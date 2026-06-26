@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<StartupObject>TREEVIEW_VBA.My.MyApplication</StartupObject>
+		<UseWindowsForms>true</UseWindowsForms>
+		<MyType>WindowsForms</MyType>
+		<Platforms>AnyCPU;x64;x86</Platforms>
+		<ApplicationManifest>My Project\app.manifest</ApplicationManifest>
+		<Title>Treeview VB.NET accesibil din VBA</Title>
+		<AssemblyName>TREEVIEW_VBA</AssemblyName>
+		<PublishReadyToRun>true</PublishReadyToRun>
+		<ApplicationIcon>Gemini_Generated_Image_51otpx51otpx51ot.ico</ApplicationIcon>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<FileVersion>25.0.0.0</FileVersion>
+		<AssemblyVersion>25.0.0.0</AssemblyVersion>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Platform)' == 'x64' Or '$(PlatformTarget)' == 'x64' Or '$(RuntimeIdentifier)' == 'win-x64'">
+		<AssemblyName>TREEVIEW_VBA_64</AssemblyName>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Platform)' == 'x86' Or '$(PlatformTarget)' == 'x86' Or '$(RuntimeIdentifier)' == 'win-x86'">
+		<AssemblyName>TREEVIEW_VBA_32</AssemblyName>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Import Include="System.Data" />
+		<Import Include="System.Drawing" />
+		<Import Include="System.Windows.Forms" />
+		<Import Remove="Microsoft.VisualBasic" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="Gemini_Generated_Image_51otpx51otpx51ot.ico" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Update="My Project\Application.Designer.vb">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Application.myapp</DependentUpon>
+		</Compile>
+		<Compile Update="My Project\Resources.Designer.vb">
+		  <DesignTime>True</DesignTime>
+		  <AutoGen>True</AutoGen>
+		  <DependentUpon>Resources.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="My Project\Application.myapp">
+			<Generator>MyApplicationCodeGenerator</Generator>
+			<LastGenOutput>Application.Designer.vb</LastGenOutput>
+		</None>
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Update="Tree.Variables.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>Tree.vb</DependentUpon>
+		</Compile>
+		<Compile Update="Tree.Window.vb">
+			<DependentUpon>Tree.vb</DependentUpon>
+		</Compile>
+		<Compile Update="Tree.Helpers.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>Tree.vb</DependentUpon>
+		</Compile>
+		<Compile Update="Tree.API.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>Tree.vb</DependentUpon>
+		</Compile>
+		<Compile Update="Tree.Builder.vb">
+			<DependentUpon>Tree.vb</DependentUpon>
+		</Compile>
+	</ItemGroup>
+	<ItemGroup>
+	  <EmbeddedResource Update="My Project\Resources.resx">
+	    <CustomToolNamespace>My.Resources</CustomToolNamespace>
+	    <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+	    <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+	  </EmbeddedResource>
+	</ItemGroup>
+</Project>

@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>KBot.DevHarness</RootNamespace>
+    <AssemblyName>KBot.DevHarness</AssemblyName>
+    <UseWindowsForms>true</UseWindowsForms>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <OptionCompare>Binary</OptionCompare>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Import Include="System.Data" />
+    <Import Include="System.Drawing" />
+    <Import Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Aceeași versiune ca în KBot.App.vbproj. -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Oglindește referințele din KBot.App.vbproj, minus KBot.App (circular),
+         minus proiectele neutilizate de testele-sămânță (Xfa, Forexe.Editor). -->
+    <ProjectReference Include="..\KBot.Domain\KBot.Domain.vbproj" />
+    <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
+    <ProjectReference Include="..\KBot.Api\KBot.Api.vbproj" />
+    <ProjectReference Include="..\KBot.LocalStore\KBot.LocalStore.vbproj" />
+    <ProjectReference Include="..\KBot.Controls\KBot.Controls.vbproj" />
+    <ProjectReference Include="..\KBot.Forexe\KBot.Forexe.vbproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<UseWindowsForms>true</UseWindowsForms>
+		<UseWPF>true</UseWPF>
+		<RootNamespace />
+		<AssemblyName>ADLOPER</AssemblyName>
+		<Product>ADLOPER - Automatizare FOREXEBUG</Product>
+		<Company>Avatar Soft SRL</Company>
+		<Copyright>Copyright © 2025</Copyright>
+		<ApplicationIcon>.\Resources\Gemini_Generated_Image_51otpx51otpx51ot.ico</ApplicationIcon>
+		<Platforms>AnyCPU;x64;x86</Platforms>
+		<StartupObject>Program</StartupObject>
+		<AssemblyName>ADLOPER</AssemblyName>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<FileVersion>12.0.0.0</FileVersion>
+		<AssemblyVersion>12.0.0.0</AssemblyVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="Build_x64\**" />
+		<EmbeddedResource Remove="Build_x64\**" />
+		<None Remove="Build_x64\**" />
+		<Page Remove="Build_x64\**" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="Markdig" Version="0.45.0" />
+		<PackageReference Include="Microsoft.Playwright" Version="1.49.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<Import Remove="Microsoft.VisualBasic" />
+		<Import Remove="Microsoft.VisualBasic.Interaction" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <None Remove="Helpers\wfl_help.md" />
+	  <None Remove="Services\JavaScripts\DebugChildren.js" />
+	  <None Remove="Services\JavaScripts\DebugElement.js" />
+	  <None Remove="Services\JavaScripts\FindInTable.js" />
+	  <None Remove="Services\ScrapeTableExtract.js" />
+	  <None Remove="Services\WicketJavascript.js" />
+	  <None Remove="Services\WicketMonitor.js" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <Content Include="Helpers\wfl_help.md">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <EmbeddedResource Include="Services\JavaScripts\DebugChildren.js" />
+	  <EmbeddedResource Include="Services\JavaScripts\DebugElement.js" />
+	  <EmbeddedResource Include="Services\JavaScripts\FindInTable.js" />
+	  <EmbeddedResource Include="Services\JavaScripts\ScrapeTableExtract.js" />
+	  <EmbeddedResource Include="Services\JavaScripts\WicketJavaScript.js" />
+	  <EmbeddedResource Include="Services\JavaScripts\WicketMonitor.js" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<Compile Update="My Project\Resources.Designer.vb">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Resources.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
+	
+	<ItemGroup>
+		<EmbeddedResource Update="My Project\Resources.resx">
+			<CustomToolNamespace>My.Resources</CustomToolNamespace>
+			<Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+			<LastGenOutput>Resources.Designer.vb</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
+	
+	<ItemGroup>
+		<Compile Update="Helpers\WorkflowEditorForm.Autocomplete.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>WorkflowEditorForm.vb</DependentUpon>
+		</Compile>
+		<Compile Update="Helpers\WorkflowEditorForm.Highlighting.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>WorkflowEditorForm.vb</DependentUpon>
+		</Compile>
+		<Compile Update="Helpers\WorkflowEditorForm.UndoRedo.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>WorkflowEditorForm.vb</DependentUpon>
+		</Compile>
+		<Compile Update="Helpers\WorkflowEditorForm.TagMap.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>WorkflowEditorForm.vb</DependentUpon>
+		</Compile>
+		<Compile Update="Helpers\WorkflowEditorForm.WflLine.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>WorkflowEditorForm.vb</DependentUpon>
+		</Compile>
+		<Compile Update="Helpers\WorkflowEditorForm.DocMap.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>WorkflowEditorForm.vb</DependentUpon>
+		</Compile>
+		<Compile Update="Helpers\WorkflowEditorForm.Help.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>WorkflowEditorForm.vb</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="KBOT_IPC.Variables.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>KBOT_IPC.vb</DependentUpon>
+		</Compile>
+		<Compile Update="KBOT_IPC.Monitoring.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>KBOT_IPC.vb</DependentUpon>
+		</Compile>
+		<Compile Update="KBOT_IPC.Pipe.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>KBOT_IPC.vb</DependentUpon>
+		</Compile>
+		<Compile Update="KBOT_IPC.Window.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>KBOT_IPC.vb</DependentUpon>
+		</Compile>
+		<Compile Update="KBOT_IPC.WorkFlow.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>KBOT_IPC.vb</DependentUpon>
+		</Compile>
+		<Compile Update="KBOT_IPC.Resend.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>KBOT_IPC.vb</DependentUpon>
+		</Compile>
+		<Compile Update="KBOT_IPC.ForexeSNM.vb">
+			<SubType>Code</SubType>
+			<DependentUpon>KBOT_IPC.vb</DependentUpon>
+		</Compile>
+	</ItemGroup>
+	
+	<ItemGroup>
+		<Compile Update="KBOT_STANDALONE.StepTree.vb">
+			<DependentUpon>KBOT_STANDALONE.vb</DependentUpon>
+		</Compile>
+		<Compile Update="KBOT_STANDALONE.AccessAttach.vb">
+			<DependentUpon>KBOT_STANDALONE.vb</DependentUpon>
+		</Compile>
+	</ItemGroup>
+</Project>
