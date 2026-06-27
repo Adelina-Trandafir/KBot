@@ -2,6 +2,7 @@ Imports System
 Imports System.Collections.Generic
 Imports System.Linq
 Imports System.Reflection
+Imports KBot.Common
 
 ' Descoperă prin reflecție toate clasele care implementează IHarnessTest și au
 ' constructor fără parametri. Implicit scanează assembly-ul harness-ului.
@@ -12,14 +13,28 @@ Public NotInheritable Class HarnessTestDiscovery
 
         Dim result As New List(Of IHarnessTest)()
         For Each asm As Assembly In asms
-            For Each t As Type In asm.GetTypes()
+            Dim types As Type()
+            Try
+                types = asm.GetTypes()
+            Catch rtle As ReflectionTypeLoadException
+                ' Nu înghiți: loghează complet, apoi continuă cu tipurile încărcabile.
+                GlobalErrorLog.Write("HarnessTestDiscovery.GetTypes(" & asm.GetName().Name & ")", rtle)
+                types = rtle.Types.Where(Function(x) x IsNot Nothing).ToArray()
+            End Try
+
+            For Each t As Type In types
                 If t.IsClass AndAlso Not t.IsAbstract AndAlso GetType(IHarnessTest).IsAssignableFrom(t) Then
                     Dim ctor As ConstructorInfo = t.GetConstructor(Type.EmptyTypes)
                     If ctor IsNot Nothing Then
-                        Dim instance As IHarnessTest = TryCast(Activator.CreateInstance(t), IHarnessTest)
-                        If instance IsNot Nothing Then
-                            result.Add(instance)
-                        End If
+                        Try
+                            Dim instance As IHarnessTest = TryCast(Activator.CreateInstance(t), IHarnessTest)
+                            If instance IsNot Nothing Then
+                                result.Add(instance)
+                            End If
+                        Catch ex As Exception
+                            ' Un test cu ctor defect nu blochează harness-ul; eroarea e suprafațată.
+                            GlobalErrorLog.Write("HarnessTestDiscovery.CreateInstance(" & t.FullName & ")", ex)
+                        End Try
                     End If
                 End If
             Next
