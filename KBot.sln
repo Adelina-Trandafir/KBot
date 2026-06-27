@@ -41,6 +41,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dev", "Dev", "{927EA651-268
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "KBot.DevHarness", "src\KBot.DevHarness\KBot.DevHarness.vbproj", "{E49AB3E2-A718-4904-B71D-90C1F8E23102}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		publish-debug.ps1 = publish-debug.ps1
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -237,5 +242,8 @@ Global
 		{31D47EDC-91DF-4991-AB47-8DB734639756} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{4A408A99-B7A2-4A8A-89B8-D6C131B1F7D7} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{E49AB3E2-A718-4904-B71D-90C1F8E23102} = {927EA651-2681-4AEB-E3A3-5C3CA4D22F3C}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {54DCC8E5-04F7-4178-85A2-3097EA422A93}
 	EndGlobalSection
 EndGlobal
