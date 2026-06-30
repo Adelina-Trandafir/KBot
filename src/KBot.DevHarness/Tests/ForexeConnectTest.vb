@@ -63,12 +63,27 @@ Public NotInheritable Class ForexeConnectTest
         Dim progress As New Progress(Of Integer)(
             Sub(p) context.Progress.Report(New HarnessProgressInfo(Math.Min(p, 100), "conectare " & p & "%")))
 
+        ' 4b) Logger FOREXE doar-fișier pentru rulările din harness (nu există RichTextBox FOREXE aici).
+        '     Scrie într-un fișier separat de test_*.log al RunLogger (doi writers pe un fișier = corupție).
+        '     RichTextBox real, neafișat (nu Nothing): SetColorScheme→RefreshDisplay dereferențiază controlul.
+        Dim logsDir As String = Path.Combine(AppContext.BaseDirectory, "Logs")
+        Directory.CreateDirectory(logsDir)   ' idempotent
+        Dim forexeLogPath As String = Path.Combine(logsDir, $"forexe_connect_{DateTime.Now:yyyyMMdd_HHmmss}.log")
+
+        Dim forexeLogger As New RichTextBoxLogger(New RichTextBox()) With {
+            .EnableUI = False,
+            .LogFilePath = forexeLogPath
+        }
+        ' AttachLogger e pe ForexeRunner concret (nu pe IForexeRunner), ca în MainForm_Load → cast (D3).
+        DirectCast(runner, ForexeRunner).AttachLogger(forexeLogger)
+
         ' 5) Același overload RunAsync ca MainForm; succes = result.Success.
         Dim result As JobResult = Await runner.RunAsync(job, cert, progress, ct)
+        Dim logHint As String = " — log: " & forexeLogPath
         If result.Success Then
-            Return HarnessTestResult.Passed("conectat" & If(String.IsNullOrEmpty(result.Message), "", " — " & result.Message))
+            Return HarnessTestResult.Passed("conectat" & If(String.IsNullOrEmpty(result.Message), "", " — " & result.Message) & logHint)
         Else
-            Return HarnessTestResult.Failed("conectare eșuată" & If(String.IsNullOrEmpty(result.Message), "", " — " & result.Message))
+            Return HarnessTestResult.Failed("conectare eșuată" & If(String.IsNullOrEmpty(result.Message), "", " — " & result.Message) & logHint)
         End If
     End Function
 End Class

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Self-extractor K-BOT (tooling, NU face parte din KBot.sln).
+       Produce un singur .exe care poarta payload-ul (.zip) atasat la finalul
+       propriului fisier; la rulare se auto-dezarhiveaza in C:\KBOT, suprascrie tot,
+       fara prompturi. NU referentiaza Playwright => single-file e sigur aici
+       (fara problema Assembly.Location gol care a cauzat NRE-ul din app). -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>KBotSetup</RootNamespace>
+    <AssemblyName>KBotSetup</AssemblyName>
+    <UseWindowsForms>true</UseWindowsForms>
+    <MyType>Empty</MyType>
+    <StartupObject>KBotSetup.Program</StartupObject>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <OptionCompare>Binary</OptionCompare>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </PropertyGroup>
+
+</Project>

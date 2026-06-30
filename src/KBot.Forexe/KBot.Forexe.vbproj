@@ -12,6 +12,16 @@
     <OptionCompare>Binary</OptionCompare>
   </PropertyGroup>
 
+  <!-- Versiune componentă K-BOT.
+       FileVersion: incrementează MANUAL, doar când SE SCHIMBĂ acest proiect. Stă la baza
+       comparației din manifestul de update.
+       AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
+       rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Cod izolat din build, păstrat pentru A3 / Felia 8 -->
     <Compile Remove="_reference\**\*.vb" />
@@ -27,7 +37,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Playwright" Version="1.61.0" />
+    <!-- 1.49.0 (Chromium build 1148): versiunea care selecteaza automat certificatul
+         prin politica AutoSelectCertificateForUrls din HKCU\...\Policies\Chromium.
+         Build-urile mai noi (1.61 / Chromium 1228) NU mai citesc politica din registry
+         (chrome://policy gol) => dialogul de certificat reapare. NU urca fara a re-testa
+         selectia automata a certificatului pe forexe.mfinante.gov.ro. -->
+    <PackageReference Include="Microsoft.Playwright" Version="1.49.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 

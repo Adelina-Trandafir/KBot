@@ -8,4 +8,14 @@
     <OptionInfer>On</OptionInfer>
     <OptionCompare>Binary</OptionCompare>
   </PropertyGroup>
+
+  <!-- Versiune componentă K-BOT.
+       FileVersion: incrementează MANUAL, doar când SE SCHIMBĂ acest proiect. Stă la baza
+       comparației din manifestul de update.
+       AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
+       rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </PropertyGroup>
 </Project>

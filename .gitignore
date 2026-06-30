@@ -426,6 +426,11 @@ test-results/
 *.dmg
 *.app
 
+# 'KBot.App' este un PROIECT, nu un bundle macOS — regula '*.app' de mai sus il
+# prinde din greseala (match case-insensitive pe Windows), lasand intreaga aplicatie
+# in afara git. Re-includem explicit folderul; bin/ si obj/ raman ignorate (liniile 33-34).
+!src/KBot.App/
+
 # content below from: https://github.com/github/gitignore/blob/main/Global/macOS.gitignore
 # General
 .DS_Store

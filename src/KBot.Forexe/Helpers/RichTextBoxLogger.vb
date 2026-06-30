@@ -51,24 +51,24 @@ Public Class RichTextBoxLogger
 
     ' Colors for light mode (high contrast on white background)
     Private Shared ReadOnly LogColorsLight As New Dictionary(Of LogLevel, Color) From {
-        {LogLevel.Info, Color.FromArgb(60, 60, 60)},
-        {LogLevel.Action, Color.FromArgb(0, 80, 190)},
-        {LogLevel.Success, Color.FromArgb(0, 130, 0)},
-        {LogLevel.Warning, Color.FromArgb(180, 90, 0)},
-        {LogLevel.Error, Color.FromArgb(180, 0, 0)},
-        {LogLevel.Debug, Color.FromArgb(110, 110, 110)},
-        {LogLevel.Normal, Color.FromArgb(10, 10, 10)}
+        {LogLevel.Info, Color.FromArgb(70, 70, 70)},         ' gri închis
+        {LogLevel.Action, Color.FromArgb(0, 102, 204)},      ' albastru
+        {LogLevel.Success, Color.FromArgb(0, 153, 51)},      ' verde
+        {LogLevel.Warning, Color.FromArgb(225, 140, 0)},     ' portocaliu
+        {LogLevel.Error, Color.FromArgb(210, 0, 0)},         ' roșu
+        {LogLevel.Debug, Color.FromArgb(140, 140, 140)},     ' gri
+        {LogLevel.Normal, Color.FromArgb(0, 0, 0)}           ' negru
     }
 
     ' Active colors — initialized to light mode, switched via SetColorScheme()
     Private Shared LogColors As New Dictionary(Of LogLevel, Color) From {
-        {LogLevel.Info, Color.FromArgb(60, 60, 60)},
-        {LogLevel.Action, Color.FromArgb(0, 80, 190)},
-        {LogLevel.Success, Color.FromArgb(0, 130, 0)},
-        {LogLevel.Warning, Color.FromArgb(180, 90, 0)},
-        {LogLevel.Error, Color.FromArgb(180, 0, 0)},
-        {LogLevel.Debug, Color.FromArgb(110, 110, 110)},
-        {LogLevel.Normal, Color.FromArgb(10, 10, 10)}
+        {LogLevel.Info, Color.FromArgb(70, 70, 70)},         ' gri închis
+        {LogLevel.Action, Color.FromArgb(0, 102, 204)},      ' albastru
+        {LogLevel.Success, Color.FromArgb(0, 153, 51)},      ' verde
+        {LogLevel.Warning, Color.FromArgb(225, 140, 0)},     ' portocaliu
+        {LogLevel.Error, Color.FromArgb(210, 0, 0)},         ' roșu
+        {LogLevel.Debug, Color.FromArgb(140, 140, 140)},     ' gri
+        {LogLevel.Normal, Color.FromArgb(0, 0, 0)}           ' negru
     }
 
     ''' <summary>Comută paleta de culori pentru log între dark și light

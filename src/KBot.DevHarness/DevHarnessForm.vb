@@ -78,7 +78,7 @@ Public NotInheritable Class DevHarnessForm
         Dim split As New SplitContainer() With {.Dock = DockStyle.Fill, .SplitterDistance = 360}
         clbTests = New CheckedListBox() With {.Dock = DockStyle.Fill, .CheckOnClick = True, .IntegralHeight = False}
         split.Panel1.Controls.Add(clbTests)
-        rtbResults = New RichTextBox() With {.Dock = DockStyle.Fill, .ReadOnly = True, .Font = New Font("Consolas", 9.0F), .BackColor = Color.White}
+        rtbResults = New RichTextBox() With {.Dock = DockStyle.Fill, .ReadOnly = False, .Font = New Font("Consolas", 9.0F), .BackColor = Color.White}
         split.Panel2.Controls.Add(rtbResults)
 
         ' --- jos: progres + status ---
@@ -340,9 +340,9 @@ Public NotInheritable Class DevHarnessForm
     ' ---------- output (Invoke-safe) ----------
     Private Sub AppendLog(message As String)
         If rtbResults.InvokeRequired Then
-            rtbResults.Invoke(Sub() AppendLogCore(message, Color.Gainsboro))
+            rtbResults.Invoke(Sub() AppendLogCore(message, Color.Black))
         Else
-            AppendLogCore(message, Color.Gainsboro)
+            AppendLogCore(message, Color.Black)
         End If
     End Sub
 

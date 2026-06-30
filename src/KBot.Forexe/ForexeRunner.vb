@@ -63,7 +63,7 @@ Namespace KBot.Forexe
                 _executor = New WorkflowExecutor(
                     logger:=_logger,
                     certificate:=certificate,
-                    stealthMode:=True,
+                    stealthMode:=False,   ' Browser ON-screen și mereu vizibil (fără off-screen -3000, fără ascundere din taskbar).
                     stepByStep:=False,
                     confirmStep:=Nothing,
                     stepOnlyCheckpoints:=False,
@@ -98,6 +98,9 @@ Namespace KBot.Forexe
 
             Catch ex As Exception
                 _logger.LogException(ex, "Eroare conectare")
+                ' DIAGNOSTIC TEMPORAR: stack trace complet în log (LogException scrie doar Message).
+                _logger.LogError("[DIAG] " & ex.GetType().FullName & ": " & ex.Message)
+                _logger.LogError("[DIAG][STACK] " & ex.ToString())
                 ' Browserul rămâne deschis pentru investigație (decizie A3).
                 Return Failed(ex.Message)
             End Try

@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow name="Definitivare {{COD_ANGAJAMENT}}" startUrl="current" expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
+  <!-- V.1
+    1. Cauta un Angajament dupa COD.
+    2. Apasa Modificare
+    3. Apasa pe Istoric
+    4. Salveaza un tabel cu intregul istoric al angajamentului prin SCRAPE  
+  -->
+
+  <!-- OBLIGATORIU LA INCEPUT !-->
+  <IfExists selector="#select2-drop-mask" timeout="1">
+      <Click selector="#select2-drop-mask" force="true" waitNavigation="true" timeOut="5" LogValue="Resetare interfață (închid ferestre)" />
+  </IfExists>
+  <Click selector="#statlogo" waitNavigation="true" timeout="10"/>    
+  <!-- PANA AICI -->
+
+  <!--MAI APAS O DATA PE ELEMENT SA MA ASIGUR. DACA TRECE PREA MULT TIMP, CHIAR DACA NAVIGHEZ LA O PAGINA, PRIMA ACTIUNE MA DUCE LA HOME IMPLICIT-->
+  <Click selector="a:has-text('Listă angajamente')" waitNavigation="false"  timeout="5" LogValue="Apas pe 'Listă angajamente'"/> 
+
+  <!--COMPLETEZ CODUL ANGAJAMENTULUI -->
+  <Fill selector="input[name='cod']" value="{{COD_ANGAJAMENT}}" clear="true"  timeout="5" LogValue="Caut angajamentul {{COD_ANGAJAMENT}}" />
+  <Click selector="button:has-text('Caută')" waitNavigation="false"  timeout="5"/>
+
+  <!--TESTEZ DACA A APARUT MESAJ DE EROARE -->
+  <IfExists selector=".alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')" timeOut="1">
+    <Exit LogValue="Nu există codul căutat! Se iese."/>
+  </IfExists>
+
+  <!--ASTEPT ELEMENTUL EXPORT - DOVADA CA LISTA S-A INCARCAT -->
+  <WaitFor selector="a[href*='exportToXLS']"  timeout="5"/>
+  
+  <!--APAS PE OCHISOR -->
+  <Click selector="a.haction i.glyphicon-list:visible" timeout="10"/>
+  <WaitFor selector=".divaction" state="visible" timeout="10"/>
+
+  <Click selector=".divaction a:has-text('Modificare')" waitNavigation="true"  timeout="5" LogValue="Apăs pe Modificare."/>
+
+  <WaitFor selector="li.tab0"  timeout="5"/>
+  
+  <Click selector="button.btn-success:has-text('Istoric')"  waitNavigation="true"/>
+  
+  <WaitFor selector="h3.heading:has-text('Istoric angajament')" timeout="10" />
+  <WaitFor selector="table.table-striped" timeout="5" />
+
+<!-- SALVEZ TABELUL CU INDICATORI (REVERSE) -->
+<ScrapeTable selector="table.table-striped"
+             saveTo="TabelIstoric"
+             lastPageSelector="a.last"
+             prevPageSelector="a.prev"
+             waitSelector="table.table-striped"
+             fingerprintSelector="table.table-striped tbody tr:last-child td:last-child"
+             exitIfCellEquals="Timp:~:^{{DATA_IESIRE}}"
+             startFromLast="true"
+             timeout="5" />
+
+  <Log message="Flux finalizat cu succes." level="success"/>
+
+</Workflow>
