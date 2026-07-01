@@ -3,6 +3,7 @@ Imports System.IO
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Threading
 Imports System.Threading.Tasks
+Imports Newtonsoft.Json.Linq
 Imports WorkflowModels   ' Workflow (modelele). WorkflowExecutor e în namespace global.
 
 Namespace KBot.Forexe
@@ -104,6 +105,120 @@ Namespace KBot.Forexe
                 ' Browserul rămâne deschis pentru investigație (decizie A3).
                 Return Failed(ex.Message)
             End Try
+        End Function
+
+        ''' <summary>
+        ''' Rulează un workflow pe sesiunea EXISTENTĂ (fără relansare de browser).
+        ''' Injectează job.Parameters (JSON -> SetVariable, plate -> ApplyVariables,
+        ''' ca în KBOT_IPC.WorkFlow), execută .wfl-ul și întoarce variabilele
+        ''' executorului în JobResult (Data plat + Tables tabelar).
+        ''' </summary>
+        Public Async Function RunJobAsync(job As JobRequest,
+                                          progress As IProgress(Of Integer),
+                                          ct As CancellationToken) As Task(Of JobResult) Implements IForexeRunner.RunJobAsync
+
+            If _logger Is Nothing Then
+                Throw New InvalidOperationException("Logger neatașat — apelează AttachLogger înainte de RunJobAsync.")
+            End If
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then
+                Throw New InvalidOperationException("Nicio sesiune activă — rulează Conectare (RunAsync) înainte de RunJobAsync.")
+            End If
+
+            Try
+                If String.IsNullOrEmpty(job.WflPath) OrElse Not File.Exists(job.WflPath) Then
+                    Return Failed($"Fișierul workflow lipsește: {job.WflPath}")
+                End If
+
+                ct.ThrowIfCancellationRequested()
+
+                Dim xml As String = File.ReadAllText(job.WflPath)
+
+                ' Injectare variabile — separat pe tip (ca în KBOT_IPC.WorkFlow):
+                ' JSON -> executor (SetVariable), plate -> substituție în XML (ApplyVariables).
+                If job.Parameters IsNot Nothing AndAlso job.Parameters.Count > 0 Then
+                    Dim varMeta As Dictionary(Of String, WorkflowVariable) = WorkflowParser.ExtractVariablesDetailed(xml)
+                    Dim flatVars As New Dictionary(Of String, String)
+                    For Each kvp In job.Parameters
+                        Dim meta As WorkflowVariable = Nothing
+                        Dim isJson As Boolean = varMeta.TryGetValue(kvp.Key, meta) AndAlso
+                                                meta.VarType.Equals("JSON", StringComparison.OrdinalIgnoreCase)
+                        If isJson Then
+                            _executor.SetVariable(kvp.Key, kvp.Value)
+                        Else
+                            flatVars(kvp.Key) = kvp.Value
+                        End If
+                    Next
+                    If flatVars.Count > 0 Then xml = WorkflowParser.ApplyVariables(xml, flatVars)
+                End If
+
+                WorkflowParser.Logger = _logger
+                Dim workflow As Workflow = WorkflowParser.Parse(xml, job.WflPath)
+                _executor.SetWorkflowPath(job.WflPath)
+
+                _logger.LogInfo($"Rulez workflow-ul '{job.WorkflowName}' pe sesiunea existentă...")
+                Await Task.Run(Function() _executor.ExecuteAsync(workflow))
+
+                Dim result As New JobResult With {.Success = True, .Message = $"'{job.WorkflowName}' rulat."}
+                PopulateResult(result)
+                progress?.Report(100)
+                Return result
+
+            Catch ex As OperationCanceledException
+                _logger.LogWarning($"'{job.WorkflowName}' anulat.")
+                Return Failed($"'{job.WorkflowName}' anulat.")
+
+            Catch ex As Exception
+                _logger.LogException(ex, $"Eroare rulare '{job.WorkflowName}'")
+                _logger.LogError("[DIAG] " & ex.GetType().FullName & ": " & ex.Message)
+                _logger.LogError("[DIAG][STACK] " & ex.ToString())
+                Return Failed(ex.Message)
+            End Try
+        End Function
+
+        ''' <summary>
+        ''' Copiază variabilele executorului în JobResult: toate ca Data plat, iar
+        ''' cele care conțin un JSON array de obiecte și în Tables (rând = coloană->valoare).
+        ''' </summary>
+        Private Sub PopulateResult(result As JobResult)
+            Dim vars As Dictionary(Of String, String) = _executor.GetAllVariables()
+            For Each kvp In vars
+                result.Data(kvp.Key) = kvp.Value
+                Dim table As List(Of Dictionary(Of String, String)) = TryParseTable(kvp.Value)
+                If table IsNot Nothing Then result.Tables(kvp.Key) = table
+            Next
+        End Sub
+
+        ''' <summary>
+        ''' Parsează un JSON array de obiecte în listă de rânduri. Întoarce Nothing
+        ''' dacă valoarea nu e un array de obiecte (clasificare, nu eroare — la fel ca
+        ''' detecția JSON din WorkflowExecutor.GetAllVariables).
+        ''' </summary>
+        Private Shared Function TryParseTable(value As String) As List(Of Dictionary(Of String, String))
+            If String.IsNullOrWhiteSpace(value) Then Return Nothing
+            Dim trimmed As String = value.Trim()
+            If Not trimmed.StartsWith("["c) Then Return Nothing
+
+            Dim token As JToken
+            Try
+                token = JToken.Parse(trimmed)
+            Catch
+                Return Nothing   ' nu e JSON valid -> nu e tabel
+            End Try
+
+            Dim arr As JArray = TryCast(token, JArray)
+            If arr Is Nothing OrElse arr.Count = 0 Then Return Nothing
+
+            Dim rows As New List(Of Dictionary(Of String, String))
+            For Each item In arr
+                Dim obj As JObject = TryCast(item, JObject)
+                If obj Is Nothing Then Return Nothing   ' array de valori, nu de obiecte
+                Dim row As New Dictionary(Of String, String)
+                For Each prop In obj.Properties()
+                    row(prop.Name) = If(prop.Value?.ToString(), String.Empty)
+                Next
+                rows.Add(row)
+            Next
+            Return rows
         End Function
 
         Private Sub OnExecutorStatus(status As String)

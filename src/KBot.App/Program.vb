@@ -82,9 +82,23 @@ Friend Module Program
         ' Context de sesiune (înlocuiește glob*), încărcat după login în felia 1.
         services.AddSingleton(Of SessionContext)()
 
-        ' Config + HttpClient (în felia 1 se trece pe IHttpClientFactory).
-        services.AddSingleton(New ApiOptions())
-        services.AddSingleton(Of HttpClient)()
+        ' Config (BaseUrl / ApiKey) din mediu; ApiOptions e ce injectăm efectiv.
+        Dim cfg As AppConfig = LoadAppConfig()
+        services.AddSingleton(cfg)
+        services.AddSingleton(New ApiOptions With {.BaseUrl = cfg.ApiBaseUrl, .ApiKey = cfg.ApiKey})
+
+        ' HttpClient tipat: BaseAddress + Timeout din ApiOptions (X-Api-Key merge
+        ' per-request din ApiClient). În felia 1 se poate trece pe IHttpClientFactory.
+        services.AddSingleton(Of HttpClient)(
+            Function(sp)
+                Dim opt As ApiOptions = sp.GetRequiredService(Of ApiOptions)()
+                Dim client As New HttpClient()
+                If Not String.IsNullOrWhiteSpace(opt.BaseUrl) Then
+                    client.BaseAddress = New Uri(opt.BaseUrl)
+                End If
+                client.Timeout = TimeSpan.FromSeconds(opt.TimeoutSeconds)
+                Return client
+            End Function)
         services.AddSingleton(Of IApiClient, ApiClient)()
 
         ' Stocare temporară (SQLite in-memory).
@@ -101,5 +115,15 @@ Friend Module Program
         services.AddTransient(Of KBot.DevHarness.DevHarnessForm)()
 #End If
     End Sub
+
+    ' Sursă de config pentru felia curentă: variabile de mediu. Lipsa lor lasă
+    ' câmpurile goale — ApiClient hard-fail-uiește la primul apel cu mesaj clar.
+    ' (Login-ul / un appsettings dedicat vor înlocui asta ulterior.)
+    Private Function LoadAppConfig() As AppConfig
+        Return New AppConfig With {
+            .ApiBaseUrl = If(Environment.GetEnvironmentVariable("KBOT_API_BASE_URL"), String.Empty),
+            .ApiKey = If(Environment.GetEnvironmentVariable("KBOT_API_KEY"), String.Empty)
+        }
+    End Function
 
 End Module

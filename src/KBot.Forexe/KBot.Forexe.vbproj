@@ -28,6 +28,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- JobBuilder construiește JobRequest din SessionContext (KBot.Common).
+         KBot.Common e cel mai jos strat (fără dependențe) => nu introduce ciclu. -->
+    <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="Services\JavaScripts\DebugChildren.js" />
     <EmbeddedResource Include="Services\JavaScripts\DebugElement.js" />
     <EmbeddedResource Include="Services\JavaScripts\FindInTable.js" />

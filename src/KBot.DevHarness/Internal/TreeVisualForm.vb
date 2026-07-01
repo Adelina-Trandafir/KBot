@@ -7,29 +7,23 @@ Imports KBot.Controls
 ' și icoane dreapta, plus butoanele Pass/Fail. Evenimentele native ale controlului
 ' se loghează prin delegatul primit din test (context.Log).
 Public NotInheritable Class TreeVisualForm
-    Inherits Form
 
     Private ReadOnly _log As Action(Of String)
     Private _rightIcon As Bitmap
 
     Public Sub New(log As Action(Of String))
         _log = log
-        BuildUi()
+        InitializeComponent()
+        PopulateTree()
     End Sub
 
-    Private Sub BuildUi()
-        Me.Text = "AdvancedTreeControl — proba vizuală"
-        Me.Width = 520
-        Me.Height = 560
-        Me.StartPosition = FormStartPosition.CenterParent
-
+    ' Date hardcodate (noduri) — populate în cod; controalele sunt în TreeVisualForm.Designer.vb.
+    Private Sub PopulateTree()
         ' Mică iconiță dreapta (16x16) ca evenimentul RightIconClicked să fie accesibil.
         _rightIcon = New Bitmap(16, 16)
         Using g As Graphics = Graphics.FromImage(_rightIcon)
             g.Clear(Color.SteelBlue)
         End Using
-
-        Dim tree As New AdvancedTreeControl() With {.Dock = DockStyle.Fill, .CheckBoxes = True}
 
         ' Două noduri-părinte, fiecare cu câteva frunze; toate cu checkbox (propagare părinte→copii).
         Dim grupA As AdvancedTreeControl.TreeItem =
@@ -49,40 +43,23 @@ Public NotInheritable Class TreeVisualForm
         b1.HasCheckBox = True
         Dim b2 As AdvancedTreeControl.TreeItem = tree.AddItem("B2", "Angajament 2", grupB, pRightIcon:=_rightIcon)
         b2.HasCheckBox = True
-
-        ' Evenimentele publice ale controlului → log.
-        AddHandler tree.NodeChecked, AddressOf OnNodeChecked
-        AddHandler tree.NodeRadioSelected, AddressOf OnNodeRadioSelected
-        AddHandler tree.RightIconClicked, AddressOf OnRightIconClicked
-        AddHandler tree.NodeDoubleClicked, AddressOf OnNodeDoubleClicked
-
-        ' Butoane Pass/Fail
-        Dim pnl As New FlowLayoutPanel() With {.Dock = DockStyle.Bottom, .Height = 40, .FlowDirection = FlowDirection.RightToLeft, .Padding = New Padding(6)}
-        Dim btnFail As New Button() With {.Text = "Fail", .DialogResult = DialogResult.Cancel, .AutoSize = True}
-        Dim btnPass As New Button() With {.Text = "Pass", .DialogResult = DialogResult.OK, .AutoSize = True}
-        pnl.Controls.Add(btnFail)
-        pnl.Controls.Add(btnPass)
-        Me.AcceptButton = btnPass
-        Me.CancelButton = btnFail
-
-        Me.Controls.Add(tree)
-        Me.Controls.Add(pnl)
     End Sub
 
-    Private Sub OnNodeChecked(pNode As AdvancedTreeControl.TreeItem)
+    ' Evenimentele publice ale controlului (WithEvents tree din Designer) → log.
+    Private Sub OnNodeChecked(pNode As AdvancedTreeControl.TreeItem) Handles tree.NodeChecked
         _log("checked: " & pNode.Key & " (" & pNode.Caption & ") -> " & pNode.CheckState.ToString())
     End Sub
 
-    Private Sub OnNodeRadioSelected(nodeOn As AdvancedTreeControl.TreeItem, nodeOff As AdvancedTreeControl.TreeItem)
+    Private Sub OnNodeRadioSelected(nodeOn As AdvancedTreeControl.TreeItem, nodeOff As AdvancedTreeControl.TreeItem) Handles tree.NodeRadioSelected
         _log("radio: " & If(nodeOn IsNot Nothing, nodeOn.Key, "<none>") &
              " (off: " & If(nodeOff IsNot Nothing, nodeOff.Key, "<none>") & ")")
     End Sub
 
-    Private Sub OnRightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs)
+    Private Sub OnRightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
         _log("right-icon: " & pNode.Key & " (" & pNode.Caption & ")")
     End Sub
 
-    Private Sub OnNodeDoubleClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs)
+    Private Sub OnNodeDoubleClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeDoubleClicked
         _log("double-click: " & pNode.Key & " (" & pNode.Caption & ")")
     End Sub
 

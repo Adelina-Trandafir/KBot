@@ -19,6 +19,7 @@ Partial Class MainForm
 
     Friend WithEvents pnlTop As System.Windows.Forms.Panel
     Friend WithEvents btnConnect As System.Windows.Forms.Button
+    Friend WithEvents btnListaAngajamente As System.Windows.Forms.Button
     Friend WithEvents pbProgress As System.Windows.Forms.ProgressBar
     Friend WithEvents rtbLog As System.Windows.Forms.RichTextBox
 
@@ -30,6 +31,7 @@ Partial Class MainForm
         components = New System.ComponentModel.Container()
         Me.pnlTop = New System.Windows.Forms.Panel()
         Me.btnConnect = New System.Windows.Forms.Button()
+        Me.btnListaAngajamente = New System.Windows.Forms.Button()
         Me.pbProgress = New System.Windows.Forms.ProgressBar()
         Me.rtbLog = New System.Windows.Forms.RichTextBox()
         Me.pnlTop.SuspendLayout()
@@ -38,6 +40,7 @@ Partial Class MainForm
         'pnlTop
         '
         Me.pnlTop.Controls.Add(Me.pbProgress)
+        Me.pnlTop.Controls.Add(Me.btnListaAngajamente)
         Me.pnlTop.Controls.Add(Me.btnConnect)
         Me.pnlTop.Dock = System.Windows.Forms.DockStyle.Top
         Me.pnlTop.Location = New System.Drawing.Point(0, 0)
@@ -54,6 +57,16 @@ Partial Class MainForm
         Me.btnConnect.TabIndex = 0
         Me.btnConnect.Text = "Conectare"
         Me.btnConnect.UseVisualStyleBackColor = True
+        '
+        'btnListaAngajamente
+        '
+        Me.btnListaAngajamente.Enabled = False
+        Me.btnListaAngajamente.Location = New System.Drawing.Point(160, 12)
+        Me.btnListaAngajamente.Name = "btnListaAngajamente"
+        Me.btnListaAngajamente.Size = New System.Drawing.Size(180, 32)
+        Me.btnListaAngajamente.TabIndex = 2
+        Me.btnListaAngajamente.Text = "Listă angajamente"
+        Me.btnListaAngajamente.UseVisualStyleBackColor = True
         '
         'pbProgress
         '
