@@ -487,3 +487,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+/PYTHON/routes/ord.old
+/PYTHON/routes/ord_v4.old
+/PYTHON/routes/ord_v5.old
+/PYTHON/routes/ddf_old.old
+/PYTHON/utils/__init__.pytouch
