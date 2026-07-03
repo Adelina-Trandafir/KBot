@@ -79,8 +79,10 @@ Friend Module Program
     End Sub
 
     Private Sub ConfigureServices(services As IServiceCollection)
-        ' Context de sesiune (înlocuiește glob*), încărcat după login în felia 1.
-        services.AddSingleton(Of SessionContext)()
+        ' Context de sesiune (înlocuiește glob*). DEMO SEED (throwaway): login (felia
+        ' 1) nu e implementat, deci seedăm 000_DEMO ca să putem închide round-trip-ul
+        ' ListaAngajamente. ȘTERGE SeedDemoSession când login populează SessionContext.
+        services.AddSingleton(Of SessionContext)(Function(sp) SeedDemoSession())
 
         ' Config (BaseUrl / ApiKey) din mediu; ApiOptions e ce injectăm efectiv.
         Dim cfg As AppConfig = LoadAppConfig()
@@ -123,6 +125,27 @@ Friend Module Program
         Return New AppConfig With {
             .ApiBaseUrl = If(Environment.GetEnvironmentVariable("KBOT_API_BASE_URL"), String.Empty),
             .ApiKey = If(Environment.GetEnvironmentVariable("KBOT_API_KEY"), String.Empty)
+        }
+    End Function
+
+    ' DEMO SEED — throwaway until login (felia 1) populates SessionContext.
+    ' Defaults target 000_DEMO with an unfiltered scrape (empty COD_PROGRAM/SURSA →
+    ' the .wfl scrapes everything the connected FOREXE unit shows); An defaults to the
+    ' current year. Each field is env-overridable so a live operator can match their
+    ' FOREXE unit/year WITHOUT a rebuild. Remove this whole method when login lands.
+    Private Function SeedDemoSession() As SessionContext
+        Dim anRaw As String = Environment.GetEnvironmentVariable("KBOT_DEMO_AN")
+        Dim an As Integer
+        If Not Integer.TryParse(anRaw, an) Then an = DateTime.Now.Year
+
+        Return New SessionContext With {
+            .DbName = If(Environment.GetEnvironmentVariable("KBOT_DEMO_DBNAME"), "000_DEMO"),
+            .An = an,
+            .CodProgram = If(Environment.GetEnvironmentVariable("KBOT_DEMO_COD_PROGRAM"), String.Empty),
+            .SectorSursa = If(Environment.GetEnvironmentVariable("KBOT_DEMO_SURSA"), String.Empty),
+            .CF = "000_DEMO",
+            .NumeUnitate = "DEMO",
+            .OperatorName = "demo-seed"
         }
     End Function
 

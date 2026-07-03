@@ -1,0 +1,11 @@
+{
+  "Host": "89.33.25.34",
+  "Port": 27015,
+  "User": "root",
+  "LocalRoot": "",
+  "RemoteRoot": "/root/AVACONT",
+  "PreserveMTime": true,
+  "HostKeyFingerprint": "",
+  "IgnorePatterns": [ ".git", ".venv", "venv", "__pycache__", "*.pyc", ".vscode", ".vs", "bin", "obj" ],
+  "IncludeExtensions": [ "py", "json", "xml", "yaml", "yml", "ini", "cfg", "toml", "txt", "sql", "html", "css", "js", "md" ]
+}

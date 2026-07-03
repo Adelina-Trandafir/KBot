@@ -32,6 +32,46 @@ _UPSERT_SQL = (
 )
 
 
+@forexe_bp.route("/api/forexe/angajamente", methods=["GET"])
+@require_api_key
+def get_angajamente():
+    """Read-back for the ListaAngajamente round-trip.
+
+    Query: db_name (required), an (optional, ignored — FX_Angajamente has no An
+    column; rows are scoped by DC = db_name, which is what the upsert writes).
+    Returns { db_name, count, rows: [ {Cod, Descriere, Stare}, ... ] }.
+    """
+    db_name = request.args.get("db_name")
+    if db_name is None or str(db_name).strip() == "":
+        return jsonify({"error": "Parametru lipsa: db_name"}), 400
+
+    try:
+        db_name = _validate_db_name(db_name)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection(db_name)
+        cursor = conn.cursor()
+        # Scoped by DC (= db_name); that is exactly what upsert stamps on insert.
+        cursor.execute(
+            "SELECT CodAngajament, Descriere, Stare FROM FX_Angajamente WHERE DC = %s",
+            (db_name,),
+        )
+        rows = [
+            {"Cod": cod, "Descriere": descriere, "Stare": stare}
+            for (cod, descriere, stare) in cursor.fetchall()
+        ]
+        return jsonify({"db_name": db_name, "count": len(rows), "rows": rows}), 200
+    except Exception as e:
+        logger.error(f"[forexe.angajamente.get] {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn is not None:
+            conn.close()
+
+
 @forexe_bp.route("/api/forexe/angajamente/upsert", methods=["POST"])
 @require_api_key
 def upsert_angajamente():

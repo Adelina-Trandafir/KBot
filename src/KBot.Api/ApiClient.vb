@@ -75,8 +75,37 @@ Public Class ApiClient
         Loop
     End Function
 
-    Public Function GetAngajamenteAsync(dbName As String, an As Integer, ct As CancellationToken) As Task(Of IReadOnlyList(Of Angajament)) Implements IApiClient.GetAngajamenteAsync
-        Throw New NotImplementedException()
+    ' Read-back for the ListaAngajamente round-trip. GETs the rows scoped to dbName
+    ' (server filters by DC = db_name). 'an' is forwarded for forward-compat but the
+    ' server ignores it (FX_Angajamente has no An column). Hard-fail (Throw) on non-2xx.
+    Public Async Function GetAngajamenteAsync(dbName As String, an As Integer, ct As CancellationToken) As Task(Of IReadOnlyList(Of Angajament)) Implements IApiClient.GetAngajamenteAsync
+        If String.IsNullOrEmpty(dbName) Then Throw New ArgumentException("dbName gol.", NameOf(dbName))
+        If String.IsNullOrEmpty(_options.ApiKey) Then Throw New InvalidOperationException("API key neconfigurat (ApiOptions.ApiKey).")
+
+        Dim url As String = $"/api/forexe/angajamente?db_name={Uri.EscapeDataString(dbName)}&an={an}"
+
+        Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+            msg.Headers.Add("X-Api-Key", _options.ApiKey)
+            Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                If Not resp.IsSuccessStatusCode Then
+                    Throw New ApplicationException($"get angajamente HTTP {CInt(resp.StatusCode)}: {respText}")
+                End If
+
+                Dim payload As GetAngajamenteResponse = JsonSerializer.Deserialize(Of GetAngajamenteResponse)(respText, _json)
+                Dim result As New List(Of Angajament)()
+                If payload IsNot Nothing AndAlso payload.rows IsNot Nothing Then
+                    For Each r As AngajamentRow In payload.rows
+                        result.Add(New Angajament() With {
+                            .CodAngajament = If(r.Cod, String.Empty),
+                            .Descriere = If(r.Descriere, String.Empty),
+                            .Stare = If(r.Stare, String.Empty)
+                        })
+                    Next
+                End If
+                Return result
+            End Using
+        End Using
     End Function
 
     Public Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T) Implements IApiClient.GetAsync

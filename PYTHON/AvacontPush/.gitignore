@@ -1,0 +1,9 @@
+# Local secrets (plaintext password lives here) - never commit
+push_settings.json
+
+# Run logs
+Logs/
+
+# Build output
+bin/
+obj/

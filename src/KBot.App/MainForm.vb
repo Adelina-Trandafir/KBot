@@ -99,6 +99,12 @@ Public Class MainForm
                 Return
             End If
 
+            ' De-risk: log the real scraped column keys before mapping, so a FOREXE
+            ' rename is visible in the log even when the upsert is skipped (no DbName).
+            If rows.Count > 0 Then
+                _logger.LogInfo($"ListaAngajamente scraped keys: {String.Join(",", rows(0).Keys)}")
+            End If
+
             Dim mapped As List(Of Angajament) = AngajamentMapper.FromListaAngajamenteResult(rows)
             _logger.LogInfo($"ListaAngajamente: {mapped.Count} rânduri mapate (din {rows.Count} brute).")
 

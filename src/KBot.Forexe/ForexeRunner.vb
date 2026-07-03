@@ -192,8 +192,10 @@ Namespace KBot.Forexe
         ''' Parsează un JSON array de obiecte în listă de rânduri. Întoarce Nothing
         ''' dacă valoarea nu e un array de obiecte (clasificare, nu eroare — la fel ca
         ''' detecția JSON din WorkflowExecutor.GetAllVariables).
+        ''' Public: this is the single raw-JSON -> Tables() parsing seam; the harness
+        ''' test ListaAngajamenteEnrichmentTest exercises it directly.
         ''' </summary>
-        Private Shared Function TryParseTable(value As String) As List(Of Dictionary(Of String, String))
+        Public Shared Function TryParseTable(value As String) As List(Of Dictionary(Of String, String))
             If String.IsNullOrWhiteSpace(value) Then Return Nothing
             Dim trimmed As String = value.Trim()
             If Not trimmed.StartsWith("["c) Then Return Nothing

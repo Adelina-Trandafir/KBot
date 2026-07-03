@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>AvacontPush</RootNamespace>
+    <AssemblyName>AvacontPush</AssemblyName>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <OptionCompare>Binary</OptionCompare>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <StartupObject>AvacontPush.Program</StartupObject>
+    <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Latest stable SSH.NET as of 2025-10-27 (verified per build note). -->
+    <PackageReference Include="SSH.NET" Version="2025.1.0" />
+  </ItemGroup>
+
+</Project>

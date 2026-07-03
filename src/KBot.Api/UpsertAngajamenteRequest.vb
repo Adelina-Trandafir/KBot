@@ -15,3 +15,11 @@ Public NotInheritable Class AngajamentRow
     Public Property Descriere As String
     Public Property Stare As String
 End Class
+
+' Wire DTO for GET /api/forexe/angajamente (read-back). Property names match the
+' JSON keys the route returns (db_name / count / rows), rows reuse AngajamentRow.
+Public NotInheritable Class GetAngajamenteResponse
+    Public Property db_name As String
+    Public Property count As Integer
+    Public Property rows As New List(Of AngajamentRow)()
+End Class
