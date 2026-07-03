@@ -492,3 +492,5 @@ $RECYCLE.BIN/
 /PYTHON/routes/ord_v5.old
 /PYTHON/routes/ddf_old.old
 /PYTHON/utils/__init__.pytouch
+/PYTHON/_push
+/src/KBot.Api/ApiOptions.vb
