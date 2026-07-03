@@ -8,6 +8,7 @@ Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports KBot.Common
+Imports KBot.Controls
 
 Public NotInheritable Class DevHarnessForm
 
@@ -61,25 +62,78 @@ Public NotInheritable Class DevHarnessForm
                     Where(Function(t) DisplayName(t).IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0).
                     ToList()
             End If
-            clbTests.BeginUpdate()
-            clbTests.Items.Clear()
-            For Each t As IHarnessTest In _visibleTests
-                clbTests.Items.Add(DisplayName(t))
-            Next
-            clbTests.EndUpdate()
+            RebuildTree()
             lblStatus.Text = _visibleTests.Count.ToString() & " test(e) afișate."
         Catch ex As Exception
             HandleUiError("ApplyFilter", ex)
         End Try
     End Sub
 
+    ' Rebuilds the tree from _visibleTests: a checkable category node per Category,
+    ' each with the tests as checkable leaves. Leaf.Tag holds the IHarnessTest.
+    ' Checking a category propagates to its tests (control's built-in propagation).
+    Private Sub RebuildTree()
+        treeTests.Clear()
+        Dim catIndex As Integer = 0
+        For Each grp In _visibleTests.GroupBy(Function(t) t.Category).OrderBy(Function(g) g.Key)
+            Dim catNode As AdvancedTreeControl.TreeItem =
+                treeTests.AddItem("cat::" & catIndex.ToString(), grp.Key, Nothing, pExpanded:=True)
+            catNode.HasCheckBox = True
+            catNode.Bold = True
+
+            Dim leafIndex As Integer = 0
+            For Each t As IHarnessTest In grp
+                Dim leaf As AdvancedTreeControl.TreeItem =
+                    treeTests.AddItem("test::" & catIndex.ToString() & "::" & leafIndex.ToString(),
+                                      LeafCaption(t), catNode)
+                leaf.HasCheckBox = True
+                leaf.Tag = t
+                leaf.Tooltip = t.Name
+                leafIndex += 1
+            Next
+            catIndex += 1
+        Next
+        treeTests.Invalidate()
+    End Sub
+
+    ' Leaf caption: test name + LIVE/DESTRUCTIVE suffix (category is the parent node).
+    Private Function LeafCaption(t As IHarnessTest) As String
+        Dim suffix As String = ""
+        If t.IsDestructive Then
+            suffix = "  (DESTRUCTIVE)"
+        ElseIf t.RequiresLiveConnection Then
+            suffix = "  (LIVE)"
+        End If
+        Return t.Name & suffix
+    End Function
+
+    ' Collects the tests whose leaf is checked (a checked category propagates to its leaves).
+    Private Function CheckedTests() As List(Of IHarnessTest)
+        Dim result As New List(Of IHarnessTest)()
+        For Each root As AdvancedTreeControl.TreeItem In treeTests.Items
+            For Each leaf As AdvancedTreeControl.TreeItem In root.Children
+                If leaf.CheckState = AdvancedTreeControl.TreeCheckState.Checked AndAlso
+                   TypeOf leaf.Tag Is IHarnessTest Then
+                    result.Add(DirectCast(leaf.Tag, IHarnessTest))
+                End If
+            Next
+        Next
+        Return result
+    End Function
+
+    ' The currently selected test leaf, or Nothing when a category (or nothing) is selected.
+    Private Function SelectedTest() As IHarnessTest
+        Dim n As AdvancedTreeControl.TreeItem = treeTests.SelectedNode
+        If n IsNot Nothing AndAlso TypeOf n.Tag Is IHarnessTest Then
+            Return DirectCast(n.Tag, IHarnessTest)
+        End If
+        Return Nothing
+    End Function
+
     ' ---------- handlers (fiecare cu Try/Catch -> HandleUiError) ----------
     Private Async Sub btnRunChecked_Click(sender As Object, e As EventArgs) Handles btnRunChecked.Click
         Try
-            Dim batch As New List(Of IHarnessTest)()
-            For i As Integer = 0 To _visibleTests.Count - 1
-                If clbTests.GetItemChecked(i) Then batch.Add(_visibleTests(i))
-            Next
+            Dim batch As List(Of IHarnessTest) = CheckedTests()
             If batch.Count = 0 Then
                 AppendLog("Niciun test bifat.")
                 Return
@@ -92,12 +146,12 @@ Public NotInheritable Class DevHarnessForm
 
     Private Async Sub btnRunSelected_Click(sender As Object, e As EventArgs) Handles btnRunSelected.Click
         Try
-            Dim idx As Integer = clbTests.SelectedIndex
-            If idx < 0 Then
-                AppendLog("Niciun test selectat.")
+            Dim t As IHarnessTest = SelectedTest()
+            If t Is Nothing Then
+                AppendLog("Niciun test selectat (selectează o frunză, nu o categorie).")
                 Return
             End If
-            Await RunTestsAsync(New List(Of IHarnessTest) From {_visibleTests(idx)})
+            Await RunTestsAsync(New List(Of IHarnessTest) From {t})
         Catch ex As Exception
             HandleUiError("btnRunSelected_Click", ex)
         End Try
@@ -268,7 +322,7 @@ Public NotInheritable Class DevHarnessForm
         btnClear.Enabled = Not running
         btnOpenMainForm.Enabled = Not running
         btnCancel.Enabled = running
-        clbTests.Enabled = Not running
+        treeTests.Enabled = Not running
         txtFilter.Enabled = Not running
     End Sub
 

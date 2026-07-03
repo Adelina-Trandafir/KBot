@@ -28,7 +28,7 @@ Partial Class DevHarnessForm
     Friend WithEvents txtFilter As System.Windows.Forms.TextBox
     Friend WithEvents lblFilter As System.Windows.Forms.Label
     Friend WithEvents split As System.Windows.Forms.SplitContainer
-    Friend WithEvents clbTests As System.Windows.Forms.CheckedListBox
+    Friend WithEvents treeTests As KBot.Controls.AdvancedTreeControl
     Friend WithEvents rtbResults As System.Windows.Forms.RichTextBox
     Friend WithEvents pnlBottom As System.Windows.Forms.Panel
     Friend WithEvents pbProgress As System.Windows.Forms.ProgressBar
@@ -48,7 +48,7 @@ Partial Class DevHarnessForm
         Me.txtFilter = New System.Windows.Forms.TextBox()
         Me.lblFilter = New System.Windows.Forms.Label()
         Me.split = New System.Windows.Forms.SplitContainer()
-        Me.clbTests = New System.Windows.Forms.CheckedListBox()
+        Me.treeTests = New KBot.Controls.AdvancedTreeControl()
         Me.rtbResults = New System.Windows.Forms.RichTextBox()
         Me.pnlBottom = New System.Windows.Forms.Panel()
         Me.pbProgress = New System.Windows.Forms.ProgressBar()
@@ -154,19 +154,18 @@ Partial Class DevHarnessForm
         '
         'split.Panel1
         '
-        Me.split.Panel1.Controls.Add(Me.clbTests)
+        Me.split.Panel1.Controls.Add(Me.treeTests)
         '
         'split.Panel2
         '
         Me.split.Panel2.Controls.Add(Me.rtbResults)
         Me.split.SplitterDistance = 360
         '
-        'clbTests
+        'treeTests
         '
-        Me.clbTests.CheckOnClick = True
-        Me.clbTests.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.clbTests.IntegralHeight = False
-        Me.clbTests.Name = "clbTests"
+        Me.treeTests.CheckBoxes = True
+        Me.treeTests.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.treeTests.Name = "treeTests"
         '
         'rtbResults
         '
