@@ -36,6 +36,7 @@ Public NotInheritable Class DiResolveAllTest
         Dim sb As New StringBuilder()
         Dim ok As Boolean = True
         ok = ResolveOne(Of IApiClient)(context, sb) AndAlso ok
+        ok = ResolveOne(Of IAuthApi)(context, sb) AndAlso ok
         ok = ResolveOne(Of IForexeRunner)(context, sb) AndAlso ok
         ok = ResolveOne(Of ITempStore)(context, sb) AndAlso ok
         ok = ResolveOne(Of SessionContext)(context, sb) AndAlso ok

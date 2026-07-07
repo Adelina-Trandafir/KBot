@@ -32,12 +32,26 @@ Friend Module Program
 
             Using provider As ServiceProvider = services.BuildServiceProvider()
 #If DEBUG Then
-                ' Pe Debug, fereastra de start e bancul de probă; deschide shell-ul real la cerere.
-                Dim harness As KBot.DevHarness.DevHarnessForm = provider.GetRequiredService(Of KBot.DevHarness.DevHarnessForm)()
-                harness.OpenMainFormAction = Sub() provider.GetRequiredService(Of MainForm)().Show()
-                Application.Run(harness)
+                ' Pe Debug, dezvoltatorul alege fereastra de pornire: Autentificare (Login)
+                ' sau Banc de probă (Harness). Dialogul apare DOAR în build-ul Debug.
+                Dim choice As DialogResult = MessageBox.Show(
+                    "Alegeți fereastra de pornire:" & Environment.NewLine & Environment.NewLine &
+                    "Da = Autentificare (Login)" & Environment.NewLine &
+                    "Nu = Banc de probă (Harness)",
+                    "K-BOT — Mod de pornire (Debug)",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+
+                If choice = DialogResult.Yes Then
+                    RunShellWithLogin(provider)
+                Else
+                    ' Fereastra de start e bancul de probă; deschide shell-ul real la cerere.
+                    Dim harness As KBot.DevHarness.DevHarnessForm = provider.GetRequiredService(Of KBot.DevHarness.DevHarnessForm)()
+                    harness.OpenMainFormAction = Sub() provider.GetRequiredService(Of MainForm)().Show()
+                    Application.Run(harness)
+                End If
 #Else
-                Application.Run(provider.GetRequiredService(Of MainForm)())
+                ' Pe Release, singura cale este poarta de login înaintea shell-ului.
+                RunShellWithLogin(provider)
 #End If
             End Using
 
@@ -46,6 +60,32 @@ Friend Module Program
             GlobalErrorLog.Write("Main.Startup", ex)
             ShowFatal(ex)
         End Try
+    End Sub
+
+    ' Poarta de login -> shell (MainForm) -> logout best-effort la închidere.
+    ' Folosită de calea Release și de opțiunea "Login" din dialogul de start Debug.
+    Private Sub RunShellWithLogin(provider As ServiceProvider)
+        Using login As LoginForm = provider.GetRequiredService(Of LoginForm)()
+            If login.ShowDialog() <> DialogResult.OK Then
+                Return   ' anulat -> ieșim fără a lansa shell-ul
+            End If
+        End Using
+
+        Dim session As SessionContext = provider.GetRequiredService(Of SessionContext)()
+        Dim authApi As IAuthApi = provider.GetRequiredService(Of IAuthApi)()
+
+        Application.Run(provider.GetRequiredService(Of MainForm)())
+
+        ' --- logout best-effort la închidere (sink terminal; NU rearunca la ieșire). ---
+        If session.IsAuthenticated AndAlso session.SessionId > 0 Then
+            Try
+                Using cts As New CancellationTokenSource(TimeSpan.FromSeconds(5))
+                    authApi.LogoutAsync(session.SessionId, cts.Token).GetAwaiter().GetResult()
+                End Using
+            Catch ex As Exception
+                GlobalErrorLog.Write("Logout la închidere", ex)
+            End Try
+        End If
     End Sub
 
     ' ---------- plase globale de erori + dialog fatal ----------
@@ -103,6 +143,9 @@ Friend Module Program
             End Function)
         services.AddSingleton(Of IApiClient, ApiClient)()
 
+        ' Client de login (felia login). Fără stare — refolosește HttpClient + ApiOptions.
+        services.AddSingleton(Of IAuthApi, AuthApi)()
+
         ' Stocare temporară (SQLite in-memory).
         services.AddSingleton(Of ITempStore, SqliteTempStore)()
 
@@ -111,6 +154,7 @@ Friend Module Program
 
         ' Forms.
         services.AddTransient(Of MainForm)()
+        services.AddTransient(Of LoginForm)()
 
 #If DEBUG Then
         ' Banc de probă (Dev Harness) — doar pe Debug.

@@ -15,6 +15,7 @@ from routes.ftp import ftp_bp  # Importam Blueprint-ul de upload FTP
 from routes.ddf import ddf_bp  # Importam Blueprint-ul pentru DDF
 from routes.ord import ord_bp
 from routes.forexe import forexe_bp  # Importam Blueprint-ul FOREXE (ListaAngajamente)
+from routes.auth import auth_bp  # Importam Blueprint-ul de login al aplicatiei K-BOT
 
 # 1. Initializam logger-ul global (ca sa scrie in fisierul .log)
 logger = setup_logger()
@@ -38,6 +39,7 @@ app.register_blueprint(ftp_bp)  # Inregistram Blueprint-ul de upload FTP
 app.register_blueprint(ddf_bp)  # Inregistram Blueprint-ul pentru DDF
 app.register_blueprint(ord_bp)
 app.register_blueprint(forexe_bp)  # Inregistram Blueprint-ul FOREXE
+app.register_blueprint(auth_bp)  # Inregistram Blueprint-ul de login
 
 logger.info("=== RUTE ÎNREGISTRATE ===")
 for rule in app.url_map.iter_rules():
