@@ -333,6 +333,11 @@ paket-files/
 __pycache__/
 *.pyc
 
+# Python virtual environments (local, per-machine)
+.venv/
+venv/
+.pytest_cache/
+
 # Cake - Uncomment if you are using it
 # tools/**
 # !tools/packages.config

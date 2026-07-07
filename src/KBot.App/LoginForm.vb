@@ -20,6 +20,10 @@ Public NotInheritable Class LoginForm
     Private _username As String
     Private _password As String
 
+    ' Inaltimile originale ale randurilor pnlCreds, capturate la Load; folosite ca sa
+    ' colapsam randurile de credentiale in faza 2 (doar selectorul unitatii ramane).
+    Private _credRowHeights As Single()
+
     ' --- culori accent theme-aware (doar unde nu exista o constanta KBotTheme reala) ---
     Private ReadOnly Property ClrError As Color
         Get
@@ -42,6 +46,7 @@ Public NotInheritable Class LoginForm
         KBotTheme.ApplyTheme(Me)
         ApplyAccentColors()
         lblError.ForeColor = ClrError
+        CaptureCredRowHeights()
         ShowPhaseCreds()
     End Sub
 
@@ -58,21 +63,56 @@ Public NotInheritable Class LoginForm
         btnBack.UseVisualStyleBackColor = False
     End Sub
 
+    ' Capteaza inaltimile randurilor pnlCreds inainte de orice colaps (o singura data, la Load).
+    Private Sub CaptureCredRowHeights()
+        _credRowHeights = New Single(pnlCreds.RowStyles.Count - 1) {}
+        For i As Integer = 0 To pnlCreds.RowStyles.Count - 1
+            _credRowHeights(i) = pnlCreds.RowStyles(i).Height
+        Next
+    End Sub
+
     ' ---------------- comutare faze ----------------
+    ' pnlUnit e imbricat in randul elastic (row5) al pnlCreds. Comutarea NU ascunde
+    ' pnlCreds (ar ascunde si pnlUnit); in schimb aratam/ascundem controalele de
+    ' credentiale si colapsam randurile lor, lasand selectorul sa umple cardul in faza 2.
     Private Sub ShowPhaseCreds()
+        SetCredControlsVisible(True)
+        SetCredRowsCollapsed(False)
         pnlUnit.Visible = False
-        pnlCreds.Visible = True
         Me.AcceptButton = btnContinue
         ClearError()
         txtUser.Focus()
     End Sub
 
     Private Sub ShowPhaseUnit()
-        pnlCreds.Visible = False
         pnlUnit.Visible = True
+        SetCredControlsVisible(False)
+        SetCredRowsCollapsed(True)
         Me.AcceptButton = btnLogin
         ClearError()
         cboUnit.Focus()
+    End Sub
+
+    ' Vizibilitatea controalelor fazei 1 (utilizator / parola / Continua).
+    Private Sub SetCredControlsVisible(visible As Boolean)
+        lblUser.Visible = visible
+        txtUser.Visible = visible
+        lblPass.Visible = visible
+        txtPass.Visible = visible
+        btnContinue.Visible = visible
+    End Sub
+
+    ' Colapseaza randurile Absolute ale pnlCreds (credentiale + spatiere) la 0 in faza 2,
+    ' ca randul Percent (pnlUnit) sa ocupe tot cardul; le reface din inaltimile capturate.
+    Private Sub SetCredRowsCollapsed(collapsed As Boolean)
+        pnlCreds.SuspendLayout()
+        For i As Integer = 0 To pnlCreds.RowStyles.Count - 1
+            Dim rs As RowStyle = pnlCreds.RowStyles(i)
+            If rs.SizeType = SizeType.Absolute Then
+                rs.Height = If(collapsed, 0F, _credRowHeights(i))
+            End If
+        Next
+        pnlCreds.ResumeLayout()
     End Sub
 
     ' ---------------- helpers ----------------

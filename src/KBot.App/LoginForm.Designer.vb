@@ -15,8 +15,6 @@ Partial Class LoginForm
 
     Friend WithEvents pnlCard As System.Windows.Forms.Panel
 
-    Friend WithEvents lblError As System.Windows.Forms.Label
-
     Private Sub InitializeComponent()
         pnlCard = New Panel()
         pnlCreds = New TableLayoutPanel()
@@ -33,8 +31,8 @@ Partial Class LoginForm
         pnlCaption = New TableLayoutPanel()
         lblSubtitle = New Label()
         lblTitle = New Label()
-        lblError = New Label()
         pbBusy = New ProgressBar()
+        lblError = New Label()
         pnlCard.SuspendLayout()
         pnlCreds.SuspendLayout()
         pnlUnit.SuspendLayout()
@@ -51,7 +49,7 @@ Partial Class LoginForm
         pnlCard.Margin = New Padding(4, 5, 4, 5)
         pnlCard.Name = "pnlCard"
         pnlCard.Padding = New Padding(10)
-        pnlCard.Size = New Size(561, 432)
+        pnlCard.Size = New Size(561, 482)
         pnlCard.TabIndex = 0
         ' 
         ' pnlCreds
@@ -75,7 +73,7 @@ Partial Class LoginForm
         pnlCreds.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
         pnlCreds.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
         pnlCreds.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        pnlCreds.Size = New Size(541, 317)
+        pnlCreds.Size = New Size(541, 367)
         pnlCreds.TabIndex = 7
         ' 
         ' lblUser
@@ -152,8 +150,8 @@ Partial Class LoginForm
         pnlUnit.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
         pnlUnit.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
         pnlUnit.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
-        pnlUnit.RowStyles.Add(New RowStyle(SizeType.Absolute, 193F))
-        pnlUnit.Size = New Size(535, 127)
+        pnlUnit.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        pnlUnit.Size = New Size(535, 177)
         pnlUnit.TabIndex = 10
         ' 
         ' lblUnit
@@ -242,21 +240,10 @@ Partial Class LoginForm
         lblTitle.Text = "K-BOT - UN ROBOT PRIETENOS"
         lblTitle.TextAlign = ContentAlignment.MiddleCenter
         ' 
-        ' lblError
-        ' 
-        lblError.Font = New Font("Segoe UI", 9F)
-        lblError.Location = New Point(43, 583)
-        lblError.Margin = New Padding(4, 0, 4, 0)
-        lblError.Name = "lblError"
-        lblError.Size = New Size(514, 57)
-        lblError.TabIndex = 4
-        lblError.TextAlign = ContentAlignment.MiddleLeft
-        lblError.Visible = False
-        ' 
         ' pbBusy
         ' 
         pbBusy.Dock = DockStyle.Bottom
-        pbBusy.Location = New Point(0, 422)
+        pbBusy.Location = New Point(0, 472)
         pbBusy.Margin = New Padding(4, 5, 4, 5)
         pbBusy.MarqueeAnimationSpeed = 30
         pbBusy.Name = "pbBusy"
@@ -265,11 +252,23 @@ Partial Class LoginForm
         pbBusy.TabIndex = 9
         pbBusy.Visible = False
         ' 
+        ' lblError
+        '
+        lblError.Dock = DockStyle.Bottom
+        lblError.Font = New Font("Segoe UI", 9F)
+        lblError.Location = New Point(4, 137)
+        lblError.Margin = New Padding(4, 0, 4, 0)
+        lblError.Name = "lblError"
+        lblError.Size = New Size(527, 40)
+        lblError.TabIndex = 8
+        lblError.TextAlign = ContentAlignment.MiddleLeft
+        lblError.Visible = False
+        ' 
         ' LoginForm
         ' 
         AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(561, 432)
+        ClientSize = New Size(561, 482)
         Controls.Add(pbBusy)
         Controls.Add(pnlCard)
         FormBorderStyle = FormBorderStyle.FixedDialog
@@ -302,4 +301,5 @@ Partial Class LoginForm
     Friend WithEvents btnLogin As Button
     Friend WithEvents btnBack As Button
     Friend WithEvents pbBusy As ProgressBar
+    Friend WithEvents lblError As Label
 End Class
