@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <RootNamespace>KBot.DevHarness</RootNamespace>
-    <AssemblyName>KBot.DevHarness</AssemblyName>
+    <RootNamespace>KBot.Theming</RootNamespace>
+    <AssemblyName>KBot.Theming</AssemblyName>
     <UseWindowsForms>true</UseWindowsForms>
     <OptionStrict>On</OptionStrict>
     <OptionExplicit>On</OptionExplicit>
@@ -18,30 +18,21 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.0.1.0</FileVersion>
+    <FileVersion>1.0.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <Import Include="System.Data" />
     <Import Include="System.Drawing" />
     <Import Include="System.Windows.Forms" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Aceeași versiune ca în KBot.App.vbproj. -->
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Oglindește referințele din KBot.App.vbproj, minus KBot.App (circular),
-         minus proiectele neutilizate de testele-sămânță (Xfa, Forexe.Editor). -->
-    <ProjectReference Include="..\KBot.Domain\KBot.Domain.vbproj" />
+    <!-- GlobalErrorLog DOAR: KBot.Common e stratul de bază (fără dependențe UI) =>
+         nicio referință în sens invers, deci fără ciclu. Motorul de teme NU cunoaște
+         KBot.Forexe; subsistemele de acolo (RichTextBoxLogger) reacționează prin
+         evenimentul ThemeManager.ThemeChanged (vezi facada KBotTheme). -->
     <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
-    <ProjectReference Include="..\KBot.Api\KBot.Api.vbproj" />
-    <ProjectReference Include="..\KBot.LocalStore\KBot.LocalStore.vbproj" />
-    <ProjectReference Include="..\KBot.Controls\KBot.Controls.vbproj" />
-    <ProjectReference Include="..\KBot.Forexe\KBot.Forexe.vbproj" />
   </ItemGroup>
 
 </Project>

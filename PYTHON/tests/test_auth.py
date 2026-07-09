@@ -1,12 +1,14 @@
 """
-Teste LIVE pentru login-ul aplicatiei K-BOT, lovind API-ul care ruleaza.
-Se skip-uiesc cand variabilele de mediu lipsesc, deci CI fara DB ramane verde.
+Teste LIVE pentru login-ul aplicatiei K-BOT (token bearer opac), lovind API-ul
+care ruleaza. Se skip-uiesc cand variabilele de mediu lipsesc, deci CI fara DB
+ramane verde.
 
-Preconditii: DDL-ul aplicat (sql/avacont_comun_login.sql), un rand CAI cu
-DbName='000_DEMO' si un cont operator de test (ideal '000_DEMO_Contabil' ca
-asertiunea de rol sa fie relevanta) cu grant pe 000_DEMO.
+Preconditii: un rand CAI cu DbName='000_DEMO' si un cont operator de test
+(ideal '000_DEMO_Contabil' ca asertiunea de rol sa fie relevanta) cu grant pe
+000_DEMO. Nu mai exista X-Api-Key: units/login se autentifica prin credentiale,
+rutele de date prin Authorization: Bearer.
 
-Env: KBOT_API_BASE_URL, KBOT_API_KEY, TEST_OP_USER, TEST_OP_PASS,
+Env: KBOT_API_BASE_URL, TEST_OP_USER, TEST_OP_PASS,
      optional TEST_OP_DENIED_UNIT (un IdUnitate pentru care operatorul nu are grant).
 """
 import os
@@ -15,20 +17,18 @@ import pytest
 import requests
 
 BASE = os.getenv("KBOT_API_BASE_URL")
-KEY = os.getenv("KBOT_API_KEY")
 USER = os.getenv("TEST_OP_USER")
 PWD = os.getenv("TEST_OP_PASS")
 
 pytestmark = pytest.mark.skipif(
-    not all([BASE, KEY, USER, PWD]),
+    not all([BASE, USER, PWD]),
     reason="Auth live env vars not set",
 )
 
-H = {"X-Api-Key": KEY}
 
-
-def _post(path, body):
-    return requests.post(f"{BASE}{path}", json=body, headers=H, timeout=30)
+def _post(path, body, token=None):
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    return requests.post(f"{BASE}{path}", json=body, headers=headers, timeout=30)
 
 
 def test_units_bad_credentials_returns_401():
@@ -48,13 +48,18 @@ def _demo_id_unitate():
     return next(u["IdUnitate"] for u in r.json()["units"] if u["DbName"] == "000_DEMO")
 
 
-def test_login_returns_session_context_and_role():
+def _login():
     idu = _demo_id_unitate()
-    r = _post("/api/auth/login",
-              {"username": USER, "password": PWD, "IdUnitate": idu, "pcname": "PYTEST"})
+    return _post("/api/auth/login",
+                 {"username": USER, "password": PWD, "IdUnitate": idu, "pcname": "PYTEST"})
+
+
+def test_login_returns_token_context_and_role():
+    r = _login()
     assert r.status_code == 200
     body = r.json()
-    assert body["session_id"] > 0
+    assert body["Token"]                      # token opac ne-gol
+    assert "session_id" not in body           # contractul vechi a disparut
     ctx = body["SessionContext"]
     assert ctx["DbName"] == "000_DEMO"
     # rolul e derivat din sufixul username-ului (store-only)
@@ -64,15 +69,26 @@ def test_login_returns_session_context_and_role():
         assert ctx["Role"] == "Administrator"
 
 
-def test_logout_stamps_once():
-    idu = _demo_id_unitate()
-    login = _post("/api/auth/login",
-                  {"username": USER, "password": PWD, "IdUnitate": idu, "pcname": "PYTEST"})
-    sid = login.json()["session_id"]
-    first = _post("/api/auth/logout", {"session_id": sid})
-    assert first.status_code == 200 and first.json()["stamped"] == 1
-    second = _post("/api/auth/logout", {"session_id": sid})
-    assert second.json()["stamped"] == 0  # deja stampilat
+def test_logout_revokes_token_immediately():
+    token = _login().json()["Token"]
+    first = _post("/api/auth/logout", {}, token=token)
+    assert first.status_code == 200 and first.json()["ok"] is True
+    # Token-ul revocat e mort instant: guard-ul intoarce 401.
+    second = _post("/api/auth/logout", {}, token=token)
+    assert second.status_code == 401
+
+
+def test_data_route_without_token_returns_401():
+    r = requests.get(f"{BASE}/api/forexe/angajamente?db_name=000_DEMO", timeout=30)
+    assert r.status_code == 401
+
+
+def test_data_route_with_token_succeeds():
+    token = _login().json()["Token"]
+    r = requests.get(f"{BASE}/api/forexe/angajamente?db_name=000_DEMO",
+                     headers={"Authorization": f"Bearer {token}"}, timeout=30)
+    assert r.status_code == 200
+    _post("/api/auth/logout", {}, token=token)
 
 
 @pytest.mark.skipif(not os.getenv("TEST_OP_DENIED_UNIT"),

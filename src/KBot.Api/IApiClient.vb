@@ -3,7 +3,7 @@ Imports System.Threading
 Imports System.Threading.Tasks
 Imports KBot.Domain
 
-' Singurul loc care va ști BaseUrl / X-Api-Key / retry / timeout / JSON.
+' Singurul loc care va ști BaseUrl / token bearer / retry / timeout / JSON.
 Public Interface IApiClient
     ''' <summary>
     ''' Trimite lista de angajamente la /api/forexe/angajamente/upsert.

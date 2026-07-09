@@ -8,10 +8,10 @@ Imports KBot.Api
 Imports KBot.Domain
 
 ' LIVE: proba fluxul de login end-to-end contra API-ului real si a contului operator
-' de test. GetUnits -> Login (000_DEMO) -> Logout. Scrie un rezumat in
-' <AppDir>\Logs\test_auth.log. Se skip-uieste daca API-ul nu e configurat sau daca
-' lipsesc credentialele de test (TEST_OP_USER / TEST_OP_PASS).
-' Destructiv: scrie un rand in FX_LoginLog (stampilat imediat la logout).
+' de test. GetUnits -> Login (000_DEMO, emite token bearer) -> Logout (revoca token).
+' Scrie un rezumat in <AppDir>\Logs\test_auth.log. Se skip-uieste daca API-ul nu e
+' configurat sau daca lipsesc credentialele de test (TEST_OP_USER / TEST_OP_PASS).
+' Destructiv: creeaza si revoca o sesiune reala pe server.
 Public NotInheritable Class AuthLiveTest
     Implements IHarnessTest
 
@@ -46,9 +46,9 @@ Public NotInheritable Class AuthLiveTest
         End If
 
         Dim opt As ApiOptions = context.GetService(Of ApiOptions)()
-        If String.IsNullOrWhiteSpace(opt.BaseUrl) OrElse String.IsNullOrWhiteSpace(opt.ApiKey) Then
+        If String.IsNullOrWhiteSpace(opt.BaseUrl) Then
             Return HarnessTestResult.Skipped(
-                "API not configured — set KBOT_API_BASE_URL/KBOT_API_KEY, then relaunch KBOT.")
+                "API not configured — set KBOT_API_BASE_URL, then relaunch KBOT.")
         End If
 
         Dim auth As IAuthApi = context.GetService(Of IAuthApi)()
@@ -80,11 +80,12 @@ Public NotInheritable Class AuthLiveTest
                 $"Rol nepotrivit: '{result.SessionContext.Role}' pentru '{user}'."), user)
         End If
 
-        ' 3) Logout (stampileaza sesiunea deschisa).
-        Await auth.LogoutAsync(result.SessionId, ct)
+        ' 3) Logout (revoca token-ul emis).
+        Await auth.LogoutAsync(result.Token, ct)
 
+        ' SECURITY: token-ul e credential bearer — nu se logheaza valoarea, doar lungimea.
         Return LogAndReturn(HarnessTestResult.Passed(
-            $"Login OK: session_id={result.SessionId}, DbName=000_DEMO, Role='{result.SessionContext.Role}', logout stamped."), user)
+            $"Login OK: token emis (len={result.Token.Length}), DbName=000_DEMO, Role='{result.SessionContext.Role}', logout (revocare) OK."), user)
     End Function
 
     ' Scrie o linie de rezumat in <AppDir>\Logs\test_auth.log si intoarce rezultatul.

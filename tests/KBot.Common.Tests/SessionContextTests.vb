@@ -10,6 +10,12 @@ Public Class SessionContextTests
         Assert.False(s.IsLoaded)
     End Sub
 
+    <Fact>
+    Public Sub IsAuthenticated_FalsFaraToken()
+        Dim s As New SessionContext()
+        Assert.False(s.IsAuthenticated)
+    End Sub
+
     Private Shared Function SampleDto() As SessionContextDto
         Return New SessionContextDto With {
             .DbName = "000_DEMO",
@@ -26,10 +32,10 @@ Public Class SessionContextTests
     <Fact>
     Public Sub Populate_MapeazaTotSiMarcheazaAutentificat()
         Dim s As New SessionContext()
-        s.Populate("000_DEMO_Contabil", 42, SampleDto())
+        s.Populate("000_DEMO_Contabil", "tok-opaque-123", SampleDto())
 
         Assert.Equal("000_DEMO_Contabil", s.OperatorName)
-        Assert.Equal(42, s.SessionId)
+        Assert.Equal("tok-opaque-123", s.Token)
         Assert.Equal("000_DEMO", s.DbName)
         Assert.Equal(136, s.IdUnitate)
         Assert.Equal(2026, s.An)                 ' DTO.ANL -> An
@@ -38,33 +44,35 @@ Public Class SessionContextTests
         Assert.Equal("123456", s.CF)
         Assert.Equal("DEMO", s.NumeUnitate)
         Assert.Equal("Contabil", s.Role)
-        Assert.True(s.IsAuthenticated)
+        Assert.True(s.IsAuthenticated)           ' derivat din Token
         Assert.True(s.IsLoaded)                  ' derivat din CF
     End Sub
 
     <Fact>
-    Public Sub Populate_SessionIdInvalid_Arunca()
+    Public Sub Populate_TokenGol_Arunca()
         Dim s As New SessionContext()
-        Assert.Throws(Of ArgumentOutOfRangeException)(
-            Sub() s.Populate("u", 0, SampleDto()))
+        Assert.Throws(Of ArgumentException)(
+            Sub() s.Populate("u", String.Empty, SampleDto()))
+        Assert.Throws(Of ArgumentException)(
+            Sub() s.Populate("u", Nothing, SampleDto()))
     End Sub
 
     <Fact>
     Public Sub Populate_CtxNothing_Arunca()
         Dim s As New SessionContext()
         Assert.Throws(Of ArgumentNullException)(
-            Sub() s.Populate("u", 1, Nothing))
+            Sub() s.Populate("u", "tok", Nothing))
     End Sub
 
     <Fact>
     Public Sub Clear_ReseteazaStareaSiCampurile()
         Dim s As New SessionContext()
-        s.Populate("000_DEMO_Contabil", 42, SampleDto())
+        s.Populate("000_DEMO_Contabil", "tok-opaque-123", SampleDto())
 
         s.Clear()
 
         Assert.False(s.IsAuthenticated)
-        Assert.Equal(0, s.SessionId)
+        Assert.Equal(String.Empty, s.Token)
         Assert.Equal(String.Empty, s.Role)
         Assert.Equal(String.Empty, s.DbName)
         Assert.Equal(0, s.IdUnitate)

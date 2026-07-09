@@ -15,16 +15,43 @@ Public Class MainForm
     Private ReadOnly _forexeRunner As IForexeRunner
     Private ReadOnly _session As SessionContext
     Private ReadOnly _apiClient As IApiClient
+    Private ReadOnly _loginFactory As Func(Of LoginForm)
     Private _logger As RichTextBoxLogger
     Private _cts As CancellationTokenSource
 
-    Public Sub New(forexeRunner As IForexeRunner, session As SessionContext, apiClient As IApiClient)
+    Public Sub New(forexeRunner As IForexeRunner, session As SessionContext,
+                   apiClient As IApiClient, loginFactory As Func(Of LoginForm))
         InitializeComponent()
         _forexeRunner = forexeRunner
         _session = session
         _apiClient = apiClient
+        _loginFactory = loginFactory
         Me.Text = "K-BOT"
     End Sub
+
+    ''' <summary>
+    ''' Rulează un apel autentificat. La 401 (sesiune expirată / plafon absolut)
+    ''' redeschide LoginForm; dacă operatorul se re-autentifică, reia apelul O SINGURĂ
+    ''' dată cu token-ul proaspăt din SessionContext (singleton — aceeași instanță pe
+    ''' care o citește ApiClient). Orice alt eșec, sau un al doilea 401, se propagă.
+    ''' </summary>
+    Private Async Function WithReauth(Of T)(action As Func(Of Task(Of T))) As Task(Of T)
+        ' VB.NET nu permite Await într-un Catch: capturăm 401-ul și continuăm sub Try.
+        Dim expired As ApiException = Nothing
+        Try
+            Return Await action().ConfigureAwait(True)
+        Catch ex As ApiException When ex.StatusCode.HasValue AndAlso ex.StatusCode.Value = 401
+            expired = ex
+        End Try
+
+        Using login As LoginForm = _loginFactory()
+            If login.ShowDialog(Me) <> DialogResult.OK Then
+                Throw expired   ' operatorul a anulat re-login-ul; propagăm 401-ul original
+            End If
+        End Using
+        ' Login-ul a repopulat _session.Token (aceeași instanță citită de ApiClient).
+        Return Await action().ConfigureAwait(True)   ' o singură reîncercare
+    End Function
 
     Private Sub MainForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         ' Logger FOREXE legat de panoul de log + fișier în <AppDir>\Logs
@@ -110,11 +137,11 @@ Public Class MainForm
 
             ' Guard: fără DbName (populat la login) nu putem ținti baza unității.
             If String.IsNullOrEmpty(_session.DbName) Then
-                _logger.LogWarning("DbName nesetat pe sesiune — sar peste upsert (login încă neimplementat).")
+                _logger.LogWarning("DbName nesetat pe sesiune — sar peste upsert (necesită login).")
                 Return
             End If
 
-            Dim resp As String = Await _apiClient.UpsertAngajamenteAsync(_session.DbName, mapped, _cts.Token)
+            Dim resp As String = Await WithReauth(Function() _apiClient.UpsertAngajamenteAsync(_session.DbName, mapped, _cts.Token))
             _logger.LogSuccess($"Upsert reușit: {mapped.Count} angajamente în '{_session.DbName}'. Răspuns server: {resp}")
 
         Catch ex As Exception

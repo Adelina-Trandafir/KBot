@@ -1,7 +1,6 @@
 Imports System
 Imports System.IO
 Imports System.IO.Compression
-Imports System.Security
 Imports System.Text
 Imports System.Windows.Forms
 
@@ -19,10 +18,6 @@ Module Program
     Private Const Magic As String = "KBOTSFX1"   ' exact 8 octeti ASCII
     Private Const FooterLen As Integer = 16      ' 8 (Int64 lungime) + 8 (magic)
 
-    ' Variabilele de mediu citite de app la pornire (Program.LoadAppConfig).
-    Private Const EnvBaseUrl As String = "KBOT_API_BASE_URL"
-    Private Const EnvApiKey As String = "KBOT_API_KEY"
-
     <STAThread>
     Sub Main(argv As String())
         Try
@@ -39,10 +34,9 @@ Module Program
             Dim payload As Byte() = ReadAppendedPayload(selfPath)
             ExtractOverwrite(payload, target)
 
-            ' Configurare API o singura data: daca variabilele lipsesc, cerem valorile
-            ' si le persistam in mediul Windows (niciodata intr-un fisier). La update-uri,
-            ' cand variabilele exista deja, instalarea ramane silentioasa.
-            EnsureApiConfig()
+            ' Nicio configurare API la instalare (Felia 1 auth): nu mai exista cheie
+            ' client-side, iar adresa serverului e hardcodata in app (KBOT_API_BASE_URL
+            ' ramane doar ca override de dev). Nu se provisioneaza niciun secret.
 
             ' Succes: iesire silentioasa (fara prompt), cod 0.
             Environment.Exit(0)
@@ -54,45 +48,6 @@ Module Program
             Environment.Exit(1)
         End Try
     End Sub
-
-    ''' <summary>
-    ''' Configurare API prompt-once. Nu face nimic daca ambele variabile exista deja
-    ''' (nivel masina SAU utilizator). Altfel cere URL + cheie si le persista.
-    ''' </summary>
-    Private Sub EnsureApiConfig()
-        If HasEnv(EnvBaseUrl) AndAlso HasEnv(EnvApiKey) Then Return   ' deja configurat -> tacut
-
-        Using f As New SetupPromptForm()
-            If f.ShowDialog() <> DialogResult.OK Then Return   ' operatorul a renuntat; se poate seta ulterior
-            Dim scope As String = PersistEnv(EnvBaseUrl, f.BaseUrl)
-            PersistEnv(EnvApiKey, f.ApiKey)
-            MessageBox.Show(
-                "Configurarea API a fost salvata (" & scope & ")." & Environment.NewLine & Environment.NewLine &
-                "Deconecteaza-te si reconecteaza-te (sign out / sign in) o data inainte de a porni K-BOT," & Environment.NewLine &
-                "ca variabilele sa devina vizibile pentru aplicatie.",
-                "K-BOT Setup", MessageBoxButtons.OK, MessageBoxIcon.Information)
-        End Using
-    End Sub
-
-    ''' <summary>True daca variabila exista (ne-goala) la nivel masina sau utilizator.</summary>
-    Private Function HasEnv(name As String) As Boolean
-        Return Not String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Machine)) OrElse
-               Not String.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.User))
-    End Function
-
-    ''' <summary>
-    ''' Persista variabila la nivel masina (vizibila tuturor utilizatorilor); daca nu
-    ''' avem drepturi (installer neelevat), cade pe nivel utilizator. Returneaza descrierea nivelului.
-    ''' </summary>
-    Private Function PersistEnv(name As String, value As String) As String
-        Try
-            Environment.SetEnvironmentVariable(name, value, EnvironmentVariableTarget.Machine)
-            Return "nivel masina"
-        Catch ex As SecurityException
-            Environment.SetEnvironmentVariable(name, value, EnvironmentVariableTarget.User)
-            Return "nivel utilizator"
-        End Try
-    End Function
 
     ''' <summary>Extrage octetii payload-ului (.zip) atasati la finalul propriului .exe.</summary>
     Private Function ReadAppendedPayload(selfPath As String) As Byte()

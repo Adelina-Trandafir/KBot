@@ -43,6 +43,12 @@ Partial Public Class WorkflowExecutor
 
     Private _throttleSettings As ThrottleSettings = ThrottleSettings.None
 
+    ' Furnizorul token-ului bearer al sesiunii K-BOT (setat de ForexeRunner).
+    ' Func, nu string: token-ul se citește la momentul cererii, deci un re-login
+    ' pe parcursul unei sesiuni lungi de browser folosește mereu token-ul viu.
+    ' Înlocuiește vechea cheie API compilată în client (X-Api-Key) la parseExcel.
+    Private _sessionTokenProvider As Func(Of String)
+
     ' Clasă internă pentru a ține minte starea fiecărei bucle active
     Public Class LoopContext
         Public Property ActionType As String     ' "While", "ForEach", "Repeat"
@@ -162,6 +168,10 @@ Partial Public Class WorkflowExecutor
 
     Public Sub SetWorkflowPath(path As String)
         _workflowPath = path
+    End Sub
+
+    Public Sub SetSessionTokenProvider(provider As Func(Of String))
+        _sessionTokenProvider = provider
     End Sub
 
     Public Sub SetVariable(name As String, value As String)

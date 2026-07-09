@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\KBot.Domain\KBot.Domain.vbproj" />
+    <!-- ApiClient citește token-ul bearer din SessionContext (KBot.Common). -->
+    <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
   </ItemGroup>
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>

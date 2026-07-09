@@ -9,6 +9,7 @@ Imports KBot.Api
 Imports KBot.Common
 Imports KBot.Forexe
 Imports KBot.LocalStore
+Imports KBot.Theming
 Imports Microsoft.Extensions.DependencyInjection
 
 Friend Module Program
@@ -26,6 +27,11 @@ Friend Module Program
             Application.EnableVisualStyles()
             Application.SetCompatibleTextRenderingDefault(False)
             Application.SetHighDpiMode(HighDpiMode.SystemAware)
+
+            ' Tema: încarcă schema persistată (implicit Classic) ÎNAINTE de primul formular,
+            ' apoi conectează subsistemele Forexe (RichTextBoxLogger) la ThemeManager.ThemeChanged.
+            ThemeManager.Initialize()
+            KBotTheme.WireSubsystems()
 
             Dim services As New ServiceCollection()
             ConfigureServices(services)
@@ -77,10 +83,11 @@ Friend Module Program
         Application.Run(provider.GetRequiredService(Of MainForm)())
 
         ' --- logout best-effort la închidere (sink terminal; NU rearunca la ieșire). ---
-        If session.IsAuthenticated AndAlso session.SessionId > 0 Then
+        ' Citește token-ul curent din sesiune — cel post-reauth, dacă a existat un re-login.
+        If session.IsAuthenticated AndAlso Not String.IsNullOrEmpty(session.Token) Then
             Try
                 Using cts As New CancellationTokenSource(TimeSpan.FromSeconds(5))
-                    authApi.LogoutAsync(session.SessionId, cts.Token).GetAwaiter().GetResult()
+                    authApi.LogoutAsync(session.Token, cts.Token).GetAwaiter().GetResult()
                 End Using
             Catch ex As Exception
                 GlobalErrorLog.Write("Logout la închidere", ex)
@@ -119,18 +126,17 @@ Friend Module Program
     End Sub
 
     Private Sub ConfigureServices(services As IServiceCollection)
-        ' Context de sesiune (înlocuiește glob*). DEMO SEED (throwaway): login (felia
-        ' 1) nu e implementat, deci seedăm 000_DEMO ca să putem închide round-trip-ul
-        ' ListaAngajamente. ȘTERGE SeedDemoSession când login populează SessionContext.
-        services.AddSingleton(Of SessionContext)(Function(sp) SeedDemoSession())
+        ' Context de sesiune (înlocuiește glob*): singleton gol, populat de login
+        ' (LoginForm -> Populate). ApiClient citește token-ul din aceeași instanță.
+        services.AddSingleton(Of SessionContext)()
 
-        ' Config (BaseUrl / ApiKey) din mediu; ApiOptions e ce injectăm efectiv.
+        ' Config (doar BaseUrl — nu mai există cheie API client-side).
         Dim cfg As AppConfig = LoadAppConfig()
         services.AddSingleton(cfg)
-        services.AddSingleton(New ApiOptions With {.BaseUrl = cfg.ApiBaseUrl, .ApiKey = cfg.ApiKey})
+        services.AddSingleton(New ApiOptions With {.BaseUrl = cfg.ApiBaseUrl})
 
-        ' HttpClient tipat: BaseAddress + Timeout din ApiOptions (X-Api-Key merge
-        ' per-request din ApiClient). În felia 1 se poate trece pe IHttpClientFactory.
+        ' HttpClient tipat: BaseAddress + Timeout din ApiOptions (token-ul bearer merge
+        ' per-request din ApiClient/AuthApi). În felia următoare se poate trece pe IHttpClientFactory.
         services.AddSingleton(Of HttpClient)(
             Function(sp)
                 Dim opt As ApiOptions = sp.GetRequiredService(Of ApiOptions)()
@@ -156,40 +162,23 @@ Friend Module Program
         services.AddTransient(Of MainForm)()
         services.AddTransient(Of LoginForm)()
 
+        ' Fabrică de LoginForm pentru re-login la 401 (MainForm.WithReauth) — fără
+        ' service-locator în MainForm.
+        services.AddSingleton(Of Func(Of LoginForm))(
+            Function(sp) Function() sp.GetRequiredService(Of LoginForm)())
+
 #If DEBUG Then
         ' Banc de probă (Dev Harness) — doar pe Debug.
         services.AddTransient(Of KBot.DevHarness.DevHarnessForm)()
 #End If
     End Sub
 
-    ' Sursă de config pentru felia curentă: variabile de mediu. Lipsa lor lasă
-    ' câmpurile goale — ApiClient hard-fail-uiește la primul apel cu mesaj clar.
-    ' (Login-ul / un appsettings dedicat vor înlocui asta ulterior.)
+    ' Adresa serverului: hostname public ne-secret. Implicit producția TLS;
+    ' KBOT_API_BASE_URL rămâne DOAR ca override de dev (mașină care țintește altundeva).
     Private Function LoadAppConfig() As AppConfig
         Return New AppConfig With {
-            .ApiBaseUrl = If(Environment.GetEnvironmentVariable("KBOT_API_BASE_URL"), String.Empty),
-            .ApiKey = If(Environment.GetEnvironmentVariable("KBOT_API_KEY"), String.Empty)
-        }
-    End Function
-
-    ' DEMO SEED — throwaway until login (felia 1) populates SessionContext.
-    ' Defaults target 000_DEMO with an unfiltered scrape (empty COD_PROGRAM/SURSA →
-    ' the .wfl scrapes everything the connected FOREXE unit shows); An defaults to the
-    ' current year. Each field is env-overridable so a live operator can match their
-    ' FOREXE unit/year WITHOUT a rebuild. Remove this whole method when login lands.
-    Private Function SeedDemoSession() As SessionContext
-        Dim anRaw As String = Environment.GetEnvironmentVariable("KBOT_DEMO_AN")
-        Dim an As Integer
-        If Not Integer.TryParse(anRaw, an) Then an = DateTime.Now.Year
-
-        Return New SessionContext With {
-            .DbName = If(Environment.GetEnvironmentVariable("KBOT_DEMO_DBNAME"), "000_DEMO"),
-            .An = an,
-            .CodProgram = If(Environment.GetEnvironmentVariable("KBOT_DEMO_COD_PROGRAM"), String.Empty),
-            .SectorSursa = If(Environment.GetEnvironmentVariable("KBOT_DEMO_SURSA"), String.Empty),
-            .CF = "000_DEMO",
-            .NumeUnitate = "DEMO",
-            .OperatorName = "demo-seed"
+            .ApiBaseUrl = If(Environment.GetEnvironmentVariable("KBOT_API_BASE_URL"),
+                             "https://kbot.avatarsoft.ro")
         }
     End Function
 

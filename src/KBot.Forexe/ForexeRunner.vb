@@ -3,6 +3,7 @@ Imports System.IO
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Threading
 Imports System.Threading.Tasks
+Imports KBot.Common      ' SessionContext (token-ul bearer al sesiunii).
 Imports Newtonsoft.Json.Linq
 Imports WorkflowModels   ' Workflow (modelele). WorkflowExecutor e în namespace global.
 
@@ -18,6 +19,15 @@ Namespace KBot.Forexe
 
         Private _logger As RichTextBoxLogger
         Private _executor As WorkflowExecutor
+
+        ' Sesiunea K-BOT (singleton DI): sursa token-ului bearer pe care executorul
+        ' îl trimite la API (parseExcel). Se citește lazy, per-cerere, ca să
+        ' urmărească re-login-ul.
+        Private ReadOnly _session As SessionContext
+
+        Public Sub New(session As SessionContext)
+            _session = session
+        End Sub
 
         ''' <summary>
         ''' Leagă logger-ul FOREXE (panoul de log K-BOT). Apelat o singură dată, după ce panoul există.
@@ -75,6 +85,11 @@ Namespace KBot.Forexe
                 ' PIN MANUAL (decizie A3): utilizatorul tastează PIN-ul în dialogul Windows.
                 ' Niciun SendKeys de PIN.
                 _executor.ManualPinMode = True
+
+                ' Token-ul bearer al sesiunii K-BOT pentru apelurile API din workflow
+                ' (parseExcel). Provider, nu valoare: un re-login în timpul sesiunii
+                ' de browser furnizează automat token-ul nou.
+                _executor.SetSessionTokenProvider(Function() _session.Token)
 
                 AddHandler _executor.OnStatusUpdate, AddressOf OnExecutorStatus
                 AddHandler _executor.OnBrowserClosed, AddressOf OnExecutorBrowserClosed

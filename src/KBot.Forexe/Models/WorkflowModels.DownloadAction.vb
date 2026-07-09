@@ -31,8 +31,6 @@ Namespace WorkflowModels
         Public Property FilterColumn As String = String.Empty ' Numele coloanei pe care vrem sa filtram
         Public Property Filter As String = String.Empty  ' Valoarea pe care vrem sa o gasim in coloana de filtrare
         Public Property ComplexFilter As String = String.Empty ' Filtru complex care accepta operatori: =, !=, >, <, >=, <= , REGEX si AND intre conditii (daca e aplicat anuleaza Filter simplu)
-        Public Property ApiUrl As String = "http://adcredit.avatarsoft.ro:5008/api/tools/process_excel" ' Poate fi suprascris din XML
-        Public Property ApiKey As String = "Ad3l1na1i1ub3st3P310ana5iRazvan2026!@#"        ' Cheia API (hardcodată sau din XML)
     End Class
 
 End Namespace

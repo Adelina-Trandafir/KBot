@@ -1,22 +1,25 @@
 # routes/auth/auth.py
 """
-Login-ul aplicatiei K-BOT.
+Login-ul aplicatiei K-BOT (token bearer opac; fara X-Api-Key).
 
-Valideaza operatorul conectandu-se la MariaDB cu userul+parola lui, deriva
-unitatile accesibile din `SHOW DATABASES` intersectat cu registrul central CAI,
-scrie randul de audit in FX_LoginLog si intoarce un session_id + SessionContext.
-Parola trece prin server DOAR pentru a deschide conexiunea de validare; nu se
-stocheaza, nu se hash-uieste, nu se logheaza nicaieri.
+Identitatea e dovedita prin connect-to-validate pe MariaDB cu userul+parola
+operatorului; unitatile accesibile = `SHOW DATABASES` intersectat cu registrul
+central CAI. La login se emite un token opac (secrets.token_urlsafe) tinut in
+registrul in-memory (session_store.STORE); logout-ul il revoca instant.
+Parola operatorului traieste DOAR in memoria procesului, in sesiune, pe durata
+sesiunii (decizia #3/#4 din planul de auth): nu se persista, nu se logheaza.
 """
 import logging
 
 import mysql.connector
 from mysql.connector import errorcode
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 
-from utils.security import require_api_key      # R5 verificat: security.py:8
 from utils.database import get_db_connection    # R5 verificat: database.py:9
 from config import DB_CONFIG
+
+from .session_store import STORE
+from .guard import require_session
 
 auth_bp = Blueprint("auth", __name__)
 logger = logging.getLogger(__name__)
@@ -44,21 +47,25 @@ def _role_from_username(username):
     return suffix if suffix in KNOWN_ROLES else None
 
 
-def _connect_as_operator(username, password):
+def connect_as_operator(username, password, db_name=None):
     """
-    Valideaza credentialele operatorului deschizand o conexiune MariaDB la nivel
-    de server CA ACEL OPERATOR, FARA baza de date implicita selectata. Succes ==
-    credentiale valide. Apelantul TREBUIE sa inchida conexiunea.
-    SECURITY: parola in clar e folosita doar pentru a deschide aceasta conexiune;
-    nu este niciodata stocata sau logata.
+    Deschide o conexiune MariaDB CA OPERATORUL (optional pe o baza anume).
+    Succes == credentiale valide si (cu db_name) acces la baza. Apelantul
+    TREBUIE sa inchida conexiunea. Nu exista fallback pe cont de serviciu —
+    esecul de autentificare se propaga (model a).
+    SECURITY: parola in clar e folosita doar pentru a deschide conexiunea;
+    nu este niciodata logata.
     """
-    return mysql.connector.connect(
+    kwargs = dict(
         host=DB_CONFIG["host"],
         port=DB_CONFIG.get("port", 3306),
         user=username,
         password=password,
         connection_timeout=10,
     )
+    if db_name:
+        kwargs["database"] = db_name
+    return mysql.connector.connect(**kwargs)
 
 
 def _operator_databases(op_conn):
@@ -72,12 +79,11 @@ def _operator_databases(op_conn):
 
 
 @auth_bp.route("/api/auth/units", methods=["POST"])
-@require_api_key
 def auth_units():
     """
-    Faza 1: valideaza credentialele, intoarce unitatile accesibile operatorului.
+    Faza 1 (proba pre-login, fara token): valideaza credentialele, intoarce
+    unitatile accesibile operatorului. NU emite token aici.
     Body: { "username": str, "password": str, "an": int|null }
-    Nu se scrie rand de audit aici (nu s-a ales inca o unitate).
     """
     data = request.json or {}
     username = (data.get("username") or "").strip()
@@ -92,7 +98,7 @@ def auth_units():
     try:
         # --- valideaza credentialele conectandu-te ca operator ---
         try:
-            op_conn = _connect_as_operator(username, password)
+            op_conn = connect_as_operator(username, password)
         except mysql.connector.Error as db_err:
             if db_err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 return jsonify({"error": "Utilizator sau parola incorecte."}), 401
@@ -141,12 +147,12 @@ def auth_units():
 
 
 @auth_bp.route("/api/auth/login", methods=["POST"])
-@require_api_key
 def auth_login():
     """
-    Faza 2: re-valideaza, confirma accesul la unitate, incarca randul CAI complet,
-    scrie randul de audit (cu rol), intoarce session_id + SessionContext.
+    Faza 2: re-valideaza credentialele, confirma accesul la unitate, incarca
+    randul CAI complet si emite token-ul opac de sesiune.
     Body: { "username", "password", "IdUnitate", "pcname" }
+    Raspuns: { "Token": str, "SessionContext": {...} } — fara session_id.
     """
     data = request.json or {}
     username = (data.get("username") or "").strip()
@@ -168,7 +174,7 @@ def auth_login():
     try:
         # --- re-valideaza credentialele ---
         try:
-            op_conn = _connect_as_operator(username, password)
+            op_conn = connect_as_operator(username, password)
         except mysql.connector.Error as db_err:
             if db_err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
                 return jsonify({"error": "Utilizator sau parola incorecte."}), 401
@@ -194,25 +200,6 @@ def auth_login():
         if unit["DbName"] not in op_dbs:
             return jsonify({"error": "Nu aveti acces la unitatea selectata."}), 403
 
-        # --- scrie randul de audit (conexiune admin) ---
-        ip_address = request.remote_addr
-        wcur = admin_conn.cursor()
-        try:
-            wcur.execute(
-                "INSERT INTO FX_LoginLog "
-                "(Username, Role, IdUnitate, DbName, IpAddress, PcName, LoginTime, LogoutTime) "
-                "VALUES (%s, %s, %s, %s, %s, %s, NOW(), NULL)",
-                (username, role, unit["IdUnitate"], unit["DbName"], ip_address, pcname),
-            )
-            session_id = wcur.lastrowid
-            admin_conn.commit()
-        finally:
-            wcur.close()
-
-        # lastrowid == 0 inseamna ca IdLog nu e AUTO_INCREMENT -> eroare dura, fara pass silentios.
-        if not session_id:
-            return jsonify({"error": "Nu s-a putut inregistra sesiunea."}), 500
-
         session_context = {
             "DbName": unit["DbName"],
             "IdUnitate": unit["IdUnitate"],
@@ -223,7 +210,12 @@ def auth_login():
             "NumeUnitate": unit["NumeUnitate"],
             "Role": role,
         }
-        return jsonify({"session_id": session_id,
+
+        # --- emite token-ul opac; parola ramane in sesiune (model a) ---
+        token, _ = STORE.create(username, password, unit["IdUnitate"],
+                                unit["DbName"], session_context, pcname)
+
+        return jsonify({"Token": token,
                         "SessionContext": session_context}), 200
 
     except Exception as e:
@@ -237,37 +229,13 @@ def auth_login():
 
 
 @auth_bp.route("/api/auth/logout", methods=["POST"])
-@require_api_key
+@require_session
 def auth_logout():
     """
-    Stampileaza LogoutTime pe randul de sesiune deschis.
-    Body: { "session_id": int }
+    Revoca token-ul sesiunii curente (evacueaza si parola din memorie).
+    Corp gol — token-ul din Authorization identifica sesiunea. Un token deja
+    mort nu ajunge aici (guard-ul intoarce 401); clientul trateaza logout-ul
+    ca best-effort si ignora rezultatul.
     """
-    data = request.json or {}
-    session_id = data.get("session_id")
-    try:
-        session_id = int(session_id)
-    except (TypeError, ValueError):
-        return jsonify({"error": "Sesiune invalida."}), 400
-
-    admin_conn = None
-    try:
-        admin_conn = get_db_connection(COMMON_DB)
-        cur = admin_conn.cursor()
-        try:
-            cur.execute(
-                "UPDATE FX_LoginLog SET LogoutTime = NOW() "
-                "WHERE IdLog = %s AND LogoutTime IS NULL",
-                (session_id,),
-            )
-            stamped = cur.rowcount
-            admin_conn.commit()
-        finally:
-            cur.close()
-        return jsonify({"status": "ok", "stamped": stamped}), 200
-    except Exception as e:
-        logger.error(f"Eroare auth_logout: {e}", exc_info=True)
-        return jsonify({"error": "Eroare interna la deconectare."}), 500
-    finally:
-        if admin_conn is not None and admin_conn.is_connected():
-            admin_conn.close()
+    STORE.revoke(g.session_token)
+    return jsonify({"ok": True}), 200

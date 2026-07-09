@@ -18,7 +18,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.0.0.0</FileVersion>
+    <FileVersion>1.0.1.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -31,6 +31,10 @@
     <!-- JobBuilder construiește JobRequest din SessionContext (KBot.Common).
          KBot.Common e cel mai jos strat (fără dependențe) => nu introduce ciclu. -->
     <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
+    <!-- Motorul de teme. Forexe referă Theming (nu invers) => fără ciclu; facada
+         KBotTheme delegă la ThemeManager, iar RichTextBoxLogger reacționează la
+         ThemeManager.ThemeChanged prin KBotTheme.WireSubsystems (apelat din Program). -->
+    <ProjectReference Include="..\KBot.Theming\KBot.Theming.vbproj" />
   </ItemGroup>
 
   <ItemGroup>

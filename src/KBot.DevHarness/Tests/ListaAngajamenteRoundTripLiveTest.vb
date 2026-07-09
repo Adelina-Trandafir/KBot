@@ -13,8 +13,8 @@ Imports KBot.Forexe
 ' LIVE round-trip: proves the ListaAngajamente vertical end to end against the real
 ' FOREXE session and the 000_DEMO database — scrape -> map -> POST -> persisted ->
 ' read back. Requires a live FOREXE session: run "FOREXE — Conectare (live)" first
-' (same singleton runner keeps the browser open). SessionContext is demo-seeded to
-' 000_DEMO in Program.SeedDemoSession until login (felia 1) lands.
+' (same singleton runner keeps the browser open). Requires a real login first —
+' login populates SessionContext (DbName + bearer token) read by ApiClient.
 Public NotInheritable Class ListaAngajamenteRoundTripLiveTest
     Implements IHarnessTest
 
@@ -53,16 +53,17 @@ Public NotInheritable Class ListaAngajamenteRoundTripLiveTest
             Return HarnessTestResult.Skipped(
                 "No live session — run 'FOREXE — Conectare (live)' first, then this test.")
         End If
-        If String.IsNullOrEmpty(session.DbName) Then
-            Return HarnessTestResult.Skipped("SessionContext.DbName empty — demo seed not applied.")
+        ' Login-ul populeaza DbName + token-ul bearer; fara ele upsert-ul nu poate rula.
+        If Not session.IsAuthenticated OrElse String.IsNullOrEmpty(session.DbName) Then
+            Return HarnessTestResult.Skipped(
+                "No authenticated session — log in first (login populates DbName + bearer token).")
         End If
 
-        ' Fail fast on missing API config BEFORE the (slow) scrape. Env vars are read at
-        ' app startup, so if these are empty they must be set and KBOT relaunched.
+        ' Fail fast on missing API config BEFORE the (slow) scrape.
         Dim apiOptions As ApiOptions = context.GetService(Of ApiOptions)()
-        If String.IsNullOrWhiteSpace(apiOptions.BaseUrl) OrElse String.IsNullOrWhiteSpace(apiOptions.ApiKey) Then
+        If String.IsNullOrWhiteSpace(apiOptions.BaseUrl) Then
             Return HarnessTestResult.Skipped(
-                "API not configured — set KBOT_API_BASE_URL/KBOT_API_KEY, then relaunch KBOT and reconnect.")
+                "API not configured — set KBOT_API_BASE_URL, then relaunch KBOT and reconnect.")
         End If
 
         ' 3) File-only logger for the scrape (no FOREXE RichTextBox here); separate file

@@ -10,13 +10,13 @@ Imports System.Threading.Tasks
 Imports KBot.Domain
 
 ' Implementarea clientului de login. Refoloseste HttpClient-ul injectat (BaseAddress
-' + Timeout setate la DI, ca ApiClient) si trimite cheia X-Api-Key per-request.
-' Caile sunt relative "/api/auth/..." — acelasi tipar ca ApiClient.
+' + Timeout setate la DI, ca ApiClient). Apelurile pre-auth (units, login) NU poarta
+' niciun header de autorizare — credentialele sunt in corp, peste TLS; logout poarta
+' token-ul bearer. Caile sunt relative "/api/auth/..." — acelasi tipar ca ApiClient.
 Public NotInheritable Class AuthApi
     Implements IAuthApi
 
     Private ReadOnly _http As HttpClient
-    Private ReadOnly _options As ApiOptions
 
     ' Numele proprietatilor raman neschimbate (contract Python), dar acceptam si
     ' potriviri case-insensitive pentru robustete la raspunsuri.
@@ -26,11 +26,9 @@ Public NotInheritable Class AuthApi
             .PropertyNameCaseInsensitive = True
         }
 
-    Public Sub New(http As HttpClient, options As ApiOptions)
+    Public Sub New(http As HttpClient)
         If http Is Nothing Then Throw New ArgumentNullException(NameOf(http))
-        If options Is Nothing Then Throw New ArgumentNullException(NameOf(options))
         _http = http
-        _options = options
     End Sub
 
     Public Async Function GetUnitsAsync(username As String, password As String,
@@ -55,30 +53,35 @@ Public NotInheritable Class AuthApi
         Dim respText As String = Await SendAsync("/api/auth/login", payload, "autentificare", ct).ConfigureAwait(False)
 
         Dim result As LoginResult = JsonSerializer.Deserialize(Of LoginResult)(respText, _json)
-        If result Is Nothing OrElse result.SessionContext Is Nothing OrElse result.SessionId <= 0 Then
+        If result Is Nothing OrElse result.SessionContext Is Nothing OrElse String.IsNullOrEmpty(result.Token) Then
             Throw New ApiException("Răspuns de autentificare invalid de la server.")
         End If
         Return result
     End Function
 
-    Public Async Function LogoutAsync(sessionId As Integer, ct As CancellationToken) _
+    Public Async Function LogoutAsync(token As String, ct As CancellationToken) _
         As Task Implements IAuthApi.LogoutAsync
-        Dim payload = New With {Key .session_id = sessionId}
-        Await SendAsync("/api/auth/logout", payload, "deconectare", ct).ConfigureAwait(False)
+        ' Corp gol; token-ul din header identifica sesiunea de revocat.
+        Await SendAsync("/api/auth/logout", New Object(), "deconectare", ct, bearer:=token).ConfigureAwait(False)
     End Function
 
-    ' POST JSON + X-Api-Key. Intoarce corpul brut la 2xx; altfel Throw ApiException
-    ' cu mesajul serverului (sau un fallback pe cod). Nu inghite niciodata.
+    ' POST JSON (+ Authorization: Bearer doar cand exista token). Intoarce corpul brut
+    ' la 2xx; altfel Throw ApiException cu mesajul serverului (sau fallback pe cod) si
+    ' codul HTTP atasat. Nu inghite niciodata.
     Private Async Function SendAsync(path As String, payload As Object,
-                                     actiune As String, ct As CancellationToken) As Task(Of String)
+                                     actiune As String, ct As CancellationToken,
+                                     Optional bearer As String = Nothing) As Task(Of String)
+        EnsureConfigured()
         Dim body As String = JsonSerializer.Serialize(payload, _json)
         Using msg As New HttpRequestMessage(HttpMethod.Post, path)
-            msg.Headers.Add("X-Api-Key", _options.ApiKey)
+            If Not String.IsNullOrEmpty(bearer) Then
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", bearer)
+            End If
             msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
             Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
                 Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
                 If resp.IsSuccessStatusCode Then Return respText
-                Throw New ApiException(BuildError(respText, actiune, resp.StatusCode))
+                Throw New ApiException(BuildError(respText, actiune, resp.StatusCode), CInt(resp.StatusCode))
             End Using
         End Using
     End Function
@@ -96,6 +99,16 @@ Public NotInheritable Class AuthApi
         If Not String.IsNullOrWhiteSpace(serverMsg) Then Return serverMsg
         Return $"Eroare la {actiune} (cod {CInt(status)})."
     End Function
+
+    ' Fara BaseAddress, caile relative "/api/..." arunca o exceptie criptica de
+    ' framework ("An invalid request URI..."); o transformam intr-un mesaj clar pentru
+    ' operator. Nu inghite niciodata — arunca ApiException, ca restul stratului.
+    Private Sub EnsureConfigured()
+        If _http.BaseAddress Is Nothing Then
+            Throw New ApiException(
+            "Configurație lipsă: adresa serverului nu este setată. Contactați administratorul.")
+        End If
+    End Sub
 
     Private NotInheritable Class UnitsResponse
         <JsonPropertyName("units")> Public Property Units As List(Of UnitInfo)

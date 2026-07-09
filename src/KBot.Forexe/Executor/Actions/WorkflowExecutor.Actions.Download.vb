@@ -49,8 +49,15 @@ Partial Public Class WorkflowExecutor
                     Dim fileBytes As Byte() = File.ReadAllBytes(finalPath)
                     Dim base64File As String = Convert.ToBase64String(fileBytes)
 
+                    ' Autentificare pe sesiunea K-BOT (bearer), nu pe cheie compilată.
+                    Dim sessionToken As String = If(_sessionTokenProvider?.Invoke(), String.Empty)
+                    If String.IsNullOrEmpty(sessionToken) Then
+                        Throw New Exception("parseExcel necesită o sesiune K-BOT autentificată (token bearer absent).")
+                    End If
+
                     Using client As New HttpClient()
-                        client.DefaultRequestHeaders.Add("X-Api-Key", action.ApiKey)
+                        client.DefaultRequestHeaders.Authorization =
+                            New Headers.AuthenticationHeaderValue("Bearer", sessionToken)
                         Dim reqBody As New JObject()
                         reqBody("file_base64") = base64File
                         reqBody("header_rows") = action.HeaderRows

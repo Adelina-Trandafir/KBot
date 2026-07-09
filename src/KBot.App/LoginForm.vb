@@ -7,6 +7,7 @@ Imports System.Windows.Forms
 Imports KBot.Api
 Imports KBot.Common
 Imports KBot.Domain
+Imports KBot.Theming
 
 ' Formularul de login al aplicatiei K-BOT: doua faze (credentiale -> unitate).
 ' Tema: KBotTheme.ApplyTheme + constantele confirmate. Rolul nu e afisat/enforced.
@@ -20,16 +21,15 @@ Public NotInheritable Class LoginForm
     Private _username As String
     Private _password As String
 
-    ' Inaltimile originale ale randurilor pnlCreds, capturate la Load; folosite ca sa
-    ' colapsam randurile de credentiale in faza 2 (doar selectorul unitatii ramane).
-    Private _credRowHeights As Single()
+    ' Doua inaltimi ale ferestrei: compacta (doar credentiale) si extinsa (+ selector
+    ' unitate). Capturate la Load; formularul creste la faza 2, revine la Inapoi.
+    Private _collapsedHeight As Integer
+    Private _expandedHeight As Integer
 
-    ' --- culori accent theme-aware (doar unde nu exista o constanta KBotTheme reala) ---
+    ' --- culoare eroare theme-aware: slotul Error din paleta schemei active ---
     Private ReadOnly Property ClrError As Color
         Get
-            Return If(KBotTheme.IsDark,
-                      Color.FromArgb(240, 120, 120),
-                      Color.FromArgb(190, 30, 30))
+            Return ThemeManager.Current.Palette.ErrorColor
         End Get
     End Property
 
@@ -42,77 +42,78 @@ Public NotInheritable Class LoginForm
     End Sub
 
     Private Sub LoginForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        ' Tematizare structurala intai; preferam constantele KBotTheme reale unde exista.
-        KBotTheme.ApplyTheme(Me)
-        ApplyAccentColors()
-        lblError.ForeColor = ClrError
-        CaptureCredRowHeights()
+        ' Tematizarea structurala o face KBotThemedForm (base OnLoad -> ThemeManager.Apply);
+        ' accentele/eroarea le pune OnThemeChanged (ruleaza dupa Apply si la comutare live).
+        CaptureFormHeights()
         ShowPhaseCreds()
     End Sub
 
+    ' Culorile theme-aware ale showcase-ului. Ruleaza DUPA structura temei (base OnLoad
+    ' cheama OnThemeChanged dupa Apply) si la fiecare comutare de schema.
+    Protected Overrides Sub OnThemeChanged()
+        MyBase.OnThemeChanged()
+        ApplyAccentColors()
+        lblError.ForeColor = ClrError
+    End Sub
+
+    ' Butoanele primare = accent (din paleta activa); rotunjite cand schema e Modern.
     Private Sub ApplyAccentColors()
-        ' Butoanele primare folosesc constantele confirmate din KBotTheme.
+        Dim scheme = ThemeManager.Current
+        Dim p = scheme.Palette
+        Dim modern As Boolean = (scheme.Style.ButtonRender = ButtonRenderStyle.ModernOwnerDrawn)
+
         For Each b As Button In {btnContinue, btnLogin}
-            b.FlatAppearance.BorderColor = KBotTheme.CLR_TAB_ACCENT
-            b.FlatAppearance.BorderSize = 1
-            b.BackColor = KBotTheme.CLR_BTN
+            If modern Then
+                ModernRenderer.ApplyButton(b, scheme)   ' colturi rotunjite + handlere
+            Else
+                ModernRenderer.DetachButton(b)          ' scoate rotunjirea daca venim din Modern
+                b.FlatStyle = FlatStyle.Flat
+                b.FlatAppearance.BorderSize = 1
+            End If
+            ' Peste randarea de baza, pictam accentul (buton primar).
+            b.BackColor = p.AccentColor
+            b.ForeColor = p.AccentTextColor
+            b.FlatAppearance.BorderColor = p.AccentColor
+            b.FlatAppearance.MouseOverBackColor = p.AccentHoverColor
+            b.FlatAppearance.MouseDownBackColor = p.AccentColor
             b.UseVisualStyleBackColor = False
         Next
-        btnBack.FlatAppearance.BorderColor = KBotTheme.CLR_BTN_BORDER
-        btnBack.BackColor = KBotTheme.CLR_BG
+
+        ' Butonul secundar „Inapoi” — buton neutru din paleta.
+        ModernRenderer.DetachButton(btnBack)
+        btnBack.FlatStyle = FlatStyle.Flat
+        btnBack.FlatAppearance.BorderColor = p.ButtonBorderColor
+        btnBack.BackColor = p.ButtonBackColor
+        btnBack.ForeColor = p.ButtonTextColor
         btnBack.UseVisualStyleBackColor = False
     End Sub
 
-    ' Capteaza inaltimile randurilor pnlCreds inainte de orice colaps (o singura data, la Load).
-    Private Sub CaptureCredRowHeights()
-        _credRowHeights = New Single(pnlCreds.RowStyles.Count - 1) {}
-        For i As Integer = 0 To pnlCreds.RowStyles.Count - 1
-            _credRowHeights(i) = pnlCreds.RowStyles(i).Height
-        Next
+    ' Inaltimea din Designer include selectorul (pnlUnit) vizibil => e cea extinsa.
+    ' Cea compacta scade spatiul ocupat de selector. Capturat o singura data, la Load.
+    Private Sub CaptureFormHeights()
+        _expandedHeight = Me.Height
+        Dim unitSpace As Integer = If(pnlUnit.Height > 0, pnlUnit.Height, 150)
+        _collapsedHeight = _expandedHeight - unitSpace
     End Sub
 
     ' ---------------- comutare faze ----------------
-    ' pnlUnit e imbricat in randul elastic (row5) al pnlCreds. Comutarea NU ascunde
-    ' pnlCreds (ar ascunde si pnlUnit); in schimb aratam/ascundem controalele de
-    ' credentiale si colapsam randurile lor, lasand selectorul sa umple cardul in faza 2.
+    ' Faza 1: doar credentialele. Formularul e compact; selectorul (pnlUnit, imbricat in
+    ' randul elastic al pnlCreds) e ascuns.
     Private Sub ShowPhaseCreds()
-        SetCredControlsVisible(True)
-        SetCredRowsCollapsed(False)
         pnlUnit.Visible = False
+        Me.Height = _collapsedHeight
         Me.AcceptButton = btnContinue
         ClearError()
         txtUser.Focus()
     End Sub
 
+    ' Faza 2: formularul creste si arata selectorul unitatii sub credentiale.
     Private Sub ShowPhaseUnit()
         pnlUnit.Visible = True
-        SetCredControlsVisible(False)
-        SetCredRowsCollapsed(True)
+        Me.Height = _expandedHeight
         Me.AcceptButton = btnLogin
         ClearError()
         cboUnit.Focus()
-    End Sub
-
-    ' Vizibilitatea controalelor fazei 1 (utilizator / parola / Continua).
-    Private Sub SetCredControlsVisible(visible As Boolean)
-        lblUser.Visible = visible
-        txtUser.Visible = visible
-        lblPass.Visible = visible
-        txtPass.Visible = visible
-        btnContinue.Visible = visible
-    End Sub
-
-    ' Colapseaza randurile Absolute ale pnlCreds (credentiale + spatiere) la 0 in faza 2,
-    ' ca randul Percent (pnlUnit) sa ocupe tot cardul; le reface din inaltimile capturate.
-    Private Sub SetCredRowsCollapsed(collapsed As Boolean)
-        pnlCreds.SuspendLayout()
-        For i As Integer = 0 To pnlCreds.RowStyles.Count - 1
-            Dim rs As RowStyle = pnlCreds.RowStyles(i)
-            If rs.SizeType = SizeType.Absolute Then
-                rs.Height = If(collapsed, 0F, _credRowHeights(i))
-            End If
-        Next
-        pnlCreds.ResumeLayout()
     End Sub
 
     ' ---------------- helpers ----------------
@@ -186,7 +187,7 @@ Public NotInheritable Class LoginForm
                 _username, _password, selected.IdUnitate,
                 Environment.MachineName, CancellationToken.None)
 
-            _session.Populate(_username, result.SessionId, result.SessionContext)
+            _session.Populate(_username, result.Token, result.SessionContext)
 
             DialogResult = DialogResult.OK
             Close()

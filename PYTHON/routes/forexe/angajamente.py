@@ -13,7 +13,7 @@ import logging
 
 from flask import request, jsonify
 
-from utils.security import require_api_key       # R5 verificat: security.py:8
+from routes.auth.guard import require_session    # bearer opac (Felia 1 auth)
 from utils.database import get_db_connection     # R5 verificat: database.py:9
 # R5 verificat: validatorul canonic db_name traieste in routes/admin.py:24
 # (DB_NAME_REGEX = ^[A-Za-z0-9_]+$, ridica ValueError("db_name invalid")).
@@ -33,7 +33,7 @@ _UPSERT_SQL = (
 
 
 @forexe_bp.route("/api/forexe/angajamente", methods=["GET"])
-@require_api_key
+@require_session
 def get_angajamente():
     """Read-back for the ListaAngajamente round-trip.
 
@@ -73,7 +73,7 @@ def get_angajamente():
 
 
 @forexe_bp.route("/api/forexe/angajamente/upsert", methods=["POST"])
-@require_api_key
+@require_session
 def upsert_angajamente():
     data = request.json or {}
     db_name = data.get("db_name")

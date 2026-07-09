@@ -1,7 +1,6 @@
 Option Strict On
 Imports System
 Imports System.Collections.Generic
-Imports System.Linq
 Imports System.Net
 Imports System.Net.Http
 Imports System.Text
@@ -12,7 +11,7 @@ Imports KBot.Api
 Imports KBot.Domain
 
 ' Teste offline pentru AuthApi. Folosesc un HttpMessageHandler stub care capteaza
-' cererea (URI / X-Api-Key / body) si intoarce un raspuns configurat — fara retea.
+' cererea (URI / Authorization / body) si intoarce un raspuns configurat — fara retea.
 Public Class AuthApiTests
 
     Private NotInheritable Class StubHandler
@@ -21,15 +20,15 @@ Public Class AuthApiTests
         Public Property Status As HttpStatusCode = HttpStatusCode.OK
         Public Property ResponseBody As String = "{}"
         Public Property LastRequestUri As Uri
-        Public Property LastApiKey As String
+        Public Property LastAuthorization As String
         Public Property LastBody As String
 
         Protected Overrides Async Function SendAsync(request As HttpRequestMessage,
                                                      cancellationToken As CancellationToken) _
             As Task(Of HttpResponseMessage)
             LastRequestUri = request.RequestUri
-            Dim vals As IEnumerable(Of String) = Nothing
-            If request.Headers.TryGetValues("X-Api-Key", vals) Then LastApiKey = vals.First()
+            LastAuthorization = If(request.Headers.Authorization IsNot Nothing,
+                                   request.Headers.Authorization.ToString(), Nothing)
             If request.Content IsNot Nothing Then
                 LastBody = Await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(False)
             End If
@@ -41,11 +40,11 @@ Public Class AuthApiTests
 
     Private Shared Function NewApi(handler As StubHandler) As AuthApi
         Dim http As New HttpClient(handler) With {.BaseAddress = New Uri("http://localhost/")}
-        Return New AuthApi(http, New ApiOptions With {.ApiKey = "test-key", .BaseUrl = "http://localhost/api"})
+        Return New AuthApi(http)
     End Function
 
     <Fact>
-    Public Async Function GetUnits_PostsWithApiKey_AndDeserializes() As Task
+    Public Async Function GetUnits_PostsWithoutAuthHeader_AndDeserializes() As Task
         Dim h As New StubHandler With {
             .ResponseBody = "{""units"":[{""IdUnitate"":136,""DbName"":""000_DEMO"",""NumeUnitate"":""DEMO"",""AlteDetalii"":""x"",""Sursa"":""02A"",""AnDate"":2026,""DC"":""dc""}]}"
         }
@@ -56,38 +55,51 @@ Public Class AuthApiTests
         Assert.Single(units)
         Assert.Equal("000_DEMO", units(0).DbName)
         Assert.Equal("/api/auth/units", h.LastRequestUri.AbsolutePath)
-        Assert.Equal("test-key", h.LastApiKey)
+        ' Apel pre-auth: credentialele sunt in corp, NICIUN header de autorizare.
+        Assert.Null(h.LastAuthorization)
     End Function
 
     <Fact>
-    Public Async Function Login_DeserializesSessionIdContextAndRole() As Task
+    Public Async Function Login_DeserializesTokenContextAndRole() As Task
         Dim h As New StubHandler With {
-            .ResponseBody = "{""session_id"":42,""SessionContext"":{""DbName"":""000_DEMO"",""IdUnitate"":136,""ANL"":2026,""CodProgram"":""P"",""SectorSursa"":""02A"",""CF"":""123"",""NumeUnitate"":""DEMO"",""Role"":""Contabil""}}"
+            .ResponseBody = "{""Token"":""tok-opaque-123"",""SessionContext"":{""DbName"":""000_DEMO"",""IdUnitate"":136,""ANL"":2026,""CodProgram"":""P"",""SectorSursa"":""02A"",""CF"":""123"",""NumeUnitate"":""DEMO"",""Role"":""Contabil""}}"
         }
         Dim api = NewApi(h)
 
         Dim result = Await api.LoginAsync("u", "p", 136, "PC1", CancellationToken.None)
 
-        Assert.Equal(42, result.SessionId)
+        Assert.Equal("tok-opaque-123", result.Token)
         Assert.Equal("000_DEMO", result.SessionContext.DbName)
         Assert.Equal("Contabil", result.SessionContext.Role)
         Assert.Equal(2026, result.SessionContext.ANL)
         Assert.Equal("/api/auth/login", h.LastRequestUri.AbsolutePath)
+        Assert.Null(h.LastAuthorization)
     End Function
 
     <Fact>
-    Public Async Function Logout_PostsSessionId() As Task
-        Dim h As New StubHandler With {.ResponseBody = "{""status"":""ok"",""stamped"":1}"}
+    Public Async Function Login_MissingToken_Throws() As Task
+        Dim h As New StubHandler With {
+            .ResponseBody = "{""SessionContext"":{""DbName"":""000_DEMO"",""IdUnitate"":136,""ANL"":2026,""CodProgram"":""P"",""SectorSursa"":""02A"",""CF"":""123"",""NumeUnitate"":""DEMO"",""Role"":""Contabil""}}"
+        }
         Dim api = NewApi(h)
 
-        Await api.LogoutAsync(7, CancellationToken.None)
-
-        Assert.Equal("/api/auth/logout", h.LastRequestUri.AbsolutePath)
-        Assert.Contains("""session_id"":7", h.LastBody)
+        Await Assert.ThrowsAsync(Of ApiException)(
+            Async Function() Await api.LoginAsync("u", "p", 136, "PC1", CancellationToken.None))
     End Function
 
     <Fact>
-    Public Async Function NonSuccess_WithErrorJson_ThrowsServerMessage() As Task
+    Public Async Function Logout_SendsBearerToken() As Task
+        Dim h As New StubHandler With {.ResponseBody = "{""ok"":true}"}
+        Dim api = NewApi(h)
+
+        Await api.LogoutAsync("tok-opaque-123", CancellationToken.None)
+
+        Assert.Equal("/api/auth/logout", h.LastRequestUri.AbsolutePath)
+        Assert.Equal("Bearer tok-opaque-123", h.LastAuthorization)
+    End Function
+
+    <Fact>
+    Public Async Function NonSuccess_WithErrorJson_ThrowsServerMessageWithStatus() As Task
         Dim h As New StubHandler With {
             .Status = HttpStatusCode.Unauthorized,
             .ResponseBody = "{""error"":""Utilizator sau parolă incorecte.""}"
@@ -97,6 +109,8 @@ Public Class AuthApiTests
         Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
             Async Function() Await api.GetUnitsAsync("u", "p", Nothing, CancellationToken.None))
         Assert.Equal("Utilizator sau parolă incorecte.", ex.Message)
+        Assert.True(ex.StatusCode.HasValue)
+        Assert.Equal(401, ex.StatusCode.Value)
     End Function
 
     <Fact>
@@ -110,5 +124,7 @@ Public Class AuthApiTests
         Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
             Async Function() Await api.GetUnitsAsync("u", "p", Nothing, CancellationToken.None))
         Assert.Contains("cod 500", ex.Message)
+        Assert.True(ex.StatusCode.HasValue)
+        Assert.Equal(500, ex.StatusCode.Value)
     End Function
 End Class
