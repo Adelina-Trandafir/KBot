@@ -130,20 +130,22 @@ Friend Module Program
         ' (LoginForm -> Populate). ApiClient citește token-ul din aceeași instanță.
         services.AddSingleton(Of SessionContext)()
 
-        ' Config (doar BaseUrl — nu mai există cheie API client-side).
-        Dim cfg As AppConfig = LoadAppConfig()
-        services.AddSingleton(cfg)
-        services.AddSingleton(New ApiOptions With {.BaseUrl = cfg.ApiBaseUrl})
+        ' Adresa serverului e o constantă în ApiOptions (hostname public, ne-secret).
+        ' Nimic despre adresă nu se mai citește din mediu / config de pe PC-ul clientului.
+        services.AddSingleton(New ApiOptions())
 
         ' HttpClient tipat: BaseAddress + Timeout din ApiOptions (token-ul bearer merge
-        ' per-request din ApiClient/AuthApi). În felia următoare se poate trece pe IHttpClientFactory.
+        ' per-request din ApiClient/AuthApi). Gardă https: refuzăm orice adresă ne-https,
+        ' ca un token să nu plece niciodată necriptat. Prinde doar o editare greșită
+        ' viitoare a constantei — aruncă la pornire, prins de plasele globale -> ShowFatal.
         services.AddSingleton(Of HttpClient)(
             Function(sp)
                 Dim opt As ApiOptions = sp.GetRequiredService(Of ApiOptions)()
-                Dim client As New HttpClient()
-                If Not String.IsNullOrWhiteSpace(opt.BaseUrl) Then
-                    client.BaseAddress = New Uri(opt.BaseUrl)
+                If Not opt.BaseUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase) Then
+                    Throw New InvalidOperationException(
+                        "Adresa serverului trebuie să folosească https. Valoare: " & opt.BaseUrl)
                 End If
+                Dim client As New HttpClient() With {.BaseAddress = New Uri(opt.BaseUrl)}
                 client.Timeout = TimeSpan.FromSeconds(opt.TimeoutSeconds)
                 Return client
             End Function)
@@ -154,6 +156,16 @@ Friend Module Program
 
         ' Stocare temporară (SQLite in-memory).
         services.AddSingleton(Of ITempStore, SqliteTempStore)()
+
+        ' Procesorul Excel pentru workflow-urile FOREXE: un mic pod către ApiClient, ca
+        ' tot HTTP-ul să stea într-un singur loc. FOREXE nu depinde de KBot.Api — primește
+        ' doar acest Func (ExcelJob din KBot.Common, văzut de ambele straturi).
+        services.AddSingleton(Of Func(Of ExcelJob, CancellationToken, Task(Of String)))(
+            Function(sp)
+                Return Function(job As ExcelJob, ct As CancellationToken)
+                           Return sp.GetRequiredService(Of IApiClient)().ProcessExcelAsync(job, ct)
+                       End Function
+            End Function)
 
         ' Executor FOREXE (in-process).
         services.AddSingleton(Of IForexeRunner, ForexeRunner)()
@@ -172,14 +184,5 @@ Friend Module Program
         services.AddTransient(Of KBot.DevHarness.DevHarnessForm)()
 #End If
     End Sub
-
-    ' Adresa serverului: hostname public ne-secret. Implicit producția TLS;
-    ' KBOT_API_BASE_URL rămâne DOAR ca override de dev (mașină care țintește altundeva).
-    Private Function LoadAppConfig() As AppConfig
-        Return New AppConfig With {
-            .ApiBaseUrl = If(Environment.GetEnvironmentVariable("KBOT_API_BASE_URL"),
-                             "https://kbot.avatarsoft.ro")
-        }
-    End Function
 
 End Module

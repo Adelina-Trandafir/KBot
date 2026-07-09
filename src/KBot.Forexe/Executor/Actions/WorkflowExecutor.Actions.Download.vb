@@ -1,9 +1,7 @@
 Imports System.IO
-Imports System.Net.Http
 Imports System.Text
+Imports KBot.Common
 Imports Microsoft.Playwright
-Imports Newtonsoft.Json
-Imports Newtonsoft.Json.Linq
 Imports WorkflowModels
 
 Partial Public Class WorkflowExecutor
@@ -42,63 +40,40 @@ Partial Public Class WorkflowExecutor
             Dim realVarName As String = ReplaceInternalVariables(action.SaveTo)
 
             If action.ParseExcel Then
-                ' --- CAZ 1: CU PARSARE (Excel -> JSON) ---
+                ' --- CAZ 1: CU PARSARE (Excel -> JSON prin ApiClient) ---
+                ' Executorul nu mai face HTTP: umple un ExcelJob și îl dă procesorului
+                ' (adresă + token bearer + POST stau în ApiClient). Un 401 iese ca
+                ' ApiException și curge în MainForm.WithReauth (re-login + o reîncercare).
                 Try
-                    _logger.LogInfo($"[Download] Trimit la Python API pentru conversie JSON...")
-
-                    Dim fileBytes As Byte() = File.ReadAllBytes(finalPath)
-                    Dim base64File As String = Convert.ToBase64String(fileBytes)
-
-                    ' Autentificare pe sesiunea K-BOT (bearer), nu pe cheie compilată.
-                    Dim sessionToken As String = If(_sessionTokenProvider?.Invoke(), String.Empty)
-                    If String.IsNullOrEmpty(sessionToken) Then
-                        Throw New Exception("parseExcel necesită o sesiune K-BOT autentificată (token bearer absent).")
+                    _logger.LogInfo("[Download] Trimit la server pentru conversie JSON...")
+                    If _excelProcessor Is Nothing Then
+                        Throw New InvalidOperationException("parseExcel necesită procesorul Excel (neconfigurat).")
                     End If
 
-                    Using client As New HttpClient()
-                        client.DefaultRequestHeaders.Authorization =
-                            New Headers.AuthenticationHeaderValue("Bearer", sessionToken)
-                        Dim reqBody As New JObject()
-                        reqBody("file_base64") = base64File
-                        reqBody("header_rows") = action.HeaderRows
-                        reqBody("skipFirstNRows") = action.SkipFirstNRows
-                        reqBody("skipLastNRows") = action.SkipLastNRows
-                        reqBody("skipFirstNColumns") = action.SkipFirstNColumns
-                        reqBody("skipLastNColumns") = action.SkipLastNColumns
-                        If action.ComplexFilter <> "" Then
-                            reqBody("complex_filter") = action.ComplexFilter
-                        ElseIf action.FilterColumn <> "" AndAlso action.Filter <> "" Then
-                            reqBody("col_to_filter") = action.FilterColumn
-                            reqBody("filter") = action.Filter
-                        End If
+                    Dim fileBytes As Byte() = File.ReadAllBytes(finalPath)
+                    Dim job As New ExcelJob With {
+                        .FileBase64 = Convert.ToBase64String(fileBytes),
+                        .HeaderRows = action.HeaderRows,
+                        .SkipFirstNRows = action.SkipFirstNRows,
+                        .SkipLastNRows = action.SkipLastNRows,
+                        .SkipFirstNColumns = action.SkipFirstNColumns,
+                        .SkipLastNColumns = action.SkipLastNColumns,
+                        .ComplexFilter = action.ComplexFilter,
+                        .FilterColumn = action.FilterColumn,
+                        .Filter = action.Filter
+                    }
 
-                        Dim content As New StringContent(reqBody.ToString(), Encoding.UTF8, "application/json")
-                        Dim response = Await client.PostAsync(action.ApiUrl, content)
-                        Dim respString = Await response.Content.ReadAsStringAsync()
+                    resultToSave = Await _excelProcessor.Invoke(job, _cancellationToken).ConfigureAwait(False)
 
-                        If response.IsSuccessStatusCode Then
-                            Dim jsonResp As JObject = JObject.Parse(respString)
-
-                            If jsonResp("data") IsNot Nothing Then
-                                resultToSave = jsonResp("data").ToString(Formatting.None)
-                            Else
-                                resultToSave = respString
-                            End If
-
-                            ' VALIDARE 1: Dimensiunea JSON-ului rezultat
-                            Dim jsonSize As Integer = Encoding.UTF8.GetByteCount(resultToSave)
-                            If jsonSize > limitBytes Then
-                                Throw New Exception($"[LIMITĂ DEPĂȘITĂ] JSON-ul rezultat are {jsonSize / 1024:F2} KB. Limita este 1 MB.")
-                            End If
-
-                            _logger.LogSuccess($"[Download] JSON validat ({jsonSize} bytes).")
-                        Else
-                            Throw New Exception($"Eroare API Python: {respString}")
-                        End If
-                    End Using
+                    ' VALIDARE: dimensiunea JSON-ului rezultat (regulă de business, rămâne aici).
+                    Dim jsonSize As Integer = Encoding.UTF8.GetByteCount(resultToSave)
+                    If jsonSize > limitBytes Then
+                        Throw New Exception($"[LIMITĂ DEPĂȘITĂ] JSON-ul rezultat are {jsonSize / 1024:F2} KB. Limita este 1 MB.")
+                    End If
+                    _logger.LogSuccess($"[Download] JSON validat ({jsonSize} bytes).")
 
                 Catch ex As Exception
-                    _logger.LogError($"[Download] Eroare Parsing: {ex.Message}")
+                    _logger.LogError($"[Download] Eroare conversie: {ex.Message}")
                     Throw
                 End Try
 

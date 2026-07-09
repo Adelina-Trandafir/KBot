@@ -63,7 +63,7 @@ Public NotInheritable Class ListaAngajamenteRoundTripLiveTest
         Dim apiOptions As ApiOptions = context.GetService(Of ApiOptions)()
         If String.IsNullOrWhiteSpace(apiOptions.BaseUrl) Then
             Return HarnessTestResult.Skipped(
-                "API not configured — set KBOT_API_BASE_URL, then relaunch KBOT and reconnect.")
+                "API address missing — ApiOptions.BaseUrl (built-in constant) is empty; check the build.")
         End If
 
         ' 3) File-only logger for the scrape (no FOREXE RichTextBox here); separate file

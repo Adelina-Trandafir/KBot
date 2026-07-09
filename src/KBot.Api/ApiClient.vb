@@ -114,6 +114,52 @@ Public Class ApiClient
         End Using
     End Function
 
+    ' Conversie Excel -> JSON pe server. FOREXE nu mai face HTTP direct: umple un
+    ' ExcelJob și îl dă aici, unde stau adresa, token-ul bearer și POST-ul. Un singur
+    ' apel, fără retry (upload base64 mare; reîncercarea e scumpă). Non-2xx -> ApiException
+    ' cu status, deci un 401 curge spre App (re-login §4.9), la fel ca celelalte apeluri.
+    Public Async Function ProcessExcelAsync(job As ExcelJob, ct As CancellationToken) _
+        As Task(Of String) Implements IApiClient.ProcessExcelAsync
+
+        If job Is Nothing Then Throw New ArgumentNullException(NameOf(job))
+        EnsureConfigured()
+
+        Dim payload As New Dictionary(Of String, Object) From {
+            {"file_base64", job.FileBase64},
+            {"header_rows", job.HeaderRows},
+            {"skipFirstNRows", job.SkipFirstNRows},
+            {"skipLastNRows", job.SkipLastNRows},
+            {"skipFirstNColumns", job.SkipFirstNColumns},
+            {"skipLastNColumns", job.SkipLastNColumns}
+        }
+        If Not String.IsNullOrEmpty(job.ComplexFilter) Then
+            payload("complex_filter") = job.ComplexFilter
+        ElseIf Not String.IsNullOrEmpty(job.FilterColumn) AndAlso Not String.IsNullOrEmpty(job.Filter) Then
+            payload("col_to_filter") = job.FilterColumn
+            payload("filter") = job.Filter
+        End If
+
+        Dim body As String = JsonSerializer.Serialize(payload, _json)
+        Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/tools/process_excel")
+            msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+            msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+            Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                If Not resp.IsSuccessStatusCode Then
+                    Throw New ApiException($"process_excel HTTP {CInt(resp.StatusCode)}: {respText}", CInt(resp.StatusCode))
+                End If
+                ' Serverul întoarce {"data": ...}; scoatem doar "data", ca înainte.
+                Using doc As JsonDocument = JsonDocument.Parse(respText)
+                    Dim dataEl As JsonElement = Nothing
+                    If doc.RootElement.TryGetProperty("data", dataEl) Then
+                        Return dataEl.GetRawText()
+                    End If
+                    Return respText
+                End Using
+            End Using
+        End Using
+    End Function
+
     ' Apelurile de date cer o adresă de server ȘI o sesiune autentificată (token viu).
     ' Fara BaseAddress, caile relative arunca o exceptie criptica de framework; fara
     ' token, serverul ar raspunde oricum 401 — dar aici dam mesajul clar, local.

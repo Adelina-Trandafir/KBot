@@ -3,7 +3,7 @@ Imports System.IO
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Threading
 Imports System.Threading.Tasks
-Imports KBot.Common      ' SessionContext (token-ul bearer al sesiunii).
+Imports KBot.Common      ' ExcelJob (payload-ul parseExcel dat procesorului).
 Imports Newtonsoft.Json.Linq
 Imports WorkflowModels   ' Workflow (modelele). WorkflowExecutor e în namespace global.
 
@@ -20,13 +20,13 @@ Namespace KBot.Forexe
         Private _logger As RichTextBoxLogger
         Private _executor As WorkflowExecutor
 
-        ' Sesiunea K-BOT (singleton DI): sursa token-ului bearer pe care executorul
-        ' îl trimite la API (parseExcel). Se citește lazy, per-cerere, ca să
-        ' urmărească re-login-ul.
-        Private ReadOnly _session As SessionContext
+        ' Procesorul Excel (bridge DI către ApiClient.ProcessExcelAsync): executorul
+        ' primește prin el conversia Excel->JSON fără ca FOREXE să depindă de KBot.Api.
+        ' Token-ul bearer și adresa stau în ApiClient; re-login-ul e transparent aici.
+        Private ReadOnly _excelProcessor As Func(Of ExcelJob, CancellationToken, Task(Of String))
 
-        Public Sub New(session As SessionContext)
-            _session = session
+        Public Sub New(excelProcessor As Func(Of ExcelJob, CancellationToken, Task(Of String)))
+            _excelProcessor = excelProcessor
         End Sub
 
         ''' <summary>
@@ -86,10 +86,9 @@ Namespace KBot.Forexe
                 ' Niciun SendKeys de PIN.
                 _executor.ManualPinMode = True
 
-                ' Token-ul bearer al sesiunii K-BOT pentru apelurile API din workflow
-                ' (parseExcel). Provider, nu valoare: un re-login în timpul sesiunii
-                ' de browser furnizează automat token-ul nou.
-                _executor.SetSessionTokenProvider(Function() _session.Token)
+                ' Procesorul Excel pentru apelurile parseExcel din workflow. Tot HTTP-ul
+                ' (adresă + token bearer + POST) stă în ApiClient; re-login-ul e transparent.
+                _executor.SetExcelProcessor(_excelProcessor)
 
                 AddHandler _executor.OnStatusUpdate, AddressOf OnExecutorStatus
                 AddHandler _executor.OnBrowserClosed, AddressOf OnExecutorBrowserClosed

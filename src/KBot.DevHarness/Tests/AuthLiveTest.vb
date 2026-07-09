@@ -48,7 +48,7 @@ Public NotInheritable Class AuthLiveTest
         Dim opt As ApiOptions = context.GetService(Of ApiOptions)()
         If String.IsNullOrWhiteSpace(opt.BaseUrl) Then
             Return HarnessTestResult.Skipped(
-                "API not configured — set KBOT_API_BASE_URL, then relaunch KBOT.")
+                "API address missing — ApiOptions.BaseUrl (built-in constant) is empty; check the build.")
         End If
 
         Dim auth As IAuthApi = context.GetService(Of IAuthApi)()

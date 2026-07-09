@@ -20,6 +20,7 @@ from config import DB_CONFIG
 
 from .session_store import STORE
 from .guard import require_session
+from .ratelimit import LIMITER
 
 auth_bp = Blueprint("auth", __name__)
 logger = logging.getLogger(__name__)
@@ -93,6 +94,11 @@ def auth_units():
     if not username or not password:
         return jsonify({"error": "Utilizator sau parola lipsa."}), 400
 
+    # Anti-forta-bruta: refuza inainte de a atinge MariaDB daca IP-ul / (IP,user) e blocat.
+    ip = request.remote_addr
+    if LIMITER.is_blocked(ip, username):
+        return jsonify({"error": "Prea multe incercari. Reincercati mai tarziu."}), 429
+
     op_conn = None
     admin_conn = None
     try:
@@ -101,10 +107,12 @@ def auth_units():
             op_conn = connect_as_operator(username, password)
         except mysql.connector.Error as db_err:
             if db_err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                LIMITER.record_failure(ip, username)
                 return jsonify({"error": "Utilizator sau parola incorecte."}), 401
             logger.error(f"Eroare conectare operator '{username}': {db_err}")
             return jsonify({"error": "Conectare esuata la server."}), 502
 
+        LIMITER.record_success(ip, username)
         op_dbs = _operator_databases(op_conn)
 
         # --- intersecteaza cu CAI (conexiune admin) ---
@@ -167,6 +175,11 @@ def auth_login():
     except (TypeError, ValueError):
         return jsonify({"error": "Unitate invalida."}), 400
 
+    # Anti-forta-bruta: refuza inainte de a atinge MariaDB daca IP-ul / (IP,user) e blocat.
+    ip = request.remote_addr
+    if LIMITER.is_blocked(ip, username):
+        return jsonify({"error": "Prea multe incercari. Reincercati mai tarziu."}), 429
+
     role = _role_from_username(username)  # store-only; poate fi None
 
     op_conn = None
@@ -177,15 +190,20 @@ def auth_login():
             op_conn = connect_as_operator(username, password)
         except mysql.connector.Error as db_err:
             if db_err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                LIMITER.record_failure(ip, username)
                 return jsonify({"error": "Utilizator sau parola incorecte."}), 401
             logger.error(f"Eroare conectare operator '{username}': {db_err}")
             return jsonify({"error": "Conectare esuata la server."}), 502
 
+        LIMITER.record_success(ip, username)
         op_dbs = _operator_databases(op_conn)
 
         # --- incarca randul CAI complet pentru unitatea aleasa ---
+        # buffered=True: CAI poate avea mai multe randuri per IdUnitate (cate unul pe
+        # AnDate). fetchone() ar lasa restul necitit si close()/is_connected() ar arunca
+        # "Unread result found"; cursorul buffered aduce tot setul in memorie -> sigur.
         admin_conn = get_db_connection(COMMON_DB)
-        acur = admin_conn.cursor(dictionary=True)
+        acur = admin_conn.cursor(dictionary=True, buffered=True)
         try:
             acur.execute(f"SELECT {_CAI_COLUMNS} FROM CAI WHERE IdUnitate = %s",
                          (id_unitate,))

@@ -1,4 +1,5 @@
 from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
 from utils.logger import setup_logger
 
 # Importam modulele (Blueprints) pe care le-am creat in folderul /routes
@@ -21,6 +22,12 @@ from routes.auth import auth_bp  # Importam Blueprint-ul de login al aplicatiei 
 logger = setup_logger()
 
 app = Flask(__name__)
+
+# Rulam in spatele nginx (un singur proxy). ProxyFix face ca request.remote_addr sa
+# fie IP-ul REAL al clientului (din X-Forwarded-For), nu 127.0.0.1. De asta depinde
+# limita anti-forta-bruta din routes/auth/ratelimit.py: fara ea, toti clientii ar
+# imparti un singur bucket si s-ar bloca reciproc.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1)
 
 app.config['MAX_CONTENT_LENGTH'] = None  # Dezactiveaza limita globala de content-length (pentru imagini mari)
 

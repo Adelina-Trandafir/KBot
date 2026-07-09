@@ -3,11 +3,11 @@ Imports System.Threading
 Imports System.Threading.Tasks
 Imports WorkflowModels
 
-' Gardă de regresie pentru contractul "niciun secret de flotă în client":
-' DownloadAction NU mai are proprietatea ApiKey (vechea cheie X-Api-Key compilată
-' în binar), iar executorul expune seam-ul de token bearer (SetSessionTokenProvider)
-' prin care acțiunea Download se autentifică pe sesiunea K-BOT.
-' Pandant al aserțiunii "no X-Api-Key" din ListaAngajamenteApiClientUpsertTest.
+' Gardă de regresie pentru contractul "niciun secret / nicio adresă de server în client":
+' DownloadAction NU mai are ApiKey (vechea cheie X-Api-Key compilată în binar) și NICI
+' ApiUrl (vechea adresă http necriptată). Tot HTTP-ul parseExcel stă acum în ApiClient,
+' iar executorul primește conversia prin seam-ul SetExcelProcessor (fără token/adresă
+' în FOREXE). Pandant al aserției "no X-Api-Key" din ListaAngajamenteApiClientUpsertTest.
 Public NotInheritable Class DownloadActionNoClientSecretTest
     Implements IHarnessTest
 
@@ -43,14 +43,19 @@ Public NotInheritable Class DownloadActionNoClientSecretTest
                 "DownloadAction.ApiKey există — cheia API nu are voie să reapară în client (folosește token-ul bearer al sesiunii)."))
         End If
 
+        If actionType.GetProperty("ApiUrl", BindingFlags.Public Or BindingFlags.Instance) IsNot Nothing Then
+            Return Task.FromResult(HarnessTestResult.Failed(
+                "DownloadAction.ApiUrl există — adresa serverului nu are voie să stea în model (tot HTTP-ul e în ApiClient)."))
+        End If
+
         Dim seam As MethodInfo = GetType(WorkflowExecutor).GetMethod(
-            "SetSessionTokenProvider", BindingFlags.Public Or BindingFlags.Instance)
+            "SetExcelProcessor", BindingFlags.Public Or BindingFlags.Instance)
         If seam Is Nothing Then
             Return Task.FromResult(HarnessTestResult.Failed(
-                "WorkflowExecutor.SetSessionTokenProvider lipsește — acțiunea Download nu are de unde lua token-ul bearer."))
+                "WorkflowExecutor.SetExcelProcessor lipsește — acțiunea Download nu are prin ce trimite Excel-ul la ApiClient."))
         End If
 
         Return Task.FromResult(HarnessTestResult.Passed(
-            "DownloadAction fără ApiKey; seam-ul bearer (SetSessionTokenProvider) prezent."))
+            "DownloadAction fără ApiKey/ApiUrl; seam-ul procesorului Excel (SetExcelProcessor) prezent."))
     End Function
 End Class

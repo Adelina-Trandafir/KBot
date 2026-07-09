@@ -1,5 +1,6 @@
 ﻿Imports System.Security.Cryptography.X509Certificates
 Imports System.Threading
+Imports KBot.Common
 Imports Microsoft.Playwright
 Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Linq
@@ -43,11 +44,10 @@ Partial Public Class WorkflowExecutor
 
     Private _throttleSettings As ThrottleSettings = ThrottleSettings.None
 
-    ' Furnizorul token-ului bearer al sesiunii K-BOT (setat de ForexeRunner).
-    ' Func, nu string: token-ul se citește la momentul cererii, deci un re-login
-    ' pe parcursul unei sesiuni lungi de browser folosește mereu token-ul viu.
-    ' Înlocuiește vechea cheie API compilată în client (X-Api-Key) la parseExcel.
-    Private _sessionTokenProvider As Func(Of String)
+    ' Procesorul Excel al sesiunii (setat de ForexeRunner). Executorul NU mai face HTTP
+    ' direct la parseExcel: dă datele lui ApiClient (adresă + token bearer + POST acolo),
+    ' printr-un Func care nu leagă FOREXE de KBot.Api. ExcelJob stă în KBot.Common.
+    Private _excelProcessor As Func(Of ExcelJob, CancellationToken, Task(Of String))
 
     ' Clasă internă pentru a ține minte starea fiecărei bucle active
     Public Class LoopContext
@@ -170,8 +170,8 @@ Partial Public Class WorkflowExecutor
         _workflowPath = path
     End Sub
 
-    Public Sub SetSessionTokenProvider(provider As Func(Of String))
-        _sessionTokenProvider = provider
+    Public Sub SetExcelProcessor(processor As Func(Of ExcelJob, CancellationToken, Task(Of String)))
+        _excelProcessor = processor
     End Sub
 
     Public Sub SetVariable(name As String, value As String)
