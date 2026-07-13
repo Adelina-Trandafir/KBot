@@ -51,9 +51,7 @@ Friend Module Program
                     RunShellWithLogin(provider)
                 Else
                     ' Fereastra de start e bancul de probă; deschide shell-ul real la cerere.
-                    Dim harness As KBot.DevHarness.DevHarnessForm = provider.GetRequiredService(Of KBot.DevHarness.DevHarnessForm)()
-                    harness.OpenMainFormAction = Sub() provider.GetRequiredService(Of MainForm)().Show()
-                    Application.Run(harness)
+                    RunHarness(provider)
                 End If
 #Else
                 ' Pe Release, singura cale este poarta de login înaintea shell-ului.
@@ -68,13 +66,46 @@ Friend Module Program
         End Try
     End Sub
 
+#If DEBUG Then
+    ' Calea "Banc de probă" (Debug): fereastra-rădăcină a buclei de mesaje este harness-ul.
+    ' MainForm-ul se deschide din harness la cerere (un singur exemplar, re-deschis dacă a
+    ' fost închis). La ÎNCHIDEREA harness-ului (pagina de teste) închidem și MainForm-ul, ca
+    ' Application.Run să se termine curat și procesul să revină în VB.NET — fără fereastră
+    ' orfană sau dispose în ordine greșită a serviciilor DI.
+    Private Sub RunHarness(provider As ServiceProvider)
+        Dim harness As KBot.DevHarness.DevHarnessForm = provider.GetRequiredService(Of KBot.DevHarness.DevHarnessForm)()
+
+        Dim harnessMain As MainForm = Nothing
+        harness.OpenMainFormAction =
+            Sub()
+                If harnessMain Is Nothing OrElse harnessMain.IsDisposed Then
+                    harnessMain = provider.GetRequiredService(Of MainForm)()
+                    AddHandler harnessMain.FormClosed, Sub() harnessMain = Nothing
+                End If
+                harnessMain.Show()
+                harnessMain.BringToFront()
+            End Sub
+
+        AddHandler harness.FormClosed,
+            Sub()
+                If harnessMain IsNot Nothing AndAlso Not harnessMain.IsDisposed Then harnessMain.Close()
+            End Sub
+
+        Application.Run(harness)   ' se termină când harness-ul (pagina de teste) se închide
+    End Sub
+#End If
+
     ' Poarta de login -> shell (MainForm) -> logout best-effort la închidere.
     ' Folosită de calea Release și de opțiunea "Login" din dialogul de start Debug.
+    ' LoginForm e MODAL (ShowDialog): se închide COMPLET înainte ca MainForm să se deschidă
+    ' (Application.Run(MainForm) rulează abia după). La închiderea MainForm-ului bucla se
+    ' termină și procesul revine în VB.NET; dacă login-ul e anulat, ieșim fără shell.
     Private Sub RunShellWithLogin(provider As ServiceProvider)
         Using login As LoginForm = provider.GetRequiredService(Of LoginForm)()
             If login.ShowDialog() <> DialogResult.OK Then
                 Return   ' anulat -> ieșim fără a lansa shell-ul
             End If
+            login.Dispose()   ' nu mai avem nevoie de login, eliberăm resursele
         End Using
 
         Dim session As SessionContext = provider.GetRequiredService(Of SessionContext)()

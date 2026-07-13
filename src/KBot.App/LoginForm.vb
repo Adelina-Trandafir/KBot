@@ -39,6 +39,10 @@ Public NotInheritable Class LoginForm
         ' accentele/eroarea le pune OnThemeChanged (ruleaza dupa Apply si la comutare live).
         picLogo.Image = My.Resources.kbot_64
         capBar.IconImage = My.Resources.kbot_64
+#If DEBUG Then
+        txtUser.Text = "scavatarsoft@gmail.com"
+        txtPass.Text = "Par0laN0u"
+#End If
         Me.KeyPreview = True                ' Escape inchide (nu mai exista X nativ)
         CaptureFormHeights()
         ShowPhaseCreds()
@@ -193,10 +197,10 @@ Public NotInheritable Class LoginForm
 
         Catch ex As ApiException
             ShowError(ex.Message)
+            SetBusy(False)
         Catch ex As Exception
             ShowError("Eroare la autentificare. Verificați rețeaua.")
             Write("LoginForm.Login", ex)
-        Finally
             SetBusy(False)
         End Try
     End Sub

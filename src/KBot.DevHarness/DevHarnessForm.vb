@@ -29,7 +29,10 @@ Public NotInheritable Class DevHarnessForm
         InitializeComponent()
         _progress = New Progress(Of HarnessProgressInfo)(AddressOf OnProgress)
         Try
-            _allTests = HarnessTestDiscovery.Discover()
+            ' Scanăm assembly-ul harness-ului ȘI assembly-ul de intrare (KBot.App), ca
+            ' testele IHarnessTest din shell (ex. FxIcons, care trăiește în KBot.App și nu
+            ' poate fi referit de harness — ar fi circular) să apară în arbore.
+            _allTests = HarnessTestDiscovery.Discover(DiscoveryAssemblies())
         Catch ex As Exception
             _allTests = New List(Of IHarnessTest)()
             GlobalErrorLog.Write("DevHarnessForm.ctor.Discover", ex)
@@ -37,6 +40,15 @@ Public NotInheritable Class DevHarnessForm
         End Try
         ApplyFilter()
     End Sub
+
+    ' Assembly-urile scanate pentru IHarnessTest: harness-ul + assembly-ul de intrare
+    ' (KBot.App), dedublicate. GetEntryAssembly poate fi Nothing în scenarii de test.
+    Private Shared Function DiscoveryAssemblies() As IEnumerable(Of System.Reflection.Assembly)
+        Dim asms As New List(Of System.Reflection.Assembly) From {GetType(DevHarnessForm).Assembly}
+        Dim entry As System.Reflection.Assembly = System.Reflection.Assembly.GetEntryAssembly()
+        If entry IsNot Nothing AndAlso Not asms.Contains(entry) Then asms.Add(entry)
+        Return asms
+    End Function
 
     Private Sub txtFilter_TextChanged(sender As Object, e As EventArgs) Handles txtFilter.TextChanged
         ApplyFilter()

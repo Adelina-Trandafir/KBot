@@ -36,6 +36,8 @@ Public Class KBotShellForm
         End Try
     End Sub
 
+    'add ignore flag from step by step debugging
+    <DebuggerStepThrough>
     Protected Overrides Sub WndProc(ByRef m As Message)
         If FormBorderStyle = FormBorderStyle.None Then
             If m.Msg = NativeMethods.WM_GETMINMAXINFO Then
