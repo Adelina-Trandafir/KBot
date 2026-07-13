@@ -112,22 +112,25 @@ Public Class MainForm
         navViews.AddItem("ord", "ORD")
         navViews.SelectedKey = "sumar"   ' declanșează SelectionChanged -> creează vederea
 
-        ' Arborele: gol în această felie (sursa reală de date e o felie viitoare);
-        ' pe Debug se încarcă un eșantion mic ca shell-ul să fie testabil vizual.
-        LoadTree(Array.Empty(Of AngajamentTreeInfo)())
-#If DEBUG Then
-        LoadDebugSampleTree()
-#End If
+        ' Lista de angajamente: controlul „tree" e configurat ca listă plată cu coloane
+        ' (caption = Descriere, coloană = CodAngajament, iconiță de status stânga,
+        ' refresh la hover în dreapta). Datele reale vin din GET /api/forexe/angajamente.
+        ConfigureAngajamenteList()
 
         UpdateForexeStatus()
 
-        ' Combo-urile an / SS se umplu doar cu o sesiune autentificată (calea Release
-        ' trece prin login; în harness-ul Debug fereastra se poate deschide fără login).
+        ' Combo-urile an / SS ȘI lista se umplu doar cu o sesiune autentificată (calea
+        ' Release trece prin login; în harness-ul Debug fereastra se poate deschide fără
+        ' login — atunci arătăm un eșantion mic ca shell-ul să fie testabil vizual).
         If _session.IsAuthenticated AndAlso Not String.IsNullOrEmpty(_session.DbName) Then
             Await LoadPeriodsAsync()
+            Await LoadAngajamenteAsync()
         Else
             cboAn.Enabled = False
             cboSs.Enabled = False
+#If DEBUG Then
+            PopulateAngajamenteList(DebugSampleAngajamente())
+#End If
         End If
     End Sub
 
@@ -256,68 +259,158 @@ Public Class MainForm
         End Select
     End Function
 
-    ' ---------------- arbore ----------------
+    ' ---------------- lista de angajamente ----------------
+
+    ' Lățimea coloanei CodAngajament (px). Restul spațiului îl ia captionul (Descriere).
+    Private Const COD_COLUMN_WIDTH As Integer = 140
 
     ''' <summary>
-    ''' Golește și reconstruiește arborele + dicționarul NodeKey -> info. Doar nodurile
-    ''' cu CodAngajament intră în dicționar (nodurile de capitol/nivel intermediar împing
-    ''' Nothing către vederi). Sursa reală de date (API pe qFX_MAIN_TREE) e o felie viitoare.
+    ''' Configurează controlul „tree" ca listă plată cu o coloană CodAngajament
+    ''' (caption = Descriere). Aspect: rând 32px, Segoe UI 9.75, iconiță status 24×24
+    ''' stânga, refresh 24×24 dreapta doar la hover. Filtrul pe coloană merge din start.
     ''' </summary>
-    Public Sub LoadTree(items As IReadOnlyList(Of AngajamentTreeInfo))
-        If items Is Nothing Then Throw New ArgumentNullException(NameOf(items))
+    Private Sub ConfigureAngajamenteList()
+        tree.Font = New Font("Segoe UI", 9.75F)
+        tree.LeftIconSize = New Size(24, 24)
+        tree.RightIconSize = New Size(24, 24)
+        tree.ItemHeight = 32
+        tree.HasNodeIcons = True
+        tree.ShowRightIconOnHover = True
+
+        Dim cols As New List(Of ColumnDef) From {
+            New ColumnDef With {
+                .Name = "CodAngajament", .Header = "CodAngajament", .Width = COD_COLUMN_WIDTH,
+                .ColType = En_ColType.ColType_Text, .Align = En_ColAlign.ColAlign_Left,
+                .Format = "", .HeaderBackColor = Color.Empty, .HeaderForeColor = Color.Empty,
+                .HeaderAlign = En_ColAlign.ColAlign_Inherit}
+        }
+        tree.ConfigureListMode(cols)
+    End Sub
+
+    ''' <summary>
+    ''' Încarcă lista de angajamente de la GET /api/forexe/angajamente (via WithReauth —
+    ''' reutilizează calea unică de re-login pe 401). Busy-bar pe durata apelului; erorile
+    ''' se arată operatorului în română, niciodată înghițite.
+    ''' </summary>
+    Private Async Function LoadAngajamenteAsync() As Task
+        busyBar.Running = True
+        Try
+            Dim ct As CancellationToken = CancellationToken.None
+            ' id_unitate=0: în baza proprie a unității indicatorii au IdUnitate NULL/0.
+            ' doarAnulate=False: lista completă (angajamentele anulate sunt un filtru viitor).
+            Dim rows As IReadOnlyList(Of Angajament) =
+                Await WithReauth(Of IReadOnlyList(Of Angajament))(
+                    Function() _apiClient.GetAngajamenteAsync(_session.DbName, 0, False, ct))
+            PopulateAngajamenteList(rows)
+        Catch ex As Exception
+            _logger?.LogException(ex, "Eroare la încărcarea listei de angajamente")
+            MessageBox.Show(Me,
+                "Nu s-a putut încărca lista de angajamente: " & ex.Message,
+                "Angajamente", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Finally
+            busyBar.Running = False
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Golește și repopulează lista + dicționarul Cod -> info. Fiecare rând: caption =
+    ''' Descriere (upper), celulă CodAngajament, iconiță de status (din Stare), refresh la
+    ''' hover, bold dacă are surse (comportament legacy), tooltip = Descriere, Tag = Cod.
+    ''' </summary>
+    Private Sub PopulateAngajamenteList(rows As IReadOnlyList(Of Angajament))
+        If rows Is Nothing Then Throw New ArgumentNullException(NameOf(rows))
         tree.Clear()
         _treeInfos.Clear()
         _currentInfo = Nothing
 
-        ' Presupune părinți înaintea copiilor în listă; un părinte lipsă se loghează
-        ' și nodul devine rădăcină (fără eșec tăcut).
-        Dim nodes As New Dictionary(Of String, AdvancedTreeControl.TreeItem)()
-        For Each info As AngajamentTreeInfo In items
-            Dim parent As AdvancedTreeControl.TreeItem = Nothing
-            If Not String.IsNullOrEmpty(info.ParentKey) AndAlso Not nodes.TryGetValue(info.ParentKey, parent) Then
-                _logger?.LogWarning($"LoadTree: părinte '{info.ParentKey}' negăsit pentru nodul '{info.NodeKey}' — adăugat ca rădăcină.")
-            End If
+        For Each a As Angajament In rows
+            Dim cod As String = If(a.CodAngajament, String.Empty)
+            Dim caption As String = If(a.Descriere, String.Empty).Trim().ToUpperInvariant()
+
             Dim node As AdvancedTreeControl.TreeItem =
-                tree.AddItem(info.NodeKey, info.Caption, pParent:=parent, pTag:=info.NodeKey)
-            nodes(info.NodeKey) = node
-            If Not String.IsNullOrEmpty(info.CodAngajament) Then
-                _treeInfos(info.NodeKey) = info
-            End If
+                tree.AddItem("D_" & cod, caption,
+                             pLeftIconClosed:=FxIcons.StatusIcon(a.Stare),
+                             pRightIcon:=FxIcons.RefreshIcon(),
+                             pTag:=cod)
+
+            node.Cells("CodAngajament") = New AdvancedTreeControl.TreeItem.CellData With {.Value = cod}
+            node.Bold = Not String.IsNullOrEmpty(a.Surse)   ' legacy: îngroșare = are surse
+            node.Tooltip = If(a.Descriere, String.Empty)
+            node.ShowRightIconOnHover = True
+
+            _treeInfos(cod) = BuildTreeInfo(a)
         Next
+
+        tree.Invalidate()
     End Sub
+
+    ' Angajament (rândul din GET) -> AngajamentTreeInfo (contextul purtat spre vederi).
+    Private Shared Function BuildTreeInfo(a As Angajament) As AngajamentTreeInfo
+        Return New AngajamentTreeInfo With {
+            .NodeKey = a.CodAngajament,
+            .Caption = a.Descriere,
+            .CodAngajament = a.CodAngajament,
+            .Descriere = a.Descriere,
+            .Stare = a.Stare,
+            .IDDF = If(a.IDDF.HasValue, CType(CLng(a.IDDF.Value), Long?), Nothing),
+            .DataCreare = a.DataCreare,
+            .EIncarcat = a.Incarcat,
+            .EPreluat = a.Preluat,
+            .AreIndicatori = Not String.IsNullOrEmpty(a.Surse)
+        }
+    End Function
 
 #If DEBUG Then
-    ' Eșantion mic, doar pe Debug: face shell-ul testabil vizual din harness
-    ' (selectare angajament vs. nod de capitol, purtarea contextului între vederi).
-    Private Sub LoadDebugSampleTree()
-        Dim items As New List(Of AngajamentTreeInfo) From {
-            New AngajamentTreeInfo With {
-                .NodeKey = "A|2026-0001", .Caption = "2026/0001 — Achiziție echipamente IT",
-                .CodAngajament = "2026-0001", .Stare = "definitivat", .AreIndicatori = True},
-            New AngajamentTreeInfo With {
-                .NodeKey = "A|2026-0001|R", .ParentKey = "A|2026-0001", .Caption = "Rezervări"},
-            New AngajamentTreeInfo With {
-                .NodeKey = "A|2026-0002", .Caption = "2026/0002 — Servicii mentenanță",
-                .CodAngajament = "2026-0002", .Stare = "în lucru"}
+    ' Eșantion mic, doar pe Debug: face shell-ul testabil vizual din harness fără login
+    ' (iconiță de status pe Stare, bold pe „are surse", selectare -> context).
+    Private Shared Function DebugSampleAngajamente() As IReadOnlyList(Of Angajament)
+        Return New List(Of Angajament) From {
+            New Angajament With {
+                .CodAngajament = "2026-0001", .Descriere = "Achiziție echipamente IT",
+                .Stare = "În derulare", .Surse = "02A;02B", .Incarcat = True, .Preluat = True},
+            New Angajament With {
+                .CodAngajament = "2026-0002", .Descriere = "Servicii mentenanță",
+                .Stare = "În definitivare", .Preluat = True},
+            New Angajament With {
+                .CodAngajament = "2026-0003", .Descriere = "Angajament anulat de test",
+                .Stare = "Anulat"}
         }
-        LoadTree(items)
-    End Sub
+    End Function
 #End If
 
-    ' Selecția din arbore împinge contextul către vederea activă. Nodurile fără
-    ' angajament (capitole) împing Nothing — vederea își arată starea goală.
+    ' Selecția din listă împinge contextul (AngajamentTreeInfo) către vederea activă.
     Private Sub tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
             Dim info As AngajamentTreeInfo = Nothing
-            Dim nodeKey As String = If(pNode Is Nothing, Nothing, TryCast(pNode.Tag, String))
-            If nodeKey IsNot Nothing Then
-                _treeInfos.TryGetValue(nodeKey, info)
+            Dim cod As String = If(pNode Is Nothing, Nothing, TryCast(pNode.Tag, String))
+            If cod IsNot Nothing Then
+                _treeInfos.TryGetValue(cod, info)
             End If
             _currentInfo = info
             _activeView?.SetContext(info)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.tree_NodeMouseUp", ex)
         End Try
+    End Sub
+
+    ' Click pe iconița de refresh (dreapta, la hover) — reîmprospătarea din FOREXE a
+    ' angajamentului e o felie separată; aici doar semnalăm, fără no-op tăcut.
+    Private Sub tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
+        Try
+            Dim cod As String = If(pNode Is Nothing, Nothing, TryCast(pNode.Tag, String))
+            If String.IsNullOrEmpty(cod) Then Return
+            RefreshAngajament(cod)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.tree_RightIconClicked", ex)
+        End Try
+    End Sub
+
+    ' Stub pentru reîmprospătarea unui angajament din FOREXE (felie viitoare).
+    Private Sub RefreshAngajament(cod As String)
+        _logger?.LogInfo($"Refresh angajament «{cod}» cerut (neimplementat în această felie).")
+        MessageBox.Show(Me,
+            $"Reîmprospătarea angajamentului «{cod}» din FOREXE va fi disponibilă într-o felie viitoare.",
+            "Refresh angajament", MessageBoxButtons.OK, MessageBoxIcon.Information)
     End Sub
 
     ' ---------------- FOREXE: conectare + sincronizare ----------------

@@ -104,7 +104,9 @@ Public NotInheritable Class ListaAngajamenteRoundTripLiveTest
         ' 6) POST to the demo DB, then read back and prove THIS run's rows persisted.
         Await apiClient.UpsertAngajamenteAsync(session.DbName, mapped, ct)
 
-        Dim readBack As IReadOnlyList(Of Angajament) = Await apiClient.GetAngajamenteAsync(session.DbName, session.An, ct)
+        ' id_unitate=0: în baza proprie a unității indicatorii au IdUnitate NULL/0;
+        ' COALESCE(IdUnitate,0)=0 le prinde. doarAnulate=False: lista completă.
+        Dim readBack As IReadOnlyList(Of Angajament) = Await apiClient.GetAngajamenteAsync(session.DbName, 0, False, ct)
         If readBack Is Nothing OrElse readBack.Count = 0 Then
             Return HarnessTestResult.Failed(
                 $"Read-back returned 0 rows for '{session.DbName}' after upserting {mapped.Count}." & logHint)

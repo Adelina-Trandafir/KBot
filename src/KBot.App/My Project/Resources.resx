@@ -62,4 +62,100 @@
   <data name="kbot_64" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\kbot_64.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="FX_GREEN_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_GREEN_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_GREEN_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_GREEN_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_GREEN_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_GREEN_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_GREEN_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_GREEN_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_RED_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_RED_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_RED_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_RED_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_RED_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_RED_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_RED_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_RED_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_ORANGE_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_ORANGE_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_ORANGE_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_ORANGE_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_ORANGE_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_ORANGE_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_ORANGE_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_ORANGE_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_GRAY_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_GRAY_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_GRAY_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_GRAY_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_GRAY_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_GRAY_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_GRAY_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_GRAY_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_BLUE_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_BLUE_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_BLUE_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_BLUE_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_BLUE_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_BLUE_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_BLUE_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_BLUE_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_WHITE_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_WHITE_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_WHITE_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_WHITE_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_WHITE_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_WHITE_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_WHITE_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_WHITE_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_REFRESH_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_REFRESH_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_REFRESH_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_REFRESH_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_REFRESH_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_REFRESH_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_REFRESH_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_REFRESH_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_REFRESH_DARK_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_REFRESH_DARK_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_REFRESH_DARK_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_REFRESH_DARK_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_REFRESH_DARK_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_REFRESH_DARK_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_REFRESH_DARK_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_REFRESH_DARK_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 </root>

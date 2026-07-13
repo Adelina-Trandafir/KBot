@@ -1071,6 +1071,11 @@ Partial Public Class AdvancedTreeControl
     ' Banda PROPRIE a randului (cache). Urca la parinte daca nodul nu are ColHeaderText.
     Private Function GetRowColumns(it As TreeItem) As List(Of ColumnDef)
         If it Is Nothing Then Return _columns
+        ' Mod static (DynamicColumns=False): toate randurile de pe ColumnsLevel impart
+        ' aceeasi banda globala instalata prin SetTreeListView (nu se rezolva per-nod
+        ' din ColHeaderText). Garanteaza alinierea celulelor cu headerul si filtrul,
+        ' care folosesc tot _columns. Modul flat-list (ConfigureListMode) trece pe aici.
+        If Not _dynamicColumns Then Return _columns
         If it.ResolvedCols IsNot Nothing Then Return it.ResolvedCols
 
         Dim src As TreeItem = it

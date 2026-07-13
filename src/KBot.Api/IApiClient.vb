@@ -13,7 +13,14 @@ Public Interface IApiClient
     Function UpsertAngajamenteAsync(dbName As String,
                                     rows As IReadOnlyList(Of Angajament),
                                     ct As CancellationToken) As Task(Of String)
-    Function GetAngajamenteAsync(dbName As String, an As Integer, ct As CancellationToken) As Task(Of IReadOnlyList(Of Angajament))
+    ''' <summary>
+    ''' Aduce lista de angajamente pentru vederea-listă din MainForm (oglindește
+    ''' Angajamente_SQL). Filtrează după COALESCE(IdUnitate,0)=idUnitate; doarAnulate
+    ''' comută pe filtrul anulate/suspendat/ascuns. Hard-fail (Throw) la non-2xx;
+    ''' fără retry pe 401 (curge spre WithReauth).
+    ''' </summary>
+    Function GetAngajamenteAsync(dbName As String, idUnitate As Integer, doarAnulate As Boolean,
+                                 ct As CancellationToken) As Task(Of IReadOnlyList(Of Angajament))
 
     ''' <summary>
     ''' Trimite un Excel (base64) la server pentru conversie în JSON (/api/tools/process_excel).

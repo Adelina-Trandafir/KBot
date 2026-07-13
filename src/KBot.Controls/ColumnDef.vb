@@ -1,5 +1,6 @@
-''' <summary>Definitia unei coloane in modul TreeListView. Populata din &lt;Columns&gt; XML.</summary>
-Friend Structure ColumnDef
+''' <summary>Definitia unei coloane in modul TreeListView. Populata din &lt;Columns&gt; XML
+''' sau construita in cod de apelanti externi (ex. MainForm via ConfigureListMode).</summary>
+Public Structure ColumnDef
     Dim Name As String
     Dim Header As String
     Dim Width As Integer
@@ -16,7 +17,7 @@ Friend Structure ColumnDef
 End Structure
 
 ''' <summary>Tipul de date al unei coloane TreeListView.</summary>
-Friend Enum En_ColType
+Public Enum En_ColType
     ColType_Text = 0
     ColType_Number = 1
     ColType_Date = 2
@@ -28,7 +29,7 @@ End Enum
 ''' ColAlign_Inherit (-1) este valid doar pe ColumnDef.HeaderAlign:
 ''' inseamna "mosteneste Align (celule)".
 ''' </summary>
-Friend Enum En_ColAlign
+Public Enum En_ColAlign
     ColAlign_Inherit = -1   ' sentinel: mosteneste Align celule (doar HeaderAlign)
     ColAlign_Left = 0
     ColAlign_Center = 1

@@ -81,14 +81,16 @@ Public Class ApiClient
         Loop
     End Function
 
-    ' Read-back for the ListaAngajamente round-trip. GETs the rows scoped to dbName
-    ' (server filters by DC = db_name). 'an' is forwarded for forward-compat but the
-    ' server ignores it (FX_Angajamente has no An column). Hard-fail (Throw) on non-2xx.
-    Public Async Function GetAngajamenteAsync(dbName As String, an As Integer, ct As CancellationToken) As Task(Of IReadOnlyList(Of Angajament)) Implements IApiClient.GetAngajamenteAsync
+    ' List query for the MainForm list view (mirrors Angajamente_SQL). Filters by
+    ' COALESCE(IdUnitate,0)=idUnitate; doarAnulate switches to the anulate/suspendat/
+    ' ascuns filter. Hard-fail (Throw ApiException) on non-2xx; a 401 bubbles to
+    ' WithReauth (no retry here).
+    Public Async Function GetAngajamenteAsync(dbName As String, idUnitate As Integer, doarAnulate As Boolean,
+                                              ct As CancellationToken) As Task(Of IReadOnlyList(Of Angajament)) Implements IApiClient.GetAngajamenteAsync
         EnsureConfigured()
         If String.IsNullOrEmpty(dbName) Then Throw New ArgumentException("dbName gol.", NameOf(dbName))
 
-        Dim url As String = $"/api/forexe/angajamente?db_name={Uri.EscapeDataString(dbName)}&an={an}"
+        Dim url As String = $"/api/forexe/angajamente?db_name={Uri.EscapeDataString(dbName)}&id_unitate={idUnitate}&doar_anulate={If(doarAnulate, 1, 0)}"
 
         Using msg As New HttpRequestMessage(HttpMethod.Get, url)
             msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
@@ -101,11 +103,18 @@ Public Class ApiClient
                 Dim payload As GetAngajamenteResponse = JsonSerializer.Deserialize(Of GetAngajamenteResponse)(respText, _json)
                 Dim result As New List(Of Angajament)()
                 If payload IsNot Nothing AndAlso payload.rows IsNot Nothing Then
-                    For Each r As AngajamentRow In payload.rows
+                    For Each r As GetAngajamenteRow In payload.rows
                         result.Add(New Angajament() With {
                             .CodAngajament = If(r.Cod, String.Empty),
                             .Descriere = If(r.Descriere, String.Empty),
-                            .Stare = If(r.Stare, String.Empty)
+                            .Stare = If(r.Stare, String.Empty),
+                            .IDDF = r.IDDF,
+                            .Surse = r.Surse,
+                            .Incarcat = r.Incarcat,
+                            .Preluat = r.Preluat,
+                            .Salarii = r.Salarii,
+                            .Ascuns = r.Ascuns,
+                            .DataCreare = r.DataCreare
                         })
                     Next
                 End If

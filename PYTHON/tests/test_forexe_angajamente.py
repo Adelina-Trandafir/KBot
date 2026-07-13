@@ -71,39 +71,112 @@ def test_empty_cod_is_skipped(client, auth_headers):
     assert r.get_json().get("written") == 0
 
 
+# The GET list query requires db_name + id_unitate (int); id_unitate=0 matches the
+# indicatori rows whose IdUnitate is NULL/0 (per-unit database convention).
+GET_Q = GET_URL + "?db_name=" + DB_NAME + "&id_unitate=0"
+
+
 def test_get_missing_db_name_returns_400(client, auth_headers):
-    r = client.get(GET_URL, headers=auth_headers)
+    r = client.get(GET_URL + "?id_unitate=0", headers=auth_headers)
+    assert r.status_code == 400
+
+
+def test_get_missing_id_unitate_returns_400(client, auth_headers):
+    r = client.get(GET_URL + "?db_name=" + DB_NAME, headers=auth_headers)
+    assert r.status_code == 400
+
+
+def test_get_bad_id_unitate_returns_400(client, auth_headers):
+    r = client.get(GET_URL + "?db_name=" + DB_NAME + "&id_unitate=abc", headers=auth_headers)
+    assert r.status_code == 400
+
+
+def test_get_bad_db_name_returns_400(client, auth_headers):
+    # DB_NAME_REGEX = ^[A-Za-z0-9_]+$ — a semicolon fails validation before any DB call.
+    r = client.get(GET_URL + "?db_name=bad;name&id_unitate=0", headers=auth_headers)
     assert r.status_code == 400
 
 
 def test_get_missing_token_is_rejected(client):
-    r = client.get(GET_URL + "?db_name=" + DB_NAME)
+    r = client.get(GET_Q)
     assert r.status_code == 401
 
 
 def test_get_returns_list_shape(client, auth_headers):
-    r = client.get(GET_URL + "?db_name=" + DB_NAME, headers=auth_headers)
+    r = client.get(GET_Q, headers=auth_headers)
     assert r.status_code == 200
     body = r.get_json()
     assert body["db_name"] == DB_NAME
     assert isinstance(body["rows"], list)
     assert body["count"] == len(body["rows"])
+    # Every row carries the wire contract keys.
+    for row in body["rows"]:
+        for key in ("Cod", "Descriere", "Stare", "IDDF", "Surse",
+                    "Incarcat", "Preluat", "Salarii", "Ascuns", "DataCreare"):
+            assert key in row
 
 
-def test_upsert_then_get_finds_the_row(client, auth_headers):
-    """End-to-end (server side): a POSTed code is visible via GET, then cleaned up."""
+def test_get_orphan_row_has_null_surse_and_sorts_last(client, auth_headers):
+    """An angajament with NO FX_Indicatori rows appears via the orphan branch
+    (scoped by DC = db_name) with Surse = null and O = 1 (sorts after main rows)."""
     conn = get_db_connection(DB_NAME)
     try:
-        body = {"db_name": DB_NAME, "rows": [{"Cod": "T2", "Descriere": "GD", "Stare": "GS"}]}
-        assert client.post(URL, headers=auth_headers, data=json.dumps(body)).status_code == 200
+        cur = conn.cursor()
+        cur.execute("DELETE FROM FX_Angajamente WHERE CodAngajament = %s", ("ORPH1",))
+        cur.execute(
+            "INSERT INTO FX_Angajamente (CodAngajament, Descriere, Stare, DC, Preluat) "
+            "VALUES (%s, %s, %s, %s, 1)",
+            ("ORPH1", "Orfan fara indicatori", "În derulare", DB_NAME),
+        )
+        conn.commit()
 
-        r = client.get(GET_URL + "?db_name=" + DB_NAME, headers=auth_headers)
+        r = client.get(GET_Q, headers=auth_headers)
         assert r.status_code == 200
-        codes = {row["Cod"] for row in r.get_json()["rows"]}
-        assert "T2" in codes
+        rows = r.get_json()["rows"]
+        match = next((row for row in rows if row["Cod"] == "ORPH1"), None)
+        assert match is not None, "orphan row not returned"
+        assert match["Surse"] is None
     finally:
-        cleanup = conn.cursor()
-        cleanup.execute("DELETE FROM FX_Angajamente WHERE CodAngajament = %s", ("T2",))
+        cur = conn.cursor()
+        cur.execute("DELETE FROM FX_Angajamente WHERE CodAngajament = %s", ("ORPH1",))
+        conn.commit()
+        conn.close()
+
+
+def test_get_doar_anulate_switches_the_filter(client, auth_headers):
+    """doar_anulate=1 replaces the IdUnitate filter with the anulate/suspendat/ascuns
+    condition: a row whose IdUnitate would NOT match id_unitate=0 is hidden normally
+    but visible when doar_anulate=1 because its Stare contains 'Anulat'."""
+    conn = get_db_connection(DB_NAME)
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM FX_Indicatori WHERE CodAngajament = %s", ("ANUL1",))
+        cur.execute("DELETE FROM FX_Angajamente WHERE CodAngajament = %s", ("ANUL1",))
+        cur.execute(
+            "INSERT INTO FX_Angajamente (CodAngajament, Descriere, Stare, DC, Preluat) "
+            "VALUES (%s, %s, %s, %s, 1)",
+            ("ANUL1", "Angajament anulat", "Anulat", DB_NAME),
+        )
+        # IdUnitate=777 so COALESCE(IdUnitate,0)=0 is FALSE -> hidden in the normal
+        # (id_unitate=0) query, but the row is in the main branch (has an indicator).
+        cur.execute(
+            "INSERT INTO FX_Indicatori (CodAI, CodAngajament, IdUnitate, SS) "
+            "VALUES (%s, %s, %s, %s)",
+            ("ANUL1-AAB", "ANUL1", 777, "02A"),
+        )
+        conn.commit()
+
+        normal = client.get(GET_Q, headers=auth_headers)
+        assert normal.status_code == 200
+        assert not any(row["Cod"] == "ANUL1" for row in normal.get_json()["rows"])
+
+        anulate = client.get(GET_Q + "&doar_anulate=1", headers=auth_headers)
+        assert anulate.status_code == 200
+        assert any(row["Cod"] == "ANUL1" for row in anulate.get_json()["rows"])
+    finally:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM FX_Indicatori WHERE CodAngajament = %s", ("ANUL1",))
+        cur.execute("DELETE FROM FX_Angajamente WHERE CodAngajament = %s", ("ANUL1",))
         conn.commit()
         conn.close()
 
