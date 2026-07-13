@@ -41,8 +41,7 @@ Public NotInheritable Class ListaAngajamenteApiClientUpsertTest
     Private Shared Function AuthedSession() As SessionContext
         Dim s As New SessionContext()
         s.Populate("test-op", "TEST-TOKEN", New SessionContextDto With {
-            .DbName = "000_DEMO", .IdUnitate = 1, .ANL = 2026,
-            .CodProgram = "P", .SectorSursa = "02A", .CF = "1", .NumeUnitate = "DEMO"})
+            .DbName = "000_DEMO", .CF = "1", .NumeUnitate = "DEMO", .Role = "Contabil"})
         Return s
     End Function
 

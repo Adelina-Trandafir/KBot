@@ -11,15 +11,17 @@ Imports KBot.Domain
 
 ' Implementarea clientului de login. Refoloseste HttpClient-ul injectat (BaseAddress
 ' + Timeout setate la DI, ca ApiClient). Apelurile pre-auth (units, login) NU poarta
-' niciun header de autorizare — credentialele sunt in corp, peste TLS; logout poarta
-' token-ul bearer. Caile sunt relative "/api/auth/..." — acelasi tipar ca ApiClient.
+' niciun header de autorizare — credentialele sunt in corp, peste TLS; logout / periods /
+' last-ss poarta token-ul bearer. Caile sunt relative "/api/auth/..." — acelasi tipar
+' ca ApiClient.
 Public NotInheritable Class AuthApi
     Implements IAuthApi
 
     Private ReadOnly _http As HttpClient
 
-    ' Numele proprietatilor raman neschimbate (contract Python), dar acceptam si
-    ' potriviri case-insensitive pentru robustete la raspunsuri.
+    ' PropertyNamingPolicy=Nothing => numele proprietatilor raman verbatim (contract
+    ' Python). DTO-urile de cerere isi forteaza cheile lowercase cu <JsonPropertyName>.
+    ' Deserializarea accepta si potriviri case-insensitive pentru robustete.
     Private Shared ReadOnly _json As JsonSerializerOptions =
         New JsonSerializerOptions With {
             .PropertyNamingPolicy = Nothing,
@@ -32,25 +34,24 @@ Public NotInheritable Class AuthApi
     End Sub
 
     Public Async Function GetUnitsAsync(username As String, password As String,
-                                        an As Integer?, ct As CancellationToken) _
+                                        ct As CancellationToken) _
         As Task(Of IReadOnlyList(Of UnitInfo)) Implements IAuthApi.GetUnitsAsync
 
-        Dim payload = New With {Key .username = username, Key .password = password, Key .an = an}
-        Dim respText As String = Await SendAsync("/api/auth/units", payload, "listarea unităților", ct).ConfigureAwait(False)
+        Dim payload As New UnitsRequest With {.Username = username, .Password = password}
+        Dim respText As String = Await PostAsync("/api/auth/units", payload, "listarea unităților", ct).ConfigureAwait(False)
 
         Dim body As UnitsResponse = JsonSerializer.Deserialize(Of UnitsResponse)(respText, _json)
         If body Is Nothing OrElse body.Units Is Nothing Then Return Array.Empty(Of UnitInfo)()
         Return body.Units
     End Function
 
-    Public Async Function LoginAsync(username As String, password As String, idUnitate As Integer,
-                                     pcname As String, ct As CancellationToken) _
+    Public Async Function LoginAsync(username As String, password As String, dc As String,
+                                     machine As String, ct As CancellationToken) _
         As Task(Of LoginResult) Implements IAuthApi.LoginAsync
 
-        Dim payload = New With {
-            Key .username = username, Key .password = password,
-            Key .IdUnitate = idUnitate, Key .pcname = pcname}
-        Dim respText As String = Await SendAsync("/api/auth/login", payload, "autentificare", ct).ConfigureAwait(False)
+        Dim payload As New LoginRequest With {
+            .Username = username, .Password = password, .DbName = dc, .Machine = machine}
+        Dim respText As String = Await PostAsync("/api/auth/login", payload, "autentificare", ct).ConfigureAwait(False)
 
         Dim result As LoginResult = JsonSerializer.Deserialize(Of LoginResult)(respText, _json)
         If result Is Nothing OrElse result.SessionContext Is Nothing OrElse String.IsNullOrEmpty(result.Token) Then
@@ -62,13 +63,32 @@ Public NotInheritable Class AuthApi
     Public Async Function LogoutAsync(token As String, ct As CancellationToken) _
         As Task Implements IAuthApi.LogoutAsync
         ' Corp gol; token-ul din header identifica sesiunea de revocat.
-        Await SendAsync("/api/auth/logout", New Object(), "deconectare", ct, bearer:=token).ConfigureAwait(False)
+        Await PostAsync("/api/auth/logout", New Object(), "deconectare", ct, bearer:=token).ConfigureAwait(False)
+    End Function
+
+    Public Async Function GetPeriodsAsync(token As String, dbName As String,
+                                          ct As CancellationToken) _
+        As Task(Of IReadOnlyList(Of PeriodInfo)) Implements IAuthApi.GetPeriodsAsync
+
+        Dim url As String = "/api/auth/periods?db_name=" & Uri.EscapeDataString(If(dbName, String.Empty))
+        Dim respText As String = Await GetAsync(url, "citirea perioadelor", ct, bearer:=token).ConfigureAwait(False)
+
+        Dim body As PeriodsResponse = JsonSerializer.Deserialize(Of PeriodsResponse)(respText, _json)
+        If body Is Nothing OrElse body.Periods Is Nothing Then Return Array.Empty(Of PeriodInfo)()
+        Return body.Periods
+    End Function
+
+    Public Async Function SaveLastSsAsync(token As String, ss As String, ct As CancellationToken) _
+        As Task Implements IAuthApi.SaveLastSsAsync
+
+        Dim payload As New LastSsRequest With {.Ss = ss}
+        Await PostAsync("/api/auth/last-ss", payload, "salvarea SS", ct, bearer:=token).ConfigureAwait(False)
     End Function
 
     ' POST JSON (+ Authorization: Bearer doar cand exista token). Intoarce corpul brut
     ' la 2xx; altfel Throw ApiException cu mesajul serverului (sau fallback pe cod) si
     ' codul HTTP atasat. Nu inghite niciodata.
-    Private Async Function SendAsync(path As String, payload As Object,
+    Private Async Function PostAsync(path As String, payload As Object,
                                      actiune As String, ct As CancellationToken,
                                      Optional bearer As String = Nothing) As Task(Of String)
         EnsureConfigured()
@@ -78,11 +98,28 @@ Public NotInheritable Class AuthApi
                 msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", bearer)
             End If
             msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
-            Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
-                Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
-                If resp.IsSuccessStatusCode Then Return respText
-                Throw New ApiException(BuildError(respText, actiune, resp.StatusCode), CInt(resp.StatusCode))
-            End Using
+            Return Await SendAsync(msg, actiune, ct).ConfigureAwait(False)
+        End Using
+    End Function
+
+    ' GET (+ Authorization: Bearer). Aceleasi reguli de eroare ca PostAsync.
+    Private Async Function GetAsync(path As String, actiune As String, ct As CancellationToken,
+                                    Optional bearer As String = Nothing) As Task(Of String)
+        EnsureConfigured()
+        Using msg As New HttpRequestMessage(HttpMethod.Get, path)
+            If Not String.IsNullOrEmpty(bearer) Then
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", bearer)
+            End If
+            Return Await SendAsync(msg, actiune, ct).ConfigureAwait(False)
+        End Using
+    End Function
+
+    Private Async Function SendAsync(msg As HttpRequestMessage, actiune As String,
+                                     ct As CancellationToken) As Task(Of String)
+        Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+            Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+            If resp.IsSuccessStatusCode Then Return respText
+            Throw New ApiException(BuildError(respText, actiune, resp.StatusCode), CInt(resp.StatusCode))
         End Using
     End Function
 
@@ -110,8 +147,31 @@ Public NotInheritable Class AuthApi
         End If
     End Sub
 
+    ' ---- DTO-uri de cerere: forteaza cheile lowercase pe care serverul le citeste ----
+    ' (serializatorul pastreaza numele verbatim, deci le fixam explicit).
+    Private NotInheritable Class UnitsRequest
+        <JsonPropertyName("username")> Public Property Username As String
+        <JsonPropertyName("password")> Public Property Password As String
+    End Class
+
+    Private NotInheritable Class LoginRequest
+        <JsonPropertyName("username")> Public Property Username As String
+        <JsonPropertyName("password")> Public Property Password As String
+        <JsonPropertyName("db_name")> Public Property DbName As String
+        <JsonPropertyName("machine")> Public Property Machine As String
+    End Class
+
+    Private NotInheritable Class LastSsRequest
+        <JsonPropertyName("ss")> Public Property Ss As String
+    End Class
+
+    ' ---- DTO-uri de raspuns ----
     Private NotInheritable Class UnitsResponse
         <JsonPropertyName("units")> Public Property Units As List(Of UnitInfo)
+    End Class
+
+    Private NotInheritable Class PeriodsResponse
+        <JsonPropertyName("periods")> Public Property Periods As List(Of PeriodInfo)
     End Class
 
     Private NotInheritable Class ErrorResponse

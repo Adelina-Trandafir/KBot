@@ -54,15 +54,15 @@ Public NotInheritable Class AuthLiveTest
         Dim auth As IAuthApi = context.GetService(Of IAuthApi)()
 
         ' 1) Faza 1: unitati accesibile.
-        Dim units As IReadOnlyList(Of UnitInfo) = Await auth.GetUnitsAsync(user, pass, Nothing, ct)
-        Dim demo As UnitInfo = units.FirstOrDefault(Function(u) u.DbName = "000_DEMO")
+        Dim units As IReadOnlyList(Of UnitInfo) = Await auth.GetUnitsAsync(user, pass, ct)
+        Dim demo As UnitInfo = units.FirstOrDefault(Function(u) u.DC = "000_DEMO")
         If demo Is Nothing Then
             Return LogAndReturn(HarnessTestResult.Failed(
                 $"Operatorul '{user}' nu vede 000_DEMO ({units.Count} unitati)."), user)
         End If
 
-        ' 2) Faza 2: login pe 000_DEMO.
-        Dim result As LoginResult = Await auth.LoginAsync(user, pass, demo.IdUnitate, "DEVHARNESS", ct)
+        ' 2) Faza 2: login pe 000_DEMO (identificata prin DC).
+        Dim result As LoginResult = Await auth.LoginAsync(user, pass, demo.DC, "DEVHARNESS", ct)
         If result.SessionContext.DbName <> "000_DEMO" Then
             Return LogAndReturn(HarnessTestResult.Failed(
                 $"SessionContext.DbName='{result.SessionContext.DbName}', asteptat 000_DEMO."), user)

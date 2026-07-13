@@ -1,30 +1,58 @@
 Imports System
 Imports System.Collections.Generic
+Imports System.Drawing
 Imports System.IO
+Imports System.Linq
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Threading
+Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports KBot.Api
 Imports KBot.Common
+Imports KBot.Controls
 Imports KBot.Domain
 Imports KBot.Forexe
+Imports KBot.Theming
 ' RichTextBoxLogger și CertificateSelectionForm sunt în namespace global (din KBot.Forexe).
 
+''' <summary>
+''' Shell-ul principal K-BOT — echivalentul Access frmFX_MAIN (DOAR el; Meniul rămâne
+''' un concept separat). Trei coloane: navigația vederilor (stânga), arborele de
+''' angajamente (mijloc) și vederea activă (dreapta). Vederile sunt UserControl-uri
+''' create lazy (PlaceholderView în această felie); starea nodului selectat circulă
+''' ca AngajamentTreeInfo, nu ca textbox-uri ascunse.
+''' </summary>
 Public Class MainForm
 
     Private ReadOnly _forexeRunner As IForexeRunner
     Private ReadOnly _session As SessionContext
     Private ReadOnly _apiClient As IApiClient
+    Private ReadOnly _authApi As IAuthApi
     Private ReadOnly _loginFactory As Func(Of LoginForm)
     Private _logger As RichTextBoxLogger
     Private _cts As CancellationTokenSource
 
+    ' Catalogul an / SS / CodProgram al bazei curente (din /api/auth/periods).
+    Private _periods As IReadOnlyList(Of PeriodInfo)
+    ' Suprima logica din SelectedIndexChanged cat timp umplem combo-urile programatic
+    ' (setarea DataSource / SelectedIndex declanseaza evenimentele).
+    Private _suppressPeriodEvents As Boolean
+
+    ' Vederile create lazy (cheie -> instanță); una singură e vizibilă.
+    Private ReadOnly _views As New Dictionary(Of String, IAngajamentView)()
+    Private _activeView As IAngajamentView
+    ' Contextul selecției curente din arbore (Nothing = nimic selectat / nod de capitol).
+    Private _currentInfo As AngajamentTreeInfo
+    ' NodeKey -> info, reconstruit la fiecare LoadTree.
+    Private ReadOnly _treeInfos As New Dictionary(Of String, AngajamentTreeInfo)()
+
     Public Sub New(forexeRunner As IForexeRunner, session As SessionContext,
-                   apiClient As IApiClient, loginFactory As Func(Of LoginForm))
+                   apiClient As IApiClient, authApi As IAuthApi, loginFactory As Func(Of LoginForm))
         InitializeComponent()
         _forexeRunner = forexeRunner
         _session = session
         _apiClient = apiClient
+        _authApi = authApi
         _loginFactory = loginFactory
         Me.Text = "K-BOT"
     End Sub
@@ -53,66 +81,301 @@ Public Class MainForm
         Return Await action().ConfigureAwait(True)   ' o singură reîncercare
     End Function
 
-    Private Sub MainForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        ' Logger FOREXE legat de panoul de log + fișier în <AppDir>\Logs
-        _logger = New RichTextBoxLogger(rtbLog)
+    Private Async Sub MainForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        ' Logger FOREXE doar-fișier: shell-ul nu mai are panou de log (rtbLog a dispărut);
+        ' liniile merg în <AppDir>\Logs, progresul vizual e busyBar. RichTextBox real,
+        ' neafișat (nu Nothing): SetColorScheme→RefreshDisplay dereferențiază controlul
+        ' (același pattern ca ForexeConnectTest din harness).
         Dim logDir As String = Path.Combine(AppContext.BaseDirectory, "Logs")
         Directory.CreateDirectory(logDir)
-        _logger.LogFilePath = Path.Combine(logDir, $"Log_{DateTime.Now:yyyyMMdd_HHmmss}.txt")
+        _logger = New RichTextBoxLogger(New RichTextBox()) With {
+            .EnableUI = False,
+            .LogFilePath = Path.Combine(logDir, $"Log_{DateTime.Now:yyyyMMdd_HHmmss}.txt")
+        }
 
         ' Atașează logger-ul FOREXE la runner (aceeași instanță singleton)
         DirectCast(_forexeRunner, ForexeRunner).AttachLogger(_logger)
+
+        ' Identitate: caption + bara de status (din SessionContext).
+        capBar.IconImage = My.Resources.kbot_64
+        capBar.Text = If(String.IsNullOrEmpty(_session.NumeUnitate), "K-BOT", "K-BOT — " & _session.NumeUnitate)
+        lblUnit.Text = If(String.IsNullOrEmpty(_session.NumeUnitate), String.Empty, _session.NumeUnitate)
+        lblOperator.Text = If(String.IsNullOrEmpty(_session.OperatorName), String.Empty, _session.OperatorName)
+        lblProgram.Text = String.Empty   ' se completează după alegerea perioadei (SetPeriod)
+
+        ' Navigația vederilor — ordinea paginilor din Access, Sumar implicit.
+        navViews.AddItem("sumar", "Sumar")
+        navViews.AddItem("rezervari", "Rezervări")
+        navViews.AddItem("receptii", "Recepții")
+        navViews.AddItem("plati", "Plăți")
+        navViews.AddItem("ddf", "DDF")
+        navViews.AddItem("ord", "ORD")
+        navViews.SelectedKey = "sumar"   ' declanșează SelectionChanged -> creează vederea
+
+        ' Arborele: gol în această felie (sursa reală de date e o felie viitoare);
+        ' pe Debug se încarcă un eșantion mic ca shell-ul să fie testabil vizual.
+        LoadTree(Array.Empty(Of AngajamentTreeInfo)())
+#If DEBUG Then
+        LoadDebugSampleTree()
+#End If
+
+        UpdateForexeStatus()
+
+        ' Combo-urile an / SS se umplu doar cu o sesiune autentificată (calea Release
+        ' trece prin login; în harness-ul Debug fereastra se poate deschide fără login).
+        If _session.IsAuthenticated AndAlso Not String.IsNullOrEmpty(_session.DbName) Then
+            Await LoadPeriodsAsync()
+        Else
+            cboAn.Enabled = False
+            cboSs.Enabled = False
+        End If
     End Sub
 
-    Private Async Sub btnConnect_Click(sender As Object, e As EventArgs) Handles btnConnect.Click
-        Dim cert As X509Certificate2 = SelectCertificate()
-        If cert Is Nothing Then Return   ' anulat / fără certificat
+    ' ---------------- perioade (an / SS / CodProgram) ----------------
 
-        btnConnect.Enabled = False
-        pbProgress.Maximum = 100
-        pbProgress.Value = 0
-        _cts = New CancellationTokenSource()
+    ''' <summary>
+    ''' Aduce catalogul an / SS / CodProgram al bazei curente și umple combo-urile.
+    ''' Anul implicit e cel mai mare; SS-ul pornește din LastSS (dacă e valabil în acel
+    ''' an), altfel primul. Un eșec de citire nu blochează fereastra — doar dezactivează.
+    ''' </summary>
+    Private Async Function LoadPeriodsAsync() As Task
+        Try
+            _periods = Await _authApi.GetPeriodsAsync(_session.Token, _session.DbName, CancellationToken.None)
+        Catch ex As Exception
+            _logger.LogException(ex, "Eroare la citirea perioadelor")
+            cboAn.Enabled = False
+            cboSs.Enabled = False
+            Return
+        End Try
+
+        If _periods Is Nothing OrElse _periods.Count = 0 Then
+            _logger.LogWarning("Nicio perioadă (an/SS) configurată pentru această unitate.")
+            cboAn.Enabled = False
+            cboSs.Enabled = False
+            Return
+        End If
+
+        _suppressPeriodEvents = True
+        Dim years = _periods.Select(Function(p) p.AN).Distinct().OrderByDescending(Function(y) y).ToList()
+        cboAn.DataSource = years
+        cboAn.SelectedIndex = 0            ' cel mai mare an
+        _suppressPeriodEvents = False
+
+        LoadSsForSelectedYear()
+    End Function
+
+    ' Umple SS-urile anului selectat; preselectează LastSS dacă există în acel an.
+    Private Sub LoadSsForSelectedYear()
+        If _periods Is Nothing OrElse cboAn.SelectedItem Is Nothing Then Return
+        Dim an As Integer = CInt(cboAn.SelectedItem)
+        Dim ssList = _periods.Where(Function(p) p.AN = an).
+                              Select(Function(p) p.SS).Distinct().ToList()
+
+        _suppressPeriodEvents = True
+        cboSs.DataSource = ssList
+        Dim idx As Integer = If(String.IsNullOrEmpty(_session.LastSS), -1, ssList.IndexOf(_session.LastSS))
+        cboSs.SelectedIndex = If(idx >= 0, idx, If(ssList.Count > 0, 0, -1))
+        _suppressPeriodEvents = False
+
+        ApplySelectedPeriod(persist:=False)   ' nu re-salvam valoarea deja memorata
+    End Sub
+
+    ' Fixează perioada pe sesiune din selecția curentă; opțional o memorează pe server.
+    Private Sub ApplySelectedPeriod(persist As Boolean)
+        If _periods Is Nothing OrElse cboAn.SelectedItem Is Nothing OrElse cboSs.SelectedItem Is Nothing Then Return
+        Dim an As Integer = CInt(cboAn.SelectedItem)
+        Dim ss As String = CStr(cboSs.SelectedItem)
+        Dim row As PeriodInfo = _periods.FirstOrDefault(Function(p) p.AN = an AndAlso p.SS = ss)
+        If row Is Nothing Then Return
+
+        _session.SetPeriod(an, ss, row.CodProgram)
+        lblProgram.Text = If(String.IsNullOrEmpty(row.CodProgram), String.Empty, "Program: " & row.CodProgram)
+        If persist Then PersistLastSs(ss)
+    End Sub
+
+    ' Fire-and-forget: memorarea SS-ului nu trebuie să blocheze utilizatorul; un eșec
+    ' se logează. Async Sub cu try/catch = nu poate dărâma aplicația.
+    Private Async Sub PersistLastSs(ss As String)
+        Try
+            Await _authApi.SaveLastSsAsync(_session.Token, ss, CancellationToken.None)
+        Catch ex As Exception
+            _logger?.LogWarning($"Nu s-a putut memora SS '{ss}': {ex.Message}")
+        End Try
+    End Sub
+
+    Private Sub cboAn_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboAn.SelectedIndexChanged
+        If _suppressPeriodEvents Then Return
+        LoadSsForSelectedYear()
+    End Sub
+
+    Private Sub cboSs_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSs.SelectedIndexChanged
+        If _suppressPeriodEvents Then Return
+        ApplySelectedPeriod(persist:=True)
+    End Sub
+
+    ' ---------------- vederi (navigație stânga) ----------------
+
+    Private Sub navViews_SelectionChanged(key As String) Handles navViews.SelectionChanged
+        ActivateView(key)
+    End Sub
+
+    ' Creează vederea la prima activare (lazy), o arată și îi împinge contextul curent.
+    Private Sub ActivateView(key As String)
+        Dim view As IAngajamentView = Nothing
+        If Not _views.TryGetValue(key, view) Then
+            view = CreateView(key)
+            Dim ctrl As Control = DirectCast(view, Control)
+            ctrl.Dock = DockStyle.Fill
+            ctrl.Visible = False
+            viewHost.Controls.Add(ctrl)
+            ThemeManager.Apply(ctrl)
+            _views(key) = view
+            _logger?.LogDebug($"Vedere '{key}' creată (lazy).")
+        End If
+
+        Dim previous As IAngajamentView = _activeView
+        _activeView = view
+        DirectCast(view, Control).Visible = True
+        If previous IsNot Nothing AndAlso Not ReferenceEquals(previous, view) Then
+            DirectCast(previous, Control).Visible = False
+        End If
+        ' Doar vederea ACTIVĂ primește contextul; celelalte îl primesc la activare.
+        view.SetContext(_currentInfo)
+    End Sub
+
+    Private Function CreateView(key As String) As IAngajamentView
+        Select Case key
+            Case "sumar" : Return New PlaceholderView(key, "Sumar")
+            Case "rezervari" : Return New PlaceholderView(key, "Rezervări")
+            Case "receptii" : Return New PlaceholderView(key, "Recepții")
+            Case "plati" : Return New PlaceholderView(key, "Plăți")
+            Case "ddf" : Return New PlaceholderView(key, "DDF")
+            Case "ord" : Return New PlaceholderView(key, "ORD")
+            Case Else
+                Throw New ArgumentException($"Vedere necunoscută: '{key}'.", NameOf(key))
+        End Select
+    End Function
+
+    ' ---------------- arbore ----------------
+
+    ''' <summary>
+    ''' Golește și reconstruiește arborele + dicționarul NodeKey -> info. Doar nodurile
+    ''' cu CodAngajament intră în dicționar (nodurile de capitol/nivel intermediar împing
+    ''' Nothing către vederi). Sursa reală de date (API pe qFX_MAIN_TREE) e o felie viitoare.
+    ''' </summary>
+    Public Sub LoadTree(items As IReadOnlyList(Of AngajamentTreeInfo))
+        If items Is Nothing Then Throw New ArgumentNullException(NameOf(items))
+        tree.Clear()
+        _treeInfos.Clear()
+        _currentInfo = Nothing
+
+        ' Presupune părinți înaintea copiilor în listă; un părinte lipsă se loghează
+        ' și nodul devine rădăcină (fără eșec tăcut).
+        Dim nodes As New Dictionary(Of String, AdvancedTreeControl.TreeItem)()
+        For Each info As AngajamentTreeInfo In items
+            Dim parent As AdvancedTreeControl.TreeItem = Nothing
+            If Not String.IsNullOrEmpty(info.ParentKey) AndAlso Not nodes.TryGetValue(info.ParentKey, parent) Then
+                _logger?.LogWarning($"LoadTree: părinte '{info.ParentKey}' negăsit pentru nodul '{info.NodeKey}' — adăugat ca rădăcină.")
+            End If
+            Dim node As AdvancedTreeControl.TreeItem =
+                tree.AddItem(info.NodeKey, info.Caption, pParent:=parent, pTag:=info.NodeKey)
+            nodes(info.NodeKey) = node
+            If Not String.IsNullOrEmpty(info.CodAngajament) Then
+                _treeInfos(info.NodeKey) = info
+            End If
+        Next
+    End Sub
+
+#If DEBUG Then
+    ' Eșantion mic, doar pe Debug: face shell-ul testabil vizual din harness
+    ' (selectare angajament vs. nod de capitol, purtarea contextului între vederi).
+    Private Sub LoadDebugSampleTree()
+        Dim items As New List(Of AngajamentTreeInfo) From {
+            New AngajamentTreeInfo With {
+                .NodeKey = "A|2026-0001", .Caption = "2026/0001 — Achiziție echipamente IT",
+                .CodAngajament = "2026-0001", .Stare = "definitivat", .AreIndicatori = True},
+            New AngajamentTreeInfo With {
+                .NodeKey = "A|2026-0001|R", .ParentKey = "A|2026-0001", .Caption = "Rezervări"},
+            New AngajamentTreeInfo With {
+                .NodeKey = "A|2026-0002", .Caption = "2026/0002 — Servicii mentenanță",
+                .CodAngajament = "2026-0002", .Stare = "în lucru"}
+        }
+        LoadTree(items)
+    End Sub
+#End If
+
+    ' Selecția din arbore împinge contextul către vederea activă. Nodurile fără
+    ' angajament (capitole) împing Nothing — vederea își arată starea goală.
+    Private Sub tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
+        Try
+            Dim info As AngajamentTreeInfo = Nothing
+            Dim nodeKey As String = If(pNode Is Nothing, Nothing, TryCast(pNode.Tag, String))
+            If nodeKey IsNot Nothing Then
+                _treeInfos.TryGetValue(nodeKey, info)
+            End If
+            _currentInfo = info
+            _activeView?.SetContext(info)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.tree_NodeMouseUp", ex)
+        End Try
+    End Sub
+
+    ' ---------------- FOREXE: conectare + sincronizare ----------------
+
+    Private Function HasLiveForexeSession() As Boolean
+        Return DirectCast(_forexeRunner, ForexeRunner).HasLiveSession
+    End Function
+
+    Private Sub UpdateForexeStatus()
+        Dim connected As Boolean = HasLiveForexeSession()
+        lblForexe.Text = If(connected, "● Forexe: conectat", "● Forexe: neconectat")
+        Dim p = ThemeManager.Current.Palette
+        lblForexe.ForeColor = If(connected, p.SuccessColor, p.TextDimColor)
+    End Sub
+
+    ''' <summary>
+    ''' Asigură o sesiune FOREXE vie: dacă nu există, rulează fluxul de conectare
+    ''' (certificat + workflow „Conectare"). Întoarce False dacă operatorul anulează
+    ''' sau conectarea eșuează. Ownership-ul conexiunii rămâne la IForexeRunner —
+    ''' shell-ul doar o cere la nevoie (sensul Access al lui btnSinc).
+    ''' </summary>
+    Private Async Function EnsureForexeSessionAsync(progress As IProgress(Of Integer), ct As CancellationToken) As Task(Of Boolean)
+        If HasLiveForexeSession() Then Return True
+
+        Dim cert As X509Certificate2 = SelectCertificate()
+        If cert Is Nothing Then Return False   ' anulat / fără certificat
 
         Dim job As New JobRequest With {
             .WorkflowName = "Conectare",
             .WflPath = Path.Combine(AppContext.BaseDirectory, "Workflows", "adlop - Conectare.wfl")
         }
-
-        Dim progress As New Progress(Of Integer)(Sub(p) pbProgress.Value = Math.Min(p, pbProgress.Maximum))
-
-        Try
-            Dim result As JobResult = Await _forexeRunner.RunAsync(job, cert, progress, _cts.Token)
-            If result.Success Then
-                btnConnect.Text = "Conectat"
-                ' Sesiune vie => activăm job-urile pe sesiunea existentă.
-                btnListaAngajamente.Enabled = True
-            Else
-                btnConnect.Enabled = True
-            End If
-        Catch ex As Exception
-            _logger.LogException(ex, "Eroare conectare (UI)")
-            btnConnect.Enabled = True
-        End Try
-    End Sub
+        Dim result As JobResult = Await _forexeRunner.RunAsync(job, cert, progress, ct)
+        UpdateForexeStatus()
+        Return result.Success
+    End Function
 
     ''' <summary>
-    ''' Rulează ListaAngajamente pe sesiunea existentă, mapează rezultatul tabelar
-    ''' și îl trimite la /api/forexe/angajamente/upsert. Fără sesiune vie e no-op;
-    ''' fără DbName setat (login încă neimplementat) se oprește după mapare.
+    ''' Sincronizare = fluxul ListaAngajamente (felia completă existentă), pe sesiunea
+    ''' FOREXE — deschisă la nevoie. Scrape -> mapare -> upsert la /api/forexe/
+    ''' angajamente/upsert, cu WithReauth pe apelul HTTP. Fără DbName (fără login,
+    ''' posibil doar în harness-ul Debug) se oprește după mapare.
     ''' </summary>
-    Private Async Sub btnListaAngajamente_Click(sender As Object, e As EventArgs) Handles btnListaAngajamente.Click
-        If Not DirectCast(_forexeRunner, ForexeRunner).HasLiveSession Then
-            _logger.LogWarning("Nicio sesiune activă — apasă întâi 'Conectare'.")
-            Return
-        End If
-
-        btnListaAngajamente.Enabled = False
-        pbProgress.Value = 0
+    Private Async Sub btnSinc_Click(sender As Object, e As EventArgs) Handles btnSinc.Click
+        btnSinc.Enabled = False
+        busyBar.Running = True
         _cts = New CancellationTokenSource()
 
-        Dim progress As New Progress(Of Integer)(Sub(p) pbProgress.Value = Math.Min(p, pbProgress.Maximum))
+        ' Procentul de progres nu are țintă vizuală în shell (busyBar e indeterminată);
+        ' liniile detaliate merg în logger-ul fișier.
+        Dim progress As New Progress(Of Integer)(Sub(p)
+                                                 End Sub)
 
         Try
+            If Not Await EnsureForexeSessionAsync(progress, _cts.Token) Then
+                _logger.LogWarning("Sincronizare oprită: nu s-a putut deschide sesiunea FOREXE.")
+                Return
+            End If
+
             Dim job As JobRequest = JobBuilder.BuildListaAngajamente(_session)
             Dim result As JobResult = Await _forexeRunner.RunJobAsync(job, progress, _cts.Token)
             If Not result.Success Then
@@ -145,9 +408,11 @@ Public Class MainForm
             _logger.LogSuccess($"Upsert reușit: {mapped.Count} angajamente în '{_session.DbName}'. Răspuns server: {resp}")
 
         Catch ex As Exception
-            _logger.LogException(ex, "Eroare ListaAngajamente (UI)")
+            _logger.LogException(ex, "Eroare Sincronizare (UI)")
         Finally
-            btnListaAngajamente.Enabled = True
+            busyBar.Running = False
+            btnSinc.Enabled = True
+            UpdateForexeStatus()
         End Try
     End Sub
 
@@ -160,5 +425,82 @@ Public Class MainForm
         End Using
         Return Nothing
     End Function
+
+    ' ---------------- placeholder-e (felii viitoare) ----------------
+
+    Private Sub btnIstoric_Click(sender As Object, e As EventArgs) Handles btnIstoric.Click
+        ' TODO felie: istoricul job-urilor (Access btnIstoric).
+        MessageBox.Show(Me, "În lucru.", "Istoric", MessageBoxButtons.OK, MessageBoxIcon.Information)
+    End Sub
+
+    Private Sub btnSort_Click(sender As Object, e As EventArgs) Handles btnSort.Click
+        ' TODO felie: sortarea arborelui (Access btnSort / m_SortTree).
+        MessageBox.Show(Me, "În lucru.", "Sortare", MessageBoxButtons.OK, MessageBoxIcon.Information)
+    End Sub
+
+    Private Sub btnOpt_Click(sender As Object, e As EventArgs) Handles btnOpt.Click
+        ' TODO felie: opțiunile arborelui (Access bOpt: angajamente anulate, cod, info).
+        MessageBox.Show(Me, "În lucru.", "Opțiuni", MessageBoxButtons.OK, MessageBoxIcon.Information)
+    End Sub
+
+    ' ---------------- temă ----------------
+
+    ' Culorile semantice theme-aware (rulează după ThemeManager.Apply și la comutare).
+    Protected Overrides Sub OnThemeChanged()
+        MyBase.OnThemeChanged()
+        Dim scheme = ThemeManager.Current
+        Dim p = scheme.Palette
+
+        ' Fundalul formularului ESTE conturul de 1px al ferestrei (vezi LoginForm).
+        BackColor = p.BorderColor
+
+        ButtonStyles.ApplyPrimary(btnSinc, scheme)
+        ButtonStyles.ApplySecondary(btnIstoric, scheme)
+
+        ' Etichetele secundare -> text dim; titlurile rămân pe TextColor plin.
+        lblOperator.ForeColor = p.TextDimColor
+        lblProgram.ForeColor = p.TextDimColor
+        lblAn.ForeColor = p.TextDimColor
+        lblSs.ForeColor = p.TextDimColor
+        lblUnit.ForeColor = p.TextColor
+        lblTree.ForeColor = p.TextColor
+
+        ' Arborele nu e IThemedControl (nu se retrofitează în această felie) —
+        ' i se împing culorile paletei prin proprietățile lui publice.
+        tree.BackColor = p.SurfaceAltColor
+        tree.ForeColor = p.TextColor
+        tree.HoverBackColor = p.ButtonHoverColor
+        tree.SelectedBackColor = p.ButtonPressedColor
+        tree.SelectedBorderColor = p.AccentColor
+        tree.LineColor = p.BorderColor
+        tree.HeaderBackColor = p.SurfaceAltColor
+        tree.HeaderForeColor = p.TextColor
+
+        UpdateForexeStatus()
+        pnlHeader.Invalidate()
+        pnlStatus.Invalidate()
+    End Sub
+
+    ' Cele două benzi (header + status) citesc ca o singură bară cu caption-ul:
+    ' o linie de 1px sub header, respectiv deasupra barei de status.
+    Private Sub pnlHeader_Paint(sender As Object, e As PaintEventArgs) Handles pnlHeader.Paint
+        Try
+            Using pen As New Pen(ThemeManager.Current.Palette.BorderColor)
+                e.Graphics.DrawLine(pen, 0, pnlHeader.Height - 1, pnlHeader.Width, pnlHeader.Height - 1)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.pnlHeader_Paint", ex)
+        End Try
+    End Sub
+
+    Private Sub pnlStatus_Paint(sender As Object, e As PaintEventArgs) Handles pnlStatus.Paint
+        Try
+            Using pen As New Pen(ThemeManager.Current.Palette.BorderColor)
+                e.Graphics.DrawLine(pen, 0, 0, pnlStatus.Width, 0)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.pnlStatus_Paint", ex)
+        End Try
+    End Sub
 
 End Class

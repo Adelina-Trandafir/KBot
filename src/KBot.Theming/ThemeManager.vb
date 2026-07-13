@@ -83,6 +83,11 @@ Public Module ThemeManager
         Dim f As Form = TryCast(ctrl, Form)
         If f IsNot Nothing Then
             NativeMethods.SetTitleBarDark(f, _current.Style.DarkTitleBar)
+            ' Formulare fără chenar (card borderless): cerem colțuri rotunjite DWM.
+            ' NativeMethods e Friend — cererea trebuie să pornească de aici, ca și dark-ul.
+            If f.FormBorderStyle = FormBorderStyle.None Then
+                NativeMethods.SetRoundedCorners(f, True)
+            End If
         End If
     End Sub
 
@@ -153,6 +158,15 @@ Public Module ThemeManager
     ' TRAVERSARE RECURSIVĂ (port verbatim din KBotTheme, cu excepțiile SplitContainer/TabControl)
     ' =========================================================================
     Private Sub Traverse(ctrl As Control)
+        ' Controalele auto-tematizate își aplică singure culorile ȘI NU se recurge în
+        ' ele — altfel regula generică de Panel ar repicta suprafața, iar recursia ar
+        ' strica TextBox-ul intern din KBotTextField.
+        Dim themed As IThemedControl = TryCast(ctrl, IThemedControl)
+        If themed IsNot Nothing Then
+            themed.ApplyTheme(_current)
+            Return
+        End If
+
         StyleControl(ctrl)
 
         If TypeOf ctrl Is SplitContainer Then
@@ -212,6 +226,9 @@ Public Module ThemeManager
             SetupTabOwnerDraw(tc, st.OwnerDrawTabs)
 
         ElseIf TypeOf ctrl Is TabPage Then
+            ctrl.BackColor = p.SurfaceAltColor
+
+        ElseIf IsCard(ctrl) Then
             ctrl.BackColor = p.SurfaceAltColor
 
         ElseIf TypeOf ctrl Is TableLayoutPanel Then
@@ -334,6 +351,9 @@ Public Module ThemeManager
         ElseIf TypeOf ctrl Is TabPage Then
             ctrl.BackColor = SystemColors.Control
             DirectCast(ctrl, TabPage).UseVisualStyleBackColor = True
+
+        ElseIf IsCard(ctrl) Then
+            ctrl.BackColor = Color.White
 
         ElseIf TypeOf ctrl Is TableLayoutPanel Then
             ctrl.BackColor = SystemColors.Control
@@ -506,6 +526,15 @@ Public Module ThemeManager
             btn.UseVisualStyleBackColor = True
         End If
     End Sub
+
+    ' =========================================================================
+    ' HELPER: „card” = Panel/TableLayoutPanel marcat Tag="Card" — suprafață SurfaceAlt
+    ' (convenția Tag e deja pattern-ul casei: vezi „ThemeToggle” / „SyntaxRTB”).
+    ' =========================================================================
+    Private Function IsCard(ctrl As Control) As Boolean
+        If TypeOf ctrl IsNot Panel AndAlso TypeOf ctrl IsNot TableLayoutPanel Then Return False
+        Return ctrl.Tag IsNot Nothing AndAlso String.Equals(ctrl.Tag.ToString(), "Card", StringComparison.Ordinal)
+    End Function
 
     ' =========================================================================
     ' HELPER: buton cu culoare funcțională (verde/roșu/galben) — NU se re-tematizează

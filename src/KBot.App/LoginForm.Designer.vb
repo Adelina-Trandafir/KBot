@@ -13,293 +13,311 @@ Partial Class LoginForm
 
     Private components As System.ComponentModel.IContainer
 
-    Friend WithEvents pnlCard As System.Windows.Forms.Panel
-
     Private Sub InitializeComponent()
         pnlCard = New Panel()
-        pnlCreds = New TableLayoutPanel()
+        capBar = New KBot.Theming.KBotCaptionBar()
+        busyBar = New KBot.Theming.KBotBusyBar()
+        tlpBody = New TableLayoutPanel()
+        picLogo = New PictureBox()
+        lblTitle = New Label()
+        lblSubtitle = New Label()
         lblUser = New Label()
-        txtUser = New TextBox()
+        txtUser = New KBot.Theming.KBotTextField()
         lblPass = New Label()
-        txtPass = New TextBox()
+        txtPass = New KBot.Theming.KBotTextField()
         btnContinue = New Button()
         pnlUnit = New TableLayoutPanel()
         lblUnit = New Label()
         cboUnit = New ComboBox()
-        btnLogin = New Button()
         btnBack = New Button()
-        pnlCaption = New TableLayoutPanel()
-        lblSubtitle = New Label()
-        lblTitle = New Label()
-        pbBusy = New ProgressBar()
-        lblError = New Label()
+        btnLogin = New Button()
+        ntfError = New KBot.Theming.KBotNotice()
         pnlCard.SuspendLayout()
-        pnlCreds.SuspendLayout()
+        tlpBody.SuspendLayout()
         pnlUnit.SuspendLayout()
-        pnlCaption.SuspendLayout()
+        CType(picLogo, System.ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
-        ' 
+        '
         ' pnlCard
-        ' 
-        pnlCard.Controls.Add(pnlCreds)
-        pnlCard.Controls.Add(pnlCaption)
-        pnlCard.Controls.Add(lblError)
+        '
+        pnlCard.Controls.Add(tlpBody)
+        pnlCard.Controls.Add(busyBar)
+        pnlCard.Controls.Add(capBar)
         pnlCard.Dock = DockStyle.Fill
-        pnlCard.Location = New Point(0, 0)
-        pnlCard.Margin = New Padding(4, 5, 4, 5)
+        pnlCard.Location = New Point(1, 1)
         pnlCard.Name = "pnlCard"
-        pnlCard.Padding = New Padding(10)
-        pnlCard.Size = New Size(561, 482)
+        pnlCard.Size = New Size(418, 518)
         pnlCard.TabIndex = 0
-        ' 
-        ' pnlCreds
-        ' 
-        pnlCreds.ColumnCount = 2
-        pnlCreds.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 46.21072F))
-        pnlCreds.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 53.78928F))
-        pnlCreds.Controls.Add(lblUser, 0, 0)
-        pnlCreds.Controls.Add(txtUser, 1, 0)
-        pnlCreds.Controls.Add(lblPass, 0, 1)
-        pnlCreds.Controls.Add(txtPass, 1, 1)
-        pnlCreds.Controls.Add(btnContinue, 0, 3)
-        pnlCreds.Controls.Add(pnlUnit, 0, 5)
-        pnlCreds.Dock = DockStyle.Fill
-        pnlCreds.Location = New Point(10, 105)
-        pnlCreds.Name = "pnlCreds"
-        pnlCreds.RowCount = 6
-        pnlCreds.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
-        pnlCreds.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
-        pnlCreds.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
-        pnlCreds.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
-        pnlCreds.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
-        pnlCreds.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        pnlCreds.Size = New Size(541, 367)
-        pnlCreds.TabIndex = 7
-        ' 
-        ' lblUser
-        ' 
-        lblUser.Dock = DockStyle.Fill
-        lblUser.Font = New Font("Segoe UI", 9F)
-        lblUser.Location = New Point(4, 0)
-        lblUser.Margin = New Padding(4, 0, 4, 0)
-        lblUser.Name = "lblUser"
-        lblUser.Size = New Size(242, 48)
-        lblUser.TabIndex = 5
-        lblUser.Text = "Utilizator"
-        lblUser.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' txtUser
-        ' 
-        txtUser.BorderStyle = BorderStyle.FixedSingle
-        txtUser.Font = New Font("Segoe UI", 11F)
-        txtUser.Location = New Point(254, 5)
-        txtUser.Margin = New Padding(4, 5, 4, 5)
-        txtUser.Name = "txtUser"
-        txtUser.Size = New Size(281, 37)
-        txtUser.TabIndex = 6
-        ' 
-        ' lblPass
-        ' 
-        lblPass.Dock = DockStyle.Fill
-        lblPass.Font = New Font("Segoe UI", 9F)
-        lblPass.Location = New Point(4, 48)
-        lblPass.Margin = New Padding(4, 0, 4, 0)
-        lblPass.Name = "lblPass"
-        lblPass.Size = New Size(242, 48)
-        lblPass.TabIndex = 7
-        lblPass.Text = "Parolă"
-        lblPass.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' txtPass
-        ' 
-        txtPass.BorderStyle = BorderStyle.FixedSingle
-        txtPass.Font = New Font("Segoe UI", 11F)
-        txtPass.Location = New Point(254, 53)
-        txtPass.Margin = New Padding(4, 5, 4, 5)
-        txtPass.Name = "txtPass"
-        txtPass.Size = New Size(281, 37)
-        txtPass.TabIndex = 8
-        txtPass.UseSystemPasswordChar = True
-        ' 
-        ' btnContinue
-        ' 
-        pnlCreds.SetColumnSpan(btnContinue, 2)
-        btnContinue.FlatStyle = FlatStyle.Flat
-        btnContinue.Font = New Font("Segoe UI Semibold", 10F)
-        btnContinue.Location = New Point(4, 121)
-        btnContinue.Margin = New Padding(4, 5, 4, 5)
-        btnContinue.Name = "btnContinue"
-        btnContinue.Size = New Size(533, 38)
-        btnContinue.TabIndex = 9
-        btnContinue.Text = "Continuă"
-        ' 
-        ' pnlUnit
-        ' 
-        pnlUnit.ColumnCount = 2
-        pnlCreds.SetColumnSpan(pnlUnit, 2)
-        pnlUnit.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 46.16822F))
-        pnlUnit.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 53.8317757F))
-        pnlUnit.Controls.Add(lblUnit, 0, 0)
-        pnlUnit.Controls.Add(cboUnit, 1, 0)
-        pnlUnit.Controls.Add(btnLogin, 1, 2)
-        pnlUnit.Controls.Add(btnBack, 0, 2)
-        pnlUnit.Dock = DockStyle.Fill
-        pnlUnit.Location = New Point(3, 187)
-        pnlUnit.Name = "pnlUnit"
-        pnlUnit.RowCount = 4
-        pnlUnit.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
-        pnlUnit.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
-        pnlUnit.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
-        pnlUnit.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        pnlUnit.Size = New Size(535, 177)
-        pnlUnit.TabIndex = 10
-        ' 
-        ' lblUnit
-        ' 
-        lblUnit.Dock = DockStyle.Fill
-        lblUnit.Font = New Font("Segoe UI", 9F)
-        lblUnit.Location = New Point(4, 0)
-        lblUnit.Margin = New Padding(4, 0, 4, 0)
-        lblUnit.Name = "lblUnit"
-        lblUnit.Size = New Size(238, 48)
-        lblUnit.TabIndex = 4
-        lblUnit.Text = "Selectați unitatea"
-        lblUnit.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' cboUnit
-        ' 
-        cboUnit.Dock = DockStyle.Fill
-        cboUnit.DropDownStyle = ComboBoxStyle.DropDownList
-        cboUnit.FlatStyle = FlatStyle.Flat
-        cboUnit.Font = New Font("Segoe UI", 11F)
-        cboUnit.Location = New Point(250, 5)
-        cboUnit.Margin = New Padding(4, 5, 4, 5)
-        cboUnit.Name = "cboUnit"
-        cboUnit.Size = New Size(281, 38)
-        cboUnit.TabIndex = 5
-        ' 
-        ' btnLogin
-        ' 
-        btnLogin.FlatStyle = FlatStyle.Flat
-        btnLogin.Font = New Font("Segoe UI Semibold", 10F)
-        btnLogin.Location = New Point(250, 73)
-        btnLogin.Margin = New Padding(4, 5, 4, 5)
-        btnLogin.Name = "btnLogin"
-        btnLogin.Size = New Size(281, 38)
-        btnLogin.TabIndex = 6
-        btnLogin.Text = "Autentificare"
-        ' 
-        ' btnBack
-        ' 
-        btnBack.FlatStyle = FlatStyle.Flat
-        btnBack.Font = New Font("Segoe UI", 9F)
-        btnBack.Location = New Point(4, 73)
-        btnBack.Margin = New Padding(4, 5, 4, 5)
-        btnBack.Name = "btnBack"
-        btnBack.Size = New Size(238, 38)
-        btnBack.TabIndex = 7
-        btnBack.Text = "Înapoi"
-        ' 
-        ' pnlCaption
-        ' 
-        pnlCaption.ColumnCount = 1
-        pnlCaption.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
-        pnlCaption.Controls.Add(lblSubtitle, 0, 1)
-        pnlCaption.Controls.Add(lblTitle, 0, 0)
-        pnlCaption.Dock = DockStyle.Top
-        pnlCaption.Location = New Point(10, 10)
-        pnlCaption.Name = "pnlCaption"
-        pnlCaption.RowCount = 2
-        pnlCaption.RowStyles.Add(New RowStyle(SizeType.Percent, 56.8421059F))
-        pnlCaption.RowStyles.Add(New RowStyle(SizeType.Percent, 43.1578941F))
-        pnlCaption.Size = New Size(541, 95)
-        pnlCaption.TabIndex = 6
-        ' 
+        pnlCard.Tag = "Card"
+        '
+        ' capBar
+        '
+        capBar.Dock = DockStyle.Top
+        capBar.Location = New Point(0, 0)
+        capBar.Name = "capBar"
+        capBar.Size = New Size(418, 40)
+        capBar.TabIndex = 3
+        capBar.TabStop = False
+        capBar.Text = "K-BOT"
+        '
+        ' busyBar
+        '
+        busyBar.Dock = DockStyle.Top
+        busyBar.Location = New Point(0, 40)
+        busyBar.Name = "busyBar"
+        busyBar.Size = New Size(418, 3)
+        busyBar.TabIndex = 2
+        busyBar.TabStop = False
+        '
+        ' tlpBody
+        '
+        tlpBody.ColumnCount = 1
+        tlpBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        tlpBody.Controls.Add(picLogo, 0, 0)
+        tlpBody.Controls.Add(lblTitle, 0, 1)
+        tlpBody.Controls.Add(lblSubtitle, 0, 2)
+        tlpBody.Controls.Add(lblUser, 0, 3)
+        tlpBody.Controls.Add(txtUser, 0, 4)
+        tlpBody.Controls.Add(lblPass, 0, 5)
+        tlpBody.Controls.Add(txtPass, 0, 6)
+        tlpBody.Controls.Add(btnContinue, 0, 7)
+        tlpBody.Controls.Add(pnlUnit, 0, 8)
+        tlpBody.Controls.Add(ntfError, 0, 9)
+        tlpBody.Dock = DockStyle.Fill
+        tlpBody.Location = New Point(0, 43)
+        tlpBody.Name = "tlpBody"
+        tlpBody.Padding = New Padding(28, 8, 28, 10)
+        tlpBody.RowCount = 11
+        tlpBody.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        tlpBody.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        tlpBody.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        tlpBody.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        tlpBody.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        tlpBody.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        tlpBody.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        tlpBody.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        tlpBody.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        tlpBody.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        tlpBody.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        tlpBody.Size = New Size(418, 475)
+        tlpBody.TabIndex = 0
+        tlpBody.Tag = "Card"
+        '
+        ' picLogo
+        '
+        picLogo.Anchor = AnchorStyles.None
+        picLogo.Location = New Point(177, 6)
+        picLogo.Margin = New Padding(3, 6, 3, 6)
+        picLogo.Name = "picLogo"
+        picLogo.Size = New Size(64, 64)
+        picLogo.SizeMode = PictureBoxSizeMode.Zoom
+        picLogo.TabIndex = 0
+        picLogo.TabStop = False
+        '
+        ' lblTitle
+        '
+        lblTitle.AutoSize = True
+        lblTitle.Dock = DockStyle.Top
+        lblTitle.Font = New Font("Segoe UI", 18.0F, FontStyle.Bold)
+        lblTitle.Location = New Point(31, 76)
+        lblTitle.Margin = New Padding(3, 0, 3, 2)
+        lblTitle.Name = "lblTitle"
+        lblTitle.Size = New Size(356, 32)
+        lblTitle.TabIndex = 1
+        lblTitle.Text = "K-BOT"
+        lblTitle.TextAlign = ContentAlignment.MiddleCenter
+        '
         ' lblSubtitle
-        ' 
-        lblSubtitle.Dock = DockStyle.Fill
-        lblSubtitle.Font = New Font("Segoe UI", 10F)
-        lblSubtitle.Location = New Point(4, 54)
-        lblSubtitle.Margin = New Padding(4, 0, 4, 0)
+        '
+        lblSubtitle.AutoSize = True
+        lblSubtitle.Dock = DockStyle.Top
+        lblSubtitle.Font = New Font("Segoe UI", 10.0F)
+        lblSubtitle.Location = New Point(31, 110)
+        lblSubtitle.Margin = New Padding(3, 0, 3, 12)
         lblSubtitle.Name = "lblSubtitle"
-        lblSubtitle.Size = New Size(533, 41)
+        lblSubtitle.Size = New Size(356, 19)
         lblSubtitle.TabIndex = 2
         lblSubtitle.Text = "Autentificare operator"
-        lblSubtitle.TextAlign = ContentAlignment.TopCenter
-        ' 
-        ' lblTitle
-        ' 
-        lblTitle.Dock = DockStyle.Fill
-        lblTitle.FlatStyle = FlatStyle.Popup
-        lblTitle.Font = New Font("Calibri", 20F, FontStyle.Bold)
-        lblTitle.Location = New Point(4, 0)
-        lblTitle.Margin = New Padding(4, 0, 4, 0)
-        lblTitle.Name = "lblTitle"
-        lblTitle.Size = New Size(533, 54)
-        lblTitle.TabIndex = 1
-        lblTitle.Text = "K-BOT - UN ROBOT PRIETENOS"
-        lblTitle.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' pbBusy
-        ' 
-        pbBusy.Dock = DockStyle.Bottom
-        pbBusy.Location = New Point(0, 472)
-        pbBusy.Margin = New Padding(4, 5, 4, 5)
-        pbBusy.MarqueeAnimationSpeed = 30
-        pbBusy.Name = "pbBusy"
-        pbBusy.Size = New Size(561, 10)
-        pbBusy.Style = ProgressBarStyle.Marquee
-        pbBusy.TabIndex = 9
-        pbBusy.Visible = False
-        ' 
-        ' lblError
+        lblSubtitle.TextAlign = ContentAlignment.MiddleCenter
         '
-        lblError.Dock = DockStyle.Bottom
-        lblError.Font = New Font("Segoe UI", 9F)
-        lblError.Location = New Point(4, 137)
-        lblError.Margin = New Padding(4, 0, 4, 0)
-        lblError.Name = "lblError"
-        lblError.Size = New Size(527, 40)
-        lblError.TabIndex = 8
-        lblError.TextAlign = ContentAlignment.MiddleLeft
-        lblError.Visible = False
-        ' 
+        ' lblUser
+        '
+        lblUser.AutoSize = True
+        lblUser.Dock = DockStyle.Top
+        lblUser.Location = New Point(31, 141)
+        lblUser.Margin = New Padding(3, 0, 3, 3)
+        lblUser.Name = "lblUser"
+        lblUser.Size = New Size(356, 15)
+        lblUser.TabIndex = 3
+        lblUser.Text = "Utilizator"
+        '
+        ' txtUser
+        '
+        txtUser.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        txtUser.Location = New Point(31, 159)
+        txtUser.Margin = New Padding(3, 0, 3, 10)
+        txtUser.Name = "txtUser"
+        txtUser.Size = New Size(356, 36)
+        txtUser.TabIndex = 4
+        '
+        ' lblPass
+        '
+        lblPass.AutoSize = True
+        lblPass.Dock = DockStyle.Top
+        lblPass.Location = New Point(31, 205)
+        lblPass.Margin = New Padding(3, 0, 3, 3)
+        lblPass.Name = "lblPass"
+        lblPass.Size = New Size(356, 15)
+        lblPass.TabIndex = 5
+        lblPass.Text = "Parolă"
+        '
+        ' txtPass
+        '
+        txtPass.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        txtPass.Location = New Point(31, 223)
+        txtPass.Margin = New Padding(3, 0, 3, 14)
+        txtPass.Name = "txtPass"
+        txtPass.Size = New Size(356, 36)
+        txtPass.TabIndex = 6
+        txtPass.UseSystemPasswordChar = True
+        '
+        ' btnContinue
+        '
+        btnContinue.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        btnContinue.FlatStyle = FlatStyle.Flat
+        btnContinue.Font = New Font("Segoe UI Semibold", 10.0F)
+        btnContinue.Location = New Point(31, 273)
+        btnContinue.Margin = New Padding(3, 0, 3, 6)
+        btnContinue.Name = "btnContinue"
+        btnContinue.Size = New Size(356, 40)
+        btnContinue.TabIndex = 7
+        btnContinue.Text = "Continuă"
+        btnContinue.UseVisualStyleBackColor = True
+        '
+        ' pnlUnit
+        '
+        pnlUnit.AutoSize = True
+        pnlUnit.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        pnlUnit.ColumnCount = 2
+        pnlUnit.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50.0F))
+        pnlUnit.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50.0F))
+        pnlUnit.Controls.Add(lblUnit, 0, 0)
+        pnlUnit.Controls.Add(cboUnit, 0, 1)
+        pnlUnit.Controls.Add(btnBack, 0, 2)
+        pnlUnit.Controls.Add(btnLogin, 1, 2)
+        pnlUnit.SetColumnSpan(lblUnit, 2)
+        pnlUnit.SetColumnSpan(cboUnit, 2)
+        pnlUnit.Dock = DockStyle.Top
+        pnlUnit.Location = New Point(28, 319)
+        pnlUnit.Margin = New Padding(0, 6, 0, 0)
+        pnlUnit.Name = "pnlUnit"
+        pnlUnit.RowCount = 3
+        pnlUnit.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        pnlUnit.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        pnlUnit.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        pnlUnit.Size = New Size(362, 100)
+        pnlUnit.TabIndex = 8
+        pnlUnit.Tag = "Card"
+        pnlUnit.Visible = False
+        '
+        ' lblUnit
+        '
+        lblUnit.AutoSize = True
+        lblUnit.Dock = DockStyle.Top
+        lblUnit.Location = New Point(3, 0)
+        lblUnit.Margin = New Padding(3, 0, 3, 3)
+        lblUnit.Name = "lblUnit"
+        lblUnit.Size = New Size(356, 15)
+        lblUnit.TabIndex = 0
+        lblUnit.Text = "Selectați unitatea"
+        '
+        ' cboUnit
+        '
+        cboUnit.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        cboUnit.DropDownStyle = ComboBoxStyle.DropDownList
+        cboUnit.FlatStyle = FlatStyle.Flat
+        cboUnit.Font = New Font("Segoe UI", 10.0F)
+        cboUnit.Location = New Point(3, 21)
+        cboUnit.Margin = New Padding(3, 3, 3, 12)
+        cboUnit.Name = "cboUnit"
+        cboUnit.Size = New Size(356, 25)
+        cboUnit.TabIndex = 1
+        '
+        ' btnBack
+        '
+        btnBack.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        btnBack.FlatStyle = FlatStyle.Flat
+        btnBack.Font = New Font("Segoe UI", 9.0F)
+        btnBack.Location = New Point(3, 61)
+        btnBack.Margin = New Padding(3, 0, 6, 0)
+        btnBack.Name = "btnBack"
+        btnBack.Size = New Size(172, 38)
+        btnBack.TabIndex = 3
+        btnBack.Text = "Înapoi"
+        btnBack.UseVisualStyleBackColor = True
+        '
+        ' btnLogin
+        '
+        btnLogin.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        btnLogin.FlatStyle = FlatStyle.Flat
+        btnLogin.Font = New Font("Segoe UI Semibold", 10.0F)
+        btnLogin.Location = New Point(187, 61)
+        btnLogin.Margin = New Padding(6, 0, 3, 0)
+        btnLogin.Name = "btnLogin"
+        btnLogin.Size = New Size(172, 38)
+        btnLogin.TabIndex = 2
+        btnLogin.Text = "Autentificare"
+        btnLogin.UseVisualStyleBackColor = True
+        '
+        ' ntfError
+        '
+        ntfError.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        ntfError.Location = New Point(31, 425)
+        ntfError.Margin = New Padding(3, 6, 3, 3)
+        ntfError.Name = "ntfError"
+        ntfError.Size = New Size(356, 40)
+        ntfError.TabIndex = 9
+        ntfError.TabStop = False
+        ntfError.Visible = False
+        '
         ' LoginForm
-        ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
+        '
+        AutoScaleDimensions = New SizeF(7.0F, 15.0F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(561, 482)
-        Controls.Add(pbBusy)
+        ClientSize = New Size(420, 520)
         Controls.Add(pnlCard)
-        FormBorderStyle = FormBorderStyle.FixedDialog
-        Margin = New Padding(4, 5, 4, 5)
+        FormBorderStyle = FormBorderStyle.None
         MaximizeBox = False
         MinimizeBox = False
         Name = "LoginForm"
+        Padding = New Padding(1)
         StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT — Autentificare"
         pnlCard.ResumeLayout(False)
-        pnlCreds.ResumeLayout(False)
-        pnlCreds.PerformLayout()
+        tlpBody.ResumeLayout(False)
+        tlpBody.PerformLayout()
         pnlUnit.ResumeLayout(False)
-        pnlCaption.ResumeLayout(False)
+        pnlUnit.PerformLayout()
+        CType(picLogo, System.ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents pnlCaption As TableLayoutPanel
-    Friend WithEvents lblSubtitle As Label
+    Friend WithEvents pnlCard As Panel
+    Friend WithEvents capBar As KBot.Theming.KBotCaptionBar
+    Friend WithEvents busyBar As KBot.Theming.KBotBusyBar
+    Friend WithEvents tlpBody As TableLayoutPanel
+    Friend WithEvents picLogo As PictureBox
     Friend WithEvents lblTitle As Label
-    Friend WithEvents pnlCreds As TableLayoutPanel
+    Friend WithEvents lblSubtitle As Label
     Friend WithEvents lblUser As Label
-    Friend WithEvents txtUser As TextBox
+    Friend WithEvents txtUser As KBot.Theming.KBotTextField
     Friend WithEvents lblPass As Label
-    Friend WithEvents txtPass As TextBox
+    Friend WithEvents txtPass As KBot.Theming.KBotTextField
     Friend WithEvents btnContinue As Button
     Friend WithEvents pnlUnit As TableLayoutPanel
     Friend WithEvents lblUnit As Label
     Friend WithEvents cboUnit As ComboBox
-    Friend WithEvents btnLogin As Button
     Friend WithEvents btnBack As Button
-    Friend WithEvents pbBusy As ProgressBar
-    Friend WithEvents lblError As Label
+    Friend WithEvents btnLogin As Button
+    Friend WithEvents ntfError As KBot.Theming.KBotNotice
 End Class

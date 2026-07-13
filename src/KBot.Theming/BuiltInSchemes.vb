@@ -11,12 +11,13 @@ Public Module BuiltInSchemes
     Public Const ModernName As String = "Modern"
 
     ''' <summary>
-    ''' Schema implicită de prim-boot (vezi ThemeManager.Initialize). Classic =
-    ''' „arată ca designerul”: SystemColors, zero pictură custom.
+    ''' Schema implicită de prim-boot (vezi ThemeManager.Initialize). Modern: sub Classic
+    ''' (UseSystemColors=True) nu se pictează nimic custom, deci cardul borderless ar
+    ''' apărea ca un dialog system gri — vrem look-ul modern din start.
     ''' </summary>
     Public ReadOnly Property DefaultSchemeName As String
         Get
-            Return ClassicName
+            Return ModernName
         End Get
     End Property
 
@@ -102,10 +103,10 @@ Public Module BuiltInSchemes
             .InputBack = "#FFFFFF", .InputText = "#1E1E1E", .InputBorder = "#CCCCCC",
             .ButtonBack = "#F3F3F3", .ButtonBorder = "#D0D0D0",
             .ButtonHover = "#E8F1FB", .ButtonPressed = "#CCE4F7", .ButtonText = "#1E1E1E",
-            .Accent = "#007ACC", .AccentText = "#FFFFFF", .AccentHover = "#1C97EA",
-            .TabAccent = "#007ACC", .TabInactive = "#ECECEC",
+            .Accent = "#185FA5", .AccentText = "#FFFFFF", .AccentHover = "#378ADD",
+            .TabAccent = "#185FA5", .TabInactive = "#ECECEC",
             .[Error] = "#C42B1C", .Success = "#0F7B0F", .Warning = "#C07000",
-            .FocusRing = "#007ACC", .DisabledText = "#A0A0A0"
+            .FocusRing = "#185FA5", .DisabledText = "#A0A0A0"
         }
         Dim s As New ThemeStyleOptions With {
             .UseSystemColors = False,

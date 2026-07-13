@@ -1,259 +1,368 @@
-# routes/auth/auth.py
+# routes/auth.py
 """
-Login-ul aplicatiei K-BOT (token bearer opac; fara X-Api-Key).
+K-BOT login / session endpoints.
 
-Identitatea e dovedita prin connect-to-validate pe MariaDB cu userul+parola
-operatorului; unitatile accesibile = `SHOW DATABASES` intersectat cu registrul
-central CAI. La login se emite un token opac (secrets.token_urlsafe) tinut in
-registrul in-memory (session_store.STORE); logout-ul il revoca instant.
-Parola operatorului traieste DOAR in memoria procesului, in sesiune, pe durata
-sesiunii (decizia #3/#4 din planul de auth): nu se persista, nu se logheaza.
+Model (option A):
+  - Identity is proven by trying to log in to MariaDB AS the operator
+    (username = e-mail, lowercase). If that login works, the person is real.
+    The password is used ONLY for that check and is then thrown away — it is
+    never stored in the session.
+  - Which databases a person may open, their role, and their last SS come from
+    three tables in AVACONT_COMUN, read through the read-only 'db_reader'
+    account (get_comun_reader_connection). Operators never touch AVACONT_COMUN:
+      * Unitati               (DC, NumeUnitate, CF)
+      * Unitati_Utilizatori   (UN, DC, Rol, LastSS)
+      * Unitati_Ani           (DC, AN, SS, CodProgram)
+  - A successful login mints an opaque bearer token (a random string that stands
+    in for "this person is logged in"), kept in an in-memory session store.
+    Single-worker Gunicorn only — same constraint as _upload_sessions.
+  - Post-login endpoints authenticate with that token, not with the password.
+  - Business events are written to the Jurnal audit table, keyed by the acting
+    user (UN). Only auth events are attributable here today; data-action logging
+    arrives with token enforcement on the data endpoints.
+
+Endpoints:
+  POST /api/auth/units     (pre-auth)  -> databases this user may open (friendly names)
+  POST /api/auth/login     (pre-auth)  -> token + identity + last SS
+  POST /api/auth/logout    (token)     -> drop the session
+  GET  /api/auth/periods   (token)     -> year / SS / CodProgram catalog for a database
+  POST /api/auth/last-ss   (token)     -> remember the SS the user just picked
 """
 import logging
+import secrets
+from datetime import datetime, timezone
+from functools import wraps
 
 import mysql.connector
-from mysql.connector import errorcode
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify
 
-from utils.database import get_db_connection    # R5 verificat: database.py:9
 from config import DB_CONFIG
-
-from .session_store import STORE
-from .guard import require_session
-from .ratelimit import LIMITER
+from utils.database import get_db_connection, get_comun_reader_connection
 
 auth_bp = Blueprint("auth", __name__)
 logger = logging.getLogger(__name__)
 
+# MySQL/MariaDB error number for "access denied" (wrong user or password).
+_ER_ACCESS_DENIED = 1045
+
+# Baza comuna care contine tabelele de login.
 COMMON_DB = "AVACONT_COMUN"
 
-# Roluri de aplicatie cunoscute (store-only; enforcement e o felie ulterioara).
-KNOWN_ROLES = ("Contabil", "Administrator")
-
-# Coloanele citite din CAI (subsetul pentru picker + contextul complet).
-_CAI_COLUMNS = ("IdUnitate, DbName, NumeUnitate, AlteDetalii, "
-                "Sursa, CF, CodProgram, AnDate, DC")
+# In-memory session store: token -> session dict.
+# Lives in THIS process only (Gunicorn single worker), like _upload_sessions.
+_sessions: dict = {}
 
 
-def _role_from_username(username):
+# ---------------------------------------------------------------------------
+# Identity check (option A): can this e-mail + password log in to MariaDB?
+# ---------------------------------------------------------------------------
+def _verify_operator(username: str, password: str) -> bool:
     """
-    Deriva rolul din sufixul contului (conturile sunt '<db_name>_<role>').
-    db_name poate contine el insusi underscore-uri, deci ne bazam DOAR pe ultimul
-    segment si numai daca este un rol cunoscut. Orice altceva -> None (login-ul
-    continua, rolul e store-only). Nu ridica niciodata exceptie.
+    True if (username, password) is a valid MariaDB login.
+    Connects with NO default database (operator accounts are USAGE-only).
+    The connection is opened only to prove the password, then closed at once.
     """
-    if not username:
-        return None
-    suffix = username.rsplit("_", 1)[-1]
-    return suffix if suffix in KNOWN_ROLES else None
-
-
-def connect_as_operator(username, password, db_name=None):
-    """
-    Deschide o conexiune MariaDB CA OPERATORUL (optional pe o baza anume).
-    Succes == credentiale valide si (cu db_name) acces la baza. Apelantul
-    TREBUIE sa inchida conexiunea. Nu exista fallback pe cont de serviciu —
-    esecul de autentificare se propaga (model a).
-    SECURITY: parola in clar e folosita doar pentru a deschide conexiunea;
-    nu este niciodata logata.
-    """
-    kwargs = dict(
-        host=DB_CONFIG["host"],
-        port=DB_CONFIG.get("port", 3306),
-        user=username,
-        password=password,
-        connection_timeout=10,
-    )
-    if db_name:
-        kwargs["database"] = db_name
-    return mysql.connector.connect(**kwargs)
-
-
-def _operator_databases(op_conn):
-    """Intoarce multimea bazelor de date vizibile contului operatorului."""
-    cur = op_conn.cursor()
+    conn = None
     try:
-        cur.execute("SHOW DATABASES")
-        return {row[0] for row in cur.fetchall()}
+        conn = mysql.connector.connect(
+            host=DB_CONFIG["host"],
+            port=DB_CONFIG.get("port", 3306),
+            user=username,
+            password=password,
+            connection_timeout=10,
+        )
+        return True
+    except mysql.connector.Error as err:
+        if getattr(err, "errno", None) == _ER_ACCESS_DENIED:
+            return False        # wrong user / password
+        raise                   # server down / network — a real error, surface it
     finally:
-        cur.close()
+        if conn is not None and conn.is_connected():
+            conn.close()
 
 
+# ---------------------------------------------------------------------------
+# Audit log (business events). Best-effort: a failed log write must NEVER break
+# the user's action — but it is recorded in the app log, not silently dropped.
+# Written by the service account (INSERT on Jurnal); db_reader is read-only.
+# ---------------------------------------------------------------------------
+def _log_action(un, dc, actiune, tinta=None, detalii=None,
+                rezultat="OK", masina=None, ip=None):
+    conn = None
+    try:
+        conn = get_db_connection(COMMON_DB)     # DB_CONFIG service account
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO Jurnal (Moment, UN, DC, Actiune, Tinta, Detalii, Rezultat, Masina, IP)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (datetime.now(timezone.utc), un, dc, actiune, tinta, detalii,
+             rezultat, masina, ip),
+        )
+        conn.commit()
+    except mysql.connector.Error as err:
+        # Do not break the caller; surface the failure in the server log.
+        logger.error("audit log write failed (%s / %s): %s", actiune, un, err)
+        if conn is not None:
+            try:
+                conn.rollback()
+            except mysql.connector.Error:
+                pass
+    finally:
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Token guard for post-login endpoints.
+# A "decorator" is a wrapper put in front of an endpoint with @require_session_token;
+# it runs first and rejects the request if the bearer token is missing/unknown.
+# ---------------------------------------------------------------------------
+def require_session_token(view):
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        header = request.headers.get("Authorization", "")
+        if not header.startswith("Bearer "):
+            return jsonify({"error": "Autentificare necesară."}), 401
+        token = header[len("Bearer "):].strip()
+        session = _sessions.get(token)
+        if session is None:
+            return jsonify({"error": "Sesiune invalidă sau expirată."}), 401
+        # Pass the live session (and the token) to the endpoint as first args.
+        return view(session, token, *args, **kwargs)
+    return wrapper
+
+
+# ---------------------------------------------------------------------------
+# POST /api/auth/units   (pre-auth)
+# Body: { "username": "<email>", "password": "<pass>" }
+# Returns the databases this user may open, with friendly names.
+# ---------------------------------------------------------------------------
 @auth_bp.route("/api/auth/units", methods=["POST"])
 def auth_units():
-    """
-    Faza 1 (proba pre-login, fara token): valideaza credentialele, intoarce
-    unitatile accesibile operatorului. NU emite token aici.
-    Body: { "username": str, "password": str, "an": int|null }
-    """
-    data = request.json or {}
-    username = (data.get("username") or "").strip()
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or "").strip().lower()
     password = data.get("password") or ""
-    an = data.get("an")  # filtru optional de an
 
     if not username or not password:
-        return jsonify({"error": "Utilizator sau parola lipsa."}), 400
+        return jsonify({"error": "Utilizator și parolă obligatorii."}), 400
 
-    # Anti-forta-bruta: refuza inainte de a atinge MariaDB daca IP-ul / (IP,user) e blocat.
-    ip = request.remote_addr
-    if LIMITER.is_blocked(ip, username):
-        return jsonify({"error": "Prea multe incercari. Reincercati mai tarziu."}), 429
+    if not _verify_operator(username, password):
+        _log_action(username, None, "AUTH_FAIL", detalii="units",
+                    rezultat="EROARE", ip=request.remote_addr)
+        return jsonify({"error": "Utilizator sau parolă incorecte."}), 401
 
-    op_conn = None
-    admin_conn = None
+    conn = None
     try:
-        # --- valideaza credentialele conectandu-te ca operator ---
-        try:
-            op_conn = connect_as_operator(username, password)
-        except mysql.connector.Error as db_err:
-            if db_err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                LIMITER.record_failure(ip, username)
-                return jsonify({"error": "Utilizator sau parola incorecte."}), 401
-            logger.error(f"Eroare conectare operator '{username}': {db_err}")
-            return jsonify({"error": "Conectare esuata la server."}), 502
-
-        LIMITER.record_success(ip, username)
-        op_dbs = _operator_databases(op_conn)
-
-        # --- intersecteaza cu CAI (conexiune admin) ---
-        admin_conn = get_db_connection(COMMON_DB)
-        acur = admin_conn.cursor(dictionary=True)
-        try:
-            if an is not None:
-                acur.execute(f"SELECT {_CAI_COLUMNS} FROM CAI WHERE AnDate = %s",
-                             (int(an),))
-            else:
-                acur.execute(f"SELECT {_CAI_COLUMNS} FROM CAI")
-            all_units = acur.fetchall()
-        finally:
-            acur.close()
-
-        units = [
-            {
-                "IdUnitate": u["IdUnitate"],
-                "DbName": u["DbName"],
-                "NumeUnitate": u["NumeUnitate"],
-                "AlteDetalii": u["AlteDetalii"],
-                "Sursa": u["Sursa"],
-                "AnDate": u["AnDate"],
-                "DC": u["DC"],
-            }
-            for u in all_units
-            if u["DbName"] in op_dbs
-        ]
-
+        conn = get_comun_reader_connection()
+        cursor = conn.cursor(dictionary=True)   # dictionary=True -> rows as {col: value}
+        cursor.execute(
+            """
+            SELECT ua.DC AS DC, u.NumeUnitate AS NumeUnitate
+            FROM Unitati_Utilizatori AS ua
+            JOIN Unitati             AS u ON u.DC = ua.DC
+            WHERE ua.UN = %s
+            ORDER BY u.NumeUnitate
+            """,
+            (username,),                        # %s is a placeholder — value passed
+                                                # separately so it can't be SQL-injected
+        )
+        units = cursor.fetchall()
         return jsonify({"units": units}), 200
-
-    except Exception as e:
-        logger.error(f"Eroare auth_units: {e}", exc_info=True)
-        return jsonify({"error": "Eroare interna la listarea unitatilor."}), 500
+    except mysql.connector.Error as err:
+        logger.error("auth_units DB error: %s", err)
+        return jsonify({"error": "Eroare la citirea unităților."}), 500
     finally:
-        if op_conn is not None and op_conn.is_connected():
-            op_conn.close()
-        if admin_conn is not None and admin_conn.is_connected():
-            admin_conn.close()
+        if conn is not None and conn.is_connected():
+            conn.close()
 
 
+# ---------------------------------------------------------------------------
+# POST /api/auth/login   (pre-auth)
+# Body: { "username", "password", "db_name", "machine" }
+# Re-verifies identity, checks the user is granted that database, mints a token.
+# ---------------------------------------------------------------------------
 @auth_bp.route("/api/auth/login", methods=["POST"])
 def auth_login():
-    """
-    Faza 2: re-valideaza credentialele, confirma accesul la unitate, incarca
-    randul CAI complet si emite token-ul opac de sesiune.
-    Body: { "username", "password", "IdUnitate", "pcname" }
-    Raspuns: { "Token": str, "SessionContext": {...} } — fara session_id.
-    """
-    data = request.json or {}
-    username = (data.get("username") or "").strip()
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or "").strip().lower()
     password = data.get("password") or ""
-    pcname = (data.get("pcname") or "").strip()
-    id_unitate = data.get("IdUnitate")
+    db_name  = (data.get("db_name") or "").strip()
+    machine  = (data.get("machine") or "").strip()
 
-    if not username or not password:
-        return jsonify({"error": "Utilizator sau parola lipsa."}), 400
+    if not username or not password or not db_name:
+        return jsonify({"error": "Date de autentificare incomplete."}), 400
+
+    if not _verify_operator(username, password):
+        _log_action(username, db_name, "AUTH_FAIL", detalii="login",
+                    rezultat="EROARE", masina=machine, ip=request.remote_addr)
+        return jsonify({"error": "Utilizator sau parolă incorecte."}), 401
+
+    conn = None
     try:
-        id_unitate = int(id_unitate)
-    except (TypeError, ValueError):
-        return jsonify({"error": "Unitate invalida."}), 400
+        conn = get_comun_reader_connection()
+        cursor = conn.cursor(dictionary=True)
 
-    # Anti-forta-bruta: refuza inainte de a atinge MariaDB daca IP-ul / (IP,user) e blocat.
-    ip = request.remote_addr
-    if LIMITER.is_blocked(ip, username):
-        return jsonify({"error": "Prea multe incercari. Reincercati mai tarziu."}), 429
+        # Authorization: is this user actually granted this database?
+        cursor.execute(
+            "SELECT Rol, LastSS FROM Unitati_Utilizatori WHERE UN = %s AND DC = %s",
+            (username, db_name),
+        )
+        access = cursor.fetchone()
+        if access is None:
+            _log_action(username, db_name, "ACCESS_DENIED",
+                        rezultat="EROARE", masina=machine, ip=request.remote_addr)
+            return jsonify({"error": "Nu aveți acces la această unitate."}), 403
 
-    role = _role_from_username(username)  # store-only; poate fi None
-
-    op_conn = None
-    admin_conn = None
-    try:
-        # --- re-valideaza credentialele ---
-        try:
-            op_conn = connect_as_operator(username, password)
-        except mysql.connector.Error as db_err:
-            if db_err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                LIMITER.record_failure(ip, username)
-                return jsonify({"error": "Utilizator sau parola incorecte."}), 401
-            logger.error(f"Eroare conectare operator '{username}': {db_err}")
-            return jsonify({"error": "Conectare esuata la server."}), 502
-
-        LIMITER.record_success(ip, username)
-        op_dbs = _operator_databases(op_conn)
-
-        # --- incarca randul CAI complet pentru unitatea aleasa ---
-        # buffered=True: CAI poate avea mai multe randuri per IdUnitate (cate unul pe
-        # AnDate). fetchone() ar lasa restul necitit si close()/is_connected() ar arunca
-        # "Unread result found"; cursorul buffered aduce tot setul in memorie -> sigur.
-        admin_conn = get_db_connection(COMMON_DB)
-        acur = admin_conn.cursor(dictionary=True, buffered=True)
-        try:
-            acur.execute(f"SELECT {_CAI_COLUMNS} FROM CAI WHERE IdUnitate = %s",
-                         (id_unitate,))
-            unit = acur.fetchone()
-        finally:
-            acur.close()
-
+        # Unit details (friendly name + CF).
+        cursor.execute(
+            "SELECT NumeUnitate, CF FROM Unitati WHERE DC = %s",
+            (db_name,),
+        )
+        unit = cursor.fetchone()
         if unit is None:
-            return jsonify({"error": "Unitatea selectata nu exista."}), 404
-
-        # --- autorizare: operatorul trebuie sa poata ajunge la baza unitatii ---
-        if unit["DbName"] not in op_dbs:
-            return jsonify({"error": "Nu aveti acces la unitatea selectata."}), 403
-
-        session_context = {
-            "DbName": unit["DbName"],
-            "IdUnitate": unit["IdUnitate"],
-            "ANL": unit["AnDate"],
-            "CodProgram": unit["CodProgram"],
-            "SectorSursa": unit["Sursa"],
-            "CF": unit["CF"],
-            "NumeUnitate": unit["NumeUnitate"],
-            "Role": role,
-        }
-
-        # --- emite token-ul opac; parola ramane in sesiune (model a) ---
-        token, _ = STORE.create(username, password, unit["IdUnitate"],
-                                unit["DbName"], session_context, pcname)
-
-        return jsonify({"Token": token,
-                        "SessionContext": session_context}), 200
-
-    except Exception as e:
-        logger.error(f"Eroare auth_login: {e}", exc_info=True)
-        return jsonify({"error": "Eroare interna la autentificare."}), 500
+            # Roster points at a DC that is not registered — a data problem.
+            logger.error("login: DC %s in Unitati_Utilizatori but missing from Unitati", db_name)
+            return jsonify({"error": "Unitate neconfigurată."}), 500
+    except mysql.connector.Error as err:
+        logger.error("auth_login DB error: %s", err)
+        return jsonify({"error": "Eroare la autentificare."}), 500
     finally:
-        if op_conn is not None and op_conn.is_connected():
-            op_conn.close()
-        if admin_conn is not None and admin_conn.is_connected():
-            admin_conn.close()
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+    token = secrets.token_urlsafe(32)           # random opaque bearer token
+    _sessions[token] = {
+        "UN": username,
+        "DC": db_name,
+        "Rol": access["Rol"],
+        "CF": unit["CF"],
+        "NumeUnitate": unit["NumeUnitate"],
+        "machine": machine,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    _log_action(username, db_name, "LOGIN", masina=machine, ip=request.remote_addr)
+
+    return jsonify({
+        "Token": token,
+        "SessionContext": {
+            "DbName": db_name,
+            "NumeUnitate": unit["NumeUnitate"],
+            "CF": unit["CF"],
+            "Role": access["Rol"],
+        },
+        "LastSS": access["LastSS"],             # runtime hint for the main form (may be null)
+    }), 200
 
 
+# ---------------------------------------------------------------------------
+# POST /api/auth/logout   (token)
+# ---------------------------------------------------------------------------
 @auth_bp.route("/api/auth/logout", methods=["POST"])
-@require_session
-def auth_logout():
-    """
-    Revoca token-ul sesiunii curente (evacueaza si parola din memorie).
-    Corp gol — token-ul din Authorization identifica sesiunea. Un token deja
-    mort nu ajunge aici (guard-ul intoarce 401); clientul trateaza logout-ul
-    ca best-effort si ignora rezultatul.
-    """
-    STORE.revoke(g.session_token)
+@require_session_token
+def auth_logout(session, token):
+    _sessions.pop(token, None)
+    _log_action(session["UN"], session["DC"], "LOGOUT",
+                masina=session.get("machine"), ip=request.remote_addr)
     return jsonify({"ok": True}), 200
+
+
+# ---------------------------------------------------------------------------
+# GET /api/auth/periods?db_name=<DC>   (token)
+# Year / SS / CodProgram catalog for the main-form combos.
+# ---------------------------------------------------------------------------
+@auth_bp.route("/api/auth/periods", methods=["GET"])
+@require_session_token
+def auth_periods(session, token):
+    db_name = (request.args.get("db_name") or "").strip()
+    if not db_name:
+        return jsonify({"error": "Lipsește 'db_name'."}), 400
+
+    # A user may only read periods for the database they are logged into.
+    if db_name != session["DC"]:
+        return jsonify({"error": "Acces interzis pentru această unitate."}), 403
+
+    conn = None
+    try:
+        conn = get_comun_reader_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT AN, SS, CodProgram
+            FROM Unitati_Ani
+            WHERE DC = %s
+            ORDER BY AN DESC, SS
+            """,
+            (db_name,),
+        )
+        periods = cursor.fetchall()
+        return jsonify({"periods": periods}), 200
+    except mysql.connector.Error as err:
+        logger.error("auth_periods DB error: %s", err)
+        return jsonify({"error": "Eroare la citirea perioadelor."}), 500
+    finally:
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+
+# ---------------------------------------------------------------------------
+# POST /api/auth/last-ss   (token)
+# Body: { "ss": "<SS>" }
+# Remembers the SS for THIS user on THIS database. The (user, database) come
+# from the token's session, never from the client, so a user can't write another
+# user's row. Written by the API service account (db_reader is read-only).
+# ---------------------------------------------------------------------------
+@auth_bp.route("/api/auth/last-ss", methods=["POST"])
+@require_session_token
+def auth_last_ss(session, token):
+    data = request.get_json(silent=True) or {}
+    ss = (data.get("ss") or "").strip()
+    if not ss:
+        return jsonify({"error": "Lipsește 'ss'."}), 400
+
+    un = session["UN"]
+    dc = session["DC"]
+
+    # Validate SS is a real SS for this database (read-only reader).
+    rconn = None
+    try:
+        rconn = get_comun_reader_connection()
+        rcur = rconn.cursor()
+        rcur.execute(
+            "SELECT 1 FROM Unitati_Ani WHERE DC = %s AND SS = %s LIMIT 1",
+            (dc, ss),
+        )
+        known_ss = rcur.fetchone() is not None
+    except mysql.connector.Error as err:
+        logger.error("auth_last_ss validate error: %s", err)
+        return jsonify({"error": "Eroare la validarea SS."}), 500
+    finally:
+        if rconn is not None and rconn.is_connected():
+            rconn.close()
+
+    if not known_ss:
+        return jsonify({"error": "SS necunoscut pentru această unitate."}), 400
+
+    # Write via the service account (has UPDATE on Unitati_Utilizatori).
+    wconn = None
+    try:
+        wconn = get_db_connection(COMMON_DB)    # DB_CONFIG service account
+        wcur = wconn.cursor()
+        wcur.execute(
+            "UPDATE Unitati_Utilizatori SET LastSS = %s WHERE UN = %s AND DC = %s",
+            (ss, un, dc),
+        )
+        wconn.commit()
+        _log_action(un, dc, "SS_CHANGE", tinta=ss,
+                    masina=session.get("machine"), ip=request.remote_addr)
+        return jsonify({"ok": True}), 200
+    except mysql.connector.Error as err:
+        if wconn is not None:
+            wconn.rollback()
+        logger.error("auth_last_ss write error: %s", err)
+        return jsonify({"error": "Eroare la salvarea SS."}), 500
+    finally:
+        if wconn is not None and wconn.is_connected():
+            wconn.close()

@@ -26,13 +26,6 @@ Public NotInheritable Class LoginForm
     Private _collapsedHeight As Integer
     Private _expandedHeight As Integer
 
-    ' --- culoare eroare theme-aware: slotul Error din paleta schemei active ---
-    Private ReadOnly Property ClrError As Color
-        Get
-            Return ThemeManager.Current.Palette.ErrorColor
-        End Get
-    End Property
-
     Public Sub New(authApi As IAuthApi, session As SessionContext)
         ArgumentNullException.ThrowIfNull(authApi)
         ArgumentNullException.ThrowIfNull(session)
@@ -44,55 +37,63 @@ Public NotInheritable Class LoginForm
     Private Sub LoginForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         ' Tematizarea structurala o face KBotThemedForm (base OnLoad -> ThemeManager.Apply);
         ' accentele/eroarea le pune OnThemeChanged (ruleaza dupa Apply si la comutare live).
+        picLogo.Image = My.Resources.kbot_64
+        capBar.IconImage = My.Resources.kbot_64
+        Me.KeyPreview = True                ' Escape inchide (nu mai exista X nativ)
         CaptureFormHeights()
         ShowPhaseCreds()
     End Sub
 
-    ' Culorile theme-aware ale showcase-ului. Ruleaza DUPA structura temei (base OnLoad
-    ' cheama OnThemeChanged dupa Apply) si la fiecare comutare de schema.
-    Protected Overrides Sub OnThemeChanged()
-        MyBase.OnThemeChanged()
-        ApplyAccentColors()
-        lblError.ForeColor = ClrError
+    ' Fara chenar nativ => fara buton X. Escape inchide dialogul cu Cancel.
+    Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
+        MyBase.OnKeyDown(e)
+        If e.KeyCode = Keys.Escape Then
+            DialogResult = DialogResult.Cancel
+            Close()
+        End If
     End Sub
 
-    ' Butoanele primare = accent (din paleta activa); rotunjite cand schema e Modern.
-    Private Sub ApplyAccentColors()
-        Dim scheme = ThemeManager.Current
-        Dim p = scheme.Palette
-        Dim modern As Boolean = (scheme.Style.ButtonRender = ButtonRenderStyle.ModernOwnerDrawn)
+    ' Culorile theme-aware. Ruleaza DUPA structura temei (base OnLoad cheama
+    ' OnThemeChanged dupa Apply) si la fiecare comutare de schema.
+    Protected Overrides Sub OnThemeChanged()
+        MyBase.OnThemeChanged()
+        Dim p = ThemeManager.Current.Palette
 
-        For Each b As Button In {btnContinue, btnLogin}
-            If modern Then
-                ModernRenderer.ApplyButton(b, scheme)   ' colturi rotunjite + handlere
-            Else
-                ModernRenderer.DetachButton(b)          ' scoate rotunjirea daca venim din Modern
-                b.FlatStyle = FlatStyle.Flat
-                b.FlatAppearance.BorderSize = 1
-            End If
-            ' Peste randarea de baza, pictam accentul (buton primar).
-            b.BackColor = p.AccentColor
-            b.ForeColor = p.AccentTextColor
-            b.FlatAppearance.BorderColor = p.AccentColor
-            b.FlatAppearance.MouseOverBackColor = p.AccentHoverColor
-            b.FlatAppearance.MouseDownBackColor = p.AccentColor
-            b.UseVisualStyleBackColor = False
+        ' Fundalul formularului ESTE conturul de 1px al ferestrei: se vede prin Padding(1)
+        ' de jur imprejurul cardului.
+        BackColor = p.BorderColor
+
+        ' Etichetele de camp / subtitlul sunt secundare -> text dim (ThemeManager le pune
+        ' pe TextColor plin; titlul ramane full TextColor).
+        For Each l As Label In {lblUser, lblPass, lblUnit, lblSubtitle}
+            l.ForeColor = p.TextDimColor
         Next
 
-        ' Butonul secundar „Inapoi” — buton neutru din paleta.
-        ModernRenderer.DetachButton(btnBack)
-        btnBack.FlatStyle = FlatStyle.Flat
-        btnBack.FlatAppearance.BorderColor = p.ButtonBorderColor
-        btnBack.BackColor = p.ButtonBackColor
-        btnBack.ForeColor = p.ButtonTextColor
-        btnBack.UseVisualStyleBackColor = False
+        ApplyPrimaryButtons()
+        ApplySecondaryButton()
+    End Sub
+
+    ' Stilurile de buton au fost extrase in KBot.Theming.ButtonStyles (refolosite de
+    ' MainForm); aici raman doar apelurile.
+    Private Sub ApplyPrimaryButtons()
+        For Each b As Button In {btnContinue, btnLogin}
+            ButtonStyles.ApplyPrimary(b, ThemeManager.Current)
+        Next
+    End Sub
+
+    Private Sub ApplySecondaryButton()
+        ButtonStyles.ApplySecondary(btnBack, ThemeManager.Current)
     End Sub
 
     ' Inaltimea din Designer include selectorul (pnlUnit) vizibil => e cea extinsa.
     ' Cea compacta scade spatiul ocupat de selector. Capturat o singura data, la Load.
     Private Sub CaptureFormHeights()
+        ' Randurile AutoSize se stabilizeaza abia dupa un layout explicit; altfel
+        ' Me.Height / dimensiunile copiilor pot fi gresite la Load.
+        tlpBody.PerformLayout()
         _expandedHeight = Me.Height
-        Dim unitSpace As Integer = If(pnlUnit.Height > 0, pnlUnit.Height, 150)
+        Dim unitSpace As Integer = pnlUnit.PreferredSize.Height + pnlUnit.Margin.Vertical
+        If unitSpace <= 0 Then unitSpace = 150
         _collapsedHeight = _expandedHeight - unitSpace
     End Sub
 
@@ -104,7 +105,7 @@ Public NotInheritable Class LoginForm
         Me.Height = _collapsedHeight
         Me.AcceptButton = btnContinue
         ClearError()
-        txtUser.Focus()
+        txtUser.FocusInput()
     End Sub
 
     ' Faza 2: formularul creste si arata selectorul unitatii sub credentiale.
@@ -118,19 +119,16 @@ Public NotInheritable Class LoginForm
 
     ' ---------------- helpers ----------------
     Private Sub ShowError(message As String)
-        lblError.Text = message
-        lblError.Visible = True
+        ntfError.Show(message, NoticeKind.Error)
     End Sub
 
     Private Sub ClearError()
-        lblError.Visible = False
-        lblError.Text = String.Empty
+        ntfError.Clear()
     End Sub
 
     Private Sub SetBusy(busy As Boolean)
-        pbBusy.Visible = busy
-        pnlCreds.Enabled = Not busy
-        pnlUnit.Enabled = Not busy
+        busyBar.Running = busy
+        tlpBody.Enabled = Not busy        ' pnlUnit e in tlpBody => acoperit
         Me.UseWaitCursor = busy
     End Sub
 
@@ -146,7 +144,7 @@ Public NotInheritable Class LoginForm
         ClearError()
         SetBusy(True)
         Try
-            Dim units = Await _authApi.GetUnitsAsync(user, pass, Nothing, CancellationToken.None)
+            Dim units = Await _authApi.GetUnitsAsync(user, pass, CancellationToken.None)
             If units Is Nothing OrElse units.Count = 0 Then
                 ShowError("Nu aveți nicio unitate accesibilă.")
                 Return
@@ -156,8 +154,8 @@ Public NotInheritable Class LoginForm
             _password = pass
 
             cboUnit.DataSource = New List(Of UnitInfo)(units)
-            cboUnit.DisplayMember = NameOf(UnitInfo.Display)
-            cboUnit.ValueMember = NameOf(UnitInfo.IdUnitate)
+            cboUnit.DisplayMember = NameOf(UnitInfo.Display)   ' arata NumeUnitate
+            cboUnit.ValueMember = NameOf(UnitInfo.DC)          ' valoarea din spate e DC
             cboUnit.SelectedIndex = 0    ' caz mono-unitate: pre-selectat, un click de confirmat
 
             ShowPhaseUnit()
@@ -184,10 +182,11 @@ Public NotInheritable Class LoginForm
         SetBusy(True)
         Try
             Dim result = Await _authApi.LoginAsync(
-                _username, _password, selected.IdUnitate,
+                _username, _password, selected.DC,
                 Environment.MachineName, CancellationToken.None)
 
-            _session.Populate(_username, result.Token, result.SessionContext)
+            _session.Populate(_username, result.Token, result.SessionContext)   ' OperatorName = e-mail
+            _session.LastSS = result.LastSS                                     ' hint pentru MainForm
 
             DialogResult = DialogResult.OK
             Close()

@@ -19,10 +19,6 @@ Public Class SessionContextTests
     Private Shared Function SampleDto() As SessionContextDto
         Return New SessionContextDto With {
             .DbName = "000_DEMO",
-            .IdUnitate = 136,
-            .ANL = 2026,
-            .CodProgram = "P01",
-            .SectorSursa = "02A",
             .CF = "123456",
             .NumeUnitate = "DEMO",
             .Role = "Contabil"
@@ -30,22 +26,34 @@ Public Class SessionContextTests
     End Function
 
     <Fact>
-    Public Sub Populate_MapeazaTotSiMarcheazaAutentificat()
+    Public Sub Populate_MapeazaIdentitateaSiMarcheazaAutentificat()
         Dim s As New SessionContext()
         s.Populate("000_DEMO_Contabil", "tok-opaque-123", SampleDto())
 
         Assert.Equal("000_DEMO_Contabil", s.OperatorName)
         Assert.Equal("tok-opaque-123", s.Token)
         Assert.Equal("000_DEMO", s.DbName)
-        Assert.Equal(136, s.IdUnitate)
-        Assert.Equal(2026, s.An)                 ' DTO.ANL -> An
-        Assert.Equal("P01", s.CodProgram)
-        Assert.Equal("02A", s.SectorSursa)
         Assert.Equal("123456", s.CF)
         Assert.Equal("DEMO", s.NumeUnitate)
         Assert.Equal("Contabil", s.Role)
+        ' Anul / SS / CodProgram NU vin din login — sunt runtime (SetPeriod).
+        Assert.Equal(0, s.An)
+        Assert.Equal(String.Empty, s.SectorSursa)
+        Assert.Equal(String.Empty, s.CodProgram)
         Assert.True(s.IsAuthenticated)           ' derivat din Token
         Assert.True(s.IsLoaded)                  ' derivat din CF
+    End Sub
+
+    <Fact>
+    Public Sub SetPeriod_FixeazaAnSsCodProgram()
+        Dim s As New SessionContext()
+        s.Populate("000_DEMO_Contabil", "tok-opaque-123", SampleDto())
+
+        s.SetPeriod(2026, "02A", "P01")
+
+        Assert.Equal(2026, s.An)
+        Assert.Equal("02A", s.SectorSursa)
+        Assert.Equal("P01", s.CodProgram)
     End Sub
 
     <Fact>
@@ -68,6 +76,7 @@ Public Class SessionContextTests
     Public Sub Clear_ReseteazaStareaSiCampurile()
         Dim s As New SessionContext()
         s.Populate("000_DEMO_Contabil", "tok-opaque-123", SampleDto())
+        s.SetPeriod(2026, "02A", "P01")
 
         s.Clear()
 
@@ -75,8 +84,9 @@ Public Class SessionContextTests
         Assert.Equal(String.Empty, s.Token)
         Assert.Equal(String.Empty, s.Role)
         Assert.Equal(String.Empty, s.DbName)
-        Assert.Equal(0, s.IdUnitate)
         Assert.Equal(0, s.An)
+        Assert.Equal(String.Empty, s.SectorSursa)
+        Assert.Equal(String.Empty, s.CodProgram)
         Assert.Equal(String.Empty, s.CF)
         Assert.False(s.IsLoaded)
     End Sub

@@ -12,6 +12,7 @@
     <OptionExplicit>On</OptionExplicit>
     <OptionInfer>On</OptionInfer>
     <OptionCompare>Binary</OptionCompare>
+    <ApplicationIcon>kbot.ico</ApplicationIcon>
   </PropertyGroup>
 
   <!-- Versiune componentă K-BOT.
@@ -28,6 +29,15 @@
     <Import Include="System.Data" />
     <Import Include="System.Drawing" />
     <Import Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <!-- Resurse proiect: fixăm numele manifest la „KBot.App.Resources” ca ResourceManager-ul
+       din My Project\Resources.Designer.vb (scris de mână, fiindcă generatorul VS nu rulează
+       sub dotnet build) să-l regăsească. Expune My.Resources.kbot_64. -->
+  <ItemGroup>
+    <EmbeddedResource Update="My Project\Resources.resx">
+      <LogicalName>KBot.App.Resources.resources</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
