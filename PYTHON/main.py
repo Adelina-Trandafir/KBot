@@ -23,6 +23,14 @@ logger = setup_logger()
 
 app = Flask(__name__)
 
+# Diacritice romanesti LITERALE (UTF-8) in raspunsurile JSON, nu escape-uri \uXXXX
+# (Flask >=2.2: app.json.ensure_ascii). Fara asta, mesajele de eroare pentru operator
+# ("Sesiune expirată", "Autentificați-vă") ajung ilizibile in corpul raspunsului.
+try:
+    app.json.ensure_ascii = False
+except Exception:
+    app.config["JSON_AS_ASCII"] = False   # fallback pentru Flask vechi
+
 # Rulam in spatele nginx (un singur proxy). ProxyFix face ca request.remote_addr sa
 # fie IP-ul REAL al clientului (din X-Forwarded-For), nu 127.0.0.1. De asta depinde
 # limita anti-forta-bruta din routes/auth/ratelimit.py: fara ea, toti clientii ar

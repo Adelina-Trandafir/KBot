@@ -140,13 +140,21 @@ Public NotInheritable Class KBotTextField
 
     Protected Overrides Sub OnResize(e As EventArgs)
         MyBase.OnResize(e)
-        LayoutBox()
+        Try
+            LayoutBox()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotTextField.OnResize", ex)
+        End Try
     End Sub
 
     Protected Overrides Sub OnFontChanged(e As EventArgs)
         MyBase.OnFontChanged(e)
-        _inner.Font = Font
-        LayoutBox()
+        Try
+            _inner.Font = Font
+            LayoutBox()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotTextField.OnFontChanged", ex)
+        End Try
     End Sub
 
     ''' <summary>Reaplică culorile schemei.</summary>

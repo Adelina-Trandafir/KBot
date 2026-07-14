@@ -1,6 +1,7 @@
 Imports System.Security.Cryptography
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Text.RegularExpressions
+Imports KBot.Common
 
 ''' <summary>
 ''' Service for smartcard certificate operations
@@ -11,10 +12,15 @@ Public Class CertificateService
     ''' Get all valid certificates with private keys from smartcard/token
     ''' </summary>
     Public Shared Function GetSmartcardCertificates() As List(Of X509Certificate2)
-        Dim certificates As New List(Of X509Certificate2)
-        AddCertificatesFromStore(certificates, StoreLocation.CurrentUser)
-        AddCertificatesFromStore(certificates, StoreLocation.LocalMachine)
-        Return certificates
+        Try
+            Dim certificates As New List(Of X509Certificate2)
+            AddCertificatesFromStore(certificates, StoreLocation.CurrentUser)
+            AddCertificatesFromStore(certificates, StoreLocation.LocalMachine)
+            Return certificates
+        Catch ex As Exception
+            GlobalErrorLog.Write("CertificateService.GetSmartcardCertificates", ex)
+            Throw
+        End Try
     End Function
 
     Private Shared Sub AddCertificatesFromStore(certificates As List(Of X509Certificate2), location As StoreLocation)
@@ -32,7 +38,9 @@ Public Class CertificateService
                 Next
             End Using
         Catch ex As Exception
-            Debug.WriteLine($"Error reading certificates from {location}: {ex.Message}")
+            ' Înghițire intenționată: un magazin inaccesibil nu trebuie să pice enumerarea
+            ' celuilalt magazin; logăm și continuăm.
+            GlobalErrorLog.Write("CertificateService.AddCertificatesFromStore", ex)
         End Try
     End Sub
 
@@ -134,8 +142,9 @@ Public Class CertificateService
             End Using ' <--- Aici se închide conexiunea cu cardul pentru acest certificat
 
         Catch ex As Exception
-            ' În caz de eroare (ex: driver lipsă), considerăm certificatul invalid pentru a nu crăpa aplicația
-            Debug.WriteLine($"Eroare validare hardware {cert.Thumbprint}: {ex.Message}")
+            ' Înghițire intenționată: la eroare (ex: driver lipsă) considerăm certificatul
+            ' invalid ca să nu crăpăm aplicația; logăm totuși în sink-ul global.
+            GlobalErrorLog.Write("CertificateService.IsValidHardwareCertificate", ex)
             Return False
         End Try
     End Function
@@ -150,7 +159,9 @@ Public Class CertificateService
                 Return match.Groups(1).Value
             End If
             Return cert.Subject
-        Catch
+        Catch ex As Exception
+            ' Înghițire intenționată: dacă regex-ul pică, întoarcem subiectul brut.
+            GlobalErrorLog.Write("CertificateService.GetCommonName", ex)
             Return cert.Subject
         End Try
     End Function
@@ -159,12 +170,17 @@ Public Class CertificateService
     ''' Generează numele de afișat în ComboBox
     ''' </summary>
     Public Shared Function GetDisplayName(cert As X509Certificate2) As String
-        Dim cn = GetCommonName(cert)
-        Dim expiry = cert.NotAfter.ToString("dd.MM.yyyy")
-        Dim issuerMatch As Match = Regex.Match(cert.Issuer, "CN=([^,]+)")
-        Dim issuer As String = If(issuerMatch.Success, issuerMatch.Groups(1).Value, "N/A")
+        Try
+            Dim cn = GetCommonName(cert)
+            Dim expiry = cert.NotAfter.ToString("dd.MM.yyyy")
+            Dim issuerMatch As Match = Regex.Match(cert.Issuer, "CN=([^,]+)")
+            Dim issuer As String = If(issuerMatch.Success, issuerMatch.Groups(1).Value, "N/A")
 
-        Return $"{cn} (exp: {expiry}) - Emis de: {issuer}"
+            Return $"{cn} (exp: {expiry}) - Emis de: {issuer}"
+        Catch ex As Exception
+            GlobalErrorLog.Write("CertificateService.GetDisplayName", ex)
+            Throw
+        End Try
     End Function
 
     ''' <summary>
@@ -204,6 +220,8 @@ Public Class CertificateService
                     Return (False, $"Eroare criptografică (HResult: {ex.HResult:X}): {ex.Message}")
             End Select
         Catch ex As Exception
+            ' Boundary spre UI: raportăm rezultatul, nu rearuncăm; logăm în sink-ul global.
+            GlobalErrorLog.Write("CertificateService.ValidatePin", ex)
             Return (False, $"Eroare la validare PIN: {ex.Message}")
         End Try
     End Function
@@ -212,11 +230,16 @@ Public Class CertificateService
     ''' Returnează detalii complete pentru afișare text
     ''' </summary>
     Public Shared Function GetCertificateDetails(cert As X509Certificate2) As String
-        Return $"Subiect (CN): {GetCommonName(cert)}{vbCrLf}" &
-               $"Emitent: {cert.IssuerName.Name}{vbCrLf}" &
-               $"Valabil de la: {cert.NotBefore:dd.MM.yyyy HH:mm:ss}{vbCrLf}" &
-               $"Valabil până la: {cert.NotAfter:dd.MM.yyyy HH:mm:ss}{vbCrLf}" &
-               $"Amprentă: {cert.Thumbprint}"
+        Try
+            Return $"Subiect (CN): {GetCommonName(cert)}{vbCrLf}" &
+                   $"Emitent: {cert.IssuerName.Name}{vbCrLf}" &
+                   $"Valabil de la: {cert.NotBefore:dd.MM.yyyy HH:mm:ss}{vbCrLf}" &
+                   $"Valabil până la: {cert.NotAfter:dd.MM.yyyy HH:mm:ss}{vbCrLf}" &
+                   $"Amprentă: {cert.Thumbprint}"
+        Catch ex As Exception
+            GlobalErrorLog.Write("CertificateService.GetCertificateDetails", ex)
+            Throw
+        End Try
     End Function
 
 End Class

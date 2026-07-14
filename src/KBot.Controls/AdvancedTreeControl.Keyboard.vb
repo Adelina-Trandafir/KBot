@@ -18,6 +18,7 @@
     ' Navigare vizuală la fiecare repeat al tastei.
     ' _keyNavPending = True DOAR dacă selecția chiar s-a schimbat.
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
+      Try
         MyBase.OnKeyDown(e)
         If Not Me.Enabled Then Return
 
@@ -125,31 +126,38 @@
                 _keyNavPending = True
             End If
         End If
+      Catch ex As Exception
+        GlobalErrorLog.Write("AdvancedTreeControl.OnKeyDown", ex)
+      End Try
     End Sub
 
     ' ── OnKeyUp ─────────────────────────────────────────────────────────────────
     ' Trimite evenimentul la VBA O SINGURĂ DATĂ, la ridicarea tastei.
     ' Indiferent cât timp s-a ținut apăsată, VBA primește un singur CLICK.
     Protected Overrides Sub OnKeyUp(e As KeyEventArgs)
-        MyBase.OnKeyUp(e)
+        Try
+            MyBase.OnKeyUp(e)
 
-        Select Case e.KeyCode
-            Case Keys.Up, Keys.Down, Keys.Left, Keys.Right,
-             Keys.PageUp, Keys.PageDown, Keys.Home, Keys.End
-                ' Navigare vizuală — NU ridicăm NodeMouseUp; utilizatorul confirmă cu Enter
-                If _keyNavPending Then
-                    _keyNavPending = False
-                    Me.Invalidate()
-                End If
+            Select Case e.KeyCode
+                Case Keys.Up, Keys.Down, Keys.Left, Keys.Right,
+                 Keys.PageUp, Keys.PageDown, Keys.Home, Keys.End
+                    ' Navigare vizuală — NU ridicăm NodeMouseUp; utilizatorul confirmă cu Enter
+                    If _keyNavPending Then
+                        _keyNavPending = False
+                        Me.Invalidate()
+                    End If
 
-            Case Keys.Enter
-                ' Enter = confirmare selecție → un singur NodeMouseUp
-                If pSelectedItem IsNot Nothing Then
-                    RaiseEvent NodeMouseUp(pSelectedItem,
-                    New MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0))
-                    pOldSelectedItem = pSelectedItem
-                End If
-        End Select
+                Case Keys.Enter
+                    ' Enter = confirmare selecție → un singur NodeMouseUp
+                    If pSelectedItem IsNot Nothing Then
+                        RaiseEvent NodeMouseUp(pSelectedItem,
+                        New MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0))
+                        pOldSelectedItem = pSelectedItem
+                    End If
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnKeyUp", ex)
+        End Try
     End Sub
 
     ' ── EnsureNodeVisible ────────────────────────────────────────────────────────

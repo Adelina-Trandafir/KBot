@@ -6,9 +6,10 @@
 # lipseste vreuna, gunicorn revine TACUT la default-ul ei — de aceea le tinem pe
 # toate aici, explicit.
 #
-# Starea aplicatiei (session_store.STORE, _upload_sessions) traieste in memoria
-# procesului. Cu >1 worker s-ar fragmenta tacut (fiecare worker ar avea alt STORE),
-# deci refuzam pornirea pana la o eventuala mutare pe Redis. (vezi session_store.py)
+# Starea aplicatiei traieste in memoria procesului. session_store.STORE poate fi
+# deja pe Redis (SESSION_BACKEND="redis"), dar _upload_sessions inca NU — deci cu
+# >1 worker starea de upload s-ar fragmenta tacut. Pastram deliberat garda de un
+# singur worker pana cand SI _upload_sessions migreaza pe Redis. (vezi session_store.py)
 
 workers = 1
 threads = 4

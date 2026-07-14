@@ -142,4 +142,40 @@ Public Class ApiClientTests
         Assert.Equal(401, ex.StatusCode.Value)
     End Function
 
+    <Fact>
+    Public Async Function ApiClient_ReadsTokenAtCallTime_NotAtConstruction() As Task
+        ' Regression guard for H1: ApiClient must read _session.Token PER REQUEST, not
+        ' capture it at construction. Build with an EMPTY session (no token), populate
+        ' the token AFTERWARDS (as LoginForm.Populate does), then issue a request — the
+        ' outgoing Authorization must carry the token set after construction.
+        Dim h As New StubHandler With {.ResponseBody = "{""db_name"":""000_DEMO"",""count"":0,""rows"":[]}"}
+        Dim http As New HttpClient(h) With {.BaseAddress = New Uri("http://localhost/")}
+        Dim session As New SessionContext()        ' fără token la construcție
+        Dim client As New ApiClient(http, New ApiOptions(), session)
+
+        session.Token = "fresh-token-after-login"  ' populat DUPĂ construcție, ca la login
+
+        Await client.GetAngajamenteAsync("000_DEMO", 0, False, CancellationToken.None)
+
+        Assert.Equal("Bearer fresh-token-after-login", h.LastAuthorization)
+    End Function
+
+    <Fact>
+    Public Async Function GetAngajamente_Non2xx_ParsesErrorMessageAndReason() As Task
+        ' The client must surface the server's Romanian message + machine reason, never
+        ' the raw JSON body.
+        Dim h As New StubHandler With {
+            .Status = HttpStatusCode.Unauthorized,
+            .ResponseBody = "{""error"":""Sesiune necunoscută. Autentificați-vă din nou."",""reason"":""TOKEN_UNKNOWN""}"
+        }
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
+            Async Function() Await client.GetAngajamenteAsync("000_DEMO", 0, False, CancellationToken.None))
+        Assert.Equal(401, ex.StatusCode.Value)
+        Assert.Equal("TOKEN_UNKNOWN", ex.Reason)
+        Assert.Equal("Sesiune necunoscută. Autentificați-vă din nou.", ex.Message)
+    End Function
+
 End Class

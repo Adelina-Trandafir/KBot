@@ -1,4 +1,5 @@
 Imports System.Windows.Forms
+Imports KBot.Common
 
 ''' <summary>
 ''' Formular de bază care se auto-tematizează. Formularele noi îl moștenesc și primesc
@@ -14,22 +15,35 @@ Public Class KBotThemedForm
     Inherits Form
 
     Protected Overrides Sub OnLoad(e As EventArgs)
-        MyBase.OnLoad(e)
-        ThemeManager.RegisterForm(Me)
-        ThemeManager.Apply(Me)
-        OnThemeChanged()
-        AddHandler ThemeManager.ThemeChanged, AddressOf HandleThemeChanged
+        Try
+            MyBase.OnLoad(e)
+            ThemeManager.RegisterForm(Me)
+            ThemeManager.Apply(Me)
+            OnThemeChanged()
+            AddHandler ThemeManager.ThemeChanged, AddressOf HandleThemeChanged
+        Catch ex As Exception
+            ' Boundary UI (Load): un throw ar dărâma deschiderea formularului — logăm și înghițim.
+            GlobalErrorLog.Write("KBotThemedForm.OnLoad", ex)
+        End Try
     End Sub
 
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
-        RemoveHandler ThemeManager.ThemeChanged, AddressOf HandleThemeChanged
-        ThemeManager.UnregisterForm(Me)
-        MyBase.OnFormClosed(e)
+        Try
+            RemoveHandler ThemeManager.ThemeChanged, AddressOf HandleThemeChanged
+            ThemeManager.UnregisterForm(Me)
+            MyBase.OnFormClosed(e)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotThemedForm.OnFormClosed", ex)
+        End Try
     End Sub
 
     Private Sub HandleThemeChanged(sender As Object, e As EventArgs)
-        ' Apply s-a executat deja în difuzarea SetScheme; aici doar re-citim culorile semantice.
-        OnThemeChanged()
+        Try
+            ' Apply s-a executat deja în difuzarea SetScheme; aici doar re-citim culorile semantice.
+            OnThemeChanged()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotThemedForm.HandleThemeChanged", ex)
+        End Try
     End Sub
 
     ''' <summary>

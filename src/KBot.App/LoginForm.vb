@@ -35,90 +35,129 @@ Public NotInheritable Class LoginForm
     End Sub
 
     Private Sub LoginForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        ' Tematizarea structurala o face KBotThemedForm (base OnLoad -> ThemeManager.Apply);
-        ' accentele/eroarea le pune OnThemeChanged (ruleaza dupa Apply si la comutare live).
-        picLogo.Image = My.Resources.kbot_64
-        capBar.IconImage = My.Resources.kbot_64
+        Try
+            ' Tematizarea structurala o face KBotThemedForm (base OnLoad -> ThemeManager.Apply);
+            ' accentele/eroarea le pune OnThemeChanged (ruleaza dupa Apply si la comutare live).
+            picLogo.Image = My.Resources.kbot_64
+            capBar.IconImage = My.Resources.kbot_64
 #If DEBUG Then
-        txtUser.Text = "scavatarsoft@gmail.com"
-        txtPass.Text = "Par0laN0u"
+            txtUser.Text = "scavatarsoft@gmail.com"
+            txtPass.Text = "Par0laN0u"
 #End If
-        Me.KeyPreview = True                ' Escape inchide (nu mai exista X nativ)
-        CaptureFormHeights()
-        ShowPhaseCreds()
+            Me.KeyPreview = True                ' Escape inchide (nu mai exista X nativ)
+            CaptureFormHeights()
+            ShowPhaseCreds()
+        Catch ex As Exception
+            ' Boundary UI (Load): logam si inghitim.
+            GlobalErrorLog.Write("LoginForm.LoginForm_Load", ex)
+        End Try
     End Sub
 
     ' Fara chenar nativ => fara buton X. Escape inchide dialogul cu Cancel.
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
-        MyBase.OnKeyDown(e)
-        If e.KeyCode = Keys.Escape Then
-            DialogResult = DialogResult.Cancel
-            Close()
-        End If
+        Try
+            MyBase.OnKeyDown(e)
+            If e.KeyCode = Keys.Escape Then
+                DialogResult = DialogResult.Cancel
+                Close()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("LoginForm.OnKeyDown", ex)
+        End Try
     End Sub
 
     ' Culorile theme-aware. Ruleaza DUPA structura temei (base OnLoad cheama
     ' OnThemeChanged dupa Apply) si la fiecare comutare de schema.
     Protected Overrides Sub OnThemeChanged()
-        MyBase.OnThemeChanged()
-        Dim p = ThemeManager.Current.Palette
+        Try
+            MyBase.OnThemeChanged()
+            Dim p = ThemeManager.Current.Palette
 
-        ' Fundalul formularului ESTE conturul de 1px al ferestrei: se vede prin Padding(1)
-        ' de jur imprejurul cardului.
-        BackColor = p.BorderColor
+            ' Fundalul formularului ESTE conturul de 1px al ferestrei: se vede prin Padding(1)
+            ' de jur imprejurul cardului.
+            BackColor = p.BorderColor
 
-        ' Etichetele de camp / subtitlul sunt secundare -> text dim (ThemeManager le pune
-        ' pe TextColor plin; titlul ramane full TextColor).
-        For Each l As Label In {lblUser, lblPass, lblUnit, lblSubtitle}
-            l.ForeColor = p.TextDimColor
-        Next
+            ' Etichetele de camp / subtitlul sunt secundare -> text dim (ThemeManager le pune
+            ' pe TextColor plin; titlul ramane full TextColor).
+            For Each l As Label In {lblUser, lblPass, lblUnit, lblSubtitle}
+                l.ForeColor = p.TextDimColor
+            Next
 
-        ApplyPrimaryButtons()
-        ApplySecondaryButton()
+            ApplyPrimaryButtons()
+            ApplySecondaryButton()
+        Catch ex As Exception
+            ' Boundary UI (cascada de tema): logam si inghitim.
+            GlobalErrorLog.Write("LoginForm.OnThemeChanged", ex)
+        End Try
     End Sub
 
     ' Stilurile de buton au fost extrase in KBot.Theming.ButtonStyles (refolosite de
     ' MainForm); aici raman doar apelurile.
     Private Sub ApplyPrimaryButtons()
-        For Each b As Button In {btnContinue, btnLogin}
-            ButtonStyles.ApplyPrimary(b, ThemeManager.Current)
-        Next
+        Try
+            For Each b As Button In {btnContinue, btnLogin}
+                ButtonStyles.ApplyPrimary(b, ThemeManager.Current)
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("LoginForm.ApplyPrimaryButtons", ex)
+            Throw
+        End Try
     End Sub
 
     Private Sub ApplySecondaryButton()
-        ButtonStyles.ApplySecondary(btnBack, ThemeManager.Current)
+        Try
+            ButtonStyles.ApplySecondary(btnBack, ThemeManager.Current)
+        Catch ex As Exception
+            GlobalErrorLog.Write("LoginForm.ApplySecondaryButton", ex)
+            Throw
+        End Try
     End Sub
 
     ' Inaltimea din Designer include selectorul (pnlUnit) vizibil => e cea extinsa.
     ' Cea compacta scade spatiul ocupat de selector. Capturat o singura data, la Load.
     Private Sub CaptureFormHeights()
-        ' Randurile AutoSize se stabilizeaza abia dupa un layout explicit; altfel
-        ' Me.Height / dimensiunile copiilor pot fi gresite la Load.
-        tlpBody.PerformLayout()
-        _expandedHeight = Me.Height
-        Dim unitSpace As Integer = pnlUnit.PreferredSize.Height + pnlUnit.Margin.Vertical
-        If unitSpace <= 0 Then unitSpace = 150
-        _collapsedHeight = _expandedHeight - unitSpace
+        Try
+            ' Randurile AutoSize se stabilizeaza abia dupa un layout explicit; altfel
+            ' Me.Height / dimensiunile copiilor pot fi gresite la Load.
+            tlpBody.PerformLayout()
+            _expandedHeight = Me.Height
+            Dim unitSpace As Integer = pnlUnit.PreferredSize.Height + pnlUnit.Margin.Vertical
+            If unitSpace <= 0 Then unitSpace = 150
+            _collapsedHeight = _expandedHeight - unitSpace
+        Catch ex As Exception
+            GlobalErrorLog.Write("LoginForm.CaptureFormHeights", ex)
+            Throw
+        End Try
     End Sub
 
     ' ---------------- comutare faze ----------------
     ' Faza 1: doar credentialele. Formularul e compact; selectorul (pnlUnit, imbricat in
     ' randul elastic al pnlCreds) e ascuns.
     Private Sub ShowPhaseCreds()
-        pnlUnit.Visible = False
-        Me.Height = _collapsedHeight
-        Me.AcceptButton = btnContinue
-        ClearError()
-        txtUser.FocusInput()
+        Try
+            pnlUnit.Visible = False
+            Me.Height = _collapsedHeight
+            Me.AcceptButton = btnContinue
+            ClearError()
+            txtUser.FocusInput()
+        Catch ex As Exception
+            GlobalErrorLog.Write("LoginForm.ShowPhaseCreds", ex)
+            Throw
+        End Try
     End Sub
 
     ' Faza 2: formularul creste si arata selectorul unitatii sub credentiale.
     Private Sub ShowPhaseUnit()
-        pnlUnit.Visible = True
-        Me.Height = _expandedHeight
-        Me.AcceptButton = btnLogin
-        ClearError()
-        cboUnit.Focus()
+        Try
+            pnlUnit.Visible = True
+            Me.Height = _expandedHeight
+            Me.AcceptButton = btnLogin
+            ClearError()
+            cboUnit.Focus()
+        Catch ex As Exception
+            GlobalErrorLog.Write("LoginForm.ShowPhaseUnit", ex)
+            Throw
+        End Try
     End Sub
 
     ' ---------------- helpers ----------------
@@ -130,10 +169,16 @@ Public NotInheritable Class LoginForm
         ntfError.Clear()
     End Sub
 
+    ' Cosmetic; chemata si din Finally-ul handler-elor de login => NU rearunca
+    ' (un throw din Finally ar scapa din async Sub si ar darama procesul).
     Private Sub SetBusy(busy As Boolean)
-        busyBar.Running = busy
-        tlpBody.Enabled = Not busy        ' pnlUnit e in tlpBody => acoperit
-        Me.UseWaitCursor = busy
+        Try
+            busyBar.Running = busy
+            tlpBody.Enabled = Not busy        ' pnlUnit e in tlpBody => acoperit
+            Me.UseWaitCursor = busy
+        Catch ex As Exception
+            GlobalErrorLog.Write("LoginForm.SetBusy", ex)
+        End Try
     End Sub
 
     ' ---------------- faza 1: obtinere unitati ----------------
@@ -206,13 +251,21 @@ Public NotInheritable Class LoginForm
     End Sub
 
     Private Sub BtnBack_Click(sender As Object, e As EventArgs) Handles btnBack.Click
-        _password = Nothing
-        ShowPhaseCreds()
+        Try
+            _password = Nothing
+            ShowPhaseCreds()
+        Catch ex As Exception
+            GlobalErrorLog.Write("LoginForm.BtnBack_Click", ex)
+        End Try
     End Sub
 
     Private Sub LoginForm_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
-        ' Nu lasa credentialele in memorie dupa ce dialogul se incheie.
-        _password = Nothing
-        _username = Nothing
+        Try
+            ' Nu lasa credentialele in memorie dupa ce dialogul se incheie.
+            _password = Nothing
+            _username = Nothing
+        Catch ex As Exception
+            GlobalErrorLog.Write("LoginForm.LoginForm_FormClosed", ex)
+        End Try
     End Sub
 End Class

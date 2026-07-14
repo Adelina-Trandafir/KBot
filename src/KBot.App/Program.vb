@@ -73,25 +73,30 @@ Friend Module Program
     ' Application.Run să se termine curat și procesul să revină în VB.NET — fără fereastră
     ' orfană sau dispose în ordine greșită a serviciilor DI.
     Private Sub RunHarness(provider As ServiceProvider)
-        Dim harness As KBot.DevHarness.DevHarnessForm = provider.GetRequiredService(Of KBot.DevHarness.DevHarnessForm)()
+        Try
+            Dim harness As KBot.DevHarness.DevHarnessForm = provider.GetRequiredService(Of KBot.DevHarness.DevHarnessForm)()
 
-        Dim harnessMain As MainForm = Nothing
-        harness.OpenMainFormAction =
-            Sub()
-                If harnessMain Is Nothing OrElse harnessMain.IsDisposed Then
-                    harnessMain = provider.GetRequiredService(Of MainForm)()
-                    AddHandler harnessMain.FormClosed, Sub() harnessMain = Nothing
-                End If
-                harnessMain.Show()
-                harnessMain.BringToFront()
-            End Sub
+            Dim harnessMain As MainForm = Nothing
+            harness.OpenMainFormAction =
+                Sub()
+                    If harnessMain Is Nothing OrElse harnessMain.IsDisposed Then
+                        harnessMain = provider.GetRequiredService(Of MainForm)()
+                        AddHandler harnessMain.FormClosed, Sub() harnessMain = Nothing
+                    End If
+                    harnessMain.Show()
+                    harnessMain.BringToFront()
+                End Sub
 
-        AddHandler harness.FormClosed,
-            Sub()
-                If harnessMain IsNot Nothing AndAlso Not harnessMain.IsDisposed Then harnessMain.Close()
-            End Sub
+            AddHandler harness.FormClosed,
+                Sub()
+                    If harnessMain IsNot Nothing AndAlso Not harnessMain.IsDisposed Then harnessMain.Close()
+                End Sub
 
-        Application.Run(harness)   ' se termină când harness-ul (pagina de teste) se închide
+            Application.Run(harness)   ' se termină când harness-ul (pagina de teste) se închide
+        Catch ex As Exception
+            GlobalErrorLog.Write("Program.RunHarness", ex)
+            Throw
+        End Try
     End Sub
 #End If
 
@@ -101,29 +106,34 @@ Friend Module Program
     ' (Application.Run(MainForm) rulează abia după). La închiderea MainForm-ului bucla se
     ' termină și procesul revine în VB.NET; dacă login-ul e anulat, ieșim fără shell.
     Private Sub RunShellWithLogin(provider As ServiceProvider)
-        Using login As LoginForm = provider.GetRequiredService(Of LoginForm)()
-            If login.ShowDialog() <> DialogResult.OK Then
-                Return   ' anulat -> ieșim fără a lansa shell-ul
+        Try
+            Using login As LoginForm = provider.GetRequiredService(Of LoginForm)()
+                If login.ShowDialog() <> DialogResult.OK Then
+                    Return   ' anulat -> ieșim fără a lansa shell-ul
+                End If
+                login.Dispose()   ' nu mai avem nevoie de login, eliberăm resursele
+            End Using
+
+            Dim session As SessionContext = provider.GetRequiredService(Of SessionContext)()
+            Dim authApi As IAuthApi = provider.GetRequiredService(Of IAuthApi)()
+
+            Application.Run(provider.GetRequiredService(Of MainForm)())
+
+            ' --- logout best-effort la închidere (sink terminal; NU rearunca la ieșire). ---
+            ' Citește token-ul curent din sesiune — cel post-reauth, dacă a existat un re-login.
+            If session.IsAuthenticated AndAlso Not String.IsNullOrEmpty(session.Token) Then
+                Try
+                    Using cts As New CancellationTokenSource(TimeSpan.FromSeconds(5))
+                        authApi.LogoutAsync(session.Token, cts.Token).GetAwaiter().GetResult()
+                    End Using
+                Catch ex As Exception
+                    GlobalErrorLog.Write("Logout la închidere", ex)
+                End Try
             End If
-            login.Dispose()   ' nu mai avem nevoie de login, eliberăm resursele
-        End Using
-
-        Dim session As SessionContext = provider.GetRequiredService(Of SessionContext)()
-        Dim authApi As IAuthApi = provider.GetRequiredService(Of IAuthApi)()
-
-        Application.Run(provider.GetRequiredService(Of MainForm)())
-
-        ' --- logout best-effort la închidere (sink terminal; NU rearunca la ieșire). ---
-        ' Citește token-ul curent din sesiune — cel post-reauth, dacă a existat un re-login.
-        If session.IsAuthenticated AndAlso Not String.IsNullOrEmpty(session.Token) Then
-            Try
-                Using cts As New CancellationTokenSource(TimeSpan.FromSeconds(5))
-                    authApi.LogoutAsync(session.Token, cts.Token).GetAwaiter().GetResult()
-                End Using
-            Catch ex As Exception
-                GlobalErrorLog.Write("Logout la închidere", ex)
-            End Try
-        End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("Program.RunShellWithLogin", ex)
+            Throw
+        End Try
     End Sub
 
     ' ---------- plase globale de erori + dialog fatal ----------
@@ -156,6 +166,9 @@ Friend Module Program
         End Try
     End Sub
 
+    ' Nu are Try/Catch propriu: ruleaza EXCLUSIV in interiorul Try-ului din Main
+    ' (compozitia DI la pornire), deci orice esec e deja prins + logat acolo ->
+    ' ShowFatal. Un wrapper aici ar dubla doar logarea.
     Private Sub ConfigureServices(services As IServiceCollection)
         ' Context de sesiune (înlocuiește glob*): singleton gol, populat de login
         ' (LoginForm -> Populate). ApiClient citește token-ul din aceeași instanță.

@@ -2,6 +2,7 @@
 Imports System.Drawing.Drawing2D
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Windows.Forms
+Imports KBot.Common
 
 Public Class CertificateSelectionForm
 
@@ -24,7 +25,11 @@ Public Class CertificateSelectionForm
     End Sub
 
     Private Sub CertificateSelectionForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        LoadCertificates()
+        Try
+            LoadCertificates()
+        Catch ex As Exception
+            GlobalErrorLog.Write("CertificateSelectionForm.CertificateSelectionForm_Load", ex)
+        End Try
     End Sub
 
     Private Sub LoadCertificates()
@@ -64,6 +69,8 @@ Public Class CertificateSelectionForm
     End Sub
 
     Private Sub lstCertificates_DrawItem(sender As Object, e As DrawItemEventArgs) Handles lstCertificates.DrawItem
+      ' Boundary de owner-draw: un throw aici pică pictarea listei — logăm și înghițim.
+      Try
         If e.Index < 0 Then Return
 
         Dim g As Graphics = e.Graphics
@@ -113,6 +120,9 @@ Public Class CertificateSelectionForm
                 g.DrawRectangle(p, borderRect)
             End Using
         End If
+      Catch ex As Exception
+        GlobalErrorLog.Write("CertificateSelectionForm.lstCertificates_DrawItem", ex)
+      End Try
     End Sub
 
     ' ==========================================================
@@ -120,26 +130,30 @@ Public Class CertificateSelectionForm
     ' ==========================================================
 
     Private Sub btnSelect_Click(sender As Object, e As EventArgs) Handles btnSelect.Click
-        If lstCertificates.SelectedIndex < 0 Then
-            MessageBox.Show("Te rog selectează un certificat din listă.", "Atenție", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-            Return
-        End If
-
-        SelectedCertificate = DirectCast(lstCertificates.SelectedItem, X509Certificate2)
-
-        If Not _manualPin Then
-            Dim validation = CertificateService.ValidatePin(SelectedCertificate)
-            If Not validation.Success Then
-                MessageBox.Show(validation.Message, "Eroare PIN", MessageBoxButtons.OK, MessageBoxIcon.Error)
-                txtPin.Clear()
+        Try
+            If lstCertificates.SelectedIndex < 0 Then
+                MessageBox.Show("Te rog selectează un certificat din listă.", "Atenție", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
-        Else
-            PinEntered = ""
-        End If
 
-        Me.DialogResult = DialogResult.OK
-        Me.Close()
+            SelectedCertificate = DirectCast(lstCertificates.SelectedItem, X509Certificate2)
+
+            If Not _manualPin Then
+                Dim validation = CertificateService.ValidatePin(SelectedCertificate)
+                If Not validation.Success Then
+                    MessageBox.Show(validation.Message, "Eroare PIN", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    txtPin.Clear()
+                    Return
+                End If
+            Else
+                PinEntered = ""
+            End If
+
+            Me.DialogResult = DialogResult.OK
+            Me.Close()
+        Catch ex As Exception
+            GlobalErrorLog.Write("CertificateSelectionForm.btnSelect_Click", ex)
+        End Try
     End Sub
 
     Private Sub btnCancel_Click(sender As Object, e As EventArgs) Handles btnCancel.Click

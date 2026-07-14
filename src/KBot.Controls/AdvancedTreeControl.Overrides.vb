@@ -2,11 +2,17 @@
 
 Partial Public Class AdvancedTreeControl
     Protected Overrides Sub OnFontChanged(e As EventArgs)
-        MyBase.OnFontChanged(e)
-        RecalculateItemHeight()
+        Try
+            MyBase.OnFontChanged(e)
+            RecalculateItemHeight()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnFontChanged", ex)
+        End Try
     End Sub
 
     Protected Overrides Sub OnPaint(e As PaintEventArgs)
+      ' Boundary de paint: un throw din corpul OnPaint dărâmă procesul — logăm și înghițim.
+      Try
         MyBase.OnPaint(e)
 
         e.Graphics.Clear(Me.BackColor)
@@ -64,12 +70,16 @@ Partial Public Class AdvancedTreeControl
                 e.Graphics.DrawRectangle(pen, 1, 1, Me.Width - 1, Me.Height - 1)
             End Using
         End If
+      Catch ex As Exception
+        GlobalErrorLog.Write("AdvancedTreeControl.OnPaint", ex)
+      End Try
     End Sub
 
     ' ======================================================
     ' 7. LOGICA MOUSE & INTERACȚIUNE
     ' ======================================================
     Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
+      Try
         MyBase.OnMouseDown(e)
         Me.Focus()
 
@@ -317,9 +327,13 @@ Partial Public Class AdvancedTreeControl
 
 
         Me.Invalidate()
+      Catch ex As Exception
+        GlobalErrorLog.Write("AdvancedTreeControl.OnMouseDown", ex)
+      End Try
     End Sub
 
     Protected Overrides Sub OnMouseUp(e As MouseEventArgs)
+      Try
         MyBase.OnMouseUp(e)
 
         Dim it = HitTestItem(e.Location)
@@ -376,9 +390,13 @@ Partial Public Class AdvancedTreeControl
             _pendingMouseArgs = e
             ClickDelayTimer.Start()
         End If
+      Catch ex As Exception
+        GlobalErrorLog.Write("AdvancedTreeControl.OnMouseUp", ex)
+      End Try
     End Sub
 
     Protected Overrides Sub OnMouseDoubleClick(e As MouseEventArgs)
+      Try
         MyBase.OnMouseDoubleClick(e)
         Dim it = HitTestItem(e.Location)
         If it Is Nothing Then Return
@@ -417,9 +435,13 @@ Partial Public Class AdvancedTreeControl
 
         ' Nu triggerează dublu click dacă e în zona moartă sau pe expander, dar dacă e dublu click pe text/icon, atunci da:
         If Not Me.IsPopupTree Then RaiseEvent NodeDoubleClicked(it, e)
+      Catch ex As Exception
+        GlobalErrorLog.Write("AdvancedTreeControl.OnMouseDoubleClick", ex)
+      End Try
     End Sub
 
     Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
+      Try
         MyBase.OnMouseMove(e)
 
         Dim it = HitTestItem(e.Location)
@@ -453,44 +475,63 @@ Partial Public Class AdvancedTreeControl
 
         ' Și stocăm întotdeauna X-ul curent (indiferent de hover change):
         _lastMouseX = e.X
+      Catch ex As Exception
+        GlobalErrorLog.Write("AdvancedTreeControl.OnMouseMove", ex)
+      End Try
     End Sub
 
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
-        MyBase.OnMouseLeave(e)
-        pHoveredItem = Nothing
-        HideAllTooltips()
-        TooltipTimer.Stop()
-        Me.Invalidate()
+        Try
+            MyBase.OnMouseLeave(e)
+            pHoveredItem = Nothing
+            HideAllTooltips()
+            TooltipTimer.Stop()
+            Me.Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnMouseLeave", ex)
+        End Try
     End Sub
 
     Protected Overrides Sub OnScroll(se As ScrollEventArgs)
-        MyBase.OnScroll(se)
-        If _isSearchMode Then PositionSearchTextBox()
+        Try
+            MyBase.OnScroll(se)
+            If _isSearchMode Then PositionSearchTextBox()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnScroll", ex)
+        End Try
     End Sub
 
     Protected Overrides Sub OnResize(e As EventArgs)
-        MyBase.OnResize(e)
-        _vScroll.Width = SystemInformation.VerticalScrollBarWidth
-        _vScroll.Left = Math.Max(0, Me.Width - _vScroll.Width)
-        '_vScroll.Top = 0
-        _vScroll.Height = Me.Height
-        RefreshScrollVisibility()
-        If _isSearchMode Then PositionSearchTextBox()
-        Me.Invalidate()
+        Try
+            MyBase.OnResize(e)
+            _vScroll.Width = SystemInformation.VerticalScrollBarWidth
+            _vScroll.Left = Math.Max(0, Me.Width - _vScroll.Width)
+            '_vScroll.Top = 0
+            _vScroll.Height = Me.Height
+            RefreshScrollVisibility()
+            If _isSearchMode Then PositionSearchTextBox()
+            Me.Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnResize", ex)
+        End Try
     End Sub
 
     Protected Overrides Sub OnMouseWheel(e As MouseEventArgs)
-        Dim headerOff As Integer = If(_headerVisible, _headerHeight, 0) +
-                               If(_isSearchMode, _searchBarHeight, 0)
-        Dim viewport As Integer = Math.Max(1, Me.Height - headerOff)
-        Dim contentH As Integer = GetVisibleItems().Count * ItemHeight + PADDING_TREE_TOP
-        If contentH <= viewport Then Return
+        Try
+            Dim headerOff As Integer = If(_headerVisible, _headerHeight, 0) +
+                                   If(_isSearchMode, _searchBarHeight, 0)
+            Dim viewport As Integer = Math.Max(1, Me.Height - headerOff)
+            Dim contentH As Integer = GetVisibleItems().Count * ItemHeight + PADDING_TREE_TOP
+            If contentH <= viewport Then Return
 
-        Dim lines As Integer = SystemInformation.MouseWheelScrollLines
-        Dim delta As Integer = -(e.Delta \ 120) * lines * ItemHeight
-        Dim maxVal As Integer = Math.Max(0, contentH - viewport)
-        _vScroll.Value = Math.Max(0, Math.Min(_vScroll.Value + delta, maxVal))
-        Me.Invalidate()
+            Dim lines As Integer = SystemInformation.MouseWheelScrollLines
+            Dim delta As Integer = -(e.Delta \ 120) * lines * ItemHeight
+            Dim maxVal As Integer = Math.Max(0, contentH - viewport)
+            _vScroll.Value = Math.Max(0, Math.Min(_vScroll.Value + delta, maxVal))
+            Me.Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnMouseWheel", ex)
+        End Try
     End Sub
 
 End Class

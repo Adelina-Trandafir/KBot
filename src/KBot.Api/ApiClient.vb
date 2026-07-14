@@ -36,49 +36,60 @@ Public Class ApiClient
     Public Async Function UpsertAngajamenteAsync(dbName As String,
                                                  rows As IReadOnlyList(Of Angajament),
                                                  ct As CancellationToken) As Task(Of String) Implements IApiClient.UpsertAngajamenteAsync
-        EnsureConfigured()
-        If String.IsNullOrEmpty(dbName) Then Throw New ArgumentException("dbName gol.", NameOf(dbName))
-        If rows Is Nothing Then Throw New ArgumentNullException(NameOf(rows))
+        ' Plasă de siguranță la limită: logăm orice eșec (rețea/JSON/HTTP) și rearuncăm —
+        ' apelantul (App) vede eroarea, dar avem urma completă în harness_errors.log.
+        Try
+            EnsureConfigured()
+            If String.IsNullOrEmpty(dbName) Then Throw New ArgumentException("dbName gol.", NameOf(dbName))
+            If rows Is Nothing Then Throw New ArgumentNullException(NameOf(rows))
 
-        Dim req As New UpsertAngajamenteRequest() With {.db_name = dbName}
-        For Each a In rows
-            req.rows.Add(New AngajamentRow() With {
-                .Cod = a.CodAngajament,
-                .Descriere = a.Descriere,
-                .Stare = a.Stare
-            })
-        Next
+            Dim req As New UpsertAngajamenteRequest() With {.db_name = dbName}
+            For Each a In rows
+                req.rows.Add(New AngajamentRow() With {
+                    .Cod = a.CodAngajament,
+                    .Descriere = a.Descriere,
+                    .Stare = a.Stare
+                })
+            Next
 
-        Dim body As String = JsonSerializer.Serialize(req, _json)
+            Dim body As String = JsonSerializer.Serialize(req, _json)
 
-        Dim maxAttempts As Integer = Math.Max(1, _options.MaxRetries)
-        Dim attempt As Integer = 0
-        Do
-            attempt += 1
-            ' VB.NET nu permite Await într-un Catch; marcăm reîncercarea și așteptăm după.
-            Dim retryDelay As TimeSpan = TimeSpan.Zero
-            Try
-                Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/angajamente/upsert")
-                    msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
-                    msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
-                    Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
-                        Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
-                        If Not resp.IsSuccessStatusCode Then
-                            ' ApiException NU e prinsă de catch-urile tranzitorii de mai jos:
-                            ' un 401 iese direct spre stratul App (re-login §4.9), fără retry aici.
-                            Throw New ApiException($"upsert angajamente HTTP {CInt(resp.StatusCode)}: {respText}", CInt(resp.StatusCode))
-                        End If
-                        Return respText
+            Dim maxAttempts As Integer = Math.Max(1, _options.MaxRetries)
+            Dim attempt As Integer = 0
+            Do
+                attempt += 1
+                ' VB.NET nu permite Await într-un Catch; marcăm reîncercarea și așteptăm după.
+                Dim retryDelay As TimeSpan = TimeSpan.Zero
+                Try
+                    Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/angajamente/upsert")
+                        msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                        msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                        Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                            Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                            If Not resp.IsSuccessStatusCode Then
+                                ' ApiException NU e prinsă de catch-urile tranzitorii de mai jos:
+                                ' un 401 iese direct spre stratul App (re-login §4.9), fără retry aici.
+                                Throw BuildApiException(respText, "upsert angajamente", CInt(resp.StatusCode))
+                            End If
+                            Return respText
+                        End Using
                     End Using
-                End Using
-            Catch ex As HttpRequestException When attempt < maxAttempts
-                retryDelay = TimeSpan.FromSeconds(2 * attempt)
-            Catch ex As TaskCanceledException When (Not ct.IsCancellationRequested) AndAlso attempt < maxAttempts
-                ' Timeout tranzitoriu (nu anulare de la apelant) — reîncercăm.
-                retryDelay = TimeSpan.FromSeconds(2 * attempt)
-            End Try
-            Await Task.Delay(retryDelay, ct).ConfigureAwait(False)
-        Loop
+                Catch ex As HttpRequestException When attempt < maxAttempts
+                    retryDelay = TimeSpan.FromSeconds(2 * attempt)
+                Catch ex As TaskCanceledException When (Not ct.IsCancellationRequested) AndAlso attempt < maxAttempts
+                    ' Timeout tranzitoriu (nu anulare de la apelant) — reîncercăm.
+                    retryDelay = TimeSpan.FromSeconds(2 * attempt)
+                End Try
+                Await Task.Delay(retryDelay, ct).ConfigureAwait(False)
+            Loop
+        Catch ex As ApiException
+            ' Excepție tipată, cu sens, tratată de apelant (ex. 401 -> WithReauth):
+            ' control-flow, nu eroare — rearuncăm fără să poluăm sink-ul.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.UpsertAngajamenteAsync", ex)
+            Throw
+        End Try
     End Function
 
     ' List query for the MainForm list view (mirrors Angajamente_SQL). Filters by
@@ -87,40 +98,48 @@ Public Class ApiClient
     ' WithReauth (no retry here).
     Public Async Function GetAngajamenteAsync(dbName As String, idUnitate As Integer, doarAnulate As Boolean,
                                               ct As CancellationToken) As Task(Of IReadOnlyList(Of Angajament)) Implements IApiClient.GetAngajamenteAsync
-        EnsureConfigured()
-        If String.IsNullOrEmpty(dbName) Then Throw New ArgumentException("dbName gol.", NameOf(dbName))
+        Try
+            EnsureConfigured()
+            If String.IsNullOrEmpty(dbName) Then Throw New ArgumentException("dbName gol.", NameOf(dbName))
 
-        Dim url As String = $"/api/forexe/angajamente?db_name={Uri.EscapeDataString(dbName)}&id_unitate={idUnitate}&doar_anulate={If(doarAnulate, 1, 0)}"
+            Dim url As String = $"/api/forexe/angajamente?db_name={Uri.EscapeDataString(dbName)}&id_unitate={idUnitate}&doar_anulate={If(doarAnulate, 1, 0)}"
 
-        Using msg As New HttpRequestMessage(HttpMethod.Get, url)
-            msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
-            Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
-                Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
-                If Not resp.IsSuccessStatusCode Then
-                    Throw New ApiException($"get angajamente HTTP {CInt(resp.StatusCode)}: {respText}", CInt(resp.StatusCode))
-                End If
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea angajamentelor", CInt(resp.StatusCode))
+                    End If
 
-                Dim payload As GetAngajamenteResponse = JsonSerializer.Deserialize(Of GetAngajamenteResponse)(respText, _json)
-                Dim result As New List(Of Angajament)()
-                If payload IsNot Nothing AndAlso payload.rows IsNot Nothing Then
-                    For Each r As GetAngajamenteRow In payload.rows
-                        result.Add(New Angajament() With {
-                            .CodAngajament = If(r.Cod, String.Empty),
-                            .Descriere = If(r.Descriere, String.Empty),
-                            .Stare = If(r.Stare, String.Empty),
-                            .IDDF = r.IDDF,
-                            .Surse = r.Surse,
-                            .Incarcat = r.Incarcat,
-                            .Preluat = r.Preluat,
-                            .Salarii = r.Salarii,
-                            .Ascuns = r.Ascuns,
-                            .DataCreare = r.DataCreare
-                        })
-                    Next
-                End If
-                Return result
+                    Dim payload As GetAngajamenteResponse = JsonSerializer.Deserialize(Of GetAngajamenteResponse)(respText, _json)
+                    Dim result As New List(Of Angajament)()
+                    If payload IsNot Nothing AndAlso payload.rows IsNot Nothing Then
+                        For Each r As GetAngajamenteRow In payload.rows
+                            result.Add(New Angajament() With {
+                                .CodAngajament = If(r.Cod, String.Empty),
+                                .Descriere = If(r.Descriere, String.Empty),
+                                .Stare = If(r.Stare, String.Empty),
+                                .IDDF = r.IDDF,
+                                .Surse = r.Surse,
+                                .Incarcat = r.Incarcat,
+                                .Preluat = r.Preluat,
+                                .Salarii = r.Salarii,
+                                .Ascuns = r.Ascuns,
+                                .DataCreare = r.DataCreare
+                            })
+                        Next
+                    End If
+                    Return result
+                End Using
             End Using
-        End Using
+        Catch ex As ApiException
+            ' 401/HTTP tipat, tratat de apelant (WithReauth) — nu logăm.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetAngajamenteAsync", ex)
+            Throw
+        End Try
     End Function
 
     ' Conversie Excel -> JSON pe server. FOREXE nu mai face HTTP direct: umple un
@@ -130,43 +149,51 @@ Public Class ApiClient
     Public Async Function ProcessExcelAsync(job As ExcelJob, ct As CancellationToken) _
         As Task(Of String) Implements IApiClient.ProcessExcelAsync
 
-        If job Is Nothing Then Throw New ArgumentNullException(NameOf(job))
-        EnsureConfigured()
+        Try
+            If job Is Nothing Then Throw New ArgumentNullException(NameOf(job))
+            EnsureConfigured()
 
-        Dim payload As New Dictionary(Of String, Object) From {
-            {"file_base64", job.FileBase64},
-            {"header_rows", job.HeaderRows},
-            {"skipFirstNRows", job.SkipFirstNRows},
-            {"skipLastNRows", job.SkipLastNRows},
-            {"skipFirstNColumns", job.SkipFirstNColumns},
-            {"skipLastNColumns", job.SkipLastNColumns}
-        }
-        If Not String.IsNullOrEmpty(job.ComplexFilter) Then
-            payload("complex_filter") = job.ComplexFilter
-        ElseIf Not String.IsNullOrEmpty(job.FilterColumn) AndAlso Not String.IsNullOrEmpty(job.Filter) Then
-            payload("col_to_filter") = job.FilterColumn
-            payload("filter") = job.Filter
-        End If
+            Dim payload As New Dictionary(Of String, Object) From {
+                {"file_base64", job.FileBase64},
+                {"header_rows", job.HeaderRows},
+                {"skipFirstNRows", job.SkipFirstNRows},
+                {"skipLastNRows", job.SkipLastNRows},
+                {"skipFirstNColumns", job.SkipFirstNColumns},
+                {"skipLastNColumns", job.SkipLastNColumns}
+            }
+            If Not String.IsNullOrEmpty(job.ComplexFilter) Then
+                payload("complex_filter") = job.ComplexFilter
+            ElseIf Not String.IsNullOrEmpty(job.FilterColumn) AndAlso Not String.IsNullOrEmpty(job.Filter) Then
+                payload("col_to_filter") = job.FilterColumn
+                payload("filter") = job.Filter
+            End If
 
-        Dim body As String = JsonSerializer.Serialize(payload, _json)
-        Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/tools/process_excel")
-            msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
-            msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
-            Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
-                Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
-                If Not resp.IsSuccessStatusCode Then
-                    Throw New ApiException($"process_excel HTTP {CInt(resp.StatusCode)}: {respText}", CInt(resp.StatusCode))
-                End If
-                ' Serverul întoarce {"data": ...}; scoatem doar "data", ca înainte.
-                Using doc As JsonDocument = JsonDocument.Parse(respText)
-                    Dim dataEl As JsonElement = Nothing
-                    If doc.RootElement.TryGetProperty("data", dataEl) Then
-                        Return dataEl.GetRawText()
+            Dim body As String = JsonSerializer.Serialize(payload, _json)
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/tools/process_excel")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "procesarea Excel", CInt(resp.StatusCode))
                     End If
-                    Return respText
+                    ' Serverul întoarce {"data": ...}; scoatem doar "data", ca înainte.
+                    Using doc As JsonDocument = JsonDocument.Parse(respText)
+                        Dim dataEl As JsonElement = Nothing
+                        If doc.RootElement.TryGetProperty("data", dataEl) Then
+                            Return dataEl.GetRawText()
+                        End If
+                        Return respText
+                    End Using
                 End Using
             End Using
-        End Using
+        Catch ex As ApiException
+            ' HTTP tipat, tratat de apelant — nu logăm.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.ProcessExcelAsync", ex)
+            Throw
+        End Try
     End Function
 
     ' Apelurile de date cer o adresă de server ȘI o sesiune autentificată (token viu).
@@ -181,6 +208,13 @@ Public Class ApiClient
             Throw New ApiException("Nu există o sesiune activă. Autentificați-vă.")
         End If
     End Sub
+
+    ' Non-2xx -> ApiException cu mesajul român al serverului (câmpul "error"), codul
+    ' HTTP și codul-motiv ("reason"). Nu mai expunem niciodată corpul JSON brut.
+    Private Shared Function BuildApiException(respText As String, actiune As String, status As Integer) As ApiException
+        Dim body As ApiErrorBody = ApiErrorBody.Parse(respText)
+        Return New ApiException(body.MessageOrFallback(actiune, status), status, body.Reason)
+    End Function
 
     Public Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T) Implements IApiClient.GetAsync
         Throw New NotImplementedException()

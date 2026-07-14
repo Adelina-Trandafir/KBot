@@ -271,17 +271,25 @@ Partial Public Class AdvancedTreeControl
         End Sub
 
         Protected Overrides Sub OnMouseLeave(e As EventArgs)
-            TreeLogger.Info("Tooltip mouse leave - hiding tooltip", "TooltipPopup.OnMouseLeave")
-            MyBase.OnMouseLeave(e)
-            _autoHideTimer.Stop()
-            Me.Hide()
+            Try
+                TreeLogger.Info("Tooltip mouse leave - hiding tooltip", "TooltipPopup.OnMouseLeave")
+                MyBase.OnMouseLeave(e)
+                _autoHideTimer.Stop()
+                Me.Hide()
+            Catch ex As Exception
+                GlobalErrorLog.Write("TooltipPopup.OnMouseLeave", ex)
+            End Try
         End Sub
 
         Protected Overrides Sub OnDeactivate(e As EventArgs)
-            MyBase.OnDeactivate(e)
-            TreeLogger.Info("OnDeactivate -> Hide", "TT.dbg")   ' diagnostic temporar
-            _autoHideTimer.Stop()
-            Me.Hide()
+            Try
+                MyBase.OnDeactivate(e)
+                TreeLogger.Info("OnDeactivate -> Hide", "TT.dbg")   ' diagnostic temporar
+                _autoHideTimer.Stop()
+                Me.Hide()
+            Catch ex As Exception
+                GlobalErrorLog.Write("TooltipPopup.OnDeactivate", ex)
+            End Try
         End Sub
 
         Protected Overrides ReadOnly Property ShowWithoutActivation As Boolean
@@ -496,13 +504,21 @@ Partial Public Class AdvancedTreeControl
         End Sub
 
         Protected Overrides Sub OnActivated(e As EventArgs)
-            MyBase.OnActivated(e)
-            MessageBox.Show("OnActivated fired")
+            Try
+                MyBase.OnActivated(e)
+                MessageBox.Show("OnActivated fired")
+            Catch ex As Exception
+                GlobalErrorLog.Write("TooltipPopup.OnActivated", ex)
+            End Try
         End Sub
 
         Protected Overrides Sub OnGotFocus(e As EventArgs)
-            MyBase.OnGotFocus(e)
-            MessageBox.Show("OnGotFocus fired")
+            Try
+                MyBase.OnGotFocus(e)
+                MessageBox.Show("OnGotFocus fired")
+            Catch ex As Exception
+                GlobalErrorLog.Write("TooltipPopup.OnGotFocus", ex)
+            End Try
         End Sub
     End Class
 End Class

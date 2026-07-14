@@ -42,38 +42,58 @@ Public Class frmNodeDebug
 
     ' ── Handlers ────────────────────────────────────────────────────────────────
     Private Sub _btnClose_Click(s As Object, e As EventArgs) Handles _btnClose.Click
-        Me.Hide()
+        Try
+            Me.Hide()
+        Catch ex As Exception
+            GlobalErrorLog.Write("FrmNodeDebug._btnClose_Click", ex)
+        End Try
     End Sub
 
     Private Sub _btnCopy_Click(s As Object, e As EventArgs) Handles _btnCopy.Click
-        Dim info = TryCast(_pg.SelectedObject, NodeDebugInfo)
-        If info Is Nothing Then Return
+        Try
+            Dim info = TryCast(_pg.SelectedObject, NodeDebugInfo)
+            If info Is Nothing Then Return
 
-        Clipboard.SetText(BuildReport(info))
+            Clipboard.SetText(BuildReport(info))
 
-        _btnCopy.Text = "✓  Copiat!"
-        _btnCopy.BackColor = Color.FromArgb(15, 75, 15)
-        _resetTimer.Start()
+            _btnCopy.Text = "✓  Copiat!"
+            _btnCopy.BackColor = Color.FromArgb(15, 75, 15)
+            _resetTimer.Start()
+        Catch ex As Exception
+            GlobalErrorLog.Write("FrmNodeDebug._btnCopy_Click", ex)
+        End Try
     End Sub
 
     Private Sub _resetTimer_Tick(s As Object, e As EventArgs) Handles _resetTimer.Tick
-        _resetTimer.Stop()
-        _btnCopy.Text = "📋  Copiaza tot"
-        _btnCopy.BackColor = Color.FromArgb(45, 45, 55)
+        Try
+            _resetTimer.Stop()
+            _btnCopy.Text = "📋  Copiaza tot"
+            _btnCopy.BackColor = Color.FromArgb(45, 45, 55)
+        Catch ex As Exception
+            GlobalErrorLog.Write("FrmNodeDebug._resetTimer_Tick", ex)
+        End Try
     End Sub
 
     Private Sub frmNodeDebug_Resize(s As Object, e As EventArgs) Handles Me.Resize
-        If _btnClose IsNot Nothing AndAlso _pnlBottom IsNot Nothing Then
-            _btnClose.Location = New Point(_pnlBottom.ClientSize.Width - _btnClose.Width - 8, 7)
-        End If
+        Try
+            If _btnClose IsNot Nothing AndAlso _pnlBottom IsNot Nothing Then
+                _btnClose.Location = New Point(_pnlBottom.ClientSize.Width - _btnClose.Width - 8, 7)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("FrmNodeDebug.frmNodeDebug_Resize", ex)
+        End Try
     End Sub
 
     Protected Overrides Sub OnFormClosing(e As FormClosingEventArgs)
-        If e.CloseReason = CloseReason.UserClosing Then
-            e.Cancel = True
-            Me.Hide()
-        End If
-        MyBase.OnFormClosing(e)
+        Try
+            If e.CloseReason = CloseReason.UserClosing Then
+                e.Cancel = True
+                Me.Hide()
+            End If
+            MyBase.OnFormClosing(e)
+        Catch ex As Exception
+            GlobalErrorLog.Write("FrmNodeDebug.OnFormClosing", ex)
+        End Try
     End Sub
 
     ' ── Report clipboard ────────────────────────────────────────────────────────

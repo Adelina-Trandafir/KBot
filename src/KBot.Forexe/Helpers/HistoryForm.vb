@@ -4,6 +4,7 @@ Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Linq
 Imports System.Text
 Imports GeneralClasses
+Imports KBot.Common
 
 Public Class HistoryForm
 
@@ -151,23 +152,27 @@ Public Class HistoryForm
     ' SELECȚIE JOB → actualizare toate tab-urile
     ' =========================================================
     Private Sub tvHistory_AfterSelect(sender As Object, e As TreeViewEventArgs) Handles tvHistory.AfterSelect
-        If e.Node.Tag Is Nothing Then Return
-        Dim job = DirectCast(e.Node.Tag, JobHistoryItem)
+        Try
+            If e.Node.Tag Is Nothing Then Return
+            Dim job = DirectCast(e.Node.Tag, JobHistoryItem)
 
-        ' Tab Log
-        rtbLog.Clear()
-        rtbLog.Text = job.FullLog.ToString()
-        ReapplyLogColors()
+            ' Tab Log
+            rtbLog.Clear()
+            rtbLog.Text = job.FullLog.ToString()
+            ReapplyLogColors()
 
-        ' Tab Input
-        rtbInput.Clear()
-        rtbInput.Text = FormatJsonText(job.InputData)
+            ' Tab Input
+            rtbInput.Clear()
+            rtbInput.Text = FormatJsonText(job.InputData)
 
-        ' Tab Output
-        PopulateOutputTree(job.OutputData)
+            ' Tab Output
+            PopulateOutputTree(job.OutputData)
 
-        ' Tab Resend — NOU
-        PopulateResendList(job)
+            ' Tab Resend — NOU
+            PopulateResendList(job)
+        Catch ex As Exception
+            GlobalErrorLog.Write("HistoryForm.tvHistory_AfterSelect", ex)
+        End Try
     End Sub
 
     ' =========================================================

@@ -103,26 +103,42 @@ Partial Public Class AdvancedTreeControl
 
         ' ────────────────────────────────────────────────────────────────
         Protected Overrides Sub OnShown(e As EventArgs)
-            MyBase.OnShown(e)
-            _textBox.Focus()
-            _textBox.SelectAll()
+            Try
+                MyBase.OnShown(e)
+                _textBox.Focus()
+                _textBox.SelectAll()
+            Catch ex As Exception
+                GlobalErrorLog.Write("ColFilterPopup.OnShown", ex)
+            End Try
         End Sub
 
         Protected Overrides Sub OnPaint(e As PaintEventArgs)
-            MyBase.OnPaint(e)
-            Using pen As New Pen(Color.FromArgb(160, 160, 200), 1)
-                e.Graphics.DrawRectangle(pen, 0, 0, Me.Width - 1, Me.Height - 1)
-            End Using
+            Try
+                MyBase.OnPaint(e)
+                Using pen As New Pen(Color.FromArgb(160, 160, 200), 1)
+                    e.Graphics.DrawRectangle(pen, 0, 0, Me.Width - 1, Me.Height - 1)
+                End Using
+            Catch ex As Exception
+                GlobalErrorLog.Write("ColFilterPopup.OnPaint", ex)
+            End Try
         End Sub
 
         Protected Overrides Sub OnDeactivate(e As EventArgs)
-            MyBase.OnDeactivate(e)
-            Me.Close()
+            Try
+                MyBase.OnDeactivate(e)
+                Me.Close()
+            Catch ex As Exception
+                GlobalErrorLog.Write("ColFilterPopup.OnDeactivate", ex)
+            End Try
         End Sub
 
         Protected Overrides Sub OnClosed(e As EventArgs)
-            MyBase.OnClosed(e)
-            ReturnFocusToOwner()
+            Try
+                MyBase.OnClosed(e)
+                ReturnFocusToOwner()
+            Catch ex As Exception
+                GlobalErrorLog.Write("ColFilterPopup.OnClosed", ex)
+            End Try
         End Sub
 
         Protected Overrides Sub Dispose(disposing As Boolean)
@@ -136,21 +152,29 @@ Partial Public Class AdvancedTreeControl
 
         ' ────────────────────────────────────────────────────────────────
         Private Sub OnTextBoxKeyDown(sender As Object, e As KeyEventArgs)
-            Select Case e.KeyCode
-                Case Keys.Return
-                    e.SuppressKeyPress = True
-                    ApplyFilter(_textBox.Text.Trim())
-                    Me.Close()
-                Case Keys.Escape
-                    Me.Close()
-            End Select
+            Try
+                Select Case e.KeyCode
+                    Case Keys.Return
+                        e.SuppressKeyPress = True
+                        ApplyFilter(_textBox.Text.Trim())
+                        Me.Close()
+                    Case Keys.Escape
+                        Me.Close()
+                End Select
+            Catch ex As Exception
+                GlobalErrorLog.Write("ColFilterPopup.OnTextBoxKeyDown", ex)
+            End Try
         End Sub
 
         Private Sub OnListBoxClick(sender As Object, e As EventArgs)
-            If _listBox.SelectedIndex < 0 Then Return
-            Dim selected As String = _listBox.SelectedItem.ToString()
-            ApplyFilter(If(selected = "(Toate)", "", selected))
-            Me.Close()
+            Try
+                If _listBox.SelectedIndex < 0 Then Return
+                Dim selected As String = _listBox.SelectedItem.ToString()
+                ApplyFilter(If(selected = "(Toate)", "", selected))
+                Me.Close()
+            Catch ex As Exception
+                GlobalErrorLog.Write("ColFilterPopup.OnListBoxClick", ex)
+            End Try
         End Sub
 
         Private Sub ApplyFilter(text As String)

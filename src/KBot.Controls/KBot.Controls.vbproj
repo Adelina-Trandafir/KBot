@@ -24,5 +24,12 @@
     <Import Include="System.Data" />
     <Import Include="System.Drawing" />
     <Import Include="System.Windows.Forms" />
+    <Import Include="KBot.Common" />
+  </ItemGroup>
+
+  <!-- Doar pentru GlobalErrorLog (sink-ul global de erori). KBot.Common e stratul cel mai
+       jos (referă doar KBot.Domain) => nu introduce ciclu. -->
+  <ItemGroup>
+    <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
   </ItemGroup>
 </Project>

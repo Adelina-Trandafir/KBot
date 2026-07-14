@@ -1,4 +1,5 @@
 Option Strict On
+Imports KBot.Common
 Imports KBot.Domain
 Imports KBot.Theming
 
@@ -30,24 +31,39 @@ Public Class PlaceholderView
     End Property
 
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
-        _info = info
-        UpdateText()
+        Try
+            _info = info
+            UpdateText()
+        Catch ex As Exception
+            GlobalErrorLog.Write("PlaceholderView.SetContext", ex)
+            Throw
+        End Try
     End Sub
 
     Private Sub UpdateText()
-        Dim text As String = $"«{_displayName}» — în lucru"
-        If _info IsNot Nothing AndAlso Not String.IsNullOrEmpty(_info.CodAngajament) Then
-            text &= Environment.NewLine & Environment.NewLine & "Angajament: " & _info.CodAngajament
-        End If
-        lblMessage.Text = text
+        Try
+            Dim text As String = $"«{_displayName}» — în lucru"
+            If _info IsNot Nothing AndAlso Not String.IsNullOrEmpty(_info.CodAngajament) Then
+                text &= Environment.NewLine & Environment.NewLine & "Angajament: " & _info.CodAngajament
+            End If
+            lblMessage.Text = text
+        Catch ex As Exception
+            GlobalErrorLog.Write("PlaceholderView.UpdateText", ex)
+            Throw
+        End Try
     End Sub
 
     ''' <summary>Reaplică culorile schemei (vederea stă pe cardul viewHost — SurfaceAlt).</summary>
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
-        If scheme Is Nothing Then Return
-        BackColor = scheme.Palette.SurfaceAltColor
-        lblMessage.ForeColor = scheme.Palette.TextDimColor
-        lblMessage.BackColor = scheme.Palette.SurfaceAltColor
+        Try
+            If scheme Is Nothing Then Return
+            BackColor = scheme.Palette.SurfaceAltColor
+            lblMessage.ForeColor = scheme.Palette.TextDimColor
+            lblMessage.BackColor = scheme.Palette.SurfaceAltColor
+        Catch ex As Exception
+            ' Boundary UI (cascada de tema): logam si inghitim.
+            GlobalErrorLog.Write("PlaceholderView.ApplyTheme", ex)
+        End Try
     End Sub
 
 End Class

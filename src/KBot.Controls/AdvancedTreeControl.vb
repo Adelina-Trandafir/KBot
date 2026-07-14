@@ -180,15 +180,19 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     Private Sub OnClickDelayTimerTick(sender As Object, e As EventArgs) Handles ClickDelayTimer.Tick
-        ClickDelayTimer.Stop()
+        Try
+            ClickDelayTimer.Stop()
 
-        If _pendingClickItem IsNot Nothing AndAlso _pendingMouseArgs IsNot Nothing Then
-            RaiseEvent NodeMouseUp(_pendingClickItem, _pendingMouseArgs)
-            pOldSelectedItem = pSelectedItem
-        End If
+            If _pendingClickItem IsNot Nothing AndAlso _pendingMouseArgs IsNot Nothing Then
+                RaiseEvent NodeMouseUp(_pendingClickItem, _pendingMouseArgs)
+                pOldSelectedItem = pSelectedItem
+            End If
 
-        _pendingClickItem = Nothing
-        _pendingMouseArgs = Nothing
+            _pendingClickItem = Nothing
+            _pendingMouseArgs = Nothing
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnClickDelayTimerTick", ex)
+        End Try
     End Sub
 
     Private Sub RecalculateItemHeight()
@@ -809,16 +813,24 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     Private Sub OnVScrollScroll(sender As Object, e As ScrollEventArgs)
-        Me.Invalidate()
+        Try
+            Me.Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnVScrollScroll", ex)
+        End Try
     End Sub
 
     Private Sub LoadingTimer_Tick(sender As Object, e As EventArgs) Handles LoadingTimer.Tick
-        loadingAngle += 15
-        If loadingAngle >= 360 Then loadingAngle = 0
+        Try
+            loadingAngle += 15
+            If loadingAngle >= 360 Then loadingAngle = 0
 
-        ' Invalidăm doar zona vizibilă pentru a redesena animația
-        ' Optimizare: Am putea invalida doar nodurile loader, dar Invalidate() e suficient pentru început
-        Me.Invalidate()
+            ' Invalidăm doar zona vizibilă pentru a redesena animația
+            ' Optimizare: Am putea invalida doar nodurile loader, dar Invalidate() e suficient pentru început
+            Me.Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.LoadingTimer_Tick", ex)
+        End Try
     End Sub
 
     ' ════════════════════════════════════════════════════════════════════

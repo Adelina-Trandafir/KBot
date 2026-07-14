@@ -24,23 +24,32 @@ Partial Public Class AdvancedTreeControl
     End Function
 
     Private Sub SetSearchCueBanner()
-        If _searchTextBox Is Nothing OrElse String.IsNullOrEmpty(_searchDefaultText) Then Return
-        If _searchTextBox.IsHandleCreated Then
-            ' wParam=0: banner dispare când textbox-ul primește focus (comportament standard)
-            SendMessage(_searchTextBox.Handle, EM_SETCUEBANNER,
-                    New IntPtr(0), _searchDefaultText)
-        Else
-            ' Handle nu e creat încă — aplicăm la HandleCreated
-            AddHandler _searchTextBox.HandleCreated, AddressOf OnSearchTextBoxHandleCreated
-        End If
+        Try
+            If _searchTextBox Is Nothing OrElse String.IsNullOrEmpty(_searchDefaultText) Then Return
+            If _searchTextBox.IsHandleCreated Then
+                ' wParam=0: banner dispare când textbox-ul primește focus (comportament standard)
+                SendMessage(_searchTextBox.Handle, EM_SETCUEBANNER,
+                        New IntPtr(0), _searchDefaultText)
+            Else
+                ' Handle nu e creat încă — aplicăm la HandleCreated
+                AddHandler _searchTextBox.HandleCreated, AddressOf OnSearchTextBoxHandleCreated
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.SetSearchCueBanner", ex)
+            Throw
+        End Try
     End Sub
 
     Private Sub OnSearchTextBoxHandleCreated(sender As Object, e As EventArgs)
-        RemoveHandler _searchTextBox.HandleCreated, AddressOf OnSearchTextBoxHandleCreated
-        If Not String.IsNullOrEmpty(_searchDefaultText) Then
-            SendMessage(_searchTextBox.Handle, EM_SETCUEBANNER,
-                    New IntPtr(0), _searchDefaultText)
-        End If
+        Try
+            RemoveHandler _searchTextBox.HandleCreated, AddressOf OnSearchTextBoxHandleCreated
+            If Not String.IsNullOrEmpty(_searchDefaultText) Then
+                SendMessage(_searchTextBox.Handle, EM_SETCUEBANNER,
+                        New IntPtr(0), _searchDefaultText)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnSearchTextBoxHandleCreated", ex)
+        End Try
     End Sub
     ' ══════════════════════════════════════════════════════════════════
     ' HEADER — DRAWING
@@ -290,26 +299,34 @@ Partial Public Class AdvancedTreeControl
     ' ══════════════════════════════════════════════════════════════════
 
     Private Sub OnSearchTextChanged(sender As Object, e As EventArgs)
-        If _searchPlaceholderActive Then Return
-        SearchDebounceTimer.Stop()
-        If _searchTextBox Is Nothing Then Return
-        Dim txt = _searchTextBox.Text
-        UpdateClearBtnVisibility()      ' ← adăugat
-        If txt.Length < 3 Then
-            _filterActive = False
-            _filterSet.Clear()
-            _searchResults.Clear()
-            Me.Invalidate()
-        Else
-            SearchDebounceTimer.Start()
-        End If
+        Try
+            If _searchPlaceholderActive Then Return
+            SearchDebounceTimer.Stop()
+            If _searchTextBox Is Nothing Then Return
+            Dim txt = _searchTextBox.Text
+            UpdateClearBtnVisibility()      ' ← adăugat
+            If txt.Length < 3 Then
+                _filterActive = False
+                _filterSet.Clear()
+                _searchResults.Clear()
+                Me.Invalidate()
+            Else
+                SearchDebounceTimer.Start()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnSearchTextChanged", ex)
+        End Try
     End Sub
 
     Private Sub OnSearchDebounceTimerTick(sender As Object, e As EventArgs) Handles SearchDebounceTimer.Tick
-        SearchDebounceTimer.Stop()
-        If _searchTextBox IsNot Nothing Then
-            PerformSearch(_searchTextBox.Text)
-        End If
+        Try
+            SearchDebounceTimer.Stop()
+            If _searchTextBox IsNot Nothing Then
+                PerformSearch(_searchTextBox.Text)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnSearchDebounceTimerTick", ex)
+        End Try
     End Sub
 
     ' ══════════════════════════════════════════════════════════════════
@@ -462,17 +479,21 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     Private Sub OnSearchClearBtnClick(sender As Object, e As EventArgs)
-        If _headerSearchIcon IsNot Nothing Then
-            ' Se comportă identic cu click pe icona de search (toggle)
-            CloseSearchMode()
-        Else
-            ' Curăță textul — OnSearchTextChanged resetează filtrul automat
-            ' UpdateClearBtnVisibility ascunde × și relărgește textbox-ul
-            If _searchTextBox IsNot Nothing Then
-                _searchTextBox.Text = ""
-                _searchTextBox.Focus()
+        Try
+            If _headerSearchIcon IsNot Nothing Then
+                ' Se comportă identic cu click pe icona de search (toggle)
+                CloseSearchMode()
+            Else
+                ' Curăță textul — OnSearchTextChanged resetează filtrul automat
+                ' UpdateClearBtnVisibility ascunde × și relărgește textbox-ul
+                If _searchTextBox IsNot Nothing Then
+                    _searchTextBox.Text = ""
+                    _searchTextBox.Focus()
+                End If
             End If
-        End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnSearchClearBtnClick", ex)
+        End Try
     End Sub
 
     ' ══════════════════════════════════════════════════════════════════
@@ -480,20 +501,24 @@ Partial Public Class AdvancedTreeControl
     ' ══════════════════════════════════════════════════════════════════
 
     Private Sub OnSearchTextBoxKeyDown(sender As Object, e As KeyEventArgs)
-        If e.KeyCode <> Keys.Down AndAlso e.KeyCode <> Keys.Up Then Return
+        Try
+            If e.KeyCode <> Keys.Down AndAlso e.KeyCode <> Keys.Up Then Return
 
-        Dim visible = GetVisibleItems()
-        If visible.Count = 0 Then Return
+            Dim visible = GetVisibleItems()
+            If visible.Count = 0 Then Return
 
-        pSelectedItem = If(e.KeyCode = Keys.Down, visible.First(), visible.Last())
+            pSelectedItem = If(e.KeyCode = Keys.Down, visible.First(), visible.Last())
 
-        e.Handled = True
-        Me.Focus()
-        Dim itemY = GetItemY(pSelectedItem)
-        If itemY >= 0 Then
-            Me.AutoScrollPosition = New Point(0, itemY - _headerHeight - _searchBarHeight)
-        End If
-        Me.Invalidate()
+            e.Handled = True
+            Me.Focus()
+            Dim itemY = GetItemY(pSelectedItem)
+            If itemY >= 0 Then
+                Me.AutoScrollPosition = New Point(0, itemY - _headerHeight - _searchBarHeight)
+            End If
+            Me.Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnSearchTextBoxKeyDown", ex)
+        End Try
     End Sub
 
 End Class

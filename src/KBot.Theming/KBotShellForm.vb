@@ -162,6 +162,7 @@ Public Class KBotShellForm
             _shell = shell
         End Sub
 
+        <DebuggerStepThrough>
         Protected Overrides Sub WndProc(ByRef m As Message)
             If m.Msg = NativeMethods.WM_NCHITTEST Then
                 Try
