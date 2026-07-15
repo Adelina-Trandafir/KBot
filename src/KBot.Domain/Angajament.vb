@@ -4,6 +4,10 @@
 '
 ' Câmpurile de mai jos vin din GET /api/forexe/angajamente (lista MainForm), care
 ' oglindește Angajamente_SQL: Surse = SS-urile concatenate (Nothing pentru orfani).
+'
+' Salarii NU e purtat: coloana FX_Angajamente.Salarii există în sistemul vechi, dar
+' e depreciată — sistemul nou nu o folosește. Nu o readăugați aici (nici pe
+' AngajamentTreeInfo) fără o cerință nouă care s-o justifice.
 Public Class Angajament
     Public Property Id As Integer
     Public Property CodAngajament As String = String.Empty
@@ -16,7 +20,6 @@ Public Class Angajament
     Public Property Surse As String              ' Nothing pentru angajamentele orfane
     Public Property Incarcat As Boolean
     Public Property Preluat As Boolean
-    Public Property Salarii As Boolean
     Public Property Ascuns As Boolean
     Public Property DataCreare As Date?
 End Class

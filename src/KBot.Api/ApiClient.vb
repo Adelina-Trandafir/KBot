@@ -124,7 +124,6 @@ Public Class ApiClient
                                 .Surse = r.Surse,
                                 .Incarcat = r.Incarcat,
                                 .Preluat = r.Preluat,
-                                .Salarii = r.Salarii,
                                 .Ascuns = r.Ascuns,
                                 .DataCreare = r.DataCreare
                             })

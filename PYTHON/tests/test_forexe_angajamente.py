@@ -119,8 +119,10 @@ def test_get_returns_list_shape(client, auth_headers):
     # Every row carries the wire contract keys.
     for row in body["rows"]:
         for key in ("Cod", "Descriere", "Stare", "IDDF", "Surse",
-                    "Incarcat", "Preluat", "Salarii", "Ascuns", "DataCreare"):
+                    "Incarcat", "Preluat", "Ascuns", "DataCreare"):
             assert key in row
+        # Salarii is deprecated and must NOT come back on the wire any more.
+        assert "Salarii" not in row
 
 
 def test_get_orphan_row_has_null_surse_and_sorts_last(client, auth_headers):

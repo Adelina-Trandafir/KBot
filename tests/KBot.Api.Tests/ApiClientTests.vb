@@ -46,10 +46,10 @@ Public Class ApiClientTests
     Private Const TwoRows As String =
         "{""db_name"":""000_DEMO"",""count"":2,""rows"":[" &
         "{""Cod"":""C1"",""Descriere"":""D1"",""Stare"":""În derulare"",""IDDF"":30," &
-        "  ""Surse"":""02A;02B"",""Incarcat"":true,""Preluat"":true,""Salarii"":false," &
+        "  ""Surse"":""02A;02B"",""Incarcat"":true,""Preluat"":true," &
         "  ""Ascuns"":false,""DataCreare"":""2026-01-18T00:00:00""}," &
         "{""Cod"":""C2"",""Descriere"":""D2"",""Stare"":""Anulat"",""IDDF"":null," &
-        "  ""Surse"":null,""Incarcat"":false,""Preluat"":false,""Salarii"":false," &
+        "  ""Surse"":null,""Incarcat"":false,""Preluat"":false," &
         "  ""Ascuns"":true,""DataCreare"":null}]}"
 
     <Fact>
@@ -98,7 +98,6 @@ Public Class ApiClientTests
         Assert.Equal(30, r0.IDDF.Value)
         Assert.True(r0.Incarcat)
         Assert.True(r0.Preluat)
-        Assert.False(r0.Salarii)
         Assert.False(r0.Ascuns)
         Assert.True(r0.DataCreare.HasValue)
         Assert.Equal(New Date(2026, 1, 18), r0.DataCreare.Value)

@@ -28,8 +28,13 @@ End Class
 ' AngajamentRow so the upsert keeps sending ONLY Cod/Descriere/Stare (its wire
 ' contract) — this DTO adds the read-only list fields. Property names ARE the JSON
 ' keys (JsonSerializer PropertyNamingPolicy=Nothing): Cod / Descriere / Stare /
-' IDDF / Surse / Incarcat / Preluat / Salarii / Ascuns / DataCreare. Surse is null
+' IDDF / Surse / Incarcat / Preluat / Ascuns / DataCreare. Surse is null
 ' for orphan angajamente.
+'
+' Salarii was dropped (deprecated; the new system does not use it). The route no
+' longer returns the key. Both directions stay safe during a staggered rollout:
+' System.Text.Json ignores an unknown key from an older server, and a missing key
+' simply leaves the property unset — so client and server need not deploy together.
 Public NotInheritable Class GetAngajamenteRow
     Public Property Cod As String
     Public Property Descriere As String
@@ -38,7 +43,6 @@ Public NotInheritable Class GetAngajamenteRow
     Public Property Surse As String
     Public Property Incarcat As Boolean
     Public Property Preluat As Boolean
-    Public Property Salarii As Boolean
     Public Property Ascuns As Boolean
     Public Property DataCreare As Date?
 End Class
