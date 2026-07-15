@@ -45,6 +45,8 @@ Public Class MainForm
     Private _currentInfo As AngajamentTreeInfo
     ' NodeKey -> info, reconstruit la fiecare LoadTree.
     Private ReadOnly _treeInfos As New Dictionary(Of String, AngajamentTreeInfo)()
+    ' Opțiunea btnOpt: arată și angajamentele ASCUNS (implicit nu).
+    Private _includeHidden As Boolean
 
     Public Sub New(forexeRunner As IForexeRunner, session As SessionContext,
                    apiClient As IApiClient, authApi As IAuthApi, loginFactory As Func(Of LoginForm))
@@ -162,17 +164,27 @@ Public Class MainForm
             lblProgram.Text = String.Empty   ' se completează după alegerea perioadei (SetPeriod)
 
             ' Navigația vederilor — ordinea paginilor din Access, Sumar implicit.
+            ' Fiecare cheie (mai puțin „sumar") e poarta unui flag Are* din arbore:
+            ' vezi ApplyViewGating. Sumar rămâne mereu activ (nu are flag).
             navViews.AddItem("sumar", "Sumar")
+            navViews.AddItem("indicatori", "Indicatori")
+            navViews.AddItem("istoric", "Istoric")
+            navViews.AddItem("revizii", "Revizii")
             navViews.AddItem("rezervari", "Rezervări")
+            navViews.AddItem("partener", "Partener")
             navViews.AddItem("receptii", "Recepții")
             navViews.AddItem("plati", "Plăți")
             navViews.AddItem("ddf", "DDF")
             navViews.AddItem("ord", "ORD")
             navViews.SelectedKey = "sumar"   ' declanșează SelectionChanged -> creează vederea
 
+            ' Fără nod selectat nu se știe ce date există: toate vederile cu flag pornesc
+            ' închise, nu deschise-și-goale.
+            ApplyViewGating(Nothing)
+
             ' Lista de angajamente: controlul „tree" e configurat ca listă plată cu coloane
             ' (caption = Descriere, coloană = CodAngajament, iconiță de status stânga,
-            ' refresh la hover în dreapta). Datele reale vin din GET /api/forexe/angajamente.
+            ' refresh la hover în dreapta). Datele reale vin din GET /api/forexe/tree.
             ConfigureAngajamenteList()
 
             UpdateForexeStatus()
@@ -182,7 +194,7 @@ Public Class MainForm
             ' login — atunci arătăm un eșantion mic ca shell-ul să fie testabil vizual).
             If _session.IsAuthenticated AndAlso Not String.IsNullOrEmpty(_session.DbName) Then
                 Await LoadPeriodsAsync()
-                Await LoadAngajamenteAsync()
+                Await LoadTreeAsync()
             Else
                 ' Fără sesiune (posibil doar în harness-ul Debug, care poate deschide shell-ul
                 ' fără login): fără date, fără eșantion tăcut — lista rămâne goală, onest.
@@ -288,20 +300,25 @@ Public Class MainForm
         End Try
     End Sub
 
-    Private Sub cboAn_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboAn.SelectedIndexChanged
+    ' Schimbarea anului reface SS-urile anului (care fixează perioada) și RE-CITEȘTE
+    ' arborele: an-ul e filtru pe server, deci datele vechi nu mai sunt valabile.
+    Private Async Sub cboAn_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboAn.SelectedIndexChanged
         Try
             If _suppressPeriodEvents Then Return
             LoadSsForSelectedYear()
+            Await LoadTreeAsync()
         Catch ex As Exception
             ' Boundary UI: un handler nu poate rearunca (ar dărâma procesul) — logăm și înghițim.
             GlobalErrorLog.Write("MainForm.cboAn_SelectedIndexChanged", ex)
         End Try
     End Sub
 
-    Private Sub cboSs_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSs.SelectedIndexChanged
+    ' Idem pentru SS (filtru pe server, prin EXISTS pe FX_Indicatori.SS).
+    Private Async Sub cboSs_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSs.SelectedIndexChanged
         Try
             If _suppressPeriodEvents Then Return
             ApplySelectedPeriod(persist:=True)
+            Await LoadTreeAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.cboSs_SelectedIndexChanged", ex)
         End Try
@@ -350,7 +367,11 @@ Public Class MainForm
         Try
             Select Case key
                 Case "sumar" : Return New PlaceholderView(key, "Sumar")
+                Case "indicatori" : Return New PlaceholderView(key, "Indicatori")
+                Case "istoric" : Return New PlaceholderView(key, "Istoric")
+                Case "revizii" : Return New PlaceholderView(key, "Revizii")
                 Case "rezervari" : Return New PlaceholderView(key, "Rezervări")
+                Case "partener" : Return New PlaceholderView(key, "Partener")
                 Case "receptii" : Return New PlaceholderView(key, "Recepții")
                 Case "plati" : Return New PlaceholderView(key, "Plăți")
                 Case "ddf" : Return New PlaceholderView(key, "DDF")
@@ -398,27 +419,38 @@ Public Class MainForm
     End Sub
 
     ''' <summary>
-    ''' Încarcă lista de angajamente de la GET /api/forexe/angajamente (via WithReauth —
-    ''' reutilizează calea unică de re-login pe 401). Busy-bar pe durata apelului; erorile
-    ''' se arată operatorului în română, niciodată înghițite.
+    ''' Încarcă arborele de la GET /api/forexe/tree pentru perioada selectată (an + SS),
+    ''' via WithReauth — aceeași cale unică de re-login pe 401. Baza nu se trimite:
+    ''' serverul o ia din sesiune (o bază = o unitate). Busy-bar pe durata apelului;
+    ''' erorile se arată operatorului în română, niciodată înghițite și niciodată
+    ''' mascate cu un arbore gol.
     ''' </summary>
-    Private Async Function LoadAngajamenteAsync() As Task
+    Private Async Function LoadTreeAsync() As Task
+        ' Fără an/SS nu există interogare de făcut (combo-uri goale = perioade necitite).
+        If cboAn.SelectedItem Is Nothing OrElse cboSs.SelectedItem Is Nothing Then
+            _logger?.LogWarning("Perioadă neselectată (an/SS) — arborele rămâne gol.")
+            Return
+        End If
+
+        Dim an As Integer = CInt(cboAn.SelectedItem)
+        Dim ss As String = CStr(cboSs.SelectedItem)
+
         busyBar.Running = True
         Try
             Dim ct As CancellationToken = CancellationToken.None
-            ' id_unitate=0: în baza proprie a unității indicatorii au IdUnitate NULL/0.
-            ' doarAnulate=False: lista completă (angajamentele anulate sunt un filtru viitor).
-            Dim rows As IReadOnlyList(Of Angajament) =
-                Await WithReauth(Of IReadOnlyList(Of Angajament))(
-                    Function() _apiClient.GetAngajamenteAsync(_session.DbName, 0, False, ct))
-            PopulateAngajamenteList(rows)
+            Dim rows As IReadOnlyList(Of AngajamentTreeInfo) =
+                Await WithReauth(Of IReadOnlyList(Of AngajamentTreeInfo))(
+                    Function() _apiClient.GetTreeAsync(an, ss, _includeHidden, ct))
+            PopulateTree(rows)
+            _logger?.LogInfo($"Arbore încărcat: {rows.Count} angajamente (an {an}, SS «{ss}»" &
+                             If(_includeHidden, ", inclusiv ascunse", String.Empty) & ").")
         Catch ex As Exception
-            ' Fără plasă tăcută: o eroare de încărcare (server oprit / 401 sesiune moartă /
-            ' defect de server după re-login) se arată operatorului, nu se maschează cu un
-            ' eșantion. Un banc fără backend, dacă e nevoie, aparține DevHarness-ului.
-            _logger?.LogException(ex, "Eroare la încărcarea listei de angajamente")
+            ' Fără plasă tăcută: o eroare (server oprit / 401 sesiune moartă / defect de
+            ' server după re-login) se arată operatorului cu motivul întors de server,
+            ' nu se maschează cu un arbore gol — acela ar minți că unitatea n-are date.
+            _logger?.LogException(ex, "Eroare la încărcarea arborelui de angajamente")
             MessageBox.Show(Me,
-                "Nu s-a putut încărca lista de angajamente: " & ex.Message,
+                "Nu s-a putut încărca arborele de angajamente: " & ex.Message,
                 "Angajamente", MessageBoxButtons.OK, MessageBoxIcon.Error)
         Finally
             busyBar.Running = False
@@ -430,57 +462,89 @@ Public Class MainForm
     ''' Descriere (upper), celulă CodAngajament, iconiță de status (din Stare), refresh la
     ''' hover, bold dacă are surse (comportament legacy), tooltip = Descriere, Tag = Cod.
     ''' </summary>
-    Private Sub PopulateAngajamenteList(rows As IReadOnlyList(Of Angajament))
+    Private Sub PopulateTree(rows As IReadOnlyList(Of AngajamentTreeInfo))
         Try
             If rows Is Nothing Then Throw New ArgumentNullException(NameOf(rows))
             tree.Clear()
             _treeInfos.Clear()
             _currentInfo = Nothing
+            ' Selecția veche a dispărut odată cu rândurile: nicio vedere nu rămâne
+            ' deschisă pe un angajament care nu mai e în arbore.
+            ApplyViewGating(Nothing)
 
-            For Each a As Angajament In rows
-                Dim cod As String = If(a.CodAngajament, String.Empty)
-                Dim caption As String = If(a.Descriere, String.Empty).Trim().ToUpperInvariant()
+            For Each info As AngajamentTreeInfo In rows
+                Dim cod As String = If(info.CodAngajament, String.Empty)
+                Dim caption As String = If(info.Descriere, String.Empty).Trim().ToUpperInvariant()
 
                 Dim node As AdvancedTreeControl.TreeItem =
                     tree.AddItem("D_" & cod, caption,
-                                 pLeftIconClosed:=FxIcons.StatusIcon(a.Stare),
+                                 pLeftIconClosed:=FxIcons.StatusIcon(info.Stare),
                                  pRightIcon:=FxIcons.RefreshIcon(),
                                  pTag:=cod)
 
                 node.Cells("CodAngajament") = New AdvancedTreeControl.TreeItem.CellData With {.Value = cod}
-                node.Bold = Not String.IsNullOrEmpty(a.Surse)   ' legacy: îngroșare = are surse
-                node.Tooltip = If(a.Descriere, String.Empty)
+                node.Bold = info.AreIndicatori   ' legacy: îngroșare = are surse (indicatori)
+                node.Tooltip = If(info.Descriere, String.Empty)
                 node.ShowRightIconOnHover = True
 
-                _treeInfos(cod) = BuildTreeInfo(a)
+                _treeInfos(cod) = info
             Next
 
             tree.Invalidate()
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.PopulateAngajamenteList", ex)
+            GlobalErrorLog.Write("MainForm.PopulateTree", ex)
             Throw
         End Try
     End Sub
 
-    ' Angajament (rândul din GET) -> AngajamentTreeInfo (contextul purtat spre vederi).
-    Private Shared Function BuildTreeInfo(a As Angajament) As AngajamentTreeInfo
+    ''' <summary>
+    ''' Poarta vederilor: fiecare flag Are* comandă exact o intrare din navigație.
+    ''' Fără nod selectat (info = Nothing) rămâne activ doar «sumar».
+    ''' NOTĂ: KBotNavList nu are conceptul de vizibilitate, doar Enabled — o intrare
+    ''' dezactivată nu se poate selecta, nu are hover și e sărită de navigarea cu
+    ''' tastatura, deci vederea e efectiv inaccesibilă (decizie felia 0008; ascunderea
+    ''' propriu-zisă ar cere SetItemVisible în KBot.Theming).
+    ''' </summary>
+    Private Sub ApplyViewGating(info As AngajamentTreeInfo)
         Try
-            Return New AngajamentTreeInfo With {
-                .NodeKey = a.CodAngajament,
-                .Caption = a.Descriere,
-                .CodAngajament = a.CodAngajament,
-                .Descriere = a.Descriere,
-                .Stare = a.Stare,
-                .IDDF = If(a.IDDF.HasValue, CType(CLng(a.IDDF.Value), Long?), Nothing),
-                .DataCreare = a.DataCreare,
-                .EIncarcat = a.Incarcat,
-                .EPreluat = a.Preluat,
-                .AreIndicatori = Not String.IsNullOrEmpty(a.Surse)
-            }
+            navViews.SetItemEnabled("indicatori", info IsNot Nothing AndAlso info.AreIndicatori)
+            navViews.SetItemEnabled("istoric", info IsNot Nothing AndAlso info.AreIstoric)
+            navViews.SetItemEnabled("revizii", info IsNot Nothing AndAlso info.AreRevizii)
+            navViews.SetItemEnabled("rezervari", info IsNot Nothing AndAlso info.AreRezervari)
+            navViews.SetItemEnabled("partener", info IsNot Nothing AndAlso info.ArePartener)
+            navViews.SetItemEnabled("receptii", info IsNot Nothing AndAlso info.AreReceptii)
+            navViews.SetItemEnabled("plati", info IsNot Nothing AndAlso info.ArePlati)
+            navViews.SetItemEnabled("ddf", info IsNot Nothing AndAlso info.AreDDF)
+            navViews.SetItemEnabled("ord", info IsNot Nothing AndAlso info.AreORD)
+
+            ' Dacă vederea activă tocmai s-a închis, cădem înapoi pe «sumar» (mereu activ)
+            ' ca shell-ul să nu rămână pe o pagină pe care nu o mai poți părăsi.
+            If Not IsViewEnabled(navViews.SelectedKey, info) Then
+                navViews.SelectedKey = "sumar"
+            End If
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.BuildTreeInfo", ex)
+            GlobalErrorLog.Write("MainForm.ApplyViewGating", ex)
             Throw
         End Try
+    End Sub
+
+    ' Adevărat dacă vederea are dreptul să fie activă pentru contextul dat.
+    Private Shared Function IsViewEnabled(key As String, info As AngajamentTreeInfo) As Boolean
+        If String.IsNullOrEmpty(key) OrElse key = "sumar" Then Return True
+        If info Is Nothing Then Return False
+        Select Case key
+            Case "indicatori" : Return info.AreIndicatori
+            Case "istoric" : Return info.AreIstoric
+            Case "revizii" : Return info.AreRevizii
+            Case "rezervari" : Return info.AreRezervari
+            Case "partener" : Return info.ArePartener
+            Case "receptii" : Return info.AreReceptii
+            Case "plati" : Return info.ArePlati
+            Case "ddf" : Return info.AreDDF
+            Case "ord" : Return info.AreORD
+            Case Else
+                Throw New ArgumentException($"Vedere necunoscută: '{key}'.", NameOf(key))
+        End Select
     End Function
 
     ' Selecția din listă împinge contextul (AngajamentTreeInfo) către vederea activă.
@@ -492,6 +556,8 @@ Public Class MainForm
                 _treeInfos.TryGetValue(cod, info)
             End If
             _currentInfo = info
+            ' Flag-urile nodului comandă ce vederi sunt accesibile (poarta Are*).
+            ApplyViewGating(info)
             _activeView?.SetContext(info)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.tree_NodeMouseUp", ex)
@@ -671,10 +737,15 @@ Public Class MainForm
         End Try
     End Sub
 
-    Private Sub btnOpt_Click(sender As Object, e As EventArgs) Handles btnOpt.Click
+    ''' <summary>
+    ''' Opțiunile arborelui (Access bOpt). În această felie: comută afișarea
+    ''' angajamentelor ascunse (ASCUNS) și re-citește arborele — ASCUNS e filtru pe
+    ''' server (include_hidden), nu unul local.
+    ''' </summary>
+    Private Async Sub btnOpt_Click(sender As Object, e As EventArgs) Handles btnOpt.Click
         Try
-            ' TODO felie: opțiunile arborelui (Access bOpt: angajamente anulate, cod, info).
-            MessageBox.Show(Me, "În lucru.", "Opțiuni", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            _includeHidden = Not _includeHidden
+            Await LoadTreeAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.btnOpt_Click", ex)
         End Try

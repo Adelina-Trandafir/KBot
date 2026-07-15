@@ -23,6 +23,15 @@ Public Interface IApiClient
                                  ct As CancellationToken) As Task(Of IReadOnlyList(Of Angajament))
 
     ''' <summary>
+    ''' Aduce arborele de angajamente pentru MainForm (GET /api/forexe/tree), filtrat
+    ''' pe an + SS. includeHidden readuce angajamentele ASCUNS (opțiunea btnOpt).
+    ''' Baza NU se trimite: serverul o ia din sesiune (o bază = o unitate). Hard-fail
+    ''' (Throw) la non-2xx; fără retry pe 401 (curge spre WithReauth).
+    ''' </summary>
+    Function GetTreeAsync(an As Integer, ss As String, includeHidden As Boolean,
+                          ct As CancellationToken) As Task(Of IReadOnlyList(Of AngajamentTreeInfo))
+
+    ''' <summary>
     ''' Trimite un Excel (base64) la server pentru conversie în JSON (/api/tools/process_excel).
     ''' Întoarce conținutul câmpului "data" din răspuns. Autorizare: bearer-ul sesiunii
     ''' curente (în ApiClient). Hard-fail (Throw ApiException) la non-2xx.

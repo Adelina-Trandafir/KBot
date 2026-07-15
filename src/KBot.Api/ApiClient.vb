@@ -141,6 +141,69 @@ Public Class ApiClient
         End Try
     End Function
 
+    ' Tree query for the MainForm tree (slice 0008). Filters by an + SS; includeHidden
+    ' brings ASCUNS rows back (btnOpt). The database is NOT sent — the server reads it
+    ' from the session (one database = one unit), so a token cannot target another base.
+    ' Hard-fail (Throw ApiException) on non-2xx; a 401 bubbles to WithReauth (no retry).
+    Public Async Function GetTreeAsync(an As Integer, ss As String, includeHidden As Boolean,
+                                       ct As CancellationToken) As Task(Of IReadOnlyList(Of AngajamentTreeInfo)) Implements IApiClient.GetTreeAsync
+        Try
+            EnsureConfigured()
+            If String.IsNullOrEmpty(ss) Then Throw New ArgumentException("ss gol.", NameOf(ss))
+
+            Dim url As String = $"/api/forexe/tree?an={an}&ss={Uri.EscapeDataString(ss)}&include_hidden={If(includeHidden, 1, 0)}"
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea arborelui de angajamente", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As GetTreeResponse = JsonSerializer.Deserialize(Of GetTreeResponse)(respText, _json)
+                    Dim result As New List(Of AngajamentTreeInfo)()
+                    If payload IsNot Nothing AndAlso payload.rows IsNot Nothing Then
+                        For Each r As GetTreeRow In payload.rows
+                            Dim cod As String = If(r.CodAngajament, String.Empty)
+                            result.Add(New AngajamentTreeInfo() With {
+                                .NodeKey = cod,
+                                .Caption = If(r.Descriere, String.Empty),
+                                .CodAngajament = cod,
+                                .Descriere = If(r.Descriere, String.Empty),
+                                .Stare = If(r.Stare, String.Empty),
+                                .DataCreare = r.DataCreare,
+                                .DataDefinitivare = r.DataDefinitivare,
+                                .IDDF = r.IDDF,
+                                .EIncarcat = r.Incarcat,
+                                .EPreluat = r.Preluat,
+                                .Salarii = r.Salarii,
+                                .Ascuns = r.Ascuns,
+                                .Surse = If(r.Surse, String.Empty),
+                                .AreIndicatori = r.AreIndicatori,
+                                .AreIstoric = r.AreIstoric,
+                                .AreRevizii = r.AreRevizii,
+                                .AreRezervari = r.AreRezervari,
+                                .AreReceptii = r.AreReceptii,
+                                .ArePlati = r.ArePlati,
+                                .AreDDF = r.AreDDF,
+                                .ArePartener = r.ArePartener,
+                                .AreORD = r.AreOrd
+                            })
+                        Next
+                    End If
+                    Return result
+                End Using
+            End Using
+        Catch ex As ApiException
+            ' 401/HTTP tipat, tratat de apelant (WithReauth) — nu logăm.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetTreeAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ' Conversie Excel -> JSON pe server. FOREXE nu mai face HTTP direct: umple un
     ' ExcelJob și îl dă aici, unde stau adresa, token-ul bearer și POST-ul. Un singur
     ' apel, fără retry (upload base64 mare; reîncercarea e scumpă). Non-2xx -> ApiException
