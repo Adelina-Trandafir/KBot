@@ -178,4 +178,24 @@ Public Class ApiClientTests
         Assert.Equal("Sesiune necunoscută. Autentificați-vă din nou.", ex.Message)
     End Function
 
+    <Fact>
+    Public Async Function GetAngajamente_403ContextMismatch_CarriesStatusAndReason() As Task
+        ' CONTEXT_MISMATCH = token VIU pe alt context; serverul îl dă cu 403, NU cu 401
+        ' (guard.reject / auth_periods). Contractul de care depinde MainForm.WithReauth:
+        ' un 403 trebuie să ajungă cu status 403 + reason, ca să fie oprit scurt în loc
+        ' să intre în calea de re-login (unde nu s-ar repara niciodată).
+        Dim h As New StubHandler With {
+            .Status = HttpStatusCode.Forbidden,
+            .ResponseBody = "{""error"":""Acces interzis pentru această unitate."",""reason"":""CONTEXT_MISMATCH""}"
+        }
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
+            Async Function() Await client.GetAngajamenteAsync("000_DEMO", 0, False, CancellationToken.None))
+        Assert.Equal(403, ex.StatusCode.Value)
+        Assert.Equal("CONTEXT_MISMATCH", ex.Reason)
+        Assert.Equal("Acces interzis pentru această unitate.", ex.Message)
+    End Function
+
 End Class

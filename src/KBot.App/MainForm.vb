@@ -62,6 +62,7 @@ Public Class MainForm
     ''' redeschide LoginForm; dacă operatorul se re-autentifică, reia apelul O SINGURĂ
     ''' dată cu token-ul proaspăt din SessionContext (singleton — aceeași instanță pe
     ''' care o citește ApiClient). Orice alt eșec, sau un al doilea 401, se propagă.
+    ''' Un CONTEXT_MISMATCH (403) se oprește scurt — vezi IsContextMismatch.
     ''' </summary>
     Private Async Function WithReauth(Of T)(action As Func(Of Task(Of T))) As Task(Of T)
         ' Fără plasă proprie: 401-ul e control-flow (re-login), iar orice alt eșec e deja
@@ -70,6 +71,8 @@ Public Class MainForm
         Dim expired As ApiException = Nothing
         Try
             Return Await action().ConfigureAwait(True)
+        Catch ex As ApiException When IsContextMismatch(ex)
+            Throw ContextMismatchError(ex)
         Catch ex As ApiException When ex.StatusCode.HasValue AndAlso ex.StatusCode.Value = 401
             expired = ex
         End Try
@@ -86,9 +89,11 @@ Public Class MainForm
         ' trimitem operatorul iar în bucla de login: îi spunem clar ce s-a întâmplat.
         Try
             Return Await action().ConfigureAwait(True)
+        Catch ex2 As ApiException When IsContextMismatch(ex2)
+            Throw ContextMismatchError(ex2)
         Catch ex2 As ApiException When ex2.StatusCode.HasValue AndAlso ex2.StatusCode.Value = 401
             Dim reason As String = If(ex2.Reason, String.Empty)
-            If reason = "TOKEN_UNKNOWN" OrElse reason = "CONTEXT_MISMATCH" Then
+            If reason = "TOKEN_UNKNOWN" Then
                 Throw New ApiException(
                     "Autentificare reușită, dar serverul a respins imediat sesiunea (« " & reason & " »). " &
                     "Este un defect de server, nu o sesiune expirată — contactați administratorul.",
@@ -96,6 +101,26 @@ Public Class MainForm
             End If
             Throw   ' alt motiv de 401 (ex. expirare reală) — propagăm neschimbat
         End Try
+    End Function
+
+    ''' <summary>
+    ''' CONTEXT_MISMATCH = token VIU, dar folosit pe alt context decât cel al sesiunii
+    ''' (ex. alt db_name). Serverul îl întoarce cu 403, NU cu 401 (vezi guard.reject /
+    ''' auth_periods), tocmai fiindcă sesiunea e validă — deci re-login-ul nu repară
+    ''' nimic și ar trimite operatorul într-o buclă inutilă. Îl tratăm separat de calea
+    ''' de 401, la ORICE apel, nu doar după re-login.
+    ''' </summary>
+    Private Shared Function IsContextMismatch(ex As ApiException) As Boolean
+        Return ex.StatusCode.HasValue AndAlso ex.StatusCode.Value = 403 AndAlso
+               String.Equals(ex.Reason, "CONTEXT_MISMATCH", StringComparison.Ordinal)
+    End Function
+
+    ' Mesaj clar pentru operator: nu e sesiune expirată, e o nepotrivire de unitate.
+    Private Shared Function ContextMismatchError(ex As ApiException) As ApiException
+        Return New ApiException(
+            "Cererea a fost respinsă: sesiunea este deschisă pe altă unitate decât cea cerută " &
+            "(« CONTEXT_MISMATCH »). Este un defect, nu o sesiune expirată — contactați administratorul.",
+            403, ex.Reason)
     End Function
 
     Private Async Sub MainForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
