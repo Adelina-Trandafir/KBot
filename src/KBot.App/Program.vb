@@ -185,10 +185,7 @@ Friend Module Program
         services.AddSingleton(Of HttpClient)(
             Function(sp)
                 Dim opt As ApiOptions = sp.GetRequiredService(Of ApiOptions)()
-                If Not opt.BaseUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase) Then
-                    Throw New InvalidOperationException(
-                        "Adresa serverului trebuie să folosească https. Valoare: " & opt.BaseUrl)
-                End If
+                opt.EnsureHttpsBaseUrl()
                 Dim client As New HttpClient() With {.BaseAddress = New Uri(opt.BaseUrl)}
                 client.Timeout = TimeSpan.FromSeconds(opt.TimeoutSeconds)
                 Return client
