@@ -1,5 +1,28 @@
 # HANDOFF — next step: the tree data API (`qFX_MAIN_TREE`)
 
+> # ⚠️ SUPERSEDED — DO NOT BUILD FROM THIS FILE
+>
+> **Superseded 2026-07-15 by `docs/worklog/PLAN_TreeDataApi.md`; the work shipped as
+> Slice 0008 (`docs/worklog/SLICE-0008-tree-data-api.md`).** Kept only as a record of how
+> the contract was reached — several claims below are wrong. Specifically:
+>
+> - **"`Salarii` … is deprecated. Do not reintroduce it."** — wrong for the tree. It is a
+>   real `FX_Angajamente` column and a real row-source column in `qFX_MAIN_TREE_DESCRIERE`.
+>   The deprecation applies to the **angajamente list path** only (commit `22a2ec4`).
+>   Slice 0008 restored it on the tree.
+> - **`IDORD` / `First(FX_ORD.IDORD)`** — dropped entirely. The tree needs only `AreOrd`,
+>   and the arbitrary-pick problem disappears with the column.
+> - **The whole "scope by `db_name` / `id_unitate`" open question** — void. One MariaDB
+>   database = one unit, so the connection is the scope; the endpoint takes neither. The
+>   base comes from the session (`g.session.db_name`).
+> - **`ArePartener` via `CODPARTENER`** — replaced by `FX_DDF.PartAng = 1`.
+>
+> The one thing below still worth reading is **"The trap that already cost one session"**:
+> the three similarly-named queries are still not interchangeable. The correction is that
+> `AngajamentTreeInfo` mirrors **two** of them — `_DESCRIERE` for the row-source columns
+> and `qFX_MAIN_TREE` for the flags — not `qFX_MAIN_TREE` alone, which is exactly the
+> mistake this file led the POCO into in Slice 0007.
+
 > Written 2026-07-15 at the end of the Tier 1 / MainForm verification session.
 > Everything below is marked **VERIFIED** (read from the real file this session) or
 > **UNVERIFIED** (assumed, needs confirming). Do not promote an UNVERIFIED line to fact
