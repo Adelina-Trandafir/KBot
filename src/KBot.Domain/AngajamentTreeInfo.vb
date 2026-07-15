@@ -2,12 +2,40 @@
 ' celor ~15 textbox-uri ascunse din Access frmFX_MAIN (CodAngajament, Stare, TIP_NOD,
 ' Are*, IDDF...). Un obiect = un rând din qFX_MAIN_TREE + starea de navigare a nodului.
 '
-' Câmpurile din query (confirmate în FX_System_Export\QUERIES\qFX_MAIN_TREE.md):
-' CodAngajament, IDDF, IDORD, DataCreare, DataDefinitivare, Descriere, Stare,
-' Incarcat, Preluat, AreIndicatori, AreIstoric, AreRevizii, AreRezervari, ArePartener,
-' AreOrd, AreDDF, AreReceptii, ArePlati.
-' TipNod / CodIndicator / CodAi / IdPartener nu vin din query — în Access le seta
-' handler-ul de click pe arbore (mcTree_Click), după nivelul/tipul nodului.
+' SURSA (verificat 2026-07-15 în C:\AVACONT\FX_System_Export): frmFX_MAIN.RefreshTreeQuery
+' deschide rcAngInd DIN qFX_MAIN_TREE (frmFX_MAIN.md:1200) — deci ACEA query e contractul
+' acestui POCO, nu qFX_MAIN_TREE_DATA / _DESCRIERE. Ultimele două populează NODURILE
+' arborelui (mdl_FX_PopulareTree.Angajamente_SQL) și au alte coloane; a nu se confunda.
+'
+' Proveniența, câmp cu câmp (toate din SQL-ul qFX_MAIN_TREE.md):
+'   CodAngajament     A.CodAngajament          (și coloană FX_Angajamente)
+'   IDDF              FX_DDF.IDDF              (join; și coloană FX_Angajamente)
+'   IDORD             First(FX_ORD.IDORD)      (join din FX_ORD — NU e coloană FX_Angajamente)
+'   DataCreare        A.DataCreare             (și coloană FX_Angajamente)
+'   DataDefinitivare  A.DataDefinitivare       (și coloană FX_Angajamente)
+'   Descriere         A.Descriere              (și coloană FX_Angajamente)
+'   Stare             A.Stare                  (și coloană FX_Angajamente)
+'   EIncarcat         A.Incarcat               (și coloană FX_Angajamente)
+'   EPreluat          A.Preluat                (și coloană FX_Angajamente)
+'   AreIndicatori     CBool((SELECT Count(*) FROM FX_Indicatori ...)>0)   — calculată
+'   AreIstoric        CBool((SELECT Count(*) FROM FX_Istoric ...)>0)      — calculată
+'   AreRevizii        CBool((SELECT Count(*) FROM FX_DDF_REV_SA ...)>0)   — calculată
+'   AreRezervari      CBool((SELECT Count(*) FROM FX_Rezervari ...)>0)    — calculată
+'   ArePartener       Not IsNull([CODPARTENER])                           — calculată
+'   AreORD            Nz([FX_ORD]![IDDF],0)<>0   (query o scrie „AreOrd") — calculată
+'   AreDDF            Nz([FX_DDF]![IDDF],0)<>0                            — calculată
+'   AreReceptii       CBool((SELECT Count(*) FROM FX_Receptii_H ...)>0)   — calculată
+'   ArePlati          CBool((SELECT Count(*) FROM FX_Plati ...)>0)        — calculată
+'
+' NU vin din query:
+'   NodeKey / ParentKey / Caption — asamblarea arborelui, ale noastre.
+'   TipNod / CodIndicator / CodAi / IdPartener — în Access le seta handler-ul de click
+'   pe arbore (mcTree_Click), după nivelul/tipul nodului.
+'
+' Salarii lipsește INTENȚIONAT, din două motive independente: qFX_MAIN_TREE (sursa
+' rcAngInd) NU o selectează — apare doar în qFX_MAIN_TREE_DESCRIERE / _DATA — ȘI e
+' depreciată: sistemul nou nu o folosește deloc (scoasă și de pe Angajament / din
+' GET /api/forexe/angajamente). Coloana rămâne pe FX_Angajamente, în sistemul vechi.
 Public NotInheritable Class AngajamentTreeInfo
 
     ' --- asamblarea arborelui ---
