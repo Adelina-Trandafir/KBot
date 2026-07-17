@@ -28,8 +28,18 @@
   </ItemGroup>
 
   <!-- Doar pentru GlobalErrorLog (sink-ul global de erori). KBot.Common e stratul cel mai
-       jos (referă doar KBot.Domain) => nu introduce ciclu. -->
+       jos (referă doar KBot.Domain) => nu introduce ciclu.
+       KBot.Theming: adăugat pentru KBotDataView (slice 0010) — controlul se auto-tematizează
+       prin IThemedControl/ThemePalette, exact ca familia KBotNavList. KBot.Theming NU referă
+       KBot.Controls, deci nu se creează ciclu. AdvancedTreeControl rămâne ne-tematizat (shell-ul
+       îi împinge culorile), noua convenție se aplică doar controalelor care implementează
+       IThemedControl. -->
   <ItemGroup>
     <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
+    <ProjectReference Include="..\KBot.Theming\KBot.Theming.vbproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Import Include="KBot.Theming" />
   </ItemGroup>
 </Project>
