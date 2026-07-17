@@ -28,17 +28,19 @@ number** is recorded at the bottom of this section — bump it when you assign a
 | 0005 | Phase A cleanup (lying tests, https guard) | DONE | — | Python 75 passed / 7 skipped, 0 fail/error; .NET 80 green |
 | 0006 | MainForm scaffolding | DONE | (pre-worklog-rule) | Plan: `PLAN_MainForm_Scaffolding.md`. Built against its own 11-item checklist; `WithReauth(Of T)` + ListaAngajamente vertical preserved. Real DI signature is 5 params (`forexeRunner, session, apiClient, authApi, loginFactory`), not the 4 the plan expected |
 | 0007 | AngajamentTreeInfo POCO correction | SUPERSEDED by 0008 | `SLICE-0008-tree-data-api.md` | Was done WRONG: built against `qFX_MAIN_TREE` alone, so `Salarii` was dropped and `IDORD` kept. 0008 rewrote the POCO against the real contract (row-source `_DESCRIERE` + flags `qFX_MAIN_TREE`): `Salarii` restored, `IDORD` dropped |
-| 0008 | Tree data API + `MainForm.LoadTree` | DONE (code) / UNVERIFIED on a live DB | `SLICE-0008-tree-data-api.md` | Plan: `PLAN_TreeDataApi.md`. `GET /api/forexe/tree` (an/ss/include_hidden, base from session), nine `EXISTS` flags, POCO rewrite, tree load + nav gating. **No part of it has touched a real database** — all 12 route tests are host-only and skip off-host |
+| 0008 | Tree data API + `MainForm.LoadTree` | DONE (code) / UNVERIFIED on a live DB | `SLICE-0008-tree-data-api.md`, `SLICE-0009-maintree-loadtree.md` (Part A amendment) | Plan: `PLAN_TreeDataApi.md`. `GET /api/forexe/tree` (an/ss/include_hidden, base from session), nine `EXISTS` flags, POCO rewrite, tree load + nav gating. **Amended by 0009:** the SS filter now has an orphan escape (`EXISTS SS OR NOT EXISTS any indicators`) so zero-indicator angajamente stay visible. **No part of it has touched a real database** — all route tests are host-only and skip off-host |
+| 0009 | `MainForm.LoadTree` (client half) + tree orphan escape | DONE (code) / UNVERIFIED on a live DB | `SLICE-0009-maintree-loadtree.md` | The brief's Parts B/C/D (DTOs, `GetTreeAsync`, `LoadTreeAsync` + gating) were **already shipped by 0008**; the real deltas are Part A (orphan escape on the server, see 0008 row) + its 2 host-only tests, and the 4 `GetTreeAsync` client tests 0008 never added (Api 26 → 30). Kept 0008's choices: mapping in the client (no `BuildTreeInfo`), token from session (no param), `IDDF As Long?` throughout. LoadTree is period-driven (runs on load + every An/SS change = the `SetPeriod` precondition) |
 
-**Next free slice number: 0009.**
+**Next free slice number: 0010.**
 
 ---
 
 ## Current focus
 
-- **Now:** run Slice 0008 on the host. The endpoint and the client are written and green
-  offline, but nothing has hit a real database: `PYTHON/tests/test_forexe_tree.py` (12
-  tests) skips off-host and is the fastest way to answer verification items 1–5 and 8.
+- **Now:** run Slices 0008 + 0009 on the host. The endpoint (incl. 0009's orphan escape)
+  and the client are written and green offline, but nothing has hit a real database:
+  `PYTHON/tests/test_forexe_tree.py` skips off-host and is the fastest way to answer
+  verification items 1–5 and 8, plus the two new orphan tests (`TREEO`/`TREEX`).
 - **Next:** the real views (all nine are still `PlaceholderView`), starting with whichever
   the operator needs first; Slice 0004's remaining Tier 1 items and the Slice 0003 VPS
   config are still open and short.

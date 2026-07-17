@@ -177,6 +177,103 @@ Public Class ApiClientTests
         Assert.Equal("Sesiune necunoscută. Autentificați-vă din nou.", ex.Message)
     End Function
 
+    ' --- GetTreeAsync (slice 0008/0009): the MainForm tree read. Maps the wire row to
+    ' AngajamentTreeInfo inside the client (no BuildTreeInfo in MainForm), so these
+    ' assertions cover BOTH the query shape and the row mapping incl. all nine flags. ---
+
+    Private Const TreeOneRow As String =
+        "{""db_name"":""000_DEMO"",""count"":1,""rows"":[{" &
+        """CodAngajament"":""A100"",""IDDF"":42,""Descriere"":""Angajament X""," &
+        """Stare"":""În derulare"",""DataCreare"":""2026-02-03T00:00:00""," &
+        """DataDefinitivare"":""2026-05-06T00:00:00""," &
+        """Incarcat"":true,""Preluat"":false,""Salarii"":true,""Ascuns"":false," &
+        """Surse"":""02A;02B""," &
+        """AreIndicatori"":true,""AreIstoric"":false,""AreRevizii"":true," &
+        """AreRezervari"":false,""AreReceptii"":true,""ArePlati"":false," &
+        """AreDDF"":true,""ArePartener"":false,""AreOrd"":true}]}"
+
+    <Fact>
+    Public Async Function GetTree_BuildsUrl_SendsBearer_EscapesSs() As Task
+        Dim h As New StubHandler With {.ResponseBody = TreeOneRow}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        ' SS cu spațiu -> dovada că folosim Uri.EscapeDataString, nu concatenare crudă.
+        Await client.GetTreeAsync(2026, "02 A", True, CancellationToken.None)
+
+        Assert.Equal(HttpMethod.Get, h.LastMethod)
+        Assert.Equal("/api/forexe/tree", h.LastRequestUri.AbsolutePath)
+        Assert.Contains("an=2026", h.LastRequestUri.Query)
+        Assert.Contains("ss=02%20A", h.LastRequestUri.Query)
+        Assert.Contains("include_hidden=1", h.LastRequestUri.Query)
+        Assert.Equal("Bearer tok-opaque-123", h.LastAuthorization)
+    End Function
+
+    <Fact>
+    Public Async Function GetTree_IncludeHiddenFalse_SetsZero() As Task
+        Dim h As New StubHandler With {.ResponseBody = "{""db_name"":""000_DEMO"",""count"":0,""rows"":[]}"}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await client.GetTreeAsync(2026, "02A", False, CancellationToken.None)
+
+        Assert.Contains("include_hidden=0", h.LastRequestUri.Query)
+    End Function
+
+    <Fact>
+    Public Async Function GetTree_Deserializes_AllFields_AndNineFlags() As Task
+        Dim h As New StubHandler With {.ResponseBody = TreeOneRow}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim rows = Await client.GetTreeAsync(2026, "02A", False, CancellationToken.None)
+
+        Assert.Single(rows)
+        Dim r = rows(0)
+        Assert.Equal("A100", r.CodAngajament)
+        Assert.Equal("A100", r.NodeKey)
+        Assert.Equal("Angajament X", r.Descriere)
+        Assert.Equal("Angajament X", r.Caption)
+        Assert.Equal("În derulare", r.Stare)
+        Assert.True(r.IDDF.HasValue)
+        Assert.Equal(42L, r.IDDF.Value)               ' Integer pe wire -> Long? pe POCO
+        Assert.True(r.DataCreare.HasValue)
+        Assert.Equal(New Date(2026, 2, 3), r.DataCreare.Value)
+        Assert.True(r.DataDefinitivare.HasValue)
+        Assert.Equal(New Date(2026, 5, 6), r.DataDefinitivare.Value)
+        Assert.True(r.EIncarcat)
+        Assert.False(r.EPreluat)
+        Assert.True(r.Salarii)
+        Assert.False(r.Ascuns)
+        Assert.Equal("02A;02B", r.Surse)
+
+        ' Cele nouă flag-uri, 1:1 — inclusiv puntea AreOrd (JSON) -> AreORD (POCO).
+        Assert.True(r.AreIndicatori)
+        Assert.False(r.AreIstoric)
+        Assert.True(r.AreRevizii)
+        Assert.False(r.AreRezervari)
+        Assert.True(r.AreReceptii)
+        Assert.False(r.ArePlati)
+        Assert.True(r.AreDDF)
+        Assert.False(r.ArePartener)
+        Assert.True(r.AreORD)
+    End Function
+
+    <Fact>
+    Public Async Function GetTree_Non2xx_ThrowsWithStatus() As Task
+        Dim h As New StubHandler With {
+            .Status = HttpStatusCode.InternalServerError,
+            .ResponseBody = "{""error"":""Eroare la citirea arborelui: boom""}"
+        }
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
+            Async Function() Await client.GetTreeAsync(2026, "02A", False, CancellationToken.None))
+        Assert.True(ex.StatusCode.HasValue)
+        Assert.Equal(500, ex.StatusCode.Value)
+    End Function
+
     <Fact>
     Public Async Function GetAngajamente_403ContextMismatch_CarriesStatusAndReason() As Task
         ' CONTEXT_MISMATCH = token VIU pe alt context; serverul îl dă cu 403, NU cu 401
