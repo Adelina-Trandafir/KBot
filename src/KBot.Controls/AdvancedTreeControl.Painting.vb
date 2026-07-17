@@ -182,6 +182,11 @@ Partial Public Class AdvancedTreeControl
 
             If _hasNodeIcons Then
                 Dim icon As Image = If(it.Expanded, it.LeftIconOpen, it.LeftIconClosed)
+                ' Fallback: un nod cu o SINGURĂ iconiță (doar Closed) trebuie s-o arate și
+                ' când e „expandat". În modul listă plată (RootExpander=False) DrawItem
+                ' forțează Expanded=True pe rândurile de nivel 0, deci fără acest fallback
+                ' iconița de status (pusă doar pe LeftIconClosed) ar dispărea.
+                If icon Is Nothing Then icon = If(it.LeftIconClosed, it.LeftIconOpen)
                 If icon IsNot Nothing Then g.DrawImage(icon, leftIconRect)
             End If
 
@@ -267,7 +272,7 @@ Partial Public Class AdvancedTreeControl
                         g.DrawLine(sepPen, cx, y, cx, y + ItemHeight)
                     End Using
 
-                    Dim rowVisibleWidth As Integer = Me.Width - scrollW - PADDING_TREE_END - colStartX
+                    Dim rowVisibleWidth As Integer = Me.Width - scrollW - PADDING_TREE_END - ReservedRightIconWidth() - colStartX
                     Dim rowVisCols As Integer = GetVisibleColumnCount(rowCols, rowVisibleWidth)
                     For i As Integer = 0 To rowVisCols - 1
                         Try

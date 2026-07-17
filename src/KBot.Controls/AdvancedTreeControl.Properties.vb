@@ -135,6 +135,27 @@
         End Set
     End Property
 
+    ' Când True, banda de coloane (TreeListView) își retrage marginea dreaptă cu lățimea
+    ' iconiței din dreapta, ca celulele să nu se suprapună peste iconiță (ex. refresh la
+    ' hover). Implicit False = comportament neschimbat pentru apelanții existenți.
+    ' Se rezervă spațiu chiar dacă iconița e hover-only: locul e fix, deci coloanele nu
+    ' „sar" la hover — la fel ca rezervarea de caption din DrawContent.
+    Private _reserveRightIconSpace As Boolean = False
+    Public Property ReserveRightIconSpace As Boolean
+        Get
+            Return _reserveRightIconSpace
+        End Get
+        Set(value As Boolean)
+            _reserveRightIconSpace = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    ' Lățimea rezervată la dreapta pentru iconiță (0 dacă rezervarea e dezactivată).
+    Friend Function ReservedRightIconWidth() As Integer
+        Return If(_reserveRightIconSpace, RightIconSize.Width + _rightIconRightPadding, 0)
+    End Function
+
     Private _RootExpander As Boolean = True
     Public Property RootExpander As Boolean
         Get

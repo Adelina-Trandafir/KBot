@@ -47,6 +47,9 @@ Public Class MainForm
     Private ReadOnly _treeInfos As New Dictionary(Of String, AngajamentTreeInfo)()
     ' Opțiunea btnOpt: arată și angajamentele ASCUNS (implicit nu).
     Private _includeHidden As Boolean
+    ' Fereastra nemodală «Informații interne» (flag-urile Are* ale nodului selectat).
+    ' Nothing / IsDisposed = închisă; se re-deschide la nevoie.
+    Private _infoForm As InternalInfoForm
 
     Public Sub New(forexeRunner As IForexeRunner, session As SessionContext,
                    apiClient As IApiClient, authApi As IAuthApi, loginFactory As Func(Of LoginForm))
@@ -403,6 +406,9 @@ Public Class MainForm
             tree.ItemHeight = 32
             tree.HasNodeIcons = True
             tree.ShowRightIconOnHover = True
+            ' Rezervă locul iconiței de refresh la dreapta, ca banda de coloane
+            ' (CodAngajament) să nu se suprapună peste ea la hover.
+            tree.ReserveRightIconSpace = True
 
             Dim cols As New List(Of ColumnDef) From {
                 New ColumnDef With {
@@ -471,6 +477,7 @@ Public Class MainForm
             ' Selecția veche a dispărut odată cu rândurile: nicio vedere nu rămâne
             ' deschisă pe un angajament care nu mai e în arbore.
             ApplyViewGating(Nothing)
+            RefreshInfoForm()   ' selecția s-a golit -> fereastra de info reflectă asta
 
             For Each info As AngajamentTreeInfo In rows
                 Dim cod As String = If(info.CodAngajament, String.Empty)
@@ -559,6 +566,7 @@ Public Class MainForm
             ' Flag-urile nodului comandă ce vederi sunt accesibile (poarta Are*).
             ApplyViewGating(info)
             _activeView?.SetContext(info)
+            RefreshInfoForm()   ' fereastra «Informații interne», dacă e deschisă
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.tree_NodeMouseUp", ex)
         End Try
@@ -748,6 +756,45 @@ Public Class MainForm
             Await LoadTreeAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.btnOpt_Click", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Deschide (sau readuce în față) fereastra nemodală «Informații interne», care
+    ''' arată toate câmpurile + flag-urile Are* ale angajamentului selectat. Nemodală:
+    ''' Show, nu ShowDialog — operatorul poate lucra în shell cu ea deschisă. Se
+    ''' reîmprospătează singură la fiecare selecție din arbore (vezi RefreshInfoForm);
+    ''' butonul ei «Reîmprospătează» re-citește selecția prin provider-ul _currentInfo.
+    ''' </summary>
+    Private Sub btnInfo_Click(sender As Object, e As EventArgs) Handles btnInfo.Click
+        Try
+            If _infoForm Is Nothing OrElse _infoForm.IsDisposed Then
+                _infoForm = New InternalInfoForm(Function() _currentInfo)
+                ' Poziționare lângă cardul arborelui, în interiorul shell-ului.
+                Dim anchor As Point = PointToScreen(New Point(pnlWork.Left + 8, pnlWork.Top + 8))
+                _infoForm.StartPosition = FormStartPosition.Manual
+                _infoForm.Location = anchor
+                _infoForm.ShowInfo(_currentInfo)
+                _infoForm.Show(Me)   ' nemodal, deținut de shell (se închide odată cu el)
+            Else
+                _infoForm.ShowInfo(_currentInfo)
+                If _infoForm.WindowState = FormWindowState.Minimized Then _infoForm.WindowState = FormWindowState.Normal
+                _infoForm.BringToFront()
+                _infoForm.Activate()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.btnInfo_Click", ex)
+        End Try
+    End Sub
+
+    ' Împinge contextul curent către fereastra de informații, dacă e deschisă.
+    Private Sub RefreshInfoForm()
+        Try
+            If _infoForm IsNot Nothing AndAlso Not _infoForm.IsDisposed Then
+                _infoForm.ShowInfo(_currentInfo)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.RefreshInfoForm", ex)
         End Try
     End Sub
 

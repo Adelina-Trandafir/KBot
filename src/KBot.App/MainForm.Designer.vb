@@ -42,6 +42,7 @@ Partial Class MainForm
         pnlTree = New Panel()
         pnlTreeHead = New Panel()
         lblTree = New Label()
+        btnInfo = New Button()
         btnSort = New Button()
         btnOpt = New Button()
         tree = New KBot.Controls.AdvancedTreeControl()
@@ -278,6 +279,7 @@ Partial Class MainForm
         ' pnlTreeHead
         '
         pnlTreeHead.Controls.Add(lblTree)
+        pnlTreeHead.Controls.Add(btnInfo)
         pnlTreeHead.Controls.Add(btnSort)
         pnlTreeHead.Controls.Add(btnOpt)
         pnlTreeHead.Dock = DockStyle.Top
@@ -296,6 +298,17 @@ Partial Class MainForm
         lblTree.Size = New Size(103, 19)
         lblTree.TabIndex = 0
         lblTree.Text = "Angajamente"
+        '
+        ' btnInfo — deschide fereastra nemodală «Informații interne» (flag-urile Are*).
+        '
+        btnInfo.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        btnInfo.FlatStyle = FlatStyle.Flat
+        btnInfo.Location = New Point(270, 4)
+        btnInfo.Name = "btnInfo"
+        btnInfo.Size = New Size(28, 28)
+        btnInfo.TabIndex = 1
+        btnInfo.Text = "ⓘ"
+        btnInfo.UseVisualStyleBackColor = True
         '
         ' btnSort
         '
@@ -385,6 +398,7 @@ Partial Class MainForm
     Friend WithEvents pnlTree As Panel
     Friend WithEvents pnlTreeHead As Panel
     Friend WithEvents lblTree As Label
+    Friend WithEvents btnInfo As Button
     Friend WithEvents btnSort As Button
     Friend WithEvents btnOpt As Button
     Friend WithEvents tree As KBot.Controls.AdvancedTreeControl

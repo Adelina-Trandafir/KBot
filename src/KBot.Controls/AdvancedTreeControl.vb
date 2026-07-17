@@ -305,7 +305,7 @@ Partial Public Class AdvancedTreeControl
     Private Function GetColumnAtX(x As Integer, cols As List(Of ColumnDef), colStartX As Integer) As Integer
         Try
             If Not _treeListViewEnabled OrElse Not _treeListView Then Return -1
-            Dim available As Integer = Me.Width - ScrollBarWidth - PADDING_TREE_END - colStartX
+            Dim available As Integer = Me.Width - ScrollBarWidth - PADDING_TREE_END - ReservedRightIconWidth() - colStartX
             Dim visCols As Integer = GetVisibleColumnCount(cols, available)
             If visCols = 0 Then Return -1
             Dim cx As Integer = colStartX
@@ -331,7 +331,7 @@ Partial Public Class AdvancedTreeControl
     End Function
 
     Friend Function GetVisibleColumnCount(cols As List(Of ColumnDef)) As Integer
-        Dim available As Integer = Me.Width - ScrollBarWidth - PADDING_TREE_END - MIN_CAPTION_WIDTH
+        Dim available As Integer = Me.Width - ScrollBarWidth - PADDING_TREE_END - ReservedRightIconWidth() - MIN_CAPTION_WIDTH
         Return GetVisibleColumnCount(cols, available)
     End Function
 
@@ -359,7 +359,7 @@ Partial Public Class AdvancedTreeControl
         For i As Integer = 0 To visCols - 1
             totalColsW += cols(i).Width
         Next
-        Return Me.Width - ScrollBarWidth - PADDING_TREE_END - totalColsW
+        Return Me.Width - ScrollBarWidth - PADDING_TREE_END - ReservedRightIconWidth() - totalColsW
     End Function
 
     Private Function GetContentStartX(it As TreeItem) As Integer
