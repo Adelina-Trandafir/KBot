@@ -33,6 +33,10 @@ ISTORIC_NOU = "Angajament nou."
 COD = "SUM1"          # angajament complet: 2 indicatori, agregate pe primul
 COD_GOL = "SUM0"      # angajament fara indicatori -> header null, rows []
 
+# IdClsfAcc al clasificatiei de test — valoare din afara plajei reale, ca sa nu
+# poata coliziona cu date de productie si ca sa se poata sterge fara ambiguitate.
+CLSF_ACC = 990001
+
 # Cheile pe care contractul de fir le promite (oglindesc SumarRow pe partea VB.NET).
 ROW_KEYS = (
     "clsf", "cod_indicator", "partener",
@@ -62,6 +66,29 @@ def auth_headers():
     STORE.revoke(token)
 
 
+def _id_unitate(cur):
+    """IdUnitate REAL al bazei conectate, citit din Unitati.
+
+    Nu se hardcodeaza 0: Clasificatii are FOREIGN KEY (IdUnitate) -> Unitati, deci
+    un 0 inventat pica insertul din fixture cu o eroare de constrangere, nu cu una
+    de logica. Pe 000_DEMO valoarea e 48, dar se citeste, nu se presupune.
+    (Atentie: `Unitati` exista si in AVACONT_COMUN, cu alte coloane — aici se
+    citeste cea din baza per-unitate, cea pe care e deschisa conexiunea.)
+    """
+    cur.execute("SELECT IdUnitate FROM Unitati LIMIT 1")
+    row = cur.fetchone()
+    if row is None:
+        raise AssertionError("Unitati este gol — fixture-ul nu are IdUnitate valid.")
+    return row[0]
+
+
+def _cleanup_clsf(cur, id_unitate):
+    """Sterge clasificatia de test. Cheiata pe ACELASI IdUnitate cu care s-a inserat,
+    ca fixture-ul sa nu atinga niciodata randuri ale altei unitati."""
+    cur.execute("DELETE FROM Clasificatii WHERE IdClsfAcc = %s AND IdUnitate = %s",
+                (CLSF_ACC, id_unitate))
+
+
 def _cleanup(cur, cod):
     cur.execute("DELETE FROM FX_Rezervari WHERE CodAngajament = %s", (cod,))
     cur.execute("DELETE FROM FX_Receptii WHERE CodAngajament = %s", (cod,))
@@ -86,15 +113,22 @@ def demo_rows():
     conn = get_db_connection(DB_NAME)
     cur = conn.cursor()
     codes = (COD, COD_GOL)
+    id_unitate = _id_unitate(cur)
     try:
         for cod in codes:
             _cleanup(cur, cod)
+        _cleanup_clsf(cur, id_unitate)
 
-        # O clasificatie reala; Clsf/Titlu sunt coloane GENERATED, deci NU se scriu.
+        # O clasificatie reala; Clsf/Titlu/SS sunt coloane GENERATED, deci NU se scriu.
+        # Valorile componente nu sunt arbitrare: Clasificatii are FK-uri catre
+        # AVACONT_COMUN.Defa* pe coloanele GENERATE (Titlu, Articol, ClsfE, ClsfF, SS),
+        # deci combinatia trebuie sa existe in nomenclatoare. S-a ales una reala,
+        # luata din FX_System_Export/TABLES/FX_Receptii.md:54
+        # (Clsf 65.02.04.02.20.01.03, CodSSI 02A650402200103).
         cur.execute(
             "INSERT INTO Clasificatii (IdClsfAcc, IdUnitate, Capitol, Subcapitol, "
             "Articol, Alineat, Denumire) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-            (990001, 0, "65.02", "04.02", "20.01", "03", "Clasificație test"),
+            (CLSF_ACC, id_unitate, "65.02", "04.02", "20.01", "03", "Clasificație test"),
         )
         id_clsf = cur.lastrowid
 
@@ -114,12 +148,12 @@ def demo_rows():
         cur.execute(
             "INSERT INTO FX_Indicatori (CodAI, CodAngajament, CodIndicator, IdClsf, "
             "IdUnitate, SS) VALUES (%s,%s,%s,%s,%s,%s)",
-            (f"{COD}-AI-A", COD, "IND-A", id_clsf, 0, "02A"),
+            (f"{COD}-AI-A", COD, "IND-A", id_clsf, id_unitate, "02A"),
         )
         cur.execute(
             "INSERT INTO FX_Indicatori (CodAI, CodAngajament, CodIndicator, IdClsf, "
             "IdUnitate, SS) VALUES (%s,%s,%s,%s,%s,%s)",
-            (f"{COD}-AI-B", COD, "IND-B", 0, 0, "02A"),
+            (f"{COD}-AI-B", COD, "IND-B", 0, id_unitate, "02A"),
         )
 
         # Agregate DOAR pe IND-A. Doua randuri fiecare, ca testul sa dovedeasca
@@ -147,7 +181,9 @@ def demo_rows():
         cur = conn.cursor()
         for cod in codes:
             _cleanup(cur, cod)
-        cur.execute("DELETE FROM Clasificatii WHERE IdClsfAcc = %s", (990001,))
+        # FX_Indicatori se sterge inaintea clasificatiei (deja facut de _cleanup),
+        # altfel un FK ar bloca stergerea randului din Clasificatii.
+        _cleanup_clsf(cur, id_unitate)
         conn.commit()
         conn.close()
 

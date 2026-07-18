@@ -40,9 +40,12 @@ WHERE IST.Descriere = 'Angajament nou.' (cu PUNCT final — literalul Access):
 Optimizari fata de transcrierea literala (Access grupa pe TOT tabelul, apoi facea
 join — pe MariaDB asta inseamna un full scan per agregat per cerere):
   - filtrul `cod` este impins in FIECARE derivata (aggRez/aggRec/aggPlati/aggRev);
-  - aggOrd este cheiat DOAR pe CodAI (nu are CodAngajament), deci se restrange prin
-    `T.CodAI IN (SELECT CodAI FROM FX_Indicatori WHERE CodAngajament = %s)`, fara
-    presupuneri despre coloanele lui FX_ORD_TBL.
+  - aggOrd ramane cheiat pe CodAI (asta ii da granulatia, nu se schimba), dar se
+    restrange cu DOUA conditii: `T.CodAngajament = %s` (direct, coloana exista pe
+    FX_ORD_TBL — vezi routes/ord/tbl.py:53) SI `T.CodAI IN (SELECT CodAI FROM
+    FX_Indicatori WHERE CodAngajament = %s)`. A doua e redundanta cat timp cele doua
+    coloane sunt consistente; se pastreaza deliberat ca centura de siguranta, pentru
+    ca nicio constrangere din schema nu impune consistenta lor.
 
 Devieri deliberate (mici, documentate in worklog):
   - COALESCE(...,0) pe cele cinci totaluri: Access v1 le lasa Null, dar varianta v2
@@ -63,16 +66,28 @@ from . import forexe_bp
 
 logger = logging.getLogger(__name__)
 
-# ATENTIE la cheia de join spre Clasificatii — vezi worklog SLICE-0011-01.
-# In MariaDB conventia este inversata fata de Access:
-#   Clasificatii.IDClsf     = id-ul „PY” (cheia primara MariaDB)
-#   Clasificatii.IdClsfAcc  = id-ul Access
-# (dovada: routes/clasificatii.py:134 `SELECT IdClsf as IdClsfPY, IdClsfAcc as IdClsf`
-#  si mdl_FX_DDF_Salvare.md:65 `rand("IdClsf") = Rs!IdClsfPY`).
-# Se leaga pe C.IDClsf = conventia tabelelor FX_ impinse in MariaDB. Daca la prima
-# rulare pe date reale Clsf iese gol pe TOATE randurile, cheia corecta este
-# C.IdClsfAcc — se schimba DOAR aici. LEFT JOIN face ca greseala sa fie vizibila
-# (coloana goala), nu tacuta (randuri disparute).
+# ===========================================================================
+# CONVENTIA CHEILOR MariaDB vs Access — citeste asta INAINTE de a porta un join.
+# ===========================================================================
+# Regula generala: cand un tabel are DOUA coloane cu acelasi nume de baza, cea
+# specifica MariaDB este cheia primara REALA, iar cealalta pastreaza id-ul Access
+# venit din import. Un port literal al join-ului din Access leaga cheia GRESITA.
+#
+#   familia FX_ORD : sufixul „P” = PK MariaDB      -> FX_ORD_TBL.IDORDTBLP
+#                    numele fara „P” = id Access   -> FX_ORD_TBL.IDORDTBL
+#   Clasificatii   : IDClsf    = PK MariaDB („PY”)
+#                    IdClsfAcc = id Access
+#                    (dovada: routes/clasificatii.py:134 `SELECT IdClsf as
+#                     IdClsfPY, IdClsfAcc as IdClsf` + mdl_FX_DDF_Salvare.md:65
+#                     `rand("IdClsf") = Rs!IdClsfPY`)
+#
+# Capcana a costat deja DOUA rulari pe felia asta: intai jonctiunea aggOrd
+# (R.IDORDTBL = T.IDORDTBL, corectata in R.IDORDTBLP = T.IDORDTBLP), apoi cheia
+# spre Clasificatii. Vederea ORD, care urmeaza, lucreaza numai cu familia FX_ORD.
+#
+# Clasificatii se leaga pe C.IDClsf. Daca pe date reale Clsf iese gol pe TOATE
+# randurile, cheia corecta este C.IdClsfAcc — se schimba DOAR aici. LEFT JOIN
+# face ca greseala sa fie vizibila (coloana goala), nu tacuta (randuri disparute).
 _SQL = (
     "SELECT A.CodAngajament, IST.DataFX, A.DataCreare, A.DataDefinitivare, "
     "A.Descriere, A.Stare, A.Incarcat, A.Preluat, "
@@ -112,8 +127,9 @@ _SQL = (
     "      AND aggRev.CodIndicator  = I.CodIndicator "
     "LEFT JOIN (SELECT T.CodAI, ROUND(SUM(R.Valoare), 2) AS TotalOrdonantari "
     "           FROM FX_ORD_TBL_REC R "
-    "           INNER JOIN FX_ORD_TBL T ON R.IDORDTBL = T.IDORDTBL "
-    "           WHERE T.CodAI IN (SELECT CodAI FROM FX_Indicatori "
+    "           INNER JOIN FX_ORD_TBL T ON R.IDORDTBLP = T.IDORDTBLP "
+    "           WHERE T.CodAngajament = %s "
+    "             AND T.CodAI IN (SELECT CodAI FROM FX_Indicatori "
     "                             WHERE CodAngajament = %s) "
     "           GROUP BY T.CodAI) aggOrd ON I.CodAI = aggOrd.CodAI "
     "WHERE IST.Descriere = 'Angajament nou.' "
@@ -173,9 +189,10 @@ def get_sumar():
     try:
         conn = get_db_connection(db_name)
         cursor = conn.cursor()
-        # Cei sase %s in ordinea aparitiei in textul SQL: cele cinci derivate,
-        # apoi filtrul exterior. SQL parametrizat — `cod` nu se interpoleaza NICIODATA.
-        cursor.execute(_SQL, (cod, cod, cod, cod, cod, cod))
+        # Cei sapte %s in ordinea aparitiei in textul SQL: aggRez, aggRec, aggPlati,
+        # aggRev, apoi DOI in aggOrd (T.CodAngajament + subinterogarea pe CodAI) si
+        # la final filtrul exterior. SQL parametrizat — `cod` nu se interpoleaza NICIODATA.
+        cursor.execute(_SQL, (cod, cod, cod, cod, cod, cod, cod))
 
         header = None
         rows = []

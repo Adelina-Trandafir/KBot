@@ -39,6 +39,30 @@ rezultat se potrivește cu datele reale din `FX_System_Export/TABLES/FX_Receptii
 `Mid(Clsf,13,2)` din interogările Access — `Capitol`(5) + `.` + `Subcapitol`(5) + `.`
 = 12 caractere, deci poziția 13 e începutul lui `Articol`.
 
+### Convenția cheilor MariaDB vs Access — regula generală (citește asta prima)
+
+**Aceeași capcană a costat DOUĂ rulări pe felia asta.** Merită scrisă o dată, ca
+regulă, nu ca două note separate:
+
+> Când un tabel migrat are **două coloane cu același nume de bază**, cea specifică
+> MariaDB e **cheia primară reală**, iar cealaltă păstrează **id-ul Access** venit din
+> import. Un port literal al join-ului din Access leagă cheia GREȘITĂ.
+
+| Familie | PK MariaDB | id Access păstrat |
+|---|---|---|
+| `FX_ORD*` | sufix **„P"** — `FX_ORD_TBL.IDORDTBLP`, `FX_ORD_TBL_REC.IDORDTBLP` | numele fără „P" — `IDORDTBL` |
+| `Clasificatii` | `IDClsf` (id-ul „PY") | `IdClsfAcc` |
+
+Cele două lovituri, în ordine:
+
+1. `aggOrd` a fost scris `R.IDORDTBL = T.IDORDTBL` (portare literală din Access).
+   Corect: **`R.IDORDTBLP = T.IDORDTBLP`**. Corectat de operator după prima rulare.
+2. Cheia spre `Clasificatii` — vezi secțiunea următoare.
+
+**Urmează vederea ORD, care lucrează NUMAI cu familia `FX_ORD`.** Regula de mai sus e
+prima verificare de făcut la fiecare join de acolo. Convenția e notată și în capul lui
+`sumar.py`, ca să fie sub ochi la următoarea portare.
+
 ### A doua capcană, găsită pe drum: cheia de join spre `Clasificatii`
 
 În MariaDB convenția e **inversată** față de Access:
@@ -83,9 +107,31 @@ golit `Clsf` pe TOATE rândurile. S-a ales `I.IdClsf = C.IDClsf` (convenția tab
 |---|---|
 | `COALESCE(...,0)` pe cele cinci totaluri | Access v1 le lasă `Null`; varianta v2 a operatorului le trece prin `Nz(...,0)`. Grila arată «0,00», nu gol. |
 | Filtrul `cod` împins în FIECARE derivată | Access grupa pe tot tabelul apoi făcea join = full scan per agregat per cerere. |
-| `aggOrd` restrâns prin `T.CodAI IN (SELECT CodAI FROM FX_Indicatori WHERE CodAngajament = %s)` | `aggOrd` e cheiat doar pe `CodAI`; așa se restrânge fără presupuneri despre coloanele lui `FX_ORD_TBL`. |
+| `aggOrd` restrâns cu `T.CodAngajament = %s` **și** `T.CodAI IN (SELECT CodAI FROM FX_Indicatori WHERE CodAngajament = %s)` | Granulația rămâne pe `CodAI` (join-ul exterior nu se schimbă). Filtrul direct pe `CodAngajament` e posibil pentru că `FX_ORD_TBL` chiar are coloana (`routes/ord/tbl.py:53`) — prima versiune presupunea că nu o are. A doua condiție e redundantă cât timp cele două coloane sunt consistente; se păstrează deliberat, pentru că **nicio constrângere din schemă nu impune consistența lor**. |
 | `ORDER BY C.Clsf, I.CodIndicator` adăugat | Access nu are niciunul → grila ar fi instabilă între refresh-uri. |
 | `ROUND(...,2)` DOAR pe `TotalRevizii` + `TotalOrdonantari` | Fidelitate: exact ce face Access. Restul rămân `SUM()` simplu; formatarea `N2` e treaba grilei. |
+
+## Corecții după prima rulare pe gazdă (operator, 2026-07-18)
+
+Prima rulare live a feliei a produs trei corecții — toate în cod scris de mine, toate
+raportate de operator:
+
+1. **`aggOrd`: `R.IDORDTBL = T.IDORDTBL` → `R.IDORDTBLP = T.IDORDTBLP`.** Vezi
+   secțiunea „convenția cheilor" de mai sus. Portare literală din Access = cheia
+   greșită.
+2. **Fixture-ul folosea `IdUnitate = 0` hardcodat.** `Clasificatii` are
+   `FOREIGN KEY (IdUnitate) -> Unitati`, deci insertul pica pe o eroare de
+   constrângere, nu pe una de logică. Acum se citește din `Unitati`
+   (48 pe această bază, dar **se citește, nu se presupune**), iar curățarea folosește
+   ACELAȘI id, ca fixture-ul să nu atingă niciodată rândurile altei unități.
+3. **`aggOrd` a primit filtrul suplimentar `T.CodAngajament = %s`** (opțiunea 3 din
+   brief), cu join-ul exterior pe `CodAI` păstrat — granulația nu se schimbă.
+
+Notă adăugată în fixture: valorile clasificației de test **nu sunt arbitrare**.
+`Clasificatii` are FK-uri către `AVACONT_COMUN.Defa*` **pe coloanele GENERATE**
+(`Titlu`, `Articol`, `ClsfE`, `ClsfF`, `SS`), deci combinația Capitol/Subcapitol/
+Articol/Alineat trebuie să existe în nomenclatoare. S-a ales una reală, luată din
+`FX_System_Export/TABLES/FX_Receptii.md:54`.
 
 ## Rezultate teste
 
