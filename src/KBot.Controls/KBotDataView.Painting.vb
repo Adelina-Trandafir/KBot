@@ -1,0 +1,281 @@
+Option Strict On
+Imports System.Drawing
+Imports System.Drawing.Drawing2D
+Imports System.Globalization
+Imports System.Windows.Forms
+Imports KBot.Common
+
+''' <summary>
+''' Partea de PICTARE a <see cref="KBotDataView"/>. Boundary UI: <c>OnPaint</c> prinde tot,
+''' loghează și ÎNGHITE (un throw dintr-un corp de pictare ar prăbuși procesul). Ajutoarele
+''' de desen de mai jos sunt acoperite TRANZITIV de acel boundary — nu-și pun Try propriu
+''' (regula casei: altfel s-ar loga o dată pe fiecare nivel).
+''' </summary>
+Partial Class KBotDataView
+
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        Try
+            Dim g As Graphics = e.Graphics
+
+            ' Recalcul pur (nu atinge controale) — garantează coerența cu starea curentă.
+            RecalcColumnLayout()
+
+            g.FillRectangle(_bRowBack, ClientRectangle)
+
+            DrawRows(g)
+            If _showHeader AndAlso _headerHeight > 0 Then DrawHeader(g)
+
+            g.DrawRectangle(_pBorder, New Rectangle(0, 0, Width - 1, Height - 1))
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.OnPaint", ex)
+        End Try
+    End Sub
+
+    ' ── Antet ───────────────────────────────────────────────────────────────────
+
+    ' Banda de antet: fundal, textul coloanelor (înghețate + derulate), separatoare, bază.
+    Private Sub DrawHeader(g As Graphics)
+        Dim headerRect As New Rectangle(0, 0, ClientSize.Width, _headerHeight)
+        g.FillRectangle(_bHeaderBack, headerRect)
+
+        Dim hf As Font = HeaderFont()
+        Dim viewW As Integer = ViewportWidth()
+
+        ' Banda derulată — decupată ca să nu treacă peste coloanele înghețate.
+        Dim scrollClip As New Rectangle(_frozenBandWidth, 0,
+                                        Math.Max(0, viewW - _frozenBandWidth), _headerHeight)
+        g.SetClip(scrollClip)
+        Dim hOffset As Integer = HScrollOffset()
+        For Each cl In _scrollLayout
+            DrawHeaderCell(g, cl.Column, _frozenBandWidth + cl.X - hOffset, hf)
+        Next
+        g.ResetClip()
+
+        ' Banda înghețată — desenată PESTE cea derulată.
+        For Each cl In _frozenLayout
+            DrawHeaderCell(g, cl.Column, cl.X, hf)
+        Next
+
+        ' Linia de bază + accentul de sub antet.
+        g.DrawLine(_pHeaderSep, 0, _headerHeight - 1, ClientSize.Width - 1, _headerHeight - 1)
+        g.DrawLine(_pHeaderBaseline, 0, _headerHeight - 1, ClientSize.Width - 1, _headerHeight - 1)
+    End Sub
+
+    Private Sub DrawHeaderCell(g As Graphics, col As KBotDataColumn, x As Integer, hf As Font)
+        Dim cellRect As New Rectangle(x, 0, col.Width, _headerHeight)
+        If cellRect.Right < 0 OrElse cellRect.Left > ClientSize.Width Then Return
+
+        Dim padX As Integer = ScaleDpi(8)
+        Dim textRect As New Rectangle(cellRect.Left + padX, cellRect.Top,
+                                      Math.Max(0, cellRect.Width - 2 * padX), cellRect.Height)
+        TextRenderer.DrawText(g, col.HeaderText, hf, textRect, _cHeaderText,
+            HorizontalFlags(col.TextAlign) Or TextFormatFlags.VerticalCenter Or
+            TextFormatFlags.EndEllipsis)
+
+        Dim sepX As Integer = cellRect.Right - 1
+        g.DrawLine(_pHeaderSep, sepX, 0, sepX, _headerHeight - 1)
+    End Sub
+
+    ' ── Rânduri (virtualizat) ───────────────────────────────────────────────────
+
+    ' Pictează DOAR rândurile vizibile. Numărul lor ajunge în DebugLastPaintedDataRows,
+    ' poarta de verificare headless a virtualizării.
+    Private Sub DrawRows(g As Graphics)
+        Dim painted As Integer = 0
+        Dim bodyTop As Integer = HeaderBandHeight()
+        Dim bodyH As Integer = ViewportHeight()
+        Dim viewW As Integer = ViewportWidth()
+
+        If bodyH <= 0 OrElse _rows.Count = 0 Then
+            DebugLastPaintedDataRows = 0
+            Return
+        End If
+
+        Dim first As Integer = FirstVisibleRow()
+        Dim last As Integer = LastVisibleRow()
+
+        ' Decupăm zona de date, ca rândurile parțiale să nu deseneze peste antet/bare.
+        Dim bodyClip As New Rectangle(0, bodyTop, viewW, bodyH)
+        g.SetClip(bodyClip)
+
+        For i As Integer = first To last
+            Dim y As Integer = RowTop(i)
+            If y + _rowHeight <= bodyTop OrElse y >= bodyTop + bodyH Then Continue For
+            DrawRow(g, i, y, viewW)
+            painted += 1
+        Next
+
+        g.ResetClip()
+        DebugLastPaintedDataRows = painted
+    End Sub
+
+    Private Sub DrawRow(g As Graphics, rowIndex As Integer, y As Integer, viewW As Integer)
+        Dim row As KBotDataRow = _rows(rowIndex)
+        Dim isAlt As Boolean = _alternatingRows AndAlso (rowIndex Mod 2 = 1)
+        Dim isSelected As Boolean = (rowIndex = _currentRowIndex)
+
+        ' Fundalul implicit al rândului: normal / alternant, iar dacă e selectat, spălarea
+        ' de accent peste fundalul REAL (două variante precalculate => zero alocări aici).
+        Dim backBrush As SolidBrush
+        If isSelected Then
+            backBrush = If(isAlt, _bSelAltBack, _bSelBack)
+        Else
+            backBrush = If(isAlt, _bRowAltBack, _bRowBack)
+        End If
+        Dim backColor As Color = backBrush.Color
+        Dim foreColor As Color = If(isSelected, _cSelText, _cCellText)
+
+        ' RowFormatting — argumente REFOLOSITE (fără alocări la mii de rânduri).
+        _rowArgs.Reset(rowIndex, row, backColor, foreColor, row.Enabled)
+        RaiseEvent RowFormatting(Me, _rowArgs)
+        backColor = _rowArgs.BackColor
+        foreColor = _rowArgs.ForeColor
+        Dim rowEnabled As Boolean = _rowArgs.Enabled
+
+        Dim rowRect As New Rectangle(0, y, viewW, _rowHeight)
+        If backColor = backBrush.Color Then
+            g.FillRectangle(backBrush, rowRect)          ' calea rapidă: pensulă cache-uită
+        Else
+            Using b As New SolidBrush(backColor)          ' doar când handler-ul a suprascris
+                g.FillRectangle(b, rowRect)
+            End Using
+        End If
+
+        ' Banda derulată (decupată), apoi cea înghețată desenată peste ea.
+        Dim scrollClip As New Rectangle(_frozenBandWidth, y,
+                                        Math.Max(0, viewW - _frozenBandWidth), _rowHeight)
+        Dim previousClip As Region = g.Clip
+        g.SetClip(scrollClip, CombineMode.Intersect)
+        Dim hOffset As Integer = HScrollOffset()
+        For Each cl In _scrollLayout
+            DrawCell(g, cl.Column, row, rowIndex,
+                     New Rectangle(_frozenBandWidth + cl.X - hOffset, y, cl.Column.Width, _rowHeight),
+                     backColor, foreColor, rowEnabled)
+        Next
+        g.Clip = previousClip
+        previousClip.Dispose()
+
+        For Each cl In _frozenLayout
+            DrawCell(g, cl.Column, row, rowIndex,
+                     New Rectangle(cl.X, y, cl.Column.Width, _rowHeight),
+                     backColor, foreColor, rowEnabled)
+        Next
+
+        ' Linia orizontală de grilă, sub rând.
+        g.DrawLine(_pGridLine, 0, y + _rowHeight - 1, viewW, y + _rowHeight - 1)
+    End Sub
+
+    ' ── Celule ──────────────────────────────────────────────────────────────────
+
+    Private Sub DrawCell(g As Graphics, col As KBotDataColumn, row As KBotDataRow, rowIndex As Integer,
+                         cellRect As Rectangle, rowBack As Color, rowFore As Color, rowEnabled As Boolean)
+        If cellRect.Right < 0 OrElse cellRect.Left > ClientSize.Width Then Return
+
+        Dim value As Object = row(col.Key)
+
+        ' CellFormatting — argumente REFOLOSITE, pre-umplute cu valorile implicite din temă.
+        _cellArgs.Reset(col, row, rowIndex, value, FormatValue(value, col),
+                        rowBack, rowFore, Font, col.TextAlign,
+                        col.Enabled AndAlso rowEnabled)
+        RaiseEvent CellFormatting(Me, _cellArgs)
+
+        ' Fundal per-celulă doar dacă handler-ul l-a schimbat față de cel al rândului.
+        If _cellArgs.BackColor <> rowBack Then
+            Using b As New SolidBrush(_cellArgs.BackColor)
+                g.FillRectangle(b, cellRect)
+            End Using
+        End If
+
+        Select Case col.ColumnType
+            Case KBotColumnType.CheckBox
+                DrawCheckCell(g, cellRect, ToBool(value))
+            Case Else
+                ' Text (și, până la 0010-03, orice tip încă nepictat) — text simplu.
+                DrawTextCell(g, cellRect, _cellArgs.Text, _cellArgs.Font,
+                             _cellArgs.ForeColor, _cellArgs.Alignment)
+        End Select
+
+        ' Separatorul vertical de grilă, la marginea dreaptă a celulei.
+        g.DrawLine(_pGridLine, cellRect.Right - 1, cellRect.Top, cellRect.Right - 1, cellRect.Bottom - 1)
+    End Sub
+
+    Private Sub DrawTextCell(g As Graphics, cellRect As Rectangle, text As String, font As Font,
+                             fore As Color, align As ContentAlignment)
+        If String.IsNullOrEmpty(text) Then Return
+        Dim padX As Integer = ScaleDpi(6)
+        Dim textRect As New Rectangle(cellRect.Left + padX, cellRect.Top,
+                                      Math.Max(0, cellRect.Width - 2 * padX), cellRect.Height)
+        TextRenderer.DrawText(g, text, font, textRect, fore,
+            HorizontalFlags(align) Or TextFormatFlags.VerticalCenter Or TextFormatFlags.EndEllipsis)
+    End Sub
+
+    ' Bifă centrată. Geometria e cea din AdvancedTreeControl (dreptunghi rotunjit + bifă),
+    ' dar culorile vin din paletă, nu hardcodate ca acolo (acel control e deliberat ne-tematizat).
+    Private Sub DrawCheckCell(g As Graphics, cellRect As Rectangle, checked As Boolean)
+        Dim size As Integer = ScaleDpi(14)
+        Dim box As New Rectangle(cellRect.Left + (cellRect.Width - size) \ 2,
+                                 cellRect.Top + (cellRect.Height - size) \ 2,
+                                 size, size)
+
+        Dim oldSmooth As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+
+        Using path As GraphicsPath = RoundedRect(box, ScaleDpi(3))
+            If checked Then
+                g.FillPath(_bCheckFill, path)
+                g.DrawPath(_pCheckFill, path)
+                Using penTick As New Pen(_cCheckMark, 2.0F)
+                    penTick.StartCap = LineCap.Round
+                    penTick.EndCap = LineCap.Round
+                    penTick.LineJoin = LineJoin.Round
+                    g.DrawLines(penTick, {
+                        New PointF(box.X + size * 0.22F, box.Y + size * 0.52F),
+                        New PointF(box.X + size * 0.42F, box.Y + size * 0.72F),
+                        New PointF(box.X + size * 0.78F, box.Y + size * 0.28F)
+                    })
+                End Using
+            Else
+                g.DrawPath(_pCheckBorder, path)
+            End If
+        End Using
+
+        g.SmoothingMode = oldSmooth
+    End Sub
+
+    ' ── Ajutoare ────────────────────────────────────────────────────────────────
+
+    ''' <summary>Valoarea formatată pentru afișare (aplică <c>Column.FormatString</c>).</summary>
+    Private Shared Function FormatValue(value As Object, col As KBotDataColumn) As String
+        If value Is Nothing Then Return String.Empty
+        If Not String.IsNullOrEmpty(col.FormatString) Then
+            Dim f As IFormattable = TryCast(value, IFormattable)
+            If f IsNot Nothing Then Return f.ToString(col.FormatString, CultureInfo.CurrentCulture)
+        End If
+        Return value.ToString()
+    End Function
+
+    ' Coerciție tolerantă la Boolean pentru celulele de tip bifă (fără excepții).
+    Private Shared Function ToBool(value As Object) As Boolean
+        If value Is Nothing Then Return False
+        If TypeOf value Is Boolean Then Return CBool(value)
+        Dim s As String = value.ToString().Trim()
+        Dim b As Boolean
+        If Boolean.TryParse(s, b) Then Return b
+        Dim d As Double
+        If Double.TryParse(s, NumberStyles.Any, CultureInfo.CurrentCulture, d) Then Return d <> 0
+        Return False
+    End Function
+
+    ' Alinierea orizontală a textului dintr-un ContentAlignment.
+    Private Shared Function HorizontalFlags(align As ContentAlignment) As TextFormatFlags
+        Select Case align
+            Case ContentAlignment.TopRight, ContentAlignment.MiddleRight, ContentAlignment.BottomRight
+                Return TextFormatFlags.Right
+            Case ContentAlignment.TopCenter, ContentAlignment.MiddleCenter, ContentAlignment.BottomCenter
+                Return TextFormatFlags.HorizontalCenter
+            Case Else
+                Return TextFormatFlags.Left
+        End Select
+    End Function
+
+End Class

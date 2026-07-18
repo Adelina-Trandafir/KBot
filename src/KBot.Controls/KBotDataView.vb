@@ -14,9 +14,9 @@ Imports KBot.Theming
 ''' Se auto-tematizează prin <see cref="IThemedControl"/> (ca familia KBotNavList): culorile
 ''' vin din paleta schemei active (ApplyTheme), niciodată literale.
 '''
-''' Slice 0010-01 (schelet): bază double-buffered, modele coloană/rând, cache de temă +
-''' ApplyTheme, pictare antet + corp gol tematizat. Virtualizarea, tipurile de coloană,
-''' formatarea, input-ul și editarea vin în pașii 0010-02..06.
+''' Fișierul acesta ține STAREA + API-ul public. Restul e împărțit pe parțiale, ca la
+''' AdvancedTreeControl: <c>.Theming</c> (culori/resurse GDI), <c>.Layout</c> (geometrie,
+''' virtualizare, scrollbar-uri), <c>.Painting</c> (pictare).
 ''' </summary>
 <ToolboxItem(True)>
 Public Class KBotDataView
@@ -36,31 +36,30 @@ Public Class KBotDataView
     Private _readOnlyGrid As Boolean = False
     Private _frozenColumnCount As Integer = 0
 
+    ' Rândul curent (selecție). API-ul public + SelectionChanged vin în 0010-05;
+    ' pictarea selecției e deja aici ca pipeline-ul să fie complet. -1 = fără selecție.
+    Private _currentRowIndex As Integer = -1
+
     ' Adâncimea BeginUpdate/EndUpdate — cât e > 0, invalidările interne se amână.
     Private _updateDepth As Integer = 0
 
-    ' Layout X al coloanelor vizibile, recalculat la pictare (zeci de coloane => neglijabil).
-    Private Structure ColLayout
-        Public Column As KBotDataColumn
-        Public X As Integer
-    End Structure
-    Private ReadOnly _colLayout As New List(Of ColLayout)()
+    ' ── Evenimente de formatare (handler-ele „bogate” vin în 0010-04) ────────────
 
-    ' ── Culori derivate din paletă (setate în ApplyTheme; default = SystemColors) ─
-    Private _cBodyBack As Color
-    Private _cHeaderBack As Color
-    Private _cHeaderFore As Color
-    Private _cBorder As Color
-    Private _cSeparator As Color
+    ''' <summary>Ridicat pentru fiecare celulă pictată. Argumentele sunt REFOLOSITE — nu le reține.</summary>
+    Public Event CellFormatting As EventHandler(Of KBotCellFormattingEventArgs)
 
-    ' ── Resurse GDI cache-uite (recreate în ApplyTheme, eliberate în Dispose) ─────
-    Private _bBodyBack As SolidBrush
-    Private _bHeaderBack As SolidBrush
-    Private _pBorder As Pen
-    Private _pSeparator As Pen
+    ''' <summary>Ridicat o dată pe rând, înaintea celulelor. Argumentele sunt REFOLOSITE — nu le reține.</summary>
+    Public Event RowFormatting As EventHandler(Of KBotRowFormattingEventArgs)
 
-    ' Font semibold pentru antet (derivat lazy din fontul ambient).
-    Private _headerFont As Font
+    ' Instanțe REFOLOSITE de argumente (zero alocări per celulă la mii de rânduri).
+    Private ReadOnly _cellArgs As New KBotCellFormattingEventArgs()
+    Private ReadOnly _rowArgs As New KBotRowFormattingEventArgs()
+
+    ''' <summary>
+    ''' Câte rânduri de date a pictat ultimul <c>OnPaint</c>. Poarta de verificare a
+    ''' virtualizării în teste (headless, prin DrawToBitmap) — nu e API public.
+    ''' </summary>
+    Friend Property DebugLastPaintedDataRows As Integer
 
     Public Sub New()
         SetStyle(ControlStyles.UserPaint Or ControlStyles.AllPaintingInWmPaint Or
@@ -70,6 +69,7 @@ Public Class KBotDataView
         InitializeComponent()
         SetDefaultColors()
         RebuildThemeResources()
+        WireScrollBars()
     End Sub
 
     ' ========================================================================
@@ -83,7 +83,7 @@ Public Class KBotDataView
         Dim col As New KBotDataColumn(key, headerText, type, width)
         _columns.Add(col)
         _columnIndex(key) = col
-        InvalidateContent()
+        LayoutChanged()
         Return col
     End Function
 
@@ -101,14 +101,18 @@ Public Class KBotDataView
         Throw New ArgumentException($"Cheie de coloană necunoscută: '{key}'.", NameOf(key))
     End Function
 
-    ''' <summary>Numărul de coloane înghețate (non-scrolling) din stânga. Folosit la virtualizare.</summary>
+    ''' <summary>
+    ''' Câte coloane vizibile din stânga sunt înghețate (nu derulează orizontal).
+    ''' NOTĂ: acesta e mecanismul autoritar; <c>KBotDataColumn.Frozen</c> rămâne metadata
+    ''' neutilizată deocamdată (vezi worklog 0010-02).
+    ''' </summary>
     Public Property FrozenColumnCount As Integer
         Get
             Return _frozenColumnCount
         End Get
         Set(value As Integer)
             _frozenColumnCount = Math.Max(0, value)
-            InvalidateContent()
+            LayoutChanged()
         End Set
     End Property
 
@@ -120,7 +124,7 @@ Public Class KBotDataView
     Public Function AddRow() As KBotDataRow
         Dim r As New KBotDataRow()
         _rows.Add(r)
-        InvalidateContent()
+        LayoutChanged()
         Return r
     End Function
 
@@ -138,10 +142,11 @@ Public Class KBotDataView
         End Get
     End Property
 
-    ''' <summary>Golește toate rândurile.</summary>
+    ''' <summary>Golește toate rândurile (și selecția).</summary>
     Public Sub ClearRows()
         _rows.Clear()
-        InvalidateContent()
+        _currentRowIndex = -1
+        LayoutChanged()
     End Sub
 
     ''' <summary>Rândurile marcate „murdare” (editate). Semantica se rafinează la editare (0010-06).</summary>
@@ -182,7 +187,7 @@ Public Class KBotDataView
         End Get
         Set(value As Integer)
             _rowHeight = Math.Max(1, value)
-            InvalidateContent()
+            LayoutChanged()
         End Set
     End Property
 
@@ -193,7 +198,7 @@ Public Class KBotDataView
         End Get
         Set(value As Integer)
             _headerHeight = Math.Max(0, value)
-            InvalidateContent()
+            LayoutChanged()
         End Set
     End Property
 
@@ -204,11 +209,11 @@ Public Class KBotDataView
         End Get
         Set(value As Boolean)
             _showHeader = value
-            InvalidateContent()
+            LayoutChanged()
         End Set
     End Property
 
-    ''' <summary>Fundal alternant pe rânduri pare/impare. Implicit True (folosit din 0010-02).</summary>
+    ''' <summary>Fundal alternant pe rânduri pare/impare. Implicit True.</summary>
     Public Property AlternatingRows As Boolean
         Get
             Return _alternatingRows
@@ -233,184 +238,50 @@ Public Class KBotDataView
     ' API PUBLIC — Bulk / refresh
     ' ========================================================================
 
-    ''' <summary>Suspendă invalidările pe durata adăugărilor în masă.</summary>
+    ''' <summary>Suspendă invalidările/relayout-ul pe durata adăugărilor în masă.</summary>
     Public Sub BeginUpdate()
         _updateDepth += 1
     End Sub
 
-    ''' <summary>Reia invalidarea; la revenirea la 0, repictează o dată.</summary>
+    ''' <summary>Reia pictarea; la revenirea la 0 recalculează layout-ul și repictează o dată.</summary>
     Public Sub EndUpdate()
         If _updateDepth > 0 Then _updateDepth -= 1
-        If _updateDepth = 0 Then Invalidate()
+        If _updateDepth = 0 Then
+            UpdateLayout()
+            Invalidate()
+        End If
     End Sub
 
-    ''' <summary>Invalidează o celulă. 0010-01: invalidare integrală (dreptunghiul exact vine la virtualizare).</summary>
+    ''' <summary>Invalidează o celulă. Deocamdată invalidare integrală (suficient, repictarea e ieftină).</summary>
     Public Sub InvalidateCell(colKey As String, rowIndex As Integer)
         InvalidateContent()
     End Sub
 
-    ''' <summary>Invalidează un rând. 0010-01: invalidare integrală (dreptunghiul exact vine la virtualizare).</summary>
+    ''' <summary>Invalidează un rând. Deocamdată invalidare integrală.</summary>
     Public Sub InvalidateRow(rowIndex As Integer)
         InvalidateContent()
     End Sub
 
-    ' Invalidare internă care respectă BeginUpdate/EndUpdate.
+    ' Invalidare care respectă BeginUpdate/EndUpdate (doar repictare).
     Private Sub InvalidateContent()
         If _updateDepth = 0 Then Invalidate()
     End Sub
 
-    ' ========================================================================
-    ' TEMĂ
-    ' ========================================================================
-
-    ''' <summary>Reaplică culorile schemei active în cache-ul de resurse GDI și invalidează.</summary>
-    Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
-        If scheme Is Nothing Then Return
-        Dim p As ThemePalette = scheme.Palette
-        ' Maparea sloturilor de paletă pe rolurile grilei. Fără culori literale.
-        _cBodyBack = p.InputBackColor          ' corp / rând normal (alb în Classic)
-        _cHeaderBack = p.ButtonBackColor       ' antet ușor „ridicat”
-        _cHeaderFore = p.ButtonTextColor
-        _cBorder = p.BorderColor
-        _cSeparator = p.BorderColor
-        BackColor = _cBodyBack
-        RebuildThemeResources()
+    ' Schimbare care afectează geometria (coloane/rânduri/înălțimi): relayout + repictare.
+    Private Sub LayoutChanged()
+        If _updateDepth <> 0 Then Return
+        UpdateLayout()
         Invalidate()
     End Sub
 
-    ' Culorile pre-temă (până la primul ApplyTheme): SystemColors, ca randarea în designer.
-    Private Sub SetDefaultColors()
-        _cBodyBack = SystemColors.Window
-        _cHeaderBack = SystemColors.Control
-        _cHeaderFore = SystemColors.ControlText
-        _cBorder = SystemColors.ControlDark
-        _cSeparator = SystemColors.ControlLight
-        BackColor = _cBodyBack
-    End Sub
-
-    ' Recreează pensulele/creioanele din culorile curente (eliberează-le pe cele vechi).
-    Private Sub RebuildThemeResources()
-        DisposeThemeResources()
-        _bBodyBack = New SolidBrush(_cBodyBack)
-        _bHeaderBack = New SolidBrush(_cHeaderBack)
-        _pBorder = New Pen(_cBorder)
-        _pSeparator = New Pen(_cSeparator)
-    End Sub
-
-    ' Eliberează resursele GDI cache-uite + fontul de antet (fără scurgeri).
-    Private Sub DisposeThemeResources()
-        _bBodyBack?.Dispose() : _bBodyBack = Nothing
-        _bHeaderBack?.Dispose() : _bHeaderBack = Nothing
-        _pBorder?.Dispose() : _pBorder = Nothing
-        _pSeparator?.Dispose() : _pSeparator = Nothing
-        _headerFont?.Dispose() : _headerFont = Nothing
-    End Sub
-
-    ' Fontul antetului: „semibold” derivat lazy din fontul ambient (fallback: bold).
-    Private Function HeaderFont() As Font
-        If _headerFont Is Nothing Then
-            Try
-                _headerFont = New Font("Segoe UI Semibold", Font.Size)
-            Catch ex As Exception
-                GlobalErrorLog.Write("KBotDataView.HeaderFont", ex)
-                _headerFont = New Font(Font, FontStyle.Bold)
-            End Try
-        End If
-        Return _headerFont
-    End Function
-
-    Protected Overrides Sub OnFontChanged(e As EventArgs)
-        MyBase.OnFontChanged(e)
-        _headerFont?.Dispose()
-        _headerFont = Nothing
-        Invalidate()
-    End Sub
-
-    ' ========================================================================
-    ' PICTARE
-    ' ========================================================================
-
-    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+    Protected Overrides Sub OnResize(e As EventArgs)
+        MyBase.OnResize(e)
         Try
-            Dim g As Graphics = e.Graphics
-            g.FillRectangle(_bBodyBack, ClientRectangle)   ' corp gol = fundal rând normal
-
-            RecalcColumnLayout()
-
-            If _showHeader AndAlso _headerHeight > 0 Then
-                DrawHeader(g)
-            End If
-
-            ' Corp: rândurile se pictează din 0010-02 (virtualizare). Aici doar fundalul.
-
-            ' Chenar exterior.
-            g.DrawRectangle(_pBorder, New Rectangle(0, 0, Width - 1, Height - 1))
+            UpdateLayout()
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotDataView.OnPaint", ex)
+            ' Boundary UI: relayout-ul nu are voie să arunce în bucla de mesaje.
+            GlobalErrorLog.Write("KBotDataView.OnResize", ex)
         End Try
     End Sub
-
-    ' Banda de antet: fundal, textul fiecărei coloane vizibile, separatoare, linie de bază.
-    ' Transitiv acoperit de Try/Catch-ul din OnPaint (regula casei) — fără Try propriu.
-    Private Sub DrawHeader(g As Graphics)
-        Dim headerRect As New Rectangle(0, 0, Width, _headerHeight)
-        g.FillRectangle(_bHeaderBack, headerRect)
-
-        Dim padX As Integer = ScaleDpi(8)
-        Dim hf As Font = HeaderFont()
-
-        For Each cl In _colLayout
-            Dim cellRect As New Rectangle(cl.X, 0, cl.Column.Width, _headerHeight)
-
-            Dim textRect As New Rectangle(cellRect.Left + padX, cellRect.Top,
-                                          Math.Max(0, cellRect.Width - 2 * padX), cellRect.Height)
-            TextRenderer.DrawText(g, cl.Column.HeaderText, hf, textRect, _cHeaderFore,
-                HorizontalFlags(cl.Column.TextAlign) Or TextFormatFlags.VerticalCenter Or
-                TextFormatFlags.EndEllipsis)
-
-            Dim sepX As Integer = cellRect.Right - 1
-            g.DrawLine(_pSeparator, sepX, 0, sepX, _headerHeight - 1)
-        Next
-
-        g.DrawLine(_pSeparator, 0, _headerHeight - 1, Width - 1, _headerHeight - 1)
-    End Sub
-
-    ' Recalculează offset-ul X al coloanelor vizibile (fără scroll orizontal în 0010-01).
-    Private Sub RecalcColumnLayout()
-        _colLayout.Clear()
-        Dim x As Integer = 0
-        For Each c In _columns
-            If Not c.Visible Then Continue For
-            _colLayout.Add(New ColLayout With {.Column = c, .X = x})
-            x += c.Width
-        Next
-    End Sub
-
-    ' ========================================================================
-    ' AJUTOARE (geometrie pură; ThemeShapes din KBot.Theming e Friend, nu se vede de aici)
-    ' ========================================================================
-
-    ' Scalează o valoare logică (px @96dpi) la DPI-ul controlului. Fallback 96 înainte de handle.
-    Private Function ScaleDpi(logical As Integer) As Integer
-        Dim dpi As Integer = 96
-        Try
-            dpi = DeviceDpi
-        Catch
-            dpi = 96
-        End Try
-        Return CInt(Math.Round(logical * dpi / 96.0))
-    End Function
-
-    ' Alinierea orizontală a textului dintr-un ContentAlignment.
-    Private Shared Function HorizontalFlags(align As ContentAlignment) As TextFormatFlags
-        Select Case align
-            Case ContentAlignment.TopRight, ContentAlignment.MiddleRight, ContentAlignment.BottomRight
-                Return TextFormatFlags.Right
-            Case ContentAlignment.TopCenter, ContentAlignment.MiddleCenter, ContentAlignment.BottomCenter
-                Return TextFormatFlags.HorizontalCenter
-            Case Else
-                Return TextFormatFlags.Left
-        End Select
-    End Function
 
 End Class
