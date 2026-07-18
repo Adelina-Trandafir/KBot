@@ -37,11 +37,20 @@ Public NotInheritable Class DataViewHarnessForm
 
             grid.BeginUpdate()
 
-            ' Prima coloană înghețată, ca să se vadă banda non-scrolling la derulare orizontală.
+            ' Câte una din fiecare din cele ȘASE tipuri de coloană (acceptanța 0010-03),
+            ' apoi restul până la COLS ca text numeric. Prima coloană e înghețată, ca să se
+            ' vadă banda non-scrolling la derulare orizontală.
             grid.AddColumn("nr", "Nr.", KBotColumnType.Text, 70)
             grid.AddColumn("cod", "Cod indicator", KBotColumnType.Text, 150)
+            grid.AddColumn("stare", "Stare", KBotColumnType.Combo, 120)
             grid.AddColumn("activ", "Activ", KBotColumnType.CheckBox, 60)
-            For c As Integer = 3 To COLS - 1
+            grid.AddColumn("optA", "Var. A", KBotColumnType.OptionButton, 70).OptionGroup = "varianta"
+            grid.AddColumn("optB", "Var. B", KBotColumnType.OptionButton, 70).OptionGroup = "varianta"
+            grid.AddColumn("det", "Detalii", KBotColumnType.Button, 100)
+            Dim prg = grid.AddColumn("prog", "Execuție", KBotColumnType.ProgressBar, 140)
+            prg.ProgressMin = 0
+            prg.ProgressMax = 100
+            For c As Integer = 8 To COLS - 1
                 Dim col = grid.AddColumn("c" & c.ToString(), "Valoare " & c.ToString(),
                                          KBotColumnType.Text, 110)
                 col.FormatString = "N2"
@@ -49,12 +58,17 @@ Public NotInheritable Class DataViewHarnessForm
             Next
             grid.FrozenColumnCount = 1
 
+            Dim stari As String() = {"Nou", "În lucru", "Definitivat", "Anulat"}
             For r As Integer = 0 To ROWS - 1
                 Dim row = grid.AddRow()
                 row("nr") = r + 1
                 row("cod") = "IND-" & (r + 1).ToString("D5")
+                row("stare") = stari(r Mod stari.Length)
                 row("activ") = (r Mod 3 = 0)
-                For c As Integer = 3 To COLS - 1
+                row("optA") = (r Mod 2 = 0)
+                row("optB") = (r Mod 2 <> 0)
+                row("prog") = (r * 13) Mod 101
+                For c As Integer = 8 To COLS - 1
                     row("c" & c.ToString()) = (r * 7.5 + c * 1.25)
                 Next
             Next

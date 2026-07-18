@@ -176,6 +176,38 @@ Public Class KBotDataView
         End Set
     End Property
 
+    ''' <summary>
+    ''' Setează o celulă de tip <see cref="KBotColumnType.OptionButton"/>. Bifarea (True) le
+    ''' stinge pe celelalte opțiuni din ACELAȘI RÂND care au același <c>OptionGroup</c> —
+    ''' exclusivitatea cerută de un grup de butoane radio. Un grup vid => opțiune independentă.
+    ''' </summary>
+    Public Sub SetOptionValue(colKey As String, rowIndex As Integer, value As Boolean)
+        Try
+            Dim col As KBotDataColumn = Column(colKey)   ' cheie necunoscută => ArgumentException
+            If col.ColumnType <> KBotColumnType.OptionButton Then
+                Throw New ArgumentException($"Coloana '{colKey}' nu e de tip OptionButton.", NameOf(colKey))
+            End If
+            Dim row As KBotDataRow = _rows(rowIndex)
+            row(colKey) = value
+            If value Then ClearOptionSiblings(row, col)
+            InvalidateRow(rowIndex)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.SetOptionValue", ex)
+            Throw
+        End Try
+    End Sub
+
+    ' Stinge opțiunile-surori din același rând + același grup (exclusivitate radio).
+    Private Sub ClearOptionSiblings(row As KBotDataRow, col As KBotDataColumn)
+        If String.IsNullOrEmpty(col.OptionGroup) Then Return
+        For Each other In _columns
+            If ReferenceEquals(other, col) Then Continue For
+            If other.ColumnType <> KBotColumnType.OptionButton Then Continue For
+            If Not String.Equals(other.OptionGroup, col.OptionGroup, StringComparison.Ordinal) Then Continue For
+            row(other.Key) = False
+        Next
+    End Sub
+
     ' ========================================================================
     ' API PUBLIC — Aspect / comportament
     ' ========================================================================

@@ -189,8 +189,19 @@ Partial Class KBotDataView
         Select Case col.ColumnType
             Case KBotColumnType.CheckBox
                 DrawCheckCell(g, cellRect, ToBool(value))
+            Case KBotColumnType.OptionButton
+                DrawOptionCell(g, cellRect, ToBool(value))
+            Case KBotColumnType.Button
+                ' Butonul nu ține valoare: eticheta e textul celulei, iar dacă lipsește,
+                ' antetul coloanei (ex. o coloană «Detalii» cu același buton pe fiecare rând).
+                Dim caption As String = If(String.IsNullOrEmpty(_cellArgs.Text), col.HeaderText, _cellArgs.Text)
+                DrawButtonCell(g, cellRect, caption, _cellArgs.Font)
+            Case KBotColumnType.ProgressBar
+                DrawProgressCell(g, cellRect, ProgressFraction(value, col))
+            Case KBotColumnType.Combo
+                DrawComboCell(g, cellRect, _cellArgs.Text, _cellArgs.Font,
+                              _cellArgs.ForeColor, _cellArgs.Alignment)
             Case Else
-                ' Text (și, până la 0010-03, orice tip încă nepictat) — text simplu.
                 DrawTextCell(g, cellRect, _cellArgs.Text, _cellArgs.Font,
                              _cellArgs.ForeColor, _cellArgs.Alignment)
         End Select
@@ -242,7 +253,130 @@ Partial Class KBotDataView
         g.SmoothingMode = oldSmooth
     End Sub
 
+    ' Buton radio centrat: elipsă + punct central (geometria din AdvancedTreeControl,
+    ' culorile din paletă).
+    Private Sub DrawOptionCell(g As Graphics, cellRect As Rectangle, selected As Boolean)
+        Dim size As Integer = ScaleDpi(14)
+        Dim box As New Rectangle(cellRect.Left + (cellRect.Width - size) \ 2,
+                                 cellRect.Top + (cellRect.Height - size) \ 2,
+                                 size, size)
+
+        Dim oldSmooth As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+
+        If selected Then
+            g.FillEllipse(_bOptionFill, box)
+            g.DrawEllipse(_pOptionFill, box)
+            Dim dotMargin As Integer = CInt(size * 0.28F)
+            Dim dot As New Rectangle(box.X + dotMargin, box.Y + dotMargin,
+                                     size - dotMargin * 2, size - dotMargin * 2)
+            g.FillEllipse(_bOptionDot, dot)
+        Else
+            g.DrawEllipse(_pOptionBorder, box)
+        End If
+
+        g.SmoothingMode = oldSmooth
+    End Sub
+
+    ' Buton de acțiune: față rotunjită + chenar + etichetă centrată. Stările hover/pressed
+    ' vin în 0010-05, odată cu urmărirea mouse-ului.
+    Private Sub DrawButtonCell(g As Graphics, cellRect As Rectangle, caption As String, font As Font)
+        Dim marginX As Integer = ScaleDpi(4)
+        Dim marginY As Integer = ScaleDpi(3)
+        Dim face As New Rectangle(cellRect.Left + marginX, cellRect.Top + marginY,
+                                  Math.Max(0, cellRect.Width - 2 * marginX),
+                                  Math.Max(0, cellRect.Height - 2 * marginY))
+        If face.Width <= 0 OrElse face.Height <= 0 Then Return
+
+        Dim oldSmooth As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+
+        Using path As GraphicsPath = RoundedRect(face, ScaleDpi(3))
+            g.FillPath(_bButtonFace, path)
+            g.DrawPath(_pButtonBorder, path)
+        End Using
+
+        g.SmoothingMode = oldSmooth
+
+        TextRenderer.DrawText(g, caption, font, face, _cButtonText,
+            TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter Or
+            TextFormatFlags.EndEllipsis)
+    End Sub
+
+    ' Bară de progres: șină + umplere proporțională. fraction e deja limitat la 0..1.
+    Private Sub DrawProgressCell(g As Graphics, cellRect As Rectangle, fraction As Double)
+        Dim marginX As Integer = ScaleDpi(6)
+        Dim barH As Integer = ScaleDpi(10)
+        Dim track As New Rectangle(cellRect.Left + marginX,
+                                   cellRect.Top + (cellRect.Height - barH) \ 2,
+                                   Math.Max(0, cellRect.Width - 2 * marginX), barH)
+        If track.Width <= 0 OrElse track.Height <= 0 Then Return
+
+        Dim oldSmooth As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+
+        Dim radius As Integer = track.Height \ 2
+        Using path As GraphicsPath = RoundedRect(track, radius)
+            g.FillPath(_bProgressTrack, path)
+        End Using
+
+        Dim fillW As Integer = CInt(track.Width * fraction)
+        If fillW > 0 Then
+            Dim fill As New Rectangle(track.X, track.Y, fillW, track.Height)
+            ' Sub o lățime egală cu înălțimea, colțul rotunjit degenerează — umplem drept.
+            If fillW >= track.Height Then
+                Using path As GraphicsPath = RoundedRect(fill, radius)
+                    g.FillPath(_bProgressFill, path)
+                End Using
+            Else
+                g.FillRectangle(_bProgressFill, fill)
+            End If
+        End If
+
+        g.SmoothingMode = oldSmooth
+    End Sub
+
+    ' Combo în stare de AFIȘARE: textul formatat + un chevron în dreapta. Editorul real
+    ' (ComboBox flotant) apare doar la editare (0010-06).
+    Private Sub DrawComboCell(g As Graphics, cellRect As Rectangle, text As String, font As Font,
+                              fore As Color, align As ContentAlignment)
+        Dim chevronZone As Integer = ScaleDpi(16)
+        Dim textRect As New Rectangle(cellRect.Left, cellRect.Top,
+                                      Math.Max(0, cellRect.Width - chevronZone), cellRect.Height)
+        DrawTextCell(g, textRect, text, font, fore, align)
+
+        Dim cx As Integer = cellRect.Right - ScaleDpi(9)
+        Dim cy As Integer = cellRect.Top + cellRect.Height \ 2
+        Dim s As Integer = ScaleDpi(3)
+
+        Dim oldSmooth As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+        g.FillPolygon(_bComboChevron, New Point() {
+            New Point(cx - s, cy - s \ 2),
+            New Point(cx + s, cy - s \ 2),
+            New Point(cx, cy + s)
+        })
+        g.SmoothingMode = oldSmooth
+    End Sub
+
     ' ── Ajutoare ────────────────────────────────────────────────────────────────
+
+    ''' <summary>Fracția (0..1) a unei valori de progres față de ProgressMin/ProgressMax.</summary>
+    Friend Shared Function ProgressFraction(value As Object, col As KBotDataColumn) As Double
+        Dim span As Double = col.ProgressMax - col.ProgressMin
+        If span <= 0 Then Return 0
+        Dim v As Double = ToDouble(value)
+        Return Math.Max(0.0, Math.Min(1.0, (v - col.ProgressMin) / span))
+    End Function
+
+    ' Coerciție tolerantă la Double (fără excepții).
+    Private Shared Function ToDouble(value As Object) As Double
+        If value Is Nothing Then Return 0
+        If TypeOf value Is Double Then Return CDbl(value)
+        Dim d As Double
+        If Double.TryParse(value.ToString().Trim(), NumberStyles.Any, CultureInfo.CurrentCulture, d) Then Return d
+        Return 0
+    End Function
 
     ''' <summary>Valoarea formatată pentru afișare (aplică <c>Column.FormatString</c>).</summary>
     Private Shared Function FormatValue(value As Object, col As KBotDataColumn) As String

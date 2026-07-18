@@ -27,6 +27,15 @@ Partial Class KBotDataView
     Private _cCheckBorder As Color
     Private _cCheckFill As Color
     Private _cCheckMark As Color
+    Private _cComboChevron As Color
+    Private _cOptionBorder As Color
+    Private _cOptionFill As Color
+    Private _cOptionDot As Color
+    Private _cButtonFace As Color
+    Private _cButtonBorder As Color
+    Private _cButtonText As Color
+    Private _cProgressTrack As Color
+    Private _cProgressFill As Color
 
     ' ── Resurse GDI cache-uite (recreate în ApplyTheme, eliberate în Dispose) ─────
     Private _bRowBack As SolidBrush
@@ -35,12 +44,21 @@ Partial Class KBotDataView
     Private _bSelAltBack As SolidBrush
     Private _bHeaderBack As SolidBrush
     Private _bCheckFill As SolidBrush
+    Private _bComboChevron As SolidBrush
+    Private _bOptionFill As SolidBrush
+    Private _bOptionDot As SolidBrush
+    Private _bButtonFace As SolidBrush
+    Private _bProgressTrack As SolidBrush
+    Private _bProgressFill As SolidBrush
     Private _pBorder As Pen
     Private _pHeaderSep As Pen
     Private _pGridLine As Pen
     Private _pCheckBorder As Pen
     Private _pCheckFill As Pen
     Private _pHeaderBaseline As Pen
+    Private _pOptionBorder As Pen
+    Private _pOptionFill As Pen
+    Private _pButtonBorder As Pen
 
     ' Font semibold pentru antet (derivat lazy din fontul ambient).
     Private _headerFont As Font
@@ -72,10 +90,21 @@ Partial Class KBotDataView
             _cSelAltBack = Blend(_cRowAltBack, p.AccentColor, 0.18)
             _cSelText = p.TextColor
 
-            ' Bifă.
+            ' Bifă / opțiune — aceleași convenții de accent.
             _cCheckBorder = p.BorderColor
             _cCheckFill = p.AccentColor
             _cCheckMark = p.AccentTextColor
+            _cOptionBorder = p.BorderColor
+            _cOptionFill = p.AccentColor
+            _cOptionDot = p.AccentTextColor
+
+            ' Combo / buton / bară de progres.
+            _cComboChevron = p.TextDimColor
+            _cButtonFace = p.ButtonBackColor
+            _cButtonBorder = p.ButtonBorderColor
+            _cButtonText = p.ButtonTextColor
+            _cProgressTrack = Blend(_cRowBack, p.BorderColor, 0.4)
+            _cProgressFill = p.AccentColor
 
             ' Editorii flotanți (controale reale) — tematizați direct.
             editText.BackColor = p.InputBackColor
@@ -108,6 +137,15 @@ Partial Class KBotDataView
         _cCheckBorder = SystemColors.ControlDark
         _cCheckFill = SystemColors.Highlight
         _cCheckMark = SystemColors.HighlightText
+        _cOptionBorder = SystemColors.ControlDark
+        _cOptionFill = SystemColors.Highlight
+        _cOptionDot = SystemColors.HighlightText
+        _cComboChevron = SystemColors.GrayText
+        _cButtonFace = SystemColors.Control
+        _cButtonBorder = SystemColors.ControlDark
+        _cButtonText = SystemColors.ControlText
+        _cProgressTrack = Blend(SystemColors.Window, SystemColors.ControlDark, 0.4)
+        _cProgressFill = SystemColors.Highlight
         BackColor = _cRowBack
     End Sub
 
@@ -120,12 +158,21 @@ Partial Class KBotDataView
         _bSelAltBack = New SolidBrush(_cSelAltBack)
         _bHeaderBack = New SolidBrush(_cHeaderBack)
         _bCheckFill = New SolidBrush(_cCheckFill)
+        _bComboChevron = New SolidBrush(_cComboChevron)
+        _bOptionFill = New SolidBrush(_cOptionFill)
+        _bOptionDot = New SolidBrush(_cOptionDot)
+        _bButtonFace = New SolidBrush(_cButtonFace)
+        _bProgressTrack = New SolidBrush(_cProgressTrack)
+        _bProgressFill = New SolidBrush(_cProgressFill)
         _pBorder = New Pen(_cHeaderSep)
         _pHeaderSep = New Pen(_cHeaderSep)
         _pGridLine = New Pen(_cGridLine)
         _pCheckBorder = New Pen(_cCheckBorder)
         _pCheckFill = New Pen(_cCheckFill)
         _pHeaderBaseline = New Pen(_cHeaderBaseline, 2.0F)
+        _pOptionBorder = New Pen(_cOptionBorder)
+        _pOptionFill = New Pen(_cOptionFill)
+        _pButtonBorder = New Pen(_cButtonBorder)
     End Sub
 
     ' Eliberează resursele GDI cache-uite + fontul de antet (fără scurgeri).
@@ -136,12 +183,21 @@ Partial Class KBotDataView
         _bSelAltBack?.Dispose() : _bSelAltBack = Nothing
         _bHeaderBack?.Dispose() : _bHeaderBack = Nothing
         _bCheckFill?.Dispose() : _bCheckFill = Nothing
+        _bComboChevron?.Dispose() : _bComboChevron = Nothing
+        _bOptionFill?.Dispose() : _bOptionFill = Nothing
+        _bOptionDot?.Dispose() : _bOptionDot = Nothing
+        _bButtonFace?.Dispose() : _bButtonFace = Nothing
+        _bProgressTrack?.Dispose() : _bProgressTrack = Nothing
+        _bProgressFill?.Dispose() : _bProgressFill = Nothing
         _pBorder?.Dispose() : _pBorder = Nothing
         _pHeaderSep?.Dispose() : _pHeaderSep = Nothing
         _pGridLine?.Dispose() : _pGridLine = Nothing
         _pCheckBorder?.Dispose() : _pCheckBorder = Nothing
         _pCheckFill?.Dispose() : _pCheckFill = Nothing
         _pHeaderBaseline?.Dispose() : _pHeaderBaseline = Nothing
+        _pOptionBorder?.Dispose() : _pOptionBorder = Nothing
+        _pOptionFill?.Dispose() : _pOptionFill = Nothing
+        _pButtonBorder?.Dispose() : _pButtonBorder = Nothing
         _headerFont?.Dispose() : _headerFont = Nothing
     End Sub
 

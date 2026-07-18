@@ -63,6 +63,13 @@ Public NotInheritable Class KBotDataColumn
     ''' <summary>Sursa combo partajată pe coloană (override per-celulă prin evenimentul de formatare).</summary>
     Public Property ComboItems As IList(Of Object)
 
+    ''' <summary>
+    ''' Grupul de exclusivitate pentru coloanele <see cref="KBotColumnType.OptionButton"/>.
+    ''' Bifarea unei opțiuni le stinge pe celelalte din ACELAȘI RÂND care au același grup.
+    ''' Vid => opțiunea e independentă (nu stinge nimic).
+    ''' </summary>
+    Public Property OptionGroup As String
+
     ''' <summary>Minimul barei de progres (doar pentru <see cref="KBotColumnType.ProgressBar"/>).</summary>
     Public Property ProgressMin As Double = 0
 
