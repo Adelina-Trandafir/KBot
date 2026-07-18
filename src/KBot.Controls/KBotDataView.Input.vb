@@ -58,6 +58,9 @@ Partial Class KBotDataView
     ' o singură dată, doar la o schimbare reală.
     Private Sub SetCurrentCell(rowIndex As Integer, colKey As String)
         If rowIndex = _currentRowIndex AndAlso String.Equals(colKey, _currentColumnKey, StringComparison.Ordinal) Then Return
+        ' Mutarea celulei curente comite editarea deschisă. Dacă handler-ul de validare a
+        ' respins valoarea, mutarea NU are loc — editorul rămâne deschis pe celula lui.
+        If _editing AndAlso Not CommitEdit() Then Return
         _currentRowIndex = rowIndex
         _currentColumnKey = colKey
         If rowIndex >= 0 Then EnsureVisible(rowIndex)
@@ -232,6 +235,10 @@ Partial Class KBotDataView
                         Dim c = EdgeEnabledColumn(False)
                         If c IsNot Nothing Then SetCurrentCell(_currentRowIndex, c.Key)
                     End If
+                Case Keys.F2
+                    If _currentRowIndex >= 0 AndAlso Not String.IsNullOrEmpty(_currentColumnKey) Then
+                        BeginEdit(_currentColumnKey, _currentRowIndex)
+                    End If
                 Case Keys.Space
                     ActivateCurrentCell()
                 Case Else
@@ -267,6 +274,7 @@ Partial Class KBotDataView
                 Dim oldValue As Object = _rows(rowIndex)(colKey)
                 Dim newValue As Boolean = Not ToBool(oldValue)
                 _rows(rowIndex)(colKey) = newValue
+                _rows(rowIndex).IsDirty = True      ' comutare de operator => „editat”
                 InvalidateRow(rowIndex)
                 RaiseEvent CellValueChanged(Me, New KBotCellValueEventArgs(colKey, rowIndex, oldValue, newValue))
 
@@ -359,6 +367,8 @@ Partial Class KBotDataView
             Dim col As KBotDataColumn = ColumnAtX(e.X)
             If col Is Nothing Then Return
             RaiseEvent CellDoubleClick(Me, New KBotCellEventArgs(col.Key, rowIndex))
+            ' Dublu-click intră în editare (celulele needitabile sunt refuzate de CanEdit).
+            BeginEdit(col.Key, rowIndex)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnMouseDoubleClick", ex)
         End Try

@@ -18,16 +18,19 @@ Public NotInheritable Class KBotDataRow
     Public Property Tag As Object
 
     ''' <summary>
-    ''' True dacă o valoare de celulă s-a schimbat de la ultima curățare. Semantica exactă
-    ''' „încărcat vs. editat” se finalizează în pasul de editare (0010-06); azi setter-ul
-    ''' <see cref="Item"/> îl ridică, iar <see cref="MarkClean"/> îl coboară.
+    ''' True dacă rândul a fost EDITAT DE OPERATOR (commit de editare, comutare de bifă/opțiune)
+    ''' de la ultima curățare. ATENȚIE: scrierea programatică — <c>row(cheie) = valoare</c> sau
+    ''' <c>KBotDataView.Item</c> — NU ridică steagul: aceea e ÎNCĂRCARE de date, nu editare.
+    ''' Cine vrea totuși să marcheze o schimbare programatică drept editare, setează explicit
+    ''' proprietatea. <see cref="MarkClean"/> o coboară (baseline curat după încărcare).
     ''' </summary>
     Public Property IsDirty As Boolean
 
     ''' <summary>
     ''' Valoarea celulei pentru cheia de coloană dată. GET întoarce <c>Nothing</c> pentru o
-    ''' cheie absentă; SET stochează valoarea și ridică <see cref="IsDirty"/> (invalidarea
-    ''' vizuală o face controlul, prin <c>KBotDataView.Item</c>).
+    ''' cheie absentă; SET doar stochează valoarea — NU ridică <see cref="IsDirty"/> (vezi
+    ''' explicația de acolo) și nu invalidează vizual (o face controlul, prin
+    ''' <c>KBotDataView.Item</c>).
     ''' </summary>
     Default Public Property Item(colKey As String) As Object
         Get
@@ -38,7 +41,6 @@ Public NotInheritable Class KBotDataRow
         Set(value As Object)
             If String.IsNullOrEmpty(colKey) Then Throw New ArgumentException("Cheie de coloană vidă.", NameOf(colKey))
             _cells(colKey) = value
-            IsDirty = True
         End Set
     End Property
 

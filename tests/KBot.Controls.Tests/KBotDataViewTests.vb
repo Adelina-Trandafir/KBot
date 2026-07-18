@@ -49,17 +49,16 @@ Public Class KBotDataViewTests
         End Using
     End Sub
 
+    ' Contract fixat în 0010-06: scrierea prin API e ÎNCĂRCARE, nu editare de operator.
     <Fact>
-    Public Sub Item_GetSetThroughControlMarksDirty()
+    Public Sub Item_GetSetThroughControl_DoesNotDirtyTheRow()
         Using dv As New KBotDataView()
             dv.AddColumn("a", "A", KBotColumnType.Text, 50)
             dv.AddRow()
             Assert.Null(dv("a", 0))
             dv("a", 0) = "valoare"
             Assert.Equal("valoare", dv("a", 0))
-            Dim dirty = dv.GetDirtyRows()
-            Assert.Single(dirty)
-            Assert.Same(dv.Rows(0), dirty(0))
+            Assert.Empty(dv.GetDirtyRows())
         End Using
     End Sub
 

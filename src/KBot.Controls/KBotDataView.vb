@@ -93,6 +93,7 @@ Public Class KBotDataView
         SetDefaultColors()
         RebuildThemeResources()
         WireScrollBars()
+        WireEditors()
     End Sub
 
     ' ========================================================================
@@ -172,7 +173,11 @@ Public Class KBotDataView
         LayoutChanged()
     End Sub
 
-    ''' <summary>Rândurile marcate „murdare” (editate). Semantica se rafinează la editare (0010-06).</summary>
+    ''' <summary>
+    ''' Rândurile EDITATE DE OPERATOR de la ultima curățare (commit de editare sau comutare de
+    ''' bifă/opțiune). Încărcarea programatică a datelor NU apare aici — vezi
+    ''' <see cref="KBotDataRow.IsDirty"/>.
+    ''' </summary>
     Public Function GetDirtyRows() As IReadOnlyList(Of KBotDataRow)
         Dim dirty As New List(Of KBotDataRow)()
         For Each r In _rows
@@ -180,6 +185,16 @@ Public Class KBotDataView
         Next
         Return dirty
     End Function
+
+    ''' <summary>
+    ''' Coboară steagul „editat” pe TOATE rândurile — baseline curat după o încărcare sau
+    ''' după ce modificările au fost trimise la server.
+    ''' </summary>
+    Public Sub ClearDirty()
+        For Each r In _rows
+            r.MarkClean()
+        Next
+    End Sub
 
     ' ========================================================================
     ' API PUBLIC — Valori
@@ -257,6 +272,7 @@ Public Class KBotDataView
             Dim row As KBotDataRow = _rows(rowIndex)
             row(colKey) = value
             If value Then ClearOptionSiblings(row, col)
+            row.IsDirty = True          ' e o COMUTARE, nu o încărcare
             InvalidateRow(rowIndex)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.SetOptionValue", ex)

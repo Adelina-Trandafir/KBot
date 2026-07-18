@@ -87,7 +87,9 @@ Public NotInheritable Class KBotDataColumn
         If String.IsNullOrWhiteSpace(key) Then Throw New ArgumentException("Cheie vidă.", NameOf(key))
         _Key = key
         _ColumnType = type
-        HeaderText = If(headerText, String.Empty)
+        ' „Me.” e OBLIGATORIU: VB e case-insensitive, deci parametrul „headerText” ascunde
+        ' proprietatea „HeaderText”, iar o atribuire nekalificată s-ar face parametrului.
+        Me.HeaderText = If(headerText, String.Empty)
         _width = Math.Max(width, _minWidth)
     End Sub
 

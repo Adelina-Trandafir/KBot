@@ -31,10 +31,20 @@ Public Class KBotDataModelTests
         Assert.Equal(100, c.Width)
     End Sub
 
+    ' Regresie: „HeaderText = headerText” nekalificat era un NO-OP (VB e case-insensitive,
+    ' parametrul ascunde proprietatea), deci TOATE antetele rămâneau Nothing.
+    <Fact>
+    Public Sub Column_HeaderTextIsActuallyStored()
+        Dim c = New KBotDataColumn("cod", "Cod indicator", KBotColumnType.Text, 80)
+        Assert.Equal("Cod indicator", c.HeaderText)
+        Assert.Equal(String.Empty, New KBotDataColumn("x", Nothing, KBotColumnType.Text, 10).HeaderText)
+    End Sub
+
     <Fact>
     Public Sub Column_KeyAndTypeAreFixed()
         Dim c = New KBotDataColumn("cod", "Cod", KBotColumnType.Combo, 80)
         Assert.Equal("cod", c.Key)
+        Assert.Equal("Cod", c.HeaderText)
         Assert.Equal(KBotColumnType.Combo, c.ColumnType)
         Assert.True(c.Visible)
         Assert.True(c.Enabled)
@@ -52,19 +62,21 @@ Public Class KBotDataModelTests
         Assert.False(r.IsDirty)
     End Sub
 
+    ' Contract fixat în 0010-06: scrierea programatică e ÎNCĂRCARE de date, NU editare,
+    ' deci nu ridică IsDirty. Doar commit-ul de editare și comutările îl ridică.
     <Fact>
-    Public Sub Row_SetMarksDirty_AndStores()
+    Public Sub Row_SetStoresWithoutMarkingDirty()
         Dim r = New KBotDataRow()
         r("a") = "x"
         Assert.Equal("x", r("a"))
         Assert.True(r.HasValue("a"))
-        Assert.True(r.IsDirty)
+        Assert.False(r.IsDirty)
     End Sub
 
     <Fact>
     Public Sub Row_MarkCleanResetsDirty()
         Dim r = New KBotDataRow()
-        r("a") = 1
+        r.IsDirty = True
         r.MarkClean()
         Assert.False(r.IsDirty)
     End Sub

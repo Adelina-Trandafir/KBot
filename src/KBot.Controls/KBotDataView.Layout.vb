@@ -117,6 +117,9 @@ Partial Class KBotDataView
 
     Private Sub OnScrollValueChanged(sender As Object, e As EventArgs)
         Try
+            ' Derularea comite editarea deschisă: un editor real care plutește peste o celulă
+            ' care tocmai a ieșit din fereastră ar rămâne agățat în aer.
+            If _editing Then CommitEdit()
             Invalidate()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnScrollValueChanged", ex)
