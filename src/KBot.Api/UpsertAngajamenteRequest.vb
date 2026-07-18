@@ -83,3 +83,36 @@ Public NotInheritable Class GetTreeRow
     Public Property ArePartener As Boolean
     Public Property AreOrd As Boolean
 End Class
+
+' Wire DTOs for GET /api/forexe/sumar (vederea Sumar, slice 0011).
+' Property names ARE the JSON keys (PropertyNamingPolicy=Nothing), so unlike the
+' tree route — whose Python side emits PascalCase — these are snake_case verbatim,
+' matching routes/forexe/sumar.py exactly. ApiClient maps them onto the SumarInfo
+' POCOs so the snake_case stops at the wire boundary.
+Public NotInheritable Class GetSumarResponse
+    ' Null când angajamentul nu are indicatori — un caz legitim, nu o eroare.
+    Public Property header As GetSumarHeader
+    Public Property rows As New List(Of GetSumarRow)()
+End Class
+
+Public NotInheritable Class GetSumarHeader
+    Public Property cod_angajament As String
+    Public Property data_fx As Date?
+    Public Property data_creare As Date?
+    Public Property data_definitivare As Date?
+    Public Property descriere As String
+    Public Property stare As String
+    Public Property incarcat As Boolean
+    Public Property preluat As Boolean
+End Class
+
+Public NotInheritable Class GetSumarRow
+    Public Property clsf As String
+    Public Property cod_indicator As String
+    Public Property partener As String
+    Public Property total_rezervari As Double
+    Public Property total_receptii As Double
+    Public Property total_plati As Double
+    Public Property total_revizii As Double
+    Public Property total_ordonantari As Double
+End Class

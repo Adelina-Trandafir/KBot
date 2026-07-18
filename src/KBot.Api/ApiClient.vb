@@ -204,6 +204,74 @@ Public Class ApiClient
         End Try
     End Function
 
+    ' Sumarul unui angajament (slice 0011), pentru SumarView. Un singur parametru:
+    ' cod = CodAngajament, escapat in query string. NU se trimite baza (o citeste
+    ' serverul din sesiune) si NU exista filtru SS — sumarul arata TOTI indicatorii.
+    ' Un cod necunoscut intoarce 200 cu header null / rows [], deci aici rezulta un
+    ' SumarInfo gol, nu o exceptie: un angajament fara indicatori e legitim.
+    ' Hard-fail (Throw ApiException) pe non-2xx; un 401 curge spre WithReauth.
+    Public Async Function GetSumarAsync(cod As String, ct As CancellationToken) _
+        As Task(Of SumarInfo) Implements IApiClient.GetSumarAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim url As String = $"/api/forexe/sumar?cod={Uri.EscapeDataString(cod)}"
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea sumarului angajamentului", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As GetSumarResponse = JsonSerializer.Deserialize(Of GetSumarResponse)(respText, _json)
+                    Dim result As New SumarInfo()
+                    If payload Is Nothing Then Return result
+
+                    ' Header ramane Nothing daca serverul a trimis null — SumarView
+                    ' trateaza asta ca „angajament fara indicatori”, nu ca eroare.
+                    If payload.header IsNot Nothing Then
+                        result.Header = New SumarHeader() With {
+                            .CodAngajament = If(payload.header.cod_angajament, String.Empty),
+                            .DataFX = payload.header.data_fx,
+                            .DataCreare = payload.header.data_creare,
+                            .DataDefinitivare = payload.header.data_definitivare,
+                            .Descriere = If(payload.header.descriere, String.Empty),
+                            .Stare = If(payload.header.stare, String.Empty),
+                            .Incarcat = payload.header.incarcat,
+                            .Preluat = payload.header.preluat
+                        }
+                    End If
+
+                    If payload.rows IsNot Nothing Then
+                        For Each r As GetSumarRow In payload.rows
+                            result.Rows.Add(New SumarRow() With {
+                                .Clsf = If(r.clsf, String.Empty),
+                                .CodIndicator = If(r.cod_indicator, String.Empty),
+                                .Partener = If(r.partener, String.Empty),
+                                .TotalRezervari = r.total_rezervari,
+                                .TotalReceptii = r.total_receptii,
+                                .TotalPlati = r.total_plati,
+                                .TotalRevizii = r.total_revizii,
+                                .TotalOrdonantari = r.total_ordonantari
+                            })
+                        Next
+                    End If
+                    Return result
+                End Using
+            End Using
+        Catch ex As ApiException
+            ' 401/HTTP tipat, tratat de apelant (WithReauth) — nu logăm.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetSumarAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ' Conversie Excel -> JSON pe server. FOREXE nu mai face HTTP direct: umple un
     ' ExcelJob și îl dă aici, unde stau adresa, token-ul bearer și POST-ul. Un singur
     ' apel, fără retry (upload base64 mare; reîncercarea e scumpă). Non-2xx -> ApiException

@@ -294,4 +294,130 @@ Public Class ApiClientTests
         Assert.Equal("Acces interzis pentru această unitate.", ex.Message)
     End Function
 
+    ' --- GetSumarAsync (slice 0011): vederea Sumar. Contractul de fir e snake_case
+    ' (spre deosebire de /tree, care e PascalCase), iar antetul poate lipsi cu totul.
+    ' Testele acoperă forma URL-ului, maparea wire -> POCO și cele două cazuri „gol”. ---
+
+    Private Const SumarOneRow As String =
+        "{""header"":{""cod_angajament"":""A100"",""data_fx"":""2026-03-05""," &
+        """data_creare"":""2026-03-01"",""data_definitivare"":null," &
+        """descriere"":""Angajament X"",""stare"":""În derulare""," &
+        """incarcat"":true,""preluat"":false}," &
+        """rows"":[{""clsf"":""65.02.04.02.20.01.03"",""cod_indicator"":""IND-A""," &
+        """partener"":""Furnizor SRL"",""total_rezervari"":150.0,""total_receptii"":10.0," &
+        """total_plati"":25.0,""total_revizii"":7.5,""total_ordonantari"":3.25}]}"
+
+    <Fact>
+    Public Async Function GetSumar_BuildsUrl_SendsBearer_EscapesCod() As Task
+        Dim h As New StubHandler With {.ResponseBody = SumarOneRow}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        ' Cod cu spațiu -> dovada că folosim Uri.EscapeDataString, nu concatenare crudă.
+        Await client.GetSumarAsync("A 100", CancellationToken.None)
+
+        Assert.Equal(HttpMethod.Get, h.LastMethod)
+        Assert.Equal("/api/forexe/sumar", h.LastRequestUri.AbsolutePath)
+        Assert.Contains("cod=A%20100", h.LastRequestUri.Query)
+        ' Fără filtru SS: sumarul arată TOȚI indicatorii angajamentului (decizia 1).
+        Assert.DoesNotContain("ss=", h.LastRequestUri.Query)
+        Assert.Equal("Bearer tok-opaque-123", h.LastAuthorization)
+    End Function
+
+    <Fact>
+    Public Async Function GetSumar_BlankCod_ThrowsBeforeAnyRequest() As Task
+        Dim h As New StubHandler With {.ResponseBody = SumarOneRow}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await Assert.ThrowsAsync(Of ArgumentException)(
+            Async Function() Await client.GetSumarAsync("   ", CancellationToken.None))
+        Assert.Null(h.LastRequestUri)      ' nu s-a trimis nimic pe fir
+    End Function
+
+    <Fact>
+    Public Async Function GetSumar_Deserializes_HeaderAndRow() As Task
+        Dim h As New StubHandler With {.ResponseBody = SumarOneRow}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetSumarAsync("A100", CancellationToken.None)
+
+        Assert.NotNull(data.Header)
+        Assert.Equal("A100", data.Header.CodAngajament)
+        Assert.Equal(New Date(2026, 3, 5), data.Header.DataFX.Value)
+        Assert.Equal(New Date(2026, 3, 1), data.Header.DataCreare.Value)
+        Assert.False(data.Header.DataDefinitivare.HasValue)     ' null pe fir -> Nothing
+        Assert.Equal("Angajament X", data.Header.Descriere)
+        Assert.Equal("În derulare", data.Header.Stare)
+        Assert.True(data.Header.Incarcat)
+        Assert.False(data.Header.Preluat)
+
+        Assert.Single(data.Rows)
+        Dim r = data.Rows(0)
+        Assert.Equal("65.02.04.02.20.01.03", r.Clsf)
+        Assert.Equal("IND-A", r.CodIndicator)
+        Assert.Equal("Furnizor SRL", r.Partener)
+        Assert.Equal(150.0, r.TotalRezervari)
+        Assert.Equal(10.0, r.TotalReceptii)
+        Assert.Equal(25.0, r.TotalPlati)
+        Assert.Equal(7.5, r.TotalRevizii)
+        Assert.Equal(3.25, r.TotalOrdonantari)
+    End Function
+
+    <Fact>
+    Public Async Function GetSumar_NullHeader_IsEmptyNotException() As Task
+        ' Un angajament fără indicatori e legitim: serverul dă 200 cu header null.
+        ' Clientul trebuie să întoarcă un SumarInfo gol, NU să arunce.
+        Dim h As New StubHandler With {.ResponseBody = "{""header"":null,""rows"":[]}"}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetSumarAsync("NUEXISTA", CancellationToken.None)
+
+        Assert.NotNull(data)
+        Assert.Null(data.Header)
+        Assert.Empty(data.Rows)
+    End Function
+
+    <Fact>
+    Public Async Function GetSumar_NullTextFields_BecomeEmptyStrings() As Task
+        ' Clsf e null pentru un indicator fără clasificație (ramura LEFT JOIN). Randul
+        ' TREBUIE să existe, iar textele null să ajungă String.Empty, nu Nothing —
+        ' altfel grila ar picta o celulă nulă.
+        Dim h As New StubHandler With {
+            .ResponseBody = "{""header"":null,""rows"":[{""clsf"":null," &
+                            """cod_indicator"":""IND-B"",""partener"":null," &
+                            """total_rezervari"":0.0,""total_receptii"":0.0," &
+                            """total_plati"":0.0,""total_revizii"":0.0," &
+                            """total_ordonantari"":0.0}]}"
+        }
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetSumarAsync("A100", CancellationToken.None)
+
+        Assert.Single(data.Rows)
+        Assert.Equal(String.Empty, data.Rows(0).Clsf)
+        Assert.Equal(String.Empty, data.Rows(0).Partener)
+        Assert.Equal("IND-B", data.Rows(0).CodIndicator)
+        Assert.Equal(0.0, data.Rows(0).TotalRezervari)
+    End Function
+
+    <Fact>
+    Public Async Function GetSumar_Non2xx_ParsesRomanianErrorAndReason() As Task
+        Dim h As New StubHandler With {
+            .Status = HttpStatusCode.Unauthorized,
+            .ResponseBody = "{""error"":""Sesiune necunoscută. Autentificați-vă din nou."",""reason"":""TOKEN_UNKNOWN""}"
+        }
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
+            Async Function() Await client.GetSumarAsync("A100", CancellationToken.None))
+        Assert.Equal(401, ex.StatusCode.Value)
+        Assert.Equal("TOKEN_UNKNOWN", ex.Reason)
+        Assert.Equal("Sesiune necunoscută. Autentificați-vă din nou.", ex.Message)
+    End Function
+
 End Class

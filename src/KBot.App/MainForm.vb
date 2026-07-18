@@ -369,7 +369,9 @@ Public Class MainForm
     Private Function CreateView(key As String) As IAngajamentView
         Try
             Select Case key
-                Case "sumar" : Return New PlaceholderView(key, "Sumar")
+                ' Prima vedere reală (felia 0011). Primește clientul API + plasa 401 a
+                ' shell-ului, ca politica de re-login să rămână într-un singur loc.
+                Case "sumar" : Return New SumarView(_apiClient, Function(op) WithReauth(Of SumarInfo)(op))
                 Case "indicatori" : Return New PlaceholderView(key, "Indicatori")
                 Case "istoric" : Return New PlaceholderView(key, "Istoric")
                 Case "revizii" : Return New PlaceholderView(key, "Revizii")
