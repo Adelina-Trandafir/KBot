@@ -55,6 +55,11 @@ Public Class KBotDataView
     Private ReadOnly _cellArgs As New KBotCellFormattingEventArgs()
     Private ReadOnly _rowArgs As New KBotRowFormattingEventArgs()
 
+    ' Instanțe SEPARATE pentru interogări din afara pictării (IsCellEnabled / input), ca o
+    ' întrebare să nu calce peste argumentele unei pictări în curs.
+    Private ReadOnly _probeCellArgs As New KBotCellFormattingEventArgs()
+    Private ReadOnly _probeRowArgs As New KBotRowFormattingEventArgs()
+
     ''' <summary>
     ''' Câte rânduri de date a pictat ultimul <c>OnPaint</c>. Poarta de verificare a
     ''' virtualizării în teste (headless, prin DrawToBitmap) — nu e API public.
@@ -175,6 +180,50 @@ Public Class KBotDataView
             InvalidateCell(colKey, rowIndex)
         End Set
     End Property
+
+    ' ========================================================================
+    ' API PUBLIC — Activare efectivă (coloană × rând × celulă)
+    ' ========================================================================
+
+    ''' <summary>
+    ''' Rândul e activ? = <c>Row.Enabled</c>, apoi eventualul veto din <c>RowFormatting</c>.
+    ''' </summary>
+    Public Function IsRowEnabled(rowIndex As Integer) As Boolean
+        Try
+            Dim row As KBotDataRow = _rows(rowIndex)
+            _probeRowArgs.Reset(rowIndex, row, BackColor, ForeColor, row.Enabled)
+            RaiseEvent RowFormatting(Me, _probeRowArgs)
+            Return _probeRowArgs.Enabled
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.IsRowEnabled", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Activarea EFECTIVĂ a unei celule: <c>Column.Enabled AndAlso Row.Enabled AndAlso
+    ''' cellEnabled</c>, unde cele două din urmă trec prin <c>RowFormatting</c>, respectiv
+    ''' <c>CellFormatting</c> (handler-ul poate coborî pe False, nu poate ridica peste
+    ''' rând/coloană). Aceeași rezoluție ca la pictare — și baza pentru blocarea
+    ''' input-ului/editării (0010-05/06).
+    ''' </summary>
+    Public Function IsCellEnabled(colKey As String, rowIndex As Integer) As Boolean
+        Try
+            Dim col As KBotDataColumn = Column(colKey)   ' cheie necunoscută => ArgumentException
+            If Not col.Enabled Then Return False
+            If Not IsRowEnabled(rowIndex) Then Return False
+
+            Dim row As KBotDataRow = _rows(rowIndex)
+            Dim value As Object = row(colKey)
+            _probeCellArgs.Reset(col, row, rowIndex, value, String.Empty,
+                                 BackColor, ForeColor, Font, col.TextAlign, True)
+            RaiseEvent CellFormatting(Me, _probeCellArgs)
+            Return _probeCellArgs.Enabled
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.IsCellEnabled", ex)
+            Throw
+        End Try
+    End Function
 
     ''' <summary>
     ''' Setează o celulă de tip <see cref="KBotColumnType.OptionButton"/>. Bifarea (True) le

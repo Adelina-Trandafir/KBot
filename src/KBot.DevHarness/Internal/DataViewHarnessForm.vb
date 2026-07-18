@@ -69,7 +69,10 @@ Public NotInheritable Class DataViewHarnessForm
                 row("optB") = (r Mod 2 <> 0)
                 row("prog") = (r * 13) Mod 101
                 For c As Integer = 8 To COLS - 1
-                    row("c" & c.ToString()) = (r * 7.5 + c * 1.25)
+                    ' Din când în când valori NEGATIVE, ca regula de formatare condiționată
+                    ' (text roșu) să aibă ce colora.
+                    Dim v As Double = (r * 7.5 + c * 1.25)
+                    row("c" & c.ToString()) = If(r Mod 7 = 0, -v, v)
                 Next
             Next
 
@@ -83,6 +86,27 @@ Public NotInheritable Class DataViewHarnessForm
             GlobalErrorLog.Write("DataViewHarnessForm.SeedSyntheticData", ex)
             Throw
         End Try
+    End Sub
+
+    ' ── Reguli de formatare condiționată (acceptanța 0010-04) ───────────────────
+
+    ' Stare = «Anulat» => tot rândul devine inert (și se pictează șters).
+    Private Sub Grid_RowFormatting(sender As Object, e As KBotRowFormattingEventArgs) Handles grid.RowFormatting
+        Dim stare As Object = e.Row("stare")
+        If stare IsNot Nothing AndAlso String.Equals(stare.ToString(), "Anulat", StringComparison.Ordinal) Then
+            e.Enabled = False
+        End If
+    End Sub
+
+    ' Valorile numerice negative se scriu cu roșul de EROARE al paletei (nu o culoare literală).
+    Private Sub Grid_CellFormatting(sender As Object, e As KBotCellFormattingEventArgs) Handles grid.CellFormatting
+        If Not e.ColumnKey.StartsWith("c", StringComparison.Ordinal) Then Return
+        Dim v As Object = e.Value
+        If v Is Nothing Then Return
+        Dim d As Double
+        If Double.TryParse(v.ToString(), d) AndAlso d < 0 Then
+            e.ForeColor = ThemeManager.Current.Palette.ErrorColor
+        End If
     End Sub
 
     Private Sub btnClassic_Click(sender As Object, e As EventArgs) Handles btnClassic.Click

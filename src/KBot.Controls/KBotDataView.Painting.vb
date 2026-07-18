@@ -179,31 +179,42 @@ Partial Class KBotDataView
                         col.Enabled AndAlso rowEnabled)
         RaiseEvent CellFormatting(Me, _cellArgs)
 
+        Dim enabled As Boolean = _cellArgs.Enabled
+        Dim customBack As Boolean = (_cellArgs.BackColor <> rowBack)
+
         ' Fundal per-celulă doar dacă handler-ul l-a schimbat față de cel al rândului.
-        If _cellArgs.BackColor <> rowBack Then
+        If customBack Then
             Using b As New SolidBrush(_cellArgs.BackColor)
                 g.FillRectangle(b, cellRect)
             End Using
+        ElseIf Not enabled Then
+            ' Spălarea de „dezactivat” se aplică doar când nimeni n-a impus alt fundal —
+            ' altfel am călca peste o regulă de formatare condiționată a caller-ului.
+            g.FillRectangle(_bDisabledWash, cellRect)
         End If
+
+        ' Textul dezactivat trece pe culoarea ștearsă, indiferent ce a cerut handler-ul:
+        ' „inert” trebuie să se și VADĂ inert.
+        Dim fore As Color = If(enabled, _cellArgs.ForeColor, _cDisabledText)
 
         Select Case col.ColumnType
             Case KBotColumnType.CheckBox
-                DrawCheckCell(g, cellRect, ToBool(value))
+                DrawCheckCell(g, cellRect, ToBool(value), enabled)
             Case KBotColumnType.OptionButton
-                DrawOptionCell(g, cellRect, ToBool(value))
+                DrawOptionCell(g, cellRect, ToBool(value), enabled)
             Case KBotColumnType.Button
                 ' Butonul nu ține valoare: eticheta e textul celulei, iar dacă lipsește,
                 ' antetul coloanei (ex. o coloană «Detalii» cu același buton pe fiecare rând).
                 Dim caption As String = If(String.IsNullOrEmpty(_cellArgs.Text), col.HeaderText, _cellArgs.Text)
-                DrawButtonCell(g, cellRect, caption, _cellArgs.Font)
+                DrawButtonCell(g, cellRect, caption, _cellArgs.Font, enabled)
             Case KBotColumnType.ProgressBar
-                DrawProgressCell(g, cellRect, ProgressFraction(value, col))
+                DrawProgressCell(g, cellRect, ProgressFraction(value, col), enabled)
             Case KBotColumnType.Combo
                 DrawComboCell(g, cellRect, _cellArgs.Text, _cellArgs.Font,
-                              _cellArgs.ForeColor, _cellArgs.Alignment)
+                              fore, _cellArgs.Alignment, enabled)
             Case Else
                 DrawTextCell(g, cellRect, _cellArgs.Text, _cellArgs.Font,
-                             _cellArgs.ForeColor, _cellArgs.Alignment)
+                             fore, _cellArgs.Alignment)
         End Select
 
         ' Separatorul vertical de grilă, la marginea dreaptă a celulei.
@@ -222,7 +233,7 @@ Partial Class KBotDataView
 
     ' Bifă centrată. Geometria e cea din AdvancedTreeControl (dreptunghi rotunjit + bifă),
     ' dar culorile vin din paletă, nu hardcodate ca acolo (acel control e deliberat ne-tematizat).
-    Private Sub DrawCheckCell(g As Graphics, cellRect As Rectangle, checked As Boolean)
+    Private Sub DrawCheckCell(g As Graphics, cellRect As Rectangle, checked As Boolean, enabled As Boolean)
         Dim size As Integer = ScaleDpi(14)
         Dim box As New Rectangle(cellRect.Left + (cellRect.Width - size) \ 2,
                                  cellRect.Top + (cellRect.Height - size) \ 2,
@@ -233,8 +244,8 @@ Partial Class KBotDataView
 
         Using path As GraphicsPath = RoundedRect(box, ScaleDpi(3))
             If checked Then
-                g.FillPath(_bCheckFill, path)
-                g.DrawPath(_pCheckFill, path)
+                g.FillPath(If(enabled, _bCheckFill, _bDisabledMark), path)
+                g.DrawPath(If(enabled, _pCheckFill, _pDisabledMark), path)
                 Using penTick As New Pen(_cCheckMark, 2.0F)
                     penTick.StartCap = LineCap.Round
                     penTick.EndCap = LineCap.Round
@@ -246,7 +257,7 @@ Partial Class KBotDataView
                     })
                 End Using
             Else
-                g.DrawPath(_pCheckBorder, path)
+                g.DrawPath(If(enabled, _pCheckBorder, _pDisabledMark), path)
             End If
         End Using
 
@@ -255,7 +266,7 @@ Partial Class KBotDataView
 
     ' Buton radio centrat: elipsă + punct central (geometria din AdvancedTreeControl,
     ' culorile din paletă).
-    Private Sub DrawOptionCell(g As Graphics, cellRect As Rectangle, selected As Boolean)
+    Private Sub DrawOptionCell(g As Graphics, cellRect As Rectangle, selected As Boolean, enabled As Boolean)
         Dim size As Integer = ScaleDpi(14)
         Dim box As New Rectangle(cellRect.Left + (cellRect.Width - size) \ 2,
                                  cellRect.Top + (cellRect.Height - size) \ 2,
@@ -265,14 +276,14 @@ Partial Class KBotDataView
         g.SmoothingMode = SmoothingMode.AntiAlias
 
         If selected Then
-            g.FillEllipse(_bOptionFill, box)
-            g.DrawEllipse(_pOptionFill, box)
+            g.FillEllipse(If(enabled, _bOptionFill, _bDisabledMark), box)
+            g.DrawEllipse(If(enabled, _pOptionFill, _pDisabledMark), box)
             Dim dotMargin As Integer = CInt(size * 0.28F)
             Dim dot As New Rectangle(box.X + dotMargin, box.Y + dotMargin,
                                      size - dotMargin * 2, size - dotMargin * 2)
             g.FillEllipse(_bOptionDot, dot)
         Else
-            g.DrawEllipse(_pOptionBorder, box)
+            g.DrawEllipse(If(enabled, _pOptionBorder, _pDisabledMark), box)
         End If
 
         g.SmoothingMode = oldSmooth
@@ -280,7 +291,8 @@ Partial Class KBotDataView
 
     ' Buton de acțiune: față rotunjită + chenar + etichetă centrată. Stările hover/pressed
     ' vin în 0010-05, odată cu urmărirea mouse-ului.
-    Private Sub DrawButtonCell(g As Graphics, cellRect As Rectangle, caption As String, font As Font)
+    Private Sub DrawButtonCell(g As Graphics, cellRect As Rectangle, caption As String, font As Font,
+                               enabled As Boolean)
         Dim marginX As Integer = ScaleDpi(4)
         Dim marginY As Integer = ScaleDpi(3)
         Dim face As New Rectangle(cellRect.Left + marginX, cellRect.Top + marginY,
@@ -293,18 +305,19 @@ Partial Class KBotDataView
 
         Using path As GraphicsPath = RoundedRect(face, ScaleDpi(3))
             g.FillPath(_bButtonFace, path)
-            g.DrawPath(_pButtonBorder, path)
+            g.DrawPath(If(enabled, _pButtonBorder, _pDisabledMark), path)
         End Using
 
         g.SmoothingMode = oldSmooth
 
-        TextRenderer.DrawText(g, caption, font, face, _cButtonText,
+        TextRenderer.DrawText(g, caption, font, face, If(enabled, _cButtonText, _cDisabledText),
             TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter Or
             TextFormatFlags.EndEllipsis)
     End Sub
 
     ' Bară de progres: șină + umplere proporțională. fraction e deja limitat la 0..1.
-    Private Sub DrawProgressCell(g As Graphics, cellRect As Rectangle, fraction As Double)
+    Private Sub DrawProgressCell(g As Graphics, cellRect As Rectangle, fraction As Double,
+                                 enabled As Boolean)
         Dim marginX As Integer = ScaleDpi(6)
         Dim barH As Integer = ScaleDpi(10)
         Dim track As New Rectangle(cellRect.Left + marginX,
@@ -323,13 +336,14 @@ Partial Class KBotDataView
         Dim fillW As Integer = CInt(track.Width * fraction)
         If fillW > 0 Then
             Dim fill As New Rectangle(track.X, track.Y, fillW, track.Height)
+            Dim fillBrush As SolidBrush = If(enabled, _bProgressFill, _bDisabledMark)
             ' Sub o lățime egală cu înălțimea, colțul rotunjit degenerează — umplem drept.
             If fillW >= track.Height Then
                 Using path As GraphicsPath = RoundedRect(fill, radius)
-                    g.FillPath(_bProgressFill, path)
+                    g.FillPath(fillBrush, path)
                 End Using
             Else
-                g.FillRectangle(_bProgressFill, fill)
+                g.FillRectangle(fillBrush, fill)
             End If
         End If
 
@@ -339,7 +353,7 @@ Partial Class KBotDataView
     ' Combo în stare de AFIȘARE: textul formatat + un chevron în dreapta. Editorul real
     ' (ComboBox flotant) apare doar la editare (0010-06).
     Private Sub DrawComboCell(g As Graphics, cellRect As Rectangle, text As String, font As Font,
-                              fore As Color, align As ContentAlignment)
+                              fore As Color, align As ContentAlignment, enabled As Boolean)
         Dim chevronZone As Integer = ScaleDpi(16)
         Dim textRect As New Rectangle(cellRect.Left, cellRect.Top,
                                       Math.Max(0, cellRect.Width - chevronZone), cellRect.Height)
@@ -351,7 +365,7 @@ Partial Class KBotDataView
 
         Dim oldSmooth As SmoothingMode = g.SmoothingMode
         g.SmoothingMode = SmoothingMode.AntiAlias
-        g.FillPolygon(_bComboChevron, New Point() {
+        g.FillPolygon(If(enabled, _bComboChevron, _bDisabledMark), New Point() {
             New Point(cx - s, cy - s \ 2),
             New Point(cx + s, cy - s \ 2),
             New Point(cx, cy + s)

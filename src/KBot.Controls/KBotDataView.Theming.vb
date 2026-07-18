@@ -36,6 +36,8 @@ Partial Class KBotDataView
     Private _cButtonText As Color
     Private _cProgressTrack As Color
     Private _cProgressFill As Color
+    Private _cDisabledText As Color
+    Private _cDisabledWash As Color
 
     ' ── Resurse GDI cache-uite (recreate în ApplyTheme, eliberate în Dispose) ─────
     Private _bRowBack As SolidBrush
@@ -50,6 +52,9 @@ Partial Class KBotDataView
     Private _bButtonFace As SolidBrush
     Private _bProgressTrack As SolidBrush
     Private _bProgressFill As SolidBrush
+    Private _bDisabledWash As SolidBrush
+    Private _bDisabledMark As SolidBrush
+    Private _pDisabledMark As Pen
     Private _pBorder As Pen
     Private _pHeaderSep As Pen
     Private _pGridLine As Pen
@@ -106,6 +111,10 @@ Partial Class KBotDataView
             _cProgressTrack = Blend(_cRowBack, p.BorderColor, 0.4)
             _cProgressFill = p.AccentColor
 
+            ' Dezactivat: text șters + o spălare FAINT spre suprafață (nu un gri opac).
+            _cDisabledText = p.DisabledTextColor
+            _cDisabledWash = Blend(_cRowBack, p.SurfaceColor, 0.4)
+
             ' Editorii flotanți (controale reale) — tematizați direct.
             editText.BackColor = p.InputBackColor
             editText.ForeColor = p.InputTextColor
@@ -146,6 +155,8 @@ Partial Class KBotDataView
         _cButtonText = SystemColors.ControlText
         _cProgressTrack = Blend(SystemColors.Window, SystemColors.ControlDark, 0.4)
         _cProgressFill = SystemColors.Highlight
+        _cDisabledText = SystemColors.GrayText
+        _cDisabledWash = Blend(SystemColors.Window, SystemColors.Control, 0.4)
         BackColor = _cRowBack
     End Sub
 
@@ -164,6 +175,9 @@ Partial Class KBotDataView
         _bButtonFace = New SolidBrush(_cButtonFace)
         _bProgressTrack = New SolidBrush(_cProgressTrack)
         _bProgressFill = New SolidBrush(_cProgressFill)
+        _bDisabledWash = New SolidBrush(_cDisabledWash)
+        _bDisabledMark = New SolidBrush(_cDisabledText)
+        _pDisabledMark = New Pen(_cDisabledText)
         _pBorder = New Pen(_cHeaderSep)
         _pHeaderSep = New Pen(_cHeaderSep)
         _pGridLine = New Pen(_cGridLine)
@@ -189,6 +203,9 @@ Partial Class KBotDataView
         _bButtonFace?.Dispose() : _bButtonFace = Nothing
         _bProgressTrack?.Dispose() : _bProgressTrack = Nothing
         _bProgressFill?.Dispose() : _bProgressFill = Nothing
+        _bDisabledWash?.Dispose() : _bDisabledWash = Nothing
+        _bDisabledMark?.Dispose() : _bDisabledMark = Nothing
+        _pDisabledMark?.Dispose() : _pDisabledMark = Nothing
         _pBorder?.Dispose() : _pBorder = Nothing
         _pHeaderSep?.Dispose() : _pHeaderSep = Nothing
         _pGridLine?.Dispose() : _pGridLine = Nothing
