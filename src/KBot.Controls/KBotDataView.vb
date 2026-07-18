@@ -36,9 +36,10 @@ Public Class KBotDataView
     Private _readOnlyGrid As Boolean = False
     Private _frozenColumnCount As Integer = 0
 
-    ' Rândul curent (selecție). API-ul public + SelectionChanged vin în 0010-05;
-    ' pictarea selecției e deja aici ca pipeline-ul să fie complet. -1 = fără selecție.
+    ' Celula curentă (selecție). -1 / Nothing = fără selecție. Se schimbă DOAR prin
+    ' SetCurrentCell (vezi partiala .Input), ca evenimentul să se ridice o singură dată.
     Private _currentRowIndex As Integer = -1
+    Private _currentColumnKey As String
 
     ' Adâncimea BeginUpdate/EndUpdate — cât e > 0, invalidările interne se amână.
     Private _updateDepth As Integer = 0
@@ -50,6 +51,23 @@ Public Class KBotDataView
 
     ''' <summary>Ridicat o dată pe rând, înaintea celulelor. Argumentele sunt REFOLOSITE — nu le reține.</summary>
     Public Event RowFormatting As EventHandler(Of KBotRowFormattingEventArgs)
+
+    ' ── Evenimente de interacțiune (argumente proaspete, nu refolosite) ─────────
+
+    ''' <summary>Click simplu pe o celulă.</summary>
+    Public Event CellClick As EventHandler(Of KBotCellEventArgs)
+
+    ''' <summary>Dublu-click pe o celulă.</summary>
+    Public Event CellDoubleClick As EventHandler(Of KBotCellEventArgs)
+
+    ''' <summary>Celulă de tip Button acționată (click sau Space).</summary>
+    Public Event ButtonClick As EventHandler(Of KBotButtonClickEventArgs)
+
+    ''' <summary>Valoarea unei celule s-a schimbat (comutare sau commit de editare).</summary>
+    Public Event CellValueChanged As EventHandler(Of KBotCellValueEventArgs)
+
+    ''' <summary>Rândul sau coloana curentă s-a schimbat.</summary>
+    Public Event SelectionChanged As EventHandler
 
     ' Instanțe REFOLOSITE de argumente (zero alocări per celulă la mii de rânduri).
     Private ReadOnly _cellArgs As New KBotCellFormattingEventArgs()
