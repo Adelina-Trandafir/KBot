@@ -32,7 +32,7 @@ number** is recorded at the bottom of this section — bump it when you assign a
 | 0009 | `MainForm.LoadTree` (client half) + tree orphan escape | DONE (code) / UNVERIFIED on a live DB | `SLICE-0009-maintree-loadtree.md` | The brief's Parts B/C/D (DTOs, `GetTreeAsync`, `LoadTreeAsync` + gating) were **already shipped by 0008**; the real deltas are Part A (orphan escape on the server, see 0008 row) + its 2 host-only tests, and the 4 `GetTreeAsync` client tests 0008 never added (Api 26 → 30). Kept 0008's choices: mapping in the client (no `BuildTreeInfo`), token from session (no param), `IDDF As Long?` throughout. LoadTree is period-driven (runs on load + every An/SS change = the `SetPeriod` precondition) |
 | 0010 | `KBotDataView` — owner-drawn unbound grid (Access continuous-form) | DONE (code) / **NO VISUAL VERDICT YET** | `SLICE-0010-01-…skeleton.md`, `-02-…virtualizare.md`, `-03-…tipuri-coloana.md`, `-04-…formatare-disable.md`, `-05-…input-selectie.md`, `-06-…editare.md` | Plan: pasted in-session (continuation plan supersedes the original where they disagree). Multi-pass. **0010-01 (skeleton):** models + enum, double-buffered `Control` implementing `IThemedControl`, theming cache + `ApplyTheme`, header + empty body, 4 child controls in Designer. **0010-02 (render+virtualize):** split into partials (`.Theming`/`.Layout`/`.Painting`), frozen + scrolling column bands, integer virtualization math, two-pass scrollbar sizing, Text + CheckBox cell painting, `CellFormatting`/`RowFormatting` plumbing with **reused** args, full palette→role mapping. **Decision:** kept in `KBot.Controls` + a `KBot.Theming` ProjectReference (no cycle) so it self-themes — the plan's "`KBotTheme` constants" don't exist (that's a ~9-slot Forexe façade). **0010-03 (column types):** Combo / OptionButton / Button / ProgressBar painting + `OptionGroup` exclusivity via `SetOptionValue`. **0010-04 (formatting+disable):** three-level effective-enabled (`IsCellEnabled`/`IsRowEnabled`, separate "probe" args so queries can't clobber an in-flight paint), disabled rendering across all six types, conditional formatting. **0010-05 (input+selection):** current cell + `SelectionChanged`, Access-style keyboard nav, click/double-click, toggle + button activation gated on `IsCellEnabled`, header-edge column resize. **0010-06 (editing):** floating Text/Combo editor, `CellValidating` (veto **and** value coercion), Esc discard, auto-commit on move/scroll, and the corrected `IsDirty` contract — API writes are *loading*, only operator edits/toggles dirty a row (`ClearDirty` added; 2 pass-01 tests deliberately rewritten). Virtualization proven **headlessly** (same painted-row count at 5,000 and 50,000 rows). 158 tests green. **Editing caught 2 real VB case-insensitivity bugs** where a parameter shadowed a same-named property and an unqualified assignment was a silent no-op: `ProposedValue` (commit always wrote Nothing) and — live since 0010-01 — `HeaderText`, meaning **every column header was Nothing**; both fixed with `Me.` + regression tests. ⚠️ **NOBODY HAS RUN THE VISUAL HARNESS for any of the six passes.** Scroll smoothness, the WinForms key→handler path, resize drag, floating-editor placement/focus and actual colours are all unverified — the blank-header bug shows exactly why that matters. Run: DevHarness → Controls/UI → «KBotDataView — virtualizare + temă (5.000 × 20)». Next: Sumar slice consumes it read-only |
 
-| 0011 | Sumar — endpoint + `SumarView` (prima vedere reală) | DONE (code) / UNVERIFIED on a live DB / **NO VISUAL VERDICT** | `SLICE-0011-01-sumar-endpoint.md`, `SLICE-0011-02-sumar-view.md` | Plan: pasted in-session. Port of `qFX_MAIN_SUMAR` v1 → `GET /api/forexe/sumar?cod=…` (header hoisted once + one row per indicator), plus `SumarView` replacing `PlaceholderView` for the `sumar` key — **the first of the nine views that is real**, and the first consumer of `KBotDataView` (read-only). **The `Clsf` blocker was resolved by the operator supplying the real DDL, not by guessing:** `Clasificatii.Clsf` EXISTS as a STORED generated column `concat_ws('.',Capitol,Subcapitol,Articol,Alineat)` (indexed), so Branch A — select it directly. `Titlu = left(Articol,2)` explains Access's `Mid(Clsf,13,2)`. Port decisions: no SS filter, `ClasificatiiG`→`Clasificatii` / `ParteneriG`→`Parteneri`, all `IdUnitate` join predicates dropped, **`LEFT JOIN Clasificatii`** (was INNER — an indicator with no classification must still appear), `TotalReceptii = SUM(DIF)` not `Valoare`, `'Angajament nou.'` with the trailing period. Deliberate deviations: `COALESCE(...,0)` on the five totals, `cod` pushed into every aggregate (Access full-scanned per aggregate), deterministic `ORDER BY` added, `ROUND(,2)` kept on revizii/ordonanțări only. Client: `WithReauth` passed in specialized on `SumarInfo` so the 401 policy stays in the shell; snake_case stops at the wire DTOs; **stale-response guard** discards a superseded `cod`. 164 tests green, 0 warnings. ⚠️ **Two open risks:** (a) the join key `I.IdClsf = C.IDClsf` is a documented-convention DECISION, not a verified fact — MariaDB inverts Access's naming (`IDClsf`=PY id, `IdClsfAcc`=Access id); if `clsf` comes back blank on ALL rows live, the key is `C.IdClsfAcc`; (b) nobody has run `SumarView` on screen, and `KBotDataView`'s visual harness is STILL unrun |
+| 0011 | Sumar — endpoint + `SumarView` (prima vedere reală) | DONE (code) / **partially run on a live DB (0011-03)** / **NO VISUAL VERDICT** | `SLICE-0011-01-sumar-endpoint.md`, `SLICE-0011-02-sumar-view.md`, `SLICE-0011-03-sumar-join-clasificatii.md` | Plan: pasted in-session. Port of `qFX_MAIN_SUMAR` v1 → `GET /api/forexe/sumar?cod=…` (header hoisted once + one row per indicator), plus `SumarView` replacing `PlaceholderView` for the `sumar` key — **the first of the nine views that is real**, and the first consumer of `KBotDataView` (read-only). **The `Clsf` blocker was resolved by the operator supplying the real DDL, not by guessing:** `Clasificatii.Clsf` EXISTS as a STORED generated column `concat_ws('.',Capitol,Subcapitol,Articol,Alineat)` (indexed), so Branch A — select it directly. `Titlu = left(Articol,2)` explains Access's `Mid(Clsf,13,2)`. Port decisions: no SS filter, `ClasificatiiG`→`Clasificatii` / `ParteneriG`→`Parteneri`, all `IdUnitate` join predicates dropped, **`LEFT JOIN Clasificatii`** (was INNER — an indicator with no classification must still appear), `TotalReceptii = SUM(DIF)` not `Valoare`, `'Angajament nou.'` with the trailing period. Deliberate deviations: `COALESCE(...,0)` on the five totals, `cod` pushed into every aggregate (Access full-scanned per aggregate), deterministic `ORDER BY` added, `ROUND(,2)` kept on revizii/ordonanțări only. Client: `WithReauth` passed in specialized on `SumarInfo` so the 401 policy stays in the shell; snake_case stops at the wire DTOs; **stale-response guard** discards a superseded `cod`. 164 tests green, 0 warnings. **0011-03 (after the operator's live run) fixed three stacked defects in the query:** the join key WAS wrong (`FX_Indicatori.IdClsf` holds the Access id → matches `C.IdClsfAcc`, giving 0 rows against `C.IDClsf`); `IdUnitate` had been dropped from a SHARED nomenclator (67-row fan-out); and `Clasificatii` has real duplicates on `(IdClsfAcc, IdUnitate)` (still 50 rows with both predicates). Fix: `LEFT JOIN Clasificatii` → **scalar subquery with `LIMIT 1`**, `ORDER BY` moved to the output alias. **The same defect was found and fixed in `aggRev`/`Parteneri`, which the brief did not ask for** — there the join sat BEFORE the `GROUP BY`, so a duplicate partener multiplied `SUM(SA.ValCur)` and inflated `TotalRevizii` (a wrong money figure, not a blank column). 3 new tests incl. a general `len(rows) == indicator count` sentinel. ⚠️ **Still open:** (a) nobody has run `SumarView` on screen, and `KBotDataView`'s visual harness is STILL unrun; (b) the `Clasificatii` duplicates need triage — if the rows differ by `Sursa`/`Sector` then a join dimension is MISSING and `LIMIT 1` picks arbitrarily between two different classifications; if identical, they are data to clean |
 
 **Next free slice number: 0012.**
 
@@ -46,11 +46,13 @@ number** is recorded at the bottom of this section — bump it when you assign a
   verification items 1–5 and 8, plus the two new orphan tests (`TREEO`/`TREEX`).
 - **Next:** the remaining eight views are still `PlaceholderView` (Sumar landed in 0011);
   Slice 0004's remaining Tier 1 items and the Slice 0003 VPS config are still open and short.
-- **Slice 0011 (Sumar) — both halves landed, 164 tests green, 0 warnings.** Two things
-  need a human: (1) run `test_forexe_sumar.py` on the host — it answers in one go
-  whether the eleven touched tables exist AND whether the `Clasificatii` join key is
-  right (if `clsf` is blank on every row, switch `C.IDClsf` → `C.IdClsfAcc` in
-  `sumar.py`); (2) look at `SumarView` on screen — it has never been rendered.
+- **Slice 0011 (Sumar) — all three passes landed, 164 .NET tests green, 0 warnings.**
+  The join-key question is now ANSWERED on real data (0011-03): the key was wrong,
+  `IdUnitate` was missing, and the nomenclator has duplicates — all three fixed by
+  moving to scalar subqueries. Two things still need a human:
+  (1) rerun `test_forexe_sumar.py` on the host (18 tests now; they skip off-host) to
+  confirm the fix end-to-end and that all eleven touched tables exist;
+  (2) look at `SumarView` on screen — **it has still never been rendered**.
 - **Slice 0010 (`KBotDataView`) — all six passes landed, 158 tests green, 0 warnings.**
   **The one open item is a human one:** nobody has run the visual harness yet. Please run
   DevHarness (Debug start → «Nu») → Controls/UI → «KBotDataView — virtualizare + temă
@@ -86,11 +88,16 @@ number** is recorded at the bottom of this section — bump it when you assign a
   operator pasted it by hand. It documents real contracts the code now depends on
   (`Clsf`/`Titlu`/`SS` as STORED generated columns; FKs into `AVACONT_COMUN.Defa*`).
   Add it to the repo so the next slice does not have to ask again.
-- **MariaDB inverts Access's classification-id naming** (`Clasificatii.IDClsf` = the
-  "PY" id / PK, `IdClsfAcc` = the Access id), while the Access modules push
-  `IdClsf = IdClsfPY`. Nothing in the repo confirms which of the two
-  `FX_Indicatori.IdClsf` actually holds. Worth settling once and writing down — every
-  future FX_ view that joins to `Clasificatii` hits the same fork.
+- ~~**MariaDB inverts Access's classification-id naming**~~ — SETTLED in 0011-03 on
+  real data: `FX_Indicatori.IdClsf` holds the **Access** id (matches `C.IdClsfAcc`).
+  Promoted to Locked decisions below.
+- **`Clasificatii` has real duplicates on `(IdClsfAcc, IdUnitate)`** — on `000_DEMO`:
+  `(75,79)`, `(75,84)`, `(75,90)`, `(75,92)`, `(75,93)`, each twice. Sumar is safe
+  (scalar subquery + `LIMIT 1` = one row per indicator), so this does not block, but
+  it needs triage: **if the duplicate rows differ by `Sursa`/`Sector`, a join
+  dimension is MISSING** and `LIMIT 1` is silently choosing between two genuinely
+  different classifications; if they are identical, they are data to clean. Any
+  future view that needs the classification's `Sursa`/`Sector` must settle this first.
 
 ## Locked decisions (do not relitigate without a note here)
 
@@ -100,6 +107,28 @@ number** is recorded at the bottom of this section — bump it when you assign a
   keys namespaced `kbot:sess:` in K-BOT's own DB; never FLUSHDB/FLUSHALL (shared Redis).
 - Static API key kept ONLY for the legacy FOREXE fleet on shared routes; eliminated for
   K-BOT.
+- **The "drop `IdUnitate`" rule applies to `FX_` tables ONLY.** Shared nomenclatoare
+  (`Clasificatii`, `Parteneri`, and others of that kind) **keep** the `IdUnitate`
+  predicate: the per-unit database holds them for SEVERAL units. On `000_DEMO`,
+  `Clasificatii` carries 8 (48, 75, 76, 121, 123, 135, 136, 157). Measured cost of
+  getting this wrong in slice 0011 (`FX_Indicatori` = 29 rows, 25 with `IdClsf <> 0`):
+  `ON I.IdClsf = C.IDClsf` → **0** rows (wrong key); `ON I.IdClsf = C.IdClsfAcc` →
+  **67** (multi-unit fan-out); `+ AND I.IdUnitate = C.IdUnitate` → **50** (duplicate
+  fan-out). Full detail: `SLICE-0011-03-sumar-join-clasificatii.md`.
+- **Key-naming conventions, both confirmed against the live schema:**
+  - `Clasificatii`: `IDClsf` = MariaDB PK, `IdClsfAcc` = retained Access id.
+    **BUT `FX_Indicatori.IdClsf` holds the ACCESS id — it does NOT follow the
+    convention.** The column name is not evidence.
+  - `FX_ORD` family: suffix "P" = MariaDB PK (`IDORDTBLP`), without "P" = Access id
+    (`IDORDTBL`).
+  - **Operational rule that beats both tables: never infer the key from the column
+    name — COUNT rows before and after the join.** A join returning 0, or more rows
+    than its left-hand table, is a defect, not a data quirk. Slice 0011 lost three
+    live runs to this; one `COUNT(*)` would have caught all three.
+- Shared nomenclatoare are read via **scalar subqueries with `LIMIT 1`**, not joins,
+  wherever the value is display-only (`Clsf`, `Partener` in Sumar). `Clasificatii` has
+  real duplicates on `(IdClsfAcc, IdUnitate)`, so even a fully-predicated join fans
+  out; a scalar subquery guarantees one row per indicator.
 
 ---
 
