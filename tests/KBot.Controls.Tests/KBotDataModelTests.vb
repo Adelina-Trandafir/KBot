@@ -31,6 +31,36 @@ Public Class KBotDataModelTests
         Assert.Equal(100, c.Width)
     End Sub
 
+    ' Slice 0013: MaxWidth caps Width, is kept at or above MinWidth, and defaults uncapped.
+    <Fact>
+    Public Sub Column_MaxWidthDefaultsUncappedAndCapsWidth()
+        Dim c = New KBotDataColumn("k", "H", KBotColumnType.Text, 60)
+        Assert.Equal(Integer.MaxValue, c.MaxWidth)
+        c.MaxWidth = 120
+        c.Width = 500
+        Assert.Equal(120, c.Width)            ' cannot grow past MaxWidth
+        c.MaxWidth = 80
+        Assert.Equal(80, c.Width)             ' lowering MaxWidth re-clamps Width
+    End Sub
+
+    <Fact>
+    Public Sub Column_MaxWidthNeverBelowMinWidth()
+        Dim c = New KBotDataColumn("k", "H", KBotColumnType.Text, 60)
+        c.MaxWidth = 10                       ' below MinWidth (40) => pinned to MinWidth
+        Assert.Equal(40, c.MaxWidth)
+        c.MinWidth = 200                      ' raising MinWidth above MaxWidth pushes MaxWidth up
+        Assert.Equal(200, c.MaxWidth)
+        Assert.Equal(200, c.Width)
+    End Sub
+
+    <Fact>
+    Public Sub Column_UserSizedDefaultsFalseAndRoundTrips()
+        Dim c = New KBotDataColumn("k", "H", KBotColumnType.Text, 60)
+        Assert.False(c.UserSized)
+        c.UserSized = True
+        Assert.True(c.UserSized)
+    End Sub
+
     ' Regresie: „HeaderText = headerText” nekalificat era un NO-OP (VB e case-insensitive,
     ' parametrul ascunde proprietatea), deci TOATE antetele rămâneau Nothing.
     <Fact>

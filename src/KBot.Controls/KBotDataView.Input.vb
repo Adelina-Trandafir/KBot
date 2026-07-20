@@ -269,6 +269,13 @@ Partial Class KBotDataView
         If Not IsCellEnabled(colKey, rowIndex) Then Return
         Dim col As KBotDataColumn = Column(colKey)
 
+        ' English: a CheckBox/OptionButton toggle mutates the row's value, so it is blocked when
+        ' the grid or the column is read-only — same contract as text/combo editing (see CanEdit).
+        ' A Button is a pure action (no value, no dirty), so it stays active even when read-only.
+        Dim valueMutating As Boolean =
+            col.ColumnType = KBotColumnType.CheckBox OrElse col.ColumnType = KBotColumnType.OptionButton
+        If valueMutating AndAlso (_readOnlyGrid OrElse col.ReadOnly) Then Return
+
         Select Case col.ColumnType
             Case KBotColumnType.CheckBox
                 Dim oldValue As Object = _rows(rowIndex)(colKey)
@@ -325,6 +332,9 @@ Partial Class KBotDataView
             ' Redimensionare în curs: lățimea urmărește mouse-ul (limitată de MinWidth).
             If _resizingColumn IsNot Nothing Then
                 _resizingColumn.Width = _resizeStartWidth + (e.X - _resizeStartX)
+                ' English (slice 0013): a manual drag pins this column — a ToContent pass must
+                ' not undo it. Fill/shrink still applies (via ResetColumnSizing to restore auto).
+                _resizingColumn.UserSized = True
                 LayoutChanged()
                 Return
             End If

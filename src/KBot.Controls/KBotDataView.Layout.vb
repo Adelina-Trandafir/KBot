@@ -134,6 +134,9 @@ Partial Class KBotDataView
         If _inLayout Then Return
         _inLayout = True
         Try
+            ' English (slice 0013): size the columns first, then compute offsets and scrollbars.
+            ' The pass no-ops while _updateDepth > 0 and runs once from EndUpdate.
+            PerformAutoSize()
             RecalcColumnLayout()
             UpdateScrollBars()
         Finally

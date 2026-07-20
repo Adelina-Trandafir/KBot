@@ -238,4 +238,58 @@ Public Class KBotDataViewInputTests
         End Using
     End Sub
 
+    ' ── Read-only gating pentru comutări (fix descoperit în playground) ──────────
+
+    <Fact>
+    Public Sub ActivateCell_ReadOnlyGrid_DoesNotToggleCheckBox()
+        Using dv As New KBotDataView()
+            dv.ReadOnlyGrid = True
+            dv.AddColumn("chk", "Chk", KBotColumnType.CheckBox, 60)
+            dv.AddRow()
+            Dim changes As Integer = 0
+            AddHandler dv.CellValueChanged, Sub(s, e) changes += 1
+
+            dv.ActivateCell("chk", 0)
+            Assert.Equal(0, changes)
+            Assert.Null(dv("chk", 0))              ' grila read-only nu comută bifa
+            Assert.False(dv.Rows(0).IsDirty)
+        End Using
+    End Sub
+
+    <Fact>
+    Public Sub ActivateCell_ReadOnlyGrid_DoesNotSetOption()
+        Using dv As New KBotDataView()
+            dv.ReadOnlyGrid = True
+            dv.AddColumn("opt", "Opt", KBotColumnType.OptionButton, 60).OptionGroup = "g"
+            dv.AddRow()
+            dv.ActivateCell("opt", 0)
+            Assert.Null(dv("opt", 0))              ' nici opțiunea nu se selectează
+        End Using
+    End Sub
+
+    <Fact>
+    Public Sub ActivateCell_ReadOnlyColumn_DoesNotToggleCheckBox()
+        Using dv As New KBotDataView()
+            dv.AddColumn("chk", "Chk", KBotColumnType.CheckBox, 60)
+            dv.Column("chk").ReadOnly = True       ' read-only per-coloană, nu pe toată grila
+            dv.AddRow()
+            dv.ActivateCell("chk", 0)
+            Assert.Null(dv("chk", 0))
+        End Using
+    End Sub
+
+    <Fact>
+    Public Sub ActivateCell_ReadOnlyGrid_StillRaisesButtonClick()
+        Using dv As New KBotDataView()
+            dv.ReadOnlyGrid = True
+            dv.AddColumn("btn", "Buton", KBotColumnType.Button, 80)
+            dv.AddRow()
+            Dim clicks As Integer = 0
+            AddHandler dv.ButtonClick, Sub(s, e) clicks += 1
+
+            dv.ActivateCell("btn", 0)
+            Assert.Equal(1, clicks)                ' butonul e acțiune, nu editare — rămâne activ
+        End Using
+    End Sub
+
 End Class

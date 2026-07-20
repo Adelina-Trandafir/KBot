@@ -27,7 +27,7 @@ Public Class SumarView
     Private Const COL_PLATI As String = "total_plati"
     Private Const COL_REVIZII As String = "total_revizii"
     Private Const COL_ORDONANTARI As String = "total_ordonantari"
-    Private Const COL_PARTENER As String = "partener"
+    ' Private Const COL_PARTENER As String = "partener"
 
     Private ReadOnly _apiClient As IApiClient
     ' Plasa 401 a shell-ului (MainForm.WithReauth), specializată pe SumarInfo:
@@ -68,7 +68,7 @@ Public Class SumarView
             AddMoneyColumn(COL_PLATI, "Plăți")
             AddMoneyColumn(COL_REVIZII, "Revizii")
             AddMoneyColumn(COL_ORDONANTARI, "Ordonanțări")
-            grid.AddColumn(COL_PARTENER, "Partener", KBotColumnType.Text, 220)
+            ' grid.AddColumn(COL_PARTENER, "Partener", KBotColumnType.Text, 220)
             ' Clasificația e cea mai lată și cea după care se citește tabelul —
             ' rămâne fixă la stânga când operatorul derulează spre coloanele de bani.
             grid.FrozenColumnCount = 1
@@ -183,7 +183,7 @@ Public Class SumarView
                     row(COL_PLATI) = r.TotalPlati
                     row(COL_REVIZII) = r.TotalRevizii
                     row(COL_ORDONANTARI) = r.TotalOrdonantari
-                    row(COL_PARTENER) = r.Partener
+                    ' row(COL_PARTENER) = r.Partener
                 Next
             End If
         Finally

@@ -124,6 +124,8 @@ Partial Class KBotDataView
 
             BackColor = _cRowBack
             RebuildThemeResources()
+            ' English (slice 0013): theme changes can swap fonts, so re-measure the columns.
+            UpdateLayout()
             Invalidate()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.ApplyTheme", ex)
@@ -233,9 +235,16 @@ Partial Class KBotDataView
 
     Protected Overrides Sub OnFontChanged(e As EventArgs)
         MyBase.OnFontChanged(e)
-        _headerFont?.Dispose()
-        _headerFont = Nothing
-        Invalidate()
+        Try
+            _headerFont?.Dispose()
+            _headerFont = Nothing
+            ' English (slice 0013): a new font changes measured content widths — re-layout.
+            UpdateLayout()
+            Invalidate()
+        Catch ex As Exception
+            ' Boundary UI: a font change must not throw into the message loop.
+            GlobalErrorLog.Write("KBotDataView.OnFontChanged", ex)
+        End Try
     End Sub
 
     ' ── Ajutoare pure (ThemeShapes din KBot.Theming e Friend, invizibil de aici) ──

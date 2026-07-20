@@ -19,6 +19,7 @@ Public NotInheritable Class KBotDataColumn
     Public Property HeaderText As String
 
     Private _minWidth As Integer = 40
+    Private _maxWidth As Integer = Integer.MaxValue
     Private _width As Integer
 
     ''' <summary>Lățimea în pixeli. Nu coboară niciodată sub <see cref="MinWidth"/>.</summary>
@@ -27,7 +28,10 @@ Public NotInheritable Class KBotDataColumn
             Return _width
         End Get
         Set(value As Integer)
-            _width = Math.Max(value, _minWidth)
+            ' English (slice 0013): clamp to [MinWidth, MaxWidth] on every write so the
+            ' auto-size / fill / shrink passes can assign freely and let the model enforce
+            ' the bounds. MaxWidth is never below MinWidth (see the MaxWidth setter).
+            _width = Math.Min(Math.Max(value, _minWidth), _maxWidth)
         End Set
     End Property
 
@@ -38,9 +42,34 @@ Public NotInheritable Class KBotDataColumn
         End Get
         Set(value As Integer)
             _minWidth = Math.Max(0, value)
+            ' English (slice 0013): keep the invariant MinWidth <= MaxWidth, then re-clamp Width.
+            If _maxWidth < _minWidth Then _maxWidth = _minWidth
             If _width < _minWidth Then _width = _minWidth
+            If _width > _maxWidth Then _width = _maxWidth
         End Set
     End Property
+
+    ''' <summary>
+    ''' English (slice 0013): maximum width in pixels. Default <see cref="Integer.MaxValue"/>
+    ''' (uncapped). Auto-sizing and fill modes never grow a column past this. Kept at or above
+    ''' <see cref="MinWidth"/>; lowering it re-clamps <see cref="Width"/>.
+    ''' </summary>
+    Public Property MaxWidth As Integer
+        Get
+            Return _maxWidth
+        End Get
+        Set(value As Integer)
+            _maxWidth = Math.Max(value, _minWidth)
+            If _width > _maxWidth Then _width = _maxWidth
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' English (slice 0013): set when the operator has dragged this column's edge. A
+    ''' <see cref="KBotAutoSizeMode.ToContent"/> pass leaves such a column alone, but fill /
+    ''' shrink still applies to it. Cleared by <c>KBotDataView.ResetColumnSizing</c>.
+    ''' </summary>
+    Friend Property UserSized As Boolean
 
     ''' <summary>Vizibilă. Implicit True. False => coloana nu se pictează și nu ocupă spațiu.</summary>
     Public Property Visible As Boolean = True
