@@ -9,6 +9,27 @@ file and `KBOT_STATUS.md` disagree, `KBOT_STATUS.md` wins — fix it there first
 
 ## What just landed (most recent first)
 
+- **Rezervări — endpoint + `RezervariView`, slice 0014 complete** (uncommitted, 2026-07-21)
+  - The **second real view** (after Sumar, 0011). `MainForm.CreateView("rezervari")` now returns a
+    real `RezervariView` instead of a `PlaceholderView` — a **master/detail** mirroring Access
+    `frmFX_MAIN_REZ`: a reservations tree on the left (month folders → (date, type) leaves) and a
+    read-only `KBotDataView` on the right (Clsf / Credit bugetar / Rezervări inițiale / Rezervare
+    curentă / Rezervări definitive). Worklog `docs/worklog/SLICE-0014-rezervari-view.md`.
+  - Server: `GET /api/forexe/rezervari?cod=` — a **raw reader** (one row per `FX_Rezervari`); the
+    client shapes both tree and grid so the row list isn't duplicated on the wire. Classification
+    resolved through `FX_Indicatori` (the verified 0011-03 path — `IdClsf` = Access id), scalar
+    subquery `LIMIT 1` + kept `IdUnitate` predicate; `LEFT JOIN FX_Indicatori` so a reservation
+    never disappears for a missing label.
+  - **The plan's biggest "open" question was answered from the Access source, not guessed:** the
+    month-folder total is `SUM(R_Valoare)` — literally the `TOTALL` column of `qFX_REZERVARI_TREE`.
+    Leaf value = `SUM(IIf(EInitiala, R_Initiala, R_Valoare))` (= `Suma` in `QFX_DDF_REZERVARI`);
+    type derived client-side (Inițială > Mărire > Micșorare).
+  - Tree icons are **GDI-drawn and palette-tinted** (`RezervariIcons`: «=»/«▲»/«▼» + «+»), not
+    binary resources. «+» is **display-only** this slice (raises `AdaugaDdfCerut`, no subscriber);
+    the `IncarcaRezervare`/DDF workflow (migration-plan item 7) is a later slice. Same
+    `WithReauth(Of RezervariInfo)` + stale-guard as Sumar.
+  - Api 36 → 42 (+6 `GetRezervariAsync`), App 22 → 30 (+8 view/shaping), +16 Python host-only tests
+    (skip off-host). Build 0 warnings, full suite green.
 - **`KBotDataView` — owner-drawn unbound grid, slice 0010 complete** (`00b0cc9` → `3d69e2a`, 2026-07-18…21)
   - A reusable, **unbound**, **virtualized**, owner-drawn grid mimicking an Access continuous
     form — the shared list widget for the real views. Built in seven passes (worklogs
@@ -80,9 +101,9 @@ file and `KBOT_STATUS.md` disagree, `KBOT_STATUS.md` wins — fix it there first
 
 ## What's next / deferred
 
-- **The nine real views are still `PlaceholderView`** (Sumar, Indicatori, Istoric, Revizii,
-  Rezervări, Partener, Recepții, Plăți, DDF, ORD). This is the "tabs aren't wired to data
-  yet" gap — the Internal Info popup is the current way to see live per-node data.
+- **Seven of the real views are still `PlaceholderView`** (Indicatori, Istoric, Revizii,
+  Partener, Recepții, Plăți, DDF, ORD) — **Sumar (0011) and Rezervări (0014) are now real.**
+  For the rest, the Internal Info popup is still the way to see live per-node data.
 - `btnSort` / `btnIstoric` are placeholder `MsgBox` stubs.
 - `KBotNavList.SetItemVisible` (real hide vs. grey-out gating).
 - The tree is a flat list, not a nested tree.
@@ -101,6 +122,13 @@ file and `KBOT_STATUS.md` disagree, `KBOT_STATUS.md` wins — fix it there first
   logic; the pixels don't. The blank-header bug (headers `Nothing` for five passes, caught only
   in pass 06) is the argument for running it: DevHarness (Debug start → «Nu») → Controls/UI →
   «KBotDataView — virtualizare + temă (5.000 × 20)».
+- **The real views (Sumar 0011, Rezervări 0014) have never run against a live DB nor been
+  rendered on screen.** Their endpoints (`/api/forexe/sumar`, `/api/forexe/rezervari`) have
+  host-only tests that skip off-station; if `Clsf` comes back blank on every row, the cause is
+  the join key, not the view (the 0011-03 trap). For Rezervări specifically: the month-total
+  formula is correct-from-source, but the exact screenshot figures (Ian 1.091.940 / …) were not
+  reproduced numerically (no data for that angajament), and click-to-filter on a tree node is
+  tested only at the data level, not as real interaction.
 - Missing MariaDB DDL for four `FX_*` flag tables; the two `FX_Angajamente` DDLs disagree
   on `ASCUNS` (see `KBOT_STATUS.md` open threads).
 

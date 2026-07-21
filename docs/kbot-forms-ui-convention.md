@@ -81,3 +81,20 @@ not for relocating controls the Designer owns.
 Do not add explanatory comments to any form's `.Designer.vb`. Keep only the default
 comments Visual Studio generates (the `' controlName` separators). Anything that
 needs explaining goes in the code-behind or here.
+
+## 8. Custom K-BOT controls are declared and configured in the Designer too
+
+`AdvancedTreeControl` and `KBotDataView` are Toolbox controls (`<ToolboxItem(True)>`),
+so the standing rule (§5/§6) applies to them exactly like stock controls: **declare
+the instance in `*.Designer.vb` and set its initial/static properties there**, via the
+property grid — not by `New`-ing it and configuring it in code-behind.
+
+- **Initial/static props go in the Designer**: appearance and fixed behavior —
+  `ItemHeight`, `Indent`, `RootExpander`, `CheckBoxes`, `HeaderVisible`,
+  `HeaderCaption`, `ScrollBarTheme`, the color properties, `TreeListView`/
+  `DynamicColumns`/`ColumnsLevel`, etc. (These now carry `<Category>`/`<Description>`/
+  `<DefaultValue>` so the grid is self-documenting.)
+- **Code-behind is for runtime data only**: building the node tree / rows, wiring event
+  handlers, resolving image keys against the runtime icon cache, and anything driven by
+  the session or API response. Runtime-only members (`SelectedNode`, `Items`, resolved
+  header `Image`s, …) are `<Browsable(False)>` and never appear in the grid by design.
