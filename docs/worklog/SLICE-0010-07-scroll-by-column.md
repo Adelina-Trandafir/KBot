@@ -14,10 +14,16 @@ derularea ORIZONTALĂ să avanseze o coloană întreagă odată, în loc de pixe
   întreagă, în loc să se lipească de aceeași margine (capcana unei alinieri „la cea mai
   apropiată”). Valoarea aliniată e limitată la maximul util al barei (`Maximum − LargeChange
   + 1`), deci ultimele coloane rămân accesibile chiar dacă capătul nu cade pe o margine.
-- **Un singur loc de aliniere**: `OnScrollValueChanged` (pentru bara orizontală) apelează
-  `SnapHScrollToColumn`, cu gardă de reintrare `_snappingHScroll` (setarea `hScroll.Value`
-  re-ridică `ValueChanged`). Acoperă TOATE căile care mișcă bara — tragere de thumb, click pe
-  săgeți/șină, `Shift`+rotiță — fără cod separat pe fiecare.
+- **Aliniere pe două căi, după cum se derulează:**
+  - *Săgeți / șină / rotiță* — trec prin `ValueChanged` și se aliniază DIRECȚIONAL (ceil la
+    creștere, floor la scădere), cu gardă de reintrare `_snappingHScroll`.
+  - *Tragerea thumb-ului cu mouse-ul* — se ascultă evenimentul `ScrollBar.Scroll` (care spune
+    CUM se derulează, spre deosebire de `ValueChanged`). Cât timp `ThumbTrack`, derularea e
+    **liberă** (pixel cu pixel), altfel alinierea ar smuci thumb-ul înapoi la fiecare mișcare
+    a mouse-ului („se refresh-uia oribil, de parcă nu se decidea ce coloană să arate”).
+    Alinierea se face DOAR la `EndScroll` (eliberare), la marginea cea mai APROPIATĂ.
+  - **Bug de comportament reparat:** prima versiune alinia și în timpul tragerii (tot prin
+    `ValueChanged`) => thumb-ul sărea. Corecția e distincția track-vs-release prin `Scroll`.
 - **Activarea aliniază pe loc**: setter-ul, când trece pe True, aliniază imediat poziția
   curentă (care putea fi la mijloc de coloană).
 - **Re-aliniere după relayout**: `UpdateScrollBars` re-aliniază la final, fiindcă lățimile se
@@ -34,7 +40,11 @@ derularea ORIZONTALĂ să avanseze o coloană întreagă odată, în loc de pixe
 ## Rezultate teste
 
 - `dotnet build src/KBot.Controls` și `src/KBot.DevHarness` — **0 warnings / 0 errors**.
-- `KBot.Controls.Tests` — **106 passed / 0 failed** (7 noi pentru `ScrollByColumn`).
+- `KBot.Controls.Tests` — **111 passed / 0 failed** (12 pentru `ScrollByColumn`: 7 direcționale
+  + 5 pentru tragerea thumb-ului — liberă în timpul tragerii, „nearest” la eliberare, inertă
+  când proprietatea e off, iar săgețile rămân direcționale după eliberare). Tragerea se
+  simulează prin `BeginHorizontalThumbDrag`/`EndHorizontalThumbDrag` (Friend) — evenimentul
+  `Scroll` nu se poate ridica headless.
 - Grila de test e fixată pe dimensionare MANUALĂ (`AutoSizeColumnsMode = None`,
   `ColumnFillMode = None`) ca marginile de coloană să fie deterministe (5 × 100px => marginile
   0/100/200/300/400, maximul util 300). Acoperit: implicit = pixel; creștere => marginea

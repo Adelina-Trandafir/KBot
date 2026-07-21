@@ -95,4 +95,66 @@ Public Class KBotDataViewScrollByColumnTests
         End Using
     End Sub
 
+    ' ── Tragerea thumb-ului: liberă în timpul tragerii, aliniere la eliberare ────
+
+    <Fact>
+    Public Sub ThumbDrag_ScrollsFreelyWhileDragging()
+        Using dv = WideGrid()
+            dv.ScrollByColumn = True
+            dv.BeginHorizontalThumbDrag()
+            ' Cât se trage, valoarea NU se aliniază — altfel thumb-ul ar smuci înapoi.
+            dv.hScroll.Value = 130
+            Assert.Equal(130, dv.hScroll.Value)
+            dv.hScroll.Value = 175
+            Assert.Equal(175, dv.hScroll.Value)
+        End Using
+    End Sub
+
+    <Fact>
+    Public Sub ThumbDrag_SnapsToNearestEdgeOnRelease()
+        Using dv = WideGrid()
+            dv.ScrollByColumn = True
+            dv.BeginHorizontalThumbDrag()
+            dv.hScroll.Value = 175                        ' mai aproape de 200 decât de 100
+            dv.EndHorizontalThumbDrag()
+            Assert.Equal(200, dv.hScroll.Value)
+        End Using
+    End Sub
+
+    <Fact>
+    Public Sub ThumbDrag_ReleaseSnapsDownWhenNearerTheLowerEdge()
+        Using dv = WideGrid()
+            dv.ScrollByColumn = True
+            dv.BeginHorizontalThumbDrag()
+            dv.hScroll.Value = 130                        ' mai aproape de 100 decât de 200
+            dv.EndHorizontalThumbDrag()
+            Assert.Equal(100, dv.hScroll.Value)          ' „nearest”, nu direcțional
+        End Using
+    End Sub
+
+    <Fact>
+    Public Sub ThumbDrag_WhenScrollByColumnOff_LeavesValueAlone()
+        Using dv = WideGrid()
+            dv.BeginHorizontalThumbDrag()
+            dv.hScroll.Value = 130
+            dv.EndHorizontalThumbDrag()
+            Assert.Equal(130, dv.hScroll.Value)          ' fără aliniere când e dezactivat
+        End Using
+    End Sub
+
+    <Fact>
+    Public Sub AfterThumbRelease_ArrowsStillStepDirectionally()
+        Using dv = WideGrid()
+            dv.ScrollByColumn = True
+            dv.BeginHorizontalThumbDrag()
+            dv.hScroll.Value = 175
+            dv.EndHorizontalThumbDrag()
+            Assert.Equal(200, dv.hScroll.Value)          ' așezat pe 200
+
+            ' O „săgeată” (pas mic prin ValueChanged) tot avansează o coloană întreagă.
+            dv.hScroll.Value = 200 + dv.hScroll.SmallChange
+            Assert.Equal(300, dv.hScroll.Value)
+        End Using
+    End Sub
+
 End Class

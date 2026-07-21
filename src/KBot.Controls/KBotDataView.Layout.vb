@@ -31,6 +31,8 @@ Partial Class KBotDataView
     Private _scrollByColumn As Boolean = False
     Private _lastHScrollValue As Integer = 0
     Private _snappingHScroll As Boolean = False
+    ' Cât timp operatorul TRAGE thumb-ul: derulare liberă, aliniere abia la eliberare.
+    Private _hThumbTracking As Boolean = False
 
     ' ── Recalcul coloane ────────────────────────────────────────────────────────
 
@@ -118,11 +120,46 @@ Partial Class KBotDataView
     Private Sub WireScrollBars()
         AddHandler vScroll.ValueChanged, AddressOf OnScrollValueChanged
         AddHandler hScroll.ValueChanged, AddressOf OnScrollValueChanged
+        AddHandler hScroll.Scroll, AddressOf OnHScrollBarScroll
+    End Sub
+
+    ' Evenimentul Scroll spune CUM se derulează (thumb-track vs. săgeți/șină/eliberare) —
+    ' informație pe care ValueChanged n-o are. Cât timp se TRAGE thumb-ul, derulăm liber
+    ' (pixel cu pixel), altfel alinierea ar smuci thumb-ul înapoi la fiecare mișcare a
+    ' mouse-ului. Alinierea se face DOAR la eliberare (EndScroll), la marginea cea mai
+    ' apropiată. Săgețile/șina/rotița trec prin ValueChanged (aliniere direcțională) ca înainte.
+    Private Sub OnHScrollBarScroll(sender As Object, e As ScrollEventArgs)
+        Try
+            If e.Type = ScrollEventType.ThumbTrack Then
+                _hThumbTracking = True
+            ElseIf e.Type = ScrollEventType.EndScroll Then
+                EndHorizontalThumbDrag()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.OnHScrollBarScroll", ex)
+        End Try
+    End Sub
+
+    ' Încheie tragerea thumb-ului: aliniere la marginea cea mai APROPIATĂ (la eliberare
+    ' „cea mai apropiată” e intuitiv; la săgeți/rotiță e direcțional — vezi SnappedHValue).
+    ''' <summary>Friend: testele nu pot ridica evenimentul Scroll fără buclă de mesaje.</summary>
+    Friend Sub EndHorizontalThumbDrag()
+        _hThumbTracking = False
+        If Not _scrollByColumn OrElse _snappingHScroll Then Return
+        If Not hScroll.Visible OrElse _scrollLayout.Count = 0 Then Return
+        ApplySnappedHValue(NearestColumnStart(hScroll.Value))
+        _lastHScrollValue = hScroll.Value
+    End Sub
+
+    ''' <summary>Friend: pornește o tragere de thumb simulată (doar pentru teste).</summary>
+    Friend Sub BeginHorizontalThumbDrag()
+        _hThumbTracking = True
     End Sub
 
     Private Sub OnScrollValueChanged(sender As Object, e As EventArgs)
         Try
             ' Aliniere la margini de coloană (dacă ScrollByColumn e activ) ÎNAINTE de a picta.
+            ' Se SARE cât timp se trage thumb-ul (derulare liberă, aliniere abia la eliberare).
             If ReferenceEquals(sender, hScroll) Then
                 SnapHScrollToColumn()
                 _lastHScrollValue = hScroll.Value
@@ -163,31 +200,56 @@ Partial Class KBotDataView
     ' Aliniază hScroll.Value la o margine de coloană, în DIRECȚIA mișcării: la creștere urcă
     ' la marginea următoare, la scădere coboară la cea precedentă. Așa un pas mic (o săgeată,
     ' o rotiță) tot avansează o coloană întreagă, nu se lipește de aceeași margine.
+    ' Se SARE cât timp se trage thumb-ul — atunci derularea e liberă, alinierea vine la EndScroll.
     Private Sub SnapHScrollToColumn()
-        If Not _scrollByColumn OrElse _snappingHScroll Then Return
+        If Not _scrollByColumn OrElse _snappingHScroll OrElse _hThumbTracking Then Return
         If Not hScroll.Visible OrElse _scrollLayout.Count = 0 Then Return
-
-        Dim snapped As Integer = SnappedHValue(hScroll.Value)
-        If snapped <> hScroll.Value Then
-            _snappingHScroll = True
-            Try
-                hScroll.Value = snapped
-            Finally
-                _snappingHScroll = False
-            End Try
-        End If
+        ApplySnappedHValue(SnappedHValue(hScroll.Value))
     End Sub
 
-    ' Valoarea aliniată pentru un offset brut, ținând cont de direcție și de maximul util.
+    ' Scrie valoarea aliniată în bară, cu gardă de reintrare (setarea re-ridică ValueChanged).
+    Private Sub ApplySnappedHValue(snapped As Integer)
+        If snapped = hScroll.Value Then Return
+        _snappingHScroll = True
+        Try
+            hScroll.Value = snapped
+        Finally
+            _snappingHScroll = False
+        End Try
+    End Sub
+
+    ' Maximul util al barei orizontale (semantica WinForms: Maximum − LargeChange + 1).
+    Private Function HScrollMaxValue() As Integer
+        Return Math.Max(0, hScroll.Maximum - hScroll.LargeChange + 1)
+    End Function
+
+    ' Valoarea aliniată DIRECȚIONAL (săgeți/rotiță/pas mic): ceil la creștere, floor la scădere.
     Private Function SnappedHValue(rawValue As Integer) As Integer
-        Dim maxValue As Integer = Math.Max(0, hScroll.Maximum - hScroll.LargeChange + 1)
         Dim target As Integer
         If rawValue >= _lastHScrollValue Then
             target = CeilToColumnStart(rawValue)     ' creștere => marginea următoare
         Else
             target = FloorToColumnStart(rawValue)    ' scădere => marginea precedentă
         End If
-        Return Math.Max(0, Math.Min(target, maxValue))
+        Return Math.Max(0, Math.Min(target, HScrollMaxValue()))
+    End Function
+
+    ' Marginea de coloană cea mai APROPIATĂ de offset (folosită la eliberarea thumb-ului).
+    ' Capătul (maximul util) e și el o poziție validă de așezare pentru ultimele coloane.
+    Private Function NearestColumnStart(rawValue As Integer) As Integer
+        Dim maxValue As Integer = HScrollMaxValue()
+        Dim best As Integer = 0
+        Dim bestDist As Integer = Math.Abs(rawValue)             ' candidatul 0
+        For Each cl In _scrollLayout
+            If cl.X > maxValue Then Continue For
+            Dim d As Integer = Math.Abs(cl.X - rawValue)
+            If d < bestDist Then
+                bestDist = d
+                best = cl.X
+            End If
+        Next
+        If Math.Abs(maxValue - rawValue) < bestDist Then best = maxValue
+        Return best
     End Function
 
     ' Cea mai mică margine de coloană (start în banda derulată) >= v. Dincolo de ultima
