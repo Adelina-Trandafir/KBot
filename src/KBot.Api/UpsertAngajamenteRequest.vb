@@ -116,3 +116,28 @@ Public NotInheritable Class GetSumarRow
     Public Property total_revizii As Double
     Public Property total_ordonantari As Double
 End Class
+
+' Wire DTOs for GET /api/forexe/rezervari (vederea Rezervari, slice 0014).
+' Property names ARE the JSON keys (PropertyNamingPolicy=Nothing) — snake_case verbatim,
+' matching routes/forexe/rezervari.py exactly. ApiClient maps them onto the RezervareRow
+' POCOs so the snake_case stops at the wire boundary. No header block: unlike Sumar,
+' Rezervari is a flat list of rows (the client shapes tree + grid from it).
+Public NotInheritable Class GetRezervariResponse
+    Public Property rows As New List(Of GetRezervareRow)()
+End Class
+
+Public NotInheritable Class GetRezervareRow
+    Public Property idrz As Integer
+    Public Property cod_indicator As String
+    Public Property clsf As String
+    Public Property denumire As String
+    Public Property data_rezervare As Date?
+    Public Property r_credit_bug As Double
+    Public Property r_initiala As Double
+    Public Property r_valoare As Double
+    Public Property r_definitiva As Double
+    Public Property e_initiala As Boolean
+    Public Property e_marire As Boolean
+    Public Property e_micsorare As Boolean
+    Public Property are_ddf As Boolean
+End Class

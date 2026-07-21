@@ -1,5 +1,14 @@
-﻿Imports System.Linq
+﻿Imports System.ComponentModel
+Imports System.Linq
 
+''' <summary>
+''' Arbore owner-drawn (nelegat de date). Din slice 0015 e și un control de TRUSĂ: se poate
+''' trage din Toolbox pe un formular și configura din grila de proprietăți (vezi atributele
+''' <see cref="CategoryAttribute"/>/<see cref="DescriptionAttribute"/> din partiala
+''' <c>.Properties</c>). NU e tematizat automat — shell-ul îi împinge culorile prin proprietăți.
+''' </summary>
+<ToolboxItem(True)>
+<DefaultProperty("HeaderCaption")>
 Partial Public Class AdvancedTreeControl
     Inherits ScrollableControl
 
@@ -65,6 +74,8 @@ Partial Public Class AdvancedTreeControl
     End Function
 
     ' Proprietate publică - folosită de Tree.vb pentru whitelist în MonitorTimer
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Property TooltipPopupHandle As IntPtr
         Get
             If pTooltipPopup IsNot Nothing AndAlso Not pTooltipPopup.IsDisposed AndAlso pTooltipPopup.Visible Then
@@ -174,8 +185,15 @@ Partial Public Class AdvancedTreeControl
 
         ClickDelayTimer.Interval = 50
 
-        pTooltipPopup = New TooltipPopup()
-        Dim _forceHandle = pTooltipPopup.Handle
+        ' La design-time NU creăm popup-ul de tooltip: e un Form real și forțarea handle-ului
+        ' ar deschide/scurge ferestre în designerul Visual Studio. Se creează leneș la runtime
+        ' (prima afișare din TooltipTimerTick face fallback dacă e Nothing/Disposed). Toate
+        ' căile care-l ating verifică deja `IsNot Nothing`, iar timerul de tooltip nu pornește
+        ' niciodată în designer (fără hover real).
+        If LicenseManager.UsageMode <> LicenseUsageMode.Designtime Then
+            pTooltipPopup = New TooltipPopup()
+            Dim _forceHandle = pTooltipPopup.Handle
+        End If
 
     End Sub
 

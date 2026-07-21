@@ -212,19 +212,51 @@ Public NotInheritable Class DataViewPlaygroundForm
 
     Private Sub LoadColumnInspector()
         Dim col = SelectedColumn()
-        If col Is Nothing Then Return
-        _loading = True
-        Try
-            chkColVisible.Checked = col.Visible
-            chkColEnabled.Checked = col.Enabled
-            chkColReadOnly.Checked = col.[ReadOnly]
-            SetNum(numColWidth, col.Width)
-            SetNum(numColMin, col.MinWidth)
-            ' MaxWidth = Integer.MaxValue (sau peste raza numericului) => 0 «neplafonat».
-            SetNum(numColMax, If(col.MaxWidth > CInt(numColMax.Maximum), 0, col.MaxWidth))
-        Finally
-            _loading = False
-        End Try
+        If col IsNot Nothing Then
+            _loading = True
+            Try
+                chkColVisible.Checked = col.Visible
+                chkColEnabled.Checked = col.Enabled
+                chkColReadOnly.Checked = col.[ReadOnly]
+                SetNum(numColWidth, col.Width)
+                SetNum(numColMin, col.MinWidth)
+                ' MaxWidth = Integer.MaxValue (sau peste raza numericului) => 0 «neplafonat».
+                SetNum(numColMax, If(col.MaxWidth > CInt(numColMax.Maximum), 0, col.MaxWidth))
+            Finally
+                _loading = False
+            End Try
+        End If
+        UpdateDependentControls()
+    End Sub
+
+    ' Activează/dezactivează controalele care NU au efect în starea curentă, ca panoul să
+    ' reflecte DOAR combinațiile valide (ex. eșantionul contează doar la ToContent).
+    Private Sub UpdateDependentControls()
+        Dim toContent As Boolean = (grid.AutoSizeColumnsMode = KBotAutoSizeMode.ToContent)
+        Dim hasFill As Boolean = (grid.ColumnFillMode <> KBotFillMode.None)
+
+        ' Eșantionarea alimentează DOAR trecerea de măsurare la conținut.
+        lblSample.Enabled = toContent
+        numSample.Enabled = toContent
+
+        ' Înălțimea antetului n-are efect dacă antetul e ascuns.
+        lblHeaderH.Enabled = grid.ShowHeader
+        numHeaderH.Enabled = grid.ShowHeader
+
+        ' AutoSizeColumns() e no-op în modul pur manual (None + None fără umplere).
+        btnAutoSize.Enabled = toContent OrElse hasFill
+        ' ResetColumnSizing() (curăță UserSized => re-măsoară) contează doar la ToContent.
+        btnReset.Enabled = toContent
+
+        ' Lățimea manuală a coloanei e suprascrisă de măsurare => editabilă doar în modul None.
+        lblColWidth.Enabled = Not toContent
+        numColWidth.Enabled = Not toContent
+
+        ' ReadOnly are efect doar pe coloane editabile / comutabile (nu Button/ProgressBar).
+        Dim col = SelectedColumn()
+        chkColReadOnly.Enabled = col IsNot Nothing AndAlso
+            (col.ColumnType = KBotColumnType.Text OrElse col.ColumnType = KBotColumnType.Combo OrElse
+             col.ColumnType = KBotColumnType.CheckBox OrElse col.ColumnType = KBotColumnType.OptionButton)
     End Sub
 
     Private Sub ApplyColumn()
@@ -240,6 +272,7 @@ Public NotInheritable Class DataViewPlaygroundForm
             col.[ReadOnly] = chkColReadOnly.Checked
             grid.AutoSizeColumns()     ' modelul coloanei nu are back-reference => forțăm trecerea
             RefreshInfo()
+            UpdateDependentControls()  ' re-evaluează activările (fără a rescrie valorile în curs de editare)
         Catch ex As Exception
             GlobalErrorLog.Write("DataViewPlaygroundForm.ApplyColumn", ex)
         End Try
@@ -252,6 +285,9 @@ Public NotInheritable Class DataViewPlaygroundForm
         Try
             action()
             RefreshInfo()
+            ' O schimbare grid-wide poate re-măsura lățimile și schimba ce controale au sens:
+            ' reîncarcă inspectorul (valori) + re-evaluează activările.
+            LoadColumnInspector()
         Catch ex As Exception
             GlobalErrorLog.Write("DataViewPlaygroundForm.Apply", ex)
         End Try

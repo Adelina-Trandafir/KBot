@@ -52,6 +52,11 @@ Partial Class KBotDataView
         g.ResetClip()
 
         ' Banda înghețată — desenată PESTE cea derulată.
+        ' English: repaint the frozen header band opaquely first, so an H-scrolled header cell
+        ' can never bleed under the static column header (the frozen band is always on top).
+        If _frozenBandWidth > 0 Then
+            g.FillRectangle(_bHeaderBack, New Rectangle(0, 0, _frozenBandWidth, _headerHeight))
+        End If
         For Each cl In _frozenLayout
             DrawHeaderCell(g, cl.Column, cl.X, hf)
         Next
@@ -154,6 +159,21 @@ Partial Class KBotDataView
         Next
         g.Clip = previousClip
         previousClip.Dispose()
+
+        ' English: repaint the frozen band opaquely before its cells, so an H-scrolled scroll
+        ' cell can never bleed under the static column — the frozen column is always on top,
+        ' regardless of the scroll-band clip above. Uses the row background (custom per-cell
+        ' backgrounds on frozen cells are re-applied inside DrawCell below).
+        If _frozenBandWidth > 0 Then
+            Dim frozenRect As New Rectangle(0, y, _frozenBandWidth, _rowHeight)
+            If backColor = backBrush.Color Then
+                g.FillRectangle(backBrush, frozenRect)
+            Else
+                Using b As New SolidBrush(backColor)
+                    g.FillRectangle(b, frozenRect)
+                End Using
+            End If
+        End If
 
         For Each cl In _frozenLayout
             DrawCell(g, cl.Column, row, rowIndex,

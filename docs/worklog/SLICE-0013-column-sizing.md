@@ -118,6 +118,14 @@ rămâne activ** (e acțiune pură, fără valoare/dirty). 4 teste noi în `KBot
 (97 în `KBot.Controls.Tests`). Butonul de comandă ERA deja clicabil (ridica `ButtonClick`) — lipsea
 doar feedback-ul în playground; s-a adăugat un handler care scrie în info + log.
 
+**Al doilea bug de pictare (frozen column):** la derulare orizontală, conținutul benzii derulate
+«răzbătea» sub coloana înghețată — celulele înghețate se desenau PESTE cea derulată, dar doar
+TEXTUL (fără fundal opac), deci textul derulat rămas se vedea printre glife. Fix în
+`KBotDataView.Painting.vb`: banda înghețată (antet + fiecare rând) e re-pictată OPAC imediat
+înainte de celulele ei, garantând că coloana statică e mereu deasupra. 2 teste noi
+(`KBotDataViewFrozenColumnTests.vb`, 99 în total) — verifică headless că nicio culoare a benzii
+derulate nu apare în banda înghețată după `hScroll`.
+
 ## Rămas / în afara scopului
 
 - Override per-coloană de `AutoSizeMode`, auto-dimensionarea rândurilor, word-wrap în celulă,

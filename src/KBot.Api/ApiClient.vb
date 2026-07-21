@@ -272,6 +272,61 @@ Public Class ApiClient
         End Try
     End Function
 
+    ' Rezervarile unui angajament (slice 0014), pentru RezervariView. Un singur parametru:
+    ' cod = CodAngajament, escapat in query string. NU se trimite baza (o citeste
+    ' serverul din sesiune). Un cod fara rezervari intoarce 200 cu rows [], deci aici
+    ' rezulta un RezervariInfo gol, nu o exceptie. Hard-fail (Throw ApiException) pe
+    ' non-2xx; un 401 curge spre WithReauth.
+    Public Async Function GetRezervariAsync(cod As String, ct As CancellationToken) _
+        As Task(Of RezervariInfo) Implements IApiClient.GetRezervariAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim url As String = $"/api/forexe/rezervari?cod={Uri.EscapeDataString(cod)}"
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea rezervărilor angajamentului", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As GetRezervariResponse = JsonSerializer.Deserialize(Of GetRezervariResponse)(respText, _json)
+                    Dim result As New RezervariInfo()
+                    If payload Is Nothing OrElse payload.rows Is Nothing Then Return result
+
+                    For Each r As GetRezervareRow In payload.rows
+                        result.Rows.Add(New RezervareRow() With {
+                            .Idrz = r.idrz,
+                            .CodIndicator = If(r.cod_indicator, String.Empty),
+                            .Clsf = If(r.clsf, String.Empty),
+                            .Denumire = If(r.denumire, String.Empty),
+                            .DataRezervare = If(r.data_rezervare.HasValue, r.data_rezervare.Value, Date.MinValue),
+                            .RCreditBug = r.r_credit_bug,
+                            .RInitiala = r.r_initiala,
+                            .RValoare = r.r_valoare,
+                            .RDefinitiva = r.r_definitiva,
+                            .EInitiala = r.e_initiala,
+                            .EMarire = r.e_marire,
+                            .EMicsorare = r.e_micsorare,
+                            .AreDDF = r.are_ddf
+                        })
+                    Next
+                    Return result
+                End Using
+            End Using
+        Catch ex As ApiException
+            ' 401/HTTP tipat, tratat de apelant (WithReauth) — nu logăm.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetRezervariAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ' Conversie Excel -> JSON pe server. FOREXE nu mai face HTTP direct: umple un
     ' ExcelJob și îl dă aici, unde stau adresa, token-ul bearer și POST-ul. Un singur
     ' apel, fără retry (upload base64 mare; reîncercarea e scumpă). Non-2xx -> ApiException

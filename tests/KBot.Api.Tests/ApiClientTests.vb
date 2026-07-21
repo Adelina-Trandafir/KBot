@@ -420,4 +420,120 @@ Public Class ApiClientTests
         Assert.Equal("Sesiune necunoscută. Autentificați-vă din nou.", ex.Message)
     End Function
 
+    ' --- GetRezervariAsync (slice 0014): vederea Rezervări. Contract de fir snake_case
+    ' (ca /sumar), listă plată de rânduri (fără antet). Testele acoperă forma URL-ului,
+    ' maparea wire -> POCO, tipul derivat și cazul „gol”. ---
+
+    Private Const RezervariTwoRows As String =
+        "{""rows"":[" &
+        "{""idrz"":960001,""cod_indicator"":""IND-A"",""clsf"":""65.02.04.02.20.01.03""," &
+        """denumire"":""Cheltuieli"",""data_rezervare"":""2026-01-17""," &
+        """r_credit_bug"":112100.0,""r_initiala"":3065.12,""r_valoare"":3065.12," &
+        """r_definitiva"":0.0,""e_initiala"":true,""e_marire"":false," &
+        """e_micsorare"":false,""are_ddf"":false}," &
+        "{""idrz"":960003,""cod_indicator"":""IND-A"",""clsf"":null,""denumire"":null," &
+        """data_rezervare"":""2026-02-07"",""r_credit_bug"":112100.0,""r_initiala"":6704.55," &
+        """r_valoare"":-23.0,""r_definitiva"":0.0,""e_initiala"":false,""e_marire"":false," &
+        """e_micsorare"":true,""are_ddf"":true}]}"
+
+    <Fact>
+    Public Async Function GetRezervari_BuildsUrl_SendsBearer_EscapesCod() As Task
+        Dim h As New StubHandler With {.ResponseBody = RezervariTwoRows}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await client.GetRezervariAsync("A 100", CancellationToken.None)
+
+        Assert.Equal(HttpMethod.Get, h.LastMethod)
+        Assert.Equal("/api/forexe/rezervari", h.LastRequestUri.AbsolutePath)
+        Assert.Contains("cod=A%20100", h.LastRequestUri.Query)
+        Assert.DoesNotContain("ss=", h.LastRequestUri.Query)
+        Assert.Equal("Bearer tok-opaque-123", h.LastAuthorization)
+    End Function
+
+    <Fact>
+    Public Async Function GetRezervari_BlankCod_ThrowsBeforeAnyRequest() As Task
+        Dim h As New StubHandler With {.ResponseBody = RezervariTwoRows}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await Assert.ThrowsAsync(Of ArgumentException)(
+            Async Function() Await client.GetRezervariAsync("   ", CancellationToken.None))
+        Assert.Null(h.LastRequestUri)      ' nu s-a trimis nimic pe fir
+    End Function
+
+    <Fact>
+    Public Async Function GetRezervari_Deserializes_RowsAndDerivedType() As Task
+        Dim h As New StubHandler With {.ResponseBody = RezervariTwoRows}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetRezervariAsync("A100", CancellationToken.None)
+
+        Assert.Equal(2, data.Rows.Count)
+        Dim first = data.Rows(0)
+        Assert.Equal(960001, first.Idrz)
+        Assert.Equal("IND-A", first.CodIndicator)
+        Assert.Equal("65.02.04.02.20.01.03", first.Clsf)
+        Assert.Equal("Cheltuieli", first.Denumire)
+        Assert.Equal(New Date(2026, 1, 17), first.DataRezervare)
+        Assert.Equal(112100.0, first.RCreditBug)
+        Assert.Equal(3065.12, first.RInitiala)
+        Assert.Equal(3065.12, first.RValoare)
+        Assert.True(first.EInitiala)
+        Assert.False(first.AreDDF)
+        ' Tip derivat + valoarea afișată a operației (= R_Initiala pentru inițială).
+        Assert.Equal(RezervareTip.Initiala, first.Tip)
+        Assert.Equal(3065.12, first.ValoareOperatie)
+
+        Dim second = data.Rows(1)
+        Assert.Equal(RezervareTip.Micsorare, second.Tip)
+        Assert.Equal(-23.0, second.RValoare)
+        Assert.Equal(-23.0, second.ValoareOperatie)   ' non-inițială -> R_Valoare
+        Assert.True(second.AreDDF)
+    End Function
+
+    <Fact>
+    Public Async Function GetRezervari_NullTextFields_BecomeEmptyStrings() As Task
+        ' clsf/denumire null pentru o rezervare al cărei indicator nu are clasificație
+        ' (ramura LEFT JOIN). Rândul TREBUIE să existe, iar textele null -> String.Empty.
+        Dim h As New StubHandler With {.ResponseBody = RezervariTwoRows}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetRezervariAsync("A100", CancellationToken.None)
+
+        Assert.Equal(String.Empty, data.Rows(1).Clsf)
+        Assert.Equal(String.Empty, data.Rows(1).Denumire)
+    End Function
+
+    <Fact>
+    Public Async Function GetRezervari_EmptyRows_IsEmptyNotException() As Task
+        ' Un angajament fără rezervări e legitim: serverul dă 200 cu rows []. Clientul
+        ' trebuie să întoarcă un RezervariInfo gol, NU să arunce.
+        Dim h As New StubHandler With {.ResponseBody = "{""rows"":[]}"}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetRezervariAsync("NUEXISTA", CancellationToken.None)
+
+        Assert.NotNull(data)
+        Assert.Empty(data.Rows)
+    End Function
+
+    <Fact>
+    Public Async Function GetRezervari_Non2xx_ParsesRomanianErrorAndReason() As Task
+        Dim h As New StubHandler With {
+            .Status = HttpStatusCode.Unauthorized,
+            .ResponseBody = "{""error"":""Sesiune necunoscută. Autentificați-vă din nou."",""reason"":""TOKEN_UNKNOWN""}"
+        }
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
+            Async Function() Await client.GetRezervariAsync("A100", CancellationToken.None))
+        Assert.Equal(401, ex.StatusCode.Value)
+        Assert.Equal("TOKEN_UNKNOWN", ex.Reason)
+    End Function
+
 End Class

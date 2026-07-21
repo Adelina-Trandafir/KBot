@@ -1,4 +1,8 @@
-﻿Partial Public Class AdvancedTreeControl
+Imports System.ComponentModel
+
+Partial Public Class AdvancedTreeControl
+    ' Categorii pentru grila de proprietăți (design-time). Ținute ca literale pentru că
+    ' atributele VB cer expresii constante.
     Public Enum TreeCheckState
         Unchecked = 0       ' Nebifat
         Checked = 1         ' Bifat complet
@@ -8,6 +12,8 @@
     Public treeID As String
 
     ' Nodes
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Items As New List(Of TreeItem)
 
     Public RaiseLeftClickOnRightClick As Boolean = True
@@ -18,6 +24,8 @@
 
     Private m_TreeFont As Font = New Font("Consolas", 9)
 
+    <Category("K-BOT Arbore")>
+    <Description("Fontul folosit la desenarea nodurilor.")>
     Public Property TreeFont As Font
         Get
             Return m_TreeFont
@@ -30,7 +38,11 @@
         End Set
     End Property
 
+    ' FontName/FontSize sunt accesori de conveniență peste TreeFont (îl mută). Ascunse din
+    ' grilă ca să nu dubleze editorul de Font — folosește TreeFont în designer.
     Private m_FontName As String = "Consolas"
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Property FontName As String
         Get
             Return m_FontName
@@ -43,6 +55,8 @@
     End Property
 
     Private m_FontSize As Single = 9
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Property FontSize As Single
         Get
             Return m_FontSize
@@ -55,6 +69,9 @@
     End Property
 
     Private m_ExpanderSize As Integer = 12
+    <Category("K-BOT Arbore")>
+    <Description("Latura (px) a butonului de expandare +/-.")>
+    <DefaultValue(12)>
     Public Property ExpanderSize As Integer
         Get
             Return m_ExpanderSize
@@ -66,6 +83,9 @@
     End Property
 
     Private m_Indent As Integer = 10
+    <Category("K-BOT Arbore")>
+    <Description("Indentarea (px) pe nivel de adâncime.")>
+    <DefaultValue(10)>
     Public Property Indent As Integer
         Get
             Return m_Indent
@@ -77,6 +97,9 @@
     End Property
 
     Private _checkBoxSize As Integer = 16
+    <Category("K-BOT Arbore")>
+    <Description("Latura (px) a checkbox-ului/radio-ului de nod.")>
+    <DefaultValue(16)>
     Public Property CheckBoxSize As Integer
         Get
             Return _checkBoxSize
@@ -90,6 +113,9 @@
     ' Înălțimea rândului (calculată automat sau setată manual)
     Private _autoHeight As Boolean = False
     Private _itemHeight As Integer = 22
+    <Category("K-BOT Arbore")>
+    <Description("Înălțimea (px) a unui rând de nod.")>
+    <DefaultValue(22)>
     Public Property ItemHeight As Integer
         Get
             Return _itemHeight
@@ -103,6 +129,8 @@
 
     ' Iconițe - Setarea lor declanșează recalcularea înălțimii rândului
     Private _leftIconSize As New Size(18, 18)
+    <Category("K-BOT Arbore")>
+    <Description("Dimensiunea iconiței din stânga nodului.")>
     Public Property LeftIconSize As Size
         Get
             Return _leftIconSize
@@ -114,6 +142,8 @@
     End Property
 
     Private _rightIconSize As New Size(18, 18)
+    <Category("K-BOT Arbore")>
+    <Description("Dimensiunea iconiței din dreapta nodului.")>
     Public Property RightIconSize As Size
         Get
             Return _rightIconSize
@@ -125,6 +155,9 @@
     End Property
 
     Private _rightIconRightPadding As Integer = 6
+    <Category("K-BOT Arbore")>
+    <Description("Marginea (px) dintre iconița din dreapta și bordura controlului.")>
+    <DefaultValue(6)>
     Public Property RightIconRightPadding As Integer
         Get
             Return _rightIconRightPadding
@@ -141,6 +174,9 @@
     ' Se rezervă spațiu chiar dacă iconița e hover-only: locul e fix, deci coloanele nu
     ' „sar" la hover — la fel ca rezervarea de caption din DrawContent.
     Private _reserveRightIconSpace As Boolean = False
+    <Category("K-BOT Arbore")>
+    <Description("Rezervă spațiul iconiței din dreapta ca banda de coloane să nu se suprapună peste ea.")>
+    <DefaultValue(False)>
     Public Property ReserveRightIconSpace As Boolean
         Get
             Return _reserveRightIconSpace
@@ -157,6 +193,9 @@
     End Function
 
     Private _RootExpander As Boolean = True
+    <Category("K-BOT Arbore")>
+    <Description("Afișează expanderul pe nodurile rădăcină (Level 0).")>
+    <DefaultValue(True)>
     Public Property RootExpander As Boolean
         Get
             Return _RootExpander
@@ -168,6 +207,9 @@
     End Property
 
     Private _rightClickFunc As String = ""
+    <Category("K-BOT Arbore")>
+    <Description("Numele funcției VBA apelate la click-dreapta (integrare FOREXE).")>
+    <DefaultValue("")>
     Public Property RightClickFunction As String
         Get
             Return _rightClickFunc
@@ -178,6 +220,8 @@
         End Set
     End Property
 
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Property SelectedNode As TreeItem
         Get
             Return pSelectedItem
@@ -192,6 +236,9 @@
     End Property
 
     Private _checkBoxes As Boolean = False
+    <Category("K-BOT Arbore")>
+    <Description("Activează checkbox-urile de nod (mod normal, fără radio).")>
+    <DefaultValue(False)>
     Public Property CheckBoxes As Boolean
         Get
             Return _checkBoxes
@@ -203,6 +250,9 @@
     End Property
 
     Private _hasNodeIcons As Boolean = True
+    <Category("K-BOT Arbore")>
+    <Description("Desenează iconițele de nod (stânga).")>
+    <DefaultValue(True)>
     Public Property HasNodeIcons As Boolean
         Get
             Return _hasNodeIcons
@@ -214,6 +264,9 @@
     End Property
 
     Private _isPopupTree As Boolean = False
+    <Category("K-BOT Arbore")>
+    <Description("Arborele rulează ca popup (nu ridică dublu-click de nod).")>
+    <DefaultValue(False)>
     Public Property IsPopupTree As Boolean
         Get
             Return _isPopupTree
@@ -225,6 +278,9 @@
     End Property
 
     Private _popupGraceMs As Integer = 1500
+    <Category("K-BOT Arbore")>
+    <Description("Timpul de grație (ms) înainte de închiderea automată a popup-ului.")>
+    <DefaultValue(1500)>
     Public Property PopupGraceMs() As Integer
         Get
             Return _popupGraceMs
@@ -235,6 +291,9 @@
     End Property
 
     Private _radioButtonLevel As Integer = -1  ' -1 = dezactivat
+    <Category("K-BOT Arbore")>
+    <Description("Nivelul care primește butoane radio; -1 = dezactivat.")>
+    <DefaultValue(-1)>
     Public Property RadioButtonLevel As Integer
         Get
             Return _radioButtonLevel
@@ -246,6 +305,8 @@
     End Property
 
     Private m_BorderColor As Color = Color.Transparent
+    <Category("K-BOT Arbore - Culori")>
+    <Description("Culoarea bordurii controlului; Transparent = fără bordură.")>
     Public Property BorderColor As Color
         Get
             Return m_BorderColor
@@ -257,6 +318,8 @@
     End Property
 
     Private m_HoverBackColor As Color = Color.FromArgb(230, 240, 255)
+    <Category("K-BOT Arbore - Culori")>
+    <Description("Fundalul rândului la hover.")>
     Public Property HoverBackColor As Color
         Get
             Return m_HoverBackColor
@@ -268,6 +331,8 @@
     End Property
 
     Private m_SelectedBackColor As Color = Color.FromArgb(200, 220, 255)
+    <Category("K-BOT Arbore - Culori")>
+    <Description("Fundalul rândului selectat.")>
     Public Property SelectedBackColor As Color
         Get
             Return m_SelectedBackColor
@@ -279,6 +344,8 @@
     End Property
 
     Private m_SelectedBorderColor As Color = Color.FromArgb(150, 180, 255)
+    <Category("K-BOT Arbore - Culori")>
+    <Description("Bordura rândului selectat.")>
     Public Property SelectedBorderColor As Color
         Get
             Return m_SelectedBorderColor
@@ -290,6 +357,8 @@
     End Property
 
     Private m_LineColor As Color = Color.FromArgb(160, 160, 160)
+    <Category("K-BOT Arbore - Culori")>
+    <Description("Culoarea liniilor punctate ale arborelui.")>
     Public Property LineColor As Color
         Get
             Return m_LineColor
@@ -301,6 +370,9 @@
     End Property
 
     Private _tooltipDelayMs As Integer = 600
+    <Category("K-BOT Arbore - Tooltip")>
+    <Description("Întârzierea (ms) până la apariția tooltip-ului.")>
+    <DefaultValue(600)>
     Public Property TooltipDelayMs As Integer
         Get
             Return _tooltipDelayMs
@@ -312,6 +384,9 @@
     End Property
 
     Private m_leftTextWidth As Integer = 0
+    <Category("K-BOT Arbore")>
+    <Description("Lățime fixă (px) rezervată textului din stânga caption; 0 = dinamic.")>
+    <DefaultValue(0)>
     Public Property LeftTextWidth As Integer
         Get
             Return m_leftTextWidth
@@ -325,6 +400,9 @@
     ' Lățime fixă rezervată pentru textul drept din caption cu separator ~~~
     ' 0 = nelimitat (dinamic)
     Private m_rightTextWidth As Integer = 0
+    <Category("K-BOT Arbore")>
+    <Description("Lățime fixă (px) rezervată textului din dreapta caption (separator ~~~); 0 = dinamic.")>
+    <DefaultValue(0)>
     Public Property RightTextWidth As Integer
         Get
             Return m_rightTextWidth
@@ -334,6 +412,9 @@
             Me.Invalidate()
         End Set
     End Property
+
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Property OldSelectedNode As TreeItem
         Get
             Return pOldSelectedItem
@@ -344,6 +425,9 @@
     ' Spațiul din dreapta e rezervat întotdeauna (textul nu sare la hover).
     ' Per-nod: TreeItem.ShowRightIconOnHover suprascrie globalul DOAR pentru nodul respectiv.
     Private _showRightIconOnHover As Boolean = False
+    <Category("K-BOT Arbore")>
+    <Description("Iconița din dreapta apare doar la hover pe nod (spațiul rămâne rezervat).")>
+    <DefaultValue(False)>
     Public Property ShowRightIconOnHover As Boolean
         Get
             Return _showRightIconOnHover
@@ -359,6 +443,9 @@
     ' ══════════════════════════════════════════════════
 
     Private _headerVisible As Boolean = False
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Afișează banda de antet deasupra arborelui.")>
+    <DefaultValue(False)>
     Public Property HeaderVisible As Boolean
         Get
             Return _headerVisible
@@ -370,6 +457,9 @@
     End Property
 
     Private _headerHeight As Integer = 32
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Înălțimea (px) benzii de antet.")>
+    <DefaultValue(32)>
     Public Property HeaderHeight As Integer
         Get
             Return _headerHeight
@@ -381,6 +471,9 @@
     End Property
 
     Private _headerCaption As String = ""
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Textul afișat în banda de antet.")>
+    <DefaultValue("")>
     Public Property HeaderCaption As String
         Get
             Return _headerCaption
@@ -396,6 +489,10 @@
     Private _headerRightIcon As Image = Nothing
     Private _headerSearchIcon As Image = Nothing
 
+    ' Imaginile REZOLVATE se setează în cod (din cache-ul de iconițe, la runtime). Ascunse din
+    ' grilă — la design-time se folosesc cheile *IconKey de mai jos.
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Property HeaderLeftIcon As Image
         Get
             Return _headerLeftIcon
@@ -404,6 +501,8 @@
             _headerLeftIcon = value : Me.Invalidate()
         End Set
     End Property
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Property HeaderRightIcon As Image
         Get
             Return _headerRightIcon
@@ -413,6 +512,8 @@
             Me.Invalidate()
         End Set
     End Property
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Property HeaderSearchIcon As Image
         Get
             Return _headerSearchIcon
@@ -428,6 +529,9 @@
     Private _headerRightIconKey As String = ""
     Private _headerSearchIconKey As String = ""
 
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Cheia iconiței din stânga antetului (rezolvată din cache-ul de iconițe).")>
+    <DefaultValue("")>
     Public Property HeaderLeftIconKey As String
         Get
             Return _headerLeftIconKey
@@ -436,6 +540,9 @@
             _headerLeftIconKey = value
         End Set
     End Property
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Cheia iconiței din dreapta antetului (rezolvată din cache-ul de iconițe).")>
+    <DefaultValue("")>
     Public Property HeaderRightIconKey As String
         Get
             Return _headerRightIconKey
@@ -444,6 +551,9 @@
             _headerRightIconKey = value
         End Set
     End Property
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Cheia iconiței de căutare din antet (rezolvată din cache-ul de iconițe).")>
+    <DefaultValue("")>
     Public Property HeaderSearchIconKey As String
         Get
             Return _headerSearchIconKey
@@ -454,6 +564,8 @@
     End Property
 
     Private _headerIconSize As New Size(16, 16)
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Dimensiunea iconițelor din antet.")>
     Public Property HeaderIconSize As Size
         Get
             Return _headerIconSize
@@ -464,6 +576,8 @@
     End Property
 
     Private _headerBackColor As Color = Color.FromArgb(222, 222, 222)
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Fundalul benzii de antet.")>
     Public Property HeaderBackColor As Color
         Get
             Return _headerBackColor
@@ -474,6 +588,8 @@
     End Property
 
     Private _headerForeColor As Color = Color.FromArgb(50, 50, 60)
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Culoarea textului din antet.")>
     Public Property HeaderForeColor As Color
         Get
             Return _headerForeColor
@@ -490,6 +606,9 @@
     Private _searchPropertiesConfigured As Boolean = False
 
     Private _searchShow As Boolean = False
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Permite deschiderea barei de căutare (din iconița de antet).")>
+    <DefaultValue(False)>
     Public Property SearchShow As Boolean
         Get
             Return _searchShow
@@ -500,6 +619,9 @@
     End Property
 
     Private _searchDefaultText As String = ""
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Textul placeholder din caseta de căutare.")>
+    <DefaultValue("")>
     Public Property SearchDefaultText As String
         Get
             Return _searchDefaultText
@@ -511,6 +633,9 @@
     End Property
 
     Private _searchType As En_Tree_SearchType = En_Tree_SearchType.SearchType_Contains
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Potrivire căutare: conține sau începe cu.")>
+    <DefaultValue(En_Tree_SearchType.SearchType_Contains)>
     Public Property SearchType As En_Tree_SearchType
         Get
             Return _searchType
@@ -522,6 +647,9 @@
     End Property
 
     Private _searchIn As En_Tree_SearchIn = En_Tree_SearchIn.SearchIn_Caption
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Unde se caută: caption, tag sau ambele.")>
+    <DefaultValue(En_Tree_SearchIn.SearchIn_Caption)>
     Public Property SearchIn As En_Tree_SearchIn
         Get
             Return _searchIn
@@ -533,6 +661,9 @@
     End Property
 
     Private _searchMode As En_Tree_SearchMode = En_Tree_SearchMode.SearchMode_Tree
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Modul de afișare a rezultatelor: arbore sau listă.")>
+    <DefaultValue(En_Tree_SearchMode.SearchMode_Tree)>
     Public Property SearchMode As En_Tree_SearchMode
         Get
             Return _searchMode
@@ -545,6 +676,8 @@
 
 
     Private _searchBackColor As Color = Color.FromArgb(222, 222, 222)
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Fundalul benzii de căutare.")>
     Public Property SearchBackColor As Color
         Get
             Return _searchBackColor
@@ -555,6 +688,8 @@
     End Property
 
     Private _searchBoxBackColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Fundalul casetei de căutare; Empty = fundalul controlului.")>
     Public Property SearchBoxBackColor As Color
         Get
             Return _searchBoxBackColor
@@ -569,6 +704,9 @@
     End Property
 
     Private _searchBarLabelText As String = "Cautare: "
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Eticheta afișată înaintea casetei de căutare.")>
+    <DefaultValue("Cautare: ")>
     Public Property SearchBarLabelText As String
         Get
             Return _searchBarLabelText
@@ -582,6 +720,8 @@
     End Property
 
     Private _searchBarLabelForeColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Culoarea etichetei de căutare; Empty = culoarea antetului.")>
     Public Property SearchBarLabelForeColor As Color
         Get
             Return _searchBarLabelForeColor
@@ -595,6 +735,9 @@
     End Property
 
     Private _searchBarLabelBold As Boolean = False
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Eticheta de căutare cu font aldin.")>
+    <DefaultValue(False)>
     Public Property SearchBarLabelBold As Boolean
         Get
             Return _searchBarLabelBold
@@ -608,6 +751,9 @@
     End Property
 
     Private _searchBarLabelItalic As Boolean = False
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Eticheta de căutare cu font cursiv.")>
+    <DefaultValue(False)>
     Public Property SearchBarLabelItalic As Boolean
         Get
             Return _searchBarLabelItalic
@@ -634,6 +780,9 @@
 
     ' ── Search TextBox font ───────────────────────────────────────────────────
     Private _searchBarFontName As String = "Calibri"
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Numele fontului din caseta de căutare.")>
+    <DefaultValue("Calibri")>
     Public Property SearchBarFontName As String
         Get
             Return _searchBarFontName
@@ -646,6 +795,8 @@
     End Property
 
     Private _searchBarFontSize As Single = 10
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Dimensiunea fontului din caseta de căutare.")>
     Public Property SearchBarFontSize As Single
         Get
             Return _searchBarFontSize
@@ -658,6 +809,9 @@
     End Property
 
     Private _searchClearButton As Boolean = False
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Afișează butonul de golire în caseta de căutare.")>
+    <DefaultValue(False)>
     Public Property SearchClearButton As Boolean
         Get
             Return _searchClearButton
@@ -668,6 +822,9 @@
     End Property
 
     Private _scrollBarTheme As En_ScrollBarTheme = En_ScrollBarTheme.Explorer
+    <Category("K-BOT Arbore")>
+    <Description("Tema barei de derulare verticale (Default/Explorer/DarkMode).")>
+    <DefaultValue(En_ScrollBarTheme.Explorer)>
     Public Property ScrollBarTheme As En_ScrollBarTheme
         Get
             Return _scrollBarTheme
@@ -679,6 +836,9 @@
     End Property
 
     Private _tooltipShow As Boolean = True
+    <Category("K-BOT Arbore - Tooltip")>
+    <Description("Activează tooltip-urile de nod.")>
+    <DefaultValue(True)>
     Public Property TooltipShow As Boolean
         Get
             Return _tooltipShow
@@ -689,6 +849,8 @@
     End Property
 
     Private _tooltipBackColor As Color = Color.FromArgb(255, 255, 232)
+    <Category("K-BOT Arbore - Tooltip")>
+    <Description("Fundalul tooltip-ului.")>
     Public Property TooltipBackColor As Color
         Get
             Return _tooltipBackColor
@@ -699,6 +861,8 @@
     End Property
 
     Private _tooltipForeColor As Color = Color.FromArgb(50, 50, 60)
+    <Category("K-BOT Arbore - Tooltip")>
+    <Description("Culoarea textului din tooltip.")>
     Public Property TooltipForeColor As Color
         Get
             Return _tooltipForeColor
@@ -713,6 +877,9 @@
     ' Dacă nodul nu are icon stânga → fallback la comportamentul normal (tot rândul).
     ' Subordonat lui TooltipShow: dacă TooltipShow = False, această setare e ignorată.
     Private _tooltipShowOnlyOnLeftIcon As Boolean = False
+    <Category("K-BOT Arbore - Tooltip")>
+    <Description("Tooltip-ul apare doar când cursorul e pe iconița din stânga a nodului.")>
+    <DefaultValue(False)>
     Public Property TooltipShowOnlyOnLeftIcon As Boolean
         Get
             Return _tooltipShowOnlyOnLeftIcon
@@ -723,6 +890,9 @@
     End Property
 
     Private _treeListViewEnabled As Boolean = False          ' master switch
+    <Category("K-BOT Arbore - Coloane")>
+    <Description("Comutatorul principal al modului TreeListView (coloane pe rânduri).")>
+    <DefaultValue(False)>
     Public Property TreeListView As Boolean
         Get
             Return _treeListViewEnabled
@@ -741,6 +911,9 @@
     End Property
 
     Private _dynamicColumns As Boolean = True               ' True = comportament actual (ColHeaderText per nod)
+    <Category("K-BOT Arbore - Coloane")>
+    <Description("True = coloane rezolvate per-nod din ColHeaderText; False = bandă statică pe ColumnsLevel.")>
+    <DefaultValue(True)>
     Public Property DynamicColumns As Boolean
         Get
             Return _dynamicColumns
@@ -752,6 +925,9 @@
     End Property
 
     Private _columnsLevel As Integer = -1                   ' DynamicColumns=False: nivelul care primeste coloane
+    <Category("K-BOT Arbore - Coloane")>
+    <Description("Nivelul care primește coloane când DynamicColumns=False; -1 = niciunul.")>
+    <DefaultValue(-1)>
     Public Property ColumnsLevel As Integer
         Get
             Return _columnsLevel
