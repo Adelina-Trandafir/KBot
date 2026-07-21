@@ -10,6 +10,7 @@ Partial Class DataViewHarnessForm
     Friend WithEvents btnClassic As System.Windows.Forms.Button
     Friend WithEvents btnDark As System.Windows.Forms.Button
     Friend WithEvents btnModern As System.Windows.Forms.Button
+    Friend WithEvents chkScrollByColumn As System.Windows.Forms.CheckBox
     Friend WithEvents lblInfo As System.Windows.Forms.Label
 
     Friend WithEvents grid As KBot.Controls.KBotDataView
@@ -24,6 +25,7 @@ Partial Class DataViewHarnessForm
         Me.btnClassic = New System.Windows.Forms.Button()
         Me.btnDark = New System.Windows.Forms.Button()
         Me.btnModern = New System.Windows.Forms.Button()
+        Me.chkScrollByColumn = New System.Windows.Forms.CheckBox()
         Me.lblInfo = New System.Windows.Forms.Label()
         Me.grid = New KBot.Controls.KBotDataView()
         Me.pnlButtons = New System.Windows.Forms.FlowLayoutPanel()
@@ -42,6 +44,7 @@ Partial Class DataViewHarnessForm
         Me.pnlTop.Controls.Add(Me.btnClassic)
         Me.pnlTop.Controls.Add(Me.btnDark)
         Me.pnlTop.Controls.Add(Me.btnModern)
+        Me.pnlTop.Controls.Add(Me.chkScrollByColumn)
         Me.pnlTop.Controls.Add(Me.lblInfo)
         Me.pnlTop.Name = "pnlTop"
         '
@@ -65,6 +68,14 @@ Partial Class DataViewHarnessForm
         Me.btnModern.Text = "Modern"
         Me.btnModern.UseVisualStyleBackColor = True
         Me.btnModern.Name = "btnModern"
+        '
+        'chkScrollByColumn — comutator ScrollByColumn
+        '
+        Me.chkScrollByColumn.AutoSize = True
+        Me.chkScrollByColumn.Margin = New System.Windows.Forms.Padding(12, 6, 3, 3)
+        Me.chkScrollByColumn.Text = "Derulare pe coloană"
+        Me.chkScrollByColumn.UseVisualStyleBackColor = True
+        Me.chkScrollByColumn.Name = "chkScrollByColumn"
         '
         'lblInfo
         '

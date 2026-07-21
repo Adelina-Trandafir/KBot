@@ -27,6 +27,11 @@ Partial Class KBotDataView
     ' Gardă de reintrare: schimbarea vizibilității barelor declanșează layout.
     Private _inLayout As Boolean = False
 
+    ' Derulare orizontală pe coloane (ScrollByColumn): starea de aliniere la margini.
+    Private _scrollByColumn As Boolean = False
+    Private _lastHScrollValue As Integer = 0
+    Private _snappingHScroll As Boolean = False
+
     ' ── Recalcul coloane ────────────────────────────────────────────────────────
 
     ''' <summary>
@@ -117,6 +122,12 @@ Partial Class KBotDataView
 
     Private Sub OnScrollValueChanged(sender As Object, e As EventArgs)
         Try
+            ' Aliniere la margini de coloană (dacă ScrollByColumn e activ) ÎNAINTE de a picta.
+            If ReferenceEquals(sender, hScroll) Then
+                SnapHScrollToColumn()
+                _lastHScrollValue = hScroll.Value
+            End If
+
             ' Derularea comite editarea deschisă: un editor real care plutește peste o celulă
             ' care tocmai a ieșit din fereastră ar rămâne agățat în aer.
             If _editing Then CommitEdit()
@@ -125,6 +136,77 @@ Partial Class KBotDataView
             GlobalErrorLog.Write("KBotDataView.OnScrollValueChanged", ex)
         End Try
     End Sub
+
+    ' ── Derulare orizontală pe coloane ──────────────────────────────────────────
+
+    ''' <summary>
+    ''' Când e True, derularea ORIZONTALĂ se aliniază la marginile coloanelor (o coloană
+    ''' întreagă odată), în loc să meargă pixel cu pixel. Nu atinge derularea verticală —
+    ''' aceea e deja „pe rând”, prin virtualizare.
+    ''' </summary>
+    Public Property ScrollByColumn As Boolean
+        Get
+            Return _scrollByColumn
+        End Get
+        Set(value As Boolean)
+            If _scrollByColumn = value Then Return
+            _scrollByColumn = value
+            If value Then
+                ' Activarea aliniază pe loc poziția curentă (care putea fi la mijloc de coloană).
+                SnapHScrollToColumn()
+                _lastHScrollValue = hScroll.Value
+            End If
+            Invalidate()
+        End Set
+    End Property
+
+    ' Aliniază hScroll.Value la o margine de coloană, în DIRECȚIA mișcării: la creștere urcă
+    ' la marginea următoare, la scădere coboară la cea precedentă. Așa un pas mic (o săgeată,
+    ' o rotiță) tot avansează o coloană întreagă, nu se lipește de aceeași margine.
+    Private Sub SnapHScrollToColumn()
+        If Not _scrollByColumn OrElse _snappingHScroll Then Return
+        If Not hScroll.Visible OrElse _scrollLayout.Count = 0 Then Return
+
+        Dim snapped As Integer = SnappedHValue(hScroll.Value)
+        If snapped <> hScroll.Value Then
+            _snappingHScroll = True
+            Try
+                hScroll.Value = snapped
+            Finally
+                _snappingHScroll = False
+            End Try
+        End If
+    End Sub
+
+    ' Valoarea aliniată pentru un offset brut, ținând cont de direcție și de maximul util.
+    Private Function SnappedHValue(rawValue As Integer) As Integer
+        Dim maxValue As Integer = Math.Max(0, hScroll.Maximum - hScroll.LargeChange + 1)
+        Dim target As Integer
+        If rawValue >= _lastHScrollValue Then
+            target = CeilToColumnStart(rawValue)     ' creștere => marginea următoare
+        Else
+            target = FloorToColumnStart(rawValue)    ' scădere => marginea precedentă
+        End If
+        Return Math.Max(0, Math.Min(target, maxValue))
+    End Function
+
+    ' Cea mai mică margine de coloană (start în banda derulată) >= v. Dincolo de ultima
+    ' margine => lățimea benzii (va fi limitată apoi la maximul util => se vede coada).
+    Private Function CeilToColumnStart(v As Integer) As Integer
+        For Each cl In _scrollLayout
+            If cl.X >= v Then Return cl.X
+        Next
+        Return _scrollBandWidth
+    End Function
+
+    ' Cea mai mare margine de coloană <= v (offset-urile sunt crescătoare prin construcție).
+    Private Function FloorToColumnStart(v As Integer) As Integer
+        Dim best As Integer = 0
+        For Each cl In _scrollLayout
+            If cl.X <= v Then best = cl.X Else Exit For
+        Next
+        Return best
+    End Function
 
     ''' <summary>
     ''' Recalculează coloanele și reconfigurează barele de derulare. Gardă de reintrare:
@@ -187,6 +269,12 @@ Partial Class KBotDataView
         End If
         If hScroll.Visible <> needH Then hScroll.Visible = needH
         If Not needH Then hScroll.Value = 0
+
+        ' Lățimile s-au putut schimba (auto-size, slice 0013): re-aliniază la o margine.
+        If needH AndAlso _scrollByColumn Then
+            SnapHScrollToColumn()
+            _lastHScrollValue = hScroll.Value
+        End If
     End Sub
 
     ' Setează intervalul unei bare. Semantica WinForms: valoarea maximă atinsă efectiv este

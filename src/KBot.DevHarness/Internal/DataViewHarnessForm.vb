@@ -109,6 +109,16 @@ Public NotInheritable Class DataViewHarnessForm
         End If
     End Sub
 
+    ' Comută derularea orizontală pe coloane (aliniere la margini) vs. pixel cu pixel.
+    Private Sub chkScrollByColumn_CheckedChanged(sender As Object, e As EventArgs) Handles chkScrollByColumn.CheckedChanged
+        Try
+            grid.ScrollByColumn = chkScrollByColumn.Checked
+            _log("ScrollByColumn = " & grid.ScrollByColumn.ToString())
+        Catch ex As Exception
+            GlobalErrorLog.Write("DataViewHarnessForm.chkScrollByColumn_CheckedChanged", ex)
+        End Try
+    End Sub
+
     Private Sub btnClassic_Click(sender As Object, e As EventArgs) Handles btnClassic.Click
         SwitchScheme(BuiltInSchemes.Classic())
     End Sub
