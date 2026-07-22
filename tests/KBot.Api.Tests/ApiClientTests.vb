@@ -546,13 +546,14 @@ Public Class ApiClientTests
         """incarcat"":false,""preluat"":true,""idrh"":980001,""nrcrt_h"":1," &
         """data_h"":""2026-01-19"",""total"":2864.12,""difh"":2864.12,""sters_h"":false," &
         """descriere_h"":""Plata factura"",""idr"":990001,""id_clsf"":75," &
-        """cod_indicator"":""IND-A"",""clsf"":""65.02.04.02.20.01.03"",""nrcrt_ind"":1," &
+        """cod_indicator"":""IND-A"",""clsf"":""65.02.04.02.20.01.03""," &
+        """denumire"":""Cheltuieli"",""nrcrt_ind"":1," &
         """valoare"":2864.12,""dif"":2864.12}," &
         "{""idrr"":970002,""nrcrt_r"":2,""data_r"":""2026-02-16"",""suma_antet"":3480.43," &
         """incarcat"":true,""preluat"":false,""idrh"":980002,""nrcrt_h"":null," &
         """data_h"":null,""total"":3480.43,""difh"":616.31,""sters_h"":false," &
         """descriere_h"":null,""idr"":null,""id_clsf"":0," &
-        """cod_indicator"":null,""clsf"":null,""nrcrt_ind"":null," &
+        """cod_indicator"":null,""clsf"":null,""denumire"":null,""nrcrt_ind"":null," &
         """valoare"":0.0,""dif"":0.0}]," &
         """plati"":[{""data_plata"":""2026-01-25"",""suma"":1000.0}," &
         "{""data_plata"":""2026-02-20"",""suma"":500.0}]}"
@@ -606,6 +607,7 @@ Public Class ApiClientTests
         Assert.Equal("Plata factura", first.DescriereH)
         Assert.Equal(990001, first.Idr.Value)
         Assert.Equal("65.02.04.02.20.01.03", first.Clsf)
+        Assert.Equal("Cheltuieli", first.Denumire)
         Assert.Equal(1, first.NrCrtInd.Value)
 
         ' Al doilea rând: antet fără linii (idr null), nrcrt_h/data_h/descriere_h null.
@@ -635,6 +637,7 @@ Public Class ApiClientTests
         Dim data = Await client.GetReceptiiAsync("A100", CancellationToken.None)
 
         Assert.Equal(String.Empty, data.Receptii(1).Clsf)
+        Assert.Equal(String.Empty, data.Receptii(1).Denumire)
         Assert.Equal(String.Empty, data.Receptii(1).CodIndicator)
         Assert.Equal(String.Empty, data.Receptii(1).DescriereH)
     End Function

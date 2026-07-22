@@ -101,33 +101,35 @@ Public Class ReceptiiViewTests
                                 incarcat As Boolean, preluat As Boolean,
                                 idrh As Integer, dataH As Date, total As Double, difh As Double,
                                 descriereH As String,
-                                idr As Integer?, clsf As String, nrCrtInd As Integer?,
+                                idr As Integer?, clsf As String, denumire As String, nrCrtInd As Integer?,
                                 valoare As Double, dif As Double) As ReceptieRow
         Return New ReceptieRow() With {
             .Idrr = idrr, .NrCrtR = nrCrtR, .DataR = dataR, .SumaAntet = sumaAntet,
             .Incarcat = incarcat, .Preluat = preluat,
             .Idrh = idrh, .DataH = dataH, .Total = total, .Difh = difh,
             .DescriereH = descriereH,
-            .Idr = idr, .Clsf = clsf, .CodIndicator = "IND-A", .NrCrtInd = nrCrtInd,
+            .Idr = idr, .Clsf = clsf, .Denumire = denumire, .CodIndicator = "IND-A", .NrCrtInd = nrCrtInd,
             .Valoare = valoare, .Dif = dif
         }
     End Function
 
-    ' Set standard: DOUA receptii.
-    '  - Recepția A (IDRR 1, Preluat): un antet (IDRH 11) cu O linie (clsf 65.02).
-    '  - Recepția B (IDRR 2, Incarcat): un antet (IDRH 21) cu DOUA linii (65.02, 66.01),
-    '    ca să testăm gruparea pe clsf + totalul = Sum(DIF).
+    ' Set standard: DOUA receptii, în DOUA luni distincte (Ianuarie + Februarie).
+    '  - Recepția A (IDRR 1, Ianuarie, Preluat): un antet (IDRH 11) cu O linie (clsf 65.02).
+    '  - Recepția B (IDRR 2, Februarie, Incarcat): un antet (IDRH 21) cu DOUA linii (65.02,
+    '    66.01), ca să testăm gruparea pe clsf + totalul = Sum(DIF).
+    ' O plată în 25 Ian: cade în fereastra lunii Ianuarie (înainte de prima recepție a lunii
+    ' Februarie), deci contează la reconcilierea lui Ianuarie (fix-ul operatorului).
     Private Shared Function StandardData() As ReceptiiInfo
         Dim data As New ReceptiiInfo() With {.Cod = "A100"}
         data.Receptii.Add(Row(1, 1, New Date(2026, 1, 19), 2864.12, False, True,
                               11, New Date(2026, 1, 19), 2864.12, 2864.12, "Plata factura",
-                              101, "65.02", 1, 2864.12, 2864.12))
+                              101, "65.02", "Salarii", 1, 2864.12, 2864.12))
         data.Receptii.Add(Row(2, 2, New Date(2026, 2, 16), 3480.43, True, False,
                               21, New Date(2026, 2, 16), 3480.43, 616.31, "Plata februarie",
-                              201, "65.02", 1, 1000.0, 500.0))
+                              201, "65.02", "Salarii", 1, 1000.0, 500.0))
         data.Receptii.Add(Row(2, 2, New Date(2026, 2, 16), 3480.43, True, False,
                               21, New Date(2026, 2, 16), 3480.43, 616.31, "Plata februarie",
-                              202, "66.01", 2, 2480.43, 116.31))
+                              202, "66.01", "Bunuri", 2, 2480.43, 116.31))
         data.Plati.Add(New ReceptiePlata() With {.DataPlata = New Date(2026, 1, 25), .Suma = 1000.0})
         Return data
     End Function
@@ -212,7 +214,7 @@ Public Class ReceptiiViewTests
     End Sub
 
     <Fact>
-    Public Sub Tree_TwoLevels_RootPerReceptie_NodePerAntet()
+    Public Sub Tree_ThreeLevels_MonthReceptieAntet()
         RunSta(Sub()
                    Dim api As New FakeApiClient()
                    Using view As New ReceptiiView(api, PassThrough())
@@ -221,29 +223,31 @@ Public Class ReceptiiViewTests
                        api.Complete("A100", StandardData())
                        Application.DoEvents()
 
-                       ' Două rădăcini (recepții), fiecare cu un singur nod (antet).
+                       ' Două foldere de lună (Ianuarie, Februarie), fiecare cu o recepție,
+                       ' fiecare recepție cu un antet.
                        Assert.Equal(2, t.Items.Count)
-                       Dim a = t.Items(0)
-                       Dim b = t.Items(1)
-                       Assert.Single(a.Children)
-                       Assert.Single(b.Children)
+                       Dim ian = t.Items(0)
+                       Dim feb = t.Items(1)
+                       Assert.StartsWith("Ianuarie/2026", ian.Caption)
+                       Assert.Contains("2.864,12", ian.Caption)      ' total lună = SumaAntet
+                       Assert.StartsWith("Februarie/2026", feb.Caption)
+                       Assert.Contains("3.480,43", feb.Caption)
 
-                       ' Captions: dată scurtă ~~~ sumă antet / total.
-                       Assert.StartsWith("19.01.2026", a.Caption)
-                       Assert.Contains("2.864,12", a.Caption)
-                       Assert.StartsWith("16.02.2026", b.Caption)
-                       Assert.Contains("3.480,43", b.Caption)
-                       Assert.Contains("2.864,12", a.Children(0).Caption)
+                       Dim receptieIan = Assert.Single(ian.Children)
+                       Dim antetIan = Assert.Single(receptieIan.Children)
+                       Assert.StartsWith("19.01.2026", receptieIan.Caption)
+                       Assert.StartsWith("19.01.2026", antetIan.Caption)
 
-                       ' Iconița de stare există pe rădăcină (nu și pe nod).
-                       Assert.NotNull(a.LeftIconClosed)
-                       Assert.Null(a.Children(0).LeftIconClosed)
+                       ' Iconița de stare există pe RECEPȚIE (nivel 1), nu pe lună sau antet.
+                       Assert.Null(ian.LeftIconClosed)
+                       Assert.NotNull(receptieIan.LeftIconClosed)
+                       Assert.Null(antetIan.LeftIconClosed)
                    End Using
                End Sub)
     End Sub
 
     <Fact>
-    Public Sub AntetSelection_FillsGrid_TotalThenPerClsf()
+    Public Sub MonthClick_FillsGrid_AggregatedTotalThenPerClsf()
         RunSta(Sub()
                    Dim api As New FakeApiClient()
                    Using view As New ReceptiiView(api, PassThrough())
@@ -253,9 +257,8 @@ Public Class ReceptiiViewTests
                        api.Complete("A100", StandardData())
                        Application.DoEvents()
 
-                       ' Antetul recepției B are DOUA clasificații -> total + 2 rânduri.
-                       Dim antetB = t.Items(1).Children(0)
-                       ClickNode(view, antetB)
+                       ' Click pe folderul lunii Februarie -> agregatul recepției B (2 clsf).
+                       ClickNode(view, t.Items(1))
 
                        Assert.Equal(3, g.RowCount)
                        ' Randul-total: Descriere „Toți indicatorii", Valoare = Sum(DIF) = 616,31.
@@ -266,14 +269,15 @@ Public Class ReceptiiViewTests
                        Assert.Equal(1000.0, CDbl(g.Rows(1)("valoare")), 2)
                        Assert.Equal("66.01", CStr(g.Rows(2)("clsf")))
                        Assert.Equal(2480.43, CDbl(g.Rows(2)("valoare")), 2)
-                       ' Descrierea rândurilor per-clsf = a antetului.
-                       Assert.Equal("Plata februarie", CStr(g.Rows(1)("descriere")))
+                       ' Descrierea rândurilor per-clsf = Denumirea clasificației.
+                       Assert.Equal("Salarii", CStr(g.Rows(1)("descriere")))
+                       Assert.Equal("Bunuri", CStr(g.Rows(2)("descriere")))
                    End Using
                End Sub)
     End Sub
 
     <Fact>
-    Public Sub RootSelection_ClearsGrid()
+    Public Sub Click_AtAnyLevel_PopulatesGrid()
         RunSta(Sub()
                    Dim api As New FakeApiClient()
                    Using view As New ReceptiiView(api, PassThrough())
@@ -283,12 +287,17 @@ Public Class ReceptiiViewTests
                        api.Complete("A100", StandardData())
                        Application.DoEvents()
 
-                       ' Umple grila dintr-un antet, apoi selectează rădăcina -> se golește.
-                       ClickNode(view, t.Items(1).Children(0))
-                       Assert.Equal(3, g.RowCount)
+                       Dim febMonth = t.Items(1)
+                       Dim receptieB = febMonth.Children(0)
+                       Dim antetB = receptieB.Children(0)
 
-                       ClickNode(view, t.Items(1))
-                       Assert.Equal(0, g.RowCount)
+                       ' Toate cele trei niveluri populează grila (aici toate = 3 rânduri).
+                       ClickNode(view, febMonth)
+                       Assert.Equal(3, g.RowCount)
+                       ClickNode(view, receptieB)
+                       Assert.Equal(3, g.RowCount)
+                       ClickNode(view, antetB)
+                       Assert.Equal(3, g.RowCount)
                    End Using
                End Sub)
     End Sub
@@ -312,11 +321,14 @@ Public Class ReceptiiViewTests
     End Sub
 
     <Fact>
-    Public Sub RootTooltip_IsTableXml_WithCumulativeReconciliation()
-        ' Felia 0015-02. Ordine DataR: A (ian) apoi B (feb).
-        '  A: difhCum = 2864,12; plata (25 ian) e DUPĂ MaxDataH (19 ian) -> platiCum = 0.
-        '  B: difhCum = 2864,12 + 616,31 = 3480,43; plata (25 ian) <= MaxDataH (16 feb)
-        '     -> platiCum = 1000; Diferență = 2480,43 (>0 -> albastru).
+    Public Sub Tooltip_OnMonthAndReceptie_WithNextMonthPlatiWindow()
+        ' Revizuire operator: fereastra de plăți se întinde până la prima recepție a lunii
+        ' URMĂTOARE. Ordine DataR: A (Ian) apoi B (Feb).
+        '  Ianuarie: difhCum = 2864,12; fereastra plăți = plăți < 16.02 (prima recepție Feb)
+        '            = plata din 25.01 = 1000 -> Diferență = 1864,12 (fix-ul: plata din 25.01
+        '            contează acum la Ianuarie, deși e după antetul din 19.01).
+        '  Februarie: difhCum = 2864,12 + 616,31 = 3480,43; ultima lună -> toate plățile
+        '             = 1000 -> Diferență = 2480,43.
         RunSta(Sub()
                    Dim api As New FakeApiClient()
                    Using view As New ReceptiiView(api, PassThrough())
@@ -325,29 +337,39 @@ Public Class ReceptiiViewTests
                        api.Complete("A100", StandardData())
                        Application.DoEvents()
 
-                       Dim ttA = t.Items(0).Tooltip
-                       Dim ttB = t.Items(1).Tooltip
+                       Dim ttMonthIan = t.Items(0).Tooltip
+                       Dim ttReceptieIan = t.Items(0).Children(0).Tooltip
+                       Dim ttMonthFeb = t.Items(1).Tooltip
 
-                       Assert.StartsWith("<table", ttA)
-                       Assert.Contains("Recepții cumulate", ttA)
-                       Assert.Contains("Plăți cumulate", ttA)
-                       Assert.Contains("Diferență", ttA)
+                       ' Tooltip de lună: tabel XML cu eticheta „Lună" + „Ianuarie/2026".
+                       Assert.StartsWith("<table", ttMonthIan)
+                       Assert.Contains("Lună", ttMonthIan)
+                       Assert.Contains("Ianuarie/2026", ttMonthIan)
+                       Assert.Contains("Recepții cumulate", ttMonthIan)
+                       Assert.Contains("Plăți cumulate", ttMonthIan)
+                       Assert.Contains("Diferență", ttMonthIan)
 
-                       ' A: platiCum = 0 (plata e după MaxDataH).
-                       Assert.Contains("2.864,12", ttA)
-                       Assert.Contains("0,00", ttA)
+                       ' Ianuarie: difhCum 2864,12; platiCum 1000 (plata din 25.01 inclusă
+                       ' pentru că e înainte de prima recepție a lunii Februarie); dif 1864,12.
+                       Assert.Contains("2.864,12", ttMonthIan)
+                       Assert.Contains("1.000,00", ttMonthIan)
+                       Assert.Contains("1.864,12", ttMonthIan)
 
-                       ' B: cumulat pe recepții + plată inclusă.
-                       Assert.Contains("3.480,43", ttB)   ' difhCum
-                       Assert.Contains("1.000,00", ttB)   ' platiCum
-                       Assert.Contains("2.480,43", ttB)   ' Diferență (>0)
+                       ' Recepția din Ianuarie folosește aceeași fereastră de plăți ca luna ei.
+                       Assert.Contains("Data recepție", ttReceptieIan)
+                       Assert.Contains("1.864,12", ttReceptieIan)
+
+                       ' Februarie: difhCum 3480,43; platiCum 1000; dif 2480,43.
+                       Assert.Contains("3.480,43", ttMonthFeb)
+                       Assert.Contains("1.000,00", ttMonthFeb)
+                       Assert.Contains("2.480,43", ttMonthFeb)
                    End Using
                End Sub)
     End Sub
 
     <Fact>
-    Public Sub RootTooltip_NegativeDifference_IsRed()
-        ' O recepție unde plățile depășesc recepțiile -> Diferență < 0 -> roșu (#CC0000).
+    Public Sub Tooltip_NegativeDifference_IsRed()
+        ' O lună unde plățile depășesc recepțiile -> Diferență < 0 -> roșu (#CC0000).
         RunSta(Sub()
                    Dim api As New FakeApiClient()
                    Using view As New ReceptiiView(api, PassThrough())
@@ -356,17 +378,17 @@ Public Class ReceptiiViewTests
                        Dim data As New ReceptiiInfo() With {.Cod = "A100"}
                        data.Receptii.Add(Row(1, 1, New Date(2026, 1, 31), 100.0, False, True,
                                              11, New Date(2026, 1, 31), 100.0, 100.0, "Antet",
-                                             101, "65.02", 1, 100.0, 100.0))
-                       ' Plată de 500 înainte de MaxDataH -> platiCum = 500 > difhCum = 100.
+                                             101, "65.02", "Salarii", 1, 100.0, 100.0))
+                       ' O singură lună -> fereastra = toate plățile = 500 > difhCum = 100.
                        data.Plati.Add(New ReceptiePlata() With {.DataPlata = New Date(2026, 1, 20), .Suma = 500.0})
 
                        view.SetContext(Context("A100"))
                        api.Complete("A100", data)
                        Application.DoEvents()
 
-                       Dim tt = t.Items(0).Tooltip
-                       Assert.Contains("-400,00", tt)      ' Diferență = 100 - 500
-                       Assert.Contains("#CC0000", tt)      ' colorat roșu
+                       Dim ttMonth = t.Items(0).Tooltip
+                       Assert.Contains("-400,00", ttMonth)      ' Diferență = 100 - 500
+                       Assert.Contains("#CC0000", ttMonth)      ' colorat roșu
                    End Using
                End Sub)
     End Sub
@@ -384,16 +406,16 @@ Public Class ReceptiiViewTests
                        view.SetContext(Context("B200"))
                        Assert.Equal(New String() {"A100", "B200"}, api.RequestedCods.ToArray())
 
-                       ' Răspunsul NOU (B200) ajunge primul: o singură recepție.
+                       ' Răspunsul NOU (B200) ajunge primul: o singură recepție (o lună).
                        Dim b As New ReceptiiInfo() With {.Cod = "B200"}
                        b.Receptii.Add(Row(9, 1, New Date(2026, 3, 1), 7.0, False, True,
                                           91, New Date(2026, 3, 1), 7.0, 7.0, "Doar una",
-                                          901, "70.01", 1, 7.0, 7.0))
+                                          901, "70.01", "Altele", 1, 7.0, 7.0))
                        api.Complete("B200", b)
                        Application.DoEvents()
                        Assert.Equal(1, t.Items.Count)
 
-                       ' Răspunsul VECHI (A100, 2 recepții) ajunge după — trebuie ignorat.
+                       ' Răspunsul VECHI (A100, 2 luni) ajunge după — trebuie ignorat.
                        api.Complete("A100", StandardData())
                        Application.DoEvents()
 

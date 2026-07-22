@@ -376,6 +376,7 @@ Public Class ApiClient
                                 .IdClsf = r.id_clsf,
                                 .CodIndicator = If(r.cod_indicator, String.Empty),
                                 .Clsf = If(r.clsf, String.Empty),
+                                .Denumire = If(r.denumire, String.Empty),
                                 .NrCrtInd = r.nrcrt_ind,
                                 .Valoare = r.valoare,
                                 .Dif = r.dif

@@ -174,6 +174,7 @@ Public NotInheritable Class GetReceptieRow
     Public Property id_clsf As Integer
     Public Property cod_indicator As String
     Public Property clsf As String
+    Public Property denumire As String
     Public Property nrcrt_ind As Integer?
     Public Property valoare As Double
     Public Property dif As Double

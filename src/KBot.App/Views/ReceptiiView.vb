@@ -11,12 +11,13 @@ Imports KBot.Theming
 
 ''' <summary>
 ''' Vederea Recepții (felia 0015) — echivalentul Access frmFX_MAIN_REC: un master/detail
-''' cu un arbore de recepții pe 2 niveluri la stânga (rădăcină = recepția R / IDRR, nod =
-''' antetul H / IDRH) și o grilă continuă la dreapta (LISTA) cu detaliul pe clasificații al
-''' antetului selectat. Read-only în această felie. Datele vin din GET /api/forexe/receptii,
-''' întotdeauna prin plasa de re-autentificare a shell-ului (401 -> re-login -> reia o dată).
-''' Selectarea unei rădăcini golește grila (Access conduce LISTA doar la nivel de antet);
-''' selectarea unui antet o umple cu un rând-total sintetic + un rând per clasificație.
+''' cu un arbore de recepții pe 3 niveluri la stânga (folder lună/an -> recepția R / IDRR ->
+''' antetul H / IDRH) și o grilă continuă la dreapta (LISTA) cu detaliul pe clasificații.
+''' Read-only în această felie. Datele vin din GET /api/forexe/receptii, întotdeauna prin
+''' plasa de re-autentificare a shell-ului (401 -> re-login -> reia o dată). Click pe ORICE
+''' nod (lună / recepție / antet) umple grila cu agregatul rândurilor lui: un rând-total
+''' sintetic (Sum(DIF)) + un rând per clasificație (Sum(Valoare)). Tooltip de reconciliere
+''' recepții/plăți pe folderele de lună ȘI pe recepții (revizuire operator 2026-07-22).
 ''' </summary>
 Public Class ReceptiiView
     Implements IAngajamentView, IThemedControl
@@ -144,7 +145,7 @@ Public Class ReceptiiView
 
             _rows = rows
             BuildTree(rows)
-            ' Nimic selectat -> grila e goală: Access conduce LISTA doar la nivel de antet.
+            ' Nimic selectat -> grila e goală; se umple la click pe orice nod al arborelui.
             grid.ClearRows()
             ShowContent()
         Catch ex As ApiException
@@ -165,52 +166,75 @@ Public Class ReceptiiView
     End Sub
 
     ' ── Arborele ─────────────────────────────────────────────────────────────
-    ' Două niveluri (qFX_MAIN_REC_TREE): rădăcină = recepția (IDRR), nod = antetul (IDRH).
-    ' Rândurile vin deja ordonate de server (R.NRCRT, R.DataR, H.NrCrt, H.DataH), deci
-    ' „distinct în ordine" e suficient. Iconița rădăcinii reflectă starea (Incarcat -> sus,
-    ' Preluat -> jos, altfel neutru). Fiecare nod poartă în Tag rândurile antetului lui, ca
-    ' un click să umple grila fără o nouă cerere; fiecare rădăcină poartă rândurile
-    ' recepției (baza tooltip-ului din felia 0015-02).
+    ' TREI niveluri (revizuire operator 2026-07-22): folder lună/an (grupat pe DataR) ->
+    ' recepția (IDRR, iconiță de stare Incarcat->sus / Preluat->jos / altfel neutru) ->
+    ' antetul (IDRH). Rândurile vin ordonate de server (R.NRCRT, R.DataR, H.NrCrt, H.DataH);
+    ' lunile se ordonează cronologic, iar în interiorul unei luni „distinct în ordine" e
+    ' suficient. Fiecare nod (lună / recepție / antet) poartă în Tag rândurile lui, ca un
+    ' click să umple grila (agregat) fără o nouă cerere. Tooltip-ul de reconciliere stă și pe
+    ' folderul de lună, și pe recepție.
     Private Sub BuildTree(rows As List(Of ReceptieRow))
         Try
             tree.Clear()
             Dim palette As ThemePalette = TryGetPalette()
 
-            Dim roots As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
-            Dim rootRows As New Dictionary(Of Integer, List(Of ReceptieRow))()
-            Dim nodes As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
-            Dim nodeRows As New Dictionary(Of Integer, List(Of ReceptieRow))()
+            Dim monthItems As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
+            Dim receptieItems As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
 
-            For Each r As ReceptieRow In rows
-                ' --- rădăcina (recepția) ---
-                Dim root As AdvancedTreeControl.TreeItem = Nothing
-                If Not roots.TryGetValue(r.Idrr, root) Then
-                    Dim icon As Image = StatusIconOf(r, palette)
-                    Dim caption As String = $"{ShortDate(r.DataR)}~~~{Money(r.SumaAntet)}"
-                    root = tree.AddItem($"r_{r.Idrr}", caption,
-                                        pLeftIconClosed:=icon, pLeftIconOpen:=icon)
-                    Dim rr As New List(Of ReceptieRow)()
-                    root.Tag = rr
-                    roots(r.Idrr) = root
-                    rootRows(r.Idrr) = rr
-                End If
-                rootRows(r.Idrr).Add(r)
+            ' Grupare pe lună (an, lună din DataR), cronologic.
+            Dim monthGroups = rows.GroupBy(Function(r) MonthKeyOf(r.DataR)).
+                                   OrderBy(Function(g) g.Key)
 
-                ' --- nodul (antetul) ---
-                Dim node As AdvancedTreeControl.TreeItem = Nothing
-                If Not nodes.TryGetValue(r.Idrh, node) Then
-                    Dim caption As String = $"{ShortDate(r.DataH)}~~~{Money(r.Total)}"
-                    node = tree.AddItem($"h_{r.Idrh}", caption, root)
-                    Dim nr As New List(Of ReceptieRow)()
-                    node.Tag = nr
-                    nodes(r.Idrh) = node
-                    nodeRows(r.Idrh) = nr
-                End If
-                nodeRows(r.Idrh).Add(r)
+            For Each mg In monthGroups
+                Dim monthRows As List(Of ReceptieRow) = mg.ToList()
+                ' Totalul lunii = suma SumaAntet pe recepții DISTINCTE ale lunii.
+                Dim monthTotal As Double = monthRows.GroupBy(Function(r) r.Idrr).
+                                                     Sum(Function(g) g.First().SumaAntet)
+                Dim monthItem As AdvancedTreeControl.TreeItem =
+                    tree.AddItem($"m_{mg.Key}", $"{MonthYearLabel(mg.Key)}~~~{Money(monthTotal)}",
+                                 pExpanded:=True)
+                monthItem.Tag = monthRows
+                monthItems(mg.Key) = monthItem
+
+                ' Recepții + anteturi sub folderul lunii.
+                Dim roots As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
+                Dim rootRows As New Dictionary(Of Integer, List(Of ReceptieRow))()
+                Dim nodes As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
+                Dim nodeRows As New Dictionary(Of Integer, List(Of ReceptieRow))()
+
+                For Each r As ReceptieRow In monthRows
+                    ' --- recepția (IDRR) ---
+                    Dim root As AdvancedTreeControl.TreeItem = Nothing
+                    If Not roots.TryGetValue(r.Idrr, root) Then
+                        Dim icon As Image = StatusIconOf(r, palette)
+                        Dim caption As String = $"{ShortDate(r.DataR)}~~~{Money(r.SumaAntet)}"
+                        root = tree.AddItem($"r_{r.Idrr}", caption, monthItem,
+                                            pLeftIconClosed:=icon, pLeftIconOpen:=icon)
+                        Dim rr As New List(Of ReceptieRow)()
+                        root.Tag = rr
+                        roots(r.Idrr) = root
+                        rootRows(r.Idrr) = rr
+                        receptieItems(r.Idrr) = root
+                    End If
+                    rootRows(r.Idrr).Add(r)
+
+                    ' --- antetul (IDRH) ---
+                    Dim node As AdvancedTreeControl.TreeItem = Nothing
+                    If Not nodes.TryGetValue(r.Idrh, node) Then
+                        Dim caption As String = $"{ShortDate(r.DataH)}~~~{Money(r.Total)}"
+                        node = tree.AddItem($"h_{r.Idrh}", caption, root)
+                        Dim nr As New List(Of ReceptieRow)()
+                        node.Tag = nr
+                        nodes(r.Idrh) = node
+                        nodeRows(r.Idrh) = nr
+                    End If
+                    nodeRows(r.Idrh).Add(r)
+                Next
             Next
 
-            ' Tooltip-ul de recepție (felia 0015-02): reconciliere recepții/plăți per rădăcină.
-            ComputeRootTooltips(rows, roots)
+            ' Tooltip de reconciliere pe folderele de lună ȘI pe recepții (fereastra de plăți
+            ' se întinde până la prima recepție a lunii URMĂTOARE — revizuirea operatorului).
+            ComputeTooltips(rows, monthItems, receptieItems)
 
             tree.Invalidate()
         Catch ex As Exception
@@ -219,49 +243,96 @@ Public Class ReceptiiView
         End Try
     End Sub
 
-    ' ── Tooltip de recepție (felia 0015-02) ──────────────────────────────────
-    ' Oglindește NewRootPlatiTooltip din frmFX_MAIN_REC: patru rânduri —
-    '   Data recepție / Recepții cumulate (difhCum) / Plăți cumulate (platiCum) /
-    '   Diferență (difhCum − platiCum, roșu dacă <0, albastru dacă >0).
-    ' Per recepție, în ordinea DataR:
+    ' ── Tooltip de reconciliere (lună + recepție) ────────────────────────────
+    ' Oglindește NewRootPlatiTooltip din frmFX_MAIN_REC, generalizat la lună (revizuire
+    ' operator 2026-07-22): patru rânduri — Data recepție/Lună / Recepții cumulate (difhCum) /
+    ' Plăți cumulate (platiCum) / Diferență (difhCum − platiCum, roșu dacă <0, albastru >0).
     '   * difhCum = sumă rulantă a Sum(DIFH) pe recepție (DIFH e per antet — se însumează
     '     anteturile DISTINCTE ale recepției, EXCLUZÂND cele șterse — qFX_MAIN_REC_TT_DIFH
-    '     filtrează Sters=False, deși arborele NU-l filtrează), apoi se cumulează pe recepții;
-    '   * platiCum = Sum(Suma) peste plăți cu DataPlata ≤ MaxDataH al recepției (cumulativ,
-    '     fără limită inferioară — finding 3). MaxDataH = max DataH pe anteturile recepției.
+    '     filtrează Sters=False, deși arborele NU-l filtrează), cumulată pe recepții în ordinea
+    '     DataR. Recepția = cumul până la ea; luna = cumul până la ULTIMA recepție a lunii.
+    '   * platiCum = Sum(Suma) peste plăți cu DataPlata < DataR-ul PRIMEI recepții din LUNA
+    '     URMĂTOARE (toate plățile de dinaintea lunii următoare — cerința operatorului).
+    '     Ultima lună -> toate plățile. Toate recepțiile aceleiași luni împart aceeași
+    '     fereastră de plăți.
     ' valAsoc NU e folosit (linia lui e comentată în Access). Nu se face niciun apel de rețea.
-    Private Sub ComputeRootTooltips(rows As List(Of ReceptieRow),
-                                    roots As Dictionary(Of Integer, AdvancedTreeControl.TreeItem))
+    Private Sub ComputeTooltips(rows As List(Of ReceptieRow),
+                                monthItems As Dictionary(Of Integer, AdvancedTreeControl.TreeItem),
+                                receptieItems As Dictionary(Of Integer, AdvancedTreeControl.TreeItem))
         Dim plati As List(Of ReceptiePlata) = If(_plati, New List(Of ReceptiePlata)())
 
+        ' Recepții, cronologic pe DataR.
         Dim perReceptie = rows.GroupBy(Function(r) r.Idrr).
             Select(Function(gp) New ReceptieTtRow With {
                 .Idrr = gp.Key,
                 .DataR = gp.Select(Function(x) x.DataR).FirstOrDefault(Function(d) d.HasValue),
-                .MaxDataH = MaxDate(gp.Select(Function(x) x.DataH)),
+                .MonthKey = MonthKeyOf(gp.Select(Function(x) x.DataR).FirstOrDefault(Function(d) d.HasValue)),
                 .SumDifh = SumDistinctAntetDifh(gp)
             }).
             OrderBy(Function(x) If(x.DataR.HasValue, x.DataR.Value, Date.MinValue)).
             ThenBy(Function(x) x.Idrr).
             ToList()
 
+        ' Lunile în ordine cronologică + prima DataR a fiecărei luni.
+        Dim monthsOrdered As List(Of Integer) =
+            perReceptie.Select(Function(x) x.MonthKey).Distinct().OrderBy(Function(k) k).ToList()
+        Dim firstDataRByMonth As New Dictionary(Of Integer, Date)()
+        For Each rec As ReceptieTtRow In perReceptie
+            If rec.DataR.HasValue AndAlso Not firstDataRByMonth.ContainsKey(rec.MonthKey) Then
+                firstDataRByMonth(rec.MonthKey) = rec.DataR.Value
+            End If
+        Next
+
+        ' Fereastra de plăți pe lună: toate plățile cu DataPlata < prima recepție a lunii
+        ' URMĂTOARE (bariera e exclusivă); ultima lună -> toate plățile.
+        Dim platiWindowByMonth As New Dictionary(Of Integer, Double)()
+        For i As Integer = 0 To monthsOrdered.Count - 1
+            Dim boundary As Date? = Nothing
+            For j As Integer = i + 1 To monthsOrdered.Count - 1
+                If firstDataRByMonth.ContainsKey(monthsOrdered(j)) Then
+                    boundary = firstDataRByMonth(monthsOrdered(j))
+                    Exit For
+                End If
+            Next
+            Dim windowSum As Double
+            If boundary.HasValue Then
+                windowSum = plati.
+                    Where(Function(p) p.DataPlata.HasValue AndAlso p.DataPlata.Value < boundary.Value).
+                    Sum(Function(p) p.Suma)
+            Else
+                windowSum = plati.Sum(Function(p) p.Suma)
+            End If
+            platiWindowByMonth(monthsOrdered(i)) = windowSum
+        Next
+
+        ' Cumulul difuri, în ordinea DataR. Recepția = cumul până la ea; luna reține cumulul
+        ' până la ULTIMA recepție a lunii (ultima scriere câștigă).
         Dim difhCum As Double = 0
+        Dim monthCum As New Dictionary(Of Integer, Double)()
         For Each rec As ReceptieTtRow In perReceptie
             difhCum += rec.SumDifh
-
-            Dim platiCum As Double = 0
-            If rec.MaxDataH.HasValue Then
-                platiCum = plati.
-                    Where(Function(p) p.DataPlata.HasValue AndAlso p.DataPlata.Value <= rec.MaxDataH.Value).
-                    Sum(Function(p) p.Suma)
+            monthCum(rec.MonthKey) = difhCum
+            Dim platiCum As Double = LookupOrZero(platiWindowByMonth, rec.MonthKey)
+            Dim ri As AdvancedTreeControl.TreeItem = Nothing
+            If receptieItems.TryGetValue(rec.Idrr, ri) Then
+                ri.Tooltip = BuildReconTooltipXml("Data recepție", ShortDate(rec.DataR), difhCum, platiCum)
             End If
+        Next
 
-            Dim root As AdvancedTreeControl.TreeItem = Nothing
-            If roots.TryGetValue(rec.Idrr, root) Then
-                root.Tooltip = BuildRootTooltipXml(rec.DataR, difhCum, platiCum)
+        For Each mk As Integer In monthsOrdered
+            Dim mi As AdvancedTreeControl.TreeItem = Nothing
+            If monthItems.TryGetValue(mk, mi) Then
+                mi.Tooltip = BuildReconTooltipXml("Lună", MonthYearLabel(mk),
+                                                  LookupOrZero(monthCum, mk),
+                                                  LookupOrZero(platiWindowByMonth, mk))
             End If
         Next
     End Sub
+
+    Private Shared Function LookupOrZero(map As Dictionary(Of Integer, Double), key As Integer) As Double
+        Dim v As Double
+        Return If(map.TryGetValue(key, v), v, 0.0)
+    End Function
 
     ' Sum(DIFH) pe anteturile DISTINCTE ale recepției, sărind cele șterse. DIFH e constant
     ' pe liniile unui antet, deci se ia o dată per IDRH.
@@ -271,14 +342,10 @@ Public Class ReceptiiView
                        Sum(Function(gp) gp.First().Difh)
     End Function
 
-    Private Shared Function MaxDate(dates As IEnumerable(Of Date?)) As Date?
-        Dim vals = dates.Where(Function(d) d.HasValue).Select(Function(d) d.Value).ToList()
-        If vals.Count = 0 Then Return Nothing
-        Return vals.Max()
-    End Function
-
     ' Construiește tabelul-tooltip XML (<table>) citit de TooltipTableParser al arborelui.
-    Private Shared Function BuildRootTooltipXml(dataR As Date?, difhCum As Double, platiCum As Double) As String
+    ' firstLabel/firstValue = primul rând (Data recepție + data, sau Lună + „Ianuarie/2026").
+    Private Shared Function BuildReconTooltipXml(firstLabel As String, firstValue As String,
+                                                 difhCum As Double, platiCum As Double) As String
         Dim dif As Double = Math.Round(difhCum - platiCum, 2)
         ' Roșu dacă negativ, albastru dacă pozitiv (Switch din Access). ParseColor ia #RRGGBB.
         Dim difColor As String = If(dif < 0, "#CC0000", If(dif > 0, "#0033CC", Nothing))
@@ -286,10 +353,10 @@ Public Class ReceptiiView
         Dim sb As New StringBuilder()
         sb.Append("<table>")
         sb.Append("<header>")
-        sb.Append("<cell Align=""left"" Bold=""1"">Data recepție</cell>")
+        sb.Append("<cell Align=""left"" Bold=""1"">").Append(XmlEscape(firstLabel)).Append("</cell>")
         sb.Append("<cell Align=""right"" Bold=""1"">Valoare</cell>")
         sb.Append("</header>")
-        AppendTtRow(sb, "Data recepție", ShortDate(dataR), Nothing)
+        AppendTtRow(sb, firstLabel, firstValue, Nothing)
         AppendTtRow(sb, "Recepții cumulate", Money(difhCum), Nothing)
         AppendTtRow(sb, "Plăți cumulate", Money(platiCum), Nothing)
         AppendTtRow(sb, "Diferență", Money(dif), difColor)
@@ -317,24 +384,24 @@ Public Class ReceptiiView
     Private NotInheritable Class ReceptieTtRow
         Public Property Idrr As Integer
         Public Property DataR As Date?
-        Public Property MaxDataH As Date?
+        Public Property MonthKey As Integer
         Public Property SumDifh As Double
     End Class
 
     ' ── Grila (LISTA) ────────────────────────────────────────────────────────
-    ' Detaliul unui antet: un rând-total sintetic „Toți indicatorii" (Valoare = Sum(DIF)
-    ' pe antet), apoi un rând per clasificație (Valoare = Sum(Valoare) grupat pe Clsf,
-    ' NrCrt din indicator, Descrierea = a antetului). Ordinea grupurilor: DataH apoi NrCrt
-    ' (DataH e constant pe un antet, deci efectiv NrCrt) — ca în ORDER BY-ul Access.
-    Private Sub FillGridForAntet(antetRows As List(Of ReceptieRow))
+    ' Detaliul AGREGAT al unui nod (lună / recepție / antet — revizuire operator): un rând-
+    ' total sintetic „Toți indicatorii" (Valoare = Sum(DIF) pe rândurile nodului), apoi un
+    ' rând per clasificație (Valoare = Sum(Valoare) grupat pe Clsf, NrCrt din indicator,
+    ' Descriere = Denumirea clasificației — bine definită la orice nivel de agregare, spre
+    ' deosebire de descrierea antetului). Grupurile: pe NrCrt apoi Clsf.
+    Private Sub FillGridFromRows(nodeRows As List(Of ReceptieRow))
         grid.BeginUpdate()
         Try
             grid.ClearRows()
-            If antetRows Is Nothing OrElse antetRows.Count = 0 Then Return
+            If nodeRows Is Nothing OrElse nodeRows.Count = 0 Then Return
 
-            ' Randul-total: Sum(DIF) peste toate liniile antetului.
-            Dim totalDif As Double = antetRows.Sum(Function(r) r.Dif)
-            Dim descriereAntet As String = antetRows(0).DescriereH
+            ' Randul-total: Sum(DIF) peste toate liniile nodului.
+            Dim totalDif As Double = nodeRows.Sum(Function(r) r.Dif)
             Dim rowTot As KBotDataRow = grid.AddRow()
             rowTot(COL_NRCRT) = String.Empty
             rowTot(COL_DESCRIERE) = "Toți indicatorii"
@@ -342,7 +409,7 @@ Public Class ReceptiiView
             rowTot(COL_VALOARE) = totalDif
 
             ' Rânduri per clasificație — doar liniile reale (un antet fără linii dă doar total).
-            Dim lines = antetRows.Where(Function(r) r.Idr.HasValue)
+            Dim lines = nodeRows.Where(Function(r) r.Idr.HasValue)
             Dim groups = lines.GroupBy(Function(r) r.Clsf).
                                OrderBy(Function(gp) MinNrCrt(gp)).
                                ThenBy(Function(gp) gp.Key, StringComparer.Ordinal)
@@ -352,7 +419,7 @@ Public Class ReceptiiView
                 Dim nrCrt As Integer? = grp.Select(Function(x) x.NrCrtInd).
                                             FirstOrDefault(Function(v) v.HasValue)
                 r(COL_NRCRT) = If(nrCrt.HasValue, CObj(nrCrt.Value), CObj(String.Empty))
-                r(COL_DESCRIERE) = descriereAntet
+                r(COL_DESCRIERE) = FirstNonEmpty(grp.Select(Function(x) x.Denumire))
                 r(COL_CLSF) = grp.Key
                 r(COL_VALOARE) = grp.Sum(Function(x) x.Valoare)
             Next
@@ -367,18 +434,22 @@ Public Class ReceptiiView
         Return If(vals.Any(), vals.Min(), Integer.MaxValue)
     End Function
 
-    ' Click pe un nod. Rădăcină (recepția, Level 0) -> golește grila (Access conduce LISTA
-    ' doar la antet). Nod (antetul, Level 1) -> umple grila din rândurile lui (în Tag).
+    ' Prima denumire ne-goală din grup (LEFT JOIN poate lăsa unele goale pe o clasificație).
+    Private Shared Function FirstNonEmpty(values As IEnumerable(Of String)) As String
+        For Each v As String In values
+            If Not String.IsNullOrEmpty(v) Then Return v
+        Next
+        Return String.Empty
+    End Function
+
+    ' Click pe orice nod (lună / recepție / antet) -> umple grila cu agregatul rândurilor
+    ' nodului (în Tag). Fără apel de rețea.
     Private Sub tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
             If pNode Is Nothing Then Return
-            If pNode.Level = 0 Then
-                grid.ClearRows()
-                Return
-            End If
             Dim rows As List(Of ReceptieRow) = TryCast(pNode.Tag, List(Of ReceptieRow))
             If rows Is Nothing Then Return
-            FillGridForAntet(rows)
+            FillGridFromRows(rows)
         Catch ex As Exception
             GlobalErrorLog.Write("ReceptiiView.tree_NodeMouseUp", ex)
         End Try
@@ -405,6 +476,28 @@ Public Class ReceptiiView
     Private Shared Function ShortDate(value As Date?) As String
         If Not value.HasValue Then Return String.Empty
         Return value.Value.ToString("dd.MM.yyyy", _roCulture)
+    End Function
+
+    ' Cheia de lună = an*100 + lună din DataR (0 dacă lipsește data). Ordonabilă cronologic.
+    Private Shared Function MonthKeyOf(value As Date?) As Integer
+        If Not value.HasValue Then Return 0
+        Return value.Value.Year * 100 + value.Value.Month
+    End Function
+
+    ' Eticheta lună/an dintr-o cheie de lună: „Ianuarie/2026". Cheia 0 -> „(fără dată)".
+    Private Shared Function MonthYearLabel(monthKey As Integer) As String
+        If monthKey <= 0 Then Return "(fără dată)"
+        Dim y As Integer = monthKey \ 100
+        Dim m As Integer = monthKey Mod 100
+        Return $"{MonthLabel(m)}/{y}"
+    End Function
+
+    ' Numele lunii în română (Ianuarie…), cu prima literă mare (ca în RezervariView).
+    Private Shared Function MonthLabel(month As Integer) As String
+        If month < 1 OrElse month > 12 Then Return CStr(month)
+        Dim name As String = _roCulture.DateTimeFormat.GetMonthName(month)
+        If String.IsNullOrEmpty(name) Then Return CStr(month)
+        Return Char.ToUpper(name(0), _roCulture) & name.Substring(1)
     End Function
 
     ' Iconița stării recepției (finding 5): Incarcat -> sus (verde), altfel Preluat -> jos
@@ -462,7 +555,7 @@ Public Class ReceptiiView
             lblEmpty.BackColor = p.SurfaceAltColor
 
             ' Re-tintarea iconițelor de stare pe noua paletă (grila rămâne golită — LISTA
-            ' se reface la următorul click pe un antet).
+            ' se reface la următorul click pe un nod).
             If _rows IsNot Nothing AndAlso _rows.Count > 0 Then
                 BuildTree(_rows)
             End If

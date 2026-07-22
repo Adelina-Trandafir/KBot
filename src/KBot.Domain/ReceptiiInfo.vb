@@ -52,6 +52,10 @@ Public NotInheritable Class ReceptieRow
     ''' <summary>Codul de clasificatie punctat. Poate fi gol: o linie al carei indicator
     ''' nu are clasificatie ramane in lista (LEFT JOIN pe server).</summary>
     Public Property Clsf As String = String.Empty
+    ''' <summary>Denumirea clasificatiei (Clasificatii.Denumire). Coloana „Descriere" a
+    ''' grilei o afiseaza pe randurile per-clsf — bine definita la orice nivel de agregare
+    ''' (luna / receptie / antet), spre deosebire de <see cref="DescriereH"/> (antetul).</summary>
+    Public Property Denumire As String = String.Empty
     ''' <summary>NrCrt-ul indicatorului (FX_Indicatori.NrCrt). Coloana „NrCrt" a grilei.</summary>
     Public Property NrCrtInd As Integer?
     Public Property Valoare As Double
