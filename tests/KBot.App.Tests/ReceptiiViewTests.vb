@@ -312,6 +312,66 @@ Public Class ReceptiiViewTests
     End Sub
 
     <Fact>
+    Public Sub RootTooltip_IsTableXml_WithCumulativeReconciliation()
+        ' Felia 0015-02. Ordine DataR: A (ian) apoi B (feb).
+        '  A: difhCum = 2864,12; plata (25 ian) e DUPĂ MaxDataH (19 ian) -> platiCum = 0.
+        '  B: difhCum = 2864,12 + 616,31 = 3480,43; plata (25 ian) <= MaxDataH (16 feb)
+        '     -> platiCum = 1000; Diferență = 2480,43 (>0 -> albastru).
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim t = TreeOf(view)
+                       view.SetContext(Context("A100"))
+                       api.Complete("A100", StandardData())
+                       Application.DoEvents()
+
+                       Dim ttA = t.Items(0).Tooltip
+                       Dim ttB = t.Items(1).Tooltip
+
+                       Assert.StartsWith("<table", ttA)
+                       Assert.Contains("Recepții cumulate", ttA)
+                       Assert.Contains("Plăți cumulate", ttA)
+                       Assert.Contains("Diferență", ttA)
+
+                       ' A: platiCum = 0 (plata e după MaxDataH).
+                       Assert.Contains("2.864,12", ttA)
+                       Assert.Contains("0,00", ttA)
+
+                       ' B: cumulat pe recepții + plată inclusă.
+                       Assert.Contains("3.480,43", ttB)   ' difhCum
+                       Assert.Contains("1.000,00", ttB)   ' platiCum
+                       Assert.Contains("2.480,43", ttB)   ' Diferență (>0)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub RootTooltip_NegativeDifference_IsRed()
+        ' O recepție unde plățile depășesc recepțiile -> Diferență < 0 -> roșu (#CC0000).
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim t = TreeOf(view)
+
+                       Dim data As New ReceptiiInfo() With {.Cod = "A100"}
+                       data.Receptii.Add(Row(1, 1, New Date(2026, 1, 31), 100.0, False, True,
+                                             11, New Date(2026, 1, 31), 100.0, 100.0, "Antet",
+                                             101, "65.02", 1, 100.0, 100.0))
+                       ' Plată de 500 înainte de MaxDataH -> platiCum = 500 > difhCum = 100.
+                       data.Plati.Add(New ReceptiePlata() With {.DataPlata = New Date(2026, 1, 20), .Suma = 500.0})
+
+                       view.SetContext(Context("A100"))
+                       api.Complete("A100", data)
+                       Application.DoEvents()
+
+                       Dim tt = t.Items(0).Tooltip
+                       Assert.Contains("-400,00", tt)      ' Diferență = 100 - 500
+                       Assert.Contains("#CC0000", tt)      ' colorat roșu
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
     Public Sub StaleResponse_ForSupersededCod_IsDiscarded()
         ' A100 e cerut, apoi B200 înainte ca A100 să răspundă. Răspunsul lui A100 vine
         ' ULTIMUL și nu are voie să suprascrie arborele lui B200.

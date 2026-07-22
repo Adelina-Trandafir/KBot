@@ -1,5 +1,6 @@
 Option Strict On
 Imports System.Globalization
+Imports System.Text
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports KBot.Api
@@ -208,12 +209,117 @@ Public Class ReceptiiView
                 nodeRows(r.Idrh).Add(r)
             Next
 
+            ' Tooltip-ul de recepție (felia 0015-02): reconciliere recepții/plăți per rădăcină.
+            ComputeRootTooltips(rows, roots)
+
             tree.Invalidate()
         Catch ex As Exception
             GlobalErrorLog.Write("ReceptiiView.BuildTree", ex)
             Throw
         End Try
     End Sub
+
+    ' ── Tooltip de recepție (felia 0015-02) ──────────────────────────────────
+    ' Oglindește NewRootPlatiTooltip din frmFX_MAIN_REC: patru rânduri —
+    '   Data recepție / Recepții cumulate (difhCum) / Plăți cumulate (platiCum) /
+    '   Diferență (difhCum − platiCum, roșu dacă <0, albastru dacă >0).
+    ' Per recepție, în ordinea DataR:
+    '   * difhCum = sumă rulantă a Sum(DIFH) pe recepție (DIFH e per antet — se însumează
+    '     anteturile DISTINCTE ale recepției, EXCLUZÂND cele șterse — qFX_MAIN_REC_TT_DIFH
+    '     filtrează Sters=False, deși arborele NU-l filtrează), apoi se cumulează pe recepții;
+    '   * platiCum = Sum(Suma) peste plăți cu DataPlata ≤ MaxDataH al recepției (cumulativ,
+    '     fără limită inferioară — finding 3). MaxDataH = max DataH pe anteturile recepției.
+    ' valAsoc NU e folosit (linia lui e comentată în Access). Nu se face niciun apel de rețea.
+    Private Sub ComputeRootTooltips(rows As List(Of ReceptieRow),
+                                    roots As Dictionary(Of Integer, AdvancedTreeControl.TreeItem))
+        Dim plati As List(Of ReceptiePlata) = If(_plati, New List(Of ReceptiePlata)())
+
+        Dim perReceptie = rows.GroupBy(Function(r) r.Idrr).
+            Select(Function(gp) New ReceptieTtRow With {
+                .Idrr = gp.Key,
+                .DataR = gp.Select(Function(x) x.DataR).FirstOrDefault(Function(d) d.HasValue),
+                .MaxDataH = MaxDate(gp.Select(Function(x) x.DataH)),
+                .SumDifh = SumDistinctAntetDifh(gp)
+            }).
+            OrderBy(Function(x) If(x.DataR.HasValue, x.DataR.Value, Date.MinValue)).
+            ThenBy(Function(x) x.Idrr).
+            ToList()
+
+        Dim difhCum As Double = 0
+        For Each rec As ReceptieTtRow In perReceptie
+            difhCum += rec.SumDifh
+
+            Dim platiCum As Double = 0
+            If rec.MaxDataH.HasValue Then
+                platiCum = plati.
+                    Where(Function(p) p.DataPlata.HasValue AndAlso p.DataPlata.Value <= rec.MaxDataH.Value).
+                    Sum(Function(p) p.Suma)
+            End If
+
+            Dim root As AdvancedTreeControl.TreeItem = Nothing
+            If roots.TryGetValue(rec.Idrr, root) Then
+                root.Tooltip = BuildRootTooltipXml(rec.DataR, difhCum, platiCum)
+            End If
+        Next
+    End Sub
+
+    ' Sum(DIFH) pe anteturile DISTINCTE ale recepției, sărind cele șterse. DIFH e constant
+    ' pe liniile unui antet, deci se ia o dată per IDRH.
+    Private Shared Function SumDistinctAntetDifh(recRows As IEnumerable(Of ReceptieRow)) As Double
+        Return recRows.Where(Function(r) Not r.StersH).
+                       GroupBy(Function(r) r.Idrh).
+                       Sum(Function(gp) gp.First().Difh)
+    End Function
+
+    Private Shared Function MaxDate(dates As IEnumerable(Of Date?)) As Date?
+        Dim vals = dates.Where(Function(d) d.HasValue).Select(Function(d) d.Value).ToList()
+        If vals.Count = 0 Then Return Nothing
+        Return vals.Max()
+    End Function
+
+    ' Construiește tabelul-tooltip XML (<table>) citit de TooltipTableParser al arborelui.
+    Private Shared Function BuildRootTooltipXml(dataR As Date?, difhCum As Double, platiCum As Double) As String
+        Dim dif As Double = Math.Round(difhCum - platiCum, 2)
+        ' Roșu dacă negativ, albastru dacă pozitiv (Switch din Access). ParseColor ia #RRGGBB.
+        Dim difColor As String = If(dif < 0, "#CC0000", If(dif > 0, "#0033CC", Nothing))
+
+        Dim sb As New StringBuilder()
+        sb.Append("<table>")
+        sb.Append("<header>")
+        sb.Append("<cell Align=""left"" Bold=""1"">Data recepție</cell>")
+        sb.Append("<cell Align=""right"" Bold=""1"">Valoare</cell>")
+        sb.Append("</header>")
+        AppendTtRow(sb, "Data recepție", ShortDate(dataR), Nothing)
+        AppendTtRow(sb, "Recepții cumulate", Money(difhCum), Nothing)
+        AppendTtRow(sb, "Plăți cumulate", Money(platiCum), Nothing)
+        AppendTtRow(sb, "Diferență", Money(dif), difColor)
+        sb.Append("</table>")
+        Return sb.ToString()
+    End Function
+
+    Private Shared Sub AppendTtRow(sb As StringBuilder, label As String, value As String, valueColor As String)
+        sb.Append("<row>")
+        sb.Append("<cell Align=""left"">").Append(XmlEscape(label)).Append("</cell>")
+        sb.Append("<cell Align=""right""")
+        If Not String.IsNullOrEmpty(valueColor) Then
+            sb.Append(" ForeColor=""").Append(valueColor).Append(""""c)
+        End If
+        sb.Append(">"c).Append(XmlEscape(value)).Append("</cell>")
+        sb.Append("</row>")
+    End Sub
+
+    Private Shared Function XmlEscape(s As String) As String
+        If String.IsNullOrEmpty(s) Then Return String.Empty
+        Return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("""", "&quot;")
+    End Function
+
+    ' Agregat de lucru per recepție pentru cumulul din tooltip (nu părăsește vederea).
+    Private NotInheritable Class ReceptieTtRow
+        Public Property Idrr As Integer
+        Public Property DataR As Date?
+        Public Property MaxDataH As Date?
+        Public Property SumDifh As Double
+    End Class
 
     ' ── Grila (LISTA) ────────────────────────────────────────────────────────
     ' Detaliul unui antet: un rând-total sintetic „Toți indicatorii" (Valoare = Sum(DIF)
