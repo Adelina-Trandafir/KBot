@@ -536,4 +536,138 @@ Public Class ApiClientTests
         Assert.Equal("TOKEN_UNKNOWN", ex.Reason)
     End Function
 
+    ' --- GetReceptiiAsync (slice 0015): vederea Recepții. Contract de fir snake_case
+    ' (ca /sumar, /rezervari), envelope cu DOUA liste (receptii + plati). Testele acoperă
+    ' forma URL-ului, maparea wire -> POCO (inclusiv nullable idr/nrcrt), și cazul „gol". ---
+
+    Private Const ReceptiiTwoRows As String =
+        "{""cod"":""A100"",""receptii"":[" &
+        "{""idrr"":970001,""nrcrt_r"":1,""data_r"":""2026-01-19"",""suma_antet"":2864.12," &
+        """incarcat"":false,""preluat"":true,""idrh"":980001,""nrcrt_h"":1," &
+        """data_h"":""2026-01-19"",""total"":2864.12,""difh"":2864.12,""sters_h"":false," &
+        """descriere_h"":""Plata factura"",""idr"":990001,""id_clsf"":75," &
+        """cod_indicator"":""IND-A"",""clsf"":""65.02.04.02.20.01.03"",""nrcrt_ind"":1," &
+        """valoare"":2864.12,""dif"":2864.12}," &
+        "{""idrr"":970002,""nrcrt_r"":2,""data_r"":""2026-02-16"",""suma_antet"":3480.43," &
+        """incarcat"":true,""preluat"":false,""idrh"":980002,""nrcrt_h"":null," &
+        """data_h"":null,""total"":3480.43,""difh"":616.31,""sters_h"":false," &
+        """descriere_h"":null,""idr"":null,""id_clsf"":0," &
+        """cod_indicator"":null,""clsf"":null,""nrcrt_ind"":null," &
+        """valoare"":0.0,""dif"":0.0}]," &
+        """plati"":[{""data_plata"":""2026-01-25"",""suma"":1000.0}," &
+        "{""data_plata"":""2026-02-20"",""suma"":500.0}]}"
+
+    <Fact>
+    Public Async Function GetReceptii_BuildsUrl_SendsBearer_EscapesCod() As Task
+        Dim h As New StubHandler With {.ResponseBody = ReceptiiTwoRows}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await client.GetReceptiiAsync("A 100", CancellationToken.None)
+
+        Assert.Equal(HttpMethod.Get, h.LastMethod)
+        Assert.Equal("/api/forexe/receptii", h.LastRequestUri.AbsolutePath)
+        Assert.Contains("cod=A%20100", h.LastRequestUri.Query)
+        Assert.DoesNotContain("ss=", h.LastRequestUri.Query)
+        Assert.Equal("Bearer tok-opaque-123", h.LastAuthorization)
+    End Function
+
+    <Fact>
+    Public Async Function GetReceptii_BlankCod_ThrowsBeforeAnyRequest() As Task
+        Dim h As New StubHandler With {.ResponseBody = ReceptiiTwoRows}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await Assert.ThrowsAsync(Of ArgumentException)(
+            Async Function() Await client.GetReceptiiAsync("   ", CancellationToken.None))
+        Assert.Null(h.LastRequestUri)      ' nu s-a trimis nimic pe fir
+    End Function
+
+    <Fact>
+    Public Async Function GetReceptii_Deserializes_RowsPlati_AndNullables() As Task
+        Dim h As New StubHandler With {.ResponseBody = ReceptiiTwoRows}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetReceptiiAsync("A100", CancellationToken.None)
+
+        Assert.Equal("A100", data.Cod)
+        Assert.Equal(2, data.Receptii.Count)
+
+        Dim first = data.Receptii(0)
+        Assert.Equal(970001, first.Idrr)
+        Assert.Equal(1, first.NrCrtR.Value)
+        Assert.Equal(New Date(2026, 1, 19), first.DataR.Value)
+        Assert.Equal(2864.12, first.SumaAntet)
+        Assert.False(first.Incarcat)
+        Assert.True(first.Preluat)
+        Assert.Equal(980001, first.Idrh)
+        Assert.Equal(2864.12, first.Difh)
+        Assert.Equal("Plata factura", first.DescriereH)
+        Assert.Equal(990001, first.Idr.Value)
+        Assert.Equal("65.02.04.02.20.01.03", first.Clsf)
+        Assert.Equal(1, first.NrCrtInd.Value)
+
+        ' Al doilea rând: antet fără linii (idr null), nrcrt_h/data_h/descriere_h null.
+        Dim second = data.Receptii(1)
+        Assert.True(second.Incarcat)
+        Assert.False(second.Preluat)
+        Assert.False(second.NrCrtH.HasValue)
+        Assert.False(second.DataH.HasValue)
+        Assert.False(second.Idr.HasValue)
+        Assert.False(second.NrCrtInd.HasValue)
+
+        ' Plăți: două rânduri, ordonate, mapate în ReceptiePlata.
+        Assert.Equal(2, data.Plati.Count)
+        Assert.Equal(New Date(2026, 1, 25), data.Plati(0).DataPlata.Value)
+        Assert.Equal(1000.0, data.Plati(0).Suma)
+        Assert.Equal(500.0, data.Plati(1).Suma)
+    End Function
+
+    <Fact>
+    Public Async Function GetReceptii_NullTextFields_BecomeEmptyStrings() As Task
+        ' clsf/cod_indicator/descriere_h null pentru un antet fără linii (ramura LEFT JOIN).
+        ' Rândul TREBUIE să existe, iar textele null -> String.Empty.
+        Dim h As New StubHandler With {.ResponseBody = ReceptiiTwoRows}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetReceptiiAsync("A100", CancellationToken.None)
+
+        Assert.Equal(String.Empty, data.Receptii(1).Clsf)
+        Assert.Equal(String.Empty, data.Receptii(1).CodIndicator)
+        Assert.Equal(String.Empty, data.Receptii(1).DescriereH)
+    End Function
+
+    <Fact>
+    Public Async Function GetReceptii_Empty_IsEmptyNotException() As Task
+        ' Un angajament fără recepții e legitim: serverul dă 200 cu receptii []. Clientul
+        ' trebuie să întoarcă un ReceptiiInfo gol, NU să arunce.
+        Dim h As New StubHandler With {.ResponseBody = "{""cod"":""NUEXISTA"",""receptii"":[],""plati"":[]}"}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetReceptiiAsync("NUEXISTA", CancellationToken.None)
+
+        Assert.NotNull(data)
+        Assert.Empty(data.Receptii)
+        Assert.Empty(data.Plati)
+        Assert.Equal("NUEXISTA", data.Cod)
+    End Function
+
+    <Fact>
+    Public Async Function GetReceptii_Non2xx_ParsesRomanianErrorAndReason() As Task
+        Dim h As New StubHandler With {
+            .Status = HttpStatusCode.Unauthorized,
+            .ResponseBody = "{""error"":""Sesiune necunoscută. Autentificați-vă din nou."",""reason"":""TOKEN_UNKNOWN""}"
+        }
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
+            Async Function() Await client.GetReceptiiAsync("A100", CancellationToken.None))
+        Assert.Equal(401, ex.StatusCode.Value)
+        Assert.Equal("TOKEN_UNKNOWN", ex.Reason)
+    End Function
+
 End Class

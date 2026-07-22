@@ -37,7 +37,9 @@ forexe_bp = Blueprint("forexe", __name__)
 # tree.py        -> GET /api/forexe/tree
 # sumar.py       -> GET /api/forexe/sumar
 # rezervari.py   -> GET /api/forexe/rezervari
+# receptii.py    -> GET /api/forexe/receptii
 from . import angajamente  # noqa: E402,F401
 from . import tree  # noqa: E402,F401
 from . import sumar  # noqa: E402,F401
 from . import rezervari  # noqa: E402,F401
+from . import receptii  # noqa: E402,F401

@@ -1,0 +1,345 @@
+Option Strict On
+Imports System
+Imports System.Collections.Generic
+Imports System.Threading
+Imports System.Threading.Tasks
+Imports System.Windows.Forms
+Imports Xunit
+Imports KBot.Api
+Imports KBot.Common
+Imports KBot.Controls
+Imports KBot.Domain
+Imports KBot.App
+
+' Headless behaviour + shaping tests for ReceptiiView (slice 0015). They cover what no
+' server test can reach: a null/blank context must NOT hit the network; a response must
+' shape into the 2-level receptie/antet tree; selecting an antet must fill the LISTA grid
+' (synthetic total = SUM(DIF), then one row per clsf = SUM(Valoare)); selecting a root
+' must CLEAR the grid; and a STALE response must be discarded.
+'
+' Everything runs on a dedicated STA thread — creating a UserControl installs a
+' WindowsFormsSynchronizationContext, so Async Sub continuations need Application.DoEvents()
+' to pump. Same pattern as SumarViewTests / RezervariViewTests.
+Public Class ReceptiiViewTests
+
+    ' Fake IApiClient: records the codes it was asked for and hands back a Task the TEST
+    ' completes, so response ORDER is fully under the test's control.
+    Private NotInheritable Class FakeApiClient
+        Implements IApiClient
+
+        Public ReadOnly RequestedCods As New List(Of String)()
+        Public ReadOnly Pending As New Dictionary(Of String, TaskCompletionSource(Of ReceptiiInfo))(StringComparer.Ordinal)
+
+        Public Function GetReceptiiAsync(cod As String, ct As CancellationToken) _
+            As Task(Of ReceptiiInfo) Implements IApiClient.GetReceptiiAsync
+            RequestedCods.Add(cod)
+            Dim tcs As New TaskCompletionSource(Of ReceptiiInfo)()
+            Pending(cod) = tcs
+            Return tcs.Task
+        End Function
+
+        Public Sub Complete(cod As String, data As ReceptiiInfo)
+            Pending(cod).SetResult(data)
+        End Sub
+
+        ' --- restul contractului: nefolosit aici ---
+        Public Function GetRezervariAsync(cod As String, ct As CancellationToken) As Task(Of RezervariInfo) _
+            Implements IApiClient.GetRezervariAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function GetSumarAsync(cod As String, ct As CancellationToken) As Task(Of SumarInfo) _
+            Implements IApiClient.GetSumarAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function UpsertAngajamenteAsync(dbName As String, rows As IReadOnlyList(Of Angajament),
+                                               ct As CancellationToken) As Task(Of String) _
+            Implements IApiClient.UpsertAngajamenteAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function GetAngajamenteAsync(dbName As String, idUnitate As Integer, doarAnulate As Boolean,
+                                            ct As CancellationToken) As Task(Of IReadOnlyList(Of Angajament)) _
+            Implements IApiClient.GetAngajamenteAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function GetTreeAsync(an As Integer, ss As String, includeHidden As Boolean,
+                                     ct As CancellationToken) As Task(Of IReadOnlyList(Of AngajamentTreeInfo)) _
+            Implements IApiClient.GetTreeAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function ProcessExcelAsync(job As ExcelJob, ct As CancellationToken) As Task(Of String) _
+            Implements IApiClient.ProcessExcelAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T) _
+            Implements IApiClient.GetAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function PostAsync(Of TRequest, TResponse)(relativeUrl As String, payload As TRequest,
+                                                          ct As CancellationToken) As Task(Of TResponse) _
+            Implements IApiClient.PostAsync
+            Throw New NotSupportedException()
+        End Function
+    End Class
+
+    Private Shared Function PassThrough() As Func(Of Func(Of Task(Of ReceptiiInfo)), Task(Of ReceptiiInfo))
+        Return Function(op) op()
+    End Function
+
+    Private Shared Function Context(cod As String) As AngajamentTreeInfo
+        Return New AngajamentTreeInfo() With {.CodAngajament = cod, .NodeKey = cod}
+    End Function
+
+    ' O linie de receptie cu antetul + receptia purtate.
+    Private Shared Function Row(idrr As Integer, nrCrtR As Integer, dataR As Date, sumaAntet As Double,
+                                incarcat As Boolean, preluat As Boolean,
+                                idrh As Integer, dataH As Date, total As Double, difh As Double,
+                                descriereH As String,
+                                idr As Integer?, clsf As String, nrCrtInd As Integer?,
+                                valoare As Double, dif As Double) As ReceptieRow
+        Return New ReceptieRow() With {
+            .Idrr = idrr, .NrCrtR = nrCrtR, .DataR = dataR, .SumaAntet = sumaAntet,
+            .Incarcat = incarcat, .Preluat = preluat,
+            .Idrh = idrh, .DataH = dataH, .Total = total, .Difh = difh,
+            .DescriereH = descriereH,
+            .Idr = idr, .Clsf = clsf, .CodIndicator = "IND-A", .NrCrtInd = nrCrtInd,
+            .Valoare = valoare, .Dif = dif
+        }
+    End Function
+
+    ' Set standard: DOUA receptii.
+    '  - Recepția A (IDRR 1, Preluat): un antet (IDRH 11) cu O linie (clsf 65.02).
+    '  - Recepția B (IDRR 2, Incarcat): un antet (IDRH 21) cu DOUA linii (65.02, 66.01),
+    '    ca să testăm gruparea pe clsf + totalul = Sum(DIF).
+    Private Shared Function StandardData() As ReceptiiInfo
+        Dim data As New ReceptiiInfo() With {.Cod = "A100"}
+        data.Receptii.Add(Row(1, 1, New Date(2026, 1, 19), 2864.12, False, True,
+                              11, New Date(2026, 1, 19), 2864.12, 2864.12, "Plata factura",
+                              101, "65.02", 1, 2864.12, 2864.12))
+        data.Receptii.Add(Row(2, 2, New Date(2026, 2, 16), 3480.43, True, False,
+                              21, New Date(2026, 2, 16), 3480.43, 616.31, "Plata februarie",
+                              201, "65.02", 1, 1000.0, 500.0))
+        data.Receptii.Add(Row(2, 2, New Date(2026, 2, 16), 3480.43, True, False,
+                              21, New Date(2026, 2, 16), 3480.43, 616.31, "Plata februarie",
+                              202, "66.01", 2, 2480.43, 116.31))
+        data.Plati.Add(New ReceptiePlata() With {.DataPlata = New Date(2026, 1, 25), .Suma = 1000.0})
+        Return data
+    End Function
+
+    Private Shared Function FindControl(Of T As Class)(root As Control) As T
+        For Each c As Control In root.Controls
+            Dim hit As T = TryCast(c, T)
+            If hit IsNot Nothing Then Return hit
+            Dim nested As T = FindControl(Of T)(c)
+            If nested IsNot Nothing Then Return nested
+        Next
+        Return Nothing
+    End Function
+
+    Private Shared Function GridOf(view As ReceptiiView) As KBotDataView
+        Dim g = FindControl(Of KBotDataView)(view)
+        If g Is Nothing Then Throw New InvalidOperationException("ReceptiiView nu conține un KBotDataView.")
+        Return g
+    End Function
+
+    Private Shared Function TreeOf(view As ReceptiiView) As AdvancedTreeControl
+        Dim t = FindControl(Of AdvancedTreeControl)(view)
+        If t Is Nothing Then Throw New InvalidOperationException("ReceptiiView nu conține un AdvancedTreeControl.")
+        Return t
+    End Function
+
+    ' Ridică NodeMouseUp pentru un nod (butonul stâng), ca la un click real în arbore.
+    Private Shared Sub ClickNode(view As ReceptiiView, node As AdvancedTreeControl.TreeItem)
+        Dim m = view.GetType().GetMethod("tree_NodeMouseUp",
+            Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance)
+        m.Invoke(view, New Object() {node, New MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0)})
+    End Sub
+
+    Private Shared Sub RunSta(body As Action)
+        Dim failure As Exception = Nothing
+        Dim t As New Thread(Sub()
+                                Try
+                                    body()
+                                Catch ex As Exception
+                                    failure = ex
+                                End Try
+                            End Sub)
+        t.SetApartmentState(ApartmentState.STA)
+        t.Start()
+        t.Join()
+        If failure IsNot Nothing Then Throw failure
+    End Sub
+
+    <Fact>
+    Public Sub SetContext_Nothing_MakesNoApiCall_AndClearsTree()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim g = GridOf(view)
+                       Dim t = TreeOf(view)
+
+                       view.SetContext(Context("A100"))
+                       api.Complete("A100", StandardData())
+                       Application.DoEvents()
+                       Assert.Equal(2, t.Items.Count)
+                       ' Nimic selectat -> grila e goală (LISTA doar la nivel de antet).
+                       Assert.Equal(0, g.RowCount)
+
+                       view.SetContext(Nothing)
+
+                       Assert.Single(api.RequestedCods)
+                       Assert.Empty(t.Items)
+                       Assert.Equal(0, g.RowCount)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub SetContext_BlankCod_MakesNoApiCall()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       view.SetContext(New AngajamentTreeInfo() With {.CodAngajament = "   "})
+                       Assert.Empty(api.RequestedCods)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Tree_TwoLevels_RootPerReceptie_NodePerAntet()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim t = TreeOf(view)
+                       view.SetContext(Context("A100"))
+                       api.Complete("A100", StandardData())
+                       Application.DoEvents()
+
+                       ' Două rădăcini (recepții), fiecare cu un singur nod (antet).
+                       Assert.Equal(2, t.Items.Count)
+                       Dim a = t.Items(0)
+                       Dim b = t.Items(1)
+                       Assert.Single(a.Children)
+                       Assert.Single(b.Children)
+
+                       ' Captions: dată scurtă ~~~ sumă antet / total.
+                       Assert.StartsWith("19.01.2026", a.Caption)
+                       Assert.Contains("2.864,12", a.Caption)
+                       Assert.StartsWith("16.02.2026", b.Caption)
+                       Assert.Contains("3.480,43", b.Caption)
+                       Assert.Contains("2.864,12", a.Children(0).Caption)
+
+                       ' Iconița de stare există pe rădăcină (nu și pe nod).
+                       Assert.NotNull(a.LeftIconClosed)
+                       Assert.Null(a.Children(0).LeftIconClosed)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AntetSelection_FillsGrid_TotalThenPerClsf()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim g = GridOf(view)
+                       Dim t = TreeOf(view)
+                       view.SetContext(Context("A100"))
+                       api.Complete("A100", StandardData())
+                       Application.DoEvents()
+
+                       ' Antetul recepției B are DOUA clasificații -> total + 2 rânduri.
+                       Dim antetB = t.Items(1).Children(0)
+                       ClickNode(view, antetB)
+
+                       Assert.Equal(3, g.RowCount)
+                       ' Randul-total: Descriere „Toți indicatorii", Valoare = Sum(DIF) = 616,31.
+                       Assert.Equal("Toți indicatorii", CStr(g.Rows(0)("descriere")))
+                       Assert.Equal(616.31, CDbl(g.Rows(0)("valoare")), 2)
+                       ' Rândurile per clsf, ordonate pe NrCrt (65.02 -> 66.01).
+                       Assert.Equal("65.02", CStr(g.Rows(1)("clsf")))
+                       Assert.Equal(1000.0, CDbl(g.Rows(1)("valoare")), 2)
+                       Assert.Equal("66.01", CStr(g.Rows(2)("clsf")))
+                       Assert.Equal(2480.43, CDbl(g.Rows(2)("valoare")), 2)
+                       ' Descrierea rândurilor per-clsf = a antetului.
+                       Assert.Equal("Plata februarie", CStr(g.Rows(1)("descriere")))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub RootSelection_ClearsGrid()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim g = GridOf(view)
+                       Dim t = TreeOf(view)
+                       view.SetContext(Context("A100"))
+                       api.Complete("A100", StandardData())
+                       Application.DoEvents()
+
+                       ' Umple grila dintr-un antet, apoi selectează rădăcina -> se golește.
+                       ClickNode(view, t.Items(1).Children(0))
+                       Assert.Equal(3, g.RowCount)
+
+                       ClickNode(view, t.Items(1))
+                       Assert.Equal(0, g.RowCount)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub EmptyReceptii_ShowsNoTreeNoGrid()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim g = GridOf(view)
+                       Dim t = TreeOf(view)
+
+                       view.SetContext(Context("A100"))
+                       api.Complete("A100", New ReceptiiInfo() With {.Cod = "A100"})
+                       Application.DoEvents()
+
+                       Assert.Equal(0, g.RowCount)
+                       Assert.Empty(t.Items)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub StaleResponse_ForSupersededCod_IsDiscarded()
+        ' A100 e cerut, apoi B200 înainte ca A100 să răspundă. Răspunsul lui A100 vine
+        ' ULTIMUL și nu are voie să suprascrie arborele lui B200.
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim t = TreeOf(view)
+
+                       view.SetContext(Context("A100"))
+                       view.SetContext(Context("B200"))
+                       Assert.Equal(New String() {"A100", "B200"}, api.RequestedCods.ToArray())
+
+                       ' Răspunsul NOU (B200) ajunge primul: o singură recepție.
+                       Dim b As New ReceptiiInfo() With {.Cod = "B200"}
+                       b.Receptii.Add(Row(9, 1, New Date(2026, 3, 1), 7.0, False, True,
+                                          91, New Date(2026, 3, 1), 7.0, 7.0, "Doar una",
+                                          901, "70.01", 1, 7.0, 7.0))
+                       api.Complete("B200", b)
+                       Application.DoEvents()
+                       Assert.Equal(1, t.Items.Count)
+
+                       ' Răspunsul VECHI (A100, 2 recepții) ajunge după — trebuie ignorat.
+                       api.Complete("A100", StandardData())
+                       Application.DoEvents()
+
+                       Assert.Equal(1, t.Items.Count)
+                   End Using
+               End Sub)
+    End Sub
+
+End Class

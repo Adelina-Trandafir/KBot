@@ -39,7 +39,9 @@ number** is recorded at the bottom of this section — bump it when you assign a
 
 | 0014 | Rezervări — endpoint + `RezervariView` (a doua vedere reală) | DONE (code) / **NEVER RUN ON A LIVE DB** / **NO VISUAL VERDICT** | `SLICE-0014-rezervari-view.md` | Plan: pasted in-session. `GET /api/forexe/rezervari?cod=` (cititor brut, un rând per `FX_Rezervari`) + `RezervariView` (master/detail: arbore lună→(dată,tip) la stânga, grilă Clsf/CreditBug/Inițiale/Curentă/Definitive la dreapta) înlocuind `PlaceholderView` pentru `rezervari`. **Întrebarea deschisă a planului (§7.1, totalul lunar) e REZOLVATĂ din sursa Access, nu ghicită:** `qFX_REZERVARI_TREE` calculează `TOTALL = SUM(R_Valoare)` corelat pe (CodAngajament, lună, an) — candidatul (a). Valoarea frunzei = `SUM(IIf(EInitiala,R_Initiala,R_Valoare))` (Suma din `QFX_DDF_REZERVARI`); tipul derivat client-side (Inițială>Mărire>Micșorare). Clasificația: aceleași decizii ca Sumar 0011-03 — prin `FX_Indicatori` (join CodAI, `IdClsf`=id Access), subinterogare scalară `LIMIT 1` + predicat `IdUnitate` păstrat la nomenclator. `LEFT JOIN FX_Indicatori` (o rezervare nu dispare fără indicator). Iconițe GDI tematizabile (`RezervariIcons`), nu resurse binare. «+» = display-only (ridică `AdaugaDdfCerut`, fără abonat) — workflow-ul DDF (migration-plan item 7) e felie ulterioară. Plasa 401 + stale-guard ca la Sumar. Api 36→42 (+6 GetRezervari), App 22→30 (+8 view), 16 teste Python host-only (skip off-host). ⚠️ **Trei lucruri deschise:** (a) nimeni nu a văzut `RezervariView` pe ecran (+ harness-ul `KBotDataView` STILL unrun); (b) `test_forexe_rezervari.py` nerulat pe host — confirmă că cele opt tabele/coloane există și că join-ul prin `FX_Indicatori` dă Clsf populat; (c) cifrele exacte din screenshot (Ian 1.091.940 / …) NU au fost reproduse numeric (formula e din sursă, dar datele angajamentului lipsesc) |
 
-**Next free slice number: 0015.**
+| 0015 | Recepții — endpoint + `ReceptiiView` (a treia vedere reală) | 0015-01 DONE (code) / **NEVER RUN ON A LIVE DB** / **NO VISUAL VERDICT** | `SLICE-0015-01-receptii-view.md` | Plan: `PLAN_ReceptiiView.md`. `GET /api/forexe/receptii?cod=` (cititor brut: un rând per linie `FX_Receptii`, cu antet `H` + recepție `R` părinte, + array `plati` în același răspuns) + `ReceptiiView` (master/detail: arbore **2 niveluri** recepție→antet la stânga, grilă LISTA NrCrt/Descriere/Clsf/Valoare la dreapta) înlocuind `PlaceholderView` pentru `receptii`. **Cele trei furci ale planului sunt blocate din sursa Access, nu ghicite:** (1) arbore 2 niveluri (frunzele pe clsf din `Show_Receptii` sunt cod comentat — `AggregateRow`/`valAsoc` dormante); (2) LISTA condusă doar de antet (rând-total `Sum(DIF)` + rânduri per clsf `Sum(Valoare)`, din `qFX_MAIN_REC_LISTA_IND`); (3) un singur endpoint (nu tree/lista/tooltip separate). Clasificația: același drum ca Sumar 0011-03 (`FX_Indicatori`, `IdClsf`=id Access, subinterogare scalară `LIMIT 1` + `IdUnitate` păstrat la nomenclator, `LEFT JOIN` ca o linie să nu dispară). Iconițe GDI de stare (sus/jos/neutru, finding 5) tematizabile. Plasa 401 + stale-guard ca la Sumar/Rezervări. Api 42→48 (+6 GetReceptii), App 30→37 (+7 view), 15 teste Python host-only (skip off-host). **Devieri documentate:** chei de fir snake_case (nu PascalCase-ul schiței); coloana grilei „Descriere" = Descrierea ANTETULUI (`FX_Receptii_H.Descriere`, din `Nz([HH]![Descriere],…)`), nu a indicatorului; `sters_h` adăugat în rând pentru cumulul DIFH din tooltip (0015-02). ⚠️ **Deschis:** (a) `test_forexe_receptii.py` nerulat pe host; (b) `ReceptiiView` niciodată pe ecran; (c) **pass 0015-02 (tooltip de recepție `NewRootPlatiTooltip`) nefăcut** |
+
+**Next free slice number: 0016.**
 
 ---
 
@@ -52,6 +54,14 @@ number** is recorded at the bottom of this section — bump it when you assign a
 - **Next:** the remaining seven views are still `PlaceholderView` (Sumar landed in 0011,
   Rezervări in 0014); Slice 0004's remaining Tier 1 items and the Slice 0003 VPS config
   are still open and short.
+- **Slice 0015 (Recepții) — pass 0015-01 landed, code green, 0 warnings; the third real
+  view.** The plan's three forks (tree depth, LISTA driver, single endpoint) were all
+  settled from the Access source, not guessed. Three human items: (1) run
+  `test_forexe_receptii.py` on the host (15 tests, skip off-host) — confirms the eight
+  tables/columns exist and the `FX_Indicatori` join yields a populated `Clsf` (blank on
+  every row ⇒ join key, same trap as 0011-03); (2) `ReceptiiView` has never been rendered
+  on screen; (3) **pass 0015-02 (the receptie root tooltip) is not yet built** — the
+  endpoint already ships `plati` + `difh` + `sters_h`, so it needs no new server call.
 - **Slice 0014 (Rezervări) — code green, 0 warnings; the second real view.** The plan's
   open month-total question was answered from the Access source (`qFX_REZERVARI_TREE.TOTALL
   = SUM(R_Valoare)`), not guessed. Three human items: (1) run `test_forexe_rezervari.py`

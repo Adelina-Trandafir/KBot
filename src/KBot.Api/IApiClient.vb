@@ -49,6 +49,15 @@ Public Interface IApiClient
     Function GetRezervariAsync(cod As String, ct As CancellationToken) As Task(Of RezervariInfo)
 
     ''' <summary>
+    ''' Aduce recepțiile unui angajament (GET /api/forexe/receptii): un rând per linie
+    ''' FX_Receptii (cu antet + receptie părinte) plus lista de plăți a angajamentului.
+    ''' Baza NU se trimite: serverul o ia din sesiune. Un cod necunoscut întoarce un
+    ''' ReceptiiInfo cu zero rânduri (nu excepție). Hard-fail (Throw) la non-2xx; fără
+    ''' retry pe 401 (curge spre WithReauth).
+    ''' </summary>
+    Function GetReceptiiAsync(cod As String, ct As CancellationToken) As Task(Of ReceptiiInfo)
+
+    ''' <summary>
     ''' Trimite un Excel (base64) la server pentru conversie în JSON (/api/tools/process_excel).
     ''' Întoarce conținutul câmpului "data" din răspuns. Autorizare: bearer-ul sesiunii
     ''' curente (în ApiClient). Hard-fail (Throw ApiException) la non-2xx.

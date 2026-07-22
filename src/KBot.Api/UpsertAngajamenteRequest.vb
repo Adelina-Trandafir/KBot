@@ -141,3 +141,45 @@ Public NotInheritable Class GetRezervareRow
     Public Property e_micsorare As Boolean
     Public Property are_ddf As Boolean
 End Class
+
+' Wire DTOs for GET /api/forexe/receptii (vederea Recepții, slice 0015).
+' Property names ARE the JSON keys (PropertyNamingPolicy=Nothing) — snake_case verbatim,
+' matching routes/forexe/receptii.py exactly. ApiClient maps them onto the Receptii POCOs
+' so the snake_case stops at the wire boundary. The envelope carries BOTH arrays
+' (receptii + plati) in one response, so the client half is a single call.
+Public NotInheritable Class GetReceptiiResponse
+    Public Property cod As String
+    Public Property receptii As New List(Of GetReceptieRow)()
+    Public Property plati As New List(Of GetReceptiePlata)()
+End Class
+
+' One raw FX_Receptii line, with its antet (H) and receptie (R) parents. nrcrt_* and idr
+' are nullable: NrCrt can be missing on an indicator/header, and idr is null for an antet
+' with no lines (LEFT JOIN branch).
+Public NotInheritable Class GetReceptieRow
+    Public Property idrr As Integer
+    Public Property nrcrt_r As Integer?
+    Public Property data_r As Date?
+    Public Property suma_antet As Double
+    Public Property incarcat As Boolean
+    Public Property preluat As Boolean
+    Public Property idrh As Integer
+    Public Property nrcrt_h As Integer?
+    Public Property data_h As Date?
+    Public Property total As Double
+    Public Property difh As Double
+    Public Property sters_h As Boolean
+    Public Property descriere_h As String
+    Public Property idr As Integer?
+    Public Property id_clsf As Integer
+    Public Property cod_indicator As String
+    Public Property clsf As String
+    Public Property nrcrt_ind As Integer?
+    Public Property valoare As Double
+    Public Property dif As Double
+End Class
+
+Public NotInheritable Class GetReceptiePlata
+    Public Property data_plata As Date?
+    Public Property suma As Double
+End Class

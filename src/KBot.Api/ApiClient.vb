@@ -327,6 +327,82 @@ Public Class ApiClient
         End Try
     End Function
 
+    ' Receptiile unui angajament (slice 0015), pentru ReceptiiView. Un singur parametru:
+    ' cod = CodAngajament, escapat in query string. NU se trimite baza (o citeste serverul
+    ' din sesiune). Un cod fara receptii intoarce 200 cu receptii [], deci aici rezulta un
+    ' ReceptiiInfo gol, nu o exceptie. Envelope-ul poarta si `plati` (pentru tooltip, felia
+    ' 0015-02) intr-un singur apel. Hard-fail (Throw ApiException) pe non-2xx; un 401 curge
+    ' spre WithReauth.
+    Public Async Function GetReceptiiAsync(cod As String, ct As CancellationToken) _
+        As Task(Of ReceptiiInfo) Implements IApiClient.GetReceptiiAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim url As String = $"/api/forexe/receptii?cod={Uri.EscapeDataString(cod)}"
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea recepțiilor angajamentului", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As GetReceptiiResponse = JsonSerializer.Deserialize(Of GetReceptiiResponse)(respText, _json)
+                    Dim result As New ReceptiiInfo()
+                    If payload Is Nothing Then Return result
+
+                    result.Cod = If(payload.cod, If(cod, String.Empty))
+
+                    If payload.receptii IsNot Nothing Then
+                        For Each r As GetReceptieRow In payload.receptii
+                            result.Receptii.Add(New ReceptieRow() With {
+                                .Idrr = r.idrr,
+                                .NrCrtR = r.nrcrt_r,
+                                .DataR = r.data_r,
+                                .SumaAntet = r.suma_antet,
+                                .Incarcat = r.incarcat,
+                                .Preluat = r.preluat,
+                                .Idrh = r.idrh,
+                                .NrCrtH = r.nrcrt_h,
+                                .DataH = r.data_h,
+                                .Total = r.total,
+                                .Difh = r.difh,
+                                .StersH = r.sters_h,
+                                .DescriereH = If(r.descriere_h, String.Empty),
+                                .Idr = r.idr,
+                                .IdClsf = r.id_clsf,
+                                .CodIndicator = If(r.cod_indicator, String.Empty),
+                                .Clsf = If(r.clsf, String.Empty),
+                                .NrCrtInd = r.nrcrt_ind,
+                                .Valoare = r.valoare,
+                                .Dif = r.dif
+                            })
+                        Next
+                    End If
+
+                    If payload.plati IsNot Nothing Then
+                        For Each p As GetReceptiePlata In payload.plati
+                            result.Plati.Add(New ReceptiePlata() With {
+                                .DataPlata = p.data_plata,
+                                .Suma = p.suma
+                            })
+                        Next
+                    End If
+                    Return result
+                End Using
+            End Using
+        Catch ex As ApiException
+            ' 401/HTTP tipat, tratat de apelant (WithReauth) — nu logăm.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetReceptiiAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ' Conversie Excel -> JSON pe server. FOREXE nu mai face HTTP direct: umple un
     ' ExcelJob și îl dă aici, unde stau adresa, token-ul bearer și POST-ul. Un singur
     ' apel, fără retry (upload base64 mare; reîncercarea e scumpă). Non-2xx -> ApiException
