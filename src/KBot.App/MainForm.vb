@@ -170,15 +170,18 @@ Public Class MainForm
             ' Fiecare cheie (mai puțin „sumar") e poarta unui flag Are* din arbore:
             ' vezi ApplyViewGating. Sumar rămâne mereu activ (nu are flag).
             navViews.AddItem("sumar", "Sumar")
-            navViews.AddItem("indicatori", "Indicatori")
+            'navViews.AddItem("indicatori", "Indicatori")
             navViews.AddItem("istoric", "Istoric")
-            navViews.AddItem("revizii", "Revizii")
+            'navViews.AddItem("revizii", "Revizii")
             navViews.AddItem("rezervari", "Rezervări")
-            navViews.AddItem("partener", "Partener")
+            'navViews.AddItem("partener", "Partener")
             navViews.AddItem("receptii", "Recepții")
             navViews.AddItem("plati", "Plăți")
-            navViews.AddItem("ddf", "DDF")
-            navViews.AddItem("ord", "ORD")
+            ' DDF/ORD sunt editoare separate de restul vederilor: le desprindem la baza
+            ' barei (grupul „Far"), cu un separator între ele și lista de deasupra.
+            navViews.AddSeparator(KBot.Theming.KBotNavAlign.Far)
+            navViews.AddItem("ddf", "DDF", KBot.Theming.KBotNavAlign.Far)
+            navViews.AddItem("ord", "ORD", KBot.Theming.KBotNavAlign.Far)
             navViews.SelectedKey = "sumar"   ' declanșează SelectionChanged -> creează vederea
 
             ' Fără nod selectat nu se știe ce date există: toate vederile cu flag pornesc
@@ -508,23 +511,22 @@ Public Class MainForm
 
     ''' <summary>
     ''' Poarta vederilor: fiecare flag Are* comandă exact o intrare din navigație.
-    ''' Fără nod selectat (info = Nothing) rămâne activ doar «sumar».
-    ''' NOTĂ: KBotNavList nu are conceptul de vizibilitate, doar Enabled — o intrare
-    ''' dezactivată nu se poate selecta, nu are hover și e sărită de navigarea cu
-    ''' tastatura, deci vederea e efectiv inaccesibilă (decizie felia 0008; ascunderea
-    ''' propriu-zisă ar cere SetItemVisible în KBot.Theming).
+    ''' Fără nod selectat (info = Nothing) rămâne activă doar «sumar».
+    ''' Un flag FALSE ASCUNDE intrarea (SetItemVisible), nu doar o dezactivează — o
+    ''' intrare ascunsă nu ocupă spațiu, nu se pictează, nu se poate selecta și e sărită
+    ''' de navigarea cu tastatura.
     ''' </summary>
     Private Sub ApplyViewGating(info As AngajamentTreeInfo)
         Try
-            navViews.SetItemEnabled("indicatori", info IsNot Nothing AndAlso info.AreIndicatori)
-            navViews.SetItemEnabled("istoric", info IsNot Nothing AndAlso info.AreIstoric)
-            navViews.SetItemEnabled("revizii", info IsNot Nothing AndAlso info.AreRevizii)
-            navViews.SetItemEnabled("rezervari", info IsNot Nothing AndAlso info.AreRezervari)
-            navViews.SetItemEnabled("partener", info IsNot Nothing AndAlso info.ArePartener)
-            navViews.SetItemEnabled("receptii", info IsNot Nothing AndAlso info.AreReceptii)
-            navViews.SetItemEnabled("plati", info IsNot Nothing AndAlso info.ArePlati)
-            navViews.SetItemEnabled("ddf", info IsNot Nothing AndAlso info.AreDDF)
-            navViews.SetItemEnabled("ord", info IsNot Nothing AndAlso info.AreORD)
+            'navViews.SetItemVisible("indicatori", info IsNot Nothing AndAlso info.AreIndicatori)
+            navViews.SetItemVisible("istoric", info IsNot Nothing AndAlso info.AreIstoric)
+            'navViews.SetItemVisible("revizii", info IsNot Nothing AndAlso info.AreRevizii)
+            navViews.SetItemVisible("rezervari", info IsNot Nothing AndAlso info.AreRezervari)
+            'navViews.SetItemVisible("partener", info IsNot Nothing AndAlso info.ArePartener)
+            navViews.SetItemVisible("receptii", info IsNot Nothing AndAlso info.AreReceptii)
+            navViews.SetItemVisible("plati", info IsNot Nothing AndAlso info.ArePlati)
+            navViews.SetItemVisible("ddf", info IsNot Nothing AndAlso info.AreDDF)
+            navViews.SetItemVisible("ord", info IsNot Nothing AndAlso info.AreORD)
 
             ' Dacă vederea activă tocmai s-a închis, cădem înapoi pe «sumar» (mereu activ)
             ' ca shell-ul să nu rămână pe o pagină pe care nu o mai poți părăsi.
@@ -542,11 +544,11 @@ Public Class MainForm
         If String.IsNullOrEmpty(key) OrElse key = "sumar" Then Return True
         If info Is Nothing Then Return False
         Select Case key
-            Case "indicatori" : Return info.AreIndicatori
+            'Case "indicatori" : Return info.AreIndicatori
             Case "istoric" : Return info.AreIstoric
-            Case "revizii" : Return info.AreRevizii
+            'Case "revizii" : Return info.AreRevizii
             Case "rezervari" : Return info.AreRezervari
-            Case "partener" : Return info.ArePartener
+            'Case "partener" : Return info.ArePartener
             Case "receptii" : Return info.AreReceptii
             Case "plati" : Return info.ArePlati
             Case "ddf" : Return info.AreDDF
