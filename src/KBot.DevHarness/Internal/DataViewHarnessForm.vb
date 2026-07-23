@@ -40,7 +40,7 @@ Public NotInheritable Class DataViewHarnessForm
             ' Câte una din fiecare din cele ȘASE tipuri de coloană (acceptanța 0010-03),
             ' apoi restul până la COLS ca text numeric. Prima coloană e înghețată, ca să se
             ' vadă banda non-scrolling la derulare orizontală.
-            grid.AddColumn("nr", "Nr.", KBotColumnType.Text, 70)
+            grid.AddColumn("nr", "Nr.", KBotColumnType.Text, 70).Aggregate = KBotAggregate.Count
             grid.AddColumn("cod", "Cod indicator", KBotColumnType.Text, 150)
             grid.AddColumn("stare", "Stare", KBotColumnType.Combo, 120)
             grid.AddColumn("activ", "Activ", KBotColumnType.CheckBox, 60)
@@ -55,6 +55,9 @@ Public NotInheritable Class DataViewHarnessForm
                                          KBotColumnType.Text, 110)
                 col.FormatString = "N2"
                 col.TextAlign = ContentAlignment.MiddleRight
+                ' English (slice 0017-01): numeric columns sum in the totals band; the first one
+                ' averages, so the harness eyeballs Sum, Count and Average side by side.
+                col.Aggregate = If(c = 8, KBotAggregate.Average, KBotAggregate.Sum)
             Next
             grid.FrozenColumnCount = 1
 
@@ -122,6 +125,18 @@ Public NotInheritable Class DataViewHarnessForm
                  " (fill = " & grid.ColumnFillMode.ToString() & "); îngustează fereastra ca să vezi efectul")
         Catch ex As Exception
             GlobalErrorLog.Write("DataViewHarnessForm.chkAutoHide_CheckedChanged", ex)
+        End Try
+    End Sub
+
+    ' Comută banda de totaluri (slice 0017-01): agregatele sunt deja setate pe coloane la seed,
+    ' deci aici doar se arată/ascunde rândul pinat.
+    Private Sub chkTotals_CheckedChanged(sender As Object, e As EventArgs) Handles chkTotals.CheckedChanged
+        Try
+            grid.ShowTotalsRow = chkTotals.Checked
+            _log("ShowTotalsRow = " & grid.ShowTotalsRow.ToString() &
+                 " (Nr.=Count, coloanele numerice=Sum, prima=Average)")
+        Catch ex As Exception
+            GlobalErrorLog.Write("DataViewHarnessForm.chkTotals_CheckedChanged", ex)
         End Try
     End Sub
 

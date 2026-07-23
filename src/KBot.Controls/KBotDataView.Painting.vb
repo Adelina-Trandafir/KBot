@@ -23,6 +23,7 @@ Partial Class KBotDataView
             g.FillRectangle(_bRowBack, ClientRectangle)
 
             DrawRows(g)
+            If _showTotalsRow AndAlso TotalsBandHeight() > 0 Then DrawTotalsRow(g)
             If _showHeader AndAlso _headerHeight > 0 Then DrawHeader(g)
 
             g.DrawRectangle(_pBorder, New Rectangle(0, 0, Width - 1, Height - 1))
@@ -79,6 +80,62 @@ Partial Class KBotDataView
 
         Dim sepX As Integer = cellRect.Right - 1
         g.DrawLine(_pHeaderSep, sepX, 0, sepX, _headerHeight - 1)
+    End Sub
+
+    ' ── Bandă de totaluri (slice 0017-01) ────────────────────────────────────────
+
+    ' English: the pinned totals band, drawn between the body and the horizontal scrollbar. It
+    ' reuses the header's band styling (same fill / separators / baseline reads — no literals),
+    ' and mirrors the header's frozen-over-scroll layering so a totals cell always sits under its
+    ' column, including with ScrollByColumn engaged. Not a row: no selection, no hit-testing.
+    Private Sub DrawTotalsRow(g As Graphics)
+        Dim bandH As Integer = TotalsBandHeight()
+        Dim bandTop As Integer = HeaderBandHeight() + ViewportHeight()
+        Dim bandRect As New Rectangle(0, bandTop, ClientSize.Width, bandH)
+        g.FillRectangle(_bHeaderBack, bandRect)
+
+        Dim tf As Font = HeaderFont()
+        Dim viewW As Integer = ViewportWidth()
+
+        ' Scroll band — clipped so it cannot bleed under the frozen columns.
+        Dim scrollClip As New Rectangle(_frozenBandWidth, bandTop,
+                                        Math.Max(0, viewW - _frozenBandWidth), bandH)
+        g.SetClip(scrollClip)
+        Dim hOffset As Integer = HScrollOffset()
+        For Each cl In _scrollLayout
+            DrawTotalsCell(g, cl.Column, _frozenBandWidth + cl.X - hOffset, bandTop, bandH, tf)
+        Next
+        g.ResetClip()
+
+        ' Frozen band — opaque repaint, then its cells, drawn PESTE the scroll band.
+        If _frozenBandWidth > 0 Then
+            g.FillRectangle(_bHeaderBack, New Rectangle(0, bandTop, _frozenBandWidth, bandH))
+        End If
+        For Each cl In _frozenLayout
+            DrawTotalsCell(g, cl.Column, cl.X, bandTop, bandH, tf)
+        Next
+
+        ' Separating rule + accent along the TOP edge (between body and totals), mirroring the
+        ' header's baseline reads.
+        g.DrawLine(_pHeaderSep, 0, bandTop, ClientSize.Width - 1, bandTop)
+        g.DrawLine(_pHeaderBaseline, 0, bandTop, ClientSize.Width - 1, bandTop)
+    End Sub
+
+    Private Sub DrawTotalsCell(g As Graphics, col As KBotDataColumn, x As Integer,
+                               bandTop As Integer, bandH As Integer, tf As Font)
+        Dim cellRect As New Rectangle(x, bandTop, col.Width, bandH)
+        If cellRect.Right < 0 OrElse cellRect.Left > ClientSize.Width Then Return
+
+        Dim text As String = TotalsTextFor(col)
+        Dim padX As Integer = ScaleDpi(8)
+        Dim textRect As New Rectangle(cellRect.Left + padX, cellRect.Top,
+                                      Math.Max(0, cellRect.Width - 2 * padX), cellRect.Height)
+        TextRenderer.DrawText(g, text, tf, textRect, _cHeaderText,
+            HorizontalFlags(col.TextAlign) Or TextFormatFlags.VerticalCenter Or
+            TextFormatFlags.EndEllipsis)
+
+        Dim sepX As Integer = cellRect.Right - 1
+        g.DrawLine(_pHeaderSep, sepX, bandTop, sepX, bandTop + bandH - 1)
     End Sub
 
     ' ── Rânduri (virtualizat) ───────────────────────────────────────────────────

@@ -70,14 +70,24 @@ Partial Class KBotDataView
         Return If(_showHeader, _headerHeight, 0)
     End Function
 
+    ''' <summary>English (slice 0017-01): effective height of the pinned totals band (0 when off).</summary>
+    Private Function TotalsBandHeight() As Integer
+        Return If(_showTotalsRow, TotalsRowHeight, 0)
+    End Function
+
     ''' <summary>Lățimea zonei utile (client minus bara verticală, dacă e vizibilă).</summary>
     Private Function ViewportWidth() As Integer
         Return Math.Max(0, ClientSize.Width - If(vScroll.Visible, vScroll.Width, 0))
     End Function
 
-    ''' <summary>Înălțimea zonei de date (client minus antet minus bara orizontală).</summary>
+    ''' <summary>
+    ''' Înălțimea zonei de date (client minus antet minus banda de totaluri minus bara
+    ''' orizontală). English (slice 0017-01): the pinned totals band eats body height, so the
+    ''' scrollable area shrinks by TotalsBandHeight when it is shown.
+    ''' </summary>
     Private Function ViewportHeight() As Integer
-        Return Math.Max(0, ClientSize.Height - HeaderBandHeight() - If(hScroll.Visible, hScroll.Height, 0))
+        Return Math.Max(0, ClientSize.Height - HeaderBandHeight() - TotalsBandHeight() -
+                           If(hScroll.Visible, hScroll.Height, 0))
     End Function
 
     ''' <summary>Offset-ul vertical curent, în pixeli.</summary>
@@ -294,12 +304,15 @@ Partial Class KBotDataView
         Dim vw As Integer = SystemInformation.VerticalScrollBarWidth
         Dim hh As Integer = SystemInformation.HorizontalScrollBarHeight
         Dim headerH As Integer = HeaderBandHeight()
+        ' English (slice 0017-01): the pinned totals band sits between the body and the
+        ' horizontal scrollbar, so it comes off the available body height just like the header.
+        Dim totalsH As Integer = TotalsBandHeight()
 
         Dim contentH As Integer = _rows.Count * _rowHeight
         Dim totalColsW As Integer = _frozenBandWidth + _scrollBandWidth
 
         Dim availW As Integer = ClientSize.Width
-        Dim availH As Integer = Math.Max(0, ClientSize.Height - headerH)
+        Dim availH As Integer = Math.Max(0, ClientSize.Height - headerH - totalsH)
 
         Dim needV As Boolean = contentH > availH
         If needV Then availW = Math.Max(0, availW - vw)

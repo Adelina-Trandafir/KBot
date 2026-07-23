@@ -155,6 +155,9 @@ Partial Class KBotDataView
             Dim changedKey As String = _editColumnKey
             Dim changedRow As Integer = _editRowIndex
             EndEditState()
+            ' English (slice 0017-01): a committed edit can change an aggregated cell — refresh
+            ' the totals band (guarded internally against BeginUpdate batches).
+            RecomputeTotals()
             InvalidateRow(changedRow)
 
             RaiseEvent CellValueChanged(Me, New KBotCellValueEventArgs(

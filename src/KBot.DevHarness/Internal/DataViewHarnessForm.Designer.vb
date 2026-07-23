@@ -12,6 +12,7 @@ Partial Class DataViewHarnessForm
     Friend WithEvents btnModern As System.Windows.Forms.Button
     Friend WithEvents chkScrollByColumn As System.Windows.Forms.CheckBox
     Friend WithEvents chkAutoHide As System.Windows.Forms.CheckBox
+    Friend WithEvents chkTotals As System.Windows.Forms.CheckBox
     Friend WithEvents lblInfo As System.Windows.Forms.Label
 
     Friend WithEvents grid As KBot.Controls.KBotDataView
@@ -28,6 +29,7 @@ Partial Class DataViewHarnessForm
         Me.btnModern = New System.Windows.Forms.Button()
         Me.chkScrollByColumn = New System.Windows.Forms.CheckBox()
         Me.chkAutoHide = New System.Windows.Forms.CheckBox()
+        Me.chkTotals = New System.Windows.Forms.CheckBox()
         Me.lblInfo = New System.Windows.Forms.Label()
         Me.grid = New KBot.Controls.KBotDataView()
         Me.pnlButtons = New System.Windows.Forms.FlowLayoutPanel()
@@ -48,6 +50,7 @@ Partial Class DataViewHarnessForm
         Me.pnlTop.Controls.Add(Me.btnModern)
         Me.pnlTop.Controls.Add(Me.chkScrollByColumn)
         Me.pnlTop.Controls.Add(Me.chkAutoHide)
+        Me.pnlTop.Controls.Add(Me.chkTotals)
         Me.pnlTop.Controls.Add(Me.lblInfo)
         Me.pnlTop.Name = "pnlTop"
         '
@@ -87,6 +90,14 @@ Partial Class DataViewHarnessForm
         Me.chkAutoHide.Text = "Ascunde coloane la nevoie (fill pe ultima)"
         Me.chkAutoHide.UseVisualStyleBackColor = True
         Me.chkAutoHide.Name = "chkAutoHide"
+        '
+        'chkTotals — comutator bandă de totaluri (slice 0017-01)
+        '
+        Me.chkTotals.AutoSize = True
+        Me.chkTotals.Margin = New System.Windows.Forms.Padding(12, 6, 3, 3)
+        Me.chkTotals.Text = "Rând de totaluri"
+        Me.chkTotals.UseVisualStyleBackColor = True
+        Me.chkTotals.Name = "chkTotals"
         '
         'lblInfo
         '

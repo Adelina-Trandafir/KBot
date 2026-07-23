@@ -36,6 +36,16 @@ Public Class KBotDataView
     Private _readOnlyGrid As Boolean = False
     Private _frozenColumnCount As Integer = 0
 
+    ' ── Totals row (slice 0017-01) ───────────────────────────────────────────────
+    ' A pinned band at the bottom, painted with the header's band styling. It is NOT a row:
+    ' excluded from _rows, RowCount, virtualization, selection, hit-testing and dirty tracking.
+    ' _totalsRowHeight <= 0 means "track HeaderHeight"; a real height overrides it.
+    Private _showTotalsRow As Boolean = False
+    Private _totalsRowHeight As Integer = 0
+    ' Cached formatted aggregate text per column key, recomputed when the model changes
+    ' (AddRow / ClearRows / EndUpdate / committed edit) so paint never re-aggregates.
+    Private ReadOnly _totalsText As New Dictionary(Of String, String)(StringComparer.Ordinal)
+
     ' Celula curentă (selecție). -1 / Nothing = fără selecție. Se schimbă DOAR prin
     ' SetCurrentCell (vezi partiala .Input), ca evenimentul să se ridice o singură dată.
     Private _currentRowIndex As Integer = -1
@@ -107,6 +117,7 @@ Public Class KBotDataView
         Dim col As New KBotDataColumn(key, headerText, type, width)
         _columns.Add(col)
         _columnIndex(key) = col
+        RecomputeTotals()
         LayoutChanged()
         Return col
     End Function
@@ -148,6 +159,7 @@ Public Class KBotDataView
     Public Function AddRow() As KBotDataRow
         Dim r As New KBotDataRow()
         _rows.Add(r)
+        RecomputeTotals()
         LayoutChanged()
         Return r
     End Function
@@ -170,6 +182,7 @@ Public Class KBotDataView
     Public Sub ClearRows()
         _rows.Clear()
         _currentRowIndex = -1
+        RecomputeTotals()
         LayoutChanged()
     End Sub
 
@@ -210,6 +223,11 @@ Public Class KBotDataView
         End Get
         Set(value As Object)
             _rows(rowIndex)(colKey) = value
+            ' English (slice 0017-01): a per-cell write through the control keeps the totals
+            ' band live (guarded internally against BeginUpdate batches — bulk loads recompute
+            ' once at EndUpdate). Writing straight to KBotDataRow bypasses this by design; those
+            ' loads are always wrapped in BeginUpdate/EndUpdate.
+            RecomputeTotals()
             InvalidateCell(colKey, rowIndex)
         End Set
     End Property
@@ -349,6 +367,39 @@ Public Class KBotDataView
         End Set
     End Property
 
+    ''' <summary>
+    ''' English (slice 0017-01): show a pinned totals band at the bottom. Default False. The band
+    ''' aggregates each column per <see cref="KBotDataColumn.Aggregate"/>, participates in
+    ''' horizontal scroll + frozen columns exactly like the body, and is never a selectable row.
+    ''' Turning it on shrinks the scrollable body by <see cref="TotalsRowHeight"/>.
+    ''' </summary>
+    Public Property ShowTotalsRow As Boolean
+        Get
+            Return _showTotalsRow
+        End Get
+        Set(value As Boolean)
+            If _showTotalsRow = value Then Return
+            _showTotalsRow = value
+            RecomputeTotals()
+            LayoutChanged()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' English (slice 0017-01): height of the pinned totals band, in pixels. Defaults to
+    ''' <see cref="HeaderHeight"/> until set to a positive value; a non-positive value restores
+    ''' the "track HeaderHeight" default.
+    ''' </summary>
+    Public Property TotalsRowHeight As Integer
+        Get
+            Return If(_totalsRowHeight > 0, _totalsRowHeight, _headerHeight)
+        End Get
+        Set(value As Integer)
+            _totalsRowHeight = Math.Max(0, value)
+            LayoutChanged()
+        End Set
+    End Property
+
     ' ========================================================================
     ' API PUBLIC — Bulk / refresh
     ' ========================================================================
@@ -362,6 +413,7 @@ Public Class KBotDataView
     Public Sub EndUpdate()
         If _updateDepth > 0 Then _updateDepth -= 1
         If _updateDepth = 0 Then
+            RecomputeTotals()
             UpdateLayout()
             Invalidate()
         End If

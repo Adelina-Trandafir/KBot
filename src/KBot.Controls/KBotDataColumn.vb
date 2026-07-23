@@ -116,6 +116,21 @@ Public NotInheritable Class KBotDataColumn
     ''' <summary>Format .NET aplicat valorii la afișare (ex. „N2”, „dd.MM.yyyy”). Vid => ToString().</summary>
     Public Property FormatString As String
 
+    ''' <summary>
+    ''' English (slice 0017-01): the aggregate this column contributes to the pinned totals row.
+    ''' Default <see cref="KBotAggregate.None"/> (empty totals cell). Only meaningful when the
+    ''' grid's <c>ShowTotalsRow</c> is True.
+    ''' </summary>
+    Public Property Aggregate As KBotAggregate = KBotAggregate.None
+
+    ''' <summary>
+    ''' English (slice 0017-01): optional .NET format string for THIS column's aggregate value.
+    ''' When empty, <see cref="KBotAggregate.Sum"/> / <see cref="KBotAggregate.Average"/> reuse
+    ''' <see cref="FormatString"/>; <see cref="KBotAggregate.Count"/> ignores both and always
+    ''' formats as a plain integer.
+    ''' </summary>
+    Public Property AggregateFormatString As String
+
     ''' <summary>Sursa combo partajată pe coloană (override per-celulă prin evenimentul de formatare).</summary>
     Public Property ComboItems As IList(Of Object)
 

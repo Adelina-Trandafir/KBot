@@ -215,6 +215,13 @@ Partial Class KBotDataView
         ' Header text always participates (semibold header font).
         Dim need As Integer = MeasureText(col.HeaderText, HeaderFont()) + 2 * headerPadX
 
+        ' English (slice 0017-01): the totals cell participates in measuring too — a wide total
+        ' that was never measured would ellipsize, which is a defect not a limitation. It is
+        ' painted in the header band (header font + header padding), so measure it the same way.
+        If _showTotalsRow AndAlso col.Aggregate <> KBotAggregate.None Then
+            need = Math.Max(need, MeasureText(TotalsTextFor(col), HeaderFont()) + 2 * headerPadX)
+        End If
+
         Select Case col.ColumnType
             Case KBotColumnType.CheckBox, KBotColumnType.OptionButton
                 ' No text content: the centered glyph box plus padding (see DrawCheckCell).
@@ -271,9 +278,11 @@ Partial Class KBotDataView
     End Function
 
     ' The vertical scrollbar depends only on row count and body height (never on column widths).
+    ' English (slice 0017-01): the pinned totals band eats body height too, so subtract it here
+    ' as well — otherwise the auto-size vscroll prediction and UpdateScrollBars would disagree.
     Private Function WillVScrollBeVisible() As Boolean
         Dim contentH As Integer = _rows.Count * _rowHeight
-        Dim availH As Integer = Math.Max(0, ClientSize.Height - HeaderBandHeight())
+        Dim availH As Integer = Math.Max(0, ClientSize.Height - HeaderBandHeight() - TotalsBandHeight())
         Return contentH > availH
     End Function
 
