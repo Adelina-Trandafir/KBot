@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>KBot.Xfa.Tests</RootNamespace>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <IsPackable>false</IsPackable>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+  </PropertyGroup>
+
+  <!-- Versiune componentă K-BOT.
+       FileVersion: incrementează MANUAL, doar când SE SCHIMBĂ acest proiect. Stă la baza
+       comparației din manifestul de update.
+       AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
+       rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\KBot.Xfa\KBot.Xfa.vbproj" />
+  </ItemGroup>
+
+</Project>
