@@ -102,7 +102,7 @@ Partial Class KBotDataView
     Private Function VisibleColumns() As List(Of KBotDataColumn)
         Dim list As New List(Of KBotDataColumn)()
         For Each c In _columns
-            If c.Visible Then list.Add(c)
+            If c.IsEffectivelyVisible Then list.Add(c)
         Next
         Return list
     End Function

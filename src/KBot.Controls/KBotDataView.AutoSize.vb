@@ -110,11 +110,18 @@ Partial Class KBotDataView
     Private Sub PerformAutoSize()
         If _inAutoLayout Then Return
         If _updateDepth > 0 Then Return                 ' deferred until EndUpdate
-        ' Manual-only (Case 3): keep the caller's widths exactly, touch nothing.
-        If _autoSizeMode = KBotAutoSizeMode.None AndAlso _fillMode = KBotFillMode.None Then Return
+
+        Dim anyAutoHide As Boolean = AnyColumnCanAutoHide()
+
+        ' Manual-only (Case 3) AND nothing to auto-hide: keep the caller's widths/visibility.
+        If _autoSizeMode = KBotAutoSizeMode.None AndAlso _fillMode = KBotFillMode.None AndAlso
+           Not anyAutoHide Then Return
 
         _inAutoLayout = True
         Try
+            ' Step 0 — reset the auto-hidden state so a widened grid re-shows columns that now fit.
+            ClearAutoHiddenState()
+
             Dim vis As List(Of KBotDataColumn) = VisibleColumns()
             If vis.Count = 0 Then Return
 
@@ -126,14 +133,76 @@ Partial Class KBotDataView
                 Next
             End If
 
-            ' Step 2 — spend the leftover, or absorb the overflow.
-            If _fillMode <> KBotFillMode.None Then DistributeOrShrink(vis)
+            ' Step 2 — auto-hide overflowing columns to avoid the horizontal scrollbar. Once
+            ' auto-hide is engaged, unresolved overflow shows the scrollbar (it does NOT shrink):
+            ' hiding a column is the caller's chosen response, not squeezing the survivors.
+            Dim autoHideEngaged As Boolean = False
+            If anyAutoHide Then
+                PerformAutoHide(vis)                      ' may set AutoHidden on some columns
+                vis = VisibleColumns()                    ' recompute after hiding
+                If vis.Count = 0 Then Return
+                autoHideEngaged = True
+            End If
+
+            ' Step 3 — spend the leftover (fill the gap a hidden column left), or absorb overflow.
+            If _fillMode <> KBotFillMode.None Then DistributeOrShrink(vis, suppressShrink:=autoHideEngaged)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.PerformAutoSize", ex)
         Finally
             _inAutoLayout = False
         End Try
     End Sub
+
+    ' ── Auto-hide (slice 0016) ────────────────────────────────────────────────────
+
+    ' Any auto-hideable column the caller currently shows? Gates the whole pass.
+    Private Function AnyColumnCanAutoHide() As Boolean
+        For Each c In _columns
+            If c.AutoHide AndAlso c.Visible Then Return True
+        Next
+        Return False
+    End Function
+
+    ' Clear the pass-owned auto-hidden state (the caller's Visible flag is never touched).
+    Private Sub ClearAutoHiddenState()
+        For Each c In _columns
+            c.AutoHidden = False
+        Next
+    End Sub
+
+    ' Hide auto-hideable columns until the rest fit, or none are left (then the scrollbar shows).
+    ' Order: rightmost hideable first (collapse from the right). The fill target is protected —
+    ' if a column is BOTH auto-hideable and the fill target, stretching wins and it stays.
+    Private Sub PerformAutoHide(vis As List(Of KBotDataColumn))
+        Dim available As Integer = AutoSizeAvailableWidth()
+        Dim total As Integer = SumWidths(vis)
+        If total <= available Then Return                ' already fits — hide nothing
+
+        Dim expander As KBotDataColumn = FillTargetColumn(vis)
+
+        For i As Integer = vis.Count - 1 To 0 Step -1
+            If total <= available Then Exit For
+            Dim c As KBotDataColumn = vis(i)
+            If Not c.AutoHide Then Continue For
+            If ReferenceEquals(c, expander) Then Continue For   ' expanding takes precedence
+            c.AutoHidden = True
+            total -= c.Width
+        Next
+    End Sub
+
+    ' The single column a First/Last fill grows — protected from auto-hide. Proportional / None
+    ' has no single protected expander (Nothing), so its auto-hideable columns can all disappear.
+    Private Function FillTargetColumn(vis As List(Of KBotDataColumn)) As KBotDataColumn
+        If vis.Count = 0 Then Return Nothing
+        Select Case _fillMode
+            Case KBotFillMode.FirstColumn
+                Return vis(0)
+            Case KBotFillMode.LastColumn
+                Return vis(vis.Count - 1)
+            Case Else
+                Return Nothing
+        End Select
+    End Function
 
     ' ── Measuring (ToContent) ────────────────────────────────────────────────────
 
@@ -208,14 +277,16 @@ Partial Class KBotDataView
         Return contentH > availH
     End Function
 
-    Private Sub DistributeOrShrink(vis As List(Of KBotDataColumn))
+    ' suppressShrink (auto-hide engaged): on overflow, do NOT shrink the survivors — let the
+    ' horizontal scrollbar appear. The leftover branch (fill the gap a hidden column left) still runs.
+    Private Sub DistributeOrShrink(vis As List(Of KBotDataColumn), Optional suppressShrink As Boolean = False)
         Dim available As Integer = AutoSizeAvailableWidth()
         Dim total As Integer = SumWidths(vis)
 
         If total = available Then Return
         If total < available Then
             DistributeLeftover(vis, available - total)
-        Else
+        ElseIf Not suppressShrink Then
             ShrinkToFit(vis, available)
         End If
     End Sub

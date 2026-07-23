@@ -48,7 +48,7 @@ Partial Class KBotDataView
         Dim visibleIndex As Integer = 0
 
         For Each c In _columns
-            If Not c.Visible Then Continue For
+            If Not c.IsEffectivelyVisible Then Continue For
             If visibleIndex < _frozenColumnCount Then
                 _frozenLayout.Add(New ColLayout With {.Column = c, .X = frozenX})
                 frozenX += c.Width

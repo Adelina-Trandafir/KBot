@@ -74,6 +74,33 @@ Public NotInheritable Class KBotDataColumn
     ''' <summary>Vizibilă. Implicit True. False => coloana nu se pictează și nu ocupă spațiu.</summary>
     Public Property Visible As Boolean = True
 
+    ''' <summary>
+    ''' English (slice 0016): the column MAY be auto-hidden when the grid would otherwise need a
+    ''' horizontal scrollbar. The fit pass hides auto-hideable columns (rightmost first) until
+    ''' the rest fit or none remain; if none remain, the scrollbar appears normally. The fill
+    ''' target (<c>ColumnFillMode</c> First/Last) is never auto-hidden — stretching wins over
+    ''' hiding. Distinct from <see cref="Visible"/>, which stays the caller's explicit show/hide.
+    ''' </summary>
+    Public Property AutoHide As Boolean = False
+
+    ''' <summary>
+    ''' English (slice 0016): set by the auto-hide pass when THIS column was hidden for lack of
+    ''' room (never by the caller). Recomputed from scratch every layout, so a widened grid
+    ''' brings the column back. Friend — the caller toggles <see cref="AutoHide"/>, not this.
+    ''' </summary>
+    Friend Property AutoHidden As Boolean
+
+    ''' <summary>
+    ''' English (slice 0016): whether the column is actually on screen right now — the caller
+    ''' shows it (<see cref="Visible"/>) AND the fit pass has not auto-hidden it. Read-only:
+    ''' the caller drives it through <see cref="Visible"/> / <see cref="AutoHide"/>.
+    ''' </summary>
+    Public ReadOnly Property IsEffectivelyVisible As Boolean
+        Get
+            Return Visible AndAlso Not AutoHidden
+        End Get
+    End Property
+
     ''' <summary>Coloană înghețată (non-scrolling): se randează la stânga, înaintea zonei derulate.</summary>
     Public Property Frozen As Boolean = False
 

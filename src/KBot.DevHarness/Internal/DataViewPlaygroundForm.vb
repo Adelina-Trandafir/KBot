@@ -37,6 +37,12 @@ Public NotInheritable Class DataViewPlaygroundForm
         End If
     End Sub
 
+    ' La terminarea redimensionării ferestrei layout-ul (deci și auto-hide) e complet: abia
+    ' atunci info-ul e corect. Așa se vede live cum coloanele AutoHide dispar când îngustezi.
+    Private Sub OnResizeEndRefresh(sender As Object, e As EventArgs) Handles MyBase.ResizeEnd
+        RefreshInfo()
+    End Sub
+
     ' ── Construcția grilei ───────────────────────────────────────────────────────
     Private Sub BuildColumns()
         grid.BeginUpdate()
@@ -194,6 +200,9 @@ Public NotInheritable Class DataViewPlaygroundForm
     Private Sub chkColReadOnly_CheckedChanged(sender As Object, e As EventArgs) Handles chkColReadOnly.CheckedChanged
         ApplyColumn()
     End Sub
+    Private Sub chkColAutoHide_CheckedChanged(sender As Object, e As EventArgs) Handles chkColAutoHide.CheckedChanged
+        ApplyColumn()
+    End Sub
     Private Sub numColWidth_ValueChanged(sender As Object, e As EventArgs) Handles numColWidth.ValueChanged
         ApplyColumn()
     End Sub
@@ -218,6 +227,7 @@ Public NotInheritable Class DataViewPlaygroundForm
                 chkColVisible.Checked = col.Visible
                 chkColEnabled.Checked = col.Enabled
                 chkColReadOnly.Checked = col.[ReadOnly]
+                chkColAutoHide.Checked = col.AutoHide
                 SetNum(numColWidth, col.Width)
                 SetNum(numColMin, col.MinWidth)
                 ' MaxWidth = Integer.MaxValue (sau peste raza numericului) => 0 «neplafonat».
@@ -270,6 +280,7 @@ Public NotInheritable Class DataViewPlaygroundForm
             col.Visible = chkColVisible.Checked
             col.Enabled = chkColEnabled.Checked
             col.[ReadOnly] = chkColReadOnly.Checked
+            col.AutoHide = chkColAutoHide.Checked
             grid.AutoSizeColumns()     ' modelul coloanei nu are back-reference => forțăm trecerea
             RefreshInfo()
             UpdateDependentControls()  ' re-evaluează activările (fără a rescrie valorile în curs de editare)
@@ -313,16 +324,21 @@ Public NotInheritable Class DataViewPlaygroundForm
         n.Value = v
     End Sub
 
-    ' Rezumat live: câte coloane vizibile, Σlățimi vs lățimea client (util pentru fill/overflow).
+    ' Rezumat live: câte coloane AFIȘATE (efectiv), câte ascunse automat, Σlățimi vs lățimea
+    ' client (util pentru fill/overflow/auto-hide). „Afișate” = IsEffectivelyVisible.
     Private Sub RefreshInfo()
-        Dim visN As Integer = 0
+        Dim shownN As Integer = 0
+        Dim autoHiddenN As Integer = 0
         Dim sumW As Integer = 0
         For Each c In grid.Columns
-            If c.Visible Then
-                visN += 1
+            If c.IsEffectivelyVisible Then
+                shownN += 1
                 sumW += c.Width
+            ElseIf c.Visible Then
+                autoHiddenN += 1     ' vizibilă pentru caller, dar ascunsă automat (nu încape)
             End If
         Next
-        lblInfo.Text = $"{grid.RowCount:N0} rânduri • {visN} col. vizibile • Σlățimi={sumW}px • client={grid.ClientSize.Width}px"
+        Dim hidden As String = If(autoHiddenN > 0, $" • {autoHiddenN} ascunse auto", String.Empty)
+        lblInfo.Text = $"{grid.RowCount:N0} rânduri • {shownN} col. afișate{hidden} • Σlățimi={sumW}px • client={grid.ClientSize.Width}px"
     End Sub
 End Class

@@ -109,6 +109,22 @@ Public NotInheritable Class DataViewHarnessForm
         End If
     End Sub
 
+    ' Marchează coloanele numerice ca AutoHide și pune fill pe ultima coloană, ca îngustarea
+    ' ferestrei să le ascundă pe rând, iar ultima să umple golul. Debifat => revine la normal.
+    Private Sub chkAutoHide_CheckedChanged(sender As Object, e As EventArgs) Handles chkAutoHide.CheckedChanged
+        Try
+            For Each c In grid.Columns
+                c.AutoHide = chkAutoHide.Checked AndAlso c.Key.StartsWith("c", StringComparison.Ordinal)
+            Next
+            grid.ColumnFillMode = If(chkAutoHide.Checked, KBotFillMode.LastColumn, KBotFillMode.None)
+            grid.AutoSizeColumns()
+            _log("AutoHide pe coloanele numerice = " & chkAutoHide.Checked.ToString() &
+                 " (fill = " & grid.ColumnFillMode.ToString() & "); îngustează fereastra ca să vezi efectul")
+        Catch ex As Exception
+            GlobalErrorLog.Write("DataViewHarnessForm.chkAutoHide_CheckedChanged", ex)
+        End Try
+    End Sub
+
     ' Comută derularea orizontală pe coloane (aliniere la margini) vs. pixel cu pixel.
     Private Sub chkScrollByColumn_CheckedChanged(sender As Object, e As EventArgs) Handles chkScrollByColumn.CheckedChanged
         Try
