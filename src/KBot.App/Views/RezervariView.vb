@@ -179,6 +179,24 @@ Public Class RezervariView
             tree.Clear()
             Dim palette As ThemePalette = TryGetPalette()
 
+            ' «+» pe EXACT o frunză (fix 0017-04): oglindește latch-ul one-shot `existaNodCuRIcon`
+            ' din Show_Rezervari — PRIMUL nod cu o rezervare fără DDF (IDREV IS NULL -> AreDDF=False)
+            ' primește iconița, restul niciuna. Access ordonează după (DataRezervare, IDH, Clsf,
+            ' strData); IDH NU e în payload-ul /rezervari, deci mergem pe (dată, tip) — cheia primară
+            ' de dată + ordinea de tip (Inițială<Mărire<Micșorare, ca strData), fără tiebreak-ul IDH.
+            ' Frunza marcată = (dată, tip)-ul primului rând eligibil în această ordine.
+            Dim plusDate As Date? = Nothing
+            Dim plusTip As RezervareTip = RezervareTip.Necunoscut
+            Dim firstEligible As RezervareRow =
+                rows.Where(Function(r) Not r.AreDDF).
+                     OrderBy(Function(r) r.DataRezervare.Date).
+                     ThenBy(Function(r) CInt(r.Tip)).
+                     FirstOrDefault()
+            If firstEligible IsNot Nothing Then
+                plusDate = firstEligible.DataRezervare.Date
+                plusTip = firstEligible.Tip
+            End If
+
             ' Luni în ordine cronologică.
             Dim months = rows.GroupBy(Function(r) New With {Key .Y = r.DataRezervare.Year, Key .M = r.DataRezervare.Month}).
                               OrderBy(Function(gp) gp.Key.Y).ThenBy(Function(gp) gp.Key.M)
