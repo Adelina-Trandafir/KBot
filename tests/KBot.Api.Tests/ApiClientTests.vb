@@ -788,4 +788,181 @@ Public Class ApiClientTests
         Assert.Equal("TOKEN_UNKNOWN", ex.Reason)
     End Function
 
+    ' --- GetDdfAsync (slice 0020): vederea DDF. Contract de fir snake_case, TREI liste
+    ' intr-un singur drum dus-intors (antet / revizii / linii). `antet` e o LISTA: PK-ul
+    ' FX_DDF e compus (IDDF, CUAL) si nimic nu impune un singur antet per angajament. ---
+
+    Private Const DdfPayload As String =
+        "{""cod"":""DDF1""," &
+        """antet"":[{""iddf"":9900201,""cod_angajament"":""DDF1"",""cual"":3," &
+        """obiect_ddf"":""Obiect DDF"",""comp"":""contabilitate"",""program"":""0000002510""," &
+        """data_creare"":""2026-01-18"",""data_def"":""2026-01-18"",""stare"":""În derulare""," &
+        """part_ang"":true,""cod_fiscal"":""46877331"",""nume_partener"":""TERMO PLOIEȘTI S.A.""," &
+        """salarii"":false,""incarcat"":true,""preluat"":true}]," &
+        """revizii"":[" &
+        "{""idrev"":9900211,""iddf"":9900201,""numar_rev"":0,""data_rev"":""2026-01-18""," &
+        """desc_scurta"":""Revizie inițială"",""desc_lunga"":""Descriere lungă""," &
+        """tip"":""În derulare"",""incarcat"":true,""preluat"":false,""semnatura"":null," &
+        """total_revizie"":600.0}," &
+        "{""idrev"":9900213,""iddf"":9900201,""numar_rev"":12,""data_rev"":""2026-02-11""," &
+        """desc_scurta"":null,""desc_lunga"":null,""tip"":null,""incarcat"":false," &
+        """preluat"":true,""semnatura"":""AB"",""total_revizie"":0.0}]," &
+        """linii"":[" &
+        "{""id_sec_a"":9900301,""idrev"":9900211,""id_clsf"":141,""clsf"":""65.02.04.02.20.01.03""," &
+        """element_fund"":""Element 0"",""parametrii_fund"":""Parametru 0"",""val_prec"":0.0," &
+        """val_cur"":100.0,""val_tot"":100.0}," &
+        "{""id_sec_a"":9900302,""idrev"":9900211,""id_clsf"":141,""clsf"":null," &
+        """element_fund"":null,""parametrii_fund"":null,""val_prec"":0.0," &
+        """val_cur"":200.0,""val_tot"":200.0}]}"
+
+    <Fact>
+    Public Async Function GetDdf_BuildsUrl_SendsBearer_EscapesCod() As Task
+        Dim h As New StubHandler With {.ResponseBody = DdfPayload}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await client.GetDdfAsync("A 100", CancellationToken.None)
+
+        Assert.Equal(HttpMethod.Get, h.LastMethod)
+        Assert.Equal("/api/forexe/ddf", h.LastRequestUri.AbsolutePath)
+        Assert.Contains("cod=A%20100", h.LastRequestUri.Query)
+        ' Baza NU se trimite: serverul o ia din sesiune (o bază = o unitate).
+        Assert.DoesNotContain("db_name=", h.LastRequestUri.Query)
+        Assert.Equal("Bearer tok-opaque-123", h.LastAuthorization)
+    End Function
+
+    <Fact>
+    Public Async Function GetDdf_BlankCod_ThrowsBeforeAnyRequest() As Task
+        Dim h As New StubHandler With {.ResponseBody = DdfPayload}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await Assert.ThrowsAsync(Of ArgumentException)(
+            Async Function() Await client.GetDdfAsync("   ", CancellationToken.None))
+        Assert.Null(h.LastRequestUri)      ' nu s-a trimis nimic pe fir
+    End Function
+
+    <Fact>
+    Public Async Function GetDdf_Deserializes_AllThreeArrays_AndNullables() As Task
+        Dim h As New StubHandler With {.ResponseBody = DdfPayload}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetDdfAsync("DDF1", CancellationToken.None)
+
+        Assert.Equal("DDF1", data.Cod)
+        Assert.Single(data.Antet)
+        Assert.Equal(2, data.Revizii.Count)
+        Assert.Equal(2, data.Linii.Count)
+
+        ' Antet: poartă tot ce compune calea PDF-ului (CUAL, PartAng, NumePartener).
+        Dim a = data.Antet(0)
+        Assert.Equal(9900201, a.Iddf)
+        Assert.Equal(3, a.Cual)
+        Assert.True(a.PartAng)
+        Assert.Equal("TERMO PLOIEȘTI S.A.", a.NumePartener)
+        Assert.False(a.Salarii)
+        Assert.Equal(New Date(2026, 1, 18), a.DataCreare.Value)
+
+        ' Revizie: total_revizie e SUMA reală (600), nu valoarea unei linii (100 sau 200).
+        Dim r0 = data.Revizii(0)
+        Assert.Equal(9900211, r0.Idrev)
+        Assert.Equal(600.0, r0.TotalRevizie)
+        Assert.Equal("Revizie inițială", r0.DescScurta)
+        Assert.True(r0.Incarcat)
+        Assert.False(r0.Preluat)
+
+        ' Nullables -> String.Empty, nu Nothing (grila nu are voie să primească null).
+        Dim r1 = data.Revizii(1)
+        Assert.Equal(String.Empty, r1.DescScurta)
+        Assert.Equal(String.Empty, r1.Tip)
+        Assert.Equal("AB", r1.Semnatura)
+        Assert.Equal(0.0, r1.TotalRevizie)
+
+        ' Linie: ParametriiFund e purtat (nu se afișează, dar felia 05 îl scrie în Cell4).
+        Dim l0 = data.Linii(0)
+        Assert.Equal(9900301, l0.IdSecA)
+        Assert.Equal("65.02.04.02.20.01.03", l0.Clsf)
+        Assert.Equal("Parametru 0", l0.ParametriiFund)
+        Assert.Equal(100.0, l0.ValCur)
+        Assert.Equal(String.Empty, data.Linii(1).Clsf)
+        Assert.Equal(String.Empty, data.Linii(1).ParametriiFund)
+    End Function
+
+    <Fact>
+    Public Async Function GetDdf_FormatsRevisionLabel_WithSpacePadding_Not_Zeroes() As Task
+        ' Access folosește Format(NumarRev, "@@@") = aliniere la dreapta în TREI caractere cu
+        ' SPAȚII (format TEXT), nu D3/"000". Pinul de regresie pentru §2.6.
+        Dim h As New StubHandler With {.ResponseBody = DdfPayload}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetDdfAsync("DDF1", CancellationToken.None)
+
+        Assert.Equal("  0 - 18.01.2026", data.Revizii(0).EtichetaRevizie)
+        Assert.Equal(" 12 - 11.02.2026", data.Revizii(1).EtichetaRevizie)
+    End Function
+
+    <Fact>
+    Public Async Function GetDdf_Empty_IsEmptyNotException() As Task
+        Dim h As New StubHandler With {
+            .ResponseBody = "{""cod"":""NUEXISTA"",""antet"":[],""revizii"":[],""linii"":[]}"}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetDdfAsync("NUEXISTA", CancellationToken.None)
+
+        Assert.NotNull(data)
+        Assert.Empty(data.Antet)
+        Assert.Empty(data.Revizii)
+        Assert.Empty(data.Linii)
+        Assert.Equal("NUEXISTA", data.Cod)
+        Assert.Null(data.AntetDeLucru(0))       ' fără antet -> Nothing, nu excepție
+    End Function
+
+    <Fact>
+    Public Async Function GetDdf_Non2xx_ParsesRomanianErrorAndReason() As Task
+        Dim h As New StubHandler With {
+            .Status = HttpStatusCode.Unauthorized,
+            .ResponseBody = "{""error"":""Sesiune necunoscută. Autentificați-vă din nou."",""reason"":""TOKEN_UNKNOWN""}"
+        }
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
+            Async Function() Await client.GetDdfAsync("DDF1", CancellationToken.None))
+        Assert.Equal(401, ex.StatusCode.Value)
+        Assert.Equal("TOKEN_UNKNOWN", ex.Reason)
+    End Function
+
+    <Fact>
+    Public Async Function GetDdf_MalformedBody_SurfacesInsteadOfReturningEmpty() As Task
+        ' Un 200 cu corp nevalid NU are voie să devină „angajament fără DDF": asta ar minți
+        ' operatorul că documentul nu există. JsonException urcă (logată + rearuncată la
+        ' graniță, regula casei), deci apelantul vede eșecul.
+        Dim h As New StubHandler With {.ResponseBody = "{""cod"":""DDF1"",""revizii"":[{""idrev"":"}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await Assert.ThrowsAsync(Of Text.Json.JsonException)(
+            Async Function() Await client.GetDdfAsync("DDF1", CancellationToken.None))
+    End Function
+
+    <Fact>
+    Public Async Function GetDdf_MissingOrNullArrays_BecomeEmptyLists() As Task
+        ' Un corp valid dar incomplet (chei absente sau explicit null) nu trebuie să arunce:
+        ' cele trei liste rămân goale, iar vederea își arată starea goală.
+        Dim h As New StubHandler With {
+            .ResponseBody = "{""cod"":""DDF1"",""antet"":null,""revizii"":null}"}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetDdfAsync("DDF1", CancellationToken.None)
+
+        Assert.Empty(data.Antet)
+        Assert.Empty(data.Revizii)
+        Assert.Empty(data.Linii)      ' cheia lipsește cu totul
+        Assert.Equal("DDF1", data.Cod)
+    End Function
+
 End Class

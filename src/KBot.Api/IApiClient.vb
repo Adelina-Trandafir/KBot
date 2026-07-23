@@ -66,6 +66,16 @@ Public Interface IApiClient
     Function GetPlatiAsync(cod As String, ct As CancellationToken) As Task(Of PlatiInfo)
 
     ''' <summary>
+    ''' Aduce documentul de fundamentare al unui angajament (GET /api/forexe/ddf): antet(e)
+    ''' FX_DDF + revizii (fiecare cu SUM-ul real al secțiunii A) + liniile de secțiune A.
+    ''' Un singur drum dus-întors pentru tot codul: vederea filtrează local. Baza NU se
+    ''' trimite: serverul o ia din sesiune. Un cod necunoscut întoarce un DdfInfo cu toate
+    ''' cele trei liste goale (nu excepție). Hard-fail (Throw) la non-2xx; fără retry pe 401
+    ''' (curge spre WithReauth).
+    ''' </summary>
+    Function GetDdfAsync(cod As String, ct As CancellationToken) As Task(Of DdfInfo)
+
+    ''' <summary>
     ''' Trimite un Excel (base64) la server pentru conversie în JSON (/api/tools/process_excel).
     ''' Întoarce conținutul câmpului "data" din răspuns. Autorizare: bearer-ul sesiunii
     ''' curente (în ApiClient). Hard-fail (Throw ApiException) la non-2xx.

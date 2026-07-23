@@ -76,6 +76,11 @@ Public Class PlatiViewTests
             Throw New NotSupportedException()
         End Function
 
+        Public Function GetDdfAsync(cod As String, ct As CancellationToken) As Task(Of DdfInfo) _
+            Implements IApiClient.GetDdfAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public Function ProcessExcelAsync(job As ExcelJob, ct As CancellationToken) As Task(Of String) _
             Implements IApiClient.ProcessExcelAsync
             Throw New NotSupportedException()

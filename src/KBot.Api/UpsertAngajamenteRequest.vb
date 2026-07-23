@@ -224,3 +224,64 @@ Public NotInheritable Class GetPlataRow
     Public Property suma_credit As Double
     Public Property explicatii As String
 End Class
+
+' Wire DTOs for GET /api/forexe/ddf (vederea DDF, slice 0020).
+' Property names ARE the JSON keys (PropertyNamingPolicy=Nothing) — snake_case verbatim,
+' matching routes/forexe/ddf.py exactly. ApiClient maps them onto the DDF POCOs so the
+' snake_case stops at the wire. Three arrays, one round trip: the client filters locally.
+Public NotInheritable Class GetDdfResponse
+    Public Property cod As String
+    ' ARRAY, not an object: FX_DDF's PK is composite (IDDF, CUAL) and nothing enforces one
+    ' header per CodAngajament. The view picks explicitly and logs when there is more than one.
+    Public Property antet As New List(Of GetDdfAntetRow)()
+    Public Property revizii As New List(Of GetDdfRevizieRow)()
+    Public Property linii As New List(Of GetDdfLinieRow)()
+End Class
+
+Public NotInheritable Class GetDdfAntetRow
+    Public Property iddf As Integer
+    Public Property cod_angajament As String
+    Public Property cual As Integer
+    Public Property obiect_ddf As String
+    Public Property comp As String
+    Public Property program As String
+    Public Property data_creare As Date?
+    Public Property data_def As Date?
+    Public Property stare As String
+    Public Property part_ang As Boolean
+    Public Property cod_fiscal As String
+    Public Property nume_partener As String
+    Public Property salarii As Boolean
+    Public Property incarcat As Boolean
+    Public Property preluat As Boolean
+End Class
+
+' One FX_DDF_REV record. total_revizie is the server-side SUM(ValCur) over section A —
+' NOT Access's `SA.ValCur AS TotalRevizie` (a single line wearing a total's name).
+Public NotInheritable Class GetDdfRevizieRow
+    Public Property idrev As Integer
+    Public Property iddf As Integer
+    Public Property numar_rev As Integer
+    Public Property data_rev As Date?
+    Public Property desc_scurta As String
+    Public Property desc_lunga As String
+    Public Property tip As String
+    Public Property incarcat As Boolean
+    Public Property preluat As Boolean
+    Public Property semnatura As String
+    Public Property total_revizie As Double
+End Class
+
+' One FX_DDF_REV_SA record. parametrii_fund is carried but not displayed (decision 4) —
+' the slice-05 XML builder writes it into section A's Cell4.
+Public NotInheritable Class GetDdfLinieRow
+    Public Property id_sec_a As Integer
+    Public Property idrev As Integer
+    Public Property id_clsf As Integer
+    Public Property clsf As String
+    Public Property element_fund As String
+    Public Property parametrii_fund As String
+    Public Property val_prec As Double
+    Public Property val_cur As Double
+    Public Property val_tot As Double
+End Class

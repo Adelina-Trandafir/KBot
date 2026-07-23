@@ -483,6 +483,102 @@ Public Class ApiClient
         End Try
     End Function
 
+    ' Documentul de fundamentare al unui angajament (slice 0020), pentru DdfView. Un singur
+    ' parametru: cod = CodAngajament, escapat in query string. NU se trimite baza (o citeste
+    ' serverul din sesiune). Un cod fara DDF intoarce 200 cu cele trei liste goale, deci aici
+    ' rezulta un DdfInfo gol, nu o exceptie. Envelope-ul poarta antet + revizii + linii intr-un
+    ' SINGUR apel (vederea filtreaza local, fara alte cereri). Hard-fail (Throw ApiException)
+    ' pe non-2xx; un 401 curge spre WithReauth.
+    Public Async Function GetDdfAsync(cod As String, ct As CancellationToken) _
+        As Task(Of DdfInfo) Implements IApiClient.GetDdfAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim url As String = $"/api/forexe/ddf?cod={Uri.EscapeDataString(cod)}"
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea documentului de fundamentare", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As GetDdfResponse = JsonSerializer.Deserialize(Of GetDdfResponse)(respText, _json)
+                    Dim result As New DdfInfo()
+                    If payload Is Nothing Then Return result
+
+                    result.Cod = If(payload.cod, If(cod, String.Empty))
+
+                    If payload.antet IsNot Nothing Then
+                        For Each a As GetDdfAntetRow In payload.antet
+                            result.Antet.Add(New DdfAntet() With {
+                                .Iddf = a.iddf,
+                                .CodAngajament = If(a.cod_angajament, String.Empty),
+                                .Cual = a.cual,
+                                .ObiectDDF = If(a.obiect_ddf, String.Empty),
+                                .Comp = If(a.comp, String.Empty),
+                                .Program = If(a.program, String.Empty),
+                                .DataCreare = a.data_creare,
+                                .DataDef = a.data_def,
+                                .Stare = If(a.stare, String.Empty),
+                                .PartAng = a.part_ang,
+                                .CodFiscal = If(a.cod_fiscal, String.Empty),
+                                .NumePartener = If(a.nume_partener, String.Empty),
+                                .Salarii = a.salarii,
+                                .Incarcat = a.incarcat,
+                                .Preluat = a.preluat
+                            })
+                        Next
+                    End If
+
+                    If payload.revizii IsNot Nothing Then
+                        For Each r As GetDdfRevizieRow In payload.revizii
+                            result.Revizii.Add(New RevizieRow() With {
+                                .Idrev = r.idrev,
+                                .Iddf = r.iddf,
+                                .NumarRev = r.numar_rev,
+                                .DataRev = r.data_rev,
+                                .DescScurta = If(r.desc_scurta, String.Empty),
+                                .DescLunga = If(r.desc_lunga, String.Empty),
+                                .Tip = If(r.tip, String.Empty),
+                                .Incarcat = r.incarcat,
+                                .Preluat = r.preluat,
+                                .Semnatura = If(r.semnatura, String.Empty),
+                                .TotalRevizie = r.total_revizie
+                            })
+                        Next
+                    End If
+
+                    If payload.linii IsNot Nothing Then
+                        For Each l As GetDdfLinieRow In payload.linii
+                            result.Linii.Add(New LinieSaRow() With {
+                                .IdSecA = l.id_sec_a,
+                                .Idrev = l.idrev,
+                                .IdClsf = l.id_clsf,
+                                .Clsf = If(l.clsf, String.Empty),
+                                .ElementFund = If(l.element_fund, String.Empty),
+                                .ParametriiFund = If(l.parametrii_fund, String.Empty),
+                                .ValPrec = l.val_prec,
+                                .ValCur = l.val_cur,
+                                .ValTot = l.val_tot
+                            })
+                        Next
+                    End If
+                    Return result
+                End Using
+            End Using
+        Catch ex As ApiException
+            ' 401/HTTP tipat, tratat de apelant (WithReauth) — nu logăm.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetDdfAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ' Conversie Excel -> JSON pe server. FOREXE nu mai face HTTP direct: umple un
     ' ExcelJob și îl dă aici, unde stau adresa, token-ul bearer și POST-ul. Un singur
     ' apel, fără retry (upload base64 mare; reîncercarea e scumpă). Non-2xx -> ApiException
