@@ -53,6 +53,11 @@ Public Class RezervariViewTests
             Throw New NotSupportedException()
         End Function
 
+        Public Function GetPlatiAsync(cod As String, ct As CancellationToken) As Task(Of PlatiInfo) _
+            Implements IApiClient.GetPlatiAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public Function UpsertAngajamenteAsync(dbName As String, rows As IReadOnlyList(Of Angajament),
                                                ct As CancellationToken) As Task(Of String) _
             Implements IApiClient.UpsertAngajamenteAsync

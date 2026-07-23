@@ -184,3 +184,43 @@ Public NotInheritable Class GetReceptiePlata
     Public Property data_plata As Date?
     Public Property suma As Double
 End Class
+
+' Wire DTOs for GET /api/forexe/plati (vederea Plăți, slice 0017).
+' Property names ARE the JSON keys (PropertyNamingPolicy=Nothing) — snake_case verbatim,
+' matching routes/forexe/plati.py exactly. ApiClient maps them onto the Plati POCOs (with the
+' flat extras fields folded into a nested ExtrasBancar) so the snake_case stops at the wire.
+Public NotInheritable Class GetPlatiResponse
+    Public Property cod As String
+    Public Property plati As New List(Of GetPlataRow)()
+End Class
+
+' One raw FX_Plati record, with its bank statement (FX_Extrase) fields carried FLAT. idfxe is
+' nullable: null means the payment has no statement (LEFT JOIN branch) -> Extras stays Nothing.
+Public NotInheritable Class GetPlataRow
+    Public Property id_plata_fx As Integer
+    Public Property id_clsf As Integer
+    Public Property cod_ai As String
+    Public Property cod_indicator As String
+    Public Property nr_op As String
+    Public Property data_plata As Date?
+    Public Property suma As Double
+    Public Property tip As String
+    Public Property incarcat As Boolean
+    Public Property preluat As Boolean
+    Public Property referinta_trezor As String
+    Public Property clsf As String
+    Public Property denumire As String
+    Public Property clsf_plata As String
+    Public Property are_ord As Boolean
+    Public Property idfxe As Integer?
+    Public Property data_banca As Date?
+    Public Property data_doc As String
+    Public Property nr_doc_extras As String
+    Public Property referinta As String
+    Public Property platitor_nume As String
+    Public Property platitor_cui As String
+    Public Property platitor_iban As String
+    Public Property suma_debit As Double
+    Public Property suma_credit As Double
+    Public Property explicatii As String
+End Class

@@ -378,7 +378,7 @@ Public Class MainForm
                 Case "rezervari" : Return New RezervariView(_apiClient, Function(op) WithReauth(Of RezervariInfo)(op))
                 Case "partener" : Return New PlaceholderView(key, "Partener")
                 Case "receptii" : Return New ReceptiiView(_apiClient, Function(op) WithReauth(Of ReceptiiInfo)(op))
-                Case "plati" : Return New PlaceholderView(key, "Plăți")
+                Case "plati" : Return New PlatiView(_apiClient, Function(op) WithReauth(Of PlatiInfo)(op))
                 Case "ddf" : Return New PlaceholderView(key, "DDF")
                 Case "ord" : Return New PlaceholderView(key, "ORD")
                 Case Else

@@ -404,6 +404,85 @@ Public Class ApiClient
         End Try
     End Function
 
+    ' Plățile unui angajament (slice 0017), pentru PlatiView. Un singur parametru:
+    ' cod = CodAngajament, escapat in query string. NU se trimite baza (o citeste serverul
+    ' din sesiune). Un cod fara plati intoarce 200 cu plati [], deci aici rezulta un PlatiInfo
+    ' gol, nu o exceptie. Extrasul bancar vine FLAT pe rand si se pliaza intr-un ExtrasBancar
+    ' (Nothing cand idfxe e null). Hard-fail (Throw ApiException) pe non-2xx; un 401 curge
+    ' spre WithReauth.
+    Public Async Function GetPlatiAsync(cod As String, ct As CancellationToken) _
+        As Task(Of PlatiInfo) Implements IApiClient.GetPlatiAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim url As String = $"/api/forexe/plati?cod={Uri.EscapeDataString(cod)}"
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea plăților angajamentului", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As GetPlatiResponse = JsonSerializer.Deserialize(Of GetPlatiResponse)(respText, _json)
+                    Dim result As New PlatiInfo()
+                    If payload Is Nothing Then Return result
+
+                    result.Cod = If(payload.cod, If(cod, String.Empty))
+
+                    If payload.plati IsNot Nothing Then
+                        For Each p As GetPlataRow In payload.plati
+                            Dim row As New PlataRow() With {
+                                .IdPlataFX = p.id_plata_fx,
+                                .IdClsf = p.id_clsf,
+                                .CodAI = If(p.cod_ai, String.Empty),
+                                .CodIndicator = If(p.cod_indicator, String.Empty),
+                                .NrOP = If(p.nr_op, String.Empty),
+                                .DataPlata = p.data_plata,
+                                .Suma = p.suma,
+                                .Tip = If(p.tip, String.Empty),
+                                .Incarcat = p.incarcat,
+                                .Preluat = p.preluat,
+                                .ReferintaTrezor = If(p.referinta_trezor, String.Empty),
+                                .Clsf = If(p.clsf, String.Empty),
+                                .Denumire = If(p.denumire, String.Empty),
+                                .ClsfPlata = If(p.clsf_plata, String.Empty)
+                            }
+                            row.AreOrd = p.are_ord
+                            ' Extrasul se pliaza doar cand exista (idfxe non-null); altfel Nothing.
+                            If p.idfxe.HasValue Then
+                                row.Extras = New ExtrasBancar() With {
+                                    .Idfxe = p.idfxe.Value,
+                                    .DataBanca = p.data_banca,
+                                    .DataDoc = If(p.data_doc, String.Empty),
+                                    .NrDoc = If(p.nr_doc_extras, String.Empty),
+                                    .Referinta = If(p.referinta, String.Empty),
+                                    .PlatitorNume = If(p.platitor_nume, String.Empty),
+                                    .PlatitorCui = If(p.platitor_cui, String.Empty),
+                                    .PlatitorIban = If(p.platitor_iban, String.Empty),
+                                    .SumaDebit = p.suma_debit,
+                                    .SumaCredit = p.suma_credit,
+                                    .Explicatii = If(p.explicatii, String.Empty)
+                                }
+                            End If
+                            result.Plati.Add(row)
+                        Next
+                    End If
+                    Return result
+                End Using
+            End Using
+        Catch ex As ApiException
+            ' 401/HTTP tipat, tratat de apelant (WithReauth) — nu logăm.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetPlatiAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ' Conversie Excel -> JSON pe server. FOREXE nu mai face HTTP direct: umple un
     ' ExcelJob și îl dă aici, unde stau adresa, token-ul bearer și POST-ul. Un singur
     ' apel, fără retry (upload base64 mare; reîncercarea e scumpă). Non-2xx -> ApiException

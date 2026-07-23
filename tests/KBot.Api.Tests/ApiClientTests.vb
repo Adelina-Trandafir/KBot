@@ -673,4 +673,119 @@ Public Class ApiClientTests
         Assert.Equal("TOKEN_UNKNOWN", ex.Reason)
     End Function
 
+    ' --- GetPlatiAsync (slice 0017): vederea Plăți. Contract de fir snake_case, extrasul
+    ' bancar FLAT pe rand -> se pliaza intr-un ExtrasBancar (Nothing cand idfxe e null). ---
+
+    Private Const PlatiTwoRows As String =
+        "{""cod"":""A100"",""plati"":[" &
+        "{""id_plata_fx"":9900171,""id_clsf"":75,""cod_ai"":""AI-A"",""cod_indicator"":""IND-A""," &
+        """nr_op"":""39"",""data_plata"":""2026-01-31"",""suma"":1331.0,""tip"":""PLATA""," &
+        """incarcat"":true,""preluat"":false,""referinta_trezor"":""TZ001"",""clsf"":""65.02""," &
+        """denumire"":""Cheltuieli"",""clsf_plata"":""65.02"",""are_ord"":true," &
+        """idfxe"":9900171,""data_banca"":""2026-01-31"",""data_doc"":""31.01.2026""," &
+        """nr_doc_extras"":""0100"",""referinta"":""TZ001"",""platitor_nume"":""FURNIZOR SRL""," &
+        """platitor_cui"":""123"",""platitor_iban"":""RO00"",""suma_debit"":1331.0," &
+        """suma_credit"":0.0,""explicatii"":""Explicație""}," &
+        "{""id_plata_fx"":9900172,""id_clsf"":0,""cod_ai"":null,""cod_indicator"":null," &
+        """nr_op"":""85"",""data_plata"":""2026-02-04"",""suma"":-23.0,""tip"":""INCASARE""," &
+        """incarcat"":false,""preluat"":true,""referinta_trezor"":""TZ002"",""clsf"":null," &
+        """denumire"":null,""clsf_plata"":""66.01"",""are_ord"":false," &
+        """idfxe"":null,""data_banca"":null,""data_doc"":null,""nr_doc_extras"":null," &
+        """referinta"":null,""platitor_nume"":null,""platitor_cui"":null,""platitor_iban"":null," &
+        """suma_debit"":0.0,""suma_credit"":0.0,""explicatii"":null}]}"
+
+    <Fact>
+    Public Async Function GetPlati_BuildsUrl_SendsBearer_EscapesCod() As Task
+        Dim h As New StubHandler With {.ResponseBody = PlatiTwoRows}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await client.GetPlatiAsync("A 100", CancellationToken.None)
+
+        Assert.Equal(HttpMethod.Get, h.LastMethod)
+        Assert.Equal("/api/forexe/plati", h.LastRequestUri.AbsolutePath)
+        Assert.Contains("cod=A%20100", h.LastRequestUri.Query)
+        Assert.DoesNotContain("ss=", h.LastRequestUri.Query)
+        Assert.Equal("Bearer tok-opaque-123", h.LastAuthorization)
+    End Function
+
+    <Fact>
+    Public Async Function GetPlati_BlankCod_ThrowsBeforeAnyRequest() As Task
+        Dim h As New StubHandler With {.ResponseBody = PlatiTwoRows}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await Assert.ThrowsAsync(Of ArgumentException)(
+            Async Function() Await client.GetPlatiAsync("   ", CancellationToken.None))
+        Assert.Null(h.LastRequestUri)      ' nu s-a trimis nimic pe fir
+    End Function
+
+    <Fact>
+    Public Async Function GetPlati_Deserializes_Rows_Extras_AndNullables() As Task
+        Dim h As New StubHandler With {.ResponseBody = PlatiTwoRows}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetPlatiAsync("A100", CancellationToken.None)
+
+        Assert.Equal("A100", data.Cod)
+        Assert.Equal(2, data.Plati.Count)
+
+        ' Primul rând: ordonantat, cu extras bancar pliat.
+        Dim first = data.Plati(0)
+        Assert.Equal(9900171, first.IdPlataFX)
+        Assert.Equal(New Date(2026, 1, 31), first.DataPlata.Value)
+        Assert.Equal(1331.0, first.Suma)
+        Assert.Equal("PLATA", first.Tip)
+        Assert.True(first.Incarcat)
+        Assert.False(first.Preluat)
+        Assert.True(first.AreOrd)
+        Assert.Equal("65.02", first.Clsf)
+        Assert.Equal("Cheltuieli", first.Denumire)
+        Assert.NotNull(first.Extras)
+        Assert.Equal(9900171, first.Extras.Idfxe)
+        Assert.Equal("FURNIZOR SRL", first.Extras.PlatitorNume)
+        Assert.Equal("31.01.2026", first.Extras.DataDoc)     ' TEXT, nu ISO
+        Assert.Equal(1331.0, first.Extras.SumaDebit)
+
+        ' Al doilea rând: fără extras (idfxe null -> Extras Nothing), clsf null -> gol,
+        ' fallback pe clsf_plata; INCASARE ne-ordonantată.
+        Dim second = data.Plati(1)
+        Assert.Equal(9900172, second.IdPlataFX)
+        Assert.Null(second.Extras)
+        Assert.Equal(String.Empty, second.Clsf)
+        Assert.Equal("66.01", second.ClsfPlata)
+        Assert.Equal("66.01", second.ClsfEfectiv)            ' fallback pe clsf_plata
+        Assert.True(second.EsteIncasare)
+        Assert.False(second.AreOrd)
+    End Function
+
+    <Fact>
+    Public Async Function GetPlati_Empty_IsEmptyNotException() As Task
+        Dim h As New StubHandler With {.ResponseBody = "{""cod"":""NUEXISTA"",""plati"":[]}"}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetPlatiAsync("NUEXISTA", CancellationToken.None)
+
+        Assert.NotNull(data)
+        Assert.Empty(data.Plati)
+        Assert.Equal("NUEXISTA", data.Cod)
+    End Function
+
+    <Fact>
+    Public Async Function GetPlati_Non2xx_ParsesRomanianErrorAndReason() As Task
+        Dim h As New StubHandler With {
+            .Status = HttpStatusCode.Unauthorized,
+            .ResponseBody = "{""error"":""Sesiune necunoscută. Autentificați-vă din nou."",""reason"":""TOKEN_UNKNOWN""}"
+        }
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
+            Async Function() Await client.GetPlatiAsync("A100", CancellationToken.None))
+        Assert.Equal(401, ex.StatusCode.Value)
+        Assert.Equal("TOKEN_UNKNOWN", ex.Reason)
+    End Function
+
 End Class

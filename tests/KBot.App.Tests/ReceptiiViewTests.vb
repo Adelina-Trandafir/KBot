@@ -48,6 +48,11 @@ Public Class ReceptiiViewTests
             Throw New NotSupportedException()
         End Function
 
+        Public Function GetPlatiAsync(cod As String, ct As CancellationToken) As Task(Of PlatiInfo) _
+            Implements IApiClient.GetPlatiAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public Function GetSumarAsync(cod As String, ct As CancellationToken) As Task(Of SumarInfo) _
             Implements IApiClient.GetSumarAsync
             Throw New NotSupportedException()
