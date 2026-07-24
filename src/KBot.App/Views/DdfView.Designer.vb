@@ -227,7 +227,7 @@ Partial Class DdfView
         lblFisiereGol.Font = New Font("Segoe UI", 10F)
         lblFisiereGol.Name = "lblFisiereGol"
         lblFisiereGol.TabIndex = 0
-        lblFisiereGol.Text = "Lista documentelor va fi disponibilă într-o etapă următoare."
+        lblFisiereGol.Text = "Selectați un angajament din arbore."
         lblFisiereGol.TextAlign = ContentAlignment.MiddleCenter
         '
         ' lblEmpty — starea goală / de încărcare a vederii

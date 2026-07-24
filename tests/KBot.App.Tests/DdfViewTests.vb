@@ -519,6 +519,47 @@ Public Class DdfViewTests
                End Sub)
     End Sub
 
+    ' ── Felia 04: browser + previzualizare partajată ────────────────────────
+
+    <Fact>
+    Public Sub View_MountsFileBrowser_AndPreview()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New DdfView(api, PassThrough())
+                       ' Browserul de fișiere e montat în pagina «Fișiere».
+                       Assert.NotNull(FindControl(Of DdfFileBrowser)(view))
+                       ' Suprafața de previzualizare implicită (XfaXml) e montată în «Vizualizare».
+                       Assert.NotNull(FindControl(Of XfaXmlPreview)(view))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub FileActivated_RoutesToPreview_AndSwitchesToVizualizarePage()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New DdfView(api, PassThrough())
+                       ' Încărcăm date ca `split` să fie vizibil (altfel Visible propagă False
+                       ' de la ancestorul ascuns și testul nu poate distinge paginile).
+                       Loaded(api, view)
+
+                       Dim pnlPreview = FindByName(view, "pnlPreview")
+                       Dim pnlValori = FindByName(view, "pnlValori")
+                       Assert.True(pnlValori.Visible)         ' pagina implicită
+                       Assert.False(pnlPreview.Visible)
+
+                       ' OnFileActivated (handler-ul vederii pentru selecția din browser) comută
+                       ' pe pagina «Vizualizare» — același drum ca selectarea unui rând.
+                       Dim onFile = view.GetType().GetMethod("OnFileActivated",
+                           Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance)
+                       onFile.Invoke(view, New Object() {"C:\nu\exista\DDF_NR_1_REV_0_A.PDF"})
+
+                       Assert.True(pnlPreview.Visible)
+                       Assert.False(pnlValori.Visible)
+                   End Using
+               End Sub)
+    End Sub
+
     <Fact>
     Public Sub EmptyRevisions_ShowsEmptyState_NotACrash()
         RunSta(Sub()

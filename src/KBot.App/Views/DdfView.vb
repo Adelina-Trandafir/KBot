@@ -76,6 +76,8 @@ Public Class DdfView
     ' Suprafața de previzualizare (felia 03), aleasă la compilare de DdfPreviewFactory. O
     ' singură instanță, montată în pnlPreview, refolosită și de pagina «Fișiere» (felia 04).
     Private ReadOnly _preview As IDdfPreview
+    ' Browserul de fișiere PDF (felia 04), montat în pnlFisiere.
+    Private ReadOnly _browser As DdfFileBrowser
 
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of DdfInfo)), Task(Of DdfInfo)))
@@ -89,6 +91,8 @@ Public Class DdfView
         BuildColumns()
         _preview = DdfPreviewFactory.Create()
         MountPreview()
+        _browser = New DdfFileBrowser()
+        MountBrowser()
         ResetClsfCombo(Nothing)
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
@@ -106,6 +110,32 @@ Public Class DdfView
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.MountPreview", ex)
             Throw
+        End Try
+    End Sub
+
+    ' Montează browserul de fișiere în pagina «Fișiere» și se abonează la selecția unui rând.
+    Private Sub MountBrowser()
+        Try
+            lblFisiereGol.Visible = False
+            _browser.Dock = DockStyle.Fill
+            pnlFisiere.Controls.Add(_browser)
+            _browser.BringToFront()
+            AddHandler _browser.FileActivated, AddressOf OnFileActivated
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.MountBrowser", ex)
+            Throw
+        End Try
+    End Sub
+
+    ' Un fișier ales din browser -> aceeași suprafață de previzualizare ca pagina «Vizualizare»
+    ' (planul §7: o singură suprafață, două puncte de intrare), apoi comutăm pe acea pagină.
+    Private Sub OnFileActivated(pdfPath As String)
+        Try
+            If String.IsNullOrWhiteSpace(pdfPath) Then Return
+            _preview.ShowDocument(pdfPath, IO.File.Exists(pdfPath))
+            navSub.SelectedKey = PAGE_PREVIEW      ' ridică SelectionChanged -> ShowPage
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.OnFileActivated", ex)
         End Try
     End Sub
 
@@ -260,6 +290,9 @@ Public Class DdfView
             _nodeIsRoot = False
             grid.ClearRows()
             ResetClsfCombo(Nothing)
+            ' Browserul de fișiere: PDF-urile angajamentului sub rădăcina configurată.
+            _browser.SetContext(KBotPaths.Current.DdfPdfRoot, cod)
+            _preview.Clear()
             ShowContent()
         Catch ex As ApiException
             If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
@@ -368,13 +401,32 @@ Public Class DdfView
             ResetClsfCombo(_nodeRows)
             FillGrid(_nodeRows)
 
-            ' Previzualizarea: o rădăcină de lună NU are un singur document -> se golește
-            ' (planul §7). Legarea frunză -> cale PDF -> ShowDocument vine în felia 04 (are
-            ' nevoie de KBotPaths.DdfPdfRoot + CUAL/PartAng din antet).
-            If _nodeIsRoot Then _preview.Clear()
+            ' Previzualizarea (planul §7): o rădăcină de lună NU are un singur document -> se
+            ' golește; o frunză -> se calculează calea așteptată (§2.5) din antet (CUAL/PartAng/
+            ' NumePartener) + NumarRev-ul reviziei și se dă previzualizării cu flag-ul de existență.
+            If _nodeIsRoot Then
+                _preview.Clear()
+            Else
+                LinkPreviewLaFrunza(payload.Revizie)
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.tree_NodeMouseUp", ex)
         End Try
+    End Sub
+
+    ' Calea așteptată a PDF-ului reviziei (planul §2.5), din antetul de lucru + NumarRev, apoi
+    ' o dă previzualizării cu flag-ul de existență de pe disc. Fără antet -> golește.
+    Private Sub LinkPreviewLaFrunza(revizie As RevizieRow)
+        If revizie Is Nothing OrElse _antet Is Nothing Then
+            _preview.Clear()
+            Return
+        End If
+        Dim path As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, revizie.NumarRev)
+        If String.IsNullOrEmpty(path) Then
+            _preview.Clear()
+            Return
+        End If
+        _preview.ShowDocument(path, IO.File.Exists(path))
     End Sub
 
     ' ── Combo-ul de clasificații ─────────────────────────────────────────────
@@ -495,6 +547,7 @@ Public Class DdfView
         grid.ClearRows()
         ResetClsfCombo(Nothing)
         _preview?.Clear()
+        _browser?.SetContext(Nothing, Nothing)
     End Sub
 
     Private Sub ShowEmpty(message As String)
@@ -619,9 +672,10 @@ Public Class DdfView
             lblEmpty.ForeColor = p.TextDimColor
             lblEmpty.BackColor = p.SurfaceAltColor
 
-            ' Cascada temei spre suprafața de previzualizare (implementează IThemedControl).
+            ' Cascada temei spre suprafața de previzualizare + browserul de fișiere.
             Dim themedPreview As IThemedControl = TryCast(_preview, IThemedControl)
             themedPreview?.ApplyTheme(scheme)
+            _browser?.ApplyTheme(scheme)
 
             ' Re-tintarea iconițelor pe noua paletă. Arborele se reconstruiește, deci selecția
             ' se pierde — grila rămâne cum e până la următorul click pe un nod.
