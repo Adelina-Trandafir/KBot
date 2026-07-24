@@ -1007,4 +1007,118 @@ Public Class ApiClientTests
         Assert.Equal("DDF1", data.Cod)
     End Function
 
+    ' --- GetIstoricAsync (slice 0022): vederea Istoric. Contract de fir snake_case, DOUĂ liste
+    ' (randuri + clasificatii) într-un singur drum dus-întors; vederea filtrează local. ---
+
+    Private Const IstoricPayload As String =
+        "{""cod"":""IST1""," &
+        """randuri"":[" &
+        "{""id"":9902201,""data_fx"":""2026-01-19T19:21:32"",""clsf"":""65.02.04.02.20.01.03""," &
+        """id_clsf"":990222,""tip_rand"":""PLATA_PLATA"",""cod_indicator"":""IND-A"",""cod_ai"":""IST1-AI-A""," &
+        """descriere"":""Înregistrare Plată"",""observatii"":""Plată document 48""," &
+        """val_rezervare_i"":0.0,""val_rezervare_d"":0.0,""val_rezervare_ant"":0.0,""val_rezervare_dif"":-50.0," &
+        """val_ang_leg"":0.0,""val_receptie"":0.0,""val_plata"":700.0,""id_trezor"":""TZ1"",""doc"":""48"",""idrev"":null}," &
+        "{""id"":9902202,""data_fx"":""2026-01-17T08:00:00"",""clsf"":""65.02.04.02.20.01.01""," &
+        """id_clsf"":990222,""tip_rand"":""Rez_Initiala"",""cod_indicator"":null,""cod_ai"":null," &
+        """descriere"":null,""observatii"":null," &
+        """val_rezervare_i"":3065.12,""val_rezervare_d"":0.0,""val_rezervare_ant"":0.0,""val_rezervare_dif"":0.0," &
+        """val_ang_leg"":0.0,""val_receptie"":0.0,""val_plata"":0.0,""id_trezor"":null,""doc"":null,""idrev"":7}]," &
+        """clasificatii"":[" &
+        "{""id_clsf"":990222,""clsf"":""65.02.04.02.20.01.03"",""capitol"":""65.02"",""subcapitol"":""04.02""," &
+        """articol"":""20.01"",""alineat"":""03"",""den_subcapitol"":""Subcapitol X"",""den_articol"":""Articol Y""," &
+        """den_alineat"":""Alineat Z""}]}"
+
+    <Fact>
+    Public Async Function GetIstoric_BuildsUrl_SendsBearer_EscapesCod() As Task
+        Dim h As New StubHandler With {.ResponseBody = IstoricPayload}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await client.GetIstoricAsync("A 100", CancellationToken.None)
+
+        Assert.Equal(HttpMethod.Get, h.LastMethod)
+        Assert.Equal("/api/forexe/istoric", h.LastRequestUri.AbsolutePath)
+        Assert.Contains("cod=A%20100", h.LastRequestUri.Query)
+        ' Baza NU se trimite: serverul o ia din sesiune (o bază = o unitate).
+        Assert.DoesNotContain("db_name=", h.LastRequestUri.Query)
+        Assert.Equal("Bearer tok-opaque-123", h.LastAuthorization)
+    End Function
+
+    <Fact>
+    Public Async Function GetIstoric_BlankCod_ThrowsBeforeAnyRequest() As Task
+        Dim h As New StubHandler With {.ResponseBody = IstoricPayload}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await Assert.ThrowsAsync(Of ArgumentException)(
+            Async Function() Await client.GetIstoricAsync("   ", CancellationToken.None))
+        Assert.Null(h.LastRequestUri)      ' nu s-a trimis nimic pe fir
+    End Function
+
+    <Fact>
+    Public Async Function GetIstoric_Deserializes_BothArrays_TimeAndNullables() As Task
+        Dim h As New StubHandler With {.ResponseBody = IstoricPayload}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetIstoricAsync("IST1", CancellationToken.None)
+
+        Assert.Equal("IST1", data.Cod)
+        Assert.Equal(2, data.Randuri.Count)
+        Assert.Single(data.Clasificatii)
+
+        ' Primul rând: data_fx PĂSTREAZĂ ora (§2.3), valoare negativă cu semn, idrev null.
+        Dim r0 = data.Randuri(0)
+        Assert.Equal(New Date(2026, 1, 19, 19, 21, 32), r0.DataFx.Value)
+        Assert.Equal(19, r0.DataFx.Value.Hour)
+        Assert.Equal(-50.0, r0.ValRezervareDif)
+        Assert.Equal(700.0, r0.ValPlata)
+        Assert.Equal("PLATA_PLATA", r0.TipRand)
+        Assert.False(r0.Idrev.HasValue)
+
+        ' Al doilea rând: nullables -> String.Empty (grila nu primește null); idrev prezent.
+        Dim r1 = data.Randuri(1)
+        Assert.Equal(String.Empty, r1.Descriere)
+        Assert.Equal(String.Empty, r1.CodIndicator)
+        Assert.Equal(String.Empty, r1.IdTrezor)
+        Assert.Equal(7, r1.Idrev.Value)
+        Assert.Equal(3065.12, r1.ValRezervareI)
+
+        ' Clasificația poartă cele trei captiuni + id-ul ACCESS (= IdClsfAcc).
+        Dim c0 = data.Clasificatii(0)
+        Assert.Equal(990222, c0.IdClsf)
+        Assert.Equal("Subcapitol X", c0.DenSubcapitol)
+        Assert.Equal("Articol Y", c0.DenArticol)
+        Assert.Equal("Alineat Z", c0.DenAlineat)
+    End Function
+
+    <Fact>
+    Public Async Function GetIstoric_Empty_IsEmptyNotException() As Task
+        Dim h As New StubHandler With {.ResponseBody = "{""cod"":""NUEXISTA"",""randuri"":[],""clasificatii"":[]}"}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetIstoricAsync("NUEXISTA", CancellationToken.None)
+
+        Assert.NotNull(data)
+        Assert.Empty(data.Randuri)
+        Assert.Empty(data.Clasificatii)
+        Assert.Equal("NUEXISTA", data.Cod)
+    End Function
+
+    <Fact>
+    Public Async Function GetIstoric_Non2xx_ParsesRomanianErrorAndReason() As Task
+        Dim h As New StubHandler With {
+            .Status = HttpStatusCode.Unauthorized,
+            .ResponseBody = "{""error"":""Sesiune necunoscută. Autentificați-vă din nou."",""reason"":""TOKEN_UNKNOWN""}"
+        }
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
+            Async Function() Await client.GetIstoricAsync("IST1", CancellationToken.None))
+        Assert.Equal(401, ex.StatusCode.Value)
+        Assert.Equal("TOKEN_UNKNOWN", ex.Reason)
+    End Function
+
 End Class

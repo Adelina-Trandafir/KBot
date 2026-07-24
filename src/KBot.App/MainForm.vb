@@ -376,7 +376,7 @@ Public Class MainForm
                 ' shell-ului, ca politica de re-login să rămână într-un singur loc.
                 Case "sumar" : Return New SumarView(_apiClient, Function(op) WithReauth(Of SumarInfo)(op))
                 Case "indicatori" : Return New PlaceholderView(key, "Indicatori")
-                Case "istoric" : Return New PlaceholderView(key, "Istoric")
+                Case "istoric" : Return New IstoricView(_apiClient, Function(op) WithReauth(Of IstoricInfo)(op))
                 Case "revizii" : Return New PlaceholderView(key, "Revizii")
                 Case "rezervari" : Return New RezervariView(_apiClient, Function(op) WithReauth(Of RezervariInfo)(op))
                 Case "partener" : Return New PlaceholderView(key, "Partener")

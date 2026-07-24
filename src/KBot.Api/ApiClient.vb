@@ -610,6 +610,88 @@ Public Class ApiClient
         End Try
     End Function
 
+    ' Istoricul unui angajament (slice 0022), pentru IstoricView. Un singur parametru:
+    ' cod = CodAngajament, escapat in query string. NU se trimite baza (o citeste serverul din
+    ' sesiune). Un cod fara istoric intoarce 200 cu ambele liste goale, deci aici rezulta un
+    ' IstoricInfo gol, nu o exceptie. Doua liste intr-un singur apel (randuri + clasificatii);
+    ' vederea filtreaza local. Hard-fail (Throw ApiException) pe non-2xx; un 401 curge spre
+    ' WithReauth.
+    Public Async Function GetIstoricAsync(cod As String, ct As CancellationToken) _
+        As Task(Of IstoricInfo) Implements IApiClient.GetIstoricAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim url As String = $"/api/forexe/istoric?cod={Uri.EscapeDataString(cod)}"
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea istoricului angajamentului", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As GetIstoricResponse = JsonSerializer.Deserialize(Of GetIstoricResponse)(respText, _json)
+                    Dim result As New IstoricInfo()
+                    If payload Is Nothing Then Return result
+
+                    result.Cod = If(payload.cod, If(cod, String.Empty))
+
+                    If payload.randuri IsNot Nothing Then
+                        For Each r As GetIstoricRandRow In payload.randuri
+                            result.Randuri.Add(New IstoricRand() With {
+                                .Id = r.id,
+                                .DataFx = r.data_fx,
+                                .Clsf = If(r.clsf, String.Empty),
+                                .IdClsf = r.id_clsf,
+                                .TipRand = If(r.tip_rand, String.Empty),
+                                .CodIndicator = If(r.cod_indicator, String.Empty),
+                                .CodAI = If(r.cod_ai, String.Empty),
+                                .Descriere = If(r.descriere, String.Empty),
+                                .Observatii = If(r.observatii, String.Empty),
+                                .ValRezervareI = r.val_rezervare_i,
+                                .ValRezervareD = r.val_rezervare_d,
+                                .ValRezervareAnt = r.val_rezervare_ant,
+                                .ValRezervareDif = r.val_rezervare_dif,
+                                .ValAngLeg = r.val_ang_leg,
+                                .ValReceptie = r.val_receptie,
+                                .ValPlata = r.val_plata,
+                                .IdTrezor = If(r.id_trezor, String.Empty),
+                                .Doc = If(r.doc, String.Empty),
+                                .Idrev = r.idrev
+                            })
+                        Next
+                    End If
+
+                    If payload.clasificatii IsNot Nothing Then
+                        For Each c As GetIstoricClasificatieRow In payload.clasificatii
+                            result.Clasificatii.Add(New IstoricClasificatie() With {
+                                .IdClsf = c.id_clsf,
+                                .Clsf = If(c.clsf, String.Empty),
+                                .Capitol = If(c.capitol, String.Empty),
+                                .Subcapitol = If(c.subcapitol, String.Empty),
+                                .Articol = If(c.articol, String.Empty),
+                                .Alineat = If(c.alineat, String.Empty),
+                                .DenSubcapitol = If(c.den_subcapitol, String.Empty),
+                                .DenArticol = If(c.den_articol, String.Empty),
+                                .DenAlineat = If(c.den_alineat, String.Empty)
+                            })
+                        Next
+                    End If
+                    Return result
+                End Using
+            End Using
+        Catch ex As ApiException
+            ' 401/HTTP tipat, tratat de apelant (WithReauth) — nu logăm.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetIstoricAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ' Conversie Excel -> JSON pe server. FOREXE nu mai face HTTP direct: umple un
     ' ExcelJob și îl dă aici, unde stau adresa, token-ul bearer și POST-ul. Un singur
     ' apel, fără retry (upload base64 mare; reîncercarea e scumpă). Non-2xx -> ApiException

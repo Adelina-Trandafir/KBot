@@ -28,6 +28,7 @@ Partial Class DdfView
         grid = New Controls.KBotDataView()
         pnlPreview = New Panel()
         lblPreviewGol = New Label()
+        pnlPdf = New Panel()
         pnlFisiere = New Panel()
         lblFisiereGol = New Label()
         lblEmpty = New Label()
@@ -123,6 +124,7 @@ Partial Class DdfView
         '
         pnlPages.Controls.Add(pnlValori)
         pnlPages.Controls.Add(pnlPreview)
+        pnlPages.Controls.Add(pnlPdf)
         pnlPages.Controls.Add(pnlFisiere)
         pnlPages.Dock = DockStyle.Fill
         pnlPages.Location = New Point(0, 34)
@@ -212,6 +214,15 @@ Partial Class DdfView
         lblPreviewGol.Text = "Selectați o revizie din arbore."
         lblPreviewGol.TextAlign = ContentAlignment.MiddleCenter
         '
+        ' pnlPdf — pagina «Document»: suprafața care afișează PDF-ul REAL (ReaderHostPreview),
+        ' distinctă de «Vizualizare» (reconstrucția din XML XFA). Se montează în cod.
+        '
+        pnlPdf.Dock = DockStyle.Fill
+        pnlPdf.Location = New Point(0, 0)
+        pnlPdf.Name = "pnlPdf"
+        pnlPdf.TabIndex = 3
+        pnlPdf.Visible = False
+        '
         ' pnlFisiere — pagina «Fișiere». Lista de PDF-uri se montează aici în felia 04.
         '
         pnlFisiere.Controls.Add(lblFisiereGol)
@@ -278,6 +289,7 @@ Partial Class DdfView
     Friend WithEvents grid As KBot.Controls.KBotDataView
     Friend WithEvents pnlPreview As Panel
     Friend WithEvents lblPreviewGol As Label
+    Friend WithEvents pnlPdf As Panel
     Friend WithEvents pnlFisiere As Panel
     Friend WithEvents lblFisiereGol As Label
     Friend WithEvents lblEmpty As Label

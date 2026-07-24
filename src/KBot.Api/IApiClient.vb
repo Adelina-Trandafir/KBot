@@ -78,6 +78,15 @@ Public Interface IApiClient
                          Optional pentruGenerare As Boolean = False) As Task(Of DdfInfo)
 
     ''' <summary>
+    ''' Aduce istoricul unui angajament (GET /api/forexe/istoric): un rând per înregistrare
+    ''' FX_Istoric + ierarhia de clasificații pentru meniul de filtrare. Un singur drum
+    ''' dus-întors pentru tot codul: vederea filtrează local. Baza NU se trimite: serverul o ia
+    ''' din sesiune. Un cod necunoscut întoarce un IstoricInfo cu listele goale (nu excepție).
+    ''' Hard-fail (Throw) la non-2xx; fără retry pe 401 (curge spre WithReauth).
+    ''' </summary>
+    Function GetIstoricAsync(cod As String, ct As CancellationToken) As Task(Of IstoricInfo)
+
+    ''' <summary>
     ''' Trimite un Excel (base64) la server pentru conversie în JSON (/api/tools/process_excel).
     ''' Întoarce conținutul câmpului "data" din răspuns. Autorizare: bearer-ul sesiunii
     ''' curente (în ApiClient). Hard-fail (Throw ApiException) la non-2xx.

@@ -312,3 +312,52 @@ Public NotInheritable Class GetDdfAtasamentRow
     Public Property prt_scr As Boolean
     Public Property date_fisier As String
 End Class
+
+' Wire DTOs for GET /api/forexe/istoric (vederea Istoric, slice 0022).
+' Property names ARE the JSON keys (PropertyNamingPolicy=Nothing) — snake_case verbatim,
+' matching routes/forexe/istoric.py exactly. ApiClient maps them onto the Istoric POCOs so the
+' snake_case stops at the wire. Two arrays, one round trip: the client filters locally.
+Public NotInheritable Class GetIstoricResponse
+    Public Property cod As String
+    Public Property randuri As New List(Of GetIstoricRandRow)()
+    Public Property clasificatii As New List(Of GetIstoricClasificatieRow)()
+End Class
+
+' One raw FX_Istoric record. data_fx carries a TIME component (§2.3) — it deserializes to a
+' Date (DateTime) with the hours intact, NOT truncated to the day like the DDF revision date.
+' idrev is nullable: many istoric rows have no revision.
+Public NotInheritable Class GetIstoricRandRow
+    Public Property id As Integer
+    Public Property data_fx As Date?
+    Public Property clsf As String
+    Public Property id_clsf As Integer
+    Public Property tip_rand As String
+    Public Property cod_indicator As String
+    Public Property cod_ai As String
+    Public Property descriere As String
+    Public Property observatii As String
+    Public Property val_rezervare_i As Double
+    Public Property val_rezervare_d As Double
+    Public Property val_rezervare_ant As Double
+    Public Property val_rezervare_dif As Double
+    Public Property val_ang_leg As Double
+    Public Property val_receptie As Double
+    Public Property val_plata As Double
+    Public Property id_trezor As String
+    Public Property doc As String
+    Public Property idrev As Integer?
+End Class
+
+' One classification-hierarchy entry (deduped on IdClsfAcc). id_clsf is the ACCESS id
+' (= Clasificatii.IdClsfAcc), matching FX_Istoric.IdClsf — the opposite direction from DDF.
+Public NotInheritable Class GetIstoricClasificatieRow
+    Public Property id_clsf As Integer
+    Public Property clsf As String
+    Public Property capitol As String
+    Public Property subcapitol As String
+    Public Property articol As String
+    Public Property alineat As String
+    Public Property den_subcapitol As String
+    Public Property den_articol As String
+    Public Property den_alineat As String
+End Class

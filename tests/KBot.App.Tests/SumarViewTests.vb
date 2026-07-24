@@ -83,6 +83,11 @@ Public Class SumarViewTests
             Throw New NotSupportedException()
         End Function
 
+        Public Function GetIstoricAsync(cod As String, ct As CancellationToken) As Task(Of IstoricInfo) _
+            Implements IApiClient.GetIstoricAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public Function ProcessExcelAsync(job As ExcelJob, ct As CancellationToken) As Task(Of String) _
             Implements IApiClient.ProcessExcelAsync
             Throw New NotSupportedException()

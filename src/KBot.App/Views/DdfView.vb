@@ -34,6 +34,8 @@ Public Class DdfView
     ' Cheile paginilor sub-navigării — o singură definiție, folosită la creare și la comutare.
     Private Const PAGE_VALORI As String = "valori"
     Private Const PAGE_PREVIEW As String = "previzualizare"
+    ' «Document» = PDF-ul REAL (ReaderHostPreview), distinct de «Vizualizare» (reconstrucția XFA).
+    Private Const PAGE_PDF As String = "document"
     Private Const PAGE_FISIERE As String = "fisiere"
 
     ' Cheile coloanelor grilei — o singură definiție, folosită la creare și la umplere.
