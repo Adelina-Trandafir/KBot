@@ -73,6 +73,10 @@ Public Class DdfView
     ' Se reconstruiește combo-ul chiar acum? Blochează re-filtrarea din SelectedIndexChanged.
     Private _suppressComboEvent As Boolean
 
+    ' Suprafața de previzualizare (felia 03), aleasă la compilare de DdfPreviewFactory. O
+    ' singură instanță, montată în pnlPreview, refolosită și de pagina «Fișiere» (felia 04).
+    Private ReadOnly _preview As IDdfPreview
+
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of DdfInfo)), Task(Of DdfInfo)))
         If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
@@ -83,8 +87,37 @@ Public Class DdfView
         ConfigureTree()
         BuildNav()
         BuildColumns()
+        _preview = DdfPreviewFactory.Create()
+        MountPreview()
         ResetClsfCombo(Nothing)
         ShowEmpty("Selectați un angajament din arbore.")
+    End Sub
+
+    ' Montează suprafața de previzualizare aleasă la compilare în pagina «Vizualizare» și se
+    ' abonează la butonul «Generează documentul» (felia 05 tratează generarea).
+    Private Sub MountPreview()
+        Try
+            Dim surface As Control = _preview.Surface
+            surface.Dock = DockStyle.Fill
+            ' Suprafața acoperă panoul; eticheta goală rămâne dedesubt ca fallback.
+            pnlPreview.Controls.Add(surface)
+            surface.BringToFront()
+            AddHandler _preview.GenerateRequested, AddressOf OnGenerateRequested
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.MountPreview", ex)
+            Throw
+        End Try
+    End Sub
+
+    ' «Generează documentul» de pe suprafața „document lipsă". Generarea PDF-ului (apel
+    ' XfaWriter pe thread de fundal) se leagă în felia 05; aici doar consemnăm cererea.
+    Private Sub OnGenerateRequested(sender As Object, e As EventArgs)
+        Try
+            GlobalErrorLog.Write("DdfView.OnGenerateRequested",
+                New NotImplementedException("Generarea documentului DDF se implementează în felia 0020-05."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.OnGenerateRequested", ex)
+        End Try
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements IAngajamentView.ViewKey
@@ -334,6 +367,11 @@ Public Class DdfView
             ' Resetul e NECONDIȚIONAT (decizia 6): nu încearcă să păstreze selecția anterioară.
             ResetClsfCombo(_nodeRows)
             FillGrid(_nodeRows)
+
+            ' Previzualizarea: o rădăcină de lună NU are un singur document -> se golește
+            ' (planul §7). Legarea frunză -> cale PDF -> ShowDocument vine în felia 04 (are
+            ' nevoie de KBotPaths.DdfPdfRoot + CUAL/PartAng din antet).
+            If _nodeIsRoot Then _preview.Clear()
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.tree_NodeMouseUp", ex)
         End Try
@@ -456,6 +494,7 @@ Public Class DdfView
         tree.Clear()
         grid.ClearRows()
         ResetClsfCombo(Nothing)
+        _preview?.Clear()
     End Sub
 
     Private Sub ShowEmpty(message As String)
@@ -579,6 +618,10 @@ Public Class DdfView
 
             lblEmpty.ForeColor = p.TextDimColor
             lblEmpty.BackColor = p.SurfaceAltColor
+
+            ' Cascada temei spre suprafața de previzualizare (implementează IThemedControl).
+            Dim themedPreview As IThemedControl = TryCast(_preview, IThemedControl)
+            themedPreview?.ApplyTheme(scheme)
 
             ' Re-tintarea iconițelor pe noua paletă. Arborele se reconstruiește, deci selecția
             ' se pierde — grila rămâne cum e până la următorul click pe un nod.
