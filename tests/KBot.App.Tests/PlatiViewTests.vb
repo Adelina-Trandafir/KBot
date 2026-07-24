@@ -76,7 +76,8 @@ Public Class PlatiViewTests
             Throw New NotSupportedException()
         End Function
 
-        Public Function GetDdfAsync(cod As String, ct As CancellationToken) As Task(Of DdfInfo) _
+        Public Function GetDdfAsync(cod As String, ct As CancellationToken,
+                                    Optional pentruGenerare As Boolean = False) As Task(Of DdfInfo) _
             Implements IApiClient.GetDdfAsync
             Throw New NotSupportedException()
         End Function

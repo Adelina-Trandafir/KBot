@@ -949,6 +949,48 @@ Public Class ApiClientTests
     End Function
 
     <Fact>
+    Public Async Function GetDdf_PentruGenerare_AddsFlag_AndMapsExtraArrays() As Task
+        Dim body As String =
+            "{""cod"":""DDF1"",""antet"":[],""revizii"":[],""linii"":[" &
+            "{""id_sec_a"":1,""idrev"":44,""id_clsf"":141,""clsf"":""65.01"",""ss"":""01A""," &
+            """element_fund"":""Salarii"",""parametrii_fund"":""p"",""val_prec"":0.0,""val_cur"":9.0,""val_tot"":9.0}]," &
+            """sectiuneb"":[{""id_sec_b"":7,""idrev"":44,""cod_angajament"":""A"",""cod_indicator"":""AAB""," &
+            """cod_ssi"":""01A"",""ca_anterior"":1000.0,""inf1"":200.0,""cb_anterior"":3000.0,""inf2"":400.0}]," &
+            """atasamente"":[{""id_rev_att"":3,""idrev"":44,""cale_fisier"":""d.pdf""," &
+            """prt_scr"":false,""date_fisier"":""QUJD""}]}"
+        Dim h As New StubHandler With {.ResponseBody = body}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Dim data = Await client.GetDdfAsync("DDF1", CancellationToken.None, pentruGenerare:=True)
+
+        Assert.Contains("pentru_generare=1", h.LastRequestUri.Query)
+        ' ss e mapat pe linie.
+        Assert.Equal("01A", data.Linii(0).SS)
+        ' Secțiunea B.
+        Assert.Single(data.SectiuneB)
+        Assert.Equal("AAB", data.SectiuneB(0).CodIndicator)
+        Assert.Equal(1000.0, data.SectiuneB(0).CaAnterior)
+        Assert.Equal(400.0, data.SectiuneB(0).Inf2)
+        ' Atașamentele.
+        Assert.Single(data.Atasamente)
+        Assert.Equal("d.pdf", data.Atasamente(0).CaleFisier)
+        Assert.Equal("QUJD", data.Atasamente(0).DateFisier)
+        Assert.False(data.Atasamente(0).PrtScr)
+    End Function
+
+    <Fact>
+    Public Async Function GetDdf_WithoutFlag_DoesNotAddPentruGenerare() As Task
+        Dim h As New StubHandler With {.ResponseBody = DdfPayload}
+        Dim session As SessionContext = Nothing
+        Dim client = NewClient(h, session)
+
+        Await client.GetDdfAsync("DDF1", CancellationToken.None)
+
+        Assert.DoesNotContain("pentru_generare", h.LastRequestUri.Query)
+    End Function
+
+    <Fact>
     Public Async Function GetDdf_MissingOrNullArrays_BecomeEmptyLists() As Task
         ' Un corp valid dar incomplet (chei absente sau explicit null) nu trebuie să arunce:
         ' cele trei liste rămân goale, iar vederea își arată starea goală.

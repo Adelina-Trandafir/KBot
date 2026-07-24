@@ -236,6 +236,9 @@ Public NotInheritable Class GetDdfResponse
     Public Property antet As New List(Of GetDdfAntetRow)()
     Public Property revizii As New List(Of GetDdfRevizieRow)()
     Public Property linii As New List(Of GetDdfLinieRow)()
+    ' Empty unless the caller passed pentru_generare=1 (slice 05).
+    Public Property sectiuneb As New List(Of GetDdfSectiuneBRow)()
+    Public Property atasamente As New List(Of GetDdfAtasamentRow)()
 End Class
 
 Public NotInheritable Class GetDdfAntetRow
@@ -272,16 +275,40 @@ Public NotInheritable Class GetDdfRevizieRow
     Public Property total_revizie As Double
 End Class
 
-' One FX_DDF_REV_SA record. parametrii_fund is carried but not displayed (decision 4) —
-' the slice-05 XML builder writes it into section A's Cell4.
+' One FX_DDF_REV_SA record. parametrii_fund/ss are carried but not displayed (decision 4) —
+' the slice-05 XML builder writes parametrii_fund into Cell4 and ss into Cell3/codSSI.
 Public NotInheritable Class GetDdfLinieRow
     Public Property id_sec_a As Integer
     Public Property idrev As Integer
     Public Property id_clsf As Integer
     Public Property clsf As String
+    Public Property ss As String
     Public Property element_fund As String
     Public Property parametrii_fund As String
     Public Property val_prec As Double
     Public Property val_cur As Double
     Public Property val_tot As Double
+End Class
+
+' One FX_DDF_REV_SB record (section B) — generation-only. Cell7 is deliberately absent (the
+' XML builder skips it). Values are doubles; the builder Int()-truncates them.
+Public NotInheritable Class GetDdfSectiuneBRow
+    Public Property id_sec_b As Integer
+    Public Property idrev As Integer
+    Public Property cod_angajament As String
+    Public Property cod_indicator As String
+    Public Property cod_ssi As String
+    Public Property ca_anterior As Double
+    Public Property inf1 As Double
+    Public Property cb_anterior As Double
+    Public Property inf2 As Double
+End Class
+
+' One FX_DDF_REV_ATT record — generation-only. date_fisier is already base64.
+Public NotInheritable Class GetDdfAtasamentRow
+    Public Property id_rev_att As Integer
+    Public Property idrev As Integer
+    Public Property cale_fisier As String
+    Public Property prt_scr As Boolean
+    Public Property date_fisier As String
 End Class

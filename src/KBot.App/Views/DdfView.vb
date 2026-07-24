@@ -53,6 +53,9 @@ Public Class DdfView
     Private ReadOnly _apiClient As IApiClient
     ' Plasa 401 a shell-ului (MainForm.WithReauth), specializată pe DdfInfo.
     Private ReadOnly _withReauth As Func(Of Func(Of Task(Of DdfInfo)), Task(Of DdfInfo))
+    ' Sesiunea (globalii unității pentru constructorul de XML, felia 05). Poate fi Nothing în
+    ' teste — atunci contextul de generare e gol.
+    Private ReadOnly _session As SessionContext
 
     ' Codul angajamentului CERUT ultima dată — stale-guard (identic cu Plăți/Recepții/Rezervări).
     Private _requestedCod As String
@@ -70,6 +73,10 @@ Public Class DdfView
     Private _nodeRows As List(Of LinieSaRow)
     ' Nodul selectat e o rădăcină de lună? Doar atunci coloana «Data reviziei» are sens.
     Private _nodeIsRoot As Boolean
+    ' Revizia frunzei previzualizate acum — ținta generării (felia 05).
+    Private _selectedRevizie As RevizieRow
+    ' O generare e în curs? Blochează re-invocarea butonului.
+    Private _generating As Boolean
     ' Se reconstruiește combo-ul chiar acum? Blochează re-filtrarea din SelectedIndexChanged.
     Private _suppressComboEvent As Boolean
 
@@ -80,12 +87,14 @@ Public Class DdfView
     Private ReadOnly _browser As DdfFileBrowser
 
     Public Sub New(apiClient As IApiClient,
-                   withReauth As Func(Of Func(Of Task(Of DdfInfo)), Task(Of DdfInfo)))
+                   withReauth As Func(Of Func(Of Task(Of DdfInfo)), Task(Of DdfInfo)),
+                   Optional session As SessionContext = Nothing)
         If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
         If withReauth Is Nothing Then Throw New ArgumentNullException(NameOf(withReauth))
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
+        _session = session
         ConfigureTree()
         BuildNav()
         BuildColumns()
@@ -139,12 +148,52 @@ Public Class DdfView
         End Try
     End Sub
 
-    ' «Generează documentul» de pe suprafața „document lipsă". Generarea PDF-ului (apel
-    ' XfaWriter pe thread de fundal) se leagă în felia 05; aici doar consemnăm cererea.
-    Private Sub OnGenerateRequested(sender As Object, e As EventArgs)
+    ' «Generează documentul» de pe suprafața „document lipsă" (felia 05). Boundary UI async:
+    ' loghează și înghite (NU rearuncă — nu există await care să prindă).
+    Private Async Sub OnGenerateRequested(sender As Object, e As EventArgs)
         Try
-            GlobalErrorLog.Write("DdfView.OnGenerateRequested",
-                New NotImplementedException("Generarea documentului DDF se implementează în felia 0020-05."))
+            If _generating Then Return
+            Dim cod As String = _requestedCod
+            Dim revizie As RevizieRow = _selectedRevizie
+            If String.IsNullOrWhiteSpace(cod) OrElse revizie Is Nothing OrElse _antet Is Nothing Then Return
+
+            _generating = True
+            Try
+                ' 1. Datele de generare (secțiunea B + atașamentele) — un apel opt-in.
+                Dim data As DdfInfo = Await _withReauth(
+                    Function() _apiClient.GetDdfAsync(cod, CancellationToken.None, pentruGenerare:=True)).ConfigureAwait(True)
+                If data Is Nothing Then Return
+                ' Ținta s-a schimbat între timp? Renunțăm.
+                If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
+
+                ' 2. Doar rândurile reviziei-țintă (generarea e per revizie, ca tmpFX_* din Access).
+                Dim liniiRev = data.Linii.Where(Function(l) l.Idrev = revizie.Idrev).ToList()
+                Dim sbRev = data.SectiuneB.Where(Function(s) s.Idrev = revizie.Idrev).ToList()
+                Dim attRev = data.Atasamente.Where(Function(a) a.Idrev = revizie.Idrev).ToList()
+
+                ' 3. XML-ul complet (form1 + NOTAFD + atașamente).
+                Dim ctx As DdfXmlBuilder.Context = DdfXmlBuilder.Context.FromSession(_session)
+                Dim xml As String = DdfXmlBuilder.BuildComplete(ctx, _antet, revizie, liniiRev, sbRev, attRev)
+
+                ' 4. Calea PDF (§2.5) + siblingul .xml, sub folderul partener/GENERAL (creat la nevoie).
+                Dim pdfPath As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, revizie.NumarRev)
+                If String.IsNullOrEmpty(pdfPath) Then Return
+                IO.Directory.CreateDirectory(IO.Path.GetDirectoryName(pdfPath))
+                Dim xmlPath As String = IO.Path.ChangeExtension(pdfPath, ".xml")
+                IO.File.WriteAllText(xmlPath, xml, New Text.UTF8Encoding(False))
+
+                ' 5. Generarea PROPRIU-ZISĂ pe thread de fundal (descarcă macheta, completează XFA,
+                ' embedează atașamentele, scrie PDF-ul). XfaWriter loghează + rearuncă la graniță;
+                ' NU adăugăm un al doilea strat de catch în jur — îl lăsăm să urce în catch-ul de aici.
+                Await Task.Run(Sub() KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "DDF", deschidePdf:=False)).ConfigureAwait(True)
+
+                ' 6. Fără scriere înapoi în bază (§2.4 — cele patru coloane nu există). Existența
+                ' se decide prin scanare de disc: reîmprospătăm browserul și previzualizarea.
+                _browser.SetContext(KBotPaths.Current.DdfPdfRoot, cod)
+                _preview.ShowDocument(pdfPath, IO.File.Exists(pdfPath))
+            Finally
+                _generating = False
+            End Try
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.OnGenerateRequested", ex)
         End Try
@@ -417,6 +466,7 @@ Public Class DdfView
     ' Calea așteptată a PDF-ului reviziei (planul §2.5), din antetul de lucru + NumarRev, apoi
     ' o dă previzualizării cu flag-ul de existență de pe disc. Fără antet -> golește.
     Private Sub LinkPreviewLaFrunza(revizie As RevizieRow)
+        _selectedRevizie = revizie      ' ținta unei eventuale generări (felia 05)
         If revizie Is Nothing OrElse _antet Is Nothing Then
             _preview.Clear()
             Return
@@ -543,6 +593,7 @@ Public Class DdfView
         _antet = Nothing
         _nodeRows = Nothing
         _nodeIsRoot = False
+        _selectedRevizie = Nothing
         tree.Clear()
         grid.ClearRows()
         ResetClsfCombo(Nothing)

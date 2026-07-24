@@ -28,11 +28,14 @@ Public Class DdfViewTests
         Implements IApiClient
 
         Public ReadOnly RequestedCods As New List(Of String)()
+        Public ReadOnly GenerareCods As New List(Of String)()
         Public ReadOnly Pending As New Dictionary(Of String, TaskCompletionSource(Of DdfInfo))(StringComparer.Ordinal)
 
-        Public Function GetDdfAsync(cod As String, ct As CancellationToken) _
+        Public Function GetDdfAsync(cod As String, ct As CancellationToken,
+                                    Optional pentruGenerare As Boolean = False) _
             As Task(Of DdfInfo) Implements IApiClient.GetDdfAsync
             RequestedCods.Add(cod)
+            If pentruGenerare Then GenerareCods.Add(cod)
             Dim tcs As New TaskCompletionSource(Of DdfInfo)()
             Pending(cod) = tcs
             Return tcs.Task

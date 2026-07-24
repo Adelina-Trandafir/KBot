@@ -489,7 +489,8 @@ Public Class ApiClient
     ' rezulta un DdfInfo gol, nu o exceptie. Envelope-ul poarta antet + revizii + linii intr-un
     ' SINGUR apel (vederea filtreaza local, fara alte cereri). Hard-fail (Throw ApiException)
     ' pe non-2xx; un 401 curge spre WithReauth.
-    Public Async Function GetDdfAsync(cod As String, ct As CancellationToken) _
+    Public Async Function GetDdfAsync(cod As String, ct As CancellationToken,
+                                      Optional pentruGenerare As Boolean = False) _
         As Task(Of DdfInfo) Implements IApiClient.GetDdfAsync
 
         Try
@@ -497,6 +498,7 @@ Public Class ApiClient
             If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
 
             Dim url As String = $"/api/forexe/ddf?cod={Uri.EscapeDataString(cod)}"
+            If pentruGenerare Then url &= "&pentru_generare=1"
 
             Using msg As New HttpRequestMessage(HttpMethod.Get, url)
                 msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
@@ -559,11 +561,40 @@ Public Class ApiClient
                                 .Idrev = l.idrev,
                                 .IdClsf = l.id_clsf,
                                 .Clsf = If(l.clsf, String.Empty),
+                                .SS = If(l.ss, String.Empty),
                                 .ElementFund = If(l.element_fund, String.Empty),
                                 .ParametriiFund = If(l.parametrii_fund, String.Empty),
                                 .ValPrec = l.val_prec,
                                 .ValCur = l.val_cur,
                                 .ValTot = l.val_tot
+                            })
+                        Next
+                    End If
+
+                    If payload.sectiuneb IsNot Nothing Then
+                        For Each s As GetDdfSectiuneBRow In payload.sectiuneb
+                            result.SectiuneB.Add(New SectiuneBRow() With {
+                                .IdSecB = s.id_sec_b,
+                                .Idrev = s.idrev,
+                                .CodAngajament = If(s.cod_angajament, String.Empty),
+                                .CodIndicator = If(s.cod_indicator, String.Empty),
+                                .CodSSI = If(s.cod_ssi, String.Empty),
+                                .CaAnterior = s.ca_anterior,
+                                .Inf1 = s.inf1,
+                                .CbAnterior = s.cb_anterior,
+                                .Inf2 = s.inf2
+                            })
+                        Next
+                    End If
+
+                    If payload.atasamente IsNot Nothing Then
+                        For Each a As GetDdfAtasamentRow In payload.atasamente
+                            result.Atasamente.Add(New AtasamentRow() With {
+                                .IdRevAtt = a.id_rev_att,
+                                .Idrev = a.idrev,
+                                .CaleFisier = If(a.cale_fisier, String.Empty),
+                                .PrtScr = a.prt_scr,
+                                .DateFisier = If(a.date_fisier, String.Empty)
                             })
                         Next
                     End If

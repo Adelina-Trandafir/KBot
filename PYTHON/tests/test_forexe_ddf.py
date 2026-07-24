@@ -51,8 +51,15 @@ REVIZIE_KEYS = (
     "tip", "incarcat", "preluat", "semnatura", "total_revizie",
 )
 LINIE_KEYS = (
-    "id_sec_a", "idrev", "id_clsf", "clsf", "element_fund", "parametrii_fund",
+    "id_sec_a", "idrev", "id_clsf", "clsf", "ss", "element_fund", "parametrii_fund",
     "val_prec", "val_cur", "val_tot",
+)
+SECTIUNEB_KEYS = (
+    "id_sec_b", "idrev", "cod_angajament", "cod_indicator", "cod_ssi",
+    "ca_anterior", "inf1", "cb_anterior", "inf2",
+)
+ATASAMENT_KEYS = (
+    "id_rev_att", "idrev", "cale_fisier", "prt_scr", "date_fisier",
 )
 
 
@@ -90,6 +97,8 @@ def _cleanup(cur):
     # Ordinea conteaza chiar daca FK-urile sunt ON DELETE CASCADE: stergem explicit de la
     # frunza spre radacina, ca testul sa nu depinda de comportamentul cascadei.
     cur.execute("DELETE FROM FX_DDF_REV_SA WHERE IDDF = %s", (IDDF,))
+    cur.execute("DELETE FROM FX_DDF_REV_SB WHERE IDDF = %s", (IDDF,))
+    cur.execute("DELETE FROM FX_DDF_REV_ATT WHERE IDDF = %s", (IDDF,))
     cur.execute("DELETE FROM FX_DDF_REV WHERE IDDF = %s", (IDDF,))
     cur.execute("DELETE FROM FX_DDF WHERE IDDF = %s", (IDDF,))
     cur.execute("DELETE FROM FX_DDF WHERE CodAngajament IN (%s,%s)", (COD, COD_GOL))
@@ -175,6 +184,21 @@ def demo_rows():
              "Element unic", "Parametru unic", 600.0, 50.0, 650.0),
         )
 
+        # O linie de sectiune B pe revizia multi-linie (necesara PDF-ului, §2.8) si un
+        # atasament (DateFisier = base64), ambele pentru testele cu pentru_generare=1.
+        cur.execute(
+            "INSERT INTO FX_DDF_REV_SB (IDDF, IDREV, CodAngajament, CodIndicator, "
+            "IdClsfAcc, IdClsf, CodSSI, CA_Anterior, Inf1, CB_Anterior, Inf2) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (IDDF, IDREV_MULTI, COD, "IND-B", CLSF_ACC, id_clsf, "01A",
+             1000.0, 200.0, 3000.0, 400.0),
+        )
+        cur.execute(
+            "INSERT INTO FX_DDF_REV_ATT (IDDF, IDREV, CaleFisier, PrtScr, DateFisier) "
+            "VALUES (%s,%s,%s,%s,%s)",
+            (IDDF, IDREV_MULTI, "dovada.pdf", 0, "AAECAwQ="),
+        )
+
         conn.commit()
         yield conn
     finally:
@@ -223,18 +247,20 @@ def test_error_message_keeps_literal_diacritics(client, auth_headers):
 # Contract de raspuns
 # ---------------------------------------------------------------------------
 
-def test_unknown_cod_returns_three_empty_arrays_not_404(client, auth_headers):
-    """§3, testul 4: un angajament fara DDF e legitim -> 200 cu TREI liste goale.
+def test_unknown_cod_returns_empty_arrays_not_404(client, auth_headers):
+    """§3, testul 4: un angajament fara DDF e legitim -> 200 cu liste goale.
 
     Apelantul trebuie sa distinga „nu are DDF" de „a cazut transportul"; un 404 le-ar
-    amesteca.
+    amesteca. Cu pentru_generare=1 cerem si sectiuneb/atasamente, tot goale.
     """
-    resp = client.get(f"{URL}?cod=NUEXISTA-XYZ", headers=auth_headers)
+    resp = client.get(f"{URL}?cod=NUEXISTA-XYZ&pentru_generare=1", headers=auth_headers)
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["antet"] == []
     assert body["revizii"] == []
     assert body["linii"] == []
+    assert body["sectiuneb"] == []
+    assert body["atasamente"] == []
     assert body["cod"] == "NUEXISTA-XYZ"
 
 
@@ -376,6 +402,52 @@ def test_parametrii_fund_is_carried_for_the_xml_builder(client, auth_headers, de
     scrie in Cell4 al sectiunii A. Adaugat acum ca sa nu se descopere abia atunci."""
     linii = _body(client.get(f"{URL}?cod={COD}", headers=auth_headers))["linii"]
     assert any(l["parametrii_fund"] == "Parametru unic" for l in linii)
+
+
+# ---------------------------------------------------------------------------
+# Felia 05: sectiunea B + atasamente (opt-in) + ss pe linii
+# ---------------------------------------------------------------------------
+
+def test_ss_is_carried_on_linii(client, auth_headers, demo_rows):
+    """`ss` (Cell3 al form1 + codSSI din NOTAFD) vine de pe linie sau din nomenclator
+    (Clasificatii.SS = generat Sector+Sursa). Clasificatia de test are Capitol 65.02 ->
+    Sector 02, Sursa A -> SS «02A»."""
+    linii = _body(client.get(f"{URL}?cod={COD}", headers=auth_headers))["linii"]
+    assert all("ss" in l for l in linii)
+    assert any(l["ss"] == "02A" for l in linii), "ss nu a fost rezolvat din nomenclator"
+
+
+def test_generare_arrays_are_empty_without_the_flag(client, auth_headers, demo_rows):
+    """Fara pentru_generare=1, sectiuneb si atasamente sunt GOALE (§2.8 — vederea nu poarta
+    date pe care nu le arata), chiar daca exista randuri in baza."""
+    body = _body(client.get(f"{URL}?cod={COD}", headers=auth_headers))
+    assert body["sectiuneb"] == []
+    assert body["atasamente"] == []
+
+
+def test_sectiuneb_is_returned_with_the_flag(client, auth_headers, demo_rows):
+    """Cu pentru_generare=1, sectiuneb poarta exact coloanele citite de constructorul de XML."""
+    body = _body(client.get(f"{URL}?cod={COD}&pentru_generare=1", headers=auth_headers))
+    assert len(body["sectiuneb"]) == 1
+    sb = body["sectiuneb"][0]
+    assert set(sb.keys()) == set(SECTIUNEB_KEYS)
+    assert sb["cod_indicator"] == "IND-B"
+    assert sb["cod_ssi"] == "01A"
+    assert sb["ca_anterior"] == 1000.0
+    assert sb["inf1"] == 200.0
+    assert sb["cb_anterior"] == 3000.0
+    assert sb["inf2"] == 400.0
+
+
+def test_atasamente_are_returned_with_the_flag(client, auth_headers, demo_rows):
+    """Cu pentru_generare=1, atasamente poarta base64-ul brut (DateFisier)."""
+    body = _body(client.get(f"{URL}?cod={COD}&pentru_generare=1", headers=auth_headers))
+    assert len(body["atasamente"]) == 1
+    att = body["atasamente"][0]
+    assert set(att.keys()) == set(ATASAMENT_KEYS)
+    assert att["cale_fisier"] == "dovada.pdf"
+    assert att["date_fisier"] == "AAECAwQ="
+    assert att["prt_scr"] is False
 
 
 # ---------------------------------------------------------------------------

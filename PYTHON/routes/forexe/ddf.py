@@ -2,11 +2,19 @@
 """
 Ruta DDF pentru frmFX_MAIN_DDF (felia 0020, vederea DDF).
 
-Contract (GET /api/forexe/ddf?cod=<CodAngajament>):
+Contract (GET /api/forexe/ddf?cod=<CodAngajament>[&pentru_generare=1]):
     { "cod": "<CodAngajament>",
-      "antet":   [ {...}, ... ],     # FX_DDF        — ARRAY, nu obiect (vezi mai jos)
-      "revizii": [ {...}, ... ],     # FX_DDF_REV    — un rand per IDREV, cu SUM-ul real
-      "linii":   [ {...}, ... ] }    # FX_DDF_REV_SA — un rand per IdSecA
+      "antet":     [ {...}, ... ],   # FX_DDF        — ARRAY, nu obiect (vezi mai jos)
+      "revizii":   [ {...}, ... ],   # FX_DDF_REV    — un rand per IDREV, cu SUM-ul real
+      "linii":     [ {...}, ... ],   # FX_DDF_REV_SA — un rand per IdSecA
+      "sectiuneb": [ {...}, ... ],   # FX_DDF_REV_SB — GOL fara pentru_generare (felia 05)
+      "atasamente":[ {...}, ... ] }  # FX_DDF_REV_ATT— GOL fara pentru_generare (base64 mare)
+
+`sectiuneb` si `atasamente` sunt OPT-IN printr-un SINGUR flag `pentru_generare=1` (ABATERE
+de la schita planului, care cerea un `atasamente=1` doar pentru atasamente): amandoua sunt
+necesare DOAR la generarea PDF-ului, deci un singur flag e mai curat si evita o incarcatura
+de generare pe jumatate. Fara flag, cele doua array-uri sunt GOALE — vederea nu poarta date
+pe care nu le arata (§2.8).
 
 Scope: baza conectata ESTE unitatea (o baza MariaDB = o unitate), deci nu exista
 parametru db_name / id_unitate — baza vine din sesiune (g.session.db_name), exact
@@ -107,18 +115,53 @@ _SQL_REVIZII = (
 # scalara cu LIMIT 1 (cheiata pe IDClsf = PK -> unica prin definitie, fara IdUnitate).
 # `ParametriiFund` NU se afiseaza in grila (decizia 4 a operatorului), dar se poarta pe fir:
 # constructorul de XML al feliei 05 il scrie in Cell4 al sectiunii A.
+# `SS` (felia 05) — pentru Cell3 al form1 (`SS + Left(Clsf,2) + ...`) si pentru `codSSI` din
+# NOTAFD. Access citeste `rsSA!SS` in form1 si `Clasificatii.CodSSI` in NOTAFD; in MariaDB
+# `Clasificatii` NU are `CodSSI` — are coloana GENERATED `SS` (Sector+Sursa) — deci un singur
+# `ss` (denormalizatul de pe linie, cu cadere pe nomenclator) le acopera pe amandoua.
 _SQL_LINII = (
     "SELECT "
     "sa.IdSecA, sa.IDREV, sa.IdClsf, "
     "COALESCE(NULLIF(sa.Clsf, ''), "
     "         (SELECT c.Clsf FROM Clasificatii c "
     "          WHERE c.IDClsf = sa.IdClsf LIMIT 1)) AS Clsf, "
+    "COALESCE(NULLIF(sa.SS, ''), "
+    "         (SELECT c.SS FROM Clasificatii c "
+    "          WHERE c.IDClsf = sa.IdClsf LIMIT 1)) AS SS, "
     "sa.ElementFund, sa.ParametriiFund, sa.ValPrec, sa.ValCur, sa.ValTot "
     "FROM FX_DDF_REV_SA sa "
     "WHERE sa.IDREV IN ("
     "  SELECT IDREV FROM FX_DDF_REV "
     "  WHERE IDDF IN (SELECT IDDF FROM FX_DDF WHERE CodAngajament = %s)) "
     "ORDER BY sa.IDREV, Clsf"
+)
+
+# Sectiunea B (FX_DDF_REV_SB) — felia 05. NU se afiseaza nicaieri (decizia 2 a operatorului
+# se aplica grilei si sub-navigarii), dar PDF-ul o cere: `GenereazaXML_PentruPython` scrie
+# `SubformSectiuneaB/Table3` si `GenereazaXML_NOTAFD` scrie `sectiuneaB/rowT_ang_ctrl_ang`.
+# Coloanele sunt exact cele citite de constructorul de XML (Cell7 e sarit intentionat acolo).
+# Nu se trimite decat cand `pentru_generare=1` — vederea nu poarta date pe care nu le arata.
+_SQL_SECTIUNEB = (
+    "SELECT "
+    "sb.IdSecB, sb.IDREV, sb.CodAngajament, sb.CodIndicator, sb.CodSSI, "
+    "sb.CA_Anterior, sb.Inf1, sb.CB_Anterior, sb.Inf2 "
+    "FROM FX_DDF_REV_SB sb "
+    "WHERE sb.IDREV IN ("
+    "  SELECT IDREV FROM FX_DDF_REV "
+    "  WHERE IDDF IN (SELECT IDDF FROM FX_DDF WHERE CodAngajament = %s)) "
+    "ORDER BY sb.IDREV, sb.IdSecB"
+)
+
+# Atasamentele (FX_DDF_REV_ATT) — felia 05. `DateFisier` e un `longtext` de base64, deci
+# array-ul e OPT-IN (`pentru_generare=1`), niciodata pe un simplu click de arbore.
+_SQL_ATASAMENTE = (
+    "SELECT "
+    "a.IdRevAtt, a.IDREV, a.CaleFisier, a.PrtScr, a.DateFisier "
+    "FROM FX_DDF_REV_ATT a "
+    "WHERE a.IDREV IN ("
+    "  SELECT IDREV FROM FX_DDF_REV "
+    "  WHERE IDDF IN (SELECT IDDF FROM FX_DDF WHERE CodAngajament = %s)) "
+    "ORDER BY a.IDREV, a.IdRevAtt"
 )
 
 
@@ -147,6 +190,13 @@ def _num(value):
     """Coloana de bani -> float. DOUBLE vine ca float; None devine 0.0 (server-side), ca
     grila si totalurile arborelui sa arate «0,00», nu gol."""
     return float(value) if value is not None else 0.0
+
+
+def _truthy(value):
+    """Flag din query string -> bool. Acceptam «1»/«true»/«yes» (case-insensitive)."""
+    if value is None:
+        return False
+    return str(value).strip().lower() in ("1", "true", "yes")
 
 
 @forexe_bp.route("/api/forexe/ddf", methods=["GET"])
@@ -226,13 +276,15 @@ def get_ddf():
         # --- linii: FX_DDF_REV_SA ------------------------------------------------------
         cursor.execute(_SQL_LINII, (cod,))
         linii = []
-        for (id_sec_a, idrev, id_clsf, clsf, element_fund, parametrii_fund,
+        for (id_sec_a, idrev, id_clsf, clsf, ss, element_fund, parametrii_fund,
              val_prec, val_cur, val_tot) in cursor.fetchall():
             linii.append({
                 "id_sec_a": int(id_sec_a) if id_sec_a is not None else None,
                 "idrev": int(idrev) if idrev is not None else None,
                 "id_clsf": int(id_clsf) if id_clsf is not None else 0,
                 "clsf": clsf,
+                # SS efectiv al liniei (Cell3 al form1 + codSSI din NOTAFD). Nefolosit de grila.
+                "ss": ss,
                 "element_fund": element_fund,
                 # Nefolosit de grila (decizia 4), purtat pentru constructorul de XML (felia 05).
                 "parametrii_fund": parametrii_fund,
@@ -241,15 +293,50 @@ def get_ddf():
                 "val_tot": _num(val_tot),
             })
 
+        # --- sectiuneb + atasamente: OPT-IN, doar pentru generare (felia 05) ------------
+        # Vederea nu poarta date pe care nu le arata (§2.8); constructorul de XML le cere.
+        sectiuneb = []
+        atasamente = []
+        pentru_generare = _truthy(request.args.get("pentru_generare"))
+        if pentru_generare:
+            cursor.execute(_SQL_SECTIUNEB, (cod,))
+            for (id_sec_b, idrev, cod_ang, cod_indicator, cod_ssi,
+                 ca_anterior, inf1, cb_anterior, inf2) in cursor.fetchall():
+                sectiuneb.append({
+                    "id_sec_b": int(id_sec_b) if id_sec_b is not None else None,
+                    "idrev": int(idrev) if idrev is not None else None,
+                    "cod_angajament": cod_ang,
+                    "cod_indicator": cod_indicator,
+                    "cod_ssi": cod_ssi,
+                    "ca_anterior": _num(ca_anterior),
+                    "inf1": _num(inf1),
+                    "cb_anterior": _num(cb_anterior),
+                    "inf2": _num(inf2),
+                })
+
+            cursor.execute(_SQL_ATASAMENTE, (cod,))
+            for (id_rev_att, idrev, cale_fisier, prt_scr, date_fisier) in cursor.fetchall():
+                atasamente.append({
+                    "id_rev_att": int(id_rev_att) if id_rev_att is not None else None,
+                    "idrev": int(idrev) if idrev is not None else None,
+                    "cale_fisier": cale_fisier,
+                    "prt_scr": bool(prt_scr),
+                    # longtext base64 — mare; ajunge doar cand pentru_generare=1.
+                    "date_fisier": date_fisier,
+                })
+
         if len(antet) > 1:
             # Nu e o eroare (schema o permite), dar clientul trebuie sa aleaga EXPLICIT.
             logger.warning("[forexe.ddf] %s: cod=%s are %s randuri de antet FX_DDF",
                            db_name, cod, len(antet))
 
-        logger.info("[forexe.ddf] %s: cod=%s -> antet=%s revizii=%s linii=%s",
-                    db_name, cod, len(antet), len(revizii), len(linii))
+        logger.info("[forexe.ddf] %s: cod=%s -> antet=%s revizii=%s linii=%s "
+                    "sectiuneb=%s atasamente=%s (generare=%s)",
+                    db_name, cod, len(antet), len(revizii), len(linii),
+                    len(sectiuneb), len(atasamente), pentru_generare)
         return _json_utf8(
-            {"cod": cod, "antet": antet, "revizii": revizii, "linii": linii}, 200)
+            {"cod": cod, "antet": antet, "revizii": revizii, "linii": linii,
+             "sectiuneb": sectiuneb, "atasamente": atasamente}, 200)
     except Exception as e:
         # Fara inghitire: o eroare de baza intoarce motivul, NU liste goale — listele goale
         # ar minti operatorul ca angajamentul nu are document de fundamentare.

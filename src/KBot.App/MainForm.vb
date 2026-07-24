@@ -382,7 +382,7 @@ Public Class MainForm
                 Case "partener" : Return New PlaceholderView(key, "Partener")
                 Case "receptii" : Return New ReceptiiView(_apiClient, Function(op) WithReauth(Of ReceptiiInfo)(op))
                 Case "plati" : Return New PlatiView(_apiClient, Function(op) WithReauth(Of PlatiInfo)(op))
-                Case "ddf" : Return New DdfView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op))
+                Case "ddf" : Return New DdfView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op), _session)
                 Case "ord" : Return New PlaceholderView(key, "ORD")
                 Case Else
                     Throw New ArgumentException($"Vedere necunoscută: '{key}'.", NameOf(key))

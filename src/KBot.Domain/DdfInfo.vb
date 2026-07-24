@@ -128,6 +128,9 @@ Public NotInheritable Class LinieSaRow
     Public Property IdClsf As Integer
     ''' <summary>Clasificatia afisata in grila si in combo-ul de filtrare.</summary>
     Public Property Clsf As String = String.Empty
+    ''' <summary>SS efectiv al liniei (Sector+Sursa). Nefolosit de grila; constructorul de XML
+    ''' (felia 05) il pune in Cell3 al form1 si in codSSI din NOTAFD.</summary>
+    Public Property SS As String = String.Empty
     ''' <summary>Elementul de fundamentare — coloana cu auto-ascundere in grila.</summary>
     Public Property ElementFund As String = String.Empty
     ''' <summary>Parametrii de fundamentare. NU se afiseaza in grila (decizia 4 a
@@ -139,9 +142,41 @@ Public NotInheritable Class LinieSaRow
 End Class
 
 ''' <summary>
-''' Raspunsul complet al lui GET /api/forexe/ddf: antet(e) + revizii + linii de sectiune A.
-''' Toate cele trei liste pot fi goale — un angajament fara DDF e legitim (raspuns 200, nu
-''' 404). <see cref="Cod"/> = angajamentul cerut.
+''' O linie de sectiune B (FX_DDF_REV_SB). NU se afiseaza nicaieri (decizia 2 se aplica
+''' grilei si sub-navigarii), dar PDF-ul o cere (§2.8): constructorul de XML scrie
+''' `SubformSectiuneaB/Table3` si `sectiuneaB/rowT_ang_ctrl_ang`. Ajunge la client doar la
+''' generare (`pentru_generare=1`). POCO -> fara Try/Catch.
+''' </summary>
+Public NotInheritable Class SectiuneBRow
+    Public Property IdSecB As Integer
+    Public Property Idrev As Integer
+    Public Property CodAngajament As String = String.Empty
+    Public Property CodIndicator As String = String.Empty
+    Public Property CodSSI As String = String.Empty
+    Public Property CaAnterior As Double
+    Public Property Inf1 As Double
+    Public Property CbAnterior As Double
+    Public Property Inf2 As Double
+End Class
+
+''' <summary>
+''' Un atasament (FX_DDF_REV_ATT). <see cref="DateFisier"/> e base64 (deja codat). Ajunge la
+''' client doar la generare (`pentru_generare=1`), fiind mare. POCO -> fara Try/Catch.
+''' </summary>
+Public NotInheritable Class AtasamentRow
+    Public Property IdRevAtt As Integer
+    Public Property Idrev As Integer
+    Public Property CaleFisier As String = String.Empty
+    Public Property PrtScr As Boolean
+    ''' <summary>Continutul fisierului, deja base64.</summary>
+    Public Property DateFisier As String = String.Empty
+End Class
+
+''' <summary>
+''' Raspunsul complet al lui GET /api/forexe/ddf: antet(e) + revizii + linii de sectiune A,
+''' plus (doar la `pentru_generare=1`) sectiunea B si atasamentele. Toate listele pot fi
+''' goale — un angajament fara DDF e legitim (raspuns 200, nu 404). <see cref="Cod"/> =
+''' angajamentul cerut.
 ''' </summary>
 Public NotInheritable Class DdfInfo
     Public Property Cod As String = String.Empty
@@ -149,6 +184,10 @@ Public NotInheritable Class DdfInfo
     Public Property Antet As New List(Of DdfAntet)()
     Public Property Revizii As New List(Of RevizieRow)()
     Public Property Linii As New List(Of LinieSaRow)()
+    ''' <summary>Sectiunea B — goala fara `pentru_generare=1` (felia 05).</summary>
+    Public Property SectiuneB As New List(Of SectiuneBRow)()
+    ''' <summary>Atasamentele — goale fara `pentru_generare=1` (felia 05).</summary>
+    Public Property Atasamente As New List(Of AtasamentRow)()
 
     ''' <summary>
     ''' Alege antetul de lucru: cel cu <paramref name="iddfPreferat"/> cand acesta e setat
