@@ -65,6 +65,17 @@ number** is recorded at the bottom of this section — bump it when you assign a
 
 ## Current focus
 
+- **Slice 0020 (DDF view) — all five built passes landed (0020-01…05), code green, 0 warnings;
+  the sixth real view.** Endpoint + `DdfView` (tree/horizontal sub-nav/grid/combo) + two preview
+  surfaces + `KBotPaths`/file browser + PDF generation (`DdfXmlBuilder` + background-thread
+  `XfaWriter.Genereaza`). Human items, none done yet: (1) **step 05-00** — `GET`/`HEAD`
+  `https://kbot.avatarsoft.ro/api/mfp/template_ddf` with `X-API-KEY` over 443 (the gate; if it
+  fails it's an nginx `location`, not app code); (2) run `test_forexe_ddf.py` on the host (17
+  tests, skip off-host) — also answers §3 item 5 (how many `CodAngajament` have >1 `FX_DDF`
+  header); (3) **produce one real PDF and confirm Adobe opens it** (closes 0019 a/c); (4) capture
+  a real Access-written DDF `.xml` and diff it against `DdfXmlBuilder` (settles the UTF-8-vs-ANSI
+  base64 risk; no DDF sample exists in the repo — `ddf_demo.xml` is really ORD); (5) nothing in
+  0020 has been rendered on screen. **Pass 06 (signing) deferred to slice 0021.**
 - **Now:** run Slices 0008 + 0009 on the host. The endpoint (incl. 0009's orphan escape)
   and the client are written and green offline, but nothing has hit a real database:
   `PYTHON/tests/test_forexe_tree.py` skips off-host and is the fastest way to answer
