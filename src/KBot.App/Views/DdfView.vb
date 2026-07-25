@@ -83,8 +83,17 @@ Public Class DdfView
     Private _suppressComboEvent As Boolean
 
     ' Suprafața de previzualizare (felia 03), aleasă la compilare de DdfPreviewFactory. O
-    ' singură instanță, montată în pnlPreview, refolosită și de pagina «Fișiere» (felia 04).
+    ' singură instanță, montată în pnlPreview («Vizualizare» — reconstrucția din XML XFA).
     Private ReadOnly _preview As IDdfPreview
+    ' Suprafața «Document»: PDF-ul REAL (ReaderHostPreview, întotdeauna, indiferent de factory),
+    ' montată în pnlPdf. Încărcată LENEȘ — abia când pagina «Document» devine vizibilă — ca să
+    ' NU pornească Adobe la fiecare click în arbore.
+    Private ReadOnly _pdfPreview As IDdfPreview
+    ' Ținta PDF curentă (calea + existența pe disc) și ce e efectiv montat acum în _pdfPreview,
+    ' ca să nu re-încorporăm același document la fiecare comutare de pagină.
+    Private _pdfPath As String
+    Private _pdfExists As Boolean
+    Private _pdfShownPath As String
     ' Browserul de fișiere PDF (felia 04), montat în pnlFisiere.
     Private ReadOnly _browser As DdfFileBrowser
 
@@ -102,6 +111,8 @@ Public Class DdfView
         BuildColumns()
         _preview = DdfPreviewFactory.Create()
         MountPreview()
+        _pdfPreview = New ReaderHostPreview()
+        MountPdfPreview()
         _browser = New DdfFileBrowser()
         MountBrowser()
         ResetClsfCombo(Nothing)
@@ -124,6 +135,21 @@ Public Class DdfView
         End Try
     End Sub
 
+    ' Montează suprafața PDF-ului real în pagina «Document» și se abonează la butonul de
+    ' generare (aceeași țintă ca previzualizarea XFA).
+    Private Sub MountPdfPreview()
+        Try
+            Dim surface As Control = _pdfPreview.Surface
+            surface.Dock = DockStyle.Fill
+            pnlPdf.Controls.Add(surface)
+            surface.BringToFront()
+            AddHandler _pdfPreview.GenerateRequested, AddressOf OnGenerateRequested
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.MountPdfPreview", ex)
+            Throw
+        End Try
+    End Sub
+
     ' Montează browserul de fișiere în pagina «Fișiere» și se abonează la selecția unui rând.
     Private Sub MountBrowser()
         Try
@@ -138,13 +164,13 @@ Public Class DdfView
         End Try
     End Sub
 
-    ' Un fișier ales din browser -> aceeași suprafață de previzualizare ca pagina «Vizualizare»
-    ' (planul §7: o singură suprafață, două puncte de intrare), apoi comutăm pe acea pagină.
+    ' Un fișier ales din browser -> PDF-ul REAL în pagina «Document», apoi comutăm pe ea. NU mai
+    ' comutăm pe «Vizualizare» (reconstrucția XFA) — aceea nu e fișierul ales (cererea operatorului).
     Private Sub OnFileActivated(pdfPath As String)
         Try
             If String.IsNullOrWhiteSpace(pdfPath) Then Return
-            _preview.ShowDocument(pdfPath, IO.File.Exists(pdfPath))
-            navSub.SelectedKey = PAGE_PREVIEW      ' ridică SelectionChanged -> ShowPage
+            SetPdfTarget(pdfPath, IO.File.Exists(pdfPath))
+            navSub.SelectedKey = PAGE_PDF      ' ridică SelectionChanged -> ShowPage -> încarcă PDF-ul
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.OnFileActivated", ex)
         End Try
@@ -190,9 +216,12 @@ Public Class DdfView
                 Await Task.Run(Sub() KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "DDF", deschidePdf:=False)).ConfigureAwait(True)
 
                 ' 6. Fără scriere înapoi în bază (§2.4 — cele patru coloane nu există). Existența
-                ' se decide prin scanare de disc: reîmprospătăm browserul și previzualizarea.
+                ' se decide prin scanare de disc: reîmprospătăm browserul, previzualizarea XFA și
+                ' pagina «Document» (forțăm re-montarea — existența fișierului tocmai s-a schimbat).
                 _browser.SetContext(KBotPaths.Current.DdfPdfRoot, cod)
                 _preview.ShowDocument(pdfPath, IO.File.Exists(pdfPath))
+                _pdfShownPath = Nothing
+                SetPdfTarget(pdfPath, IO.File.Exists(pdfPath))
             Finally
                 _generating = False
             End Try
@@ -224,6 +253,7 @@ Public Class DdfView
         Try
             navSub.AddItem(PAGE_VALORI, "Valori")
             navSub.AddItem(PAGE_PREVIEW, "Vizualizare")
+            navSub.AddItem(PAGE_PDF, "Document")
             navSub.AddItem(PAGE_FISIERE, "Fișiere")
             navSub.SelectedKey = PAGE_VALORI
             ShowPage(PAGE_VALORI)
@@ -457,6 +487,7 @@ Public Class DdfView
             ' NumePartener) + NumarRev-ul reviziei și se dă previzualizării cu flag-ul de existență.
             If _nodeIsRoot Then
                 _preview.Clear()
+                ClearPdfTarget()
             Else
                 LinkPreviewLaFrunza(payload.Revizie)
             End If
@@ -471,14 +502,19 @@ Public Class DdfView
         _selectedRevizie = revizie      ' ținta unei eventuale generări (felia 05)
         If revizie Is Nothing OrElse _antet Is Nothing Then
             _preview.Clear()
+            ClearPdfTarget()
             Return
         End If
         Dim path As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, revizie.NumarRev)
         If String.IsNullOrEmpty(path) Then
             _preview.Clear()
+            ClearPdfTarget()
             Return
         End If
-        _preview.ShowDocument(path, IO.File.Exists(path))
+        Dim exists As Boolean = IO.File.Exists(path)
+        _preview.ShowDocument(path, exists)
+        ' Ținta paginii «Document» (lazy: nu pornește Adobe decât când ești pe acea pagină).
+        SetPdfTarget(path, exists)
     End Sub
 
     ' ── Combo-ul de clasificații ─────────────────────────────────────────────
@@ -580,11 +616,38 @@ Public Class DdfView
     End Sub
 
     ' O singură pagină vizibilă odată — același tipar lazy ca gazda de vederi din MainForm,
-    ' NU un TabControl.
+    ' NU un TabControl. Când «Document» devine vizibilă, montăm PDF-ul real ACUM (lazy) — abia
+    ' aici pornește eventual Adobe, nu la fiecare click în arbore.
     Private Sub ShowPage(key As String)
         pnlValori.Visible = String.Equals(key, PAGE_VALORI, StringComparison.Ordinal)
         pnlPreview.Visible = String.Equals(key, PAGE_PREVIEW, StringComparison.Ordinal)
+        pnlPdf.Visible = String.Equals(key, PAGE_PDF, StringComparison.Ordinal)
         pnlFisiere.Visible = String.Equals(key, PAGE_FISIERE, StringComparison.Ordinal)
+        If pnlPdf.Visible Then ShowPdfSurface()
+    End Sub
+
+    ' Reține ținta PDF (fără să pornească Adobe); dacă pagina «Document» e deja vizibilă,
+    ' o reflectă imediat, altfel se încarcă leneș la următoarea comutare pe «Document».
+    Private Sub SetPdfTarget(path As String, exists As Boolean)
+        _pdfPath = path
+        _pdfExists = exists
+        If pnlPdf.Visible Then ShowPdfSurface()
+    End Sub
+
+    ' Montează în _pdfPreview ținta PDF curentă, dar DOAR dacă s-a schimbat față de ce e deja
+    ' afișat — ca să nu re-încorporăm (și să nu relansăm Adobe) la fiecare comutare de pagină.
+    Private Sub ShowPdfSurface()
+        If String.Equals(_pdfShownPath, _pdfPath, StringComparison.Ordinal) Then Return
+        _pdfShownPath = _pdfPath
+        _pdfPreview.ShowDocument(If(_pdfPath, String.Empty), _pdfExists)
+    End Sub
+
+    ' Golește ținta PDF și suprafața (o rădăcină de lună / deselectare).
+    Private Sub ClearPdfTarget()
+        _pdfPath = Nothing
+        _pdfExists = False
+        _pdfShownPath = Nothing
+        _pdfPreview?.Clear()
     End Sub
 
     ' ── Stare goală / conținut ───────────────────────────────────────────────
@@ -600,6 +663,7 @@ Public Class DdfView
         grid.ClearRows()
         ResetClsfCombo(Nothing)
         _preview?.Clear()
+        ClearPdfTarget()
         _browser?.SetContext(Nothing, Nothing)
     End Sub
 
@@ -718,6 +782,7 @@ Public Class DdfView
             pnlPreview.BackColor = p.SurfaceAltColor
             lblPreviewGol.ForeColor = p.TextDimColor
             lblPreviewGol.BackColor = p.SurfaceAltColor
+            pnlPdf.BackColor = p.SurfaceAltColor
             pnlFisiere.BackColor = p.SurfaceAltColor
             lblFisiereGol.ForeColor = p.TextDimColor
             lblFisiereGol.BackColor = p.SurfaceAltColor
@@ -725,9 +790,12 @@ Public Class DdfView
             lblEmpty.ForeColor = p.TextDimColor
             lblEmpty.BackColor = p.SurfaceAltColor
 
-            ' Cascada temei spre suprafața de previzualizare + browserul de fișiere.
+            ' Cascada temei spre suprafața de previzualizare XFA, suprafața PDF-ului real și
+            ' browserul de fișiere.
             Dim themedPreview As IThemedControl = TryCast(_preview, IThemedControl)
             themedPreview?.ApplyTheme(scheme)
+            Dim themedPdf As IThemedControl = TryCast(_pdfPreview, IThemedControl)
+            themedPdf?.ApplyTheme(scheme)
             _browser?.ApplyTheme(scheme)
 
             ' Re-tintarea iconițelor pe noua paletă. Arborele se reconstruiește, deci selecția

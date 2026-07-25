@@ -131,3 +131,24 @@ are **not** in the control tree, so `ThemeManager.Apply` cannot reach them) via 
   captions** are the least-certain part until the host run; filtering itself keys on `id_clsf`
   and is unaffected.
 - `RandSchimbat` is raised but unsubscribed by design.
+
+## Revizuire operator (2026-07-24)
+
+Four grid/detail changes requested after first review:
+
+1. **The seven value columns were removed from the main grid.** It now shows five columns:
+   `Clasificație`, `Tip rând`, `Data`, `Descriere`, `Observații`.
+2. **`Observații` is last and stretches** (`ColumnFillMode.LastColumn`, already set).
+3. **The values moved into a small grid in the detail pane.** The bottom-left pane is now
+   `Descriere` (left) + a two-column `KBotDataView` `gridValori` (`Tip` | `Valoare`, right) that
+   shows **one row per non-zero value** of the selected row — an on-the-fly unpivot/crosstab over
+   the seven money fields, in Access order (Rezervare inițială/definitivă/anterioară/diferență,
+   Angajament legal, Recepție, Plată). No non-zero value ⇒ empty grid.
+4. **The totals row was removed** (`ShowTotalsRow = False`; the Sum aggregates are gone with the
+   columns). The three-column totals of the original design no longer apply.
+
+The `IstoricRand` DTO and the endpoint are **unchanged** — the seven money fields are still on the
+wire and in the POCO; only the *presentation* moved from grid columns + totals to the detail grid.
+Tests updated: `GridColumns_FiveNoValueColumns_NoTotals` (was the totals-columns test) and
+`DetailPane_FollowsSelection_DescriereAndNonZeroValues` (was txtDescriere/txtObservatii). Full
+.NET suite still 436 green.

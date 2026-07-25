@@ -86,3 +86,31 @@ to diff pass 05's output against** — DoD's "structurally matches a known-good 
    not-native and deliberately not fixed (§6).
 6. **`XfaXmlPreview` header/nota styling** is functional but unseen; the `tblHeader` runtime
    layout has no visual verdict.
+
+## Revizuire operator (2026-07-24) — a fourth sub-nav page: «Document» (PDF real)
+
+Two operator requests on the DDF view:
+
+1. **Selecting a file in «Fișiere» no longer reverts to «Vizualizare».** That page is the XFA-XML
+   *reconstruction*, not the chosen file — jumping there on a file click was confusing.
+2. **A dedicated tab shows the actual PDF.** Added a fourth sub-nav page **«Document»** (order:
+   Valori · Vizualizare · Document · Fișiere) hosting a **`ReaderHostPreview`** instance
+   (`_pdfPreview`) — always the real-PDF surface, independent of the compile-time
+   `DdfPreviewFactory` (which still drives «Vizualizare» = `XfaXmlPreview`). So both preview
+   surfaces now coexist as separate tabs, neither dead code.
+
+Flow: `OnFileActivated` routes the real PDF to «Document» and switches to it (not «Vizualizare»);
+a leaf click in the tree sets the «Document» target too. **Lazy by design** — `ShowPdfSurface`
+mounts the PDF (and possibly launches Adobe) **only when «Document» is the visible page**, guarded
+by `_pdfShownPath` so switching pages doesn't re-embed the same file. `SetPdfTarget`/`ClearPdfTarget`
+carry the current path + on-disk existence; generation forces a re-mount (existence changed).
+`ClearAll`, root-node clicks and the theme cascade all reach `_pdfPreview`.
+
+Tests: `View_MountsFileBrowser_AndBothPreviews` (now also asserts a `ReaderHostPreview` is mounted)
+and `FileActivated_RoutesToDocumentPage_NotVizualizare` (was `…RoutesToPreview_AndSwitchesToVizualizarePage`).
+A missing file shows `ReaderHostPreview`'s "document lipsă" state without launching Adobe, so the
+STA tests stay headless-safe. Full .NET suite 436 green.
+
+⚠️ **Still no visual/PDF verdict** — the `ReaderHostPreview` Win32 hosting path (`EnumWindows`/
+`SetParent`/style-cleanup) remains the least-verified code in the whole feature and has never run;
+if Adobe is not the default `.pdf` handler it falls back to opening the file externally.

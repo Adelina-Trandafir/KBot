@@ -139,7 +139,8 @@ Partial Class IstoricView
         '
         gridValori.AlternatingRows = True
         gridValori.BackColor = SystemColors.Window
-        gridValori.ColumnFillMode = KBot.Controls.KBotFillMode.LastColumn
+        ' «Tip» (eticheta) se întinde; «Valoare» rămâne o coloană numerică îngustă la dreapta.
+        gridValori.ColumnFillMode = KBot.Controls.KBotFillMode.FirstColumn
         gridValori.CurrentColumnKey = Nothing
         gridValori.CurrentRowIndex = -1
         gridValori.Dock = DockStyle.Fill

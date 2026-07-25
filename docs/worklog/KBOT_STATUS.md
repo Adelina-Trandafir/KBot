@@ -69,8 +69,11 @@ number** is recorded at the bottom of this section — bump it when you assign a
 
 - **Slice 0022 (Istoric view) — both passes landed (0022-01/02), code green, 0 warnings; the
   seventh real view (the sixth was DDF).** Endpoint (`{cod, randuri[], clasificatii[]}`) +
-  `IstoricView` (filter strip with three menu buttons, 12-column grid + 3-column totals, detail
-  pane) + the pure `IstoricFilter` engine. Human items, none done yet: (1) **the #1 host check —
+  `IstoricView` (filter strip with three menu buttons, grid, detail pane) + the pure
+  `IstoricFilter` engine. **Operator revision 2026-07-24:** value columns removed from the grid
+  (now Clasificație/Tip/Data/Descriere/Observații, Observații stretched last), totals row removed,
+  and the non-zero values moved into a small `Tip | Valoare` grid in the detail pane (unpivot per
+  row). Human items, none done yet: (1) **the #1 host check —
   the classification-caption tables** `AVACONT_COMUN.DefaClsfF` / `DefaArticol`: the plan (§2.2)
   says `.Denumire`, but the Access export (`qFX_DDF_SA_CLSF`) says `DefaClsfF.Explicatie` and
   `DefaTitlu2`, and the real MariaDB schema for these nomenclatoare is not in the repo — if the
@@ -80,7 +83,10 @@ number** is recorded at the bottom of this section — bump it when you assign a
 - **Slice 0020 (DDF view) — all five built passes landed (0020-01…05), code green, 0 warnings;
   the sixth real view.** Endpoint + `DdfView` (tree/horizontal sub-nav/grid/combo) + two preview
   surfaces + `KBotPaths`/file browser + PDF generation (`DdfXmlBuilder` + background-thread
-  `XfaWriter.Genereaza`). Human items, none done yet: (1) **step 05-00** — `GET`/`HEAD`
+  `XfaWriter.Genereaza`). **Operator revision 2026-07-24:** added a fourth sub-nav page «Document»
+  hosting the **real PDF** (`ReaderHostPreview`, lazy-loaded only when that page is visible so
+  Adobe isn't launched on every tree click); selecting a file in «Fișiere» now opens it there
+  instead of reverting to «Vizualizare» (the XFA reconstruction). See `SLICE-0020-03` revision note. Human items, none done yet: (1) **step 05-00** — `GET`/`HEAD`
   `https://kbot.avatarsoft.ro/api/mfp/template_ddf` with `X-API-KEY` over 443 (the gate; if it
   fails it's an nginx `location`, not app code); (2) run `test_forexe_ddf.py` on the host (17
   tests, skip off-host) — also answers §3 item 5 (how many `CodAngajament` have >1 `FX_DDF`

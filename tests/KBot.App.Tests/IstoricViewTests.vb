@@ -238,18 +238,20 @@ Public Class IstoricViewTests
     End Sub
 
     <Fact>
-    Public Sub TotalsRow_ExactlyThreeSumColumns_OnTheAccessOnes()
+    Public Sub GridColumns_FiveNoValueColumns_NoTotals()
         RunSta(Sub()
                    Dim api As New FakeApiClient()
                    Using view As New IstoricView(api, PassThrough())
                        Dim g = GridOf(view)
-                       Dim sumKeys As New List(Of String)()
+                       ' Coloanele de valori au fost scoase; rămân cinci, «obs» ultima (întinsă).
+                       Dim keys As New List(Of String)()
                        For Each col In g.Columns
-                           If col.Aggregate = KBotAggregate.Sum Then sumKeys.Add(col.Key)
+                           keys.Add(col.Key)
+                           Assert.Equal(KBotAggregate.None, col.Aggregate)   ' niciun agregat
                        Next
-                       sumKeys.Sort()
-                       Assert.Equal(New String() {"vpl", "vrdif", "vrec"}, sumKeys.ToArray())
-                       Assert.True(g.ShowTotalsRow)
+                       Assert.Equal(New String() {"clsf", "tip", "data", "desc", "obs"}, keys.ToArray())
+                       Assert.False(g.ShowTotalsRow)                          ' fără rând de totaluri
+                       Assert.Equal(KBot.Controls.KBotFillMode.LastColumn, g.ColumnFillMode)
                    End Using
                End Sub)
     End Sub
@@ -290,7 +292,7 @@ Public Class IstoricViewTests
     End Sub
 
     <Fact>
-    Public Sub DetailPane_FollowsSelection_ThenEmpty()
+    Public Sub DetailPane_FollowsSelection_DescriereAndNonZeroValues()
         RunSta(Sub()
                    Dim api As New FakeApiClient()
                    Using view As New IstoricView(api, PassThrough())
@@ -300,21 +302,31 @@ Public Class IstoricViewTests
                        Application.DoEvents()
 
                        Dim txtD = CType(FindByName(view, "txtDescriere"), TextBox)
-                       Dim txtO = CType(FindByName(view, "txtObservatii"), TextBox)
+                       Dim gv = CType(FindByName(view, "gridValori"), KBotDataView)
 
                        ' Nimic selectat imediat după umplere.
                        Assert.Equal(String.Empty, txtD.Text)
-                       Assert.Equal(String.Empty, txtO.Text)
+                       Assert.Equal(0, gv.RowCount)
 
-                       ' Selectăm primul rând -> panoul urmează selecția.
+                       ' Rândul 0 (Init) are TOATE valorile 0 -> grila de valori rămâne goală.
                        g.CurrentRowIndex = 0
                        Assert.Equal("Init", txtD.Text)
-                       Assert.Equal("ObsInit", txtO.Text)
+                       Assert.Equal(0, gv.RowCount)
 
-                       ' Deselectare -> ambele goale.
+                       ' Rândul 3 (Rec): Val_Rezervare_Dif=-50 și Val_Receptie=700 -> exact 2 valori,
+                       ' în ordinea Access (diferență înaintea recepției). Semnul negativ păstrat.
+                       g.CurrentRowIndex = 3
+                       Assert.Equal("Rec", txtD.Text)
+                       Assert.Equal(2, gv.RowCount)
+                       Assert.Equal("Rezervare diferență", CStr(gv.Rows(0)("vtip")))
+                       Assert.Equal(-50.0, CDbl(gv.Rows(0)("vval")), 2)
+                       Assert.Equal("Recepție", CStr(gv.Rows(1)("vtip")))
+                       Assert.Equal(700.0, CDbl(gv.Rows(1)("vval")), 2)
+
+                       ' Deselectare -> Descriere goală + valori goale.
                        g.CurrentRowIndex = -1
                        Assert.Equal(String.Empty, txtD.Text)
-                       Assert.Equal(String.Empty, txtO.Text)
+                       Assert.Equal(0, gv.RowCount)
                    End Using
                End Sub)
     End Sub

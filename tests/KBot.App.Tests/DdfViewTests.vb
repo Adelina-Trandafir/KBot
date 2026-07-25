@@ -530,7 +530,7 @@ Public Class DdfViewTests
     ' ── Felia 04: browser + previzualizare partajată ────────────────────────
 
     <Fact>
-    Public Sub View_MountsFileBrowser_AndPreview()
+    Public Sub View_MountsFileBrowser_AndBothPreviews()
         RunSta(Sub()
                    Dim api As New FakeApiClient()
                    Using view As New DdfView(api, PassThrough())
@@ -538,12 +538,14 @@ Public Class DdfViewTests
                        Assert.NotNull(FindControl(Of DdfFileBrowser)(view))
                        ' Suprafața de previzualizare implicită (XfaXml) e montată în «Vizualizare».
                        Assert.NotNull(FindControl(Of XfaXmlPreview)(view))
+                       ' Suprafața PDF-ului REAL (ReaderHostPreview) e montată în «Document».
+                       Assert.NotNull(FindControl(Of ReaderHostPreview)(view))
                    End Using
                End Sub)
     End Sub
 
     <Fact>
-    Public Sub FileActivated_RoutesToPreview_AndSwitchesToVizualizarePage()
+    Public Sub FileActivated_RoutesToDocumentPage_NotVizualizare()
         RunSta(Sub()
                    Dim api As New FakeApiClient()
                    Using view As New DdfView(api, PassThrough())
@@ -552,17 +554,20 @@ Public Class DdfViewTests
                        Loaded(api, view)
 
                        Dim pnlPreview = FindByName(view, "pnlPreview")
+                       Dim pnlPdf = FindByName(view, "pnlPdf")
                        Dim pnlValori = FindByName(view, "pnlValori")
                        Assert.True(pnlValori.Visible)         ' pagina implicită
-                       Assert.False(pnlPreview.Visible)
+                       Assert.False(pnlPdf.Visible)
 
-                       ' OnFileActivated (handler-ul vederii pentru selecția din browser) comută
-                       ' pe pagina «Vizualizare» — același drum ca selectarea unui rând.
+                       ' OnFileActivated comută pe pagina «Document» (PDF-ul real), NU pe
+                       ' «Vizualizare» (reconstrucția XFA). Fișierul lipsește -> ReaderHostPreview
+                       ' arată starea „document lipsă", fără să pornească Adobe.
                        Dim onFile = view.GetType().GetMethod("OnFileActivated",
                            Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance)
                        onFile.Invoke(view, New Object() {"C:\nu\exista\DDF_NR_1_REV_0_A.PDF"})
 
-                       Assert.True(pnlPreview.Visible)
+                       Assert.True(pnlPdf.Visible)
+                       Assert.False(pnlPreview.Visible)       ' NU revine pe «Vizualizare»
                        Assert.False(pnlValori.Visible)
                    End Using
                End Sub)
