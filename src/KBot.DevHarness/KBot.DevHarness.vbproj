@@ -18,7 +18,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.0.3.0</FileVersion>
+    <FileVersion>1.0.4.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -31,6 +31,12 @@
   <ItemGroup>
     <!-- Aceeași versiune ca în KBot.App.vbproj. -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+  </ItemGroup>
+
+  <!-- Scenariile bancului de probă ajung lângă executabil, în <AppDir>\Config\ (felia 0023).
+       PreserveNewest, ca un scenariu editat de operator să nu fie suprascris la fiecare build. -->
+  <ItemGroup>
+    <None Include="Config\*.json" CopyToOutputDirectory="PreserveNewest" Link="Config\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

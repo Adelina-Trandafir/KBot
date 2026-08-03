@@ -1,0 +1,52 @@
+{
+  // Scenariu-exemplu: combinația care a funcționat manual pe UI-ul clasic Reader DC —
+  // Shift+F4 (pliază panoul de instrumente), apoi ascunde fereastra AVTaskPaneHostView.
+  // Copiat lângă executabil în <AppDir>\Config\ la build. Modifică-l liber: comentariile
+  // și virgulele finale sunt permise.
+  "schema": 1,
+  "name": "RHP: pliază apoi ascunde",
+  "note": "Shift+F4 pentru pliere, apoi ascunde AVTaskPaneHostView. Nu scrie nimic în registry.",
+
+  // Pune aici calea unui PDF real; fără ea, pasul «launch» nu pornește Adobe.
+  "document": {
+    "path": "C:\\AVACONT\\FOREXE\\PDF\\DDF\\GENERAL\\exemplu.pdf"
+  },
+
+  "launch": {
+    "newInstance": true,
+    "noSplash": true
+  },
+
+  "openParameters": {
+    "toolbar": 0,
+    "navpanes": 0,
+    "statusbar": 0,
+    "messages": 0,
+    "scrollbar": 0,
+    "pagemode": "none"
+  },
+
+  // Handle-urile se schimbă la fiecare lansare (0x5083E -> 0x20B66), textul nu:
+  // ferestrele copil se adresează DOAR după text.
+  "hideChildren": {
+    "byText": [ "AVTaskPaneHostView" ],
+    "reapplyOnRelaunch": true,
+    "reapplyAttempts": 10,
+    "reapplyIntervalMs": 400
+  },
+
+  "keys": [
+    { "send": "Shift+F4", "delayMsBefore": 600 }
+  ],
+
+  // Fără secțiunile «clip», «userPrefs» și «machinePolicy»: absent înseamnă
+  // «lasă în pace», NU «oprește» — acest scenariu nu atinge deloc registry-ul.
+  "scenario": [
+    "launch",
+    "waitForEmbed",
+    "sendKeys",
+    "probe",
+    "hideChildren",
+    "probe"
+  ]
+}

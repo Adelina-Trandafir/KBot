@@ -7,6 +7,7 @@ Imports System.IO
 Imports System.Linq
 Imports System.Runtime.InteropServices
 Imports System.Text
+Imports System.Text.Json
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
@@ -19,30 +20,28 @@ Imports KBot.Common
 ''' schimbare de bifă închidem instanța Adobe curentă și o redeschidem cu noul set de switch-uri
 ''' (cerința operatorului).
 '''
-''' Slice 0023 adds the four candidate levers against the right-hand Tools pane (RHP), which the
-''' /A open parameters cannot touch (document chrome vs application chrome):
-'''   §3.A a child-window probe (EnumChildWindows-style walk, depth-limited) whose output decides
-'''        everything else — logged to Logs\test_adobe_rhp.log;
-'''   §3.B geometry clipping (oversize + offset the hosted window so the clipped bands fall
-'''        outside pnlHost) — live, no relaunch;
-'''   §3.C direct ShowWindow(SW_HIDE) on a probed child HWND — live, no relaunch;
-'''   §3.D experimental keyboard toggles (Shift+F4 / F4);
-'''   §3.E HKCU AVGeneral preferences with a once-per-session snapshot and exact restore
-'''        (absent restores to DELETION, never to 0);
-'''   §3.F HKLM FeatureLockDown policies via generated .reg files imported by an elevated
-'''        reg.exe (the harness itself is never elevated).
+''' Slice 0023 (first pass) added the four candidate levers against the right-hand Tools pane
+''' (RHP), which the /A open parameters cannot touch (document chrome vs application chrome):
+''' the child-window probe, geometry clipping, direct child hiding, keyboard toggles, HKCU
+''' preferences and HKLM policies.
+'''
+''' Slice 0023 (config+layout pass) adds two things and NO new lever:
+'''   * Scenario files (JSON, AppDir\Config) — load / run / save, so a combination found by hand
+'''     becomes a file that can be repeated, sent to someone else, or tried on another machine.
+'''     Children are addressed by window TEXT, never by HWND: handles change on every launch
+'''     (0x5083E -> 0x20B66) while the text (AVTaskPaneHostView) does not, and class names are
+'''     useless because nearly everything is AVL_AVView.
+'''   * A resizable docked layout (SplitContainer + TableLayoutPanel per section), so the Adobe
+'''     area can be traded against the options area at runtime. Because the clip geometry is
+'''     computed from pnlHost.ClientSize, it is re-applied on host resize and splitter moves —
+'''     debounced, since Adobe repaints late and badly during a resize storm.
 '''
 ''' Detalii care au mușcat deja tiparul (vezi și <see cref="ReaderHostPreview"/> din KBot.App):
 '''   * Reader e practic mono-instanță -> lansăm cu «/n» (instanță nouă) ca fereastra să ne
-'''     aparțină și să nu fie predată unei instanțe deja deschise cu alte documente. Fereastra
-'''     o găsim cu EnumWindows (clasă Acrobat + titlu care conține numele fișierului), cu timeout.
+'''     aparțină și să nu fie predată unei instanțe deja deschise cu alte documente.
 '''   * După SetParent + curățarea stilurilor, fereastra rămâne NEVĂZUTĂ până la o schimbare de
-'''     layout (redimensionare/mutare). De aceea forțăm explicit o redesenare (NudgeRedraw):
-'''     SetWindowPos(FRAMECHANGED|SHOWWINDOW) + un mic „nudge" de dimensiune + RedrawWindow, o
-'''     dată imediat și încă o dată după o scurtă întârziere (Adobe își termină layout-ul târziu).
-'''   * La închiderea formularului (și la fiecare reîncorporare) OMORÂM forțat Adobe după PID —
-'''     PID-ul ferestrei găzduite (proprietarul real, via GetWindowThreadProcessId) plus procesul
-'''     pe care l-am pornit noi — ca să nu rămână un proces orfan.
+'''     layout. De aceea forțăm explicit o redesenare (NudgeRedraw).
+'''   * La închiderea formularului (și la fiecare reîncorporare) OMORÂM forțat Adobe după PID.
 ''' </summary>
 Public NotInheritable Class AdobeReaderHarnessForm
 
@@ -51,11 +50,13 @@ Public NotInheritable Class AdobeReaderHarnessForm
     Private Const FIND_POLL_MS As Integer = 150
     ' Întârziere pentru a doua redesenare (Adobe își finalizează layout-ul după apariția ferestrei).
     Private Const REDRAW_DELAY_MS As Integer = 250
-    ' §3.A probe depth limit and the right-edge tolerance of the RHP heuristic (px).
+    ' Probe depth limit and the right-edge tolerance of the RHP heuristic (px).
     Private Const PROBE_MAX_DEPTH As Integer = 4
     Private Const RHP_EDGE_TOLERANCE As Integer = 8
     ' Dedicated log for this slice (house rule: harness output goes to Logs\test_*.log).
     Private Const RHP_LOG_NAME As String = "test_adobe_rhp.log"
+    ' Scenario files live here, with no fixed names — the operator browses for one.
+    Private Const CONFIG_DIR_NAME As String = "Config"
 
     Private ReadOnly _log As Action(Of String)
     Private ReadOnly _adobePath As String
@@ -74,20 +75,29 @@ Public NotInheritable Class AdobeReaderHarnessForm
     Private _readerProcess As Process
     ' Generația relansării curente: o relansare mai nouă o invalidează pe cea în curs.
     Private _generation As Integer = 0
+    ' Between a scenario's `launch` and `waitForEmbed` steps.
+    Private _pendingProcess As Process
+    Private _pendingGeneration As Integer = 0
 
-    ' §3.A/§3.C state: widest RHP candidate from the last probe, and the child handles we hid.
+    ' Probe/child state: widest RHP candidate, the last probe's nodes, the handles we hid, and
+    ' the TEXTS we hid (the durable identity across relaunches).
     Private _probeCandidateWidth As Integer = 0
     Private _probeCandidateClass As String = Nothing
+    Private ReadOnly _lastProbe As New List(Of ChildWindowItem)()
     Private ReadOnly _hiddenChildren As New List(Of IntPtr)()
-    ' §3.E/§3.F state for the status block: which HKCU values were applied this session, and
-    ' whether the HKLM policy import succeeded this session.
+    Private ReadOnly _hiddenChildTexts As New List(Of String)()
+    ' Status-block state: which HKCU values were applied, whether HKLM was applied this session.
     Private ReadOnly _userValuesApplied As New List(Of String)()
     Private _machinePolicyApplied As Boolean = False
-    ' §3.F: generated .reg file paths (apply + revert), set by the last "Aplică (cere elevare)".
+    ' Generated .reg file paths (apply + revert), set by the last machine-policy apply.
     Private _applyRegPath As String = Nothing
     Private _revertRegPath As String = Nothing
     ' Last one-line action message, shown under the status block (see RefreshStatusBlock).
     Private _lastMessage As String = ""
+    ' Loaded scenario + its file path; _scenarioRunning guards against re-entry.
+    Private _scenario As HarnessScenario
+    Private _scenarioPath As String
+    Private _scenarioRunning As Boolean = False
 
     Public Sub New(log As Action(Of String))
         _log = log
@@ -170,20 +180,51 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
-    ' La redimensionarea panoului, reașează fereastra găzduită pe tot panoul.
-    Private Sub pnlHost_SizeChanged(sender As Object, e As EventArgs) Handles pnlHost.SizeChanged
+    ' ── Layout: host resize + splitter, debounced ───────────────────────────────
+    ' The clip geometry is computed from pnlHost.ClientSize, which now changes when the splitter
+    ' moves and when the form resizes — without re-applying here, dragging the splitter would
+    ' silently break the clip. Debounced (150 ms) because Adobe repaints late and badly during a
+    ' resize storm: do NOT reposition on every Resize tick.
+    Private Sub pnlHost_Resize(sender As Object, e As EventArgs) Handles pnlHost.Resize
         Try
-            LayoutHostedWindow()
+            ScheduleLayoutRefresh()
         Catch ex As Exception
-            GlobalErrorLog.Write("AdobeReaderHarnessForm.pnlHost_SizeChanged", ex)
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.pnlHost_Resize", ex)
+        End Try
+    End Sub
+
+    Private Sub splitMain_SplitterMoved(sender As Object, e As SplitterEventArgs) Handles splitMain.SplitterMoved
+        Try
+            ScheduleLayoutRefresh()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.splitMain_SplitterMoved", ex)
+        End Try
+    End Sub
+
+    Private Sub ScheduleLayoutRefresh()
+        ' Nothing hosted -> nothing to re-place (guard required by the layout rework).
+        If _hostedWindow = IntPtr.Zero Then Return
+        tmrLayout.Stop()
+        tmrLayout.Start()
+    End Sub
+
+    Private Sub tmrLayout_Tick(sender As Object, e As EventArgs) Handles tmrLayout.Tick
+        Try
+            tmrLayout.Stop()
+            If _hostedWindow = IntPtr.Zero Then Return
+            LayoutHostedWindow()
+            NudgeRedraw()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.tmrLayout_Tick", ex)
         End Try
     End Sub
 
     ' On close: invalidate any in-flight embed, force-kill Adobe (operator requirement), then
-    ' restore the HKCU snapshot if the operator left "Restaurează la închidere" checked (§3.E).
+    ' restore the HKCU snapshot if the operator left "Restaurează la închidere" checked.
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         Try
             Interlocked.Increment(_generation)
+            tmrLayout.Stop()
             KillTracked()
             RestoreUserPrefsOnClose()
         Catch ex As Exception
@@ -197,50 +238,80 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' (pe fir de fundal, ca UI-ul să rămână responsiv) și o reparentează în pnlHost.
     Private Async Function RelaunchAsync() As Task
         Try
-            Dim gen As Integer = Interlocked.Increment(_generation)
-            KillTracked()   ' „close the current adobe if any"
-
-            If String.IsNullOrEmpty(_adobePath) OrElse String.IsNullOrEmpty(_pdfPath) Then Return
-
-            Dim args As String = BuildArguments(_pdfPath)
-            ShowStatus("Pornesc Adobe…")
-            Dim proc As Process = StartReader(args)
+            Dim gen As Integer = StartFreshLaunch()
+            If gen = 0 Then Return
+            Dim proc As Process = _pendingProcess
             If proc Is Nothing Then Return
-
-            Dim baseName As String = Path.GetFileNameWithoutExtension(_pdfPath)
-            Dim hwnd As IntPtr = Await Task.Run(Function() FindReaderWindow(baseName))
-
-            ' O relansare mai nouă a preluat controlul cât timp căutam: curăț procesul propriu.
-            If gen <> _generation Then
-                SafeKill(proc)
-                Return
-            End If
-
-            _readerProcess = proc
-            If hwnd = IntPtr.Zero Then
-                _hostedPid = SafePid(proc)
-                ShowStatus("Adobe pornit, dar fereastra nu a apărut în " & (FIND_TIMEOUT_MS \ 1000).ToString() &
-                           "s (fără încorporare).")
-                Return
-            End If
-
-            _hostedWindow = hwnd
-            Dim ownerPid As Integer = 0
-            GetWindowThreadProcessId(hwnd, ownerPid)
-            _hostedPid = ownerPid
-
-            HostWindow(hwnd)
-            ShowStatus("Încorporat. PID fereastră: " & ownerPid.ToString() & Environment.NewLine & args)
-            _log("Adobe încorporat — " & Path.GetFileName(_adobePath) & " " & args)
-            UpdateActionStates()
-
-            ' A doua redesenare, după ce Adobe își termină layout-ul (altfel rămâne nevăzut).
-            Await Task.Delay(REDRAW_DELAY_MS)
-            If gen = _generation Then NudgeRedraw()
+            Await CompleteEmbedAsync(gen, proc)
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHarnessForm.RelaunchAsync", ex)
             ShowStatus("Eroare la încorporare: " & ex.Message)
         End Try
+    End Function
+
+    ' Kills the current instance and starts a new one with the effective switch set. Returns the
+    ' generation of this launch, or 0 when nothing was started. Shared by the button path and the
+    ' scenario `launch` step (which then runs `waitForEmbed` separately).
+    Private Function StartFreshLaunch() As Integer
+        Dim gen As Integer = Interlocked.Increment(_generation)
+        KillTracked()
+        _pendingProcess = Nothing
+        _pendingGeneration = 0
+
+        Dim pdf As String = EffectivePdfPath()
+        If String.IsNullOrEmpty(_adobePath) OrElse String.IsNullOrEmpty(pdf) Then Return 0
+
+        Dim args As String = BuildArguments(pdf)
+        ShowStatus("Pornesc Adobe…")
+        Dim proc As Process = StartReader(args)
+        If proc Is Nothing Then Return 0
+        _pendingProcess = proc
+        _pendingGeneration = gen
+        Return gen
+    End Function
+
+    ' Waits for the launched window, hosts it, and (if a scenario asks) re-applies the hides.
+    Private Async Function CompleteEmbedAsync(gen As Integer, proc As Process) As Task
+        Dim pdf As String = EffectivePdfPath()
+        Dim baseName As String = Path.GetFileNameWithoutExtension(pdf)
+        Dim hwnd As IntPtr = Await Task.Run(Function() FindReaderWindow(baseName))
+
+        ' O relansare mai nouă a preluat controlul cât timp căutam: curăț procesul propriu.
+        If gen <> _generation Then
+            SafeKill(proc)
+            Return
+        End If
+
+        _readerProcess = proc
+        _pendingProcess = Nothing
+        If hwnd = IntPtr.Zero Then
+            _hostedPid = SafePid(proc)
+            ShowStatus("Adobe pornit, dar fereastra nu a apărut în " & (FIND_TIMEOUT_MS \ 1000).ToString() &
+                       "s (fără încorporare).")
+            Return
+        End If
+
+        _hostedWindow = hwnd
+        Dim ownerPid As Integer = 0
+        GetWindowThreadProcessId(hwnd, ownerPid)
+        _hostedPid = ownerPid
+
+        HostWindow(hwnd)
+        ShowStatus("Încorporat. PID fereastră: " & ownerPid.ToString())
+        _log("Adobe încorporat — " & Path.GetFileName(_adobePath) & " " & BuildArguments(pdf))
+        UpdateActionStates()
+
+        ' A doua redesenare, după ce Adobe își termină layout-ul (altfel rămâne nevăzut).
+        Await Task.Delay(REDRAW_DELAY_MS)
+        If gen <> _generation Then Return
+        NudgeRedraw()
+
+        ' Hidden children do not survive a relaunch (new HWNDs) — re-resolve by text.
+        Dim hc As HideChildrenConfig = If(_scenario IsNot Nothing, _scenario.HideChildren, Nothing)
+        If hc IsNot Nothing AndAlso hc.ReapplyOnRelaunch.GetValueOrDefault() AndAlso
+           hc.ByText IsNot Nothing AndAlso hc.ByText.Count > 0 Then
+            Await HideChildrenByTextAsync(hc)
+        End If
     End Function
 
     Private Function StartReader(args As String) As Process
@@ -255,7 +326,6 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Function
 
     ' Reparentează fereastra în pnlHost, curățând stilurile de fereastră de sine stătătoare.
-    ' Rulează pe firul UI (după await). Transitiv acoperit de Try/Catch-ul din RelaunchAsync.
     Private Sub HostWindow(hwnd As IntPtr)
         _originalStyle = GetWindowLongPtrSafe(hwnd, GWL_STYLE)
 
@@ -269,9 +339,9 @@ Public NotInheritable Class AdobeReaderHarnessForm
         NudgeRedraw()
     End Sub
 
-    ' §3.B: the bounds of the hosted window inside pnlHost. Without clipping it fills the panel;
-    ' with clipping it is oversized and offset so the clipped bands (top toolbar strip / right
-    ' pane strip) fall OUTSIDE the visible client area of pnlHost.
+    ' The bounds of the hosted window inside pnlHost. Without clipping it fills the panel; with
+    ' clipping it is oversized and offset so the clipped bands (top toolbar strip / right pane
+    ' strip) fall OUTSIDE the visible client area of pnlHost.
     Private Function HostedBounds() As Rectangle
         Dim w As Integer = pnlHost.ClientSize.Width
         Dim h As Integer = pnlHost.ClientSize.Height
@@ -291,20 +361,16 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Sub
 
     ' Forțează afișarea/redesenarea ferestrei reparentate (altfel rămâne nevăzută până la o
-    ' schimbare de layout a formularului). Reaplică frame-ul, face un mic „nudge" de dimensiune
-    ' și cere o repictare completă a copilului. (Clip-aware since slice 0023: uses HostedBounds.)
+    ' schimbare de layout a formularului).
     Private Sub NudgeRedraw()
         If _hostedWindow = IntPtr.Zero Then Return
         Dim b As Rectangle = HostedBounds()
         If b.Width <= 0 OrElse b.Height <= 0 Then Return
 
-        ' 1) Reaplică frame-ul după schimbarea stilurilor și fă fereastra vizibilă.
         SetWindowPos(_hostedWindow, IntPtr.Zero, b.X, b.Y, b.Width, b.Height,
                      SWP_NOZORDER Or SWP_NOACTIVATE Or SWP_FRAMECHANGED Or SWP_SHOWWINDOW)
-        ' 2) Mic „nudge" de dimensiune -> Adobe își reașează conținutul și pictează.
         MoveWindow(_hostedWindow, b.X, b.Y, Math.Max(1, b.Width - 1), b.Height, True)
         MoveWindow(_hostedWindow, b.X, b.Y, b.Width, b.Height, True)
-        ' 3) Repictare completă a copilului + a panoului.
         RedrawWindow(_hostedWindow, IntPtr.Zero, IntPtr.Zero,
                      RDW_INVALIDATE Or RDW_ALLCHILDREN Or RDW_UPDATENOW Or RDW_FRAME)
         pnlHost.Invalidate(True)
@@ -314,17 +380,28 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' Sintaxă Adobe: [/n] [/s] [/A "param1&param2&…"] "cale.pdf". Parametrii /A trebuie ÎNAINTE de fișier.
     Private Function BuildArguments(pdf As String) As String
         Dim sb As New StringBuilder()
-        If chkNewInstance.Checked Then sb.Append("/n ")
-        If chkNoSplash.Checked Then sb.Append("/s ")
+        If EffectiveNewInstance() Then sb.Append("/n ")
+        If EffectiveNoSplash() Then sb.Append("/s ")
         Dim op As String = BuildOpenParameters()
         If op.Length > 0 Then sb.Append("/A """).Append(op).Append(""" ")
         sb.Append(""""c).Append(pdf).Append(""""c)
         Return sb.ToString()
     End Function
 
-    ' Parametrii de deschidere (/A) care ascund chrome-ul, în ordinea din panou.
+    ' Parametrii de deschidere (/A) care ascund chrome-ul, în ordinea din panou. A loaded scenario
+    ' wins over the checkboxes (they agree anyway when «Aplică la încărcare» is ticked).
     Private Function BuildOpenParameters() As String
         Dim parts As New List(Of String)()
+        Dim op As OpenParametersConfig = If(_scenario IsNot Nothing, _scenario.OpenParameters, Nothing)
+        If op IsNot Nothing Then
+            If op.Toolbar.HasValue Then parts.Add("toolbar=" & op.Toolbar.Value.ToString())
+            If op.Navpanes.HasValue Then parts.Add("navpanes=" & op.Navpanes.Value.ToString())
+            If op.Statusbar.HasValue Then parts.Add("statusbar=" & op.Statusbar.Value.ToString())
+            If op.Messages.HasValue Then parts.Add("messages=" & op.Messages.Value.ToString())
+            If op.Scrollbar.HasValue Then parts.Add("scrollbar=" & op.Scrollbar.Value.ToString())
+            If Not String.IsNullOrWhiteSpace(op.Pagemode) Then parts.Add("pagemode=" & op.Pagemode)
+            Return String.Join("&", parts)
+        End If
         If chkToolbar.Checked Then parts.Add("toolbar=0")
         If chkNavpanes.Checked Then parts.Add("navpanes=0")
         If chkStatusbar.Checked Then parts.Add("statusbar=0")
@@ -334,16 +411,36 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Return String.Join("&", parts)
     End Function
 
+    Private Function EffectivePdfPath() As String
+        If _scenario IsNot Nothing AndAlso _scenario.Document IsNot Nothing AndAlso
+           Not String.IsNullOrWhiteSpace(_scenario.Document.Path) Then
+            Return _scenario.Document.Path
+        End If
+        Return _pdfPath
+    End Function
+
+    Private Function EffectiveNewInstance() As Boolean
+        If _scenario IsNot Nothing AndAlso _scenario.Launch IsNot Nothing AndAlso
+           _scenario.Launch.NewInstance.HasValue Then Return _scenario.Launch.NewInstance.Value
+        Return chkNewInstance.Checked
+    End Function
+
+    Private Function EffectiveNoSplash() As Boolean
+        If _scenario IsNot Nothing AndAlso _scenario.Launch IsNot Nothing AndAlso
+           _scenario.Launch.NoSplash.HasValue Then Return _scenario.Launch.NoSplash.Value
+        Return chkNoSplash.Checked
+    End Function
+
     Private Sub UpdateCmdPreview()
         Dim exe As String = If(String.IsNullOrEmpty(_adobePath), "<Adobe negăsit>", Path.GetFileName(_adobePath))
-        Dim pdf As String = If(String.IsNullOrEmpty(_pdfPath), "document.pdf", _pdfPath)
-        lblCmd.Text = exe & " " & BuildArguments(pdf)
+        Dim pdf As String = EffectivePdfPath()
+        If String.IsNullOrEmpty(pdf) Then pdf = "document.pdf"
+        txtCmd.Text = exe & " " & BuildArguments(pdf)
     End Sub
 
     ' ── Curățare Adobe ──────────────────────────────────────────────────────────
     ' Distruge forțat Adobe găzduit: întâi procesul PROPRIETAR al ferestrei (via PID), apoi
-    ' procesul pornit de noi. Best-effort prin construcție (fiecare pas înghite excepțiile).
-    ' Since 0023 it also drops the probe/child state — those HWNDs die with the process.
+    ' procesul pornit de noi. Best-effort prin construcție.
     Private Sub KillTracked()
         Dim hostedPid As Integer = _hostedPid
         _hostedWindow = IntPtr.Zero
@@ -356,7 +453,13 @@ Public NotInheritable Class AdobeReaderHarnessForm
         _readerProcess = Nothing
         SafeKill(rp)
 
-        ' Probe results and hidden-child handles belong to the dead process.
+        Dim pp As Process = _pendingProcess
+        _pendingProcess = Nothing
+        SafeKill(pp)
+
+        ' Probe results and hidden-child HANDLES belong to the dead process. The hidden TEXTS are
+        ' kept: they are the durable identity a scenario re-applies after the next embed.
+        _lastProbe.Clear()
         _hiddenChildren.Clear()
         _probeCandidateWidth = 0
         _probeCandidateClass = Nothing
@@ -400,8 +503,6 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Function
 
     ' ── Căutarea ferestrei Reader (fir de fundal) ───────────────────────────────
-    ' Fereastră de nivel superior a Reader-ului al cărei titlu conține numele fișierului, cu
-    ' timeout mărginit. Zero dacă nu apare. Transitiv acoperit de Try/Catch-ul apelantului.
     Private Function FindReaderWindow(baseName As String) As IntPtr
         Dim deadline As DateTime = DateTime.UtcNow.AddMilliseconds(FIND_TIMEOUT_MS)
         Do
@@ -427,11 +528,8 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Function
 
     ' ── Localizarea Adobe ───────────────────────────────────────────────────────
-    ' Preferă App Paths (Acrobat.exe = Acrobat/Reader DC unificat, apoi AcroRd32.exe = Reader
-    ' clasic), apoi cade pe căile uzuale de instalare.
-    ' NOTE (0023): AdobeUtils.GetAdobeReaderPath (KBot.Xfa) resolves the .pdf HANDLER, but it is
-    ' Private and KBot.Xfa is not referenced here — reusing it would mean touching KBot.Xfa,
-    ' which is out of scope for this pass. Recorded in the worklog.
+    ' NOTE: AdobeUtils.GetAdobeReaderPath (KBot.Xfa) resolves the .pdf HANDLER, but it is Private
+    ' and KBot.Xfa is not referenced here — reusing it would mean touching KBot.Xfa, out of scope.
     Private Shared Function ResolveAdobePath() As String
         Try
             For Each exe As String In New String() {"Acrobat.exe", "AcroRd32.exe"}
@@ -472,7 +570,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Return Nothing
     End Function
 
-    ' ══ §3.A Diagnostic — child window probe ════════════════════════════════════
+    ' ══ Diagnostic — child window probe ═════════════════════════════════════════
     Private Sub btnProbe_Click(sender As Object, e As EventArgs) Handles btnProbe.Click
         Try
             ProbeChildren()
@@ -482,15 +580,16 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Sub
 
     ' Walks the hosted window's descendants (GW_CHILD/GW_HWNDNEXT recursion, depth-limited),
-    ' logging one line per node and filling lstChildren. The RHP candidate is a HEURISTIC:
-    ' visible, flush against the host's right edge (± tolerance) and narrower than half the
-    ' host width; the widest such child wins and feeds "Măsoară din probă" (§3.B).
+    ' logging one line per node and filling lstChildren + _lastProbe. The RHP candidate is a
+    ' HEURISTIC: visible, flush against the host's right edge (± tolerance) and narrower than
+    ' half the host width; the widest such child wins and feeds "Măsoară din probă".
     Private Sub ProbeChildren()
         If _hostedWindow = IntPtr.Zero Then
             ShowStatus("Nicio fereastră găzduită — încorporează întâi un PDF.")
             Return
         End If
         lstChildren.Items.Clear()
+        _lastProbe.Clear()
         _probeCandidateWidth = 0
         _probeCandidateClass = Nothing
 
@@ -517,7 +616,8 @@ Public NotInheritable Class AdobeReaderHarnessForm
         While child <> IntPtr.Zero
             total += 1
             Dim cls As String = GetClass(child)
-            Dim txt As String = GetTitle(child)
+            Dim fullText As String = GetTitle(child)
+            Dim txt As String = fullText
             If txt.Length > 40 Then txt = txt.Substring(0, 40) & "…"
             Dim r As RECT
             GetWindowRect(child, r)
@@ -530,7 +630,9 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
             RhpLog($"  d={depth} hwnd=0x{child.ToInt64():X} cls={cls} text=""{txt}"" " &
                    $"x={tl.X} y={tl.Y} {w}x{h} vis={If(vis, 1, 0)} style=0x{style:X8} ex=0x{exStyle:X8}")
-            lstChildren.Items.Add(New ChildWindowItem(child, cls, w, h))
+            Dim item As New ChildWindowItem(child, cls, fullText, w, h)
+            lstChildren.Items.Add(item)
+            _lastProbe.Add(item)
 
             ' RHP-candidate heuristic (labelled as such in the log header above).
             If vis AndAlso w > 0 AndAlso w < hostW \ 2 AndAlso
@@ -546,26 +648,30 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End While
     End Sub
 
-    ' A probed child in lstChildren: display class + size, carry the HWND.
+    ' A probed child: text first, because the text is the durable identity across relaunches while
+    ' the class is almost always AVL_AVView and the HWND changes every launch.
     Private NotInheritable Class ChildWindowItem
         Public ReadOnly Hwnd As IntPtr
         Public ReadOnly ClassName As String
+        Public ReadOnly WindowText As String
         Public ReadOnly W As Integer
         Public ReadOnly H As Integer
 
-        Public Sub New(hwnd As IntPtr, className As String, w As Integer, h As Integer)
+        Public Sub New(hwnd As IntPtr, className As String, windowText As String, w As Integer, h As Integer)
             Me.Hwnd = hwnd
             Me.ClassName = className
+            Me.WindowText = If(windowText, "")
             Me.W = w
             Me.H = h
         End Sub
 
         Public Overrides Function ToString() As String
-            Return $"{ClassName}  ({W}x{H})"
+            Dim t As String = If(String.IsNullOrEmpty(WindowText), "(fără text)", WindowText)
+            Return $"{t} — {ClassName} ({W}x{H})"
         End Function
     End Class
 
-    ' ══ §3.B Decupare — geometry clipping (live, no relaunch/kill) ══════════════
+    ' ══ Decupare — geometry clipping (live, no relaunch/kill) ═══════════════════
     Private Sub ClipSettingsChanged(sender As Object, e As EventArgs) _
         Handles chkClip.CheckedChanged, numClipRight.ValueChanged, numClipTop.ValueChanged
         Try
@@ -586,8 +692,6 @@ Public NotInheritable Class AdobeReaderHarnessForm
             End If
             numClipRight.Value = Math.Min(numClipRight.Maximum, CDec(_probeCandidateWidth))
             If Not chkClip.Checked Then chkClip.Checked = True
-            ' Value/checked changes already relaid out via ClipSettingsChanged; nudge once more
-            ' explicitly in case neither actually changed.
             LayoutHostedWindow()
             NudgeRedraw()
             RhpLog($"Decupare setată din probă: dreapta={_probeCandidateWidth}px ({_probeCandidateClass}).")
@@ -597,14 +701,12 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
-    ' ══ §3.C Ferestre copil — hide/show a probed child directly ═════════════════
+    ' ══ Ferestre copil — hide/show a probed child directly ══════════════════════
     Private Sub btnHideChild_Click(sender As Object, e As EventArgs) Handles btnHideChild.Click
         Try
             Dim item As ChildWindowItem = SelectedChildAlive()
             If item Is Nothing Then Return
-            ShowWindow(item.Hwnd, SW_HIDE)
-            If Not _hiddenChildren.Contains(item.Hwnd) Then _hiddenChildren.Add(item.Hwnd)
-            RhpLog($"Ascuns copil: {item} (hwnd=0x{item.Hwnd.ToInt64():X})")
+            HideChild(item)
             NudgeRedraw()
             UpdateActionStates()
             RefreshStatusBlock()
@@ -613,12 +715,24 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
+    ' Hides one child and remembers BOTH its handle (for exact restore now) and its text (so a
+    ' saved scenario can find it again after the next launch).
+    Private Sub HideChild(item As ChildWindowItem)
+        ShowWindow(item.Hwnd, SW_HIDE)
+        If Not _hiddenChildren.Contains(item.Hwnd) Then _hiddenChildren.Add(item.Hwnd)
+        If Not String.IsNullOrEmpty(item.WindowText) AndAlso Not _hiddenChildTexts.Contains(item.WindowText) Then
+            _hiddenChildTexts.Add(item.WindowText)
+        End If
+        RhpLog($"Ascuns copil: {item} (hwnd=0x{item.Hwnd.ToInt64():X})")
+    End Sub
+
     Private Sub btnShowChild_Click(sender As Object, e As EventArgs) Handles btnShowChild.Click
         Try
             Dim item As ChildWindowItem = SelectedChildAlive()
             If item Is Nothing Then Return
             ShowWindow(item.Hwnd, SW_SHOW)
             _hiddenChildren.Remove(item.Hwnd)
+            _hiddenChildTexts.Remove(item.WindowText)
             RhpLog($"Rearătat copil: {item} (hwnd=0x{item.Hwnd.ToInt64():X})")
             NudgeRedraw()
             UpdateActionStates()
@@ -640,6 +754,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 End If
             Next
             _hiddenChildren.Clear()
+            _hiddenChildTexts.Clear()
             NudgeRedraw()
             UpdateActionStates()
             RefreshStatusBlock()
@@ -648,8 +763,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
-    ' Selected list item whose HWND is still alive; stale handles are dropped with a log line
-    ' (IsWindow guard — Adobe destroys and recreates panels).
+    ' Selected list item whose HWND is still alive; stale handles are dropped with a log line.
     Private Function SelectedChildAlive() As ChildWindowItem
         Dim item As ChildWindowItem = TryCast(lstChildren.SelectedItem, ChildWindowItem)
         If item Is Nothing Then
@@ -659,6 +773,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         If Not IsWindow(item.Hwnd) Then
             RhpLog($"Handle mort (fereastra a fost distrusă între timp): {item} — eliminat din listă.")
             lstChildren.Items.Remove(item)
+            _lastProbe.Remove(item)
             _hiddenChildren.Remove(item.Hwnd)
             UpdateActionStates()
             Return Nothing
@@ -666,7 +781,47 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Return item
     End Function
 
-    ' ══ §3.D Scurtături — keyboard toggles (experimental) ═══════════════════════
+    ' Re-probes and hides everything whose window text matches, retrying because Adobe creates the
+    ' task pane host AFTER the main view: a single attempt right after embed often finds nothing.
+    ' Every attempt logs "n of m found" — exactly the diagnostic needed when a scenario stops
+    ' working on a different Adobe build.
+    Private Async Function HideChildrenByTextAsync(cfg As HideChildrenConfig) As Task(Of Boolean)
+        If cfg Is Nothing OrElse cfg.ByText Is Nothing OrElse cfg.ByText.Count = 0 Then
+            RhpLog("hideChildren: lista «byText» este goală — nimic de ascuns.")
+            Return True
+        End If
+        Dim attempts As Integer = cfg.EffectiveAttempts()
+        Dim intervalMs As Integer = cfg.EffectiveIntervalMs()
+        Dim wanted As List(Of String) = cfg.ByText.Where(Function(t) Not String.IsNullOrWhiteSpace(t)).ToList()
+
+        For attempt As Integer = 1 To attempts
+            If _hostedWindow = IntPtr.Zero Then
+                RhpLog("hideChildren: nicio fereastră găzduită — abandonez.")
+                Return False
+            End If
+            ProbeChildren()
+            Dim found As Integer = 0
+            For Each text As String In wanted
+                Dim matches As List(Of ChildWindowItem) = _lastProbe.
+                    Where(Function(i) String.Equals(i.WindowText, text, StringComparison.OrdinalIgnoreCase)).ToList()
+                If matches.Count > 0 Then found += 1
+                For Each m As ChildWindowItem In matches
+                    If IsWindow(m.Hwnd) Then HideChild(m)
+                Next
+            Next
+            RhpLog($"hideChildren: încercarea {attempt}/{attempts} — {found} din {wanted.Count} texte găsite.")
+            NudgeRedraw()
+            UpdateActionStates()
+            RefreshStatusBlock()
+            If found = wanted.Count Then Return True
+            If attempt < attempts Then Await Task.Delay(intervalMs)
+        Next
+        RhpLog($"hideChildren: după {attempts} încercări nu s-au găsit toate textele cerute " &
+               "(rezultat valid de notat — panoul poate lipsi pe acest build Adobe).")
+        Return True
+    End Function
+
+    ' ══ Scurtături — keyboard toggles (experimental) ════════════════════════════
     Private Sub btnSendShiftF4_Click(sender As Object, e As EventArgs) Handles btnSendShiftF4.Click
         Try
             SendKeyToHosted("+{F4}", "Shift+F4")
@@ -685,8 +840,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
     ' Focus the hosted window, then send the keystroke. EXPERIMENTAL and version-dependent:
     ' keyboard across a process boundary into a reparented window does not behave like a native
-    ' child (documented in ReaderHostPreview). "Nothing happened" is a valid result to record —
-    ' no retries, no workarounds (plan §3.D).
+    ' child. "Nothing happened" is a valid result to record — no retries, no workarounds.
     Private Sub SendKeyToHosted(keys As String, label As String)
         If _hostedWindow = IntPtr.Zero Then
             ShowStatus("Nicio fereastră găzduită — încorporează întâi un PDF.")
@@ -701,7 +855,31 @@ Public NotInheritable Class AdobeReaderHarnessForm
         ShowStatus($"Trimis {label}. Observă dacă panoul s-a comutat.")
     End Sub
 
-    ' ══ §3.E Preferințe Adobe (utilizator, HKCU) ════════════════════════════════
+    ' Translates a scenario key spec ("Shift+F4", "F4", "Ctrl+Shift+P") into SendKeys syntax.
+    Private Shared Function ToSendKeysSyntax(spec As String) As String
+        If String.IsNullOrWhiteSpace(spec) Then Return ""
+        Dim prefix As New StringBuilder()
+        Dim key As String = spec.Trim()
+        Do
+            Dim plus As Integer = key.IndexOf("+"c)
+            If plus <= 0 Then Exit Do
+            Dim modifier As String = key.Substring(0, plus).Trim().ToLowerInvariant()
+            Select Case modifier
+                Case "shift" : prefix.Append("+"c)
+                Case "ctrl", "control" : prefix.Append("^"c)
+                Case "alt" : prefix.Append("%"c)
+                Case Else : Exit Do
+            End Select
+            key = key.Substring(plus + 1).Trim()
+        Loop
+        ' Function keys and named keys need braces; a single character does not.
+        If key.Length > 1 AndAlso Not key.StartsWith("{", StringComparison.Ordinal) Then
+            key = "{" & key.ToUpperInvariant() & "}"
+        End If
+        Return prefix.ToString() & key
+    End Function
+
+    ' ══ Preferințe Adobe (utilizator, HKCU) ═════════════════════════════════════
     Private Sub cboHive_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboHive.SelectedIndexChanged
         Try
             If _loading Then Return
@@ -714,6 +892,16 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' The AVGeneral hive to write: explicit combo choice, or the pure resolver on "auto".
     Private Function CurrentAvGeneralPath() As String
         Dim sel As String = TryCast(cboHive.SelectedItem, String)
+        If _scenario IsNot Nothing AndAlso _scenario.UserPrefs IsNot Nothing AndAlso
+           Not String.IsNullOrWhiteSpace(_scenario.UserPrefs.Hive) AndAlso
+           Not String.Equals(_scenario.UserPrefs.Hive, "auto", StringComparison.OrdinalIgnoreCase) Then
+            ' A scenario names the product ("Acrobat Reader"/"Adobe Acrobat"), not the full path.
+            If String.Equals(_scenario.UserPrefs.Hive, AdobeRegistryConstants.ProductReader, StringComparison.OrdinalIgnoreCase) Then
+                Return AdobeRegistryConstants.AvGeneralReader
+            ElseIf String.Equals(_scenario.UserPrefs.Hive, AdobeRegistryConstants.ProductAcrobat, StringComparison.OrdinalIgnoreCase) Then
+                Return AdobeRegistryConstants.AvGeneralAcrobat
+            End If
+        End If
         If sel = AdobeRegistryConstants.AvGeneralReader OrElse sel = AdobeRegistryConstants.AvGeneralAcrobat Then
             Return sel
         End If
@@ -739,6 +927,34 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Sub
     End Class
 
+    ' The HKCU values to write: a loaded scenario's `userPrefs.values` wins over the checkboxes.
+    Private Function CollectUserPrefs() As List(Of UserPrefWrite)
+        If _scenario IsNot Nothing AndAlso _scenario.UserPrefs IsNot Nothing AndAlso
+           _scenario.UserPrefs.Values IsNot Nothing AndAlso _scenario.UserPrefs.Values.Count > 0 Then
+            Return UserPrefsFromScenario(_scenario.UserPrefs.Values)
+        End If
+        Return CollectTickedUserPrefs()
+    End Function
+
+    ' JSON numbers become REG_DWORD, JSON strings become REG_SZ. Anything else is logged and
+    ' skipped — the type is never guessed.
+    Private Function UserPrefsFromScenario(values As Dictionary(Of String, JsonElement)) As List(Of UserPrefWrite)
+        Dim prefs As New List(Of UserPrefWrite)()
+        For Each kv As KeyValuePair(Of String, JsonElement) In values
+            Select Case kv.Value.ValueKind
+                Case JsonValueKind.Number
+                    Dim n As Integer = kv.Value.GetInt32()
+                    prefs.Add(New UserPrefWrite(kv.Key, RegistryValueKind.DWord, n, $"{kv.Key}={n}"))
+                Case JsonValueKind.String
+                    Dim s As String = kv.Value.GetString()
+                    prefs.Add(New UserPrefWrite(kv.Key, RegistryValueKind.String, s, $"{kv.Key}={s}"))
+                Case Else
+                    RhpLog($"userPrefs.values.{kv.Key}: tip JSON nesuportat ({kv.Value.ValueKind}) — ignorat.")
+            End Select
+        Next
+        Return prefs
+    End Function
+
     Private Function CollectTickedUserPrefs() As List(Of UserPrefWrite)
         Dim prefs As New List(Of UserPrefWrite)()
         If chkExpandRhp.Checked Then prefs.Add(New UserPrefWrite(
@@ -753,33 +969,38 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Return prefs
     End Function
 
-    ' Plan §3.E order: (1) snapshot ticked values ONCE per session (Capture is idempotent, so a
-    ' second Apply cannot overwrite the true originals); (2) kill Adobe — ours by PID plus, with
-    ' CONSENT ONLY, any foreign instance (Adobe rewrites its prefs on exit, the write is
-    ' worthless while it runs); (3) write, logging old → new; (4) relaunch.
+    ' Order: (1) snapshot ticked values ONCE per session (Capture is idempotent, so a second
+    ' Apply cannot overwrite the true originals); (2) kill Adobe — ours by PID plus, with CONSENT
+    ' ONLY, any foreign instance (Adobe rewrites its prefs on exit, the write is worthless while
+    ' it runs); (3) write, logging old → new. Shared by the button and the scenario step.
+    Private Function ApplyUserPrefsCore() As Boolean
+        Dim prefs As List(Of UserPrefWrite) = CollectUserPrefs()
+        If prefs.Count = 0 Then
+            ShowStatus("Nicio valoare HKCU bifată — nimic de aplicat.")
+            Return True
+        End If
+        Dim hive As String = CurrentAvGeneralPath()
+
+        For Each p As UserPrefWrite In prefs
+            _userSnapshot.Capture(hive, p.Name)
+        Next
+
+        If Not KillAdobeForRegistryWrite() Then Return False
+
+        For Each p As UserPrefWrite In prefs
+            Dim oldSnap As RegistryValueSnapshot = _regAccess.Read(hive, p.Name)
+            _regAccess.Write(hive, p.Name, p.Kind, p.Value)
+            RhpLog($"HKCU scris: {oldSnap} -> {p.Value} ({p.Kind})")
+            If Not _userValuesApplied.Contains(p.Label) Then _userValuesApplied.Add(p.Label)
+        Next
+        Return True
+    End Function
+
     Private Async Sub btnApplyUser_Click(sender As Object, e As EventArgs) Handles btnApplyUser.Click
         Try
-            Dim prefs As List(Of UserPrefWrite) = CollectTickedUserPrefs()
-            If prefs.Count = 0 Then
-                ShowStatus("Nicio valoare HKCU bifată — nimic de aplicat.")
-                Return
-            End If
-            Dim hive As String = CurrentAvGeneralPath()
-
-            For Each p As UserPrefWrite In prefs
-                _userSnapshot.Capture(hive, p.Name)
-            Next
-
-            If Not KillAdobeForRegistryWrite() Then Return
-
-            For Each p As UserPrefWrite In prefs
-                Dim oldSnap As RegistryValueSnapshot = _regAccess.Read(hive, p.Name)
-                _regAccess.Write(hive, p.Name, p.Kind, p.Value)
-                RhpLog($"HKCU scris: {oldSnap} -> {p.Value} ({p.Kind})")
-                If Not _userValuesApplied.Contains(p.Label) Then _userValuesApplied.Add(p.Label)
-            Next
-
-            If Not String.IsNullOrEmpty(_pdfPath) Then Await RelaunchAsync()
+            If Not ConfirmRegistryWrites(userPrefs:=True, machinePolicy:=False) Then Return
+            If Not ApplyUserPrefsCore() Then Return
+            If Not String.IsNullOrEmpty(EffectivePdfPath()) Then Await RelaunchAsync()
             ShowStatus("Valori HKCU aplicate; Adobe repornit cu setul curent de switch-uri.")
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHarnessForm.btnApplyUser_Click", ex)
@@ -787,19 +1008,24 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
+    Private Function RestoreUserPrefsCore() As Boolean
+        If _userSnapshot.Count = 0 Then
+            ShowStatus("Nimic de restaurat — nu s-a aplicat nicio valoare în această sesiune.")
+            Return True
+        End If
+        If Not KillAdobeForRegistryWrite() Then Return False
+        For Each s As RegistryValueSnapshot In _userSnapshot.Snapshots()
+            RhpLog("HKCU restaurez la original: " & s.ToString())
+        Next
+        _userSnapshot.RestoreAll()
+        _userValuesApplied.Clear()
+        Return True
+    End Function
+
     Private Async Sub btnRestoreUser_Click(sender As Object, e As EventArgs) Handles btnRestoreUser.Click
         Try
-            If _userSnapshot.Count = 0 Then
-                ShowStatus("Nimic de restaurat — nu s-a aplicat nicio valoare în această sesiune.")
-                Return
-            End If
-            If Not KillAdobeForRegistryWrite() Then Return
-            For Each s As RegistryValueSnapshot In _userSnapshot.Snapshots()
-                RhpLog("HKCU restaurez la original: " & s.ToString())
-            Next
-            _userSnapshot.RestoreAll()
-            _userValuesApplied.Clear()
-            If Not String.IsNullOrEmpty(_pdfPath) Then Await RelaunchAsync()
+            If Not RestoreUserPrefsCore() Then Return
+            If Not String.IsNullOrEmpty(EffectivePdfPath()) Then Await RelaunchAsync()
             ShowStatus("Valorile HKCU au fost restaurate la original.")
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHarnessForm.btnRestoreUser_Click", ex)
@@ -808,8 +1034,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Sub
 
     ' Kills OUR hosted instance by PID (existing path), then asks — in Romanian, never silently —
-    ' before killing foreign Adobe processes. Returns False when the operator declines (the
-    ' registry write would be overwritten by Adobe on exit, so the operation aborts).
+    ' before killing foreign Adobe processes. Returns False when the operator declines.
     Private Function KillAdobeForRegistryWrite() As Boolean
         KillTracked()
         Dim foreign As New List(Of Process)()
@@ -857,12 +1082,11 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Function
 
-    ' On-close restore (§3.E): bounded by construction — our Adobe is already killed, and the
-    ' restore is a handful of registry writes. DEVIATION from a literal reading of the plan:
-    ' foreign Adobe processes are NOT killed here (no consent dialog on close — never silently);
-    ' if any run, their exit may overwrite the restore, which is logged. On failure the operator
-    ' is told (lblStatus + MessageBox — the form is closing, the label alone would never be seen)
-    ' with the exact keys named for manual cleanup.
+    ' On-close restore: bounded by construction — our Adobe is already killed and the restore is a
+    ' handful of registry writes. DEVIATION: foreign Adobe processes are NOT killed here (no
+    ' consent dialog on close — never silently); if any run, their exit may overwrite the restore,
+    ' which is logged. On failure the operator is told (status + MessageBox, since the label alone
+    ' would never be seen on a closing form) with the exact keys named for manual cleanup.
     Private Sub RestoreUserPrefsOnClose()
         If Not chkRestoreOnClose.Checked OrElse _userValuesApplied.Count = 0 Then Return
         Try
@@ -891,7 +1115,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
-    ' ══ §3.F Politici Adobe (mașină, HKLM) — elevated reg.exe import ════════════
+    ' ══ Politici Adobe (mașină, HKLM) — elevated reg.exe import ═════════════════
     Private Sub cboProduct_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboProduct.SelectedIndexChanged
         Try
             If _loading Then Return
@@ -901,8 +1125,13 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
-    ' The FeatureLockDown <product>: explicit combo choice, or the pure resolver on "auto".
+    ' The FeatureLockDown <product>: scenario, else explicit combo choice, else the pure resolver.
     Private Function CurrentPolicyProduct() As String
+        If _scenario IsNot Nothing AndAlso _scenario.MachinePolicy IsNot Nothing AndAlso
+           Not String.IsNullOrWhiteSpace(_scenario.MachinePolicy.Product) AndAlso
+           Not String.Equals(_scenario.MachinePolicy.Product, "auto", StringComparison.OrdinalIgnoreCase) Then
+            Return _scenario.MachinePolicy.Product
+        End If
         Dim sel As String = TryCast(cboProduct.SelectedItem, String)
         If sel = AdobeRegistryConstants.ProductReader OrElse sel = AdobeRegistryConstants.ProductAcrobat Then
             Return sel
@@ -914,86 +1143,137 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Return res.PolicyProduct
     End Function
 
+    ' One HKLM policy value: its full section path, its name and the value to write.
+    Private NotInheritable Class PolicyEntry
+        Public ReadOnly SectionPath As String
+        Public ReadOnly Name As String
+        Public ReadOnly Value As UInteger
+
+        Public Sub New(sectionPath As String, name As String, value As UInteger)
+            Me.SectionPath = sectionPath
+            Me.Name = name
+            Me.Value = value
+        End Sub
+    End Class
+
+    ' The policy values to write: a loaded scenario's `machinePolicy.values` wins over the
+    ' checkboxes. A key may carry a subkey prefix ("cServices\bToggle…"), which selects the
+    ' cServices section — the subkey the installer does not create.
+    Private Function CollectPolicyEntries(product As String) As List(Of PolicyEntry)
+        Dim fld As String = AdobeRegistryConstants.FeatureLockDownPath(product)
+        Dim entries As New List(Of PolicyEntry)()
+        Dim mp As MachinePolicyConfig = If(_scenario IsNot Nothing, _scenario.MachinePolicy, Nothing)
+        If mp IsNot Nothing AndAlso mp.Values IsNot Nothing AndAlso mp.Values.Count > 0 Then
+            For Each kv As KeyValuePair(Of String, JsonElement) In mp.Values
+                If kv.Value.ValueKind <> JsonValueKind.Number Then
+                    RhpLog($"machinePolicy.values.{kv.Key}: doar valori numerice (REG_DWORD) sunt suportate — ignorat.")
+                    Continue For
+                End If
+                Dim name As String = kv.Key
+                Dim section As String = fld
+                Dim slash As Integer = name.LastIndexOf("\"c)
+                If slash >= 0 Then
+                    section = fld & "\" & name.Substring(0, slash)
+                    name = name.Substring(slash + 1)
+                End If
+                entries.Add(New PolicyEntry(section, name, CUInt(kv.Value.GetInt32())))
+            Next
+            Return entries
+        End If
+        If chkSuppressUpsell.Checked Then
+            entries.Add(New PolicyEntry(fld, AdobeRegistryConstants.ValSuppressUpsell, 1UI))
+        End If
+        If chkDisableServices.Checked Then
+            entries.Add(New PolicyEntry(AdobeRegistryConstants.CServicesPath(product),
+                                        AdobeRegistryConstants.ValToggleServices, 1UI))
+        End If
+        Return entries
+    End Function
+
     ' Generates the apply/revert .reg pair into AppDir\Logs\ (revert from PRE-apply reads:
     ' absent -> deletion line, present dword -> original value), then imports the apply file via
     ' elevated reg.exe. Reading HKLM for the snapshot needs no elevation; only writing does.
+    Private Async Function ApplyMachinePolicyCoreAsync() As Task(Of Boolean)
+        Dim product As String = CurrentPolicyProduct()
+        Dim entries As List(Of PolicyEntry) = CollectPolicyEntries(product)
+        If entries.Count = 0 Then
+            ShowStatus("Nicio politică HKLM bifată — nimic de aplicat.")
+            Return True
+        End If
+
+        Dim apply As New RegFileBuilder()
+        Dim revert As New RegFileBuilder()
+        For Each en As PolicyEntry In entries
+            AddPolicyValue(apply, revert, en)
+        Next
+
+        Dim logsDir As String = Path.Combine(AppContext.BaseDirectory, "Logs")
+        Directory.CreateDirectory(logsDir)
+        _applyRegPath = Path.Combine(logsDir, "adobe_policy_apply.reg")
+        _revertRegPath = Path.Combine(logsDir, "adobe_policy_revert.reg")
+        ' reg.exe expects UTF-16 for "Version 5.00" files.
+        File.WriteAllText(_applyRegPath, apply.Build(), Encoding.Unicode)
+        File.WriteAllText(_revertRegPath, revert.Build(), Encoding.Unicode)
+        RhpLog($"Fișiere .reg generate (produs «{product}»): {_applyRegPath} + {_revertRegPath}")
+
+        Dim ok As Boolean = Await RunRegImportAsync(_applyRegPath)
+        If ok Then
+            _machinePolicyApplied = True
+            ShowStatus("Politica HKLM aplicată. Repornește Adobe (Reîncorporează) pentru efect.")
+        End If
+        RefreshStatusBlock()
+        Return ok
+    End Function
+
     Private Async Sub btnApplyMachine_Click(sender As Object, e As EventArgs) Handles btnApplyMachine.Click
         Try
-            If Not chkSuppressUpsell.Checked AndAlso Not chkDisableServices.Checked Then
-                ShowStatus("Nicio politică HKLM bifată — nimic de aplicat.")
-                Return
-            End If
-            Dim product As String = CurrentPolicyProduct()
-            Dim fld As String = AdobeRegistryConstants.FeatureLockDownPath(product)
-            Dim cs As String = AdobeRegistryConstants.CServicesPath(product)
-
-            Dim apply As New RegFileBuilder()
-            Dim revert As New RegFileBuilder()
-            If chkSuppressUpsell.Checked Then
-                AddPolicyValue(apply, revert, fld, AdobeRegistryConstants.ValSuppressUpsell)
-            End If
-            If chkDisableServices.Checked Then
-                AddPolicyValue(apply, revert, cs, AdobeRegistryConstants.ValToggleServices)
-            End If
-
-            Dim logsDir As String = Path.Combine(AppContext.BaseDirectory, "Logs")
-            Directory.CreateDirectory(logsDir)
-            _applyRegPath = Path.Combine(logsDir, "adobe_policy_apply.reg")
-            _revertRegPath = Path.Combine(logsDir, "adobe_policy_revert.reg")
-            ' reg.exe expects UTF-16 for "Version 5.00" files.
-            File.WriteAllText(_applyRegPath, apply.Build(), Encoding.Unicode)
-            File.WriteAllText(_revertRegPath, revert.Build(), Encoding.Unicode)
-            RhpLog($"Fișiere .reg generate (produs «{product}»): {_applyRegPath} + {_revertRegPath}")
-
-            Dim ok As Boolean = Await RunRegImportAsync(_applyRegPath)
-            If ok Then
-                _machinePolicyApplied = True
-                ShowStatus("Politica HKLM aplicată. Repornește Adobe (Reîncorporează) pentru efect.")
-            End If
-            RefreshStatusBlock()
+            If Not ConfirmRegistryWrites(userPrefs:=False, machinePolicy:=True) Then Return
+            Await ApplyMachinePolicyCoreAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHarnessForm.btnApplyMachine_Click", ex)
             ShowStatus("Eroare la aplicarea politicii HKLM: " & ex.Message)
         End Try
     End Sub
 
+    Private Async Function RevertMachinePolicyCoreAsync() As Task(Of Boolean)
+        If String.IsNullOrEmpty(_revertRegPath) OrElse Not File.Exists(_revertRegPath) Then
+            ShowStatus("Nu există fișier de revocare — aplică întâi politica (el se generează atunci).")
+            Return True
+        End If
+        Dim ok As Boolean = Await RunRegImportAsync(_revertRegPath)
+        If ok Then
+            _machinePolicyApplied = False
+            ShowStatus("Politica HKLM a fost revocată (valorile originale reimportate).")
+        End If
+        RefreshStatusBlock()
+        Return ok
+    End Function
+
     Private Async Sub btnRevertMachine_Click(sender As Object, e As EventArgs) Handles btnRevertMachine.Click
         Try
-            If String.IsNullOrEmpty(_revertRegPath) OrElse Not File.Exists(_revertRegPath) Then
-                ShowStatus("Nu există fișier de revocare — aplică întâi politica (el se generează atunci).")
-                Return
-            End If
-            Dim ok As Boolean = Await RunRegImportAsync(_revertRegPath)
-            If ok Then
-                _machinePolicyApplied = False
-                ShowStatus("Politica HKLM a fost revocată (valorile originale reimportate).")
-            End If
-            RefreshStatusBlock()
+            Await RevertMachinePolicyCoreAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHarnessForm.btnRevertMachine_Click", ex)
             ShowStatus("Eroare la revocarea politicii HKLM: " & ex.Message)
         End Try
     End Sub
 
-    ' Adds one policy value to the apply builder and its pre-apply original to the revert
-    ' builder. Absent -> deletion line; present DWORD -> original value; present with another
-    ' kind -> string when possible, otherwise logged as needing manual revert (never guessed).
-    Private Sub AddPolicyValue(apply As RegFileBuilder, revert As RegFileBuilder,
-                               sectionPath As String, name As String)
-        apply.AddDword(sectionPath, name, 1UI)
-        Dim snap As RegistryValueSnapshot = _regAccess.Read(sectionPath, name)
+    ' Adds one policy value to the apply builder and its pre-apply original to the revert builder.
+    ' Absent -> deletion line; present DWORD -> original value; present with another kind ->
+    ' string when possible, otherwise logged as needing manual revert (never guessed).
+    Private Sub AddPolicyValue(apply As RegFileBuilder, revert As RegFileBuilder, entry As PolicyEntry)
+        apply.AddDword(entry.SectionPath, entry.Name, entry.Value)
+        Dim snap As RegistryValueSnapshot = _regAccess.Read(entry.SectionPath, entry.Name)
         RhpLog("HKLM citit (pentru revocare): " & snap.ToString())
         If snap.Presence = RegPresence.Absent Then
-            revert.DeleteValue(sectionPath, name)
+            revert.DeleteValue(entry.SectionPath, entry.Name)
         ElseIf snap.Kind = RegistryValueKind.DWord Then
-            revert.AddDword(sectionPath, name, DwordToUInt(snap.Value))
+            revert.AddDword(entry.SectionPath, entry.Name, DwordToUInt(snap.Value))
         ElseIf snap.Kind = RegistryValueKind.String Then
-            revert.AddString(sectionPath, name, CStr(snap.Value))
+            revert.AddString(entry.SectionPath, entry.Name, CStr(snap.Value))
         Else
-            ' Preserve honesty over completeness: an exotic original kind is not representable
-            ' by this builder — record it instead of guessing.
-            RhpLog($"ATENȚIE: {sectionPath}\{name} are tipul {snap.Kind}, nereprezentabil în .reg-ul " &
-                   "de revocare — revocarea acestei valori va trebui făcută manual.")
+            RhpLog($"ATENȚIE: {entry.SectionPath}\{entry.Name} are tipul {snap.Kind}, nereprezentabil în " &
+                   ".reg-ul de revocare — revocarea acestei valori va trebui făcută manual.")
         End If
     End Sub
 
@@ -1038,9 +1318,469 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Function
 
+    ' ══ Scenariu — load / run / save ════════════════════════════════════════════
+    Private Sub btnLoadScenario_Click(sender As Object, e As EventArgs) Handles btnLoadScenario.Click
+        Try
+            Dim dir As String = ConfigDir()
+            Using dlg As New System.Windows.Forms.OpenFileDialog()
+                dlg.Filter = "Scenarii K-BOT (*.json)|*.json|Toate fișierele (*.*)|*.*"
+                dlg.Title = "Încarcă un scenariu"
+                If Directory.Exists(dir) Then dlg.InitialDirectory = dir
+                If dlg.ShowDialog(Me) <> DialogResult.OK Then Return
+                LoadScenarioFile(dlg.FileName)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnLoadScenario_Click", ex)
+            ShowStatus("Eroare la încărcarea scenariului: " & ex.Message)
+        End Try
+    End Sub
+
+    ' Loading NEVER writes anything — only pressing Run does.
+    ' NOTE: the parameter is deliberately NOT called `path` — VB identifiers are case-insensitive,
+    ' so `path` would shadow System.IO.Path and turn `Path.GetFileName` into a compile error (the
+    ' same shadowing trap that produced silent no-ops in slice 0010 and 0019).
+    Private Sub LoadScenarioFile(filePath As String)
+        Dim json As String = File.ReadAllText(filePath)
+        Dim result As HarnessScenarioReadResult = HarnessScenarioReader.Read(json)
+
+        For Each w As String In result.Warnings
+            RhpLog("Scenariu (avertisment): " & w)
+        Next
+
+        If Not result.IsValid Then
+            For Each errText As String In result.Errors
+                RhpLog("Scenariu (eroare): " & errText)
+            Next
+            _scenario = Nothing
+            _scenarioPath = Nothing
+            lblScenario.Text = "(niciun scenariu)"
+            btnRunScenario.Enabled = False
+            MessageBox.Show(Me,
+                "Scenariul nu a putut fi încărcat:" & Environment.NewLine & Environment.NewLine &
+                String.Join(Environment.NewLine, result.Errors),
+                "K-BOT — scenariu invalid", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            ShowStatus("Scenariu invalid — vezi " & RHP_LOG_NAME & ".")
+            Return
+        End If
+
+        _scenario = result.Scenario
+        _scenarioPath = filePath
+        lblScenario.Text = Path.GetFileName(filePath)
+        btnRunScenario.Enabled = True
+        RhpLog($"Scenariu încărcat: {filePath} — «{If(_scenario.Name, "(fără nume)")}»")
+
+        If chkApplyOnLoad.Checked Then ApplyScenarioToControls()
+        UpdateCmdPreview()
+        Dim note As String = If(String.IsNullOrWhiteSpace(_scenario.Note), "", " — " & _scenario.Note)
+        ShowStatus($"Scenariu încărcat: {If(_scenario.Name, Path.GetFileName(filePath))}{note}")
+    End Sub
+
+    ' Ticks the checkboxes and fills the spinners so the operator SEES what the file will do and
+    ' can adjust before running. Unchecked, the file runs from its own values instead.
+    Private Sub ApplyScenarioToControls()
+        _loading = True
+        Try
+            If _scenario.Document IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(_scenario.Document.Path) Then
+                _pdfPath = _scenario.Document.Path
+                lblFile.Text = _pdfPath
+            End If
+            If _scenario.Launch IsNot Nothing Then
+                If _scenario.Launch.NewInstance.HasValue Then chkNewInstance.Checked = _scenario.Launch.NewInstance.Value
+                If _scenario.Launch.NoSplash.HasValue Then chkNoSplash.Checked = _scenario.Launch.NoSplash.Value
+            End If
+            Dim op As OpenParametersConfig = _scenario.OpenParameters
+            If op IsNot Nothing Then
+                If op.Toolbar.HasValue Then chkToolbar.Checked = (op.Toolbar.Value = 0)
+                If op.Navpanes.HasValue Then chkNavpanes.Checked = (op.Navpanes.Value = 0)
+                If op.Statusbar.HasValue Then chkStatusbar.Checked = (op.Statusbar.Value = 0)
+                If op.Messages.HasValue Then chkMessages.Checked = (op.Messages.Value = 0)
+                If op.Scrollbar.HasValue Then chkScrollbar.Checked = (op.Scrollbar.Value = 0)
+                If Not String.IsNullOrWhiteSpace(op.Pagemode) Then
+                    chkPagemodeNone.Checked = String.Equals(op.Pagemode, "none", StringComparison.OrdinalIgnoreCase)
+                End If
+            End If
+            If _scenario.Clip IsNot Nothing Then
+                If _scenario.Clip.Enabled.HasValue Then chkClip.Checked = _scenario.Clip.Enabled.Value
+                If _scenario.Clip.Right.HasValue Then numClipRight.Value = ClampToRange(numClipRight, _scenario.Clip.Right.Value)
+                If _scenario.Clip.Top.HasValue Then numClipTop.Value = ClampToRange(numClipTop, _scenario.Clip.Top.Value)
+            End If
+            If _scenario.UserPrefs IsNot Nothing Then
+                If _scenario.UserPrefs.RestoreOnClose.HasValue Then
+                    chkRestoreOnClose.Checked = _scenario.UserPrefs.RestoreOnClose.Value
+                End If
+                ApplyUserPrefValuesToChecks(_scenario.UserPrefs.Values)
+                SelectComboValue(cboHive, _scenario.UserPrefs.Hive)
+            End If
+            If _scenario.MachinePolicy IsNot Nothing Then
+                SelectComboValue(cboProduct, _scenario.MachinePolicy.Product)
+                ApplyPolicyValuesToChecks(_scenario.MachinePolicy.Values)
+            End If
+        Finally
+            _loading = False
+        End Try
+        RefreshStatusBlock()
+    End Sub
+
+    Private Shared Function ClampToRange(n As NumericUpDown, value As Integer) As Decimal
+        Dim v As Decimal = value
+        If v < n.Minimum Then Return n.Minimum
+        If v > n.Maximum Then Return n.Maximum
+        Return v
+    End Function
+
+    Private Shared Sub SelectComboValue(combo As ComboBox, value As String)
+        If String.IsNullOrWhiteSpace(value) Then Return
+        For i As Integer = 0 To combo.Items.Count - 1
+            If String.Equals(CStr(combo.Items(i)), value, StringComparison.OrdinalIgnoreCase) Then
+                combo.SelectedIndex = i
+                Return
+            End If
+        Next
+    End Sub
+
+    Private Sub ApplyUserPrefValuesToChecks(values As Dictionary(Of String, JsonElement))
+        If values Is Nothing Then Return
+        chkExpandRhp.Checked = values.ContainsKey(AdobeRegistryConstants.ValExpandRhp)
+        chkRhpSticky.Checked = values.ContainsKey(AdobeRegistryConstants.ValRhpSticky)
+        chkRhpCollapsed.Checked = values.ContainsKey(AdobeRegistryConstants.ValRhpViewMode)
+        chkClassicViewer.Checked = values.ContainsKey(AdobeRegistryConstants.ValEnableAv2)
+    End Sub
+
+    Private Sub ApplyPolicyValuesToChecks(values As Dictionary(Of String, JsonElement))
+        If values Is Nothing Then Return
+        chkSuppressUpsell.Checked = values.Keys.Any(
+            Function(k) k.EndsWith(AdobeRegistryConstants.ValSuppressUpsell, StringComparison.OrdinalIgnoreCase))
+        chkDisableServices.Checked = values.Keys.Any(
+            Function(k) k.EndsWith(AdobeRegistryConstants.ValToggleServices, StringComparison.OrdinalIgnoreCase))
+    End Sub
+
+    Private Async Sub btnRunScenario_Click(sender As Object, e As EventArgs) Handles btnRunScenario.Click
+        Try
+            If _scenario Is Nothing Then
+                ShowStatus("Încarcă întâi un scenariu.")
+                Return
+            End If
+            If _scenarioRunning Then
+                ShowStatus("Scenariul rulează deja.")
+                Return
+            End If
+            _scenarioRunning = True
+            btnRunScenario.Enabled = False
+            Try
+                Await RunScenarioAsync()
+            Finally
+                _scenarioRunning = False
+                btnRunScenario.Enabled = True
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnRunScenario_Click", ex)
+            ShowStatus("Eroare la rularea scenariului: " & ex.Message)
+        End Try
+    End Sub
+
+    ' Runs the steps in order. A step that fails stops the run there, logged — no automatic
+    ' rollback, because half-rolled-back state is harder to read than the failure.
+    Private Async Function RunScenarioAsync() As Task
+        Dim steps As List(Of String) = _scenario.Scenario
+        If steps Is Nothing OrElse steps.Count = 0 Then
+            ShowStatus("Scenariul nu conține niciun pas.")
+            Return
+        End If
+
+        ' Registry-touching runs are confirmed ONCE, up front, listing every path and value.
+        Dim touchesUser As Boolean = steps.Contains(HarnessScenarioSteps.ApplyUserPrefs)
+        Dim touchesMachine As Boolean = steps.Contains(HarnessScenarioSteps.ApplyMachinePolicy) AndAlso
+                                        _scenario.MachinePolicy IsNot Nothing AndAlso _scenario.MachinePolicy.Apply
+        If touchesUser OrElse touchesMachine Then
+            If Not ConfirmRegistryWrites(touchesUser, touchesMachine) Then
+                RhpLog("Scenariu abandonat de operator la confirmarea scrierilor în registry.")
+                ShowStatus("Rularea scenariului a fost abandonată.")
+                Return
+            End If
+        End If
+
+        RhpLog($"══ Scenariu «{If(_scenario.Name, Path.GetFileName(If(_scenarioPath, "?")))}» — {steps.Count} pași ══")
+        For Each stepName As String In steps
+            RhpLog($"PAS start: {stepName}")
+            Dim ok As Boolean
+            Try
+                ok = Await RunStepAsync(stepName)
+            Catch ex As Exception
+                GlobalErrorLog.Write("AdobeReaderHarnessForm.RunStepAsync." & stepName, ex)
+                RhpLog($"PAS eșuat: {stepName} — {ex.Message}. Rularea se oprește; starea rămâne ca atare.")
+                ShowStatus($"Scenariu oprit la pasul «{stepName}»: {ex.Message}")
+                Return
+            End Try
+            If Not ok Then
+                RhpLog($"PAS oprit: {stepName} — rularea se oprește; starea rămâne ca atare.")
+                ShowStatus($"Scenariu oprit la pasul «{stepName}».")
+                Return
+            End If
+            RhpLog($"PAS gata: {stepName}")
+        Next
+        RhpLog("══ Scenariu terminat ══")
+        ShowStatus($"Scenariu terminat: {steps.Count} pași.")
+    End Function
+
+    ' Every step maps to the SAME code path as the corresponding button — no step contains new
+    ' logic. An unrecognised name cannot reach here (the reader rejects the file), but it is
+    ' still handled loudly rather than skipped.
+    Private Async Function RunStepAsync(stepName As String) As Task(Of Boolean)
+        Select Case stepName
+            Case HarnessScenarioSteps.ApplyUserPrefs
+                Return ApplyUserPrefsCore()
+
+            Case HarnessScenarioSteps.ApplyMachinePolicy
+                If _scenario.MachinePolicy Is Nothing OrElse Not _scenario.MachinePolicy.Apply Then
+                    RhpLog("applyMachinePolicy: sărit (machinePolicy.apply = false).")
+                    Return True
+                End If
+                Return Await ApplyMachinePolicyCoreAsync()
+
+            Case HarnessScenarioSteps.Launch
+                Dim gen As Integer = StartFreshLaunch()
+                If gen = 0 Then
+                    ShowStatus("Pasul «launch» nu a pornit Adobe (lipsește Adobe sau documentul).")
+                    Return False
+                End If
+                Return True
+
+            Case HarnessScenarioSteps.WaitForEmbed
+                If _pendingProcess Is Nothing Then
+                    RhpLog("waitForEmbed: nu există un proces pornit de pasul «launch».")
+                    Return False
+                End If
+                Await CompleteEmbedAsync(_pendingGeneration, _pendingProcess)
+                Return _hostedWindow <> IntPtr.Zero
+
+            Case HarnessScenarioSteps.SendKeys
+                Return Await SendScenarioKeysAsync()
+
+            Case HarnessScenarioSteps.Probe
+                ProbeChildren()
+                Return True
+
+            Case HarnessScenarioSteps.HideChildren
+                Return Await HideChildrenByTextAsync(_scenario.HideChildren)
+
+            Case HarnessScenarioSteps.ApplyClip
+                ApplyScenarioClip()
+                Return True
+
+            Case HarnessScenarioSteps.RestoreUserPrefs
+                Return RestoreUserPrefsCore()
+
+            Case HarnessScenarioSteps.RevertMachinePolicy
+                Return Await RevertMachinePolicyCoreAsync()
+
+            Case Else
+                RhpLog($"Pas necunoscut «{stepName}». Pași valizi: {HarnessScenarioSteps.AllAsText()}.")
+                Return False
+        End Select
+    End Function
+
+    Private Async Function SendScenarioKeysAsync() As Task(Of Boolean)
+        If _scenario.Keys Is Nothing OrElse _scenario.Keys.Count = 0 Then
+            RhpLog("sendKeys: lista «keys» este goală — nimic de trimis.")
+            Return True
+        End If
+        For Each k As KeyStepConfig In _scenario.Keys
+            If k Is Nothing OrElse String.IsNullOrWhiteSpace(k.Send) Then Continue For
+            If k.DelayMsBefore.HasValue AndAlso k.DelayMsBefore.Value > 0 Then
+                Await Task.Delay(k.DelayMsBefore.Value)
+            End If
+            SendKeyToHosted(ToSendKeysSyntax(k.Send), k.Send)
+        Next
+        Return True
+    End Function
+
+    ' Sets the clip values from the scenario (when it carries a clip section) and applies the
+    ' geometry — the same path the spinners use, no relaunch.
+    Private Sub ApplyScenarioClip()
+        Dim c As ClipConfig = _scenario.Clip
+        If c IsNot Nothing Then
+            _loading = True
+            Try
+                If c.Right.HasValue Then numClipRight.Value = ClampToRange(numClipRight, c.Right.Value)
+                If c.Top.HasValue Then numClipTop.Value = ClampToRange(numClipTop, c.Top.Value)
+                If c.Enabled.HasValue Then chkClip.Checked = c.Enabled.Value
+            Finally
+                _loading = False
+            End Try
+        End If
+        LayoutHostedWindow()
+        NudgeRedraw()
+        RhpLog($"applyClip: activă={chkClip.Checked}, dreapta={CInt(numClipRight.Value)}px, sus={CInt(numClipTop.Value)}px.")
+        RefreshStatusBlock()
+    End Sub
+
+    ' Lists every registry path and value that will be written, current value beside the new one.
+    ' Cancel abandons the whole run, not just the step.
+    Private Function ConfirmRegistryWrites(userPrefs As Boolean, machinePolicy As Boolean) As Boolean
+        Try
+            Dim sb As New StringBuilder()
+            If userPrefs Then
+                Dim hive As String = CurrentAvGeneralPath()
+                Dim prefs As List(Of UserPrefWrite) = CollectUserPrefs()
+                If prefs.Count > 0 Then
+                    sb.AppendLine("HKCU — preferințe utilizator:")
+                    For Each p As UserPrefWrite In prefs
+                        Dim cur As RegistryValueSnapshot = _regAccess.Read(hive, p.Name)
+                        Dim curText As String = If(cur.Presence = RegPresence.Absent, "<absent>", CStr(cur.Value))
+                        sb.AppendLine($"  {hive}\{p.Name}: {curText} -> {p.Value}")
+                    Next
+                End If
+            End If
+            If machinePolicy Then
+                Dim product As String = CurrentPolicyProduct()
+                Dim entries As List(Of PolicyEntry) = CollectPolicyEntries(product)
+                If entries.Count > 0 Then
+                    If sb.Length > 0 Then sb.AppendLine()
+                    sb.AppendLine("HKLM — politici de mașină (cer elevare):")
+                    For Each en As PolicyEntry In entries
+                        Dim cur As RegistryValueSnapshot = _regAccess.Read(en.SectionPath, en.Name)
+                        Dim curText As String = If(cur.Presence = RegPresence.Absent, "<absent>", CStr(cur.Value))
+                        sb.AppendLine($"  {en.SectionPath}\{en.Name}: {curText} -> {en.Value}")
+                    Next
+                End If
+            End If
+            If sb.Length = 0 Then Return True
+
+            Dim r As DialogResult = MessageBox.Show(Me,
+                "Se vor scrie următoarele valori în registry:" & Environment.NewLine & Environment.NewLine &
+                sb.ToString() & Environment.NewLine &
+                "Continui?",
+                "K-BOT — confirmare scriere registry", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning)
+            If r <> DialogResult.OK Then
+                RhpLog("Scriere registry refuzată de operator la confirmare.")
+                Return False
+            End If
+            RhpLog("Operatorul a confirmat scrierile în registry:" & Environment.NewLine & sb.ToString())
+            Return True
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.ConfirmRegistryWrites", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Writes the CURRENT state of every control back out in the same schema, including the text of
+    ' any child windows hidden right now. This is the round trip that matters: find a combination
+    ' by hand, save it, send it, re-run it, try it on another machine.
+    Private Sub btnSaveScenario_Click(sender As Object, e As EventArgs) Handles btnSaveScenario.Click
+        Try
+            Dim dir As String = ConfigDir()
+            Directory.CreateDirectory(dir)
+            Using dlg As New System.Windows.Forms.SaveFileDialog()
+                dlg.Filter = "Scenarii K-BOT (*.json)|*.json|Toate fișierele (*.*)|*.*"
+                dlg.Title = "Salvează starea curentă ca scenariu"
+                dlg.InitialDirectory = dir
+                dlg.FileName = "scenariu_adobe.json"
+                If dlg.ShowDialog(Me) <> DialogResult.OK Then Return
+                Dim json As String = HarnessScenarioWriter.Write(BuildScenarioFromControls())
+                File.WriteAllText(dlg.FileName, json, New UTF8Encoding(False))
+                RhpLog($"Scenariu salvat: {dlg.FileName}")
+                ShowStatus("Scenariu salvat: " & Path.GetFileName(dlg.FileName))
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnSaveScenario_Click", ex)
+            ShowStatus("Eroare la salvarea scenariului: " & ex.Message)
+        End Try
+    End Sub
+
+    Private Function BuildScenarioFromControls() As HarnessScenario
+        Dim s As New HarnessScenario() With {
+            .Schema = HarnessScenarioReader.SupportedSchema,
+            .Name = "Stare salvată din bancul de probă",
+            .Note = "Generat automat din controalele bancului la " & DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") & "."
+        }
+
+        Dim pdf As String = EffectivePdfPath()
+        If Not String.IsNullOrWhiteSpace(pdf) Then s.Document = New DocumentConfig() With {.Path = pdf}
+
+        s.Launch = New LaunchConfig() With {
+            .NewInstance = chkNewInstance.Checked,
+            .NoSplash = chkNoSplash.Checked}
+
+        Dim op As New OpenParametersConfig()
+        If chkToolbar.Checked Then op.Toolbar = 0
+        If chkNavpanes.Checked Then op.Navpanes = 0
+        If chkStatusbar.Checked Then op.Statusbar = 0
+        If chkMessages.Checked Then op.Messages = 0
+        If chkScrollbar.Checked Then op.Scrollbar = 0
+        If chkPagemodeNone.Checked Then op.Pagemode = "none"
+        s.OpenParameters = op
+
+        s.Clip = New ClipConfig() With {
+            .Enabled = chkClip.Checked,
+            .Right = CInt(numClipRight.Value),
+            .Top = CInt(numClipTop.Value)}
+
+        If _hiddenChildTexts.Count > 0 Then
+            s.HideChildren = New HideChildrenConfig() With {
+                .ByText = New List(Of String)(_hiddenChildTexts),
+                .ReapplyOnRelaunch = True,
+                .ReapplyAttempts = HideChildrenConfig.DefaultReapplyAttempts,
+                .ReapplyIntervalMs = HideChildrenConfig.DefaultReapplyIntervalMs}
+        End If
+
+        Dim prefValues As New Dictionary(Of String, JsonElement)()
+        For Each p As UserPrefWrite In CollectTickedUserPrefs()
+            prefValues(p.Name) = ToJsonElement(p.Value)
+        Next
+        If prefValues.Count > 0 Then
+            s.UserPrefs = New UserPrefsConfig() With {
+                .Hive = CStr(If(cboHive.SelectedItem, "auto")),
+                .Values = prefValues,
+                .RestoreOnClose = chkRestoreOnClose.Checked}
+        End If
+
+        Dim policyValues As New Dictionary(Of String, JsonElement)()
+        If chkSuppressUpsell.Checked Then
+            policyValues(AdobeRegistryConstants.ValSuppressUpsell) = ToJsonElement(1)
+        End If
+        If chkDisableServices.Checked Then
+            policyValues("cServices\" & AdobeRegistryConstants.ValToggleServices) = ToJsonElement(1)
+        End If
+        If policyValues.Count > 0 Then
+            ' apply stays FALSE on save: a saved file must never write machine-wide policy just
+            ' by being run somewhere else.
+            s.MachinePolicy = New MachinePolicyConfig() With {
+                .Product = CStr(If(cboProduct.SelectedItem, "auto")),
+                .Apply = False,
+                .Values = policyValues}
+        End If
+
+        s.Scenario = BuildDefaultStepList(s)
+        Return s
+    End Function
+
+    ' The step list a saved file replays: exactly what the current state implies, in the order the
+    ' operator would have clicked.
+    Private Function BuildDefaultStepList(s As HarnessScenario) As List(Of String)
+        Dim steps As New List(Of String)()
+        steps.Add(HarnessScenarioSteps.Launch)
+        steps.Add(HarnessScenarioSteps.WaitForEmbed)
+        If s.HideChildren IsNot Nothing Then
+            steps.Add(HarnessScenarioSteps.Probe)
+            steps.Add(HarnessScenarioSteps.HideChildren)
+        Else
+            steps.Add(HarnessScenarioSteps.Probe)
+        End If
+        If chkClip.Checked Then steps.Add(HarnessScenarioSteps.ApplyClip)
+        Return steps
+    End Function
+
+    Private Shared Function ToJsonElement(value As Object) As JsonElement
+        Return JsonSerializer.SerializeToElement(value)
+    End Function
+
+    Private Shared Function ConfigDir() As String
+        Return Path.Combine(AppContext.BaseDirectory, CONFIG_DIR_NAME)
+    End Function
+
     ' ── Stare / activare ────────────────────────────────────────────────────────
-    ' §3.G: lblStatus always shows the effective state of all four levers in one block, with the
-    ' last action message underneath. Never throws (called from ctor and catch paths).
+    ' lblStatus always shows the effective state of all four levers in one block, with the last
+    ' action message underneath. Never throws (called from the ctor and from catch paths).
     Private Sub RefreshStatusBlock()
         Try
             Dim hive As String
@@ -1051,15 +1791,18 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 hive = "?"
             End Try
             Dim sb As New StringBuilder()
-            sb.AppendLine("Hive HKCU: " & hive)
-            sb.AppendLine("Decupare: " & If(chkClip.Checked,
+            sb.Append("Hive HKCU: ").Append(hive)
+            sb.Append("  ·  Decupare: ").Append(If(chkClip.Checked,
                 $"activă (dreapta={CInt(numClipRight.Value)}px, sus={CInt(numClipTop.Value)}px)", "inactivă"))
-            sb.AppendLine("Ferestre copil ascunse: " & _hiddenChildren.Count.ToString())
-            sb.AppendLine("HKCU aplicat: " & If(_userValuesApplied.Count > 0,
-                String.Join(", ", _userValuesApplied), "—"))
-            sb.AppendLine("Politică HKLM aplicată în sesiune: " & If(_machinePolicyApplied, "da", "nu"))
+            sb.Append("  ·  Copii ascunși: ").Append(_hiddenChildren.Count.ToString())
+            If _hiddenChildTexts.Count > 0 Then sb.Append(" [").Append(String.Join(", ", _hiddenChildTexts)).Append("]")
+            sb.AppendLine()
+            sb.Append("HKCU aplicat: ").Append(If(_userValuesApplied.Count > 0, String.Join(", ", _userValuesApplied), "—"))
+            sb.Append("  ·  Politică HKLM în sesiune: ").Append(If(_machinePolicyApplied, "da", "nu"))
+            sb.Append("  ·  Scenariu: ").Append(If(_scenario Is Nothing, "(niciunul)",
+                If(_scenario.Name, Path.GetFileName(If(_scenarioPath, "?")))))
             If _lastMessage.Length > 0 Then
-                sb.AppendLine("―")
+                sb.AppendLine()
                 sb.Append(_lastMessage)
             End If
             lblStatus.Text = sb.ToString()
@@ -1073,15 +1816,13 @@ Public NotInheritable Class AdobeReaderHarnessForm
         RefreshStatusBlock()
     End Sub
 
-    ' Everything interactive lives in flowLeft — disable it wholesale when Adobe is absent
-    ' (labels included, harmless). Pass/Fail (pnlButtons) stay usable.
+    ' Everything interactive lives in the options panel — disable it wholesale when Adobe is
+    ' absent. Pass/Fail (pnlButtons) stay usable.
     Private Sub SetControlsEnabled(enabled As Boolean)
-        For Each c As Control In flowLeft.Controls
-            c.Enabled = enabled
-        Next
+        tlpOptions.Enabled = enabled
     End Sub
 
-    ' Hosted-window-dependent buttons (§3.A/§3.C/§3.D) + the probe-fed auto-measure (§3.B).
+    ' Hosted-window-dependent buttons + the probe-fed auto-measure.
     Private Sub UpdateActionStates()
         If String.IsNullOrEmpty(_adobePath) Then Return
         Dim hosted As Boolean = _hostedWindow <> IntPtr.Zero
@@ -1092,11 +1833,11 @@ Public NotInheritable Class AdobeReaderHarnessForm
         btnShowChild.Enabled = hosted AndAlso lstChildren.Items.Count > 0
         btnShowAllChildren.Enabled = _hiddenChildren.Count > 0
         btnClipAuto.Enabled = _probeCandidateWidth > 0
+        btnRunScenario.Enabled = _scenario IsNot Nothing AndAlso Not _scenarioRunning
     End Sub
 
     ' Timestamped tee: context log + AppDir\Logs\test_adobe_rhp.log (appended, never
-    ' overwritten — the log is a deliverable of this slice). Failures propagate to the wrapped
-    ' handler boundary (transitive coverage).
+    ' overwritten — the log is a deliverable of this slice).
     Private Sub RhpLog(line As String)
         _log(line)
         Dim dir As String = Path.Combine(AppContext.BaseDirectory, "Logs")

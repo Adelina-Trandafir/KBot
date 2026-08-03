@@ -2,37 +2,64 @@
 Partial Class AdobeReaderHarnessForm
     Inherits KBot.Theming.KBotThemedForm
 
-    ' Adobe embed test bench (slice 0023 extends the original switches bench): a host panel
-    ' (Fill) that reparents the Adobe Reader/Acrobat DC window, and a left strip exposing every
-    ' lever the operator can judge: /A open parameters (document chrome), the child-window probe,
-    ' geometry clipping, direct child hiding, keyboard shortcuts, HKCU preferences and HKLM
-    ' policies (the four candidate levers against the right-hand Tools pane). House rule: ALL
-    ' WinForms controls are declared here, in .Designer.vb.
+    ' Adobe embed test bench. Layout (slice 0023, config+layout pass): a vertical SplitContainer
+    ' the operator can drag at runtime — Panel1 holds the options as one GroupBox + TableLayoutPanel
+    ' per section stacked in a scrolling TableLayoutPanel, Panel2 holds the Adobe host (100%) over
+    ' the status line (AutoSize). Everything docks, so controls follow the form and the Adobe area
+    ' can be traded against the options area. House rule: ALL WinForms controls are declared here,
+    ' in .Designer.vb — including the SplitContainer and every TableLayoutPanel, so the layout stays
+    ' editable in the designer.
 
+    Private components As System.ComponentModel.IContainer
+
+    Friend WithEvents splitMain As System.Windows.Forms.SplitContainer
+    Friend WithEvents tlpOptions As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpRight As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents pnlHost As System.Windows.Forms.Panel
+    Friend WithEvents lblStatus As System.Windows.Forms.Label
+    ' Debounce for resize/splitter storms — Adobe repaints late and badly during them.
+    Friend WithEvents tmrLayout As System.Windows.Forms.Timer
 
-    Friend WithEvents flowLeft As System.Windows.Forms.FlowLayoutPanel
-    Friend WithEvents lblSecLaunch As System.Windows.Forms.Label
+    ' Lansare
+    Friend WithEvents grpLaunch As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpLaunch As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents chkNewInstance As System.Windows.Forms.CheckBox
     Friend WithEvents chkNoSplash As System.Windows.Forms.CheckBox
-    Friend WithEvents lblSecChrome As System.Windows.Forms.Label
+
+    ' Chrome ascuns (parametri /A)
+    Friend WithEvents grpChrome As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpChrome As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents chkToolbar As System.Windows.Forms.CheckBox
     Friend WithEvents chkNavpanes As System.Windows.Forms.CheckBox
     Friend WithEvents chkStatusbar As System.Windows.Forms.CheckBox
     Friend WithEvents chkMessages As System.Windows.Forms.CheckBox
     Friend WithEvents chkScrollbar As System.Windows.Forms.CheckBox
     Friend WithEvents chkPagemodeNone As System.Windows.Forms.CheckBox
-    Friend WithEvents lblSecFile As System.Windows.Forms.Label
+
+    ' Document
+    Friend WithEvents grpFile As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpFile As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents btnBrowse As System.Windows.Forms.Button
     Friend WithEvents lblFile As System.Windows.Forms.Label
     Friend WithEvents btnRelaunch As System.Windows.Forms.Button
 
-    ' §3.A Diagnostic — the child window probe.
-    Friend WithEvents lblSecProbe As System.Windows.Forms.Label
+    ' Diagnostic — the child window probe.
+    Friend WithEvents grpProbe As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpProbe As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents btnProbe As System.Windows.Forms.Button
 
-    ' §3.B Decupare — geometry clipping (live, no relaunch).
-    Friend WithEvents lblSecClip As System.Windows.Forms.Label
+    ' Scenariu — load / run / save a scenario file (JSON, AppDir\Config).
+    Friend WithEvents grpScenario As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpScenario As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents lblScenario As System.Windows.Forms.Label
+    Friend WithEvents btnLoadScenario As System.Windows.Forms.Button
+    Friend WithEvents btnRunScenario As System.Windows.Forms.Button
+    Friend WithEvents btnSaveScenario As System.Windows.Forms.Button
+    Friend WithEvents chkApplyOnLoad As System.Windows.Forms.CheckBox
+
+    ' Decupare — geometry clipping (live, no relaunch).
+    Friend WithEvents grpClip As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpClip As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents chkClip As System.Windows.Forms.CheckBox
     Friend WithEvents lblClipRight As System.Windows.Forms.Label
     Friend WithEvents numClipRight As System.Windows.Forms.NumericUpDown
@@ -40,20 +67,23 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents numClipTop As System.Windows.Forms.NumericUpDown
     Friend WithEvents btnClipAuto As System.Windows.Forms.Button
 
-    ' §3.C Ferestre copil — hide a child window directly.
-    Friend WithEvents lblSecChildren As System.Windows.Forms.Label
+    ' Ferestre copil — hide a child window directly.
+    Friend WithEvents grpChildren As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpChildren As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents lstChildren As System.Windows.Forms.ListBox
     Friend WithEvents btnHideChild As System.Windows.Forms.Button
     Friend WithEvents btnShowChild As System.Windows.Forms.Button
     Friend WithEvents btnShowAllChildren As System.Windows.Forms.Button
 
-    ' §3.D Scurtături — keyboard toggles (experimental).
-    Friend WithEvents lblSecKeys As System.Windows.Forms.Label
+    ' Scurtături — keyboard toggles (experimental).
+    Friend WithEvents grpKeys As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpKeys As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents btnSendShiftF4 As System.Windows.Forms.Button
     Friend WithEvents btnSendF4 As System.Windows.Forms.Button
 
-    ' §3.E Preferințe Adobe (utilizator) — HKCU, no elevation.
-    Friend WithEvents lblSecUser As System.Windows.Forms.Label
+    ' Preferințe Adobe (utilizator) — HKCU, no elevation.
+    Friend WithEvents grpUser As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpUser As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents lblHive As System.Windows.Forms.Label
     Friend WithEvents cboHive As System.Windows.Forms.ComboBox
     Friend WithEvents chkExpandRhp As System.Windows.Forms.CheckBox
@@ -64,252 +94,946 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents btnRestoreUser As System.Windows.Forms.Button
     Friend WithEvents chkRestoreOnClose As System.Windows.Forms.CheckBox
 
-    ' §3.F Politici Adobe (mașină) — HKLM via elevated reg.exe import.
-    Friend WithEvents lblSecMachine As System.Windows.Forms.Label
+    ' Politici Adobe (mașină) — HKLM via elevated reg.exe import.
+    Friend WithEvents grpMachine As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpMachine As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents cboProduct As System.Windows.Forms.ComboBox
     Friend WithEvents chkSuppressUpsell As System.Windows.Forms.CheckBox
     Friend WithEvents chkDisableServices As System.Windows.Forms.CheckBox
     Friend WithEvents btnApplyMachine As System.Windows.Forms.Button
     Friend WithEvents btnRevertMachine As System.Windows.Forms.Button
 
-    Friend WithEvents lblSecCmd As System.Windows.Forms.Label
-    Friend WithEvents lblCmd As System.Windows.Forms.Label
-    Friend WithEvents lblSecStatus As System.Windows.Forms.Label
-    Friend WithEvents lblStatus As System.Windows.Forms.Label
+    ' Linie de comandă — the one control that must not collapse when the splitter goes narrow.
+    Friend WithEvents grpCmd As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpCmd As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents txtCmd As System.Windows.Forms.TextBox
 
     Friend WithEvents pnlButtons As System.Windows.Forms.FlowLayoutPanel
     Friend WithEvents btnFail As System.Windows.Forms.Button
     Friend WithEvents btnPass As System.Windows.Forms.Button
 
+    Protected Overrides Sub Dispose(disposing As Boolean)
+        Try
+            If disposing AndAlso components IsNot Nothing Then components.Dispose()
+        Finally
+            MyBase.Dispose(disposing)
+        End Try
+    End Sub
+
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        Me.pnlHost = New System.Windows.Forms.Panel()
-        Me.flowLeft = New System.Windows.Forms.FlowLayoutPanel()
-        Me.lblSecLaunch = New System.Windows.Forms.Label()
-        Me.chkNewInstance = New System.Windows.Forms.CheckBox()
-        Me.chkNoSplash = New System.Windows.Forms.CheckBox()
-        Me.lblSecChrome = New System.Windows.Forms.Label()
-        Me.chkToolbar = New System.Windows.Forms.CheckBox()
-        Me.chkNavpanes = New System.Windows.Forms.CheckBox()
-        Me.chkStatusbar = New System.Windows.Forms.CheckBox()
-        Me.chkMessages = New System.Windows.Forms.CheckBox()
-        Me.chkScrollbar = New System.Windows.Forms.CheckBox()
-        Me.chkPagemodeNone = New System.Windows.Forms.CheckBox()
-        Me.lblSecFile = New System.Windows.Forms.Label()
-        Me.btnBrowse = New System.Windows.Forms.Button()
-        Me.lblFile = New System.Windows.Forms.Label()
-        Me.btnRelaunch = New System.Windows.Forms.Button()
-        Me.lblSecProbe = New System.Windows.Forms.Label()
-        Me.btnProbe = New System.Windows.Forms.Button()
-        Me.lblSecClip = New System.Windows.Forms.Label()
-        Me.chkClip = New System.Windows.Forms.CheckBox()
-        Me.lblClipRight = New System.Windows.Forms.Label()
-        Me.numClipRight = New System.Windows.Forms.NumericUpDown()
-        Me.lblClipTop = New System.Windows.Forms.Label()
-        Me.numClipTop = New System.Windows.Forms.NumericUpDown()
-        Me.btnClipAuto = New System.Windows.Forms.Button()
-        Me.lblSecChildren = New System.Windows.Forms.Label()
-        Me.lstChildren = New System.Windows.Forms.ListBox()
-        Me.btnHideChild = New System.Windows.Forms.Button()
-        Me.btnShowChild = New System.Windows.Forms.Button()
-        Me.btnShowAllChildren = New System.Windows.Forms.Button()
-        Me.lblSecKeys = New System.Windows.Forms.Label()
-        Me.btnSendShiftF4 = New System.Windows.Forms.Button()
-        Me.btnSendF4 = New System.Windows.Forms.Button()
-        Me.lblSecUser = New System.Windows.Forms.Label()
-        Me.lblHive = New System.Windows.Forms.Label()
-        Me.cboHive = New System.Windows.Forms.ComboBox()
-        Me.chkExpandRhp = New System.Windows.Forms.CheckBox()
-        Me.chkRhpSticky = New System.Windows.Forms.CheckBox()
-        Me.chkRhpCollapsed = New System.Windows.Forms.CheckBox()
-        Me.chkClassicViewer = New System.Windows.Forms.CheckBox()
-        Me.btnApplyUser = New System.Windows.Forms.Button()
-        Me.btnRestoreUser = New System.Windows.Forms.Button()
-        Me.chkRestoreOnClose = New System.Windows.Forms.CheckBox()
-        Me.lblSecMachine = New System.Windows.Forms.Label()
-        Me.cboProduct = New System.Windows.Forms.ComboBox()
-        Me.chkSuppressUpsell = New System.Windows.Forms.CheckBox()
-        Me.chkDisableServices = New System.Windows.Forms.CheckBox()
-        Me.btnApplyMachine = New System.Windows.Forms.Button()
-        Me.btnRevertMachine = New System.Windows.Forms.Button()
-        Me.lblSecCmd = New System.Windows.Forms.Label()
-        Me.lblCmd = New System.Windows.Forms.Label()
-        Me.lblSecStatus = New System.Windows.Forms.Label()
-        Me.lblStatus = New System.Windows.Forms.Label()
-        Me.pnlButtons = New System.Windows.Forms.FlowLayoutPanel()
-        Me.btnFail = New System.Windows.Forms.Button()
-        Me.btnPass = New System.Windows.Forms.Button()
-        Me.flowLeft.SuspendLayout()
-        Me.pnlButtons.SuspendLayout()
-        CType(Me.numClipRight, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(Me.numClipTop, System.ComponentModel.ISupportInitialize).BeginInit()
-        Me.SuspendLayout()
+        components = New System.ComponentModel.Container()
+        splitMain = New System.Windows.Forms.SplitContainer()
+        tlpOptions = New System.Windows.Forms.TableLayoutPanel()
+        tlpRight = New System.Windows.Forms.TableLayoutPanel()
+        pnlHost = New System.Windows.Forms.Panel()
+        lblStatus = New System.Windows.Forms.Label()
+        tmrLayout = New System.Windows.Forms.Timer(components)
+        grpLaunch = New System.Windows.Forms.GroupBox()
+        tlpLaunch = New System.Windows.Forms.TableLayoutPanel()
+        chkNewInstance = New System.Windows.Forms.CheckBox()
+        chkNoSplash = New System.Windows.Forms.CheckBox()
+        grpChrome = New System.Windows.Forms.GroupBox()
+        tlpChrome = New System.Windows.Forms.TableLayoutPanel()
+        chkToolbar = New System.Windows.Forms.CheckBox()
+        chkNavpanes = New System.Windows.Forms.CheckBox()
+        chkStatusbar = New System.Windows.Forms.CheckBox()
+        chkMessages = New System.Windows.Forms.CheckBox()
+        chkScrollbar = New System.Windows.Forms.CheckBox()
+        chkPagemodeNone = New System.Windows.Forms.CheckBox()
+        grpFile = New System.Windows.Forms.GroupBox()
+        tlpFile = New System.Windows.Forms.TableLayoutPanel()
+        btnBrowse = New System.Windows.Forms.Button()
+        lblFile = New System.Windows.Forms.Label()
+        btnRelaunch = New System.Windows.Forms.Button()
+        grpProbe = New System.Windows.Forms.GroupBox()
+        tlpProbe = New System.Windows.Forms.TableLayoutPanel()
+        btnProbe = New System.Windows.Forms.Button()
+        grpScenario = New System.Windows.Forms.GroupBox()
+        tlpScenario = New System.Windows.Forms.TableLayoutPanel()
+        lblScenario = New System.Windows.Forms.Label()
+        btnLoadScenario = New System.Windows.Forms.Button()
+        btnRunScenario = New System.Windows.Forms.Button()
+        btnSaveScenario = New System.Windows.Forms.Button()
+        chkApplyOnLoad = New System.Windows.Forms.CheckBox()
+        grpClip = New System.Windows.Forms.GroupBox()
+        tlpClip = New System.Windows.Forms.TableLayoutPanel()
+        chkClip = New System.Windows.Forms.CheckBox()
+        lblClipRight = New System.Windows.Forms.Label()
+        numClipRight = New System.Windows.Forms.NumericUpDown()
+        lblClipTop = New System.Windows.Forms.Label()
+        numClipTop = New System.Windows.Forms.NumericUpDown()
+        btnClipAuto = New System.Windows.Forms.Button()
+        grpChildren = New System.Windows.Forms.GroupBox()
+        tlpChildren = New System.Windows.Forms.TableLayoutPanel()
+        lstChildren = New System.Windows.Forms.ListBox()
+        btnHideChild = New System.Windows.Forms.Button()
+        btnShowChild = New System.Windows.Forms.Button()
+        btnShowAllChildren = New System.Windows.Forms.Button()
+        grpKeys = New System.Windows.Forms.GroupBox()
+        tlpKeys = New System.Windows.Forms.TableLayoutPanel()
+        btnSendShiftF4 = New System.Windows.Forms.Button()
+        btnSendF4 = New System.Windows.Forms.Button()
+        grpUser = New System.Windows.Forms.GroupBox()
+        tlpUser = New System.Windows.Forms.TableLayoutPanel()
+        lblHive = New System.Windows.Forms.Label()
+        cboHive = New System.Windows.Forms.ComboBox()
+        chkExpandRhp = New System.Windows.Forms.CheckBox()
+        chkRhpSticky = New System.Windows.Forms.CheckBox()
+        chkRhpCollapsed = New System.Windows.Forms.CheckBox()
+        chkClassicViewer = New System.Windows.Forms.CheckBox()
+        btnApplyUser = New System.Windows.Forms.Button()
+        btnRestoreUser = New System.Windows.Forms.Button()
+        chkRestoreOnClose = New System.Windows.Forms.CheckBox()
+        grpMachine = New System.Windows.Forms.GroupBox()
+        tlpMachine = New System.Windows.Forms.TableLayoutPanel()
+        cboProduct = New System.Windows.Forms.ComboBox()
+        chkSuppressUpsell = New System.Windows.Forms.CheckBox()
+        chkDisableServices = New System.Windows.Forms.CheckBox()
+        btnApplyMachine = New System.Windows.Forms.Button()
+        btnRevertMachine = New System.Windows.Forms.Button()
+        grpCmd = New System.Windows.Forms.GroupBox()
+        tlpCmd = New System.Windows.Forms.TableLayoutPanel()
+        txtCmd = New System.Windows.Forms.TextBox()
+        pnlButtons = New System.Windows.Forms.FlowLayoutPanel()
+        btnPass = New System.Windows.Forms.Button()
+        btnFail = New System.Windows.Forms.Button()
+        CType(splitMain, System.ComponentModel.ISupportInitialize).BeginInit()
+        splitMain.Panel1.SuspendLayout()
+        splitMain.Panel2.SuspendLayout()
+        splitMain.SuspendLayout()
+        tlpOptions.SuspendLayout()
+        tlpRight.SuspendLayout()
+        grpLaunch.SuspendLayout()
+        tlpLaunch.SuspendLayout()
+        grpChrome.SuspendLayout()
+        tlpChrome.SuspendLayout()
+        grpFile.SuspendLayout()
+        tlpFile.SuspendLayout()
+        grpProbe.SuspendLayout()
+        tlpProbe.SuspendLayout()
+        grpScenario.SuspendLayout()
+        tlpScenario.SuspendLayout()
+        grpClip.SuspendLayout()
+        tlpClip.SuspendLayout()
+        CType(numClipRight, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(numClipTop, System.ComponentModel.ISupportInitialize).BeginInit()
+        grpChildren.SuspendLayout()
+        tlpChildren.SuspendLayout()
+        grpKeys.SuspendLayout()
+        tlpKeys.SuspendLayout()
+        grpUser.SuspendLayout()
+        tlpUser.SuspendLayout()
+        grpMachine.SuspendLayout()
+        tlpMachine.SuspendLayout()
+        grpCmd.SuspendLayout()
+        tlpCmd.SuspendLayout()
+        pnlButtons.SuspendLayout()
+        SuspendLayout()
         '
-        'pnlHost — gazda ferestrei Adobe reparentate
+        ' splitMain — dragged at runtime; both sides share the growth (FixedPanel = None)
         '
-        Me.pnlHost.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlHost.Name = "pnlHost"
+        splitMain.Dock = System.Windows.Forms.DockStyle.Fill
+        splitMain.FixedPanel = System.Windows.Forms.FixedPanel.None
+        splitMain.IsSplitterFixed = False
+        splitMain.Location = New System.Drawing.Point(0, 0)
+        splitMain.Name = "splitMain"
+        splitMain.Orientation = System.Windows.Forms.Orientation.Vertical
+        splitMain.Panel1.Controls.Add(tlpOptions)
+        splitMain.Panel1MinSize = 260
+        splitMain.Panel2.Controls.Add(tlpRight)
+        splitMain.Panel2MinSize = 200
+        splitMain.Size = New System.Drawing.Size(1240, 727)
+        splitMain.SplitterDistance = 320
+        splitMain.SplitterWidth = 6
+        splitMain.TabIndex = 0
         '
-        'flowLeft — banda de comutatoare (derulabilă)
+        ' tlpOptions — one AutoSize row per section, plus a filler row so sections stay top-aligned
         '
-        Me.flowLeft.Dock = System.Windows.Forms.DockStyle.Left
-        Me.flowLeft.Width = 360
-        Me.flowLeft.AutoScroll = True
-        Me.flowLeft.FlowDirection = System.Windows.Forms.FlowDirection.TopDown
-        Me.flowLeft.WrapContents = False
-        Me.flowLeft.Padding = New System.Windows.Forms.Padding(8)
-        Me.flowLeft.Name = "flowLeft"
-        Me.flowLeft.Controls.Add(Me.lblSecLaunch)
-        Me.flowLeft.Controls.Add(Me.chkNewInstance)
-        Me.flowLeft.Controls.Add(Me.chkNoSplash)
-        Me.flowLeft.Controls.Add(Me.lblSecChrome)
-        Me.flowLeft.Controls.Add(Me.chkToolbar)
-        Me.flowLeft.Controls.Add(Me.chkNavpanes)
-        Me.flowLeft.Controls.Add(Me.chkStatusbar)
-        Me.flowLeft.Controls.Add(Me.chkMessages)
-        Me.flowLeft.Controls.Add(Me.chkScrollbar)
-        Me.flowLeft.Controls.Add(Me.chkPagemodeNone)
-        Me.flowLeft.Controls.Add(Me.lblSecFile)
-        Me.flowLeft.Controls.Add(Me.btnBrowse)
-        Me.flowLeft.Controls.Add(Me.lblFile)
-        Me.flowLeft.Controls.Add(Me.btnRelaunch)
-        Me.flowLeft.Controls.Add(Me.lblSecProbe)
-        Me.flowLeft.Controls.Add(Me.btnProbe)
-        Me.flowLeft.Controls.Add(Me.lblSecClip)
-        Me.flowLeft.Controls.Add(Me.chkClip)
-        Me.flowLeft.Controls.Add(Me.lblClipRight)
-        Me.flowLeft.Controls.Add(Me.numClipRight)
-        Me.flowLeft.Controls.Add(Me.lblClipTop)
-        Me.flowLeft.Controls.Add(Me.numClipTop)
-        Me.flowLeft.Controls.Add(Me.btnClipAuto)
-        Me.flowLeft.Controls.Add(Me.lblSecChildren)
-        Me.flowLeft.Controls.Add(Me.lstChildren)
-        Me.flowLeft.Controls.Add(Me.btnHideChild)
-        Me.flowLeft.Controls.Add(Me.btnShowChild)
-        Me.flowLeft.Controls.Add(Me.btnShowAllChildren)
-        Me.flowLeft.Controls.Add(Me.lblSecKeys)
-        Me.flowLeft.Controls.Add(Me.btnSendShiftF4)
-        Me.flowLeft.Controls.Add(Me.btnSendF4)
-        Me.flowLeft.Controls.Add(Me.lblSecUser)
-        Me.flowLeft.Controls.Add(Me.lblHive)
-        Me.flowLeft.Controls.Add(Me.cboHive)
-        Me.flowLeft.Controls.Add(Me.chkExpandRhp)
-        Me.flowLeft.Controls.Add(Me.chkRhpSticky)
-        Me.flowLeft.Controls.Add(Me.chkRhpCollapsed)
-        Me.flowLeft.Controls.Add(Me.chkClassicViewer)
-        Me.flowLeft.Controls.Add(Me.btnApplyUser)
-        Me.flowLeft.Controls.Add(Me.btnRestoreUser)
-        Me.flowLeft.Controls.Add(Me.chkRestoreOnClose)
-        Me.flowLeft.Controls.Add(Me.lblSecMachine)
-        Me.flowLeft.Controls.Add(Me.cboProduct)
-        Me.flowLeft.Controls.Add(Me.chkSuppressUpsell)
-        Me.flowLeft.Controls.Add(Me.chkDisableServices)
-        Me.flowLeft.Controls.Add(Me.btnApplyMachine)
-        Me.flowLeft.Controls.Add(Me.btnRevertMachine)
-        Me.flowLeft.Controls.Add(Me.lblSecCmd)
-        Me.flowLeft.Controls.Add(Me.lblCmd)
-        Me.flowLeft.Controls.Add(Me.lblSecStatus)
-        Me.flowLeft.Controls.Add(Me.lblStatus)
+        tlpOptions.AutoScroll = True
+        tlpOptions.ColumnCount = 1
+        tlpOptions.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpOptions.Controls.Add(grpLaunch, 0, 0)
+        tlpOptions.Controls.Add(grpChrome, 0, 1)
+        tlpOptions.Controls.Add(grpFile, 0, 2)
+        tlpOptions.Controls.Add(grpProbe, 0, 3)
+        tlpOptions.Controls.Add(grpScenario, 0, 4)
+        tlpOptions.Controls.Add(grpClip, 0, 5)
+        tlpOptions.Controls.Add(grpChildren, 0, 6)
+        tlpOptions.Controls.Add(grpKeys, 0, 7)
+        tlpOptions.Controls.Add(grpUser, 0, 8)
+        tlpOptions.Controls.Add(grpMachine, 0, 9)
+        tlpOptions.Controls.Add(grpCmd, 0, 10)
+        tlpOptions.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpOptions.Location = New System.Drawing.Point(0, 0)
+        tlpOptions.Name = "tlpOptions"
+        tlpOptions.Padding = New System.Windows.Forms.Padding(6)
+        tlpOptions.RowCount = 12
+        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpOptions.Size = New System.Drawing.Size(320, 727)
+        tlpOptions.TabIndex = 0
         '
-        Me.lblSecLaunch.AutoSize = True : Me.lblSecLaunch.Text = "—— Lansare ——" : Me.lblSecLaunch.Name = "lblSecLaunch"
-        Me.chkNewInstance.AutoSize = True : Me.chkNewInstance.Checked = True : Me.chkNewInstance.CheckState = System.Windows.Forms.CheckState.Checked : Me.chkNewInstance.Text = "/n  — instanță nouă (recomandat pt. încorporare)" : Me.chkNewInstance.Name = "chkNewInstance"
-        Me.chkNoSplash.AutoSize = True : Me.chkNoSplash.Checked = True : Me.chkNoSplash.CheckState = System.Windows.Forms.CheckState.Checked : Me.chkNoSplash.Text = "/s  — fără ecran de întâmpinare" : Me.chkNoSplash.Name = "chkNoSplash"
+        ' tlpRight — Adobe host (100%) over the status line (AutoSize)
         '
-        Me.lblSecChrome.AutoSize = True : Me.lblSecChrome.Text = "—— Chrome ascuns (parametri /A) ——" : Me.lblSecChrome.Margin = New System.Windows.Forms.Padding(3, 12, 3, 0) : Me.lblSecChrome.Name = "lblSecChrome"
-        Me.chkToolbar.AutoSize = True : Me.chkToolbar.Checked = True : Me.chkToolbar.CheckState = System.Windows.Forms.CheckState.Checked : Me.chkToolbar.Text = "toolbar=0  — ascunde bara de instrumente" : Me.chkToolbar.Name = "chkToolbar"
-        Me.chkNavpanes.AutoSize = True : Me.chkNavpanes.Checked = True : Me.chkNavpanes.CheckState = System.Windows.Forms.CheckState.Checked : Me.chkNavpanes.Text = "navpanes=0  — ascunde panourile de navigare" : Me.chkNavpanes.Name = "chkNavpanes"
-        Me.chkStatusbar.AutoSize = True : Me.chkStatusbar.Checked = True : Me.chkStatusbar.CheckState = System.Windows.Forms.CheckState.Checked : Me.chkStatusbar.Text = "statusbar=0  — ascunde bara de stare" : Me.chkStatusbar.Name = "chkStatusbar"
-        Me.chkMessages.AutoSize = True : Me.chkMessages.Checked = True : Me.chkMessages.CheckState = System.Windows.Forms.CheckState.Checked : Me.chkMessages.Text = "messages=0  — ascunde bara de mesaje" : Me.chkMessages.Name = "chkMessages"
-        Me.chkScrollbar.AutoSize = True : Me.chkScrollbar.Checked = True : Me.chkScrollbar.CheckState = System.Windows.Forms.CheckState.Checked : Me.chkScrollbar.Text = "scrollbar=0  — ascunde barele de derulare" : Me.chkScrollbar.Name = "chkScrollbar"
-        Me.chkPagemodeNone.AutoSize = True : Me.chkPagemodeNone.Checked = True : Me.chkPagemodeNone.CheckState = System.Windows.Forms.CheckState.Checked : Me.chkPagemodeNone.Text = "pagemode=none  — fără panou lateral deschis" : Me.chkPagemodeNone.Name = "chkPagemodeNone"
+        tlpRight.ColumnCount = 1
+        tlpRight.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpRight.Controls.Add(pnlHost, 0, 0)
+        tlpRight.Controls.Add(lblStatus, 0, 1)
+        tlpRight.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpRight.Location = New System.Drawing.Point(0, 0)
+        tlpRight.Name = "tlpRight"
+        tlpRight.RowCount = 2
+        tlpRight.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpRight.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpRight.Size = New System.Drawing.Size(914, 727)
+        tlpRight.TabIndex = 0
         '
-        Me.lblSecFile.AutoSize = True : Me.lblSecFile.Text = "—— Document ——" : Me.lblSecFile.Margin = New System.Windows.Forms.Padding(3, 12, 3, 0) : Me.lblSecFile.Name = "lblSecFile"
-        Me.btnBrowse.AutoSize = True : Me.btnBrowse.Text = "Deschide PDF…" : Me.btnBrowse.Name = "btnBrowse" : Me.btnBrowse.UseVisualStyleBackColor = True
-        Me.lblFile.AutoSize = True : Me.lblFile.MaximumSize = New System.Drawing.Size(330, 0) : Me.lblFile.Text = "<niciun PDF>" : Me.lblFile.Name = "lblFile"
-        Me.btnRelaunch.AutoSize = True : Me.btnRelaunch.Text = "Reîncorporează / redesenează" : Me.btnRelaunch.Margin = New System.Windows.Forms.Padding(3, 6, 3, 3) : Me.btnRelaunch.Name = "btnRelaunch" : Me.btnRelaunch.UseVisualStyleBackColor = True
+        ' pnlHost — gazda ferestrei Adobe reparentate
         '
-        ' §3.A Diagnostic
-        Me.lblSecProbe.AutoSize = True : Me.lblSecProbe.Text = "—— Diagnostic ——" : Me.lblSecProbe.Margin = New System.Windows.Forms.Padding(3, 12, 3, 0) : Me.lblSecProbe.Name = "lblSecProbe"
-        Me.btnProbe.AutoSize = True : Me.btnProbe.Text = "Arborele de ferestre copil" : Me.btnProbe.Name = "btnProbe" : Me.btnProbe.UseVisualStyleBackColor = True
+        pnlHost.Dock = System.Windows.Forms.DockStyle.Fill
+        pnlHost.Location = New System.Drawing.Point(3, 3)
+        pnlHost.Name = "pnlHost"
+        pnlHost.Size = New System.Drawing.Size(908, 640)
+        pnlHost.TabIndex = 0
         '
-        ' §3.B Decupare
-        Me.lblSecClip.AutoSize = True : Me.lblSecClip.Text = "—— Decupare ——" : Me.lblSecClip.Margin = New System.Windows.Forms.Padding(3, 12, 3, 0) : Me.lblSecClip.Name = "lblSecClip"
-        Me.chkClip.AutoSize = True : Me.chkClip.Text = "Decupare activă" : Me.chkClip.Name = "chkClip"
-        Me.lblClipRight.AutoSize = True : Me.lblClipRight.Text = "Decupare dreapta (px)" : Me.lblClipRight.Name = "lblClipRight"
-        Me.numClipRight.Minimum = 0D : Me.numClipRight.Maximum = 800D : Me.numClipRight.Increment = 10D : Me.numClipRight.Value = 0D : Me.numClipRight.Width = 120 : Me.numClipRight.Name = "numClipRight"
-        Me.lblClipTop.AutoSize = True : Me.lblClipTop.Text = "Decupare sus (px)" : Me.lblClipTop.Name = "lblClipTop"
-        Me.numClipTop.Minimum = 0D : Me.numClipTop.Maximum = 400D : Me.numClipTop.Increment = 10D : Me.numClipTop.Value = 0D : Me.numClipTop.Width = 120 : Me.numClipTop.Name = "numClipTop"
-        Me.btnClipAuto.AutoSize = True : Me.btnClipAuto.Text = "Măsoară din probă" : Me.btnClipAuto.Enabled = False : Me.btnClipAuto.Name = "btnClipAuto" : Me.btnClipAuto.UseVisualStyleBackColor = True
+        ' lblStatus
         '
-        ' §3.C Ferestre copil
-        Me.lblSecChildren.AutoSize = True : Me.lblSecChildren.Text = "—— Ferestre copil ——" : Me.lblSecChildren.Margin = New System.Windows.Forms.Padding(3, 12, 3, 0) : Me.lblSecChildren.Name = "lblSecChildren"
-        Me.lstChildren.Width = 336 : Me.lstChildren.Height = 140 : Me.lstChildren.IntegralHeight = False : Me.lstChildren.Name = "lstChildren"
-        Me.btnHideChild.AutoSize = True : Me.btnHideChild.Text = "Ascunde fereastra selectată" : Me.btnHideChild.Name = "btnHideChild" : Me.btnHideChild.UseVisualStyleBackColor = True
-        Me.btnShowChild.AutoSize = True : Me.btnShowChild.Text = "Arată fereastra selectată" : Me.btnShowChild.Name = "btnShowChild" : Me.btnShowChild.UseVisualStyleBackColor = True
-        Me.btnShowAllChildren.AutoSize = True : Me.btnShowAllChildren.Text = "Restaurează toate" : Me.btnShowAllChildren.Name = "btnShowAllChildren" : Me.btnShowAllChildren.UseVisualStyleBackColor = True
+        lblStatus.AutoSize = True
+        lblStatus.Dock = System.Windows.Forms.DockStyle.Fill
+        lblStatus.Location = New System.Drawing.Point(3, 646)
+        lblStatus.Name = "lblStatus"
+        lblStatus.Padding = New System.Windows.Forms.Padding(4)
+        lblStatus.Size = New System.Drawing.Size(908, 33)
+        lblStatus.TabIndex = 1
         '
-        ' §3.D Scurtături
-        Me.lblSecKeys.AutoSize = True : Me.lblSecKeys.Text = "—— Scurtături (experimental) ——" : Me.lblSecKeys.Margin = New System.Windows.Forms.Padding(3, 12, 3, 0) : Me.lblSecKeys.Name = "lblSecKeys"
-        Me.btnSendShiftF4.AutoSize = True : Me.btnSendShiftF4.Text = "Trimite Shift+F4 (comută panoul de instrumente)" : Me.btnSendShiftF4.Name = "btnSendShiftF4" : Me.btnSendShiftF4.UseVisualStyleBackColor = True
-        Me.btnSendF4.AutoSize = True : Me.btnSendF4.Text = "Trimite F4 (comută panoul de navigare)" : Me.btnSendF4.Name = "btnSendF4" : Me.btnSendF4.UseVisualStyleBackColor = True
+        ' tmrLayout — 150 ms debounce, restarted on every resize/splitter move
         '
-        ' §3.E Preferințe Adobe (utilizator)
-        Me.lblSecUser.AutoSize = True : Me.lblSecUser.Text = "—— Preferințe Adobe (utilizator, HKCU) ——" : Me.lblSecUser.Margin = New System.Windows.Forms.Padding(3, 12, 3, 0) : Me.lblSecUser.Name = "lblSecUser"
-        Me.lblHive.AutoSize = True : Me.lblHive.MaximumSize = New System.Drawing.Size(330, 0) : Me.lblHive.Text = "" : Me.lblHive.Name = "lblHive"
-        Me.cboHive.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList : Me.cboHive.Width = 336 : Me.cboHive.DropDownWidth = 420 : Me.cboHive.Name = "cboHive"
-        Me.chkExpandRhp.AutoSize = True : Me.chkExpandRhp.Text = "bExpandRHPInViewer = 0" : Me.chkExpandRhp.Name = "chkExpandRhp"
-        Me.chkRhpSticky.AutoSize = True : Me.chkRhpSticky.Text = "bRHPSticky = 1" : Me.chkRhpSticky.Name = "chkRhpSticky"
-        Me.chkRhpCollapsed.AutoSize = True : Me.chkRhpCollapsed.Text = "aDefaultRHPViewMode_L = Collapsed" : Me.chkRhpCollapsed.Name = "chkRhpCollapsed"
-        Me.chkClassicViewer.AutoSize = True : Me.chkClassicViewer.Text = "bEnableAv2 = 0 (interfața clasică)" : Me.chkClassicViewer.Name = "chkClassicViewer"
-        Me.btnApplyUser.AutoSize = True : Me.btnApplyUser.Text = "Aplică și repornește Adobe" : Me.btnApplyUser.Name = "btnApplyUser" : Me.btnApplyUser.UseVisualStyleBackColor = True
-        Me.btnRestoreUser.AutoSize = True : Me.btnRestoreUser.Text = "Restaurează valorile originale" : Me.btnRestoreUser.Name = "btnRestoreUser" : Me.btnRestoreUser.UseVisualStyleBackColor = True
-        Me.chkRestoreOnClose.AutoSize = True : Me.chkRestoreOnClose.Checked = True : Me.chkRestoreOnClose.CheckState = System.Windows.Forms.CheckState.Checked : Me.chkRestoreOnClose.Text = "Restaurează la închiderea bancului" : Me.chkRestoreOnClose.Name = "chkRestoreOnClose"
+        tmrLayout.Interval = 150
         '
-        ' §3.F Politici Adobe (mașină)
-        Me.lblSecMachine.AutoSize = True : Me.lblSecMachine.Text = "—— Politici Adobe (mașină, HKLM) ——" : Me.lblSecMachine.Margin = New System.Windows.Forms.Padding(3, 12, 3, 0) : Me.lblSecMachine.Name = "lblSecMachine"
-        Me.cboProduct.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList : Me.cboProduct.Width = 336 : Me.cboProduct.Name = "cboProduct"
-        Me.chkSuppressUpsell.AutoSize = True : Me.chkSuppressUpsell.Text = "bAcroSuppressUpsell = 1" : Me.chkSuppressUpsell.Name = "chkSuppressUpsell"
-        Me.chkDisableServices.AutoSize = True : Me.chkDisableServices.Text = "cServices\bToggleAdobeDocumentServices = 1" : Me.chkDisableServices.Name = "chkDisableServices"
-        Me.btnApplyMachine.AutoSize = True : Me.btnApplyMachine.Text = "Aplică (cere elevare)" : Me.btnApplyMachine.Name = "btnApplyMachine" : Me.btnApplyMachine.UseVisualStyleBackColor = True
-        Me.btnRevertMachine.AutoSize = True : Me.btnRevertMachine.Text = "Revocă (cere elevare)" : Me.btnRevertMachine.Name = "btnRevertMachine" : Me.btnRevertMachine.UseVisualStyleBackColor = True
+        ' grpLaunch
         '
-        Me.lblSecCmd.AutoSize = True : Me.lblSecCmd.Text = "—— Linie de comandă ——" : Me.lblSecCmd.Margin = New System.Windows.Forms.Padding(3, 12, 3, 0) : Me.lblSecCmd.Name = "lblSecCmd"
-        Me.lblCmd.AutoSize = True : Me.lblCmd.MaximumSize = New System.Drawing.Size(330, 0) : Me.lblCmd.Font = New System.Drawing.Font("Consolas", 8.25!) : Me.lblCmd.Text = "" : Me.lblCmd.Name = "lblCmd"
+        grpLaunch.AutoSize = True
+        grpLaunch.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpLaunch.Controls.Add(tlpLaunch)
+        grpLaunch.Dock = System.Windows.Forms.DockStyle.Fill
+        grpLaunch.Location = New System.Drawing.Point(9, 9)
+        grpLaunch.Name = "grpLaunch"
+        grpLaunch.Size = New System.Drawing.Size(296, 90)
+        grpLaunch.TabIndex = 0
+        grpLaunch.TabStop = False
+        grpLaunch.Text = "Lansare"
         '
-        Me.lblSecStatus.AutoSize = True : Me.lblSecStatus.Text = "—— Stare ——" : Me.lblSecStatus.Margin = New System.Windows.Forms.Padding(3, 12, 3, 0) : Me.lblSecStatus.Name = "lblSecStatus"
-        Me.lblStatus.AutoSize = True : Me.lblStatus.MaximumSize = New System.Drawing.Size(330, 0) : Me.lblStatus.Text = "" : Me.lblStatus.Name = "lblStatus"
+        tlpLaunch.AutoSize = True
+        tlpLaunch.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpLaunch.ColumnCount = 1
+        tlpLaunch.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpLaunch.Controls.Add(chkNewInstance, 0, 0)
+        tlpLaunch.Controls.Add(chkNoSplash, 0, 1)
+        tlpLaunch.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpLaunch.Name = "tlpLaunch"
+        tlpLaunch.RowCount = 2
+        tlpLaunch.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpLaunch.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpLaunch.TabIndex = 0
         '
-        'pnlButtons — verdictul uman
+        chkNewInstance.AutoSize = True
+        chkNewInstance.Checked = True
+        chkNewInstance.CheckState = System.Windows.Forms.CheckState.Checked
+        chkNewInstance.Dock = System.Windows.Forms.DockStyle.Fill
+        chkNewInstance.Name = "chkNewInstance"
+        chkNewInstance.TabIndex = 0
+        chkNewInstance.Text = "/n  — instanță nouă (recomandat pt. încorporare)"
         '
-        Me.pnlButtons.AutoSize = True
-        Me.pnlButtons.Dock = System.Windows.Forms.DockStyle.Bottom
-        Me.pnlButtons.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft
-        Me.pnlButtons.Padding = New System.Windows.Forms.Padding(6)
-        Me.pnlButtons.Controls.Add(Me.btnPass)
-        Me.pnlButtons.Controls.Add(Me.btnFail)
-        Me.pnlButtons.Name = "pnlButtons"
+        chkNoSplash.AutoSize = True
+        chkNoSplash.Checked = True
+        chkNoSplash.CheckState = System.Windows.Forms.CheckState.Checked
+        chkNoSplash.Dock = System.Windows.Forms.DockStyle.Fill
+        chkNoSplash.Name = "chkNoSplash"
+        chkNoSplash.TabIndex = 1
+        chkNoSplash.Text = "/s  — fără ecran de întâmpinare"
         '
-        Me.btnFail.AutoSize = True : Me.btnFail.DialogResult = System.Windows.Forms.DialogResult.Cancel : Me.btnFail.Text = "Fail" : Me.btnFail.Name = "btnFail" : Me.btnFail.UseVisualStyleBackColor = True
-        Me.btnPass.AutoSize = True : Me.btnPass.DialogResult = System.Windows.Forms.DialogResult.OK : Me.btnPass.Text = "Pass" : Me.btnPass.Name = "btnPass" : Me.btnPass.UseVisualStyleBackColor = True
+        ' grpChrome
         '
-        'AdobeReaderHarnessForm
+        grpChrome.AutoSize = True
+        grpChrome.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpChrome.Controls.Add(tlpChrome)
+        grpChrome.Dock = System.Windows.Forms.DockStyle.Fill
+        grpChrome.Name = "grpChrome"
+        grpChrome.TabIndex = 1
+        grpChrome.TabStop = False
+        grpChrome.Text = "Chrome ascuns (parametri /A)"
         '
-        Me.AcceptButton = Me.btnPass
-        Me.CancelButton = Me.btnFail
-        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1240, 780)
-        ' Dock order (house rule): Fill first, then Left, then Bottom (so the bottom band spans
-        ' the full width under the left strip).
-        Me.Controls.Add(Me.pnlHost)
-        Me.Controls.Add(Me.flowLeft)
-        Me.Controls.Add(Me.pnlButtons)
-        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
-        Me.Text = "Adobe Reader DC — încorporare + switch-uri (bare ascunse)"
-        Me.Name = "AdobeReaderHarnessForm"
-        Me.flowLeft.ResumeLayout(False) : Me.flowLeft.PerformLayout()
-        Me.pnlButtons.ResumeLayout(False) : Me.pnlButtons.PerformLayout()
-        CType(Me.numClipRight, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(Me.numClipTop, System.ComponentModel.ISupportInitialize).EndInit()
-        Me.ResumeLayout(False) : Me.PerformLayout()
+        tlpChrome.AutoSize = True
+        tlpChrome.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpChrome.ColumnCount = 1
+        tlpChrome.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpChrome.Controls.Add(chkToolbar, 0, 0)
+        tlpChrome.Controls.Add(chkNavpanes, 0, 1)
+        tlpChrome.Controls.Add(chkStatusbar, 0, 2)
+        tlpChrome.Controls.Add(chkMessages, 0, 3)
+        tlpChrome.Controls.Add(chkScrollbar, 0, 4)
+        tlpChrome.Controls.Add(chkPagemodeNone, 0, 5)
+        tlpChrome.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpChrome.Name = "tlpChrome"
+        tlpChrome.RowCount = 6
+        tlpChrome.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpChrome.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpChrome.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpChrome.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpChrome.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpChrome.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpChrome.TabIndex = 0
+        '
+        chkToolbar.AutoSize = True
+        chkToolbar.Checked = True
+        chkToolbar.CheckState = System.Windows.Forms.CheckState.Checked
+        chkToolbar.Dock = System.Windows.Forms.DockStyle.Fill
+        chkToolbar.Name = "chkToolbar"
+        chkToolbar.TabIndex = 0
+        chkToolbar.Text = "toolbar=0  — ascunde bara de instrumente"
+        '
+        chkNavpanes.AutoSize = True
+        chkNavpanes.Checked = True
+        chkNavpanes.CheckState = System.Windows.Forms.CheckState.Checked
+        chkNavpanes.Dock = System.Windows.Forms.DockStyle.Fill
+        chkNavpanes.Name = "chkNavpanes"
+        chkNavpanes.TabIndex = 1
+        chkNavpanes.Text = "navpanes=0  — ascunde panourile de navigare"
+        '
+        chkStatusbar.AutoSize = True
+        chkStatusbar.Checked = True
+        chkStatusbar.CheckState = System.Windows.Forms.CheckState.Checked
+        chkStatusbar.Dock = System.Windows.Forms.DockStyle.Fill
+        chkStatusbar.Name = "chkStatusbar"
+        chkStatusbar.TabIndex = 2
+        chkStatusbar.Text = "statusbar=0  — ascunde bara de stare"
+        '
+        chkMessages.AutoSize = True
+        chkMessages.Checked = True
+        chkMessages.CheckState = System.Windows.Forms.CheckState.Checked
+        chkMessages.Dock = System.Windows.Forms.DockStyle.Fill
+        chkMessages.Name = "chkMessages"
+        chkMessages.TabIndex = 3
+        chkMessages.Text = "messages=0  — ascunde bara de mesaje"
+        '
+        chkScrollbar.AutoSize = True
+        chkScrollbar.Checked = True
+        chkScrollbar.CheckState = System.Windows.Forms.CheckState.Checked
+        chkScrollbar.Dock = System.Windows.Forms.DockStyle.Fill
+        chkScrollbar.Name = "chkScrollbar"
+        chkScrollbar.TabIndex = 4
+        chkScrollbar.Text = "scrollbar=0  — ascunde barele de derulare"
+        '
+        chkPagemodeNone.AutoSize = True
+        chkPagemodeNone.Checked = True
+        chkPagemodeNone.CheckState = System.Windows.Forms.CheckState.Checked
+        chkPagemodeNone.Dock = System.Windows.Forms.DockStyle.Fill
+        chkPagemodeNone.Name = "chkPagemodeNone"
+        chkPagemodeNone.TabIndex = 5
+        chkPagemodeNone.Text = "pagemode=none  — fără panou lateral deschis"
+        '
+        ' grpFile
+        '
+        grpFile.AutoSize = True
+        grpFile.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpFile.Controls.Add(tlpFile)
+        grpFile.Dock = System.Windows.Forms.DockStyle.Fill
+        grpFile.Name = "grpFile"
+        grpFile.TabIndex = 2
+        grpFile.TabStop = False
+        grpFile.Text = "Document"
+        '
+        tlpFile.AutoSize = True
+        tlpFile.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpFile.ColumnCount = 1
+        tlpFile.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpFile.Controls.Add(btnBrowse, 0, 0)
+        tlpFile.Controls.Add(lblFile, 0, 1)
+        tlpFile.Controls.Add(btnRelaunch, 0, 2)
+        tlpFile.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpFile.Name = "tlpFile"
+        tlpFile.RowCount = 3
+        tlpFile.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpFile.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpFile.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpFile.TabIndex = 0
+        '
+        btnBrowse.AutoSize = True
+        btnBrowse.Dock = System.Windows.Forms.DockStyle.Fill
+        btnBrowse.Name = "btnBrowse"
+        btnBrowse.TabIndex = 0
+        btnBrowse.Text = "Deschide PDF…"
+        btnBrowse.UseVisualStyleBackColor = True
+        '
+        lblFile.AutoSize = True
+        lblFile.Dock = System.Windows.Forms.DockStyle.Fill
+        lblFile.Name = "lblFile"
+        lblFile.TabIndex = 1
+        lblFile.Text = "<niciun PDF>"
+        '
+        btnRelaunch.AutoSize = True
+        btnRelaunch.Dock = System.Windows.Forms.DockStyle.Fill
+        btnRelaunch.Name = "btnRelaunch"
+        btnRelaunch.TabIndex = 2
+        btnRelaunch.Text = "Reîncorporează / redesenează"
+        btnRelaunch.UseVisualStyleBackColor = True
+        '
+        ' grpProbe
+        '
+        grpProbe.AutoSize = True
+        grpProbe.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpProbe.Controls.Add(tlpProbe)
+        grpProbe.Dock = System.Windows.Forms.DockStyle.Fill
+        grpProbe.Name = "grpProbe"
+        grpProbe.TabIndex = 3
+        grpProbe.TabStop = False
+        grpProbe.Text = "Diagnostic"
+        '
+        tlpProbe.AutoSize = True
+        tlpProbe.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpProbe.ColumnCount = 1
+        tlpProbe.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpProbe.Controls.Add(btnProbe, 0, 0)
+        tlpProbe.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpProbe.Name = "tlpProbe"
+        tlpProbe.RowCount = 1
+        tlpProbe.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpProbe.TabIndex = 0
+        '
+        btnProbe.AutoSize = True
+        btnProbe.Dock = System.Windows.Forms.DockStyle.Fill
+        btnProbe.Name = "btnProbe"
+        btnProbe.TabIndex = 0
+        btnProbe.Text = "Arborele de ferestre copil"
+        btnProbe.UseVisualStyleBackColor = True
+        '
+        ' grpScenario
+        '
+        grpScenario.AutoSize = True
+        grpScenario.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpScenario.Controls.Add(tlpScenario)
+        grpScenario.Dock = System.Windows.Forms.DockStyle.Fill
+        grpScenario.Name = "grpScenario"
+        grpScenario.TabIndex = 4
+        grpScenario.TabStop = False
+        grpScenario.Text = "Scenariu"
+        '
+        tlpScenario.AutoSize = True
+        tlpScenario.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpScenario.ColumnCount = 1
+        tlpScenario.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpScenario.Controls.Add(lblScenario, 0, 0)
+        tlpScenario.Controls.Add(btnLoadScenario, 0, 1)
+        tlpScenario.Controls.Add(btnRunScenario, 0, 2)
+        tlpScenario.Controls.Add(btnSaveScenario, 0, 3)
+        tlpScenario.Controls.Add(chkApplyOnLoad, 0, 4)
+        tlpScenario.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpScenario.Name = "tlpScenario"
+        tlpScenario.RowCount = 5
+        tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpScenario.TabIndex = 0
+        '
+        lblScenario.AutoSize = True
+        lblScenario.Dock = System.Windows.Forms.DockStyle.Fill
+        lblScenario.Name = "lblScenario"
+        lblScenario.TabIndex = 0
+        lblScenario.Text = "(niciun scenariu)"
+        '
+        btnLoadScenario.AutoSize = True
+        btnLoadScenario.Dock = System.Windows.Forms.DockStyle.Fill
+        btnLoadScenario.Name = "btnLoadScenario"
+        btnLoadScenario.TabIndex = 1
+        btnLoadScenario.Text = "Încarcă scenariu…"
+        btnLoadScenario.UseVisualStyleBackColor = True
+        '
+        btnRunScenario.AutoSize = True
+        btnRunScenario.Dock = System.Windows.Forms.DockStyle.Fill
+        btnRunScenario.Enabled = False
+        btnRunScenario.Name = "btnRunScenario"
+        btnRunScenario.TabIndex = 2
+        btnRunScenario.Text = "Rulează scenariul"
+        btnRunScenario.UseVisualStyleBackColor = True
+        '
+        btnSaveScenario.AutoSize = True
+        btnSaveScenario.Dock = System.Windows.Forms.DockStyle.Fill
+        btnSaveScenario.Name = "btnSaveScenario"
+        btnSaveScenario.TabIndex = 3
+        btnSaveScenario.Text = "Salvează starea curentă ca scenariu…"
+        btnSaveScenario.UseVisualStyleBackColor = True
+        '
+        chkApplyOnLoad.AutoSize = True
+        chkApplyOnLoad.Checked = True
+        chkApplyOnLoad.CheckState = System.Windows.Forms.CheckState.Checked
+        chkApplyOnLoad.Dock = System.Windows.Forms.DockStyle.Fill
+        chkApplyOnLoad.Name = "chkApplyOnLoad"
+        chkApplyOnLoad.TabIndex = 4
+        chkApplyOnLoad.Text = "Aplică valorile în controale la încărcare"
+        '
+        ' grpClip — label/input pairs: column 0 AutoSize, column 1 100%
+        '
+        grpClip.AutoSize = True
+        grpClip.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpClip.Controls.Add(tlpClip)
+        grpClip.Dock = System.Windows.Forms.DockStyle.Fill
+        grpClip.Name = "grpClip"
+        grpClip.TabIndex = 5
+        grpClip.TabStop = False
+        grpClip.Text = "Decupare"
+        '
+        tlpClip.AutoSize = True
+        tlpClip.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpClip.ColumnCount = 2
+        tlpClip.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpClip.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpClip.Controls.Add(chkClip, 0, 0)
+        tlpClip.Controls.Add(lblClipRight, 0, 1)
+        tlpClip.Controls.Add(numClipRight, 1, 1)
+        tlpClip.Controls.Add(lblClipTop, 0, 2)
+        tlpClip.Controls.Add(numClipTop, 1, 2)
+        tlpClip.Controls.Add(btnClipAuto, 0, 3)
+        tlpClip.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpClip.Name = "tlpClip"
+        tlpClip.RowCount = 4
+        tlpClip.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpClip.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpClip.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpClip.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpClip.SetColumnSpan(chkClip, 2)
+        tlpClip.SetColumnSpan(btnClipAuto, 2)
+        tlpClip.TabIndex = 0
+        '
+        chkClip.AutoSize = True
+        chkClip.Dock = System.Windows.Forms.DockStyle.Fill
+        chkClip.Name = "chkClip"
+        chkClip.TabIndex = 0
+        chkClip.Text = "Decupare activă"
+        '
+        lblClipRight.AutoSize = True
+        lblClipRight.Dock = System.Windows.Forms.DockStyle.Fill
+        lblClipRight.Name = "lblClipRight"
+        lblClipRight.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+        lblClipRight.TabIndex = 1
+        lblClipRight.Text = "Decupare dreapta (px)"
+        '
+        numClipRight.Dock = System.Windows.Forms.DockStyle.Fill
+        numClipRight.Increment = New Decimal(New Integer() {10, 0, 0, 0})
+        numClipRight.Maximum = New Decimal(New Integer() {800, 0, 0, 0})
+        numClipRight.Name = "numClipRight"
+        numClipRight.TabIndex = 2
+        '
+        lblClipTop.AutoSize = True
+        lblClipTop.Dock = System.Windows.Forms.DockStyle.Fill
+        lblClipTop.Name = "lblClipTop"
+        lblClipTop.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+        lblClipTop.TabIndex = 3
+        lblClipTop.Text = "Decupare sus (px)"
+        '
+        numClipTop.Dock = System.Windows.Forms.DockStyle.Fill
+        numClipTop.Increment = New Decimal(New Integer() {10, 0, 0, 0})
+        numClipTop.Maximum = New Decimal(New Integer() {400, 0, 0, 0})
+        numClipTop.Name = "numClipTop"
+        numClipTop.TabIndex = 4
+        '
+        btnClipAuto.AutoSize = True
+        btnClipAuto.Dock = System.Windows.Forms.DockStyle.Fill
+        btnClipAuto.Enabled = False
+        btnClipAuto.Name = "btnClipAuto"
+        btnClipAuto.TabIndex = 5
+        btnClipAuto.Text = "Măsoară din probă"
+        btnClipAuto.UseVisualStyleBackColor = True
+        '
+        ' grpChildren
+        '
+        grpChildren.AutoSize = True
+        grpChildren.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpChildren.Controls.Add(tlpChildren)
+        grpChildren.Dock = System.Windows.Forms.DockStyle.Fill
+        grpChildren.Name = "grpChildren"
+        grpChildren.TabIndex = 6
+        grpChildren.TabStop = False
+        grpChildren.Text = "Ferestre copil"
+        '
+        tlpChildren.AutoSize = True
+        tlpChildren.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpChildren.ColumnCount = 1
+        tlpChildren.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpChildren.Controls.Add(lstChildren, 0, 0)
+        tlpChildren.Controls.Add(btnHideChild, 0, 1)
+        tlpChildren.Controls.Add(btnShowChild, 0, 2)
+        tlpChildren.Controls.Add(btnShowAllChildren, 0, 3)
+        tlpChildren.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpChildren.Name = "tlpChildren"
+        tlpChildren.RowCount = 4
+        tlpChildren.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpChildren.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpChildren.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpChildren.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpChildren.TabIndex = 0
+        '
+        lstChildren.Dock = System.Windows.Forms.DockStyle.Fill
+        lstChildren.IntegralHeight = False
+        lstChildren.MinimumSize = New System.Drawing.Size(0, 120)
+        lstChildren.Name = "lstChildren"
+        lstChildren.TabIndex = 0
+        '
+        btnHideChild.AutoSize = True
+        btnHideChild.Dock = System.Windows.Forms.DockStyle.Fill
+        btnHideChild.Name = "btnHideChild"
+        btnHideChild.TabIndex = 1
+        btnHideChild.Text = "Ascunde fereastra selectată"
+        btnHideChild.UseVisualStyleBackColor = True
+        '
+        btnShowChild.AutoSize = True
+        btnShowChild.Dock = System.Windows.Forms.DockStyle.Fill
+        btnShowChild.Name = "btnShowChild"
+        btnShowChild.TabIndex = 2
+        btnShowChild.Text = "Arată fereastra selectată"
+        btnShowChild.UseVisualStyleBackColor = True
+        '
+        btnShowAllChildren.AutoSize = True
+        btnShowAllChildren.Dock = System.Windows.Forms.DockStyle.Fill
+        btnShowAllChildren.Name = "btnShowAllChildren"
+        btnShowAllChildren.TabIndex = 3
+        btnShowAllChildren.Text = "Restaurează toate"
+        btnShowAllChildren.UseVisualStyleBackColor = True
+        '
+        ' grpKeys
+        '
+        grpKeys.AutoSize = True
+        grpKeys.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpKeys.Controls.Add(tlpKeys)
+        grpKeys.Dock = System.Windows.Forms.DockStyle.Fill
+        grpKeys.Name = "grpKeys"
+        grpKeys.TabIndex = 7
+        grpKeys.TabStop = False
+        grpKeys.Text = "Scurtături (experimental)"
+        '
+        tlpKeys.AutoSize = True
+        tlpKeys.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpKeys.ColumnCount = 1
+        tlpKeys.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpKeys.Controls.Add(btnSendShiftF4, 0, 0)
+        tlpKeys.Controls.Add(btnSendF4, 0, 1)
+        tlpKeys.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpKeys.Name = "tlpKeys"
+        tlpKeys.RowCount = 2
+        tlpKeys.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpKeys.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpKeys.TabIndex = 0
+        '
+        btnSendShiftF4.AutoSize = True
+        btnSendShiftF4.Dock = System.Windows.Forms.DockStyle.Fill
+        btnSendShiftF4.Name = "btnSendShiftF4"
+        btnSendShiftF4.TabIndex = 0
+        btnSendShiftF4.Text = "Trimite Shift+F4 (comută panoul de instrumente)"
+        btnSendShiftF4.UseVisualStyleBackColor = True
+        '
+        btnSendF4.AutoSize = True
+        btnSendF4.Dock = System.Windows.Forms.DockStyle.Fill
+        btnSendF4.Name = "btnSendF4"
+        btnSendF4.TabIndex = 1
+        btnSendF4.Text = "Trimite F4 (comută panoul de navigare)"
+        btnSendF4.UseVisualStyleBackColor = True
+        '
+        ' grpUser
+        '
+        grpUser.AutoSize = True
+        grpUser.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpUser.Controls.Add(tlpUser)
+        grpUser.Dock = System.Windows.Forms.DockStyle.Fill
+        grpUser.Name = "grpUser"
+        grpUser.TabIndex = 8
+        grpUser.TabStop = False
+        grpUser.Text = "Preferințe Adobe (utilizator, HKCU)"
+        '
+        tlpUser.AutoSize = True
+        tlpUser.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpUser.ColumnCount = 1
+        tlpUser.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpUser.Controls.Add(lblHive, 0, 0)
+        tlpUser.Controls.Add(cboHive, 0, 1)
+        tlpUser.Controls.Add(chkExpandRhp, 0, 2)
+        tlpUser.Controls.Add(chkRhpSticky, 0, 3)
+        tlpUser.Controls.Add(chkRhpCollapsed, 0, 4)
+        tlpUser.Controls.Add(chkClassicViewer, 0, 5)
+        tlpUser.Controls.Add(btnApplyUser, 0, 6)
+        tlpUser.Controls.Add(btnRestoreUser, 0, 7)
+        tlpUser.Controls.Add(chkRestoreOnClose, 0, 8)
+        tlpUser.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpUser.Name = "tlpUser"
+        tlpUser.RowCount = 9
+        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpUser.TabIndex = 0
+        '
+        lblHive.AutoSize = True
+        lblHive.Dock = System.Windows.Forms.DockStyle.Fill
+        lblHive.Name = "lblHive"
+        lblHive.TabIndex = 0
+        '
+        cboHive.Dock = System.Windows.Forms.DockStyle.Fill
+        cboHive.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        cboHive.DropDownWidth = 420
+        cboHive.Name = "cboHive"
+        cboHive.TabIndex = 1
+        '
+        chkExpandRhp.AutoSize = True
+        chkExpandRhp.Dock = System.Windows.Forms.DockStyle.Fill
+        chkExpandRhp.Name = "chkExpandRhp"
+        chkExpandRhp.TabIndex = 2
+        chkExpandRhp.Text = "bExpandRHPInViewer = 0"
+        '
+        chkRhpSticky.AutoSize = True
+        chkRhpSticky.Dock = System.Windows.Forms.DockStyle.Fill
+        chkRhpSticky.Name = "chkRhpSticky"
+        chkRhpSticky.TabIndex = 3
+        chkRhpSticky.Text = "bRHPSticky = 1"
+        '
+        chkRhpCollapsed.AutoSize = True
+        chkRhpCollapsed.Dock = System.Windows.Forms.DockStyle.Fill
+        chkRhpCollapsed.Name = "chkRhpCollapsed"
+        chkRhpCollapsed.TabIndex = 4
+        chkRhpCollapsed.Text = "aDefaultRHPViewMode_L = Collapsed"
+        '
+        chkClassicViewer.AutoSize = True
+        chkClassicViewer.Dock = System.Windows.Forms.DockStyle.Fill
+        chkClassicViewer.Name = "chkClassicViewer"
+        chkClassicViewer.TabIndex = 5
+        chkClassicViewer.Text = "bEnableAv2 = 0 (interfața clasică)"
+        '
+        btnApplyUser.AutoSize = True
+        btnApplyUser.Dock = System.Windows.Forms.DockStyle.Fill
+        btnApplyUser.Name = "btnApplyUser"
+        btnApplyUser.TabIndex = 6
+        btnApplyUser.Text = "Aplică și repornește Adobe"
+        btnApplyUser.UseVisualStyleBackColor = True
+        '
+        btnRestoreUser.AutoSize = True
+        btnRestoreUser.Dock = System.Windows.Forms.DockStyle.Fill
+        btnRestoreUser.Name = "btnRestoreUser"
+        btnRestoreUser.TabIndex = 7
+        btnRestoreUser.Text = "Restaurează valorile originale"
+        btnRestoreUser.UseVisualStyleBackColor = True
+        '
+        chkRestoreOnClose.AutoSize = True
+        chkRestoreOnClose.Checked = True
+        chkRestoreOnClose.CheckState = System.Windows.Forms.CheckState.Checked
+        chkRestoreOnClose.Dock = System.Windows.Forms.DockStyle.Fill
+        chkRestoreOnClose.Name = "chkRestoreOnClose"
+        chkRestoreOnClose.TabIndex = 8
+        chkRestoreOnClose.Text = "Restaurează la închiderea bancului"
+        '
+        ' grpMachine
+        '
+        grpMachine.AutoSize = True
+        grpMachine.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpMachine.Controls.Add(tlpMachine)
+        grpMachine.Dock = System.Windows.Forms.DockStyle.Fill
+        grpMachine.Name = "grpMachine"
+        grpMachine.TabIndex = 9
+        grpMachine.TabStop = False
+        grpMachine.Text = "Politici Adobe (mașină, HKLM)"
+        '
+        tlpMachine.AutoSize = True
+        tlpMachine.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpMachine.ColumnCount = 1
+        tlpMachine.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpMachine.Controls.Add(cboProduct, 0, 0)
+        tlpMachine.Controls.Add(chkSuppressUpsell, 0, 1)
+        tlpMachine.Controls.Add(chkDisableServices, 0, 2)
+        tlpMachine.Controls.Add(btnApplyMachine, 0, 3)
+        tlpMachine.Controls.Add(btnRevertMachine, 0, 4)
+        tlpMachine.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpMachine.Name = "tlpMachine"
+        tlpMachine.RowCount = 5
+        tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpMachine.TabIndex = 0
+        '
+        cboProduct.Dock = System.Windows.Forms.DockStyle.Fill
+        cboProduct.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        cboProduct.Name = "cboProduct"
+        cboProduct.TabIndex = 0
+        '
+        chkSuppressUpsell.AutoSize = True
+        chkSuppressUpsell.Dock = System.Windows.Forms.DockStyle.Fill
+        chkSuppressUpsell.Name = "chkSuppressUpsell"
+        chkSuppressUpsell.TabIndex = 1
+        chkSuppressUpsell.Text = "bAcroSuppressUpsell = 1"
+        '
+        chkDisableServices.AutoSize = True
+        chkDisableServices.Dock = System.Windows.Forms.DockStyle.Fill
+        chkDisableServices.Name = "chkDisableServices"
+        chkDisableServices.TabIndex = 2
+        chkDisableServices.Text = "cServices\bToggleAdobeDocumentServices = 1"
+        '
+        btnApplyMachine.AutoSize = True
+        btnApplyMachine.Dock = System.Windows.Forms.DockStyle.Fill
+        btnApplyMachine.Name = "btnApplyMachine"
+        btnApplyMachine.TabIndex = 3
+        btnApplyMachine.Text = "Aplică (cere elevare)"
+        btnApplyMachine.UseVisualStyleBackColor = True
+        '
+        btnRevertMachine.AutoSize = True
+        btnRevertMachine.Dock = System.Windows.Forms.DockStyle.Fill
+        btnRevertMachine.Name = "btnRevertMachine"
+        btnRevertMachine.TabIndex = 4
+        btnRevertMachine.Text = "Revocă (cere elevare)"
+        btnRevertMachine.UseVisualStyleBackColor = True
+        '
+        ' grpCmd
+        '
+        grpCmd.AutoSize = True
+        grpCmd.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpCmd.Controls.Add(tlpCmd)
+        grpCmd.Dock = System.Windows.Forms.DockStyle.Fill
+        grpCmd.Name = "grpCmd"
+        grpCmd.TabIndex = 10
+        grpCmd.TabStop = False
+        grpCmd.Text = "Linie de comandă"
+        '
+        tlpCmd.AutoSize = True
+        tlpCmd.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpCmd.ColumnCount = 1
+        tlpCmd.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpCmd.Controls.Add(txtCmd, 0, 0)
+        tlpCmd.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpCmd.Name = "tlpCmd"
+        tlpCmd.RowCount = 1
+        tlpCmd.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpCmd.TabIndex = 0
+        '
+        txtCmd.Dock = System.Windows.Forms.DockStyle.Fill
+        txtCmd.Font = New System.Drawing.Font("Consolas", 8.25F)
+        txtCmd.Multiline = True
+        txtCmd.MinimumSize = New System.Drawing.Size(0, 72)
+        txtCmd.Name = "txtCmd"
+        txtCmd.ReadOnly = True
+        txtCmd.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
+        txtCmd.TabIndex = 0
+        '
+        ' pnlButtons — verdictul uman (stays where the harness framework puts it)
+        '
+        pnlButtons.AutoSize = True
+        pnlButtons.Controls.Add(btnPass)
+        pnlButtons.Controls.Add(btnFail)
+        pnlButtons.Dock = System.Windows.Forms.DockStyle.Bottom
+        pnlButtons.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft
+        pnlButtons.Location = New System.Drawing.Point(0, 727)
+        pnlButtons.Name = "pnlButtons"
+        pnlButtons.Padding = New System.Windows.Forms.Padding(6)
+        pnlButtons.Size = New System.Drawing.Size(1240, 53)
+        pnlButtons.TabIndex = 1
+        '
+        btnPass.AutoSize = True
+        btnPass.DialogResult = System.Windows.Forms.DialogResult.OK
+        btnPass.Name = "btnPass"
+        btnPass.TabIndex = 0
+        btnPass.Text = "Pass"
+        btnPass.UseVisualStyleBackColor = True
+        '
+        btnFail.AutoSize = True
+        btnFail.DialogResult = System.Windows.Forms.DialogResult.Cancel
+        btnFail.Name = "btnFail"
+        btnFail.TabIndex = 1
+        btnFail.Text = "Fail"
+        btnFail.UseVisualStyleBackColor = True
+        '
+        ' AdobeReaderHarnessForm
+        '
+        AcceptButton = btnPass
+        AutoScaleDimensions = New System.Drawing.SizeF(10F, 25F)
+        AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        CancelButton = btnFail
+        ClientSize = New System.Drawing.Size(1240, 780)
+        ' Dock order (house rule): Fill first, then Bottom.
+        Controls.Add(splitMain)
+        Controls.Add(pnlButtons)
+        Name = "AdobeReaderHarnessForm"
+        StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
+        Text = "Adobe Reader DC — încorporare + switch-uri (bare ascunse)"
+        splitMain.Panel1.ResumeLayout(False)
+        splitMain.Panel2.ResumeLayout(False)
+        CType(splitMain, System.ComponentModel.ISupportInitialize).EndInit()
+        splitMain.ResumeLayout(False)
+        tlpOptions.ResumeLayout(False)
+        tlpOptions.PerformLayout()
+        tlpRight.ResumeLayout(False)
+        tlpRight.PerformLayout()
+        grpLaunch.ResumeLayout(False)
+        grpLaunch.PerformLayout()
+        tlpLaunch.ResumeLayout(False)
+        tlpLaunch.PerformLayout()
+        grpChrome.ResumeLayout(False)
+        grpChrome.PerformLayout()
+        tlpChrome.ResumeLayout(False)
+        tlpChrome.PerformLayout()
+        grpFile.ResumeLayout(False)
+        grpFile.PerformLayout()
+        tlpFile.ResumeLayout(False)
+        tlpFile.PerformLayout()
+        grpProbe.ResumeLayout(False)
+        grpProbe.PerformLayout()
+        tlpProbe.ResumeLayout(False)
+        tlpProbe.PerformLayout()
+        grpScenario.ResumeLayout(False)
+        grpScenario.PerformLayout()
+        tlpScenario.ResumeLayout(False)
+        tlpScenario.PerformLayout()
+        grpClip.ResumeLayout(False)
+        grpClip.PerformLayout()
+        tlpClip.ResumeLayout(False)
+        tlpClip.PerformLayout()
+        CType(numClipRight, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(numClipTop, System.ComponentModel.ISupportInitialize).EndInit()
+        grpChildren.ResumeLayout(False)
+        grpChildren.PerformLayout()
+        tlpChildren.ResumeLayout(False)
+        tlpChildren.PerformLayout()
+        grpKeys.ResumeLayout(False)
+        grpKeys.PerformLayout()
+        tlpKeys.ResumeLayout(False)
+        tlpKeys.PerformLayout()
+        grpUser.ResumeLayout(False)
+        grpUser.PerformLayout()
+        tlpUser.ResumeLayout(False)
+        tlpUser.PerformLayout()
+        grpMachine.ResumeLayout(False)
+        grpMachine.PerformLayout()
+        tlpMachine.ResumeLayout(False)
+        tlpMachine.PerformLayout()
+        grpCmd.ResumeLayout(False)
+        grpCmd.PerformLayout()
+        tlpCmd.ResumeLayout(False)
+        tlpCmd.PerformLayout()
+        pnlButtons.ResumeLayout(False)
+        pnlButtons.PerformLayout()
+        ResumeLayout(False)
+        PerformLayout()
     End Sub
 End Class
