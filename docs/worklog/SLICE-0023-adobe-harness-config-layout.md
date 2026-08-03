@@ -57,15 +57,22 @@ another machine.
 
 ### 2. Layout rework (§2)
 
-The fixed-width `FlowLayoutPanel` strip is gone. Now: `splitMain` (`SplitContainer`, vertical,
-`SplitterDistance` 320, `Panel1MinSize` 260, `FixedPanel = None`, draggable at runtime) → Panel1
-holds `tlpOptions` (`AutoScroll`, one AutoSize row per section plus a 100% filler so sections stay
-top-aligned); Panel2 holds `tlpRight` (row 0 = 100% `pnlHost`, row 1 = AutoSize `lblStatus`). Each
-of the eleven sections is a `GroupBox` + inner `TableLayoutPanel`, both `Dock = Fill` +
-`AutoSize`/`GrowAndShrink`; the clip section uses two columns (AutoSize label + 100% input).
-`lblCmd` became **`txtCmd`** (multiline, vertical scrollbar, `MinimumSize` height 72) and
-`lstChildren` got `MinimumSize` height 120, so neither collapses when the splitter goes narrow.
-Pass/Fail stayed where the harness framework puts them.
+> **This shipped broken and was fixed afterwards — see “Defect found on screen” below.**
+> The description here is the corrected end state.
+
+The fixed-width strip is replaced by: `splitMain` (`SplitContainer`, vertical,
+`SplitterDistance` 470, `Panel1MinSize` 300, `FixedPanel = None`, draggable at runtime) → Panel1
+holds **`flowOptions`** (a `FlowLayoutPanel`: `AutoScroll`, `FlowDirection = TopDown`,
+`WrapContents = False`); Panel2 holds `tlpRight` (row 0 = 100% `pnlHost`, row 1 = AutoSize
+`lblStatus`). Each of the eleven sections is a `GroupBox` + inner `TableLayoutPanel`; the clip
+section uses two columns (AutoSize label + 100% input). `lblCmd` became **`txtCmd`** (multiline,
+vertical scrollbar, `MinimumSize` height 72) and `lstChildren` got `MinimumSize` height 120, so
+neither collapses when the splitter goes narrow. Pass/Fail stayed where the harness framework
+puts them.
+
+Sections do **not** dock (a `FlowLayoutPanel` ignores `Dock` on its children). Their width is
+tracked to the panel in `SizeSections` (`AdobeReaderHarnessForm.vb`), called from the ctor and
+from `flowOptions.SizeChanged` — so also on every splitter drag.
 
 The three consequences the plan said to handle rather than discover:
 
@@ -78,6 +85,33 @@ The three consequences the plan said to handle rather than discover:
 Hidden children survive a resize but not a relaunch — handled by §3.4 above; `KillTracked` now
 clears the hidden *handles* and the probe list but **keeps the hidden texts**, which are the
 durable identity a scenario re-applies after the next embed.
+
+### 2b. Defect found on screen — the options panel did not scroll
+
+The layout above was first shipped with `tlpOptions` as a **`TableLayoutPanel`** with
+`AutoScroll = True` and twelve rows: eleven AutoSize plus a final **`Percent 100` filler**. A
+percent row absorbs whatever space is left, so the table always reported that its content fitted
+its client area, **never showed a scrollbar, and silently clipped every section past the fold**.
+The eleven sections stack to ~1470px in a ~740px panel, so the operator could not reach
+«Preferințe Adobe (HKCU)» or «Politici Adobe (HKLM)» **at all** — the two registry sections this
+whole slice exists for. `SplitterDistance` was also set to 320 when the operator's own
+designer-regenerated file measured `chkNewInstance` at 427 and `chkDisableServices` at 412, so
+captions were truncated as well.
+
+Neither the build nor the 475 tests noticed, because nothing exercised the layout. It was found
+by the operator, on screen, after I twice reported the pass as landed.
+
+Fix: `tlpOptions` → `flowOptions` (`FlowLayoutPanel`, TopDown, AutoScroll, no wrapping — the
+container that already scrolled this same content before the rework), the percent filler row gone
+with the table, `SplitterDistance` 320 → 470, `Panel1MinSize` 260 → 300, and the GroupBoxes'
+width pinned in `SizeSections` via `MinimumSize`/`MaximumSize` rather than `.Width` (setting
+`.Width` on an `AutoSize` control is futile — the layout engine recomputes it from the content and
+the section overflows the panel sideways; pinning min = max leaves AutoSize governing height only).
+
+Verified by rendering the real form: panel client 453×740, **vertical scrollbar visible**
+(`Maximum` 1467), **no** horizontal scrollbar, all eleven sections at a uniform 426px, `grpUser`
+at top=979 and `grpMachine` at top=1241 — both past the fold and both fully reachable by
+scrolling, with every checkbox and button inside them visible and correctly captioned.
 
 ### 3. Theming (§6) — checked, no fix needed
 
@@ -112,9 +146,17 @@ Out of scope and untouched, as in pass 1: `ReaderHostPreview`, `IDdfPreview`,
 
 - `dotnet build KBot.sln` — 0 errors, 0 BC warnings (16 pre-existing NU1701 from
   iTextSharp/BouncyCastle).
-- `dotnet test KBot.sln` — **475 passed / 0 failed / 0 skipped** (was 458; +17 scenario tests).
-  `KBot.DevHarness.Tests` is now 39.
+- `dotnet test KBot.sln` — **482 passed / 0 failed / 0 skipped** (was 458; +17 scenario tests,
+  +7 layout regression tests). `KBot.DevHarness.Tests` is now 46.
 - Sample scenario confirmed landing in `bin\Debug\net8.0-windows\Config\`.
+- **The form was rendered and looked at** (see §2b) — the step that was missing the first time.
+
+`AdobeHarnessLayoutTests` (7, STA — same `RunSta` pattern as `SumarViewTests`) is the guard the
+clipping defect deserved: the options panel must be a scrolling FlowLayoutPanel and not a
+TableLayoutPanel; all eleven sections present in order; content taller than the panel **must**
+produce a vertical scrollbar; both registry sections must scroll fully into view; all thirteen
+registry controls must exist with non-zero size; sections must track the panel width without
+forcing a horizontal scrollbar; and the splitter must be at least as wide as the widest caption.
 
 Scenario tests cover exactly what §5 asked: full-field round trip
 (serialize → deserialize → serialize unchanged), absent-section ≠ disabled-section (both
@@ -125,11 +167,15 @@ absent sections so a saved file keeps its meaning.
 
 ## Anything left unverified or deferred
 
-- **No visual verdict — nothing here has been on screen.** The layout is the most exposed part:
-  AutoSize `GroupBox` + `TableLayoutPanel` nesting inside an `AutoScroll` table is exactly the
-  combination that looks right in the designer and can still misbehave at a narrow splitter
-  position. Wrapping of long checkbox captions, the `txtCmd`/`lstChildren` minimum sizes and the
-  AutoSize row behaviour under scroll are all unconfirmed.
+- **Process failure, recorded deliberately:** this pass was reported as landed twice while the
+  layout had never been rendered. The panel did not scroll and both registry sections were
+  unreachable (§2b). "Builds clean and the tests are green" said nothing about it, because no test
+  touched the layout — that gap is now closed by `AdobeHarnessLayoutTests`. A UI change is not
+  done until it has been on screen.
+- **Rendered, but not click-tested.** The screenshots prove the sections are laid out, scrollable
+  and correctly captioned; they do not prove that dragging the splitter to its narrowest, or
+  running at a different DPI, behaves well. The regression tests pin the width/scroll invariants,
+  not the feel.
 - **The scenario runner has never been run against a real Adobe.** The step→handler mapping is
   green offline and the model is well covered, but `launch`/`waitForEmbed`/`hideChildren` have not
   executed once against a live window.

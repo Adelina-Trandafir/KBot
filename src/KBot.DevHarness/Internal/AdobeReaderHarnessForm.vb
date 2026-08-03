@@ -31,10 +31,15 @@ Imports KBot.Common
 '''     Children are addressed by window TEXT, never by HWND: handles change on every launch
 '''     (0x5083E -> 0x20B66) while the text (AVTaskPaneHostView) does not, and class names are
 '''     useless because nearly everything is AVL_AVView.
-'''   * A resizable docked layout (SplitContainer + TableLayoutPanel per section), so the Adobe
-'''     area can be traded against the options area at runtime. Because the clip geometry is
-'''     computed from pnlHost.ClientSize, it is re-applied on host resize and splitter moves —
-'''     debounced, since Adobe repaints late and badly during a resize storm.
+'''   * A resizable docked layout (SplitContainer; the options are GroupBox sections stacked in a
+'''     SCROLLING FlowLayoutPanel), so the Adobe area can be traded against the options area at
+'''     runtime. Because the clip geometry is computed from pnlHost.ClientSize, it is re-applied on
+'''     host resize and splitter moves — debounced, since Adobe repaints late and badly during a
+'''     resize storm.
+'''     NOTE: the options stack must NOT be a TableLayoutPanel. A TLP with AutoScroll plus a
+'''     Percent filler row always reports that its content fits, so no scrollbar ever appears and
+'''     every section past the fold is clipped — that defect shipped once and made both registry
+'''     sections unreachable on screen.
 '''
 ''' Detalii care au mușcat deja tiparul (vezi și <see cref="ReaderHostPreview"/> din KBot.App):
 '''   * Reader e practic mono-instanță -> lansăm cu «/n» (instanță nouă) ca fereastra să ne
@@ -114,6 +119,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         _loading = False
         UpdateCmdPreview()
         UpdateActionStates()
+        SizeSections()
     End Sub
 
     ' Fills the hive/product combos ("auto" + explicit choices) and the hive-detection label.
@@ -1819,7 +1825,36 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' Everything interactive lives in the options panel — disable it wholesale when Adobe is
     ' absent. Pass/Fail (pnlButtons) stay usable.
     Private Sub SetControlsEnabled(enabled As Boolean)
-        tlpOptions.Enabled = enabled
+        flowOptions.Enabled = enabled
+    End Sub
+
+    ' Sections track the panel width. A FlowLayoutPanel ignores Dock on its children, so the width
+    ' is set here instead: client width minus padding, and minus the vertical scrollbar when it is
+    ' showing (otherwise the sections would be just wide enough to trigger a horizontal scrollbar
+    ' too). Called on every resize of the panel, i.e. also on every splitter drag.
+    Private Sub flowOptions_SizeChanged(sender As Object, e As EventArgs) Handles flowOptions.SizeChanged
+        Try
+            SizeSections()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.flowOptions_SizeChanged", ex)
+        End Try
+    End Sub
+
+    Private Sub SizeSections()
+        Dim usable As Integer = flowOptions.ClientSize.Width - flowOptions.Padding.Horizontal
+        If flowOptions.VerticalScroll.Visible Then usable -= SystemInformation.VerticalScrollBarWidth
+        If usable <= 0 Then Return
+        For Each c As Control In flowOptions.Controls
+            Dim w As Integer = usable - c.Margin.Horizontal
+            If w <= 0 Then Continue For
+            ' Setting .Width alone is futile on an AutoSize control — the layout engine recomputes
+            ' it from the content and the section then overflows the panel sideways. Pinning
+            ' Minimum and Maximum width to the same value leaves AutoSize governing the HEIGHT
+            ' only, which is exactly what a stacked section needs. Height 0 = unconstrained.
+            c.MinimumSize = New Size(w, 0)
+            c.MaximumSize = New Size(w, 0)
+            c.Width = w
+        Next
     End Sub
 
     ' Hosted-window-dependent buttons + the probe-fed auto-measure.

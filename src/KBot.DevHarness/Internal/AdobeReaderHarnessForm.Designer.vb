@@ -4,16 +4,20 @@ Partial Class AdobeReaderHarnessForm
 
     ' Adobe embed test bench. Layout (slice 0023, config+layout pass): a vertical SplitContainer
     ' the operator can drag at runtime — Panel1 holds the options as one GroupBox + TableLayoutPanel
-    ' per section stacked in a scrolling TableLayoutPanel, Panel2 holds the Adobe host (100%) over
-    ' the status line (AutoSize). Everything docks, so controls follow the form and the Adobe area
-    ' can be traded against the options area. House rule: ALL WinForms controls are declared here,
-    ' in .Designer.vb — including the SplitContainer and every TableLayoutPanel, so the layout stays
-    ' editable in the designer.
+    ' per section stacked in a SCROLLING FlowLayoutPanel, Panel2 holds the Adobe host (100%) over
+    ' the status line (AutoSize). The Adobe area can be traded against the options area.
+    ' House rule: ALL WinForms controls are declared here, in .Designer.vb — including the
+    ' SplitContainer and every TableLayoutPanel, so the layout stays editable in the designer.
 
     Private components As System.ComponentModel.IContainer
 
     Friend WithEvents splitMain As System.Windows.Forms.SplitContainer
-    Friend WithEvents tlpOptions As System.Windows.Forms.TableLayoutPanel
+    ' The options stack is a FlowLayoutPanel, NOT a TableLayoutPanel: a TLP with AutoScroll and a
+    ' Percent filler row reports that its content always fits, so it never shows a scrollbar and
+    ' silently clips every section past the fold (that defect made both registry sections
+    ' unreachable). A TopDown FlowLayoutPanel with AutoScroll scrolls this content reliably — it is
+    ' the same container that worked here before the layout rework.
+    Friend WithEvents flowOptions As System.Windows.Forms.FlowLayoutPanel
     Friend WithEvents tlpRight As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents pnlHost As System.Windows.Forms.Panel
     Friend WithEvents lblStatus As System.Windows.Forms.Label
@@ -124,7 +128,7 @@ Partial Class AdobeReaderHarnessForm
     Private Sub InitializeComponent()
         components = New System.ComponentModel.Container()
         splitMain = New System.Windows.Forms.SplitContainer()
-        tlpOptions = New System.Windows.Forms.TableLayoutPanel()
+        flowOptions = New System.Windows.Forms.FlowLayoutPanel()
         tlpRight = New System.Windows.Forms.TableLayoutPanel()
         pnlHost = New System.Windows.Forms.Panel()
         lblStatus = New System.Windows.Forms.Label()
@@ -202,7 +206,7 @@ Partial Class AdobeReaderHarnessForm
         splitMain.Panel1.SuspendLayout()
         splitMain.Panel2.SuspendLayout()
         splitMain.SuspendLayout()
-        tlpOptions.SuspendLayout()
+        flowOptions.SuspendLayout()
         tlpRight.SuspendLayout()
         grpLaunch.SuspendLayout()
         tlpLaunch.SuspendLayout()
@@ -239,50 +243,41 @@ Partial Class AdobeReaderHarnessForm
         splitMain.Location = New System.Drawing.Point(0, 0)
         splitMain.Name = "splitMain"
         splitMain.Orientation = System.Windows.Forms.Orientation.Vertical
-        splitMain.Panel1.Controls.Add(tlpOptions)
-        splitMain.Panel1MinSize = 260
+        splitMain.Panel1.Controls.Add(flowOptions)
+        splitMain.Panel1MinSize = 300
         splitMain.Panel2.Controls.Add(tlpRight)
         splitMain.Panel2MinSize = 200
         splitMain.Size = New System.Drawing.Size(1240, 727)
-        splitMain.SplitterDistance = 320
+        ' 470, not 320: the operator's own DPI needs ~430px for the option captions
+        ' (chkNewInstance measured 427 and chkDisableServices 412 in the designer-regenerated file).
+        splitMain.SplitterDistance = 470
         splitMain.SplitterWidth = 6
         splitMain.TabIndex = 0
         '
-        ' tlpOptions — one AutoSize row per section, plus a filler row so sections stay top-aligned
+        ' flowOptions — the scrolling stack of sections (top-down, no wrapping). Section widths are
+        ' tracked to the panel in AdobeReaderHarnessForm.SizeSections; the GroupBoxes deliberately
+        ' do NOT dock, because Dock inside a FlowLayoutPanel fights AutoSize.
         '
-        tlpOptions.AutoScroll = True
-        tlpOptions.ColumnCount = 1
-        tlpOptions.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlpOptions.Controls.Add(grpLaunch, 0, 0)
-        tlpOptions.Controls.Add(grpChrome, 0, 1)
-        tlpOptions.Controls.Add(grpFile, 0, 2)
-        tlpOptions.Controls.Add(grpProbe, 0, 3)
-        tlpOptions.Controls.Add(grpScenario, 0, 4)
-        tlpOptions.Controls.Add(grpClip, 0, 5)
-        tlpOptions.Controls.Add(grpChildren, 0, 6)
-        tlpOptions.Controls.Add(grpKeys, 0, 7)
-        tlpOptions.Controls.Add(grpUser, 0, 8)
-        tlpOptions.Controls.Add(grpMachine, 0, 9)
-        tlpOptions.Controls.Add(grpCmd, 0, 10)
-        tlpOptions.Dock = System.Windows.Forms.DockStyle.Fill
-        tlpOptions.Location = New System.Drawing.Point(0, 0)
-        tlpOptions.Name = "tlpOptions"
-        tlpOptions.Padding = New System.Windows.Forms.Padding(6)
-        tlpOptions.RowCount = 12
-        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpOptions.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlpOptions.Size = New System.Drawing.Size(320, 727)
-        tlpOptions.TabIndex = 0
+        flowOptions.AutoScroll = True
+        flowOptions.Controls.Add(grpLaunch)
+        flowOptions.Controls.Add(grpChrome)
+        flowOptions.Controls.Add(grpFile)
+        flowOptions.Controls.Add(grpProbe)
+        flowOptions.Controls.Add(grpScenario)
+        flowOptions.Controls.Add(grpClip)
+        flowOptions.Controls.Add(grpChildren)
+        flowOptions.Controls.Add(grpKeys)
+        flowOptions.Controls.Add(grpUser)
+        flowOptions.Controls.Add(grpMachine)
+        flowOptions.Controls.Add(grpCmd)
+        flowOptions.Dock = System.Windows.Forms.DockStyle.Fill
+        flowOptions.FlowDirection = System.Windows.Forms.FlowDirection.TopDown
+        flowOptions.Location = New System.Drawing.Point(0, 0)
+        flowOptions.Name = "flowOptions"
+        flowOptions.Padding = New System.Windows.Forms.Padding(6)
+        flowOptions.Size = New System.Drawing.Size(470, 727)
+        flowOptions.TabIndex = 0
+        flowOptions.WrapContents = False
         '
         ' tlpRight — Adobe host (100%) over the status line (AutoSize)
         '
@@ -326,7 +321,6 @@ Partial Class AdobeReaderHarnessForm
         grpLaunch.AutoSize = True
         grpLaunch.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpLaunch.Controls.Add(tlpLaunch)
-        grpLaunch.Dock = System.Windows.Forms.DockStyle.Fill
         grpLaunch.Location = New System.Drawing.Point(9, 9)
         grpLaunch.Name = "grpLaunch"
         grpLaunch.Size = New System.Drawing.Size(296, 90)
@@ -368,7 +362,6 @@ Partial Class AdobeReaderHarnessForm
         grpChrome.AutoSize = True
         grpChrome.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpChrome.Controls.Add(tlpChrome)
-        grpChrome.Dock = System.Windows.Forms.DockStyle.Fill
         grpChrome.Name = "grpChrome"
         grpChrome.TabIndex = 1
         grpChrome.TabStop = False
@@ -448,7 +441,6 @@ Partial Class AdobeReaderHarnessForm
         grpFile.AutoSize = True
         grpFile.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpFile.Controls.Add(tlpFile)
-        grpFile.Dock = System.Windows.Forms.DockStyle.Fill
         grpFile.Name = "grpFile"
         grpFile.TabIndex = 2
         grpFile.TabStop = False
@@ -494,7 +486,6 @@ Partial Class AdobeReaderHarnessForm
         grpProbe.AutoSize = True
         grpProbe.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpProbe.Controls.Add(tlpProbe)
-        grpProbe.Dock = System.Windows.Forms.DockStyle.Fill
         grpProbe.Name = "grpProbe"
         grpProbe.TabIndex = 3
         grpProbe.TabStop = False
@@ -523,7 +514,6 @@ Partial Class AdobeReaderHarnessForm
         grpScenario.AutoSize = True
         grpScenario.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpScenario.Controls.Add(tlpScenario)
-        grpScenario.Dock = System.Windows.Forms.DockStyle.Fill
         grpScenario.Name = "grpScenario"
         grpScenario.TabIndex = 4
         grpScenario.TabStop = False
@@ -589,7 +579,6 @@ Partial Class AdobeReaderHarnessForm
         grpClip.AutoSize = True
         grpClip.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpClip.Controls.Add(tlpClip)
-        grpClip.Dock = System.Windows.Forms.DockStyle.Fill
         grpClip.Name = "grpClip"
         grpClip.TabIndex = 5
         grpClip.TabStop = False
@@ -662,7 +651,6 @@ Partial Class AdobeReaderHarnessForm
         grpChildren.AutoSize = True
         grpChildren.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpChildren.Controls.Add(tlpChildren)
-        grpChildren.Dock = System.Windows.Forms.DockStyle.Fill
         grpChildren.Name = "grpChildren"
         grpChildren.TabIndex = 6
         grpChildren.TabStop = False
@@ -717,7 +705,6 @@ Partial Class AdobeReaderHarnessForm
         grpKeys.AutoSize = True
         grpKeys.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpKeys.Controls.Add(tlpKeys)
-        grpKeys.Dock = System.Windows.Forms.DockStyle.Fill
         grpKeys.Name = "grpKeys"
         grpKeys.TabIndex = 7
         grpKeys.TabStop = False
@@ -755,7 +742,6 @@ Partial Class AdobeReaderHarnessForm
         grpUser.AutoSize = True
         grpUser.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpUser.Controls.Add(tlpUser)
-        grpUser.Dock = System.Windows.Forms.DockStyle.Fill
         grpUser.Name = "grpUser"
         grpUser.TabIndex = 8
         grpUser.TabStop = False
@@ -850,7 +836,6 @@ Partial Class AdobeReaderHarnessForm
         grpMachine.AutoSize = True
         grpMachine.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpMachine.Controls.Add(tlpMachine)
-        grpMachine.Dock = System.Windows.Forms.DockStyle.Fill
         grpMachine.Name = "grpMachine"
         grpMachine.TabIndex = 9
         grpMachine.TabStop = False
@@ -911,7 +896,6 @@ Partial Class AdobeReaderHarnessForm
         grpCmd.AutoSize = True
         grpCmd.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpCmd.Controls.Add(tlpCmd)
-        grpCmd.Dock = System.Windows.Forms.DockStyle.Fill
         grpCmd.Name = "grpCmd"
         grpCmd.TabIndex = 10
         grpCmd.TabStop = False
@@ -981,8 +965,8 @@ Partial Class AdobeReaderHarnessForm
         splitMain.Panel2.ResumeLayout(False)
         CType(splitMain, System.ComponentModel.ISupportInitialize).EndInit()
         splitMain.ResumeLayout(False)
-        tlpOptions.ResumeLayout(False)
-        tlpOptions.PerformLayout()
+        flowOptions.ResumeLayout(False)
+        flowOptions.PerformLayout()
         tlpRight.ResumeLayout(False)
         tlpRight.PerformLayout()
         grpLaunch.ResumeLayout(False)
