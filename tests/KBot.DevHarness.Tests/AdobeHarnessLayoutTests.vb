@@ -80,11 +80,11 @@ Public Class AdobeHarnessLayoutTests
                    Using f = NewForm()
                        Dim names = OptionsPanel(f).Controls.OfType(Of GroupBox)().
                                      Select(Function(g) g.Name).ToArray()
-                       ' grpMove joined in pass 6, deliberately right after grpChildren: hiding a
-                       ' child and moving one are the same family of lever.
+                       ' grpMove joined in pass 6, deliberately right after grpClip: both drive
+                       ' the SAME window (the hosted one), and neither touches child windows.
                        Assert.Equal(New String() {
                            "grpLaunch", "grpChrome", "grpFile", "grpProbe", "grpScenario",
-                           "grpClip", "grpChildren", "grpMove", "grpKeys", "grpUser",
+                           "grpClip", "grpMove", "grpChildren", "grpKeys", "grpUser",
                            "grpMachine", "grpCmd"},
                            names)
                    End Using
@@ -149,8 +149,8 @@ Public Class AdobeHarnessLayoutTests
 
     <Fact>
     Public Sub MoveSection_IsPresentAndReachable()
-        ' «Mută ferestre copil» sits under «Ferestre copil»; it is the lever that does NOT inflate
-        ' the hosted window, so it must be reachable in the scrolling panel like the others.
+        ' «Poziția ferestrei Adobe» sits next to «Decupare» — both drive the hosted window — and
+        ' must be reachable in the scrolling panel like every other section.
         RunSta(Sub()
                    Using f = NewForm()
                        Dim panel = OptionsPanel(f)
@@ -160,10 +160,8 @@ Public Class AdobeHarnessLayoutTests
                        Assert.True(section.Top >= 0 AndAlso section.Bottom <= panel.ClientSize.Height,
                                    $"«grpMove» nu e complet vizibilă după derulare (top={section.Top}, bottom={section.Bottom})")
 
-                       For Each name As String In New String() {"txtMoveTarget", "numDx", "numDy",
-                                                                "numDw", "numDh", "btnApplyMove",
-                                                                "btnResetMoves", "chkReapplyMoves",
-                                                                "numReapplyMs"}
+                       For Each name As String In New String() {"numDx", "numDy", "numDw", "numDh",
+                                                                "btnResetMove"}
                            Dim hits = f.Controls.Find(name, searchAllChildren:=True)
                            Assert.True(hits.Length = 1, $"controlul «{name}» lipsește din formular")
                            Assert.True(hits(0).Width > 0 AndAlso hits(0).Height > 0,
@@ -174,9 +172,23 @@ Public Class AdobeHarnessLayoutTests
     End Sub
 
     <Fact>
+    Public Sub MoveSection_TargetsNoChildWindow()
+        ' The first attempt at this pass moved individual Adobe child windows by text. Wrong
+        ' mechanism: the deltas belong on the hosted window, like clip right/top. Nothing in the
+        ' section may ask for a child-window target again.
+        RunSta(Sub()
+                   Using f = NewForm()
+                       Assert.Empty(f.Controls.Find("txtMoveTarget", searchAllChildren:=True))
+                       Assert.Empty(f.Controls.Find("chkReapplyMoves", searchAllChildren:=True))
+                       Assert.Empty(f.Controls.Find("numReapplyMs", searchAllChildren:=True))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
     Public Sub MoveDeltas_AcceptNegativeValues()
-        ' dx = -120 is the whole point: pulling the splitter LEFT over the gutter. A spinner whose
-        ' minimum is 0 would make the feature unusable and the failure would be silent.
+        ' dx = -120 is the whole point: pulling the window LEFT so the gutter leaves the panel. A
+        ' spinner whose minimum is 0 would make the feature unusable, and silently so.
         RunSta(Sub()
                    Using f = NewForm()
                        For Each name As String In New String() {"numDx", "numDy", "numDw", "numDh"}
@@ -185,17 +197,6 @@ Public Class AdobeHarnessLayoutTests
                            Assert.True(n.Maximum >= 2000D, $"«{name}» are maximul prea mic ({n.Maximum})")
                            Assert.Equal(0D, n.Value)
                        Next
-                   End Using
-               End Sub)
-    End Sub
-
-    <Fact>
-    Public Sub ReapplyIsOffByDefault()
-        ' A timer that writes into another process must never start on its own.
-        RunSta(Sub()
-                   Using f = NewForm()
-                       Assert.False(DirectCast(f.Controls.Find("chkReapplyMoves", True).Single(), CheckBox).Checked)
-                       Assert.Equal(500D, DirectCast(f.Controls.Find("numReapplyMs", True).Single(), NumericUpDown).Value)
                    End Using
                End Sub)
     End Sub

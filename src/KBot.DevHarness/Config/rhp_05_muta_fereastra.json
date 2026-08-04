@@ -1,0 +1,64 @@
+{
+  // ── TEST 5 — «Mutarea ferestrei Adobe scoate jgheabul din stânga?» ────────
+  //
+  // Decuparea de până acum lucrează pe DOUĂ direcții fixe: dreapta și sus.
+  // Secțiunea «move» e forma ei generală, pe toate patru: acționează asupra
+  // ACELEIAȘI ferestre — cea găzduită în panou — nu asupra ferestrelor copil
+  // din interiorul lui Adobe.
+  //
+  // dx/dy negative trag fereastra spre stânga/sus, deci banda de la marginea
+  // aceea iese din zona vizibilă a panoului; dw/dh o cresc înapoi peste
+  // marginea opusă, ca să nu rămână panoul cu o fâșie goală.
+  //
+  // De aceea NU e nevoie de nimic care să reaplice periodic: totul trece prin
+  // HostedBounds, deci deplasarea se re-aplică singură la fiecare redimensionare,
+  // tragere de splitter și relansare — exact ca decuparea.
+  //
+  // CE URMĂREȘTI:
+  //   1. Log-ul: «Poziție (scenariu): cerut 0,0 1466x1278 — MUTAT ... -> ...».
+  //      Dacă apare «ATENȚIE: fereastra nu a ajuns la dreptunghiul cerut»,
+  //      Adobe a refuzat sau a limitat dimensiunea — e un rezultat, notează-l.
+  //   2. Ecranul: a dispărut banda neagră din stânga? A urcat documentul peste
+  //      banda de bare de sus?
+  //   3. Zoom-ul: pune documentul pe «fit width» și vezi dacă pagina se
+  //      rescalează la lățimea umflată — asta e limita metodei, comună cu
+  //      decuparea, fiindcă fereastra chiar E mai mare decât panoul.
+  "schema": 1,
+  "requireCleanBaseline": true,
+  "name": "RHP 05: mută fereastra Adobe (stânga + sus)",
+  "note": "Trage fereastra găzduită 120px la stânga și 90px în sus, crescând-o cu aceleași valori. Fără decupare, fără ascunderi.",
+
+  "launch": {
+    "newInstance": true,
+    "noSplash": true
+  },
+
+  "openParameters": {
+    "toolbar": 0,
+    "navpanes": 0,
+    "statusbar": 0,
+    "messages": 0,
+    "scrollbar": 0,
+    "pagemode": "none"
+  },
+
+  // Decuparea rămâne EXPLICIT oprită: se compun, deci dacă ar fi amândouă
+  // active nu s-ar mai putea spune care a produs ce se vede pe ecran.
+  "clip": {
+    "enabled": false
+  },
+
+  "move": {
+    "dx": -120,
+    "dy": -90,
+    "dw": 120,
+    "dh": 90
+  },
+
+  "scenario": [
+    "launch",
+    "waitForEmbed",
+    "probe",
+    "applyMove"
+  ]
+}

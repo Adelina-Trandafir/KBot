@@ -202,36 +202,35 @@ Public Class AdobeHarnessScenarioBindingTests
     End Sub
 
     <Fact>
-    Public Sub Loading_FillsTheMoveBoxesFromTheScenario()
+    Public Sub Loading_FillsTheMoveSpinnersFromTheScenario()
         Const move As String = "{
   ""schema"": 1,
-  ""moveChildren"": [
-    { ""byText"": ""AVSplitterView"", ""dx"": -120, ""dy"": -90, ""dw"": 120, ""dh"": 90 }
-  ],
-  ""moveOptions"": { ""reapply"": true, ""reapplyIntervalMs"": 250 },
-  ""scenario"": [ ""moveChildren"" ]
+  ""move"": { ""dx"": -120, ""dy"": -90, ""dw"": 120, ""dh"": 90 },
+  ""scenario"": [ ""applyMove"" ]
 }"
         RunSta(Sub()
                    Using f = NewForm()
                        LoadScenario(f, move)
-                       Assert.Equal("AVSplitterView", Ctl(Of TextBox)(f, "txtMoveTarget").Text)
                        Assert.Equal(-120D, Ctl(Of NumericUpDown)(f, "numDx").Value)
                        Assert.Equal(-90D, Ctl(Of NumericUpDown)(f, "numDy").Value)
                        Assert.Equal(120D, Ctl(Of NumericUpDown)(f, "numDw").Value)
                        Assert.Equal(90D, Ctl(Of NumericUpDown)(f, "numDh").Value)
-                       Assert.True(Ctl(Of CheckBox)(f, "chkReapplyMoves").Checked)
-                       Assert.Equal(250D, Ctl(Of NumericUpDown)(f, "numReapplyMs").Value)
+                       ' A non-zero delta arriving from a FILE must enable «Readu la zero» exactly
+                       ' as one typed into the spinner does — caught by rendering the panel.
+                       Assert.True(Ctl(Of Button)(f, "btnResetMove").Enabled)
                    End Using
                End Sub)
     End Sub
 
     <Fact>
-    Public Sub Loading_AScenarioWithoutMoves_LeavesTheReapplyTimerOff()
+    Public Sub Loading_AScenarioWithoutAMoveSection_LeavesTheSpinnersAtZero()
         RunSta(Sub()
                    Using f = NewForm()
                        LoadScenario(f, SettingsJson)
-                       Assert.False(Ctl(Of CheckBox)(f, "chkReapplyMoves").Checked)
-                       Assert.Equal("", Ctl(Of TextBox)(f, "txtMoveTarget").Text)
+                       For Each name As String In New String() {"numDx", "numDy", "numDw", "numDh"}
+                           Assert.Equal(0D, Ctl(Of NumericUpDown)(f, name).Value)
+                       Next
+                       Assert.False(Ctl(Of Button)(f, "btnResetMove").Enabled)
                    End Using
                End Sub)
     End Sub

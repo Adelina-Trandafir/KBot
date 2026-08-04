@@ -79,11 +79,9 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents btnShowChild As System.Windows.Forms.Button
     Friend WithEvents btnShowAllChildren As System.Windows.Forms.Button
 
-    ' Mută ferestre copil — move/resize a child window instead of hiding it or clipping the host.
+    ' Poziția ferestrei Adobe — dx/dy/dw/dh on the HOSTED window, exactly like clip right/top.
     Friend WithEvents grpMove As System.Windows.Forms.GroupBox
     Friend WithEvents tlpMove As System.Windows.Forms.TableLayoutPanel
-    Friend WithEvents lblMoveTarget As System.Windows.Forms.Label
-    Friend WithEvents txtMoveTarget As System.Windows.Forms.TextBox
     Friend WithEvents lblDx As System.Windows.Forms.Label
     Friend WithEvents numDx As System.Windows.Forms.NumericUpDown
     Friend WithEvents lblDy As System.Windows.Forms.Label
@@ -92,13 +90,8 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents numDw As System.Windows.Forms.NumericUpDown
     Friend WithEvents lblDh As System.Windows.Forms.Label
     Friend WithEvents numDh As System.Windows.Forms.NumericUpDown
-    Friend WithEvents btnApplyMove As System.Windows.Forms.Button
-    Friend WithEvents btnResetMoves As System.Windows.Forms.Button
-    Friend WithEvents chkReapplyMoves As System.Windows.Forms.CheckBox
-    Friend WithEvents lblReapplyMs As System.Windows.Forms.Label
-    Friend WithEvents numReapplyMs As System.Windows.Forms.NumericUpDown
-    ' Re-imposes the recorded moves; Adobe puts its windows back on resize/zoom/document change.
-    Friend WithEvents tmrReapplyMoves As System.Windows.Forms.Timer
+    Friend WithEvents btnResetMove As System.Windows.Forms.Button
+    Friend WithEvents lblMoveHint As System.Windows.Forms.Label
 
     ' Scurtături — keyboard toggles (experimental).
     Friend WithEvents grpKeys As System.Windows.Forms.GroupBox
@@ -209,8 +202,6 @@ Partial Class AdobeReaderHarnessForm
         btnShowAllChildren = New System.Windows.Forms.Button()
         grpMove = New System.Windows.Forms.GroupBox()
         tlpMove = New System.Windows.Forms.TableLayoutPanel()
-        lblMoveTarget = New System.Windows.Forms.Label()
-        txtMoveTarget = New System.Windows.Forms.TextBox()
         lblDx = New System.Windows.Forms.Label()
         numDx = New System.Windows.Forms.NumericUpDown()
         lblDy = New System.Windows.Forms.Label()
@@ -219,12 +210,8 @@ Partial Class AdobeReaderHarnessForm
         numDw = New System.Windows.Forms.NumericUpDown()
         lblDh = New System.Windows.Forms.Label()
         numDh = New System.Windows.Forms.NumericUpDown()
-        btnApplyMove = New System.Windows.Forms.Button()
-        btnResetMoves = New System.Windows.Forms.Button()
-        chkReapplyMoves = New System.Windows.Forms.CheckBox()
-        lblReapplyMs = New System.Windows.Forms.Label()
-        numReapplyMs = New System.Windows.Forms.NumericUpDown()
-        tmrReapplyMoves = New System.Windows.Forms.Timer(components)
+        btnResetMove = New System.Windows.Forms.Button()
+        lblMoveHint = New System.Windows.Forms.Label()
         grpKeys = New System.Windows.Forms.GroupBox()
         tlpKeys = New System.Windows.Forms.TableLayoutPanel()
         btnSendShiftF4 = New System.Windows.Forms.Button()
@@ -289,7 +276,6 @@ Partial Class AdobeReaderHarnessForm
         CType(numDy, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(numDw, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(numDh, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(numReapplyMs, System.ComponentModel.ISupportInitialize).BeginInit()
         grpKeys.SuspendLayout()
         tlpKeys.SuspendLayout()
         grpUser.SuspendLayout()
@@ -332,9 +318,11 @@ Partial Class AdobeReaderHarnessForm
         flowOptions.Controls.Add(grpFile)
         flowOptions.Controls.Add(grpProbe)
         flowOptions.Controls.Add(grpScenario)
+        ' grpMove sits next to grpClip on purpose: both drive the SAME window (the hosted Adobe
+        ' one), and neither has anything to do with the child-window levers below them.
         flowOptions.Controls.Add(grpClip)
-        flowOptions.Controls.Add(grpChildren)
         flowOptions.Controls.Add(grpMove)
+        flowOptions.Controls.Add(grpChildren)
         flowOptions.Controls.Add(grpKeys)
         flowOptions.Controls.Add(grpUser)
         flowOptions.Controls.Add(grpMachine)
@@ -721,7 +709,7 @@ Partial Class AdobeReaderHarnessForm
         grpChildren.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpChildren.Controls.Add(tlpChildren)
         grpChildren.Name = "grpChildren"
-        grpChildren.TabIndex = 6
+        grpChildren.TabIndex = 7
         grpChildren.TabStop = False
         grpChildren.Text = "Ferestre copil"
         '
@@ -769,45 +757,36 @@ Partial Class AdobeReaderHarnessForm
         btnShowAllChildren.Text = "Restaurează toate"
         btnShowAllChildren.UseVisualStyleBackColor = True
         '
-        ' grpMove — move/resize a child instead of hiding it or inflating the host
+        ' grpMove — dx/dy/dw/dh on the HOSTED Adobe window, the same window clip right/top drives
         '
         grpMove.AutoSize = True
         grpMove.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         grpMove.Controls.Add(tlpMove)
         grpMove.Name = "grpMove"
-        grpMove.TabIndex = 7
+        grpMove.TabIndex = 6
         grpMove.TabStop = False
-        grpMove.Text = "Mută ferestre copil"
+        grpMove.Text = "Poziția ferestrei Adobe"
         '
         tlpMove.AutoSize = True
         tlpMove.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
         tlpMove.ColumnCount = 2
         tlpMove.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpMove.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlpMove.Controls.Add(lblMoveTarget, 0, 0)
-        tlpMove.Controls.Add(txtMoveTarget, 1, 0)
-        tlpMove.Controls.Add(lblDx, 0, 1)
-        tlpMove.Controls.Add(numDx, 1, 1)
-        tlpMove.Controls.Add(lblDy, 0, 2)
-        tlpMove.Controls.Add(numDy, 1, 2)
-        tlpMove.Controls.Add(lblDw, 0, 3)
-        tlpMove.Controls.Add(numDw, 1, 3)
-        tlpMove.Controls.Add(lblDh, 0, 4)
-        tlpMove.Controls.Add(numDh, 1, 4)
-        tlpMove.Controls.Add(btnApplyMove, 0, 5)
-        tlpMove.SetColumnSpan(btnApplyMove, 2)
-        tlpMove.Controls.Add(btnResetMoves, 0, 6)
-        tlpMove.SetColumnSpan(btnResetMoves, 2)
-        tlpMove.Controls.Add(chkReapplyMoves, 0, 7)
-        tlpMove.SetColumnSpan(chkReapplyMoves, 2)
-        tlpMove.Controls.Add(lblReapplyMs, 0, 8)
-        tlpMove.Controls.Add(numReapplyMs, 1, 8)
+        tlpMove.Controls.Add(lblDx, 0, 0)
+        tlpMove.Controls.Add(numDx, 1, 0)
+        tlpMove.Controls.Add(lblDy, 0, 1)
+        tlpMove.Controls.Add(numDy, 1, 1)
+        tlpMove.Controls.Add(lblDw, 0, 2)
+        tlpMove.Controls.Add(numDw, 1, 2)
+        tlpMove.Controls.Add(lblDh, 0, 3)
+        tlpMove.Controls.Add(numDh, 1, 3)
+        tlpMove.Controls.Add(btnResetMove, 0, 4)
+        tlpMove.SetColumnSpan(btnResetMove, 2)
+        tlpMove.Controls.Add(lblMoveHint, 0, 5)
+        tlpMove.SetColumnSpan(lblMoveHint, 2)
         tlpMove.Dock = System.Windows.Forms.DockStyle.Fill
         tlpMove.Name = "tlpMove"
-        tlpMove.RowCount = 9
-        tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpMove.RowCount = 6
         tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
@@ -816,23 +795,10 @@ Partial Class AdobeReaderHarnessForm
         tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpMove.TabIndex = 0
         '
-        lblMoveTarget.AutoSize = True
-        lblMoveTarget.Dock = System.Windows.Forms.DockStyle.Fill
-        lblMoveTarget.Name = "lblMoveTarget"
-        lblMoveTarget.TabIndex = 0
-        lblMoveTarget.Text = "Text fereastră"
-        lblMoveTarget.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        '
-        ' Filled by selecting an entry in lstChildren; still editable, because a scenario may target
-        ' a window that is not in the current probe.
-        txtMoveTarget.Dock = System.Windows.Forms.DockStyle.Fill
-        txtMoveTarget.Name = "txtMoveTarget"
-        txtMoveTarget.TabIndex = 1
-        '
         lblDx.AutoSize = True
         lblDx.Dock = System.Windows.Forms.DockStyle.Fill
         lblDx.Name = "lblDx"
-        lblDx.TabIndex = 2
+        lblDx.TabIndex = 0
         lblDx.Text = "dx (stânga −)"
         lblDx.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
         '
@@ -840,12 +806,12 @@ Partial Class AdobeReaderHarnessForm
         numDx.Maximum = New Decimal(New Integer() {2000, 0, 0, 0})
         numDx.Minimum = New Decimal(New Integer() {2000, 0, 0, -2147483648})
         numDx.Name = "numDx"
-        numDx.TabIndex = 3
+        numDx.TabIndex = 1
         '
         lblDy.AutoSize = True
         lblDy.Dock = System.Windows.Forms.DockStyle.Fill
         lblDy.Name = "lblDy"
-        lblDy.TabIndex = 4
+        lblDy.TabIndex = 2
         lblDy.Text = "dy (sus −)"
         lblDy.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
         '
@@ -853,12 +819,12 @@ Partial Class AdobeReaderHarnessForm
         numDy.Maximum = New Decimal(New Integer() {2000, 0, 0, 0})
         numDy.Minimum = New Decimal(New Integer() {2000, 0, 0, -2147483648})
         numDy.Name = "numDy"
-        numDy.TabIndex = 5
+        numDy.TabIndex = 3
         '
         lblDw.AutoSize = True
         lblDw.Dock = System.Windows.Forms.DockStyle.Fill
         lblDw.Name = "lblDw"
-        lblDw.TabIndex = 6
+        lblDw.TabIndex = 4
         lblDw.Text = "dw (lățime)"
         lblDw.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
         '
@@ -866,12 +832,12 @@ Partial Class AdobeReaderHarnessForm
         numDw.Maximum = New Decimal(New Integer() {2000, 0, 0, 0})
         numDw.Minimum = New Decimal(New Integer() {2000, 0, 0, -2147483648})
         numDw.Name = "numDw"
-        numDw.TabIndex = 7
+        numDw.TabIndex = 5
         '
         lblDh.AutoSize = True
         lblDh.Dock = System.Windows.Forms.DockStyle.Fill
         lblDh.Name = "lblDh"
-        lblDh.TabIndex = 8
+        lblDh.TabIndex = 6
         lblDh.Text = "dh (înălțime)"
         lblDh.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
         '
@@ -879,46 +845,22 @@ Partial Class AdobeReaderHarnessForm
         numDh.Maximum = New Decimal(New Integer() {2000, 0, 0, 0})
         numDh.Minimum = New Decimal(New Integer() {2000, 0, 0, -2147483648})
         numDh.Name = "numDh"
-        numDh.TabIndex = 9
+        numDh.TabIndex = 7
         '
-        btnApplyMove.AutoSize = True
-        btnApplyMove.Dock = System.Windows.Forms.DockStyle.Fill
-        btnApplyMove.Name = "btnApplyMove"
-        btnApplyMove.TabIndex = 10
-        btnApplyMove.Text = "Aplică mutarea"
-        btnApplyMove.UseVisualStyleBackColor = True
+        btnResetMove.AutoSize = True
+        btnResetMove.Dock = System.Windows.Forms.DockStyle.Fill
+        btnResetMove.Name = "btnResetMove"
+        btnResetMove.TabIndex = 8
+        btnResetMove.Text = "Readu la zero"
+        btnResetMove.UseVisualStyleBackColor = True
         '
-        btnResetMoves.AutoSize = True
-        btnResetMoves.Dock = System.Windows.Forms.DockStyle.Fill
-        btnResetMoves.Name = "btnResetMoves"
-        btnResetMoves.TabIndex = 11
-        btnResetMoves.Text = "Readu la poziția inițială"
-        btnResetMoves.UseVisualStyleBackColor = True
-        '
-        chkReapplyMoves.AutoSize = True
-        chkReapplyMoves.Dock = System.Windows.Forms.DockStyle.Fill
-        chkReapplyMoves.Name = "chkReapplyMoves"
-        chkReapplyMoves.TabIndex = 12
-        chkReapplyMoves.Text = "Reaplică periodic (Adobe reface aranjarea)"
-        '
-        lblReapplyMs.AutoSize = True
-        lblReapplyMs.Dock = System.Windows.Forms.DockStyle.Fill
-        lblReapplyMs.Name = "lblReapplyMs"
-        lblReapplyMs.TabIndex = 13
-        lblReapplyMs.Text = "Interval (ms)"
-        lblReapplyMs.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        '
-        numReapplyMs.Dock = System.Windows.Forms.DockStyle.Fill
-        numReapplyMs.Increment = New Decimal(New Integer() {50, 0, 0, 0})
-        numReapplyMs.Maximum = New Decimal(New Integer() {10000, 0, 0, 0})
-        numReapplyMs.Minimum = New Decimal(New Integer() {50, 0, 0, 0})
-        numReapplyMs.Name = "numReapplyMs"
-        numReapplyMs.TabIndex = 14
-        numReapplyMs.Value = New Decimal(New Integer() {500, 0, 0, 0})
-        '
-        ' tmrReapplyMoves — interval driven by numReapplyMs; started only by chkReapplyMoves
-        '
-        tmrReapplyMoves.Interval = 500
+        lblMoveHint.AutoSize = True
+        lblMoveHint.Dock = System.Windows.Forms.DockStyle.Fill
+        lblMoveHint.Name = "lblMoveHint"
+        lblMoveHint.TabIndex = 9
+        lblMoveHint.Text = "Deplasează ȘI redimensionează FEREASTRA ADOBE în panou, exact ca decuparea " &
+                           "dreapta/sus (se compun). dx/dy negative o trag spre stânga/sus, deci banda " &
+                           "din marginea aceea iese din zona vizibilă."
         '
         ' grpKeys
         '
@@ -1305,7 +1247,6 @@ Partial Class AdobeReaderHarnessForm
         CType(numDy, System.ComponentModel.ISupportInitialize).EndInit()
         CType(numDw, System.ComponentModel.ISupportInitialize).EndInit()
         CType(numDh, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(numReapplyMs, System.ComponentModel.ISupportInitialize).EndInit()
         grpMove.ResumeLayout(False)
         grpMove.PerformLayout()
         tlpMove.ResumeLayout(False)

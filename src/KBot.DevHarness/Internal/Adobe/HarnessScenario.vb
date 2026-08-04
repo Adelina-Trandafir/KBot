@@ -43,11 +43,8 @@ Public NotInheritable Class HarnessScenario
     <JsonPropertyName("hideChildren")>
     Public Property HideChildren As HideChildrenConfig
 
-    <JsonPropertyName("moveChildren")>
-    Public Property MoveChildren As List(Of MoveChildEntry)
-
-    <JsonPropertyName("moveOptions")>
-    Public Property MoveOptions As MoveOptionsConfig
+    <JsonPropertyName("move")>
+    Public Property Move As MoveConfig
 
     <JsonPropertyName("keys")>
     Public Property Keys As List(Of KeyStepConfig)
@@ -154,20 +151,15 @@ Public NotInheritable Class HideChildrenConfig
     End Function
 End Class
 
-' One child window to MOVE/RESIZE, by window text, as deltas on its current rectangle.
+' Where the HOSTED Adobe window sits inside the host panel, as deltas on the rectangle it would
+' otherwise get. The sibling of `clip`, driving the SAME window: clip right is a dw, clip top is a
+' dy plus a dh; `move` is the general form, in all four directions.
 '
-' WHY DELTAS AND NOT ABSOLUTE COORDINATES: Adobe lays its inner windows out from the host size, so
-' an absolute rectangle written on one machine is wrong on the next resize, let alone the next
-' monitor. A delta ("pull it 120px left and give it those 120px back in width") survives both.
-'
-' WHY THIS EXISTS AT ALL, NEXT TO CLIPPING: clipping enlarges the HOSTED window so the unwanted
-' band falls off the panel edge, which means a fit-width/fit-page zoom rescales the page to the
-' inflated width and the clip starts eating document content. Moving a child leaves the host size
-' untouched, so the page keeps its scale. Where moving works it is strictly better.
-Public NotInheritable Class MoveChildEntry
-    <JsonPropertyName("byText")>
-    Public Property ByText As String
-
+' WHY DELTAS AND NOT AN ABSOLUTE RECTANGLE: the base rectangle is the host panel's client area, so
+' it changes with every window resize and splitter drag. An absolute rectangle written on one
+' machine would be wrong at the next resize, let alone on another monitor. A delta ("pull it 120px
+' left and give those 120px back in width") survives both.
+Public NotInheritable Class MoveConfig
     <JsonPropertyName("dx")>
     Public Property Dx As Integer?
 
@@ -199,34 +191,9 @@ Public NotInheritable Class MoveChildEntry
         Return Dh.GetValueOrDefault(0)
     End Function
 
-    ' All-zero deltas are a no-op, and the runner says so rather than reporting a move.
+    ' All-zero deltas leave the window exactly where the panel puts it.
     Public Function IsNoOp() As Boolean
-        Return EffectiveDx() = 0 AndAlso EffectiveDy() = 0 AndAlso
-               EffectiveDw() = 0 AndAlso EffectiveDh() = 0
-    End Function
-End Class
-
-' Adobe recomputes its layout on resize, zoom change, document change and assorted repaints, and
-' puts the window back where it wants it. Reapplication is how a move survives that.
-Public NotInheritable Class MoveOptionsConfig
-    Public Const DefaultReapplyIntervalMs As Integer = 500
-
-    <JsonPropertyName("reapply")>
-    Public Property Reapply As Boolean?
-
-    <JsonPropertyName("reapplyIntervalMs")>
-    Public Property ReapplyIntervalMs As Integer?
-
-    <JsonExtensionData>
-    Public Property Extra As Dictionary(Of String, JsonElement)
-
-    Public Function ShouldReapply() As Boolean
-        Return Reapply.GetValueOrDefault(False)
-    End Function
-
-    Public Function EffectiveIntervalMs() As Integer
-        If ReapplyIntervalMs.HasValue AndAlso ReapplyIntervalMs.Value > 0 Then Return ReapplyIntervalMs.Value
-        Return DefaultReapplyIntervalMs
+        Return HostedWindowGeometry.IsNeutral(EffectiveDx(), EffectiveDy(), EffectiveDw(), EffectiveDh())
     End Function
 End Class
 
@@ -297,14 +264,14 @@ Public NotInheritable Class HarnessScenarioSteps
     Public Const SendKeys As String = "sendKeys"
     Public Const Probe As String = "probe"
     Public Const HideChildren As String = "hideChildren"
-    Public Const MoveChildren As String = "moveChildren"
     Public Const ApplyClip As String = "applyClip"
+    Public Const ApplyMove As String = "applyMove"
     Public Const RestoreUserPrefs As String = "restoreUserPrefs"
     Public Const RevertMachinePolicy As String = "revertMachinePolicy"
 
     Public Shared ReadOnly All As String() = {
         ApplyUserPrefs, ApplyMachinePolicy, Launch, WaitForEmbed, SendKeys,
-        Probe, HideChildren, MoveChildren, ApplyClip, RestoreUserPrefs, RevertMachinePolicy}
+        Probe, HideChildren, ApplyClip, ApplyMove, RestoreUserPrefs, RevertMachinePolicy}
 
     Public Shared Function IsKnown(stepName As String) As Boolean
         If String.IsNullOrWhiteSpace(stepName) Then Return False
