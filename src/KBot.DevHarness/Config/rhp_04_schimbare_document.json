@@ -1,0 +1,72 @@
+{
+  // ── TEST 4 din 4 — «Rezistă ascunderea la schimbarea documentului?» ────────
+  //
+  // Acesta este pe jumătate manual: vocabularul de pași nu are un pas
+  // «deschide alt document», pentru că PDF-ul se alege întotdeauna separat cu
+  // «Deschide PDF…». Scenariul pregătește starea; restul faci tu cu mâna.
+  //
+  // DE CE CONTEAZĂ: «reapplyOnRelaunch» acoperă RELANSAREA lui Adobe, nu
+  // schimbarea documentului în aceeași instanță. În «ReaderHostPreview»
+  // operatorul sare de la un DDF la altul toată ziua. Dacă Adobe reconstruiește
+  // AVTaskPaneHostView la fiecare document nou, panoul reapare în producție
+  // chiar dacă în banc totul arată perfect.
+  //
+  // PROCEDURA, în ordine:
+  //   1. Alege un PDF cu «Deschide PDF…».
+  //   2. «Rulează scenariul» → panoul dispare.
+  //   3. FĂRĂ să închizi nimic, alege AL DOILEA PDF cu «Deschide PDF…».
+  //   4. Privește ecranul: a reapărut panoul?
+  //   5. Apasă «Arborele de ferestre copil» și compară handle-ul lui
+  //      AVTaskPaneHostView cu cel din proba anterioară.
+  //
+  // CUM SE CITEȘTE REZULTATUL:
+  //   - panoul NU reapare            → ascunderea ține, nu e nevoie de nimic;
+  //   - reapare, handle DIFERIT      → Adobe a distrus și a recreat fereastra:
+  //     «ReaderHostPreview» trebuie să reaplice ascunderea după FIECARE
+  //     încărcare de document, nu doar după încorporare;
+  //   - reapare, ACELAȘI handle      → Adobe doar a re-arătat fereastra:
+  //     e nevoie de o reaplicare periodică sau de un cârlig pe schimbarea
+  //     documentului.
+  // Trimite-mi cele două linii de probă cu AVTaskPaneHostView, cu tot cu
+  // handle-uri — diferența dintre ele decide implementarea.
+  //
+  // «reapplyAttempts» este urcat la 20 și intervalul la 500 ms: dacă bancul
+  // reaplică singur ascunderea la al doilea document, vreau să văd în log
+  // câte încercări i-au trebuit. Liniile «0 din 1 găsite» repetate sunt exact
+  // diagnosticul util aici.
+  "schema": 1,
+  // Refuză să ruleze dacă o politică HKLM e activă: o bază contaminată face
+  // rezultatele neconcludente (vezi 04.08, patru rulări «reușite» care nu au testat nimic).
+  "requireCleanBaseline": true,
+  "name": "RHP 04: schimbare de document",
+  "note": "Rulează scenariul, apoi deschide manual al doilea PDF fără a închide Adobe.",
+
+  "launch": {
+    "newInstance": true,
+    "noSplash": true
+  },
+
+  "openParameters": {
+    "toolbar": 0,
+    "navpanes": 0,
+    "statusbar": 0,
+    "messages": 0,
+    "scrollbar": 0,
+    "pagemode": "none"
+  },
+
+  "hideChildren": {
+    "byText": [ "AVTaskPaneHostView" ],
+    "reapplyOnRelaunch": true,
+    "reapplyAttempts": 20,
+    "reapplyIntervalMs": 500
+  },
+
+  "scenario": [
+    "launch",
+    "waitForEmbed",
+    "probe",
+    "hideChildren",
+    "probe"
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  // ── TEST 3 din 4 — «Ce se întâmplă când ascunzi panoul DESFĂȘURAT?» ────────
+  //
+  // Pe o mașină de client curată, Adobe pornește cu panoul desfășurat la 346px,
+  // nu pliat la 70px — starea pliată de pe mașina ta este o preferință pe care
+  // Adobe și-a notat-o local, în profilul tău Windows. Deci cazul real, cel de
+  // pe calculatorul operatorului, este exact cel netestat până acum.
+  //
+  // ÎNTREBAREA: după ce ascunzi AVTaskPaneHostView de 346px, zona documentului
+  // se reașază și umple golul, sau rămâne o bandă moartă de 346px în dreapta?
+  // Dacă rămâne bandă moartă, «ReaderHostPreview» are nevoie de ascundere ȘI
+  // decupare, nu doar de ascundere.
+  //
+  // OBLIGATORIU ÎNAINTE DE «Rulează scenariul»:
+  // panoul trebuie să fie DESFĂȘURAT la pornire. Citește prima «probă» din log:
+  //   - scrie 346px → testul e valid, continuă;
+  //   - scrie 70px  → panoul era pliat, testul NU este valid. Desfășoară-l
+  //     (clic pe banda din dreapta, sau Shift+F4 din secțiunea «Scurtături»),
+  //     apoi rulează scenariul din nou.
+  // Nu am pus «sendKeys» aici tocmai ca să nu comute la întâmplare într-o
+  // direcție sau alta.
+  //
+  // Secțiunea «clip» vine încărcată cu 346 dar OPRITĂ. Dacă vezi bandă moartă,
+  // bifează «Decupare activă» în panoul din stânga — valoarea e deja acolo, nu
+  // trebuie s-o tastezi. Decuparea se aplică live, fără relansare.
+  //
+  // CE ÎMI TRIMIȚI: o captură după ascundere și, dacă a fost nevoie de
+  // decupare, valoarea finală din «Decupare dreapta».
+  "schema": 1,
+  // Refuză să ruleze dacă o politică HKLM e activă: o bază contaminată face
+  // rezultatele neconcludente (vezi 04.08, patru rulări «reușite» care nu au testat nimic).
+  "requireCleanBaseline": true,
+  "name": "RHP 03: ascunde panoul desfășurat",
+  "note": "Panoul TREBUIE să fie desfășurat (346px) la pornire — verifică prima probă din log.",
+
+  "launch": {
+    "newInstance": true,
+    "noSplash": true
+  },
+
+  "openParameters": {
+    "toolbar": 0,
+    "navpanes": 0,
+    "statusbar": 0,
+    "messages": 0,
+    "scrollbar": 0,
+    "pagemode": "none"
+  },
+
+  "hideChildren": {
+    "byText": [ "AVTaskPaneHostView" ],
+    "reapplyOnRelaunch": true,
+    "reapplyAttempts": 10,
+    "reapplyIntervalMs": 400
+  },
+
+  // Pregătită, dar oprită: se bifează manual DOAR dacă rămâne bandă moartă.
+  "clip": {
+    "enabled": false,
+    "right": 346,
+    "top": 0
+  },
+
+  // Fără «keys»: nu comutăm nimic, ca să știm sigur din ce stare am pornit.
+  // Fără «userPrefs» / «machinePolicy»: nu se scrie nimic în registry.
+  "scenario": [
+    "launch",
+    "waitForEmbed",
+    "probe",
+    "hideChildren",
+    "probe"
+  ]
+}

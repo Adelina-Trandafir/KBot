@@ -1,0 +1,68 @@
+{
+  // ── TEST 2 din 4 — «Există AVTaskPaneHostView și pe interfața modernă?» ────
+  //
+  // ACESTA ESTE CEL MAI IMPORTANT DIN CELE PATRU.
+  //
+  // Tot ce funcționează acum se sprijină pe UN SINGUR ȘIR DE TEXT:
+  // «AVTaskPaneHostView». Log-ul tău arată bEnableAv2 = 0 deja setat sub
+  // Adobe Acrobat\DC\AVGeneral, deci tot ce ai probat până acum a fost
+  // interfața CLASICĂ. Ai spus că pe mașinile operatorilor contează mai ales
+  // cea NOUĂ. Dacă acolo fereastra are alt text — sau nu există ca fereastră
+  // separată — scenariul cade și «ReaderHostPreview» are nevoie de decupare
+  // ca rezervă.
+  //
+  // ATENȚIE: acest scenariu SCRIE în registry (HKCU, per utilizator).
+  // Va apărea dialogul de confirmare cu valoarea veche și cea nouă. Este
+  // singurul dintre cele patru care scrie ceva. «restoreOnClose» este true,
+  // deci bancul readuce valoarea la închidere — dar verifică log-ul la final
+  // ca să fii sigură că restaurarea a reușit.
+  //
+  // NU ascunde nimic intenționat: vrem arborele curat, nu un rezultat.
+  //
+  // CE URMĂREȘTI ÎN LOG, la «probă»:
+  //   1. Mai apare textul «AVTaskPaneHostView»? Dacă da, ești portabilă.
+  //   2. Dacă nu — ce fereastră este lipită de marginea dreaptă, ce text are
+  //      și ce lățime? Trimite-mi acele linii; din ele scot al doilea «byText».
+  //   3. Dacă nicio fereastră copil nu corespunde panoului vizibil pe ecran,
+  //      înseamnă că interfața nouă îl desenează intern, iar singura cale
+  //      deterministă rămâne decuparea geometrică.
+  "schema": 1,
+  // Refuză să ruleze dacă o politică HKLM e activă: o bază contaminată face
+  // rezultatele neconcludente (vezi 04.08, patru rulări «reușite» care nu au testat nimic).
+  "requireCleanBaseline": true,
+  "name": "RHP 02: probă pe interfața modernă",
+  "note": "Comută pe interfața nouă (bEnableAv2 = 1) și doar probează arborele. Nu ascunde nimic.",
+
+  "launch": {
+    "newInstance": true,
+    "noSplash": true
+  },
+
+  "openParameters": {
+    "toolbar": 0,
+    "navpanes": 0,
+    "statusbar": 0,
+    "messages": 0,
+    "scrollbar": 0,
+    "pagemode": "none"
+  },
+
+  "userPrefs": {
+    "hive": "auto",
+    // Doar comutatorul de interfață. NU punem aici bExpandRHPInViewer /
+    // bRHPSticky / aDefaultRHPViewMode_L: vrem să vedem cum arată interfața
+    // nouă NEATINSĂ, nu cum arată după ce am încercat s-o îmblânzim.
+    "values": {
+      "bEnableAv2": 1
+    },
+    "restoreOnClose": true
+  },
+
+  // Fără «hideChildren» și fără «keys»: observație pură.
+  "scenario": [
+    "applyUserPrefs",
+    "launch",
+    "waitForEmbed",
+    "probe"
+  ]
+}

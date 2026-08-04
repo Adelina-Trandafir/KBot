@@ -13,6 +13,7 @@ Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports Microsoft.Win32
 Imports KBot.Common
+Imports KBot.Theming
 
 ''' <summary>
 ''' Banc de probă pentru încorporarea Adobe Reader/Acrobat DC într-un panou-gazdă, cu fiecare
@@ -124,6 +125,18 @@ Public NotInheritable Class AdobeReaderHarnessForm
         UpdateCmdPreview()
         UpdateActionStates()
         SizeSections()
+        RefreshPrefsGrid()
+    End Sub
+
+    ' Warn about an outstanding HKLM policy as soon as the bench is visible — a modal dialog in the
+    ' constructor would fight the theming/Load path.
+    Protected Overrides Sub OnShown(e As EventArgs)
+        MyBase.OnShown(e)
+        Try
+            WarnIfPolicyOutstanding()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.OnShown", ex)
+        End Try
     End Sub
 
     ' Fills the hive/product combos ("auto" + explicit choices) and the hive-detection label.
@@ -237,6 +250,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
             tmrLayout.Stop()
             KillTracked()
             RestoreUserPrefsOnClose()
+            RevertMachinePolicyOnClose()
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHarnessForm.OnFormClosed", ex)
         End Try
@@ -586,9 +600,31 @@ Public NotInheritable Class AdobeReaderHarnessForm
                "px, lățime < 1/2 gazdă) ──")
         WalkChildren(_hostedWindow, 1, hostW, total)
 
+        ' The line that actually matters, per target the loaded scenario asks to hide — printed
+        ' whether or not it matched, so it cannot be lost in the tree above.
+        Dim targets As List(Of String) = ScenarioHideTargets()
+        Dim zeroSizedTarget As Boolean = False
+        For Each t As String In targets
+            Dim hit As ChildWindowItem = _lastProbe.FirstOrDefault(
+                Function(i) String.Equals(i.WindowText, t, StringComparison.OrdinalIgnoreCase))
+            If hit Is Nothing Then
+                RhpLog($"PANOU: {t} — NEGĂSIT")
+            Else
+                Dim vis As Boolean = IsWindowVisible(hit.Hwnd)
+                ' Rectangles of invisible windows are unreliable — Adobe leaves stale geometry
+                ' behind (e.g. a 27x913 child inside a 587-high host). Mark, never trust.
+                Dim stale As String = If(vis, "", " (posibil învechit)")
+                RhpLog($"PANOU: {t} — {hit.W}x{hit.H}{stale}, vis={If(vis, 1, 0)}")
+                If hit.W <= 0 OrElse hit.H <= 0 Then zeroSizedTarget = True
+            End If
+        Next
+
         Dim summary As String
         If _probeCandidateWidth > 0 Then
             summary = $"{total} ferestre copil; candidat RHP (EURISTIC): {_probeCandidateClass}, lățime {_probeCandidateWidth}px."
+        ElseIf zeroSizedTarget Then
+            summary = $"{total} ferestre copil; niciun candidat RHP — dar ținta cerută EXISTĂ cu dimensiune ZERO " &
+                      "(panoul e deja gol: probabil bază de pornire contaminată, nu un rezultat)."
         Else
             summary = $"{total} ferestre copil; niciun candidat RHP după euristic."
         End If
@@ -596,6 +632,13 @@ Public NotInheritable Class AdobeReaderHarnessForm
         ShowStatus(summary)
         UpdateActionStates()
     End Sub
+
+    ' The texts the loaded scenario wants hidden (empty when none is loaded).
+    Private Function ScenarioHideTargets() As List(Of String)
+        If _scenario Is Nothing OrElse _scenario.HideChildren Is Nothing OrElse
+           _scenario.HideChildren.ByText Is Nothing Then Return New List(Of String)()
+        Return _scenario.HideChildren.ByText.Where(Function(t) Not String.IsNullOrWhiteSpace(t)).ToList()
+    End Function
 
     Private Sub WalkChildren(parent As IntPtr, depth As Integer, hostW As Integer, ByRef total As Integer)
         Dim child As IntPtr = GetWindow(parent, GW_CHILD)
@@ -779,6 +822,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Dim attempts As Integer = cfg.EffectiveAttempts()
         Dim intervalMs As Integer = cfg.EffectiveIntervalMs()
         Dim wanted As List(Of String) = cfg.ByText.Where(Function(t) Not String.IsNullOrWhiteSpace(t)).ToList()
+        Dim lastSummary As HideAttemptSummary = Nothing
 
         For attempt As Integer = 1 To attempts
             If _hostedWindow = IntPtr.Zero Then
@@ -786,24 +830,56 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 Return False
             End If
             ProbeChildren()
-            Dim found As Integer = 0
+
+            Dim outcomes As New List(Of HideOutcome)()
             For Each text As String In wanted
                 Dim matches As List(Of ChildWindowItem) = _lastProbe.
                     Where(Function(i) String.Equals(i.WindowText, text, StringComparison.OrdinalIgnoreCase)).ToList()
-                If matches.Count > 0 Then found += 1
+                If matches.Count = 0 Then
+                    outcomes.Add(HideOutcome.NotFound)
+                    RhpLog($"  {HideOutcomeClassifier.Label(HideOutcome.NotFound)}: «{text}»")
+                    Continue For
+                End If
                 For Each m As ChildWindowItem In matches
-                    If IsWindow(m.Hwnd) Then HideChild(m)
+                    If Not IsWindow(m.Hwnd) Then Continue For
+                    ' Classify BEFORE touching it — afterwards everything looks hidden, which is
+                    ' precisely how a no-op used to be logged as a success.
+                    Dim outcome As HideOutcome = HideOutcomeClassifier.Classify(
+                        found:=True, visible:=IsWindowVisible(m.Hwnd), width:=m.W, height:=m.H)
+                    outcomes.Add(outcome)
+                    RhpLog($"  {HideOutcomeClassifier.Label(outcome)}: «{m.WindowText}» " &
+                           $"{m.W}x{m.H} vis={If(IsWindowVisible(m.Hwnd), 1, 0)} (hwnd=0x{m.Hwnd.ToInt64():X})")
+                    If outcome = HideOutcome.Hidden Then HideChild(m)
                 Next
             Next
-            RhpLog($"hideChildren: încercarea {attempt}/{attempts} — {found} din {wanted.Count} texte găsite.")
+
+            lastSummary = New HideAttemptSummary(wanted.Count, outcomes)
+            RhpLog(lastSummary.SummaryLine(attempt, attempts))
             NudgeRedraw()
             UpdateActionStates()
-            RefreshStatusBlock()
-            If found = wanted.Count Then Return True
+
+            ' Stop early only on a REAL hide. A run that only ever sees «deja ascuns»/«zero» burns
+            ' through every attempt and says so — that pattern is the signature of a contaminated
+            ' baseline, not of success.
+            If lastSummary.HiddenCount > 0 Then
+                ShowStatus($"hideChildren: {lastSummary.HiddenCount} fereastră(e) ascunse efectiv.")
+                Return True
+            End If
             If attempt < attempts Then Await Task.Delay(intervalMs)
         Next
-        RhpLog($"hideChildren: după {attempts} încercări nu s-au găsit toate textele cerute " &
-               "(rezultat valid de notat — panoul poate lipsi pe acest build Adobe).")
+
+        If lastSummary IsNot Nothing AndAlso lastSummary.FoundCount > 0 Then
+            Dim warn As String =
+                $"ATENȚIE: după {attempts} încercări nu s-a ascuns NIMIC — ferestrele cerute erau deja " &
+                "ascunse sau de dimensiune zero. Pasul nu a schimbat nimic, deci NU dovedește nimic " &
+                "despre mecanismul de ascundere (bază de pornire contaminată?)."
+            RhpLog(warn)
+            ShowStatus(warn)
+        Else
+            RhpLog($"hideChildren: după {attempts} încercări niciun text cerut nu a fost găsit " &
+                   "(rezultat valid de notat — panoul poate lipsi pe acest build Adobe).")
+            ShowStatus("hideChildren: niciun text cerut nu a fost găsit în arborele de ferestre.")
+        End If
         Return True
     End Function
 
@@ -889,38 +965,42 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Return res.AvGeneralPath
     End Function
 
-    ' One ticked HKCU value to write: registry name, kind, value, plus a short status label.
-    Private NotInheritable Class UserPrefWrite
-        Public ReadOnly Name As String
-        Public ReadOnly Kind As RegistryValueKind
-        Public ReadOnly Value As Object
-        Public ReadOnly Label As String
-
-        Public Sub New(name As String, kind As RegistryValueKind, value As Object, label As String)
-            Me.Name = name
-            Me.Kind = kind
-            Me.Value = value
-            Me.Label = label
-        End Sub
-    End Class
-
-    ' The HKCU values to write — from the CHECKBOXES only. A loaded scenario has already ticked
-    ' them (ApplyScenarioToControls), so the panel is what runs.
-    Private Function CollectUserPrefs() As List(Of UserPrefWrite)
-        Return CollectTickedUserPrefs()
+    ' The HKCU values to write, as LITERAL intents.
+    '
+    ' The scenario wins: its values go to the registry exactly as written in the file (integer ->
+    ' REG_DWORD, string -> REG_SZ, null -> delete), and the value NAMES are open — anything under
+    ' the resolved AVGeneral hive can be driven from a file without a code change. The checkboxes
+    ' are a manual shortcut for the common case and are merged in only for names the scenario does
+    ' not mention (or for all of them when no scenario is loaded).
+    '
+    ' This replaces routing scenario values through the checkboxes, which clamped them: a file
+    ' asking for `"bEnableAv2": 1` came out as 0 and the log recorded `0 (DWord) -> 0 (DWord)`.
+    Private Function CollectUserPrefs() As List(Of UserPrefIntent)
+        Dim fromScenario As New List(Of UserPrefIntent)()
+        If _scenario IsNot Nothing AndAlso _scenario.UserPrefs IsNot Nothing Then
+            Dim rejected As List(Of String) = Nothing
+            fromScenario = UserPrefIntentFactory.FromValues(_scenario.UserPrefs.Values, rejected)
+            If rejected IsNot Nothing Then
+                For Each r As String In rejected
+                    RhpLog(r)
+                Next
+            End If
+        End If
+        Return UserPrefIntentFactory.Merge(fromScenario, CollectTickedUserPrefs())
     End Function
 
-    Private Function CollectTickedUserPrefs() As List(Of UserPrefWrite)
-        Dim prefs As New List(Of UserPrefWrite)()
-        If chkExpandRhp.Checked Then prefs.Add(New UserPrefWrite(
-            AdobeRegistryConstants.ValExpandRhp, RegistryValueKind.DWord, 0, "bExpandRHPInViewer=0"))
-        If chkRhpSticky.Checked Then prefs.Add(New UserPrefWrite(
-            AdobeRegistryConstants.ValRhpSticky, RegistryValueKind.DWord, 1, "bRHPSticky=1"))
-        If chkRhpCollapsed.Checked Then prefs.Add(New UserPrefWrite(
-            AdobeRegistryConstants.ValRhpViewMode, RegistryValueKind.String,
-            AdobeRegistryConstants.RhpViewModeCollapsed, "aDefaultRHPViewMode_L=Collapsed"))
-        If chkClassicViewer.Checked Then prefs.Add(New UserPrefWrite(
-            AdobeRegistryConstants.ValEnableAv2, RegistryValueKind.DWord, 0, "bEnableAv2=0"))
+    ' The four manual shortcuts, each meaning "set this one value".
+    Private Function CollectTickedUserPrefs() As List(Of UserPrefIntent)
+        Dim prefs As New List(Of UserPrefIntent)()
+        If chkExpandRhp.Checked Then prefs.Add(New UserPrefIntent(
+            AdobeRegistryConstants.ValExpandRhp, UserPrefAction.WriteDword, 0))
+        If chkRhpSticky.Checked Then prefs.Add(New UserPrefIntent(
+            AdobeRegistryConstants.ValRhpSticky, UserPrefAction.WriteDword, 1))
+        If chkRhpCollapsed.Checked Then prefs.Add(New UserPrefIntent(
+            AdobeRegistryConstants.ValRhpViewMode, UserPrefAction.WriteString,
+            AdobeRegistryConstants.RhpViewModeCollapsed))
+        If chkClassicViewer.Checked Then prefs.Add(New UserPrefIntent(
+            AdobeRegistryConstants.ValEnableAv2, UserPrefAction.WriteDword, 0))
         Return prefs
     End Function
 
@@ -929,25 +1009,47 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' ONLY, any foreign instance (Adobe rewrites its prefs on exit, the write is worthless while
     ' it runs); (3) write, logging old → new. Shared by the button and the scenario step.
     Private Function ApplyUserPrefsCore() As Boolean
-        Dim prefs As List(Of UserPrefWrite) = CollectUserPrefs()
+        Dim prefs As List(Of UserPrefIntent) = CollectUserPrefs()
         If prefs.Count = 0 Then
             ShowStatus("Nicio valoare HKCU bifată — nimic de aplicat.")
             Return True
         End If
         Dim hive As String = CurrentAvGeneralPath()
 
-        For Each p As UserPrefWrite In prefs
+        For Each p As UserPrefIntent In prefs
             _userSnapshot.Capture(hive, p.Name)
         Next
 
         If Not KillAdobeForRegistryWrite() Then Return False
 
-        For Each p As UserPrefWrite In prefs
+        For Each p As UserPrefIntent In prefs
             Dim oldSnap As RegistryValueSnapshot = _regAccess.Read(hive, p.Name)
-            _regAccess.Write(hive, p.Name, p.Kind, p.Value)
-            RhpLog($"HKCU scris: {oldSnap} -> {p.Value} ({p.Kind})")
-            If Not _userValuesApplied.Contains(p.Label) Then _userValuesApplied.Add(p.Label)
+            If p.Action = UserPrefAction.Delete Then
+                _regAccess.DeleteValue(hive, p.Name)
+            Else
+                _regAccess.Write(hive, p.Name, p.Kind, p.Value)
+            End If
+
+            ' READ BACK and compare. A preference that will not stick is a result worth stopping
+            ' for — this is the check whose absence let four runs "pass" while testing nothing.
+            Dim actual As RegistryValueSnapshot = _regAccess.Read(hive, p.Name)
+            Dim v As WriteVerification = RegistryWriteVerifier.Verify(hive, p, actual)
+            RhpLog($"HKCU: {oldSnap} => {v.Message}")
+            If Not v.Matches Then
+                RefreshPrefsGrid()
+                ShowStatus("Scriere HKCU neconfirmată — vezi " & RHP_LOG_NAME & ".")
+                MessageBox.Show(Me,
+                    "Valoarea nu a rămas scrisă în registry:" & Environment.NewLine & Environment.NewLine &
+                    v.Message & Environment.NewLine & Environment.NewLine &
+                    "Scenariul se oprește aici — o preferință care nu se aplică ar face rezultatele " &
+                    "neconcludente.",
+                    "K-BOT — scriere registry neconfirmată", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return False
+            End If
+            Dim label As String = p.Name & "=" & p.RequestedText()
+            If Not _userValuesApplied.Contains(label) Then _userValuesApplied.Add(label)
         Next
+        RefreshPrefsGrid()
         Return True
     End Function
 
@@ -1135,8 +1237,11 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
         Dim apply As New RegFileBuilder()
         Dim revert As New RegFileBuilder()
+        ' Pre-apply snapshot, kept in the marker file so a revert can be reconstructed by hand if
+        ' the .reg goes missing.
+        Dim preApply As New List(Of String)()
         For Each en As PolicyEntry In entries
-            AddPolicyValue(apply, revert, en)
+            preApply.Add(AddPolicyValue(apply, revert, en))
         Next
 
         Dim logsDir As String = Path.Combine(AppContext.BaseDirectory, "Logs")
@@ -1151,6 +1256,21 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Dim ok As Boolean = Await RunRegImportAsync(_applyRegPath)
         If ok Then
             _machinePolicyApplied = True
+            ' Persist the fact of the apply. An elevated apply with nothing remembering it is how
+            ' the machine stayed contaminated across a whole day.
+            Try
+                WriteMarker(New MachineStateMarker() With {
+                    .PolicyApplied = True,
+                    .Product = product,
+                    .AppliedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    .RevertRegFile = _revertRegPath,
+                    .PreApply = preApply})
+                RhpLog($"Marcaj de stare scris: {MarkerPath()}")
+            Catch ex As Exception
+                GlobalErrorLog.Write("AdobeReaderHarnessForm.ApplyMachinePolicyCoreAsync.Marker", ex)
+                RhpLog("ATENȚIE: marcajul de stare NU a putut fi scris — revocarea automată la " &
+                       "închidere nu va ști că politica e aplicată.")
+            End Try
             ShowStatus("Politica HKLM aplicată. Repornește Adobe (Reîncorporează) pentru efect.")
         End If
         RefreshStatusBlock()
@@ -1168,14 +1288,33 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Sub
 
     Private Async Function RevertMachinePolicyCoreAsync() As Task(Of Boolean)
-        If String.IsNullOrEmpty(_revertRegPath) OrElse Not File.Exists(_revertRegPath) Then
+        ' Fall back to the path recorded in the marker: a revert may be needed in a LATER session,
+        ' when _revertRegPath is empty because this run never applied anything.
+        Dim regFile As String = _revertRegPath
+        If String.IsNullOrEmpty(regFile) OrElse Not File.Exists(regFile) Then
+            Dim r As MachineStateMarkerResult = ReadMarker()
+            If r.Status = MarkerReadStatus.Present AndAlso r.Marker IsNot Nothing Then
+                regFile = r.Marker.RevertRegFile
+            End If
+        End If
+        If String.IsNullOrEmpty(regFile) OrElse Not File.Exists(regFile) Then
             ShowStatus("Nu există fișier de revocare — aplică întâi politica (el se generează atunci).")
             Return True
         End If
-        Dim ok As Boolean = Await RunRegImportAsync(_revertRegPath)
+        Dim ok As Boolean = Await RunRegImportAsync(regFile)
         If ok Then
             _machinePolicyApplied = False
-            ShowStatus("Politica HKLM a fost revocată (valorile originale reimportate).")
+            ' Verify the revert actually landed before forgetting about it.
+            Dim stillActive As Integer = Enumerable.Count(ReadPolicyState(), Function(p) p.Present)
+            If stillActive = 0 Then
+                ClearMarker()
+                RhpLog("Politica HKLM revocată și verificată (nicio valoare rămasă). Marcaj șters.")
+                ShowStatus("Politica HKLM a fost revocată (verificat: nicio valoare rămasă).")
+            Else
+                RhpLog($"ATENȚIE: după revocare au rămas {stillActive} valori de politică active — " &
+                       "marcajul de stare rămâne pus.")
+                ShowStatus($"Revocare incompletă: {stillActive} valori de politică încă active.")
+            End If
         End If
         RefreshStatusBlock()
         Return ok
@@ -1193,7 +1332,8 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' Adds one policy value to the apply builder and its pre-apply original to the revert builder.
     ' Absent -> deletion line; present DWORD -> original value; present with another kind ->
     ' string when possible, otherwise logged as needing manual revert (never guessed).
-    Private Sub AddPolicyValue(apply As RegFileBuilder, revert As RegFileBuilder, entry As PolicyEntry)
+    Private Function AddPolicyValue(apply As RegFileBuilder, revert As RegFileBuilder,
+                                    entry As PolicyEntry) As String
         apply.AddDword(entry.SectionPath, entry.Name, entry.Value)
         Dim snap As RegistryValueSnapshot = _regAccess.Read(entry.SectionPath, entry.Name)
         RhpLog("HKLM citit (pentru revocare): " & snap.ToString())
@@ -1207,7 +1347,8 @@ Public NotInheritable Class AdobeReaderHarnessForm
             RhpLog($"ATENȚIE: {entry.SectionPath}\{entry.Name} are tipul {snap.Kind}, nereprezentabil în " &
                    ".reg-ul de revocare — revocarea acestei valori va trebui făcută manual.")
         End If
-    End Sub
+        Return snap.ToString()
+    End Function
 
     ' Registry DWORDs surface as Integer (possibly negative for high values) — normalize.
     Private Shared Function DwordToUInt(value As Object) As UInteger
@@ -1345,10 +1486,13 @@ Public NotInheritable Class AdobeReaderHarnessForm
             If _scenario.MachinePolicy IsNot Nothing Then
                 SelectComboValue(cboProduct, _scenario.MachinePolicy.Product)
                 ApplyPolicyValuesToChecks(_scenario.MachinePolicy.Values)
+                chkRevertPolicyOnClose.Checked = _scenario.MachinePolicy.ShouldRevertOnClose()
             End If
         Finally
             _loading = False
         End Try
+        ' The «Cerut vs Curent» table is the point of loading a scenario that touches HKCU.
+        RefreshPrefsGrid()
         RefreshStatusBlock()
     End Sub
 
@@ -1369,25 +1513,45 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Next
     End Sub
 
-    ' The panel has one checkbox per supported HKCU value. A scenario naming anything else cannot
-    ' be represented — and since the panel is what runs, that value would be silently dropped.
-    ' Say so instead.
+    ' The panel has one checkbox per COMMON HKCU value; a scenario may name any others and they are
+    ' still applied literally (see CollectUserPrefs) — they simply have no switch, so they appear
+    ' only in the «Cerut vs Curent» grid. Logged so the operator knows where to look for them.
     Private Sub ApplyUserPrefValuesToChecks(values As Dictionary(Of String, JsonElement))
         If values Is Nothing Then Return
-        chkExpandRhp.Checked = values.ContainsKey(AdobeRegistryConstants.ValExpandRhp)
-        chkRhpSticky.Checked = values.ContainsKey(AdobeRegistryConstants.ValRhpSticky)
-        chkRhpCollapsed.Checked = values.ContainsKey(AdobeRegistryConstants.ValRhpViewMode)
-        chkClassicViewer.Checked = values.ContainsKey(AdobeRegistryConstants.ValEnableAv2)
+        ' Tick a shortcut ONLY when the scenario asks for exactly what that shortcut means. A file
+        ' asking for bEnableAv2 = 1 must NOT leave «bEnableAv2 = 0» ticked: the panel would be
+        ' claiming the opposite of what will be written (the grid shows the truth either way).
+        chkExpandRhp.Checked = AsksFor(values, AdobeRegistryConstants.ValExpandRhp, 0)
+        chkRhpSticky.Checked = AsksFor(values, AdobeRegistryConstants.ValRhpSticky, 1)
+        chkRhpCollapsed.Checked = AsksForText(values, AdobeRegistryConstants.ValRhpViewMode,
+                                              AdobeRegistryConstants.RhpViewModeCollapsed)
+        chkClassicViewer.Checked = AsksFor(values, AdobeRegistryConstants.ValEnableAv2, 0)
 
         Dim known As String() = {AdobeRegistryConstants.ValExpandRhp, AdobeRegistryConstants.ValRhpSticky,
                                  AdobeRegistryConstants.ValRhpViewMode, AdobeRegistryConstants.ValEnableAv2}
         For Each k As String In values.Keys
             If Not known.Any(Function(n) String.Equals(n, k, StringComparison.OrdinalIgnoreCase)) Then
-                RhpLog($"userPrefs.values.{k}: nu există un comutator în panou pentru această valoare — " &
-                       "va fi IGNORATĂ (panoul e sursa adevărului la aplicare).")
+                RhpLog($"userPrefs.values.{k}: fără comutator în panou — se aplică LITERAL din fișier " &
+                       "(vizibilă în tabelul «Cerut vs Curent»).")
             End If
         Next
     End Sub
+
+    ' True when the scenario names this value AND asks for exactly the number the shortcut means.
+    Private Shared Function AsksFor(values As Dictionary(Of String, JsonElement),
+                                    name As String, expected As Integer) As Boolean
+        Dim el As JsonElement = Nothing
+        If Not values.TryGetValue(name, el) Then Return False
+        Return el.ValueKind = JsonValueKind.Number AndAlso el.GetInt32() = expected
+    End Function
+
+    Private Shared Function AsksForText(values As Dictionary(Of String, JsonElement),
+                                        name As String, expected As String) As Boolean
+        Dim el As JsonElement = Nothing
+        If Not values.TryGetValue(name, el) Then Return False
+        Return el.ValueKind = JsonValueKind.String AndAlso
+               String.Equals(el.GetString(), expected, StringComparison.OrdinalIgnoreCase)
+    End Function
 
     Private Sub ApplyPolicyValuesToChecks(values As Dictionary(Of String, JsonElement))
         If values Is Nothing Then Return
@@ -1437,6 +1601,29 @@ Public NotInheritable Class AdobeReaderHarnessForm
             ShowStatus("Scenariul nu conține niciun pas.")
             Return
         End If
+
+        ' Every run starts by reading the machine, so a contaminated baseline is visible BEFORE the
+        ' first step instead of being reconstructed from logs afterwards.
+        LogMachineState("── Bază de pornire ──")
+        Dim baseline As BaselineAssessment = BaselineEvaluator.Evaluate(
+            ReadPolicyState(), _scenario.RequireCleanBaseline)
+        Select Case baseline.Verdict
+            Case BaselineVerdict.Block
+                RhpLog("Scenariu REFUZAT: requireCleanBaseline = true și politica HKLM e activă." &
+                       Environment.NewLine & baseline.Describe())
+                MessageBox.Show(Me, baseline.BlockedText(), "K-BOT — bază de pornire contaminată",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error)
+                ShowStatus("Scenariu refuzat: bază de pornire contaminată (politică HKLM activă).")
+                Return
+            Case BaselineVerdict.Warn
+                RhpLog("ATENȚIE bază de pornire: politică HKLM activă —" & Environment.NewLine & baseline.Describe())
+                If MessageBox.Show(Me, baseline.WarningText(), "K-BOT — bază de pornire contaminată",
+                                   MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) <> DialogResult.OK Then
+                    RhpLog("Scenariu abandonat de operator la avertismentul de bază contaminată.")
+                    ShowStatus("Rularea scenariului a fost abandonată.")
+                    Return
+                End If
+        End Select
 
         ' Registry-touching runs are confirmed ONCE, up front, listing every path and value.
         Dim touchesUser As Boolean = steps.Contains(HarnessScenarioSteps.ApplyUserPrefs)
@@ -1562,13 +1749,19 @@ Public NotInheritable Class AdobeReaderHarnessForm
             Dim sb As New StringBuilder()
             If userPrefs Then
                 Dim hive As String = CurrentAvGeneralPath()
-                Dim prefs As List(Of UserPrefWrite) = CollectUserPrefs()
+                Dim prefs As List(Of UserPrefIntent) = CollectUserPrefs()
                 If prefs.Count > 0 Then
                     sb.AppendLine("HKCU — preferințe utilizator:")
-                    For Each p As UserPrefWrite In prefs
+                    sb.AppendLine("  (hive · nume · valoare curentă · valoare nouă · tip)")
+                    For Each p As UserPrefIntent In prefs
+                        ' The TRUE intended value, straight from the scenario — never the value a
+                        ' checkbox would have clamped it to.
                         Dim cur As RegistryValueSnapshot = _regAccess.Read(hive, p.Name)
-                        Dim curText As String = If(cur.Presence = RegPresence.Absent, "<absent>", CStr(cur.Value))
-                        sb.AppendLine($"  {hive}\{p.Name}: {curText} -> {p.Value}")
+                        Dim curText As String = If(cur.Presence = RegPresence.Absent, "(absent)",
+                                                   Convert.ToString(cur.Value))
+                        Dim newText As String = If(p.Action = UserPrefAction.Delete, "(șters)", p.RequestedText())
+                        Dim kindText As String = If(p.Action = UserPrefAction.Delete, "—", p.Kind.ToString())
+                        sb.AppendLine($"  {hive}\{p.Name}: {curText} -> {newText} ({kindText})")
                     Next
                 End If
             End If
@@ -1664,9 +1857,15 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 .ReapplyIntervalMs = HideChildrenConfig.DefaultReapplyIntervalMs}
         End If
 
+        ' Save the LITERAL intents, so a saved file reproduces exactly what would be written —
+        ' including a deletion, which round-trips as JSON null.
         Dim prefValues As New Dictionary(Of String, JsonElement)()
-        For Each p As UserPrefWrite In CollectTickedUserPrefs()
-            prefValues(p.Name) = ToJsonElement(p.Value)
+        For Each p As UserPrefIntent In CollectUserPrefs()
+            If p.Action = UserPrefAction.Delete Then
+                prefValues(p.Name) = JsonSerializer.SerializeToElement(Of Object)(Nothing)
+            Else
+                prefValues(p.Name) = ToJsonElement(p.Value)
+            End If
         Next
         If prefValues.Count > 0 Then
             s.UserPrefs = New UserPrefsConfig() With {
@@ -1718,6 +1917,251 @@ Public NotInheritable Class AdobeReaderHarnessForm
     Private Shared Function ConfigDir() As String
         Return Path.Combine(AppContext.BaseDirectory, CONFIG_DIR_NAME)
     End Function
+
+    ' ══ Starea mașinii (Adobe + registry) ══════════════════════════════════════
+    Private Sub btnMachineState_Click(sender As Object, e As EventArgs) Handles btnMachineState.Click
+        Try
+            Dim summary As String = LogMachineState("── Starea mașinii ──")
+            ShowStatus(summary)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnMachineState_Click", ex)
+            ShowStatus("Eroare la citirea stării mașinii: " & ex.Message)
+        End Try
+    End Sub
+
+    ' Reads and logs the whole picture WITHOUT writing anything and without elevation (reading
+    ' HKLM\SOFTWARE\Policies needs no rights). Returns a compact summary for lblStatus.
+    Private Function LogMachineState(header As String) As String
+        RhpLog(header)
+
+        ' Adobe executable + version.
+        If String.IsNullOrEmpty(_adobePath) Then
+            RhpLog("  Adobe: NEGĂSIT")
+        Else
+            Dim ver As String = "?"
+            Dim prod As String = "?"
+            Try
+                Dim fvi = FileVersionInfo.GetVersionInfo(_adobePath)
+                ver = If(fvi.FileVersion, "?")
+                prod = If(fvi.ProductName, "?")
+            Catch ex As Exception
+                GlobalErrorLog.Write("AdobeReaderHarnessForm.LogMachineState.Version", ex)
+            End Try
+            RhpLog($"  Adobe: {_adobePath}")
+            RhpLog($"  Versiune: {ver}   Produs: {prod}")
+        End If
+
+        ' Both AVGeneral hives and the four RHP/viewer values in each.
+        For Each hive As String In New String() {AdobeRegistryConstants.AvGeneralReader,
+                                                 AdobeRegistryConstants.AvGeneralAcrobat}
+            Dim exists As Boolean = _regAccess.KeyExists(hive)
+            RhpLog($"  {hive} — {If(exists, "există", "lipsește")}")
+            If Not exists Then Continue For
+            For Each name As String In New String() {AdobeRegistryConstants.ValEnableAv2,
+                                                     AdobeRegistryConstants.ValExpandRhp,
+                                                     AdobeRegistryConstants.ValRhpSticky,
+                                                     AdobeRegistryConstants.ValRhpViewMode}
+                Dim s As RegistryValueSnapshot = _regAccess.Read(hive, name)
+                RhpLog($"      {name} = " & If(s.Presence = RegPresence.Absent, "(absent)",
+                                               Convert.ToString(s.Value) & $" ({s.Kind})"))
+            Next
+        Next
+
+        ' Both HKLM policy products.
+        Dim readings As List(Of PolicyReading) = ReadPolicyState()
+        For Each r As PolicyReading In readings
+            RhpLog("  " & r.ToString())
+        Next
+
+        Dim adobeProcs As Integer =
+            Process.GetProcessesByName("Acrobat").Length + Process.GetProcessesByName("AcroRd32").Length
+        RhpLog($"  Procese Adobe în execuție: {adobeProcs}")
+
+        Dim active As Integer = Enumerable.Count(readings, Function(r) r.Present)
+        Dim summaryText As String =
+            $"Stare: Adobe {If(String.IsNullOrEmpty(_adobePath), "negăsit", "găsit")} · " &
+            $"politici HKLM active: {active} · procese Adobe: {adobeProcs}"
+        If active > 0 Then summaryText &= "  ⚠ bază de pornire CONTAMINATĂ"
+        RhpLog("  " & summaryText)
+        Return summaryText
+    End Function
+
+    ' Reads both products' policy values (read-only, no elevation).
+    Private Function ReadPolicyState() As List(Of PolicyReading)
+        Dim readings As New List(Of PolicyReading)()
+        For Each product As String In New String() {AdobeRegistryConstants.ProductReader,
+                                                    AdobeRegistryConstants.ProductAcrobat}
+            Dim fld As String = AdobeRegistryConstants.FeatureLockDownPath(product)
+            Dim cs As String = AdobeRegistryConstants.CServicesPath(product)
+            readings.Add(ReadPolicyValue(fld, AdobeRegistryConstants.ValSuppressUpsell))
+            readings.Add(ReadPolicyValue(cs, AdobeRegistryConstants.ValToggleServices))
+        Next
+        Return readings
+    End Function
+
+    Private Function ReadPolicyValue(path As String, name As String) As PolicyReading
+        Dim s As RegistryValueSnapshot = _regAccess.Read(path, name)
+        Return New PolicyReading(path, name, s.Presence = RegPresence.Present, s.Value)
+    End Function
+
+    ' Reverts an outstanding HKLM policy when the bench closes. Synchronous by necessity (the form
+    ' is going away, there is nothing left to await on). If the operator cancels the UAC prompt the
+    ' marker file is KEPT and the machine is reported as still modified, naming the exact keys —
+    ' the silent-drift case this whole pass exists to prevent.
+    Private Sub RevertMachinePolicyOnClose()
+        If Not chkRevertPolicyOnClose.Checked Then Return
+        Dim r As MachineStateMarkerResult = ReadMarker()
+        If r.Status <> MarkerReadStatus.Present OrElse r.Marker Is Nothing OrElse Not r.Marker.PolicyApplied Then Return
+
+        Dim regFile As String = If(Not String.IsNullOrEmpty(_revertRegPath) AndAlso File.Exists(_revertRegPath),
+                                   _revertRegPath, r.Marker.RevertRegFile)
+        If String.IsNullOrEmpty(regFile) OrElse Not File.Exists(regFile) Then
+            ReportPolicyStillActive("fișierul de revocare lipsește (" & If(regFile, "—") & ")")
+            Return
+        End If
+
+        Try
+            Dim psi As New ProcessStartInfo("reg.exe", $"import ""{regFile}""") With {
+                .Verb = "runas",
+                .UseShellExecute = True
+            }
+            Using p As Process = Process.Start(psi)
+                If p Is Nothing Then
+                    ReportPolicyStillActive("reg.exe nu a pornit")
+                    Return
+                End If
+                If Not p.WaitForExit(60000) Then
+                    ReportPolicyStillActive("reg.exe nu s-a terminat în 60s")
+                    Return
+                End If
+                If p.ExitCode <> 0 Then
+                    ReportPolicyStillActive($"reg.exe a întors codul {p.ExitCode}")
+                    Return
+                End If
+            End Using
+            Dim stillActive As List(Of PolicyReading) = ReadPolicyState().Where(Function(x) x.Present).ToList()
+            If stillActive.Count = 0 Then
+                ClearMarker()
+                RhpLog("Revocare la închidere: politica HKLM a fost revocată și verificată. Marcaj șters.")
+            Else
+                ReportPolicyStillActive($"{stillActive.Count} valori încă active după import")
+            End If
+        Catch wex As Win32Exception When wex.NativeErrorCode = 1223
+            ReportPolicyStillActive("operatorul a anulat elevarea (UAC)")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.RevertMachinePolicyOnClose", ex)
+            ReportPolicyStillActive(ex.Message)
+        End Try
+    End Sub
+
+    ' Names the exact keys that are still set, in the log AND to the operator's face — the form is
+    ' closing, so lblStatus alone would never be read.
+    Private Sub ReportPolicyStillActive(reason As String)
+        Dim active As List(Of PolicyReading) = ReadPolicyState().Where(Function(p) p.Present).ToList()
+        Dim keys As String = String.Join(Environment.NewLine, active.Select(Function(p) "  " & p.ToString()))
+        Dim text As String =
+            "Politica HKLM NU a fost revocată (" & reason & ")." & Environment.NewLine &
+            "Mașina rămâne modificată la:" & Environment.NewLine & keys & Environment.NewLine & Environment.NewLine &
+            "Revoc-o din banc («Revocă (cere elevare)») înainte de următoarea probă — altfel " &
+            "rezultatele vor fi neconcludente."
+        RhpLog("ATENȚIE la închidere: " & text.Replace(Environment.NewLine, " "))
+        Try
+            lblStatus.Text = "Politica HKLM a rămas ACTIVĂ — vezi mesajul."
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.ReportPolicyStillActive.Status", ex)
+        End Try
+        MessageBox.Show(Me, text, "K-BOT — mașina rămâne modificată", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+    End Sub
+
+    ' ══ Marcaj de stare a mașinii (supraviețuiește închiderii bancului) ═════════
+    Private Function MarkerPath() As String
+        Return MachineStateMarkerStore.PathFor(ConfigDir())
+    End Function
+
+    Private Function ReadMarker() As MachineStateMarkerResult
+        Try
+            Dim p As String = MarkerPath()
+            If Not File.Exists(p) Then Return New MachineStateMarkerResult(MarkerReadStatus.None, Nothing, Nothing)
+            Return MachineStateMarkerStore.Parse(File.ReadAllText(p))
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.ReadMarker", ex)
+            Return New MachineStateMarkerResult(MarkerReadStatus.Corrupt, Nothing, ex.Message)
+        End Try
+    End Function
+
+    Private Sub WriteMarker(marker As MachineStateMarker)
+        Try
+            Directory.CreateDirectory(ConfigDir())
+            File.WriteAllText(MarkerPath(), MachineStateMarkerStore.Serialize(marker), New UTF8Encoding(False))
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.WriteMarker", ex)
+            Throw
+        End Try
+    End Sub
+
+    Private Sub ClearMarker()
+        Try
+            Dim p As String = MarkerPath()
+            If File.Exists(p) Then File.Delete(p)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.ClearMarker", ex)
+        End Try
+    End Sub
+
+    ' On open: if a policy is outstanding from a previous session, say so immediately — that is
+    ' exactly the state that silently invalidated four runs.
+    Private Sub WarnIfPolicyOutstanding()
+        Dim r As MachineStateMarkerResult = ReadMarker()
+        If Not r.NeedsWarning Then Return
+        Dim text As String
+        If r.Status = MarkerReadStatus.Corrupt Then
+            text = "Fișierul de stare a mașinii nu a putut fi citit (" & If(r.[Error], "") & ")." &
+                   Environment.NewLine &
+                   "Nu pot ști dacă o politică HKLM a rămas aplicată — verifică cu «Starea mașinii»."
+        Else
+            text = "O politică HKLM aplicată de banc a rămas ACTIVĂ dintr-o sesiune anterioară" &
+                   If(String.IsNullOrWhiteSpace(r.Marker.Product), "", $" (produs «{r.Marker.Product}»)") &
+                   If(String.IsNullOrWhiteSpace(r.Marker.AppliedAt), "", $", aplicată la {r.Marker.AppliedAt}") & "." &
+                   Environment.NewLine & Environment.NewLine &
+                   "Ea suprimă serviciile Adobe și poate face panoul de instrumente gol sau de dimensiune " &
+                   "zero. Revoc-o («Revocă (cere elevare)») înainte de a trage concluzii."
+        End If
+        RhpLog("ATENȚIE la pornire: " & text.Replace(Environment.NewLine, " "))
+        MessageBox.Show(Me, text, "K-BOT — mașină modificată", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+    End Sub
+
+    ' ── gridPrefs: cerut vs curent ──────────────────────────────────────────────
+    ' Valoare · Cerut · Curent · Tip. This is where the operator SEES that a file asked for 1 and
+    ' the machine holds 0 — the discrepancy that was previously invisible.
+    Private Sub RefreshPrefsGrid()
+        Try
+            gridPrefs.Rows.Clear()
+            If gridPrefs.Columns.Count = 0 Then
+                gridPrefs.Columns.Add("colName", "Valoare")
+                gridPrefs.Columns.Add("colWanted", "Cerut")
+                gridPrefs.Columns.Add("colCurrent", "Curent")
+                gridPrefs.Columns.Add("colKind", "Tip")
+            End If
+
+            Dim hive As String = CurrentAvGeneralPath()
+            For Each p As UserPrefIntent In CollectUserPrefs()
+                Dim cur As RegistryValueSnapshot = _regAccess.Read(hive, p.Name)
+                Dim curText As String = If(cur.Presence = RegPresence.Absent, "(absent)",
+                                           Convert.ToString(cur.Value))
+                Dim kindText As String = If(p.Action = UserPrefAction.Delete, "—", p.Kind.ToString())
+                Dim idx As Integer = gridPrefs.Rows.Add(p.Name, p.RequestedText(), curText, kindText)
+                ' Highlight the rows where the machine does not (yet) hold what was asked for.
+                Dim agrees As Boolean = RegistryWriteVerifier.Verify(hive, p, cur).Matches
+                If Not agrees Then
+                    gridPrefs.Rows(idx).DefaultCellStyle.ForeColor = ThemeManager.Current.Palette.ErrorColor
+                End If
+            Next
+            ' No row selected: a highlighted row would paint over the mismatch colour.
+            gridPrefs.ClearSelection()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.RefreshPrefsGrid", ex)
+        End Try
+    End Sub
 
     ' ── Stare / activare ────────────────────────────────────────────────────────
     ' lblStatus always shows the effective state of all four levers in one block, with the last

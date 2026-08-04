@@ -1,0 +1,62 @@
+{
+  // ── TEST 1 din 4 — «Este Shift+F4 necesar?» ───────────────────────────────
+  //
+  // Identic cu «rhp_collapse_then_hide.json», dar FĂRĂ pasul «sendKeys».
+  //
+  // De ce: Shift+F4 este un COMUTATOR. În log-ul din 12:05:17 el a pliat panoul
+  // de la 346px la 70px, iar Adobe a ținut minte starea pliată (proba de la
+  // 12:07 arată 70px după relansare). Deci pe mașina ta, azi, scenariul cu
+  // sendKeys trimite Shift+F4 unui panou DEJA pliat și îl DESPLIAZĂ înapoi la
+  // 346px — după care oricum îl ascunde. Rezultatul arată corect, dar din alt
+  // motiv decât cel presupus.
+  //
+  // ÎNAINTE DE TEST: verifică dacă politica HKLM pentru «Adobe Acrobat»,
+  // importată la 12:10:48, mai este activă. Nu apare nicio revocare după ea în
+  // log. Dacă e activă, revoc-o cu «Revocă (cere elevare)» — altfel testezi
+  // registry-ul tău, nu scenariul.
+  //
+  // CE URMĂREȘTI: dacă fereastra arată la fel ca înainte, Shift+F4 este balast
+  // și iese definitiv din scenariu — mai puține piese mobile, nicio dependență
+  // de ce ține minte Adobe, niciun comportament de tastatură peste granița de
+  // proces. Dacă panoul rămâne vizibil, taste rămâne în scenariu.
+  //
+  // ÎN LOG: prima «probă» îți spune lățimea panoului la pornire (70 sau 346),
+  // a doua confirmă ascunderea.
+  "schema": 1,
+  // Refuză să ruleze dacă o politică HKLM e activă: o bază contaminată face
+  // rezultatele neconcludente (vezi 04.08, patru rulări «reușite» care nu au testat nimic).
+  "requireCleanBaseline": true,
+  "name": "RHP 01: fără taste, doar ascundere",
+  "note": "Fără Shift+F4. Verifică dacă ascunderea după text este suficientă singură.",
+
+  "launch": {
+    "newInstance": true,
+    "noSplash": true
+  },
+
+  "openParameters": {
+    "toolbar": 0,
+    "navpanes": 0,
+    "statusbar": 0,
+    "messages": 0,
+    "scrollbar": 0,
+    "pagemode": "none"
+  },
+
+  "hideChildren": {
+    "byText": [ "AVTaskPaneHostView" ],
+    "reapplyOnRelaunch": true,
+    "reapplyAttempts": 10,
+    "reapplyIntervalMs": 400
+  },
+
+  // Fără «keys», fără «clip», fără «userPrefs», fără «machinePolicy».
+  // Absent = «lasă în pace». Acest scenariu nu atinge registry-ul.
+  "scenario": [
+    "launch",
+    "waitForEmbed",
+    "probe",
+    "hideChildren",
+    "probe"
+  ]
+}

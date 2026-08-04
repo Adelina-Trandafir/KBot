@@ -115,6 +115,45 @@ Public Class AdobeHarnessScenarioBindingTests
     End Sub
 
     <Fact>
+    Public Sub Loading_DoesNotTickAShortcutThatContradictsTheFile()
+        ' A file asking for bEnableAv2 = 1 must NOT leave «bEnableAv2 = 0» ticked — the panel would
+        ' be claiming the opposite of what will actually be written. This is the scenario that was
+        ' silently clamped on 04.08.
+        Const modernUi As String = "{
+  ""schema"": 1,
+  ""userPrefs"": { ""values"": { ""bEnableAv2"": 1 } },
+  ""scenario"": [ ""applyUserPrefs"" ]
+}"
+        RunSta(Sub()
+                   Using f = NewForm()
+                       LoadScenario(f, modernUi)
+                       Assert.False(Ctl(Of CheckBox)(f, "chkClassicViewer").Checked)
+
+                       ' …and the grid shows what was really asked for.
+                       Dim grid = Ctl(Of DataGridView)(f, "gridPrefs")
+                       Dim row = grid.Rows.Cast(Of DataGridViewRow)().
+                                 Single(Function(r) CStr(r.Cells(0).Value) = "bEnableAv2")
+                       Assert.Equal("1", CStr(row.Cells(1).Value))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Loading_TicksAShortcutThatAgreesWithTheFile()
+        Const classicUi As String = "{
+  ""schema"": 1,
+  ""userPrefs"": { ""values"": { ""bEnableAv2"": 0 } },
+  ""scenario"": [ ""applyUserPrefs"" ]
+}"
+        RunSta(Sub()
+                   Using f = NewForm()
+                       LoadScenario(f, classicUi)
+                       Assert.True(Ctl(Of CheckBox)(f, "chkClassicViewer").Checked)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
     Public Sub Loading_DoesNotTouchTheDocument()
         ' The whole point: the PDF comes from «Deschide PDF…», never from the scenario.
         RunSta(Sub()

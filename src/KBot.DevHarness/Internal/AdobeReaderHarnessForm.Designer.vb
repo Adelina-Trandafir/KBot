@@ -47,10 +47,11 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents lblFile As System.Windows.Forms.Label
     Friend WithEvents btnRelaunch As System.Windows.Forms.Button
 
-    ' Diagnostic — the child window probe.
+    ' Diagnostic — the child window probe + the machine-state read.
     Friend WithEvents grpProbe As System.Windows.Forms.GroupBox
     Friend WithEvents tlpProbe As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents btnProbe As System.Windows.Forms.Button
+    Friend WithEvents btnMachineState As System.Windows.Forms.Button
 
     ' Scenariu — load / run / save a scenario file (JSON, AppDir\Config).
     Friend WithEvents grpScenario As System.Windows.Forms.GroupBox
@@ -93,6 +94,9 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents chkRhpSticky As System.Windows.Forms.CheckBox
     Friend WithEvents chkRhpCollapsed As System.Windows.Forms.CheckBox
     Friend WithEvents chkClassicViewer As System.Windows.Forms.CheckBox
+    ' Read-only view of what the loaded scenario ASKED FOR vs what the machine currently holds —
+    ' the display that makes a clamped or refused value obvious instead of invisible.
+    Friend WithEvents gridPrefs As System.Windows.Forms.DataGridView
     Friend WithEvents btnApplyUser As System.Windows.Forms.Button
     Friend WithEvents btnRestoreUser As System.Windows.Forms.Button
     Friend WithEvents chkRestoreOnClose As System.Windows.Forms.CheckBox
@@ -105,6 +109,7 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents chkDisableServices As System.Windows.Forms.CheckBox
     Friend WithEvents btnApplyMachine As System.Windows.Forms.Button
     Friend WithEvents btnRevertMachine As System.Windows.Forms.Button
+    Friend WithEvents chkRevertPolicyOnClose As System.Windows.Forms.CheckBox
 
     ' Linie de comandă — the one control that must not collapse when the splitter goes narrow.
     Friend WithEvents grpCmd As System.Windows.Forms.GroupBox
@@ -152,6 +157,7 @@ Partial Class AdobeReaderHarnessForm
         grpProbe = New System.Windows.Forms.GroupBox()
         tlpProbe = New System.Windows.Forms.TableLayoutPanel()
         btnProbe = New System.Windows.Forms.Button()
+        btnMachineState = New System.Windows.Forms.Button()
         grpScenario = New System.Windows.Forms.GroupBox()
         tlpScenario = New System.Windows.Forms.TableLayoutPanel()
         lblScenario = New System.Windows.Forms.Label()
@@ -184,6 +190,7 @@ Partial Class AdobeReaderHarnessForm
         chkRhpSticky = New System.Windows.Forms.CheckBox()
         chkRhpCollapsed = New System.Windows.Forms.CheckBox()
         chkClassicViewer = New System.Windows.Forms.CheckBox()
+        gridPrefs = New System.Windows.Forms.DataGridView()
         btnApplyUser = New System.Windows.Forms.Button()
         btnRestoreUser = New System.Windows.Forms.Button()
         chkRestoreOnClose = New System.Windows.Forms.CheckBox()
@@ -194,6 +201,7 @@ Partial Class AdobeReaderHarnessForm
         chkDisableServices = New System.Windows.Forms.CheckBox()
         btnApplyMachine = New System.Windows.Forms.Button()
         btnRevertMachine = New System.Windows.Forms.Button()
+        chkRevertPolicyOnClose = New System.Windows.Forms.CheckBox()
         grpCmd = New System.Windows.Forms.GroupBox()
         tlpCmd = New System.Windows.Forms.TableLayoutPanel()
         txtCmd = New System.Windows.Forms.TextBox()
@@ -226,6 +234,7 @@ Partial Class AdobeReaderHarnessForm
         tlpKeys.SuspendLayout()
         grpUser.SuspendLayout()
         tlpUser.SuspendLayout()
+        CType(gridPrefs, System.ComponentModel.ISupportInitialize).BeginInit()
         grpMachine.SuspendLayout()
         tlpMachine.SuspendLayout()
         grpCmd.SuspendLayout()
@@ -494,9 +503,11 @@ Partial Class AdobeReaderHarnessForm
         tlpProbe.ColumnCount = 1
         tlpProbe.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
         tlpProbe.Controls.Add(btnProbe, 0, 0)
+        tlpProbe.Controls.Add(btnMachineState, 0, 1)
         tlpProbe.Dock = System.Windows.Forms.DockStyle.Fill
         tlpProbe.Name = "tlpProbe"
-        tlpProbe.RowCount = 1
+        tlpProbe.RowCount = 2
+        tlpProbe.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpProbe.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpProbe.TabIndex = 0
         '
@@ -506,6 +517,13 @@ Partial Class AdobeReaderHarnessForm
         btnProbe.TabIndex = 0
         btnProbe.Text = "Arborele de ferestre copil"
         btnProbe.UseVisualStyleBackColor = True
+        '
+        btnMachineState.AutoSize = True
+        btnMachineState.Dock = System.Windows.Forms.DockStyle.Fill
+        btnMachineState.Name = "btnMachineState"
+        btnMachineState.TabIndex = 1
+        btnMachineState.Text = "Starea mașinii (Adobe + registry)"
+        btnMachineState.UseVisualStyleBackColor = True
         '
         ' grpScenario
         '
@@ -746,12 +764,14 @@ Partial Class AdobeReaderHarnessForm
         tlpUser.Controls.Add(chkRhpSticky, 0, 3)
         tlpUser.Controls.Add(chkRhpCollapsed, 0, 4)
         tlpUser.Controls.Add(chkClassicViewer, 0, 5)
-        tlpUser.Controls.Add(btnApplyUser, 0, 6)
-        tlpUser.Controls.Add(btnRestoreUser, 0, 7)
-        tlpUser.Controls.Add(chkRestoreOnClose, 0, 8)
+        tlpUser.Controls.Add(gridPrefs, 0, 6)
+        tlpUser.Controls.Add(btnApplyUser, 0, 7)
+        tlpUser.Controls.Add(btnRestoreUser, 0, 8)
+        tlpUser.Controls.Add(chkRestoreOnClose, 0, 9)
         tlpUser.Dock = System.Windows.Forms.DockStyle.Fill
         tlpUser.Name = "tlpUser"
-        tlpUser.RowCount = 9
+        tlpUser.RowCount = 10
+        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
@@ -762,6 +782,23 @@ Partial Class AdobeReaderHarnessForm
         tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpUser.TabIndex = 0
+        '
+        ' gridPrefs — read-only: Valoare · Cerut · Curent · Tip
+        '
+        gridPrefs.AllowUserToAddRows = False
+        gridPrefs.AllowUserToDeleteRows = False
+        gridPrefs.AllowUserToResizeRows = False
+        gridPrefs.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill
+        gridPrefs.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
+        gridPrefs.Dock = System.Windows.Forms.DockStyle.Fill
+        gridPrefs.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically
+        gridPrefs.MinimumSize = New System.Drawing.Size(0, 110)
+        gridPrefs.MultiSelect = False
+        gridPrefs.Name = "gridPrefs"
+        gridPrefs.ReadOnly = True
+        gridPrefs.RowHeadersVisible = False
+        gridPrefs.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect
+        gridPrefs.TabIndex = 6
         '
         lblHive.AutoSize = True
         lblHive.Dock = System.Windows.Forms.DockStyle.Fill
@@ -839,9 +876,10 @@ Partial Class AdobeReaderHarnessForm
         tlpMachine.Controls.Add(chkDisableServices, 0, 2)
         tlpMachine.Controls.Add(btnApplyMachine, 0, 3)
         tlpMachine.Controls.Add(btnRevertMachine, 0, 4)
+        tlpMachine.Controls.Add(chkRevertPolicyOnClose, 0, 5)
         tlpMachine.Dock = System.Windows.Forms.DockStyle.Fill
         tlpMachine.Name = "tlpMachine"
-        tlpMachine.RowCount = 5
+        tlpMachine.RowCount = 6
         tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
@@ -879,6 +917,14 @@ Partial Class AdobeReaderHarnessForm
         btnRevertMachine.TabIndex = 4
         btnRevertMachine.Text = "Revocă (cere elevare)"
         btnRevertMachine.UseVisualStyleBackColor = True
+        '
+        chkRevertPolicyOnClose.AutoSize = True
+        chkRevertPolicyOnClose.Checked = True
+        chkRevertPolicyOnClose.CheckState = System.Windows.Forms.CheckState.Checked
+        chkRevertPolicyOnClose.Dock = System.Windows.Forms.DockStyle.Fill
+        chkRevertPolicyOnClose.Name = "chkRevertPolicyOnClose"
+        chkRevertPolicyOnClose.TabIndex = 5
+        chkRevertPolicyOnClose.Text = "Revocă politica HKLM la închiderea bancului"
         '
         ' grpCmd
         '
@@ -994,6 +1040,7 @@ Partial Class AdobeReaderHarnessForm
         tlpKeys.PerformLayout()
         grpUser.ResumeLayout(False)
         grpUser.PerformLayout()
+        CType(gridPrefs, System.ComponentModel.ISupportInitialize).EndInit()
         tlpUser.ResumeLayout(False)
         tlpUser.PerformLayout()
         grpMachine.ResumeLayout(False)

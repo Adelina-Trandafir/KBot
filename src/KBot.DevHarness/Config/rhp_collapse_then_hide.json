@@ -8,6 +8,9 @@
   // în panoul din stânga, iar PDF-ul îl alegi separat cu «Deschide PDF…» — fișierul ales
   // se deschide apoi cu setările fixate de scenariu.
   "schema": 1,
+  // Refuză să ruleze dacă o politică HKLM e activă: o bază contaminată face
+  // rezultatele neconcludente (vezi 04.08, patru rulări «reușite» care nu au testat nimic).
+  "requireCleanBaseline": true,
   "name": "RHP: pliază apoi ascunde",
   "note": "Shift+F4 pentru pliere, apoi ascunde AVTaskPaneHostView. Nu scrie nimic în registry.",
 

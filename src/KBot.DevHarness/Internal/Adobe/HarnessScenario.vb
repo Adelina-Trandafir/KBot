@@ -52,6 +52,12 @@ Public NotInheritable Class HarnessScenario
     <JsonPropertyName("machinePolicy")>
     Public Property MachinePolicy As MachinePolicyConfig
 
+    ' When true the run REFUSES to start if any HKLM policy value is present, instead of only
+    ' warning. An outstanding policy suppresses Adobe's services and can leave the tools pane empty
+    ' or zero-sized, which silently invalidates every result — that is what happened on 04.08.
+    <JsonPropertyName("requireCleanBaseline")>
+    Public Property RequireCleanBaseline As Boolean
+
     <JsonPropertyName("scenario")>
     Public Property Scenario As List(Of String)
 
@@ -182,8 +188,17 @@ Public NotInheritable Class MachinePolicyConfig
     <JsonPropertyName("values")>
     Public Property Values As Dictionary(Of String, JsonElement)
 
+    ' Default TRUE: an elevated apply with no matching revert is how the machine got contaminated
+    ' on 03.08 and stayed that way for a day.
+    <JsonPropertyName("revertOnClose")>
+    Public Property RevertOnClose As Boolean?
+
     <JsonExtensionData>
     Public Property Extra As Dictionary(Of String, JsonElement)
+
+    Public Function ShouldRevertOnClose() As Boolean
+        Return RevertOnClose.GetValueOrDefault(True)
+    End Function
 End Class
 
 ' The recognised step names. An unrecognised name aborts the run — a typo in a file sent from
