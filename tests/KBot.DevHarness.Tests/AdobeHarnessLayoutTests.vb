@@ -145,6 +145,22 @@ Public Class AdobeHarnessLayoutTests
     End Sub
 
     <Fact>
+    Public Sub ScenarioSection_HasLoadRunSave_AndNoApplyOnLoadSwitch()
+        ' Loading a scenario ALWAYS sets the panel now, so the old «Aplică valorile în controale
+        ' la încărcare» switch is gone — unticking it would have made loading do nothing at all.
+        RunSta(Sub()
+                   Using f = NewForm()
+                       For Each name As String In New String() {"lblScenario", "btnLoadScenario",
+                                                                "btnRunScenario", "btnSaveScenario"}
+                           Assert.True(f.Controls.Find(name, searchAllChildren:=True).Length = 1,
+                                       $"controlul «{name}» lipsește din secțiunea Scenariu")
+                       Next
+                       Assert.Empty(f.Controls.Find("chkApplyOnLoad", searchAllChildren:=True))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
     Public Sub SectionsTrackThePanelWidth_AndDoNotForceHorizontalScrolling()
         ' The sections are width-tracked in code (a FlowLayoutPanel ignores Dock on its children).
         ' If that handler breaks, captions get truncated and a horizontal scrollbar appears.

@@ -16,6 +16,17 @@ then hide `AVTaskPaneHostView`) existed only as a log trace plus a memory of whi
 pressed in which order. It is now a file that can be repeated, sent to someone else, or tried on
 another machine.
 
+- **A scenario is a SETTINGS recipe, never a document** (operator clarification, applied after the
+  first cut): loading one **pre-sets the controls in the left panel**, and the PDF chosen
+  afterwards with «Deschide PDF…» opens under those settings. The `document` section is gone from
+  the schema; saving no longer writes a path. From load onward the **panel is the single source of
+  truth** — the scenario is never consulted again while launching, so what is ticked is what runs
+  and the operator can still adjust before opening a file. Files written against the earlier
+  schema still load: `document` lands in the unknown-property bucket and is reported as a warning.
+  The `chkApplyOnLoad` switch was removed with it — loading always applies now, so unticking it
+  would have meant "loading does nothing".
+  Picking a file launches with those switches and re-applies the hidden child windows; the rest of
+  the steps (Shift+F4 and friends) run when «Rulează scenariul» is pressed.
 - **JSON via `System.Text.Json`** (already in .NET 8, no package reference), read with
   `ReadCommentHandling = Skip` and `AllowTrailingCommas = True` because these files are written by
   hand with comments; written with `WriteIndented = True` so saves are readable and diffable.
@@ -146,12 +157,18 @@ Out of scope and untouched, as in pass 1: `ReaderHostPreview`, `IDdfPreview`,
 
 - `dotnet build KBot.sln` — 0 errors, 0 BC warnings (16 pre-existing NU1701 from
   iTextSharp/BouncyCastle).
-- `dotnet test KBot.sln` — **482 passed / 0 failed / 0 skipped** (was 458; +17 scenario tests,
-  +7 layout regression tests). `KBot.DevHarness.Tests` is now 46.
+- `dotnet test KBot.sln` — **491 passed / 0 failed / 0 skipped** (was 458; +19 scenario model,
+  +8 layout regression, +6 scenario→panel binding). `KBot.DevHarness.Tests` is now 55.
 - Sample scenario confirmed landing in `bin\Debug\net8.0-windows\Config\`.
 - **The form was rendered and looked at** (see §2b) — the step that was missing the first time.
 
-`AdobeHarnessLayoutTests` (7, STA — same `RunSta` pattern as `SumarViewTests`) is the guard the
+`AdobeHarnessScenarioBindingTests` (6, STA) pin the corrected contract by driving the form's real
+load path: loading sets the launch/chrome switches, sets the clip spinners, ticks **only** the
+registry values the file names, **leaves the document untouched** (the command preview still says
+`<alege un PDF>`), the preview reflects the scenario's switches, and an operator adjustment made
+after loading wins over the file.
+
+`AdobeHarnessLayoutTests` (8, STA — same `RunSta` pattern as `SumarViewTests`) is the guard the
 clipping defect deserved: the options panel must be a scrolling FlowLayoutPanel and not a
 TableLayoutPanel; all eleven sections present in order; content taller than the panel **must**
 produce a vertical scrollbar; both registry sections must scroll fully into view; all thirteen

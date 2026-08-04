@@ -8,12 +8,12 @@ Imports Xunit
 ' must stay distinguishable from a present section that switches something off.
 Public Class HarnessScenarioTests
 
-    ' The full schema-1 example from the plan, used as the round-trip fixture.
+    ' The full schema-1 example, used as the round-trip fixture. NOTE: no `document` section —
+    ' a scenario carries settings only; the PDF always comes from «Deschide PDF…».
     Private Const FullJson As String = "{
   ""schema"": 1,
   ""name"": ""RHP: collapse then hide"",
   ""note"": ""Free text, shown in the status line when loaded."",
-  ""document"": { ""path"": ""C:\\AVACONT\\forexe\\PDF\\GENERAL\\DDF_NR_1_REV_2.PDF"" },
   ""launch"": { ""newInstance"": true, ""noSplash"": true },
   ""openParameters"": {
     ""toolbar"": 0, ""navpanes"": 0, ""statusbar"": 0,
@@ -58,7 +58,6 @@ Public Class HarnessScenarioTests
         Dim s = r.Scenario
         Assert.Equal(1, s.Schema)
         Assert.Equal("RHP: collapse then hide", s.Name)
-        Assert.EndsWith("DDF_NR_1_REV_2.PDF", s.Document.Path)
         Assert.True(s.Launch.NewInstance.Value)
         Assert.True(s.Launch.NoSplash.Value)
         Assert.Equal(0, s.OpenParameters.Toolbar.Value)
@@ -89,6 +88,26 @@ Public Class HarnessScenarioTests
         Dim writtenAgain As String = HarnessScenarioWriter.Write(second.Scenario)
 
         Assert.Equal(written, writtenAgain)
+    End Sub
+
+    <Fact>
+    Public Sub Schema_HasNoDocumentSection_ScenariosCarrySettingsOnly()
+        ' The PDF is always chosen with «Deschide PDF…»; a path baked into a scenario would be
+        ' meaningless on anyone else's machine. Pinned so it cannot creep back in.
+        Assert.Null(GetType(HarnessScenario).GetProperty("Document"))
+        Dim s As New HarnessScenario() With {
+            .Schema = 1,
+            .Scenario = New List(Of String) From {HarnessScenarioSteps.Launch}}
+        Assert.DoesNotContain("document", HarnessScenarioWriter.Write(s), StringComparison.OrdinalIgnoreCase)
+    End Sub
+
+    <Fact>
+    Public Sub OlderFileWithADocumentSection_StillLoads_WithAWarning()
+        ' Migration: files written against the earlier schema must not become unusable.
+        Dim json As String = "{ ""schema"": 1, ""document"": { ""path"": ""C:\\x.pdf"" }, ""scenario"": [ ""launch"" ] }"
+        Dim r = HarnessScenarioReader.Read(json)
+        Assert.True(r.IsValid)
+        Assert.Contains(r.Warnings, Function(w) w.Contains("document"))
     End Sub
 
     <Fact>

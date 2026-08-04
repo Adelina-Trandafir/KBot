@@ -28,6 +28,10 @@ Imports KBot.Common
 ''' Slice 0023 (config+layout pass) adds two things and NO new lever:
 '''   * Scenario files (JSON, AppDir\Config) — load / run / save, so a combination found by hand
 '''     becomes a file that can be repeated, sent to someone else, or tried on another machine.
+'''     A scenario carries SETTINGS, never a document: loading one PRE-SETS the controls in the
+'''     left panel, and the PDF the operator then picks with «Deschide PDF…» opens under those
+'''     settings. The controls are the single source of truth from that point on — the scenario is
+'''     never consulted again while launching, so what the operator sees ticked is what runs.
 '''     Children are addressed by window TEXT, never by HWND: handles change on every launch
 '''     (0x5083E -> 0x20B66) while the text (AVTaskPaneHostView) does not, and class names are
 '''     useless because nearly everything is AVL_AVView.
@@ -386,28 +390,19 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' Sintaxă Adobe: [/n] [/s] [/A "param1&param2&…"] "cale.pdf". Parametrii /A trebuie ÎNAINTE de fișier.
     Private Function BuildArguments(pdf As String) As String
         Dim sb As New StringBuilder()
-        If EffectiveNewInstance() Then sb.Append("/n ")
-        If EffectiveNoSplash() Then sb.Append("/s ")
+        If chkNewInstance.Checked Then sb.Append("/n ")
+        If chkNoSplash.Checked Then sb.Append("/s ")
         Dim op As String = BuildOpenParameters()
         If op.Length > 0 Then sb.Append("/A """).Append(op).Append(""" ")
         sb.Append(""""c).Append(pdf).Append(""""c)
         Return sb.ToString()
     End Function
 
-    ' Parametrii de deschidere (/A) care ascund chrome-ul, în ordinea din panou. A loaded scenario
-    ' wins over the checkboxes (they agree anyway when «Aplică la încărcare» is ticked).
+    ' Parametrii de deschidere (/A) care ascund chrome-ul, în ordinea din panou. Read from the
+    ' CONTROLS only: a loaded scenario has already written itself into them, so the panel is the
+    ' single source of truth and the operator can still adjust before opening a file.
     Private Function BuildOpenParameters() As String
         Dim parts As New List(Of String)()
-        Dim op As OpenParametersConfig = If(_scenario IsNot Nothing, _scenario.OpenParameters, Nothing)
-        If op IsNot Nothing Then
-            If op.Toolbar.HasValue Then parts.Add("toolbar=" & op.Toolbar.Value.ToString())
-            If op.Navpanes.HasValue Then parts.Add("navpanes=" & op.Navpanes.Value.ToString())
-            If op.Statusbar.HasValue Then parts.Add("statusbar=" & op.Statusbar.Value.ToString())
-            If op.Messages.HasValue Then parts.Add("messages=" & op.Messages.Value.ToString())
-            If op.Scrollbar.HasValue Then parts.Add("scrollbar=" & op.Scrollbar.Value.ToString())
-            If Not String.IsNullOrWhiteSpace(op.Pagemode) Then parts.Add("pagemode=" & op.Pagemode)
-            Return String.Join("&", parts)
-        End If
         If chkToolbar.Checked Then parts.Add("toolbar=0")
         If chkNavpanes.Checked Then parts.Add("navpanes=0")
         If chkStatusbar.Checked Then parts.Add("statusbar=0")
@@ -417,30 +412,15 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Return String.Join("&", parts)
     End Function
 
+    ' The document ALWAYS comes from «Deschide PDF…» — a scenario never carries one.
     Private Function EffectivePdfPath() As String
-        If _scenario IsNot Nothing AndAlso _scenario.Document IsNot Nothing AndAlso
-           Not String.IsNullOrWhiteSpace(_scenario.Document.Path) Then
-            Return _scenario.Document.Path
-        End If
         Return _pdfPath
-    End Function
-
-    Private Function EffectiveNewInstance() As Boolean
-        If _scenario IsNot Nothing AndAlso _scenario.Launch IsNot Nothing AndAlso
-           _scenario.Launch.NewInstance.HasValue Then Return _scenario.Launch.NewInstance.Value
-        Return chkNewInstance.Checked
-    End Function
-
-    Private Function EffectiveNoSplash() As Boolean
-        If _scenario IsNot Nothing AndAlso _scenario.Launch IsNot Nothing AndAlso
-           _scenario.Launch.NoSplash.HasValue Then Return _scenario.Launch.NoSplash.Value
-        Return chkNoSplash.Checked
     End Function
 
     Private Sub UpdateCmdPreview()
         Dim exe As String = If(String.IsNullOrEmpty(_adobePath), "<Adobe negăsit>", Path.GetFileName(_adobePath))
-        Dim pdf As String = EffectivePdfPath()
-        If String.IsNullOrEmpty(pdf) Then pdf = "document.pdf"
+        Dim pdf As String = _pdfPath
+        If String.IsNullOrEmpty(pdf) Then pdf = "<alege un PDF>"
         txtCmd.Text = exe & " " & BuildArguments(pdf)
     End Sub
 
@@ -896,18 +876,9 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Sub
 
     ' The AVGeneral hive to write: explicit combo choice, or the pure resolver on "auto".
+    ' Combo only — a loaded scenario has already selected it (see ApplyScenarioToControls).
     Private Function CurrentAvGeneralPath() As String
         Dim sel As String = TryCast(cboHive.SelectedItem, String)
-        If _scenario IsNot Nothing AndAlso _scenario.UserPrefs IsNot Nothing AndAlso
-           Not String.IsNullOrWhiteSpace(_scenario.UserPrefs.Hive) AndAlso
-           Not String.Equals(_scenario.UserPrefs.Hive, "auto", StringComparison.OrdinalIgnoreCase) Then
-            ' A scenario names the product ("Acrobat Reader"/"Adobe Acrobat"), not the full path.
-            If String.Equals(_scenario.UserPrefs.Hive, AdobeRegistryConstants.ProductReader, StringComparison.OrdinalIgnoreCase) Then
-                Return AdobeRegistryConstants.AvGeneralReader
-            ElseIf String.Equals(_scenario.UserPrefs.Hive, AdobeRegistryConstants.ProductAcrobat, StringComparison.OrdinalIgnoreCase) Then
-                Return AdobeRegistryConstants.AvGeneralAcrobat
-            End If
-        End If
         If sel = AdobeRegistryConstants.AvGeneralReader OrElse sel = AdobeRegistryConstants.AvGeneralAcrobat Then
             Return sel
         End If
@@ -933,32 +904,10 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Sub
     End Class
 
-    ' The HKCU values to write: a loaded scenario's `userPrefs.values` wins over the checkboxes.
+    ' The HKCU values to write — from the CHECKBOXES only. A loaded scenario has already ticked
+    ' them (ApplyScenarioToControls), so the panel is what runs.
     Private Function CollectUserPrefs() As List(Of UserPrefWrite)
-        If _scenario IsNot Nothing AndAlso _scenario.UserPrefs IsNot Nothing AndAlso
-           _scenario.UserPrefs.Values IsNot Nothing AndAlso _scenario.UserPrefs.Values.Count > 0 Then
-            Return UserPrefsFromScenario(_scenario.UserPrefs.Values)
-        End If
         Return CollectTickedUserPrefs()
-    End Function
-
-    ' JSON numbers become REG_DWORD, JSON strings become REG_SZ. Anything else is logged and
-    ' skipped — the type is never guessed.
-    Private Function UserPrefsFromScenario(values As Dictionary(Of String, JsonElement)) As List(Of UserPrefWrite)
-        Dim prefs As New List(Of UserPrefWrite)()
-        For Each kv As KeyValuePair(Of String, JsonElement) In values
-            Select Case kv.Value.ValueKind
-                Case JsonValueKind.Number
-                    Dim n As Integer = kv.Value.GetInt32()
-                    prefs.Add(New UserPrefWrite(kv.Key, RegistryValueKind.DWord, n, $"{kv.Key}={n}"))
-                Case JsonValueKind.String
-                    Dim s As String = kv.Value.GetString()
-                    prefs.Add(New UserPrefWrite(kv.Key, RegistryValueKind.String, s, $"{kv.Key}={s}"))
-                Case Else
-                    RhpLog($"userPrefs.values.{kv.Key}: tip JSON nesuportat ({kv.Value.ValueKind}) — ignorat.")
-            End Select
-        Next
-        Return prefs
     End Function
 
     Private Function CollectTickedUserPrefs() As List(Of UserPrefWrite)
@@ -1131,13 +1080,9 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
-    ' The FeatureLockDown <product>: scenario, else explicit combo choice, else the pure resolver.
+    ' The FeatureLockDown <product>: explicit combo choice, else the pure resolver on "auto".
+    ' Combo only — a loaded scenario has already selected it.
     Private Function CurrentPolicyProduct() As String
-        If _scenario IsNot Nothing AndAlso _scenario.MachinePolicy IsNot Nothing AndAlso
-           Not String.IsNullOrWhiteSpace(_scenario.MachinePolicy.Product) AndAlso
-           Not String.Equals(_scenario.MachinePolicy.Product, "auto", StringComparison.OrdinalIgnoreCase) Then
-            Return _scenario.MachinePolicy.Product
-        End If
         Dim sel As String = TryCast(cboProduct.SelectedItem, String)
         If sel = AdobeRegistryConstants.ProductReader OrElse sel = AdobeRegistryConstants.ProductAcrobat Then
             Return sel
@@ -1162,30 +1107,11 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Sub
     End Class
 
-    ' The policy values to write: a loaded scenario's `machinePolicy.values` wins over the
-    ' checkboxes. A key may carry a subkey prefix ("cServices\bToggle…"), which selects the
-    ' cServices section — the subkey the installer does not create.
+    ' The policy values to write — from the CHECKBOXES only. A loaded scenario has already ticked
+    ' them, so the panel is what runs.
     Private Function CollectPolicyEntries(product As String) As List(Of PolicyEntry)
         Dim fld As String = AdobeRegistryConstants.FeatureLockDownPath(product)
         Dim entries As New List(Of PolicyEntry)()
-        Dim mp As MachinePolicyConfig = If(_scenario IsNot Nothing, _scenario.MachinePolicy, Nothing)
-        If mp IsNot Nothing AndAlso mp.Values IsNot Nothing AndAlso mp.Values.Count > 0 Then
-            For Each kv As KeyValuePair(Of String, JsonElement) In mp.Values
-                If kv.Value.ValueKind <> JsonValueKind.Number Then
-                    RhpLog($"machinePolicy.values.{kv.Key}: doar valori numerice (REG_DWORD) sunt suportate — ignorat.")
-                    Continue For
-                End If
-                Dim name As String = kv.Key
-                Dim section As String = fld
-                Dim slash As Integer = name.LastIndexOf("\"c)
-                If slash >= 0 Then
-                    section = fld & "\" & name.Substring(0, slash)
-                    name = name.Substring(slash + 1)
-                End If
-                entries.Add(New PolicyEntry(section, name, CUInt(kv.Value.GetInt32())))
-            Next
-            Return entries
-        End If
         If chkSuppressUpsell.Checked Then
             entries.Add(New PolicyEntry(fld, AdobeRegistryConstants.ValSuppressUpsell, 1UI))
         End If
@@ -1375,21 +1301,20 @@ Public NotInheritable Class AdobeReaderHarnessForm
         btnRunScenario.Enabled = True
         RhpLog($"Scenariu încărcat: {filePath} — «{If(_scenario.Name, "(fără nume)")}»")
 
-        If chkApplyOnLoad.Checked Then ApplyScenarioToControls()
+        ' A scenario's whole job is to SET the panel; loading always applies it.
+        ApplyScenarioToControls()
         UpdateCmdPreview()
         Dim note As String = If(String.IsNullOrWhiteSpace(_scenario.Note), "", " — " & _scenario.Note)
-        ShowStatus($"Scenariu încărcat: {If(_scenario.Name, Path.GetFileName(filePath))}{note}")
+        ShowStatus($"Scenariu încărcat: {If(_scenario.Name, Path.GetFileName(filePath))}{note}" &
+                   Environment.NewLine & "Alege acum un PDF (Deschide PDF…) — se va deschide cu aceste setări.")
     End Sub
 
-    ' Ticks the checkboxes and fills the spinners so the operator SEES what the file will do and
-    ' can adjust before running. Unchecked, the file runs from its own values instead.
+    ' Ticks the checkboxes and fills the spinners: this IS what loading a scenario does. The
+    ' operator sees exactly what will be used and can still adjust before picking a PDF. The
+    ' document is deliberately untouched — it always comes from «Deschide PDF…».
     Private Sub ApplyScenarioToControls()
         _loading = True
         Try
-            If _scenario.Document IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(_scenario.Document.Path) Then
-                _pdfPath = _scenario.Document.Path
-                lblFile.Text = _pdfPath
-            End If
             If _scenario.Launch IsNot Nothing Then
                 If _scenario.Launch.NewInstance.HasValue Then chkNewInstance.Checked = _scenario.Launch.NewInstance.Value
                 If _scenario.Launch.NoSplash.HasValue Then chkNoSplash.Checked = _scenario.Launch.NoSplash.Value
@@ -1444,12 +1369,24 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Next
     End Sub
 
+    ' The panel has one checkbox per supported HKCU value. A scenario naming anything else cannot
+    ' be represented — and since the panel is what runs, that value would be silently dropped.
+    ' Say so instead.
     Private Sub ApplyUserPrefValuesToChecks(values As Dictionary(Of String, JsonElement))
         If values Is Nothing Then Return
         chkExpandRhp.Checked = values.ContainsKey(AdobeRegistryConstants.ValExpandRhp)
         chkRhpSticky.Checked = values.ContainsKey(AdobeRegistryConstants.ValRhpSticky)
         chkRhpCollapsed.Checked = values.ContainsKey(AdobeRegistryConstants.ValRhpViewMode)
         chkClassicViewer.Checked = values.ContainsKey(AdobeRegistryConstants.ValEnableAv2)
+
+        Dim known As String() = {AdobeRegistryConstants.ValExpandRhp, AdobeRegistryConstants.ValRhpSticky,
+                                 AdobeRegistryConstants.ValRhpViewMode, AdobeRegistryConstants.ValEnableAv2}
+        For Each k As String In values.Keys
+            If Not known.Any(Function(n) String.Equals(n, k, StringComparison.OrdinalIgnoreCase)) Then
+                RhpLog($"userPrefs.values.{k}: nu există un comutator în panou pentru această valoare — " &
+                       "va fi IGNORATĂ (panoul e sursa adevărului la aplicare).")
+            End If
+        Next
     End Sub
 
     Private Sub ApplyPolicyValuesToChecks(values As Dictionary(Of String, JsonElement))
@@ -1458,6 +1395,14 @@ Public NotInheritable Class AdobeReaderHarnessForm
             Function(k) k.EndsWith(AdobeRegistryConstants.ValSuppressUpsell, StringComparison.OrdinalIgnoreCase))
         chkDisableServices.Checked = values.Keys.Any(
             Function(k) k.EndsWith(AdobeRegistryConstants.ValToggleServices, StringComparison.OrdinalIgnoreCase))
+
+        For Each k As String In values.Keys
+            If Not k.EndsWith(AdobeRegistryConstants.ValSuppressUpsell, StringComparison.OrdinalIgnoreCase) AndAlso
+               Not k.EndsWith(AdobeRegistryConstants.ValToggleServices, StringComparison.OrdinalIgnoreCase) Then
+                RhpLog($"machinePolicy.values.{k}: nu există un comutator în panou pentru această valoare — " &
+                       "va fi IGNORATĂ.")
+            End If
+        Next
     End Sub
 
     Private Async Sub btnRunScenario_Click(sender As Object, e As EventArgs) Handles btnRunScenario.Click
@@ -1600,20 +1545,10 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Return True
     End Function
 
-    ' Sets the clip values from the scenario (when it carries a clip section) and applies the
-    ' geometry — the same path the spinners use, no relaunch.
+    ' Applies the clip geometry from the CURRENT spinner/checkbox values — the same path the
+    ' spinners use, no relaunch. The scenario's clip values reached those controls when it was
+    ' loaded, so there is nothing to re-read here.
     Private Sub ApplyScenarioClip()
-        Dim c As ClipConfig = _scenario.Clip
-        If c IsNot Nothing Then
-            _loading = True
-            Try
-                If c.Right.HasValue Then numClipRight.Value = ClampToRange(numClipRight, c.Right.Value)
-                If c.Top.HasValue Then numClipTop.Value = ClampToRange(numClipTop, c.Top.Value)
-                If c.Enabled.HasValue Then chkClip.Checked = c.Enabled.Value
-            Finally
-                _loading = False
-            End Try
-        End If
         LayoutHostedWindow()
         NudgeRedraw()
         RhpLog($"applyClip: activă={chkClip.Checked}, dreapta={CInt(numClipRight.Value)}px, sus={CInt(numClipTop.Value)}px.")
@@ -1694,14 +1629,14 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Sub
 
     Private Function BuildScenarioFromControls() As HarnessScenario
+        ' Settings only — the document is NOT saved. A scenario is a recipe that any PDF can be
+        ' opened under, so a path here would be dead weight on anyone else's machine.
         Dim s As New HarnessScenario() With {
             .Schema = HarnessScenarioReader.SupportedSchema,
             .Name = "Stare salvată din bancul de probă",
-            .Note = "Generat automat din controalele bancului la " & DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") & "."
+            .Note = "Generat automat din controalele bancului la " & DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") &
+                    ". Documentul se alege separat, cu «Deschide PDF…»."
         }
-
-        Dim pdf As String = EffectivePdfPath()
-        If Not String.IsNullOrWhiteSpace(pdf) Then s.Document = New DocumentConfig() With {.Path = pdf}
 
         s.Launch = New LaunchConfig() With {
             .NewInstance = chkNewInstance.Checked,

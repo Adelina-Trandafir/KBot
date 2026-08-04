@@ -7,7 +7,12 @@ Imports System.Text.Json.Serialization
 ' attributes: NO I/O and NO Windows API calls in this file — serialization only, so the whole
 ' model is unit-testable without a registry, a window or Adobe.
 '
-' Two rules the shape encodes deliberately:
+' Three rules the shape encodes deliberately:
+'   * A scenario carries SETTINGS, never a document. The PDF is always chosen by the operator with
+'     «Deschide PDF…»; loading a scenario pre-sets the left panel, and the file picked afterwards
+'     opens under those settings. So there is no `document` section — a file path in a scenario
+'     would be meaningless on anyone else's machine anyway. (Files written against the older
+'     schema still load: `document` simply lands in Extra and is reported as an unknown property.)
 '   * An ABSENT section is Nothing and means "leave that alone". It is NOT the same as a present
 '     section that turns something off (e.g. `"clip": { "enabled": false }`). Every section is a
 '     reference type, never default-constructed, and every scalar inside is Nullable, so both
@@ -25,9 +30,6 @@ Public NotInheritable Class HarnessScenario
 
     <JsonPropertyName("note")>
     Public Property Note As String
-
-    <JsonPropertyName("document")>
-    Public Property Document As DocumentConfig
 
     <JsonPropertyName("launch")>
     Public Property Launch As LaunchConfig
@@ -54,14 +56,6 @@ Public NotInheritable Class HarnessScenario
     Public Property Scenario As List(Of String)
 
     ' Unknown properties are captured (not rejected) so the reader can warn about each one.
-    <JsonExtensionData>
-    Public Property Extra As Dictionary(Of String, JsonElement)
-End Class
-
-Public NotInheritable Class DocumentConfig
-    <JsonPropertyName("path")>
-    Public Property Path As String
-
     <JsonExtensionData>
     Public Property Extra As Dictionary(Of String, JsonElement)
 End Class

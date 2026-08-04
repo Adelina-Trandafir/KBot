@@ -3,14 +3,13 @@
   // Shift+F4 (pliază panoul de instrumente), apoi ascunde fereastra AVTaskPaneHostView.
   // Copiat lângă executabil în <AppDir>\Config\ la build. Modifică-l liber: comentariile
   // și virgulele finale sunt permise.
+  //
+  // Un scenariu conține DOAR SETĂRI, niciodată un document: la încărcare el pune valorile
+  // în panoul din stânga, iar PDF-ul îl alegi separat cu «Deschide PDF…» — fișierul ales
+  // se deschide apoi cu setările fixate de scenariu.
   "schema": 1,
   "name": "RHP: pliază apoi ascunde",
   "note": "Shift+F4 pentru pliere, apoi ascunde AVTaskPaneHostView. Nu scrie nimic în registry.",
-
-  // Pune aici calea unui PDF real; fără ea, pasul «launch» nu pornește Adobe.
-  "document": {
-    "path": "C:\\AVACONT\\FOREXE\\PDF\\DDF\\GENERAL\\exemplu.pdf"
-  },
 
   "launch": {
     "newInstance": true,
@@ -41,6 +40,10 @@
 
   // Fără secțiunile «clip», «userPrefs» și «machinePolicy»: absent înseamnă
   // «lasă în pace», NU «oprește» — acest scenariu nu atinge deloc registry-ul.
+  //
+  // Lista de pași e folosită de butonul «Rulează scenariul». Când doar alegi un PDF cu
+  // «Deschide PDF…», Adobe pornește cu switch-urile din panou și ascunderile se reaplică
+  // automat după încorporare; restul pașilor (Shift+F4 etc.) rulează la apăsarea butonului.
   "scenario": [
     "launch",
     "waitForEmbed",

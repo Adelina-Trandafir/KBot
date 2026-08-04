@@ -105,7 +105,6 @@ Public NotInheritable Class HarnessScenarioReader
     ' exceptions — a newer file must still run on an older bench.
     Private Shared Sub CollectUnknownProperties(s As HarnessScenario, result As HarnessScenarioReadResult)
         WarnExtras(result, "(rădăcină)", s.Extra)
-        If s.Document IsNot Nothing Then WarnExtras(result, "document", s.Document.Extra)
         If s.Launch IsNot Nothing Then WarnExtras(result, "launch", s.Launch.Extra)
         If s.OpenParameters IsNot Nothing Then WarnExtras(result, "openParameters", s.OpenParameters.Extra)
         If s.Clip IsNot Nothing Then WarnExtras(result, "clip", s.Clip.Extra)

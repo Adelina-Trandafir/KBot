@@ -59,7 +59,6 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents btnLoadScenario As System.Windows.Forms.Button
     Friend WithEvents btnRunScenario As System.Windows.Forms.Button
     Friend WithEvents btnSaveScenario As System.Windows.Forms.Button
-    Friend WithEvents chkApplyOnLoad As System.Windows.Forms.CheckBox
 
     ' Decupare — geometry clipping (live, no relaunch).
     Friend WithEvents grpClip As System.Windows.Forms.GroupBox
@@ -159,7 +158,6 @@ Partial Class AdobeReaderHarnessForm
         btnLoadScenario = New System.Windows.Forms.Button()
         btnRunScenario = New System.Windows.Forms.Button()
         btnSaveScenario = New System.Windows.Forms.Button()
-        chkApplyOnLoad = New System.Windows.Forms.CheckBox()
         grpClip = New System.Windows.Forms.GroupBox()
         tlpClip = New System.Windows.Forms.TableLayoutPanel()
         chkClip = New System.Windows.Forms.CheckBox()
@@ -527,11 +525,9 @@ Partial Class AdobeReaderHarnessForm
         tlpScenario.Controls.Add(btnLoadScenario, 0, 1)
         tlpScenario.Controls.Add(btnRunScenario, 0, 2)
         tlpScenario.Controls.Add(btnSaveScenario, 0, 3)
-        tlpScenario.Controls.Add(chkApplyOnLoad, 0, 4)
         tlpScenario.Dock = System.Windows.Forms.DockStyle.Fill
         tlpScenario.Name = "tlpScenario"
-        tlpScenario.RowCount = 5
-        tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpScenario.RowCount = 4
         tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
@@ -566,13 +562,6 @@ Partial Class AdobeReaderHarnessForm
         btnSaveScenario.Text = "Salvează starea curentă ca scenariu…"
         btnSaveScenario.UseVisualStyleBackColor = True
         '
-        chkApplyOnLoad.AutoSize = True
-        chkApplyOnLoad.Checked = True
-        chkApplyOnLoad.CheckState = System.Windows.Forms.CheckState.Checked
-        chkApplyOnLoad.Dock = System.Windows.Forms.DockStyle.Fill
-        chkApplyOnLoad.Name = "chkApplyOnLoad"
-        chkApplyOnLoad.TabIndex = 4
-        chkApplyOnLoad.Text = "Aplică valorile în controale la încărcare"
         '
         ' grpClip — label/input pairs: column 0 AutoSize, column 1 100%
         '
