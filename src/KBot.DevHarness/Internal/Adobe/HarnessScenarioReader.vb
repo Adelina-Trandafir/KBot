@@ -75,6 +75,7 @@ Public NotInheritable Class HarnessScenarioReader
         Dim result As New HarnessScenarioReadResult(parsed)
         ValidateSchema(parsed, result)
         ValidateSteps(parsed, result)
+        ValidateMoves(parsed, result)
         CollectUnknownProperties(parsed, result)
         Return result
     End Function
@@ -101,6 +102,21 @@ Public NotInheritable Class HarnessScenarioReader
         Next
     End Sub
 
+    ' A move entry addresses a window by TEXT — without one there is nothing to move, and silently
+    ' skipping it would hide a typo in a file that came from outside. An all-zero entry is only a
+    ' warning: it is legible ("this window stays put") even though it does nothing.
+    Private Shared Sub ValidateMoves(s As HarnessScenario, result As HarnessScenarioReadResult)
+        If s.MoveChildren Is Nothing Then Return
+        For i As Integer = 0 To s.MoveChildren.Count - 1
+            Dim e As MoveChildEntry = s.MoveChildren(i)
+            If e Is Nothing OrElse String.IsNullOrWhiteSpace(e.ByText) Then
+                result.Errors.Add($"moveChildren[{i}]: lipsește «byText» — nu se știe ce fereastră trebuie mutată.")
+            ElseIf e.IsNoOp() Then
+                result.Warnings.Add($"moveChildren[{i}] («{e.ByText}»): toate deplasările sunt 0 — intrarea nu face nimic.")
+            End If
+        Next
+    End Sub
+
     ' Unknown properties are captured by JsonExtensionData and reported as warnings, never as
     ' exceptions — a newer file must still run on an older bench.
     Private Shared Sub CollectUnknownProperties(s As HarnessScenario, result As HarnessScenarioReadResult)
@@ -109,6 +125,12 @@ Public NotInheritable Class HarnessScenarioReader
         If s.OpenParameters IsNot Nothing Then WarnExtras(result, "openParameters", s.OpenParameters.Extra)
         If s.Clip IsNot Nothing Then WarnExtras(result, "clip", s.Clip.Extra)
         If s.HideChildren IsNot Nothing Then WarnExtras(result, "hideChildren", s.HideChildren.Extra)
+        If s.MoveOptions IsNot Nothing Then WarnExtras(result, "moveOptions", s.MoveOptions.Extra)
+        If s.MoveChildren IsNot Nothing Then
+            For i As Integer = 0 To s.MoveChildren.Count - 1
+                If s.MoveChildren(i) IsNot Nothing Then WarnExtras(result, $"moveChildren[{i}]", s.MoveChildren(i).Extra)
+            Next
+        End If
         If s.UserPrefs IsNot Nothing Then WarnExtras(result, "userPrefs", s.UserPrefs.Extra)
         If s.MachinePolicy IsNot Nothing Then WarnExtras(result, "machinePolicy", s.MachinePolicy.Extra)
         If s.Keys IsNot Nothing Then

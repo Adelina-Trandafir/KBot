@@ -202,6 +202,41 @@ Public Class AdobeHarnessScenarioBindingTests
     End Sub
 
     <Fact>
+    Public Sub Loading_FillsTheMoveBoxesFromTheScenario()
+        Const move As String = "{
+  ""schema"": 1,
+  ""moveChildren"": [
+    { ""byText"": ""AVSplitterView"", ""dx"": -120, ""dy"": -90, ""dw"": 120, ""dh"": 90 }
+  ],
+  ""moveOptions"": { ""reapply"": true, ""reapplyIntervalMs"": 250 },
+  ""scenario"": [ ""moveChildren"" ]
+}"
+        RunSta(Sub()
+                   Using f = NewForm()
+                       LoadScenario(f, move)
+                       Assert.Equal("AVSplitterView", Ctl(Of TextBox)(f, "txtMoveTarget").Text)
+                       Assert.Equal(-120D, Ctl(Of NumericUpDown)(f, "numDx").Value)
+                       Assert.Equal(-90D, Ctl(Of NumericUpDown)(f, "numDy").Value)
+                       Assert.Equal(120D, Ctl(Of NumericUpDown)(f, "numDw").Value)
+                       Assert.Equal(90D, Ctl(Of NumericUpDown)(f, "numDh").Value)
+                       Assert.True(Ctl(Of CheckBox)(f, "chkReapplyMoves").Checked)
+                       Assert.Equal(250D, Ctl(Of NumericUpDown)(f, "numReapplyMs").Value)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Loading_AScenarioWithoutMoves_LeavesTheReapplyTimerOff()
+        RunSta(Sub()
+                   Using f = NewForm()
+                       LoadScenario(f, SettingsJson)
+                       Assert.False(Ctl(Of CheckBox)(f, "chkReapplyMoves").Checked)
+                       Assert.Equal("", Ctl(Of TextBox)(f, "txtMoveTarget").Text)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
     Public Sub AnUntouchedPanel_AsksForNothing()
         ' The default state must write NOTHING — the grid is empty until something is requested.
         RunSta(Sub()

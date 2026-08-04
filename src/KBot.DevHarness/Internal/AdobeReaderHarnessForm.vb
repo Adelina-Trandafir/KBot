@@ -96,6 +96,13 @@ Public NotInheritable Class AdobeReaderHarnessForm
     Private ReadOnly _lastProbe As New List(Of ChildWindowItem)()
     Private ReadOnly _hiddenChildren As New List(Of IntPtr)()
     Private ReadOnly _hiddenChildTexts As New List(Of String)()
+    ' Rectangles as they were BEFORE the first move of each window text, so «readu la poziția
+    ' inițială» restores Adobe's own layout and not an intermediate one the operator produced.
+    Private ReadOnly _moveOrigins As New MoveOriginStore()
+    ' How often the reapply timer actually had to correct something — the number that decides
+    ' whether moving is viable in production or only in the bench.
+    Private _moveReapplyTicks As Integer = 0
+    Private _moveReapplyHits As Integer = 0
     ' Status-block state: which HKCU values were applied, whether HKLM was applied this session.
     Private ReadOnly _userValuesApplied As New List(Of String)()
     Private _machinePolicyApplied As Boolean = False
@@ -298,6 +305,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Try
             Interlocked.Increment(_generation)
             tmrLayout.Stop()
+            tmrReapplyMoves.Stop()
             KillTracked()
             RestoreUserPrefsOnClose()
             RevertMachinePolicyOnClose()
@@ -386,6 +394,11 @@ Public NotInheritable Class AdobeReaderHarnessForm
            hc.ByText IsNot Nothing AndAlso hc.ByText.Count > 0 Then
             Await HideChildrenByTextAsync(hc)
         End If
+
+        ' Moves do not survive a relaunch either (new HWNDs, and Adobe lays the new window out from
+        ' scratch). The timer only restarts when the operator asked for reapplication — a relaunch
+        ' must not silently resurrect a move they turned off.
+        SyncMoveReapplyTimer()
     End Function
 
     Private Function StartReader(args As String) As Process
@@ -514,6 +527,14 @@ Public NotInheritable Class AdobeReaderHarnessForm
         _probeCandidateWidth = 0
         _probeCandidateClass = Nothing
         If lstChildren IsNot Nothing AndAlso Not lstChildren.IsDisposed Then lstChildren.Items.Clear()
+
+        ' The reapply timer has nothing to reapply to once the process is gone, and the recorded
+        ' rectangles belonged to windows of that process — both go with it. The move REQUEST
+        ' (target text + deltas) stays in the panel: it is the durable part, like the hidden texts.
+        If tmrReapplyMoves IsNot Nothing AndAlso tmrReapplyMoves.Enabled Then tmrReapplyMoves.Stop()
+        _moveOrigins.Clear()
+        _moveReapplyTicks = 0
+        _moveReapplyHits = 0
         UpdateActionStates()
     End Sub
 
@@ -859,6 +880,235 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End If
         Return item
     End Function
+
+    ' ══ Mută ferestre copil — move/resize instead of hiding or inflating the host ═══
+    '
+    ' WHY THIS EXISTS ALONGSIDE CLIPPING: clipping enlarges the HOSTED window so the unwanted band
+    ' falls off the panel edge. A fit-width/fit-page zoom then rescales the page to the inflated
+    ' width and the clip starts eating document content. Moving a child leaves the host size alone,
+    ' so the page keeps its scale — strictly better wherever it works.
+    '
+    ' COORDINATES: GetWindowRect gives SCREEN coordinates; SetWindowPos on a child expects the
+    ' PARENT'S CLIENT coordinates. Mixing the two is the one way this goes wrong, so every rectangle
+    ' is converted through MapWindowPoints once, and both rectangles are logged.
+    Private Function ChildRectInParent(hwnd As IntPtr) As Rectangle
+        Dim r As RECT
+        If Not GetWindowRect(hwnd, r) Then Return Rectangle.Empty
+        Dim parent As IntPtr = GetParent(hwnd)
+        If parent = IntPtr.Zero Then Return New Rectangle(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top)
+        ' MapWindowPoints(HWND_DESKTOP, parent, …) over a RECT = two POINTs, hence cPoints = 2.
+        MapWindowPoints(IntPtr.Zero, parent, r, 2)
+        Return New Rectangle(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top)
+    End Function
+
+    ' Moves ONE window by deltas on its current rectangle. Records the pre-move rectangle the first
+    ' time this text is touched (idempotent — a second move must not overwrite the true original).
+    Private Function MoveOneChild(hwnd As IntPtr, text As String,
+                                  dx As Integer, dy As Integer, dw As Integer, dh As Integer) As MoveAttempt
+        If Not IsWindow(hwnd) Then
+            Return New MoveAttempt(text, MoveOutcome.NotFound, Rectangle.Empty, Rectangle.Empty)
+        End If
+        Dim before As Rectangle = ChildRectInParent(hwnd)
+        _moveOrigins.Capture(text, before)
+
+        Dim target As New Rectangle(before.X + dx, before.Y + dy,
+                                    Math.Max(0, before.Width + dw), Math.Max(0, before.Height + dh))
+        Dim ok As Boolean = SetWindowPos(hwnd, IntPtr.Zero, target.X, target.Y, target.Width, target.Height,
+                                         SWP_NOZORDER Or SWP_NOACTIVATE)
+        Dim after As Rectangle = ChildRectInParent(hwnd)
+        Dim outcome As MoveOutcome = MoveOutcomeClassifier.Classify(found:=True, apiSucceeded:=ok,
+                                                                    before:=before, after:=after)
+        Return New MoveAttempt(text, outcome, before, after)
+    End Function
+
+    ' Applies one entry to EVERY window carrying that text — the duplicate-text case the probe
+    ' already exposed for hiding (two AVUITopRightCommandCluster nodes), so it is handled, not
+    ' assumed away. Re-probes only when the last probe is stale/empty.
+    Private Function ApplyMoveEntry(entry As MoveChildEntry) As List(Of MoveAttempt)
+        Dim results As New List(Of MoveAttempt)()
+        Dim text As String = If(entry.ByText, "").Trim()
+        If text.Length = 0 Then Return results
+        If entry.IsNoOp() Then
+            results.Add(New MoveAttempt(text, MoveOutcome.Unchanged, Rectangle.Empty, Rectangle.Empty))
+            Return results
+        End If
+
+        Dim matches As List(Of ChildWindowItem) = _lastProbe.
+            Where(Function(i) String.Equals(i.WindowText, text, StringComparison.OrdinalIgnoreCase)).ToList()
+        If matches.Count = 0 Then
+            results.Add(New MoveAttempt(text, MoveOutcome.NotFound, Rectangle.Empty, Rectangle.Empty))
+            Return results
+        End If
+        For Each m As ChildWindowItem In matches
+            results.Add(MoveOneChild(m.Hwnd, text, entry.EffectiveDx(), entry.EffectiveDy(),
+                                     entry.EffectiveDw(), entry.EffectiveDh()))
+        Next
+        Return results
+    End Function
+
+    ' The move set currently in force: the scenario's list when one is loaded, otherwise the single
+    ' entry the panel describes. This is what the reapply timer re-imposes.
+    Private Function CurrentMoveEntries() As List(Of MoveChildEntry)
+        If _scenario IsNot Nothing AndAlso _scenario.MoveChildren IsNot Nothing AndAlso
+           _scenario.MoveChildren.Count > 0 Then
+            Return _scenario.MoveChildren.Where(Function(e) Not String.IsNullOrWhiteSpace(e.ByText)).ToList()
+        End If
+        Dim text As String = txtMoveTarget.Text.Trim()
+        If text.Length = 0 Then Return New List(Of MoveChildEntry)()
+        Return New List(Of MoveChildEntry) From {
+            New MoveChildEntry() With {.ByText = text, .Dx = CInt(numDx.Value), .Dy = CInt(numDy.Value),
+                                       .Dw = CInt(numDw.Value), .Dh = CInt(numDh.Value)}}
+    End Function
+
+    ' Applies a whole list in ARRAY ORDER (entries can depend on each other's geometry) and logs one
+    ' line per attempt plus a summary. `quiet` is for the reapply timer: at 2 ticks a second, logging
+    ' the ticks that found everything already in place would drown the log.
+    Private Function ApplyMoves(entries As List(Of MoveChildEntry), quiet As Boolean) As MoveAttemptSummary
+        Dim all As New List(Of MoveAttempt)()
+        For Each entry As MoveChildEntry In entries
+            all.AddRange(ApplyMoveEntry(entry))
+        Next
+        Dim summary As New MoveAttemptSummary(all)
+        If Not quiet OrElse summary.MovedCount > 0 Then
+            For Each a As MoveAttempt In all
+                If quiet AndAlso a.Outcome <> MoveOutcome.Moved Then Continue For
+                RhpLog(a.LogLine())
+            Next
+            RhpLog(If(quiet, "reaplicare " & summary.SummaryLine(), summary.SummaryLine()))
+        End If
+        If summary.MovedCount > 0 Then NudgeRedraw()
+        Return summary
+    End Function
+
+    Private Sub btnApplyMove_Click(sender As Object, e As EventArgs) Handles btnApplyMove.Click
+        Try
+            If _hostedWindow = IntPtr.Zero Then
+                ShowStatus("Nicio fereastră găzduită — încorporează întâi un PDF.")
+                Return
+            End If
+            If txtMoveTarget.Text.Trim().Length = 0 Then
+                ShowStatus("Alege o fereastră din listă (sau scrie textul ei) înainte de a muta.")
+                Return
+            End If
+            ' The stored HWNDs come from the last probe; re-probe so a stale list cannot report
+            ' NEGĂSIT for a window that is on screen right now.
+            ProbeChildren()
+            RhpLog("── Mutare ferestre copil ──")
+            Dim summary As MoveAttemptSummary = ApplyMoves(CurrentMoveEntries(), quiet:=False)
+            ShowStatus(summary.SummaryLine())
+            UpdateActionStates()
+            RefreshStatusBlock()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnApplyMove_Click", ex)
+            ShowStatus("Eroare la mutare: " & ex.Message)
+        End Try
+    End Sub
+
+    ' Puts every moved window back to the rectangle recorded the FIRST time it was moved.
+    Private Sub btnResetMoves_Click(sender As Object, e As EventArgs) Handles btnResetMoves.Click
+        Try
+            If _moveOrigins.Count = 0 Then
+                ShowStatus("Nicio mutare de anulat în această sesiune.")
+                Return
+            End If
+            chkReapplyMoves.Checked = False
+            ProbeChildren()
+            RhpLog("── Readucere la poziția inițială ──")
+            Dim restored As Integer = 0
+            For Each text As String In _moveOrigins.Texts()
+                Dim origin As Rectangle = Rectangle.Empty
+                If Not _moveOrigins.TryGet(text, origin) Then Continue For
+                For Each m As ChildWindowItem In _lastProbe.
+                        Where(Function(i) String.Equals(i.WindowText, text, StringComparison.OrdinalIgnoreCase))
+                    If Not IsWindow(m.Hwnd) Then Continue For
+                    Dim before As Rectangle = ChildRectInParent(m.Hwnd)
+                    Dim ok As Boolean = SetWindowPos(m.Hwnd, IntPtr.Zero, origin.X, origin.Y,
+                                                     origin.Width, origin.Height,
+                                                     SWP_NOZORDER Or SWP_NOACTIVATE)
+                    Dim after As Rectangle = ChildRectInParent(m.Hwnd)
+                    RhpLog(New MoveAttempt(text,
+                                           MoveOutcomeClassifier.Classify(True, ok, before, after),
+                                           before, after).LogLine())
+                    If before <> after Then restored += 1
+                Next
+            Next
+            _moveOrigins.Clear()
+            NudgeRedraw()
+            Dim msg As String = $"Readuse la poziția inițială: {restored} fereastră(e)."
+            RhpLog(msg)
+            ShowStatus(msg)
+            UpdateActionStates()
+            RefreshStatusBlock()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnResetMoves_Click", ex)
+            ShowStatus("Eroare la readucerea la poziția inițială: " & ex.Message)
+        End Try
+    End Sub
+
+    ' Selecting a probed window fills the target box — the operator never types a window text that
+    ' the probe already knows how to spell.
+    Private Sub lstChildren_SelectedIndexChanged(sender As Object, e As EventArgs) _
+        Handles lstChildren.SelectedIndexChanged
+        Try
+            If _loading Then Return
+            Dim item As ChildWindowItem = TryCast(lstChildren.SelectedItem, ChildWindowItem)
+            If item Is Nothing OrElse String.IsNullOrEmpty(item.WindowText) Then Return
+            txtMoveTarget.Text = item.WindowText
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.lstChildren_SelectedIndexChanged", ex)
+        End Try
+    End Sub
+
+    Private Sub MoveReapplySettingsChanged(sender As Object, e As EventArgs) _
+        Handles chkReapplyMoves.CheckedChanged, numReapplyMs.ValueChanged
+        Try
+            If _loading Then Return
+            SyncMoveReapplyTimer()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.MoveReapplySettingsChanged", ex)
+        End Try
+    End Sub
+
+    ' The timer runs only while there is something hosted AND something to re-impose.
+    Private Sub SyncMoveReapplyTimer()
+        tmrReapplyMoves.Interval = CInt(numReapplyMs.Value)
+        Dim wanted As Boolean = chkReapplyMoves.Checked AndAlso _hostedWindow <> IntPtr.Zero AndAlso
+                                CurrentMoveEntries().Count > 0
+        If wanted Then
+            If Not tmrReapplyMoves.Enabled Then
+                tmrReapplyMoves.Start()
+                RhpLog($"Reaplicarea mutărilor: PORNITĂ la {tmrReapplyMoves.Interval} ms.")
+            End If
+        ElseIf tmrReapplyMoves.Enabled Then
+            tmrReapplyMoves.Stop()
+            RhpLog("Reaplicarea mutărilor: OPRITĂ.")
+        End If
+    End Sub
+
+    ' Re-imposes the moves. Ticks that found everything already in place log NOTHING (see
+    ' ApplyMoves(quiet:=True)) — otherwise the file fills with two lines a second.
+    '
+    ' The counter is a FINDING, not bookkeeping: if Adobe puts the window back on nearly every tick,
+    ' this approach flickers in production and clipping is the more honest route.
+    Private Sub tmrReapplyMoves_Tick(sender As Object, e As EventArgs) Handles tmrReapplyMoves.Tick
+        Try
+            If _hostedWindow = IntPtr.Zero Then
+                tmrReapplyMoves.Stop()
+                Return
+            End If
+            _moveReapplyTicks += 1
+            ' Refresh the handle list cheaply: only the windows we care about are re-resolved, and
+            ' only when the current list has none of them alive.
+            If _lastProbe.Count = 0 OrElse Not _lastProbe.Any(Function(i) IsWindow(i.Hwnd)) Then ProbeChildren()
+            Dim summary As MoveAttemptSummary = ApplyMoves(CurrentMoveEntries(), quiet:=True)
+            If summary.MovedCount > 0 Then
+                _moveReapplyHits += 1
+                ShowStatus($"Reaplicare mutări: {_moveReapplyHits} din {_moveReapplyTicks} tick-uri au avut de corectat ceva.")
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.tmrReapplyMoves_Tick", ex)
+        End Try
+    End Sub
 
     ' Re-probes and hides everything whose window text matches, retrying because Adobe creates the
     ' task pane host AFTER the main view: a single attempt right after embed often finds nothing.
@@ -1541,6 +1791,25 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 If _scenario.Clip.Right.HasValue Then numClipRight.Value = ClampToRange(numClipRight, _scenario.Clip.Right.Value)
                 If _scenario.Clip.Top.HasValue Then numClipTop.Value = ClampToRange(numClipTop, _scenario.Clip.Top.Value)
             End If
+            ' The move section pre-sets the panel exactly like every other section: the FIRST entry
+            ' fills the boxes so the operator sees what «Aplică mutarea» would do; the whole list is
+            ' what the `moveChildren` step replays.
+            If _scenario.MoveChildren IsNot Nothing AndAlso _scenario.MoveChildren.Count > 0 Then
+                Dim first As MoveChildEntry = _scenario.MoveChildren(0)
+                txtMoveTarget.Text = If(first.ByText, "")
+                numDx.Value = ClampToRange(numDx, first.EffectiveDx())
+                numDy.Value = ClampToRange(numDy, first.EffectiveDy())
+                numDw.Value = ClampToRange(numDw, first.EffectiveDw())
+                numDh.Value = ClampToRange(numDh, first.EffectiveDh())
+                If _scenario.MoveChildren.Count > 1 Then
+                    RhpLog($"moveChildren: {_scenario.MoveChildren.Count} intrări; panoul arată prima " &
+                           "(«Rulează scenariul» le aplică pe toate, în ordinea din fișier).")
+                End If
+            End If
+            If _scenario.MoveOptions IsNot Nothing Then
+                chkReapplyMoves.Checked = _scenario.MoveOptions.ShouldReapply()
+                numReapplyMs.Value = ClampToRange(numReapplyMs, _scenario.MoveOptions.EffectiveIntervalMs())
+            End If
             If _scenario.UserPrefs IsNot Nothing Then
                 If _scenario.UserPrefs.RestoreOnClose.HasValue Then
                     chkRestoreOnClose.Checked = _scenario.UserPrefs.RestoreOnClose.Value
@@ -1766,6 +2035,9 @@ Public NotInheritable Class AdobeReaderHarnessForm
             Case HarnessScenarioSteps.HideChildren
                 Return Await HideChildrenByTextAsync(_scenario.HideChildren)
 
+            Case HarnessScenarioSteps.MoveChildren
+                Return MoveScenarioChildren()
+
             Case HarnessScenarioSteps.ApplyClip
                 ApplyScenarioClip()
                 Return True
@@ -1780,6 +2052,28 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 RhpLog($"Pas necunoscut «{stepName}». Pași valizi: {HarnessScenarioSteps.AllAsText()}.")
                 Return False
         End Select
+    End Function
+
+    ' The `moveChildren` step. An absent section does nothing and says so; a step that moves NOTHING
+    ' still returns True — «negăsit» is a legitimate result of this experiment, not a failure of the
+    ' run, and the summary line already carries the warning.
+    Private Function MoveScenarioChildren() As Boolean
+        Dim entries As List(Of MoveChildEntry) = If(_scenario.MoveChildren, New List(Of MoveChildEntry)())
+        If entries.Count = 0 Then
+            RhpLog("moveChildren: secțiunea «moveChildren» lipsește sau e goală — nimic de mutat.")
+            Return True
+        End If
+        ' Fresh handles: the entries address windows by text, and the HWNDs change every launch.
+        ProbeChildren()
+        RhpLog("── Mutare ferestre copil (scenariu) ──")
+        Dim summary As MoveAttemptSummary = ApplyMoves(entries, quiet:=False)
+        ShowStatus(summary.SummaryLine())
+        ' Reapplication is a property of the scenario, applied after the first pass so the timer has
+        ' something recorded to re-impose.
+        SyncMoveReapplyTimer()
+        UpdateActionStates()
+        RefreshStatusBlock()
+        Return True
     End Function
 
     Private Async Function SendScenarioKeysAsync() As Task(Of Boolean)
@@ -1922,6 +2216,17 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 .ReapplyIntervalMs = HideChildrenConfig.DefaultReapplyIntervalMs}
         End If
 
+        ' The move currently described by the panel, saved only when it names a window and would
+        ' actually do something — an all-zero entry in a file is noise.
+        Dim moveEntries As List(Of MoveChildEntry) = CurrentMoveEntries()
+        moveEntries = moveEntries.Where(Function(m) Not m.IsNoOp()).ToList()
+        If moveEntries.Count > 0 Then
+            s.MoveChildren = moveEntries
+            s.MoveOptions = New MoveOptionsConfig() With {
+                .Reapply = chkReapplyMoves.Checked,
+                .ReapplyIntervalMs = CInt(numReapplyMs.Value)}
+        End If
+
         ' Save the LITERAL intents, so a saved file reproduces exactly what would be written —
         ' including a deletion, which round-trips as JSON null.
         Dim prefValues As New Dictionary(Of String, JsonElement)()
@@ -1965,12 +2270,9 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Dim steps As New List(Of String)()
         steps.Add(HarnessScenarioSteps.Launch)
         steps.Add(HarnessScenarioSteps.WaitForEmbed)
-        If s.HideChildren IsNot Nothing Then
-            steps.Add(HarnessScenarioSteps.Probe)
-            steps.Add(HarnessScenarioSteps.HideChildren)
-        Else
-            steps.Add(HarnessScenarioSteps.Probe)
-        End If
+        steps.Add(HarnessScenarioSteps.Probe)
+        If s.HideChildren IsNot Nothing Then steps.Add(HarnessScenarioSteps.HideChildren)
+        If s.MoveChildren IsNot Nothing Then steps.Add(HarnessScenarioSteps.MoveChildren)
         If chkClip.Checked Then steps.Add(HarnessScenarioSteps.ApplyClip)
         Return steps
     End Function
@@ -2281,6 +2583,13 @@ Public NotInheritable Class AdobeReaderHarnessForm
             sb.Append("  ·  Copii ascunși: ").Append(_hiddenChildren.Count.ToString())
             If _hiddenChildTexts.Count > 0 Then sb.Append(" [").Append(String.Join(", ", _hiddenChildTexts)).Append("]")
             sb.AppendLine()
+            sb.Append("  ·  Mutări: ").Append(_moveOrigins.Count.ToString())
+            If _moveOrigins.Count > 0 Then sb.Append(" [").Append(String.Join(", ", _moveOrigins.Texts())).Append("]")
+            If tmrReapplyMoves.Enabled Then
+                sb.Append(" (reaplicare ").Append(_moveReapplyHits.ToString()).Append("/").
+                   Append(_moveReapplyTicks.ToString()).Append(")")
+            End If
+            sb.AppendLine()
             sb.Append("HKCU aplicat: ").Append(If(_userValuesApplied.Count > 0, String.Join(", ", _userValuesApplied), "—"))
             sb.Append("  ·  Politică HKLM în sesiune: ").Append(If(_machinePolicyApplied, "da", "nu"))
             sb.Append("  ·  Scenariu: ").Append(If(_scenario Is Nothing, "(niciunul)",
@@ -2346,6 +2655,8 @@ Public NotInheritable Class AdobeReaderHarnessForm
         btnShowChild.Enabled = hosted AndAlso lstChildren.Items.Count > 0
         btnShowAllChildren.Enabled = _hiddenChildren.Count > 0
         btnClipAuto.Enabled = _probeCandidateWidth > 0
+        btnApplyMove.Enabled = hosted
+        btnResetMoves.Enabled = _moveOrigins.Count > 0
         btnRunScenario.Enabled = _scenario IsNot Nothing AndAlso Not _scenarioRunning
     End Sub
 
@@ -2433,6 +2744,17 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
     <DllImport("user32.dll")>
     Private Shared Function GetWindow(hWnd As IntPtr, uCmd As UInteger) As IntPtr
+    End Function
+
+    <DllImport("user32.dll")>
+    Private Shared Function GetParent(hWnd As IntPtr) As IntPtr
+    End Function
+
+    ' cPoints = 2 when the "points" are the two corners of a RECT. Converts screen -> parent client,
+    ' which is the coordinate space SetWindowPos wants for a child window.
+    <DllImport("user32.dll", SetLastError:=True)>
+    Private Shared Function MapWindowPoints(hWndFrom As IntPtr, hWndTo As IntPtr,
+                                            ByRef lpPoints As RECT, cPoints As UInteger) As Integer
     End Function
 
     <DllImport("user32.dll", SetLastError:=True)>

@@ -75,14 +75,17 @@ Public Class AdobeHarnessLayoutTests
     End Sub
 
     <Fact>
-    Public Sub AllElevenSections_ArePresent_InOrder()
+    Public Sub AllTwelveSections_ArePresent_InOrder()
         RunSta(Sub()
                    Using f = NewForm()
                        Dim names = OptionsPanel(f).Controls.OfType(Of GroupBox)().
                                      Select(Function(g) g.Name).ToArray()
+                       ' grpMove joined in pass 6, deliberately right after grpChildren: hiding a
+                       ' child and moving one are the same family of lever.
                        Assert.Equal(New String() {
                            "grpLaunch", "grpChrome", "grpFile", "grpProbe", "grpScenario",
-                           "grpClip", "grpChildren", "grpKeys", "grpUser", "grpMachine", "grpCmd"},
+                           "grpClip", "grpChildren", "grpMove", "grpKeys", "grpUser",
+                           "grpMachine", "grpCmd"},
                            names)
                    End Using
                End Sub)
@@ -140,6 +143,59 @@ Public Class AdobeHarnessLayoutTests
                            Assert.True(hits(0).Width > 0 AndAlso hits(0).Height > 0,
                                        $"controlul «{name}» are dimensiune nulă (secțiune colapsată)")
                        Next
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub MoveSection_IsPresentAndReachable()
+        ' «Mută ferestre copil» sits under «Ferestre copil»; it is the lever that does NOT inflate
+        ' the hosted window, so it must be reachable in the scrolling panel like the others.
+        RunSta(Sub()
+                   Using f = NewForm()
+                       Dim panel = OptionsPanel(f)
+                       Dim section = SectionNamed(panel, "grpMove")
+                       panel.ScrollControlIntoView(section)
+                       Application.DoEvents()
+                       Assert.True(section.Top >= 0 AndAlso section.Bottom <= panel.ClientSize.Height,
+                                   $"«grpMove» nu e complet vizibilă după derulare (top={section.Top}, bottom={section.Bottom})")
+
+                       For Each name As String In New String() {"txtMoveTarget", "numDx", "numDy",
+                                                                "numDw", "numDh", "btnApplyMove",
+                                                                "btnResetMoves", "chkReapplyMoves",
+                                                                "numReapplyMs"}
+                           Dim hits = f.Controls.Find(name, searchAllChildren:=True)
+                           Assert.True(hits.Length = 1, $"controlul «{name}» lipsește din formular")
+                           Assert.True(hits(0).Width > 0 AndAlso hits(0).Height > 0,
+                                       $"controlul «{name}» are dimensiune nulă")
+                       Next
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub MoveDeltas_AcceptNegativeValues()
+        ' dx = -120 is the whole point: pulling the splitter LEFT over the gutter. A spinner whose
+        ' minimum is 0 would make the feature unusable and the failure would be silent.
+        RunSta(Sub()
+                   Using f = NewForm()
+                       For Each name As String In New String() {"numDx", "numDy", "numDw", "numDh"}
+                           Dim n = DirectCast(f.Controls.Find(name, searchAllChildren:=True).Single(), NumericUpDown)
+                           Assert.True(n.Minimum <= -2000D, $"«{name}» nu acceptă valori negative (min={n.Minimum})")
+                           Assert.True(n.Maximum >= 2000D, $"«{name}» are maximul prea mic ({n.Maximum})")
+                           Assert.Equal(0D, n.Value)
+                       Next
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ReapplyIsOffByDefault()
+        ' A timer that writes into another process must never start on its own.
+        RunSta(Sub()
+                   Using f = NewForm()
+                       Assert.False(DirectCast(f.Controls.Find("chkReapplyMoves", True).Single(), CheckBox).Checked)
+                       Assert.Equal(500D, DirectCast(f.Controls.Find("numReapplyMs", True).Single(), NumericUpDown).Value)
                    End Using
                End Sub)
     End Sub
