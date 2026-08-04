@@ -217,6 +217,67 @@ Public Class HarnessTruthTests
         Assert.Equal(BaselineVerdict.Clean, BaselineEvaluator.Evaluate(Nothing, False).Verdict)
     End Sub
 
+    ' ── pass 5: HKCU pane preferences contaminate the baseline just as a policy does ──
+    ' A baseline read on 04.08 said "curată" while bRHPSticky = 1 and
+    ' aDefaultRHPViewMode_L = "Collapsed" were still set — Adobe already remembering a collapsed
+    ' pane. Cleaning only the policies would still leave a machine that is not neutral.
+    Private Shared Function Pref(name As String, present As Boolean, value As Object) As PolicyReading
+        Return New PolicyReading("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\DC\AVGeneral",
+                                 name, present, value, BaselineOrigin.UserPreference)
+    End Function
+
+    <Fact>
+    Public Sub Baseline_LeftoverHkcuPreference_IsNotClean()
+        Dim a = BaselineEvaluator.Evaluate({Policy(False), Pref("bRHPSticky", True, 1)},
+                                           requireCleanBaseline:=False)
+        Assert.Equal(BaselineVerdict.Warn, a.Verdict)
+        Assert.Contains("bRHPSticky", a.WarningText())
+    End Sub
+
+    <Fact>
+    Public Sub Baseline_LeftoverHkcuPreference_BlocksAScenarioDemandingClean()
+        Dim a = BaselineEvaluator.Evaluate({Pref("aDefaultRHPViewMode_L", True, "Collapsed")},
+                                           requireCleanBaseline:=True)
+        Assert.Equal(BaselineVerdict.Block, a.Verdict)
+        ' The cleanup route for HKCU is «șterge» + apply, not the elevated revert.
+        Assert.Contains("șterge", a.BlockedText())
+    End Sub
+
+    <Fact>
+    Public Sub Baseline_SeparatesPoliciesFromPreferences()
+        Dim a = BaselineEvaluator.Evaluate(
+            {Policy(True), Pref("bRHPSticky", True, 1), Pref("bExpandRHPInViewer", False, Nothing)},
+            requireCleanBaseline:=False)
+        Assert.Single(a.Policies)
+        Assert.Single(a.Preferences)
+        Assert.Equal(2, a.Active.Count)
+    End Sub
+
+    <Fact>
+    Public Sub Baseline_AbsentPreferences_AreTheNeutralMachine()
+        Dim a = BaselineEvaluator.Evaluate(
+            {Policy(False), Pref("bRHPSticky", False, Nothing),
+             Pref("bExpandRHPInViewer", False, Nothing), Pref("aDefaultRHPViewMode_L", False, Nothing)},
+            requireCleanBaseline:=True)
+        Assert.Equal(BaselineVerdict.Clean, a.Verdict)
+    End Sub
+
+    <Fact>
+    Public Sub Baseline_EachActiveValueIsTaggedWithWhereItLives()
+        Dim a = BaselineEvaluator.Evaluate({Policy(True), Pref("bRHPSticky", True, 1)},
+                                           requireCleanBaseline:=False)
+        Assert.Contains("[HKLM politică]", a.Describe())
+        Assert.Contains("[HKCU preferință]", a.Describe())
+    End Sub
+
+    <Fact>
+    Public Sub Baseline_PolicyOnly_DoesNotTalkAboutHkcuCleanup()
+        ' Each consequence and each cleanup route is stated only when it actually applies.
+        Dim a = BaselineEvaluator.Evaluate({Policy(True)}, requireCleanBaseline:=True)
+        Assert.DoesNotContain("șterge", a.BlockedText())
+        Assert.Contains("elevare", a.BlockedText())
+    End Sub
+
     ' ══ §3.3 marker file round trip ════════════════════════════════════════════
     <Fact>
     Public Sub Marker_RoundTrips()

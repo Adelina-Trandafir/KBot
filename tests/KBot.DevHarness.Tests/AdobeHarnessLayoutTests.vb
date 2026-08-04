@@ -130,8 +130,8 @@ Public Class AdobeHarnessLayoutTests
                    Using f = NewForm()
                        Dim panel = OptionsPanel(f)
                        Dim expected As String() = {
-                           "cboHive", "chkExpandRhp", "chkRhpSticky", "chkRhpCollapsed",
-                           "chkClassicViewer", "btnApplyUser", "btnRestoreUser", "chkRestoreOnClose",
+                           "cboHive", "cboExpandRhp", "cboRhpSticky", "cboRhpViewMode",
+                           "cboEnableAv2", "btnApplyUser", "btnRestoreUser", "chkRestoreOnClose",
                            "cboProduct", "chkSuppressUpsell", "chkDisableServices",
                            "btnApplyMachine", "btnRevertMachine"}
                        For Each name As String In expected

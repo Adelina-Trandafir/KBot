@@ -90,10 +90,18 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents tlpUser As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents lblHive As System.Windows.Forms.Label
     Friend WithEvents cboHive As System.Windows.Forms.ComboBox
-    Friend WithEvents chkExpandRhp As System.Windows.Forms.CheckBox
-    Friend WithEvents chkRhpSticky As System.Windows.Forms.CheckBox
-    Friend WithEvents chkRhpCollapsed As System.Windows.Forms.CheckBox
-    Friend WithEvents chkClassicViewer As System.Windows.Forms.CheckBox
+    ' One ROW per preference — «nu atinge» / «șterge» / a literal value. NOT checkboxes: a
+    ' checkbox has two states and the schema has four, so «bEnableAv2 = 0» could never express 1.
+    Friend WithEvents tlpPrefRows As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents lblExpandRhp As System.Windows.Forms.Label
+    Friend WithEvents cboExpandRhp As System.Windows.Forms.ComboBox
+    Friend WithEvents lblRhpSticky As System.Windows.Forms.Label
+    Friend WithEvents cboRhpSticky As System.Windows.Forms.ComboBox
+    Friend WithEvents lblRhpViewMode As System.Windows.Forms.Label
+    Friend WithEvents cboRhpViewMode As System.Windows.Forms.ComboBox
+    Friend WithEvents lblEnableAv2 As System.Windows.Forms.Label
+    Friend WithEvents cboEnableAv2 As System.Windows.Forms.ComboBox
+    Friend WithEvents lblPrefHint As System.Windows.Forms.Label
     ' Read-only view of what the loaded scenario ASKED FOR vs what the machine currently holds —
     ' the display that makes a clamped or refused value obvious instead of invisible.
     Friend WithEvents gridPrefs As System.Windows.Forms.DataGridView
@@ -186,10 +194,16 @@ Partial Class AdobeReaderHarnessForm
         tlpUser = New System.Windows.Forms.TableLayoutPanel()
         lblHive = New System.Windows.Forms.Label()
         cboHive = New System.Windows.Forms.ComboBox()
-        chkExpandRhp = New System.Windows.Forms.CheckBox()
-        chkRhpSticky = New System.Windows.Forms.CheckBox()
-        chkRhpCollapsed = New System.Windows.Forms.CheckBox()
-        chkClassicViewer = New System.Windows.Forms.CheckBox()
+        tlpPrefRows = New System.Windows.Forms.TableLayoutPanel()
+        lblExpandRhp = New System.Windows.Forms.Label()
+        cboExpandRhp = New System.Windows.Forms.ComboBox()
+        lblRhpSticky = New System.Windows.Forms.Label()
+        cboRhpSticky = New System.Windows.Forms.ComboBox()
+        lblRhpViewMode = New System.Windows.Forms.Label()
+        cboRhpViewMode = New System.Windows.Forms.ComboBox()
+        lblEnableAv2 = New System.Windows.Forms.Label()
+        cboEnableAv2 = New System.Windows.Forms.ComboBox()
+        lblPrefHint = New System.Windows.Forms.Label()
         gridPrefs = New System.Windows.Forms.DataGridView()
         btnApplyUser = New System.Windows.Forms.Button()
         btnRestoreUser = New System.Windows.Forms.Button()
@@ -234,6 +248,7 @@ Partial Class AdobeReaderHarnessForm
         tlpKeys.SuspendLayout()
         grpUser.SuspendLayout()
         tlpUser.SuspendLayout()
+        tlpPrefRows.SuspendLayout()
         CType(gridPrefs, System.ComponentModel.ISupportInitialize).BeginInit()
         grpMachine.SuspendLayout()
         tlpMachine.SuspendLayout()
@@ -760,19 +775,15 @@ Partial Class AdobeReaderHarnessForm
         tlpUser.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
         tlpUser.Controls.Add(lblHive, 0, 0)
         tlpUser.Controls.Add(cboHive, 0, 1)
-        tlpUser.Controls.Add(chkExpandRhp, 0, 2)
-        tlpUser.Controls.Add(chkRhpSticky, 0, 3)
-        tlpUser.Controls.Add(chkRhpCollapsed, 0, 4)
-        tlpUser.Controls.Add(chkClassicViewer, 0, 5)
-        tlpUser.Controls.Add(gridPrefs, 0, 6)
-        tlpUser.Controls.Add(btnApplyUser, 0, 7)
-        tlpUser.Controls.Add(btnRestoreUser, 0, 8)
-        tlpUser.Controls.Add(chkRestoreOnClose, 0, 9)
+        tlpUser.Controls.Add(tlpPrefRows, 0, 2)
+        tlpUser.Controls.Add(lblPrefHint, 0, 3)
+        tlpUser.Controls.Add(gridPrefs, 0, 4)
+        tlpUser.Controls.Add(btnApplyUser, 0, 5)
+        tlpUser.Controls.Add(btnRestoreUser, 0, 6)
+        tlpUser.Controls.Add(chkRestoreOnClose, 0, 7)
         tlpUser.Dock = System.Windows.Forms.DockStyle.Fill
         tlpUser.Name = "tlpUser"
-        tlpUser.RowCount = 10
-        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpUser.RowCount = 8
         tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
@@ -782,6 +793,31 @@ Partial Class AdobeReaderHarnessForm
         tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
         tlpUser.TabIndex = 0
+        '
+        ' tlpPrefRows — one «nume | valoare» row per HKCU preference. Column 0 AutoSize (the value
+        ' name), column 1 Percent 100 (the editable combo), so the combos line up under each other.
+        '
+        tlpPrefRows.AutoSize = True
+        tlpPrefRows.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpPrefRows.ColumnCount = 2
+        tlpPrefRows.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpPrefRows.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpPrefRows.Controls.Add(lblExpandRhp, 0, 0)
+        tlpPrefRows.Controls.Add(cboExpandRhp, 1, 0)
+        tlpPrefRows.Controls.Add(lblRhpSticky, 0, 1)
+        tlpPrefRows.Controls.Add(cboRhpSticky, 1, 1)
+        tlpPrefRows.Controls.Add(lblRhpViewMode, 0, 2)
+        tlpPrefRows.Controls.Add(cboRhpViewMode, 1, 2)
+        tlpPrefRows.Controls.Add(lblEnableAv2, 0, 3)
+        tlpPrefRows.Controls.Add(cboEnableAv2, 1, 3)
+        tlpPrefRows.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpPrefRows.Name = "tlpPrefRows"
+        tlpPrefRows.RowCount = 4
+        tlpPrefRows.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpPrefRows.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpPrefRows.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpPrefRows.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpPrefRows.TabIndex = 2
         '
         ' gridPrefs — read-only: Valoare · Cerut · Curent · Tip
         '
@@ -811,29 +847,62 @@ Partial Class AdobeReaderHarnessForm
         cboHive.Name = "cboHive"
         cboHive.TabIndex = 1
         '
-        chkExpandRhp.AutoSize = True
-        chkExpandRhp.Dock = System.Windows.Forms.DockStyle.Fill
-        chkExpandRhp.Name = "chkExpandRhp"
-        chkExpandRhp.TabIndex = 2
-        chkExpandRhp.Text = "bExpandRHPInViewer = 0"
+        lblExpandRhp.AutoSize = True
+        lblExpandRhp.Dock = System.Windows.Forms.DockStyle.Fill
+        lblExpandRhp.Name = "lblExpandRhp"
+        lblExpandRhp.TabIndex = 0
+        lblExpandRhp.Text = "bExpandRHPInViewer"
+        lblExpandRhp.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
         '
-        chkRhpSticky.AutoSize = True
-        chkRhpSticky.Dock = System.Windows.Forms.DockStyle.Fill
-        chkRhpSticky.Name = "chkRhpSticky"
-        chkRhpSticky.TabIndex = 3
-        chkRhpSticky.Text = "bRHPSticky = 1"
+        ' DropDown (editabil), nu DropDownList: scenariile pot cere orice întreg, nu doar 0/1.
+        cboExpandRhp.Dock = System.Windows.Forms.DockStyle.Fill
+        cboExpandRhp.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown
+        cboExpandRhp.Name = "cboExpandRhp"
+        cboExpandRhp.TabIndex = 1
         '
-        chkRhpCollapsed.AutoSize = True
-        chkRhpCollapsed.Dock = System.Windows.Forms.DockStyle.Fill
-        chkRhpCollapsed.Name = "chkRhpCollapsed"
-        chkRhpCollapsed.TabIndex = 4
-        chkRhpCollapsed.Text = "aDefaultRHPViewMode_L = Collapsed"
+        lblRhpSticky.AutoSize = True
+        lblRhpSticky.Dock = System.Windows.Forms.DockStyle.Fill
+        lblRhpSticky.Name = "lblRhpSticky"
+        lblRhpSticky.TabIndex = 2
+        lblRhpSticky.Text = "bRHPSticky"
+        lblRhpSticky.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
         '
-        chkClassicViewer.AutoSize = True
-        chkClassicViewer.Dock = System.Windows.Forms.DockStyle.Fill
-        chkClassicViewer.Name = "chkClassicViewer"
-        chkClassicViewer.TabIndex = 5
-        chkClassicViewer.Text = "bEnableAv2 = 0 (interfața clasică)"
+        cboRhpSticky.Dock = System.Windows.Forms.DockStyle.Fill
+        cboRhpSticky.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown
+        cboRhpSticky.Name = "cboRhpSticky"
+        cboRhpSticky.TabIndex = 3
+        '
+        lblRhpViewMode.AutoSize = True
+        lblRhpViewMode.Dock = System.Windows.Forms.DockStyle.Fill
+        lblRhpViewMode.Name = "lblRhpViewMode"
+        lblRhpViewMode.TabIndex = 4
+        lblRhpViewMode.Text = "aDefaultRHPViewMode_L"
+        lblRhpViewMode.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+        '
+        ' REG_SZ: text liber, cu «Collapsed»/«Expanded» doar ca sugestii în listă.
+        cboRhpViewMode.Dock = System.Windows.Forms.DockStyle.Fill
+        cboRhpViewMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown
+        cboRhpViewMode.Name = "cboRhpViewMode"
+        cboRhpViewMode.TabIndex = 5
+        '
+        lblEnableAv2.AutoSize = True
+        lblEnableAv2.Dock = System.Windows.Forms.DockStyle.Fill
+        lblEnableAv2.Name = "lblEnableAv2"
+        lblEnableAv2.TabIndex = 6
+        lblEnableAv2.Text = "bEnableAv2 (0 = clasic, 1 = modern)"
+        lblEnableAv2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+        '
+        cboEnableAv2.Dock = System.Windows.Forms.DockStyle.Fill
+        cboEnableAv2.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown
+        cboEnableAv2.Name = "cboEnableAv2"
+        cboEnableAv2.TabIndex = 7
+        '
+        lblPrefHint.AutoSize = True
+        lblPrefHint.Dock = System.Windows.Forms.DockStyle.Fill
+        lblPrefHint.Name = "lblPrefHint"
+        lblPrefHint.TabIndex = 3
+        lblPrefHint.Text = "«nu atinge» lasă valoarea exact cum e (NU o scrie pe 0); «șterge» o elimină din registry; " &
+                           "orice altceva se scrie literal."
         '
         btnApplyUser.AutoSize = True
         btnApplyUser.Dock = System.Windows.Forms.DockStyle.Fill
@@ -849,13 +918,13 @@ Partial Class AdobeReaderHarnessForm
         btnRestoreUser.Text = "Restaurează valorile originale"
         btnRestoreUser.UseVisualStyleBackColor = True
         '
+        ' DEBIFAT implicit: bifat, el anulează experimentul la fiecare închidere a bancului — exact
+        ' ce s-a întâmplat cu bEnableAv2 = 1, readus la 0 fără ca nimeni să ceară asta.
         chkRestoreOnClose.AutoSize = True
-        chkRestoreOnClose.Checked = True
-        chkRestoreOnClose.CheckState = System.Windows.Forms.CheckState.Checked
         chkRestoreOnClose.Dock = System.Windows.Forms.DockStyle.Fill
         chkRestoreOnClose.Name = "chkRestoreOnClose"
         chkRestoreOnClose.TabIndex = 8
-        chkRestoreOnClose.Text = "Restaurează la închiderea bancului"
+        chkRestoreOnClose.Text = "Restaurează valorile HKCU la închiderea bancului"
         '
         ' grpMachine
         '
@@ -1043,6 +1112,8 @@ Partial Class AdobeReaderHarnessForm
         CType(gridPrefs, System.ComponentModel.ISupportInitialize).EndInit()
         tlpUser.ResumeLayout(False)
         tlpUser.PerformLayout()
+        tlpPrefRows.ResumeLayout(False)
+        tlpPrefRows.PerformLayout()
         grpMachine.ResumeLayout(False)
         grpMachine.PerformLayout()
         tlpMachine.ResumeLayout(False)

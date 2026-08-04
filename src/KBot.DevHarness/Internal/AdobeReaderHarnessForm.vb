@@ -148,6 +148,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         cboProduct.Items.AddRange(New Object() {
             "auto", AdobeRegistryConstants.ProductReader, AdobeRegistryConstants.ProductAcrobat})
         cboProduct.SelectedIndex = 0
+        PopulatePrefRows()
         Try
             Dim rEx As Boolean = _regAccess.KeyExists(AdobeRegistryConstants.AvGeneralReader)
             Dim aEx As Boolean = _regAccess.KeyExists(AdobeRegistryConstants.AvGeneralAcrobat)
@@ -156,6 +157,55 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHarnessForm.PopulateRegistryCombos", ex)
             lblHive.Text = "AVGeneral: detecție eșuată (vezi jurnalul de erori)."
+        End Try
+    End Sub
+
+    ' Each HKCU preference gets a row whose value is EDITABLE, with «nu atinge» as the default and
+    ' «șterge» as an explicit choice. The list entries are suggestions, not the whole alphabet: the
+    ' combos are DropDown, so a scenario asking for a value nobody anticipated still shows up here
+    ' as itself instead of being rounded to the nearest checkbox.
+    Private Sub PopulatePrefRows()
+        Dim flags As Object() = {PrefRowSelection.Untouched, "0", "1", PrefRowSelection.DeleteText}
+        For Each c As ComboBox In New ComboBox() {cboExpandRhp, cboRhpSticky, cboEnableAv2}
+            c.Items.AddRange(flags)
+            c.SelectedIndex = 0
+        Next
+        cboRhpViewMode.Items.AddRange(New Object() {
+            PrefRowSelection.Untouched, AdobeRegistryConstants.RhpViewModeCollapsed,
+            "Expanded", PrefRowSelection.DeleteText})
+        cboRhpViewMode.SelectedIndex = 0
+        For Each c As ComboBox In New ComboBox() {cboExpandRhp, cboRhpSticky, cboRhpViewMode, cboEnableAv2}
+            c.SelectionLength = 0
+        Next
+    End Sub
+
+    ' Every row parsed, in panel order. Rows the operator left on «nu atinge» produce no intent at
+    ' all — the state the old checkboxes could not express.
+    Private Function ParsePrefRows() As List(Of PrefRowParse)
+        Return New List(Of PrefRowParse) From {
+            PrefRowSelection.ParseDword(AdobeRegistryConstants.ValExpandRhp, cboExpandRhp.Text),
+            PrefRowSelection.ParseDword(AdobeRegistryConstants.ValRhpSticky, cboRhpSticky.Text),
+            PrefRowSelection.ParseString(AdobeRegistryConstants.ValRhpViewMode, cboRhpViewMode.Text),
+            PrefRowSelection.ParseDword(AdobeRegistryConstants.ValEnableAv2, cboEnableAv2.Text)}
+    End Function
+
+    ' A row that cannot be parsed must stop the run: silently skipping it would put the panel and
+    ' the registry back into disagreement, which is the whole defect this pass exists to remove.
+    Private Function InvalidPrefRows() As List(Of String)
+        Return ParsePrefRows().Where(Function(p) p.Invalid).Select(Function(p) p.Message).ToList()
+    End Function
+
+    ' Any row change re-reads the machine so «Cerut vs Curent» never lags behind the panel.
+    Private Sub PrefRow_Changed(sender As Object, e As EventArgs) _
+        Handles cboExpandRhp.SelectedIndexChanged, cboExpandRhp.TextChanged,
+                cboRhpSticky.SelectedIndexChanged, cboRhpSticky.TextChanged,
+                cboRhpViewMode.SelectedIndexChanged, cboRhpViewMode.TextChanged,
+                cboEnableAv2.SelectedIndexChanged, cboEnableAv2.TextChanged
+        Try
+            If _loading Then Return
+            RefreshPrefsGrid()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.PrefRow_Changed", ex)
         End Try
     End Sub
 
@@ -986,22 +1036,14 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 Next
             End If
         End If
-        Return UserPrefIntentFactory.Merge(fromScenario, CollectTickedUserPrefs())
+        Return UserPrefIntentFactory.Merge(fromScenario, CollectPanelUserPrefs())
     End Function
 
-    ' The four manual shortcuts, each meaning "set this one value".
-    Private Function CollectTickedUserPrefs() As List(Of UserPrefIntent)
-        Dim prefs As New List(Of UserPrefIntent)()
-        If chkExpandRhp.Checked Then prefs.Add(New UserPrefIntent(
-            AdobeRegistryConstants.ValExpandRhp, UserPrefAction.WriteDword, 0))
-        If chkRhpSticky.Checked Then prefs.Add(New UserPrefIntent(
-            AdobeRegistryConstants.ValRhpSticky, UserPrefAction.WriteDword, 1))
-        If chkRhpCollapsed.Checked Then prefs.Add(New UserPrefIntent(
-            AdobeRegistryConstants.ValRhpViewMode, UserPrefAction.WriteString,
-            AdobeRegistryConstants.RhpViewModeCollapsed))
-        If chkClassicViewer.Checked Then prefs.Add(New UserPrefIntent(
-            AdobeRegistryConstants.ValEnableAv2, UserPrefAction.WriteDword, 0))
-        Return prefs
+    ' The four panel rows, each carrying whatever the operator typed or picked. A row on
+    ' «nu atinge» contributes nothing; «șterge» contributes a deletion.
+    Private Function CollectPanelUserPrefs() As List(Of UserPrefIntent)
+        Return ParsePrefRows().Where(Function(p) p.Intent IsNot Nothing).
+                               Select(Function(p) p.Intent).ToList()
     End Function
 
     ' Order: (1) snapshot ticked values ONCE per session (Capture is idempotent, so a second
@@ -1009,9 +1051,24 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' ONLY, any foreign instance (Adobe rewrites its prefs on exit, the write is worthless while
     ' it runs); (3) write, logging old → new. Shared by the button and the scenario step.
     Private Function ApplyUserPrefsCore() As Boolean
+        Dim bad As List(Of String) = InvalidPrefRows()
+        If bad.Count > 0 Then
+            For Each m As String In bad
+                RhpLog("HKCU rând invalid: " & m)
+            Next
+            ShowStatus("Rând HKCU invalid — nu s-a scris nimic.")
+            MessageBox.Show(Me,
+                "Un rând din «Preferințe Adobe» nu poate fi interpretat:" & Environment.NewLine &
+                Environment.NewLine & String.Join(Environment.NewLine, bad) & Environment.NewLine &
+                Environment.NewLine &
+                "Alege «nu atinge», «șterge» sau un număr întreg. Nu s-a scris nimic în registry.",
+                "K-BOT — valoare HKCU invalidă", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Return False
+        End If
+
         Dim prefs As List(Of UserPrefIntent) = CollectUserPrefs()
         If prefs.Count = 0 Then
-            ShowStatus("Nicio valoare HKCU bifată — nimic de aplicat.")
+            ShowStatus("Toate rândurile HKCU sunt pe «nu atinge» — nimic de aplicat.")
             Return True
         End If
         Dim hive As String = CurrentAvGeneralPath()
@@ -1145,7 +1202,15 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' which is logged. On failure the operator is told (status + MessageBox, since the label alone
     ' would never be seen on a closing form) with the exact keys named for manual cleanup.
     Private Sub RestoreUserPrefsOnClose()
-        If Not chkRestoreOnClose.Checked OrElse _userValuesApplied.Count = 0 Then Return
+        If _userValuesApplied.Count = 0 Then Return
+        If Not chkRestoreOnClose.Checked Then
+            ' Deliberate: the operator wants the experiment to survive the bench closing. Say so,
+            ' because the next session's baseline check will read exactly these values.
+            RhpLog("Restaurare la închidere DEZACTIVATĂ — valorile HKCU rămân aplicate: " &
+                   String.Join(", ", _userValuesApplied) &
+                   ". Ele vor apărea ca stare de pornire la următoarea rulare.")
+            Return
+        End If
         Try
             Dim foreignCount As Integer =
                 Process.GetProcessesByName("Acrobat").Length + Process.GetProcessesByName("AcroRd32").Length
@@ -1480,9 +1545,11 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 If _scenario.UserPrefs.RestoreOnClose.HasValue Then
                     chkRestoreOnClose.Checked = _scenario.UserPrefs.RestoreOnClose.Value
                 End If
-                ApplyUserPrefValuesToChecks(_scenario.UserPrefs.Values)
                 SelectComboValue(cboHive, _scenario.UserPrefs.Hive)
             End If
+            ' Always, even with no userPrefs section: a scenario silent about HKCU must clear rows
+            ' left behind by the previous one, not inherit them.
+            ApplyUserPrefValuesToRows(If(_scenario.UserPrefs Is Nothing, Nothing, _scenario.UserPrefs.Values))
             If _scenario.MachinePolicy IsNot Nothing Then
                 SelectComboValue(cboProduct, _scenario.MachinePolicy.Product)
                 ApplyPolicyValuesToChecks(_scenario.MachinePolicy.Values)
@@ -1513,45 +1580,42 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Next
     End Sub
 
-    ' The panel has one checkbox per COMMON HKCU value; a scenario may name any others and they are
-    ' still applied literally (see CollectUserPrefs) — they simply have no switch, so they appear
-    ' only in the «Cerut vs Curent» grid. Logged so the operator knows where to look for them.
-    Private Sub ApplyUserPrefValuesToChecks(values As Dictionary(Of String, JsonElement))
-        If values Is Nothing Then Return
-        ' Tick a shortcut ONLY when the scenario asks for exactly what that shortcut means. A file
-        ' asking for bEnableAv2 = 1 must NOT leave «bEnableAv2 = 0» ticked: the panel would be
-        ' claiming the opposite of what will be written (the grid shows the truth either way).
-        chkExpandRhp.Checked = AsksFor(values, AdobeRegistryConstants.ValExpandRhp, 0)
-        chkRhpSticky.Checked = AsksFor(values, AdobeRegistryConstants.ValRhpSticky, 1)
-        chkRhpCollapsed.Checked = AsksForText(values, AdobeRegistryConstants.ValRhpViewMode,
-                                              AdobeRegistryConstants.RhpViewModeCollapsed)
-        chkClassicViewer.Checked = AsksFor(values, AdobeRegistryConstants.ValEnableAv2, 0)
+    ' The panel has one ROW per COMMON HKCU value, and the row shows the scenario's value VERBATIM
+    ' — 1 stays 1, "Expanded" stays "Expanded", null becomes «șterge». A value the file does not
+    ' mention goes back to «nu atinge», which is not the same as writing 0. Values with no row are
+    ' still applied literally (see CollectUserPrefs) and appear in the «Cerut vs Curent» grid.
+    Private Sub ApplyUserPrefValuesToRows(values As Dictionary(Of String, JsonElement))
+        Dim byName As New Dictionary(Of String, UserPrefIntent)(StringComparer.OrdinalIgnoreCase)
+        For Each i As UserPrefIntent In UserPrefIntentFactory.FromValues(values)
+            byName(i.Name) = i
+        Next
 
+        SetRowText(cboExpandRhp, byName, AdobeRegistryConstants.ValExpandRhp)
+        SetRowText(cboRhpSticky, byName, AdobeRegistryConstants.ValRhpSticky)
+        SetRowText(cboRhpViewMode, byName, AdobeRegistryConstants.ValRhpViewMode)
+        SetRowText(cboEnableAv2, byName, AdobeRegistryConstants.ValEnableAv2)
+
+        If values Is Nothing Then Return
         Dim known As String() = {AdobeRegistryConstants.ValExpandRhp, AdobeRegistryConstants.ValRhpSticky,
                                  AdobeRegistryConstants.ValRhpViewMode, AdobeRegistryConstants.ValEnableAv2}
         For Each k As String In values.Keys
             If Not known.Any(Function(n) String.Equals(n, k, StringComparison.OrdinalIgnoreCase)) Then
-                RhpLog($"userPrefs.values.{k}: fără comutator în panou — se aplică LITERAL din fișier " &
+                RhpLog($"userPrefs.values.{k}: fără rând în panou — se aplică LITERAL din fișier " &
                        "(vizibilă în tabelul «Cerut vs Curent»).")
             End If
         Next
     End Sub
 
-    ' True when the scenario names this value AND asks for exactly the number the shortcut means.
-    Private Shared Function AsksFor(values As Dictionary(Of String, JsonElement),
-                                    name As String, expected As Integer) As Boolean
-        Dim el As JsonElement = Nothing
-        If Not values.TryGetValue(name, el) Then Return False
-        Return el.ValueKind = JsonValueKind.Number AndAlso el.GetInt32() = expected
-    End Function
-
-    Private Shared Function AsksForText(values As Dictionary(Of String, JsonElement),
-                                        name As String, expected As String) As Boolean
-        Dim el As JsonElement = Nothing
-        If Not values.TryGetValue(name, el) Then Return False
-        Return el.ValueKind = JsonValueKind.String AndAlso
-               String.Equals(el.GetString(), expected, StringComparison.OrdinalIgnoreCase)
-    End Function
+    Private Shared Sub SetRowText(row As ComboBox, byName As Dictionary(Of String, UserPrefIntent),
+                                  name As String)
+        Dim intent As UserPrefIntent = Nothing
+        byName.TryGetValue(name, intent)
+        ' TextFor(Nothing) is «nu atinge» — a file silent about a value leaves it alone.
+        row.Text = PrefRowSelection.TextFor(intent)
+        ' Setting .Text on an editable combo leaves the whole value selected, which reads as a
+        ' highlighted (half-edited) row in a panel where nothing is being edited.
+        row.SelectionLength = 0
+    End Sub
 
     Private Sub ApplyPolicyValuesToChecks(values As Dictionary(Of String, JsonElement))
         If values Is Nothing Then Return
@@ -1606,17 +1670,18 @@ Public NotInheritable Class AdobeReaderHarnessForm
         ' first step instead of being reconstructed from logs afterwards.
         LogMachineState("── Bază de pornire ──")
         Dim baseline As BaselineAssessment = BaselineEvaluator.Evaluate(
-            ReadPolicyState(), _scenario.RequireCleanBaseline)
+            ReadBaselineState(), _scenario.RequireCleanBaseline)
         Select Case baseline.Verdict
             Case BaselineVerdict.Block
-                RhpLog("Scenariu REFUZAT: requireCleanBaseline = true și politica HKLM e activă." &
+                RhpLog("Scenariu REFUZAT: requireCleanBaseline = true și mașina nu e neutră." &
                        Environment.NewLine & baseline.Describe())
                 MessageBox.Show(Me, baseline.BlockedText(), "K-BOT — bază de pornire contaminată",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
-                ShowStatus("Scenariu refuzat: bază de pornire contaminată (politică HKLM activă).")
+                ShowStatus($"Scenariu refuzat: bază contaminată ({baseline.Policies.Count} politici HKLM, " &
+                           $"{baseline.Preferences.Count} preferințe HKCU).")
                 Return
             Case BaselineVerdict.Warn
-                RhpLog("ATENȚIE bază de pornire: politică HKLM activă —" & Environment.NewLine & baseline.Describe())
+                RhpLog("ATENȚIE bază de pornire: mașina nu e neutră —" & Environment.NewLine & baseline.Describe())
                 If MessageBox.Show(Me, baseline.WarningText(), "K-BOT — bază de pornire contaminată",
                                    MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) <> DialogResult.OK Then
                     RhpLog("Scenariu abandonat de operator la avertismentul de bază contaminată.")
@@ -1978,12 +2043,46 @@ Public NotInheritable Class AdobeReaderHarnessForm
         RhpLog($"  Procese Adobe în execuție: {adobeProcs}")
 
         Dim active As Integer = Enumerable.Count(readings, Function(r) r.Present)
+        ' The three RHP preferences count as contamination too — that is the whole point of pass 5.
+        Dim prefsSet As Integer = Enumerable.Count(ReadUserRhpState(), Function(r) r.Present)
         Dim summaryText As String =
             $"Stare: Adobe {If(String.IsNullOrEmpty(_adobePath), "negăsit", "găsit")} · " &
-            $"politici HKLM active: {active} · procese Adobe: {adobeProcs}"
-        If active > 0 Then summaryText &= "  ⚠ bază de pornire CONTAMINATĂ"
+            $"politici HKLM active: {active} · preferințe RHP în HKCU: {prefsSet} · " &
+            $"procese Adobe: {adobeProcs}"
+        If active > 0 OrElse prefsSet > 0 Then summaryText &= "  ⚠ bază de pornire CONTAMINATĂ"
         RhpLog("  " & summaryText)
         Return summaryText
+    End Function
+
+    ' The three HKCU values a NEUTRAL machine does not have at all. They are Adobe's memory of how
+    ' the right-hand pane should look, and they survive everything: on 04.08 a baseline came back
+    ' "curată" while bRHPSticky = 1 and aDefaultRHPViewMode_L = "Collapsed" were still set.
+    '
+    ' bEnableAv2 is deliberately NOT here: it selects the classic/modern viewer, which is the thing
+    ' under test. Counting it as contamination would make every scenario that sets it block itself.
+    Private Function ReadUserRhpState() As List(Of PolicyReading)
+        Dim readings As New List(Of PolicyReading)()
+        For Each hive As String In New String() {AdobeRegistryConstants.AvGeneralReader,
+                                                 AdobeRegistryConstants.AvGeneralAcrobat}
+            If Not _regAccess.KeyExists(hive) Then Continue For
+            For Each name As String In New String() {AdobeRegistryConstants.ValExpandRhp,
+                                                     AdobeRegistryConstants.ValRhpSticky,
+                                                     AdobeRegistryConstants.ValRhpViewMode}
+                Dim s As RegistryValueSnapshot = _regAccess.Read(hive, name)
+                readings.Add(New PolicyReading(hive, name, s.Presence = RegPresence.Present, s.Value,
+                                               BaselineOrigin.UserPreference))
+            Next
+        Next
+        Return readings
+    End Function
+
+    ' What «bază de pornire curată» means: no HKLM policy AND no leftover HKCU pane preference.
+    ' Kept separate from ReadPolicyState, which the revert path uses to verify that the ELEVATED
+    ' import removed the policy — HKCU values must not make that verification fail.
+    Private Function ReadBaselineState() As List(Of PolicyReading)
+        Dim all As New List(Of PolicyReading)(ReadPolicyState())
+        all.AddRange(ReadUserRhpState())
+        Return all
     End Function
 
     ' Reads both products' policy values (read-only, no elevation).

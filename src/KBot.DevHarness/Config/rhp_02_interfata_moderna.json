@@ -13,9 +13,13 @@
   //
   // ATENȚIE: acest scenariu SCRIE în registry (HKCU, per utilizator).
   // Va apărea dialogul de confirmare cu valoarea veche și cea nouă. Este
-  // singurul dintre cele patru care scrie ceva. «restoreOnClose» este true,
-  // deci bancul readuce valoarea la închidere — dar verifică log-ul la final
-  // ca să fii sigură că restaurarea a reușit.
+  // singurul dintre cele patru care scrie ceva.
+  //
+  // «restoreOnClose» este acum FALSE. Cu true, bancul readucea bEnableAv2 la 0
+  // la fiecare închidere, deci a doua zi mașina era iar pe interfața clasică și
+  // rândul din panou arăta «0 -> 0». Experimentul trebuie să supraviețuiască
+  // închiderii bancului. Când vrei mașina înapoi pe clasic: pune rândul
+  // «bEnableAv2» pe 0 (sau pe «șterge») și apasă «Aplică și repornește Adobe».
   //
   // NU ascunde nimic intenționat: vrem arborele curat, nu un rezultat.
   //
@@ -55,7 +59,7 @@
     "values": {
       "bEnableAv2": 1
     },
-    "restoreOnClose": true
+    "restoreOnClose": false
   },
 
   // Fără «hideChildren» și fără «keys»: observație pură.

@@ -101,24 +101,24 @@ Public Class AdobeHarnessScenarioBindingTests
     End Sub
 
     <Fact>
-    Public Sub Loading_TicksOnlyTheRegistryValuesTheScenarioNames()
+    Public Sub Loading_SetsOnlyTheRegistryRowsTheScenarioNames()
         RunSta(Sub()
                    Using f = NewForm()
                        LoadScenario(f, SettingsJson)
-                       Assert.True(Ctl(Of CheckBox)(f, "chkRhpSticky").Checked)
-                       Assert.False(Ctl(Of CheckBox)(f, "chkExpandRhp").Checked)
-                       Assert.False(Ctl(Of CheckBox)(f, "chkRhpCollapsed").Checked)
-                       Assert.False(Ctl(Of CheckBox)(f, "chkClassicViewer").Checked)
+                       Assert.Equal("1", Ctl(Of ComboBox)(f, "cboRhpSticky").Text)
+                       ' Untouched is NOT «0» — a value the file is silent about stays alone.
+                       Assert.Equal(PrefRowSelection.Untouched, Ctl(Of ComboBox)(f, "cboExpandRhp").Text)
+                       Assert.Equal(PrefRowSelection.Untouched, Ctl(Of ComboBox)(f, "cboRhpViewMode").Text)
+                       Assert.Equal(PrefRowSelection.Untouched, Ctl(Of ComboBox)(f, "cboEnableAv2").Text)
                        Assert.False(Ctl(Of CheckBox)(f, "chkRestoreOnClose").Checked)
                    End Using
                End Sub)
     End Sub
 
     <Fact>
-    Public Sub Loading_DoesNotTickAShortcutThatContradictsTheFile()
-        ' A file asking for bEnableAv2 = 1 must NOT leave «bEnableAv2 = 0» ticked — the panel would
-        ' be claiming the opposite of what will actually be written. This is the scenario that was
-        ' silently clamped on 04.08.
+    Public Sub Loading_ShowsTheScenarioValueVerbatim_EvenWhenItIsOne()
+        ' A file asking for bEnableAv2 = 1 must show 1 in the row. The old panel had a
+        ' «bEnableAv2 = 0» checkbox, so 1 was inexpressible and the write was clamped on 04.08.
         Const modernUi As String = "{
   ""schema"": 1,
   ""userPrefs"": { ""values"": { ""bEnableAv2"": 1 } },
@@ -127,7 +127,7 @@ Public Class AdobeHarnessScenarioBindingTests
         RunSta(Sub()
                    Using f = NewForm()
                        LoadScenario(f, modernUi)
-                       Assert.False(Ctl(Of CheckBox)(f, "chkClassicViewer").Checked)
+                       Assert.Equal("1", Ctl(Of ComboBox)(f, "cboEnableAv2").Text)
 
                        ' …and the grid shows what was really asked for.
                        Dim grid = Ctl(Of DataGridView)(f, "gridPrefs")
@@ -139,7 +139,7 @@ Public Class AdobeHarnessScenarioBindingTests
     End Sub
 
     <Fact>
-    Public Sub Loading_TicksAShortcutThatAgreesWithTheFile()
+    Public Sub Loading_ShowsAZeroAsAZero_NotAsUntouched()
         Const classicUi As String = "{
   ""schema"": 1,
   ""userPrefs"": { ""values"": { ""bEnableAv2"": 0 } },
@@ -148,7 +148,65 @@ Public Class AdobeHarnessScenarioBindingTests
         RunSta(Sub()
                    Using f = NewForm()
                        LoadScenario(f, classicUi)
-                       Assert.True(Ctl(Of CheckBox)(f, "chkClassicViewer").Checked)
+                       Assert.Equal("0", Ctl(Of ComboBox)(f, "cboEnableAv2").Text)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Loading_ShowsANullAsADeletion()
+        ' JSON null is the third state the checkboxes could never express.
+        Const wipe As String = "{
+  ""schema"": 1,
+  ""userPrefs"": { ""values"": { ""bRHPSticky"": null } },
+  ""scenario"": [ ""applyUserPrefs"" ]
+}"
+        RunSta(Sub()
+                   Using f = NewForm()
+                       LoadScenario(f, wipe)
+                       Assert.Equal(PrefRowSelection.DeleteText, Ctl(Of ComboBox)(f, "cboRhpSticky").Text)
+                       Dim grid = Ctl(Of DataGridView)(f, "gridPrefs")
+                       Dim row = grid.Rows.Cast(Of DataGridViewRow)().
+                                 Single(Function(r) CStr(r.Cells(0).Value) = "bRHPSticky")
+                       Assert.Equal("(șters)", CStr(row.Cells(1).Value))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Loading_ShowsAStringValueVerbatim_IncludingOneThePanelNeverListed()
+        Const odd As String = "{
+  ""schema"": 1,
+  ""userPrefs"": { ""values"": { ""aDefaultRHPViewMode_L"": ""Docked"" } },
+  ""scenario"": [ ""applyUserPrefs"" ]
+}"
+        RunSta(Sub()
+                   Using f = NewForm()
+                       LoadScenario(f, odd)
+                       Assert.Equal("Docked", Ctl(Of ComboBox)(f, "cboRhpViewMode").Text)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Loading_AScenarioSilentAboutHkcu_ClearsRowsLeftByThePreviousOne()
+        Const silent As String = "{ ""schema"": 1, ""scenario"": [ ""launch"" ] }"
+        RunSta(Sub()
+                   Using f = NewForm()
+                       LoadScenario(f, SettingsJson)
+                       Assert.Equal("1", Ctl(Of ComboBox)(f, "cboRhpSticky").Text)
+                       LoadScenario(f, silent)
+                       Assert.Equal(PrefRowSelection.Untouched, Ctl(Of ComboBox)(f, "cboRhpSticky").Text)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AnUntouchedPanel_AsksForNothing()
+        ' The default state must write NOTHING — the grid is empty until something is requested.
+        RunSta(Sub()
+                   Using f = NewForm()
+                       Assert.Empty(Ctl(Of DataGridView)(f, "gridPrefs").Rows.Cast(Of DataGridViewRow)())
                    End Using
                End Sub)
     End Sub
