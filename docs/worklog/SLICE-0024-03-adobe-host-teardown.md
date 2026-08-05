@@ -126,6 +126,49 @@ restores the style or re-parents; both drop the window.
 (290 lines, `git mv`, no edits to their bodies). `KBot.App` cannot reference `KBot.DevHarness`, and
 duplicating a snapshot helper is the exact mistake 0024-01 was written to eliminate.
 
+## §3 The AcroPDF verdict — recorded 05.08.2026, and it is POSITIVE
+
+**A real XFA DDF renders in the AcroPDF ActiveX control.** No «Please wait…» placeholder.
+
+Evidence, from `test_20260805_162859_073.log` and `test_adobe_rhp.log`:
+
+* the control **is** registered here — CLSID `{CA8A9780-280D-11CF-A24D-444553540000}`, read from
+  `HKCR\AcroPDF.PDF.1\CLSID` at runtime as designed, never hardcoded;
+* it creates and answers reflection calls — the version property returned a full Acrobat **26.1**
+  plugin list (`AcroForm`, `EScript`, `DigSig`, `PPKLite`, …), with no interop assembly and no
+  `aximp`;
+* **two real generated DDFs rendered**, both dynamic XFA (`NeedsRendering true`):
+  `C:\AVACONT\forexe\PDF\1264\DDF_NR_2_REV_0.PDF` and
+  `C:\AVACONT\forexe\PDF\DDF\GENERAL\DDF_NR_2_REV_0_AAB2MBD8E3F.PDF`;
+* **document switching works** — the second was loaded into the SAME control with no clear in
+  between (16:38:40 → 16:38:57), which was the whole point of the comparison;
+* zero AcroPDF entries in `harness_errors.log`.
+
+### The one failure, and what it actually was
+
+`ORD_009.pdf` showed a dark grey void on both attempts. **The cause is not the file and not the
+path — it is that the SAME document was already open in the window-hosted Adobe.** The log shows it
+plainly: `Adobe încorporat — Acrobat.exe … "…\Config\ORD_009.pdf"` (lines 12 and 16) and then
+`LoadFile(documentul curent) … ORD_009.pdf` (lines 21 and 29). Every load of a *different* file
+worked; every load of the *hosted* file did not.
+
+Adobe is effectively single-instance, and the AcroPDF control is served by that same Acrobat engine.
+It already had the document open in the embedded window, so the second request for it yields
+nothing.
+
+Recorded because two plausible-looking theories were wrong and cost time: the failing file sits
+under a path containing a **space** while both working files are under `C:\AVACONT\…`, and it is a
+dynamic XFA form. Both facts are true, **and neither is the cause.** The same-document collision
+explains all four data points; the other two explain two each by coincidence.
+
+**Consequence for any future design.** The window-hosting surface and an AcroPDF surface **cannot
+show the same document at the same time**. If AcroPDF ever replaces window hosting, it replaces it
+entirely — the two cannot run side by side on one document, so there is no gradual migration in
+which both are live. That does not change §11: there is still no shipping dependency on AcroPDF.
+
+The bench now warns when the two collide, so the next person meets a log line instead of a grey
+rectangle.
+
 ## Files touched
 
 **New** — `src\KBot.Controls\Adobe\{INativeWindows, IAdobeLauncher, IHostSurface, AdobeHostOptions,
@@ -199,20 +242,29 @@ the change, which is what it is for.
   measured» are all **on-screen observations**. The code paths that produced both defects are gone
   and their absence is pinned by tests — that is a different and weaker claim than «the defects are
   observed fixed».
-* **The residual flash is narrowed, not measured.** Hiding moved from «after the window is visible»
-  to «the instant it is matched», and polling from 150 ms to 30 ms. By how much that shows up on the
-  operator's machine is unknown. The creation hook may narrow it further but, being an out-of-context
-  WinEvent, **cannot be promised to eliminate it** — which is why it defaults to off.
+* **The residual flash is narrowed much less than hoped, and now there is a number.** Every capture
+  in the fixed build matched `după titlu` at **1465–1567 ms** — because on this machine Adobe hands
+  the document to a running instance, so the match waits for that instance to set the document
+  title, which it plausibly does around the moment it shows the window. Hiding on match still helps;
+  claiming more than that would be wrong. (For contrast, the broken PID-only build matched in
+  **42–51 ms** — because it was seizing the wrong window.)
 * **`CaptureDelayMs` defaults to 0 and no threshold has been found.** Whether reparenting a
   half-initialised Adobe window causes trouble is the open question the spinner exists to answer.
-* **Mode B has never closed a real window.** Whether Adobe honours `WM_CLOSE` on a reparented child,
-  and whether the process survives when it was the last document window (in which case B degenerates
-  to A), are both unverified. Behaviour on the new Acrobat UI is unverified.
-* **The AcroPDF verdict is NOT recorded** — the section exists, reads the CLSID at runtime and logs,
-  but nobody has run it. **The question it exists to answer is still open: does a real XFA DDF
-  render, or does the Adobe «please wait…» placeholder appear?** Whether the control is even
-  registered on the operator's machines is also unknown; «not registered» is a valid answer the
-  section will report.
+* **The creation hook ran, and it does do something:** `Cârlig de creare eliberat (a ascuns 1
+  ferestre)`. First evidence it is not inert. Whether it measurably shortens the flash is still
+  unmeasured, and it stays off by default.
+* **MODE B DOES NOT WORK ON THE OPERATOR'S MACHINE.** Observed twice: `Închidere (B): fereastra nu
+  s-a închis în 1500 ms și procesul 9828 nu e al nostru — nu îl opresc.` Adobe did not honour
+  `WM_CLOSE` on the reparented foreign window. **And mode A cannot close it either** — correctly
+  refusing to kill a process it did not start, it degraded to a close that also failed:
+  `rămâne copil al panoului și dispare odată cu el`. So under the single-instance handoff **neither
+  mode can close the window**; it only dies when the host panel does. Mode A remains the right
+  shipped default. Whether B behaves differently against a window K-BOT actually launched (`/n`
+  honoured) is still unverified, as is the new Acrobat UI.
+* ~~The AcroPDF verdict is NOT recorded~~ — **RECORDED and POSITIVE, see §3.** What remains open
+  there is narrower: whether `ORD_009.pdf` renders in the control once it is NOT also open in the
+  hosted window. The same-document collision explains the observation without needing that check,
+  but the check has not been run.
 * **The §5 `bEnableAv2` table is empty.** Whether the opt-out is still honoured, per UI generation,
   has not been observed. `AdobeUiPreference` is inert (`ENFORCE_LEGACY_UI = False`), so its
   snapshot/restore path — including «absent restores to deletion» — has never executed in the app;

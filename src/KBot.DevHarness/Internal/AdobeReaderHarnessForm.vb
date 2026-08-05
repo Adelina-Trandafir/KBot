@@ -761,8 +761,10 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
-    Private Sub LoadIntoAcro(path As String, what As String)
-        If String.IsNullOrEmpty(path) Then
+    ' Parametrul NU se numește `path`: VB e insensibil la majuscule, deci `path` ar umbri
+    ' System.IO.Path și fiecare `Path.GetFileName` de mai jos ar deveni o căutare de membru pe String.
+    Private Sub LoadIntoAcro(pdf As String, what As String)
+        If String.IsNullOrEmpty(pdf) Then
             ShowStatus("Alege întâi un PDF (Deschide PDF…).")
             Return
         End If
@@ -771,12 +773,41 @@ Public NotInheritable Class AdobeReaderHarnessForm
             RhpLog("AcroPDF: controlul nu poate fi creat (CLSID absent).")
             Return
         End If
-        Dim ok As Boolean = host.LoadFile(path)
-        RhpLog($"AcroPDF: LoadFile({what}) = {ok} — «{path}».")
+
+        ' MĂSURAT PE 05.08.2026, nu presupus: același document NU poate fi deschis simultan în
+        ' fereastra găzduită ȘI în controlul ActiveX. Adobe e practic mono-instanță, iar controlul e
+        ' servit de ACELAȘI motor Acrobat care ține deja documentul deschis în fereastra încorporată
+        ' — a doua cerere nu întoarce nimic și panoul rămâne gri. `LoadFile` întoarce oricum True,
+        ' deci fără linia asta simptomul arată ca „ActiveX-ul nu randează XFA", ceea ce e FALS:
+        ' documentele DIFERITE se randează corect. O oră s-a pierdut pe teorii despre calea cu spații
+        ' și despre XFA înainte ca operatorul să vadă coliziunea.
+        If IsHostedDocument(pdf) Then
+            Dim warning As String =
+                "ATENȚIE: «" & Path.GetFileName(pdf) & "» e deja deschis în fereastra GĂZDUITĂ. " &
+                "Același document nu poate fi afișat simultan și în ActiveX — controlul va rămâne " &
+                "GRI, iar LoadFile va întoarce oricum True. Desprinde întâi fereastra (relansează " &
+                "sau închide) ori alege alt document."
+            RhpLog(warning)
+            ShowStatus(warning)
+        End If
+
+        Dim ok As Boolean = host.LoadFile(pdf)
+        RhpLog($"AcroPDF: LoadFile({what}) = {ok} — «{pdf}».")
         RhpLog("AcroPDF: VERDICTUL DE CONSEMNAT — se vede documentul XFA randat, sau substitutul " &
                "Adobe («Please wait…»)? Notează care dintre ele, e singura întrebare a acestei secțiuni.")
         ShowStatus($"AcroPDF: LoadFile a întors {ok}. Verifică pe ecran ce s-a randat.")
     End Sub
+
+    ''' <summary>
+    ''' Adevărat când <paramref name="path"/> e chiar documentul ținut acum în fereastra găzduită.
+    ''' Comparație pe cale completă, insensibilă la majuscule (Windows).
+    ''' </summary>
+    Private Function IsHostedDocument(pdf As String) As Boolean
+        If _hostedWindow = IntPtr.Zero OrElse String.IsNullOrEmpty(pdf) Then Return False
+        If String.IsNullOrEmpty(_pdfPath) Then Return False
+        Return String.Equals(Path.GetFullPath(pdf), Path.GetFullPath(_pdfPath),
+                             StringComparison.OrdinalIgnoreCase)
+    End Function
 
     ' ══ Diagnostic — child window probe ═════════════════════════════════════════
     Private Sub btnProbe_Click(sender As Object, e As EventArgs) Handles btnProbe.Click
