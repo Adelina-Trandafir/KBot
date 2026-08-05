@@ -587,4 +587,140 @@ Public Class DdfViewTests
                End Sub)
     End Sub
 
+    ' ══ Slice 0024 — the Adobe host settings on the «Document» page ═════════════
+    '
+    ' The two combos are the operator's only way to change how Adobe is hosted, and the brief is
+    ' explicit that the change must take effect WHILE THE APPLICATION RUNS. These tests pin the
+    ' wiring: the controls exist on the right page, they are populated in the documented order with
+    ' Romanian labels, they start on the stored value, and changing one PERSISTS both.
+    '
+    ' They save and restore the real settings around themselves — a test must not leave the
+    ' operator's kbot_paths.json rewritten.
+
+    Private Shared Function ComboByName(view As DdfView, name As String) As ComboBox
+        Dim c = TryCast(FindByName(view, name), ComboBox)
+        If c Is Nothing Then Throw New InvalidOperationException($"DdfView nu conține {name}.")
+        Return c
+    End Function
+
+    Private Shared Sub WithSavedSettings(body As Action)
+        Dim mode As String = KBotPaths.Current.AdobeViewerMode
+        Dim inst As String = KBotPaths.Current.AdobeNewInstance
+        Try
+            body()
+        Finally
+            KBotPaths.Current.AdobeViewerMode = mode
+            KBotPaths.Current.AdobeNewInstance = inst
+        End Try
+    End Sub
+
+    <Fact>
+    Public Sub AdobeSettings_LiveOnTheDocumentPage_NotOnValues()
+        ' They belong where their effect is visible: changing the mode re-places the window that is
+        ' hosted right there.
+        RunSta(Sub()
+                   Using view As New DdfView(New FakeApiClient(), PassThrough())
+                       Dim band = FindByName(view, "pnlAdobe")
+                       Assert.NotNull(band)
+                       Assert.Equal("pnlPdf", band.Parent.Name)
+                       Assert.Equal(DockStyle.Top, band.Dock)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AdobeModeCombo_OffersExactlyThreeRomanianChoices()
+        RunSta(Sub()
+                   Using view As New DdfView(New FakeApiClient(), PassThrough())
+                       Dim c = ComboByName(view, "cboAdobeMod")
+                       Assert.Equal(3, c.Items.Count)
+                       Assert.Equal("Automat", c.Items(0).ToString())
+                       Assert.Equal("Modern", c.Items(1).ToString())
+                       Assert.Equal("Clasic", c.Items(2).ToString())
+                       ' DropDownList: the operator picks, never types a fourth value.
+                       Assert.Equal(ComboBoxStyle.DropDownList, c.DropDownStyle)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AdobeNewInstanceCombo_OffersAutomatDaNu()
+        RunSta(Sub()
+                   Using view As New DdfView(New FakeApiClient(), PassThrough())
+                       Dim c = ComboByName(view, "cboAdobeInst")
+                       Assert.Equal(3, c.Items.Count)
+                       Assert.Equal("Automat", c.Items(0).ToString())
+                       Assert.Equal("Da", c.Items(1).ToString())
+                       Assert.Equal("Nu", c.Items(2).ToString())
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AdobeCombos_StartOnTheStoredValue()
+        WithSavedSettings(
+            Sub()
+                KBotPaths.Current.AdobeViewerMode = AdobeViewerSettings.ModeToText(AdobeViewerMode.Modern)
+                KBotPaths.Current.AdobeNewInstance = AdobeViewerSettings.NewInstanceToText(AdobeNewInstanceMode.Nu)
+                RunSta(Sub()
+                           Using view As New DdfView(New FakeApiClient(), PassThrough())
+                               Assert.Equal("Modern", ComboByName(view, "cboAdobeMod").SelectedItem.ToString())
+                               Assert.Equal("Nu", ComboByName(view, "cboAdobeInst").SelectedItem.ToString())
+                           End Using
+                       End Sub)
+            End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AnInvalidStoredValue_StartsOnAutomat_WithoutThrowing()
+        ' A broken settings file must never stop the view from opening.
+        WithSavedSettings(
+            Sub()
+                KBotPaths.Current.AdobeViewerMode = "turbo"
+                KBotPaths.Current.AdobeNewInstance = "poate"
+                RunSta(Sub()
+                           Using view As New DdfView(New FakeApiClient(), PassThrough())
+                               Assert.Equal("Automat", ComboByName(view, "cboAdobeMod").SelectedItem.ToString())
+                               Assert.Equal("Automat", ComboByName(view, "cboAdobeInst").SelectedItem.ToString())
+                           End Using
+                       End Sub)
+            End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ChangingTheModeCombo_PersistsBOTHSettings()
+        ' Both, because they describe the same host: saving one and leaving the other behind is how
+        ' a settings file ends up disagreeing with the panel the operator is looking at.
+        WithSavedSettings(
+            Sub()
+                KBotPaths.Current.AdobeViewerMode = AdobeViewerSettings.ModeToText(AdobeViewerMode.Auto)
+                KBotPaths.Current.AdobeNewInstance = AdobeViewerSettings.NewInstanceToText(AdobeNewInstanceMode.Auto)
+                RunSta(Sub()
+                           Using view As New DdfView(New FakeApiClient(), PassThrough())
+                               ComboByName(view, "cboAdobeInst").SelectedIndex = 1   ' «Da»
+                               ComboByName(view, "cboAdobeMod").SelectedIndex = 2    ' «Clasic»
+                               Assert.Equal(AdobeViewerMode.Classic, AdobeViewerSettings.CurrentMode().Value)
+                               Assert.Equal(AdobeNewInstanceMode.Da, AdobeViewerSettings.CurrentNewInstance().Value)
+                           End Using
+                       End Sub)
+            End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub BuildingTheCombos_DoesNotItselfWriteTheSettings()
+        ' Populating a ComboBox raises SelectedIndexChanged. Without the guard, merely OPENING the
+        ' view would overwrite the stored value with whatever landed in the list first.
+        WithSavedSettings(
+            Sub()
+                KBotPaths.Current.AdobeViewerMode = AdobeViewerSettings.ModeToText(AdobeViewerMode.Modern)
+                KBotPaths.Current.AdobeNewInstance = AdobeViewerSettings.NewInstanceToText(AdobeNewInstanceMode.Nu)
+                RunSta(Sub()
+                           Using view As New DdfView(New FakeApiClient(), PassThrough())
+                               Assert.Equal(AdobeViewerMode.Modern, AdobeViewerSettings.CurrentMode().Value)
+                               Assert.Equal(AdobeNewInstanceMode.Nu, AdobeViewerSettings.CurrentNewInstance().Value)
+                           End Using
+                       End Sub)
+            End Sub)
+    End Sub
+
 End Class

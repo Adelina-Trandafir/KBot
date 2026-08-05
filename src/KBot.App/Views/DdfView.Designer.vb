@@ -29,6 +29,11 @@ Partial Class DdfView
         pnlPreview = New Panel()
         lblPreviewGol = New Label()
         pnlPdf = New Panel()
+        pnlAdobe = New Panel()
+        cboAdobeInst = New ComboBox()
+        lblAdobeInst = New Label()
+        cboAdobeMod = New ComboBox()
+        lblAdobeMod = New Label()
         pnlFisiere = New Panel()
         lblFisiereGol = New Label()
         lblEmpty = New Label()
@@ -41,6 +46,8 @@ Partial Class DdfView
         pnlValori.SuspendLayout()
         pnlFilter.SuspendLayout()
         pnlPreview.SuspendLayout()
+        pnlPdf.SuspendLayout()
+        pnlAdobe.SuspendLayout()
         pnlFisiere.SuspendLayout()
         SuspendLayout()
         '
@@ -217,11 +224,65 @@ Partial Class DdfView
         ' pnlPdf — pagina «Document»: suprafața care afișează PDF-ul REAL (ReaderHostPreview),
         ' distinctă de «Vizualizare» (reconstrucția din XML XFA). Se montează în cod.
         '
+        pnlPdf.Controls.Add(pnlAdobe)
         pnlPdf.Dock = DockStyle.Fill
         pnlPdf.Location = New Point(0, 0)
         pnlPdf.Name = "pnlPdf"
         pnlPdf.TabIndex = 3
         pnlPdf.Visible = False
+        '
+        ' pnlAdobe — banda de setări a gazdei Adobe (felia 0024). Stă pe pagina «Document»
+        ' fiindcă exact acolo se vede efectul: schimbarea se aplică documentului afișat ACUM.
+        ' Copiii se adaugă în ordine INVERSĂ de andocare (ultimul Left rămâne cel mai la stânga).
+        '
+        pnlAdobe.Controls.Add(cboAdobeInst)
+        pnlAdobe.Controls.Add(lblAdobeInst)
+        pnlAdobe.Controls.Add(cboAdobeMod)
+        pnlAdobe.Controls.Add(lblAdobeMod)
+        pnlAdobe.Dock = DockStyle.Top
+        pnlAdobe.Height = 32
+        pnlAdobe.Location = New Point(0, 0)
+        pnlAdobe.Name = "pnlAdobe"
+        pnlAdobe.Padding = New Padding(6, 4, 6, 4)
+        pnlAdobe.TabIndex = 0
+        '
+        ' lblAdobeMod
+        '
+        lblAdobeMod.AutoSize = True
+        lblAdobeMod.Dock = DockStyle.Left
+        lblAdobeMod.Name = "lblAdobeMod"
+        lblAdobeMod.Padding = New Padding(0, 5, 8, 0)
+        lblAdobeMod.TabIndex = 0
+        lblAdobeMod.Text = "Mod vizualizator Adobe:"
+        lblAdobeMod.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' cboAdobeMod — «Automat» / «Modern» / «Clasic»
+        '
+        cboAdobeMod.Dock = DockStyle.Left
+        cboAdobeMod.DropDownStyle = ComboBoxStyle.DropDownList
+        cboAdobeMod.FlatStyle = FlatStyle.Flat
+        cboAdobeMod.Name = "cboAdobeMod"
+        cboAdobeMod.Size = New Size(140, 24)
+        cboAdobeMod.TabIndex = 1
+        '
+        ' lblAdobeInst
+        '
+        lblAdobeInst.AutoSize = True
+        lblAdobeInst.Dock = DockStyle.Left
+        lblAdobeInst.Name = "lblAdobeInst"
+        lblAdobeInst.Padding = New Padding(16, 5, 8, 0)
+        lblAdobeInst.TabIndex = 2
+        lblAdobeInst.Text = "Instanță nouă Adobe:"
+        lblAdobeInst.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' cboAdobeInst — «Automat» / «Da» / «Nu»
+        '
+        cboAdobeInst.Dock = DockStyle.Left
+        cboAdobeInst.DropDownStyle = ComboBoxStyle.DropDownList
+        cboAdobeInst.FlatStyle = FlatStyle.Flat
+        cboAdobeInst.Name = "cboAdobeInst"
+        cboAdobeInst.Size = New Size(120, 24)
+        cboAdobeInst.TabIndex = 3
         '
         ' pnlFisiere — pagina «Fișiere». Lista de PDF-uri se montează aici în felia 04.
         '
@@ -263,6 +324,9 @@ Partial Class DdfView
         Name = "DdfView"
         Size = New Size(986, 567)
         pnlFisiere.ResumeLayout(False)
+        pnlAdobe.ResumeLayout(False)
+        pnlAdobe.PerformLayout()
+        pnlPdf.ResumeLayout(False)
         pnlPreview.ResumeLayout(False)
         pnlFilter.ResumeLayout(False)
         pnlFilter.PerformLayout()
@@ -290,6 +354,11 @@ Partial Class DdfView
     Friend WithEvents pnlPreview As Panel
     Friend WithEvents lblPreviewGol As Label
     Friend WithEvents pnlPdf As Panel
+    Friend WithEvents pnlAdobe As Panel
+    Friend WithEvents lblAdobeMod As Label
+    Friend WithEvents cboAdobeMod As ComboBox
+    Friend WithEvents lblAdobeInst As Label
+    Friend WithEvents cboAdobeInst As ComboBox
     Friend WithEvents pnlFisiere As Panel
     Friend WithEvents lblFisiereGol As Label
     Friend WithEvents lblEmpty As Label

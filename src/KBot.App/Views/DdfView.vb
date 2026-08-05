@@ -81,6 +81,9 @@ Public Class DdfView
     Private _generating As Boolean
     ' Se reconstruiește combo-ul chiar acum? Blochează re-filtrarea din SelectedIndexChanged.
     Private _suppressComboEvent As Boolean
+    ' Idem pentru combo-urile de setări Adobe (felia 0024): cât timp le populăm din setări, o
+    ' selecție programatică nu are voie să declanșeze o salvare.
+    Private _suppressAdobeComboEvent As Boolean
 
     ' Suprafața de previzualizare (felia 03), aleasă la compilare de DdfPreviewFactory. O
     ' singură instanță, montată în pnlPreview («Vizualizare» — reconstrucția din XML XFA).
@@ -113,6 +116,7 @@ Public Class DdfView
         MountPreview()
         _pdfPreview = New ReaderHostPreview()
         MountPdfPreview()
+        BuildAdobeCombos()
         _browser = New DdfFileBrowser()
         MountBrowser()
         ResetClsfCombo(Nothing)
@@ -147,6 +151,78 @@ Public Class DdfView
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.MountPdfPreview", ex)
             Throw
+        End Try
+    End Sub
+
+    ' ── Setările gazdei Adobe (felia 0024) ───────────────────────────────────
+    ' Cele două combo-uri de pe banda paginii «Document». Se umplu din setările salvate; o
+    ' schimbare se PERSISTĂ imediat și se aplică documentului afișat acum, ca operatorul să vadă
+    ' efectul fără să repornească aplicația.
+    Private Sub BuildAdobeCombos()
+        Try
+            _suppressAdobeComboEvent = True
+            Try
+                For Each m As AdobeViewerMode In New AdobeViewerMode() {
+                    AdobeViewerMode.Auto, AdobeViewerMode.Modern, AdobeViewerMode.Classic}
+                    cboAdobeMod.Items.Add(New AdobeModeItem(m))
+                Next
+                For Each n As AdobeNewInstanceMode In New AdobeNewInstanceMode() {
+                    AdobeNewInstanceMode.Auto, AdobeNewInstanceMode.Da, AdobeNewInstanceMode.Nu}
+                    cboAdobeInst.Items.Add(New AdobeNewInstanceItem(n))
+                Next
+                SelectAdobeMode(AdobeViewerSettings.CurrentMode().Value)
+                SelectAdobeNewInstance(AdobeViewerSettings.CurrentNewInstance().Value)
+            Finally
+                _suppressAdobeComboEvent = False
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.BuildAdobeCombos", ex)
+            Throw
+        End Try
+    End Sub
+
+    Private Sub SelectAdobeMode(mode As AdobeViewerMode)
+        For i As Integer = 0 To cboAdobeMod.Items.Count - 1
+            Dim item As AdobeModeItem = TryCast(cboAdobeMod.Items(i), AdobeModeItem)
+            If item IsNot Nothing AndAlso item.Mode = mode Then
+                cboAdobeMod.SelectedIndex = i
+                Return
+            End If
+        Next
+    End Sub
+
+    Private Sub SelectAdobeNewInstance(mode As AdobeNewInstanceMode)
+        For i As Integer = 0 To cboAdobeInst.Items.Count - 1
+            Dim item As AdobeNewInstanceItem = TryCast(cboAdobeInst.Items(i), AdobeNewInstanceItem)
+            If item IsNot Nothing AndAlso item.Mode = mode Then
+                cboAdobeInst.SelectedIndex = i
+                Return
+            End If
+        Next
+    End Sub
+
+    ' Graniță UI: loghează și înghite. Ambele combo-uri intră aici — setările se salvează
+    ' împreună, fiindcă amândouă descriu aceeași gazdă.
+    Private Sub AdobeSetting_Changed(sender As Object, e As EventArgs) _
+        Handles cboAdobeMod.SelectedIndexChanged, cboAdobeInst.SelectedIndexChanged
+        Try
+            If _suppressAdobeComboEvent Then Return
+            Dim mode As AdobeModeItem = TryCast(cboAdobeMod.SelectedItem, AdobeModeItem)
+            Dim inst As AdobeNewInstanceItem = TryCast(cboAdobeInst.SelectedItem, AdobeNewInstanceItem)
+            If mode Is Nothing OrElse inst Is Nothing Then Return
+
+            Dim saved As Boolean = AdobeViewerSettings.Persist(mode.Mode, inst.Mode)
+            If Not saved Then
+                ' Setarea rămâne activă pentru sesiune, dar nu s-a putut scrie: spune-o, nu o
+                ' ascunde — altfel operatorul o va regăsi schimbată la următoarea pornire.
+                lblEmpty.Text = "Setarea Adobe s-a aplicat, dar nu a putut fi salvată. Detalii în jurnalul de erori."
+            End If
+            ' Se aplică pe documentul afișat ACUM (geometria); parametrii de lansare («/n», «/s»,
+            ' /A) intră în vigoare la documentul următor — nu se poate reporni un proces în curs.
+            Dim reader As ReaderHostPreview = TryCast(_pdfPreview, ReaderHostPreview)
+            reader?.ReapplySettings()
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.AdobeSetting_Changed", ex)
         End Try
     End Sub
 
@@ -783,6 +859,15 @@ Public Class DdfView
             lblPreviewGol.ForeColor = p.TextDimColor
             lblPreviewGol.BackColor = p.SurfaceAltColor
             pnlPdf.BackColor = p.SurfaceAltColor
+            pnlAdobe.BackColor = p.SurfaceAltColor
+            lblAdobeMod.ForeColor = p.TextDimColor
+            lblAdobeMod.BackColor = Color.Transparent
+            lblAdobeInst.ForeColor = p.TextDimColor
+            lblAdobeInst.BackColor = Color.Transparent
+            cboAdobeMod.BackColor = p.InputBackColor
+            cboAdobeMod.ForeColor = p.InputTextColor
+            cboAdobeInst.BackColor = p.InputBackColor
+            cboAdobeInst.ForeColor = p.InputTextColor
             pnlFisiere.BackColor = p.SurfaceAltColor
             lblFisiereGol.ForeColor = p.TextDimColor
             lblFisiereGol.BackColor = p.SurfaceAltColor
@@ -817,6 +902,35 @@ End Class
 ''' frunze — revizia însăși, de care feliile 03/04 au nevoie ca să compună calea PDF-ului.
 ''' POCO -> fără Try/Catch.
 ''' </summary>
+''' <summary>
+''' O intrare din combo-ul «Mod vizualizator Adobe»: valoarea + eticheta românească. Există ca să
+''' NU se compare texte de interfață când se citește selecția. POCO -&gt; fără Try/Catch.
+''' </summary>
+Friend NotInheritable Class AdobeModeItem
+    Public ReadOnly Property Mode As AdobeViewerMode
+
+    Public Sub New(mode As AdobeViewerMode)
+        Me.Mode = mode
+    End Sub
+
+    Public Overrides Function ToString() As String
+        Return AdobeViewerSettings.ModeLabel(Mode)
+    End Function
+End Class
+
+''' <summary>O intrare din combo-ul «Instanță nouă Adobe». POCO -&gt; fără Try/Catch.</summary>
+Friend NotInheritable Class AdobeNewInstanceItem
+    Public ReadOnly Property Mode As AdobeNewInstanceMode
+
+    Public Sub New(mode As AdobeNewInstanceMode)
+        Me.Mode = mode
+    End Sub
+
+    Public Overrides Function ToString() As String
+        Return AdobeViewerSettings.NewInstanceLabel(Mode)
+    End Function
+End Class
+
 Friend NotInheritable Class DdfNodeRows
     Public ReadOnly Property Linii As List(Of LinieSaRow)
     Public ReadOnly Property IsRoot As Boolean

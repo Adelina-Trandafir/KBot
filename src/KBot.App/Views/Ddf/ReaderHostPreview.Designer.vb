@@ -24,6 +24,7 @@ Partial Class ReaderHostPreview
         lblMissing = New Label()
         btnGenereaza = New Button()
         lblMessage = New Label()
+        lblNote = New Label()
         pnlMissing.SuspendLayout()
         tblMissing.SuspendLayout()
         SuspendLayout()
@@ -88,6 +89,19 @@ Partial Class ReaderHostPreview
         lblMessage.Text = "Selectați o revizie din arbore."
         lblMessage.TextAlign = ContentAlignment.MiddleCenter
         '
+        ' lblNote — nota discretă de sub previzualizare (ex.: versiune Adobe nerecunoscută).
+        ' Andocată JOS, deci se adaugă ÎNAINTE de pnlHost (regula casei: într-un panou, copiii se
+        ' adaugă în ordine INVERSĂ de andocare — Fill primul la citire, deci ultimul adăugat).
+        '
+        lblNote.AutoSize = False
+        lblNote.Dock = DockStyle.Bottom
+        lblNote.Height = 24
+        lblNote.Name = "lblNote"
+        lblNote.Padding = New Padding(8, 4, 8, 4)
+        lblNote.TabIndex = 3
+        lblNote.TextAlign = ContentAlignment.MiddleLeft
+        lblNote.Visible = False
+        '
         ' ReaderHostPreview
         '
         AutoScaleDimensions = New SizeF(10F, 25F)
@@ -95,6 +109,7 @@ Partial Class ReaderHostPreview
         Controls.Add(pnlHost)
         Controls.Add(pnlMissing)
         Controls.Add(lblMessage)
+        Controls.Add(lblNote)
         Name = "ReaderHostPreview"
         Size = New Size(641, 460)
         pnlMissing.ResumeLayout(False)
@@ -109,4 +124,5 @@ Partial Class ReaderHostPreview
     Friend WithEvents lblMissing As Label
     Friend WithEvents btnGenereaza As Button
     Friend WithEvents lblMessage As Label
+    Friend WithEvents lblNote As Label
 End Class
