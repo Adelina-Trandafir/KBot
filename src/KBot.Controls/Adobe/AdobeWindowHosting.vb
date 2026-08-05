@@ -102,41 +102,51 @@ Public NotInheritable Class AdobeWindowHosting
 
     ''' <summary>The command line a profile produces for a document.</summary>
     Public Shared Function BuildArguments(profile As AdobeViewerProfile, pdfPath As String) As String
-        If profile Is Nothing Then Return """" & pdfPath & """"
-        Return BuildArguments(profile.NewInstance, profile.NoSplash, profile.OpenParametersText(), pdfPath)
+        Return BuildArguments(profile, pdfPath, Nothing)
+    End Function
+
+    ''' <summary>
+    ''' The command line a profile produces, plus any extra switches the caller wants appended. The
+    ''' extras go BEFORE the file name, like every other switch — Adobe ignores anything after it.
+    ''' </summary>
+    Public Shared Function BuildArguments(profile As AdobeViewerProfile, pdfPath As String,
+                                          extraArgs As String) As String
+        Dim head As String
+        If profile Is Nothing Then
+            head = ""
+        Else
+            head = BuildArguments(profile.NewInstance, profile.NoSplash, profile.OpenParametersText(), "")
+            ' Strip the empty quoted file name the shared builder appends; it is re-added below.
+            head = head.Substring(0, Math.Max(0, head.Length - 2))
+        End If
+        Dim extras As String = If(String.IsNullOrWhiteSpace(extraArgs), "", extraArgs.Trim() & " ")
+        Return head & extras & """"c & pdfPath & """"c
     End Function
 
     ' ── Finding the window ──────────────────────────────────────────────────────
     ''' <summary>
-    ''' A visible top-level Adobe window whose title contains <paramref name="baseName"/>, polled
-    ''' until the timeout. IntPtr.Zero when it never appears — the caller then falls back and SAYS
-    ''' so, rather than grabbing the wrong window.
+    ''' A top-level Adobe window whose title contains <paramref name="baseName"/>, polled until the
+    ''' timeout. IntPtr.Zero when it never appears — the caller then SAYS so rather than grabbing the
+    ''' wrong window.
     '''
-    ''' Blocking by design: call it from a background thread (both callers do).
+    ''' THE TITLE-ONLY PATH. Prefer <see cref="AdobeWindowCapture.Find"/> with a process id: a title
+    ''' substring cannot tell our window from one the operator opened by hand, and this overload
+    ''' therefore can (and before slice 0024-03 did) embed a stranger's document. It remains for the
+    ''' bench, which starts Adobe in a separate scenario step and has no PID at this point.
+    '''
+    ''' It no longer requires the window to be VISIBLE, and it hides the window the instant it
+    ''' matches — that visibility gate was the reason Adobe was seen on screen, with its caption,
+    ''' before it could be embedded.
+    '''
+    ''' Blocking by design: call it from a background thread.
     ''' </summary>
     Public Shared Function FindReaderWindow(baseName As String,
                                             Optional timeoutMs As Integer = FindTimeoutMs,
-                                            Optional pollMs As Integer = FindPollMs) As IntPtr
+                                            Optional pollMs As Integer = 30) As IntPtr
         Try
-            Dim deadline As DateTime = DateTime.UtcNow.AddMilliseconds(timeoutMs)
-            Do
-                Dim found As IntPtr = IntPtr.Zero
-                AdobeNativeMethods.EnumWindows(
-                    Function(h, l)
-                        If Not AdobeNativeMethods.IsWindowVisible(h) Then Return True
-                        If Not IsAdobeWindowClass(AdobeNativeMethods.GetClass(h)) Then Return True
-                        Dim title As String = AdobeNativeMethods.GetTitle(h)
-                        If title.IndexOf(baseName, StringComparison.OrdinalIgnoreCase) >= 0 Then
-                            found = h
-                            Return False   ' stop enumerating
-                        End If
-                        Return True
-                    End Function, IntPtr.Zero)
-
-                If found <> IntPtr.Zero Then Return found
-                Thread.Sleep(pollMs)
-            Loop While DateTime.UtcNow < deadline
-            Return IntPtr.Zero
+            Dim capture As New AdobeWindowCapture()
+            Dim opts As New AdobeHostOptions() With {.FindTimeoutMs = timeoutMs, .FindPollMs = pollMs}
+            Return capture.Find(0, baseName, allowForeignTitleMatch:=True, options:=opts).Window
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeWindowHosting.FindReaderWindow", ex)
             Throw
@@ -172,40 +182,20 @@ Public NotInheritable Class AdobeWindowHosting
     ' ── Reparenting ─────────────────────────────────────────────────────────────
     ''' <summary>
     ''' Turns a top-level Adobe window into a child of <paramref name="hostHandle"/>, stripping the
-    ''' styles that only make sense on a standalone window. Returns the ORIGINAL style, which the
-    ''' caller must keep and hand back to <see cref="RestoreStandalone"/> — otherwise the window is
-    ''' left as an unusable frameless orphan if the process outlives us.
+    ''' styles that only make sense on a standalone window. Returns the ORIGINAL style, for the log
+    ''' and for diagnostics.
+    '''
+    ''' THE ORIGINAL STYLE IS NEVER WRITTEN BACK. There used to be a <c>RestoreStandalone</c> here
+    ''' that put the style and the parent back on teardown; it was deleted in slice 0024-03 because
+    ''' it WAS the defect. Restoring WS_CAPTION/WS_POPUP and re-parenting to the desktop is the
+    ''' textbook way to create a top-level window, and a top-level window is a taskbar button — so
+    ''' every document change left a live Adobe window behind, showing the previous PDF. Teardown
+    ''' now drops the window instead: see <see cref="AdobeWindowTeardown"/>.
     ''' </summary>
     Public Shared Function AttachAsChild(hwnd As IntPtr, hostHandle As IntPtr) As IntPtr
-        Try
-            Dim originalStyle As IntPtr = AdobeNativeMethods.GetWindowLongPtrSafe(hwnd, AdobeNativeMethods.GWL_STYLE)
-            Dim style As Long = originalStyle.ToInt64()
-            style = style And Not AdobeNativeMethods.StandaloneStyles
-            style = style Or AdobeNativeMethods.WS_CHILD
-            AdobeNativeMethods.SetWindowLongPtrSafe(hwnd, AdobeNativeMethods.GWL_STYLE, New IntPtr(style))
-            AdobeNativeMethods.SetParent(hwnd, hostHandle)
-            Return originalStyle
-        Catch ex As Exception
-            GlobalErrorLog.Write("AdobeWindowHosting.AttachAsChild", ex)
-            Throw
-        End Try
+        ' One implementation of the mask and the call order, shared with the capture path.
+        Return New AdobeWindowCapture().AttachAsChild(hwnd, hostHandle)
     End Function
-
-    ''' <summary>
-    ''' Puts style and parent back. Best-effort by construction: this runs on the dispose path and
-    ''' on every document change, where a dead handle is normal, not exceptional.
-    ''' </summary>
-    Public Shared Sub RestoreStandalone(hwnd As IntPtr, originalStyle As IntPtr, originalParent As IntPtr)
-        Try
-            If hwnd = IntPtr.Zero OrElse Not AdobeNativeMethods.IsWindow(hwnd) Then Return
-            If originalStyle <> IntPtr.Zero Then
-                AdobeNativeMethods.SetWindowLongPtrSafe(hwnd, AdobeNativeMethods.GWL_STYLE, originalStyle)
-            End If
-            AdobeNativeMethods.SetParent(hwnd, originalParent)
-        Catch ex As Exception
-            GlobalErrorLog.Write("AdobeWindowHosting.RestoreStandalone", ex)
-        End Try
-    End Sub
 
     ' ── Placing / painting ──────────────────────────────────────────────────────
     ''' <summary>Moves the hosted window to <paramref name="bounds"/> (host client coordinates).</summary>

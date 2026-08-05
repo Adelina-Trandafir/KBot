@@ -75,18 +75,64 @@ Public Class AdobeHarnessLayoutTests
     End Sub
 
     <Fact>
-    Public Sub AllTwelveSections_ArePresent_InOrder()
+    Public Sub AllFourteenSections_ArePresent_InOrder()
         RunSta(Sub()
                    Using f = NewForm()
                        Dim names = OptionsPanel(f).Controls.OfType(Of GroupBox)().
                                      Select(Function(g) g.Name).ToArray()
                        ' grpMove joined in pass 6, deliberately right after grpClip: both drive
                        ' the SAME window (the hosted one), and neither touches child windows.
+                       ' grpHosting joined in slice 0024-03, right after grpMove for the same
+                       ' reason — it decides how that window is caught and how it is let go.
+                       ' grpActiveX sits at the END on purpose: it is a separate INVESTIGATION
+                       ' (whether the whole window-hosting approach could be replaced), not another
+                       ' lever over the window hosted right now.
                        Assert.Equal(New String() {
                            "grpLaunch", "grpChrome", "grpFile", "grpProbe", "grpScenario",
-                           "grpClip", "grpMove", "grpChildren", "grpKeys", "grpUser",
-                           "grpMachine", "grpCmd"},
+                           "grpClip", "grpMove", "grpHosting", "grpChildren", "grpKeys",
+                           "grpUser", "grpMachine", "grpActiveX", "grpCmd"},
                            names)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub HostingSection_CarriesAllFourLevers_AndDefaultsToModeA()
+        ' The four controls that make the A-vs-B comparison reproducible, plus the timing label —
+        ' without a NUMBER the comparison is an impression, which is what slice 0024-03 set out to
+        ' replace. Mode A is the default because it is deterministic and never waits.
+        RunSta(Sub()
+                   Using f = NewForm()
+                       Dim kill = DirectCast(f.Controls.Find("rdoDetachKill", True).Single(), RadioButton)
+                       Dim close = DirectCast(f.Controls.Find("rdoDetachClose", True).Single(), RadioButton)
+                       Dim hook = DirectCast(f.Controls.Find("chkCreationHook", True).Single(), CheckBox)
+                       Dim delay = DirectCast(f.Controls.Find("numCaptureDelay", True).Single(), NumericUpDown)
+                       Dim grace = DirectCast(f.Controls.Find("numCloseGrace", True).Single(), NumericUpDown)
+                       Assert.Single(f.Controls.Find("lblEmbedTiming", True))
+
+                       Assert.True(kill.Checked)
+                       Assert.False(close.Checked)
+                       ' The creation hook is an experiment that cannot promise to remove the flash,
+                       ' so it must never be on unless somebody asked for it.
+                       Assert.False(hook.Checked)
+                       Assert.Equal(0D, delay.Value)
+                       Assert.Equal(2000D, delay.Maximum)
+                       Assert.Equal(1500D, grace.Value)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ActiveXSection_IsPresentWithItsThreeButtonsAndAHostPanel()
+        RunSta(Sub()
+                   Using f = NewForm()
+                       Assert.Single(f.Controls.Find("btnAcroLoad", True))
+                       ' The second-document button is the whole point: document SWITCHING is what
+                       ' the ActiveX route has to be judged on.
+                       Assert.Single(f.Controls.Find("btnAcroSecond", True))
+                       Assert.Single(f.Controls.Find("btnAcroClear", True))
+                       Assert.Single(f.Controls.Find("pnlAcroHost", True))
+                       Assert.Single(f.Controls.Find("lblAcroStatus", True))
                    End Using
                End Sub)
     End Sub
@@ -143,6 +189,28 @@ Public Class AdobeHarnessLayoutTests
                            Assert.True(hits(0).Width > 0 AndAlso hits(0).Height > 0,
                                        $"controlul «{name}» are dimensiune nulă (secțiune colapsată)")
                        Next
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Verdict_IsGivenByTheMouseOnly_AndTheValuesReachTheCaller()
+        ' Two halves that must stay together:
+        '  * Enter must not produce a verdict -> no AcceptButton, and the buttons are not tab stops.
+        '  * the buttons must still CARRY a verdict -> DialogResult set. Unlike CancelButton,
+        '    AcceptButton does NOT assign one for you, so dropping the property silently made
+        '    «Pass» do nothing at all.
+        ' Yes/No rather than OK/Cancel, so Cancel stays free for «closed with the X, no verdict» —
+        ' AdobeReaderSwitchesTest maps exactly these values.
+        RunSta(Sub()
+                   Using f = NewForm()
+                       Dim pass = DirectCast(f.Controls.Find("btnPass", True).Single(), Button)
+                       Dim fail = DirectCast(f.Controls.Find("btnFail", True).Single(), Button)
+                       Assert.Equal(DialogResult.Yes, pass.DialogResult)
+                       Assert.Equal(DialogResult.No, fail.DialogResult)
+                       Assert.Null(f.AcceptButton)
+                       Assert.False(pass.TabStop)
+                       Assert.False(fail.TabStop)
                    End Using
                End Sub)
     End Sub

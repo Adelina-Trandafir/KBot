@@ -33,6 +33,18 @@ Public Class ReaderHostPreview
 
     Public Event GenerateRequested As EventHandler Implements IDdfPreview.GenerateRequested
 
+    ''' <summary>
+    ''' Cum se eliberează fereastra Adobe la schimbarea documentului. Constantă de COMPILARE, același
+    ''' tipar ca <c>DdfPreviewFactory.Mode</c>: ambele căi sunt implementate și testate, niciuna nu e
+    ''' cod mort, iar operatorul comută după ce compară A și B pe banc (bancul arată și timpul de
+    ''' încorporare pentru fiecare).
+    '''
+    ''' A (implicit) oprește procesul pornit de K-BOT — determinist, nu așteaptă nimic. B trimite
+    ''' WM_CLOSE doar ferestrei și lasă procesul cald, deci documentul următor pornește mai repede,
+    ''' dar poate aștepta până la <c>CloseGraceMs</c> dacă fereastra nu se închide.
+    ''' </summary>
+    Private Const DetachMode As AdobeDetachMode = AdobeDetachMode.KillProcess
+
     Private ReadOnly _host As AdobeReaderHost
     ' Documentul cerut ultima dată — gardă anti-răspuns depășit (același tipar ca vederile).
     Private _requestedPath As String
@@ -41,6 +53,7 @@ Public Class ReaderHostPreview
         InitializeComponent()
         _host = New AdobeReaderHost(pnlHost, AddressOf AdobeHostLog.Write) With {
             .PopupWatchEnabled = True}
+        _host.Options.DetachMode = DetachMode
         ApplySettings()
         ShowMessage("Selectați o revizie din arbore.")
     End Sub
@@ -103,7 +116,10 @@ Public Class ReaderHostPreview
                 Return
             End If
 
-            ShowHost()
+            ' Starea de așteptare rămâne pe ecran până când fereastra e chiar încorporată. Panoul
+            ' gazdă NU se arată acum: fereastra Adobe încă nu există, iar un dreptunghi gol nu spune
+            ' nimic operatorului.
+            ShowLoading()
             ' Fire-and-forget deliberat: metoda își tratează singură TOATE erorile (același tipar ca
             ' LoadAsync din vederi — apelantul e un handler sincron, nu există cine să aștepte).
             EmbedAsync(pdfPath)
@@ -174,14 +190,26 @@ Public Class ReaderHostPreview
     End Sub
 
     ' ── Stări ─────────────────────────────────────────────────────────────────
+    ' Patru stări care se exclud reciproc. Fiecare metodă le setează pe TOATE, ca o stare nouă să nu
+    ' poată lăsa în urmă un panou vechi vizibil peste ea.
     Private Sub ShowHost()
         pnlHost.Visible = True
+        pnlLoading.Visible = False
         pnlMissing.Visible = False
         lblMessage.Visible = False
     End Sub
 
+    Private Sub ShowLoading()
+        pnlHost.Visible = False
+        pnlLoading.Visible = True
+        pnlMissing.Visible = False
+        lblMessage.Visible = False
+        lblNote.Visible = False
+    End Sub
+
     Private Sub ShowMissing()
         pnlHost.Visible = False
+        pnlLoading.Visible = False
         pnlMissing.Visible = True
         lblMessage.Visible = False
         lblNote.Visible = False
@@ -190,6 +218,7 @@ Public Class ReaderHostPreview
     Private Sub ShowMessage(message As String)
         lblMessage.Text = message
         pnlHost.Visible = False
+        pnlLoading.Visible = False
         pnlMissing.Visible = False
         lblMessage.Visible = True
         lblNote.Visible = False
@@ -201,6 +230,9 @@ Public Class ReaderHostPreview
             Dim p As ThemePalette = scheme.Palette
             BackColor = p.SurfaceAltColor
             pnlHost.BackColor = p.SurfaceColor
+            pnlLoading.BackColor = p.SurfaceAltColor
+            lblLoading.ForeColor = p.TextDimColor
+            lblLoading.BackColor = p.SurfaceAltColor
             pnlMissing.BackColor = p.SurfaceAltColor
             tblMissing.BackColor = p.SurfaceAltColor
             lblMissing.ForeColor = p.TextDimColor

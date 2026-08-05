@@ -47,6 +47,10 @@ Friend NotInheritable Class AdobeNativeMethods
     Public Const GW_HWNDNEXT As UInteger = 2UI
     Public Const GW_CHILD As UInteger = 5UI
 
+    ' Detach mode B (slice 0024-03): ask ONE window to close, leaving the process alive for the next
+    ' document. Posted, never sent — a foreign UI thread that is busy must not block ours.
+    Public Const WM_CLOSE As UInteger = &H10UI
+
     <StructLayout(LayoutKind.Sequential)>
     Public Structure RECT
         Public Left As Integer
@@ -123,6 +127,35 @@ Friend NotInheritable Class AdobeNativeMethods
 
     <DllImport("user32.dll", SetLastError:=True)>
     Public Shared Function SetFocus(hWnd As IntPtr) As IntPtr
+    End Function
+
+    <DllImport("user32.dll", SetLastError:=True)>
+    Public Shared Function PostMessage(hWnd As IntPtr, msg As UInteger,
+                                       wParam As IntPtr, lParam As IntPtr) As Boolean
+    End Function
+
+    ' ── Creation hook (optional early catch, slice 0024-03 §4) ──────────────────
+    Public Const EVENT_OBJECT_CREATE As UInteger = &H8000UI
+    Public Const EVENT_OBJECT_SHOW As UInteger = &H8002UI
+    ' Out-of-context: the callback runs on OUR thread, so it needs a message pump — install from the
+    ' UI thread only. In-context would inject a DLL into Adobe, which is out of the question.
+    Public Const WINEVENT_OUTOFCONTEXT As UInteger = &H0UI
+    ' The event is about the window itself, not one of its accessibility children.
+    Public Const OBJID_WINDOW As Integer = 0
+
+    Public Delegate Sub WinEventProc(hook As IntPtr, eventType As UInteger, hWnd As IntPtr,
+                                     idObject As Integer, idChild As Integer,
+                                     threadId As UInteger, timestamp As UInteger)
+
+    <DllImport("user32.dll", SetLastError:=True)>
+    Public Shared Function SetWinEventHook(eventMin As UInteger, eventMax As UInteger,
+                                           hmodWinEventProc As IntPtr, lpfnWinEventProc As WinEventProc,
+                                           idProcess As UInteger, idThread As UInteger,
+                                           dwFlags As UInteger) As IntPtr
+    End Function
+
+    <DllImport("user32.dll", SetLastError:=True)>
+    Public Shared Function UnhookWinEvent(hWinEventHook As IntPtr) As Boolean
     End Function
 
     <DllImport("user32.dll", CharSet:=CharSet.Unicode)>

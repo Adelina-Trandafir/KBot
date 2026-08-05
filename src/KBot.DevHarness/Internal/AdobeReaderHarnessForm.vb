@@ -111,11 +111,29 @@ Public NotInheritable Class AdobeReaderHarnessForm
     Private _scenarioPath As String
     Private _scenarioRunning As Boolean = False
 
+    ' ── Felia 0024-03 ───────────────────────────────────────────────────────────
+    ' Captura și desprinderea folosesc ACUM aceleași primitive ca previzualizarea livrată. Bancul
+    ' își păstrează orchestrarea (pași de scenariu separați, spinnere live) — vezi worklog-ul
+    ' 0024-01 §3 — dar niciuna dintre primitive nu mai are a doua copie.
+    Private ReadOnly _capture As New AdobeWindowCapture()
+    Private ReadOnly _teardown As New AdobeWindowTeardown()
+    Private ReadOnly _creationHook As AdobeCreationHook
+    ' Procesele pornite de BANC. Nimic din afara acestei mulțimi nu e omorât vreodată.
+    Private ReadOnly _launchedPids As New HashSet(Of Integer)()
+    ' Ultima măsurătoare lansare → încorporare, în ms (−1 = încă niciuna).
+    Private _lastEmbedMs As Integer = -1
+    ' Controlul ActiveX creat la rulare (Nothing când AcroPDF nu e înregistrat pe mașina asta).
+    Private _acroHost As AcroPdfHost
+    Private _acroClsid As String
+    Private _acroSecondPath As String
+
     Public Sub New(log As Action(Of String))
         _log = log
         InitializeComponent()
+        _creationHook = New AdobeCreationHook(AddressOf RhpLog)
         _userSnapshot = New RegistrySnapshotSet(_regAccess)
         PopulateRegistryCombos()
+        InitAcroPdfSection()
         _adobePath = AdobeWindowHosting.ResolveAdobePath()
         If String.IsNullOrEmpty(_adobePath) Then
             SetControlsEnabled(False)
@@ -301,6 +319,8 @@ Public NotInheritable Class AdobeReaderHarnessForm
             Interlocked.Increment(_generation)
             tmrLayout.Stop()
             KillTracked()
+            ' UnhookWinEvent pe TOATE căile, inclusiv cele de eșec (felia 0024-03 §4).
+            _creationHook.Dispose()
             RestoreUserPrefsOnClose()
             RevertMachinePolicyOnClose()
         Catch ex As Exception
@@ -314,6 +334,12 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' (pe fir de fundal, ca UI-ul să rămână responsiv) și o reparentează în pnlHost.
     Private Async Function RelaunchAsync() As Task
         Try
+            ' Înainte de ORICE lansare, dacă operatorul a cerut-o: bEnableAv2 = 0. Trebuie să fie
+            ' aici, nu după pornire — Adobe citește preferința la startul lui.
+            If Not ApplyClassicUiIfRequested() Then
+                ShowStatus("Nu am putut aplica bEnableAv2 = 0 — lansarea a fost oprită.")
+                Return
+            End If
             Dim gen As Integer = StartFreshLaunch()
             If gen = 0 Then Return
             Dim proc As Process = _pendingProcess
@@ -350,7 +376,20 @@ Public NotInheritable Class AdobeReaderHarnessForm
     Private Async Function CompleteEmbedAsync(gen As Integer, proc As Process) As Task
         Dim pdf As String = EffectivePdfPath()
         Dim baseName As String = Path.GetFileNameWithoutExtension(pdf)
-        Dim hwnd As IntPtr = Await Task.Run(Function() FindReaderWindow(baseName))
+        Dim launchedPid As Integer = SafePid(proc)
+        If launchedPid > 0 Then _launchedPids.Add(launchedPid)
+
+        ' Felia 0024-03: căutarea merge întâi pe PID și NU cere fereastra să fie deja vizibilă — o
+        ' prinde cât e încă ascunsă și o ascunde pe loc. Căderea pe titlu rămâne permisă doar când
+        ' bancul a lansat FĂRĂ «/n», adică exact cazul în care Adobe predă documentul altei instanțe.
+        Dim opts As AdobeHostOptions = CurrentHostOptions()
+        Dim allowForeign As Boolean = Not chkNewInstance.Checked
+        If opts.UseCreationHook Then _creationHook.Install(launchedPid)
+
+        Dim caught As AdobeCaptureResult =
+            Await Task.Run(Function() _capture.Find(launchedPid, baseName, allowForeign, opts))
+
+        If opts.UseCreationHook Then _creationHook.Remove()
 
         ' O relansare mai nouă a preluat controlul cât timp căutam: curăț procesul propriu.
         If gen <> _generation Then
@@ -360,18 +399,31 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
         _readerProcess = proc
         _pendingProcess = Nothing
+        Dim hwnd As IntPtr = caught.Window
         If hwnd = IntPtr.Zero Then
-            _hostedPid = SafePid(proc)
+            _hostedPid = launchedPid
+            _lastEmbedMs = -1
+            RefreshEmbedTiming()
             ShowStatus("Adobe pornit, dar fereastra nu a apărut în " & (FIND_TIMEOUT_MS \ 1000).ToString() &
                        "s (fără încorporare).")
             Return
         End If
 
         _hostedWindow = hwnd
-        Dim ownerPid As Integer = AdobeWindowHosting.OwnerPid(hwnd)
+        Dim ownerPid As Integer = caught.OwnerPid
         _hostedPid = ownerPid
+        _lastEmbedMs = caught.ElapsedMs
+        RefreshEmbedTiming()
+        RhpLog($"Fereastră prinsă în {caught.ElapsedMs} ms " &
+               $"({If(caught.Match = AdobeCaptureMatch.ByPid, "după PID", "după titlu")}), PID {ownerPid}.")
+        If caught.Match = AdobeCaptureMatch.ByTitle Then
+            RhpLog($"ATENȚIE: fereastra (PID {ownerPid}) NU a fost creată de banc (am pornit PID " &
+                   $"{launchedPid}). Nu va fi omorâtă la desprindere.")
+        End If
 
         HostWindow(hwnd)
+        ' Abia acum devine vizibilă — după ce a fost făcută copil și așezată.
+        _capture.Reveal(hwnd)
         ShowStatus("Încorporat. PID fereastră: " & ownerPid.ToString())
         _log("Adobe încorporat — " & Path.GetFileName(_adobePath) & " " & BuildArguments(pdf))
         UpdateActionStates()
@@ -478,11 +530,26 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' procesul pornit de noi. Best-effort prin construcție.
     Private Sub KillTracked()
         Dim hostedPid As Integer = _hostedPid
+        Dim hostedWindow As IntPtr = _hostedWindow
         _hostedWindow = IntPtr.Zero
         _originalStyle = IntPtr.Zero
         _hostedPid = 0
 
-        AdobeWindowHosting.KillPid(hostedPid)
+        ' Felia 0024-03: desprinderea trece prin AdobeWindowTeardown, în modul ales de operator.
+        ' NICIODATĂ nu se repune stilul original și nu se re-parentează — asta lăsa în urmă o
+        ' fereastră Adobe vie, cu buton în bara de activități, la fiecare schimbare de document.
+        ' Un PID pe care bancul nu l-a pornit nu e omorât nici aici.
+        If hostedWindow <> IntPtr.Zero OrElse hostedPid > 0 Then
+            Dim outcome As AdobeTeardownOutcome = _teardown.Run(
+                hostedWindow, hostedPid, _launchedPids, CurrentDetachMode(), CurrentCloseGraceMs())
+            If outcome.Message.Length > 0 Then RhpLog(outcome.Message)
+            If outcome.Action = AdobeTeardownAction.Killed OrElse
+               outcome.Action = AdobeTeardownAction.ClosedThenKilled Then
+                _launchedPids.Remove(hostedPid)
+            End If
+        End If
+
+        _creationHook.Remove()
 
         Dim rp As Process = _readerProcess
         _readerProcess = Nothing
@@ -533,6 +600,181 @@ Public NotInheritable Class AdobeReaderHarnessForm
     Private Shared Function FindReaderWindow(baseName As String) As IntPtr
         Return AdobeWindowHosting.FindReaderWindow(baseName)
     End Function
+
+    ' ══ Închidere / captură (felia 0024-03) ════════════════════════════════════
+    ' Cele patru manete care fac reproductibilă comparația A vs B. Toate citesc DIN CONTROALE, ca
+    ' orice altceva în banc: un scenariu încărcat s-a scris deja în ele.
+    Private Function CurrentDetachMode() As AdobeDetachMode
+        If rdoDetachClose.Checked Then Return AdobeDetachMode.CloseWindow
+        Return AdobeDetachMode.KillProcess
+    End Function
+
+    Private Function CurrentCloseGraceMs() As Integer
+        Return CInt(numCloseGrace.Value)
+    End Function
+
+    Private Function CurrentHostOptions() As AdobeHostOptions
+        Return New AdobeHostOptions() With {
+            .DetachMode = CurrentDetachMode(),
+            .UseCreationHook = chkCreationHook.Checked,
+            .CaptureDelayMs = CInt(numCaptureDelay.Value),
+            .CloseGraceMs = CurrentCloseGraceMs(),
+            .FindTimeoutMs = FIND_TIMEOUT_MS}
+    End Function
+
+    ' Numărul cu care se compară A și B. Fără el, «care mod e mai bun» rămâne o impresie.
+    Private Sub RefreshEmbedTiming()
+        If lblEmbedTiming Is Nothing OrElse lblEmbedTiming.IsDisposed Then Return
+        Dim mode As String = If(CurrentDetachMode() = AdobeDetachMode.KillProcess, "A", "B")
+        If _lastEmbedMs < 0 Then
+            lblEmbedTiming.Text = $"Timp lansare → încorporare: — (mod {mode})"
+        Else
+            lblEmbedTiming.Text = $"Timp lansare → încorporare: {_lastEmbedMs} ms (mod {mode})"
+        End If
+    End Sub
+
+    Private Sub HostingSettingsChanged(sender As Object, e As EventArgs) _
+        Handles rdoDetachKill.CheckedChanged, rdoDetachClose.CheckedChanged,
+                numCaptureDelay.ValueChanged, numCloseGrace.ValueChanged,
+                chkCreationHook.CheckedChanged
+        Try
+            If _loading Then Return
+            RefreshEmbedTiming()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.HostingSettingsChanged", ex)
+        End Try
+    End Sub
+
+    ' «Aplică bEnableAv2 = 0 înainte de fiecare lansare». Reia EXACT calea de aplicare existentă
+    ' (instantaneu o dată pe sesiune + dialogul de consimțământ înainte de a omorî un Adobe străin)
+    ' — nicio mașinărie nouă de registry, doar rândul din panou pus pe 0 și aplicat.
+    Private Function ApplyClassicUiIfRequested() As Boolean
+        If Not chkForceClassicUi.Checked Then Return True
+        Try
+            RhpLog("Forțez interfața clasică înainte de lansare: bEnableAv2 = 0.")
+            _loading = True
+            Try
+                cboEnableAv2.Text = "0"
+                cboEnableAv2.SelectionLength = 0
+            Finally
+                _loading = False
+            End Try
+            RefreshPrefsGrid()
+            Return ApplyUserPrefsCore()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.ApplyClassicUiIfRequested", ex)
+            Return False
+        End Try
+    End Function
+
+    ' ══ ActiveX (AcroPDF) — evaluare, felia 0024-03 §8 ══════════════════════════
+    '
+    ' ÎNTREBAREA la care există secțiunea asta, și singura care contează: se randează DDF-ul XFA real
+    ' în controlul ActiveX, sau apare substitutul Adobe («Please wait… if this message is not
+    ' eventually replaced»)? XFA e tot motivul pentru care există suprafața asta. Un «nu» aici
+    ' înseamnă că găzduirea de ferestre rămâne singura cale; un «da» deschide discuția.
+    '
+    ' Nimic din KBot.App nu depinde de asta în felia curentă.
+    Private Sub InitAcroPdfSection()
+        Try
+            Dim raw As String = AcroPdfDetector.ResolveClsid()
+            _acroClsid = AcroPdfDetector.NormaliseClsid(raw)
+            If String.IsNullOrEmpty(_acroClsid) Then
+                lblAcroStatus.Text = "Controlul AcroPDF nu este înregistrat pe această mașină."
+                SetAcroControlsEnabled(False)
+                RhpLog($"AcroPDF: ProgID «{AcroPdfDetector.ProgId}» nu are CLSID în HKCR — " &
+                       "controlul nu e înregistrat. ACESTA E UN REZULTAT VALID de consemnat.")
+                Return
+            End If
+            lblAcroStatus.Text = $"AcroPDF înregistrat, CLSID {raw}. Alege un PDF cu «Deschide PDF…», apoi încarcă-l."
+            RhpLog($"AcroPDF: CLSID citit din HKCR\{AcroPdfDetector.ProgId}\CLSID = {raw}.")
+            SetAcroControlsEnabled(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.InitAcroPdfSection", ex)
+            lblAcroStatus.Text = "AcroPDF: detecție eșuată (vezi jurnalul de erori)."
+            SetAcroControlsEnabled(False)
+        End Try
+    End Sub
+
+    Private Sub SetAcroControlsEnabled(enabled As Boolean)
+        btnAcroLoad.Enabled = enabled
+        btnAcroSecond.Enabled = enabled
+        btnAcroClear.Enabled = enabled
+        pnlAcroHost.Enabled = enabled
+    End Sub
+
+    ' Creează controlul la prima folosire. AxHost are nevoie de un handle înainte ca GetOcx() să
+    ' întoarcă ceva, deci îl adăugăm în panou și abia apoi îl folosim.
+    Private Function EnsureAcroHost() As AcroPdfHost
+        If _acroHost IsNot Nothing Then Return _acroHost
+        If String.IsNullOrEmpty(_acroClsid) Then Return Nothing
+        Dim host As New AcroPdfHost(_acroClsid) With {.Dock = DockStyle.Fill, .Name = "axAcroPdf"}
+        pnlAcroHost.Controls.Add(host)
+        ' Forțează crearea ferestrei; fără asta GetOcx() întoarce Nothing.
+        Dim unused As IntPtr = host.Handle
+        _acroHost = host
+        Dim version As String = host.TryReadVersion()
+        If String.IsNullOrEmpty(version) Then
+            RhpLog("AcroPDF: controlul nu expune o proprietate de versiune pe acest build.")
+        Else
+            RhpLog("AcroPDF versiune: " & version)
+        End If
+        Return host
+    End Function
+
+    Private Sub btnAcroLoad_Click(sender As Object, e As EventArgs) Handles btnAcroLoad.Click
+        Try
+            LoadIntoAcro(_pdfPath, "documentul curent")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroLoad_Click", ex)
+            RhpLog("AcroPDF: încărcare eșuată — " & ex.Message)
+            ShowStatus("AcroPDF: încărcare eșuată (vezi jurnalul).")
+        End Try
+    End Sub
+
+    ' Al DOILEA document în ACELAȘI control — schimbarea de document e tot rostul comparației.
+    Private Sub btnAcroSecond_Click(sender As Object, e As EventArgs) Handles btnAcroSecond.Click
+        Try
+            Using dlg As New System.Windows.Forms.OpenFileDialog()
+                dlg.Filter = "Fișiere PDF (*.pdf)|*.pdf|Toate fișierele (*.*)|*.*"
+                dlg.Title = "Al doilea document pentru controlul ActiveX"
+                If dlg.ShowDialog(Me) <> DialogResult.OK Then Return
+                _acroSecondPath = dlg.FileName
+            End Using
+            LoadIntoAcro(_acroSecondPath, "al doilea document")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroSecond_Click", ex)
+            RhpLog("AcroPDF: încărcarea celui de-al doilea document a eșuat — " & ex.Message)
+        End Try
+    End Sub
+
+    Private Sub btnAcroClear_Click(sender As Object, e As EventArgs) Handles btnAcroClear.Click
+        Try
+            If _acroHost Is Nothing Then Return
+            _acroHost.Clear()
+            RhpLog("AcroPDF: control golit.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroClear_Click", ex)
+            RhpLog("AcroPDF: golirea a eșuat — " & ex.Message)
+        End Try
+    End Sub
+
+    Private Sub LoadIntoAcro(path As String, what As String)
+        If String.IsNullOrEmpty(path) Then
+            ShowStatus("Alege întâi un PDF (Deschide PDF…).")
+            Return
+        End If
+        Dim host As AcroPdfHost = EnsureAcroHost()
+        If host Is Nothing Then
+            RhpLog("AcroPDF: controlul nu poate fi creat (CLSID absent).")
+            Return
+        End If
+        Dim ok As Boolean = host.LoadFile(path)
+        RhpLog($"AcroPDF: LoadFile({what}) = {ok} — «{path}».")
+        RhpLog("AcroPDF: VERDICTUL DE CONSEMNAT — se vede documentul XFA randat, sau substitutul " &
+               "Adobe («Please wait…»)? Notează care dintre ele, e singura întrebare a acestei secțiuni.")
+        ShowStatus($"AcroPDF: LoadFile a întors {ok}. Verifică pe ecran ce s-a randat.")
+    End Sub
 
     ' ══ Diagnostic — child window probe ═════════════════════════════════════════
     Private Sub btnProbe_Click(sender As Object, e As EventArgs) Handles btnProbe.Click
@@ -1495,6 +1737,25 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 numDw.Value = ClampToRange(numDw, _scenario.Move.EffectiveDw())
                 numDh.Value = ClampToRange(numDh, _scenario.Move.EffectiveDh())
             End If
+            ' Captura și desprinderea (felia 0024-03). O secțiune absentă lasă controalele exact cum
+            ' erau — aceeași regulă ca peste tot: absent ≠ „pune pe implicit".
+            If _scenario.Hosting IsNot Nothing Then
+                Dim warning As String = _scenario.Hosting.DetachModeWarning()
+                If Not String.IsNullOrEmpty(warning) Then RhpLog("ATENȚIE: " & warning)
+                If Not String.IsNullOrWhiteSpace(_scenario.Hosting.DetachMode) Then
+                    rdoDetachClose.Checked = _scenario.Hosting.WantsCloseWindow()
+                    rdoDetachKill.Checked = Not rdoDetachClose.Checked
+                End If
+                If _scenario.Hosting.UseCreationHook.HasValue Then
+                    chkCreationHook.Checked = _scenario.Hosting.UseCreationHook.Value
+                End If
+                If _scenario.Hosting.CaptureDelayMs.HasValue Then
+                    numCaptureDelay.Value = ClampToRange(numCaptureDelay, _scenario.Hosting.CaptureDelayMs.Value)
+                End If
+                If _scenario.Hosting.CloseGraceMs.HasValue Then
+                    numCloseGrace.Value = ClampToRange(numCloseGrace, _scenario.Hosting.CloseGraceMs.Value)
+                End If
+            End If
             If _scenario.UserPrefs IsNot Nothing Then
                 If _scenario.UserPrefs.RestoreOnClose.HasValue Then
                     chkRestoreOnClose.Checked = _scenario.UserPrefs.RestoreOnClose.Value
@@ -1888,6 +2149,14 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Dim mv As New MoveConfig() With {.Dx = CInt(numDx.Value), .Dy = CInt(numDy.Value),
                                          .Dw = CInt(numDw.Value), .Dh = CInt(numDh.Value)}
         If Not mv.IsNoOp() Then s.Move = mv
+
+        ' Captura și desprinderea se salvează ÎNTOTDEAUNA: fără ele, o stare salvată nu poate
+        ' reproduce comparația A vs B, care e tot rostul feliei 0024-03.
+        s.Hosting = New HostingConfig() With {
+            .DetachMode = If(rdoDetachClose.Checked, HostingConfig.DetachClose, HostingConfig.DetachKill),
+            .UseCreationHook = chkCreationHook.Checked,
+            .CaptureDelayMs = CInt(numCaptureDelay.Value),
+            .CloseGraceMs = CInt(numCloseGrace.Value)}
 
         ' Save the LITERAL intents, so a saved file reproduces exactly what would be written —
         ' including a deletion, which round-trips as JSON null.

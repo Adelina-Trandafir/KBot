@@ -1,6 +1,8 @@
 Option Strict On
 Imports Microsoft.Win32
 Imports KBot.DevHarness
+' IRegistryAccess / RegistryValueSnapshot au trecut în KBot.Controls (felia 0024-03).
+Imports KBot.Controls
 
 ' In-memory IRegistryAccess for the pure-helper tests (slice 0023, plan §6): the tests never
 ' touch the real registry. Stores (kind, value) per path|name, case-insensitively, and tracks

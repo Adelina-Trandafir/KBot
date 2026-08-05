@@ -81,6 +81,29 @@ Partial Class AdobeReaderHarnessForm
 
     ' Poziția ferestrei Adobe — dx/dy/dw/dh on the HOSTED window, exactly like clip right/top.
     Friend WithEvents grpMove As System.Windows.Forms.GroupBox
+    ' ── Felia 0024-03: «Închidere / captură» ────────────────────────────────────
+    Friend WithEvents grpHosting As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpHosting As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents lblDetachMode As System.Windows.Forms.Label
+    Friend WithEvents flowDetachMode As System.Windows.Forms.FlowLayoutPanel
+    Friend WithEvents rdoDetachKill As System.Windows.Forms.RadioButton
+    Friend WithEvents rdoDetachClose As System.Windows.Forms.RadioButton
+    Friend WithEvents lblCaptureDelay As System.Windows.Forms.Label
+    Friend WithEvents numCaptureDelay As System.Windows.Forms.NumericUpDown
+    Friend WithEvents lblCloseGrace As System.Windows.Forms.Label
+    Friend WithEvents numCloseGrace As System.Windows.Forms.NumericUpDown
+    Friend WithEvents chkCreationHook As System.Windows.Forms.CheckBox
+    Friend WithEvents chkForceClassicUi As System.Windows.Forms.CheckBox
+    Friend WithEvents lblEmbedTiming As System.Windows.Forms.Label
+    ' ── Felia 0024-03: «ActiveX (AcroPDF)» ──────────────────────────────────────
+    Friend WithEvents grpActiveX As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpActiveX As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents lblAcroStatus As System.Windows.Forms.Label
+    Friend WithEvents flowAcroButtons As System.Windows.Forms.FlowLayoutPanel
+    Friend WithEvents btnAcroLoad As System.Windows.Forms.Button
+    Friend WithEvents btnAcroSecond As System.Windows.Forms.Button
+    Friend WithEvents btnAcroClear As System.Windows.Forms.Button
+    Friend WithEvents pnlAcroHost As System.Windows.Forms.Panel
     Friend WithEvents tlpMove As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents lblDx As System.Windows.Forms.Label
     Friend WithEvents numDx As System.Windows.Forms.NumericUpDown
@@ -152,108 +175,128 @@ Partial Class AdobeReaderHarnessForm
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        components = New System.ComponentModel.Container()
-        splitMain = New System.Windows.Forms.SplitContainer()
-        flowOptions = New System.Windows.Forms.FlowLayoutPanel()
-        tlpRight = New System.Windows.Forms.TableLayoutPanel()
-        pnlHost = New System.Windows.Forms.Panel()
-        lblStatus = New System.Windows.Forms.Label()
-        tmrLayout = New System.Windows.Forms.Timer(components)
-        grpLaunch = New System.Windows.Forms.GroupBox()
-        tlpLaunch = New System.Windows.Forms.TableLayoutPanel()
-        chkNewInstance = New System.Windows.Forms.CheckBox()
-        chkNoSplash = New System.Windows.Forms.CheckBox()
-        grpChrome = New System.Windows.Forms.GroupBox()
-        tlpChrome = New System.Windows.Forms.TableLayoutPanel()
-        chkToolbar = New System.Windows.Forms.CheckBox()
-        chkNavpanes = New System.Windows.Forms.CheckBox()
-        chkStatusbar = New System.Windows.Forms.CheckBox()
-        chkMessages = New System.Windows.Forms.CheckBox()
-        chkScrollbar = New System.Windows.Forms.CheckBox()
-        chkPagemodeNone = New System.Windows.Forms.CheckBox()
-        grpFile = New System.Windows.Forms.GroupBox()
-        tlpFile = New System.Windows.Forms.TableLayoutPanel()
-        btnBrowse = New System.Windows.Forms.Button()
-        lblFile = New System.Windows.Forms.Label()
-        btnRelaunch = New System.Windows.Forms.Button()
-        grpProbe = New System.Windows.Forms.GroupBox()
-        tlpProbe = New System.Windows.Forms.TableLayoutPanel()
-        btnProbe = New System.Windows.Forms.Button()
-        btnMachineState = New System.Windows.Forms.Button()
-        grpScenario = New System.Windows.Forms.GroupBox()
-        tlpScenario = New System.Windows.Forms.TableLayoutPanel()
-        lblScenario = New System.Windows.Forms.Label()
-        btnLoadScenario = New System.Windows.Forms.Button()
-        btnRunScenario = New System.Windows.Forms.Button()
-        btnSaveScenario = New System.Windows.Forms.Button()
-        grpClip = New System.Windows.Forms.GroupBox()
-        tlpClip = New System.Windows.Forms.TableLayoutPanel()
-        chkClip = New System.Windows.Forms.CheckBox()
-        lblClipRight = New System.Windows.Forms.Label()
-        numClipRight = New System.Windows.Forms.NumericUpDown()
-        lblClipTop = New System.Windows.Forms.Label()
-        numClipTop = New System.Windows.Forms.NumericUpDown()
-        btnClipAuto = New System.Windows.Forms.Button()
-        grpChildren = New System.Windows.Forms.GroupBox()
-        tlpChildren = New System.Windows.Forms.TableLayoutPanel()
-        lstChildren = New System.Windows.Forms.ListBox()
-        btnHideChild = New System.Windows.Forms.Button()
-        btnShowChild = New System.Windows.Forms.Button()
-        btnShowAllChildren = New System.Windows.Forms.Button()
-        grpMove = New System.Windows.Forms.GroupBox()
-        tlpMove = New System.Windows.Forms.TableLayoutPanel()
-        lblDx = New System.Windows.Forms.Label()
-        numDx = New System.Windows.Forms.NumericUpDown()
-        lblDy = New System.Windows.Forms.Label()
-        numDy = New System.Windows.Forms.NumericUpDown()
-        lblDw = New System.Windows.Forms.Label()
-        numDw = New System.Windows.Forms.NumericUpDown()
-        lblDh = New System.Windows.Forms.Label()
-        numDh = New System.Windows.Forms.NumericUpDown()
-        btnResetMove = New System.Windows.Forms.Button()
-        lblMoveHint = New System.Windows.Forms.Label()
-        grpKeys = New System.Windows.Forms.GroupBox()
-        tlpKeys = New System.Windows.Forms.TableLayoutPanel()
-        btnSendShiftF4 = New System.Windows.Forms.Button()
-        btnSendF4 = New System.Windows.Forms.Button()
-        grpUser = New System.Windows.Forms.GroupBox()
-        tlpUser = New System.Windows.Forms.TableLayoutPanel()
-        lblHive = New System.Windows.Forms.Label()
-        cboHive = New System.Windows.Forms.ComboBox()
-        tlpPrefRows = New System.Windows.Forms.TableLayoutPanel()
-        lblExpandRhp = New System.Windows.Forms.Label()
-        cboExpandRhp = New System.Windows.Forms.ComboBox()
-        lblRhpSticky = New System.Windows.Forms.Label()
-        cboRhpSticky = New System.Windows.Forms.ComboBox()
-        lblRhpViewMode = New System.Windows.Forms.Label()
-        cboRhpViewMode = New System.Windows.Forms.ComboBox()
-        lblEnableAv2 = New System.Windows.Forms.Label()
-        cboEnableAv2 = New System.Windows.Forms.ComboBox()
-        lblPrefHint = New System.Windows.Forms.Label()
-        gridPrefs = New System.Windows.Forms.DataGridView()
-        btnApplyUser = New System.Windows.Forms.Button()
-        btnRestoreUser = New System.Windows.Forms.Button()
-        chkRestoreOnClose = New System.Windows.Forms.CheckBox()
-        grpMachine = New System.Windows.Forms.GroupBox()
-        tlpMachine = New System.Windows.Forms.TableLayoutPanel()
-        cboProduct = New System.Windows.Forms.ComboBox()
-        chkSuppressUpsell = New System.Windows.Forms.CheckBox()
-        chkDisableServices = New System.Windows.Forms.CheckBox()
-        btnApplyMachine = New System.Windows.Forms.Button()
-        btnRevertMachine = New System.Windows.Forms.Button()
-        chkRevertPolicyOnClose = New System.Windows.Forms.CheckBox()
-        grpCmd = New System.Windows.Forms.GroupBox()
-        tlpCmd = New System.Windows.Forms.TableLayoutPanel()
-        txtCmd = New System.Windows.Forms.TextBox()
-        pnlButtons = New System.Windows.Forms.FlowLayoutPanel()
-        btnPass = New System.Windows.Forms.Button()
-        btnFail = New System.Windows.Forms.Button()
-        CType(splitMain, System.ComponentModel.ISupportInitialize).BeginInit()
+        components = New ComponentModel.Container()
+        splitMain = New SplitContainer()
+        flowOptions = New FlowLayoutPanel()
+        grpLaunch = New GroupBox()
+        tlpLaunch = New TableLayoutPanel()
+        chkNewInstance = New CheckBox()
+        chkNoSplash = New CheckBox()
+        grpChrome = New GroupBox()
+        tlpChrome = New TableLayoutPanel()
+        chkToolbar = New CheckBox()
+        chkNavpanes = New CheckBox()
+        chkStatusbar = New CheckBox()
+        chkMessages = New CheckBox()
+        chkScrollbar = New CheckBox()
+        chkPagemodeNone = New CheckBox()
+        grpFile = New GroupBox()
+        tlpFile = New TableLayoutPanel()
+        btnBrowse = New Button()
+        lblFile = New Label()
+        btnRelaunch = New Button()
+        grpProbe = New GroupBox()
+        tlpProbe = New TableLayoutPanel()
+        btnProbe = New Button()
+        btnMachineState = New Button()
+        grpScenario = New GroupBox()
+        tlpScenario = New TableLayoutPanel()
+        lblScenario = New Label()
+        btnLoadScenario = New Button()
+        btnRunScenario = New Button()
+        btnSaveScenario = New Button()
+        grpClip = New GroupBox()
+        tlpClip = New TableLayoutPanel()
+        chkClip = New CheckBox()
+        lblClipRight = New Label()
+        numClipRight = New NumericUpDown()
+        lblClipTop = New Label()
+        numClipTop = New NumericUpDown()
+        btnClipAuto = New Button()
+        grpMove = New GroupBox()
+        grpHosting = New GroupBox()
+        tlpHosting = New TableLayoutPanel()
+        lblDetachMode = New Label()
+        flowDetachMode = New FlowLayoutPanel()
+        rdoDetachKill = New RadioButton()
+        rdoDetachClose = New RadioButton()
+        lblCaptureDelay = New Label()
+        numCaptureDelay = New NumericUpDown()
+        lblCloseGrace = New Label()
+        numCloseGrace = New NumericUpDown()
+        chkCreationHook = New CheckBox()
+        chkForceClassicUi = New CheckBox()
+        lblEmbedTiming = New Label()
+        grpActiveX = New GroupBox()
+        tlpActiveX = New TableLayoutPanel()
+        lblAcroStatus = New Label()
+        flowAcroButtons = New FlowLayoutPanel()
+        btnAcroLoad = New Button()
+        btnAcroSecond = New Button()
+        btnAcroClear = New Button()
+        pnlAcroHost = New Panel()
+        tlpMove = New TableLayoutPanel()
+        lblDx = New Label()
+        numDx = New NumericUpDown()
+        lblDy = New Label()
+        numDy = New NumericUpDown()
+        lblDw = New Label()
+        numDw = New NumericUpDown()
+        lblDh = New Label()
+        numDh = New NumericUpDown()
+        btnResetMove = New Button()
+        lblMoveHint = New Label()
+        grpChildren = New GroupBox()
+        tlpChildren = New TableLayoutPanel()
+        lstChildren = New ListBox()
+        btnHideChild = New Button()
+        btnShowChild = New Button()
+        btnShowAllChildren = New Button()
+        grpKeys = New GroupBox()
+        tlpKeys = New TableLayoutPanel()
+        btnSendShiftF4 = New Button()
+        btnSendF4 = New Button()
+        grpUser = New GroupBox()
+        tlpUser = New TableLayoutPanel()
+        lblHive = New Label()
+        cboHive = New ComboBox()
+        tlpPrefRows = New TableLayoutPanel()
+        lblExpandRhp = New Label()
+        cboExpandRhp = New ComboBox()
+        lblRhpSticky = New Label()
+        cboRhpSticky = New ComboBox()
+        lblRhpViewMode = New Label()
+        cboRhpViewMode = New ComboBox()
+        lblEnableAv2 = New Label()
+        cboEnableAv2 = New ComboBox()
+        lblPrefHint = New Label()
+        gridPrefs = New DataGridView()
+        btnApplyUser = New Button()
+        btnRestoreUser = New Button()
+        chkRestoreOnClose = New CheckBox()
+        grpMachine = New GroupBox()
+        tlpMachine = New TableLayoutPanel()
+        cboProduct = New ComboBox()
+        chkSuppressUpsell = New CheckBox()
+        chkDisableServices = New CheckBox()
+        btnApplyMachine = New Button()
+        btnRevertMachine = New Button()
+        chkRevertPolicyOnClose = New CheckBox()
+        grpCmd = New GroupBox()
+        tlpCmd = New TableLayoutPanel()
+        txtCmd = New TextBox()
+        tlpRight = New TableLayoutPanel()
+        pnlHost = New Panel()
+        lblStatus = New Label()
+        tmrLayout = New Timer(components)
+        pnlButtons = New FlowLayoutPanel()
+        btnPass = New Button()
+        btnFail = New Button()
+        CType(splitMain, ComponentModel.ISupportInitialize).BeginInit()
         splitMain.Panel1.SuspendLayout()
         splitMain.Panel2.SuspendLayout()
         splitMain.SuspendLayout()
         flowOptions.SuspendLayout()
-        tlpRight.SuspendLayout()
         grpLaunch.SuspendLayout()
         tlpLaunch.SuspendLayout()
         grpChrome.SuspendLayout()
@@ -266,512 +309,791 @@ Partial Class AdobeReaderHarnessForm
         tlpScenario.SuspendLayout()
         grpClip.SuspendLayout()
         tlpClip.SuspendLayout()
-        CType(numClipRight, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(numClipTop, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(numClipRight, ComponentModel.ISupportInitialize).BeginInit()
+        CType(numClipTop, ComponentModel.ISupportInitialize).BeginInit()
+        grpMove.SuspendLayout()
+        grpHosting.SuspendLayout()
+        tlpHosting.SuspendLayout()
+        flowDetachMode.SuspendLayout()
+        CType(numCaptureDelay, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(numCloseGrace, System.ComponentModel.ISupportInitialize).BeginInit()
+        grpActiveX.SuspendLayout()
+        tlpActiveX.SuspendLayout()
+        flowAcroButtons.SuspendLayout()
+        tlpMove.SuspendLayout()
+        CType(numDx, ComponentModel.ISupportInitialize).BeginInit()
+        CType(numDy, ComponentModel.ISupportInitialize).BeginInit()
+        CType(numDw, ComponentModel.ISupportInitialize).BeginInit()
+        CType(numDh, ComponentModel.ISupportInitialize).BeginInit()
         grpChildren.SuspendLayout()
         tlpChildren.SuspendLayout()
-        grpMove.SuspendLayout()
-        tlpMove.SuspendLayout()
-        CType(numDx, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(numDy, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(numDw, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(numDh, System.ComponentModel.ISupportInitialize).BeginInit()
         grpKeys.SuspendLayout()
         tlpKeys.SuspendLayout()
         grpUser.SuspendLayout()
         tlpUser.SuspendLayout()
         tlpPrefRows.SuspendLayout()
-        CType(gridPrefs, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(gridPrefs, ComponentModel.ISupportInitialize).BeginInit()
         grpMachine.SuspendLayout()
         tlpMachine.SuspendLayout()
         grpCmd.SuspendLayout()
         tlpCmd.SuspendLayout()
+        tlpRight.SuspendLayout()
         pnlButtons.SuspendLayout()
         SuspendLayout()
-        '
-        ' splitMain — dragged at runtime; both sides share the growth (FixedPanel = None)
-        '
-        splitMain.Dock = System.Windows.Forms.DockStyle.Fill
-        splitMain.FixedPanel = System.Windows.Forms.FixedPanel.None
-        splitMain.IsSplitterFixed = False
-        splitMain.Location = New System.Drawing.Point(0, 0)
+        ' 
+        ' splitMain
+        ' 
+        splitMain.Dock = DockStyle.Fill
+        splitMain.Location = New Point(0, 0)
         splitMain.Name = "splitMain"
-        splitMain.Orientation = System.Windows.Forms.Orientation.Vertical
+        ' 
+        ' splitMain.Panel1
+        ' 
         splitMain.Panel1.Controls.Add(flowOptions)
         splitMain.Panel1MinSize = 300
+        ' 
+        ' splitMain.Panel2
+        ' 
         splitMain.Panel2.Controls.Add(tlpRight)
         splitMain.Panel2MinSize = 200
-        splitMain.Size = New System.Drawing.Size(1240, 727)
-        ' 470, not 320: the operator's own DPI needs ~430px for the option captions
-        ' (chkNewInstance measured 427 and chkDisableServices 412 in the designer-regenerated file).
+        splitMain.Size = New Size(1240, 727)
         splitMain.SplitterDistance = 470
         splitMain.SplitterWidth = 6
         splitMain.TabIndex = 0
-        '
-        ' flowOptions — the scrolling stack of sections (top-down, no wrapping). Section widths are
-        ' tracked to the panel in AdobeReaderHarnessForm.SizeSections; the GroupBoxes deliberately
-        ' do NOT dock, because Dock inside a FlowLayoutPanel fights AutoSize.
-        '
+        ' 
+        ' flowOptions
+        ' 
         flowOptions.AutoScroll = True
         flowOptions.Controls.Add(grpLaunch)
         flowOptions.Controls.Add(grpChrome)
         flowOptions.Controls.Add(grpFile)
         flowOptions.Controls.Add(grpProbe)
         flowOptions.Controls.Add(grpScenario)
-        ' grpMove sits next to grpClip on purpose: both drive the SAME window (the hosted Adobe
-        ' one), and neither has anything to do with the child-window levers below them.
         flowOptions.Controls.Add(grpClip)
         flowOptions.Controls.Add(grpMove)
+        ' Imediat după «Poziția ferestrei Adobe»: ambele descriu ce se întâmplă cu FEREASTRA
+        ' găzduită, iar comparația A/B se face uitându-te la ele împreună.
+        flowOptions.Controls.Add(grpHosting)
         flowOptions.Controls.Add(grpChildren)
         flowOptions.Controls.Add(grpKeys)
         flowOptions.Controls.Add(grpUser)
         flowOptions.Controls.Add(grpMachine)
+        ' Evaluarea ActiveX stă la sfârșit: e o INVESTIGAȚIE separată (poate înlocui tot mecanismul
+        ' de găzduire de ferestre), nu o manetă peste fereastra găzduită acum.
+        flowOptions.Controls.Add(grpActiveX)
         flowOptions.Controls.Add(grpCmd)
-        flowOptions.Dock = System.Windows.Forms.DockStyle.Fill
-        flowOptions.FlowDirection = System.Windows.Forms.FlowDirection.TopDown
-        flowOptions.Location = New System.Drawing.Point(0, 0)
+        flowOptions.Dock = DockStyle.Fill
+        flowOptions.FlowDirection = FlowDirection.TopDown
+        flowOptions.Location = New Point(0, 0)
         flowOptions.Name = "flowOptions"
-        flowOptions.Padding = New System.Windows.Forms.Padding(6)
-        flowOptions.Size = New System.Drawing.Size(470, 727)
+        flowOptions.Padding = New Padding(6)
+        flowOptions.Size = New Size(470, 727)
         flowOptions.TabIndex = 0
         flowOptions.WrapContents = False
-        '
-        ' tlpRight — Adobe host (100%) over the status line (AutoSize)
-        '
-        tlpRight.ColumnCount = 1
-        tlpRight.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlpRight.Controls.Add(pnlHost, 0, 0)
-        tlpRight.Controls.Add(lblStatus, 0, 1)
-        tlpRight.Dock = System.Windows.Forms.DockStyle.Fill
-        tlpRight.Location = New System.Drawing.Point(0, 0)
-        tlpRight.Name = "tlpRight"
-        tlpRight.RowCount = 2
-        tlpRight.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlpRight.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpRight.Size = New System.Drawing.Size(914, 727)
-        tlpRight.TabIndex = 0
-        '
-        ' pnlHost — gazda ferestrei Adobe reparentate
-        '
-        pnlHost.Dock = System.Windows.Forms.DockStyle.Fill
-        pnlHost.Location = New System.Drawing.Point(3, 3)
-        pnlHost.Name = "pnlHost"
-        pnlHost.Size = New System.Drawing.Size(908, 640)
-        pnlHost.TabIndex = 0
-        '
-        ' lblStatus
-        '
-        lblStatus.AutoSize = True
-        lblStatus.Dock = System.Windows.Forms.DockStyle.Fill
-        lblStatus.Location = New System.Drawing.Point(3, 646)
-        lblStatus.Name = "lblStatus"
-        lblStatus.Padding = New System.Windows.Forms.Padding(4)
-        lblStatus.Size = New System.Drawing.Size(908, 33)
-        lblStatus.TabIndex = 1
-        '
-        ' tmrLayout — 150 ms debounce, restarted on every resize/splitter move
-        '
-        tmrLayout.Interval = 150
-        '
+        ' 
         ' grpLaunch
-        '
+        ' 
         grpLaunch.AutoSize = True
-        grpLaunch.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpLaunch.AutoSizeMode = AutoSizeMode.GrowAndShrink
         grpLaunch.Controls.Add(tlpLaunch)
-        grpLaunch.Location = New System.Drawing.Point(9, 9)
+        grpLaunch.Location = New Point(9, 9)
         grpLaunch.Name = "grpLaunch"
-        grpLaunch.Size = New System.Drawing.Size(296, 90)
+        grpLaunch.Size = New Size(439, 100)
         grpLaunch.TabIndex = 0
         grpLaunch.TabStop = False
         grpLaunch.Text = "Lansare"
-        '
+        ' 
+        ' tlpLaunch
+        ' 
         tlpLaunch.AutoSize = True
-        tlpLaunch.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpLaunch.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpLaunch.ColumnCount = 1
-        tlpLaunch.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpLaunch.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpLaunch.Controls.Add(chkNewInstance, 0, 0)
         tlpLaunch.Controls.Add(chkNoSplash, 0, 1)
-        tlpLaunch.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpLaunch.Dock = DockStyle.Fill
+        tlpLaunch.Location = New Point(3, 27)
         tlpLaunch.Name = "tlpLaunch"
         tlpLaunch.RowCount = 2
-        tlpLaunch.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpLaunch.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpLaunch.RowStyles.Add(New RowStyle())
+        tlpLaunch.RowStyles.Add(New RowStyle())
+        tlpLaunch.Size = New Size(433, 70)
         tlpLaunch.TabIndex = 0
-        '
+        ' 
+        ' chkNewInstance
+        ' 
         chkNewInstance.AutoSize = True
         chkNewInstance.Checked = True
-        chkNewInstance.CheckState = System.Windows.Forms.CheckState.Checked
-        chkNewInstance.Dock = System.Windows.Forms.DockStyle.Fill
+        chkNewInstance.CheckState = CheckState.Checked
+        chkNewInstance.Dock = DockStyle.Fill
+        chkNewInstance.Location = New Point(3, 3)
         chkNewInstance.Name = "chkNewInstance"
+        chkNewInstance.Size = New Size(427, 29)
         chkNewInstance.TabIndex = 0
         chkNewInstance.Text = "/n  — instanță nouă (recomandat pt. încorporare)"
-        '
+        ' 
+        ' chkNoSplash
+        ' 
         chkNoSplash.AutoSize = True
         chkNoSplash.Checked = True
-        chkNoSplash.CheckState = System.Windows.Forms.CheckState.Checked
-        chkNoSplash.Dock = System.Windows.Forms.DockStyle.Fill
+        chkNoSplash.CheckState = CheckState.Checked
+        chkNoSplash.Dock = DockStyle.Fill
+        chkNoSplash.Location = New Point(3, 38)
         chkNoSplash.Name = "chkNoSplash"
+        chkNoSplash.Size = New Size(427, 29)
         chkNoSplash.TabIndex = 1
         chkNoSplash.Text = "/s  — fără ecran de întâmpinare"
-        '
+        ' 
         ' grpChrome
-        '
+        ' 
         grpChrome.AutoSize = True
-        grpChrome.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpChrome.AutoSizeMode = AutoSizeMode.GrowAndShrink
         grpChrome.Controls.Add(tlpChrome)
+        grpChrome.Location = New Point(9, 115)
         grpChrome.Name = "grpChrome"
+        grpChrome.Size = New Size(423, 240)
         grpChrome.TabIndex = 1
         grpChrome.TabStop = False
         grpChrome.Text = "Chrome ascuns (parametri /A)"
-        '
+        ' 
+        ' tlpChrome
+        ' 
         tlpChrome.AutoSize = True
-        tlpChrome.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpChrome.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpChrome.ColumnCount = 1
-        tlpChrome.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpChrome.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpChrome.Controls.Add(chkToolbar, 0, 0)
         tlpChrome.Controls.Add(chkNavpanes, 0, 1)
         tlpChrome.Controls.Add(chkStatusbar, 0, 2)
         tlpChrome.Controls.Add(chkMessages, 0, 3)
         tlpChrome.Controls.Add(chkScrollbar, 0, 4)
         tlpChrome.Controls.Add(chkPagemodeNone, 0, 5)
-        tlpChrome.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpChrome.Dock = DockStyle.Fill
+        tlpChrome.Location = New Point(3, 27)
         tlpChrome.Name = "tlpChrome"
         tlpChrome.RowCount = 6
-        tlpChrome.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpChrome.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpChrome.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpChrome.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpChrome.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpChrome.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpChrome.RowStyles.Add(New RowStyle())
+        tlpChrome.RowStyles.Add(New RowStyle())
+        tlpChrome.RowStyles.Add(New RowStyle())
+        tlpChrome.RowStyles.Add(New RowStyle())
+        tlpChrome.RowStyles.Add(New RowStyle())
+        tlpChrome.RowStyles.Add(New RowStyle())
+        tlpChrome.Size = New Size(417, 210)
         tlpChrome.TabIndex = 0
-        '
+        ' 
+        ' chkToolbar
+        ' 
         chkToolbar.AutoSize = True
         chkToolbar.Checked = True
-        chkToolbar.CheckState = System.Windows.Forms.CheckState.Checked
-        chkToolbar.Dock = System.Windows.Forms.DockStyle.Fill
+        chkToolbar.CheckState = CheckState.Checked
+        chkToolbar.Dock = DockStyle.Fill
+        chkToolbar.Location = New Point(3, 3)
         chkToolbar.Name = "chkToolbar"
+        chkToolbar.Size = New Size(411, 29)
         chkToolbar.TabIndex = 0
         chkToolbar.Text = "toolbar=0  — ascunde bara de instrumente"
-        '
+        ' 
+        ' chkNavpanes
+        ' 
         chkNavpanes.AutoSize = True
         chkNavpanes.Checked = True
-        chkNavpanes.CheckState = System.Windows.Forms.CheckState.Checked
-        chkNavpanes.Dock = System.Windows.Forms.DockStyle.Fill
+        chkNavpanes.CheckState = CheckState.Checked
+        chkNavpanes.Dock = DockStyle.Fill
+        chkNavpanes.Location = New Point(3, 38)
         chkNavpanes.Name = "chkNavpanes"
+        chkNavpanes.Size = New Size(411, 29)
         chkNavpanes.TabIndex = 1
         chkNavpanes.Text = "navpanes=0  — ascunde panourile de navigare"
-        '
+        ' 
+        ' chkStatusbar
+        ' 
         chkStatusbar.AutoSize = True
         chkStatusbar.Checked = True
-        chkStatusbar.CheckState = System.Windows.Forms.CheckState.Checked
-        chkStatusbar.Dock = System.Windows.Forms.DockStyle.Fill
+        chkStatusbar.CheckState = CheckState.Checked
+        chkStatusbar.Dock = DockStyle.Fill
+        chkStatusbar.Location = New Point(3, 73)
         chkStatusbar.Name = "chkStatusbar"
+        chkStatusbar.Size = New Size(411, 29)
         chkStatusbar.TabIndex = 2
         chkStatusbar.Text = "statusbar=0  — ascunde bara de stare"
-        '
+        ' 
+        ' chkMessages
+        ' 
         chkMessages.AutoSize = True
         chkMessages.Checked = True
-        chkMessages.CheckState = System.Windows.Forms.CheckState.Checked
-        chkMessages.Dock = System.Windows.Forms.DockStyle.Fill
+        chkMessages.CheckState = CheckState.Checked
+        chkMessages.Dock = DockStyle.Fill
+        chkMessages.Location = New Point(3, 108)
         chkMessages.Name = "chkMessages"
+        chkMessages.Size = New Size(411, 29)
         chkMessages.TabIndex = 3
         chkMessages.Text = "messages=0  — ascunde bara de mesaje"
-        '
+        ' 
+        ' chkScrollbar
+        ' 
         chkScrollbar.AutoSize = True
         chkScrollbar.Checked = True
-        chkScrollbar.CheckState = System.Windows.Forms.CheckState.Checked
-        chkScrollbar.Dock = System.Windows.Forms.DockStyle.Fill
+        chkScrollbar.CheckState = CheckState.Checked
+        chkScrollbar.Dock = DockStyle.Fill
+        chkScrollbar.Location = New Point(3, 143)
         chkScrollbar.Name = "chkScrollbar"
+        chkScrollbar.Size = New Size(411, 29)
         chkScrollbar.TabIndex = 4
         chkScrollbar.Text = "scrollbar=0  — ascunde barele de derulare"
-        '
+        ' 
+        ' chkPagemodeNone
+        ' 
         chkPagemodeNone.AutoSize = True
         chkPagemodeNone.Checked = True
-        chkPagemodeNone.CheckState = System.Windows.Forms.CheckState.Checked
-        chkPagemodeNone.Dock = System.Windows.Forms.DockStyle.Fill
+        chkPagemodeNone.CheckState = CheckState.Checked
+        chkPagemodeNone.Dock = DockStyle.Fill
+        chkPagemodeNone.Location = New Point(3, 178)
         chkPagemodeNone.Name = "chkPagemodeNone"
+        chkPagemodeNone.Size = New Size(411, 29)
         chkPagemodeNone.TabIndex = 5
         chkPagemodeNone.Text = "pagemode=none  — fără panou lateral deschis"
-        '
+        ' 
         ' grpFile
-        '
+        ' 
         grpFile.AutoSize = True
-        grpFile.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpFile.AutoSizeMode = AutoSizeMode.GrowAndShrink
         grpFile.Controls.Add(tlpFile)
+        grpFile.Location = New Point(9, 361)
         grpFile.Name = "grpFile"
+        grpFile.Size = New Size(269, 137)
         grpFile.TabIndex = 2
         grpFile.TabStop = False
         grpFile.Text = "Document"
-        '
+        ' 
+        ' tlpFile
+        ' 
         tlpFile.AutoSize = True
-        tlpFile.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpFile.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpFile.ColumnCount = 1
-        tlpFile.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpFile.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpFile.Controls.Add(btnBrowse, 0, 0)
         tlpFile.Controls.Add(lblFile, 0, 1)
         tlpFile.Controls.Add(btnRelaunch, 0, 2)
-        tlpFile.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpFile.Dock = DockStyle.Fill
+        tlpFile.Location = New Point(3, 27)
         tlpFile.Name = "tlpFile"
         tlpFile.RowCount = 3
-        tlpFile.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpFile.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpFile.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpFile.RowStyles.Add(New RowStyle())
+        tlpFile.RowStyles.Add(New RowStyle())
+        tlpFile.RowStyles.Add(New RowStyle())
+        tlpFile.Size = New Size(263, 107)
         tlpFile.TabIndex = 0
-        '
+        ' 
+        ' btnBrowse
+        ' 
         btnBrowse.AutoSize = True
-        btnBrowse.Dock = System.Windows.Forms.DockStyle.Fill
+        btnBrowse.Dock = DockStyle.Fill
+        btnBrowse.Location = New Point(3, 3)
         btnBrowse.Name = "btnBrowse"
+        btnBrowse.Size = New Size(257, 35)
         btnBrowse.TabIndex = 0
         btnBrowse.Text = "Deschide PDF…"
         btnBrowse.UseVisualStyleBackColor = True
-        '
+        ' 
+        ' lblFile
+        ' 
         lblFile.AutoSize = True
-        lblFile.Dock = System.Windows.Forms.DockStyle.Fill
+        lblFile.Dock = DockStyle.Fill
+        lblFile.Location = New Point(3, 41)
         lblFile.Name = "lblFile"
+        lblFile.Size = New Size(257, 25)
         lblFile.TabIndex = 1
         lblFile.Text = "<niciun PDF>"
-        '
+        ' 
+        ' btnRelaunch
+        ' 
         btnRelaunch.AutoSize = True
-        btnRelaunch.Dock = System.Windows.Forms.DockStyle.Fill
+        btnRelaunch.Dock = DockStyle.Fill
+        btnRelaunch.Location = New Point(3, 69)
         btnRelaunch.Name = "btnRelaunch"
+        btnRelaunch.Size = New Size(257, 35)
         btnRelaunch.TabIndex = 2
         btnRelaunch.Text = "Reîncorporează / redesenează"
         btnRelaunch.UseVisualStyleBackColor = True
-        '
+        ' 
         ' grpProbe
-        '
+        ' 
         grpProbe.AutoSize = True
-        grpProbe.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpProbe.AutoSizeMode = AutoSizeMode.GrowAndShrink
         grpProbe.Controls.Add(tlpProbe)
+        grpProbe.Location = New Point(9, 504)
         grpProbe.Name = "grpProbe"
+        grpProbe.Size = New Size(292, 130)
         grpProbe.TabIndex = 3
         grpProbe.TabStop = False
         grpProbe.Text = "Diagnostic"
-        '
+        ' 
+        ' tlpProbe
+        ' 
         tlpProbe.AutoSize = True
-        tlpProbe.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpProbe.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpProbe.ColumnCount = 1
-        tlpProbe.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpProbe.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpProbe.Controls.Add(btnProbe, 0, 0)
         tlpProbe.Controls.Add(btnMachineState, 0, 1)
-        tlpProbe.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpProbe.Dock = DockStyle.Fill
+        tlpProbe.Location = New Point(3, 27)
         tlpProbe.Name = "tlpProbe"
         tlpProbe.RowCount = 2
-        tlpProbe.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpProbe.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpProbe.RowStyles.Add(New RowStyle())
+        tlpProbe.RowStyles.Add(New RowStyle())
+        tlpProbe.Size = New Size(286, 100)
         tlpProbe.TabIndex = 0
-        '
+        ' 
+        ' btnProbe
+        ' 
         btnProbe.AutoSize = True
-        btnProbe.Dock = System.Windows.Forms.DockStyle.Fill
+        btnProbe.Dock = DockStyle.Fill
+        btnProbe.Location = New Point(3, 3)
         btnProbe.Name = "btnProbe"
+        btnProbe.Size = New Size(280, 35)
         btnProbe.TabIndex = 0
         btnProbe.Text = "Arborele de ferestre copil"
         btnProbe.UseVisualStyleBackColor = True
-        '
+        ' 
+        ' btnMachineState
+        ' 
         btnMachineState.AutoSize = True
-        btnMachineState.Dock = System.Windows.Forms.DockStyle.Fill
+        btnMachineState.Dock = DockStyle.Fill
+        btnMachineState.Location = New Point(3, 44)
         btnMachineState.Name = "btnMachineState"
+        btnMachineState.Size = New Size(280, 53)
         btnMachineState.TabIndex = 1
         btnMachineState.Text = "Starea mașinii (Adobe + registry)"
         btnMachineState.UseVisualStyleBackColor = True
-        '
+        ' 
         ' grpScenario
-        '
+        ' 
         grpScenario.AutoSize = True
-        grpScenario.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpScenario.AutoSizeMode = AutoSizeMode.GrowAndShrink
         grpScenario.Controls.Add(tlpScenario)
+        grpScenario.Location = New Point(9, 640)
         grpScenario.Name = "grpScenario"
+        grpScenario.Size = New Size(320, 178)
         grpScenario.TabIndex = 4
         grpScenario.TabStop = False
         grpScenario.Text = "Scenariu"
-        '
+        ' 
+        ' tlpScenario
+        ' 
         tlpScenario.AutoSize = True
-        tlpScenario.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpScenario.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpScenario.ColumnCount = 1
-        tlpScenario.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpScenario.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpScenario.Controls.Add(lblScenario, 0, 0)
         tlpScenario.Controls.Add(btnLoadScenario, 0, 1)
         tlpScenario.Controls.Add(btnRunScenario, 0, 2)
         tlpScenario.Controls.Add(btnSaveScenario, 0, 3)
-        tlpScenario.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpScenario.Dock = DockStyle.Fill
+        tlpScenario.Location = New Point(3, 27)
         tlpScenario.Name = "tlpScenario"
         tlpScenario.RowCount = 4
-        tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpScenario.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpScenario.RowStyles.Add(New RowStyle())
+        tlpScenario.RowStyles.Add(New RowStyle())
+        tlpScenario.RowStyles.Add(New RowStyle())
+        tlpScenario.RowStyles.Add(New RowStyle())
+        tlpScenario.Size = New Size(314, 148)
         tlpScenario.TabIndex = 0
-        '
+        ' 
+        ' lblScenario
+        ' 
         lblScenario.AutoSize = True
-        lblScenario.Dock = System.Windows.Forms.DockStyle.Fill
+        lblScenario.Dock = DockStyle.Fill
+        lblScenario.Location = New Point(3, 0)
         lblScenario.Name = "lblScenario"
+        lblScenario.Size = New Size(308, 25)
         lblScenario.TabIndex = 0
         lblScenario.Text = "(niciun scenariu)"
-        '
+        ' 
+        ' btnLoadScenario
+        ' 
         btnLoadScenario.AutoSize = True
-        btnLoadScenario.Dock = System.Windows.Forms.DockStyle.Fill
+        btnLoadScenario.Dock = DockStyle.Fill
+        btnLoadScenario.Location = New Point(3, 28)
         btnLoadScenario.Name = "btnLoadScenario"
+        btnLoadScenario.Size = New Size(308, 35)
         btnLoadScenario.TabIndex = 1
         btnLoadScenario.Text = "Încarcă scenariu…"
         btnLoadScenario.UseVisualStyleBackColor = True
-        '
+        ' 
+        ' btnRunScenario
+        ' 
         btnRunScenario.AutoSize = True
-        btnRunScenario.Dock = System.Windows.Forms.DockStyle.Fill
+        btnRunScenario.Dock = DockStyle.Fill
         btnRunScenario.Enabled = False
+        btnRunScenario.Location = New Point(3, 69)
         btnRunScenario.Name = "btnRunScenario"
+        btnRunScenario.Size = New Size(308, 35)
         btnRunScenario.TabIndex = 2
         btnRunScenario.Text = "Rulează scenariul"
         btnRunScenario.UseVisualStyleBackColor = True
-        '
+        ' 
+        ' btnSaveScenario
+        ' 
         btnSaveScenario.AutoSize = True
-        btnSaveScenario.Dock = System.Windows.Forms.DockStyle.Fill
+        btnSaveScenario.Dock = DockStyle.Fill
+        btnSaveScenario.Location = New Point(3, 110)
         btnSaveScenario.Name = "btnSaveScenario"
+        btnSaveScenario.Size = New Size(308, 35)
         btnSaveScenario.TabIndex = 3
         btnSaveScenario.Text = "Salvează starea curentă ca scenariu…"
         btnSaveScenario.UseVisualStyleBackColor = True
-        '
-        '
-        ' grpClip — label/input pairs: column 0 AutoSize, column 1 100%
-        '
+        ' 
+        ' grpClip
+        ' 
         grpClip.AutoSize = True
-        grpClip.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpClip.AutoSizeMode = AutoSizeMode.GrowAndShrink
         grpClip.Controls.Add(tlpClip)
+        grpClip.Location = New Point(9, 824)
         grpClip.Name = "grpClip"
+        grpClip.Size = New Size(325, 180)
         grpClip.TabIndex = 5
         grpClip.TabStop = False
         grpClip.Text = "Decupare"
-        '
+        ' 
+        ' tlpClip
+        ' 
         tlpClip.AutoSize = True
-        tlpClip.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpClip.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpClip.ColumnCount = 2
-        tlpClip.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpClip.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpClip.ColumnStyles.Add(New ColumnStyle())
+        tlpClip.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpClip.Controls.Add(chkClip, 0, 0)
         tlpClip.Controls.Add(lblClipRight, 0, 1)
         tlpClip.Controls.Add(numClipRight, 1, 1)
         tlpClip.Controls.Add(lblClipTop, 0, 2)
         tlpClip.Controls.Add(numClipTop, 1, 2)
         tlpClip.Controls.Add(btnClipAuto, 0, 3)
-        tlpClip.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpClip.Dock = DockStyle.Fill
+        tlpClip.Location = New Point(3, 27)
         tlpClip.Name = "tlpClip"
         tlpClip.RowCount = 4
-        tlpClip.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpClip.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpClip.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpClip.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpClip.SetColumnSpan(chkClip, 2)
-        tlpClip.SetColumnSpan(btnClipAuto, 2)
+        tlpClip.RowStyles.Add(New RowStyle())
+        tlpClip.RowStyles.Add(New RowStyle())
+        tlpClip.RowStyles.Add(New RowStyle())
+        tlpClip.RowStyles.Add(New RowStyle())
+        tlpClip.Size = New Size(319, 150)
         tlpClip.TabIndex = 0
-        '
+        ' 
+        ' chkClip
+        ' 
         chkClip.AutoSize = True
-        chkClip.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpClip.SetColumnSpan(chkClip, 2)
+        chkClip.Dock = DockStyle.Fill
+        chkClip.Location = New Point(3, 3)
         chkClip.Name = "chkClip"
+        chkClip.Size = New Size(313, 29)
         chkClip.TabIndex = 0
         chkClip.Text = "Decupare activă"
-        '
+        ' 
+        ' lblClipRight
+        ' 
         lblClipRight.AutoSize = True
-        lblClipRight.Dock = System.Windows.Forms.DockStyle.Fill
+        lblClipRight.Dock = DockStyle.Fill
+        lblClipRight.Location = New Point(3, 35)
         lblClipRight.Name = "lblClipRight"
-        lblClipRight.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+        lblClipRight.Size = New Size(187, 37)
         lblClipRight.TabIndex = 1
         lblClipRight.Text = "Decupare dreapta (px)"
-        '
-        numClipRight.Dock = System.Windows.Forms.DockStyle.Fill
+        lblClipRight.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' numClipRight
+        ' 
+        numClipRight.Dock = DockStyle.Fill
         numClipRight.Increment = New Decimal(New Integer() {10, 0, 0, 0})
+        numClipRight.Location = New Point(196, 38)
         numClipRight.Maximum = New Decimal(New Integer() {800, 0, 0, 0})
         numClipRight.Name = "numClipRight"
+        numClipRight.Size = New Size(120, 31)
         numClipRight.TabIndex = 2
-        '
+        ' 
+        ' lblClipTop
+        ' 
         lblClipTop.AutoSize = True
-        lblClipTop.Dock = System.Windows.Forms.DockStyle.Fill
+        lblClipTop.Dock = DockStyle.Fill
+        lblClipTop.Location = New Point(3, 72)
         lblClipTop.Name = "lblClipTop"
-        lblClipTop.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+        lblClipTop.Size = New Size(187, 37)
         lblClipTop.TabIndex = 3
         lblClipTop.Text = "Decupare sus (px)"
-        '
-        numClipTop.Dock = System.Windows.Forms.DockStyle.Fill
+        lblClipTop.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' numClipTop
+        ' 
+        numClipTop.Dock = DockStyle.Fill
         numClipTop.Increment = New Decimal(New Integer() {10, 0, 0, 0})
+        numClipTop.Location = New Point(196, 75)
         numClipTop.Maximum = New Decimal(New Integer() {400, 0, 0, 0})
         numClipTop.Name = "numClipTop"
+        numClipTop.Size = New Size(120, 31)
         numClipTop.TabIndex = 4
-        '
+        ' 
+        ' btnClipAuto
+        ' 
         btnClipAuto.AutoSize = True
-        btnClipAuto.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpClip.SetColumnSpan(btnClipAuto, 2)
+        btnClipAuto.Dock = DockStyle.Fill
         btnClipAuto.Enabled = False
+        btnClipAuto.Location = New Point(3, 112)
         btnClipAuto.Name = "btnClipAuto"
+        btnClipAuto.Size = New Size(313, 35)
         btnClipAuto.TabIndex = 5
         btnClipAuto.Text = "Măsoară din probă"
         btnClipAuto.UseVisualStyleBackColor = True
-        '
-        ' grpChildren
-        '
-        grpChildren.AutoSize = True
-        grpChildren.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
-        grpChildren.Controls.Add(tlpChildren)
-        grpChildren.Name = "grpChildren"
-        grpChildren.TabIndex = 7
-        grpChildren.TabStop = False
-        grpChildren.Text = "Ferestre copil"
-        '
-        tlpChildren.AutoSize = True
-        tlpChildren.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
-        tlpChildren.ColumnCount = 1
-        tlpChildren.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlpChildren.Controls.Add(lstChildren, 0, 0)
-        tlpChildren.Controls.Add(btnHideChild, 0, 1)
-        tlpChildren.Controls.Add(btnShowChild, 0, 2)
-        tlpChildren.Controls.Add(btnShowAllChildren, 0, 3)
-        tlpChildren.Dock = System.Windows.Forms.DockStyle.Fill
-        tlpChildren.Name = "tlpChildren"
-        tlpChildren.RowCount = 4
-        tlpChildren.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpChildren.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpChildren.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpChildren.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpChildren.TabIndex = 0
-        '
-        lstChildren.Dock = System.Windows.Forms.DockStyle.Fill
-        lstChildren.IntegralHeight = False
-        lstChildren.MinimumSize = New System.Drawing.Size(0, 120)
-        lstChildren.Name = "lstChildren"
-        lstChildren.TabIndex = 0
-        '
-        btnHideChild.AutoSize = True
-        btnHideChild.Dock = System.Windows.Forms.DockStyle.Fill
-        btnHideChild.Name = "btnHideChild"
-        btnHideChild.TabIndex = 1
-        btnHideChild.Text = "Ascunde fereastra selectată"
-        btnHideChild.UseVisualStyleBackColor = True
-        '
-        btnShowChild.AutoSize = True
-        btnShowChild.Dock = System.Windows.Forms.DockStyle.Fill
-        btnShowChild.Name = "btnShowChild"
-        btnShowChild.TabIndex = 2
-        btnShowChild.Text = "Arată fereastra selectată"
-        btnShowChild.UseVisualStyleBackColor = True
-        '
-        btnShowAllChildren.AutoSize = True
-        btnShowAllChildren.Dock = System.Windows.Forms.DockStyle.Fill
-        btnShowAllChildren.Name = "btnShowAllChildren"
-        btnShowAllChildren.TabIndex = 3
-        btnShowAllChildren.Text = "Restaurează toate"
-        btnShowAllChildren.UseVisualStyleBackColor = True
-        '
-        ' grpMove — dx/dy/dw/dh on the HOSTED Adobe window, the same window clip right/top drives
-        '
+        ' 
+        ' grpMove
+        ' 
         grpMove.AutoSize = True
-        grpMove.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpMove.AutoSizeMode = AutoSizeMode.GrowAndShrink
         grpMove.Controls.Add(tlpMove)
+        grpMove.Location = New Point(9, 1010)
         grpMove.Name = "grpMove"
+        grpMove.Size = New Size(1600, 244)
         grpMove.TabIndex = 6
         grpMove.TabStop = False
         grpMove.Text = "Poziția ferestrei Adobe"
         '
+        ' grpHosting — cum se PRINDE fereastra și cum se DĂ DRUMUL la ea (felia 0024-03).
+        ' Cele două defecte reparate în felia asta se compară doar cu numere: timpul de la lansare la
+        ' încorporare, pentru fiecare mod de închidere.
+        '
+        grpHosting.AutoSize = True
+        grpHosting.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        grpHosting.Controls.Add(tlpHosting)
+        grpHosting.Name = "grpHosting"
+        grpHosting.Size = New Size(1600, 260)
+        grpHosting.TabIndex = 7
+        grpHosting.TabStop = False
+        grpHosting.Text = "Închidere / captură"
+        '
+        ' tlpHosting
+        '
+        tlpHosting.AutoSize = True
+        tlpHosting.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        tlpHosting.ColumnCount = 2
+        tlpHosting.ColumnStyles.Add(New ColumnStyle())
+        tlpHosting.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpHosting.Controls.Add(lblDetachMode, 0, 0)
+        tlpHosting.Controls.Add(flowDetachMode, 1, 0)
+        tlpHosting.Controls.Add(lblCaptureDelay, 0, 1)
+        tlpHosting.Controls.Add(numCaptureDelay, 1, 1)
+        tlpHosting.Controls.Add(lblCloseGrace, 0, 2)
+        tlpHosting.Controls.Add(numCloseGrace, 1, 2)
+        tlpHosting.Controls.Add(chkCreationHook, 0, 3)
+        tlpHosting.SetColumnSpan(chkCreationHook, 2)
+        tlpHosting.Controls.Add(chkForceClassicUi, 0, 4)
+        tlpHosting.SetColumnSpan(chkForceClassicUi, 2)
+        tlpHosting.Controls.Add(lblEmbedTiming, 0, 5)
+        tlpHosting.SetColumnSpan(lblEmbedTiming, 2)
+        tlpHosting.Dock = DockStyle.Fill
+        tlpHosting.Location = New Point(3, 27)
+        tlpHosting.Name = "tlpHosting"
+        tlpHosting.RowCount = 6
+        tlpHosting.RowStyles.Add(New RowStyle())
+        tlpHosting.RowStyles.Add(New RowStyle())
+        tlpHosting.RowStyles.Add(New RowStyle())
+        tlpHosting.RowStyles.Add(New RowStyle())
+        tlpHosting.RowStyles.Add(New RowStyle())
+        tlpHosting.RowStyles.Add(New RowStyle())
+        tlpHosting.Size = New Size(1594, 230)
+        tlpHosting.TabIndex = 0
+        '
+        ' lblDetachMode
+        '
+        lblDetachMode.AutoSize = True
+        lblDetachMode.Dock = DockStyle.Fill
+        lblDetachMode.Name = "lblDetachMode"
+        lblDetachMode.Size = New Size(190, 37)
+        lblDetachMode.TabIndex = 0
+        lblDetachMode.Text = "Mod de închidere"
+        lblDetachMode.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' flowDetachMode
+        '
+        flowDetachMode.AutoSize = True
+        flowDetachMode.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        flowDetachMode.Controls.Add(rdoDetachKill)
+        flowDetachMode.Controls.Add(rdoDetachClose)
+        flowDetachMode.Dock = DockStyle.Fill
+        flowDetachMode.Margin = New Padding(0)
+        flowDetachMode.Name = "flowDetachMode"
+        flowDetachMode.TabIndex = 1
+        '
+        ' rdoDetachKill
+        '
+        rdoDetachKill.AutoSize = True
+        rdoDetachKill.Checked = True
+        rdoDetachKill.Name = "rdoDetachKill"
+        rdoDetachKill.TabIndex = 0
+        rdoDetachKill.TabStop = True
+        rdoDetachKill.Text = "Omoară procesul (A)"
+        rdoDetachKill.UseVisualStyleBackColor = True
+        '
+        ' rdoDetachClose
+        '
+        rdoDetachClose.AutoSize = True
+        rdoDetachClose.Name = "rdoDetachClose"
+        rdoDetachClose.TabIndex = 1
+        rdoDetachClose.Text = "Închide fereastra (B)"
+        rdoDetachClose.UseVisualStyleBackColor = True
+        '
+        ' lblCaptureDelay
+        '
+        lblCaptureDelay.AutoSize = True
+        lblCaptureDelay.Dock = DockStyle.Fill
+        lblCaptureDelay.Name = "lblCaptureDelay"
+        lblCaptureDelay.Size = New Size(190, 37)
+        lblCaptureDelay.TabIndex = 2
+        lblCaptureDelay.Text = "Întârziere captură (ms)"
+        lblCaptureDelay.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' numCaptureDelay
+        '
+        numCaptureDelay.Dock = DockStyle.Fill
+        numCaptureDelay.Increment = New Decimal(New Integer() {50, 0, 0, 0})
+        numCaptureDelay.Maximum = New Decimal(New Integer() {2000, 0, 0, 0})
+        numCaptureDelay.Name = "numCaptureDelay"
+        numCaptureDelay.Size = New Size(1400, 31)
+        numCaptureDelay.TabIndex = 3
+        '
+        ' lblCloseGrace
+        '
+        lblCloseGrace.AutoSize = True
+        lblCloseGrace.Dock = DockStyle.Fill
+        lblCloseGrace.Name = "lblCloseGrace"
+        lblCloseGrace.Size = New Size(190, 37)
+        lblCloseGrace.TabIndex = 4
+        lblCloseGrace.Text = "Răgaz închidere B (ms)"
+        lblCloseGrace.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' numCloseGrace
+        '
+        numCloseGrace.Dock = DockStyle.Fill
+        numCloseGrace.Increment = New Decimal(New Integer() {100, 0, 0, 0})
+        numCloseGrace.Maximum = New Decimal(New Integer() {10000, 0, 0, 0})
+        numCloseGrace.Name = "numCloseGrace"
+        numCloseGrace.Size = New Size(1400, 31)
+        numCloseGrace.TabIndex = 5
+        numCloseGrace.Value = New Decimal(New Integer() {1500, 0, 0, 0})
+        '
+        ' chkCreationHook
+        '
+        chkCreationHook.AutoSize = True
+        chkCreationHook.Name = "chkCreationHook"
+        chkCreationHook.TabIndex = 6
+        chkCreationHook.Text = "Folosește cârligul de creare (ascunde fereastra la apariție, nu la următoarea sondare)"
+        chkCreationHook.UseVisualStyleBackColor = True
+        '
+        ' chkForceClassicUi
+        '
+        chkForceClassicUi.AutoSize = True
+        chkForceClassicUi.Name = "chkForceClassicUi"
+        chkForceClassicUi.TabIndex = 7
+        chkForceClassicUi.Text = "Aplică bEnableAv2 = 0 înainte de fiecare lansare"
+        chkForceClassicUi.UseVisualStyleBackColor = True
+        '
+        ' lblEmbedTiming — NUMĂRUL cu care se compară A și B.
+        '
+        lblEmbedTiming.AutoSize = True
+        lblEmbedTiming.Name = "lblEmbedTiming"
+        lblEmbedTiming.TabIndex = 8
+        lblEmbedTiming.Text = "Timp lansare → încorporare: —"
+        '
+        ' grpActiveX — evaluarea controlului AcroPDF (doar banc, felia 0024-03).
+        '
+        grpActiveX.AutoSize = True
+        grpActiveX.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        grpActiveX.Controls.Add(tlpActiveX)
+        grpActiveX.Name = "grpActiveX"
+        grpActiveX.Size = New Size(1600, 420)
+        grpActiveX.TabIndex = 12
+        grpActiveX.TabStop = False
+        grpActiveX.Text = "ActiveX (AcroPDF)"
+        '
+        ' tlpActiveX
+        '
+        tlpActiveX.AutoSize = True
+        tlpActiveX.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        tlpActiveX.ColumnCount = 1
+        tlpActiveX.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpActiveX.Controls.Add(lblAcroStatus, 0, 0)
+        tlpActiveX.Controls.Add(flowAcroButtons, 0, 1)
+        tlpActiveX.Controls.Add(pnlAcroHost, 0, 2)
+        tlpActiveX.Dock = DockStyle.Fill
+        tlpActiveX.Location = New Point(3, 27)
+        tlpActiveX.Name = "tlpActiveX"
+        tlpActiveX.RowCount = 3
+        tlpActiveX.RowStyles.Add(New RowStyle())
+        tlpActiveX.RowStyles.Add(New RowStyle())
+        tlpActiveX.RowStyles.Add(New RowStyle())
+        tlpActiveX.Size = New Size(1594, 390)
+        tlpActiveX.TabIndex = 0
+        '
+        ' lblAcroStatus
+        '
+        lblAcroStatus.AutoSize = True
+        lblAcroStatus.Dock = DockStyle.Fill
+        lblAcroStatus.Name = "lblAcroStatus"
+        lblAcroStatus.TabIndex = 0
+        lblAcroStatus.Text = "Se verifică dacă AcroPDF e înregistrat…"
+        '
+        ' flowAcroButtons
+        '
+        flowAcroButtons.AutoSize = True
+        flowAcroButtons.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        flowAcroButtons.Controls.Add(btnAcroLoad)
+        flowAcroButtons.Controls.Add(btnAcroSecond)
+        flowAcroButtons.Controls.Add(btnAcroClear)
+        flowAcroButtons.Dock = DockStyle.Fill
+        flowAcroButtons.Margin = New Padding(0)
+        flowAcroButtons.Name = "flowAcroButtons"
+        flowAcroButtons.TabIndex = 1
+        '
+        ' btnAcroLoad
+        '
+        btnAcroLoad.AutoSize = True
+        btnAcroLoad.Name = "btnAcroLoad"
+        btnAcroLoad.TabIndex = 0
+        btnAcroLoad.Text = "Încarcă în ActiveX"
+        btnAcroLoad.UseVisualStyleBackColor = True
+        '
+        ' btnAcroSecond — al DOILEA document în ACELAȘI control: exact comparația care contează.
+        '
+        btnAcroSecond.AutoSize = True
+        btnAcroSecond.Name = "btnAcroSecond"
+        btnAcroSecond.TabIndex = 1
+        btnAcroSecond.Text = "Încarcă alt document…"
+        btnAcroSecond.UseVisualStyleBackColor = True
+        '
+        ' btnAcroClear
+        '
+        btnAcroClear.AutoSize = True
+        btnAcroClear.Name = "btnAcroClear"
+        btnAcroClear.TabIndex = 2
+        btnAcroClear.Text = "Golește"
+        btnAcroClear.UseVisualStyleBackColor = True
+        '
+        ' pnlAcroHost — aici se creează controlul AxHost la rulare (nu se poate în Designer fără
+        ' interop generat, iar felia asta refuză explicit aximp/referințe COM).
+        '
+        pnlAcroHost.BorderStyle = BorderStyle.FixedSingle
+        pnlAcroHost.Dock = DockStyle.Fill
+        pnlAcroHost.Name = "pnlAcroHost"
+        pnlAcroHost.Size = New Size(1588, 300)
+        pnlAcroHost.TabIndex = 2
+        '
+        ' tlpMove
+        '
         tlpMove.AutoSize = True
-        tlpMove.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpMove.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpMove.ColumnCount = 2
-        tlpMove.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpMove.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpMove.ColumnStyles.Add(New ColumnStyle())
+        tlpMove.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpMove.Controls.Add(lblDx, 0, 0)
         tlpMove.Controls.Add(numDx, 1, 0)
         tlpMove.Controls.Add(lblDy, 0, 1)
@@ -781,138 +1103,273 @@ Partial Class AdobeReaderHarnessForm
         tlpMove.Controls.Add(lblDh, 0, 3)
         tlpMove.Controls.Add(numDh, 1, 3)
         tlpMove.Controls.Add(btnResetMove, 0, 4)
-        tlpMove.SetColumnSpan(btnResetMove, 2)
         tlpMove.Controls.Add(lblMoveHint, 0, 5)
-        tlpMove.SetColumnSpan(lblMoveHint, 2)
-        tlpMove.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpMove.Dock = DockStyle.Fill
+        tlpMove.Location = New Point(3, 27)
         tlpMove.Name = "tlpMove"
         tlpMove.RowCount = 6
-        tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpMove.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpMove.RowStyles.Add(New RowStyle())
+        tlpMove.RowStyles.Add(New RowStyle())
+        tlpMove.RowStyles.Add(New RowStyle())
+        tlpMove.RowStyles.Add(New RowStyle())
+        tlpMove.RowStyles.Add(New RowStyle())
+        tlpMove.RowStyles.Add(New RowStyle())
+        tlpMove.Size = New Size(1594, 214)
         tlpMove.TabIndex = 0
-        '
+        ' 
+        ' lblDx
+        ' 
         lblDx.AutoSize = True
-        lblDx.Dock = System.Windows.Forms.DockStyle.Fill
+        lblDx.Dock = DockStyle.Fill
+        lblDx.Location = New Point(3, 0)
         lblDx.Name = "lblDx"
+        lblDx.Size = New Size(116, 37)
         lblDx.TabIndex = 0
         lblDx.Text = "dx (stânga −)"
-        lblDx.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        '
-        numDx.Dock = System.Windows.Forms.DockStyle.Fill
+        lblDx.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' numDx
+        ' 
+        numDx.Dock = DockStyle.Fill
+        numDx.Location = New Point(125, 3)
         numDx.Maximum = New Decimal(New Integer() {2000, 0, 0, 0})
-        numDx.Minimum = New Decimal(New Integer() {2000, 0, 0, -2147483648})
+        numDx.Minimum = New Decimal(New Integer() {2000, 0, 0, Integer.MinValue})
         numDx.Name = "numDx"
+        numDx.Size = New Size(1466, 31)
         numDx.TabIndex = 1
-        '
+        ' 
+        ' lblDy
+        ' 
         lblDy.AutoSize = True
-        lblDy.Dock = System.Windows.Forms.DockStyle.Fill
+        lblDy.Dock = DockStyle.Fill
+        lblDy.Location = New Point(3, 37)
         lblDy.Name = "lblDy"
+        lblDy.Size = New Size(116, 37)
         lblDy.TabIndex = 2
         lblDy.Text = "dy (sus −)"
-        lblDy.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        '
-        numDy.Dock = System.Windows.Forms.DockStyle.Fill
+        lblDy.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' numDy
+        ' 
+        numDy.Dock = DockStyle.Fill
+        numDy.Location = New Point(125, 40)
         numDy.Maximum = New Decimal(New Integer() {2000, 0, 0, 0})
-        numDy.Minimum = New Decimal(New Integer() {2000, 0, 0, -2147483648})
+        numDy.Minimum = New Decimal(New Integer() {2000, 0, 0, Integer.MinValue})
         numDy.Name = "numDy"
+        numDy.Size = New Size(1466, 31)
         numDy.TabIndex = 3
-        '
+        ' 
+        ' lblDw
+        ' 
         lblDw.AutoSize = True
-        lblDw.Dock = System.Windows.Forms.DockStyle.Fill
+        lblDw.Dock = DockStyle.Fill
+        lblDw.Location = New Point(3, 74)
         lblDw.Name = "lblDw"
+        lblDw.Size = New Size(116, 37)
         lblDw.TabIndex = 4
         lblDw.Text = "dw (lățime)"
-        lblDw.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        '
-        numDw.Dock = System.Windows.Forms.DockStyle.Fill
+        lblDw.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' numDw
+        ' 
+        numDw.Dock = DockStyle.Fill
+        numDw.Location = New Point(125, 77)
         numDw.Maximum = New Decimal(New Integer() {2000, 0, 0, 0})
-        numDw.Minimum = New Decimal(New Integer() {2000, 0, 0, -2147483648})
+        numDw.Minimum = New Decimal(New Integer() {2000, 0, 0, Integer.MinValue})
         numDw.Name = "numDw"
+        numDw.Size = New Size(1466, 31)
         numDw.TabIndex = 5
-        '
+        ' 
+        ' lblDh
+        ' 
         lblDh.AutoSize = True
-        lblDh.Dock = System.Windows.Forms.DockStyle.Fill
+        lblDh.Dock = DockStyle.Fill
+        lblDh.Location = New Point(3, 111)
         lblDh.Name = "lblDh"
+        lblDh.Size = New Size(116, 37)
         lblDh.TabIndex = 6
         lblDh.Text = "dh (înălțime)"
-        lblDh.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        '
-        numDh.Dock = System.Windows.Forms.DockStyle.Fill
+        lblDh.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' numDh
+        ' 
+        numDh.Dock = DockStyle.Fill
+        numDh.Location = New Point(125, 114)
         numDh.Maximum = New Decimal(New Integer() {2000, 0, 0, 0})
-        numDh.Minimum = New Decimal(New Integer() {2000, 0, 0, -2147483648})
+        numDh.Minimum = New Decimal(New Integer() {2000, 0, 0, Integer.MinValue})
         numDh.Name = "numDh"
+        numDh.Size = New Size(1466, 31)
         numDh.TabIndex = 7
-        '
+        ' 
+        ' btnResetMove
+        ' 
         btnResetMove.AutoSize = True
-        btnResetMove.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpMove.SetColumnSpan(btnResetMove, 2)
+        btnResetMove.Dock = DockStyle.Fill
+        btnResetMove.Location = New Point(3, 151)
         btnResetMove.Name = "btnResetMove"
+        btnResetMove.Size = New Size(1588, 35)
         btnResetMove.TabIndex = 8
         btnResetMove.Text = "Readu la zero"
         btnResetMove.UseVisualStyleBackColor = True
-        '
+        ' 
+        ' lblMoveHint
+        ' 
         lblMoveHint.AutoSize = True
-        lblMoveHint.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpMove.SetColumnSpan(lblMoveHint, 2)
+        lblMoveHint.Dock = DockStyle.Fill
+        lblMoveHint.Location = New Point(3, 189)
         lblMoveHint.Name = "lblMoveHint"
+        lblMoveHint.Size = New Size(1588, 25)
         lblMoveHint.TabIndex = 9
-        lblMoveHint.Text = "Deplasează ȘI redimensionează FEREASTRA ADOBE în panou, exact ca decuparea " &
-                           "dreapta/sus (se compun). dx/dy negative o trag spre stânga/sus, deci banda " &
-                           "din marginea aceea iese din zona vizibilă."
-        '
+        lblMoveHint.Text = "Deplasează ȘI redimensionează FEREASTRA ADOBE în panou, exact ca decuparea dreapta/sus (se compun). dx/dy negative o trag spre stânga/sus, deci banda din marginea aceea iese din zona vizibilă."
+        ' 
+        ' grpChildren
+        ' 
+        grpChildren.AutoSize = True
+        grpChildren.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        grpChildren.Controls.Add(tlpChildren)
+        grpChildren.Location = New Point(9, 1260)
+        grpChildren.Name = "grpChildren"
+        grpChildren.Size = New Size(248, 279)
+        grpChildren.TabIndex = 7
+        grpChildren.TabStop = False
+        grpChildren.Text = "Ferestre copil"
+        ' 
+        ' tlpChildren
+        ' 
+        tlpChildren.AutoSize = True
+        tlpChildren.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        tlpChildren.ColumnCount = 1
+        tlpChildren.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpChildren.Controls.Add(lstChildren, 0, 0)
+        tlpChildren.Controls.Add(btnHideChild, 0, 1)
+        tlpChildren.Controls.Add(btnShowChild, 0, 2)
+        tlpChildren.Controls.Add(btnShowAllChildren, 0, 3)
+        tlpChildren.Dock = DockStyle.Fill
+        tlpChildren.Location = New Point(3, 27)
+        tlpChildren.Name = "tlpChildren"
+        tlpChildren.RowCount = 4
+        tlpChildren.RowStyles.Add(New RowStyle())
+        tlpChildren.RowStyles.Add(New RowStyle())
+        tlpChildren.RowStyles.Add(New RowStyle())
+        tlpChildren.RowStyles.Add(New RowStyle())
+        tlpChildren.Size = New Size(242, 249)
+        tlpChildren.TabIndex = 0
+        ' 
+        ' lstChildren
+        ' 
+        lstChildren.Dock = DockStyle.Fill
+        lstChildren.IntegralHeight = False
+        lstChildren.ItemHeight = 25
+        lstChildren.Location = New Point(3, 3)
+        lstChildren.MinimumSize = New Size(0, 120)
+        lstChildren.Name = "lstChildren"
+        lstChildren.Size = New Size(236, 120)
+        lstChildren.TabIndex = 0
+        ' 
+        ' btnHideChild
+        ' 
+        btnHideChild.AutoSize = True
+        btnHideChild.Dock = DockStyle.Fill
+        btnHideChild.Location = New Point(3, 129)
+        btnHideChild.Name = "btnHideChild"
+        btnHideChild.Size = New Size(236, 35)
+        btnHideChild.TabIndex = 1
+        btnHideChild.Text = "Ascunde fereastra selectată"
+        btnHideChild.UseVisualStyleBackColor = True
+        ' 
+        ' btnShowChild
+        ' 
+        btnShowChild.AutoSize = True
+        btnShowChild.Dock = DockStyle.Fill
+        btnShowChild.Location = New Point(3, 170)
+        btnShowChild.Name = "btnShowChild"
+        btnShowChild.Size = New Size(236, 35)
+        btnShowChild.TabIndex = 2
+        btnShowChild.Text = "Arată fereastra selectată"
+        btnShowChild.UseVisualStyleBackColor = True
+        ' 
+        ' btnShowAllChildren
+        ' 
+        btnShowAllChildren.AutoSize = True
+        btnShowAllChildren.Dock = DockStyle.Fill
+        btnShowAllChildren.Location = New Point(3, 211)
+        btnShowAllChildren.Name = "btnShowAllChildren"
+        btnShowAllChildren.Size = New Size(236, 35)
+        btnShowAllChildren.TabIndex = 3
+        btnShowAllChildren.Text = "Restaurează toate"
+        btnShowAllChildren.UseVisualStyleBackColor = True
+        ' 
         ' grpKeys
-        '
+        ' 
         grpKeys.AutoSize = True
-        grpKeys.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpKeys.AutoSizeMode = AutoSizeMode.GrowAndShrink
         grpKeys.Controls.Add(tlpKeys)
+        grpKeys.Location = New Point(9, 1545)
         grpKeys.Name = "grpKeys"
+        grpKeys.Size = New Size(417, 130)
         grpKeys.TabIndex = 8
         grpKeys.TabStop = False
         grpKeys.Text = "Scurtături (experimental)"
-        '
+        ' 
+        ' tlpKeys
+        ' 
         tlpKeys.AutoSize = True
-        tlpKeys.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpKeys.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpKeys.ColumnCount = 1
-        tlpKeys.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpKeys.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpKeys.Controls.Add(btnSendShiftF4, 0, 0)
         tlpKeys.Controls.Add(btnSendF4, 0, 1)
-        tlpKeys.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpKeys.Dock = DockStyle.Fill
+        tlpKeys.Location = New Point(3, 27)
         tlpKeys.Name = "tlpKeys"
         tlpKeys.RowCount = 2
-        tlpKeys.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpKeys.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpKeys.RowStyles.Add(New RowStyle())
+        tlpKeys.RowStyles.Add(New RowStyle())
+        tlpKeys.Size = New Size(411, 100)
         tlpKeys.TabIndex = 0
-        '
+        ' 
+        ' btnSendShiftF4
+        ' 
         btnSendShiftF4.AutoSize = True
-        btnSendShiftF4.Dock = System.Windows.Forms.DockStyle.Fill
+        btnSendShiftF4.Dock = DockStyle.Fill
+        btnSendShiftF4.Location = New Point(3, 3)
         btnSendShiftF4.Name = "btnSendShiftF4"
+        btnSendShiftF4.Size = New Size(405, 35)
         btnSendShiftF4.TabIndex = 0
         btnSendShiftF4.Text = "Trimite Shift+F4 (comută panoul de instrumente)"
         btnSendShiftF4.UseVisualStyleBackColor = True
-        '
+        ' 
+        ' btnSendF4
+        ' 
         btnSendF4.AutoSize = True
-        btnSendF4.Dock = System.Windows.Forms.DockStyle.Fill
+        btnSendF4.Dock = DockStyle.Fill
+        btnSendF4.Location = New Point(3, 44)
         btnSendF4.Name = "btnSendF4"
+        btnSendF4.Size = New Size(405, 53)
         btnSendF4.TabIndex = 1
         btnSendF4.Text = "Trimite F4 (comută panoul de navigare)"
         btnSendF4.UseVisualStyleBackColor = True
-        '
+        ' 
         ' grpUser
-        '
+        ' 
         grpUser.AutoSize = True
-        grpUser.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpUser.AutoSizeMode = AutoSizeMode.GrowAndShrink
         grpUser.Controls.Add(tlpUser)
+        grpUser.Location = New Point(9, 1681)
         grpUser.Name = "grpUser"
+        grpUser.Size = New Size(922, 554)
         grpUser.TabIndex = 9
         grpUser.TabStop = False
         grpUser.Text = "Preferințe Adobe (utilizator, HKCU)"
-        '
+        ' 
+        ' tlpUser
+        ' 
         tlpUser.AutoSize = True
-        tlpUser.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpUser.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpUser.ColumnCount = 1
-        tlpUser.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpUser.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpUser.Controls.Add(lblHive, 0, 0)
         tlpUser.Controls.Add(cboHive, 0, 1)
         tlpUser.Controls.Add(tlpPrefRows, 0, 2)
@@ -921,27 +1378,47 @@ Partial Class AdobeReaderHarnessForm
         tlpUser.Controls.Add(btnApplyUser, 0, 5)
         tlpUser.Controls.Add(btnRestoreUser, 0, 6)
         tlpUser.Controls.Add(chkRestoreOnClose, 0, 7)
-        tlpUser.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpUser.Dock = DockStyle.Fill
+        tlpUser.Location = New Point(3, 27)
         tlpUser.Name = "tlpUser"
         tlpUser.RowCount = 8
-        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpUser.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpUser.RowStyles.Add(New RowStyle())
+        tlpUser.RowStyles.Add(New RowStyle())
+        tlpUser.RowStyles.Add(New RowStyle())
+        tlpUser.RowStyles.Add(New RowStyle())
+        tlpUser.RowStyles.Add(New RowStyle())
+        tlpUser.RowStyles.Add(New RowStyle())
+        tlpUser.RowStyles.Add(New RowStyle())
+        tlpUser.RowStyles.Add(New RowStyle())
+        tlpUser.Size = New Size(916, 524)
         tlpUser.TabIndex = 0
-        '
-        ' tlpPrefRows — one «nume | valoare» row per HKCU preference. Column 0 AutoSize (the value
-        ' name), column 1 Percent 100 (the editable combo), so the combos line up under each other.
-        '
+        ' 
+        ' lblHive
+        ' 
+        lblHive.AutoSize = True
+        lblHive.Dock = DockStyle.Fill
+        lblHive.Location = New Point(3, 0)
+        lblHive.Name = "lblHive"
+        lblHive.Size = New Size(910, 25)
+        lblHive.TabIndex = 0
+        ' 
+        ' cboHive
+        ' 
+        cboHive.Dock = DockStyle.Fill
+        cboHive.DropDownStyle = ComboBoxStyle.DropDownList
+        cboHive.DropDownWidth = 420
+        cboHive.Location = New Point(3, 28)
+        cboHive.Name = "cboHive"
+        cboHive.Size = New Size(910, 33)
+        cboHive.TabIndex = 1
+        ' 
+        ' tlpPrefRows
+        ' 
         tlpPrefRows.AutoSize = True
-        tlpPrefRows.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpPrefRows.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpPrefRows.ColumnCount = 2
-        tlpPrefRows.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpPrefRows.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpPrefRows.ColumnStyles.Add(New ColumnStyle())
+        tlpPrefRows.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpPrefRows.Controls.Add(lblExpandRhp, 0, 0)
         tlpPrefRows.Controls.Add(cboExpandRhp, 1, 0)
         tlpPrefRows.Controls.Add(lblRhpSticky, 0, 1)
@@ -950,269 +1427,393 @@ Partial Class AdobeReaderHarnessForm
         tlpPrefRows.Controls.Add(cboRhpViewMode, 1, 2)
         tlpPrefRows.Controls.Add(lblEnableAv2, 0, 3)
         tlpPrefRows.Controls.Add(cboEnableAv2, 1, 3)
-        tlpPrefRows.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpPrefRows.Dock = DockStyle.Fill
+        tlpPrefRows.Location = New Point(3, 67)
         tlpPrefRows.Name = "tlpPrefRows"
         tlpPrefRows.RowCount = 4
-        tlpPrefRows.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpPrefRows.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpPrefRows.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpPrefRows.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpPrefRows.RowStyles.Add(New RowStyle())
+        tlpPrefRows.RowStyles.Add(New RowStyle())
+        tlpPrefRows.RowStyles.Add(New RowStyle())
+        tlpPrefRows.RowStyles.Add(New RowStyle())
+        tlpPrefRows.Size = New Size(910, 156)
         tlpPrefRows.TabIndex = 2
-        '
-        ' gridPrefs — read-only: Valoare · Cerut · Curent · Tip
-        '
+        ' 
+        ' lblExpandRhp
+        ' 
+        lblExpandRhp.AutoSize = True
+        lblExpandRhp.Dock = DockStyle.Fill
+        lblExpandRhp.Location = New Point(3, 0)
+        lblExpandRhp.Name = "lblExpandRhp"
+        lblExpandRhp.Size = New Size(298, 39)
+        lblExpandRhp.TabIndex = 0
+        lblExpandRhp.Text = "bExpandRHPInViewer"
+        lblExpandRhp.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' cboExpandRhp
+        ' 
+        cboExpandRhp.Dock = DockStyle.Fill
+        cboExpandRhp.Location = New Point(307, 3)
+        cboExpandRhp.Name = "cboExpandRhp"
+        cboExpandRhp.Size = New Size(600, 33)
+        cboExpandRhp.TabIndex = 1
+        ' 
+        ' lblRhpSticky
+        ' 
+        lblRhpSticky.AutoSize = True
+        lblRhpSticky.Dock = DockStyle.Fill
+        lblRhpSticky.Location = New Point(3, 39)
+        lblRhpSticky.Name = "lblRhpSticky"
+        lblRhpSticky.Size = New Size(298, 39)
+        lblRhpSticky.TabIndex = 2
+        lblRhpSticky.Text = "bRHPSticky"
+        lblRhpSticky.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' cboRhpSticky
+        ' 
+        cboRhpSticky.Dock = DockStyle.Fill
+        cboRhpSticky.Location = New Point(307, 42)
+        cboRhpSticky.Name = "cboRhpSticky"
+        cboRhpSticky.Size = New Size(600, 33)
+        cboRhpSticky.TabIndex = 3
+        ' 
+        ' lblRhpViewMode
+        ' 
+        lblRhpViewMode.AutoSize = True
+        lblRhpViewMode.Dock = DockStyle.Fill
+        lblRhpViewMode.Location = New Point(3, 78)
+        lblRhpViewMode.Name = "lblRhpViewMode"
+        lblRhpViewMode.Size = New Size(298, 39)
+        lblRhpViewMode.TabIndex = 4
+        lblRhpViewMode.Text = "aDefaultRHPViewMode_L"
+        lblRhpViewMode.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' cboRhpViewMode
+        ' 
+        cboRhpViewMode.Dock = DockStyle.Fill
+        cboRhpViewMode.Location = New Point(307, 81)
+        cboRhpViewMode.Name = "cboRhpViewMode"
+        cboRhpViewMode.Size = New Size(600, 33)
+        cboRhpViewMode.TabIndex = 5
+        ' 
+        ' lblEnableAv2
+        ' 
+        lblEnableAv2.AutoSize = True
+        lblEnableAv2.Dock = DockStyle.Fill
+        lblEnableAv2.Location = New Point(3, 117)
+        lblEnableAv2.Name = "lblEnableAv2"
+        lblEnableAv2.Size = New Size(298, 39)
+        lblEnableAv2.TabIndex = 6
+        lblEnableAv2.Text = "bEnableAv2 (0 = clasic, 1 = modern)"
+        lblEnableAv2.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' cboEnableAv2
+        ' 
+        cboEnableAv2.Dock = DockStyle.Fill
+        cboEnableAv2.Location = New Point(307, 120)
+        cboEnableAv2.Name = "cboEnableAv2"
+        cboEnableAv2.Size = New Size(600, 33)
+        cboEnableAv2.TabIndex = 7
+        ' 
+        ' lblPrefHint
+        ' 
+        lblPrefHint.AutoSize = True
+        lblPrefHint.Dock = DockStyle.Fill
+        lblPrefHint.Location = New Point(3, 226)
+        lblPrefHint.Name = "lblPrefHint"
+        lblPrefHint.Size = New Size(910, 25)
+        lblPrefHint.TabIndex = 3
+        lblPrefHint.Text = "«nu atinge» lasă valoarea exact cum e (NU o scrie pe 0); «șterge» o elimină din registry; orice altceva se scrie literal."
+        ' 
+        ' gridPrefs
+        ' 
         gridPrefs.AllowUserToAddRows = False
         gridPrefs.AllowUserToDeleteRows = False
         gridPrefs.AllowUserToResizeRows = False
-        gridPrefs.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill
-        gridPrefs.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
-        gridPrefs.Dock = System.Windows.Forms.DockStyle.Fill
-        gridPrefs.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically
-        gridPrefs.MinimumSize = New System.Drawing.Size(0, 110)
+        gridPrefs.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+        gridPrefs.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
+        gridPrefs.Dock = DockStyle.Fill
+        gridPrefs.EditMode = DataGridViewEditMode.EditProgrammatically
+        gridPrefs.Location = New Point(3, 254)
+        gridPrefs.MinimumSize = New Size(0, 110)
         gridPrefs.MultiSelect = False
         gridPrefs.Name = "gridPrefs"
         gridPrefs.ReadOnly = True
         gridPrefs.RowHeadersVisible = False
-        gridPrefs.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect
+        gridPrefs.RowHeadersWidth = 62
+        gridPrefs.SelectionMode = DataGridViewSelectionMode.FullRowSelect
+        gridPrefs.Size = New Size(910, 150)
         gridPrefs.TabIndex = 6
-        '
-        lblHive.AutoSize = True
-        lblHive.Dock = System.Windows.Forms.DockStyle.Fill
-        lblHive.Name = "lblHive"
-        lblHive.TabIndex = 0
-        '
-        cboHive.Dock = System.Windows.Forms.DockStyle.Fill
-        cboHive.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
-        cboHive.DropDownWidth = 420
-        cboHive.Name = "cboHive"
-        cboHive.TabIndex = 1
-        '
-        lblExpandRhp.AutoSize = True
-        lblExpandRhp.Dock = System.Windows.Forms.DockStyle.Fill
-        lblExpandRhp.Name = "lblExpandRhp"
-        lblExpandRhp.TabIndex = 0
-        lblExpandRhp.Text = "bExpandRHPInViewer"
-        lblExpandRhp.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        '
-        ' DropDown (editabil), nu DropDownList: scenariile pot cere orice întreg, nu doar 0/1.
-        cboExpandRhp.Dock = System.Windows.Forms.DockStyle.Fill
-        cboExpandRhp.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown
-        cboExpandRhp.Name = "cboExpandRhp"
-        cboExpandRhp.TabIndex = 1
-        '
-        lblRhpSticky.AutoSize = True
-        lblRhpSticky.Dock = System.Windows.Forms.DockStyle.Fill
-        lblRhpSticky.Name = "lblRhpSticky"
-        lblRhpSticky.TabIndex = 2
-        lblRhpSticky.Text = "bRHPSticky"
-        lblRhpSticky.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        '
-        cboRhpSticky.Dock = System.Windows.Forms.DockStyle.Fill
-        cboRhpSticky.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown
-        cboRhpSticky.Name = "cboRhpSticky"
-        cboRhpSticky.TabIndex = 3
-        '
-        lblRhpViewMode.AutoSize = True
-        lblRhpViewMode.Dock = System.Windows.Forms.DockStyle.Fill
-        lblRhpViewMode.Name = "lblRhpViewMode"
-        lblRhpViewMode.TabIndex = 4
-        lblRhpViewMode.Text = "aDefaultRHPViewMode_L"
-        lblRhpViewMode.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        '
-        ' REG_SZ: text liber, cu «Collapsed»/«Expanded» doar ca sugestii în listă.
-        cboRhpViewMode.Dock = System.Windows.Forms.DockStyle.Fill
-        cboRhpViewMode.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown
-        cboRhpViewMode.Name = "cboRhpViewMode"
-        cboRhpViewMode.TabIndex = 5
-        '
-        lblEnableAv2.AutoSize = True
-        lblEnableAv2.Dock = System.Windows.Forms.DockStyle.Fill
-        lblEnableAv2.Name = "lblEnableAv2"
-        lblEnableAv2.TabIndex = 6
-        lblEnableAv2.Text = "bEnableAv2 (0 = clasic, 1 = modern)"
-        lblEnableAv2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        '
-        cboEnableAv2.Dock = System.Windows.Forms.DockStyle.Fill
-        cboEnableAv2.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDown
-        cboEnableAv2.Name = "cboEnableAv2"
-        cboEnableAv2.TabIndex = 7
-        '
-        lblPrefHint.AutoSize = True
-        lblPrefHint.Dock = System.Windows.Forms.DockStyle.Fill
-        lblPrefHint.Name = "lblPrefHint"
-        lblPrefHint.TabIndex = 3
-        lblPrefHint.Text = "«nu atinge» lasă valoarea exact cum e (NU o scrie pe 0); «șterge» o elimină din registry; " &
-                           "orice altceva se scrie literal."
-        '
+        ' 
+        ' btnApplyUser
+        ' 
         btnApplyUser.AutoSize = True
-        btnApplyUser.Dock = System.Windows.Forms.DockStyle.Fill
+        btnApplyUser.Dock = DockStyle.Fill
+        btnApplyUser.Location = New Point(3, 410)
         btnApplyUser.Name = "btnApplyUser"
+        btnApplyUser.Size = New Size(910, 35)
         btnApplyUser.TabIndex = 6
         btnApplyUser.Text = "Aplică și repornește Adobe"
         btnApplyUser.UseVisualStyleBackColor = True
-        '
+        ' 
+        ' btnRestoreUser
+        ' 
         btnRestoreUser.AutoSize = True
-        btnRestoreUser.Dock = System.Windows.Forms.DockStyle.Fill
+        btnRestoreUser.Dock = DockStyle.Fill
+        btnRestoreUser.Location = New Point(3, 451)
         btnRestoreUser.Name = "btnRestoreUser"
+        btnRestoreUser.Size = New Size(910, 35)
         btnRestoreUser.TabIndex = 7
         btnRestoreUser.Text = "Restaurează valorile originale"
         btnRestoreUser.UseVisualStyleBackColor = True
-        '
-        ' DEBIFAT implicit: bifat, el anulează experimentul la fiecare închidere a bancului — exact
-        ' ce s-a întâmplat cu bEnableAv2 = 1, readus la 0 fără ca nimeni să ceară asta.
+        ' 
+        ' chkRestoreOnClose
+        ' 
         chkRestoreOnClose.AutoSize = True
-        chkRestoreOnClose.Dock = System.Windows.Forms.DockStyle.Fill
+        chkRestoreOnClose.Dock = DockStyle.Fill
+        chkRestoreOnClose.Location = New Point(3, 492)
         chkRestoreOnClose.Name = "chkRestoreOnClose"
+        chkRestoreOnClose.Size = New Size(910, 29)
         chkRestoreOnClose.TabIndex = 8
         chkRestoreOnClose.Text = "Restaurează valorile HKCU la închiderea bancului"
-        '
+        ' 
         ' grpMachine
-        '
+        ' 
         grpMachine.AutoSize = True
-        grpMachine.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpMachine.AutoSizeMode = AutoSizeMode.GrowAndShrink
         grpMachine.Controls.Add(tlpMachine)
+        grpMachine.Location = New Point(9, 2241)
         grpMachine.Name = "grpMachine"
+        grpMachine.Size = New Size(424, 241)
         grpMachine.TabIndex = 10
         grpMachine.TabStop = False
         grpMachine.Text = "Politici Adobe (mașină, HKLM)"
-        '
+        ' 
+        ' tlpMachine
+        ' 
         tlpMachine.AutoSize = True
-        tlpMachine.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpMachine.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpMachine.ColumnCount = 1
-        tlpMachine.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpMachine.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpMachine.Controls.Add(cboProduct, 0, 0)
         tlpMachine.Controls.Add(chkSuppressUpsell, 0, 1)
         tlpMachine.Controls.Add(chkDisableServices, 0, 2)
         tlpMachine.Controls.Add(btnApplyMachine, 0, 3)
         tlpMachine.Controls.Add(btnRevertMachine, 0, 4)
         tlpMachine.Controls.Add(chkRevertPolicyOnClose, 0, 5)
-        tlpMachine.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpMachine.Dock = DockStyle.Fill
+        tlpMachine.Location = New Point(3, 27)
         tlpMachine.Name = "tlpMachine"
         tlpMachine.RowCount = 6
-        tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlpMachine.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpMachine.RowStyles.Add(New RowStyle())
+        tlpMachine.RowStyles.Add(New RowStyle())
+        tlpMachine.RowStyles.Add(New RowStyle())
+        tlpMachine.RowStyles.Add(New RowStyle())
+        tlpMachine.RowStyles.Add(New RowStyle())
+        tlpMachine.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
+        tlpMachine.Size = New Size(418, 211)
         tlpMachine.TabIndex = 0
-        '
-        cboProduct.Dock = System.Windows.Forms.DockStyle.Fill
-        cboProduct.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        ' 
+        ' cboProduct
+        ' 
+        cboProduct.Dock = DockStyle.Fill
+        cboProduct.DropDownStyle = ComboBoxStyle.DropDownList
+        cboProduct.Location = New Point(3, 3)
         cboProduct.Name = "cboProduct"
+        cboProduct.Size = New Size(412, 33)
         cboProduct.TabIndex = 0
-        '
+        ' 
+        ' chkSuppressUpsell
+        ' 
         chkSuppressUpsell.AutoSize = True
-        chkSuppressUpsell.Dock = System.Windows.Forms.DockStyle.Fill
+        chkSuppressUpsell.Dock = DockStyle.Fill
+        chkSuppressUpsell.Location = New Point(3, 42)
         chkSuppressUpsell.Name = "chkSuppressUpsell"
+        chkSuppressUpsell.Size = New Size(412, 29)
         chkSuppressUpsell.TabIndex = 1
         chkSuppressUpsell.Text = "bAcroSuppressUpsell = 1"
-        '
+        ' 
+        ' chkDisableServices
+        ' 
         chkDisableServices.AutoSize = True
-        chkDisableServices.Dock = System.Windows.Forms.DockStyle.Fill
+        chkDisableServices.Dock = DockStyle.Fill
+        chkDisableServices.Location = New Point(3, 77)
         chkDisableServices.Name = "chkDisableServices"
+        chkDisableServices.Size = New Size(412, 29)
         chkDisableServices.TabIndex = 2
         chkDisableServices.Text = "cServices\bToggleAdobeDocumentServices = 1"
-        '
+        ' 
+        ' btnApplyMachine
+        ' 
         btnApplyMachine.AutoSize = True
-        btnApplyMachine.Dock = System.Windows.Forms.DockStyle.Fill
+        btnApplyMachine.Dock = DockStyle.Fill
+        btnApplyMachine.Location = New Point(3, 112)
         btnApplyMachine.Name = "btnApplyMachine"
+        btnApplyMachine.Size = New Size(412, 35)
         btnApplyMachine.TabIndex = 3
         btnApplyMachine.Text = "Aplică (cere elevare)"
         btnApplyMachine.UseVisualStyleBackColor = True
-        '
+        ' 
+        ' btnRevertMachine
+        ' 
         btnRevertMachine.AutoSize = True
-        btnRevertMachine.Dock = System.Windows.Forms.DockStyle.Fill
+        btnRevertMachine.Dock = DockStyle.Fill
+        btnRevertMachine.Location = New Point(3, 153)
         btnRevertMachine.Name = "btnRevertMachine"
+        btnRevertMachine.Size = New Size(412, 35)
         btnRevertMachine.TabIndex = 4
         btnRevertMachine.Text = "Revocă (cere elevare)"
         btnRevertMachine.UseVisualStyleBackColor = True
-        '
+        ' 
+        ' chkRevertPolicyOnClose
+        ' 
         chkRevertPolicyOnClose.AutoSize = True
         chkRevertPolicyOnClose.Checked = True
-        chkRevertPolicyOnClose.CheckState = System.Windows.Forms.CheckState.Checked
-        chkRevertPolicyOnClose.Dock = System.Windows.Forms.DockStyle.Fill
+        chkRevertPolicyOnClose.CheckState = CheckState.Checked
+        chkRevertPolicyOnClose.Dock = DockStyle.Fill
+        chkRevertPolicyOnClose.Location = New Point(3, 194)
         chkRevertPolicyOnClose.Name = "chkRevertPolicyOnClose"
+        chkRevertPolicyOnClose.Size = New Size(412, 14)
         chkRevertPolicyOnClose.TabIndex = 5
         chkRevertPolicyOnClose.Text = "Revocă politica HKLM la închiderea bancului"
-        '
+        ' 
         ' grpCmd
-        '
+        ' 
         grpCmd.AutoSize = True
-        grpCmd.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        grpCmd.AutoSizeMode = AutoSizeMode.GrowAndShrink
         grpCmd.Controls.Add(tlpCmd)
+        grpCmd.Location = New Point(9, 2488)
         grpCmd.Name = "grpCmd"
+        grpCmd.Size = New Size(112, 108)
         grpCmd.TabIndex = 11
         grpCmd.TabStop = False
         grpCmd.Text = "Linie de comandă"
-        '
+        ' 
+        ' tlpCmd
+        ' 
         tlpCmd.AutoSize = True
-        tlpCmd.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
+        tlpCmd.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpCmd.ColumnCount = 1
-        tlpCmd.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlpCmd.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpCmd.Controls.Add(txtCmd, 0, 0)
-        tlpCmd.Dock = System.Windows.Forms.DockStyle.Fill
+        tlpCmd.Dock = DockStyle.Fill
+        tlpCmd.Location = New Point(3, 27)
         tlpCmd.Name = "tlpCmd"
         tlpCmd.RowCount = 1
-        tlpCmd.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlpCmd.RowStyles.Add(New RowStyle())
+        tlpCmd.Size = New Size(106, 78)
         tlpCmd.TabIndex = 0
-        '
-        txtCmd.Dock = System.Windows.Forms.DockStyle.Fill
-        txtCmd.Font = New System.Drawing.Font("Consolas", 8.25F)
+        ' 
+        ' txtCmd
+        ' 
+        txtCmd.Dock = DockStyle.Fill
+        txtCmd.Font = New Font("Consolas", 8.25F)
+        txtCmd.Location = New Point(3, 3)
+        txtCmd.MinimumSize = New Size(0, 72)
         txtCmd.Multiline = True
-        txtCmd.MinimumSize = New System.Drawing.Size(0, 72)
         txtCmd.Name = "txtCmd"
         txtCmd.ReadOnly = True
-        txtCmd.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
+        txtCmd.ScrollBars = ScrollBars.Vertical
+        txtCmd.Size = New Size(100, 72)
         txtCmd.TabIndex = 0
-        '
-        ' pnlButtons — verdictul uman (stays where the harness framework puts it)
-        '
+        ' 
+        ' tlpRight
+        ' 
+        tlpRight.ColumnCount = 1
+        tlpRight.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpRight.Controls.Add(pnlHost, 0, 0)
+        tlpRight.Controls.Add(lblStatus, 0, 1)
+        tlpRight.Dock = DockStyle.Fill
+        tlpRight.Location = New Point(0, 0)
+        tlpRight.Name = "tlpRight"
+        tlpRight.RowCount = 2
+        tlpRight.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlpRight.RowStyles.Add(New RowStyle())
+        tlpRight.Size = New Size(764, 727)
+        tlpRight.TabIndex = 0
+        ' 
+        ' pnlHost
+        ' 
+        pnlHost.Dock = DockStyle.Fill
+        pnlHost.Location = New Point(3, 3)
+        pnlHost.Name = "pnlHost"
+        pnlHost.Size = New Size(758, 688)
+        pnlHost.TabIndex = 0
+        ' 
+        ' lblStatus
+        ' 
+        lblStatus.AutoSize = True
+        lblStatus.Dock = DockStyle.Fill
+        lblStatus.Location = New Point(3, 694)
+        lblStatus.Name = "lblStatus"
+        lblStatus.Padding = New Padding(4)
+        lblStatus.Size = New Size(758, 33)
+        lblStatus.TabIndex = 1
+        ' 
+        ' tmrLayout
+        ' 
+        tmrLayout.Interval = 150
+        ' 
+        ' pnlButtons
+        ' 
         pnlButtons.AutoSize = True
         pnlButtons.Controls.Add(btnPass)
         pnlButtons.Controls.Add(btnFail)
-        pnlButtons.Dock = System.Windows.Forms.DockStyle.Bottom
-        pnlButtons.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft
-        pnlButtons.Location = New System.Drawing.Point(0, 727)
+        pnlButtons.Dock = DockStyle.Bottom
+        pnlButtons.FlowDirection = FlowDirection.RightToLeft
+        pnlButtons.Location = New Point(0, 727)
         pnlButtons.Name = "pnlButtons"
-        pnlButtons.Padding = New System.Windows.Forms.Padding(6)
-        pnlButtons.Size = New System.Drawing.Size(1240, 53)
+        pnlButtons.Padding = New Padding(6)
+        pnlButtons.Size = New Size(1240, 53)
         pnlButtons.TabIndex = 1
-        '
+        ' 
+        ' btnPass
+        ' 
         btnPass.AutoSize = True
-        btnPass.DialogResult = System.Windows.Forms.DialogResult.OK
+        btnPass.DialogResult = DialogResult.Yes
+        btnPass.Location = New Point(1150, 9)
         btnPass.Name = "btnPass"
+        btnPass.Size = New Size(75, 35)
         btnPass.TabIndex = 0
+        btnPass.TabStop = False
         btnPass.Text = "Pass"
         btnPass.UseVisualStyleBackColor = True
-        '
+        ' 
+        ' btnFail
+        ' 
         btnFail.AutoSize = True
-        btnFail.DialogResult = System.Windows.Forms.DialogResult.Cancel
+        btnFail.DialogResult = DialogResult.No
+        btnFail.Location = New Point(1069, 9)
         btnFail.Name = "btnFail"
+        btnFail.Size = New Size(75, 35)
         btnFail.TabIndex = 1
+        btnFail.TabStop = False
         btnFail.Text = "Fail"
         btnFail.UseVisualStyleBackColor = True
-        '
+        ' 
         ' AdobeReaderHarnessForm
-        '
-        AcceptButton = btnPass
-        AutoScaleDimensions = New System.Drawing.SizeF(10F, 25F)
-        AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        ' 
+        ' NU se setează AcceptButton: Enter nu are voie să dea un verdict. Butoanele au și
+        ' TabStop = False, deci nu pot fi nici focalizate cu Tab și apoi apăsate din greșeală.
+        ' Verdictul se dă DOAR cu mouse-ul, pe butonul respectiv.
+        AcceptButton = Nothing
+        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleMode = AutoScaleMode.Font
+        ' ATENȚIE: CancelButton apasă efectiv btnFail, deci Esc DĂ verdictul «Fail» (No) — nu doar
+        ' închide. Setter-ul nu suprascrie DialogResult fiindcă nu e None. Lăsat aici deliberat
+        ' (cererea a fost despre Enter); dacă nici Esc nu trebuie să dea verdict, se șterge linia.
         CancelButton = btnFail
-        ClientSize = New System.Drawing.Size(1240, 780)
-        ' Dock order (house rule): Fill first, then Bottom.
+        ClientSize = New Size(1240, 780)
         Controls.Add(splitMain)
         Controls.Add(pnlButtons)
         Name = "AdobeReaderHarnessForm"
-        StartPosition = System.Windows.Forms.FormStartPosition.CenterParent
+        StartPosition = FormStartPosition.CenterParent
         Text = "Adobe Reader DC — încorporare + switch-uri (bare ascunse)"
         splitMain.Panel1.ResumeLayout(False)
         splitMain.Panel2.ResumeLayout(False)
-        CType(splitMain, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(splitMain, ComponentModel.ISupportInitialize).EndInit()
         splitMain.ResumeLayout(False)
         flowOptions.ResumeLayout(False)
         flowOptions.PerformLayout()
-        tlpRight.ResumeLayout(False)
-        tlpRight.PerformLayout()
         grpLaunch.ResumeLayout(False)
         grpLaunch.PerformLayout()
         tlpLaunch.ResumeLayout(False)
@@ -1237,31 +1838,45 @@ Partial Class AdobeReaderHarnessForm
         grpClip.PerformLayout()
         tlpClip.ResumeLayout(False)
         tlpClip.PerformLayout()
-        CType(numClipRight, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(numClipTop, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(numClipRight, ComponentModel.ISupportInitialize).EndInit()
+        CType(numClipTop, ComponentModel.ISupportInitialize).EndInit()
+        grpMove.ResumeLayout(False)
+        grpMove.PerformLayout()
+        grpHosting.ResumeLayout(False)
+        grpHosting.PerformLayout()
+        tlpHosting.ResumeLayout(False)
+        tlpHosting.PerformLayout()
+        flowDetachMode.ResumeLayout(False)
+        flowDetachMode.PerformLayout()
+        CType(numCaptureDelay, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(numCloseGrace, System.ComponentModel.ISupportInitialize).EndInit()
+        grpActiveX.ResumeLayout(False)
+        grpActiveX.PerformLayout()
+        tlpActiveX.ResumeLayout(False)
+        tlpActiveX.PerformLayout()
+        flowAcroButtons.ResumeLayout(False)
+        flowAcroButtons.PerformLayout()
+        tlpMove.ResumeLayout(False)
+        tlpMove.PerformLayout()
+        CType(numDx, ComponentModel.ISupportInitialize).EndInit()
+        CType(numDy, ComponentModel.ISupportInitialize).EndInit()
+        CType(numDw, ComponentModel.ISupportInitialize).EndInit()
+        CType(numDh, ComponentModel.ISupportInitialize).EndInit()
         grpChildren.ResumeLayout(False)
         grpChildren.PerformLayout()
         tlpChildren.ResumeLayout(False)
         tlpChildren.PerformLayout()
-        CType(numDx, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(numDy, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(numDw, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(numDh, System.ComponentModel.ISupportInitialize).EndInit()
-        grpMove.ResumeLayout(False)
-        grpMove.PerformLayout()
-        tlpMove.ResumeLayout(False)
-        tlpMove.PerformLayout()
         grpKeys.ResumeLayout(False)
         grpKeys.PerformLayout()
         tlpKeys.ResumeLayout(False)
         tlpKeys.PerformLayout()
         grpUser.ResumeLayout(False)
         grpUser.PerformLayout()
-        CType(gridPrefs, System.ComponentModel.ISupportInitialize).EndInit()
         tlpUser.ResumeLayout(False)
         tlpUser.PerformLayout()
         tlpPrefRows.ResumeLayout(False)
         tlpPrefRows.PerformLayout()
+        CType(gridPrefs, ComponentModel.ISupportInitialize).EndInit()
         grpMachine.ResumeLayout(False)
         grpMachine.PerformLayout()
         tlpMachine.ResumeLayout(False)
@@ -1270,6 +1885,8 @@ Partial Class AdobeReaderHarnessForm
         grpCmd.PerformLayout()
         tlpCmd.ResumeLayout(False)
         tlpCmd.PerformLayout()
+        tlpRight.ResumeLayout(False)
+        tlpRight.PerformLayout()
         pnlButtons.ResumeLayout(False)
         pnlButtons.PerformLayout()
         ResumeLayout(False)

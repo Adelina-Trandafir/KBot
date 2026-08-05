@@ -36,4 +36,13 @@
     <ProjectReference Include="..\..\src\KBot.DevHarness\KBot.DevHarness.vbproj" />
   </ItemGroup>
 
+  <!-- Import la nivel de proiect, același tipar ca «KBot.Common» din KBot.Controls.vbproj.
+       Felia 0024-03 a mutat mecanismul de registry (IRegistryAccess, RegistryValueSnapshot,
+       RegistrySnapshotSet, AdobeHiveResolver, AdobeRegistryConstants) din KBot.DevHarness în
+       KBot.Controls, ca previzualizarea LIVRATĂ să folosească exact același cod ca bancul, nu o a
+       doua copie a lui. Testele îl referă acum de acolo. -->
+  <ItemGroup>
+    <Import Include="KBot.Controls" />
+  </ItemGroup>
+
 </Project>

@@ -36,10 +36,13 @@ Public NotInheritable Class AdobeReaderSwitchesTest
         Using f As New AdobeReaderHarnessForm(AddressOf context.Log)
             verdict = f.ShowDialog()
         End Using
+        ' Yes/No, nu OK/Cancel: butoanele Pass/Fail poartă DialogResult.Yes / .No tocmai ca să
+        ' rămână LIBER `Cancel` pentru «am închis fereastra fără să dau un verdict» (X / Alt+F4).
+        ' Cu OK/Cancel, închiderea cu X ar fi fost indistinctă de un «Fail» apăsat intenționat.
         Select Case verdict
-            Case DialogResult.OK
+            Case DialogResult.Yes
                 Return Task.FromResult(HarnessTestResult.Passed("încorporare + switch-uri OK"))
-            Case DialogResult.Cancel
+            Case DialogResult.No
                 Return Task.FromResult(HarnessTestResult.Failed("respins de operator"))
             Case Else
                 Return Task.FromResult(HarnessTestResult.Skipped("închis fără verdict"))

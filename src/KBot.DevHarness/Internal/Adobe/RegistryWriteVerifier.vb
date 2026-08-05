@@ -1,6 +1,9 @@
 Option Strict On
 Imports System.Globalization
 Imports Microsoft.Win32
+' RegistryValueSnapshot / RegPresence au trecut în KBot.Controls (felia 0024-03), ca previzualizarea
+' livrată să poată folosi ACELAȘI mecanism de instantaneu ca bancul, nu o a doua copie a lui.
+Imports KBot.Controls
 
 ' Verdict of comparing what was INTENDED against what the registry actually holds afterwards
 ' (slice 0023). Pure: the caller does the read-back and hands the snapshot in.

@@ -25,6 +25,9 @@ Partial Class ReaderHostPreview
         btnGenereaza = New Button()
         lblMessage = New Label()
         lblNote = New Label()
+        pnlLoading = New Panel()
+        lblLoading = New Label()
+        pnlLoading.SuspendLayout()
         pnlMissing.SuspendLayout()
         tblMissing.SuspendLayout()
         SuspendLayout()
@@ -102,16 +105,39 @@ Partial Class ReaderHostPreview
         lblNote.TextAlign = ContentAlignment.MiddleLeft
         lblNote.Visible = False
         '
+        ' pnlLoading — starea „încorporare în curs".
+        ' A patra stare, alături de pnlHost / pnlMissing / lblMessage. Există fiindcă între cererea
+        ' documentului și încorporarea ferestrei Adobe pot trece secunde, iar înainte panoul rămânea
+        ' un dreptunghi gol — operatorul nu avea cum să distingă «se lucrează» de «s-a stricat».
+        '
+        pnlLoading.Controls.Add(lblLoading)
+        pnlLoading.Dock = DockStyle.Fill
+        pnlLoading.Location = New Point(0, 0)
+        pnlLoading.Name = "pnlLoading"
+        pnlLoading.TabIndex = 4
+        pnlLoading.Visible = False
+        '
+        ' lblLoading
+        '
+        lblLoading.Dock = DockStyle.Fill
+        lblLoading.Font = New Font("Segoe UI", 10F)
+        lblLoading.Name = "lblLoading"
+        lblLoading.TabIndex = 0
+        lblLoading.Text = "Se încarcă documentul…"
+        lblLoading.TextAlign = ContentAlignment.MiddleCenter
+        '
         ' ReaderHostPreview
         '
         AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(pnlHost)
         Controls.Add(pnlMissing)
+        Controls.Add(pnlLoading)
         Controls.Add(lblMessage)
         Controls.Add(lblNote)
         Name = "ReaderHostPreview"
         Size = New Size(641, 460)
+        pnlLoading.ResumeLayout(False)
         pnlMissing.ResumeLayout(False)
         tblMissing.ResumeLayout(False)
         tblMissing.PerformLayout()
@@ -125,4 +151,6 @@ Partial Class ReaderHostPreview
     Friend WithEvents btnGenereaza As Button
     Friend WithEvents lblMessage As Label
     Friend WithEvents lblNote As Label
+    Friend WithEvents pnlLoading As Panel
+    Friend WithEvents lblLoading As Label
 End Class

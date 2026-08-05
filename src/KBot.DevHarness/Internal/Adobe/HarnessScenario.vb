@@ -49,6 +49,9 @@ Public NotInheritable Class HarnessScenario
     <JsonPropertyName("move")>
     Public Property Move As MoveConfig
 
+    <JsonPropertyName("hosting")>
+    Public Property Hosting As HostingConfig
+
     <JsonPropertyName("keys")>
     Public Property Keys As List(Of KeyStepConfig)
 
@@ -198,6 +201,61 @@ Public NotInheritable Class MoveConfig
     Public Function IsNoOp() As Boolean
         Return HostedWindowGeometry.IsNeutral(EffectiveDx(), EffectiveDy(), EffectiveDw(), EffectiveDh())
     End Function
+End Class
+
+' How the window is CAUGHT and how it is LET GO (slice 0024-03). These are the two halves of the
+' defect that slice fixed — a window seen on screen before it was embedded, and a window left alive
+' with a taskbar button afterwards — so a bench state that does not record them cannot reproduce the
+' comparison the operator is being asked to make.
+'
+' `detachMode` is text ("kill" / "close"), not a number: a scenario is read by people, and a 0 in a
+' file tells nobody which mode ran. An unrecognised value falls back to "kill" WITH A WARNING, the
+' same rule the rest of the reader follows.
+Public NotInheritable Class HostingConfig
+
+    Public Const DetachKill As String = "kill"
+    Public Const DetachClose As String = "close"
+    Public Const DefaultCloseGraceMs As Integer = 1500
+
+    <JsonPropertyName("detachMode")>
+    Public Property DetachMode As String
+
+    <JsonPropertyName("useCreationHook")>
+    Public Property UseCreationHook As Boolean?
+
+    <JsonPropertyName("captureDelayMs")>
+    Public Property CaptureDelayMs As Integer?
+
+    <JsonPropertyName("closeGraceMs")>
+    Public Property CloseGraceMs As Integer?
+
+    <JsonExtensionData>
+    Public Property Extra As Dictionary(Of String, JsonElement)
+
+    ''' <summary>True when the file asked for mode B. Anything unrecognised means mode A.</summary>
+    Public Function WantsCloseWindow() As Boolean
+        Return String.Equals(DetachMode, DetachClose, StringComparison.OrdinalIgnoreCase)
+    End Function
+
+    ''' <summary>Nothing when the value is recognised (or absent); a warning otherwise.</summary>
+    Public Function DetachModeWarning() As String
+        If String.IsNullOrWhiteSpace(DetachMode) Then Return Nothing
+        If String.Equals(DetachMode, DetachKill, StringComparison.OrdinalIgnoreCase) Then Return Nothing
+        If String.Equals(DetachMode, DetachClose, StringComparison.OrdinalIgnoreCase) Then Return Nothing
+        Return $"hosting.detachMode «{DetachMode}» nu e recunoscut (aștept «{DetachKill}» sau " &
+               $"«{DetachClose}») — folosesc «{DetachKill}»."
+    End Function
+
+    Public Function EffectiveCaptureDelayMs() As Integer
+        If CaptureDelayMs.HasValue AndAlso CaptureDelayMs.Value > 0 Then Return CaptureDelayMs.Value
+        Return 0
+    End Function
+
+    Public Function EffectiveCloseGraceMs() As Integer
+        If CloseGraceMs.HasValue AndAlso CloseGraceMs.Value > 0 Then Return CloseGraceMs.Value
+        Return DefaultCloseGraceMs
+    End Function
+
 End Class
 
 Public NotInheritable Class KeyStepConfig
