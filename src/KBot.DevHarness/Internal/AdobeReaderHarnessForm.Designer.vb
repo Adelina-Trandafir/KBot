@@ -108,6 +108,8 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents btnAcroPrefs As System.Windows.Forms.Button
     Friend WithEvents btnAcroHideChrome As System.Windows.Forms.Button
     Friend WithEvents btnAcroCollapse As System.Windows.Forms.Button
+    Friend WithEvents btnAcroHud As System.Windows.Forms.Button
+    Friend WithEvents btnAcroHudApply As System.Windows.Forms.Button
     Friend WithEvents tmrAcroVerify As System.Windows.Forms.Timer
     Friend WithEvents pnlAcroHost As System.Windows.Forms.Panel
     Friend WithEvents tlpMove As System.Windows.Forms.TableLayoutPanel
@@ -245,6 +247,8 @@ Partial Class AdobeReaderHarnessForm
         btnAcroPrefs = New Button()
         btnAcroHideChrome = New Button()
         btnAcroCollapse = New Button()
+        btnAcroHud = New Button()
+        btnAcroHudApply = New Button()
         tmrAcroVerify = New Timer(components)
         pnlAcroHost = New Panel()
         tlpMove = New TableLayoutPanel()
@@ -1062,6 +1066,8 @@ Partial Class AdobeReaderHarnessForm
         flowAcroButtons.Controls.Add(btnAcroSecond)
         flowAcroButtons.Controls.Add(btnAcroClear)
         flowAcroButtons.Controls.Add(btnAcroCollapse)
+        flowAcroButtons.Controls.Add(btnAcroHud)
+        flowAcroButtons.Controls.Add(btnAcroHudApply)
         flowAcroButtons.Controls.Add(btnAcroHideChrome)
         flowAcroButtons.Controls.Add(btnAcroProbe)
         flowAcroButtons.Controls.Add(btnAcroPrefs)
@@ -1104,6 +1110,25 @@ Partial Class AdobeReaderHarnessForm
         btnAcroCollapse.TabIndex = 3
         btnAcroCollapse.Text = "Colapsează panourile (butonul Adobe)"
         btnAcroCollapse.UseVisualStyleBackColor = True
+        '
+        ' btnAcroHud / btnAcroHudApply — bara plutitoare (HUD-ul lui Adobe).
+        ' Sonda cealaltă NU o vede: ea umblă prin COPIII controlului, iar bara e o fereastră de nivel
+        ' SUPERIOR. AcroPDF fiind server COM IN-PROCESS, bara aparține procesului NOSTRU, deci se
+        ' poate enumera și muta fără complicațiile de peste graniță de proces.
+        ' Poziția NU e în registry (operatorul a mutat-o între două instantanee și niciuna dintre
+        ' cele 106 valori nu s-a schimbat), deci singura cale de a o reproduce e mutarea ferestrei.
+        '
+        btnAcroHud.AutoSize = True
+        btnAcroHud.Name = "btnAcroHud"
+        btnAcroHud.TabIndex = 4
+        btnAcroHud.Text = "Bara plutitoare: sondează și reține"
+        btnAcroHud.UseVisualStyleBackColor = True
+        '
+        btnAcroHudApply.AutoSize = True
+        btnAcroHudApply.Name = "btnAcroHudApply"
+        btnAcroHudApply.TabIndex = 5
+        btnAcroHudApply.Text = "Bara plutitoare: reaplică poziția"
+        btnAcroHudApply.UseVisualStyleBackColor = True
         '
         ' tmrAcroVerify — Adobe reașază ASINCRON, deci verificarea se face după o pauză, nu imediat.
         '

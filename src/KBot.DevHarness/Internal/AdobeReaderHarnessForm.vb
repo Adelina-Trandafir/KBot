@@ -754,6 +754,131 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' cut off above the pane that matters answers nothing.
     Private Const ACRO_PROBE_DEPTH As Integer = 7
 
+    ' The floating bar's remembered position, and the class that identified it. Nothing is persisted
+    ' to disk yet — first the window has to be identified beyond doubt.
+    Private _hudRect As Rectangle = Rectangle.Empty
+    Private _hudClass As String = Nothing
+    Private _hudText As String = Nothing
+
+    ''' <summary>
+    ''' Finds the floating bar (Adobe's HUD) and remembers where it is.
+    '''
+    ''' WHY THE OTHER PROBE CANNOT SEE IT. <see cref="AdobeWindowProbe"/> walks the CHILDREN of the
+    ''' ActiveX control; the floating bar is a TOP-LEVEL popup, so it is not in that tree at all.
+    '''
+    ''' WHY THIS IS EASIER THAN IT LOOKS. AcroPDF is an IN-PROCESS COM server — the control runs
+    ''' inside this very process, not inside a separate Acrobat. So the popup belongs to OUR process
+    ''' id, and none of the cross-process caveats that dog the hosted window apply here.
+    '''
+    ''' The position is NOT in the registry: the operator moved the bar between two AVGeneral
+    ''' snapshots and not one of the 106 values changed (`iNumUserDockUndockHUD` is a dock/undock
+    ''' COUNTER, still 0). So it lives in memory, which means the only way to reproduce it is to move
+    ''' the window — hence <see cref="btnAcroHudApply_Click"/>.
+    ''' </summary>
+    Private Sub btnAcroHud_Click(sender As Object, e As EventArgs) Handles btnAcroHud.Click
+        Try
+            Dim myPid As Integer = Process.GetCurrentProcess().Id
+            Dim win As INativeWindows = Win32Windows.Instance
+            Dim ours As New HashSet(Of IntPtr)()
+            For Each f As Form In Application.OpenForms
+                If f.IsHandleCreated Then ours.Add(f.Handle)
+            Next
+
+            RhpLog($"── Sondă bara plutitoare (ferestre de nivel superior ale procesului {myPid}) ──")
+            Dim best As IntPtr = IntPtr.Zero
+            Dim bestArea As Long = Long.MaxValue
+            Dim shown As Integer = 0
+
+            For Each h As IntPtr In win.EnumTopLevelWindows()
+                If win.OwnerPid(h) <> myPid Then Continue For
+                If ours.Contains(h) Then Continue For            ' our own forms
+                Dim cls As String = win.GetClass(h)
+                Dim txt As String = win.GetTitle(h)
+                Dim r As Rectangle = AdobeWindowHosting.RectInParent(h)
+                Dim vis As Boolean = win.IsWindowVisible(h)
+                If r.Width <= 0 OrElse r.Height <= 0 Then Continue For
+                shown += 1
+                RhpLog($"    cls={cls} text=«{txt}» {r.X},{r.Y} {r.Width}x{r.Height} vis={If(vis, 1, 0)}")
+
+                ' The bar is small, visible and floating. Smallest visible non-form window wins.
+                Dim area As Long = CLng(r.Width) * r.Height
+                If vis AndAlso area < bestArea Then
+                    bestArea = area
+                    best = h
+                End If
+            Next
+
+            If shown = 0 Then
+                RhpLog("  Nicio fereastră de nivel superior în afară de formularele noastre. " &
+                       "Bara plutitoare nu era pe ecran în acest moment — arat-o întâi (mișcă mouse-ul " &
+                       "peste document), apoi sondează.")
+                ShowStatus("Bara plutitoare nu e vizibilă acum.")
+                Return
+            End If
+
+            If best = IntPtr.Zero Then
+                RhpLog("  Niciun candidat VIZIBIL — nu rețin nimic.")
+                Return
+            End If
+
+            _hudRect = AdobeWindowHosting.RectInParent(best)
+            _hudClass = win.GetClass(best)
+            _hudText = win.GetTitle(best)
+            RhpLog($"  REȚINUT ca bară plutitoare: cls={_hudClass} text=«{_hudText}» " &
+                   $"la {_hudRect.X},{_hudRect.Y} {_hudRect.Width}x{_hudRect.Height}.")
+            RhpLog("  EURISTIC (cea mai mică fereastră vizibilă a procesului, în afara formularelor " &
+                   "noastre) — confirmă din listă că e chiar ea înainte de a te baza pe asta.")
+            ShowStatus($"Bară plutitoare reținută la {_hudRect.X},{_hudRect.Y}.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroHud_Click", ex)
+            RhpLog("Sonda barei plutitoare a eșuat — " & ex.Message)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Puts the floating bar back where it was remembered. Matched by CLASS + TEXT, never by handle:
+    ''' Adobe destroys and recreates this popup, so a handle recorded a moment ago is worthless —
+    ''' the same rule slice 0023 established for the hosted window's children.
+    ''' </summary>
+    Private Sub btnAcroHudApply_Click(sender As Object, e As EventArgs) Handles btnAcroHudApply.Click
+        Try
+            If _hudRect.IsEmpty OrElse String.IsNullOrEmpty(_hudClass) Then
+                ShowStatus("Sondează întâi bara plutitoare, ca să am ce reaplica.")
+                Return
+            End If
+
+            Dim myPid As Integer = Process.GetCurrentProcess().Id
+            Dim win As INativeWindows = Win32Windows.Instance
+            Dim target As IntPtr = IntPtr.Zero
+            For Each h As IntPtr In win.EnumTopLevelWindows()
+                If win.OwnerPid(h) <> myPid Then Continue For
+                If Not String.Equals(win.GetClass(h), _hudClass, StringComparison.OrdinalIgnoreCase) Then Continue For
+                If Not String.Equals(If(win.GetTitle(h), ""), If(_hudText, ""), StringComparison.OrdinalIgnoreCase) Then Continue For
+                target = h
+                Exit For
+            Next
+
+            If target = IntPtr.Zero Then
+                RhpLog($"  Bara plutitoare (cls={_hudClass}) nu e pe ecran acum — nimic de mutat.")
+                ShowStatus("Bara plutitoare nu e vizibilă acum.")
+                Return
+            End If
+
+            Dim before As Rectangle = AdobeWindowHosting.RectInParent(target)
+            AdobeWindowHosting.Place(target, _hudRect)
+            Dim after As Rectangle = AdobeWindowHosting.RectInParent(target)
+            RhpLog($"  Bară plutitoare: cerut {_hudRect.X},{_hudRect.Y} {_hudRect.Width}x{_hudRect.Height} — " &
+                   $"{before.X},{before.Y} -> {after.X},{after.Y}.")
+            If after.Location <> _hudRect.Location Then
+                RhpLog("  ATENȚIE: nu a ajuns unde s-a cerut (Adobe a refuzat sau o repoziționează singur).")
+            End If
+            ShowStatus($"Bară plutitoare mutată la {after.X},{after.Y}.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroHudApply_Click", ex)
+            RhpLog("Reaplicarea poziției barei a eșuat — " & ex.Message)
+        End Try
+    End Sub
+
     ''' <summary>
     ''' Makes Adobe perform its FIRST layout, which it otherwise postpones until the control gets
     ''' some input.

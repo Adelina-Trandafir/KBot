@@ -256,10 +256,35 @@ rectangles.
 That distinction cost a run: the collapse button saw `0x0`, reported «deja colapsată» and refused to
 press. Both states have width 0 and only the height tells them apart.
 
-`WakeAcroLayout` now escalates cheapest-first — focus, then a size change, then a synthetic click
-into `AVDocumentMainView` — and **logs which step worked**, because the cheap steps are the ones safe
-to run on every load. It runs automatically after each `LoadFile`, guarded by
-`IsAcroLayoutDegenerate` so a healthy layout is never touched.
+`WakeAcroLayout` escalates cheapest-first — focus, then a size change, then a synthetic click into
+`AVDocumentMainView` — and **logs which step worked**. It runs automatically after each `LoadFile`,
+guarded by `IsAcroLayoutDegenerate` so a healthy layout is never touched.
+
+**Answered on the next run: the SIZE CHANGE is what does it.** Twice, at 21:27:15 and 21:27:35 —
+`REZOLVAT cu schimbarea de dimensiune`. Focus alone is not enough, and the synthetic click into the
+document is never reached. So the automatic wake costs one focus call and one one-pixel resize, and
+never has to touch the document.
+
+### The floating bar (Adobe's HUD)
+
+The operator moves it higher because it is otherwise off-screen, and asked whether that position can
+be detected and reproduced. Two facts settle how:
+
+* **It is not in the registry.** They moved it between two `AVGeneral` snapshots and **not one of the
+  106 values changed**. `iNumUserDockUndockHUD` is a dock/undock COUNTER, still 0. So the position
+  lives in process memory and can only be reproduced by moving the window.
+* **The existing probe cannot see it**, because `AdobeWindowProbe.Walk` walks the CHILDREN of the
+  control and the bar is a TOP-LEVEL popup.
+
+What makes this easy rather than hard: **AcroPDF is an in-process COM server**, so the popup belongs
+to *our own* process id. None of the cross-process caveats that dog the hosted window apply.
+`btnAcroHud` enumerates this process's top-level windows (excluding our own forms), logs each with
+class/text/rect/visibility, and remembers the smallest visible one; `btnAcroHudApply` puts it back,
+matching by **class + text, never by handle** — Adobe destroys and recreates the popup, the same rule
+slice 0023 established for the hosted window's children.
+
+The «smallest visible window» rule is a **heuristic**, and the log prints the full candidate list
+precisely so it can be confirmed rather than trusted.
 
 ### The pane state is NOT in the registry
 
