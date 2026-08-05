@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.Collections.Generic
 Imports System.Linq
 Imports Microsoft.Win32
 Imports KBot.Common
@@ -70,6 +71,22 @@ Public NotInheritable Class WinRegistryAccess
             End Using
         Catch ex As Exception
             GlobalErrorLog.Write("WinRegistryAccess.KeyExists", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Function ValueNames(path As String) As IReadOnlyList(Of String) Implements IRegistryAccess.ValueNames
+        Try
+            Dim hive As RegistryKey = Nothing
+            Dim subPath As String = Nothing
+            SplitPath(path, hive, subPath)
+            Using k As RegistryKey = hive.OpenSubKey(subPath, writable:=False)
+                ' A missing key is «nothing there», not a failure — same rule as Read.
+                If k Is Nothing Then Return New List(Of String)()
+                Return k.GetValueNames().OrderBy(Function(n) n, StringComparer.OrdinalIgnoreCase).ToList()
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("WinRegistryAccess.ValueNames", ex)
             Throw
         End Try
     End Function

@@ -58,4 +58,16 @@ Public NotInheritable Class FakeRegistryAccess
         Return _keys.Contains(path)
     End Function
 
+    Public Function ValueNames(path As String) As IReadOnlyList(Of String) Implements IRegistryAccess.ValueNames
+        Dim names As New List(Of String)()
+        Dim prefix As String = path & "|"
+        For Each key As String In _values.Keys
+            If key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) Then
+                names.Add(key.Substring(prefix.Length))
+            End If
+        Next
+        names.Sort(StringComparer.OrdinalIgnoreCase)
+        Return names
+    End Function
+
 End Class

@@ -104,6 +104,8 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents btnAcroSecond As System.Windows.Forms.Button
     Friend WithEvents btnAcroClear As System.Windows.Forms.Button
     Friend WithEvents chkAcroChrome As System.Windows.Forms.CheckBox
+    Friend WithEvents btnAcroProbe As System.Windows.Forms.Button
+    Friend WithEvents btnAcroPrefs As System.Windows.Forms.Button
     Friend WithEvents pnlAcroHost As System.Windows.Forms.Panel
     Friend WithEvents tlpMove As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents lblDx As System.Windows.Forms.Label
@@ -236,6 +238,8 @@ Partial Class AdobeReaderHarnessForm
         btnAcroSecond = New Button()
         btnAcroClear = New Button()
         chkAcroChrome = New CheckBox()
+        btnAcroProbe = New Button()
+        btnAcroPrefs = New Button()
         pnlAcroHost = New Panel()
         tlpMove = New TableLayoutPanel()
         lblDx = New Label()
@@ -1051,6 +1055,8 @@ Partial Class AdobeReaderHarnessForm
         flowAcroButtons.Controls.Add(btnAcroLoad)
         flowAcroButtons.Controls.Add(btnAcroSecond)
         flowAcroButtons.Controls.Add(btnAcroClear)
+        flowAcroButtons.Controls.Add(btnAcroProbe)
+        flowAcroButtons.Controls.Add(btnAcroPrefs)
         flowAcroButtons.Controls.Add(chkAcroChrome)
         flowAcroButtons.Dock = DockStyle.Fill
         flowAcroButtons.Margin = New Padding(0)
@@ -1080,6 +1086,26 @@ Partial Class AdobeReaderHarnessForm
         btnAcroClear.TabIndex = 2
         btnAcroClear.Text = "Golește"
         btnAcroClear.UseVisualStyleBackColor = True
+        '
+        ' btnAcroProbe — arborele de ferestre DIN INTERIORUL controlului ActiveX, la cerere.
+        ' Panourile lui Adobe apar/dispar/plutesc în funcție de starea dinainte; asta e STRUCTURĂ DE
+        ' FERESTRE, deci se citește cu aceeași sondă ca fereastra găzduită, nu se ghicește.
+        '
+        btnAcroProbe.AutoSize = True
+        btnAcroProbe.Name = "btnAcroProbe"
+        btnAcroProbe.TabIndex = 3
+        btnAcroProbe.Text = "Sondează ActiveX"
+        btnAcroProbe.UseVisualStyleBackColor = True
+        '
+        ' btnAcroPrefs — dump COMPLET al cheii AVGeneral, fără să numească nimic.
+        ' Starea panourilor persistă între documente, deci Adobe o scrie undeva; enumerăm toată
+        ' cheia înainte și după o acțiune, iar valoarea care s-a schimbat se numește SINGURĂ.
+        '
+        btnAcroPrefs.AutoSize = True
+        btnAcroPrefs.Name = "btnAcroPrefs"
+        btnAcroPrefs.TabIndex = 4
+        btnAcroPrefs.Text = "Instantaneu AVGeneral"
+        btnAcroPrefs.UseVisualStyleBackColor = True
         '
         ' chkAcroChrome — API-ul DOCUMENTAT al controlului pentru ascunderea barelor. Bifat implicit:
         ' asta e întrebarea deschisă acum, iar ascunderea barelor e exact problema pe care felia 0023

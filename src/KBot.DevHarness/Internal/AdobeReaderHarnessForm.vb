@@ -750,6 +750,91 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
+    ' Depth 4 is enough for the hosted window; the ActiveX control nests its panes deeper, and a tree
+    ' cut off above the pane that matters answers nothing.
+    Private Const ACRO_PROBE_DEPTH As Integer = 7
+
+    ''' <summary>
+    ''' Dumps the window tree INSIDE the ActiveX control.
+    '''
+    ''' This exists for the pane behaviour reported on 05.08.2026: which of Adobe's bars appear,
+    ''' which collapse/expand buttons are present, whether the floating bar shows, and whether the
+    ''' document view has any size at all — ALL of it depends on the state left behind by the
+    ''' previous document, and all of it is window structure. Run it after each step of a sequence
+    ''' and diff the dumps; that is the difference between a description and a diagnosis.
+    '''
+    ''' Same probe as the hosted window (<see cref="AdobeWindowProbe"/>), so a node that looks odd
+    ''' here can be compared directly with the embedded-window case.
+    ''' </summary>
+    Private Sub btnAcroProbe_Click(sender As Object, e As EventArgs) Handles btnAcroProbe.Click
+        Try
+            If _acroHost Is Nothing OrElse Not _acroHost.IsHandleCreated Then
+                ShowStatus("Încarcă întâi un document în ActiveX.")
+                RhpLog("Sondă ActiveX: controlul nu e creat încă — nimic de sondat.")
+                Return
+            End If
+
+            Dim nodes As List(Of AdobeWindowNode) =
+                AdobeWindowProbe.Walk(_acroHost.Handle, pnlAcroHost.Handle, ACRO_PROBE_DEPTH)
+            RhpLog($"── Sondă ActiveX (hwnd control 0x{_acroHost.Handle.ToInt64():X}, " &
+                   $"panou {pnlAcroHost.ClientSize.Width}x{pnlAcroHost.ClientSize.Height}, " &
+                   $"adâncime max {ACRO_PROBE_DEPTH}) ──")
+            For Each n As AdobeWindowNode In nodes
+                RhpLog(AdobeWindowProbe.DescribeNode(n))
+            Next
+
+            ' The one number that decides whether «nu se vede nimic» means «no document» or «the
+            ' document view was squeezed to nothing by the panes».
+            ' Where().Count(), not Count(predicate): List(Of T).Count is a PROPERTY and shadows the
+            ' LINQ overload, so the predicate form does not compile here.
+            Dim zeroSized As Integer =
+                nodes.Where(Function(n) n.Width <= 0 OrElse n.Height <= 0).Count()
+            RhpLog($"Sondă ActiveX: {nodes.Count} ferestre copil, dintre care {zeroSized} de " &
+                   "dimensiune ZERO. O vedere de document cu dimensiune zero explică un panou gol " &
+                   "fără ca documentul să lipsească.")
+            ShowStatus($"Sondă ActiveX: {nodes.Count} ferestre copil ({zeroSized} de dimensiune zero).")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroProbe_Click", ex)
+            RhpLog("Sondă ActiveX: eșec — " & ex.Message)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Dumps EVERY value under both AVGeneral hives, naming nothing in advance.
+    '''
+    ''' The pane state survives from one document to the next, so Adobe writes it somewhere. Rather
+    ''' than guess a key name — the house rule in <see cref="AdobeRegistryConstants"/> is that an
+    ''' invented name is worse than an absent one — enumerate the whole key before and after an
+    ''' action and let the value that changed name itself.
+    ''' </summary>
+    Private Sub btnAcroPrefs_Click(sender As Object, e As EventArgs) Handles btnAcroPrefs.Click
+        Try
+            RhpLog("── Instantaneu AVGeneral (toate valorile, în ambele hive-uri) ──")
+            Dim total As Integer = 0
+            For Each hive As String In New String() {
+                AdobeRegistryConstants.AvGeneralReader, AdobeRegistryConstants.AvGeneralAcrobat}
+
+                If Not _regAccess.KeyExists(hive) Then
+                    RhpLog($"  {hive} — cheia LIPSEȘTE")
+                    Continue For
+                End If
+                Dim names As IReadOnlyList(Of String) = _regAccess.ValueNames(hive)
+                RhpLog($"  {hive} — {names.Count} valori")
+                For Each n As String In names
+                    Dim snap As RegistryValueSnapshot = _regAccess.Read(hive, n)
+                    RhpLog($"    {n} = {Convert.ToString(snap.Value)} ({snap.Kind})")
+                    total += 1
+                Next
+            Next
+            RhpLog($"Instantaneu AVGeneral: {total} valori. Ia unul ÎNAINTE și unul DUPĂ acțiune — " &
+                   "valoarea care s-a schimbat e cea care ține starea panourilor.")
+            ShowStatus($"Instantaneu AVGeneral: {total} valori în jurnal.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroPrefs_Click", ex)
+            RhpLog("Instantaneu AVGeneral: eșec — " & ex.Message)
+        End Try
+    End Sub
+
     Private Sub btnAcroClear_Click(sender As Object, e As EventArgs) Handles btnAcroClear.Click
         Try
             If _acroHost Is Nothing Then Return
