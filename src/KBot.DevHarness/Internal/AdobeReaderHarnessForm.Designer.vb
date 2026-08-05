@@ -103,6 +103,7 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents btnAcroLoad As System.Windows.Forms.Button
     Friend WithEvents btnAcroSecond As System.Windows.Forms.Button
     Friend WithEvents btnAcroClear As System.Windows.Forms.Button
+    Friend WithEvents chkAcroChrome As System.Windows.Forms.CheckBox
     Friend WithEvents pnlAcroHost As System.Windows.Forms.Panel
     Friend WithEvents tlpMove As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents lblDx As System.Windows.Forms.Label
@@ -234,6 +235,7 @@ Partial Class AdobeReaderHarnessForm
         btnAcroLoad = New Button()
         btnAcroSecond = New Button()
         btnAcroClear = New Button()
+        chkAcroChrome = New CheckBox()
         pnlAcroHost = New Panel()
         tlpMove = New TableLayoutPanel()
         lblDx = New Label()
@@ -1049,6 +1051,7 @@ Partial Class AdobeReaderHarnessForm
         flowAcroButtons.Controls.Add(btnAcroLoad)
         flowAcroButtons.Controls.Add(btnAcroSecond)
         flowAcroButtons.Controls.Add(btnAcroClear)
+        flowAcroButtons.Controls.Add(chkAcroChrome)
         flowAcroButtons.Dock = DockStyle.Fill
         flowAcroButtons.Margin = New Padding(0)
         flowAcroButtons.Name = "flowAcroButtons"
@@ -1077,6 +1080,19 @@ Partial Class AdobeReaderHarnessForm
         btnAcroClear.TabIndex = 2
         btnAcroClear.Text = "Golește"
         btnAcroClear.UseVisualStyleBackColor = True
+        '
+        ' chkAcroChrome — API-ul DOCUMENTAT al controlului pentru ascunderea barelor. Bifat implicit:
+        ' asta e întrebarea deschisă acum, iar ascunderea barelor e exact problema pe care felia 0023
+        ' a atacat-o cinci pași cu decupare, ascundere de copii, registry și taste.
+        '
+        chkAcroChrome.AutoSize = True
+        chkAcroChrome.Checked = True
+        chkAcroChrome.CheckState = CheckState.Checked
+        chkAcroChrome.Margin = New Padding(18, 9, 3, 3)
+        chkAcroChrome.Name = "chkAcroChrome"
+        chkAcroChrome.TabIndex = 3
+        chkAcroChrome.Text = "Ascunde barele (setShowToolbar / setPageMode / setShowScrollbars)"
+        chkAcroChrome.UseVisualStyleBackColor = True
         '
         ' pnlAcroHost — aici se creează controlul AxHost la rulare (nu se poate în Designer fără
         ' interop generat, iar felia asta refuză explicit aximp/referințe COM).

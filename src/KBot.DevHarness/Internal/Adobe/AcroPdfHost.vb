@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.Collections.Generic
 Imports System.Reflection
 Imports System.Windows.Forms
 Imports Microsoft.Win32
@@ -76,6 +77,53 @@ Friend NotInheritable Class AcroPdfHost
         ' must not be reported as a failure it did not report.
         If TypeOf result Is Boolean Then Return CBool(result)
         Return True
+    End Function
+
+    ''' <summary>
+    ''' Turns off every piece of Adobe chrome the control exposes a method for, and reports what
+    ''' each call did.
+    '''
+    ''' WHY THIS MATTERS MORE THAN IT LOOKS. Hiding Adobe's toolbars is the problem slice 0023 spent
+    ''' five passes on and never solved cleanly — clip geometry, hiding child windows by text,
+    ''' HKCU preferences, HKLM policies, keyboard toggles. The ActiveX control has a DOCUMENTED API
+    ''' for the same thing. If these four calls work, they replace that entire apparatus.
+    '''
+    ''' Each call is made and reported INDEPENDENTLY, because the interesting answer is *which* ones
+    ''' this Adobe build honours — a single pass/fail would hide that. A member the control does not
+    ''' expose is a fact to record, not an error.
+    ''' </summary>
+    Public Function ApplyChrome() As List(Of String)
+        Dim results As New List(Of String)()
+        Dim ocx As Object = GetOcx()
+        If ocx Is Nothing Then
+            results.Add("AcroPDF: controlul nu e creat — nu pot aplica setările de chrome.")
+            Return results
+        End If
+
+        ' Adobe's own names and argument shapes. Order follows their documentation.
+        results.Add(CallMember(ocx, "setShowToolbar", False))
+        results.Add(CallMember(ocx, "setShowScrollbars", False))
+        results.Add(CallMember(ocx, "setPageMode", "none"))
+        results.Add(CallMember(ocx, "setLayoutMode", "SinglePage"))
+        results.Add(CallMember(ocx, "setView", "Fit"))
+        Return results
+    End Function
+
+    ' One reflection call, reduced to one log line. Never throws: a member this build does not have
+    ' is exactly the kind of thing the bench exists to discover.
+    Private Shared Function CallMember(ocx As Object, memberName As String, arg As Object) As String
+        Try
+            ocx.GetType().InvokeMember(memberName, BindingFlags.InvokeMethod, Nothing, ocx,
+                                       New Object() {arg})
+            Return $"  {memberName}({arg}) — OK"
+        Catch ex As MissingMethodException
+            Return $"  {memberName}({arg}) — NU EXISTĂ pe acest build"
+        Catch ex As Exception
+            ' TargetInvocationException wraps whatever the control itself threw; the inner message is
+            ' the informative one.
+            Dim detail As String = If(ex.InnerException Is Nothing, ex.Message, ex.InnerException.Message)
+            Return $"  {memberName}({arg}) — EȘEC: {detail}"
+        End Try
     End Function
 
     ''' <summary>Calls <c>src = ""</c> / <c>LoadFile("")</c> to blank the control, best-effort.</summary>

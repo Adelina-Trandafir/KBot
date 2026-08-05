@@ -791,8 +791,28 @@ Public NotInheritable Class AdobeReaderHarnessForm
             ShowStatus(warning)
         End If
 
+        ' Barele se sting ÎNAINTE și DIN NOU DUPĂ încărcare, iar ambele treceri se loghează separat.
+        ' Documentația Adobe și practica nu sunt de acord care ordine ține pe ce build, iar bancul e
+        ' exact locul unde întrebarea asta se rezolvă prin măsurare, nu prin citit de forumuri.
+        If chkAcroChrome.Checked Then
+            RhpLog("AcroPDF: ascund barele ÎNAINTE de încărcare —")
+            For Each line As String In host.ApplyChrome()
+                RhpLog(line)
+            Next
+        End If
+
         Dim ok As Boolean = host.LoadFile(pdf)
         RhpLog($"AcroPDF: LoadFile({what}) = {ok} — «{pdf}».")
+
+        If chkAcroChrome.Checked Then
+            RhpLog("AcroPDF: ascund barele DUPĂ încărcare —")
+            For Each line As String In host.ApplyChrome()
+                RhpLog(line)
+            Next
+            RhpLog("AcroPDF: DE CONSEMNAT — au dispărut barele? Dacă da, API-ul ăsta înlocuiește " &
+                   "decuparea, ascunderea ferestrelor copil și cheile de registry din felia 0023.")
+        End If
+
         RhpLog("AcroPDF: VERDICTUL DE CONSEMNAT — se vede documentul XFA randat, sau substitutul " &
                "Adobe («Please wait…»)? Notează care dintre ele, e singura întrebare a acestei secțiuni.")
         ShowStatus($"AcroPDF: LoadFile a întors {ok}. Verifică pe ecran ce s-a randat.")

@@ -167,7 +167,30 @@ entirely — the two cannot run side by side on one document, so there is no gra
 which both are live. That does not change §11: there is still no shipping dependency on AcroPDF.
 
 The bench now warns when the two collide, so the next person meets a log line instead of a grey
-rectangle.
+rectangle. Confirmed afterwards by the operator: **`ORD_009.pdf` renders normally in the control once
+it is not simultaneously hosted.** The collision was the whole of it.
+
+### What is still wrong with the ActiveX surface: the toolbars
+
+The rendered document arrives **with all of Adobe's toolbars visible**. That is the same problem
+slice 0023 spent five passes on — clip geometry, hiding child windows by text, HKCU preferences,
+HKLM policies, keyboard toggles — and never solved cleanly.
+
+The difference is that the ActiveX control has a **documented API** for it. `AcroPdfHost.ApplyChrome`
+now calls, by reflection, each of `setShowToolbar(False)`, `setShowScrollbars(False)`,
+`setPageMode("none")`, `setLayoutMode("SinglePage")` and `setView("Fit")`, **reporting each one
+independently** — the interesting answer is *which* of them this Adobe build honours, and a single
+pass/fail would hide that. A member the control does not expose is logged as «NU EXISTĂ pe acest
+build», which is a result, not an error.
+
+The calls are made **before and again after** `LoadFile`, with the two passes logged separately,
+because the documentation and common practice disagree about which ordering takes effect on which
+build. The bench is the right place to settle that by measurement.
+
+**If those calls work, they replace the entire clip / hide-children / registry apparatus with four
+method calls.** That is the open question now, and it is a bigger one than the original §8 verdict.
+It is gated behind the «Ascunde barele» checkbox (on by default) and, per §11, nothing in `KBot.App`
+depends on any of it.
 
 ## Files touched
 
@@ -261,10 +284,15 @@ the change, which is what it is for.
   mode can close the window**; it only dies when the host panel does. Mode A remains the right
   shipped default. Whether B behaves differently against a window K-BOT actually launched (`/n`
   honoured) is still unverified, as is the new Acrobat UI.
-* ~~The AcroPDF verdict is NOT recorded~~ — **RECORDED and POSITIVE, see §3.** What remains open
-  there is narrower: whether `ORD_009.pdf` renders in the control once it is NOT also open in the
-  hosted window. The same-document collision explains the observation without needing that check,
-  but the check has not been run.
+* ~~The AcroPDF verdict is NOT recorded~~ — **RECORDED and POSITIVE, see §3**, and the
+  same-document collision is confirmed as the whole explanation of the one failure.
+* **THE NEW OPEN QUESTION, and it is the biggest one in this slice: do the ActiveX chrome calls
+  work?** The document renders but with every Adobe toolbar showing. `ApplyChrome` is written and
+  wired (five documented calls, each reported independently, applied before AND after `LoadFile`)
+  but **has never been run**. If Adobe honours them, four method calls replace the clip geometry,
+  the child-window hiding and the registry keys that slice 0023 spent five passes on. If it ignores
+  them, the ActiveX route is no better than window hosting on the problem that actually matters,
+  and the positive render verdict does not save it.
 * **The §5 `bEnableAv2` table is empty.** Whether the opt-out is still honoured, per UI generation,
   has not been observed. `AdobeUiPreference` is inert (`ENFORCE_LEGACY_UI = False`), so its
   snapshot/restore path — including «absent restores to deletion» — has never executed in the app;
