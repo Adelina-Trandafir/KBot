@@ -215,6 +215,52 @@ pointed at the ActiveX control instead of the hosted window. `btnAcroHideChrome`
 classifies each window BEFORE touching it so «already hidden» and «zero-sized» cannot be reported as
 success — pass 4's lesson, applied before the same mistake could be repeated.
 
+### Correction: hiding is not collapsing, and the click IS the answer
+
+The first attempt at reproducing the state — `ShowWindow(SW_HIDE)` on those windows — **ran and did
+not work**, which the probe showed immediately:
+
+```
+after ShowWindow(SW_HIDE)   AVDockableTabStripView 67x697 vis=0, document x=67 w=792
+the state actually wanted   AVDockableTabStripView  0x697 vis=0, document x=0  w=859
+```
+
+Hiding leaves the **width**, so Adobe never re-lays-out. Adobe's own collapse sets the width to zero
+**and moves the siblings**. `vis=0` was a consequence, not the mechanism — reading the correlation as
+the cause is what produced a useless button.
+
+**Pressing Adobe's own button works.** Measured 05.08.2026 21:18:35:
+
+```
+Apăs butonul de la x=67 ... înainte: bandă 67x697 la x=0
+După click: bandă 0x697, document la x=0 lățime 859 (panou 886)   REUȘIT
+```
+
+A posted `WM_LBUTTONDOWN`/`WM_LBUTTONUP` on `AVExpandCollapseButtonView` makes Adobe do its own
+layout, which is the only version guaranteed to be self-consistent. The button toggles, so it is only
+pressed when the strip is actually expanded.
+
+**And the state persists across documents in the same Acrobat process** — at 19:22 the strip was
+already `0x697` before anything was clicked, after two loads. So this has to succeed **once per
+session**, not per document, which is much cheaper than the hosted-window case where every embed
+needs its hides re-applied.
+
+### The grey first document: Adobe postpones its first layout
+
+Reported symptom: the first document of a session stays grey until the operator clicks in the panel;
+afterwards it never recurs. The probe says exactly why — right after the first `LoadFile`, **26 of 28
+child windows are zero-sized** and the tab strip is `0x0`. After a click it drops to 18 with real
+rectangles.
+
+**Zero on BOTH axes is «not laid out», not «collapsed»** — a genuinely collapsed strip is `0x697`.
+That distinction cost a run: the collapse button saw `0x0`, reported «deja colapsată» and refused to
+press. Both states have width 0 and only the height tells them apart.
+
+`WakeAcroLayout` now escalates cheapest-first — focus, then a size change, then a synthetic click
+into `AVDocumentMainView` — and **logs which step worked**, because the cheap steps are the ones safe
+to run on every load. It runs automatically after each `LoadFile`, guarded by
+`IsAcroLayoutDegenerate` so a healthy layout is never touched.
+
 ### The pane state is NOT in the registry
 
 Fifteen `AVGeneral` snapshots, 106 values each, across every pane manipulation. **The only values
@@ -326,15 +372,18 @@ the change, which is what it is for.
   honoured) is still unverified, as is the new Acrobat UI.
 * ~~The AcroPDF verdict is NOT recorded~~ — **RECORDED and POSITIVE, see §3**, and the
   same-document collision is confirmed as the whole explanation of the one failure.
-* ~~Do the ActiveX chrome calls work?~~ **ANSWERED 05.08.2026: NO.** All five return OK and change
-  nothing — see §3. Hiding three child windows by text does work, and `btnAcroHideChrome` now does
-  it, but that has **not been run yet**: the mechanism is inferred from a probe diff of a state the
-  operator reached by hand, not from having reproduced it programmatically. Reproducing it with one
-  button click is the next check.
-* **Whether the hidden state SURVIVES the next document is unknown.** Adobe rebuilds these child
-  windows per document and the handles change every time — that is why slice 0023 addresses them by
-  text and re-applies after every embed. The same will almost certainly be needed here, and the
-  retry loop that exists for the hosted window has no equivalent in the ActiveX path yet.
+* ~~Do the ActiveX chrome calls work?~~ **ANSWERED: NO** (all five return OK and change nothing).
+  ~~Does hiding by text work?~~ **ANSWERED: NO** — hiding leaves the width and Adobe never reflows.
+  ~~Does pressing Adobe's own collapse button work?~~ **ANSWERED: YES, measured.** See §3.
+* **`WakeAcroLayout` has not been run.** Which of its three steps clears the grey first document —
+  focus, size change, or synthetic click — is unknown, and that is the whole point of it reporting
+  which one fired. Only the operator's manual click is known to work.
+* **The AcroPDF route is now a genuine candidate, and that is a decision, not a code change.** It
+  renders XFA, switches documents, reaches the wanted chrome state with one synthetic click, and
+  that state persists for the session. Against window hosting it looks better on every axis measured
+  so far. **Nothing in `KBot.App` depends on it (§11) and nothing should until somebody decides
+  that deliberately** — the remaining unknowns are whether the collapse click is reliable across
+  Adobe versions, and what happens when the host panel is resized.
 * **The §5 `bEnableAv2` table is empty.** Whether the opt-out is still honoured, per UI generation,
   has not been observed. `AdobeUiPreference` is inert (`ENFORCE_LEGACY_UI = False`), so its
   snapshot/restore path — including «absent restores to deletion» — has never executed in the app;

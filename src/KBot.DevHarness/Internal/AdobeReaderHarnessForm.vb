@@ -755,6 +755,82 @@ Public NotInheritable Class AdobeReaderHarnessForm
     Private Const ACRO_PROBE_DEPTH As Integer = 7
 
     ''' <summary>
+    ''' Makes Adobe perform its FIRST layout, which it otherwise postpones until the control gets
+    ''' some input.
+    '''
+    ''' THE SYMPTOM THIS FIXES (measured 05.08.2026): on the first document of a session the panel
+    ''' stays grey until the operator clicks somewhere inside it; afterwards it never happens again.
+    ''' The probe shows exactly that — right after the first <c>LoadFile</c>, 26 of 28 child windows
+    ''' are zero-sized and the tab strip is <c>0x0</c> (zero on BOTH axes = nothing laid out). After
+    ''' a click it drops to 18 and the panes have real rectangles.
+    '''
+    ''' Escalates, cheapest first, and reports which step did it — that is the useful outcome, since
+    ''' the cheap steps are the ones safe to run on every load.
+    ''' </summary>
+    Private Sub WakeAcroLayout()
+        Try
+            If _acroHost Is Nothing OrElse Not _acroHost.IsHandleCreated Then Return
+
+            RhpLog("── Trezesc aranjarea ActiveX ──")
+            RhpLog($"  înainte: {DegenerateReport()}")
+
+            ' 1. Focus. The cheapest thing that resembles «the operator clicked in it».
+            AdobeWindowHosting.FocusWindow(_acroHost.Handle)
+            If Not IsAcroLayoutDegenerate() Then
+                RhpLog("  REZOLVAT doar cu focus — " & DegenerateReport())
+                ShowStatus("Aranjarea Adobe s-a făcut la focus.")
+                Return
+            End If
+
+            ' 2. A size change. Adobe recomputes its layout on a size CHANGE, not on a repaint.
+            Dim client As New Rectangle(0, 0, pnlAcroHost.ClientSize.Width, pnlAcroHost.ClientSize.Height)
+            AdobeWindowHosting.NudgeRedraw(_acroHost.Handle, client)
+            If Not IsAcroLayoutDegenerate() Then
+                RhpLog("  REZOLVAT cu schimbarea de dimensiune — " & DegenerateReport())
+                ShowStatus("Aranjarea Adobe s-a făcut la schimbarea de dimensiune.")
+                Return
+            End If
+
+            ' 3. A synthetic click into the document view — what the operator does by hand. Last,
+            ' because a click lands IN the document and could select something.
+            Dim nodes As List(Of AdobeWindowNode) =
+                AdobeWindowProbe.Walk(_acroHost.Handle, pnlAcroHost.Handle, ACRO_PROBE_DEPTH)
+            Dim target As AdobeWindowNode = nodes.FirstOrDefault(
+                Function(n) String.Equals(n.Text, "AVDocumentMainView", StringComparison.OrdinalIgnoreCase))
+            If target Is Nothing Then
+                RhpLog("  AVDocumentMainView negăsit — nu am unde să dau click.")
+                Return
+            End If
+            AdobeWindowHosting.ClickCentre(target.Hwnd)
+            RhpLog("  Am dat click sintetic în AVDocumentMainView (ultima treaptă). " & DegenerateReport())
+            ShowStatus("Am trezit controlul cu un click sintetic — vezi jurnalul.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.WakeAcroLayout", ex)
+            RhpLog("Trezirea aranjării ActiveX a eșuat — " & ex.Message)
+        End Try
+    End Sub
+
+    ' «Not laid out» is not a guess: the document view having no height is the unambiguous marker.
+    Private Function IsAcroLayoutDegenerate() As Boolean
+        If _acroHost Is Nothing OrElse Not _acroHost.IsHandleCreated Then Return False
+        Dim nodes As List(Of AdobeWindowNode) =
+            AdobeWindowProbe.Walk(_acroHost.Handle, pnlAcroHost.Handle, ACRO_PROBE_DEPTH)
+        Dim page As AdobeWindowNode = nodes.FirstOrDefault(
+            Function(n) String.Equals(n.Text, "AVSplitationPageView", StringComparison.OrdinalIgnoreCase))
+        Return page Is Nothing OrElse page.Height <= 0 OrElse page.Width <= 0
+    End Function
+
+    Private Function DegenerateReport() As String
+        Dim nodes As List(Of AdobeWindowNode) =
+            AdobeWindowProbe.Walk(_acroHost.Handle, pnlAcroHost.Handle, ACRO_PROBE_DEPTH)
+        Dim zero As Integer = nodes.Where(Function(n) n.Width <= 0 OrElse n.Height <= 0).Count()
+        Dim page As AdobeWindowNode = nodes.FirstOrDefault(
+            Function(n) String.Equals(n.Text, "AVSplitationPageView", StringComparison.OrdinalIgnoreCase))
+        Dim pageText As String = If(page Is Nothing, "absent", $"{page.Width}x{page.Height}")
+        Return $"{nodes.Count} ferestre, {zero} de dimensiune zero, document {pageText}"
+    End Function
+
+    ''' <summary>
     ''' Presses Adobe's OWN collapse button, so Adobe performs its own re-layout.
     '''
     ''' THE CORRECTION THAT MADE THIS NECESSARY (measured 05.08.2026). «Ascunde chrome-ul» reported
@@ -787,6 +863,16 @@ Public NotInheritable Class AdobeReaderHarnessForm
             If strip Is Nothing Then
                 RhpLog("  AVDockableTabStripView NEGĂSIT — nimic de colapsat.")
                 ShowStatus("Banda de file nu există în arbore.")
+                Return
+            End If
+            ' ZERO LĂȚIME ȘI ZERO ÎNĂLȚIME NU ÎNSEAMNĂ „COLAPSAT" — înseamnă „Adobe încă nu a
+            ' aranjat nimic". Distincția a costat o rulare: la 21:18:03 butonul ăsta a văzut 0x0, a
+            ' zis «deja colapsată» și a refuzat să apese, deși starea reală era „nearanjat".
+            ' Colapsat cu adevărat = lățime 0 dar ÎNĂLȚIME ÎNTREAGĂ (0x697).
+            If strip.Height <= 0 Then
+                RhpLog($"  AVDockableTabStripView e {strip.Width}x{strip.Height} — Adobe NU și-a " &
+                       "făcut încă aranjarea (zero pe AMBELE axe nu e «colapsat»). Trezesc controlul.")
+                WakeAcroLayout()
                 Return
             End If
             If strip.Width <= 0 Then
@@ -1088,6 +1174,15 @@ Public NotInheritable Class AdobeReaderHarnessForm
             Next
             RhpLog("AcroPDF: DE CONSEMNAT — au dispărut barele? Dacă da, API-ul ăsta înlocuiește " &
                    "decuparea, ascunderea ferestrelor copil și cheile de registry din felia 0023.")
+        End If
+
+        ' Prima încărcare a sesiunii rămâne GRI până când operatorul dă click în panou: Adobe își
+        ' amână prima aranjare până primește ceva input (măsurat — 26 din 28 de ferestre copil erau
+        ' de dimensiune zero imediat după LoadFile). Trezirea e ieftină și se face de fiecare dată;
+        ' când aranjarea e deja bună, IsAcroLayoutDegenerate iese imediat și nu se atinge nimic.
+        If IsAcroLayoutDegenerate() Then
+            RhpLog("AcroPDF: aranjarea e degenerată imediat după încărcare — trezesc controlul.")
+            WakeAcroLayout()
         End If
 
         RhpLog("AcroPDF: VERDICTUL DE CONSEMNAT — se vede documentul XFA randat, sau substitutul " &
