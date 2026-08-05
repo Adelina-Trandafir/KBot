@@ -2,6 +2,9 @@ Option Strict On
 Imports System.Collections.Generic
 Imports System.Text.Json
 Imports System.Text.Json.Serialization
+' HostedWindowGeometry moved to KBot.Controls in slice 0024 — one implementation for the bench and
+' for the shipping DDF preview.
+Imports KBot.Controls
 
 ' Scenario file model (slice 0023, config+layout pass). Plain classes with System.Text.Json
 ' attributes: NO I/O and NO Windows API calls in this file — serialization only, so the whole

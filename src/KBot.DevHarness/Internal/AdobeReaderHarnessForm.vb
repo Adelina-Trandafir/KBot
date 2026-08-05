@@ -5,7 +5,6 @@ Imports System.ComponentModel
 Imports System.Diagnostics
 Imports System.IO
 Imports System.Linq
-Imports System.Runtime.InteropServices
 Imports System.Text
 Imports System.Text.Json
 Imports System.Threading
@@ -13,6 +12,10 @@ Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports Microsoft.Win32
 Imports KBot.Common
+' Slice 0024: the hosting primitives (geometry, probe, reparenting, hide/show, Adobe lookup,
+' command line) live in KBot.Controls now and are SHARED with ReaderHostPreview in KBot.App. The
+' bench keeps only what is bench-specific: scenarios, the registry levers and the panel.
+Imports KBot.Controls
 Imports KBot.Theming
 
 ''' <summary>
@@ -55,14 +58,13 @@ Imports KBot.Theming
 ''' </summary>
 Public NotInheritable Class AdobeReaderHarnessForm
 
-    ' Timeout la căutarea ferestrei Reader (ms) și pasul de polling.
-    Private Const FIND_TIMEOUT_MS As Integer = 8000
-    Private Const FIND_POLL_MS As Integer = 150
-    ' Întârziere pentru a doua redesenare (Adobe își finalizează layout-ul după apariția ferestrei).
-    Private Const REDRAW_DELAY_MS As Integer = 250
-    ' Probe depth limit and the right-edge tolerance of the RHP heuristic (px).
-    Private Const PROBE_MAX_DEPTH As Integer = 4
-    Private Const RHP_EDGE_TOLERANCE As Integer = 8
+    ' Timeouts, the probe depth limit and the RHP edge tolerance now live with the hosting code in
+    ' KBot.Controls (slice 0024) — the bench and the shipping preview wait exactly as long as each
+    ' other and probe exactly as deep as each other.
+    Private Const FIND_TIMEOUT_MS As Integer = AdobeWindowHosting.FindTimeoutMs
+    Private Const REDRAW_DELAY_MS As Integer = AdobeWindowHosting.RedrawDelayMs
+    Private Const PROBE_MAX_DEPTH As Integer = AdobeWindowProbe.DefaultMaxDepth
+    Private Const RHP_EDGE_TOLERANCE As Integer = AdobeWindowProbe.RhpEdgeTolerance
     ' Dedicated log for this slice (house rule: harness output goes to Logs\test_*.log).
     Private Const RHP_LOG_NAME As String = "test_adobe_rhp.log"
     ' Scenario files live here, with no fixed names — the operator browses for one.
@@ -93,7 +95,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' the TEXTS we hid (the durable identity across relaunches).
     Private _probeCandidateWidth As Integer = 0
     Private _probeCandidateClass As String = Nothing
-    Private ReadOnly _lastProbe As New List(Of ChildWindowItem)()
+    Private ReadOnly _lastProbe As New List(Of AdobeWindowNode)()
     Private ReadOnly _hiddenChildren As New List(Of IntPtr)()
     Private ReadOnly _hiddenChildTexts As New List(Of String)()
     ' Status-block state: which HKCU values were applied, whether HKLM was applied this session.
@@ -114,7 +116,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         InitializeComponent()
         _userSnapshot = New RegistrySnapshotSet(_regAccess)
         PopulateRegistryCombos()
-        _adobePath = ResolveAdobePath()
+        _adobePath = AdobeWindowHosting.ResolveAdobePath()
         If String.IsNullOrEmpty(_adobePath) Then
             SetControlsEnabled(False)
             ShowStatus("Adobe Reader/Acrobat nu a fost găsit pe această mașină.")
@@ -366,8 +368,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End If
 
         _hostedWindow = hwnd
-        Dim ownerPid As Integer = 0
-        GetWindowThreadProcessId(hwnd, ownerPid)
+        Dim ownerPid As Integer = AdobeWindowHosting.OwnerPid(hwnd)
         _hostedPid = ownerPid
 
         HostWindow(hwnd)
@@ -400,16 +401,10 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Function
 
     ' Reparentează fereastra în pnlHost, curățând stilurile de fereastră de sine stătătoare.
+    ' Mecanica e în AdobeWindowHosting (KBot.Controls) din felia 0024 — bancul și previzualizarea
+    ' DDF curăță ACELEAȘI stiluri; înainte, cele două copii divergeau.
     Private Sub HostWindow(hwnd As IntPtr)
-        _originalStyle = GetWindowLongPtrSafe(hwnd, GWL_STYLE)
-
-        Dim style As Long = _originalStyle.ToInt64()
-        style = style And Not (WS_CAPTION Or WS_THICKFRAME Or WS_POPUP Or
-                               WS_MINIMIZEBOX Or WS_MAXIMIZEBOX Or WS_SYSMENU)
-        style = style Or WS_CHILD
-        SetWindowLongPtrSafe(hwnd, GWL_STYLE, New IntPtr(style))
-
-        SetParent(hwnd, pnlHost.Handle)
+        _originalStyle = AdobeWindowHosting.AttachAsChild(hwnd, pnlHost.Handle)
         NudgeRedraw()
     End Sub
 
@@ -421,54 +416,35 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' general form of what clip right/top do in two fixed directions. Because everything goes
     ' through here, they are re-applied for free by LayoutHostedWindow, NudgeRedraw, the resize /
     ' splitter debounce and every relaunch: there is nothing to keep re-imposing on a timer.
+    ' The arithmetic itself is AdobeHostGeometry.Compute (KBot.Controls, slice 0024): the bench reads
+    ' the numbers off its spinners, the DDF preview reads them off a profile, and both then place the
+    ' window through the SAME function.
     Private Function HostedBounds() As Rectangle
-        Dim w As Integer = pnlHost.ClientSize.Width
-        Dim h As Integer = pnlHost.ClientSize.Height
-        Dim b As Rectangle
-        If chkClip.Checked Then
-            Dim clipRight As Integer = CInt(numClipRight.Value)
-            Dim clipTop As Integer = CInt(numClipTop.Value)
-            b = New Rectangle(0, -clipTop, w + clipRight, h + clipTop)
-        Else
-            b = New Rectangle(0, 0, w, h)
-        End If
-        Return HostedWindowGeometry.Offset(b, CInt(numDx.Value), CInt(numDy.Value),
-                                           CInt(numDw.Value), CInt(numDh.Value))
+        Return AdobeHostGeometry.Compute(pnlHost.ClientSize.Width, pnlHost.ClientSize.Height,
+                                         chkClip.Checked, CInt(numClipRight.Value), CInt(numClipTop.Value),
+                                         CInt(numDx.Value), CInt(numDy.Value),
+                                         CInt(numDw.Value), CInt(numDh.Value))
     End Function
 
     Private Sub LayoutHostedWindow()
         If _hostedWindow = IntPtr.Zero Then Return
-        Dim b As Rectangle = HostedBounds()
-        If b.Width <= 0 OrElse b.Height <= 0 Then Return
-        MoveWindow(_hostedWindow, b.X, b.Y, b.Width, b.Height, True)
+        AdobeWindowHosting.Place(_hostedWindow, HostedBounds())
     End Sub
 
     ' Forțează afișarea/redesenarea ferestrei reparentate (altfel rămâne nevăzută până la o
     ' schimbare de layout a formularului).
     Private Sub NudgeRedraw()
         If _hostedWindow = IntPtr.Zero Then Return
-        Dim b As Rectangle = HostedBounds()
-        If b.Width <= 0 OrElse b.Height <= 0 Then Return
-
-        SetWindowPos(_hostedWindow, IntPtr.Zero, b.X, b.Y, b.Width, b.Height,
-                     SWP_NOZORDER Or SWP_NOACTIVATE Or SWP_FRAMECHANGED Or SWP_SHOWWINDOW)
-        MoveWindow(_hostedWindow, b.X, b.Y, Math.Max(1, b.Width - 1), b.Height, True)
-        MoveWindow(_hostedWindow, b.X, b.Y, b.Width, b.Height, True)
-        RedrawWindow(_hostedWindow, IntPtr.Zero, IntPtr.Zero,
-                     RDW_INVALIDATE Or RDW_ALLCHILDREN Or RDW_UPDATENOW Or RDW_FRAME)
+        AdobeWindowHosting.NudgeRedraw(_hostedWindow, HostedBounds())
         pnlHost.Invalidate(True)
     End Sub
 
     ' ── Argumente / preview ─────────────────────────────────────────────────────
-    ' Sintaxă Adobe: [/n] [/s] [/A "param1&param2&…"] "cale.pdf". Parametrii /A trebuie ÎNAINTE de fișier.
+    ' Sintaxă Adobe: [/n] [/s] [/A "param1&param2&…"] "cale.pdf". Parametrii /A trebuie ÎNAINTE de
+    ' fișier — regula e codificată o singură dată, în AdobeWindowHosting.BuildArguments (felia 0024).
     Private Function BuildArguments(pdf As String) As String
-        Dim sb As New StringBuilder()
-        If chkNewInstance.Checked Then sb.Append("/n ")
-        If chkNoSplash.Checked Then sb.Append("/s ")
-        Dim op As String = BuildOpenParameters()
-        If op.Length > 0 Then sb.Append("/A """).Append(op).Append(""" ")
-        sb.Append(""""c).Append(pdf).Append(""""c)
-        Return sb.ToString()
+        Return AdobeWindowHosting.BuildArguments(chkNewInstance.Checked, chkNoSplash.Checked,
+                                                 BuildOpenParameters(), pdf)
     End Function
 
     ' Parametrii de deschidere (/A) care ascund chrome-ul, în ordinea din panou. Read from the
@@ -506,7 +482,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         _originalStyle = IntPtr.Zero
         _hostedPid = 0
 
-        KillPid(hostedPid)
+        AdobeWindowHosting.KillPid(hostedPid)
 
         Dim rp As Process = _readerProcess
         _readerProcess = Nothing
@@ -530,20 +506,6 @@ Public NotInheritable Class AdobeReaderHarnessForm
         UpdateActionStates()
     End Sub
 
-    Private Shared Sub KillPid(pid As Integer)
-        If pid <= 0 Then Return
-        Try
-            Dim p As Process = Process.GetProcessById(pid)
-            Try
-                If Not p.HasExited Then p.Kill(True)
-            Finally
-                p.Dispose()
-            End Try
-        Catch
-            ' Best-effort: procesul poate să nu mai existe.
-        End Try
-    End Sub
-
     Private Shared Sub SafeKill(proc As Process)
         If proc Is Nothing Then Return
         Try
@@ -565,72 +527,11 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Function
 
-    ' ── Căutarea ferestrei Reader (fir de fundal) ───────────────────────────────
-    Private Function FindReaderWindow(baseName As String) As IntPtr
-        Dim deadline As DateTime = DateTime.UtcNow.AddMilliseconds(FIND_TIMEOUT_MS)
-        Do
-            Dim found As IntPtr = IntPtr.Zero
-            EnumWindows(
-                Function(h, l)
-                    If Not IsWindowVisible(h) Then Return True
-                    Dim cls As String = GetClass(h)
-                    If cls.IndexOf("Acrobat", StringComparison.OrdinalIgnoreCase) < 0 AndAlso
-                       cls.IndexOf("AdobeAcrobat", StringComparison.OrdinalIgnoreCase) < 0 Then Return True
-                    Dim title As String = GetTitle(h)
-                    If title.IndexOf(baseName, StringComparison.OrdinalIgnoreCase) >= 0 Then
-                        found = h
-                        Return False   ' oprim enumerarea
-                    End If
-                    Return True
-                End Function, IntPtr.Zero)
-
-            If found <> IntPtr.Zero Then Return found
-            Thread.Sleep(FIND_POLL_MS)
-        Loop While DateTime.UtcNow < deadline
-        Return IntPtr.Zero
-    End Function
-
-    ' ── Localizarea Adobe ───────────────────────────────────────────────────────
-    ' NOTE: AdobeUtils.GetAdobeReaderPath (KBot.Xfa) resolves the .pdf HANDLER, but it is Private
-    ' and KBot.Xfa is not referenced here — reusing it would mean touching KBot.Xfa, out of scope.
-    Private Shared Function ResolveAdobePath() As String
-        Try
-            For Each exe As String In New String() {"Acrobat.exe", "AcroRd32.exe"}
-                Dim p As String = ReadAppPath(exe)
-                If Not String.IsNullOrEmpty(p) AndAlso File.Exists(p) Then Return p
-            Next
-
-            Dim candidates As String() = {
-                "Adobe\Acrobat DC\Acrobat\Acrobat.exe",
-                "Adobe\Acrobat Reader DC\Reader\AcroRd32.exe",
-                "Adobe\Acrobat\Acrobat.exe"
-            }
-            For Each pf As String In New String() {
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}
-                If String.IsNullOrEmpty(pf) Then Continue For
-                For Each c As String In candidates
-                    Dim full As String = Path.Combine(pf, c)
-                    If File.Exists(full) Then Return full
-                Next
-            Next
-            Return Nothing
-        Catch ex As Exception
-            GlobalErrorLog.Write("AdobeReaderHarnessForm.ResolveAdobePath", ex)
-            Return Nothing
-        End Try
-    End Function
-
-    Private Shared Function ReadAppPath(exeName As String) As String
-        Try
-            Using k As RegistryKey = Registry.LocalMachine.OpenSubKey(
-                "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\" & exeName)
-                If k IsNot Nothing Then Return TryCast(k.GetValue(Nothing), String)
-            End Using
-        Catch ex As Exception
-            GlobalErrorLog.Write("AdobeReaderHarnessForm.ReadAppPath", ex)
-        End Try
-        Return Nothing
+    ' ── Căutarea ferestrei Reader / localizarea Adobe ───────────────────────────
+    ' Ambele au trecut în AdobeWindowHosting (KBot.Controls, felia 0024). Căutarea rulează pe fir de
+    ' fundal, la fel ca înainte — apelantul e cel care o pune pe Task.Run.
+    Private Shared Function FindReaderWindow(baseName As String) As IntPtr
+        Return AdobeWindowHosting.FindReaderWindow(baseName)
     End Function
 
     ' ══ Diagnostic — child window probe ═════════════════════════════════════════
@@ -657,28 +558,47 @@ Public NotInheritable Class AdobeReaderHarnessForm
         _probeCandidateClass = Nothing
 
         Dim hostW As Integer = pnlHost.ClientSize.Width
-        Dim total As Integer = 0
         RhpLog($"── Probă ferestre copil (hwnd gazdă 0x{_hostedWindow.ToInt64():X}, adâncime max {PROBE_MAX_DEPTH}; " &
                "EURISTIC candidat RHP = vizibil, lipit de marginea dreaptă ±" & RHP_EDGE_TOLERANCE.ToString() &
                "px, lățime < 1/2 gazdă) ──")
-        WalkChildren(_hostedWindow, 1, hostW, total)
+
+        ' The walk itself is AdobeWindowProbe (KBot.Controls, slice 0024) — the SAME tree the DDF
+        ' preview reads to decide modern vs classic, so a detection bug is one bug, not two.
+        Dim nodes As List(Of AdobeWindowNode) = AdobeWindowProbe.Walk(_hostedWindow, pnlHost.Handle, PROBE_MAX_DEPTH)
+        For Each n As AdobeWindowNode In nodes
+            RhpLog(AdobeWindowProbe.DescribeNode(n))
+            lstChildren.Items.Add(n)
+            _lastProbe.Add(n)
+        Next
+        Dim total As Integer = nodes.Count
+
+        Dim candidate As AdobeWindowNode = AdobeWindowProbe.RhpCandidate(nodes, hostW)
+        If candidate IsNot Nothing Then
+            _probeCandidateWidth = candidate.Width
+            _probeCandidateClass = candidate.ClassName
+        End If
+
+        ' The viewer generation, read off the same tree. The bench does not ACT on it — the shipping
+        ' preview does — but printing it here is how a new Adobe build gets diagnosed on the bench.
+        Dim detection As AdobeUiDetection = AdobeUiDetector.Detect(nodes)
+        RhpLog(detection.Describe())
 
         ' The line that actually matters, per target the loaded scenario asks to hide — printed
         ' whether or not it matched, so it cannot be lost in the tree above.
         Dim targets As List(Of String) = ScenarioHideTargets()
         Dim zeroSizedTarget As Boolean = False
         For Each t As String In targets
-            Dim hit As ChildWindowItem = _lastProbe.FirstOrDefault(
-                Function(i) String.Equals(i.WindowText, t, StringComparison.OrdinalIgnoreCase))
+            Dim hit As AdobeWindowNode = _lastProbe.FirstOrDefault(
+                Function(i) String.Equals(i.Text, t, StringComparison.OrdinalIgnoreCase))
             If hit Is Nothing Then
                 RhpLog($"PANOU: {t} — NEGĂSIT")
             Else
-                Dim vis As Boolean = IsWindowVisible(hit.Hwnd)
+                Dim vis As Boolean = AdobeWindowHosting.IsVisible(hit.Hwnd)
                 ' Rectangles of invisible windows are unreliable — Adobe leaves stale geometry
                 ' behind (e.g. a 27x913 child inside a 587-high host). Mark, never trust.
                 Dim stale As String = If(vis, "", " (posibil învechit)")
-                RhpLog($"PANOU: {t} — {hit.W}x{hit.H}{stale}, vis={If(vis, 1, 0)}")
-                If hit.W <= 0 OrElse hit.H <= 0 Then zeroSizedTarget = True
+                RhpLog($"PANOU: {t} — {hit.Width}x{hit.Height}{stale}, vis={If(vis, 1, 0)}")
+                If hit.Width <= 0 OrElse hit.Height <= 0 Then zeroSizedTarget = True
             End If
         Next
 
@@ -703,65 +623,8 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Return _scenario.HideChildren.ByText.Where(Function(t) Not String.IsNullOrWhiteSpace(t)).ToList()
     End Function
 
-    Private Sub WalkChildren(parent As IntPtr, depth As Integer, hostW As Integer, ByRef total As Integer)
-        Dim child As IntPtr = GetWindow(parent, GW_CHILD)
-        While child <> IntPtr.Zero
-            total += 1
-            Dim cls As String = GetClass(child)
-            Dim fullText As String = GetTitle(child)
-            Dim txt As String = fullText
-            If txt.Length > 40 Then txt = txt.Substring(0, 40) & "…"
-            Dim r As RECT
-            GetWindowRect(child, r)
-            Dim tl As Point = pnlHost.PointToClient(New Point(r.Left, r.Top))
-            Dim w As Integer = r.Right - r.Left
-            Dim h As Integer = r.Bottom - r.Top
-            Dim vis As Boolean = IsWindowVisible(child)
-            Dim style As Long = GetWindowLongPtrSafe(child, GWL_STYLE).ToInt64()
-            Dim exStyle As Long = GetWindowLongPtrSafe(child, GWL_EXSTYLE).ToInt64()
-
-            RhpLog($"  d={depth} hwnd=0x{child.ToInt64():X} cls={cls} text=""{txt}"" " &
-                   $"x={tl.X} y={tl.Y} {w}x{h} vis={If(vis, 1, 0)} style=0x{style:X8} ex=0x{exStyle:X8}")
-            Dim item As New ChildWindowItem(child, cls, fullText, w, h)
-            lstChildren.Items.Add(item)
-            _lastProbe.Add(item)
-
-            ' RHP-candidate heuristic (labelled as such in the log header above).
-            If vis AndAlso w > 0 AndAlso w < hostW \ 2 AndAlso
-               Math.Abs((tl.X + w) - hostW) <= RHP_EDGE_TOLERANCE Then
-                If w > _probeCandidateWidth Then
-                    _probeCandidateWidth = w
-                    _probeCandidateClass = cls
-                End If
-            End If
-
-            If depth < PROBE_MAX_DEPTH Then WalkChildren(child, depth + 1, hostW, total)
-            child = GetWindow(child, GW_HWNDNEXT)
-        End While
-    End Sub
-
-    ' A probed child: text first, because the text is the durable identity across relaunches while
-    ' the class is almost always AVL_AVView and the HWND changes every launch.
-    Private NotInheritable Class ChildWindowItem
-        Public ReadOnly Hwnd As IntPtr
-        Public ReadOnly ClassName As String
-        Public ReadOnly WindowText As String
-        Public ReadOnly W As Integer
-        Public ReadOnly H As Integer
-
-        Public Sub New(hwnd As IntPtr, className As String, windowText As String, w As Integer, h As Integer)
-            Me.Hwnd = hwnd
-            Me.ClassName = className
-            Me.WindowText = If(windowText, "")
-            Me.W = w
-            Me.H = h
-        End Sub
-
-        Public Overrides Function ToString() As String
-            Dim t As String = If(String.IsNullOrEmpty(WindowText), "(fără text)", WindowText)
-            Return $"{t} — {ClassName} ({W}x{H})"
-        End Function
-    End Class
+    ' WalkChildren and ChildWindowItem are GONE (slice 0024): AdobeWindowProbe.Walk returns
+    ' AdobeWindowNode, whose ToString() produces the same list entry the bench showed before.
 
     ' ══ Decupare — geometry clipping (live, no relaunch/kill) ═══════════════════
     Private Sub ClipSettingsChanged(sender As Object, e As EventArgs) _
@@ -859,21 +722,15 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
     ' The hosted window's rectangle in pnlHost's CLIENT coordinates. GetWindowRect returns SCREEN
     ' coordinates; mixing the two is the one way this reads plausible numbers and means nothing, so
-    ' the conversion happens once, here. cPoints = 2 because a RECT is two POINTs.
-    Private Function ChildRectInParent(hwnd As IntPtr) As Rectangle
-        If hwnd = IntPtr.Zero OrElse Not IsWindow(hwnd) Then Return Rectangle.Empty
-        Dim r As RECT
-        If Not GetWindowRect(hwnd, r) Then Return Rectangle.Empty
-        Dim parent As IntPtr = GetParent(hwnd)
-        If parent = IntPtr.Zero Then Return New Rectangle(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top)
-        MapWindowPoints(IntPtr.Zero, parent, r, 2)
-        Return New Rectangle(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top)
+    ' the conversion happens once — now inside AdobeWindowHosting (slice 0024).
+    Private Shared Function ChildRectInParent(hwnd As IntPtr) As Rectangle
+        Return AdobeWindowHosting.RectInParent(hwnd)
     End Function
 
     ' ══ Ferestre copil — hide/show a probed child directly ══════════════════════
     Private Sub btnHideChild_Click(sender As Object, e As EventArgs) Handles btnHideChild.Click
         Try
-            Dim item As ChildWindowItem = SelectedChildAlive()
+            Dim item As AdobeWindowNode = SelectedChildAlive()
             If item Is Nothing Then Return
             HideChild(item)
             NudgeRedraw()
@@ -886,22 +743,22 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
     ' Hides one child and remembers BOTH its handle (for exact restore now) and its text (so a
     ' saved scenario can find it again after the next launch).
-    Private Sub HideChild(item As ChildWindowItem)
-        ShowWindow(item.Hwnd, SW_HIDE)
+    Private Sub HideChild(item As AdobeWindowNode)
+        AdobeWindowHosting.Hide(item.Hwnd)
         If Not _hiddenChildren.Contains(item.Hwnd) Then _hiddenChildren.Add(item.Hwnd)
-        If Not String.IsNullOrEmpty(item.WindowText) AndAlso Not _hiddenChildTexts.Contains(item.WindowText) Then
-            _hiddenChildTexts.Add(item.WindowText)
+        If Not String.IsNullOrEmpty(item.Text) AndAlso Not _hiddenChildTexts.Contains(item.Text) Then
+            _hiddenChildTexts.Add(item.Text)
         End If
         RhpLog($"Ascuns copil: {item} (hwnd=0x{item.Hwnd.ToInt64():X})")
     End Sub
 
     Private Sub btnShowChild_Click(sender As Object, e As EventArgs) Handles btnShowChild.Click
         Try
-            Dim item As ChildWindowItem = SelectedChildAlive()
+            Dim item As AdobeWindowNode = SelectedChildAlive()
             If item Is Nothing Then Return
-            ShowWindow(item.Hwnd, SW_SHOW)
+            AdobeWindowHosting.Show(item.Hwnd)
             _hiddenChildren.Remove(item.Hwnd)
-            _hiddenChildTexts.Remove(item.WindowText)
+            _hiddenChildTexts.Remove(item.Text)
             RhpLog($"Rearătat copil: {item} (hwnd=0x{item.Hwnd.ToInt64():X})")
             NudgeRedraw()
             UpdateActionStates()
@@ -914,8 +771,8 @@ Public NotInheritable Class AdobeReaderHarnessForm
     Private Sub btnShowAllChildren_Click(sender As Object, e As EventArgs) Handles btnShowAllChildren.Click
         Try
             For Each h As IntPtr In _hiddenChildren.ToList()
-                If IsWindow(h) Then
-                    ShowWindow(h, SW_SHOW)
+                If AdobeWindowHosting.IsAlive(h) Then
+                    AdobeWindowHosting.Show(h)
                     RhpLog($"Rearătat: 0x{h.ToInt64():X}")
                 Else
                     ' Stale handle (Adobe destroys and recreates panels) — drop, do not throw.
@@ -933,13 +790,13 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Sub
 
     ' Selected list item whose HWND is still alive; stale handles are dropped with a log line.
-    Private Function SelectedChildAlive() As ChildWindowItem
-        Dim item As ChildWindowItem = TryCast(lstChildren.SelectedItem, ChildWindowItem)
+    Private Function SelectedChildAlive() As AdobeWindowNode
+        Dim item As AdobeWindowNode = TryCast(lstChildren.SelectedItem, AdobeWindowNode)
         If item Is Nothing Then
             ShowStatus("Selectează întâi o fereastră din listă (rulează proba dacă lista e goală).")
             Return Nothing
         End If
-        If Not IsWindow(item.Hwnd) Then
+        If Not AdobeWindowHosting.IsAlive(item.Hwnd) Then
             RhpLog($"Handle mort (fereastra a fost distrusă între timp): {item} — eliminat din listă.")
             lstChildren.Items.Remove(item)
             _lastProbe.Remove(item)
@@ -973,22 +830,22 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
             Dim outcomes As New List(Of HideOutcome)()
             For Each text As String In wanted
-                Dim matches As List(Of ChildWindowItem) = _lastProbe.
-                    Where(Function(i) String.Equals(i.WindowText, text, StringComparison.OrdinalIgnoreCase)).ToList()
+                Dim matches As List(Of AdobeWindowNode) = _lastProbe.
+                    Where(Function(i) String.Equals(i.Text, text, StringComparison.OrdinalIgnoreCase)).ToList()
                 If matches.Count = 0 Then
                     outcomes.Add(HideOutcome.NotFound)
                     RhpLog($"  {HideOutcomeClassifier.Label(HideOutcome.NotFound)}: «{text}»")
                     Continue For
                 End If
-                For Each m As ChildWindowItem In matches
-                    If Not IsWindow(m.Hwnd) Then Continue For
+                For Each m As AdobeWindowNode In matches
+                    If Not AdobeWindowHosting.IsAlive(m.Hwnd) Then Continue For
                     ' Classify BEFORE touching it — afterwards everything looks hidden, which is
                     ' precisely how a no-op used to be logged as a success.
                     Dim outcome As HideOutcome = HideOutcomeClassifier.Classify(
-                        found:=True, visible:=IsWindowVisible(m.Hwnd), width:=m.W, height:=m.H)
+                        found:=True, visible:=AdobeWindowHosting.IsVisible(m.Hwnd), width:=m.Width, height:=m.Height)
                     outcomes.Add(outcome)
-                    RhpLog($"  {HideOutcomeClassifier.Label(outcome)}: «{m.WindowText}» " &
-                           $"{m.W}x{m.H} vis={If(IsWindowVisible(m.Hwnd), 1, 0)} (hwnd=0x{m.Hwnd.ToInt64():X})")
+                    RhpLog($"  {HideOutcomeClassifier.Label(outcome)}: «{m.Text}» " &
+                           $"{m.Width}x{m.Height} vis={If(AdobeWindowHosting.IsVisible(m.Hwnd), 1, 0)} (hwnd=0x{m.Hwnd.ToInt64():X})")
                     If outcome = HideOutcome.Hidden Then HideChild(m)
                 Next
             Next
@@ -1049,7 +906,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
             Return
         End If
         Activate()
-        SetFocus(_hostedWindow)
+        AdobeWindowHosting.FocusWindow(_hostedWindow)
         SendKeys.SendWait(keys)
         RhpLog($"Trimis {label} către fereastra găzduită (EXPERIMENTAL, dependent de versiune; " &
                "tastatura peste granița de proces nu se comportă ca la un copil nativ). " &
@@ -2474,149 +2331,10 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Sub
 
     ' ── Win32 interop ───────────────────────────────────────────────────────────
-    Private Const GWL_STYLE As Integer = -16
-    Private Const GWL_EXSTYLE As Integer = -20
-    Private Const WS_CHILD As Long = &H40000000L
-    Private Const WS_POPUP As Long = &H80000000L
-    Private Const WS_CAPTION As Long = &HC00000L
-    Private Const WS_THICKFRAME As Long = &H40000L
-    Private Const WS_SYSMENU As Long = &H80000L
-    Private Const WS_MINIMIZEBOX As Long = &H20000L
-    Private Const WS_MAXIMIZEBOX As Long = &H10000L
-
-    Private Const SWP_NOZORDER As UInteger = &H4UI
-    Private Const SWP_NOACTIVATE As UInteger = &H10UI
-    Private Const SWP_FRAMECHANGED As UInteger = &H20UI
-    Private Const SWP_SHOWWINDOW As UInteger = &H40UI
-
-    Private Const RDW_INVALIDATE As UInteger = &H1UI
-    Private Const RDW_UPDATENOW As UInteger = &H100UI
-    Private Const RDW_ALLCHILDREN As UInteger = &H80UI
-    Private Const RDW_FRAME As UInteger = &H400UI
-
-    Private Const SW_HIDE As Integer = 0
-    Private Const SW_SHOW As Integer = 5
-    Private Const GW_HWNDNEXT As UInteger = 2UI
-    Private Const GW_CHILD As UInteger = 5UI
-
-    <StructLayout(LayoutKind.Sequential)>
-    Private Structure RECT
-        Public Left As Integer
-        Public Top As Integer
-        Public Right As Integer
-        Public Bottom As Integer
-    End Structure
-
-    Private Delegate Function EnumWindowsProc(hWnd As IntPtr, lParam As IntPtr) As Boolean
-
-    <DllImport("user32.dll")>
-    Private Shared Function EnumWindows(callback As EnumWindowsProc, extra As IntPtr) As Boolean
-    End Function
-
-    <DllImport("user32.dll")>
-    Private Shared Function IsWindowVisible(hWnd As IntPtr) As Boolean
-    End Function
-
-    <DllImport("user32.dll")>
-    Private Shared Function IsWindow(hWnd As IntPtr) As Boolean
-    End Function
-
-    <DllImport("user32.dll", SetLastError:=True)>
-    Private Shared Function SetParent(hWndChild As IntPtr, hWndNewParent As IntPtr) As IntPtr
-    End Function
-
-    <DllImport("user32.dll", SetLastError:=True)>
-    Private Shared Function MoveWindow(hWnd As IntPtr, x As Integer, y As Integer,
-                                       w As Integer, h As Integer, repaint As Boolean) As Boolean
-    End Function
-
-    <DllImport("user32.dll", SetLastError:=True)>
-    Private Shared Function SetWindowPos(hWnd As IntPtr, hWndInsertAfter As IntPtr,
-                                         x As Integer, y As Integer, cx As Integer, cy As Integer,
-                                         uFlags As UInteger) As Boolean
-    End Function
-
-    <DllImport("user32.dll")>
-    Private Shared Function RedrawWindow(hWnd As IntPtr, lprcUpdate As IntPtr,
-                                         hrgnUpdate As IntPtr, flags As UInteger) As Boolean
-    End Function
-
-    <DllImport("user32.dll", SetLastError:=True)>
-    Private Shared Function GetWindowThreadProcessId(hWnd As IntPtr, ByRef lpdwProcessId As Integer) As Integer
-    End Function
-
-    <DllImport("user32.dll")>
-    Private Shared Function GetWindow(hWnd As IntPtr, uCmd As UInteger) As IntPtr
-    End Function
-
-    <DllImport("user32.dll")>
-    Private Shared Function GetParent(hWnd As IntPtr) As IntPtr
-    End Function
-
-    ' cPoints = 2 when the "points" are the two corners of a RECT. Converts screen -> parent client,
-    ' which is the coordinate space SetWindowPos wants for a child window.
-    <DllImport("user32.dll", SetLastError:=True)>
-    Private Shared Function MapWindowPoints(hWndFrom As IntPtr, hWndTo As IntPtr,
-                                            ByRef lpPoints As RECT, cPoints As UInteger) As Integer
-    End Function
-
-    <DllImport("user32.dll", SetLastError:=True)>
-    Private Shared Function GetWindowRect(hWnd As IntPtr, ByRef lpRect As RECT) As Boolean
-    End Function
-
-    <DllImport("user32.dll")>
-    Private Shared Function ShowWindow(hWnd As IntPtr, nCmdShow As Integer) As Boolean
-    End Function
-
-    <DllImport("user32.dll", SetLastError:=True)>
-    Private Shared Function SetFocus(hWnd As IntPtr) As IntPtr
-    End Function
-
-    <DllImport("user32.dll", CharSet:=CharSet.Unicode)>
-    Private Shared Function GetClassName(hWnd As IntPtr, lpClassName As StringBuilder, nMaxCount As Integer) As Integer
-    End Function
-
-    <DllImport("user32.dll", CharSet:=CharSet.Unicode)>
-    Private Shared Function GetWindowText(hWnd As IntPtr, lpString As StringBuilder, nMaxCount As Integer) As Integer
-    End Function
-
-    ' GetWindowLongPtr/SetWindowLongPtr nu există pe 32-bit; alegem varianta potrivită la rulare.
-    <DllImport("user32.dll", EntryPoint:="GetWindowLongPtrW")>
-    Private Shared Function GetWindowLongPtr64(hWnd As IntPtr, nIndex As Integer) As IntPtr
-    End Function
-
-    <DllImport("user32.dll", EntryPoint:="GetWindowLongW")>
-    Private Shared Function GetWindowLong32(hWnd As IntPtr, nIndex As Integer) As Integer
-    End Function
-
-    <DllImport("user32.dll", EntryPoint:="SetWindowLongPtrW")>
-    Private Shared Function SetWindowLongPtr64(hWnd As IntPtr, nIndex As Integer, dwNewLong As IntPtr) As IntPtr
-    End Function
-
-    <DllImport("user32.dll", EntryPoint:="SetWindowLongW")>
-    Private Shared Function SetWindowLong32(hWnd As IntPtr, nIndex As Integer, dwNewLong As Integer) As Integer
-    End Function
-
-    Private Shared Function GetWindowLongPtrSafe(hWnd As IntPtr, nIndex As Integer) As IntPtr
-        If IntPtr.Size = 8 Then Return GetWindowLongPtr64(hWnd, nIndex)
-        Return New IntPtr(GetWindowLong32(hWnd, nIndex))
-    End Function
-
-    Private Shared Function SetWindowLongPtrSafe(hWnd As IntPtr, nIndex As Integer, val As IntPtr) As IntPtr
-        If IntPtr.Size = 8 Then Return SetWindowLongPtr64(hWnd, nIndex, val)
-        Return New IntPtr(SetWindowLong32(hWnd, nIndex, val.ToInt32()))
-    End Function
-
-    Private Shared Function GetClass(hWnd As IntPtr) As String
-        Dim sb As New StringBuilder(256)
-        GetClassName(hWnd, sb, sb.Capacity)
-        Return sb.ToString()
-    End Function
-
-    Private Shared Function GetTitle(hWnd As IntPtr) As String
-        Dim sb As New StringBuilder(512)
-        GetWindowText(hWnd, sb, sb.Capacity)
-        Return sb.ToString()
-    End Function
+    ' GONE IN SLICE 0024. Every declaration that used to live here (styles, SetParent, MoveWindow,
+    ' SetWindowPos, RedrawWindow, GetWindow, MapWindowPoints, GetClassName/GetWindowText, the 32/64
+    ' bit GetWindowLongPtr pair, the RECT struct and the EnumWindows delegate) is now in
+    ' AdobeNativeMethods / AdobeWindowHosting in KBot.Controls, shared with ReaderHostPreview.
+    ' The bench reaches them ONLY through AdobeWindowHosting — there is no second copy to drift.
 
 End Class

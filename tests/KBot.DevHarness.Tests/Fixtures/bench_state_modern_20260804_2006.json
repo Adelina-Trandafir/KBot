@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "name": "Stare salvat\u0103 din bancul de prob\u0103",
+  "note": "Generat automat din controalele bancului la 2026-08-04 20:06:04. Documentul se alege separat, cu \u00ABDeschide PDF\u2026\u00BB.",
+  "launch": {
+    "newInstance": false,
+    "noSplash": false
+  },
+  "openParameters": {},
+  "clip": {
+    "enabled": true,
+    "right": 230,
+    "top": 152
+  },
+  "move": {
+    "dx": -130,
+    "dy": 0,
+    "dw": 0,
+    "dh": 0
+  },
+  "userPrefs": {
+    "hive": "auto",
+    "values": {
+      "bEnableAv2": 1
+    },
+    "restoreOnClose": false
+  },
+  "requireCleanBaseline": false,
+  "scenario": [
+    "launch",
+    "waitForEmbed",
+    "probe",
+    "applyClip",
+    "applyMove"
+  ]
+}

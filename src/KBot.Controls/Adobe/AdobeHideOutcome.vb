@@ -2,7 +2,10 @@ Option Strict On
 Imports System.Collections.Generic
 Imports System.Linq
 
-' What actually happened to one window a scenario asked to hide (slice 0023).
+' What actually happened to one window we asked to hide.
+'
+' MOVED HERE IN SLICE 0024 from KBot.DevHarness (Internal\Adobe\HideOutcome.vb), unchanged — the
+' popup watcher in the shipping preview reports with exactly the same vocabulary as the bench.
 '
 ' WHY: the old code logged «1 din 1 texte găsite» and called it a success. On 04.08 the task pane
 ' host was already 0×0 and invisible BEFORE the scenario started, so every run hid a window that

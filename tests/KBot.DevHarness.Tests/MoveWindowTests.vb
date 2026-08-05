@@ -1,6 +1,9 @@
 Option Strict On
 Imports System.Drawing
 Imports System.Linq
+' Slice 0024 moved HostedWindowGeometry / MoveOutcome into KBot.Controls, shared with the shipping
+' DDF preview. The tests are unchanged — the same assertions now pin the shared implementation.
+Imports KBot.Controls
 Imports KBot.DevHarness
 Imports Xunit
 

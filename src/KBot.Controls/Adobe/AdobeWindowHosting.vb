@@ -1,0 +1,299 @@
+Option Strict On
+Imports System.Collections.Generic
+Imports System.Diagnostics
+Imports System.Drawing
+Imports System.IO
+Imports System.Text
+Imports System.Threading
+Imports KBot.Common
+Imports Microsoft.Win32
+
+''' <summary>
+''' The Win32 primitives for hosting an Adobe window in a panel: find the exe, build the command
+''' line, find the window, reparent it, place it, force it to paint, and let it go again.
+'''
+''' EXTRACTED IN SLICE 0024. Both <c>AdobeReaderHarnessForm</c> (KBot.DevHarness) and
+''' <c>ReaderHostPreview</c> (KBot.App) used to carry their own copy of every one of these, and the
+''' copies had ALREADY diverged — the bench stripped WS_SYSMENU / WS_MINIMIZEBOX / WS_MAXIMIZEBOX
+''' and nudged the window into painting, the preview did neither, so the same PDF behaved
+''' differently in the two places. One implementation means the next Adobe update is diagnosed once.
+''' </summary>
+Public NotInheritable Class AdobeWindowHosting
+
+    Private Sub New()
+    End Sub
+
+    ''' <summary>Timeout when looking for the launched Adobe window (ms).</summary>
+    Public Const FindTimeoutMs As Integer = 8000
+    ''' <summary>Polling step while looking for it (ms).</summary>
+    Public Const FindPollMs As Integer = 150
+    ''' <summary>Delay before the second redraw — Adobe finishes its layout after the window appears.</summary>
+    Public Const RedrawDelayMs As Integer = 250
+
+    ''' <summary>The process names an Adobe viewer runs under.</summary>
+    Public Shared ReadOnly ProcessNames As String() = {"Acrobat", "AcroRd32"}
+
+    ' ── Locating Adobe ──────────────────────────────────────────────────────────
+    ''' <summary>
+    ''' The Adobe executable: the App Paths registry entry first, then the usual install folders.
+    ''' Nothing when Adobe is not installed — the caller must say so in Romanian, never crash.
+    '''
+    ''' NOTE: <c>AdobeUtils.GetAdobeReaderPath</c> (KBot.Xfa) resolves the .pdf HANDLER instead, but
+    ''' it is Private and KBot.Controls does not reference KBot.Xfa; unifying them would mean opening
+    ''' the signing engine, which is out of scope here.
+    ''' </summary>
+    Public Shared Function ResolveAdobePath() As String
+        Try
+            For Each exe As String In New String() {"Acrobat.exe", "AcroRd32.exe"}
+                Dim p As String = ReadAppPath(exe)
+                If Not String.IsNullOrEmpty(p) AndAlso File.Exists(p) Then Return p
+            Next
+
+            Dim candidates As String() = {
+                "Adobe\Acrobat DC\Acrobat\Acrobat.exe",
+                "Adobe\Acrobat Reader DC\Reader\AcroRd32.exe",
+                "Adobe\Acrobat\Acrobat.exe"
+            }
+            For Each pf As String In New String() {
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}
+                If String.IsNullOrEmpty(pf) Then Continue For
+                For Each c As String In candidates
+                    Dim full As String = Path.Combine(pf, c)
+                    If File.Exists(full) Then Return full
+                Next
+            Next
+            Return Nothing
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeWindowHosting.ResolveAdobePath", ex)
+            Return Nothing
+        End Try
+    End Function
+
+    Private Shared Function ReadAppPath(exeName As String) As String
+        Try
+            Using k As RegistryKey = Registry.LocalMachine.OpenSubKey(
+                "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\" & exeName)
+                If k IsNot Nothing Then Return TryCast(k.GetValue(Nothing), String)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeWindowHosting.ReadAppPath", ex)
+        End Try
+        Return Nothing
+    End Function
+
+    ' ── Command line ────────────────────────────────────────────────────────────
+    ''' <summary>
+    ''' Adobe's syntax: <c>[/n] [/s] [/A "param1&amp;param2&amp;…"] "cale.pdf"</c>. The /A parameters
+    ''' MUST come before the file name — Adobe ignores them otherwise. Pure, so the exact command
+    ''' line each profile produces is pinned by tests.
+    ''' </summary>
+    Public Shared Function BuildArguments(newInstance As Boolean, noSplash As Boolean,
+                                          openParameters As String, pdfPath As String) As String
+        Dim sb As New StringBuilder()
+        If newInstance Then sb.Append("/n ")
+        If noSplash Then sb.Append("/s ")
+        If Not String.IsNullOrEmpty(openParameters) Then
+            sb.Append("/A """).Append(openParameters).Append(""" ")
+        End If
+        sb.Append(""""c).Append(pdfPath).Append(""""c)
+        Return sb.ToString()
+    End Function
+
+    ''' <summary>The command line a profile produces for a document.</summary>
+    Public Shared Function BuildArguments(profile As AdobeViewerProfile, pdfPath As String) As String
+        If profile Is Nothing Then Return """" & pdfPath & """"
+        Return BuildArguments(profile.NewInstance, profile.NoSplash, profile.OpenParametersText(), pdfPath)
+    End Function
+
+    ' ── Finding the window ──────────────────────────────────────────────────────
+    ''' <summary>
+    ''' A visible top-level Adobe window whose title contains <paramref name="baseName"/>, polled
+    ''' until the timeout. IntPtr.Zero when it never appears — the caller then falls back and SAYS
+    ''' so, rather than grabbing the wrong window.
+    '''
+    ''' Blocking by design: call it from a background thread (both callers do).
+    ''' </summary>
+    Public Shared Function FindReaderWindow(baseName As String,
+                                            Optional timeoutMs As Integer = FindTimeoutMs,
+                                            Optional pollMs As Integer = FindPollMs) As IntPtr
+        Try
+            Dim deadline As DateTime = DateTime.UtcNow.AddMilliseconds(timeoutMs)
+            Do
+                Dim found As IntPtr = IntPtr.Zero
+                AdobeNativeMethods.EnumWindows(
+                    Function(h, l)
+                        If Not AdobeNativeMethods.IsWindowVisible(h) Then Return True
+                        If Not IsAdobeWindowClass(AdobeNativeMethods.GetClass(h)) Then Return True
+                        Dim title As String = AdobeNativeMethods.GetTitle(h)
+                        If title.IndexOf(baseName, StringComparison.OrdinalIgnoreCase) >= 0 Then
+                            found = h
+                            Return False   ' stop enumerating
+                        End If
+                        Return True
+                    End Function, IntPtr.Zero)
+
+                If found <> IntPtr.Zero Then Return found
+                Thread.Sleep(pollMs)
+            Loop While DateTime.UtcNow < deadline
+            Return IntPtr.Zero
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeWindowHosting.FindReaderWindow", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>The main-window classes Adobe uses across versions (Reader and Acrobat).</summary>
+    Public Shared Function IsAdobeWindowClass(className As String) As Boolean
+        If String.IsNullOrEmpty(className) Then Return False
+        Return className.IndexOf("Acrobat", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+               className.IndexOf("AdobeAcrobat", StringComparison.OrdinalIgnoreCase) >= 0
+    End Function
+
+    ''' <summary>Every live Adobe process id on this machine.</summary>
+    Public Shared Function AdobeProcessIds() As List(Of Integer)
+        Dim ids As New List(Of Integer)()
+        Try
+            For Each name As String In ProcessNames
+                For Each p As Process In Process.GetProcessesByName(name)
+                    Try
+                        ids.Add(p.Id)
+                    Finally
+                        p.Dispose()
+                    End Try
+                Next
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeWindowHosting.AdobeProcessIds", ex)
+        End Try
+        Return ids
+    End Function
+
+    ' ── Reparenting ─────────────────────────────────────────────────────────────
+    ''' <summary>
+    ''' Turns a top-level Adobe window into a child of <paramref name="hostHandle"/>, stripping the
+    ''' styles that only make sense on a standalone window. Returns the ORIGINAL style, which the
+    ''' caller must keep and hand back to <see cref="RestoreStandalone"/> — otherwise the window is
+    ''' left as an unusable frameless orphan if the process outlives us.
+    ''' </summary>
+    Public Shared Function AttachAsChild(hwnd As IntPtr, hostHandle As IntPtr) As IntPtr
+        Try
+            Dim originalStyle As IntPtr = AdobeNativeMethods.GetWindowLongPtrSafe(hwnd, AdobeNativeMethods.GWL_STYLE)
+            Dim style As Long = originalStyle.ToInt64()
+            style = style And Not AdobeNativeMethods.StandaloneStyles
+            style = style Or AdobeNativeMethods.WS_CHILD
+            AdobeNativeMethods.SetWindowLongPtrSafe(hwnd, AdobeNativeMethods.GWL_STYLE, New IntPtr(style))
+            AdobeNativeMethods.SetParent(hwnd, hostHandle)
+            Return originalStyle
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeWindowHosting.AttachAsChild", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Puts style and parent back. Best-effort by construction: this runs on the dispose path and
+    ''' on every document change, where a dead handle is normal, not exceptional.
+    ''' </summary>
+    Public Shared Sub RestoreStandalone(hwnd As IntPtr, originalStyle As IntPtr, originalParent As IntPtr)
+        Try
+            If hwnd = IntPtr.Zero OrElse Not AdobeNativeMethods.IsWindow(hwnd) Then Return
+            If originalStyle <> IntPtr.Zero Then
+                AdobeNativeMethods.SetWindowLongPtrSafe(hwnd, AdobeNativeMethods.GWL_STYLE, originalStyle)
+            End If
+            AdobeNativeMethods.SetParent(hwnd, originalParent)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeWindowHosting.RestoreStandalone", ex)
+        End Try
+    End Sub
+
+    ' ── Placing / painting ──────────────────────────────────────────────────────
+    ''' <summary>Moves the hosted window to <paramref name="bounds"/> (host client coordinates).</summary>
+    Public Shared Sub Place(hwnd As IntPtr, bounds As Rectangle)
+        If hwnd = IntPtr.Zero OrElse bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return
+        AdobeNativeMethods.MoveWindow(hwnd, bounds.X, bounds.Y, bounds.Width, bounds.Height, True)
+    End Sub
+
+    ''' <summary>
+    ''' Forces the reparented window to show and repaint. WITHOUT THIS IT STAYS INVISIBLE until some
+    ''' unrelated layout change happens — the single most confusing symptom of this whole mechanism,
+    ''' and the one difference the preview copy was missing.
+    ''' </summary>
+    Public Shared Sub NudgeRedraw(hwnd As IntPtr, bounds As Rectangle)
+        If hwnd = IntPtr.Zero OrElse bounds.Width <= 0 OrElse bounds.Height <= 0 Then Return
+        AdobeNativeMethods.SetWindowPos(hwnd, IntPtr.Zero, bounds.X, bounds.Y, bounds.Width, bounds.Height,
+                                        AdobeNativeMethods.SWP_NOZORDER Or AdobeNativeMethods.SWP_NOACTIVATE Or
+                                        AdobeNativeMethods.SWP_FRAMECHANGED Or AdobeNativeMethods.SWP_SHOWWINDOW)
+        ' One pixel narrower and back: Adobe recomputes its layout on a size CHANGE, not on a repaint.
+        AdobeNativeMethods.MoveWindow(hwnd, bounds.X, bounds.Y, Math.Max(1, bounds.Width - 1), bounds.Height, True)
+        AdobeNativeMethods.MoveWindow(hwnd, bounds.X, bounds.Y, bounds.Width, bounds.Height, True)
+        AdobeNativeMethods.RedrawWindow(hwnd, IntPtr.Zero, IntPtr.Zero,
+                                        AdobeNativeMethods.RDW_INVALIDATE Or AdobeNativeMethods.RDW_ALLCHILDREN Or
+                                        AdobeNativeMethods.RDW_UPDATENOW Or AdobeNativeMethods.RDW_FRAME)
+    End Sub
+
+    ''' <summary>The hosted window's rectangle in its parent's CLIENT coordinates.</summary>
+    Public Shared Function RectInParent(hwnd As IntPtr) As Rectangle
+        Return AdobeNativeMethods.RectInParent(hwnd)
+    End Function
+
+    ''' <summary>Hides one window and says what that actually achieved.</summary>
+    Public Shared Function Hide(hwnd As IntPtr) As HideOutcome
+        If hwnd = IntPtr.Zero OrElse Not AdobeNativeMethods.IsWindow(hwnd) Then Return HideOutcome.NotFound
+        Dim r As Rectangle = AdobeNativeMethods.RectOnScreen(hwnd)
+        Dim outcome As HideOutcome = HideOutcomeClassifier.Classify(
+            found:=True, visible:=AdobeNativeMethods.IsWindowVisible(hwnd), width:=r.Width, height:=r.Height)
+        If outcome = HideOutcome.Hidden Then AdobeNativeMethods.ShowWindow(hwnd, AdobeNativeMethods.SW_HIDE)
+        Return outcome
+    End Function
+
+    ''' <summary>Shows one window again (the bench's «rearată»).</summary>
+    Public Shared Sub Show(hwnd As IntPtr)
+        If hwnd = IntPtr.Zero OrElse Not AdobeNativeMethods.IsWindow(hwnd) Then Return
+        AdobeNativeMethods.ShowWindow(hwnd, AdobeNativeMethods.SW_SHOW)
+    End Sub
+
+    ''' <summary>The process that owns a window, or 0.</summary>
+    Public Shared Function OwnerPid(hwnd As IntPtr) As Integer
+        Return AdobeNativeMethods.OwnerPid(hwnd)
+    End Function
+
+    ''' <summary>
+    ''' True while the handle still names a window. Adobe destroys and recreates its panels, so a
+    ''' handle recorded a second ago can already be dead — every caller checks before using one.
+    ''' </summary>
+    Public Shared Function IsAlive(hwnd As IntPtr) As Boolean
+        Return hwnd <> IntPtr.Zero AndAlso AdobeNativeMethods.IsWindow(hwnd)
+    End Function
+
+    ''' <summary>True when the window is currently visible.</summary>
+    Public Shared Function IsVisible(hwnd As IntPtr) As Boolean
+        Return hwnd <> IntPtr.Zero AndAlso AdobeNativeMethods.IsWindowVisible(hwnd)
+    End Function
+
+    ''' <summary>
+    ''' Gives the keyboard focus to the hosted window. EXPERIMENTAL across a process boundary — a
+    ''' reparented foreign window does not behave like a native child, and "nothing happened" is a
+    ''' valid result to record.
+    ''' </summary>
+    Public Shared Sub FocusWindow(hwnd As IntPtr)
+        If hwnd = IntPtr.Zero Then Return
+        AdobeNativeMethods.SetFocus(hwnd)
+    End Sub
+
+    ''' <summary>Kills a process tree by id. Best-effort: the process may already be gone.</summary>
+    Public Shared Sub KillPid(pid As Integer)
+        If pid <= 0 Then Return
+        Try
+            Dim p As Process = Process.GetProcessById(pid)
+            Try
+                If Not p.HasExited Then p.Kill(True)
+            Finally
+                p.Dispose()
+            End Try
+        Catch
+            ' Best-effort: the process may not exist any more. Nothing to report.
+        End Try
+    End Sub
+
+End Class

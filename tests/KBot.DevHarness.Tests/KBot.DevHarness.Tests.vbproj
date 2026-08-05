@@ -25,6 +25,13 @@
 
   <!-- Covers the pure Adobe-RHP helpers (slice 0023): RegistrySnapshotSet, RegFileBuilder,
        AdobeHiveResolver. Registry I/O stays behind IRegistryAccess — tests use a fake. -->
+  <!-- The two bench states the operator saved on 04.08.2026 (20:06 modern / 20:10 classic), kept
+       BYTE-VERBATIM as fixtures. They are the evidence behind the two shipped profiles, so the
+       regression test can prove the refactor did not change the geometry they produce. -->
+  <ItemGroup>
+    <None Include="Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" Link="Fixtures\%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\KBot.DevHarness\KBot.DevHarness.vbproj" />
   </ItemGroup>

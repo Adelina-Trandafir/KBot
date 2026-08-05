@@ -3,6 +3,9 @@ Imports System.Collections.Generic
 Imports System.Linq
 Imports System.Text.Json
 Imports Microsoft.Win32
+' HideOutcome / HideAttemptSummary moved to KBot.Controls in slice 0024 (shared with the DDF
+' preview's popup watcher); the assertions below are untouched.
+Imports KBot.Controls
 Imports KBot.DevHarness
 Imports Xunit
 

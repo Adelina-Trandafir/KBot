@@ -1,12 +1,17 @@
 Option Strict On
 Imports System.Drawing
 
-' Placing the HOSTED Adobe window inside pnlHost (slice 0023, pass 6).
+' Placing the HOSTED Adobe window inside a host panel.
 '
-' The bench moves and resizes the window it hosts — the same window clip right/top already drive —
+' MOVED HERE IN SLICE 0024 from KBot.DevHarness (Internal\Adobe\MoveOutcome.vb), unchanged. The
+' bench and the shipping preview now compute the same rectangle from the same code — the whole point
+' of the extraction. The semantics are the ones the harness already implements and are NOT redefined
+' here (see docs\SETARI_UTILIZATOR.md for the operator-facing description).
+'
+' The bench moves and resizes the window it HOSTS — the same window clip right/top already drive —
 ' NOT individual Adobe child windows. dx/dy/dw/dh are the general form of the clip: clip right is a
-' dw, clip top is a dy plus a dh. Everything the harness places goes through one rectangle, so a
-' delta survives resizes, splitter drags and relaunches without anything re-imposing it.
+' dw, clip top is a dy plus a dh. Everything goes through one rectangle, so a delta survives
+' resizes, splitter drags and relaunches without anything re-imposing it.
 Public NotInheritable Class HostedWindowGeometry
 
     Private Sub New()
@@ -25,6 +30,40 @@ Public NotInheritable Class HostedWindowGeometry
 
     Public Shared Function IsNeutral(dx As Integer, dy As Integer, dw As Integer, dh As Integer) As Boolean
         Return dx = 0 AndAlso dy = 0 AndAlso dw = 0 AndAlso dh = 0
+    End Function
+
+End Class
+
+''' <summary>
+''' The whole placement in one pure function: host client size + clip + deltas -&gt; the rectangle the
+''' hosted window gets. This is the extracted body of the harness's <c>HostedBounds()</c>, which is
+''' why the bench and the DDF preview cannot drift apart geometrically.
+''' </summary>
+Public NotInheritable Class AdobeHostGeometry
+
+    Private Sub New()
+    End Sub
+
+    Public Shared Function Compute(hostWidth As Integer, hostHeight As Integer,
+                                   clipEnabled As Boolean, clipRight As Integer, clipTop As Integer,
+                                   dx As Integer, dy As Integer, dw As Integer, dh As Integer) As Rectangle
+        Dim b As Rectangle
+        If clipEnabled Then
+            ' Oversized and offset, so the clipped bands (top toolbar strip / right pane strip)
+            ' fall OUTSIDE the visible client area of the host panel.
+            b = New Rectangle(0, -clipTop, hostWidth + clipRight, hostHeight + clipTop)
+        Else
+            b = New Rectangle(0, 0, hostWidth, hostHeight)
+        End If
+        Return HostedWindowGeometry.Offset(b, dx, dy, dw, dh)
+    End Function
+
+    ''' <summary>The rectangle a profile asks for, given the host panel's client size.</summary>
+    Public Shared Function Compute(hostSize As Size, profile As AdobeViewerProfile) As Rectangle
+        If profile Is Nothing Then Return New Rectangle(0, 0, Math.Max(1, hostSize.Width), Math.Max(1, hostSize.Height))
+        Return Compute(hostSize.Width, hostSize.Height,
+                       profile.ClipEnabled, profile.ClipRight, profile.ClipTop,
+                       profile.Dx, profile.Dy, profile.Dw, profile.Dh)
     End Function
 
 End Class
