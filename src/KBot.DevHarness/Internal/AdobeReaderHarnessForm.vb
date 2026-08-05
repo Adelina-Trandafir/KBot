@@ -800,6 +800,80 @@ Public NotInheritable Class AdobeReaderHarnessForm
     End Sub
 
     ''' <summary>
+    ''' The window texts that stand between the ActiveX control and the state the operator wants.
+    '''
+    ''' MEASURED ON 05.08.2026, NOT PROPOSED. Comparing the probe of the «perfect» state against a
+    ''' bad one, the whole difference is these windows being invisible:
+    '''
+    '''   <c>AVDockableTabStripView</c>          67x297 vis=1  ->  0x297 vis=0
+    '''   <c>AVExpandCollapseButtonView</c>      27x297 vis=1  ->  27x227 vis=0
+    '''   <c>AVSplitationPageView</c> (document) x=67 w=1805    ->  x=0  w=1899  (fills the panel)
+    '''
+    ''' The document view widens to the full panel BY ITSELF once they are gone — nothing has to be
+    ''' resized. <c>AVTaskPaneHostView</c> is included because it is the right-hand Tools pane, the
+    ''' original target of slice 0023.
+    ''' </summary>
+    Private Shared ReadOnly AcroChromeTexts As String() = {
+        "AVDockableTabStripView", "AVExpandCollapseButtonView", "AVTaskPaneHostView"}
+
+    ''' <summary>
+    ''' Hides the ActiveX control's chrome by window TEXT — the lever that actually works.
+    '''
+    ''' The control's own API does NOT: `setShowToolbar`, `setShowScrollbars`, `setPageMode`,
+    ''' `setLayoutMode` and `setView` all returned OK on every load of 05.08.2026 and the bars stayed
+    ''' put. That is the same split slice 0023 hit with the `/A` open parameters — they address
+    ''' DOCUMENT chrome, while the tab strip and the Tools pane are APPLICATION chrome.
+    '''
+    ''' Each window is classified BEFORE being touched, so «already hidden» and «zero-sized» cannot
+    ''' be reported as a success — the lesson from pass 4 of slice 0023, applied here before the same
+    ''' mistake could be made a second time.
+    ''' </summary>
+    Private Sub btnAcroHideChrome_Click(sender As Object, e As EventArgs) Handles btnAcroHideChrome.Click
+        Try
+            If _acroHost Is Nothing OrElse Not _acroHost.IsHandleCreated Then
+                ShowStatus("Încarcă întâi un document în ActiveX.")
+                Return
+            End If
+
+            Dim nodes As List(Of AdobeWindowNode) =
+                AdobeWindowProbe.Walk(_acroHost.Handle, pnlAcroHost.Handle, ACRO_PROBE_DEPTH)
+            RhpLog("── Ascund chrome-ul ActiveX (după text) ──")
+
+            Dim outcomes As New List(Of HideOutcome)()
+            For Each text As String In AcroChromeTexts
+                Dim matches As List(Of AdobeWindowNode) = nodes.
+                    Where(Function(n) String.Equals(n.Text, text, StringComparison.OrdinalIgnoreCase)).ToList()
+                If matches.Count = 0 Then
+                    outcomes.Add(HideOutcome.NotFound)
+                    RhpLog($"  {HideOutcomeClassifier.Label(HideOutcome.NotFound)}: «{text}»")
+                    Continue For
+                End If
+                For Each m As AdobeWindowNode In matches
+                    If Not AdobeWindowHosting.IsAlive(m.Hwnd) Then Continue For
+                    ' Classify FIRST — afterwards everything looks hidden, which is exactly how a
+                    ' no-op gets logged as a success.
+                    Dim outcome As HideOutcome = HideOutcomeClassifier.Classify(
+                        found:=True, visible:=AdobeWindowHosting.IsVisible(m.Hwnd),
+                        width:=m.Width, height:=m.Height)
+                    outcomes.Add(outcome)
+                    RhpLog($"  {HideOutcomeClassifier.Label(outcome)}: «{m.Text}» {m.Width}x{m.Height} " &
+                           $"(hwnd=0x{m.Hwnd.ToInt64():X})")
+                    If outcome = HideOutcome.Hidden Then AdobeWindowHosting.Hide(m.Hwnd)
+                Next
+            Next
+
+            Dim summary As New HideAttemptSummary(AcroChromeTexts.Length, outcomes)
+            RhpLog(summary.SummaryLine(1, 1))
+            RhpLog("Sondează din nou ca să vezi dacă AVSplitationPageView s-a lățit la tot panoul " &
+                   "(x=0). Asta e semnul că starea e cea bună, nu impresia de pe ecran.")
+            ShowStatus($"Chrome ActiveX: {summary.HiddenCount} fereastră(e) ascunse efectiv.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroHideChrome_Click", ex)
+            RhpLog("Ascunderea chrome-ului ActiveX a eșuat — " & ex.Message)
+        End Try
+    End Sub
+
+    ''' <summary>
     ''' Dumps EVERY value under both AVGeneral hives, naming nothing in advance.
     '''
     ''' The pane state survives from one document to the next, so Adobe writes it somewhere. Rather

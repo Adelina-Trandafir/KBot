@@ -187,10 +187,50 @@ The calls are made **before and again after** `LoadFile`, with the two passes lo
 because the documentation and common practice disagree about which ordering takes effect on which
 build. The bench is the right place to settle that by measurement.
 
-**If those calls work, they replace the entire clip / hide-children / registry apparatus with four
-method calls.** That is the open question now, and it is a bigger one than the original §8 verdict.
-It is gated behind the «Ascunde barele» checkbox (on by default) and, per §11, nothing in `KBot.App`
-depends on any of it.
+### The chrome API was measured on 05.08.2026. It does not work.
+
+All five calls returned **OK on every load, before and after `LoadFile`** — and the bars stayed.
+Accepted and ignored.
+
+This is the **same split slice 0023 hit with the `/A` open parameters**: those methods address
+DOCUMENT chrome, while the tab strip and the Tools pane are APPLICATION chrome. The ActiveX route
+does not escape the problem; it inherits it. So the hoped-for outcome — four method calls replacing
+the clip / hide-children / registry apparatus — **did not happen.**
+
+### What DOES work: hiding three child windows by text
+
+The operator reached a state they describe as perfect — nothing visible until the mouse moves, when
+the floating bar appears. Diffing that probe against a bad one shows the whole difference:
+
+| window (by text) | bad | **perfect** |
+|---|---|---|
+| `AVDockableTabStripView` (left strip) | `67x297 vis=1` | **`0x297 vis=0`** |
+| `AVExpandCollapseButtonView` (right, x=1872) | `27x297 vis=1` | **`27x227 vis=0`** |
+| `AVSplitationPageView` (the document) | `x=67, w=1805` | **`x=0, w=1899` — the whole panel** |
+
+**The perfect state is not a mode Adobe offers. It is three windows being invisible**, after which
+the document view widens to the full panel *by itself* — nothing has to be resized. That makes it
+reproducible with `ShowWindow`, which is exactly the `hideChildren` lever slice 0023 already built,
+pointed at the ActiveX control instead of the hosted window. `btnAcroHideChrome` does that, and
+classifies each window BEFORE touching it so «already hidden» and «zero-sized» cannot be reported as
+success — pass 4's lesson, applied before the same mistake could be repeated.
+
+### The pane state is NOT in the registry
+
+Fifteen `AVGeneral` snapshots, 106 values each, across every pane manipulation. **The only values
+that changed were session counters** (`iNumAcrobatLaunches`, `iNumOfAVDocsOpened`,
+`uLastSessionTimeStamp`, `uWhatsNewExpContentRotation`). Nothing pane-related moved.
+
+So the state that survives from one document to the next is held **in the live Acrobat process's
+memory** — which persists precisely because Adobe is single-instance. Consequences: a registry
+pre-set cannot steer it mid-session, and the first document of a session inherits whatever the
+operator's previous Acrobat session left behind. That is why the same file behaves differently
+depending on what was open before it.
+
+This is also why enumerating the hive rather than guessing a key name was the right call: the
+answer turned out to be «no key at all», which no amount of guessing would have produced.
+
+Per §11, nothing in `KBot.App` depends on any of this.
 
 ## Files touched
 
@@ -286,13 +326,15 @@ the change, which is what it is for.
   honoured) is still unverified, as is the new Acrobat UI.
 * ~~The AcroPDF verdict is NOT recorded~~ — **RECORDED and POSITIVE, see §3**, and the
   same-document collision is confirmed as the whole explanation of the one failure.
-* **THE NEW OPEN QUESTION, and it is the biggest one in this slice: do the ActiveX chrome calls
-  work?** The document renders but with every Adobe toolbar showing. `ApplyChrome` is written and
-  wired (five documented calls, each reported independently, applied before AND after `LoadFile`)
-  but **has never been run**. If Adobe honours them, four method calls replace the clip geometry,
-  the child-window hiding and the registry keys that slice 0023 spent five passes on. If it ignores
-  them, the ActiveX route is no better than window hosting on the problem that actually matters,
-  and the positive render verdict does not save it.
+* ~~Do the ActiveX chrome calls work?~~ **ANSWERED 05.08.2026: NO.** All five return OK and change
+  nothing — see §3. Hiding three child windows by text does work, and `btnAcroHideChrome` now does
+  it, but that has **not been run yet**: the mechanism is inferred from a probe diff of a state the
+  operator reached by hand, not from having reproduced it programmatically. Reproducing it with one
+  button click is the next check.
+* **Whether the hidden state SURVIVES the next document is unknown.** Adobe rebuilds these child
+  windows per document and the handles change every time — that is why slice 0023 addresses them by
+  text and re-applies after every embed. The same will almost certainly be needed here, and the
+  retry loop that exists for the hosted window has no equivalent in the ActiveX path yet.
 * **The §5 `bEnableAv2` table is empty.** Whether the opt-out is still honoured, per UI generation,
   has not been observed. `AdobeUiPreference` is inert (`ENFORCE_LEGACY_UI = False`), so its
   snapshot/restore path — including «absent restores to deletion» — has never executed in the app;

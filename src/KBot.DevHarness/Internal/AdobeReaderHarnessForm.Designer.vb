@@ -106,6 +106,7 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents chkAcroChrome As System.Windows.Forms.CheckBox
     Friend WithEvents btnAcroProbe As System.Windows.Forms.Button
     Friend WithEvents btnAcroPrefs As System.Windows.Forms.Button
+    Friend WithEvents btnAcroHideChrome As System.Windows.Forms.Button
     Friend WithEvents pnlAcroHost As System.Windows.Forms.Panel
     Friend WithEvents tlpMove As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents lblDx As System.Windows.Forms.Label
@@ -240,6 +241,7 @@ Partial Class AdobeReaderHarnessForm
         chkAcroChrome = New CheckBox()
         btnAcroProbe = New Button()
         btnAcroPrefs = New Button()
+        btnAcroHideChrome = New Button()
         pnlAcroHost = New Panel()
         tlpMove = New TableLayoutPanel()
         lblDx = New Label()
@@ -1055,6 +1057,7 @@ Partial Class AdobeReaderHarnessForm
         flowAcroButtons.Controls.Add(btnAcroLoad)
         flowAcroButtons.Controls.Add(btnAcroSecond)
         flowAcroButtons.Controls.Add(btnAcroClear)
+        flowAcroButtons.Controls.Add(btnAcroHideChrome)
         flowAcroButtons.Controls.Add(btnAcroProbe)
         flowAcroButtons.Controls.Add(btnAcroPrefs)
         flowAcroButtons.Controls.Add(chkAcroChrome)
@@ -1086,6 +1089,18 @@ Partial Class AdobeReaderHarnessForm
         btnAcroClear.TabIndex = 2
         btnAcroClear.Text = "Golește"
         btnAcroClear.UseVisualStyleBackColor = True
+        '
+        ' btnAcroHideChrome — MĂSURAT pe 05.08.2026, nu propus. Starea „perfectă" a operatorului
+        ' (nimic vizibil până la mișcarea mouse-ului, când apare bara plutitoare) NU e un mod al lui
+        ' Adobe: e exact situația în care trei ferestre copil sunt invizibile, iar vederea
+        ' documentului se întinde atunci pe tot panoul (x=0, lățime completă, în loc de x=67).
+        ' Deci se reproduce cu ShowWindow — aceeași pârghie ca «hideChildren» din felia 0023.
+        '
+        btnAcroHideChrome.AutoSize = True
+        btnAcroHideChrome.Name = "btnAcroHideChrome"
+        btnAcroHideChrome.TabIndex = 3
+        btnAcroHideChrome.Text = "Ascunde chrome-ul (după text)"
+        btnAcroHideChrome.UseVisualStyleBackColor = True
         '
         ' btnAcroProbe — arborele de ferestre DIN INTERIORUL controlului ActiveX, la cerere.
         ' Panourile lui Adobe apar/dispar/plutesc în funcție de starea dinainte; asta e STRUCTURĂ DE
@@ -1126,7 +1141,11 @@ Partial Class AdobeReaderHarnessForm
         pnlAcroHost.BorderStyle = BorderStyle.FixedSingle
         pnlAcroHost.Dock = DockStyle.Fill
         pnlAcroHost.Name = "pnlAcroHost"
-        pnlAcroHost.Size = New Size(1588, 300)
+        ' 300 era prea puțin: sondele din 05.08.2026 arată panoul la 1899x298, adică Adobe își
+        ' aranjează panourile într-o fâșie în care documentul aproape că nu încape. Nu era cauza
+        ' comportamentului raportat, dar făcea imposibil de judecat pe ecran ce s-a întâmplat.
+        pnlAcroHost.Size = New Size(1588, 700)
+        pnlAcroHost.MinimumSize = New Size(0, 700)
         pnlAcroHost.TabIndex = 2
         '
         ' tlpMove
