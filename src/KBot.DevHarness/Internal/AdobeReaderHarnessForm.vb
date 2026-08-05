@@ -755,6 +755,113 @@ Public NotInheritable Class AdobeReaderHarnessForm
     Private Const ACRO_PROBE_DEPTH As Integer = 7
 
     ''' <summary>
+    ''' Presses Adobe's OWN collapse button, so Adobe performs its own re-layout.
+    '''
+    ''' THE CORRECTION THAT MADE THIS NECESSARY (measured 05.08.2026). «Ascunde chrome-ul» reported
+    ''' three windows ASCUNS and changed nothing useful: hiding leaves the WIDTH, so Adobe never
+    ''' reflows. The probe is unambiguous —
+    '''
+    '''   after ShowWindow(SW_HIDE):  AVDockableTabStripView 67x697 vis=0, document at x=67 w=792
+    '''   the state actually wanted:  AVDockableTabStripView  0x697 vis=0, document at x=0  w=859
+    '''
+    ''' Adobe's collapse sets the width to ZERO and moves the siblings. Visibility was a consequence
+    ''' of that, not the mechanism, and reading the correlation as the cause is what produced the
+    ''' useless button. So: press Adobe's button and let Adobe do the layout.
+    '''
+    ''' The button TOGGLES, so this only clicks when the strip is actually expanded — otherwise it
+    ''' would re-open the pane it is supposed to close.
+    ''' </summary>
+    Private Sub btnAcroCollapse_Click(sender As Object, e As EventArgs) Handles btnAcroCollapse.Click
+        Try
+            If _acroHost Is Nothing OrElse Not _acroHost.IsHandleCreated Then
+                ShowStatus("Încarcă întâi un document în ActiveX.")
+                Return
+            End If
+
+            Dim nodes As List(Of AdobeWindowNode) =
+                AdobeWindowProbe.Walk(_acroHost.Handle, pnlAcroHost.Handle, ACRO_PROBE_DEPTH)
+            Dim strip As AdobeWindowNode = nodes.FirstOrDefault(
+                Function(n) String.Equals(n.Text, "AVDockableTabStripView", StringComparison.OrdinalIgnoreCase))
+
+            RhpLog("── Colapsez panourile prin butonul lui Adobe ──")
+            If strip Is Nothing Then
+                RhpLog("  AVDockableTabStripView NEGĂSIT — nimic de colapsat.")
+                ShowStatus("Banda de file nu există în arbore.")
+                Return
+            End If
+            If strip.Width <= 0 Then
+                RhpLog($"  AVDockableTabStripView e DEJA colapsată ({strip.Width}x{strip.Height}) — " &
+                       "nu apăs, fiindcă butonul comută și ar redeschide panoul.")
+                ShowStatus("Panourile sunt deja colapsate.")
+                Return
+            End If
+
+            ' The collapse button that belongs to the strip sits immediately to its right.
+            Dim button As AdobeWindowNode = nodes.
+                Where(Function(n) String.Equals(n.Text, "AVExpandCollapseButtonView", StringComparison.OrdinalIgnoreCase)).
+                OrderBy(Function(n) Math.Abs(n.Bounds.X - (strip.Bounds.X + strip.Width))).
+                FirstOrDefault()
+            If button Is Nothing Then
+                RhpLog("  AVExpandCollapseButtonView NEGĂSIT — nu am pe ce apăsa.")
+                Return
+            End If
+
+            Dim before As String = $"bandă {strip.Width}x{strip.Height} la x={strip.Bounds.X}"
+            RhpLog($"  Apăs butonul de la x={button.Bounds.X} ({button.Width}x{button.Height}, " &
+                   $"hwnd=0x{button.Hwnd.ToInt64():X}); înainte: {before}.")
+            AdobeWindowHosting.ClickCentre(button.Hwnd)
+
+            ' Adobe re-lays-out asynchronously; re-probe after a beat and report the number that
+            ' decides it — where the DOCUMENT view ends up.
+            tmrAcroVerify.Stop()
+            tmrAcroVerify.Start()
+            ShowStatus("Am apăsat butonul de colapsare; verific în 600 ms.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroCollapse_Click", ex)
+            RhpLog("Colapsarea prin buton a eșuat — " & ex.Message)
+        End Try
+    End Sub
+
+    ' Re-probes after the click and states plainly whether the document view reflowed. A click Adobe
+    ' ignored must not read like a success — the same rule as everywhere else in this bench.
+    Private Sub tmrAcroVerify_Tick(sender As Object, e As EventArgs) Handles tmrAcroVerify.Tick
+        Try
+            tmrAcroVerify.Stop()
+            If _acroHost Is Nothing OrElse Not _acroHost.IsHandleCreated Then Return
+
+            Dim nodes As List(Of AdobeWindowNode) =
+                AdobeWindowProbe.Walk(_acroHost.Handle, pnlAcroHost.Handle, ACRO_PROBE_DEPTH)
+            Dim strip As AdobeWindowNode = nodes.FirstOrDefault(
+                Function(n) String.Equals(n.Text, "AVDockableTabStripView", StringComparison.OrdinalIgnoreCase))
+            Dim page As AdobeWindowNode = nodes.FirstOrDefault(
+                Function(n) String.Equals(n.Text, "AVSplitationPageView", StringComparison.OrdinalIgnoreCase))
+
+            If strip Is Nothing OrElse page Is Nothing Then
+                RhpLog("  Verificare: arborele nu mai conține banda sau vederea documentului.")
+                Return
+            End If
+
+            Dim collapsed As Boolean = strip.Width <= 0
+            Dim flushLeft As Boolean = page.Bounds.X = 0
+            RhpLog($"  După click: bandă {strip.Width}x{strip.Height}, document la x={page.Bounds.X} " &
+                   $"lățime {page.Width} (panou {pnlAcroHost.ClientSize.Width}).")
+            If collapsed AndAlso flushLeft Then
+                RhpLog("  REUȘIT: banda e la lățime zero ȘI documentul s-a lățit la marginea stângă. " &
+                       "Asta e starea cerută, iar ea PERSISTĂ la documentele următoare din același " &
+                       "proces Adobe (măsurat: supraviețuiește a două încărcări).")
+                ShowStatus("Colapsare reușită — documentul ocupă tot panoul.")
+            Else
+                RhpLog("  FĂRĂ EFECT: Adobe nu a colapsat la click. Un click sintetic peste graniță " &
+                       "de proces nu e garantat onorat — rezultat valid de consemnat, nu un bug de " &
+                       "ocolit prin redimensionări din afară (acelea nu declanșează re-aranjarea).")
+                ShowStatus("Click ignorat de Adobe — vezi jurnalul.")
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.tmrAcroVerify_Tick", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
     ''' Dumps the window tree INSIDE the ActiveX control.
     '''
     ''' This exists for the pane behaviour reported on 05.08.2026: which of Adobe's bars appear,
@@ -864,9 +971,20 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
             Dim summary As New HideAttemptSummary(AcroChromeTexts.Length, outcomes)
             RhpLog(summary.SummaryLine(1, 1))
-            RhpLog("Sondează din nou ca să vezi dacă AVSplitationPageView s-a lățit la tot panoul " &
-                   "(x=0). Asta e semnul că starea e cea bună, nu impresia de pe ecran.")
-            ShowStatus($"Chrome ActiveX: {summary.HiddenCount} fereastră(e) ascunse efectiv.")
+
+            ' SUGESTIA OPERATORULUI, corectată: «forțăm o redesenare după ascundere?»
+            ' O REDESENARE nu mută nimic — dreptunghiurile din sondă sunt geometrie reală, nu pictură
+            ' veche; documentul chiar STĂ la x=67. Ce poate declanșa re-aranjarea e o SCHIMBARE DE
+            ' DIMENSIUNE, iar NudgeRedraw face exact asta (un pixel mai îngust și înapoi). Comentariul
+            ' lui din felia 0024 spune de ce, și e răspunsul la întrebare: «Adobe recalculează
+            ' layout-ul la o schimbare de DIMENSIUNE, nu la o repictare».
+            Dim client As New Rectangle(0, 0, pnlAcroHost.ClientSize.Width, pnlAcroHost.ClientSize.Height)
+            AdobeWindowHosting.NudgeRedraw(_acroHost.Handle, client)
+            RhpLog("  Am forțat o SCHIMBARE DE DIMENSIUNE pe control (un pixel și înapoi), ca Adobe " &
+                   "să reia aranjarea — o simplă repictare nu ar muta nimic.")
+            tmrAcroVerify.Stop()
+            tmrAcroVerify.Start()
+            ShowStatus($"Chrome ActiveX: {summary.HiddenCount} ascunse; verific aranjarea în 600 ms.")
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroHideChrome_Click", ex)
             RhpLog("Ascunderea chrome-ului ActiveX a eșuat — " & ex.Message)

@@ -107,6 +107,8 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents btnAcroProbe As System.Windows.Forms.Button
     Friend WithEvents btnAcroPrefs As System.Windows.Forms.Button
     Friend WithEvents btnAcroHideChrome As System.Windows.Forms.Button
+    Friend WithEvents btnAcroCollapse As System.Windows.Forms.Button
+    Friend WithEvents tmrAcroVerify As System.Windows.Forms.Timer
     Friend WithEvents pnlAcroHost As System.Windows.Forms.Panel
     Friend WithEvents tlpMove As System.Windows.Forms.TableLayoutPanel
     Friend WithEvents lblDx As System.Windows.Forms.Label
@@ -242,6 +244,8 @@ Partial Class AdobeReaderHarnessForm
         btnAcroProbe = New Button()
         btnAcroPrefs = New Button()
         btnAcroHideChrome = New Button()
+        btnAcroCollapse = New Button()
+        tmrAcroVerify = New Timer(components)
         pnlAcroHost = New Panel()
         tlpMove = New TableLayoutPanel()
         lblDx = New Label()
@@ -1057,6 +1061,7 @@ Partial Class AdobeReaderHarnessForm
         flowAcroButtons.Controls.Add(btnAcroLoad)
         flowAcroButtons.Controls.Add(btnAcroSecond)
         flowAcroButtons.Controls.Add(btnAcroClear)
+        flowAcroButtons.Controls.Add(btnAcroCollapse)
         flowAcroButtons.Controls.Add(btnAcroHideChrome)
         flowAcroButtons.Controls.Add(btnAcroProbe)
         flowAcroButtons.Controls.Add(btnAcroPrefs)
@@ -1089,6 +1094,20 @@ Partial Class AdobeReaderHarnessForm
         btnAcroClear.TabIndex = 2
         btnAcroClear.Text = "Golește"
         btnAcroClear.UseVisualStyleBackColor = True
+        '
+        ' btnAcroCollapse — apasă butonul LUI Adobe, ca Adobe să-și facă singur re-aranjarea.
+        ' Ascunderea (butonul de alături) lasă LĂȚIMEA, deci Adobe nu reașază nimic și documentul
+        ' rămâne retras cu 67px; colapsarea proprie a lui Adobe pune lățimea pe ZERO și mută frații.
+        '
+        btnAcroCollapse.AutoSize = True
+        btnAcroCollapse.Name = "btnAcroCollapse"
+        btnAcroCollapse.TabIndex = 3
+        btnAcroCollapse.Text = "Colapsează panourile (butonul Adobe)"
+        btnAcroCollapse.UseVisualStyleBackColor = True
+        '
+        ' tmrAcroVerify — Adobe reașază ASINCRON, deci verificarea se face după o pauză, nu imediat.
+        '
+        tmrAcroVerify.Interval = 600
         '
         ' btnAcroHideChrome — MĂSURAT pe 05.08.2026, nu propus. Starea „perfectă" a operatorului
         ' (nimic vizibil până la mișcarea mouse-ului, când apare bara plutitoare) NU e un mod al lui

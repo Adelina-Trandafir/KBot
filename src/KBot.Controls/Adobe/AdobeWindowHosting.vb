@@ -236,6 +236,30 @@ Public NotInheritable Class AdobeWindowHosting
         Return outcome
     End Function
 
+    ''' <summary>
+    ''' Posts a left click at the centre of a window's client area.
+    '''
+    ''' EXISTS BECAUSE HIDING IS NOT COLLAPSING (measured 05.08.2026). Calling ShowWindow(SW_HIDE) on
+    ''' Adobe's tab strip leaves its WIDTH intact, so Adobe never re-lays-out and the document view
+    ''' stays inset — the probe showed it still at x=67 with 792px instead of x=0 with 859px. Adobe's
+    ''' own collapse button sets the width to zero AND reflows the siblings, so the reliable way to
+    ''' reach that state is to press Adobe's button and let Adobe do the layout.
+    '''
+    ''' Posted, not sent: a foreign UI thread must never block ours. Returns False when the window is
+    ''' gone. EXPERIMENTAL in the same sense as the keyboard path of slice 0023 — a synthetic click
+    ''' into another process's window is not guaranteed to be honoured, and «nothing happened» is a
+    ''' valid result to record.
+    ''' </summary>
+    Public Shared Function ClickCentre(hwnd As IntPtr) As Boolean
+        If hwnd = IntPtr.Zero OrElse Not AdobeNativeMethods.IsWindow(hwnd) Then Return False
+        Dim r As Rectangle = AdobeNativeMethods.RectOnScreen(hwnd)
+        ' Client coordinates, so the centre is half the size — not the screen position.
+        Dim lp As IntPtr = AdobeNativeMethods.MakeLParam(Math.Max(0, r.Width \ 2), Math.Max(0, r.Height \ 2))
+        AdobeNativeMethods.PostMessage(hwnd, AdobeNativeMethods.WM_LBUTTONDOWN, New IntPtr(1), lp)
+        AdobeNativeMethods.PostMessage(hwnd, AdobeNativeMethods.WM_LBUTTONUP, IntPtr.Zero, lp)
+        Return True
+    End Function
+
     ''' <summary>Shows one window again (the bench's «rearată»).</summary>
     Public Shared Sub Show(hwnd As IntPtr)
         If hwnd = IntPtr.Zero OrElse Not AdobeNativeMethods.IsWindow(hwnd) Then Return

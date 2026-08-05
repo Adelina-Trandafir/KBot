@@ -51,6 +51,19 @@ Friend NotInheritable Class AdobeNativeMethods
     ' document. Posted, never sent — a foreign UI thread that is busy must not block ours.
     Public Const WM_CLOSE As UInteger = &H10UI
 
+    ' Synthetic click on one of Adobe's own child windows (slice 0024-03).
+    ' WHY A CLICK AND NOT A RESIZE: hiding or zero-sizing Adobe's panes from outside does NOT make it
+    ' re-lay-out — measured 05.08.2026, the document view stayed inset by 67px. Adobe's own collapse
+    ' button sets the width to zero AND reflows the siblings. Letting Adobe do it is the only way to
+    ' get its layout to agree with the result.
+    Public Const WM_LBUTTONDOWN As UInteger = &H201UI
+    Public Const WM_LBUTTONUP As UInteger = &H202UI
+
+    ''' <summary>Packs client-area coordinates into an lParam for the mouse messages.</summary>
+    Public Shared Function MakeLParam(x As Integer, y As Integer) As IntPtr
+        Return New IntPtr((y << 16) Or (x And &HFFFF))
+    End Function
+
     <StructLayout(LayoutKind.Sequential)>
     Public Structure RECT
         Public Left As Integer
