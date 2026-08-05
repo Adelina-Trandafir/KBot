@@ -8,6 +8,11 @@
     <OptionExplicit>On</OptionExplicit>
     <OptionInfer>On</OptionInfer>
     <OptionCompare>Binary</OptionCompare>
+    <!-- BouncyCastle 1.8.9 vine TRANSITIV prin iTextSharp, deci `NoWarn` de pe PackageReference-ul
+         lui iTextSharp nu-l acoperă (alt id de pachet). Motivarea completă e la PackageReference,
+         mai jos. Se repetă în cele trei proiecte care ajung la el: KBot.Xfa.Tests, KBot.App,
+         KBot.App.Tests. -->
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
   </PropertyGroup>
 
   <!-- Versiune componentă K-BOT.
@@ -21,8 +26,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Motorul XFA/PDF (portat din XFA_WRITTER). Aceeași versiune ca exe-ul original. -->
-    <PackageReference Include="iTextSharp" Version="5.5.13.3" />
+    <!-- Motorul XFA/PDF (portat din XFA_WRITTER). Aceeași versiune ca exe-ul original.
+
+         NU1701 SUPRIMAT DELIBERAT. iTextSharp 5.5.13.3 și dependența lui BouncyCastle 1.8.9 sunt
+         pachete .NET Framework; NuGet le restaurează prin shim-ul de compatibilitate și avertizează
+         o dată pentru FIECARE proiect care ajunge la ele (KBot.Xfa, KBot.Xfa.Tests, KBot.App,
+         KBot.App.Tests) — 16 avertismente pe build, mereu aceleași două pachete.
+
+         CE PIERDEM SPUNÂND ASTA: nu vom mai fi anunțați că pachetele astea nu sunt native pe .NET 8.
+         E acceptabil fiindcă versiunile sunt FIXATE (aceleași ca exe-ul original din care s-a portat
+         motorul, felia 0019) și fiindcă suprafața folosită din ele e acoperită de cele 39 de teste
+         din KBot.Xfa.Tests. Dacă vreodată se schimbă versiunea unuia dintre ele, ȘTERGE `NoWarn`
+         înainte, ca avertismentul să se poată auzi din nou.
+
+         Suprimarea stă pe PACHET, nu pe proiect: un pachet nou adăugat mâine va avertiza normal. -->
+    <PackageReference Include="iTextSharp" Version="5.5.13.3" NoWarn="NU1701" />
   </ItemGroup>
 
   <ItemGroup>

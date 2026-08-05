@@ -115,13 +115,26 @@ capture; `BuildArguments` extras overload), `AdobeNativeMethods.vb` (`PostMessag
 `FakeRegistryAccess.vb`, `AdobeHarnessLayoutTests.vb`, `KBot.DevHarness.Tests.vbproj`
 (project-wide `<Import Include="KBot.Controls" />`)
 
+**Modified (build hygiene)** — `KBot.Xfa.vbproj`, `KBot.App.vbproj`, `KBot.Xfa.Tests.vbproj`,
+`KBot.App.Tests.vbproj`: NU1701 suppression, see the test-results section.
+
 **Versions** — `KBot.Controls` 1.1.0.0 → 1.2.0.0, `KBot.App` 1.0.4.0 → 1.0.5.0,
 `KBot.DevHarness` 1.0.7.0 → 1.0.8.0. `KBot.Common` **unchanged** — it was not touched.
+`KBot.Xfa` **not bumped**: only its .vbproj warning settings changed, not a single line of its code.
 
 ## Test results
 
-* `dotnet build KBot.sln` — **0 errors, 0 BC warnings** (32 NU1701 on a rebuild = the 16 pre-existing
-  iTextSharp/BouncyCastle ones counted across both passes; unchanged).
+* `dotnet build KBot.sln` — **0 errors, 0 warnings of any kind.** The 16 long-standing NU1701
+  warnings were silenced in this pass at the operator's request: `NoWarn="NU1701"` on the iTextSharp
+  `PackageReference` in `KBot.Xfa`, plus a `<NoWarn>` property in the four projects that reach
+  **BouncyCastle**, which arrives *transitively* through iTextSharp and therefore cannot be covered
+  by the package-level attribute (different package id). The suppression is deliberately NOT a
+  `Directory.Build.props` blanket — the other eight projects still warn normally, and a new
+  .NET Framework package added tomorrow will still be reported. **What it costs:** we will no longer
+  be told these two packages are not native to .NET 8. Acceptable because both versions are pinned
+  (the same ones as the original XFA_WRITTER exe the engine was ported from, slice 0019) and the
+  surface used is covered by `KBot.Xfa.Tests`. If either version ever changes, remove `NoWarn` first
+  so the warning can be heard again — that note is in the .vbproj itself, not only here.
 * `dotnet test KBot.sln` — **693 passed / 0 failed / 0 skipped**, up from 663 (+30).
   `KBot.Controls.Tests` 201 → 224, `KBot.DevHarness.Tests` 153 → 160.
 

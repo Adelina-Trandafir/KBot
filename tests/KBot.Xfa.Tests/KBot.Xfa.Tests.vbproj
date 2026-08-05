@@ -8,6 +8,9 @@
     <OptionStrict>On</OptionStrict>
     <OptionExplicit>On</OptionExplicit>
     <OptionInfer>On</OptionInfer>
+    <!-- BouncyCastle 1.8.9, transitiv prin KBot.Xfa → iTextSharp. Motivarea completă e în
+         src\KBot.Xfa\KBot.Xfa.vbproj, la PackageReference-ul lui iTextSharp. -->
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
   </PropertyGroup>
 
   <!-- Versiune componentă K-BOT.
