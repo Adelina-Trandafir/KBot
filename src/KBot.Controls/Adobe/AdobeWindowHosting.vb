@@ -129,10 +129,9 @@ Public NotInheritable Class AdobeWindowHosting
     ''' timeout. IntPtr.Zero when it never appears — the caller then SAYS so rather than grabbing the
     ''' wrong window.
     '''
-    ''' THE TITLE-ONLY PATH. Prefer <see cref="AdobeWindowCapture.Find"/> with a process id: a title
-    ''' substring cannot tell our window from one the operator opened by hand, and this overload
-    ''' therefore can (and before slice 0024-03 did) embed a stranger's document. It remains for the
-    ''' bench, which starts Adobe in a separate scenario step and has no PID at this point.
+    ''' THE PID-LESS PATH. Prefer <see cref="AdobeWindowCapture.Find"/> with a process id, which can
+    ''' at least PREFER our own window; here every match is a title match. It remains for the bench,
+    ''' which starts Adobe in a separate scenario step and has no PID at this point.
     '''
     ''' It no longer requires the window to be VISIBLE, and it hides the window the instant it
     ''' matches — that visibility gate was the reason Adobe was seen on screen, with its caption,
@@ -146,7 +145,7 @@ Public NotInheritable Class AdobeWindowHosting
         Try
             Dim capture As New AdobeWindowCapture()
             Dim opts As New AdobeHostOptions() With {.FindTimeoutMs = timeoutMs, .FindPollMs = pollMs}
-            Return capture.Find(0, baseName, allowForeignTitleMatch:=True, options:=opts).Window
+            Return capture.Find(0, baseName, opts).Window
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeWindowHosting.FindReaderWindow", ex)
             Throw

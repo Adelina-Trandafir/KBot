@@ -106,10 +106,13 @@ Public Class AdobeReaderHostTests
     Public Async Function ASuccessfulEmbed_HostsTheWindowAndRevealsItOnlyAfterPlacing() As Task
         Dim win As New FakeNativeWindows()
         Dim launcher As New FakeAdobeLauncher()
-        ' The launcher hands out 1001 first, so that is the pid our window must carry.
-        Dim w = win.Add(handle:=40, pid:=1001, visible:=True)
         Dim host = NewHost(win, launcher)
         Dim pdf As String = NewTempPdf()
+        ' The window is identified by the DOCUMENT NAME, so the fake must carry it — a bare PID is
+        ' deliberately not enough any more. The launcher hands out 1001 first.
+        Dim w = win.Add(handle:=40, pid:=1001,
+                        title:=Path.GetFileNameWithoutExtension(pdf) & " - Adobe Acrobat",
+                        visible:=True)
 
         Try
             Dim result = Await host.ShowDocumentAsync(pdf)
@@ -141,9 +144,9 @@ Public Class AdobeReaderHostTests
         ' produce a top-level window.
         Dim win As New FakeNativeWindows()
         Dim launcher As New FakeAdobeLauncher()
-        win.Add(handle:=41, pid:=1001)
         Dim host = NewHost(win, launcher)
         Dim pdf As String = NewTempPdf()
+        win.Add(handle:=41, pid:=1001, title:=Path.GetFileNameWithoutExtension(pdf))
 
         Try
             Await host.ShowDocumentAsync(pdf)
@@ -178,8 +181,9 @@ Public Class AdobeReaderHostTests
             Dim firstTask As Task(Of AdobeHostResult) = host.ShowDocumentAsync(first)
             Assert.Single(launcher.Started)          ' pid 1001 is in flight
 
-            ' The second request supersedes it, and this one does find a window (pid 1002).
-            win.Add(handle:=42, pid:=1002)
+            ' The second request supersedes it, and this one does find a window (pid 1002). The
+            ' title carries the SECOND document's name, so the first request can never match it.
+            win.Add(handle:=42, pid:=1002, title:=Path.GetFileNameWithoutExtension(second))
             Dim secondResult = Await host.ShowDocumentAsync(second)
             Dim firstResult = Await firstTask
 
@@ -199,20 +203,19 @@ Public Class AdobeReaderHostTests
 
     <Fact>
     Public Async Function AForeignWindow_IsHostedButItsProcessIsNeverKilled() As Task
-        ' The modern profile's «/n = off» case, end to end: we embed a window belonging to the
-        ' operator's own Adobe, and letting go must not close their process.
+        ' The single-instance handoff, end to end, and the case that MUST work whatever «/n» says —
+        ' the operator's log shows Adobe does this on every launch. We embed a window belonging to
+        ' another Adobe process, and letting go must not close it.
         Dim win As New FakeNativeWindows()
         Dim launcher As New FakeAdobeLauncher()
-        win.Add(handle:=43, pid:=7777, title:="raport - Adobe Acrobat")
         Dim host = NewHost(win, launcher)
-        ' Force «/n» off so the title fallback is permitted.
-        host.NewInstanceMode = AdobeNewInstanceMode.Nu
+        ' «/n» explicitly ON — capture must STILL take the foreign window. Requiring our own PID here
+        ' is what left the real window floating in the taskbar.
+        host.NewInstanceMode = AdobeNewInstanceMode.Da
 
-        Dim pdf As String = Path.Combine(Path.GetTempPath(),
-                                         "raport_" & Guid.NewGuid().ToString("N") & ".pdf")
-        File.WriteAllText(pdf, "%PDF-1.4 test")
-        Dim baseName As String = Path.GetFileNameWithoutExtension(pdf)
-        win.Windows(0).Title = baseName & " - Adobe Acrobat"
+        Dim pdf As String = NewTempPdf()
+        win.Add(handle:=43, pid:=7777,
+                title:=Path.GetFileNameWithoutExtension(pdf) & " - Adobe Acrobat")
 
         Try
             Dim result = Await host.ShowDocumentAsync(pdf)

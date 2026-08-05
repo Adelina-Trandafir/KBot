@@ -379,15 +379,17 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Dim launchedPid As Integer = SafePid(proc)
         If launchedPid > 0 Then _launchedPids.Add(launchedPid)
 
-        ' Felia 0024-03: căutarea merge întâi pe PID și NU cere fereastra să fie deja vizibilă — o
-        ' prinde cât e încă ascunsă și o ascunde pe loc. Căderea pe titlu rămâne permisă doar când
-        ' bancul a lansat FĂRĂ «/n», adică exact cazul în care Adobe predă documentul altei instanțe.
+        ' Felia 0024-03: căutarea NU cere fereastra să fie deja vizibilă — o prinde cât e încă ascunsă
+        ' și o ascunde pe loc. Identificarea se face după NUMELE DOCUMENTULUI; PID-ul doar preferă
+        ' fereastra pornită de noi și etichetează potrivirea. Nu se condiționează pe «/n»: jurnalul
+        ' operatorului arată că Adobe predă documentul unei instanțe existente la FIECARE lansare,
+        ' inclusiv cu «/n», deci o căutare strictă pe PID nu găsea nimic și lăsa fereastra reală
+        ' plutind pe ecran, cu buton în bara de activități.
         Dim opts As AdobeHostOptions = CurrentHostOptions()
-        Dim allowForeign As Boolean = Not chkNewInstance.Checked
         If opts.UseCreationHook Then _creationHook.Install(launchedPid)
 
         Dim caught As AdobeCaptureResult =
-            Await Task.Run(Function() _capture.Find(launchedPid, baseName, allowForeign, opts))
+            Await Task.Run(Function() _capture.Find(launchedPid, baseName, opts))
 
         If opts.UseCreationHook Then _creationHook.Remove()
 

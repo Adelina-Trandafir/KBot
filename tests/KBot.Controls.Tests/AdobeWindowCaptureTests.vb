@@ -45,33 +45,70 @@ Public Class AdobeWindowCaptureTests
     End Sub
 
     <Fact>
-    Public Sub Find_IgnoresAWindowOfAnotherProcess_EvenWhenClassAndTitleMatch()
-        ' §9 test 3. THE REGRESSION THIS PREVENTS: the old search matched on class + title only, so
-        ' an Adobe the operator had open on the same document would be embedded into K-BOT's panel —
-        ' taking their window away from them.
+    Public Sub Find_TakesAForeignWindow_BecauseAdobeHandsTheDocumentToAnExistingInstance()
+        ' THE REGRESSION THIS FILE SHIPPED ONCE, and the reason this test exists.
+        '
+        ' Capture used to refuse a window belonging to a process K-BOT had not started, unless the
+        ' launch profile omitted «/n». The operator's own adobe_preview.log shows that gate is
+        ' simply wrong: EVERY launch logs «fereastra încorporată (PID 25168) NU a fost creată de
+        ' K-BOT (am pornit PID 27152)». Adobe is effectively single-instance and hands the document
+        ' to a running copy even when «/n» is passed. With the gate on, capture found nothing,
+        ' reported «window not found», and left the real Adobe window on screen — floating, with a
+        ' taskbar button. Exactly what the operator saw.
         Dim win As New FakeNativeWindows()
-        win.Add(handle:=10, pid:=4242, title:="raport.pdf - Adobe Acrobat")   ' theirs
+        win.Add(handle:=13, pid:=7777, title:="raport.pdf - Adobe Acrobat")   ' a running instance
         Dim capture As New AdobeWindowCapture(win)
 
-        ' allowForeignTitleMatch:=False — this is the «/n» case, where our PID must own the window.
-        Dim result = capture.Find(launchedPid:=1001, baseName:="raport",
-                                  allowForeignTitleMatch:=False, options:=FastOptions())
+        ' We started 1001 and it owns nothing. The window must still be taken.
+        Dim result = capture.Find(launchedPid:=1001, baseName:="raport", options:=FastOptions())
+
+        Assert.True(result.Found, "fereastra străină TREBUIE luată — altfel rămâne plutind în taskbar")
+        Assert.Equal(New IntPtr(13), result.Window)
+        ' Reported as foreign, which is what stops teardown from killing someone else's process.
+        Assert.Equal(AdobeCaptureMatch.ByTitle, result.Match)
+        Assert.Equal(7777, result.OwnerPid)
+    End Sub
+
+    <Fact>
+    Public Sub Find_IgnoresAWindowOfAnotherDocument_EvenInOurOwnProcess()
+        ' The title is what identifies the window. A different document open in the same Adobe must
+        ' not be grabbed.
+        Dim win As New FakeNativeWindows()
+        win.Add(handle:=10, pid:=1001, title:="altceva.pdf - Adobe Acrobat")
+        Dim capture As New AdobeWindowCapture(win)
+
+        Dim result = capture.Find(launchedPid:=1001, baseName:="raport", options:=FastOptions())
 
         Assert.False(result.Found)
         Assert.Equal(AdobeCaptureMatch.None, result.Match)
     End Sub
 
     <Fact>
-    Public Sub Find_AcceptsAWindowThatIsNotVisibleYet()
-        ' §9 test 4 — the flash regression itself. The previous search skipped any window failing
-        ' IsWindowVisible, which meant it could only ever match a window ALREADY DRAWN on screen,
-        ' caption and all. Catching it while invisible is the entire fix.
+    Public Sub Find_IgnoresAHelperWindowOfOurOwnProcess()
+        ' Adobe creates several top-level windows in one process sharing the «Acrobat» class prefix,
+        ' and EnumWindows returns them in Z-order. Matching on PID + class alone therefore grabbed a
+        ' helper window, hid it, reparented it — and left the real document window floating. The
+        ' document name in the title is what tells them apart.
         Dim win As New FakeNativeWindows()
-        win.Add(handle:=11, pid:=1001, title:="", visible:=False)
+        win.Add(handle:=16, pid:=1001, title:="", visible:=False)              ' helper, listed FIRST
+        win.Add(handle:=17, pid:=1001, title:="raport.pdf - Adobe Acrobat")    ' the real frame
         Dim capture As New AdobeWindowCapture(win)
 
-        Dim result = capture.Find(launchedPid:=1001, baseName:="raport",
-                                  allowForeignTitleMatch:=False, options:=FastOptions())
+        Dim result = capture.Find(launchedPid:=1001, baseName:="raport", options:=FastOptions())
+
+        Assert.Equal(New IntPtr(17), result.Window)
+    End Sub
+
+    <Fact>
+    Public Sub Find_AcceptsAWindowThatIsNotVisibleYet()
+        ' §9 test 4 — the flash fix. The original search skipped any window failing IsWindowVisible,
+        ' which meant it could only ever match a window ALREADY DRAWN on screen, caption and all.
+        ' Catching it while still invisible is the point; the title, not the visibility, identifies it.
+        Dim win As New FakeNativeWindows()
+        win.Add(handle:=11, pid:=1001, title:="raport.pdf", visible:=False)
+        Dim capture As New AdobeWindowCapture(win)
+
+        Dim result = capture.Find(launchedPid:=1001, baseName:="raport", options:=FastOptions())
 
         Assert.True(result.Found)
         Assert.Equal(New IntPtr(11), result.Window)
@@ -83,11 +120,10 @@ Public Class AdobeWindowCaptureTests
         ' Hiding must happen inside the search, before the caller is even told the window exists —
         ' every millisecond between «it exists» and «it is hidden» is a millisecond it can be seen.
         Dim win As New FakeNativeWindows()
-        Dim w = win.Add(handle:=12, pid:=1001, visible:=True)
+        Dim w = win.Add(handle:=12, pid:=1001, title:="raport.pdf", visible:=True)
         Dim capture As New AdobeWindowCapture(win)
 
-        Dim result = capture.Find(launchedPid:=1001, baseName:="raport",
-                                  allowForeignTitleMatch:=False, options:=FastOptions())
+        Dim result = capture.Find(launchedPid:=1001, baseName:="raport", options:=FastOptions())
 
         Assert.True(result.Found)
         Assert.False(w.Visible)
@@ -95,40 +131,15 @@ Public Class AdobeWindowCaptureTests
     End Sub
 
     <Fact>
-    Public Sub Find_MatchesByTitleInAForeignProcess_OnlyWhenTheProfileOmittedNewInstance()
-        ' The modern profile launches WITHOUT «/n», so Adobe hands the document to an instance the
-        ' operator already had open and OUR pid owns nothing. That case must still work — and must
-        ' be REPORTED as a title match, so the caller knows never to kill that process.
-        Dim win As New FakeNativeWindows()
-        win.Add(handle:=13, pid:=7777, title:="raport.pdf - Adobe Acrobat")
-        Dim capture As New AdobeWindowCapture(win)
-
-        Dim allowed = capture.Find(launchedPid:=1001, baseName:="raport",
-                                   allowForeignTitleMatch:=True, options:=FastOptions())
-        Assert.True(allowed.Found)
-        Assert.Equal(AdobeCaptureMatch.ByTitle, allowed.Match)
-        Assert.Equal(7777, allowed.OwnerPid)
-
-        ' Same desktop, «/n» on: the foreign window must stay untouched.
-        Dim win2 As New FakeNativeWindows()
-        win2.Add(handle:=13, pid:=7777, title:="raport.pdf - Adobe Acrobat")
-        Dim refused = New AdobeWindowCapture(win2).Find(
-            launchedPid:=1001, baseName:="raport",
-            allowForeignTitleMatch:=False, options:=FastOptions())
-        Assert.False(refused.Found)
-    End Sub
-
-    <Fact>
     Public Sub Find_PrefersOurOwnWindowOverAForeignOneWithTheSameTitle()
-        ' Both phases can match at once. Ours must win, or a second K-BOT document would embed the
+        ' Both can match at once. Ours must win, or a second K-BOT document would embed the
         ' operator's window while our own sat there unused.
         Dim win As New FakeNativeWindows()
         win.Add(handle:=20, pid:=7777, title:="raport.pdf - Adobe Acrobat")   ' theirs, listed first
         win.Add(handle:=21, pid:=1001, title:="raport.pdf - Adobe Acrobat")   ' ours
         Dim capture As New AdobeWindowCapture(win)
 
-        Dim result = capture.Find(launchedPid:=1001, baseName:="raport",
-                                  allowForeignTitleMatch:=True, options:=FastOptions())
+        Dim result = capture.Find(launchedPid:=1001, baseName:="raport", options:=FastOptions())
 
         Assert.Equal(New IntPtr(21), result.Window)
         Assert.Equal(AdobeCaptureMatch.ByPid, result.Match)
@@ -138,26 +149,23 @@ Public Class AdobeWindowCaptureTests
     Public Sub Find_KeepsPollingUntilTheWindowTurnsUp()
         ' Adobe does not have a window the instant Process.Start returns.
         Dim win As New FakeNativeWindows()
-        Dim w = win.Add(handle:=14, pid:=1001)
+        Dim w = win.Add(handle:=14, pid:=1001, title:="raport.pdf")
         w.AppearsAfterSweeps = 3
         Dim capture As New AdobeWindowCapture(win)
 
-        Dim result = capture.Find(launchedPid:=1001, baseName:="raport",
-                                  allowForeignTitleMatch:=False, options:=FastOptions())
+        Dim result = capture.Find(launchedPid:=1001, baseName:="raport", options:=FastOptions())
 
         Assert.True(result.Found)
         Assert.Equal(New IntPtr(14), result.Window)
     End Sub
 
     <Fact>
-    Public Sub Find_RejectsANonAdobeWindowOfOurOwnProcess()
-        ' Our own process can own windows that are not the document frame.
+    Public Sub Find_RejectsANonAdobeWindowEvenWithAMatchingTitle()
         Dim win As New FakeNativeWindows()
-        win.Add(handle:=15, pid:=1001, className:="SplashScreenClass")
+        win.Add(handle:=15, pid:=1001, title:="raport.pdf", className:="SplashScreenClass")
         Dim capture As New AdobeWindowCapture(win)
 
-        Dim result = capture.Find(launchedPid:=1001, baseName:="raport",
-                                  allowForeignTitleMatch:=False, options:=FastOptions())
+        Dim result = capture.Find(launchedPid:=1001, baseName:="raport", options:=FastOptions())
 
         Assert.False(result.Found)
     End Sub

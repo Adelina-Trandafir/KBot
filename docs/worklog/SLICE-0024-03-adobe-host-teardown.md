@@ -30,17 +30,47 @@ against the code as it actually stands, its sections split three ways:
   `IsWindowVisible`, so by construction it could only ever match a window **already drawn on
   screen**, caption and all.
 
-## §1 One correction the brief could not have anticipated
+## §1 The brief's PID rule is wrong on a real machine — and the first fix for it was ALSO wrong
 
-Brief §3.3 says capture must `skip unless pid = ourPid`. Applied literally that **breaks the modern
-profile**: `AdobeViewerProfiles.Modern` launches *without* `/n` — a measured value transcribed from
-the bench in 0024-01, not a preference — so Adobe hands the document to an instance the operator
-already had open and **our process owns no window at all**. A strict PID filter would return
-`WindowNotFound` for every modern-profile document.
+Brief §3.3 says capture must `skip unless pid = ourPid`. **This shipped broken and had to be fixed
+after the operator ran it.** Both the mistake and the correction are recorded here because the
+evidence only exists in a log, not in the repository.
 
-Implemented instead as **PID-first, with a logged title fallback permitted only when the launch
-profile omitted `/n`**. The result carries `AdobeCaptureMatch.ByPid` or `.ByTitle`, and a `ByTitle`
-match is what later forbids killing that process. Both halves are pinned by tests.
+**First attempt (wrong).** Knowing the modern profile launches without `/n`, capture was written as
+PID-first with a title fallback permitted *only when the launch profile omitted `/n`*. Under Auto or
+Classic — which do pass `/n` — the fallback was off, so capture searched our own PID only.
+
+**What the operator saw:** the Adobe window never became a child of the panel and stayed on screen
+as a floating, taskbar-listed window.
+
+**Why.** From their `adobe_preview.log`, on *every single launch*:
+
+```
+ATENȚIE: fereastra încorporată (PID 25168) NU a fost creată de K-BOT (am pornit PID 27152)
+```
+
+Adobe is effectively single-instance and hands the document to an already-running copy **even when
+`/n` is passed — it ignores the switch**. So our launched process routinely owns no window at all,
+PID-strict capture found nothing, returned `WindowNotFound`, and the real window was simply left
+alone. Gating on what we *asked for* (`/n`) rather than what actually happens was the error.
+
+**The fix.** The **document title is required** and the **PID is only a preference**: it decides
+whether the match is labelled `ByPid` or `ByTitle` and nothing more. A foreign window is always
+accepted. Nothing is lost by this, because the protection against ending someone else's process
+lives in `AdobeWindowTeardown` and its launched-PID set — capture never needed to be strict for that
+to hold.
+
+The title requirement also closes a second hole the first attempt opened: Adobe creates several
+top-level windows per process sharing the `Acrobat` class prefix, and `EnumWindows` returns them in
+Z-order, so PID + class alone could grab a **helper window** — hide it, reparent it, and leave the
+real frame floating. The document name in the title is what tells them apart.
+
+**The tests were complicit and have been fixed too.** The original test #4 used a fake desktop with
+exactly one Acrobat-class window per PID, so it could not distinguish the right window from the
+first one; and one test actively asserted that a foreign window must be *refused*. Three new tests
+now pin the real behaviour: a foreign window is taken (with the log evidence quoted in the test), a
+helper window listed first is skipped in favour of the titled frame, and a different document's
+window in our own process is ignored.
 
 ## §2 What changed
 
@@ -135,8 +165,8 @@ capture; `BuildArguments` extras overload), `AdobeNativeMethods.vb` (`PostMessag
   (the same ones as the original XFA_WRITTER exe the engine was ported from, slice 0019) and the
   surface used is covered by `KBot.Xfa.Tests`. If either version ever changes, remove `NoWarn` first
   so the warning can be heard again — that note is in the .vbproj itself, not only here.
-* `dotnet test KBot.sln` — **693 passed / 0 failed / 0 skipped**, up from 663 (+30).
-  `KBot.Controls.Tests` 201 → 224, `KBot.DevHarness.Tests` 153 → 160.
+* `dotnet test KBot.sln` — **694 passed / 0 failed / 0 skipped**, up from 663 (+31).
+  `KBot.Controls.Tests` 201 → 225, `KBot.DevHarness.Tests` 153 → 160.
 
 All nine tests the brief's §9 asks for exist:
 
@@ -154,10 +184,16 @@ the change, which is what it is for.
 
 ## Anything left unverified or deferred
 
-* **NOTHING HERE HAS RUN AGAINST A REAL ADOBE, AND NOTHING HAS BEEN SEEN ON SCREEN.** This is the
-  same standing caveat as 0024-01/02 and it applies to every claim below. The tests prove call
-  *order* and call *absence* against a fake desktop; `SetParent`, `ShowWindow`, `PostMessage` and
-  `SetWinEventHook` have not been executed once in this pass.
+* **THE CAPTURE PATH HAS NOW BEEN RUN ONCE ON A REAL MACHINE — AND IT FAILED.** See §1. The fix is
+  in, but it too is unverified: nobody has yet confirmed on screen that the window becomes a child
+  again. **This is the first thing to check.**
+* **NOTHING ELSE HERE HAS RUN AGAINST A REAL ADOBE.** The tests prove call *order* and call
+  *absence* against a fake desktop; teardown's `PostMessage`, the creation hook's `SetWinEventHook`
+  and both detach modes have still not been executed once.
+* **A process lesson worth keeping:** the failure was not caught by the build, by 693 passing tests,
+  or by review — it needed one run. The tests were written from the same wrong assumption as the
+  code, so they confirmed it instead of challenging it. The evidence that settled it was a log file
+  in `bin\`, not anything in the repository.
 * **The brief's §10 definition of done cannot be signed off from here.** «No stray window», «no
   taskbar button», «the window is not seen before it is inside `pnlHost`» and «the residual flash is
   measured» are all **on-screen observations**. The code paths that produced both defects are gone

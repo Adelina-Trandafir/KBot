@@ -54,13 +54,22 @@ End Class
 '''  * identity comes from the process id, so a window the operator opened by hand cannot be
 '''    grabbed by accident — the old search matched a title substring and would happily take one.
 '''
-''' THE ONE CONCESSION, AND WHY. <see cref="AdobeViewerProfiles.Modern"/> launches WITHOUT «/n»,
-''' which is a measured value, not a preference: Adobe then hands the document to an instance the
-''' operator already had open and OUR process owns no window at all. A strict PID filter would
-''' report «window not found» for every modern-profile document. So when — and only when — the
-''' launch profile omitted «/n», a title match in a foreign process is accepted as a SECOND phase,
-''' and the result says <see cref="AdobeCaptureMatch.ByTitle"/> so the caller can log it and refuse
-''' to kill that process later.
+''' THE DOCUMENT TITLE IS REQUIRED, AND THE PROCESS ID IS ONLY A PREFERENCE. This was learned the
+''' hard way, from the operator's own `adobe_preview.log`: on a real machine EVERY launch logs
+''' «fereastra încorporată (PID 25168) NU a fost creată de K-BOT (am pornit PID 27152)». Adobe is
+''' effectively single-instance and hands the document to an already-running copy — even when the
+''' profile passes «/n», which it ignores. So our launched process very often owns NO window at all,
+''' and a capture that REQUIRES the PID to match reports «window not found» while the real Adobe
+''' window sits on screen as a floating, taskbar-listed window. That is exactly the regression this
+''' class shipped with once.
+'''
+''' Therefore: a candidate must carry the document name in its title (which is what makes it the
+''' right window, and what stops a helper window of the same class from being grabbed), and the PID
+''' is used only to PREFER our own window and to LABEL the match. A
+''' <see cref="AdobeCaptureMatch.ByTitle"/> result tells the caller the window is foreign, which is
+''' what stops teardown from ending someone else's process — that protection lives in
+''' <see cref="AdobeWindowTeardown"/> and its launched-PID set, and never needed capture to be
+''' strict.
 ''' </summary>
 Public NotInheritable Class AdobeWindowCapture
 
@@ -74,13 +83,12 @@ Public NotInheritable Class AdobeWindowCapture
     ''' Polls for the window, hides it on sight, and returns it. Blocking by design — call it from a
     ''' background thread.
     ''' </summary>
-    ''' <param name="launchedPid">The PID we started; 0 disables the (preferred) PID phase.</param>
-    ''' <param name="baseName">The document's file name, used only by the title fallback.</param>
-    ''' <param name="allowForeignTitleMatch">
-    ''' True only when the launch profile omitted «/n». See the class remarks — this is the modern
-    ''' profile's concession, not a general loosening.
+    ''' <param name="launchedPid">
+    ''' The PID we started. Used to PREFER our own window and to label the match; a window belonging
+    ''' to another process is still accepted, because Adobe routinely hands the document to one.
     ''' </param>
-    Public Function Find(launchedPid As Integer, baseName As String, allowForeignTitleMatch As Boolean,
+    ''' <param name="baseName">The document's file name. Required — see the class remarks.</param>
+    Public Function Find(launchedPid As Integer, baseName As String,
                          options As AdobeHostOptions) As AdobeCaptureResult
         Try
             Dim opts As AdobeHostOptions = If(options, New AdobeHostOptions())
@@ -91,22 +99,8 @@ Public NotInheritable Class AdobeWindowCapture
 
             Dim deadline As DateTime = started.AddMilliseconds(Math.Max(1, opts.FindTimeoutMs))
             Do
-                ' Phase 1 — ours by process id. No visibility test, no title test.
-                If launchedPid > 0 Then
-                    Dim mine As IntPtr = FirstAdobeWindow(launchedPid, Nothing)
-                    If mine <> IntPtr.Zero Then
-                        Return Captured(mine, launchedPid, AdobeCaptureMatch.ByPid, started)
-                    End If
-                End If
-
-                ' Phase 2 — the modern profile's foreign instance, matched on the document name.
-                If allowForeignTitleMatch AndAlso Not String.IsNullOrEmpty(baseName) Then
-                    Dim foreign As IntPtr = FirstAdobeWindow(0, baseName)
-                    If foreign <> IntPtr.Zero Then
-                        Return Captured(foreign, _win.OwnerPid(foreign), AdobeCaptureMatch.ByTitle, started)
-                    End If
-                End If
-
+                Dim hit As AdobeCaptureResult = SweepOnce(launchedPid, baseName, started)
+                If hit IsNot Nothing Then Return hit
                 Thread.Sleep(Math.Max(1, opts.FindPollMs))
             Loop While DateTime.UtcNow < deadline
 
@@ -115,6 +109,38 @@ Public NotInheritable Class AdobeWindowCapture
             GlobalErrorLog.Write("AdobeWindowCapture.Find", ex)
             Throw
         End Try
+    End Function
+
+    ' One pass over the desktop. Ours wins over a stranger's, but a stranger's is still taken —
+    ' refusing it is what left the real window floating in the taskbar.
+    Private Function SweepOnce(launchedPid As Integer, baseName As String,
+                               started As DateTime) As AdobeCaptureResult
+        If String.IsNullOrEmpty(baseName) Then Return Nothing
+        Dim all As IReadOnlyList(Of IntPtr) = _win.EnumTopLevelWindows()
+        If all Is Nothing Then Return Nothing
+
+        Dim ours As IntPtr = IntPtr.Zero
+        Dim foreign As IntPtr = IntPtr.Zero
+
+        For Each h As IntPtr In all
+            ' Visibility is deliberately NOT tested: catching the window while it is still hidden is
+            ' the whole point. The title is what identifies it.
+            If Not AdobeWindowHosting.IsAdobeWindowClass(_win.GetClass(h)) Then Continue For
+            Dim title As String = If(_win.GetTitle(h), "")
+            If title.IndexOf(baseName, StringComparison.OrdinalIgnoreCase) < 0 Then Continue For
+
+            If launchedPid > 0 AndAlso _win.OwnerPid(h) = launchedPid Then
+                If ours = IntPtr.Zero Then ours = h
+            ElseIf foreign = IntPtr.Zero Then
+                foreign = h
+            End If
+        Next
+
+        If ours <> IntPtr.Zero Then Return Captured(ours, launchedPid, AdobeCaptureMatch.ByPid, started)
+        If foreign <> IntPtr.Zero Then
+            Return Captured(foreign, _win.OwnerPid(foreign), AdobeCaptureMatch.ByTitle, started)
+        End If
+        Return Nothing
     End Function
 
     ' Hide FIRST, report second. Between the match and this call the window may be on screen; there
@@ -127,22 +153,6 @@ Public NotInheritable Class AdobeWindowCapture
 
     Private Shared Function Elapsed(started As DateTime) As Integer
         Return CInt(Math.Min(Integer.MaxValue, (DateTime.UtcNow - started).TotalMilliseconds))
-    End Function
-
-    ' One sweep. pid > 0 matches on owner; otherwise titleContains must match. Never tests visibility.
-    Private Function FirstAdobeWindow(pid As Integer, titleContains As String) As IntPtr
-        Dim all As IReadOnlyList(Of IntPtr) = _win.EnumTopLevelWindows()
-        If all Is Nothing Then Return IntPtr.Zero
-        For Each h As IntPtr In all
-            If pid > 0 AndAlso _win.OwnerPid(h) <> pid Then Continue For
-            If Not AdobeWindowHosting.IsAdobeWindowClass(_win.GetClass(h)) Then Continue For
-            If Not String.IsNullOrEmpty(titleContains) Then
-                Dim title As String = If(_win.GetTitle(h), "")
-                If title.IndexOf(titleContains, StringComparison.OrdinalIgnoreCase) < 0 Then Continue For
-            End If
-            Return h
-        Next
-        Return IntPtr.Zero
     End Function
 
     ''' <summary>

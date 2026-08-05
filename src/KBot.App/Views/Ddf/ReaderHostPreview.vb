@@ -197,14 +197,23 @@ Public Class ReaderHostPreview
         pnlLoading.Visible = False
         pnlMissing.Visible = False
         lblMessage.Visible = False
+        pnlHost.BringToFront()
     End Sub
 
+    ''' <summary>
+    ''' Starea de așteptare. <c>pnlHost</c> rămâne VIZIBIL, doar acoperit de <c>pnlLoading</c> — nu
+    ''' se ascunde. Fereastra Adobe se reparentează pe handle-ul lui cât timp mesajul e pe ecran, iar
+    ''' un panou ascuns e un loc prost în care să muți o fereastră străină: WinForms poate recrea
+    ''' handle-ul unui control la schimbări de vizibilitate, iar asta ar orfaniza fereastra deja
+    ''' încorporată.
+    ''' </summary>
     Private Sub ShowLoading()
-        pnlHost.Visible = False
+        pnlHost.Visible = True
         pnlLoading.Visible = True
         pnlMissing.Visible = False
         lblMessage.Visible = False
         lblNote.Visible = False
+        pnlLoading.BringToFront()
     End Sub
 
     Private Sub ShowMissing()

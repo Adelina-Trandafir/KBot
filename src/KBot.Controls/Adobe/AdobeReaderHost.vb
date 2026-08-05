@@ -237,13 +237,15 @@ Public NotInheritable Class AdobeReaderHost
         ' The early catch, when it is switched on. Installed from THIS (UI) thread by contract.
         If _options.UseCreationHook Then _hook.Install(pid)
 
-        ' A profile that launches WITHOUT «/n» may have handed the document to the operator's own
-        ' Adobe, in which case our PID owns no window at all — see AdobeWindowCapture.
-        Dim allowForeign As Boolean = Not launchProfile.NewInstance
+        ' The window is identified by the DOCUMENT NAME, and the PID only decides whether the match
+        ' is labelled «ours» or «foreign». Gating the search on «/n» — as this code briefly did — is
+        ' wrong: the operator's log shows Adobe hands the document to a running instance on EVERY
+        ' launch, «/n» included, so a PID-strict search finds nothing and leaves the real window
+        ' floating on screen with a taskbar button.
         Dim opts As AdobeHostOptions = _options.Clone()
         Dim baseName As String = Path.GetFileNameWithoutExtension(pdfPath)
         Dim caught As AdobeCaptureResult =
-            Await Task.Run(Function() _capture.Find(pid, baseName, allowForeign, opts)).ConfigureAwait(True)
+            Await Task.Run(Function() _capture.Find(pid, baseName, opts)).ConfigureAwait(True)
 
         If _options.UseCreationHook Then _hook.Remove()
 
