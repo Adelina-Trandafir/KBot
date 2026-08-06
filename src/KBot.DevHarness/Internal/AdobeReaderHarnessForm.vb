@@ -851,6 +851,8 @@ Public NotInheritable Class AdobeReaderHarnessForm
     Private _hudWatchTicks As Integer = 0
     ' Deepest node the walk actually reached — the difference between «nothing there» and «I stopped».
     Private _hudDeepest As Integer = 0
+    ' 0 = idle, 1 = we re-opened the panes and still owe the closing click that produces the bar.
+    Private _acroToggleStage As Integer = 0
 
     ''' <summary>
     ''' Watches for the floating bar for ten seconds, sampling five times a second.
@@ -1129,18 +1131,36 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 WakeAcroLayout()
                 Return
             End If
+            ' DEJA COLAPSAT NU ÎNSEAMNĂ „NIMIC DE FĂCUT" — și asta a fost greșeala.
+            '
+            ' Bara plutitoare apare ca URMARE A ACȚIUNII de colapsare, nu ca urmare a STĂRII de
+            ' colapsat. Starea persistă între sesiuni (măsurat: la 09:35:18 banda era deja 0x697
+            ' înainte de orice click, după repornirea aplicației), deci la pornire Adobe e deja
+            ' colapsat, butonul ăsta zicea «nu apăs», nicio colapsare nu se mai întâmpla în sesiune
+            ' — și bara nu mai apărea deloc. Nu o fereastră ascunsă a stricat-o, ci acțiunea care
+            ' lipsea.
+            '
+            ' Deci: dacă e deja colapsat, COMUTĂM DE DOUĂ ORI — deschidem și închidem la loc — ca
+            ' Adobe să execute chiar acțiunea de colapsare în sesiunea curentă.
             If strip.Width <= 0 Then
-                RhpLog($"  AVDockableTabStripView e DEJA colapsată ({strip.Width}x{strip.Height}) — " &
-                       "nu apăs, fiindcă butonul comută și ar redeschide panoul.")
-                ShowStatus("Panourile sunt deja colapsate.")
+                Dim reopen As AdobeWindowNode = NearestCollapseButton(nodes, strip)
+                If reopen Is Nothing Then
+                    RhpLog("  Deja colapsat, dar nu găsesc butonul ca să comut — nu pot forța acțiunea.")
+                    Return
+                End If
+                RhpLog($"  Deja colapsat ({strip.Width}x{strip.Height}). Bara plutitoare apare la " &
+                       "ACȚIUNEA de colapsare, nu la starea de colapsat — deci deschid și închid la " &
+                       "loc, ca Adobe să execute acțiunea acum.")
+                AdobeWindowHosting.ClickCentre(reopen.Hwnd)
+                _acroToggleStage = 1
+                tmrAcroVerify.Stop()
+                tmrAcroVerify.Start()
+                ShowStatus("Comut panourile ca să reapară bara plutitoare…")
                 Return
             End If
 
             ' The collapse button that belongs to the strip sits immediately to its right.
-            Dim button As AdobeWindowNode = nodes.
-                Where(Function(n) String.Equals(n.Text, "AVExpandCollapseButtonView", StringComparison.OrdinalIgnoreCase)).
-                OrderBy(Function(n) Math.Abs(n.Bounds.X - (strip.Bounds.X + strip.Width))).
-                FirstOrDefault()
+            Dim button As AdobeWindowNode = NearestCollapseButton(nodes, strip)
             If button Is Nothing Then
                 RhpLog("  AVExpandCollapseButtonView NEGĂSIT — nu am pe ce apăsa.")
                 Return
@@ -1164,6 +1184,15 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
     ' Re-probes after the click and states plainly whether the document view reflowed. A click Adobe
     ' ignored must not read like a success — the same rule as everywhere else in this bench.
+    ''' <summary>The collapse button belonging to a strip: the nearest one to its right edge.</summary>
+    Private Shared Function NearestCollapseButton(nodes As List(Of AdobeWindowNode),
+                                                  strip As AdobeWindowNode) As AdobeWindowNode
+        Return nodes.
+            Where(Function(n) String.Equals(n.Text, "AVExpandCollapseButtonView", StringComparison.OrdinalIgnoreCase)).
+            OrderBy(Function(n) Math.Abs(n.Bounds.X - (strip.Bounds.X + strip.Width))).
+            FirstOrDefault()
+    End Function
+
     Private Sub tmrAcroVerify_Tick(sender As Object, e As EventArgs) Handles tmrAcroVerify.Tick
         Try
             tmrAcroVerify.Stop()
@@ -1171,6 +1200,27 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
             Dim nodes As List(Of AdobeWindowNode) =
                 AdobeWindowProbe.Walk(_acroHost.Handle, pnlAcroHost.Handle, ACRO_PROBE_DEPTH)
+
+            ' Second half of the «already collapsed» toggle: it is open again now, so close it — and
+            ' THAT closing is the action that makes the floating bar appear.
+            If _acroToggleStage = 1 Then
+                _acroToggleStage = 0
+                Dim s As AdobeWindowNode = nodes.FirstOrDefault(
+                    Function(n) String.Equals(n.Text, "AVDockableTabStripView", StringComparison.OrdinalIgnoreCase))
+                If s Is Nothing Then
+                    RhpLog("  Comutare: banda a dispărut din arbore între cele două clickuri.")
+                    Return
+                End If
+                RhpLog($"  Comutare, pasul 2: banda e acum {s.Width}x{s.Height} — o închid la loc.")
+                Dim b As AdobeWindowNode = NearestCollapseButton(nodes, s)
+                If b Is Nothing Then
+                    RhpLog("  Comutare: butonul a dispărut — nu pot închide la loc.")
+                    Return
+                End If
+                AdobeWindowHosting.ClickCentre(b.Hwnd)
+                tmrAcroVerify.Start()      ' verify on the next tick
+                Return
+            End If
             Dim strip As AdobeWindowNode = nodes.FirstOrDefault(
                 Function(n) String.Equals(n.Text, "AVDockableTabStripView", StringComparison.OrdinalIgnoreCase))
             Dim page As AdobeWindowNode = nodes.FirstOrDefault(
