@@ -16,28 +16,28 @@ Partial Class DdfView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         split = New SplitContainer()
+        tree = New Controls.AdvancedTreeControl()
         pnlTreeHead = New Panel()
         lblTreeTitle = New Label()
-        tree = New Controls.AdvancedTreeControl()
-        navSub = New Theming.KBotNavList()
         pnlPages = New Panel()
         pnlValori = New Panel()
-        pnlFilter = New Panel()
-        lblClsf = New Label()
-        cboClsf = New ComboBox()
         grid = New Controls.KBotDataView()
+        pnlFilter = New Panel()
+        cboClsf = New ComboBox()
+        lblClsf = New Label()
         pnlPreview = New Panel()
         lblPreviewGol = New Label()
         pnlPdf = New Panel()
         pnlAdobe = New Panel()
-        cboAdobeMotor = New ComboBox()
-        lblAdobeMotor = New Label()
         cboAdobeInst = New ComboBox()
         lblAdobeInst = New Label()
         cboAdobeMod = New ComboBox()
         lblAdobeMod = New Label()
+        cboAdobeMotor = New ComboBox()
+        lblAdobeMotor = New Label()
         pnlFisiere = New Panel()
         lblFisiereGol = New Label()
+        navSub = New Theming.KBotNavList()
         lblEmpty = New Label()
         CType(split, ComponentModel.ISupportInitialize).BeginInit()
         split.Panel1.SuspendLayout()
@@ -52,44 +52,30 @@ Partial Class DdfView
         pnlAdobe.SuspendLayout()
         pnlFisiere.SuspendLayout()
         SuspendLayout()
-        '
-        ' split — arborele de revizii (stânga) | paginile sub-navigării (dreapta)
-        '
+        ' 
+        ' split
+        ' 
         split.Dock = DockStyle.Fill
         split.Location = New Point(0, 0)
         split.Margin = New Padding(4, 5, 4, 5)
         split.Name = "split"
-        ' Ordine INVERSĂ de andocare: Fill întâi, apoi Top (ultimul Top rămâne cel mai sus).
+        ' 
+        ' split.Panel1
+        ' 
         split.Panel1.Controls.Add(tree)
         split.Panel1.Controls.Add(pnlTreeHead)
+        ' 
+        ' split.Panel2
+        ' 
         split.Panel2.Controls.Add(pnlPages)
         split.Panel2.Controls.Add(navSub)
         split.Size = New Size(986, 567)
         split.SplitterDistance = 336
         split.SplitterWidth = 9
         split.TabIndex = 0
-        '
-        ' pnlTreeHead — banda de titlu a arborelui
-        '
-        pnlTreeHead.Controls.Add(lblTreeTitle)
-        pnlTreeHead.Dock = DockStyle.Top
-        pnlTreeHead.Height = 28
-        pnlTreeHead.Location = New Point(0, 0)
-        pnlTreeHead.Name = "pnlTreeHead"
-        pnlTreeHead.TabIndex = 0
-        '
-        ' lblTreeTitle
-        '
-        lblTreeTitle.Dock = DockStyle.Fill
-        lblTreeTitle.Font = New Font("Segoe UI", 9F, FontStyle.Bold)
-        lblTreeTitle.Name = "lblTreeTitle"
-        lblTreeTitle.Padding = New Padding(6, 0, 0, 0)
-        lblTreeTitle.TabIndex = 0
-        lblTreeTitle.Text = "Revizii"
-        lblTreeTitle.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' tree — două niveluri: lună (rădăcină) -> revizie (frunză)
-        '
+        ' 
+        ' tree
+        ' 
         tree.AutoScrollMinSize = New Size(0, 0)
         tree.BackColor = Color.White
         tree.BorderColor = Color.Transparent
@@ -105,7 +91,6 @@ Partial Class DdfView
         tree.Location = New Point(0, 28)
         tree.Margin = New Padding(4, 5, 4, 5)
         tree.Name = "tree"
-        tree.ReserveRightIconSpace = False
         tree.RightIconSize = New Size(14, 14)
         tree.RightTextWidth = 110
         tree.SearchBackColor = Color.FromArgb(CByte(222), CByte(222), CByte(222))
@@ -119,18 +104,30 @@ Partial Class DdfView
         tree.TooltipBackColor = Color.FromArgb(CByte(255), CByte(255), CByte(232))
         tree.TooltipForeColor = Color.FromArgb(CByte(50), CByte(50), CByte(60))
         tree.TreeFont = New Font("Consolas", 9F)
-        '
-        ' navSub — sub-navigarea ORIZONTALĂ (decizia 8 a operatorului)
-        '
-        navSub.Dock = DockStyle.Top
-        navSub.Height = 34
-        navSub.Location = New Point(0, 0)
-        navSub.Name = "navSub"
-        navSub.Orientation = Theming.KBotNavOrientation.Horizontal
-        navSub.TabIndex = 0
-        '
-        ' pnlPages — gazda celor trei pagini (doar una Visible odată; NU un TabControl)
-        '
+        ' 
+        ' pnlTreeHead
+        ' 
+        pnlTreeHead.Controls.Add(lblTreeTitle)
+        pnlTreeHead.Dock = DockStyle.Top
+        pnlTreeHead.Location = New Point(0, 0)
+        pnlTreeHead.Name = "pnlTreeHead"
+        pnlTreeHead.Size = New Size(336, 28)
+        pnlTreeHead.TabIndex = 0
+        ' 
+        ' lblTreeTitle
+        ' 
+        lblTreeTitle.Dock = DockStyle.Fill
+        lblTreeTitle.Font = New Font("Segoe UI", 9F, FontStyle.Bold)
+        lblTreeTitle.Location = New Point(0, 0)
+        lblTreeTitle.Name = "lblTreeTitle"
+        lblTreeTitle.Padding = New Padding(6, 0, 0, 0)
+        lblTreeTitle.Size = New Size(336, 28)
+        lblTreeTitle.TabIndex = 0
+        lblTreeTitle.Text = "Revizii"
+        lblTreeTitle.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' pnlPages
+        ' 
         pnlPages.Controls.Add(pnlValori)
         pnlPages.Controls.Add(pnlPreview)
         pnlPages.Controls.Add(pnlPdf)
@@ -138,51 +135,21 @@ Partial Class DdfView
         pnlPages.Dock = DockStyle.Fill
         pnlPages.Location = New Point(0, 34)
         pnlPages.Name = "pnlPages"
+        pnlPages.Size = New Size(641, 533)
         pnlPages.TabIndex = 1
-        '
-        ' pnlValori — pagina «Valori»: filtrul de clasificație peste grilă
-        '
-        ' Ordine INVERSĂ de andocare: grila (Fill) întâi, apoi banda de filtru (Top).
+        ' 
+        ' pnlValori
+        ' 
         pnlValori.Controls.Add(grid)
         pnlValori.Controls.Add(pnlFilter)
         pnlValori.Dock = DockStyle.Fill
         pnlValori.Location = New Point(0, 0)
         pnlValori.Name = "pnlValori"
+        pnlValori.Size = New Size(641, 533)
         pnlValori.TabIndex = 0
-        '
-        ' pnlFilter — banda de filtrare pe clasificație
-        '
-        pnlFilter.Controls.Add(cboClsf)
-        pnlFilter.Controls.Add(lblClsf)
-        pnlFilter.Dock = DockStyle.Top
-        pnlFilter.Height = 32
-        pnlFilter.Location = New Point(0, 0)
-        pnlFilter.Name = "pnlFilter"
-        pnlFilter.Padding = New Padding(6, 4, 6, 4)
-        pnlFilter.TabIndex = 0
-        '
-        ' lblClsf
-        '
-        lblClsf.AutoSize = True
-        lblClsf.Dock = DockStyle.Left
-        lblClsf.Name = "lblClsf"
-        lblClsf.Padding = New Padding(0, 5, 8, 0)
-        lblClsf.TabIndex = 0
-        lblClsf.Text = "Clasificație:"
-        lblClsf.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' cboClsf — ComboBox simplu (DropDownList + Flat), temat de ThemeManager ca
-        ' cboUnit / cboAn din MainForm.
-        '
-        cboClsf.Dock = DockStyle.Left
-        cboClsf.DropDownStyle = ComboBoxStyle.DropDownList
-        cboClsf.FlatStyle = FlatStyle.Flat
-        cboClsf.Name = "cboClsf"
-        cboClsf.Size = New Size(280, 24)
-        cboClsf.TabIndex = 1
-        '
-        ' grid — liniile de secțiune A (read-only, cu rând de totaluri)
-        '
+        ' 
+        ' grid
+        ' 
         grid.AlternatingRows = True
         grid.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.ToContent
         grid.AutoSizeSampleRows = 200
@@ -203,42 +170,74 @@ Partial Class DdfView
         grid.ShowTotalsRow = True
         grid.Size = New Size(641, 501)
         grid.TabIndex = 1
-        '
-        ' pnlPreview — pagina «Vizualizare». Suprafața de previzualizare se montează aici
-        ' în felia 03; până atunci arată doar starea goală.
-        '
+        grid.TotalsRowHeight = 30
+        ' 
+        ' pnlFilter
+        ' 
+        pnlFilter.Controls.Add(cboClsf)
+        pnlFilter.Controls.Add(lblClsf)
+        pnlFilter.Dock = DockStyle.Top
+        pnlFilter.Location = New Point(0, 0)
+        pnlFilter.Name = "pnlFilter"
+        pnlFilter.Padding = New Padding(6, 4, 6, 4)
+        pnlFilter.Size = New Size(641, 32)
+        pnlFilter.TabIndex = 0
+        ' 
+        ' cboClsf
+        ' 
+        cboClsf.Dock = DockStyle.Left
+        cboClsf.DropDownStyle = ComboBoxStyle.DropDownList
+        cboClsf.FlatStyle = FlatStyle.Flat
+        cboClsf.Location = New Point(112, 4)
+        cboClsf.Name = "cboClsf"
+        cboClsf.Size = New Size(280, 33)
+        cboClsf.TabIndex = 1
+        ' 
+        ' lblClsf
+        ' 
+        lblClsf.AutoSize = True
+        lblClsf.Dock = DockStyle.Left
+        lblClsf.Location = New Point(6, 4)
+        lblClsf.Name = "lblClsf"
+        lblClsf.Padding = New Padding(0, 5, 8, 0)
+        lblClsf.Size = New Size(106, 30)
+        lblClsf.TabIndex = 0
+        lblClsf.Text = "Clasificație:"
+        lblClsf.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' pnlPreview
+        ' 
         pnlPreview.Controls.Add(lblPreviewGol)
         pnlPreview.Dock = DockStyle.Fill
         pnlPreview.Location = New Point(0, 0)
         pnlPreview.Name = "pnlPreview"
+        pnlPreview.Size = New Size(641, 533)
         pnlPreview.TabIndex = 1
         pnlPreview.Visible = False
-        '
+        ' 
         ' lblPreviewGol
-        '
+        ' 
         lblPreviewGol.Dock = DockStyle.Fill
         lblPreviewGol.Font = New Font("Segoe UI", 10F)
+        lblPreviewGol.Location = New Point(0, 0)
         lblPreviewGol.Name = "lblPreviewGol"
+        lblPreviewGol.Size = New Size(641, 533)
         lblPreviewGol.TabIndex = 0
         lblPreviewGol.Text = "Selectați o revizie din arbore."
         lblPreviewGol.TextAlign = ContentAlignment.MiddleCenter
-        '
-        ' pnlPdf — pagina «Document»: suprafața care afișează PDF-ul REAL (ReaderHostPreview),
-        ' distinctă de «Vizualizare» (reconstrucția din XML XFA). Se montează în cod.
-        '
+        ' 
+        ' pnlPdf
+        ' 
         pnlPdf.Controls.Add(pnlAdobe)
         pnlPdf.Dock = DockStyle.Fill
         pnlPdf.Location = New Point(0, 0)
         pnlPdf.Name = "pnlPdf"
+        pnlPdf.Size = New Size(641, 533)
         pnlPdf.TabIndex = 3
         pnlPdf.Visible = False
-        '
-        ' pnlAdobe — banda de setări a gazdei Adobe (felia 0024). Stă pe pagina «Document»
-        ' fiindcă exact acolo se vede efectul: schimbarea se aplică documentului afișat ACUM.
-        ' Copiii se adaugă în ordine INVERSĂ de andocare (ultimul Left rămâne cel mai la stânga).
-        '
-        ' Dock=Left: ultimul adăugat ajunge cel mai la STÂNGA, deci ordinea de aici e inversă celei
-        ' de pe ecran — «Motor» primul pe ecran înseamnă ultimul adăugat.
+        ' 
+        ' pnlAdobe
+        ' 
         pnlAdobe.Controls.Add(cboAdobeInst)
         pnlAdobe.Controls.Add(lblAdobeInst)
         pnlAdobe.Controls.Add(cboAdobeMod)
@@ -246,89 +245,111 @@ Partial Class DdfView
         pnlAdobe.Controls.Add(cboAdobeMotor)
         pnlAdobe.Controls.Add(lblAdobeMotor)
         pnlAdobe.Dock = DockStyle.Top
-        pnlAdobe.Height = 32
         pnlAdobe.Location = New Point(0, 0)
         pnlAdobe.Name = "pnlAdobe"
         pnlAdobe.Padding = New Padding(6, 4, 6, 4)
+        pnlAdobe.Size = New Size(641, 32)
         pnlAdobe.TabIndex = 0
-        '
-        ' lblAdobeMod
-        '
-        lblAdobeMod.AutoSize = True
-        lblAdobeMod.Dock = DockStyle.Left
-        lblAdobeMod.Name = "lblAdobeMod"
-        lblAdobeMod.Padding = New Padding(0, 5, 8, 0)
-        lblAdobeMod.TabIndex = 0
-        lblAdobeMod.Text = "Mod vizualizator Adobe:"
-        lblAdobeMod.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' cboAdobeMod — «Automat» / «Modern» / «Clasic»
-        '
-        cboAdobeMod.Dock = DockStyle.Left
-        cboAdobeMod.DropDownStyle = ComboBoxStyle.DropDownList
-        cboAdobeMod.FlatStyle = FlatStyle.Flat
-        cboAdobeMod.Name = "cboAdobeMod"
-        cboAdobeMod.Size = New Size(140, 24)
-        cboAdobeMod.TabIndex = 1
-        '
-        ' lblAdobeMotor / cboAdobeMotor — CARE suprafață randează PDF-ul (felia 0024-03).
-        ' Stă primul pe bandă fiindcă celelalte două («mod», «instanță nouă») descriu doar
-        ' FEREASTRA găzduită; pe «ActiveX» ele se dezactivează, ca să nu pară că fac ceva.
-        '
-        lblAdobeMotor.AutoSize = True
-        lblAdobeMotor.Dock = DockStyle.Left
-        lblAdobeMotor.Name = "lblAdobeMotor"
-        lblAdobeMotor.Padding = New Padding(0, 5, 8, 0)
-        lblAdobeMotor.TabIndex = 4
-        lblAdobeMotor.Text = "Motor previzualizare:"
-        lblAdobeMotor.TextAlign = ContentAlignment.MiddleLeft
-        '
-        cboAdobeMotor.Dock = DockStyle.Left
-        cboAdobeMotor.DropDownStyle = ComboBoxStyle.DropDownList
-        cboAdobeMotor.FlatStyle = FlatStyle.Flat
-        cboAdobeMotor.Name = "cboAdobeMotor"
-        cboAdobeMotor.Size = New Size(160, 24)
-        cboAdobeMotor.TabIndex = 5
-        '
-        ' lblAdobeInst
-        '
-        lblAdobeInst.AutoSize = True
-        lblAdobeInst.Dock = DockStyle.Left
-        lblAdobeInst.Name = "lblAdobeInst"
-        lblAdobeInst.Padding = New Padding(16, 5, 8, 0)
-        lblAdobeInst.TabIndex = 2
-        lblAdobeInst.Text = "Instanță nouă Adobe:"
-        lblAdobeInst.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' cboAdobeInst — «Automat» / «Da» / «Nu»
-        '
+        ' 
+        ' cboAdobeInst
+        ' 
         cboAdobeInst.Dock = DockStyle.Left
         cboAdobeInst.DropDownStyle = ComboBoxStyle.DropDownList
         cboAdobeInst.FlatStyle = FlatStyle.Flat
+        cboAdobeInst.Location = New Point(912, 4)
         cboAdobeInst.Name = "cboAdobeInst"
-        cboAdobeInst.Size = New Size(120, 24)
+        cboAdobeInst.Size = New Size(120, 33)
         cboAdobeInst.TabIndex = 3
-        '
-        ' pnlFisiere — pagina «Fișiere». Lista de PDF-uri se montează aici în felia 04.
-        '
+        ' 
+        ' lblAdobeInst
+        ' 
+        lblAdobeInst.AutoSize = True
+        lblAdobeInst.Dock = DockStyle.Left
+        lblAdobeInst.Location = New Point(705, 4)
+        lblAdobeInst.Name = "lblAdobeInst"
+        lblAdobeInst.Padding = New Padding(16, 5, 8, 0)
+        lblAdobeInst.Size = New Size(207, 30)
+        lblAdobeInst.TabIndex = 2
+        lblAdobeInst.Text = "Instanță nouă Adobe:"
+        lblAdobeInst.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' cboAdobeMod
+        ' 
+        cboAdobeMod.Dock = DockStyle.Left
+        cboAdobeMod.DropDownStyle = ComboBoxStyle.DropDownList
+        cboAdobeMod.FlatStyle = FlatStyle.Flat
+        cboAdobeMod.Location = New Point(565, 4)
+        cboAdobeMod.Name = "cboAdobeMod"
+        cboAdobeMod.Size = New Size(140, 33)
+        cboAdobeMod.TabIndex = 1
+        ' 
+        ' lblAdobeMod
+        ' 
+        lblAdobeMod.AutoSize = True
+        lblAdobeMod.Dock = DockStyle.Left
+        lblAdobeMod.Location = New Point(351, 4)
+        lblAdobeMod.Name = "lblAdobeMod"
+        lblAdobeMod.Padding = New Padding(0, 5, 8, 0)
+        lblAdobeMod.Size = New Size(214, 30)
+        lblAdobeMod.TabIndex = 0
+        lblAdobeMod.Text = "Mod vizualizator Adobe:"
+        lblAdobeMod.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' cboAdobeMotor
+        ' 
+        cboAdobeMotor.Dock = DockStyle.Left
+        cboAdobeMotor.DropDownStyle = ComboBoxStyle.DropDownList
+        cboAdobeMotor.FlatStyle = FlatStyle.Flat
+        cboAdobeMotor.Location = New Point(191, 4)
+        cboAdobeMotor.Name = "cboAdobeMotor"
+        cboAdobeMotor.Size = New Size(160, 33)
+        cboAdobeMotor.TabIndex = 5
+        ' 
+        ' lblAdobeMotor
+        ' 
+        lblAdobeMotor.AutoSize = True
+        lblAdobeMotor.Dock = DockStyle.Left
+        lblAdobeMotor.Location = New Point(6, 4)
+        lblAdobeMotor.Name = "lblAdobeMotor"
+        lblAdobeMotor.Padding = New Padding(0, 5, 8, 0)
+        lblAdobeMotor.Size = New Size(185, 30)
+        lblAdobeMotor.TabIndex = 4
+        lblAdobeMotor.Text = "Motor previzualizare:"
+        lblAdobeMotor.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' pnlFisiere
+        ' 
         pnlFisiere.Controls.Add(lblFisiereGol)
         pnlFisiere.Dock = DockStyle.Fill
         pnlFisiere.Location = New Point(0, 0)
         pnlFisiere.Name = "pnlFisiere"
+        pnlFisiere.Size = New Size(641, 533)
         pnlFisiere.TabIndex = 2
         pnlFisiere.Visible = False
-        '
+        ' 
         ' lblFisiereGol
-        '
+        ' 
         lblFisiereGol.Dock = DockStyle.Fill
         lblFisiereGol.Font = New Font("Segoe UI", 10F)
+        lblFisiereGol.Location = New Point(0, 0)
         lblFisiereGol.Name = "lblFisiereGol"
+        lblFisiereGol.Size = New Size(641, 533)
         lblFisiereGol.TabIndex = 0
         lblFisiereGol.Text = "Selectați un angajament din arbore."
         lblFisiereGol.TextAlign = ContentAlignment.MiddleCenter
-        '
-        ' lblEmpty — starea goală / de încărcare a vederii
-        '
+        ' 
+        ' navSub
+        ' 
+        navSub.Dock = DockStyle.Top
+        navSub.Location = New Point(0, 0)
+        navSub.Name = "navSub"
+        navSub.Orientation = Theming.KBotNavOrientation.Horizontal
+        navSub.SelectedKey = Nothing
+        navSub.Size = New Size(641, 34)
+        navSub.TabIndex = 0
+        ' 
+        ' lblEmpty
+        ' 
         lblEmpty.Dock = DockStyle.Fill
         lblEmpty.Font = New Font("Segoe UI", 10F)
         lblEmpty.Location = New Point(0, 0)
@@ -338,9 +359,9 @@ Partial Class DdfView
         lblEmpty.TabIndex = 1
         lblEmpty.Text = "Selectați un angajament din arbore."
         lblEmpty.TextAlign = ContentAlignment.MiddleCenter
-        '
+        ' 
         ' DdfView
-        '
+        ' 
         AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(split)
@@ -348,20 +369,20 @@ Partial Class DdfView
         Margin = New Padding(4, 5, 4, 5)
         Name = "DdfView"
         Size = New Size(986, 567)
-        pnlFisiere.ResumeLayout(False)
-        pnlAdobe.ResumeLayout(False)
-        pnlAdobe.PerformLayout()
-        pnlPdf.ResumeLayout(False)
-        pnlPreview.ResumeLayout(False)
-        pnlFilter.ResumeLayout(False)
-        pnlFilter.PerformLayout()
-        pnlValori.ResumeLayout(False)
-        pnlPages.ResumeLayout(False)
-        pnlTreeHead.ResumeLayout(False)
         split.Panel1.ResumeLayout(False)
         split.Panel2.ResumeLayout(False)
         CType(split, ComponentModel.ISupportInitialize).EndInit()
         split.ResumeLayout(False)
+        pnlTreeHead.ResumeLayout(False)
+        pnlPages.ResumeLayout(False)
+        pnlValori.ResumeLayout(False)
+        pnlFilter.ResumeLayout(False)
+        pnlFilter.PerformLayout()
+        pnlPreview.ResumeLayout(False)
+        pnlPdf.ResumeLayout(False)
+        pnlAdobe.ResumeLayout(False)
+        pnlAdobe.PerformLayout()
+        pnlFisiere.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 

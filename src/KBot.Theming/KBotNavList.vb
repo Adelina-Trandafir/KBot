@@ -145,17 +145,39 @@ Public NotInheritable Class KBotNavList
     End Sub
 
     ''' <summary>
-    ''' Cheia selectată. Setarea unei chei necunoscute aruncă ArgumentException;
-    ''' setarea aceleiași chei nu re-ridică evenimentul.
+    ''' Cheia selectată. O cheie NECUNOSCUTĂ aruncă ArgumentException (regula casei: fără no-op-uri
+    ''' tăcute); setarea aceleiași chei nu re-ridică evenimentul.
+    '''
+    ''' NIMIC / ȘIR GOL înseamnă «nicio selecție» și NU e o eroare — e o stare, nu o cheie greșită.
+    ''' Distincția a costat o vedere întreagă: designer-ul WinForms serializează o proprietate String
+    ''' rămasă Nothing ca <c>navSub.SelectedKey = Nothing</c>, iar la prima regenerare a fișierului
+    ''' <c>DdfView.Designer.vb</c> linia aceea a început să arunce din <c>InitializeComponent</c> —
+    ''' adică vederea DDF nu se mai deschidea deloc, iar din navlist nu se întâmpla «nimic».
+    ''' Orice control care ajunge în designer trebuie să suporte ce scrie designer-ul despre el.
     ''' </summary>
     Public Property SelectedKey As String
         Get
             Return _selectedKey
         End Get
         Set(value As String)
+            If String.IsNullOrEmpty(value) Then
+                ClearSelection()
+                Return
+            End If
             SelectIndex(RequireIndex(value))
         End Set
     End Property
+
+    ''' <summary>
+    ''' Deselectează tot. Ridică <c>SelectionChanged</c> doar dacă exista o selecție — aceeași regulă
+    ''' ca <see cref="SelectIndex"/>: evenimentul marchează o SCHIMBARE, nu o atribuire.
+    ''' </summary>
+    Public Sub ClearSelection()
+        If String.IsNullOrEmpty(_selectedKey) Then Return
+        _selectedKey = Nothing
+        InvalidateLayout()
+        RaiseEvent SelectionChanged(Nothing)
+    End Sub
 
     ' ── Interne ────────────────────────────────────────────────────────────────
 
