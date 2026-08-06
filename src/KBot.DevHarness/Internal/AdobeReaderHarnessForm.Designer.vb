@@ -109,6 +109,8 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents btnAcroHideChrome As System.Windows.Forms.Button
     Friend WithEvents btnAcroCollapse As System.Windows.Forms.Button
     Friend WithEvents btnAcroHud As System.Windows.Forms.Button
+    Friend WithEvents btnAcroHudWatch As System.Windows.Forms.Button
+    Friend WithEvents tmrHudWatch As System.Windows.Forms.Timer
     Friend WithEvents btnAcroHudApply As System.Windows.Forms.Button
     Friend WithEvents tmrAcroVerify As System.Windows.Forms.Timer
     Friend WithEvents pnlAcroHost As System.Windows.Forms.Panel
@@ -248,7 +250,9 @@ Partial Class AdobeReaderHarnessForm
         btnAcroHideChrome = New Button()
         btnAcroCollapse = New Button()
         btnAcroHud = New Button()
+        btnAcroHudWatch = New Button()
         btnAcroHudApply = New Button()
+        tmrHudWatch = New Timer(components)
         tmrAcroVerify = New Timer(components)
         pnlAcroHost = New Panel()
         tlpMove = New TableLayoutPanel()
@@ -1066,6 +1070,7 @@ Partial Class AdobeReaderHarnessForm
         flowAcroButtons.Controls.Add(btnAcroSecond)
         flowAcroButtons.Controls.Add(btnAcroClear)
         flowAcroButtons.Controls.Add(btnAcroCollapse)
+        flowAcroButtons.Controls.Add(btnAcroHudWatch)
         flowAcroButtons.Controls.Add(btnAcroHud)
         flowAcroButtons.Controls.Add(btnAcroHudApply)
         flowAcroButtons.Controls.Add(btnAcroHideChrome)
@@ -1117,6 +1122,20 @@ Partial Class AdobeReaderHarnessForm
         ' poate enumera și muta fără complicațiile de peste graniță de proces.
         ' Poziția NU e în registry (operatorul a mutat-o între două instantanee și niciuna dintre
         ' cele 106 valori nu s-a schimbat), deci singura cale de a o reproduce e mutarea ferestrei.
+        '
+        ' btnAcroHudWatch — o SONDĂ INSTANTANEE NU POATE prinde bara: ea există doar cât mouse-ul e
+        ' peste document, iar apăsarea unui buton mută mouse-ul și o închide. Măsurat 06.08.2026:
+        ' sonda instantanee a raportat «niciun candidat VIZIBIL» și doar ferestre vis=0.
+        '
+        btnAcroHudWatch.AutoSize = True
+        btnAcroHudWatch.Name = "btnAcroHudWatch"
+        btnAcroHudWatch.TabIndex = 4
+        btnAcroHudWatch.Text = "Bara plutitoare: urmărește 10 s"
+        btnAcroHudWatch.UseVisualStyleBackColor = True
+        '
+        ' tmrHudWatch — 5 eșantioane pe secundă, 10 s.
+        '
+        tmrHudWatch.Interval = 200
         '
         btnAcroHud.AutoSize = True
         btnAcroHud.Name = "btnAcroHud"

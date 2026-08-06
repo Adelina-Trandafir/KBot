@@ -835,6 +835,81 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
+    ' Sampling state for the floating-bar watch.
+    Private ReadOnly _hudSeen As New Dictionary(Of IntPtr, String)()
+    Private _hudWatchTicks As Integer = 0
+
+    ''' <summary>
+    ''' Watches for the floating bar for ten seconds, sampling five times a second.
+    '''
+    ''' WHY A SNAPSHOT CANNOT WORK (measured 06.08.2026). The one-shot probe reported «niciun candidat
+    ''' VIZIBIL» and listed nothing but <c>vis=0</c> windows — because the bar only exists while the
+    ''' mouse is over the document, and pressing a button moves the mouse away and dismisses it. The
+    ''' bar is transient by design, so it has to be sampled over time while the operator keeps the
+    ''' mouse where it belongs.
+    '''
+    ''' Everything visible is recorded once, with its rectangle, so the bar names itself.
+    ''' </summary>
+    Private Sub btnAcroHudWatch_Click(sender As Object, e As EventArgs) Handles btnAcroHudWatch.Click
+        Try
+            _hudSeen.Clear()
+            _hudWatchTicks = 0
+            RhpLog("── Urmăresc bara plutitoare 10 s ──")
+            RhpLog("  MIȘCĂ ACUM mouse-ul peste document și ține-l acolo. Bara există doar cât timp " &
+                   "e hover; de asta o sondă instantanee nu o prinde niciodată.")
+            tmrHudWatch.Start()
+            ShowStatus("Urmăresc bara plutitoare 10 s — mișcă mouse-ul peste document.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroHudWatch_Click", ex)
+        End Try
+    End Sub
+
+    Private Sub tmrHudWatch_Tick(sender As Object, e As EventArgs) Handles tmrHudWatch.Tick
+        Try
+            _hudWatchTicks += 1
+            Dim myPid As Integer = Process.GetCurrentProcess().Id
+            Dim win As INativeWindows = Win32Windows.Instance
+            Dim ours As New HashSet(Of IntPtr)()
+            For Each f As Form In Application.OpenForms
+                If f.IsHandleCreated Then ours.Add(f.Handle)
+            Next
+
+            For Each h As IntPtr In win.EnumTopLevelWindows()
+                If win.OwnerPid(h) <> myPid Then Continue For
+                If ours.Contains(h) OrElse _hudSeen.ContainsKey(h) Then Continue For
+                If Not win.IsWindowVisible(h) Then Continue For
+                Dim r As Rectangle = AdobeWindowHosting.RectInParent(h)
+                If r.Width <= 0 OrElse r.Height <= 0 Then Continue For
+                Dim cls As String = win.GetClass(h)
+                _hudSeen(h) = cls
+                RhpLog($"    VĂZUTĂ vizibil: cls={cls} text=«{win.GetTitle(h)}» " &
+                       $"{r.X},{r.Y} {r.Width}x{r.Height}")
+                ' Smallest visible window wins, same heuristic as the one-shot probe.
+                If _hudRect.IsEmpty OrElse CLng(r.Width) * r.Height < CLng(_hudRect.Width) * _hudRect.Height Then
+                    _hudRect = r
+                    _hudClass = cls
+                    _hudText = win.GetTitle(h)
+                End If
+            Next
+
+            If _hudWatchTicks < 50 Then Return      ' 50 x 200 ms = 10 s
+            tmrHudWatch.Stop()
+            If _hudSeen.Count = 0 Then
+                RhpLog("  Nimic vizibil în 10 s. Ori bara nu a fost afișată, ori nu e o fereastră de " &
+                       "nivel superior a acestui proces — caz în care e desenată DIRECT în vederea " &
+                       "documentului și nu poate fi mutată ca fereastră.")
+                ShowStatus("Bara plutitoare nu a apărut ca fereastră în 10 s.")
+            Else
+                RhpLog($"  {_hudSeen.Count} fereastră(e) vizibile surprinse; reținut cls={_hudClass} " &
+                       $"la {_hudRect.X},{_hudRect.Y} {_hudRect.Width}x{_hudRect.Height}.")
+                ShowStatus($"Bară plutitoare reținută: {_hudClass}.")
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.tmrHudWatch_Tick", ex)
+            tmrHudWatch.Stop()
+        End Try
+    End Sub
+
     ''' <summary>
     ''' Puts the floating bar back where it was remembered. Matched by CLASS + TEXT, never by handle:
     ''' Adobe destroys and recreates this popup, so a handle recorded a moment ago is worthless —
@@ -1131,8 +1206,22 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ''' resized. <c>AVTaskPaneHostView</c> is included because it is the right-hand Tools pane, the
     ''' original target of slice 0023.
     ''' </summary>
+    ''' <summary>
+    ''' NOTE THE ABSENCE OF <c>AVExpandCollapseButtonView</c>. Hiding it BREAKS the floating bar,
+    ''' measured 06.08.2026: at 09:28:25 that window was vis=1 and the bar worked; «Ascunde chrome-ul»
+    ''' ran at 09:28:49 and hid it («1 ascunse»); from 09:28:51 it is vis=0 and the bar never appeared
+    ''' again. It is the 27px strip at the right edge that the floating bar hovers out of — hiding it
+    ''' removes the hover target.
+    '''
+    ''' That was also this button's ONLY remaining effect: the same run logs «1 ascunse, 3 deja
+    ''' ascuns/zero», i.e. everything else was already gone. So the button was doing nothing except
+    ''' the one harmful thing.
+    ''' </summary>
     Private Shared ReadOnly AcroChromeTexts As String() = {
-        "AVDockableTabStripView", "AVExpandCollapseButtonView", "AVTaskPaneHostView"}
+        "AVDockableTabStripView", "AVTaskPaneHostView"}
+
+    ''' <summary>The window that must stay visible, and is re-shown if an earlier run hid it.</summary>
+    Private Const AcroFloatingBarHost As String = "AVExpandCollapseButtonView"
 
     ''' <summary>
     ''' Hides the ActiveX control's chrome by window TEXT — the lever that actually works.
@@ -1178,6 +1267,18 @@ Public NotInheritable Class AdobeReaderHarnessForm
                            $"(hwnd=0x{m.Hwnd.ToInt64():X})")
                     If outcome = HideOutcome.Hidden Then AdobeWindowHosting.Hide(m.Hwnd)
                 Next
+            Next
+
+            ' REPARĂ ce a stricat o rulare anterioară: dacă strip-ul barei plutitoare a fost ascuns
+            ' de versiunea veche a acestui buton, îl arătăm la loc. Fără asta, bara rămâne dispărută
+            ' până la repornirea Adobe și nimic nu spune de ce.
+            For Each n As AdobeWindowNode In nodes.
+                Where(Function(x) String.Equals(x.Text, AcroFloatingBarHost, StringComparison.OrdinalIgnoreCase))
+                If AdobeWindowHosting.IsAlive(n.Hwnd) AndAlso Not AdobeWindowHosting.IsVisible(n.Hwnd) Then
+                    AdobeWindowHosting.Show(n.Hwnd)
+                    RhpLog($"  REARĂTAT «{n.Text}» (hwnd=0x{n.Hwnd.ToInt64():X}) — el produce bara " &
+                           "plutitoare, iar o rulare anterioară îl ascunsese.")
+                End If
             Next
 
             Dim summary As New HideAttemptSummary(AcroChromeTexts.Length, outcomes)
