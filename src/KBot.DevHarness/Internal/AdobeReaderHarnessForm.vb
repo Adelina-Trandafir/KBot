@@ -874,33 +874,39 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 If f.IsHandleCreated Then ours.Add(f.Handle)
             Next
 
+            ' (a) TOP-LEVEL windows of this process.
             For Each h As IntPtr In win.EnumTopLevelWindows()
                 If win.OwnerPid(h) <> myPid Then Continue For
                 If ours.Contains(h) OrElse _hudSeen.ContainsKey(h) Then Continue For
                 If Not win.IsWindowVisible(h) Then Continue For
                 Dim r As Rectangle = AdobeWindowHosting.RectInParent(h)
                 If r.Width <= 0 OrElse r.Height <= 0 Then Continue For
-                Dim cls As String = win.GetClass(h)
-                _hudSeen(h) = cls
-                RhpLog($"    VĂZUTĂ vizibil: cls={cls} text=«{win.GetTitle(h)}» " &
-                       $"{r.X},{r.Y} {r.Width}x{r.Height}")
-                ' Smallest visible window wins, same heuristic as the one-shot probe.
-                If _hudRect.IsEmpty OrElse CLng(r.Width) * r.Height < CLng(_hudRect.Width) * _hudRect.Height Then
-                    _hudRect = r
-                    _hudClass = cls
-                    _hudText = win.GetTitle(h)
-                End If
+                Record(h, win.GetClass(h), win.GetTitle(h), r, "nivel superior")
             Next
+
+            ' (b) CHILDREN of the control. THE FIRST WATCH MISSED THIS, and that is why it found
+            ' nothing: it only enumerated top-level windows, so a bar that is a transient CHILD of
+            ' the ActiveX control was invisible to the instrument, not absent from the screen.
+            If _acroHost IsNot Nothing AndAlso _acroHost.IsHandleCreated Then
+                For Each n As AdobeWindowNode In AdobeWindowProbe.Walk(_acroHost.Handle, pnlAcroHost.Handle, ACRO_PROBE_DEPTH)
+                    If _hudSeen.ContainsKey(n.Hwnd) Then Continue For
+                    If Not n.Visible OrElse n.Width <= 0 OrElse n.Height <= 0 Then Continue For
+                    ' The panes that are always there are not news; only report the newcomers.
+                    If IsAlwaysPresentPane(n.Text) Then Continue For
+                    Record(n.Hwnd, n.ClassName, n.Text, n.Bounds, $"copil d={n.Depth}")
+                Next
+            End If
 
             If _hudWatchTicks < 50 Then Return      ' 50 x 200 ms = 10 s
             tmrHudWatch.Stop()
             If _hudSeen.Count = 0 Then
-                RhpLog("  Nimic vizibil în 10 s. Ori bara nu a fost afișată, ori nu e o fereastră de " &
-                       "nivel superior a acestui proces — caz în care e desenată DIRECT în vederea " &
-                       "documentului și nu poate fi mutată ca fereastră.")
-                ShowStatus("Bara plutitoare nu a apărut ca fereastră în 10 s.")
+                RhpLog("  Nimic nou vizibil în 10 s — nici la nivel superior, nici printre copii. " &
+                       "Dacă bara chiar era pe ecran, atunci NU e o fereastră: e desenată direct în " &
+                       "vederea documentului, deci nu poate fi găsită, mutată sau reținută ca " &
+                       "fereastră. Asta ar închide definitiv ideea de a-i reproduce poziția.")
+                ShowStatus("Bara nu e o fereastră — vezi jurnalul.")
             Else
-                RhpLog($"  {_hudSeen.Count} fereastră(e) vizibile surprinse; reținut cls={_hudClass} " &
+                RhpLog($"  {_hudSeen.Count} fereastră(e) noi surprinse; reținut cls={_hudClass} " &
                        $"la {_hudRect.X},{_hudRect.Y} {_hudRect.Width}x{_hudRect.Height}.")
                 ShowStatus($"Bară plutitoare reținută: {_hudClass}.")
             End If
@@ -908,6 +914,25 @@ Public NotInheritable Class AdobeReaderHarnessForm
             GlobalErrorLog.Write("AdobeReaderHarnessForm.tmrHudWatch_Tick", ex)
             tmrHudWatch.Stop()
         End Try
+    End Sub
+
+    ' The structural panes appear in every probe; reporting them would bury the one newcomer that
+    ' matters under thirty lines of noise.
+    Private Shared Function IsAlwaysPresentPane(text As String) As Boolean
+        If String.IsNullOrEmpty(text) Then Return False
+        Return text.StartsWith("AV", StringComparison.Ordinal) AndAlso
+               (text.EndsWith("View", StringComparison.Ordinal) OrElse
+                text.EndsWith("ViewForDocs", StringComparison.Ordinal))
+    End Function
+
+    Private Sub Record(hwnd As IntPtr, cls As String, text As String, r As Rectangle, where As String)
+        _hudSeen(hwnd) = cls
+        RhpLog($"    VĂZUT ({where}): cls={cls} text=«{text}» {r.X},{r.Y} {r.Width}x{r.Height}")
+        If _hudRect.IsEmpty OrElse CLng(r.Width) * r.Height < CLng(_hudRect.Width) * _hudRect.Height Then
+            _hudRect = r
+            _hudClass = cls
+            _hudText = text
+        End If
     End Sub
 
     ''' <summary>
@@ -1339,11 +1364,26 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Empties the control by DESTROYING it; the next load recreates it.
+    '''
+    ''' <c>src = ""</c> does not work on this build — measured 06.08.2026: the call returns without
+    ''' error, the log said «control golit», and the document stayed on screen. A method that reports
+    ''' success while changing nothing is worse than one that fails, so it is gone.
+    ''' </summary>
     Private Sub btnAcroClear_Click(sender As Object, e As EventArgs) Handles btnAcroClear.Click
         Try
-            If _acroHost Is Nothing Then Return
-            _acroHost.Clear()
-            RhpLog("AcroPDF: control golit.")
+            If _acroHost Is Nothing Then
+                ShowStatus("Nu e nimic de golit — controlul nu e creat.")
+                Return
+            End If
+            Dim host As AcroPdfHost = _acroHost
+            _acroHost = Nothing
+            pnlAcroHost.Controls.Remove(host)
+            host.Dispose()
+            RhpLog("AcroPDF: control DISTRUS (golirea prin «src» nu face nimic pe acest build — " &
+                   "întorcea succes și lăsa documentul pe ecran). Următoarea încărcare îl recreează.")
+            ShowStatus("AcroPDF golit (controlul a fost distrus).")
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroClear_Click", ex)
             RhpLog("AcroPDF: golirea a eșuat — " & ex.Message)
