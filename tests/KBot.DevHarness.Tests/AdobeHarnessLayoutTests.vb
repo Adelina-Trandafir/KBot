@@ -123,6 +123,56 @@ Public Class AdobeHarnessLayoutTests
     End Sub
 
     <Fact>
+    Public Sub TheTwoSurfaces_AreTabs_AndTheDocumentViewsLiveInThem()
+        ' The two surfaces do the same job by different means, so they have to be comparable: same
+        ' place, same size. Before this they were not - the hosted window owned the right-hand panel
+        ' while the ActiveX control sat squeezed inside a section of the OPTIONS panel.
+        RunSta(Sub()
+                   Using f = NewForm()
+                       Dim tabs = DirectCast(f.Controls.Find("tabsMain", True).Single(), TabControl)
+                       Dim hosted = DirectCast(f.Controls.Find("tabHosted", True).Single(), TabPage)
+                       Dim activeX = DirectCast(f.Controls.Find("tabActiveX", True).Single(), TabPage)
+                       Assert.Equal(2, tabs.TabPages.Count)
+                       Assert.Same(hosted, tabs.TabPages(0))
+                       Assert.Same(activeX, tabs.TabPages(1))
+
+                       ' Each document view belongs to its own tab, not to the options panel.
+                       Dim host = f.Controls.Find("pnlHost", True).Single()
+                       Dim acro = f.Controls.Find("pnlAcroHost", True).Single()
+                       Assert.Same(hosted, host.Parent)
+                       Assert.Same(activeX, acro.Parent)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub OptionSections_FollowTheSelectedTab()
+        RunSta(Sub()
+                   Using f = NewForm()
+                       Dim tabs = DirectCast(f.Controls.Find("tabsMain", True).Single(), TabControl)
+                       Dim panel = OptionsPanel(f)
+                       Dim byName = panel.Controls.OfType(Of GroupBox)().ToDictionary(Function(g) g.Name)
+
+                       ' Hosted surface selected: its levers show, the ActiveX section does not.
+                       Assert.Same(f.Controls.Find("tabHosted", True).Single(), tabs.SelectedTab)
+                       Assert.True(byName("grpClip").Visible)
+                       Assert.True(byName("grpHosting").Visible)
+                       Assert.False(byName("grpActiveX").Visible)
+
+                       tabs.SelectedTab = DirectCast(f.Controls.Find("tabActiveX", True).Single(), TabPage)
+
+                       Assert.True(byName("grpActiveX").Visible)
+                       Assert.False(byName("grpClip").Visible)
+                       Assert.False(byName("grpHosting").Visible)
+                       ' Document choice and the registry sections serve both surfaces.
+                       Assert.True(byName("grpFile").Visible)
+                       Assert.True(byName("grpUser").Visible)
+                       Assert.True(byName("grpMachine").Visible)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
     Public Sub ActiveXSection_IsPresentWithItsThreeButtonsAndAHostPanel()
         RunSta(Sub()
                    Using f = NewForm()

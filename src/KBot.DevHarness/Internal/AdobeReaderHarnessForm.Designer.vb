@@ -19,6 +19,10 @@ Partial Class AdobeReaderHarnessForm
     ' the same container that worked here before the layout rework.
     Friend WithEvents flowOptions As System.Windows.Forms.FlowLayoutPanel
     Friend WithEvents tlpRight As System.Windows.Forms.TableLayoutPanel
+    ' Cele două suprafețe de document, ca file. Opțiunile din stânga urmăresc fila selectată.
+    Friend WithEvents tabsMain As System.Windows.Forms.TabControl
+    Friend WithEvents tabHosted As System.Windows.Forms.TabPage
+    Friend WithEvents tabActiveX As System.Windows.Forms.TabPage
     Friend WithEvents pnlHost As System.Windows.Forms.Panel
     Friend WithEvents lblStatus As System.Windows.Forms.Label
     ' Debounce for resize/splitter storms — Adobe repaints late and badly during them.
@@ -306,6 +310,9 @@ Partial Class AdobeReaderHarnessForm
         tlpCmd = New TableLayoutPanel()
         txtCmd = New TextBox()
         tlpRight = New TableLayoutPanel()
+        tabsMain = New TabControl()
+        tabHosted = New TabPage()
+        tabActiveX = New TabPage()
         pnlHost = New Panel()
         lblStatus = New Label()
         tmrLayout = New Timer(components)
@@ -358,6 +365,9 @@ Partial Class AdobeReaderHarnessForm
         grpCmd.SuspendLayout()
         tlpCmd.SuspendLayout()
         tlpRight.SuspendLayout()
+        tabsMain.SuspendLayout()
+        tabHosted.SuspendLayout()
+        tabActiveX.SuspendLayout()
         pnlButtons.SuspendLayout()
         SuspendLayout()
         ' 
@@ -1039,26 +1049,27 @@ Partial Class AdobeReaderHarnessForm
         '
         tlpActiveX.AutoSize = True
         tlpActiveX.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        ' Doar MANETELE rămân aici. Vederea documentului (pnlAcroHost) și eticheta ei de stare au
+        ' trecut în fila «ActiveX (AcroPDF)» din dreapta — un panou de opțiuni nu e locul în care să
+        ' citești un PDF.
         tlpActiveX.ColumnCount = 1
         tlpActiveX.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlpActiveX.Controls.Add(lblAcroStatus, 0, 0)
-        tlpActiveX.Controls.Add(flowAcroButtons, 0, 1)
-        tlpActiveX.Controls.Add(pnlAcroHost, 0, 2)
+        tlpActiveX.Controls.Add(flowAcroButtons, 0, 0)
         tlpActiveX.Dock = DockStyle.Fill
         tlpActiveX.Location = New Point(3, 27)
         tlpActiveX.Name = "tlpActiveX"
-        tlpActiveX.RowCount = 3
+        tlpActiveX.RowCount = 1
         tlpActiveX.RowStyles.Add(New RowStyle())
-        tlpActiveX.RowStyles.Add(New RowStyle())
-        tlpActiveX.RowStyles.Add(New RowStyle())
-        tlpActiveX.Size = New Size(1594, 390)
+        tlpActiveX.Size = New Size(1594, 90)
         tlpActiveX.TabIndex = 0
         '
         ' lblAcroStatus
         '
-        lblAcroStatus.AutoSize = True
-        lblAcroStatus.Dock = DockStyle.Fill
+        lblAcroStatus.AutoSize = False
+        lblAcroStatus.Dock = DockStyle.Top
+        lblAcroStatus.Height = 28
         lblAcroStatus.Name = "lblAcroStatus"
+        lblAcroStatus.Padding = New Padding(6, 5, 6, 0)
         lblAcroStatus.TabIndex = 0
         lblAcroStatus.Text = "Se verifică dacă AcroPDF e înregistrat…"
         '
@@ -1201,15 +1212,13 @@ Partial Class AdobeReaderHarnessForm
         ' pnlAcroHost — aici se creează controlul AxHost la rulare (nu se poate în Designer fără
         ' interop generat, iar felia asta refuză explicit aximp/referințe COM).
         '
+        ' Acum umple fila din dreapta, deci nu mai are nevoie de o înălțime impusă: primește exact
+        ' cât primește și fereastra găzduită, ceea ce face cele două suprafețe comparabile.
         pnlAcroHost.BorderStyle = BorderStyle.FixedSingle
         pnlAcroHost.Dock = DockStyle.Fill
         pnlAcroHost.Name = "pnlAcroHost"
-        ' 300 era prea puțin: sondele din 05.08.2026 arată panoul la 1899x298, adică Adobe își
-        ' aranjează panourile într-o fâșie în care documentul aproape că nu încape. Nu era cauza
-        ' comportamentului raportat, dar făcea imposibil de judecat pe ecran ce s-a întâmplat.
-        pnlAcroHost.Size = New Size(1588, 700)
-        pnlAcroHost.MinimumSize = New Size(0, 700)
-        pnlAcroHost.TabIndex = 2
+        pnlAcroHost.Size = New Size(752, 654)
+        pnlAcroHost.TabIndex = 1
         '
         ' tlpMove
         '
@@ -1844,7 +1853,7 @@ Partial Class AdobeReaderHarnessForm
         ' 
         tlpRight.ColumnCount = 1
         tlpRight.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlpRight.Controls.Add(pnlHost, 0, 0)
+        tlpRight.Controls.Add(tabsMain, 0, 0)
         tlpRight.Controls.Add(lblStatus, 0, 1)
         tlpRight.Dock = DockStyle.Fill
         tlpRight.Location = New Point(0, 0)
@@ -1855,8 +1864,41 @@ Partial Class AdobeReaderHarnessForm
         tlpRight.Size = New Size(764, 727)
         tlpRight.TabIndex = 0
         ' 
+        ' tabsMain — cele două suprafețe de document, ca file.
+        ' Înainte erau amestecate: fereastra găzduită ocupa panoul din dreapta, iar controlul ActiveX
+        ' stătea într-o secțiune din panoul de OPȚIUNI din stânga, strivit la câteva sute de pixeli.
+        ' Nu se puteau compara, iar manetele celor două suprafețe erau amestecate în aceeași listă.
+        '
+        tabsMain.Controls.Add(tabHosted)
+        tabsMain.Controls.Add(tabActiveX)
+        tabsMain.Dock = DockStyle.Fill
+        tabsMain.Location = New Point(3, 3)
+        tabsMain.Name = "tabsMain"
+        tabsMain.SelectedIndex = 0
+        tabsMain.Size = New Size(758, 688)
+        tabsMain.TabIndex = 0
+        '
+        ' tabHosted
+        '
+        tabHosted.Controls.Add(pnlHost)
+        tabHosted.Name = "tabHosted"
+        tabHosted.Padding = New Padding(3)
+        tabHosted.TabIndex = 0
+        tabHosted.Text = "Fereastră găzduită"
+        tabHosted.UseVisualStyleBackColor = True
+        '
+        ' tabActiveX — regula casei: copiii se adaugă în ordine INVERSĂ de andocare (Fill întâi).
+        '
+        tabActiveX.Controls.Add(pnlAcroHost)
+        tabActiveX.Controls.Add(lblAcroStatus)
+        tabActiveX.Name = "tabActiveX"
+        tabActiveX.Padding = New Padding(3)
+        tabActiveX.TabIndex = 1
+        tabActiveX.Text = "ActiveX (AcroPDF)"
+        tabActiveX.UseVisualStyleBackColor = True
+        '
         ' pnlHost
-        ' 
+        '
         pnlHost.Dock = DockStyle.Fill
         pnlHost.Location = New Point(3, 3)
         pnlHost.Name = "pnlHost"
@@ -2009,6 +2051,9 @@ Partial Class AdobeReaderHarnessForm
         grpCmd.PerformLayout()
         tlpCmd.ResumeLayout(False)
         tlpCmd.PerformLayout()
+        tabsMain.ResumeLayout(False)
+        tabHosted.ResumeLayout(False)
+        tabActiveX.ResumeLayout(False)
         tlpRight.ResumeLayout(False)
         tlpRight.PerformLayout()
         pnlButtons.ResumeLayout(False)

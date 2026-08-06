@@ -146,6 +146,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         UpdateActionStates()
         SizeSections()
         RefreshPrefsGrid()
+        ApplyTabSections()
     End Sub
 
     ' Warn about an outstanding HKLM policy as soon as the bench is visible — a modal dialog in the
@@ -668,6 +669,49 @@ Public NotInheritable Class AdobeReaderHarnessForm
             Return False
         End Try
     End Function
+
+    ' ══ Filele suprafeței de document ═══════════════════════════════════════════
+    '
+    ' Sunt DOUĂ suprafețe care fac același lucru pe căi diferite: fereastra Adobe găzduită și
+    ' controlul ActiveX. Până acum una ocupa panoul din dreapta, cealaltă stătea strivită într-o
+    ' secțiune din panoul de OPȚIUNI, iar manetele amândurora erau amestecate în aceeași listă — nu
+    ' se puteau nici compara, nici judeca separat. Acum fiecare are fila ei, la aceeași dimensiune,
+    ' iar panoul din stânga arată DOAR manetele suprafeței selectate.
+
+    ' Secțiunile care aparțin exclusiv suprafeței ActiveX.
+    Private Shared ReadOnly ActiveXSections As String() = {"grpActiveX"}
+
+    ' Secțiunile valabile pentru AMBELE: alegerea documentului și cele două zone de registry
+    ' (preferințele Adobe afectează deopotrivă fereastra găzduită și controlul in-process).
+    Private Shared ReadOnly SharedSections As String() = {"grpFile", "grpUser", "grpMachine"}
+
+    Private Sub tabsMain_SelectedIndexChanged(sender As Object, e As EventArgs) Handles tabsMain.SelectedIndexChanged
+        Try
+            ApplyTabSections()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.tabsMain_SelectedIndexChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Shows only the option sections that belong to the selected surface. Sections are HIDDEN, not
+    ''' removed, so their order in the flow — which a layout test pins — never changes.
+    ''' </summary>
+    Private Sub ApplyTabSections()
+        Dim onActiveX As Boolean = tabsMain.SelectedTab Is tabActiveX
+        For Each g As GroupBox In flowOptions.Controls.OfType(Of GroupBox)()
+            If SharedSections.Contains(g.Name) Then
+                g.Visible = True
+            ElseIf ActiveXSections.Contains(g.Name) Then
+                g.Visible = onActiveX
+            Else
+                g.Visible = Not onActiveX
+            End If
+        Next
+        ShowStatus(If(onActiveX,
+                      "Suprafață: ActiveX (AcroPDF). Manetele din stânga sunt cele ale controlului.",
+                      "Suprafață: fereastra Adobe găzduită. Manetele din stânga sunt cele ale ferestrei."))
+    End Sub
 
     ' ══ ActiveX (AcroPDF) — evaluare, felia 0024-03 §8 ══════════════════════════
     '
