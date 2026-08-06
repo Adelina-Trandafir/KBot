@@ -13,7 +13,7 @@ Imports KBot.Common
 ''' silently fails to create is indistinguishable from one that renders a blank page. If the ProgID
 ''' is not registered here, that is itself the answer the bench is meant to record.
 ''' </summary>
-Friend NotInheritable Class AcroPdfDetector
+Public NotInheritable Class AcroPdfDetector
 
     Private Sub New()
     End Sub
@@ -56,7 +56,7 @@ End Class
 ''' Consequently every call into the control goes through reflection: <c>Option Strict On</c> forbids
 ''' late binding, so <c>CallByName</c> is not available and <see cref="Type.InvokeMember"/> is.
 ''' </summary>
-Friend NotInheritable Class AcroPdfHost
+Public NotInheritable Class AcroPdfHost
     Inherits AxHost
 
     Public Sub New(clsidWithoutBraces As String)

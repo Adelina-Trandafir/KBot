@@ -30,6 +30,8 @@ Partial Class DdfView
         lblPreviewGol = New Label()
         pnlPdf = New Panel()
         pnlAdobe = New Panel()
+        cboAdobeMotor = New ComboBox()
+        lblAdobeMotor = New Label()
         cboAdobeInst = New ComboBox()
         lblAdobeInst = New Label()
         cboAdobeMod = New ComboBox()
@@ -235,10 +237,14 @@ Partial Class DdfView
         ' fiindcă exact acolo se vede efectul: schimbarea se aplică documentului afișat ACUM.
         ' Copiii se adaugă în ordine INVERSĂ de andocare (ultimul Left rămâne cel mai la stânga).
         '
+        ' Dock=Left: ultimul adăugat ajunge cel mai la STÂNGA, deci ordinea de aici e inversă celei
+        ' de pe ecran — «Motor» primul pe ecran înseamnă ultimul adăugat.
         pnlAdobe.Controls.Add(cboAdobeInst)
         pnlAdobe.Controls.Add(lblAdobeInst)
         pnlAdobe.Controls.Add(cboAdobeMod)
         pnlAdobe.Controls.Add(lblAdobeMod)
+        pnlAdobe.Controls.Add(cboAdobeMotor)
+        pnlAdobe.Controls.Add(lblAdobeMotor)
         pnlAdobe.Dock = DockStyle.Top
         pnlAdobe.Height = 32
         pnlAdobe.Location = New Point(0, 0)
@@ -264,6 +270,25 @@ Partial Class DdfView
         cboAdobeMod.Name = "cboAdobeMod"
         cboAdobeMod.Size = New Size(140, 24)
         cboAdobeMod.TabIndex = 1
+        '
+        ' lblAdobeMotor / cboAdobeMotor — CARE suprafață randează PDF-ul (felia 0024-03).
+        ' Stă primul pe bandă fiindcă celelalte două («mod», «instanță nouă») descriu doar
+        ' FEREASTRA găzduită; pe «ActiveX» ele se dezactivează, ca să nu pară că fac ceva.
+        '
+        lblAdobeMotor.AutoSize = True
+        lblAdobeMotor.Dock = DockStyle.Left
+        lblAdobeMotor.Name = "lblAdobeMotor"
+        lblAdobeMotor.Padding = New Padding(0, 5, 8, 0)
+        lblAdobeMotor.TabIndex = 4
+        lblAdobeMotor.Text = "Motor previzualizare:"
+        lblAdobeMotor.TextAlign = ContentAlignment.MiddleLeft
+        '
+        cboAdobeMotor.Dock = DockStyle.Left
+        cboAdobeMotor.DropDownStyle = ComboBoxStyle.DropDownList
+        cboAdobeMotor.FlatStyle = FlatStyle.Flat
+        cboAdobeMotor.Name = "cboAdobeMotor"
+        cboAdobeMotor.Size = New Size(160, 24)
+        cboAdobeMotor.TabIndex = 5
         '
         ' lblAdobeInst
         '
@@ -359,6 +384,8 @@ Partial Class DdfView
     Friend WithEvents cboAdobeMod As ComboBox
     Friend WithEvents lblAdobeInst As Label
     Friend WithEvents cboAdobeInst As ComboBox
+    Friend WithEvents lblAdobeMotor As Label
+    Friend WithEvents cboAdobeMotor As ComboBox
     Friend WithEvents pnlFisiere As Panel
     Friend WithEvents lblFisiereGol As Label
     Friend WithEvents lblEmpty As Label

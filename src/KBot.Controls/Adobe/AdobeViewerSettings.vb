@@ -45,6 +45,50 @@ Public NotInheritable Class AdobeViewerSettings
     Public Const NewInstanceYesText As String = "Da"
     Public Const NewInstanceNoText As String = "Nu"
 
+    Public Const EngineWindowText As String = "Fereastra"
+    Public Const EngineActiveXText As String = "ActiveX"
+
+    ''' <summary>
+    ''' Textul stocat -&gt; motorul de previzualizare. Necunoscut -&gt; fereastra găzduită + avertisment.
+    '''
+    ''' Căderea e pe FEREASTRĂ, nu pe ActiveX, deși ruta ActiveX arată mai bine pe banc: e singura
+    ''' care a rulat vreodată în aplicație. O setare stricată nu are voie să comute operatorul pe un
+    ''' motor pe care nu l-a cerut.
+    ''' </summary>
+    Public Shared Function ParseEngine(stored As String) As AdobeSettingRead(Of AdobePreviewEngine)
+        If String.IsNullOrWhiteSpace(stored) Then
+            Return New AdobeSettingRead(Of AdobePreviewEngine)(AdobePreviewEngine.WindowHost, "")
+        End If
+        Select Case stored.Trim().ToLowerInvariant()
+            Case "fereastra", "fereastră", "window", "windowhost"
+                Return New AdobeSettingRead(Of AdobePreviewEngine)(AdobePreviewEngine.WindowHost, "")
+            Case "activex", "acropdf", "acro"
+                Return New AdobeSettingRead(Of AdobePreviewEngine)(AdobePreviewEngine.ActiveX, "")
+            Case Else
+                Return New AdobeSettingRead(Of AdobePreviewEngine)(
+                    AdobePreviewEngine.WindowHost,
+                    $"Setarea «{KBotPathsKeys.AdobePreviewEngine}» are valoarea nerecunoscută «{stored}» — " &
+                    "se folosește «Fereastra». Valori acceptate: Fereastra, ActiveX.")
+        End Select
+    End Function
+
+    ''' <summary>Valoarea de scris în fișier pentru un motor.</summary>
+    Public Shared Function EngineToText(engine As AdobePreviewEngine) As String
+        If engine = AdobePreviewEngine.ActiveX Then Return EngineActiveXText
+        Return EngineWindowText
+    End Function
+
+    ''' <summary>Eticheta românească din combo.</summary>
+    Public Shared Function EngineLabel(engine As AdobePreviewEngine) As String
+        If engine = AdobePreviewEngine.ActiveX Then Return "ActiveX (AcroPDF)"
+        Return "Fereastră găzduită"
+    End Function
+
+    ''' <summary>Motorul cerut acum, din setările încărcate.</summary>
+    Public Shared Function CurrentEngine() As AdobeSettingRead(Of AdobePreviewEngine)
+        Return ParseEngine(KBotPaths.Current.AdobePreviewEngine)
+    End Function
+
     ''' <summary>Textul stocat -&gt; profilul cerut. Necunoscut -&gt; Auto + avertisment.</summary>
     Public Shared Function ParseMode(stored As String) As AdobeSettingRead(Of AdobeViewerMode)
         If String.IsNullOrWhiteSpace(stored) Then
@@ -138,6 +182,16 @@ Public NotInheritable Class AdobeViewerSettings
         Return current.Save()
     End Function
 
+    ''' <summary>Persistă toate trei setările, inclusiv motorul de previzualizare.</summary>
+    Public Shared Function Persist(mode As AdobeViewerMode, newInstance As AdobeNewInstanceMode,
+                                   engine As AdobePreviewEngine) As Boolean
+        Dim current As KBotPaths = KBotPaths.Current
+        current.AdobeViewerMode = ModeToText(mode)
+        current.AdobeNewInstance = NewInstanceToText(newInstance)
+        current.AdobePreviewEngine = EngineToText(engine)
+        Return current.Save()
+    End Function
+
 End Class
 
 ''' <summary>Numele cheilor JSON, pentru mesaje care trebuie să numească exact setarea stricată.</summary>
@@ -148,5 +202,6 @@ Public NotInheritable Class KBotPathsKeys
 
     Public Const AdobeViewerMode As String = "AdobeViewerMode"
     Public Const AdobeNewInstance As String = "AdobeNewInstance"
+    Public Const AdobePreviewEngine As String = "AdobePreviewEngine"
 
 End Class

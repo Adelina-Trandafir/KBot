@@ -46,6 +46,10 @@ Public Class ReaderHostPreview
     Private Const DetachMode As AdobeDetachMode = AdobeDetachMode.KillProcess
 
     Private ReadOnly _host As AdobeReaderHost
+    ' Suprafața ActiveX, creată LENEȘ: dacă operatorul nu cere motorul «ActiveX», controlul COM nu
+    ' se încarcă niciodată în proces.
+    Private _acro As AcroPdfSurface
+    Private _engine As AdobePreviewEngine = AdobePreviewEngine.WindowHost
     ' Documentul cerut ultima dată — gardă anti-răspuns depășit (același tipar ca vederile).
     Private _requestedPath As String
 
@@ -57,6 +61,13 @@ Public Class ReaderHostPreview
         ApplySettings()
         ShowMessage("Selectați o revizie din arbore.")
     End Sub
+
+    ''' <summary>Motorul cerut acum. Public pentru vederea care oferă comutatorul.</summary>
+    Public ReadOnly Property Engine As AdobePreviewEngine
+        Get
+            Return _engine
+        End Get
+    End Property
 
     Public ReadOnly Property Surface As Control Implements IDdfPreview.Surface
         Get
@@ -73,11 +84,15 @@ Public Class ReaderHostPreview
         Try
             Dim mode = AdobeViewerSettings.CurrentMode()
             Dim newInstance = AdobeViewerSettings.CurrentNewInstance()
+            Dim engine = AdobeViewerSettings.CurrentEngine()
             If mode.HasWarning Then AdobeHostLog.Write("ATENȚIE: " & mode.Warning)
             If newInstance.HasWarning Then AdobeHostLog.Write("ATENȚIE: " & newInstance.Warning)
+            If engine.HasWarning Then AdobeHostLog.Write("ATENȚIE: " & engine.Warning)
             _host.Mode = mode.Value
             _host.NewInstanceMode = newInstance.Value
-            AdobeHostLog.Write($"Setări gazdă Adobe: mod={AdobeViewerSettings.ModeLabel(mode.Value)}, " &
+            _engine = engine.Value
+            AdobeHostLog.Write($"Setări gazdă Adobe: motor={AdobeViewerSettings.EngineLabel(engine.Value)}, " &
+                               $"mod={AdobeViewerSettings.ModeLabel(mode.Value)}, " &
                                $"instanță nouă={AdobeViewerSettings.NewInstanceLabel(newInstance.Value)}.")
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.ApplySettings", ex)
@@ -105,6 +120,9 @@ Public Class ReaderHostPreview
     Public Sub ShowDocument(pdfPath As String, exists As Boolean) Implements IDdfPreview.ShowDocument
         Try
             _requestedPath = pdfPath
+            ' Ambele motoare folosesc ACELAȘI panou, deci cel nefolosit trebuie să-l elibereze —
+            ' altfel controlul ActiveX ar rămâne peste fereastra reparentată, sau invers.
+            ReleaseUnusedEngine()
             _host.Detach()
 
             If String.IsNullOrWhiteSpace(pdfPath) Then
@@ -133,6 +151,11 @@ Public Class ReaderHostPreview
     ' pe ecran — §6: o previzualizare care arată în tăcere un dreptunghi gri e cel mai prost final.
     Private Async Sub EmbedAsync(pdfPath As String)
         Try
+            If _engine = AdobePreviewEngine.ActiveX Then
+                Await EmbedWithActiveXAsync(pdfPath).ConfigureAwait(True)
+                Return
+            End If
+
             Dim result As AdobeHostResult = Await _host.ShowDocumentAsync(pdfPath).ConfigureAwait(True)
 
             ' Între timp operatorul a ales altă revizie: răspunsul e depășit, îl aruncăm.
@@ -155,6 +178,48 @@ Public Class ReaderHostPreview
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Calea ActiveX: încarcă documentul în controlul AcroPDF ȘI îl aduce în starea cerută —
+    ''' aranjarea trezită și panourile colapsate, adică exact ce face butonul «Colapsează panourile»
+    ''' de pe banc. Totul e în <see cref="AcroPdfSurface"/>, o singură implementare pentru amândouă.
+    '''
+    ''' Dacă AcroPDF nu e înregistrat pe mașină, NU cădem în tăcere pe cealaltă cale: operatorul a
+    ''' cerut explicit acest motor, iar o comutare tăcută i-ar ascunde că setarea lui nu s-a aplicat.
+    ''' </summary>
+    Private Async Function EmbedWithActiveXAsync(pdfPath As String) As Task
+        Dim surface As AcroPdfSurface = EnsureAcroSurface()
+        If surface Is Nothing Then
+            ShowMessage("Documentul nu a putut fi afișat. Detalii în jurnalul de erori.")
+            Return
+        End If
+
+        Dim result As AcroPdfResult = Await surface.ShowDocumentAsync(pdfPath).ConfigureAwait(True)
+        If Not String.Equals(_requestedPath, pdfPath, StringComparison.Ordinal) Then Return
+
+        If result.Succeeded Then
+            ShowHost()
+            ' Nota discretă spune doar ce NU a mers: colapsarea e vizibilă, absența ei nu.
+            If result.Collapsed Then
+                lblNote.Visible = False
+            Else
+                lblNote.Text = "Panourile Adobe nu au putut fi colapsate — vezi jurnalul."
+                lblNote.Visible = True
+            End If
+        Else
+            ShowMessage(result.Message)
+        End If
+    End Function
+
+    Private Function EnsureAcroSurface() As AcroPdfSurface
+        Try
+            If _acro Is Nothing Then _acro = New AcroPdfSurface(pnlHost, AddressOf AdobeHostLog.Write)
+            Return _acro
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.EnsureAcroSurface", ex)
+            Return Nothing
+        End Try
+    End Function
+
     Private Sub pnlHost_SizeChanged(sender As Object, e As EventArgs) Handles pnlHost.SizeChanged
         Try
             _host.Relayout()
@@ -170,15 +235,32 @@ Public Class ReaderHostPreview
     Friend Sub DetachReader()
         Try
             _host?.Dispose()
+            _acro?.Dispose()
+            _acro = Nothing
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.DetachReader", ex)
         End Try
+    End Sub
+
+    ''' <summary>
+    ''' Eliberează panoul de motorul care NU e cerut acum. Cele două nu pot coexista: Adobe e practic
+    ''' mono-instanță, iar controlul in-process e servit de același motor, deci același document nu
+    ''' poate fi deschis simultan în amândouă (măsurat 05.08.2026 — a doua cerere dă un panou gri).
+    ''' </summary>
+    Private Sub ReleaseUnusedEngine()
+        If _engine = AdobePreviewEngine.ActiveX Then
+            _host.Detach()
+        ElseIf _acro IsNot Nothing Then
+            _acro.Dispose()
+            _acro = Nothing
+        End If
     End Sub
 
     Public Sub Clear() Implements IDdfPreview.Clear
         Try
             _requestedPath = Nothing
             _host.Detach()
+            _acro?.Clear()
             ShowMessage("Selectați o revizie din arbore.")
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.Clear", ex)

@@ -18,6 +18,22 @@ Public Enum AdobeViewerMode
 End Enum
 
 ''' <summary>
+''' Which surface renders the PDF on the DDF «Document» tab.
+'''
+''' Two genuinely different mechanisms, not two settings of one: <see cref="WindowHost"/> starts
+''' Adobe as a separate process and reparents its window; <see cref="ActiveX"/> loads the AcroPDF
+''' control INSIDE this process. They cannot both show the same document at once — Adobe is
+''' effectively single-instance and the control is served by the same engine — so this is a choice,
+''' never a combination.
+''' </summary>
+Public Enum AdobePreviewEngine
+    ''' <summary>Reparent a real Adobe window (the default, and the only one ever run in the app).</summary>
+    WindowHost = 0
+    ''' <summary>The in-process AcroPDF ActiveX control.</summary>
+    ActiveX = 1
+End Enum
+
+''' <summary>
 ''' Whether Adobe is launched with «/n» (a NEW instance). Separate from
 ''' <see cref="AdobeViewerMode"/> because it is the one profile value with a consequence OUTSIDE
 ''' the preview: with <c>/n</c> off, Adobe may hand the document to an instance the operator opened

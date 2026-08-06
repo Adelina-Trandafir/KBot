@@ -33,6 +33,15 @@ Public NotInheritable Class KBotPaths
     ''' <summary>Valoarea implicită a comutatorului «instanță nouă Adobe».</summary>
     Public Const DefaultAdobeNewInstance As String = "Auto"
 
+    ''' <summary>
+    ''' Motorul implicit de previzualizare DDF: fereastra Adobe găzduită.
+    '''
+    ''' Rămâne implicitul fiindcă e singurul care a rulat vreodată în aplicație. Ruta ActiveX arată
+    ''' mai bine pe banc — randează XFA, schimbă documente, colapsează panourile cu un click — dar
+    ''' asta s-a măsurat DOAR pe banc, deci se alege explicit, nu implicit.
+    ''' </summary>
+    Public Const DefaultAdobePreviewEngine As String = "Fereastra"
+
     ''' <summary>Numele fișierului de configurare, lângă executabil.</summary>
     Public Const FileName As String = "kbot_paths.json"
 
@@ -48,6 +57,12 @@ Public NotInheritable Class KBotPaths
 
     ''' <summary>Forțarea comutatorului «/n» la pornirea Adobe: «Auto», «Da» sau «Nu».</summary>
     Public Property AdobeNewInstance As String = DefaultAdobeNewInstance
+
+    ''' <summary>
+    ''' Cum se afișează PDF-ul pe fila «Document» a DDF: «Fereastra» (fereastra Adobe reparentată,
+    ''' implicit) sau «ActiveX» (controlul AcroPDF, în proces). Text, din același motiv ca celelalte.
+    ''' </summary>
+    Public Property AdobePreviewEngine As String = DefaultAdobePreviewEngine
 
     Private Shared ReadOnly _gate As New Object()
     Private Shared _current As KBotPaths
@@ -87,6 +102,7 @@ Public NotInheritable Class KBotPaths
                 If Not String.IsNullOrWhiteSpace(dto.DdfPdfRoot) Then result.DdfPdfRoot = dto.DdfPdfRoot.Trim()
                 If Not String.IsNullOrWhiteSpace(dto.AdobeViewerMode) Then result.AdobeViewerMode = dto.AdobeViewerMode.Trim()
                 If Not String.IsNullOrWhiteSpace(dto.AdobeNewInstance) Then result.AdobeNewInstance = dto.AdobeNewInstance.Trim()
+                If Not String.IsNullOrWhiteSpace(dto.AdobePreviewEngine) Then result.AdobePreviewEngine = dto.AdobePreviewEngine.Trim()
             End If
             Return result
         Catch ex As Exception
@@ -115,7 +131,8 @@ Public NotInheritable Class KBotPaths
             Dim dto As New KBotPathsDto With {
                 .DdfPdfRoot = DdfPdfRoot,
                 .AdobeViewerMode = AdobeViewerMode,
-                .AdobeNewInstance = AdobeNewInstance}
+                .AdobeNewInstance = AdobeNewInstance,
+                .AdobePreviewEngine = AdobePreviewEngine}
             Dim json As String = JsonSerializer.Serialize(dto, New JsonSerializerOptions With {.WriteIndented = True})
             Directory.CreateDirectory(baseDir)
             File.WriteAllText(filePath, json, New UTF8Encoding(False))
@@ -145,4 +162,5 @@ Friend NotInheritable Class KBotPathsDto
     Public Property DdfPdfRoot As String
     Public Property AdobeViewerMode As String
     Public Property AdobeNewInstance As String
+    Public Property AdobePreviewEngine As String
 End Class

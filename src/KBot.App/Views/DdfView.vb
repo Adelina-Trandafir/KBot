@@ -170,8 +170,13 @@ Public Class DdfView
                     AdobeNewInstanceMode.Auto, AdobeNewInstanceMode.Da, AdobeNewInstanceMode.Nu}
                     cboAdobeInst.Items.Add(New AdobeNewInstanceItem(n))
                 Next
+                For Each g As AdobePreviewEngine In New AdobePreviewEngine() {
+                    AdobePreviewEngine.WindowHost, AdobePreviewEngine.ActiveX}
+                    cboAdobeMotor.Items.Add(New AdobeEngineItem(g))
+                Next
                 SelectAdobeMode(AdobeViewerSettings.CurrentMode().Value)
                 SelectAdobeNewInstance(AdobeViewerSettings.CurrentNewInstance().Value)
+                SelectAdobeEngine(AdobeViewerSettings.CurrentEngine().Value)
             Finally
                 _suppressAdobeComboEvent = False
             End Try
@@ -201,17 +206,35 @@ Public Class DdfView
         Next
     End Sub
 
-    ' Graniță UI: loghează și înghite. Ambele combo-uri intră aici — setările se salvează
-    ' împreună, fiindcă amândouă descriu aceeași gazdă.
+    Private Sub SelectAdobeEngine(engine As AdobePreviewEngine)
+        For i As Integer = 0 To cboAdobeMotor.Items.Count - 1
+            Dim item As AdobeEngineItem = TryCast(cboAdobeMotor.Items(i), AdobeEngineItem)
+            If item IsNot Nothing AndAlso item.Engine = engine Then
+                cboAdobeMotor.SelectedIndex = i
+                Return
+            End If
+        Next
+    End Sub
+
+    ' Graniță UI: loghează și înghite. Toate trei combo-urile intră aici — setările se salvează
+    ' împreună, fiindcă toate descriu aceeași suprafață de previzualizare.
     Private Sub AdobeSetting_Changed(sender As Object, e As EventArgs) _
-        Handles cboAdobeMod.SelectedIndexChanged, cboAdobeInst.SelectedIndexChanged
+        Handles cboAdobeMod.SelectedIndexChanged, cboAdobeInst.SelectedIndexChanged,
+                cboAdobeMotor.SelectedIndexChanged
         Try
             If _suppressAdobeComboEvent Then Return
             Dim mode As AdobeModeItem = TryCast(cboAdobeMod.SelectedItem, AdobeModeItem)
             Dim inst As AdobeNewInstanceItem = TryCast(cboAdobeInst.SelectedItem, AdobeNewInstanceItem)
-            If mode Is Nothing OrElse inst Is Nothing Then Return
+            Dim motor As AdobeEngineItem = TryCast(cboAdobeMotor.SelectedItem, AdobeEngineItem)
+            If mode Is Nothing OrElse inst Is Nothing OrElse motor Is Nothing Then Return
 
-            Dim saved As Boolean = AdobeViewerSettings.Persist(mode.Mode, inst.Mode)
+            ' «Mod» și «instanță nouă» descriu FEREASTRA găzduită; pe motorul ActiveX nu au efect,
+            ' iar combo-urile o spun în loc să pară că fac ceva.
+            Dim onActiveX As Boolean = motor.Engine = AdobePreviewEngine.ActiveX
+            cboAdobeMod.Enabled = Not onActiveX
+            cboAdobeInst.Enabled = Not onActiveX
+
+            Dim saved As Boolean = AdobeViewerSettings.Persist(mode.Mode, inst.Mode, motor.Engine)
             If Not saved Then
                 ' Setarea rămâne activă pentru sesiune, dar nu s-a putut scrie: spune-o, nu o
                 ' ascunde — altfel operatorul o va regăsi schimbată la următoarea pornire.
@@ -915,6 +938,19 @@ Friend NotInheritable Class AdobeModeItem
 
     Public Overrides Function ToString() As String
         Return AdobeViewerSettings.ModeLabel(Mode)
+    End Function
+End Class
+
+''' <summary>O intrare din combo-ul «Motor previzualizare». POCO -&gt; fără Try/Catch.</summary>
+Friend NotInheritable Class AdobeEngineItem
+    Public ReadOnly Property Engine As AdobePreviewEngine
+
+    Public Sub New(engine As AdobePreviewEngine)
+        Me.Engine = engine
+    End Sub
+
+    Public Overrides Function ToString() As String
+        Return AdobeViewerSettings.EngineLabel(Engine)
     End Function
 End Class
 
