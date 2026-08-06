@@ -164,10 +164,19 @@ Public Class AdobeHarnessLayoutTests
                        Assert.True(byName("grpActiveX").Visible)
                        Assert.False(byName("grpClip").Visible)
                        Assert.False(byName("grpHosting").Visible)
-                       ' Document choice and the registry sections serve both surfaces.
-                       Assert.True(byName("grpFile").Visible)
-                       Assert.True(byName("grpUser").Visible)
-                       Assert.True(byName("grpMachine").Visible)
+
+                       ' NOTHING is shared. «Deschide PDF…» / «Reîncorporează» drive the HOSTED
+                       ' window, and the registry keys configure the STANDALONE viewer — bEnableAv2
+                       ' picks that viewer's UI generation, not the in-process control's. Showing
+                       ' them here implied they act on the control, which they do not.
+                       Assert.False(byName("grpFile").Visible)
+                       Assert.False(byName("grpUser").Visible)
+                       Assert.False(byName("grpMachine").Visible)
+
+                       ' Every section is accounted for by exactly one surface.
+                       For Each g In byName.Values
+                           Assert.Equal(g.Name = "grpActiveX", g.Visible)
+                       Next
                    End Using
                End Sub)
     End Sub

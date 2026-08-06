@@ -681,9 +681,18 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' Secțiunile care aparțin exclusiv suprafeței ActiveX.
     Private Shared ReadOnly ActiveXSections As String() = {"grpActiveX"}
 
-    ' Secțiunile valabile pentru AMBELE: alegerea documentului și cele două zone de registry
-    ' (preferințele Adobe afectează deopotrivă fereastra găzduită și controlul in-process).
-    Private Shared ReadOnly SharedSections As String() = {"grpFile", "grpUser", "grpMachine"}
+    ''' <summary>
+    ''' NICIO secțiune nu e comună. Prima variantă lăsa vizibile «Document», «Preferințe Adobe
+    ''' (HKCU)» și «Politici Adobe (HKLM)» pe ambele file, ceea ce e greșit: «Deschide PDF…» și
+    ''' «Reîncorporează» conduc FEREASTRA GĂZDUITĂ, iar cheile de registry configurează
+    ''' VIZUALIZATORUL DE SINE STĂTĂTOR — `bEnableAv2` alege generația de interfață a acelui
+    ''' vizualizator, nu a controlului in-process. Afișate pe fila ActiveX, sugerau că acționează
+    ''' asupra controlului, ceea ce nu fac.
+    '''
+    ''' Fila ActiveX rămâne autonomă fiindcă își alege singură documentul (vezi
+    ''' <see cref="btnAcroLoad_Click"/>, care deschide dialogul când nu există încă unul).
+    ''' </summary>
+    Private Shared ReadOnly SharedSections As String() = {}
 
     Private Sub tabsMain_SelectedIndexChanged(sender As Object, e As EventArgs) Handles tabsMain.SelectedIndexChanged
         Try
@@ -768,8 +777,25 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Return host
     End Function
 
+    ''' <summary>
+    ''' Loads the current document, and asks for one when there is none.
+    '''
+    ''' The fallback exists because «Deschide PDF…» belongs to the hosted-window tab and is hidden
+    ''' here — this tab has to be able to choose its own document, or the button would be dead the
+    ''' first time it is pressed in a session.
+    ''' </summary>
     Private Sub btnAcroLoad_Click(sender As Object, e As EventArgs) Handles btnAcroLoad.Click
         Try
+            If String.IsNullOrEmpty(_pdfPath) Then
+                Using dlg As New System.Windows.Forms.OpenFileDialog()
+                    dlg.Filter = "Fișiere PDF (*.pdf)|*.pdf|Toate fișierele (*.*)|*.*"
+                    dlg.Title = "Alege un PDF pentru controlul ActiveX"
+                    If dlg.ShowDialog(Me) <> DialogResult.OK Then Return
+                    _pdfPath = dlg.FileName
+                End Using
+                lblFile.Text = _pdfPath
+                UpdateCmdPreview()
+            End If
             LoadIntoAcro(_pdfPath, "documentul curent")
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHarnessForm.btnAcroLoad_Click", ex)
