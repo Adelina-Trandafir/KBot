@@ -33,30 +33,31 @@ End Enum
 ''' sau Sus/Jos (Stânga/Dreapta în orizontal); re-selectarea aceleiași chei NU re-ridică
 ''' <see cref="SelectionChanged"/>. Toate culorile vin din schema activă (ApplyTheme).
 ''' </summary>
-<ToolboxItem(False)>
+<ToolboxItem(True)>
+<DefaultProperty("Items")>
+<DefaultEvent("SelectionChanged")>
 Public NotInheritable Class KBotNavList
     Inherits Control
     Implements IThemedControl
+    Implements ISupportInitialize
 
-    ''' <summary>Un element de navigație (buton sau separator; model intern).</summary>
-    Private NotInheritable Class NavItem
-        Public Property Key As String
-        Public Property Text As String
-        Public Property Badge As Integer                 ' 0 = ascuns
-        Public Property Enabled As Boolean = True
-        Public Property Visible As Boolean = True
-        Public Property IsSeparator As Boolean
-        Public Property Align As KBotNavAlign = KBotNavAlign.Near
-        ' Slotul calculat de RecalcLayout (Rectangle.Empty dacă e ascuns).
-        Public Property Bounds As Rectangle
-    End Class
-
-    Private ReadOnly _items As New List(Of NavItem)()
+    ' English (slice 0025): the item model moved OUT of here into the public KBotNavItem, so the
+    ' Visual Studio property grid can author it through the stock collection dialog. The private
+    ' nested NavItem is gone; nothing else about the layout / paint / input logic changed.
+    Private ReadOnly _items As New KBotNavItemCollection()
     Private _selectedKey As String
     Private _hoverIndex As Integer = -1
     Private _orientation As KBotNavOrientation = KBotNavOrientation.Vertical
     Private _layoutValid As Boolean
     Private _sepSeq As Integer                            ' contor pentru cheile interne ale separatorilor
+
+    ' ── Inițializare din designer (ISupportInitialize) ────────────────────────
+    ' Between BeginInit and EndInit the control accepts whatever InitializeComponent writes
+    ' WITHOUT validating it — the designer emits properties in its own order, so SelectedKey can
+    ' arrive before Items is populated. EndInit is where the contract is enforced again.
+    Private _initializing As Boolean
+    Private _pendingSelectedKey As String
+    Private _hasPendingSelectedKey As Boolean
 
     ' ── Culori/stil derivate din paletă (setate în ApplyTheme) ────────────────
     Private _scheme As ThemeScheme
@@ -81,9 +82,24 @@ Public NotInheritable Class KBotNavList
                  ControlStyles.Selectable, True)
         TabStop = True
         Width = 170
+        _items.Owner = Me
     End Sub
 
     ' ── API public ─────────────────────────────────────────────────────────────
+
+    ''' <summary>
+    ''' Butoanele și separatorii, în ordinea de afișare. Editabil din grila de proprietăți
+    ''' (dialogul standard de colecție) sau din cod, prin <see cref="AddItem"/> /
+    ''' <see cref="AddSeparator"/> — aceeași colecție.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Butoanele și separatorii barei, în ordinea de afișare.")>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Content)>
+    Public ReadOnly Property Items As KBotNavItemCollection
+        Get
+            Return _items
+        End Get
+    End Property
 
     ''' <summary>
     ''' Orientarea barei. Schimbarea reașază elementele și repictează.
@@ -109,8 +125,8 @@ Public NotInheritable Class KBotNavList
     Public Sub AddItem(key As String, text As String, align As KBotNavAlign)
         If String.IsNullOrWhiteSpace(key) Then Throw New ArgumentException("Cheie vidă.", NameOf(key))
         If FindIndex(key) >= 0 Then Throw New ArgumentException($"Cheie duplicată: '{key}'.", NameOf(key))
-        _items.Add(New NavItem With {.Key = key, .Text = If(text, String.Empty), .Align = align})
-        InvalidateLayout()
+        ' The collection invalidates the layout by itself (slice 0025).
+        _items.Add(New KBotNavItem(key, text, align))
     End Sub
 
     ''' <summary>
@@ -118,9 +134,7 @@ Public NotInheritable Class KBotNavList
     ''' „Far" desparte grupul de butoane ancorate la capăt (ex. DDF/ORD) de rest.
     ''' </summary>
     Public Sub AddSeparator(Optional align As KBotNavAlign = KBotNavAlign.Near)
-        _sepSeq += 1
-        _items.Add(New NavItem With {.Key = "__sep_" & _sepSeq, .IsSeparator = True, .Align = align})
-        InvalidateLayout()
+        _items.Add(New KBotNavItem With {.Key = NextSeparatorKey(), .IsSeparator = True, .Align = align})
     End Sub
 
     ''' <summary>Setează badge-ul unui buton (0 = ascuns). Cheie necunoscută => excepție.</summary>
@@ -157,9 +171,18 @@ Public NotInheritable Class KBotNavList
     ''' </summary>
     Public Property SelectedKey As String
         Get
+            If _initializing AndAlso _hasPendingSelectedKey Then Return _pendingSelectedKey
             Return _selectedKey
         End Get
         Set(value As String)
+            ' English (slice 0025): while InitializeComponent runs, STORE and return. The designer
+            ' has no obligation to emit Items before SelectedKey, and the validating setter below
+            ' would throw on a key that is about to exist one line later.
+            If _initializing Then
+                _pendingSelectedKey = value
+                _hasPendingSelectedKey = True
+                Return
+            End If
             If String.IsNullOrEmpty(value) Then
                 ClearSelection()
                 Return
@@ -167,6 +190,94 @@ Public NotInheritable Class KBotNavList
             SelectIndex(RequireIndex(value))
         End Set
     End Property
+
+    ' ── ISupportInitialize ─────────────────────────────────────────────────────
+
+    ''' <summary>Începutul blocului de inițializare emis de designer (validările se suspendă).</summary>
+    Public Sub BeginInit() Implements ISupportInitialize.BeginInit
+        _initializing = True
+    End Sub
+
+    ''' <summary>
+    ''' Sfârșitul blocului de inițializare: se dau chei separatorilor fără cheie, se validează
+    ''' butoanele (cheie nevidă și unică) și se aplică selecția reținută.
+    '''
+    ''' În DESIGNER validarea și aplicarea selecției se sar: o cheie pe jumătate tastată ar
+    ''' arunca din <c>InitializeComponent</c>, adică formularul nu s-ar mai deschide deloc —
+    ''' exact defectul pe care îl semnalăm vizual, cu chenar roșu (vezi <see cref="OnPaint"/>).
+    ''' </summary>
+    Public Sub EndInit() Implements ISupportInitialize.EndInit
+        Try
+            _initializing = False
+
+            ' 1) Separatorii autoriți în designer nu au cheie — le-o dăm acum, fără coliziune.
+            For Each it As KBotNavItem In _items
+                If it.IsSeparator AndAlso String.IsNullOrWhiteSpace(it.Key) Then
+                    it.Key = NextSeparatorKey()
+                End If
+            Next
+
+            If KBotDesignTime.IsDesignTime(Me) Then
+                ' Design time: nu validăm, dar PĂSTRĂM valoarea ca să se re-serializeze corect
+                ' (dacă am ignora-o, designer-ul ar pierde-o la următoarea regenerare).
+                If _hasPendingSelectedKey Then _selectedKey = _pendingSelectedKey
+                _hasPendingSelectedKey = False
+                _pendingSelectedKey = Nothing
+                InvalidateLayout()
+                Return
+            End If
+
+            ' 2) Contractul de rulare, neschimbat: cheie nevidă și unică pe orice ne-separator.
+            ValidateItems()
+
+            ' 3) Selecția reținută trece acum pe drumul normal (inclusiv excepția pe cheie greșită).
+            If _hasPendingSelectedKey Then
+                Dim pending As String = _pendingSelectedKey
+                _hasPendingSelectedKey = False
+                _pendingSelectedKey = Nothing
+                SelectedKey = pending
+            End If
+
+            InvalidateLayout()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotNavList.EndInit", ex)
+            Throw
+        End Try
+    End Sub
+
+    ' Cheile butoanelor: nevide și unice. Separatorii sunt săriți (cheia lor e internă).
+    Private Sub ValidateItems()
+        Dim seen As New HashSet(Of String)(StringComparer.Ordinal)
+        For i As Integer = 0 To _items.Count - 1
+            Dim it As KBotNavItem = _items(i)
+            If it.IsSeparator Then Continue For
+            If String.IsNullOrWhiteSpace(it.Key) Then
+                Throw New ArgumentException($"Cheie vidă la elementul {i} («{If(it.Text, String.Empty)}»).", NameOf(Items))
+            End If
+            If Not seen.Add(it.Key) Then
+                Throw New ArgumentException($"Cheie duplicată: '{it.Key}' (elementul {i}).", NameOf(Items))
+            End If
+        Next
+    End Sub
+
+    ' Următoarea cheie internă de separator, garantat nefolosită de vreun element existent
+    ' (un separator autorit manual în designer poate purta deja «__sep_1»).
+    Private Function NextSeparatorKey() As String
+        Dim k As String
+        Do
+            _sepSeq += 1
+            k = "__sep_" & _sepSeq
+        Loop While KeyExistsAnywhere(k)
+        Return k
+    End Function
+
+    ' Spre deosebire de FindIndex, asta se uită ȘI la separatori.
+    Private Function KeyExistsAnywhere(key As String) As Boolean
+        For Each it As KBotNavItem In _items
+            If String.Equals(it.Key, key, StringComparison.Ordinal) Then Return True
+        Next
+        Return False
+    End Function
 
     ''' <summary>
     ''' Deselectează tot. Ridică <c>SelectionChanged</c> doar dacă exista o selecție — aceeași regulă
@@ -181,9 +292,15 @@ Public NotInheritable Class KBotNavList
 
     ' ── Interne ────────────────────────────────────────────────────────────────
 
+    ' English (slice 0025): a lookup never sees a separator (its key is internal plumbing) and an
+    ' empty key never matches anything — the designer can leave an item half-filled, and a
+    ' Nothing-vs-Nothing match would silently hand out the wrong item.
     Private Function FindIndex(key As String) As Integer
+        If String.IsNullOrEmpty(key) Then Return -1
         For i As Integer = 0 To _items.Count - 1
-            If String.Equals(_items(i).Key, key, StringComparison.Ordinal) Then Return i
+            Dim it As KBotNavItem = _items(i)
+            If it.IsSeparator Then Continue For
+            If String.Equals(it.Key, key, StringComparison.Ordinal) Then Return i
         Next
         Return -1
     End Function
@@ -198,7 +315,7 @@ Public NotInheritable Class KBotNavList
     ' Selectează prin index; ridică evenimentul DOAR la schimbare reală. Separatorii și
     ' butoanele ascunse nu sunt selectabili.
     Private Sub SelectIndex(index As Integer)
-        Dim it As NavItem = _items(index)
+        Dim it As KBotNavItem = _items(index)
         If it.IsSeparator OrElse Not it.Visible Then
             Throw New ArgumentException($"Cheie neselectabilă: '{it.Key}'.", NameOf(index))
         End If
@@ -208,8 +325,9 @@ Public NotInheritable Class KBotNavList
         RaiseEvent SelectionChanged(it.Key)
     End Sub
 
-    ' Marchează layout-ul „murdar" și cere repictare.
-    Private Sub InvalidateLayout()
+    ' Marchează layout-ul „murdar" și cere repictare. FRIEND din 0025: colecția de elemente
+    ' (KBotNavItemCollection) o cheamă la fiecare adăugare/ștergere/reordonare.
+    Friend Sub InvalidateLayout()
         _layoutValid = False
         Invalidate()
     End Sub
@@ -223,7 +341,7 @@ Public NotInheritable Class KBotNavList
     End Function
 
     ' Extinderea (pe axa principală) a unui element vizibil.
-    Private Function ItemExtent(it As NavItem) As Integer
+    Private Function ItemExtent(it As KBotNavItem) As Integer
         If it.IsSeparator Then Return SeparatorExtent()
         If _orientation = KBotNavOrientation.Vertical Then Return ItemThickness()
         ' Orizontal: lățimea butonului = textul măsurat + padding (+ loc de badge).
@@ -281,10 +399,33 @@ Public NotInheritable Class KBotNavList
         If Not _layoutValid Then RecalcLayout()
     End Sub
 
+    ' ── Cârlige Friend pentru teste (headless, fără ecran) ─────────────────────
+
+    ''' <summary>Friend test hook: forțează recalcularea layout-ului, fără pictare.</summary>
+    Friend Sub DebugEnsureLayout()
+        EnsureLayout()
+    End Sub
+
+    ''' <summary>Friend test hook: slotul calculat al unui element (Rectangle.Empty dacă e ascuns).</summary>
+    Friend Function DebugBounds(index As Integer) As Rectangle
+        EnsureLayout()
+        Return _items(index).Bounds
+    End Function
+
+    ''' <summary>Friend test hook: indexul elementului de sub un punct client (-1 = niciunul).</summary>
+    Friend Function DebugIndexAt(location As Point) As Integer
+        Return IndexAt(location)
+    End Function
+
+    ''' <summary>Friend test hook: trimite o tastă pe drumul real de navigare.</summary>
+    Friend Sub DebugKeyDown(key As Keys)
+        OnKeyDown(New KeyEventArgs(key))
+    End Sub
+
     Private Function IndexAt(location As Point) As Integer
         EnsureLayout()
         For i As Integer = 0 To _items.Count - 1
-            Dim it As NavItem = _items(i)
+            Dim it As KBotNavItem = _items(i)
             If it.Visible AndAlso Not it.IsSeparator AndAlso it.Bounds.Contains(location) Then Return i
         Next
         Return -1
@@ -329,7 +470,7 @@ Public NotInheritable Class KBotNavList
             Try
                 _semiboldFont = New Font("Segoe UI Semibold", Font.Size)
             Catch ex As Exception
-                GlobalErrorLog.Write("KBotNavList.SemiboldFont", ex)
+                If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotNavList.SemiboldFont", ex)
                 _semiboldFont = New Font(Font, FontStyle.Bold)
             End Try
         End If
@@ -339,6 +480,7 @@ Public NotInheritable Class KBotNavList
     ' ── Pictare ────────────────────────────────────────────────────────────────
 
     Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        Dim designTime As Boolean = KBotDesignTime.IsDesignTime(Me)
         Try
             EnsureLayout()
             Dim g As Graphics = e.Graphics
@@ -348,8 +490,12 @@ Public NotInheritable Class KBotNavList
             Dim radius As Integer = ThemeShapes.ScaleDpi(Me, If(_scheme IsNot Nothing, _scheme.Style.CornerRadius, 0))
             Dim padX As Integer = ThemeShapes.ScaleDpi(Me, 12)
 
+            ' Design time only: which keys are wrong. Validation is relaxed inside Visual Studio
+            ' (throwing would kill the design surface), so the mistake has to be VISIBLE instead.
+            Dim badKeys As HashSet(Of String) = If(designTime, DuplicateKeys(), Nothing)
+
             For i As Integer = 0 To _items.Count - 1
-                Dim it As NavItem = _items(i)
+                Dim it As KBotNavItem = _items(i)
                 If Not it.Visible Then Continue For
                 Dim r As Rectangle = it.Bounds
                 If r.Width <= 0 OrElse r.Height <= 0 Then Continue For
@@ -406,11 +552,32 @@ Public NotInheritable Class KBotNavList
                 Dim flags As TextFormatFlags = TextFormatFlags.VerticalCenter Or TextFormatFlags.EndEllipsis Or
                     If(_orientation = KBotNavOrientation.Vertical, TextFormatFlags.Left, TextFormatFlags.HorizontalCenter)
                 TextRenderer.DrawText(g, it.Text, textFont, tr, textColor, flags)
+
+                ' Marcajul de eroare din designer: cheie vidă sau duplicată.
+                If designTime AndAlso
+                   (String.IsNullOrWhiteSpace(it.Key) OrElse badKeys.Contains(it.Key)) Then
+                    Using pen As New Pen(Color.Red, 2)
+                        g.DrawRectangle(pen, r.Left + 1, r.Top + 1, Math.Max(1, r.Width - 3), Math.Max(1, r.Height - 3))
+                    End Using
+                End If
             Next
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotNavList.OnPaint", ex)
+            ' Nu logăm din procesul designer-ului (vezi KBotDesignTime): fișierul de erori ar
+            ' ajunge lângă devenv.exe și ar fi zgomot, nu diagnostic.
+            If Not designTime Then GlobalErrorLog.Write("KBotNavList.OnPaint", ex)
         End Try
     End Sub
+
+    ' Cheile care apar de mai multe ori pe butoane (separatorii nu contează). Doar design-time.
+    Private Function DuplicateKeys() As HashSet(Of String)
+        Dim seen As New HashSet(Of String)(StringComparer.Ordinal)
+        Dim dup As New HashSet(Of String)(StringComparer.Ordinal)
+        For Each it As KBotNavItem In _items
+            If it.IsSeparator OrElse String.IsNullOrWhiteSpace(it.Key) Then Continue For
+            If Not seen.Add(it.Key) Then dup.Add(it.Key)
+        Next
+        Return dup
+    End Function
 
     ' Linia separatorului: pe mijlocul slotului, perpendiculară pe axa principală.
     Private Sub DrawSeparator(g As Graphics, r As Rectangle)
@@ -438,7 +605,7 @@ Public NotInheritable Class KBotNavList
                 Invalidate()
             End If
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotNavList.OnMouseMove", ex)
+            If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotNavList.OnMouseMove", ex)
         End Try
     End Sub
 
@@ -458,7 +625,7 @@ Public NotInheritable Class KBotNavList
             Dim idx As Integer = IndexAt(e.Location)
             If idx >= 0 AndAlso _items(idx).Enabled Then SelectIndex(idx)
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotNavList.OnMouseClick", ex)
+            If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotNavList.OnMouseClick", ex)
         End Try
     End Sub
 
@@ -483,7 +650,7 @@ Public NotInheritable Class KBotNavList
             ' Caută următorul buton SELECTABIL (vizibil, activ, ne-separator) fără wrap.
             Dim idx As Integer = start + direction
             While idx >= 0 AndAlso idx < _items.Count
-                Dim it As NavItem = _items(idx)
+                Dim it As KBotNavItem = _items(idx)
                 If it.Visible AndAlso it.Enabled AndAlso Not it.IsSeparator Then
                     SelectIndex(idx)
                     Exit While
@@ -492,7 +659,7 @@ Public NotInheritable Class KBotNavList
             End While
             e.Handled = True
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotNavList.OnKeyDown", ex)
+            If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotNavList.OnKeyDown", ex)
         End Try
     End Sub
 

@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Windows.Forms
 Imports KBot.Common
@@ -24,6 +25,8 @@ Partial Class KBotDataView
     ' ========================================================================
 
     ''' <summary>Indexul rândului curent (-1 = fără selecție). Setarea derulează la el.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Property CurrentRowIndex As Integer
         Get
             Return _currentRowIndex
@@ -35,6 +38,8 @@ Partial Class KBotDataView
     End Property
 
     ''' <summary>Cheia coloanei curente (Nothing = niciuna).</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Property CurrentColumnKey As String
         Get
             Return _currentColumnKey
@@ -47,6 +52,8 @@ Partial Class KBotDataView
     End Property
 
     ''' <summary>Rândul curent, sau Nothing dacă nu e niciunul selectat.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Property CurrentRow As KBotDataRow
         Get
             If _currentRowIndex < 0 OrElse _currentRowIndex >= _rows.Count Then Return Nothing

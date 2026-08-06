@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Windows.Forms
 Imports KBot.Common
@@ -191,6 +192,9 @@ Partial Class KBotDataView
     ''' întreagă odată), în loc să meargă pixel cu pixel. Nu atinge derularea verticală —
     ''' aceea e deja „pe rând”, prin virtualizare.
     ''' </summary>
+    <Category("K-BOT")>
+    <Description("Derularea orizontală se aliniază la marginile coloanelor, nu pixel cu pixel.")>
+    <DefaultValue(False)>
     Public Property ScrollByColumn As Boolean
         Get
             Return _scrollByColumn

@@ -12,7 +12,7 @@ Imports KBot.Common
 ''' dreapta, tragerea ferestrei de pe zona liberă. Toate culorile vin din schema
 ''' activă (via <see cref="ApplyTheme"/>); nicio culoare hardcodată.
 ''' </summary>
-<ToolboxItem(False)>
+<ToolboxItem(True)>
 Public NotInheritable Class KBotCaptionBar
     Inherits Control
     Implements IThemedControl
@@ -39,6 +39,8 @@ Public NotInheritable Class KBotCaptionBar
     End Sub
 
     ''' <summary>Pictograma afișată la stânga titlului (opțională).</summary>
+    <Category("K-BOT")>
+    <Description("Pictograma afișată la stânga titlului. Lăsată goală, titlul începe de la marginea din stânga.")>
     Public Property IconImage As Image
         Get
             Return _iconImage
@@ -50,6 +52,9 @@ Public NotInheritable Class KBotCaptionBar
     End Property
 
     ''' <summary>Arată și butonul de minimizare (implicit doar închiderea).</summary>
+    <Category("K-BOT")>
+    <Description("Arată și butonul de minimizare. Implicit False — un dialog are doar închidere.")>
+    <DefaultValue(False)>
     Public Property ShowMinimize As Boolean
         Get
             Return _showMinimize
@@ -64,6 +69,9 @@ Public NotInheritable Class KBotCaptionBar
     ''' Arată și butonul de maximizare/restaurare (implicit ascuns — dialogurile gen
     ''' LoginForm rămân neatinse). Activează și dublu-click pe zona de tragere.
     ''' </summary>
+    <Category("K-BOT")>
+    <Description("Arată și butonul de maximizare/restaurare și activează dublu-click pe zona de tragere. Implicit False.")>
+    <DefaultValue(False)>
     Public Property ShowMaximize As Boolean
         Get
             Return _showMaximize
@@ -226,7 +234,8 @@ Public NotInheritable Class KBotCaptionBar
                 g.DrawLine(pen, ccx + half, ccy - half, ccx - half, ccy + half)
             End Using
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotCaptionBar.OnPaint", ex)
+            ' Fără log din procesul designer-ului (vezi KBotDesignTime).
+            If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotCaptionBar.OnPaint", ex)
         End Try
     End Sub
 
@@ -251,7 +260,7 @@ Public NotInheritable Class KBotCaptionBar
                 Invalidate()
             End If
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotCaptionBar.OnMouseMove", ex)
+            If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotCaptionBar.OnMouseMove", ex)
         End Try
     End Sub
 
@@ -278,7 +287,7 @@ Public NotInheritable Class KBotCaptionBar
             Dim f As Form = FindForm()
             If f IsNot Nothing Then NativeMethods.DragMove(f)
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotCaptionBar.OnMouseDown", ex)
+            If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotCaptionBar.OnMouseDown", ex)
         End Try
     End Sub
 
@@ -296,7 +305,7 @@ Public NotInheritable Class KBotCaptionBar
                 f.WindowState = FormWindowState.Minimized
             End If
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotCaptionBar.OnMouseClick", ex)
+            If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotCaptionBar.OnMouseClick", ex)
         End Try
     End Sub
 
@@ -310,7 +319,7 @@ Public NotInheritable Class KBotCaptionBar
             If IsOnButton(e.Location) Then Return
             ToggleMaximize()
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotCaptionBar.OnMouseDoubleClick", ex)
+            If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotCaptionBar.OnMouseDoubleClick", ex)
         End Try
     End Sub
 

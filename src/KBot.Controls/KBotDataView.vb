@@ -19,14 +19,24 @@ Imports KBot.Theming
 ''' virtualizare, scrollbar-uri), <c>.Painting</c> (pictare).
 ''' </summary>
 <ToolboxItem(True)>
+<DefaultProperty("Columns")>
 Public Class KBotDataView
     Inherits Control
     Implements IThemedControl
+    Implements ISupportInitialize
 
     ' ── Model (deținut de control) ──────────────────────────────────────────────
-    Private ReadOnly _columns As New List(Of KBotDataColumn)()
+    ' English (slice 0025): the column list is a KBotDataColumnCollection so the Visual Studio
+    ' property grid can author it through the stock collection dialog. Mutating it rebuilds
+    ' _columnIndex and triggers a layout — AddColumn no longer has to do that itself.
+    Private ReadOnly _columns As New KBotDataColumnCollection()
     Private ReadOnly _columnIndex As New Dictionary(Of String, KBotDataColumn)(StringComparer.Ordinal)
     Private ReadOnly _rows As New List(Of KBotDataRow)()
+
+    ' Între BeginInit și EndInit (blocul emis de designer) validările se suspendă și layout-ul
+    ' se amână: coloanele sosesc una câte una, iar o cheie pe jumătate tastată nu are voie să
+    ' arunce din InitializeComponent.
+    Private _initializing As Boolean
 
     ' ── Aspect / comportament ───────────────────────────────────────────────────
     Private _rowHeight As Integer = 28
@@ -99,6 +109,7 @@ Public Class KBotDataView
                  ControlStyles.OptimizedDoubleBuffer Or ControlStyles.ResizeRedraw Or
                  ControlStyles.Selectable, True)
         TabStop = True
+        _columns.Owner = Me
         InitializeComponent()
         SetDefaultColors()
         RebuildThemeResources()
@@ -115,19 +126,104 @@ Public Class KBotDataView
         If String.IsNullOrWhiteSpace(key) Then Throw New ArgumentException("Cheie vidă.", NameOf(key))
         If _columnIndex.ContainsKey(key) Then Throw New ArgumentException($"Cheie de coloană duplicată: '{key}'.", NameOf(key))
         Dim col As New KBotDataColumn(key, headerText, type, width)
+        ' Indexul, totalurile și layout-ul vin de la colecție (slice 0025) — nu le repetăm aici.
         _columns.Add(col)
-        _columnIndex(key) = col
-        RecomputeTotals()
-        LayoutChanged()
         Return col
     End Function
 
-    ''' <summary>Coloanele, în ordinea de inserare (doar-citire).</summary>
-    Public ReadOnly Property Columns As IReadOnlyList(Of KBotDataColumn)
+    ''' <summary>
+    ''' Coloanele, în ordinea de inserare. Editabilă din grila de proprietăți (dialogul standard
+    ''' de colecție) sau din cod, prin <see cref="AddColumn"/> — aceeași colecție.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Coloanele grilei, în ordinea de afișare.")>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Content)>
+    Public ReadOnly Property Columns As KBotDataColumnCollection
         Get
             Return _columns
         End Get
     End Property
+
+    ' ── Legătura colecție -> control (slice 0025) ───────────────────────────────
+
+    ''' <summary>
+    ''' Called by <see cref="KBotDataColumnCollection"/> after every add / replace / remove /
+    ''' clear. While the designer's init block runs, only the index is rebuilt — the layout pass
+    ''' is done once, at <c>EndInit</c>.
+    ''' </summary>
+    Friend Sub OnColumnsChanged()
+        RebuildColumnIndex()
+        If _initializing Then Return
+        RecomputeTotals()
+        LayoutChanged()
+    End Sub
+
+    ''' <summary>
+    ''' Rebuilds the key → column index from the collection. Duplicate keys are skipped SILENTLY
+    ''' here on purpose (the designer inserts a keyless column on «Add»); the loud check lives in
+    ''' <see cref="AddColumn"/> and in <c>EndInit</c>.
+    ''' </summary>
+    Friend Sub RebuildColumnIndex()
+        _columnIndex.Clear()
+        For Each col In _columns
+            If String.IsNullOrWhiteSpace(col.Key) Then Continue For
+            If _columnIndex.ContainsKey(col.Key) Then Continue For
+            _columnIndex(col.Key) = col
+        Next
+    End Sub
+
+    ''' <summary>Called by <see cref="KBotDataColumn.Key"/> after a rename (grid has no rows).</summary>
+    Friend Sub OnColumnKeyChanged(oldKey As String, newKey As String)
+        RebuildColumnIndex()
+        ' Selecția curentă putea sta pe cheia veche — o mutăm, nu o lăsăm să atârne.
+        If String.Equals(_currentColumnKey, oldKey, StringComparison.Ordinal) Then
+            _currentColumnKey = newKey
+        End If
+        If _initializing Then Return
+        RecomputeTotals()
+        LayoutChanged()
+    End Sub
+
+    ' ── ISupportInitialize ──────────────────────────────────────────────────────
+
+    ''' <summary>Începutul blocului de inițializare emis de designer (validările se suspendă).</summary>
+    Public Sub BeginInit() Implements ISupportInitialize.BeginInit
+        _initializing = True
+    End Sub
+
+    ''' <summary>
+    ''' Sfârșitul blocului de inițializare: se validează coloanele (cheie nevidă și unică) și se
+    ''' recalculează o singură dată indexul, totalurile și layout-ul.
+    '''
+    ''' În DESIGNER validarea se sare: o cheie pe jumătate tastată ar arunca din
+    ''' <c>InitializeComponent</c>, adică formularul nu s-ar mai deschide deloc.
+    ''' </summary>
+    Public Sub EndInit() Implements ISupportInitialize.EndInit
+        Try
+            _initializing = False
+            If Not KBotDesignTime.IsDesignTime(Me) Then ValidateColumns()
+            RebuildColumnIndex()
+            RecomputeTotals()
+            LayoutChanged()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.EndInit", ex)
+            Throw
+        End Try
+    End Sub
+
+    ' Cheile coloanelor: nevide și unice — același contract ca AddColumn.
+    Private Sub ValidateColumns()
+        Dim seen As New HashSet(Of String)(StringComparer.Ordinal)
+        For i As Integer = 0 To _columns.Count - 1
+            Dim col As KBotDataColumn = _columns(i)
+            If String.IsNullOrWhiteSpace(col.Key) Then
+                Throw New ArgumentException($"Cheie de coloană vidă la poziția {i} («{If(col.HeaderText, String.Empty)}»).", NameOf(Columns))
+            End If
+            If Not seen.Add(col.Key) Then
+                Throw New ArgumentException($"Cheie de coloană duplicată: '{col.Key}' (poziția {i}).", NameOf(Columns))
+            End If
+        Next
+    End Sub
 
     ''' <summary>Coloana după cheie. Cheie necunoscută => ArgumentException (fără no-op tăcut).</summary>
     Public Function Column(key As String) As KBotDataColumn
@@ -141,6 +237,9 @@ Public Class KBotDataView
     ''' NOTĂ: acesta e mecanismul autoritar; <c>KBotDataColumn.Frozen</c> rămâne metadata
     ''' neutilizată deocamdată (vezi worklog 0010-02).
     ''' </summary>
+    <Category("K-BOT")>
+    <Description("Câte coloane vizibile din stânga rămân înghețate (nu derulează orizontal).")>
+    <DefaultValue(0)>
     Public Property FrozenColumnCount As Integer
         Get
             Return _frozenColumnCount
@@ -164,7 +263,12 @@ Public Class KBotDataView
         Return r
     End Function
 
-    ''' <summary>Rândurile, în ordinea de inserare (doar-citire).</summary>
+    ''' <summary>
+    ''' Rândurile, în ordinea de inserare (doar-citire). Sunt DATE de rulare: nu apar în grila de
+    ''' proprietăți și nu se serializează niciodată în <c>*.Designer.vb</c>.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Property Rows As IReadOnlyList(Of KBotDataRow)
         Get
             Return _rows
@@ -172,6 +276,8 @@ Public Class KBotDataView
     End Property
 
     ''' <summary>Numărul de rânduri.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Property RowCount As Integer
         Get
             Return _rows.Count
@@ -217,6 +323,8 @@ Public Class KBotDataView
     ''' Valoarea celulei (cheie coloană × index rând). SET scrie în rând (ridică IsDirty) și
     ''' invalidează celula. Index de rând în afara intervalului => excepție.
     ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Default Public Property Item(colKey As String, rowIndex As Integer) As Object
         Get
             Return _rows(rowIndex)(colKey)
@@ -314,6 +422,9 @@ Public Class KBotDataView
     ' ========================================================================
 
     ''' <summary>Înălțimea fixă a unui rând (px). Implicit 28.</summary>
+    <Category("K-BOT")>
+    <Description("Înălțimea fixă a unui rând, în pixeli.")>
+    <DefaultValue(28)>
     Public Property RowHeight As Integer
         Get
             Return _rowHeight
@@ -325,6 +436,9 @@ Public Class KBotDataView
     End Property
 
     ''' <summary>Înălțimea benzii de antet (px). Implicit 30.</summary>
+    <Category("K-BOT")>
+    <Description("Înălțimea benzii de antet, în pixeli.")>
+    <DefaultValue(30)>
     Public Property HeaderHeight As Integer
         Get
             Return _headerHeight
@@ -336,6 +450,9 @@ Public Class KBotDataView
     End Property
 
     ''' <summary>Afișează banda de antet. Implicit True.</summary>
+    <Category("K-BOT")>
+    <Description("Afișează banda de antet.")>
+    <DefaultValue(True)>
     Public Property ShowHeader As Boolean
         Get
             Return _showHeader
@@ -347,6 +464,9 @@ Public Class KBotDataView
     End Property
 
     ''' <summary>Fundal alternant pe rânduri pare/impare. Implicit True.</summary>
+    <Category("K-BOT")>
+    <Description("Fundal alternant pe rândurile pare/impare.")>
+    <DefaultValue(True)>
     Public Property AlternatingRows As Boolean
         Get
             Return _alternatingRows
@@ -358,6 +478,9 @@ Public Class KBotDataView
     End Property
 
     ''' <summary>True => nicio celulă nu intră vreodată în editare (vederi read-only, ex. Sumar).</summary>
+    <Category("K-BOT")>
+    <Description("True => nicio celulă nu intră vreodată în editare (vederi doar-citire).")>
+    <DefaultValue(False)>
     Public Property ReadOnlyGrid As Boolean
         Get
             Return _readOnlyGrid
@@ -373,6 +496,9 @@ Public Class KBotDataView
     ''' horizontal scroll + frozen columns exactly like the body, and is never a selectable row.
     ''' Turning it on shrinks the scrollable body by <see cref="TotalsRowHeight"/>.
     ''' </summary>
+    <Category("K-BOT")>
+    <Description("Afișează banda fixă de totaluri, la baza grilei.")>
+    <DefaultValue(False)>
     Public Property ShowTotalsRow As Boolean
         Get
             Return _showTotalsRow
@@ -390,6 +516,8 @@ Public Class KBotDataView
     ''' <see cref="HeaderHeight"/> until set to a positive value; a non-positive value restores
     ''' the "track HeaderHeight" default.
     ''' </summary>
+    <Category("K-BOT")>
+    <Description("Înălțimea benzii de totaluri (px). 0 => urmărește HeaderHeight.")>
     Public Property TotalsRowHeight As Integer
         Get
             Return If(_totalsRowHeight > 0, _totalsRowHeight, _headerHeight)
@@ -399,6 +527,18 @@ Public Class KBotDataView
             LayoutChanged()
         End Set
     End Property
+
+    ' English (slice 0025): NOT a DefaultValue property. The getter returns HeaderHeight while the
+    ' band is on "track the header", so a DefaultValue(0) would make the designer serialise the
+    ' RESOLVED number (e.g. 30) and pin the band for good — a round-trip that silently changes the
+    ' meaning. ShouldSerialize/Reset express "unset" correctly and the designer honours them.
+    Private Function ShouldSerializeTotalsRowHeight() As Boolean
+        Return _totalsRowHeight > 0
+    End Function
+
+    Private Sub ResetTotalsRowHeight()
+        TotalsRowHeight = 0
+    End Sub
 
     ' ========================================================================
     ' API PUBLIC — Bulk / refresh

@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Windows.Forms
 Imports KBot.Common
@@ -27,6 +28,8 @@ Partial Class KBotDataView
     Public Event CellValidating As EventHandler(Of KBotCellValidatingEventArgs)
 
     ''' <summary>True cât o celulă e în editare.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Property IsEditing As Boolean
         Get
             Return _editing

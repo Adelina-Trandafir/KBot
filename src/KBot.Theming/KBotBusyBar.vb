@@ -9,7 +9,7 @@ Imports KBot.Common
 ''' înapoi cât timp <see cref="Running"/> e True. Înlocuiește ProgressBar-ul marquee.
 ''' Când e oprită nu pictează nimic peste track (invizibilă pe card).
 ''' </summary>
-<ToolboxItem(False)>
+<ToolboxItem(True)>
 Public NotInheritable Class KBotBusyBar
     Inherits Control
     Implements IThemedControl
@@ -30,6 +30,9 @@ Public NotInheritable Class KBotBusyBar
     End Sub
 
     ''' <summary>Pornește/oprește animația.</summary>
+    <Category("K-BOT")>
+    <Description("Pornește/oprește animația. În designer valoarea se reține și segmentul se desenează, dar cronometrul NU pornește.")>
+    <DefaultValue(False)>
     Public Property Running As Boolean
         Get
             Return _running
@@ -37,6 +40,13 @@ Public NotInheritable Class KBotBusyBar
         Set(value As Boolean)
             If _running = value Then Return
             _running = value
+            ' English (slice 0025): a 15 ms timer ticking inside the Visual Studio designer process
+            ' is a real problem (it repaints the design surface forever and burns CPU in devenv /
+            ' DesignToolsServer). Remember the value, paint the segment where it stands, do not run.
+            If KBotDesignTime.IsDesignTime(Me) Then
+                Invalidate()
+                Return
+            End If
             If value Then
                 _pos = 0.0
                 _dir = 1
@@ -83,7 +93,8 @@ Public NotInheritable Class KBotBusyBar
                 g.FillRectangle(b, x, 0, segW, Height)
             End Using
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotBusyBar.OnPaint", ex)
+            ' Fără log din procesul designer-ului (vezi KBotDesignTime).
+            If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotBusyBar.OnPaint", ex)
         End Try
     End Sub
 

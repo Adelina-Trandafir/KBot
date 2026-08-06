@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Windows.Forms
 Imports KBot.Common
@@ -36,6 +37,9 @@ Partial Class KBotDataView
     ' ── Public properties ────────────────────────────────────────────────────────
 
     ''' <summary>English (slice 0013): how columns are measured. Default <c>ToContent</c>.</summary>
+    <Category("K-BOT")>
+    <Description("Cum se măsoară coloanele: None (lățimi fixe) sau ToContent (după conținut).")>
+    <DefaultValue(KBotAutoSizeMode.ToContent)>
     Public Property AutoSizeColumnsMode As KBotAutoSizeMode
         Get
             Return _autoSizeMode
@@ -47,6 +51,9 @@ Partial Class KBotDataView
     End Property
 
     ''' <summary>English (slice 0013): how leftover/overflow space is spent. Default <c>None</c>.</summary>
+    <Category("K-BOT")>
+    <Description("Cum se cheltuie spațiul rămas: None, FirstColumn, LastColumn sau Proportional.")>
+    <DefaultValue(KBotFillMode.None)>
     Public Property ColumnFillMode As KBotFillMode
         Get
             Return _fillMode
@@ -61,6 +68,9 @@ Partial Class KBotDataView
     ''' English (slice 0013): how many rows (from the top) are measured when sizing to content.
     ''' Default 200; 0 measures every row. Clamped to be non-negative.
     ''' </summary>
+    <Category("K-BOT")>
+    <Description("Câte rânduri (de sus) se măsoară la dimensionarea după conținut. 0 = toate.")>
+    <DefaultValue(200)>
     Public Property AutoSizeSampleRows As Integer
         Get
             Return _autoSizeSampleRows
