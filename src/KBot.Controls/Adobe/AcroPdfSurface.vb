@@ -73,13 +73,34 @@ Public NotInheritable Class AcroPdfSurface
     ' Deep enough for Adobe's pane tree, which was measured at 11 levels.
     Private Const ProbeDepth As Integer = 14
     ' Adobe re-lays-out asynchronously; these are the waits that let it.
-    Private Const LayoutSettleMs As Integer = 250
     Private Const CollapseSettleMs As Integer = 600
+
+    ''' <summary>
+    ''' How long to keep waiting for Adobe to BUILD its pane tree after a load.
+    '''
+    ''' THE FIRST VERSION OF THIS CLASS TRIED ONCE, 430 ms after LoadFile, AND FAILED — the log read
+    ''' «aranjarea a rămas degenerată» and then «banda de file nu există în arbore». The tree simply
+    ''' did not exist yet. On the bench the operator presses those buttons seconds after loading, so
+    ''' the panes were always already there and the one-shot looked fine.
+    '''
+    ''' This is the same lesson slice 0023 wrote down for `hideChildren`: «Adobe creates the task
+    ''' pane host AFTER the main view, so a single attempt right after embed often finds nothing —
+    ''' hence the retry knobs». Same numbers as that config, for the same reason.
+    ''' </summary>
+    Private Const MaxLayoutAttempts As Integer = 10
+    Private Const AttemptIntervalMs As Integer = 400
+
+    ''' <summary>
+    ''' Panes hidden AFTER the collapse. <c>AVExpandCollapseButtonView</c> is deliberately ABSENT:
+    ''' hiding it removes the strip the floating bar hovers out of, and the bar never appears again
+    ''' (measured 06.08.2026).
+    ''' </summary>
+    Private Shared ReadOnly ChromeToHide As String() = {TabStripText, TaskPaneText}
 
     Private Const TabStripText As String = "AVDockableTabStripView"
     Private Const CollapseButtonText As String = "AVExpandCollapseButtonView"
     Private Const PageViewText As String = "AVSplitationPageView"
-    Private Const DocumentViewText As String = "AVDocumentMainView"
+    Private Const TaskPaneText As String = "AVTaskPaneHostView"
 
     Private ReadOnly _panel As Control
     Private ReadOnly _log As Action(Of String)
@@ -128,8 +149,12 @@ Public NotInheritable Class AcroPdfSurface
             Report($"AcroPDF: încarc «{Path.GetFileName(pdfPath)}».")
             host.LoadFile(pdfPath)
 
-            Await WakeLayoutAsync().ConfigureAwait(True)
+            If Not Await WaitForPaneTreeAsync().ConfigureAwait(True) Then
+                Return New AcroPdfResult(AcroPdfStatus.Shown,
+                                         "", collapsed:=False)
+            End If
             Dim collapsed As Boolean = Await CollapsePanesAsync().ConfigureAwait(True)
+            HideChrome()
 
             Return New AcroPdfResult(AcroPdfStatus.Shown, "", collapsed)
         Catch ex As Exception
@@ -170,43 +195,46 @@ Public NotInheritable Class AcroPdfSurface
         End Try
     End Function
 
-    ' ── Step 2: the first layout ────────────────────────────────────────────────
-    Private Async Function WakeLayoutAsync() As Task
-        If Not IsLayoutDegenerate() Then Return
-        AdobeWindowHosting.FocusWindow(_host.Handle)
-        If Not IsLayoutDegenerate() Then
-            Report("AcroPDF: aranjarea s-a făcut la focus.")
-            Return
-        End If
-        ' The size change is the step that actually works (measured 06.08.2026).
-        AdobeWindowHosting.NudgeRedraw(_host.Handle,
-                                       New Rectangle(0, 0, _panel.ClientSize.Width, _panel.ClientSize.Height))
-        Await Task.Delay(LayoutSettleMs).ConfigureAwait(True)
-        If IsLayoutDegenerate() Then
-            Report("AcroPDF: ATENȚIE — aranjarea a rămas degenerată; panoul poate arăta gol.")
-        Else
-            Report("AcroPDF: aranjarea s-a făcut la schimbarea de dimensiune.")
-        End If
-    End Function
+    ' ── Step 2: wait for Adobe to build AND lay out its panes ───────────────────
+    '
+    ' Waits for BOTH conditions, because they fail separately: the document view can have size while
+    ' the tab strip does not exist yet, which is precisely what the 10:48 log caught.
+    Private Async Function WaitForPaneTreeAsync() As Task(Of Boolean)
+        For attempt As Integer = 1 To MaxLayoutAttempts
+            Dim nodes As List(Of AdobeWindowNode) = Walk()
+            Dim page As AdobeWindowNode = FindNode(nodes, PageViewText)
+            Dim strip As AdobeWindowNode = FindNode(nodes, TabStripText)
+            Dim laidOut As Boolean = page IsNot Nothing AndAlso page.Width > 0 AndAlso page.Height > 0
+            Dim built As Boolean = strip IsNot Nothing AndAlso strip.Height > 0
 
-    ' «Not laid out» has an unambiguous marker: the document view has no size.
-    Private Function IsLayoutDegenerate() As Boolean
-        Dim page As AdobeWindowNode = FindNode(Walk(), PageViewText)
-        Return page Is Nothing OrElse page.Width <= 0 OrElse page.Height <= 0
+            If laidOut AndAlso built Then
+                If attempt > 1 Then Report($"AcroPDF: arborele de panouri a apărut la încercarea {attempt}.")
+                Return True
+            End If
+
+            ' Focus first, then a SIZE CHANGE — Adobe recomputes its layout on a size change, not on
+            ' a repaint. Repeated every attempt: the tree may still be under construction.
+            AdobeWindowHosting.FocusWindow(_host.Handle)
+            AdobeWindowHosting.NudgeRedraw(_host.Handle,
+                                           New Rectangle(0, 0, _panel.ClientSize.Width, _panel.ClientSize.Height))
+            Await Task.Delay(AttemptIntervalMs).ConfigureAwait(True)
+        Next
+
+        Report($"AcroPDF: ATENȚIE — după {MaxLayoutAttempts} încercări " &
+               $"({MaxLayoutAttempts * AttemptIntervalMs} ms) Adobe tot nu are un arbore de panouri " &
+               "utilizabil. Nu colapsez și nu ascund nimic — o acțiune pe un arbore incomplet ar " &
+               "lăsa suprafața într-o stare pe care nimeni nu a cerut-o.")
+        Return False
     End Function
 
     ' ── Step 3: Adobe's own collapse ────────────────────────────────────────────
     Private Async Function CollapsePanesAsync() As Task(Of Boolean)
         Dim nodes As List(Of AdobeWindowNode) = Walk()
         Dim strip As AdobeWindowNode = FindNode(nodes, TabStripText)
-        If strip Is Nothing Then
-            Report("AcroPDF: banda de file nu există în arbore — nu am ce colapsa.")
-            Return False
-        End If
-
-        ' Zero on BOTH axes is «not laid out», not «collapsed».
-        If strip.Height <= 0 Then
-            Report($"AcroPDF: banda e {strip.Width}x{strip.Height} — Adobe nu a aranjat încă; nu colapsez.")
+        ' WaitForPaneTreeAsync has already guaranteed both of these; the guards stay because Adobe
+        ' destroys and recreates these windows and the tree can change under us.
+        If strip Is Nothing OrElse strip.Height <= 0 Then
+            Report("AcroPDF: banda de file a dispărut din arbore între verificare și colapsare.")
             Return False
         End If
 
@@ -249,6 +277,37 @@ Public NotInheritable Class AcroPdfSurface
         Await Task.Delay(CollapseSettleMs).ConfigureAwait(True)
         Return True
     End Function
+
+    ' ── Step 4: hide what the collapse leaves behind ────────────────────────────
+    '
+    ' The collapse takes the panes to zero width and reflows the document, but the strip windows are
+    ' still THERE and can still paint. Hiding them is what the bench's «Ascunde chrome-ul» does, and
+    ' it is the second half of the state the operator asked for.
+    '
+    ' Hiding alone would NOT be enough — it leaves the width, so Adobe never reflows and the document
+    ' stays inset. Collapse first, hide second; the order is the whole point.
+    Private Sub HideChrome()
+        Try
+            Dim nodes As List(Of AdobeWindowNode) = Walk()
+            For Each text As String In ChromeToHide
+                For Each n As AdobeWindowNode In nodes.
+                    Where(Function(x) String.Equals(x.Text, text, StringComparison.OrdinalIgnoreCase))
+                    If Not AdobeWindowHosting.IsAlive(n.Hwnd) Then Continue For
+                    ' Classify BEFORE touching it: afterwards everything looks hidden, which is how a
+                    ' no-op gets logged as a success (the lesson of slice 0023 pass 4).
+                    Dim outcome As HideOutcome = HideOutcomeClassifier.Classify(
+                        found:=True, visible:=AdobeWindowHosting.IsVisible(n.Hwnd),
+                        width:=n.Width, height:=n.Height)
+                    If outcome = HideOutcome.Hidden Then
+                        AdobeWindowHosting.Hide(n.Hwnd)
+                        Report($"AcroPDF: ascuns «{n.Text}» {n.Width}x{n.Height}.")
+                    End If
+                Next
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcroPdfSurface.HideChrome", ex)
+        End Try
+    End Sub
 
     ' ── Helpers ─────────────────────────────────────────────────────────────────
     Private Function Walk() As List(Of AdobeWindowNode)
