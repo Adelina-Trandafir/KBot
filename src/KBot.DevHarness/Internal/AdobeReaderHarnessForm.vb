@@ -754,6 +754,17 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' cut off above the pane that matters answers nothing.
     Private Const ACRO_PROBE_DEPTH As Integer = 7
 
+    ''' <summary>
+    ''' Depth used ONLY by the floating-bar watch. Deliberately far past what the pane tree needs.
+    '''
+    ''' The watch of 09:43 found no transient child at depth 7, which points at «the bar is not a
+    ''' window» — but a bar nested deeper than 7 would look exactly the same from here, and that
+    ''' alternative has to be ruled out before the conclusion is worth anything. The watch also
+    ''' reports the DEEPEST node it actually reached: if that comes back below this limit, the tree
+    ''' was exhausted and depth is eliminated as an explanation rather than merely not observed.
+    ''' </summary>
+    Private Const ACRO_WATCH_DEPTH As Integer = 14
+
     ' The floating bar's remembered position, and the class that identified it. Nothing is persisted
     ' to disk yet — first the window has to be identified beyond doubt.
     Private _hudRect As Rectangle = Rectangle.Empty
@@ -838,6 +849,8 @@ Public NotInheritable Class AdobeReaderHarnessForm
     ' Sampling state for the floating-bar watch.
     Private ReadOnly _hudSeen As New Dictionary(Of IntPtr, String)()
     Private _hudWatchTicks As Integer = 0
+    ' Deepest node the walk actually reached — the difference between «nothing there» and «I stopped».
+    Private _hudDeepest As Integer = 0
 
     ''' <summary>
     ''' Watches for the floating bar for ten seconds, sampling five times a second.
@@ -854,6 +867,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Try
             _hudSeen.Clear()
             _hudWatchTicks = 0
+            _hudDeepest = 0
             RhpLog("── Urmăresc bara plutitoare 10 s ──")
             RhpLog("  MIȘCĂ ACUM mouse-ul peste document și ține-l acolo. Bara există doar cât timp " &
                    "e hover; de asta o sondă instantanee nu o prinde niciodată.")
@@ -888,7 +902,8 @@ Public NotInheritable Class AdobeReaderHarnessForm
             ' nothing: it only enumerated top-level windows, so a bar that is a transient CHILD of
             ' the ActiveX control was invisible to the instrument, not absent from the screen.
             If _acroHost IsNot Nothing AndAlso _acroHost.IsHandleCreated Then
-                For Each n As AdobeWindowNode In AdobeWindowProbe.Walk(_acroHost.Handle, pnlAcroHost.Handle, ACRO_PROBE_DEPTH)
+                For Each n As AdobeWindowNode In AdobeWindowProbe.Walk(_acroHost.Handle, pnlAcroHost.Handle, ACRO_WATCH_DEPTH)
+                    If n.Depth > _hudDeepest Then _hudDeepest = n.Depth
                     If _hudSeen.ContainsKey(n.Hwnd) Then Continue For
                     If Not n.Visible OrElse n.Width <= 0 OrElse n.Height <= 0 Then Continue For
                     ' The panes that are always there are not news; only report the newcomers.
@@ -899,12 +914,26 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
             If _hudWatchTicks < 50 Then Return      ' 50 x 200 ms = 10 s
             tmrHudWatch.Stop()
+
+            ' The line that decides whether «found nothing» is a conclusion or just a short walk.
+            Dim exhausted As Boolean = _hudDeepest < ACRO_WATCH_DEPTH
+            RhpLog($"  Adâncime maximă atinsă în arbore: {_hudDeepest} (limita era {ACRO_WATCH_DEPTH}). " &
+                   If(exhausted,
+                      "Arborele S-A TERMINAT înainte de limită, deci adâncimea NU mai e o explicație posibilă.",
+                      "ATENȚIE: s-a atins limita, deci pot exista ferestre mai adânci NEVĂZUTE — " &
+                      "ridică limita înainte de a trage vreo concluzie."))
+
             If _hudSeen.Count = 0 Then
-                RhpLog("  Nimic nou vizibil în 10 s — nici la nivel superior, nici printre copii. " &
-                       "Dacă bara chiar era pe ecran, atunci NU e o fereastră: e desenată direct în " &
-                       "vederea documentului, deci nu poate fi găsită, mutată sau reținută ca " &
-                       "fereastră. Asta ar închide definitiv ideea de a-i reproduce poziția.")
-                ShowStatus("Bara nu e o fereastră — vezi jurnalul.")
+                If exhausted Then
+                    RhpLog("  CONCLUZIE: bara plutitoare NU e o fereastră. Zece secunde de eșantionare " &
+                           "peste ferestrele de nivel superior ALE procesului ȘI peste tot arborele de " &
+                           "copii, care s-a epuizat, nu au surprins nimic nou vizibil. E desenată direct " &
+                           "în vederea documentului, deci nu poate fi găsită, mutată sau reținută ca " &
+                           "fereastră — ideea de a-i reproduce poziția se închide aici.")
+                Else
+                    RhpLog("  Nimic nou vizibil, DAR arborele a fost tăiat la limită — încă nu e o concluzie.")
+                End If
+                ShowStatus("Bara nu a apărut ca fereastră — vezi jurnalul.")
             Else
                 RhpLog($"  {_hudSeen.Count} fereastră(e) noi surprinse; reținut cls={_hudClass} " &
                        $"la {_hudRect.X},{_hudRect.Y} {_hudRect.Width}x{_hudRect.Height}.")
