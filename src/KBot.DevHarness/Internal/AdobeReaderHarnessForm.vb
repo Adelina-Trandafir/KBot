@@ -918,6 +918,8 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
     ' Sampling state for the floating-bar watch.
     Private ReadOnly _hudSeen As New Dictionary(Of IntPtr, String)()
+    ' What was already on screen at the first sample. Anything outside this set APPEARED.
+    Private ReadOnly _hudBaseline As New HashSet(Of IntPtr)()
     Private _hudWatchTicks As Integer = 0
     ' Deepest node the walk actually reached — the difference between «nothing there» and «I stopped».
     Private _hudDeepest As Integer = 0
@@ -938,8 +940,10 @@ Public NotInheritable Class AdobeReaderHarnessForm
     Private Sub btnAcroHudWatch_Click(sender As Object, e As EventArgs) Handles btnAcroHudWatch.Click
         Try
             _hudSeen.Clear()
+            _hudBaseline.Clear()
             _hudWatchTicks = 0
             _hudDeepest = 0
+            _hudRect = Rectangle.Empty
             RhpLog("── Urmăresc bara plutitoare 10 s ──")
             RhpLog("  MIȘCĂ ACUM mouse-ul peste document și ține-l acolo. Bara există doar cât timp " &
                    "e hover; de asta o sondă instantanee nu o prinde niciodată.")
@@ -960,6 +964,10 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 If f.IsHandleCreated Then ours.Add(f.Handle)
             Next
 
+            ' The FIRST sample is the baseline: it records what is already on screen and reports
+            ' nothing. Every later sample reports only what was not there before.
+            Dim baselining As Boolean = (_hudWatchTicks = 1)
+
             ' (a) TOP-LEVEL windows of this process.
             For Each h As IntPtr In win.EnumTopLevelWindows()
                 If win.OwnerPid(h) <> myPid Then Continue For
@@ -967,21 +975,32 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 If Not win.IsWindowVisible(h) Then Continue For
                 Dim r As Rectangle = AdobeWindowHosting.RectInParent(h)
                 If r.Width <= 0 OrElse r.Height <= 0 Then Continue For
-                Record(h, win.GetClass(h), win.GetTitle(h), r, "nivel superior")
+                If baselining Then
+                    _hudBaseline.Add(h)
+                Else
+                    Record(h, win.GetClass(h), win.GetTitle(h), r, "nivel superior")
+                End If
             Next
 
-            ' (b) CHILDREN of the control. THE FIRST WATCH MISSED THIS, and that is why it found
-            ' nothing: it only enumerated top-level windows, so a bar that is a transient CHILD of
-            ' the ActiveX control was invisible to the instrument, not absent from the screen.
+            ' (b) CHILDREN of the control. Everything is considered — no name filter — because the
+            ' bar is almost certainly an AV*View like every other pane Adobe creates.
             If _acroHost IsNot Nothing AndAlso _acroHost.IsHandleCreated Then
                 For Each n As AdobeWindowNode In AdobeWindowProbe.Walk(_acroHost.Handle, pnlAcroHost.Handle, ACRO_WATCH_DEPTH)
                     If n.Depth > _hudDeepest Then _hudDeepest = n.Depth
                     If _hudSeen.ContainsKey(n.Hwnd) Then Continue For
                     If Not n.Visible OrElse n.Width <= 0 OrElse n.Height <= 0 Then Continue For
-                    ' The panes that are always there are not news; only report the newcomers.
-                    If IsAlwaysPresentPane(n.Text) Then Continue For
-                    Record(n.Hwnd, n.ClassName, n.Text, n.Bounds, $"copil d={n.Depth}")
+                    If _hudBaseline.Contains(n.Hwnd) Then Continue For
+                    If baselining Then
+                        _hudBaseline.Add(n.Hwnd)
+                    Else
+                        Record(n.Hwnd, n.ClassName, n.Text, n.Bounds, $"copil d={n.Depth}")
+                    End If
                 Next
+            End If
+
+            If baselining Then
+                RhpLog($"  Bază: {_hudBaseline.Count} ferestre deja vizibile. De acum raportez DOAR " &
+                       "ce apare în plus — mișcă mouse-ul peste document ca să scoți bara.")
             End If
 
             If _hudWatchTicks < 50 Then Return      ' 50 x 200 ms = 10 s
@@ -997,11 +1016,11 @@ Public NotInheritable Class AdobeReaderHarnessForm
 
             If _hudSeen.Count = 0 Then
                 If exhausted Then
-                    RhpLog("  CONCLUZIE: bara plutitoare NU e o fereastră. Zece secunde de eșantionare " &
-                           "peste ferestrele de nivel superior ALE procesului ȘI peste tot arborele de " &
-                           "copii, care s-a epuizat, nu au surprins nimic nou vizibil. E desenată direct " &
-                           "în vederea documentului, deci nu poate fi găsită, mutată sau reținută ca " &
-                           "fereastră — ideea de a-i reproduce poziția se închide aici.")
+                    RhpLog($"  CONCLUZIE: bara plutitoare NU e o fereastră. Față de baza de " &
+                           $"{_hudBaseline.Count} ferestre, zece secunde de eșantionare — nivel superior " &
+                           "ȘI tot arborele de copii, epuizat, FĂRĂ filtru de nume — nu au surprins " &
+                           "nimic apărut în plus. E desenată direct în vederea documentului, deci nu " &
+                           "poate fi găsită, mutată sau reținută ca fereastră.")
                 Else
                     RhpLog("  Nimic nou vizibil, DAR arborele a fost tăiat la limită — încă nu e o concluzie.")
                 End If
@@ -1017,14 +1036,14 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
-    ' The structural panes appear in every probe; reporting them would bury the one newcomer that
-    ' matters under thirty lines of noise.
-    Private Shared Function IsAlwaysPresentPane(text As String) As Boolean
-        If String.IsNullOrEmpty(text) Then Return False
-        Return text.StartsWith("AV", StringComparison.Ordinal) AndAlso
-               (text.EndsWith("View", StringComparison.Ordinal) OrElse
-                text.EndsWith("ViewForDocs", StringComparison.Ordinal))
-    End Function
+    ' NO NAME FILTER. There used to be one here that skipped anything called AV*View, to keep the
+    ' log short. Adobe names EVERYTHING that way, so if the floating bar is one of those — and it
+    ' almost certainly is — the filter threw away the very thing the watch exists to find. The 10:22
+    ' run reported four windows and none of them was the bar, while the operator was looking at it.
+    '
+    ' What replaces it is a BASELINE: the first sample records what is already on screen, and every
+    ' later sample reports only what was NOT there before. That is a measurement of «appeared»,
+    ' rather than a guess about which names are boring.
 
     Private Sub Record(hwnd As IntPtr, cls As String, text As String, r As Rectangle, where As String)
         _hudSeen(hwnd) = cls
