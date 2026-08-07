@@ -21,6 +21,14 @@ Partial Class MainForm
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        Dim KBotNavItem1 As New KBot.Theming.KBotNavItem()
+        Dim KBotNavItem2 As New KBot.Theming.KBotNavItem()
+        Dim KBotNavItem3 As New KBot.Theming.KBotNavItem()
+        Dim KBotNavItem4 As New KBot.Theming.KBotNavItem()
+        Dim KBotNavItem5 As New KBot.Theming.KBotNavItem()
+        Dim KBotNavItem6 As New KBot.Theming.KBotNavItem()
+        Dim KBotNavItem7 As New KBot.Theming.KBotNavItem()
+        Dim KBotNavItem8 As New KBot.Theming.KBotNavItem()
         pnlRoot = New Panel()
         capBar = New KBot.Theming.KBotCaptionBar()
         busyBar = New KBot.Theming.KBotBusyBar()
@@ -51,6 +59,7 @@ Partial Class MainForm
         pnlHeader.SuspendLayout()
         pnlStatus.SuspendLayout()
         pnlWork.SuspendLayout()
+        CType(navViews, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(split, System.ComponentModel.ISupportInitialize).BeginInit()
         split.Panel1.SuspendLayout()
         split.Panel2.SuspendLayout()
@@ -238,6 +247,32 @@ Partial Class MainForm
         ' navViews
         '
         navViews.Dock = DockStyle.Left
+        KBotNavItem1.Key = "sumar"
+        KBotNavItem1.Text = "Sumar"
+        navViews.Items.Add(KBotNavItem1)
+        KBotNavItem2.Key = "istoric"
+        KBotNavItem2.Text = "Istoric"
+        navViews.Items.Add(KBotNavItem2)
+        KBotNavItem3.Key = "rezervari"
+        KBotNavItem3.Text = "Rezervări"
+        navViews.Items.Add(KBotNavItem3)
+        KBotNavItem4.Key = "receptii"
+        KBotNavItem4.Text = "Recepții"
+        navViews.Items.Add(KBotNavItem4)
+        KBotNavItem5.Key = "plati"
+        KBotNavItem5.Text = "Plăți"
+        navViews.Items.Add(KBotNavItem5)
+        KBotNavItem6.Align = KBot.Theming.KBotNavAlign.Far
+        KBotNavItem6.IsSeparator = True
+        navViews.Items.Add(KBotNavItem6)
+        KBotNavItem7.Align = KBot.Theming.KBotNavAlign.Far
+        KBotNavItem7.Key = "ddf"
+        KBotNavItem7.Text = "DDF"
+        navViews.Items.Add(KBotNavItem7)
+        KBotNavItem8.Align = KBot.Theming.KBotNavAlign.Far
+        KBotNavItem8.Key = "ord"
+        KBotNavItem8.Text = "ORD"
+        navViews.Items.Add(KBotNavItem8)
         navViews.Location = New Point(8, 8)
         navViews.Name = "navViews"
         navViews.Size = New Size(170, 615)
@@ -367,6 +402,7 @@ Partial Class MainForm
         pnlStatus.ResumeLayout(False)
         pnlStatus.PerformLayout()
         pnlWork.ResumeLayout(False)
+        CType(navViews, System.ComponentModel.ISupportInitialize).EndInit()
         split.Panel1.ResumeLayout(False)
         split.Panel2.ResumeLayout(False)
         CType(split, System.ComponentModel.ISupportInitialize).EndInit()

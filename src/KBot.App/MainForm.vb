@@ -167,21 +167,15 @@ Public Class MainForm
             lblProgram.Text = String.Empty   ' se completează după alegerea perioadei (SetPeriod)
 
             ' Navigația vederilor — ordinea paginilor din Access, Sumar implicit.
+            ' Cele opt intrări (cinci butoane Near, separator Far, DDF/ORD Far) sunt AUTORITE
+            ' ÎN DESIGNER, în `navViews.Items` (felia 0025): vezi MainForm.Designer.vb. Nu se
+            ' mai adaugă nimic din cod — un AddItem aici ar lovi aruncarea pe cheie duplicată
+            ' la prima rulare.
             ' Fiecare cheie (mai puțin „sumar") e poarta unui flag Are* din arbore:
             ' vezi ApplyViewGating. Sumar rămâne mereu activ (nu are flag).
-            navViews.AddItem("sumar", "Sumar")
-            'navViews.AddItem("indicatori", "Indicatori")
-            navViews.AddItem("istoric", "Istoric")
-            'navViews.AddItem("revizii", "Revizii")
-            navViews.AddItem("rezervari", "Rezervări")
-            'navViews.AddItem("partener", "Partener")
-            navViews.AddItem("receptii", "Recepții")
-            navViews.AddItem("plati", "Plăți")
-            ' DDF/ORD sunt editoare separate de restul vederilor: le desprindem la baza
-            ' barei (grupul „Far"), cu un separator între ele și lista de deasupra.
-            navViews.AddSeparator(KBot.Theming.KBotNavAlign.Far)
-            navViews.AddItem("ddf", "DDF", KBot.Theming.KBotNavAlign.Far)
-            navViews.AddItem("ord", "ORD", KBot.Theming.KBotNavAlign.Far)
+            ' Rămân de adăugat, când vederile lor vor exista: „indicatori", „revizii", „partener".
+            ' Selecția inițială RĂMÂNE în cod, deliberat: atribuirea de aici e cea care ridică
+            ' SelectionChanged și deci creează prima vedere. În designer ar fi o valoare moartă.
             navViews.SelectedKey = "sumar"   ' declanșează SelectionChanged -> creează vederea
 
             ' Fără nod selectat nu se știe ce date există: toate vederile cu flag pornesc

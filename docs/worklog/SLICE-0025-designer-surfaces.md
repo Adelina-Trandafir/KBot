@@ -14,7 +14,8 @@ fila «Document»), deci felia și worklog-ul poartă **0025**, cum cere §0 al 
 | 2 | «`KBotNavList` currently has **no** xUnit tests at all (open item from slice 0018)» | `tests/KBot.Theming.Tests/KBotNavListSelectionTests.vb` EXISTĂ (4 teste, adăugate de commit-ul `5f94f44` pentru bug-ul `SelectedKey = Nothing` din DdfView) | Firul 0018 rămâne **parțial** deschis: existau teste pentru `SelectedKey`, dar NU pentru separatori / aliniere / vizibilitate / orientare. Felia asta le adaugă (20 de teste noi), deci firul se poate închide acum |
 | 3 | «Existing counts before this slice: `KBot.Controls.Tests` 134, `KBot.App.Tests` 136, solution 436 — confirm these numbers against `KBOT_STATUS.md`» | Confirmat contra STATUS + rulare reală: **Controls 240, App 143, soluție 715** (cifrele planului sunt de pe vremea feliei 0022; 0023/0024 au adăugat ~280 de teste) | Folosite cifrele reale |
 | 4 | Helper-ul de design-time e descris ca `Friend Shared Function IsDesignTime` | `Friend` nu traversează assembly-uri, iar `KBot.Controls` (alt assembly) are nevoie de el | `Public NotInheritable Class KBotDesignTime` cu `<EditorBrowsable(Advanced)>` — scos din lista comună IntelliSense, dar vizibil pentru `KBot.Controls`. Fără `InternalsVisibleTo` suplimentar |
-| 5 | Pasul 1 cere proba rotundei **în Visual Studio**, altfel «stop and report» | Nu pot deschide designer-ul VS din acest mediu | Am construit **proba programatică cea mai apropiată** (vezi §5) și am mers mai departe pe pașii 2–5; **pasul 6 (verificările manuale) NU a rulat**, deci **pasul 7 (migrarea `MainForm`) NU a rulat** — exact regula planului |
+| 5 | Pasul 1 cere proba rotundei **în Visual Studio**, altfel «stop and report» | Nu pot deschide designer-ul VS din acest mediu | Am construit **proba programatică cea mai apropiată** (vezi §5) și am mers mai departe pe pașii 2–5. **Pasul 6 (verificările manuale) tot NU a rulat.** Pasul 7 s-a oprit inițial din acest motiv (regula planului), apoi **a fost cerut explicit de operator și livrat** — vezi §6 |
+| 6 | §9.3: «keep `navViews.SelectedKey = "sumar"` in code, **after** `ApplyViewGating(Nothing)` **as today**» | În cod era ÎNAINTEA lui `ApplyViewGating(Nothing)`, nu după | Păstrată ordinea REALĂ. Ambele funcționează; «as today» descria greșit codul, iar o schimbare de ordine pe care nimeni nu a cerut-o nu merită riscul |
 
 ---
 
@@ -159,6 +160,10 @@ spune la fața locului.
 - `src/KBot.Controls/KBotDataView.{AutoSize,Layout,Input,Editing}.vb` — atribute + `Imports System.ComponentModel`
 - `src/KBot.Theming/KBot.Theming.vbproj` — `FileVersion` 1.0.0.0 → **1.1.0.0**
 - `src/KBot.Controls/KBot.Controls.vbproj` — `FileVersion` 1.2.0.0 → **1.3.0.0**
+- `src/KBot.App/MainForm.Designer.vb` — cele opt intrări `navViews.Items` + `BeginInit`/`EndInit` (pasul 7)
+- `src/KBot.App/MainForm.vb` — blocul `AddItem`/`AddSeparator` șters din calea de încărcare (pasul 7)
+- `src/KBot.App/KBot.App.vbproj` — `FileVersion` 1.0.5.0 → **1.0.6.0** (pasul 7)
+- `tests/KBot.App.Tests/MainFormNavItemsTests.vb` (nou, pasul 7)
 - `docs/worklog/KBOT_STATUS.md`
 
 **`AssemblyVersion` rămâne 1.0.0.0 în ambele.** Pentru `KBot.Theming` e evident (suprafața doar
@@ -170,7 +175,7 @@ locuri folosesc doar `.Count`, indexatorul și `For Each`, toate oferite de `Col
 deci `AssemblyVersion` stă pe loc — dar contractul manifestului cere ca decizia să fie scrisă, nu
 subînțeleasă.
 
-`KBot.App` **nu** a primit bump: pasul 7 nu a rulat, deci nicio linie din el nu s-a schimbat.
+`KBot.App` a primit bump (1.0.5.0 → 1.0.6.0) fiindcă pasul 7 a rulat.
 
 ---
 
@@ -184,21 +189,25 @@ pe mașina clientului, ieșirea scrisă în
 |---|---:|---:|---:|
 | KBot.Theming.Tests | 31 | **51** | +20 |
 | KBot.Controls.Tests | 240 | **261** | +21 |
-| KBot.App.Tests | 143 | 143 | — |
+| KBot.App.Tests | 143 | **148** | +5 (pasul 7) |
 | KBot.DevHarness.Tests | 162 | 162 | — |
 | KBot.Api.Tests | 68 | 68 | — |
 | KBot.Xfa.Tests | 39 | 39 | — |
 | KBot.Domain.Tests | 17 | 17 | — |
 | KBot.Common.Tests | 14 | 14 | — |
 | KBot.LocalStore.Tests | 1 | 1 | — |
-| **Total** | **715** | **756** | **+41** |
+| **Total** | **715** | **761** | **+46** |
 
-**756 passed / 0 failed / 0 skipped.** `dotnet build KBot.sln`: **0 erori, 0 avertismente** (de
+**761 passed / 0 failed / 0 skipped.** `dotnet build KBot.sln`: **0 erori, 0 avertismente** (de
 orice fel — cele 16 NU1701 au fost reduse la tăcere în felia 0024-03).
 
-Cifrele «înainte» sunt derivate: singurele fișiere de test adăugate sunt cele două de mai sus, cu
-20 și 21 de `<Fact>` și zero `<Theory>` (numărate). Cifrele din planul feliei (Controls 134, App
+Cifrele «înainte» sunt derivate: singurele fișiere de test adăugate sunt cele trei de mai sus, cu
+20, 21 și 5 `<Fact>` și zero `<Theory>` (numărate). Cifrele din planul feliei (Controls 134, App
 136, soluție 436) erau de pe vremea feliei 0022 și au fost corectate contra rulării reale.
+
+A doua rulare (după pasul 7) e logată în
+`src\KBot.App\bin\Debug\net8.0-windows\win-x64\Logs\test_20260807_093959_095.log`, cu publicare
+înainte (`artifacts\KBot_Debug_20260806_161919`).
 
 Ce acoperă cele 41 de teste noi:
 - `Items` add/remove/clear schimbă ce întoarce `IndexAt` (deci invalidarea de layout chiar are loc);
@@ -265,45 +274,86 @@ fost probată**. Trei lucruri o susțin însă, două măsurate și unul citit d
 Ce NU probează nimic din cele de mai sus: că dialogul chiar se deschide, că `Add` chiar creează un
 element editabil, și că `MainForm.Designer.vb` chiar recapătă elementele la redeschidere.
 
-## 6. Pasul 7 — migrarea `MainForm.navViews`: **NU A RULAT**
+## 6. Pasul 7 — migrarea `MainForm.navViews`: **A RULAT** (cerut explicit de operator)
 
-Regula planului e explicită: «Only after Steps 1 and 6 pass», și «`MainForm` is not the place to
-debug this». Pasul 6 nu a rulat, deci pasul 7 nu a rulat. `MainForm.vb:172-184` își păstrează
-blocul `AddItem`/`AddSeparator` neatins, `MainForm.Designer.vb` nu s-a schimbat, iar
-`KBot.App/KBot.App.vbproj` nu a primit bump de `FileVersion`.
+Prima variantă a feliei a livrat pașii 0–5 și **a oprit înaintea pasului 7**, fiindcă planul îl
+condiționează de trecerea pașilor 1 și 6, iar pasul 6 cere Visual Studio. Operatorul a cerut
+migrarea oricum, după ce riscul i-a fost spus. Consemnat ca atare: pasul 7 e livrat pe o rotundă
+**neprobată în designer**, nu pe una verificată.
 
-Ce trebuie făcut când cineva ajunge în fața Visual Studio-ului (ordinea din §9 al planului, cu
-cheile și ordinea exacte — `ApplyViewGating`/`IsViewEnabled` se leagă de aceste șiruri):
+Cele opt intrări trăiesc acum în `MainForm.Designer.vb`, exact în forma pe care o emite designer-ul
+(instanțe `Dim KBotNavItem1..8`, atribuiri de proprietăți, `navViews.Items.Add(...)`), plus perechea
+`CType(navViews, ISupportInitialize).BeginInit()` / `.EndInit()` alături de cea a lui `split`:
 
-| Cheie | Text | Align |
-|---|---|---|
-| `sumar` | `Sumar` | Near |
-| `istoric` | `Istoric` | Near |
-| `rezervari` | `Rezervări` | Near |
-| `receptii` | `Recepții` | Near |
-| *(separator)* | — | **Far** |
-| `ddf` | `DDF` | **Far** |
-| `ord` | `ORD` | **Far** |
+| # | Cheie | Text | Align | Notă |
+|---|---|---|---|---|
+| 1 | `sumar` | `Sumar` | Near | mereu vizibil, fără flag `Are*` |
+| 2 | `istoric` | `Istoric` | Near | |
+| 3 | `rezervari` | `Rezervări` | Near | |
+| 4 | `receptii` | `Recepții` | Near | |
+| 5 | `plati` | `Plăți` | Near | |
+| 6 | *(separator)* | — | **Far** | `IsSeparator = True`, fără cheie — `EndInit` îi dă `__sep_1` |
+| 7 | `ddf` | `DDF` | **Far** | |
+| 8 | `ord` | `ORD` | **Far** | |
 
-…plus `plati` / `Plăți` (Near) între `receptii` și separator. Apoi: șterge blocul
-`AddItem`/`AddSeparator` din `MainForm.vb` (altfel `AddItem` lovește aruncarea pe cheie duplicată la
-prima rulare), **păstrează** `navViews.SelectedKey = "sumar"` în cod după `ApplyViewGating(Nothing)`,
-NU seta `SelectedKey` în designer, lasă `indicatori`/`revizii`/`partener` comentate, și verifică în
-`MainForm.Designer.vb` că designer-ul a scris diacritice UTF-8 literale (`Rezervări`, `Recepții`,
-`Plăți`), nu `\uXXXX` și nu entități HTML. Dacă nu, revino la calea prin cod.
+`Align = Near` NU e emis (e `DefaultValue`), la fel `Enabled`/`Visible`/`Badge`; se emit doar
+`Align = Far` și `IsSeparator = True`. Nu am adăugat un `AddRange` pe colecție tocmai ca forma
+scrisă de mână să fie cea pe care o va regenera VS: `CollectionCodeDomSerializer` folosește
+`AddRange` doar dacă există, altfel emite `Add` per element — și `Collection(Of T)` nu are `AddRange`.
 
-**Notă de regresie deja acoperită:** `DdfView` conține un `KBotNavList` autorit în designer. Când VS
-regenerează `DdfView.Designer.vb`, va emite acum și `BeginInit()`/`EndInit()` în jurul lui `navSub`.
-Calea aia a fost gândită: `EndInit` pe o colecție goală validează fără să arunce, iar
+Din `MainForm.vb` a dispărut blocul `AddItem`/`AddSeparator` (dacă rămânea, `AddItem` lovea
+aruncarea pe cheie duplicată la prima rulare). **`navViews.SelectedKey = "sumar"` rămâne în cod** —
+atribuirea aia e cea care ridică `SelectionChanged` și deci creează prima vedere; în designer ar fi
+o valoare moartă. Cele trei intrări comentate (`indicatori`, `revizii`, `partener`) NU au fost
+adăugate în designer; comentariul din cod le păstrează numele pentru ziua în care vederile lor
+există.
+
+**O corecție la plan:** §9.3 spune «keep `navViews.SelectedKey = "sumar"` in code, after
+`ApplyViewGating(Nothing)` as today». În cod era, și a rămas, **înaintea** lui
+`ApplyViewGating(Nothing)`. Ambele ordini funcționează (`IsViewEnabled` întoarce True și pentru
+cheie goală, și pentru «sumar»), dar «as today» descria greșit codul, așa că am păstrat ordinea
+reală în loc să introduc o schimbare de comportament pe care nimeni nu a cerut-o.
+
+**Diacriticele sunt literale, verificat pe octeți**, nu doar pe ochi: `Rezervări` = `C4 83`,
+`Recepții` / `Plăți` = `C8 9B`, zero apariții de `\u00` în fișier. Și, mai important, cele două
+teste noi compară cu literalele românești la RULARE — dacă designer-ul ar rescrie vreodată fișierul
+cu escape-uri, VB le-ar purta ca text simplu și testele ar pica.
+
+**Cinci teste noi** (`tests/KBot.App.Tests/MainFormNavItemsTests.vb`) construiesc `MainForm` pe un
+fir STA cu cele cinci dependențe pe `Nothing` (constructorul face doar `InitializeComponent` +
+atribuiri de câmpuri) și fixează: cele opt intrări în ordine cu Align-ul corect; diacriticele
+literale; faptul că separatorul a primit `__sep_1`, adică **`BeginInit`/`EndInit` chiar au rulat**
+din `InitializeComponent`; faptul că toate cheile pe care le folosește `ApplyViewGating` se rezolvă
+(`SetItemVisible` aruncă pe o cheie necunoscută, deci trecerea probează că poarta nu se poate rupe
+la pornire); și faptul că re-adăugarea oricăreia din cod ar arunca — motivul pentru care blocul a
+trebuit să dispară.
+
+Asta e apărarea reală împotriva pericolului feliei: o regenerare de designer care pierde sau
+reordonează intrări. `IsViewEnabled` aruncă `ArgumentException` pe o cheie necunoscută, deci o
+intrare pierdută nu e o pagubă cosmetică.
+
+**Notă de regresie deja acoperită:** `DdfView` conține și el un `KBotNavList` autorit în designer.
+Când VS regenerează `DdfView.Designer.vb`, va emite acum și `BeginInit()`/`EndInit()` în jurul lui
+`navSub`. Calea aia a fost gândită: `EndInit` pe o colecție goală validează fără să arunce, iar
 `SelectedKey = Nothing` reținut se aplică prin `ClearSelection()`, adică no-op. `DdfView.vb`
 continuă să-și adauge cele patru pagini în cod.
+
+**Ce rămâne neverificat aici:** nimeni nu a deschis `MainForm` în designer după migrare, deci nu se
+știe dacă VS **reîncarcă** cele opt elemente în dialogul de colecție și dacă le **rescrie** identic
+la prima regenerare. Ce se știe: se compilează, se construiește headless, și starea de rulare e
+identică cu cea de dinainte (fixată de cele cinci teste). Dacă VS refuză rotunda, calea de întoarcere
+e blocul `AddItem` din istoricul git — nu e o fundătură.
 
 ---
 
 ## 7. Nefăcut / neverificat, explicit
 
 - **Rotunda din designer, Toolbox-ul, marcajul roșu și grila de proprietăți** — vezi §4 și §5.
-  NERULATE, nu «verificate».
+  NERULATE, nu «verificate». Asta include acum și `MainForm`: cele opt intrări sunt scrise în
+  `MainForm.Designer.vb` în forma pe care o emite designer-ul, dar **nimeni nu a deschis formularul
+  în designer după migrare** — dacă VS le reîncarcă în dialogul de colecție și le rescrie identic
+  la prima regenerare rămâne întrebarea deschisă a feliei. Starea de RULARE e fixată de cinci teste,
+  iar calea de întoarcere (blocul `AddItem`) e în istoricul git.
 - **Fără manipulare directă pe suprafața de design** (decizia 2 a planului): nu poți da click pe un
   buton din bară în designer, nu îl poți trage ca să-l reordonezi și nu îl poți șterge cu Del. Ar
   cere un `ControlDesigner` propriu, iar pe `net8.0-windows` designer-ul rulează în alt proces, deci
