@@ -19,35 +19,68 @@ Public NotInheritable Class KBotDataColumnCollection
     ''' <summary>The grid that owns this collection (Nothing for a free-floating instance).</summary>
     Friend Property Owner As KBotDataView
 
+    ' English (slice 0025-03): the four mutators carry their own Try/Catch because they are ENTRY
+    ' POINTS — the designer calls them from InitializeComponent, AddColumn calls them, and callers
+    ' call them directly, so there is no already-wrapped boundary above them to log at (the house
+    ' rule's transitive coverage does not apply). They also reach real work: OnColumnsChanged runs
+    ' the index rebuild AND a full layout pass (scrollbars, auto-size, fill), which is the part
+    ' that can genuinely fail. Classification is «boundary»: log and RE-THROW, never swallow — a
+    ' grid that silently loses a column would paint blank cells and look like a data bug.
     Protected Overrides Sub InsertItem(index As Integer, item As KBotDataColumn)
-        If item Is Nothing Then Throw New ArgumentNullException(NameOf(item))
-        MyBase.InsertItem(index, item)
-        item.Owner = Owner
-        Owner?.OnColumnsChanged()
+        Try
+            If item Is Nothing Then Throw New ArgumentNullException(NameOf(item))
+            MyBase.InsertItem(index, item)
+            item.Owner = Owner
+            Owner?.OnColumnsChanged()
+        Catch ex As Exception
+            LogUnlessDesignTime("KBotDataColumnCollection.InsertItem", ex)
+            Throw
+        End Try
     End Sub
 
     Protected Overrides Sub SetItem(index As Integer, item As KBotDataColumn)
-        If item Is Nothing Then Throw New ArgumentNullException(NameOf(item))
-        Dim replaced As KBotDataColumn = Me(index)
-        MyBase.SetItem(index, item)
-        If replaced IsNot Nothing Then replaced.Owner = Nothing
-        item.Owner = Owner
-        Owner?.OnColumnsChanged()
+        Try
+            If item Is Nothing Then Throw New ArgumentNullException(NameOf(item))
+            Dim replaced As KBotDataColumn = Me(index)
+            MyBase.SetItem(index, item)
+            If replaced IsNot Nothing Then replaced.Owner = Nothing
+            item.Owner = Owner
+            Owner?.OnColumnsChanged()
+        Catch ex As Exception
+            LogUnlessDesignTime("KBotDataColumnCollection.SetItem", ex)
+            Throw
+        End Try
     End Sub
 
     Protected Overrides Sub RemoveItem(index As Integer)
-        Dim removed As KBotDataColumn = Me(index)
-        MyBase.RemoveItem(index)
-        If removed IsNot Nothing Then removed.Owner = Nothing
-        Owner?.OnColumnsChanged()
+        Try
+            Dim removed As KBotDataColumn = Me(index)
+            MyBase.RemoveItem(index)
+            If removed IsNot Nothing Then removed.Owner = Nothing
+            Owner?.OnColumnsChanged()
+        Catch ex As Exception
+            LogUnlessDesignTime("KBotDataColumnCollection.RemoveItem", ex)
+            Throw
+        End Try
     End Sub
 
     Protected Overrides Sub ClearItems()
-        For Each col As KBotDataColumn In Me
-            col.Owner = Nothing
-        Next
-        MyBase.ClearItems()
-        Owner?.OnColumnsChanged()
+        Try
+            For Each col As KBotDataColumn In Me
+                col.Owner = Nothing
+            Next
+            MyBase.ClearItems()
+            Owner?.OnColumnsChanged()
+        Catch ex As Exception
+            LogUnlessDesignTime("KBotDataColumnCollection.ClearItems", ex)
+            Throw
+        End Try
+    End Sub
+
+    ' Writing a log file from inside devenv.exe is noise at best; see KBotDesignTime.
+    Private Sub LogUnlessDesignTime(source As String, ex As Exception)
+        If KBotDesignTime.IsDesignTime(Owner) Then Return
+        GlobalErrorLog.Write(source, ex)
     End Sub
 
 End Class

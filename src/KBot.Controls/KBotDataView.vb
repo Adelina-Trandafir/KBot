@@ -172,16 +172,29 @@ Public Class KBotDataView
         Next
     End Sub
 
-    ''' <summary>Called by <see cref="KBotDataColumn.Key"/> after a rename (grid has no rows).</summary>
+    ''' <summary>
+    ''' Called by <see cref="KBotDataColumn.Key"/> after a rename (grid has no rows).
+    '''
+    ''' English (slice 0025-03): wrapped on its own because the ONLY path here is the column's Key
+    ''' setter, and that setter is deliberately left unwrapped — its <c>InvalidOperationException</c>
+    ''' guard is the documented contract, and logging every legitimate rejection would turn the
+    ''' error file into a transcript of somebody typing in the property grid. A real failure in the
+    ''' index rebuild or the layout pass, on the other hand, is worth recording.
+    ''' </summary>
     Friend Sub OnColumnKeyChanged(oldKey As String, newKey As String)
-        RebuildColumnIndex()
-        ' Selecția curentă putea sta pe cheia veche — o mutăm, nu o lăsăm să atârne.
-        If String.Equals(_currentColumnKey, oldKey, StringComparison.Ordinal) Then
-            _currentColumnKey = newKey
-        End If
-        If _initializing Then Return
-        RecomputeTotals()
-        LayoutChanged()
+        Try
+            RebuildColumnIndex()
+            ' Selecția curentă putea sta pe cheia veche — o mutăm, nu o lăsăm să atârne.
+            If String.Equals(_currentColumnKey, oldKey, StringComparison.Ordinal) Then
+                _currentColumnKey = newKey
+            End If
+            If _initializing Then Return
+            RecomputeTotals()
+            LayoutChanged()
+        Catch ex As Exception
+            If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotDataView.OnColumnKeyChanged", ex)
+            Throw
+        End Try
     End Sub
 
     ' ── ISupportInitialize ──────────────────────────────────────────────────────

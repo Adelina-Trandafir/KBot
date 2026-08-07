@@ -67,4 +67,26 @@ Public NotInheritable Class DdfPreviewFactory
         End Select
     End Function
 
+    ''' <summary>
+    ''' English (slice 0025-05): same choice, but on the DEFAULT path it hands back the instance
+    ''' the DESIGNER already created and parented, instead of building a second one.
+    '''
+    ''' Why it exists: `DdfView` now declares its preview surface in `DdfView.Designer.vb`, so the
+    ''' operator can see the page on the design surface instead of an empty panel. Building another
+    ''' `XfaXmlPreview` here would leave the designer's copy parented and unused, sitting behind the
+    ''' one actually driven — two grids, one of them permanently blank.
+    '''
+    ''' On the Adobe path the compile-time switch still wins and a fresh `ReaderHostPreview` is
+    ''' returned; the caller mounts it and hides the designer's surface (see `DdfView.MountPreview`).
+    ''' </summary>
+    Public Shared Function Create(designerDefault As XfaXmlPreview) As IDdfPreview
+        If designerDefault Is Nothing Then Throw New ArgumentNullException(NameOf(designerDefault))
+        Select Case Mode
+            Case DdfPreviewMode.AdobeReader
+                Return New ReaderHostPreview()
+            Case Else
+                Return designerDefault
+        End Select
+    End Function
+
 End Class

@@ -527,6 +527,301 @@ Public Class KBotNavListTests
         icon.Dispose()
     End Sub
 
+    ' ── Lățimea butoanelor (0025-03) ──────────────────────────────────────────
+
+    <Fact>
+    Public Sub ItemWidth_DefaultsToAuto_AndAutoIsExactlyTheOldBehaviour()
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       Assert.Equal(0, nav.ItemWidth)
+                       nav.AddItem("a", "A")
+                       ' Vertical automat = umple lățimea utilă a barei (lățime - 2 * margine).
+                       Assert.Equal(nav.Width - 2 * Dpi(nav, 6), nav.DebugBounds(0).Width)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ItemWidth_OnAVerticalBar_NarrowsTheButtonsAndKeepsThemLeftAligned()
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       nav.AddItem("b", "B")
+                       nav.ItemWidth = 90
+
+                       For i As Integer = 0 To 1
+                           Assert.Equal(Dpi(nav, 90), nav.DebugBounds(i).Width)
+                           Assert.Equal(Dpi(nav, 6), nav.DebugBounds(i).Left)   ' tot la marginea din stânga
+                       Next
+                       ' Înălțimea rândului nu se schimbă — ItemWidth e doar lățime.
+                       Assert.Equal(Dpi(nav, 36), nav.DebugBounds(0).Height)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ItemWidth_OnAVerticalBar_IsClampedToTheBarWidth()
+        ' Un buton nu poate fi mai lat decât bara care îl ține.
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       nav.ItemWidth = 10000
+                       Assert.Equal(nav.Width - 2 * Dpi(nav, 6), nav.DebugBounds(0).Width)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ItemWidth_OnAHorizontalBar_ReplacesTheMeasuredWidth()
+        RunSta(Sub()
+                   Using nav = New KBotNavList()
+                       nav.Orientation = KBotNavOrientation.Horizontal
+                       nav.Size = New Size(600, 34)
+                       nav.AddItem("a", "Un text foarte lung care ar măsura mult mai mult")
+                       nav.AddItem("b", "B")
+
+                       nav.ItemWidth = 100
+                       ' Amândouă primesc aceeași lățime, indiferent cât măsoară textul.
+                       Assert.Equal(Dpi(nav, 100), nav.DebugBounds(0).Width)
+                       Assert.Equal(Dpi(nav, 100), nav.DebugBounds(1).Width)
+                       ' Și se așază unul după altul, fără suprapunere.
+                       Assert.Equal(nav.DebugBounds(0).Right, nav.DebugBounds(1).Left)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ItemWidth_OnAHorizontalBar_IsHonouredBelowTheAutoMinimum()
+        ' Minimul de 48 e o gardă a MĂSURĂRII, nu o limită a apelantului: explicit e explicit.
+        RunSta(Sub()
+                   Using nav = New KBotNavList()
+                       nav.Orientation = KBotNavOrientation.Horizontal
+                       nav.Size = New Size(600, 34)
+                       nav.AddItem("a", "A")
+                       nav.ItemWidth = 30
+                       Assert.Equal(Dpi(nav, 30), nav.DebugBounds(0).Width)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ItemWidth_DoesNotTouchASeparatorOnAHorizontalBar()
+        ' Un separator e o linie fină, nu un buton.
+        RunSta(Sub()
+                   Using nav = New KBotNavList()
+                       nav.Orientation = KBotNavOrientation.Horizontal
+                       nav.Size = New Size(600, 34)
+                       nav.AddItem("a", "A")
+                       nav.AddSeparator()
+                       nav.ItemWidth = 120
+                       Assert.Equal(Dpi(nav, 120), nav.DebugBounds(0).Width)
+                       Assert.Equal(Dpi(nav, 11), nav.DebugBounds(1).Width)     ' SeparatorExtent
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ItemWidth_OnAVerticalBar_DoesNarrowTheSeparatorLine()
+        ' Aici e invers: linia trebuie să stea în dreptul butoanelor, nu să iasă din coloană.
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       nav.AddSeparator()
+                       nav.ItemWidth = 90
+                       Assert.Equal(Dpi(nav, 90), nav.DebugBounds(1).Width)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ItemWidth_RejectsNegativesByFallingBackToAuto()
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       nav.ItemWidth = 90
+                       nav.ItemWidth = -5
+                       Assert.Equal(0, nav.ItemWidth)
+                       Assert.Equal(nav.Width - 2 * Dpi(nav, 6), nav.DebugBounds(0).Width)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ItemWidth_KeepsTheIconAndTheTextInsideTheNarrowedButton()
+        RunSta(Sub()
+                   Using nav = NewSizedList(), icon = NewIcon(32)
+                       nav.AddItem("a", "A")
+                       nav.Items(0).Image = icon
+                       nav.ItemWidth = 90
+
+                       Dim r As Rectangle = nav.DebugBounds(0)
+                       Dim ir As Rectangle = nav.DebugIconRect(0)
+                       Assert.True(ir.Left >= r.Left AndAlso ir.Right <= r.Right)
+                       Assert.True(nav.DebugTextLeft(0) < r.Right)
+                   End Using
+               End Sub)
+    End Sub
+
+    ' ── AutoSize per element + măsurarea cu fontul real (0025-04) ─────────────
+
+    <Fact>
+    Public Sub Measurement_UsesTheSemiboldFont_SoASelectedButtonStillFits()
+        ' Defectul: elementul selectat se PICTEAZĂ semibold, dar se MĂSURA cu fontul obișnuit, care
+        ' e mai îngust — textul se tăia cu «…» exact când era selectat. În designer nu e nimic
+        ' selectat, deci nimic nu era semibold și totul părea în regulă.
+        RunSta(Sub()
+                   Using nav = New KBotNavList()
+                       nav.Orientation = KBotNavOrientation.Horizontal
+                       nav.Size = New Size(900, 34)
+                       nav.AddItem("a", "Vizualizare document")
+                       nav.AddItem("b", "B")
+
+                       Dim slot As Integer = nav.DebugBounds(0).Width
+                       Dim padX As Integer = Dpi(nav, 12)
+                       Using semibold As New Font("Segoe UI Semibold", nav.Font.Size)
+                           Dim needed As Integer =
+                               TextRenderer.MeasureText("Vizualizare document", semibold).Width + 2 * padX
+                           Assert.True(slot >= needed,
+                               $"slotul ({slot}) trebuie să încapă textul semibold ({needed})")
+                       End Using
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Measurement_DoesNotDependOnWhichItemIsSelected()
+        ' Geometria nu are voie să se schimbe la selecție — altfel bara sare sub degetul operatorului.
+        RunSta(Sub()
+                   Using nav = New KBotNavList()
+                       nav.Orientation = KBotNavOrientation.Horizontal
+                       nav.Size = New Size(900, 34)
+                       nav.AddItem("a", "Vizualizare")
+                       nav.AddItem("b", "Document")
+
+                       Dim before As Rectangle() = {nav.DebugBounds(0), nav.DebugBounds(1)}
+                       nav.SelectedKey = "a"
+                       Assert.Equal(before(0), nav.DebugBounds(0))
+                       Assert.Equal(before(1), nav.DebugBounds(1))
+                       nav.SelectedKey = "b"
+                       Assert.Equal(before(0), nav.DebugBounds(0))
+                       Assert.Equal(before(1), nav.DebugBounds(1))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AutoSize_DefaultsToFalse_AndChangesNothing()
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       Assert.False(nav.Items(0).AutoSize)
+                       Assert.Equal(nav.Width - 2 * Dpi(nav, 6), nav.DebugBounds(0).Width)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AutoSize_OnAVerticalBar_ShrinksTheButtonToItsContent()
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("scurt", "Ab")
+                       nav.AddItem("lung", "Un text considerabil mai lung")
+                       nav.Items(0).AutoSize = True
+                       nav.Items(1).AutoSize = True
+                       nav.InvalidateLayout()
+
+                       Dim full As Integer = nav.Width - 2 * Dpi(nav, 6)
+                       Assert.True(nav.DebugBounds(0).Width < full, "butonul scurt trebuie să se strângă")
+                       Assert.True(nav.DebugBounds(0).Width < nav.DebugBounds(1).Width,
+                                   "textul mai lung trebuie să dea un buton mai lat")
+                       ' Nu poate depăși niciodată lățimea utilă a barei.
+                       Assert.True(nav.DebugBounds(1).Width <= full)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AutoSize_CountsTheImage_NotJustTheText()
+        RunSta(Sub()
+                   Using nav = NewSizedList(), icon = NewIcon(16)
+                       nav.AddItem("a", "A")
+                       nav.Items(0).AutoSize = True
+                       Dim withoutIcon As Integer = nav.DebugBounds(0).Width
+
+                       nav.Items(0).Image = icon
+                       nav.InvalidateLayout()
+                       Assert.Equal(withoutIcon + Dpi(nav, 20) + Dpi(nav, 8), nav.DebugBounds(0).Width)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AutoSize_BeatsItemWidth_OnBothOrientations()
+        RunSta(Sub()
+                   ' Vertical.
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       nav.AddItem("b", "B")
+                       nav.ItemWidth = 140
+                       nav.Items(0).AutoSize = True
+                       nav.InvalidateLayout()
+                       Assert.True(nav.DebugBounds(0).Width < Dpi(nav, 140), "AutoSize bate ItemWidth")
+                       Assert.Equal(Dpi(nav, 140), nav.DebugBounds(1).Width)   ' celălalt rămâne impus
+                   End Using
+
+                   ' Orizontal.
+                   Using nav = New KBotNavList()
+                       nav.Orientation = KBotNavOrientation.Horizontal
+                       nav.Size = New Size(900, 34)
+                       nav.AddItem("a", "A")
+                       nav.AddItem("b", "B")
+                       nav.ItemWidth = 200
+                       nav.Items(0).AutoSize = True
+                       nav.InvalidateLayout()
+                       Assert.True(nav.DebugBounds(0).Width < Dpi(nav, 200))
+                       Assert.Equal(Dpi(nav, 200), nav.DebugBounds(1).Width)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AutoSize_IsIgnoredOnASeparator()
+        ' Un separator nu are conținut de încadrat; linia lui urmează coloana butoanelor.
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       nav.AddSeparator()
+                       nav.Items(1).AutoSize = True
+                       nav.ItemWidth = 90
+                       nav.InvalidateLayout()
+                       Assert.Equal(Dpi(nav, 90), nav.DebugBounds(1).Width)
+                   End Using
+               End Sub)
+    End Sub
+
+    ' ── Serializarea pictogramei (0025-03) ────────────────────────────────────
+
+    <Fact>
+    Public Sub Image_IsNotSerialized_WhenTheItemHasNone()
+        ' Fără asta, designer-ul scria «KBotNavItemN.Image = Nothing» pentru fiecare element fără
+        ' pictogramă — patru linii moarte în DdfView, opt în MainForm, și crește cu bara.
+        Dim prop As PropertyDescriptor = TypeDescriptor.GetProperties(GetType(KBotNavItem))("Image")
+        Assert.NotNull(prop)
+
+        Dim item As New KBotNavItem("a", "A")
+        Assert.False(prop.ShouldSerializeValue(item))
+
+        Using icon = NewIcon(16)
+            item.Image = icon
+            Assert.True(prop.ShouldSerializeValue(item))
+
+            ' Reset («Restaurare» din grila de proprietăți) o scoate din nou.
+            prop.ResetValue(item)
+            Assert.Null(item.Image)
+            Assert.False(prop.ShouldSerializeValue(item))
+        End Using
+    End Sub
+
     ' ── Proxy pentru rotunda din designer ─────────────────────────────────────
 
     <Fact>

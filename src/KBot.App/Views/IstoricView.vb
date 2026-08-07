@@ -546,6 +546,9 @@ Public Class IstoricView
         menu.Renderer = New ToolStripProfessionalRenderer(New KBotMenuColorTable(p)) With {.RoundedEdges = False}
     End Sub
 
+    Private Sub btnFiltruClsf_Click_1(sender As Object, e As EventArgs)
+
+    End Sub
 End Class
 
 ''' <summary>Argumentul evenimentului <see cref="IstoricView.RandSchimbat"/> — poartă ID-ul

@@ -52,6 +52,7 @@ Public NotInheritable Class KBotNavList
     Private _layoutValid As Boolean
     Private _sepSeq As Integer                            ' contor pentru cheile interne ale separatorilor
     Private _iconSize As Integer = 20                     ' latura pictogramei, px logici (0025-02)
+    Private _itemWidth As Integer                         ' lățimea butoanelor, px logici; 0 = automat (0025-03)
 
     ' ── Inițializare din designer (ISupportInitialize) ────────────────────────
     ' Between BeginInit and EndInit the control accepts whatever InitializeComponent writes
@@ -135,6 +136,39 @@ Public NotInheritable Class KBotNavList
             Dim clamped As Integer = Math.Max(0, value)
             If clamped = _iconSize Then Return
             _iconSize = clamped
+            InvalidateLayout()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Lățimea butoanelor, în px logici (scalați la DPI). **0 = automat**, adică exact
+    ''' comportamentul dinainte de 0025-03:
+    ''' <list type="bullet">
+    ''' <item>pe VERTICALĂ butonul umple lățimea barei (minus marginile);</item>
+    ''' <item>pe ORIZONTALĂ lățimea se măsoară din text (+ pictogramă, + badge), cu un minim de 48.</item>
+    ''' </list>
+    ''' O valoare pozitivă înlocuiește măsurarea: TOATE butoanele primesc exact lățimea aceea, iar
+    ''' textul prea lung se taie cu «…» (nu se rupe rândul). Pe verticală se limitează la lățimea
+    ''' utilă a barei — un buton nu poate fi mai lat decât bara care îl ține; butoanele rămân
+    ''' aliniate la marginea din stânga.
+    '''
+    ''' NU se aplică separatorilor pe orizontală (un separator e o linie fină, nu un buton); pe
+    ''' verticală linia lor urmează aceeași coloană, ca să nu iasă din dreptul butoanelor.
+    '''
+    ''' Valorile negative se aduc la 0 (= automat), ca la <see cref="IconSize"/> — un setter de
+    ''' dimensiune care aruncă ar rupe <c>InitializeComponent</c> la o valoare greșită din designer.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Lățimea butoanelor (px logici). 0 = automat: pe verticală umplu bara, pe orizontală se măsoară din text.")>
+    <DefaultValue(0)>
+    Public Property ItemWidth As Integer
+        Get
+            Return _itemWidth
+        End Get
+        Set(value As Integer)
+            Dim clamped As Integer = Math.Max(0, value)
+            If clamped = _itemWidth Then Return
+            _itemWidth = clamped
             InvalidateLayout()
         End Set
     End Property
@@ -393,16 +427,70 @@ Public NotInheritable Class KBotNavList
         Return New Rectangle(r.Left + padX, r.Top + (r.Height - side) \ 2, side, side)
     End Function
 
+    ' Lățimea impusă a butoanelor, scalată (0 = automat). Vezi ItemWidth.
+    Private Function FixedItemWidth() As Integer
+        If _itemWidth <= 0 Then Return 0
+        Return ThemeShapes.ScaleDpi(Me, _itemWidth)
+    End Function
+
+    ''' <summary>
+    ''' Fontul cu care se MĂSOARĂ un element — întotdeauna cel semibold, adică cel mai LAT font cu
+    ''' care poate fi pictat.
+    '''
+    ''' Aici a stat un defect real (0025-04): elementul SELECTAT se pictează semibold (vezi
+    ''' <see cref="OnPaint"/>), dar măsurarea folosea fontul obișnuit. Semibold e mai lat la aceeași
+    ''' mărime, deci textul butonului selectat nu mai încăpea în slotul calculat pentru el și se
+    ''' tăia cu «…». În designer nu e nimic selectat, deci nimic nu era semibold și totul părea în
+    ''' regulă — exact simptomul «în designer arată bine, la rulare e mai gros și nu mai încape».
+    '''
+    ''' Se măsoară MEREU cu semibold, nu doar pentru cel selectat, ca geometria să NU depindă de
+    ''' selecție: altfel butoanele și-ar schimba lățimea la fiecare click, iar bara ar sări sub
+    ''' degetul operatorului. Prețul e câțiva pixeli de aer pe butoanele neselectate.
+    ''' </summary>
+    Private Function MeasureFont() As Font
+        Return SemiboldFont()
+    End Function
+
+    ''' <summary>
+    ''' Lățimea cerută de CONȚINUTUL unui buton: padding + pictogramă + text (măsurat cu
+    ''' <see cref="MeasureFont"/>) + pastila badge-ului. Baza pentru <c>AutoSize</c> și pentru
+    ''' modul automat al barei orizontale.
+    ''' </summary>
+    Private Function ContentWidth(it As KBotNavItem) As Integer
+        Dim padX As Integer = ThemeShapes.ScaleDpi(Me, 12)
+        Dim ts As Size = TextRenderer.MeasureText(If(it.Text, String.Empty), MeasureFont())
+        Dim w As Integer = ts.Width + 2 * padX + IconSlotWidth(it)
+        If it.Badge > 0 Then w += ThemeShapes.ScaleDpi(Me, 26)
+        Return w
+    End Function
+
     ' Extinderea (pe axa principală) a unui element vizibil.
     Private Function ItemExtent(it As KBotNavItem) As Integer
         If it.IsSeparator Then Return SeparatorExtent()
         If _orientation = KBotNavOrientation.Vertical Then Return ItemThickness()
-        ' Orizontal: lățimea butonului = textul măsurat + padding (+ pictogramă, + loc de badge).
-        Dim padX As Integer = ThemeShapes.ScaleDpi(Me, 12)
-        Dim ts As Size = TextRenderer.MeasureText(If(it.Text, String.Empty), Font)
-        Dim w As Integer = ts.Width + 2 * padX + IconSlotWidth(it)
-        If it.Badge > 0 Then w += ThemeShapes.ScaleDpi(Me, 26)
-        Return Math.Max(w, ThemeShapes.ScaleDpi(Me, 48))
+        ' Orizontal: axa principală E lățimea.
+        ' 1. AutoSize pe element bate orice — el CERE să încapă.
+        If it.AutoSize Then Return ContentWidth(it)
+        ' 2. Lățimea impusă pe bară. Explicit înseamnă explicit: nu se mai aplică nici minimul de
+        '    48 (acela e o gardă a MĂSURĂRII, nu o limită pentru apelant).
+        Dim fixedW As Integer = FixedItemWidth()
+        If fixedW > 0 Then Return fixedW
+        ' 3. Automat: din conținut, cu minimul istoric de 48.
+        Return Math.Max(ContentWidth(it), ThemeShapes.ScaleDpi(Me, 48))
+    End Function
+
+    ''' <summary>
+    ''' Lățimea TRANSVERSALĂ a unui element pe bara verticală (pe orizontală lățimea e axa
+    ''' principală și se rezolvă în <see cref="ItemExtent"/>). Aceeași ordine de precedență:
+    ''' <c>AutoSize</c> pe element, apoi <c>ItemWidth</c> pe bară, apoi «umple bara».
+    ''' Separatorii nu au conținut, deci ignoră <c>AutoSize</c> — linia lor urmează coloana
+    ''' butoanelor, altfel ar ieși din dreptul lor.
+    ''' </summary>
+    Private Function CrossWidthFor(it As KBotNavItem, crossSpan As Integer) As Integer
+        If it.AutoSize AndAlso Not it.IsSeparator Then Return Math.Min(ContentWidth(it), crossSpan)
+        Dim fixedW As Integer = FixedItemWidth()
+        If fixedW > 0 Then Return Math.Min(fixedW, crossSpan)
+        Return crossSpan
     End Function
 
     ' (Re)calculează slotul fiecărui element. Butoanele/separatorii ascunși primesc
@@ -441,7 +529,8 @@ Public NotInheritable Class KBotNavList
                 nearCursor += ext
             End If
             If vertical Then
-                it.Bounds = New Rectangle(crossStart, mainPos, crossSpan, ext)
+                ' Pe verticală lățimea e transversală și se decide PER ELEMENT (AutoSize).
+                it.Bounds = New Rectangle(crossStart, mainPos, CrossWidthFor(it, crossSpan), ext)
             Else
                 it.Bounds = New Rectangle(mainPos, crossStart, ext, crossSpan)
             End If

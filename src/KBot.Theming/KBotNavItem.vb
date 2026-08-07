@@ -2,6 +2,7 @@ Option Strict On
 Imports System.Collections.ObjectModel
 Imports System.ComponentModel
 Imports System.Drawing
+Imports KBot.Common
 
 ''' <summary>
 ''' English (slice 0025): one entry of a <see cref="KBotNavList"/> — either a button (key, text,
@@ -58,6 +59,20 @@ Public NotInheritable Class KBotNavItem
     <Description("Pictograma desenată la stânga textului (ca Image-ul unui buton). Ignorată pe separatori.")>
     Public Property Image As System.Drawing.Image
 
+    ' English (slice 0025-03): without these two the designer writes «KBotNavItemN.Image = Nothing»
+    ' for EVERY item that has no icon — four dead lines in DdfView, eight in MainForm, and it grows
+    ' with the bar. A reference type has no usable <DefaultValue> in VB (the attribute takes a
+    ' converted string, and Nothing is not one), so ShouldSerialize/Reset is how «unset» is said.
+    ' Private on purpose: TypeDescriptor looks them up by name including non-public members, and
+    ' they are not part of the item's API.
+    Private Function ShouldSerializeImage() As Boolean
+        Return Image IsNot Nothing
+    End Function
+
+    Private Sub ResetImage()
+        Image = Nothing
+    End Sub
+
     <Category("K-BOT")>
     <Description("Numărul din pastila din dreapta butonului. 0 = pastila nu se desenează.")>
     <DefaultValue(0)>
@@ -72,6 +87,22 @@ Public NotInheritable Class KBotNavItem
     <Description("False => elementul nu ocupă spațiu, nu se pictează, nu se selectează și e sărit de navigarea cu tastatura.")>
     <DefaultValue(True)>
     Public Property Visible As Boolean = True
+
+    ''' <summary>
+    ''' English (slice 0025-04): when True, THIS button sizes itself to its content — padding +
+    ''' <see cref="Image"/> + the measured caption + the badge pill — and ignores the bar's
+    ''' <c>KBotNavList.ItemWidth</c>. Default False, so a bar behaves exactly as before.
+    '''
+    ''' Precedence is: <c>AutoSize</c> on the item, then <c>ItemWidth</c> on the bar, then the
+    ''' bar's own default (fill the width on a vertical bar, measure the content on a horizontal
+    ''' one). On a vertical bar the button can never grow past the bar's usable width.
+    '''
+    ''' Ignored on a separator: it has no content to fit.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("True => butonul se redimensionează ca să încapă textul și pictograma, ignorând ItemWidth-ul barei.")>
+    <DefaultValue(False)>
+    Public Property AutoSize As Boolean
 
     <Category("K-BOT")>
     <Description("True => linie fină neselectabilă în locul unui buton. Cheia și textul sunt ignorate.")>
@@ -119,26 +150,58 @@ Public NotInheritable Class KBotNavItemCollection
     ''' <summary>The bar that owns this collection (Nothing for a free-floating instance).</summary>
     Friend Property Owner As KBotNavList
 
+    ' English (slice 0025-03): the four mutators carry their own Try/Catch because they are ENTRY
+    ' POINTS — the designer calls them from InitializeComponent and callers call them from code, so
+    ' there is no already-wrapped boundary above them to log at (the house rule's transitive
+    ' coverage does not apply). Classification is «boundary»: log and RE-THROW, never swallow — a
+    ' bar that silently drops an item is the failure mode this whole slice exists to prevent.
+    ' The log is skipped inside Visual Studio, like every other sink in these controls.
     Protected Overrides Sub InsertItem(index As Integer, item As KBotNavItem)
-        If item Is Nothing Then Throw New ArgumentNullException(NameOf(item))
-        MyBase.InsertItem(index, item)
-        Owner?.InvalidateLayout()
+        Try
+            If item Is Nothing Then Throw New ArgumentNullException(NameOf(item))
+            MyBase.InsertItem(index, item)
+            Owner?.InvalidateLayout()
+        Catch ex As Exception
+            LogUnlessDesignTime("KBotNavItemCollection.InsertItem", ex)
+            Throw
+        End Try
     End Sub
 
     Protected Overrides Sub SetItem(index As Integer, item As KBotNavItem)
-        If item Is Nothing Then Throw New ArgumentNullException(NameOf(item))
-        MyBase.SetItem(index, item)
-        Owner?.InvalidateLayout()
+        Try
+            If item Is Nothing Then Throw New ArgumentNullException(NameOf(item))
+            MyBase.SetItem(index, item)
+            Owner?.InvalidateLayout()
+        Catch ex As Exception
+            LogUnlessDesignTime("KBotNavItemCollection.SetItem", ex)
+            Throw
+        End Try
     End Sub
 
     Protected Overrides Sub RemoveItem(index As Integer)
-        MyBase.RemoveItem(index)
-        Owner?.InvalidateLayout()
+        Try
+            MyBase.RemoveItem(index)
+            Owner?.InvalidateLayout()
+        Catch ex As Exception
+            LogUnlessDesignTime("KBotNavItemCollection.RemoveItem", ex)
+            Throw
+        End Try
     End Sub
 
     Protected Overrides Sub ClearItems()
-        MyBase.ClearItems()
-        Owner?.InvalidateLayout()
+        Try
+            MyBase.ClearItems()
+            Owner?.InvalidateLayout()
+        Catch ex As Exception
+            LogUnlessDesignTime("KBotNavItemCollection.ClearItems", ex)
+            Throw
+        End Try
+    End Sub
+
+    ' Writing a log file from inside devenv.exe is noise at best; see KBotDesignTime.
+    Private Sub LogUnlessDesignTime(source As String, ex As Exception)
+        If KBotDesignTime.IsDesignTime(Owner) Then Return
+        GlobalErrorLog.Write(source, ex)
     End Sub
 
 End Class

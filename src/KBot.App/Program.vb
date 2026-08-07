@@ -26,7 +26,18 @@ Friend Module Program
         Try
             Application.EnableVisualStyles()
             Application.SetCompatibleTextRenderingDefault(False)
-            Application.SetHighDpiMode(HighDpiMode.SystemAware)
+            ' PerMonitorV2 (0025-05), nu SystemAware. SystemAware citește DPI-ul monitorului
+            ' PRINCIPAL o singură dată, la pornire, și nu-l mai actualizează: mutată pe un monitor
+            ' cu altă scalare, fereastra e ÎNTINSĂ ca bitmap de Windows — exact aspectul „textul e
+            ' mai gros și nu mai încape". PerMonitorV2 redimensionează și re-scalează real la
+            ' fiecare schimbare de DPI.
+            '
+            ' Controalele K-BOT desenate de noi sunt pregătite: toate trec prin
+            ' ThemeShapes.ScaleDpi(Me, …), care citește DeviceDpi la fiecare pictare, deci urmăresc
+            ' DPI-ul nou fără cod în plus. NEVERIFICAT PE ECRAN: AdvancedTreeControl (netematizat,
+            ' cu metrici proprii) și ferestrele fără chenar din KBotShellForm (WM_NCHITTEST /
+            ' WM_GETMINMAXINFO) nu au fost privite la o schimbare de monitor.
+            Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)
 
             ' Tema: încarcă schema persistată (implicit Classic) ÎNAINTE de primul formular,
             ' apoi conectează subsistemele Forexe (RichTextBoxLogger) la ThemeManager.ThemeChanged.

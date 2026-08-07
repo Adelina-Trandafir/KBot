@@ -58,7 +58,14 @@ Public Class ReaderHostPreview
         _host = New AdobeReaderHost(pnlHost, AddressOf AdobeHostLog.Write) With {
             .PopupWatchEnabled = True}
         _host.Options.DetachMode = DetachMode
-        ApplySettings()
+        ' În DESIGNER nu citim setările și nu scriem jurnal (0025-05, de când controlul e declarat
+        ' în DdfView.Designer.vb și deci se construiește pe suprafața de design): `AppDir` e acolo
+        ' folderul lui devenv.exe, deci `kbot_paths.json` lipsește oricum, iar singurul efect real
+        ' ar fi un `adobe_preview.log` scris lângă Visual Studio, la fiecare redeschidere a vederii.
+        ' Restul constructorului e inert prin construcție — AdobeReaderHost și cele patru obiecte
+        ' ale lui doar își setează câmpurile; nici cronometrul de popup-uri, nici cârligul de
+        ' ferestre nu pornesc până la ShowDocument.
+        If Not KBotDesignTime.IsDesignTime(Me) Then ApplySettings()
         ShowMessage("Selectați o revizie din arbore.")
     End Sub
 

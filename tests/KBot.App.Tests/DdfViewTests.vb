@@ -556,7 +556,8 @@ Public Class DdfViewTests
                        Dim pnlPreview = FindByName(view, "pnlPreview")
                        Dim pnlPdf = FindByName(view, "pnlPdf")
                        Dim pnlValori = FindByName(view, "pnlValori")
-                       Assert.True(pnlValori.Visible)         ' pagina implicită
+                       Assert.True(pnlPreview.Visible)        ' pagina implicită de la parcarea lui «valori»
+                       Assert.False(pnlValori.Visible)        ' pagina parcată nu se arată niciodată
                        Assert.False(pnlPdf.Visible)
 
                        ' OnFileActivated comută pe pagina «Document» (PDF-ul real), NU pe

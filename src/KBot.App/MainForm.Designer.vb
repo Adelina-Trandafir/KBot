@@ -99,7 +99,7 @@ Partial Class MainForm
         ' split
         ' 
         split.Dock = DockStyle.Fill
-        split.Location = New Point(254, 13)
+        split.Location = New Point(280, 13)
         split.Margin = New Padding(4, 5, 4, 5)
         split.Name = "split"
         ' 
@@ -114,8 +114,8 @@ Partial Class MainForm
         split.Panel2.Controls.Add(viewHost)
         split.Panel2.Padding = New Padding(11, 0, 0, 0)
         split.Panel2MinSize = 400
-        split.Size = New Size(1562, 1025)
-        split.SplitterDistance = 543
+        split.Size = New Size(1536, 1025)
+        split.SplitterDistance = 533
         split.SplitterWidth = 9
         split.TabIndex = 1
         ' 
@@ -127,7 +127,7 @@ Partial Class MainForm
         pnlTree.Location = New Point(11, 0)
         pnlTree.Margin = New Padding(4, 5, 4, 5)
         pnlTree.Name = "pnlTree"
-        pnlTree.Size = New Size(532, 1025)
+        pnlTree.Size = New Size(522, 1025)
         pnlTree.TabIndex = 0
         pnlTree.Tag = "Card"
         ' 
@@ -154,7 +154,7 @@ Partial Class MainForm
         tree.SearchBoxBackColor = Color.Empty
         tree.SelectedBackColor = Color.FromArgb(CByte(200), CByte(220), CByte(255))
         tree.SelectedBorderColor = Color.FromArgb(CByte(150), CByte(180), CByte(255))
-        tree.Size = New Size(532, 965)
+        tree.Size = New Size(522, 965)
         tree.TabIndex = 0
         tree.TooltipBackColor = Color.FromArgb(CByte(255), CByte(255), CByte(232))
         tree.TooltipForeColor = Color.FromArgb(CByte(50), CByte(50), CByte(60))
@@ -170,7 +170,7 @@ Partial Class MainForm
         pnlTreeHead.Location = New Point(0, 0)
         pnlTreeHead.Margin = New Padding(4, 5, 4, 5)
         pnlTreeHead.Name = "pnlTreeHead"
-        pnlTreeHead.Size = New Size(532, 60)
+        pnlTreeHead.Size = New Size(522, 60)
         pnlTreeHead.TabIndex = 1
         pnlTreeHead.Tag = "Card"
         ' 
@@ -189,7 +189,7 @@ Partial Class MainForm
         ' 
         btnInfo.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         btnInfo.FlatStyle = FlatStyle.Flat
-        btnInfo.Location = New Point(387, 7)
+        btnInfo.Location = New Point(377, 7)
         btnInfo.Margin = New Padding(4, 5, 4, 5)
         btnInfo.Name = "btnInfo"
         btnInfo.Size = New Size(40, 47)
@@ -201,7 +201,7 @@ Partial Class MainForm
         ' 
         btnSort.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         btnSort.FlatStyle = FlatStyle.Flat
-        btnSort.Location = New Point(435, 7)
+        btnSort.Location = New Point(425, 7)
         btnSort.Margin = New Padding(4, 5, 4, 5)
         btnSort.Name = "btnSort"
         btnSort.Size = New Size(40, 47)
@@ -213,7 +213,7 @@ Partial Class MainForm
         ' 
         btnOpt.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         btnOpt.FlatStyle = FlatStyle.Flat
-        btnOpt.Location = New Point(484, 7)
+        btnOpt.Location = New Point(474, 7)
         btnOpt.Margin = New Padding(4, 5, 4, 5)
         btnOpt.Name = "btnOpt"
         btnOpt.Size = New Size(40, 47)
@@ -227,7 +227,7 @@ Partial Class MainForm
         viewHost.Location = New Point(11, 0)
         viewHost.Margin = New Padding(4, 5, 4, 5)
         viewHost.Name = "viewHost"
-        viewHost.Size = New Size(999, 1025)
+        viewHost.Size = New Size(983, 1025)
         viewHost.TabIndex = 0
         viewHost.Tag = "Card"
         ' 
@@ -237,31 +237,30 @@ Partial Class MainForm
         KBotNavItem1.Image = CType(resources.GetObject("KBotNavItem1.Image"), Image)
         KBotNavItem1.Key = "sumar"
         KBotNavItem1.Text = "Sumar"
-        KBotNavItem2.Image = Nothing
+        KBotNavItem2.Image = KBot.App.Resources.calendar
         KBotNavItem2.Key = "istoric"
         KBotNavItem2.Text = "Istoric"
-        KBotNavItem3.Image = Nothing
+        KBotNavItem3.Image = KBot.App.Resources.database
         KBotNavItem3.Key = "rezervari"
         KBotNavItem3.Text = "Rezervări"
-        KBotNavItem4.Image = Nothing
+        KBotNavItem4.Image = KBot.App.Resources.binvoice
         KBotNavItem4.Key = "receptii"
         KBotNavItem4.Text = "Recepții"
-        KBotNavItem5.Image = Nothing
+        KBotNavItem5.Image = KBot.App.Resources.credit_card
         KBotNavItem5.Key = "plati"
         KBotNavItem5.Text = "Plăți"
         KBotNavItem6.Align = Theming.KBotNavAlign.Far
-        KBotNavItem6.Image = Nothing
         KBotNavItem6.IsSeparator = True
         KBotNavItem6.Key = "__sep_1"
         KBotNavItem6.Text = Nothing
         KBotNavItem7.Align = Theming.KBotNavAlign.Far
-        KBotNavItem7.Image = Nothing
+        KBotNavItem7.Image = KBot.App.Resources.Umut_Pulat_Tulliana_2_File_temporary_32
         KBotNavItem7.Key = "ddf"
-        KBotNavItem7.Text = "DDF"
+        KBotNavItem7.Text = "Doc. Fundamentare"
         KBotNavItem8.Align = Theming.KBotNavAlign.Far
-        KBotNavItem8.Image = Nothing
+        KBotNavItem8.Image = KBot.App.Resources.Umut_Pulat_Tulliana_2_File_locked_32
         KBotNavItem8.Key = "ord"
-        KBotNavItem8.Text = "ORD"
+        KBotNavItem8.Text = "Ordonanțare"
         navViews.Items.Add(KBotNavItem1)
         navViews.Items.Add(KBotNavItem2)
         navViews.Items.Add(KBotNavItem3)
@@ -274,7 +273,7 @@ Partial Class MainForm
         navViews.Margin = New Padding(4, 5, 4, 5)
         navViews.Name = "navViews"
         navViews.SelectedKey = Nothing
-        navViews.Size = New Size(243, 1025)
+        navViews.Size = New Size(269, 1025)
         navViews.TabIndex = 0
         ' 
         ' pnlStatus

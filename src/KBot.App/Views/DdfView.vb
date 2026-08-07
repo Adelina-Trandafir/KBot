@@ -32,6 +32,21 @@ Public Class DdfView
     Implements IAngajamentView, IThemedControl
 
     ' Cheile paginilor sub-navigării — o singură definiție, folosită la creare și la comutare.
+    '
+    ' «valori» e PARCATĂ (decizie de operator, felia 0025): nu mai are intrare în navigație și nu
+    ' mai e comutată de ShowPage. Panoul, grila, filtrul pe clasificație și TOATĂ logica lor rămân
+    ' însă vii — se construiesc, se umplu la fiecare selecție din arbore și se tematizează exact ca
+    ' înainte; doar că `pnlValori` stă ascuns (`Visible = False` în designer). Costul e o grilă
+    ' umplută degeaba; câștigul e că pagina se întoarce cu trei modificări, nu cu o rescriere, și
+    ' că testele care acoperă filtrul rămân valabile între timp.
+    '
+    ' CA SĂ O ADUCI ÎNAPOI:
+    '   1. designer: adaugă în `navSub.Items` un element cu Key = "valori", Text = "Valori", pe
+    '      prima poziție, și scoate `pnlValori.Visible = False`;
+    '   2. `ShowPage`: repune linia `pnlValori.Visible = String.Equals(key, PAGE_VALORI, …)`;
+    '   3. `BuildNav`: schimbă selecția inițială înapoi pe PAGE_VALORI.
+    ' Vezi și nota din ShowPage despre ordinea Z — `pnlValori` e primul adăugat în `pnlPages`, deci
+    ' stă ÎN FAȚA celorlalte trei pagini și le-ar acoperi dacă ar rămâne vizibil.
     Private Const PAGE_VALORI As String = "valori"
     Private Const PAGE_PREVIEW As String = "previzualizare"
     ' «Document» = PDF-ul REAL (ReaderHostPreview), distinct de «Vizualizare» (reconstrucția XFA).
@@ -97,8 +112,10 @@ Public Class DdfView
     Private _pdfPath As String
     Private _pdfExists As Boolean
     Private _pdfShownPath As String
-    ' Browserul de fișiere PDF (felia 04), montat în pnlFisiere.
-    Private ReadOnly _browser As DdfFileBrowser
+    ' Browserul de fișiere PDF (felia 04) e `browser`, DECLARAT ÎN DESIGNER (0025-05) și așezat
+    ' acolo în pnlFisiere. Nu mai există un câmp `_browser` care să-l dubleze: un `WithEvents
+    ' browser` generează chiar el un `_browser`, deci cele două se ciocneau — iar aliasul nu aducea
+    ' nimic.
 
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of DdfInfo)), Task(Of DdfInfo)),
@@ -112,12 +129,14 @@ Public Class DdfView
         ConfigureTree()
         BuildNav()
         BuildColumns()
-        _preview = DdfPreviewFactory.Create()
+        ' Cele trei suprafețe sunt DECLARATE ÎN DESIGNER (0025-05) — `previewXfa`, `previewPdf` și
+        ' `browser` — ca paginile să se vadă pe suprafața de design, nu ca trei panouri goale.
+        ' Aici doar le legăm de câmpurile de lucru și le abonăm la evenimente.
+        _preview = DdfPreviewFactory.Create(previewXfa)
         MountPreview()
-        _pdfPreview = New ReaderHostPreview()
+        _pdfPreview = previewPdf
         MountPdfPreview()
         BuildAdobeCombos()
-        _browser = New DdfFileBrowser()
         MountBrowser()
         ResetClsfCombo(Nothing)
         ShowEmpty("Selectați un angajament din arbore.")
@@ -128,10 +147,17 @@ Public Class DdfView
     Private Sub MountPreview()
         Try
             Dim surface As Control = _preview.Surface
-            surface.Dock = DockStyle.Fill
-            ' Suprafața acoperă panoul; eticheta goală rămâne dedesubt ca fallback.
-            pnlPreview.Controls.Add(surface)
-            surface.BringToFront()
+            ' Calea implicită: suprafața E `previewXfa`, deja creată și așezată de designer — nu
+            ' mai e nimic de montat. Calea de rezervă (constanta de compilare pe AdobeReader) aduce
+            ' o instanță nouă, neparentată: o montăm acum și ascundem suprafața din designer, ca să
+            ' nu rămână două una peste alta.
+            If surface.Parent Is Nothing Then
+                surface.Dock = DockStyle.Fill
+                ' Suprafața acoperă panoul; eticheta goală rămâne dedesubt ca fallback.
+                pnlPreview.Controls.Add(surface)
+                surface.BringToFront()
+                previewXfa.Visible = False
+            End If
             AddHandler _preview.GenerateRequested, AddressOf OnGenerateRequested
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.MountPreview", ex)
@@ -143,10 +169,8 @@ Public Class DdfView
     ' generare (aceeași țintă ca previzualizarea XFA).
     Private Sub MountPdfPreview()
         Try
-            Dim surface As Control = _pdfPreview.Surface
-            surface.Dock = DockStyle.Fill
-            pnlPdf.Controls.Add(surface)
-            surface.BringToFront()
+            ' `previewPdf` e declarată în designer, deci e deja în `pnlPdf`, sub banda `pnlAdobe`.
+            ' Rămâne doar abonarea la butonul de generare.
             AddHandler _pdfPreview.GenerateRequested, AddressOf OnGenerateRequested
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.MountPdfPreview", ex)
@@ -252,11 +276,9 @@ Public Class DdfView
     ' Montează browserul de fișiere în pagina «Fișiere» și se abonează la selecția unui rând.
     Private Sub MountBrowser()
         Try
+            ' `browser` e declarat în designer, deci e deja în `pnlFisiere`, peste eticheta goală.
             lblFisiereGol.Visible = False
-            _browser.Dock = DockStyle.Fill
-            pnlFisiere.Controls.Add(_browser)
-            _browser.BringToFront()
-            AddHandler _browser.FileActivated, AddressOf OnFileActivated
+            AddHandler browser.FileActivated, AddressOf OnFileActivated
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.MountBrowser", ex)
             Throw
@@ -317,7 +339,7 @@ Public Class DdfView
                 ' 6. Fără scriere înapoi în bază (§2.4 — cele patru coloane nu există). Existența
                 ' se decide prin scanare de disc: reîmprospătăm browserul, previzualizarea XFA și
                 ' pagina «Document» (forțăm re-montarea — existența fișierului tocmai s-a schimbat).
-                _browser.SetContext(KBotPaths.Current.DdfPdfRoot, cod)
+                browser.SetContext(KBotPaths.Current.DdfPdfRoot, cod)
                 _preview.ShowDocument(pdfPath, IO.File.Exists(pdfPath))
                 _pdfShownPath = Nothing
                 SetPdfTarget(pdfPath, IO.File.Exists(pdfPath))
@@ -347,17 +369,18 @@ Public Class DdfView
         End Try
     End Sub
 
-    ' Sub-navigarea orizontală: cele patru pagini sunt AUTORITE ÎN DESIGNER, în `navSub.Items`
+    ' Sub-navigarea orizontală: cele TREI pagini sunt AUTORITE ÎN DESIGNER, în `navSub.Items`
     ' (felia 0025) — vezi DdfView.Designer.vb. Aici rămâne doar selecția inițială: atribuirea e
-    ' cea care ridică SelectionChanged și deci arată prima pagină.
+    ' cea care ridică SelectionChanged și, prin ea, ShowPage arată prima pagină. NU se mai cheamă
+    ' ShowPage a doua oară de mână — ar rula DUPĂ eveniment și ar ascunde exact pagina tocmai
+    ' arătată.
     '
     ' Designer-ul scrie cheile ca LITERALE (nu poate referi constantele private de mai sus), deci
     ' cele două trebuie să rămână în acord. Dacă se desincronizează, atribuirea de mai jos aruncă
     ' ArgumentException pe cheie necunoscută — zgomotos, nu tăcut.
     Private Sub BuildNav()
         Try
-            navSub.SelectedKey = PAGE_VALORI
-            ShowPage(PAGE_VALORI)
+            navSub.SelectedKey = PAGE_PREVIEW   ' pagina implicită de la parcarea lui «valori»
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.BuildNav", ex)
             Throw
@@ -473,7 +496,7 @@ Public Class DdfView
             grid.ClearRows()
             ResetClsfCombo(Nothing)
             ' Browserul de fișiere: PDF-urile angajamentului sub rădăcina configurată.
-            _browser.SetContext(KBotPaths.Current.DdfPdfRoot, cod)
+            browser.SetContext(KBotPaths.Current.DdfPdfRoot, cod)
             _preview.Clear()
             ShowContent()
         Catch ex As ApiException
@@ -719,8 +742,13 @@ Public Class DdfView
     ' O singură pagină vizibilă odată — același tipar lazy ca gazda de vederi din MainForm,
     ' NU un TabControl. Când «Document» devine vizibilă, montăm PDF-ul real ACUM (lazy) — abia
     ' aici pornește eventual Adobe, nu la fiecare click în arbore.
+    '
+    ' `pnlValori` NU apare aici: pagina «valori» e parcată (vezi nota de la constante) și panoul
+    ' stă ascuns din designer. ATENȚIE dacă o repui: cele patru panouri sunt toate `Dock = Fill` în
+    ' același loc, iar `pnlValori` e PRIMUL adăugat în `pnlPages`, adică indexul 0 = fața ordinii Z.
+    ' Lăsat vizibil, acoperă complet celelalte trei — s-ar vedea grila oricâte pagini ai comuta,
+    ' iar `pnlPdf.Visible` ar fi True fără ca un pixel din el să ajungă pe ecran.
     Private Sub ShowPage(key As String)
-        pnlValori.Visible = String.Equals(key, PAGE_VALORI, StringComparison.Ordinal)
         pnlPreview.Visible = String.Equals(key, PAGE_PREVIEW, StringComparison.Ordinal)
         pnlPdf.Visible = String.Equals(key, PAGE_PDF, StringComparison.Ordinal)
         pnlFisiere.Visible = String.Equals(key, PAGE_FISIERE, StringComparison.Ordinal)
@@ -765,7 +793,7 @@ Public Class DdfView
         ResetClsfCombo(Nothing)
         _preview?.Clear()
         ClearPdfTarget()
-        _browser?.SetContext(Nothing, Nothing)
+        browser?.SetContext(Nothing, Nothing)
     End Sub
 
     Private Sub ShowEmpty(message As String)
@@ -906,7 +934,7 @@ Public Class DdfView
             themedPreview?.ApplyTheme(scheme)
             Dim themedPdf As IThemedControl = TryCast(_pdfPreview, IThemedControl)
             themedPdf?.ApplyTheme(scheme)
-            _browser?.ApplyTheme(scheme)
+            browser?.ApplyTheme(scheme)
 
             ' Re-tintarea iconițelor pe noua paletă. Arborele se reconstruiește, deci selecția
             ' se pierde — grila rămâne cum e până la următorul click pe un nod.

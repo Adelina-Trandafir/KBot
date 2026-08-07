@@ -76,8 +76,22 @@ Public Class MainFormNavItemsTests
                        Assert.Equal("Rezervări", byKey("rezervari"))
                        Assert.Equal("Recepții", byKey("receptii"))
                        Assert.Equal("Plăți", byKey("plati"))
-                       Assert.Equal("DDF", byKey("ddf"))
-                       Assert.Equal("ORD", byKey("ord"))
+                       Assert.Equal("Doc. Fundamentare", byKey("ddf"))
+                       Assert.Equal("Ordonanțare", byKey("ord"))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Designer_AuthoredAnImage_OnEveryNonSeparatorEntry()
+        ' Pictogramele vin din DOUĂ locuri: «sumar» din MainForm.resx (resursă locală), restul din
+        ' My Project\Resources.resx prin accesorul KBot.App.Resources. A doua cale se rupe tăcut
+        ' dacă un nume din .resx nu mai are proprietate tipizată — aici se vede.
+        RunSta(Sub()
+                   Using f As New MainForm(Nothing, Nothing, Nothing, Nothing, Nothing)
+                       For Each it In f.navViews.Items.Where(Function(i) Not i.IsSeparator)
+                           Assert.NotNull(it.Image)
+                       Next
                    End Using
                End Sub)
     End Sub
