@@ -21,17 +21,32 @@ Partial Class MainForm
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        Dim KBotNavItem1 As New KBot.Theming.KBotNavItem()
-        Dim KBotNavItem2 As New KBot.Theming.KBotNavItem()
-        Dim KBotNavItem3 As New KBot.Theming.KBotNavItem()
-        Dim KBotNavItem4 As New KBot.Theming.KBotNavItem()
-        Dim KBotNavItem5 As New KBot.Theming.KBotNavItem()
-        Dim KBotNavItem6 As New KBot.Theming.KBotNavItem()
-        Dim KBotNavItem7 As New KBot.Theming.KBotNavItem()
-        Dim KBotNavItem8 As New KBot.Theming.KBotNavItem()
+        Dim KBotNavItem1 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(MainForm))
+        Dim KBotNavItem2 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim KBotNavItem3 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim KBotNavItem4 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim KBotNavItem5 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim KBotNavItem6 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim KBotNavItem7 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim KBotNavItem8 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
         pnlRoot = New Panel()
-        capBar = New KBot.Theming.KBotCaptionBar()
-        busyBar = New KBot.Theming.KBotBusyBar()
+        pnlWork = New Panel()
+        split = New SplitContainer()
+        pnlTree = New Panel()
+        tree = New Controls.AdvancedTreeControl()
+        pnlTreeHead = New Panel()
+        lblTree = New Label()
+        btnInfo = New Button()
+        btnSort = New Button()
+        btnOpt = New Button()
+        viewHost = New Panel()
+        navViews = New Theming.KBotNavList()
+        pnlStatus = New Panel()
+        lblOperator = New Label()
+        lblProgram = New Label()
+        btnIstoric = New Button()
+        btnSinc = New Button()
         pnlHeader = New Panel()
         lblUnit = New Label()
         lblAn = New Label()
@@ -39,73 +54,290 @@ Partial Class MainForm
         lblSs = New Label()
         cboSs = New ComboBox()
         lblForexe = New Label()
-        pnlStatus = New Panel()
-        lblOperator = New Label()
-        lblProgram = New Label()
-        btnIstoric = New Button()
-        btnSinc = New Button()
-        pnlWork = New Panel()
-        navViews = New KBot.Theming.KBotNavList()
-        split = New SplitContainer()
-        pnlTree = New Panel()
-        pnlTreeHead = New Panel()
-        lblTree = New Label()
-        btnInfo = New Button()
-        btnSort = New Button()
-        btnOpt = New Button()
-        tree = New KBot.Controls.AdvancedTreeControl()
-        viewHost = New Panel()
+        busyBar = New Theming.KBotBusyBar()
+        capBar = New Theming.KBotCaptionBar()
         pnlRoot.SuspendLayout()
-        pnlHeader.SuspendLayout()
-        pnlStatus.SuspendLayout()
         pnlWork.SuspendLayout()
-        CType(navViews, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(split, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(split, ComponentModel.ISupportInitialize).BeginInit()
         split.Panel1.SuspendLayout()
         split.Panel2.SuspendLayout()
         split.SuspendLayout()
         pnlTree.SuspendLayout()
         pnlTreeHead.SuspendLayout()
+        CType(navViews, ComponentModel.ISupportInitialize).BeginInit()
+        pnlStatus.SuspendLayout()
+        pnlHeader.SuspendLayout()
         SuspendLayout()
-        '
-        ' pnlRoot — cardul rădăcină; copiii se adaugă în ordine INVERSĂ de dock:
-        ' pnlWork (Fill) primul, apoi pnlStatus (Bottom), pnlHeader / busyBar / capBar (Top).
-        '
+        ' 
+        ' pnlRoot
+        ' 
         pnlRoot.Controls.Add(pnlWork)
         pnlRoot.Controls.Add(pnlStatus)
         pnlRoot.Controls.Add(pnlHeader)
         pnlRoot.Controls.Add(busyBar)
         pnlRoot.Controls.Add(capBar)
         pnlRoot.Dock = DockStyle.Fill
-        pnlRoot.Location = New Point(1, 1)
+        pnlRoot.Location = New Point(1, 2)
+        pnlRoot.Margin = New Padding(4, 5, 4, 5)
         pnlRoot.Name = "pnlRoot"
-        pnlRoot.Size = New Size(1278, 758)
+        pnlRoot.Size = New Size(1827, 1263)
         pnlRoot.TabIndex = 0
         pnlRoot.Tag = "Card"
-        '
-        ' capBar
-        '
-        capBar.Dock = DockStyle.Top
-        capBar.Location = New Point(0, 0)
-        capBar.Name = "capBar"
-        capBar.ShowMaximize = True
-        capBar.ShowMinimize = True
-        capBar.Size = New Size(1278, 40)
-        capBar.TabIndex = 4
-        capBar.TabStop = False
-        capBar.Text = "K-BOT"
-        '
-        ' busyBar
-        '
-        busyBar.Dock = DockStyle.Top
-        busyBar.Location = New Point(0, 40)
-        busyBar.Name = "busyBar"
-        busyBar.Size = New Size(1278, 3)
-        busyBar.TabIndex = 3
-        busyBar.TabStop = False
-        '
-        ' pnlHeader — banda sub caption: unitate, An/SS, stare Forexe.
-        '
+        ' 
+        ' pnlWork
+        ' 
+        pnlWork.Controls.Add(split)
+        pnlWork.Controls.Add(navViews)
+        pnlWork.Dock = DockStyle.Fill
+        pnlWork.Location = New Point(0, 139)
+        pnlWork.Margin = New Padding(4, 5, 4, 5)
+        pnlWork.Name = "pnlWork"
+        pnlWork.Padding = New Padding(11, 13, 11, 13)
+        pnlWork.Size = New Size(1827, 1051)
+        pnlWork.TabIndex = 0
+        ' 
+        ' split
+        ' 
+        split.Dock = DockStyle.Fill
+        split.Location = New Point(254, 13)
+        split.Margin = New Padding(4, 5, 4, 5)
+        split.Name = "split"
+        ' 
+        ' split.Panel1
+        ' 
+        split.Panel1.Controls.Add(pnlTree)
+        split.Panel1.Padding = New Padding(11, 0, 0, 0)
+        split.Panel1MinSize = 240
+        ' 
+        ' split.Panel2
+        ' 
+        split.Panel2.Controls.Add(viewHost)
+        split.Panel2.Padding = New Padding(11, 0, 0, 0)
+        split.Panel2MinSize = 400
+        split.Size = New Size(1562, 1025)
+        split.SplitterDistance = 543
+        split.SplitterWidth = 9
+        split.TabIndex = 1
+        ' 
+        ' pnlTree
+        ' 
+        pnlTree.Controls.Add(tree)
+        pnlTree.Controls.Add(pnlTreeHead)
+        pnlTree.Dock = DockStyle.Fill
+        pnlTree.Location = New Point(11, 0)
+        pnlTree.Margin = New Padding(4, 5, 4, 5)
+        pnlTree.Name = "pnlTree"
+        pnlTree.Size = New Size(532, 1025)
+        pnlTree.TabIndex = 0
+        pnlTree.Tag = "Card"
+        ' 
+        ' tree
+        ' 
+        tree.AutoScrollMinSize = New Size(0, 0)
+        tree.BackColor = Color.White
+        tree.BorderColor = Color.Transparent
+        tree.Dock = DockStyle.Fill
+        tree.Font = New Font("Segoe UI", 9F)
+        tree.HeaderBackColor = Color.FromArgb(CByte(222), CByte(222), CByte(222))
+        tree.HeaderForeColor = Color.FromArgb(CByte(50), CByte(50), CByte(60))
+        tree.HeaderIconSize = New Size(16, 16)
+        tree.HoverBackColor = Color.FromArgb(CByte(230), CByte(240), CByte(255))
+        tree.LeftIconSize = New Size(18, 18)
+        tree.LineColor = Color.FromArgb(CByte(160), CByte(160), CByte(160))
+        tree.Location = New Point(0, 60)
+        tree.Margin = New Padding(4, 5, 4, 5)
+        tree.Name = "tree"
+        tree.RightIconSize = New Size(18, 18)
+        tree.SearchBackColor = Color.FromArgb(CByte(222), CByte(222), CByte(222))
+        tree.SearchBarFontSize = 10F
+        tree.SearchBarLabelForeColor = Color.Empty
+        tree.SearchBoxBackColor = Color.Empty
+        tree.SelectedBackColor = Color.FromArgb(CByte(200), CByte(220), CByte(255))
+        tree.SelectedBorderColor = Color.FromArgb(CByte(150), CByte(180), CByte(255))
+        tree.Size = New Size(532, 965)
+        tree.TabIndex = 0
+        tree.TooltipBackColor = Color.FromArgb(CByte(255), CByte(255), CByte(232))
+        tree.TooltipForeColor = Color.FromArgb(CByte(50), CByte(50), CByte(60))
+        tree.TreeFont = New Font("Consolas", 9F)
+        ' 
+        ' pnlTreeHead
+        ' 
+        pnlTreeHead.Controls.Add(lblTree)
+        pnlTreeHead.Controls.Add(btnInfo)
+        pnlTreeHead.Controls.Add(btnSort)
+        pnlTreeHead.Controls.Add(btnOpt)
+        pnlTreeHead.Dock = DockStyle.Top
+        pnlTreeHead.Location = New Point(0, 0)
+        pnlTreeHead.Margin = New Padding(4, 5, 4, 5)
+        pnlTreeHead.Name = "pnlTreeHead"
+        pnlTreeHead.Size = New Size(532, 60)
+        pnlTreeHead.TabIndex = 1
+        pnlTreeHead.Tag = "Card"
+        ' 
+        ' lblTree
+        ' 
+        lblTree.AutoSize = True
+        lblTree.Font = New Font("Segoe UI Semibold", 10F)
+        lblTree.Location = New Point(14, 13)
+        lblTree.Margin = New Padding(4, 0, 4, 0)
+        lblTree.Name = "lblTree"
+        lblTree.Size = New Size(133, 28)
+        lblTree.TabIndex = 0
+        lblTree.Text = "Angajamente"
+        ' 
+        ' btnInfo
+        ' 
+        btnInfo.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        btnInfo.FlatStyle = FlatStyle.Flat
+        btnInfo.Location = New Point(387, 7)
+        btnInfo.Margin = New Padding(4, 5, 4, 5)
+        btnInfo.Name = "btnInfo"
+        btnInfo.Size = New Size(40, 47)
+        btnInfo.TabIndex = 1
+        btnInfo.Text = "ⓘ"
+        btnInfo.UseVisualStyleBackColor = True
+        ' 
+        ' btnSort
+        ' 
+        btnSort.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        btnSort.FlatStyle = FlatStyle.Flat
+        btnSort.Location = New Point(435, 7)
+        btnSort.Margin = New Padding(4, 5, 4, 5)
+        btnSort.Name = "btnSort"
+        btnSort.Size = New Size(40, 47)
+        btnSort.TabIndex = 1
+        btnSort.Text = "↕"
+        btnSort.UseVisualStyleBackColor = True
+        ' 
+        ' btnOpt
+        ' 
+        btnOpt.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        btnOpt.FlatStyle = FlatStyle.Flat
+        btnOpt.Location = New Point(484, 7)
+        btnOpt.Margin = New Padding(4, 5, 4, 5)
+        btnOpt.Name = "btnOpt"
+        btnOpt.Size = New Size(40, 47)
+        btnOpt.TabIndex = 2
+        btnOpt.Text = "…"
+        btnOpt.UseVisualStyleBackColor = True
+        ' 
+        ' viewHost
+        ' 
+        viewHost.Dock = DockStyle.Fill
+        viewHost.Location = New Point(11, 0)
+        viewHost.Margin = New Padding(4, 5, 4, 5)
+        viewHost.Name = "viewHost"
+        viewHost.Size = New Size(999, 1025)
+        viewHost.TabIndex = 0
+        viewHost.Tag = "Card"
+        ' 
+        ' navViews
+        ' 
+        navViews.Dock = DockStyle.Left
+        KBotNavItem1.Image = CType(resources.GetObject("KBotNavItem1.Image"), Image)
+        KBotNavItem1.Key = "sumar"
+        KBotNavItem1.Text = "Sumar"
+        KBotNavItem2.Image = Nothing
+        KBotNavItem2.Key = "istoric"
+        KBotNavItem2.Text = "Istoric"
+        KBotNavItem3.Image = Nothing
+        KBotNavItem3.Key = "rezervari"
+        KBotNavItem3.Text = "Rezervări"
+        KBotNavItem4.Image = Nothing
+        KBotNavItem4.Key = "receptii"
+        KBotNavItem4.Text = "Recepții"
+        KBotNavItem5.Image = Nothing
+        KBotNavItem5.Key = "plati"
+        KBotNavItem5.Text = "Plăți"
+        KBotNavItem6.Align = Theming.KBotNavAlign.Far
+        KBotNavItem6.Image = Nothing
+        KBotNavItem6.IsSeparator = True
+        KBotNavItem6.Key = "__sep_1"
+        KBotNavItem6.Text = Nothing
+        KBotNavItem7.Align = Theming.KBotNavAlign.Far
+        KBotNavItem7.Image = Nothing
+        KBotNavItem7.Key = "ddf"
+        KBotNavItem7.Text = "DDF"
+        KBotNavItem8.Align = Theming.KBotNavAlign.Far
+        KBotNavItem8.Image = Nothing
+        KBotNavItem8.Key = "ord"
+        KBotNavItem8.Text = "ORD"
+        navViews.Items.Add(KBotNavItem1)
+        navViews.Items.Add(KBotNavItem2)
+        navViews.Items.Add(KBotNavItem3)
+        navViews.Items.Add(KBotNavItem4)
+        navViews.Items.Add(KBotNavItem5)
+        navViews.Items.Add(KBotNavItem6)
+        navViews.Items.Add(KBotNavItem7)
+        navViews.Items.Add(KBotNavItem8)
+        navViews.Location = New Point(11, 13)
+        navViews.Margin = New Padding(4, 5, 4, 5)
+        navViews.Name = "navViews"
+        navViews.SelectedKey = Nothing
+        navViews.Size = New Size(243, 1025)
+        navViews.TabIndex = 0
+        ' 
+        ' pnlStatus
+        ' 
+        pnlStatus.Controls.Add(lblOperator)
+        pnlStatus.Controls.Add(lblProgram)
+        pnlStatus.Controls.Add(btnIstoric)
+        pnlStatus.Controls.Add(btnSinc)
+        pnlStatus.Dock = DockStyle.Bottom
+        pnlStatus.Location = New Point(0, 1190)
+        pnlStatus.Margin = New Padding(4, 5, 4, 5)
+        pnlStatus.Name = "pnlStatus"
+        pnlStatus.Size = New Size(1827, 73)
+        pnlStatus.TabIndex = 1
+        pnlStatus.Tag = "Card"
+        ' 
+        ' lblOperator
+        ' 
+        lblOperator.AutoSize = True
+        lblOperator.Location = New Point(17, 23)
+        lblOperator.Margin = New Padding(4, 0, 4, 0)
+        lblOperator.Name = "lblOperator"
+        lblOperator.Size = New Size(84, 25)
+        lblOperator.TabIndex = 0
+        lblOperator.Text = "Operator"
+        ' 
+        ' lblProgram
+        ' 
+        lblProgram.AutoSize = True
+        lblProgram.Location = New Point(543, 23)
+        lblProgram.Margin = New Padding(4, 0, 4, 0)
+        lblProgram.Name = "lblProgram"
+        lblProgram.Size = New Size(81, 25)
+        lblProgram.TabIndex = 1
+        lblProgram.Text = "Program"
+        ' 
+        ' btnIstoric
+        ' 
+        btnIstoric.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        btnIstoric.FlatStyle = FlatStyle.Flat
+        btnIstoric.Location = New Point(1424, 10)
+        btnIstoric.Margin = New Padding(4, 5, 4, 5)
+        btnIstoric.Name = "btnIstoric"
+        btnIstoric.Size = New Size(157, 53)
+        btnIstoric.TabIndex = 2
+        btnIstoric.Text = "Istoric"
+        btnIstoric.UseVisualStyleBackColor = True
+        ' 
+        ' btnSinc
+        ' 
+        btnSinc.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        btnSinc.FlatStyle = FlatStyle.Flat
+        btnSinc.Font = New Font("Segoe UI Semibold", 10F)
+        btnSinc.Location = New Point(1595, 10)
+        btnSinc.Margin = New Padding(4, 5, 4, 5)
+        btnSinc.Name = "btnSinc"
+        btnSinc.Size = New Size(214, 53)
+        btnSinc.TabIndex = 3
+        btnSinc.Text = "Sincronizare"
+        btnSinc.UseVisualStyleBackColor = True
+        ' 
+        ' pnlHeader
+        ' 
         pnlHeader.Controls.Add(lblUnit)
         pnlHeader.Controls.Add(lblAn)
         pnlHeader.Controls.Add(cboAn)
@@ -113,303 +345,130 @@ Partial Class MainForm
         pnlHeader.Controls.Add(cboSs)
         pnlHeader.Controls.Add(lblForexe)
         pnlHeader.Dock = DockStyle.Top
-        pnlHeader.Location = New Point(0, 43)
+        pnlHeader.Location = New Point(0, 72)
+        pnlHeader.Margin = New Padding(4, 5, 4, 5)
         pnlHeader.Name = "pnlHeader"
-        pnlHeader.Size = New Size(1278, 40)
+        pnlHeader.Size = New Size(1827, 67)
         pnlHeader.TabIndex = 2
         pnlHeader.Tag = "Card"
-        '
+        ' 
         ' lblUnit
-        '
+        ' 
         lblUnit.AutoSize = True
-        lblUnit.Font = New Font("Segoe UI Semibold", 10.0F)
-        lblUnit.Location = New Point(12, 10)
+        lblUnit.Font = New Font("Segoe UI Semibold", 10F)
+        lblUnit.Location = New Point(17, 17)
+        lblUnit.Margin = New Padding(4, 0, 4, 0)
         lblUnit.Name = "lblUnit"
-        lblUnit.Size = New Size(63, 19)
+        lblUnit.Size = New Size(78, 28)
         lblUnit.TabIndex = 0
         lblUnit.Text = "Unitate"
-        '
+        ' 
         ' lblAn
-        '
+        ' 
         lblAn.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         lblAn.AutoSize = True
-        lblAn.Location = New Point(846, 12)
+        lblAn.Location = New Point(1210, 20)
+        lblAn.Margin = New Padding(4, 0, 4, 0)
         lblAn.Name = "lblAn"
-        lblAn.Size = New Size(27, 15)
+        lblAn.Size = New Size(38, 25)
         lblAn.TabIndex = 1
         lblAn.Text = "An:"
-        '
+        ' 
         ' cboAn
-        '
+        ' 
         cboAn.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         cboAn.DropDownStyle = ComboBoxStyle.DropDownList
         cboAn.FlatStyle = FlatStyle.Flat
-        cboAn.Location = New Point(880, 8)
+        cboAn.Location = New Point(1258, 13)
+        cboAn.Margin = New Padding(4, 5, 4, 5)
         cboAn.Name = "cboAn"
-        cboAn.Size = New Size(72, 23)
+        cboAn.Size = New Size(101, 33)
         cboAn.TabIndex = 2
-        '
+        ' 
         ' lblSs
-        '
+        ' 
         lblSs.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         lblSs.AutoSize = True
-        lblSs.Location = New Point(966, 12)
+        lblSs.Location = New Point(1381, 20)
+        lblSs.Margin = New Padding(4, 0, 4, 0)
         lblSs.Name = "lblSs"
-        lblSs.Size = New Size(24, 15)
+        lblSs.Size = New Size(36, 25)
         lblSs.TabIndex = 3
         lblSs.Text = "SS:"
-        '
+        ' 
         ' cboSs
-        '
+        ' 
         cboSs.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         cboSs.DropDownStyle = ComboBoxStyle.DropDownList
         cboSs.FlatStyle = FlatStyle.Flat
-        cboSs.Location = New Point(1000, 8)
+        cboSs.Location = New Point(1430, 13)
+        cboSs.Margin = New Padding(4, 5, 4, 5)
         cboSs.Name = "cboSs"
-        cboSs.Size = New Size(90, 23)
+        cboSs.Size = New Size(127, 33)
         cboSs.TabIndex = 4
-        '
-        ' lblForexe — indicator de stare FOREXE (doar afișaj; ownership-ul e la runner).
-        '
+        ' 
+        ' lblForexe
+        ' 
         lblForexe.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        lblForexe.Location = New Point(1106, 12)
+        lblForexe.Location = New Point(1581, 20)
+        lblForexe.Margin = New Padding(4, 0, 4, 0)
         lblForexe.Name = "lblForexe"
-        lblForexe.Size = New Size(160, 15)
+        lblForexe.Size = New Size(229, 25)
         lblForexe.TabIndex = 5
         lblForexe.Text = "● Forexe: neconectat"
         lblForexe.TextAlign = ContentAlignment.MiddleRight
-        '
-        ' pnlStatus — bara de jos: operator + program, Istoric, Sincronizare.
-        '
-        pnlStatus.Controls.Add(lblOperator)
-        pnlStatus.Controls.Add(lblProgram)
-        pnlStatus.Controls.Add(btnIstoric)
-        pnlStatus.Controls.Add(btnSinc)
-        pnlStatus.Dock = DockStyle.Bottom
-        pnlStatus.Location = New Point(0, 714)
-        pnlStatus.Name = "pnlStatus"
-        pnlStatus.Size = New Size(1278, 44)
-        pnlStatus.TabIndex = 1
-        pnlStatus.Tag = "Card"
-        '
-        ' lblOperator
-        '
-        lblOperator.AutoSize = True
-        lblOperator.Location = New Point(12, 14)
-        lblOperator.Name = "lblOperator"
-        lblOperator.Size = New Size(57, 15)
-        lblOperator.TabIndex = 0
-        lblOperator.Text = "Operator"
-        '
-        ' lblProgram
-        '
-        lblProgram.AutoSize = True
-        lblProgram.Location = New Point(380, 14)
-        lblProgram.Name = "lblProgram"
-        lblProgram.Size = New Size(55, 15)
-        lblProgram.TabIndex = 1
-        lblProgram.Text = "Program"
-        '
-        ' btnIstoric
-        '
-        btnIstoric.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        btnIstoric.FlatStyle = FlatStyle.Flat
-        btnIstoric.Location = New Point(996, 6)
-        btnIstoric.Name = "btnIstoric"
-        btnIstoric.Size = New Size(110, 32)
-        btnIstoric.TabIndex = 2
-        btnIstoric.Text = "Istoric"
-        btnIstoric.UseVisualStyleBackColor = True
-        '
-        ' btnSinc
-        '
-        btnSinc.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        btnSinc.FlatStyle = FlatStyle.Flat
-        btnSinc.Font = New Font("Segoe UI Semibold", 10.0F)
-        btnSinc.Location = New Point(1116, 6)
-        btnSinc.Name = "btnSinc"
-        btnSinc.Size = New Size(150, 32)
-        btnSinc.TabIndex = 3
-        btnSinc.Text = "Sincronizare"
-        btnSinc.UseVisualStyleBackColor = True
-        '
-        ' pnlWork — zona de lucru: navigație stânga + arbore/detaliu (Surface, fără Card).
-        '
-        pnlWork.Controls.Add(split)
-        pnlWork.Controls.Add(navViews)
-        pnlWork.Dock = DockStyle.Fill
-        pnlWork.Location = New Point(0, 83)
-        pnlWork.Name = "pnlWork"
-        pnlWork.Padding = New Padding(8)
-        pnlWork.Size = New Size(1278, 631)
-        pnlWork.TabIndex = 0
-        '
-        ' navViews
-        '
-        navViews.Dock = DockStyle.Left
-        KBotNavItem1.Key = "sumar"
-        KBotNavItem1.Text = "Sumar"
-        navViews.Items.Add(KBotNavItem1)
-        KBotNavItem2.Key = "istoric"
-        KBotNavItem2.Text = "Istoric"
-        navViews.Items.Add(KBotNavItem2)
-        KBotNavItem3.Key = "rezervari"
-        KBotNavItem3.Text = "Rezervări"
-        navViews.Items.Add(KBotNavItem3)
-        KBotNavItem4.Key = "receptii"
-        KBotNavItem4.Text = "Recepții"
-        navViews.Items.Add(KBotNavItem4)
-        KBotNavItem5.Key = "plati"
-        KBotNavItem5.Text = "Plăți"
-        navViews.Items.Add(KBotNavItem5)
-        KBotNavItem6.Align = KBot.Theming.KBotNavAlign.Far
-        KBotNavItem6.IsSeparator = True
-        navViews.Items.Add(KBotNavItem6)
-        KBotNavItem7.Align = KBot.Theming.KBotNavAlign.Far
-        KBotNavItem7.Key = "ddf"
-        KBotNavItem7.Text = "DDF"
-        navViews.Items.Add(KBotNavItem7)
-        KBotNavItem8.Align = KBot.Theming.KBotNavAlign.Far
-        KBotNavItem8.Key = "ord"
-        KBotNavItem8.Text = "ORD"
-        navViews.Items.Add(KBotNavItem8)
-        navViews.Location = New Point(8, 8)
-        navViews.Name = "navViews"
-        navViews.Size = New Size(170, 615)
-        navViews.TabIndex = 0
-        '
-        ' split
-        '
-        split.Dock = DockStyle.Fill
-        split.Location = New Point(178, 8)
-        split.Name = "split"
-        '
-        ' split.Panel1
-        '
-        split.Panel1.Controls.Add(pnlTree)
-        split.Panel1.Padding = New Padding(8, 0, 0, 0)
-        split.Panel1MinSize = 240
-        '
-        ' split.Panel2
-        '
-        split.Panel2.Controls.Add(viewHost)
-        split.Panel2.Padding = New Padding(8, 0, 0, 0)
-        split.Panel2MinSize = 400
-        split.Size = New Size(1092, 615)
-        split.SplitterDistance = 380
-        split.SplitterWidth = 6
-        split.TabIndex = 1
-        '
-        ' pnlTree — cardul arborelui: antet (titlu + sortare + opțiuni) + arbore.
-        '
-        pnlTree.Controls.Add(tree)
-        pnlTree.Controls.Add(pnlTreeHead)
-        pnlTree.Dock = DockStyle.Fill
-        pnlTree.Location = New Point(8, 0)
-        pnlTree.Name = "pnlTree"
-        pnlTree.Size = New Size(372, 615)
-        pnlTree.TabIndex = 0
-        pnlTree.Tag = "Card"
-        '
-        ' pnlTreeHead
-        '
-        pnlTreeHead.Controls.Add(lblTree)
-        pnlTreeHead.Controls.Add(btnInfo)
-        pnlTreeHead.Controls.Add(btnSort)
-        pnlTreeHead.Controls.Add(btnOpt)
-        pnlTreeHead.Dock = DockStyle.Top
-        pnlTreeHead.Location = New Point(0, 0)
-        pnlTreeHead.Name = "pnlTreeHead"
-        pnlTreeHead.Size = New Size(372, 36)
-        pnlTreeHead.TabIndex = 1
-        pnlTreeHead.Tag = "Card"
-        '
-        ' lblTree
-        '
-        lblTree.AutoSize = True
-        lblTree.Font = New Font("Segoe UI Semibold", 10.0F)
-        lblTree.Location = New Point(10, 8)
-        lblTree.Name = "lblTree"
-        lblTree.Size = New Size(103, 19)
-        lblTree.TabIndex = 0
-        lblTree.Text = "Angajamente"
-        '
-        ' btnInfo — deschide fereastra nemodală «Informații interne» (flag-urile Are*).
-        '
-        btnInfo.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        btnInfo.FlatStyle = FlatStyle.Flat
-        btnInfo.Location = New Point(270, 4)
-        btnInfo.Name = "btnInfo"
-        btnInfo.Size = New Size(28, 28)
-        btnInfo.TabIndex = 1
-        btnInfo.Text = "ⓘ"
-        btnInfo.UseVisualStyleBackColor = True
-        '
-        ' btnSort
-        '
-        btnSort.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        btnSort.FlatStyle = FlatStyle.Flat
-        btnSort.Location = New Point(304, 4)
-        btnSort.Name = "btnSort"
-        btnSort.Size = New Size(28, 28)
-        btnSort.TabIndex = 1
-        btnSort.Text = "↕"
-        btnSort.UseVisualStyleBackColor = True
-        '
-        ' btnOpt
-        '
-        btnOpt.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        btnOpt.FlatStyle = FlatStyle.Flat
-        btnOpt.Location = New Point(338, 4)
-        btnOpt.Name = "btnOpt"
-        btnOpt.Size = New Size(28, 28)
-        btnOpt.TabIndex = 2
-        btnOpt.Text = "…"
-        btnOpt.UseVisualStyleBackColor = True
-        '
-        ' tree
-        '
-        tree.Dock = DockStyle.Fill
-        tree.Location = New Point(0, 36)
-        tree.Name = "tree"
-        tree.Size = New Size(372, 579)
-        tree.TabIndex = 0
-        '
-        ' viewHost — gazda vederilor (UserControl-urile IAngajamentView, create lazy).
-        '
-        viewHost.Dock = DockStyle.Fill
-        viewHost.Location = New Point(8, 0)
-        viewHost.Name = "viewHost"
-        viewHost.Size = New Size(698, 615)
-        viewHost.TabIndex = 0
-        viewHost.Tag = "Card"
-        '
+        ' 
+        ' busyBar
+        ' 
+        busyBar.Dock = DockStyle.Top
+        busyBar.Location = New Point(0, 67)
+        busyBar.Margin = New Padding(4, 5, 4, 5)
+        busyBar.Name = "busyBar"
+        busyBar.Size = New Size(1827, 5)
+        busyBar.TabIndex = 3
+        busyBar.TabStop = False
+        ' 
+        ' capBar
+        ' 
+        capBar.Dock = DockStyle.Top
+        capBar.IconImage = Nothing
+        capBar.Location = New Point(0, 0)
+        capBar.Margin = New Padding(4, 5, 4, 5)
+        capBar.Name = "capBar"
+        capBar.ShowMaximize = True
+        capBar.ShowMinimize = True
+        capBar.Size = New Size(1827, 67)
+        capBar.TabIndex = 4
+        capBar.TabStop = False
+        capBar.Text = "K-BOT"
+        ' 
         ' MainForm
-        '
-        AutoScaleDimensions = New SizeF(7.0F, 15.0F)
+        ' 
+        AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(1280, 760)
+        ClientSize = New Size(1829, 1267)
         Controls.Add(pnlRoot)
         FormBorderStyle = FormBorderStyle.None
-        MinimumSize = New Size(1100, 640)
+        Margin = New Padding(4, 5, 4, 5)
+        MinimumSize = New Size(1571, 1067)
         Name = "MainForm"
-        Padding = New Padding(1)
+        Padding = New Padding(1, 2, 1, 2)
         StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT"
         pnlRoot.ResumeLayout(False)
-        pnlHeader.ResumeLayout(False)
-        pnlHeader.PerformLayout()
-        pnlStatus.ResumeLayout(False)
-        pnlStatus.PerformLayout()
         pnlWork.ResumeLayout(False)
-        CType(navViews, System.ComponentModel.ISupportInitialize).EndInit()
         split.Panel1.ResumeLayout(False)
         split.Panel2.ResumeLayout(False)
-        CType(split, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(split, ComponentModel.ISupportInitialize).EndInit()
         split.ResumeLayout(False)
         pnlTree.ResumeLayout(False)
         pnlTreeHead.ResumeLayout(False)
         pnlTreeHead.PerformLayout()
+        CType(navViews, ComponentModel.ISupportInitialize).EndInit()
+        pnlStatus.ResumeLayout(False)
+        pnlStatus.PerformLayout()
+        pnlHeader.ResumeLayout(False)
+        pnlHeader.PerformLayout()
         ResumeLayout(False)
     End Sub
 

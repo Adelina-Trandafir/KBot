@@ -15,6 +15,10 @@ Partial Class DdfView
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        Dim KBotNavItem1 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim KBotNavItem2 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim KBotNavItem3 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim KBotNavItem4 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
         split = New SplitContainer()
         tree = New Controls.AdvancedTreeControl()
         pnlTreeHead = New Panel()
@@ -46,11 +50,13 @@ Partial Class DdfView
         pnlTreeHead.SuspendLayout()
         pnlPages.SuspendLayout()
         pnlValori.SuspendLayout()
+        CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         pnlFilter.SuspendLayout()
         pnlPreview.SuspendLayout()
         pnlPdf.SuspendLayout()
         pnlAdobe.SuspendLayout()
         pnlFisiere.SuspendLayout()
+        CType(navSub, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
         ' split
@@ -133,9 +139,9 @@ Partial Class DdfView
         pnlPages.Controls.Add(pnlPdf)
         pnlPages.Controls.Add(pnlFisiere)
         pnlPages.Dock = DockStyle.Fill
-        pnlPages.Location = New Point(0, 34)
+        pnlPages.Location = New Point(0, 49)
         pnlPages.Name = "pnlPages"
-        pnlPages.Size = New Size(641, 533)
+        pnlPages.Size = New Size(641, 518)
         pnlPages.TabIndex = 1
         ' 
         ' pnlValori
@@ -145,30 +151,21 @@ Partial Class DdfView
         pnlValori.Dock = DockStyle.Fill
         pnlValori.Location = New Point(0, 0)
         pnlValori.Name = "pnlValori"
-        pnlValori.Size = New Size(641, 533)
+        pnlValori.Size = New Size(641, 518)
         pnlValori.TabIndex = 0
         ' 
         ' grid
         ' 
-        grid.AlternatingRows = True
-        grid.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.ToContent
-        grid.AutoSizeSampleRows = 200
         grid.BackColor = SystemColors.Window
         grid.ColumnFillMode = KBot.Controls.KBotFillMode.LastColumn
-        grid.CurrentColumnKey = Nothing
-        grid.CurrentRowIndex = -1
         grid.Dock = DockStyle.Fill
-        grid.FrozenColumnCount = 0
-        grid.HeaderHeight = 30
-        grid.Location = New Point(0, 32)
+        grid.Location = New Point(0, 37)
         grid.Margin = New Padding(4, 5, 4, 5)
         grid.Name = "grid"
         grid.ReadOnlyGrid = True
-        grid.RowHeight = 28
         grid.ScrollByColumn = True
-        grid.ShowHeader = True
         grid.ShowTotalsRow = True
-        grid.Size = New Size(641, 501)
+        grid.Size = New Size(641, 481)
         grid.TabIndex = 1
         grid.TotalsRowHeight = 30
         ' 
@@ -180,7 +177,7 @@ Partial Class DdfView
         pnlFilter.Location = New Point(0, 0)
         pnlFilter.Name = "pnlFilter"
         pnlFilter.Padding = New Padding(6, 4, 6, 4)
-        pnlFilter.Size = New Size(641, 32)
+        pnlFilter.Size = New Size(641, 37)
         pnlFilter.TabIndex = 0
         ' 
         ' cboClsf
@@ -211,7 +208,7 @@ Partial Class DdfView
         pnlPreview.Dock = DockStyle.Fill
         pnlPreview.Location = New Point(0, 0)
         pnlPreview.Name = "pnlPreview"
-        pnlPreview.Size = New Size(641, 533)
+        pnlPreview.Size = New Size(641, 518)
         pnlPreview.TabIndex = 1
         pnlPreview.Visible = False
         ' 
@@ -221,7 +218,7 @@ Partial Class DdfView
         lblPreviewGol.Font = New Font("Segoe UI", 10F)
         lblPreviewGol.Location = New Point(0, 0)
         lblPreviewGol.Name = "lblPreviewGol"
-        lblPreviewGol.Size = New Size(641, 533)
+        lblPreviewGol.Size = New Size(641, 518)
         lblPreviewGol.TabIndex = 0
         lblPreviewGol.Text = "Selectați o revizie din arbore."
         lblPreviewGol.TextAlign = ContentAlignment.MiddleCenter
@@ -232,7 +229,7 @@ Partial Class DdfView
         pnlPdf.Dock = DockStyle.Fill
         pnlPdf.Location = New Point(0, 0)
         pnlPdf.Name = "pnlPdf"
-        pnlPdf.Size = New Size(641, 533)
+        pnlPdf.Size = New Size(641, 518)
         pnlPdf.TabIndex = 3
         pnlPdf.Visible = False
         ' 
@@ -323,7 +320,7 @@ Partial Class DdfView
         pnlFisiere.Dock = DockStyle.Fill
         pnlFisiere.Location = New Point(0, 0)
         pnlFisiere.Name = "pnlFisiere"
-        pnlFisiere.Size = New Size(641, 533)
+        pnlFisiere.Size = New Size(641, 518)
         pnlFisiere.TabIndex = 2
         pnlFisiere.Visible = False
         ' 
@@ -333,7 +330,7 @@ Partial Class DdfView
         lblFisiereGol.Font = New Font("Segoe UI", 10F)
         lblFisiereGol.Location = New Point(0, 0)
         lblFisiereGol.Name = "lblFisiereGol"
-        lblFisiereGol.Size = New Size(641, 533)
+        lblFisiereGol.Size = New Size(641, 518)
         lblFisiereGol.TabIndex = 0
         lblFisiereGol.Text = "Selectați un angajament din arbore."
         lblFisiereGol.TextAlign = ContentAlignment.MiddleCenter
@@ -341,11 +338,27 @@ Partial Class DdfView
         ' navSub
         ' 
         navSub.Dock = DockStyle.Top
+        KBotNavItem1.Image = Nothing
+        KBotNavItem1.Key = "valori"
+        KBotNavItem1.Text = "Valori"
+        KBotNavItem2.Image = Nothing
+        KBotNavItem2.Key = "previzualizare"
+        KBotNavItem2.Text = "Vizualizare"
+        KBotNavItem3.Image = Nothing
+        KBotNavItem3.Key = "document"
+        KBotNavItem3.Text = "Document"
+        KBotNavItem4.Image = Nothing
+        KBotNavItem4.Key = "fisiere"
+        KBotNavItem4.Text = "Fișiere"
+        navSub.Items.Add(KBotNavItem1)
+        navSub.Items.Add(KBotNavItem2)
+        navSub.Items.Add(KBotNavItem3)
+        navSub.Items.Add(KBotNavItem4)
         navSub.Location = New Point(0, 0)
         navSub.Name = "navSub"
         navSub.Orientation = Theming.KBotNavOrientation.Horizontal
         navSub.SelectedKey = Nothing
-        navSub.Size = New Size(641, 34)
+        navSub.Size = New Size(641, 49)
         navSub.TabIndex = 0
         ' 
         ' lblEmpty
@@ -376,6 +389,7 @@ Partial Class DdfView
         pnlTreeHead.ResumeLayout(False)
         pnlPages.ResumeLayout(False)
         pnlValori.ResumeLayout(False)
+        CType(grid, ComponentModel.ISupportInitialize).EndInit()
         pnlFilter.ResumeLayout(False)
         pnlFilter.PerformLayout()
         pnlPreview.ResumeLayout(False)
@@ -383,6 +397,7 @@ Partial Class DdfView
         pnlAdobe.ResumeLayout(False)
         pnlAdobe.PerformLayout()
         pnlFisiere.ResumeLayout(False)
+        CType(navSub, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
     End Sub
 

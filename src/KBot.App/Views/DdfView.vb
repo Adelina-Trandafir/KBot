@@ -347,13 +347,15 @@ Public Class DdfView
         End Try
     End Sub
 
-    ' Sub-navigarea orizontală: trei pagini, «Valori» selectată implicit.
+    ' Sub-navigarea orizontală: cele patru pagini sunt AUTORITE ÎN DESIGNER, în `navSub.Items`
+    ' (felia 0025) — vezi DdfView.Designer.vb. Aici rămâne doar selecția inițială: atribuirea e
+    ' cea care ridică SelectionChanged și deci arată prima pagină.
+    '
+    ' Designer-ul scrie cheile ca LITERALE (nu poate referi constantele private de mai sus), deci
+    ' cele două trebuie să rămână în acord. Dacă se desincronizează, atribuirea de mai jos aruncă
+    ' ArgumentException pe cheie necunoscută — zgomotos, nu tăcut.
     Private Sub BuildNav()
         Try
-            navSub.AddItem(PAGE_VALORI, "Valori")
-            navSub.AddItem(PAGE_PREVIEW, "Vizualizare")
-            navSub.AddItem(PAGE_PDF, "Document")
-            navSub.AddItem(PAGE_FISIERE, "Fișiere")
             navSub.SelectedKey = PAGE_VALORI
             ShowPage(PAGE_VALORI)
         Catch ex As Exception
