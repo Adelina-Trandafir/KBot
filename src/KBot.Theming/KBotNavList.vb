@@ -2,6 +2,7 @@ Option Strict On
 Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Drawing.Drawing2D
+Imports System.Drawing.Imaging
 Imports System.Windows.Forms
 Imports KBot.Common
 
@@ -50,6 +51,7 @@ Public NotInheritable Class KBotNavList
     Private _orientation As KBotNavOrientation = KBotNavOrientation.Vertical
     Private _layoutValid As Boolean
     Private _sepSeq As Integer                            ' contor pentru cheile interne ale separatorilor
+    Private _iconSize As Integer = 20                     ' latura pictogramei, px logici (0025-02)
 
     ' ── Inițializare din designer (ISupportInitialize) ────────────────────────
     ' Between BeginInit and EndInit the control accepts whatever InitializeComponent writes
@@ -112,6 +114,27 @@ Public NotInheritable Class KBotNavList
         Set(value As KBotNavOrientation)
             If value = _orientation Then Return
             _orientation = value
+            InvalidateLayout()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Latura (px logici, scalați la DPI) a pătratului în care se desenează
+    ''' <see cref="KBotNavItem.Image"/>. Implicit 20. Se aplică TUTUROR elementelor — pictogramele
+    ''' unei bare de navigație trebuie să fie de aceeași mărime, altfel textul nu se mai aliniază.
+    ''' Pictograma se scalează în pătrat, deci sursa poate fi de orice dimensiune.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Latura (px logici) a pictogramei elementelor. Implicit 20; se aplică tuturor.")>
+    <DefaultValue(20)>
+    Public Property IconSize As Integer
+        Get
+            Return _iconSize
+        End Get
+        Set(value As Integer)
+            Dim clamped As Integer = Math.Max(0, value)
+            If clamped = _iconSize Then Return
+            _iconSize = clamped
             InvalidateLayout()
         End Set
     End Property
@@ -340,14 +363,44 @@ Public NotInheritable Class KBotNavList
         Return ThemeShapes.ScaleDpi(Me, 11)
     End Function
 
+    ' ── Pictograma elementului (0025-02) ───────────────────────────────────────
+    ' O SINGURĂ funcție de geometrie, folosită și la măsurare și la pictare, ca cele două să nu
+    ' poată să se despartă: dacă slotul crește, textul se mută cu el, automat.
+
+    ' Latura nominală a pătratului pictogramei, scalată la DPI.
+    Private Function IconSide() As Integer
+        Return ThemeShapes.ScaleDpi(Me, _iconSize)
+    End Function
+
+    ' Spațiul dintre pictogramă și text.
+    Private Function IconGap() As Integer
+        Return ThemeShapes.ScaleDpi(Me, 8)
+    End Function
+
+    ' Cât mănâncă pictograma din lățimea rândului (0 dacă elementul nu are una).
+    Private Function IconSlotWidth(it As KBotNavItem) As Integer
+        If it.IsSeparator OrElse it.Image Is Nothing OrElse _iconSize <= 0 Then Return 0
+        Return IconSide() + IconGap()
+    End Function
+
+    ' Pătratul în care se desenează pictograma, în interiorul slotului elementului. Se strânge
+    ' dacă rândul e mai scund decât latura nominală; Rectangle.Empty = nimic de desenat.
+    Private Function IconRect(it As KBotNavItem, r As Rectangle) As Rectangle
+        If IconSlotWidth(it) = 0 Then Return Rectangle.Empty
+        Dim padX As Integer = ThemeShapes.ScaleDpi(Me, 12)
+        Dim side As Integer = Math.Min(IconSide(), r.Height - ThemeShapes.ScaleDpi(Me, 8))
+        If side <= 0 Then Return Rectangle.Empty
+        Return New Rectangle(r.Left + padX, r.Top + (r.Height - side) \ 2, side, side)
+    End Function
+
     ' Extinderea (pe axa principală) a unui element vizibil.
     Private Function ItemExtent(it As KBotNavItem) As Integer
         If it.IsSeparator Then Return SeparatorExtent()
         If _orientation = KBotNavOrientation.Vertical Then Return ItemThickness()
-        ' Orizontal: lățimea butonului = textul măsurat + padding (+ loc de badge).
+        ' Orizontal: lățimea butonului = textul măsurat + padding (+ pictogramă, + loc de badge).
         Dim padX As Integer = ThemeShapes.ScaleDpi(Me, 12)
         Dim ts As Size = TextRenderer.MeasureText(If(it.Text, String.Empty), Font)
-        Dim w As Integer = ts.Width + 2 * padX
+        Dim w As Integer = ts.Width + 2 * padX + IconSlotWidth(it)
         If it.Badge > 0 Then w += ThemeShapes.ScaleDpi(Me, 26)
         Return Math.Max(w, ThemeShapes.ScaleDpi(Me, 48))
     End Function
@@ -410,6 +463,19 @@ Public NotInheritable Class KBotNavList
     Friend Function DebugBounds(index As Integer) As Rectangle
         EnsureLayout()
         Return _items(index).Bounds
+    End Function
+
+    ''' <summary>Friend test hook: pătratul pictogramei unui element (Rectangle.Empty dacă n-are).</summary>
+    Friend Function DebugIconRect(index As Integer) As Rectangle
+        EnsureLayout()
+        Return IconRect(_items(index), _items(index).Bounds)
+    End Function
+
+    ''' <summary>Friend test hook: de unde începe textul unui element (după pictogramă, dacă are).</summary>
+    Friend Function DebugTextLeft(index As Integer) As Integer
+        EnsureLayout()
+        Dim it As KBotNavItem = _items(index)
+        Return it.Bounds.Left + ThemeShapes.ScaleDpi(Me, 12) + IconSlotWidth(it)
     End Function
 
     ''' <summary>Friend test hook: indexul elementului de sub un punct client (-1 = niciunul).</summary>
@@ -537,6 +603,12 @@ Public NotInheritable Class KBotNavList
                     textRight = br.Left - ThemeShapes.ScaleDpi(Me, 4)
                 End If
 
+                ' Pictograma (stânga), înaintea textului — ea decide de unde începe textul.
+                Dim iconR As Rectangle = IconRect(it, r)
+                If Not iconR.IsEmpty Then
+                    DrawItemImage(g, it.Image, iconR, it.Enabled)
+                End If
+
                 ' Text.
                 Dim textColor As Color
                 Dim textFont As Font = Font
@@ -548,7 +620,8 @@ Public NotInheritable Class KBotNavList
                 Else
                     textColor = _textNormal
                 End If
-                Dim tr As New Rectangle(r.Left + padX, r.Top, Math.Max(0, textRight - r.Left - padX), r.Height)
+                Dim textLeft As Integer = r.Left + padX + IconSlotWidth(it)
+                Dim tr As New Rectangle(textLeft, r.Top, Math.Max(0, textRight - textLeft), r.Height)
                 Dim flags As TextFormatFlags = TextFormatFlags.VerticalCenter Or TextFormatFlags.EndEllipsis Or
                     If(_orientation = KBotNavOrientation.Vertical, TextFormatFlags.Left, TextFormatFlags.HorizontalCenter)
                 TextRenderer.DrawText(g, it.Text, textFont, tr, textColor, flags)
@@ -578,6 +651,27 @@ Public NotInheritable Class KBotNavList
         Next
         Return dup
     End Function
+
+    ' Desenează pictograma scalată în pătratul ei. Pe un element DEZACTIVAT o estompează
+    ' (desaturare + alfa), ca imaginea unui Button dezactivat — altfel un buton stins ar avea
+    ' text gri lângă o pictogramă în culori vii.
+    Private Shared Sub DrawItemImage(g As Graphics, img As Image, dest As Rectangle, enabled As Boolean)
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic
+        If enabled Then
+            g.DrawImage(img, dest)
+            Return
+        End If
+        Using attrs As New ImageAttributes()
+            ' Luminanța standard pe R/G/B (0.299/0.587/0.114) + alfa 45%.
+            attrs.SetColorMatrix(New ColorMatrix(New Single()() {
+                New Single() {0.299F, 0.299F, 0.299F, 0.0F, 0.0F},
+                New Single() {0.587F, 0.587F, 0.587F, 0.0F, 0.0F},
+                New Single() {0.114F, 0.114F, 0.114F, 0.0F, 0.0F},
+                New Single() {0.0F, 0.0F, 0.0F, 0.45F, 0.0F},
+                New Single() {0.0F, 0.0F, 0.0F, 0.0F, 1.0F}}))
+            g.DrawImage(img, dest, 0, 0, img.Width, img.Height, GraphicsUnit.Pixel, attrs)
+        End Using
+    End Sub
 
     ' Linia separatorului: pe mijlocul slotului, perpendiculară pe axa principală.
     Private Sub DrawSeparator(g As Graphics, r As Rectangle)

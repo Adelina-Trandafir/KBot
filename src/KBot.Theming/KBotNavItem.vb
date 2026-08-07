@@ -43,6 +43,21 @@ Public NotInheritable Class KBotNavItem
     <Description("Textul afișat pe buton.")>
     Public Property Text As String
 
+    ''' <summary>
+    ''' English (slice 0025-02): the icon drawn at the LEFT of the caption — the equivalent of
+    ''' <c>Button.Image</c>, and editable with the same stock image editor in the property grid
+    ''' (the designer stores it in the form's <c>.resx</c>).
+    '''
+    ''' There is deliberately NO <c>ImageAlign</c>: a nav entry is a left-icon-then-caption row by
+    ''' design, and an alignment nobody asked for is one more thing that can be set wrong.
+    ''' Ignored when <see cref="IsSeparator"/> is True. The item does NOT own the image and never
+    ''' disposes it — it belongs to the caller or to the form's resources, exactly like
+    ''' <c>KBotCaptionBar.IconImage</c>.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Pictograma desenată la stânga textului (ca Image-ul unui buton). Ignorată pe separatori.")>
+    Public Property Image As System.Drawing.Image
+
     <Category("K-BOT")>
     <Description("Numărul din pastila din dreapta butonului. 0 = pastila nu se desenează.")>
     <DefaultValue(0)>

@@ -132,7 +132,7 @@ Public Class KBotNavListTests
                        Assert.True(nav.DebugBounds(1).Bottom < nav.DebugBounds(2).Top)
                        Assert.True(nav.DebugBounds(2).Bottom <= nav.DebugBounds(3).Top)
                        Assert.True(nav.DebugBounds(3).Top < nav.DebugBounds(4).Top)
-                       Assert.Equal(nav.Height - 6, nav.DebugBounds(4).Bottom)   ' 6 = marginea
+                       Assert.Equal(nav.Height - Dpi(nav, 6), nav.DebugBounds(4).Bottom)   ' 6 = marginea
                    End Using
                End Sub)
     End Sub
@@ -364,6 +364,167 @@ Public Class KBotNavListTests
                        Assert.Throws(Of ArgumentException)(Sub() nav.SelectedKey = "b")
                    End Using
                End Sub)
+    End Sub
+
+    ' ── Pictograma din stânga (0025-02) ───────────────────────────────────────
+
+    ' The control scales every logical measurement to its DPI, so the expectations below have to
+    ' scale too — a literal 20 would pass here and fail on a 150% display.
+    Private Shared Function Dpi(nav As KBotNavList, logical As Integer) As Integer
+        Return ThemeShapes.ScaleDpi(nav, logical)
+    End Function
+
+    Private Shared Function NewIcon(side As Integer) As Bitmap
+        Dim bmp As New Bitmap(side, side)
+        Using g = Graphics.FromImage(bmp)
+            g.Clear(Color.Magenta)
+        End Using
+        Return bmp
+    End Function
+
+    <Fact>
+    Public Sub AnItemWithoutAnImage_LeavesTheTextWhereItAlwaysWas()
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       Assert.Equal(Rectangle.Empty, nav.DebugIconRect(0))
+                       ' 12 px logici de padding, exact ca înainte de felie.
+                       Assert.Equal(nav.DebugBounds(0).Left + Dpi(nav, 12), nav.DebugTextLeft(0))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AnImage_GetsASquareSlotOnTheLeft_AndPushesTheTextRight()
+        RunSta(Sub()
+                   Using nav = NewSizedList(), icon = NewIcon(64)
+                       nav.AddItem("a", "A")
+                       nav.Items(0).Image = icon
+                       nav.InvalidateLayout()
+
+                       Dim r As Rectangle = nav.DebugBounds(0)
+                       Dim ir As Rectangle = nav.DebugIconRect(0)
+
+                       Assert.False(ir.IsEmpty)
+                       Assert.Equal(ir.Width, ir.Height)                        ' pătrat
+                       Assert.Equal(Dpi(nav, 20), ir.Width)                     ' IconSize implicit
+                       Assert.Equal(r.Left + Dpi(nav, 12), ir.Left)             ' lipit de padding-ul din stânga
+                       Assert.Equal(r.Top + (r.Height - ir.Height) \ 2, ir.Top) ' centrat vertical
+                       ' Sursa de 64px se scalează în pătrat — nu impune lățimea rândului.
+                       Assert.Equal(r.Left + Dpi(nav, 12) + Dpi(nav, 20) + Dpi(nav, 8), nav.DebugTextLeft(0))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub IconSize_DrivesTheSlotAndTheTextOffset()
+        RunSta(Sub()
+                   Using nav = NewSizedList(), icon = NewIcon(16)
+                       nav.AddItem("a", "A")
+                       nav.Items(0).Image = icon
+                       nav.IconSize = 14
+                       Assert.Equal(Dpi(nav, 14), nav.DebugIconRect(0).Width)
+                       Assert.Equal(nav.DebugBounds(0).Left + Dpi(nav, 12) + Dpi(nav, 14) + Dpi(nav, 8),
+                                    nav.DebugTextLeft(0))
+
+                       ' IconSize = 0 înseamnă «fără pictograme», nu «pictograme de zero pixeli
+                       ' care lasă totuși o gaură»: textul revine la padding-ul simplu.
+                       nav.IconSize = 0
+                       Assert.Equal(Rectangle.Empty, nav.DebugIconRect(0))
+                       Assert.Equal(nav.DebugBounds(0).Left + Dpi(nav, 12), nav.DebugTextLeft(0))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub TheIconSlotShrinks_WhenTheRowIsShorterThanTheNominalSide()
+        ' Bară orizontală joasă: pictograma nu are voie să iasă din rând.
+        RunSta(Sub()
+                   Using nav = New KBotNavList(), icon = NewIcon(32)
+                       nav.Orientation = KBotNavOrientation.Horizontal
+                       nav.Size = New Size(400, 22)
+                       nav.AddItem("a", "A")
+                       nav.Items(0).Image = icon
+
+                       Dim r As Rectangle = nav.DebugBounds(0)
+                       Dim ir As Rectangle = nav.DebugIconRect(0)
+                       Assert.True(ir.Width < Dpi(nav, 20), "slotul trebuie să se strângă sub latura nominală")
+                       Assert.True(ir.Top >= r.Top AndAlso ir.Bottom <= r.Bottom)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub AnImage_WidensAHorizontalItem_ButNotAVerticalOne()
+        RunSta(Sub()
+                   Using icon = NewIcon(16)
+                       ' Vertical: înălțimea rândului e fixă, deci pictograma nu schimbă extinderea.
+                       Using nav = NewSizedList()
+                           nav.AddItem("a", "A")
+                           Dim before As Integer = nav.DebugBounds(0).Height
+                           nav.Items(0).Image = icon
+                           nav.InvalidateLayout()
+                           Assert.Equal(before, nav.DebugBounds(0).Height)
+                       End Using
+
+                       ' Orizontal: lățimea se măsoară din conținut, deci crește cu slotul + spațiu.
+                       Using nav = New KBotNavList()
+                           nav.Orientation = KBotNavOrientation.Horizontal
+                           nav.Size = New Size(600, 34)
+                           nav.AddItem("a", "Un text destul de lung ca să nu lovească minimul")
+                           Dim before As Integer = nav.DebugBounds(0).Width
+                           nav.Items(0).Image = icon
+                           nav.InvalidateLayout()
+                           Assert.Equal(before + Dpi(nav, 20) + Dpi(nav, 8), nav.DebugBounds(0).Width)
+                       End Using
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ASeparator_IgnoresItsImage_LikeItIgnoresKeyAndText()
+        RunSta(Sub()
+                   Using nav = NewSizedList(), icon = NewIcon(16)
+                       nav.AddItem("a", "A")
+                       nav.AddSeparator()
+                       nav.Items(1).Image = icon
+                       nav.InvalidateLayout()
+                       Assert.Equal(Rectangle.Empty, nav.DebugIconRect(1))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub PaintingAnItemWithAnImage_DoesNotThrow_EnabledOrDisabled()
+        ' The disabled path runs a ColorMatrix through DrawImage; headless paint proves both
+        ' branches execute (a bad matrix throws, it does not just look wrong).
+        RunSta(Sub()
+                   Using nav = NewSizedList(), icon = NewIcon(24)
+                       nav.AddItem("a", "A")
+                       nav.AddItem("b", "B")
+                       nav.Items(0).Image = icon
+                       nav.Items(1).Image = icon
+                       nav.SetItemEnabled("b", False)
+                       Using bmp As New Bitmap(nav.Width, nav.Height)
+                           nav.DrawToBitmap(bmp, New Rectangle(0, 0, bmp.Width, bmp.Height))
+                       End Using
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub TheItemDoesNotOwnTheImage_AndNeverDisposesIt()
+        ' The image belongs to the caller or to the form's .resx; disposing the bar must not take
+        ' it down, or a resource shared between two items dies with the first one.
+        Dim icon As Bitmap = NewIcon(16)
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       nav.Items(0).Image = icon
+                   End Using
+               End Sub)
+        Assert.Equal(16, icon.Width)          ' still alive after the bar was disposed
+        icon.Dispose()
     End Sub
 
     ' ── Proxy pentru rotunda din designer ─────────────────────────────────────
