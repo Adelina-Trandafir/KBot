@@ -1,4 +1,4 @@
-<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class PlatiView
     Inherits System.Windows.Forms.UserControl
 
@@ -60,35 +60,17 @@ Partial Class PlatiView
         '
         ' tree
         '
-        tree.AutoScrollMinSize = New Size(0, 0)
-        tree.BackColor = Color.White
-        tree.BorderColor = Color.Transparent
         tree.Dock = DockStyle.Fill
-        tree.Font = New Font("Segoe UI", 9F)
-        tree.HeaderBackColor = Color.FromArgb(CByte(222), CByte(222), CByte(222))
-        tree.HeaderForeColor = Color.FromArgb(CByte(50), CByte(50), CByte(60))
-        tree.HeaderIconSize = New Size(16, 16)
-        tree.HoverBackColor = Color.FromArgb(CByte(230), CByte(240), CByte(255))
         tree.ItemHeight = 24
         tree.LeftIconSize = New Size(16, 16)
-        tree.LineColor = Color.FromArgb(CByte(160), CByte(160), CByte(160))
         tree.Location = New Point(0, 0)
         tree.Margin = New Padding(4, 5, 4, 5)
         tree.Name = "tree"
         tree.ReserveRightIconSpace = False
         tree.RightIconSize = New Size(14, 14)
         tree.RightTextWidth = 110
-        tree.SearchBackColor = Color.FromArgb(CByte(222), CByte(222), CByte(222))
-        tree.SearchBarFontSize = 10F
-        tree.SearchBarLabelForeColor = Color.Empty
-        tree.SearchBoxBackColor = Color.Empty
-        tree.SelectedBackColor = Color.FromArgb(CByte(200), CByte(220), CByte(255))
-        tree.SelectedBorderColor = Color.FromArgb(CByte(150), CByte(180), CByte(255))
         tree.Size = New Size(336, 567)
         tree.TabIndex = 0
-        tree.TooltipBackColor = Color.FromArgb(CByte(255), CByte(255), CByte(232))
-        tree.TooltipForeColor = Color.FromArgb(CByte(50), CByte(50), CByte(60))
-        tree.TreeFont = New Font("Consolas", 9F)
         '
         ' innerSplit — grilă (sus) / detaliu extras (jos)
         '

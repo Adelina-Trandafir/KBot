@@ -5,8 +5,28 @@ Partial Public Class AdvancedTreeControl
         Try
             MyBase.OnFontChanged(e)
             RecalculateItemHeight()
+            UpdateSearchTextBoxFont()
+            RefreshSearchBarMetrics()
         Catch ex As Exception
             GlobalErrorLog.Write("AdvancedTreeControl.OnFontChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Designerul (InitializeComponent) scrie proprietățile într-o ordine pe care controlul
+    ''' n-o alege — SearchShow poate ajunge înaintea fontului sau a iconițelor de antet. Aici,
+    ''' cu instanța complet configurată, banda de căutare se aplică o dată, corect.
+    ''' </summary>
+    Protected Overrides Sub OnHandleCreated(e As EventArgs)
+        Try
+            MyBase.OnHandleCreated(e)
+            ApplySearchShow()
+            If _isSearchMode Then
+                RecomputeSearchBarHeight()
+                PositionSearchTextBox()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnHandleCreated", ex)
         End Try
     End Sub
 

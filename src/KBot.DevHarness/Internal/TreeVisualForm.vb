@@ -63,6 +63,10 @@ Public NotInheritable Class TreeVisualForm
         _log("double-click: " & pNode.Key & " (" & pNode.Caption & ")")
     End Sub
 
+    Private Sub OnSearchFinished(matchingItems As List(Of AdvancedTreeControl.TreeItem), searchText As String) Handles tree.SearchFinished
+        _log("căutare «" & searchText & "» → " & matchingItems.Count.ToString() & " potriviri")
+    End Sub
+
     Protected Overrides Sub Dispose(disposing As Boolean)
         If disposing Then
             _rightIcon?.Dispose()

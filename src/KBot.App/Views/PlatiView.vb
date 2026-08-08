@@ -506,14 +506,8 @@ Public Class PlatiView
             innerSplit.Panel1.BackColor = p.SurfaceAltColor
             innerSplit.Panel2.BackColor = p.SurfaceAltColor
 
-            tree.BackColor = p.SurfaceAltColor
-            tree.ForeColor = p.TextColor
-            tree.HoverBackColor = p.ButtonHoverColor
-            tree.SelectedBackColor = p.ButtonPressedColor
-            tree.SelectedBorderColor = p.AccentColor
-            tree.LineColor = p.BorderColor
-            tree.HeaderBackColor = p.SurfaceAltColor
-            tree.HeaderForeColor = p.TextColor
+            ' Arborele e IThemedControl: își ia singur paleta, iar ThemeManager nu mai recurge
+            ' în copiii lui. Culorile puse în designer câștigă; cele lăsate goale urmează tema.
 
             ' Panoul de detaliu: fundal de suprafață, etichete estompate, valori pline.
             detailPane.BackColor = p.SurfaceAltColor

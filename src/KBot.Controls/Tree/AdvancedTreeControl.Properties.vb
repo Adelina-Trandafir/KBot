@@ -37,6 +37,16 @@ Partial Public Class AdvancedTreeControl
             Me.Invalidate() ' Redesenează imediat controlul când se schimbă fontul
         End Set
     End Property
+    ' Un Font nu poate purta <DefaultValue> (atributul cere o constantă), deci «neschimbat» se
+    ' spune prin perechea asta — altfel designerul scria «Consolas, 9» în FIECARE formular gazdă.
+    Public Function ShouldSerializeTreeFont() As Boolean
+        Return Not (m_TreeFont.Name = "Consolas" AndAlso
+                    m_TreeFont.Size = 9.0F AndAlso
+                    m_TreeFont.Style = FontStyle.Regular)
+    End Function
+    Public Sub ResetTreeFont()
+        TreeFont = New Font("Consolas", 9.0F)
+    End Sub
 
     ' FontName/FontSize sunt accesori de conveniență peste TreeFont (îl mută). Ascunse din
     ' grilă ca să nu dubleze editorul de Font — folosește TreeFont în designer.
@@ -123,6 +133,7 @@ Partial Public Class AdvancedTreeControl
         Set(value As Integer)
             _itemHeight = value
             '_autoHeight = False
+            RefreshSearchBarMetrics()   ' banda de căutare se dimensionează după rând
             Me.Invalidate()
         End Set
     End Property
@@ -140,6 +151,12 @@ Partial Public Class AdvancedTreeControl
             RecalculateItemHeight()
         End Set
     End Property
+    Public Function ShouldSerializeLeftIconSize() As Boolean
+        Return _leftIconSize <> New Size(18, 18)
+    End Function
+    Public Sub ResetLeftIconSize()
+        LeftIconSize = New Size(18, 18)
+    End Sub
 
     Private _rightIconSize As New Size(18, 18)
     <Category("K-BOT Arbore")>
@@ -153,6 +170,12 @@ Partial Public Class AdvancedTreeControl
             RecalculateItemHeight()
         End Set
     End Property
+    Public Function ShouldSerializeRightIconSize() As Boolean
+        Return _rightIconSize <> New Size(18, 18)
+    End Function
+    Public Sub ResetRightIconSize()
+        RightIconSize = New Size(18, 18)
+    End Sub
 
     Private _rightIconRightPadding As Integer = 6
     <Category("K-BOT Arbore")>
@@ -304,70 +327,109 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
-    Private m_BorderColor As Color = Color.Transparent
+    ' NOTĂ pentru toate culorile de mai jos: Color.Empty = «auto», adică valoarea din tema
+    ' activă (vezi partiala .Theming). Getterul întoarce culoarea REZOLVATĂ — ce se desenează
+    ' efectiv — iar perechea ShouldSerialize*/Reset* face ca designerul să scrie o linie doar
+    ' pentru o alegere reală a operatorului, nu pentru implicitul rezolvat.
+    Private m_BorderColor As Color = Color.Empty
     <Category("K-BOT Arbore - Culori")>
-    <Description("Culoarea bordurii controlului; Transparent = fără bordură.")>
+    <Description("Culoarea bordurii controlului; Transparent = fără bordură, gol = din temă.")>
     Public Property BorderColor As Color
         Get
-            Return m_BorderColor
+            Return If(m_BorderColor <> Color.Empty, m_BorderColor, _autoBorder)
         End Get
         Set(value As Color)
             m_BorderColor = value
             Me.Invalidate()
         End Set
     End Property
+    Public Function ShouldSerializeBorderColor() As Boolean
+        Return m_BorderColor <> Color.Empty
+    End Function
+    Public Sub ResetBorderColor()
+        m_BorderColor = Color.Empty
+        Me.Invalidate()
+    End Sub
 
-    Private m_HoverBackColor As Color = Color.FromArgb(230, 240, 255)
+    Private m_HoverBackColor As Color = Color.Empty
     <Category("K-BOT Arbore - Culori")>
-    <Description("Fundalul rândului la hover.")>
+    <Description("Fundalul rândului la hover; gol = din temă.")>
     Public Property HoverBackColor As Color
         Get
-            Return m_HoverBackColor
+            Return If(m_HoverBackColor <> Color.Empty, m_HoverBackColor, _autoHoverBack)
         End Get
         Set(value As Color)
             m_HoverBackColor = value
             Me.Invalidate()
         End Set
     End Property
+    Public Function ShouldSerializeHoverBackColor() As Boolean
+        Return m_HoverBackColor <> Color.Empty
+    End Function
+    Public Sub ResetHoverBackColor()
+        m_HoverBackColor = Color.Empty
+        Me.Invalidate()
+    End Sub
 
-    Private m_SelectedBackColor As Color = Color.FromArgb(200, 220, 255)
+    Private m_SelectedBackColor As Color = Color.Empty
     <Category("K-BOT Arbore - Culori")>
-    <Description("Fundalul rândului selectat.")>
+    <Description("Fundalul rândului selectat; gol = din temă.")>
     Public Property SelectedBackColor As Color
         Get
-            Return m_SelectedBackColor
+            Return If(m_SelectedBackColor <> Color.Empty, m_SelectedBackColor, _autoSelectedBack)
         End Get
         Set(value As Color)
             m_SelectedBackColor = value
             Me.Invalidate()
         End Set
     End Property
+    Public Function ShouldSerializeSelectedBackColor() As Boolean
+        Return m_SelectedBackColor <> Color.Empty
+    End Function
+    Public Sub ResetSelectedBackColor()
+        m_SelectedBackColor = Color.Empty
+        Me.Invalidate()
+    End Sub
 
-    Private m_SelectedBorderColor As Color = Color.FromArgb(150, 180, 255)
+    Private m_SelectedBorderColor As Color = Color.Empty
     <Category("K-BOT Arbore - Culori")>
-    <Description("Bordura rândului selectat.")>
+    <Description("Bordura rândului selectat; gol = din temă.")>
     Public Property SelectedBorderColor As Color
         Get
-            Return m_SelectedBorderColor
+            Return If(m_SelectedBorderColor <> Color.Empty, m_SelectedBorderColor, _autoSelectedBorder)
         End Get
         Set(value As Color)
             m_SelectedBorderColor = value
             Me.Invalidate()
         End Set
     End Property
+    Public Function ShouldSerializeSelectedBorderColor() As Boolean
+        Return m_SelectedBorderColor <> Color.Empty
+    End Function
+    Public Sub ResetSelectedBorderColor()
+        m_SelectedBorderColor = Color.Empty
+        Me.Invalidate()
+    End Sub
 
-    Private m_LineColor As Color = Color.FromArgb(160, 160, 160)
+    Private m_LineColor As Color = Color.Empty
     <Category("K-BOT Arbore - Culori")>
-    <Description("Culoarea liniilor punctate ale arborelui.")>
+    <Description("Culoarea liniilor punctate ale arborelui; gol = din temă.")>
     Public Property LineColor As Color
         Get
-            Return m_LineColor
+            Return If(m_LineColor <> Color.Empty, m_LineColor, _autoLine)
         End Get
         Set(value As Color)
             m_LineColor = value
             Me.Invalidate()
         End Set
     End Property
+    Public Function ShouldSerializeLineColor() As Boolean
+        Return m_LineColor <> Color.Empty
+    End Function
+    Public Sub ResetLineColor()
+        m_LineColor = Color.Empty
+        Me.Invalidate()
+    End Sub
 
     Private _tooltipDelayMs As Integer = 600
     <Category("K-BOT Arbore - Tooltip")>
@@ -452,6 +514,7 @@ Partial Public Class AdvancedTreeControl
         End Get
         Set(value As Boolean)
             _headerVisible = value
+            If _isSearchMode Then PositionSearchTextBox()   ' banda stă sub antet
             Me.Invalidate()
         End Set
     End Property
@@ -466,6 +529,7 @@ Partial Public Class AdvancedTreeControl
         End Get
         Set(value As Integer)
             _headerHeight = Math.Max(16, value)
+            If _isSearchMode Then PositionSearchTextBox()
             Me.Invalidate()
         End Set
     End Property
@@ -489,10 +553,13 @@ Partial Public Class AdvancedTreeControl
     Private _headerRightIcon As Image = Nothing
     Private _headerSearchIcon As Image = Nothing
 
-    ' Imaginile REZOLVATE se setează în cod (din cache-ul de iconițe, la runtime). Ascunse din
-    ' grilă — la design-time se folosesc cheile *IconKey de mai jos.
-    <Browsable(False)>
-    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    ' Iconițele se pot alege DIRECT din designer (selectorul de imagini le pune în .resx) sau
+    ' se pot rezolva la rulare din cache-ul de iconițe / NodeImages prin cheile *IconKey de mai
+    ' jos. Cine setează ultimul câștigă: ResolveHeaderIcons nu suprascrie decât cheile care
+    ' chiar găsesc o imagine.
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Iconița din stânga antetului.")>
+    <DefaultValue(GetType(Image), Nothing)>
     Public Property HeaderLeftIcon As Image
         Get
             Return _headerLeftIcon
@@ -501,8 +568,9 @@ Partial Public Class AdvancedTreeControl
             _headerLeftIcon = value : Me.Invalidate()
         End Set
     End Property
-    <Browsable(False)>
-    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Iconița din dreapta antetului (ridică HeaderRightIconClicked).")>
+    <DefaultValue(GetType(Image), Nothing)>
     Public Property HeaderRightIcon As Image
         Get
             Return _headerRightIcon
@@ -512,14 +580,17 @@ Partial Public Class AdvancedTreeControl
             Me.Invalidate()
         End Set
     End Property
-    <Browsable(False)>
-    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Iconița de căutare din antet; prezentă, ea deschide/închide banda de căutare.")>
+    <DefaultValue(GetType(Image), Nothing)>
     Public Property HeaderSearchIcon As Image
         Get
             Return _headerSearchIcon
         End Get
         Set(value As Image)
             _headerSearchIcon = value
+            ' Fără iconiță de toggle, SearchShow înseamnă bandă permanentă — re-evaluăm.
+            ApplySearchShow()
             Me.Invalidate()
         End Set
     End Property
@@ -538,6 +609,8 @@ Partial Public Class AdvancedTreeControl
         End Get
         Set(value As String)
             _headerLeftIconKey = value
+            ResolveHeaderIconsFromNodeImages()
+            Me.Invalidate()
         End Set
     End Property
     <Category("K-BOT Arbore - Antet")>
@@ -549,6 +622,8 @@ Partial Public Class AdvancedTreeControl
         End Get
         Set(value As String)
             _headerRightIconKey = value
+            ResolveHeaderIconsFromNodeImages()
+            Me.Invalidate()
         End Set
     End Property
     <Category("K-BOT Arbore - Antet")>
@@ -560,6 +635,8 @@ Partial Public Class AdvancedTreeControl
         End Get
         Set(value As String)
             _headerSearchIconKey = value
+            ResolveHeaderIconsFromNodeImages()
+            Me.Invalidate()
         End Set
     End Property
 
@@ -574,30 +651,131 @@ Partial Public Class AdvancedTreeControl
             _headerIconSize = value : Me.Invalidate()
         End Set
     End Property
+    Public Function ShouldSerializeHeaderIconSize() As Boolean
+        Return _headerIconSize <> New Size(16, 16)
+    End Function
+    Public Sub ResetHeaderIconSize()
+        HeaderIconSize = New Size(16, 16)
+    End Sub
 
-    Private _headerBackColor As Color = Color.FromArgb(222, 222, 222)
+    Private _headerBackColor As Color = Color.Empty
     <Category("K-BOT Arbore - Antet")>
-    <Description("Fundalul benzii de antet.")>
+    <Description("Fundalul benzii de antet; gol = din temă.")>
     Public Property HeaderBackColor As Color
         Get
-            Return _headerBackColor
+            Return If(_headerBackColor <> Color.Empty, _headerBackColor, _autoHeaderBack)
         End Get
         Set(value As Color)
-            _headerBackColor = value : Me.Invalidate()
+            _headerBackColor = value
+            Me.Invalidate()
         End Set
     End Property
+    Public Function ShouldSerializeHeaderBackColor() As Boolean
+        Return _headerBackColor <> Color.Empty
+    End Function
+    Public Sub ResetHeaderBackColor()
+        _headerBackColor = Color.Empty
+        Me.Invalidate()
+    End Sub
 
-    Private _headerForeColor As Color = Color.FromArgb(50, 50, 60)
+    Private _headerForeColor As Color = Color.Empty
     <Category("K-BOT Arbore - Antet")>
-    <Description("Culoarea textului din antet.")>
+    <Description("Culoarea textului din antet; gol = din temă.")>
     Public Property HeaderForeColor As Color
         Get
-            Return _headerForeColor
+            Return If(_headerForeColor <> Color.Empty, _headerForeColor, _autoHeaderFore)
         End Get
         Set(value As Color)
             _headerForeColor = value
-            Me.Invalidate() : End Set
+            RestyleSearchChildren()      ' eticheta de căutare cade pe culoarea antetului
+            Me.Invalidate()
+        End Set
     End Property
+    Public Function ShouldSerializeHeaderForeColor() As Boolean
+        Return _headerForeColor <> Color.Empty
+    End Function
+    Public Sub ResetHeaderForeColor()
+        _headerForeColor = Color.Empty
+        RestyleSearchChildren()
+        Me.Invalidate()
+    End Sub
+
+    ' ── Antet: font, aliniere, stil de fundal ─────────────────────────────────────
+    Private _headerFont As Font = Nothing          ' Nothing = fontul arborelui (TreeFont)
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Fontul textului din antet (toate atributele); nesetat = TreeFont.")>
+    Public Property HeaderFont As Font
+        Get
+            Return If(_headerFont, Me.TreeFont)
+        End Get
+        Set(value As Font)
+            _headerFont = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeHeaderFont() As Boolean
+        Return _headerFont IsNot Nothing
+    End Function
+    Public Sub ResetHeaderFont()
+        _headerFont = Nothing
+        Me.Invalidate()
+    End Sub
+
+    Private _headerTextAlign As ContentAlignment = ContentAlignment.MiddleLeft
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Alinierea textului din antet, în spațiul rămas între iconițe.")>
+    <DefaultValue(ContentAlignment.MiddleLeft)>
+    Public Property HeaderTextAlign As ContentAlignment
+        Get
+            Return _headerTextAlign
+        End Get
+        Set(value As ContentAlignment)
+            _headerTextAlign = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>Stilul de fundal al benzii de antet.</summary>
+    Public Enum En_HeaderBackStyle
+        Solid = 0
+        GradientVertical = 1
+        GradientHorizontal = 2
+    End Enum
+
+    Private _headerBackStyle As En_HeaderBackStyle = En_HeaderBackStyle.Solid
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Fundal plin sau în degrade (vertical/orizontal) pornind din HeaderBackColor.")>
+    <DefaultValue(En_HeaderBackStyle.Solid)>
+    Public Property HeaderBackStyle As En_HeaderBackStyle
+        Get
+            Return _headerBackStyle
+        End Get
+        Set(value As En_HeaderBackStyle)
+            _headerBackStyle = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _headerGradientEndColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Capătul degradeului de antet; gol = automat (spre alb dacă baza e deschisă, spre negru dacă e închisă).")>
+    Public Property HeaderGradientEndColor As Color
+        Get
+            Return If(_headerGradientEndColor <> Color.Empty,
+                      _headerGradientEndColor, AutoGradientEnd(HeaderBackColor))
+        End Get
+        Set(value As Color)
+            _headerGradientEndColor = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeHeaderGradientEndColor() As Boolean
+        Return _headerGradientEndColor <> Color.Empty
+    End Function
+    Public Sub ResetHeaderGradientEndColor()
+        _headerGradientEndColor = Color.Empty
+        Me.Invalidate()
+    End Sub
 
     ' ══════════════════════════════════════════════════
     ' SEARCH PROPERTIES
@@ -607,14 +785,17 @@ Partial Public Class AdvancedTreeControl
 
     Private _searchShow As Boolean = False
     <Category("K-BOT Arbore - Căutare")>
-    <Description("Permite deschiderea barei de căutare (din iconița de antet).")>
+    <Description("Afișează banda de căutare. Fără iconiță de căutare în antet banda e permanentă; " &
+                 "cu iconiță, aceasta o deschide/închide.")>
     <DefaultValue(False)>
     Public Property SearchShow As Boolean
         Get
             Return _searchShow
         End Get
         Set(value As Boolean)
+            If _searchShow = value Then Return
             _searchShow = value
+            ApplySearchShow()
         End Set
     End Property
 
@@ -629,6 +810,7 @@ Partial Public Class AdvancedTreeControl
         Set(value As String)
             _searchDefaultText = value
             ApplySearchPlaceholder()
+            Me.Invalidate()
         End Set
     End Property
 
@@ -675,33 +857,51 @@ Partial Public Class AdvancedTreeControl
     End Property
 
 
-    Private _searchBackColor As Color = Color.FromArgb(222, 222, 222)
+    Private _searchBackColor As Color = Color.Empty
     <Category("K-BOT Arbore - Căutare")>
-    <Description("Fundalul benzii de căutare.")>
+    <Description("Fundalul benzii de căutare; gol = din temă.")>
     Public Property SearchBackColor As Color
         Get
-            Return _searchBackColor
+            Return If(_searchBackColor <> Color.Empty, _searchBackColor, _autoSearchBack)
         End Get
         Set(value As Color)
-            _searchBackColor = value : Me.Invalidate()
-        End Set
-    End Property
-
-    Private _searchBoxBackColor As Color = Color.Empty
-    <Category("K-BOT Arbore - Căutare")>
-    <Description("Fundalul casetei de căutare; Empty = fundalul controlului.")>
-    Public Property SearchBoxBackColor As Color
-        Get
-            Return _searchBoxBackColor
-        End Get
-        Set(value As Color)
-            _searchBoxBackColor = value
-            If _searchTextBox IsNot Nothing Then
-                _searchTextBox.BackColor = If(value = Color.Empty, Me.BackColor, value)
-            End If
+            _searchBackColor = value
+            RestyleSearchChildren()
             Me.Invalidate()
         End Set
     End Property
+    Public Function ShouldSerializeSearchBackColor() As Boolean
+        Return _searchBackColor <> Color.Empty
+    End Function
+    Public Sub ResetSearchBackColor()
+        _searchBackColor = Color.Empty
+        RestyleSearchChildren()
+        Me.Invalidate()
+    End Sub
+
+    Private _searchBoxBackColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Fundalul casetei de căutare; gol = din temă (sau fundalul controlului, fără temă).")>
+    Public Property SearchBoxBackColor As Color
+        Get
+            If _searchBoxBackColor <> Color.Empty Then Return _searchBoxBackColor
+            If _autoSearchBoxBack <> Color.Empty Then Return _autoSearchBoxBack
+            Return Me.BackColor
+        End Get
+        Set(value As Color)
+            _searchBoxBackColor = value
+            RestyleSearchChildren()
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeSearchBoxBackColor() As Boolean
+        Return _searchBoxBackColor <> Color.Empty
+    End Function
+    Public Sub ResetSearchBoxBackColor()
+        _searchBoxBackColor = Color.Empty
+        RestyleSearchChildren()
+        Me.Invalidate()
+    End Sub
 
     Private _searchBarLabelText As String = "Cautare: "
     <Category("K-BOT Arbore - Căutare")>
@@ -714,97 +914,119 @@ Partial Public Class AdvancedTreeControl
         Set(value As String)
             _searchBarLabelText = value
             _searchPropertiesConfigured = True
-            If _searchBarLabel IsNot Nothing Then _searchBarLabel.Text = value
+            RefreshSearchBarLabel()
             Me.Invalidate()
         End Set
     End Property
 
     Private _searchBarLabelForeColor As Color = Color.Empty
     <Category("K-BOT Arbore - Căutare")>
-    <Description("Culoarea etichetei de căutare; Empty = culoarea antetului.")>
+    <Description("Culoarea etichetei de căutare; gol = culoarea antetului.")>
     Public Property SearchBarLabelForeColor As Color
         Get
-            Return _searchBarLabelForeColor
+            Return If(_searchBarLabelForeColor <> Color.Empty, _searchBarLabelForeColor, HeaderForeColor)
         End Get
         Set(value As Color)
             _searchBarLabelForeColor = value
             _searchPropertiesConfigured = True
-            If _searchBarLabel IsNot Nothing Then _searchBarLabel.ForeColor = If(value = Color.Empty, _headerForeColor, value)
+            RestyleSearchChildren()
             Me.Invalidate()
         End Set
     End Property
+    Public Function ShouldSerializeSearchBarLabelForeColor() As Boolean
+        Return _searchBarLabelForeColor <> Color.Empty
+    End Function
+    Public Sub ResetSearchBarLabelForeColor()
+        _searchBarLabelForeColor = Color.Empty
+        RestyleSearchChildren()
+        Me.Invalidate()
+    End Sub
 
-    Private _searchBarLabelBold As Boolean = False
+    ' ── Fonturile benzii de căutare ───────────────────────────────────────────────
+    ' Un Font întreg pentru fiecare (etichetă și casetă), editabil din designer cu tot ce are
+    ' un font. Au înlocuit perechea SearchBarLabelBold/Italic, care nu putea exprima decât două
+    ' atribute din opt. SearchBarFontName/FontSize supraviețuiesc ca accesori ASCUNȘI peste
+    ' SearchBarFont — exact tiparul deja folosit de FontName/FontSize peste TreeFont — ca fișierele
+    ' de designer existente și aplicatorul XML (Tree.Builder) să compileze neatinse.
+    Private _searchBarLabelFont As Font = Nothing        ' Nothing = fontul controlului
     <Category("K-BOT Arbore - Căutare")>
-    <Description("Eticheta de căutare cu font aldin.")>
-    <DefaultValue(False)>
-    Public Property SearchBarLabelBold As Boolean
+    <Description("Fontul etichetei de căutare (toate atributele); nesetat = fontul controlului.")>
+    Public Property SearchBarLabelFont As Font
         Get
-            Return _searchBarLabelBold
+            Return If(_searchBarLabelFont, Me.Font)
         End Get
-        Set(value As Boolean)
-            _searchBarLabelBold = value
+        Set(value As Font)
+            _searchBarLabelFont = value
             _searchPropertiesConfigured = True
             UpdateSearchBarLabelFont()
+            If _isSearchMode Then PositionSearchTextBox()
             Me.Invalidate()
         End Set
     End Property
+    Public Function ShouldSerializeSearchBarLabelFont() As Boolean
+        Return _searchBarLabelFont IsNot Nothing
+    End Function
+    Public Sub ResetSearchBarLabelFont()
+        _searchBarLabelFont = Nothing
+        UpdateSearchBarLabelFont()
+        Me.Invalidate()
+    End Sub
 
-    Private _searchBarLabelItalic As Boolean = False
+    Private _searchBarFont As Font = New Font("Calibri", 10.0F)
     <Category("K-BOT Arbore - Căutare")>
-    <Description("Eticheta de căutare cu font cursiv.")>
-    <DefaultValue(False)>
-    Public Property SearchBarLabelItalic As Boolean
+    <Description("Fontul casetei de căutare (toate atributele).")>
+    Public Property SearchBarFont As Font
         Get
-            Return _searchBarLabelItalic
+            Return If(_searchBarFont, Me.Font)
         End Get
-        Set(value As Boolean)
-            _searchBarLabelItalic = value
+        Set(value As Font)
+            _searchBarFont = value
             _searchPropertiesConfigured = True
-            UpdateSearchBarLabelFont()
+            UpdateSearchTextBoxFont()
+            If _isSearchMode Then PositionSearchTextBox()
             Me.Invalidate()
         End Set
     End Property
+    Public Function ShouldSerializeSearchBarFont() As Boolean
+        Return _searchBarFont IsNot Nothing AndAlso
+               Not (_searchBarFont.Name = "Calibri" AndAlso _searchBarFont.Size = 10.0F AndAlso
+                    _searchBarFont.Style = FontStyle.Regular)
+    End Function
+    Public Sub ResetSearchBarFont()
+        SearchBarFont = New Font("Calibri", 10.0F)
+    End Sub
 
     Private Sub UpdateSearchBarLabelFont()
         If _searchBarLabel Is Nothing Then Return
-        Dim style As FontStyle = FontStyle.Regular
-        If _searchBarLabelBold Then style = style Or FontStyle.Bold
-        If _searchBarLabelItalic Then style = style Or FontStyle.Italic
-        _searchBarLabel.Font = New Font(Me.Font, style)
+        _searchBarLabel.Font = SearchBarLabelFont
     End Sub
 
     Friend Sub MarkSearchConfigured()
         _searchPropertiesConfigured = True
     End Sub
 
-    ' ── Search TextBox font ───────────────────────────────────────────────────
-    Private _searchBarFontName As String = "Calibri"
-    <Category("K-BOT Arbore - Căutare")>
-    <Description("Numele fontului din caseta de căutare.")>
-    <DefaultValue("Calibri")>
+    ' ── Accesori legacy peste SearchBarFont (calea XML/FOREXE + designerele existente) ────
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Property SearchBarFontName As String
         Get
-            Return _searchBarFontName
+            Return SearchBarFont.Name
         End Get
         Set(value As String)
-            _searchBarFontName = value
-            _searchPropertiesConfigured = True
-            UpdateSearchTextBoxFont()
+            If String.IsNullOrEmpty(value) Then Return
+            SearchBarFont = New Font(value, SearchBarFont.Size, SearchBarFont.Style)
         End Set
     End Property
 
-    Private _searchBarFontSize As Single = 10
-    <Category("K-BOT Arbore - Căutare")>
-    <Description("Dimensiunea fontului din caseta de căutare.")>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Property SearchBarFontSize As Single
         Get
-            Return _searchBarFontSize
+            Return SearchBarFont.Size
         End Get
         Set(value As Single)
-            _searchBarFontSize = value
-            _searchPropertiesConfigured = True
-            UpdateSearchTextBoxFont()
+            If value <= 0 Then Return
+            SearchBarFont = New Font(SearchBarFont.Name, value, SearchBarFont.Style)
         End Set
     End Property
 
@@ -817,8 +1039,57 @@ Partial Public Class AdvancedTreeControl
             Return _searchClearButton
         End Get
         Set(value As Boolean)
+            If _searchClearButton = value Then Return
             _searchClearButton = value
+            RefreshClearButton()
+            Me.Invalidate()
         End Set
+    End Property
+
+    Private _searchClearButtonPadding As New Padding(2)
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Spațiul din jurul butonului de golire (se adaugă la lățimea rezervată lui).")>
+    Public Property SearchClearButtonPadding As Padding
+        Get
+            Return _searchClearButtonPadding
+        End Get
+        Set(value As Padding)
+            _searchClearButtonPadding = value
+            ApplyClearButtonLook()      ' lățimea butonului = glifă/imagine + padding
+            If _isSearchMode Then PositionSearchTextBox()
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeSearchClearButtonPadding() As Boolean
+        Return _searchClearButtonPadding <> New Padding(2)
+    End Function
+    Public Sub ResetSearchClearButtonPadding()
+        SearchClearButtonPadding = New Padding(2)
+    End Sub
+
+    Private _searchClearButtonImage As Image = Nothing
+    <Category("K-BOT Arbore - Căutare")>
+    <Description("Imaginea butonului de golire; nesetată = glifa «✕».")>
+    <DefaultValue(GetType(Image), Nothing)>
+    Public Property SearchClearButtonImage As Image
+        Get
+            Return _searchClearButtonImage
+        End Get
+        Set(value As Image)
+            _searchClearButtonImage = value
+            ApplyClearButtonLook()
+            If _isSearchMode Then PositionSearchTextBox()
+            Me.Invalidate()
+        End Set
+    End Property
+
+    ' Lățimea totală rezervată butonului ✕ = glifă/imagine + padding-ul din jur.
+    Friend ReadOnly Property SearchClearButtonWidth As Integer
+        Get
+            Dim latimeGlifa As Integer = If(_searchClearButtonImage IsNot Nothing,
+                                            _searchClearButtonImage.Width, CLEAR_BTN_WIDTH)
+            Return latimeGlifa + _searchClearButtonPadding.Horizontal
+        End Get
     End Property
 
     Private _scrollBarTheme As En_ScrollBarTheme = En_ScrollBarTheme.Explorer
@@ -848,29 +1119,41 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
-    Private _tooltipBackColor As Color = Color.FromArgb(255, 255, 232)
+    Private _tooltipBackColor As Color = Color.Empty
     <Category("K-BOT Arbore - Tooltip")>
-    <Description("Fundalul tooltip-ului.")>
+    <Description("Fundalul tooltip-ului; gol = din temă.")>
     Public Property TooltipBackColor As Color
         Get
-            Return _tooltipBackColor
+            Return If(_tooltipBackColor <> Color.Empty, _tooltipBackColor, _autoTooltipBack)
         End Get
         Set(value As Color)
             _tooltipBackColor = value
         End Set
     End Property
+    Public Function ShouldSerializeTooltipBackColor() As Boolean
+        Return _tooltipBackColor <> Color.Empty
+    End Function
+    Public Sub ResetTooltipBackColor()
+        _tooltipBackColor = Color.Empty
+    End Sub
 
-    Private _tooltipForeColor As Color = Color.FromArgb(50, 50, 60)
+    Private _tooltipForeColor As Color = Color.Empty
     <Category("K-BOT Arbore - Tooltip")>
-    <Description("Culoarea textului din tooltip.")>
+    <Description("Culoarea textului din tooltip; gol = din temă.")>
     Public Property TooltipForeColor As Color
         Get
-            Return _tooltipForeColor
+            Return If(_tooltipForeColor <> Color.Empty, _tooltipForeColor, _autoTooltipFore)
         End Get
         Set(value As Color)
             _tooltipForeColor = value
         End Set
     End Property
+    Public Function ShouldSerializeTooltipForeColor() As Boolean
+        Return _tooltipForeColor <> Color.Empty
+    End Function
+    Public Sub ResetTooltipForeColor()
+        _tooltipForeColor = Color.Empty
+    End Sub
 
     ' Când True, tooltip-ul se afișează DOAR dacă cursorul se află deasupra
     ' iconului stânga al nodului (cu padding TOOLTIP_ICON_HIT_PADDING).
@@ -940,9 +1223,8 @@ Partial Public Class AdvancedTreeControl
 
     Friend Sub UpdateSearchTextBoxFont()
         If _searchTextBox Is Nothing Then Return
-        Dim name As String = If(String.IsNullOrEmpty(_searchBarFontName), Me.Font.Name, _searchBarFontName)
-        Dim size As Single = If(_searchBarFontSize <= 0, Me.Font.Size, _searchBarFontSize)
-        _searchTextBox.Font = New Font(name, size)
+        _searchTextBox.Font = SearchBarFont
+        If _searchClearBtn IsNot Nothing Then _searchClearBtn.Font = SearchBarFont
     End Sub
 
     Private ReadOnly Property ScrollBarWidth As Integer

@@ -107,6 +107,7 @@ Public NotInheritable Class KBotNavList
     Private _itemPadding As New System.Windows.Forms.Padding(6)   ' aerul din jurul butoanelor, px logici
     Private _collapsible As Boolean
     Private _collapseCorner As KBotNavCorner = KBotNavCorner.TopRight
+    Private _collapseButtonSize As Integer = 18            ' latura butonului din colț, px logici (0025-09)
     Private _collapseState As KBotNavCollapseState = KBotNavCollapseState.Expanded
     Private _collapseHover As Boolean
     ' Pictogramele butonului din colț (0025-06). Nothing pe oricare dintre ele => pe starea aceea
@@ -424,6 +425,49 @@ Public NotInheritable Class KBotNavList
         Set(value As KBotNavCorner)
             If value = _collapseCorner Then Return
             _collapseCorner = value
+            InvalidateLayout()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Latura (px logici, scalați la DPI) a pătratului butonului de strângere din colț. Implicit
+    ''' 18 — exact valoarea fixă de dinainte de 0025-09, deci o bară care nu atinge proprietatea
+    ''' arată identic.
+    '''
+    ''' Nu schimbă doar desenul: butonul își rezervă o BANDĂ de <c>latură + 2*6</c> la capătul axei
+    ''' principale, iar starea <see cref="KBotNavCollapseState.Complete"/> strânge bara exact la
+    ''' banda aia. Deci un buton mai mare împinge primul (sau ultimul) element mai încolo ȘI
+    ''' lățește bara complet strânsă. Ce e desenat ÎN buton — unghiul sau
+    ''' <see cref="CollapseExpandedImage"/> / <see cref="CollapseCollapsedImage"/> — se scalează cu
+    ''' el, nu rămâne de 18.
+    '''
+    ''' <b>0 = niciun buton</b>: nu se desenează, nu se poate apăsa și **nu mai rezervă bandă**
+    ''' (aceeași convenție ca <see cref="IconSize"/> = 0 pentru «fără pictograme»). E o stare
+    ''' validă, nu o greșeală: o aplicație care strânge bara din propriul ei buton de bară de
+    ''' unelte, prin <see cref="ToggleCollapse"/> sau <see cref="CollapseState"/>, nu vrea și
+    ''' unghiul din colț. Dar ATENȚIE — cu <see cref="Collapsible"/> = True și latura 0, operatorul
+    ''' NU mai poate strânge sau desfășura bara cu mouse-ul; strângerea rămâne exclusiv din cod.
+    '''
+    ''' Valorile negative se aduc la 0, ca la celelalte măsuri (un setter de dimensiune care aruncă
+    ''' ar rupe <c>InitializeComponent</c> la o valoare greșită din designer).
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Latura (px logici) a butonului de strângere din colț. Implicit 18; 0 = fără buton (strângere doar din cod).")>
+    <DefaultValue(18)>
+    Public Property CollapseButtonSize As Integer
+        Get
+            Return _collapseButtonSize
+        End Get
+        Set(value As Integer)
+            Dim clamped As Integer = Math.Max(0, value)
+            If clamped = _collapseButtonSize Then Return
+            _collapseButtonSize = clamped
+            ' Banda se schimbă => layout; iar dacă bara e STRÂNSĂ chiar acum, dimensiunea la care
+            ' e strânsă se calculează din latura butonului, deci trebuie reaplicată — altfel o
+            ' bară pe «Complete» ar rămâne la lățimea butonului vechi.
+            If _collapsible AndAlso _collapseState <> KBotNavCollapseState.Expanded Then
+                ApplyCollapseExtent()
+            End If
             InvalidateLayout()
         End Set
     End Property
@@ -952,7 +996,7 @@ Public NotInheritable Class KBotNavList
 
     ' Latura butonului din colț și aerul din jurul lui.
     Private Function CollapseButtonSide() As Integer
-        Return ThemeShapes.ScaleDpi(Me, 18)
+        Return ThemeShapes.ScaleDpi(Me, _collapseButtonSize)
     End Function
 
     Private Function CollapseButtonMargin() As Integer
@@ -967,10 +1011,14 @@ Public NotInheritable Class KBotNavList
         Return _collapseCorner = KBotNavCorner.TopLeft OrElse _collapseCorner = KBotNavCorner.TopRight
     End Function
 
-    ''' <summary>Pătratul butonului din colț (<see cref="Rectangle.Empty"/> dacă bara nu e colapsabilă).</summary>
+    ''' <summary>
+    ''' Pătratul butonului din colț (<see cref="Rectangle.Empty"/> dacă bara nu e colapsabilă sau
+    ''' dacă <see cref="CollapseButtonSize"/> e 0 — vezi acolo de ce «fără buton» e o stare validă).
+    ''' </summary>
     Private Function CollapseButtonRect() As Rectangle
         If Not _collapsible Then Return Rectangle.Empty
         Dim side As Integer = CollapseButtonSide()
+        If side <= 0 Then Return Rectangle.Empty
         Dim gap As Integer = CollapseButtonMargin()
         Dim x As Integer = If(CornerIsLeft(), gap, Width - gap - side)
         Dim y As Integer = If(CornerIsTop(), gap, Height - gap - side)
@@ -978,9 +1026,10 @@ Public NotInheritable Class KBotNavList
     End Function
 
     ' Cât mănâncă butonul din AXA PRINCIPALĂ (0 dacă bara nu e colapsabilă). Banda se rezervă
-    ' ca butonul să nu stea peste primul/ultimul element.
+    ' ca butonul să nu stea peste primul/ultimul element. Un buton de latură 0 nu se desenează,
+    ' deci nici nu are de ce să-și rezerve bandă (0025-09).
     Private Function CollapseBandExtent() As Integer
-        If Not _collapsible Then Return 0
+        If Not _collapsible OrElse CollapseButtonSide() <= 0 Then Return 0
         Return CollapseButtonSide() + 2 * CollapseButtonMargin()
     End Function
 
@@ -1717,7 +1766,11 @@ Public NotInheritable Class KBotNavList
         ' «uite o săgeată», deci n-are de ce să depindă de felul glifei.
         Dim glyph As Image = CollapseButtonImage()
         If glyph IsNot Nothing Then
-            Dim inset As Integer = ThemeShapes.ScaleDpi(Me, 2)
+            ' Aerul din jurul pictogramei e PROPORȚIONAL cu butonul (1/9 din latură = 2 px la
+            ' latura implicită de 18), nu fix: altfel un buton de 40 ar purta o pictogramă lipită
+            ' de margini, iar unul de 8 ar rămâne fără pictogramă deloc. Unghiul desenat era deja
+            ' proporțional (brațul = latura/5), deci acum se scalează amândouă la fel.
+            Dim inset As Integer = Math.Max(1, b.Width \ 9)
             Dim dest As New Rectangle(b.Left + inset, b.Top + inset,
                                       Math.Max(1, b.Width - 2 * inset), Math.Max(1, b.Height - 2 * inset))
             DrawItemImage(g, glyph, dest, True)

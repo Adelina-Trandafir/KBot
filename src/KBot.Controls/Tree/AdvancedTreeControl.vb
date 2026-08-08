@@ -53,7 +53,7 @@ Partial Public Class AdvancedTreeControl
     Private Const PADDING_CHECKBOX_GAP As Integer = 8
 
     ' Spațiu între Iconiță (stânga) și Text
-    Private Const PADDING_ICON_GAP As Integer = 4
+    Private Const PADDING_ICON_GAP As Integer = 16
 
     ' Separator pentru comanda de procesare venita din VBA
     Private Shared ReadOnly separator As String() = New String() {"||"}
@@ -156,11 +156,15 @@ Partial Public Class AdvancedTreeControl
 
     ' INIȚIALIZARE
     Public Sub New()
+        _nodeDefinitions.Owner = Me      ' colecția de designer cere reconstrucția prin proprietar
         Me.DoubleBuffered = True
         Me.AutoScroll = False
-        Me.BackColor = Color.White
+        ' MyBase, NU Me: proprietatea suprascrisă marchează culoarea drept «fixată de operator»
+        ' (vezi partiala .Theming), iar implicitul din constructor n-are voie să însemne asta —
+        ' altfel arborele ar rămâne alb pe tema întunecată.
+        MyBase.BackColor = Color.White
         Me.Cursor = Cursors.Default
-        Me.Font = New Font("Segoe UI", 9)
+        MyBase.Font = New Font("Segoe UI", 9)   ' MyBase: implicitul nu e alegere de operator
         Me.Enabled = True
 
         ' ── VScrollBar manual — imun la layout engine ─────────────────────
@@ -223,6 +227,7 @@ Partial Public Class AdvancedTreeControl
         Dim hMax As Integer = Math.Max(hFont, hIcon)
 
         _itemHeight = hMax + 6
+        RefreshSearchBarMetrics()
         Me.Invalidate()
     End Sub
 
@@ -737,7 +742,12 @@ Partial Public Class AdvancedTreeControl
     ' VSCROLL — shadow properties pentru compatibilitate Keyboard.vb + Tree.Helpers.vb
     ' ══════════════════════════════════════════════════════════════════
 
+    ' Ascunse din designer: fiind SHADOWS, nu moștenesc atributele de serializare ale bazei,
+    ' iar designerul le-ar scrie în fiecare formular gazdă («tree.AutoScrollMinSize = New
+    ' Size(0, 0)» era în toate cinci). Sunt stare de derulare, nu setări de operator.
     ' WinForms convention: getter returnează Y negativ, setter primește Y pozitiv
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Shadows Property AutoScrollPosition As Point
         Get
             Return New Point(0, -_vScroll.Value)
@@ -752,6 +762,8 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Shadows Property AutoScrollMinSize As Size
         Get
             Return New Size(0, _vScroll.Maximum)

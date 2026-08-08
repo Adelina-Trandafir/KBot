@@ -185,7 +185,7 @@ Public Class MainForm
             ' Lista de angajamente: controlul „tree" e configurat ca listă plată cu coloane
             ' (caption = Descriere, coloană = CodAngajament, iconiță de status stânga,
             ' refresh la hover în dreapta). Datele reale vin din GET /api/forexe/tree.
-            ConfigureAngajamenteList()
+            'ConfigureAngajamenteList()
 
             UpdateForexeStatus()
 
@@ -397,31 +397,31 @@ Public Class MainForm
     ''' (caption = Descriere). Aspect: rând 32px, Segoe UI 9.75, iconiță status 24×24
     ''' stânga, refresh 24×24 dreapta doar la hover. Filtrul pe coloană merge din start.
     ''' </summary>
-    Private Sub ConfigureAngajamenteList()
-        Try
-            tree.Font = New Font("Segoe UI", 9.75F)
-            tree.LeftIconSize = New Size(24, 24)
-            tree.RightIconSize = New Size(24, 24)
-            tree.ItemHeight = 32
-            tree.HasNodeIcons = True
-            tree.ShowRightIconOnHover = True
-            ' Rezervă locul iconiței de refresh la dreapta, ca banda de coloane
-            ' (CodAngajament) să nu se suprapună peste ea la hover.
-            tree.ReserveRightIconSpace = True
+    'Private Sub ConfigureAngajamenteList()
+    '    Try
+    '        tree.Font = New Font("Segoe UI", 9.75F)
+    '        tree.LeftIconSize = New Size(24, 24)
+    '        tree.RightIconSize = New Size(24, 24)
+    '        tree.ItemHeight = 32
+    '        tree.HasNodeIcons = True
+    '        tree.ShowRightIconOnHover = True
+    '        ' Rezervă locul iconiței de refresh la dreapta, ca banda de coloane
+    '        ' (CodAngajament) să nu se suprapună peste ea la hover.
+    '        tree.ReserveRightIconSpace = True
 
-            'Dim cols As New List(Of ColumnDef) From {
-            '    New ColumnDef With {
-            '        .Name = "CodAngajament", .Header = "CodAngajament", .Width = COD_COLUMN_WIDTH,
-            '        .ColType = En_ColType.ColType_Text, .Align = En_ColAlign.ColAlign_Left,
-            '        .Format = "", .HeaderBackColor = Color.Empty, .HeaderForeColor = Color.Empty,
-            '        .HeaderAlign = En_ColAlign.ColAlign_Inherit}
-            '}
-            'tree.ConfigureListMode(cols)
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.ConfigureAngajamenteList", ex)
-            Throw
-        End Try
-    End Sub
+    '        'Dim cols As New List(Of ColumnDef) From {
+    '        '    New ColumnDef With {
+    '        '        .Name = "CodAngajament", .Header = "CodAngajament", .Width = COD_COLUMN_WIDTH,
+    '        '        .ColType = En_ColType.ColType_Text, .Align = En_ColAlign.ColAlign_Left,
+    '        '        .Format = "", .HeaderBackColor = Color.Empty, .HeaderForeColor = Color.Empty,
+    '        '        .HeaderAlign = En_ColAlign.ColAlign_Inherit}
+    '        '}
+    '        'tree.ConfigureListMode(cols)
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("MainForm.ConfigureAngajamenteList", ex)
+    '        Throw
+    '    End Try
+    'End Sub
 
     ''' <summary>
     ''' Încarcă arborele de la GET /api/forexe/tree pentru perioada selectată (an + SS),
@@ -819,16 +819,10 @@ Public Class MainForm
             lblUnit.ForeColor = p.TextColor
             lblTree.ForeColor = p.TextColor
 
-            ' Arborele nu e IThemedControl (nu se retrofitează în această felie) —
-            ' i se împing culorile paletei prin proprietățile lui publice.
-            tree.BackColor = p.SurfaceAltColor
-            tree.ForeColor = p.TextColor
-            tree.HoverBackColor = p.ButtonHoverColor
-            tree.SelectedBackColor = p.ButtonPressedColor
-            tree.SelectedBorderColor = p.AccentColor
-            tree.LineColor = p.BorderColor
-            tree.HeaderBackColor = p.SurfaceAltColor
-            tree.HeaderForeColor = p.TextColor
+            ' Arborele ESTE acum IThemedControl: își ia singur paleta și, mai important,
+            ' ThemeManager nu mai recurge în copiii lui. Împinsul de culori de aici era exact
+            ' ce ștergea alegerile din designer, deci a dispărut — o culoare pusă în designer
+            ' câștigă, una lăsată goală urmează tema.
 
             UpdateForexeStatus()
             pnlHeader.Invalidate()

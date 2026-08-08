@@ -108,7 +108,7 @@ Public NotInheritable Class RevizieRow
         Get
             Dim numar As String = NumarRev.ToString(Globalization.CultureInfo.InvariantCulture).PadLeft(3)
             Dim data As String = If(DataRev.HasValue, DataRev.Value.ToString("dd.MM.yyyy"), String.Empty)
-            Return $"{numar} - {data}"
+            Return $"{data}" '$"{numar} - {data}"
         End Get
     End Property
 End Class

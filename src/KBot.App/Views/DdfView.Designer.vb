@@ -1,4 +1,4 @@
-<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfView
     Inherits System.Windows.Forms.UserControl
 
@@ -15,12 +15,16 @@ Partial Class DdfView
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        components = New ComponentModel.Container()
+        Dim TreeNodeDefinition1 As KBot.Controls.TreeNodeDefinition = New Controls.TreeNodeDefinition()
+        Dim TreeNodeDefinition2 As KBot.Controls.TreeNodeDefinition = New Controls.TreeNodeDefinition()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DdfView))
-        Dim KBotNavItem1 As KBot.Controls.KBotNavItem = New KBot.Controls.KBotNavItem()
-        Dim KBotNavItem2 As KBot.Controls.KBotNavItem = New KBot.Controls.KBotNavItem()
-        Dim KBotNavItem3 As KBot.Controls.KBotNavItem = New KBot.Controls.KBotNavItem()
+        Dim KBotNavItem1 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem2 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem3 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
         split = New SplitContainer()
         tree = New Controls.AdvancedTreeControl()
+        tree_image_list = New ImageList(components)
         pnlTreeHead = New Panel()
         lblTreeTitle = New Label()
         pnlPages = New Panel()
@@ -49,7 +53,7 @@ Partial Class DdfView
         pnlFisiere = New Panel()
         browser = New DdfFileBrowser()
         lblFisiereGol = New Label()
-        navSub = New KBot.Controls.KBotNavList()
+        navSub = New Controls.KBotNavList()
         lblEmpty = New Label()
         CType(split, ComponentModel.ISupportInitialize).BeginInit()
         split.Panel1.SuspendLayout()
@@ -93,34 +97,50 @@ Partial Class DdfView
         ' 
         ' tree
         ' 
-        tree.AutoScrollMinSize = New Size(0, 0)
-        tree.BackColor = Color.White
-        tree.BorderColor = Color.Transparent
         tree.Dock = DockStyle.Fill
-        tree.Font = New Font("Segoe UI", 9F)
-        tree.HeaderBackColor = Color.FromArgb(CByte(222), CByte(222), CByte(222))
-        tree.HeaderForeColor = Color.FromArgb(CByte(50), CByte(50), CByte(60))
-        tree.HeaderIconSize = New Size(16, 16)
-        tree.HoverBackColor = Color.FromArgb(CByte(230), CByte(240), CByte(255))
-        tree.ItemHeight = 24
-        tree.LeftIconSize = New Size(16, 16)
-        tree.LineColor = Color.FromArgb(CByte(160), CByte(160), CByte(160))
+        tree.DynamicColumns = False
+        tree.Font = New Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        tree.ItemHeight = 30
+        tree.LeftIconSize = New Size(20, 20)
         tree.Location = New Point(0, 49)
         tree.Margin = New Padding(4, 5, 4, 5)
         tree.Name = "tree"
+        tree.NodeImages = tree_image_list
+        TreeNodeDefinition1.Caption = "Ianuarie ~~~ 1.234.567,00"
+        TreeNodeDefinition1.Expanded = True
+        TreeNodeDefinition1.ImageKey = "folder_closed"
+        TreeNodeDefinition1.Key = "1"
+        TreeNodeDefinition1.OpenImageKey = "folder_open"
+        TreeNodeDefinition1.ParentKey = Nothing
+        TreeNodeDefinition1.RightImageKey = Nothing
+        TreeNodeDefinition1.Tag = Nothing
+        TreeNodeDefinition1.Tooltip = Nothing
+        TreeNodeDefinition2.Caption = "01.01.2025 ~~~ 1.234.567,00"
+        TreeNodeDefinition2.ImageKey = "up"
+        TreeNodeDefinition2.Key = "2"
+        TreeNodeDefinition2.OpenImageKey = Nothing
+        TreeNodeDefinition2.ParentKey = "1"
+        TreeNodeDefinition2.RightImageKey = Nothing
+        TreeNodeDefinition2.Tag = Nothing
+        TreeNodeDefinition2.Tooltip = Nothing
+        tree.Nodes.Add(TreeNodeDefinition1)
+        tree.Nodes.Add(TreeNodeDefinition2)
         tree.RightIconSize = New Size(14, 14)
         tree.RightTextWidth = 110
-        tree.SearchBackColor = Color.FromArgb(CByte(222), CByte(222), CByte(222))
-        tree.SearchBarFontSize = 10F
-        tree.SearchBarLabelForeColor = Color.Empty
-        tree.SearchBoxBackColor = Color.Empty
-        tree.SelectedBackColor = Color.FromArgb(CByte(200), CByte(220), CByte(255))
-        tree.SelectedBorderColor = Color.FromArgb(CByte(150), CByte(180), CByte(255))
+        tree.ScrollBarTheme = KBot.Controls.AdvancedTreeControl.En_ScrollBarTheme.Default
         tree.Size = New Size(305, 479)
         tree.TabIndex = 1
-        tree.TooltipBackColor = Color.FromArgb(CByte(255), CByte(255), CByte(232))
-        tree.TooltipForeColor = Color.FromArgb(CByte(50), CByte(50), CByte(60))
-        tree.TreeFont = New Font("Consolas", 9F)
+        tree.TreeFont = New Font("Segoe UI", 9F)
+        ' 
+        ' tree_image_list
+        ' 
+        tree_image_list.ColorDepth = ColorDepth.Depth32Bit
+        tree_image_list.ImageStream = CType(resources.GetObject("tree_image_list.ImageStream"), ImageListStreamer)
+        tree_image_list.TransparentColor = Color.Transparent
+        tree_image_list.Images.SetKeyName(0, "Up")
+        tree_image_list.Images.SetKeyName(1, "down")
+        tree_image_list.Images.SetKeyName(2, "folder_open")
+        tree_image_list.Images.SetKeyName(3, "folder_closed")
         ' 
         ' pnlTreeHead
         ' 
@@ -447,12 +467,20 @@ Partial Class DdfView
         ' navSub
         ' 
         navSub.Dock = DockStyle.Top
+        navSub.IconSize = 16
+        navSub.ItemCornerRadius = 4
+        navSub.ItemPadding = New Padding(3)
+        KBotNavItem1.AutoSize = True
+        KBotNavItem1.Image = My.Resources.Resources.vertical
         KBotNavItem1.Key = "previzualizare"
         KBotNavItem1.Text = "Vizualizare"
+        KBotNavItem2.AutoSize = True
+        KBotNavItem2.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Pdf_exports_24
         KBotNavItem2.Key = "document"
-        KBotNavItem2.Text = "Document"
+        KBotNavItem2.Text = "Document PDF"
         KBotNavItem3.Key = "fisiere"
         KBotNavItem3.Text = "Fișiere"
+        KBotNavItem3.Visible = False
         navSub.Items.Add(KBotNavItem1)
         navSub.Items.Add(KBotNavItem2)
         navSub.Items.Add(KBotNavItem3)
@@ -538,4 +566,5 @@ Partial Class DdfView
     Friend WithEvents btnOpenInAdobe As Button
     Friend WithEvents btnSaveLocalCopy As Button
     Friend WithEvents tlyPDF As TableLayoutPanel
+    Friend WithEvents tree_image_list As ImageList
 End Class

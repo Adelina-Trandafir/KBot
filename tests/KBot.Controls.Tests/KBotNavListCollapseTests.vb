@@ -227,6 +227,115 @@ Public Class KBotNavListCollapseTests
                End Sub)
     End Sub
 
+    ' ── Latura butonului din colț (0025-09) ────────────────────────────────────
+
+    <Fact>
+    Public Sub CollapseButtonSize_DefaultsToEighteen_TheOldFixedValue()
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       Assert.Equal(18, nav.CollapseButtonSize)
+                       nav.Collapsible = True
+                       Assert.Equal(Dpi(nav, 18), nav.DebugCollapseButtonRect().Width)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub CollapseButtonSize_ResizesTheButton_AndTheBandItReserves()
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       nav.Collapsible = True
+                       nav.CollapseCorner = KBotNavCorner.TopRight
+                       nav.CollapseButtonSize = 30
+
+                       Dim r As Rectangle = nav.DebugCollapseButtonRect()
+                       Assert.Equal(Dpi(nav, 30), r.Width)
+                       Assert.Equal(Dpi(nav, 30), r.Height)
+                       Assert.Equal(nav.Width - Dpi(nav, 6) - Dpi(nav, 30), r.Left)
+
+                       ' Banda crește odată cu butonul, deci primul element coboară.
+                       Dim band As Integer = Dpi(nav, 30) + 2 * Dpi(nav, 6)
+                       Assert.Equal(Dpi(nav, 6) + band, nav.DebugBounds(0).Top)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub CollapseButtonSize_DrivesTheCompletelyCollapsedWidth_EvenWhileCollapsed()
+        ' Starea «Complete» E lățimea butonului + aer, deci schimbarea trebuie să se aplice pe loc;
+        ' altfel bara ar rămâne strânsă la mărimea butonului vechi.
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       nav.Collapsible = True
+                       nav.CollapseState = KBotNavCollapseState.Complete
+                       Assert.Equal(Dpi(nav, 18) + 2 * Dpi(nav, 6), nav.Width)
+
+                       nav.CollapseButtonSize = 34
+                       Assert.Equal(Dpi(nav, 34) + 2 * Dpi(nav, 6), nav.Width)
+
+                       ' Desfășurarea readuce mărimea de dinainte, nu una derivată din buton.
+                       nav.ToggleCollapse()
+                       Assert.Equal(170, nav.Width)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub CollapseButtonSize_Zero_MeansNoButtonAndNoBand()
+        ' Convenția casei (ca IconSize = 0): 0 nu e «buton de zero pixeli care lasă o gaură», e
+        ' «fără buton». Strângerea rămâne posibilă din cod — și DOAR din cod.
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       nav.Collapsible = True
+                       nav.CollapseButtonSize = 0
+
+                       Assert.Equal(Rectangle.Empty, nav.DebugCollapseButtonRect())
+                       Assert.Equal(Dpi(nav, 6), nav.DebugBounds(0).Top)      ' nicio bandă rezervată
+
+                       ' Click în colț nu mai strânge nimic…
+                       nav.DebugClickAt(New Point(nav.Width - 4, 4))
+                       Assert.Equal(KBotNavCollapseState.Expanded, nav.CollapseState)
+                       ' …dar din cod merge în continuare.
+                       nav.ToggleCollapse()
+                       Assert.Equal(KBotNavCollapseState.Complete, nav.CollapseState)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub CollapseButtonSize_ClampsNegativesToZero()
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.CollapseButtonSize = -12
+                       Assert.Equal(0, nav.CollapseButtonSize)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub PaintingEverySize_DoesNotThrow_WithAGlyphAndWithoutOne()
+        RunSta(Sub()
+                   Using glyph = NewIcon(32)
+                       For Each size As Integer In {0, 6, 18, 44}
+                           Using nav = NewSizedList()
+                               nav.AddItem("a", "A")
+                               nav.Collapsible = True
+                               nav.CollapseButtonSize = size
+                               For Each withGlyph As Boolean In {False, True}
+                                   nav.CollapseExpandedImage = If(withGlyph, glyph, Nothing)
+                                   Using bmp As New Bitmap(Math.Max(1, nav.Width), Math.Max(1, nav.Height))
+                                       nav.DrawToBitmap(bmp, New Rectangle(0, 0, bmp.Width, bmp.Height))
+                                   End Using
+                               Next
+                           End Using
+                       Next
+                   End Using
+               End Sub)
+    End Sub
+
     ' ── Ciclul de strângere ────────────────────────────────────────────────────
 
     <Fact>

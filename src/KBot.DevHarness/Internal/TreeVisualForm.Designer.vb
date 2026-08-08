@@ -24,6 +24,14 @@ Partial Class TreeVisualForm
         Me.tree.CheckBoxes = True
         Me.tree.Dock = System.Windows.Forms.DockStyle.Fill
         Me.tree.Name = "tree"
+        Me.tree.HeaderVisible = True
+        Me.tree.HeaderCaption = "Arbore de probă"
+        ' Banda de căutare permanentă (fără iconiță de toggle în antet): exact configurația
+        ' din shell, ca proba vizuală să prindă regresia «SearchShow nu afișează nimic».
+        Me.tree.SearchShow = True
+        Me.tree.SearchClearButton = True
+        Me.tree.SearchDefaultText = "minim 3 caractere…"
+        Me.tree.SearchIn = KBot.Controls.AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
         '
         'pnl
         '

@@ -542,14 +542,8 @@ Public Class ReceptiiView
             split.Panel1.BackColor = p.SurfaceAltColor
             split.Panel2.BackColor = p.SurfaceAltColor
 
-            tree.BackColor = p.SurfaceAltColor
-            tree.ForeColor = p.TextColor
-            tree.HoverBackColor = p.ButtonHoverColor
-            tree.SelectedBackColor = p.ButtonPressedColor
-            tree.SelectedBorderColor = p.AccentColor
-            tree.LineColor = p.BorderColor
-            tree.HeaderBackColor = p.SurfaceAltColor
-            tree.HeaderForeColor = p.TextColor
+            ' Arborele e IThemedControl: își ia singur paleta, iar ThemeManager nu mai recurge
+            ' în copiii lui. Culorile puse în designer câștigă; cele lăsate goale urmează tema.
 
             lblEmpty.ForeColor = p.TextDimColor
             lblEmpty.BackColor = p.SurfaceAltColor

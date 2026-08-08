@@ -126,7 +126,7 @@ Public Class DdfView
         _apiClient = apiClient
         _withReauth = withReauth
         _session = session
-        ConfigureTree()
+        'ConfigureTree()
         BuildNav()
         BuildColumns()
         ' Cele trei suprafețe sunt DECLARATE ÎN DESIGNER (0025-05) — `previewXfa`, `previewPdf` și
@@ -358,16 +358,16 @@ Public Class DdfView
     End Property
 
     ' Font + comportament neacoperite de Designer (setter-ele reconstruiesc fontul intern).
-    Private Sub ConfigureTree()
-        Try
-            tree.FontName = "Segoe UI"
-            tree.FontSize = 9.0F
-            tree.RootExpander = True
-        Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.ConfigureTree", ex)
-            Throw
-        End Try
-    End Sub
+    'Private Sub ConfigureTree()
+    '    Try
+    '        tree.FontName = "Segoe UI"
+    '        tree.FontSize = 9.0F
+    '        tree.RootExpander = True
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("DdfView.ConfigureTree", ex)
+    '        Throw
+    '    End Try
+    'End Sub
 
     ' Sub-navigarea orizontală: cele TREI pagini sunt AUTORITE ÎN DESIGNER, în `navSub.Items`
     ' (felia 0025) — vezi DdfView.Designer.vb. Aici rămâne doar selecția inițială: atribuirea e
@@ -891,14 +891,8 @@ Public Class DdfView
             lblTreeTitle.ForeColor = p.TextColor
             lblTreeTitle.BackColor = Color.Transparent
 
-            tree.BackColor = p.SurfaceAltColor
-            tree.ForeColor = p.TextColor
-            tree.HoverBackColor = p.ButtonHoverColor
-            tree.SelectedBackColor = p.ButtonPressedColor
-            tree.SelectedBorderColor = p.AccentColor
-            tree.LineColor = p.BorderColor
-            tree.HeaderBackColor = p.SurfaceAltColor
-            tree.HeaderForeColor = p.TextColor
+            ' Arborele e IThemedControl: își ia singur paleta, iar ThemeManager nu mai recurge
+            ' în copiii lui. Culorile puse în designer câștigă; cele lăsate goale urmează tema.
 
             pnlPages.BackColor = p.SurfaceAltColor
             pnlValori.BackColor = p.SurfaceAltColor

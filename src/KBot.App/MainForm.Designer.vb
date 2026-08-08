@@ -1,4 +1,4 @@
-<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class MainForm
     Inherits KBot.Theming.KBotShellForm
 
@@ -133,32 +133,38 @@ Partial Class MainForm
         ' 
         ' tree
         ' 
-        tree.AutoScrollMinSize = New Size(0, 0)
-        tree.BackColor = Color.White
-        tree.BorderColor = Color.Transparent
         tree.Dock = DockStyle.Fill
-        tree.Font = New Font("Segoe UI", 9F)
-        tree.HeaderBackColor = Color.FromArgb(CByte(222), CByte(222), CByte(222))
-        tree.HeaderForeColor = Color.FromArgb(CByte(50), CByte(50), CByte(60))
-        tree.HeaderIconSize = New Size(16, 16)
-        tree.HoverBackColor = Color.FromArgb(CByte(230), CByte(240), CByte(255))
-        tree.LeftIconSize = New Size(18, 18)
-        tree.LineColor = Color.FromArgb(CByte(160), CByte(160), CByte(160))
-        tree.Location = New Point(0, 60)
+        tree.DynamicColumns = False
+        tree.ExpanderSize = 16
+        tree.Font = New Font("Consolas", 10F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        tree.HeaderBackColor = SystemColors.Control
+        tree.HeaderBackStyle = KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
+        tree.HeaderCaption = " LISTĂ ANGAJAMENTE"
+        tree.HeaderFont = New Font("Tahoma", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        tree.HeaderForeColor = Color.Black
+        tree.HeaderGradientEndColor = Color.CornflowerBlue
+        tree.HeaderHeight = 40
+        tree.HeaderIconSize = New Size(24, 24)
+        tree.HeaderLeftIcon = My.Resources.Resources.folder_open
+        tree.HeaderRightIcon = My.Resources.Resources.settings__1_
+        tree.HeaderSearchIcon = My.Resources.Resources.Everaldo_Crystal_Clear_App_xmag_search_48
+        tree.HeaderVisible = True
+        tree.ItemHeight = 34
+        tree.LeftIconSize = New Size(20, 20)
+        tree.Location = New Point(0, 0)
         tree.Margin = New Padding(4, 5, 4, 5)
         tree.Name = "tree"
-        tree.RightIconSize = New Size(18, 18)
-        tree.SearchBackColor = Color.FromArgb(CByte(222), CByte(222), CByte(222))
-        tree.SearchBarFontSize = 10F
-        tree.SearchBarLabelForeColor = Color.Empty
-        tree.SearchBoxBackColor = Color.Empty
-        tree.SelectedBackColor = Color.FromArgb(CByte(200), CByte(220), CByte(255))
-        tree.SelectedBorderColor = Color.FromArgb(CByte(150), CByte(180), CByte(255))
-        tree.Size = New Size(522, 965)
+        tree.RightIconSize = New Size(20, 20)
+        tree.RootExpander = False
+        tree.ScrollBarTheme = KBot.Controls.AdvancedTreeControl.En_ScrollBarTheme.Default
+        tree.SearchBoxBackColor = Color.FromArgb(CByte(192), CByte(255), CByte(192))
+        tree.SearchClearButton = True
+        tree.SearchDefaultText = "... tastează minim 3 caractere ..."
+        tree.SearchIn = KBot.Controls.AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
+        tree.ShowRightIconOnHover = True
+        tree.Size = New Size(522, 1025)
         tree.TabIndex = 0
-        tree.TooltipBackColor = Color.FromArgb(CByte(255), CByte(255), CByte(232))
-        tree.TooltipForeColor = Color.FromArgb(CByte(50), CByte(50), CByte(60))
-        tree.TreeFont = New Font("Consolas", 9F)
+        tree.TreeListView = True
         ' 
         ' pnlTreeHead
         ' 
@@ -166,13 +172,13 @@ Partial Class MainForm
         pnlTreeHead.Controls.Add(btnInfo)
         pnlTreeHead.Controls.Add(btnSort)
         pnlTreeHead.Controls.Add(btnOpt)
-        pnlTreeHead.Dock = DockStyle.Top
         pnlTreeHead.Location = New Point(0, 0)
         pnlTreeHead.Margin = New Padding(4, 5, 4, 5)
         pnlTreeHead.Name = "pnlTreeHead"
         pnlTreeHead.Size = New Size(522, 60)
         pnlTreeHead.TabIndex = 1
         pnlTreeHead.Tag = "Card"
+        pnlTreeHead.Visible = False
         ' 
         ' lblTree
         ' 
@@ -233,11 +239,15 @@ Partial Class MainForm
         ' 
         ' navViews
         ' 
+        navViews.CollapseButtonSize = 14
         navViews.CollapseCollapsedImage = My.Resources.Resources.expand_24
         navViews.CollapseCorner = KBot.Controls.KBotNavCorner.BottomRight
         navViews.CollapseExpandedImage = My.Resources.Resources.collapse_24
         navViews.Collapsible = True
         navViews.Dock = DockStyle.Left
+        navViews.FlyoutDelay = 150
+        navViews.FlyoutSlideDuration = 100
+        navViews.ItemCornerRadius = 8
         navViews.ItemPadding = New Padding(0)
         KBotNavItem1.Image = CType(resources.GetObject("KBotNavItem1.Image"), Image)
         KBotNavItem1.Key = "sumar"
