@@ -21,15 +21,15 @@ Partial Class MainForm
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        Dim KBotNavItem1 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim KBotNavItem1 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(MainForm))
-        Dim KBotNavItem2 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
-        Dim KBotNavItem3 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
-        Dim KBotNavItem4 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
-        Dim KBotNavItem5 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
-        Dim KBotNavItem6 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
-        Dim KBotNavItem7 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
-        Dim KBotNavItem8 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim KBotNavItem2 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem3 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem4 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem5 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem6 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem7 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem8 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
         pnlRoot = New Panel()
         pnlWork = New Panel()
         split = New SplitContainer()
@@ -41,7 +41,7 @@ Partial Class MainForm
         btnSort = New Button()
         btnOpt = New Button()
         viewHost = New Panel()
-        navViews = New Theming.KBotNavList()
+        navViews = New Controls.KBotNavList()
         pnlStatus = New Panel()
         lblOperator = New Label()
         lblProgram = New Label()
@@ -54,8 +54,8 @@ Partial Class MainForm
         lblSs = New Label()
         cboSs = New ComboBox()
         lblForexe = New Label()
-        busyBar = New Theming.KBotBusyBar()
-        capBar = New Theming.KBotCaptionBar()
+        busyBar = New Controls.KBotBusyBar()
+        capBar = New Controls.KBotCaptionBar()
         pnlRoot.SuspendLayout()
         pnlWork.SuspendLayout()
         CType(split, ComponentModel.ISupportInitialize).BeginInit()
@@ -233,32 +233,37 @@ Partial Class MainForm
         ' 
         ' navViews
         ' 
+        navViews.CollapseCollapsedImage = My.Resources.Resources.expand_24
+        navViews.CollapseCorner = KBot.Controls.KBotNavCorner.BottomRight
+        navViews.CollapseExpandedImage = My.Resources.Resources.collapse_24
+        navViews.Collapsible = True
         navViews.Dock = DockStyle.Left
+        navViews.ItemPadding = New Padding(0)
         KBotNavItem1.Image = CType(resources.GetObject("KBotNavItem1.Image"), Image)
         KBotNavItem1.Key = "sumar"
         KBotNavItem1.Text = "Sumar"
-        KBotNavItem2.Image = KBot.App.Resources.calendar
+        KBotNavItem2.Image = My.Resources.Resources.calendar
         KBotNavItem2.Key = "istoric"
         KBotNavItem2.Text = "Istoric"
-        KBotNavItem3.Image = KBot.App.Resources.database
+        KBotNavItem3.Image = My.Resources.Resources.database
         KBotNavItem3.Key = "rezervari"
         KBotNavItem3.Text = "Rezervări"
-        KBotNavItem4.Image = KBot.App.Resources.binvoice
+        KBotNavItem4.Image = My.Resources.Resources.binvoice
         KBotNavItem4.Key = "receptii"
         KBotNavItem4.Text = "Recepții"
-        KBotNavItem5.Image = KBot.App.Resources.credit_card
+        KBotNavItem5.Image = My.Resources.Resources.credit_card
         KBotNavItem5.Key = "plati"
         KBotNavItem5.Text = "Plăți"
-        KBotNavItem6.Align = Theming.KBotNavAlign.Far
+        KBotNavItem6.Align = KBot.Controls.KBotNavAlign.Far
         KBotNavItem6.IsSeparator = True
         KBotNavItem6.Key = "__sep_1"
         KBotNavItem6.Text = Nothing
-        KBotNavItem7.Align = Theming.KBotNavAlign.Far
-        KBotNavItem7.Image = KBot.App.Resources.Umut_Pulat_Tulliana_2_File_temporary_32
+        KBotNavItem7.Align = KBot.Controls.KBotNavAlign.Far
+        KBotNavItem7.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_temporary_32
         KBotNavItem7.Key = "ddf"
         KBotNavItem7.Text = "Doc. Fundamentare"
-        KBotNavItem8.Align = Theming.KBotNavAlign.Far
-        KBotNavItem8.Image = KBot.App.Resources.Umut_Pulat_Tulliana_2_File_locked_32
+        KBotNavItem8.Align = KBot.Controls.KBotNavAlign.Far
+        KBotNavItem8.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
         KBotNavItem8.Key = "ord"
         KBotNavItem8.Text = "Ordonanțare"
         navViews.Items.Add(KBotNavItem1)
@@ -472,8 +477,8 @@ Partial Class MainForm
     End Sub
 
     Friend WithEvents pnlRoot As Panel
-    Friend WithEvents capBar As KBot.Theming.KBotCaptionBar
-    Friend WithEvents busyBar As KBot.Theming.KBotBusyBar
+    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
+    Friend WithEvents busyBar As KBot.Controls.KBotBusyBar
     Friend WithEvents pnlHeader As Panel
     Friend WithEvents lblUnit As Label
     Friend WithEvents lblAn As Label
@@ -487,7 +492,7 @@ Partial Class MainForm
     Friend WithEvents btnIstoric As Button
     Friend WithEvents btnSinc As Button
     Friend WithEvents pnlWork As Panel
-    Friend WithEvents navViews As KBot.Theming.KBotNavList
+    Friend WithEvents navViews As KBot.Controls.KBotNavList
     Friend WithEvents split As SplitContainer
     Friend WithEvents pnlTree As Panel
     Friend WithEvents pnlTreeHead As Panel

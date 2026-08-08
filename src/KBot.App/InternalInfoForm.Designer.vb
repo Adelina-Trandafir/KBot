@@ -16,7 +16,7 @@ Partial Class InternalInfoForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         pnlCard = New Panel()
-        capBar = New KBot.Theming.KBotCaptionBar()
+        capBar = New KBot.Controls.KBotCaptionBar()
         lblHeader = New Label()
         txtInfo = New TextBox()
         pnlFoot = New Panel()
@@ -120,7 +120,7 @@ Partial Class InternalInfoForm
     End Sub
 
     Friend WithEvents pnlCard As Panel
-    Friend WithEvents capBar As KBot.Theming.KBotCaptionBar
+    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
     Friend WithEvents lblHeader As Label
     Friend WithEvents txtInfo As TextBox
     Friend WithEvents pnlFoot As Panel

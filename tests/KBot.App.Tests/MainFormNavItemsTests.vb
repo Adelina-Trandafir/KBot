@@ -1,6 +1,7 @@
 Option Strict On
 Imports System.Threading
 Imports Xunit
+Imports KBot.Controls
 Imports KBot.Theming
 
 ''' <summary>

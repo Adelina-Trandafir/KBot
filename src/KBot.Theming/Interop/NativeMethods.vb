@@ -7,8 +7,11 @@ Imports KBot.Common
 ''' Contract „zero excepții înghițite fără urmă”: pe eșec logăm O SINGURĂ DATĂ prin
 ''' GlobalErrorLog (guard static), apoi suprimăm — altfel am spama log-ul la fiecare
 ''' formular ne-tematizat pe Windows vechi unde atributul nu există.
+''' Modulul e Public DOAR ca să rămână vizibil un singur membru — <see cref="DragMove"/>,
+''' cerut de KBotCaptionBar, care stă acum în KBot.Controls (toate controalele K-BOT trăiesc
+''' acolo). Restul membrilor sunt consumați numai din KBot.Theming și rămân Friend.
 ''' </summary>
-Friend Module NativeMethods
+Public Module NativeMethods
 
     ' DWMWA_USE_IMMERSIVE_DARK_MODE = 20 (Windows 10 v2004+ / Windows 11).
     Private Const DWMWA_USE_IMMERSIVE_DARK_MODE As Integer = 20
@@ -79,7 +82,7 @@ Friend Module NativeMethods
     Private _cornerLogged As Boolean = False
 
     ''' <summary>Setează bara de titlu dark/light pentru un formular.</summary>
-    Public Sub SetTitleBarDark(f As Form, dark As Boolean)
+    Friend Sub SetTitleBarDark(f As Form, dark As Boolean)
         If f Is Nothing OrElse Not f.IsHandleCreated Then Return
         Try
             Dim value As Integer = If(dark, 1, 0)
@@ -97,7 +100,7 @@ Friend Module NativeMethods
     ''' Windows 10 atributul nu există; apelul eșuează, se loghează o singură dată, iar
     ''' fereastra rămâne pătrată — outcome documentat și acceptat.
     ''' </summary>
-    Public Sub SetRoundedCorners(f As Form, rounded As Boolean)
+    Friend Sub SetRoundedCorners(f As Form, rounded As Boolean)
         If f Is Nothing OrElse Not f.IsHandleCreated Then Return
         Try
             Dim pref As Integer = If(rounded, DWMWCP_ROUND, DWMWCP_DEFAULT)
@@ -130,7 +133,7 @@ Friend Module NativeMethods
     ''' Se apelează DUPĂ MyBase.WndProc, ca ptMinTrackSize (MinimumSize) pus de
     ''' WinForms să rămână neatins — se suprascriu doar câmpurile de maximizare.
     ''' </summary>
-    Public Sub ApplyMinMaxInfo(lParam As IntPtr, f As Form)
+    Friend Sub ApplyMinMaxInfo(lParam As IntPtr, f As Form)
         If f Is Nothing OrElse Not f.IsHandleCreated Then Return
         Try
             Dim mmi As MINMAXINFO = Marshal.PtrToStructure(Of MINMAXINFO)(lParam)
@@ -150,7 +153,7 @@ Friend Module NativeMethods
     ''' Aplică o temă vizuală uxtheme (ex. „DarkMode_Explorer”, „Explorer”) pe
     ''' scrollbar-urile native ale unui control. Erorile se loghează o singură dată.
     ''' </summary>
-    Public Sub ApplyWindowTheme(ctrl As Control, theme As String)
+    Friend Sub ApplyWindowTheme(ctrl As Control, theme As String)
         If ctrl Is Nothing OrElse Not ctrl.IsHandleCreated Then Return
         Try
             SetWindowTheme(ctrl.Handle, theme, Nothing)

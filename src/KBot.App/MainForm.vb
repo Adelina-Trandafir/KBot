@@ -409,14 +409,14 @@ Public Class MainForm
             ' (CodAngajament) să nu se suprapună peste ea la hover.
             tree.ReserveRightIconSpace = True
 
-            Dim cols As New List(Of ColumnDef) From {
-                New ColumnDef With {
-                    .Name = "CodAngajament", .Header = "CodAngajament", .Width = COD_COLUMN_WIDTH,
-                    .ColType = En_ColType.ColType_Text, .Align = En_ColAlign.ColAlign_Left,
-                    .Format = "", .HeaderBackColor = Color.Empty, .HeaderForeColor = Color.Empty,
-                    .HeaderAlign = En_ColAlign.ColAlign_Inherit}
-            }
-            tree.ConfigureListMode(cols)
+            'Dim cols As New List(Of ColumnDef) From {
+            '    New ColumnDef With {
+            '        .Name = "CodAngajament", .Header = "CodAngajament", .Width = COD_COLUMN_WIDTH,
+            '        .ColType = En_ColType.ColType_Text, .Align = En_ColAlign.ColAlign_Left,
+            '        .Format = "", .HeaderBackColor = Color.Empty, .HeaderForeColor = Color.Empty,
+            '        .HeaderAlign = En_ColAlign.ColAlign_Inherit}
+            '}
+            'tree.ConfigureListMode(cols)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ConfigureAngajamenteList", ex)
             Throw

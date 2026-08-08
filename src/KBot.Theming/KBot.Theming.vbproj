@@ -18,9 +18,15 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.3.0.0</FileVersion>
+    <FileVersion>1.4.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
+
+  <!-- CONȚINUT: motorul de teme + form-urile de bază (KBotThemedForm/KBotShellForm).
+       NICIUN control K-BOT nu mai stă aici — toate trăiesc în KBot.Controls, fiecare în
+       folderul lui. Proiectul ăsta NU referă KBot.Controls (ar face ciclu), deci tot ce-i
+       trebuie unui control se expune Public de aici: ThemeManager/ThemePalette,
+       IThemedControl, ThemeShapes și NativeMethods.DragMove. -->
 
   <ItemGroup>
     <Import Include="System.Drawing" />

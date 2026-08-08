@@ -70,6 +70,16 @@ End Enum
 ''' colțul <see cref="CollapseCorner"/>, care parcurge ciclic stările din
 ''' <see cref="KBotNavCollapseState"/>; iar aerul din jurul butoanelor se dă acum din
 ''' <see cref="ItemPadding"/> (înainte era o margine fixă de 6 px logici).
+'''
+''' 0025-06: butonul din colț poate purta pictograme autorate —
+''' <see cref="CollapseExpandedImage"/> / <see cref="CollapseCollapsedImage"/>; fără ele rămâne
+''' unghiul desenat, care ACUM se întoarce pe orice stare strânsă, nu doar pe «Complete».
+'''
+''' 0025-07: bara strânsă scoate la hover o ETICHETĂ PLUTITOARE cu butonul întreg
+''' (<see cref="CollapsedFlyout"/> + <c>KBotNavFlyout</c>) — nu un ToolTip, ci butonul care se
+''' desfășoară din propriul dreptunghi. 0025-08: forma butoanelor se dă acum din
+''' <see cref="ItemCornerRadius"/> și <see cref="ItemGradient"/>, per BARĂ, și e aceeași pentru
+''' butoane, butonul din colț și etichetă.
 ''' </summary>
 <ToolboxItem(True)>
 <DefaultProperty("Items")>
@@ -90,6 +100,8 @@ Public NotInheritable Class KBotNavList
     Private _sepSeq As Integer                            ' contor pentru cheile interne ale separatorilor
     Private _iconSize As Integer = 20                     ' latura pictogramei, px logici (0025-02)
     Private _itemWidth As Integer                         ' lățimea butoanelor, px logici; 0 = automat (0025-03)
+    Private _itemCornerRadius As Integer = -1             ' -1 = raza schemei active (0025-08)
+    Private _itemGradient As Integer = 14                 ' 0..100; 0 = umplere plată (0025-08)
 
     ' ── Padding + strângere (0025-05) ─────────────────────────────────────────
     Private _itemPadding As New System.Windows.Forms.Padding(6)   ' aerul din jurul butoanelor, px logici
@@ -97,6 +109,10 @@ Public NotInheritable Class KBotNavList
     Private _collapseCorner As KBotNavCorner = KBotNavCorner.TopRight
     Private _collapseState As KBotNavCollapseState = KBotNavCollapseState.Expanded
     Private _collapseHover As Boolean
+    ' Pictogramele butonului din colț (0025-06). Nothing pe oricare dintre ele => pe starea aceea
+    ' se desenează unghiul din DrawCollapseButton, ca înainte.
+    Private _collapseImageExpanded As Image
+    Private _collapseImageCollapsed As Image
     ' Dimensiunea (lățime pe verticală / înălțime pe orizontală) la care se ÎNTOARCE bara.
     ' Se reține ultima valoare avută DESFĂȘURATĂ, nu cea din constructor: operatorul poate
     ' lăți bara înainte s-o strângă, iar „mărimea inițială" înseamnă mărimea LUI.
@@ -104,6 +120,16 @@ Public NotInheritable Class KBotNavList
     ' True cât timp NOI schimbăm dimensiunea; altfel OnSizeChanged ar reține lățimea strânsă
     ' ca „dimensiune inițială" și bara nu s-ar mai putea desfășura niciodată.
     Private _applyingCollapseExtent As Boolean
+
+    ' ── Eticheta plutitoare din starea strânsă (0025-07) ──────────────────────
+    Private _flyoutEnabled As Boolean = True
+    Private _flyoutDelay As Integer = 250                 ' ms de hover înainte să iasă
+    Private _flyoutSlide As Integer = 120                 ' ms de desfășurare
+    Private _flyout As KBotNavFlyout
+    Private _flyoutDelayTimer As System.Windows.Forms.Timer
+    Private _flyoutAnimTimer As System.Windows.Forms.Timer
+    Private _flyoutIndex As Integer = -1                  ' elementul pentru care iese eticheta
+    Private _flyoutProgress As Double                     ' 0 = doar banda pictogramei, 1 = butonul întreg
 
     ' ── Inițializare din designer (ISupportInitialize) ────────────────────────
     ' Between BeginInit and EndInit the control accepts whatever InitializeComponent writes
@@ -250,6 +276,62 @@ Public NotInheritable Class KBotNavList
     End Property
 
     ''' <summary>
+    ''' Raza colțurilor rotunjite ale BUTOANELOR barei și ale etichetei plutitoare, în px logici
+    ''' (scalați la DPI). Se dă **pe bară, nu pe element**: într-o navigație butoanele trebuie să
+    ''' aibă aceeași formă, altfel coloana arată rupt — exact ca <see cref="IconSize"/>.
+    '''
+    ''' <b>-1 (implicit) = raza SCHEMEI ACTIVE</b> (<c>ThemeStyleOptions.CornerRadius</c>: 0 pe
+    ''' Classic și Dark, 8 pe Modern), adică exact comportamentul de dinainte de 0025-08 și singura
+    ''' valoare care urmează tema când operatorul schimbă schema. O valoare de la 0 în sus o
+    ''' înlocuiește: 0 = colțuri drepte chiar și pe o schemă rotunjită.
+    '''
+    ''' Sub -1 se limitează la -1 (nu se aruncă, ca la celelalte măsuri — un setter de dimensiune
+    ''' care aruncă ar rupe <c>InitializeComponent</c> la o valoare greșită din designer).
+    ''' Raza efectivă e oricum limitată la jumătatea laturii mici de <c>ThemeShapes.RoundedRect</c>.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Raza colțurilor butoanelor și a etichetei (px logici). -1 = raza schemei active; 0 = colțuri drepte.")>
+    <DefaultValue(-1)>
+    Public Property ItemCornerRadius As Integer
+        Get
+            Return _itemCornerRadius
+        End Get
+        Set(value As Integer)
+            Dim clamped As Integer = Math.Max(-1, value)
+            If clamped = _itemCornerRadius Then Return
+            _itemCornerRadius = clamped
+            Invalidate()
+            RefreshFlyout()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Cât de pronunțat e gradientul „modern" de pe fundalul butoanelor (selectat / survolat) și de
+    ''' pe eticheta plutitoare: 0..100. Implicit 14 — vizibil, nu lucios. <b>0 = umplere plată</b>,
+    ''' adică fix ce se picta înainte de 0025-08.
+    '''
+    ''' NU introduce culori noi: cele două capete se derivă din culoarea de bază a schemei active
+    ''' (<c>AccentSoft</c> derivat pentru selecție, <c>ButtonHover</c> pentru survolare), mai deschis
+    ''' sus și puțin mai închis jos — deci gradientul se schimbă odată cu tema, ca tot restul barei.
+    ''' Vezi <c>ThemeShapes.FillModern</c>. Valorile din afara intervalului se limitează.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Intensitatea gradientului de pe butoane și etichetă (0..100). Implicit 14; 0 = umplere plată.")>
+    <DefaultValue(14)>
+    Public Property ItemGradient As Integer
+        Get
+            Return _itemGradient
+        End Get
+        Set(value As Integer)
+            Dim clamped As Integer = Math.Max(0, Math.Min(100, value))
+            If clamped = _itemGradient Then Return
+            _itemGradient = clamped
+            Invalidate()
+            RefreshFlyout()
+        End Set
+    End Property
+
+    ''' <summary>
     ''' Aerul din jurul butoanelor, în px logici (scalați la DPI ca tot restul barei: <c>IconSize</c>,
     ''' <c>ItemWidth</c>, înălțimea rândului). Implicit 6 pe toate laturile — exact marginea fixă de
     ''' dinainte de 0025-05, ca o bară care nu atinge proprietatea să arate identic.
@@ -343,6 +425,142 @@ Public NotInheritable Class KBotNavList
             If value = _collapseCorner Then Return
             _collapseCorner = value
             InvalidateLayout()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Pictograma butonului din colț cât timp bara e DESFĂȘURATĂ — adică imaginea de pe butonul
+    ''' care STRÂNGE. Editabilă din grila de proprietăți cu editorul de imagine stoc (designer-ul
+    ''' depune imaginea în <c>.resx</c>-ul formularului), exact ca <see cref="KBotNavItem.Image"/>.
+    '''
+    ''' <c>Nothing</c> (implicit) = se desenează unghiul («chevron») tematizat de dinainte de
+    ''' 0025-06. Cele două pictograme sunt INDEPENDENTE: cine dă doar una primește unghiul pe
+    ''' cealaltă stare — nu se cere un set complet ca să meargă jumătate din el.
+    '''
+    ''' Imaginea se scalează în pătratul butonului (18 px logici, minus 2 px de aer). Bara NU
+    ''' deține imaginea și nu o eliberează niciodată: e a apelantului sau a resurselor
+    ''' formularului, ca la <c>KBotCaptionBar.IconImage</c>.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Pictograma butonului din colț când bara e desfășurată. Nimic = unghiul desenat implicit.")>
+    Public Property CollapseExpandedImage As Image
+        Get
+            Return _collapseImageExpanded
+        End Get
+        Set(value As Image)
+            If value Is _collapseImageExpanded Then Return
+            _collapseImageExpanded = value
+            Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Pictograma butonului din colț cât timp bara e STRÂNSĂ (<see cref="KBotNavCollapseState.Icons"/>
+    ''' SAU <see cref="KBotNavCollapseState.Complete"/> — o singură imagine pentru amândouă, fiindcă
+    ''' butonul face același lucru din amândouă: desfășoară). Vezi
+    ''' <see cref="CollapseExpandedImage"/> pentru rest.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Pictograma butonului din colț când bara e strânsă. Nimic = unghiul desenat implicit.")>
+    Public Property CollapseCollapsedImage As Image
+        Get
+            Return _collapseImageCollapsed
+        End Get
+        Set(value As Image)
+            If value Is _collapseImageCollapsed Then Return
+            _collapseImageCollapsed = value
+            Invalidate()
+        End Set
+    End Property
+
+    ' English (like KBotNavItem.Image, slice 0025-03): a reference type has no usable <DefaultValue>
+    ' in VB, so «unset» is said with ShouldSerialize/Reset — otherwise the designer writes
+    ' «navViews.CollapseExpandedImage = Nothing» into every form that never touched the property.
+    ' Private on purpose: TypeDescriptor finds them by name including non-public members.
+    Private Function ShouldSerializeCollapseExpandedImage() As Boolean
+        Return _collapseImageExpanded IsNot Nothing
+    End Function
+
+    Private Sub ResetCollapseExpandedImage()
+        CollapseExpandedImage = Nothing
+    End Sub
+
+    Private Function ShouldSerializeCollapseCollapsedImage() As Boolean
+        Return _collapseImageCollapsed IsNot Nothing
+    End Function
+
+    Private Sub ResetCollapseCollapsedImage()
+        CollapseCollapsedImage = Nothing
+    End Sub
+
+    ''' <summary>
+    ''' True (implicit) => cât timp bara e strânsă la pictograme, hover-ul pe un buton scoate spre
+    ''' dreapta o ETICHETĂ PLUTITOARE cu butonul întreg — pictograma pe loc, textul desfășurându-se
+    ''' de la stânga la dreapta, ca meniul lateral al unei pagini web.
+    '''
+    ''' Nu e un <c>ToolTip</c> (galben, netematizabil, cu poziția lui): e o fereastră proprie care
+    ''' preia toate proprietățile butonului de sub cursor — pictogramă, text, badge, starea
+    ''' <c>Enabled</c> și fundalul de selecție — cu culorile schemei active. Vezi
+    ''' <c>KBotNavFlyout</c>.
+    '''
+    ''' Implicit True, spre deosebire de <see cref="Collapsible"/>: bara nu se strânge dacă nu i se
+    ''' cere, dar odată strânsă la pictograme e nefolosibilă fără etichete — nu mai scrie nimic pe
+    ''' butoane. Poarta rămâne <see cref="Collapsible"/>; asta doar spune ce se întâmplă dincolo de
+    ''' ea. Trecerea pe False ascunde imediat eticheta care e afară.
+    '''
+    ''' Se aplică DOAR barei verticale strânse la <see cref="KBotNavCollapseState.Icons"/> — și
+    ''' asta nu e o limitare aleasă, ci singurul caz care există: «Icons» nu e disponibil pe
+    ''' orizontală, iar în «Complete» niciun buton nu mai are slot, deci n-are ce fi survolat.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("True => hover pe un buton al barei strânse scoate spre dreapta o etichetă cu butonul întreg.")>
+    <DefaultValue(True)>
+    Public Property CollapsedFlyout As Boolean
+        Get
+            Return _flyoutEnabled
+        End Get
+        Set(value As Boolean)
+            If value = _flyoutEnabled Then Return
+            _flyoutEnabled = value
+            If Not _flyoutEnabled Then CancelFlyout()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Cât stă cursorul (ms) pe buton înainte să iasă eticheta. Implicit 250 — destul cât plimbatul
+    ''' mouse-ului peste bară să nu scoată cinci etichete pe rând, destul de puțin cât să nu pară
+    ''' că nu răspunde. 0 = imediat. Valorile negative se aduc la 0, ca la
+    ''' <see cref="IconSize"/> / <see cref="ItemWidth"/> / <see cref="ItemPadding"/>.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Cât așteaptă hover-ul (ms) înainte să scoată eticheta. Implicit 250; 0 = imediat.")>
+    <DefaultValue(250)>
+    Public Property FlyoutDelay As Integer
+        Get
+            Return _flyoutDelay
+        End Get
+        Set(value As Integer)
+            Dim clamped As Integer = Math.Max(0, value)
+            If clamped = _flyoutDelay Then Return
+            _flyoutDelay = clamped
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Cât durează (ms) desfășurarea etichetei spre dreapta. Implicit 120. 0 = fără animație,
+    ''' eticheta apare dintr-odată la lățimea ei completă. Valorile negative se aduc la 0.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Durata (ms) desfășurării etichetei spre dreapta. Implicit 120; 0 = fără animație.")>
+    <DefaultValue(120)>
+    Public Property FlyoutSlideDuration As Integer
+        Get
+            Return _flyoutSlide
+        End Get
+        Set(value As Integer)
+            Dim clamped As Integer = Math.Max(0, value)
+            If clamped = _flyoutSlide Then Return
+            _flyoutSlide = clamped
         End Set
     End Property
 
@@ -612,12 +830,19 @@ Public NotInheritable Class KBotNavList
         If String.Equals(it.Key, _selectedKey, StringComparison.Ordinal) Then Return
         _selectedKey = it.Key
         Invalidate()
+        ' Eticheta e afară chiar peste butonul pe care tocmai s-a dat click: fără asta ar rămâne
+        ' cu fundalul de hover și fontul obișnuit, adică ar contrazice bara de dedesubt.
+        RefreshFlyout()
         RaiseEvent SelectionChanged(it.Key)
     End Sub
 
     ' Marchează layout-ul „murdar" și cere repictare. FRIEND din 0025: colecția de elemente
     ' (KBotNavItemCollection) o cheamă la fiecare adăugare/ștergere/reordonare.
     Friend Sub InvalidateLayout()
+        ' Eticheta plutitoare ține minte un INDEX și un dreptunghi din layout-ul vechi; orice
+        ' lucru care mută sloturile (add/remove, vizibilitate, orientare, resize, strângere) o
+        ' face să arate un buton care nu mai e acolo. Se retrage, nu se recalculează.
+        CancelFlyout()
         _layoutValid = False
         Invalidate()
     End Sub
@@ -662,6 +887,17 @@ Public NotInheritable Class KBotNavList
         Return New Rectangle(r.Left + ThemeShapes.ScaleDpi(Me, 12), top, side, side)
     End Function
 
+    ''' <summary>
+    ''' Raza EFECTIVĂ a colțurilor, în px scalați: cea din <see cref="ItemCornerRadius"/> dacă e
+    ''' dată, altfel cea a schemei active. O singură funcție, folosită de butoane, de butonul din
+    ''' colț și de eticheta plutitoare — altfel cele trei ar putea să se rotunjească diferit.
+    ''' </summary>
+    Private Function ItemRadius() As Integer
+        Dim logical As Integer = If(_itemCornerRadius >= 0, _itemCornerRadius,
+                                    If(_scheme IsNot Nothing, _scheme.Style.CornerRadius, 0))
+        Return ThemeShapes.ScaleDpi(Me, Math.Max(0, logical))
+    End Function
+
     ' Lățimea impusă a butoanelor, scalată (0 = automat). Vezi ItemWidth.
     Private Function FixedItemWidth() As Integer
         If _itemWidth <= 0 Then Return 0
@@ -683,6 +919,31 @@ Public NotInheritable Class KBotNavList
 
     Private Function IsIconsCollapsed() As Boolean
         Return _collapsible AndAlso _collapseState = KBotNavCollapseState.Icons
+    End Function
+
+    ''' <summary>
+    ''' Pictograma autorată pentru starea CURENTĂ a butonului din colț (0025-06), sau
+    ''' <c>Nothing</c> dacă starea aia n-a primit niciuna — caz în care se desenează unghiul.
+    ''' «Strâns» înseamnă orice stare în afară de <see cref="KBotNavCollapseState.Expanded"/>:
+    ''' din <c>Icons</c> ca și din <c>Complete</c> butonul desfășoară.
+    ''' </summary>
+    Private Function CollapseButtonImage() As Image
+        If _collapseState = KBotNavCollapseState.Expanded Then Return _collapseImageExpanded
+        Return _collapseImageCollapsed
+    End Function
+
+    ''' <summary>
+    ''' Încotro arată unghiul desenat implicit: True = spre desfășurare (deci «>» pe o bară
+    ''' verticală), False = spre strângere («&lt;»).
+    '''
+    ''' Se uită la ORICE stare strânsă, nu doar la <see cref="KBotNavCollapseState.Complete"/>:
+    ''' pe <c>Icons</c> unghiul rămânea identic cu cel din starea desfășurată, adică bara strânsă
+    ''' arăta tot «&lt;» și părea că butonul nu face nimic — cu atât mai vizibil de când ciclul se
+    ''' oprește la <c>Icons</c> (vezi <see cref="CycleCollapse"/>), deci «&lt;» era singurul unghi
+    ''' pe care apuca să-l vadă cineva.
+    ''' </summary>
+    Private Function ChevronPointsToExpand() As Boolean
+        Return _collapseState <> KBotNavCollapseState.Expanded
     End Function
 
     Private Function IsCompletelyCollapsed() As Boolean
@@ -797,13 +1058,203 @@ Public NotInheritable Class KBotNavList
         Select Case _collapseState
             Case KBotNavCollapseState.Expanded
                 [next] = If(IconsCollapseAvailable, KBotNavCollapseState.Icons, KBotNavCollapseState.Complete)
-            Case KBotNavCollapseState.Icons
-                [next] = KBotNavCollapseState.Complete
+                'eliminat de mine (project manager). nu imi place cum arata fara nicio iconita!
+                'Case KBotNavCollapseState.Icons
+                '    [next] = KBotNavCollapseState.Complete
             Case Else
                 [next] = KBotNavCollapseState.Expanded
         End Select
         ApplyCollapseState([next])
     End Sub
+
+    ' ── Eticheta plutitoare (0025-07) ──────────────────────────────────────────
+    ' Ca la pictogramă și la butonul din colț: geometria stă în funcții pure, folosite și la
+    ' afișare și de teste. Fereastra (KBotNavFlyout) e doar randare — decizia «pentru cine, cât de
+    ' desfășurată, unde» se ia AICI și rămâne calculabilă fără ecran.
+
+    Private Const FlyoutTickMs As Integer = 15
+
+    ''' <summary>
+    ''' Lățimea COMPLETĂ a etichetei: banda pictogramei (adică exact butonul strâns) + textul
+    ''' măsurat cu <see cref="MeasureFont"/> + aer la dreapta + pastila badge-ului.
+    ''' Se măsoară cu fontul semibold din același motiv ca <see cref="ContentWidth"/>: lățimea nu
+    ''' are voie să depindă de care buton e selectat.
+    ''' </summary>
+    Private Function FlyoutFullWidth(it As KBotNavItem) As Integer
+        Dim rail As Integer = Math.Max(1, it.Bounds.Width)
+        Dim ts As Size = TextRenderer.MeasureText(If(it.Text, String.Empty), MeasureFont())
+        Dim w As Integer = rail + ts.Width + ThemeShapes.ScaleDpi(Me, 12)
+        If it.Badge > 0 Then w += ThemeShapes.ScaleDpi(Me, 26)
+        Return w
+    End Function
+
+    ''' <summary>
+    ''' Dreptunghiul etichetei în coordonatele CLIENT ale barei, la un progres dat (0..1). Pleacă
+    ''' EXACT din dreptunghiul butonului strâns și crește doar spre dreapta — de aceea la progres 0
+    ''' eticheta e nedeosebită de buton, și de aceea desfășurarea arată ca a butonului, nu ca a
+    ''' unei note lipite alături.
+    ''' </summary>
+    Private Function FlyoutClientBounds(index As Integer, progress As Double) As Rectangle
+        If index < 0 OrElse index >= _items.Count Then Return Rectangle.Empty
+        Dim r As Rectangle = _items(index).Bounds
+        If r.Width <= 0 OrElse r.Height <= 0 Then Return Rectangle.Empty
+        Dim full As Integer = FlyoutFullWidth(_items(index))
+        Dim t As Double = Math.Max(0.0, Math.Min(1.0, progress))
+        Dim w As Integer = r.Width + CInt(Math.Round((full - r.Width) * t))
+        Return New Rectangle(r.Left, r.Top, Math.Max(r.Width, w), r.Height)
+    End Function
+
+    ''' <summary>
+    ''' Pentru ce element ar trebui să iasă eticheta la un punct dat (-1 = niciunul). Cere: bară
+    ''' strânsă la pictograme, eticheta activată, și un BUTON vizibil cu text sub cursor.
+    '''
+    ''' Separatorii sunt săriți (n-au ce arăta), la fel butoanele fără text (eticheta n-ar dezvălui
+    ''' nimic în plus față de pictograma deja vizibilă). Butoanele DEZACTIVATE primesc etichetă,
+    ''' spre deosebire de hover-ul obișnuit: tocmai în starea strânsă e cel mai greu de ghicit ce e
+    ''' butonul stins de sub cursor, iar eticheta îl arată stins, cu culorile lui.
+    ''' </summary>
+    Private Function FlyoutTargetAt(location As Point) As Integer
+        If Not _flyoutEnabled Then Return -1
+        If Not IsIconsCollapsed() Then Return -1
+        If KBotDesignTime.IsDesignTime(Me) Then Return -1
+        EnsureLayout()
+        For i As Integer = 0 To _items.Count - 1
+            Dim it As KBotNavItem = _items(i)
+            If it.IsSeparator OrElse Not it.Visible Then Continue For
+            If String.IsNullOrEmpty(it.Text) Then Continue For
+            If it.Bounds.Contains(location) Then Return i
+        Next
+        Return -1
+    End Function
+
+    ' Cursorul s-a mutat pe alt element (sau pe niciunul): reprogramează. Același element =
+    ' nu se atinge nimic, altfel fiecare pixel de mișcare ar reporni temporizarea.
+    Private Sub UpdateFlyout(target As Integer)
+        If target = _flyoutIndex Then Return
+        CancelFlyout()
+        If target < 0 Then Return
+        _flyoutIndex = target
+        If _flyoutDelay <= 0 Then
+            BeginFlyoutSlide()
+            Return
+        End If
+        EnsureFlyoutTimers()
+        _flyoutDelayTimer.Interval = _flyoutDelay
+        _flyoutDelayTimer.Start()
+    End Sub
+
+    ''' <summary>Ascunde eticheta și uită elementul pentru care ieșise. Sigur de chemat oricând.</summary>
+    Private Sub CancelFlyout()
+        _flyoutDelayTimer?.Stop()
+        _flyoutAnimTimer?.Stop()
+        _flyoutIndex = -1
+        _flyoutProgress = 0.0
+        If _flyout IsNot Nothing AndAlso _flyout.Visible Then _flyout.Hide()
+    End Sub
+
+    ' Pornește desfășurarea. Starea (indexul + progresul) avansează INDEPENDENT de existența unei
+    ' ferestre — headless și în designer nu se afișează nimic, dar calculul rămâne verificabil.
+    Private Sub BeginFlyoutSlide()
+        _flyoutProgress = If(_flyoutSlide <= 0, 1.0, 0.0)
+        RenderFlyout()
+        If _flyoutSlide <= 0 Then Return
+        EnsureFlyoutTimers()
+        _flyoutAnimTimer.Interval = FlyoutTickMs
+        _flyoutAnimTimer.Start()
+    End Sub
+
+    Private Sub EnsureFlyoutTimers()
+        If _flyoutDelayTimer Is Nothing Then
+            _flyoutDelayTimer = New System.Windows.Forms.Timer()
+            AddHandler _flyoutDelayTimer.Tick, AddressOf FlyoutDelayTick
+        End If
+        If _flyoutAnimTimer Is Nothing Then
+            _flyoutAnimTimer = New System.Windows.Forms.Timer() With {.Interval = FlyoutTickMs}
+            AddHandler _flyoutAnimTimer.Tick, AddressOf FlyoutAnimTick
+        End If
+    End Sub
+
+    ' Cronometru = graniță de UI: se loghează și se înghite (nu are cui să arunce mai departe).
+    Private Sub FlyoutDelayTick(sender As Object, e As EventArgs)
+        Try
+            _flyoutDelayTimer.Stop()
+            If _flyoutIndex < 0 Then Return
+            BeginFlyoutSlide()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotNavList.FlyoutDelayTick", ex)
+        End Try
+    End Sub
+
+    Private Sub FlyoutAnimTick(sender As Object, e As EventArgs)
+        Try
+            AdvanceFlyout()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotNavList.FlyoutAnimTick", ex)
+        End Try
+    End Sub
+
+    ' Un pas de desfășurare. Scos din handler ca testele să-l poată chema direct, fără cronometru.
+    Private Sub AdvanceFlyout()
+        If _flyoutIndex < 0 Then
+            _flyoutAnimTimer?.Stop()
+            Return
+        End If
+        _flyoutProgress += CDbl(FlyoutTickMs) / Math.Max(1, _flyoutSlide)
+        If _flyoutProgress >= 1.0 Then
+            _flyoutProgress = 1.0
+            _flyoutAnimTimer?.Stop()
+        End If
+        RenderFlyout()
+    End Sub
+
+    ' Partea care chiar atinge ecranul. Se retrage tăcut când nu există fereastră de arătat
+    ' (bară fără handle / nepusă pe un formular / design time) — nu e o eroare, e absența unui ecran.
+    Private Sub RenderFlyout()
+        If _flyoutIndex < 0 OrElse _flyoutIndex >= _items.Count Then Return
+        If Not IsIconsCollapsed() Then Return
+        If KBotDesignTime.IsDesignTime(Me) Then Return
+        If Not IsHandleCreated OrElse Not Visible Then Return
+        Dim host As Form = FindForm()
+        If host Is Nothing Then Return
+
+        Dim rect As Rectangle = FlyoutClientBounds(_flyoutIndex, _flyoutProgress)
+        If rect.IsEmpty Then Return
+
+        Dim it As KBotNavItem = _items(_flyoutIndex)
+        If _flyout Is Nothing Then _flyout = New KBotNavFlyout()
+        _flyout.SetContent(it.Text, it.Image, it.Badge, it.Enabled, BuildFlyoutStyle(it))
+        _flyout.Bounds = RectangleToScreen(rect)
+        If Not _flyout.Visible Then _flyout.Show(host)
+    End Sub
+
+    ' Reîmprospătează eticheta deja afară (schimbare de selecție sau de temă sub cursor).
+    Private Sub RefreshFlyout()
+        If _flyoutIndex < 0 Then Return
+        RenderFlyout()
+    End Sub
+
+    ''' <summary>
+    ''' Culorile/fonturile/măsurile butonului, gata calculate. Aceleași reguli ca în
+    ''' <see cref="OnPaint"/> — selectat = accent soft + accent + semibold, dezactivat = text
+    ''' estompat, restul = fundal de hover (elementul E survolat, prin definiție).
+    ''' </summary>
+    Private Function BuildFlyoutStyle(it As KBotNavItem) As KBotNavFlyoutStyle
+        Dim selected As Boolean = String.Equals(it.Key, _selectedKey, StringComparison.Ordinal)
+        Return New KBotNavFlyoutStyle With {
+            .Fill = If(selected, _selectedFill, _hoverFill),
+            .Border = _separatorColor,
+            .TextColor = If(Not it.Enabled, _textDisabled, If(selected, _accent, _textNormal)),
+            .BadgeFill = _badgeFill,
+            .BadgeText = _badgeText,
+            .Radius = ItemRadius(),
+            .GradientStrength = _itemGradient,
+            .RailWidth = it.Bounds.Width,
+            .IconSide = IconSide(),
+            .PadX = ThemeShapes.ScaleDpi(Me, 12),
+            .BadgeHeight = ThemeShapes.ScaleDpi(Me, 18),
+            .CaptionFont = If(selected, SemiboldFont(), Font),
+            .BadgeFont = Font}
+    End Function
 
     ''' <summary>
     ''' Fontul cu care se MĂSOARĂ un element — întotdeauna cel semibold, adică cel mai LAT font cu
@@ -971,10 +1422,96 @@ Public NotInheritable Class KBotNavList
         Return CollapseButtonRect()
     End Function
 
+    ''' <summary>
+    ''' Friend test hook: pictograma pe care ar picta-o ACUM butonul din colț
+    ''' (<c>Nothing</c> = se desenează unghiul).
+    ''' </summary>
+    Friend Function DebugCollapseButtonImage() As Image
+        Return CollapseButtonImage()
+    End Function
+
+    ''' <summary>Friend test hook: True dacă unghiul butonului arată spre desfășurare.</summary>
+    Friend Function DebugCollapseChevronPointsToExpand() As Boolean
+        Return ChevronPointsToExpand()
+    End Function
+
     ''' <summary>Friend test hook: click stânga pe drumul real (inclusiv butonul de strângere).</summary>
     Friend Sub DebugClickAt(location As Point)
         OnMouseClick(New MouseEventArgs(MouseButtons.Left, 1, location.X, location.Y, 0))
     End Sub
+
+    ' ── Cârlige pentru eticheta plutitoare (0025-07) ───────────────────────────
+    ' Fereastra nu se arată headless (RenderFlyout se retrage fără handle/formular), dar TOATĂ
+    ' decizia și geometria rulează — deci exact ele se pot fixa în teste.
+
+    ''' <summary>Friend test hook: mișcare de mouse pe drumul real.</summary>
+    Friend Sub DebugMouseMoveTo(location As Point)
+        OnMouseMove(New MouseEventArgs(MouseButtons.None, 0, location.X, location.Y, 0))
+    End Sub
+
+    ''' <summary>Friend test hook: părăsirea barei cu mouse-ul, pe drumul real.</summary>
+    Friend Sub DebugMouseLeave()
+        OnMouseLeave(EventArgs.Empty)
+    End Sub
+
+    ''' <summary>Friend test hook: pentru ce element ar ieși eticheta la un punct (-1 = niciunul).</summary>
+    Friend Function DebugFlyoutTargetAt(location As Point) As Integer
+        Return FlyoutTargetAt(location)
+    End Function
+
+    ''' <summary>Friend test hook: elementul pentru care eticheta e programată sau afară (-1 = niciunul).</summary>
+    Friend Function DebugFlyoutIndex() As Integer
+        Return _flyoutIndex
+    End Function
+
+    ''' <summary>Friend test hook: cât de desfășurată e eticheta (0..1).</summary>
+    Friend Function DebugFlyoutProgress() As Double
+        Return _flyoutProgress
+    End Function
+
+    ''' <summary>Friend test hook: lățimea completă a etichetei unui element.</summary>
+    Friend Function DebugFlyoutFullWidth(index As Integer) As Integer
+        EnsureLayout()
+        Return FlyoutFullWidth(_items(index))
+    End Function
+
+    ''' <summary>Friend test hook: dreptunghiul etichetei (client), la un progres dat.</summary>
+    Friend Function DebugFlyoutClientBounds(index As Integer, progress As Double) As Rectangle
+        EnsureLayout()
+        Return FlyoutClientBounds(index, progress)
+    End Function
+
+    ''' <summary>Friend test hook: declanșează temporizarea, fără să aștepte cronometrul.</summary>
+    Friend Sub DebugFlyoutFireDelay()
+        FlyoutDelayTick(Nothing, EventArgs.Empty)
+    End Sub
+
+    ''' <summary>Friend test hook: un pas de desfășurare, fără să aștepte cronometrul.</summary>
+    Friend Sub DebugFlyoutTick()
+        AdvanceFlyout()
+    End Sub
+
+    ''' <summary>Friend test hook: raza efectivă a colțurilor, în px scalați.</summary>
+    Friend Function DebugItemRadius() As Integer
+        Return ItemRadius()
+    End Function
+
+    ''' <summary>Friend test hook: stilul cu care s-ar picta eticheta unui element.</summary>
+    Friend Function DebugFlyoutStyle(index As Integer) As KBotNavFlyoutStyle
+        EnsureLayout()
+        Return BuildFlyoutStyle(_items(index))
+    End Function
+
+    ''' <summary>Friend test hook: fereastra etichetei, pictată la lățimea completă (fără s-o arate).</summary>
+    Friend Function DebugCreateFlyoutWindow(index As Integer) As Form
+        EnsureLayout()
+        Dim it As KBotNavItem = _items(index)
+        Dim fly As New KBotNavFlyout()
+        fly.SetContent(it.Text, it.Image, it.Badge, it.Enabled, BuildFlyoutStyle(it))
+        Dim r As Rectangle = FlyoutClientBounds(index, 1.0)
+        fly.Size = New Size(Math.Max(1, r.Width), Math.Max(1, r.Height))
+        Return fly
+    End Function
 
     Private Function IndexAt(location As Point) As Integer
         EnsureLayout()
@@ -1004,6 +1541,7 @@ Public NotInheritable Class KBotNavList
         _separatorColor = p.BorderColor
         BackColor = p.SurfaceColor
         Invalidate()
+        RefreshFlyout()                 ' schema s-a schimbat cu eticheta afară
     End Sub
 
     Protected Overrides Sub OnFontChanged(e As EventArgs)
@@ -1048,7 +1586,7 @@ Public NotInheritable Class KBotNavList
             g.Clear(BackColor)
             g.SmoothingMode = SmoothingMode.AntiAlias
 
-            Dim radius As Integer = ThemeShapes.ScaleDpi(Me, If(_scheme IsNot Nothing, _scheme.Style.CornerRadius, 0))
+            Dim radius As Integer = ItemRadius()
             Dim padX As Integer = ThemeShapes.ScaleDpi(Me, 12)
 
             ' Design time only: which keys are wrong. Validation is relaxed inside Visual Studio
@@ -1073,11 +1611,11 @@ Public NotInheritable Class KBotNavList
                 Dim isHover As Boolean = (i = _hoverIndex) AndAlso it.Enabled AndAlso Not isSelected
 
                 ' Fundal: selectat = accent soft; hover = ButtonHover; normal = transparent.
+                ' Umplerea trece prin ThemeShapes.FillModern, deci capătă gradientul cerut de
+                ' ItemGradient (0 = plat, exact ca înainte) — aceeași funcție ca la etichetă.
                 If isSelected OrElse isHover Then
                     Using path As GraphicsPath = ThemeShapes.RoundedRect(r, radius)
-                        Using b As New SolidBrush(If(isSelected, _selectedFill, _hoverFill))
-                            g.FillPath(b, path)
-                        End Using
+                        ThemeShapes.FillModern(g, path, r, If(isSelected, _selectedFill, _hoverFill), _itemGradient)
                     End Using
                 End If
 
@@ -1161,22 +1699,32 @@ Public NotInheritable Class KBotNavList
         End Try
     End Sub
 
-    ' Butonul de strângere: fundal doar la hover + un unghi («chevron») care arată încotro merge
-    ' următorul click. Cât mai sunt trepte de strâns arată spre începutul axei (stânga pe
-    ' verticală, sus pe orizontală); din starea complet strânsă arată înapoi, spre desfășurare.
+    ' Butonul de strângere: fundal doar la hover + pictograma autorată pentru starea curentă
+    ' (0025-06) sau, dacă starea aia n-a primit una, un unghi («chevron») care arată încotro merge
+    ' următorul click. DESFĂȘURATĂ arată spre începutul axei (stânga pe verticală, sus pe
+    ' orizontală) = «strânge»; din ORICE stare strânsă arată invers = «desfășoară».
     Private Sub DrawCollapseButton(g As Graphics, radius As Integer)
         Dim b As Rectangle = CollapseButtonRect()
         If b.IsEmpty OrElse b.Width <= 0 OrElse b.Height <= 0 Then Return
 
         If _collapseHover Then
             Using path As GraphicsPath = ThemeShapes.RoundedRect(b, Math.Min(radius, b.Width \ 2))
-                Using br As New SolidBrush(_hoverFill)
-                    g.FillPath(br, path)
-                End Using
+                ThemeShapes.FillModern(g, path, b, _hoverFill, _itemGradient)
             End Using
         End If
 
-        Dim forward As Boolean = (_collapseState = KBotNavCollapseState.Complete)   ' True = desfășoară
+        ' Pictograma bate unghiul. Fundalul de hover rămâne — el spune «se poate apăsa», nu
+        ' «uite o săgeată», deci n-are de ce să depindă de felul glifei.
+        Dim glyph As Image = CollapseButtonImage()
+        If glyph IsNot Nothing Then
+            Dim inset As Integer = ThemeShapes.ScaleDpi(Me, 2)
+            Dim dest As New Rectangle(b.Left + inset, b.Top + inset,
+                                      Math.Max(1, b.Width - 2 * inset), Math.Max(1, b.Height - 2 * inset))
+            DrawItemImage(g, glyph, dest, True)
+            Return
+        End If
+
+        Dim forward As Boolean = ChevronPointsToExpand()
         Dim cx As Single = b.Left + b.Width / 2.0F
         Dim cy As Single = b.Top + b.Height / 2.0F
         Dim ax As Single = b.Width / 5.0F        ' brațul unghiului
@@ -1214,7 +1762,9 @@ Public NotInheritable Class KBotNavList
     ' Desenează pictograma scalată în pătratul ei. Pe un element DEZACTIVAT o estompează
     ' (desaturare + alfa), ca imaginea unui Button dezactivat — altfel un buton stins ar avea
     ' text gri lângă o pictogramă în culori vii.
-    Private Shared Sub DrawItemImage(g As Graphics, img As Image, dest As Rectangle, enabled As Boolean)
+    ' FRIEND din 0025-07: o folosește și eticheta plutitoare (KBotNavFlyout), ca pictograma să fie
+    ' desenată și estompată exact la fel în amândouă locurile.
+    Friend Shared Sub DrawItemImage(g As Graphics, img As Image, dest As Rectangle, enabled As Boolean)
         g.InterpolationMode = InterpolationMode.HighQualityBicubic
         If enabled Then
             g.DrawImage(img, dest)
@@ -1260,6 +1810,9 @@ Public NotInheritable Class KBotNavList
                 _collapseHover = onCollapse
                 Invalidate()
             End If
+            ' Eticheta plutitoare are propria țintă: ea iese ȘI pe butoanele dezactivate, și numai
+            ' pe bara strânsă (vezi FlyoutTargetAt).
+            UpdateFlyout(If(onCollapse, -1, FlyoutTargetAt(e.Location)))
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotNavList.OnMouseMove", ex)
         End Try
@@ -1267,6 +1820,7 @@ Public NotInheritable Class KBotNavList
 
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
         MyBase.OnMouseLeave(e)
+        CancelFlyout()
         If _hoverIndex <> -1 OrElse _collapseHover Then
             _hoverIndex = -1
             _collapseHover = False
@@ -1341,6 +1895,16 @@ Public NotInheritable Class KBotNavList
         If disposing Then
             _semiboldFont?.Dispose()
             _semiboldFont = Nothing
+            ' Eticheta e o FEREASTRĂ de nivel înalt: nu e copilul barei, deci nimeni n-o închide
+            ' în locul nostru. Pictogramele și fonturile din ea rămân ale barei/apelantului.
+            _flyoutDelayTimer?.Stop()
+            _flyoutDelayTimer?.Dispose()
+            _flyoutDelayTimer = Nothing
+            _flyoutAnimTimer?.Stop()
+            _flyoutAnimTimer?.Dispose()
+            _flyoutAnimTimer = Nothing
+            _flyout?.Dispose()
+            _flyout = Nothing
         End If
         MyBase.Dispose(disposing)
     End Sub

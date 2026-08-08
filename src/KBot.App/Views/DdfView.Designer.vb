@@ -16,9 +16,9 @@ Partial Class DdfView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DdfView))
-        Dim KBotNavItem1 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
-        Dim KBotNavItem2 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
-        Dim KBotNavItem3 As KBot.Theming.KBotNavItem = New Theming.KBotNavItem()
+        Dim KBotNavItem1 As KBot.Controls.KBotNavItem = New KBot.Controls.KBotNavItem()
+        Dim KBotNavItem2 As KBot.Controls.KBotNavItem = New KBot.Controls.KBotNavItem()
+        Dim KBotNavItem3 As KBot.Controls.KBotNavItem = New KBot.Controls.KBotNavItem()
         split = New SplitContainer()
         tree = New Controls.AdvancedTreeControl()
         pnlTreeHead = New Panel()
@@ -49,7 +49,7 @@ Partial Class DdfView
         pnlFisiere = New Panel()
         browser = New DdfFileBrowser()
         lblFisiereGol = New Label()
-        navSub = New Theming.KBotNavList()
+        navSub = New KBot.Controls.KBotNavList()
         lblEmpty = New Label()
         CType(split, ComponentModel.ISupportInitialize).BeginInit()
         split.Panel1.SuspendLayout()
@@ -458,7 +458,7 @@ Partial Class DdfView
         navSub.Items.Add(KBotNavItem3)
         navSub.Location = New Point(0, 0)
         navSub.Name = "navSub"
-        navSub.Orientation = Theming.KBotNavOrientation.Horizontal
+        navSub.Orientation = KBot.Controls.KBotNavOrientation.Horizontal
         navSub.SelectedKey = Nothing
         navSub.Size = New Size(849, 49)
         navSub.TabIndex = 0
@@ -510,7 +510,7 @@ Partial Class DdfView
     Friend WithEvents pnlTreeHead As Panel
     Friend WithEvents lblTreeTitle As Label
     Friend WithEvents tree As KBot.Controls.AdvancedTreeControl
-    Friend WithEvents navSub As KBot.Theming.KBotNavList
+    Friend WithEvents navSub As KBot.Controls.KBotNavList
     Friend WithEvents pnlPages As Panel
     Friend WithEvents pnlValori As Panel
     Friend WithEvents pnlFilter As Panel

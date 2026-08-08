@@ -230,7 +230,12 @@ Public Class KBotNavListCollapseTests
     ' ── Ciclul de strângere ────────────────────────────────────────────────────
 
     <Fact>
-    Public Sub ClickingTheButton_CyclesIconsThenCompleteThenBackToTheInitialSize()
+    Public Sub ClickingTheButton_CyclesIconsThenBackToTheInitialSize()
+        ' Ciclul a fost SCURTAT de operator (vezi comentariul din CycleCollapse: «nu imi place cum
+        ' arata fara nicio iconita!»): cât timp «Icons» e disponibil, butonul face doar
+        ' Expanded ↔ Icons și NU mai trece prin «Complete». Starea «Complete» rămâne în API
+        ' (setter-ul CollapseState) și rămâne acoperită de celelalte teste, dar butonul nu mai
+        ' duce nimeni acolo dintr-o bară cu pictograme.
         RunSta(Sub()
                    Using nav = NewSizedList(), icon = NewIcon(16)
                        nav.AddItem("a", "A")
@@ -246,11 +251,6 @@ Public Class KBotNavListCollapseTests
                        Assert.Equal(IconsExtent(nav), nav.Width)
 
                        ' Butonul se mută odată cu bara (colțul e din dreapta) — reluăm punctul.
-                       br = nav.DebugCollapseButtonRect()
-                       nav.DebugClickAt(New Point(br.Left + br.Width \ 2, br.Top + br.Height \ 2))
-                       Assert.Equal(KBotNavCollapseState.Complete, nav.CollapseState)
-                       Assert.Equal(CompleteExtent(nav), nav.Width)
-
                        br = nav.DebugCollapseButtonRect()
                        nav.DebugClickAt(New Point(br.Left + br.Width \ 2, br.Top + br.Height \ 2))
                        Assert.Equal(KBotNavCollapseState.Expanded, nav.CollapseState)
@@ -484,11 +484,11 @@ Public Class KBotNavListCollapseTests
 
                        nav.ToggleCollapse()
                        nav.ToggleCollapse()
-                       nav.ToggleCollapse()
                        nav.CollapseState = KBotNavCollapseState.Expanded     ' deja acolo
 
+                       ' Doar două trepte: ciclul sare «Complete» cât timp «Icons» e disponibil
+                       ' (vezi ClickingTheButton_CyclesIconsThenBackToTheInitialSize).
                        Assert.Equal(New KBotNavCollapseState() {KBotNavCollapseState.Icons,
-                                                                KBotNavCollapseState.Complete,
                                                                 KBotNavCollapseState.Expanded},
                                     seen.ToArray())
                    End Using
@@ -523,6 +523,149 @@ Public Class KBotNavListCollapseTests
                                Next
                            End Using
                        Next
+                   End Using
+               End Sub)
+    End Sub
+
+    ' ── Pictogramele butonului din colț (0025-06) ──────────────────────────────
+
+    <Fact>
+    Public Sub CollapseImages_DefaultToNothing_SoTheChevronIsStillDrawn()
+        RunSta(Sub()
+                   Using nav = NewSizedList()
+                       nav.AddItem("a", "A")
+                       nav.Collapsible = True
+
+                       Assert.Null(nav.CollapseExpandedImage)
+                       Assert.Null(nav.CollapseCollapsedImage)
+                       Assert.Null(nav.DebugCollapseButtonImage())
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub TheButton_PicksTheImageOfTheCurrentState()
+        RunSta(Sub()
+                   Using nav = NewSizedList(), icon = NewIcon(16), imgOpen = NewIcon(12), imgShut = NewIcon(12)
+                       nav.AddItem("a", "A")
+                       nav.Items(0).Image = icon
+                       nav.Collapsible = True
+                       nav.CollapseExpandedImage = imgOpen
+                       nav.CollapseCollapsedImage = imgShut
+
+                       Assert.Same(imgOpen, nav.DebugCollapseButtonImage())
+
+                       ' O SINGURĂ pictogramă pentru amândouă stările strânse: butonul face
+                       ' același lucru din amândouă.
+                       nav.CollapseState = KBotNavCollapseState.Icons
+                       Assert.Same(imgShut, nav.DebugCollapseButtonImage())
+                       nav.CollapseState = KBotNavCollapseState.Complete
+                       Assert.Same(imgShut, nav.DebugCollapseButtonImage())
+
+                       nav.CollapseState = KBotNavCollapseState.Expanded
+                       Assert.Same(imgOpen, nav.DebugCollapseButtonImage())
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub TheTwoImages_AreIndependent_SoHalfASetStillWorks()
+        ' Cine dă doar una dintre pictograme primește unghiul pe cealaltă stare — cererea nu e
+        ' «un set complet sau nimic».
+        RunSta(Sub()
+                   Using nav = NewSizedList(), only = NewIcon(12)
+                       nav.AddItem("a", "A")
+                       nav.Collapsible = True
+                       nav.CollapseExpandedImage = only
+
+                       Assert.Same(only, nav.DebugCollapseButtonImage())
+                       nav.CollapseState = KBotNavCollapseState.Complete
+                       Assert.Null(nav.DebugCollapseButtonImage())        ' => unghi
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub TheChevron_TurnsAround_OnEveryCollapsedState_NotJustComplete()
+        ' Defectul de la 0025-06: pe «Icons» unghiul rămânea «<», adică identic cu cel din starea
+        ' desfășurată — bara strânsă părea că nu se mai poate desfășura.
+        RunSta(Sub()
+                   Using nav = NewSizedList(), icon = NewIcon(16)
+                       nav.AddItem("a", "A")
+                       nav.Items(0).Image = icon
+                       nav.Collapsible = True
+
+                       Assert.False(nav.DebugCollapseChevronPointsToExpand())
+                       nav.CollapseState = KBotNavCollapseState.Icons
+                       Assert.True(nav.DebugCollapseChevronPointsToExpand())
+                       nav.CollapseState = KBotNavCollapseState.Complete
+                       Assert.True(nav.DebugCollapseChevronPointsToExpand())
+                       nav.CollapseState = KBotNavCollapseState.Expanded
+                       Assert.False(nav.DebugCollapseChevronPointsToExpand())
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub TheImages_AreOnlySerializedWhenSet()
+        ' Fără ShouldSerialize/Reset designer-ul ar scrie «CollapseExpandedImage = Nothing» în
+        ' fiecare formular care nu s-a atins de proprietate (vezi KBotNavItem.Image, 0025-03).
+        RunSta(Sub()
+                   Using nav = NewSizedList(), img = NewIcon(12)
+                       For Each name As String In {"CollapseExpandedImage", "CollapseCollapsedImage"}
+                           Dim prop As PropertyDescriptor = TypeDescriptor.GetProperties(GetType(KBotNavList))(name)
+                           Assert.NotNull(prop)
+                           Assert.True(prop.IsBrowsable)
+                           Assert.False(prop.ShouldSerializeValue(nav))
+
+                           prop.SetValue(nav, img)
+                           Assert.True(prop.ShouldSerializeValue(nav))
+
+                           prop.ResetValue(nav)
+                           Assert.Null(prop.GetValue(nav))
+                           Assert.False(prop.ShouldSerializeValue(nav))
+                       Next
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub TheBar_DoesNotOwnTheCollapseImages()
+        ' Aceeași regulă ca la KBotNavItem.Image / KBotCaptionBar.IconImage: imaginea e a
+        ' apelantului sau a resurselor formularului. Dacă bara ar elibera-o, o pictogramă
+        ' partajată de două bare ar muri odată cu prima.
+        RunSta(Sub()
+                   Using img = NewIcon(12)
+                       Using nav = NewSizedList()
+                           nav.Collapsible = True
+                           nav.CollapseExpandedImage = img
+                           nav.CollapseCollapsedImage = img
+                       End Using
+                       Assert.Equal(12, img.Width)          ' aruncă dacă bitmap-ul a fost eliberat
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub PaintingWithCollapseImages_DoesNotThrow()
+        RunSta(Sub()
+                   Using icon = NewIcon(24), imgOpen = NewIcon(32), imgShut = NewIcon(32)
+                       Using nav = NewSizedList()
+                           nav.AddItem("a", "A")
+                           nav.Items(0).Image = icon
+                           nav.Collapsible = True
+                           nav.CollapseExpandedImage = imgOpen
+                           nav.CollapseCollapsedImage = imgShut
+
+                           For Each state As KBotNavCollapseState In {KBotNavCollapseState.Icons,
+                                                                      KBotNavCollapseState.Complete,
+                                                                      KBotNavCollapseState.Expanded}
+                               nav.CollapseState = state
+                               Using bmp As New Bitmap(Math.Max(1, nav.Width), Math.Max(1, nav.Height))
+                                   nav.DrawToBitmap(bmp, New Rectangle(0, 0, bmp.Width, bmp.Height))
+                               End Using
+                           Next
+                       End Using
                    End Using
                End Sub)
     End Sub

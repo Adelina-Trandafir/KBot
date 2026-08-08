@@ -16,9 +16,28 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.3.0.0</FileVersion>
+    <FileVersion>1.7.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
+
+  <!-- CONVENȚIE DE ORGANIZARE (obligatorie pentru orice control nou)
+       TOATE controalele K-BOT trăiesc în acest proiect — nicăieri altundeva. Fiecare
+       familie de control are folderul ei, grupată logic (controlul + tipurile lui
+       auxiliare: enum-uri, colecții, EventArgs, modele, form-uri ajutătoare):
+
+         Tree\      AdvancedTreeControl (+ partial-uri, ColumnDef, TreeItem, TreeLogger,
+                    TooltipTableModel, NodeDebugInfo, FrmNodeDebug)
+         DataView\  KBotDataView (+ partial-uri, KBotDataColumn/Row/Collection, enum-urile
+                    KBotAggregate/KBotAutoSizeMode/KBotColumnType/KBotFillMode) și
+                    DataView\Events\ (KBotCell*/KBotRow*/KBotButtonClickEventArgs)
+         Adobe\     vizualizatorul Adobe (AcroPdfHost/AcroPdfSurface + gazduirea nativă)
+         NavList\   KBotNavList (+ KBotNavItem/Collection, KBotNavOrientation/Align/
+                    Corner/CollapseState)
+         CaptionBar\, BusyBar\, Notice\ (+ NoticeKind), TextField\
+
+       KBotThemedForm / KBotShellForm NU sunt controale, ci form-uri de bază: rămân în
+       KBot.Theming, împreună cu motorul de teme. -->
+
 
   <ItemGroup>
     <Import Include="System.Data" />
@@ -29,11 +48,12 @@
 
   <!-- Doar pentru GlobalErrorLog (sink-ul global de erori). KBot.Common e stratul cel mai
        jos (referă doar KBot.Domain) => nu introduce ciclu.
-       KBot.Theming: adăugat pentru KBotDataView (slice 0010) — controlul se auto-tematizează
-       prin IThemedControl/ThemePalette, exact ca familia KBotNavList. KBot.Theming NU referă
-       KBot.Controls, deci nu se creează ciclu. AdvancedTreeControl rămâne ne-tematizat (shell-ul
-       îi împinge culorile), noua convenție se aplică doar controalelor care implementează
-       IThemedControl. -->
+       KBot.Theming: controalele se auto-tematizează prin IThemedControl/ThemePalette și
+       folosesc ajutoarele din motor (ThemeShapes, NativeMethods.DragMove). Sensul referinței
+       e Controls -> Theming și NUMAI așa: KBot.Theming nu referă KBot.Controls, deci nu se
+       creează ciclu — de aceea form-urile de bază (KBotThemedForm/KBotShellForm) au rămas
+       acolo, iar controalele au venit toate aici. AdvancedTreeControl rămâne ne-tematizat
+       (shell-ul îi împinge culorile); convenția IThemedControl se aplică restului. -->
   <ItemGroup>
     <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
     <ProjectReference Include="..\KBot.Theming\KBot.Theming.vbproj" />

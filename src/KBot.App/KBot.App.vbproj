@@ -36,10 +36,22 @@
 
   <!-- Resurse proiect: fixăm numele manifest la „KBot.App.Resources” ca ResourceManager-ul
        din My Project\Resources.Designer.vb (scris de mână, fiindcă generatorul VS nu rulează
-       sub dotnet build) să-l regăsească. Expune My.Resources.kbot_64. -->
+       sub dotnet build) să-l regăsească. Expune My.Resources.kbot_64.
+
+       Generator/CustomToolNamespace NU schimbă nimic la dotnet build — sunt pentru Visual
+       Studio și sunt OBLIGATORII: fără ele, designer-ul nu știe că resursele proiectului sunt
+       cele „My” de VB, ghicește tipul «KBot.App.Resources» și scrie în MainForm.Designer.vb
+       «Resources.calendar». Cum InitializeComponent are deja o variabilă locală «resources»
+       (ComponentResourceManager) iar VB nu e case-sensitive, acel «Resources.calendar» se
+       leagă de variabila locală și nu mai compilează. Cu metadatele astea, designer-ul emite
+       forma canonică «My.Resources.Resources.calendar», care nu se poate ciocni. -->
   <ItemGroup>
     <EmbeddedResource Update="My Project\Resources.resx">
       <LogicalName>KBot.App.Resources.resources</LogicalName>
+      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+      <CustomToolNamespace>My.Resources</CustomToolNamespace>
+      <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
 
@@ -68,6 +80,13 @@
   <!-- Banc de probă (Dev Harness): referit DOAR pe Debug → zero amprentă în Release. -->
   <ItemGroup Condition="'$(Configuration)'=='Debug'">
     <ProjectReference Include="..\KBot.DevHarness\KBot.DevHarness.vbproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="My Project\Resources.Designer.vb">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
 
 </Project>

@@ -15,23 +15,23 @@ Partial Class LoginForm
 
     Private Sub InitializeComponent()
         pnlCard = New Panel()
-        capBar = New KBot.Theming.KBotCaptionBar()
-        busyBar = New KBot.Theming.KBotBusyBar()
+        capBar = New KBot.Controls.KBotCaptionBar()
+        busyBar = New KBot.Controls.KBotBusyBar()
         tlpBody = New TableLayoutPanel()
         picLogo = New PictureBox()
         lblTitle = New Label()
         lblSubtitle = New Label()
         lblUser = New Label()
-        txtUser = New KBot.Theming.KBotTextField()
+        txtUser = New KBot.Controls.KBotTextField()
         lblPass = New Label()
-        txtPass = New KBot.Theming.KBotTextField()
+        txtPass = New KBot.Controls.KBotTextField()
         btnContinue = New Button()
         pnlUnit = New TableLayoutPanel()
         lblUnit = New Label()
         cboUnit = New ComboBox()
         btnBack = New Button()
         btnLogin = New Button()
-        ntfError = New KBot.Theming.KBotNotice()
+        ntfError = New KBot.Controls.KBotNotice()
         pnlCard.SuspendLayout()
         tlpBody.SuspendLayout()
         pnlUnit.SuspendLayout()
@@ -303,21 +303,21 @@ Partial Class LoginForm
     End Sub
 
     Friend WithEvents pnlCard As Panel
-    Friend WithEvents capBar As KBot.Theming.KBotCaptionBar
-    Friend WithEvents busyBar As KBot.Theming.KBotBusyBar
+    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
+    Friend WithEvents busyBar As KBot.Controls.KBotBusyBar
     Friend WithEvents tlpBody As TableLayoutPanel
     Friend WithEvents picLogo As PictureBox
     Friend WithEvents lblTitle As Label
     Friend WithEvents lblSubtitle As Label
     Friend WithEvents lblUser As Label
-    Friend WithEvents txtUser As KBot.Theming.KBotTextField
+    Friend WithEvents txtUser As KBot.Controls.KBotTextField
     Friend WithEvents lblPass As Label
-    Friend WithEvents txtPass As KBot.Theming.KBotTextField
+    Friend WithEvents txtPass As KBot.Controls.KBotTextField
     Friend WithEvents btnContinue As Button
     Friend WithEvents pnlUnit As TableLayoutPanel
     Friend WithEvents lblUnit As Label
     Friend WithEvents cboUnit As ComboBox
     Friend WithEvents btnBack As Button
     Friend WithEvents btnLogin As Button
-    Friend WithEvents ntfError As KBot.Theming.KBotNotice
+    Friend WithEvents ntfError As KBot.Controls.KBotNotice
 End Class

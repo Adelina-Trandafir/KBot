@@ -162,7 +162,7 @@ Public NotInheritable Class LoginForm
 
     ' ---------------- helpers ----------------
     Private Sub ShowError(message As String)
-        ntfError.Show(message, NoticeKind.Error)
+        ntfError.Show(message, KBot.Controls.NoticeKind.Error)
     End Sub
 
     Private Sub ClearError()

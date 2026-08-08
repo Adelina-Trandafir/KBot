@@ -1,11 +1,52 @@
-AdvancedTreeControl (păstrat ca atare). De importat din sursa existentă:
-- AdvancedTreeControl.*.vb (controlul + API-ul: AddItem, ProcessPropertyRequest, TreeItem etc.)
+# KBot.Controls
 
-DE TĂIAT la import:
-- forma-gazdă Tree.vb și tot podul Access: TrimiteMesajAccess, _accessApp,
-  ProcesareComandaAccess, _formHwnd, MonitorTimer, parsarea argumentelor /frm /acc /idt /log,
-  API-ul pe string-uri (SET_CHECKBOX||NodeID||State).
+**Toate controalele K-BOT trăiesc aici.** Nu există control K-BOT în alt proiect: nici în
+`KBot.Theming` (acolo a rămas doar motorul de teme plus form-urile de bază), nici în
+`KBot.App`.
 
-Rămâne: AdvancedTreeControl ca UserControl reutilizabil, cu evenimentele native
-  (NodeChecked, NodeRadioSelected, RightIconClicked, SearchFinished) consumate direct.
-Aici intră și serviciul de progres (înlocuiește clsMeter).
+## Regula de organizare
+
+Fiecare **familie de control** are folderul ei, iar în folder intră controlul ÎMPREUNĂ cu
+tot ce ține de el — enum-uri, colecții, `EventArgs`, modele, form-uri ajutătoare. Gruparea
+e logică (după control), nu după felul fișierului.
+
+| Folder | Conține |
+|---|---|
+| `Tree/` | `AdvancedTreeControl` (+ partial-urile `.API`/`.Painting`/`.Popup*`/…), `ColumnDef`, `TreeLogger`, `TooltipTableModel`, `NodeDebugInfo`, `FrmNodeDebug` |
+| `DataView/` | `KBotDataView` (+ partial-urile `.Layout`/`.Painting`/`.Editing`/…), `KBotDataColumn`, `KBotDataColumnCollection`, `KBotDataRow`, enum-urile `KBotAggregate`/`KBotAutoSizeMode`/`KBotColumnType`/`KBotFillMode`; `DataView/Events/` ține `KBotCell*`/`KBotRow*`/`KBotButtonClickEventArgs` |
+| `Adobe/` | vizualizatorul Adobe: `AcroPdfHost`, `AcroPdfSurface`, găzduirea nativă (`AdobeReaderHost`, `AdobeWindow*`, `Adobe*Watcher`, registry, `IHostSurface`) |
+| `NavList/` | `KBotNavList`, `KBotNavItem`, `KBotNavItemCollection`, `KBotNavFlyout` + `KBotNavFlyoutStyle` (eticheta plutitoare a barei strânse), enum-urile `KBotNavOrientation`/`KBotNavAlign`/`KBotNavCorner`/`KBotNavCollapseState` |
+| `CaptionBar/` | `KBotCaptionBar` |
+| `BusyBar/` | `KBotBusyBar` |
+| `Notice/` | `KBotNotice`, `NoticeKind` |
+| `TextField/` | `KBotTextField` |
+
+Un control nou => un folder nou. Nu se adaugă fișiere de control în rădăcina proiectului
+(acolo rămân doar `AssemblyInfo.vb`, `.vbproj` și acest README).
+
+## Referințe
+
+Sensul e `KBot.Controls → KBot.Theming`, niciodată invers — `KBot.Theming` NU referă
+proiectul ăsta, altfel s-ar face ciclu. De aceea ce-i trebuie unui control din motor e
+expus `Public` acolo: `ThemeManager`/`ThemePalette`, `IThemedControl`, `ThemeShapes`
+(`ScaleDpi`/`RoundedRect`/`Blend`), `KBotDesignTime` și `NativeMethods.DragMove`.
+
+`KBot.Common` e referit doar pentru `GlobalErrorLog` (sink-ul global de erori).
+
+## Ce NU intră aici
+
+- **`KBotThemedForm` / `KBotShellForm`** — sunt form-uri de bază, nu controale; stau în
+  `KBot.Theming`, lângă motorul de teme.
+- **Vederile din `KBot.App\Views\`** (`SumarView`, `IstoricView`, `DdfView`,
+  `DdfFileBrowser`, `XfaXmlPreview`, `ReaderHostPreview`, `PlaceholderView`) — sunt ecrane
+  ale aplicației: implementează `IAngajamentView` și cheamă API-ul. Mutate aici, ar trage
+  `KBot.Api`/`KBot.Forexe`/`KBot.Xfa` într-o bibliotecă de UI care trebuie să rămână frunză.
+
+## Note istorice
+
+`AdvancedTreeControl` e importat din TREEVIEW_VBA cu podul Access tăiat (forma-gazdă
+`Tree.vb`, `TrimiteMesajAccess`, `ProcesareComandaAccess`, argumentele `/frm /acc /idt /log`,
+API-ul pe string-uri `SET_CHECKBOX||NodeID||State`). A rămas controlul reutilizabil cu
+evenimentele native (`NodeChecked`, `NodeRadioSelected`, `RightIconClicked`,
+`SearchFinished`) consumate direct. Rămâne **ne-tematizat** — shell-ul îi împinge culorile
+prin proprietăți publice; convenția `IThemedControl` se aplică restului controalelor.
