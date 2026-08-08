@@ -25,6 +25,38 @@ Public Enum KBotNavAlign
     Far
 End Enum
 
+''' <summary>Colțul barei în care stă butonul de strângere/desfășurare (0025-05).</summary>
+Public Enum KBotNavCorner
+    ''' <summary>Stânga-sus.</summary>
+    TopLeft
+    ''' <summary>Dreapta-sus (implicit — bara verticală clasică e ancorată la stânga).</summary>
+    TopRight
+    ''' <summary>Stânga-jos.</summary>
+    BottomLeft
+    ''' <summary>Dreapta-jos.</summary>
+    BottomRight
+End Enum
+
+''' <summary>
+''' Starea de strângere a barei (0025-05). Butonul din colț le parcurge ciclic, în ordinea
+''' <c>Expanded → Icons → Complete → Expanded</c>; <see cref="Icons"/> se sare când nu e
+''' disponibil (vezi <see cref="KBotNavList.IconsCollapseAvailable"/>).
+''' </summary>
+Public Enum KBotNavCollapseState
+    ''' <summary>Desfășurată — dimensiunea inițială, exact bara de dinainte de felie.</summary>
+    Expanded
+    ''' <summary>
+    ''' Doar pictograme: bara ȘI butoanele se strâng la latura pictogramei + puțin aer.
+    ''' Numai pe verticală și numai dacă măcar un buton are <c>Image</c>.
+    ''' </summary>
+    Icons
+    ''' <summary>
+    ''' Strânsă complet: bara rămâne cu puțin mai mult decât butonul de desfășurare, iar
+    ''' elementele nu mai primesc niciun slot (nu se pictează și nu se pot apăsa).
+    ''' </summary>
+    Complete
+End Enum
+
 ''' <summary>
 ''' Navigație owner-drawn — „tab-urile" simulate ale shell-ului (înlocuiește
 ''' TabControl-ul netematizabil). Un element = buton (cheie + text + badge opțional +
@@ -33,6 +65,11 @@ End Enum
 ''' verticală sau orizontală (<see cref="Orientation"/>). Selecția se schimbă cu click
 ''' sau Sus/Jos (Stânga/Dreapta în orizontal); re-selectarea aceleiași chei NU re-ridică
 ''' <see cref="SelectionChanged"/>. Toate culorile vin din schema activă (ApplyTheme).
+'''
+''' 0025-05: bara poate fi STRÂNSĂ (<see cref="Collapsible"/>) dintr-un buton mic desenat în
+''' colțul <see cref="CollapseCorner"/>, care parcurge ciclic stările din
+''' <see cref="KBotNavCollapseState"/>; iar aerul din jurul butoanelor se dă acum din
+''' <see cref="ItemPadding"/> (înainte era o margine fixă de 6 px logici).
 ''' </summary>
 <ToolboxItem(True)>
 <DefaultProperty("Items")>
@@ -53,6 +90,20 @@ Public NotInheritable Class KBotNavList
     Private _sepSeq As Integer                            ' contor pentru cheile interne ale separatorilor
     Private _iconSize As Integer = 20                     ' latura pictogramei, px logici (0025-02)
     Private _itemWidth As Integer                         ' lățimea butoanelor, px logici; 0 = automat (0025-03)
+
+    ' ── Padding + strângere (0025-05) ─────────────────────────────────────────
+    Private _itemPadding As New System.Windows.Forms.Padding(6)   ' aerul din jurul butoanelor, px logici
+    Private _collapsible As Boolean
+    Private _collapseCorner As KBotNavCorner = KBotNavCorner.TopRight
+    Private _collapseState As KBotNavCollapseState = KBotNavCollapseState.Expanded
+    Private _collapseHover As Boolean
+    ' Dimensiunea (lățime pe verticală / înălțime pe orizontală) la care se ÎNTOARCE bara.
+    ' Se reține ultima valoare avută DESFĂȘURATĂ, nu cea din constructor: operatorul poate
+    ' lăți bara înainte s-o strângă, iar „mărimea inițială" înseamnă mărimea LUI.
+    Private _expandedExtent As Integer
+    ' True cât timp NOI schimbăm dimensiunea; altfel OnSizeChanged ar reține lățimea strânsă
+    ' ca „dimensiune inițială" și bara nu s-ar mai putea desfășura niciodată.
+    Private _applyingCollapseExtent As Boolean
 
     ' ── Inițializare din designer (ISupportInitialize) ────────────────────────
     ' Between BeginInit and EndInit the control accepts whatever InitializeComponent writes
@@ -79,12 +130,16 @@ Public NotInheritable Class KBotNavList
     ''' <summary>Ridicat când selecția se schimbă (click, tastatură sau setter).</summary>
     Public Event SelectionChanged(key As String)
 
+    ''' <summary>Ridicat când bara se strânge sau se desfășoară (0025-05).</summary>
+    Public Event CollapseStateChanged(state As KBotNavCollapseState)
+
     Public Sub New()
         SetStyle(ControlStyles.UserPaint Or ControlStyles.AllPaintingInWmPaint Or
                  ControlStyles.OptimizedDoubleBuffer Or ControlStyles.ResizeRedraw Or
                  ControlStyles.Selectable, True)
         TabStop = True
         Width = 170
+        _expandedExtent = Width
         _items.Owner = Me
     End Sub
 
@@ -106,6 +161,11 @@ Public NotInheritable Class KBotNavList
 
     ''' <summary>
     ''' Orientarea barei. Schimbarea reașază elementele și repictează.
+    '''
+    ''' Dacă bara e STRÂNSĂ, schimbarea axei o desfășoară întâi pe axa veche (altfel dimensiunea
+    ''' strânsă ar rămâne agățată de o axă care nu mai e cea care se strânge), apoi reține
+    ''' mărimea curentă de pe axa nouă ca dimensiune inițială și restrânge. „Icons" nu există
+    ''' pe orizontală, deci acolo se retrogradează la „Complete".
     ''' </summary>
     <DefaultValue(KBotNavOrientation.Vertical)>
     Public Property Orientation As KBotNavOrientation
@@ -114,8 +174,24 @@ Public NotInheritable Class KBotNavList
         End Get
         Set(value As KBotNavOrientation)
             If value = _orientation Then Return
+
+            Dim previous As KBotNavCollapseState = _collapseState
+            If previous <> KBotNavCollapseState.Expanded Then
+                _collapseState = KBotNavCollapseState.Expanded
+                ApplyCollapseExtent()
+            End If
+
             _orientation = value
+            _expandedExtent = CurrentExtent()
+
+            If previous <> KBotNavCollapseState.Expanded Then
+                _collapseState = If(previous = KBotNavCollapseState.Icons AndAlso Not IconsCollapseAvailable,
+                                    KBotNavCollapseState.Complete, previous)
+                ApplyCollapseExtent()
+            End If
+
             InvalidateLayout()
+            If _collapseState <> previous Then RaiseEvent CollapseStateChanged(_collapseState)
         End Set
     End Property
 
@@ -172,6 +248,163 @@ Public NotInheritable Class KBotNavList
             InvalidateLayout()
         End Set
     End Property
+
+    ''' <summary>
+    ''' Aerul din jurul butoanelor, în px logici (scalați la DPI ca tot restul barei: <c>IconSize</c>,
+    ''' <c>ItemWidth</c>, înălțimea rândului). Implicit 6 pe toate laturile — exact marginea fixă de
+    ''' dinainte de 0025-05, ca o bară care nu atinge proprietatea să arate identic.
+    '''
+    ''' Pe VERTICALĂ <c>Left</c>/<c>Right</c> strâng coloana butoanelor (deci și lățimea lor, când
+    ''' sunt pe „umple bara"), iar <c>Top</c>/<c>Bottom</c> depărtează primul buton de sus și
+    ''' ultimul buton „Far" de jos; pe ORIZONTALĂ rolurile se inversează.
+    '''
+    ''' Se numește <c>ItemPadding</c>, nu <c>Padding</c>: <c>Control.Padding</c> există deja pe orice
+    ''' control, e SCALAT AUTOMAT de WinForms la autoscalarea formularului și ar intra în coliziune
+    ''' cu scalarea proprie a barei (aceeași valoare ajustată de două ori). Cel moștenit e ascuns
+    ''' din grilă tocmai ca să nu stea acolo o proprietate care nu face nimic.
+    ''' Valorile negative se aduc la 0, ca la <see cref="IconSize"/> / <see cref="ItemWidth"/>.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Aerul (px logici) din jurul butoanelor. Implicit 6 pe fiecare latură.")>
+    <DefaultValue(GetType(System.Windows.Forms.Padding), "6, 6, 6, 6")>
+    Public Property ItemPadding As System.Windows.Forms.Padding
+        Get
+            Return _itemPadding
+        End Get
+        Set(value As System.Windows.Forms.Padding)
+            Dim clamped As New System.Windows.Forms.Padding(Math.Max(0, value.Left), Math.Max(0, value.Top),
+                                                            Math.Max(0, value.Right), Math.Max(0, value.Bottom))
+            If clamped = _itemPadding Then Return
+            _itemPadding = clamped
+            InvalidateLayout()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' <c>Control.Padding</c> nu are niciun efect pe bara asta (layout-ul e owner-drawn și își
+    ''' calculează singur sloturile) — se ascunde din grila de proprietăți ca să nu fie confundat
+    ''' cu <see cref="ItemPadding"/>, care e cel care chiar lucrează.
+    ''' </summary>
+    <Browsable(False)>
+    <EditorBrowsable(EditorBrowsableState.Never)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Shadows Property Padding As System.Windows.Forms.Padding
+        Get
+            Return MyBase.Padding
+        End Get
+        Set(value As System.Windows.Forms.Padding)
+            MyBase.Padding = value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' True => în colțul <see cref="CollapseCorner"/> apare un buton mic care strânge/desfășoară
+    ''' bara. Un singur buton parcurge ciclic stările: <c>Icons</c> (dacă e disponibil), apoi
+    ''' <c>Complete</c>, apoi înapoi la mărimea inițială.
+    '''
+    ''' Butonul își REZERVĂ o bandă la capătul barei dinspre colțul ales (sus/jos pe verticală,
+    ''' stânga/dreapta pe orizontală), ca să nu se suprapună peste primul sau ultimul buton.
+    ''' Trecerea pe False desfășoară bara imediat.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("True => un buton mic din colț strânge bara (Icons → Complete → mărimea inițială).")>
+    <DefaultValue(False)>
+    Public Property Collapsible As Boolean
+        Get
+            Return _collapsible
+        End Get
+        Set(value As Boolean)
+            If value = _collapsible Then Return
+            _collapsible = value
+            If Not _collapsible AndAlso _collapseState <> KBotNavCollapseState.Expanded Then
+                _collapseState = KBotNavCollapseState.Expanded
+                ApplyCollapseExtent()
+                InvalidateLayout()
+                RaiseEvent CollapseStateChanged(_collapseState)
+                Return
+            End If
+            InvalidateLayout()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Colțul în care stă butonul de strângere. Implicit dreapta-sus — bara verticală clasică e
+    ''' ancorată la stânga ferestrei, deci butonul cade pe marginea dinspre conținut.
+    ''' Ignorat cât timp <see cref="Collapsible"/> e False.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Colțul în care se desenează butonul de strângere. Implicit dreapta-sus.")>
+    <DefaultValue(KBotNavCorner.TopRight)>
+    Public Property CollapseCorner As KBotNavCorner
+        Get
+            Return _collapseCorner
+        End Get
+        Set(value As KBotNavCorner)
+            If value = _collapseCorner Then Return
+            _collapseCorner = value
+            InvalidateLayout()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Starea curentă de strângere. STARE DE RULARE, nu valoare de designer: nu se serializează
+    ''' (ar îngheța formularul strâns și s-ar bate cu <c>Size</c>-ul scris tot de designer).
+    '''
+    ''' Setarea aruncă <c>InvalidOperationException</c> pe o stare imposibilă (bara nu e
+    ''' colapsabilă, sau „Icons" fără pictograme / pe orizontală) — fără no-op-uri tăcute.
+    ''' Butonul din colț NU aruncă: el sare stările indisponibile.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property CollapseState As KBotNavCollapseState
+        Get
+            Return _collapseState
+        End Get
+        Set(value As KBotNavCollapseState)
+            If value = _collapseState Then Return
+            If value <> KBotNavCollapseState.Expanded AndAlso Not _collapsible Then
+                Throw New InvalidOperationException("Bara nu e colapsabilă (Collapsible = False).")
+            End If
+            If value = KBotNavCollapseState.Icons AndAlso Not IconsCollapseAvailable Then
+                Throw New InvalidOperationException(
+                    "Starea «Icons» nu e disponibilă: bara e orizontală, IconSize e 0 sau niciun buton vizibil nu are pictogramă.")
+            End If
+            ApplyCollapseState(value)
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' True dacă starea <see cref="KBotNavCollapseState.Icons"/> are sens ACUM: bară verticală,
+    ''' <see cref="IconSize"/> pozitiv și măcar un buton vizibil cu pictogramă. Când e False,
+    ''' butonul din colț sare direct la <see cref="KBotNavCollapseState.Complete"/>.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property IconsCollapseAvailable As Boolean
+        Get
+            If _orientation <> KBotNavOrientation.Vertical Then Return False
+            If _iconSize <= 0 Then Return False
+            For Each it As KBotNavItem In _items
+                If Not it.IsSeparator AndAlso it.Visible AndAlso it.Image IsNot Nothing Then Return True
+            Next
+            Return False
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Trece la starea următoare din ciclu, exact ca un click pe butonul din colț:
+    ''' desfășurată → doar pictograme (dacă se poate) → strânsă complet → desfășurată.
+    ''' Aruncă dacă bara nu e colapsabilă.
+    ''' </summary>
+    Public Sub ToggleCollapse()
+        Try
+            If Not _collapsible Then Throw New InvalidOperationException("Bara nu e colapsabilă (Collapsible = False).")
+            CycleCollapse()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotNavList.ToggleCollapse", ex)
+            Throw
+        End Try
+    End Sub
 
     ''' <summary>Adaugă un buton (aliniat la început). Cheia trebuie să fie nevidă și unică.</summary>
     Public Sub AddItem(key As String, text As String)
@@ -419,12 +652,14 @@ Public NotInheritable Class KBotNavList
 
     ' Pătratul în care se desenează pictograma, în interiorul slotului elementului. Se strânge
     ' dacă rândul e mai scund decât latura nominală; Rectangle.Empty = nimic de desenat.
+    ' În starea „doar pictograme" nu mai există text lângă care să stea, deci se CENTREAZĂ.
     Private Function IconRect(it As KBotNavItem, r As Rectangle) As Rectangle
         If IconSlotWidth(it) = 0 Then Return Rectangle.Empty
-        Dim padX As Integer = ThemeShapes.ScaleDpi(Me, 12)
         Dim side As Integer = Math.Min(IconSide(), r.Height - ThemeShapes.ScaleDpi(Me, 8))
         If side <= 0 Then Return Rectangle.Empty
-        Return New Rectangle(r.Left + padX, r.Top + (r.Height - side) \ 2, side, side)
+        Dim top As Integer = r.Top + (r.Height - side) \ 2
+        If IsIconsCollapsed() Then Return New Rectangle(r.Left + (r.Width - side) \ 2, top, side, side)
+        Return New Rectangle(r.Left + ThemeShapes.ScaleDpi(Me, 12), top, side, side)
     End Function
 
     ' Lățimea impusă a butoanelor, scalată (0 = automat). Vezi ItemWidth.
@@ -432,6 +667,143 @@ Public NotInheritable Class KBotNavList
         If _itemWidth <= 0 Then Return 0
         Return ThemeShapes.ScaleDpi(Me, _itemWidth)
     End Function
+
+    ' ── Strângerea barei (0025-05) ─────────────────────────────────────────────
+    ' Ca la pictogramă: o SINGURĂ geometrie, folosită și la layout, și la pictare, și la
+    ' lovirea cu mouse-ul — altfel butonul din colț ar putea fi desenat într-un loc și
+    ' apăsat în altul.
+
+    ' Aerul din jurul butoanelor, în px scalați.
+    Private Function ScaledPadding() As System.Windows.Forms.Padding
+        Return New System.Windows.Forms.Padding(ThemeShapes.ScaleDpi(Me, _itemPadding.Left),
+                                                ThemeShapes.ScaleDpi(Me, _itemPadding.Top),
+                                                ThemeShapes.ScaleDpi(Me, _itemPadding.Right),
+                                                ThemeShapes.ScaleDpi(Me, _itemPadding.Bottom))
+    End Function
+
+    Private Function IsIconsCollapsed() As Boolean
+        Return _collapsible AndAlso _collapseState = KBotNavCollapseState.Icons
+    End Function
+
+    Private Function IsCompletelyCollapsed() As Boolean
+        Return _collapsible AndAlso _collapseState = KBotNavCollapseState.Complete
+    End Function
+
+    ' Latura butonului din colț și aerul din jurul lui.
+    Private Function CollapseButtonSide() As Integer
+        Return ThemeShapes.ScaleDpi(Me, 18)
+    End Function
+
+    Private Function CollapseButtonMargin() As Integer
+        Return ThemeShapes.ScaleDpi(Me, 6)
+    End Function
+
+    Private Function CornerIsLeft() As Boolean
+        Return _collapseCorner = KBotNavCorner.TopLeft OrElse _collapseCorner = KBotNavCorner.BottomLeft
+    End Function
+
+    Private Function CornerIsTop() As Boolean
+        Return _collapseCorner = KBotNavCorner.TopLeft OrElse _collapseCorner = KBotNavCorner.TopRight
+    End Function
+
+    ''' <summary>Pătratul butonului din colț (<see cref="Rectangle.Empty"/> dacă bara nu e colapsabilă).</summary>
+    Private Function CollapseButtonRect() As Rectangle
+        If Not _collapsible Then Return Rectangle.Empty
+        Dim side As Integer = CollapseButtonSide()
+        Dim gap As Integer = CollapseButtonMargin()
+        Dim x As Integer = If(CornerIsLeft(), gap, Width - gap - side)
+        Dim y As Integer = If(CornerIsTop(), gap, Height - gap - side)
+        Return New Rectangle(x, y, side, side)
+    End Function
+
+    ' Cât mănâncă butonul din AXA PRINCIPALĂ (0 dacă bara nu e colapsabilă). Banda se rezervă
+    ' ca butonul să nu stea peste primul/ultimul element.
+    Private Function CollapseBandExtent() As Integer
+        If Not _collapsible Then Return 0
+        Return CollapseButtonSide() + 2 * CollapseButtonMargin()
+    End Function
+
+    ' La ce capăt al axei principale cade banda: pe verticală decid colțurile de sus/jos, pe
+    ' orizontală cele de stânga/dreapta.
+    Private Function CollapseBandAtStart() As Boolean
+        Return If(_orientation = KBotNavOrientation.Vertical, CornerIsTop(), CornerIsLeft())
+    End Function
+
+    ' Lățimea unui buton în starea „doar pictograme": pătratul pictogramei + aer de o parte și de alta.
+    Private Function IconOnlyItemWidth() As Integer
+        Return IconSide() + 2 * ThemeShapes.ScaleDpi(Me, 8)
+    End Function
+
+    ' Dimensiunea barei pe axa care se strânge, în starea „Complete": «puțin mai mult decât butonul».
+    Private Function CompleteCollapsedExtent() As Integer
+        Return CollapseButtonSide() + 2 * CollapseButtonMargin()
+    End Function
+
+    ' Idem, în starea „Icons": padding + butonul îngust. Niciodată sub „Complete" — butonul din
+    ' colț trebuie să încapă în continuare.
+    Private Function IconsCollapsedExtent() As Integer
+        Dim pad As System.Windows.Forms.Padding = ScaledPadding()
+        Return Math.Max(CompleteCollapsedExtent(), pad.Left + pad.Right + IconOnlyItemWidth())
+    End Function
+
+    ' Dimensiunea curentă pe axa care se strânge.
+    Private Function CurrentExtent() As Integer
+        Return If(_orientation = KBotNavOrientation.Vertical, Width, Height)
+    End Function
+
+    ' Dimensiunea cerută de starea curentă.
+    Private Function TargetExtent() As Integer
+        Select Case _collapseState
+            Case KBotNavCollapseState.Icons
+                Return IconsCollapsedExtent()
+            Case KBotNavCollapseState.Complete
+                Return CompleteCollapsedExtent()
+            Case Else
+                Return _expandedExtent
+        End Select
+    End Function
+
+    ' Aplică dimensiunea stării curente. Steagul oprește OnSizeChanged să confunde dimensiunea
+    ' strânsă cu „dimensiunea inițială".
+    Private Sub ApplyCollapseExtent()
+        Dim target As Integer = TargetExtent()
+        If target <= 0 OrElse target = CurrentExtent() Then Return
+        _applyingCollapseExtent = True
+        Try
+            If _orientation = KBotNavOrientation.Vertical Then
+                Width = target
+            Else
+                Height = target
+            End If
+        Finally
+            _applyingCollapseExtent = False
+        End Try
+    End Sub
+
+    ' Trecerea propriu-zisă într-o stare deja validată.
+    Private Sub ApplyCollapseState(value As KBotNavCollapseState)
+        If value = _collapseState Then Return
+        _collapseState = value
+        ApplyCollapseExtent()
+        InvalidateLayout()
+        RaiseEvent CollapseStateChanged(value)
+    End Sub
+
+    ' Ciclul butonului din colț. Spre deosebire de setter, NU aruncă pe „Icons" indisponibil:
+    ' îl sare. Un buton care aruncă în fața operatorului fiindcă nicio intrare n-are pictogramă
+    ' ar fi o pedeapsă pentru o alegere de autorare.
+    Private Sub CycleCollapse()
+        Dim [next] As KBotNavCollapseState
+        Select Case _collapseState
+            Case KBotNavCollapseState.Expanded
+                [next] = If(IconsCollapseAvailable, KBotNavCollapseState.Icons, KBotNavCollapseState.Complete)
+            Case KBotNavCollapseState.Icons
+                [next] = KBotNavCollapseState.Complete
+            Case Else
+                [next] = KBotNavCollapseState.Expanded
+        End Select
+        ApplyCollapseState([next])
+    End Sub
 
     ''' <summary>
     ''' Fontul cu care se MĂSOARĂ un element — întotdeauna cel semibold, adică cel mai LAT font cu
@@ -487,6 +859,9 @@ Public NotInheritable Class KBotNavList
     ''' butoanelor, altfel ar ieși din dreptul lor.
     ''' </summary>
     Private Function CrossWidthFor(it As KBotNavItem, crossSpan As Integer) As Integer
+        ' „Doar pictograme" bate tot: bara S-A strâns la lățimea unei pictograme, deci nici
+        ' AutoSize, nici ItemWidth nu mai au ce lățime să ceară.
+        If IsIconsCollapsed() Then Return Math.Min(IconOnlyItemWidth(), crossSpan)
         If it.AutoSize AndAlso Not it.IsSeparator Then Return Math.Min(ContentWidth(it), crossSpan)
         Dim fixedW As Integer = FixedItemWidth()
         If fixedW > 0 Then Return Math.Min(fixedW, crossSpan)
@@ -501,21 +876,35 @@ Public NotInheritable Class KBotNavList
             it.Bounds = Rectangle.Empty
         Next
 
-        Dim margin As Integer = ThemeShapes.ScaleDpi(Me, 6)
+        ' „Strânsă complet": nu încape decât butonul din colț. Toate sloturile rămân goale, deci
+        ' nici pictarea, nici IndexAt, nici hover-ul nu mai ating vreun buton.
+        If IsCompletelyCollapsed() Then Return
+
+        Dim pad As System.Windows.Forms.Padding = ScaledPadding()
         Dim vertical As Boolean = (_orientation = KBotNavOrientation.Vertical)
-        Dim mainLen As Integer = If(vertical, Height, Width)
-        Dim crossLen As Integer = If(vertical, Width, Height)
-        Dim crossStart As Integer = margin
-        Dim crossSpan As Integer = Math.Max(0, crossLen - 2 * margin)
+        Dim mainStart As Integer = If(vertical, pad.Top, pad.Left)
+        Dim mainEnd As Integer = If(vertical, Height - pad.Bottom, Width - pad.Right)
+        Dim crossStart As Integer = If(vertical, pad.Left, pad.Top)
+        Dim crossSpan As Integer = Math.Max(0, If(vertical, Width - pad.Right, Height - pad.Bottom) - crossStart)
+
+        ' Banda rezervată butonului de strângere, la capătul dinspre colțul ales.
+        Dim band As Integer = CollapseBandExtent()
+        If band > 0 Then
+            If CollapseBandAtStart() Then
+                mainStart += band
+            Else
+                mainEnd -= band
+            End If
+        End If
 
         ' Grupul Near: de la început spre capăt.
-        Dim nearCursor As Integer = margin
+        Dim nearCursor As Integer = mainStart
         ' Grupul Far: se așază de la (capăt - extindereTotală) în ordinea listei.
         Dim farTotal As Integer = 0
         For Each it In _items
             If it.Visible AndAlso it.Align = KBotNavAlign.Far Then farTotal += ItemExtent(it)
         Next
-        Dim farCursor As Integer = Math.Max(nearCursor, mainLen - margin - farTotal)
+        Dim farCursor As Integer = Math.Max(nearCursor, mainEnd - farTotal)
 
         For Each it In _items
             If Not it.Visible Then Continue For
@@ -577,6 +966,16 @@ Public NotInheritable Class KBotNavList
         OnKeyDown(New KeyEventArgs(key))
     End Sub
 
+    ''' <summary>Friend test hook: pătratul butonului de strângere (Empty dacă bara nu e colapsabilă).</summary>
+    Friend Function DebugCollapseButtonRect() As Rectangle
+        Return CollapseButtonRect()
+    End Function
+
+    ''' <summary>Friend test hook: click stânga pe drumul real (inclusiv butonul de strângere).</summary>
+    Friend Sub DebugClickAt(location As Point)
+        OnMouseClick(New MouseEventArgs(MouseButtons.Left, 1, location.X, location.Y, 0))
+    End Sub
+
     Private Function IndexAt(location As Point) As Integer
         EnsureLayout()
         For i As Integer = 0 To _items.Count - 1
@@ -616,6 +1015,13 @@ Public NotInheritable Class KBotNavList
 
     Protected Overrides Sub OnSizeChanged(e As EventArgs)
         MyBase.OnSizeChanged(e)
+        ' „Mărimea inițială" la care se întoarce butonul de strângere = ultima mărime avută
+        ' DESFĂȘURATĂ (operatorul poate lăți bara înainte s-o strângă). Redimensionările pe
+        ' care le facem NOI (_applyingCollapseExtent) nu contează — altfel prima strângere
+        ' ar deveni noua „mărime inițială" și bara nu s-ar mai putea desfășura.
+        If Not _applyingCollapseExtent AndAlso _collapseState = KBotNavCollapseState.Expanded Then
+            _expandedExtent = CurrentExtent()
+        End If
         InvalidateLayout()
     End Sub
 
@@ -649,6 +1055,9 @@ Public NotInheritable Class KBotNavList
             ' (throwing would kill the design surface), so the mistake has to be VISIBLE instead.
             Dim badKeys As HashSet(Of String) = If(designTime, DuplicateKeys(), Nothing)
 
+            ' Starea „doar pictograme": nu mai e loc de text, badge sau elipsă.
+            Dim iconsOnly As Boolean = IsIconsCollapsed()
+
             For i As Integer = 0 To _items.Count - 1
                 Dim it As KBotNavItem = _items(i)
                 If Not it.Visible Then Continue For
@@ -673,9 +1082,17 @@ Public NotInheritable Class KBotNavList
                 End If
 
                 ' Badge (pastilă rotunjită, aliniată dreapta) — desenat înaintea
-                ' textului ca să-i putem rezerva lățimea.
+                ' textului ca să-i putem rezerva lățimea. Într-o bară strânsă la pictograme
+                ' pastila n-are unde încăpea: rămâne un punct în colțul din dreapta-sus, ca
+                ' informația «are ceva de arătat» să nu dispară de tot.
                 Dim textRight As Integer = r.Right - padX
-                If it.Badge > 0 Then
+                If it.Badge > 0 AndAlso iconsOnly Then
+                    Dim dot As Integer = ThemeShapes.ScaleDpi(Me, 6)
+                    Using b As New SolidBrush(_accent)
+                        g.FillEllipse(b, r.Right - dot - ThemeShapes.ScaleDpi(Me, 4),
+                                      r.Top + ThemeShapes.ScaleDpi(Me, 4), dot, dot)
+                    End Using
+                ElseIf it.Badge > 0 Then
                     Dim badgeText As String = it.Badge.ToString()
                     Dim ts As Size = TextRenderer.MeasureText(g, badgeText, Font)
                     Dim bh As Integer = ThemeShapes.ScaleDpi(Me, 18)
@@ -709,11 +1126,21 @@ Public NotInheritable Class KBotNavList
                 Else
                     textColor = _textNormal
                 End If
-                Dim textLeft As Integer = r.Left + padX + IconSlotWidth(it)
-                Dim tr As New Rectangle(textLeft, r.Top, Math.Max(0, textRight - textLeft), r.Height)
-                Dim flags As TextFormatFlags = TextFormatFlags.VerticalCenter Or TextFormatFlags.EndEllipsis Or
-                    If(_orientation = KBotNavOrientation.Vertical, TextFormatFlags.Left, TextFormatFlags.HorizontalCenter)
-                TextRenderer.DrawText(g, it.Text, textFont, tr, textColor, flags)
+                If iconsOnly Then
+                    ' Fără text. Un buton FĂRĂ pictogramă ar rămâne o pată goală, deci primește
+                    ' inițiala — starea „Icons" se poate cere de îndată ce UN singur buton are
+                    ' pictogramă, iar restul trebuie totuși să se distingă unul de altul.
+                    If iconR.IsEmpty AndAlso Not String.IsNullOrEmpty(it.Text) Then
+                        TextRenderer.DrawText(g, it.Text.Substring(0, 1).ToUpperInvariant(), SemiboldFont(), r, textColor,
+                            TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter)
+                    End If
+                Else
+                    Dim textLeft As Integer = r.Left + padX + IconSlotWidth(it)
+                    Dim tr As New Rectangle(textLeft, r.Top, Math.Max(0, textRight - textLeft), r.Height)
+                    Dim flags As TextFormatFlags = TextFormatFlags.VerticalCenter Or TextFormatFlags.EndEllipsis Or
+                        If(_orientation = KBotNavOrientation.Vertical, TextFormatFlags.Left, TextFormatFlags.HorizontalCenter)
+                    TextRenderer.DrawText(g, it.Text, textFont, tr, textColor, flags)
+                End If
 
                 ' Marcajul de eroare din designer: cheie vidă sau duplicată.
                 If designTime AndAlso
@@ -723,11 +1150,54 @@ Public NotInheritable Class KBotNavList
                     End Using
                 End If
             Next
+
+            ' Butonul din colț se pictează ULTIMUL: banda lui e rezervată în layout, dar pe o bară
+            ' foarte îngustă un buton lat tot i-ar putea intra pe dedesubt.
+            DrawCollapseButton(g, radius)
         Catch ex As Exception
             ' Nu logăm din procesul designer-ului (vezi KBotDesignTime): fișierul de erori ar
             ' ajunge lângă devenv.exe și ar fi zgomot, nu diagnostic.
             If Not designTime Then GlobalErrorLog.Write("KBotNavList.OnPaint", ex)
         End Try
+    End Sub
+
+    ' Butonul de strângere: fundal doar la hover + un unghi («chevron») care arată încotro merge
+    ' următorul click. Cât mai sunt trepte de strâns arată spre începutul axei (stânga pe
+    ' verticală, sus pe orizontală); din starea complet strânsă arată înapoi, spre desfășurare.
+    Private Sub DrawCollapseButton(g As Graphics, radius As Integer)
+        Dim b As Rectangle = CollapseButtonRect()
+        If b.IsEmpty OrElse b.Width <= 0 OrElse b.Height <= 0 Then Return
+
+        If _collapseHover Then
+            Using path As GraphicsPath = ThemeShapes.RoundedRect(b, Math.Min(radius, b.Width \ 2))
+                Using br As New SolidBrush(_hoverFill)
+                    g.FillPath(br, path)
+                End Using
+            End Using
+        End If
+
+        Dim forward As Boolean = (_collapseState = KBotNavCollapseState.Complete)   ' True = desfășoară
+        Dim cx As Single = b.Left + b.Width / 2.0F
+        Dim cy As Single = b.Top + b.Height / 2.0F
+        Dim ax As Single = b.Width / 5.0F        ' brațul unghiului
+        Dim ay As Single = b.Height / 5.0F
+        Dim pts As PointF()
+        If _orientation = KBotNavOrientation.Vertical Then
+            Dim tip As Single = If(forward, cx + ax, cx - ax)
+            Dim tail As Single = If(forward, cx - ax, cx + ax)
+            pts = {New PointF(tail, cy - ay), New PointF(tip, cy), New PointF(tail, cy + ay)}
+        Else
+            Dim tip As Single = If(forward, cy + ay, cy - ay)
+            Dim tail As Single = If(forward, cy - ay, cy + ay)
+            pts = {New PointF(cx - ax, tail), New PointF(cx, tip), New PointF(cx + ax, tail)}
+        End If
+
+        Using pen As New Pen(If(_collapseHover, _accent, _textNormal), Math.Max(1.4F, b.Width / 10.0F))
+            pen.StartCap = LineCap.Round
+            pen.EndCap = LineCap.Round
+            pen.LineJoin = LineJoin.Round
+            g.DrawLines(pen, pts)
+        End Using
     End Sub
 
     ' Cheile care apar de mai multe ori pe butoane (separatorii nu contează). Doar design-time.
@@ -781,10 +1251,13 @@ Public NotInheritable Class KBotNavList
     Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
         MyBase.OnMouseMove(e)
         Try
-            Dim idx As Integer = IndexAt(e.Location)
+            ' Butonul din colț e desenat PESTE bandă, deci el ia hover-ul primul.
+            Dim onCollapse As Boolean = CollapseButtonRect().Contains(e.Location)
+            Dim idx As Integer = If(onCollapse, -1, IndexAt(e.Location))
             If idx >= 0 AndAlso Not _items(idx).Enabled Then idx = -1   ' fără hover pe disabled
-            If idx <> _hoverIndex Then
+            If idx <> _hoverIndex OrElse onCollapse <> _collapseHover Then
                 _hoverIndex = idx
+                _collapseHover = onCollapse
                 Invalidate()
             End If
         Catch ex As Exception
@@ -794,8 +1267,9 @@ Public NotInheritable Class KBotNavList
 
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
         MyBase.OnMouseLeave(e)
-        If _hoverIndex <> -1 Then
+        If _hoverIndex <> -1 OrElse _collapseHover Then
             _hoverIndex = -1
+            _collapseHover = False
             Invalidate()
         End If
     End Sub
@@ -805,6 +1279,12 @@ Public NotInheritable Class KBotNavList
         Try
             If e.Button <> MouseButtons.Left Then Return
             Focus()
+            ' Butonul din colț înaintea elementelor — vezi OnMouseMove. În designer NU se
+            ' strânge: ar redimensiona controlul și ar murdări formularul cuiva.
+            If CollapseButtonRect().Contains(e.Location) Then
+                If Not KBotDesignTime.IsDesignTime(Me) Then CycleCollapse()
+                Return
+            End If
             Dim idx As Integer = IndexAt(e.Location)
             If idx >= 0 AndAlso _items(idx).Enabled Then SelectIndex(idx)
         Catch ex As Exception
