@@ -75,8 +75,8 @@ Partial Public Class AdvancedTreeControl
                 inaltimeMax = Math.Max(inaltimeMax, sz.Height)
             Next
 
-            Dim cx As Single = HeaderTextStartX(x, availW, latimeTotala)
-            Dim cy As Single = HeaderTextStartY(inaltimeMax)
+            Dim cx As Single = AlignStartX(_headerTextAlign, x, availW, latimeTotala)
+            Dim cy As Single = AlignStartY(_headerTextAlign, _headerHeight, inaltimeMax)
 
             For Each part In parts
                 Dim sz = g.MeasureString(part.Text, part.Font, PointF.Empty, fmt)
@@ -100,29 +100,9 @@ Partial Public Class AdvancedTreeControl
         End Using
     End Sub
 
-    ' Punctul de plecare orizontal al caption-ului, după HeaderTextAlign.
-    Private Function HeaderTextStartX(stanga As Integer, disponibil As Integer, latime As Single) As Single
-        Select Case _headerTextAlign
-            Case ContentAlignment.TopCenter, ContentAlignment.MiddleCenter, ContentAlignment.BottomCenter
-                Return stanga + Math.Max(0.0F, (disponibil - latime) / 2.0F)
-            Case ContentAlignment.TopRight, ContentAlignment.MiddleRight, ContentAlignment.BottomRight
-                Return stanga + Math.Max(0.0F, disponibil - latime)
-            Case Else
-                Return stanga
-        End Select
-    End Function
-
-    ' Punctul de plecare vertical al caption-ului, după HeaderTextAlign.
-    Private Function HeaderTextStartY(inaltime As Single) As Single
-        Select Case _headerTextAlign
-            Case ContentAlignment.TopLeft, ContentAlignment.TopCenter, ContentAlignment.TopRight
-                Return 0.0F
-            Case ContentAlignment.BottomLeft, ContentAlignment.BottomCenter, ContentAlignment.BottomRight
-                Return Math.Max(0.0F, _headerHeight - inaltime)
-            Case Else
-                Return Math.Max(0.0F, (_headerHeight - inaltime) / 2.0F)
-        End Select
-    End Function
+    ' Punctul de plecare al caption-ului (orizontal/vertical) după HeaderTextAlign: AlignStartX /
+    ' AlignStartY din partiala .Footer — o singură interpretare a lui ContentAlignment pentru
+    ' amândouă benzile.
 
     ' ══════════════════════════════════════════════════════════════════
     ' HEADER — ICON KEY RESOLUTION (called from Tree.Builder after cache load)
@@ -138,6 +118,9 @@ Partial Public Class AdvancedTreeControl
         End If
         If Not String.IsNullOrEmpty(_headerSearchIconKey) Then
             If cache.TryGetValue(_headerSearchIconKey, img) Then _headerSearchIcon = img
+        End If
+        If Not String.IsNullOrEmpty(_footerLeftIconKey) Then
+            If cache.TryGetValue(_footerLeftIconKey, img) Then _footerLeftIcon = img
         End If
 
         ' Auto-open: SearchShow = True și nu există iconiță toggle

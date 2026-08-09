@@ -241,6 +241,9 @@ Partial Public Class AdvancedTreeControl
         Dim headerOff As Integer = TotalHeaderOffset
 
         If p.Y < headerOff Then Return Nothing
+        ' Banda de subsol nu e zonă de noduri: un rând derulat pe sub ea rămâne desenat sub clip,
+        ' dar nu se mai poate nici selecta, nici survola prin bandă.
+        If _footerVisible AndAlso p.Y >= Me.Height - _footerHeight Then Return Nothing
 
         Dim yRel = p.Y - Me.AutoScrollPosition.Y - PADDING_TREE_TOP - headerOff
         Dim idx As Integer = yRel \ ItemHeight
@@ -776,7 +779,7 @@ Partial Public Class AdvancedTreeControl
     Private Sub UpdateVScrollMaximum(contentHeight As Integer)
         Dim headerOff As Integer = If(_headerVisible, _headerHeight, 0) +
                                If(_isSearchMode, _searchBarHeight, 0)
-        Dim viewport As Integer = Math.Max(1, Me.Height - headerOff)
+        Dim viewport As Integer = Math.Max(1, Me.Height - headerOff - FooterOffset)
         _vScroll.LargeChange = viewport
         _vScroll.SmallChange = ItemHeight
 
@@ -808,13 +811,15 @@ Partial Public Class AdvancedTreeControl
     Friend Sub RefreshScrollVisibility()
         Dim headerOff As Integer = If(_headerVisible, _headerHeight, 0) +
                                If(_isSearchMode, _searchBarHeight, 0)
-        Dim viewport As Integer = Math.Max(1, Me.Height - headerOff)
+        ' Bara de derulare se oprește DEASUPRA subsolului — altfel săgeata ei de jos ar cădea
+        ' peste butonul de strângere.
+        Dim viewport As Integer = Math.Max(1, Me.Height - headerOff - FooterOffset)
         Dim contentH As Integer = GetVisibleItems().Count * ItemHeight + PADDING_TREE_TOP
 
         _vScroll.Width = SystemInformation.VerticalScrollBarWidth
         _vScroll.Left = Math.Max(0, Me.Width - _vScroll.Width)
         _vScroll.Top = headerOff
-        _vScroll.Height = Math.Max(1, Me.Height - headerOff)
+        _vScroll.Height = viewport
         _vScroll.SmallChange = ItemHeight
         _vScroll.LargeChange = viewport
 
@@ -844,6 +849,7 @@ Partial Public Class AdvancedTreeControl
 
     Private Sub OnVScrollScroll(sender As Object, e As ScrollEventArgs)
         Try
+            CancelCollapsedFlyout()   ' rândul de sub etichetă s-a mutat — eticheta n-o urmează
             Me.Invalidate()
         Catch ex As Exception
             GlobalErrorLog.Write("AdvancedTreeControl.OnVScrollScroll", ex)

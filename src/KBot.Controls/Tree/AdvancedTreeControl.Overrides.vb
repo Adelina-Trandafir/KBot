@@ -40,17 +40,19 @@ Partial Public Class AdvancedTreeControl
         e.Graphics.PixelOffsetMode = PixelOffsetMode.Half
 
         Dim headerOff As Integer = TotalHeaderOffset
+        Dim footerOff As Integer = FooterOffset
+        Dim zonaNoduri As Integer = Math.Max(0, Me.Height - headerOff - footerOff)
 
         ' ── 1. Items (cu clip) — se desenează PRIMII ──────────────────────
         Dim visibleItems = GetVisibleItems()
         Dim contentH As Integer = visibleItems.Count * ItemHeight + PADDING_TREE_TOP
 
         Dim oldClip = e.Graphics.Clip.Clone()
-        e.Graphics.SetClip(New Rectangle(0, headerOff, Me.Width, Me.Height - headerOff))
+        e.Graphics.SetClip(New Rectangle(0, headerOff, Me.Width, zonaNoduri))
 
         Dim y As Integer = -_vScroll.Value + PADDING_TREE_TOP + headerOff
         For Each it In visibleItems
-            If y + ItemHeight > headerOff AndAlso y < Me.Height Then
+            If y + ItemHeight > headerOff AndAlso y < headerOff + zonaNoduri Then
                 DrawItem(e.Graphics, it, y)
             End If
             y += ItemHeight
@@ -58,14 +60,15 @@ Partial Public Class AdvancedTreeControl
 
         e.Graphics.Clip = oldClip
 
-        ' ── 2. Header + SearchBar desenate DUPĂ items — acoperă orice bleeding ──
+        ' ── 2. Header + SearchBar + Footer desenate DUPĂ items — acoperă orice bleeding ──
         If _headerVisible Then DrawHeader(e.Graphics)
         If _isSearchMode Then DrawSearchBar(e.Graphics)
+        If _footerVisible Then DrawFooter(e.Graphics)
         ' ── 2b. Column headers (TreeListView) — deseneaza DUPA items, DUPA header ──
         If _treeListViewEnabled AndAlso _treeListView Then DrawColumnHeaders(e.Graphics)
 
         ' ── 3. Scrollbar visibility (BeginInvoke — nu din interiorul OnPaint) ──
-        Dim viewport As Integer = Math.Max(1, Me.Height - headerOff)
+        Dim viewport As Integer = Math.Max(1, zonaNoduri)
         Dim needsScroll As Boolean = contentH > viewport
         If _vScroll.Visible <> needsScroll Then
             Me.BeginInvoke(New Action(AddressOf RefreshScrollVisibility))
@@ -102,6 +105,9 @@ Partial Public Class AdvancedTreeControl
       Try
         MyBase.OnMouseDown(e)
         Me.Focus()
+
+        ' ── Footer area clicks (butonul de strângere) ────────────────────────
+        If HandleFooterMouseDown(e.Location) Then Return
 
         ' ── Header area clicks ───────────────────────────────────────────────
         If _headerVisible AndAlso e.Y < _headerHeight Then
@@ -464,6 +470,19 @@ Partial Public Class AdvancedTreeControl
       Try
         MyBase.OnMouseMove(e)
 
+        ' Subsolul își ia întâi partea (hover pe buton + eticheta plutitoare a arborelui strâns);
+        ' cursorul în bandă înseamnă că niciun nod nu e survolat.
+        If HandleFooterMouseMove(e.Location) Then
+            If pHoveredItem IsNot Nothing Then
+                pHoveredItem = Nothing
+                HideAllTooltips()
+                TooltipTimer.Stop()
+                Me.Invalidate()
+            End If
+            _lastMouseX = e.X
+            Return
+        End If
+
         Dim it = HitTestItem(e.Location)
 
         ' --- Logică Zonă Moartă ---
@@ -503,6 +522,7 @@ Partial Public Class AdvancedTreeControl
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
         Try
             MyBase.OnMouseLeave(e)
+            HandleFooterMouseLeave()
             pHoveredItem = Nothing
             HideAllTooltips()
             TooltipTimer.Stop()
@@ -524,10 +544,12 @@ Partial Public Class AdvancedTreeControl
     Protected Overrides Sub OnResize(e As EventArgs)
         Try
             MyBase.OnResize(e)
+            RememberExpandedWidth()       ' lățimea la care se întoarce butonul de strângere
+            CancelCollapsedFlyout()       ' eticheta plutitoare nu supraviețuiește unei mutări
             _vScroll.Width = SystemInformation.VerticalScrollBarWidth
             _vScroll.Left = Math.Max(0, Me.Width - _vScroll.Width)
             '_vScroll.Top = 0
-            _vScroll.Height = Me.Height
+            _vScroll.Height = Math.Max(1, Me.Height - FooterOffset)
             RefreshScrollVisibility()
             If _isSearchMode Then PositionSearchTextBox()
             Me.Invalidate()
@@ -540,7 +562,7 @@ Partial Public Class AdvancedTreeControl
         Try
             Dim headerOff As Integer = If(_headerVisible, _headerHeight, 0) +
                                    If(_isSearchMode, _searchBarHeight, 0)
-            Dim viewport As Integer = Math.Max(1, Me.Height - headerOff)
+            Dim viewport As Integer = Math.Max(1, Me.Height - headerOff - FooterOffset)
             Dim contentH As Integer = GetVisibleItems().Count * ItemHeight + PADDING_TREE_TOP
             If contentH <= viewport Then Return
 
@@ -548,6 +570,7 @@ Partial Public Class AdvancedTreeControl
             Dim delta As Integer = -(e.Delta \ 120) * lines * ItemHeight
             Dim maxVal As Integer = Math.Max(0, contentH - viewport)
             _vScroll.Value = Math.Max(0, Math.Min(_vScroll.Value + delta, maxVal))
+            CancelCollapsedFlyout()   ' rândul de sub etichetă s-a mutat — eticheta n-o urmează
             Me.Invalidate()
         Catch ex As Exception
             GlobalErrorLog.Write("AdvancedTreeControl.OnMouseWheel", ex)

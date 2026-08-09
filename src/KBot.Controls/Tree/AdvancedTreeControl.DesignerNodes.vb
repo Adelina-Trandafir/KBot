@@ -136,8 +136,9 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     ''' <summary>
-    ''' Rezolvă cheile de iconițe de antet din <see cref="NodeImages"/>. Cheia câștigă doar dacă
-    ''' găsește o imagine — o iconiță aleasă direct în designer nu e ștearsă de o cheie greșită.
+    ''' Rezolvă cheile de iconițe de antet ȘI de subsol din <see cref="NodeImages"/>. Cheia câștigă
+    ''' doar dacă găsește o imagine — o iconiță aleasă direct în designer nu e ștearsă de o cheie
+    ''' greșită.
     ''' </summary>
     Friend Sub ResolveHeaderIconsFromNodeImages()
         If _nodeImages Is Nothing Then Return
@@ -148,6 +149,9 @@ Partial Public Class AdvancedTreeControl
 
         img = NodeImage(_headerRightIconKey)
         If img IsNot Nothing Then _headerRightIcon = img
+
+        img = NodeImage(_footerLeftIconKey)
+        If img IsNot Nothing Then _footerLeftIcon = img
 
         img = NodeImage(_headerSearchIconKey)
         If img IsNot Nothing Then

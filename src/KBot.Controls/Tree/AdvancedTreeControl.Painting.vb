@@ -229,7 +229,7 @@ Partial Public Class AdvancedTreeControl
             Dim baseTextColor As Color = If(it.NodeForeColor <> Color.Empty, it.NodeForeColor,
                                      If(Me.ForeColor <> Color.Empty, Me.ForeColor, Color.Black))
 
-            Dim nodeStyle As FontStyle = Me.TreeFont.Style
+            Dim nodeStyle As FontStyle = Me.Font.Style
             If it.Bold Then nodeStyle = nodeStyle Or FontStyle.Bold
             If it.Italic Then nodeStyle = nodeStyle Or FontStyle.Italic
 
@@ -237,7 +237,7 @@ Partial Public Class AdvancedTreeControl
                 nodeFont = New Font(Me.Font, nodeStyle)
                 nodeFontCreated = True              ' eliberat în Finally
             Else
-                nodeFont = Me.TreeFont              ' font partajat — NU se eliberează
+                nodeFont = Me.Font                  ' font partajat — NU se eliberează
             End If
 
             ' ══ 5. BACKCOLOR PER NOD ══════════════════════════════════════════════
@@ -326,7 +326,7 @@ Partial Public Class AdvancedTreeControl
             TreeLogger.Ex(ex, "DrawContent")
         Finally
             ' Eliberăm DOAR fontul creat dinamic (Bold/Italic per nod);
-            ' Me.TreeFont este partajat și nu se eliberează niciodată aici.
+            ' Me.Font este partajat și nu se eliberează niciodată aici.
             If nodeFontCreated AndAlso nodeFont IsNot Nothing Then nodeFont.Dispose()
         End Try
     End Sub

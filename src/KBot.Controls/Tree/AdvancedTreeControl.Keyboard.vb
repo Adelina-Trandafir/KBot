@@ -170,7 +170,7 @@
 
         Dim headerOff As Integer = If(_headerVisible, _headerHeight, 0) +
                                    If(_isSearchMode, _searchBarHeight, 0)
-        Dim viewport As Integer = Math.Max(1, Me.Height - headerOff)
+        Dim viewport As Integer = Math.Max(1, Me.Height - headerOff - FooterOffset)
         Dim scrollY As Integer = _vScroll.Value
         Dim nodeTop As Integer = PADDING_TREE_TOP + idx * ItemHeight
         Dim nodeBot As Integer = nodeTop + ItemHeight

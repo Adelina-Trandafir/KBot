@@ -23,6 +23,9 @@ Public NotInheritable Class TreePlaygroundForm
     Private _iconRight As Bitmap
     Private _iconSearch As Bitmap
     Private _iconHeaderRight As Bitmap
+    Private _iconFooter As Bitmap
+    Private _iconCollapseOpen As Bitmap
+    Private _iconCollapseClosed As Bitmap
 
     ' Perechile (grupuri × frunze) din combo-ul de date.
     Private Shared ReadOnly _seturi As (Grupuri As Integer, Frunze As Integer)() = {
@@ -56,6 +59,9 @@ Public NotInheritable Class TreePlaygroundForm
         _iconRight = SolidIcon(16, Color.MediumSeaGreen)
         _iconSearch = SolidIcon(16, Color.DimGray)
         _iconHeaderRight = SolidIcon(16, Color.IndianRed)
+        _iconFooter = SolidIcon(16, Color.MediumPurple)
+        _iconCollapseOpen = SolidIcon(16, Color.SeaGreen)
+        _iconCollapseClosed = SolidIcon(16, Color.Firebrick)
     End Sub
 
     Private Shared Function SolidIcon(latura As Integer, culoare As Color) As Bitmap
@@ -70,9 +76,13 @@ Public NotInheritable Class TreePlaygroundForm
         cboSearchIn.Items.AddRange(New Object() {"Caption", "Tag", "Ambele"})
         cboSearchType.Items.AddRange(New Object() {"Conține", "Începe cu"})
         cboScrollTheme.Items.AddRange(New Object() {"Default", "Explorer", "DarkMode"})
+        cboSearchMode.Items.AddRange(New Object() {"Arbore", "Listă plată"})
         cboHeaderStyle.Items.AddRange(New Object() {"Solid", "Degrade vertical", "Degrade orizontal"})
+        cboFooterStyle.Items.AddRange(New Object() {"Solid", "Degrade vertical", "Degrade orizontal"})
+        cboCollapsePos.Items.AddRange(New Object() {"Dreapta", "Stânga"})
         For Each a As ContentAlignment In [Enum].GetValues(GetType(ContentAlignment))
             cboHeaderAlign.Items.Add(a.ToString())
+            cboFooterAlign.Items.Add(a.ToString())
         Next
         For Each s In _seturi
             cboNodeCount.Items.Add($"{s.Grupuri} grupuri × {s.Frunze} frunze")
@@ -184,6 +194,98 @@ Public NotInheritable Class TreePlaygroundForm
     Private Sub chkHeaderRightIcon_CheckedChanged(sender As Object, e As EventArgs) Handles chkHeaderRightIcon.CheckedChanged
         Apply(Sub() tree.HeaderRightIcon = If(chkHeaderRightIcon.Checked, _iconHeaderRight, Nothing))
     End Sub
+    Private Sub numHeaderIconSize_ValueChanged(sender As Object, e As EventArgs) Handles numHeaderIconSize.ValueChanged
+        Apply(Sub() tree.HeaderIconSize = Patrat(numHeaderIconSize))
+    End Sub
+
+    ' ── Subsol ───────────────────────────────────────────────────────────────────
+    Private Sub chkFooterVisible_CheckedChanged(sender As Object, e As EventArgs) Handles chkFooterVisible.CheckedChanged
+        Apply(Sub() tree.FooterVisible = chkFooterVisible.Checked)
+    End Sub
+    Private Sub txtFooterCaption_TextChanged(sender As Object, e As EventArgs) Handles txtFooterCaption.TextChanged
+        Apply(Sub() tree.FooterCaption = txtFooterCaption.Text)
+    End Sub
+    Private Sub numFooterHeight_ValueChanged(sender As Object, e As EventArgs) Handles numFooterHeight.ValueChanged
+        Apply(Sub() tree.FooterHeight = CInt(numFooterHeight.Value))
+    End Sub
+    Private Sub btnFooterFont_Click(sender As Object, e As EventArgs) Handles btnFooterFont.Click
+        PickFont(tree.FooterCaptionFont, Sub(f) tree.FooterCaptionFont = f, "FooterCaptionFont")
+    End Sub
+    Private Sub cboFooterAlign_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboFooterAlign.SelectedIndexChanged
+        Apply(Sub()
+                  Dim valori As Array = [Enum].GetValues(GetType(ContentAlignment))
+                  tree.FooterTextAlign = CType(valori.GetValue(cboFooterAlign.SelectedIndex), ContentAlignment)
+              End Sub)
+    End Sub
+    Private Sub cboFooterStyle_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboFooterStyle.SelectedIndexChanged
+        Apply(Sub() tree.FooterBackStyle =
+                  CType(cboFooterStyle.SelectedIndex, AdvancedTreeControl.En_HeaderBackStyle))
+    End Sub
+    Private Sub btnFooterBack_Click(sender As Object, e As EventArgs) Handles btnFooterBack.Click
+        PickColor(tree.FooterBackColor, Sub(c) tree.FooterBackColor = c, "FooterBackColor")
+    End Sub
+    Private Sub btnFooterFore_Click(sender As Object, e As EventArgs) Handles btnFooterFore.Click
+        PickColor(tree.FooterForeColor, Sub(c) tree.FooterForeColor = c, "FooterForeColor")
+    End Sub
+    Private Sub btnFooterGradEnd_Click(sender As Object, e As EventArgs) Handles btnFooterGradEnd.Click
+        PickColor(tree.FooterGradientEndColor, Sub(c) tree.FooterGradientEndColor = c, "FooterGradientEndColor")
+    End Sub
+    Private Sub btnFooterCapBack_Click(sender As Object, e As EventArgs) Handles btnFooterCapBack.Click
+        PickColor(tree.FooterCaptionBackColor, Sub(c) tree.FooterCaptionBackColor = c, "FooterCaptionBackColor")
+    End Sub
+    Private Sub btnFooterCapFore_Click(sender As Object, e As EventArgs) Handles btnFooterCapFore.Click
+        PickColor(tree.FooterCaptionForeColor, Sub(c) tree.FooterCaptionForeColor = c, "FooterCaptionForeColor")
+    End Sub
+    Private Sub chkFooterLeftIcon_CheckedChanged(sender As Object, e As EventArgs) Handles chkFooterLeftIcon.CheckedChanged
+        Apply(Sub() tree.FooterLeftIcon = If(chkFooterLeftIcon.Checked, _iconFooter, Nothing))
+    End Sub
+    Private Sub numFooterIconSize_ValueChanged(sender As Object, e As EventArgs) Handles numFooterIconSize.ValueChanged
+        Apply(Sub() tree.FooterIconSize = Patrat(numFooterIconSize))
+    End Sub
+
+    ' ── Subsol: strângere ────────────────────────────────────────────────────────
+    Private Sub chkCollapseButton_CheckedChanged(sender As Object, e As EventArgs) Handles chkCollapseButton.CheckedChanged
+        Apply(Sub() tree.FooterCollapseButton = chkCollapseButton.Checked)
+    End Sub
+    Private Sub numCollapseSize_ValueChanged(sender As Object, e As EventArgs) Handles numCollapseSize.ValueChanged
+        Apply(Sub() tree.FooterCollapseButtonSize = CInt(numCollapseSize.Value))
+    End Sub
+    Private Sub cboCollapsePos_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboCollapsePos.SelectedIndexChanged
+        Apply(Sub() tree.FooterCollapseButtonPosition =
+                  CType(cboCollapsePos.SelectedIndex, AdvancedTreeControl.En_FooterButtonPosition))
+    End Sub
+    Private Sub chkCollapseImages_CheckedChanged(sender As Object, e As EventArgs) Handles chkCollapseImages.CheckedChanged
+        Apply(Sub()
+                  tree.FooterCollapseExpandedImage = If(chkCollapseImages.Checked, _iconCollapseOpen, Nothing)
+                  tree.FooterCollapseCollapsedImage = If(chkCollapseImages.Checked, _iconCollapseClosed, Nothing)
+              End Sub)
+    End Sub
+    Private Sub numMinCollapsed_ValueChanged(sender As Object, e As EventArgs) Handles numMinCollapsed.ValueChanged
+        Apply(Sub() tree.MinimumCollapsedWidth = CInt(numMinCollapsed.Value))
+    End Sub
+    Private Sub chkCollapsedFlyout_CheckedChanged(sender As Object, e As EventArgs) Handles chkCollapsedFlyout.CheckedChanged
+        Apply(Sub() tree.CollapsedFlyout = chkCollapsedFlyout.Checked)
+    End Sub
+    Private Sub numFlyoutDelay_ValueChanged(sender As Object, e As EventArgs) Handles numFlyoutDelay.ValueChanged
+        Apply(Sub() tree.FlyoutDelay = CInt(numFlyoutDelay.Value))
+    End Sub
+    Private Sub numFlyoutSlide_ValueChanged(sender As Object, e As EventArgs) Handles numFlyoutSlide.ValueChanged
+        Apply(Sub() tree.FlyoutSlideDuration = CInt(numFlyoutSlide.Value))
+    End Sub
+    Private Sub btnToggleCollapse_Click(sender As Object, e As EventArgs) Handles btnToggleCollapse.Click
+        Apply(Sub() tree.ToggleCollapse())
+    End Sub
+
+    ' Arborele anunță singur strângerea — exact cârligul pe care-l folosește o gazdă reală ca
+    ' să-și mute splitter-ul. Aici doar îl scriem în jurnal, ca proba să fie vizibilă.
+    Private Sub tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
+        Try
+            _log($"CollapsedChanged → {If(collapsed, "strâns", "desfășurat")} (lățime {tree.Width}px)")
+            RefreshInfo()
+        Catch ex As Exception
+            GlobalErrorLog.Write("TreePlaygroundForm.tree_CollapsedChanged", ex)
+        End Try
+    End Sub
 
     ' ── Căutare ──────────────────────────────────────────────────────────────────
     Private Sub chkSearchShow_CheckedChanged(sender As Object, e As EventArgs) Handles chkSearchShow.CheckedChanged
@@ -221,6 +323,12 @@ Public NotInheritable Class TreePlaygroundForm
     End Sub
     Private Sub btnSearchBox_Click(sender As Object, e As EventArgs) Handles btnSearchBox.Click
         PickColor(tree.SearchBoxBackColor, Sub(c) tree.SearchBoxBackColor = c, "SearchBoxBackColor")
+    End Sub
+    Private Sub btnLabelFore_Click(sender As Object, e As EventArgs) Handles btnLabelFore.Click
+        PickColor(tree.SearchBarLabelForeColor, Sub(c) tree.SearchBarLabelForeColor = c, "SearchBarLabelForeColor")
+    End Sub
+    Private Sub cboSearchMode_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSearchMode.SelectedIndexChanged
+        Apply(Sub() tree.SearchMode = CType(cboSearchMode.SelectedIndex, AdvancedTreeControl.En_Tree_SearchMode))
     End Sub
 
     ' Rezultatul căutării în banda de info — confirmă că filtrarea chiar rulează.
@@ -268,11 +376,41 @@ Public NotInheritable Class TreePlaygroundForm
     Private Sub numRightPad_ValueChanged(sender As Object, e As EventArgs) Handles numRightPad.ValueChanged
         Apply(Sub() tree.RightIconRightPadding = CInt(numRightPad.Value))
     End Sub
-    Private Sub numTreeFont_ValueChanged(sender As Object, e As EventArgs) Handles numTreeFont.ValueChanged
-        Apply(Sub() tree.TreeFont = New Font(tree.TreeFont.Name, CSng(numTreeFont.Value)))
+    Private Sub numLeftIconSize_ValueChanged(sender As Object, e As EventArgs) Handles numLeftIconSize.ValueChanged
+        Apply(Sub() tree.LeftIconSize = Patrat(numLeftIconSize))
+    End Sub
+    Private Sub numRightIconSize_ValueChanged(sender As Object, e As EventArgs) Handles numRightIconSize.ValueChanged
+        Apply(Sub() tree.RightIconSize = Patrat(numRightIconSize))
+    End Sub
+    ' Un singur font pentru arbore: Font. Îl desenează și nodurile, și tot el dă înălțimea rândului.
+    Private Sub btnFont_Click(sender As Object, e As EventArgs) Handles btnFont.Click
+        PickFont(tree.Font, Sub(f) tree.Font = f, "Font")
     End Sub
     Private Sub cboScrollTheme_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboScrollTheme.SelectedIndexChanged
         Apply(Sub() tree.ScrollBarTheme = CType(cboScrollTheme.SelectedIndex, AdvancedTreeControl.En_ScrollBarTheme))
+    End Sub
+
+    ' ── Culori ───────────────────────────────────────────────────────────────────
+    Private Sub btnBackColor_Click(sender As Object, e As EventArgs) Handles btnBackColor.Click
+        PickColor(tree.BackColor, Sub(c) tree.BackColor = c, "BackColor")
+    End Sub
+    Private Sub btnForeColor_Click(sender As Object, e As EventArgs) Handles btnForeColor.Click
+        PickColor(tree.ForeColor, Sub(c) tree.ForeColor = c, "ForeColor")
+    End Sub
+    Private Sub btnHoverBack_Click(sender As Object, e As EventArgs) Handles btnHoverBack.Click
+        PickColor(tree.HoverBackColor, Sub(c) tree.HoverBackColor = c, "HoverBackColor")
+    End Sub
+    Private Sub btnSelectedBack_Click(sender As Object, e As EventArgs) Handles btnSelectedBack.Click
+        PickColor(tree.SelectedBackColor, Sub(c) tree.SelectedBackColor = c, "SelectedBackColor")
+    End Sub
+    Private Sub btnSelectedBorder_Click(sender As Object, e As EventArgs) Handles btnSelectedBorder.Click
+        PickColor(tree.SelectedBorderColor, Sub(c) tree.SelectedBorderColor = c, "SelectedBorderColor")
+    End Sub
+    Private Sub btnLineColor_Click(sender As Object, e As EventArgs) Handles btnLineColor.Click
+        PickColor(tree.LineColor, Sub(c) tree.LineColor = c, "LineColor")
+    End Sub
+    Private Sub btnBorderColor_Click(sender As Object, e As EventArgs) Handles btnBorderColor.Click
+        PickColor(tree.BorderColor, Sub(c) tree.BorderColor = c, "BorderColor")
     End Sub
 
     ' ── Tooltip ──────────────────────────────────────────────────────────────────
@@ -284,6 +422,12 @@ Public NotInheritable Class TreePlaygroundForm
     End Sub
     Private Sub numTooltipDelay_ValueChanged(sender As Object, e As EventArgs) Handles numTooltipDelay.ValueChanged
         Apply(Sub() tree.TooltipDelayMs = CInt(numTooltipDelay.Value))
+    End Sub
+    Private Sub btnTooltipBack_Click(sender As Object, e As EventArgs) Handles btnTooltipBack.Click
+        PickColor(tree.TooltipBackColor, Sub(c) tree.TooltipBackColor = c, "TooltipBackColor")
+    End Sub
+    Private Sub btnTooltipFore_Click(sender As Object, e As EventArgs) Handles btnTooltipFore.Click
+        PickColor(tree.TooltipForeColor, Sub(c) tree.TooltipForeColor = c, "TooltipForeColor")
     End Sub
 
     ' ── Date ─────────────────────────────────────────────────────────────────────
@@ -426,6 +570,25 @@ Public NotInheritable Class TreePlaygroundForm
         chkHeaderLeftIcon.Checked = tree.HeaderLeftIcon IsNot Nothing
         chkHeaderSearchIcon.Checked = tree.HeaderSearchIcon IsNot Nothing
         chkHeaderRightIcon.Checked = tree.HeaderRightIcon IsNot Nothing
+        SetNum(numHeaderIconSize, tree.HeaderIconSize.Width)
+
+        chkFooterVisible.Checked = tree.FooterVisible
+        txtFooterCaption.Text = tree.FooterCaption
+        SetNum(numFooterHeight, tree.FooterHeight)
+        cboFooterAlign.SelectedIndex =
+            Array.IndexOf([Enum].GetValues(GetType(ContentAlignment)), tree.FooterTextAlign)
+        cboFooterStyle.SelectedIndex = CInt(tree.FooterBackStyle)
+        chkFooterLeftIcon.Checked = tree.FooterLeftIcon IsNot Nothing
+        SetNum(numFooterIconSize, tree.FooterIconSize.Width)
+
+        chkCollapseButton.Checked = tree.FooterCollapseButton
+        SetNum(numCollapseSize, tree.FooterCollapseButtonSize)
+        cboCollapsePos.SelectedIndex = CInt(tree.FooterCollapseButtonPosition)
+        chkCollapseImages.Checked = tree.FooterCollapseExpandedImage IsNot Nothing
+        SetNum(numMinCollapsed, tree.MinimumCollapsedWidth)
+        chkCollapsedFlyout.Checked = tree.CollapsedFlyout
+        SetNum(numFlyoutDelay, tree.FlyoutDelay)
+        SetNum(numFlyoutSlide, tree.FlyoutSlideDuration)
 
         chkSearchShow.Checked = tree.SearchShow
         chkSearchClear.Checked = tree.SearchClearButton
@@ -435,6 +598,7 @@ Public NotInheritable Class TreePlaygroundForm
         chkClearImage.Checked = tree.SearchClearButtonImage IsNot Nothing
         cboSearchIn.SelectedIndex = CInt(tree.SearchIn)
         cboSearchType.SelectedIndex = CInt(tree.SearchType)
+        cboSearchMode.SelectedIndex = CInt(tree.SearchMode)
 
         SetNum(numItemHeight, tree.ItemHeight)
         SetNum(numIndent, tree.Indent)
@@ -447,7 +611,8 @@ Public NotInheritable Class TreePlaygroundForm
         chkRightIconHover.Checked = tree.ShowRightIconOnHover
         chkReserveRight.Checked = tree.ReserveRightIconSpace
         SetNum(numRightPad, tree.RightIconRightPadding)
-        SetNum(numTreeFont, CInt(tree.TreeFont.Size))
+        SetNum(numLeftIconSize, tree.LeftIconSize.Width)
+        SetNum(numRightIconSize, tree.RightIconSize.Width)
         cboScrollTheme.SelectedIndex = CInt(tree.ScrollBarTheme)
 
         chkTooltip.Checked = tree.TooltipShow
@@ -477,9 +642,43 @@ Public NotInheritable Class TreePlaygroundForm
         chkHeaderLeftIcon.Enabled = hdr
         chkHeaderSearchIcon.Enabled = hdr
         chkHeaderRightIcon.Enabled = hdr
+        lblHeaderIconSize.Enabled = hdr
+        numHeaderIconSize.Enabled = hdr
         ' Capătul degradeului n-are ce colora pe fundal plin.
         btnHeaderGradEnd.Enabled = hdr AndAlso
             tree.HeaderBackStyle <> AdvancedTreeControl.En_HeaderBackStyle.Solid
+
+        ' Subsolul ascuns înseamnă că nimic din el nu se vede — nici butonul de strângere.
+        Dim ftr As Boolean = tree.FooterVisible
+        For Each c As Control In New Control() {lblFooterCaption, txtFooterCaption, lblFooterHeight,
+                                                numFooterHeight, btnFooterFont, lblFooterAlign,
+                                                cboFooterAlign, lblFooterStyle, cboFooterStyle,
+                                                btnFooterBack, btnFooterFore, btnFooterCapBack,
+                                                btnFooterCapFore, chkCollapseButton}
+            c.Enabled = ftr
+        Next
+        btnFooterGradEnd.Enabled = ftr AndAlso
+            tree.FooterBackStyle <> AdvancedTreeControl.En_HeaderBackStyle.Solid
+        ' Butonul pus în stânga îi ia locul iconiței — atunci nu mai are rost s-o alegi.
+        Dim butonStanga As Boolean = tree.FooterCollapseButton AndAlso
+            tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
+        chkFooterLeftIcon.Enabled = ftr AndAlso Not butonStanga
+        lblFooterIconSize.Enabled = chkFooterLeftIcon.Enabled AndAlso tree.FooterLeftIcon IsNot Nothing
+        numFooterIconSize.Enabled = lblFooterIconSize.Enabled
+
+        ' Restul secțiunii de strângere contează doar dacă butonul chiar există.
+        Dim clps As Boolean = ftr AndAlso tree.FooterCollapseButton
+        For Each c As Control In New Control() {lblCollapseSize, numCollapseSize, lblCollapsePos,
+                                                cboCollapsePos, chkCollapseImages, lblMinCollapsed,
+                                                numMinCollapsed, chkCollapsedFlyout, btnToggleCollapse}
+            c.Enabled = clps
+        Next
+        ' Cronometrele n-au ce tempora fără nodul plutitor.
+        Dim fly As Boolean = clps AndAlso tree.CollapsedFlyout
+        lblFlyoutDelay.Enabled = fly
+        numFlyoutDelay.Enabled = fly
+        lblFlyoutSlide.Enabled = fly
+        numFlyoutSlide.Enabled = fly
 
         ' Restul benzii de căutare contează doar dacă banda poate apărea.
         Dim srch As Boolean = tree.SearchShow
@@ -507,6 +706,12 @@ Public NotInheritable Class TreePlaygroundForm
         numTooltipDelay.Enabled = tree.TooltipShow
     End Sub
 
+    ' Iconițele arborelui sunt pătrate în toate probele: un singur numeric pe latură, nu două.
+    Private Shared Function Patrat(n As NumericUpDown) As Size
+        Dim latura As Integer = CInt(n.Value)
+        Return New Size(latura, latura)
+    End Function
+
     Private Shared Sub SetNum(n As NumericUpDown, value As Integer)
         Dim v As Decimal = value
         If v < n.Minimum Then v = n.Minimum
@@ -526,7 +731,9 @@ Public NotInheritable Class TreePlaygroundForm
             Else
                 modCautare = "bandă de căutare permanentă"
             End If
-            lblInfo.Text = $"{total} noduri • {modCautare} • temă {ThemeManager.Current.Name}"
+            Dim stareArbore As String = If(tree.Collapsed,
+                                           $"STRÂNS la {tree.Width}px", $"desfășurat ({tree.Width}px)")
+            lblInfo.Text = $"{total} noduri • {modCautare} • {stareArbore} • temă {ThemeManager.Current.Name}"
         Catch ex As Exception
             GlobalErrorLog.Write("TreePlaygroundForm.RefreshInfo", ex)
         End Try
@@ -548,6 +755,9 @@ Public NotInheritable Class TreePlaygroundForm
             _iconRight?.Dispose() : _iconRight = Nothing
             _iconSearch?.Dispose() : _iconSearch = Nothing
             _iconHeaderRight?.Dispose() : _iconHeaderRight = Nothing
+            _iconFooter?.Dispose() : _iconFooter = Nothing
+            _iconCollapseOpen?.Dispose() : _iconCollapseOpen = Nothing
+            _iconCollapseClosed?.Dispose() : _iconCollapseClosed = Nothing
         End If
         MyBase.Dispose(disposing)
     End Sub

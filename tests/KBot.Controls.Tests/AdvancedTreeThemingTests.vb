@@ -131,14 +131,14 @@ Public Class AdvancedTreeThemingTests
     ''' <summary>
     ''' Un arbore proaspăt, neatins, nu trebuie să producă NICIO linie de proprietate în
     ''' formularul gazdă. Lista de mai jos e exact zgomotul care se scria înainte în toate cele
-    ''' cinci designere: fontul arborelui, cele trei dimensiuni de iconițe, fontul ambiant și
+    ''' cinci designere: fontul controlului, cele trei dimensiuni de iconițe și
     ''' perechea de derulare (aceasta din urmă e `Shadows`, deci nu moștenea atributele bazei).
     ''' </summary>
     <Fact>
     Public Sub Un_arbore_neatins_nu_scrie_nimic_in_designer()
         RunSta(Sub()
                    Using tree As New AdvancedTreeControl()
-                       For Each nume As String In {"TreeFont", "Font", "BackColor", "ForeColor",
+                       For Each nume As String In {"Font", "BackColor", "ForeColor",
                                                    "LeftIconSize", "RightIconSize", "HeaderIconSize",
                                                    "SearchClearButtonPadding", "SearchBarFont"}
                            Assert.False(SerializeazaProprietatea(tree, nume),
@@ -160,18 +160,16 @@ Public Class AdvancedTreeThemingTests
     Public Sub O_alegere_reala_se_serializeaza()
         RunSta(Sub()
                    Using tree As New AdvancedTreeControl()
-                       tree.TreeFont = New Font("Segoe UI", 11.0F)
                        tree.LeftIconSize = New Size(24, 24)
                        tree.Font = New Font("Arial", 12.0F)
 
-                       Assert.True(SerializeazaProprietatea(tree, "TreeFont"))
                        Assert.True(SerializeazaProprietatea(tree, "LeftIconSize"))
                        Assert.True(SerializeazaProprietatea(tree, "Font"))
 
-                       tree.ResetTreeFont()
                        tree.ResetLeftIconSize()
-                       Assert.False(SerializeazaProprietatea(tree, "TreeFont"))
+                       tree.ResetFont()
                        Assert.False(SerializeazaProprietatea(tree, "LeftIconSize"))
+                       Assert.False(SerializeazaProprietatea(tree, "Font"))
                    End Using
                End Sub)
     End Sub

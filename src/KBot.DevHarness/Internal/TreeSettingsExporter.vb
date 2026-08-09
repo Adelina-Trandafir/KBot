@@ -54,8 +54,8 @@ Public NotInheritable Class TreeSettingsExporter
             ScrieAntet(sb, numeTema)
 
             ' Etalonul: un arbore proaspăt. Metadatele (DefaultValue / ShouldSerialize*) prind
-            ' aproape tot, dar proprietățile fără nici una — TreeFont, *IconSize — s-ar scrie
-            ' mereu. Comparate cu etalonul, tac atâta timp cât nimeni nu le-a mișcat.
+            ' aproape tot, dar proprietățile fără nici una — *IconSize, *GradientEndColor — s-ar
+            ' scrie mereu. Comparate cu etalonul, tac atâta timp cât nimeni nu le-a mișcat.
             Dim etalon As AdvancedTreeControl = Nothing
             Try
                 etalon = New AdvancedTreeControl()

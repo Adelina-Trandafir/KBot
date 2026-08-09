@@ -70,11 +70,11 @@ Public Class PlatiView
         End Get
     End Property
 
-    ' Font + comportament neacoperite de Designer (setter-ele reconstruiesc fontul intern).
+    ' Comportament neacoperit de Designer. Fontul NU se mai pune aici: era «Segoe UI, 9», adică
+    ' exact implicitul arborelui de la unificarea TreeFont→Font, iar scris explicit ar fi FIXAT
+    ' fontul (vezi ShouldSerializeFont din .Theming) și l-ar fi făcut surd la tema activă.
     Private Sub ConfigureTree()
         Try
-            tree.FontName = "Segoe UI"
-            tree.FontSize = 9.0F
             tree.RootExpander = True
         Catch ex As Exception
             GlobalErrorLog.Write("PlatiView.ConfigureTree", ex)

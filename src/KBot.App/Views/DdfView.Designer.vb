@@ -130,7 +130,6 @@ Partial Class DdfView
         tree.ScrollBarTheme = KBot.Controls.AdvancedTreeControl.En_ScrollBarTheme.Default
         tree.Size = New Size(305, 479)
         tree.TabIndex = 1
-        tree.TreeFont = New Font("Segoe UI", 9F)
         ' 
         ' tree_image_list
         ' 

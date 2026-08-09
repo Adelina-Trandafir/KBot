@@ -22,61 +22,12 @@ Partial Public Class AdvancedTreeControl
     ' Tooltip
     Public AutoHideTooltipMs As Integer = 5000
 
-    Private m_TreeFont As Font = New Font("Consolas", 9)
-
-    <Category("K-BOT Arbore")>
-    <Description("Fontul folosit la desenarea nodurilor.")>
-    Public Property TreeFont As Font
-        Get
-            Return m_TreeFont
-        End Get
-        Set(value As Font)
-            m_TreeFont = value
-            m_FontName = m_TreeFont.Name ' Actualizează numele fontului pentru a reflecta schimbarea
-            m_FontSize = m_TreeFont.Size ' Actualizează dimensiunea fontului pentru a reflecta schimbarea
-            Me.Invalidate() ' Redesenează imediat controlul când se schimbă fontul
-        End Set
-    End Property
-    ' Un Font nu poate purta <DefaultValue> (atributul cere o constantă), deci «neschimbat» se
-    ' spune prin perechea asta — altfel designerul scria «Consolas, 9» în FIECARE formular gazdă.
-    Public Function ShouldSerializeTreeFont() As Boolean
-        Return Not (m_TreeFont.Name = "Consolas" AndAlso
-                    m_TreeFont.Size = 9.0F AndAlso
-                    m_TreeFont.Style = FontStyle.Regular)
-    End Function
-    Public Sub ResetTreeFont()
-        TreeFont = New Font("Consolas", 9.0F)
-    End Sub
-
-    ' FontName/FontSize sunt accesori de conveniență peste TreeFont (îl mută). Ascunse din
-    ' grilă ca să nu dubleze editorul de Font — folosește TreeFont în designer.
-    Private m_FontName As String = "Consolas"
-    <Browsable(False)>
-    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
-    Public Property FontName As String
-        Get
-            Return m_FontName
-        End Get
-        Set(value As String)
-            m_FontName = value
-            m_TreeFont = New Font(m_FontName, TreeFont.Size) ' Actualizează fontul cu noul nume
-            Me.Invalidate() ' Redesenează imediat controlul când se schimbă fontul
-        End Set
-    End Property
-
-    Private m_FontSize As Single = 9
-    <Browsable(False)>
-    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
-    Public Property FontSize As Single
-        Get
-            Return m_FontSize
-        End Get
-        Set(value As Single)
-            m_FontSize = value
-            m_TreeFont = New Font(TreeFont.Name, m_FontSize) ' Actualizează fontul cu noua dimensiune
-            Me.Invalidate() ' Redesenează imediat controlul când se schimbă fontul
-        End Set
-    End Property
+    ' FONTUL ARBORELUI = <see cref="Font"/> (partiala .Theming). A existat până acum o a DOUA
+    ' proprietate, «TreeFont», cu care se desenau nodurile, în timp ce înălțimea rândului
+    ' (RecalculateItemHeight) și banda de căutare se luau după Font — două surse de adevăr pentru
+    ' aceeași măsură, deci un arbore care putea desena text mai mare decât rândul care-l ținea.
+    ' A rămas una singură: Font. Odată cu ea au dispărut și accesoriile FontName/FontSize, care
+    ' nu erau decât «mută TreeFont» scris pe bucăți.
 
     Private m_ExpanderSize As Integer = 12
     <Category("K-BOT Arbore")>
@@ -701,12 +652,12 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     ' ── Antet: font, aliniere, stil de fundal ─────────────────────────────────────
-    Private _headerFont As Font = Nothing          ' Nothing = fontul arborelui (TreeFont)
+    Private _headerFont As Font = Nothing          ' Nothing = fontul arborelui (Font)
     <Category("K-BOT Arbore - Antet")>
-    <Description("Fontul textului din antet (toate atributele); nesetat = TreeFont.")>
+    <Description("Fontul textului din antet (toate atributele); nesetat = Font.")>
     Public Property HeaderFont As Font
         Get
-            Return If(_headerFont, Me.TreeFont)
+            Return If(_headerFont, Me.Font)
         End Get
         Set(value As Font)
             _headerFont = value
@@ -776,6 +727,415 @@ Partial Public Class AdvancedTreeControl
         _headerGradientEndColor = Color.Empty
         Me.Invalidate()
     End Sub
+
+    ' ══════════════════════════════════════════════════
+    ' FOOTER PROPERTIES
+    ' ══════════════════════════════════════════════════
+    ' Banda de subsol e sora antetului: aceleași unelte (înălțime, fundal plin/degrade, iconiță
+    ' stânga, caption cu font/culori proprii) plus BUTONUL DE STRÂNGERE, care e singura piesă
+    ' fără corespondent sus. Desenul e în partiala .Footer, exact ca al antetului în .Header.
+
+    ''' <summary>Latura pe care stă butonul de strângere din subsol.</summary>
+    Public Enum En_FooterButtonPosition
+        Right = 0
+        Left = 1
+    End Enum
+
+    Private _footerVisible As Boolean = False
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Afișează banda de subsol sub arbore.")>
+    <DefaultValue(False)>
+    Public Property FooterVisible As Boolean
+        Get
+            Return _footerVisible
+        End Get
+        Set(value As Boolean)
+            _footerVisible = value
+            CancelCollapsedFlyout()          ' banda plecată = orice etichetă afară e orfană
+            RefreshScrollVisibility()        ' zona de noduri s-a scurtat/lungit
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _footerHeight As Integer = 28
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Înălțimea (px) benzii de subsol.")>
+    <DefaultValue(28)>
+    Public Property FooterHeight As Integer
+        Get
+            Return _footerHeight
+        End Get
+        Set(value As Integer)
+            _footerHeight = Math.Max(16, value)
+            RefreshScrollVisibility()
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _footerCaption As String = ""
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Textul afișat în banda de subsol.")>
+    <DefaultValue("")>
+    Public Property FooterCaption As String
+        Get
+            Return _footerCaption
+        End Get
+        Set(value As String)
+            _footerCaption = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _footerLeftIcon As Image = Nothing
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Iconița din stânga subsolului. IGNORATĂ dacă butonul de strângere stă tot în stânga.")>
+    <DefaultValue(GetType(Image), Nothing)>
+    Public Property FooterLeftIcon As Image
+        Get
+            Return _footerLeftIcon
+        End Get
+        Set(value As Image)
+            _footerLeftIcon = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _footerLeftIconKey As String = ""
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Cheia iconiței din stânga subsolului (rezolvată din cache-ul de iconițe).")>
+    <DefaultValue("")>
+    Public Property FooterLeftIconKey As String
+        Get
+            Return _footerLeftIconKey
+        End Get
+        Set(value As String)
+            _footerLeftIconKey = value
+            ResolveHeaderIconsFromNodeImages()
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _footerIconSize As New Size(16, 16)
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Dimensiunea iconiței din subsol.")>
+    Public Property FooterIconSize As Size
+        Get
+            Return _footerIconSize
+        End Get
+        Set(value As Size)
+            _footerIconSize = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeFooterIconSize() As Boolean
+        Return _footerIconSize <> New Size(16, 16)
+    End Function
+    Public Sub ResetFooterIconSize()
+        FooterIconSize = New Size(16, 16)
+    End Sub
+
+    Private _footerBackColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Fundalul benzii de subsol; gol = din temă.")>
+    Public Property FooterBackColor As Color
+        Get
+            Return If(_footerBackColor <> Color.Empty, _footerBackColor, _autoFooterBack)
+        End Get
+        Set(value As Color)
+            _footerBackColor = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeFooterBackColor() As Boolean
+        Return _footerBackColor <> Color.Empty
+    End Function
+    Public Sub ResetFooterBackColor()
+        _footerBackColor = Color.Empty
+        Me.Invalidate()
+    End Sub
+
+    Private _footerForeColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Culoarea de prim-plan a subsolului (unghiul butonului, implicitul textului); gol = din temă.")>
+    Public Property FooterForeColor As Color
+        Get
+            Return If(_footerForeColor <> Color.Empty, _footerForeColor, _autoFooterFore)
+        End Get
+        Set(value As Color)
+            _footerForeColor = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeFooterForeColor() As Boolean
+        Return _footerForeColor <> Color.Empty
+    End Function
+    Public Sub ResetFooterForeColor()
+        _footerForeColor = Color.Empty
+        Me.Invalidate()
+    End Sub
+
+    Private _footerBackStyle As En_HeaderBackStyle = En_HeaderBackStyle.Solid
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Fundal plin sau în degrade (vertical/orizontal) pornind din FooterBackColor.")>
+    <DefaultValue(En_HeaderBackStyle.Solid)>
+    Public Property FooterBackStyle As En_HeaderBackStyle
+        Get
+            Return _footerBackStyle
+        End Get
+        Set(value As En_HeaderBackStyle)
+            _footerBackStyle = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _footerGradientEndColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Capătul degradeului de subsol; gol = automat (spre alb dacă baza e deschisă, spre negru dacă e închisă).")>
+    Public Property FooterGradientEndColor As Color
+        Get
+            Return If(_footerGradientEndColor <> Color.Empty,
+                      _footerGradientEndColor, AutoGradientEnd(FooterBackColor))
+        End Get
+        Set(value As Color)
+            _footerGradientEndColor = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeFooterGradientEndColor() As Boolean
+        Return _footerGradientEndColor <> Color.Empty
+    End Function
+    Public Sub ResetFooterGradientEndColor()
+        _footerGradientEndColor = Color.Empty
+        Me.Invalidate()
+    End Sub
+
+    ' ── Subsol: eticheta (caption) cu font și culori proprii ─────────────────────
+    Private _footerCaptionFont As Font = Nothing        ' Nothing = fontul controlului
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Fontul textului din subsol (toate atributele); nesetat = Font.")>
+    Public Property FooterCaptionFont As Font
+        Get
+            Return If(_footerCaptionFont, Me.Font)
+        End Get
+        Set(value As Font)
+            _footerCaptionFont = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeFooterCaptionFont() As Boolean
+        Return _footerCaptionFont IsNot Nothing
+    End Function
+    Public Sub ResetFooterCaptionFont()
+        _footerCaptionFont = Nothing
+        Me.Invalidate()
+    End Sub
+
+    Private _footerCaptionForeColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Culoarea textului din subsol; gol = FooterForeColor.")>
+    Public Property FooterCaptionForeColor As Color
+        Get
+            Return If(_footerCaptionForeColor <> Color.Empty, _footerCaptionForeColor, FooterForeColor)
+        End Get
+        Set(value As Color)
+            _footerCaptionForeColor = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeFooterCaptionForeColor() As Boolean
+        Return _footerCaptionForeColor <> Color.Empty
+    End Function
+    Public Sub ResetFooterCaptionForeColor()
+        _footerCaptionForeColor = Color.Empty
+        Me.Invalidate()
+    End Sub
+
+    ' Gol NU înseamnă aici «din temă», ci «fără plajă proprie»: eticheta se desenează direct pe
+    ' banda de subsol. E singura culoare a arborelui cu sensul ăsta, tocmai fiindcă o etichetă
+    ' fără fundal e ce vrea oricine în mod normal.
+    Private _footerCaptionBackColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Fundalul din spatele textului din subsol; gol = fără (se vede banda).")>
+    Public Property FooterCaptionBackColor As Color
+        Get
+            Return _footerCaptionBackColor
+        End Get
+        Set(value As Color)
+            _footerCaptionBackColor = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeFooterCaptionBackColor() As Boolean
+        Return _footerCaptionBackColor <> Color.Empty
+    End Function
+    Public Sub ResetFooterCaptionBackColor()
+        _footerCaptionBackColor = Color.Empty
+        Me.Invalidate()
+    End Sub
+
+    Private _footerTextAlign As ContentAlignment = ContentAlignment.MiddleLeft
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Alinierea textului din subsol, în spațiul rămas între iconiță și buton.")>
+    <DefaultValue(ContentAlignment.MiddleLeft)>
+    Public Property FooterTextAlign As ContentAlignment
+        Get
+            Return _footerTextAlign
+        End Get
+        Set(value As ContentAlignment)
+            _footerTextAlign = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    ' ── Subsol: butonul de strângere ─────────────────────────────────────────────
+    Private _footerCollapseButton As Boolean = False
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Afișează în subsol butonul care strânge/desfășoară arborele.")>
+    <DefaultValue(False)>
+    Public Property FooterCollapseButton As Boolean
+        Get
+            Return _footerCollapseButton
+        End Get
+        Set(value As Boolean)
+            _footerCollapseButton = value
+            ' Fără buton nu mai există cale de întoarcere din starea strânsă: o desfacem noi,
+            ' altfel arborele ar rămâne îngust pentru totdeauna (aceeași grijă ca la NavList).
+            If Not _footerCollapseButton AndAlso _collapsed Then Collapsed = False
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _footerCollapseButtonSize As Integer = 16
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Latura (px) a butonului de strângere din subsol.")>
+    <DefaultValue(16)>
+    Public Property FooterCollapseButtonSize As Integer
+        Get
+            Return _footerCollapseButtonSize
+        End Get
+        Set(value As Integer)
+            _footerCollapseButtonSize = Math.Max(8, value)
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _footerCollapseButtonPosition As En_FooterButtonPosition = En_FooterButtonPosition.Right
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Latura pe care stă butonul de strângere. Pe Left, FooterLeftIcon nu se mai desenează.")>
+    <DefaultValue(En_FooterButtonPosition.Right)>
+    Public Property FooterCollapseButtonPosition As En_FooterButtonPosition
+        Get
+            Return _footerCollapseButtonPosition
+        End Get
+        Set(value As En_FooterButtonPosition)
+            _footerCollapseButtonPosition = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    ' Ca la KBotNavList: două imagini, una pentru fiecare stare. Fără ele se desenează unghiul
+    ' («‹» strâns, «›» desfășurat) din FooterForeColor, deci butonul e folosibil din start.
+    Private _footerCollapseExpandedImage As Image = Nothing
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Pictograma butonului cât timp arborele e DESFĂȘURAT; nesetată = unghi desenat.")>
+    <DefaultValue(GetType(Image), Nothing)>
+    Public Property FooterCollapseExpandedImage As Image
+        Get
+            Return _footerCollapseExpandedImage
+        End Get
+        Set(value As Image)
+            _footerCollapseExpandedImage = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _footerCollapseCollapsedImage As Image = Nothing
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Pictograma butonului cât timp arborele e STRÂNS; nesetată = unghi desenat.")>
+    <DefaultValue(GetType(Image), Nothing)>
+    Public Property FooterCollapseCollapsedImage As Image
+        Get
+            Return _footerCollapseCollapsedImage
+        End Get
+        Set(value As Image)
+            _footerCollapseCollapsedImage = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _minimumCollapsedWidth As Integer = 100
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Lățimea (px) la care se strânge arborele. Implicit 100.")>
+    <DefaultValue(100)>
+    Public Property MinimumCollapsedWidth As Integer
+        Get
+            Return _minimumCollapsedWidth
+        End Get
+        Set(value As Integer)
+            _minimumCollapsedWidth = Math.Max(16, value)
+            If _collapsed Then ApplyCollapseExtent()
+            Me.Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Starea de strângere. STARE DE RULARE, nu valoare de designer (vezi
+    ''' <c>KBotNavList.CollapseState</c>): serializată, ar îngheța formularul strâns și s-ar bate
+    ''' cu <c>Size</c>-ul scris tot de designer.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property Collapsed As Boolean
+        Get
+            Return _collapsed
+        End Get
+        Set(value As Boolean)
+            If value = _collapsed Then Return
+            If value AndAlso Not _footerCollapseButton Then
+                Throw New InvalidOperationException(
+                    "Arborele nu se poate strânge cât timp FooterCollapseButton e False.")
+            End If
+            ApplyCollapsedState(value)
+        End Set
+    End Property
+
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("True => cât timp arborele e strâns, hover-ul pe un nod scoate spre dreapta nodul întreg.")>
+    <DefaultValue(True)>
+    Public Property CollapsedFlyout As Boolean
+        Get
+            Return _flyoutEnabled
+        End Get
+        Set(value As Boolean)
+            If value = _flyoutEnabled Then Return
+            _flyoutEnabled = value
+            If Not _flyoutEnabled Then CancelCollapsedFlyout()
+        End Set
+    End Property
+
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Cât așteaptă hover-ul (ms) înainte să scoată nodul. Implicit 250; 0 = imediat.")>
+    <DefaultValue(250)>
+    Public Property FlyoutDelay As Integer
+        Get
+            Return _flyoutDelay
+        End Get
+        Set(value As Integer)
+            _flyoutDelay = Math.Max(0, value)
+        End Set
+    End Property
+
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Durata (ms) desfășurării nodului spre dreapta. Implicit 120; 0 = fără animație.")>
+    <DefaultValue(120)>
+    Public Property FlyoutSlideDuration As Integer
+        Get
+            Return _flyoutSlide
+        End Get
+        Set(value As Integer)
+            _flyoutSlide = Math.Max(0, value)
+        End Set
+    End Property
 
     ' ══════════════════════════════════════════════════
     ' SEARCH PROPERTIES
@@ -946,8 +1306,8 @@ Partial Public Class AdvancedTreeControl
     ' Un Font întreg pentru fiecare (etichetă și casetă), editabil din designer cu tot ce are
     ' un font. Au înlocuit perechea SearchBarLabelBold/Italic, care nu putea exprima decât două
     ' atribute din opt. SearchBarFontName/FontSize supraviețuiesc ca accesori ASCUNȘI peste
-    ' SearchBarFont — exact tiparul deja folosit de FontName/FontSize peste TreeFont — ca fișierele
-    ' de designer existente și aplicatorul XML (Tree.Builder) să compileze neatinse.
+    ' SearchBarFont, ca fișierele de designer existente și aplicatorul XML (Tree.Builder) să
+    ' compileze neatinse.
     Private _searchBarLabelFont As Font = Nothing        ' Nothing = fontul controlului
     <Category("K-BOT Arbore - Căutare")>
     <Description("Fontul etichetei de căutare (toate atributele); nesetat = fontul controlului.")>

@@ -28,6 +28,8 @@ Partial Public Class AdvancedTreeControl
     ' ── Culorile «auto» (fallback pentru orice proprietate lăsată Empty) ──────────
     Private _autoHeaderBack As Color = Color.FromArgb(222, 222, 222)
     Private _autoHeaderFore As Color = Color.FromArgb(50, 50, 60)
+    Private _autoFooterBack As Color = Color.FromArgb(222, 222, 222)
+    Private _autoFooterFore As Color = Color.FromArgb(50, 50, 60)
     Private _autoSearchBack As Color = Color.FromArgb(222, 222, 222)
     Private _autoSearchBoxBack As Color = Color.Empty      ' Empty ⇒ cade pe Me.BackColor
     Private _autoHoverBack As Color = Color.FromArgb(230, 240, 255)
@@ -71,13 +73,15 @@ Partial Public Class AdvancedTreeControl
         Return _backColorPinned
     End Function
 
+    ' Steagul se stinge DUPĂ scrierea culorii, din același motiv ca la ResetFont: calea
+    ' MyBase.ResetBackColor trece prin setterul virtual, adică prin al nostru.
     Public Overrides Sub ResetBackColor()
-        _backColorPinned = False
         If _autoNodeBack <> Color.Empty Then
             MyBase.BackColor = _autoNodeBack
         Else
             MyBase.ResetBackColor()
         End If
+        _backColorPinned = False
         Me.Invalidate()
     End Sub
 
@@ -99,12 +103,12 @@ Partial Public Class AdvancedTreeControl
     End Function
 
     Public Overrides Sub ResetForeColor()
-        _foreColorPinned = False
         If _autoNodeFore <> Color.Empty Then
             MyBase.ForeColor = _autoNodeFore
         Else
             MyBase.ResetForeColor()
         End If
+        _foreColorPinned = False
         Me.Invalidate()
     End Sub
 
@@ -131,9 +135,15 @@ Partial Public Class AdvancedTreeControl
         Return _fontPinned
     End Function
 
+    ''' <summary>
+    ''' Steagul se stinge DUPĂ resetul bazei, nu înainte: <c>Control.ResetFont</c> scrie
+    ''' <c>Font = Nothing</c> prin setterul VIRTUAL, adică prin al nostru, care ar fixa la loc ce
+    ''' tocmai am dezlegat. Reset-ul ar fi rămas fără efect asupra serializării — exact ce a prins
+    ''' testul «o alegere reală se serializează».
+    ''' </summary>
     Public Overrides Sub ResetFont()
-        _fontPinned = False
         MyBase.ResetFont()
+        _fontPinned = False
         Me.Invalidate()
     End Sub
 
@@ -149,6 +159,8 @@ Partial Public Class AdvancedTreeControl
 
             _autoHeaderBack = p.SurfaceAltColor
             _autoHeaderFore = p.TextColor
+            _autoFooterBack = p.SurfaceAltColor
+            _autoFooterFore = p.TextColor
             _autoSearchBack = p.SurfaceAltColor
             _autoSearchBoxBack = p.InputBackColor
             _autoHoverBack = p.ButtonHoverColor
@@ -174,6 +186,7 @@ Partial Public Class AdvancedTreeControl
             End If
 
             RestyleSearchChildren()
+            CancelCollapsedFlyout()   ' o etichetă afară ar rămâne cu culorile schemei vechi
             Me.Invalidate()
         Catch ex As Exception
             GlobalErrorLog.Write("AdvancedTreeControl.ApplyTheme", ex)

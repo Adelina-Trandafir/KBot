@@ -357,11 +357,9 @@ Public Class DdfView
         End Get
     End Property
 
-    ' Font + comportament neacoperite de Designer (setter-ele reconstruiesc fontul intern).
+    ' Comportament neacoperit de Designer (fontul e implicitul arborelui — vezi celelalte vederi).
     'Private Sub ConfigureTree()
     '    Try
-    '        tree.FontName = "Segoe UI"
-    '        tree.FontSize = 9.0F
     '        tree.RootExpander = True
     '    Catch ex As Exception
     '        GlobalErrorLog.Write("DdfView.ConfigureTree", ex)
