@@ -16,8 +16,6 @@ Partial Class DdfView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim TreeNodeDefinition1 As KBot.Controls.TreeNodeDefinition = New Controls.TreeNodeDefinition()
-        Dim TreeNodeDefinition2 As KBot.Controls.TreeNodeDefinition = New Controls.TreeNodeDefinition()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DdfView))
         Dim KBotNavItem1 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
         Dim KBotNavItem2 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
@@ -25,8 +23,6 @@ Partial Class DdfView
         split = New SplitContainer()
         tree = New Controls.AdvancedTreeControl()
         tree_image_list = New ImageList(components)
-        pnlTreeHead = New Panel()
-        lblTreeTitle = New Label()
         pnlPages = New Panel()
         pnlPdf = New Panel()
         tlyPDF = New TableLayoutPanel()
@@ -59,7 +55,6 @@ Partial Class DdfView
         split.Panel1.SuspendLayout()
         split.Panel2.SuspendLayout()
         split.SuspendLayout()
-        pnlTreeHead.SuspendLayout()
         pnlPages.SuspendLayout()
         pnlPdf.SuspendLayout()
         tlyPDF.SuspendLayout()
@@ -84,7 +79,6 @@ Partial Class DdfView
         ' split.Panel1
         ' 
         split.Panel1.Controls.Add(tree)
-        split.Panel1.Controls.Add(pnlTreeHead)
         ' 
         ' split.Panel2
         ' 
@@ -99,36 +93,35 @@ Partial Class DdfView
         ' 
         tree.Dock = DockStyle.Fill
         tree.DynamicColumns = False
-        tree.Font = New Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        tree.FooterBackColor = SystemColors.Control
+        tree.FooterCollapseButton = True
+        tree.FooterCollapseButtonPosition = KBot.Controls.AdvancedTreeControl.En_FooterButtonPosition.Left
+        tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
+        tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
+        tree.FooterHeight = 40
+        tree.FooterIconSize = New Size(24, 24)
+        tree.FooterVisible = True
+        tree.HeaderBackColor = SystemColors.Control
+        tree.HeaderBackStyle = KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
+        tree.HeaderCaption = " REVIZII DDF"
+        tree.HeaderFont = New Font("Tahoma", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        tree.HeaderForeColor = Color.Black
+        tree.HeaderGradientEndColor = Color.LightSteelBlue
+        tree.HeaderHeight = 40
+        tree.HeaderIconSize = New Size(24, 24)
+        tree.HeaderLeftIcon = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_temporary_32
+        tree.HeaderVisible = True
         tree.ItemHeight = 30
         tree.LeftIconSize = New Size(20, 20)
-        tree.Location = New Point(0, 49)
+        tree.Location = New Point(0, 0)
         tree.Margin = New Padding(4, 5, 4, 5)
+        tree.MinimumCollapsedWidth = 120
         tree.Name = "tree"
         tree.NodeImages = tree_image_list
-        TreeNodeDefinition1.Caption = "Ianuarie ~~~ 1.234.567,00"
-        TreeNodeDefinition1.Expanded = True
-        TreeNodeDefinition1.ImageKey = "folder_closed"
-        TreeNodeDefinition1.Key = "1"
-        TreeNodeDefinition1.OpenImageKey = "folder_open"
-        TreeNodeDefinition1.ParentKey = Nothing
-        TreeNodeDefinition1.RightImageKey = Nothing
-        TreeNodeDefinition1.Tag = Nothing
-        TreeNodeDefinition1.Tooltip = Nothing
-        TreeNodeDefinition2.Caption = "01.01.2025 ~~~ 1.234.567,00"
-        TreeNodeDefinition2.ImageKey = "up"
-        TreeNodeDefinition2.Key = "2"
-        TreeNodeDefinition2.OpenImageKey = Nothing
-        TreeNodeDefinition2.ParentKey = "1"
-        TreeNodeDefinition2.RightImageKey = Nothing
-        TreeNodeDefinition2.Tag = Nothing
-        TreeNodeDefinition2.Tooltip = Nothing
-        tree.Nodes.Add(TreeNodeDefinition1)
-        tree.Nodes.Add(TreeNodeDefinition2)
         tree.RightIconSize = New Size(14, 14)
         tree.RightTextWidth = 110
         tree.ScrollBarTheme = KBot.Controls.AdvancedTreeControl.En_ScrollBarTheme.Default
-        tree.Size = New Size(305, 479)
+        tree.Size = New Size(305, 528)
         tree.TabIndex = 1
         ' 
         ' tree_image_list
@@ -141,27 +134,6 @@ Partial Class DdfView
         tree_image_list.Images.SetKeyName(2, "folder_open")
         tree_image_list.Images.SetKeyName(3, "folder_closed")
         ' 
-        ' pnlTreeHead
-        ' 
-        pnlTreeHead.Controls.Add(lblTreeTitle)
-        pnlTreeHead.Dock = DockStyle.Top
-        pnlTreeHead.Location = New Point(0, 0)
-        pnlTreeHead.Name = "pnlTreeHead"
-        pnlTreeHead.Size = New Size(305, 49)
-        pnlTreeHead.TabIndex = 0
-        ' 
-        ' lblTreeTitle
-        ' 
-        lblTreeTitle.Dock = DockStyle.Fill
-        lblTreeTitle.Font = New Font("Segoe UI", 9F, FontStyle.Bold)
-        lblTreeTitle.Location = New Point(0, 0)
-        lblTreeTitle.Name = "lblTreeTitle"
-        lblTreeTitle.Padding = New Padding(6, 0, 0, 0)
-        lblTreeTitle.Size = New Size(305, 49)
-        lblTreeTitle.TabIndex = 0
-        lblTreeTitle.Text = "Revizii"
-        lblTreeTitle.TextAlign = ContentAlignment.MiddleLeft
-        ' 
         ' pnlPages
         ' 
         pnlPages.Controls.Add(pnlPdf)
@@ -169,9 +141,9 @@ Partial Class DdfView
         pnlPages.Controls.Add(pnlPreview)
         pnlPages.Controls.Add(pnlFisiere)
         pnlPages.Dock = DockStyle.Fill
-        pnlPages.Location = New Point(0, 49)
+        pnlPages.Location = New Point(0, 40)
         pnlPages.Name = "pnlPages"
-        pnlPages.Size = New Size(849, 479)
+        pnlPages.Size = New Size(849, 488)
         pnlPages.TabIndex = 1
         ' 
         ' pnlPdf
@@ -181,7 +153,7 @@ Partial Class DdfView
         pnlPdf.Dock = DockStyle.Fill
         pnlPdf.Location = New Point(0, 0)
         pnlPdf.Name = "pnlPdf"
-        pnlPdf.Size = New Size(849, 479)
+        pnlPdf.Size = New Size(849, 488)
         pnlPdf.TabIndex = 3
         pnlPdf.Visible = False
         ' 
@@ -192,31 +164,34 @@ Partial Class DdfView
         tlyPDF.Controls.Add(previewPdf, 0, 0)
         tlyPDF.Controls.Add(pnlBottomButtons, 0, 1)
         tlyPDF.Dock = DockStyle.Fill
-        tlyPDF.Location = New Point(0, 37)
+        tlyPDF.Location = New Point(0, 0)
         tlyPDF.Margin = New Padding(0)
         tlyPDF.Name = "tlyPDF"
         tlyPDF.RowCount = 2
         tlyPDF.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyPDF.RowStyles.Add(New RowStyle(SizeType.Absolute, 54F))
-        tlyPDF.Size = New Size(849, 442)
+        tlyPDF.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        tlyPDF.Size = New Size(849, 488)
         tlyPDF.TabIndex = 3
         ' 
         ' previewPdf
         ' 
+        previewPdf.BackColor = SystemColors.Window
         previewPdf.BorderStyle = BorderStyle.FixedSingle
         previewPdf.Dock = DockStyle.Fill
         previewPdf.Location = New Point(3, 3)
+        previewPdf.Margin = New Padding(3, 3, 3, 0)
         previewPdf.Name = "previewPdf"
-        previewPdf.Size = New Size(843, 382)
+        previewPdf.Size = New Size(843, 445)
         previewPdf.TabIndex = 1
         ' 
         ' pnlBottomButtons
         ' 
         pnlBottomButtons.Controls.Add(tlyBottomButtons)
         pnlBottomButtons.Dock = DockStyle.Fill
-        pnlBottomButtons.Location = New Point(3, 391)
+        pnlBottomButtons.Location = New Point(0, 448)
+        pnlBottomButtons.Margin = New Padding(0)
         pnlBottomButtons.Name = "pnlBottomButtons"
-        pnlBottomButtons.Size = New Size(843, 48)
+        pnlBottomButtons.Size = New Size(849, 40)
         pnlBottomButtons.TabIndex = 2
         ' 
         ' tlyBottomButtons
@@ -233,7 +208,7 @@ Partial Class DdfView
         tlyBottomButtons.Name = "tlyBottomButtons"
         tlyBottomButtons.RowCount = 1
         tlyBottomButtons.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyBottomButtons.Size = New Size(843, 48)
+        tlyBottomButtons.Size = New Size(849, 40)
         tlyBottomButtons.TabIndex = 0
         ' 
         ' btnOpenInAdobe
@@ -242,10 +217,10 @@ Partial Class DdfView
         btnOpenInAdobe.FlatAppearance.BorderSize = 0
         btnOpenInAdobe.FlatStyle = FlatStyle.Flat
         btnOpenInAdobe.Image = CType(resources.GetObject("btnOpenInAdobe.Image"), Image)
-        btnOpenInAdobe.Location = New Point(683, 0)
+        btnOpenInAdobe.Location = New Point(689, 0)
         btnOpenInAdobe.Margin = New Padding(0)
         btnOpenInAdobe.Name = "btnOpenInAdobe"
-        btnOpenInAdobe.Size = New Size(80, 48)
+        btnOpenInAdobe.Size = New Size(80, 40)
         btnOpenInAdobe.TabIndex = 0
         btnOpenInAdobe.UseVisualStyleBackColor = True
         ' 
@@ -255,10 +230,10 @@ Partial Class DdfView
         btnSaveLocalCopy.FlatAppearance.BorderSize = 0
         btnSaveLocalCopy.FlatStyle = FlatStyle.Flat
         btnSaveLocalCopy.Image = CType(resources.GetObject("btnSaveLocalCopy.Image"), Image)
-        btnSaveLocalCopy.Location = New Point(763, 0)
+        btnSaveLocalCopy.Location = New Point(769, 0)
         btnSaveLocalCopy.Margin = New Padding(0)
         btnSaveLocalCopy.Name = "btnSaveLocalCopy"
-        btnSaveLocalCopy.Size = New Size(80, 48)
+        btnSaveLocalCopy.Size = New Size(80, 40)
         btnSaveLocalCopy.TabIndex = 1
         btnSaveLocalCopy.UseVisualStyleBackColor = True
         ' 
@@ -270,7 +245,6 @@ Partial Class DdfView
         pnlAdobe.Controls.Add(lblAdobeMod)
         pnlAdobe.Controls.Add(cboAdobeMotor)
         pnlAdobe.Controls.Add(lblAdobeMotor)
-        pnlAdobe.Dock = DockStyle.Top
         pnlAdobe.Location = New Point(0, 0)
         pnlAdobe.Name = "pnlAdobe"
         pnlAdobe.Padding = New Padding(6, 4, 6, 4)
@@ -351,7 +325,7 @@ Partial Class DdfView
         pnlValori.Dock = DockStyle.Fill
         pnlValori.Location = New Point(0, 0)
         pnlValori.Name = "pnlValori"
-        pnlValori.Size = New Size(849, 479)
+        pnlValori.Size = New Size(849, 488)
         pnlValori.TabIndex = 0
         pnlValori.Visible = False
         ' 
@@ -366,7 +340,7 @@ Partial Class DdfView
         grid.ReadOnlyGrid = True
         grid.ScrollByColumn = True
         grid.ShowTotalsRow = True
-        grid.Size = New Size(849, 442)
+        grid.Size = New Size(849, 451)
         grid.TabIndex = 1
         grid.TotalsRowHeight = 30
         ' 
@@ -410,7 +384,7 @@ Partial Class DdfView
         pnlPreview.Dock = DockStyle.Fill
         pnlPreview.Location = New Point(0, 0)
         pnlPreview.Name = "pnlPreview"
-        pnlPreview.Size = New Size(849, 479)
+        pnlPreview.Size = New Size(849, 488)
         pnlPreview.TabIndex = 1
         pnlPreview.Visible = False
         ' 
@@ -419,7 +393,7 @@ Partial Class DdfView
         previewXfa.Dock = DockStyle.Fill
         previewXfa.Location = New Point(0, 0)
         previewXfa.Name = "previewXfa"
-        previewXfa.Size = New Size(849, 479)
+        previewXfa.Size = New Size(849, 488)
         previewXfa.TabIndex = 0
         ' 
         ' lblPreviewGol
@@ -428,7 +402,7 @@ Partial Class DdfView
         lblPreviewGol.Font = New Font("Segoe UI", 10F)
         lblPreviewGol.Location = New Point(0, 0)
         lblPreviewGol.Name = "lblPreviewGol"
-        lblPreviewGol.Size = New Size(849, 479)
+        lblPreviewGol.Size = New Size(849, 488)
         lblPreviewGol.TabIndex = 0
         lblPreviewGol.Text = "Selectați o revizie din arbore."
         lblPreviewGol.TextAlign = ContentAlignment.MiddleCenter
@@ -440,7 +414,7 @@ Partial Class DdfView
         pnlFisiere.Dock = DockStyle.Fill
         pnlFisiere.Location = New Point(0, 0)
         pnlFisiere.Name = "pnlFisiere"
-        pnlFisiere.Size = New Size(849, 479)
+        pnlFisiere.Size = New Size(849, 488)
         pnlFisiere.TabIndex = 2
         pnlFisiere.Visible = False
         ' 
@@ -449,7 +423,7 @@ Partial Class DdfView
         browser.Dock = DockStyle.Fill
         browser.Location = New Point(0, 0)
         browser.Name = "browser"
-        browser.Size = New Size(849, 479)
+        browser.Size = New Size(849, 488)
         browser.TabIndex = 0
         ' 
         ' lblFisiereGol
@@ -458,7 +432,7 @@ Partial Class DdfView
         lblFisiereGol.Font = New Font("Segoe UI", 10F)
         lblFisiereGol.Location = New Point(0, 0)
         lblFisiereGol.Name = "lblFisiereGol"
-        lblFisiereGol.Size = New Size(849, 479)
+        lblFisiereGol.Size = New Size(849, 488)
         lblFisiereGol.TabIndex = 0
         lblFisiereGol.Text = "Selectați un angajament din arbore."
         lblFisiereGol.TextAlign = ContentAlignment.MiddleCenter
@@ -487,7 +461,7 @@ Partial Class DdfView
         navSub.Name = "navSub"
         navSub.Orientation = KBot.Controls.KBotNavOrientation.Horizontal
         navSub.SelectedKey = Nothing
-        navSub.Size = New Size(849, 49)
+        navSub.Size = New Size(849, 40)
         navSub.TabIndex = 0
         ' 
         ' lblEmpty
@@ -515,7 +489,6 @@ Partial Class DdfView
         split.Panel2.ResumeLayout(False)
         CType(split, ComponentModel.ISupportInitialize).EndInit()
         split.ResumeLayout(False)
-        pnlTreeHead.ResumeLayout(False)
         pnlPages.ResumeLayout(False)
         pnlPdf.ResumeLayout(False)
         tlyPDF.ResumeLayout(False)
@@ -534,8 +507,6 @@ Partial Class DdfView
     End Sub
 
     Friend WithEvents split As SplitContainer
-    Friend WithEvents pnlTreeHead As Panel
-    Friend WithEvents lblTreeTitle As Label
     Friend WithEvents tree As KBot.Controls.AdvancedTreeControl
     Friend WithEvents navSub As KBot.Controls.KBotNavList
     Friend WithEvents pnlPages As Panel

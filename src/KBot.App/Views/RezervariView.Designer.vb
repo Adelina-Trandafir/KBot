@@ -47,14 +47,34 @@ Partial Class RezervariView
         ' tree
         ' 
         tree.Dock = DockStyle.Fill
+        tree.FooterBackColor = SystemColors.Control
+        tree.FooterCollapseButton = True
+        tree.FooterCollapseButtonPosition = KBot.Controls.AdvancedTreeControl.En_FooterButtonPosition.Left
+        tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
+        tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
+        tree.FooterHeight = 40
+        tree.FooterIconSize = New Size(24, 24)
+        tree.FooterVisible = True
+        tree.HeaderBackColor = SystemColors.Control
+        tree.HeaderBackStyle = KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
+        tree.HeaderCaption = " REZERVĂRI"
+        tree.HeaderFont = New Font("Tahoma", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        tree.HeaderForeColor = Color.Black
+        tree.HeaderGradientEndColor = Color.CornflowerBlue
+        tree.HeaderHeight = 40
+        tree.HeaderIconSize = New Size(24, 24)
+        tree.HeaderLeftIcon = My.Resources.Resources.folder_open
+        tree.HeaderVisible = True
         tree.ItemHeight = 24
         tree.LeftIconSize = New Size(16, 16)
         tree.Location = New Point(0, 0)
         tree.Margin = New Padding(4, 5, 4, 5)
+        tree.MinimumCollapsedWidth = 120
         tree.Name = "tree"
         tree.ReserveRightIconSpace = True
         tree.RightIconSize = New Size(14, 14)
         tree.RightTextWidth = 110
+        tree.RootExpander = True
         tree.Size = New Size(336, 567)
         tree.TabIndex = 0
         ' 

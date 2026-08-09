@@ -140,11 +140,16 @@ Partial Class MainForm
         tree.FlyoutSlideDuration = 100
         tree.Font = New Font("Consolas", 10F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
+        tree.FooterCaption = "Actualizează angajamente"
+        tree.FooterCaptionFont = New Font("Consolas", 8F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCollapseButton = True
         tree.FooterCollapseButtonPosition = KBot.Controls.AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
         tree.FooterHeight = 40
+        tree.FooterIconSize = New Size(24, 24)
+        tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
+        tree.FooterTextAlign = ContentAlignment.MiddleRight
         tree.FooterVisible = True
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal

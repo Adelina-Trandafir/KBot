@@ -47,6 +47,11 @@ Public Class ReceptiiView
     Private _rows As List(Of ReceptieRow)
     Private _plati As List(Of ReceptiePlata)
 
+    ' Starea splitter-ului dinainte de strângerea arborelui, ca desfacerea să-l pună înapoi
+    ' exact unde era (vezi tree_CollapsedChanged). 0 = arborele n-a fost încă strâns.
+    Private _splitterDistanceDesfasurat As Integer
+    Private _panel1MinSizeDesfasurat As Integer
+
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of ReceptiiInfo)), Task(Of ReceptiiInfo)))
         If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
@@ -54,7 +59,6 @@ Public Class ReceptiiView
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
-        ConfigureTree()
         BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
@@ -65,17 +69,42 @@ Public Class ReceptiiView
         End Get
     End Property
 
-    ' Comportament neacoperit de Designer. Fontul NU se mai pune aici: era «Segoe UI, 9», adică
-    ' exact implicitul arborelui de la unificarea TreeFont→Font, iar scris explicit ar fi FIXAT
-    ' fontul (vezi ShouldSerializeFont din .Theming) și l-ar fi făcut surd la tema activă.
-    Private Sub ConfigureTree()
+    ''' <summary>
+    ''' Strângerea arborelui (felia 0027-03, aceeași înțelegere ca în MainForm): arborele e
+    ''' <c>Dock = Fill</c> în <c>split.Panel1</c>, deci lățimea NU e a lui — el schimbă starea
+    ''' și ne anunță, GAZDA mută splitter-ul. <c>Panel1MinSize</c> păzește TRAGEREA splitter-ului;
+    ''' strângerea e o comandă, nu o tragere, deci coborâm paza cât ține starea.
+    ''' </summary>
+    Private Sub tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
         Try
-            tree.RootExpander = True
+            Dim padStanga As Integer = split.Panel1.Padding.Left
+            If collapsed Then
+                _splitterDistanceDesfasurat = split.SplitterDistance
+                _panel1MinSizeDesfasurat = split.Panel1MinSize
+                Dim tinta As Integer = tree.MinimumCollapsedWidth + padStanga
+                split.Panel1MinSize = Math.Min(_panel1MinSizeDesfasurat, tinta)
+                split.SplitterDistance = ClampSplitter(tinta)
+                split.IsSplitterFixed = True
+            Else
+                split.IsSplitterFixed = False
+                If _panel1MinSizeDesfasurat > 0 Then split.Panel1MinSize = _panel1MinSizeDesfasurat
+                Dim tinta As Integer = If(_splitterDistanceDesfasurat > 0,
+                                          _splitterDistanceDesfasurat,
+                                          tree.ExpandedWidth + padStanga)
+                split.SplitterDistance = ClampSplitter(tinta)
+            End If
         Catch ex As Exception
-            GlobalErrorLog.Write("ReceptiiView.ConfigureTree", ex)
-            Throw
+            GlobalErrorLog.Write("ReceptiiView.tree_CollapsedChanged", ex)
         End Try
     End Sub
+
+    ' Distanța splitter-ului adusă în intervalul acceptat de SplitContainer — o vedere îngustă
+    ' n-are voie să transforme apăsarea butonului de strângere într-o excepție.
+    Private Function ClampSplitter(dorit As Integer) As Integer
+        Dim maxim As Integer = split.Width - split.Panel2MinSize - split.SplitterWidth
+        If maxim < split.Panel1MinSize Then Return split.Panel1MinSize
+        Return Math.Max(split.Panel1MinSize, Math.Min(dorit, maxim))
+    End Function
 
     ' Coloanele grilei = frmFX_MAIN_REC_LISTA (qFX_MAIN_REC_LISTA_IND): NrCrt, Descriere,
     ' Clsf, Valoare. NrCrt + Valoare aliniate la dreapta (read-only, deci un tip numeric ar
