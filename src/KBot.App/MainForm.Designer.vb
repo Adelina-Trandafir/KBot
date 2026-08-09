@@ -141,7 +141,7 @@ Partial Class MainForm
         tree.Font = New Font("Consolas", 10F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCollapseButton = True
-        tree.FooterCollapseButtonSize = 20
+        tree.FooterCollapseButtonPosition = KBot.Controls.AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
         tree.FooterHeight = 40
@@ -253,7 +253,7 @@ Partial Class MainForm
         ' 
         navViews.CollapseButtonSize = 14
         navViews.CollapseCollapsedImage = My.Resources.Resources.expand_24
-        navViews.CollapseCorner = KBot.Controls.KBotNavCorner.BottomRight
+        navViews.CollapseCorner = KBot.Controls.KBotNavCorner.BottomLeft
         navViews.CollapseExpandedImage = My.Resources.Resources.collapse_24
         navViews.Collapsible = True
         navViews.Dock = DockStyle.Left

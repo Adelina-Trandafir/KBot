@@ -271,21 +271,128 @@ Public Class AdvancedTreeFooterTests
                End Sub)
     End Sub
 
+    ' Un clic de probă în punctul dat (butonul stâng, o singură apăsare).
+    Private Shared Function Clic(p As Point) As MouseEventArgs
+        Return New MouseEventArgs(MouseButtons.Left, 1, p.X, p.Y, 0)
+    End Function
+
+    Private Shared Function Centrul(r As Rectangle) As Point
+        Return New Point(r.Left + r.Width \ 2, r.Top + r.Height \ 2)
+    End Function
+
     <Fact>
     Public Sub Clic_pe_buton_comuta_iar_clic_in_banda_nu_ajunge_la_noduri()
         RunSta(Sub()
                    Using tree As AdvancedTreeControl = ArboreCuSubsol()
-                       Dim r As Rectangle = tree.FooterCollapseButtonRect
-                       Assert.True(tree.HandleFooterMouseDown(New Point(r.Left + r.Width \ 2,
-                                                                        r.Top + r.Height \ 2)))
+                       Dim peButon As Point = Centrul(tree.FooterCollapseButtonRect)
+                       Assert.True(tree.HandleFooterMouseDown(peButon, Clic(peButon)))
                        Assert.True(tree.Collapsed)
 
                        ' Restul benzii e tot al subsolului: consumat, dar fără efect.
-                       Assert.True(tree.HandleFooterMouseDown(New Point(2, tree.Height - 2)))
+                       Dim inBanda As New Point(2, tree.Height - 2)
+                       Assert.True(tree.HandleFooterMouseDown(inBanda, Clic(inBanda)))
                        Assert.True(tree.Collapsed)
 
                        ' Deasupra benzii nu mai e treaba subsolului.
-                       Assert.False(tree.HandleFooterMouseDown(New Point(2, 10)))
+                       Dim susDeTot As New Point(2, 10)
+                       Assert.False(tree.HandleFooterMouseDown(susDeTot, Clic(susDeTot)))
+                   End Using
+               End Sub)
+    End Sub
+
+    ' ── Iconițele de capăt ale subsolului ────────────────────────────────────────
+    ' Regula cerută: latura pe care stă butonul de strângere îi aparține, iar iconița de capăt
+    ' de acolo nu se mai desenează. Simetric — stânga ca dreapta.
+
+    <Fact>
+    Public Sub Butonul_ia_latura_pe_care_sta_iar_iconita_de_acolo_nu_se_mai_vede()
+        RunSta(Sub()
+                   Using tree As AdvancedTreeControl = ArboreCuSubsol()
+                       tree.FooterLeftIcon = New Bitmap(16, 16)
+                       tree.FooterRightIcon = New Bitmap(16, 16)
+
+                       ' Butonul e implicit în DREAPTA: iconița din dreapta tace, cea din stânga nu.
+                       tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Right
+                       Assert.True(tree.ShowFooterLeftIcon())
+                       Assert.False(tree.ShowFooterRightIcon())
+                       Assert.True(tree.FooterRightIconRect.IsEmpty)
+
+                       ' Mutat în STÂNGA: exact pe dos.
+                       tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
+                       Assert.False(tree.ShowFooterLeftIcon())
+                       Assert.True(tree.ShowFooterRightIcon())
+                       Assert.False(tree.FooterRightIconRect.IsEmpty)
+
+                       ' Fără buton deloc, amândouă se văd.
+                       tree.FooterCollapseButton = False
+                       Assert.True(tree.ShowFooterLeftIcon())
+                       Assert.True(tree.ShowFooterRightIcon())
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Iconita_din_dreapta_sta_in_banda_si_ridica_evenimentul_la_clic()
+        RunSta(Sub()
+                   Using tree As AdvancedTreeControl = ArboreCuSubsol()
+                       tree.FooterRightIcon = New Bitmap(16, 16)
+                       ' Butonul se mută la stânga ca dreapta să rămână liberă pentru iconiță.
+                       tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
+
+                       Dim banda As New Rectangle(0, tree.Height - tree.FooterHeight,
+                                                  tree.Width, tree.FooterHeight)
+                       Dim r As Rectangle = tree.FooterRightIconRect
+                       Assert.True(banda.Contains(r), "iconița trebuie să încapă în banda de subsol")
+                       Assert.True(r.Left > tree.Width \ 2, "iconița din dreapta stă în dreapta")
+
+                       Dim clicuri As Integer = 0
+                       AddHandler tree.FooterRightIconClicked, Sub(e As MouseEventArgs) clicuri += 1
+
+                       Dim p As Point = Centrul(r)
+                       Assert.True(tree.HandleFooterMouseDown(p, Clic(p)))
+                       Assert.Equal(1, clicuri)
+
+                       ' Restul benzii nu ridică nimic.
+                       Dim altundeva As New Point(2, tree.Height - 2)
+                       tree.HandleFooterMouseDown(altundeva, Clic(altundeva))
+                       Assert.Equal(1, clicuri)
+                   End Using
+               End Sub)
+    End Sub
+
+    ''' <summary>
+    ''' Iconița suprimată de buton nu e doar invizibilă, e și INAPĂSABILĂ: altfel ar rămâne o zonă
+    ''' de clic fantomă exact peste buton.
+    ''' </summary>
+    <Fact>
+    Public Sub Iconita_suprimata_de_buton_nu_mai_e_nici_apasabila()
+        RunSta(Sub()
+                   Using tree As AdvancedTreeControl = ArboreCuSubsol()
+                       tree.FooterRightIcon = New Bitmap(16, 16)
+                       tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
+                       Dim undeEra As Point = Centrul(tree.FooterRightIconRect)
+
+                       tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Right
+                       Dim clicuri As Integer = 0
+                       AddHandler tree.FooterRightIconClicked, Sub(e As MouseEventArgs) clicuri += 1
+
+                       tree.HandleFooterMouseDown(undeEra, Clic(undeEra))
+                       Assert.Equal(0, clicuri)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Iconitele_de_subsol_nu_se_scriu_in_designer_pe_un_arbore_neatins()
+        RunSta(Sub()
+                   Using tree As New AdvancedTreeControl()
+                       For Each nume As String In {"FooterRightIcon", "FooterRightIconKey",
+                                                   "FooterLeftIcon", "FooterLeftIconKey"}
+                           Dim pd As PropertyDescriptor = TypeDescriptor.GetProperties(tree)(nume)
+                           Assert.NotNull(pd)
+                           Assert.False(pd.ShouldSerializeValue(tree),
+                                        $"«{nume}» nu ar trebui serializat pe un arbore neatins")
+                       Next
                    End Using
                End Sub)
     End Sub

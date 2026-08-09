@@ -122,6 +122,9 @@ Partial Public Class AdvancedTreeControl
         If Not String.IsNullOrEmpty(_footerLeftIconKey) Then
             If cache.TryGetValue(_footerLeftIconKey, img) Then _footerLeftIcon = img
         End If
+        If Not String.IsNullOrEmpty(_footerRightIconKey) Then
+            If cache.TryGetValue(_footerRightIconKey, img) Then _footerRightIcon = img
+        End If
 
         ' Auto-open: SearchShow = True și nu există iconiță toggle
         ApplySearchShow()

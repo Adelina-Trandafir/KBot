@@ -60,7 +60,7 @@ Fișier nou `AdvancedTreeControl.Footer.vb` (desen + geometrie + strângere + no
 | Cerut | Proprietăți |
 |---|---|
 | a. înălțime, fundal, degrade | `FooterVisible`, `FooterHeight` (28), `FooterBackColor`, `FooterForeColor`, `FooterBackStyle`, `FooterGradientEndColor` |
-| b. iconiță stânga | `FooterLeftIcon`, `FooterLeftIconKey` (din `NodeImages`), `FooterIconSize` |
+| b. iconiță stânga (+ dreapta, §7) | `FooterLeftIcon`/`FooterRightIcon` + cheile lor (din `NodeImages`), `FooterIconSize`, evenimentul `FooterRightIconClicked` |
 | c. caption cu font/culori | `FooterCaption`, `FooterCaptionFont`, `FooterCaptionForeColor`, `FooterCaptionBackColor`, `FooterTextAlign` |
 | d. buton de strângere | `FooterCollapseButton`, `FooterCollapseButtonSize` (16), `FooterCollapseButtonPosition`, `FooterCollapseExpandedImage`, `FooterCollapseCollapsedImage` |
 | d.II | `MinimumCollapsedWidth` (100) |
@@ -309,13 +309,48 @@ o readuce, selectarea rândului survolat retrage eticheta deja ieșită, iar sti
 
 ---
 
+## 7. Iconița din dreapta subsolului
+
+Cerere de operator:
+
+> «i also need a righticon in the footer similar to the right icon in the header. if collapse
+> button is on the right, the right button is not displayed. the same if it is on the left»
+
+`FooterRightIcon` + `FooterRightIconKey`, perechea celor din stânga, cu evenimentul
+`FooterRightIconClicked(e As MouseEventArgs)` — sora lui `HeaderRightIconClicked`, aceeași
+semnătură, ca gazda să nu aibă de învățat un al doilea tipar.
+
+**Regula de capăt e acum SIMETRICĂ și scrisă o singură dată** (`ButonPeLatura`): latura pe care
+stă butonul de strângere îi aparține, iar iconița de acolo nu se mai desenează. Până acum exista
+doar jumătatea din stânga, cu regula împrăștiată în `DrawFooter`; s-a mutat în
+`ShowFooterLeftIcon` / `ShowFooterRightIcon`, care spun ce e pe ecran ACUM și sunt publice (le
+citește și playground-ul ca să-și stingă comutatoarele fără să reproducă regula).
+
+Dreptunghiul iconiței vine din `ComputeFooterRightIconRect`, funcție pură folosită și de desen și
+de hit-test — a doua oară în felia asta când se aplică lecția butonului: o geometrie publicată de
+desen ar face apăsarea să depindă de o repictare anterioară. `FooterRightIconRect` o expune, ca
+`FooterCollapseButtonRect`.
+
+Iconița suprimată de buton nu e doar invizibilă, e și **inapăsabilă**: altfel ar fi rămas o zonă de
+clic fantomă exact peste buton. Are test.
+
+Patru teste noi (442 în total): tabelul de suprimare (buton dreapta / buton stânga / fără buton),
+iconița stă în bandă și ridică evenimentul, zona de clic dispare odată cu ea, iar cele patru
+proprietăți de iconițe nu se scriu în designer pe un arbore neatins. `HandleFooterMouseDown`
+primește acum și `MouseEventArgs`, ca evenimentul să plece cu poziția clicului, exact ca la antet.
+
+În playground: `chkFooterRightIcon`, comutatoarele de iconițe se sting după latura butonului, iar
+`FooterRightIconClicked` se scrie în jurnal — proba că iconița chiar e apăsabilă.
+
+---
+
 ## Rămas neverificat / amânat
 
 - **Verdict vizual PARȚIAL.** Operatorul a rulat playground-ul și `MainForm` și a raportat
   strângerea ca fiind ruptă în shell (vezi §4, reparat) și funcțională în playground. Deci
   strângerea ARE timp de ecran; restul benzii — degradeul, unghiul desenat, alinierea caption-ului,
   culorile proprii ale etichetei — nu a fost confirmat bucată cu bucată.
-- **Corecturile din §4, §5 și §6 nu au fost revăzute pe ecran.** Mutarea splitter-ului,
+- **Nimic din §4–§7 nu a fost revăzut pe ecran.** Mutarea splitter-ului,
   `IsSplitterFixed` cât e strâns, întoarcerea la distanța dinainte și îngustarea textului la hover
   sunt verzi la teste, dar nu re-probate nici în `MainForm`, nici în playground.
 - **`RezervariView` cere explicit `ReserveRightIconSpace = True`** (`RezervariView.Designer.vb`),

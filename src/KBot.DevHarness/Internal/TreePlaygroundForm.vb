@@ -239,6 +239,18 @@ Public NotInheritable Class TreePlaygroundForm
     Private Sub chkFooterLeftIcon_CheckedChanged(sender As Object, e As EventArgs) Handles chkFooterLeftIcon.CheckedChanged
         Apply(Sub() tree.FooterLeftIcon = If(chkFooterLeftIcon.Checked, _iconFooter, Nothing))
     End Sub
+    Private Sub chkFooterRightIcon_CheckedChanged(sender As Object, e As EventArgs) Handles chkFooterRightIcon.CheckedChanged
+        Apply(Sub() tree.FooterRightIcon = If(chkFooterRightIcon.Checked, _iconHeaderRight, Nothing))
+    End Sub
+    ' Perechea evenimentului din antet: confirmă că iconița din subsol chiar e apăsabilă.
+    Private Sub tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
+        Try
+            _log("FooterRightIconClicked")
+            lblInfo.Text = "Clic pe iconița din dreapta subsolului"
+        Catch ex As Exception
+            GlobalErrorLog.Write("TreePlaygroundForm.tree_FooterRightIconClicked", ex)
+        End Try
+    End Sub
     Private Sub numFooterIconSize_ValueChanged(sender As Object, e As EventArgs) Handles numFooterIconSize.ValueChanged
         Apply(Sub() tree.FooterIconSize = Patrat(numFooterIconSize))
     End Sub
@@ -582,6 +594,7 @@ Public NotInheritable Class TreePlaygroundForm
             Array.IndexOf([Enum].GetValues(GetType(ContentAlignment)), tree.FooterTextAlign)
         cboFooterStyle.SelectedIndex = CInt(tree.FooterBackStyle)
         chkFooterLeftIcon.Checked = tree.FooterLeftIcon IsNot Nothing
+        chkFooterRightIcon.Checked = tree.FooterRightIcon IsNot Nothing
         SetNum(numFooterIconSize, tree.FooterIconSize.Width)
 
         chkCollapseButton.Checked = tree.FooterCollapseButton
@@ -663,12 +676,17 @@ Public NotInheritable Class TreePlaygroundForm
         Next
         btnFooterGradEnd.Enabled = ftr AndAlso
             tree.FooterBackStyle <> AdvancedTreeControl.En_HeaderBackStyle.Solid
-        ' Butonul pus în stânga îi ia locul iconiței — atunci nu mai are rost s-o alegi.
+        ' Butonul de strângere ia latura pe care stă, deci iconița de acolo n-are rost s-o alegi.
         Dim butonStanga As Boolean = tree.FooterCollapseButton AndAlso
             tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
+        Dim butonDreapta As Boolean = tree.FooterCollapseButton AndAlso
+            tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Right
         chkFooterLeftIcon.Enabled = ftr AndAlso Not butonStanga
-        lblFooterIconSize.Enabled = chkFooterLeftIcon.Enabled AndAlso tree.FooterLeftIcon IsNot Nothing
-        numFooterIconSize.Enabled = lblFooterIconSize.Enabled
+        chkFooterRightIcon.Enabled = ftr AndAlso Not butonDreapta
+        ' Dimensiunea iconițelor contează dacă MĂCAR una dintre ele se vede.
+        Dim vreoIconita As Boolean = ftr AndAlso (tree.ShowFooterLeftIcon() OrElse tree.ShowFooterRightIcon())
+        lblFooterIconSize.Enabled = vreoIconita
+        numFooterIconSize.Enabled = vreoIconita
 
         ' Restul secțiunii de strângere contează doar dacă butonul chiar există.
         Dim clps As Boolean = ftr AndAlso tree.FooterCollapseButton

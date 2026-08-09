@@ -853,6 +853,36 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
+    Private _footerRightIcon As Image = Nothing
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Iconița din dreapta subsolului (ridică FooterRightIconClicked). " &
+                 "IGNORATĂ dacă butonul de strângere stă tot în dreapta.")>
+    <DefaultValue(GetType(Image), Nothing)>
+    Public Property FooterRightIcon As Image
+        Get
+            Return _footerRightIcon
+        End Get
+        Set(value As Image)
+            _footerRightIcon = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _footerRightIconKey As String = ""
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Cheia iconiței din dreapta subsolului (rezolvată din cache-ul de iconițe).")>
+    <DefaultValue("")>
+    Public Property FooterRightIconKey As String
+        Get
+            Return _footerRightIconKey
+        End Get
+        Set(value As String)
+            _footerRightIconKey = value
+            ResolveHeaderIconsFromNodeImages()
+            Me.Invalidate()
+        End Set
+    End Property
+
     Private _footerIconSize As New Size(16, 16)
     <Category("K-BOT Arbore - Subsol")>
     <Description("Dimensiunea iconiței din subsol.")>

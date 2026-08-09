@@ -153,6 +153,9 @@ Partial Public Class AdvancedTreeControl
         img = NodeImage(_footerLeftIconKey)
         If img IsNot Nothing Then _footerLeftIcon = img
 
+        img = NodeImage(_footerRightIconKey)
+        If img IsNot Nothing Then _footerRightIcon = img
+
         img = NodeImage(_headerSearchIconKey)
         If img IsNot Nothing Then
             _headerSearchIcon = img

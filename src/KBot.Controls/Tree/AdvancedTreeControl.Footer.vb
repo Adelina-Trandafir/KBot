@@ -95,15 +95,19 @@ Partial Public Class AdvancedTreeControl
             End If
         End If
 
-        ' ── Iconița din stânga ───────────────────────────────────────────
-        ' Butonul pus în stânga îi ia locul: regula cerută e «dacă e stânga ȘI există iconiță
-        ' de stânga, iconița se ignoră» — nu se înghesuie amândouă.
-        Dim butonInStanga As Boolean = Not butonRect.IsEmpty AndAlso
-                                       _footerCollapseButtonPosition = En_FooterButtonPosition.Left
-        If _footerLeftIcon IsNot Nothing AndAlso Not butonInStanga Then
+        ' ── Iconițele de capăt ───────────────────────────────────────────
+        ' Regula e simetrică: butonul de strângere ia latura pe care stă, iar iconița de acolo
+        ' se ignoră. Nu se înghesuie două lucruri în același colț — vezi FooterIconSuppressed*.
+        If ShowFooterLeftIcon() Then
             Dim iy As Integer = midY - (_footerIconSize.Height \ 2)
             g.DrawImage(_footerLeftIcon, x, iy, _footerIconSize.Width, _footerIconSize.Height)
             x += _footerIconSize.Width + PADDING_ICON_GAP
+        End If
+
+        If ShowFooterRightIcon() Then
+            Dim r As Rectangle = ComputeFooterRightIconRect(bandRect)
+            g.DrawImage(_footerRightIcon, r)
+            rx = r.Left - PADDING_ICON_GAP
         End If
 
         ' ── Caption (text îmbogățit, în spațiul rămas) ───────────────────
@@ -206,6 +210,53 @@ Partial Public Class AdvancedTreeControl
         Return New Rectangle(left, top, side, side)
     End Function
 
+    ''' <summary>
+    ''' Butonul de strângere e cerut ȘI stă pe latura dată? Purtătorul regulii simetrice: latura
+    ''' pe care stă butonul îi aparține, iar iconița de capăt de acolo nu se mai desenează.
+    ''' </summary>
+    Private Function ButonPeLatura(latura As En_FooterButtonPosition) As Boolean
+        Return _footerCollapseButton AndAlso _footerCollapseButtonPosition = latura
+    End Function
+
+    ''' <summary>Iconița din stânga se vede? (există ȘI butonul nu i-a luat colțul)</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property ShowFooterLeftIcon As Boolean
+        Get
+            Return _footerLeftIcon IsNot Nothing AndAlso Not ButonPeLatura(En_FooterButtonPosition.Left)
+        End Get
+    End Property
+
+    ''' <summary>Iconița din dreapta se vede? (există ȘI butonul nu i-a luat colțul)</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property ShowFooterRightIcon As Boolean
+        Get
+            Return _footerRightIcon IsNot Nothing AndAlso Not ButonPeLatura(En_FooterButtonPosition.Right)
+        End Get
+    End Property
+
+    ' Dreptunghiul iconiței din dreapta. Ca la buton: funcție pură, folosită și de desen și de
+    ' hit-test — o a doua formulă ar fi o iconiță care se desenează unde nu se apasă.
+    Private Function ComputeFooterRightIconRect(bandRect As Rectangle) As Rectangle
+        If Not ShowFooterRightIcon() Then Return Rectangle.Empty
+        Dim latime As Integer = _footerIconSize.Width
+        Dim inaltime As Integer = _footerIconSize.Height
+        Dim top As Integer = bandRect.Top + (bandRect.Height - inaltime) \ 2
+        Return New Rectangle(Math.Max(0, Me.Width - PADDING_TREE_END - latime), top, latime, inaltime)
+    End Function
+
+    ''' <summary>Dreptunghiul curent al iconiței din dreapta subsolului (gol = nu se vede).</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property FooterRightIconRect As Rectangle
+        Get
+            If Not _footerVisible Then Return Rectangle.Empty
+            Return ComputeFooterRightIconRect(New Rectangle(0, Math.Max(0, Me.Height - _footerHeight),
+                                                            Math.Max(1, Me.Width), Math.Max(1, _footerHeight)))
+        End Get
+    End Property
+
     ''' <summary>Dreptunghiul curent al butonului de strângere (gol = nu există). Pentru teste/gazdă.</summary>
     <Browsable(False)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
@@ -251,12 +302,19 @@ Partial Public Class AdvancedTreeControl
     ''' Click în banda de subsol. Întoarce True dacă subsolul a consumat evenimentul — arborele
     ''' nu mai caută niciun nod sub el.
     ''' </summary>
-    Friend Function HandleFooterMouseDown(location As Point) As Boolean
+    Friend Function HandleFooterMouseDown(location As Point, e As MouseEventArgs) As Boolean
         If Not _footerVisible Then Return False
         If location.Y < Me.Height - _footerHeight Then Return False
+
         Dim butonRect As Rectangle = FooterCollapseButtonRect
         If Not butonRect.IsEmpty AndAlso butonRect.Contains(location) Then
             If Not KBotDesignTime.IsDesignTime(Me) Then ToggleCollapse()
+            Return True
+        End If
+
+        Dim iconRect As Rectangle = FooterRightIconRect
+        If Not iconRect.IsEmpty AndAlso iconRect.Contains(location) Then
+            If Not KBotDesignTime.IsDesignTime(Me) Then RaiseEvent FooterRightIconClicked(e)
         End If
         Return True                       ' banda e a subsolului, indiferent unde s-a apăsat
     End Function

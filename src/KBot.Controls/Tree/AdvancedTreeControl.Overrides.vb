@@ -106,8 +106,8 @@ Partial Public Class AdvancedTreeControl
         MyBase.OnMouseDown(e)
         Me.Focus()
 
-        ' ── Footer area clicks (butonul de strângere) ────────────────────────
-        If HandleFooterMouseDown(e.Location) Then Return
+        ' ── Footer area clicks (butonul de strângere / iconița din dreapta) ──
+        If HandleFooterMouseDown(e.Location, e) Then Return
 
         ' ── Header area clicks ───────────────────────────────────────────────
         If _headerVisible AndAlso e.Y < _headerHeight Then

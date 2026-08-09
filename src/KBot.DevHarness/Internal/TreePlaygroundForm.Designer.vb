@@ -64,6 +64,7 @@ Partial Class TreePlaygroundForm
     Friend WithEvents btnFooterCapBack As System.Windows.Forms.Button
     Friend WithEvents btnFooterCapFore As System.Windows.Forms.Button
     Friend WithEvents chkFooterLeftIcon As System.Windows.Forms.CheckBox
+    Friend WithEvents chkFooterRightIcon As System.Windows.Forms.CheckBox
     Friend WithEvents lblFooterIconSize As System.Windows.Forms.Label
     Friend WithEvents numFooterIconSize As System.Windows.Forms.NumericUpDown
 
@@ -216,6 +217,7 @@ Partial Class TreePlaygroundForm
         Me.btnFooterCapBack = New System.Windows.Forms.Button()
         Me.btnFooterCapFore = New System.Windows.Forms.Button()
         Me.chkFooterLeftIcon = New System.Windows.Forms.CheckBox()
+        Me.chkFooterRightIcon = New System.Windows.Forms.CheckBox()
         Me.lblFooterIconSize = New System.Windows.Forms.Label()
         Me.numFooterIconSize = New System.Windows.Forms.NumericUpDown()
         Me.lblSecCollapse = New System.Windows.Forms.Label()
@@ -393,6 +395,7 @@ Partial Class TreePlaygroundForm
         Me.flowLeft.Controls.Add(Me.btnFooterCapBack)
         Me.flowLeft.Controls.Add(Me.btnFooterCapFore)
         Me.flowLeft.Controls.Add(Me.chkFooterLeftIcon)
+        Me.flowLeft.Controls.Add(Me.chkFooterRightIcon)
         Me.flowLeft.Controls.Add(Me.lblFooterIconSize)
         Me.flowLeft.Controls.Add(Me.numFooterIconSize)
         Me.flowLeft.Controls.Add(Me.lblSecCollapse)
@@ -522,6 +525,7 @@ Partial Class TreePlaygroundForm
         Me.btnFooterCapBack.AutoSize = True : Me.btnFooterCapBack.Text = "FooterCaptionBackColor…" : Me.btnFooterCapBack.Name = "btnFooterCapBack" : Me.btnFooterCapBack.UseVisualStyleBackColor = True
         Me.btnFooterCapFore.AutoSize = True : Me.btnFooterCapFore.Text = "FooterCaptionForeColor…" : Me.btnFooterCapFore.Name = "btnFooterCapFore" : Me.btnFooterCapFore.UseVisualStyleBackColor = True
         Me.chkFooterLeftIcon.AutoSize = True : Me.chkFooterLeftIcon.Text = "Iconiță stânga în subsol" : Me.chkFooterLeftIcon.Name = "chkFooterLeftIcon"
+        Me.chkFooterRightIcon.AutoSize = True : Me.chkFooterRightIcon.Text = "Iconiță dreapta în subsol" : Me.chkFooterRightIcon.Name = "chkFooterRightIcon"
         Me.lblFooterIconSize.AutoSize = True : Me.lblFooterIconSize.Text = "FooterIconSize (latură)" : Me.lblFooterIconSize.Name = "lblFooterIconSize"
         Me.numFooterIconSize.Minimum = 8D : Me.numFooterIconSize.Maximum = 48D : Me.numFooterIconSize.Value = 16D : Me.numFooterIconSize.Width = 120 : Me.numFooterIconSize.Name = "numFooterIconSize"
         '
