@@ -27,6 +27,7 @@ Partial Public Class AdvancedTreeControl
     ' așteptare (cât stă cursorul înainte să iasă) și unul de animație (desfășurarea spre dreapta).
     Private Const FlyoutTickMs As Integer = 15
     Private _flyoutEnabled As Boolean = True
+    Private _flyoutSelectedNode As Boolean = False    ' nodul selectat NU iese, implicit
     Private _flyoutDelay As Integer = 250
     Private _flyoutSlide As Integer = 120
     Private _flyout As TreeNodeFlyout
@@ -414,14 +415,37 @@ Partial Public Class AdvancedTreeControl
 
     ''' <summary>
     ''' Pentru ce nod ar trebui să iasă eticheta la un punct dat (Nothing = niciunul). Cere: arbore
-    ''' STRÂNS, etichetă activată, nu design time, și un nod sub cursor.
+    ''' STRÂNS, etichetă activată, nu design time, un nod sub cursor — și ca acel nod să aibă voie
+    ''' (vezi <see cref="FlyoutSelectedNode"/>: nodul selectat e sărit, implicit).
     ''' </summary>
     Friend Function CollapsedFlyoutTargetAt(location As Point) As TreeItem
         If Not _flyoutEnabled Then Return Nothing
         If Not _collapsed Then Return Nothing
         If KBotDesignTime.IsDesignTime(Me) Then Return Nothing
-        Return HitTestItem(location)
+        Dim it As TreeItem = HitTestItem(location)
+        If FlyoutSuppressedFor(it) Then Return Nothing
+        Return it
     End Function
+
+    ''' <summary>
+    ''' Nodul ăsta e scutit de etichetă? Doar cel SELECTAT, și doar cât
+    ''' <see cref="FlyoutSelectedNode"/> e False. E o suprimare pe UN rând, nu o stingere a
+    ''' etichetei: vecinii lui ies în continuare.
+    ''' </summary>
+    Friend Function FlyoutSuppressedFor(it As TreeItem) As Boolean
+        If it Is Nothing Then Return False
+        Return Not _flyoutSelectedNode AndAlso it Is pSelectedItem
+    End Function
+
+    ''' <summary>
+    ''' Retrage eticheta dacă nodul pentru care ieșise tocmai a devenit scutit — cazul obișnuit e
+    ''' «am survolat un rând, a ieșit eticheta, am dat clic pe el»: din clipa în care e selectat,
+    ''' eticheta n-are ce mai arăta. Chemată din <c>OnMouseDown</c> și din setterul proprietății.
+    ''' </summary>
+    Friend Sub EnsureCollapsedFlyoutStillAllowed()
+        If _flyoutItem Is Nothing Then Return
+        If FlyoutSuppressedFor(_flyoutItem) Then CancelCollapsedFlyout()
+    End Sub
 
     ''' <summary>
     ''' Lățimea COMPLETĂ a etichetei: textul măsurat de la <see cref="NodeTextStartX"/> + aer la
@@ -580,6 +604,11 @@ Partial Public Class AdvancedTreeControl
     ' (arbore fără handle / nepus pe un formular / design time) — nu e o eroare, e absența unui ecran.
     Private Sub RenderCollapsedFlyout()
         If _flyoutItem Is Nothing OrElse Not _collapsed Then Return
+        ' Selecția se poate schimba și fără mouse (tastatură, cod) cât eticheta se desfășoară.
+        If FlyoutSuppressedFor(_flyoutItem) Then
+            CancelCollapsedFlyout()
+            Return
+        End If
         If KBotDesignTime.IsDesignTime(Me) Then Return
         If Not IsHandleCreated OrElse Not Visible Then Return
         Dim host As Form = FindForm()

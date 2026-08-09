@@ -362,6 +362,94 @@ Public Class AdvancedTreeFooterTests
                End Sub)
     End Sub
 
+    ''' <summary>
+    ''' Nodul SELECTAT nu primește etichetă (implicit): operatorul l-a ales el, deci eticheta
+    ''' n-are ce-i spune, dar ar acoperi vederea de alături de fiecare dată când cursorul trece pe
+    ''' deasupra. Suprimarea e DOAR pentru rândul selectat — vecinii lui ies în continuare.
+    ''' </summary>
+    <Fact>
+    Public Sub Nodul_selectat_nu_scoate_eticheta_dar_vecinii_lui_da()
+        RunSta(Sub()
+                   Using tree As AdvancedTreeControl = ArboreCuSubsol()
+                       tree.ToggleCollapse()
+                       Assert.False(tree.FlyoutSelectedNode)          ' implicitul cerut
+
+                       Dim peNod As Point = PePrimulNod(tree)
+                       Dim primul As AdvancedTreeControl.TreeItem = tree.CollapsedFlyoutTargetAt(peNod)
+                       Assert.NotNull(primul)                          ' neselectat: iese
+
+                       tree.SelectedNode = primul
+                       Assert.Null(tree.CollapsedFlyoutTargetAt(peNod))   ' selectat: nu mai iese
+
+                       ' …dar rândul de dedesubt, neselectat, iese ca înainte.
+                       Dim peAlDoilea As New Point(peNod.X, peNod.Y + tree.ItemHeight)
+                       Dim alDoilea As AdvancedTreeControl.TreeItem = tree.CollapsedFlyoutTargetAt(peAlDoilea)
+                       Assert.NotNull(alDoilea)
+                       Assert.NotSame(primul, alDoilea)
+                   End Using
+               End Sub)
+    End Sub
+
+    ''' <summary>Cine chiar vrea eticheta și pe nodul selectat o cere explicit.</summary>
+    <Fact>
+    Public Sub FlyoutSelectedNode_readuce_eticheta_pe_nodul_selectat()
+        RunSta(Sub()
+                   Using tree As AdvancedTreeControl = ArboreCuSubsol()
+                       tree.ToggleCollapse()
+                       Dim peNod As Point = PePrimulNod(tree)
+                       tree.SelectedNode = tree.CollapsedFlyoutTargetAt(peNod)
+                       Assert.Null(tree.CollapsedFlyoutTargetAt(peNod))
+
+                       tree.FlyoutSelectedNode = True
+                       Assert.NotNull(tree.CollapsedFlyoutTargetAt(peNod))
+                   End Using
+               End Sub)
+    End Sub
+
+    ''' <summary>
+    ''' Cazul obișnuit: survolez un rând, iese eticheta, dau clic pe el. Din clipa în care e
+    ''' selectat, eticheta n-are ce mai arăta — se retrage singură.
+    ''' </summary>
+    <Fact>
+    Public Sub Selectarea_nodului_survolat_retrage_eticheta_deja_iesita()
+        RunSta(Sub()
+                   Using tree As AdvancedTreeControl = ArboreCuSubsol()
+                       tree.FlyoutDelay = 0
+                       tree.FlyoutSlideDuration = 0
+                       tree.ToggleCollapse()
+
+                       Dim peNod As Point = PePrimulNod(tree)
+                       tree.HandleFooterMouseMove(peNod)
+                       Dim iesit As AdvancedTreeControl.TreeItem = tree.DebugFlyoutItem()
+                       Assert.NotNull(iesit)
+
+                       tree.SelectedNode = iesit
+                       Assert.Null(tree.DebugFlyoutItem())
+                   End Using
+               End Sub)
+    End Sub
+
+    ''' <summary>Și invers: stingerea opțiunii cât eticheta e afară peste nodul selectat o retrage.</summary>
+    <Fact>
+    Public Sub Stingerea_optiunii_retrage_eticheta_de_pe_nodul_selectat()
+        RunSta(Sub()
+                   Using tree As AdvancedTreeControl = ArboreCuSubsol()
+                       tree.FlyoutDelay = 0
+                       tree.FlyoutSlideDuration = 0
+                       tree.FlyoutSelectedNode = True
+                       tree.ToggleCollapse()
+
+                       Dim peNod As Point = PePrimulNod(tree)
+                       tree.SelectedNode = tree.CollapsedFlyoutTargetAt(peNod)
+                       tree.HandleFooterMouseMove(peNod)
+                       Assert.NotNull(tree.DebugFlyoutItem())      ' opțiunea o lasă să iasă
+
+                       tree.FlyoutSelectedNode = False
+                       Assert.Null(tree.DebugFlyoutItem())
+                   End Using
+               End Sub)
+    End Sub
+
     ''' <summary>Cursorul intrat în banda de subsol stinge eticheta: acolo nu e niciun nod.</summary>
     <Fact>
     Public Sub Cursorul_in_subsol_stinge_eticheta()

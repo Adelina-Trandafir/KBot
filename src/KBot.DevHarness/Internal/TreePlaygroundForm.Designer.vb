@@ -78,6 +78,7 @@ Partial Class TreePlaygroundForm
     Friend WithEvents lblMinCollapsed As System.Windows.Forms.Label
     Friend WithEvents numMinCollapsed As System.Windows.Forms.NumericUpDown
     Friend WithEvents chkCollapsedFlyout As System.Windows.Forms.CheckBox
+    Friend WithEvents chkFlyoutSelected As System.Windows.Forms.CheckBox
     Friend WithEvents lblFlyoutDelay As System.Windows.Forms.Label
     Friend WithEvents numFlyoutDelay As System.Windows.Forms.NumericUpDown
     Friend WithEvents lblFlyoutSlide As System.Windows.Forms.Label
@@ -227,6 +228,7 @@ Partial Class TreePlaygroundForm
         Me.lblMinCollapsed = New System.Windows.Forms.Label()
         Me.numMinCollapsed = New System.Windows.Forms.NumericUpDown()
         Me.chkCollapsedFlyout = New System.Windows.Forms.CheckBox()
+        Me.chkFlyoutSelected = New System.Windows.Forms.CheckBox()
         Me.lblFlyoutDelay = New System.Windows.Forms.Label()
         Me.numFlyoutDelay = New System.Windows.Forms.NumericUpDown()
         Me.lblFlyoutSlide = New System.Windows.Forms.Label()
@@ -403,6 +405,7 @@ Partial Class TreePlaygroundForm
         Me.flowLeft.Controls.Add(Me.lblMinCollapsed)
         Me.flowLeft.Controls.Add(Me.numMinCollapsed)
         Me.flowLeft.Controls.Add(Me.chkCollapsedFlyout)
+        Me.flowLeft.Controls.Add(Me.chkFlyoutSelected)
         Me.flowLeft.Controls.Add(Me.lblFlyoutDelay)
         Me.flowLeft.Controls.Add(Me.numFlyoutDelay)
         Me.flowLeft.Controls.Add(Me.lblFlyoutSlide)
@@ -534,6 +537,7 @@ Partial Class TreePlaygroundForm
         Me.lblMinCollapsed.AutoSize = True : Me.lblMinCollapsed.Text = "MinimumCollapsedWidth" : Me.lblMinCollapsed.Name = "lblMinCollapsed"
         Me.numMinCollapsed.Minimum = 16D : Me.numMinCollapsed.Maximum = 400D : Me.numMinCollapsed.Value = 100D : Me.numMinCollapsed.Width = 120 : Me.numMinCollapsed.Name = "numMinCollapsed"
         Me.chkCollapsedFlyout.AutoSize = True : Me.chkCollapsedFlyout.Text = "CollapsedFlyout (nod plutitor)" : Me.chkCollapsedFlyout.Checked = True : Me.chkCollapsedFlyout.Name = "chkCollapsedFlyout"
+        Me.chkFlyoutSelected.AutoSize = True : Me.chkFlyoutSelected.Text = "FlyoutSelectedNode (și pe nodul selectat)" : Me.chkFlyoutSelected.Name = "chkFlyoutSelected"
         Me.lblFlyoutDelay.AutoSize = True : Me.lblFlyoutDelay.Text = "FlyoutDelay (ms)" : Me.lblFlyoutDelay.Name = "lblFlyoutDelay"
         Me.numFlyoutDelay.Minimum = 0D : Me.numFlyoutDelay.Maximum = 3000D : Me.numFlyoutDelay.Value = 250D : Me.numFlyoutDelay.Increment = 50D : Me.numFlyoutDelay.Width = 120 : Me.numFlyoutDelay.Name = "numFlyoutDelay"
         Me.lblFlyoutSlide.AutoSize = True : Me.lblFlyoutSlide.Text = "FlyoutSlideDuration (ms)" : Me.lblFlyoutSlide.Name = "lblFlyoutSlide"

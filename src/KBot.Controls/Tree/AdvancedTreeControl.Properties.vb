@@ -239,6 +239,8 @@ Partial Public Class AdvancedTreeControl
         Set(value As TreeItem)
             If pSelectedItem IsNot value Then
                 pSelectedItem = value
+                ' Nodul nou selectat poate fi chiar cel peste care stă eticheta plutitoare.
+                EnsureCollapsedFlyoutStillAllowed()
                 ' Invalidate to trigger redraw and show the new selection
                 Me.Invalidate()
             End If
@@ -1146,6 +1148,29 @@ Partial Public Class AdvancedTreeControl
             If value = _flyoutEnabled Then Return
             _flyoutEnabled = value
             If Not _flyoutEnabled Then CancelCollapsedFlyout()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Primește și nodul SELECTAT etichetă plutitoare? Implicit **False**: nu.
+    '''
+    ''' Nodul selectat e singurul pe care operatorul îl are deja în minte — l-a ales el. O etichetă
+    ''' care iese peste el nu-i spune nimic nou, dar acoperă vederea de alături exact în locul spre
+    ''' care se uită, și o face de fiecare dată când cursorul trece pe deasupra. Restul rândurilor
+    ''' rămân neatinse: suprimarea e DOAR pentru rândul selectat, nu o stingere a etichetei.
+    ''' </summary>
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Scoate etichetă plutitoare și pentru nodul SELECTAT. Implicit False: nodul ales de operator nu mai iese.")>
+    <DefaultValue(False)>
+    Public Property FlyoutSelectedNode As Boolean
+        Get
+            Return _flyoutSelectedNode
+        End Get
+        Set(value As Boolean)
+            If value = _flyoutSelectedNode Then Return
+            _flyoutSelectedNode = value
+            ' Stins cât o etichetă e afară peste nodul selectat, o retragem pe loc.
+            If Not _flyoutSelectedNode Then EnsureCollapsedFlyoutStillAllowed()
         End Set
     End Property
 

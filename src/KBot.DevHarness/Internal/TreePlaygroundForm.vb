@@ -266,6 +266,9 @@ Public NotInheritable Class TreePlaygroundForm
     Private Sub chkCollapsedFlyout_CheckedChanged(sender As Object, e As EventArgs) Handles chkCollapsedFlyout.CheckedChanged
         Apply(Sub() tree.CollapsedFlyout = chkCollapsedFlyout.Checked)
     End Sub
+    Private Sub chkFlyoutSelected_CheckedChanged(sender As Object, e As EventArgs) Handles chkFlyoutSelected.CheckedChanged
+        Apply(Sub() tree.FlyoutSelectedNode = chkFlyoutSelected.Checked)
+    End Sub
     Private Sub numFlyoutDelay_ValueChanged(sender As Object, e As EventArgs) Handles numFlyoutDelay.ValueChanged
         Apply(Sub() tree.FlyoutDelay = CInt(numFlyoutDelay.Value))
     End Sub
@@ -587,6 +590,7 @@ Public NotInheritable Class TreePlaygroundForm
         chkCollapseImages.Checked = tree.FooterCollapseExpandedImage IsNot Nothing
         SetNum(numMinCollapsed, tree.MinimumCollapsedWidth)
         chkCollapsedFlyout.Checked = tree.CollapsedFlyout
+        chkFlyoutSelected.Checked = tree.FlyoutSelectedNode
         SetNum(numFlyoutDelay, tree.FlyoutDelay)
         SetNum(numFlyoutSlide, tree.FlyoutSlideDuration)
 
@@ -673,8 +677,9 @@ Public NotInheritable Class TreePlaygroundForm
                                                 numMinCollapsed, chkCollapsedFlyout, btnToggleCollapse}
             c.Enabled = clps
         Next
-        ' Cronometrele n-au ce tempora fără nodul plutitor.
+        ' Cronometrele și scutirea nodului selectat n-au ce guverna fără nodul plutitor.
         Dim fly As Boolean = clps AndAlso tree.CollapsedFlyout
+        chkFlyoutSelected.Enabled = fly
         lblFlyoutDelay.Enabled = fly
         numFlyoutDelay.Enabled = fly
         lblFlyoutSlide.Enabled = fly

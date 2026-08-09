@@ -277,13 +277,45 @@ poate proba decât cu un cursor real e o regulă neprobată.
 
 ---
 
+## 6. A treia corectură de pe ecran: nodul selectat nu mai iese
+
+Raport de operator:
+
+> «when the tree is collapsed and there is a selected node, that node MUST NOT DO THE FLYOUT
+> thing! Only for the selected row. should be done through an option: flyoutselectednode = boolean
+> (exposed in the designer)»
+
+Nodul selectat e singurul pe care operatorul îl are deja în minte — l-a ales el. O etichetă care
+iese peste el nu-i spune nimic nou, dar acoperă vederea de alături exact în locul spre care se
+uită, și o face de fiecare dată când cursorul trece pe deasupra.
+
+`FlyoutSelectedNode` (Boolean, categoria «K-BOT Arbore - Subsol», **implicit False**) guvernează
+asta. Suprimarea e pe UN rând — cel selectat — nu o stingere a etichetei: vecinii lui ies în
+continuare, cum a și cerut («Only for the selected row»).
+
+Trei căi, ca eticheta să nu rămână agățată:
+
+- `CollapsedFlyoutTargetAt` sare nodul scutit, deci nu mai iese deloc;
+- `EnsureCollapsedFlyoutStillAllowed` retrage eticheta DEJA ieșită când rândul de sub ea devine
+  selectat — cazul obișnuit, «survolez, iese, dau clic»; chemată din `OnMouseDown`, din setterul
+  `SelectedNode` (selecție din cod / din shell) și din setterul proprietății, ca stingerea
+  opțiunii cât eticheta e afară s-o retragă pe loc;
+- `RenderCollapsedFlyout` re-verifică la fiecare cadru, fiindcă selecția se poate muta din
+  tastatură chiar cât desfășurarea e în curs.
+
+Patru teste noi (438 în total): nodul selectat tace iar vecinul lui iese, `FlyoutSelectedNode = True`
+o readuce, selectarea rândului survolat retrage eticheta deja ieșită, iar stingerea opțiunii la fel.
+În playground, `chkFlyoutSelected`, activat doar când nodul plutitor e pornit.
+
+---
+
 ## Rămas neverificat / amânat
 
 - **Verdict vizual PARȚIAL.** Operatorul a rulat playground-ul și `MainForm` și a raportat
   strângerea ca fiind ruptă în shell (vezi §4, reparat) și funcțională în playground. Deci
   strângerea ARE timp de ecran; restul benzii — degradeul, unghiul desenat, alinierea caption-ului,
   culorile proprii ale etichetei — nu a fost confirmat bucată cu bucată.
-- **Corecturile din §4 și §5 nu au fost revăzute pe ecran.** Mutarea splitter-ului,
+- **Corecturile din §4, §5 și §6 nu au fost revăzute pe ecran.** Mutarea splitter-ului,
   `IsSplitterFixed` cât e strâns, întoarcerea la distanța dinainte și îngustarea textului la hover
   sunt verzi la teste, dar nu re-probate nici în `MainForm`, nici în playground.
 - **`RezervariView` cere explicit `ReserveRightIconSpace = True`** (`RezervariView.Designer.vb`),

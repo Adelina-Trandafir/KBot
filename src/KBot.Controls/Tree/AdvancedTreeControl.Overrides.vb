@@ -354,6 +354,9 @@ Partial Public Class AdvancedTreeControl
             End If
         End If
 
+        ' Selecția tocmai s-a mutat. Dacă eticheta plutitoare ieșise chiar peste rândul care a
+        ' devenit selectat, o retragem — vezi FlyoutSelectedNode.
+        EnsureCollapsedFlyoutStillAllowed()
 
         Me.Invalidate()
       Catch ex As Exception

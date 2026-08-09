@@ -162,7 +162,9 @@ Partial Class MainForm
         tree.LeftIconSize = New Size(20, 20)
         tree.Location = New Point(0, 0)
         tree.Margin = New Padding(4, 5, 4, 5)
+        tree.MinimumCollapsedWidth = 250
         tree.Name = "tree"
+        tree.ReserveRightIconSpace = True
         tree.RightIconSize = New Size(20, 20)
         tree.RootExpander = False
         tree.ScrollBarTheme = KBot.Controls.AdvancedTreeControl.En_ScrollBarTheme.Default
@@ -173,6 +175,7 @@ Partial Class MainForm
         tree.ShowRightIconOnHover = True
         tree.Size = New Size(522, 1025)
         tree.TabIndex = 0
+        tree.TooltipShowOnlyOnLeftIcon = True
         tree.TreeListView = True
         ' 
         ' pnlTreeHead
