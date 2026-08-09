@@ -51,6 +51,11 @@ Public Class MainForm
     ' Nothing / IsDisposed = închisă; se re-deschide la nevoie.
     Private _infoForm As InternalInfoForm
 
+    ' Starea splitter-ului dinainte de strângerea arborelui, ca desfacerea să-l pună înapoi
+    ' exact unde era (vezi tree_CollapsedChanged). 0 = arborele n-a fost încă strâns.
+    Private _splitterDistanceDesfasurat As Integer
+    Private _panel1MinSizeDesfasurat As Integer
+
     Public Sub New(forexeRunner As IForexeRunner, session As SessionContext,
                    apiClient As IApiClient, authApi As IAuthApi, loginFactory As Func(Of LoginForm))
         InitializeComponent()
@@ -569,6 +574,52 @@ Public Class MainForm
             GlobalErrorLog.Write("MainForm.tree_NodeMouseUp", ex)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Strângerea arborelui (felia 0027-02). Arborele e <c>Dock = Fill</c> în <c>split.Panel1</c>,
+    ''' deci NU-și poate ține singur lățimea: layout-ul formularului i-o dă înapoi la următoarea
+    ''' trecere — exact ce se vedea, «se strânge și imediat se desface». Contractul controlului
+    ''' (același ca la <c>KBotNavList</c>): el schimbă starea și ne anunță, GAZDA mută splitter-ul.
+    '''
+    ''' Distanța cerută = lățimea strânsă a arborelui + padding-ul stâng al panoului (citit, nu
+    ''' presupus). <c>Panel1MinSize</c> păzește TRAGEREA splitter-ului, iar strângerea e o comandă,
+    ''' nu o tragere: coborâm paza cât ține starea și o punem la loc la desfacere. Cât e strâns,
+    ''' splitter-ul se fixează — tras, n-ar duce decât la o lățime pe jumătate, care nu e nici
+    ''' starea strânsă, nici cea desfășurată.
+    ''' </summary>
+    Private Sub tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
+        Try
+            Dim padStanga As Integer = split.Panel1.Padding.Left
+            If collapsed Then
+                _splitterDistanceDesfasurat = split.SplitterDistance
+                _panel1MinSizeDesfasurat = split.Panel1MinSize
+                Dim tinta As Integer = tree.MinimumCollapsedWidth + padStanga
+                split.Panel1MinSize = Math.Min(_panel1MinSizeDesfasurat, tinta)
+                split.SplitterDistance = ClampSplitter(tinta)
+                split.IsSplitterFixed = True
+            Else
+                split.IsSplitterFixed = False
+                If _panel1MinSizeDesfasurat > 0 Then split.Panel1MinSize = _panel1MinSizeDesfasurat
+                Dim tinta As Integer = If(_splitterDistanceDesfasurat > 0,
+                                          _splitterDistanceDesfasurat,
+                                          tree.ExpandedWidth + padStanga)
+                split.SplitterDistance = ClampSplitter(tinta)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.tree_CollapsedChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Distanța splitter-ului adusă în intervalul pe care <see cref="SplitContainer"/> îl acceptă.
+    ''' Fără asta, o fereastră îngustă face setterul să arunce <c>InvalidOperationException</c> —
+    ''' iar o excepție la apăsarea unui buton de strângere ar fi o pedeapsă pentru mărimea ferestrei.
+    ''' </summary>
+    Private Function ClampSplitter(dorit As Integer) As Integer
+        Dim maxim As Integer = split.Width - split.Panel2MinSize - split.SplitterWidth
+        If maxim < split.Panel1MinSize Then Return split.Panel1MinSize
+        Return Math.Max(split.Panel1MinSize, Math.Min(dorit, maxim))
+    End Function
 
     ' Click pe iconița de refresh (dreapta, la hover) — reîmprospătarea din FOREXE a
     ' angajamentului e o felie separată; aici doar semnalăm, fără no-op tăcut.

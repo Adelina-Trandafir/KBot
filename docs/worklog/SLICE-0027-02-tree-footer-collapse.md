@@ -198,17 +198,56 @@ aceleași 6, aceeași cauză, cu felia asta scoasă cu totul. Nu le-am atins: su
 
 ---
 
+## 4. Corectură după prima probă pe ecran: strângerea în `MainForm`
+
+Raport de operator:
+
+> «something is wrong with the mainform: it collapses the tree then imediately it expands it again
+> so i never get to see it collapsed. in the playground is working»
+
+Diagnostic — și playground-ul era indiciul, nu contra-exemplul. În `MainForm` arborele e
+`Dock = Fill` în `pnlTree`, `pnlTree` e `Dock = Fill` în `split.Panel1`: lățimea lui o dă
+`split.SplitterDistance`, nu el. `ApplyCollapseExtent` scria `Me.Width = 100`, iar layout-ul
+formularului i-o dădea înapoi la următoarea trecere — de unde pâlpâirea. În playground arborele e
+docat `Left` într-o gazdă `Fill` (schimbare făcută tocmai ca proba să arate ceva), deci acolo
+`Width` chiar e al lui și totul funcționa.
+
+Contractul era deja scris în worklog («gazda ascultă `CollapsedChanged` și mută splitter-ul»), dar
+**nimeni nu-l implementa, iar controlul se bătea cu layout-ul în loc să tacă**. Ambele jumătăți au
+fost reparate:
+
+- **Control** — `HostOwnsWidth` (orice `Dock`, sau ancorare pe amândouă laturile) și
+  `ExpandedWidth` (ultima lățime desfășurată, ca gazda să știe unde să se întoarcă). Când lățimea
+  nu e a noastră, `ApplyCollapseExtent` NU mai scrie nimic: starea se schimbă, evenimentul pleacă,
+  atât. O scriere acolo n-ar fi decât o pâlpâire.
+- **`MainForm`** — `tree_CollapsedChanged` mută `split.SplitterDistance` la
+  `MinimumCollapsedWidth + split.Panel1.Padding.Left` (padding-ul e CITIT, nu presupus).
+  `Panel1MinSize` era 240, adică peste ținta de 111, deci păzea și comanda, nu doar tragerea:
+  se coboară cât ține starea strânsă și se pune la loc la desfacere. Cât e strâns,
+  `IsSplitterFixed = True` — tras, splitter-ul n-ar duce decât la o lățime care nu e nici starea
+  strânsă, nici cea desfășurată. `ClampSplitter` ține distanța în intervalul acceptat de
+  `SplitContainer`, fiindcă altfel o fereastră îngustă ar transforma apăsarea butonului în
+  `InvalidOperationException`.
+
+Două teste noi (428 în total): un arbore docat își schimbă starea și ridică evenimentul **fără**
+să-și atingă `Width`, iar `HostOwnsWidth` urmărește `Dock`-ul și ancorarea pe ambele laturi.
+
+---
+
 ## Rămas neverificat / amânat
 
-- **NIMIC nu a fost văzut pe ecran.** Subsolul, butonul, unghiul desenat, degradeul benzii și
-  nodul plutitor sunt verzi la compilare și la teste headless, dar `TreePlaygroundForm` NU a fost
-  deschis. Slice 0027 a fost prima felie de control cu verdict vizual — asta încă nu-l are.
+- **Verdict vizual PARȚIAL.** Operatorul a rulat playground-ul și `MainForm` și a raportat
+  strângerea ca fiind ruptă în shell (vezi §4, reparat) și funcțională în playground. Deci
+  strângerea ARE timp de ecran; restul benzii — degradeul, unghiul desenat, alinierea caption-ului,
+  culorile proprii ale etichetei — nu a fost confirmat bucată cu bucată.
+- **Corectura din §4 nu a fost revăzută pe ecran.** Mutarea splitter-ului, `IsSplitterFixed` cât e
+  strâns și întoarcerea la distanța dinainte sunt verzi la teste, dar nu re-probate în `MainForm`.
 - Nodul plutitor n-a fost probat cu o fereastră reală: `TreeNodeFlyout.OnPaint`, decupajul de
   colțuri și trecerea mouse-ului prin fereastră (`HTTRANSPARENT`) sunt copiate din `KBotNavFlyout`
   (care ARE verdict vizual din 0025-07), dar nu confirmate aici.
-- Strângerea nu a fost probată în `MainForm`, unde arborele stă într-un `SplitContainer`: acolo
-  lățimea o dă splitter-ul, deci gazda trebuie să asculte `CollapsedChanged` și să mute panoul.
-  Nimeni n-o face încă — `MainForm` nu folosește subsolul.
+- Cât e strâns, `MainForm` fixează splitter-ul (`IsSplitterFixed`). E o decizie de GAZDĂ, nu a
+  controlului — dacă operatorul o vrea altfel (splitter liber și în starea strânsă), se schimbă
+  într-un singur loc, în `tree_CollapsedChanged`.
 - `FooterLeftIconKey` se rezolvă pe ambele căi (`ResolveHeaderIcons` din XML/FOREXE și
   `ResolveHeaderIconsFromNodeImages` din designer), dar niciuna n-a fost rulată cu o cheie de
   subsol reală.

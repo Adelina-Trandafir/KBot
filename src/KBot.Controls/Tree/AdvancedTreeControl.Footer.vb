@@ -316,14 +316,45 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     ''' <summary>
+    ''' True când NU noi hotărâm lățimea, ci layout-ul gazdei: orice <c>Dock</c> și orice ancorare
+    ''' pe amândouă laturile. Într-un asemenea host, o scriere de <c>Width</c> ține exact până la
+    ''' următoarea trecere de layout, care o dă înapoi — adică fix ce s-a văzut în <c>MainForm</c>
+    ''' (arbore <c>Dock=Fill</c> în <c>split.Panel1</c>): se strângea și se desfăcea instantaneu.
+    ''' Acolo strângerea NU se face scriind <c>Width</c>, ci mutând splitter-ul gazdei — de aceea
+    ''' există <see cref="CollapsedChanged"/> și <see cref="ExpandedWidth"/>.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property HostOwnsWidth As Boolean
+        Get
+            If Me.Dock <> DockStyle.None Then Return True
+            Return (Me.Anchor And AnchorStyles.Left) = AnchorStyles.Left AndAlso
+                   (Me.Anchor And AnchorStyles.Right) = AnchorStyles.Right
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Ultima lățime avută DESFĂȘURAT — lățimea la care trebuie readus arborele. O citește gazda
+    ''' care-i ține lățimea (vezi <see cref="HostOwnsWidth"/>) ca să știe unde să pună splitter-ul.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property ExpandedWidth As Integer
+        Get
+            Return _expandedWidth
+        End Get
+    End Property
+
+    ''' <summary>
     ''' Aplică lățimea stării curente. Steagul oprește <c>OnResize</c> să confunde lățimea strânsă
     ''' cu «lățimea desfășurată».
     '''
-    ''' NU forțează nimic peste gazdă: un arbore ancorat (Dock/Anchor) primește lățimea de la
-    ''' layout-ul formularului, exact ca <c>KBotNavList</c> — acolo gazda ascultă
-    ''' <see cref="CollapsedChanged"/> și mută ea splitter-ul.
+    ''' NU se bate cu layout-ul gazdei: dacă lățimea nu e a noastră (<see cref="HostOwnsWidth"/>),
+    ''' nu scriem nimic — starea se schimbă, <see cref="CollapsedChanged"/> se ridică, iar gazda
+    ''' își mută splitter-ul. Un <c>Width</c> scris acolo n-ar fi decât o pâlpâire.
     ''' </summary>
     Private Sub ApplyCollapseExtent()
+        If HostOwnsWidth Then Return
         Dim target As Integer = If(_collapsed, _minimumCollapsedWidth, _expandedWidth)
         If target <= 0 OrElse target = Me.Width Then Return
         _applyingCollapseExtent = True

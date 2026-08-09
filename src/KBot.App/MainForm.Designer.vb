@@ -136,7 +136,16 @@ Partial Class MainForm
         tree.Dock = DockStyle.Fill
         tree.DynamicColumns = False
         tree.ExpanderSize = 16
+        tree.FlyoutDelay = 150
+        tree.FlyoutSlideDuration = 100
         tree.Font = New Font("Consolas", 10F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        tree.FooterBackColor = SystemColors.Control
+        tree.FooterCollapseButton = True
+        tree.FooterCollapseButtonSize = 20
+        tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
+        tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
+        tree.FooterHeight = 40
+        tree.FooterVisible = True
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " LISTĂ ANGAJAMENTE"

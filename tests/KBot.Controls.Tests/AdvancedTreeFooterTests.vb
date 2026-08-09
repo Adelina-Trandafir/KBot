@@ -168,6 +168,57 @@ Public Class AdvancedTreeFooterTests
                End Sub)
     End Sub
 
+    ''' <summary>
+    ''' Un arbore a cărui lățime o dă gazda (orice <c>Dock</c>, sau ancorare pe amândouă laturile)
+    ''' NU-și scrie singur <c>Width</c>: layout-ul formularului i l-ar da înapoi la următoarea
+    ''' trecere. Exact asta s-a văzut în `MainForm` (arbore `Dock=Fill` în `split.Panel1`) —
+    ''' se strângea și se desfăcea instantaneu. Starea se schimbă și evenimentul pleacă; mutarea
+    ''' e a gazdei.
+    ''' </summary>
+    <Fact>
+    Public Sub Cand_gazda_tine_latimea_arborele_nu_se_bate_cu_layout_ul()
+        RunSta(Sub()
+                   Using gazda As New Form() With {.Width = 500, .Height = 400}
+                       Using tree As AdvancedTreeControl = ArboreCuSubsol()
+                           gazda.Controls.Add(tree)
+                           tree.Dock = DockStyle.Fill
+                           Assert.True(tree.HostOwnsWidth)
+
+                           Dim latimeInainte As Integer = tree.Width
+                           Dim anuntat As Boolean = False
+                           AddHandler tree.CollapsedChanged, Sub(c As Boolean) anuntat = True
+
+                           tree.ToggleCollapse()
+
+                           Assert.True(tree.Collapsed)          ' starea s-a schimbat
+                           Assert.True(anuntat)                 ' gazda a fost anunțată
+                           Assert.Equal(latimeInainte, tree.Width)   ' dar lățimea NU s-a atins
+                           ' …iar gazda știe unde să se întoarcă.
+                           Assert.Equal(latimeInainte, tree.ExpandedWidth)
+                       End Using
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub HostOwnsWidth_urmareste_Dock_ul_si_ancorarea_pe_ambele_laturi()
+        RunSta(Sub()
+                   Using tree As New AdvancedTreeControl() With {.Width = 300, .Height = 200}
+                       Assert.False(tree.HostOwnsWidth)                      ' liber
+
+                       tree.Anchor = AnchorStyles.Top Or AnchorStyles.Left
+                       Assert.False(tree.HostOwnsWidth)                      ' ancorat într-un colț
+
+                       tree.Anchor = AnchorStyles.Left Or AnchorStyles.Right
+                       Assert.True(tree.HostOwnsWidth)                       ' întins între margini
+
+                       tree.Anchor = AnchorStyles.Top Or AnchorStyles.Left
+                       tree.Dock = DockStyle.Left
+                       Assert.True(tree.HostOwnsWidth)
+                   End Using
+               End Sub)
+    End Sub
+
     <Fact>
     Public Sub Strangerea_anunta_gazda()
         RunSta(Sub()
