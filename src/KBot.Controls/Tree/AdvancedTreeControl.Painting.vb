@@ -195,8 +195,10 @@ Partial Public Class AdvancedTreeControl
                                       leftIconRect.Right + PADDING_ICON_GAP, xBase)
 
             Dim scrollW As Integer = ScrollBarWidth
-            Dim maxRightX As Integer = Me.Width - scrollW - PADDING_TREE_END
-            If it.RightIcon IsNot Nothing Then maxRightX -= (RightIconSize.Width + _rightIconRightPadding)
+            ' Locul iconiței din dreapta se ia DOAR cât iconița e pe ecran: o iconiță hover-only
+            ' nu mai ciuntește textul pe toate rândurile, ci doar pe cel survolat (vezi
+            ' RightIconGutter; ReserveRightIconSpace = True îl ține fix, dacă se vrea așa).
+            Dim maxRightX As Integer = Me.Width - scrollW - PADDING_TREE_END - RightIconGutter(it)
 
             ' ══ 3. GEOMETRIE COLOANE — calculată O SINGURĂ DATĂ pe rând ═══════════
             ' colsActive : TreeListView pornit + coloane definite (geometrie globală)
@@ -334,11 +336,10 @@ Partial Public Class AdvancedTreeControl
     Private Sub DrawRightIcon(g As Graphics, it As TreeItem, y As Integer)
         If it.RightIcon Is Nothing Then Return
 
-        ' Hover-only: activat global SAU per nod
-        ' Spațiul din dreapta e rezervat întotdeauna (DrawContent verifică it.RightIcon IsNot Nothing),
-        ' deci textul NU sare la hover — Varianta A garantată fără modificări în DrawContent.
-        Dim hoverOnly As Boolean = _showRightIconOnHover OrElse it.ShowRightIconOnHover
-        If hoverOnly AndAlso it IsNot pHoveredItem Then Return
+        ' Hover-only: activat global SAU per nod. Cât nodul nu e survolat, iconița nu se desenează
+        ' ȘI nu-i ține nimeni locul — textul se îngustează abia acum, când ea apare (perechea din
+        ' DrawContent e RightIconGutter). Cine vrea text nemișcat pune ReserveRightIconSpace = True.
+        If IsRightIconHoverOnly(it) AndAlso it IsNot pHoveredItem Then Return
 
         Dim scrollW As Integer = ScrollBarWidth 'If(Me.VerticalScroll.Visible, SystemInformation.VerticalScrollBarWidth, 0)
         Dim rx As Integer = Me.Width - RightIconSize.Width - _rightIconRightPadding - scrollW

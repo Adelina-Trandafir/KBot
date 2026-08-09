@@ -142,14 +142,14 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
-    ' Când True, banda de coloane (TreeListView) își retrage marginea dreaptă cu lățimea
-    ' iconiței din dreapta, ca celulele să nu se suprapună peste iconiță (ex. refresh la
-    ' hover). Implicit False = comportament neschimbat pentru apelanții existenți.
-    ' Se rezervă spațiu chiar dacă iconița e hover-only: locul e fix, deci coloanele nu
-    ' „sar" la hover — la fel ca rezervarea de caption din DrawContent.
+    ' Comutatorul de REZERVARE a locului iconiței din dreapta. Implicit False: locul NU se
+    ' rezervă, deci textul nodului folosește toată lățimea și se îngustează abia când iconița
+    ' chiar apare (la hover). Pus pe True, locul e ținut permanent: textul nu se mai mișcă la
+    ' hover, cu prețul unei fâșii goale pe fiecare rând.
     Private _reserveRightIconSpace As Boolean = False
     <Category("K-BOT Arbore")>
-    <Description("Rezervă spațiul iconiței din dreapta ca banda de coloane să nu se suprapună peste ea.")>
+    <Description("Ține permanent locul iconiței din dreapta (textul nu se mai îngustează la hover). " &
+                 "Implicit False: locul se ia doar cât iconița e pe ecran.")>
     <DefaultValue(False)>
     Public Property ReserveRightIconSpace As Boolean
         Get
@@ -161,7 +161,43 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
-    ' Lățimea rezervată la dreapta pentru iconiță (0 dacă rezervarea e dezactivată).
+    ''' <summary>
+    ''' Lățimea pe care o ia iconița din dreapta DIN TEXTUL unui nod anume.
+    '''
+    ''' O iconiță PERMANENTĂ ia mereu locul: textul n-are voie să treacă pe sub ea. O iconiță
+    ''' HOVER-ONLY (<see cref="ShowRightIconOnHover"/>, global sau per nod) nu ia nimic cât nodul
+    ''' nu e survolat — ăsta e tot rostul lui «hover-only», ca textul să aibă toată lățimea — și
+    ''' îngustează textul abia când apare. <see cref="ReserveRightIconSpace"/> = True cere locul
+    ''' fix și pentru ea, dacă operatorul preferă un text care nu se mișcă.
+    ''' </summary>
+    Friend Function RightIconGutter(it As TreeItem) As Integer
+        If it Is Nothing OrElse it.RightIcon Is Nothing Then Return 0
+        Dim latime As Integer = RightIconSize.Width + _rightIconRightPadding
+        If Not IsRightIconHoverOnly(it) Then Return latime
+        If _reserveRightIconSpace Then Return latime
+        Return If(it Is pHoveredItem, latime, 0)
+    End Function
+
+    ''' <summary>Iconița din dreapta a acestui nod apare doar la survolare? (global SAU per nod)</summary>
+    Friend Function IsRightIconHoverOnly(it As TreeItem) As Boolean
+        Return _showRightIconOnHover OrElse (it IsNot Nothing AndAlso it.ShowRightIconOnHover)
+    End Function
+
+    ''' <summary>
+    ''' Cârlig de test: pune nodul survolat fără mouse. Survolarea e stare INTERNĂ (o scrie
+    ''' <c>OnMouseMove</c>), dar regula de rezervare a locului depinde de ea, iar o regulă
+    ''' care nu se poate proba decât cu un cursor real e o regulă neprobată.
+    ''' </summary>
+    Friend Sub DebugSetHoveredItem(it As TreeItem)
+        pHoveredItem = it
+    End Sub
+
+    ''' <summary>
+    ''' Lățimea rezervată la dreapta pentru BANDA DE COLOANE (TreeListView). Aici rezervarea NU e
+    ''' condiționată de hover, cu bună știință: coloanele sunt o geometrie pe tot controlul, iar o
+    ''' bandă care se re-așază la fiecare trecere a cursorului ar fi de nefolosit. Doar textul de
+    ''' nod se îngustează la hover — vezi <see cref="RightIconGutter"/>.
+    ''' </summary>
     Friend Function ReservedRightIconWidth() As Integer
         Return If(_reserveRightIconSpace, RightIconSize.Width + _rightIconRightPadding, 0)
     End Function

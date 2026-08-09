@@ -581,7 +581,7 @@ Partial Class TreePlaygroundForm
         Me.lblRadioLevel.AutoSize = True : Me.lblRadioLevel.Text = "RadioButtonLevel (-1 = dezactivat)" : Me.lblRadioLevel.Name = "lblRadioLevel"
         Me.numRadioLevel.Minimum = -1D : Me.numRadioLevel.Maximum = 5D : Me.numRadioLevel.Value = -1D : Me.numRadioLevel.Width = 120 : Me.numRadioLevel.Name = "numRadioLevel"
         Me.chkRightIconHover.AutoSize = True : Me.chkRightIconHover.Text = "ShowRightIconOnHover" : Me.chkRightIconHover.Name = "chkRightIconHover"
-        Me.chkReserveRight.AutoSize = True : Me.chkReserveRight.Text = "ReserveRightIconSpace" : Me.chkReserveRight.Name = "chkReserveRight"
+        Me.chkReserveRight.AutoSize = True : Me.chkReserveRight.Text = "ReserveRightIconSpace (loc fix, text nemișcat)" : Me.chkReserveRight.Name = "chkReserveRight"
         Me.lblRightPad.AutoSize = True : Me.lblRightPad.Text = "RightIconRightPadding" : Me.lblRightPad.Name = "lblRightPad"
         Me.numRightPad.Minimum = 0D : Me.numRightPad.Maximum = 40D : Me.numRightPad.Value = 6D : Me.numRightPad.Width = 120 : Me.numRightPad.Name = "numRightPad"
         Me.lblLeftIconSize.AutoSize = True : Me.lblLeftIconSize.Text = "LeftIconSize (latură)" : Me.lblLeftIconSize.Name = "lblLeftIconSize"

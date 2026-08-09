@@ -234,14 +234,63 @@ să-și atingă `Width`, iar `HostOwnsWidth` urmărește `Dock`-ul și ancorarea
 
 ---
 
+## 5. A doua corectură de pe ecran: iconița din dreapta nu mai ține locul degeaba
+
+Raport de operator:
+
+> «showrighticononhover SHOULDN'T reserve the space by default. if it's disabled, then DON'T
+> RESERVE THE SPACE! when hovered and the space is NOT reserved, the text of the node will become
+> narrower to fit the icon»
+
+`DrawContent` retrăgea marginea dreaptă a textului ori de câte ori nodul avea `RightIcon`, **fără
+să se uite dacă iconița e sau nu pe ecran**. Comentariul de lângă îi spunea «Varianta A»: text care
+nu sare la hover. Prețul, însă, era o fâșie goală pe FIECARE rând, pentru o iconiță pe care n-o
+vede nimeni până la survolare — adică exact ce anulează rostul lui `ShowRightIconOnHover`.
+
+Regula acum, într-un singur loc (`RightIconGutter`):
+
+| iconiță | nesurvolat | survolat |
+|---|---|---|
+| permanentă | ia locul | ia locul |
+| hover-only, `ReserveRightIconSpace = False` (implicit) | **nu ia nimic** | ia locul |
+| hover-only, `ReserveRightIconSpace = True` | ia locul | ia locul |
+
+`ReserveRightIconSpace` era deja `False` implicit, dar guverna doar banda de coloane; acum e
+comutatorul care spune «ține locul fix» și pentru text. Descrierea din grila de proprietăți s-a
+rescris ca atare.
+
+**Banda de coloane rămâne DELIBERAT ne-condiționată de hover** (`ReservedRightIconWidth`): o
+geometrie pe tot controlul care se re-așază la fiecare trecere a cursorului ar fi de nefolosit.
+Doar textul de nod se îngustează. Cele două funcții stau una lângă alta, cu motivul scris între ele.
+
+Prins alături, în zona de clic a iconiței (`OnMouseDown`): marginea era scrisă `6`, adică
+implicitul lui `RightIconRightPadding` — deci zona de clic se despărțea de cea desenată de îndată
+ce cineva atingea proprietatea. Acum se citește proprietatea.
+
+În playground, `RightIconRightPadding` era activat doar când spațiul era rezervat; padding-ul
+POZIȚIONEAZĂ iconița, deci contează oricând e desenată. Gating scos.
+
+Șase teste noi (434 în total), în `AdvancedTreeRightIconTests`: tabelul de mai sus, nodul fără
+iconiță, steagul per-nod care ridică hover-only doar pentru nodul lui, și banda de coloane care NU
+se re-așază la hover. Survolarea se pune din test prin `DebugSetHoveredItem` — o regulă care nu se
+poate proba decât cu un cursor real e o regulă neprobată.
+
+---
+
 ## Rămas neverificat / amânat
 
 - **Verdict vizual PARȚIAL.** Operatorul a rulat playground-ul și `MainForm` și a raportat
   strângerea ca fiind ruptă în shell (vezi §4, reparat) și funcțională în playground. Deci
   strângerea ARE timp de ecran; restul benzii — degradeul, unghiul desenat, alinierea caption-ului,
   culorile proprii ale etichetei — nu a fost confirmat bucată cu bucată.
-- **Corectura din §4 nu a fost revăzută pe ecran.** Mutarea splitter-ului, `IsSplitterFixed` cât e
-  strâns și întoarcerea la distanța dinainte sunt verzi la teste, dar nu re-probate în `MainForm`.
+- **Corecturile din §4 și §5 nu au fost revăzute pe ecran.** Mutarea splitter-ului,
+  `IsSplitterFixed` cât e strâns, întoarcerea la distanța dinainte și îngustarea textului la hover
+  sunt verzi la teste, dar nu re-probate nici în `MainForm`, nici în playground.
+- **`RezervariView` cere explicit `ReserveRightIconSpace = True`** (`RezervariView.Designer.vb`),
+  deci acolo textul rămâne cu locul rezervat permanent — neschimbat față de înainte. `PlatiView` și
+  `ReceptiiView` îl au pe `False`, iar `MainForm` nu-l setează deloc: toate trei trec pe
+  comportamentul nou. Dacă vreuna dintre ele arăta bine tocmai fiindcă locul era ținut, se va
+  vedea abia la rulare.
 - Nodul plutitor n-a fost probat cu o fereastră reală: `TreeNodeFlyout.OnPaint`, decupajul de
   colțuri și trecerea mouse-ului prin fereastră (`HTTRANSPARENT`) sunt copiate din `KBotNavFlyout`
   (care ARE verdict vizual din 0025-07), dar nu confirmate aici.

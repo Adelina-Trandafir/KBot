@@ -398,37 +398,6 @@ Public Class MainForm
     Private Const COD_COLUMN_WIDTH As Integer = 140
 
     ''' <summary>
-    ''' Configurează controlul „tree" ca listă plată cu o coloană CodAngajament
-    ''' (caption = Descriere). Aspect: rând 32px, Segoe UI 9.75, iconiță status 24×24
-    ''' stânga, refresh 24×24 dreapta doar la hover. Filtrul pe coloană merge din start.
-    ''' </summary>
-    'Private Sub ConfigureAngajamenteList()
-    '    Try
-    '        tree.Font = New Font("Segoe UI", 9.75F)
-    '        tree.LeftIconSize = New Size(24, 24)
-    '        tree.RightIconSize = New Size(24, 24)
-    '        tree.ItemHeight = 32
-    '        tree.HasNodeIcons = True
-    '        tree.ShowRightIconOnHover = True
-    '        ' Rezervă locul iconiței de refresh la dreapta, ca banda de coloane
-    '        ' (CodAngajament) să nu se suprapună peste ea la hover.
-    '        tree.ReserveRightIconSpace = True
-
-    '        'Dim cols As New List(Of ColumnDef) From {
-    '        '    New ColumnDef With {
-    '        '        .Name = "CodAngajament", .Header = "CodAngajament", .Width = COD_COLUMN_WIDTH,
-    '        '        .ColType = En_ColType.ColType_Text, .Align = En_ColAlign.ColAlign_Left,
-    '        '        .Format = "", .HeaderBackColor = Color.Empty, .HeaderForeColor = Color.Empty,
-    '        '        .HeaderAlign = En_ColAlign.ColAlign_Inherit}
-    '        '}
-    '        'tree.ConfigureListMode(cols)
-    '    Catch ex As Exception
-    '        GlobalErrorLog.Write("MainForm.ConfigureAngajamenteList", ex)
-    '        Throw
-    '    End Try
-    'End Sub
-
-    ''' <summary>
     ''' Încarcă arborele de la GET /api/forexe/tree pentru perioada selectată (an + SS),
     ''' via WithReauth — aceeași cale unică de re-login pe 401. Baza nu se trimite:
     ''' serverul o ia din sesiune (o bază = o unitate). Busy-bar pe durata apelului;
@@ -496,7 +465,7 @@ Public Class MainForm
                 node.Cells("CodAngajament") = New AdvancedTreeControl.TreeItem.CellData With {.Value = cod}
                 node.Bold = info.AreIndicatori   ' legacy: îngroșare = are surse (indicatori)
                 node.Tooltip = If(info.Descriere, String.Empty)
-                node.ShowRightIconOnHover = True
+                'node.ShowRightIconOnHover = True
 
                 _treeInfos(cod) = info
             Next

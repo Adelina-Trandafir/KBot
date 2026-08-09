@@ -342,7 +342,10 @@ Partial Public Class AdvancedTreeControl
 
             ' Nota: Calculul Y de mai sus e complex pentru ca OnMouseDown nu ne da Y-ul desenat direct.
             ' Mai simplu: stim ca e in dreapta. Verificam doar X-ul.
-            Dim minX As Integer = Me.Width - RightIconSize.Width - 6 - scrollW
+            ' Padding-ul e CITIT, nu presupus: era scris «6» aici, adică implicitul lui
+            ' RightIconRightPadding, deci zona de clic se despărțea de cea desenată de îndată ce
+            ' cineva schimba proprietatea.
+            Dim minX As Integer = Me.Width - RightIconSize.Width - _rightIconRightPadding - scrollW
 
             If e.X >= minX AndAlso e.X <= (minX + RightIconSize.Width) Then
                 ' Aici ridici un eveniment special

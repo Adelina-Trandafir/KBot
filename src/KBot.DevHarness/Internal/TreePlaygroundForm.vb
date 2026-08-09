@@ -697,9 +697,9 @@ Public NotInheritable Class TreePlaygroundForm
 
         ' RadioButtonLevel are prioritate față de CheckBoxes (vezi NodeHasCheckControl).
         chkCheckBoxes.Enabled = (tree.RadioButtonLevel < 0)
-        ' Padding-ul iconiței din dreapta contează doar dacă spațiul e rezervat.
-        lblRightPad.Enabled = tree.ReserveRightIconSpace
-        numRightPad.Enabled = tree.ReserveRightIconSpace
+        ' Padding-ul iconiței din dreapta o POZIȚIONEAZĂ, deci contează oricând e desenată — nu
+        ' doar când i se rezervă locul. (Era legat de ReserveRightIconSpace, ceea ce a devenit
+        ' de-a dreptul greșit de când rezervarea nu mai e implicită.)
         ' Restrângerea tooltip-ului la icon e subordonată lui TooltipShow.
         chkTooltipIconOnly.Enabled = tree.TooltipShow
         lblTooltipDelay.Enabled = tree.TooltipShow
