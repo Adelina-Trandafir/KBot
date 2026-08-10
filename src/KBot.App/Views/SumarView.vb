@@ -42,12 +42,12 @@ Public Class SumarView
 
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of SumarInfo)), Task(Of SumarInfo)))
-        If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
-        If withReauth Is Nothing Then Throw New ArgumentNullException(NameOf(withReauth))
+        ArgumentNullException.ThrowIfNull(apiClient)
+        ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
-        BuildColumns()
+        'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
 
@@ -59,30 +59,30 @@ Public Class SumarView
 
     ' Coloanele grilei. Cele cinci coloane de bani sunt Text cu FormatString="N2" și
     ' aliniere la dreapta — nu se editează nimic, deci nu e nevoie de un tip numeric.
-    Private Sub BuildColumns()
-        Try
-            grid.AddColumn(COL_CLSF, "Clasificație", KBotColumnType.Text, 190)
-            grid.AddColumn(COL_INDICATOR, "Indicator", KBotColumnType.Text, 120)
-            AddMoneyColumn(COL_REZERVARI, "Rezervări")
-            AddMoneyColumn(COL_RECEPTII, "Recepții")
-            AddMoneyColumn(COL_PLATI, "Plăți")
-            AddMoneyColumn(COL_REVIZII, "Revizii")
-            AddMoneyColumn(COL_ORDONANTARI, "Ordonanțări")
-            ' grid.AddColumn(COL_PARTENER, "Partener", KBotColumnType.Text, 220)
-            ' Clasificația e cea mai lată și cea după care se citește tabelul —
-            ' rămâne fixă la stânga când operatorul derulează spre coloanele de bani.
-            grid.FrozenColumnCount = 1
-        Catch ex As Exception
-            GlobalErrorLog.Write("SumarView.BuildColumns", ex)
-            Throw
-        End Try
-    End Sub
+    'Private Sub BuildColumns()
+    '    Try
+    '        grid.AddColumn(COL_CLSF, "Clasificație", KBotColumnType.Text, 190)
+    '        grid.AddColumn(COL_INDICATOR, "Indicator", KBotColumnType.Text, 120)
+    '        AddMoneyColumn(COL_REZERVARI, "Rezervări")
+    '        AddMoneyColumn(COL_RECEPTII, "Recepții")
+    '        AddMoneyColumn(COL_PLATI, "Plăți")
+    '        AddMoneyColumn(COL_REVIZII, "Revizii")
+    '        AddMoneyColumn(COL_ORDONANTARI, "Ordonanțări")
+    '        ' grid.AddColumn(COL_PARTENER, "Partener", KBotColumnType.Text, 220)
+    '        ' Clasificația e cea mai lată și cea după care se citește tabelul —
+    '        ' rămâne fixă la stânga când operatorul derulează spre coloanele de bani.
+    '        grid.FrozenColumnCount = 1
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("SumarView.BuildColumns", ex)
+    '        Throw
+    '    End Try
+    'End Sub
 
-    Private Sub AddMoneyColumn(key As String, header As String)
-        Dim col As KBotDataColumn = grid.AddColumn(key, header, KBotColumnType.Text, 110)
-        col.FormatString = "N2"
-        col.TextAlign = ContentAlignment.MiddleRight
-    End Sub
+    'Private Sub AddMoneyColumn(key As String, header As String)
+    '    Dim col As KBotDataColumn = grid.AddColumn(key, header, KBotColumnType.Text, 110)
+    '    col.FormatString = "N2"
+    '    col.TextAlign = ContentAlignment.MiddleRight
+    'End Sub
 
     ''' <summary>
     ''' Selecția din arbore s-a schimbat. Fără angajament (nod de capitol / deselectare)
@@ -90,7 +90,7 @@ Public Class SumarView
     ''' </summary>
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
         Try
-            Dim cod As String = If(info Is Nothing, Nothing, info.CodAngajament)
+            Dim cod As String = info?.CodAngajament
             If String.IsNullOrWhiteSpace(cod) Then
                 ' Invalidează orice răspuns aflat în zbor (vezi _requestedCod).
                 _requestedCod = Nothing
@@ -218,8 +218,16 @@ Public Class SumarView
     End Function
 
     ''' <summary>
-    ''' Reaplică culorile schemei. Grila NU se atinge aici: KBotDataView implementează
-    ''' el însuși IThemedControl, iar ThemeManager.Traverse ajunge la el.
+    ''' Reaplică culorile schemei. Grila NU se atinge aici: <c>KBotDataView</c> e el însuși
+    ''' <c>IThemedControl</c> și își ia schema singur.
+    '''
+    ''' <para><b>Atenție la cum ajunge ea acolo</b> (bug găsit în 0028-03): <c>Traverse</c> se
+    ''' OPREȘTE la primul <c>IThemedControl</c>, iar vederea asta e unul — deci grila nu era atinsă
+    ''' de nimeni și rămânea pe culorile ei implicite, cât timp aceeași grilă pusă direct pe un
+    ''' formular (bancul de probă) se colora corect. Predarea schemei către controalele
+    ''' auto-tematizate IMBRICATE se face acum în <c>ThemeManager.ApplyToNestedThemed</c>, o dată
+    ''' pentru toate vederile — nu prin câte un apel copiat în fiecare <c>ApplyTheme</c> de aici,
+    ''' care s-ar uita exact la a șaptea vedere.</para>
     ''' </summary>
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try

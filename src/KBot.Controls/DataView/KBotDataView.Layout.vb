@@ -71,9 +71,14 @@ Partial Class KBotDataView
         Return If(_showHeader, _headerHeight, 0)
     End Function
 
-    ''' <summary>English (slice 0017-01): effective height of the pinned totals band (0 when off).</summary>
-    Private Function TotalsBandHeight() As Integer
-        Return If(_showTotalsRow, TotalsRowHeight, 0)
+    ''' <summary>Înălțimea efectivă a benzii de subsol (0 dacă e stinsă).</summary>
+    Private Function FooterBandHeight() As Integer
+        Return If(_showFooter, FooterHeight, 0)
+    End Function
+
+    ''' <summary>Y-ul (client) la care începe banda de subsol — sub antet și sub corp.</summary>
+    Private Function FooterBandTop() As Integer
+        Return HeaderBandHeight() + ViewportHeight()
     End Function
 
     ''' <summary>Lățimea zonei utile (client minus bara verticală, dacă e vizibilă).</summary>
@@ -82,12 +87,16 @@ Partial Class KBotDataView
     End Function
 
     ''' <summary>
-    ''' Înălțimea zonei de date (client minus antet minus banda de totaluri minus bara
-    ''' orizontală). English (slice 0017-01): the pinned totals band eats body height, so the
-    ''' scrollable area shrinks by TotalsBandHeight when it is shown.
+    ''' Înălțimea zonei de date (client minus antet minus banda de subsol minus bara orizontală).
+    ''' Banda de subsol mănâncă din înălțimea corpului, exact ca antetul.
+    '''
+    ''' Strâns pe verticală (slice 0028) corpul are înălțime ZERO: nu e o zonă ascunsă sub
+    ''' altceva, ci una care nu există — virtualizarea, hit-testul și barele de derulare se
+    ''' opresc toate din acest singur număr.
     ''' </summary>
     Private Function ViewportHeight() As Integer
-        Return Math.Max(0, ClientSize.Height - HeaderBandHeight() - TotalsBandHeight() -
+        If BodyIsCollapsed() Then Return 0
+        Return Math.Max(0, ClientSize.Height - HeaderBandHeight() - FooterBandHeight() -
                            If(hScroll.Visible, hScroll.Height, 0))
     End Function
 
@@ -103,7 +112,11 @@ Partial Class KBotDataView
 
     ' ── Virtualizare (înălțime fixă => aritmetică întreagă) ─────────────────────
 
-    ''' <summary>Primul rând vizibil, dedus din offset-ul în pixeli.</summary>
+    ' English (slice 0028-03): everything below counts in VIEW POSITIONS — the on-screen order
+    ' after filtering and sorting — never in model indices. See KBotDataView.Filtering for the two
+    ' numbering schemes and why they must not be mixed.
+
+    ''' <summary>Prima POZIȚIE DE VEDERE vizibilă, dedusă din offset-ul în pixeli.</summary>
     Private Function FirstVisibleRow() As Integer
         If _rowHeight <= 0 Then Return 0
         Return Math.Max(0, VScrollOffset() \ _rowHeight)
@@ -115,14 +128,25 @@ Partial Class KBotDataView
         Return (ViewportHeight() \ _rowHeight) + 2
     End Function
 
-    ''' <summary>Ultimul rând care trebuie pictat (limitat la ultimul rând real).</summary>
+    ''' <summary>Ultima POZIȚIE DE VEDERE de pictat (limitată la ultimul rând care trece de filtre).</summary>
     Private Function LastVisibleRow() As Integer
-        Return Math.Min(_rows.Count - 1, FirstVisibleRow() + VisibleRowCount())
+        Return Math.Min(ViewCount() - 1, FirstVisibleRow() + VisibleRowCount())
     End Function
 
-    ''' <summary>Y-ul (client) al unui rând, ținând cont de antet și de derulare.</summary>
-    Private Function RowTop(rowIndex As Integer) As Integer
-        Return HeaderBandHeight() + rowIndex * _rowHeight - VScrollOffset()
+    ''' <summary>Y-ul (client) al unei POZIȚII DE VEDERE, ținând cont de antet și de derulare.</summary>
+    Private Function RowTop(viewPosition As Integer) As Integer
+        Return HeaderBandHeight() + viewPosition * _rowHeight - VScrollOffset()
+    End Function
+
+    ''' <summary>
+    ''' Y-ul (client) al unui rând dat prin indexul lui de MODEL — poarta prin care API-ul public
+    ''' (celule, editare, etichetă) ajunge la geometrie. <see cref="Integer.MinValue"/> = rândul e
+    ''' filtrat afară, deci nu are niciun Y.
+    ''' </summary>
+    Private Function RowTopForModel(modelIndex As Integer) As Integer
+        Dim vp As Integer = ViewPositionOf(modelIndex)
+        If vp < 0 Then Return Integer.MinValue
+        Return RowTop(vp)
     End Function
 
     ' ── Bare de derulare ────────────────────────────────────────────────────────
@@ -177,8 +201,10 @@ Partial Class KBotDataView
             End If
 
             ' Derularea comite editarea deschisă: un editor real care plutește peste o celulă
-            ' care tocmai a ieșit din fereastră ar rămâne agățat în aer.
+            ' care tocmai a ieșit din fereastră ar rămâne agățat în aer. Din același motiv
+            ' cade și eticheta: celula ei tocmai s-a mutat de sub cursor.
             If _editing Then CommitEdit()
+            CancelCellTooltip()
             Invalidate()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnScrollValueChanged", ex)
@@ -305,14 +331,26 @@ Partial Class KBotDataView
     ' Decide vizibilitatea/valorile barelor. Cele două se influențează reciproc, deci
     ' evaluăm în două treceri (bara verticală mănâncă lățime, cea orizontală înălțime).
     Private Sub UpdateScrollBars()
+        ' Strâns pe verticală nu mai există corp de derulat: barele se sting amândouă, altfel ar
+        ' rămâne atârnate peste cele două benzi.
+        If BodyIsCollapsed() Then
+            If vScroll.Visible Then vScroll.Visible = False
+            If hScroll.Visible Then hScroll.Visible = False
+            vScroll.Value = 0
+            hScroll.Value = 0
+            Return
+        End If
+
         Dim vw As Integer = SystemInformation.VerticalScrollBarWidth
         Dim hh As Integer = SystemInformation.HorizontalScrollBarHeight
         Dim headerH As Integer = HeaderBandHeight()
-        ' English (slice 0017-01): the pinned totals band sits between the body and the
-        ' horizontal scrollbar, so it comes off the available body height just like the header.
-        Dim totalsH As Integer = TotalsBandHeight()
+        ' Banda de subsol stă între corp și bara orizontală, deci se scade din înălțimea
+        ' disponibilă a corpului exact ca antetul.
+        Dim totalsH As Integer = FooterBandHeight()
 
-        Dim contentH As Integer = _rows.Count * _rowHeight
+        ' Se derulează doar rândurile care trec de filtre — altfel bara ar promite o înălțime de
+        ' conținut pe care grila n-o mai are și s-ar putea derula sub ultimul rând vizibil.
+        Dim contentH As Integer = ViewCount() * _rowHeight
         Dim totalColsW As Integer = _frozenBandWidth + _scrollBandWidth
 
         Dim availW As Integer = ClientSize.Width
@@ -370,14 +408,21 @@ Partial Class KBotDataView
         If bar.Value > maxValue Then bar.Value = maxValue
     End Sub
 
-    ''' <summary>Derulează astfel încât rândul dat să fie complet vizibil.</summary>
+    ''' <summary>
+    ''' Derulează astfel încât rândul dat să fie complet vizibil. <paramref name="rowIndex"/> e un
+    ''' index de MODEL (API public); un rând filtrat afară nu are unde să fie derulat, deci e un
+    ''' no-op — nu o eroare, fiindcă apelantul obișnuit (o selecție, un commit) n-are de unde ști
+    ''' că tocmai a fost ascuns de un filtru.
+    ''' </summary>
     Public Sub EnsureVisible(rowIndex As Integer)
         Try
             If rowIndex < 0 OrElse rowIndex >= _rows.Count Then Return
+            Dim viewPosition As Integer = ViewPositionOf(rowIndex)
+            If viewPosition < 0 Then Return
             If Not vScroll.Visible Then Return
 
             Dim viewH As Integer = ViewportHeight()
-            Dim top As Integer = rowIndex * _rowHeight
+            Dim top As Integer = viewPosition * _rowHeight
             Dim bottom As Integer = top + _rowHeight
             Dim current As Integer = vScroll.Value
             Dim target As Integer = current
@@ -388,7 +433,7 @@ Partial Class KBotDataView
                 target = bottom - viewH                   ' iese pe jos
             End If
 
-            Dim maxValue As Integer = Math.Max(0, (_rows.Count * _rowHeight) - viewH)
+            Dim maxValue As Integer = Math.Max(0, (ViewCount() * _rowHeight) - viewH)
             target = Math.Max(0, Math.Min(target, maxValue))
             If target <> current Then vScroll.Value = target
         Catch ex As Exception

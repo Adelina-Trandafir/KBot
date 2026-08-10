@@ -160,7 +160,7 @@ Partial Class KBotDataView
             EndEditState()
             ' English (slice 0017-01): a committed edit can change an aggregated cell — refresh
             ' the totals band (guarded internally against BeginUpdate batches).
-            RecomputeTotals()
+            RecomputeDerived()
             InvalidateRow(changedRow)
 
             RaiseEvent CellValueChanged(Me, New KBotCellValueEventArgs(
@@ -212,9 +212,11 @@ Partial Class KBotDataView
     End Sub
 
     ' Dreptunghiul (coordonate client) al unei celule, ținând cont de banda înghețată,
-    ' de derulare și de antet. Empty dacă coloana nu e vizibilă.
+    ' de derulare și de antet. Empty dacă coloana nu e vizibilă SAU dacă rândul e filtrat afară —
+    ' iar asta oprește editarea din BeginEdit, care refuză un dreptunghi gol.
     Private Function CellRect(col As KBotDataColumn, rowIndex As Integer) As Rectangle
-        Dim y As Integer = RowTop(rowIndex)
+        Dim y As Integer = RowTopForModel(rowIndex)
+        If y = Integer.MinValue Then Return Rectangle.Empty
         For Each cl In _frozenLayout
             If ReferenceEquals(cl.Column, col) Then Return New Rectangle(cl.X, y, col.Width, _rowHeight)
         Next

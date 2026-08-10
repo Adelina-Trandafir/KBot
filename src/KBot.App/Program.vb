@@ -130,6 +130,8 @@ Friend Module Program
 
             Application.Run(provider.GetRequiredService(Of MainForm)())
 
+            'trebuie sa aduca in prim plan fereastra main, daca loginul a fost facut cu succes si s-a inchis formularul login
+
             ' --- logout best-effort la închidere (sink terminal; NU rearunca la ieșire). ---
             ' Citește token-ul curent din sesiune — cel post-reauth, dacă a existat un re-login.
             If session.IsAuthenticated AndAlso Not String.IsNullOrEmpty(session.Token) Then

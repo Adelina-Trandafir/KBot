@@ -14,7 +14,7 @@ Imports Xunit
 ''' Numeric assertions parse the formatted text back with CurrentCulture, so they do not depend
 ''' on the test host's decimal separator; Count asserts the plain integer string directly.
 ''' </summary>
-Public Class KBotDataViewTotalsTests
+Public Class KBotDataViewFooterTests
 
     Private Shared Function ParseNum(text As String) As Double
         Return Double.Parse(text, NumberStyles.Any, CultureInfo.CurrentCulture)
@@ -28,10 +28,14 @@ Public Class KBotDataViewTotalsTests
         dv.AddColumn("cod", "Cod", KBotColumnType.Text, 120).Aggregate = KBotAggregate.Count
         Dim s = dv.AddColumn("suma", "Suma", KBotColumnType.Text, 120)
         s.FormatString = "N2"
+        ' ValueType comes FIRST (slice 0028): Sum/Average are offered only to numeric columns,
+        ' and "Text" here is the RENDER type, not the data type.
+        s.ValueType = KBotValueType.Number
         s.Aggregate = KBotAggregate.Sum
         Dim a = dv.AddColumn("medie", "Medie", KBotColumnType.Text, 120)
+        a.ValueType = KBotValueType.Number
         a.Aggregate = KBotAggregate.Average
-        dv.ShowTotalsRow = True
+        dv.FooterVisible = True
         Return dv
     End Function
 
@@ -48,9 +52,9 @@ Public Class KBotDataViewTotalsTests
                 dv("medie", i) = v
             Next
 
-            Assert.Equal("3", dv.DebugTotalsText("cod"))              ' Count of rows with a value
-            Assert.Equal(60.0, ParseNum(dv.DebugTotalsText("suma")), 2)
-            Assert.Equal(20.0, ParseNum(dv.DebugTotalsText("medie")), 2)
+            Assert.Equal("3", dv.DebugFooterText("cod"))              ' Count of rows with a value
+            Assert.Equal(60.0, ParseNum(dv.DebugFooterText("suma")), 2)
+            Assert.Equal(20.0, ParseNum(dv.DebugFooterText("medie")), 2)
         End Using
     End Sub
 
@@ -63,8 +67,8 @@ Public Class KBotDataViewTotalsTests
             dv.AddRow() : dv("suma", 3) = 30.0 : dv("medie", 3) = 30.0
 
             ' Sum = 10 + 30 = 40; Average = 40 / 2 countable = 20 (the two skipped do not count).
-            Assert.Equal(40.0, ParseNum(dv.DebugTotalsText("suma")), 2)
-            Assert.Equal(20.0, ParseNum(dv.DebugTotalsText("medie")), 2)
+            Assert.Equal(40.0, ParseNum(dv.DebugFooterText("suma")), 2)
+            Assert.Equal(20.0, ParseNum(dv.DebugFooterText("medie")), 2)
         End Using
     End Sub
 
@@ -73,7 +77,7 @@ Public Class KBotDataViewTotalsTests
         Using dv = Grid()
             dv.AddRow() : dv("medie", 0) = "x"
             dv.AddRow() : dv("medie", 1) = Nothing
-            Assert.Equal(String.Empty, dv.DebugTotalsText("medie"))
+            Assert.Equal(String.Empty, dv.DebugFooterText("medie"))
         End Using
     End Sub
 
@@ -84,7 +88,7 @@ Public Class KBotDataViewTotalsTests
             dv.AddRow() : dv("cod", 1) = Nothing            ' stored Nothing -> still HAS a value
             dv.AddRow()                                     ' never set "cod" -> no stored value
             ' Two rows have a stored "cod" value; the third never set it.
-            Assert.Equal("2", dv.DebugTotalsText("cod"))
+            Assert.Equal("2", dv.DebugFooterText("cod"))
         End Using
     End Sub
 
@@ -95,14 +99,15 @@ Public Class KBotDataViewTotalsTests
             Dim s = dv.AddColumn("suma", "Suma", KBotColumnType.Text, 120)
             s.FormatString = "N2"
             s.AggregateFormatString = "N0"                  ' aggregate-specific format wins
+            s.ValueType = KBotValueType.Number
             s.Aggregate = KBotAggregate.Sum
-            dv.ShowTotalsRow = True
+            dv.FooterVisible = True
 
             dv.AddRow() : dv("cod", 0) = "x" : dv("suma", 0) = 1234.56
             ' Count ignores every format string -> plain integer.
-            Assert.Equal("1", dv.DebugTotalsText("cod"))
+            Assert.Equal("1", dv.DebugFooterText("cod"))
             ' Sum uses AggregateFormatString "N0" -> no decimals (parses back to 1235).
-            Assert.Equal(1235.0, ParseNum(dv.DebugTotalsText("suma")), 0)
+            Assert.Equal(1235.0, ParseNum(dv.DebugFooterText("suma")), 0)
         End Using
     End Sub
 
@@ -110,19 +115,21 @@ Public Class KBotDataViewTotalsTests
     Public Sub NoAggregate_Column_RendersEmptyTotalsCell()
         Using dv As New KBotDataView()
             dv.AddColumn("plain", "Plain", KBotColumnType.Text, 120)   ' Aggregate = None (default)
-            dv.ShowTotalsRow = True
+            dv.FooterVisible = True
             dv.AddRow() : dv("plain", 0) = "value"
-            Assert.Equal(String.Empty, dv.DebugTotalsText("plain"))
+            Assert.Equal(String.Empty, dv.DebugFooterText("plain"))
         End Using
     End Sub
 
     <Fact>
     Public Sub TotalsOff_ComputesNothing()
         Using dv As New KBotDataView()
-            dv.AddColumn("suma", "Suma", KBotColumnType.Text, 120).Aggregate = KBotAggregate.Sum
+            Dim s = dv.AddColumn("suma", "Suma", KBotColumnType.Text, 120)
+            s.ValueType = KBotValueType.Number
+            s.Aggregate = KBotAggregate.Sum
             dv.AddRow() : dv("suma", 0) = 5.0
-            ' ShowTotalsRow left False -> no cached text.
-            Assert.Equal(String.Empty, dv.DebugTotalsText("suma"))
+            ' FooterVisible left False -> no cached text.
+            Assert.Equal(String.Empty, dv.DebugFooterText("suma"))
         End Using
     End Sub
 
@@ -132,14 +139,14 @@ Public Class KBotDataViewTotalsTests
     Public Sub Totals_RecomputeAfterAddRowAndClearRows()
         Using dv = Grid()
             dv.AddRow() : dv("suma", 0) = 100.0
-            Assert.Equal(100.0, ParseNum(dv.DebugTotalsText("suma")), 2)
+            Assert.Equal(100.0, ParseNum(dv.DebugFooterText("suma")), 2)
 
             dv.AddRow() : dv("suma", 1) = 50.0
-            Assert.Equal(150.0, ParseNum(dv.DebugTotalsText("suma")), 2)
+            Assert.Equal(150.0, ParseNum(dv.DebugFooterText("suma")), 2)
 
             dv.ClearRows()
-            Assert.Equal(0.0, ParseNum(dv.DebugTotalsText("suma")), 2)   ' Sum of nothing = 0
-            Assert.Equal("0", dv.DebugTotalsText("cod"))                 ' Count of nothing = 0
+            Assert.Equal(0.0, ParseNum(dv.DebugFooterText("suma")), 2)   ' Sum of nothing = 0
+            Assert.Equal("0", dv.DebugFooterText("cod"))                 ' Count of nothing = 0
         End Using
     End Sub
 
@@ -151,7 +158,7 @@ Public Class KBotDataViewTotalsTests
                 dv.AddRow()("suma") = 10.0
             Next
             dv.EndUpdate()
-            Assert.Equal(50.0, ParseNum(dv.DebugTotalsText("suma")), 2)
+            Assert.Equal(50.0, ParseNum(dv.DebugFooterText("suma")), 2)
         End Using
     End Sub
 
@@ -161,16 +168,17 @@ Public Class KBotDataViewTotalsTests
             dv.Size = New Size(500, 300)
             dv.ApplyTheme(BuiltInSchemes.Classic())
             Dim s = dv.AddColumn("suma", "Suma", KBotColumnType.Text, 120)
+            s.ValueType = KBotValueType.Number
             s.Aggregate = KBotAggregate.Sum
-            dv.ShowTotalsRow = True
+            dv.FooterVisible = True
             dv.AddRow() : dv("suma", 0) = 10.0
-            Assert.Equal(10.0, ParseNum(dv.DebugTotalsText("suma")), 2)
+            Assert.Equal(10.0, ParseNum(dv.DebugFooterText("suma")), 2)
 
             Assert.True(dv.BeginEdit("suma", 0))
             dv.editText.Text = "99"
             Assert.True(dv.CommitEdit())
             ' The committed edit recomputed the total.
-            Assert.Equal(99.0, ParseNum(dv.DebugTotalsText("suma")), 2)
+            Assert.Equal(99.0, ParseNum(dv.DebugFooterText("suma")), 2)
         End Using
     End Sub
 
@@ -209,7 +217,9 @@ Public Class KBotDataViewTotalsTests
         Using dv As New KBotDataView()
             dv.Size = New Size(400, 300)
             dv.ApplyTheme(BuiltInSchemes.Classic())
-            dv.AddColumn("suma", "Suma", KBotColumnType.Text, 120).Aggregate = KBotAggregate.Sum
+            Dim s = dv.AddColumn("suma", "Suma", KBotColumnType.Text, 120)
+            s.ValueType = KBotValueType.Number
+            s.Aggregate = KBotAggregate.Sum
             For i As Integer = 1 To 200                       ' enough to force the vertical bar
                 dv.AddRow()("suma") = CDbl(i)
             Next
@@ -219,8 +229,8 @@ Public Class KBotDataViewTotalsTests
             Dim largeOff As Integer = dv.vScroll.LargeChange
             Assert.True(dv.vScroll.Visible)
 
-            dv.TotalsRowHeight = 56                           ' ~2 rows at RowHeight 28
-            dv.ShowTotalsRow = True
+            dv.FooterHeight = 56                           ' ~2 rows at RowHeight 28
+            dv.FooterVisible = True
             PaintOnce(dv)
             Dim paintedOn As Integer = dv.DebugLastPaintedDataRows
             Dim largeOn As Integer = dv.vScroll.LargeChange
@@ -241,12 +251,13 @@ Public Class KBotDataViewTotalsTests
             dv.ApplyTheme(BuiltInSchemes.Classic())
             dv.AddColumn("cod", "Cod", KBotColumnType.Text, 120).Aggregate = KBotAggregate.Count
             For i As Integer = 1 To 6
-                dv.AddColumn("c" & i.ToString(), "C" & i.ToString(), KBotColumnType.Text, 120).
-                    Aggregate = KBotAggregate.Sum
+                Dim c = dv.AddColumn("c" & i.ToString(), "C" & i.ToString(), KBotColumnType.Text, 120)
+                c.ValueType = KBotValueType.Number
+                c.Aggregate = KBotAggregate.Sum
             Next
             dv.FrozenColumnCount = 1
             dv.ScrollByColumn = True
-            dv.ShowTotalsRow = True
+            dv.FooterVisible = True
             ' Row-indexer load inside a batch: EndUpdate recomputes once with every cell set.
             dv.BeginUpdate()
             For r As Integer = 1 To 4
@@ -258,7 +269,7 @@ Public Class KBotDataViewTotalsTests
             Next
             dv.EndUpdate()
 
-            Assert.Equal("4", dv.DebugTotalsText("cod"))      ' frozen column total present
+            Assert.Equal("4", dv.DebugFooterText("cod"))      ' frozen column total present
             PaintOnce(dv)                                     ' must not throw with H-scroll + frozen
         End Using
     End Sub

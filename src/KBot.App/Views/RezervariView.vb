@@ -70,7 +70,7 @@ Public Class RezervariView
     End Property
 
     ''' <summary>
-    ''' Strângerea arborelui (felia 0027-03, aceeași înțelegere ca în MainForm): arborele e
+    ''' Strângerea arborelui (felia 0028, aceeași înțelegere ca în MainForm): arborele e
     ''' <c>Dock = Fill</c> în <c>split.Panel1</c>, deci lățimea NU e a lui — el schimbă starea
     ''' și ne anunță, GAZDA mută splitter-ul. <c>Panel1MinSize</c> păzește TRAGEREA splitter-ului;
     ''' strângerea e o comandă, nu o tragere, deci coborâm paza cât ține starea.

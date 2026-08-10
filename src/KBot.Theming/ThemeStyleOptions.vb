@@ -47,6 +47,21 @@ Public NotInheritable Class ThemeStyleOptions
     ''' <summary>Owner-draw pe header-ele de tab (reutilizează OnDrawTab).</summary>
     Public Property OwnerDrawTabs As Boolean = False
 
+    ''' <summary>
+    ''' «Nu-mi atinge culorile.» True ⇒ motorul NU scrie <c>BackColor</c>/<c>ForeColor</c>/
+    ''' <c>Font</c> pe controale, ci le pune la loc pe cele reținute de
+    ''' <see cref="DesignerBaseline"/> (adică exact ce s-a autorit în designer). Steagul schemei
+    ''' «Colorful» din felia 0028.
+    '''
+    ''' Ce NU face: controalele <c>IThemedControl</c> primesc în continuare
+    ''' <c>ApplyTheme(schema)</c> — culorile lor INTERNE (hover, selecție, linii, benzi) nu sunt
+    ''' proprietăți de designer ale gazdei și trebuie să vină de undeva; contractul lor propriu
+    ''' «<c>Color.Empty</c> = din temă, orice culoare pusă în designer câștigă» le apără oricum
+    ''' alegerile. Peste asta, cele trei proprietăți ambientale ale controlului se restaurează
+    ''' din instantaneu.
+    ''' </summary>
+    Public Property PreserveDesignerColors As Boolean = False
+
     ''' <summary>Padding-ul efectiv ca <see cref="Padding"/> WinForms.</summary>
     <JsonIgnore> Public ReadOnly Property PaddingValue As Padding
         Get

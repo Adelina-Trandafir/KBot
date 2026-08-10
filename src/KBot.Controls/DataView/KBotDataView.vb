@@ -46,15 +46,15 @@ Public Class KBotDataView
     Private _readOnlyGrid As Boolean = False
     Private _frozenColumnCount As Integer = 0
 
-    ' ── Totals row (slice 0017-01) ───────────────────────────────────────────────
-    ' A pinned band at the bottom, painted with the header's band styling. It is NOT a row:
-    ' excluded from _rows, RowCount, virtualization, selection, hit-testing and dirty tracking.
-    ' _totalsRowHeight <= 0 means "track HeaderHeight"; a real height overrides it.
-    Private _showTotalsRow As Boolean = False
-    Private _totalsRowHeight As Integer = 0
-    ' Cached formatted aggregate text per column key, recomputed when the model changes
-    ' (AddRow / ClearRows / EndUpdate / committed edit) so paint never re-aggregates.
-    Private ReadOnly _totalsText As New Dictionary(Of String, String)(StringComparer.Ordinal)
+    ' ── Banda de subsol (slice 0017-01, rebotezată în 0028) ───────────────────
+    ' O bandă fixată jos, sora benzii de antet. NU e un rând: exclusă din _rows, RowCount,
+    ' virtualizare, selecție, hit-testing și urmărirea modificărilor.
+    ' _footerHeight <= 0 înseamnă „urmărește HeaderHeight”; o înălțime reală o suprascrie.
+    Private _showFooter As Boolean = False
+    Private _footerHeight As Integer = 0
+    ' Textul agregat formatat, cache-uit pe cheie de coloană; recalculat când se schimbă modelul
+    ' (AddRow / ClearRows / EndUpdate / commit de editare) ca pictarea să nu re-agrege niciodată.
+    Private ReadOnly _footerText As New Dictionary(Of String, String)(StringComparer.Ordinal)
 
     ' Celula curentă (selecție). -1 / Nothing = fără selecție. Se schimbă DOAR prin
     ' SetCurrentCell (vezi partiala .Input), ca evenimentul să se ridice o singură dată.
@@ -115,6 +115,7 @@ Public Class KBotDataView
         RebuildThemeResources()
         WireScrollBars()
         WireEditors()
+        WireCellTooltip()
     End Sub
 
     ' ========================================================================
@@ -154,7 +155,17 @@ Public Class KBotDataView
     Friend Sub OnColumnsChanged()
         RebuildColumnIndex()
         If _initializing Then Return
-        RecomputeTotals()
+        ' O coloană construită liber (fără Owner) și-a putut lua orice pereche ValueType ×
+        ' Aggregate: setterul ei n-avea de la cine să afle. Intrarea în grilă e locul unde
+        ' perechea devine a NOASTRĂ, deci se verifică acum — la fel de tare ca la EndInit.
+        ' În designer se sare, din același motiv ca ValidateColumns: o excepție acolo ar închide
+        ' formularul, nu ar corecta modelul.
+        If Not KBotDesignTime.IsDesignTime(Me) Then
+            For Each col In _columns
+                col.ValidateSettled()
+            Next
+        End If
+        RecomputeDerived()
         LayoutChanged()
     End Sub
 
@@ -189,12 +200,17 @@ Public Class KBotDataView
                 _currentColumnKey = newKey
             End If
             If _initializing Then Return
-            RecomputeTotals()
+            RecomputeDerived()
             LayoutChanged()
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotDataView.OnColumnKeyChanged", ex)
             Throw
         End Try
+    End Sub
+
+    Friend Sub OnColumnAutoSizeModeChanged()
+        If _initializing Then Return
+        LayoutChanged()
     End Sub
 
     ' ── ISupportInitialize ──────────────────────────────────────────────────────
@@ -216,7 +232,7 @@ Public Class KBotDataView
             _initializing = False
             If Not KBotDesignTime.IsDesignTime(Me) Then ValidateColumns()
             RebuildColumnIndex()
-            RecomputeTotals()
+            RecomputeDerived()
             LayoutChanged()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.EndInit", ex)
@@ -224,7 +240,10 @@ Public Class KBotDataView
         End Try
     End Sub
 
-    ' Cheile coloanelor: nevide și unice — același contract ca AddColumn.
+    ' Cheile coloanelor: nevide și unice — același contract ca AddColumn. Plus perechea
+    ' ValueType × Aggregate (slice 0028): în setter verificarea se amână cât timp grila e în
+    ' BeginInit, fiindcă designerul poate emite agregatul înaintea tipului; AICI perechea e
+    ' AȘEZATĂ, deci o nepotrivire e a modelului, nu a ordinii de emitere.
     Private Sub ValidateColumns()
         Dim seen As New HashSet(Of String)(StringComparer.Ordinal)
         For i As Integer = 0 To _columns.Count - 1
@@ -235,8 +254,34 @@ Public Class KBotDataView
             If Not seen.Add(col.Key) Then
                 Throw New ArgumentException($"Cheie de coloană duplicată: '{col.Key}' (poziția {i}).", NameOf(Columns))
             End If
+            col.ValidateSettled()
         Next
     End Sub
+
+    ''' <summary>
+    ''' Chemată de <see cref="KBotDataColumn"/> după o schimbare de format: se re-formatează și
+    ''' corpul, și agregatele din subsol — altfel un total ar rămâne scris în formatul vechi, sub
+    ''' o coloană deja trecută la cel nou. Boundary: loghează + înghite.
+    ''' </summary>
+    Friend Sub OnColumnFormatChanged()
+        Try
+            If _initializing Then Return
+            RecomputeDerived()
+            InvalidateContent()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.OnColumnFormatChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Suntem în blocul <c>BeginInit</c>/<c>EndInit</c> emis de designer? O citește
+    ''' <see cref="KBotDataColumn"/>, ca validările lui să se amâne până la <c>EndInit</c>.
+    ''' </summary>
+    Friend ReadOnly Property IsInitializing As Boolean
+        Get
+            Return _initializing
+        End Get
+    End Property
 
     ''' <summary>Coloana după cheie. Cheie necunoscută => ArgumentException (fără no-op tăcut).</summary>
     Public Function Column(key As String) As KBotDataColumn
@@ -271,7 +316,7 @@ Public Class KBotDataView
     Public Function AddRow() As KBotDataRow
         Dim r As New KBotDataRow()
         _rows.Add(r)
-        RecomputeTotals()
+        RecomputeDerived()
         LayoutChanged()
         Return r
     End Function
@@ -301,7 +346,7 @@ Public Class KBotDataView
     Public Sub ClearRows()
         _rows.Clear()
         _currentRowIndex = -1
-        RecomputeTotals()
+        RecomputeDerived()
         LayoutChanged()
     End Sub
 
@@ -348,7 +393,7 @@ Public Class KBotDataView
             ' band live (guarded internally against BeginUpdate batches — bulk loads recompute
             ' once at EndUpdate). Writing straight to KBotDataRow bypasses this by design; those
             ' loads are always wrapped in BeginUpdate/EndUpdate.
-            RecomputeTotals()
+            RecomputeDerived()
             InvalidateCell(colKey, rowIndex)
         End Set
     End Property
@@ -435,7 +480,7 @@ Public Class KBotDataView
     ' ========================================================================
 
     ''' <summary>Înălțimea fixă a unui rând (px). Implicit 28.</summary>
-    <Category("K-BOT")>
+    <Category("K-BOT: Body")>
     <Description("Înălțimea fixă a unui rând, în pixeli.")>
     <DefaultValue(28)>
     Public Property RowHeight As Integer
@@ -449,7 +494,7 @@ Public Class KBotDataView
     End Property
 
     ''' <summary>Înălțimea benzii de antet (px). Implicit 30.</summary>
-    <Category("K-BOT")>
+    <Category("K-BOT: Header")>
     <Description("Înălțimea benzii de antet, în pixeli.")>
     <DefaultValue(30)>
     Public Property HeaderHeight As Integer
@@ -463,7 +508,7 @@ Public Class KBotDataView
     End Property
 
     ''' <summary>Afișează banda de antet. Implicit True.</summary>
-    <Category("K-BOT")>
+    <Category("K-BOT: Header")>
     <Description("Afișează banda de antet.")>
     <DefaultValue(True)>
     Public Property ShowHeader As Boolean
@@ -477,7 +522,7 @@ Public Class KBotDataView
     End Property
 
     ''' <summary>Fundal alternant pe rânduri pare/impare. Implicit True.</summary>
-    <Category("K-BOT")>
+    <Category("K-BOT: Body")>
     <Description("Fundal alternant pe rândurile pare/impare.")>
     <DefaultValue(True)>
     Public Property AlternatingRows As Boolean
@@ -491,7 +536,7 @@ Public Class KBotDataView
     End Property
 
     ''' <summary>True => nicio celulă nu intră vreodată în editare (vederi read-only, ex. Sumar).</summary>
-    <Category("K-BOT")>
+    <Category("K-BOT: Body")>
     <Description("True => nicio celulă nu intră vreodată în editare (vederi doar-citire).")>
     <DefaultValue(False)>
     Public Property ReadOnlyGrid As Boolean
@@ -504,39 +549,39 @@ Public Class KBotDataView
     End Property
 
     ''' <summary>
-    ''' English (slice 0017-01): show a pinned totals band at the bottom. Default False. The band
-    ''' aggregates each column per <see cref="KBotDataColumn.Aggregate"/>, participates in
-    ''' horizontal scroll + frozen columns exactly like the body, and is never a selectable row.
-    ''' Turning it on shrinks the scrollable body by <see cref="TotalsRowHeight"/>.
+    ''' Afișează banda fixă de SUBSOL, la baza grilei (slice 0017-01, rebotezată în 0028 din
+    ''' <c>ShowTotalsRow</c>). Implicit False. Banda agregă fiecare coloană după
+    ''' <see cref="KBotDataColumn.Aggregate"/>, participă la derularea orizontală și la coloanele
+    ''' înghețate exact ca și corpul, și nu e niciodată un rând selectabil. Aprinderea ei
+    ''' micșorează corpul derulabil cu <see cref="FooterHeight"/>.
     ''' </summary>
-    <Category("K-BOT")>
-    <Description("Afișează banda fixă de totaluri, la baza grilei.")>
+    <Category("K-BOT: Footer")>
+    <Description("Afișează banda fixă de subsol (agregate), la baza grilei.")>
     <DefaultValue(False)>
-    Public Property ShowTotalsRow As Boolean
+    Public Property FooterVisible As Boolean
         Get
-            Return _showTotalsRow
+            Return _showFooter
         End Get
         Set(value As Boolean)
-            If _showTotalsRow = value Then Return
-            _showTotalsRow = value
-            RecomputeTotals()
+            If _showFooter = value Then Return
+            _showFooter = value
+            RecomputeDerived()
             LayoutChanged()
         End Set
     End Property
 
     ''' <summary>
-    ''' English (slice 0017-01): height of the pinned totals band, in pixels. Defaults to
-    ''' <see cref="HeaderHeight"/> until set to a positive value; a non-positive value restores
-    ''' the "track HeaderHeight" default.
+    ''' Înălțimea benzii de subsol, în pixeli. Implicit urmărește <see cref="HeaderHeight"/>, până
+    ''' când i se dă o valoare pozitivă; o valoare ne-pozitivă readuce urmărirea antetului.
     ''' </summary>
-    <Category("K-BOT")>
-    <Description("Înălțimea benzii de totaluri (px). 0 => urmărește HeaderHeight.")>
-    Public Property TotalsRowHeight As Integer
+    <Category("K-BOT: Footer")>
+    <Description("Înălțimea benzii de subsol (px). 0 => urmărește HeaderHeight.")>
+    Public Property FooterHeight As Integer
         Get
-            Return If(_totalsRowHeight > 0, _totalsRowHeight, _headerHeight)
+            Return If(_footerHeight > 0, _footerHeight, _headerHeight)
         End Get
         Set(value As Integer)
-            _totalsRowHeight = Math.Max(0, value)
+            _footerHeight = Math.Max(0, value)
             LayoutChanged()
         End Set
     End Property
@@ -545,12 +590,12 @@ Public Class KBotDataView
     ' band is on "track the header", so a DefaultValue(0) would make the designer serialise the
     ' RESOLVED number (e.g. 30) and pin the band for good — a round-trip that silently changes the
     ' meaning. ShouldSerialize/Reset express "unset" correctly and the designer honours them.
-    Private Function ShouldSerializeTotalsRowHeight() As Boolean
-        Return _totalsRowHeight > 0
+    Private Function ShouldSerializeFooterHeight() As Boolean
+        Return _footerHeight > 0
     End Function
 
-    Private Sub ResetTotalsRowHeight()
-        TotalsRowHeight = 0
+    Private Sub ResetFooterHeight()
+        FooterHeight = 0
     End Sub
 
     ' ========================================================================
@@ -566,7 +611,7 @@ Public Class KBotDataView
     Public Sub EndUpdate()
         If _updateDepth > 0 Then _updateDepth -= 1
         If _updateDepth = 0 Then
-            RecomputeTotals()
+            RecomputeDerived()
             UpdateLayout()
             Invalidate()
         End If
@@ -597,6 +642,8 @@ Public Class KBotDataView
     Protected Overrides Sub OnResize(e As EventArgs)
         MyBase.OnResize(e)
         Try
+            ' Dimensiunea la care se întoarce butonul de strângere = ultima avută desfășurat.
+            RememberExpandedExtent()
             UpdateLayout()
         Catch ex As Exception
             ' Boundary UI: relayout-ul nu are voie să arunce în bucla de mesaje.

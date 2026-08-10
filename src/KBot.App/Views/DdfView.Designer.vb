@@ -196,6 +196,7 @@ Partial Class DdfView
         ' 
         ' tlyBottomButtons
         ' 
+        tlyBottomButtons.BackColor = Color.Transparent
         tlyBottomButtons.ColumnCount = 3
         tlyBottomButtons.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyBottomButtons.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 80F))
@@ -332,17 +333,18 @@ Partial Class DdfView
         ' grid
         ' 
         grid.BackColor = SystemColors.Window
-        grid.ColumnFillMode = KBot.Controls.KBotFillMode.LastColumn
+        grid.ColumnFillMode = KBot.Controls.KBotFillMode.FirstColumn
         grid.Dock = DockStyle.Fill
+        grid.FrozenColumnCount = 1
         grid.Location = New Point(0, 37)
         grid.Margin = New Padding(4, 5, 4, 5)
         grid.Name = "grid"
         grid.ReadOnlyGrid = True
         grid.ScrollByColumn = True
-        grid.ShowTotalsRow = True
+        grid.FooterVisible = True
         grid.Size = New Size(849, 451)
         grid.TabIndex = 1
-        grid.TotalsRowHeight = 30
+        grid.FooterHeight = 40
         ' 
         ' pnlFilter
         ' 
@@ -441,7 +443,7 @@ Partial Class DdfView
         ' 
         navSub.Dock = DockStyle.Top
         navSub.IconSize = 16
-        navSub.ItemCornerRadius = 4
+        navSub.ItemCornerRadius = 2
         navSub.ItemPadding = New Padding(3)
         KBotNavItem1.AutoSize = True
         KBotNavItem1.Image = My.Resources.Resources.vertical
@@ -532,9 +534,9 @@ Partial Class DdfView
     Friend WithEvents lblFisiereGol As Label
     Friend WithEvents lblEmpty As Label
     Friend WithEvents pnlBottomButtons As Panel
+    Friend WithEvents tlyPDF As TableLayoutPanel
+    Friend WithEvents tree_image_list As ImageList
     Friend WithEvents tlyBottomButtons As TableLayoutPanel
     Friend WithEvents btnOpenInAdobe As Button
     Friend WithEvents btnSaveLocalCopy As Button
-    Friend WithEvents tlyPDF As TableLayoutPanel
-    Friend WithEvents tree_image_list As ImageList
 End Class

@@ -7,9 +7,10 @@ Imports KBot.Common
 ''' Contract „zero excepții înghițite fără urmă”: pe eșec logăm O SINGURĂ DATĂ prin
 ''' GlobalErrorLog (guard static), apoi suprimăm — altfel am spama log-ul la fiecare
 ''' formular ne-tematizat pe Windows vechi unde atributul nu există.
-''' Modulul e Public DOAR ca să rămână vizibil un singur membru — <see cref="DragMove"/>,
-''' cerut de KBotCaptionBar, care stă acum în KBot.Controls (toate controalele K-BOT trăiesc
-''' acolo). Restul membrilor sunt consumați numai din KBot.Theming și rămân Friend.
+''' Modulul e Public ca să rămână vizibili DOI membri: <see cref="DragMove"/>, cerut de
+''' KBotCaptionBar, și <see cref="ApplyWindowTheme"/>, cerut de KBotComboBox — amândouă
+''' controale care stau acum în KBot.Controls (toate controalele K-BOT trăiesc acolo).
+''' Restul membrilor sunt consumați numai din KBot.Theming și rămân Friend.
 ''' </summary>
 Public Module NativeMethods
 
@@ -152,8 +153,13 @@ Public Module NativeMethods
     ''' <summary>
     ''' Aplică o temă vizuală uxtheme (ex. „DarkMode_Explorer”, „Explorer”) pe
     ''' scrollbar-urile native ale unui control. Erorile se loghează o singură dată.
+    '''
+    ''' PUBLIC de la felia 0028, al doilea membru vizibil după <see cref="DragMove"/>, din același
+    ''' motiv: <c>KBotComboBox</c> trăiește în KBot.Controls și are nevoie de el pentru fereastra
+    ''' NATIVĂ de listă derulantă — acel HWND nu e al controlului, deci nici pictura proprie, nici
+    ''' traversarea temei nu ajung la el.
     ''' </summary>
-    Friend Sub ApplyWindowTheme(ctrl As Control, theme As String)
+    Public Sub ApplyWindowTheme(ctrl As Control, theme As String)
         If ctrl Is Nothing OrElse Not ctrl.IsHandleCreated Then Return
         Try
             SetWindowTheme(ctrl.Handle, theme, Nothing)

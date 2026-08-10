@@ -124,8 +124,8 @@ Public Class DdfView
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of DdfInfo)), Task(Of DdfInfo)),
                    Optional session As SessionContext = Nothing)
-        If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
-        If withReauth Is Nothing Then Throw New ArgumentNullException(NameOf(withReauth))
+        ArgumentNullException.ThrowIfNull(apiClient)
+        ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
@@ -361,12 +361,12 @@ Public Class DdfView
     End Property
 
     ''' <summary>
-    ''' Strângerea arborelui (felia 0027-03, aceeași înțelegere ca în MainForm): arborele e
+    ''' Strângerea arborelui (felia 0028, aceeași înțelegere ca în MainForm): arborele e
     ''' <c>Dock = Fill</c> în <c>split.Panel1</c>, deci lățimea NU e a lui — el schimbă starea
     ''' și ne anunță, GAZDA mută splitter-ul. <c>Panel1MinSize</c> păzește TRAGEREA splitter-ului;
     ''' strângerea e o comandă, nu o tragere, deci coborâm paza cât ține starea.
     ''' </summary>
-    Private Sub tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
+    Private Sub Tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
         Try
             Dim padStanga As Integer = split.Panel1.Padding.Left
             If collapsed Then
@@ -444,6 +444,9 @@ Public Class DdfView
                 grid.AddColumn(COL_VALCUR, "Valoare curentă", KBotColumnType.Text, 130)
             colCur.FormatString = "N2"
             colCur.TextAlign = ContentAlignment.MiddleRight
+            ' ValueType ÎNAINTE de Aggregate: suma se poate cere doar unei coloane numerice
+            ' (slice 0028), iar coloana e „Text” doar ca fel de pictare.
+            colCur.ValueType = KBotValueType.Number
             colCur.Aggregate = KBotAggregate.Sum        ' singurul agregat (decizia 5)
 
             Dim colTot As KBotDataColumn =
@@ -462,7 +465,7 @@ Public Class DdfView
     ''' </summary>
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
         Try
-            Dim cod As String = If(info Is Nothing, Nothing, info.CodAngajament)
+            Dim cod As String = info?.CodAngajament
             If String.IsNullOrWhiteSpace(cod) Then
                 ClearAll()
                 ShowEmpty("Selectați un angajament din arbore.")
@@ -619,7 +622,7 @@ Public Class DdfView
 
     ' Click pe orice nod -> resetează combo-ul din rândurile nodului, apoi umple grila
     ' NEFILTRATĂ. Fără apel de rețea (decizia 7).
-    Private Sub tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
+    Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
             If pNode Is Nothing Then Return
             Dim payload As DdfNodeRows = TryCast(pNode.Tag, DdfNodeRows)
@@ -694,7 +697,7 @@ Public Class DdfView
         End Try
     End Sub
 
-    Private Sub cboClsf_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboClsf.SelectedIndexChanged
+    Private Sub CboClsf_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboClsf.SelectedIndexChanged
         Try
             If _suppressComboEvent Then Return
             FillGrid(FilteredRows())
@@ -759,11 +762,11 @@ Public Class DdfView
     End Function
 
     ' ── Sub-navigarea ────────────────────────────────────────────────────────
-    Private Sub navSub_SelectionChanged(key As String) Handles navSub.SelectionChanged
+    Private Sub NavSub_SelectionChanged(key As String) Handles navSub.SelectionChanged
         Try
             ShowPage(key)
         Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.navSub_SelectionChanged", ex)
+            GlobalErrorLog.Write("DdfView.NavSub_SelectionChanged", ex)
         End Try
     End Sub
 
@@ -897,7 +900,7 @@ Public Class DdfView
         ' Nothing. Atunci arborele se construiește fără iconițe/culori (structura e aceeași),
         ' iar ApplyTheme reconstruiește când tema devine disponibilă.
         Dim current As ThemeScheme = ThemeManager.Current
-        Return If(current Is Nothing, Nothing, current.Palette)
+        Return current?.Palette
     End Function
 
     ''' <summary>

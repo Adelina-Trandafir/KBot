@@ -20,6 +20,9 @@ Public NotInheritable Class DataViewPlaygroundForm
         _originalScheme = ThemeManager.Current
         InitializeComponent()
         cboAutoSize.Items.AddRange(New Object() {"None", "ToContent"})
+        ' Pe coloană există și «Inherit» (implicitul), care nu are ce căuta pe grilă — de aceea
+        ' lista asta e a ei, cu alt index decât cea de sus (vezi ColumnModeAt/IndexOfColumnMode).
+        cboColAutoSize.Items.AddRange(New Object() {"Inherit (decide grila)", "None", "ToContent"})
         cboFill.Items.AddRange(New Object() {"None", "FirstColumn", "LastColumn", "Proportional"})
         cboRowCount.Items.AddRange(New Object() {"12", "200", "5000"})
         BuildColumns()
@@ -177,6 +180,9 @@ Public NotInheritable Class DataViewPlaygroundForm
     Private Sub chkReadOnly_CheckedChanged(sender As Object, e As EventArgs) Handles chkReadOnly.CheckedChanged
         Apply(Sub() grid.ReadOnlyGrid = chkReadOnly.Checked)
     End Sub
+    Private Sub btnClearFilters_Click(sender As Object, e As EventArgs) Handles btnClearFilters.Click
+        Apply(Sub() grid.ClearAllFilters())
+    End Sub
     Private Sub btnAutoSize_Click(sender As Object, e As EventArgs) Handles btnAutoSize.Click
         Apply(Sub() grid.AutoSizeColumns())
     End Sub
@@ -201,6 +207,12 @@ Public NotInheritable Class DataViewPlaygroundForm
         ApplyColumn()
     End Sub
     Private Sub chkColAutoHide_CheckedChanged(sender As Object, e As EventArgs) Handles chkColAutoHide.CheckedChanged
+        ApplyColumn()
+    End Sub
+    Private Sub chkColFilterable_CheckedChanged(sender As Object, e As EventArgs) Handles chkColFilterable.CheckedChanged
+        ApplyColumn()
+    End Sub
+    Private Sub cboColAutoSize_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboColAutoSize.SelectedIndexChanged
         ApplyColumn()
     End Sub
     Private Sub numColWidth_ValueChanged(sender As Object, e As EventArgs) Handles numColWidth.ValueChanged
@@ -228,6 +240,8 @@ Public NotInheritable Class DataViewPlaygroundForm
                 chkColEnabled.Checked = col.Enabled
                 chkColReadOnly.Checked = col.[ReadOnly]
                 chkColAutoHide.Checked = col.AutoHide
+                chkColFilterable.Checked = col.ShowColumnFilter
+                cboColAutoSize.SelectedIndex = IndexOfColumnMode(col.AutoSizeMode)
                 SetNum(numColWidth, col.Width)
                 SetNum(numColMin, col.MinWidth)
                 ' MaxWidth = Integer.MaxValue (sau peste raza numericului) => 0 «neplafonat».
@@ -258,16 +272,49 @@ Public NotInheritable Class DataViewPlaygroundForm
         ' ResetColumnSizing() (curăță UserSized => re-măsoară) contează doar la ToContent.
         btnReset.Enabled = toContent
 
-        ' Lățimea manuală a coloanei e suprascrisă de măsurare => editabilă doar în modul None.
-        lblColWidth.Enabled = Not toContent
-        numColWidth.Enabled = Not toContent
+        ' Lățimea manuală a coloanei e suprascrisă de măsurare => editabilă doar când coloana
+        ' SELECTATĂ nu se măsoară. Se întreabă modul EFECTIV (al coloanei, altfel al grilei):
+        ' de când coloana bate grila, steagul grilei singur ar minți în ambele sensuri.
+        Dim colToContent As Boolean = SelectedColumnSizesToContent()
+        lblColWidth.Enabled = Not colToContent
+        numColWidth.Enabled = Not colToContent
 
         ' ReadOnly are efect doar pe coloane editabile / comutabile (nu Button/ProgressBar).
         Dim col = SelectedColumn()
         chkColReadOnly.Enabled = col IsNot Nothing AndAlso
             (col.ColumnType = KBotColumnType.Text OrElse col.ColumnType = KBotColumnType.Combo OrElse
              col.ColumnType = KBotColumnType.CheckBox OrElse col.ColumnType = KBotColumnType.OptionButton)
+
+        ' Filtrarea nu se poate aprinde pe Button / ProgressBar (setarea ARUNCĂ) — bifa se stinge
+        ' aici, ca bancul să arate regula, nu s-o descopere printr-o excepție.
+        chkColFilterable.Enabled = col IsNot Nothing AndAlso
+            col.ColumnType <> KBotColumnType.Button AndAlso col.ColumnType <> KBotColumnType.ProgressBar
     End Sub
+
+    ' Lista coloanei începe cu «Inherit», deci indexul ei NU e valoarea enum-ului (Inherit = -1).
+    Private Shared Function ColumnModeAt(index As Integer) As KBotAutoSizeMode
+        Select Case index
+            Case 1 : Return KBotAutoSizeMode.None
+            Case 2 : Return KBotAutoSizeMode.ToContent
+            Case Else : Return KBotAutoSizeMode.Inherit
+        End Select
+    End Function
+
+    Private Shared Function IndexOfColumnMode(mode As KBotAutoSizeMode) As Integer
+        Select Case mode
+            Case KBotAutoSizeMode.None : Return 1
+            Case KBotAutoSizeMode.ToContent : Return 2
+            Case Else : Return 0
+        End Select
+    End Function
+
+    ' Modul EFECTIV al coloanei selectate: al ei dacă și-a spus părerea, altfel al grilei.
+    Private Function SelectedColumnSizesToContent() As Boolean
+        Dim col = SelectedColumn()
+        Dim mode As KBotAutoSizeMode = If(col Is Nothing OrElse col.AutoSizeMode = KBotAutoSizeMode.Inherit,
+                                          grid.AutoSizeColumnsMode, col.AutoSizeMode)
+        Return mode = KBotAutoSizeMode.ToContent
+    End Function
 
     Private Sub ApplyColumn()
         If _loading Then Return
@@ -281,6 +328,8 @@ Public NotInheritable Class DataViewPlaygroundForm
             col.Enabled = chkColEnabled.Checked
             col.[ReadOnly] = chkColReadOnly.Checked
             col.AutoHide = chkColAutoHide.Checked
+            col.ShowColumnFilter = chkColFilterable.Checked
+            col.AutoSizeMode = ColumnModeAt(cboColAutoSize.SelectedIndex)
             grid.AutoSizeColumns()     ' modelul coloanei nu are back-reference => forțăm trecerea
             RefreshInfo()
             UpdateDependentControls()  ' re-evaluează activările (fără a rescrie valorile în curs de editare)

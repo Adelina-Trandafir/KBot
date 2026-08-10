@@ -16,6 +16,7 @@ e logică (după control), nu după felul fișierului.
 | `DataView/` | `KBotDataView` (+ partial-urile `.Layout`/`.Painting`/`.Editing`/…), `KBotDataColumn`, `KBotDataColumnCollection`, `KBotDataRow`, enum-urile `KBotAggregate`/`KBotAutoSizeMode`/`KBotColumnType`/`KBotFillMode`; `DataView/Events/` ține `KBotCell*`/`KBotRow*`/`KBotButtonClickEventArgs` |
 | `Adobe/` | vizualizatorul Adobe: `AcroPdfHost`, `AcroPdfSurface`, găzduirea nativă (`AdobeReaderHost`, `AdobeWindow*`, `Adobe*Watcher`, registry, `IHostSurface`) |
 | `NavList/` | `KBotNavList`, `KBotNavItem`, `KBotNavItemCollection`, `KBotNavFlyout` + `KBotNavFlyoutStyle` (eticheta plutitoare a barei strânse), enum-urile `KBotNavOrientation`/`KBotNavAlign`/`KBotNavCorner`/`KBotNavCollapseState` |
+| `Popup/` | `CustomPopup` (+ partialele `.Painting`/`.Input`), `CustomPopupItem`, `CustomPopupItemCollection`, `CustomPopupItemEventArgs`, `PopupMnemonic` (litera de acces, funcție pură), `IPopupAnchor` (controlul care desfășoară meniul rămâne aprins cât e deschis) |
 | `CaptionBar/` | `KBotCaptionBar` |
 | `BusyBar/` | `KBotBusyBar` |
 | `Notice/` | `KBotNotice`, `NoticeKind` |
@@ -36,7 +37,9 @@ expus `Public` acolo: `ThemeManager`/`ThemePalette`, `IThemedControl`, `ThemeSha
 ## Ce NU intră aici
 
 - **`KBotThemedForm` / `KBotShellForm`** — sunt form-uri de bază, nu controale; stau în
-  `KBot.Theming`, lângă motorul de teme.
+  `KBot.Theming`, lângă motorul de teme. Nu se confundă cu ferestrele-ajutor ale unui control
+  (`KBotNavFlyout`, `TreeNodeFlyout`, `CustomPopup`): acelea moștenesc `Form` fiindcă au nevoie
+  de HWND propriu, dar aparțin controlului lor și stau în folderul familiei.
 - **Vederile din `KBot.App\Views\`** (`SumarView`, `IstoricView`, `DdfView`,
   `DdfFileBrowser`, `XfaXmlPreview`, `ReaderHostPreview`, `PlaceholderView`) — sunt ecrane
   ale aplicației: implementează `IAngajamentView` și cheamă API-ul. Mutate aici, ar trage

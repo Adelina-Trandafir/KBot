@@ -80,7 +80,7 @@ Public Class IstoricView
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
-        BuildColumns()
+        'BuildColumns()
         BuildValoriColumns()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
@@ -94,18 +94,18 @@ Public Class IstoricView
     ' Grila principală: Clasificație, Tip rând, Data, Descriere, Observații — FĂRĂ coloanele de
     ' valori și FĂRĂ rând de totaluri (cererea operatorului). «Observații» e ultima și se întinde
     ' (ColumnFillMode.LastColumn din Designer). Valorile <> 0 se mută în grila mică de detaliu.
-    Private Sub BuildColumns()
-        Try
-            grid.AddColumn(COL_CLSF, "Clasificație", KBotColumnType.Text, 150)
-            grid.AddColumn(COL_TIP, "Tip rând", KBotColumnType.Text, 120)
-            grid.AddColumn(COL_DATA, "Data", KBotColumnType.Text, 90)
-            grid.AddColumn(COL_DESC, "Descriere", KBotColumnType.Text, 240)
-            grid.AddColumn(COL_OBS, "Observații", KBotColumnType.Text, 240)
-        Catch ex As Exception
-            GlobalErrorLog.Write("IstoricView.BuildColumns", ex)
-            Throw
-        End Try
-    End Sub
+    'Private Sub BuildColumns()
+    '    Try
+    '        grid.AddColumn(COL_CLSF, "Clasificație", KBotColumnType.Text, 150)
+    '        grid.AddColumn(COL_TIP, "Tip rând", KBotColumnType.Text, 120)
+    '        grid.AddColumn(COL_DATA, "Data", KBotColumnType.Text, 90)
+    '        grid.AddColumn(COL_DESC, "Descriere", KBotColumnType.Text, 240)
+    '        grid.AddColumn(COL_OBS, "Observații", KBotColumnType.Text, 240)
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("IstoricView.BuildColumns", ex)
+    '        Throw
+    '    End Try
+    'End Sub
 
     ' Grila mică de detaliu: Tip (text) | Valoare (N2, dreapta). Un rând per valoare <> 0 a
     ' rândului selectat (crosstab/unpivot pe rând). Fără totaluri.
@@ -238,7 +238,7 @@ Public Class IstoricView
     ' Fără rând -> Descriere goală + grila de valori goală. Cu rând -> Descriere + un rând per
     ' valoare <> 0 (Tip | Valoare).
     Private Sub UpdateDetail(r As IstoricRand)
-        txtDescriere.Text = If(r Is Nothing, String.Empty, r.Descriere)
+        txtDescriere.Text = If(r Is Nothing, String.Empty, r.Observatii)
         gridValori.BeginUpdate()
         Try
             gridValori.ClearRows()

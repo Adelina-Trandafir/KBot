@@ -183,6 +183,16 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized resource of type System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property filter() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("filter", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property folder_open() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("folder_open", resourceCulture)
@@ -573,9 +583,79 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized resource of type System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property Papirus_Team_Papirus_Apps_Preferences_desktop_theme_24() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("Papirus-Team-Papirus-Apps-Preferences-desktop-theme.24", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property settings__1_() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("settings (1)", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property switch_theme() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("switch_theme", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property ThemeClassic() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("ThemeClassic", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property ThemeColorful() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("ThemeColorful", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property ThemeDark() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("ThemeDark", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property ThemeEditor() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("ThemeEditor", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property ThemeModern() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("ThemeModern", resourceCulture)
                 Return CType(obj,System.Drawing.Bitmap)
             End Get
         End Property

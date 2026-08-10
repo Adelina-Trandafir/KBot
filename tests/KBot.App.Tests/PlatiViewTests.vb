@@ -374,7 +374,7 @@ Public Class PlatiViewTests
                        Assert.Equal("19.01.2026", CStr(g.Rows(0)("data")))
                        Assert.Equal(1331.0, CDbl(g.Rows(0)("suma")), 2)
                        ' (Rândul de totaluri e verificat headless în KBotDataViewTotalsTests —
-                       '  DebugTotalsText e Friend în KBot.Controls, invizibil de aici.)
+                       '  DebugFooterText e Friend în KBot.Controls, invizibil de aici.)
                    End Using
                End Sub)
     End Sub

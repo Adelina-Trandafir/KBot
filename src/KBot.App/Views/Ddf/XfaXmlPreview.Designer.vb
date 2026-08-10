@@ -55,7 +55,7 @@ Partial Class XfaXmlPreview
         grid.ReadOnlyGrid = True
         grid.RowHeight = 28
         grid.ShowHeader = True
-        grid.ShowTotalsRow = False
+        grid.FooterVisible = False
         grid.TabIndex = 1
         '
         ' pnlHeader — perechile de antet + nota

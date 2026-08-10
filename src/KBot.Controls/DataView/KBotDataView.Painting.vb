@@ -22,8 +22,15 @@ Partial Class KBotDataView
 
             g.FillRectangle(_bRowBack, ClientRectangle)
 
-            DrawRows(g)
-            If _showTotalsRow AndAlso TotalsBandHeight() > 0 Then DrawTotalsRow(g)
+            ' Strâns pe verticală, corpul nu se mai desenează deloc: rămân doar cele două benzi
+            ' (vezi partiala .Collapse). Rândurile nu sunt „ascunse prin decupare”, ci sărite —
+            ' altfel virtualizarea ar continua să măsoare și să picteze sub bandă.
+            If BodyIsCollapsed() Then
+                DebugLastPaintedDataRows = 0
+            Else
+                DrawRows(g)
+            End If
+            If _showFooter AndAlso FooterBandHeight() > 0 Then DrawFooterBand(g)
             If _showHeader AndAlso _headerHeight > 0 Then DrawHeader(g)
 
             g.DrawRectangle(_pBorder, New Rectangle(0, 0, Width - 1, Height - 1))
@@ -37,9 +44,9 @@ Partial Class KBotDataView
     ' Banda de antet: fundal, textul coloanelor (înghețate + derulate), separatoare, bază.
     Private Sub DrawHeader(g As Graphics)
         Dim headerRect As New Rectangle(0, 0, ClientSize.Width, _headerHeight)
-        g.FillRectangle(_bHeaderBack, headerRect)
+        FillBand(g, headerRect, _bHeaderBack, _cHeaderGradientEnd)
 
-        Dim hf As Font = HeaderFont()
+        Dim hf As Font = ResolvedHeaderFont()
         Dim viewW As Integer = ViewportWidth()
 
         ' Banda derulată — decupată ca să nu treacă peste coloanele înghețate.
@@ -56,7 +63,7 @@ Partial Class KBotDataView
         ' English: repaint the frozen header band opaquely first, so an H-scrolled header cell
         ' can never bleed under the static column header (the frozen band is always on top).
         If _frozenBandWidth > 0 Then
-            g.FillRectangle(_bHeaderBack, New Rectangle(0, 0, _frozenBandWidth, _headerHeight))
+            FillBand(g, New Rectangle(0, 0, _frozenBandWidth, _headerHeight), _bHeaderBack, _cHeaderGradientEnd)
         End If
         For Each cl In _frozenLayout
             DrawHeaderCell(g, cl.Column, cl.X, hf)
@@ -67,75 +74,151 @@ Partial Class KBotDataView
         g.DrawLine(_pHeaderBaseline, 0, _headerHeight - 1, ClientSize.Width - 1, _headerHeight - 1)
     End Sub
 
+    ' Titlul + perechea de pictograme (slice 0028-02). Așezarea vine din partiala .HeaderIcons,
+    ' aceeași funcție pe care o folosește hit-testul — desenul și apăsarea nu au voie să difere.
     Private Sub DrawHeaderCell(g As Graphics, col As KBotDataColumn, x As Integer, hf As Font)
         Dim cellRect As New Rectangle(x, 0, col.Width, _headerHeight)
         If cellRect.Right < 0 OrElse cellRect.Left > ClientSize.Width Then Return
 
-        Dim padX As Integer = ScaleDpi(8)
-        Dim textRect As New Rectangle(cellRect.Left + padX, cellRect.Top,
-                                      Math.Max(0, cellRect.Width - 2 * padX), cellRect.Height)
-        TextRenderer.DrawText(g, col.HeaderText, hf, textRect, _cHeaderText,
-            HorizontalFlags(col.TextAlign) Or TextFormatFlags.VerticalCenter Or
-            TextFormatFlags.EndEllipsis)
+        Dim textRect As Rectangle = DrawHeaderIcons(g, col, cellRect)
+        If textRect.Width > 0 Then
+            TextRenderer.DrawText(g, col.HeaderText, hf, textRect, HeaderForeResolved(),
+                HorizontalFlags(col.HeaderTextAlign) Or TextFormatFlags.VerticalCenter Or
+                TextFormatFlags.EndEllipsis)
+        End If
 
         Dim sepX As Integer = cellRect.Right - 1
         g.DrawLine(_pHeaderSep, sepX, 0, sepX, _headerHeight - 1)
     End Sub
 
-    ' ── Bandă de totaluri (slice 0017-01) ────────────────────────────────────────
+    ' ── Banda de subsol (slice 0017-01; separatoare + buton în 0028) ──────────
 
-    ' English: the pinned totals band, drawn between the body and the horizontal scrollbar. It
-    ' reuses the header's band styling (same fill / separators / baseline reads — no literals),
-    ' and mirrors the header's frozen-over-scroll layering so a totals cell always sits under its
-    ' column, including with ScrollByColumn engaged. Not a row: no selection, no hit-testing.
-    Private Sub DrawTotalsRow(g As Graphics)
-        Dim bandH As Integer = TotalsBandHeight()
-        Dim bandTop As Integer = HeaderBandHeight() + ViewportHeight()
+    ''' <summary>
+    ''' Banda fixată de subsol, între corp și bara orizontală de derulare. Oglindește stratificarea
+    ''' antetului (înghețat PESTE derulat), deci o celulă de subsol stă întotdeauna sub coloana ei,
+    ''' inclusiv cu <c>ScrollByColumn</c> pornit. Nu e un rând: fără selecție, fără hit-testing.
+    '''
+    ''' <para><b>Liniile verticale.</b> Spre deosebire de antet, subsolul NU desparte toate
+    ''' coloanele: separatorul se desenează doar în jurul celor AGREGATE (slice 0028). Un șir de
+    ''' cutii goale despărțite cu linii arată ca niște totaluri care lipsesc; fără linii, banda
+    ''' arată ce este — câteva valori, sub coloanele lor.</para>
+    ''' </summary>
+    Private Sub DrawFooterBand(g As Graphics)
+        Dim bandH As Integer = FooterBandHeight()
+        Dim bandTop As Integer = FooterBandTop()
         Dim bandRect As New Rectangle(0, bandTop, ClientSize.Width, bandH)
-        g.FillRectangle(_bHeaderBack, bandRect)
+        FillBand(g, bandRect, _bFooterBack, _cFooterGradientEnd)
 
-        Dim tf As Font = HeaderFont()
+        Dim tf As Font = ResolvedFooterFont()
         Dim viewW As Integer = ViewportWidth()
 
-        ' Scroll band — clipped so it cannot bleed under the frozen columns.
-        Dim scrollClip As New Rectangle(_frozenBandWidth, bandTop,
-                                        Math.Max(0, viewW - _frozenBandWidth), bandH)
+        ' Butonul de strângere își ia latura lui din bandă: textul agregatelor se decupează
+        ' înaintea lui, ca o sumă lungă să nu curgă pe sub buton. Coloanele NU se re-așază —
+        ' X-urile rămân cele din antet, altfel subsolul s-ar desprinde de coloanele lui.
+        Dim contentRect As Rectangle = FooterContentRect(bandRect)
+
+        ' Banda derulată — decupată ca să nu treacă peste coloanele înghețate.
+        Dim scrollLeft As Integer = Math.Max(_frozenBandWidth, contentRect.Left)
+        Dim scrollClip As New Rectangle(scrollLeft, bandTop,
+                                        Math.Max(0, Math.Min(viewW, contentRect.Right) - scrollLeft), bandH)
         g.SetClip(scrollClip)
         Dim hOffset As Integer = HScrollOffset()
-        For Each cl In _scrollLayout
-            DrawTotalsCell(g, cl.Column, _frozenBandWidth + cl.X - hOffset, bandTop, bandH, tf)
+        For i As Integer = 0 To _scrollLayout.Count - 1
+            Dim cl As ColLayout = _scrollLayout(i)
+            ' Vecinul din STÂNGA celei dintâi coloane derulate e ultima coloană înghețată.
+            Dim stanga As KBotDataColumn = If(i > 0, _scrollLayout(i - 1).Column,
+                                              If(_frozenLayout.Count > 0, _frozenLayout(_frozenLayout.Count - 1).Column, Nothing))
+            DrawFooterCell(g, cl.Column, stanga, _frozenBandWidth + cl.X - hOffset, bandTop, bandH, tf)
         Next
         g.ResetClip()
 
-        ' Frozen band — opaque repaint, then its cells, drawn PESTE the scroll band.
+        ' Banda înghețată — repictare opacă, apoi celulele ei, desenate PESTE cea derulată.
         If _frozenBandWidth > 0 Then
-            g.FillRectangle(_bHeaderBack, New Rectangle(0, bandTop, _frozenBandWidth, bandH))
+            FillBand(g, New Rectangle(0, bandTop, _frozenBandWidth, bandH), _bFooterBack, _cFooterGradientEnd)
         End If
-        For Each cl In _frozenLayout
-            DrawTotalsCell(g, cl.Column, cl.X, bandTop, bandH, tf)
+        Dim frozenClip As New Rectangle(contentRect.Left, bandTop,
+                                        Math.Max(0, Math.Min(_frozenBandWidth, contentRect.Right) - contentRect.Left), bandH)
+        g.SetClip(frozenClip)
+        For i As Integer = 0 To _frozenLayout.Count - 1
+            Dim cl As ColLayout = _frozenLayout(i)
+            Dim stanga As KBotDataColumn = If(i > 0, _frozenLayout(i - 1).Column, Nothing)
+            DrawFooterCell(g, cl.Column, stanga, cl.X, bandTop, bandH, tf)
         Next
+        g.ResetClip()
 
-        ' Separating rule + accent along the TOP edge (between body and totals), mirroring the
-        ' header's baseline reads.
-        g.DrawLine(_pHeaderSep, 0, bandTop, ClientSize.Width - 1, bandTop)
-        g.DrawLine(_pHeaderBaseline, 0, bandTop, ClientSize.Width - 1, bandTop)
+        ' Titlul din stânga (slice 0028-02) — după celule, ca să stea peste banda deja umplută, dar
+        ' înaintea liniilor: zona lui se oprește oricum la prima coloană agregată.
+        DrawFooterCaption(g, bandRect, tf)
+
+        ' Linia de despărțire + accentul pe muchia de SUS (între corp și subsol), perechea
+        ' liniei de sub antet.
+        g.DrawLine(_pFooterSep, 0, bandTop, ClientSize.Width - 1, bandTop)
+        g.DrawLine(_pFooterBaseline, 0, bandTop, ClientSize.Width - 1, bandTop)
+
+        ' Butonul de strângere, ultimul: stă PESTE bandă, în colțul care îi aparține.
+        Dim butonRect As Rectangle = ComputeCollapseButtonRect(bandRect)
+        If Not butonRect.IsEmpty Then DrawCollapseButton(g, butonRect)
     End Sub
 
-    Private Sub DrawTotalsCell(g As Graphics, col As KBotDataColumn, x As Integer,
-                               bandTop As Integer, bandH As Integer, tf As Font)
+    ' O celulă de subsol. «stanga» = coloana vecină din stânga (Nothing = nu există): din ea se
+    ' deduce dacă muchia stângă a unei coloane agregate a fost deja desenată de vecin.
+    Private Sub DrawFooterCell(g As Graphics, col As KBotDataColumn, stanga As KBotDataColumn,
+                               x As Integer, bandTop As Integer, bandH As Integer, tf As Font)
         Dim cellRect As New Rectangle(x, bandTop, col.Width, bandH)
         If cellRect.Right < 0 OrElse cellRect.Left > ClientSize.Width Then Return
 
-        Dim text As String = TotalsTextFor(col)
-        Dim padX As Integer = ScaleDpi(8)
-        Dim textRect As New Rectangle(cellRect.Left + padX, cellRect.Top,
-                                      Math.Max(0, cellRect.Width - 2 * padX), cellRect.Height)
-        TextRenderer.DrawText(g, text, tf, textRect, _cHeaderText,
-            HorizontalFlags(col.TextAlign) Or TextFormatFlags.VerticalCenter Or
-            TextFormatFlags.EndEllipsis)
+        Dim agregata As Boolean = col.Aggregate <> KBotAggregate.None
 
-        Dim sepX As Integer = cellRect.Right - 1
-        g.DrawLine(_pHeaderSep, sepX, bandTop, sepX, bandTop + bandH - 1)
+        If agregata Then
+            Dim text As String = FooterTextFor(col)
+            Dim padX As Integer = ScaleDpi(8)
+            Dim textRect As New Rectangle(cellRect.Left + padX, cellRect.Top,
+                                          Math.Max(0, cellRect.Width - 2 * padX), cellRect.Height)
+            TextRenderer.DrawText(g, text, tf, textRect, FooterForeResolved(),
+                HorizontalFlags(col.TextAlign) Or TextFormatFlags.VerticalCenter Or
+                TextFormatFlags.EndEllipsis)
+        End If
+
+        If FooterDrawsRightSeparator(col) Then
+            Dim sepX As Integer = cellRect.Right - 1
+            g.DrawLine(_pFooterSep, sepX, bandTop, sepX, bandTop + bandH - 1)
+        End If
+        If FooterDrawsLeftSeparator(col, stanga) Then
+            g.DrawLine(_pFooterSep, cellRect.Left, bandTop, cellRect.Left, bandTop + bandH - 1)
+        End If
+    End Sub
+
+    ''' <summary>
+    ''' Muchia DREAPTĂ a unei celule de subsol se desenează? Doar pentru coloanele agregate —
+    ''' regula cerută în 0028. Funcție pură: o folosește pictarea, o verifică testul (o regulă
+    ''' de desen ascunsă într-un <c>OnPaint</c> nu se poate verifica decât cu ochiul).
+    ''' </summary>
+    Friend Shared Function FooterDrawsRightSeparator(col As KBotDataColumn) As Boolean
+        Return col IsNot Nothing AndAlso col.Aggregate <> KBotAggregate.None
+    End Function
+
+    ''' <summary>
+    ''' Muchia STÂNGĂ se desenează doar când coloana e agregată IAR vecinul din stânga nu e
+    ''' (altfel el a desenat-o deja, ca muchie a lui dreaptă). Așa o valoare rămâne închisă între
+    ''' două linii, fără ca vecinele goale să capete vreuna. <c>stanga = Nothing</c> înseamnă
+    ''' «nu există vecin» — marginea controlului, unde chenarul e deja desenat.
+    ''' </summary>
+    Friend Shared Function FooterDrawsLeftSeparator(col As KBotDataColumn, stanga As KBotDataColumn) As Boolean
+        If col Is Nothing OrElse col.Aggregate = KBotAggregate.None Then Return False
+        If stanga Is Nothing Then Return False
+        Return stanga.Aggregate = KBotAggregate.None
+    End Function
+
+    ' Fundalul unei benzi: plin, sau în degrade când SCHEMA cere așa (Modern) — vezi _bandGradient.
+    Private Sub FillBand(g As Graphics, rect As Rectangle, plin As SolidBrush, capat As Color)
+        If rect.Width <= 0 OrElse rect.Height <= 0 Then Return
+        If Not _bandGradient Then
+            g.FillRectangle(plin, rect)
+            Return
+        End If
+        Using lg As New LinearGradientBrush(rect, plin.Color, capat, LinearGradientMode.Vertical)
+            g.FillRectangle(lg, rect)
+        End Using
     End Sub
 
     ' ── Rânduri (virtualizat) ───────────────────────────────────────────────────
@@ -148,7 +231,7 @@ Partial Class KBotDataView
         Dim bodyH As Integer = ViewportHeight()
         Dim viewW As Integer = ViewportWidth()
 
-        If bodyH <= 0 OrElse _rows.Count = 0 Then
+        If bodyH <= 0 OrElse ViewCount() = 0 Then
             DebugLastPaintedDataRows = 0
             Return
         End If
@@ -171,9 +254,15 @@ Partial Class KBotDataView
         DebugLastPaintedDataRows = painted
     End Sub
 
-    Private Sub DrawRow(g As Graphics, rowIndex As Integer, y As Integer, viewW As Integer)
+    ' English (slice 0028-03): viewPosition is the ON-SCREEN slot; rowIndex below is the MODEL
+    ' index, and that is the one every event argument carries — a handler must never have to know
+    ' that a filter is on. The stripe, by contrast, follows the VIEW position: alternating colours
+    ' describe the printed page, so they have to stay alternating after rows are filtered out.
+    Private Sub DrawRow(g As Graphics, viewPosition As Integer, y As Integer, viewW As Integer)
+        Dim rowIndex As Integer = ModelIndexAt(viewPosition)
+        If rowIndex < 0 Then Return
         Dim row As KBotDataRow = _rows(rowIndex)
-        Dim isAlt As Boolean = _alternatingRows AndAlso (rowIndex Mod 2 = 1)
+        Dim isAlt As Boolean = _alternatingRows AndAlso (viewPosition Mod 2 = 1)
         Dim isSelected As Boolean = (rowIndex = _currentRowIndex)
 
         ' Fundalul implicit al rândului: normal / alternant, iar dacă e selectat, spălarea
@@ -252,7 +341,7 @@ Partial Class KBotDataView
 
         ' CellFormatting — argumente REFOLOSITE, pre-umplute cu valorile implicite din temă.
         _cellArgs.Reset(col, row, rowIndex, value, FormatValue(value, col),
-                        rowBack, rowFore, Font, col.TextAlign,
+                        rowBack, rowFore, col.ColumnFont, col.TextAlign,
                         col.Enabled AndAlso rowEnabled)
         RaiseEvent CellFormatting(Me, _cellArgs)
 
@@ -472,15 +561,59 @@ Partial Class KBotDataView
     ''' <summary>Valoarea formatată pentru afișare (aplică <c>Column.FormatString</c>).</summary>
     Private Shared Function FormatValue(value As Object, col As KBotDataColumn) As String
         If value Is Nothing Then Return String.Empty
+
+        ' Zecimalele fixate (slice 0028) taie ÎNAINTEA formatării: rotunjim numărul, apoi îl
+        ' formatăm. Invers — «N4» peste o valoare deja formatată — n-ar mai avea ce rotunji.
+        Dim rotunjit As Object = RoundForDisplay(value, col)
+
+        ' Formatul NUMIT (slice 0028-02) merge înaintea lui FormatString fiindcă el știe și să
+        ' citească valoarea, nu doar s-o formateze. Cele două nu pot fi setate amândouă (vezi
+        ' KBotDataColumn.Format), deci nu e o precedență, e singura cale disponibilă.
+        Dim numit As String = Nothing
+        If KBotColumnFormat.TryFormat(rotunjit, col.Format, col.DecimalPlaces, numit) Then Return numit
+
         If Not String.IsNullOrEmpty(col.FormatString) Then
-            Dim f As IFormattable = TryCast(value, IFormattable)
+            Dim f As IFormattable = TryCast(rotunjit, IFormattable)
             If f IsNot Nothing Then Return f.ToString(col.FormatString, CultureInfo.CurrentCulture)
         End If
-        Return value.ToString()
+
+        ' Fără FormatString, zecimalele fixate SPUN singure formatul: 2 zecimale înseamnă două
+        ' zecimale scrise, nu «2,5» pentru 2,50. Altfel proprietatea ar rotunji fără să se vadă.
+        If col.HasDecimalPlaces Then
+            Dim d As Double
+            If TryNumeric(rotunjit, d) Then Return d.ToString("F" & col.DecimalPlaces.ToString(CultureInfo.InvariantCulture),
+                                                              CultureInfo.CurrentCulture)
+        End If
+
+        Return rotunjit.ToString()
+    End Function
+
+    ''' <summary>
+    ''' Valoarea rotunjită la <see cref="KBotDataColumn.DecimalPlaces"/>, dacă sunt fixate și dacă
+    ''' valoarea e numerică; altfel valoarea neatinsă. Rotunjire NORMALĂ (0,5 în sus) — nu
+    ''' implicitul .NET, care rotunjește „la par” și ar da 2 pentru 2,5.
+    '''
+    ''' Friend: o folosesc și pictarea (prin <c>FormatValue</c>) și agregatele din subsol, ca ce se
+    ''' adună să fie exact ce se vede.
+    ''' </summary>
+    Friend Shared Function RoundForDisplay(value As Object, col As KBotDataColumn) As Object
+        If value Is Nothing OrElse col Is Nothing OrElse Not col.HasDecimalPlaces Then Return value
+
+        ' Decimal se rotunjește ca Decimal: trecerea prin Double ar pierde exact precizia pentru
+        ' care cineva a ales Decimal la coloane de bani.
+        If TypeOf value Is Decimal Then
+            Return Math.Round(CDec(value), col.DecimalPlaces, MidpointRounding.AwayFromZero)
+        End If
+
+        Dim d As Double
+        If Not TryNumeric(value, d) Then Return value        ' text ne-numeric etc.: neatins
+        Return Math.Round(d, col.DecimalPlaces, MidpointRounding.AwayFromZero)
     End Function
 
     ' Coerciție tolerantă la Boolean pentru celulele de tip bifă (fără excepții).
-    Private Shared Function ToBool(value As Object) As Boolean
+    ''' <summary>Friend: o reia și <see cref="KBotColumnFormat"/>, ca „bifat” să însemne același
+    ''' lucru în celulă și în formatul numit «Yes/No».</summary>
+    Friend Shared Function ToBool(value As Object) As Boolean
         If value Is Nothing Then Return False
         If TypeOf value Is Boolean Then Return CBool(value)
         Dim s As String = value.ToString().Trim()

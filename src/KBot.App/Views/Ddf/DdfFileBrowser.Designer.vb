@@ -32,7 +32,7 @@ Partial Class DdfFileBrowser
         grid.ReadOnlyGrid = True
         grid.RowHeight = 28
         grid.ShowHeader = True
-        grid.ShowTotalsRow = False
+        grid.FooterVisible = False
         grid.Size = New Size(641, 460)
         grid.TabIndex = 0
         '

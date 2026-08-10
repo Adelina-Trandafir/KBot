@@ -250,7 +250,7 @@ Public Class IstoricViewTests
                            Assert.Equal(KBotAggregate.None, col.Aggregate)   ' niciun agregat
                        Next
                        Assert.Equal(New String() {"clsf", "tip", "data", "desc", "obs"}, keys.ToArray())
-                       Assert.False(g.ShowTotalsRow)                          ' fără rând de totaluri
+                       Assert.False(g.FooterVisible)                          ' fără rând de totaluri
                        Assert.Equal(KBot.Controls.KBotFillMode.LastColumn, g.ColumnFillMode)
                    End Using
                End Sub)

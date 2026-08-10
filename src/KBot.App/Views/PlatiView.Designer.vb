@@ -124,7 +124,7 @@ Partial Class PlatiView
         grid.RowHeight = 28
         grid.ScrollByColumn = True
         grid.ShowHeader = True
-        grid.ShowTotalsRow = True
+        grid.FooterVisible = True
         grid.Size = New Size(641, 340)
         grid.TabIndex = 0
         '

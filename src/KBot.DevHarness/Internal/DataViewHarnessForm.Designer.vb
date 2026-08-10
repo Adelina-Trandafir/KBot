@@ -13,6 +13,8 @@ Partial Class DataViewHarnessForm
     Friend WithEvents chkScrollByColumn As System.Windows.Forms.CheckBox
     Friend WithEvents chkAutoHide As System.Windows.Forms.CheckBox
     Friend WithEvents chkTotals As System.Windows.Forms.CheckBox
+    Friend WithEvents chkCollapseButton As System.Windows.Forms.CheckBox
+    Friend WithEvents chkCollapseVertical As System.Windows.Forms.CheckBox
     Friend WithEvents lblInfo As System.Windows.Forms.Label
 
     Friend WithEvents grid As KBot.Controls.KBotDataView
@@ -30,6 +32,8 @@ Partial Class DataViewHarnessForm
         Me.chkScrollByColumn = New System.Windows.Forms.CheckBox()
         Me.chkAutoHide = New System.Windows.Forms.CheckBox()
         Me.chkTotals = New System.Windows.Forms.CheckBox()
+        Me.chkCollapseButton = New System.Windows.Forms.CheckBox()
+        Me.chkCollapseVertical = New System.Windows.Forms.CheckBox()
         Me.lblInfo = New System.Windows.Forms.Label()
         Me.grid = New KBot.Controls.KBotDataView()
         Me.pnlButtons = New System.Windows.Forms.FlowLayoutPanel()
@@ -51,6 +55,8 @@ Partial Class DataViewHarnessForm
         Me.pnlTop.Controls.Add(Me.chkScrollByColumn)
         Me.pnlTop.Controls.Add(Me.chkAutoHide)
         Me.pnlTop.Controls.Add(Me.chkTotals)
+        Me.pnlTop.Controls.Add(Me.chkCollapseButton)
+        Me.pnlTop.Controls.Add(Me.chkCollapseVertical)
         Me.pnlTop.Controls.Add(Me.lblInfo)
         Me.pnlTop.Name = "pnlTop"
         '
@@ -98,6 +104,22 @@ Partial Class DataViewHarnessForm
         Me.chkTotals.Text = "Rând de totaluri"
         Me.chkTotals.UseVisualStyleBackColor = True
         Me.chkTotals.Name = "chkTotals"
+        '
+        'chkCollapseButton — butonul de strângere din subsol (slice 0028)
+        '
+        Me.chkCollapseButton.AutoSize = True
+        Me.chkCollapseButton.Margin = New System.Windows.Forms.Padding(12, 6, 3, 3)
+        Me.chkCollapseButton.Text = "Buton de strângere"
+        Me.chkCollapseButton.UseVisualStyleBackColor = True
+        Me.chkCollapseButton.Name = "chkCollapseButton"
+        '
+        'chkCollapseVertical — axa strângerii (slice 0028)
+        '
+        Me.chkCollapseVertical.AutoSize = True
+        Me.chkCollapseVertical.Margin = New System.Windows.Forms.Padding(12, 6, 3, 3)
+        Me.chkCollapseVertical.Text = "Strânge pe verticală"
+        Me.chkCollapseVertical.UseVisualStyleBackColor = True
+        Me.chkCollapseVertical.Name = "chkCollapseVertical"
         '
         'lblInfo
         '

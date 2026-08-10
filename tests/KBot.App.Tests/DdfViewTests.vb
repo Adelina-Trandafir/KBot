@@ -216,7 +216,9 @@ Public Class DdfViewTests
         t.SetApartmentState(ApartmentState.STA)
         t.Start()
         t.Join()
-        If failure IsNot Nothing Then Throw failure
+        ' «Throw failure» ar reseta urma de stivă la linia asta, adică fiecare eșec din firul STA
+        ' s-ar raporta ca o excepție fără loc. Capture().Throw() o păstrează pe cea originală.
+        If failure IsNot Nothing Then Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw()
     End Sub
 
     Private Shared Function Loaded(api As FakeApiClient, view As DdfView) As AdvancedTreeControl
@@ -448,7 +450,7 @@ Public Class DdfViewTests
                    Dim api As New FakeApiClient()
                    Using view As New DdfView(api, PassThrough())
                        Dim g = GridOf(view)
-                       Assert.True(g.ShowTotalsRow)
+                       Assert.True(g.FooterVisible)
                        Assert.Equal(KBotAggregate.Sum, g.Column("valcur").Aggregate)
                        For Each key As String In New String() {"clsf", "element", "data", "valprec", "valtot"}
                            Assert.Equal(KBotAggregate.None, g.Column(key).Aggregate)

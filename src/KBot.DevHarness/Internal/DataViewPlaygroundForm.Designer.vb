@@ -35,6 +35,8 @@ Partial Class DataViewPlaygroundForm
     Friend WithEvents chkHeader As System.Windows.Forms.CheckBox
     Friend WithEvents chkAlt As System.Windows.Forms.CheckBox
     Friend WithEvents chkReadOnly As System.Windows.Forms.CheckBox
+    Friend WithEvents btnClearFilters As System.Windows.Forms.Button
+    Friend WithEvents chkColFilterable As System.Windows.Forms.CheckBox
     Friend WithEvents btnAutoSize As System.Windows.Forms.Button
     Friend WithEvents btnReset As System.Windows.Forms.Button
     Friend WithEvents lblSecCol As System.Windows.Forms.Label
@@ -43,6 +45,8 @@ Partial Class DataViewPlaygroundForm
     Friend WithEvents chkColEnabled As System.Windows.Forms.CheckBox
     Friend WithEvents chkColReadOnly As System.Windows.Forms.CheckBox
     Friend WithEvents chkColAutoHide As System.Windows.Forms.CheckBox
+    Friend WithEvents lblColAutoSize As System.Windows.Forms.Label
+    Friend WithEvents cboColAutoSize As System.Windows.Forms.ComboBox
     Friend WithEvents lblColWidth As System.Windows.Forms.Label
     Friend WithEvents numColWidth As System.Windows.Forms.NumericUpDown
     Friend WithEvents lblColMin As System.Windows.Forms.Label
@@ -81,6 +85,8 @@ Partial Class DataViewPlaygroundForm
         Me.chkHeader = New System.Windows.Forms.CheckBox()
         Me.chkAlt = New System.Windows.Forms.CheckBox()
         Me.chkReadOnly = New System.Windows.Forms.CheckBox()
+        Me.btnClearFilters = New System.Windows.Forms.Button()
+        Me.chkColFilterable = New System.Windows.Forms.CheckBox()
         Me.btnAutoSize = New System.Windows.Forms.Button()
         Me.btnReset = New System.Windows.Forms.Button()
         Me.lblSecCol = New System.Windows.Forms.Label()
@@ -89,6 +95,8 @@ Partial Class DataViewPlaygroundForm
         Me.chkColEnabled = New System.Windows.Forms.CheckBox()
         Me.chkColReadOnly = New System.Windows.Forms.CheckBox()
         Me.chkColAutoHide = New System.Windows.Forms.CheckBox()
+        Me.lblColAutoSize = New System.Windows.Forms.Label()
+        Me.cboColAutoSize = New System.Windows.Forms.ComboBox()
         Me.lblColWidth = New System.Windows.Forms.Label()
         Me.numColWidth = New System.Windows.Forms.NumericUpDown()
         Me.lblColMin = New System.Windows.Forms.Label()
@@ -155,6 +163,7 @@ Partial Class DataViewPlaygroundForm
         Me.flowLeft.Controls.Add(Me.chkHeader)
         Me.flowLeft.Controls.Add(Me.chkAlt)
         Me.flowLeft.Controls.Add(Me.chkReadOnly)
+        Me.flowLeft.Controls.Add(Me.btnClearFilters)
         Me.flowLeft.Controls.Add(Me.btnAutoSize)
         Me.flowLeft.Controls.Add(Me.btnReset)
         Me.flowLeft.Controls.Add(Me.lblSecCol)
@@ -163,6 +172,9 @@ Partial Class DataViewPlaygroundForm
         Me.flowLeft.Controls.Add(Me.chkColEnabled)
         Me.flowLeft.Controls.Add(Me.chkColReadOnly)
         Me.flowLeft.Controls.Add(Me.chkColAutoHide)
+        Me.flowLeft.Controls.Add(Me.chkColFilterable)
+        Me.flowLeft.Controls.Add(Me.lblColAutoSize)
+        Me.flowLeft.Controls.Add(Me.cboColAutoSize)
         Me.flowLeft.Controls.Add(Me.lblColWidth)
         Me.flowLeft.Controls.Add(Me.numColWidth)
         Me.flowLeft.Controls.Add(Me.lblColMin)
@@ -189,6 +201,7 @@ Partial Class DataViewPlaygroundForm
         Me.chkHeader.AutoSize = True : Me.chkHeader.Text = "ShowHeader" : Me.chkHeader.Checked = True : Me.chkHeader.Name = "chkHeader"
         Me.chkAlt.AutoSize = True : Me.chkAlt.Text = "AlternatingRows" : Me.chkAlt.Checked = True : Me.chkAlt.Name = "chkAlt"
         Me.chkReadOnly.AutoSize = True : Me.chkReadOnly.Text = "ReadOnlyGrid" : Me.chkReadOnly.Name = "chkReadOnly"
+        Me.btnClearFilters.AutoSize = True : Me.btnClearFilters.Text = "ClearAllFilters()" : Me.btnClearFilters.Name = "btnClearFilters" : Me.btnClearFilters.UseVisualStyleBackColor = True
         Me.btnAutoSize.AutoSize = True : Me.btnAutoSize.Text = "AutoSizeColumns()" : Me.btnAutoSize.Name = "btnAutoSize" : Me.btnAutoSize.UseVisualStyleBackColor = True
         Me.btnReset.AutoSize = True : Me.btnReset.Text = "ResetColumnSizing()" : Me.btnReset.Name = "btnReset" : Me.btnReset.UseVisualStyleBackColor = True
         '
@@ -198,6 +211,9 @@ Partial Class DataViewPlaygroundForm
         Me.chkColEnabled.AutoSize = True : Me.chkColEnabled.Text = "Enabled" : Me.chkColEnabled.Name = "chkColEnabled"
         Me.chkColReadOnly.AutoSize = True : Me.chkColReadOnly.Text = "ReadOnly" : Me.chkColReadOnly.Name = "chkColReadOnly"
         Me.chkColAutoHide.AutoSize = True : Me.chkColAutoHide.Text = "AutoHide (dispare când nu încape)" : Me.chkColAutoHide.Name = "chkColAutoHide"
+        Me.chkColFilterable.AutoSize = True : Me.chkColFilterable.Text = "ShowColumnFilter (meniu ca în Access)" : Me.chkColFilterable.Name = "chkColFilterable"
+        Me.lblColAutoSize.AutoSize = True : Me.lblColAutoSize.Text = "AutoSizeMode (bate modul grilei)" : Me.lblColAutoSize.Name = "lblColAutoSize"
+        Me.cboColAutoSize.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList : Me.cboColAutoSize.Width = 250 : Me.cboColAutoSize.Name = "cboColAutoSize"
         Me.lblColWidth.AutoSize = True : Me.lblColWidth.Text = "Width" : Me.lblColWidth.Name = "lblColWidth"
         Me.numColWidth.Minimum = 0D : Me.numColWidth.Maximum = 4000D : Me.numColWidth.Value = 100D : Me.numColWidth.Width = 120 : Me.numColWidth.Name = "numColWidth"
         Me.lblColMin.AutoSize = True : Me.lblColMin.Text = "MinWidth" : Me.lblColMin.Name = "lblColMin"

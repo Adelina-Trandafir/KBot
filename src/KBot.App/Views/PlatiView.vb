@@ -75,7 +75,7 @@ Public Class PlatiView
     End Property
 
     ''' <summary>
-    ''' Strângerea arborelui (felia 0027-03, aceeași înțelegere ca în MainForm): arborele e
+    ''' Strângerea arborelui (felia 0028, aceeași înțelegere ca în MainForm): arborele e
     ''' <c>Dock = Fill</c> în <c>split.Panel1</c>, deci lățimea NU e a lui — el schimbă starea
     ''' și ne anunță, GAZDA mută splitter-ul. <c>Panel1MinSize</c> păzește TRAGEREA splitter-ului;
     ''' strângerea e o comandă, nu o tragere, deci coborâm paza cât ține starea.
@@ -124,6 +124,8 @@ Public Class PlatiView
             Dim colSuma As KBotDataColumn = grid.AddColumn(COL_SUMA, "Suma", KBotColumnType.Text, 120)
             colSuma.FormatString = "N2"
             colSuma.TextAlign = ContentAlignment.MiddleRight
+            ' ValueType ÎNAINTE de Aggregate: suma se cere doar unei coloane numerice (0028).
+            colSuma.ValueType = KBotValueType.Number
             colSuma.Aggregate = KBotAggregate.Sum
         Catch ex As Exception
             GlobalErrorLog.Write("PlatiView.BuildColumns", ex)

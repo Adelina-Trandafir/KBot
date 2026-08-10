@@ -154,8 +154,9 @@ Public Class KBotDataColumnDesignerTests
         ' The totals band must be live for a column added straight into the collection, exactly
         ' as it is for one added through AddColumn.
         Using dv As New KBotDataView()
-            dv.ShowTotalsRow = True
+            dv.FooterVisible = True
             Dim col As New KBotDataColumn("val", "Valoare", KBotColumnType.Text, 80) With {
+                .ValueType = KBotValueType.Number,
                 .Aggregate = KBotAggregate.Sum
             }
             dv.Columns.Add(col)
@@ -163,7 +164,7 @@ Public Class KBotDataColumnDesignerTests
             dv.AddRow()("val") = 10
             dv.AddRow()("val") = 32
             dv.EndUpdate()
-            Assert.Equal("42", dv.DebugTotalsText("val"))
+            Assert.Equal("42", dv.DebugFooterText("val"))
         End Using
     End Sub
 
@@ -272,21 +273,21 @@ Public Class KBotDataColumnDesignerTests
     End Sub
 
     <Fact>
-    Public Sub TotalsRowHeight_IsNotSerializedWhileItTracksTheHeader()
+    Public Sub FooterHeight_IsNotSerializedWhileItTracksTheHeader()
         ' The getter resolves to HeaderHeight when unset, so a DefaultValue would make the
         ' designer write the RESOLVED number and pin the band for good.
         Using dv As New KBotDataView()
-            Dim prop As PropertyDescriptor = TypeDescriptor.GetProperties(dv)("TotalsRowHeight")
+            Dim prop As PropertyDescriptor = TypeDescriptor.GetProperties(dv)("FooterHeight")
             Assert.False(prop.ShouldSerializeValue(dv))
-            Assert.Equal(dv.HeaderHeight, dv.TotalsRowHeight)
+            Assert.Equal(dv.HeaderHeight, dv.FooterHeight)
 
-            dv.TotalsRowHeight = 44
+            dv.FooterHeight = 44
             Assert.True(prop.ShouldSerializeValue(dv))
-            Assert.Equal(44, dv.TotalsRowHeight)
+            Assert.Equal(44, dv.FooterHeight)
 
             prop.ResetValue(dv)
             Assert.False(prop.ShouldSerializeValue(dv))
-            Assert.Equal(dv.HeaderHeight, dv.TotalsRowHeight)
+            Assert.Equal(dv.HeaderHeight, dv.FooterHeight)
         End Using
     End Sub
 

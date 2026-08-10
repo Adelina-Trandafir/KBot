@@ -6,6 +6,7 @@ Imports System.Linq
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Threading
 Imports System.Threading.Tasks
+Imports System.Windows.Controls
 Imports System.Windows.Forms
 Imports KBot.Api
 Imports KBot.Common
@@ -78,7 +79,7 @@ Public Class MainForm
         ' Fără plasă proprie: 401-ul e control-flow (re-login), iar orice alt eșec e deja
         ' logat + arătat de apelant (LoadAngajamenteAsync / btnSinc_Click via _logger).
         ' VB.NET nu permite Await într-un Catch: capturăm 401-ul și continuăm sub Try.
-        Dim expired As ApiException = Nothing
+        Dim expired As ApiException
         Try
             Return Await action().ConfigureAwait(True)
         Catch ex As ApiException When IsContextMismatch(ex)
@@ -143,7 +144,7 @@ Public Class MainForm
             Directory.CreateDirectory(logDir)
 
             Try
-                _logger = New RichTextBoxLogger(New RichTextBox()) With {
+                _logger = New RichTextBoxLogger(New System.Windows.Forms.RichTextBox()) With {
                     .EnableUI = False,
                     .LogFilePath = Path.Combine(logDir, $"Log_{DateTime.Now:yyyyMMdd_HHmmss}.txt")
                 }
@@ -307,11 +308,11 @@ Public Class MainForm
 
     ' Schimbarea anului reface SS-urile anului (care fixează perioada) și RE-CITEȘTE
     ' arborele: an-ul e filtru pe server, deci datele vechi nu mai sunt valabile.
-    Private Async Sub cboAn_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboAn.SelectedIndexChanged
+    Private Async Sub CboAn_SelectedIndexChanged(sender As Object, e As EventArgs)
         Try
             If _suppressPeriodEvents Then Return
-            LoadSsForSelectedYear()
-            Await LoadTreeAsync()
+            LoadSsForSelectedYear
+            Await LoadTreeAsync
         Catch ex As Exception
             ' Boundary UI: un handler nu poate rearunca (ar dărâma procesul) — logăm și înghițim.
             GlobalErrorLog.Write("MainForm.cboAn_SelectedIndexChanged", ex)
@@ -319,11 +320,11 @@ Public Class MainForm
     End Sub
 
     ' Idem pentru SS (filtru pe server, prin EXISTS pe FX_Indicatori.SS).
-    Private Async Sub cboSs_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSs.SelectedIndexChanged
+    Private Async Sub CboSs_SelectedIndexChanged(sender As Object, e As EventArgs)
         Try
             If _suppressPeriodEvents Then Return
             ApplySelectedPeriod(persist:=True)
-            Await LoadTreeAsync()
+            Await LoadTreeAsync
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.cboSs_SelectedIndexChanged", ex)
         End Try
@@ -331,7 +332,7 @@ Public Class MainForm
 
     ' ---------------- vederi (navigație stânga) ----------------
 
-    Private Sub navViews_SelectionChanged(key As String) Handles navViews.SelectionChanged
+    Private Sub NavViews_SelectionChanged(key As String) Handles navViews.SelectionChanged
         Try
             ActivateView(key)
         Catch ex As Exception
@@ -345,7 +346,7 @@ Public Class MainForm
             Dim view As IAngajamentView = Nothing
             If Not _views.TryGetValue(key, view) Then
                 view = CreateView(key)
-                Dim ctrl As Control = DirectCast(view, Control)
+                Dim ctrl As System.Windows.Forms.Control = DirectCast(view, System.Windows.Forms.Control)
                 ctrl.Dock = DockStyle.Fill
                 ctrl.Visible = False
                 viewHost.Controls.Add(ctrl)
@@ -356,9 +357,9 @@ Public Class MainForm
 
             Dim previous As IAngajamentView = _activeView
             _activeView = view
-            DirectCast(view, Control).Visible = True
+            DirectCast(view, System.Windows.Forms.Control).Visible = True
             If previous IsNot Nothing AndAlso Not ReferenceEquals(previous, view) Then
-                DirectCast(previous, Control).Visible = False
+                DirectCast(previous, System.Windows.Forms.Control).Visible = False
             End If
             ' Doar vederea ACTIVĂ primește contextul; celelalte îl primesc la activare.
             view.SetContext(_currentInfo)
@@ -443,7 +444,7 @@ Public Class MainForm
     ''' </summary>
     Private Sub PopulateTree(rows As IReadOnlyList(Of AngajamentTreeInfo))
         Try
-            If rows Is Nothing Then Throw New ArgumentNullException(NameOf(rows))
+            ArgumentNullException.ThrowIfNull(rows)
             tree.Clear()
             _treeInfos.Clear()
             _currentInfo = Nothing
@@ -527,7 +528,7 @@ Public Class MainForm
     End Function
 
     ' Selecția din listă împinge contextul (AngajamentTreeInfo) către vederea activă.
-    Private Sub tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
+    Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
             Dim info As AngajamentTreeInfo = Nothing
             Dim cod As String = If(pNode Is Nothing, Nothing, TryCast(pNode.Tag, String))
@@ -556,7 +557,7 @@ Public Class MainForm
     ''' splitter-ul se fixează — tras, n-ar duce decât la o lățime pe jumătate, care nu e nici
     ''' starea strânsă, nici cea desfășurată.
     ''' </summary>
-    Private Sub tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
+    Private Sub Tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
         Try
             Dim padStanga As Integer = split.Panel1.Padding.Left
             If collapsed Then
@@ -592,7 +593,7 @@ Public Class MainForm
 
     ' Click pe iconița de refresh (dreapta, la hover) — reîmprospătarea din FOREXE a
     ' angajamentului e o felie separată; aici doar semnalăm, fără no-op tăcut.
-    Private Sub tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
+    Private Sub Tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
         Try
             Dim cod As String = If(pNode Is Nothing, Nothing, TryCast(pNode.Tag, String))
             If String.IsNullOrEmpty(cod) Then Return
@@ -672,7 +673,7 @@ Public Class MainForm
     ''' angajamente/upsert, cu WithReauth pe apelul HTTP. Fără DbName (fără login,
     ''' posibil doar în harness-ul Debug) se oprește după mapare.
     ''' </summary>
-    Private Async Sub btnSinc_Click(sender As Object, e As EventArgs) Handles btnSinc.Click
+    Private Async Sub BtnSinc_Click(sender As Object, e As EventArgs) Handles btnSinc.Click
         btnSinc.Enabled = False
         busyBar.Running = True
         _cts = New CancellationTokenSource()
@@ -745,16 +746,7 @@ Public Class MainForm
 
     ' ---------------- placeholder-e (felii viitoare) ----------------
 
-    Private Sub btnIstoric_Click(sender As Object, e As EventArgs) Handles btnIstoric.Click
-        Try
-            ' TODO felie: istoricul job-urilor (Access btnIstoric).
-            MessageBox.Show(Me, "În lucru.", "Istoric", MessageBoxButtons.OK, MessageBoxIcon.Information)
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.btnIstoric_Click", ex)
-        End Try
-    End Sub
-
-    Private Sub btnSort_Click(sender As Object, e As EventArgs) Handles btnSort.Click
+    Private Sub BtnSort_Click(sender As Object, e As EventArgs) Handles btnSort.Click
         Try
             ' TODO felie: sortarea arborelui (Access btnSort / m_SortTree).
             MessageBox.Show(Me, "În lucru.", "Sortare", MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -768,7 +760,7 @@ Public Class MainForm
     ''' angajamentelor ascunse (ASCUNS) și re-citește arborele — ASCUNS e filtru pe
     ''' server (include_hidden), nu unul local.
     ''' </summary>
-    Private Async Sub btnOpt_Click(sender As Object, e As EventArgs) Handles btnOpt.Click
+    Private Async Sub BtnOpt_Click(sender As Object, e As EventArgs) Handles btnOpt.Click
         Try
             _includeHidden = Not _includeHidden
             Await LoadTreeAsync()
@@ -784,7 +776,7 @@ Public Class MainForm
     ''' reîmprospătează singură la fiecare selecție din arbore (vezi RefreshInfoForm);
     ''' butonul ei «Reîmprospătează» re-citește selecția prin provider-ul _currentInfo.
     ''' </summary>
-    Private Sub btnInfo_Click(sender As Object, e As EventArgs) Handles btnInfo.Click
+    Private Sub BtnInfo_Click(sender As Object, e As EventArgs) Handles btnInfo.Click
         Try
             If _infoForm Is Nothing OrElse _infoForm.IsDisposed Then
                 _infoForm = New InternalInfoForm(Function() _currentInfo)
@@ -818,6 +810,10 @@ Public Class MainForm
 
     ' ---------------- temă ----------------
 
+    ' Ridicat cât timp umplem combo-ul: atribuirea SelectedItem ridică SelectedIndexChanged, iar
+    ' handler-ul ar re-aplica schema deja activă (difuzare inutilă peste tot shell-ul la pornire).
+    Private _suppressThemeEvents As Boolean = False
+
     ' Culorile semantice theme-aware (rulează după ThemeManager.Apply și la comutare).
     Protected Overrides Sub OnThemeChanged()
         Try
@@ -829,7 +825,6 @@ Public Class MainForm
             BackColor = p.BorderColor
 
             ButtonStyles.ApplyPrimary(btnSinc, scheme)
-            ButtonStyles.ApplySecondary(btnIstoric, scheme)
 
             ' Etichetele secundare -> text dim; titlurile rămân pe TextColor plin.
             lblOperator.ForeColor = p.TextDimColor
@@ -838,6 +833,7 @@ Public Class MainForm
             lblSs.ForeColor = p.TextDimColor
             lblUnit.ForeColor = p.TextColor
             lblTree.ForeColor = p.TextColor
+
 
             ' Arborele ESTE acum IThemedControl: își ia singur paleta și, mai important,
             ' ThemeManager nu mai recurge în copiii lui. Împinsul de culori de aici era exact
@@ -855,7 +851,7 @@ Public Class MainForm
 
     ' Cele două benzi (header + status) citesc ca o singură bară cu caption-ul:
     ' o linie de 1px sub header, respectiv deasupra barei de status.
-    Private Sub pnlHeader_Paint(sender As Object, e As PaintEventArgs) Handles pnlHeader.Paint
+    Private Sub PnlHeader_Paint(sender As Object, e As PaintEventArgs) Handles pnlHeader.Paint
         Try
             Using pen As New Pen(ThemeManager.Current.Palette.BorderColor)
                 e.Graphics.DrawLine(pen, 0, pnlHeader.Height - 1, pnlHeader.Width, pnlHeader.Height - 1)
@@ -865,7 +861,7 @@ Public Class MainForm
         End Try
     End Sub
 
-    Private Sub pnlStatus_Paint(sender As Object, e As PaintEventArgs) Handles pnlStatus.Paint
+    Private Sub PnlStatus_Paint(sender As Object, e As PaintEventArgs) Handles pnlStatus.Paint
         Try
             Using pen As New Pen(ThemeManager.Current.Palette.BorderColor)
                 e.Graphics.DrawLine(pen, 0, 0, pnlStatus.Width, 0)
@@ -875,4 +871,145 @@ Public Class MainForm
         End Try
     End Sub
 
+    Private Sub MainForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
+        Me.Activate()
+        Me.BringToFront()
+    End Sub
+
+    ''' <summary>
+    ''' Selectorul de temă din butonul de opțiuni al barei de titlu — un <see cref="CustomPopup"/>,
+    ''' nu un <c>ContextMenuStrip</c>. Motivul e chiar cel pentru care controlul există: fața unui
+    ''' ContextMenuStrip o desenează <c>ToolStripRenderer</c>, deci meniul CU CARE SE ALEGE TEMA
+    ''' rămânea o fâșie de sistem, albă pe schemele întunecate.
+    '''
+    ''' Meniul arată DOAR schemele pe care le poate alege operatorul: cea activă lipsește din
+    ''' listă, fiindcă un rând care nu face nimic n-are ce căuta într-un meniu. Numele sunt cele
+    ''' ROMÂNEȘTI (<c>BuiltInSchemes.DisplayName</c>) — cheia rămâne numele englezesc al schemei,
+    ''' cel cu care se persistă și se rezolvă înapoi.
+    '''
+    ''' Restul, față de varianta veche:
+    ''' <list type="bullet">
+    ''' <item>fiecare nume poartă litera lui de acces («C&amp;lasic»), calculată din prima literă
+    ''' liberă ȘI TASTABILĂ, deci temele se pot comuta de la tastatură;</item>
+    ''' <item>meniul se agață de <c>capBar.OptionButtonBounds</c>, nu de o formulă de sloturi
+    ''' rescrisă aici — cea veche rămânea în urmă dacă se stingea butonul de minimizare, și
+    ''' oricum nu era folosită: <c>cms.Show()</c> fără argumente deschidea meniul la cursor;</item>
+    ''' <item>butonul rămâne aprins cât e meniul deschis — bara e <c>IPopupAnchor</c>, iar
+    ''' popup-ul îl aprinde și îl stinge singur.</item>
+    ''' </list>
+    ''' </summary>
+    Private Sub CapBar_OptionButtonClick(sender As Object, e As EventArgs) Handles capBar.OptionButtonClick
+        Try
+            If _suppressThemeEvents Then Return
+            ' Al doilea clic pe buton ÎNCHIDE meniul: apăsarea l-a închis deja (a activat shell-ul),
+            ' deci fără garda asta l-am redeschide instantaneu. Vezi CustomPopup.ClosedJustNow.
+            If CustomPopup.ClosedJustNow Then Return
+
+            Dim ancora As Rectangle = capBar.OptionButtonBounds
+            If ancora.IsEmpty Then Return          ' butonul e ascuns — n-are de unde ieși meniul
+
+            Dim elemente As New List(Of CustomPopupItem)()
+            Dim folosite As New List(Of Char)()
+            For Each s In ThemeManager.AvailableSchemes
+                ' Schema activă NU intră în meniu: e deja aplicată, deci ar fi un rând care nu
+                ' face nimic. (Cerere de operator: «the existing theme must not be visible».)
+                If String.Equals(s.Name, ThemeManager.Current.Name, StringComparison.OrdinalIgnoreCase) Then Continue For
+                elemente.Add(New CustomPopupItem(s.Name,
+                                                 CuLiteraDeAcces(BuiltInSchemes.DisplayName(s.Name), folosite),
+                                                 GetThemeIcon(s)))
+            Next
+            If elemente.Count = 0 Then Return       ' o singură schemă instalată: n-ai ce alege
+            elemente.Add(CustomPopupItem.Separator())   ' separator vizual între scheme și «Stiluri»
+            elemente.Add(New CustomPopupItem("Stiluri", "Stiluri...", My.Resources.ThemeEditor))
+
+            ' Nicio selecție inițială: rândul «curent» lipsește din listă tocmai fiindcă e curent,
+            ' deci n-are ce fi evidențiat. Prima săgeată în jos ia primul rând, ca la orice meniu.
+            ' NU în «Using»: arătat nemodal, popup-ul se eliberează singur la închidere.
+            Dim meniu As New CustomPopup(elemente)
+            AddHandler meniu.ItemClicked, AddressOf OnThemePicked
+            meniu.ShowBelow(capBar, ancora)
+        Catch ex As Exception
+            ' Boundary UI: un handler nu poate rearunca.
+            GlobalErrorLog.Write("MainForm.capBar_OptionButtonClick", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Comută pe schema aleasă. Cheia elementului E numele schemei, deci drumul înapoi trece prin
+    ''' <c>ResolveByName</c> — o schemă care a dispărut între deschiderea meniului și clic se
+    ''' semnalează, nu se ignoră.
+    ''' </summary>
+    Private Sub OnThemePicked(sender As Object, e As CustomPopupItemEventArgs)
+        Try
+            If String.Equals(e.Item.Key, ThemeManager.Current.Name, StringComparison.OrdinalIgnoreCase) Then Return
+            If String.Equals(e.Item.Key, "Stiluri") Then
+                Try
+                    ThemeEditorForm.ShowFor(Me)
+                    Return
+                Catch ex As Exception
+                    GlobalErrorLog.Write("MainForm.btnStil_Click", ex)
+                    MessageBox.Show(Me, "Nu s-a putut deschide editorul de stiluri: " & ex.Message,
+                            "Stiluri", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End Try
+            End If
+
+            Try
+                Dim aleasa As ThemeScheme = ThemeManager.ResolveByName(e.Item.Key)
+                If aleasa Is Nothing Then
+                    _logger?.LogWarning($"Schema de temă «{e.Item.Key}» nu mai există.")
+                    Return
+                End If
+                ThemeManager.SetScheme(aleasa)
+            Catch ex As Exception
+                GlobalErrorLog.Write("MainForm.btnStil_Click", ex)
+            End Try
+
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.OnThemePicked", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Pune un «&amp;» înaintea primei litere încă nefolosite din nume, ca fiecare schemă să aibă
+    ''' litera ei de acces. Numele schemelor vin și din fișiere de utilizator, nu dintr-o listă
+    ''' fixă, deci marcajul nu poate fi scris de mână nicăieri.
+    '''
+    ''' Litera trebuie să fie și TASTABILĂ, nu doar liberă — <c>PopupMnemonic.IsTypable</c>. În
+    ''' română asta nu e o subtilitate: «Întunecat» ar fi marcat «Î», care nu e nicio tastă, deci
+    ''' sublinierea ar promite o scurtătură inexistentă. Se sare peste ea și iese «Î&amp;ntunecat».
+    '''
+    ''' Când toate literele sunt deja luate, numele rămâne nemarcat: două rânduri pe aceeași
+    ''' literă ar fi mers oricum (a doua apăsare mută evidențierea), dar un nume fără marcaj e mai
+    ''' cinstit decât unul care pare al altcuiva.
+    ''' </summary>
+    Private Shared Function CuLiteraDeAcces(nume As String, folosite As List(Of Char)) As String
+        If String.IsNullOrEmpty(nume) Then Return String.Empty
+        ' Un «&» din numele schemei e text, nu marcaj: se dublează ÎNAINTE de a căuta locul
+        ' marcajului, ca poziția găsită să fie deja cea din șirul livrat meniului.
+        Dim escapat As String = nume.Replace("&", "&&")
+        For i As Integer = 0 To escapat.Length - 1
+            If Not PopupMnemonic.IsTypable(escapat(i)) Then Continue For
+            Dim litera As Char = Char.ToUpperInvariant(escapat(i))
+            If folosite.Contains(litera) Then Continue For
+            folosite.Add(litera)
+            Return escapat.Insert(i, "&")
+        Next
+        Return escapat
+    End Function
+
+    Private Function GetThemeIcon(scheme As ThemeScheme) As Drawing.Image
+        ' Adjust the resource names / logic to match what you actually have
+        Select Case scheme.Name.ToLowerInvariant()
+            Case "classic"
+                Return KBot.App.My.Resources.ThemeClassic          ' or whatever your resource is called
+            Case "dark"
+                Return KBot.App.My.Resources.ThemeDark
+            Case "modern"
+                Return KBot.App.My.Resources.ThemeModern
+            Case "colorful"
+                Return KBot.App.My.Resources.ThemeColorful
+            Case Else
+                Return KBot.App.My.Resources.ThemeClassic          ' fallback
+        End Select
+    End Function
 End Class

@@ -15,6 +15,20 @@ Imports KBot.Common
 '''     so the fill modes never leave an empty strip nor a scrollbar (except the honest
 '''     sum(MinWidth) &gt; available fallback).
 '''
+'''  English (slice 0028-04): knob 1 is no longer grid-wide only. Every column carries its own
+'''  <see cref="KBotDataColumn.AutoSizeMode"/> and IT TAKES PRECEDENCE over the grid's — the grid
+'''  setting is what a column falls back on, not what it obeys. The default column value is
+'''  <see cref="KBotAutoSizeMode.Inherit"/> ("no opinion"), so a grid nobody has touched behaves
+'''  exactly as it did before. Two consequences worth naming, both deliberate:
+'''
+'''  • the pass now runs even when the GRID says <c>None</c>, as long as one column asks for
+'''    <c>ToContent</c> — otherwise the per-column knob would be a no-op in the one arrangement
+'''    (measure just this column, leave the others alone) it exists for;
+'''  • precedence covers MEASURING only. Knob 2 (fill / shrink) still spreads across every visible
+'''    column, including a column pinned at <c>None</c> — same rule as a column the operator has
+'''    drag-resized (<c>UserSized</c>), which ToContent skips but fill still moves. A column that
+'''    must not move at all is pinned with <c>MinWidth = MaxWidth</c>, which the clamp enforces.
+'''
 '''  The vertical scrollbar's visibility depends only on row count and body height, never on
 '''  column widths, so it is decided first and there is no circular dependency. A re-entrancy
 '''  guard (<c>_inAutoLayout</c>) makes doubly sure a pass can never trigger itself.
@@ -36,7 +50,14 @@ Partial Class KBotDataView
 
     ' ── Public properties ────────────────────────────────────────────────────────
 
-    ''' <summary>English (slice 0013): how columns are measured. Default <c>ToContent</c>.</summary>
+    ''' <summary>
+    ''' English (slice 0013): how columns are measured. Default <c>ToContent</c>.
+    '''
+    ''' English (slice 0028-04): this is the FALLBACK now — it decides only for the columns whose
+    ''' own <see cref="KBotDataColumn.AutoSizeMode"/> is <c>Inherit</c>.
+    ''' <see cref="KBotAutoSizeMode.Inherit"/> itself is rejected here: there is nothing above the
+    ''' grid to inherit from, so accepting it would silently have to mean something else.
+    ''' </summary>
     <Category("K-BOT")>
     <Description("Cum se măsoară coloanele: None (lățimi fixe) sau ToContent (după conținut).")>
     <DefaultValue(KBotAutoSizeMode.ToContent)>
@@ -45,6 +66,13 @@ Partial Class KBotDataView
             Return _autoSizeMode
         End Get
         Set(value As KBotAutoSizeMode)
+            If value = KBotAutoSizeMode.Inherit Then
+                Throw New ArgumentException(
+                    "«Inherit» e doar pentru coloane (nu există nimic deasupra grilei de moștenit).", NameOf(value))
+            End If
+            If Not [Enum].IsDefined(GetType(KBotAutoSizeMode), value) Then
+                Throw New ArgumentException($"Mod de auto-dimensionare necunoscut: «{value}».", NameOf(value))
+            End If
             _autoSizeMode = value
             LayoutChanged()
         End Set
@@ -124,8 +152,10 @@ Partial Class KBotDataView
         Dim anyAutoHide As Boolean = AnyColumnCanAutoHide()
 
         ' Manual-only (Case 3) AND nothing to auto-hide: keep the caller's widths/visibility.
-        If _autoSizeMode = KBotAutoSizeMode.None AndAlso _fillMode = KBotFillMode.None AndAlso
-           Not anyAutoHide Then Return
+        ' English (slice 0028-04): «manual-only» is now decided per column — a grid set to None
+        ' still runs the pass when a single column asks for ToContent on its own.
+        If _fillMode = KBotFillMode.None AndAlso Not anyAutoHide AndAlso
+           Not AnyColumnSizesToContent() Then Return
 
         _inAutoLayout = True
         Try
@@ -135,13 +165,13 @@ Partial Class KBotDataView
             Dim vis As List(Of KBotDataColumn) = VisibleColumns()
             If vis.Count = 0 Then Return
 
-            ' Step 1 — size to content (skipping columns the operator has dragged).
-            If _autoSizeMode = KBotAutoSizeMode.ToContent Then
-                For Each c In vis
-                    If c.UserSized Then Continue For
-                    c.Width = MeasureColumnToContent(c)   ' setter clamps to [Min, Max]
-                Next
-            End If
+            ' Step 1 — size to content (skipping columns the operator has dragged). The mode is
+            ' asked PER COLUMN: the column's own knob wins, the grid's answers for Inherit.
+            For Each c In vis
+                If c.UserSized Then Continue For
+                If EffectiveAutoSizeMode(c) <> KBotAutoSizeMode.ToContent Then Continue For
+                c.Width = MeasureColumnToContent(c)       ' setter clamps to [Min, Max]
+            Next
 
             ' Step 2 — auto-hide overflowing columns to avoid the horizontal scrollbar. Once
             ' auto-hide is engaged, unresolved overflow shows the scrollbar (it does NOT shrink):
@@ -162,6 +192,30 @@ Partial Class KBotDataView
             _inAutoLayout = False
         End Try
     End Sub
+
+    ' ── Per-column precedence (slice 0028-04) ────────────────────────────────────
+
+    ''' <summary>
+    ''' English (slice 0028-04): the mode that actually applies to one column — its own, unless it
+    ''' says <c>Inherit</c>, in which case the grid-wide setting answers. This is THE place the
+    ''' precedence lives; nothing else may read <c>_autoSizeMode</c> to decide a column's fate.
+    ''' </summary>
+    Friend Function EffectiveAutoSizeMode(col As KBotDataColumn) As KBotAutoSizeMode
+        If col Is Nothing Then Return _autoSizeMode
+        If col.AutoSizeMode = KBotAutoSizeMode.Inherit Then Return _autoSizeMode
+        Return col.AutoSizeMode
+    End Function
+
+    ' Does anything at all want measuring? Gates the pass together with fill / auto-hide. Hidden
+    ' columns do not count: they take no space, so measuring them would change nothing on screen.
+    Private Function AnyColumnSizesToContent() As Boolean
+        For Each c In _columns
+            If Not c.Visible Then Continue For
+            If c.UserSized Then Continue For              ' a dragged column is skipped anyway
+            If EffectiveAutoSizeMode(c) = KBotAutoSizeMode.ToContent Then Return True
+        Next
+        Return False
+    End Function
 
     ' ── Auto-hide (slice 0016) ────────────────────────────────────────────────────
 
@@ -222,14 +276,17 @@ Partial Class KBotDataView
         Dim cellPadX As Integer = ScaleDpi(6)             ' matches DrawTextCell
         Dim headerPadX As Integer = ScaleDpi(8)           ' matches DrawHeaderCell
 
-        ' Header text always participates (semibold header font).
-        Dim need As Integer = MeasureText(col.HeaderText, HeaderFont()) + 2 * headerPadX
+        ' Header text always participates (semibold header font), plus whatever the column's
+        ' header icons take (slice 0028-02) — measuring only the caption would size the column so
+        ' the icons eat the text back, which is a defect, not a limitation.
+        Dim need As Integer = MeasureText(col.HeaderText, ResolvedHeaderFont()) + 2 * headerPadX +
+                              HeaderIconsExtent(col)
 
-        ' English (slice 0017-01): the totals cell participates in measuring too — a wide total
+        ' English (slice 0017-01): the footer cell participates in measuring too — a wide total
         ' that was never measured would ellipsize, which is a defect not a limitation. It is
-        ' painted in the header band (header font + header padding), so measure it the same way.
-        If _showTotalsRow AndAlso col.Aggregate <> KBotAggregate.None Then
-            need = Math.Max(need, MeasureText(TotalsTextFor(col), HeaderFont()) + 2 * headerPadX)
+        ' painted with the footer band's own font and padding, so measure it the same way.
+        If _showFooter AndAlso col.Aggregate <> KBotAggregate.None Then
+            need = Math.Max(need, MeasureText(FooterTextFor(col), ResolvedFooterFont()) + 2 * headerPadX)
         End If
 
         Select Case col.ColumnType
@@ -250,16 +307,22 @@ Partial Class KBotDataView
                 need = Math.Max(need, MeasureSampledCells(col) + 2 * cellPadX)
         End Select
 
-        Return Math.Max(col.MinWidth, Math.Min(need, col.MaxWidth))
+        ' EffectiveMinWidth, nu MinWidth: podeaua ține cont și de pictogramele de antet, și ea
+        ' bate plafonul (vezi KBotDataColumn.ClampWidth).
+        Return Math.Max(col.EffectiveMinWidth, Math.Min(need, col.MaxWidth))
     End Function
 
     ' Widest sampled cell for a column, measured formatted (never raising CellFormatting).
     Private Function MeasureSampledCells(col As KBotDataColumn) As Integer
-        Dim limit As Integer = If(_autoSizeSampleRows <= 0, _rows.Count,
-                                  Math.Min(_autoSizeSampleRows, _rows.Count))
+        ' English (slice 0028-03): sample the VISIBLE rows. Measuring rows a filter has removed
+        ' would size the column to content nobody can see — the column would stay wide and the
+        ' filtered grid would look like it had lost its data off to the right.
+        Dim total As Integer = ViewCount()
+        Dim limit As Integer = If(_autoSizeSampleRows <= 0, total,
+                                  Math.Min(_autoSizeSampleRows, total))
         Dim maxW As Integer = 0
         For i As Integer = 0 To limit - 1
-            Dim row As KBotDataRow = _rows(i)
+            Dim row As KBotDataRow = ViewRowAt(i)
             Dim text As String = FormatValue(row(col.Key), col)
             ' A Button paints its caption, falling back to the header when the cell is empty.
             If col.ColumnType = KBotColumnType.Button AndAlso String.IsNullOrEmpty(text) Then
@@ -291,8 +354,10 @@ Partial Class KBotDataView
     ' English (slice 0017-01): the pinned totals band eats body height too, so subtract it here
     ' as well — otherwise the auto-size vscroll prediction and UpdateScrollBars would disagree.
     Private Function WillVScrollBeVisible() As Boolean
-        Dim contentH As Integer = _rows.Count * _rowHeight
-        Dim availH As Integer = Math.Max(0, ClientSize.Height - HeaderBandHeight() - TotalsBandHeight())
+        ' Aceleași rânduri pe care le socotește UpdateScrollBars (cele care trec de filtre),
+        ' altfel predicția și bara adevărată s-ar contrazice.
+        Dim contentH As Integer = ViewCount() * _rowHeight
+        Dim availH As Integer = Math.Max(0, ClientSize.Height - HeaderBandHeight() - FooterBandHeight())
         Return contentH > availH
     End Function
 
@@ -325,7 +390,7 @@ Partial Class KBotDataView
     ' Add extra to a single column. The Width setter clamps at MaxWidth, so an over-cap
     ' remainder is silently dropped (it must not spill into a neighbour).
     Private Shared Sub GrowColumn(col As KBotDataColumn, extra As Integer)
-        col.Width = col.Width + extra
+        col.Width += extra
     End Sub
 
     ' Split the leftover in proportion to each column's current width. Integer division leaves
@@ -382,9 +447,11 @@ Partial Class KBotDataView
 
     ' total > available and a fill mode is active: shrink so the scrollbar does not appear.
     Private Sub ShrinkToFit(vis As List(Of KBotDataColumn), available As Integer)
+        ' English (slice 0028-02): the floor is EffectiveMinWidth — a column carrying header icons
+        ' cannot shrink below what they need, so the shrink pass must count that, not MinWidth.
         Dim minTotal As Integer = 0
         For Each c In vis
-            minTotal += c.MinWidth
+            minTotal += c.EffectiveMinWidth
         Next
 
         ' Honest fallback: even at MinWidth the columns overflow. Pin everything to MinWidth
@@ -392,7 +459,7 @@ Partial Class KBotDataView
         ' worse than a scrollbar the caller did not ask for.
         If minTotal >= available Then
             For Each c In vis
-                c.Width = c.MinWidth
+                c.Width = c.EffectiveMinWidth
             Next
             Return
         End If
@@ -408,7 +475,7 @@ Partial Class KBotDataView
             Dim flex As New List(Of KBotDataColumn)()
             Dim flexWidth As Long = 0
             For Each c In vis
-                If c.Width > c.MinWidth Then
+                If c.Width > c.EffectiveMinWidth Then
                     flex.Add(c)
                     flexWidth += c.Width
                 End If
@@ -424,7 +491,7 @@ Partial Class KBotDataView
             shares(flex.Count - 1) += (deficit - assigned)   ' rounding remainder to last flex
             For i As Integer = 0 To flex.Count - 1
                 Dim c As KBotDataColumn = flex(i)
-                c.Width = Math.Max(c.MinWidth, c.Width - shares(i))   ' floor at MinWidth
+                c.Width = Math.Max(c.EffectiveMinWidth, c.Width - shares(i))   ' floor at the real min
             Next
 
             guard += 1

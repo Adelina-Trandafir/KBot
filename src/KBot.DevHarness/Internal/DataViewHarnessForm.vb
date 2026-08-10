@@ -42,6 +42,13 @@ Public NotInheritable Class DataViewHarnessForm
             ' vadă banda non-scrolling la derulare orizontală.
             grid.AddColumn("nr", "Nr.", KBotColumnType.Text, 70).Aggregate = KBotAggregate.Count
             grid.AddColumn("cod", "Cod indicator", KBotColumnType.Text, 150)
+            ' Coloană deliberat prea îngustă pentru textul ei (MaxWidth oprește auto-size-ul din
+            ' a o lăți): singurul fel în care se poate VEDEA eticheta plutitoare de celulă
+            ' (slice 0028) — stai cu cursorul pe o denumire tăiată.
+            Dim den = grid.AddColumn("den", "Denumire", KBotColumnType.Text, 160)
+            den.MaxWidth = 160
+            den.ValueType = KBotValueType.Text
+            den.Aggregate = KBotAggregate.CountDistinct
             grid.AddColumn("stare", "Stare", KBotColumnType.Combo, 120)
             grid.AddColumn("activ", "Activ", KBotColumnType.CheckBox, 60)
             grid.AddColumn("optA", "Var. A", KBotColumnType.OptionButton, 70).OptionGroup = "varianta"
@@ -55,8 +62,10 @@ Public NotInheritable Class DataViewHarnessForm
                                          KBotColumnType.Text, 110)
                 col.FormatString = "N2"
                 col.TextAlign = ContentAlignment.MiddleRight
-                ' English (slice 0017-01): numeric columns sum in the totals band; the first one
+                ' English (slice 0017-01): numeric columns sum in the footer band; the first one
                 ' averages, so the harness eyeballs Sum, Count and Average side by side.
+                ' ValueType comes FIRST — Sum/Average are only offered to numeric columns (0028).
+                col.ValueType = KBotValueType.Number
                 col.Aggregate = If(c = 8, KBotAggregate.Average, KBotAggregate.Sum)
             Next
             grid.FrozenColumnCount = 1
@@ -66,6 +75,8 @@ Public NotInheritable Class DataViewHarnessForm
                 Dim row = grid.AddRow()
                 row("nr") = r + 1
                 row("cod") = "IND-" & (r + 1).ToString("D5")
+                row("den") = "Denumire lungă de indicator bugetar, poziția " & (r + 1).ToString() &
+                             " din nomenclatorul de probă"
                 row("stare") = stari(r Mod stari.Length)
                 row("activ") = (r Mod 3 = 0)
                 row("optA") = (r Mod 2 = 0)
@@ -132,11 +143,51 @@ Public NotInheritable Class DataViewHarnessForm
     ' deci aici doar se arată/ascunde rândul pinat.
     Private Sub chkTotals_CheckedChanged(sender As Object, e As EventArgs) Handles chkTotals.CheckedChanged
         Try
-            grid.ShowTotalsRow = chkTotals.Checked
-            _log("ShowTotalsRow = " & grid.ShowTotalsRow.ToString() &
+            grid.FooterVisible = chkTotals.Checked
+            _log("FooterVisible = " & grid.FooterVisible.ToString() &
                  " (Nr.=Count, coloanele numerice=Sum, prima=Average)")
         Catch ex As Exception
             GlobalErrorLog.Write("DataViewHarnessForm.chkTotals_CheckedChanged", ex)
+        End Try
+    End Sub
+
+    ' Butonul de strângere din subsol (slice 0028). Trăiește în banda de subsol, deci o
+    ' aprinde și pe aceea — fără subsol n-ar avea unde se desena.
+    Private Sub chkCollapseButton_CheckedChanged(sender As Object, e As EventArgs) Handles chkCollapseButton.CheckedChanged
+        Try
+            If chkCollapseButton.Checked AndAlso Not chkTotals.Checked Then chkTotals.Checked = True
+            grid.CollapseButton = chkCollapseButton.Checked
+            _log("CollapseButton = " & grid.CollapseButton.ToString() &
+                 " (apasă unghiul din colțul subsolului; axa = " & grid.CollapseDirection.ToString() & ")")
+        Catch ex As Exception
+            GlobalErrorLog.Write("DataViewHarnessForm.chkCollapseButton_CheckedChanged", ex)
+        End Try
+    End Sub
+
+    ' Axa strângerii: pe lățime (ca arborele) sau pe înălțime (rămân antetul + subsolul).
+    Private Sub chkCollapseVertical_CheckedChanged(sender As Object, e As EventArgs) Handles chkCollapseVertical.CheckedChanged
+        Try
+            grid.CollapseDirection = If(chkCollapseVertical.Checked,
+                                        KBotCollapseDirection.Vertical, KBotCollapseDirection.Horizontal)
+            _log("CollapseDirection = " & grid.CollapseDirection.ToString() &
+                 If(chkCollapseVertical.Checked,
+                    " (strânsă, rămân cele două benzi — agregatele stau sub ochi)",
+                    " (strânsă la MinimumCollapsedWidth = " & grid.MinimumCollapsedWidth.ToString() & "px)"))
+        Catch ex As Exception
+            GlobalErrorLog.Write("DataViewHarnessForm.chkCollapseVertical_CheckedChanged", ex)
+        End Try
+    End Sub
+
+    ' Grila e andocată în harness, deci lățimea/înălțimea sunt ale GAZDEI: controlul doar ridică
+    ' evenimentul, iar strângerea o face gazda. Aici e suficient s-o spunem în jurnal — mutarea
+    ' unui splitter e treaba lui MainForm, nu a bancului de probă.
+    Private Sub Grid_CollapsedChanged(collapsed As Boolean) Handles grid.CollapsedChanged
+        Try
+            _log("CollapsedChanged -> " & collapsed.ToString() &
+                 " (HostOwnsWidth = " & grid.HostOwnsWidth.ToString() &
+                 ", HostOwnsHeight = " & grid.HostOwnsHeight.ToString() & ")")
+        Catch ex As Exception
+            GlobalErrorLog.Write("DataViewHarnessForm.Grid_CollapsedChanged", ex)
         End Try
     End Sub
 

@@ -58,8 +58,12 @@ Public Module ThemeManager
     End Sub
 
     ''' <summary>Rezolvă un nume la o schemă (built-in sau utilizator); Nothing dacă nu există.</summary>
-    ''' <remarks>Friend pentru teste: contractul de fallback (nume necunoscut → Nothing → Classic).</remarks>
-    Friend Function ResolveByName(name As String) As ThemeScheme
+    ''' <remarks>
+    ''' Public de la felia 0028: selectorul de temă din MainForm ține în listă NUMELE schemelor
+    ''' (ThemeScheme nu suprascrie ToString) și are nevoie de drumul invers nume → schemă.
+    ''' Testele îl folosesc și pentru contractul de fallback (nume necunoscut → Nothing → Classic).
+    ''' </remarks>
+    Public Function ResolveByName(name As String) As ThemeScheme
         If String.IsNullOrWhiteSpace(name) Then Return Nothing
         For Each s In AvailableSchemes
             If String.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase) Then
@@ -158,16 +162,37 @@ Public Module ThemeManager
     ' TRAVERSARE RECURSIVĂ (port verbatim din KBotTheme, cu excepțiile SplitContainer/TabControl)
     ' =========================================================================
     Private Sub Traverse(ctrl As Control)
+        ' PRIMA operație pe orice control: instantaneul valorilor din designer. Trebuie luat
+        ' înainte de orice scriere a temei — după, valoarea autorită nu mai există (vezi
+        ' DesignerBaseline). Idempotent: doar prima trecere reține ceva.
+        CaptureBaseline(ctrl)
+
+        Dim preserve As Boolean = _current.Style.PreserveDesignerColors
+
         ' Controalele auto-tematizate își aplică singure culorile ȘI NU se recurge în
-        ' ele — altfel regula generică de Panel ar repicta suprafața, iar recursia ar
+        ' ele cu regulile GENERICE — altfel regula de Panel ar repicta suprafața, iar recursia ar
         ' strica TextBox-ul intern din KBotTextField.
         Dim themed As IThemedControl = TryCast(ctrl, IThemedControl)
         If themed IsNot Nothing Then
             themed.ApplyTheme(_current)
+            ' …iar sub «Colorful» punem înapoi cele trei proprietăți ambientale peste ce-a scris
+            ' ApplyTheme: interiorul controlului rămâne al schemei, suprafața rămâne a designerului.
+            If preserve Then DesignerBaseline.Restore(ctrl)
+            ' …DAR un control auto-tematizat poate GĂZDUI la rândul lui controale auto-tematizate,
+            ' iar acelea trebuie să-și primească schema. Cazul e regula, nu excepția: toate cele
+            ' șase vederi reale (Sumar, Rezervări, Recepții, Plăți, DDF, Istoric) sunt
+            ' IThemedControl ȘI țin un KBotDataView înăuntru, deci oprirea seacă de aici lăsa
+            ' NETEMATIZATĂ grila din fiecare — pe bancul de probă, unde grila stă direct pe
+            ' formular, aceeași grilă se colora corect, ceea ce făcea diferența greu de citit.
+            ApplyToNestedThemed(ctrl)
             Return
         End If
 
-        StyleControl(ctrl)
+        If preserve Then
+            PreserveDesigner(ctrl)
+        Else
+            StyleControl(ctrl)
+        End If
 
         If TypeOf ctrl Is SplitContainer Then
             Dim sc = DirectCast(ctrl, SplitContainer)
@@ -191,6 +216,82 @@ Public Module ThemeManager
         For Each child As Control In ctrl.Controls
             Traverse(child)
         Next
+    End Sub
+
+    ''' <summary>
+    ''' Duce schema la controalele auto-tematizate din INTERIORUL unui control auto-tematizat, fără
+    ''' să aplice vreo regulă generică pe drum.
+    '''
+    ''' <para>Asta e diferența față de <see cref="Traverse"/>, și e toată povestea: aici nu se
+    ''' stilizează nimic „după tip”, se doar PREDĂ schema celor care știu singure ce să facă cu ea.
+    ''' De aceea coborârea e sigură exact acolo unde <c>Traverse</c> n-avea voie să meargă —
+    ''' <c>TextBox</c>-ul intern al lui <c>KBotTextField</c> sau al benzii de căutare a arborelui nu
+    ''' e <c>IThemedControl</c>, deci nu e atins, în timp ce grila dintr-o vedere îl este și îl
+    ''' primește.</para>
+    ''' </summary>
+    Private Sub ApplyToNestedThemed(container As Control)
+        For Each child As Control In container.Controls
+            Dim themed As IThemedControl = TryCast(child, IThemedControl)
+            If themed IsNot Nothing Then
+                ' Instantaneul de designer se ia și aici, înaintea oricărei scrieri — altfel
+                ' «Colorful» n-ar avea ce restaura pentru un control imbricat.
+                CaptureBaseline(child)
+                themed.ApplyTheme(_current)
+                If _current.Style.PreserveDesignerColors Then DesignerBaseline.Restore(child)
+            End If
+            ApplyToNestedThemed(child)
+        Next
+    End Sub
+
+    ' =========================================================================
+    ' «COLORFUL» — schema care restaurează în loc să scrie (Style.PreserveDesignerColors)
+    ' =========================================================================
+
+    ''' <summary>
+    ''' Instantaneul de designer al controlului, plus cazul special al lui SplitContainer.
+    ''' Panourile lui NU trec niciodată prin <see cref="Traverse"/> (recursia sare direct la copiii
+    ''' lor), dar <see cref="StylePalette"/> LE SCRIE — deci dacă nu le-am fotografia AICI, prima
+    ''' lor fotografie ar fi luată abia sub «Colorful», adică deja peste culoarea temei anterioare.
+    ''' Exact asta a prins testul «Colorful_RestoresSplitContainerPanels_Too».
+    ''' </summary>
+    Private Sub CaptureBaseline(ctrl As Control)
+        DesignerBaseline.Capture(ctrl)
+        Dim sc As SplitContainer = TryCast(ctrl, SplitContainer)
+        If sc IsNot Nothing Then
+            DesignerBaseline.Capture(sc.Panel1)
+            DesignerBaseline.Capture(sc.Panel2)
+        End If
+    End Sub
+
+    ''' <summary>
+    ''' Pune controlul înapoi pe valorile din designer. Ordinea contează: întâi DESPRINDEM
+    ''' cârligele de pictură lăsate de o schemă anterioară — un buton rămas owner-drawn se
+    ''' pictează singur cu paleta veche și ar face restaurarea lui BackColor complet invizibilă,
+    ''' la fel inelul de focus de pe inputuri și owner-draw-ul de pe tab-uri — și abia apoi
+    ''' restaurăm instantaneul.
+    ''' </summary>
+    Private Sub PreserveDesigner(ctrl As Control)
+        Dim btn As Button = TryCast(ctrl, Button)
+        If btn IsNot Nothing Then ModernRenderer.DetachButton(btn)
+
+        If TypeOf ctrl Is ComboBox OrElse TypeOf ctrl Is TextBox OrElse TypeOf ctrl Is MaskedTextBox Then
+            ModernRenderer.DetachFocusAccent(ctrl)
+        End If
+
+        Dim tc As TabControl = TryCast(ctrl, TabControl)
+        If tc IsNot Nothing Then SetupTabOwnerDraw(tc, False)
+
+        ' Panourile unui SplitContainer nu trec niciodată prin Traverse (recursia sare direct la
+        ' copiii lor), deci nu s-ar restaura niciodată — dar StylePalette LE SCRIE. Le tratăm aici.
+        Dim sc As SplitContainer = TryCast(ctrl, SplitContainer)
+        If sc IsNot Nothing Then
+            DesignerBaseline.Capture(sc.Panel1)
+            DesignerBaseline.Capture(sc.Panel2)
+            DesignerBaseline.Restore(sc.Panel1)
+            DesignerBaseline.Restore(sc.Panel2)
+        End If
+
+        DesignerBaseline.Restore(ctrl)
     End Sub
 
     ' =========================================================================

@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Drawing.Drawing2D
 Imports KBot.Common
@@ -17,6 +18,17 @@ Partial Class KBotDataView
     Private _cHeaderText As Color
     Private _cHeaderSep As Color
     Private _cHeaderBaseline As Color
+    ' Subsolul are roluri PROPRII (slice 0028): până acum împrumuta sloturile antetului, deci
+    ' o schemă nu putea distinge banda de sumar de banda de titluri nici dacă voia.
+    Private _cFooterBack As Color
+    Private _cFooterText As Color
+    Private _cFooterSep As Color
+    Private _cFooterBaseline As Color
+    ' Capătul degradeului benzilor + dacă el se folosește. Ambele vin din STILUL schemei
+    ' (ButtonRender/CornerRadius), nu dintr-un „if Modern” scris în control.
+    Private _cHeaderGradientEnd As Color
+    Private _cFooterGradientEnd As Color
+    Private _bandGradient As Boolean = False
     Private _cRowBack As Color
     Private _cRowAltBack As Color
     Private _cSelBack As Color
@@ -45,6 +57,7 @@ Partial Class KBotDataView
     Private _bSelBack As SolidBrush
     Private _bSelAltBack As SolidBrush
     Private _bHeaderBack As SolidBrush
+    Private _bFooterBack As SolidBrush
     Private _bCheckFill As SolidBrush
     Private _bComboChevron As SolidBrush
     Private _bOptionFill As SolidBrush
@@ -57,6 +70,8 @@ Partial Class KBotDataView
     Private _pDisabledMark As Pen
     Private _pBorder As Pen
     Private _pHeaderSep As Pen
+    Private _pFooterSep As Pen
+    Private _pFooterBaseline As Pen
     Private _pGridLine As Pen
     Private _pCheckBorder As Pen
     Private _pCheckFill As Pen
@@ -65,8 +80,32 @@ Partial Class KBotDataView
     Private _pOptionFill As Pen
     Private _pButtonBorder As Pen
 
-    ' Font semibold pentru antet (derivat lazy din fontul ambient).
+    ' Fonturile benzilor, derivate LAZY din stilul schemei (nu din fontul ambient, și cu atât mai
+    ' puțin dintr-un nume de familie scris în sursă — vezi BuildBandFont). Se aruncă la fiecare
+    ' ApplyTheme / OnFontChanged și se reconstruiesc la prima pictare.
     Private _headerFont As Font
+    Private _footerFont As Font
+
+    ' Fontul de bază al schemei active. Gol / 0 => se ia fontul ambient al controlului.
+    Private _schemeFontName As String = String.Empty
+    Private _schemeFontSize As Single = 0F
+
+    ' ── Ce a fixat OPERATORUL în designer (Color.Empty / Nothing = „din temă”) ────
+    ' Regula casei: o proprietate care se poate seta din designer are nevoie de perechea
+    ' ShouldSerialize/Reset, altfel Visual Studio scrie valoarea REZOLVATĂ în .Designer.vb și
+    ' de-atunci încolo ea trece drept alegerea deliberată a operatorului.
+    Private _headerBackPinned As Color = Color.Empty
+    Private _headerForePinned As Color = Color.Empty
+    Private _headerFontPinned As Font = Nothing
+    Private _footerBackPinned As Color = Color.Empty
+    Private _footerForePinned As Color = Color.Empty
+    Private _footerFontPinned As Font = Nothing
+
+    ''' <summary>
+    ''' Schema activă e ÎNTUNECATĂ? Cât timp e True, culorile fixate în designer se IGNORĂ și
+    ''' benzile iau culorile paletei (vezi <see cref="DarkOverridesDesignerColors"/>).
+    ''' </summary>
+    Private _schemeIsDark As Boolean = False
 
     ''' <summary>
     ''' Reaplică culorile schemei active. Boundary de temă/pictare: logăm și ÎNGHIȚIM —
@@ -76,12 +115,34 @@ Partial Class KBotDataView
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
+            ' Se citește ÎNAINTEA culorilor: *Resolved() îl consultă, iar RebuildThemeResources de
+            ' mai jos cheamă deja HeaderBackResolved / FooterBackResolved.
+            _schemeIsDark = scheme.IsDark
+
+            ' Stilul schemei conduce fonturile benzilor ȘI dacă ele sunt în degrade: schema
+            ' Modern aduce «Segoe UI Variable Text» la 9pt și randare owner-drawn, deci benzile
+            ' se schimbă cu tema, nu rămân cu un font scris în control (bug-ul de până în 0028,
+            ' unde antetul era mereu „Segoe UI Semibold”, indiferent de schemă).
+            Dim st As ThemeStyleOptions = If(scheme.Style, New ThemeStyleOptions())
+            _schemeFontName = If(st.BaseFontName, String.Empty)
+            _schemeFontSize = st.BaseFontSize
+            _bandGradient = (st.ButtonRender = ButtonRenderStyle.ModernOwnerDrawn) OrElse st.CornerRadius > 0
+            DisposeBandFonts()
 
             ' Antet.
             _cHeaderBack = p.SurfaceAltColor
             _cHeaderText = p.TextColor
             _cHeaderSep = p.BorderColor
             _cHeaderBaseline = p.AccentColor
+            _cHeaderGradientEnd = Blend(p.SurfaceAltColor, p.SurfaceColor, 0.65)
+
+            ' Subsol — banda de sumar. Aceleași sloturi, dar spălate spre accent, ca ochiul să
+            ' vadă din prima că jos e altceva decât un rând de date.
+            _cFooterBack = Blend(p.SurfaceAltColor, p.AccentColor, 0.1)
+            _cFooterText = p.TextColor
+            _cFooterSep = p.BorderColor
+            _cFooterBaseline = p.AccentColor
+            _cFooterGradientEnd = Blend(_cFooterBack, p.SurfaceColor, 0.55)
 
             ' Zona de date.
             _cRowBack = p.InputBackColor
@@ -123,6 +184,7 @@ Partial Class KBotDataView
             editCombo.FlatStyle = FlatStyle.Flat
 
             BackColor = _cRowBack
+            ApplyScrollBarTheme()
             RebuildThemeResources()
             ' English (slice 0013): theme changes can swap fonts, so re-measure the columns.
             UpdateLayout()
@@ -132,12 +194,51 @@ Partial Class KBotDataView
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Trece barele de derulare pe varianta întunecată a temei vizuale Windows (slice 0028-03).
+    '''
+    ''' <para><b>De ce nu sunt pictate de noi.</b> <c>VScrollBar</c>/<c>HScrollBar</c> sunt ferestre
+    ''' native: fața lor o desenează Windows, nu <c>OnPaint</c>-ul nostru, deci nicio culoare din
+    ''' paletă n-ar ajunge la ele. <c>SetWindowTheme</c> cu «DarkMode_Explorer» e exact trucul pe
+    ''' care ThemeManager îl folosește deja pentru liste și pentru <c>KBotComboBox</c> — nu ne
+    ''' aduce culorile schemei, ci griul întunecat al Windows-ului, dar aceea e singura variantă
+    ''' care nu cere un control de derulare scris de la zero.</para>
+    '''
+    ''' <para><b>Limita, spusă pe față:</b> barele urmează DOAR perechea întuneric/lumină. Sub o
+    ''' schemă colorată ele rămân cele de sistem, iar accentul paletei nu ajunge niciodată pe ele.
+    ''' Un <c>KBotScrollBar</c> owner-drawn ar rezolva și asta — vezi worklog-ul feliei.</para>
+    '''
+    ''' <para>Se re-aplică și la <c>OnHandleCreated</c>: <c>SetWindowTheme</c> cere un handle, iar
+    ''' prima aplicare de temă poate cădea înaintea lui.</para>
+    ''' </summary>
+    Private Sub ApplyScrollBarTheme()
+        Dim tema As String = If(_schemeIsDark, "DarkMode_Explorer", "Explorer")
+        NativeMethods.ApplyWindowTheme(vScroll, tema)
+        NativeMethods.ApplyWindowTheme(hScroll, tema)
+    End Sub
+
+    Protected Overrides Sub OnHandleCreated(e As EventArgs)
+        MyBase.OnHandleCreated(e)
+        Try
+            ApplyScrollBarTheme()
+        Catch ex As Exception
+            ' Boundary UI: crearea handle-ului nu are voie să arunce în bucla de mesaje.
+            GlobalErrorLog.Write("KBotDataView.OnHandleCreated", ex)
+        End Try
+    End Sub
+
     ' Culorile pre-temă (până la primul ApplyTheme): SystemColors, ca randarea în designer.
     Private Sub SetDefaultColors()
         _cHeaderBack = SystemColors.Control
         _cHeaderText = SystemColors.ControlText
         _cHeaderSep = SystemColors.ControlDark
         _cHeaderBaseline = SystemColors.Highlight
+        _cHeaderGradientEnd = Blend(SystemColors.Control, SystemColors.Window, 0.65)
+        _cFooterBack = Blend(SystemColors.Control, SystemColors.Highlight, 0.1)
+        _cFooterText = SystemColors.ControlText
+        _cFooterSep = SystemColors.ControlDark
+        _cFooterBaseline = SystemColors.Highlight
+        _cFooterGradientEnd = Blend(_cFooterBack, SystemColors.Window, 0.55)
         _cRowBack = SystemColors.Window
         _cRowAltBack = Blend(SystemColors.Window, SystemColors.Control, 0.5)
         _cSelBack = Blend(SystemColors.Window, SystemColors.Highlight, 0.18)
@@ -169,7 +270,8 @@ Partial Class KBotDataView
         _bRowAltBack = New SolidBrush(_cRowAltBack)
         _bSelBack = New SolidBrush(_cSelBack)
         _bSelAltBack = New SolidBrush(_cSelAltBack)
-        _bHeaderBack = New SolidBrush(_cHeaderBack)
+        _bHeaderBack = New SolidBrush(HeaderBackResolved())
+        _bFooterBack = New SolidBrush(FooterBackResolved())
         _bCheckFill = New SolidBrush(_cCheckFill)
         _bComboChevron = New SolidBrush(_cComboChevron)
         _bOptionFill = New SolidBrush(_cOptionFill)
@@ -182,6 +284,8 @@ Partial Class KBotDataView
         _pDisabledMark = New Pen(_cDisabledText)
         _pBorder = New Pen(_cHeaderSep)
         _pHeaderSep = New Pen(_cHeaderSep)
+        _pFooterSep = New Pen(_cFooterSep)
+        _pFooterBaseline = New Pen(_cFooterBaseline, 2.0F)
         _pGridLine = New Pen(_cGridLine)
         _pCheckBorder = New Pen(_cCheckBorder)
         _pCheckFill = New Pen(_cCheckFill)
@@ -198,6 +302,7 @@ Partial Class KBotDataView
         _bSelBack?.Dispose() : _bSelBack = Nothing
         _bSelAltBack?.Dispose() : _bSelAltBack = Nothing
         _bHeaderBack?.Dispose() : _bHeaderBack = Nothing
+        _bFooterBack?.Dispose() : _bFooterBack = Nothing
         _bCheckFill?.Dispose() : _bCheckFill = Nothing
         _bComboChevron?.Dispose() : _bComboChevron = Nothing
         _bOptionFill?.Dispose() : _bOptionFill = Nothing
@@ -210,6 +315,8 @@ Partial Class KBotDataView
         _pDisabledMark?.Dispose() : _pDisabledMark = Nothing
         _pBorder?.Dispose() : _pBorder = Nothing
         _pHeaderSep?.Dispose() : _pHeaderSep = Nothing
+        _pFooterSep?.Dispose() : _pFooterSep = Nothing
+        _pFooterBaseline?.Dispose() : _pFooterBaseline = Nothing
         _pGridLine?.Dispose() : _pGridLine = Nothing
         _pCheckBorder?.Dispose() : _pCheckBorder = Nothing
         _pCheckFill?.Dispose() : _pCheckFill = Nothing
@@ -217,27 +324,250 @@ Partial Class KBotDataView
         _pOptionBorder?.Dispose() : _pOptionBorder = Nothing
         _pOptionFill?.Dispose() : _pOptionFill = Nothing
         _pButtonBorder?.Dispose() : _pButtonBorder = Nothing
-        _headerFont?.Dispose() : _headerFont = Nothing
+        DisposeBandFonts()
     End Sub
 
-    ' Fontul antetului: „semibold” derivat lazy din fontul ambient (fallback: bold).
-    Private Function HeaderFont() As Font
-        If _headerFont Is Nothing Then
-            Try
-                _headerFont = New Font("Segoe UI Semibold", Font.Size)
-            Catch ex As Exception
-                GlobalErrorLog.Write("KBotDataView.HeaderFont", ex)
-                _headerFont = New Font(Font, FontStyle.Bold)
-            End Try
-        End If
+    ' Fonturile DERIVATE sunt ale noastre (le eliberăm); cele fixate de operator
+    ' (_headerFontPinned/_footerFontPinned) sunt ale lui — nu se ating aici.
+    Private Sub DisposeBandFonts()
+        _headerFont?.Dispose() : _headerFont = Nothing
+        _footerFont?.Dispose() : _footerFont = Nothing
+    End Sub
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' FONTURILE BENZILOR — rezolvate din temă, cu ultimul cuvânt la operator
+    ' ══════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>Fontul cu care se scriu titlurile de coloană (fixat de operator sau din temă).</summary>
+    Friend Function ResolvedHeaderFont() As Font
+        If _headerFontPinned IsNot Nothing Then Return _headerFontPinned
+        If _headerFont Is Nothing Then _headerFont = BuildBandFont()
         Return _headerFont
     End Function
+
+    ''' <summary>Fontul cu care se scriu agregatele din subsol (fixat de operator sau din temă).</summary>
+    Friend Function ResolvedFooterFont() As Font
+        If _footerFontPinned IsNot Nothing Then Return _footerFontPinned
+        If _footerFont Is Nothing Then _footerFont = BuildBandFont()
+        Return _footerFont
+    End Function
+
+    ''' <summary>
+    ''' Fontul unei benzi: familia și mărimea DIN SCHEMĂ (<c>Style.BaseFontName</c> /
+    ''' <c>BaseFontSize</c>), în varianta semibold dacă familia are una instalată, altfel bold.
+    '''
+    ''' Semibold-ul se caută ca FAMILIE separată («Segoe UI Semibold», «Segoe UI Variable Text
+    ''' Semibold»), pentru că așa îl expune Windows. Verificarea se face în lista familiilor
+    ''' instalate, nu construind fontul și prinzând excepția: GDI+ nu aruncă pentru o familie
+    ''' necunoscută, ci cade tăcut pe alta — adică exact felul de eșec pe care nu-l vezi.
+    ''' </summary>
+    Private Function BuildBandFont() As Font
+        Dim numeBaza As String = If(String.IsNullOrWhiteSpace(_schemeFontName), Font.Name, _schemeFontName)
+        Dim marime As Single = If(_schemeFontSize > 0F, _schemeFontSize, Font.Size)
+        Dim semibold As String = numeBaza & " Semibold"
+        If FamilyExists(semibold) Then Return New Font(semibold, marime)
+        If FamilyExists(numeBaza) Then Return New Font(numeBaza, marime, FontStyle.Bold)
+        ' Nici familia schemei nu e instalată: fontul ambient în bold, ca să rămână lizibil.
+        Return New Font(Font, FontStyle.Bold)
+    End Function
+
+    Private Shared Function FamilyExists(name As String) As Boolean
+        If String.IsNullOrWhiteSpace(name) Then Return False
+        For Each f As FontFamily In FontFamily.Families
+            If String.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase) Then Return True
+        Next
+        Return False
+    End Function
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' ASPECTUL BENZILOR — proprietăți de designer (gol = din temă)
+    ' ══════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>
+    ''' Sub o schemă ÎNTUNECATĂ, culorile fixate în designer se ignoră (slice 0028-03).
+    '''
+    ''' <para>Regula obișnuită a casei e inversă — «orice culoare pusă explicit câștigă» — și rămâne
+    ''' inversă pe schemele luminoase. Excepția e cerută de ce se întâmplă altfel: paleta de
+    ''' designer se autorează pe fundal deschis, iar o bandă de antet lăsată albă peste un corp
+    ''' devenit aproape negru nu e „alegerea operatorului respectată”, e o grilă imposibil de
+    ''' citit. Sub întuneric, contrastul bate preferința; la lumină, preferința bate implicitul.</para>
+    '''
+    ''' <para>Se aplică numai CULORILOR. Fontul fixat rămâne al operatorului în orice schemă: un
+    ''' font nu devine ilizibil pe fundal închis, deci n-are de ce să fie luat înapoi.</para>
+    ''' </summary>
+    Friend ReadOnly Property DarkOverridesDesignerColors As Boolean
+        Get
+            Return _schemeIsDark
+        End Get
+    End Property
+
+    Friend Function HeaderBackResolved() As Color
+        If _schemeIsDark Then Return _cHeaderBack
+        Return If(_headerBackPinned = Color.Empty, _cHeaderBack, _headerBackPinned)
+    End Function
+
+    Friend Function HeaderForeResolved() As Color
+        If _schemeIsDark Then Return _cHeaderText
+        Return If(_headerForePinned = Color.Empty, _cHeaderText, _headerForePinned)
+    End Function
+
+    Friend Function FooterBackResolved() As Color
+        If _schemeIsDark Then Return _cFooterBack
+        Return If(_footerBackPinned = Color.Empty, _cFooterBack, _footerBackPinned)
+    End Function
+
+    Friend Function FooterForeResolved() As Color
+        If _schemeIsDark Then Return _cFooterText
+        Return If(_footerForePinned = Color.Empty, _cFooterText, _footerForePinned)
+    End Function
+
+    ''' <summary>Fundalul benzii de antet. <c>Color.Empty</c> (implicit) = din schema activă.</summary>
+    <Category("K-BOT: Header")>
+    <Description("Fundalul benzii de antet. Gol = culoarea din schema activă.")>
+    Public Property HeaderBackColor As Color
+        Get
+            Return _headerBackPinned
+        End Get
+        Set(value As Color)
+            If _headerBackPinned = value Then Return
+            _headerBackPinned = value
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeHeaderBackColor() As Boolean
+        Return _headerBackPinned <> Color.Empty
+    End Function
+
+    Private Sub ResetHeaderBackColor()
+        HeaderBackColor = Color.Empty
+    End Sub
+
+    ''' <summary>Culoarea titlurilor de coloană. <c>Color.Empty</c> (implicit) = din schema activă.</summary>
+    <Category("K-BOT: Header")>
+    <Description("Culoarea textului din antet. Gol = culoarea din schema activă.")>
+    Public Property HeaderForeColor As Color
+        Get
+            Return _headerForePinned
+        End Get
+        Set(value As Color)
+            If _headerForePinned = value Then Return
+            _headerForePinned = value
+            Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeHeaderForeColor() As Boolean
+        Return _headerForePinned <> Color.Empty
+    End Function
+
+    Private Sub ResetHeaderForeColor()
+        HeaderForeColor = Color.Empty
+    End Sub
+
+    ''' <summary>
+    ''' Fontul benzii de antet. <c>Nothing</c> (implicit) = derivat din schema activă (vezi
+    ''' <see cref="BuildBandFont"/>). Perechea ShouldSerialize/Reset e obligatorie: <c>Font</c> nu
+    ''' poate purta <c>DefaultValue</c>, deci fără ea designerul ar scrie fontul rezolvat în
+    ''' fiecare formular-gazdă și schimbarea temei n-ar mai ajunge niciodată la antet.
+    ''' </summary>
+    <Category("K-BOT: Header")>
+    <Description("Fontul benzii de antet. Nesetat = fontul schemei active, în semibold.")>
+    Public Property HeaderFont As Font
+        Get
+            Return _headerFontPinned
+        End Get
+        Set(value As Font)
+            If _headerFontPinned Is value Then Return
+            _headerFontPinned = value
+            UpdateLayout()
+            Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeHeaderFont() As Boolean
+        Return _headerFontPinned IsNot Nothing
+    End Function
+
+    Private Sub ResetHeaderFont()
+        HeaderFont = Nothing
+    End Sub
+
+    ''' <summary>Fundalul benzii de subsol. <c>Color.Empty</c> (implicit) = din schema activă.</summary>
+    <Category("K-BOT: Footer")>
+    <Description("Fundalul benzii de subsol. Gol = culoarea din schema activă.")>
+    Public Property FooterBackColor As Color
+        Get
+            Return _footerBackPinned
+        End Get
+        Set(value As Color)
+            If _footerBackPinned = value Then Return
+            _footerBackPinned = value
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeFooterBackColor() As Boolean
+        Return _footerBackPinned <> Color.Empty
+    End Function
+
+    Private Sub ResetFooterBackColor()
+        FooterBackColor = Color.Empty
+    End Sub
+
+    ''' <summary>Culoarea agregatelor din subsol. <c>Color.Empty</c> (implicit) = din schema activă.</summary>
+    <Category("K-BOT: Footer")>
+    <Description("Culoarea textului din subsol. Gol = culoarea din schema activă.")>
+    Public Property FooterForeColor As Color
+        Get
+            Return _footerForePinned
+        End Get
+        Set(value As Color)
+            If _footerForePinned = value Then Return
+            _footerForePinned = value
+            Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeFooterForeColor() As Boolean
+        Return _footerForePinned <> Color.Empty
+    End Function
+
+    Private Sub ResetFooterForeColor()
+        FooterForeColor = Color.Empty
+    End Sub
+
+    ''' <summary>Fontul benzii de subsol. <c>Nothing</c> (implicit) = derivat din schema activă.</summary>
+    <Category("K-BOT: Footer")>
+    <Description("Fontul benzii de subsol. Nesetat = fontul schemei active, în semibold.")>
+    Public Property FooterFont As Font
+        Get
+            Return _footerFontPinned
+        End Get
+        Set(value As Font)
+            If _footerFontPinned Is value Then Return
+            _footerFontPinned = value
+            UpdateLayout()
+            Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeFooterFont() As Boolean
+        Return _footerFontPinned IsNot Nothing
+    End Function
+
+    Private Sub ResetFooterFont()
+        FooterFont = Nothing
+    End Sub
 
     Protected Overrides Sub OnFontChanged(e As EventArgs)
         MyBase.OnFontChanged(e)
         Try
-            _headerFont?.Dispose()
-            _headerFont = Nothing
+            ' Fontul ambient e plasa de siguranță a fonturilor de bandă (schemă fără familie
+            ' instalată / fără BaseFontSize), deci ele se reconstruiesc odată cu el.
+            DisposeBandFonts()
             ' English (slice 0013): a new font changes measured content widths — re-layout.
             UpdateLayout()
             Invalidate()

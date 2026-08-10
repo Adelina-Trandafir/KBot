@@ -79,14 +79,17 @@ Partial Class KBotDataView
     ' HIT-TESTING
     ' ========================================================================
 
-    ''' <summary>Indexul rândului de sub un punct client, sau -1 (antet/gol/în afara zonei).</summary>
+    ''' <summary>
+    ''' Indexul de MODEL al rândului de sub un punct client, sau -1 (antet/gol/în afara zonei).
+    ''' Punctul dă o POZIȚIE DE VEDERE — traducerea se face aici, o singură dată, ca tot restul
+    ''' input-ului să lucreze în indici de model ca și până acum.
+    ''' </summary>
     Private Function RowAtPoint(pt As Point) As Integer
         Dim top As Integer = HeaderBandHeight()
         If pt.Y < top Then Return -1
         If pt.Y >= top + ViewportHeight() Then Return -1
-        Dim idx As Integer = (pt.Y - top + VScrollOffset()) \ _rowHeight
-        If idx < 0 OrElse idx >= _rows.Count Then Return -1
-        Return idx
+        Dim viewPosition As Integer = (pt.Y - top + VScrollOffset()) \ _rowHeight
+        Return ModelIndexAt(viewPosition)
     End Function
 
     ''' <summary>Coloana de sub un X client, sau Nothing. Ține cont de banda înghețată.</summary>
@@ -172,18 +175,28 @@ Partial Class KBotDataView
     End Function
 
     ' Mută rândul curent cu delta, limitat la intervalul valid.
+    '
+    ' English (slice 0028-03): the step is taken in VIEW positions, not model indices. Down-arrow
+    ' means "the row drawn under this one" — under a filter or a sort, that is almost never the
+    ' next model index, and stepping through the model would make the selection jump around the
+    ' screen and stop on rows nobody can see.
     Private Sub MoveRow(delta As Integer)
-        If _rows.Count = 0 Then Return
-        Dim target As Integer = If(_currentRowIndex < 0, 0, _currentRowIndex + delta)
-        target = Math.Max(0, Math.Min(target, _rows.Count - 1))
-        SetCurrentCell(target, _currentColumnKey)
+        Dim total As Integer = ViewCount()
+        If total = 0 Then Return
+        Dim pozitie As Integer = ViewPositionOf(_currentRowIndex)
+        Dim target As Integer = If(pozitie < 0, 0, pozitie + delta)
+        target = Math.Max(0, Math.Min(target, total - 1))
+        SetCurrentCell(ModelIndexAt(target), _currentColumnKey)
     End Sub
 
     ' Mută coloana curentă în direcția dată, dacă există o coloană activă acolo.
     Private Sub MoveColumn(direction As Integer)
         Dim target As KBotDataColumn = NextEnabledColumn(_currentColumnKey, direction)
         If target Is Nothing Then Return
-        SetCurrentCell(If(_currentRowIndex < 0 AndAlso _rows.Count > 0, 0, _currentRowIndex), target.Key)
+        ' Fără rând curent, coloana se mută pe PRIMUL rând vizibil, nu pe modelul 0 — acela poate
+        ' fi tocmai unul filtrat afară.
+        Dim rand As Integer = If(_currentRowIndex < 0, ModelIndexAt(0), _currentRowIndex)
+        SetCurrentCell(rand, target.Key)
     End Sub
 
     ' Câte rânduri intră într-o „pagină” (PageUp/PageDown).
@@ -230,14 +243,14 @@ Partial Class KBotDataView
                     MoveRow(PageRows())
                 Case Keys.Home
                     If ctrl Then
-                        MoveRow(-_rows.Count)        ' Ctrl+Home => primul rând
+                        MoveRow(-ViewCount())        ' Ctrl+Home => primul rând
                     Else
                         Dim c = EdgeEnabledColumn(True)
                         If c IsNot Nothing Then SetCurrentCell(_currentRowIndex, c.Key)
                     End If
                 Case Keys.End
                     If ctrl Then
-                        MoveRow(_rows.Count)         ' Ctrl+End => ultimul rând
+                        MoveRow(ViewCount())         ' Ctrl+End => ultimul rând
                     Else
                         Dim c = EdgeEnabledColumn(False)
                         If c IsNot Nothing Then SetCurrentCell(_currentRowIndex, c.Key)
@@ -311,7 +324,22 @@ Partial Class KBotDataView
         MyBase.OnMouseDown(e)
         Try
             Focus()
+            ' Orice apăsare închide eticheta: operatorul a trecut la treabă, nu mai citește.
+            CancelCellTooltip()
             If e.Button <> MouseButtons.Left Then Return
+
+            ' 0) Banda de subsol (butonul de strângere) — nu e un rând, deci consumă apăsarea.
+            If HandleFooterMouseDown(e.Location) Then Return
+
+            ' 0b) Pictograma din dreapta unui antet de coloană (slice 0028-02). Se caută ÎNAINTEA
+            ' redimensionării, deși cele două zone nu se ating: pictograma e o acțiune, iar o
+            ' apăsare pe ea nu are voie să pornească o tragere de margine.
+            If HandleHeaderIconMouseDown(e.Location) Then Return
+
+            ' 0c) Pictograma de FILTRARE (slice 0028-03), din același motiv: e o acțiune, nu o
+            ' margine de tras. Se caută după cea din dreapta, fiindcă ele nu se suprapun niciodată
+            ' (așezarea le dă sloturi separate) — ordinea aici e doar cea a citirii.
+            If HandleFilterIconMouseDown(e.Location) Then Return
 
             ' 1) Început de redimensionare pe marginea unei coloane din antet.
             Dim resizeTarget As KBotDataColumn = HeaderResizeTarget(e.Location)
@@ -336,6 +364,14 @@ Partial Class KBotDataView
     Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
         MyBase.OnMouseMove(e)
         Try
+            ' Banda de subsol: hover-ul butonului de strângere. Cât timp cursorul e acolo, nicio
+            ' celulă nu e survolată, deci nici etichetă.
+            If HandleFooterMouseMove(e.Location) Then
+                CancelCellTooltip()
+                Cursor = If(FooterIconHovered, Cursors.Hand, Cursors.Default)
+                Return
+            End If
+
             ' Redimensionare în curs: lățimea urmărește mouse-ul (limitată de MinWidth).
             If _resizingColumn IsNot Nothing Then
                 _resizingColumn.Width = _resizeStartWidth + (e.X - _resizeStartX)
@@ -346,8 +382,37 @@ Partial Class KBotDataView
                 Return
             End If
 
+            ' Pictogramele din antet: hover + cursor de mână. Cât timp cursorul e peste una, nu
+            ' se mai caută nici margine de redimensionare, nici etichetă de celulă.
+            If UpdateHeaderIconHover(e.Location) Then
+                ' Cele două pictograme sunt VECINE: trecând direct de pe una pe alta, cea părăsită
+                ' n-ar mai apuca să afle că a rămas fără cursor și ar rămâne aprinsă.
+                ClearFilterIconHover()
+                CancelCellTooltip()
+                Cursor = Cursors.Hand
+                Return
+            End If
+
+            ' Pictograma de filtrare — aceeași regulă.
+            If UpdateFilterIconHover(e.Location) Then
+                CancelCellTooltip()
+                Cursor = Cursors.Hand
+                Return
+            End If
+
             ' Cursor de redimensionare când suntem pe o margine redimensionabilă din antet.
-            Cursor = If(HeaderResizeTarget(e.Location) IsNot Nothing, Cursors.SizeWE, Cursors.Default)
+            Dim peMargine As Boolean = HeaderResizeTarget(e.Location) IsNot Nothing
+            Cursor = If(peMargine, Cursors.SizeWE, Cursors.Default)
+
+            ' Eticheta celulei de sub cursor (doar dacă textul ei chiar nu încape). Pe marginea
+            ' de redimensionare nu se cere: acolo operatorul trage, nu citește.
+            If peMargine Then
+                CancelCellTooltip()
+                Return
+            End If
+            Dim tipRow As Integer = RowAtPoint(e.Location)
+            Dim tipCol As KBotDataColumn = If(tipRow < 0, Nothing, ColumnAtX(e.X))
+            UpdateCellTooltip(If(tipCol Is Nothing, Nothing, tipCol.Key), If(tipCol Is Nothing, -1, tipRow))
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnMouseMove", ex)
         End Try
@@ -394,6 +459,10 @@ Partial Class KBotDataView
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
         MyBase.OnMouseLeave(e)
         Cursor = Cursors.Default
+        HandleFooterMouseLeave()
+        ClearHeaderIconHover()
+        ClearFilterIconHover()
+        CancelCellTooltip()
     End Sub
 
     ' Coloana a cărei margine dreaptă din antet e sub punct (toleranță ~4px), dacă e

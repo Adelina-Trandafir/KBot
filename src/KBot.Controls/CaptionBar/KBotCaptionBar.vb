@@ -2,6 +2,7 @@ Option Strict On
 Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Drawing.Drawing2D
+Imports System.Drawing.Imaging
 Imports System.Drawing.Text
 Imports System.Windows.Forms
 Imports KBot.Common
@@ -15,7 +16,7 @@ Imports KBot.Common
 <ToolboxItem(True)>
 Public NotInheritable Class KBotCaptionBar
     Inherits Control
-    Implements IThemedControl
+    Implements IThemedControl, IPopupAnchor
 
     ' ── Culori derivate din paletă (setate în ApplyTheme) ─────────────────────
     Private _backColor As Color = SystemColors.Control
@@ -23,6 +24,7 @@ Public NotInheritable Class KBotCaptionBar
     Private _glyphColor As Color = SystemColors.ControlText
     Private _closeHoverColor As Color = Color.FromArgb(196, 43, 28)
     Private _btnHoverColor As Color = SystemColors.ControlLight
+    Private _optBtnHoverColor As Color = SystemColors.ControlLight
 
     ' ── Stare ─────────────────────────────────────────────────────────────────
     Private _iconImage As Image
@@ -31,6 +33,15 @@ Public NotInheritable Class KBotCaptionBar
     Private _hoverClose As Boolean = False
     Private _hoverMin As Boolean = False
     Private _hoverMax As Boolean = False
+    Private _optionButtonHover As Boolean = False
+
+    ' ── Optional - Options Button (in stanga ultimului buton vizibil din control box) ───────────────────────────────
+    Private _showOptionsButton As Boolean = False
+    Private _optionButtonImage As Image
+    Private _optionButtonClick As EventHandler
+    Private _optionButtonPadding As Integer = 0
+    Private _tintOptionButtonImage As Boolean = True
+    Private _optionButtonActive As Boolean = False
 
     Public Sub New()
         SetStyle(ControlStyles.UserPaint Or ControlStyles.AllPaintingInWmPaint Or
@@ -82,6 +93,126 @@ Public NotInheritable Class KBotCaptionBar
         End Set
     End Property
 
+    'butonul de optiuni (in stanga ultimului buton vizibil din control box)
+    <Category("K-BOT")>
+    <Description("Arată și butonul de opțiuni (în stânga")>
+    <DefaultValue(False)>
+    Public Property ShowOptionsButton As Boolean
+        Get
+            Return _showOptionsButton
+        End Get
+        Set(value As Boolean)
+            _showOptionsButton = value
+            Invalidate()
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Imaginea butonului de opțiuni")>
+    Public Property OptionButtonImage As Image
+        Get
+            Return _optionButtonImage
+        End Get
+        Set(value As Image)
+            _optionButtonImage = value
+            Invalidate()
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Padding-ul pentru imaginea din OptionButton")>
+    Public Property OptionButtonPadding As Integer
+        Get
+            Return _optionButtonPadding
+        End Get
+        Set(value As Integer)
+            _optionButtonPadding = value
+            Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Pictograma butonului de opțiuni se RECOLOREAZĂ cu culoarea celorlalte trei glife
+    ''' (minimizare / maximizare / închidere), deci urmează schema: neagră pe temele deschise,
+    ''' albă pe cele întunecate. Implicit True, fiindcă pictograma de acolo e o siluetă
+    ''' monocromă — pe schema întunecată, netratată, e o pată neagră pe fundal negru, adică
+    ''' invizibilă.
+    '''
+    ''' Se stinge pentru o pictogramă cu adevărat colorată, pe care recolorarea ar turti-o.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Recolorează pictograma butonului de opțiuni cu culoarea glifelor (deci urmează tema). Stinge-l pentru o pictogramă colorată.")>
+    <DefaultValue(True)>
+    Public Property TintOptionButtonImage As Boolean
+        Get
+            Return _tintOptionButtonImage
+        End Get
+        Set(value As Boolean)
+            If value = _tintOptionButtonImage Then Return
+            _tintOptionButtonImage = value
+            Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Butonul de opțiuni rămâne APRINS (fundalul de survolare) cât timp e deschis meniul pe
+    ''' care l-a desfășurat. Nu se pune de mână: îl ridică și îl coboară <see cref="CustomPopup"/>
+    ''' prin <see cref="IPopupAnchor"/>, pe sinkul prin care trec toate drumurile de închidere.
+    ''' Stare pură de rulare — designerul n-o vede și n-o serializează.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property OptionButtonActive As Boolean
+        Get
+            Return _optionButtonActive
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Bara are UN singur buton care desfășoară meniuri — cel de opțiuni — deci nu are nevoie să
+    ''' i se spună și CARE buton s-a desfășurat.
+    ''' </summary>
+    Private Sub SetPopupOpen(open As Boolean) Implements IPopupAnchor.SetPopupOpen
+        If open = _optionButtonActive Then Return
+        _optionButtonActive = open
+        Invalidate()
+    End Sub
+
+    ''' <summary>
+    ''' Dreptunghiul butonului de opțiuni, în coordonatele CLIENT ale barei —
+    ''' <see cref="Rectangle.Empty"/> când butonul e ascuns.
+    '''
+    ''' Există ca să poată o gazdă să agațe ceva sub buton (un meniu, o listă) fără să-i
+    ''' reproducă geometria: butonul e DESENAT, nu e un control, deci n-are `Bounds` propriu, iar
+    ''' o gazdă care își calculează singură slotul rămâne în urmă în clipa în care se stinge
+    ''' `ShowMinimize` sau `ShowMaximize`. Aceeași lecție ca la butonul de strângere al arborelui:
+    ''' desenul, hit-testul și gazda citesc ACEEAȘI funcție.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property OptionButtonBounds As Rectangle
+        Get
+            If Not _showOptionsButton Then Return Rectangle.Empty
+            Return OptionButtonRect()
+        End Get
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Evenimentul declanșat la click pe butonul de opțiuni")>
+    Public Custom Event OptionButtonClick As EventHandler
+        AddHandler(value As EventHandler)
+            _optionButtonClick = DirectCast(System.Delegate.Combine(_optionButtonClick, value), EventHandler)
+        End AddHandler
+        RemoveHandler(value As EventHandler)
+            _optionButtonClick = DirectCast(System.Delegate.Remove(_optionButtonClick, value), EventHandler)
+        End RemoveHandler
+        RaiseEvent(sender As Object, e As EventArgs)
+            If _optionButtonClick IsNot Nothing Then
+                _optionButtonClick.Invoke(sender, e)
+            End If
+        End RaiseEvent
+    End Event
+
     ' Titlul e Text-ul controlului (setat în designer). Repictăm la schimbare.
     Protected Overrides Sub OnTextChanged(e As EventArgs)
         MyBase.OnTextChanged(e)
@@ -97,6 +228,8 @@ Public NotInheritable Class KBotCaptionBar
         _glyphColor = p.TextDimColor
         _closeHoverColor = p.ErrorColor
         _btnHoverColor = ThemeShapes.Blend(p.SurfaceAltColor, p.BorderColor, 0.6)
+        _optBtnHoverColor = ThemeShapes.Blend(p.SurfaceAltColor, p.BorderColor, 0.6)
+
         BackColor = _backColor
         Invalidate()
     End Sub
@@ -124,6 +257,13 @@ Public NotInheritable Class KBotCaptionBar
 
     Private Function MinRect() As Rectangle
         Return SlotRect(If(_showMaximize, 2, 1))
+    End Function
+
+    Private Function OptionButtonRect() As Rectangle
+        Dim slotIndex As Integer = 1 'Close button is always in slot 0
+        If _showMinimize Then slotIndex += 1
+        If _showMaximize Then slotIndex += 1
+        Return SlotRect(slotIndex)
     End Function
 
     ' Limita din dreapta a titlului = marginea stângă a celui mai din stânga buton vizibil.
@@ -170,6 +310,29 @@ Public NotInheritable Class KBotCaptionBar
             End If
 
             g.SmoothingMode = SmoothingMode.AntiAlias
+
+            ' Buton opțiuni (opțional).
+            If _showOptionsButton Then
+                Dim orect As Rectangle = OptionButtonRect()
+                ' Aprins și cât timp meniul lui e deschis, nu doar sub cursor: meniul trebuie să
+                ' pară continuarea butonului. Vezi IPopupAnchor.
+                If _optionButtonHover OrElse _optionButtonActive Then
+                    Using hb As New SolidBrush(_optBtnHoverColor)
+                        g.FillRectangle(hb, orect)
+                    End Using
+                End If
+                If _optionButtonImage IsNot Nothing Then
+                    Dim padOptBtn As Integer = ThemeShapes.ScaleDpi(Me, _optionButtonPadding)
+                    Dim side As Integer = Math.Min(Height - ThemeShapes.ScaleDpi(Me, 14), ThemeShapes.ScaleDpi(Me, 24))
+                    side = Math.Max(0, side - 2 * padOptBtn)          ' shrink by padding on both sides
+                    If side > 0 Then
+                        Dim ix As Integer = orect.Left + (orect.Width - side) \ 2
+                        Dim iy As Integer = (Height - side) \ 2
+                        g.InterpolationMode = InterpolationMode.HighQualityBicubic
+                        DrawOptionGlyph(g, New Rectangle(ix, iy, side, side))
+                    End If
+                End If
+            End If
 
             ' Buton minimizare (opțional).
             If _showMinimize Then
@@ -239,11 +402,41 @@ Public NotInheritable Class KBotCaptionBar
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Pictograma butonului de opțiuni. Cu <see cref="TintOptionButtonImage"/> aprins, e desenată
+    ''' RECOLORATĂ în <c>_glyphColor</c> — adică exact culoarea liniilor de la minimizare,
+    ''' maximizare și închidere, deci butonul devine a patra glifă a barei și urmează schema.
+    '''
+    ''' Matricea turtește R/G/B la culoarea cerută și lasă ALFA neatins (rândul 4 rămâne 1 pe
+    ''' poziția lui): forma pictogramei e dată de canalul alfa, deci silueta și marginile ei
+    ''' antialiasate rămân intacte, se schimbă doar culoarea. Pentru o pictogramă cu adevărat
+    ''' colorată asta ar fi distructiv — de aceea proprietatea se poate stinge.
+    '''
+    ''' Ajutor chemat DOAR din OnPaint, care e deja înfășurat (regula de acoperire tranzitivă).
+    ''' </summary>
+    Private Sub DrawOptionGlyph(g As Graphics, dest As Rectangle)
+        If Not _tintOptionButtonImage Then
+            g.DrawImage(_optionButtonImage, dest)
+            Return
+        End If
+        Using attrs As New ImageAttributes()
+            attrs.SetColorMatrix(New ColorMatrix(New Single()() {
+                New Single() {0.0F, 0.0F, 0.0F, 0.0F, 0.0F},
+                New Single() {0.0F, 0.0F, 0.0F, 0.0F, 0.0F},
+                New Single() {0.0F, 0.0F, 0.0F, 0.0F, 0.0F},
+                New Single() {0.0F, 0.0F, 0.0F, 1.0F, 0.0F},
+                New Single() {_glyphColor.R / 255.0F, _glyphColor.G / 255.0F, _glyphColor.B / 255.0F, 0.0F, 1.0F}}))
+            g.DrawImage(_optionButtonImage, dest, 0, 0,
+                        _optionButtonImage.Width, _optionButtonImage.Height, GraphicsUnit.Pixel, attrs)
+        End Using
+    End Sub
+
     ' True dacă punctul e pe oricare dintre butoanele vizibile.
     Private Function IsOnButton(location As Point) As Boolean
         If CloseRect().Contains(location) Then Return True
         If _showMaximize AndAlso MaxRect().Contains(location) Then Return True
         If _showMinimize AndAlso MinRect().Contains(location) Then Return True
+        If _showOptionsButton AndAlso OptionButtonRect().Contains(location) Then Return True
         Return False
     End Function
 
@@ -253,10 +446,13 @@ Public NotInheritable Class KBotCaptionBar
             Dim overClose As Boolean = CloseRect().Contains(e.Location)
             Dim overMax As Boolean = _showMaximize AndAlso MaxRect().Contains(e.Location)
             Dim overMin As Boolean = _showMinimize AndAlso MinRect().Contains(e.Location)
-            If overClose <> _hoverClose OrElse overMin <> _hoverMin OrElse overMax <> _hoverMax Then
+            Dim overOpt As Boolean = _showOptionsButton AndAlso OptionButtonRect().Contains(e.Location)
+
+            If overClose <> _hoverClose OrElse overMin <> _hoverMin OrElse overMax <> _hoverMax OrElse overOpt <> _optionButtonHover Then
                 _hoverClose = overClose
                 _hoverMin = overMin
                 _hoverMax = overMax
+                _optionButtonHover = overOpt
                 Invalidate()
             End If
         Catch ex As Exception
@@ -266,10 +462,11 @@ Public NotInheritable Class KBotCaptionBar
 
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
         MyBase.OnMouseLeave(e)
-        If _hoverClose OrElse _hoverMin OrElse _hoverMax Then
+        If _hoverClose OrElse _hoverMin OrElse _hoverMax OrElse _optionButtonHover Then
             _hoverClose = False
             _hoverMin = False
             _hoverMax = False
+            _optionButtonHover = False
             Invalidate()
         End If
     End Sub
@@ -303,6 +500,8 @@ Public NotInheritable Class KBotCaptionBar
                 ToggleMaximize()
             ElseIf _showMinimize AndAlso MinRect().Contains(e.Location) Then
                 f.WindowState = FormWindowState.Minimized
+            ElseIf _showOptionsButton AndAlso OptionButtonRect().Contains(e.Location) Then
+                RaiseEvent OptionButtonClick(Me, EventArgs.Empty)
             End If
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotCaptionBar.OnMouseClick", ex)
