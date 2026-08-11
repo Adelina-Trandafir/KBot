@@ -27,7 +27,7 @@ Partial Class LoginForm
         btnContinue = New Button()
         pnlUnit = New TableLayoutPanel()
         lblUnit = New Label()
-        cboUnit = New ComboBox()
+        cboUnit = New Controls.KBotComboBox()
         btnBack = New Button()
         btnLogin = New Button()
         ntfError = New Controls.KBotNotice()
@@ -206,7 +206,7 @@ Partial Class LoginForm
         pnlUnit.RowStyles.Add(New RowStyle())
         pnlUnit.RowStyles.Add(New RowStyle())
         pnlUnit.RowStyles.Add(New RowStyle())
-        pnlUnit.Size = New Size(518, 154)
+        pnlUnit.Size = New Size(518, 160)
         pnlUnit.TabIndex = 8
         pnlUnit.Tag = "Card"
         pnlUnit.Visible = False
@@ -227,21 +227,24 @@ Partial Class LoginForm
         ' 
         cboUnit.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
         pnlUnit.SetColumnSpan(cboUnit, 2)
+        cboUnit.CornerRadius = 4
+        cboUnit.DrawMode = DrawMode.OwnerDrawFixed
         cboUnit.DropDownStyle = ComboBoxStyle.DropDownList
         cboUnit.FlatStyle = FlatStyle.Flat
-        cboUnit.Font = New Font("Segoe UI", 10F)
+        cboUnit.Font = New Font("Segoe UI", 10.0F)
+        cboUnit.ItemHeight = 36
         cboUnit.Location = New Point(4, 35)
         cboUnit.Margin = New Padding(4, 5, 4, 20)
         cboUnit.Name = "cboUnit"
-        cboUnit.Size = New Size(510, 36)
+        cboUnit.Size = New Size(510, 42)
         cboUnit.TabIndex = 1
         ' 
         ' btnBack
         ' 
         btnBack.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
         btnBack.FlatStyle = FlatStyle.Flat
-        btnBack.Font = New Font("Segoe UI", 9F)
-        btnBack.Location = New Point(4, 91)
+        btnBack.Font = New Font("Segoe UI", 9.0F)
+        btnBack.Location = New Point(4, 97)
         btnBack.Margin = New Padding(4, 0, 9, 0)
         btnBack.Name = "btnBack"
         btnBack.Size = New Size(246, 63)
@@ -253,8 +256,8 @@ Partial Class LoginForm
         ' 
         btnLogin.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
         btnLogin.FlatStyle = FlatStyle.Flat
-        btnLogin.Font = New Font("Segoe UI Semibold", 10F)
-        btnLogin.Location = New Point(268, 91)
+        btnLogin.Font = New Font("Segoe UI Semibold", 10.0F)
+        btnLogin.Location = New Point(268, 97)
         btnLogin.Margin = New Padding(9, 0, 4, 0)
         btnLogin.Name = "btnLogin"
         btnLogin.Size = New Size(246, 63)
@@ -266,7 +269,7 @@ Partial Class LoginForm
         ' 
         ntfError.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
         ntfError.BackColor = Color.Transparent
-        ntfError.Location = New Point(44, 710)
+        ntfError.Location = New Point(44, 716)
         ntfError.Margin = New Padding(4, 10, 4, 5)
         ntfError.Name = "ntfError"
         ntfError.Size = New Size(510, 67)
@@ -287,10 +290,13 @@ Partial Class LoginForm
         ' capBar
         ' 
         capBar.Dock = DockStyle.Top
-        capBar.IconImage = Nothing
+        capBar.IconImage = My.Resources.Resources.kbot_64
         capBar.Location = New Point(0, 0)
         capBar.Margin = New Padding(4, 5, 4, 5)
         capBar.Name = "capBar"
+        capBar.OptionButtonImage = My.Resources.Resources.switch_theme
+        capBar.OptionButtonPadding = 0
+        capBar.ShowOptionsButton = True
         capBar.Size = New Size(598, 67)
         capBar.TabIndex = 3
         capBar.TabStop = False
@@ -334,7 +340,7 @@ Partial Class LoginForm
     Friend WithEvents btnContinue As Button
     Friend WithEvents pnlUnit As TableLayoutPanel
     Friend WithEvents lblUnit As Label
-    Friend WithEvents cboUnit As ComboBox
+    Friend WithEvents cboUnit As KBot.Controls.KBotComboBox
     Friend WithEvents btnBack As Button
     Friend WithEvents btnLogin As Button
     Friend WithEvents ntfError As KBot.Controls.KBotNotice

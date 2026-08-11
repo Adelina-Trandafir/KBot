@@ -810,10 +810,6 @@ Public Class MainForm
 
     ' ---------------- temă ----------------
 
-    ' Ridicat cât timp umplem combo-ul: atribuirea SelectedItem ridică SelectedIndexChanged, iar
-    ' handler-ul ar re-aplica schema deja activă (difuzare inutilă peste tot shell-ul la pornire).
-    Private _suppressThemeEvents As Boolean = False
-
     ' Culorile semantice theme-aware (rulează după ThemeManager.Apply și la comutare).
     Protected Overrides Sub OnThemeChanged()
         Try
@@ -877,139 +873,18 @@ Public Class MainForm
     End Sub
 
     ''' <summary>
-    ''' Selectorul de temă din butonul de opțiuni al barei de titlu — un <see cref="CustomPopup"/>,
-    ''' nu un <c>ContextMenuStrip</c>. Motivul e chiar cel pentru care controlul există: fața unui
-    ''' ContextMenuStrip o desenează <c>ToolStripRenderer</c>, deci meniul CU CARE SE ALEGE TEMA
-    ''' rămânea o fâșie de sistem, albă pe schemele întunecate.
-    '''
-    ''' Meniul arată DOAR schemele pe care le poate alege operatorul: cea activă lipsește din
-    ''' listă, fiindcă un rând care nu face nimic n-are ce căuta într-un meniu. Numele sunt cele
-    ''' ROMÂNEȘTI (<c>BuiltInSchemes.DisplayName</c>) — cheia rămâne numele englezesc al schemei,
-    ''' cel cu care se persistă și se rezolvă înapoi.
-    '''
-    ''' Restul, față de varianta veche:
-    ''' <list type="bullet">
-    ''' <item>fiecare nume poartă litera lui de acces («C&amp;lasic»), calculată din prima literă
-    ''' liberă ȘI TASTABILĂ, deci temele se pot comuta de la tastatură;</item>
-    ''' <item>meniul se agață de <c>capBar.OptionButtonBounds</c>, nu de o formulă de sloturi
-    ''' rescrisă aici — cea veche rămânea în urmă dacă se stingea butonul de minimizare, și
-    ''' oricum nu era folosită: <c>cms.Show()</c> fără argumente deschidea meniul la cursor;</item>
-    ''' <item>butonul rămâne aprins cât e meniul deschis — bara e <c>IPopupAnchor</c>, iar
-    ''' popup-ul îl aprinde și îl stinge singur.</item>
-    ''' </list>
+    ''' Selectorul de temă a intrat ÎN BARA DE TITLU (felia 0029): <c>capBar.ShowThemeButton</c>.
+    ''' Meniul de scheme, literele de acces, pictogramele, garda de re-deschidere și «Stiluri...»
+    ''' sunt acum ale controlului — vezi <c>KBotCaptionBar.ThemeButton.vb</c>. Aici rămâne doar
+    ''' ce e AL SHELL-ULUI după o comutare: restul se re-tematizează singur, fiindcă
+    ''' <c>ThemeManager.SetScheme</c> difuzează schema peste toate formularele deschise.
     ''' </summary>
-    Private Sub CapBar_OptionButtonClick(sender As Object, e As EventArgs) Handles capBar.OptionButtonClick
+    Private Sub CapBar_ThemeSchemeChanged(sender As Object, e As ThemeSchemeChangedEventArgs) Handles capBar.ThemeSchemeChanged
         Try
-            If _suppressThemeEvents Then Return
-            ' Al doilea clic pe buton ÎNCHIDE meniul: apăsarea l-a închis deja (a activat shell-ul),
-            ' deci fără garda asta l-am redeschide instantaneu. Vezi CustomPopup.ClosedJustNow.
-            If CustomPopup.ClosedJustNow Then Return
-
-            Dim ancora As Rectangle = capBar.OptionButtonBounds
-            If ancora.IsEmpty Then Return          ' butonul e ascuns — n-are de unde ieși meniul
-
-            Dim elemente As New List(Of CustomPopupItem)()
-            Dim folosite As New List(Of Char)()
-            For Each s In ThemeManager.AvailableSchemes
-                ' Schema activă NU intră în meniu: e deja aplicată, deci ar fi un rând care nu
-                ' face nimic. (Cerere de operator: «the existing theme must not be visible».)
-                If String.Equals(s.Name, ThemeManager.Current.Name, StringComparison.OrdinalIgnoreCase) Then Continue For
-                elemente.Add(New CustomPopupItem(s.Name,
-                                                 CuLiteraDeAcces(BuiltInSchemes.DisplayName(s.Name), folosite),
-                                                 GetThemeIcon(s)))
-            Next
-            If elemente.Count = 0 Then Return       ' o singură schemă instalată: n-ai ce alege
-            elemente.Add(CustomPopupItem.Separator())   ' separator vizual între scheme și «Stiluri»
-            elemente.Add(New CustomPopupItem("Stiluri", "Stiluri...", My.Resources.ThemeEditor))
-
-            ' Nicio selecție inițială: rândul «curent» lipsește din listă tocmai fiindcă e curent,
-            ' deci n-are ce fi evidențiat. Prima săgeată în jos ia primul rând, ca la orice meniu.
-            ' NU în «Using»: arătat nemodal, popup-ul se eliberează singur la închidere.
-            Dim meniu As New CustomPopup(elemente)
-            AddHandler meniu.ItemClicked, AddressOf OnThemePicked
-            meniu.ShowBelow(capBar, ancora)
+            _logger?.LogInfo($"Schemă de temă comutată pe «{e.Scheme.Name}».")
         Catch ex As Exception
             ' Boundary UI: un handler nu poate rearunca.
-            GlobalErrorLog.Write("MainForm.capBar_OptionButtonClick", ex)
+            GlobalErrorLog.Write("MainForm.capBar_ThemeSchemeChanged", ex)
         End Try
     End Sub
-
-    ''' <summary>
-    ''' Comută pe schema aleasă. Cheia elementului E numele schemei, deci drumul înapoi trece prin
-    ''' <c>ResolveByName</c> — o schemă care a dispărut între deschiderea meniului și clic se
-    ''' semnalează, nu se ignoră.
-    ''' </summary>
-    Private Sub OnThemePicked(sender As Object, e As CustomPopupItemEventArgs)
-        Try
-            If String.Equals(e.Item.Key, ThemeManager.Current.Name, StringComparison.OrdinalIgnoreCase) Then Return
-            If String.Equals(e.Item.Key, "Stiluri") Then
-                Try
-                    ThemeEditorForm.ShowFor(Me)
-                    Return
-                Catch ex As Exception
-                    GlobalErrorLog.Write("MainForm.btnStil_Click", ex)
-                    MessageBox.Show(Me, "Nu s-a putut deschide editorul de stiluri: " & ex.Message,
-                            "Stiluri", MessageBoxButtons.OK, MessageBoxIcon.Error)
-                End Try
-            End If
-
-            Try
-                Dim aleasa As ThemeScheme = ThemeManager.ResolveByName(e.Item.Key)
-                If aleasa Is Nothing Then
-                    _logger?.LogWarning($"Schema de temă «{e.Item.Key}» nu mai există.")
-                    Return
-                End If
-                ThemeManager.SetScheme(aleasa)
-            Catch ex As Exception
-                GlobalErrorLog.Write("MainForm.btnStil_Click", ex)
-            End Try
-
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.OnThemePicked", ex)
-        End Try
-    End Sub
-
-    ''' <summary>
-    ''' Pune un «&amp;» înaintea primei litere încă nefolosite din nume, ca fiecare schemă să aibă
-    ''' litera ei de acces. Numele schemelor vin și din fișiere de utilizator, nu dintr-o listă
-    ''' fixă, deci marcajul nu poate fi scris de mână nicăieri.
-    '''
-    ''' Litera trebuie să fie și TASTABILĂ, nu doar liberă — <c>PopupMnemonic.IsTypable</c>. În
-    ''' română asta nu e o subtilitate: «Întunecat» ar fi marcat «Î», care nu e nicio tastă, deci
-    ''' sublinierea ar promite o scurtătură inexistentă. Se sare peste ea și iese «Î&amp;ntunecat».
-    '''
-    ''' Când toate literele sunt deja luate, numele rămâne nemarcat: două rânduri pe aceeași
-    ''' literă ar fi mers oricum (a doua apăsare mută evidențierea), dar un nume fără marcaj e mai
-    ''' cinstit decât unul care pare al altcuiva.
-    ''' </summary>
-    Private Shared Function CuLiteraDeAcces(nume As String, folosite As List(Of Char)) As String
-        If String.IsNullOrEmpty(nume) Then Return String.Empty
-        ' Un «&» din numele schemei e text, nu marcaj: se dublează ÎNAINTE de a căuta locul
-        ' marcajului, ca poziția găsită să fie deja cea din șirul livrat meniului.
-        Dim escapat As String = nume.Replace("&", "&&")
-        For i As Integer = 0 To escapat.Length - 1
-            If Not PopupMnemonic.IsTypable(escapat(i)) Then Continue For
-            Dim litera As Char = Char.ToUpperInvariant(escapat(i))
-            If folosite.Contains(litera) Then Continue For
-            folosite.Add(litera)
-            Return escapat.Insert(i, "&")
-        Next
-        Return escapat
-    End Function
-
-    Private Function GetThemeIcon(scheme As ThemeScheme) As Drawing.Image
-        ' Adjust the resource names / logic to match what you actually have
-        Select Case scheme.Name.ToLowerInvariant()
-            Case "classic"
-                Return KBot.App.My.Resources.ThemeClassic          ' or whatever your resource is called
-            Case "dark"
-                Return KBot.App.My.Resources.ThemeDark
-            Case "modern"
-                Return KBot.App.My.Resources.ThemeModern
-            Case "colorful"
-                Return KBot.App.My.Resources.ThemeColorful
-            Case Else
-                Return KBot.App.My.Resources.ThemeClassic          ' fallback
-        End Select
-    End Function
 End Class

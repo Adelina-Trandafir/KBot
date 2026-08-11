@@ -16,7 +16,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.19.0.0</FileVersion>
+    <FileVersion>1.20.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -66,7 +66,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="My Project\Resources.Designer.vb">
+    <Compile Update="Resources.Designer.vb">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
@@ -74,9 +74,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="My Project\Resources.resx">
+    <EmbeddedResource Update="Resources.resx">
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
-      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+      <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>

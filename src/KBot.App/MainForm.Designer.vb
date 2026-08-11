@@ -481,11 +481,9 @@ Partial Class MainForm
         capBar.Location = New Point(0, 0)
         capBar.Margin = New Padding(4, 5, 4, 5)
         capBar.Name = "capBar"
-        capBar.OptionButtonImage = My.Resources.Resources.switch_theme
-        capBar.OptionButtonPadding = 2
         capBar.ShowMaximize = True
         capBar.ShowMinimize = True
-        capBar.ShowOptionsButton = True
+        capBar.ShowThemeButton = True
         capBar.Size = New Size(1827, 67)
         capBar.TabIndex = 4
         capBar.TabStop = False

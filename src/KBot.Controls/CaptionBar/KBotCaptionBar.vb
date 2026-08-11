@@ -12,9 +12,12 @@ Imports KBot.Common
 ''' pictogramă + titlu în stânga, buton de închidere (și, opțional, minimizare) în
 ''' dreapta, tragerea ferestrei de pe zona liberă. Toate culorile vin din schema
 ''' activă (via <see cref="ApplyTheme"/>); nicio culoare hardcodată.
+'''
+''' <para>Partea de SELECTOR DE TEMĂ (butonul <c>ShowThemeButton</c> și meniul lui) stă în
+''' <c>KBotCaptionBar.ThemeButton.vb</c> — vezi acolo de ce bara își face singură meniul.</para>
 ''' </summary>
 <ToolboxItem(True)>
-Public NotInheritable Class KBotCaptionBar
+Partial Public NotInheritable Class KBotCaptionBar
     Inherits Control
     Implements IThemedControl, IPopupAnchor
 
@@ -34,6 +37,7 @@ Public NotInheritable Class KBotCaptionBar
     Private _hoverMin As Boolean = False
     Private _hoverMax As Boolean = False
     Private _optionButtonHover As Boolean = False
+    Private _themeButtonHover As Boolean = False
 
     ' ── Optional - Options Button (in stanga ultimului buton vizibil din control box) ───────────────────────────────
     Private _showOptionsButton As Boolean = False
@@ -42,6 +46,14 @@ Public NotInheritable Class KBotCaptionBar
     Private _optionButtonPadding As Integer = 0
     Private _tintOptionButtonImage As Boolean = True
     Private _optionButtonActive As Boolean = False
+
+    ' ── Optional - Theme Button (selectorul de teme; vezi KBotCaptionBar.ThemeButton.vb) ──────
+    Private _showThemeButton As Boolean = False
+    Private _showThemeEditor As Boolean = True
+    Private _themeButtonImage As Image
+    Private _themeButtonPadding As Integer = 2
+    Private _tintThemeButtonImage As Boolean = True
+    Private _themeButtonActive As Boolean = False
 
     Public Sub New()
         SetStyle(ControlStyles.UserPaint Or ControlStyles.AllPaintingInWmPaint Or
@@ -169,12 +181,33 @@ Public NotInheritable Class KBotCaptionBar
     End Property
 
     ''' <summary>
-    ''' Bara are UN singur buton care desfășoară meniuri — cel de opțiuni — deci nu are nevoie să
-    ''' i se spună și CARE buton s-a desfășurat.
+    ''' Bara are ACUM două butoane care desfășoară meniuri (opțiuni și temă), iar interfața nu
+    ''' spune care s-a desfășurat — <see cref="IPopupAnchor"/> primește un singur bit, fiindcă
+    ''' popup-ul nu are de unde ști ce buton l-a deschis.
+    '''
+    ''' Diferența o face bara: meniul de temă îl deschide EA, deci ridică <c>_themeMenuOpening</c>
+    ''' chiar înainte de <c>ShowBelow</c> (vezi <c>ShowThemeMenu</c>); orice altă deschidere vine de
+    ''' la gazdă, prin butonul de opțiuni. Steagul se consumă aici, la prima aprindere, ca o
+    ''' deschidere ratată să nu-l lase ridicat pentru următoarea.
     ''' </summary>
     Private Sub SetPopupOpen(open As Boolean) Implements IPopupAnchor.SetPopupOpen
-        If open = _optionButtonActive Then Return
-        _optionButtonActive = open
+        If open Then
+            Dim eTema As Boolean = _themeMenuOpening
+            _themeMenuOpening = False
+            If eTema Then
+                If _themeButtonActive Then Return
+                _themeButtonActive = True
+            Else
+                If _optionButtonActive Then Return
+                _optionButtonActive = True
+            End If
+        Else
+            ' Închiderea stinge amândouă: sinkul e comun, iar un buton rămas aprins ar arăta un
+            ' meniu care nu mai există.
+            If Not _optionButtonActive AndAlso Not _themeButtonActive Then Return
+            _optionButtonActive = False
+            _themeButtonActive = False
+        End If
         Invalidate()
     End Sub
 
@@ -197,6 +230,11 @@ Public NotInheritable Class KBotCaptionBar
         End Get
     End Property
 
+    Private Shared ReadOnly newColorMatrix As Single() = New Single() {0.0F, 0.0F, 0.0F, 0.0F, 0.0F}
+    Private Shared ReadOnly newColorMatrixArray As Single() = New Single() {0.0F, 0.0F, 0.0F, 0.0F, 0.0F}
+    Private Shared ReadOnly newColorMatrixArray0 As Single() = New Single() {0.0F, 0.0F, 0.0F, 0.0F, 0.0F}
+    Private Shared ReadOnly newColorMatrixArray1 As Single() = New Single() {0.0F, 0.0F, 0.0F, 1.0F, 0.0F}
+
     <Category("K-BOT")>
     <Description("Evenimentul declanșat la click pe butonul de opțiuni")>
     Public Custom Event OptionButtonClick As EventHandler
@@ -207,9 +245,7 @@ Public NotInheritable Class KBotCaptionBar
             _optionButtonClick = DirectCast(System.Delegate.Remove(_optionButtonClick, value), EventHandler)
         End RemoveHandler
         RaiseEvent(sender As Object, e As EventArgs)
-            If _optionButtonClick IsNot Nothing Then
-                _optionButtonClick.Invoke(sender, e)
-            End If
+            _optionButtonClick?.Invoke(sender, e)
         End RaiseEvent
     End Event
 
@@ -259,15 +295,31 @@ Public NotInheritable Class KBotCaptionBar
         Return SlotRect(If(_showMaximize, 2, 1))
     End Function
 
-    Private Function OptionButtonRect() As Rectangle
+    ' Ordinea butoanelor pe bară, dreapta → stânga: închidere, maximizare, minimizare, TEMĂ,
+    ' opțiuni. Butonul de temă stă imediat după cutia de control (min/max, iar în lipsa lor după
+    ' închidere), deci slotul lui e primul liber după ea; butonul de opțiuni vine la stânga lui.
+    ' Toate se derivă din aceeași numărătoare — nimic nu rămâne în urmă când se stinge un buton.
+    Private Function ThemeButtonSlot() As Integer
         Dim slotIndex As Integer = 1 'Close button is always in slot 0
         If _showMinimize Then slotIndex += 1
         If _showMaximize Then slotIndex += 1
-        Return SlotRect(slotIndex)
+        Return slotIndex
+    End Function
+
+    Private Function ThemeButtonRect() As Rectangle
+        Return SlotRect(ThemeButtonSlot())
+    End Function
+
+    Private Function OptionButtonRect() As Rectangle
+        Return SlotRect(ThemeButtonSlot() + If(_showThemeButton, 1, 0))
     End Function
 
     ' Limita din dreapta a titlului = marginea stângă a celui mai din stânga buton vizibil.
+    ' Butoanele de opțiuni și de temă intră și ele în socoteală: fără asta titlul curge PE SUB
+    ' ele, iar un titlu lung le acoperă.
     Private Function TitleRightLimit() As Integer
+        If _showOptionsButton Then Return OptionButtonRect().Left
+        If _showThemeButton Then Return ThemeButtonRect().Left
         If _showMinimize Then Return MinRect().Left
         If _showMaximize Then Return MaxRect().Left
         Return CloseRect().Left
@@ -311,27 +363,17 @@ Public NotInheritable Class KBotCaptionBar
 
             g.SmoothingMode = SmoothingMode.AntiAlias
 
-            ' Buton opțiuni (opțional).
+            ' Buton opțiuni (opțional). Aprins și cât timp meniul lui e deschis, nu doar sub
+            ' cursor: meniul trebuie să pară continuarea butonului. Vezi IPopupAnchor.
             If _showOptionsButton Then
-                Dim orect As Rectangle = OptionButtonRect()
-                ' Aprins și cât timp meniul lui e deschis, nu doar sub cursor: meniul trebuie să
-                ' pară continuarea butonului. Vezi IPopupAnchor.
-                If _optionButtonHover OrElse _optionButtonActive Then
-                    Using hb As New SolidBrush(_optBtnHoverColor)
-                        g.FillRectangle(hb, orect)
-                    End Using
-                End If
-                If _optionButtonImage IsNot Nothing Then
-                    Dim padOptBtn As Integer = ThemeShapes.ScaleDpi(Me, _optionButtonPadding)
-                    Dim side As Integer = Math.Min(Height - ThemeShapes.ScaleDpi(Me, 14), ThemeShapes.ScaleDpi(Me, 24))
-                    side = Math.Max(0, side - 2 * padOptBtn)          ' shrink by padding on both sides
-                    If side > 0 Then
-                        Dim ix As Integer = orect.Left + (orect.Width - side) \ 2
-                        Dim iy As Integer = (Height - side) \ 2
-                        g.InterpolationMode = InterpolationMode.HighQualityBicubic
-                        DrawOptionGlyph(g, New Rectangle(ix, iy, side, side))
-                    End If
-                End If
+                DrawImageButton(g, OptionButtonRect(), _optionButtonImage, _optionButtonPadding,
+                                _tintOptionButtonImage, _optionButtonHover OrElse _optionButtonActive)
+            End If
+
+            ' Buton temă (opțional) — aceeași față ca butonul de opțiuni, alt conținut.
+            If _showThemeButton Then
+                DrawImageButton(g, ThemeButtonRect(), EffectiveThemeButtonImage(), _themeButtonPadding,
+                                _tintThemeButtonImage, _themeButtonHover OrElse _themeButtonActive)
             End If
 
             ' Buton minimizare (opțional).
@@ -403,7 +445,36 @@ Public NotInheritable Class KBotCaptionBar
     End Sub
 
     ''' <summary>
-    ''' Pictograma butonului de opțiuni. Cu <see cref="TintOptionButtonImage"/> aprins, e desenată
+    ''' Un buton cu pictogramă (opțiuni sau temă): fundalul de survolare, apoi glifa pătrată,
+    ''' centrată, micșorată cu <paramref name="padding"/> pe fiecare latură.
+    '''
+    ''' Cele două butoane citesc ACEEAȘI funcție, ca la sloturi: sunt același obiect vizual, iar
+    ''' două desene paralele s-ar despărți la prima reglare de padding.
+    '''
+    ''' Ajutor chemat DOAR din OnPaint, care e deja înfășurat (regula de acoperire tranzitivă).
+    ''' </summary>
+    Private Sub DrawImageButton(g As Graphics, bounds As Rectangle, image As Image,
+                                padding As Integer, tint As Boolean, hot As Boolean)
+        If hot Then
+            Using hb As New SolidBrush(_optBtnHoverColor)
+                g.FillRectangle(hb, bounds)
+            End Using
+        End If
+        If image Is Nothing Then Return
+
+        Dim pad As Integer = ThemeShapes.ScaleDpi(Me, padding)
+        Dim side As Integer = Math.Min(Height - ThemeShapes.ScaleDpi(Me, 14), ThemeShapes.ScaleDpi(Me, 24))
+        side = Math.Max(0, side - 2 * pad)          ' shrink by padding on both sides
+        If side <= 0 Then Return
+
+        Dim ix As Integer = bounds.Left + (bounds.Width - side) \ 2
+        Dim iy As Integer = (Height - side) \ 2
+        g.InterpolationMode = InterpolationMode.HighQualityBicubic
+        DrawGlyphImage(g, image, New Rectangle(ix, iy, side, side), tint)
+    End Sub
+
+    ''' <summary>
+    ''' Pictograma unui buton de bară. Cu <paramref name="tint"/> aprins, e desenată
     ''' RECOLORATĂ în <c>_glyphColor</c> — adică exact culoarea liniilor de la minimizare,
     ''' maximizare și închidere, deci butonul devine a patra glifă a barei și urmează schema.
     '''
@@ -414,20 +485,20 @@ Public NotInheritable Class KBotCaptionBar
     '''
     ''' Ajutor chemat DOAR din OnPaint, care e deja înfășurat (regula de acoperire tranzitivă).
     ''' </summary>
-    Private Sub DrawOptionGlyph(g As Graphics, dest As Rectangle)
-        If Not _tintOptionButtonImage Then
-            g.DrawImage(_optionButtonImage, dest)
+    Private Sub DrawGlyphImage(g As Graphics, image As Image, dest As Rectangle, tint As Boolean)
+        If Not tint Then
+            g.DrawImage(image, dest)
             Return
         End If
         Using attrs As New ImageAttributes()
             attrs.SetColorMatrix(New ColorMatrix(New Single()() {
-                New Single() {0.0F, 0.0F, 0.0F, 0.0F, 0.0F},
-                New Single() {0.0F, 0.0F, 0.0F, 0.0F, 0.0F},
-                New Single() {0.0F, 0.0F, 0.0F, 0.0F, 0.0F},
-                New Single() {0.0F, 0.0F, 0.0F, 1.0F, 0.0F},
+                newColorMatrix,
+                newColorMatrixArray,
+                newColorMatrixArray0,
+                newColorMatrixArray1,
                 New Single() {_glyphColor.R / 255.0F, _glyphColor.G / 255.0F, _glyphColor.B / 255.0F, 0.0F, 1.0F}}))
-            g.DrawImage(_optionButtonImage, dest, 0, 0,
-                        _optionButtonImage.Width, _optionButtonImage.Height, GraphicsUnit.Pixel, attrs)
+            g.DrawImage(image, dest, 0, 0,
+                        image.Width, image.Height, GraphicsUnit.Pixel, attrs)
         End Using
     End Sub
 
@@ -437,6 +508,7 @@ Public NotInheritable Class KBotCaptionBar
         If _showMaximize AndAlso MaxRect().Contains(location) Then Return True
         If _showMinimize AndAlso MinRect().Contains(location) Then Return True
         If _showOptionsButton AndAlso OptionButtonRect().Contains(location) Then Return True
+        If _showThemeButton AndAlso ThemeButtonRect().Contains(location) Then Return True
         Return False
     End Function
 
@@ -447,12 +519,15 @@ Public NotInheritable Class KBotCaptionBar
             Dim overMax As Boolean = _showMaximize AndAlso MaxRect().Contains(e.Location)
             Dim overMin As Boolean = _showMinimize AndAlso MinRect().Contains(e.Location)
             Dim overOpt As Boolean = _showOptionsButton AndAlso OptionButtonRect().Contains(e.Location)
+            Dim overTema As Boolean = _showThemeButton AndAlso ThemeButtonRect().Contains(e.Location)
 
-            If overClose <> _hoverClose OrElse overMin <> _hoverMin OrElse overMax <> _hoverMax OrElse overOpt <> _optionButtonHover Then
+            If overClose <> _hoverClose OrElse overMin <> _hoverMin OrElse overMax <> _hoverMax OrElse
+               overOpt <> _optionButtonHover OrElse overTema <> _themeButtonHover Then
                 _hoverClose = overClose
                 _hoverMin = overMin
                 _hoverMax = overMax
                 _optionButtonHover = overOpt
+                _themeButtonHover = overTema
                 Invalidate()
             End If
         Catch ex As Exception
@@ -462,11 +537,12 @@ Public NotInheritable Class KBotCaptionBar
 
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
         MyBase.OnMouseLeave(e)
-        If _hoverClose OrElse _hoverMin OrElse _hoverMax OrElse _optionButtonHover Then
+        If _hoverClose OrElse _hoverMin OrElse _hoverMax OrElse _optionButtonHover OrElse _themeButtonHover Then
             _hoverClose = False
             _hoverMin = False
             _hoverMax = False
             _optionButtonHover = False
+            _themeButtonHover = False
             Invalidate()
         End If
     End Sub
@@ -502,6 +578,9 @@ Public NotInheritable Class KBotCaptionBar
                 f.WindowState = FormWindowState.Minimized
             ElseIf _showOptionsButton AndAlso OptionButtonRect().Contains(e.Location) Then
                 RaiseEvent OptionButtonClick(Me, EventArgs.Empty)
+            ElseIf _showThemeButton AndAlso ThemeButtonRect().Contains(e.Location) Then
+                ' Meniul de teme îl face bara însăși — vezi KBotCaptionBar.ThemeButton.vb.
+                ShowThemeMenu()
             End If
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotCaptionBar.OnMouseClick", ex)
