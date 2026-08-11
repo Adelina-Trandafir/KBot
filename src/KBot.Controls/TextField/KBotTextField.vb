@@ -49,6 +49,12 @@ Public NotInheritable Class KBotTextField
         AddHandler _inner.Enter, AddressOf OnInnerEnter
         AddHandler _inner.Leave, AddressOf OnInnerLeave
         AddHandler _inner.KeyDown, AddressOf OnInnerKeyDown
+        ' English (slice 0028-06): the frame's own TextChanged must fire too. `Text` is delegated
+        ' to the inner TextBox, so without this forward the event of a WinForms control whose text
+        ' HAS changed simply never fires — every consumer would have to know about InnerTextBox,
+        ' and a `Handles txtX.TextChanged` written in a designer-authored form would silently do
+        ' nothing. That is a trap, not a design.
+        AddHandler _inner.TextChanged, AddressOf OnInnerTextChanged
         Controls.Add(_inner)
 
         Height = 36
@@ -259,6 +265,13 @@ Public NotInheritable Class KBotTextField
 
     Private Sub OnInnerKeyDown(sender As Object, e As KeyEventArgs)
         RaiseEvent FieldKeyDown(Me, e)
+    End Sub
+
+    ' Textul intern s-a schimbat => și al cadrului, fiindcă `Text` e delegat acolo. Placeholder-ul
+    ' se redesenează la fel, deci și repictarea stă aici.
+    Private Sub OnInnerTextChanged(sender As Object, e As EventArgs)
+        OnTextChanged(EventArgs.Empty)
+        Invalidate()
     End Sub
 
 End Class
