@@ -231,7 +231,7 @@ Partial Class LoginForm
         cboUnit.DrawMode = DrawMode.OwnerDrawFixed
         cboUnit.DropDownStyle = ComboBoxStyle.DropDownList
         cboUnit.FlatStyle = FlatStyle.Flat
-        cboUnit.Font = New Font("Segoe UI", 10.0F)
+        cboUnit.Font = New Font("Segoe UI", 10F)
         cboUnit.ItemHeight = 36
         cboUnit.Location = New Point(4, 35)
         cboUnit.Margin = New Padding(4, 5, 4, 20)
@@ -243,7 +243,7 @@ Partial Class LoginForm
         ' 
         btnBack.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
         btnBack.FlatStyle = FlatStyle.Flat
-        btnBack.Font = New Font("Segoe UI", 9.0F)
+        btnBack.Font = New Font("Segoe UI", 9F)
         btnBack.Location = New Point(4, 97)
         btnBack.Margin = New Padding(4, 0, 9, 0)
         btnBack.Name = "btnBack"
@@ -256,7 +256,7 @@ Partial Class LoginForm
         ' 
         btnLogin.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
         btnLogin.FlatStyle = FlatStyle.Flat
-        btnLogin.Font = New Font("Segoe UI Semibold", 10.0F)
+        btnLogin.Font = New Font("Segoe UI Semibold", 10F)
         btnLogin.Location = New Point(268, 97)
         btnLogin.Margin = New Padding(9, 0, 4, 0)
         btnLogin.Name = "btnLogin"
@@ -294,9 +294,10 @@ Partial Class LoginForm
         capBar.Location = New Point(0, 0)
         capBar.Margin = New Padding(4, 5, 4, 5)
         capBar.Name = "capBar"
-        capBar.OptionButtonImage = My.Resources.Resources.switch_theme
+        capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
-        capBar.ShowOptionsButton = True
+        capBar.ShowThemeButton = True
+        capBar.ShowThemeEditor = False
         capBar.Size = New Size(598, 67)
         capBar.TabIndex = 3
         capBar.TabStop = False

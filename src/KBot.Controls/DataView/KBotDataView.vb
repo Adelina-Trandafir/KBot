@@ -274,6 +274,46 @@ Public Class KBotDataView
     End Sub
 
     ''' <summary>
+    ''' Chemată de <see cref="KBotDataColumn"/> când i s-a schimbat TITLUL sau steagul
+    ''' <see cref="KBotDataColumn.MultiLine"/>. Nu e o simplă repictare: titlul intră în măsurarea
+    ''' la conținut, iar pe o coloană cu mai multe linii el hotărăște și înălțimea benzii de antet
+    ''' (vezi <c>EffectiveHeaderHeight</c>) — deci se cere o trecere de layout întreagă.
+    ''' Boundary: loghează + înghite — o tastare în grila de proprietăți n-are voie să arunce.
+    ''' </summary>
+    ''' <summary>
+    ''' Chemată de <see cref="KBotDataColumn.Width"/> când CALLER-ul îi schimbă lățimea (nu și de
+    ''' trecerea de layout, care scrie prin <c>SetLayoutWidth</c>).
+    '''
+    ''' <para>Uită înălțimea măsurată a antetului și cere o repictare — atât. NU pornește o trecere
+    ''' de layout, deși ar părea locul: în timpul unei trageri de margine, lățimea se scrie ÎNAINTE
+    ''' ca respectiva coloană să fie marcată <c>UserSized</c>, iar o trecere «la conținut» pornită
+    ''' între cele două ar re-măsura coloana chiar de sub mouse-ul care o trage. Pictarea își
+    ''' reface oricum singură offset-urile (<c>RecalcColumnLayout</c> din <c>OnPaint</c>), iar
+    ''' apelanții care chiar au nevoie de bare recalculate — tragerea, umplerea — cheamă explicit
+    ''' <c>LayoutChanged</c> după ce starea lor s-a așezat.</para>
+    ''' </summary>
+    Friend Sub OnColumnWidthChanged()
+        Try
+            If _initializing Then Return
+            ' Banda de antet e o funcție de lățimi: o coloană lărgită își rupe titlul în mai
+            ' puține rânduri, deci măsurătoarea veche nu mai e valabilă.
+            InvalidateHeaderHeight()
+            InvalidateContent()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.OnColumnWidthChanged", ex)
+        End Try
+    End Sub
+
+    Friend Sub OnColumnHeaderChanged()
+        Try
+            If _initializing Then Return
+            LayoutChanged()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.OnColumnHeaderChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
     ''' Suntem în blocul <c>BeginInit</c>/<c>EndInit</c> emis de designer? O citește
     ''' <see cref="KBotDataColumn"/>, ca validările lui să se amâne până la <c>EndInit</c>.
     ''' </summary>
@@ -433,7 +473,7 @@ Public Class KBotDataView
             Dim row As KBotDataRow = _rows(rowIndex)
             Dim value As Object = row(colKey)
             _probeCellArgs.Reset(col, row, rowIndex, value, String.Empty,
-                                 BackColor, ForeColor, Font, col.TextAlign, True)
+                                 BackColor, ForeColor, CellFontFor(col), col.TextAlign, True)
             RaiseEvent CellFormatting(Me, _probeCellArgs)
             Return _probeCellArgs.Enabled
         Catch ex As Exception
@@ -493,9 +533,17 @@ Public Class KBotDataView
         End Set
     End Property
 
-    ''' <summary>Înălțimea benzii de antet (px). Implicit 30.</summary>
+    ''' <summary>
+    ''' Înălțimea benzii de antet (px). Implicit 30.
+    '''
+    ''' <para>De când există <see cref="KBotDataColumn.MultiLine"/>, e MINIMUL benzii, nu
+    ''' înălțimea ei fixă: o coloană cu titlul pe mai multe linii ridică banda cât îi trebuie și o
+    ''' lasă la loc când se lărgește. Ce se vede efectiv pe ecran e
+    ''' <see cref="EffectiveHeaderHeight"/>; numărul de aici nu se schimbă niciodată singur, ca să
+    ''' rămână ce a cerut operatorul.</para>
+    ''' </summary>
     <Category("K-BOT: Header")>
-    <Description("Înălțimea benzii de antet, în pixeli.")>
+    <Description("Înălțimea benzii de antet, în pixeli. Cu coloane MultiLine e MINIMUL benzii (ea crește cât cere textul).")>
     <DefaultValue(30)>
     Public Property HeaderHeight As Integer
         Get
@@ -503,6 +551,63 @@ Public Class KBotDataView
         End Get
         Set(value As Integer)
             _headerHeight = Math.Max(0, value)
+            InvalidateHeaderHeight()
+            LayoutChanged()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Banda de antet se măsoară după text (implicit, <c>True</c>), sau rămâne fix la
+    ''' <see cref="HeaderHeight"/>?
+    '''
+    ''' <para><c>False</c> înseamnă exact ce spune: înălțimea hotărâtă în designer, indiferent dacă
+    ''' titlurile încap sau nu. Un titlu pe două rânduri într-o bandă de un rând se va TĂIA — și e
+    ''' o tăiere cerută, nu o scăpare: uneori un antet care își schimbă înălțimea singur, pe
+    ''' măsură ce coloanele se lățesc, mișcă tot ce e sub el, iar o grilă așezată lângă alta
+    ''' trebuie să rămână aliniată cu vecina ei.</para>
+    '''
+    ''' <para>Cât timp e <c>True</c>, <see cref="HeaderHeight"/> e minimul benzii, iar
+    ''' <see cref="MaxHeaderHeight"/> plafonul ei. Stins, amândouă rămân fără efect în afară de
+    ''' primul: banda e chiar <see cref="HeaderHeight"/>.</para>
+    ''' </summary>
+    <Category("K-BOT: Header")>
+    <Description("Banda de antet se măsoară după text (crește pentru titlurile pe mai multe rânduri). False = rămâne fix la HeaderHeight, iar ce nu încape se taie.")>
+    <DefaultValue(True)>
+    Public Property AutoSizeHeaderHeight As Boolean
+        Get
+            Return _autoSizeHeaderHeight
+        End Get
+        Set(value As Boolean)
+            If _autoSizeHeaderHeight = value Then Return
+            _autoSizeHeaderHeight = value
+            InvalidateHeaderHeight()
+            LayoutChanged()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Plafonul (px) până la care banda de antet are voie să crească pentru coloanele
+    ''' <see cref="KBotDataColumn.MultiLine"/>. <c>0</c> (implicit) = fără plafon. Contează doar
+    ''' cât timp <see cref="AutoSizeHeaderHeight"/> e pornit.
+    '''
+    ''' <para>E o supapă, nu o dimensiune: o coloană strâmtată până la podeaua ei ar putea cere
+    ''' cinci-șase rânduri de titlu, iar o bandă de antet cât un sfert de grilă e o greșeală
+    ''' vizibilă, nu o adaptare. Peste plafon titlul se taie cu elipsă, ca oriunde altundeva.
+    ''' Plafonul nu coboară niciodată sub <see cref="HeaderHeight"/> — acela e minimul cerut
+    ''' explicit, iar două proprietăți care se contrazic n-au voie să dea o bandă imposibilă.</para>
+    ''' </summary>
+    <Category("K-BOT: Header")>
+    <Description("Cât are voie să crească banda de antet pentru coloanele MultiLine (px). 0 = fără plafon.")>
+    <DefaultValue(0)>
+    Public Property MaxHeaderHeight As Integer
+        Get
+            Return _maxHeaderHeight
+        End Get
+        Set(value As Integer)
+            Dim nou As Integer = Math.Max(0, value)
+            If _maxHeaderHeight = nou Then Return
+            _maxHeaderHeight = nou
+            InvalidateHeaderHeight()
             LayoutChanged()
         End Set
     End Property

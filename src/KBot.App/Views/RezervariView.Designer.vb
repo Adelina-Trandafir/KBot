@@ -1,4 +1,6 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
+﻿Imports KBot.Controls
+
+<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class RezervariView
     Inherits System.Windows.Forms.UserControl
 
@@ -15,14 +17,20 @@ Partial Class RezervariView
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        Dim KBotDataColumn1 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
         split = New SplitContainer()
-        tree = New Controls.AdvancedTreeControl()
-        grid = New Controls.KBotDataView()
+        tree = New AdvancedTreeControl()
+        grid = New KBotDataView()
         lblEmpty = New Label()
         CType(split, ComponentModel.ISupportInitialize).BeginInit()
         split.Panel1.SuspendLayout()
         split.Panel2.SuspendLayout()
         split.SuspendLayout()
+        CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
         ' split
@@ -40,7 +48,7 @@ Partial Class RezervariView
         ' 
         split.Panel2.Controls.Add(grid)
         split.Size = New Size(986, 567)
-        split.SplitterDistance = 336
+        split.SplitterDistance = 276
         split.SplitterWidth = 9
         split.TabIndex = 0
         ' 
@@ -49,14 +57,14 @@ Partial Class RezervariView
         tree.Dock = DockStyle.Fill
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCollapseButton = True
-        tree.FooterCollapseButtonPosition = KBot.Controls.AdvancedTreeControl.En_FooterButtonPosition.Left
+        tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
         tree.FooterHeight = 40
         tree.FooterIconSize = New Size(24, 24)
         tree.FooterVisible = True
         tree.HeaderBackColor = SystemColors.Control
-        tree.HeaderBackStyle = KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
+        tree.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " REZERVĂRI"
         tree.HeaderFont = New Font("Tahoma", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.HeaderForeColor = Color.Black
@@ -74,30 +82,101 @@ Partial Class RezervariView
         tree.ReserveRightIconSpace = True
         tree.RightIconSize = New Size(14, 14)
         tree.RightTextWidth = 110
-        tree.RootExpander = True
-        tree.Size = New Size(336, 567)
+        tree.Size = New Size(276, 567)
         tree.TabIndex = 0
         ' 
         ' grid
         ' 
-        grid.AlternatingRows = True
-        grid.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.ToContent
-        grid.AutoSizeSampleRows = 200
+        grid.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        grid.AutoSizeHeaderHeight = False
         grid.BackColor = SystemColors.Window
-        grid.ColumnFillMode = KBot.Controls.KBotFillMode.None
-        grid.CurrentColumnKey = Nothing
-        grid.CurrentRowIndex = -1
+        grid.CellTooltip.Enabled = False
+        grid.ColumnFillMode = KBotFillMode.FirstColumn
+        KBotDataColumn1.AggregateFormatString = Nothing
+        KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
+        KBotDataColumn1.FormatString = Nothing
+        KBotDataColumn1.Frozen = True
+        KBotDataColumn1.HeaderText = "Clasificația"
+        KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn1.Key = "clsf"
+        KBotDataColumn1.OptionGroup = Nothing
+        KBotDataColumn1.ShowColumnFilter = True
+        KBotDataColumn1.Width = 180
+        KBotDataColumn2.AggregateFormatString = Nothing
+        KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn2.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn2.DecimalPlaces = 2
+        KBotDataColumn2.Format = KBotFormat.Standard
+        KBotDataColumn2.FormatString = Nothing
+        KBotDataColumn2.HeaderText = "Credit" & vbCrLf & "Bugetar"
+        KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn2.Key = "credit_bug"
+        KBotDataColumn2.MultiLine = True
+        KBotDataColumn2.OptionGroup = Nothing
+        KBotDataColumn2.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn2.ValueType = KBotValueType.Number
+        KBotDataColumn2.Width = 130
+        KBotDataColumn3.AggregateFormatString = Nothing
+        KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn3.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn3.DecimalPlaces = 2
+        KBotDataColumn3.Format = KBotFormat.Standard
+        KBotDataColumn3.FormatString = Nothing
+        KBotDataColumn3.HeaderText = "Rezervare" & vbCrLf & "Inițială"
+        KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn3.Key = "r_initiala"
+        KBotDataColumn3.MultiLine = True
+        KBotDataColumn3.OptionGroup = Nothing
+        KBotDataColumn3.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn3.ValueType = KBotValueType.Number
+        KBotDataColumn3.Width = 130
+        KBotDataColumn4.Aggregate = KBotAggregate.Sum
+        KBotDataColumn4.AggregateFormatString = Nothing
+        KBotDataColumn4.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn4.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn4.DecimalPlaces = 2
+        KBotDataColumn4.Format = KBotFormat.Standard
+        KBotDataColumn4.FormatString = Nothing
+        KBotDataColumn4.HeaderText = "Rezervare" & vbCrLf & "Curentă"
+        KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn4.Key = "r_valoare"
+        KBotDataColumn4.MultiLine = True
+        KBotDataColumn4.OptionGroup = Nothing
+        KBotDataColumn4.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn4.ValueType = KBotValueType.Number
+        KBotDataColumn4.Width = 130
+        KBotDataColumn5.AggregateFormatString = Nothing
+        KBotDataColumn5.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn5.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn5.DecimalPlaces = 2
+        KBotDataColumn5.Format = KBotFormat.Standard
+        KBotDataColumn5.FormatString = Nothing
+        KBotDataColumn5.HeaderText = "Rezervare" & vbCrLf & "Definitivă"
+        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn5.Key = "r_definitiva"
+        KBotDataColumn5.MultiLine = True
+        KBotDataColumn5.OptionGroup = Nothing
+        KBotDataColumn5.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn5.ValueType = KBotValueType.Number
+        KBotDataColumn5.Width = 130
+        grid.Columns.Add(KBotDataColumn1)
+        grid.Columns.Add(KBotDataColumn2)
+        grid.Columns.Add(KBotDataColumn3)
+        grid.Columns.Add(KBotDataColumn4)
+        grid.Columns.Add(KBotDataColumn5)
         grid.Dock = DockStyle.Fill
-        grid.FrozenColumnCount = 0
-        grid.HeaderHeight = 30
+        grid.FooterCaption = "TOTALURI"
+        grid.FooterHeight = 40
+        grid.FooterVisible = True
+        grid.FrozenColumnCount = 1
+        grid.HeaderHeight = 60
         grid.Location = New Point(0, 0)
         grid.Margin = New Padding(4, 5, 4, 5)
         grid.Name = "grid"
         grid.ReadOnlyGrid = True
-        grid.RowHeight = 28
         grid.ScrollByColumn = True
-        grid.ShowHeader = True
-        grid.Size = New Size(641, 567)
+        grid.ShrinkColumnsToFit = False
+        grid.Size = New Size(701, 567)
         grid.TabIndex = 0
         ' 
         ' lblEmpty
@@ -125,6 +204,7 @@ Partial Class RezervariView
         split.Panel2.ResumeLayout(False)
         CType(split, ComponentModel.ISupportInitialize).EndInit()
         split.ResumeLayout(False)
+        CType(grid, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
     End Sub
 

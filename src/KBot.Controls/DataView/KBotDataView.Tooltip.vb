@@ -76,8 +76,10 @@ Partial Class KBotDataView
             ' Aceeași trecere de formatare ca la pictare, pe argumentele de INTEROGARE (nu pe
             ' cele ale unei pictări în curs): eticheta trebuie să arate exact ce s-ar fi văzut,
             ' inclusiv un text pus de handler peste valoarea brută.
+            ' Fontul e cel al coloanei (altfel al grilei), ca la pictare: eticheta se aprinde
+            ' pentru ce NU încape, iar «cât încape» depinde de fontul cu care se scrie.
             _probeCellArgs.Reset(col, row, rowIndex, value, FormatValue(value, col),
-                                 BackColor, ForeColor, Font, col.TextAlign,
+                                 BackColor, ForeColor, CellFontFor(col), col.TextAlign,
                                  col.Enabled AndAlso row.Enabled)
             RaiseEvent CellFormatting(Me, _probeCellArgs)
 

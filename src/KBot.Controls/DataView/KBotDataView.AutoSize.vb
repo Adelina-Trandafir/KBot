@@ -13,7 +13,9 @@ Imports KBot.Common
 '''     (header vs a bounded sample of cells) and clamp to [MinWidth, MaxWidth].
 '''  2. <see cref="ColumnFillMode"/> — then spend the leftover space (or absorb the overflow)
 '''     so the fill modes never leave an empty strip nor a scrollbar (except the honest
-'''     sum(MinWidth) &gt; available fallback).
+'''     sum(MinWidth) &gt; available fallback). Absorbing the overflow is the half that
+'''     <see cref="ShrinkColumnsToFit"/> can switch off: cu ea stinsă, coloanele își păstrează
+'''     lățimile și apare bara orizontală.
 '''
 '''  English (slice 0028-04): knob 1 is no longer grid-wide only. Every column carries its own
 '''  <see cref="KBotDataColumn.AutoSizeMode"/> and IT TAKES PRECEDENCE over the grid's — the grid
@@ -44,6 +46,7 @@ Partial Class KBotDataView
     Private _autoSizeMode As KBotAutoSizeMode = KBotAutoSizeMode.ToContent
     Private _fillMode As KBotFillMode = KBotFillMode.None
     Private _autoSizeSampleRows As Integer = 200
+    Private _shrinkColumnsToFit As Boolean = True
 
     ' Re-entrancy guard: the pass mutates column widths, so it must never re-enter itself.
     Private _inAutoLayout As Boolean = False
@@ -88,6 +91,31 @@ Partial Class KBotDataView
         End Get
         Set(value As KBotFillMode)
             _fillMode = value
+            LayoutChanged()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Când coloanele nu încap în lățimea grilei, li se ia din lățime ca să încapă (implicit
+    ''' <c>True</c>), sau se lasă așa cum au fost calculate și apare bara orizontală?
+    '''
+    ''' <para><c>False</c> înseamnă: fiecare coloană rămâne cu lățimea ei — cea cerută de apelant
+    ''' sau cea măsurată la conținut — chiar dacă suma lor depășește fereastra. Bara de derulare
+    ''' e atunci răspunsul corect, nu o scăpare: o coloană strâmtată până la podea își taie
+    ''' valorile cu elipsă, iar într-o listă de sume o cifră lipsă e mai rea decât o bară.
+    ''' Trecerea de UMPLERE (<see cref="ColumnFillMode"/>) nu e atinsă: spațiul rămas se cheltuie
+    ''' mai departe la fel — se stinge doar strâmtarea, adică jumătatea cealaltă.</para>
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("La depășire, coloanele se strâmtează ca să încapă (True) sau își păstrează lățimile și apare bara orizontală (False).")>
+    <DefaultValue(True)>
+    Public Property ShrinkColumnsToFit As Boolean
+        Get
+            Return _shrinkColumnsToFit
+        End Get
+        Set(value As Boolean)
+            If _shrinkColumnsToFit = value Then Return
+            _shrinkColumnsToFit = value
             LayoutChanged()
         End Set
     End Property
@@ -300,38 +328,54 @@ Partial Class KBotDataView
     ' Width = max(header need, content need), then clamped to [MinWidth, MaxWidth]. Header and
     ' cells are measured with the same fonts the painter uses, so the result does not ellipsize.
     Private Function MeasureColumnToContent(col As KBotDataColumn) As Integer
-        Dim cellPadX As Integer = ScaleDpi(6)             ' matches DrawTextCell
-        Dim headerPadX As Integer = ScaleDpi(8)           ' matches DrawHeaderCell
+        ' Toate trei sunt TOTALURI (stânga + dreapta), nu valori pe o latură: retragerea celulei
+        ' se cere acum pe coloană (KBotDataColumn.CellPadding) și poate fi asimetrică.
+        '
+        ' Retragerea CERUTĂ, nu una fixată aici: altfel o coloană cu retragere mare ar fi măsurată
+        ' pe o lățime și scrisă pe alta, adică tăiată cu elipsă exact pe textul pentru care tocmai
+        ' fusese lărgită.
+        Dim cellPadX As Integer = ScaleDpi(col.CellPadding.Left) + ScaleDpi(col.CellPadding.Right)
+        Dim headerPadX As Integer = 2 * ScaleDpi(KBotDataColumn.HeaderTextPad)   ' vezi HeaderLayoutFor
+        Dim footerPadX As Integer = 2 * ScaleDpi(8)                              ' vezi DrawFooterCell
 
         ' Header text always participates (semibold header font), plus whatever the column's
         ' header icons take (slice 0028-02) — measuring only the caption would size the column so
         ' the icons eat the text back, which is a defect, not a limitation.
-        Dim need As Integer = MeasureText(col.HeaderText, ResolvedHeaderFont()) + 2 * headerPadX +
-                              HeaderIconsExtent(col)
+        '
+        ' Pe o coloană cu titlul pe mai multe linii se măsoară doar cel mai lung CUVÂNT al lui:
+        ' altfel trecerea ar lărgi coloana exact atât cât textul să încapă pe un rând, adică ar
+        ' anula ruperea pentru care a fost aprinsă proprietatea. Cuvântul rămâne totuși un prag
+        ' real — sub el nici ruperea n-ar avea unde să se facă.
+        Dim need As Integer = MeasureHeaderCaption(col) + headerPadX + HeaderIconsExtent(col)
 
         ' English (slice 0017-01): the footer cell participates in measuring too — a wide total
         ' that was never measured would ellipsize, which is a defect not a limitation. It is
         ' painted with the footer band's own font and padding, so measure it the same way.
         If _showFooter AndAlso col.Aggregate <> KBotAggregate.None Then
-            need = Math.Max(need, MeasureText(FooterTextFor(col), ResolvedFooterFont()) + 2 * headerPadX)
+            need = Math.Max(need, MeasureText(FooterTextFor(col), ResolvedFooterFont()) + footerPadX)
         End If
 
         Select Case col.ColumnType
             Case KBotColumnType.CheckBox, KBotColumnType.OptionButton
                 ' No text content: the centered glyph box plus padding (see DrawCheckCell).
-                need = Math.Max(need, ScaleDpi(14) + 2 * cellPadX)
+                need = Math.Max(need, ScaleDpi(14) + cellPadX)
 
             Case KBotColumnType.ProgressBar
                 ' No intrinsic content: keep the caller's width; header still participates.
+                ' Retragerea nu-l atinge (desenează o formă, vezi KBotDataColumn.CellPadding).
                 need = Math.Max(need, col.Width)
 
             Case KBotColumnType.Combo
                 ' Widest formatted cell plus padding plus the chevron zone (see DrawComboCell).
-                need = Math.Max(need, MeasureSampledCells(col) + 2 * cellPadX + ScaleDpi(16))
+                need = Math.Max(need, MeasureSampledCells(col) + cellPadX + ScaleDpi(16))
+
+            Case KBotColumnType.Button
+                ' Butonul își desenează propriile margini, nu retragerea coloanei.
+                need = Math.Max(need, MeasureSampledCells(col) + 2 * ScaleDpi(4))
 
             Case Else
-                ' Text and Button: widest formatted / caption cell plus padding.
-                need = Math.Max(need, MeasureSampledCells(col) + 2 * cellPadX)
+                ' Text: widest formatted cell plus the column's own padding.
+                need = Math.Max(need, MeasureSampledCells(col) + cellPadX)
         End Select
 
         ' EffectiveMinWidth, nu MinWidth: podeaua ține cont și de pictogramele de antet, și ea
@@ -347,6 +391,10 @@ Partial Class KBotDataView
         Dim total As Integer = ViewCount()
         Dim limit As Integer = If(_autoSizeSampleRows <= 0, total,
                                   Math.Min(_autoSizeSampleRows, total))
+        ' Fontul CU CARE SE ȘI PICTEAZĂ celula (al coloanei, altfel al grilei) — vezi CellFontFor.
+        ' Măsurată cu fontul grilei, o coloană cu font propriu mai mare ieșea prea îngustă și își
+        ' tăia valorile cu elipsă taman în trecerea care exista ca să le facă loc.
+        Dim cf As Font = CellFontFor(col)
         Dim maxW As Integer = 0
         For i As Integer = 0 To limit - 1
             Dim row As KBotDataRow = ViewRowAt(i)
@@ -355,7 +403,7 @@ Partial Class KBotDataView
             If col.ColumnType = KBotColumnType.Button AndAlso String.IsNullOrEmpty(text) Then
                 text = col.HeaderText
             End If
-            Dim w As Integer = MeasureText(text, Font)
+            Dim w As Integer = MeasureText(text, cf)
             If w > maxW Then maxW = w
         Next
         Return maxW
@@ -366,6 +414,38 @@ Partial Class KBotDataView
     Private Shared Function MeasureText(text As String, font As Font) As Integer
         If String.IsNullOrEmpty(text) Then Return 0
         Return TextRenderer.MeasureText(text, font).Width
+    End Function
+
+    ''' <summary>
+    ''' Cât cere titlul unei coloane pe orizontală. Trei cazuri, după cum se rupe el:
+    '''
+    ''' <list type="bullet">
+    ''' <item>rupere automată (<see cref="KBotDataColumn.MultiLine"/>): doar cel mai lung CUVÂNT —
+    ''' altfel trecerea ar lărgi coloana exact atât cât să nu mai fie nevoie de rupere;</item>
+    ''' <item>doar rupturi scrise cu Enter: cea mai lată LINIE — acolo se rupe, și nicăieri
+    ''' altundeva, deci linia e bucata care chiar trebuie să încapă;</item>
+    ''' <item>un singur rând: tot titlul, ca până acum.</item>
+    ''' </list>
+    ''' </summary>
+    Private Function MeasureHeaderCaption(col As KBotDataColumn) As Integer
+        Dim hf As Font = HeaderFontFor(col)
+        If col.MultiLine Then Return MeasureWidestPiece(col.HeaderText, hf, dupaCuvinte:=True)
+        If HeaderIsMultiLine(col) Then Return MeasureWidestPiece(col.HeaderText, hf, dupaCuvinte:=False)
+        Return MeasureText(col.HeaderText, hf)
+    End Function
+
+    ' Lățimea celei mai late bucăți dintr-un text: cuvânt (dupaCuvinte) sau linie.
+    Private Shared Function MeasureWidestPiece(text As String, font As Font, dupaCuvinte As Boolean) As Integer
+        If String.IsNullOrEmpty(text) Then Return 0
+        Dim separatori As Char() = If(dupaCuvinte,
+                                      New Char() {" "c, ControlChars.Tab, ControlChars.Cr, ControlChars.Lf},
+                                      New Char() {ControlChars.Cr, ControlChars.Lf})
+        Dim maxW As Integer = 0
+        For Each bucata In text.Split(separatori, StringSplitOptions.RemoveEmptyEntries)
+            Dim w As Integer = TextRenderer.MeasureText(bucata, font).Width
+            If w > maxW Then maxW = w
+        Next
+        Return maxW
     End Function
 
     ' ── Fill / shrink ────────────────────────────────────────────────────────────
@@ -390,6 +470,10 @@ Partial Class KBotDataView
 
     ' suppressShrink (auto-hide engaged): on overflow, do NOT shrink the survivors — let the
     ' horizontal scrollbar appear. The leftover branch (fill the gap a hidden column left) still runs.
+    '
+    ' A doua cale spre aceeași purtare e ShrinkColumnsToFit = False, cerut de operator o dată
+    ' pentru totdeauna, nu dedus dintr-o ascundere automată. Ambele stâng DOAR strâmtarea:
+    ' cheltuirea spațiului rămas rămâne cum era.
     Private Sub DistributeOrShrink(vis As List(Of KBotDataColumn), Optional suppressShrink As Boolean = False)
         Dim available As Integer = AutoSizeAvailableWidth()
         Dim total As Integer = SumWidths(vis)
@@ -397,7 +481,7 @@ Partial Class KBotDataView
         If total = available Then Return
         If total < available Then
             DistributeLeftover(vis, available - total)
-        ElseIf Not suppressShrink Then
+        ElseIf Not suppressShrink AndAlso _shrinkColumnsToFit Then
             ShrinkToFit(vis, available)
         End If
     End Sub

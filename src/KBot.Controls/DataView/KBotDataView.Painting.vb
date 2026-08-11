@@ -31,7 +31,7 @@ Partial Class KBotDataView
                 DrawRows(g)
             End If
             If _showFooter AndAlso FooterBandHeight() > 0 Then DrawFooterBand(g)
-            If _showHeader AndAlso _headerHeight > 0 Then DrawHeader(g)
+            If _showHeader Then DrawHeader(g)
 
             g.DrawRectangle(_pBorder, New Rectangle(0, 0, Width - 1, Height - 1))
         Catch ex As Exception
@@ -43,19 +43,23 @@ Partial Class KBotDataView
 
     ' Banda de antet: fundal, textul coloanelor (înghețate + derulate), separatoare, bază.
     Private Sub DrawHeader(g As Graphics)
-        Dim headerRect As New Rectangle(0, 0, ClientSize.Width, _headerHeight)
+        ' Aceeași înălțime pe care o folosesc geometria și hit-testul (vezi partiala .Layout):
+        ' o bandă desenată mai înaltă decât cea socotită ar acoperi primele rânduri.
+        Dim headerH As Integer = HeaderBandHeight()
+        If headerH <= 0 Then Return
+
+        Dim headerRect As New Rectangle(0, 0, ClientSize.Width, headerH)
         FillBand(g, headerRect, _bHeaderBack, _cHeaderGradientEnd)
 
-        Dim hf As Font = ResolvedHeaderFont()
         Dim viewW As Integer = ViewportWidth()
+        Dim hOffset As Integer = HScrollOffset()
 
         ' Banda derulată — decupată ca să nu treacă peste coloanele înghețate.
         Dim scrollClip As New Rectangle(_frozenBandWidth, 0,
-                                        Math.Max(0, viewW - _frozenBandWidth), _headerHeight)
+                                        Math.Max(0, viewW - _frozenBandWidth), headerH)
         g.SetClip(scrollClip)
-        Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
-            DrawHeaderCell(g, cl.Column, _frozenBandWidth + cl.X - hOffset, hf)
+            DrawHeaderCell(g, cl.Column, _frozenBandWidth + cl.X - hOffset, headerH)
         Next
         g.ResetClip()
 
@@ -63,33 +67,96 @@ Partial Class KBotDataView
         ' English: repaint the frozen header band opaquely first, so an H-scrolled header cell
         ' can never bleed under the static column header (the frozen band is always on top).
         If _frozenBandWidth > 0 Then
-            FillBand(g, New Rectangle(0, 0, _frozenBandWidth, _headerHeight), _bHeaderBack, _cHeaderGradientEnd)
+            FillBand(g, New Rectangle(0, 0, _frozenBandWidth, headerH), _bHeaderBack, _cHeaderGradientEnd)
         End If
         For Each cl In _frozenLayout
-            DrawHeaderCell(g, cl.Column, cl.X, hf)
+            DrawHeaderCell(g, cl.Column, cl.X, headerH)
         Next
 
         ' Linia de bază + accentul de sub antet.
-        g.DrawLine(_pHeaderSep, 0, _headerHeight - 1, ClientSize.Width - 1, _headerHeight - 1)
-        g.DrawLine(_pHeaderBaseline, 0, _headerHeight - 1, ClientSize.Width - 1, _headerHeight - 1)
+        g.DrawLine(_pHeaderSep, 0, headerH - 1, ClientSize.Width - 1, headerH - 1)
+        g.DrawLine(_pHeaderBaseline, 0, headerH - 1, ClientSize.Width - 1, headerH - 1)
     End Sub
 
     ' Titlul + perechea de pictograme (slice 0028-02). Așezarea vine din partiala .HeaderIcons,
     ' aceeași funcție pe care o folosește hit-testul — desenul și apăsarea nu au voie să difere.
-    Private Sub DrawHeaderCell(g As Graphics, col As KBotDataColumn, x As Integer, hf As Font)
-        Dim cellRect As New Rectangle(x, 0, col.Width, _headerHeight)
+    '
+    ' Fontul se cere PE COLOANĂ, nu o dată pe bandă: fiecare coloană poate purta al ei
+    ' (KBotDataColumn.HeaderFont), iar banda e doar ce se folosește când ea n-a cerut nimic.
+    Private Sub DrawHeaderCell(g As Graphics, col As KBotDataColumn, x As Integer, headerH As Integer)
+        Dim cellRect As New Rectangle(x, 0, col.Width, headerH)
         If cellRect.Right < 0 OrElse cellRect.Left > ClientSize.Width Then Return
 
         Dim textRect As Rectangle = DrawHeaderIcons(g, col, cellRect)
         If textRect.Width > 0 Then
-            TextRenderer.DrawText(g, col.HeaderText, hf, textRect, HeaderForeResolved(),
-                HorizontalFlags(col.HeaderTextAlign) Or TextFormatFlags.VerticalCenter Or
-                TextFormatFlags.EndEllipsis)
+            TextRenderer.DrawText(g, col.HeaderText, HeaderFontFor(col), HeaderTextRect(col, textRect),
+                                  HeaderForeResolved(), HeaderTextFlags(col))
         End If
 
         Dim sepX As Integer = cellRect.Right - 1
-        g.DrawLine(_pHeaderSep, sepX, 0, sepX, _headerHeight - 1)
+        g.DrawLine(_pHeaderSep, sepX, 0, sepX, headerH - 1)
     End Sub
+
+    ''' <summary>
+    ''' Titlul coloanei ajunge pe mai multe rânduri? Două motive independente, și AMÂNDOUĂ contează:
+    ''' <see cref="KBotDataColumn.MultiLine"/> (rupere automată între cuvinte, la lățimea coloanei)
+    ''' și o ruptură SCRISĂ cu Enter în text.
+    '''
+    ''' <para>Ruptura scrisă se respectă chiar și fără <c>MultiLine</c>, și nu din îngăduință:
+    ''' <c>DrawText</c> o desenează oricum, cât timp nu i se cere <c>SingleLine</c>. Cât timp banda
+    ''' nu creștea decât pentru <c>MultiLine</c>, un titlu cu Enter în el se picta pe două rânduri
+    ''' într-o bandă de un rând — adică al doilea rând dispărea cu totul sub linia de bază. Ori se
+    ''' respectă și se face loc pentru ea, ori nu se desenează deloc; jumătatea era o dispariție
+    ''' tăcută. Aici se alege prima variantă: cine a apăsat Enter în titlu asta a cerut.</para>
+    ''' </summary>
+    Friend Shared Function HeaderIsMultiLine(col As KBotDataColumn) As Boolean
+        If col Is Nothing Then Return False
+        If col.MultiLine Then Return True
+        Return HasHardBreak(col.HeaderText)
+    End Function
+
+    Private Shared Function HasHardBreak(text As String) As Boolean
+        If String.IsNullOrEmpty(text) Then Return False
+        Return text.IndexOf(ControlChars.Lf) >= 0 OrElse text.IndexOf(ControlChars.Cr) >= 0
+    End Function
+
+    ''' <summary>
+    ''' Steagurile cu care se scrie titlul unei coloane. UNA singură pentru desen ȘI pentru
+    ''' măsurarea benzii (<c>MeasureHeaderTextHeight</c>) — două formule ar da o bandă înaltă cât
+    ''' patru rânduri și un text rupt în trei, sau invers, un rând tăiat sub linia de bază.
+    '''
+    ''' <para>Pe mai multe rânduri NU se cere <c>VerticalCenter</c>: în Win32 el merge doar
+    ''' împreună cu <c>SingleLine</c>, iar textul ar rămâne lipit de marginea de sus. Centrarea o
+    ''' face <see cref="HeaderTextRect"/>, mutând dreptunghiul. <c>EndEllipsis</c> rămâne cerut și
+    ''' acolo, ca supapă: un cuvânt mai lat decât coloana, sau un titlu tăiat de
+    ''' <c>MaxHeaderHeight</c>, se termină cu trei puncte, nu retezat la mijlocul literelor.</para>
+    '''
+    ''' <para><c>WordBreak</c> se cere doar pentru <c>MultiLine</c>: un titlu care are DOAR o
+    ''' ruptură scrisă cu Enter se rupe exact acolo unde a cerut operatorul și nicăieri altundeva.
+    ''' Pe un singur rând se cere <c>SingleLine</c> — el e ce face <c>VerticalCenter</c> să
+    ''' funcționeze cu adevărat.</para>
+    ''' </summary>
+    Private Shared Function HeaderTextFlags(col As KBotDataColumn) As TextFormatFlags
+        Dim flags As TextFormatFlags = HorizontalFlags(col.HeaderTextAlign) Or TextFormatFlags.EndEllipsis
+        If Not HeaderIsMultiLine(col) Then Return flags Or TextFormatFlags.SingleLine Or TextFormatFlags.VerticalCenter
+        If col.MultiLine Then flags = flags Or TextFormatFlags.WordBreak
+        Return flags
+    End Function
+
+    ''' <summary>
+    ''' Dreptunghiul în care se scrie efectiv titlul. Pe o singură linie e chiar cel primit
+    ''' (centrarea o face steagul); pe mai multe linii se măsoară blocul de text și se AȘAZĂ
+    ''' centrat pe verticală în celulă — vezi <see cref="HeaderTextFlags"/> pentru de ce nu poate
+    ''' face steagul asta.
+    ''' </summary>
+    Private Function HeaderTextRect(col As KBotDataColumn, textRect As Rectangle) As Rectangle
+        If Not HeaderIsMultiLine(col) Then Return textRect
+        Dim h As Integer = TextRenderer.MeasureText(col.HeaderText, HeaderFontFor(col),
+                                                    New Size(textRect.Width, Integer.MaxValue),
+                                                    HeaderTextFlags(col)).Height
+        If h <= 0 OrElse h >= textRect.Height Then Return textRect
+        Return New Rectangle(textRect.Left, textRect.Top + (textRect.Height - h) \ 2, textRect.Width, h)
+    End Function
 
     ' ── Banda de subsol (slice 0017-01; separatoare + buton în 0028) ──────────
 
@@ -341,7 +408,7 @@ Partial Class KBotDataView
 
         ' CellFormatting — argumente REFOLOSITE, pre-umplute cu valorile implicite din temă.
         _cellArgs.Reset(col, row, rowIndex, value, FormatValue(value, col),
-                        rowBack, rowFore, col.ColumnFont, col.TextAlign,
+                        rowBack, rowFore, CellFontFor(col), col.TextAlign,
                         col.Enabled AndAlso rowEnabled)
         RaiseEvent CellFormatting(Me, _cellArgs)
 
@@ -363,11 +430,16 @@ Partial Class KBotDataView
         ' „inert” trebuie să se și VADĂ inert.
         Dim fore As Color = If(enabled, _cellArgs.ForeColor, _cDisabledText)
 
+        ' Dreptunghiul de CONȚINUT: celula minus retragerea cerută pe coloană. Butonul și bara de
+        ' progres primesc mai jos cellRect întreg — ele desenează o formă cu marginile ei, nu un
+        ' conținut retras (vezi KBotDataColumn.CellPadding).
+        Dim contentRect As Rectangle = CellContentRect(col, cellRect)
+
         Select Case col.ColumnType
             Case KBotColumnType.CheckBox
-                DrawCheckCell(g, cellRect, ToBool(value), enabled)
+                DrawCheckCell(g, contentRect, ToBool(value), enabled)
             Case KBotColumnType.OptionButton
-                DrawOptionCell(g, cellRect, ToBool(value), enabled)
+                DrawOptionCell(g, contentRect, ToBool(value), enabled)
             Case KBotColumnType.Button
                 ' Butonul nu ține valoare: eticheta e textul celulei, iar dacă lipsește,
                 ' antetul coloanei (ex. o coloană «Detalii» cu același buton pe fiecare rând).
@@ -376,10 +448,10 @@ Partial Class KBotDataView
             Case KBotColumnType.ProgressBar
                 DrawProgressCell(g, cellRect, ProgressFraction(value, col), enabled)
             Case KBotColumnType.Combo
-                DrawComboCell(g, cellRect, _cellArgs.Text, _cellArgs.Font,
+                DrawComboCell(g, contentRect, _cellArgs.Text, _cellArgs.Font,
                               fore, _cellArgs.Alignment, enabled)
             Case Else
-                DrawTextCell(g, cellRect, _cellArgs.Text, _cellArgs.Font,
+                DrawTextCell(g, contentRect, _cellArgs.Text, _cellArgs.Font,
                              fore, _cellArgs.Alignment)
         End Select
 
@@ -387,13 +459,30 @@ Partial Class KBotDataView
         g.DrawLine(_pGridLine, cellRect.Right - 1, cellRect.Top, cellRect.Right - 1, cellRect.Bottom - 1)
     End Sub
 
-    Private Sub DrawTextCell(g As Graphics, cellRect As Rectangle, text As String, font As Font,
+    ''' <summary>
+    ''' Dreptunghiul în care intră CONȚINUTUL unei celule: celula, minus
+    ''' <see cref="KBotDataColumn.CellPadding"/> (scalată la DPI-ul controlului). Un singur loc,
+    ''' folosit și de pictare și de măsurarea la conținut — două formule ar însemna o coloană
+    ''' măsurată pe o lățime și scrisă pe alta, adică elipsă exact pe textul pentru care fusese
+    ''' lărgită. Nu se lasă niciodată sub zero pe niciuna dintre axe.
+    ''' </summary>
+    Private Function CellContentRect(col As KBotDataColumn, cellRect As Rectangle) As Rectangle
+        Dim p As Padding = col.CellPadding
+        Dim st As Integer = ScaleDpi(p.Left)
+        Dim sus As Integer = ScaleDpi(p.Top)
+        Dim dr As Integer = ScaleDpi(p.Right)
+        Dim jos As Integer = ScaleDpi(p.Bottom)
+        Return New Rectangle(cellRect.Left + st, cellRect.Top + sus,
+                             Math.Max(0, cellRect.Width - st - dr),
+                             Math.Max(0, cellRect.Height - sus - jos))
+    End Function
+
+    ' Retragerea e deja scăzută de CellContentRect, în apelant — aici se primește dreptunghiul
+    ' de conținut, nu celula.
+    Private Sub DrawTextCell(g As Graphics, contentRect As Rectangle, text As String, font As Font,
                              fore As Color, align As ContentAlignment)
         If String.IsNullOrEmpty(text) Then Return
-        Dim padX As Integer = ScaleDpi(6)
-        Dim textRect As New Rectangle(cellRect.Left + padX, cellRect.Top,
-                                      Math.Max(0, cellRect.Width - 2 * padX), cellRect.Height)
-        TextRenderer.DrawText(g, text, font, textRect, fore,
+        TextRenderer.DrawText(g, text, font, contentRect, fore,
             HorizontalFlags(align) Or TextFormatFlags.VerticalCenter Or TextFormatFlags.EndEllipsis)
     End Sub
 

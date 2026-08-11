@@ -353,6 +353,30 @@ Partial Class KBotDataView
     End Function
 
     ''' <summary>
+    ''' Fontul cu care se scrie titlul UNEI coloane: al ei, dacă și l-a cerut
+    ''' (<see cref="KBotDataColumn.HeaderFont"/>), altfel al benzii. Precedența stă AICI și numai
+    ''' aici: o citesc pictarea, măsurarea la conținut și înălțimea benzii de antet, iar dacă
+    ''' vreuna dintre ele ar citi direct <see cref="ResolvedHeaderFont"/>, coloana ar fi scrisă cu
+    ''' un font și măsurată cu altul — adică fie tăiată cu elipsă, fie cu ultimul rând de titlu
+    ''' sub linia de bază.
+    ''' </summary>
+    Friend Function HeaderFontFor(col As KBotDataColumn) As Font
+        If col IsNot Nothing AndAlso col.HeaderFont IsNot Nothing Then Return col.HeaderFont
+        Return ResolvedHeaderFont()
+    End Function
+
+    ''' <summary>
+    ''' Fontul cu care se scriu celulele unei coloane: al ei
+    ''' (<see cref="KBotDataColumn.ColumnFont"/>), altfel al grilei. Aceeași regulă ca la antet, pe
+    ''' cealaltă față a coloanei — și tot un singur loc, citit de pictare, de măsurare și de
+    ''' verificarea depășirii care aprinde eticheta.
+    ''' </summary>
+    Friend Function CellFontFor(col As KBotDataColumn) As Font
+        If col IsNot Nothing AndAlso col.ColumnFont IsNot Nothing Then Return col.ColumnFont
+        Return Font
+    End Function
+
+    ''' <summary>
     ''' Fontul unei benzi: familia și mărimea DIN SCHEMĂ (<c>Style.BaseFontName</c> /
     ''' <c>BaseFontSize</c>), în varianta semibold dacă familia are una instalată, altfel bold.
     '''

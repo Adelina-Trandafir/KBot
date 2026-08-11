@@ -481,6 +481,8 @@ Partial Class MainForm
         capBar.Location = New Point(0, 0)
         capBar.Margin = New Padding(4, 5, 4, 5)
         capBar.Name = "capBar"
+        capBar.OptionButtonImage = Nothing
+        capBar.OptionButtonPadding = 0
         capBar.ShowMaximize = True
         capBar.ShowMinimize = True
         capBar.ShowThemeButton = True

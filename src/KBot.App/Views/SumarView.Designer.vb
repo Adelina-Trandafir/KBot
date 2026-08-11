@@ -247,7 +247,6 @@ Partial Class SumarView
         KBotDataColumn1.ColumnFont = New Font("Consolas", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.Frozen = True
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn1.HeaderLeftIconSize = New Size(14, 14)
         KBotDataColumn1.HeaderText = "Clasificația"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -262,7 +261,6 @@ Partial Class SumarView
         KBotDataColumn2.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn2.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn2.HeaderText = "Indicator"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "cod_indicator"
@@ -274,11 +272,9 @@ Partial Class SumarView
         KBotDataColumn2.Width = 130
         KBotDataColumn3.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn3.AggregateFormatString = Nothing
-        KBotDataColumn3.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.DecimalPlaces = 2
         KBotDataColumn3.Format = KBot.Controls.KBotFormat.Standard
         KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn3.HeaderText = "Rezervări"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "total_rezervari"
@@ -291,11 +287,9 @@ Partial Class SumarView
         KBotDataColumn3.Width = 130
         KBotDataColumn4.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn4.AggregateFormatString = Nothing
-        KBotDataColumn4.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn4.DecimalPlaces = 2
         KBotDataColumn4.Format = KBot.Controls.KBotFormat.Standard
         KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn4.HeaderText = "Recepții"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "total_receptii"
@@ -308,11 +302,9 @@ Partial Class SumarView
         KBotDataColumn4.Width = 130
         KBotDataColumn5.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn5.AggregateFormatString = Nothing
-        KBotDataColumn5.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn5.DecimalPlaces = 2
         KBotDataColumn5.Format = KBot.Controls.KBotFormat.Standard
         KBotDataColumn5.FormatString = Nothing
-        KBotDataColumn5.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn5.HeaderText = "Plăți"
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "total_plati"
@@ -325,11 +317,9 @@ Partial Class SumarView
         KBotDataColumn5.Width = 130
         KBotDataColumn6.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn6.AggregateFormatString = Nothing
-        KBotDataColumn6.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn6.DecimalPlaces = 2
         KBotDataColumn6.Format = KBot.Controls.KBotFormat.Standard
         KBotDataColumn6.FormatString = Nothing
-        KBotDataColumn6.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn6.HeaderText = "Revizii"
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn6.Key = "total_revizii"
@@ -341,11 +331,9 @@ Partial Class SumarView
         KBotDataColumn6.Width = 130
         KBotDataColumn7.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn7.AggregateFormatString = Nothing
-        KBotDataColumn7.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn7.DecimalPlaces = 2
         KBotDataColumn7.Format = KBot.Controls.KBotFormat.Standard
         KBotDataColumn7.FormatString = Nothing
-        KBotDataColumn7.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn7.HeaderText = "Ordonanțări"
         KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn7.Key = "total_ordonantari"

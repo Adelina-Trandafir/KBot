@@ -1,6 +1,7 @@
 Option Strict On
 Imports System.ComponentModel
 Imports System.Drawing
+Imports System.Windows.Forms
 
 ''' <summary>
 ''' Modelul unei coloane <see cref="KBotDataView"/> (control NELEGAT de date). Controlul
@@ -21,10 +22,13 @@ Public NotInheritable Class KBotDataColumn
     Private _minWidth As Integer = 40
     Private _maxWidth As Integer = Integer.MaxValue
     Private _width As Integer = 100
-    Private _columnFont As New Font("Calibri", 9.0F, FontStyle.Regular, GraphicsUnit.Point)
-    Private _headerFont As New Font("Calibri", 9.0F, FontStyle.Bold, GraphicsUnit.Point)
+    ' Nothing = «din grilă» (vezi ColumnFont / HeaderFont). Un font construit AICI ar fi fost o
+    ' alegere fixată în cod, care ar fi bătut tema și banda pe fiecare coloană, pentru totdeauna.
+    Private _columnFont As Font
+    Private _headerFont As Font
     Private _headerTextAlign As ContentAlignment = ContentAlignment.MiddleLeft
     Private _autoSizeMode As KBotAutoSizeMode = KBotAutoSizeMode.Inherit
+    Private _headerMultiline As Boolean = False
 
     ''' <summary>
     ''' English (slice 0025): the grid this column belongs to, set by
@@ -121,6 +125,35 @@ Public NotInheritable Class KBotDataColumn
         End If
     End Sub
 
+    ''' <summary>
+    ''' Titlul coloanei se scrie pe MAI MULTE LINII: se rupe singur între cuvinte la lățimea
+    ''' coloanei și respectă și rupturile scrise de mână în <see cref="HeaderText"/> (Enter în
+    ''' editorul din grila de proprietăți).
+    '''
+    ''' <para>Aprinderea nu e o simplă schimbare de desen: banda de antet se ÎNALȚĂ cât cere cea
+    ''' mai înaltă coloană cu mai multe linii (vezi <c>KBotDataView.EffectiveHeaderHeight</c>) și
+    ''' COBOARĂ la loc când coloana se lărgește și textul încape pe mai puține linii — de aceea
+    ''' scrierea aici cere o trecere de layout, nu doar o repictare. <c>HeaderHeight</c> rămâne
+    ''' MINIMUL benzii; el nu se atinge niciodată.</para>
+    '''
+    ''' <para>Măsurarea la conținut ține cont și ea: pentru o coloană cu mai multe linii, titlul
+    ''' cere doar cât cel mai lung CUVÂNT al lui, nu cât toată propoziția — altfel coloana ar fi
+    ''' lărgită exact atât cât să nu mai fie nevoie de rupere, iar proprietatea n-ar face nimic.</para>
+    ''' </summary>
+    <Category("K-BOT: Header")>
+    <Description("Titlul coloanei se scrie pe mai multe linii (rupere între cuvinte + rupturile scrise cu Enter). Banda de antet crește și scade după el.")>
+    <DefaultValue(False)>
+    Public Property MultiLine As Boolean
+        Get
+            Return _headerMultiline
+        End Get
+        Set(value As Boolean)
+            If _headerMultiline = value Then Return
+            _headerMultiline = value
+            Owner?.OnColumnHeaderChanged()
+        End Set
+    End Property
+
     <Category("K-BOT: Header")>
     <Description("Alinierea textului din antet.")>
     Public Property HeaderTextAlign As ContentAlignment
@@ -134,10 +167,32 @@ Public NotInheritable Class KBotDataColumn
         End Set
     End Property
 
-    ''' <summary>Textul din antet.</summary>
+    ''' <summary>
+    ''' Textul din antet.
+    '''
+    ''' <para><b>Se poate scrie pe mai multe linii, din designer.</b> Grila de proprietăți dă un
+    ''' singur rând, iar Enter acolo închide editarea — de aceea proprietatea poartă editorul
+    ''' standard cu mai multe linii (săgeata din dreapta valorii deschide o cutie în care Enter
+    ''' chiar rupe rândul). Ruptura scrisă cu mâna se respectă DOAR când coloana are
+    ''' <see cref="MultiLine"/> aprins; pe o coloană cu o singură linie ea ar fi desenată ca un
+    ''' pătrățel, nu ca o ruptură.</para>
+    ''' </summary>
     <Category("K-BOT: Header")>
-    <Description("Textul afișat în banda de antet.")>
+    <Description("Textul afișat în banda de antet. Cu MultiLine aprins, se pot scrie mai multe rânduri (Enter în editorul din dreapta valorii).")>
+    <Editor(GetType(System.ComponentModel.Design.MultilineStringEditor), GetType(System.Drawing.Design.UITypeEditor))>
     Public Property HeaderText As String
+        Get
+            Return _headerText
+        End Get
+        Set(value As String)
+            If String.Equals(_headerText, value, StringComparison.Ordinal) Then Return
+            _headerText = value
+            ' Nu e doar desen: titlul intră în măsurarea la conținut ȘI în înălțimea benzii
+            ' (când coloana e pe mai multe linii), deci cere o trecere de layout.
+            Owner?.OnColumnHeaderChanged()
+        End Set
+    End Property
+    Private _headerText As String
 
     ''' <summary>
     ''' Lățimea în pixeli. Nu coboară niciodată sub <see cref="MinWidth"/>.
@@ -156,8 +211,15 @@ Public NotInheritable Class KBotDataColumn
             ' English (slice 0013): clamp to [MinWidth, MaxWidth] on every write so the
             ' auto-size / fill / shrink passes can assign freely and let the model enforce
             ' the bounds. MaxWidth is never below MinWidth (see the MaxWidth setter).
-            _width = ClampWidth(value)
-            _authoredWidth = _width
+            Dim nou As Integer = ClampWidth(value)
+            Dim schimbat As Boolean = (nou <> _width) OrElse (nou <> _authoredWidth)
+            _width = nou
+            _authoredWidth = nou
+            ' Scrierea de AICI e a caller-ului, deci grila trebuie să se re-așeze: offset-uri,
+            ' bare și — de când există MultiLine — înălțimea benzii de antet, care e o funcție de
+            ' lățimi. Trecerea de layout scrie prin SetLayoutWidth, care NU trece pe aici, deci
+            ' nu se poate declanșa singură.
+            If schimbat Then Owner?.OnColumnWidthChanged()
         End Set
     End Property
 
@@ -243,8 +305,16 @@ Public NotInheritable Class KBotDataColumn
     Private _headerRightIconSize As New Size(16, 16)
     Private _headerRightIconHoverColor As Color = Color.Empty
 
-    ''' <summary>Spațiul (px logici) dintre marginea celulei de antet și prima piesă din ea.</summary>
+    ''' <summary>Spațiul (px logici) dintre marginea celulei de antet și prima PICTOGRAMĂ din ea.</summary>
     Friend Const HeaderIconPad As Integer = 8
+
+    ''' <summary>
+    ''' Retragerea (px logici) a TITLULUI de la marginea celulei de antet, pe latura unde nu stă
+    ''' nicio pictogramă. Mai mică decât <see cref="HeaderIconPad"/>, și potrivită cu retragerea
+    ''' celulelor din corp — cât timp era una singură, antetul stătea vizibil mai retras decât
+    ''' coloana de sub el și pierdea 16px din lățimea la care se rupe un titlu pe mai multe linii.
+    ''' </summary>
+    Friend Const HeaderTextPad As Integer = 4
 
     ''' <summary>Spațiul (px logici) dintre o pictogramă de antet și titlu.</summary>
     Friend Const HeaderIconGap As Integer = 4
@@ -252,8 +322,24 @@ Public NotInheritable Class KBotDataColumn
     ''' <summary>Mărimea implicită a unei pictograme de antet.</summary>
     Friend Shared ReadOnly DefaultHeaderIconSize As New Size(16, 16)
 
+    ''' <summary>
+    ''' Fontul cu care se scrie titlul ACESTEI coloane. <c>Nothing</c> (implicit) = fontul BENZII:
+    ''' cel fixat pe grilă (<c>KBotDataView.HeaderFont</c>) sau, lipsă și el, cel derivat din schema
+    ''' activă. Un font pus aici bate banda — dar numai pentru coloana lui.
+    '''
+    ''' <para><b>Nu e o simplă repictare.</b> Fontul intră și în MĂSURAREA la conținut, și în
+    ''' ÎNĂLȚIMEA benzii de antet (un titlu pe mai multe linii scris mai mare cere mai multe
+    ''' rânduri), deci scrierea aici cere o trecere de layout. Desenul și amândouă măsurătorile
+    ''' citesc aceeași funcție, <c>KBotDataView.HeaderFontFor</c>: două formule ar însemna o
+    ''' coloană măsurată cu un font și scrisă cu altul, adică tăiată cu elipsă exact pe titlul
+    ''' pentru care tocmai fusese lărgită.</para>
+    '''
+    ''' <para>Perechea ShouldSerialize/Reset e obligatorie (regula casei): <c>Font</c> nu poate
+    ''' purta <c>DefaultValue</c>, deci fără ea designerul ar scrie fontul rezolvat în fiecare
+    ''' formular-gazdă, iar valoarea aceea ar citi pe vecie ca alegerea operatorului.</para>
+    ''' </summary>
     <Category("K-BOT: Header")>
-    <Description("Font-ul antetului.")>
+    <Description("Fontul titlului acestei coloane. Nesetat = fontul benzii de antet (de pe grilă, altfel din temă).")>
     Public Property HeaderFont As Font
         Get
             Return _headerFont
@@ -261,9 +347,17 @@ Public NotInheritable Class KBotDataColumn
         Set(value As Font)
             If _headerFont Is value Then Return
             _headerFont = value
-            Owner?.Invalidate()
+            Owner?.OnColumnHeaderChanged()
         End Set
     End Property
+
+    Private Function ShouldSerializeHeaderFont() As Boolean
+        Return _headerFont IsNot Nothing
+    End Function
+
+    Private Sub ResetHeaderFont()
+        HeaderFont = Nothing
+    End Sub
 
     ''' <summary>
     ''' Pictograma dinaintea titlului de coloană. E un SEMN, nu un buton: nu are eveniment și
@@ -333,8 +427,22 @@ Public NotInheritable Class KBotDataColumn
         End Set
     End Property
 
+    ''' <summary>
+    ''' Fontul cu care se scriu CELULELE acestei coloane. <c>Nothing</c> (implicit) = fontul
+    ''' grilei (<c>KBotDataView.Font</c>), adică cel venit din temă. Perechea antetului, pe
+    ''' cealaltă față a coloanei — vezi <see cref="HeaderFont"/>.
+    '''
+    ''' <para>Ca și acolo, nu e doar desen: fontul intră în măsurarea la conținut, deci scrierea
+    ''' aici cere o trecere de layout, iar pictarea, măsurarea și eticheta de depășire citesc toate
+    ''' aceeași funcție (<c>KBotDataView.CellFontFor</c>). Cât timp coloana ținea un font construit
+    ''' în cod, celulele se scriau cu el iar coloana se măsura cu fontul grilei — două formule, deci
+    ''' o coloană tăiată cu elipsă la fontul cel mai mare dintre ele.</para>
+    '''
+    ''' <para>Rămâne o valoare IMPLICITĂ: handler-ul de <c>CellFormatting</c> o primește în
+    ''' <c>Font</c> și o poate schimba pe celula lui.</para>
+    ''' </summary>
     <Category("K-BOT")>
-    <Description("Font-ul coloanei selectate ")>
+    <Description("Fontul celulelor din coloană. Nesetat = fontul grilei (din temă).")>
     Public Property ColumnFont As Font
         Get
             Return _columnFont
@@ -342,9 +450,17 @@ Public NotInheritable Class KBotDataColumn
         Set(value As Font)
             If _columnFont Is value Then Return
             _columnFont = value
-            Owner?.Invalidate()
+            Owner?.OnColumnHeaderChanged()
         End Set
     End Property
+
+    Private Function ShouldSerializeColumnFont() As Boolean
+        Return _columnFont IsNot Nothing
+    End Function
+
+    Private Sub ResetColumnFont()
+        ColumnFont = Nothing
+    End Sub
 
     ' Size nu poate purta <DefaultValue> (atributul cere o constantă) — vezi regula casei:
     ' fără perechea ShouldSerialize/Reset, designerul ar scrie 16×16 în fiecare formular gazdă.
@@ -668,6 +784,54 @@ Public NotInheritable Class KBotDataColumn
     <Description("Alinierea conținutului în celulă.")>
     <DefaultValue(ContentAlignment.MiddleLeft)>
     Public Property TextAlign As ContentAlignment = ContentAlignment.MiddleLeft
+
+    ''' <summary>
+    ''' Retragerea conținutului față de marginile celulei, pe coloana asta. Implicit
+    ''' <c>6, 0, 6, 0</c> — exact cât era fixat în cod până acum, deci o coloană pe care nimeni
+    ''' n-a atins-o se pictează neschimbată.
+    '''
+    ''' <para>Ea hotărăște DREPTUNGHIUL DE CONȚINUT al celulei: acolo se scrie textul, acolo se
+    ''' centrează bifa sau butonul de opțiune, și tot de acolo pleacă și MĂSURAREA la conținut —
+    ''' altfel o retragere mare ar tăia cu elipsă exact textul pentru care coloana tocmai fusese
+    ''' lărgită.</para>
+    '''
+    ''' <para><b>Nu atinge celulele <see cref="KBotColumnType.Button"/> și
+    ''' <see cref="KBotColumnType.ProgressBar"/>.</b> Acelea nu scriu un conținut în celulă, ci
+    ''' desenează o FORMĂ (o față rotunjită, o șină), iar marginile lor sunt parte din desenul
+    ''' formei, nu o retragere a textului. O retragere pusă peste ele s-ar aduna la marginile
+    ''' proprii și ar strâmta butonul fără ca cineva să fi cerut asta. Nici antetul nu se atinge:
+    ''' banda de antet are retragerile ei (vezi <see cref="HeaderTextPad"/>).</para>
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Retragerea conținutului față de marginile celulei. Implicit 6, 0, 6, 0. Nu se aplică celulelor Button și ProgressBar.")>
+    Public Property CellPadding As Padding
+        Get
+            Return _cellPadding
+        End Get
+        Set(value As Padding)
+            Dim nou As New Padding(Math.Max(0, value.Left), Math.Max(0, value.Top),
+                                   Math.Max(0, value.Right), Math.Max(0, value.Bottom))
+            If _cellPadding = nou Then Return
+            _cellPadding = nou
+            ' Retragerea intră în măsurarea la conținut, deci nu e doar o repictare.
+            Owner?.OnColumnHeaderChanged()
+        End Set
+    End Property
+    Private _cellPadding As Padding = DefaultCellPadding
+
+    ''' <summary>Retragerea implicită a conținutului unei celule (cea fixată în cod până în 0028-09).</summary>
+    Public Shared ReadOnly DefaultCellPadding As New Padding(6, 0, 6, 0)
+
+    ' Padding nu poate purta <DefaultValue> printr-o constantă — vezi regula casei: fără perechea
+    ' ShouldSerialize/Reset, designerul ar scrie «6, 0, 6, 0» în fiecare formular gazdă, iar
+    ' valoarea aceea ar citi apoi ca o alegere deliberată a operatorului, pe vecie.
+    Private Function ShouldSerializeCellPadding() As Boolean
+        Return _cellPadding <> DefaultCellPadding
+    End Function
+
+    Private Sub ResetCellPadding()
+        CellPadding = DefaultCellPadding
+    End Sub
 
     ''' <summary>
     ''' Format .NET aplicat valorii la afișare (ex. „N2”, „dd.MM.yyyy”). Vid => ToString().

@@ -54,12 +54,12 @@ Public Class RezervariView
 
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of RezervariInfo)), Task(Of RezervariInfo)))
-        If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
-        If withReauth Is Nothing Then Throw New ArgumentNullException(NameOf(withReauth))
+        ArgumentNullException.ThrowIfNull(apiClient)
+        ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
-        BuildColumns()
+        'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
 
@@ -75,7 +75,7 @@ Public Class RezervariView
     ''' și ne anunță, GAZDA mută splitter-ul. <c>Panel1MinSize</c> păzește TRAGEREA splitter-ului;
     ''' strângerea e o comandă, nu o tragere, deci coborâm paza cât ține starea.
     ''' </summary>
-    Private Sub tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
+    Private Sub Tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
         Try
             Dim padStanga As Integer = split.Panel1.Padding.Left
             If collapsed Then
@@ -108,26 +108,26 @@ Public Class RezervariView
 
     ' Coloanele grilei = frmFX_MAIN_REZ_LISTA: Clsf + patru coloane de bani. Toate sunt
     ' Text cu N2 aliniat la dreapta (read-only, deci un tip numeric ar fi degeaba).
-    Private Sub BuildColumns()
-        Try
-            grid.AddColumn(COL_CLSF, "Clasificație", KBotColumnType.Text, 190)
-            AddMoneyColumn(COL_CREDIT_BUG, "Credit bugetar")
-            AddMoneyColumn(COL_INITIALA, "Rezervări inițiale")
-            AddMoneyColumn(COL_VALOARE, "Rezervare curentă")
-            AddMoneyColumn(COL_DEFINITIVA, "Rezervări definitive")
-            ' Clasificația e cea după care se citește tabelul — rămâne fixă la stânga.
-            grid.FrozenColumnCount = 1
-        Catch ex As Exception
-            GlobalErrorLog.Write("RezervariView.BuildColumns", ex)
-            Throw
-        End Try
-    End Sub
+    'Private Sub BuildColumns()
+    '    Try
+    '        grid.AddColumn(COL_CLSF, "Clasificație", KBotColumnType.Text, 190)
+    '        AddMoneyColumn(COL_CREDIT_BUG, "Credit bugetar")
+    '        AddMoneyColumn(COL_INITIALA, "Rezervări inițiale")
+    '        AddMoneyColumn(COL_VALOARE, "Rezervare curentă")
+    '        AddMoneyColumn(COL_DEFINITIVA, "Rezervări definitive")
+    '        ' Clasificația e cea după care se citește tabelul — rămâne fixă la stânga.
+    '        grid.FrozenColumnCount = 1
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("RezervariView.BuildColumns", ex)
+    '        Throw
+    '    End Try
+    'End Sub
 
-    Private Sub AddMoneyColumn(key As String, header As String)
-        Dim col As KBotDataColumn = grid.AddColumn(key, header, KBotColumnType.Text, 130)
-        col.FormatString = "N2"
-        col.TextAlign = ContentAlignment.MiddleRight
-    End Sub
+    'Private Sub AddMoneyColumn(key As String, header As String)
+    '    Dim col As KBotDataColumn = grid.AddColumn(key, header, KBotColumnType.Text, 130)
+    '    col.FormatString = "N2"
+    '    col.TextAlign = ContentAlignment.MiddleRight
+    'End Sub
 
     ''' <summary>
     ''' Selecția din arbore s-a schimbat. Fără angajament (nod de capitol / deselectare)
@@ -135,7 +135,7 @@ Public Class RezervariView
     ''' </summary>
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
         Try
-            Dim cod As String = If(info Is Nothing, Nothing, info.CodAngajament)
+            Dim cod As String = info?.CodAngajament
             If String.IsNullOrWhiteSpace(cod) Then
                 _requestedCod = Nothing
                 _rows = Nothing
@@ -302,7 +302,7 @@ Public Class RezervariView
 
     ' Click pe un nod -> filtrează grila la rândurile nodului (lună sau frunză). Rândurile
     ' stau în Tag, puse la construcția arborelui — niciun apel de rețea aici.
-    Private Sub tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
+    Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
             If pNode Is Nothing Then Return
             Dim rows As List(Of RezervareRow) = TryCast(pNode.Tag, List(Of RezervareRow))
@@ -314,7 +314,7 @@ Public Class RezervariView
     End Sub
 
     ' Click pe iconița «+» a unei frunze -> semnalăm doar (workflow DDF = felie ulterioară).
-    Private Sub tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
+    Private Sub Tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
         Try
             If pNode Is Nothing Then Return
             Dim rows As List(Of RezervareRow) = TryCast(pNode.Tag, List(Of RezervareRow))
@@ -373,7 +373,7 @@ Public Class RezervariView
         ' fi Nothing. Atunci arborele se construiește fără iconițe/culori (structura e
         ' aceeași), iar ApplyTheme reconstruiește când tema devine disponibilă.
         Dim current As ThemeScheme = ThemeManager.Current
-        Return If(current Is Nothing, Nothing, current.Palette)
+        Return current?.Palette
     End Function
 
     ''' <summary>
@@ -407,5 +407,4 @@ Public Class RezervariView
             GlobalErrorLog.Write("RezervariView.ApplyTheme", ex)
         End Try
     End Sub
-
 End Class

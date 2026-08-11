@@ -468,7 +468,9 @@ Partial Class KBotDataView
     ' Coloana a cărei margine dreaptă din antet e sub punct (toleranță ~4px), dacă e
     ' redimensionabilă. Nothing în rest.
     Private Function HeaderResizeTarget(pt As Point) As KBotDataColumn
-        If Not _showHeader OrElse pt.Y >= _headerHeight Then Return Nothing
+        ' Banda EFECTIVĂ: cu un titlu pe mai multe linii ea e mai înaltă, iar marginea trebuie să
+        ' se poată apuca pe toată înălțimea ei, nu doar pe primii 30 de pixeli.
+        If Not _showHeader OrElse pt.Y >= HeaderBandHeight() Then Return Nothing
         Dim tol As Integer = ScaleDpi(4)
 
         For Each cl In _frozenLayout

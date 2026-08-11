@@ -63,12 +63,21 @@ Partial Class KBotDataView
     ''' grilei, aceeași pe toate coloanele, deci trebuie să cadă mereu în același loc — o
     ''' pictogramă care își schimbă poziția de la o coloană la alta e o pictogramă pe care o cauți
     ''' de fiecare dată.</para>
+    '''
+    ''' <para><paramref name="textPad"/> e retragerea TITLULUI de la marginea celulei, și e mai mică
+    ''' decât cea a pictogramelor (<paramref name="pad"/>). Erau una singură, iar antetul stătea
+    ''' retras cu 8px de fiecare parte — mai mult decât celulele din corp (6px), și, mai rău,
+    ''' 16px furați din lățimea la care se rupe un titlu pe mai multe linii. Retragerea mică se
+    ''' aplică doar pe latura unde NU s-a așezat nicio pictogramă; acolo unde e una, titlul se
+    ''' oprește oricum la spațiul dinaintea ei. <c>-1</c> = aceeași cu cea a pictogramelor.</para>
     ''' </summary>
     Friend Shared Function ComputeHeaderCellLayout(col As KBotDataColumn, cellRect As Rectangle,
                                                    pad As Integer, gap As Integer,
-                                                   Optional filterSize As Size = Nothing) As HeaderCellLayout
+                                                   Optional filterSize As Size = Nothing,
+                                                   Optional textPad As Integer = -1) As HeaderCellLayout
         Dim rez As New HeaderCellLayout()
         If col Is Nothing Then Return rez
+        If textPad < 0 Then textPad = pad
 
         Dim stanga As Integer = cellRect.Left + pad
         Dim dreapta As Integer = cellRect.Right - pad
@@ -103,8 +112,14 @@ Partial Class KBotDataView
             End If
         End If
 
-        ' 3) Titlul ia ce a rămas — poate fi zero, fiindcă el se taie primul.
-        rez.Text = New Rectangle(stanga, cellRect.Top, Math.Max(0, dreapta - stanga), cellRect.Height)
+        ' 3) Titlul ia ce a rămas — poate fi zero, fiindcă el se taie primul. Pe laturile unde nu
+        '    s-a așezat nicio pictogramă își ia PROPRIA retragere, cea mică: acolo nu are de ce să
+        '    stea la distanță de pictograme inexistente.
+        Dim textStanga As Integer = If(rez.LeftIcon.IsEmpty, cellRect.Left + textPad, stanga)
+        Dim textDreapta As Integer = If(rez.RightIcon.IsEmpty AndAlso rez.FilterIcon.IsEmpty,
+                                        cellRect.Right - textPad, dreapta)
+        rez.Text = New Rectangle(textStanga, cellRect.Top,
+                                 Math.Max(0, textDreapta - textStanga), cellRect.Height)
         Return rez
     End Function
 
@@ -113,7 +128,8 @@ Partial Class KBotDataView
         Return ComputeHeaderCellLayout(col, cellRect,
                                        ScaleDpi(KBotDataColumn.HeaderIconPad),
                                        ScaleDpi(KBotDataColumn.HeaderIconGap),
-                                       FilterIconSizeFor(col))
+                                       FilterIconSizeFor(col),
+                                       ScaleDpi(KBotDataColumn.HeaderTextPad))
     End Function
 
     ''' <summary>
@@ -188,11 +204,15 @@ Partial Class KBotDataView
     ''' </summary>
     Friend Function HeaderIconTarget(pt As Point, ByRef iconRect As Rectangle) As KBotDataColumn
         iconRect = Rectangle.Empty
-        If Not _showHeader OrElse _headerHeight <= 0 Then Return Nothing
-        If pt.Y < 0 OrElse pt.Y >= _headerHeight Then Return Nothing
+        ' Înălțimea EFECTIVĂ, nu cea din designer: sub o coloană cu titlul pe mai multe linii banda
+        ' e mai înaltă, iar pictogramele stau centrate în ea — căutate în vechea bandă, ele s-ar
+        ' desena într-un loc și s-ar apăsa în altul.
+        Dim bandH As Integer = HeaderBandHeight()
+        If bandH <= 0 Then Return Nothing
+        If pt.Y < 0 OrElse pt.Y >= bandH Then Return Nothing
 
         For Each cl In _frozenLayout
-            Dim r As Rectangle = HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.Width, _headerHeight)).RightIcon
+            Dim r As Rectangle = HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.Width, bandH)).RightIcon
             If Not r.IsEmpty AndAlso r.Contains(pt) Then
                 iconRect = r
                 Return cl.Column
@@ -205,7 +225,7 @@ Partial Class KBotDataView
         Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
             Dim r As Rectangle = HeaderLayoutFor(cl.Column,
-                New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.Width, _headerHeight)).RightIcon
+                New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.Width, bandH)).RightIcon
             If Not r.IsEmpty AndAlso r.Contains(pt) Then
                 iconRect = r
                 Return cl.Column
@@ -271,16 +291,17 @@ Partial Class KBotDataView
     ''' </summary>
     Friend Function DebugHeaderRightIconRect(colKey As String) As Rectangle
         RecalcColumnLayout()
+        Dim bandH As Integer = HeaderBandHeight()
         For Each cl In _frozenLayout
             If String.Equals(cl.Column.Key, colKey, StringComparison.Ordinal) Then
-                Return HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.Width, _headerHeight)).RightIcon
+                Return HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.Width, bandH)).RightIcon
             End If
         Next
         Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
             If String.Equals(cl.Column.Key, colKey, StringComparison.Ordinal) Then
                 Return HeaderLayoutFor(cl.Column,
-                    New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.Width, _headerHeight)).RightIcon
+                    New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.Width, bandH)).RightIcon
             End If
         Next
         Return Rectangle.Empty

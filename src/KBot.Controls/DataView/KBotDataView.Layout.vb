@@ -42,6 +42,10 @@ Partial Class KBotDataView
     ''' e sigur de apelat și din pictare.
     ''' </summary>
     Private Sub RecalcColumnLayout()
+        ' Lățimile tocmai s-au putut schimba, iar înălțimea benzii de antet e o funcție de ele:
+        ' se uită măsurătoarea veche AICI, nu la fiecare interogare, ca o trecere să vadă un
+        ' singur număr de la cap la coadă. Recalculul propriu-zis e leneș (EffectiveHeaderHeight).
+        InvalidateHeaderHeight()
         _frozenLayout.Clear()
         _scrollLayout.Clear()
         Dim frozenX As Integer = 0
@@ -68,7 +72,102 @@ Partial Class KBotDataView
 
     ''' <summary>Înălțimea efectivă a benzii de antet (0 dacă e ascunsă).</summary>
     Private Function HeaderBandHeight() As Integer
-        Return If(_showHeader, _headerHeight, 0)
+        Return If(_showHeader, EffectiveHeaderHeight(), 0)
+    End Function
+
+    ' ── Înălțimea benzii de antet, când titlurile se scriu pe mai multe linii ────
+    '
+    ' Banda are DOUĂ înălțimi și e important să nu fie confundate:
+    '
+    '   • HeaderHeight — cea cerută de operator, în designer. Nu se schimbă niciodată singură.
+    '   • EffectiveHeaderHeight — cea desenată: HeaderHeight, ridicată cât cere cea mai înaltă
+    '     coloană cu MultiLine, plafonată la MaxHeaderHeight.
+    '
+    ' A doua e o FUNCȚIE de lățimile curente, deci trebuie să și COBOARE: coloana lărgită (fie de
+    ' o umplere, fie de tragerea operatorului) încape pe mai puține rânduri, iar banda se strânge
+    ' la loc. De aceea măsurătoarea se uită la fiecare RecalcColumnLayout și nu se ține între
+    ' treceri — un cache care nu s-ar șterge ar face banda să crească o dată și să rămână așa.
+    '
+    ' Și e o înălțime de GEOMETRIE, nu de desen: din ea pleacă rândurile, corpul derulabil,
+    ' barele și hit-testul benzii. Prima versiune a mărit doar dreptunghiul pictat, iar rândurile
+    ' au rămas să înceapă la vechiul HeaderHeight — adică sub antetul înalt.
+
+    ' -1 = trebuie măsurată din nou (vezi InvalidateHeaderHeight).
+    Private _measuredHeaderHeight As Integer = -1
+
+    ' Plafonul benzii; 0 = fără plafon. Vezi proprietatea MaxHeaderHeight.
+    Private _maxHeaderHeight As Integer = 0
+
+    ' Banda se măsoară după text, sau rămâne fixă? Vezi proprietatea AutoSizeHeaderHeight.
+    Private _autoSizeHeaderHeight As Boolean = True
+
+    ''' <summary>
+    ''' Spațiul (px logici) lăsat deasupra și dedesubtul titlului pe mai multe linii. E MIC pe
+    ''' bună dreptate: înălțimea măsurată a textului include deja interlinia proprie a fontului
+    ''' (~3px sus și jos la Segoe UI 9), deci ce se adaugă aici se vede DUBLU. Cu 4 de fiecare
+    ''' parte, două rânduri de titlu ajungeau la o bandă de 38px pentru 24px de litere.
+    ''' </summary>
+    Private Const HeaderTextPadY As Integer = 2
+
+    ''' <summary>Uită înălțimea măsurată a antetului; următoarea interogare o recalculează.</summary>
+    Private Sub InvalidateHeaderHeight()
+        _measuredHeaderHeight = -1
+    End Sub
+
+    ''' <summary>
+    ''' Înălțimea pe care o are efectiv banda de antet: <see cref="HeaderHeight"/> ridicată cât
+    ''' cere cea mai înaltă coloană cu <see cref="KBotDataColumn.MultiLine"/> și plafonată la
+    ''' <see cref="MaxHeaderHeight"/>. Friend: o citește pictarea, hit-testul și testele — o a
+    ''' doua formulă ar însemna o bandă desenată altundeva decât se apasă.
+    ''' </summary>
+    Friend Function EffectiveHeaderHeight() As Integer
+        If _measuredHeaderHeight < 0 Then _measuredHeaderHeight = MeasureHeaderBandHeight()
+        Return _measuredHeaderHeight
+    End Function
+
+    ' Cât cere banda: minimul cerut de operator, urcat de coloanele pe mai multe linii, apoi
+    ' plafonat. Plafonul NU coboară sub HeaderHeight — vezi MaxHeaderHeight.
+    Private Function MeasureHeaderBandHeight() As Integer
+        ' Măsurarea stinsă: banda e exact cât s-a cerut, indiferent câte rânduri ar avea titlurile.
+        ' Ce nu încape se taie — asta e chiar înțelesul lui AutoSizeHeaderHeight = False.
+        If Not _autoSizeHeaderHeight Then Return _headerHeight
+
+        Dim inaltime As Integer = _headerHeight
+        Dim pad As Integer = ScaleDpi(HeaderTextPadY)
+
+        For Each c In _columns
+            If Not c.IsEffectivelyVisible OrElse Not HeaderIsMultiLine(c) Then Continue For
+            Dim textH As Integer = MeasureHeaderTextHeight(c)
+            If textH <= 0 Then Continue For
+            inaltime = Math.Max(inaltime, textH + 2 * pad)
+        Next
+
+        If _maxHeaderHeight > 0 Then inaltime = Math.Min(inaltime, Math.Max(_headerHeight, _maxHeaderHeight))
+        Return inaltime
+    End Function
+
+    ''' <summary>
+    ''' Cât de înalt iese titlul unei coloane rupt la lățimea LUI DE TEXT — nu la lățimea coloanei:
+    ''' pictogramele de antet mănâncă din ea, iar o măsurare peste lățimea întreagă ar tăia ultimul
+    ''' rând. Se măsoară cu fontul și cu steagurile cu care se și desenează
+    ''' (<see cref="HeaderTextFlags"/>), altfel banda și textul ar fi calculate din două formule.
+    ''' </summary>
+    Private Function MeasureHeaderTextHeight(col As KBotDataColumn) As Integer
+        If col Is Nothing OrElse String.IsNullOrEmpty(col.HeaderText) Then Return 0
+        Dim latime As Integer = HeaderTextWidthFor(col)
+        If latime <= 0 Then Return 0
+        Return TextRenderer.MeasureText(col.HeaderText, HeaderFontFor(col),
+                                        New Size(latime, Integer.MaxValue),
+                                        HeaderTextFlags(col)).Height
+    End Function
+
+    ''' <summary>
+    ''' Lățimea rămasă titlului într-o celulă de antet, după pictograme. Nu depinde de înălțimea
+    ''' benzii (așezarea folosește înălțimea doar ca să centreze pictogramele pe verticală), deci
+    ''' se poate cere ÎNAINTE ca înălțimea să fie știută — altfel calculul s-ar mușca de coadă.
+    ''' </summary>
+    Private Function HeaderTextWidthFor(col As KBotDataColumn) As Integer
+        Return HeaderLayoutFor(col, New Rectangle(0, 0, col.Width, _headerHeight)).Text.Width
     End Function
 
     ''' <summary>Înălțimea efectivă a benzii de subsol (0 dacă e stinsă).</summary>

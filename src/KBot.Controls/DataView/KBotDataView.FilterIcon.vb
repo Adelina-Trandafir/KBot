@@ -159,11 +159,14 @@ Partial Class KBotDataView
     Friend Function FilterIconTarget(pt As Point, ByRef iconRect As Rectangle) As KBotDataColumn
         iconRect = Rectangle.Empty
         If Not AnyColumnFilterShown() Then Return Nothing
-        If Not _showHeader OrElse _headerHeight <= 0 Then Return Nothing
-        If pt.Y < 0 OrElse pt.Y >= _headerHeight Then Return Nothing
+        ' Înălțimea EFECTIVĂ a benzii (poate fi mai mare decât HeaderHeight când o coloană are
+        ' titlul pe mai multe linii) — altfel pâlnia s-ar apăsa doar în treimea de sus.
+        Dim bandH As Integer = HeaderBandHeight()
+        If bandH <= 0 Then Return Nothing
+        If pt.Y < 0 OrElse pt.Y >= bandH Then Return Nothing
 
         For Each cl In _frozenLayout
-            Dim r As Rectangle = HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.Width, _headerHeight)).FilterIcon
+            Dim r As Rectangle = HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.Width, bandH)).FilterIcon
             If Not r.IsEmpty AndAlso r.Contains(pt) Then
                 iconRect = r
                 Return cl.Column
@@ -176,7 +179,7 @@ Partial Class KBotDataView
         Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
             Dim r As Rectangle = HeaderLayoutFor(cl.Column,
-                New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.Width, _headerHeight)).FilterIcon
+                New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.Width, bandH)).FilterIcon
             If Not r.IsEmpty AndAlso r.Contains(pt) Then
                 iconRect = r
                 Return cl.Column
@@ -219,7 +222,7 @@ Partial Class KBotDataView
             Dim r As Rectangle = DebugFilterIconRect(colKey)
             ' Fără pictogramă pe ecran (coloana e ascunsă, derulată afară sau exclusă), meniul se
             ' deschide sub colțul din stânga-sus al antetului: tot trebuie să se vadă undeva.
-            If r.IsEmpty Then r = New Rectangle(0, 0, 1, Math.Max(1, _headerHeight))
+            If r.IsEmpty Then r = New Rectangle(0, 0, 1, Math.Max(1, HeaderBandHeight()))
             OpenColumnFilterMenu(col, r)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.ShowColumnFilterMenu", ex)
@@ -269,16 +272,17 @@ Partial Class KBotDataView
     ''' </summary>
     Friend Function DebugFilterIconRect(colKey As String) As Rectangle
         RecalcColumnLayout()
+        Dim bandH As Integer = HeaderBandHeight()
         For Each cl In _frozenLayout
             If String.Equals(cl.Column.Key, colKey, StringComparison.Ordinal) Then
-                Return HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.Width, _headerHeight)).FilterIcon
+                Return HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.Width, bandH)).FilterIcon
             End If
         Next
         Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
             If String.Equals(cl.Column.Key, colKey, StringComparison.Ordinal) Then
                 Return HeaderLayoutFor(cl.Column,
-                    New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.Width, _headerHeight)).FilterIcon
+                    New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.Width, bandH)).FilterIcon
             End If
         Next
         Return Rectangle.Empty
