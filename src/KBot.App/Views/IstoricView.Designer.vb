@@ -73,9 +73,11 @@ Partial Class IstoricView
         ' 
         ' grid
         ' 
+        grid.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
         grid.BackColor = SystemColors.Window
         grid.ColumnFillMode = KBot.Controls.KBotFillMode.LastColumn
         KBotDataColumn1.AggregateFormatString = Nothing
+        KBotDataColumn1.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn1.ColumnFont = New Font("Consolas", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
@@ -83,7 +85,6 @@ Partial Class IstoricView
         KBotDataColumn1.HeaderText = "Clasificație"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clsf"
-        KBotDataColumn1.MaxWidth = 300
         KBotDataColumn1.MinWidth = 300
         KBotDataColumn1.OptionGroup = Nothing
         KBotDataColumn1.ReadOnly = True
@@ -91,6 +92,7 @@ Partial Class IstoricView
         KBotDataColumn1.TextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Width = 300
         KBotDataColumn2.AggregateFormatString = Nothing
+        KBotDataColumn2.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn2.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn2.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn2.FormatString = Nothing
@@ -101,8 +103,9 @@ Partial Class IstoricView
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.ReadOnly = True
         KBotDataColumn2.ShowColumnFilter = True
-        KBotDataColumn2.Width = 162
+        KBotDataColumn2.Width = 200
         KBotDataColumn3.AggregateFormatString = Nothing
+        KBotDataColumn3.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn3.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn3.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn3.FormatString = Nothing
@@ -114,8 +117,9 @@ Partial Class IstoricView
         KBotDataColumn3.ReadOnly = True
         KBotDataColumn3.ShowColumnFilter = True
         KBotDataColumn3.ValueType = KBot.Controls.KBotValueType.DateTime
-        KBotDataColumn3.Width = 174
+        KBotDataColumn3.Width = 200
         KBotDataColumn4.AggregateFormatString = Nothing
+        KBotDataColumn4.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn4.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderFont = New Font("Consolas", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
@@ -123,7 +127,7 @@ Partial Class IstoricView
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "desc"
         KBotDataColumn4.OptionGroup = Nothing
-        KBotDataColumn4.Width = 350
+        KBotDataColumn4.Width = 250
         grid.Columns.Add(KBotDataColumn1)
         grid.Columns.Add(KBotDataColumn2)
         grid.Columns.Add(KBotDataColumn3)

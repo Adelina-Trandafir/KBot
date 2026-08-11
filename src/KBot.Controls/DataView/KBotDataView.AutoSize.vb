@@ -149,6 +149,17 @@ Partial Class KBotDataView
         If _inAutoLayout Then Return
         If _updateDepth > 0 Then Return                 ' deferred until EndUpdate
 
+        ' English (slice 0028-05): the pass NEVER runs inside the Visual Studio designer. It
+        ' writes `Width`, and the designer serializes whatever it finds afterwards — so a measured
+        ' or stretched width lands in `.Designer.vb` as if the operator had typed it, and then
+        ' outlives the layout that produced it. That is exactly how `IstoricView` ended up with
+        ' `KBotDataColumn1.Width = 747`: the four widths summed to the design surface's own width,
+        ' which no human types. It is the same trap the house rule describes for
+        ' `ShouldSerialize*`, one level down — here the value is not a property default but the
+        ' output of a layout pass, and a layout pass has no business authoring the form.
+        ' The designer therefore shows the widths as AUTHORED; fill and measuring happen live.
+        If KBotDesignTime.IsDesignTime(Me) Then Return
+
         Dim anyAutoHide As Boolean = AnyColumnCanAutoHide()
 
         ' Manual-only (Case 3) AND nothing to auto-hide: keep the caller's widths/visibility.
@@ -159,8 +170,14 @@ Partial Class KBotDataView
 
         _inAutoLayout = True
         Try
-            ' Step 0 — reset the auto-hidden state so a widened grid re-shows columns that now fit.
+            ' Step 0 — reset the auto-hidden state so a widened grid re-shows columns that now fit,
+            ' and put every width back to what the CALLER asked for. English (slice 0028-05): without
+            ' that second reset the pass compounds its own output — a grid that was briefly narrow
+            ' shrank a column to its floor, and widening the window afterwards could only ever grow
+            ' the fill target, so the caller's 200px column stayed at 65px for the rest of the
+            ' session. A pass must be a function of (authored widths, available space), nothing else.
             ClearAutoHiddenState()
+            RestoreAuthoredWidths()
 
             Dim vis As List(Of KBotDataColumn) = VisibleColumns()
             If vis.Count = 0 Then Return
@@ -170,7 +187,7 @@ Partial Class KBotDataView
             For Each c In vis
                 If c.UserSized Then Continue For
                 If EffectiveAutoSizeMode(c) <> KBotAutoSizeMode.ToContent Then Continue For
-                c.Width = MeasureColumnToContent(c)       ' setter clamps to [Min, Max]
+                c.SetLayoutWidth(MeasureColumnToContent(c))   ' clamps to [Min, Max]
             Next
 
             ' Step 2 — auto-hide overflowing columns to avoid the horizontal scrollbar. Once
@@ -226,6 +243,16 @@ Partial Class KBotDataView
         Next
         Return False
     End Function
+
+    ' Baseline of the pass: every column back to the width the caller authored. A column the
+    ' operator has drag-resized is skipped — that drag IS the caller's width now, and it stands
+    ' until ResetColumnSizing().
+    Private Sub RestoreAuthoredWidths()
+        For Each c In _columns
+            If c.UserSized Then Continue For
+            c.RestoreAuthoredWidth()
+        Next
+    End Sub
 
     ' Clear the pass-owned auto-hidden state (the caller's Visible flag is never touched).
     Private Sub ClearAutoHiddenState()
@@ -390,7 +417,7 @@ Partial Class KBotDataView
     ' Add extra to a single column. The Width setter clamps at MaxWidth, so an over-cap
     ' remainder is silently dropped (it must not spill into a neighbour).
     Private Shared Sub GrowColumn(col As KBotDataColumn, extra As Integer)
-        col.Width += extra
+        col.SetLayoutWidth(col.Width + extra)
     End Sub
 
     ' Split the leftover in proportion to each column's current width. Integer division leaves
@@ -414,7 +441,7 @@ Partial Class KBotDataView
         For i As Integer = 0 To vis.Count - 1
             Dim c As KBotDataColumn = vis(i)
             Dim want As Integer = c.Width + shares(i)
-            c.Width = want                               ' setter clamps to MaxWidth
+            c.SetLayoutWidth(want)                       ' clamps to MaxWidth
             If c.Width < want Then
                 surplus += (want - c.Width)              ' capped: could not take its full share
             ElseIf c.MaxWidth > c.Width Then
@@ -441,7 +468,7 @@ Partial Class KBotDataView
         Next
         shares(cols.Count - 1) += (surplus - assigned)
         For i As Integer = 0 To cols.Count - 1
-            cols(i).Width = cols(i).Width + shares(i)    ' setter clamps; any residue is dropped
+            cols(i).SetLayoutWidth(cols(i).Width + shares(i))   ' clamps; any residue is dropped
         Next
     End Sub
 
@@ -459,7 +486,7 @@ Partial Class KBotDataView
         ' worse than a scrollbar the caller did not ask for.
         If minTotal >= available Then
             For Each c In vis
-                c.Width = c.EffectiveMinWidth
+                c.SetLayoutWidth(c.EffectiveMinWidth)
             Next
             Return
         End If
@@ -491,7 +518,7 @@ Partial Class KBotDataView
             shares(flex.Count - 1) += (deficit - assigned)   ' rounding remainder to last flex
             For i As Integer = 0 To flex.Count - 1
                 Dim c As KBotDataColumn = flex(i)
-                c.Width = Math.Max(c.EffectiveMinWidth, c.Width - shares(i))   ' floor at the real min
+                c.SetLayoutWidth(Math.Max(c.EffectiveMinWidth, c.Width - shares(i)))   ' floor at the real min
             Next
 
             guard += 1

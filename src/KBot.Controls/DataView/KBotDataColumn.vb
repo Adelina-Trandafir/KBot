@@ -139,7 +139,12 @@ Public NotInheritable Class KBotDataColumn
     <Description("Textul afișat în banda de antet.")>
     Public Property HeaderText As String
 
-    ''' <summary>Lățimea în pixeli. Nu coboară niciodată sub <see cref="MinWidth"/>.</summary>
+    ''' <summary>
+    ''' Lățimea în pixeli. Nu coboară niciodată sub <see cref="MinWidth"/>.
+    '''
+    ''' English (slice 0028-05): a write here is the CALLER's width (designer, code, or the
+    ''' operator's drag) and is remembered as such — see <see cref="SetLayoutWidth"/>.
+    ''' </summary>
     <Category("K-BOT")>
     <Description("Lățimea în pixeli. Se limitează întotdeauna la intervalul [MinWidth, MaxWidth].")>
     <DefaultValue(100)>
@@ -152,8 +157,33 @@ Public NotInheritable Class KBotDataColumn
             ' auto-size / fill / shrink passes can assign freely and let the model enforce
             ' the bounds. MaxWidth is never below MinWidth (see the MaxWidth setter).
             _width = ClampWidth(value)
+            _authoredWidth = _width
         End Set
     End Property
+
+    ''' <summary>
+    ''' English (slice 0028-05): the width the CALLER asked for, kept apart from the one currently
+    ''' painted. Without it the layout pass compounds its own output: a grid that is briefly narrow
+    ''' shrinks a column to its floor, and when the space comes back nothing knows what the width
+    ''' used to be — the caller's 200px column stays at 65px forever, which reads as «the property
+    ''' does not work». The pass restores this baseline before every run
+    ''' (<see cref="RestoreAuthoredWidth"/>), so a pass is a function of (authored widths,
+    ''' available space) and not of how the window happened to be resized.
+    ''' </summary>
+    Private _authoredWidth As Integer = 100
+
+    ''' <summary>
+    ''' Scrierea făcută de o trecere de layout (măsurare / umplere / strâmtare): schimbă lățimea
+    ''' PICTATĂ, dar NU atinge lățimea cerută de caller. Friend: e mecanismul trecerii, nu API.
+    ''' </summary>
+    Friend Sub SetLayoutWidth(value As Integer)
+        _width = ClampWidth(value)
+    End Sub
+
+    ''' <summary>Readuce lățimea la cea cerută de caller. O cheamă trecerea, la începutul ei.</summary>
+    Friend Sub RestoreAuthoredWidth()
+        _width = ClampWidth(_authoredWidth)
+    End Sub
 
     ''' <summary>
     ''' Limitarea unei lățimi cerute la intervalul valabil. PODEAUA BATE PLAFONUL: dacă
@@ -181,6 +211,7 @@ Public NotInheritable Class KBotDataColumn
             ' English (slice 0013): keep the invariant MinWidth <= MaxWidth, then re-clamp Width.
             If _maxWidth < _minWidth Then _maxWidth = _minWidth
             _width = ClampWidth(_width)
+            _authoredWidth = ClampWidth(_authoredWidth)
         End Set
     End Property
 
@@ -199,6 +230,7 @@ Public NotInheritable Class KBotDataColumn
         Set(value As Integer)
             _maxWidth = Math.Max(value, _minWidth)
             _width = ClampWidth(_width)
+            _authoredWidth = ClampWidth(_authoredWidth)
         End Set
     End Property
 
@@ -935,6 +967,7 @@ Public NotInheritable Class KBotDataColumn
         ' proprietatea „HeaderText”, iar o atribuire nekalificată s-ar face parametrului.
         Me.HeaderText = If(headerText, String.Empty)
         _width = Math.Max(width, _minWidth)
+        _authoredWidth = _width          ' lățimea cerută la creare e tot a caller-ului
     End Sub
 
     ''' <summary>Ce arată lista dialogului de colecție din designer.</summary>
