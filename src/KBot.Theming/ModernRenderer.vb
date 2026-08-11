@@ -18,6 +18,16 @@ Public Module ModernRenderer
     Private NotInheritable Class ButtonState
         Public Attached As Boolean
         Public Scheme As ThemeScheme
+
+        ''' <summary>
+        ''' Marginea și înălțimea AUTORATE (cele din designer), reținute înainte de prima scriere a
+        ''' temei. Fără ele, schema modernă și-ar compune propriul rezultat: umplutura ei ar rămâne
+        ''' pe buton la întoarcerea în Classic, iar înălțimea crescută n-ar mai avea la ce reveni.
+        ''' Același tipar ca lățimea autorată a unei coloane (felia 0028-05).
+        ''' </summary>
+        Public HasAuthored As Boolean
+        Public AuthoredPadding As Padding
+        Public AuthoredHeight As Integer
     End Class
 
     Private ReadOnly _buttons As New ConditionalWeakTable(Of Button, ButtonState)()
@@ -40,6 +50,13 @@ Public Module ModernRenderer
         Dim st As ButtonState = _buttons.GetValue(btn, Function(b) New ButtonState())
         st.Scheme = scheme
 
+        ' Instantaneul valorilor autorate, ÎNAINTE de orice scriere a temei (idempotent).
+        If Not st.HasAuthored Then
+            st.HasAuthored = True
+            st.AuthoredPadding = btn.Padding
+            st.AuthoredHeight = btn.Height
+        End If
+
         Dim p As ThemePalette = scheme.Palette
         btn.FlatStyle = FlatStyle.Flat
         btn.FlatAppearance.BorderSize = 1
@@ -51,6 +68,11 @@ Public Module ModernRenderer
         btn.UseVisualStyleBackColor = False
         If scheme.Style.PaddingValue <> Padding.Empty Then
             btn.Padding = scheme.Style.PaddingValue
+            ' …iar butonul crește cât să încapă ȘI umplutura, ȘI textul. Umplutura schemei moderne
+            ' (12,8,12,8) mănâncă 16px din înălțime: pe un buton autorat la 32px mai rămâneau 16, în
+            ' care un rând de text nu încape — și textul dispărea la comutarea temei. O temă are voie
+            ' să ceară aer în jurul textului, dar nu are voie să ascundă textul.
+            FitHeightToPaddingAndText(btn, st)
         End If
 
         If Not st.Attached Then
@@ -63,11 +85,49 @@ Public Module ModernRenderer
         UpdateButtonRegion(btn, scheme)
     End Sub
 
+    ''' <summary>
+    ''' Cât trebuie să fie ÎNALT butonul ca să încapă un rând de text peste umplutura cerută de
+    ''' schemă: umplutura + textul + cele două chenare. Se ia MAXIMUL cu înălțimea autorată — o temă
+    ''' poate mări un buton ca să-i intre textul, dar n-are voie să strice o înălțime aleasă anume
+    ''' (aceeași regulă ca la lățimea coloanelor: se crește la nevoie, nu se rescrie designul).
+    ''' </summary>
+    Private Sub FitHeightToPaddingAndText(btn As Button, st As ButtonState)
+        Try
+            If btn.AutoSize Then Return                  ' WinForms se ocupă singur
+            ' Când butonul e andocat pe o latură verticală (sau umple), înălțimea lui e a
+            ' PĂRINTELUI, nu a lui: o scriere aici ar fi ștearsă de următorul layout.
+            If btn.Dock = DockStyle.Left OrElse btn.Dock = DockStyle.Right OrElse
+               btn.Dock = DockStyle.Fill Then Return
+
+            Dim text As String = If(String.IsNullOrEmpty(btn.Text), "Wg", btn.Text)
+            Dim textH As Integer = TextRenderer.MeasureText(text, btn.Font).Height
+            Dim chenar As Integer = If(btn.FlatStyle = FlatStyle.Flat, 2 * btn.FlatAppearance.BorderSize, 2)
+            Dim nevoie As Integer = btn.Padding.Vertical + textH + chenar
+
+            Dim inaltime As Integer = Math.Max(st.AuthoredHeight, nevoie)
+            If btn.Height <> inaltime Then btn.Height = inaltime
+        Catch ex As Exception
+            GlobalErrorLog.Write("ModernRenderer.FitHeightToPaddingAndText", ex)
+        End Try
+    End Sub
+
     ''' <summary>Scoate randarea modern (revenire la buton standard). Idempotent.</summary>
     Public Sub DetachButton(btn As Button)
         If btn Is Nothing Then Return
         Dim st As ButtonState = Nothing
         If Not _buttons.TryGetValue(btn, st) Then Return
+
+        ' Marginea și înălțimea autorate se dau ÎNAPOI: altfel ieșirea din schema modernă ar lăsa
+        ' butonul cu umplutura ei (12,8,12,8) și cu înălțimea crescută pentru ea — adică schema ar
+        ' rescrie permanent designul, exact ce nu are voie să facă.
+        If st.HasAuthored Then
+            btn.Padding = st.AuthoredPadding
+            If Not btn.AutoSize AndAlso btn.Dock <> DockStyle.Left AndAlso
+               btn.Dock <> DockStyle.Right AndAlso btn.Dock <> DockStyle.Fill Then
+                btn.Height = st.AuthoredHeight
+            End If
+        End If
+
         If st.Attached Then
             RemoveHandler btn.Resize, AddressOf OnButtonResize
             RemoveHandler btn.HandleCreated, AddressOf OnButtonResize

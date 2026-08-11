@@ -149,6 +149,30 @@ Public Class KBotFilterPopupDesignerTests
                End Sub)
     End Sub
 
+    ' ── Butoane mai înalte (schema Modern) nu mănâncă din listă ─────────────────
+
+    <Fact>
+    Public Sub WhenACommandButtonGrows_TheWindowGrowsWithIt()
+        ' Schema «Modern» cere aer în jurul textului, deci butoanele de comandă cresc
+        ' (vezi ModernButtonHeightTests). Fiind andocate SUS, creșterea lor ar mușca din lista de
+        ' dedesubt, care e Fill — meniul ar arăta pe urmă mai puține valori decât înainte.
+        ' Testul crește butonul DIRECT, ca să nu mute schema globală a procesului (convenția casei
+        ' din AdvancedTreeThemingTests): ce se probează aici e re-măsurarea ferestrei, nu tema.
+        RunSta(Sub()
+                   Using p = Meniu()
+                       p.PerformLayout()
+                       Dim inainte As Integer = p.lstValori.Height
+                       Dim inaltimeFereastra As Integer = p.ClientSize.Height
+
+                       p.btnSortAsc.Height += 20
+                       p.DebugMeasure()
+
+                       Assert.Equal(inainte, p.lstValori.Height)
+                       Assert.Equal(inaltimeFereastra + 20, p.ClientSize.Height)
+                   End Using
+               End Sub)
+    End Sub
+
     ' ── Ce depinde de TIPUL coloanei ────────────────────────────────────────────
 
     <Fact>

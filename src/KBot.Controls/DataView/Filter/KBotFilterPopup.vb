@@ -140,6 +140,13 @@ Partial Friend NotInheritable Class KBotFilterPopup
             sepConditii.BackColor = p.BorderColor
             lstValori.BackColor = p.SurfaceAltColor  ' lista continuă suprafața meniului
             lstValori.ForeColor = p.TextColor
+
+            ' O schemă poate cere alt aer în jurul textului (Modern: 12,8,12,8), iar butoanele de
+            ' comandă cresc atunci ca să încapă și umplutura, și textul (vezi ModernRenderer). Ele
+            ' sunt andocate SUS, deci creșterea lor mușcă din lista de dedesubt: fereastra se
+            ' re-măsoară aici, ca numărul de rânduri arătate să rămână cel de dinainte.
+            PerformLayout()
+            AjusteazaInaltimea()
         Catch ex As Exception
             ' Boundary de temă: loghează + ÎNGHITE — o excepție aici ar rupe comutarea de schemă.
             GlobalErrorLog.Write("KBotFilterPopup.OnThemeChanged", ex)
