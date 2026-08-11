@@ -147,9 +147,19 @@ Partial Class PlatiView
         detailTable.Dock = DockStyle.Fill
         detailTable.Name = "detailTable"
         detailTable.RowCount = 10
-        For i As Integer = 0 To 8
-            detailTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
-        Next
+        ' Cele nouă rânduri de perechi sunt scrise UNUL CÂTE UNUL, nu într-un For: stilurile sunt
+        ' POZIȚIONALE, iar bucla de dinainte a fost ștearsă de designerul VS la prima deschidere a
+        ' vederii (el nu poate reciti cod pe care nu l-a scris el). Rămăsese doar linia de mai jos,
+        ' care astfel nimerea pe rândul 0 — «Nr. document» absorbea spațiul în locul «Explicații».
+        detailTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        detailTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        detailTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        detailTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        detailTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        detailTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        detailTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        detailTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
+        detailTable.RowStyles.Add(New RowStyle(SizeType.AutoSize))
         detailTable.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))   ' Explicații absoarbe
         detailTable.TabIndex = 0
         detailTable.Visible = False

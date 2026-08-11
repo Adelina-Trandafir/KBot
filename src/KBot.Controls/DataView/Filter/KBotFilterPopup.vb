@@ -126,9 +126,10 @@ Partial Friend NotInheritable Class KBotFilterPopup
 
     ''' <summary>
     ''' Culorile SEMANTICE, cele pe care regulile generice pe tip n-au de unde să le știe: chenarul
-    ''' meniului (marginea formularului), cele două linii despărțitoare și suprafața pe care stau
-    ''' rândurile. Restul — butoane, bifă, listă, bara ei de derulare — vine de la
-    ''' <c>ThemeManager.Apply</c>, prin <see cref="KBotThemedForm"/>.
+    ''' meniului (marginea formularului), cele două linii despărțitoare, suprafața pe care stau
+    ''' rândurile și cele patru RÂNDURI DE MENIU de sus. Restul — cele două butoane de comandă,
+    ''' bifa, lista, bara ei de derulare — vine de la <c>ThemeManager.Apply</c>, prin
+    ''' <see cref="KBotThemedForm"/>.
     ''' </summary>
     Protected Overrides Sub OnThemeChanged()
         Try
@@ -141,16 +142,49 @@ Partial Friend NotInheritable Class KBotFilterPopup
             lstValori.BackColor = p.SurfaceAltColor  ' lista continuă suprafața meniului
             lstValori.ForeColor = p.TextColor
 
+            ' Cele patru comenzi de sus sunt RÂNDURI, nu butoane (vezi AplicaRandDeMeniu). Roșul lui
+            ' «Șterge filtrul» vine din paletă, nu din designer: e culoarea de avertizare a schemei
+            ' active, nu un Firebrick scris o dată.
+            AplicaRandDeMeniu(btnSortAsc, p, p.TextColor)
+            AplicaRandDeMeniu(btnSortDesc, p, p.TextColor)
+            AplicaRandDeMeniu(btnStergeFiltru, p, p.ErrorColor)
+            AplicaRandDeMeniu(btnConditii, p, p.TextColor)
+
             ' O schemă poate cere alt aer în jurul textului (Modern: 12,8,12,8), iar butoanele de
-            ' comandă cresc atunci ca să încapă și umplutura, și textul (vezi ModernRenderer). Ele
-            ' sunt andocate SUS, deci creșterea lor mușcă din lista de dedesubt: fereastra se
-            ' re-măsoară aici, ca numărul de rânduri arătate să rămână cel de dinainte.
+            ' comandă cresc atunci ca să încapă și umplutura, și textul (vezi ModernRenderer).
+            ' Rândurile de mai sus și-au primit înapoi înălțimea autorată, dar bifa, caseta de
+            ' căutare și bara de butoane pot încă să se miște: fereastra se re-măsoară aici, ca
+            ' numărul de rânduri arătate să rămână cel de dinainte.
             PerformLayout()
             AjusteazaInaltimea()
         Catch ex As Exception
             ' Boundary de temă: loghează + ÎNGHITE — o excepție aici ar rupe comutarea de schemă.
             GlobalErrorLog.Write("KBotFilterPopup.OnThemeChanged", ex)
         End Try
+    End Sub
+
+    ''' <summary>
+    ''' Un RÂND DE MENIU: plat, fără chenar, pe toată lățimea, în culoarea suprafeței pe care stă —
+    ''' hover-ul e singurul lucru care-l scoate în relief, exact ca într-un meniu de sistem.
+    '''
+    ''' <para><b>De ce nu-l lăsăm pe seama regulii generice de buton.</b> Schema Modern randează
+    ''' orice <c>Button</c> owner-drawn: îi taie colțurile cu un <c>Region</c> de rază 8 și-i pune
+    ''' fundalul de buton (<c>#F3F3F3</c>). Pe un rând lat cât meniul, prin cele patru decupaje se
+    ''' vedea suprafața de dedesubt (<c>#FFFFFF</c>), deci meniul arăta ca patru pastile gri lipite
+    ''' pe o foaie albă, nu ca o listă de comenzi. <c>DetachButton</c> scoate Region-ul și, pe drum,
+    ''' redă marginea și înălțimea AUTORATE — schema modernă le mărise ca să încapă umplutura ei.
+    ''' Celelalte scheme nu rotunjesc nimic, iar apelul e idempotent: rândul iese la fel peste
+    ''' tot.</para>
+    ''' </summary>
+    Private Sub AplicaRandDeMeniu(b As Button, p As ThemePalette, culoareText As Color)
+        ModernRenderer.DetachButton(b)
+        b.FlatStyle = FlatStyle.Flat
+        b.FlatAppearance.BorderSize = 0
+        b.BackColor = p.SurfaceAltColor
+        b.ForeColor = culoareText
+        b.FlatAppearance.MouseOverBackColor = p.ButtonHoverColor
+        b.FlatAppearance.MouseDownBackColor = p.ButtonPressedColor
+        b.UseVisualStyleBackColor = False
     End Sub
 
     ' ══════════════════════════════════════════════════════════════════════════
@@ -482,7 +516,13 @@ Partial Friend NotInheritable Class KBotFilterPopup
         AddHandler meniu.ItemClicked,
             Sub(s As Object, ev As CustomPopupItemEventArgs)
                 Dim ales As KBotFilterOperator
-                If [Enum].TryParse(Of KBotFilterOperator)(ev.Item.Key, ales) Then AplicaConditia(ales)
+                If Not [Enum].TryParse(Of KBotFilterOperator)(ev.Item.Key, ales) Then Return
+                ' Submeniul se DĂ LA O PARTE ÎNTÂI. CustomPopup ridică ItemClicked ÎNAINTE de
+                ' Close (vezi CustomPopup.CloseWith), iar dialogul de condiție e modal: fără
+                ' rândul de mai jos, meniul ar rămâne pe ecran, viu și inutil, până la închiderea
+                ' dialogului. Close-ul lui vine oricum, imediat ce ne întoarcem de aici.
+                meniu.Hide()
+                AplicaConditia(ales)
             End Sub
         AddHandler meniu.FormClosed,
             Sub(s As Object, ev As FormClosedEventArgs)
@@ -508,8 +548,10 @@ Partial Friend NotInheritable Class KBotFilterPopup
 
         ' Dialogul e MODAL, deci meniul se dă la o parte întâi: două ferestre suprapuse, dintre
         ' care una cere o valoare, sunt o fereastră în plus peste ce a cerut operatorul.
-        Hide()
+        ' Garda se pune ÎNAINTE de Hide: ascunderea ferestrei active mută activarea pe altcineva,
+        ' adică ridică OnDeactivate — care altfel ar închide meniul chiar acum.
         _suppressDeactivate = True
+        Hide()
         Dim dlg As New KBotFilterConditionDialog(op, _valueType, _columnCaption,
                                                  _working.Operand1, _working.Operand2)
         Try

@@ -29,29 +29,54 @@ Friend NotInheritable Class KBotFilterConditionDialog
     Friend Sub New(condition As KBotFilterOperator, valueType As KBotValueType,
                    columnCaption As String, operand1 As String, operand2 As String)
         InitializeComponent()
-        _condition = condition
-        _valueType = valueType
+        Try
+            _condition = condition
+            _valueType = valueType
 
-        Dim numeCol As String = If(String.IsNullOrWhiteSpace(columnCaption), "coloana", columnCaption)
-        lblPrompt.Text = $"Arată rândurile în care «{numeCol}»" & Environment.NewLine &
-                         KBotFilterEngine.OperatorCaption(condition, valueType).TrimEnd("…"c)
+            Dim numeCol As String = If(String.IsNullOrWhiteSpace(columnCaption), "coloana", columnCaption)
+            lblPrompt.Text = $"Arată rândurile în care «{numeCol}»" & Environment.NewLine &
+                             KBotFilterEngine.OperatorCaption(condition, valueType).TrimEnd("…"c)
 
-        ' A doua casetă are sens numai la «Între…»; altfel nu se ascunde doar, ci se și strânge
-        ' fereastra peste ea — un gol de 50 de pixeli sub o casetă arată ca un control lipsă.
-        Dim doiOperanzi As Boolean = (KBotFilterEngine.OperandCount(condition) = 2)
-        lblOperand2.Visible = doiOperanzi
-        txtOperand2.Visible = doiOperanzi
-        If Not doiOperanzi Then
-            Dim scade As Integer = txtOperand2.Bottom - txtOperand1.Bottom
-            btnOk.Top -= scade
-            btnCancel.Top -= scade
-            ClientSize = New Drawing.Size(ClientSize.Width, ClientSize.Height - scade)
-        End If
+            ' A doua casetă are sens numai la «Între…». Ascunderea ei singură nu ajunge: rândurile
+            ' din tlyMAIN au înălțime ABSOLUTĂ, deci ar rămâne un gol de 72px sub prima casetă — un
+            ' control lipsă, nu o fereastră mai scurtă. Rândurile se STRÂNG la zero, iar fereastra
+            ' se scurtează cu exact cât s-a strâns; restul așezării rămâne treaba tabelului.
+            Dim doiOperanzi As Boolean = (KBotFilterEngine.OperandCount(condition) = 2)
+            lblOperand2.Visible = doiOperanzi
+            txtOperand2.Visible = doiOperanzi
+            If Not doiOperanzi Then
+                Dim strans As Integer = StrangeRandul(lblOperand2) + StrangeRandul(txtOperand2)
+                If strans > 0 Then
+                    ClientSize = New Drawing.Size(ClientSize.Width, ClientSize.Height - strans)
+                End If
+            End If
 
-        lblOperand1.Text = If(doiOperanzi, "De la:", "Valoare:")
-        txtOperand1.Text = If(operand1, String.Empty)
-        txtOperand2.Text = If(operand2, String.Empty)
+            lblOperand1.Text = If(doiOperanzi, "De la:", "Valoare:")
+            txtOperand1.Text = If(operand1, String.Empty)
+            txtOperand2.Text = If(operand2, String.Empty)
+        Catch ex As Exception
+            ' Punct de intrare (construcția dialogului): loghează și RE-ARUNCĂ — un dialog pe
+            ' jumătate așezat e mai rău decât unul care nu s-a deschis.
+            GlobalErrorLog.Write("KBotFilterConditionDialog.New", ex)
+            Throw
+        End Try
     End Sub
+
+    ''' <summary>
+    ''' Strânge la zero rândul din <c>tlyMAIN</c> pe care stă controlul dat și întoarce înălțimea
+    ''' eliberată. Rândul se CITEȘTE din tabel, nu se scrie ca indice aici: reordonarea lui în
+    ''' designer (rostul pentru care totul a intrat în tlyMAIN) n-are voie să strice socoteala.
+    ''' </summary>
+    Private Function StrangeRandul(ctrl As Control) As Integer
+        Dim rand As Integer = tlyMAIN.GetRow(ctrl)
+        If rand < 0 OrElse rand >= tlyMAIN.RowStyles.Count Then Return 0
+
+        Dim stil As RowStyle = tlyMAIN.RowStyles(rand)
+        Dim inainte As Integer = If(stil.SizeType = SizeType.Absolute, CInt(stil.Height), ctrl.Height)
+        stil.SizeType = SizeType.Absolute
+        stil.Height = 0F
+        Return inainte
+    End Function
 
     ''' <summary>Primul operand, așa cum l-a tastat operatorul.</summary>
     Friend ReadOnly Property Operand1 As String

@@ -79,9 +79,9 @@ Partial Class KBotFilterPopup
         pnlCorp.Controls.Add(btnSortAsc)
         pnlCorp.Dock = DockStyle.Fill
         pnlCorp.Location = New Point(1, 1)
+        pnlCorp.Margin = New Padding(0)
         pnlCorp.Name = "pnlCorp"
-        pnlCorp.Padding = New Padding(0, 4, 0, 0)
-        pnlCorp.Size = New Size(310, 486)
+        pnlCorp.Size = New Size(310, 581)
         pnlCorp.TabIndex = 0
         ' 
         ' lstValori
@@ -90,9 +90,9 @@ Partial Class KBotFilterPopup
         lstValori.CheckOnClick = True
         lstValori.Dock = DockStyle.Fill
         lstValori.IntegralHeight = False
-        lstValori.Location = New Point(0, 204)
+        lstValori.Location = New Point(0, 256)
         lstValori.Name = "lstValori"
-        lstValori.Size = New Size(310, 234)
+        lstValori.Size = New Size(310, 262)
         lstValori.TabIndex = 7
         ' 
         ' pnlButoane
@@ -100,19 +100,19 @@ Partial Class KBotFilterPopup
         pnlButoane.Controls.Add(btnOk)
         pnlButoane.Controls.Add(btnAnuleaza)
         pnlButoane.Dock = DockStyle.Bottom
-        pnlButoane.Location = New Point(0, 438)
+        pnlButoane.Location = New Point(0, 518)
         pnlButoane.Margin = New Padding(0)
         pnlButoane.Name = "pnlButoane"
-        pnlButoane.Padding = New Padding(6, 0, 6, 0)
-        pnlButoane.Size = New Size(310, 48)
+        pnlButoane.Padding = New Padding(6)
+        pnlButoane.Size = New Size(310, 63)
         pnlButoane.TabIndex = 8
         ' 
         ' btnOk
         ' 
         btnOk.Dock = DockStyle.Right
-        btnOk.Location = New Point(184, 0)
+        btnOk.Location = New Point(184, 6)
         btnOk.Name = "btnOk"
-        btnOk.Size = New Size(120, 48)
+        btnOk.Size = New Size(120, 51)
         btnOk.TabIndex = 8
         btnOk.Text = "OK"
         btnOk.UseVisualStyleBackColor = True
@@ -121,9 +121,9 @@ Partial Class KBotFilterPopup
         ' 
         btnAnuleaza.DialogResult = DialogResult.Cancel
         btnAnuleaza.Dock = DockStyle.Left
-        btnAnuleaza.Location = New Point(6, 0)
+        btnAnuleaza.Location = New Point(6, 6)
         btnAnuleaza.Name = "btnAnuleaza"
-        btnAnuleaza.Size = New Size(120, 48)
+        btnAnuleaza.Size = New Size(120, 51)
         btnAnuleaza.TabIndex = 9
         btnAnuleaza.Text = "Anulează"
         btnAnuleaza.UseVisualStyleBackColor = True
@@ -131,7 +131,7 @@ Partial Class KBotFilterPopup
         ' chkSelecteazaTot
         ' 
         chkSelecteazaTot.Dock = DockStyle.Top
-        chkSelecteazaTot.Location = New Point(0, 174)
+        chkSelecteazaTot.Location = New Point(0, 226)
         chkSelecteazaTot.Name = "chkSelecteazaTot"
         chkSelecteazaTot.Padding = New Padding(4, 0, 0, 0)
         chkSelecteazaTot.Size = New Size(310, 30)
@@ -144,7 +144,7 @@ Partial Class KBotFilterPopup
         ' 
         txtCauta.BackColor = Color.Transparent
         txtCauta.Dock = DockStyle.Top
-        txtCauta.Location = New Point(0, 134)
+        txtCauta.Location = New Point(0, 186)
         txtCauta.Margin = New Padding(6)
         txtCauta.MaxLength = 32767
         txtCauta.Name = "txtCauta"
@@ -157,38 +157,40 @@ Partial Class KBotFilterPopup
         ' sepConditii
         ' 
         sepConditii.Dock = DockStyle.Top
-        sepConditii.Location = New Point(0, 133)
+        sepConditii.Location = New Point(0, 185)
         sepConditii.Name = "sepConditii"
         sepConditii.Size = New Size(310, 1)
         sepConditii.TabIndex = 9
         ' 
         ' btnConditii
         ' 
+        btnConditii.Cursor = Cursors.Hand
         btnConditii.Dock = DockStyle.Top
         btnConditii.FlatAppearance.BorderSize = 0
         btnConditii.FlatStyle = FlatStyle.Flat
         btnConditii.Font = New Font("Segoe UI", 9F, FontStyle.Italic)
-        btnConditii.Location = New Point(0, 101)
+        btnConditii.Location = New Point(0, 139)
         btnConditii.Name = "btnConditii"
         btnConditii.Padding = New Padding(8, 0, 0, 0)
-        btnConditii.Size = New Size(310, 32)
+        btnConditii.Size = New Size(310, 46)
         btnConditii.TabIndex = 4
-        btnConditii.Text = "Filtre..."
+        btnConditii.Text = "Operatori filtru"
         btnConditii.TextAlign = ContentAlignment.MiddleLeft
         btnConditii.UseVisualStyleBackColor = True
         ' 
         ' btnStergeFiltru
         ' 
+        btnStergeFiltru.Cursor = Cursors.Hand
         btnStergeFiltru.Dock = DockStyle.Top
         btnStergeFiltru.FlatAppearance.BorderSize = 0
         btnStergeFiltru.FlatStyle = FlatStyle.Flat
         btnStergeFiltru.Font = New Font("Segoe UI", 9F, FontStyle.Bold)
         btnStergeFiltru.ForeColor = Color.Firebrick
-        btnStergeFiltru.Location = New Point(0, 69)
+        btnStergeFiltru.Location = New Point(0, 93)
         btnStergeFiltru.Margin = New Padding(0)
         btnStergeFiltru.Name = "btnStergeFiltru"
         btnStergeFiltru.Padding = New Padding(8, 0, 0, 0)
-        btnStergeFiltru.Size = New Size(310, 32)
+        btnStergeFiltru.Size = New Size(310, 46)
         btnStergeFiltru.TabIndex = 3
         btnStergeFiltru.Text = "Șterge filtrul"
         btnStergeFiltru.TextAlign = ContentAlignment.MiddleLeft
@@ -197,7 +199,7 @@ Partial Class KBotFilterPopup
         ' sepSortare
         ' 
         sepSortare.Dock = DockStyle.Top
-        sepSortare.Location = New Point(0, 68)
+        sepSortare.Location = New Point(0, 92)
         sepSortare.Margin = New Padding(0, 3, 0, 3)
         sepSortare.Name = "sepSortare"
         sepSortare.Size = New Size(310, 1)
@@ -205,15 +207,16 @@ Partial Class KBotFilterPopup
         ' 
         ' btnSortDesc
         ' 
+        btnSortDesc.Cursor = Cursors.Hand
         btnSortDesc.Dock = DockStyle.Top
         btnSortDesc.FlatAppearance.BorderSize = 0
         btnSortDesc.FlatStyle = FlatStyle.Flat
         btnSortDesc.Font = New Font("Segoe UI", 9F, FontStyle.Bold)
-        btnSortDesc.Location = New Point(0, 36)
+        btnSortDesc.Location = New Point(0, 46)
         btnSortDesc.Margin = New Padding(0)
         btnSortDesc.Name = "btnSortDesc"
         btnSortDesc.Padding = New Padding(8, 0, 0, 0)
-        btnSortDesc.Size = New Size(310, 32)
+        btnSortDesc.Size = New Size(310, 46)
         btnSortDesc.TabIndex = 2
         btnSortDesc.Text = "Sortează descrescător"
         btnSortDesc.TextAlign = ContentAlignment.MiddleLeft
@@ -221,15 +224,16 @@ Partial Class KBotFilterPopup
         ' 
         ' btnSortAsc
         ' 
+        btnSortAsc.Cursor = Cursors.Hand
         btnSortAsc.Dock = DockStyle.Top
         btnSortAsc.FlatAppearance.BorderSize = 0
         btnSortAsc.FlatStyle = FlatStyle.Flat
         btnSortAsc.Font = New Font("Segoe UI", 9F, FontStyle.Bold)
-        btnSortAsc.Location = New Point(0, 4)
+        btnSortAsc.Location = New Point(0, 0)
         btnSortAsc.Margin = New Padding(0)
         btnSortAsc.Name = "btnSortAsc"
         btnSortAsc.Padding = New Padding(8, 0, 0, 0)
-        btnSortAsc.Size = New Size(310, 32)
+        btnSortAsc.Size = New Size(310, 46)
         btnSortAsc.TabIndex = 1
         btnSortAsc.Text = "Sortează crescător"
         btnSortAsc.TextAlign = ContentAlignment.MiddleLeft
@@ -239,7 +243,7 @@ Partial Class KBotFilterPopup
         ' 
         AutoScaleMode = AutoScaleMode.None
         CancelButton = btnAnuleaza
-        ClientSize = New Size(312, 488)
+        ClientSize = New Size(312, 583)
         ControlBox = False
         Controls.Add(pnlCorp)
         FormBorderStyle = FormBorderStyle.None
