@@ -71,13 +71,35 @@ Partial Class KBotDataView
         Return ComputeAggregateText(col)
     End Function
 
-    ' Calculează + formatează agregatul unei coloane peste TOATE rândurile.
+    ' Calculează + formatează agregatul unei coloane peste TOATE rândurile vizibile.
     Private Function ComputeAggregateText(col As KBotDataColumn) As String
+        Return ComputeAggregateText(col, 0, ViewCount() - 1)
+    End Function
+
+    ''' <summary>
+    ''' Rândurile dintr-un interval de poziții de vedere. Un grup e, prin construcție, un interval
+    ''' CONTIGUU (sortarea așază cheile de grupare primele), deci agregatul lui e chiar agregatul
+    ''' grilei calculat peste o felie — nu o a doua formulă. Vezi <c>KBotDataView.Grouping</c>.
+    ''' </summary>
+    Private Iterator Function ViewRowsRange(firstViewPos As Integer, lastViewPos As Integer) As IEnumerable(Of KBotDataRow)
+        Dim ultim As Integer = Math.Min(lastViewPos, ViewCount() - 1)
+        For i As Integer = Math.Max(0, firstViewPos) To ultim
+            Yield ViewRowAt(i)
+        Next
+    End Function
+
+    ''' <summary>
+    ''' Calculează + formatează agregatul unei coloane peste UN INTERVAL de poziții de vedere.
+    ''' Subsolul grilei îl cheamă pe toată vederea, subsolul unui grup pe intervalul lui — o
+    ''' singură definiție a lui «sumă», ca totalul de grup și cel general să nu se poată contrazice.
+    ''' </summary>
+    Private Function ComputeAggregateText(col As KBotDataColumn,
+                                          firstViewPos As Integer, lastViewPos As Integer) As String
         Select Case col.Aggregate
             Case KBotAggregate.Sum
                 Dim s As Double = 0
                 Dim d As Double
-                For Each r In ViewRows()
+                For Each r In ViewRowsRange(firstViewPos, lastViewPos)
                     ' Se adună valorile ROTUNJITE, adică exact cele afișate în coloană: un total
                     ' care nu iese la adunare pe ecran e, pentru cine citește pagina, o greșeală
                     ' de calcul — degeaba e „mai exact”.
@@ -89,7 +111,7 @@ Partial Class KBotDataView
                 Dim s As Double = 0
                 Dim cnt As Integer = 0
                 Dim d As Double
-                For Each r In ViewRows()
+                For Each r In ViewRowsRange(firstViewPos, lastViewPos)
                     If TryNumericRounded(r(col.Key), col, d) Then
                         s += d
                         cnt += 1
@@ -100,13 +122,13 @@ Partial Class KBotDataView
                 Return FormatAggregate(col, s / cnt)
 
             Case KBotAggregate.Min, KBotAggregate.Max
-                Return ComputeExtremeText(col, col.Aggregate = KBotAggregate.Min)
+                Return ComputeExtremeText(col, col.Aggregate = KBotAggregate.Min, firstViewPos, lastViewPos)
 
             Case KBotAggregate.Count
                 ' Numărul RÂNDURILOR care AU o valoare stocată pentru coloană (stare prezentă),
                 ' NU numărul celulelor numerice ne-vide — un rând cu Nothing stocat tot se numără.
                 Dim n As Integer = 0
-                For Each r In ViewRows()
+                For Each r In ViewRowsRange(firstViewPos, lastViewPos)
                     If r.HasValue(col.Key) Then n += 1
                 Next
                 Return FormatCount(n)
@@ -116,7 +138,7 @@ Partial Class KBotDataView
                 ' deci ce se vede la fel se și numără la fel (două DateTime cu ore diferite,
                 ' afișate „dd.MM.yyyy”, sunt o singură zi — exact ce întreabă operatorul).
                 Dim vazute As New HashSet(Of String)(StringComparer.CurrentCulture)
-                For Each r In ViewRows()
+                For Each r In ViewRowsRange(firstViewPos, lastViewPos)
                     Dim v As Object = r(col.Key)
                     If EsteGol(v) Then Continue For
                     vazute.Add(FormatValue(v, col))
@@ -125,7 +147,7 @@ Partial Class KBotDataView
 
             Case KBotAggregate.CountEmpty
                 Dim n As Integer = 0
-                For Each r In ViewRows()
+                For Each r In ViewRowsRange(firstViewPos, lastViewPos)
                     If EsteGol(r(col.Key)) Then n += 1
                 Next
                 Return FormatCount(n)
@@ -133,7 +155,7 @@ Partial Class KBotDataView
             Case KBotAggregate.CountTrue, KBotAggregate.CountFalse
                 Dim caut As Boolean = (col.Aggregate = KBotAggregate.CountTrue)
                 Dim n As Integer = 0
-                For Each r In ViewRows()
+                For Each r In ViewRowsRange(firstViewPos, lastViewPos)
                     ' Doar rândurile care AU valoare stocată: o celulă niciodată scrisă nu e nici
                     ' bifată, nici debifată — e absentă (o numără CountEmpty).
                     If Not r.HasValue(col.Key) Then Continue For
@@ -144,14 +166,14 @@ Partial Class KBotDataView
             Case KBotAggregate.First, KBotAggregate.Last
                 Dim primul As Boolean = (col.Aggregate = KBotAggregate.First)
                 If primul Then
-                    For Each r In ViewRows()
+                    For Each r In ViewRowsRange(firstViewPos, lastViewPos)
                         Dim v As Object = r(col.Key)
                         If Not EsteGol(v) Then Return FormatValue(v, col)
                     Next
                 Else
                     ' „Ultimul” înseamnă ultimul de pe ECRAN, deci se numără în ordinea de
                     ' afișare: sub o sortare, ultimul rând încărcat nu mai e cel de jos.
-                    For i As Integer = ViewCount() - 1 To 0 Step -1
+                    For i As Integer = Math.Min(lastViewPos, ViewCount() - 1) To Math.Max(0, firstViewPos) Step -1
                         Dim v As Object = ViewRowAt(i)(col.Key)
                         If Not EsteGol(v) Then Return FormatValue(v, col)
                     Next
@@ -165,12 +187,13 @@ Partial Class KBotDataView
 
     ' Min/Max — comparate în tipul coloanei: numeric pentru Number, calendaristic pentru DateTime.
     ' Celulele care nu se pot citi în tipul cerut se sar (ca la Sum), iar zero candidați => vid.
-    Private Function ComputeExtremeText(col As KBotDataColumn, cautMinim As Boolean) As String
+    Private Function ComputeExtremeText(col As KBotDataColumn, cautMinim As Boolean,
+                                        firstViewPos As Integer, lastViewPos As Integer) As String
         If col.ValueType = KBotValueType.DateTime Then
             Dim best As Date = Nothing
             Dim gasit As Boolean = False
             Dim d As Date
-            For Each r In ViewRows()
+            For Each r In ViewRowsRange(firstViewPos, lastViewPos)
                 If Not TryDate(r(col.Key), d) Then Continue For
                 If Not gasit OrElse If(cautMinim, d < best, d > best) Then
                     best = d
@@ -184,7 +207,7 @@ Partial Class KBotDataView
         Dim bestN As Double = 0
         Dim gasitN As Boolean = False
         Dim n As Double
-        For Each r In ViewRows()
+        For Each r In ViewRowsRange(firstViewPos, lastViewPos)
             If Not TryNumericRounded(r(col.Key), col, n) Then Continue For
             If Not gasitN OrElse If(cautMinim, n < bestN, n > bestN) Then
                 bestN = n

@@ -64,6 +64,9 @@ Partial Class KBotDataView
     ''' </summary>
     Friend Sub InvalidateView()
         _viewDirty = True
+        ' Benzile stau PESTE hartă (slice 0029): dacă ea se reface, ele nu mai au pe ce sta.
+        ' Marcajul e ieftin — reconstrucția lor e la fel de leneșă (vezi EnsureBands).
+        InvalidateBands()
     End Sub
 
     ''' <summary>
@@ -86,7 +89,12 @@ Partial Class KBotDataView
                 If RowPassesFilters(i) Then _view.Add(i)
             Next
 
-            If _sortDirection <> KBotSortDirection.None AndAlso Not String.IsNullOrEmpty(_sortKey) Then
+            ' Nivelurile de grupare se recitesc ÎNAINTE de sortare: ele sunt primele chei de
+            ' ordonare, iar o listă rămasă în urma coloanelor ar sorta după o coloană ștearsă.
+            RefreshActiveLevels()
+
+            If _activeLevels.Count > 0 OrElse
+               (_sortDirection <> KBotSortDirection.None AndAlso Not String.IsNullOrEmpty(_sortKey)) Then
                 SortView()
             End If
 
@@ -120,20 +128,59 @@ Partial Class KBotDataView
         _viewDirty = False
     End Sub
 
-    ' Sortarea vederii. List.Sort NU e stabilă, deci comparatorul cade la egalitate pe indexul de
-    ' model: fără asta, două rânduri cu aceeași valoare și-ar schimba locul între ele la fiecare
-    ' resortare, iar o grilă care se rearanjează singură arată ca un bug.
+    ''' <summary>
+    ''' Sortarea vederii. List.Sort NU e stabilă, deci comparatorul cade la egalitate pe indexul de
+    ''' model: fără asta, două rânduri cu aceeași valoare și-ar schimba locul între ele la fiecare
+    ''' resortare, iar o grilă care se rearanjează singură arată ca un bug.
+    '''
+    ''' <para><b>Precedența, de la slice 0029.</b> Cheile de GRUPARE se compară primele, în ordinea
+    ''' nivelurilor, și abia după ele coloana cerută de operator din antet. Asta e regula din
+    ''' fereastra «Sorting and Grouping» a unui raport Access, și nu e o preferință de stil: un
+    ''' grup înseamnă rândurile aceleiași chei, LIPITE. Dacă sortarea operatorului ar putea trece
+    ''' înaintea cheii de grupare, aceleași chei s-ar împrăștia prin listă și fiecare bucată și-ar
+    ''' primi propriul antet și propriul total — o grilă în care «Total ianuarie» apare de patru
+    ''' ori, cu patru sume diferite. Așa, un click pe antet ordonează ÎNĂUNTRUL grupurilor și nu
+    ''' poate rupe gruparea niciodată.</para>
+    '''
+    ''' <para>Sortarea pe o coloană care e ea însăși cheie de grupare nu ajunge aici deloc: ea
+    ''' întoarce sensul nivelului — vezi <see cref="ApplySort"/>.</para>
+    ''' </summary>
     Private Sub SortView()
-        Dim col As KBotDataColumn = Nothing
-        If Not _columnIndex.TryGetValue(_sortKey, col) Then Return
+        ' Cheile de grupare, pregătite o dată (nu o căutare de coloană per comparație).
+        Dim nrNiveluri As Integer = _activeLevels.Count
+        Dim cheiGrup(Math.Max(0, nrNiveluri - 1)) As String
+        Dim tipuriGrup(Math.Max(0, nrNiveluri - 1)) As KBotValueType
+        Dim descrescatorGrup(Math.Max(0, nrNiveluri - 1)) As Boolean
+        For d As Integer = 0 To nrNiveluri - 1
+            Dim gc As KBotDataColumn = _columnIndex(_activeLevels(d).ColumnKey)
+            cheiGrup(d) = gc.Key
+            tipuriGrup(d) = gc.ValueType
+            descrescatorGrup(d) = (_activeLevels(d).SortDirection = KBotSortDirection.Descending)
+        Next
 
-        Dim cheie As String = col.Key
-        Dim tip As KBotValueType = col.ValueType
+        ' Sortarea operatorului — poate lipsi (grilă doar grupată).
+        Dim col As KBotDataColumn = Nothing
+        Dim areSortare As Boolean = _sortDirection <> KBotSortDirection.None AndAlso
+                                    Not String.IsNullOrEmpty(_sortKey) AndAlso
+                                    _columnIndex.TryGetValue(_sortKey, col)
+        Dim cheie As String = If(areSortare, col.Key, Nothing)
+        Dim tip As KBotValueType = If(areSortare, col.ValueType, KBotValueType.Text)
         Dim descrescator As Boolean = (_sortDirection = KBotSortDirection.Descending)
 
+        If nrNiveluri = 0 AndAlso Not areSortare Then Return
+
         _view.Sort(Function(a As Integer, b As Integer) As Integer
-                       Dim semn As Integer = KBotFilterEngine.Compare(_rows(a)(cheie), _rows(b)(cheie), tip)
-                       If semn <> 0 Then Return If(descrescator, -semn, semn)
+                       For d As Integer = 0 To nrNiveluri - 1
+                           Dim semnGrup As Integer = KBotFilterEngine.Compare(
+                               _rows(a)(cheiGrup(d)), _rows(b)(cheiGrup(d)), tipuriGrup(d))
+                           If semnGrup <> 0 Then Return If(descrescatorGrup(d), -semnGrup, semnGrup)
+                       Next
+
+                       If areSortare Then
+                           Dim semn As Integer = KBotFilterEngine.Compare(_rows(a)(cheie), _rows(b)(cheie), tip)
+                           If semn <> 0 Then Return If(descrescator, -semn, semn)
+                       End If
+
                        Return a.CompareTo(b)
                    End Function)
     End Sub
@@ -219,6 +266,17 @@ Partial Class KBotDataView
     ''' <summary>
     ''' Sortează după o coloană. <see cref="KBotSortDirection.None"/> (sau o cheie vidă) readuce
     ''' ordinea de încărcare. Cheie necunoscută => <see cref="ArgumentException"/>, ca peste tot.
+    '''
+    ''' <para><b>Pe o grilă GRUPATĂ (slice 0029) sunt două cazuri, și amândouă păstrează
+    ''' gruparea:</b></para>
+    ''' <list type="number">
+    ''' <item><description>coloana e o cheie de grupare => se schimbă SENSUL acelui nivel. E
+    ''' singurul lucru pe care îl poate însemna «sortează după lună» într-o grilă grupată pe lună:
+    ''' lunile sunt deja adunate, tot ce mai rămâne de ales e dacă merg în sus sau în jos. Sortarea
+    ''' de rând se ridică atunci, ca antetul să nu arate două semne de sortare deodată;</description></item>
+    ''' <item><description>orice altă coloană => se sortează ÎNĂUNTRUL fiecărui grup, sub cheile de
+    ''' grupare (vezi <see cref="SortView"/>).</description></item>
+    ''' </list>
     ''' </summary>
     Public Sub ApplySort(colKey As String, direction As KBotSortDirection)
         Try
@@ -227,8 +285,16 @@ Partial Class KBotDataView
                 _sortDirection = KBotSortDirection.None
             Else
                 Column(colKey)                  ' cheie necunoscută => ArgumentException
-                _sortKey = colKey
-                _sortDirection = direction
+                Dim nivel As KBotGroupLevel = GroupLevelFor(colKey)
+                If nivel IsNot Nothing Then
+                    ' Nivelul își schimbă sensul; sortarea de rând se ridică (vezi rezumatul).
+                    nivel.SortDirection = direction
+                    _sortKey = Nothing
+                    _sortDirection = KBotSortDirection.None
+                Else
+                    _sortKey = colKey
+                    _sortDirection = direction
+                End If
             End If
             AfterViewStateChanged()
             RaiseEvent SortChanged(Me, EventArgs.Empty)
@@ -237,6 +303,19 @@ Partial Class KBotDataView
             Throw
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Nivelul de grupare așezat pe o coloană, sau <c>Nothing</c>. Îl citesc <see cref="ApplySort"/>
+    ''' și antetul (ca să arate semnul de sortare al nivelului pe coloana lui de grupare).
+    ''' </summary>
+    Public Function GroupLevelFor(colKey As String) As KBotGroupLevel
+        If String.IsNullOrEmpty(colKey) Then Return Nothing
+        RefreshActiveLevels()
+        For Each nivel In _activeLevels
+            If String.Equals(nivel.ColumnKey, colKey, StringComparison.Ordinal) Then Return nivel
+        Next
+        Return Nothing
+    End Function
 
     ' ══════════════════════════════════════════════════════════════════════════
     ' API PUBLIC — filtrare
@@ -382,8 +461,15 @@ Partial Class KBotDataView
         LayoutChanged()             ' rândurile vizibile s-au schimbat => alt conținut de derulat
     End Sub
 
-    ' Selecția cade dacă rândul ei nu mai e vizibil. Editarea deschisă se abandonează întâi —
+    ' Selecția cade dacă rândul ei a fost FILTRAT AFARĂ. Editarea deschisă se abandonează întâi —
     ' un editor plutind peste un rând care tocmai a dispărut ar rămâne agățat în aer.
+    '
+    ' English (slice 0029): a row hidden by a COLLAPSED GROUP deliberately does NOT drop the
+    ' selection, and the difference matters. A filter says the row is not part of the page any
+    ' more — there is nothing to go back to. Collapsing says "not right now", and it is meant to be
+    ' undone: if the selection were dropped, Ctrl+Right could never re-open what Ctrl+Left just
+    ' closed, because there would be no row left to ask about. The row keeps the selection, draws
+    ' nothing (it has no band), and anchors navigation on its group's header — see AnchorBandOfRow.
     Private Sub DropSelectionIfHidden()
         If _currentRowIndex < 0 Then Return
         If ViewPositionOf(_currentRowIndex) >= 0 Then Return

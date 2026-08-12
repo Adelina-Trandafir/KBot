@@ -290,31 +290,37 @@ Partial Class KBotDataView
 
     ' ── Rânduri (virtualizat) ───────────────────────────────────────────────────
 
-    ' Pictează DOAR rândurile vizibile. Numărul lor ajunge în DebugLastPaintedDataRows,
-    ' poarta de verificare headless a virtualizării.
+    ' Pictează DOAR benzile vizibile. Numărul RÂNDURILOR DE DATE dintre ele ajunge în
+    ' DebugLastPaintedDataRows, poarta de verificare headless a virtualizării — antetele și
+    ' subsolurile de grup nu se numără acolo, ca proba să însemne același lucru ca înainte de
+    ' slice 0029 („costul unei pictări nu depinde de RowCount”).
     Private Sub DrawRows(g As Graphics)
         Dim painted As Integer = 0
         Dim bodyTop As Integer = HeaderBandHeight()
         Dim bodyH As Integer = ViewportHeight()
         Dim viewW As Integer = ViewportWidth()
 
-        If bodyH <= 0 OrElse ViewCount() = 0 Then
+        Dim first As Integer = FirstVisibleBand()
+        Dim last As Integer = LastVisibleBand()
+        If bodyH <= 0 OrElse first < 0 OrElse last < first Then
             DebugLastPaintedDataRows = 0
             Return
         End If
 
-        Dim first As Integer = FirstVisibleRow()
-        Dim last As Integer = LastVisibleRow()
-
-        ' Decupăm zona de date, ca rândurile parțiale să nu deseneze peste antet/bare.
+        ' Decupăm zona de date, ca benzile parțiale să nu deseneze peste antet/bare.
         Dim bodyClip As New Rectangle(0, bodyTop, viewW, bodyH)
         g.SetClip(bodyClip)
 
         For i As Integer = first To last
-            Dim y As Integer = RowTop(i)
-            If y + _rowHeight <= bodyTop OrElse y >= bodyTop + bodyH Then Continue For
-            DrawRow(g, i, y, viewW)
-            painted += 1
+            Dim banda As KBotBand = BandAt(i)
+            Dim y As Integer = bodyTop + banda.Top - VScrollOffset()
+            If y + banda.Height <= bodyTop OrElse y >= bodyTop + bodyH Then Continue For
+            If banda.Kind = KBotGroupBandKind.Data Then
+                DrawRow(g, banda.ViewPosition, y, viewW)
+                painted += 1
+            Else
+                DrawGroupBand(g, banda, y, viewW)
+            End If
         Next
 
         g.ResetClip()

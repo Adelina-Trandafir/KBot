@@ -209,38 +209,60 @@ Partial Class KBotDataView
         Return If(hScroll.Visible, hScroll.Value, 0)
     End Function
 
-    ' ── Virtualizare (înălțime fixă => aritmetică întreagă) ─────────────────────
+    ' ── Virtualizare ────────────────────────────────────────────────────────────
 
     ' English (slice 0028-03): everything below counts in VIEW POSITIONS — the on-screen order
     ' after filtering and sorting — never in model indices. See KBotDataView.Filtering for the two
     ' numbering schemes and why they must not be mixed.
+    '
+    ' English (slice 0029): and now in BAND INDICES, which is a third numbering — the rows actually
+    ' DRAWN, group headers and group footers included. The old arithmetic (position × RowHeight)
+    ' survives untouched on a grid nobody grouped: KBotDataView.Grouping keeps that fast path and
+    ' allocates no band table at all. Grouped, the bands carry cumulative offsets and the lookups
+    ' below become a binary search — which is what buys group bands their OWN heights without
+    ' making a painting pass depend on the row count again.
 
-    ''' <summary>Prima POZIȚIE DE VEDERE vizibilă, dedusă din offset-ul în pixeli.</summary>
-    Private Function FirstVisibleRow() As Integer
-        If _rowHeight <= 0 Then Return 0
-        Return Math.Max(0, VScrollOffset() \ _rowHeight)
+    ''' <summary>Primul INDEX DE BANDĂ vizibil, dedus din offset-ul în pixeli. -1 = nimic de pictat.</summary>
+    Private Function FirstVisibleBand() As Integer
+        Dim n As Integer = BandCount()
+        If n = 0 Then Return -1
+        Dim idx As Integer = BandIndexAtOffset(VScrollOffset())
+        If idx < 0 Then Return If(VScrollOffset() <= 0, 0, n - 1)
+        Return idx
     End Function
 
-    ''' <summary>Câte rânduri încap în zona de date (+2 pentru rândurile tăiate sus/jos).</summary>
-    Private Function VisibleRowCount() As Integer
-        If _rowHeight <= 0 Then Return 0
-        Return (ViewportHeight() \ _rowHeight) + 2
+    ''' <summary>
+    ''' Ultimul INDEX DE BANDĂ de pictat. Cuprinde și banda tăiată de marginea de jos: decuparea
+    ''' zonei de date o retează oricum, iar o bandă lipsă la margine s-ar vedea ca o gaură.
+    ''' </summary>
+    Private Function LastVisibleBand() As Integer
+        Dim n As Integer = BandCount()
+        If n = 0 Then Return -1
+        Dim idx As Integer = BandIndexAtOffset(Math.Max(0, VScrollOffset() + ViewportHeight()))
+        If idx < 0 Then Return n - 1
+        Return Math.Min(n - 1, idx)
     End Function
 
-    ''' <summary>Ultima POZIȚIE DE VEDERE de pictat (limitată la ultimul rând care trece de filtre).</summary>
-    Private Function LastVisibleRow() As Integer
-        Return Math.Min(ViewCount() - 1, FirstVisibleRow() + VisibleRowCount())
+    ''' <summary>Y-ul (client) al unei benzi, ținând cont de antet și de derulare.</summary>
+    Private Function BandTop(bandIndex As Integer) As Integer
+        Return HeaderBandHeight() + BandAt(bandIndex).Top - VScrollOffset()
     End Function
 
-    ''' <summary>Y-ul (client) al unei POZIȚII DE VEDERE, ținând cont de antet și de derulare.</summary>
+    ''' <summary>
+    ''' Y-ul (client) al unei POZIȚII DE VEDERE. <see cref="Integer.MinValue"/> = rândul nu se
+    ''' desenează nicăieri, fiindcă stă într-un grup STRÂNS (slice 0029).
+    ''' </summary>
     Private Function RowTop(viewPosition As Integer) As Integer
-        Return HeaderBandHeight() + viewPosition * _rowHeight - VScrollOffset()
+        Dim bi As Integer = BandIndexOfViewPosition(viewPosition)
+        If bi < 0 Then Return Integer.MinValue
+        Return BandTop(bi)
     End Function
 
     ''' <summary>
     ''' Y-ul (client) al unui rând dat prin indexul lui de MODEL — poarta prin care API-ul public
-    ''' (celule, editare, etichetă) ajunge la geometrie. <see cref="Integer.MinValue"/> = rândul e
-    ''' filtrat afară, deci nu are niciun Y.
+    ''' (celule, editare, etichetă) ajunge la geometrie. <see cref="Integer.MinValue"/> = rândul nu
+    ''' are niciun Y, fie pentru că e filtrat afară, fie pentru că grupul lui e strâns. Apelanții
+    ''' (<c>CellRect</c>, <c>CellRectangle</c>) verifică deja exact valoarea asta.
     ''' </summary>
     Private Function RowTopForModel(modelIndex As Integer) As Integer
         Dim vp As Integer = ViewPositionOf(modelIndex)
@@ -449,7 +471,9 @@ Partial Class KBotDataView
 
         ' Se derulează doar rândurile care trec de filtre — altfel bara ar promite o înălțime de
         ' conținut pe care grila n-o mai are și s-ar putea derula sub ultimul rând vizibil.
-        Dim contentH As Integer = ViewCount() * _rowHeight
+        ' Slice 0029: și doar BENZILE desenate, deci fără rândurile din grupurile strânse și cu
+        ' tot cu antetele/subsolurile de grup. ContentHeight() e singurul loc care o știe.
+        Dim contentH As Integer = ContentHeight()
         Dim totalColsW As Integer = _frozenBandWidth + _scrollBandWidth
 
         Dim availW As Integer = ClientSize.Width
@@ -509,20 +533,23 @@ Partial Class KBotDataView
 
     ''' <summary>
     ''' Derulează astfel încât rândul dat să fie complet vizibil. <paramref name="rowIndex"/> e un
-    ''' index de MODEL (API public); un rând filtrat afară nu are unde să fie derulat, deci e un
-    ''' no-op — nu o eroare, fiindcă apelantul obișnuit (o selecție, un commit) n-are de unde ști
-    ''' că tocmai a fost ascuns de un filtru.
+    ''' index de MODEL (API public); un rând care nu se desenează nicăieri — filtrat afară, sau
+    ''' într-un grup strâns — nu are unde să fie derulat, deci e un no-op. Nu o eroare: apelantul
+    ''' obișnuit (o selecție, un commit) n-are de unde ști că tocmai a fost ascuns.
     ''' </summary>
     Public Sub EnsureVisible(rowIndex As Integer)
         Try
             If rowIndex < 0 OrElse rowIndex >= _rows.Count Then Return
-            Dim viewPosition As Integer = ViewPositionOf(rowIndex)
-            If viewPosition < 0 Then Return
+            ' Ancora, nu banda: un rând închis într-un grup strâns se derulează la ANTETUL
+            ' grupului — acela e ce se vede din el, și e locul de unde se poate redeschide.
+            Dim bandIndex As Integer = AnchorBandOfRow(rowIndex)
+            If bandIndex < 0 Then Return
             If Not vScroll.Visible Then Return
 
+            Dim banda As KBotBand = BandAt(bandIndex)
             Dim viewH As Integer = ViewportHeight()
-            Dim top As Integer = viewPosition * _rowHeight
-            Dim bottom As Integer = top + _rowHeight
+            Dim top As Integer = banda.Top
+            Dim bottom As Integer = top + banda.Height
             Dim current As Integer = vScroll.Value
             Dim target As Integer = current
 
@@ -532,7 +559,7 @@ Partial Class KBotDataView
                 target = bottom - viewH                   ' iese pe jos
             End If
 
-            Dim maxValue As Integer = Math.Max(0, (ViewCount() * _rowHeight) - viewH)
+            Dim maxValue As Integer = Math.Max(0, ContentHeight() - viewH)
             target = Math.Max(0, Math.Min(target, maxValue))
             If target <> current Then vScroll.Value = target
         Catch ex As Exception

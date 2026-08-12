@@ -461,9 +461,10 @@ Partial Class KBotDataView
     ' English (slice 0017-01): the pinned totals band eats body height too, so subtract it here
     ' as well — otherwise the auto-size vscroll prediction and UpdateScrollBars would disagree.
     Private Function WillVScrollBeVisible() As Boolean
-        ' Aceleași rânduri pe care le socotește UpdateScrollBars (cele care trec de filtre),
-        ' altfel predicția și bara adevărată s-ar contrazice.
-        Dim contentH As Integer = ViewCount() * _rowHeight
+        ' Aceleași BENZI pe care le socotește UpdateScrollBars (cele care trec de filtre, plus
+        ' antetele/subsolurile de grup, minus rândurile din grupurile strânse), altfel predicția
+        ' și bara adevărată s-ar contrazice. Un singur loc le știe: ContentHeight().
+        Dim contentH As Integer = ContentHeight()
         Dim availH As Integer = Math.Max(0, ClientSize.Height - HeaderBandHeight() - FooterBandHeight())
         Return contentH > availH
     End Function

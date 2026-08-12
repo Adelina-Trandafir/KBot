@@ -110,6 +110,7 @@ Public Class KBotDataView
                  ControlStyles.Selectable, True)
         TabStop = True
         _columns.Owner = Me
+        _levels.Owner = Me
         InitializeComponent()
         SetDefaultColors()
         RebuildThemeResources()
@@ -154,6 +155,9 @@ Public Class KBotDataView
     ''' </summary>
     Friend Sub OnColumnsChanged()
         RebuildColumnIndex()
+        ' Nivelurile de grupare arată către coloane pe cheie: una ștearsă trebuie să stingă nivelul
+        ' care se sprijinea pe ea, altfel sortarea ar căuta o coloană care nu mai există.
+        RefreshActiveLevels()
         If _initializing Then Return
         ' O coloană construită liber (fără Owner) și-a putut lua orice pereche ValueType ×
         ' Aggregate: setterul ei n-avea de la cine să afle. Intrarea în grilă e locul unde
@@ -230,8 +234,14 @@ Public Class KBotDataView
     Public Sub EndInit() Implements ISupportInitialize.EndInit
         Try
             _initializing = False
-            If Not KBotDesignTime.IsDesignTime(Me) Then ValidateColumns()
             RebuildColumnIndex()
+            ' Aceeași regulă ca la coloane: în DESIGNER validarea se sare, fiindcă o excepție din
+            ' InitializeComponent înseamnă un formular care nu se mai deschide deloc.
+            If Not KBotDesignTime.IsDesignTime(Me) Then
+                ValidateColumns()
+                ValidateGroupLevels()
+            End If
+            RefreshActiveLevels()
             RecomputeDerived()
             LayoutChanged()
         Catch ex As Exception
@@ -529,6 +539,9 @@ Public Class KBotDataView
         End Get
         Set(value As Integer)
             _rowHeight = Math.Max(1, value)
+            ' Benzile își iau înălțimea de aici (o bandă de grup fără înălțime proprie urmărește
+            ' RowHeight), deci offset-urile lor cumulate nu mai sunt valabile.
+            InvalidateBands()
             LayoutChanged()
         End Set
     End Property

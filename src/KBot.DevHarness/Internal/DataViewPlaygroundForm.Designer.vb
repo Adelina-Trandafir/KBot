@@ -53,6 +53,19 @@ Partial Class DataViewPlaygroundForm
     Friend WithEvents numColMin As System.Windows.Forms.NumericUpDown
     Friend WithEvents lblColMax As System.Windows.Forms.Label
     Friend WithEvents numColMax As System.Windows.Forms.NumericUpDown
+    ' —— Grupare (slice 0029) ——
+    Friend WithEvents lblSecGroup As System.Windows.Forms.Label
+    Friend WithEvents lblGroup1 As System.Windows.Forms.Label
+    Friend WithEvents cboGroup1 As System.Windows.Forms.ComboBox
+    Friend WithEvents lblGroup2 As System.Windows.Forms.Label
+    Friend WithEvents cboGroup2 As System.Windows.Forms.ComboBox
+    Friend WithEvents chkFooter As System.Windows.Forms.CheckBox
+    Friend WithEvents chkGroupHeaderAgg As System.Windows.Forms.CheckBox
+    Friend WithEvents chkGroupFooterAgg As System.Windows.Forms.CheckBox
+    Friend WithEvents chkGroupCollapsed As System.Windows.Forms.CheckBox
+    Friend WithEvents btnCollapseAll As System.Windows.Forms.Button
+    Friend WithEvents btnExpandAll As System.Windows.Forms.Button
+
     Friend WithEvents lblSecData As System.Windows.Forms.Label
     Friend WithEvents lblRowCount As System.Windows.Forms.Label
     Friend WithEvents cboRowCount As System.Windows.Forms.ComboBox
@@ -103,6 +116,17 @@ Partial Class DataViewPlaygroundForm
         Me.numColMin = New System.Windows.Forms.NumericUpDown()
         Me.lblColMax = New System.Windows.Forms.Label()
         Me.numColMax = New System.Windows.Forms.NumericUpDown()
+        Me.lblSecGroup = New System.Windows.Forms.Label()
+        Me.lblGroup1 = New System.Windows.Forms.Label()
+        Me.cboGroup1 = New System.Windows.Forms.ComboBox()
+        Me.lblGroup2 = New System.Windows.Forms.Label()
+        Me.cboGroup2 = New System.Windows.Forms.ComboBox()
+        Me.chkFooter = New System.Windows.Forms.CheckBox()
+        Me.chkGroupHeaderAgg = New System.Windows.Forms.CheckBox()
+        Me.chkGroupFooterAgg = New System.Windows.Forms.CheckBox()
+        Me.chkGroupCollapsed = New System.Windows.Forms.CheckBox()
+        Me.btnCollapseAll = New System.Windows.Forms.Button()
+        Me.btnExpandAll = New System.Windows.Forms.Button()
         Me.lblSecData = New System.Windows.Forms.Label()
         Me.lblRowCount = New System.Windows.Forms.Label()
         Me.cboRowCount = New System.Windows.Forms.ComboBox()
@@ -181,6 +205,17 @@ Partial Class DataViewPlaygroundForm
         Me.flowLeft.Controls.Add(Me.numColMin)
         Me.flowLeft.Controls.Add(Me.lblColMax)
         Me.flowLeft.Controls.Add(Me.numColMax)
+        Me.flowLeft.Controls.Add(Me.lblSecGroup)
+        Me.flowLeft.Controls.Add(Me.lblGroup1)
+        Me.flowLeft.Controls.Add(Me.cboGroup1)
+        Me.flowLeft.Controls.Add(Me.lblGroup2)
+        Me.flowLeft.Controls.Add(Me.cboGroup2)
+        Me.flowLeft.Controls.Add(Me.chkFooter)
+        Me.flowLeft.Controls.Add(Me.chkGroupHeaderAgg)
+        Me.flowLeft.Controls.Add(Me.chkGroupFooterAgg)
+        Me.flowLeft.Controls.Add(Me.chkGroupCollapsed)
+        Me.flowLeft.Controls.Add(Me.btnCollapseAll)
+        Me.flowLeft.Controls.Add(Me.btnExpandAll)
         Me.flowLeft.Controls.Add(Me.lblSecData)
         Me.flowLeft.Controls.Add(Me.lblRowCount)
         Me.flowLeft.Controls.Add(Me.cboRowCount)
@@ -220,6 +255,20 @@ Partial Class DataViewPlaygroundForm
         Me.numColMin.Minimum = 0D : Me.numColMin.Maximum = 4000D : Me.numColMin.Value = 40D : Me.numColMin.Width = 120 : Me.numColMin.Name = "numColMin"
         Me.lblColMax.AutoSize = True : Me.lblColMax.Text = "MaxWidth (0 = neplafonat)" : Me.lblColMax.Name = "lblColMax"
         Me.numColMax.Minimum = 0D : Me.numColMax.Maximum = 4000D : Me.numColMax.Value = 0D : Me.numColMax.Width = 120 : Me.numColMax.Name = "numColMax"
+        '
+        ' —— Grupare (slice 0029): secțiunile de grup ale unui raport Access ——
+        '
+        Me.lblSecGroup.AutoSize = True : Me.lblSecGroup.Text = "—— Grupare (ca la raportul Access) ——" : Me.lblSecGroup.Margin = New System.Windows.Forms.Padding(3, 12, 3, 0) : Me.lblSecGroup.Name = "lblSecGroup"
+        Me.lblGroup1.AutoSize = True : Me.lblGroup1.Text = "Nivelul 1 (dinafară)" : Me.lblGroup1.Name = "lblGroup1"
+        Me.cboGroup1.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList : Me.cboGroup1.Width = 250 : Me.cboGroup1.Name = "cboGroup1"
+        Me.lblGroup2.AutoSize = True : Me.lblGroup2.Text = "Nivelul 2 (dinăuntru)" : Me.lblGroup2.Name = "lblGroup2"
+        Me.cboGroup2.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList : Me.cboGroup2.Width = 250 : Me.cboGroup2.Name = "cboGroup2"
+        Me.chkFooter.AutoSize = True : Me.chkFooter.Text = "FooterVisible (totalul general)" : Me.chkFooter.Checked = True : Me.chkFooter.Name = "chkFooter"
+        Me.chkGroupHeaderAgg.AutoSize = True : Me.chkGroupHeaderAgg.Text = "Agregate și în ANTETUL grupului" : Me.chkGroupHeaderAgg.Name = "chkGroupHeaderAgg"
+        Me.chkGroupFooterAgg.AutoSize = True : Me.chkGroupFooterAgg.Text = "Agregate în SUBSOLUL grupului" : Me.chkGroupFooterAgg.Checked = True : Me.chkGroupFooterAgg.Name = "chkGroupFooterAgg"
+        Me.chkGroupCollapsed.AutoSize = True : Me.chkGroupCollapsed.Text = "CollapsedByDefault" : Me.chkGroupCollapsed.Name = "chkGroupCollapsed"
+        Me.btnCollapseAll.AutoSize = True : Me.btnCollapseAll.Text = "CollapseAllGroups()" : Me.btnCollapseAll.Name = "btnCollapseAll" : Me.btnCollapseAll.UseVisualStyleBackColor = True
+        Me.btnExpandAll.AutoSize = True : Me.btnExpandAll.Text = "ExpandAllGroups()" : Me.btnExpandAll.Name = "btnExpandAll" : Me.btnExpandAll.UseVisualStyleBackColor = True
         '
         Me.lblSecData.AutoSize = True : Me.lblSecData.Text = "—— Date ——" : Me.lblSecData.Margin = New System.Windows.Forms.Padding(3, 12, 3, 0) : Me.lblSecData.Name = "lblSecData"
         Me.lblRowCount.AutoSize = True : Me.lblRowCount.Text = "Rânduri" : Me.lblRowCount.Name = "lblRowCount"

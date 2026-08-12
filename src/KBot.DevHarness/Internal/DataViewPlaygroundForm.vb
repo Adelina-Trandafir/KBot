@@ -28,6 +28,7 @@ Public NotInheritable Class DataViewPlaygroundForm
         BuildColumns()
         SeedRows(12)
         PopulateColumnCombo()
+        PopulateGroupCombos()
         SyncGridControls()
         _loading = False
         LoadColumnInspector()
@@ -64,7 +65,12 @@ Public NotInheritable Class DataViewPlaygroundForm
                                      KBotColumnType.Text, 110)
             col.FormatString = "N2"
             col.TextAlign = ContentAlignment.MiddleRight
+            ' Slice 0029: coloanele purtătoare de sume alimentează ACELAȘI agregat și în subsolul
+            ' grilei, și în subsolurile de grup — un raport Access scrie «=Sum([x])» o dată.
+            col.ValueType = KBotValueType.Number
+            col.Aggregate = KBotAggregate.Sum
         Next
+        grid.FooterVisible = True
         grid.FrozenColumnCount = 1
         grid.EndUpdate()
     End Sub
@@ -191,6 +197,83 @@ Public NotInheritable Class DataViewPlaygroundForm
     End Sub
     Private Sub cboRowCount_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboRowCount.SelectedIndexChanged
         Apply(Sub() SeedRows(Integer.Parse(CStr(cboRowCount.SelectedItem))))
+    End Sub
+
+    ' ── Grupare (slice 0029) ─────────────────────────────────────────────────────
+    '
+    ' Cele două combo-uri sunt cele două niveluri. «(fără)» pe primul stinge gruparea cu totul;
+    ' «(fără)» pe al doilea lasă un singur nivel. Coloanele bune de grupat sunt cele cu puține
+    ' valori distincte (Stare, Activ) — pe «Cod indicator» ar ieși un grup per rând, care e chiar
+    ' demonstrația că gruparea nu e o sortare.
+    Private Sub PopulateGroupCombos()
+        For Each cbo As ComboBox In New ComboBox() {cboGroup1, cboGroup2}
+            cbo.Items.Clear()
+            cbo.Items.Add("(fără)")
+            For Each c In grid.Columns
+                cbo.Items.Add(c.HeaderText & "  [" & c.Key & "]")
+            Next
+            cbo.SelectedIndex = 0
+        Next
+    End Sub
+
+    ' Cheia coloanei alese într-un combo de grupare, sau Nothing pentru «(fără)».
+    Private Function GroupKeyOf(cbo As ComboBox) As String
+        Dim i As Integer = cbo.SelectedIndex - 1          ' indexul 0 e «(fără)»
+        If i < 0 OrElse i >= grid.Columns.Count Then Return Nothing
+        Return grid.Columns(i).Key
+    End Function
+
+    Private Sub cboGroup1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboGroup1.SelectedIndexChanged
+        Apply(AddressOf RebuildGrouping)
+    End Sub
+
+    Private Sub cboGroup2_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboGroup2.SelectedIndexChanged
+        Apply(AddressOf RebuildGrouping)
+    End Sub
+
+    Private Sub chkGroupHeaderAgg_CheckedChanged(sender As Object, e As EventArgs) Handles chkGroupHeaderAgg.CheckedChanged
+        Apply(AddressOf ApplyGroupOptions)
+    End Sub
+
+    Private Sub chkGroupFooterAgg_CheckedChanged(sender As Object, e As EventArgs) Handles chkGroupFooterAgg.CheckedChanged
+        Apply(AddressOf ApplyGroupOptions)
+    End Sub
+
+    Private Sub chkGroupCollapsed_CheckedChanged(sender As Object, e As EventArgs) Handles chkGroupCollapsed.CheckedChanged
+        Apply(AddressOf ApplyGroupOptions)
+    End Sub
+
+    Private Sub chkFooter_CheckedChanged(sender As Object, e As EventArgs) Handles chkFooter.CheckedChanged
+        Apply(Sub() grid.FooterVisible = chkFooter.Checked)
+    End Sub
+
+    Private Sub btnCollapseAll_Click(sender As Object, e As EventArgs) Handles btnCollapseAll.Click
+        Apply(Sub() grid.CollapseAllGroups())
+    End Sub
+
+    Private Sub btnExpandAll_Click(sender As Object, e As EventArgs) Handles btnExpandAll.Click
+        Apply(Sub() grid.ExpandAllGroups())
+    End Sub
+
+    ' Reconstruiește nivelurile din cele două combo-uri. Se reface lista întreagă, nu se peticește:
+    ' ordinea elementelor E ierarhia, iar o mutare parțială ar lăsa nivelurile în altă ordine decât
+    ' cea din panou.
+    Private Sub RebuildGrouping()
+        grid.Groups.Clear()
+        For Each cbo As ComboBox In New ComboBox() {cboGroup1, cboGroup2}
+            Dim cheie As String = GroupKeyOf(cbo)
+            If cheie Is Nothing Then Continue For
+            grid.Groups.Add(New KBotGroupLevel(cheie, KBotSortDirection.Ascending))
+        Next
+        ApplyGroupOptions()
+    End Sub
+
+    Private Sub ApplyGroupOptions()
+        For Each nivel In grid.Groups
+            nivel.ShowHeaderAggregates = chkGroupHeaderAgg.Checked
+            nivel.ShowFooterAggregates = chkGroupFooterAgg.Checked
+            nivel.CollapsedByDefault = chkGroupCollapsed.Checked
+        Next
     End Sub
 
     ' ── Inspector de coloană ─────────────────────────────────────────────────────
@@ -363,6 +446,7 @@ Public NotInheritable Class DataViewPlaygroundForm
         chkHeader.Checked = grid.ShowHeader
         chkAlt.Checked = grid.AlternatingRows
         chkReadOnly.Checked = grid.ReadOnlyGrid
+        chkFooter.Checked = grid.FooterVisible
         cboRowCount.SelectedIndex = 0
     End Sub
 
@@ -388,6 +472,7 @@ Public NotInheritable Class DataViewPlaygroundForm
             End If
         Next
         Dim hidden As String = If(autoHiddenN > 0, $" • {autoHiddenN} ascunse auto", String.Empty)
-        lblInfo.Text = $"{grid.RowCount:N0} rânduri • {shownN} col. afișate{hidden} • Σlățimi={sumW}px • client={grid.ClientSize.Width}px"
+        Dim grupuri As String = If(grid.IsGrouped, $" • {grid.GroupCount():N0} grupuri", String.Empty)
+        lblInfo.Text = $"{grid.RowCount:N0} rânduri{grupuri} • {shownN} col. afișate{hidden} • Σlățimi={sumW}px • client={grid.ClientSize.Width}px"
     End Sub
 End Class

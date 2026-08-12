@@ -80,16 +80,47 @@ Partial Class KBotDataView
     ' ========================================================================
 
     ''' <summary>
-    ''' Indexul de MODEL al rândului de sub un punct client, sau -1 (antet/gol/în afara zonei).
-    ''' Punctul dă o POZIȚIE DE VEDERE — traducerea se face aici, o singură dată, ca tot restul
-    ''' input-ului să lucreze în indici de model ca și până acum.
+    ''' Indexul BENZII de sub un punct client, sau -1 (antet/subsol/gol/în afara zonei de date).
+    ''' Punctul dă un offset în conținut — traducerea se face aici, o singură dată.
     ''' </summary>
-    Private Function RowAtPoint(pt As Point) As Integer
+    Private Function BandAtPoint(pt As Point) As Integer
         Dim top As Integer = HeaderBandHeight()
         If pt.Y < top Then Return -1
         If pt.Y >= top + ViewportHeight() Then Return -1
-        Dim viewPosition As Integer = (pt.Y - top + VScrollOffset()) \ _rowHeight
-        Return ModelIndexAt(viewPosition)
+        Return BandIndexAtOffset(pt.Y - top + VScrollOffset())
+    End Function
+
+    ''' <summary>
+    ''' Indexul de MODEL al rândului de sub un punct client, sau -1. De la slice 0029, «-1»
+    ''' înseamnă și «acolo e o bandă de grup, nu un rând» — o bandă de grup nu are index de model,
+    ''' deci nu se selectează, nu se editează și nu ridică <c>CellClick</c>.
+    ''' </summary>
+    Private Function RowAtPoint(pt As Point) As Integer
+        Dim bi As Integer = BandAtPoint(pt)
+        If bi < 0 Then Return -1
+        Dim banda As KBotBand = BandAt(bi)
+        If banda.Kind <> KBotGroupBandKind.Data Then Return -1
+        Return ModelIndexAt(banda.ViewPosition)
+    End Function
+
+    ''' <summary>
+    ''' Apăsare pe o bandă de ANTET de grup: strânge/desface. True = a fost consumată, deci grila
+    ''' nu mai caută nicio celulă sub ea.
+    '''
+    ''' <para>Ținta e TOATĂ banda, nu doar triunghiul: într-un raport care se citește dintr-o
+    ''' privire, o țintă de nouă pixeli e o țintă ratată. Subsolul de grup nu e apăsabil — el nu are
+    ''' ce comuta, dar tot consumă apăsarea, ca un click alături de un total să nu mute selecția
+    ''' pe un rând pe care operatorul nu-l țintea.</para>
+    ''' </summary>
+    Private Function HandleGroupBandMouseDown(location As Point) As Boolean
+        Dim bi As Integer = BandAtPoint(location)
+        If bi < 0 Then Return False
+        Dim banda As KBotBand = BandAt(bi)
+        If banda.Kind = KBotGroupBandKind.Data Then Return False
+        If banda.Kind = KBotGroupBandKind.GroupHeader AndAlso Not KBotDesignTime.IsDesignTime(Me) Then
+            ToggleBandCollapse(bi)
+        End If
+        Return True
     End Function
 
     ''' <summary>Coloana de sub un X client, sau Nothing. Ține cont de banda înghețată.</summary>
@@ -180,22 +211,80 @@ Partial Class KBotDataView
     ' means "the row drawn under this one" — under a filter or a sort, that is almost never the
     ' next model index, and stepping through the model would make the selection jump around the
     ' screen and stop on rows nobody can see.
+    '
+    ' English (slice 0029): and now the step is taken over BANDS, skipping the ones that are not
+    ' data rows. Two things fall out of that, both of them the point: a group header/footer is
+    ' never "selected" (it has no model row to select), and a row inside a collapsed group is
+    ' never reached — it has no band at all, so Down-arrow walks past the whole group in one step,
+    ' exactly like the eye does.
     Private Sub MoveRow(delta As Integer)
-        Dim total As Integer = ViewCount()
-        If total = 0 Then Return
-        Dim pozitie As Integer = ViewPositionOf(_currentRowIndex)
-        Dim target As Integer = If(pozitie < 0, 0, pozitie + delta)
-        target = Math.Max(0, Math.Min(target, total - 1))
-        SetCurrentCell(ModelIndexAt(target), _currentColumnKey)
+        Dim n As Integer = BandCount()
+        If n = 0 OrElse delta = 0 Then Return
+
+        Dim pas As Integer = If(delta > 0, 1, -1)
+        Dim ramase As Integer = Math.Abs(delta)
+
+        ' Ancora, nu banda: dacă rândul curent e închis într-un grup strâns, pasul pleacă de la
+        ' antetul acelui grup — adică sare peste tot grupul, exact ca ochiul.
+        Dim curent As Integer = -1
+        If _currentRowIndex >= 0 Then curent = AnchorBandOfRow(_currentRowIndex)
+        ' Fără selecție (sau cu una tocmai ascunsă) se pleacă din afara capătului potrivit, ca
+        ' primul pas să cadă chiar pe primul / ultimul rând de date.
+        Dim i As Integer = If(curent >= 0, curent, If(pas > 0, -1, n))
+
+        ' Un salt mai mare decât grila (Ctrl+Home / Ctrl+End) e chiar «du-te la capăt»: se merge
+        ' direct acolo, ca o singură apăsare să nu plimbe o buclă prin sute de mii de benzi.
+        If ramase >= n Then
+            i = If(pas > 0, -1, n)
+            ramase = 1
+            Dim capat As Integer = EdgeDataBand(pas > 0)
+            If capat >= 0 Then
+                SetCurrentCell(ModelIndexAt(BandAt(capat).ViewPosition), _currentColumnKey)
+            End If
+            Return
+        End If
+
+        Dim ultimaData As Integer = -1
+        While ramase > 0
+            i += pas
+            If i < 0 OrElse i >= n Then Exit While
+            If BandAt(i).Kind <> KBotGroupBandKind.Data Then Continue While
+            ultimaData = i
+            ramase -= 1
+        End While
+
+        If ultimaData < 0 Then Return
+        SetCurrentCell(ModelIndexAt(BandAt(ultimaData).ViewPosition), _currentColumnKey)
     End Sub
+
+    ' Prima (sau ultima) bandă de DATE, sau -1 dacă grila n-are niciun rând desenat — se poate
+    ' întâmpla cu tot ce e vizibil strâns, caz în care săgețile n-au unde să ducă.
+    Private Function EdgeDataBand(prima As Boolean) As Integer
+        Dim n As Integer = BandCount()
+        If prima Then
+            For i As Integer = 0 To n - 1
+                If BandAt(i).Kind = KBotGroupBandKind.Data Then Return i
+            Next
+        Else
+            For i As Integer = n - 1 To 0 Step -1
+                If BandAt(i).Kind = KBotGroupBandKind.Data Then Return i
+            Next
+        End If
+        Return -1
+    End Function
 
     ' Mută coloana curentă în direcția dată, dacă există o coloană activă acolo.
     Private Sub MoveColumn(direction As Integer)
         Dim target As KBotDataColumn = NextEnabledColumn(_currentColumnKey, direction)
         If target Is Nothing Then Return
-        ' Fără rând curent, coloana se mută pe PRIMUL rând vizibil, nu pe modelul 0 — acela poate
-        ' fi tocmai unul filtrat afară.
-        Dim rand As Integer = If(_currentRowIndex < 0, ModelIndexAt(0), _currentRowIndex)
+        ' Fără rând curent, coloana se mută pe PRIMUL rând DESENAT, nu pe modelul 0 — acela poate
+        ' fi tocmai unul filtrat afară sau închis într-un grup strâns.
+        Dim rand As Integer = _currentRowIndex
+        If rand < 0 Then
+            Dim capat As Integer = EdgeDataBand(True)
+            If capat < 0 Then Return
+            rand = ModelIndexAt(BandAt(capat).ViewPosition)
+        End If
         SetCurrentCell(rand, target.Key)
     End Sub
 
@@ -230,9 +319,21 @@ Partial Class KBotDataView
                 Case Keys.Down
                     MoveRow(1)
                 Case Keys.Left
-                    MoveColumn(-1)
+                    ' Ctrl+Stânga strânge grupul rândului curent — echivalentul de la tastatură al
+                    ' apăsării pe antetul lui. Fără Ctrl rămâne mutarea de coloană, ca până acum:
+                    ' săgețile simple sunt navigație prin celule și n-au voie să-și schimbe rostul
+                    ' pentru că grila s-a întâmplat să fie grupată.
+                    If ctrl Then
+                        If _currentRowIndex >= 0 Then SetGroupCollapsedForRow(_currentRowIndex, True)
+                    Else
+                        MoveColumn(-1)
+                    End If
                 Case Keys.Right
-                    MoveColumn(1)
+                    If ctrl Then
+                        If _currentRowIndex >= 0 Then SetGroupCollapsedForRow(_currentRowIndex, False)
+                    Else
+                        MoveColumn(1)
+                    End If
                 Case Keys.Enter
                     MoveRow(1)                       ' senzația de formular continuu Access
                 Case Keys.Tab
@@ -350,6 +451,10 @@ Partial Class KBotDataView
                 Return
             End If
 
+            ' 1b) O bandă de grup (slice 0029) — se strânge/desface și consumă apăsarea; nu e
+            ' un rând, deci nu are ce selecta sub ea.
+            If HandleGroupBandMouseDown(e.Location) Then Return
+
             ' 2) Selecție în zona de date.
             Dim rowIndex As Integer = RowAtPoint(e.Location)
             If rowIndex < 0 Then Return
@@ -397,6 +502,16 @@ Partial Class KBotDataView
             If UpdateFilterIconHover(e.Location) Then
                 CancelCellTooltip()
                 Cursor = Cursors.Hand
+                Return
+            End If
+
+            ' O bandă de grup (slice 0029): cursor de mână peste antetele care se pot strânge,
+            ' și nicio etichetă de celulă — acolo nu e nicio celulă.
+            Dim bandaGrup As Integer = BandAtPoint(e.Location)
+            If bandaGrup >= 0 AndAlso BandAt(bandaGrup).Kind <> KBotGroupBandKind.Data Then
+                CancelCellTooltip()
+                Cursor = If(BandAt(bandaGrup).Kind = KBotGroupBandKind.GroupHeader AndAlso
+                            GroupBandIsCollapsible(bandaGrup), Cursors.Hand, Cursors.Default)
                 Return
             End If
 

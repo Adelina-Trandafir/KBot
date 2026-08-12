@@ -24,6 +24,15 @@ Partial Class KBotDataView
     Private _cFooterText As Color
     Private _cFooterSep As Color
     Private _cFooterBaseline As Color
+    ' Benzile de GRUP (slice 0029) au și ele roluri proprii — nici antet, nici subsol de grilă:
+    ' o schemă trebuie să poată distinge „titlul unei secțiuni” de „titlurile coloanelor”. Nuanța
+    ' pe niveluri (nivelul 0 cel mai apăsat) NU se ține aici: ea se calculează la pictare, din
+    ' aceste două, ca un nivel adăugat să nu ceară un slot nou de paletă.
+    Private _cGroupHeaderBack As Color
+    Private _cGroupHeaderText As Color
+    Private _cGroupFooterBack As Color
+    Private _cGroupFooterText As Color
+    Private _cGroupSep As Color
     ' Capătul degradeului benzilor + dacă el se folosește. Ambele vin din STILUL schemei
     ' (ButtonRender/CornerRadius), nu dintr-un „if Modern” scris în control.
     Private _cHeaderGradientEnd As Color
@@ -73,6 +82,7 @@ Partial Class KBotDataView
     Private _pFooterSep As Pen
     Private _pFooterBaseline As Pen
     Private _pGridLine As Pen
+    Private _pGroupSep As Pen
     Private _pCheckBorder As Pen
     Private _pCheckFill As Pen
     Private _pHeaderBaseline As Pen
@@ -143,6 +153,16 @@ Partial Class KBotDataView
             _cFooterSep = p.BorderColor
             _cFooterBaseline = p.AccentColor
             _cFooterGradientEnd = Blend(_cFooterBack, p.SurfaceColor, 0.55)
+
+            ' Benzile de grup (slice 0029). Antetul de grup e spălat mai TARE spre accent decât
+            ' subsolul grilei (0,1): el desparte secțiuni, nu încheie o pagină, deci trebuie să se
+            ' vadă de la prima privire că acolo începe altceva. Subsolul de grup e sora lui, mai
+            ' potolită — un total de secțiune nu are voie să tragă ochiul mai mult decât totalul general.
+            _cGroupHeaderBack = Blend(p.SurfaceAltColor, p.AccentColor, 0.28)
+            _cGroupHeaderText = p.TextColor
+            _cGroupFooterBack = Blend(p.SurfaceAltColor, p.AccentColor, 0.16)
+            _cGroupFooterText = p.TextColor
+            _cGroupSep = p.BorderColor
 
             ' Zona de date.
             _cRowBack = p.InputBackColor
@@ -239,6 +259,11 @@ Partial Class KBotDataView
         _cFooterSep = SystemColors.ControlDark
         _cFooterBaseline = SystemColors.Highlight
         _cFooterGradientEnd = Blend(_cFooterBack, SystemColors.Window, 0.55)
+        _cGroupHeaderBack = Blend(SystemColors.Control, SystemColors.Highlight, 0.28)
+        _cGroupHeaderText = SystemColors.ControlText
+        _cGroupFooterBack = Blend(SystemColors.Control, SystemColors.Highlight, 0.16)
+        _cGroupFooterText = SystemColors.ControlText
+        _cGroupSep = SystemColors.ControlDark
         _cRowBack = SystemColors.Window
         _cRowAltBack = Blend(SystemColors.Window, SystemColors.Control, 0.5)
         _cSelBack = Blend(SystemColors.Window, SystemColors.Highlight, 0.18)
@@ -287,6 +312,7 @@ Partial Class KBotDataView
         _pFooterSep = New Pen(_cFooterSep)
         _pFooterBaseline = New Pen(_cFooterBaseline, 2.0F)
         _pGridLine = New Pen(_cGridLine)
+        _pGroupSep = New Pen(_cGroupSep)
         _pCheckBorder = New Pen(_cCheckBorder)
         _pCheckFill = New Pen(_cCheckFill)
         _pHeaderBaseline = New Pen(_cHeaderBaseline, 2.0F)
@@ -318,6 +344,7 @@ Partial Class KBotDataView
         _pFooterSep?.Dispose() : _pFooterSep = Nothing
         _pFooterBaseline?.Dispose() : _pFooterBaseline = Nothing
         _pGridLine?.Dispose() : _pGridLine = Nothing
+        _pGroupSep?.Dispose() : _pGroupSep = Nothing
         _pCheckBorder?.Dispose() : _pCheckBorder = Nothing
         _pCheckFill?.Dispose() : _pCheckFill = Nothing
         _pHeaderBaseline?.Dispose() : _pHeaderBaseline = Nothing
