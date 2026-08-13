@@ -25,24 +25,27 @@ Partial Public Class AdvancedTreeControl
         Dim midY As Integer = _headerHeight \ 2
 
         ' ── Left icon ────────────────────────────────────────────────
-        Dim x As Integer = PADDING_TREE_START
+        Dim x As Integer = PaddingHeaderLeft
         If _headerLeftIcon IsNot Nothing Then
             Dim iy = midY - (_headerIconSize.Height \ 2)
             g.DrawImage(_headerLeftIcon, x, iy, _headerIconSize.Width, _headerIconSize.Height)
-            x += _headerIconSize.Width + PADDING_ICON_GAP
+            x += _headerIconSize.Width + PaddingIconGap
         End If
 
         ' ── Right side: RightIcon then SearchIcon (built right-to-left) ──
         Dim scrollW As Integer = ScrollBarWidth 'If(_vScroll.Visible, _vScroll.Width, 0)
-        Dim rx As Integer = Me.Width - PADDING_TREE_END - scrollW
+        Dim rx As Integer = Me.Width - PaddingTreeEnd - scrollW
 
         _headerRightIconRect = Rectangle.Empty
         If _headerRightIcon IsNot Nothing Then
             rx -= _headerIconSize.Width
             Dim iy = midY - (_headerIconSize.Height \ 2)
             _headerRightIconRect = New Rectangle(rx, iy, _headerIconSize.Width, _headerIconSize.Height)
+            If _headerRightIconHover Then
+                DrawButtonHover(g, _headerRightIconRect, HeaderRightIconHoverColor)
+            End If
             g.DrawImage(_headerRightIcon, _headerRightIconRect)
-            rx -= PADDING_ICON_GAP
+            rx -= PaddingIconGap
         End If
 
         _headerSearchIconRect = Rectangle.Empty
@@ -50,8 +53,11 @@ Partial Public Class AdvancedTreeControl
             rx -= _headerIconSize.Width
             Dim iy = midY - (_headerIconSize.Height \ 2)
             _headerSearchIconRect = New Rectangle(rx, iy, _headerIconSize.Width, _headerIconSize.Height)
+            If _headerSearchIconHover Then
+                DrawButtonHover(g, _headerSearchIconRect, HeaderSearchIconHoverColor)
+            End If
             g.DrawImage(_headerSearchIcon, _headerSearchIconRect)
-            rx -= PADDING_ICON_GAP
+            rx -= PaddingIconGap
         End If
 
         ' ── Caption (rich text, in remaining space) ───────────────────

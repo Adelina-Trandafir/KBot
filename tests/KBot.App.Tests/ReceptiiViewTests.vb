@@ -13,7 +13,7 @@ Imports KBot.App
 
 ' Headless behaviour + shaping tests for ReceptiiView (slice 0015). They cover what no
 ' server test can reach: a null/blank context must NOT hit the network; a response must
-' shape into the 2-level receptie/antet tree; selecting an antet must fill the LISTA grid
+' shape into the 2-level luna/receptie tree; selecting a node must fill the LISTA grid
 ' (synthetic total = SUM(DIF), then one row per clsf = SUM(Valoare)); selecting a root
 ' must CLEAR the grid; and a STALE response must be discarded.
 '
@@ -103,6 +103,21 @@ Public Class ReceptiiViewTests
             Throw New NotSupportedException()
         End Function
     End Class
+
+    ' Doua imagini au aceiasi pixeli? ImageList.Images(cheie) intoarce o COPIE noua la fiecare
+    ' apel, deci identitatea de referinta nu spune nimic despre provenienta iconitei.
+    Private Shared Function SamePixels(a As Drawing.Image, b As Drawing.Image) As Boolean
+        If a Is Nothing OrElse b Is Nothing Then Return False
+        If a.Size <> b.Size Then Return False
+        Using ba As New Drawing.Bitmap(a), bb As New Drawing.Bitmap(b)
+            For y As Integer = 0 To ba.Height - 1
+                For x As Integer = 0 To ba.Width - 1
+                    If ba.GetPixel(x, y) <> bb.GetPixel(x, y) Then Return False
+                Next
+            Next
+        End Using
+        Return True
+    End Function
 
     Private Shared Function PassThrough() As Func(Of Func(Of Task(Of ReceptiiInfo)), Task(Of ReceptiiInfo))
         Return Function(op) op()
@@ -206,8 +221,9 @@ Public Class ReceptiiViewTests
                        api.Complete("A100", StandardData())
                        Application.DoEvents()
                        Assert.Equal(2, t.Items.Count)
-                       ' Nimic selectat -> grila e goală (LISTA doar la nivel de antet).
-                       Assert.Equal(0, g.RowCount)
+                       ' Nimic selectat -> grila arată TOATE recepțiile (ca în Rezervări):
+                       ' cele două clasificații ale angajamentului.
+                       Assert.Equal(2, g.RowCount)
 
                        view.SetContext(Nothing)
 
@@ -230,7 +246,7 @@ Public Class ReceptiiViewTests
     End Sub
 
     <Fact>
-    Public Sub Tree_ThreeLevels_MonthReceptieAntet()
+    Public Sub Tree_TwoLevels_MonthReceptie()
         RunSta(Sub()
                    Dim api As New FakeApiClient()
                    Using view As New ReceptiiView(api, PassThrough())
@@ -239,25 +255,34 @@ Public Class ReceptiiViewTests
                        api.Complete("A100", StandardData())
                        Application.DoEvents()
 
-                       ' Două foldere de lună (Ianuarie, Februarie), fiecare cu o recepție,
-                       ' fiecare recepție cu un antet.
+                       ' Două foldere de lună (Ianuarie, Februarie), fiecare cu o recepție.
+                       ' Nivelul de antet NU mai există (revizuire operator 2026-08-13).
                        Assert.Equal(2, t.Items.Count)
                        Dim ian = t.Items(0)
                        Dim feb = t.Items(1)
-                       Assert.StartsWith("Ianuarie/2026", ian.Caption)
+                       Assert.StartsWith("Ianuarie", ian.Caption)
                        Assert.Contains("2.864,12", ian.Caption)      ' total lună = SumaAntet
-                       Assert.StartsWith("Februarie/2026", feb.Caption)
+                       Assert.StartsWith("Februarie", feb.Caption)
                        Assert.Contains("3.480,43", feb.Caption)
 
                        Dim receptieIan = Assert.Single(ian.Children)
-                       Dim antetIan = Assert.Single(receptieIan.Children)
                        Assert.StartsWith("19.01.2026", receptieIan.Caption)
-                       Assert.StartsWith("19.01.2026", antetIan.Caption)
+                       Assert.Empty(receptieIan.Children)
 
-                       ' Iconița de stare există pe RECEPȚIE (nivel 1), nu pe lună sau antet.
-                       Assert.Null(ian.LeftIconClosed)
+                       ' Iconițele vin din «image_list» (month / up / down): și luna, și
+                       ' recepția au acum iconiță de listă, nu forme GDI. Recepția A are
+                       ' SumaAntet pozitivă -> «up» (iconița urmează VALOAREA, nu steagurile
+                       ' Incarcat/Preluat).
+                       ' NU Assert.Same: ImageList.Images(cheie) întoarce o COPIE la fiecare
+                       ' apel, deci comparăm pixelii.
+                       Assert.NotNull(ian.LeftIconClosed)
+                       Assert.True(SamePixels(t.NodeImage("month"), ian.LeftIconClosed))
                        Assert.NotNull(receptieIan.LeftIconClosed)
-                       Assert.Null(antetIan.LeftIconClosed)
+                       Assert.True(SamePixels(t.NodeImage("up"), receptieIan.LeftIconClosed))
+
+                       ' Fără iconiță «+» la dreapta pe niciun nod (recepțiile n-au nevoie).
+                       Assert.Null(ian.RightIcon)
+                       Assert.Null(receptieIan.RightIcon)
                    End Using
                End Sub)
     End Sub
@@ -276,18 +301,17 @@ Public Class ReceptiiViewTests
                        ' Click pe folderul lunii Februarie -> agregatul recepției B (2 clsf).
                        ClickNode(view, t.Items(1))
 
-                       Assert.Equal(3, g.RowCount)
-                       ' Randul-total: Descriere „Toți indicatorii", Valoare = Sum(DIF) = 616,31.
-                       Assert.Equal("Toți indicatorii", CStr(g.Rows(0)("descriere")))
-                       Assert.Equal(616.31, CDbl(g.Rows(0)("valoare")), 2)
-                       ' Rândurile per clsf, ordonate pe NrCrt (65.02 -> 66.01).
-                       Assert.Equal("65.02", CStr(g.Rows(1)("clsf")))
-                       Assert.Equal(1000.0, CDbl(g.Rows(1)("valoare")), 2)
-                       Assert.Equal("66.01", CStr(g.Rows(2)("clsf")))
-                       Assert.Equal(2480.43, CDbl(g.Rows(2)("valoare")), 2)
+                       ' Doar rândurile per clsf: rândul-total sintetic „Toți indicatorii"
+                       ' a fost scos din foaia de date (revizuire operator 2026-08-13).
+                       Assert.Equal(2, g.RowCount)
+                       ' Ordonate pe NrCrt (65.02 -> 66.01).
+                       Assert.Equal("65.02", CStr(g.Rows(0)("clsf")))
+                       Assert.Equal(1000.0, CDbl(g.Rows(0)("valoare")), 2)
+                       Assert.Equal("66.01", CStr(g.Rows(1)("clsf")))
+                       Assert.Equal(2480.43, CDbl(g.Rows(1)("valoare")), 2)
                        ' Descrierea rândurilor per-clsf = Denumirea clasificației.
-                       Assert.Equal("Salarii", CStr(g.Rows(1)("descriere")))
-                       Assert.Equal("Bunuri", CStr(g.Rows(2)("descriere")))
+                       Assert.Equal("Salarii", CStr(g.Rows(0)("descriere")))
+                       Assert.Equal("Bunuri", CStr(g.Rows(1)("descriere")))
                    End Using
                End Sub)
     End Sub
@@ -305,15 +329,13 @@ Public Class ReceptiiViewTests
 
                        Dim febMonth = t.Items(1)
                        Dim receptieB = febMonth.Children(0)
-                       Dim antetB = receptieB.Children(0)
 
-                       ' Toate cele trei niveluri populează grila (aici toate = 3 rânduri).
+                       ' Ambele niveluri populează grila (aici amândouă = 2 rânduri, câte
+                       ' unul per clasificație — fără rândul-total sintetic).
                        ClickNode(view, febMonth)
-                       Assert.Equal(3, g.RowCount)
+                       Assert.Equal(2, g.RowCount)
                        ClickNode(view, receptieB)
-                       Assert.Equal(3, g.RowCount)
-                       ClickNode(view, antetB)
-                       Assert.Equal(3, g.RowCount)
+                       Assert.Equal(2, g.RowCount)
                    End Using
                End Sub)
     End Sub

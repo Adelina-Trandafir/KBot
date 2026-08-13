@@ -144,6 +144,27 @@ Public NotInheritable Class KBotTextField
         _inner.SetBounds(left, top, w, _inner.Height)
     End Sub
 
+    ''' <summary>
+    ''' Cât de înalt trebuie să fie cadrul ca să încapă un rând de text pe fontul CURENT, plus
+    ''' aerul de deasupra și de dedesubt.
+    '''
+    ''' <para>Cadrul NU se redimensionează singur — înălțimea lui e a designerului, ca la orice
+    ''' control al casei. Dar atunci trebuie să existe undeva un răspuns cinstit la întrebarea «mai
+    ''' încape textul?», fiindcă o schemă poate schimba fontul de bază (Modern: «Segoe UI Variable
+    ''' Text») și un cadru autorat pe fontul de sistem rămâne cu litera tăiată. Locul acela e
+    ''' <c>GetPreferredSize</c>: îl citește <c>ThemeTableFit</c> ca să crească rândul de tabel în
+    ''' care stă cadrul, cu exact cât nu încape.</para>
+    ''' </summary>
+    Public Overrides Function GetPreferredSize(proposedSize As Size) As Size
+        Try
+            Dim aer As Integer = ThemeShapes.ScaleDpi(Me, 7)
+            Return New Size(Width, _inner.PreferredHeight + 2 * aer)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotTextField.GetPreferredSize", ex)
+            Return MyBase.GetPreferredSize(proposedSize)
+        End Try
+    End Function
+
     Protected Overrides Sub OnResize(e As EventArgs)
         MyBase.OnResize(e)
         Try

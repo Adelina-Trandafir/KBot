@@ -9,19 +9,15 @@ Partial Public Class AdvancedTreeControl
         If Me.ItemHeight Mod 2 <> 0 Then Me.ItemHeight -= 1
 
         ' ── Calcul layout comun ──────────────────────────────────────────────────
-        Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PADDING_TREE_START
+        Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+        Dim selectionLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X +  PaddingSelectionLeft
         Dim expanderCenterX As Integer = gridLeft + (Indent \ 2)
         Dim midY As Integer = y + (ItemHeight \ 2)
-        Dim expanderRect As New Rectangle(
-        expanderCenterX - (ExpanderSize \ 2),
-        midY - (ExpanderSize \ 2),
-        ExpanderSize, ExpanderSize)
-        Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander,
-                              gridLeft,
-                              gridLeft + Indent + PADDING_EXPANDER_GAP)
+        Dim expanderRect As New Rectangle(expanderCenterX - (ExpanderSize \ 2), midY - (ExpanderSize \ 2), ExpanderSize, ExpanderSize)
+        Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander, gridLeft, gridLeft + Indent + PaddingExpanderGap)
 
         ' ── Pasul 1: Selecție & Hover ──────────────────────────────────────────── 
-        DrawSelection(g, it, y, gridLeft, xBase)
+        DrawSelection(g, it, y, selectionLeft, xBase)
 
         ' ── Pasul 2: Linii arbore ──────────────────────────────────────────────── 
         If Not (it.Level = 0 AndAlso Not _RootExpander) Then
@@ -48,7 +44,7 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     Private Sub DrawSelection(g As Graphics, it As TreeItem, y As Integer, gridLeft As Integer, xBase As Integer)
-        Dim selStartX As Integer = If(it.Level = 0 AndAlso Not _RootExpander, gridLeft, xBase - PADDING_SELECTION_LEFT)
+        Dim selStartX As Integer = If(it.Level = 0 AndAlso Not _RootExpander, gridLeft, xBase - PaddingSelectionLeft)
         Dim selWidth As Integer = Math.Max(0, Me.ClientSize.Width - selStartX - 1)
         Dim fullRowRect As New Rectangle(selStartX, y, selWidth, ItemHeight)
 
@@ -56,19 +52,19 @@ Partial Public Class AdvancedTreeControl
         g.SmoothingMode = SmoothingMode.AntiAlias
 
         If it Is pSelectedItem Then
-            Using path As GraphicsPath = GetRoundedRect(fullRowRect, SELECTION_CORNER_RADIUS)
+            Using path As GraphicsPath = GetRoundedRect(fullRowRect, SelectionCornerRadius)
                 Using brush As New SolidBrush(SelectedBackColor)
                     g.FillPath(brush, path)
                 End Using
                 Dim borderRect As New Rectangle(fullRowRect.X, fullRowRect.Y, fullRowRect.Width - 1, fullRowRect.Height - 1)
-                Using borderPath As GraphicsPath = GetRoundedRect(borderRect, SELECTION_CORNER_RADIUS)
+                Using borderPath As GraphicsPath = GetRoundedRect(borderRect, SelectionCornerRadius)
                     Using pen As New Pen(SelectedBorderColor)
                         g.DrawPath(pen, borderPath)
                     End Using
                 End Using
             End Using
         ElseIf it Is pHoveredItem Then
-            Using path As GraphicsPath = GetRoundedRect(fullRowRect, SELECTION_CORNER_RADIUS)
+            Using path As GraphicsPath = GetRoundedRect(fullRowRect, SelectionCornerRadius)
                 Using brush As New SolidBrush(HoverBackColor)
                     g.FillPath(brush, path)
                 End Using
@@ -154,7 +150,7 @@ Partial Public Class AdvancedTreeControl
         End If
 
         g.SmoothingMode = oldSmooth
-        Return xBase + chkSize + PADDING_CHECKBOX_GAP
+        Return xBase + chkSize + PaddingCheckBoxGap
     End Function
 
     Private Sub DrawExpander(g As Graphics, it As TreeItem, expanderRect As Rectangle, expanderCenterX As Integer, midY As Integer)
@@ -192,13 +188,13 @@ Partial Public Class AdvancedTreeControl
 
             ' ══ 2. LIMITE TEXT (fără coloane) ═════════════════════════════════════
             Dim textX As Integer = If(it.LeftIconClosed IsNot Nothing AndAlso _hasNodeIcons,
-                                      leftIconRect.Right + PADDING_ICON_GAP, xBase)
+                                      leftIconRect.Right + PaddingIconGap, xBase)
 
             Dim scrollW As Integer = ScrollBarWidth
             ' Locul iconiței din dreapta se ia DOAR cât iconița e pe ecran: o iconiță hover-only
             ' nu mai ciuntește textul pe toate rândurile, ci doar pe cel survolat (vezi
             ' RightIconGutter; ReserveRightIconSpace = True îl ține fix, dacă se vrea așa).
-            Dim maxRightX As Integer = Me.Width - scrollW - PADDING_TREE_END - RightIconGutter(it)
+            Dim maxRightX As Integer = Me.Width - scrollW - PaddingTreeEnd - RightIconGutter(it)
 
             ' ══ 3. GEOMETRIE COLOANE — calculată O SINGURĂ DATĂ pe rând ═══════════
             ' colsActive : TreeListView pornit + coloane definite (geometrie globală)
@@ -274,7 +270,7 @@ Partial Public Class AdvancedTreeControl
                         g.DrawLine(sepPen, cx, y, cx, y + ItemHeight)
                     End Using
 
-                    Dim rowVisibleWidth As Integer = Me.Width - scrollW - PADDING_TREE_END - ReservedRightIconWidth() - colStartX
+                    Dim rowVisibleWidth As Integer = Me.Width - scrollW - PaddingTreeEnd - ReservedRightIconWidth() - colStartX
                     Dim rowVisCols As Integer = GetVisibleColumnCount(rowCols, rowVisibleWidth)
                     For i As Integer = 0 To rowVisCols - 1
                         Try
@@ -344,6 +340,14 @@ Partial Public Class AdvancedTreeControl
         Dim scrollW As Integer = ScrollBarWidth 'If(Me.VerticalScroll.Visible, SystemInformation.VerticalScrollBarWidth, 0)
         Dim rx As Integer = Me.Width - RightIconSize.Width - _rightIconRightPadding - scrollW
         Dim ry As Integer = y + (ItemHeight - RightIconSize.Height) \ 2
+
+        ' Iconița e apăsabilă (ridică RightIconClicked), deci se aprinde ca orice buton — dar
+        ' numai pe nodul de sub cursor, altfel s-ar aprinde câte una pe fiecare rând.
+        If _nodeRightIconHover AndAlso it Is pHoveredItem Then
+            DrawButtonHover(g, New Rectangle(rx, ry, RightIconSize.Width, RightIconSize.Height),
+                            NodeRightIconHoverColor)
+        End If
+
         g.DrawImage(it.RightIcon, rx, ry, RightIconSize.Width, RightIconSize.Height)
     End Sub
 
@@ -372,10 +376,10 @@ Partial Public Class AdvancedTreeControl
             If it.Level = 0 Then Return
 
             ' X-ul trunchiului vertical = coloana expanderului PĂRINTELUI
-            Dim parentColX As Integer = ((it.Level - 1) * Indent) + Me.AutoScrollPosition.X + PADDING_TREE_START + (Indent \ 2)
+            Dim parentColX As Integer = ((it.Level - 1) * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart + (Indent \ 2)
 
             ' Capătul drept al liniei orizontale = imediat înainte de conținut
-            Dim hLineEnd As Integer = currentGridLeft + Indent + PADDING_EXPANDER_GAP - TREE_LINE_H_MARGIN
+            Dim hLineEnd As Integer = currentGridLeft + Indent + PaddingExpanderGap - PaddingTreeLineHMargin
 
             ' ------------------------------------------------------------------
             ' 1. LINIA ORIZONTALĂ — de la trunchiul părintelui → înainte de conținut
@@ -402,7 +406,7 @@ Partial Public Class AdvancedTreeControl
             Dim ancestor As TreeItem = it.Parent
             While ancestor IsNot Nothing AndAlso ancestor.Parent IsNot Nothing
                 If Not ancestor.IsLastSibling Then
-                    Dim ancParentColX As Integer = ((ancestor.Level - 1) * Indent) + Me.AutoScrollPosition.X + PADDING_TREE_START + (Indent \ 2)
+                    Dim ancParentColX As Integer = ((ancestor.Level - 1) * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart + (Indent \ 2)
                     g.DrawLine(p, ancParentColX, y, ancParentColX, y + ItemHeight)
                 End If
                 ancestor = ancestor.Parent
@@ -453,7 +457,7 @@ Partial Public Class AdvancedTreeControl
                 ' Case B: ambele setate — stânga prioritate
                 leftBudget = Math.Min(CSng(m_leftTextWidth), CSng(availableWidth))
                 Dim naturalRS = rightEdgeX - CSng(m_rightTextWidth)
-                Dim forcedRS = CSng(x) + leftBudget + PADDING_SEPARATOR_GAP
+                Dim forcedRS = CSng(x) + leftBudget + PaddingSeparatorGap
                 rightZoneStart = Math.Max(naturalRS, forcedRS)
                 rightBudget = Math.Max(0, rightEdgeX - rightZoneStart)
 
@@ -461,12 +465,12 @@ Partial Public Class AdvancedTreeControl
                 ' Case C: doar dreapta setată — rezervare fixă din dreapta
                 rightBudget = CSng(m_rightTextWidth)
                 rightZoneStart = rightEdgeX - rightBudget
-                leftBudget = Math.Max(0, rightZoneStart - CSng(x) - PADDING_SEPARATOR_GAP)
+                leftBudget = Math.Max(0, rightZoneStart - CSng(x) - PaddingSeparatorGap)
 
             Else
                 ' Case D: doar stânga setată — stânga are budget fix
                 leftBudget = Math.Min(CSng(m_leftTextWidth), CSng(availableWidth))
-                rightZoneStart = CSng(x) + leftBudget + PADDING_SEPARATOR_GAP
+                rightZoneStart = CSng(x) + leftBudget + PaddingSeparatorGap
                 rightBudget = Math.Max(0, rightEdgeX - rightZoneStart)
             End If
         End If
@@ -506,7 +510,7 @@ Partial Public Class AdvancedTreeControl
 
         If caseA Then
             ' Case A: afișăm dreapta DOAR dacă încape complet după stânga
-            Dim dynamicStart As Single = currentX + PADDING_SEPARATOR_GAP
+            Dim dynamicStart As Single = currentX + PaddingSeparatorGap
             If dynamicStart + rightTotal > rightEdgeX Then Return ' nu încape — skip total
             ' Right-aligned în spațiul rămas
             DrawRichPartsSimple(g, rightParts, y, rightEdgeX - rightTotal, fmt)

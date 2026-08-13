@@ -27,6 +27,16 @@ Public Class RezervariView
     Private Const COL_VALOARE As String = "r_valoare"
     Private Const COL_DEFINITIVA As String = "r_definitiva"
 
+    ' CHEILE ICONIȚELOR din «image_list» (ImageList-ul pus pe vedere în designer și legat de
+    ' arbore prin tree.NodeImages). Arborele rezolvă o cheie prin AdvancedTreeControl.NodeImage:
+    ' cheia e numele dat pozei în editorul de ImageList, iar o cheie lipsă întoarce Nothing.
+    ' Ținute ca și constante ca un typo să nu ajungă un nod fără iconiță în producție.
+    Private Const ICO_LUNA As String = "month"      ' folderul de lună
+    Private Const ICO_MARIRE As String = "up"       ' frunză: Mărire ▲
+    Private Const ICO_MICSORARE As String = "down"  ' frunză: Micșorare ▼
+    Private Const ICO_INITIALA As String = "equal"  ' frunză: Inițială «=»
+    Private Const ICO_PLUS As String = "plus"       ' iconița dreapta «adaugă DDF»
+
     ' Format românesc: separator de mii «.» și zecimală «,» (1.091.940,00).
     Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
 
@@ -177,8 +187,9 @@ Public Class RezervariView
 
             _rows = rows
             BuildTree(rows)
-            ' „Nimic selectat" -> grila arată TOATE rândurile angajamentului (decizia §7.3).
-            FillGrid(rows)
+            ' „Nimic selectat" -> grila arată TOTALURILE pe clasificație peste tot angajamentul
+            ' (decizia §7.3 + revizuirea operator 2026-08-13: agregat, ca în Recepții).
+            FillGridAgregat(rows)
             ShowContent()
         Catch ex As ApiException
             If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
@@ -236,12 +247,22 @@ Public Class RezervariView
                 Dim y As Integer = monthGroup.Key.Y
                 Dim m As Integer = monthGroup.Key.M
                 Dim monthKey As String = $"LA_{y}_{m}"
-                Dim monthCaption As String = $"{MonthLabel(m)}/{y}~~~{Money(total)}"
-
+                Dim monthCaption As String = $"{MonthLabel(m)}~~~{Money(total)}"
+                ' NU «lunaIcon»: VB e insensibil la litere mari/mici, deci variabila ar fi
+                ' același nume cu funcția LunaIcon și ar umbri-o.
+                Dim icoLuna As Image = LunaIcon()
+                ' Arborele pornește STRÂNS: se desface DOAR luna care conține frunza cu «+»
+                ' (cerință operator) — adică singurul loc unde mai e ceva de făcut. Fără nicio
+                ' frunză eligibilă, toate lunile rămân strânse.
+                Dim areFrunzaCuPlus As Boolean = plusDate.HasValue AndAlso
+                                                 plusDate.Value.Year = y AndAlso
+                                                 plusDate.Value.Month = m
                 Dim root As AdvancedTreeControl.TreeItem =
-                    tree.AddItem(monthKey, monthCaption, pExpanded:=True)
+                    tree.AddItem(monthKey, monthCaption,
+                                 pLeftIconClosed:=icoLuna, pLeftIconOpen:=icoLuna,
+                                 pExpanded:=areFrunzaCuPlus)
                 root.Tag = monthRows
-
+                root.Bold = True
                 ' Frunze pe (dată, tip), ordonate pe dată apoi pe rangul tipului
                 ' (Inițială < Mărire < Micșorare, ca strData din Access).
                 Dim leaves = monthRows.GroupBy(Function(r) New With {Key .D = r.DataRezervare.Date, Key .T = r.Tip}).
@@ -252,11 +273,17 @@ Public Class RezervariView
                     Dim d As Date = leafGroup.Key.D
                     Dim tip As RezervareTip = leafGroup.Key.T
                     Dim leafValue As Double = leafRows.Sum(Function(r) r.ValoareOperatie)
-                    Dim hasPlus As Boolean = leafRows.Any(Function(r) Not r.AreDDF)
+                    ' «+» pe EXACT o frunză. Testul e «ESTE frunza aleasă mai sus?», NU «are
+                    ' frunza asta vreun rând fără DDF?» — al doilea e adevărat pe TOATE frunzele
+                    ' de la prima eligibilă încolo, deci punea «+» pe un șir de noduri.
+                    Dim hasPlus As Boolean = plusDate.HasValue AndAlso
+                                             d = plusDate.Value AndAlso
+                                             tip = plusTip
 
                     Dim leafKey As String = $"RZ_{d:yyyyMMdd}_{CInt(tip)}"
                     Dim leafCaption As String = $"{d:dd.MM.yyyy}~~~{Money(leafValue)}"
 
+                    'not using these anymore, but the actual images in the image_list
                     Dim leftIcon As Image = TipIconOf(tip, palette)
                     Dim rightIcon As Image = If(hasPlus, PlusIconOf(tip, palette), Nothing)
 
@@ -300,7 +327,42 @@ Public Class RezervariView
         End Try
     End Sub
 
-    ' Click pe un nod -> filtrează grila la rândurile nodului (lună sau frunză). Rândurile
+    ''' <summary>
+    ''' Grila AGREGATĂ pe clasificație — starea „nimic selectat" (revizuire operator
+    ''' 2026-08-13, ca în ReceptiiView): un rând per clasificație, nu unul per înregistrare
+    ''' FX_Rezervari. Sumele merg pe cele trei coloane de operație (inițială / valoare /
+    ''' definitivă), fiindcă acelea sunt sume de operații și se adună.
+    '''
+    ''' «Credit bugetar» NU se adună: e creditul indicatorului la data rezervării, nu o sumă
+    ''' de operație, iar adunarea lui peste rezervările aceleiași clasificații l-ar înmulți cu
+    ''' numărul lor. Se ia valoarea de la CEA MAI RECENTĂ rezervare a clasificației — creditul
+    ''' în vigoare. (Presupunere; dacă operatorul îl vrea altfel — prima valoare, sau chiar
+    ''' suma — se schimbă doar linia asta.)
+    ''' </summary>
+    Private Sub FillGridAgregat(rows As List(Of RezervareRow))
+        grid.BeginUpdate()
+        Try
+            grid.ClearRows()
+            If rows Is Nothing Then Return
+
+            Dim grupuri = rows.GroupBy(Function(r) r.Clsf).
+                               OrderBy(Function(gp) gp.Key, StringComparer.Ordinal)
+            For Each gp In grupuri
+                Dim row As KBotDataRow = grid.AddRow()
+                row(COL_CLSF) = gp.Key
+                row(COL_CREDIT_BUG) = gp.OrderByDescending(Function(r) r.DataRezervare).
+                                         First().RCreditBug
+                row(COL_INITIALA) = gp.Sum(Function(r) r.RInitiala)
+                row(COL_VALOARE) = gp.Sum(Function(r) r.RValoare)
+                row(COL_DEFINITIVA) = gp.Sum(Function(r) r.RDefinitiva)
+            Next
+        Finally
+            grid.EndUpdate()
+        End Try
+    End Sub
+
+    ' Click pe un nod -> filtrează grila la rândurile nodului (lună sau frunză), rând cu rând:
+    ' agregarea e starea „nimic selectat", iar un nod ales cere detaliul lui. Rândurile
     ' stau în Tag, puse la construcția arborelui — niciun apel de rețea aici.
     Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
@@ -350,7 +412,25 @@ Public Class RezervariView
         Return Char.ToUpper(name(0), _roCulture) & name.Substring(1)
     End Function
 
+    ''' <summary>
+    ''' Iconița frunzei, după tipul operației. ÎNTÂI din «image_list» (pozele alese de operator
+    ''' în designer), și abia dacă lista n-are cheia respectivă se cade înapoi pe formele GDI din
+    ''' <see cref="RezervariIcons"/> — altfel un ImageList incomplet ar lăsa noduri fără iconiță.
+    ''' Cum se scapă de fallback: pui în «image_list» pozele cu cheile de mai sus.
+    ''' </summary>
     Private Function TipIconOf(tip As RezervareTip, palette As ThemePalette) As Image
+        Dim cheie As String
+        Select Case tip
+            Case RezervareTip.Marire : cheie = ICO_MARIRE
+            Case RezervareTip.Micsorare : cheie = ICO_MICSORARE
+            Case RezervareTip.Initiala : cheie = ICO_INITIALA
+            Case Else : Return Nothing          ' Necunoscut -> fără iconiță, ca până acum
+        End Select
+
+        Dim dinLista As Image = tree.NodeImage(cheie)
+        If dinLista IsNot Nothing Then Return dinLista
+
+        ' Fallback GDI (se re-tintează pe paletă; imaginile din listă sunt fixe).
         If palette Is Nothing Then Return Nothing
         Dim color As Color
         Select Case tip
@@ -361,7 +441,16 @@ Public Class RezervariView
         Return RezervariIcons.TipIcon(tip, color, tree.LeftIconSize.Width)
     End Function
 
+    ''' <summary>Iconița folderului de lună; doar din «image_list» (n-a avut niciodată formă GDI).</summary>
+    Private Function LunaIcon() As Image
+        Return tree.NodeImage(ICO_LUNA)
+    End Function
+
+    ''' <summary>Iconița «+» (adaugă DDF), cu aceeași regulă listă-întâi ca <see cref="TipIconOf"/>.</summary>
     Private Function PlusIconOf(tip As RezervareTip, palette As ThemePalette) As Image
+        Dim dinLista As Image = tree.NodeImage(ICO_PLUS)
+        If dinLista IsNot Nothing Then Return dinLista
+
         If palette Is Nothing Then Return Nothing
         ' Plus_Green pentru operația inițială, altfel accent — ca în Access.
         Dim color As Color = If(tip = RezervareTip.Initiala, palette.SuccessColor, palette.AccentColor)
@@ -397,10 +486,11 @@ Public Class RezervariView
             lblEmpty.ForeColor = p.TextDimColor
             lblEmpty.BackColor = p.SurfaceAltColor
 
-            ' Re-tintarea iconițelor de tip/«+» pe noua paletă.
+            ' Re-tintarea iconițelor de tip/«+» pe noua paletă. Arborele se reconstruiește,
+            ' deci selecția se pierde — grila se întoarce la starea „nimic selectat".
             If _rows IsNot Nothing AndAlso _rows.Count > 0 Then
                 BuildTree(_rows)
-                FillGrid(_rows)
+                FillGridAgregat(_rows)
             End If
         Catch ex As Exception
             ' Boundary UI (cascada de temă): logăm și înghițim.

@@ -47,14 +47,14 @@ Partial Public Class AdvancedTreeControl
         ' 2. LAYOUT — calculat exact ca in DrawItem / Painting.vb
         ' ──────────────────────────────────────────────────────────────────────
         Dim y As Integer = GetItemY(it)
-        Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PADDING_TREE_START
+        Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
         Dim expCX As Integer = gridLeft + (Indent \ 2)   ' centrul expanderului pe X
         Dim midY As Integer = y + (ItemHeight \ 2)
 
         ' xBase — exact ca in DrawItem
         Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander,
                                   gridLeft,
-                                  gridLeft + Indent + PADDING_EXPANDER_GAP)
+                                  gridLeft + Indent + PaddingExpanderGap)
 
         ' NodeBounds
         info.NodeBounds = If(y = -1, Rectangle.Empty,
@@ -72,7 +72,7 @@ Partial Public Class AdvancedTreeControl
             Dim xIcon As Integer = xBase
             ' Daca exista checkbox, iconita incepe dupa el
             If info.CheckBoxBounds <> Rectangle.Empty Then
-                xIcon = info.CheckBoxBounds.Right + PADDING_CHECKBOX_GAP
+                xIcon = info.CheckBoxBounds.Right + PaddingCheckBoxGap
             End If
             If it.LeftIconClosed IsNot Nothing OrElse it.LeftIconOpen IsNot Nothing Then
                 leftIconBounds = New Rectangle(xIcon,
@@ -84,15 +84,15 @@ Partial Public Class AdvancedTreeControl
 
         ' TextBounds — replica logica din DrawContent
         Dim textX As Integer = If(leftIconBounds <> Rectangle.Empty,
-                                  leftIconBounds.Right + PADDING_ICON_GAP,
+                                  leftIconBounds.Right + PaddingIconGap,
                                   xBase)
         ' Daca exista checkbox dar nu iconita, textul incepe dupa checkbox
         If leftIconBounds = Rectangle.Empty AndAlso info.CheckBoxBounds <> Rectangle.Empty Then
-            textX = info.CheckBoxBounds.Right + PADDING_CHECKBOX_GAP
+            textX = info.CheckBoxBounds.Right + PaddingCheckBoxGap
         End If
 
         Dim scrollW As Integer = ScrollBarWidth
-        Dim maxRightX As Integer = Me.Width - scrollW - PADDING_TREE_END
+        Dim maxRightX As Integer = Me.Width - scrollW - PaddingTreeEnd
         If it.RightIcon IsNot Nothing Then maxRightX -= (RightIconSize.Width + _rightIconRightPadding)
         info.TextBounds = If(y = -1, Rectangle.Empty,
                              New Rectangle(textX, y, Math.Max(0, maxRightX - textX), ItemHeight))
@@ -100,7 +100,7 @@ Partial Public Class AdvancedTreeControl
         ' RightIconBounds — replica logica din DrawRightIcon
         Dim rightIconBounds As Rectangle = Rectangle.Empty
         If it.RightIcon IsNot Nothing Then
-            Dim rx As Integer = Me.Width - RightIconSize.Width - _rightIconRightPadding - PADDING_TREE_END - scrollW
+            Dim rx As Integer = Me.Width - RightIconSize.Width - _rightIconRightPadding - PaddingTreeEnd - scrollW
             rightIconBounds = New Rectangle(rx, y + (ItemHeight - RightIconSize.Height) \ 2,
                                             RightIconSize.Width, RightIconSize.Height)
         End If
@@ -124,7 +124,7 @@ Partial Public Class AdvancedTreeControl
         End If
         info.SelectionBounds = If(y = -1, Rectangle.Empty,
                                     New Rectangle(selStartX, y,
-                                                  Math.Max(0, Me.ClientSize.Width - selStartX - PADDING_TREE_END),
+                                                  Math.Max(0, Me.ClientSize.Width - selStartX - PaddingTreeEnd),
                                                   ItemHeight))
 
         ' ──────────────────────────────────────────────────────────────────────

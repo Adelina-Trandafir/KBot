@@ -45,12 +45,41 @@ Public Class AdvancedTreeThemingTests
                    Using tree As New AdvancedTreeControl() With {.Width = 300, .Height = 200}
                        Dim verde As Color = Color.FromArgb(192, 255, 192)
                        tree.SearchBoxBackColor = verde
-                       tree.HeaderBackColor = Color.Gainsboro
 
                        DirectCast(tree, IThemedControl).ApplyTheme(BuiltInSchemes.Dark())
 
                        Assert.Equal(verde, tree.SearchBoxBackColor)
+                   End Using
+               End Sub)
+    End Sub
+
+    ''' <summary>
+    ''' EXCEPȚIA benzilor pe întuneric, cerută de operator: un antet/subsol colorat în designer
+    ''' pentru tema luminoasă ar rămâne o dungă deschisă peste un arbore negru. Pe schemă
+    ''' întunecată culorile alese se IGNORĂ — dar nu se pierd: revin pe o schemă luminoasă.
+    ''' </summary>
+    <Fact>
+    Public Sub Pe_intuneric_benzile_ignora_culorile_din_designer()
+        RunSta(Sub()
+                   Using tree As New AdvancedTreeControl() With {.Width = 300, .Height = 200}
+                       tree.HeaderBackColor = Color.Gainsboro
+                       tree.FooterBackColor = Color.Gainsboro
+                       tree.HeaderForeColor = Color.Maroon
+                       tree.FooterForeColor = Color.Maroon
+
+                       Dim dark As ThemeScheme = BuiltInSchemes.Dark()
+                       DirectCast(tree, IThemedControl).ApplyTheme(dark)
+
+                       Assert.Equal(dark.Palette.SurfaceAltColor, tree.HeaderBackColor)
+                       Assert.Equal(dark.Palette.SurfaceAltColor, tree.FooterBackColor)
+                       Assert.Equal(dark.Palette.TextColor, tree.HeaderForeColor)
+                       Assert.Equal(dark.Palette.TextColor, tree.FooterForeColor)
+
+                       ' Alegerea operatorului n-a fost ștearsă, doar ignorată.
+                       Assert.True(tree.ShouldSerializeHeaderBackColor())
+                       DirectCast(tree, IThemedControl).ApplyTheme(BuiltInSchemes.Classic())
                        Assert.Equal(Color.Gainsboro, tree.HeaderBackColor)
+                       Assert.Equal(Color.Maroon, tree.FooterForeColor)
                    End Using
                End Sub)
     End Sub

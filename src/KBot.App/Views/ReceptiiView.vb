@@ -11,11 +11,11 @@ Imports KBot.Theming
 
 ''' <summary>
 ''' Vederea Recepții (felia 0015) — echivalentul Access frmFX_MAIN_REC: un master/detail
-''' cu un arbore de recepții pe 3 niveluri la stânga (folder lună/an -> recepția R / IDRR ->
-''' antetul H / IDRH) și o grilă continuă la dreapta (LISTA) cu detaliul pe clasificații.
+''' cu un arbore de recepții pe 2 niveluri la stânga (folder lună/an -> recepția R / IDRR,
+''' ca în RezervariView) și o grilă continuă la dreapta (LISTA) cu detaliul pe clasificații.
 ''' Read-only în această felie. Datele vin din GET /api/forexe/receptii, întotdeauna prin
 ''' plasa de re-autentificare a shell-ului (401 -> re-login -> reia o dată). Click pe ORICE
-''' nod (lună / recepție / antet) umple grila cu agregatul rândurilor lui: un rând-total
+''' nod (lună / recepție) umple grila cu agregatul rândurilor lui: un rând-total
 ''' sintetic (Sum(DIF)) + un rând per clasificație (Sum(Valoare)). Tooltip de reconciliere
 ''' recepții/plăți pe folderele de lună ȘI pe recepții (revizuire operator 2026-07-22).
 ''' </summary>
@@ -28,6 +28,14 @@ Public Class ReceptiiView
     Private Const COL_DESCRIERE As String = "descriere"
     Private Const COL_CLSF As String = "clsf"
     Private Const COL_VALOARE As String = "valoare"
+
+    ' CHEILE ICONIȚELOR din «image_list» (ImageList-ul pus pe vedere în designer și legat de
+    ' arbore prin tree.NodeImages), ca în RezervariView: arborele rezolvă o cheie prin
+    ' AdvancedTreeControl.NodeImage, iar o cheie lipsă întoarce Nothing. Ținute ca și
+    ' constante ca un typo să nu ajungă un nod fără iconiță în producție.
+    Private Const ICO_LUNA As String = "month"      ' folderul de lună
+    Private Const ICO_SUS As String = "up"          ' recepție cu valoare pozitivă ▲
+    Private Const ICO_JOS As String = "down"        ' recepție cu valoare negativă ▼
 
     ' Format românesc: separator de mii «.» și zecimală «,» (1.091.940,00).
     Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
@@ -59,7 +67,7 @@ Public Class ReceptiiView
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
-        BuildColumns()
+        'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
 
@@ -75,28 +83,28 @@ Public Class ReceptiiView
     ''' și ne anunță, GAZDA mută splitter-ul. <c>Panel1MinSize</c> păzește TRAGEREA splitter-ului;
     ''' strângerea e o comandă, nu o tragere, deci coborâm paza cât ține starea.
     ''' </summary>
-    Private Sub tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
-        Try
-            Dim padStanga As Integer = split.Panel1.Padding.Left
-            If collapsed Then
-                _splitterDistanceDesfasurat = split.SplitterDistance
-                _panel1MinSizeDesfasurat = split.Panel1MinSize
-                Dim tinta As Integer = tree.MinimumCollapsedWidth + padStanga
-                split.Panel1MinSize = Math.Min(_panel1MinSizeDesfasurat, tinta)
-                split.SplitterDistance = ClampSplitter(tinta)
-                split.IsSplitterFixed = True
-            Else
-                split.IsSplitterFixed = False
-                If _panel1MinSizeDesfasurat > 0 Then split.Panel1MinSize = _panel1MinSizeDesfasurat
-                Dim tinta As Integer = If(_splitterDistanceDesfasurat > 0,
-                                          _splitterDistanceDesfasurat,
-                                          tree.ExpandedWidth + padStanga)
-                split.SplitterDistance = ClampSplitter(tinta)
-            End If
-        Catch ex As Exception
-            GlobalErrorLog.Write("ReceptiiView.tree_CollapsedChanged", ex)
-        End Try
-    End Sub
+    'Private Sub tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
+    '    Try
+    '        Dim padStanga As Integer = split.Panel1.Padding.Left
+    '        If collapsed Then
+    '            _splitterDistanceDesfasurat = split.SplitterDistance
+    '            _panel1MinSizeDesfasurat = split.Panel1MinSize
+    '            Dim tinta As Integer = tree.MinimumCollapsedWidth + padStanga
+    '            split.Panel1MinSize = Math.Min(_panel1MinSizeDesfasurat, tinta)
+    '            split.SplitterDistance = ClampSplitter(tinta)
+    '            split.IsSplitterFixed = True
+    '        Else
+    '            split.IsSplitterFixed = False
+    '            If _panel1MinSizeDesfasurat > 0 Then split.Panel1MinSize = _panel1MinSizeDesfasurat
+    '            Dim tinta As Integer = If(_splitterDistanceDesfasurat > 0,
+    '                                      _splitterDistanceDesfasurat,
+    '                                      tree.ExpandedWidth + padStanga)
+    '            split.SplitterDistance = ClampSplitter(tinta)
+    '        End If
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("ReceptiiView.tree_CollapsedChanged", ex)
+    '    End Try
+    'End Sub
 
     ' Distanța splitter-ului adusă în intervalul acceptat de SplitContainer — o vedere îngustă
     ' n-are voie să transforme apăsarea butonului de strângere într-o excepție.
@@ -109,20 +117,20 @@ Public Class ReceptiiView
     ' Coloanele grilei = frmFX_MAIN_REC_LISTA (qFX_MAIN_REC_LISTA_IND): NrCrt, Descriere,
     ' Clsf, Valoare. NrCrt + Valoare aliniate la dreapta (read-only, deci un tip numeric ar
     ' fi degeaba — Text cu format aliniat e suficient).
-    Private Sub BuildColumns()
-        Try
-            Dim colNr As KBotDataColumn = grid.AddColumn(COL_NRCRT, "NrCrt", KBotColumnType.Text, 60)
-            colNr.TextAlign = ContentAlignment.MiddleRight
-            grid.AddColumn(COL_DESCRIERE, "Descriere", KBotColumnType.Text, 220)
-            grid.AddColumn(COL_CLSF, "Clasificație", KBotColumnType.Text, 180)
-            Dim colVal As KBotDataColumn = grid.AddColumn(COL_VALOARE, "Valoare", KBotColumnType.Text, 130)
-            colVal.FormatString = "N2"
-            colVal.TextAlign = ContentAlignment.MiddleRight
-        Catch ex As Exception
-            GlobalErrorLog.Write("ReceptiiView.BuildColumns", ex)
-            Throw
-        End Try
-    End Sub
+    'Private Sub BuildColumns()
+    '    Try
+    '        Dim colNr As KBotDataColumn = grid.AddColumn(COL_NRCRT, "NrCrt", KBotColumnType.Text, 60)
+    '        colNr.TextAlign = ContentAlignment.MiddleRight
+    '        grid.AddColumn(COL_DESCRIERE, "Descriere", KBotColumnType.Text, 220)
+    '        grid.AddColumn(COL_CLSF, "Clasificație", KBotColumnType.Text, 180)
+    '        Dim colVal As KBotDataColumn = grid.AddColumn(COL_VALOARE, "Valoare", KBotColumnType.Text, 130)
+    '        colVal.FormatString = "N2"
+    '        colVal.TextAlign = ContentAlignment.MiddleRight
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("ReceptiiView.BuildColumns", ex)
+    '        Throw
+    '    End Try
+    'End Sub
 
     ''' <summary>
     ''' Selecția din arbore s-a schimbat. Fără angajament (nod de capitol / deselectare)
@@ -174,8 +182,9 @@ Public Class ReceptiiView
 
             _rows = rows
             BuildTree(rows)
-            ' Nimic selectat -> grila e goală; se umple la click pe orice nod al arborelui.
-            grid.ClearRows()
+            ' „Nimic selectat" -> grila arată TOATE recepțiile angajamentului (ca în
+            ' RezervariView); un click pe un nod o restrânge apoi la rândurile lui.
+            FillGridFromRows(rows)
             ShowContent()
         Catch ex As ApiException
             If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
@@ -195,13 +204,16 @@ Public Class ReceptiiView
     End Sub
 
     ' ── Arborele ─────────────────────────────────────────────────────────────
-    ' TREI niveluri (revizuire operator 2026-07-22): folder lună/an (grupat pe DataR) ->
-    ' recepția (IDRR, iconiță de stare Incarcat->sus / Preluat->jos / altfel neutru) ->
-    ' antetul (IDRH). Rândurile vin ordonate de server (R.NRCRT, R.DataR, H.NrCrt, H.DataH);
-    ' lunile se ordonează cronologic, iar în interiorul unei luni „distinct în ordine" e
-    ' suficient. Fiecare nod (lună / recepție / antet) poartă în Tag rândurile lui, ca un
-    ' click să umple grila (agregat) fără o nouă cerere. Tooltip-ul de reconciliere stă și pe
-    ' folderul de lună, și pe recepție.
+    ' DOUĂ niveluri (revizuire operator 2026-08-13, ca în RezervariView): folder lună/an
+    ' (grupat pe DataR) -> recepția (IDRR, iconiță după VALOARE: SumaAntet >= 0 -> «up»,
+    ' negativă -> «down»). Nivelul de ANTET (IDRH) a fost scos — anteturile rămân doar rânduri în
+    ' Tag-ul recepției, agregate în grilă. Aici NU există iconița «+» din Rezervări
+    ' (recepțiile n-au nevoie de ea), deci nu se rezervă loc la dreapta.
+    ' Rândurile vin ordonate de server (R.NRCRT, R.DataR, H.NrCrt, H.DataH); lunile se
+    ' ordonează cronologic, iar în interiorul unei luni „distinct în ordine" e suficient.
+    ' Fiecare nod (lună / recepție) poartă în Tag rândurile lui, ca un click să umple grila
+    ' (agregat) fără o nouă cerere. Tooltip-ul de reconciliere stă și pe folderul de lună,
+    ' și pe recepție.
     Private Sub BuildTree(rows As List(Of ReceptieRow))
         Try
             tree.Clear()
@@ -219,23 +231,27 @@ Public Class ReceptiiView
                 ' Totalul lunii = suma SumaAntet pe recepții DISTINCTE ale lunii.
                 Dim monthTotal As Double = monthRows.GroupBy(Function(r) r.Idrr).
                                                      Sum(Function(g) g.First().SumaAntet)
+                ' NU «lunaIcon»: VB e insensibil la litere mari/mici, deci variabila ar purta
+                ' același nume cu funcția LunaIcon și ar umbri-o (capcana din RezervariView).
+                Dim icoLuna As Image = LunaIcon()
                 Dim monthItem As AdvancedTreeControl.TreeItem =
-                    tree.AddItem($"m_{mg.Key}", $"{MonthYearLabel(mg.Key)}~~~{Money(monthTotal)}",
+                    tree.AddItem($"m_{mg.Key}", $"{MonthLabel(mg.Key Mod 100)}~~~{Money(monthTotal)}",
+                                 pLeftIconClosed:=icoLuna, pLeftIconOpen:=icoLuna,
                                  pExpanded:=True)
                 monthItem.Tag = monthRows
+                monthItem.Bold = True
+                monthItem.Expanded = False
                 monthItems(mg.Key) = monthItem
 
-                ' Recepții + anteturi sub folderul lunii.
+                ' Recepțiile sub folderul lunii (al DOILEA și ultimul nivel).
                 Dim roots As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
                 Dim rootRows As New Dictionary(Of Integer, List(Of ReceptieRow))()
-                Dim nodes As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
-                Dim nodeRows As New Dictionary(Of Integer, List(Of ReceptieRow))()
 
                 For Each r As ReceptieRow In monthRows
                     ' --- recepția (IDRR) ---
                     Dim root As AdvancedTreeControl.TreeItem = Nothing
                     If Not roots.TryGetValue(r.Idrr, root) Then
-                        Dim icon As Image = StatusIconOf(r, palette)
+                        Dim icon As Image = ValoareIconOf(r.SumaAntet, palette)
                         Dim caption As String = $"{ShortDate(r.DataR)}~~~{Money(r.SumaAntet)}"
                         root = tree.AddItem($"r_{r.Idrr}", caption, monthItem,
                                             pLeftIconClosed:=icon, pLeftIconOpen:=icon)
@@ -245,19 +261,9 @@ Public Class ReceptiiView
                         rootRows(r.Idrr) = rr
                         receptieItems(r.Idrr) = root
                     End If
+                    ' Toate liniile TUTUROR anteturilor recepției intră în Tag-ul ei: nivelul
+                    ' de antet nu mai există ca nod, dar agregatul din grilă rămâne complet.
                     rootRows(r.Idrr).Add(r)
-
-                    ' --- antetul (IDRH) ---
-                    Dim node As AdvancedTreeControl.TreeItem = Nothing
-                    If Not nodes.TryGetValue(r.Idrh, node) Then
-                        Dim caption As String = $"{ShortDate(r.DataH)}~~~{Money(r.Total)}"
-                        node = tree.AddItem($"h_{r.Idrh}", caption, root)
-                        Dim nr As New List(Of ReceptieRow)()
-                        node.Tag = nr
-                        nodes(r.Idrh) = node
-                        nodeRows(r.Idrh) = nr
-                    End If
-                    nodeRows(r.Idrh).Add(r)
                 Next
             Next
 
@@ -418,7 +424,7 @@ Public Class ReceptiiView
     End Class
 
     ' ── Grila (LISTA) ────────────────────────────────────────────────────────
-    ' Detaliul AGREGAT al unui nod (lună / recepție / antet — revizuire operator): un rând-
+    ' Detaliul AGREGAT al unui nod (lună / recepție): un rând-
     ' total sintetic „Toți indicatorii" (Valoare = Sum(DIF) pe rândurile nodului), apoi un
     ' rând per clasificație (Valoare = Sum(Valoare) grupat pe Clsf, NrCrt din indicator,
     ' Descriere = Denumirea clasificației — bine definită la orice nivel de agregare, spre
@@ -430,12 +436,12 @@ Public Class ReceptiiView
             If nodeRows Is Nothing OrElse nodeRows.Count = 0 Then Return
 
             ' Randul-total: Sum(DIF) peste toate liniile nodului.
-            Dim totalDif As Double = nodeRows.Sum(Function(r) r.Dif)
-            Dim rowTot As KBotDataRow = grid.AddRow()
-            rowTot(COL_NRCRT) = String.Empty
-            rowTot(COL_DESCRIERE) = "Toți indicatorii"
-            rowTot(COL_CLSF) = String.Empty
-            rowTot(COL_VALOARE) = totalDif
+            'Dim totalDif As Double = nodeRows.Sum(Function(r) r.Dif)
+            'Dim rowTot As KBotDataRow = grid.AddRow()
+            'rowTot(COL_NRCRT) = String.Empty
+            'rowTot(COL_DESCRIERE) = "Toți indicatorii"
+            'rowTot(COL_CLSF) = String.Empty
+            'rowTot(COL_VALOARE) = totalDif
 
             ' Rânduri per clasificație — doar liniile reale (un antet fără linii dă doar total).
             Dim lines = nodeRows.Where(Function(r) r.Idr.HasValue)
@@ -445,9 +451,8 @@ Public Class ReceptiiView
 
             For Each grp In groups
                 Dim r As KBotDataRow = grid.AddRow()
-                Dim nrCrt As Integer? = grp.Select(Function(x) x.NrCrtInd).
-                                            FirstOrDefault(Function(v) v.HasValue)
-                r(COL_NRCRT) = If(nrCrt.HasValue, CObj(nrCrt.Value), CObj(String.Empty))
+                'Dim nrCrt As Integer? = grp.Select(Function(x) x.NrCrtInd).FirstOrDefault(Function(v) v.HasValue)
+                'r(COL_NRCRT) = If(nrCrt.HasValue, CObj(nrCrt.Value), CObj(String.Empty))
                 r(COL_DESCRIERE) = FirstNonEmpty(grp.Select(Function(x) x.Denumire))
                 r(COL_CLSF) = grp.Key
                 r(COL_VALOARE) = grp.Sum(Function(x) x.Valoare)
@@ -471,7 +476,7 @@ Public Class ReceptiiView
         Return String.Empty
     End Function
 
-    ' Click pe orice nod (lună / recepție / antet) -> umple grila cu agregatul rândurilor
+    ' Click pe orice nod (lună / recepție) -> umple grila cu agregatul rândurilor
     ' nodului (în Tag). Fără apel de rețea.
     Private Sub tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
@@ -521,6 +526,7 @@ Public Class ReceptiiView
         Return $"{MonthLabel(m)}/{y}"
     End Function
 
+
     ' Numele lunii în română (Ianuarie…), cu prima literă mare (ca în RezervariView).
     Private Shared Function MonthLabel(month As Integer) As String
         If month < 1 OrElse month > 12 Then Return CStr(month)
@@ -529,23 +535,33 @@ Public Class ReceptiiView
         Return Char.ToUpper(name(0), _roCulture) & name.Substring(1)
     End Function
 
-    ' Iconița stării recepției (finding 5): Incarcat -> sus (verde), altfel Preluat -> jos
-    ' (accent), altfel neutru (estompat).
-    Private Function StatusIconOf(row As ReceptieRow, palette As ThemePalette) As Image
+    ''' <summary>
+    ''' Iconița recepției după VALOAREA ei (revizuire operator 2026-08-13, ca în RezervariView):
+    ''' valoare pozitivă sau zero -> «up», valoare negativă -> «down». Steagurile
+    ''' Incarcat/Preluat NU mai aleg iconița — ele spun în ce stadiu e recepția, nu dacă suma
+    ''' urcă sau coboară, și lăsau toate rândurile cu aceeași săgeată în jos.
+    '''
+    ''' ÎNTÂI din «image_list» (pozele alese de operator în designer, aceeași regulă
+    ''' listă-întâi ca în RezervariView) și abia dacă lista n-are cheia respectivă se cade
+    ''' înapoi pe formele GDI din <see cref="ReceptiiIcons"/> — altfel un ImageList incomplet
+    ''' ar lăsa noduri fără iconiță.
+    ''' </summary>
+    Private Function ValoareIconOf(valoare As Double, palette As ThemePalette) As Image
+        Dim urca As Boolean = valoare >= 0
+
+        Dim dinLista As Image = tree.NodeImage(If(urca, ICO_SUS, ICO_JOS))
+        If dinLista IsNot Nothing Then Return dinLista
+
+        ' Fallback GDI (se re-tintează pe paletă; imaginile din listă sunt fixe).
         If palette Is Nothing Then Return Nothing
-        Dim stare As ReceptiiIcons.Stare
-        Dim color As Color
-        If row.Incarcat Then
-            stare = ReceptiiIcons.Stare.Sus
-            color = palette.SuccessColor
-        ElseIf row.Preluat Then
-            stare = ReceptiiIcons.Stare.Jos
-            color = palette.AccentColor
-        Else
-            stare = ReceptiiIcons.Stare.Neutru
-            color = palette.TextDimColor
-        End If
+        Dim stare As ReceptiiIcons.Stare = If(urca, ReceptiiIcons.Stare.Sus, ReceptiiIcons.Stare.Jos)
+        Dim color As Color = If(urca, palette.SuccessColor, palette.ErrorColor)
         Return ReceptiiIcons.StatusIcon(stare, color, tree.LeftIconSize.Width)
+    End Function
+
+    ''' <summary>Iconița folderului de lună; doar din «image_list» (n-are formă GDI).</summary>
+    Private Function LunaIcon() As Image
+        Return tree.NodeImage(ICO_LUNA)
     End Function
 
     Private Shared Function TryGetPalette() As ThemePalette

@@ -21,6 +21,7 @@ Partial Class MainForm
     'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        Dim TreeNodeDefinition1 As KBot.Controls.TreeNodeDefinition = New Controls.TreeNodeDefinition()
         Dim KBotNavItem1 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(MainForm))
         Dim KBotNavItem2 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
@@ -169,6 +170,16 @@ Partial Class MainForm
         tree.Margin = New Padding(4, 5, 4, 5)
         tree.MinimumCollapsedWidth = 50
         tree.Name = "tree"
+        TreeNodeDefinition1.Caption = "elasalqw qwlrlqwl qlrqwlr lqwr "
+        TreeNodeDefinition1.ImageKey = Nothing
+        TreeNodeDefinition1.Key = "1"
+        TreeNodeDefinition1.OpenImageKey = Nothing
+        TreeNodeDefinition1.ParentKey = Nothing
+        TreeNodeDefinition1.RightImageKey = Nothing
+        TreeNodeDefinition1.Tag = Nothing
+        TreeNodeDefinition1.Tooltip = Nothing
+        tree.Nodes.Add(TreeNodeDefinition1)
+        tree.PaddingSelectionLeft = 2
         tree.ReserveRightIconSpace = True
         tree.RightIconSize = New Size(20, 20)
         tree.RootExpander = False

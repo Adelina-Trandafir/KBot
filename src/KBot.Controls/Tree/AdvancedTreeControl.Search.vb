@@ -119,12 +119,12 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     ' Replică desenată a benzii. Geometria urmează pas cu pas PositionSearchTextBox
-    ' (etichetă la PADDING_TREE_START, casetă până la PADDING_TREE_END, ✕ lipit în dreapta),
+    ' (etichetă la PaddingTreeStart, casetă până la PaddingTreeEnd, ✕ lipit în dreapta),
     ' ca trecerea design-time → runtime să nu mute nimic.
     Private Sub DrawSearchBarPreview(g As Graphics, barTop As Integer)
         Dim labelFont As Font = Me.SearchBarLabelFont
         Dim boxFont As Font = Me.SearchBarFont
-        Dim x As Integer = PADDING_TREE_START
+        Dim x As Integer = PaddingTreeStart
 
         If Not String.IsNullOrEmpty(_searchBarLabelText) Then
             Dim latime As Integer = CInt(Math.Ceiling(g.MeasureString(_searchBarLabelText, labelFont).Width))
@@ -137,7 +137,7 @@ Partial Public Class AdvancedTreeControl
         End If
 
         Dim clearW As Integer = If(_searchClearButton, SearchClearButtonWidth, 0)
-        Dim boxW As Integer = Math.Max(40, Me.Width - x - PADDING_TREE_END - clearW)
+        Dim boxW As Integer = Math.Max(40, Me.Width - x - PaddingTreeEnd - clearW)
         Dim boxH As Integer = boxFont.Height + 2
         Dim boxRect As New Rectangle(x, barTop + (_searchBarHeight - boxH) \ 2, boxW, boxH)
         Dim boxBack As Color = SearchBoxBackColor
@@ -250,6 +250,7 @@ Partial Public Class AdvancedTreeControl
                 .TabStop = False
             }
             AddHandler _searchClearBtn.Click, AddressOf OnSearchClearBtnClick
+            HookClearButtonHover(_searchClearBtn)   ' vezi .ButtonHover
             Me.Controls.Add(_searchClearBtn)
         End If
         ApplyClearButtonLook()
@@ -269,8 +270,8 @@ Partial Public Class AdvancedTreeControl
             _searchClearBtn.Text = "✕"
         End If
         _searchClearBtn.Font = SearchBarFont
-        _searchClearBtn.BackColor = SearchBoxBackColor
         _searchClearBtn.ForeColor = Me.ForeColor
+        ApplyClearButtonHoverColor()   ' el scrie BackColor-ul, ca hover-ul să nu fie rescris
     End Sub
 
     ''' <summary>
@@ -348,13 +349,13 @@ Partial Public Class AdvancedTreeControl
         Dim tbWidth As Integer
 
         If _searchBarLabel IsNot Nothing AndAlso _searchBarLabel.Visible Then
-            _searchBarLabel.Left = PADDING_TREE_START
+            _searchBarLabel.Left = PaddingTreeStart
             _searchBarLabel.Top = barTop + (_searchBarHeight - _searchBarLabel.Height) \ 2
             tbLeft = _searchBarLabel.Right + 4
-            tbWidth = Math.Max(40, Me.Width - tbLeft - PADDING_TREE_END - clearW)
+            tbWidth = Math.Max(40, Me.Width - tbLeft - PaddingTreeEnd - clearW)
         Else
-            tbLeft = PADDING_TREE_START
-            tbWidth = Math.Max(40, Me.Width - PADDING_TREE_START - PADDING_TREE_END - clearW)
+            tbLeft = PaddingTreeStart
+            tbWidth = Math.Max(40, Me.Width - PaddingTreeStart - PaddingTreeEnd - clearW)
         End If
 
         _searchTextBox.Left = tbLeft

@@ -170,6 +170,19 @@ Public Class IstoricViewTests
         Return CType(fld.GetValue(view), ContextMenuStrip)
     End Function
 
+    Private Shared Function TreeOf(view As IstoricView) As AdvancedTreeControl
+        Dim t = FindControl(Of AdvancedTreeControl)(view)
+        If t Is Nothing Then Throw New InvalidOperationException("IstoricView nu conține un AdvancedTreeControl.")
+        Return t
+    End Function
+
+    ' Clic pe un nod: apelăm handler-ul direct — headless, controlul nu primește mesaje de mouse.
+    Private Shared Sub ClickNode(view As IstoricView, node As AdvancedTreeControl.TreeItem)
+        Dim m = view.GetType().GetMethod("Tree_NodeMouseUp",
+            Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance)
+        m.Invoke(view, New Object() {node, New MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0)})
+    End Sub
+
     Private Shared Function FilterOf(view As IstoricView) As IstoricFilter
         Dim fld = view.GetType().GetField("_filter", Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance)
         Return CType(fld.GetValue(view), IstoricFilter)
@@ -233,6 +246,92 @@ Public Class IstoricViewTests
                        Assert.Equal("65.02", CStr(g.Rows(0)("clsf")))
                        Assert.Equal("Rez_Initiala", CStr(g.Rows(0)("tip")))
                        Assert.Equal("17.01.2026", CStr(g.Rows(0)("data")))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Tree_HasTwoLevels_MonthsThenDays()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New IstoricView(api, PassThrough())
+                       Dim t = TreeOf(view)
+                       view.SetContext(Context("IST1"))
+                       api.Complete("IST1", StandardData())
+                       Application.DoEvents()
+
+                       ' Setul standard: Ianuarie (17 + 18) și Februarie (04 x2) -> 2 luni, 2 + 1 zile.
+                       Assert.Equal(2, t.Items.Count)
+                       Assert.Equal("Ianuarie 2026~~~2", t.Items(0).Caption)
+                       Assert.Equal("Februarie 2026~~~2", t.Items(1).Caption)
+                       Assert.Equal(2, t.Items(0).Children.Count)
+                       Assert.Equal("17.01.2026~~~1", t.Items(0).Children(0).Caption)
+                       Assert.Equal("18.01.2026~~~1", t.Items(0).Children(1).Caption)
+                       ' Nivelul 2 e ultimul — o zi nu mai are copii.
+                       Assert.Empty(t.Items(0).Children(0).Children)
+                       Assert.Single(t.Items(1).Children)
+                       Assert.Equal("04.02.2026~~~2", t.Items(1).Children(0).Caption)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ClickingMonthThenDay_FiltersGrid_AndComposesWithTheOtherSegments()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New IstoricView(api, PassThrough())
+                       Dim t = TreeOf(view)
+                       Dim g = GridOf(view)
+                       view.SetContext(Context("IST1"))
+                       api.Complete("IST1", StandardData())
+                       Application.DoEvents()
+                       Assert.Equal(4, g.RowCount)
+
+                       ClickNode(view, t.Items(0))                    ' Ianuarie -> 2 rânduri
+                       Assert.Equal(2, g.RowCount)
+                       Assert.True(FilterOf(view).DataFxActive)
+
+                       ClickNode(view, t.Items(0).Children(1))        ' 18.01.2026 -> 1 rând
+                       Assert.Equal(1, g.RowCount)
+                       Assert.Equal("Nou", CStr(g.Rows(0)("desc")))
+
+                       ClickNode(view, t.Items(1))                    ' Februarie -> 2 rânduri
+                       Assert.Equal(2, g.RowCount)
+
+                       ' Arborele mută DOAR segmentul DataFx: se compune cu TipRand (ȘI).
+                       FilterOf(view).SetTipRandExact("Receptie")
+                       ClickNode(view, t.Items(1).Children(0))        ' 04.02.2026 + Receptie -> 1 rând
+                       Assert.Equal(1, g.RowCount)
+                       Assert.Equal("Rec", CStr(g.Rows(0)("desc")))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub NewContext_RebuildsTheTree_AndAnEmptyResponseClearsIt()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New IstoricView(api, PassThrough())
+                       Dim t = TreeOf(view)
+                       view.SetContext(Context("IST1"))
+                       api.Complete("IST1", StandardData())
+                       Application.DoEvents()
+                       Assert.Equal(2, t.Items.Count)
+
+                       ' Alt angajament, o singură lună -> arborele NU păstrează nimic din primul.
+                       Dim b As New IstoricInfo() With {.Cod = "IST2"}
+                       b.Randuri.Add(Rand(201, 30, "Rez_Definitiva", New Date(2026, 3, 1, 10, 0, 0), 0.0, 0.0, 0.0, "X", "Y"))
+                       view.SetContext(Context("IST2"))
+                       api.Complete("IST2", b)
+                       Application.DoEvents()
+                       Assert.Single(t.Items)
+                       Assert.Equal("Martie 2026~~~1", t.Items(0).Caption)
+
+                       ' Fără rânduri -> arbore gol (starea goală a vederii).
+                       view.SetContext(Context("IST3"))
+                       api.Complete("IST3", New IstoricInfo() With {.Cod = "IST3"})
+                       Application.DoEvents()
+                       Assert.Empty(t.Items)
                    End Using
                End Sub)
     End Sub

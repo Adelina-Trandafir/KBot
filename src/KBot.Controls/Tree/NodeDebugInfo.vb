@@ -190,12 +190,12 @@ Public Class NodeDebugInfo
 
     <Category("2. Layout"),
      DisplayName("GridLeft"),
-     Description("X-ul de start al grilei = (Level * Indent) + AutoScrollPosition.X + PADDING_TREE_START(10).")>
+     Description("X-ul de start al grilei = (Level * Indent) + AutoScrollPosition.X + PaddingTreeStart (implicit 10).")>
     Public Property GridLeft As Integer
 
     <Category("2. Layout"),
      DisplayName("XBase"),
-     Description("X-ul de start al continutului (dupa expander+gap). = GridLeft + Indent + PADDING_EXPANDER_GAP(12), sau GridLeft daca Level=0 si RootExpander=False.")>
+     Description("X-ul de start al continutului (dupa expander+gap). = GridLeft + Indent + PaddingExpanderGap (implicit 12), sau GridLeft daca Level=0 si RootExpander=False.")>
     Public Property XBase As Integer
 
     <Category("2. Layout"),

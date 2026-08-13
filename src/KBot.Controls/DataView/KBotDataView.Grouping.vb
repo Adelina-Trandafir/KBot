@@ -198,6 +198,73 @@ Partial Class KBotDataView
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Meniul de coloană îi oferă operatorului fila «Grupare» (slice 0030). Implicit False.
+    '''
+    ''' <para><b>Nu atinge gruparea AUTORATĂ.</b> <see cref="Groups"/> rămâne exact ce e:
+    ''' o grilă poate porni grupată din designer cu steagul acesta stins, și atunci gruparea e a
+    ''' machetei, nu una pe care operatorul o poate desface din meniu. Steagul spune un singur
+    ''' lucru: dacă fila de grupare se vede sau nu în <c>KBotFilterPopup</c>.</para>
+    '''
+    ''' <para>Implicit STINS fiindcă cele șase vederi livrate n-au cerut niciodată o grupare pe care
+    ''' s-o schimbe operatorul; o filă nouă apărută peste noapte în meniul lor ar fi o schimbare de
+    ''' comportament, nu o îmbunătățire.</para>
+    ''' </summary>
+    <Category("K-BOT: Grupare")>
+    <Description("Meniul de coloană arată fila «Grupare». Nu atinge nivelurile autorate în designer.")>
+    <DefaultValue(False)>
+    Public Property EnableGrouping As Boolean
+        Get
+            Return _enableGrouping
+        End Get
+        Set(value As Boolean)
+            _enableGrouping = value
+        End Set
+    End Property
+    Private _enableGrouping As Boolean
+
+    ''' <summary>
+    ''' Așază, înlocuiește sau RIDICĂ nivelul de grupare al unei coloane — drumul pe care îl face
+    ''' fila «Grupare» din meniul de coloană. <c>Nothing</c> = coloana nu mai grupează.
+    '''
+    ''' <para>Nivelul primit e ADOPTAT ca atare (i se pune cheia coloanei și intră în
+    ''' <see cref="Groups"/>), nu copiat: apelantul construiește un <see cref="KBotGroupLevel"/>
+    ''' liber, cu opțiunile lui, și-l predă. Un nivel existent pe aceeași coloană se înlocuiește pe
+    ''' LOCUL LUI din ierarhie — o schimbare de opțiuni n-are voie să mute coloana de pe nivelul 1
+    ''' pe ultimul, fiindcă ordinea nivelurilor E ierarhia.</para>
+    '''
+    ''' <para>Strângerea grupurilor nu se pierde: ea se ține pe CALE, în grilă, nu pe obiectul de
+    ''' nivel (vezi <c>_collapsedPaths</c>).</para>
+    ''' </summary>
+    Public Sub SetColumnGroupLevel(colKey As String, level As KBotGroupLevel)
+        Try
+            Column(colKey)                      ' cheie necunoscută => ArgumentException
+            Dim idx As Integer = -1
+            For i As Integer = 0 To _levels.Count - 1
+                If _levels(i) IsNot Nothing AndAlso
+                   String.Equals(_levels(i).ColumnKey, colKey, StringComparison.Ordinal) Then
+                    idx = i
+                    Exit For
+                End If
+            Next
+
+            If level Is Nothing Then
+                If idx >= 0 Then _levels.RemoveAt(idx)
+                Return
+            End If
+
+            level.ColumnKey = colKey
+            If idx >= 0 Then
+                _levels(idx) = level
+            Else
+                _levels.Add(level)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.SetColumnGroupLevel", ex)
+            Throw
+        End Try
+    End Sub
+
     ' ── Legătura colecție -> control ────────────────────────────────────────────
 
     ''' <summary>

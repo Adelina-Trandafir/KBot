@@ -238,17 +238,23 @@ Partial Class KBotDataView
             RaiseEvent ColumnFilterOpening(Me, args)
             If args.Cancel Then Return
 
+            ' Grila se predă meniului ca să-și poată citi starea de GRUPARE (nivelul coloanei și
+            ' ierarhia). Meniul nu scrie nimic prin ea — hotărârile vin înapoi pe evenimentele de
+            ' mai jos, ca filtrul și sortarea.
             Dim meniu As New KBotFilterPopup(col.Key,
                                              If(col.HeaderText, col.Key),
                                              col.ValueType,
                                              DistinctDisplayValues(col.Key),
                                              ColumnFilter(col.Key),
-                                             SortDirectionFor(col.Key))
+                                             SortDirectionFor(col.Key),
+                                             Me)
 
             AddHandler meniu.FilterAccepted,
                 Sub(s As Object, e As KBotFilterAcceptedEventArgs) SetColumnFilter(e.Filter)
             AddHandler meniu.SortRequested,
                 Sub(s As Object, e As KBotSortRequestedEventArgs) ApplySort(e.ColumnKey, e.Direction)
+            AddHandler meniu.GroupingRequested,
+                Sub(s As Object, e As KBotGroupingRequestedEventArgs) SetColumnGroupLevel(e.ColumnKey, e.Level)
 
             ' Arătat NEMODAL, deci WinForms îl eliberează singur la închidere — vezi CustomPopup:
             ' un «Using» aici l-ar distruge înainte să-l vadă cineva.

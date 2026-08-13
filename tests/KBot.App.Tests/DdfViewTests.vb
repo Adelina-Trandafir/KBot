@@ -198,9 +198,14 @@ Public Class DdfViewTests
         Return c
     End Function
 
+    ' Cautare INSENSIBILA la litere mari/mici: Reflection e sensibila, VB nu, deci un handler
+    ' redenumit `Tree_NodeMouseUp` -> `tree_NodeMouseUp` (sau invers) intorcea Nothing si
+    ' testul cadea cu NullReference inainte sa verifice ceva.
     Private Shared Sub ClickNode(view As DdfView, node As AdvancedTreeControl.TreeItem)
         Dim m = view.GetType().GetMethod("tree_NodeMouseUp",
-            Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance)
+            Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance Or
+            Reflection.BindingFlags.IgnoreCase)
+        If m Is Nothing Then Throw New InvalidOperationException("DdfView nu are tree_NodeMouseUp.")
         m.Invoke(view, New Object() {node, New MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0)})
     End Sub
 

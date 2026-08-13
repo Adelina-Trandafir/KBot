@@ -9,16 +9,18 @@ Imports KBot.Domain
 Imports KBot.Theming
 
 ''' <summary>
-''' Vederea Plăți (felia 0017) — echivalentul Access frmFX_MAIN_PLATI: un arbore pe TREI
-''' niveluri la stânga (folder lună/an -> zi -> plata/IdPlataFX), o grilă continuă LISTA sus-
-''' dreapta și un panou de detaliu jos-dreapta cu extrasul bancar. Read-only în această felie.
-''' Datele vin din GET /api/forexe/plati, întotdeauna prin plasa de re-autentificare a
-''' shell-ului (401 -> re-login -> reia o dată). Click pe orice nod (TOATE / lună / zi / plată)
-''' FILTREAZĂ grila la rândurile nodului (nu agregă — spre deosebire de Recepții). Selectarea
-''' unui rând din grilă umple panoul de detaliu din datele deja pe rând (fără al doilea apel).
+''' Vederea Plăți (felia 0017) — echivalentul Access frmFX_MAIN_PLATI: un arbore pe DOUĂ
+''' niveluri la stânga (folder lună/an -> plata însăși, etichetată cu ziua ei), o grilă
+''' continuă LISTA sus-dreapta și un panou de detaliu jos-dreapta cu extrasul bancar.
+''' Read-only în această felie. Datele vin din GET /api/forexe/plati, întotdeauna prin plasa
+''' de re-autentificare a shell-ului (401 -> re-login -> reia o dată). Click pe orice nod
+''' (lună / plată) FILTREAZĂ grila la rândurile nodului (nu agregă — spre deosebire de
+''' Recepții). Selectarea unui rând din grilă umple panoul de detaliu din datele deja pe rând
+''' (fără al doilea apel).
 '''
-''' Nivelul 2 (plata) reînvie codul dormant Level=2 din Access (mcTree_Click /
-''' RightIconClick / RefreshPlataLista aveau ramura, dar Show_Plati nu construia nodul).
+''' Cele două niveluri sunt exact cele construite de Access în Show_Plati: rădăcina «m_»&LunaAn
+''' și frunza «d_»&Data, o frunză per înregistrare FX_Plati. Nivelul de zi agregată din felia
+''' 0017 a fost scos — Access nu l-a avut niciodată.
 ''' </summary>
 Public Class PlatiView
     Implements IAngajamentView, IThemedControl
@@ -29,6 +31,13 @@ Public Class PlatiView
     Private Const COL_NRDOC As String = "nrdoc"
     Private Const COL_DATA As String = "data"
     Private Const COL_SUMA As String = "suma"
+
+    ' Cheile iconițelor din «image_list» (ImageList-ul autorat în designer, legat prin
+    ' tree.NodeImages). Arborele desenează DIN ELE; formele GDI rămân doar ca plasă pentru
+    ' cheile care încă nu există în listă (starea neutră și «+»).
+    Private Const ICO_LUNA As String = "month"      ' folderul de lună
+    Private Const ICO_SUS As String = "up"          ' plată încărcată (Access REV_SUS)
+    Private Const ICO_JOS As String = "down"        ' plată preluată (Access REV_JOS)
 
     ' Format românesc: separator de mii «.» și zecimală «,» (1.091.940,00).
     Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
@@ -53,19 +62,45 @@ Public Class PlatiView
     ''' RaiseEvent AdaugareOrdonantari(LunaAn). Fără abonat în această felie.</summary>
     Public Event AdaugaOrdonantariCerut(sender As Object, e As LunaAnEventArgs)
 
-    ''' <summary>«+» apăsat pe o zi (nivel 1, IdPlataFx = -1) sau pe o plată (nivel 2, IdPlataFx
-    ''' real) — oglindește RaiseEvent AdaugareOrdonantare(IdPlataFX, DataPlata). Fără abonat.</summary>
+    ''' <summary>«+» apăsat pe o plată (nivel 1) — oglindește RaiseEvent
+    ''' AdaugareOrdonantare(IdPlataFX, DataPlata). Fără abonat în această felie.</summary>
     Public Event AdaugaOrdonantareCerut(sender As Object, e As PlataOrdEventArgs)
 
-    Public Sub New(apiClient As IApiClient,
-                   withReauth As Func(Of Func(Of Task(Of PlatiInfo)), Task(Of PlatiInfo)))
-        If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
-        If withReauth Is Nothing Then Throw New ArgumentNullException(NameOf(withReauth))
+    Public Sub New(apiClient As IApiClient, withReauth As Func(Of Func(Of Task(Of PlatiInfo)), Task(Of PlatiInfo)))
+        ArgumentNullException.ThrowIfNull(apiClient)
+        ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
-        BuildColumns()
+        BuildDetailRows()
         ShowEmpty("Selectați un angajament din arbore.")
+    End Sub
+
+    ''' <summary>
+    ''' Pune cele zece perechi etichetă/valoare în <c>detailTable</c>. Stă AICI, nu în
+    ''' <c>InitializeComponent</c>: apelurile au trăit acolo până când o deschidere a vederii în
+    ''' designerul Visual Studio a REGENERAT metoda și le-a șters — controalele rămâneau create
+    ''' și denumite, dar neatașate tabelului, deci panoul de detaliu ieșea gol. Orice cod scris
+    ''' de mână în <c>InitializeComponent</c> se pierde la primul dute-vino prin designer;
+    ''' constructorul e singurul loc pe care designerul nu-l rescrie.
+    ''' </summary>
+    Private Sub BuildDetailRows()
+        Try
+            If detailTable.Controls.Count > 0 Then Return   ' idempotent
+            InitDetailPair(capNrDoc, "Nr. document", valNrDoc, 0)
+            InitDetailPair(capDataBanca, "Data bancă", valDataBanca, 1)
+            InitDetailPair(capDataDoc, "Data document", valDataDoc, 2)
+            InitDetailPair(capReferinta, "Referință", valReferinta, 3)
+            InitDetailPair(capPlatitor, "Plătitor", valPlatitor, 4)
+            InitDetailPair(capCui, "CUI", valCui, 5)
+            InitDetailPair(capIban, "IBAN", valIban, 6)
+            InitDetailPair(capDebit, "Sumă debit", valDebit, 7)
+            InitDetailPair(capCredit, "Sumă credit", valCredit, 8)
+            InitDetailPair(capExplicatii, "Explicații", valExplicatii, 9)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PlatiView.BuildDetailRows", ex)
+            Throw
+        End Try
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements IAngajamentView.ViewKey
@@ -80,7 +115,7 @@ Public Class PlatiView
     ''' și ne anunță, GAZDA mută splitter-ul. <c>Panel1MinSize</c> păzește TRAGEREA splitter-ului;
     ''' strângerea e o comandă, nu o tragere, deci coborâm paza cât ține starea.
     ''' </summary>
-    Private Sub tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
+    Private Sub Tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
         Try
             Dim padStanga As Integer = split.Panel1.Padding.Left
             If collapsed Then
@@ -111,27 +146,11 @@ Public Class PlatiView
         Return Math.Max(split.Panel1MinSize, Math.Min(dorit, maxim))
     End Function
 
-    ' Coloanele grilei = frmFX_MAIN_PLATI_LISTA: Clasificație, Plătitor, Nr. doc, Data plății,
-    ' Suma. Rând de totaluri (Designer): Count pe clasificație, Sum pe Suma. Suma e Double (ca
-    ' agregatul să însumeze), formatată N2 la dreapta; restul sunt text.
-    Private Sub BuildColumns()
-        Try
-            Dim colClsf As KBotDataColumn = grid.AddColumn(COL_CLSF, "Clasificație", KBotColumnType.Text, 160)
-            colClsf.Aggregate = KBotAggregate.Count
-            grid.AddColumn(COL_PLATITOR, "Plătitor", KBotColumnType.Text, 200)
-            grid.AddColumn(COL_NRDOC, "Nr. doc", KBotColumnType.Text, 90)
-            grid.AddColumn(COL_DATA, "Data plății", KBotColumnType.Text, 100)
-            Dim colSuma As KBotDataColumn = grid.AddColumn(COL_SUMA, "Suma", KBotColumnType.Text, 120)
-            colSuma.FormatString = "N2"
-            colSuma.TextAlign = ContentAlignment.MiddleRight
-            ' ValueType ÎNAINTE de Aggregate: suma se cere doar unei coloane numerice (0028).
-            colSuma.ValueType = KBotValueType.Number
-            colSuma.Aggregate = KBotAggregate.Sum
-        Catch ex As Exception
-            GlobalErrorLog.Write("PlatiView.BuildColumns", ex)
-            Throw
-        End Try
-    End Sub
+    ' Coloanele grilei (= frmFX_MAIN_PLATI_LISTA: Clasificație, Plătitor, Nr. doc, Data plății,
+    ' Suma) sunt AUTORATE ÎN DESIGNER, nu construite aici. Un BuildColumns() care le adăuga a
+    ' doua oară arunca «Cheie de coloană duplicată: 'clsf'» din constructor și dobora activarea
+    ' vederii. Cheile COL_* de mai sus trebuie să rămână identice cu cele din designer — ele
+    ' sunt singura legătură dintre coloanele autorate și FillGrid.
 
     ''' <summary>
     ''' Selecția din arbore s-a schimbat. Fără angajament (nod de capitol / deselectare) NU se
@@ -139,7 +158,7 @@ Public Class PlatiView
     ''' </summary>
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
         Try
-            Dim cod As String = If(info Is Nothing, Nothing, info.CodAngajament)
+            Dim cod As String = info?.CodAngajament
             If String.IsNullOrWhiteSpace(cod) Then
                 _requestedCod = Nothing
                 _rows = Nothing
@@ -202,31 +221,32 @@ Public Class PlatiView
     End Sub
 
     ' ── Arborele ─────────────────────────────────────────────────────────────
-    ' TREI niveluri: rădăcina specială « TOATE PLĂȚILE » (SUM peste tot) + un folder per lună
-    ' (SUM lună) -> o frunză per zi (TOATE rândurile zilei, SUM zi) -> un nod per plată (Suma).
+    ' DOUĂ niveluri: un folder per lună (SUM lună) -> o frunză per ZI, care strânge TOATE
+    ' plățile zilei într-un singur nod (SUM zi). Nodul de plată individuală din felia 0017 a
+    ' fost scos — arborele se oprește la zi.
     ' Fiecare nod poartă în Tag rândurile lui, ca un click să FILTREZE grila fără o nouă cerere.
     '
-    ' Iconițe (finding operator, notat în worklog — Access nu dă sursă pentru lună/zi merjate):
-    '   * nivel 2 (plată): per rând — Incarcat->sus, altfel Preluat->jos, altfel neutru;
-    '   * lună + zi (merjate): ORICE rând Incarcat->sus; altfel ORICE Preluat->jos; altfel neutru.
-    ' Colorare INCASARE (verde din paletă): nivel 2 per rând; lună/zi verde doar dacă TOATE
-    ' rândurile sunt INCASARE (asumat, notat în worklog).
+    ' Iconițe — din «image_list» (autorat în designer, legat prin tree.NodeImages):
+    '   * luna -> «month» (folderul; Access: FolderClosed/FolderOpen — NU o stare merjată,
+    '     de aceea luna nu se colorează și nu poartă iconiță de stare);
+    '   * ziua -> starea MERJATĂ a plăților ei: ORICE Incarcat -> «up», altfel ORICE Preluat
+    '     -> «down», altfel neutru (Access: REV_SUS / REV_JOS / REV_NOT, acolo per plată —
+    '     merjarea e a noastră, fiindcă frunza noastră e ziua, nu plata).
+    ' Starea neutră (Access REV_NOT) N-ARE încă cheie în «image_list», deci cade pe forma GDI.
+    ' Colorare INCASARE (verde din paletă): pe zi, doar dacă TOATE plățile ei sunt încasări.
+    '
+    ' «+» (iconița din dreapta): îl primește cea mai veche zi ne-ordonantată, iar luna care o
+    ' conține îl primește și ea — Access: cLeaf.IconRight urmat de cLeaf.ParentNode.IconRight.
+    ' Rădăcinile stau STRÂNSE; se deschide doar luna care poartă «+» (cerință operator — în
+    ' Access toate erau Expanded = False).
     Private Sub BuildTree(rows As List(Of PlataRow))
         Try
             tree.Clear()
             Dim palette As ThemePalette = TryGetPalette()
 
-            ' « TOATE PLĂȚILE » — rădăcină specială, prima, colapsată; SUM(Suma) peste tot.
-            Dim allSum As Double = rows.Sum(Function(r) r.Suma)
-            Dim toateIcon As Image = If(palette Is Nothing, Nothing,
-                                        PlatiIcons.ToateIcon(palette.TextColor, tree.LeftIconSize.Width))
-            Dim allItem As AdvancedTreeControl.TreeItem =
-                tree.AddItem("ALL", $"« TOATE PLĂȚILE »~~~{Money(allSum)}",
-                             pLeftIconClosed:=toateIcon, pLeftIconOpen:=toateIcon, pExpanded:=False)
-            allItem.Tag = rows
-
             ' Cea mai veche zi cu cel puțin o plată ne-ordonantată -> «+» pe ea (o singură zi).
             Dim plusDay As Date? = OldestUnordonantatDay(rows)
+            Dim monthIcon As Image = LunaIcon()
 
             ' Foldere de lună, cronologic.
             Dim monthGroups = rows.GroupBy(Function(r) MonthKeyOf(r.DataPlata)).
@@ -235,28 +255,23 @@ Public Class PlatiView
             For Each mg In monthGroups
                 Dim monthRows As List(Of PlataRow) = mg.ToList()
                 Dim monthSum As Double = monthRows.Sum(Function(r) r.Suma)
-                Dim monthContainsPlus As Boolean =
-                    plusDay.HasValue AndAlso monthRows.Any(Function(r) SameDay(r.DataPlata, plusDay))
-                Dim monthIcon As Image = IconFor(MergedStare(monthRows), palette)
+                Dim monthContainsPlus As Boolean = monthRows.Any(Function(r) SameDay(r.DataPlata, plusDay))
                 Dim monthPlus As Image = If(monthContainsPlus, PlusIcon(palette), Nothing)
 
                 Dim monthItem As AdvancedTreeControl.TreeItem =
-                    tree.AddItem($"m_{mg.Key}", $"{MonthYearLabel(mg.Key)}~~~{Money(monthSum)}",
+                    tree.AddItem($"m_{mg.Key}", $"{MonthLabel(mg.Key Mod 100)}~~~{Money(monthSum)}",
                                  pLeftIconClosed:=monthIcon, pLeftIconOpen:=monthIcon,
-                                 pRightIcon:=monthPlus, pExpanded:=False)
+                                 pRightIcon:=monthPlus, pExpanded:=monthContainsPlus)
                 monthItem.Tag = monthRows
-                If AllIncasare(monthRows) AndAlso palette IsNot Nothing Then
-                    monthItem.NodeForeColor = palette.SuccessColor
-                End If
 
-                ' Frunze de zi (TOATE rândurile zilei într-un nod), cronologic.
+                ' Frunze = ZIUA (toate plățile ei într-un singur nod), cronologic.
                 Dim dayGroups = monthRows.GroupBy(Function(r) DayKeyOf(r.DataPlata)).
                                           OrderBy(Function(g) g.Key)
                 For Each dg In dayGroups
                     Dim dayRows As List(Of PlataRow) = dg.ToList()
                     Dim daySum As Double = dayRows.Sum(Function(r) r.Suma)
                     Dim dayIsPlus As Boolean = plusDay.HasValue AndAlso dg.Key = plusDay.Value.Date
-                    Dim dayIcon As Image = IconFor(MergedStare(dayRows), palette)
+                    Dim dayIcon As Image = StareIconOf(MergedStare(dayRows), palette)
                     Dim dayPlus As Image = If(dayIsPlus, PlusIcon(palette), Nothing)
 
                     Dim dayItem As AdvancedTreeControl.TreeItem =
@@ -267,22 +282,6 @@ Public Class PlatiView
                     If AllIncasare(dayRows) AndAlso palette IsNot Nothing Then
                         dayItem.NodeForeColor = palette.SuccessColor
                     End If
-
-                    ' Noduri de plată (nivel 2), în ordinea serverului (Data_plata, IdPlataFX).
-                    For Each r As PlataRow In dayRows
-                        Dim payIcon As Image = IconFor(StareOf(r), palette)
-                        Dim payIsPlus As Boolean = dayIsPlus AndAlso Not r.AreOrd
-                        Dim payPlus As Image = If(payIsPlus, PlusIcon(palette), Nothing)
-
-                        Dim payItem As AdvancedTreeControl.TreeItem =
-                            tree.AddItem($"p_{r.IdPlataFX}", $"{r.EtichetaPlata}~~~{Money(r.Suma)}",
-                                         dayItem, pLeftIconClosed:=payIcon, pLeftIconOpen:=payIcon,
-                                         pRightIcon:=payPlus)
-                        payItem.Tag = New List(Of PlataRow) From {r}
-                        If r.EsteIncasare AndAlso palette IsNot Nothing Then
-                            payItem.NodeForeColor = palette.SuccessColor
-                        End If
-                    Next
                 Next
             Next
 
@@ -328,7 +327,7 @@ Public Class PlatiView
     End Sub
 
     ' Click pe orice nod -> filtrează grila la rândurile nodului (în Tag). Fără apel de rețea.
-    Private Sub tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
+    Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
             If pNode Is Nothing Then Return
             Dim rows As List(Of PlataRow) = TryCast(pNode.Tag, List(Of PlataRow))
@@ -340,9 +339,11 @@ Public Class PlatiView
     End Sub
 
     ' Click pe iconița «+» -> ridicăm evenimentele dormante (mcTree_RightIconClick), fără abonat
-    ' în această felie. Nivel 0 (lună) -> AdaugaOrdonantariCerut(LunaAn); nivel 1 (zi) ->
-    ' AdaugaOrdonantareCerut(-1, data); nivel 2 (plată) -> AdaugaOrdonantareCerut(IdPlataFX, data).
-    Private Sub tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
+    ' în această felie. Pe două niveluri, exact ca Access: nivel 0 (lună) ->
+    ' AdaugaOrdonantariCerut(LunaAn); nivel 1 (zi) -> AdaugaOrdonantareCerut(-1, data), unde
+    ' -1 înseamnă „toată ziua, nu o plată anume". Ramura Access de nivel 2 (o plată anume) n-are
+    ' nod care s-o ridice cât timp frunza e ziua.
+    Private Sub Tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
         Try
             If pNode Is Nothing Then Return
             Dim rows As List(Of PlataRow) = TryCast(pNode.Tag, List(Of PlataRow))
@@ -350,12 +351,9 @@ Public Class PlatiView
 
             Select Case pNode.Level
                 Case 0
-                    If String.Equals(pNode.Key, "ALL", StringComparison.Ordinal) Then Return
                     RaiseEvent AdaugaOrdonantariCerut(Me, New LunaAnEventArgs(LunaAnOf(rows(0))))
                 Case 1
                     RaiseEvent AdaugaOrdonantareCerut(Me, New PlataOrdEventArgs(-1, DayOf(rows(0))))
-                Case 2
-                    RaiseEvent AdaugaOrdonantareCerut(Me, New PlataOrdEventArgs(rows(0).IdPlataFX, DayOf(rows(0))))
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("PlatiView.tree_RightIconClicked", ex)
@@ -364,7 +362,7 @@ Public Class PlatiView
 
     ' ── Panoul de detaliu (extrasul bancar) ──────────────────────────────────
     ' Condus de selecția din grilă, din datele deja pe rând. Fără al doilea apel de rețea.
-    Private Sub grid_SelectionChanged(sender As Object, e As EventArgs) Handles grid.SelectionChanged
+    Private Sub Grid_SelectionChanged(sender As Object, e As EventArgs) Handles grid.SelectionChanged
         Try
             Dim cur As KBotDataRow = grid.CurrentRow
             Dim r As PlataRow = If(cur Is Nothing, Nothing, TryCast(cur.Tag, PlataRow))
@@ -445,14 +443,6 @@ Public Class PlatiView
         Return If(value.HasValue, value.Value.Date, Date.MinValue)
     End Function
 
-    ' Eticheta lună/an dintr-o cheie de lună: „Ianuarie/2026". Cheia 0 -> „(fără dată)".
-    Private Shared Function MonthYearLabel(monthKey As Integer) As String
-        If monthKey <= 0 Then Return "(fără dată)"
-        Dim y As Integer = monthKey \ 100
-        Dim m As Integer = monthKey Mod 100
-        Return $"{MonthLabel(m)}/{y}"
-    End Function
-
     ' Numele lunii în română (Ianuarie…), cu prima literă mare (ca în Recepții/Rezervări).
     Private Shared Function MonthLabel(month As Integer) As String
         If month < 1 OrElse month > 12 Then Return CStr(month)
@@ -475,26 +465,31 @@ Public Class PlatiView
         Return a.HasValue AndAlso b.HasValue AndAlso a.Value.Date = b.Value.Date
     End Function
 
-    ' Starea vizuală a unei plăți: Incarcat->sus, altfel Preluat->jos, altfel neutru.
-    Private Shared Function StareOf(r As PlataRow) As PlatiIcons.Stare
-        If r.Incarcat Then Return PlatiIcons.Stare.Sus
-        If r.Preluat Then Return PlatiIcons.Stare.Jos
-        Return PlatiIcons.Stare.Neutru
-    End Function
-
-    ' Starea merjată a unui grup (lună/zi): ORICE sus->sus, altfel ORICE jos->jos, altfel neutru.
+    ' Starea merjată a unei zile: ORICE sus -> sus, altfel ORICE jos -> jos, altfel neutru.
     Private Shared Function MergedStare(rows As List(Of PlataRow)) As PlatiIcons.Stare
         If rows.Any(Function(r) r.Incarcat) Then Return PlatiIcons.Stare.Sus
         If rows.Any(Function(r) r.Preluat) Then Return PlatiIcons.Stare.Jos
         Return PlatiIcons.Stare.Neutru
     End Function
 
+    ' Ziua e verde doar dacă TOATE plățile ei sunt încasări.
     Private Shared Function AllIncasare(rows As List(Of PlataRow)) As Boolean
         Return rows.Count > 0 AndAlso rows.All(Function(r) r.EsteIncasare)
     End Function
 
-    ' Iconița stării, cu culoarea din paletă după stare (sus=succes, jos=accent, neutru=estompat).
-    Private Function IconFor(stare As PlatiIcons.Stare, palette As ThemePalette) As Image
+    ' Iconița de stare, luată din «image_list»: «up» = încărcată, «down» = preluată.
+    ' Starea neutră n-are cheie în listă (și nici «up»/«down» nu sunt garantate), deci rămâne
+    ' plasa GDI, care se re-tintează pe paletă — imaginile din listă sunt fixe.
+    Private Function StareIconOf(stare As PlatiIcons.Stare, palette As ThemePalette) As Image
+        Dim cheie As String = String.Empty
+        Select Case stare
+            Case PlatiIcons.Stare.Sus : cheie = ICO_SUS
+            Case PlatiIcons.Stare.Jos : cheie = ICO_JOS
+        End Select
+
+        Dim dinLista As Image = If(cheie.Length = 0, Nothing, tree.NodeImage(cheie))
+        If dinLista IsNot Nothing Then Return dinLista
+
         If palette Is Nothing Then Return Nothing
         Dim color As Color
         Select Case stare
@@ -503,6 +498,11 @@ Public Class PlatiView
             Case Else : color = palette.TextDimColor
         End Select
         Return PlatiIcons.StatusIcon(stare, color, tree.LeftIconSize.Width)
+    End Function
+
+    ''' <summary>Iconița folderului de lună; doar din «image_list» (n-are formă GDI).</summary>
+    Private Function LunaIcon() As Image
+        Return tree.NodeImage(ICO_LUNA)
     End Function
 
     ' Iconița «+» (accent din paletă — Access folosește doar „Plus" pentru plăți).
@@ -516,7 +516,7 @@ Public Class PlatiView
         ' Nothing. Atunci arborele se construiește fără iconițe/culori (structura e aceeași),
         ' iar ApplyTheme reconstruiește când tema devine disponibilă.
         Dim current As ThemeScheme = ThemeManager.Current
-        Return If(current Is Nothing, Nothing, current.Palette)
+        Return current?.Palette
     End Function
 
     ''' <summary>

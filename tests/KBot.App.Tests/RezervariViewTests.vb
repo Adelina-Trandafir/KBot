@@ -190,7 +190,8 @@ Public Class RezervariViewTests
                        view.SetContext(Context("A100"))
                        api.Complete("A100", StandardData())
                        Application.DoEvents()
-                       Assert.Equal(6, g.RowCount)
+                       ' Agregat pe clasificație: setul standard are una singură.
+                       Assert.Equal(1, g.RowCount)
                        Assert.Equal(2, t.Items.Count)
 
                        view.SetContext(Nothing)
@@ -214,8 +215,10 @@ Public Class RezervariViewTests
     End Sub
 
     <Fact>
-    Public Sub SetContext_FillsGridWithAllRows()
-        ' „Nimic selectat" -> grila arată TOATE rândurile angajamentului (decizia §7.3).
+    Public Sub SetContext_FillsGridWithTotalsPerClasificatie()
+        ' „Nimic selectat" -> grila arată TOTALURILE pe clasificație peste tot angajamentul
+        ' (ca în Recepții), nu cele 6 înregistrări brute. Setul standard are o singură
+        ' clasificație (65.02), deci un singur rând.
         RunSta(Sub()
                    Dim api As New FakeApiClient()
                    Using view As New RezervariView(api, PassThrough())
@@ -227,7 +230,11 @@ Public Class RezervariViewTests
                        api.Complete("A100", StandardData())
                        Application.DoEvents()
 
-                       Assert.Equal(6, g.RowCount)
+                       Assert.Equal(1, g.RowCount)
+                       Assert.Equal("65.02", CStr(g.Rows(0)("clsf")))
+                       ' R_Valoare: 100 + 5 + 50 - 20 + 30 + 10 = 175; R_Initiala: doar 100.
+                       Assert.Equal(175.0, CDbl(g.Rows(0)("r_valoare")), 2)
+                       Assert.Equal(100.0, CDbl(g.Rows(0)("r_initiala")), 2)
                    End Using
                End Sub)
     End Sub
@@ -265,13 +272,18 @@ Public Class RezervariViewTests
                        Assert.Equal(2, t.Items.Count)
                        Dim ian = t.Items(0)
                        Dim feb = t.Items(1)
-                       Assert.StartsWith("Ianuarie/2026", ian.Caption)
+                       Assert.StartsWith("Ianuarie", ian.Caption)
                        Assert.Contains("155,00", ian.Caption)
-                       Assert.StartsWith("Februarie/2026", feb.Caption)
+                       Assert.StartsWith("Februarie", feb.Caption)
                        Assert.Contains("20,00", feb.Caption)
                        ' Tag-ul folderului = rândurile lunii (baza filtrului de grilă).
                        Assert.Equal(3, RowsOf(ian).Count)
                        Assert.Equal(3, RowsOf(feb).Count)
+
+                       ' Arborele pornește STRÂNS, în afară de luna care ține frunza cu «+»
+                       ' (prima rezervare fără DDF = 17.01, Inițială -> Ianuarie).
+                       Assert.True(ian.Expanded)
+                       Assert.False(feb.Expanded)
                    End Using
                End Sub)
     End Sub
@@ -306,10 +318,12 @@ Public Class RezervariViewTests
                        Assert.Equal(RezervareTip.Initiala, RowsOf(l0)(0).Tip)
                        Assert.Equal(RezervareTip.Marire, RowsOf(l1)(0).Tip)
 
-                       ' «+» apare doar când grupul are un rând cu AreDDF=False.
-                       Assert.NotNull(l0.RightIcon)          ' 17-Inițială: AreDDF=False -> +
+                       ' «+» pe EXACT o frunză (fix 0017-04): prima eligibilă în ordinea
+                       ' (dată, tip), adică 17-Inițială. Restul rămân fără iconiță, chiar
+                       ' dacă au și ele rânduri cu AreDDF=False.
+                       Assert.NotNull(l0.RightIcon)          ' 17-Inițială: prima fără DDF -> +
                        Assert.Null(l1.RightIcon)             ' 17-Mărire:   AreDDF=True  -> fără +
-                       Assert.NotNull(l2.RightIcon)          ' 29-Mărire:   AreDDF=False -> +
+                       Assert.Null(l2.RightIcon)             ' 29-Mărire:   fără DDF, dar nu prima
                    End Using
                End Sub)
     End Sub
@@ -330,10 +344,11 @@ Public Class RezervariViewTests
                        Dim micsorare = feb.Children(0)
                        Dim marire = feb.Children(1)
 
-                       ' Grupul (15, Mărire) = 30 + 10 = 40, și are un rând fără DDF -> +.
+                       ' Grupul (15, Mărire) = 30 + 10 = 40. Are un rând fără DDF, dar «+» stă
+                       ' pe PRIMA frunză eligibilă din tot arborele (17.01, Ianuarie) — aici nu.
                        Assert.Equal(2, RowsOf(marire).Count)
                        Assert.Contains("40,00", marire.Caption)
-                       Assert.NotNull(marire.RightIcon)
+                       Assert.Null(marire.RightIcon)
 
                        ' (07, Micșorare) = -20 -> nod roșu, fără + (AreDDF=True).
                        Assert.Contains("-20,00", micsorare.Caption)

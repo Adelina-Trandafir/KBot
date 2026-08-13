@@ -45,12 +45,12 @@ Partial Public Class AdvancedTreeControl
 
         ' ── 1. Items (cu clip) — se desenează PRIMII ──────────────────────
         Dim visibleItems = GetVisibleItems()
-        Dim contentH As Integer = visibleItems.Count * ItemHeight + PADDING_TREE_TOP
+        Dim contentH As Integer = visibleItems.Count * ItemHeight + PaddingTreeTop
 
         Dim oldClip = e.Graphics.Clip.Clone()
         e.Graphics.SetClip(New Rectangle(0, headerOff, Me.Width, zonaNoduri))
 
-        Dim y As Integer = -_vScroll.Value + PADDING_TREE_TOP + headerOff
+        Dim y As Integer = -_vScroll.Value + PaddingTreeTop + headerOff
         For Each it In visibleItems
             If y + ItemHeight > headerOff AndAlso y < headerOff + zonaNoduri Then
                 DrawItem(e.Graphics, it, y)
@@ -172,7 +172,7 @@ Partial Public Class AdvancedTreeControl
         ' --- 1. LOGICĂ ZONĂ MOARTĂ (Folosind constantele din AdvancedTreeControl.vb) ---
         If it IsNot Nothing Then
             ' Calculăm punctul de start exact ca în Painting.vb
-            Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PADDING_TREE_START
+            Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
 
             ' Considerăm zona activă începând de la linia expanderului/indentării
             ' Tot ce e în stânga alinierii nivelului → Toggle Expand dacă are copii/LazyNode
@@ -216,7 +216,7 @@ Partial Public Class AdvancedTreeControl
         ' =================================================================
         ' 2. PRIORITATE ZERO: EXPANDER (+/-)
         ' =================================================================
-        ' GetExpanderRect folosește deja PADDING_TREE_START intern
+        ' GetExpanderRect folosește deja PaddingTreeStart intern
         Dim expRect = GetExpanderRect(it)
 
         ' Verificăm dacă click-ul e în zona expanderului (și dacă are copii)
@@ -372,7 +372,7 @@ Partial Public Class AdvancedTreeControl
 
         ' --- Logică Zonă Moartă ---
         If it IsNot Nothing Then
-            Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PADDING_TREE_START
+            Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
             If e.X < gridLeft Then
                 it = Nothing
             End If
@@ -436,7 +436,7 @@ Partial Public Class AdvancedTreeControl
         ' --- 1. LOGICĂ ZONĂ MOARTĂ (Folosind constantele din AdvancedTreeControl.vb) ---
         If it IsNot Nothing Then
             ' Calculăm punctul de start exact ca în Painting.vb
-            Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PADDING_TREE_START
+            Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
 
             ' Considerăm zona activă începând de la linia expanderului/indentării
             ' Tot ce e în stânga alinierii nivelului este ignorat
@@ -485,6 +485,10 @@ Partial Public Class AdvancedTreeControl
                 TooltipTimer.Stop()
                 Me.Invalidate()
             End If
+            ' Cursorul e în subsol: niciun buton de antet și nicio iconiță de nod nu mai e
+            ' survolată. Ambele răspund False aici, deci steagurile se sting singure.
+            UpdateHeaderButtonHover(e.Location)
+            UpdateNodeRightIconHover(e.Location)
             _lastMouseX = e.X
             Return
         End If
@@ -493,8 +497,8 @@ Partial Public Class AdvancedTreeControl
 
         ' --- Logică Zonă Moartă ---
         If it IsNot Nothing Then
-            ' Folosim constanta PADDING_TREE_START definită în AdvancedTreeControl.vb
-            Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PADDING_TREE_START
+            ' Folosim constanta PaddingTreeStart definită în AdvancedTreeControl.vb
+            Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
 
             ' Opțional: Dacă vrei să ignori mouse-over chiar și pe indentare:
             ' Dim activeAreaStart As Integer = gridLeft ' Sau gridLeft + Indent
@@ -518,6 +522,11 @@ Partial Public Class AdvancedTreeControl
             ResetTooltip(it, e.X)
         End If
 
+        ' Butoanele desenate de noi (antet + iconița din dreapta nodului) se aprind la survolare —
+        ' vezi .ButtonHover. DUPĂ stabilirea lui pHoveredItem: plaja nodului depinde de el.
+        UpdateHeaderButtonHover(e.Location)
+        UpdateNodeRightIconHover(e.Location)
+
         ' Și stocăm întotdeauna X-ul curent (indiferent de hover change):
         _lastMouseX = e.X
       Catch ex As Exception
@@ -529,6 +538,7 @@ Partial Public Class AdvancedTreeControl
         Try
             MyBase.OnMouseLeave(e)
             HandleFooterMouseLeave()
+            ClearButtonHover()
             pHoveredItem = Nothing
             HideAllTooltips()
             TooltipTimer.Stop()
@@ -569,7 +579,7 @@ Partial Public Class AdvancedTreeControl
             Dim headerOff As Integer = If(_headerVisible, _headerHeight, 0) +
                                    If(_isSearchMode, _searchBarHeight, 0)
             Dim viewport As Integer = Math.Max(1, Me.Height - headerOff - FooterOffset)
-            Dim contentH As Integer = GetVisibleItems().Count * ItemHeight + PADDING_TREE_TOP
+            Dim contentH As Integer = GetVisibleItems().Count * ItemHeight + PaddingTreeTop
             If contentH <= viewport Then Return
 
             Dim lines As Integer = SystemInformation.MouseWheelScrollLines

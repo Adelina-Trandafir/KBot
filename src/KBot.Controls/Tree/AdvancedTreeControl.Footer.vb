@@ -84,14 +84,14 @@ Partial Public Class AdvancedTreeControl
         Dim butonRect As Rectangle = ComputeFooterButtonRect(bandRect)
         If Not butonRect.IsEmpty Then DrawCollapseButton(g, butonRect)
 
-        Dim x As Integer = PADDING_TREE_START
-        Dim rx As Integer = Me.Width - PADDING_TREE_END
+        Dim x As Integer = PaddingTreeStart
+        Dim rx As Integer = Me.Width - PaddingTreeEnd
 
         If Not butonRect.IsEmpty Then
             If _footerCollapseButtonPosition = En_FooterButtonPosition.Left Then
-                x = butonRect.Right + PADDING_ICON_GAP
+                x = butonRect.Right + PaddingIconGap
             Else
-                rx = butonRect.Left - PADDING_ICON_GAP
+                rx = butonRect.Left - PaddingIconGap
             End If
         End If
 
@@ -101,13 +101,14 @@ Partial Public Class AdvancedTreeControl
         If ShowFooterLeftIcon() Then
             Dim iy As Integer = midY - (_footerIconSize.Height \ 2)
             g.DrawImage(_footerLeftIcon, x, iy, _footerIconSize.Width, _footerIconSize.Height)
-            x += _footerIconSize.Width + PADDING_ICON_GAP
+            x += _footerIconSize.Width + PaddingIconGap
         End If
 
         If ShowFooterRightIcon() Then
             Dim r As Rectangle = ComputeFooterRightIconRect(bandRect)
+            If _footerRightIconHover Then DrawButtonHover(g, r, FooterRightIconHoverColor)
             g.DrawImage(_footerRightIcon, r)
-            rx = r.Left - PADDING_ICON_GAP
+            rx = r.Left - PaddingIconGap
         End If
 
         ' ── Caption (text îmbogățit, în spațiul rămas) ───────────────────
@@ -133,8 +134,11 @@ Partial Public Class AdvancedTreeControl
         Dim cy As Single = bandRect.Top + AlignStartY(_footerTextAlign, _footerHeight, inaltimeMax)
 
         ' Plaja proprie a etichetei (gol = fără): se desenează O DATĂ, sub tot textul.
-        If _footerCaptionBackColor <> Color.Empty Then
-            Using b As New SolidBrush(_footerCaptionBackColor)
+        ' Prin PROPRIETATE, nu prin câmp: pe schemă întunecată proprietatea răspunde Empty,
+        ' iar o citire directă a câmpului ar fi strecurat plaja aleasă în designer înapoi.
+        Dim captionBackPlate As Color = FooterCaptionBackColor
+        If captionBackPlate <> Color.Empty Then
+            Using b As New SolidBrush(captionBackPlate)
                 g.FillRectangle(b, cx, bandRect.Top, Math.Min(latimeTotala, availW), _footerHeight)
             End Using
         End If
@@ -160,12 +164,10 @@ Partial Public Class AdvancedTreeControl
     ''' («‹» strâns → «se desface spre dreapta», «›» desfășurat → «se strânge»).
     ''' </summary>
     Private Sub DrawCollapseButton(g As Graphics, r As Rectangle)
+        ' Plaja de survolare: aceeași funcție ca la celelalte butoane (vezi .ButtonHover), ca ele
+        ' să se aprindă identic. Era scrisă aici în cod — acum e o proprietate de designer.
         If _footerButtonHover Then
-            Using b As New SolidBrush(Color.FromArgb(40, FooterForeColor))
-                Using path As GraphicsPath = GetRoundedRect(Rectangle.Inflate(r, 2, 2), 3)
-                    g.FillPath(b, path)
-                End Using
-            End Using
+            DrawButtonHover(g, r, FooterCollapseButtonHoverColor)
         End If
 
         Dim img As Image = If(_collapsed, _footerCollapseCollapsedImage, _footerCollapseExpandedImage)
@@ -203,9 +205,9 @@ Partial Public Class AdvancedTreeControl
         Dim top As Integer = bandRect.Top + (bandRect.Height - side) \ 2
         Dim left As Integer
         If _footerCollapseButtonPosition = En_FooterButtonPosition.Left Then
-            left = PADDING_TREE_START
+            left = PaddingTreeStart
         Else
-            left = Math.Max(0, Me.Width - PADDING_TREE_END - side)
+            left = Math.Max(0, Me.Width - PaddingTreeEnd - side)
         End If
         Return New Rectangle(left, top, side, side)
     End Function
@@ -243,7 +245,7 @@ Partial Public Class AdvancedTreeControl
         Dim latime As Integer = _footerIconSize.Width
         Dim inaltime As Integer = _footerIconSize.Height
         Dim top As Integer = bandRect.Top + (bandRect.Height - inaltime) \ 2
-        Return New Rectangle(Math.Max(0, Me.Width - PADDING_TREE_END - latime), top, latime, inaltime)
+        Return New Rectangle(Math.Max(0, Me.Width - PaddingTreeEnd - latime), top, latime, inaltime)
     End Function
 
     ''' <summary>Dreptunghiul curent al iconiței din dreapta subsolului (gol = nu se vede).</summary>
@@ -327,8 +329,15 @@ Partial Public Class AdvancedTreeControl
         Dim inFooter As Boolean = _footerVisible AndAlso location.Y >= Me.Height - _footerHeight
         Dim butonRect As Rectangle = If(inFooter, FooterCollapseButtonRect, Rectangle.Empty)
         Dim hover As Boolean = Not butonRect.IsEmpty AndAlso butonRect.Contains(location)
-        If hover <> _footerButtonHover Then
+
+        ' Iconița din dreapta subsolului e și ea un buton (ridică FooterRightIconClicked), deci
+        ' se aprinde la fel — vezi .ButtonHover.
+        Dim iconRect As Rectangle = If(inFooter, FooterRightIconRect, Rectangle.Empty)
+        Dim hoverIcon As Boolean = Not iconRect.IsEmpty AndAlso iconRect.Contains(location)
+
+        If hover <> _footerButtonHover OrElse hoverIcon <> _footerRightIconHover Then
             _footerButtonHover = hover
+            _footerRightIconHover = hoverIcon
             Me.Invalidate()
         End If
         ' Cursorul în bandă = niciun nod survolat, deci nicio etichetă plutitoare.
@@ -337,8 +346,9 @@ Partial Public Class AdvancedTreeControl
     End Function
 
     Friend Sub HandleFooterMouseLeave()
-        If _footerButtonHover Then
+        If _footerButtonHover OrElse _footerRightIconHover Then
             _footerButtonHover = False
+            _footerRightIconHover = False
             Me.Invalidate()
         End If
         CancelCollapsedFlyout()
@@ -447,12 +457,12 @@ Partial Public Class AdvancedTreeControl
     ''' clipa în care iese fereastra și iluzia de «rând care se desface» s-ar rupe.
     ''' </summary>
     Friend Function NodeTextStartX(it As TreeItem) As Integer
-        Dim gridLeft As Integer = (it.Level * Indent) + PADDING_TREE_START
+        Dim gridLeft As Integer = (it.Level * Indent) + PaddingTreeStart
         Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander,
-                                  gridLeft, gridLeft + Indent + PADDING_EXPANDER_GAP)
-        If NodeHasCheckControl(it) Then xBase += _checkBoxSize + PADDING_CHECKBOX_GAP
+                                  gridLeft, gridLeft + Indent + PaddingExpanderGap)
+        If NodeHasCheckControl(it) Then xBase += _checkBoxSize + PaddingCheckBoxGap
         If it.LeftIconClosed IsNot Nothing AndAlso _hasNodeIcons Then
-            Return xBase + LeftIconSize.Width + PADDING_ICON_GAP
+            Return xBase + LeftIconSize.Width + PaddingIconGap
         End If
         Return xBase
     End Function
@@ -463,10 +473,10 @@ Partial Public Class AdvancedTreeControl
         Dim icon As Image = If(it.Expanded, it.LeftIconOpen, it.LeftIconClosed)
         If icon Is Nothing Then icon = If(it.LeftIconClosed, it.LeftIconOpen)
         If icon Is Nothing Then Return Rectangle.Empty
-        Dim gridLeft As Integer = (it.Level * Indent) + PADDING_TREE_START
+        Dim gridLeft As Integer = (it.Level * Indent) + PaddingTreeStart
         Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander,
-                                  gridLeft, gridLeft + Indent + PADDING_EXPANDER_GAP)
-        If NodeHasCheckControl(it) Then xBase += _checkBoxSize + PADDING_CHECKBOX_GAP
+                                  gridLeft, gridLeft + Indent + PaddingExpanderGap)
+        If NodeHasCheckControl(it) Then xBase += _checkBoxSize + PaddingCheckBoxGap
         Return New Rectangle(xBase, (ItemHeight - LeftIconSize.Height) \ 2,
                              LeftIconSize.Width, LeftIconSize.Height)
     End Function
@@ -530,7 +540,7 @@ Partial Public Class AdvancedTreeControl
                 Next
             End If
         End If
-        Return NodeTextStartX(it) + CInt(Math.Ceiling(total)) + PADDING_TREE_END
+        Return NodeTextStartX(it) + CInt(Math.Ceiling(total)) + PaddingTreeEnd
     End Function
 
     ''' <summary>
@@ -696,7 +706,7 @@ Partial Public Class AdvancedTreeControl
         Return New TreeNodeFlyoutStyle With {
             .Fill = If(selectat, SelectedBackColor, HoverBackColor),
             .Border = If(selectat, SelectedBorderColor, LineColor),
-            .Radius = SELECTION_CORNER_RADIUS,
+            .Radius = SelectionCornerRadius,
             .ItemHeight = ItemHeight,
             .IconRect = NodeIconRect(it),
             .Icon = icon,

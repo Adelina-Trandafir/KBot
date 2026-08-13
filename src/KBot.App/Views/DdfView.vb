@@ -521,11 +521,14 @@ Public Class DdfView
             _revizii = revizii
             _liniiByRev = GroupLinii(data.Linii)
             BuildTree(revizii)
-            ' Nimic selectat -> grila e goală; se umple la click pe orice nod al arborelui.
-            _nodeRows = Nothing
-            _nodeIsRoot = False
-            grid.ClearRows()
-            ResetClsfCombo(Nothing)
+            ' „Nimic selectat" -> grila arată TOATE liniile angajamentului, ca în ReceptiiView
+            ' (revizuire operator 2026-08-13). E aceeași vedere ca a unei rădăcini de lună,
+            ' doar peste toate reviziile: listă plată, deci «Data reviziei» rămâne vizibilă.
+            _nodeRows = ToateLiniile(revizii)
+            _nodeIsRoot = True
+            grid.Column(COL_DATA).Visible = True
+            ResetClsfCombo(_nodeRows)
+            FillGrid(_nodeRows)
             ' Browserul de fișiere: PDF-urile angajamentului sub rădăcina configurată.
             browser.SetContext(KBotPaths.Current.DdfPdfRoot, cod)
             _preview.Clear()
@@ -557,6 +560,21 @@ Public Class DdfView
             bucket.Add(l)
         Next
         Return map
+    End Function
+
+    ''' <summary>
+    ''' Liniile TUTUROR reviziilor, în ordinea reviziilor primite de la server — starea
+    ''' „nimic selectat" a grilei. Se trece prin <see cref="LiniiFor"/>, deci ia exact
+    ''' liniile pe care le acoperă și arborele: o linie cu un IDREV care nu apare printre
+    ''' revizii n-are unde să fie văzută, deci n-are ce căuta nici în listă.
+    ''' </summary>
+    Private Function ToateLiniile(revizii As List(Of RevizieRow)) As List(Of LinieSaRow)
+        Dim toate As New List(Of LinieSaRow)()
+        If revizii Is Nothing Then Return toate
+        For Each r As RevizieRow In revizii
+            toate.AddRange(LiniiFor(r.Idrev))
+        Next
+        Return toate
     End Function
 
     Private Function LiniiFor(idrev As Integer) As List(Of LinieSaRow)

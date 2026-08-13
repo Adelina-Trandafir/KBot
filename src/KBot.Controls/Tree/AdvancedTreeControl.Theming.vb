@@ -40,6 +40,65 @@ Partial Public Class AdvancedTreeControl
     Private _autoTooltipBack As Color = Color.FromArgb(255, 255, 232)
     Private _autoTooltipFore As Color = Color.FromArgb(50, 50, 60)
 
+    ''' <summary>
+    ''' EXCEPȚIA SCHEMEI ÎNTUNECATE, pentru benzile de antet și subsol.
+    '''
+    ''' Regula generală a arborelui e «designerul câștigă» (o culoare care nu e
+    ''' <c>Color.Empty</c> bate paleta). Pe întuneric regula asta produce exact ce nu vrea
+    ''' nimeni: un antet gri-deschis ales pentru tema luminoasă rămâne gri-deschis peste un
+    ''' arbore negru, cu text negru pe el. Culorile de bandă alese în designer se IGNORĂ deci
+    ''' cât timp schema e întunecată — nu se șterg, doar nu se citesc, așa că revin întregi la
+    ''' întoarcerea pe o schemă luminoasă (și designerul le serializează mai departe).
+    '''
+    ''' Ce SUPRAVIEȚUIEȘTE: forma benzii, nu culoarea ei — <c>HeaderBackStyle</c>/
+    ''' <c>FooterBackStyle</c>. Dacă operatorul a cerut degrade, banda rămâne în degrade și pe
+    ''' întuneric; capătul lui se recalculează însă din culoarea temei (<see cref="AutoGradientEnd"/>),
+    ''' fiindcă un capăt ales pentru un fundal deschis n-are niciun sens pe unul închis.
+    ''' </summary>
+    Private _isDarkScheme As Boolean = False
+
+    ''' <summary>True cât timp benzile trebuie să-și ia culorile DOAR din temă. Vezi <see cref="_isDarkScheme"/>.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property BandColorsFromThemeOnly As Boolean
+        Get
+            Return _isDarkScheme
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Raza colțurilor benzii de selecție/survolare a unui rând.
+    '''
+    ''' Nu e o valoare fixă, ci una a SCHEMEI: Classic și Dark cer colțuri drepte
+    ''' (<c>Style.CornerRadius</c> = 0), iar arborele rămâne la implicitul lui istoric — 1, adică
+    ''' practic drept. Modern cere colțuri rotunjite, și atunci rândul se rotunjește și el, ca
+    ''' selecția să nu fie singurul dreptunghi ascuțit dintr-o interfață altfel rotundă.
+    '''
+    ''' Creșterea e MODERATĂ, nu raza schemei: 8px pe o bandă de 22px ar face din rândul selectat
+    ''' o pastilă. Jumătate din raza schemei, plafonat la 4.
+    ''' </summary>
+    Private _selectionCornerRadius As Integer = SELECTION_CORNER_RADIUS_DEFAULT
+
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property SelectionCornerRadius As Integer
+        Get
+            Return _selectionCornerRadius
+        End Get
+    End Property
+
+    ' Plafonul de mai sus, într-un singur loc.
+    Private Const SELECTION_CORNER_RADIUS_MAX As Integer = 4
+
+    ''' <summary>Raza rândului pentru o schemă dată. Pură, ca s-o poată citi și ochiul, și un test.</summary>
+    Friend Shared Function SelectionRadiusForScheme(scheme As ThemeScheme) As Integer
+        If scheme Is Nothing OrElse scheme.Style Is Nothing Then Return SELECTION_CORNER_RADIUS_DEFAULT
+        Dim razaSchemei As Integer = scheme.Style.CornerRadius
+        If razaSchemei <= 0 Then Return SELECTION_CORNER_RADIUS_DEFAULT
+        Return Math.Min(SELECTION_CORNER_RADIUS_MAX,
+                        Math.Max(SELECTION_CORNER_RADIUS_DEFAULT, razaSchemei \ 2))
+    End Function
+
     ' Suprafața/textul nodurilor sunt Control.BackColor/ForeColor. Tema le rescrie DOAR cât timp
     ' operatorul nu le-a fixat el în designer — de aceea reținem cine a scris ultimul.
     Private _backColorPinned As Boolean = False
@@ -157,6 +216,14 @@ Partial Public Class AdvancedTreeControl
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
+            ' Pe întuneric, antetul și subsolul nu mai citesc culorile din designer (vezi
+            ' _isDarkScheme). Se pune ÎNAINTE de restul, ca Invalidate-ul de la coadă să
+            ' repicteze deja cu regula nouă.
+            _isDarkScheme = scheme.IsDark
+
+            ' Colțurile rândului urmează rotunjimea schemei (Modern le rotunjește, Classic/Dark nu).
+            _selectionCornerRadius = SelectionRadiusForScheme(scheme)
+
             _autoHeaderBack = p.SurfaceAltColor
             _autoHeaderFore = p.TextColor
             _autoFooterBack = p.SurfaceAltColor
@@ -207,8 +274,8 @@ Partial Public Class AdvancedTreeControl
             _searchBarLabel.ForeColor = SearchBarLabelForeColor
         End If
         If _searchClearBtn IsNot Nothing Then
-            _searchClearBtn.BackColor = SearchBoxBackColor
             _searchClearBtn.ForeColor = Me.ForeColor
+            ApplyClearButtonHoverColor()   ' el scrie BackColor-ul (survolat sau nu)
         End If
     End Sub
 

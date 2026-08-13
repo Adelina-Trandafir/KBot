@@ -65,6 +65,11 @@ Public Class IstoricView
     ' Motorul de filtrare pur (portul ApplyColumnFilter) — trei segmente independente.
     Private ReadOnly _filter As New IstoricFilter()
 
+    ' Starea splitter-ului dinainte de strângerea arborelui, ca desfacerea să-l pună înapoi
+    ' exact unde era (vezi Tree_CollapsedChanged, identic cu RezervariView). 0 = niciodată strâns.
+    Private _splitterDistanceDesfasurat As Integer
+    Private _panel1MinSizeDesfasurat As Integer
+
     ''' <summary>
     ''' Rândul selectat s-a schimbat — oglindește evenimentul dormant Access
     ''' <c>Public Event RowChanged(key)</c> (cu <c>RaiseEvent</c> comentat) și textbox-ul ascuns
@@ -181,6 +186,7 @@ Public Class IstoricView
             ' regulă necondiționată ca resetul combo-ului din DdfView).
             _filter.ClearAll()
             BuildMenus()
+            BuildTree()
             FillFiltered()
             ShowContent()
         Catch ex As ApiException
@@ -256,6 +262,118 @@ Public Class IstoricView
             gridValori.EndUpdate()
         End Try
     End Sub
+
+    ' ── Arborele de perioade (două niveluri: Lună -> Zi) ─────────────────────
+    ''' <summary>
+    ''' Construiește arborele din stânga peste <c>DataFx</c>-ul rândurilor încărcate: nivelul 1 =
+    ''' luna (an+lună, cronologic), nivelul 2 = ziua exactă din acea lună. Textul din dreapta
+    ''' (partea de după «~~~») e numărul de rânduri, ca operatorul să vadă unde e materia.
+    ''' Rândurile FĂRĂ dată nu au unde intra în arbore — rămân accesibile prin «Reset» / «TOATE».
+    '''
+    ''' Fiecare nod poartă în <c>Tag</c> perioada lui; clickul doar mută segmentul DataFx al
+    ''' aceluiași <see cref="IstoricFilter"/> pe care îl folosesc și cele trei meniuri, deci
+    ''' arborele SE COMPUNE cu filtrele de clasificație/tip și e golit de butonul «Reset».
+    ''' </summary>
+    Private Sub BuildTree()
+        Try
+            tree.Clear()
+            If _rows Is Nothing Then Return
+
+            Dim cuData As List(Of IstoricRand) = _rows.Where(Function(r) r IsNot Nothing AndAlso r.DataFx.HasValue).ToList()
+            Dim icoLuna As Image = My.Resources.Resources.folder_open
+            Dim icoZi As Image = My.Resources.Resources.calendar
+
+            Dim luni = cuData.GroupBy(Function(r) r.DataFx.Value.Year * 100 + r.DataFx.Value.Month).
+                              OrderBy(Function(g) g.Key)
+
+            For Each lunaGrp In luni
+                Dim an As Integer = lunaGrp.Key \ 100
+                Dim luna As Integer = lunaGrp.Key Mod 100
+                Dim randuriLuna As List(Of IstoricRand) = lunaGrp.ToList()
+                Dim nodLuna As AdvancedTreeControl.TreeItem =
+                    tree.AddItem($"L_{an}_{luna:00}",
+                                 $"{IstoricFilter.MonthLabel(luna)}~~~{randuriLuna.Count}",
+                                 pLeftIconClosed:=icoLuna, pLeftIconOpen:=icoLuna,
+                                 pExpanded:=True)
+                nodLuna.Tag = NodPerioada.Luna(an, luna)
+                nodLuna.Expanded = False
+                nodLuna.Bold = True
+
+                For Each ziGrp In randuriLuna.GroupBy(Function(r) r.DataFx.Value.Date).OrderBy(Function(g) g.Key)
+                    Dim zi As Date = ziGrp.Key
+                    Dim nodZi As AdvancedTreeControl.TreeItem =
+                        tree.AddItem($"Z_{zi:yyyyMMdd}",
+                                     $"{zi.ToString("dd.MM.yyyy", _roCulture)}~~~{ziGrp.Count()}",
+                                     nodLuna,
+                                     pLeftIconClosed:=icoZi, pLeftIconOpen:=icoZi)
+                    nodZi.Tag = NodPerioada.Zi(zi)
+                Next
+            Next
+
+            tree.Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("IstoricView.BuildTree", ex)
+            Throw
+        End Try
+    End Sub
+
+    ' Click pe un nod -> segmentul DataFx al filtrului trece pe luna / ziua nodului, apoi grila
+    ' se re-umple. Niciun apel de rețea (perioada stă în Tag, pusă la construcția arborelui).
+    Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
+        Try
+            If pNode Is Nothing Then Return
+            Dim perioada As NodPerioada = TryCast(pNode.Tag, NodPerioada)
+            If perioada Is Nothing Then Return
+
+            If perioada.EsteZi Then
+                Dim zi As Date = perioada.Data.Value
+                ApplyFilterChange(Sub() _filter.SetDataFxDay(zi, zi.ToString("dd.MM.yyyy", _roCulture)))
+            Else
+                Dim an As Integer = perioada.An
+                Dim luna As Integer = perioada.LunaNr
+                ApplyFilterChange(Sub() _filter.SetDataFxMonth(an, luna, $"{IstoricFilter.MonthLabel(luna)}/{an}"))
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("IstoricView.Tree_NodeMouseUp", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Strângerea arborelui (aceeași înțelegere ca în RezervariView/MainForm): arborele e
+    ''' <c>Dock = Fill</c> în <c>splitTree.Panel1</c>, deci lățimea NU e a lui — el schimbă starea
+    ''' și ne anunță, GAZDA mută splitter-ul. <c>Panel1MinSize</c> păzește TRAGEREA splitter-ului;
+    ''' strângerea e o comandă, nu o tragere, deci coborâm paza cât ține starea.
+    ''' </summary>
+    Private Sub Tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
+        Try
+            Dim padStanga As Integer = splitTree.Panel1.Padding.Left
+            If collapsed Then
+                _splitterDistanceDesfasurat = splitTree.SplitterDistance
+                _panel1MinSizeDesfasurat = splitTree.Panel1MinSize
+                Dim tinta As Integer = tree.MinimumCollapsedWidth + padStanga
+                splitTree.Panel1MinSize = Math.Min(_panel1MinSizeDesfasurat, tinta)
+                splitTree.SplitterDistance = ClampSplitter(tinta)
+                splitTree.IsSplitterFixed = True
+            Else
+                splitTree.IsSplitterFixed = False
+                If _panel1MinSizeDesfasurat > 0 Then splitTree.Panel1MinSize = _panel1MinSizeDesfasurat
+                Dim tinta As Integer = If(_splitterDistanceDesfasurat > 0,
+                                          _splitterDistanceDesfasurat,
+                                          tree.ExpandedWidth + padStanga)
+                splitTree.SplitterDistance = ClampSplitter(tinta)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("IstoricView.Tree_CollapsedChanged", ex)
+        End Try
+    End Sub
+
+    ' Distanța splitter-ului adusă în intervalul acceptat de SplitContainer — o vedere îngustă
+    ' n-are voie să transforme apăsarea butonului de strângere într-o excepție.
+    Private Function ClampSplitter(dorit As Integer) As Integer
+        Dim maxim As Integer = splitTree.Width - splitTree.Panel2MinSize - splitTree.SplitterWidth
+        If maxim < splitTree.Panel1MinSize Then Return splitTree.Panel1MinSize
+        Return Math.Max(splitTree.Panel1MinSize, Math.Min(dorit, maxim))
+    End Function
 
     ' ── Cele trei meniuri de filtrare (construite din datele încărcate) ───────
     Private Sub BuildMenus()
@@ -449,6 +567,7 @@ Public Class IstoricView
         _clasificatii = Nothing
         _filter.ClearAll()
         grid.ClearRows()
+        tree.Clear()
         menuClsf.Items.Clear()
         menuTipRand.Items.Clear()
         menuData.Items.Clear()
@@ -459,13 +578,13 @@ Public Class IstoricView
     Private Sub ShowEmpty(message As String)
         lblEmpty.Text = message
         lblEmpty.Visible = True
-        split.Visible = False
+        splitTree.Visible = False
         pnlFiltre.Visible = False
     End Sub
 
     Private Sub ShowContent()
         lblEmpty.Visible = False
-        split.Visible = True
+        splitTree.Visible = True
         pnlFiltre.Visible = True
     End Sub
 
@@ -502,9 +621,16 @@ Public Class IstoricView
             Dim p As ThemePalette = scheme.Palette
 
             BackColor = p.SurfaceAltColor
+            splitTree.BackColor = p.SurfaceAltColor
+            splitTree.Panel1.BackColor = p.SurfaceAltColor
+            splitTree.Panel2.BackColor = p.SurfaceAltColor
             split.BackColor = p.SurfaceAltColor
             split.Panel1.BackColor = p.SurfaceAltColor
             split.Panel2.BackColor = p.SurfaceAltColor
+
+            ' Arborele e IThemedControl: își ia singur paleta, iar ThemeManager nu mai recurge în
+            ' copiii lui. Iconițele nodurilor sunt bitmap-uri fixe (My.Resources), deci arborele
+            ' NU se reconstruiește la schimbarea temei.
 
             pnlFiltre.BackColor = p.SurfaceColor
             pnlDetaliu.BackColor = p.SurfaceColor
@@ -546,9 +672,35 @@ Public Class IstoricView
         menu.Renderer = New ToolStripProfessionalRenderer(New KBotMenuColorTable(p)) With {.RoundedEdges = False}
     End Sub
 
-    Private Sub btnFiltruClsf_Click_1(sender As Object, e As EventArgs)
+End Class
 
+''' <summary>Perioada purtată în <c>Tag</c>-ul unui nod din arborele Istoric: fie o lună (an +
+''' număr de lună), fie o zi exactă. POCO — construit doar prin cele două fabrici.</summary>
+Friend NotInheritable Class NodPerioada
+    Public ReadOnly Property An As Integer
+    Public ReadOnly Property LunaNr As Integer
+    ''' <summary>Ziua exactă, doar pentru nodurile de nivel 2 (altfel Nothing).</summary>
+    Public ReadOnly Property Data As Date?
+
+    Public ReadOnly Property EsteZi As Boolean
+        Get
+            Return Data.HasValue
+        End Get
+    End Property
+
+    Private Sub New(an As Integer, lunaNr As Integer, data As Date?)
+        Me.An = an
+        Me.LunaNr = lunaNr
+        Me.Data = data
     End Sub
+
+    Public Shared Function Luna(an As Integer, lunaNr As Integer) As NodPerioada
+        Return New NodPerioada(an, lunaNr, Nothing)
+    End Function
+
+    Public Shared Function Zi(data As Date) As NodPerioada
+        Return New NodPerioada(data.Year, data.Month, data.Date)
+    End Function
 End Class
 
 ''' <summary>Argumentul evenimentului <see cref="IstoricView.RandSchimbat"/> — poartă ID-ul

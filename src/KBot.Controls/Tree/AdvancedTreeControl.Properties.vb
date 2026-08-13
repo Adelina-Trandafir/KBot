@@ -128,19 +128,7 @@ Partial Public Class AdvancedTreeControl
         RightIconSize = New Size(18, 18)
     End Sub
 
-    Private _rightIconRightPadding As Integer = 6
-    <Category("K-BOT Arbore")>
-    <Description("Marginea (px) dintre iconița din dreapta și bordura controlului.")>
-    <DefaultValue(6)>
-    Public Property RightIconRightPadding As Integer
-        Get
-            Return _rightIconRightPadding
-        End Get
-        Set(value As Integer)
-            _rightIconRightPadding = Math.Max(0, value)
-            Me.Invalidate()
-        End Set
-    End Property
+    ' RightIconRightPadding s-a mutat în partiala .Paddings (toate marginile într-un singur fișier).
 
     ' Comutatorul de REZERVARE a locului iconiței din dreapta. Implicit False: locul NU se
     ' rezervă, deci textul nodului folosește toată lățimea și se îngustează abia când iconița
@@ -649,9 +637,11 @@ Partial Public Class AdvancedTreeControl
 
     Private _headerBackColor As Color = Color.Empty
     <Category("K-BOT Arbore - Antet")>
-    <Description("Fundalul benzii de antet; gol = din temă.")>
+    <Description("Fundalul benzii de antet; gol = din temă. Pe schemă întunecată se ignoră și " &
+                 "se ia oricum din temă (vezi BandColorsFromThemeOnly).")>
     Public Property HeaderBackColor As Color
         Get
+            If _isDarkScheme Then Return _autoHeaderBack
             Return If(_headerBackColor <> Color.Empty, _headerBackColor, _autoHeaderBack)
         End Get
         Set(value As Color)
@@ -669,9 +659,10 @@ Partial Public Class AdvancedTreeControl
 
     Private _headerForeColor As Color = Color.Empty
     <Category("K-BOT Arbore - Antet")>
-    <Description("Culoarea textului din antet; gol = din temă.")>
+    <Description("Culoarea textului din antet; gol = din temă. Pe schemă întunecată se ignoră.")>
     Public Property HeaderForeColor As Color
         Get
+            If _isDarkScheme Then Return _autoHeaderFore
             Return If(_headerForeColor <> Color.Empty, _headerForeColor, _autoHeaderFore)
         End Get
         Set(value As Color)
@@ -747,9 +738,12 @@ Partial Public Class AdvancedTreeControl
 
     Private _headerGradientEndColor As Color = Color.Empty
     <Category("K-BOT Arbore - Antet")>
-    <Description("Capătul degradeului de antet; gol = automat (spre alb dacă baza e deschisă, spre negru dacă e închisă).")>
+    <Description("Capătul degradeului de antet; gol = automat (spre alb dacă baza e deschisă, spre " &
+                 "negru dacă e închisă). Pe schemă întunecată se calculează întotdeauna automat — " &
+                 "rămâne CĂ e degrade, nu și culoarea aleasă pentru tema luminoasă.")>
     Public Property HeaderGradientEndColor As Color
         Get
+            If _isDarkScheme Then Return AutoGradientEnd(HeaderBackColor)
             Return If(_headerGradientEndColor <> Color.Empty,
                       _headerGradientEndColor, AutoGradientEnd(HeaderBackColor))
         End Get
@@ -904,9 +898,11 @@ Partial Public Class AdvancedTreeControl
 
     Private _footerBackColor As Color = Color.Empty
     <Category("K-BOT Arbore - Subsol")>
-    <Description("Fundalul benzii de subsol; gol = din temă.")>
+    <Description("Fundalul benzii de subsol; gol = din temă. Pe schemă întunecată se ignoră și " &
+                 "se ia oricum din temă (vezi BandColorsFromThemeOnly).")>
     Public Property FooterBackColor As Color
         Get
+            If _isDarkScheme Then Return _autoFooterBack
             Return If(_footerBackColor <> Color.Empty, _footerBackColor, _autoFooterBack)
         End Get
         Set(value As Color)
@@ -924,9 +920,11 @@ Partial Public Class AdvancedTreeControl
 
     Private _footerForeColor As Color = Color.Empty
     <Category("K-BOT Arbore - Subsol")>
-    <Description("Culoarea de prim-plan a subsolului (unghiul butonului, implicitul textului); gol = din temă.")>
+    <Description("Culoarea de prim-plan a subsolului (unghiul butonului, implicitul textului); " &
+                 "gol = din temă. Pe schemă întunecată se ignoră.")>
     Public Property FooterForeColor As Color
         Get
+            If _isDarkScheme Then Return _autoFooterFore
             Return If(_footerForeColor <> Color.Empty, _footerForeColor, _autoFooterFore)
         End Get
         Set(value As Color)
@@ -958,9 +956,12 @@ Partial Public Class AdvancedTreeControl
 
     Private _footerGradientEndColor As Color = Color.Empty
     <Category("K-BOT Arbore - Subsol")>
-    <Description("Capătul degradeului de subsol; gol = automat (spre alb dacă baza e deschisă, spre negru dacă e închisă).")>
+    <Description("Capătul degradeului de subsol; gol = automat (spre alb dacă baza e deschisă, spre " &
+                 "negru dacă e închisă). Pe schemă întunecată se calculează întotdeauna automat — " &
+                 "rămâne CĂ e degrade, nu și culoarea aleasă pentru tema luminoasă.")>
     Public Property FooterGradientEndColor As Color
         Get
+            If _isDarkScheme Then Return AutoGradientEnd(FooterBackColor)
             Return If(_footerGradientEndColor <> Color.Empty,
                       _footerGradientEndColor, AutoGradientEnd(FooterBackColor))
         End Get
@@ -1000,9 +1001,10 @@ Partial Public Class AdvancedTreeControl
 
     Private _footerCaptionForeColor As Color = Color.Empty
     <Category("K-BOT Arbore - Subsol")>
-    <Description("Culoarea textului din subsol; gol = FooterForeColor.")>
+    <Description("Culoarea textului din subsol; gol = FooterForeColor. Pe schemă întunecată se ignoră.")>
     Public Property FooterCaptionForeColor As Color
         Get
+            If _isDarkScheme Then Return FooterForeColor
             Return If(_footerCaptionForeColor <> Color.Empty, _footerCaptionForeColor, FooterForeColor)
         End Get
         Set(value As Color)
@@ -1023,9 +1025,11 @@ Partial Public Class AdvancedTreeControl
     ' fără fundal e ce vrea oricine în mod normal.
     Private _footerCaptionBackColor As Color = Color.Empty
     <Category("K-BOT Arbore - Subsol")>
-    <Description("Fundalul din spatele textului din subsol; gol = fără (se vede banda).")>
+    <Description("Fundalul din spatele textului din subsol; gol = fără (se vede banda). " &
+                 "Pe schemă întunecată se ignoră, deci textul stă direct pe bandă.")>
     Public Property FooterCaptionBackColor As Color
         Get
+            If _isDarkScheme Then Return Color.Empty
             Return _footerCaptionBackColor
         End Get
         Set(value As Color)
@@ -1497,26 +1501,7 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
-    Private _searchClearButtonPadding As New Padding(2)
-    <Category("K-BOT Arbore - Căutare")>
-    <Description("Spațiul din jurul butonului de golire (se adaugă la lățimea rezervată lui).")>
-    Public Property SearchClearButtonPadding As Padding
-        Get
-            Return _searchClearButtonPadding
-        End Get
-        Set(value As Padding)
-            _searchClearButtonPadding = value
-            ApplyClearButtonLook()      ' lățimea butonului = glifă/imagine + padding
-            If _isSearchMode Then PositionSearchTextBox()
-            Me.Invalidate()
-        End Set
-    End Property
-    Public Function ShouldSerializeSearchClearButtonPadding() As Boolean
-        Return _searchClearButtonPadding <> New Padding(2)
-    End Function
-    Public Sub ResetSearchClearButtonPadding()
-        SearchClearButtonPadding = New Padding(2)
-    End Sub
+    ' SearchClearButtonPadding s-a mutat în partiala .Paddings (toate marginile într-un singur fișier).
 
     Private _searchClearButtonImage As Image = Nothing
     <Category("K-BOT Arbore - Căutare")>
@@ -1607,7 +1592,7 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     ' Când True, tooltip-ul se afișează DOAR dacă cursorul se află deasupra
-    ' iconului stânga al nodului (cu padding TOOLTIP_ICON_HIT_PADDING).
+    ' iconului stânga al nodului (cu padding PaddingTooltipIconHit).
     ' Dacă nodul nu are icon stânga → fallback la comportamentul normal (tot rândul).
     ' Subordonat lui TooltipShow: dacă TooltipShow = False, această setare e ignorată.
     Private _tooltipShowOnlyOnLeftIcon As Boolean = False
