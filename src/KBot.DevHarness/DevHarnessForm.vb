@@ -22,6 +22,10 @@ Public NotInheritable Class DevHarnessForm
     ' Injectat din Program.vb (Debug). Deschide shell-ul real fără referință la KBot.App.
     Public Property OpenMainFormAction As Action
 
+    ' La fel, pentru vizualizatorul de jurnale (felia 0031-04): fereastra trăiește în KBot.App, iar
+    ' bancul NU referă KBot.App. Vezi și ILogViewerLauncher, drumul pe care merge proba vizuală.
+    Public Property OpenLogViewerAction As Action
+
     ' Controalele sunt declarate în DevHarnessForm.Designer.vb (design-time).
 
     Public Sub New(provider As IServiceProvider)
@@ -202,6 +206,18 @@ Public NotInheritable Class DevHarnessForm
             End If
         Catch ex As Exception
             HandleUiError("btnOpenMainForm_Click", ex)
+        End Try
+    End Sub
+
+    Private Sub btnJurnale_Click(sender As Object, e As EventArgs) Handles btnJurnale.Click
+        Try
+            If OpenLogViewerAction IsNot Nothing Then
+                OpenLogViewerAction.Invoke()
+            Else
+                AppendLog("OpenLogViewerAction nu e cablat (vezi Program.vb).")
+            End If
+        Catch ex As Exception
+            HandleUiError("btnJurnale_Click", ex)
         End Try
     End Sub
 

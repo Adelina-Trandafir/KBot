@@ -24,6 +24,7 @@ Partial Class DevHarnessForm
     Friend WithEvents btnCancel As System.Windows.Forms.Button
     Friend WithEvents btnClear As System.Windows.Forms.Button
     Friend WithEvents btnOpenMainForm As System.Windows.Forms.Button
+    Friend WithEvents btnJurnale As System.Windows.Forms.Button
     Friend WithEvents filterBar As System.Windows.Forms.Panel
     Friend WithEvents txtFilter As System.Windows.Forms.TextBox
     Friend WithEvents lblFilter As System.Windows.Forms.Label
@@ -44,6 +45,7 @@ Partial Class DevHarnessForm
         Me.btnCancel = New System.Windows.Forms.Button()
         Me.btnClear = New System.Windows.Forms.Button()
         Me.btnOpenMainForm = New System.Windows.Forms.Button()
+        Me.btnJurnale = New System.Windows.Forms.Button()
         Me.filterBar = New System.Windows.Forms.Panel()
         Me.txtFilter = New System.Windows.Forms.TextBox()
         Me.lblFilter = New System.Windows.Forms.Label()
@@ -70,6 +72,7 @@ Partial Class DevHarnessForm
         Me.pnlTop.Controls.Add(Me.btnCancel)
         Me.pnlTop.Controls.Add(Me.btnClear)
         Me.pnlTop.Controls.Add(Me.btnOpenMainForm)
+        Me.pnlTop.Controls.Add(Me.btnJurnale)
         Me.pnlTop.Dock = System.Windows.Forms.DockStyle.Top
         Me.pnlTop.Height = 38
         Me.pnlTop.Name = "pnlTop"
@@ -124,6 +127,14 @@ Partial Class DevHarnessForm
         Me.btnOpenMainForm.Name = "btnOpenMainForm"
         Me.btnOpenMainForm.Text = "Deschide MainForm"
         Me.btnOpenMainForm.UseVisualStyleBackColor = True
+        '
+        'btnJurnale
+        '
+        Me.btnJurnale.AutoSize = True
+        Me.btnJurnale.Margin = New System.Windows.Forms.Padding(3, 2, 3, 2)
+        Me.btnJurnale.Name = "btnJurnale"
+        Me.btnJurnale.Text = "Jurnale"
+        Me.btnJurnale.UseVisualStyleBackColor = True
         '
         'filterBar
         '

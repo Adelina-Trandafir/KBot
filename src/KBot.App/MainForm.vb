@@ -51,6 +51,9 @@ Public Class MainForm
     ' Fereastra nemodală «Informații interne» (flag-urile Are* ale nodului selectat).
     ' Nothing / IsDisposed = închisă; se re-deschide la nevoie.
     Private _infoForm As InternalInfoForm
+    ' Fereastra nemodală de jurnale, deschisă din meniul butonului de opțiuni (felia 0031-04).
+    ' Nothing / IsDisposed = închisă; se re-deschide la nevoie, ca _infoForm.
+    Private _logViewer As LogViewerForm
 
     ' Starea splitter-ului dinainte de strângerea arborelui, ca desfacerea să-l pună înapoi
     ' exact unde era (vezi tree_CollapsedChanged). 0 = arborele n-a fost încă strâns.
@@ -311,8 +314,8 @@ Public Class MainForm
     Private Async Sub CboAn_SelectedIndexChanged(sender As Object, e As EventArgs)
         Try
             If _suppressPeriodEvents Then Return
-            LoadSsForSelectedYear
-            Await LoadTreeAsync
+            LoadSsForSelectedYear()
+            Await LoadTreeAsync()
         Catch ex As Exception
             ' Boundary UI: un handler nu poate rearunca (ar dărâma procesul) — logăm și înghițim.
             GlobalErrorLog.Write("MainForm.cboAn_SelectedIndexChanged", ex)
@@ -324,7 +327,7 @@ Public Class MainForm
         Try
             If _suppressPeriodEvents Then Return
             ApplySelectedPeriod(persist:=True)
-            Await LoadTreeAsync
+            Await LoadTreeAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.cboSs_SelectedIndexChanged", ex)
         End Try
@@ -886,5 +889,73 @@ Public Class MainForm
             ' Boundary UI: un handler nu poate rearunca.
             GlobalErrorLog.Write("MainForm.capBar_ThemeSchemeChanged", ex)
         End Try
+    End Sub
+
+    ' Cheile rândurilor din meniul butonului de opțiuni. Azi e unul singur; se adaugă aici.
+    Private Const OPT_JURNAL As String = "jurnal"
+
+    ''' <summary>
+    ''' Butonul de opțiuni din bara de titlu desfășoară meniul shell-ului — un <c>CustomPopup</c>
+    ''' desenat de noi, deci tematizat, exact ca meniul de teme al aceleiași bare.
+    '''
+    ''' <para>Azi are un singur rând, «Arată jurnal». Poarta lui e
+    ''' <c>FeatureSwitches.VizualizatorJurnaleActiv</c> — comutatorul intern, mereu aprins deocamdată.
+    ''' Când e stins, meniul NU se deschide deloc: un meniu cu singurul lui rând stins ar fi o
+    ''' fereastră goală agățată de buton.</para>
+    ''' </summary>
+    Private Sub CapBar_OptionButtonClick(sender As Object, e As EventArgs) Handles capBar.OptionButtonClick
+        Try
+            ' Al doilea clic pe buton ÎNCHIDE meniul: apăsarea l-a închis deja (a activat fereastra
+            ' de dedesubt), deci fără garda asta l-am redeschide instantaneu.
+            If CustomPopup.ClosedJustNow Then Return
+
+            Dim ancora As Rectangle = capBar.OptionButtonBounds
+            If ancora.IsEmpty Then Return
+
+            Dim elemente As New List(Of CustomPopupItem)()
+            If FeatureSwitches.VizualizatorJurnaleActiv Then
+                ' «&A» = litera de acces, ca la orice meniu de sistem.
+                elemente.Add(New CustomPopupItem(OPT_JURNAL, "&Arată jurnal"))
+            End If
+            If elemente.Count = 0 Then Return
+
+            ' NU în «Using»: arătat nemodal, popup-ul se eliberează singur la închidere.
+            Dim meniu As New CustomPopup(elemente)
+            AddHandler meniu.ItemClicked, AddressOf MeniuOptiuni_ItemClicked
+            meniu.ShowBelow(capBar, ancora)
+        Catch ex As Exception
+            ' Frontieră de UI (handler de eveniment): logăm și înghițim.
+            GlobalErrorLog.Write("MainForm.CapBar_OptionButtonClick", ex)
+        End Try
+    End Sub
+
+    Private Sub MeniuOptiuni_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
+        Try
+            Select Case e.Item.Key
+                Case OPT_JURNAL
+                    ShowLog()
+                Case Else
+                    ' Fără no-op-uri tăcute: un rând adăugat în meniu și uitat aici trebuie să se vadă.
+                    Throw New ArgumentException("Rând necunoscut în meniul de opțiuni: «" & e.Item.Key & "».")
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.MeniuOptiuni_ItemClicked", ex)
+            MessageBox.Show(Me, "Comanda nu a putut fi executată: " & ex.Message, "K-BOT",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Deschide vizualizatorul de jurnale NEMODAL — operatorul trebuie să poată citi jurnalul și să
+    ''' lucreze în shell în același timp. O singură fereastră: dacă e deja deschisă, se aduce în
+    ''' față, ca <c>InternalInfoForm</c>.
+    ''' </summary>
+    Private Sub ShowLog()
+        If _logViewer Is Nothing OrElse _logViewer.IsDisposed Then
+            _logViewer = New LogViewerForm(_apiClient)
+            AddHandler _logViewer.FormClosed, Sub() _logViewer = Nothing
+        End If
+        _logViewer.Show()
+        _logViewer.BringToFront()
     End Sub
 End Class

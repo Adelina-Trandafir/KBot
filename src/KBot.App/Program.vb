@@ -49,21 +49,10 @@ Friend Module Program
 
             Using provider As ServiceProvider = services.BuildServiceProvider()
 #If DEBUG Then
-                ' Pe Debug, dezvoltatorul alege fereastra de pornire: Autentificare (Login)
-                ' sau Banc de probă (Harness). Dialogul apare DOAR în build-ul Debug.
-                Dim choice As DialogResult = MessageBox.Show(
-                    "Alegeți fereastra de pornire:" & Environment.NewLine & Environment.NewLine &
-                    "Da = Autentificare (Login)" & Environment.NewLine &
-                    "Nu = Banc de probă (Harness)",
-                    "K-BOT — Mod de pornire (Debug)",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Question)
-
-                If choice = DialogResult.Yes Then
-                    RunShellWithLogin(provider)
-                Else
-                    ' Fereastra de start e bancul de probă; deschide shell-ul real la cerere.
-                    RunHarness(provider)
-                End If
+                ' Pe Debug, dezvoltatorul alege fereastra de pornire dintr-o listă tematizată
+                ' (StartupLauncherForm). Apare DOAR în build-ul Debug; Release-ul nu are nicio
+                ' alegere de făcut.
+                RunLauncher(provider)
 #Else
                 ' Pe Release, singura cale este poarta de login înaintea shell-ului.
                 RunShellWithLogin(provider)
@@ -78,6 +67,36 @@ Friend Module Program
     End Sub
 
 #If DEBUG Then
+    ''' <summary>
+    ''' Fereastra de pornire (Debug) și dispecerul ei. Launcher-ul e MODAL și se închide COMPLET
+    ''' înainte să pornească ceva — bucla de mesaje a ferestrei alese rulează abia după, exact ca
+    ''' la LoginForm.
+    '''
+    ''' O cheie necunoscută ARUNCĂ: dacă cineva adaugă o pornire în <c>StartupLauncherForm.PORNIRI</c>
+    ''' și uită dispecerul, trebuie să afle imediat, nu să vadă un proces care iese tăcut.
+    ''' </summary>
+    Private Sub RunLauncher(provider As ServiceProvider)
+        Dim alegere As String
+        Using launcher As New StartupLauncherForm()
+            If launcher.ShowDialog() <> DialogResult.OK Then Return   ' renunțare -> ieșim curat
+            alegere = launcher.Alegere
+        End Using
+
+        Select Case alegere
+            Case StartupLauncherForm.KEY_APLICATIE
+                RunShellWithLogin(provider)
+            Case StartupLauncherForm.KEY_BANC
+                RunHarness(provider)
+            Case StartupLauncherForm.KEY_JURNALE
+                ' Jurnalele, singure: fără autentificare (citesc fișiere locale) și fără shell.
+                ' Grupul de jurnale de server rămâne acolo, dar fără sesiune apelul lui va pica —
+                ' și o spune în notificarea proprie, ca orice altă cădere de server.
+                Application.Run(provider.GetRequiredService(Of LogViewerForm)())
+            Case Else
+                Throw New ArgumentException("Pornire necunoscută în launcher: «" & If(alegere, "<nimic>") & "».")
+        End Select
+    End Sub
+
     ' Calea "Banc de probă" (Debug): fereastra-rădăcină a buclei de mesaje este harness-ul.
     ' MainForm-ul se deschide din harness la cerere (un singur exemplar, re-deschis dacă a
     ' fost închis). La ÎNCHIDEREA harness-ului (pagina de teste) închidem și MainForm-ul, ca
@@ -98,9 +117,23 @@ Friend Module Program
                     harnessMain.BringToFront()
                 End Sub
 
+            ' Vizualizatorul de jurnale, deschis nemodal din butonul «Jurnale» al bancului — o
+            ' singură fereastră, re-deschisă dacă a fost închisă, exact ca shell-ul de mai sus.
+            Dim harnessLogs As LogViewerForm = Nothing
+            harness.OpenLogViewerAction =
+                Sub()
+                    If harnessLogs Is Nothing OrElse harnessLogs.IsDisposed Then
+                        harnessLogs = provider.GetRequiredService(Of LogViewerForm)()
+                        AddHandler harnessLogs.FormClosed, Sub() harnessLogs = Nothing
+                    End If
+                    harnessLogs.Show()
+                    harnessLogs.BringToFront()
+                End Sub
+
             AddHandler harness.FormClosed,
                 Sub()
                     If harnessMain IsNot Nothing AndAlso Not harnessMain.IsDisposed Then harnessMain.Close()
+                    If harnessLogs IsNot Nothing AndAlso Not harnessLogs.IsDisposed Then harnessLogs.Close()
                 End Sub
 
             Application.Run(harness)   ' se termină când harness-ul (pagina de teste) se închide
@@ -227,6 +260,11 @@ Friend Module Program
         ' Forms.
         services.AddTransient(Of MainForm)()
         services.AddTransient(Of LoginForm)()
+        ' Vizualizatorul de jurnale (felia 0031-04). Transient: se deschide nemodal din meniul
+        ' butonului de opțiuni al shell-ului și modal din bancul de probă — două vieți diferite,
+        ' deci două instanțe. Primește IApiClient, deci vede și grupul de jurnale de SERVER.
+        services.AddTransient(Of LogViewerForm)(
+            Function(sp) New LogViewerForm(sp.GetRequiredService(Of IApiClient)()))
 
         ' Fabrică de LoginForm pentru re-login la 401 (MainForm.WithReauth) — fără
         ' service-locator în MainForm.
@@ -236,6 +274,10 @@ Friend Module Program
 #If DEBUG Then
         ' Banc de probă (Dev Harness) — doar pe Debug.
         services.AddTransient(Of KBot.DevHarness.DevHarnessForm)()
+        ' Puntea prin care proba vizuală a jurnalelor deschide fereastra din KBot.App fără ca
+        ' bancul să refere KBot.App (vezi ILogViewerLauncher).
+        services.AddSingleton(Of KBot.DevHarness.ILogViewerLauncher)(
+            Function(sp) New LogViewerLauncher(sp))
 #End If
     End Sub
 
