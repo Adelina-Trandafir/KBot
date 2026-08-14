@@ -56,6 +56,18 @@ Public Class DdfView
     Private Const PAGE_PDF As String = "document"
     Private Const PAGE_FISIERE As String = "fisiere"
 
+    ' CHEILE ICONIȚELOR din «tree_image_list» (ImageList-ul pus pe vedere în designer și legat
+    ' de arbore prin tree.NodeImages). Felia 0033 §12 (cererea operatorului): arborele DDF
+    ' rezolvă iconițele ÎNTÂI din listă, exact ca RezervariView, și abia dacă lista n-are cheia
+    ' cade înapoi pe formele GDI din DdfIcons. Cum se scapă de fallback: pui pozele în listă.
+    ' Căutarea cheii e insensibilă la litere mari/mici (ImageList.IndexOfKey), deci «Up» din
+    ' listă răspunde și la «up».
+    Private Const ICO_LUNA_INCHIS As String = "folder_closed"
+    Private Const ICO_LUNA_DESCHIS As String = "folder_open"
+    Private Const ICO_SUS As String = "up"        ' revizie încărcată ▲
+    Private Const ICO_JOS As String = "down"      ' revizie preluată ▼
+    Private Const ICO_NEUTRU As String = "neutral"
+
     ' Format românesc: separator de mii «.» și zecimală «,» (1.091.940,00).
     Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
 
@@ -376,11 +388,13 @@ Public Class DdfView
                     monthLines.AddRange(LiniiFor(r.Idrev))
                 Next
 
-                Dim monthIcon As Image = If(palette Is Nothing, Nothing,
-                                            DdfIcons.LunaIcon(palette.TextDimColor, tree.LeftIconSize.Width))
+                ' Lista poate purta două poze pentru lună (închis / deschis); când n-are decât
+                ' una — sau niciuna — amândouă cad pe aceeași imagine, ca înainte.
+                Dim monthIconInchis As Image = LunaIcon(ICO_LUNA_INCHIS, palette)
+                Dim monthIconDeschis As Image = LunaIcon(ICO_LUNA_DESCHIS, palette)
                 Dim monthItem As AdvancedTreeControl.TreeItem =
                     tree.AddItem(MonthKeyText(mg.Key), $"{MonthYearLabel(mg.Key)}~~~{Money(monthSum)}",
-                                 pLeftIconClosed:=monthIcon, pLeftIconOpen:=monthIcon,
+                                 pLeftIconClosed:=monthIconInchis, pLeftIconOpen:=monthIconDeschis,
                                  pExpanded:=True)
                 monthItem.Tag = New DdfNodeRows(monthLines, isRoot:=True)
                 ' Roșu doar când PROPRIUL total e negativ (Access copiază culoarea ultimei frunze).
@@ -603,8 +617,24 @@ Public Class DdfView
         Return DdfIcons.Stare.Neutru
     End Function
 
-    ' Iconița stării, cu culoarea din paletă după stare (sus=succes, jos=accent, neutru=estompat).
+    ''' <summary>
+    ''' Iconița stării unei revizii. ÎNTÂI din «tree_image_list» (pozele alese de operator în
+    ''' designer), și abia dacă lista n-are cheia respectivă se cade înapoi pe formele GDI din
+    ''' <see cref="DdfIcons"/>, colorate din paletă (sus=succes, jos=accent, neutru=estompat).
+    ''' Felia 0033 §12: aceeași regulă listă-întâi ca în <c>RezervariView.TipIconOf</c>.
+    ''' </summary>
     Private Function IconFor(stare As DdfIcons.Stare, palette As ThemePalette) As Image
+        Dim cheie As String
+        Select Case stare
+            Case DdfIcons.Stare.Sus : cheie = ICO_SUS
+            Case DdfIcons.Stare.Jos : cheie = ICO_JOS
+            Case Else : cheie = ICO_NEUTRU
+        End Select
+
+        Dim dinLista As Image = tree.NodeImage(cheie)
+        If dinLista IsNot Nothing Then Return dinLista
+
+        ' Fallback GDI (se re-tintează pe paletă; imaginile din listă sunt fixe).
         If palette Is Nothing Then Return Nothing
         Dim color As Color
         Select Case stare
@@ -613,6 +643,17 @@ Public Class DdfView
             Case Else : color = palette.TextDimColor
         End Select
         Return DdfIcons.StatusIcon(stare, color, tree.LeftIconSize.Width)
+    End Function
+
+    ''' <summary>
+    ''' Iconița folderului de lună pentru cheia dată («folder_closed» / «folder_open»), cu
+    ''' aceeași regulă listă-întâi ca <see cref="IconFor"/>.
+    ''' </summary>
+    Private Function LunaIcon(cheie As String, palette As ThemePalette) As Image
+        Dim dinLista As Image = tree.NodeImage(cheie)
+        If dinLista IsNot Nothing Then Return dinLista
+        If palette Is Nothing Then Return Nothing
+        Return DdfIcons.LunaIcon(palette.TextDimColor, tree.LeftIconSize.Width)
     End Function
 
     Private Shared Function TryGetPalette() As ThemePalette

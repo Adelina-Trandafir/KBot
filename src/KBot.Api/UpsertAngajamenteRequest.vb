@@ -361,3 +361,48 @@ Public NotInheritable Class GetIstoricClasificatieRow
     Public Property den_articol As String
     Public Property den_alineat As String
 End Class
+
+' Wire DTOs for GET /api/forexe/ord (vederea ORD, slice 0033).
+' Property names ARE the JSON keys (PropertyNamingPolicy=Nothing) — snake_case verbatim,
+' matching routes/forexe/ord.py exactly. ApiClient maps them onto the ORD POCOs so the
+' snake_case stops at the wire. Two arrays, one round trip: the client builds the tree from
+' `ordonantari` and filters `linii` by the selected idordp — no second request.
+Public NotInheritable Class GetOrdResponse
+    Public Property cod As String
+    Public Property ordonantari As New List(Of GetOrdHeaderRow)()
+    Public Property linii As New List(Of GetOrdLinieRow)()
+End Class
+
+' One FX_ORD record. idordp is the MariaDB key (the «...P» column — the non-P name is the
+' preserved Access id). total_ord is a server-side scalar SUM(Valoare) over FX_ORD_TBL, so
+' several beneficiaries can never inflate it.
+Public NotInheritable Class GetOrdHeaderRow
+    Public Property idordp As Integer
+    Public Property nr_ord As Integer
+    Public Property data_ord As Date?
+    Public Property total_ord As Double
+    ' The RECORDED FX_ORD.CalePDF, when that column still exists in MariaDB — Nothing
+    ' otherwise. A signal that a PDF was once produced (and how it was named), NEVER the
+    ' path to open: the client computes the local path and probes its own disk.
+    Public Property pdf As String
+    ' From FX_DDF through FX_ORD.IDDF — they compose the PDF folder (normalized partner
+    ' name vs «GENERAL»), the rule mdl_FX_ORD_PDF applies. Not displayed.
+    Public Property part_ang As Boolean
+    Public Property nume_partener As String
+    Public Property incarcat As Boolean
+    Public Property preluat As Boolean
+End Class
+
+' One FX_ORD_TBL record, FLAT (no FX_ORD_PART grouping in this slice). idordp ties the line
+' to its tree node. clsf/descriere come from Clasificatii — the route tries the documented
+' direct FK first and falls back to the 0011-03-verified FX_Indicatori path.
+Public NotInheritable Class GetOrdLinieRow
+    Public Property idordtblp As Integer
+    Public Property idordp As Integer
+    Public Property clsf As String
+    Public Property descriere As String
+    Public Property total_receptii As Double
+    Public Property plati_ant As Double
+    Public Property valoare As Double
+    Public Property ramas As Double
+End Class

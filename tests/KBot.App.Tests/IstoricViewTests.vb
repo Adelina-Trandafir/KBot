@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.Threading
@@ -82,6 +82,13 @@ Public Class IstoricViewTests
         Public Function GetTreeAsync(an As Integer, ss As String, includeHidden As Boolean,
                                      ct As CancellationToken) As Task(Of IReadOnlyList(Of AngajamentTreeInfo)) _
             Implements IApiClient.GetTreeAsync
+            Throw New NotSupportedException()
+        End Function
+
+        ' Felia 0033: vederea ORD nu e exercitată de acest dublu — contractul cere metoda,
+        ' deci o refuzăm zgomotos, ca pe celelalte neatinse.
+        Public Function GetOrdAsync(cod As String, ct As CancellationToken) As Task(Of OrdInfo) _
+            Implements IApiClient.GetOrdAsync
             Throw New NotSupportedException()
         End Function
 

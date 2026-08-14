@@ -1,7 +1,7 @@
 Imports KBot.Controls
 
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
-Partial Class DdfView
+Partial Class OrdView
     Inherits System.Windows.Forms.UserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
@@ -18,13 +18,15 @@ Partial Class DdfView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DdfView))
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(OrdView))
+        Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
+        Dim TreeNodeDefinition2 As TreeNodeDefinition = New TreeNodeDefinition()
+        Dim TreeNodeDefinition3 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
         split = New SplitContainer()
         tree = New AdvancedTreeControl()
-        tree_image_list = New ImageList(components)
+        image_list = New ImageList(components)
         pnlPages = New Panel()
         navSub = New KBotNavList()
         lblEmpty = New Label()
@@ -55,10 +57,12 @@ Partial Class DdfView
         split.SplitterWidth = 9
         split.TabIndex = 0
         '
-        ' tree
+        ' tree — arborele ordonanțărilor (lună -> ordonanțare). Toate proprietățile de aspect
+        ' sunt AUTORITE AICI (felia 0033, decizia 6), copiate după «tree»-ul lui RezervariView:
+        ' fontul, ItemHeight, dimensiunile iconițelor, benzile de antet/subsol. Din cod se
+        ' populează DOAR nodurile.
         '
         tree.Dock = DockStyle.Fill
-        tree.DynamicColumns = False
         tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCaptionFont = New Font("Consolas", 8F, FontStyle.Bold)
@@ -72,49 +76,76 @@ Partial Class DdfView
         tree.FooterVisible = True
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
-        tree.HeaderCaption = " REVIZII DDF"
+        tree.HeaderCaption = " ORDONANȚĂRI"
         tree.HeaderFont = New Font("Tahoma", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.HeaderForeColor = Color.Black
         tree.HeaderGradientEndColor = Color.CornflowerBlue
         tree.HeaderHeight = 40
         tree.HeaderIconSize = New Size(24, 24)
-        tree.HeaderLeftIcon = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_temporary_32
+        tree.HeaderLeftIcon = My.Resources.Resources.folder_open
         tree.HeaderVisible = True
         tree.Indent = 8
-        ' Paritate cu «tree»-ul lui RezervariView (felia 0033 §12, cererea operatorului): era
-        ' 24, singura dimensiune care mai diferea. Fontul (Calibri 9) și dimensiunile
-        ' iconițelor (16 / 14) erau deja aceleași.
         tree.ItemHeight = 30
         tree.LeftIconSize = New Size(16, 16)
         tree.Location = New Point(0, 0)
         tree.Margin = New Padding(4, 5, 4, 5)
-        tree.MinimumCollapsedWidth = 80
+        tree.MinimumCollapsedWidth = 120
         tree.Name = "tree"
-        tree.NodeImages = tree_image_list
+        tree.NodeImages = image_list
+        TreeNodeDefinition1.Caption = "Aprilie~~~11.234.567,78"
+        TreeNodeDefinition1.Expanded = True
+        TreeNodeDefinition1.ImageKey = "month"
+        TreeNodeDefinition1.Key = "apr"
+        TreeNodeDefinition1.OpenImageKey = Nothing
+        TreeNodeDefinition1.ParentKey = Nothing
+        TreeNodeDefinition1.RightImageKey = Nothing
+        TreeNodeDefinition1.Tag = Nothing
+        TreeNodeDefinition1.Tooltip = Nothing
+        TreeNodeDefinition2.Caption = "14 - 07.04.2026~~~11.234.567,89"
+        TreeNodeDefinition2.ImageKey = "up"
+        TreeNodeDefinition2.Key = "1"
+        TreeNodeDefinition2.OpenImageKey = Nothing
+        TreeNodeDefinition2.ParentKey = "apr"
+        TreeNodeDefinition2.RightImageKey = Nothing
+        TreeNodeDefinition2.Tag = Nothing
+        TreeNodeDefinition2.Tooltip = Nothing
+        TreeNodeDefinition3.Caption = "15 - 07.04.2026~~~123.456,78"
+        TreeNodeDefinition3.ImageKey = "down"
+        TreeNodeDefinition3.Key = "2"
+        TreeNodeDefinition3.OpenImageKey = Nothing
+        TreeNodeDefinition3.ParentKey = "apr"
+        TreeNodeDefinition3.RightImageKey = Nothing
+        TreeNodeDefinition3.Tag = Nothing
+        TreeNodeDefinition3.Tooltip = Nothing
+        tree.Nodes.Add(TreeNodeDefinition1)
+        tree.Nodes.Add(TreeNodeDefinition2)
+        tree.Nodes.Add(TreeNodeDefinition3)
         tree.PaddingExpanderGap = 10
         tree.PaddingIconGap = 10
         tree.PaddingTreeStart = 8
         tree.ReserveRightIconSpace = True
         tree.RightIconSize = New Size(14, 14)
         tree.RightTextWidth = 110
-        tree.ScrollBarTheme = AdvancedTreeControl.En_ScrollBarTheme.Default
         tree.Size = New Size(305, 528)
-        tree.TabIndex = 1
+        tree.TabIndex = 0
         '
-        ' tree_image_list
+        ' image_list — iconițele nodurilor, legate de arbore prin tree.NodeImages. Cheile sunt
+        ' cele citite de OrdView (month / up / down / neutral). Pozele pornesc de la setul lui
+        ' RezervariView; operatorul le poate schimba din designer, cheile rămân.
         '
-        tree_image_list.ColorDepth = ColorDepth.Depth32Bit
-        tree_image_list.ImageStream = CType(resources.GetObject("tree_image_list.ImageStream"), ImageListStreamer)
-        tree_image_list.TransparentColor = Color.Transparent
-        tree_image_list.Images.SetKeyName(0, "Up")
-        tree_image_list.Images.SetKeyName(1, "down")
-        tree_image_list.Images.SetKeyName(2, "folder_open")
-        tree_image_list.Images.SetKeyName(3, "folder_closed")
+        image_list.ColorDepth = ColorDepth.Depth32Bit
+        image_list.ImageStream = CType(resources.GetObject("image_list.ImageStream"), ImageListStreamer)
+        image_list.TransparentColor = Color.Transparent
+        image_list.Images.SetKeyName(0, "up")
+        image_list.Images.SetKeyName(1, "down")
+        image_list.Images.SetKeyName(2, "month")
+        image_list.Images.SetKeyName(3, "neutral")
+        image_list.Images.SetKeyName(4, "plus")
         '
-        ' pnlPages — GAZDA sub-paginilor (felia 0032), echivalentul lui `viewHost` din MainForm.
-        ' Rămâne GOL în designer: cele patru pagini sunt UserControl-uri separate
-        ' (DdfValoriPage / DdfVizualizarePage / DdfDocumentPage / DdfFisierePage), create LENEȘ
-        ' la prima activare din navSub și adăugate aici de DdfView.ActivatePage.
+        ' pnlPages — GAZDA sub-paginilor, echivalentul lui `pnlPages` din DdfView. Rămâne GOL
+        ' în designer: paginile (OrdVizualizarePage / OrdDocumentPage) sunt UserControl-uri
+        ' separate, create LENEȘ la prima activare din navSub și adăugate aici de
+        ' OrdView.ActivatePage.
         '
         pnlPages.Dock = DockStyle.Fill
         pnlPages.Location = New Point(0, 40)
@@ -122,7 +153,9 @@ Partial Class DdfView
         pnlPages.Size = New Size(849, 488)
         pnlPages.TabIndex = 1
         '
-        ' navSub
+        ' navSub — sub-navigarea orizontală. Cheile sunt LITERALE aici și trebuie să rămână în
+        ' acord cu constantele PAGE_* din OrdView (o desincronizare aruncă zgomotos la
+        ' selecția inițială, nu tăcut).
         '
         navSub.Dock = DockStyle.Top
         navSub.IconSize = 16
@@ -130,18 +163,14 @@ Partial Class DdfView
         navSub.ItemPadding = New Padding(3)
         KBotNavItem1.AutoSize = True
         KBotNavItem1.Image = My.Resources.Resources.vertical
-        KBotNavItem1.Key = "previzualizare"
+        KBotNavItem1.Key = "vizualizare"
         KBotNavItem1.Text = "Vizualizare"
         KBotNavItem2.AutoSize = True
         KBotNavItem2.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Pdf_exports_24
         KBotNavItem2.Key = "document"
-        KBotNavItem2.Text = "Document PDF"
-        KBotNavItem3.Key = "fisiere"
-        KBotNavItem3.Text = "Fișiere"
-        KBotNavItem3.Visible = False
+        KBotNavItem2.Text = "Document"
         navSub.Items.Add(KBotNavItem1)
         navSub.Items.Add(KBotNavItem2)
-        navSub.Items.Add(KBotNavItem3)
         navSub.Location = New Point(0, 0)
         navSub.Name = "navSub"
         navSub.Orientation = KBotNavOrientation.Horizontal
@@ -161,14 +190,14 @@ Partial Class DdfView
         lblEmpty.Text = "Selectați un angajament din arbore."
         lblEmpty.TextAlign = ContentAlignment.MiddleCenter
         '
-        ' DdfView
+        ' OrdView
         '
         AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(split)
         Controls.Add(lblEmpty)
         Margin = New Padding(4, 5, 4, 5)
-        Name = "DdfView"
+        Name = "OrdView"
         Size = New Size(1163, 528)
         split.Panel1.ResumeLayout(False)
         split.Panel2.ResumeLayout(False)
@@ -183,5 +212,5 @@ Partial Class DdfView
     Friend WithEvents navSub As KBot.Controls.KBotNavList
     Friend WithEvents pnlPages As Panel
     Friend WithEvents lblEmpty As Label
-    Friend WithEvents tree_image_list As ImageList
+    Friend WithEvents image_list As ImageList
 End Class

@@ -27,6 +27,13 @@ Public NotInheritable Class KBotPaths
     ''' <summary>Valoarea implicită a rădăcinii PDF-urilor DDF (planul, decizia 13).</summary>
     Public Const DefaultDdfPdfRoot As String = "C:\AVACONT\FOREXE\PDF\DDF\"
 
+    ''' <summary>
+    ''' Valoarea implicită a rădăcinii PDF-urilor ORD (felia 0033). Sora celei de mai sus:
+    ''' <c>mdl_FX_ORD_PDF</c> compune exact <c>&lt;CPJ&gt;\FOREXE\PDF\ORD\</c>, iar căile
+    ''' înregistrate în <c>FX_ORD.CalePDF</c> o confirmă.
+    ''' </summary>
+    Public Const DefaultOrdPdfRoot As String = "C:\AVACONT\FOREXE\PDF\ORD\"
+
     ''' <summary>Valoarea implicită a modului vizualizatorului Adobe.</summary>
     Public Const DefaultAdobeViewerMode As String = "Auto"
 
@@ -47,6 +54,9 @@ Public NotInheritable Class KBotPaths
 
     ''' <summary>Rădăcina în care se caută PDF-urile DDF (recursiv). Nu e niciodată gol.</summary>
     Public Property DdfPdfRoot As String = DefaultDdfPdfRoot
+
+    ''' <summary>Rădăcina în care se caută PDF-urile ORD (felia 0033). Nu e niciodată goală.</summary>
+    Public Property OrdPdfRoot As String = DefaultOrdPdfRoot
 
     ''' <summary>
     ''' Profilul gazdei Adobe: «Auto» (detectează), «Modern» sau «Classic». Se păstrează ca TEXT,
@@ -100,6 +110,7 @@ Public NotInheritable Class KBotPaths
             Dim dto As KBotPathsDto = JsonSerializer.Deserialize(Of KBotPathsDto)(json)
             If dto IsNot Nothing Then
                 If Not String.IsNullOrWhiteSpace(dto.DdfPdfRoot) Then result.DdfPdfRoot = dto.DdfPdfRoot.Trim()
+                If Not String.IsNullOrWhiteSpace(dto.OrdPdfRoot) Then result.OrdPdfRoot = dto.OrdPdfRoot.Trim()
                 If Not String.IsNullOrWhiteSpace(dto.AdobeViewerMode) Then result.AdobeViewerMode = dto.AdobeViewerMode.Trim()
                 If Not String.IsNullOrWhiteSpace(dto.AdobeNewInstance) Then result.AdobeNewInstance = dto.AdobeNewInstance.Trim()
                 If Not String.IsNullOrWhiteSpace(dto.AdobePreviewEngine) Then result.AdobePreviewEngine = dto.AdobePreviewEngine.Trim()
@@ -130,6 +141,7 @@ Public NotInheritable Class KBotPaths
         Try
             Dim dto As New KBotPathsDto With {
                 .DdfPdfRoot = DdfPdfRoot,
+                .OrdPdfRoot = OrdPdfRoot,
                 .AdobeViewerMode = AdobeViewerMode,
                 .AdobeNewInstance = AdobeNewInstance,
                 .AdobePreviewEngine = AdobePreviewEngine}
@@ -160,6 +172,7 @@ End Class
 ''' <summary>DTO de fir pentru JSON. Numele proprietății E cheia JSON. POCO -> fără Try/Catch.</summary>
 Friend NotInheritable Class KBotPathsDto
     Public Property DdfPdfRoot As String
+    Public Property OrdPdfRoot As String
     Public Property AdobeViewerMode As String
     Public Property AdobeNewInstance As String
     Public Property AdobePreviewEngine As String
