@@ -1,9 +1,21 @@
-﻿Imports System.IO
+﻿Imports System.Diagnostics
+Imports System.IO
 
 ''' <summary>
-''' Logger centralizat bazat pe treeId. 
+''' Logger centralizat bazat pe treeId.
 ''' Fișierul se suprascrie la fiecare pornire.
 ''' Thread-safe prin SyncLock.
+'''
+''' <para>Felia 0031: fișierul s-a mutat din directorul executabilului în
+''' <c>&lt;AppDir&gt;\Logs</c>, lângă celelalte jurnale, ca vizualizatorul să aibă un singur
+''' director de citit. Numele (<c>log_{treeId}.txt</c>) și parametrul opțional de cale rămân
+''' neschimbate.</para>
+'''
+''' <para><b>Sink TERMINAL, ca <c>GlobalErrorLog</c> și <c>AdobeHostLog</c>.</b> Scrierile de aici
+''' NU pot rearunca: <c>AdvancedTreeControl</c> le cheamă din căi de desenare și de așezare
+''' (<c>TooltipPopup.OnPaint</c>, <c>DrawContent</c>), iar o excepție ieșită dintr-o scriere de
+''' jurnal în <c>OnPaint</c> omoară procesul. Eșecurile pleacă deci pe <see cref="Trace"/> — ceea
+''' ce e altceva decât înghițirea tăcută dinainte, care nu lăsa NICIO urmă.</para>
 ''' </summary>
 Public Class TreeLogger
     Private Shared _logPath As String = Nothing
@@ -32,10 +44,20 @@ Public Class TreeLogger
             _startTime = DateTime.Now
 
             Dim safeName As String = If(String.IsNullOrEmpty(treeId), "unknown", SanitizeFileName(treeId))
-            Dim folder As String = AppDomain.CurrentDomain.BaseDirectory
-
+            ' Felia 0031: <AppDir>\Logs, nu directorul executabilului. Calea explicită dată de
+            ' apelant are în continuare prioritate.
+            Dim folder As String
             If Not String.IsNullOrEmpty(logPath) Then
                 folder = logPath
+            Else
+                Try
+                    folder = LogPaths.EnsureLogsDirectory()
+                Catch ex As Exception
+                    ' Directorul Logs nu se poate crea: încercăm oricum lângă executabil, iar
+                    ' blocul de mai jos are propria rezervă pe Temp. Motivul NU se pierde.
+                    Trace.WriteLine("TreeLogger.Init: nu am putut crea directorul Logs: " & ex.Message)
+                    folder = AppDomain.CurrentDomain.BaseDirectory
+                End Try
             End If
 
             _logPath = Path.Combine(folder, $"log_{safeName}.txt")
@@ -51,14 +73,17 @@ Public Class TreeLogger
 
                 _initialized = True
             Catch ex As Exception
-                ' Fallback: dacă nu putem scrie în folderul exe, încercăm Temp
+                ' Fallback: dacă nu putem scrie în folderul ales, încercăm Temp.
+                Trace.WriteLine($"TreeLogger.Init: scrierea în {_logPath} a eșuat ({ex.Message}); încerc Temp.")
                 Try
                     folder = Path.GetTempPath()
                     _logPath = Path.Combine(folder, $"log_{safeName}.txt")
                     File.WriteAllText(_logPath, $"[FALLBACK] Log start: {_startTime:yyyy-MM-dd HH:mm:ss.fff}{Environment.NewLine}")
                     _initialized = True
-                Catch
-                    ' Nu putem loga nicăieri - continuăm silențios
+                Catch fallbackEx As Exception
+                    ' SINK TERMINAL: nu mai există unde scrie. NU rearuncăm (vezi nota de clasă),
+                    ' dar nici nu tăcem — fără linia asta, un logger mort arăta exact ca unul viu.
+                    Trace.WriteLine("TreeLogger.Init: nici rezerva pe Temp nu a mers: " & fallbackEx.Message)
                     _initialized = False
                 End Try
             End Try
@@ -116,9 +141,13 @@ Public Class TreeLogger
 
         SyncLock _lock
             Try
+                ' Rotația nu aruncă: dacă eșuează, linia se scrie oricum. Vezi LogRotation.
+                LogRotation.Roll(_logPath)
                 File.AppendAllText(_logPath, line & Environment.NewLine)
-            Catch
-                ' Eșec silențios la scriere - nu vrem să blocăm aplicația
+            Catch ex As Exception
+                ' SINK TERMINAL: apelat din căi de desenare, deci NU poate rearunca (vezi nota de
+                ' clasă). Înainte era înghițire tăcută; acum eșecul lasă o urmă pe Trace.
+                Trace.WriteLine("TreeLogger.Write a eșuat: " & ex.Message)
             End Try
         End SyncLock
     End Sub

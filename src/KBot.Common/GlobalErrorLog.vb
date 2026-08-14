@@ -10,17 +10,23 @@ Imports System.Text
 Public Module GlobalErrorLog
     Private ReadOnly _gate As New Object()
 
+    ''' <summary>Numele fișierului, lângă executabil, sub <c>Logs\</c>.</summary>
+    Public Const FileNameOnly As String = "harness_errors.log"
+
     ''' <summary>Scrie detaliul COMPLET al unei erori în &lt;AppDir&gt;\Logs\harness_errors.log.</summary>
     Public Sub Write(source As String, ex As Exception)
         Try
-            Dim dir As String = Path.Combine(AppContext.BaseDirectory, "Logs")
-            Directory.CreateDirectory(dir)
-            Dim filePath As String = Path.Combine(dir, "harness_errors.log")
+            ' LogPaths: aceeași cale ca înainte (<AppDir>\Logs), calculată acum într-un singur loc.
+            LogPaths.EnsureLogsDirectory()
+            Dim filePath As String = LogPaths.Combine(FileNameOnly)
             Dim sb As New StringBuilder()
             sb.AppendLine("==== " & DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") & "  [" & source & "] ====")
             sb.AppendLine(If(ex IsNot Nothing, ex.ToString(), "<null exception>"))
             sb.AppendLine()
             SyncLock _gate
+                ' Rotația se cheamă ÎNAINTE de adăugare și nu aruncă niciodată: dacă eșuează,
+                ' linia se scrie oricum în fișierul vechi. Vezi LogRotation.
+                LogRotation.Roll(filePath)
                 File.AppendAllText(filePath, sb.ToString(), New UTF8Encoding(True))
             End SyncLock
         Catch terminalEx As Exception

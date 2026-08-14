@@ -25,10 +25,13 @@ Public Module AdobeHostLog
     ''' <summary>Scrie o linie cu marcaj de timp. Nu aruncă niciodată.</summary>
     Public Sub Write(line As String)
         Try
-            Dim dir As String = Path.Combine(AppContext.BaseDirectory, "Logs")
-            Directory.CreateDirectory(dir)
+            ' LogPaths: aceeași cale ca înainte (<AppDir>\Logs), calculată acum într-un singur loc.
+            LogPaths.EnsureLogsDirectory()
+            Dim filePath As String = LogPaths.Combine(FileNameOnly)
             SyncLock _gate
-                File.AppendAllText(Path.Combine(dir, FileNameOnly),
+                ' Rotația nu aruncă: dacă eșuează, linia se scrie oricum. Vezi LogRotation.
+                LogRotation.Roll(filePath)
+                File.AppendAllText(filePath,
                                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") & "  " & line & Environment.NewLine,
                                    New UTF8Encoding(True))
             End SyncLock
