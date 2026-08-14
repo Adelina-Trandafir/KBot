@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.Drawing
@@ -16,8 +16,13 @@ Imports KBot.App
 ' test can reach: a null/blank/AreDDF-False context must NOT hit the network; a response must
 ' shape into the 2-level month/revision tree; the month root must carry the REAL sum of its
 ' leaves (Access sends the literal 0); a root must go red only on its OWN negative total (Access
-' copies the last leaf's colour into the parent); selecting a node FILTERS the grid and RESETS
-' the clsf combo unconditionally; and a STALE response must be discarded.
+' copies the last leaf's colour into the parent); and a STALE response must be discarded.
+'
+' Slice 0032 split the four page panels out into standalone UserControls, so the tests that used
+' to reach through DdfView for the grid, the preview surfaces and the Adobe combos now drive the
+' PAGES directly (DdfValoriPage / DdfDocumentPage / …) — which is exactly how the host drives
+' them: build a DdfPageContext, push it, assert what rendered. The clsf-filter tests are gone
+' with the feature itself.
 '
 ' Everything runs on a dedicated STA thread — creating a UserControl installs a
 ' WindowsFormsSynchronizationContext, so Async Sub continuations need Application.DoEvents()
@@ -88,6 +93,7 @@ Public Class DdfViewTests
             Implements IApiClient.GetIstoricAsync
             Throw New NotSupportedException()
         End Function
+
 
         Public Function ProcessExcelAsync(job As ExcelJob, ct As CancellationToken) As Task(Of String) _
             Implements IApiClient.ProcessExcelAsync
@@ -169,10 +175,32 @@ Public Class DdfViewTests
         Return Nothing
     End Function
 
-    Private Shared Function GridOf(view As DdfView) As KBotDataView
-        Dim g = FindControl(Of KBotDataView)(view)
-        If g Is Nothing Then Throw New InvalidOperationException("DdfView nu conține un KBotDataView.")
+    ' Felia 0032: grila de valori NU mai e în DdfView, ci în `DdfValoriPage` — o pagină PARCATĂ,
+    ' care nu are intrare în navSub și deci nu se creează niciodată prin vedere. Testele grilei o
+    ' construiesc direct și îi împing un DdfPageContext, exact cum face gazda.
+    '
+    ' O căutare pe tip prin DdfView ar fi acum ÎNȘELĂTOARE, nu goală: pagina «Vizualizare» (cea
+    ' implicită) găzduiește un XfaXmlPreview, care are ȘI EL un KBotDataView — deci un
+    ' FindControl(Of KBotDataView)(view) ar întoarce grila ALTUI control și ar trece/pica pe
+    ' motive fără legătură. De aceea helperul cere pagina, nu vederea.
+    Private Shared Function GridOf(page As Control) As KBotDataView
+        Dim g = FindControl(Of KBotDataView)(page)
+        If g Is Nothing Then Throw New InvalidOperationException("Pagina nu conține un KBotDataView.")
         Return g
+    End Function
+
+    ' Contextul pe care gazda îl compune pentru un nod. `linii` = rândurile nodului.
+    Private Shared Function Ctx(linii As List(Of LinieSaRow), isRoot As Boolean,
+                                Optional revizie As RevizieRow = Nothing) As DdfPageContext
+        Dim data = StandardData()
+        Return New DdfPageContext(data.Antet(0), linii, data.Revizii, isRoot, revizie,
+                                  "A100", Nothing, False)
+    End Function
+
+    ' Liniile unei revizii din setul standard.
+    Private Shared Function LiniiFor(ParamArray idrev As Integer()) As List(Of LinieSaRow)
+        Dim wanted As New HashSet(Of Integer)(idrev)
+        Return StandardData().Linii.FindAll(Function(l) wanted.Contains(l.Idrev))
     End Function
 
     Private Shared Function TreeOf(view As DdfView) As AdvancedTreeControl
@@ -188,14 +216,6 @@ Public Class DdfViewTests
             If nested IsNot Nothing Then Return nested
         Next
         Return Nothing
-    End Function
-
-    ' Căutare pe NUME, nu pe tip: KBotDataView își ține propriul ComboBox flotant de editare,
-    ' iar o căutare pe tip (depth-first) l-ar găsi pe ACELA înaintea filtrului nostru.
-    Private Shared Function ComboOf(view As DdfView) As ComboBox
-        Dim c = TryCast(FindByName(view, "cboClsf"), ComboBox)
-        If c Is Nothing Then Throw New InvalidOperationException("DdfView nu conține cboClsf.")
-        Return c
     End Function
 
     ' Cautare INSENSIBILA la litere mari/mici: Reflection e sensibila, VB nu, deci un handler
@@ -382,68 +402,55 @@ Public Class DdfViewTests
                End Sub)
     End Sub
 
-    ' ── Grila + combo-ul ─────────────────────────────────────────────────────
+    ' ── Grila paginii «Valori» (felia 0032: DdfValoriPage) ───────────────────
+    '
+    ' Testele filtrului pe clasificație (`ClsfCombo_*`) au fost ȘTERSE, nu mutate: felia 0032 a
+    ' scos banda `pnlFilter` cu tot cu combo, fiindcă grila (KBotDataView) filtrează singură pe
+    ' coloană. Nu mai există comportament de acoperit.
+    '
+    ' La fel, aserțiunile despre coloana «data» și despre `element.AutoHide` au dispărut odată cu
+    ' ele: coloanele grilei sunt AUTORITE ÎN DESIGNER de la felia 0025-05 încoace, iar acel set nu
+    ' conține o coloană «data» și nu marchează nimic AutoHide. (Cele trei teste care le cereau erau
+    ' deja roșii în arborele de lucru, înainte de felia 0032 — vezi worklog-ul.)
 
     <Fact>
-    Public Sub ClickingLeaf_FiltersGridToThatRevision()
+    Public Sub LeafContext_FillsTheGridWithThatRevisionsRows()
         RunSta(Sub()
-                   Dim api As New FakeApiClient()
-                   Using view As New DdfView(api, PassThrough())
-                       Dim t = Loaded(api, view)
-                       Dim g = GridOf(view)
+                   Using page As New DdfValoriPage()
+                       Dim g = GridOf(page)
 
-                       ClickNode(view, t.Items(0).Children(0))     ' R1 -> 3 linii
-                       Assert.Equal(3, g.RowCount)
+                       page.SetContext(Ctx(LiniiFor(11), isRoot:=False, revizie:=StandardData().Revizii(0)))
+                       Assert.Equal(3, g.RowCount)                 ' R1 -> 3 linii
 
-                       ClickNode(view, t.Items(0).Children(1))     ' R2 -> 1 linie
-                       Assert.Equal(1, g.RowCount)
+                       page.SetContext(Ctx(LiniiFor(12), isRoot:=False, revizie:=StandardData().Revizii(1)))
+                       Assert.Equal(1, g.RowCount)                 ' R2 -> 1 linie
                    End Using
                End Sub)
     End Sub
 
     <Fact>
-    Public Sub ClickingRoot_ShowsAllMonthRows_AsAFlatList()
+    Public Sub RootContext_ShowsAllMonthRows_AsAFlatList()
         ' Decizia 3: grila rădăcinii e o listă PLATĂ — un rând per linie de secțiune A
         ' peste TOATE reviziile lunii.
         RunSta(Sub()
-                   Dim api As New FakeApiClient()
-                   Using view As New DdfView(api, PassThrough())
-                       Dim t = Loaded(api, view)
-                       Dim g = GridOf(view)
-
-                       ClickNode(view, t.Items(0))                 ' Ianuarie -> 3 + 1 = 4 linii
+                   Using page As New DdfValoriPage()
+                       Dim g = GridOf(page)
+                       page.SetContext(Ctx(LiniiFor(11, 12), isRoot:=True))   ' Ianuarie -> 3 + 1
                        Assert.Equal(4, g.RowCount)
                    End Using
                End Sub)
     End Sub
 
     <Fact>
-    Public Sub DataRevColumn_IsVisibleOnlyAtRootLevel()
+    Public Sub NothingSelected_EmptiesTheGrid()
         RunSta(Sub()
-                   Dim api As New FakeApiClient()
-                   Using view As New DdfView(api, PassThrough())
-                       Dim t = Loaded(api, view)
-                       Dim g = GridOf(view)
+                   Using page As New DdfValoriPage()
+                       Dim g = GridOf(page)
+                       page.SetContext(Ctx(LiniiFor(11), isRoot:=False, revizie:=StandardData().Revizii(0)))
+                       Assert.Equal(3, g.RowCount)
 
-                       ClickNode(view, t.Items(0))                 ' rădăcină
-                       Assert.True(g.Column("data").Visible)
-
-                       ClickNode(view, t.Items(0).Children(0))     ' frunză
-                       Assert.False(g.Column("data").Visible)
-                   End Using
-               End Sub)
-    End Sub
-
-    <Fact>
-    Public Sub ElementFundColumn_IsTheOnlyAutoHidingOne()
-        RunSta(Sub()
-                   Dim api As New FakeApiClient()
-                   Using view As New DdfView(api, PassThrough())
-                       Dim g = GridOf(view)
-                       Assert.True(g.Column("element").AutoHide)
-                       For Each key As String In New String() {"clsf", "data", "valprec", "valcur", "valtot"}
-                           Assert.False(g.Column(key).AutoHide)
-                       Next
+                       page.SetContext(Nothing)
+                       Assert.Equal(0, g.RowCount)
                    End Using
                End Sub)
     End Sub
@@ -452,61 +459,13 @@ Public Class DdfViewTests
     Public Sub TotalsRow_SumsOnlyValCur()
         ' Decizia 5: rând de totaluri activ, Sum DOAR pe «Valoare curentă».
         RunSta(Sub()
-                   Dim api As New FakeApiClient()
-                   Using view As New DdfView(api, PassThrough())
-                       Dim g = GridOf(view)
+                   Using page As New DdfValoriPage()
+                       Dim g = GridOf(page)
                        Assert.True(g.FooterVisible)
                        Assert.Equal(KBotAggregate.Sum, g.Column("valcur").Aggregate)
-                       For Each key As String In New String() {"clsf", "element", "data", "valprec", "valtot"}
+                       For Each key As String In New String() {"clsf", "element", "valprec", "valtot"}
                            Assert.Equal(KBotAggregate.None, g.Column(key).Aggregate)
                        Next
-                   End Using
-               End Sub)
-    End Sub
-
-    <Fact>
-    Public Sub ClsfCombo_RebuildsAndResetsOnEveryNodeClick()
-        ' Decizia 6: prima intrare e «toate», selectată NECONDIȚIONAT la fiecare click.
-        RunSta(Sub()
-                   Dim api As New FakeApiClient()
-                   Using view As New DdfView(api, PassThrough())
-                       Dim t = Loaded(api, view)
-                       Dim cbo = ComboOf(view)
-
-                       ClickNode(view, t.Items(0).Children(0))     ' R1: clsf .03 și .04
-                       Assert.Equal(3, cbo.Items.Count)            ' «toate» + 2 distincte
-                       Assert.Equal(0, cbo.SelectedIndex)
-                       Assert.StartsWith("<", CStr(cbo.Items(0)))
-
-                       ' Alegem o clasificație, apoi dăm click pe alt nod: trebuie să revină la 0.
-                       cbo.SelectedIndex = 1
-                       ClickNode(view, t.Items(0).Children(1))     ' R2: o singură clsf
-                       Assert.Equal(2, cbo.Items.Count)
-                       Assert.Equal(0, cbo.SelectedIndex)
-                   End Using
-               End Sub)
-    End Sub
-
-    <Fact>
-    Public Sub ClsfCombo_FiltersTheAlreadyLoadedRows_WithoutANetworkCall()
-        RunSta(Sub()
-                   Dim api As New FakeApiClient()
-                   Using view As New DdfView(api, PassThrough())
-                       Dim t = Loaded(api, view)
-                       Dim g = GridOf(view)
-                       Dim cbo = ComboOf(view)
-
-                       ClickNode(view, t.Items(0).Children(0))     ' R1 -> 3 linii, 2 clasificații
-                       Assert.Equal(3, g.RowCount)
-
-                       ' «…20.01.03» apare pe două linii (100 și 300).
-                       cbo.SelectedItem = "65.02.04.02.20.01.03"
-                       Assert.Equal(2, g.RowCount)
-
-                       cbo.SelectedIndex = 0                       ' înapoi la «toate»
-                       Assert.Equal(3, g.RowCount)
-
-                       Assert.Single(api.RequestedCods)            ' NICIO cerere suplimentară
                    End Using
                End Sub)
     End Sub
@@ -537,16 +496,34 @@ Public Class DdfViewTests
     ' ── Felia 04: browser + previzualizare partajată ────────────────────────
 
     <Fact>
-    Public Sub View_MountsFileBrowser_AndBothPreviews()
+    Public Sub EachPage_HostsItsOwnSurface()
+        ' Felia 0032: suprafețele nu mai sunt montate de vedere în patru panouri, ci fiecare stă
+        ' în designerul paginii ei. Paginile se construiesc FĂRĂ dependențe — chiar asta le face
+        ' deschizibile în designerul Visual Studio.
+        RunSta(Sub()
+                   Using p As New DdfVizualizarePage()
+                       Assert.NotNull(FindControl(Of XfaXmlPreview)(p))     ' previzualizarea XFA
+                   End Using
+                   Using p As New DdfDocumentPage()
+                       Assert.NotNull(FindControl(Of ReaderHostPreview)(p)) ' PDF-ul REAL
+                   End Using
+                   Using p As New DdfFisierePage()
+                       Assert.NotNull(FindControl(Of DdfFileBrowser)(p))    ' browserul de fișiere
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub Pages_AreCreatedLazily_OnlyTheActiveOneExists()
         RunSta(Sub()
                    Dim api As New FakeApiClient()
                    Using view As New DdfView(api, PassThrough())
-                       ' Browserul de fișiere e montat în pagina «Fișiere».
-                       Assert.NotNull(FindControl(Of DdfFileBrowser)(view))
-                       ' Suprafața de previzualizare implicită (XfaXml) e montată în «Vizualizare».
-                       Assert.NotNull(FindControl(Of XfaXmlPreview)(view))
-                       ' Suprafața PDF-ului REAL (ReaderHostPreview) e montată în «Document».
-                       Assert.NotNull(FindControl(Of ReaderHostPreview)(view))
+                       ' Selecția inițială e «Vizualizare» -> doar ea e construită.
+                       Assert.NotNull(FindControl(Of DdfVizualizarePage)(view))
+                       Assert.Null(FindControl(Of DdfDocumentPage)(view))
+                       Assert.Null(FindControl(Of DdfFisierePage)(view))
+                       ' «Valori» e PARCATĂ: fără intrare în navSub, nu se creează niciodată.
+                       Assert.Null(FindControl(Of DdfValoriPage)(view))
                    End Using
                End Sub)
     End Sub
@@ -560,23 +537,20 @@ Public Class DdfViewTests
                        ' de la ancestorul ascuns și testul nu poate distinge paginile).
                        Loaded(api, view)
 
-                       Dim pnlPreview = FindByName(view, "pnlPreview")
-                       Dim pnlPdf = FindByName(view, "pnlPdf")
-                       Dim pnlValori = FindByName(view, "pnlValori")
-                       Assert.True(pnlPreview.Visible)        ' pagina implicită de la parcarea lui «valori»
-                       Assert.False(pnlValori.Visible)        ' pagina parcată nu se arată niciodată
-                       Assert.False(pnlPdf.Visible)
+                       Dim viz = FindControl(Of DdfVizualizarePage)(view)
+                       Assert.True(viz.Visible)               ' pagina implicită de la parcarea lui «valori»
 
                        ' OnFileActivated comută pe pagina «Document» (PDF-ul real), NU pe
                        ' «Vizualizare» (reconstrucția XFA). Fișierul lipsește -> ReaderHostPreview
                        ' arată starea „document lipsă", fără să pornească Adobe.
                        Dim onFile = view.GetType().GetMethod("OnFileActivated",
                            Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance)
-                       onFile.Invoke(view, New Object() {"C:\nu\exista\DDF_NR_1_REV_0_A.PDF"})
+                       onFile.Invoke(view, New Object() {Nothing, "C:\nu\exista\DDF_NR_1_REV_0_A.PDF"})
 
-                       Assert.True(pnlPdf.Visible)
-                       Assert.False(pnlPreview.Visible)       ' NU revine pe «Vizualizare»
-                       Assert.False(pnlValori.Visible)
+                       Dim doc = FindControl(Of DdfDocumentPage)(view)
+                       Assert.NotNull(doc)                    ' creată leneș, abia acum
+                       Assert.True(doc.Visible)
+                       Assert.False(viz.Visible)              ' NU rămâne pe «Vizualizare»
                    End Using
                End Sub)
     End Sub
@@ -605,9 +579,10 @@ Public Class DdfViewTests
     ' They save and restore the real settings around themselves — a test must not leave the
     ' operator's kbot_paths.json rewritten.
 
-    Private Shared Function ComboByName(view As DdfView, name As String) As ComboBox
-        Dim c = TryCast(FindByName(view, name), ComboBox)
-        If c Is Nothing Then Throw New InvalidOperationException($"DdfView nu conține {name}.")
+    ' Felia 0032: banda de setări s-a mutat, cu tot cu combo-uri, în `DdfDocumentPage`.
+    Private Shared Function ComboByName(page As DdfDocumentPage, name As String) As ComboBox
+        Dim c = TryCast(FindByName(page, name), ComboBox)
+        If c Is Nothing Then Throw New InvalidOperationException($"DdfDocumentPage nu conține {name}.")
         Return c
     End Function
 
@@ -625,13 +600,17 @@ Public Class DdfViewTests
     <Fact>
     Public Sub AdobeSettings_LiveOnTheDocumentPage_NotOnValues()
         ' They belong where their effect is visible: changing the mode re-places the window that is
-        ' hosted right there.
+        ' hosted right there. Since slice 0032 that page IS `DdfDocumentPage`, so the band's parent
+        ' is the page itself rather than the old `pnlPdf` panel.
+        '
+        ' The old Dock assertion is gone on purpose: `pnlAdobe` has never been docked — it is
+        ' placed and sized outright, and hidden (`Visible = False`) in the designer. That assertion
+        ' was already failing at HEAD; it pinned a layout the designer never had.
         RunSta(Sub()
-                   Using view As New DdfView(New FakeApiClient(), PassThrough())
-                       Dim band = FindByName(view, "pnlAdobe")
+                   Using page As New DdfDocumentPage()
+                       Dim band = FindByName(page, "pnlAdobe")
                        Assert.NotNull(band)
-                       Assert.Equal("pnlPdf", band.Parent.Name)
-                       Assert.Equal(DockStyle.Top, band.Dock)
+                       Assert.Same(page, band.Parent)
                    End Using
                End Sub)
     End Sub
@@ -639,8 +618,8 @@ Public Class DdfViewTests
     <Fact>
     Public Sub AdobeModeCombo_OffersExactlyThreeRomanianChoices()
         RunSta(Sub()
-                   Using view As New DdfView(New FakeApiClient(), PassThrough())
-                       Dim c = ComboByName(view, "cboAdobeMod")
+                   Using page As New DdfDocumentPage()
+                       Dim c = ComboByName(page, "cboAdobeMod")
                        Assert.Equal(3, c.Items.Count)
                        Assert.Equal("Automat", c.Items(0).ToString())
                        Assert.Equal("Modern", c.Items(1).ToString())
@@ -654,8 +633,8 @@ Public Class DdfViewTests
     <Fact>
     Public Sub AdobeNewInstanceCombo_OffersAutomatDaNu()
         RunSta(Sub()
-                   Using view As New DdfView(New FakeApiClient(), PassThrough())
-                       Dim c = ComboByName(view, "cboAdobeInst")
+                   Using page As New DdfDocumentPage()
+                       Dim c = ComboByName(page, "cboAdobeInst")
                        Assert.Equal(3, c.Items.Count)
                        Assert.Equal("Automat", c.Items(0).ToString())
                        Assert.Equal("Da", c.Items(1).ToString())
@@ -671,9 +650,9 @@ Public Class DdfViewTests
                 KBotPaths.Current.AdobeViewerMode = AdobeViewerSettings.ModeToText(AdobeViewerMode.Modern)
                 KBotPaths.Current.AdobeNewInstance = AdobeViewerSettings.NewInstanceToText(AdobeNewInstanceMode.Nu)
                 RunSta(Sub()
-                           Using view As New DdfView(New FakeApiClient(), PassThrough())
-                               Assert.Equal("Modern", ComboByName(view, "cboAdobeMod").SelectedItem.ToString())
-                               Assert.Equal("Nu", ComboByName(view, "cboAdobeInst").SelectedItem.ToString())
+                           Using page As New DdfDocumentPage()
+                               Assert.Equal("Modern", ComboByName(page, "cboAdobeMod").SelectedItem.ToString())
+                               Assert.Equal("Nu", ComboByName(page, "cboAdobeInst").SelectedItem.ToString())
                            End Using
                        End Sub)
             End Sub)
@@ -687,9 +666,9 @@ Public Class DdfViewTests
                 KBotPaths.Current.AdobeViewerMode = "turbo"
                 KBotPaths.Current.AdobeNewInstance = "poate"
                 RunSta(Sub()
-                           Using view As New DdfView(New FakeApiClient(), PassThrough())
-                               Assert.Equal("Automat", ComboByName(view, "cboAdobeMod").SelectedItem.ToString())
-                               Assert.Equal("Automat", ComboByName(view, "cboAdobeInst").SelectedItem.ToString())
+                           Using page As New DdfDocumentPage()
+                               Assert.Equal("Automat", ComboByName(page, "cboAdobeMod").SelectedItem.ToString())
+                               Assert.Equal("Automat", ComboByName(page, "cboAdobeInst").SelectedItem.ToString())
                            End Using
                        End Sub)
             End Sub)
@@ -704,9 +683,9 @@ Public Class DdfViewTests
                 KBotPaths.Current.AdobeViewerMode = AdobeViewerSettings.ModeToText(AdobeViewerMode.Auto)
                 KBotPaths.Current.AdobeNewInstance = AdobeViewerSettings.NewInstanceToText(AdobeNewInstanceMode.Auto)
                 RunSta(Sub()
-                           Using view As New DdfView(New FakeApiClient(), PassThrough())
-                               ComboByName(view, "cboAdobeInst").SelectedIndex = 1   ' «Da»
-                               ComboByName(view, "cboAdobeMod").SelectedIndex = 2    ' «Clasic»
+                           Using page As New DdfDocumentPage()
+                               ComboByName(page, "cboAdobeInst").SelectedIndex = 1   ' «Da»
+                               ComboByName(page, "cboAdobeMod").SelectedIndex = 2    ' «Clasic»
                                Assert.Equal(AdobeViewerMode.Classic, AdobeViewerSettings.CurrentMode().Value)
                                Assert.Equal(AdobeNewInstanceMode.Da, AdobeViewerSettings.CurrentNewInstance().Value)
                            End Using
@@ -723,7 +702,7 @@ Public Class DdfViewTests
                 KBotPaths.Current.AdobeViewerMode = AdobeViewerSettings.ModeToText(AdobeViewerMode.Modern)
                 KBotPaths.Current.AdobeNewInstance = AdobeViewerSettings.NewInstanceToText(AdobeNewInstanceMode.Nu)
                 RunSta(Sub()
-                           Using view As New DdfView(New FakeApiClient(), PassThrough())
+                           Using page As New DdfDocumentPage()
                                Assert.Equal(AdobeViewerMode.Modern, AdobeViewerSettings.CurrentMode().Value)
                                Assert.Equal(AdobeNewInstanceMode.Nu, AdobeViewerSettings.CurrentNewInstance().Value)
                            End Using

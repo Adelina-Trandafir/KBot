@@ -11,13 +11,23 @@ Imports KBot.Theming
 ''' <summary>
 ''' Vederea DDF (felia 0020) — echivalentul Access frmFX_MAIN_DDF: un arbore de revizii pe
 ''' DOUĂ niveluri la stânga (lună/an -> revizie) și, la dreapta, o sub-navigare ORIZONTALĂ
-''' (decizia 8) cu trei pagini: «Valori» (grila liniilor de secțiune A + filtru de
-''' clasificație), «Vizualizare» (felia 03) și «Fișiere» (felia 04). Read-only.
+''' (decizia 8) cu paginile «Vizualizare» (felia 03), «Document» (PDF-ul real) și «Fișiere»
+''' (felia 04). Read-only.
 '''
 ''' Datele vin dintr-un SINGUR apel GET /api/forexe/ddf pentru tot CodAngajament-ul, prin
 ''' plasa de re-autentificare a shell-ului (401 -> re-login -> reia o dată). Un click în
 ''' arbore FILTREAZĂ datele deja încărcate — nu declanșează nicio cerere de rețea
 ''' (decizia 7).
+'''
+''' FELIA 0032 — SUB-PAGINI: cele patru pagini nu mai sunt panouri în acest designer, ci
+''' UserControl-uri separate în <c>Views\Ddf\</c>, fiecare cu designerul lui. Găzduirea copiază
+''' tiparul leneș din <c>MainForm.ActivateView</c>: pagina se creează la prima selecție din
+''' <c>navSub</c>, se andochează în <c>pnlPages</c> și doar cea activă e vizibilă.
+'''
+''' Diferența față de MainForm: vederile shell-ului își aduc SINGURE datele, sub-paginile de aici
+''' NU. Ele n-au nici client API, nici sesiune — primesc un <see cref="DdfPageContext"/> de la
+''' această vedere. Altfel decizia 7 (o singură cerere pe CodAngajament) s-ar rupe: patru pagini
+''' cu DI proprie ar însemna patru încărcări.
 '''
 ''' ABATERI DELIBERATE de la Access (motivate în worklog-ul feliei):
 '''   * valoarea unei frunze este SUM(ValCur) peste revizie, calculat pe server —
@@ -33,36 +43,18 @@ Public Class DdfView
 
     ' Cheile paginilor sub-navigării — o singură definiție, folosită la creare și la comutare.
     '
-    ' «valori» e PARCATĂ (decizie de operator, felia 0025): nu mai are intrare în navigație și nu
-    ' mai e comutată de ShowPage. Panoul, grila, filtrul pe clasificație și TOATĂ logica lor rămân
-    ' însă vii — se construiesc, se umplu la fiecare selecție din arbore și se tematizează exact ca
-    ' înainte; doar că `pnlValori` stă ascuns (`Visible = False` în designer). Costul e o grilă
-    ' umplută degeaba; câștigul e că pagina se întoarce cu trei modificări, nu cu o rescriere, și
-    ' că testele care acoperă filtrul rămân valabile între timp.
+    ' «valori» e PARCATĂ (decizie de operator, felia 0025, dusă mai departe în 0032): nu are
+    ' intrare în navigație, deci pagina nu se activează și nici măcar nu se construiește. Codul ei
+    ' rămâne viu în <c>DdfValoriPage</c> și are deja un caz în <c>CreatePage</c>.
     '
-    ' CA SĂ O ADUCI ÎNAPOI:
-    '   1. designer: adaugă în `navSub.Items` un element cu Key = "valori", Text = "Valori", pe
-    '      prima poziție, și scoate `pnlValori.Visible = False`;
-    '   2. `ShowPage`: repune linia `pnlValori.Visible = String.Equals(key, PAGE_VALORI, …)`;
-    '   3. `BuildNav`: schimbă selecția inițială înapoi pe PAGE_VALORI.
-    ' Vezi și nota din ShowPage despre ordinea Z — `pnlValori` e primul adăugat în `pnlPages`, deci
-    ' stă ÎN FAȚA celorlalte trei pagini și le-ar acoperi dacă ar rămâne vizibil.
+    ' CA SĂ O ADUCI ÎNAPOI: în designerul acestei vederi, adaugă în `navSub.Items` un element cu
+    ' Key = "valori", Text = "Valori", pe prima poziție. Atât — restul e deja pe loc. (Opțional:
+    ' schimbă selecția inițială din `BuildNav` înapoi pe PAGE_VALORI.)
     Private Const PAGE_VALORI As String = "valori"
     Private Const PAGE_PREVIEW As String = "previzualizare"
     ' «Document» = PDF-ul REAL (ReaderHostPreview), distinct de «Vizualizare» (reconstrucția XFA).
     Private Const PAGE_PDF As String = "document"
     Private Const PAGE_FISIERE As String = "fisiere"
-
-    ' Cheile coloanelor grilei — o singură definiție, folosită la creare și la umplere.
-    Private Const COL_CLSF As String = "clsf"
-    Private Const COL_ELEMENT As String = "element"
-    Private Const COL_DATA As String = "data"
-    Private Const COL_VALPREC As String = "valprec"
-    Private Const COL_VALCUR As String = "valcur"
-    Private Const COL_VALTOT As String = "valtot"
-
-    ''' <summary>Prima intrare a combo-ului de clasificații — „fără filtru".</summary>
-    Private Const CLSF_TOATE As String = "< Arată toate clasificațiile >"
 
     ' Format românesc: separator de mii «.» și zecimală «,» (1.091.940,00).
     Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
@@ -73,6 +65,12 @@ Public Class DdfView
     ' Sesiunea (globalii unității pentru constructorul de XML, felia 05). Poate fi Nothing în
     ' teste — atunci contextul de generare e gol.
     Private ReadOnly _session As SessionContext
+
+    ' Sub-paginile create până acum (leneș, la prima activare) și cea vizibilă acum.
+    Private ReadOnly _pages As New Dictionary(Of String, IDdfPage)(StringComparer.Ordinal)
+    Private _activePage As IDdfPage
+    ' Contextul împins paginilor: reconstruit la fiecare schimbare de nod și după o generare.
+    Private _currentCtx As DdfPageContext
 
     ' Codul angajamentului CERUT ultima dată — stale-guard (identic cu Plăți/Recepții/Rezervări).
     Private _requestedCod As String
@@ -86,40 +84,23 @@ Public Class DdfView
     ' Antetul de lucru — poartă CUAL / PartAng / NumePartener pentru calea PDF (feliile 03-04).
     Private _antet As DdfAntet
 
-    ' Rândurile nodului selectat acum — sursa grilei ȘI a combo-ului de clasificații.
+    ' Rândurile nodului selectat acum — sursa grilei paginii «Valori».
     Private _nodeRows As List(Of LinieSaRow)
-    ' Nodul selectat e o rădăcină de lună? Doar atunci coloana «Data reviziei» are sens.
+    ' Nodul selectat e o rădăcină de lună? O lună NU are un singur document, deci nu are cale PDF.
     Private _nodeIsRoot As Boolean
-    ' Revizia frunzei previzualizate acum — ținta generării (felia 05).
+    ' Revizia frunzei selectate acum — ținta generării (felia 05) și sursa căii PDF.
     Private _selectedRevizie As RevizieRow
+    ' Fișierul ales din lista paginii «Fișiere», care ÎNLOCUIEȘTE calea calculată din revizie
+    ' până la următorul click în arbore. Fără el, alegerea unui fișier n-ar avea cum să ajungă la
+    ' pagina «Document»: contextul se compune din revizia selectată, nu din listă.
+    Private _pdfPathOverride As String
     ' O generare e în curs? Blochează re-invocarea butonului.
     Private _generating As Boolean
-    ' Se reconstruiește combo-ul chiar acum? Blochează re-filtrarea din SelectedIndexChanged.
-    Private _suppressComboEvent As Boolean
-    ' Idem pentru combo-urile de setări Adobe (felia 0024): cât timp le populăm din setări, o
-    ' selecție programatică nu are voie să declanșeze o salvare.
-    Private _suppressAdobeComboEvent As Boolean
 
-    ' Suprafața de previzualizare (felia 03), aleasă la compilare de DdfPreviewFactory. O
-    ' singură instanță, montată în pnlPreview («Vizualizare» — reconstrucția din XML XFA).
-    Private ReadOnly _preview As IDdfPreview
-    ' Suprafața «Document»: PDF-ul REAL (ReaderHostPreview, întotdeauna, indiferent de factory),
-    ' montată în pnlPdf. Încărcată LENEȘ — abia când pagina «Document» devine vizibilă — ca să
-    ' NU pornească Adobe la fiecare click în arbore.
-    Private ReadOnly _pdfPreview As IDdfPreview
-    ' Ținta PDF curentă (calea + existența pe disc) și ce e efectiv montat acum în _pdfPreview,
-    ' ca să nu re-încorporăm același document la fiecare comutare de pagină.
-    Private _pdfPath As String
-    Private _pdfExists As Boolean
-    Private _pdfShownPath As String
     ' Starea splitter-ului dinainte de strângerea arborelui, ca desfacerea să-l pună înapoi
-    ' exact unde era (vezi tree_CollapsedChanged). 0 = arborele n-a fost încă strâns.
+    ' exact unde era (vezi Tree_CollapsedChanged). 0 = arborele n-a fost încă strâns.
     Private _splitterDistanceDesfasurat As Integer
     Private _panel1MinSizeDesfasurat As Integer
-    ' Browserul de fișiere PDF (felia 04) e `browser`, DECLARAT ÎN DESIGNER (0025-05) și așezat
-    ' acolo în pnlFisiere. Nu mai există un câmp `_browser` care să-l dubleze: un `WithEvents
-    ' browser` generează chiar el un `_browser`, deci cele două se ciocneau — iar aliasul nu aducea
-    ' nimic.
 
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of DdfInfo)), Task(Of DdfInfo)),
@@ -131,227 +112,7 @@ Public Class DdfView
         _withReauth = withReauth
         _session = session
         BuildNav()
-        BuildColumns()
-        ' Cele trei suprafețe sunt DECLARATE ÎN DESIGNER (0025-05) — `previewXfa`, `previewPdf` și
-        ' `browser` — ca paginile să se vadă pe suprafața de design, nu ca trei panouri goale.
-        ' Aici doar le legăm de câmpurile de lucru și le abonăm la evenimente.
-        _preview = DdfPreviewFactory.Create(previewXfa)
-        MountPreview()
-        _pdfPreview = previewPdf
-        MountPdfPreview()
-        BuildAdobeCombos()
-        MountBrowser()
-        ResetClsfCombo(Nothing)
         ShowEmpty("Selectați un angajament din arbore.")
-    End Sub
-
-    ' Montează suprafața de previzualizare aleasă la compilare în pagina «Vizualizare» și se
-    ' abonează la butonul «Generează documentul» (felia 05 tratează generarea).
-    Private Sub MountPreview()
-        Try
-            Dim surface As Control = _preview.Surface
-            ' Calea implicită: suprafața E `previewXfa`, deja creată și așezată de designer — nu
-            ' mai e nimic de montat. Calea de rezervă (constanta de compilare pe AdobeReader) aduce
-            ' o instanță nouă, neparentată: o montăm acum și ascundem suprafața din designer, ca să
-            ' nu rămână două una peste alta.
-            If surface.Parent Is Nothing Then
-                surface.Dock = DockStyle.Fill
-                ' Suprafața acoperă panoul; eticheta goală rămâne dedesubt ca fallback.
-                pnlPreview.Controls.Add(surface)
-                surface.BringToFront()
-                previewXfa.Visible = False
-            End If
-            AddHandler _preview.GenerateRequested, AddressOf OnGenerateRequested
-        Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.MountPreview", ex)
-            Throw
-        End Try
-    End Sub
-
-    ' Montează suprafața PDF-ului real în pagina «Document» și se abonează la butonul de
-    ' generare (aceeași țintă ca previzualizarea XFA).
-    Private Sub MountPdfPreview()
-        Try
-            ' `previewPdf` e declarată în designer, deci e deja în `pnlPdf`, sub banda `pnlAdobe`.
-            ' Rămâne doar abonarea la butonul de generare.
-            AddHandler _pdfPreview.GenerateRequested, AddressOf OnGenerateRequested
-        Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.MountPdfPreview", ex)
-            Throw
-        End Try
-    End Sub
-
-    ' ── Setările gazdei Adobe (felia 0024) ───────────────────────────────────
-    ' Cele două combo-uri de pe banda paginii «Document». Se umplu din setările salvate; o
-    ' schimbare se PERSISTĂ imediat și se aplică documentului afișat acum, ca operatorul să vadă
-    ' efectul fără să repornească aplicația.
-    Private Sub BuildAdobeCombos()
-        Try
-            _suppressAdobeComboEvent = True
-            Try
-                For Each m As AdobeViewerMode In New AdobeViewerMode() {
-                    AdobeViewerMode.Auto, AdobeViewerMode.Modern, AdobeViewerMode.Classic}
-                    cboAdobeMod.Items.Add(New AdobeModeItem(m))
-                Next
-                For Each n As AdobeNewInstanceMode In New AdobeNewInstanceMode() {
-                    AdobeNewInstanceMode.Auto, AdobeNewInstanceMode.Da, AdobeNewInstanceMode.Nu}
-                    cboAdobeInst.Items.Add(New AdobeNewInstanceItem(n))
-                Next
-                For Each g As AdobePreviewEngine In New AdobePreviewEngine() {
-                    AdobePreviewEngine.WindowHost, AdobePreviewEngine.ActiveX}
-                    cboAdobeMotor.Items.Add(New AdobeEngineItem(g))
-                Next
-                SelectAdobeMode(AdobeViewerSettings.CurrentMode().Value)
-                SelectAdobeNewInstance(AdobeViewerSettings.CurrentNewInstance().Value)
-                SelectAdobeEngine(AdobeViewerSettings.CurrentEngine().Value)
-            Finally
-                _suppressAdobeComboEvent = False
-            End Try
-        Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.BuildAdobeCombos", ex)
-            Throw
-        End Try
-    End Sub
-
-    Private Sub SelectAdobeMode(mode As AdobeViewerMode)
-        For i As Integer = 0 To cboAdobeMod.Items.Count - 1
-            Dim item As AdobeModeItem = TryCast(cboAdobeMod.Items(i), AdobeModeItem)
-            If item IsNot Nothing AndAlso item.Mode = mode Then
-                cboAdobeMod.SelectedIndex = i
-                Return
-            End If
-        Next
-    End Sub
-
-    Private Sub SelectAdobeNewInstance(mode As AdobeNewInstanceMode)
-        For i As Integer = 0 To cboAdobeInst.Items.Count - 1
-            Dim item As AdobeNewInstanceItem = TryCast(cboAdobeInst.Items(i), AdobeNewInstanceItem)
-            If item IsNot Nothing AndAlso item.Mode = mode Then
-                cboAdobeInst.SelectedIndex = i
-                Return
-            End If
-        Next
-    End Sub
-
-    Private Sub SelectAdobeEngine(engine As AdobePreviewEngine)
-        For i As Integer = 0 To cboAdobeMotor.Items.Count - 1
-            Dim item As AdobeEngineItem = TryCast(cboAdobeMotor.Items(i), AdobeEngineItem)
-            If item IsNot Nothing AndAlso item.Engine = engine Then
-                cboAdobeMotor.SelectedIndex = i
-                Return
-            End If
-        Next
-    End Sub
-
-    ' Graniță UI: loghează și înghite. Toate trei combo-urile intră aici — setările se salvează
-    ' împreună, fiindcă toate descriu aceeași suprafață de previzualizare.
-    Private Sub AdobeSetting_Changed(sender As Object, e As EventArgs) _
-        Handles cboAdobeMod.SelectedIndexChanged, cboAdobeInst.SelectedIndexChanged,
-                cboAdobeMotor.SelectedIndexChanged
-        Try
-            If _suppressAdobeComboEvent Then Return
-            Dim mode As AdobeModeItem = TryCast(cboAdobeMod.SelectedItem, AdobeModeItem)
-            Dim inst As AdobeNewInstanceItem = TryCast(cboAdobeInst.SelectedItem, AdobeNewInstanceItem)
-            Dim motor As AdobeEngineItem = TryCast(cboAdobeMotor.SelectedItem, AdobeEngineItem)
-            If mode Is Nothing OrElse inst Is Nothing OrElse motor Is Nothing Then Return
-
-            ' «Mod» și «instanță nouă» descriu FEREASTRA găzduită; pe motorul ActiveX nu au efect,
-            ' iar combo-urile o spun în loc să pară că fac ceva.
-            Dim onActiveX As Boolean = motor.Engine = AdobePreviewEngine.ActiveX
-            cboAdobeMod.Enabled = Not onActiveX
-            cboAdobeInst.Enabled = Not onActiveX
-
-            Dim saved As Boolean = AdobeViewerSettings.Persist(mode.Mode, inst.Mode, motor.Engine)
-            If Not saved Then
-                ' Setarea rămâne activă pentru sesiune, dar nu s-a putut scrie: spune-o, nu o
-                ' ascunde — altfel operatorul o va regăsi schimbată la următoarea pornire.
-                lblEmpty.Text = "Setarea Adobe s-a aplicat, dar nu a putut fi salvată. Detalii în jurnalul de erori."
-            End If
-            ' Se aplică pe documentul afișat ACUM (geometria); parametrii de lansare («/n», «/s»,
-            ' /A) intră în vigoare la documentul următor — nu se poate reporni un proces în curs.
-            Dim reader As ReaderHostPreview = TryCast(_pdfPreview, ReaderHostPreview)
-            reader?.ReapplySettings()
-        Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.AdobeSetting_Changed", ex)
-        End Try
-    End Sub
-
-    ' Montează browserul de fișiere în pagina «Fișiere» și se abonează la selecția unui rând.
-    Private Sub MountBrowser()
-        Try
-            ' `browser` e declarat în designer, deci e deja în `pnlFisiere`, peste eticheta goală.
-            lblFisiereGol.Visible = False
-            AddHandler browser.FileActivated, AddressOf OnFileActivated
-        Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.MountBrowser", ex)
-            Throw
-        End Try
-    End Sub
-
-    ' Un fișier ales din browser -> PDF-ul REAL în pagina «Document», apoi comutăm pe ea. NU mai
-    ' comutăm pe «Vizualizare» (reconstrucția XFA) — aceea nu e fișierul ales (cererea operatorului).
-    Private Sub OnFileActivated(pdfPath As String)
-        Try
-            If String.IsNullOrWhiteSpace(pdfPath) Then Return
-            SetPdfTarget(pdfPath, IO.File.Exists(pdfPath))
-            navSub.SelectedKey = PAGE_PDF      ' ridică SelectionChanged -> ShowPage -> încarcă PDF-ul
-        Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.OnFileActivated", ex)
-        End Try
-    End Sub
-
-    ' «Generează documentul» de pe suprafața „document lipsă" (felia 05). Boundary UI async:
-    ' loghează și înghite (NU rearuncă — nu există await care să prindă).
-    Private Async Sub OnGenerateRequested(sender As Object, e As EventArgs)
-        Try
-            If _generating Then Return
-            Dim cod As String = _requestedCod
-            Dim revizie As RevizieRow = _selectedRevizie
-            If String.IsNullOrWhiteSpace(cod) OrElse revizie Is Nothing OrElse _antet Is Nothing Then Return
-
-            _generating = True
-            Try
-                ' 1. Datele de generare (secțiunea B + atașamentele) — un apel opt-in.
-                Dim data As DdfInfo = Await _withReauth(
-                    Function() _apiClient.GetDdfAsync(cod, CancellationToken.None, pentruGenerare:=True)).ConfigureAwait(True)
-                If data Is Nothing Then Return
-                ' Ținta s-a schimbat între timp? Renunțăm.
-                If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
-
-                ' 2. Doar rândurile reviziei-țintă (generarea e per revizie, ca tmpFX_* din Access).
-                Dim liniiRev = data.Linii.Where(Function(l) l.Idrev = revizie.Idrev).ToList()
-                Dim sbRev = data.SectiuneB.Where(Function(s) s.Idrev = revizie.Idrev).ToList()
-                Dim attRev = data.Atasamente.Where(Function(a) a.Idrev = revizie.Idrev).ToList()
-
-                ' 3. XML-ul complet (form1 + NOTAFD + atașamente).
-                Dim ctx As DdfXmlBuilder.Context = DdfXmlBuilder.Context.FromSession(_session)
-                Dim xml As String = DdfXmlBuilder.BuildComplete(ctx, _antet, revizie, liniiRev, sbRev, attRev)
-
-                ' 4. Calea PDF (§2.5) + siblingul .xml, sub folderul partener/GENERAL (creat la nevoie).
-                Dim pdfPath As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, revizie.NumarRev)
-                If String.IsNullOrEmpty(pdfPath) Then Return
-                IO.Directory.CreateDirectory(IO.Path.GetDirectoryName(pdfPath))
-                Dim xmlPath As String = IO.Path.ChangeExtension(pdfPath, ".xml")
-                IO.File.WriteAllText(xmlPath, xml, New Text.UTF8Encoding(False))
-
-                ' 5. Generarea PROPRIU-ZISĂ pe thread de fundal (descarcă macheta, completează XFA,
-                ' embedează atașamentele, scrie PDF-ul). XfaWriter loghează + rearuncă la graniță;
-                ' NU adăugăm un al doilea strat de catch în jur — îl lăsăm să urce în catch-ul de aici.
-                Await Task.Run(Sub() KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "DDF", deschidePdf:=False)).ConfigureAwait(True)
-
-                ' 6. Fără scriere înapoi în bază (§2.4 — cele patru coloane nu există). Existența
-                ' se decide prin scanare de disc: reîmprospătăm browserul, previzualizarea XFA și
-                ' pagina «Document» (forțăm re-montarea — existența fișierului tocmai s-a schimbat).
-                browser.SetContext(KBotPaths.Current.DdfPdfRoot, cod)
-                _preview.ShowDocument(pdfPath, IO.File.Exists(pdfPath))
-                _pdfShownPath = Nothing
-                SetPdfTarget(pdfPath, IO.File.Exists(pdfPath))
-            Finally
-                _generating = False
-            End Try
-        Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.OnGenerateRequested", ex)
-        End Try
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements IAngajamentView.ViewKey
@@ -360,48 +121,11 @@ Public Class DdfView
         End Get
     End Property
 
-    ''' <summary>
-    ''' Strângerea arborelui (felia 0028, aceeași înțelegere ca în MainForm): arborele e
-    ''' <c>Dock = Fill</c> în <c>split.Panel1</c>, deci lățimea NU e a lui — el schimbă starea
-    ''' și ne anunță, GAZDA mută splitter-ul. <c>Panel1MinSize</c> păzește TRAGEREA splitter-ului;
-    ''' strângerea e o comandă, nu o tragere, deci coborâm paza cât ține starea.
-    ''' </summary>
-    Private Sub Tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
-        Try
-            Dim padStanga As Integer = split.Panel1.Padding.Left
-            If collapsed Then
-                _splitterDistanceDesfasurat = split.SplitterDistance
-                _panel1MinSizeDesfasurat = split.Panel1MinSize
-                Dim tinta As Integer = tree.MinimumCollapsedWidth + padStanga
-                split.Panel1MinSize = Math.Min(_panel1MinSizeDesfasurat, tinta)
-                split.SplitterDistance = ClampSplitter(tinta)
-                split.IsSplitterFixed = True
-            Else
-                split.IsSplitterFixed = False
-                If _panel1MinSizeDesfasurat > 0 Then split.Panel1MinSize = _panel1MinSizeDesfasurat
-                Dim tinta As Integer = If(_splitterDistanceDesfasurat > 0,
-                                          _splitterDistanceDesfasurat,
-                                          tree.ExpandedWidth + padStanga)
-                split.SplitterDistance = ClampSplitter(tinta)
-            End If
-        Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.tree_CollapsedChanged", ex)
-        End Try
-    End Sub
-
-    ' Distanța splitter-ului adusă în intervalul acceptat de SplitContainer — o vedere îngustă
-    ' n-are voie să transforme apăsarea butonului de strângere într-o excepție.
-    Private Function ClampSplitter(dorit As Integer) As Integer
-        Dim maxim As Integer = split.Width - split.Panel2MinSize - split.SplitterWidth
-        If maxim < split.Panel1MinSize Then Return split.Panel1MinSize
-        Return Math.Max(split.Panel1MinSize, Math.Min(dorit, maxim))
-    End Function
-
-    ' Sub-navigarea orizontală: cele TREI pagini sunt AUTORITE ÎN DESIGNER, în `navSub.Items`
-    ' (felia 0025) — vezi DdfView.Designer.vb. Aici rămâne doar selecția inițială: atribuirea e
-    ' cea care ridică SelectionChanged și, prin ea, ShowPage arată prima pagină. NU se mai cheamă
-    ' ShowPage a doua oară de mână — ar rula DUPĂ eveniment și ar ascunde exact pagina tocmai
-    ' arătată.
+    ' ── Găzduirea sub-paginilor ──────────────────────────────────────────────
+    ' Sub-navigarea orizontală: intrările sunt AUTORITE ÎN DESIGNER, în `navSub.Items` (felia
+    ' 0025). Aici rămâne doar selecția inițială: atribuirea e cea care ridică SelectionChanged
+    ' și, prin ea, ActivatePage arată prima pagină. NU se activează a doua oară de mână — ar rula
+    ' DUPĂ eveniment și ar ascunde exact pagina tocmai arătată.
     '
     ' Designer-ul scrie cheile ca LITERALE (nu poate referi constantele private de mai sus), deci
     ' cele două trebuie să rămână în acord. Dacă se desincronizează, atribuirea de mai jos aruncă
@@ -415,50 +139,100 @@ Public Class DdfView
         End Try
     End Sub
 
-    ' Coloanele grilei = liniile de secțiune A (decizia 4: FĂRĂ Clasificatii.Denumire).
-    ' «Element de fundamentare» e SINGURA coloană cu auto-ascundere — prima care dispare când
-    ' spațiul e strâmt. Rând de totaluri cu Sum DOAR pe «Valoare curentă» (decizia 5).
-    ' Coloanele de bani sunt Text cu FormatString N2 + aliniere dreapta, iar valorile se pun
-    ' ca Double, ca agregatul să poată însuma (același tipar ca PlatiView).
-    Private Sub BuildColumns()
+    Private Sub NavSub_SelectionChanged(key As String) Handles navSub.SelectionChanged
         Try
-            grid.AddColumn(COL_CLSF, "Clasificație", KBotColumnType.Text, 170)
-
-            Dim colElement As KBotDataColumn =
-                grid.AddColumn(COL_ELEMENT, "Element de fundamentare", KBotColumnType.Text, 220)
-            ' Auto-ascunderea scanează de la dreapta la stânga dar SARE coloanele fără AutoHide,
-            ' deci funcționează și pe o coloană care nu e ultima. Ținta de umplere (ultima
-            ' coloană, ColumnFillMode.LastColumn) e protejată — aici e «Valoare totală», nu asta.
-            colElement.AutoHide = True
-
-            ' Vizibilă DOAR pe rădăcina de lună: acolo grila e o listă plată peste mai multe
-            ' revizii, iar ordonarea „Clsf, DataRev" ar fi ilizibilă fără ea.
-            grid.AddColumn(COL_DATA, "Data reviziei", KBotColumnType.Text, 110)
-
-            Dim colPrec As KBotDataColumn =
-                grid.AddColumn(COL_VALPREC, "Valoare precedentă", KBotColumnType.Text, 130)
-            colPrec.FormatString = "N2"
-            colPrec.TextAlign = ContentAlignment.MiddleRight
-
-            Dim colCur As KBotDataColumn =
-                grid.AddColumn(COL_VALCUR, "Valoare curentă", KBotColumnType.Text, 130)
-            colCur.FormatString = "N2"
-            colCur.TextAlign = ContentAlignment.MiddleRight
-            ' ValueType ÎNAINTE de Aggregate: suma se poate cere doar unei coloane numerice
-            ' (slice 0028), iar coloana e „Text” doar ca fel de pictare.
-            colCur.ValueType = KBotValueType.Number
-            colCur.Aggregate = KBotAggregate.Sum        ' singurul agregat (decizia 5)
-
-            Dim colTot As KBotDataColumn =
-                grid.AddColumn(COL_VALTOT, "Valoare totală", KBotColumnType.Text, 130)
-            colTot.FormatString = "N2"
-            colTot.TextAlign = ContentAlignment.MiddleRight
+            ActivatePage(key)
         Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.BuildColumns", ex)
+            GlobalErrorLog.Write("DdfView.NavSub_SelectionChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Arată pagina cerută, creând-o la prima activare — același tipar leneș ca
+    ''' <c>MainForm.ActivateView</c>. O singură pagină vizibilă odată; contextul curent se împinge
+    ''' abia acum, deci o pagină creată târziu nu pierde selecția făcută înainte de ea.
+    ''' </summary>
+    Private Sub ActivatePage(key As String)
+        Try
+            Dim page As IDdfPage = Nothing
+            If Not _pages.TryGetValue(key, page) Then
+                page = CreatePage(key)
+                Dim ctrl As Control = DirectCast(page, Control)
+                ctrl.Dock = DockStyle.Fill
+                ctrl.Visible = False
+                pnlPages.Controls.Add(ctrl)
+                ThemeManager.Apply(ctrl)
+                _pages(key) = page
+            End If
+
+            Dim previous As IDdfPage = _activePage
+            _activePage = page
+            DirectCast(page, Control).Visible = True
+            If previous IsNot Nothing AndAlso Not ReferenceEquals(previous, page) Then
+                DirectCast(previous, Control).Visible = False
+            End If
+            ' Doar pagina ACTIVĂ primește contextul; celelalte îl primesc la activare.
+            page.SetContext(_currentCtx)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.ActivatePage", ex)
             Throw
         End Try
     End Sub
 
+    Private Function CreatePage(key As String) As IDdfPage
+        Try
+            Dim page As IDdfPage
+            Select Case key
+                Case PAGE_VALORI : page = New DdfValoriPage()   ' parcată: fără intrare în navSub
+                Case PAGE_PREVIEW : page = New DdfVizualizarePage()
+                Case PAGE_PDF : page = New DdfDocumentPage()
+                Case PAGE_FISIERE : page = New DdfFisierePage()
+                Case Else
+                    Throw New ArgumentException($"Pagină DDF necunoscută: '{key}'.", NameOf(key))
+            End Select
+            ' Abonare UNIFORMĂ: paginile care n-au ce ridica pur și simplu nu ridică niciodată.
+            AddHandler page.GenerateRequested, AddressOf OnGenerateRequested
+            AddHandler page.FileActivated, AddressOf OnFileActivated
+            Return page
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.CreatePage", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Contextul nodului selectat acum. <c>Nothing</c> cât timp nu s-a încărcat niciun
+    ''' angajament. Calea PDF există DOAR pentru o frunză (o lună nu are un singur document) sau
+    ''' când operatorul a ales un fișier din listă — atunci fișierul ales are întâietate.
+    ''' </summary>
+    Private Function BuildCurrentContext() As DdfPageContext
+        Try
+            If String.IsNullOrWhiteSpace(_requestedCod) OrElse _revizii Is Nothing Then Return Nothing
+
+            Dim pdfPath As String = Nothing
+            If Not String.IsNullOrEmpty(_pdfPathOverride) Then
+                pdfPath = _pdfPathOverride
+            ElseIf Not _nodeIsRoot AndAlso _selectedRevizie IsNot Nothing AndAlso _antet IsNot Nothing Then
+                pdfPath = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, _selectedRevizie.NumarRev)
+            End If
+            Dim exists As Boolean = Not String.IsNullOrEmpty(pdfPath) AndAlso IO.File.Exists(pdfPath)
+
+            Return New DdfPageContext(_antet, _nodeRows, _revizii, _nodeIsRoot, _selectedRevizie,
+                                      _requestedCod, pdfPath, exists)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.BuildCurrentContext", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Reconstruiește contextul și îl împinge paginii active. Singura cale de randare a paginilor —
+    ' aceeași pentru un click în arbore, un fișier ales din listă și sfârșitul unei generări.
+    Private Sub PushToActivePage()
+        _currentCtx = BuildCurrentContext()
+        _activePage?.SetContext(_currentCtx)
+    End Sub
+
+    ' ── Contextul shell-ului ─────────────────────────────────────────────────
     ''' <summary>
     ''' Selecția din arbore s-a schimbat. Fără angajament (nod de capitol / deselectare) sau
     ''' fără DDF (<c>AreDDF = False</c>) NU se face niciun apel de rețea — doar se golește vederea.
@@ -523,15 +297,12 @@ Public Class DdfView
             BuildTree(revizii)
             ' „Nimic selectat" -> grila arată TOATE liniile angajamentului, ca în ReceptiiView
             ' (revizuire operator 2026-08-13). E aceeași vedere ca a unei rădăcini de lună,
-            ' doar peste toate reviziile: listă plată, deci «Data reviziei» rămâne vizibilă.
+            ' doar peste toate reviziile: listă plată, fără un document unic.
             _nodeRows = ToateLiniile(revizii)
             _nodeIsRoot = True
-            grid.Column(COL_DATA).Visible = True
-            ResetClsfCombo(_nodeRows)
-            FillGrid(_nodeRows)
-            ' Browserul de fișiere: PDF-urile angajamentului sub rădăcina configurată.
-            browser.SetContext(KBotPaths.Current.DdfPdfRoot, cod)
-            _preview.Clear()
+            _selectedRevizie = Nothing
+            _pdfPathOverride = Nothing
+            PushToActivePage()
             ShowContent()
         Catch ex As ApiException
             If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
@@ -638,8 +409,8 @@ Public Class DdfView
         End Try
     End Sub
 
-    ' Click pe orice nod -> resetează combo-ul din rândurile nodului, apoi umple grila
-    ' NEFILTRATĂ. Fără apel de rețea (decizia 7).
+    ' Click pe orice nod -> se reconstruiește contextul și se împinge paginii active. Fără apel
+    ' de rețea (decizia 7).
     Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
             If pNode Is Nothing Then Return
@@ -648,184 +419,122 @@ Public Class DdfView
 
             _nodeRows = payload.Linii
             _nodeIsRoot = payload.IsRoot
-            ' «Data reviziei» are sens doar pe rădăcină (listă plată peste mai multe revizii).
-            grid.Column(COL_DATA).Visible = _nodeIsRoot
+            ' Revizia frunzei (Nothing pe o rădăcină) = ținta unei eventuale generări (felia 05)
+            ' și sursa căii PDF calculate în BuildCurrentContext.
+            _selectedRevizie = payload.Revizie
+            ' O selecție nouă în arbore ANULEAZĂ fișierul ales din lista paginii «Fișiere».
+            _pdfPathOverride = Nothing
 
-            ' Resetul e NECONDIȚIONAT (decizia 6): nu încearcă să păstreze selecția anterioară.
-            ResetClsfCombo(_nodeRows)
-            FillGrid(_nodeRows)
+            PushToActivePage()
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.Tree_NodeMouseUp", ex)
+        End Try
+    End Sub
 
-            ' Previzualizarea (planul §7): o rădăcină de lună NU are un singur document -> se
-            ' golește; o frunză -> se calculează calea așteptată (§2.5) din antet (CUAL/PartAng/
-            ' NumePartener) + NumarRev-ul reviziei și se dă previzualizării cu flag-ul de existență.
-            If _nodeIsRoot Then
-                _preview.Clear()
-                ClearPdfTarget()
+    ''' <summary>
+    ''' Strângerea arborelui (felia 0028, aceeași înțelegere ca în MainForm): arborele e
+    ''' <c>Dock = Fill</c> în <c>split.Panel1</c>, deci lățimea NU e a lui — el schimbă starea
+    ''' și ne anunță, GAZDA mută splitter-ul. <c>Panel1MinSize</c> păzește TRAGEREA splitter-ului;
+    ''' strângerea e o comandă, nu o tragere, deci coborâm paza cât ține starea.
+    ''' </summary>
+    Private Sub Tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
+        Try
+            Dim padStanga As Integer = split.Panel1.Padding.Left
+            If collapsed Then
+                _splitterDistanceDesfasurat = split.SplitterDistance
+                _panel1MinSizeDesfasurat = split.Panel1MinSize
+                Dim tinta As Integer = tree.MinimumCollapsedWidth + padStanga
+                split.Panel1MinSize = Math.Min(_panel1MinSizeDesfasurat, tinta)
+                split.SplitterDistance = ClampSplitter(tinta)
+                split.IsSplitterFixed = True
             Else
-                LinkPreviewLaFrunza(payload.Revizie)
+                split.IsSplitterFixed = False
+                If _panel1MinSizeDesfasurat > 0 Then split.Panel1MinSize = _panel1MinSizeDesfasurat
+                Dim tinta As Integer = If(_splitterDistanceDesfasurat > 0,
+                                          _splitterDistanceDesfasurat,
+                                          tree.ExpandedWidth + padStanga)
+                split.SplitterDistance = ClampSplitter(tinta)
             End If
         Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.tree_NodeMouseUp", ex)
+            GlobalErrorLog.Write("DdfView.Tree_CollapsedChanged", ex)
         End Try
     End Sub
 
-    ' Calea așteptată a PDF-ului reviziei (planul §2.5), din antetul de lucru + NumarRev, apoi
-    ' o dă previzualizării cu flag-ul de existență de pe disc. Fără antet -> golește.
-    Private Sub LinkPreviewLaFrunza(revizie As RevizieRow)
-        _selectedRevizie = revizie      ' ținta unei eventuale generări (felia 05)
-        If revizie Is Nothing OrElse _antet Is Nothing Then
-            _preview.Clear()
-            ClearPdfTarget()
-            Return
-        End If
-        Dim path As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, revizie.NumarRev)
-        If String.IsNullOrEmpty(path) Then
-            _preview.Clear()
-            ClearPdfTarget()
-            Return
-        End If
-        Dim exists As Boolean = IO.File.Exists(path)
-        _preview.ShowDocument(path, exists)
-        ' Ținta paginii «Document» (lazy: nu pornește Adobe decât când ești pe acea pagină).
-        SetPdfTarget(path, exists)
-    End Sub
+    ' Distanța splitter-ului adusă în intervalul acceptat de SplitContainer — o vedere îngustă
+    ' n-are voie să transforme apăsarea butonului de strângere într-o excepție.
+    Private Function ClampSplitter(dorit As Integer) As Integer
+        Dim maxim As Integer = split.Width - split.Panel2MinSize - split.SplitterWidth
+        If maxim < split.Panel1MinSize Then Return split.Panel1MinSize
+        Return Math.Max(split.Panel1MinSize, Math.Min(dorit, maxim))
+    End Function
 
-    ' ── Combo-ul de clasificații ─────────────────────────────────────────────
-    ' Valorile DISTINCTE ale rândurilor încărcate acum, sortate, cu «toate» pe prima poziție
-    ' și selectată. Nu emite cereri; re-filtrează doar ce e deja în memorie.
-    Private Sub ResetClsfCombo(rows As List(Of LinieSaRow))
-        _suppressComboEvent = True
+    ' ── Evenimentele urcate de sub-pagini ────────────────────────────────────
+    ' Un fișier ales din lista paginii «Fișiere» -> devine calea PDF a contextului, apoi comutăm
+    ' pe «Document». NU comutăm pe «Vizualizare» (reconstrucția XFA) — cererea operatorului.
+    Private Sub OnFileActivated(sender As Object, pdfPath As String)
         Try
-            cboClsf.BeginUpdate()
-            cboClsf.Items.Clear()
-            cboClsf.Items.Add(CLSF_TOATE)
-            If rows IsNot Nothing Then
-                Dim distincte = rows.Select(Function(r) If(r.Clsf, String.Empty)).
-                                     Where(Function(s) Not String.IsNullOrWhiteSpace(s)).
-                                     Distinct(StringComparer.Ordinal).
-                                     OrderBy(Function(s) s, StringComparer.Ordinal)
-                For Each c As String In distincte
-                    cboClsf.Items.Add(c)
-                Next
-            End If
-            cboClsf.SelectedIndex = 0
-        Finally
-            cboClsf.EndUpdate()
-            _suppressComboEvent = False
-        End Try
-    End Sub
-
-    Private Sub CboClsf_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboClsf.SelectedIndexChanged
-        Try
-            If _suppressComboEvent Then Return
-            FillGrid(FilteredRows())
+            If String.IsNullOrWhiteSpace(pdfPath) Then Return
+            _pdfPathOverride = pdfPath
+            PushToActivePage()
+            navSub.SelectedKey = PAGE_PDF      ' ridică SelectionChanged -> ActivatePage -> îl arată
         Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.cboClsf_SelectedIndexChanged", ex)
+            GlobalErrorLog.Write("DdfView.OnFileActivated", ex)
         End Try
     End Sub
 
-    ' Rândurile nodului, filtrate pe clasificația aleasă. Prima intrare = fără filtru.
-    Private Function FilteredRows() As List(Of LinieSaRow)
-        If _nodeRows Is Nothing Then Return New List(Of LinieSaRow)()
-        If cboClsf.SelectedIndex <= 0 Then Return _nodeRows
-        Dim wanted As String = TryCast(cboClsf.SelectedItem, String)
-        If String.IsNullOrEmpty(wanted) Then Return _nodeRows
-        Return _nodeRows.Where(Function(r) String.Equals(r.Clsf, wanted, StringComparison.Ordinal)).ToList()
-    End Function
-
-    ' ── Grila ────────────────────────────────────────────────────────────────
-    ' Ordonare: pe rădăcină «Clsf, DataRev» (listă plată peste revizii), pe frunză doar «Clsf».
-    Private Sub FillGrid(rows As List(Of LinieSaRow))
-        grid.BeginUpdate()
+    ' «Generează documentul» de pe suprafața „document lipsă" (felia 05). Boundary UI async:
+    ' loghează și înghite (NU rearuncă — nu există await care să prindă).
+    Private Async Sub OnGenerateRequested(sender As Object, e As EventArgs)
         Try
-            grid.ClearRows()
-            If rows IsNot Nothing Then
-                For Each r As LinieSaRow In SortRows(rows)
-                    Dim rev As RevizieRow = RevizieOf(r.Idrev)
-                    Dim row As KBotDataRow = grid.AddRow()
-                    row.Tag = r
-                    row(COL_CLSF) = r.Clsf
-                    row(COL_ELEMENT) = r.ElementFund
-                    row(COL_DATA) = If(rev Is Nothing, String.Empty, ShortDate(rev.DataRev))
-                    row(COL_VALPREC) = r.ValPrec
-                    row(COL_VALCUR) = r.ValCur
-                    row(COL_VALTOT) = r.ValTot
-                Next
-            End If
-        Finally
-            grid.EndUpdate()
-        End Try
-    End Sub
+            If _generating Then Return
+            Dim cod As String = _requestedCod
+            Dim revizie As RevizieRow = _selectedRevizie
+            If String.IsNullOrWhiteSpace(cod) OrElse revizie Is Nothing OrElse _antet Is Nothing Then Return
 
-    Private Function SortRows(rows As List(Of LinieSaRow)) As List(Of LinieSaRow)
-        If _nodeIsRoot Then
-            Return rows.OrderBy(Function(r) If(r.Clsf, String.Empty), StringComparer.Ordinal).
-                        ThenBy(Function(r) DataRevOf(r.Idrev)).ToList()
-        End If
-        Return rows.OrderBy(Function(r) If(r.Clsf, String.Empty), StringComparer.Ordinal).ToList()
-    End Function
+            _generating = True
+            Try
+                ' 1. Datele de generare (secțiunea B + atașamentele) — un apel opt-in.
+                Dim data As DdfInfo = Await _withReauth(
+                    Function() _apiClient.GetDdfAsync(cod, CancellationToken.None, pentruGenerare:=True)).ConfigureAwait(True)
+                If data Is Nothing Then Return
+                ' Ținta s-a schimbat între timp? Renunțăm.
+                If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
 
-    Private Function RevizieOf(idrev As Integer) As RevizieRow
-        If _revizii Is Nothing Then Return Nothing
-        For Each r As RevizieRow In _revizii
-            If r.Idrev = idrev Then Return r
-        Next
-        Return Nothing
-    End Function
+                ' 2. Doar rândurile reviziei-țintă (generarea e per revizie, ca tmpFX_* din Access).
+                Dim liniiRev = data.Linii.Where(Function(l) l.Idrev = revizie.Idrev).ToList()
+                Dim sbRev = data.SectiuneB.Where(Function(s) s.Idrev = revizie.Idrev).ToList()
+                Dim attRev = data.Atasamente.Where(Function(a) a.Idrev = revizie.Idrev).ToList()
 
-    Private Function DataRevOf(idrev As Integer) As Date
-        Dim r As RevizieRow = RevizieOf(idrev)
-        If r Is Nothing OrElse Not r.DataRev.HasValue Then Return Date.MaxValue
-        Return r.DataRev.Value
-    End Function
+                ' 3. XML-ul complet (form1 + NOTAFD + atașamente).
+                Dim ctx As DdfXmlBuilder.Context = DdfXmlBuilder.Context.FromSession(_session)
+                Dim xml As String = DdfXmlBuilder.BuildComplete(ctx, _antet, revizie, liniiRev, sbRev, attRev)
 
-    ' ── Sub-navigarea ────────────────────────────────────────────────────────
-    Private Sub NavSub_SelectionChanged(key As String) Handles navSub.SelectionChanged
-        Try
-            ShowPage(key)
+                ' 4. Calea PDF (§2.5) + siblingul .xml, sub folderul partener/GENERAL (creat la nevoie).
+                Dim pdfPath As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, revizie.NumarRev)
+                If String.IsNullOrEmpty(pdfPath) Then Return
+                IO.Directory.CreateDirectory(IO.Path.GetDirectoryName(pdfPath))
+                Dim xmlPath As String = IO.Path.ChangeExtension(pdfPath, ".xml")
+                IO.File.WriteAllText(xmlPath, xml, New Text.UTF8Encoding(False))
+
+                ' 5. Generarea PROPRIU-ZISĂ pe thread de fundal (descarcă macheta, completează XFA,
+                ' embedează atașamentele, scrie PDF-ul). XfaWriter loghează + rearuncă la graniță;
+                ' NU adăugăm un al doilea strat de catch în jur — îl lăsăm să urce în catch-ul de aici.
+                Await Task.Run(Sub() KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "DDF", deschidePdf:=False)).ConfigureAwait(True)
+
+                ' 6. Fără scriere înapoi în bază (§2.4 — cele patru coloane nu există). Existența
+                ' se decide prin scanare de disc: reconstruim contextul (PdfExists tocmai a trecut
+                ' din False în True) și îl re-împingem paginii active, care se re-randează pe calea
+                ' ei normală. Nicio pagină n-are metodă de „reîmprospătare" — SetContext e singura.
+                ' Garda paginii «Document» e pe perechea (cale, existență) tocmai ca acest salt să
+                ' forțeze re-încorporarea deși calea a rămas aceeași.
+                _pdfPathOverride = pdfPath
+                PushToActivePage()
+            Finally
+                _generating = False
+            End Try
         Catch ex As Exception
-            GlobalErrorLog.Write("DdfView.NavSub_SelectionChanged", ex)
+            GlobalErrorLog.Write("DdfView.OnGenerateRequested", ex)
         End Try
-    End Sub
-
-    ' O singură pagină vizibilă odată — același tipar lazy ca gazda de vederi din MainForm,
-    ' NU un TabControl. Când «Document» devine vizibilă, montăm PDF-ul real ACUM (lazy) — abia
-    ' aici pornește eventual Adobe, nu la fiecare click în arbore.
-    '
-    ' `pnlValori` NU apare aici: pagina «valori» e parcată (vezi nota de la constante) și panoul
-    ' stă ascuns din designer. ATENȚIE dacă o repui: cele patru panouri sunt toate `Dock = Fill` în
-    ' același loc, iar `pnlValori` e PRIMUL adăugat în `pnlPages`, adică indexul 0 = fața ordinii Z.
-    ' Lăsat vizibil, acoperă complet celelalte trei — s-ar vedea grila oricâte pagini ai comuta,
-    ' iar `pnlPdf.Visible` ar fi True fără ca un pixel din el să ajungă pe ecran.
-    Private Sub ShowPage(key As String)
-        pnlPreview.Visible = String.Equals(key, PAGE_PREVIEW, StringComparison.Ordinal)
-        pnlPdf.Visible = String.Equals(key, PAGE_PDF, StringComparison.Ordinal)
-        pnlFisiere.Visible = String.Equals(key, PAGE_FISIERE, StringComparison.Ordinal)
-        If pnlPdf.Visible Then ShowPdfSurface()
-    End Sub
-
-    ' Reține ținta PDF (fără să pornească Adobe); dacă pagina «Document» e deja vizibilă,
-    ' o reflectă imediat, altfel se încarcă leneș la următoarea comutare pe «Document».
-    Private Sub SetPdfTarget(path As String, exists As Boolean)
-        _pdfPath = path
-        _pdfExists = exists
-        If pnlPdf.Visible Then ShowPdfSurface()
-    End Sub
-
-    ' Montează în _pdfPreview ținta PDF curentă, dar DOAR dacă s-a schimbat față de ce e deja
-    ' afișat — ca să nu re-încorporăm (și să nu relansăm Adobe) la fiecare comutare de pagină.
-    Private Sub ShowPdfSurface()
-        If String.Equals(_pdfShownPath, _pdfPath, StringComparison.Ordinal) Then Return
-        _pdfShownPath = _pdfPath
-        _pdfPreview.ShowDocument(If(_pdfPath, String.Empty), _pdfExists)
-    End Sub
-
-    ' Golește ținta PDF și suprafața (o rădăcină de lună / deselectare).
-    Private Sub ClearPdfTarget()
-        _pdfPath = Nothing
-        _pdfExists = False
-        _pdfShownPath = Nothing
-        _pdfPreview?.Clear()
     End Sub
 
     ' ── Stare goală / conținut ───────────────────────────────────────────────
@@ -837,12 +546,10 @@ Public Class DdfView
         _nodeRows = Nothing
         _nodeIsRoot = False
         _selectedRevizie = Nothing
+        _pdfPathOverride = Nothing
         tree.Clear()
-        grid.ClearRows()
-        ResetClsfCombo(Nothing)
-        _preview?.Clear()
-        ClearPdfTarget()
-        browser?.SetContext(Nothing, Nothing)
+        ' Contextul devine Nothing -> pagina activă își arată starea goală.
+        PushToActivePage()
     End Sub
 
     Private Sub ShowEmpty(message As String)
@@ -859,11 +566,6 @@ Public Class DdfView
     ' ── Formatare / iconițe ──────────────────────────────────────────────────
     Private Shared Function Money(value As Double) As String
         Return value.ToString("N2", _roCulture)
-    End Function
-
-    Private Shared Function ShortDate(value As Date?) As String
-        If Not value.HasValue Then Return String.Empty
-        Return value.Value.ToString("dd.MM.yyyy", _roCulture)
     End Function
 
     ' Cheia de lună = an*100 + lună din DataRev (0 dacă lipsește). Ordonabilă cronologic.
@@ -922,9 +624,11 @@ Public Class DdfView
     End Function
 
     ''' <summary>
-    ''' Reaplică culorile schemei pe arbore, banda de titlu, filtrul de clasificație și
-    ''' paginile goale (grila și sub-navigarea se auto-temează: implementează ele însele
-    ''' IThemedControl). Reconstruiește arborele dacă are date, ca iconițele să se re-tinteze.
+    ''' Reaplică schema pe ce a rămas la vedere după felia 0032 — arborele, splitter-ul, gazda
+    ''' paginilor și starea goală — apoi CASCADEAZĂ spre sub-paginile deja create (fiecare își
+    ''' temează singură conținutul). Paginile necreate n-au nevoie: primesc tema la activare,
+    ''' prin <c>ThemeManager.Apply</c>. Reconstruiește arborele dacă are date, ca iconițele să se
+    ''' re-tinteze.
     ''' </summary>
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
@@ -936,51 +640,20 @@ Public Class DdfView
             split.Panel1.BackColor = p.SurfaceAltColor
             split.Panel2.BackColor = p.SurfaceAltColor
 
-            'pnlTreeHead.BackColor = p.SurfaceAltColor
-            'lblTreeTitle.ForeColor = p.TextColor
-            'lblTreeTitle.BackColor = Color.Transparent
-
             ' Arborele e IThemedControl: își ia singur paleta, iar ThemeManager nu mai recurge
             ' în copiii lui. Culorile puse în designer câștigă; cele lăsate goale urmează tema.
 
             pnlPages.BackColor = p.SurfaceAltColor
-            pnlValori.BackColor = p.SurfaceAltColor
-            pnlFilter.BackColor = p.SurfaceAltColor
-            lblClsf.ForeColor = p.TextDimColor
-            lblClsf.BackColor = Color.Transparent
-            cboClsf.BackColor = p.InputBackColor
-            cboClsf.ForeColor = p.InputTextColor
-
-            pnlPreview.BackColor = p.SurfaceAltColor
-            lblPreviewGol.ForeColor = p.TextDimColor
-            lblPreviewGol.BackColor = p.SurfaceAltColor
-            pnlPdf.BackColor = p.SurfaceAltColor
-            pnlAdobe.BackColor = p.SurfaceAltColor
-            lblAdobeMod.ForeColor = p.TextDimColor
-            lblAdobeMod.BackColor = Color.Transparent
-            lblAdobeInst.ForeColor = p.TextDimColor
-            lblAdobeInst.BackColor = Color.Transparent
-            cboAdobeMod.BackColor = p.InputBackColor
-            cboAdobeMod.ForeColor = p.InputTextColor
-            cboAdobeInst.BackColor = p.InputBackColor
-            cboAdobeInst.ForeColor = p.InputTextColor
-            pnlFisiere.BackColor = p.SurfaceAltColor
-            lblFisiereGol.ForeColor = p.TextDimColor
-            lblFisiereGol.BackColor = p.SurfaceAltColor
-
             lblEmpty.ForeColor = p.TextDimColor
             lblEmpty.BackColor = p.SurfaceAltColor
 
-            ' Cascada temei spre suprafața de previzualizare XFA, suprafața PDF-ului real și
-            ' browserul de fișiere.
-            Dim themedPreview As IThemedControl = TryCast(_preview, IThemedControl)
-            themedPreview?.ApplyTheme(scheme)
-            Dim themedPdf As IThemedControl = TryCast(_pdfPreview, IThemedControl)
-            themedPdf?.ApplyTheme(scheme)
-            browser?.ApplyTheme(scheme)
+            For Each page As IDdfPage In _pages.Values
+                Dim themed As IThemedControl = TryCast(page, IThemedControl)
+                themed?.ApplyTheme(scheme)
+            Next
 
             ' Re-tintarea iconițelor pe noua paletă. Arborele se reconstruiește, deci selecția
-            ' se pierde — grila rămâne cum e până la următorul click pe un nod.
+            ' se pierde — paginile rămân cum sunt până la următorul click pe un nod.
             If _revizii IsNot Nothing AndAlso _revizii.Count > 0 Then
                 BuildTree(_revizii)
             End If
@@ -993,53 +666,10 @@ Public Class DdfView
 End Class
 
 ''' <summary>
-''' Ce acoperă un nod din arborele DDF: liniile de secțiune A pe care le arată grila, dacă
-''' nodul e o rădăcină de lună (atunci coloana «Data reviziei» devine vizibilă) și — pentru
-''' frunze — revizia însăși, de care feliile 03/04 au nevoie ca să compună calea PDF-ului.
-''' POCO -> fără Try/Catch.
+''' Ce acoperă un nod din arborele DDF: liniile de secțiune A pe care le arată pagina «Valori»,
+''' dacă nodul e o rădăcină de lună (o lună nu are UN singur document) și — pentru frunze —
+''' revizia însăși, din care se compune calea PDF-ului. POCO -&gt; fără Try/Catch.
 ''' </summary>
-''' <summary>
-''' O intrare din combo-ul «Mod vizualizator Adobe»: valoarea + eticheta românească. Există ca să
-''' NU se compare texte de interfață când se citește selecția. POCO -&gt; fără Try/Catch.
-''' </summary>
-Friend NotInheritable Class AdobeModeItem
-    Public ReadOnly Property Mode As AdobeViewerMode
-
-    Public Sub New(mode As AdobeViewerMode)
-        Me.Mode = mode
-    End Sub
-
-    Public Overrides Function ToString() As String
-        Return AdobeViewerSettings.ModeLabel(Mode)
-    End Function
-End Class
-
-''' <summary>O intrare din combo-ul «Motor previzualizare». POCO -&gt; fără Try/Catch.</summary>
-Friend NotInheritable Class AdobeEngineItem
-    Public ReadOnly Property Engine As AdobePreviewEngine
-
-    Public Sub New(engine As AdobePreviewEngine)
-        Me.Engine = engine
-    End Sub
-
-    Public Overrides Function ToString() As String
-        Return AdobeViewerSettings.EngineLabel(Engine)
-    End Function
-End Class
-
-''' <summary>O intrare din combo-ul «Instanță nouă Adobe». POCO -&gt; fără Try/Catch.</summary>
-Friend NotInheritable Class AdobeNewInstanceItem
-    Public ReadOnly Property Mode As AdobeNewInstanceMode
-
-    Public Sub New(mode As AdobeNewInstanceMode)
-        Me.Mode = mode
-    End Sub
-
-    Public Overrides Function ToString() As String
-        Return AdobeViewerSettings.NewInstanceLabel(Mode)
-    End Function
-End Class
-
 Friend NotInheritable Class DdfNodeRows
     Public ReadOnly Property Linii As List(Of LinieSaRow)
     Public ReadOnly Property IsRoot As Boolean
