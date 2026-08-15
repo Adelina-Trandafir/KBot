@@ -20,78 +20,82 @@ Partial Class ForexeFooterView
     Private Sub InitializeComponent()
         btnConectare = New Button()
         lblConexiune = New Label()
-        pbProgress = New ProgressBar()
+        pbProgress = New KBot.Controls.KBotProgressBar()
         lblCert = New Label()
         lblStatus = New Label()
         btnExtinde = New Button()
         SuspendLayout()
-        '
+        ' 
         ' btnConectare
-        '
+        ' 
         btnConectare.Dock = DockStyle.Left
         btnConectare.FlatStyle = FlatStyle.Flat
         btnConectare.Location = New Point(0, 0)
+        btnConectare.Margin = New Padding(4, 5, 4, 5)
         btnConectare.Name = "btnConectare"
-        btnConectare.Size = New Size(140, 60)
+        btnConectare.Size = New Size(200, 52)
         btnConectare.TabIndex = 0
         btnConectare.Text = "Conectare"
         btnConectare.UseVisualStyleBackColor = True
-        '
-        ' lblConexiune — pastila de stare a conexiunii (înlocuiește vechiul lblForexe).
-        '
+        ' 
+        ' lblConexiune
+        ' 
         lblConexiune.Dock = DockStyle.Left
-        lblConexiune.Location = New Point(140, 0)
+        lblConexiune.Location = New Point(200, 0)
+        lblConexiune.Margin = New Padding(4, 0, 4, 0)
         lblConexiune.Name = "lblConexiune"
-        lblConexiune.Size = New Size(180, 60)
+        lblConexiune.Size = New Size(151, 52)
         lblConexiune.TabIndex = 1
-        lblConexiune.Text = "● Forexe: neconectat"
+        lblConexiune.Text = "● Neconectat"
         lblConexiune.TextAlign = ContentAlignment.MiddleCenter
-        '
+        ' 
         ' pbProgress
-        '
+        ' 
         pbProgress.Dock = DockStyle.Left
-        pbProgress.Location = New Point(320, 0)
-        pbProgress.Margin = New Padding(4)
+        pbProgress.Location = New Point(351, 0)
+        pbProgress.Margin = New Padding(6, 7, 6, 7)
         pbProgress.Name = "pbProgress"
-        pbProgress.Size = New Size(180, 60)
+        pbProgress.Size = New Size(257, 52)
         pbProgress.TabIndex = 2
-        '
+        ' 
         ' lblCert
-        '
+        ' 
         lblCert.AutoEllipsis = True
         lblCert.Dock = DockStyle.Left
-        lblCert.Location = New Point(500, 0)
+        lblCert.Location = New Point(608, 0)
+        lblCert.Margin = New Padding(4, 0, 4, 0)
         lblCert.Name = "lblCert"
-        lblCert.Size = New Size(220, 60)
+        lblCert.Size = New Size(227, 52)
         lblCert.TabIndex = 3
         lblCert.Text = "Certificat: —"
         lblCert.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' btnExtinde — deschide consola FOREXE.
-        '
+        ' 
+        ' lblStatus
+        ' 
+        lblStatus.AutoEllipsis = True
+        lblStatus.Dock = DockStyle.Fill
+        lblStatus.Location = New Point(835, 0)
+        lblStatus.Margin = New Padding(4, 0, 4, 0)
+        lblStatus.Name = "lblStatus"
+        lblStatus.Size = New Size(250, 52)
+        lblStatus.TabIndex = 4
+        lblStatus.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' btnExtinde
+        ' 
         btnExtinde.Dock = DockStyle.Right
         btnExtinde.FlatStyle = FlatStyle.Flat
-        btnExtinde.Location = New Point(760, 0)
+        btnExtinde.Location = New Point(1085, 0)
+        btnExtinde.Margin = New Padding(4, 5, 4, 5)
         btnExtinde.Name = "btnExtinde"
-        btnExtinde.Size = New Size(60, 60)
+        btnExtinde.Size = New Size(86, 52)
         btnExtinde.TabIndex = 5
         btnExtinde.Text = "▲"
         btnExtinde.UseVisualStyleBackColor = True
-        '
-        ' lblStatus — ULTIMA linie de stare, nu jurnalul (acela e în consolă).
-        '
-        lblStatus.AutoEllipsis = True
-        lblStatus.Dock = DockStyle.Fill
-        lblStatus.Location = New Point(720, 0)
-        lblStatus.Name = "lblStatus"
-        lblStatus.Size = New Size(40, 60)
-        lblStatus.TabIndex = 4
-        lblStatus.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' ForexeFooterView — copiii se adaugă în ordine INVERSĂ de dock:
-        ' lblStatus (Fill) primul, apoi btnExtinde (Right), apoi cei ancorați la stânga.
-        '
-        AutoScaleDimensions = New SizeF(7F, 15F)
+        ' 
+        ' ForexeFooterView
+        ' 
+        AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(lblStatus)
         Controls.Add(btnExtinde)
@@ -99,14 +103,15 @@ Partial Class ForexeFooterView
         Controls.Add(pbProgress)
         Controls.Add(lblConexiune)
         Controls.Add(btnConectare)
+        Margin = New Padding(4, 5, 4, 5)
         Name = "ForexeFooterView"
-        Size = New Size(820, 60)
+        Size = New Size(1171, 52)
         ResumeLayout(False)
     End Sub
 
     Friend WithEvents btnConectare As Button
     Friend WithEvents lblConexiune As Label
-    Friend WithEvents pbProgress As ProgressBar
+    Friend WithEvents pbProgress As KBot.Controls.KBotProgressBar
     Friend WithEvents lblCert As Label
     Friend WithEvents lblStatus As Label
     Friend WithEvents btnExtinde As Button

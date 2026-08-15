@@ -158,6 +158,51 @@ trecute, 0 picate**. `App.Tests` **155 trecute / 6 picate** — mulțime **IDENT
 verificat prin `git stash` pe arborele curat, aceleași 6 eșecuri, aceleași nume. **Fără teste noi**
 (politica standing).
 
+## 8. Trecerea operatorului peste bandă (după prima livrare)
+
+Trei cereri, plus consecințele lor.
+
+### `KBotProgressBar` — control nou (`src/KBot.Controls/Progress/KBotProgressBar.vb`)
+
+`System.Windows.Forms.ProgressBar` e desenat de Windows, deci **tema nu-l poate atinge**: rămânea
+verde pe schemă întunecată. Controlul nou e fratele DETERMINAT al lui `KBotBusyBar` (acela e
+indeterminatul) și îi copiază deciziile: același `SetStyle`, același `KBotDesignTime.IsDesignTime`
+în `OnPaint` (fără log din procesul designerului), aceeași formă de `ApplyTheme`.
+
+Regulile casei respectate cap-coadă: `BarColor` / `TrackColor` / `PercentTextColor` au
+`Color.Empty` = «din temă» cu perechea `ShouldSerialize`/`Reset` fiecare, iar `Font` — care **nu
+poate purta `<DefaultValue>`** (atributul cere o constantă) — are perechea lui plus steagul
+«operatorul l-a scris», ca designerul să nu-l pinuiască în fiecare gazdă.
+
+`Value` **prinde** valorile din afara intervalului în loc să arunce: sursa e un
+`IProgress(Of Integer)` venit de pe firul robotului, iar o excepție acolo ar opri descărcarea din
+cauza unei bare de progres. Umplerea se decupează la forma șinei, ca marginea rotunjită să rămână
+rotunjită și la 100%.
+
+⚠️ **Capcana IThemedControl, a treia oară.** `ForexeFooterView` este ea însăși `IThemedControl`,
+deci `ThemeManager` **nu recurge în copiii ei** — bara ar fi rămas pe culorile implicite la fiecare
+comutare. `ApplyTheme` al benzii o împinge explicit mai departe. (În consolă nu e nevoie: acolo
+părintele e un `Panel` obișnuit, deci traversarea ajunge singură la ea.)
+
+### Vizibilitate condiționată în bandă
+
+`pbProgress` se vede **doar cât rulează ceva**; `lblCert` **doar după ce s-a ales un certificat**
+(fără el n-are ce spune, iar un «Certificat: —» permanent e zgomot). Amândouă sunt andocate la
+stânga, deci ascunse nu lasă gol în urmă — banda se strânge singură.
+
+Steagurile pornesc din **constructor, nu din designer**: pe suprafața de proiectare cele două rămân
+vizibile (altfel operatorul n-ar mai avea ce apuca), iar la rulare pornesc ascunse.
+
+### Consola a primit același control
+
+Doar schimbarea de tip, ca să nu existe o bară tematizată și una nu pentru **același progres**.
+Vizibilitatea ei a rămas neschimbată (permanentă): e o fereastră dedicată, nu o bandă de status.
+
+**Observație:** `ForexeFooterView.Designer.vb` și `ForexeConsoleForm.Designer.vb` fuseseră între
+timp deschise în designerul VS și **re-serializate** (dimensiuni, margini, `AutoScaleDimensions`) —
+adică dus-întorsul din §DoD 14 s-a făcut și **au supraviețuit**. Schimbările de aici sunt peste
+forma re-serializată de designer.
+
 ## ⚠️ Deschis / neverificat
 
 1. **Nimic nu a atins FOREXE-ul viu.** Niciun workflow rulat, nicio sesiune deschisă, niciun
@@ -173,6 +218,12 @@ verificat prin `git stash` pe arborele curat, aceleași 6 eșecuri, aceleași nu
 5. **Calea REVERSE e rar exercitată** cât timp descărcările rămân locale (vezi §2).
 6. `FooterLeftIconClicked` n-a fost apăsat niciodată pe ecran — geometria și survolarea se judecă
    privind, ca la orice iconiță de bandă.
+6b. **`KBotProgressBar` n-a fost privit niciodată pe ecran** — colțurile rotunjite, decuparea
+   umplerii la 100%, contrastul accentului pe cele patru scheme și felul în care arată la
+   înălțimea autorată în bandă (52px, mult peste cei 18 impliciți) se judecă doar privind.
+   Nici dus-întorsul lui prin designerul VS nu s-a făcut, și **are** perechi
+   `ShouldSerialize`/`Reset` de probat exact ca la 0025/0027. **Fără teste** (politica standing) —
+   deci `Value`-ul care prinde, `Fraction` și `ShouldSerialize*` sunt neacoperite.
 7. Iconița subsolului e `database`, aleasă din ce exista; nu e o glifă de descărcare — de schimbat
    din designer când există una.
 8. `collectFields` diferit între cele două `.wfl` (§2) — nereparat, nu e al feliei.

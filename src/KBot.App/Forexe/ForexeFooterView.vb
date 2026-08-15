@@ -26,6 +26,11 @@ Public Class ForexeFooterView
 
     Public Sub New()
         InitializeComponent()
+        ' Starea de repaus, pusă AICI și nu în designer: pe suprafața de proiectare cele două
+        ' rămân vizibile (altfel operatorul n-ar mai avea ce apuca), iar la rulare pornesc
+        ' ascunse. Fiind andocate la stânga, ascunse nu ocupă deloc lățime.
+        pbProgress.Visible = False
+        lblCert.Visible = False
     End Sub
 
     ''' <summary>
@@ -101,9 +106,16 @@ Public Class ForexeFooterView
         Dim p = ThemeManager.Current.Palette
         lblConexiune.ForeColor = If(conectat, p.SuccessColor, p.TextDimColor)
 
+        ' Certificatul: eticheta apare DOAR după ce s-a ales unul. Fără certificat n-are ce
+        ' spune, iar un «Certificat: —» permanent e zgomot, nu informație.
         Dim cert As String = _controller.CertificateName
-        lblCert.Text = "Certificat: " & If(String.IsNullOrEmpty(cert), "—", cert)
+        Dim areCert As Boolean = Not String.IsNullOrEmpty(cert)
+        lblCert.Visible = areCert
+        If areCert Then lblCert.Text = "Certificat: " & cert
 
+        ' Bara de progres se vede DOAR cât rulează ceva; în repaus se retrage la zero și dispare
+        ' (fiind andocată la stânga, nu lasă gol în urmă).
+        pbProgress.Visible = ocupat
         If Not ocupat Then pbProgress.Value = 0
     End Sub
 
@@ -144,6 +156,12 @@ Public Class ForexeFooterView
 
             ButtonStyles.ApplyPrimary(btnConectare, scheme)
             ButtonStyles.ApplySecondary(btnExtinde, scheme)
+
+            ' Bara de progres e ea însăși IThemedControl, dar banda ASTA e la rândul ei una:
+            ' ThemeManager nu recurge în copiii unui IThemedControl, deci schema trebuie
+            ' împinsă mai departe cu mâna. Fără rândul ăsta bara ar rămâne pe culorile
+            ' implicite la fiecare comutare (exact capcana din regulile casei).
+            pbProgress.ApplyTheme(scheme)
 
             ' Culoarea pastilei de conexiune depinde de STARE, nu doar de schemă.
             ActualizeazaStarea()

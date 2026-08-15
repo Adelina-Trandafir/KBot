@@ -44,8 +44,8 @@ Partial Class MainForm
         viewHost = New Panel()
         navViews = New Controls.KBotNavList()
         pnlStatus = New Panel()
-        lblOperator = New Label()
         forexeFooter = New ForexeFooterView()
+        lblOperator = New Label()
         pnlHeader = New Panel()
         tlyHeader = New TableLayoutPanel()
         cboSs = New Controls.KBotComboBox()
@@ -316,8 +316,6 @@ Partial Class MainForm
         ' 
         ' pnlStatus
         ' 
-        ' Copiii se adaugă în ordine INVERSĂ de dock: banda FOREXE (Fill) prima,
-        ' apoi eticheta operatorului (Left).
         pnlStatus.Controls.Add(forexeFooter)
         pnlStatus.Controls.Add(lblOperator)
         pnlStatus.Dock = DockStyle.Bottom
@@ -327,9 +325,19 @@ Partial Class MainForm
         pnlStatus.Size = New Size(1827, 73)
         pnlStatus.TabIndex = 1
         pnlStatus.Tag = "Card"
-        '
+        ' 
+        ' forexeFooter
+        ' 
+        forexeFooter.Dock = DockStyle.Fill
+        forexeFooter.Location = New Point(240, 0)
+        forexeFooter.Margin = New Padding(0)
+        forexeFooter.Name = "forexeFooter"
+        forexeFooter.Padding = New Padding(10, 15, 10, 15)
+        forexeFooter.Size = New Size(1587, 73)
+        forexeFooter.TabIndex = 1
+        ' 
         ' lblOperator
-        '
+        ' 
         lblOperator.Dock = DockStyle.Left
         lblOperator.Location = New Point(0, 0)
         lblOperator.Margin = New Padding(4, 0, 4, 0)
@@ -339,18 +347,7 @@ Partial Class MainForm
         lblOperator.TabIndex = 0
         lblOperator.Text = "Operator"
         lblOperator.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' forexeFooter — banda FOREXE (Conectare / progres / certificat / stare / consolă).
-        ' Înlocuiește lblProgram și înghite ce arăta lblForexe; btnSinc a plecat în meniul
-        ' butonului de opțiuni din bara de titlu.
-        '
-        forexeFooter.Dock = DockStyle.Fill
-        forexeFooter.Location = New Point(240, 0)
-        forexeFooter.Margin = New Padding(0)
-        forexeFooter.Name = "forexeFooter"
-        forexeFooter.Size = New Size(1587, 73)
-        forexeFooter.TabIndex = 1
-        '
+        ' 
         ' pnlHeader
         ' 
         pnlHeader.BorderStyle = BorderStyle.FixedSingle
@@ -503,7 +500,6 @@ Partial Class MainForm
         pnlTreeHead.PerformLayout()
         CType(navViews, ComponentModel.ISupportInitialize).EndInit()
         pnlStatus.ResumeLayout(False)
-        pnlStatus.PerformLayout()
         pnlHeader.ResumeLayout(False)
         tlyHeader.ResumeLayout(False)
         tlyHeader.PerformLayout()
