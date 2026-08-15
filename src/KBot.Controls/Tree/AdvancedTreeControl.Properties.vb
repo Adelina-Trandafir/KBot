@@ -820,7 +820,8 @@ Partial Public Class AdvancedTreeControl
 
     Private _footerLeftIcon As Image = Nothing
     <Category("K-BOT Arbore - Subsol")>
-    <Description("Iconița din stânga subsolului. IGNORATĂ dacă butonul de strângere stă tot în stânga.")>
+    <Description("Iconița din stânga subsolului (ridică FooterLeftIconClicked). " &
+                 "IGNORATĂ dacă butonul de strângere stă tot în stânga.")>
     <DefaultValue(GetType(Image), Nothing)>
     Public Property FooterLeftIcon As Image
         Get

@@ -44,10 +44,8 @@ Partial Class MainForm
         viewHost = New Panel()
         navViews = New Controls.KBotNavList()
         pnlStatus = New Panel()
-        lblForexe = New Label()
         lblOperator = New Label()
-        lblProgram = New Label()
-        btnSinc = New Button()
+        forexeFooter = New ForexeFooterView()
         pnlHeader = New Panel()
         tlyHeader = New TableLayoutPanel()
         cboSs = New Controls.KBotComboBox()
@@ -144,11 +142,9 @@ Partial Class MainForm
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCaption = "Actualizează angajamente"
         tree.FooterCaptionFont = New Font("Consolas", 8F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        tree.FooterCollapseButtonPosition = KBot.Controls.AdvancedTreeControl.En_FooterButtonPosition.Left
-        tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
-        tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
         tree.FooterHeight = 40
         tree.FooterIconSize = New Size(24, 24)
+        tree.FooterLeftIcon = My.Resources.Resources.database
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
         tree.FooterTextAlign = ContentAlignment.MiddleRight
         tree.FooterVisible = True
@@ -168,7 +164,6 @@ Partial Class MainForm
         tree.LeftIconSize = New Size(20, 20)
         tree.Location = New Point(0, 0)
         tree.Margin = New Padding(4, 5, 4, 5)
-        tree.MinimumCollapsedWidth = 50
         tree.Name = "tree"
         TreeNodeDefinition1.Caption = "elasalqw qwlrlqwl qlrqwlr lqwr "
         TreeNodeDefinition1.ImageKey = Nothing
@@ -321,10 +316,10 @@ Partial Class MainForm
         ' 
         ' pnlStatus
         ' 
-        pnlStatus.Controls.Add(lblForexe)
+        ' Copiii se adaugă în ordine INVERSĂ de dock: banda FOREXE (Fill) prima,
+        ' apoi eticheta operatorului (Left).
+        pnlStatus.Controls.Add(forexeFooter)
         pnlStatus.Controls.Add(lblOperator)
-        pnlStatus.Controls.Add(lblProgram)
-        pnlStatus.Controls.Add(btnSinc)
         pnlStatus.Dock = DockStyle.Bottom
         pnlStatus.Location = New Point(0, 1190)
         pnlStatus.Margin = New Padding(4, 5, 4, 5)
@@ -332,51 +327,30 @@ Partial Class MainForm
         pnlStatus.Size = New Size(1827, 73)
         pnlStatus.TabIndex = 1
         pnlStatus.Tag = "Card"
-        ' 
-        ' lblForexe
-        ' 
-        lblForexe.AutoSize = True
-        lblForexe.Location = New Point(799, 25)
-        lblForexe.Margin = New Padding(4, 0, 4, 0)
-        lblForexe.Name = "lblForexe"
-        lblForexe.Size = New Size(175, 25)
-        lblForexe.TabIndex = 7
-        lblForexe.Text = "● Forexe: neconectat"
-        lblForexe.TextAlign = ContentAlignment.MiddleCenter
-        ' 
+        '
         ' lblOperator
-        ' 
-        lblOperator.AutoSize = True
-        lblOperator.Location = New Point(17, 23)
+        '
+        lblOperator.Dock = DockStyle.Left
+        lblOperator.Location = New Point(0, 0)
         lblOperator.Margin = New Padding(4, 0, 4, 0)
         lblOperator.Name = "lblOperator"
-        lblOperator.Size = New Size(84, 25)
+        lblOperator.Padding = New Padding(17, 0, 8, 0)
+        lblOperator.Size = New Size(240, 73)
         lblOperator.TabIndex = 0
         lblOperator.Text = "Operator"
-        ' 
-        ' lblProgram
-        ' 
-        lblProgram.AutoSize = True
-        lblProgram.Location = New Point(617, 23)
-        lblProgram.Margin = New Padding(4, 0, 4, 0)
-        lblProgram.Name = "lblProgram"
-        lblProgram.Size = New Size(81, 25)
-        lblProgram.TabIndex = 1
-        lblProgram.Text = "Program"
-        ' 
-        ' btnSinc
-        ' 
-        btnSinc.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        btnSinc.FlatStyle = FlatStyle.Flat
-        btnSinc.Font = New Font("Segoe UI Semibold", 10F)
-        btnSinc.Location = New Point(1595, 10)
-        btnSinc.Margin = New Padding(4, 5, 4, 5)
-        btnSinc.Name = "btnSinc"
-        btnSinc.Size = New Size(214, 53)
-        btnSinc.TabIndex = 3
-        btnSinc.Text = "Sincronizare"
-        btnSinc.UseVisualStyleBackColor = True
-        ' 
+        lblOperator.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' forexeFooter — banda FOREXE (Conectare / progres / certificat / stare / consolă).
+        ' Înlocuiește lblProgram și înghite ce arăta lblForexe; btnSinc a plecat în meniul
+        ' butonului de opțiuni din bara de titlu.
+        '
+        forexeFooter.Dock = DockStyle.Fill
+        forexeFooter.Location = New Point(240, 0)
+        forexeFooter.Margin = New Padding(0)
+        forexeFooter.Name = "forexeFooter"
+        forexeFooter.Size = New Size(1587, 73)
+        forexeFooter.TabIndex = 1
+        '
         ' pnlHeader
         ' 
         pnlHeader.BorderStyle = BorderStyle.FixedSingle
@@ -542,8 +516,7 @@ Partial Class MainForm
     Friend WithEvents pnlHeader As Panel
     Friend WithEvents pnlStatus As Panel
     Friend WithEvents lblOperator As Label
-    Friend WithEvents lblProgram As Label
-    Friend WithEvents btnSinc As Button
+    Friend WithEvents forexeFooter As ForexeFooterView
     Friend WithEvents pnlWork As Panel
     Friend WithEvents navViews As KBot.Controls.KBotNavList
     Friend WithEvents split As SplitContainer
@@ -561,5 +534,4 @@ Partial Class MainForm
     Friend WithEvents cboAn As Controls.KBotComboBox
     Friend WithEvents lblAn As Label
     Friend WithEvents lblUnit As Label
-    Friend WithEvents lblForexe As Label
 End Class

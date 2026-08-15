@@ -76,8 +76,6 @@ Partial Public Class AdvancedTreeControl
             g.DrawLine(sep, 0, bandRect.Top, Me.Width, bandRect.Top)
         End Using
 
-        Dim midY As Integer = bandRect.Top + (_footerHeight \ 2)
-
         ' ── Butonul de strângere (stânga sau dreapta) ────────────────────
         ' Dreptunghiul vine din ACEEAȘI funcție pe care o folosește hit-testul — desenul nu-l
         ' „publică" într-un câmp, fiindcă atunci apăsarea ar depinde de o repictare anterioară.
@@ -98,10 +96,14 @@ Partial Public Class AdvancedTreeControl
         ' ── Iconițele de capăt ───────────────────────────────────────────
         ' Regula e simetrică: butonul de strângere ia latura pe care stă, iar iconița de acolo
         ' se ignoră. Nu se înghesuie două lucruri în același colț — vezi FooterIconSuppressed*.
+        ' Iconița din stânga e ȘI ea un buton (ridică FooterLeftIconClicked), exact ca sora ei din
+        ' dreapta: dreptunghiul vine din aceeași funcție pură pe care o folosește hit-testul, iar
+        ' plaja de survolare se aprinde la fel — vezi .ButtonHover.
         If ShowFooterLeftIcon() Then
-            Dim iy As Integer = midY - (_footerIconSize.Height \ 2)
-            g.DrawImage(_footerLeftIcon, x, iy, _footerIconSize.Width, _footerIconSize.Height)
-            x += _footerIconSize.Width + PaddingIconGap
+            Dim l As Rectangle = ComputeFooterLeftIconRect(bandRect)
+            If _footerLeftIconHover Then DrawButtonHover(g, l, FooterLeftIconHoverColor)
+            g.DrawImage(_footerLeftIcon, l)
+            x = l.Right + PaddingIconGap
         End If
 
         If ShowFooterRightIcon() Then
@@ -259,6 +261,28 @@ Partial Public Class AdvancedTreeControl
         End Get
     End Property
 
+    ' Dreptunghiul iconiței din stânga. Perechea lui ComputeFooterRightIconRect: aceeași funcție
+    ' pură pentru desen și hit-test. Când iconița se vede, butonul de strângere NU e pe stânga
+    ' (vezi ShowFooterLeftIcon), deci începutul benzii îi aparține — de aici PaddingTreeStart.
+    Private Function ComputeFooterLeftIconRect(bandRect As Rectangle) As Rectangle
+        If Not ShowFooterLeftIcon() Then Return Rectangle.Empty
+        Dim latime As Integer = _footerIconSize.Width
+        Dim inaltime As Integer = _footerIconSize.Height
+        Dim top As Integer = bandRect.Top + (bandRect.Height - inaltime) \ 2
+        Return New Rectangle(PaddingTreeStart, top, latime, inaltime)
+    End Function
+
+    ''' <summary>Dreptunghiul curent al iconiței din stânga subsolului (gol = nu se vede).</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property FooterLeftIconRect As Rectangle
+        Get
+            If Not _footerVisible Then Return Rectangle.Empty
+            Return ComputeFooterLeftIconRect(New Rectangle(0, Math.Max(0, Me.Height - _footerHeight),
+                                                           Math.Max(1, Me.Width), Math.Max(1, _footerHeight)))
+        End Get
+    End Property
+
     ''' <summary>Dreptunghiul curent al butonului de strângere (gol = nu există). Pentru teste/gazdă.</summary>
     <Browsable(False)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
@@ -317,6 +341,12 @@ Partial Public Class AdvancedTreeControl
         Dim iconRect As Rectangle = FooterRightIconRect
         If Not iconRect.IsEmpty AndAlso iconRect.Contains(location) Then
             If Not KBotDesignTime.IsDesignTime(Me) Then RaiseEvent FooterRightIconClicked(e)
+            Return True
+        End If
+
+        Dim leftRect As Rectangle = FooterLeftIconRect
+        If Not leftRect.IsEmpty AndAlso leftRect.Contains(location) Then
+            If Not KBotDesignTime.IsDesignTime(Me) Then RaiseEvent FooterLeftIconClicked(e)
         End If
         Return True                       ' banda e a subsolului, indiferent unde s-a apăsat
     End Function
@@ -335,9 +365,15 @@ Partial Public Class AdvancedTreeControl
         Dim iconRect As Rectangle = If(inFooter, FooterRightIconRect, Rectangle.Empty)
         Dim hoverIcon As Boolean = Not iconRect.IsEmpty AndAlso iconRect.Contains(location)
 
-        If hover <> _footerButtonHover OrElse hoverIcon <> _footerRightIconHover Then
+        ' Iconița din stânga e la fel un buton (ridică FooterLeftIconClicked) — se aprinde identic.
+        Dim leftRect As Rectangle = If(inFooter, FooterLeftIconRect, Rectangle.Empty)
+        Dim hoverLeft As Boolean = Not leftRect.IsEmpty AndAlso leftRect.Contains(location)
+
+        If hover <> _footerButtonHover OrElse hoverIcon <> _footerRightIconHover OrElse
+           hoverLeft <> _footerLeftIconHover Then
             _footerButtonHover = hover
             _footerRightIconHover = hoverIcon
+            _footerLeftIconHover = hoverLeft
             Me.Invalidate()
         End If
         ' Cursorul în bandă = niciun nod survolat, deci nicio etichetă plutitoare.
@@ -346,9 +382,10 @@ Partial Public Class AdvancedTreeControl
     End Function
 
     Friend Sub HandleFooterMouseLeave()
-        If _footerButtonHover OrElse _footerRightIconHover Then
+        If _footerButtonHover OrElse _footerRightIconHover OrElse _footerLeftIconHover Then
             _footerButtonHover = False
             _footerRightIconHover = False
+            _footerLeftIconHover = False
             Me.Invalidate()
         End If
         CancelCollapsedFlyout()

@@ -8,5 +8,6 @@
     Public Event RightIconClicked(pNode As TreeItem, e As MouseEventArgs)
     Public Event HeaderRightIconClicked(e As MouseEventArgs)
     Public Event FooterRightIconClicked(e As MouseEventArgs)
+    Public Event FooterLeftIconClicked(e As MouseEventArgs)
     Public Event SearchFinished(matchingItems As List(Of TreeItem), searchText As String)
 End Class

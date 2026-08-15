@@ -55,19 +55,23 @@ Public Class MainForm
     ' Nothing / IsDisposed = închisă; se re-deschide la nevoie, ca _infoForm.
     Private _logViewer As LogViewerForm
 
-    ' Starea splitter-ului dinainte de strângerea arborelui, ca desfacerea să-l pună înapoi
-    ' exact unde era (vezi tree_CollapsedChanged). 0 = arborele n-a fost încă strâns.
-    Private _splitterDistanceDesfasurat As Integer
-    Private _panel1MinSizeDesfasurat As Integer
+    ' Coordonatorul FOREXE (felia 0034) — singurul care vorbește cu runner-ul. Banda din
+    ' subsol și consola se leagă la el; shell-ul nu mai orchestrează nimic singur.
+    Private ReadOnly _forexe As ForexeController
+    ' Consola FOREXE: creată O SINGURĂ DATĂ și doar ascunsă la închidere, fiindcă rtbLog-ul
+    ' ei e ținta logger-ului pe toată durata aplicației (vezi EnsureConsole).
+    Private _console As ForexeConsoleForm
 
     Public Sub New(forexeRunner As IForexeRunner, session As SessionContext,
-                   apiClient As IApiClient, authApi As IAuthApi, loginFactory As Func(Of LoginForm))
+                   apiClient As IApiClient, authApi As IAuthApi, loginFactory As Func(Of LoginForm),
+                   forexe As ForexeController)
         InitializeComponent()
         _forexeRunner = forexeRunner
         _session = session
         _apiClient = apiClient
         _authApi = authApi
         _loginFactory = loginFactory
+        _forexe = forexe
         Me.Text = "K-BOT"
     End Sub
 
@@ -139,17 +143,21 @@ Public Class MainForm
 
     Private Async Sub MainForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Try
-            ' Logger FOREXE doar-fișier: shell-ul nu mai are panou de log (rtbLog a dispărut);
-            ' liniile merg în <AppDir>\Logs, progresul vizual e busyBar. RichTextBox real,
-            ' neafișat (nu Nothing): SetColorScheme→RefreshDisplay dereferențiază controlul
-            ' (același pattern ca ForexeConnectTest din harness).
+            ' Logger FOREXE (felia 0034): ținta VIZIBILĂ e caseta din consola FOREXE, iar
+            ' liniile merg ȘI în <AppDir>\Logs. Consola se construiește AICI, o singură dată,
+            ' și rămâne ascunsă până o cere operatorul — RichTextBoxLogger cere controlul la
+            ' construcție și îl ține cât trăiește aplicația, deci ținta trebuie să existe
+            ' înainte de prima acțiune FOREXE, nu abia când se deschide fereastra.
             Dim logDir As String = Path.Combine(AppContext.BaseDirectory, "Logs")
             Directory.CreateDirectory(logDir)
+            Dim caleJurnal As String = Path.Combine(logDir, $"Log_{DateTime.Now:yyyyMMdd_HHmmss}.txt")
 
             Try
-                _logger = New RichTextBoxLogger(New System.Windows.Forms.RichTextBox()) With {
-                    .EnableUI = False,
-                    .LogFilePath = Path.Combine(logDir, $"Log_{DateTime.Now:yyyyMMdd_HHmmss}.txt")
+                EnsureConsole()
+                _console.CaleJurnal = caleJurnal
+                _logger = New RichTextBoxLogger(_console.LogBox) With {
+                    .EnableUI = True,
+                    .LogFilePath = caleJurnal
                 }
             Catch ex As Exception
                 MessageBox.Show(Me, "Nu s-a putut crea logger-ul FOREXE: " & ex.Message,
@@ -173,7 +181,11 @@ Public Class MainForm
             capBar.Text = If(String.IsNullOrEmpty(_session.NumeUnitate), "K-BOT", "K-BOT — " & _session.NumeUnitate)
             lblUnit.Text = If(String.IsNullOrEmpty(_session.NumeUnitate), String.Empty, _session.NumeUnitate)
             lblOperator.Text = If(String.IsNullOrEmpty(_session.OperatorName), String.Empty, _session.OperatorName)
-            lblProgram.Text = String.Empty   ' se completează după alegerea perioadei (SetPeriod)
+
+            ' Banda FOREXE din subsol: dialogurile coordonatorului (alegerea certificatului)
+            ' primesc shell-ul ca proprietar, iar banda se leagă la coordonator.
+            _forexe.Owner = Me
+            forexeFooter.Bind(_forexe)
 
             ' Navigația vederilor — ordinea paginilor din Access, Sumar implicit.
             ' Cele opt intrări (cinci butoane Near, separator Far, DDF/ORD Far) sunt AUTORITE
@@ -195,8 +207,6 @@ Public Class MainForm
             ' (caption = Descriere, coloană = CodAngajament, iconiță de status stânga,
             ' refresh la hover în dreapta). Datele reale vin din GET /api/forexe/tree.
             'ConfigureAngajamenteList()
-
-            UpdateForexeStatus()
 
             ' Combo-urile an / SS ȘI lista se umplu doar cu o sesiune autentificată (calea
             ' Release trece prin login; în harness-ul Debug fereastra se poate deschide fără
@@ -290,8 +300,9 @@ Public Class MainForm
             Dim row As PeriodInfo = _periods.FirstOrDefault(Function(p) p.AN = an AndAlso p.SS = ss)
             If row Is Nothing Then Return
 
+            ' CodProgram nu mai are etichetă proprie în subsol (locul lui l-a luat banda
+            ' FOREXE, felia 0034) — rămâne pe sesiune, de unde îl citește JobBuilder.
             _session.SetPeriod(an, ss, row.CodProgram)
-            lblProgram.Text = If(String.IsNullOrEmpty(row.CodProgram), String.Empty, "Program: " & row.CodProgram)
             If persist Then PersistLastSs(ss)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ApplySelectedPeriod", ex)
@@ -548,171 +559,112 @@ Public Class MainForm
         End Try
     End Sub
 
+    ' NOTĂ (felia 0034): strângerea arborelui a DISPĂRUT din shell — butonul de subsol,
+    ' handler-ul tree_CollapsedChanged și ClampSplitter au fost șterse, iar colțul din stânga
+    ' al subsolului a devenit butonul de descărcare a listei. Arborii din VEDERI își păstrează
+    ' strângerea; asta a fost doar a shell-ului.
+
     ''' <summary>
-    ''' Strângerea arborelui (felia 0027-02). Arborele e <c>Dock = Fill</c> în <c>split.Panel1</c>,
-    ''' deci NU-și poate ține singur lățimea: layout-ul formularului i-o dă înapoi la următoarea
-    ''' trecere — exact ce se vedea, «se strânge și imediat se desface». Contractul controlului
-    ''' (același ca la <c>KBotNavList</c>): el schimbă starea și ne anunță, GAZDA mută splitter-ul.
-    '''
-    ''' Distanța cerută = lățimea strânsă a arborelui + padding-ul stâng al panoului (citit, nu
-    ''' presupus). <c>Panel1MinSize</c> păzește TRAGEREA splitter-ului, iar strângerea e o comandă,
-    ''' nu o tragere: coborâm paza cât ține starea și o punem la loc la desfacere. Cât e strâns,
-    ''' splitter-ul se fixează — tras, n-ar duce decât la o lățime pe jumătate, care nu e nici
-    ''' starea strânsă, nici cea desfășurată.
+    ''' Iconița din STÂNGA subsolului arborelui = descarcă din FOREXE lista de angajamente
+    ''' («adlop - Lista Angajamente Curente.wfl»). Rezultatul rămâne LOCAL (memorie + JSON);
+    ''' scrierea pe server e rândul «Sincronizare (server)» din meniul de opțiuni.
     ''' </summary>
-    Private Sub Tree_CollapsedChanged(collapsed As Boolean) Handles tree.CollapsedChanged
+    Private Async Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
         Try
-            Dim padStanga As Integer = split.Panel1.Padding.Left
-            If collapsed Then
-                _splitterDistanceDesfasurat = split.SplitterDistance
-                _panel1MinSizeDesfasurat = split.Panel1MinSize
-                Dim tinta As Integer = tree.MinimumCollapsedWidth + padStanga
-                split.Panel1MinSize = Math.Min(_panel1MinSizeDesfasurat, tinta)
-                split.SplitterDistance = ClampSplitter(tinta)
-                split.IsSplitterFixed = True
-            Else
-                split.IsSplitterFixed = False
-                If _panel1MinSizeDesfasurat > 0 Then split.Panel1MinSize = _panel1MinSizeDesfasurat
-                Dim tinta As Integer = If(_splitterDistanceDesfasurat > 0,
-                                          _splitterDistanceDesfasurat,
-                                          tree.ExpandedWidth + padStanga)
-                split.SplitterDistance = ClampSplitter(tinta)
-            End If
+            busyBar.Running = True
+            Try
+                Await _forexe.DownloadListaAsync()
+            Finally
+                busyBar.Running = False
+            End Try
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.tree_CollapsedChanged", ex)
+            ' Frontieră de UI (async Sub): nu poate rearunca — logăm și spunem de ce.
+            GlobalErrorLog.Write("MainForm.tree_FooterLeftIconClicked", ex)
+            MessageBox.Show(Me, "Descărcarea listei de angajamente a eșuat: " & ex.Message,
+                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
 
     ''' <summary>
-    ''' Distanța splitter-ului adusă în intervalul pe care <see cref="SplitContainer"/> îl acceptă.
-    ''' Fără asta, o fereastră îngustă face setterul să arunce <c>InvalidOperationException</c> —
-    ''' iar o excepție la apăsarea unui buton de strângere ar fi o pedeapsă pentru mărimea ferestrei.
+    ''' Iconița din dreapta unui NOD = descarcă din FOREXE angajamentul acela întreg
+    ''' («Prelucrare Completa», sau varianta REVERSE dacă are deja istoric local). Rezultatul
+    ''' rămâne LOCAL, brut — nu există încă mapper de ingestie pentru fluxul ăsta.
     ''' </summary>
-    Private Function ClampSplitter(dorit As Integer) As Integer
-        Dim maxim As Integer = split.Width - split.Panel2MinSize - split.SplitterWidth
-        If maxim < split.Panel1MinSize Then Return split.Panel1MinSize
-        Return Math.Max(split.Panel1MinSize, Math.Min(dorit, maxim))
-    End Function
-
-    ' Click pe iconița de refresh (dreapta, la hover) — reîmprospătarea din FOREXE a
-    ' angajamentului e o felie separată; aici doar semnalăm, fără no-op tăcut.
-    Private Sub Tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
+    Private Async Sub Tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
         Try
             Dim cod As String = If(pNode Is Nothing, Nothing, TryCast(pNode.Tag, String))
             If String.IsNullOrEmpty(cod) Then Return
-            RefreshAngajament(cod)
+
+            busyBar.Running = True
+            Try
+                ' Istoricul LOCAL decide înainte/înapoi (Access FX_Angajament_InfoComplete):
+                ' îl citim prin aceeași plasă de re-login ca restul shell-ului.
+                Await _forexe.DownloadNodeAsync(
+                    cod,
+                    Function(c, ct) WithReauth(Of IstoricInfo)(Function() _apiClient.GetIstoricAsync(c, ct)))
+            Finally
+                busyBar.Running = False
+            End Try
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.tree_RightIconClicked", ex)
+            MessageBox.Show(Me, "Descărcarea angajamentului a eșuat: " & ex.Message,
+                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
 
-    ' Stub pentru reîmprospătarea unui angajament din FOREXE (felie viitoare).
-    Private Sub RefreshAngajament(cod As String)
+    ' ---------------- FOREXE: consolă + sincronizare ----------------
+    '
+    ' Conectarea, alegerea certificatului, progresul, starea și anularea au plecat toate în
+    ' ForexeController (felia 0034). Shell-ul păstrează doar: fereastra consolei (creată o
+    ' dată, ascunsă la închidere) și treapta de upsert, care e a lui — coordonatorul aduce
+    ' datele, serverul le primește pe calea deja existentă (WithReauth).
+
+    ''' <summary>
+    ''' Creează consola FOREXE dacă nu există. Se cheamă din <c>MainForm_Load</c>, ÎNAINTE de
+    ''' construirea logger-ului: caseta ei e ținta acestuia pe toată durata aplicației.
+    ''' Închiderea ferestrei o ascunde (vezi <c>ForexeConsoleForm.OnFormClosing</c>), deci
+    ''' instanța rămâne validă și nu se re-creează niciodată.
+    ''' </summary>
+    Private Sub EnsureConsole()
         Try
-            _logger?.LogInfo($"Refresh angajament «{cod}» cerut (neimplementat în această felie).")
-            MessageBox.Show(Me,
-                $"Reîmprospătarea angajamentului «{cod}» din FOREXE va fi disponibilă într-o felie viitoare.",
-                "Refresh angajament", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            If _console IsNot Nothing AndAlso Not _console.IsDisposed Then Return
+            _console = New ForexeConsoleForm()
+            _console.Bind(_forexe)
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.RefreshAngajament", ex)
+            GlobalErrorLog.Write("MainForm.EnsureConsole", ex)
             Throw
         End Try
     End Sub
 
-    ' ---------------- FOREXE: conectare + sincronizare ----------------
-
-    Private Function HasLiveForexeSession() As Boolean
+    ' Butonul de extindere din banda de subsol: arată consola (nemodal, deținută de shell).
+    Private Sub ForexeFooter_ExpandRequested(sender As Object, e As EventArgs) Handles forexeFooter.ExpandRequested
         Try
-            Return DirectCast(_forexeRunner, ForexeRunner).HasLiveSession
+            EnsureConsole()
+            If Not _console.Visible Then _console.Show(Me)
+            If _console.WindowState = FormWindowState.Minimized Then _console.WindowState = FormWindowState.Normal
+            _console.BringToFront()
+            _console.Activate()
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.HasLiveForexeSession", ex)
-            Throw
-        End Try
-    End Function
-
-    ' Actualizare cosmetică a indicatorului de status; e chemată și din Finally-ul lui
-    ' btnSinc_Click și din OnThemeChanged, deci NU rearuncă (un throw ar scăpa din
-    ' handler / Finally și ar dărâma procesul) — logăm și înghițim.
-    Private Sub UpdateForexeStatus()
-        Try
-            Dim connected As Boolean = HasLiveForexeSession()
-            lblForexe.Text = If(connected, "● Forexe: conectat", "● Forexe: neconectat")
-            Dim p = ThemeManager.Current.Palette
-            lblForexe.ForeColor = If(connected, p.SuccessColor, p.TextDimColor)
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.UpdateForexeStatus", ex)
+            GlobalErrorLog.Write("MainForm.forexeFooter_ExpandRequested", ex)
         End Try
     End Sub
 
     ''' <summary>
-    ''' Asigură o sesiune FOREXE vie: dacă nu există, rulează fluxul de conectare
-    ''' (certificat + workflow „Conectare"). Întoarce False dacă operatorul anulează
-    ''' sau conectarea eșuează. Ownership-ul conexiunii rămâne la IForexeRunner —
-    ''' shell-ul doar o cere la nevoie (sensul Access al lui btnSinc).
+    ''' Sincronizare = descărcarea listei (prin coordonator) + upsert la
+    ''' <c>/api/forexe/angajamente/upsert</c>, cu <c>WithReauth</c> pe apelul HTTP. Este
+    ''' fluxul vechiului <c>btnSinc</c>, mutat în meniul butonului de opțiuni din bara de
+    ''' titlu. Fără DbName (fără login, posibil doar în harness-ul Debug) se oprește după
+    ''' descărcare — datele rămân oricum salvate local de coordonator.
     ''' </summary>
-    Private Async Function EnsureForexeSessionAsync(progress As IProgress(Of Integer), ct As CancellationToken) As Task(Of Boolean)
-        Try
-            If HasLiveForexeSession() Then Return True
-
-            Dim cert As X509Certificate2 = SelectCertificate()
-            If cert Is Nothing Then Return False   ' anulat / fără certificat
-
-            Dim job As New JobRequest With {
-                .WorkflowName = "Conectare",
-                .WflPath = Path.Combine(AppContext.BaseDirectory, "Workflows", "adlop - Conectare.wfl")
-            }
-            Dim result As JobResult = Await _forexeRunner.RunAsync(job, cert, progress, ct)
-            UpdateForexeStatus()
-            Return result.Success
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.EnsureForexeSessionAsync", ex)
-            Throw
-        End Try
-    End Function
-
-    ''' <summary>
-    ''' Sincronizare = fluxul ListaAngajamente (felia completă existentă), pe sesiunea
-    ''' FOREXE — deschisă la nevoie. Scrape -> mapare -> upsert la /api/forexe/
-    ''' angajamente/upsert, cu WithReauth pe apelul HTTP. Fără DbName (fără login,
-    ''' posibil doar în harness-ul Debug) se oprește după mapare.
-    ''' </summary>
-    Private Async Sub BtnSinc_Click(sender As Object, e As EventArgs) Handles btnSinc.Click
-        btnSinc.Enabled = False
+    Private Async Function SincronizeazaAsync() As Task
         busyBar.Running = True
         _cts = New CancellationTokenSource()
-
-        ' Procentul de progres nu are țintă vizuală în shell (busyBar e indeterminată);
-        ' liniile detaliate merg în logger-ul fișier.
-        Dim progress As New Progress(Of Integer)(Sub(p)
-                                                 End Sub)
-
         Try
-            If Not Await EnsureForexeSessionAsync(progress, _cts.Token) Then
-                _logger.LogWarning("Sincronizare oprită: nu s-a putut deschide sesiunea FOREXE.")
+            Dim mapate As List(Of Angajament) = Await _forexe.DownloadListaAsync()
+            If mapate Is Nothing Then
+                _logger.LogWarning("Sincronizare oprită: lista de angajamente nu a putut fi descărcată.")
                 Return
             End If
-
-            Dim job As JobRequest = JobBuilder.BuildListaAngajamente(_session)
-            Dim result As JobResult = Await _forexeRunner.RunJobAsync(job, progress, _cts.Token)
-            If Not result.Success Then
-                _logger.LogError($"ListaAngajamente eșuat: {result.Message}")
-                Return
-            End If
-
-            Dim rows As List(Of Dictionary(Of String, String)) = Nothing
-            If Not result.Tables.TryGetValue(WorkflowCatalog.ListaAngajamenteTable, rows) Then
-                _logger.LogWarning($"Nu s-a găsit tabelul '{WorkflowCatalog.ListaAngajamenteTable}' în rezultat (0 rânduri scrape).")
-                Return
-            End If
-
-            ' De-risk: log the real scraped column keys before mapping, so a FOREXE
-            ' rename is visible in the log even when the upsert is skipped (no DbName).
-            If rows.Count > 0 Then
-                _logger.LogInfo($"ListaAngajamente scraped keys: {String.Join(",", rows(0).Keys)}")
-            End If
-
-            Dim mapped As List(Of Angajament) = AngajamentMapper.FromListaAngajamenteResult(rows)
-            _logger.LogInfo($"ListaAngajamente: {mapped.Count} rânduri mapate (din {rows.Count} brute).")
 
             ' Guard: fără DbName (populat la login) nu putem ținti baza unității.
             If String.IsNullOrEmpty(_session.DbName) Then
@@ -720,30 +672,13 @@ Public Class MainForm
                 Return
             End If
 
-            Dim resp As String = Await WithReauth(Function() _apiClient.UpsertAngajamenteAsync(_session.DbName, mapped, _cts.Token))
-            _logger.LogSuccess($"Upsert reușit: {mapped.Count} angajamente în '{_session.DbName}'. Răspuns server: {resp}")
-
+            Dim resp As String = Await WithReauth(Function() _apiClient.UpsertAngajamenteAsync(_session.DbName, mapate, _cts.Token))
+            _logger.LogSuccess($"Upsert reușit: {mapate.Count} angajamente în '{_session.DbName}'. Răspuns server: {resp}")
         Catch ex As Exception
-            _logger.LogException(ex, "Eroare Sincronizare (UI)")
+            GlobalErrorLog.Write("MainForm.SincronizeazaAsync", ex)
+            Throw
         Finally
             busyBar.Running = False
-            btnSinc.Enabled = True
-            UpdateForexeStatus()
-        End Try
-    End Sub
-
-    ''' <summary>Picker de certificat în mod manual de PIN (utilizatorul tastează PIN-ul în dialogul Windows).</summary>
-    Private Function SelectCertificate() As X509Certificate2
-        Try
-            Using dlg As New CertificateSelectionForm(manualPin:=True)
-                If dlg.ShowDialog(Me) = DialogResult.OK Then
-                    Return dlg.SelectedCertificate
-                End If
-            End Using
-            Return Nothing
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.SelectCertificate", ex)
-            Throw
         End Try
     End Function
 
@@ -823,11 +758,8 @@ Public Class MainForm
             ' Fundalul formularului ESTE conturul de 1px al ferestrei (vezi LoginForm).
             BackColor = p.BorderColor
 
-            ButtonStyles.ApplyPrimary(btnSinc, scheme)
-
             ' Etichetele secundare -> text dim; titlurile rămân pe TextColor plin.
             lblOperator.ForeColor = p.TextDimColor
-            lblProgram.ForeColor = p.TextDimColor
             lblAn.ForeColor = p.TextDimColor
             lblSs.ForeColor = p.TextDimColor
             lblUnit.ForeColor = p.TextColor
@@ -839,7 +771,8 @@ Public Class MainForm
             ' ce ștergea alegerile din designer, deci a dispărut — o culoare pusă în designer
             ' câștigă, una lăsată goală urmează tema.
 
-            UpdateForexeStatus()
+            ' Banda FOREXE e IThemedControl: ThemeManager i-a cerut deja ApplyTheme și NU a
+            ' recurs în copiii ei — aici nu mai împingem nicio culoare peste ea.
             pnlHeader.Invalidate()
             pnlStatus.Invalidate()
         Catch ex As Exception
@@ -891,8 +824,10 @@ Public Class MainForm
         End Try
     End Sub
 
-    ' Cheile rândurilor din meniul butonului de opțiuni. Azi e unul singur; se adaugă aici.
+    ' Cheile rândurilor din meniul butonului de opțiuni.
     Private Const OPT_JURNAL As String = "jurnal"
+    ' Felia 0034: vechiul btnSinc din subsol a devenit rând de meniu (compatibilitate).
+    Private Const OPT_SINCRONIZARE As String = "sincronizare"
 
     ''' <summary>
     ''' Butonul de opțiuni din bara de titlu desfășoară meniul shell-ului — un <c>CustomPopup</c>
@@ -917,6 +852,7 @@ Public Class MainForm
                 ' «&A» = litera de acces, ca la orice meniu de sistem.
                 elemente.Add(New CustomPopupItem(OPT_JURNAL, "&Arată jurnal"))
             End If
+            elemente.Add(New CustomPopupItem(OPT_SINCRONIZARE, "&Sincronizare (server)"))
             If elemente.Count = 0 Then Return
 
             ' NU în «Using»: arătat nemodal, popup-ul se eliberează singur la închidere.
@@ -929,11 +865,13 @@ Public Class MainForm
         End Try
     End Sub
 
-    Private Sub MeniuOptiuni_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
+    Private Async Sub MeniuOptiuni_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
         Try
             Select Case e.Item.Key
                 Case OPT_JURNAL
                     ShowLog()
+                Case OPT_SINCRONIZARE
+                    Await SincronizeazaAsync()
                 Case Else
                     ' Fără no-op-uri tăcute: un rând adăugat în meniu și uitat aici trebuie să se vadă.
                     Throw New ArgumentException("Rând necunoscut în meniul de opțiuni: «" & e.Item.Key & "».")

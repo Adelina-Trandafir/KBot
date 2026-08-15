@@ -18,5 +18,17 @@ Namespace KBot.Forexe
         Function RunJobAsync(job As JobRequest,
                              progress As IProgress(Of Integer),
                              ct As CancellationToken) As Task(Of JobResult)
+
+        ' Linia de stare a executorului, împinsă mai departe (felia 0034). Până acum se
+        ' termina în logger; suprafețele de UI (banda de subsol + consola) au nevoie de ea
+        ' ca text scurt, nu ca fișier de log.
+        Event StatusUpdated As EventHandler(Of String)
+
+        ' True dacă există o sesiune vie (executor cu browser deschis). Era doar pe clasă,
+        ' iar gazdele făceau DirectCast la ForexeRunner ca s-o citească.
+        ReadOnly Property HasLiveSession As Boolean
+
+        ' Aduce fereastra browserului în față (delegare către WorkflowExecutor).
+        Function ShowBrowserAsync() As Task
     End Interface
 End Namespace

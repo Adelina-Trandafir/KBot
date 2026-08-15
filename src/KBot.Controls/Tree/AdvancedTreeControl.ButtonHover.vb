@@ -31,12 +31,14 @@ Partial Public Class AdvancedTreeControl
     Private _headerSearchIconHover As Boolean = False
     Private _headerRightIconHover As Boolean = False
     Private _footerRightIconHover As Boolean = False
+    Private _footerLeftIconHover As Boolean = False
     Private _nodeRightIconHover As Boolean = False
 
     ' ── Culorile ──────────────────────────────────────────────────────────────
     Private _headerSearchIconHoverColor As Color = Color.Empty
     Private _headerRightIconHoverColor As Color = Color.Empty
     Private _footerRightIconHoverColor As Color = Color.Empty
+    Private _footerLeftIconHoverColor As Color = Color.Empty
     Private _footerCollapseButtonHoverColor As Color = Color.Empty
     Private _nodeRightIconHoverColor As Color = Color.Empty
     Private _searchClearButtonHoverColor As Color = Color.Empty
@@ -103,6 +105,26 @@ Partial Public Class AdvancedTreeControl
     End Function
     Public Sub ResetFooterRightIconHoverColor()
         _footerRightIconHoverColor = Color.Empty
+        Me.Invalidate()
+    End Sub
+
+    <Category("K-BOT Arbore - Butoane")>
+    <Description("Fundalul iconiței din stânga subsolului, la survolare; gol = automat din FooterForeColor.")>
+    Public Property FooterLeftIconHoverColor As Color
+        Get
+            Return If(_footerLeftIconHoverColor <> Color.Empty,
+                      _footerLeftIconHoverColor, AutoHover(FooterForeColor))
+        End Get
+        Set(value As Color)
+            _footerLeftIconHoverColor = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeFooterLeftIconHoverColor() As Boolean
+        Return _footerLeftIconHoverColor <> Color.Empty
+    End Function
+    Public Sub ResetFooterLeftIconHoverColor()
+        _footerLeftIconHoverColor = Color.Empty
         Me.Invalidate()
     End Sub
 
@@ -273,10 +295,11 @@ Partial Public Class AdvancedTreeControl
     ''' <summary>Stinge toate stările de survolare (cursorul a plecat din control).</summary>
     Friend Sub ClearButtonHover()
         If Not (_headerSearchIconHover OrElse _headerRightIconHover OrElse
-                _footerRightIconHover OrElse _nodeRightIconHover) Then Return
+                _footerRightIconHover OrElse _footerLeftIconHover OrElse _nodeRightIconHover) Then Return
         _headerSearchIconHover = False
         _headerRightIconHover = False
         _footerRightIconHover = False
+        _footerLeftIconHover = False
         _nodeRightIconHover = False
         Me.Invalidate()
     End Sub

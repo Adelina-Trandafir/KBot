@@ -39,12 +39,34 @@ Namespace KBot.Forexe
             _logger = logger
         End Sub
 
+        ''' <summary>
+        ''' Linia de stare a executorului, retransmisă gazdelor (felia 0034). Rămâne ȘI în
+        ''' logger — evenimentul se adaugă, nu înlocuiește (vezi OnExecutorStatus).
+        ''' </summary>
+        Public Event StatusUpdated As EventHandler(Of String) Implements IForexeRunner.StatusUpdated
+
         ''' <summary>True dacă există o sesiune (executor cu browser deschis).</summary>
-        Public ReadOnly Property HasLiveSession As Boolean
+        Public ReadOnly Property HasLiveSession As Boolean Implements IForexeRunner.HasLiveSession
             Get
                 Return _executor IsNot Nothing AndAlso _executor.IsBrowserOpen
             End Get
         End Property
+
+        ''' <summary>
+        ''' Aduce fereastra browserului în față. Fără sesiune vie nu e un no-op tăcut:
+        ''' apelantul (butonul «Arată browser») trebuie să afle de ce nu s-a întâmplat nimic.
+        ''' </summary>
+        Public Async Function ShowBrowserAsync() As Task Implements IForexeRunner.ShowBrowserAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then
+                Throw New InvalidOperationException("Nicio sesiune activă — nu există browser de arătat.")
+            End If
+            Try
+                Await _executor.ShowBrowserWindowAsync()
+            Catch ex As Exception
+                _logger?.LogException(ex, "Eroare la aducerea browserului în față")
+                Throw
+            End Try
+        End Function
 
         Public Async Function RunAsync(job As JobRequest,
                                        certificate As X509Certificate2,
@@ -237,8 +259,16 @@ Namespace KBot.Forexe
             Return rows
         End Function
 
+        ' Starea merge în DOUĂ locuri: jurnalul (ca până acum) și evenimentul pe care îl
+        ' ascultă suprafețele de UI. Un abonat care aruncă nu are voie să oprească robotul,
+        ' deci ridicarea evenimentului e păzită separat de scrierea în jurnal.
         Private Sub OnExecutorStatus(status As String)
             _logger.LogInfo(status)
+            Try
+                RaiseEvent StatusUpdated(Me, status)
+            Catch ex As Exception
+                _logger.LogWarning($"Un abonat la StatusUpdated a aruncat: {ex.Message}")
+            End Try
         End Sub
 
         Private Sub OnExecutorBrowserClosed(message As String)

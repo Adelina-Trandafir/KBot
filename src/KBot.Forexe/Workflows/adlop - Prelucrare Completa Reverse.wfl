@@ -1,0 +1,235 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow name="Prelucrare completă {{COD_ANGAJAMENT}}" startUrl="current" expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
+  <!-- V.4 - 26/03/2026
+    Flux combinat — prelucrare completă angajament
+    ───────────────────────────────────────────────
+    SEC. 0 — Citire date angajament (din .well)
+    SEC. 1 — Scrape tabel indicatori (tab0)
+    SEC. 2 — Recepții (tab1) cu detaliu per recepție
+    SEC. 4 — Istoric (cu paginare)
+
+    Toate secțiunile cu tabel sunt protejate cu IfExists —
+    dacă tab-ul sau tabelul lipsește, fluxul continuă fără eroare.
+
+    Variabile așteptate din VBA:
+      {{COD_ANGAJAMENT}}  — codul angajamentului de procesat
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       RESET INTERFAȚĂ — OBLIGATORIU LA ÎNCEPUT
+       ═══════════════════════════════════════════════════════ -->
+
+  <IfExists selector="#select2-drop-mask" timeout="1">
+    <Click selector="#select2-drop-mask" force="true" LogValue="Resetare interfață — închid dropdown-uri deschise"/>
+  </IfExists>
+  <Click selector="#statlogo" waitNavigation="true" timeout="5"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CĂUTARE ANGAJAMENT + DESCHIDERE MODIFICARE
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ Caut și deschid angajamentul {{COD_ANGAJAMENT}} ══" level="action"/>
+
+  <Click selector="a:has-text('Listă angajamente')" waitNavigation="false" timeout="5"/>
+  <Fill selector="input[name='cod']" value="{{COD_ANGAJAMENT}}" clear="true" timeout="5"/>
+  <Click selector="button:has-text('Caută')" waitNavigation="false" timeout="5"/>
+
+  <IfExists selector=".alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')" timeout="1">
+    <Log message="EROARE: Angajamentul {{COD_ANGAJAMENT}} nu există în listă!" level="error"/>
+    <Exit message="Angajamentul {{COD_ANGAJAMENT}} nu a fost găsit. Opresc execuția."/>
+  </IfExists>
+
+  <WaitFor selector="a[href*='exportToXLS']" timeout="5"/>
+  <Click selector="a.haction i.glyphicon-list:visible" timeout="5"/>
+  <WaitFor selector=".divaction" state="visible" timeout="5"/>
+  <Click selector=".divaction a:has-text('Modificare')" waitNavigation="true" timeout="5"/>
+  <WaitFor selector="li.tab0" timeout="5"/>
+
+  <Log message="Angajament {{COD_ANGAJAMENT}} deschis în modul Modificare." level="success"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECȚIUNEA 0 — CITIRE DATE ANGAJAMENT (din .well)
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ SECȚIUNEA 0: Citesc datele angajamentului ══" level="action"/>
+
+  <Read selector=".well.well-small h4 span:nth-child(2)" saveTo="CodAngajament"/>
+  <Read selector=".well.well-small div.clearfix:has(strong:has-text('Dată angajament')) span:last-child" saveTo="DataAngajament"/>
+  <IfExists selector=".well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child" >
+     <Read selector=".well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child" saveTo="DataInceputDerulare"/>
+  </IfExists>
+  
+  <IfExists selector=".well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child" >
+     <Read selector=".well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child" saveTo="UltimaModificare"/>
+  </IfExists>
+
+  <Read selector=".well.well-small div.pull-left p" saveTo="DescriereAngajament"/>
+  <Read selector=".well.well-small span.label" saveTo="StareAngajament"/>
+
+  <Log message="✓ Date angajament citite: [[CodAngajament]] / [[StareAngajament]]" level="success"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECȚIUNEA 1 — INDICATORI (tab0)
+       Guard: dacă tabelul nu există, sărim secțiunea silențios.
+       Selector exterior: table.table-striped.table-bordered.table-condensed
+       Selector interior: table.table-bordered.table-hover.table-condensed
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ SECȚIUNEA 1: Indicatori ══" level="action"/>
+
+  <WaitFor selector="li.tab0.active" timeout="5"/>
+
+  <IfExists selector="table.table-striped.table-bordered.table-condensed tbody tr" timeout="5">
+
+    <ScrapeTable selector="table.table-striped.table-bordered.table-condensed"
+                 saveTo="TabelIndicatori"
+                 nextPageSelector="a[rel='next']"
+                 waitSelector="table.table-striped.table-bordered.table-condensed"
+                 fingerprintSelector="table.table-striped.table-bordered.table-condensed tbody tr:last-child td:last-child"
+                 isCheckpoint="true"
+                 timeout="5"/>
+
+    <Log message="Lista indicatori citită. Încep iterarea..." level="info"/>
+
+    <ForEachVar source="TabelIndicatori" itemPrefix="R" indexVariable="idx"
+                collectFields="Indicator_ang,Program,Obiectiv,Proiect,Sector_Sursa_Indicator,Limita_credit_angajament,Total_credit_angajament,Credit_bugetar,Angajament_legal,Credit_bugetar_rezervat_definitiv_an_curent,Credit_bugetar_rezervat_definitiv_ani_urmatori,Col_12,BugetIndicator">
+
+      <Log message="Procesez indicatorul [[idx]]: [[R.Indicator_ang]] / [[R.Sector_Sursa_Indicator]]..." level="info"/>
+
+      <Click selector="table.table-striped.table-bordered.table-condensed tbody tr:nth-child([[idx]]) .glyphicon-eye-open"
+             waitNavigation="false" timeout="5"/>
+
+      <WaitFor selector="table.table-bordered.table-hover.table-condensed" timeout="5"/>
+
+      <ScrapeTable selector="table.table-bordered.table-hover.table-condensed"
+                   saveTo="BugetIndicator"
+                   nextPageSelector="a[rel='next']"
+                   waitSelector="table.table-bordered.table-hover.table-condensed"
+                   fingerprintSelector="table.table-bordered.table-hover.table-condensed tbody tr:last-child td:last-child"
+                   timeout="5"/>
+
+      <Log message="✓ Indicatorul [[idx]] procesat. Revin la listă..." level="success"/>
+
+      <GoBack/>
+      <WaitFor selector="li.tab0.active" state="visible" timeout="5"/>
+
+    </ForEachVar>
+
+    <Log message="✓ Secțiunea Indicatori finalizată." level="success"/>
+
+    <Else>
+      <Log message="Tab0 nu conține indicatori pentru {{COD_ANGAJAMENT}}." level="warning"/>
+    </Else>
+  </IfExists>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECȚIUNEA 2 — RECEPȚII (tab1)
+       Guard nivel 1: tab-ul există în DOM.
+       Guard nivel 2: tabelul are cel puțin un rând.
+       Selector exterior: table.table-striped.table-bordered.table-condensed
+       Selector interior: table.table-striped.table-bordered.table-hover.table-condensed
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ SECȚIUNEA 2: Recepții ══" level="action"/>
+
+  <IfExists selector="li.tab1" timeout="5">
+
+    <Click selector="li.tab1 a" timeout="5"/>
+    <WaitFor selector="li.tab1.active" state="visible" timeout="5"/>
+
+    <!-- Guard nivel 2: tab activ dar posibil gol -->
+    <IfExists selector="table.table-striped.table-bordered.table-condensed tbody tr" timeout="5">
+
+      <ScrapeTable selector="table.table-striped.table-bordered.table-condensed"
+                   saveTo="ListaReceptii"
+                   timeout="5"/>
+
+      <Log message="Lista recepții citită. Încep iterarea..." level="info"/>
+
+      <ForEachVar source="ListaReceptii" itemPrefix="R" indexVariable="idx"
+                  collectFields="Tip,Data,Suma,TipReceptie,DescriereReceptie,CodIndicator,Detaliu">
+
+        <Log message="Procesez recepția [[idx]]: [[R.Tip]] / [[R.Data]] / [[R.Suma]]..." level="info"/>
+
+        <!-- nth-child e 1-based, exact ca idx -->
+        <Click selector="table.table-striped.table-bordered.table-condensed tbody tr:nth-child([[idx]]) .glyphicon-eye-open"
+               waitNavigation="false" timeout="5"/>
+
+        <WaitFor selector="h3.heading:has-text('Modifică recepție')" timeout="5"/>
+        <WaitFor selector="select[name='receptie']" timeout="5"/>
+
+        <Read selector="select[name='receptie']" saveTo="TipReceptie"/>
+        <Read selector="textarea[name='descriere']" saveTo="DescriereReceptie"/>
+
+        <!-- Tabelul interior: selector cu table-hover — diferențiator față de tabelul exterior -->
+        <ScrapeTable selector="table.table-striped.table-bordered.table-hover.table-condensed"
+                     saveTo="Detaliu"
+                     nextPageSelector="a[rel='next']"
+                     waitSelector="table.table-striped.table-bordered.table-hover.table-condensed"
+                     fingerprintSelector="table.table-striped.table-bordered.table-hover.table-condensed tbody tr:last-child td:last-child"
+                     timeout="5"/>
+
+        <!-- Cod din primul rând al tabelului interior -->
+        <Read selector="table.table-striped.table-bordered.table-hover.table-condensed tbody tr:first-child td:nth-child(1) span"
+              saveTo="CodIndicator"/>
+
+        <Log message="✓ Recepția [[idx]] procesată. Revin la listă..." level="success"/>
+
+        <!-- GoBack via browser — butonul 'Înapoi' din UI afișează confirmare modală -->
+        <GoBack/>
+        <WaitFor selector="li.tab1.active" state="visible" timeout="5"/>
+
+      </ForEachVar>
+
+      <Log message="✓ Secțiunea Recepții finalizată." level="success"/>
+
+      <Else>
+        <Log message="Tab Recepții există dar nu conține înregistrări pentru {{COD_ANGAJAMENT}}." level="warning"/>
+      </Else>
+    </IfExists>
+
+    <Else>
+      <Log message="Tab-ul Recepții (tab1) nu este disponibil pentru {{COD_ANGAJAMENT}}." level="warning"/>
+    </Else>
+  </IfExists>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECȚIUNEA 4 — ISTORIC
+       Butonul Istoric e accesibil doar din tab0 — revenim explicit.
+       Guard: dacă tabelul nu există, sărim secțiunea silențios.
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ SECȚIUNEA 4: Istoric angajament ══" level="action"/>
+
+  <Click selector="li.tab0 a" timeout="5"/>
+  <WaitFor selector="li.tab0.active" timeout="5"/>
+
+  <Click selector="button.btn-success:has-text('Istoric')" waitNavigation="true" timeout="5"/>
+  <WaitFor selector="h3.heading:has-text('Istoric angajament')" timeout="5"/>
+
+  <IfExists selector="table.table-striped tbody tr" timeout="5">
+
+    <ScrapeTable selector="table.table-striped"
+             saveTo="TabelIstoric"
+             lastPageSelector="a.last"
+             prevPageSelector="a.prev"
+             waitSelector="table.table-striped"
+             fingerprintSelector="table.table-striped tbody tr:last-child td:last-child"
+             exitIfCellEquals="Timp:~:^{{DATA_IESIRE}}"
+             startFromLast="true"
+             timeout="5" />
+
+    <Log message="✓ Istoric salvat cu succes." level="success"/>
+
+    <Else>
+      <Log message="Pagina Istoric nu conține înregistrări pentru {{COD_ANGAJAMENT}}." level="warning"/>
+    </Else>
+  </IfExists>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FINAL
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ Flux complet finalizat pentru angajamentul {{COD_ANGAJAMENT}}. ══" level="success"/>
+
+</Workflow>

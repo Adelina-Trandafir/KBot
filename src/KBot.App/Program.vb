@@ -257,6 +257,11 @@ Friend Module Program
         ' Executor FOREXE (in-process).
         services.AddSingleton(Of IForexeRunner, ForexeRunner)()
 
+        ' Coordonatorul FOREXE (felia 0034) — SINGLETON, ca runner-ul: ține sesiunea, progresul,
+        ' certificatul ales și depozitul local de rezultate. Cele două suprafețe de UI (banda din
+        ' subsolul shell-ului și consola) se leagă la el, nu la runner.
+        services.AddSingleton(Of ForexeController)()
+
         ' Forms.
         services.AddTransient(Of MainForm)()
         services.AddTransient(Of LoginForm)()

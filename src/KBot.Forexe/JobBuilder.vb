@@ -34,5 +34,48 @@ Namespace KBot.Forexe
             Return job
         End Function
 
+        ''' <summary>
+        ''' Prelucrarea COMPLETĂ a unui angajament (fără istoric local): antetul din .well,
+        ''' indicatorii cu bugetul fiecăruia, recepțiile cu detaliul fiecăreia și istoricul.
+        ''' Fișierul consumă o singură variabilă — {{COD_ANGAJAMENT}} — și scrie CINCI tabele,
+        ''' nu unul (vezi WorkflowCatalog.PrelucrareCompletaTables).
+        ''' </summary>
+        Public Shared Function BuildPrelucrareCompleta(cod As String) As JobRequest
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
+            End If
+
+            Dim job As New JobRequest With {
+                .WorkflowName = "PrelucrareCompleta",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.PrelucrareCompletaFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
+            Return job
+        End Function
+
+        ''' <summary>
+        ''' Varianta REVERSE, pentru un angajament care ARE deja istoric local: identică în
+        ''' secțiunile 0–2, dar citește istoricul de la ULTIMA pagină înapoi și se oprește
+        ''' când coloana «Timp» ajunge la <paramref name="ultimaData"/>. Oglindește exact
+        ''' Access FX_Angajament_InfoComplete (DMax("DataFX", "FX_Istoric", ...)).
+        ''' </summary>
+        Public Shared Function BuildPrelucrareCompletaReverse(cod As String, ultimaData As Date) As JobRequest
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
+            End If
+
+            Dim job As New JobRequest With {
+                .WorkflowName = "PrelucrareCompletaReverse",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.PrelucrareCompletaReverseFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
+            ' Invariant, nu locale: valoarea ajunge într-o expresie regulată comparată cu
+            ' textul din pagină, deci un separator schimbat de Windows ar rupe oprirea.
+            job.Parameters(WorkflowCatalog.VarDataIesire) =
+                ultimaData.ToString(WorkflowCatalog.DataIesireFormat,
+                                    Globalization.CultureInfo.InvariantCulture)
+            Return job
+        End Function
+
     End Class
 End Namespace
