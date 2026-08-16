@@ -91,8 +91,9 @@ Partial Public Class AdvancedTreeControl
         End If
 
         ' ── 5. Border ─────────────────────────────────────────────────────
-        If Me.BorderColor <> Color.Transparent Then
-            Using pen As New Pen(Me.BorderColor, 1)
+        Dim grosChenar As Integer = SY(Me.BorderWidth)
+        If Me.BorderColor <> Color.Transparent AndAlso grosChenar > 0 Then
+            Using pen As New Pen(Me.BorderColor, grosChenar)
                 e.Graphics.DrawRectangle(pen, 1, 1, Me.Width - 1, Me.Height - 1)
             End Using
         End If

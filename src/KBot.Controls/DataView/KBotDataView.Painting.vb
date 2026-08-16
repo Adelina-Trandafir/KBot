@@ -33,7 +33,16 @@ Partial Class KBotDataView
             If _showFooter AndAlso FooterBandHeight() > 0 Then DrawFooterBand(g)
             If _showHeader Then DrawHeader(g)
 
-            g.DrawRectangle(_pBorder, New Rectangle(0, 0, Width - 1, Height - 1))
+            ' Chenarul, ultimul. `Nothing` = grosime 0 sau culoare transparentă, adică «fără chenar».
+            ' Conturul se RETRAGE cu jumătate din grosime: GDI+ centrează trasa pe dreptunghi, deci
+            ' un chenar gros desenat pe muchie ar rămâne pe din două afară din control.
+            If _pBorder IsNot Nothing Then
+                Dim gros As Integer = CInt(_pBorder.Width)
+                Dim inset As Integer = gros \ 2
+                g.DrawRectangle(_pBorder, New Rectangle(inset, inset,
+                                                        Math.Max(1, Width - 1 - 2 * inset),
+                                                        Math.Max(1, Height - 1 - 2 * inset)))
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnPaint", ex)
         End Try
@@ -73,9 +82,13 @@ Partial Class KBotDataView
             DrawHeaderCell(g, cl.Column, cl.X, headerH)
         Next
 
-        ' Linia de bază + accentul de sub antet.
-        g.DrawLine(_pHeaderSep, 0, headerH - 1, ClientSize.Width - 1, headerH - 1)
-        g.DrawLine(_pHeaderBaseline, 0, headerH - 1, ClientSize.Width - 1, headerH - 1)
+        ' Linia de bază + accentul de sub antet. Amândouă atârnă de creionul de accent: cu
+        ' `HeaderSeparatorWidth = 0` operatorul a cerut «fără linie», iar firul de dedesubt lăsat
+        ' singur ar face din asta o subțiere, nu o dispariție.
+        If _pHeaderBaseline IsNot Nothing Then
+            g.DrawLine(_pHeaderSep, 0, headerH - 1, ClientSize.Width - 1, headerH - 1)
+            g.DrawLine(_pHeaderBaseline, 0, headerH - 1, ClientSize.Width - 1, headerH - 1)
+        End If
     End Sub
 
     ' Titlul + perechea de pictograme (slice 0028-02). Așezarea vine din partiala .HeaderIcons,
@@ -93,8 +106,12 @@ Partial Class KBotDataView
                                   HeaderForeResolved(), HeaderTextFlags(col))
         End If
 
-        Dim sepX As Integer = cellRect.Right - 1
-        g.DrawLine(_pHeaderSep, sepX, 0, sepX, headerH - 1)
+        ' Muchia dreaptă a titlului. Creion propriu (felia 0038): `Nothing` = operatorul a cerut
+        ' lățime 0, adică titluri fără linii între ele.
+        If _pHeaderColSep IsNot Nothing Then
+            Dim sepX As Integer = cellRect.Right - 1
+            g.DrawLine(_pHeaderColSep, sepX, 0, sepX, headerH - 1)
+        End If
     End Sub
 
     ''' <summary>
@@ -219,8 +236,10 @@ Partial Class KBotDataView
 
         ' Linia de despărțire + accentul pe muchia de SUS (între corp și subsol), perechea
         ' liniei de sub antet.
-        g.DrawLine(_pFooterSep, 0, bandTop, ClientSize.Width - 1, bandTop)
-        g.DrawLine(_pFooterBaseline, 0, bandTop, ClientSize.Width - 1, bandTop)
+        If _pFooterBaseline IsNot Nothing Then
+            g.DrawLine(_pFooterSep, 0, bandTop, ClientSize.Width - 1, bandTop)
+            g.DrawLine(_pFooterBaseline, 0, bandTop, ClientSize.Width - 1, bandTop)
+        End If
 
         ' Butonul de strângere, ultimul: stă PESTE bandă, în colțul care îi aparține.
         Dim butonRect As Rectangle = ComputeCollapseButtonRect(bandRect)
@@ -248,12 +267,14 @@ Partial Class KBotDataView
                 TextFormatFlags.EndEllipsis)
         End If
 
-        If FooterDrawsRightSeparator(col) Then
-            Dim sepX As Integer = cellRect.Right - 1
-            g.DrawLine(_pFooterSep, sepX, bandTop, sepX, bandTop + bandH - 1)
-        End If
-        If FooterDrawsLeftSeparator(col, stanga) Then
-            g.DrawLine(_pFooterSep, cellRect.Left, bandTop, cellRect.Left, bandTop + bandH - 1)
+        If _pFooterColSep IsNot Nothing Then
+            If FooterDrawsRightSeparator(col) Then
+                Dim sepX As Integer = cellRect.Right - 1
+                g.DrawLine(_pFooterColSep, sepX, bandTop, sepX, bandTop + bandH - 1)
+            End If
+            If FooterDrawsLeftSeparator(col, stanga) Then
+                g.DrawLine(_pFooterColSep, cellRect.Left, bandTop, cellRect.Left, bandTop + bandH - 1)
+            End If
         End If
     End Sub
 

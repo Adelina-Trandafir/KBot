@@ -58,8 +58,10 @@ Partial Class ReceptiiView
         ' 
         ' tree
         ' 
+        tree.BorderColor = SystemColors.ActiveBorder
         tree.CollapseButtonTooltip = "Strânge arborele la o bandă îngustă." & vbLf & "Rândurile se citesc atunci prin eticheta care iese la survolare."
         tree.Dock = DockStyle.Fill
+        tree.DynamicColumns = False
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
         tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
@@ -72,6 +74,8 @@ Partial Class ReceptiiView
         tree.FooterIconSize = New Size(18, 18)
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
         tree.FooterRightIconTooltip = "Reîncarcă recepțiile de la server."
+        tree.FooterSeparatorColor = Color.Gainsboro
+        tree.FooterSeparatorWidth = 2
         tree.FooterTextAlign = ContentAlignment.MiddleRight
         tree.FooterVisible = True
         tree.HeaderBackColor = SystemColors.Control
@@ -79,11 +83,13 @@ Partial Class ReceptiiView
         tree.HeaderCaption = " RECEPȚII"
         tree.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.HeaderForeColor = Color.Black
-        tree.HeaderGradientEndColor = Color.CornflowerBlue
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
         tree.HeaderSearchIconTooltip = "Caută în arbore." & vbLf & "ESC golește căutarea și închide banda."
+        tree.HeaderSeparatorColor = Color.Gainsboro
+        tree.HeaderSeparatorWidth = 2
+        tree.HeaderTextAlign = ContentAlignment.MiddleCenter
         tree.HeaderVisible = True
         tree.Indent = 8
         tree.ItemHeight = 20
@@ -126,6 +132,7 @@ Partial Class ReceptiiView
         tree.PaddingTreeStart = 8
         tree.RightIconSize = New Size(14, 14)
         tree.RightTextWidth = 90
+        tree.SearchIn = AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
         tree.Size = New Size(255, 454)
         tree.TabIndex = 0
         ' 
@@ -143,7 +150,7 @@ Partial Class ReceptiiView
         grid.AutoSizeColumnsMode = KBotAutoSizeMode.None
         grid.AutoSizeHeaderHeight = False
         grid.BackColor = SystemColors.Window
-        grid.CellTooltip.Enabled = False
+        grid.BorderColor = SystemColors.ActiveBorder
         grid.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
@@ -164,6 +171,7 @@ Partial Class ReceptiiView
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn2.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn2.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.HeaderText = "Descriere"
@@ -175,6 +183,7 @@ Partial Class ReceptiiView
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn3.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn3.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.DecimalPlaces = 2
         KBotDataColumn3.Format = KBotFormat.Standard
         KBotDataColumn3.FormatString = Nothing
@@ -193,9 +202,15 @@ Partial Class ReceptiiView
         grid.Dock = DockStyle.Fill
         grid.EnableGrouping = True
         grid.FillColumnKey = "descriere"
+        grid.FooterBackColor = SystemColors.Control
         grid.FooterCaption = "TOTALURI"
+        grid.FooterColumnSeparatorColor = Color.Gainsboro
         grid.FooterHeight = 30
+        grid.FooterSeparatorColor = Color.Gainsboro
         grid.FooterVisible = True
+        grid.HeaderBackColor = SystemColors.Control
+        grid.HeaderColumnSeparatorColor = Color.Gainsboro
+        grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 0)
         grid.Margin = New Padding(3, 4, 3, 4)
         grid.Name = "grid"

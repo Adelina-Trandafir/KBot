@@ -344,6 +344,29 @@ Partial Public Class AdvancedTreeControl
         Me.Invalidate()
     End Sub
 
+    ''' <summary>
+    ''' Grosimea chenarului, în pixeli LOGICI (la 96 dpi). <c>0</c> = fără chenar, la fel ca
+    ''' <c>BorderColor = Transparent</c>. Adăugată odată cu perechea din <c>KBotDataView</c>: aici
+    ''' culoarea se putea alege dintotdeauna, dar grosimea era scrisă în pictură.
+    ''' </summary>
+    Private _borderWidth As Integer = DEFAULT_SEPARATOR_WIDTH
+    <Category("K-BOT Arbore - Culori")>
+    <Description("Grosimea chenarului, în pixeli la 96 dpi. 0 = fără chenar.")>
+    <DefaultValue(DEFAULT_SEPARATOR_WIDTH)>
+    Public Property BorderWidth As Integer
+        Get
+            Return _borderWidth
+        End Get
+        Set(value As Integer)
+            If value < 0 Then
+                Throw New ArgumentOutOfRangeException(NameOf(value),
+                    $"Grosimea chenarului nu poate fi negativă (primit «{value}»); 0 = fără chenar.")
+            End If
+            _borderWidth = value
+            Me.Invalidate()
+        End Set
+    End Property
+
     Private m_HoverBackColor As Color = Color.Empty
     <Category("K-BOT Arbore - Culori")>
     <Description("Fundalul rândului la hover; gol = din temă.")>
@@ -698,6 +721,189 @@ Partial Public Class AdvancedTreeControl
         Me.Invalidate()
     End Sub
 
+    ' ── Linia dintre antet și corp (felia 0038) ──────────────────────────────────
+    ' Până acum era o deducere fixă din culoarea textului de antet (aceeași culoare, la 60 din 255
+    ' opacitate) și avea un pixel, nediscutabil. Rămâne exact aceea cât timp nimeni nu cere altceva
+    ' — «gol = automat», ca toate culorile de mai sus.
+    Private _headerSeparatorColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Culoarea liniei dintre antet și corp; gol = deducerea din culoarea textului de antet.")>
+    Public Property HeaderSeparatorColor As Color
+        Get
+            If _headerSeparatorColor <> Color.Empty Then Return _headerSeparatorColor
+            Return Color.FromArgb(60, HeaderForeColor)
+        End Get
+        Set(value As Color)
+            _headerSeparatorColor = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeHeaderSeparatorColor() As Boolean
+        Return _headerSeparatorColor <> Color.Empty
+    End Function
+    Public Sub ResetHeaderSeparatorColor()
+        _headerSeparatorColor = Color.Empty
+        Me.Invalidate()
+    End Sub
+
+    ''' <summary>
+    ''' Grosimea liniei dintre antet și corp, în pixeli LOGICI (la 96 dpi) — se scalează cu ecranul,
+    ''' ca toate măsurile arborelui de la felia 0035. <c>0</c> = fără linie.
+    ''' </summary>
+    Private _headerSeparatorWidth As Integer = DEFAULT_SEPARATOR_WIDTH
+    <Category("K-BOT Arbore - Antet")>
+    <Description("Grosimea liniei dintre antet și corp, în pixeli la 96 dpi. 0 = fără linie.")>
+    <DefaultValue(DEFAULT_SEPARATOR_WIDTH)>
+    Public Property HeaderSeparatorWidth As Integer
+        Get
+            Return _headerSeparatorWidth
+        End Get
+        Set(value As Integer)
+            If value < 0 Then
+                Throw New ArgumentOutOfRangeException(NameOf(value),
+                    $"Grosimea liniei nu poate fi negativă (primit «{value}»); 0 = fără linie.")
+            End If
+            _headerSeparatorWidth = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>Grosimea logică implicită a liniei dintre benzi (px la 96 dpi).</summary>
+    Friend Const DEFAULT_SEPARATOR_WIDTH As Integer = 1
+
+    ' ── Linia de sub banda de căutare (felia 0038) ───────────────────────────────
+    ' ATENȚIE la implicit: până acum era `Color.FromArgb(80, Color.Black)` — NEGRU LITERAL, adică
+    ' singura culoare scrisă în sursă din tot controlul, deci una care nu se schimba cu tema și se
+    ' pierdea pe schemele întunecate. «Gol» înseamnă acum aceeași transparență peste LineColor, care
+    ' VINE din paletă. E o schimbare de aspect, mică și deliberată: regula casei e zero culori
+    ' literale, iar cine chiar vrea negru îl poate cere acum pe față.
+    Private _searchSeparatorColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Cautare")>
+    <Description("Culoarea liniei de sub banda de căutare; gol = culoarea de linie a temei, transparentizată.")>
+    Public Property SearchSeparatorColor As Color
+        Get
+            If _searchSeparatorColor <> Color.Empty Then Return _searchSeparatorColor
+            Return Color.FromArgb(80, LineColor)
+        End Get
+        Set(value As Color)
+            _searchSeparatorColor = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeSearchSeparatorColor() As Boolean
+        Return _searchSeparatorColor <> Color.Empty
+    End Function
+    Public Sub ResetSearchSeparatorColor()
+        _searchSeparatorColor = Color.Empty
+        Me.Invalidate()
+    End Sub
+
+    ''' <summary>Grosimea liniei de sub banda de căutare, în pixeli LOGICI. <c>0</c> = fără linie.</summary>
+    Private _searchSeparatorWidth As Integer = DEFAULT_SEPARATOR_WIDTH
+    <Category("K-BOT Arbore - Cautare")>
+    <Description("Grosimea liniei de sub banda de căutare, în pixeli la 96 dpi. 0 = fără linie.")>
+    <DefaultValue(DEFAULT_SEPARATOR_WIDTH)>
+    Public Property SearchSeparatorWidth As Integer
+        Get
+            Return _searchSeparatorWidth
+        End Get
+        Set(value As Integer)
+            If value < 0 Then
+                Throw New ArgumentOutOfRangeException(NameOf(value),
+                    $"Grosimea liniei nu poate fi negativă (primit «{value}»); 0 = fără linie.")
+            End If
+            _searchSeparatorWidth = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    ' ── Liniile benzii de coloane / TreeListView (felia 0038) ────────────────────
+    ' Un SINGUR reglaj pentru toate cele trei linii verticale (începutul zonei de coloane, capătul
+    ' fiecărei coloane pe rând, și aceleași muchii în banda de titluri): ochiul le vede ca pe una
+    ' singură, care coboară prin tot controlul. Trei proprietăți care trebuie ținute la fel n-ar fi
+    ' un reglaj mai fin, ar fi trei ocazii ca ele să nu mai semene.
+    Private _columnSeparatorColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Coloane")>
+    <Description("Culoarea liniilor verticale dintre coloane (rânduri și titluri); gol = linia temei, transparentizată.")>
+    Public Property ColumnSeparatorColor As Color
+        Get
+            If _columnSeparatorColor <> Color.Empty Then Return _columnSeparatorColor
+            Return Color.FromArgb(COLUMN_SEPARATOR_COLOR_ALPHA, LineColor)
+        End Get
+        Set(value As Color)
+            _columnSeparatorColor = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeColumnSeparatorColor() As Boolean
+        Return _columnSeparatorColor <> Color.Empty
+    End Function
+    Public Sub ResetColumnSeparatorColor()
+        _columnSeparatorColor = Color.Empty
+        Me.Invalidate()
+    End Sub
+
+    ''' <summary>Grosimea liniilor verticale dintre coloane, în pixeli LOGICI. <c>0</c> = fără ele.</summary>
+    Private _columnSeparatorWidth As Integer = DEFAULT_SEPARATOR_WIDTH
+    <Category("K-BOT Arbore - Coloane")>
+    <Description("Grosimea liniilor verticale dintre coloane, în pixeli la 96 dpi. 0 = fără linii.")>
+    <DefaultValue(DEFAULT_SEPARATOR_WIDTH)>
+    Public Property ColumnSeparatorWidth As Integer
+        Get
+            Return _columnSeparatorWidth
+        End Get
+        Set(value As Integer)
+            If value < 0 Then
+                Throw New ArgumentOutOfRangeException(NameOf(value),
+                    $"Grosimea liniei nu poate fi negativă (primit «{value}»); 0 = fără linii.")
+            End If
+            _columnSeparatorWidth = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    ' Linia ORIZONTALĂ de sub banda de titluri de coloană — sora celei de sub antet, dar a altei
+    ' benzi, deci reglaj propriu.
+    Private _columnHeaderSeparatorColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Coloane")>
+    <Description("Culoarea liniei de sub banda de titluri de coloană; gol = culoarea de linie a temei.")>
+    Public Property ColumnHeaderSeparatorColor As Color
+        Get
+            If _columnHeaderSeparatorColor <> Color.Empty Then Return _columnHeaderSeparatorColor
+            Return LineColor
+        End Get
+        Set(value As Color)
+            _columnHeaderSeparatorColor = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeColumnHeaderSeparatorColor() As Boolean
+        Return _columnHeaderSeparatorColor <> Color.Empty
+    End Function
+    Public Sub ResetColumnHeaderSeparatorColor()
+        _columnHeaderSeparatorColor = Color.Empty
+        Me.Invalidate()
+    End Sub
+
+    ''' <summary>Grosimea liniei de sub banda de titluri de coloană, în px LOGICI. <c>0</c> = fără ea.</summary>
+    Private _columnHeaderSeparatorWidth As Integer = DEFAULT_SEPARATOR_WIDTH
+    <Category("K-BOT Arbore - Coloane")>
+    <Description("Grosimea liniei de sub banda de titluri de coloană, în pixeli la 96 dpi. 0 = fără linie.")>
+    <DefaultValue(DEFAULT_SEPARATOR_WIDTH)>
+    Public Property ColumnHeaderSeparatorWidth As Integer
+        Get
+            Return _columnHeaderSeparatorWidth
+        End Get
+        Set(value As Integer)
+            If value < 0 Then
+                Throw New ArgumentOutOfRangeException(NameOf(value),
+                    $"Grosimea liniei nu poate fi negativă (primit «{value}»); 0 = fără linie.")
+            End If
+            _columnHeaderSeparatorWidth = value
+            Me.Invalidate()
+        End Set
+    End Property
+
     ' ── Antet: font, aliniere, stil de fundal ─────────────────────────────────────
     Private _headerFont As Font = Nothing          ' Nothing = fontul arborelui (Font)
     <Category("K-BOT Arbore - Antet")>
@@ -960,6 +1166,49 @@ Partial Public Class AdvancedTreeControl
         _footerForeColor = Color.Empty
         Me.Invalidate()
     End Sub
+
+    ' ── Linia dintre corp și subsol (felia 0038) — perechea celei de sub antet ───
+    Private _footerSeparatorColor As Color = Color.Empty
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Culoarea liniei dintre corp și subsol; gol = deducerea din culoarea de prim-plan a subsolului.")>
+    Public Property FooterSeparatorColor As Color
+        Get
+            If _footerSeparatorColor <> Color.Empty Then Return _footerSeparatorColor
+            Return Color.FromArgb(60, FooterForeColor)
+        End Get
+        Set(value As Color)
+            _footerSeparatorColor = value
+            Me.Invalidate()
+        End Set
+    End Property
+    Public Function ShouldSerializeFooterSeparatorColor() As Boolean
+        Return _footerSeparatorColor <> Color.Empty
+    End Function
+    Public Sub ResetFooterSeparatorColor()
+        _footerSeparatorColor = Color.Empty
+        Me.Invalidate()
+    End Sub
+
+    ''' <summary>
+    ''' Grosimea liniei dintre corp și subsol, în pixeli LOGICI (la 96 dpi). <c>0</c> = fără linie.
+    ''' </summary>
+    Private _footerSeparatorWidth As Integer = DEFAULT_SEPARATOR_WIDTH
+    <Category("K-BOT Arbore - Subsol")>
+    <Description("Grosimea liniei dintre corp și subsol, în pixeli la 96 dpi. 0 = fără linie.")>
+    <DefaultValue(DEFAULT_SEPARATOR_WIDTH)>
+    Public Property FooterSeparatorWidth As Integer
+        Get
+            Return _footerSeparatorWidth
+        End Get
+        Set(value As Integer)
+            If value < 0 Then
+                Throw New ArgumentOutOfRangeException(NameOf(value),
+                    $"Grosimea liniei nu poate fi negativă (primit «{value}»); 0 = fără linie.")
+            End If
+            _footerSeparatorWidth = value
+            Me.Invalidate()
+        End Set
+    End Property
 
     Private _footerBackStyle As En_HeaderBackStyle = En_HeaderBackStyle.Solid
     <Category("K-BOT Arbore - Subsol")>

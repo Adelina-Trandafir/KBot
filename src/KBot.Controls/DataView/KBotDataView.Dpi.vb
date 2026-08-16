@@ -149,6 +149,9 @@ Partial Class KBotDataView
             For Each c In _columns
                 c.RefreshWidthScale()
             Next
+            ' Creioanele benzilor poartă o GROSIME logică (felia 0038), deci se refac odată cu
+            ' scara. Fără asta linia dintre benzi ar rămâne singura măsură nescalată din control.
+            RebuildThemeResources()
             InvalidateHeaderHeight()
             InvalidateBands()
             LayoutChanged()

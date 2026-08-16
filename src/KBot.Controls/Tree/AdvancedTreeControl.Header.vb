@@ -101,9 +101,14 @@ Partial Public Class AdvancedTreeControl
         End If
 
         ' ── Bottom separator ─────────────────────────────────────────
-        Using sep As New Pen(Color.FromArgb(60, HeaderForeColor))
-            g.DrawLine(sep, 0, _headerHeight - 1, Me.Width, _headerHeight - 1)
-        End Using
+        ' Culoarea și grosimea se cer acum din designer (felia 0038); grosimea e LOGICĂ, deci trece
+        ' prin SY, iar 0 înseamnă «fără linie» — de aceea nici nu se construiește creionul.
+        Dim latimeSep As Integer = SY(HeaderSeparatorWidth)
+        If latimeSep > 0 Then
+            Using sep As New Pen(HeaderSeparatorColor, latimeSep)
+                g.DrawLine(sep, 0, _headerHeight - 1, Me.Width, _headerHeight - 1)
+            End Using
+        End If
     End Sub
 
     ' Punctul de plecare al caption-ului (orizontal/vertical) după HeaderTextAlign: AlignStartX /

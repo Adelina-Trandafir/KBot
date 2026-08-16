@@ -85,7 +85,7 @@ Public Class IstoricView
         _apiClient = apiClient
         _withReauth = withReauth
         'BuildColumns()
-        BuildValoriColumns()
+        'BuildValoriColumns()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
 
@@ -113,17 +113,17 @@ Public Class IstoricView
 
     ' Grila mică de detaliu: Tip (text) | Valoare (N2, dreapta). Un rând per valoare <> 0 a
     ' rândului selectat (crosstab/unpivot pe rând). Fără totaluri.
-    Private Sub BuildValoriColumns()
-        Try
-            gridValori.AddColumn(COL_V_TIP, "Tip", KBotColumnType.Text, 150)
-            Dim colVal As KBotDataColumn = gridValori.AddColumn(COL_V_VAL, "Valoare", KBotColumnType.Text, 120)
-            colVal.FormatString = "N2"
-            colVal.TextAlign = ContentAlignment.MiddleRight
-        Catch ex As Exception
-            GlobalErrorLog.Write("IstoricView.BuildValoriColumns", ex)
-            Throw
-        End Try
-    End Sub
+    'Private Sub BuildValoriColumns()
+    '    Try
+    '        gridValori.AddColumn(COL_V_TIP, "Tip", KBotColumnType.Text, 150)
+    '        Dim colVal As KBotDataColumn = gridValori.AddColumn(COL_V_VAL, "Valoare", KBotColumnType.Text, 120)
+    '        colVal.FormatString = "N2"
+    '        colVal.TextAlign = ContentAlignment.MiddleRight
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("IstoricView.BuildValoriColumns", ex)
+    '        Throw
+    '    End Try
+    'End Sub
 
     ' Etichetele celor șapte valori, în ordinea Access. Perechea (etichetă, extractor) e sursa
     ' unpivot-ului din grila de detaliu.
@@ -184,7 +184,7 @@ Public Class IstoricView
             ' Filtrul din angajamentul precedent NU are voie să supraviețuiască (§6, aceeași
             ' regulă necondiționată ca resetul combo-ului din DdfView).
             _filter.ClearAll()
-            BuildMenus()
+            'BuildMenus()
             BuildTree()
             FillFiltered()
             ShowContent()
@@ -636,8 +636,8 @@ Public Class IstoricView
             detailTable.BackColor = p.SurfaceColor
             lblCapDescriere.ForeColor = p.TextDimColor
             lblCapDescriere.BackColor = Color.Transparent
-            lblCapValori.ForeColor = p.TextDimColor
-            lblCapValori.BackColor = Color.Transparent
+            'lblCapValori.ForeColor = p.TextDimColor
+            'lblCapValori.BackColor = Color.Transparent
             lblFiltruActiv.ForeColor = p.TextDimColor
             lblFiltruActiv.BackColor = Color.Transparent
 

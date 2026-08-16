@@ -80,6 +80,9 @@ Partial Class KBotDataView
     Private _pBorder As Pen
     Private _pHeaderSep As Pen
     Private _pFooterSep As Pen
+    ' Creioanele liniilor verticale dintre celule. Nothing = lățime 0, adică «fără linii».
+    Private _pHeaderColSep As Pen
+    Private _pFooterColSep As Pen
     Private _pFooterBaseline As Pen
     Private _pGridLine As Pen
     Private _pGroupSep As Pen
@@ -110,6 +113,28 @@ Partial Class KBotDataView
     Private _footerBackPinned As Color = Color.Empty
     Private _footerForePinned As Color = Color.Empty
     Private _footerFontPinned As Font = Nothing
+    ' Liniile care despart antetul de corp și corpul de subsol (felia 0038). Lățimile sunt LOGICE
+    ' (px la 96 dpi), ca orice măsură scrisă de operator — se scalează la pictare, nu la citire.
+    Private _headerSepPinned As Color = Color.Empty
+    Private _footerSepPinned As Color = Color.Empty
+    Private _headerSepWidth As Integer = DefaultBandSeparatorWidth
+    Private _footerSepWidth As Integer = DefaultBandSeparatorWidth
+    ' Liniile VERTICALE dintre celulele benzilor. Sunt reglaje separate de cele orizontale, fiindcă
+    ' fac altceva: acelea despart benzile între ele, acestea despart coloanele în cadrul unei benzi.
+    Private _headerColSepPinned As Color = Color.Empty
+    Private _footerColSepPinned As Color = Color.Empty
+    Private _headerColSepWidth As Integer = DefaultCellSeparatorWidth
+    Private _footerColSepWidth As Integer = DefaultCellSeparatorWidth
+    ' Chenarul controlului. Empty = din temă, Transparent = fără chenar (vocabularul lui
+    ' AdvancedTreeControl.BorderColor — două controale vecine n-au voie să spună altfel același lucru).
+    Private _borderPinned As Color = Color.Empty
+    Private _borderWidth As Integer = DefaultCellSeparatorWidth
+
+    ''' <summary>Lățimea logică implicită a liniei dintre benzi (px la 96 dpi).</summary>
+    Friend Const DefaultBandSeparatorWidth As Integer = 2
+
+    ''' <summary>Lățimea logică implicită a liniei dintre celulele unei benzi (px la 96 dpi).</summary>
+    Friend Const DefaultCellSeparatorWidth As Integer = 1
 
     ''' <summary>
     ''' Schema activă e ÎNTUNECATĂ? Cât timp e True, culorile fixate în designer se IGNORĂ și
@@ -309,15 +334,18 @@ Partial Class KBotDataView
         _bDisabledWash = New SolidBrush(_cDisabledWash)
         _bDisabledMark = New SolidBrush(_cDisabledText)
         _pDisabledMark = New Pen(_cDisabledText)
-        _pBorder = New Pen(_cHeaderSep)
+        _pBorder = If(BorderColorResolved() = Color.Transparent, Nothing,
+                      BuildBandSeparatorPen(BorderColorResolved(), _borderWidth))
         _pHeaderSep = New Pen(_cHeaderSep)
         _pFooterSep = New Pen(_cFooterSep)
-        _pFooterBaseline = New Pen(_cFooterBaseline, 2.0F)
+        _pHeaderColSep = BuildBandSeparatorPen(HeaderColumnSeparatorColorResolved(), _headerColSepWidth)
+        _pFooterColSep = BuildBandSeparatorPen(FooterColumnSeparatorColorResolved(), _footerColSepWidth)
+        _pFooterBaseline = BuildBandSeparatorPen(FooterSeparatorColorResolved(), _footerSepWidth)
         _pGridLine = New Pen(_cGridLine)
         _pGroupSep = New Pen(_cGroupSep)
         _pCheckBorder = New Pen(_cCheckBorder)
         _pCheckFill = New Pen(_cCheckFill)
-        _pHeaderBaseline = New Pen(_cHeaderBaseline, 2.0F)
+        _pHeaderBaseline = BuildBandSeparatorPen(HeaderSeparatorColorResolved(), _headerSepWidth)
         _pOptionBorder = New Pen(_cOptionBorder)
         _pOptionFill = New Pen(_cOptionFill)
         _pButtonBorder = New Pen(_cButtonBorder)
@@ -344,6 +372,8 @@ Partial Class KBotDataView
         _pBorder?.Dispose() : _pBorder = Nothing
         _pHeaderSep?.Dispose() : _pHeaderSep = Nothing
         _pFooterSep?.Dispose() : _pFooterSep = Nothing
+        _pHeaderColSep?.Dispose() : _pHeaderColSep = Nothing
+        _pFooterColSep?.Dispose() : _pFooterColSep = Nothing
         _pFooterBaseline?.Dispose() : _pFooterBaseline = Nothing
         _pGridLine?.Dispose() : _pGridLine = Nothing
         _pGroupSep?.Dispose() : _pGroupSep = Nothing
@@ -474,6 +504,108 @@ Partial Class KBotDataView
         Return If(_footerForePinned = Color.Empty, _cFooterText, _footerForePinned)
     End Function
 
+    ''' <summary>
+    ''' Culoarea liniei dintre antet și corp. <c>Color.Empty</c> = accentul schemei.
+    '''
+    ''' <para><b>Aici NU se aplică regula întunericului</b> (<see cref="DarkOverridesDesignerColors"/>),
+    ''' și asta e o abatere deliberată de la surorile ei de mai sus. Regula aceea există fiindcă o
+    ''' BANDĂ lăsată albă peste un corp aproape negru face grila imposibil de citit — o suprafață
+    ''' întinsă, cu text pe ea. O linie de câțiva pixeli nu poate face nimic ilizibil: în cel mai
+    ''' rău caz nu se vede. Iar o linie de despărțire e prin definiție un accent cerut anume, deci
+    ''' luat înapoi tocmai pe schema pe care operatorul a ales-o ar fi mai degrabă un defect.</para>
+    ''' </summary>
+    Friend Function HeaderSeparatorColorResolved() As Color
+        Return If(_headerSepPinned = Color.Empty, _cHeaderBaseline, _headerSepPinned)
+    End Function
+
+    ''' <summary>Culoarea liniei dintre corp și subsol; aceeași regulă ca la antet.</summary>
+    Friend Function FooterSeparatorColorResolved() As Color
+        Return If(_footerSepPinned = Color.Empty, _cFooterBaseline, _footerSepPinned)
+    End Function
+
+    ''' <summary>Culoarea liniilor verticale dintre titlurile de coloană; gol = marginea temei.</summary>
+    Friend Function HeaderColumnSeparatorColorResolved() As Color
+        Return If(_headerColSepPinned = Color.Empty, _cHeaderSep, _headerColSepPinned)
+    End Function
+
+    ''' <summary>Culoarea liniilor verticale dintre celulele de subsol; gol = marginea temei.</summary>
+    Friend Function FooterColumnSeparatorColorResolved() As Color
+        Return If(_footerColSepPinned = Color.Empty, _cFooterSep, _footerColSepPinned)
+    End Function
+
+    ''' <summary>Culoarea chenarului; gol = marginea temei, <c>Transparent</c> = fără chenar.</summary>
+    Friend Function BorderColorResolved() As Color
+        Return If(_borderPinned = Color.Empty, _cHeaderSep, _borderPinned)
+    End Function
+
+    ''' <summary>
+    ''' Creionul unei linii dintre benzi. <c>Nothing</c> pentru lățime 0 — adică „fără linie",
+    ''' cerere cinstită, nu un creion de lățime zero (GDI+ desenează un creion 0 ca pe unul de un
+    ''' pixel, deci linia n-ar dispărea niciodată). Pictarea știe să sară peste <c>Nothing</c>.
+    '''
+    ''' <para>Lățimea primită e LOGICĂ; scalarea se face aici, într-un singur loc. De aceea
+    ''' creioanele se refac și la schimbarea de DPI (vezi <c>ApplyMetricScale</c>): altfel linia ar
+    ''' rămâne singura măsură nescalată din control, exact boala reparată în felia 0035.</para>
+    ''' </summary>
+    Private Function BuildBandSeparatorPen(culoare As Color, latimeLogica As Integer) As Pen
+        If latimeLogica <= 0 Then Return Nothing
+        Return New Pen(culoare, Math.Max(1, SY(latimeLogica)))
+    End Function
+
+    ''' <summary>
+    ''' Culoarea chenarului din jurul grilei. <c>Color.Empty</c> (implicit) = culoarea de margine a
+    ''' schemei; <c>Color.Transparent</c> = fără chenar — același vocabular ca
+    ''' <c>AdvancedTreeControl.BorderColor</c>, fiindcă două controale vecine n-au voie să spună
+    ''' altfel același lucru.
+    '''
+    ''' <para>Chenarul avea până acum culoarea liniilor de antet, cu care împărțea un singur creion:
+    ''' de aceea nu putea fi schimbat singur. Acum are creionul lui.</para>
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Culoarea chenarului grilei. Gol = marginea din schema activă; Transparent = fără chenar.")>
+    Public Property BorderColor As Color
+        Get
+            Return _borderPinned
+        End Get
+        Set(value As Color)
+            If _borderPinned = value Then Return
+            _borderPinned = value
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeBorderColor() As Boolean
+        Return _borderPinned <> Color.Empty
+    End Function
+
+    Private Sub ResetBorderColor()
+        BorderColor = Color.Empty
+    End Sub
+
+    ''' <summary>
+    ''' Grosimea chenarului, în pixeli LOGICI (la 96 dpi). <c>0</c> = fără chenar, la fel ca
+    ''' <c>BorderColor = Transparent</c> (două drumuri spre aceeași cerere, ca la orice altă linie).
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Grosimea chenarului grilei, în pixeli la 96 dpi. 0 = fără chenar.")>
+    <DefaultValue(DefaultCellSeparatorWidth)>
+    Public Property BorderWidth As Integer
+        Get
+            Return _borderWidth
+        End Get
+        Set(value As Integer)
+            If value < 0 Then
+                Throw New ArgumentOutOfRangeException(NameOf(value),
+                    $"Grosimea chenarului nu poate fi negativă (primit «{value}»); 0 = fără chenar.")
+            End If
+            If _borderWidth = value Then Return
+            _borderWidth = value
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
+
     ''' <summary>Fundalul benzii de antet. <c>Color.Empty</c> (implicit) = din schema activă.</summary>
     <Category("K-BOT: Header")>
     <Description("Fundalul benzii de antet. Gol = culoarea din schema activă.")>
@@ -547,6 +679,56 @@ Partial Class KBotDataView
         HeaderFont = Nothing
     End Sub
 
+    ''' <summary>
+    ''' Culoarea liniei care desparte antetul de corp. <c>Color.Empty</c> (implicit) = accentul
+    ''' schemei active. Vezi <see cref="HeaderSeparatorColorResolved"/> pentru de ce aceasta e
+    ''' respectată și pe schemele întunecate, spre deosebire de culorile benzii.
+    ''' </summary>
+    <Category("K-BOT: Header")>
+    <Description("Culoarea liniei dintre antet și corp. Gol = accentul din schema activă.")>
+    Public Property HeaderSeparatorColor As Color
+        Get
+            Return _headerSepPinned
+        End Get
+        Set(value As Color)
+            If _headerSepPinned = value Then Return
+            _headerSepPinned = value
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeHeaderSeparatorColor() As Boolean
+        Return _headerSepPinned <> Color.Empty
+    End Function
+
+    Private Sub ResetHeaderSeparatorColor()
+        HeaderSeparatorColor = Color.Empty
+    End Sub
+
+    ''' <summary>
+    ''' Grosimea liniei dintre antet și corp, în pixeli LOGICI (la 96 dpi) — se scalează singură cu
+    ''' ecranul. <c>0</c> = fără linie. Negativul se refuză: e o greșeală de tastare, nu o cerere.
+    ''' </summary>
+    <Category("K-BOT: Header")>
+    <Description("Grosimea liniei dintre antet și corp, în pixeli la 96 dpi. 0 = fără linie.")>
+    <DefaultValue(DefaultBandSeparatorWidth)>
+    Public Property HeaderSeparatorWidth As Integer
+        Get
+            Return _headerSepWidth
+        End Get
+        Set(value As Integer)
+            If value < 0 Then
+                Throw New ArgumentOutOfRangeException(NameOf(value),
+                    $"Grosimea liniei nu poate fi negativă (primit «{value}»); 0 = fără linie.")
+            End If
+            If _headerSepWidth = value Then Return
+            _headerSepWidth = value
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
+
     ''' <summary>Fundalul benzii de subsol. <c>Color.Empty</c> (implicit) = din schema activă.</summary>
     <Category("K-BOT: Footer")>
     <Description("Fundalul benzii de subsol. Gol = culoarea din schema activă.")>
@@ -614,6 +796,153 @@ Partial Class KBotDataView
     Private Sub ResetFooterFont()
         FooterFont = Nothing
     End Sub
+
+    ''' <summary>
+    ''' Culoarea liniilor VERTICALE dintre titlurile de coloană. <c>Color.Empty</c> (implicit) =
+    ''' culoarea de margine a schemei. Reglaj separat de <see cref="HeaderSeparatorColor"/>: acela
+    ''' desparte antetul de corp, acesta desparte coloanele între ele.
+    ''' </summary>
+    <Category("K-BOT: Header")>
+    <Description("Culoarea liniilor verticale dintre titlurile de coloană. Gol = marginea din schema activă.")>
+    Public Property HeaderColumnSeparatorColor As Color
+        Get
+            Return _headerColSepPinned
+        End Get
+        Set(value As Color)
+            If _headerColSepPinned = value Then Return
+            _headerColSepPinned = value
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeHeaderColumnSeparatorColor() As Boolean
+        Return _headerColSepPinned <> Color.Empty
+    End Function
+
+    Private Sub ResetHeaderColumnSeparatorColor()
+        HeaderColumnSeparatorColor = Color.Empty
+    End Sub
+
+    ''' <summary>
+    ''' Grosimea liniilor verticale dintre titlurile de coloană, în pixeli LOGICI (la 96 dpi).
+    ''' <c>0</c> = fără linii.
+    ''' </summary>
+    <Category("K-BOT: Header")>
+    <Description("Grosimea liniilor verticale dintre titlurile de coloană, în pixeli la 96 dpi. 0 = fără linii.")>
+    <DefaultValue(DefaultCellSeparatorWidth)>
+    Public Property HeaderColumnSeparatorWidth As Integer
+        Get
+            Return _headerColSepWidth
+        End Get
+        Set(value As Integer)
+            If value < 0 Then
+                Throw New ArgumentOutOfRangeException(NameOf(value),
+                    $"Grosimea liniei nu poate fi negativă (primit «{value}»); 0 = fără linii.")
+            End If
+            If _headerColSepWidth = value Then Return
+            _headerColSepWidth = value
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Culoarea liniei care desparte corpul de subsol. <c>Color.Empty</c> (implicit) = accentul
+    ''' schemei active; aceeași regulă ca la sora ei de sub antet.
+    ''' </summary>
+    <Category("K-BOT: Footer")>
+    <Description("Culoarea liniei dintre corp și subsol. Gol = accentul din schema activă.")>
+    Public Property FooterSeparatorColor As Color
+        Get
+            Return _footerSepPinned
+        End Get
+        Set(value As Color)
+            If _footerSepPinned = value Then Return
+            _footerSepPinned = value
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeFooterSeparatorColor() As Boolean
+        Return _footerSepPinned <> Color.Empty
+    End Function
+
+    Private Sub ResetFooterSeparatorColor()
+        FooterSeparatorColor = Color.Empty
+    End Sub
+
+    ''' <summary>
+    ''' Grosimea liniei dintre corp și subsol, în pixeli LOGICI (la 96 dpi). <c>0</c> = fără linie.
+    ''' </summary>
+    <Category("K-BOT: Footer")>
+    <Description("Grosimea liniei dintre corp și subsol, în pixeli la 96 dpi. 0 = fără linie.")>
+    <DefaultValue(DefaultBandSeparatorWidth)>
+    Public Property FooterSeparatorWidth As Integer
+        Get
+            Return _footerSepWidth
+        End Get
+        Set(value As Integer)
+            If value < 0 Then
+                Throw New ArgumentOutOfRangeException(NameOf(value),
+                    $"Grosimea liniei nu poate fi negativă (primit «{value}»); 0 = fără linie.")
+            End If
+            If _footerSepWidth = value Then Return
+            _footerSepWidth = value
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Culoarea liniilor VERTICALE dintre celulele de subsol. <c>Color.Empty</c> (implicit) =
+    ''' culoarea de margine a schemei.
+    ''' </summary>
+    <Category("K-BOT: Footer")>
+    <Description("Culoarea liniilor verticale dintre celulele de subsol. Gol = marginea din schema activă.")>
+    Public Property FooterColumnSeparatorColor As Color
+        Get
+            Return _footerColSepPinned
+        End Get
+        Set(value As Color)
+            If _footerColSepPinned = value Then Return
+            _footerColSepPinned = value
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeFooterColumnSeparatorColor() As Boolean
+        Return _footerColSepPinned <> Color.Empty
+    End Function
+
+    Private Sub ResetFooterColumnSeparatorColor()
+        FooterColumnSeparatorColor = Color.Empty
+    End Sub
+
+    ''' <summary>
+    ''' Grosimea liniilor verticale dintre celulele de subsol, în pixeli LOGICI (la 96 dpi).
+    ''' <c>0</c> = fără linii.
+    ''' </summary>
+    <Category("K-BOT: Footer")>
+    <Description("Grosimea liniilor verticale dintre celulele de subsol, în pixeli la 96 dpi. 0 = fără linii.")>
+    <DefaultValue(DefaultCellSeparatorWidth)>
+    Public Property FooterColumnSeparatorWidth As Integer
+        Get
+            Return _footerColSepWidth
+        End Get
+        Set(value As Integer)
+            If value < 0 Then
+                Throw New ArgumentOutOfRangeException(NameOf(value),
+                    $"Grosimea liniei nu poate fi negativă (primit «{value}»); 0 = fără linii.")
+            End If
+            If _footerColSepWidth = value Then Return
+            _footerColSepWidth = value
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
 
     Protected Overrides Sub OnFontChanged(e As EventArgs)
         MyBase.OnFontChanged(e)

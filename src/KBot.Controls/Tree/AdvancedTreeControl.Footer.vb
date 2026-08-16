@@ -71,10 +71,13 @@ Partial Public Class AdvancedTreeControl
             End Using
         End If
 
-        ' Separator sus — perechea liniei de sub antet.
-        Using sep As New Pen(Color.FromArgb(60, FooterForeColor))
-            g.DrawLine(sep, 0, bandRect.Top, Me.Width, bandRect.Top)
-        End Using
+        ' Separator sus — perechea liniei de sub antet, cu aceleași două reglaje (felia 0038).
+        Dim latimeSep As Integer = SY(FooterSeparatorWidth)
+        If latimeSep > 0 Then
+            Using sep As New Pen(FooterSeparatorColor, latimeSep)
+                g.DrawLine(sep, 0, bandRect.Top, Me.Width, bandRect.Top)
+            End Using
+        End If
 
         ' ── Butonul de strângere (stânga sau dreapta) ────────────────────
         ' Dreptunghiul vine din ACEEAȘI funcție pe care o folosește hit-testul — desenul nu-l

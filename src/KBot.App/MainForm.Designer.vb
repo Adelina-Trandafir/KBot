@@ -205,7 +205,10 @@ Partial Class MainForm
         ' 
         ' tree
         ' 
+        tree.BorderColor = SystemColors.ActiveBorder
         tree.CollapseButtonTooltip = "Strânge arborele la o bandă îngustă." & vbLf & "Rândurile se citesc atunci prin eticheta care iese la survolare."
+        tree.ColumnHeaderSeparatorColor = Color.Gainsboro
+        tree.ColumnHeaderSeparatorWidth = 2
         tree.Dock = DockStyle.Fill
         tree.DynamicColumns = False
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
@@ -214,12 +217,17 @@ Partial Class MainForm
         tree.FlyoutSlideDuration = 100
         tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
-        tree.FooterCaption = "Actualizează angajamente"
-        tree.FooterCaptionFont = New Font("Calibri", 8F, FontStyle.Bold)
+        tree.FooterCaption = "Actualizează"
+        tree.FooterCaptionBackColor = SystemColors.Control
+        tree.FooterCaptionFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        tree.FooterCaptionForeColor = SystemColors.ActiveCaptionText
+        tree.FooterHeight = 30
         tree.FooterLeftIcon = My.Resources.Resources.database
         tree.FooterLeftIconTooltip = "Sursa datelor: unitatea și perioada din care s-a încărcat arborele."
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
         tree.FooterRightIconTooltip = "Actualizează lista de angajamente din FOREXE." & vbLf & "Se conectează întâi, dacă nu există sesiune."
+        tree.FooterSeparatorColor = Color.Gainsboro
+        tree.FooterSeparatorWidth = 2
         tree.FooterTextAlign = ContentAlignment.MiddleRight
         tree.FooterVisible = True
         tree.HeaderBackColor = SystemColors.Control
@@ -227,14 +235,15 @@ Partial Class MainForm
         tree.HeaderCaption = " LISTĂ ANGAJAMENTE"
         tree.HeaderFont = New Font("Calibri", 10F, FontStyle.Bold)
         tree.HeaderForeColor = Color.Black
-        tree.HeaderGradientEndColor = Color.CornflowerBlue
-        tree.HeaderHeight = 28
+        tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
         tree.HeaderRightIcon = My.Resources.Resources.settings__1_
         tree.HeaderRightIconTooltip = "Setările arborelui: coloane, sortare și rânduri ascunse."
         tree.HeaderSearchIcon = My.Resources.Resources.Everaldo_Crystal_Clear_App_xmag_search_48
         tree.HeaderSearchIconTooltip = "Deschide banda de căutare peste arbore." & vbLf & "ESC golește căutarea și o închide."
+        tree.HeaderSeparatorColor = Color.Gainsboro
+        tree.HeaderSeparatorWidth = 2
         tree.HeaderVisible = True
         tree.ItemHeight = 24
         tree.LeftIconSize = New Size(16, 16)
@@ -261,6 +270,7 @@ Partial Class MainForm
         tree.SearchClearButtonHoverColor = SystemColors.Control
         tree.SearchDefaultText = "... tastează minim 3 caractere ..."
         tree.SearchIn = KBot.Controls.AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
+        tree.SearchSeparatorColor = Color.Gainsboro
         tree.ShowRightIconOnHover = True
         tree.Size = New Size(334, 675)
         tree.TabIndex = 0

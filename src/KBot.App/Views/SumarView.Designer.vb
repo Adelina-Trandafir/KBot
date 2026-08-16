@@ -47,6 +47,7 @@ Partial Class SumarView
         ' 
         ' pnlHeader
         ' 
+        pnlHeader.BackColor = SystemColors.Window
         pnlHeader.Controls.Add(tblHeader)
         pnlHeader.Dock = DockStyle.Top
         pnlHeader.Location = New Point(0, 0)
@@ -228,6 +229,7 @@ Partial Class SumarView
         ' 
         grid.AutoSizeHeaderHeight = False
         grid.BackColor = SystemColors.Window
+        grid.BorderColor = SystemColors.ActiveBorder
         grid.ColumnFillMode = KBot.Controls.KBotFillMode.FirstColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
@@ -350,14 +352,20 @@ Partial Class SumarView
         grid.Dock = DockStyle.Fill
         grid.FooterBackColor = SystemColors.Control
         grid.FooterCaption = "TOTALURI"
+        grid.FooterColumnSeparatorColor = Color.Gainsboro
         grid.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FooterHeight = 30
         grid.FooterLeftIcon = My.Resources.Resources.settings__1_
         grid.FooterLeftIconHoverColor = SystemColors.Highlight
+        grid.FooterSeparatorColor = Color.Gainsboro
         grid.FooterVisible = True
         grid.FrozenColumnCount = 1
         grid.HeaderBackColor = SystemColors.Control
+        grid.HeaderColumnSeparatorColor = Color.Gainsboro
         grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        grid.HeaderForeColor = SystemColors.ActiveCaptionText
+        grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 166)
         grid.Margin = New Padding(3, 4, 3, 4)
         grid.Name = "grid"

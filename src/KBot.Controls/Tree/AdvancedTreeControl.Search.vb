@@ -111,11 +111,14 @@ Partial Public Class AdvancedTreeControl
         ' casetă, placeholder, ✕ — ca designerul să arate exact ce va fi la runtime.
         If _searchTextBox Is Nothing Then DrawSearchBarPreview(g, barTop)
 
-        ' Separator inferior
-        Using sep As New Pen(Color.FromArgb(80, Color.Black))
-            g.DrawLine(sep, 0, barTop + _searchBarHeight - 1,
-                   Me.Width, barTop + _searchBarHeight - 1)
-        End Using
+        ' Separator inferior — culoare și grosime din designer (felia 0038); 0 = fără linie.
+        Dim latimeSep As Integer = SY(SearchSeparatorWidth)
+        If latimeSep > 0 Then
+            Using sep As New Pen(SearchSeparatorColor, latimeSep)
+                g.DrawLine(sep, 0, barTop + _searchBarHeight - 1,
+                       Me.Width, barTop + _searchBarHeight - 1)
+            End Using
+        End If
     End Sub
 
     ' Replică desenată a benzii. Geometria urmează pas cu pas PositionSearchTextBox

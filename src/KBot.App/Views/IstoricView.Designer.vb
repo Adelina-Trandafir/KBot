@@ -20,6 +20,8 @@ Partial Class IstoricView
         Dim KBotDataColumn2 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn3 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn4 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn5 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn6 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         tips = New KBot.Controls.KBotToolTip(components)
         btnFiltruClsf = New Button()
         btnFiltruTipRand = New Button()
@@ -32,7 +34,6 @@ Partial Class IstoricView
         pnlDetaliu = New Panel()
         detailTable = New TableLayoutPanel()
         lblCapDescriere = New Label()
-        lblCapValori = New Label()
         txtDescriere = New TextBox()
         gridValori = New Controls.KBotDataView()
         pnlFiltre = New Panel()
@@ -134,13 +135,14 @@ Partial Class IstoricView
         ' 
         ' tree
         ' 
+        tree.BorderColor = SystemColors.ActiveBorder
         tree.CollapseButtonTooltip = "Strânge arborele la o bandă îngustă." & vbLf & "Rândurile se citesc atunci prin eticheta care iese la survolare."
         tree.Dock = DockStyle.Fill
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
-        tree.Font = New Font("Calibri", 9.0F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCaption = "Perioade"
-        tree.FooterCaptionFont = New Font("Consolas", 8.0F, FontStyle.Bold)
+        tree.FooterCaptionFont = New Font("Consolas", 8F, FontStyle.Bold)
         tree.FooterCollapseButton = True
         tree.FooterCollapseButtonPosition = KBot.Controls.AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
@@ -153,13 +155,14 @@ Partial Class IstoricView
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " ISTORIC"
-        tree.HeaderFont = New Font("Calibri", 10.0F, FontStyle.Bold)
-        tree.HeaderForeColor = Color.Black
-        tree.HeaderGradientEndColor = Color.CornflowerBlue
-        tree.HeaderHeight = 28
+        tree.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
+        tree.HeaderForeColor = SystemColors.ActiveCaptionText
+        tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
         tree.HeaderSearchIconTooltip = "Caută în arbore." & vbLf & "ESC golește căutarea și închide banda."
+        tree.HeaderSeparatorColor = Color.Gainsboro
+        tree.HeaderSeparatorWidth = 2
         tree.HeaderVisible = True
         tree.Indent = 8
         tree.ItemHeight = 20
@@ -201,13 +204,15 @@ Partial Class IstoricView
         ' 
         grid.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
         grid.BackColor = SystemColors.Window
+        grid.BorderColor = SystemColors.ActiveBorder
         grid.CellTooltip.Enabled = False
         grid.ColumnFillMode = KBot.Controls.KBotFillMode.LastColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn1.ColumnFont = New Font("Calibri", 9.0F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
+        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Clasificația"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clsf"
@@ -221,6 +226,7 @@ Partial Class IstoricView
         KBotDataColumn2.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn2.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn2.FormatString = Nothing
+        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn2.HeaderText = "Tipul"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "tip"
@@ -232,6 +238,7 @@ Partial Class IstoricView
         KBotDataColumn3.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn3.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn3.FormatString = Nothing
+        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn3.HeaderText = "Data"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "data"
@@ -243,6 +250,7 @@ Partial Class IstoricView
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn4.FormatString = Nothing
+        KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn4.HeaderText = "Descriere"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "desc"
@@ -256,7 +264,13 @@ Partial Class IstoricView
         grid.EnableGrouping = True
         grid.FilterIconSize = New Size(14, 14)
         grid.FilterIconTooltip = "Filtrează coloana." & vbLf & "Bifează valorile pe care vrei să le vezi; fără nicio bifă, se văd toate."
+        grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FrozenColumnCount = 1
+        grid.HeaderBackColor = SystemColors.Control
+        grid.HeaderColumnSeparatorColor = Color.Gainsboro
+        grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        grid.HeaderForeColor = SystemColors.ActiveCaptionText
+        grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 0)
         grid.Margin = New Padding(3, 4, 3, 4)
         grid.Name = "grid"
@@ -285,15 +299,14 @@ Partial Class IstoricView
         detailTable.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
         detailTable.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
         detailTable.Controls.Add(lblCapDescriere, 0, 0)
-        detailTable.Controls.Add(lblCapValori, 1, 0)
         detailTable.Controls.Add(txtDescriere, 0, 1)
-        detailTable.Controls.Add(gridValori, 1, 1)
+        detailTable.Controls.Add(gridValori, 1, 0)
         detailTable.Dock = DockStyle.Fill
         detailTable.Location = New Point(5, 5)
         detailTable.Margin = New Padding(2)
         detailTable.Name = "detailTable"
         detailTable.RowCount = 2
-        detailTable.RowStyles.Add(New RowStyle(SizeType.Absolute, 23F))
+        detailTable.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
         detailTable.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         detailTable.Size = New Size(564, 130)
         detailTable.TabIndex = 0
@@ -301,52 +314,69 @@ Partial Class IstoricView
         ' lblCapDescriere
         ' 
         lblCapDescriere.AutoSize = True
+        lblCapDescriere.BorderStyle = BorderStyle.Fixed3D
         lblCapDescriere.Dock = DockStyle.Fill
+        lblCapDescriere.FlatStyle = FlatStyle.Flat
+        lblCapDescriere.Font = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         lblCapDescriere.Location = New Point(2, 0)
         lblCapDescriere.Margin = New Padding(2, 0, 2, 0)
         lblCapDescriere.Name = "lblCapDescriere"
-        lblCapDescriere.Size = New Size(278, 23)
+        lblCapDescriere.Size = New Size(278, 20)
         lblCapDescriere.TabIndex = 0
         lblCapDescriere.Text = "Observații"
         lblCapDescriere.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' lblCapValori
-        ' 
-        lblCapValori.AutoSize = True
-        lblCapValori.Dock = DockStyle.Fill
-        lblCapValori.Location = New Point(284, 0)
-        lblCapValori.Margin = New Padding(2, 0, 2, 0)
-        lblCapValori.Name = "lblCapValori"
-        lblCapValori.Size = New Size(278, 23)
-        lblCapValori.TabIndex = 1
-        lblCapValori.Text = "Valori"
-        lblCapValori.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' txtDescriere
         ' 
         txtDescriere.BackColor = SystemColors.Window
         txtDescriere.Dock = DockStyle.Fill
-        txtDescriere.Location = New Point(0, 23)
+        txtDescriere.Location = New Point(0, 20)
         txtDescriere.Margin = New Padding(0, 0, 2, 0)
         txtDescriere.Multiline = True
         txtDescriere.Name = "txtDescriere"
         txtDescriere.ReadOnly = True
         txtDescriere.ScrollBars = ScrollBars.Vertical
-        txtDescriere.Size = New Size(280, 107)
+        txtDescriere.Size = New Size(280, 110)
         txtDescriere.TabIndex = 2
         ' 
         ' gridValori
         ' 
+        gridValori.AlternatingRows = False
         gridValori.BackColor = SystemColors.Window
+        gridValori.BorderColor = SystemColors.ActiveBorder
         gridValori.ColumnFillMode = KBot.Controls.KBotFillMode.FirstColumn
+        KBotDataColumn5.AggregateFormatString = Nothing
+        KBotDataColumn5.FormatString = Nothing
+        KBotDataColumn5.HeaderText = "TIP"
+        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn5.Key = "vtip"
+        KBotDataColumn5.OptionGroup = Nothing
+        KBotDataColumn6.AggregateFormatString = Nothing
+        KBotDataColumn6.DecimalPlaces = 2
+        KBotDataColumn6.Format = KBot.Controls.KBotFormat.Standard
+        KBotDataColumn6.FormatString = Nothing
+        KBotDataColumn6.HeaderText = "Valoare"
+        KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn6.Key = "vval"
+        KBotDataColumn6.OptionGroup = Nothing
+        KBotDataColumn6.ValueType = KBot.Controls.KBotValueType.Number
+        KBotDataColumn6.Width = 120
+        gridValori.Columns.Add(KBotDataColumn5)
+        gridValori.Columns.Add(KBotDataColumn6)
         gridValori.Dock = DockStyle.Fill
-        gridValori.HeaderHeight = 26
-        gridValori.Location = New Point(284, 23)
+        gridValori.HeaderBackColor = SystemColors.Control
+        gridValori.HeaderColumnSeparatorColor = Color.Gainsboro
+        gridValori.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        gridValori.HeaderForeColor = SystemColors.ActiveCaptionText
+        gridValori.HeaderHeight = 20
+        gridValori.HeaderSeparatorColor = Color.Gainsboro
+        gridValori.Location = New Point(284, 0)
         gridValori.Margin = New Padding(2, 0, 0, 0)
         gridValori.Name = "gridValori"
         gridValori.ReadOnlyGrid = True
-        gridValori.RowHeight = 26
-        gridValori.Size = New Size(280, 107)
+        gridValori.RowHeight = 20
+        detailTable.SetRowSpan(gridValori, 2)
+        gridValori.Size = New Size(280, 130)
         gridValori.TabIndex = 3
         ' 
         ' pnlFiltre
@@ -459,7 +489,6 @@ Partial Class IstoricView
     Friend WithEvents pnlDetaliu As Panel
     Friend WithEvents detailTable As TableLayoutPanel
     Friend WithEvents lblCapDescriere As Label
-    Friend WithEvents lblCapValori As Label
     Friend WithEvents txtDescriere As TextBox
     Friend WithEvents gridValori As KBot.Controls.KBotDataView
     Friend WithEvents pnlFiltre As Panel

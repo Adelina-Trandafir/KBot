@@ -265,10 +265,13 @@ Partial Public Class AdvancedTreeControl
 
                     Dim cx As Integer = colStartX
 
-                    ' Separator vertical la inceputul zonei de coloane
-                    Using sepPen As New Pen(Color.FromArgb(COLUMN_SEPARATOR_COLOR_ALPHA, LineColor), 1)
-                        g.DrawLine(sepPen, cx, y, cx, y + _itemHeight)
-                    End Using
+                    ' Separator vertical la inceputul zonei de coloane (culoare/grosime: felia 0038)
+                    Dim latimeColSep As Integer = SX(ColumnSeparatorWidth)
+                    If latimeColSep > 0 Then
+                        Using sepPen As New Pen(ColumnSeparatorColor, latimeColSep)
+                            g.DrawLine(sepPen, cx, y, cx, y + _itemHeight)
+                        End Using
+                    End If
 
                     Dim rowVisibleWidth As Integer = Me.Width - scrollW - PaddingTreeEnd - ReservedRightIconWidth() - colStartX
                     Dim rowVisCols As Integer = GetVisibleColumnCount(rowCols, rowVisibleWidth)
@@ -288,9 +291,11 @@ Partial Public Class AdvancedTreeControl
                             End If
 
                             ' Separator vertical la capatul coloanei
-                            Using sepPen As New Pen(Color.FromArgb(COLUMN_SEPARATOR_COLOR_ALPHA, LineColor), 1)
-                                g.DrawLine(sepPen, cx + cd.Width - 1, y, cx + cd.Width - 1, y + _itemHeight)
-                            End Using
+                            If latimeColSep > 0 Then
+                                Using sepPen As New Pen(ColumnSeparatorColor, latimeColSep)
+                                    g.DrawLine(sepPen, cx + cd.Width - 1, y, cx + cd.Width - 1, y + _itemHeight)
+                                End Using
+                            End If
 
                             ' Text celula
                             Dim cellVal As String = If(cellData IsNot Nothing, cellData.Value, "")
@@ -771,10 +776,13 @@ Partial Public Class AdvancedTreeControl
             End Try
 
             Try
-                Using borderPen As New Pen(LineColor, 1)
-                    g.DrawLine(borderPen, 0, hdrY + COLUMN_HEADER_HEIGHT - 1,
-                                           Me.Width, hdrY + COLUMN_HEADER_HEIGHT - 1)
-                End Using
+                Dim latimeSubBanda As Integer = SY(ColumnHeaderSeparatorWidth)
+                If latimeSubBanda > 0 Then
+                    Using borderPen As New Pen(ColumnHeaderSeparatorColor, latimeSubBanda)
+                        g.DrawLine(borderPen, 0, hdrY + COLUMN_HEADER_HEIGHT - 1,
+                                               Me.Width, hdrY + COLUMN_HEADER_HEIGHT - 1)
+                    End Using
+                End If
             Catch
             End Try
 
@@ -800,9 +808,13 @@ Partial Public Class AdvancedTreeControl
                         End If
 
                         ' ── 2. Separator vertical ────────────────────────────────────────────
-                        Using sepPen As New Pen(Color.FromArgb(COLUMN_SEPARATOR_COLOR_ALPHA, LineColor), 1)
-                            g.DrawLine(sepPen, cx, hdrY, cx, hdrY + COLUMN_HEADER_HEIGHT)
-                        End Using
+                        ' Același reglaj ca pe rânduri: linia coboară prin toată banda de coloane.
+                        Dim latimeColSep As Integer = SX(ColumnSeparatorWidth)
+                        If latimeColSep > 0 Then
+                            Using sepPen As New Pen(ColumnSeparatorColor, latimeColSep)
+                                g.DrawLine(sepPen, cx, hdrY, cx, hdrY + COLUMN_HEADER_HEIGHT)
+                            End Using
+                        End If
 
                         ' ── 3. Aliniere efectiva ─────────────────────────────────────────────
                         ' Select Case cd.Align cu HorizontalAlignment era mort (suprascris imediat)
