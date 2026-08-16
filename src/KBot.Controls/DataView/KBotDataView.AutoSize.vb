@@ -47,6 +47,7 @@ Partial Class KBotDataView
     Private _fillMode As KBotFillMode = KBotFillMode.None
     Private _autoSizeSampleRows As Integer = 200
     Private _shrinkColumnsToFit As Boolean = True
+    Private _fillColumnKey As String = String.Empty
 
     ' Re-entrancy guard: the pass mutates column widths, so it must never re-enter itself.
     Private _inAutoLayout As Boolean = False
@@ -83,17 +84,63 @@ Partial Class KBotDataView
 
     ''' <summary>English (slice 0013): how leftover/overflow space is spent. Default <c>None</c>.</summary>
     <Category("K-BOT")>
-    <Description("Cum se cheltuie spațiul rămas: None, FirstColumn, LastColumn sau Proportional.")>
+    <Description("Cum se cheltuie spațiul rămas: None, FirstColumn, LastColumn, Proportional sau SpecificColumn (coloana din FillColumnKey).")>
     <DefaultValue(KBotFillMode.None)>
     Public Property ColumnFillMode As KBotFillMode
         Get
             Return _fillMode
         End Get
         Set(value As KBotFillMode)
+            If Not [Enum].IsDefined(GetType(KBotFillMode), value) Then
+                Throw New ArgumentException($"Mod de umplere necunoscut: «{value}».", NameOf(value))
+            End If
             _fillMode = value
             LayoutChanged()
         End Set
     End Property
+
+    ''' <summary>
+    ''' Coloana care absoarbe spațiul rămas când <see cref="ColumnFillMode"/> e
+    ''' <see cref="KBotFillMode.SpecificColumn"/> — cheia ei (<see cref="KBotDataColumn.Key"/>),
+    ''' nu poziția: o coloană mutată sau ascunsă între timp nu trebuie să întindă altă coloană
+    ''' decât cea aleasă.
+    '''
+    ''' <para>Se citește DOAR în modul <c>SpecificColumn</c>; în rest e metadata inertă, ca să
+    ''' poată fi scrisă în designer înainte de a comuta modul. O cheie necunoscută e o greșeală de
+    ''' model, deci se reclamă zgomotos la <c>EndInit</c> (ca la nivelurile de grupare), nu dintr-o
+    ''' trecere de layout: coloana ascunsă în momentul întinderii nu e o greșeală, e o stare, și
+    ''' atunci pur și simplu nu se întinde nimic.</para>
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Cheia coloanei care absoarbe spațiul rămas când ColumnFillMode = SpecificColumn.")>
+    <DefaultValue("")>
+    Public Property FillColumnKey As String
+        Get
+            Return _fillColumnKey
+        End Get
+        Set(value As String)
+            Dim nou As String = If(value, String.Empty)
+            If String.Equals(_fillColumnKey, nou, StringComparison.Ordinal) Then Return
+            _fillColumnKey = nou
+            LayoutChanged()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Verificarea zgomotoasă de la <c>EndInit</c>: în modul <c>SpecificColumn</c>, o cheie goală
+    ''' sau necunoscută înseamnă un mod de umplere care n-are ce umple.
+    ''' </summary>
+    Friend Sub ValidateFillColumn()
+        If _fillMode <> KBotFillMode.SpecificColumn Then Return
+        If String.IsNullOrEmpty(_fillColumnKey) Then
+            Throw New ArgumentException(
+                "«ColumnFillMode = SpecificColumn» cere o coloană: FillColumnKey e gol.", NameOf(FillColumnKey))
+        End If
+        If Not _columnIndex.ContainsKey(_fillColumnKey) Then
+            Throw New ArgumentException(
+                $"FillColumnKey arată către o coloană inexistentă: '{_fillColumnKey}'.", NameOf(FillColumnKey))
+        End If
+    End Sub
 
     ''' <summary>
     ''' Când coloanele nu încap în lățimea grilei, li se ia din lățime ca să încapă (implicit
@@ -305,12 +352,12 @@ Partial Class KBotDataView
             If Not c.AutoHide Then Continue For
             If ReferenceEquals(c, expander) Then Continue For   ' expanding takes precedence
             c.AutoHidden = True
-            total -= c.Width
+            total -= c.WidthPx
         Next
     End Sub
 
-    ' The single column a First/Last fill grows — protected from auto-hide. Proportional / None
-    ' has no single protected expander (Nothing), so its auto-hideable columns can all disappear.
+    ' The single column a First/Last/Specific fill grows — protected from auto-hide. Proportional /
+    ' None has no single protected expander (Nothing), so its auto-hideable columns can all disappear.
     Private Function FillTargetColumn(vis As List(Of KBotDataColumn)) As KBotDataColumn
         If vis.Count = 0 Then Return Nothing
         Select Case _fillMode
@@ -318,6 +365,14 @@ Partial Class KBotDataView
                 Return vis(0)
             Case KBotFillMode.LastColumn
                 Return vis(vis.Count - 1)
+            Case KBotFillMode.SpecificColumn
+                ' Se caută printre coloanele VIZIBILE, nu în index: o coloană ascunsă n-are lățime
+                ' pe ecran, deci n-are ce absorbi — atunci spațiul rămâne gol, ca la «None».
+                If String.IsNullOrEmpty(_fillColumnKey) Then Return Nothing
+                For Each c In vis
+                    If String.Equals(c.Key, _fillColumnKey, StringComparison.Ordinal) Then Return c
+                Next
+                Return Nothing
             Case Else
                 Return Nothing
         End Select
@@ -363,7 +418,7 @@ Partial Class KBotDataView
             Case KBotColumnType.ProgressBar
                 ' No intrinsic content: keep the caller's width; header still participates.
                 ' Retragerea nu-l atinge (desenează o formă, vezi KBotDataColumn.CellPadding).
-                need = Math.Max(need, col.Width)
+                need = Math.Max(need, col.WidthPx)
 
             Case KBotColumnType.Combo
                 ' Widest formatted cell plus padding plus the chevron zone (see DrawComboCell).
@@ -380,7 +435,7 @@ Partial Class KBotDataView
 
         ' EffectiveMinWidth, nu MinWidth: podeaua ține cont și de pictogramele de antet, și ea
         ' bate plafonul (vezi KBotDataColumn.ClampWidth).
-        Return Math.Max(col.EffectiveMinWidth, Math.Min(need, col.MaxWidth))
+        Return Math.Max(col.EffectiveMinWidthPx, Math.Min(need, col.MaxWidthPx))
     End Function
 
     ' Widest sampled cell for a column, measured formatted (never raising CellFormatting).
@@ -496,13 +551,19 @@ Partial Class KBotDataView
                 GrowColumn(vis(vis.Count - 1), leftover)
             Case KBotFillMode.Proportional
                 DistributeProportional(vis, leftover)
+            Case KBotFillMode.SpecificColumn
+                ' Coloana aleasă poate lipsi (ascunsă acum): atunci nu crește nimeni, iar restul
+                ' rămâne gol. Nu se cade pe ultima coloană — ar întinde taman coloana pe care
+                ' operatorul a ocolit-o alegând alta.
+                Dim tinta As KBotDataColumn = FillTargetColumn(vis)
+                If tinta IsNot Nothing Then GrowColumn(tinta, leftover)
         End Select
     End Sub
 
     ' Add extra to a single column. The Width setter clamps at MaxWidth, so an over-cap
     ' remainder is silently dropped (it must not spill into a neighbour).
     Private Shared Sub GrowColumn(col As KBotDataColumn, extra As Integer)
-        col.SetLayoutWidth(col.Width + extra)
+        col.SetLayoutWidth(col.WidthPx + extra)
     End Sub
 
     ' Split the leftover in proportion to each column's current width. Integer division leaves
@@ -516,7 +577,7 @@ Partial Class KBotDataView
         Dim shares(vis.Count - 1) As Integer
         Dim assigned As Integer = 0
         For i As Integer = 0 To vis.Count - 1
-            shares(i) = CInt(CLng(leftover) * vis(i).Width \ totalWidth)
+            shares(i) = CInt(CLng(leftover) * vis(i).WidthPx \ totalWidth)
             assigned += shares(i)
         Next
         shares(vis.Count - 1) += (leftover - assigned)   ' exact remainder to the last column
@@ -525,11 +586,11 @@ Partial Class KBotDataView
         Dim uncapped As New List(Of KBotDataColumn)()
         For i As Integer = 0 To vis.Count - 1
             Dim c As KBotDataColumn = vis(i)
-            Dim want As Integer = c.Width + shares(i)
+            Dim want As Integer = c.WidthPx + shares(i)
             c.SetLayoutWidth(want)                       ' clamps to MaxWidth
-            If c.Width < want Then
-                surplus += (want - c.Width)              ' capped: could not take its full share
-            ElseIf c.MaxWidth > c.Width Then
+            If c.WidthPx < want Then
+                surplus += (want - c.WidthPx)              ' capped: could not take its full share
+            ElseIf c.MaxWidthPx > c.WidthPx Then
                 uncapped.Add(c)                          ' still has headroom
             End If
         Next
@@ -541,19 +602,19 @@ Partial Class KBotDataView
     Private Shared Sub RedistributeSurplus(cols As List(Of KBotDataColumn), surplus As Integer)
         Dim totalWidth As Long = 0
         For Each c In cols
-            totalWidth += c.Width
+            totalWidth += c.WidthPx
         Next
         If totalWidth <= 0 Then Return
 
         Dim shares(cols.Count - 1) As Integer
         Dim assigned As Integer = 0
         For i As Integer = 0 To cols.Count - 1
-            shares(i) = CInt(CLng(surplus) * cols(i).Width \ totalWidth)
+            shares(i) = CInt(CLng(surplus) * cols(i).WidthPx \ totalWidth)
             assigned += shares(i)
         Next
         shares(cols.Count - 1) += (surplus - assigned)
         For i As Integer = 0 To cols.Count - 1
-            cols(i).SetLayoutWidth(cols(i).Width + shares(i))   ' clamps; any residue is dropped
+            cols(i).SetLayoutWidth(cols(i).WidthPx + shares(i))   ' clamps; any residue is dropped
         Next
     End Sub
 
@@ -563,7 +624,7 @@ Partial Class KBotDataView
         ' cannot shrink below what they need, so the shrink pass must count that, not MinWidth.
         Dim minTotal As Integer = 0
         For Each c In vis
-            minTotal += c.EffectiveMinWidth
+            minTotal += c.EffectiveMinWidthPx
         Next
 
         ' Honest fallback: even at MinWidth the columns overflow. Pin everything to MinWidth
@@ -571,7 +632,7 @@ Partial Class KBotDataView
         ' worse than a scrollbar the caller did not ask for.
         If minTotal >= available Then
             For Each c In vis
-                c.SetLayoutWidth(c.EffectiveMinWidth)
+                c.SetLayoutWidth(c.EffectiveMinWidthPx)
             Next
             Return
         End If
@@ -587,9 +648,9 @@ Partial Class KBotDataView
             Dim flex As New List(Of KBotDataColumn)()
             Dim flexWidth As Long = 0
             For Each c In vis
-                If c.Width > c.EffectiveMinWidth Then
+                If c.WidthPx > c.EffectiveMinWidthPx Then
                     flex.Add(c)
-                    flexWidth += c.Width
+                    flexWidth += c.WidthPx
                 End If
             Next
             If flex.Count = 0 OrElse flexWidth <= 0 Then Exit Do
@@ -597,13 +658,13 @@ Partial Class KBotDataView
             Dim shares(flex.Count - 1) As Integer
             Dim assigned As Integer = 0
             For i As Integer = 0 To flex.Count - 1
-                shares(i) = CInt(CLng(deficit) * flex(i).Width \ flexWidth)
+                shares(i) = CInt(CLng(deficit) * flex(i).WidthPx \ flexWidth)
                 assigned += shares(i)
             Next
             shares(flex.Count - 1) += (deficit - assigned)   ' rounding remainder to last flex
             For i As Integer = 0 To flex.Count - 1
                 Dim c As KBotDataColumn = flex(i)
-                c.SetLayoutWidth(Math.Max(c.EffectiveMinWidth, c.Width - shares(i)))   ' floor at the real min
+                c.SetLayoutWidth(Math.Max(c.EffectiveMinWidthPx, c.WidthPx - shares(i)))   ' floor at the real min
             Next
 
             guard += 1
@@ -613,7 +674,7 @@ Partial Class KBotDataView
     Private Shared Function SumWidths(cols As List(Of KBotDataColumn)) As Integer
         Dim total As Integer = 0
         For Each c In cols
-            total += c.Width
+            total += c.WidthPx
         Next
         Return total
     End Function

@@ -44,8 +44,8 @@ Public Class OrdView
     ' întoarce Nothing, deci nodul rămâne fără iconiță — ORD nu are clasă de iconițe GDI, iar
     ' remediul e să pui poza în designer, nu să desenezi una în cod.
     Private Const ICO_LUNA As String = "month"
-    Private Const ICO_INCARCAT As String = "up"      ' ordonanțare încărcată ▲
-    Private Const ICO_PRELUAT As String = "down"     ' ordonanțare preluată ▼
+    Private Const ICO_SUS As String = "up"       ' total pozitiv ▲
+    Private Const ICO_JOS As String = "down"     ' total negativ ▼
     Private Const ICO_NEUTRU As String = "neutral"   ' nici una, nici alta
 
     ' Format românesc: separator de mii «.» și zecimală «,» (1.091.940,00).
@@ -54,6 +54,9 @@ Public Class OrdView
     Private ReadOnly _apiClient As IApiClient
     ' Plasa 401 a shell-ului (MainForm.WithReauth), specializată pe OrdInfo.
     Private ReadOnly _withReauth As Func(Of Func(Of Task(Of OrdInfo)), Task(Of OrdInfo))
+    ' Sesiunea (globalii unității pentru banda de antet a paginii «Vizualizare»). Poate fi
+    ' Nothing în teste — atunci antetul își sare rândurile de unitate. Același tipar ca DdfView.
+    Private ReadOnly _session As SessionContext
 
     ' Sub-paginile create până acum (leneș, la prima activare) și cea vizibilă acum.
     Private ReadOnly _pages As New Dictionary(Of String, IOrdPage)(StringComparer.Ordinal)
@@ -80,12 +83,14 @@ Public Class OrdView
     Private _panel1MinSizeDesfasurat As Integer
 
     Public Sub New(apiClient As IApiClient,
-                   withReauth As Func(Of Func(Of Task(Of OrdInfo)), Task(Of OrdInfo)))
+                   withReauth As Func(Of Func(Of Task(Of OrdInfo)), Task(Of OrdInfo)),
+                   Optional session As SessionContext = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
+        _session = session
         BuildNav()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
@@ -181,10 +186,15 @@ Public Class OrdView
             ' știe nimic despre PDF-uri (vezi nota rutei), la fel ca la DDF.
             Dim exists As Boolean = Not String.IsNullOrEmpty(pdfPath) AndAlso IO.File.Exists(pdfPath)
 
+            ' Antetul întreg + globalii unității: banda de antet a paginii «Vizualizare» îi
+            ' folosește. Sesiunea poate lipsi (teste) -> rândurile ei se sar, banda nu se rupe.
             Return New OrdPageContext(_nodeLinii, _nodeIsRoot,
                                       If(_selectedOrd Is Nothing, 0, _selectedOrd.NrOrd),
                                       If(_selectedOrd Is Nothing, Nothing, _selectedOrd.DataOrd),
-                                      _requestedCod, pdfPath, exists)
+                                      _requestedCod, pdfPath, exists,
+                                      _selectedOrd,
+                                      If(_session Is Nothing, String.Empty, _session.NumeUnitate),
+                                      If(_session Is Nothing, String.Empty, _session.CF))
         Catch ex As Exception
             GlobalErrorLog.Write("OrdView.BuildCurrentContext", ex)
             Throw
@@ -426,7 +436,7 @@ Public Class OrdView
         If monthKey <= 0 Then Return "(fără dată)"
         Dim y As Integer = monthKey \ 100
         Dim m As Integer = monthKey Mod 100
-        Return $"{MonthLabel(m)}/{y}"
+        Return $"{MonthLabel(m)}" '/{y}"
     End Function
 
     ' Numele lunii în română (Ianuarie…), cu prima literă mare (ca în celelalte vederi).
@@ -438,14 +448,19 @@ Public Class OrdView
     End Function
 
     ''' <summary>
-    ''' Iconița frunzei, după starea ordonanțării: Încărcat -&gt; «sus», altfel Preluat -&gt;
-    ''' «jos», altfel neutru — regula stărilor din DDF, aplicată la ORD. Se ia DOAR din
-    ''' «image_list»; o cheie lipsă lasă nodul fără iconiță, iar remediul e o poză în designer.
+    ''' Iconița frunzei, dată de SEMNUL TOTALULUI ordonanțării: pozitiv → «sus», negativ →
+    ''' «jos», exact zero → neutru. Aceeași axă ca la Rezervări și ca la DDF, și aceeași cu a
+    ''' culorii rândului, care e deja roșu când totalul e negativ. Se ia DOAR din «image_list»;
+    ''' o cheie lipsă lasă nodul fără iconiță, iar remediul e o poză în designer.
+    '''
+    ''' <para>ÎNAINTE se citea starea de încărcare (<c>Incarcat</c> → sus, altfel
+    ''' <c>Preluat</c> → jos). E o axă DIFERITĂ de semn, și în practică arăta ▼ pe aproape tot,
+    ''' fiindcă ordonanțările sunt de regulă preluate.</para>
     ''' </summary>
     Private Function StareIconOf(o As OrdHeaderRow) As Image
         If o Is Nothing Then Return Nothing
-        If o.Incarcat Then Return tree.NodeImage(ICO_INCARCAT)
-        If o.Preluat Then Return tree.NodeImage(ICO_PRELUAT)
+        If o.TotalOrd > 0 Then Return tree.NodeImage(ICO_SUS)
+        If o.TotalOrd < 0 Then Return tree.NodeImage(ICO_JOS)
         Return tree.NodeImage(ICO_NEUTRU)
     End Function
 

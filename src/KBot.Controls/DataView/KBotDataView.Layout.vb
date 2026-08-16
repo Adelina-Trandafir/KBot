@@ -3,6 +3,7 @@ Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Windows.Forms
 Imports KBot.Common
+Imports KBot.Theming
 
 ''' <summary>
 ''' Partea de GEOMETRIE a <see cref="KBotDataView"/>: benzile (antet / coloane înghețate /
@@ -56,10 +57,10 @@ Partial Class KBotDataView
             If Not c.IsEffectivelyVisible Then Continue For
             If visibleIndex < _frozenColumnCount Then
                 _frozenLayout.Add(New ColLayout With {.Column = c, .X = frozenX})
-                frozenX += c.Width
+                frozenX += c.WidthPx
             Else
                 _scrollLayout.Add(New ColLayout With {.Column = c, .X = scrollX})
-                scrollX += c.Width
+                scrollX += c.WidthPx
             End If
             visibleIndex += 1
         Next
@@ -167,12 +168,15 @@ Partial Class KBotDataView
     ''' se poate cere ÎNAINTE ca înălțimea să fie știută — altfel calculul s-ar mușca de coadă.
     ''' </summary>
     Private Function HeaderTextWidthFor(col As KBotDataColumn) As Integer
-        Return HeaderLayoutFor(col, New Rectangle(0, 0, col.Width, _headerHeight)).Text.Width
+        Return HeaderLayoutFor(col, New Rectangle(0, 0, col.WidthPx, _headerHeight)).Text.Width
     End Function
 
     ''' <summary>Înălțimea efectivă a benzii de subsol (0 dacă e stinsă).</summary>
     Private Function FooterBandHeight() As Integer
-        Return If(_showFooter, FooterHeight, 0)
+        If Not _showFooter Then Return 0
+        ' Câmpurile SCALATE, nu proprietatea: aceea întoarce valoarea logică (px la 96 dpi), care
+        ' e ce a cerut operatorul, nu ce se desenează. Vezi KBotDataView.Dpi.vb.
+        Return If(_footerHeight > 0, _footerHeight, _headerHeight)
     End Function
 
     ''' <summary>Y-ul (client) la care începe banda de subsol — sub antet și sub corp.</summary>
@@ -589,17 +593,18 @@ Partial Class KBotDataView
         End Try
     End Sub
 
-    ' ── Ajutor DPI (ThemeShapes e Friend în KBot.Theming, invizibil de aici) ─────
+    ' ── Ajutor DPI ──────────────────────────────────────────────────────────────
 
-    ' Scalează o valoare logică (px @96dpi) la DPI-ul controlului. Fallback 96 înainte de handle.
+    ' Scalează o valoare logică (px @96dpi) la scara controlului.
+    '
+    ' Răspunsul vine din AppScaling — SURSA UNICĂ a scării de când operatorul o poate fixa la
+    ' 100% sau pune un factor al lui (felia 0036). Aici se calcula până acum direct din
+    ' `DeviceDpi`, adică exact a doua formulă de care se ferește nota de DPI din .Dpi.vb:
+    ' măsurile proprii (rând, antet, lățimi de coloană) treceau prin AppScaling, iar
+    ' constantele de pictură — spațiile dintre pictograme, caseta de bifă, chevronul — nu, deci
+    ' pe scalare fixată la 100% pictogramele rămâneau mari într-un antet care se strânsese.
     Private Function ScaleDpi(logical As Integer) As Integer
-        Dim dpi As Integer = 96
-        Try
-            dpi = DeviceDpi
-        Catch
-            dpi = 96
-        End Try
-        Return CInt(Math.Round(logical * dpi / 96.0))
+        Return ThemeShapes.ScaleDpi(Me, logical)
     End Function
 
 End Class

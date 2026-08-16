@@ -34,29 +34,29 @@ Partial Class DdfView
         split.SuspendLayout()
         CType(navSub, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
-        '
+        ' 
         ' split
-        '
+        ' 
         split.Dock = DockStyle.Fill
         split.Location = New Point(0, 0)
         split.Margin = New Padding(4, 5, 4, 5)
         split.Name = "split"
-        '
+        ' 
         ' split.Panel1
-        '
+        ' 
         split.Panel1.Controls.Add(tree)
-        '
+        ' 
         ' split.Panel2
-        '
+        ' 
         split.Panel2.Controls.Add(pnlPages)
         split.Panel2.Controls.Add(navSub)
         split.Size = New Size(1163, 528)
         split.SplitterDistance = 305
         split.SplitterWidth = 9
         split.TabIndex = 0
-        '
+        ' 
         ' tree
-        '
+        ' 
         tree.Dock = DockStyle.Fill
         tree.DynamicColumns = False
         tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
@@ -80,10 +80,11 @@ Partial Class DdfView
         tree.HeaderIconSize = New Size(24, 24)
         tree.HeaderLeftIcon = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_temporary_32
         tree.HeaderVisible = True
+        tree.CollapseButtonTooltip = "Strânge arborele la o bandă îngustă." & vbLf & "Rândurile se citesc atunci prin eticheta care iese la survolare."
+        tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
+        tree.FooterRightIconTooltip = "Reîncarcă documentele de deschidere de finanțare (DDF) de la server."
+        tree.HeaderSearchIconTooltip = "Caută în arbore." & vbLf & "ESC golește căutarea și închide banda."
         tree.Indent = 8
-        ' Paritate cu «tree»-ul lui RezervariView (felia 0033 §12, cererea operatorului): era
-        ' 24, singura dimensiune care mai diferea. Fontul (Calibri 9) și dimensiunile
-        ' iconițelor (16 / 14) erau deja aceleași.
         tree.ItemHeight = 30
         tree.LeftIconSize = New Size(16, 16)
         tree.Location = New Point(0, 0)
@@ -100,30 +101,26 @@ Partial Class DdfView
         tree.ScrollBarTheme = AdvancedTreeControl.En_ScrollBarTheme.Default
         tree.Size = New Size(305, 528)
         tree.TabIndex = 1
-        '
+        ' 
         ' tree_image_list
-        '
+        ' 
         tree_image_list.ColorDepth = ColorDepth.Depth32Bit
         tree_image_list.ImageStream = CType(resources.GetObject("tree_image_list.ImageStream"), ImageListStreamer)
         tree_image_list.TransparentColor = Color.Transparent
-        tree_image_list.Images.SetKeyName(0, "Up")
+        tree_image_list.Images.SetKeyName(0, "up")
         tree_image_list.Images.SetKeyName(1, "down")
-        tree_image_list.Images.SetKeyName(2, "folder_open")
-        tree_image_list.Images.SetKeyName(3, "folder_closed")
-        '
-        ' pnlPages — GAZDA sub-paginilor (felia 0032), echivalentul lui `viewHost` din MainForm.
-        ' Rămâne GOL în designer: cele patru pagini sunt UserControl-uri separate
-        ' (DdfValoriPage / DdfVizualizarePage / DdfDocumentPage / DdfFisierePage), create LENEȘ
-        ' la prima activare din navSub și adăugate aici de DdfView.ActivatePage.
-        '
+        tree_image_list.Images.SetKeyName(2, "month")
+        ' 
+        ' pnlPages
+        ' 
         pnlPages.Dock = DockStyle.Fill
         pnlPages.Location = New Point(0, 40)
         pnlPages.Name = "pnlPages"
         pnlPages.Size = New Size(849, 488)
         pnlPages.TabIndex = 1
-        '
+        ' 
         ' navSub
-        '
+        ' 
         navSub.Dock = DockStyle.Top
         navSub.IconSize = 16
         navSub.ItemCornerRadius = 2
@@ -148,9 +145,9 @@ Partial Class DdfView
         navSub.SelectedKey = Nothing
         navSub.Size = New Size(849, 40)
         navSub.TabIndex = 0
-        '
+        ' 
         ' lblEmpty
-        '
+        ' 
         lblEmpty.Dock = DockStyle.Fill
         lblEmpty.Font = New Font("Segoe UI", 10F)
         lblEmpty.Location = New Point(0, 0)
@@ -160,9 +157,9 @@ Partial Class DdfView
         lblEmpty.TabIndex = 1
         lblEmpty.Text = "Selectați un angajament din arbore."
         lblEmpty.TextAlign = ContentAlignment.MiddleCenter
-        '
+        ' 
         ' DdfView
-        '
+        ' 
         AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(split)

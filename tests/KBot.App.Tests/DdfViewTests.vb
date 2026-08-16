@@ -186,9 +186,9 @@ Public Class DdfViewTests
     ' construiesc direct și îi împing un DdfPageContext, exact cum face gazda.
     '
     ' O căutare pe tip prin DdfView ar fi acum ÎNȘELĂTOARE, nu goală: pagina «Vizualizare» (cea
-    ' implicită) găzduiește un XfaXmlPreview, care are ȘI EL un KBotDataView — deci un
-    ' FindControl(Of KBotDataView)(view) ar întoarce grila ALTUI control și ar trece/pica pe
-    ' motive fără legătură. De aceea helperul cere pagina, nu vederea.
+    ' implicită) găzduiește ea însăși un `DdfValoriPage`, deci un FindControl(Of KBotDataView)(view)
+    ' ar întoarce grila ALTEI instanțe și ar trece/pica pe motive fără legătură. De aceea helperul
+    ' cere pagina, nu vederea.
     Private Shared Function GridOf(page As Control) As KBotDataView
         Dim g = FindControl(Of KBotDataView)(page)
         If g Is Nothing Then Throw New InvalidOperationException("Pagina nu conține un KBotDataView.")
@@ -508,7 +508,8 @@ Public Class DdfViewTests
         ' deschizibile în designerul Visual Studio.
         RunSta(Sub()
                    Using p As New DdfVizualizarePage()
-                       Assert.NotNull(FindControl(Of XfaXmlPreview)(p))     ' previzualizarea XFA
+                       ' 2026-08-15: «Vizualizare» nu mai citește XFA — găzduiește grila de valori.
+                       Assert.NotNull(FindControl(Of DdfValoriPage)(p))
                    End Using
                    Using p As New DdfDocumentPage()
                        Assert.NotNull(FindControl(Of ReaderHostPreview)(p)) ' PDF-ul REAL
@@ -528,8 +529,11 @@ Public Class DdfViewTests
                        Assert.NotNull(FindControl(Of DdfVizualizarePage)(view))
                        Assert.Null(FindControl(Of DdfDocumentPage)(view))
                        Assert.Null(FindControl(Of DdfFisierePage)(view))
-                       ' «Valori» e PARCATĂ: fără intrare în navSub, nu se creează niciodată.
-                       Assert.Null(FindControl(Of DdfValoriPage)(view))
+                       ' «Valori» e PARCATĂ ca PAGINĂ de navigație (fără intrare în navSub), dar
+                       ' din 2026-08-15 e găzduită ÎN «Vizualizare» — deci o găsim, ca sub-control
+                       ' al ei, nu ca pagină andocată în pnlPages.
+                       Dim viz = FindControl(Of DdfVizualizarePage)(view)
+                       Assert.NotNull(FindControl(Of DdfValoriPage)(viz))
                    End Using
                End Sub)
     End Sub

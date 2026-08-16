@@ -218,12 +218,12 @@ Partial Class KBotDataView
         Dim y As Integer = RowTopForModel(rowIndex)
         If y = Integer.MinValue Then Return Rectangle.Empty
         For Each cl In _frozenLayout
-            If ReferenceEquals(cl.Column, col) Then Return New Rectangle(cl.X, y, col.Width, _rowHeight)
+            If ReferenceEquals(cl.Column, col) Then Return New Rectangle(cl.X, y, col.WidthPx, _rowHeight)
         Next
         Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
             If ReferenceEquals(cl.Column, col) Then
-                Return New Rectangle(_frozenBandWidth + cl.X - hOffset, y, col.Width, _rowHeight)
+                Return New Rectangle(_frozenBandWidth + cl.X - hOffset, y, col.WidthPx, _rowHeight)
             End If
         Next
         Return Rectangle.Empty

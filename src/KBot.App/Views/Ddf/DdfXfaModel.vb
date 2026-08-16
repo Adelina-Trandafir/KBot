@@ -2,6 +2,7 @@ Option Strict On
 Imports System.Collections.Generic
 Imports System.Linq
 Imports System.Xml.Linq
+Imports KBot.Common
 
 ''' <summary>
 ''' Modelul redabil al unui document DDF, extras din XML-ul XFA (felia 0020-03). Acoperă
@@ -44,6 +45,7 @@ Public NotInheritable Class DdfXfaLinie
     Public Property Clsf As String = String.Empty
     Public Property ValPrec As String = String.Empty
     Public Property ValCur As String = String.Empty
+    Public Property ValTot As String = String.Empty
 End Class
 
 ''' <summary>
@@ -72,62 +74,83 @@ Public NotInheritable Class DdfXfaParser
     ''' sau nu conține un nod «form1». Nu aruncă.
     ''' </summary>
     Public Shared Function Parse(xml As String) As DdfXfaModel
-        If String.IsNullOrWhiteSpace(xml) Then Return Nothing
-
-        Dim doc As XDocument
         Try
-            doc = XDocument.Parse(xml)
-        Catch
-            ' XML nevalid — apelantul arată starea de eroare, nu o excepție.
-            Return Nothing
-        End Try
+            If String.IsNullOrWhiteSpace(xml) Then Return Nothing
 
-        Dim form1 As XElement = FirstLocal(doc.Root, "form1")
-        If form1 Is Nothing Then Return Nothing
+            Dim doc As XDocument
+            Try
+                doc = XDocument.Parse(xml)
+            Catch ex As Exception
+                ' XML nevalid — apelantul arată starea de eroare, nu o excepție. Dar NU tăcem:
+                ' fără linia asta din jurnal, „documentul nu a putut fi interpretat" e tot ce
+                ' rămâne pe ecran, iar cauza (XML trunchiat, encoding greșit) se pierde.
+                GlobalErrorLog.Write("DdfXfaParser.Parse", ex)
+                Return Nothing
+            End Try
 
-        Dim model As New DdfXfaModel()
-
-        ' --- Antet ---
-        Dim antet As XElement = FirstLocal(form1, "SubformAntet")
-        If antet IsNot Nothing Then
-            For Each pair In _antetLabels
-                Dim el As XElement = FirstLocal(antet, pair.Tag)
-                If el IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(el.Value) Then
-                    model.AntetFields.Add(New KeyValuePair(Of String, String)(pair.Label, el.Value.Trim()))
-                End If
-            Next
-        End If
-
-        ' --- Secțiunea A ---
-        Dim sectA As XElement = FirstLocal(form1, "SubformSectiuneaA")
-        If sectA IsNot Nothing Then
-            Dim sub123 As XElement = FirstLocal(sectA, "Subform123")
-            If sub123 IsNot Nothing Then
-                model.Compartiment = ValueOf(sub123, "ComparimentSpecialitate")
-                model.DescScurt = ValueOf(sub123, "DescrieObFundRevizuireScurt")
-                model.DescLung = ValueOf(sub123, "DescrieObFundRevizuireLung")
+            Dim form1 As XElement = FirstLocal(doc.Root, "form1")
+            If form1 Is Nothing Then
+                ' XML valid, dar nu e macheta noastră — tot o cauză de raportat.
+                GlobalErrorLog.Write("DdfXfaParser.Parse",
+                    New InvalidOperationException(
+                        $"XML-ul XFA nu conține un nod «form1» (rădăcina este «{If(doc.Root Is Nothing, "(niciuna)", doc.Root.Name.LocalName)}»)."))
+                Return Nothing
             End If
 
-            ' Table1 poate sta sub Subform4; îl căutăm oriunde sub secțiunea A ca să fim robuști.
-            Dim table1 As XElement = DescendantsLocal(sectA, "Table1").FirstOrDefault()
-            If table1 IsNot Nothing Then
-                For Each row As XElement In DirectLocal(table1, "Row1")
-                    ' Rândul FICTIV (index 0) are doar Cell1 gol — nu are Cell6. Îl sărim, exact
-                    ' ca JS-ul din macheta Access.
-                    Dim cell6 As XElement = FirstLocal(row, "Cell6")
-                    If cell6 Is Nothing Then Continue For
+            Dim model As New DdfXfaModel()
 
-                    model.Linii.Add(New DdfXfaLinie() With {
-                        .ElementFund = ValueOf(row, "Cell1"),
-                        .Clsf = ValueOf(row, "Cell3"),
-                        .ValPrec = ValueOf(row, "Cell5"),
-                        .ValCur = cell6.Value.Trim()
-                    })
+            ' --- Antet ---
+            Dim antet As XElement = FirstLocal(form1, "SubformAntet")
+            If antet IsNot Nothing Then
+                For Each pair In _antetLabels
+                    Dim el As XElement = FirstLocal(antet, pair.Tag)
+                    If el IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(el.Value) Then
+                        model.AntetFields.Add(New KeyValuePair(Of String, String)(pair.Label, el.Value.Trim()))
+                    End If
                 Next
             End If
-        End If
 
-        Return model
+            ' --- Secțiunea A ---
+            Dim sectA As XElement = FirstLocal(form1, "SubformSectiuneaA")
+            If sectA IsNot Nothing Then
+                Dim sub123 As XElement = FirstLocal(sectA, "Subform123")
+                If sub123 IsNot Nothing Then
+                    model.Compartiment = ValueOf(sub123, "ComparimentSpecialitate")
+                    model.DescScurt = ValueOf(sub123, "DescrieObFundRevizuireScurt")
+                    model.DescLung = ValueOf(sub123, "DescrieObFundRevizuireLung")
+                End If
+
+                ' Table1 poate sta sub Subform4; îl căutăm oriunde sub secțiunea A ca să fim robuști.
+                Dim table1 As XElement = DescendantsLocal(sectA, "Table1").FirstOrDefault()
+                If table1 IsNot Nothing Then
+                    For Each row As XElement In DirectLocal(table1, "Row1")
+                        ' Rândul FICTIV (index 0) are doar Cell1 gol — nu are Cell6. Îl sărim, exact
+                        ' ca JS-ul din macheta Access.
+                        Dim cell6 As XElement = FirstLocal(row, "Cell6")
+                        Dim cell7 As XElement = FirstLocal(row, "Cell7")
+
+                        If cell6 Is Nothing OrElse cell7 Is Nothing Then Continue For
+
+                        model.Linii.Add(New DdfXfaLinie() With {
+                            .ElementFund = ValueOf(row, "Cell1"),
+                            .Clsf = ValueOf(row, "Cell3"),
+                            .ValPrec = ValueOf(row, "Cell5"),
+                            .ValCur = cell6.Value.Trim(),
+                            .ValTot = cell7.Value.Trim()
+                        })
+                    Next
+                End If
+            End If
+
+            Return model
+
+        Catch ex As Exception
+            ' Contractul metodei e „nu arunc niciodată" (apelantul își arată starea „nu pot citi
+            ' documentul"), deci logăm și întoarcem Nothing — singura cale prin care eroarea mai
+            ' ajunge undeva. Fără Throw: rearuncarea ar rupe contractul.
+            GlobalErrorLog.Write("DdfXfaParser.Parse", ex)
+            Return Nothing
+        End Try
     End Function
 
     ' Primul descendent (la orice adâncime) cu local-name-ul dat. Nothing dacă nu există.

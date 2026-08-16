@@ -15,6 +15,8 @@ Partial Class StartupLauncherForm
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        components = New ComponentModel.Container()
+        tips = New KBot.Controls.KBotToolTip(components)
         tlyRadacina = New TableLayoutPanel()
         capBar = New KBot.Controls.KBotCaptionBar()
         lblIntro = New Label()
@@ -147,9 +149,19 @@ Partial Class StartupLauncherForm
         CType(navPorniri, System.ComponentModel.ISupportInitialize).EndInit()
         tlyRadacina.ResumeLayout(False)
         tlyButoane.ResumeLayout(False)
+        '
+        ' tips — etichetele de survolare (felia 0035), toate în română.
+        '
+        tips.SetToolTipHeader(btnPorneste, "Pornește")
+        tips.SetToolTipText(btnPorneste, "Deschide fereastra aleasă în listă.")
+        tips.SetToolTipHeader(btnIesire, "Ieșire")
+        tips.SetToolTipText(btnIesire, "Închide K-BOT fără să pornească nimic.")
+        tips.SetToolTipHeader(navPorniri, "Porniri")
+        tips.SetToolTipText(navPorniri, "Alege ce se deschide: aplicația, bancul de probă sau jurnalele." & vbLf & "Lista apare doar în build-ul de dezvoltare.")
         ResumeLayout(False)
     End Sub
 
+    Friend WithEvents tips As KBot.Controls.KBotToolTip
     Friend WithEvents tlyRadacina As TableLayoutPanel
     Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
     Friend WithEvents lblIntro As Label

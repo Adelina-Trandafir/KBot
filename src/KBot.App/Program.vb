@@ -37,7 +37,22 @@ Friend Module Program
             ' DPI-ul nou fără cod în plus. NEVERIFICAT PE ECRAN: AdvancedTreeControl (netematizat,
             ' cu metrici proprii) și ferestrele fără chenar din KBotShellForm (WM_NCHITTEST /
             ' WM_GETMINMAXINFO) nu au fost privite la o schimbare de monitor.
-            Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)
+            '
+            ' Felia 0036: operatorul poate cere EXPLICIT calea cealaltă, din «Opțiuni temă».
+            ' Bifa înseamnă „întinde-mi fereastra, Windows" — proporțiile ies identice cu cele de
+            ' la proiectare (100%), cu prețul unui text mai moale la 150%. E o alegere, nu un
+            ' implicit: fără bifă rămâne PerMonitorV2, exact ca până acum.
+            '
+            ' Setarea se citește AICI și nicăieri altundeva, fiindcă modul DPI al unui proces nu
+            ' se mai poate schimba după prima fereastră — de aceea comutatorul din UI spune că
+            ' cere repornire. Citirea trebuie deci să se facă înaintea lui ThemeManager.Initialize
+            ' (care ar fi încărcat oricum aceeași valoare, dar prea târziu pentru apelul de mai jos).
+            ThemeStore.LoadScaling()
+            If AppScaling.DpiUnaware Then
+                Application.SetHighDpiMode(HighDpiMode.DpiUnaware)
+            Else
+                Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)
+            End If
 
             ' Tema: încarcă schema persistată (implicit Classic) ÎNAINTE de primul formular,
             ' apoi conectează subsistemele Forexe (RichTextBoxLogger) la ThemeManager.ThemeChanged.

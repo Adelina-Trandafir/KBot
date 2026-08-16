@@ -101,6 +101,9 @@ Public Class ForexeConsoleForm
         If _controller Is Nothing Then Return
         btnAnulare.Enabled = _controller.IsBusy
         btnAfiseazaBrowser.Enabled = _controller.IsConnected
+        ' Eticheta spune ce FACE apăsarea, nu ce se vede acum.
+        btnAfiseazaBrowser.Text = If(_controller.IsConnected AndAlso _controller.IsBrowserVisible,
+                                     "Ascunde browserul", "Arată browserul")
         Dim cert As String = _controller.CertificateName
         lblCert.Text = "Certificat: " & If(String.IsNullOrEmpty(cert), "—", cert)
         If Not _controller.IsBusy Then pbProgress.Value = 0
@@ -121,7 +124,9 @@ Public Class ForexeConsoleForm
     Private Async Sub BtnAfiseazaBrowser_Click(sender As Object, e As EventArgs) Handles btnAfiseazaBrowser.Click
         Try
             If _controller Is Nothing Then Return
-            Await _controller.ShowBrowserAsync()
+            ' Comutare, nu doar «arată»: browserul pornește ASCUNS (stealth), deci operatorul
+            ' trebuie să-l poată pune la loc după ce s-a uitat la el.
+            Await _controller.ToggleBrowserAsync()
         Catch ex As Exception
             ' Frontieră de UI (async Sub): nu poate rearunca — logăm și spunem de ce.
             GlobalErrorLog.Write("ForexeConsoleForm.btnAfiseazaBrowser_Click", ex)

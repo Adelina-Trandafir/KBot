@@ -31,6 +31,9 @@ Public NotInheritable Class KBotDataColumnCollection
             If item Is Nothing Then Throw New ArgumentNullException(NameOf(item))
             MyBase.InsertItem(index, item)
             item.Owner = Owner
+            ' Lățimea cerută e logică; cea pictată se derivă acum, când coloana știe pe ce grilă
+            ' stă și, prin ea, la ce DPI (felia 0035-01).
+            item.RefreshWidthScale()
             Owner?.OnColumnsChanged()
         Catch ex As Exception
             LogUnlessDesignTime("KBotDataColumnCollection.InsertItem", ex)
@@ -45,6 +48,9 @@ Public NotInheritable Class KBotDataColumnCollection
             MyBase.SetItem(index, item)
             If replaced IsNot Nothing Then replaced.Owner = Nothing
             item.Owner = Owner
+            ' Lățimea cerută e logică; cea pictată se derivă acum, când coloana știe pe ce grilă
+            ' stă și, prin ea, la ce DPI (felia 0035-01).
+            item.RefreshWidthScale()
             Owner?.OnColumnsChanged()
         Catch ex As Exception
             LogUnlessDesignTime("KBotDataColumnCollection.SetItem", ex)

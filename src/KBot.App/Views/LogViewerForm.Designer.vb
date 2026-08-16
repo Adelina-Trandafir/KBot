@@ -16,6 +16,7 @@ Partial Class LogViewerForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
+        tips = New KBot.Controls.KBotToolTip(components)
         Dim KBotDataColumn1 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn2 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn3 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
@@ -520,9 +521,33 @@ Partial Class LogViewerForm
         tlyFilterActual.ResumeLayout(False)
         tlyFilterActual.PerformLayout()
         tlyFooter.ResumeLayout(False)
+        '
+        ' tips — etichetele de survolare (felia 0035), toate în română.
+        '
+        tips.SetToolTipHeader(txtCauta, "Caută")
+        tips.SetToolTipText(txtCauta, "Text căutat în mesajele din jurnal." & vbLf & "Se caută pe măsură ce scrii.")
+        tips.SetToolTipHeader(txtDeLa, "De la")
+        tips.SetToolTipText(txtDeLa, "Data de început a intervalului afișat (zz.ll.aaaa).")
+        tips.SetToolTipHeader(txtPanaLa, "Până la")
+        tips.SetToolTipText(txtPanaLa, "Data de sfârșit a intervalului afișat (zz.ll.aaaa).")
+        tips.SetToolTipHeader(btnReimprospateaza, "Reîmprospătează")
+        tips.SetToolTipText(btnReimprospateaza, "Recitește fișierul de jurnal de pe disc.")
+        tips.SetToolTipHeader(chipNiveluri, "Niveluri")
+        tips.SetToolTipText(chipNiveluri, "Arată doar nivelurile bifate (eroare, avertisment, informație).")
+        tips.SetToolTipHeader(navFisiere, "Fișiere de jurnal")
+        tips.SetToolTipText(navFisiere, "Alege jurnalul afișat: cele locale și grupul de pe server.")
+        tips.SetToolTipHeader(btnCopiaza, "Copiază")
+        tips.SetToolTipText(btnCopiaza, "Pune în clipboard rândurile afișate acum, cu filtrele aplicate.")
+        tips.SetToolTipHeader(btnExporta, "Exportă")
+        tips.SetToolTipText(btnExporta, "Salvează într-un fișier rândurile afișate acum.")
+        tips.SetToolTipHeader(btnDeschideDosar, "Deschide dosarul")
+        tips.SetToolTipText(btnDeschideDosar, "Deschide în Explorer dosarul în care se scriu jurnalele.")
+        tips.SetToolTipHeader(btnGoleste, "Golește")
+        tips.SetToolTipText(btnGoleste, "<b>Șterge</b> fișiere de jurnal de pe disc." & vbLf & "Se cere confirmare, cu lista fișierelor și mărimea lor.")
         ResumeLayout(False)
     End Sub
 
+    Friend WithEvents tips As KBot.Controls.KBotToolTip
     Friend WithEvents lblCauta As Label
     Friend WithEvents txtCauta As KBot.Controls.KBotTextField
     Friend WithEvents lblDeLa As Label

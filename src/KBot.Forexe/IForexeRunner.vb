@@ -30,5 +30,13 @@ Namespace KBot.Forexe
 
         ' Aduce fereastra browserului în față (delegare către WorkflowExecutor).
         Function ShowBrowserAsync() As Task
+
+        ' Ascunde la loc fereastra browserului (stealth). Perechea lui ShowBrowserAsync:
+        ' de la felia 0034-02 browserul PORNEȘTE ascuns, deci fără asta o dată arătat nu
+        ' mai putea fi ascuns înapoi.
+        Function HideBrowserAsync() As Task
+
+        ' Browserul e la vedere acum? (pentru butonul care comută)
+        ReadOnly Property IsBrowserVisible As Boolean
     End Interface
 End Namespace

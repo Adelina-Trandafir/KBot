@@ -26,12 +26,12 @@ Public Class XfaXmlPreview
     Private Const COL_CLSF As String = "clsf"
     Private Const COL_VALPREC As String = "valprec"
     Private Const COL_VALCUR As String = "valcur"
-
+    Private Const COL_VALTOT As String = "valtot"
     Public Event GenerateRequested As EventHandler Implements IDdfPreview.GenerateRequested
 
     Public Sub New()
         InitializeComponent()
-        BuildColumns()
+        'BuildColumns()
         ShowMessage("Selectați o revizie din arbore.")
     End Sub
 
@@ -41,19 +41,19 @@ Public Class XfaXmlPreview
         End Get
     End Property
 
-    Private Sub BuildColumns()
-        Try
-            grid.AddColumn(COL_ELEMENT, "Element de fundamentare", KBotColumnType.Text, 240)
-            grid.AddColumn(COL_CLSF, "Clasificație", KBotColumnType.Text, 160)
-            Dim colPrec As KBotDataColumn = grid.AddColumn(COL_VALPREC, "Valoare precedentă", KBotColumnType.Text, 130)
-            colPrec.TextAlign = ContentAlignment.MiddleRight
-            Dim colCur As KBotDataColumn = grid.AddColumn(COL_VALCUR, "Valoare curentă", KBotColumnType.Text, 130)
-            colCur.TextAlign = ContentAlignment.MiddleRight
-        Catch ex As Exception
-            GlobalErrorLog.Write("XfaXmlPreview.BuildColumns", ex)
-            Throw
-        End Try
-    End Sub
+    'Private Sub BuildColumns()
+    '    Try
+    '        grid.AddColumn(COL_ELEMENT, "Element de fundamentare", KBotColumnType.Text, 240)
+    '        grid.AddColumn(COL_CLSF, "Clasificație", KBotColumnType.Text, 160)
+    '        Dim colPrec As KBotDataColumn = grid.AddColumn(COL_VALPREC, "Valoare precedentă", KBotColumnType.Text, 130)
+    '        colPrec.TextAlign = ContentAlignment.MiddleRight
+    '        Dim colCur As KBotDataColumn = grid.AddColumn(COL_VALCUR, "Valoare curentă", KBotColumnType.Text, 130)
+    '        colCur.TextAlign = ContentAlignment.MiddleRight
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("XfaXmlPreview.BuildColumns", ex)
+    '        Throw
+    '    End Try
+    'End Sub
 
     ''' <summary>
     ''' Afișează documentul de la calea dată. Fișier lipsă -> suprafața „document lipsă"
@@ -150,6 +150,7 @@ Public Class XfaXmlPreview
                 row(COL_CLSF) = l.Clsf
                 row(COL_VALPREC) = l.ValPrec
                 row(COL_VALCUR) = l.ValCur
+                row(COL_VALTOT) = l.ValTot
             Next
         Finally
             grid.EndUpdate()
@@ -165,7 +166,7 @@ Public Class XfaXmlPreview
         End Try
     End Sub
 
-    Private Sub btnGenereaza_Click(sender As Object, e As EventArgs) Handles btnGenereaza.Click
+    Private Sub BtnGenereaza_Click(sender As Object, e As EventArgs) Handles btnGenereaza.Click
         ' Trivial: doar ridică evenimentul spre DdfView (care apelează felia 05).
         RaiseEvent GenerateRequested(Me, EventArgs.Empty)
     End Sub
@@ -192,7 +193,7 @@ Public Class XfaXmlPreview
 
     Private Shared Function TryGetPalette() As ThemePalette
         Dim current As ThemeScheme = ThemeManager.Current
-        Return If(current Is Nothing, Nothing, current.Palette)
+        Return current?.Palette
     End Function
 
     ''' <summary>Reaplică schema (grila se auto-temează; aici colorăm chrome-ul și butonul).</summary>

@@ -40,9 +40,24 @@ Public NotInheritable Class DdfPageContext
     ''' <summary>Există acel PDF pe disc chiar acum?</summary>
     Public ReadOnly Property PdfExists As Boolean
 
+    ''' <summary>
+    ''' Numele unității (globalul de sesiune «NumeUnitate»). Antetul paginii «Vizualizare» îl
+    ''' arată ca «Instituția publică» — ACEEAȘI sursă din care îl scrie și constructorul de XML
+    ''' (<c>DdfXmlBuilder</c> pune <c>DenInstPb</c> din contextul de sesiune, nu din FX_DDF),
+    ''' deci antetul reconstruit și cel tipărit în PDF nu pot să se contrazică.
+    ''' </summary>
+    Public ReadOnly Property NumeUnitate As String
+
+    ''' <summary>Codul fiscal al UNITĂȚII (sesiune «CF»), perechea lui <c>cif</c> din XML. A NU
+    ''' se confunda cu <c>Antet.CodFiscal</c>, care e al partenerului.</summary>
+    Public ReadOnly Property CodFiscal As String
+
     Public Sub New(antet As DdfAntet, linii As List(Of LinieSaRow), revizii As List(Of RevizieRow),
                    isRoot As Boolean, revizie As RevizieRow, cod As String,
-                   pdfPath As String, pdfExists As Boolean)
+                   pdfPath As String, pdfExists As Boolean,
+                   Optional numeUnitate As String = "", Optional codFiscal As String = "")
+        Me.NumeUnitate = If(numeUnitate, String.Empty)
+        Me.CodFiscal = If(codFiscal, String.Empty)
         Me.Antet = antet
         Me.Linii = If(linii, New List(Of LinieSaRow)())
         Me.Revizii = If(revizii, New List(Of RevizieRow)())

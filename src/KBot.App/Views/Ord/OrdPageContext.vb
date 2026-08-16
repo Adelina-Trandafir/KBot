@@ -39,8 +39,28 @@ Public NotInheritable Class OrdPageContext
     ''' <summary>Există acel PDF pe discul CLIENTULUI chiar acum?</summary>
     Public ReadOnly Property PdfExists As Boolean
 
+    ''' <summary>
+    ''' Antetul ordonanțării selectate — rândul <c>FX_ORD_P</c> întreg, nu doar numărul și data
+    ''' desprinse din el. <c>Nothing</c> pe o rădăcină de lună. Banda de antet a paginii
+    ''' «Vizualizare» îl citește (total, partener, stare); <see cref="NrOrd"/> și
+    ''' <see cref="DataOrd"/> rămân pentru apelanții care nu au nevoie de mai mult.
+    ''' </summary>
+    Public ReadOnly Property Ord As OrdHeaderRow
+
+    ''' <summary>Numele unității (sesiune «NumeUnitate») — «Instituția publică» în banda de antet,
+    ''' aceeași sursă ca la DDF.</summary>
+    Public ReadOnly Property NumeUnitate As String
+
+    ''' <summary>Codul fiscal al UNITĂȚII (sesiune «CF»), nu al partenerului.</summary>
+    Public ReadOnly Property CodFiscal As String
+
     Public Sub New(linii As List(Of OrdLinieRow), isRoot As Boolean, nrOrd As Integer,
-                   dataOrd As Date?, cod As String, pdfPath As String, pdfExists As Boolean)
+                   dataOrd As Date?, cod As String, pdfPath As String, pdfExists As Boolean,
+                   Optional ord As OrdHeaderRow = Nothing,
+                   Optional numeUnitate As String = "", Optional codFiscal As String = "")
+        Me.Ord = ord
+        Me.NumeUnitate = If(numeUnitate, String.Empty)
+        Me.CodFiscal = If(codFiscal, String.Empty)
         Me.Linii = If(linii, New List(Of OrdLinieRow)())
         Me.IsRoot = isRoot
         Me.NrOrd = nrOrd

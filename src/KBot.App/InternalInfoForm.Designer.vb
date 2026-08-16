@@ -15,6 +15,8 @@ Partial Class InternalInfoForm
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        components = New ComponentModel.Container()
+        tips = New KBot.Controls.KBotToolTip(components)
         pnlCard = New Panel()
         capBar = New KBot.Controls.KBotCaptionBar()
         lblHeader = New Label()
@@ -116,9 +118,15 @@ Partial Class InternalInfoForm
         pnlCard.ResumeLayout(False)
         pnlCard.PerformLayout()
         pnlFoot.ResumeLayout(False)
+        '
+        ' tips — etichetele de survolare (felia 0035), toate în română.
+        '
+        tips.SetToolTipHeader(btnRefresh, "Reîmprospătează")
+        tips.SetToolTipText(btnRefresh, "Recitește datele interne ale sesiunii și versiunile componentelor.")
         ResumeLayout(False)
     End Sub
 
+    Friend WithEvents tips As KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
     Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
     Friend WithEvents lblHeader As Label

@@ -64,6 +64,7 @@ Partial Class KBotDataView
                 components?.Dispose()
                 DisposeThemeResources()
                 DisposeCellTooltip()
+                DisposeButtonTips()
             End If
         Finally
             MyBase.Dispose(disposing)

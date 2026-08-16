@@ -38,10 +38,27 @@ Partial Public Class CustomPopup
                 Case Keys.Down
                     MoveSelection(1)
                     Return True
+                Case Keys.Left
+                    ' Săgețile orizontale sunt ale CURSORULUI evidențiat. Fără unul, tasta își
+                    ' vede de drum: un meniu în care stânga/dreapta nu fac nimic e mai bun decât
+                    ' unul în care fac altceva decât se așteaptă operatorul.
+                    If NudgeSelectedSlider(-SliderKeyStep) Then Return True
+                Case Keys.Right
+                    If NudgeSelectedSlider(SliderKeyStep) Then Return True
                 Case Keys.Home
+                    ' Pe un cursor, Home/End sunt capetele ȘINEI, nu capetele meniului — asta
+                    ' așteaptă oricine a mai folosit un cursor.
+                    If IsSliderRow(SelectedIndex) Then
+                        SetSliderValue(SelectedIndex, Items(SelectedIndex).SliderMinimum)
+                        Return True
+                    End If
                     SelectEdge(True)
                     Return True
                 Case Keys.End
+                    If IsSliderRow(SelectedIndex) Then
+                        SetSliderValue(SelectedIndex, Items(SelectedIndex).SliderMaximum)
+                        Return True
+                    End If
                     SelectEdge(False)
                     Return True
                 Case Keys.Enter, Keys.Space
@@ -62,6 +79,23 @@ Partial Public Class CustomPopup
             Return False
         End Try
     End Function
+
+    ''' <summary>
+    ''' Ridicarea tastei încheie un gest de cursor pornit din săgeți / Home / End. Săgețile sosesc
+    ''' una câte una și se REPETĂ cât ții tasta apăsată, deci predarea la fiecare apăsare ar fi
+    ''' comandat lucrul greu de zeci de ori — exact ce se întâmpla cu mouse-ul înainte de trecerea
+    ''' asta.
+    '''
+    ''' Frontieră de UI (tastatură): logăm și înghițim.
+    ''' </summary>
+    Protected Overrides Sub OnKeyUp(e As KeyEventArgs)
+        Try
+            MyBase.OnKeyUp(e)
+            CommitKeyboardSlider()
+        Catch ex As Exception
+            GlobalErrorLog.Write("CustomPopup.OnKeyUp", ex)
+        End Try
+    End Sub
 
     ''' <summary>Tasta ca literă/cifră de acces, sau <see cref="PopupMnemonic.None"/>.</summary>
     Friend Shared Function KeyToChar(code As Keys) As Char
@@ -142,10 +176,38 @@ Partial Public Class CustomPopup
     ' MOUSE
     ' =====================================================================
 
+    ''' <summary>
+    ''' Apăsarea contează doar pentru CURSOARE: acolo tragerea trebuie să înceapă pe apăsare, nu
+    ''' pe ridicare. Rândurile obișnuite se aleg în continuare pe ridicare (vezi
+    ''' <see cref="OnMouseUp"/>) — regula meniurilor de sistem, care apără deschiderea însăși de a
+    ''' fi luată drept alegere.
+    ''' </summary>
+    Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
+        MyBase.OnMouseDown(e)
+        Try
+            If e.Button <> MouseButtons.Left Then Return
+            Dim i As Integer = HitTest(e.Location)
+            If IsSliderRow(i) AndAlso Items(i).Enabled Then
+                SelectedIndex = i
+                BeginSliderDrag(i, e.X)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("CustomPopup.OnMouseDown", ex)
+        End Try
+    End Sub
+
     ''' <summary>Survolarea MUTĂ evidențierea — la un meniu nu există «hover» separat de selecție.</summary>
     Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
         MyBase.OnMouseMove(e)
         Try
+            ' Cât se trage un cursor, mouse-ul e AL LUI: mișcarea nu mai mută evidențierea, nici
+            ' dacă degetul iese din rând. Altfel o tragere lungă ar «scăpa» pe rândul vecin și
+            ' valoarea ar rămâne în urmă la jumătatea drumului.
+            If IsDraggingSlider Then
+                UpdateSliderDrag(e.X)
+                Return
+            End If
+
             Dim i As Integer = HitTest(e.Location)
             If IsSelectable(i) Then SelectedIndex = i
         Catch ex As Exception
@@ -161,6 +223,13 @@ Partial Public Class CustomPopup
         MyBase.OnMouseUp(e)
         Try
             If e.Button <> MouseButtons.Left Then Return
+
+            ' Ridicarea care încheie o tragere NU alege nimic — degetul tocmai a lăsat șina.
+            If IsDraggingSlider Then
+                EndSliderDrag()
+                Return
+            End If
+
             ActivateItem(HitTest(e.Location))
         Catch ex As Exception
             GlobalErrorLog.Write("CustomPopup.OnMouseUp", ex)

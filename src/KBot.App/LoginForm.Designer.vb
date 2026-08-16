@@ -15,6 +15,8 @@ Partial Class LoginForm
 
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(LoginForm))
+        components = New ComponentModel.Container()
+        tips = New Controls.KBotToolTip(components)
         pnlCard = New Panel()
         tlpBody = New TableLayoutPanel()
         picLogo = New PictureBox()
@@ -298,6 +300,7 @@ Partial Class LoginForm
         capBar.OptionButtonPadding = 0
         capBar.ShowThemeButton = True
         capBar.ShowThemeEditor = False
+        capBar.ShowThemeOptions = False
         capBar.Size = New Size(598, 67)
         capBar.TabIndex = 3
         capBar.TabStop = False
@@ -324,9 +327,25 @@ Partial Class LoginForm
         CType(picLogo, ComponentModel.ISupportInitialize).EndInit()
         pnlUnit.ResumeLayout(False)
         pnlUnit.PerformLayout()
+        '
+        ' tips — etichetele de survolare (felia 0035). Toate în română, pe controalele care se apasă.
+        '
+        tips.SetToolTipHeader(txtUser, "Utilizator")
+        tips.SetToolTipText(txtUser, "Adresa de e-mail cu care ești înregistrat în K-BOT." & vbLf & "Ea ține locul vechiului nume de utilizator.")
+        tips.SetToolTipHeader(txtPass, "Parolă")
+        tips.SetToolTipText(txtPass, "Parola contului." & vbLf & "Se trimite criptat; nu se păstrează pe acest calculator.")
+        tips.SetToolTipHeader(btnContinue, "Continuă")
+        tips.SetToolTipText(btnContinue, "Verifică utilizatorul și parola, apoi trece la alegerea unității.")
+        tips.SetToolTipHeader(cboUnit, "Unitate")
+        tips.SetToolTipText(cboUnit, "Unitatea (baza de date) în care vei lucra." & vbLf & "Se poate schimba doar reluând autentificarea.")
+        tips.SetToolTipHeader(btnBack, "Înapoi")
+        tips.SetToolTipText(btnBack, "Revino la utilizator și parolă, fără să te autentifici.")
+        tips.SetToolTipHeader(btnLogin, "Autentificare")
+        tips.SetToolTipText(btnLogin, "Intră în aplicație cu unitatea aleasă.")
         ResumeLayout(False)
     End Sub
 
+    Friend WithEvents tips As KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
     Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
     Friend WithEvents busyBar As KBot.Controls.KBotBusyBar

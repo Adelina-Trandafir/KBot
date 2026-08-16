@@ -88,10 +88,10 @@ Partial Public Class AdvancedTreeControl
 
     Private Sub RecomputeSearchBarHeight()
         ' Banda de search e ÎNTOTDEAUNA o bandă separată, dimensionată după rând/font.
-        _searchBarHeight = Math.Max(ItemHeight + 8, Me.Font.Height + 10)
+        _searchBarHeight = Math.Max(_itemHeight + 8, Me.Font.Height + 10)
     End Sub
 
-    ''' <summary>Re-dimensionează banda după o schimbare de font / ItemHeight (no-op dacă e închisă).</summary>
+    ''' <summary>Re-dimensionează banda după o schimbare de font / _itemHeight (no-op dacă e închisă).</summary>
     Friend Sub RefreshSearchBarMetrics()
         If Not _isSearchMode Then Return
         RecomputeSearchBarHeight()

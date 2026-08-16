@@ -565,8 +565,10 @@ Partial Class KBotDataView
 
     ''' <summary>Înălțimea unei benzi de grup: cea cerută pe nivel, sau <c>RowHeight</c>.</summary>
     Private Function GroupBandHeight(nivel As KBotGroupLevel, antet As Boolean) As Integer
+        ' Înălțimile de pe nivel sunt LOGICE (px la 96 dpi), ca toate măsurile de designer: se
+        ' scalează aici, la folosire. _rowHeight e deja scalat.
         Dim ceruta As Integer = If(antet, nivel.HeaderHeight, nivel.FooterHeight)
-        Return If(ceruta > 0, ceruta, _rowHeight)
+        Return If(ceruta > 0, SY(ceruta), _rowHeight)
     End Function
 
     ' ══════════════════════════════════════════════════════════════════════════

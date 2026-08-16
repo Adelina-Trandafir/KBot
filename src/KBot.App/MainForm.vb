@@ -397,7 +397,7 @@ Public Class MainForm
                 Case "receptii" : Return New ReceptiiView(_apiClient, Function(op) WithReauth(Of ReceptiiInfo)(op))
                 Case "plati" : Return New PlatiView(_apiClient, Function(op) WithReauth(Of PlatiInfo)(op))
                 Case "ddf" : Return New DdfView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op), _session)
-                Case "ord" : Return New OrdView(_apiClient, Function(op) WithReauth(Of OrdInfo)(op))
+                Case "ord" : Return New OrdView(_apiClient, Function(op) WithReauth(Of OrdInfo)(op), _session)
                 Case Else
                     Throw New ArgumentException($"Vedere necunoscută: '{key}'.", NameOf(key))
             End Select

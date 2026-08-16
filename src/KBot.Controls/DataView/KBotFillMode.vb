@@ -21,4 +21,12 @@ Public Enum KBotFillMode
     ''' </summary>
     Proportional = 3
 
+    ''' <summary>
+    ''' O coloană ALEASĂ de operator absoarbe tot spațiul rămas — cea numită de
+    ''' <see cref="KBotDataView.FillColumnKey"/>. Există fiindcă întinderea nu cade întotdeauna
+    ''' pe un capăt: într-o grilă cu sume la dreapta și un cod la stânga, coloana care trebuie să
+    ''' crească e descrierea din MIJLOC, iar <c>FirstColumn</c>/<c>LastColumn</c> n-o pot numi.
+    ''' </summary>
+    SpecificColumn = 4
+
 End Enum

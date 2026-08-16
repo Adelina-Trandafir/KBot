@@ -51,13 +51,13 @@
 
             Case Keys.PageUp
                 handled = True
-                Dim pgUpSize As Integer = Math.Max(1, Me.Height \ ItemHeight)
+                Dim pgUpSize As Integer = Math.Max(1, Me.Height \ _itemHeight)
                 pSelectedItem = visible(Math.Max(0,
                                                   If(currentIdx < 0, 0, currentIdx - pgUpSize)))
 
             Case Keys.PageDown
                 handled = True
-                Dim pgDnSize As Integer = Math.Max(1, Me.Height \ ItemHeight)
+                Dim pgDnSize As Integer = Math.Max(1, Me.Height \ _itemHeight)
                 pSelectedItem = visible(Math.Min(visible.Count - 1,
                                                   If(currentIdx < 0, 0, currentIdx + pgDnSize)))
 
@@ -172,8 +172,8 @@
                                    If(_isSearchMode, _searchBarHeight, 0)
         Dim viewport As Integer = Math.Max(1, Me.Height - headerOff - FooterOffset)
         Dim scrollY As Integer = _vScroll.Value
-        Dim nodeTop As Integer = PaddingTreeTop + idx * ItemHeight
-        Dim nodeBot As Integer = nodeTop + ItemHeight
+        Dim nodeTop As Integer = PaddingTreeTop + idx * _itemHeight
+        Dim nodeBot As Integer = nodeTop + _itemHeight
 
         If nodeTop < scrollY Then
             _vScroll.Value = nodeTop

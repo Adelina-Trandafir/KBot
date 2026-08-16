@@ -223,7 +223,7 @@ Partial Class KBotDataView
                                        x As Integer, top As Integer, height As Integer,
                                        font As Font, fore As Color)
         If col.Aggregate = KBotAggregate.None Then Return
-        Dim cellRect As New Rectangle(x, top, col.Width, height)
+        Dim cellRect As New Rectangle(x, top, col.WidthPx, height)
         If cellRect.Right < 0 OrElse cellRect.Left > ClientSize.Width Then Return
 
         Dim padX As Integer = ScaleDpi(8)

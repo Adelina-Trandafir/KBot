@@ -45,6 +45,37 @@ Public NotInheritable Class CustomPopupItem
         Return New CustomPopupItem() With {.IsSeparator = True}
     End Function
 
+    ''' <summary>
+    ''' CURSOR: un rând care se TRAGE în loc să se apese (felia 0036-01) — eticheta la stânga,
+    ''' șina pe restul lățimii, valoarea la dreapta.
+    '''
+    ''' <para>E al treilea rol al aceluiași tip, din exact motivul pentru care <see cref="IsSeparator"/>
+    ''' e un steag și nu o clasă: mai multe tipuri într-o colecție ordonată ar cere un editor de
+    ''' colecții propriu, deci un assembly de design-time.</para>
+    '''
+    ''' <para><b>Un cursor NU închide meniul.</b> Toată ideea e să vezi efectul în timp ce tragi;
+    ''' un meniu care se închide la prima mișcare ar trebui redeschis pentru fiecare pas. De aceea
+    ''' cursorul nu trece prin <c>ItemClicked</c>, ci prin <c>SliderValueChanged</c>.</para>
+    '''
+    ''' <para>Valorile sunt ÎNTREGI, iar apelantul le dă înțelesul (procente, pași de 5, …): un
+    ''' cursor cu virgulă ar fi cerut o formatare a valorii pe care meniul n-are de unde s-o
+    ''' știe.</para>
+    ''' </summary>
+    Public Shared Function Slider(key As String, text As String,
+                                  minimum As Integer, maximum As Integer, value As Integer) As CustomPopupItem
+        If maximum <= minimum Then Throw New ArgumentException(
+            "Un cursor cere maximum > minimum.", NameOf(maximum))
+        Dim it As New CustomPopupItem() With {
+            .Key = key,
+            .Text = If(text, String.Empty),
+            .IsSlider = True,
+            .SliderMinimum = minimum,
+            .SliderMaximum = maximum
+        }
+        it.SliderValue = value       ' prin setter, ca să se limiteze
+        Return it
+    End Function
+
     <Category("K-BOT")>
     <Description("Identificatorul folosit de SelectedKey / ItemByKey. Trebuie să fie nevid și unic. Ignorat pe separatori.")>
     Public Property Key As String
@@ -79,6 +110,52 @@ Public NotInheritable Class CustomPopupItem
     <DefaultValue(False)>
     Public Property IsSeparator As Boolean
 
+    <Category("K-BOT")>
+    <Description("True => rândul e un CURSOR care se trage, nu un rând care se apasă. Nu închide meniul; ridică SliderValueChanged.")>
+    <DefaultValue(False)>
+    Public Property IsSlider As Boolean
+
+    <Category("K-BOT")>
+    <Description("Capătul de jos al cursorului. Ignorat dacă IsSlider e False.")>
+    <DefaultValue(0)>
+    Public Property SliderMinimum As Integer = 0
+
+    <Category("K-BOT")>
+    <Description("Capătul de sus al cursorului. Ignorat dacă IsSlider e False.")>
+    <DefaultValue(100)>
+    Public Property SliderMaximum As Integer = 100
+
+    ''' <summary>
+    ''' Valoarea curentă, LIMITATĂ între capete la fiecare scriere. Se limitează în loc să arunce
+    ''' fiindcă sursa e o tragere de mouse și o săgeată de tastatură: o excepție la marginea șinei
+    ''' ar fi o cădere produsă chiar de folosirea normală a controlului.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Valoarea curentă a cursorului; se limitează singură între SliderMinimum și SliderMaximum.")>
+    <DefaultValue(0)>
+    Public Property SliderValue As Integer
+        Get
+            Return _sliderValue
+        End Get
+        Set(value As Integer)
+            Dim jos As Integer = Math.Min(SliderMinimum, SliderMaximum)
+            Dim sus As Integer = Math.Max(SliderMinimum, SliderMaximum)
+            _sliderValue = Math.Max(jos, Math.Min(sus, value))
+        End Set
+    End Property
+    Private _sliderValue As Integer
+
+    ''' <summary>Poziția valorii pe șină, 0..1. 0 dacă intervalul e degenerat.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property SliderFraction As Double
+        Get
+            Dim interval As Integer = SliderMaximum - SliderMinimum
+            If interval <= 0 Then Return 0.0
+            Return (SliderValue - SliderMinimum) / CDbl(interval)
+        End Get
+    End Property
+
     ''' <summary>Sac liber pentru apelant (nu e citit de popup).</summary>
     <Category("K-BOT")>
     <Description("Valoare liberă a apelantului; popup-ul nu o citește niciodată.")>
@@ -97,7 +174,9 @@ Public NotInheritable Class CustomPopupItem
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Property Mnemonic As Char
         Get
-            If IsSeparator OrElse Not Enabled Then Return PopupMnemonic.None
+            ' Un CURSOR n-are literă de acces: litera ALEGE un rând, iar un cursor nu se alege, se
+            ' trage. O literă care doar mută evidențierea pe el ar promite o alegere inexistentă.
+            If IsSeparator OrElse IsSlider OrElse Not Enabled Then Return PopupMnemonic.None
             Dim litera As Char = PopupMnemonic.Extract(Text)
             If Not PopupMnemonic.IsTypable(litera) Then Return PopupMnemonic.None
             Return litera
@@ -107,6 +186,11 @@ Public NotInheritable Class CustomPopupItem
     ''' <summary>Ce arată lista din stânga dialogului de colecții.</summary>
     Public Overrides Function ToString() As String
         If IsSeparator Then Return "──────── separator ────────"
+        If IsSlider Then
+            Dim cheieCursor As String = If(String.IsNullOrWhiteSpace(Key), "<fără cheie>", Key)
+            Return cheieCursor & " — cursor «" & PopupMnemonic.Strip(If(Text, String.Empty)) & "» " &
+                   SliderMinimum & "…" & SliderMaximum & " = " & SliderValue
+        End If
         Dim cheie As String = If(String.IsNullOrWhiteSpace(Key), "<fără cheie>", Key)
         Dim eticheta As String = PopupMnemonic.Strip(If(Text, String.Empty))
         Dim litera As Char = Mnemonic

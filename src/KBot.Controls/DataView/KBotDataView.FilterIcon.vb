@@ -9,9 +9,15 @@ Imports KBot.Theming
 ''' PICTOGRAMA DE FILTRARE din antetul <see cref="KBotDataView"/> (slice 0028-03) — butonul care
 ''' desfășoară meniul de sortare și filtrare al coloanei, ca săgeata din foaia de date Access.
 '''
-''' <para><b>Se hotărăște PE COLOANĂ, în designer.</b> Steagul și înfățișarea butonului stau pe
+''' <para><b>MĂRIMEA se pune pe GRILĂ</b> (<see cref="KBotDataView.FilterIconSize"/>, px logici,
+''' implicit 16×16): filtrul e o funcție a grilei, aceeași pe toate coloanele, deci se hotărăște
+''' o dată pentru tot antetul. O coloană poate să o bată cu
+''' <see cref="KBotDataColumn.ColumnFilterIconSize"/>, care cât timp nu e scris întoarce chiar
+''' valoarea grilei.</para>
+'''
+''' <para><b>Restul se hotărăște PE COLOANĂ, în designer.</b> Steagul și înfățișarea butonului stau pe
 ''' <see cref="KBotDataColumn"/> (<c>ShowColumnFilter</c>, <c>ColumnFilterIcon</c>,
-''' <c>ColumnFilterIconSize</c>, <c>ColumnFilterHoverColor</c>), lângă celelalte pictograme de
+''' <c>ColumnFilterHoverColor</c>), lângă celelalte pictograme de
 ''' antet ale coloanei; aici rămâne doar ce ține de GRILĂ — așezarea, hit-testul, pictarea și
 ''' deschiderea meniului. Pe coloanele <see cref="KBotColumnType.Button"/> și
 ''' <see cref="KBotColumnType.ProgressBar"/> filtrarea nu se poate aprinde deloc (vezi
@@ -40,6 +46,51 @@ Partial Class KBotDataView
     ''' </summary>
     Public Event ColumnFilterOpening As EventHandler(Of KBotColumnFilterOpeningEventArgs)
 
+    ' Mărimea pictogramei de filtrare pentru TOATĂ grila, în px LOGICI (96 dpi) — vezi mai jos.
+    Private _filterIconSize As Size = KBotDataColumn.DefaultFilterIconSize
+
+    ''' <summary>
+    ''' Mărimea (px la 96 dpi) a butonului de filtrare din antet, pentru TOATE coloanele. Implicit
+    ''' 16×16.
+    '''
+    ''' <para><b>De ce pe grilă.</b> Filtrul e o funcție a grilei, aceeași pe fiecare coloană — un
+    ''' antet cu zece pâlnii de mărimi diferite n-ar spune nimic în plus, doar ar arăta neîngrijit.
+    ''' Se pune o dată aici și se vede peste tot. O coloană care chiar are nevoie de altceva își
+    ''' scrie propriul <see cref="KBotDataColumn.ColumnFilterIconSize"/>, care bate valoarea asta
+    ''' — aceeași înțelegere ca peste tot în K-BOT: nesetat = «de la gazdă», setat de operator
+    ''' câștigă.</para>
+    '''
+    ''' <para><b>Valoarea rămâne LOGICĂ.</b> Ce se scrie aici e ce se serializează în designer;
+    ''' scalarea la DPI (și la mărimea cerută de operator) se face la folosire, prin
+    ''' <see cref="KBotDataColumn.ColumnFilterIconSizePx"/>. Vezi regula din
+    ''' <c>KBotDataView.Dpi.vb</c>.</para>
+    ''' </summary>
+    <Category("K-BOT: Filtrare")>
+    <Description("Mărimea (px @96dpi) a butonului de filtrare din antet, pentru toate coloanele. O coloană cu ColumnFilterIconSize propriu bate valoarea asta.")>
+    Public Property FilterIconSize As Size
+        Get
+            Return _filterIconSize
+        End Get
+        Set(value As Size)
+            Dim nou As New Size(Math.Max(1, value.Width), Math.Max(1, value.Height))
+            If _filterIconSize = nou Then Return
+            _filterIconSize = nou
+            ' Pictogramele schimbă podeaua de lățime a fiecărei coloane filtrabile, deci se
+            ' re-măsoară tot — la fel ca la o schimbare de pictogramă pe coloană.
+            OnColumnIconsChanged()
+        End Set
+    End Property
+
+    ' Size nu poate purta <DefaultValue> (atributul cere o constantă) — fără perechea
+    ' ShouldSerialize/Reset, designerul ar scrie 16×16 în fiecare formular gazdă.
+    Private Function ShouldSerializeFilterIconSize() As Boolean
+        Return _filterIconSize <> KBotDataColumn.DefaultFilterIconSize
+    End Function
+
+    Private Sub ResetFilterIconSize()
+        FilterIconSize = KBotDataColumn.DefaultFilterIconSize
+    End Sub
+
     ''' <summary>Vreo coloană poartă butonul de filtrare? (Hit-testul se oprește din asta.)</summary>
     Friend Function AnyColumnFilterShown() As Boolean
         For Each col In _columns
@@ -58,7 +109,7 @@ Partial Class KBotDataView
     ''' </summary>
     Friend Function FilterIconSizeFor(col As KBotDataColumn) As Size
         If col Is Nothing OrElse Not col.FilterEnabled Then Return Size.Empty
-        Return col.ColumnFilterIconSize
+        Return col.ColumnFilterIconSizePx
     End Function
 
     ' ══════════════════════════════════════════════════════════════════════════
@@ -166,7 +217,7 @@ Partial Class KBotDataView
         If pt.Y < 0 OrElse pt.Y >= bandH Then Return Nothing
 
         For Each cl In _frozenLayout
-            Dim r As Rectangle = HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.Width, bandH)).FilterIcon
+            Dim r As Rectangle = HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.WidthPx, bandH)).FilterIcon
             If Not r.IsEmpty AndAlso r.Contains(pt) Then
                 iconRect = r
                 Return cl.Column
@@ -179,7 +230,7 @@ Partial Class KBotDataView
         Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
             Dim r As Rectangle = HeaderLayoutFor(cl.Column,
-                New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.Width, bandH)).FilterIcon
+                New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.WidthPx, bandH)).FilterIcon
             If Not r.IsEmpty AndAlso r.Contains(pt) Then
                 iconRect = r
                 Return cl.Column
@@ -281,14 +332,14 @@ Partial Class KBotDataView
         Dim bandH As Integer = HeaderBandHeight()
         For Each cl In _frozenLayout
             If String.Equals(cl.Column.Key, colKey, StringComparison.Ordinal) Then
-                Return HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.Width, bandH)).FilterIcon
+                Return HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.WidthPx, bandH)).FilterIcon
             End If
         Next
         Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
             If String.Equals(cl.Column.Key, colKey, StringComparison.Ordinal) Then
                 Return HeaderLayoutFor(cl.Column,
-                    New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.Width, bandH)).FilterIcon
+                    New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.WidthPx, bandH)).FilterIcon
             End If
         Next
         Return Rectangle.Empty

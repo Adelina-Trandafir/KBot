@@ -27,14 +27,55 @@ Public Module ThemeManager
         End Get
     End Property
 
-    ''' <summary>Cele 3 scheme built-in + orice scheme utilizator descoperite.</summary>
+    ''' <summary>
+    ''' Schemele alegibile: cele built-in, plus cele de utilizator descoperite în AppData.
+    '''
+    ''' <para><b>Un fișier cu numele unei scheme built-in o ÎNLOCUIEȘTE, nu se adaugă lângă ea</b>
+    ''' (felia 0036). Așa se persistă editarea lui «Modern»: editorul scrie
+    ''' <c>…\Themes\Modern.json</c>, iar de la pornirea următoare acela E «Modern». Regula veche —
+    ''' concatenare oarbă — ar fi produs DOUĂ rânduri «Modern» în meniul de teme, iar
+    ''' <c>ResolveByName</c> ar fi întors mereu primul, adică exact pe cel needitat.</para>
+    '''
+    ''' <para>Ștergerea fișierului readuce schema compilată: codul sursă nu se atinge niciodată,
+    ''' deci «Restaurează implicit» n-are cum să eșueze pe jumătate.</para>
+    ''' </summary>
     Public ReadOnly Property AvailableSchemes As IReadOnlyList(Of ThemeScheme)
         Get
-            Dim list As New List(Of ThemeScheme)(BuiltInSchemes.All())
-            list.AddRange(_userSchemes)
-            Return list
+            Return MergeSchemes(BuiltInSchemes.All(), _userSchemes)
         End Get
     End Property
+
+    ''' <summary>
+    ''' Built-in-urile, cu cele omonime din <paramref name="user"/> puse peste, apoi restul
+    ''' schemelor de utilizator în ordinea lor. Pură — de aceea e și cusătura de test.
+    ''' </summary>
+    Friend Function MergeSchemes(builtIn As IReadOnlyList(Of ThemeScheme),
+                                 user As IReadOnlyList(Of ThemeScheme)) As IReadOnlyList(Of ThemeScheme)
+        Dim result As New List(Of ThemeScheme)()
+        Dim consumed As New List(Of ThemeScheme)()
+
+        For Each b As ThemeScheme In builtIn
+            Dim replacement As ThemeScheme = Nothing
+            For Each u As ThemeScheme In user
+                If u IsNot Nothing AndAlso String.Equals(u.Name, b.Name, StringComparison.OrdinalIgnoreCase) Then
+                    replacement = u
+                    Exit For
+                End If
+            Next
+            If replacement Is Nothing Then
+                result.Add(b)
+            Else
+                result.Add(replacement)
+                consumed.Add(replacement)
+            End If
+        Next
+
+        For Each u As ThemeScheme In user
+            If u IsNot Nothing AndAlso Not consumed.Contains(u) Then result.Add(u)
+        Next
+
+        Return result
+    End Function
 
     ''' <summary>Ridicat DUPĂ ce Current s-a schimbat (Apply deja difuzat).</summary>
     Public Event ThemeChanged As EventHandler
@@ -47,7 +88,12 @@ Public Module ThemeManager
         If _initialized Then Return
         _initialized = True
 
-        ' Scheme utilizator (editor viitor). Un fișier corupt e sărit + logat, nu crapă pornirea.
+        ' Scalarea ÎNAINTE de orice altceva: e citită de fiecare control la prima pictare, deci
+        ' trebuie să fie deja așezată când se construiește primul formular (felia 0036).
+        ThemeStore.LoadScaling()
+
+        ' Scheme utilizator — inclusiv fișierele care SUPRASCRIU o schemă built-in editată din
+        ' fereastra de opțiuni. Un fișier corupt e sărit + logat, nu crapă pornirea.
         _userSchemes.Clear()
         _userSchemes.AddRange(ThemeStore.LoadUserSchemes())
 
@@ -93,6 +139,12 @@ Public Module ThemeManager
                 NativeMethods.SetRoundedCorners(f, True)
             End If
         End If
+
+        ' MĂRIMEA TEXTULUI, la SFÂRȘIT (felia 0036-01). Ordinea nu e o preferință: ApplyBaseFont
+        ' tocmai a scris fontul schemei pe formular, iar sub «Colorat» PreserveDesignerColors a
+        ' restaurat fonturile autorite — amândouă ar fi șters mărirea dacă ar fi rulat DUPĂ ea.
+        ' Aici, orice ar fi scris tema devine baza din care se înmulțește (vezi FontBaseline).
+        AppScaling.ApplyTextScale(ctrl)
     End Sub
 
     ''' <summary>Setează schema activă, o persistă, o difuzează și ridică ThemeChanged.</summary>
@@ -108,6 +160,86 @@ Public Module ThemeManager
 
         RaiseEvent ThemeChanged(Nothing, EventArgs.Empty)
     End Sub
+
+    ''' <summary>
+    ''' Re-difuzează schema ACTIVĂ, fără s-o schimbe și fără s-o persiste. O folosește fereastra
+    ''' de opțiuni după fiecare valoare atinsă: schema e un obiect MUTABIL, deci editarea ei a
+    ''' avut deja loc — ce lipsește e doar repictarea ferestrelor.
+    '''
+    ''' Despărțită de <see cref="SetScheme"/> tocmai ca previzualizarea să nu scrie pe disc la
+    ''' fiecare mișcare de cursor prin selectorul de culoare.
+    ''' </summary>
+    Public Sub Refresh()
+        Try
+            For Each f As Form In CollectTargets()
+                Apply(f)
+            Next
+            RaiseEvent ThemeChanged(Nothing, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ThemeManager.Refresh", ex)
+            Throw
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Persistă o schemă editată ca fișier de utilizator și o pune în lista celor alegibile
+    ''' (înlocuind versiunea cu același nume, built-in sau nu). Dacă e chiar schema activă, ecranul
+    ''' se reîmprospătează.
+    '''
+    ''' Frontieră de I/O: loghează ȘI aruncă — operatorul tocmai a apăsat «Salvează».
+    ''' </summary>
+    Public Sub SaveScheme(scheme As ThemeScheme)
+        If scheme Is Nothing Then Throw New ArgumentNullException(NameOf(scheme))
+        Try
+            ThemeStore.SaveScheme(scheme)
+
+            For i As Integer = _userSchemes.Count - 1 To 0 Step -1
+                If String.Equals(_userSchemes(i).Name, scheme.Name, StringComparison.OrdinalIgnoreCase) Then
+                    _userSchemes.RemoveAt(i)
+                End If
+            Next
+            _userSchemes.Add(scheme)
+
+            If String.Equals(scheme.Name, _current.Name, StringComparison.OrdinalIgnoreCase) Then
+                _current = scheme
+                Refresh()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("ThemeManager.SaveScheme", ex)
+            Throw
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' «Readu schema asta la implicitul ei»: șterge fișierul de utilizator și, dacă numele e al
+    ''' unei scheme built-in, o repune pe cea compilată. Întoarce schema rezultată — Nothing dacă
+    ''' era o schemă pur de utilizator, care prin ștergere a dispărut cu totul.
+    '''
+    ''' Când dispare CHIAR schema activă, se comută pe implicita documentată; altfel aplicația ar
+    ''' rămâne pictată cu o schemă care nu mai există nicăieri.
+    ''' </summary>
+    Public Function ResetScheme(schemeName As String) As ThemeScheme
+        If String.IsNullOrWhiteSpace(schemeName) Then Throw New ArgumentException(
+            "Numele schemei e obligatoriu.", NameOf(schemeName))
+        Try
+            ThemeStore.DeleteScheme(schemeName)
+
+            For i As Integer = _userSchemes.Count - 1 To 0 Step -1
+                If String.Equals(_userSchemes(i).Name, schemeName, StringComparison.OrdinalIgnoreCase) Then
+                    _userSchemes.RemoveAt(i)
+                End If
+            Next
+
+            Dim rezultat As ThemeScheme = ResolveByName(schemeName)   ' built-in-ul, dacă există
+            If String.Equals(schemeName, _current.Name, StringComparison.OrdinalIgnoreCase) Then
+                SetScheme(If(rezultat, ResolveByName(BuiltInSchemes.DefaultSchemeName)))
+            End If
+            Return rezultat
+        Catch ex As Exception
+            GlobalErrorLog.Write("ThemeManager.ResetScheme", ex)
+            Throw
+        End Try
+    End Function
 
     ' Reuniunea formularelor tematizate înregistrate și a celor deschise (legacy incluse).
     Private Function CollectTargets() As List(Of Form)
@@ -556,6 +688,9 @@ Public Module ThemeManager
         If String.IsNullOrWhiteSpace(st.BaseFontName) OrElse st.BaseFontSize <= 0F Then Return
         Try
             ctrl.Font = New Font(st.BaseFontName, st.BaseFontSize, ctrl.Font.Style)
+            ' Fontul schemei e noua BAZĂ pentru mărirea textului (felia 0036-01). Fără linia asta,
+            ' mărirea s-ar înmulți peste fontul deja mărit al schemei precedente.
+            FontBaseline.Rebase(ctrl)
         Catch ex As Exception
             GlobalErrorLog.Write("ThemeManager.ApplyBaseFont", ex)
         End Try

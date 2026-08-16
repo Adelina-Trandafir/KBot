@@ -15,42 +15,46 @@ Partial Class DdfVizualizarePage
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        previewXfa = New XfaXmlPreview()
-        lblPreviewGol = New Label()
+        pagValori = New DdfValoriPage()
+        lblNota = New Label()
         SuspendLayout()
-        '
-        ' previewXfa — suprafața implicită (reconstrucția din XML XFA). Adăugată PRIMA, deci
-        ' stă în fața etichetei goale de dedesubt (regula ordinii Z, nu a andocării).
-        '
-        previewXfa.Dock = DockStyle.Fill
-        previewXfa.Location = New Point(0, 0)
-        previewXfa.Name = "previewXfa"
-        previewXfa.Size = New Size(849, 488)
-        previewXfa.TabIndex = 0
-        '
-        ' lblPreviewGol — plasa de dedesubt, când suprafața lipsește
-        '
-        lblPreviewGol.Dock = DockStyle.Fill
-        lblPreviewGol.Font = New Font("Segoe UI", 10F)
-        lblPreviewGol.Location = New Point(0, 0)
-        lblPreviewGol.Name = "lblPreviewGol"
-        lblPreviewGol.Size = New Size(849, 488)
-        lblPreviewGol.TabIndex = 1
-        lblPreviewGol.Text = "Selectați o revizie din arbore."
-        lblPreviewGol.TextAlign = ContentAlignment.MiddleCenter
-        '
+        ' 
+        ' pagValori
+        ' 
+        pagValori.Dock = DockStyle.Fill
+        pagValori.Location = New Point(0, 108)
+        pagValori.Margin = New Padding(4, 5, 4, 5)
+        pagValori.Name = "pagValori"
+        pagValori.Size = New Size(840, 372)
+        pagValori.TabIndex = 1
+        ' 
+        ' lblNota
+        ' 
+        lblNota.Dock = DockStyle.Top
+        lblNota.Font = New Font("Segoe UI", 10F)
+        lblNota.Location = New Point(0, 0)
+        lblNota.Name = "lblNota"
+        lblNota.Padding = New Padding(8)
+        lblNota.Size = New Size(840, 108)
+        lblNota.TabIndex = 0
+        lblNota.Text = "Selectați o revizie din arbore."
+        lblNota.TextAlign = ContentAlignment.TopLeft
+        ' Antetul e text de date: un «&» dintr-un nume de instituție trebuie să se vadă, nu să
+        ' sublinieze litera următoare.
+        lblNota.UseMnemonic = False
+        ' 
         ' DdfVizualizarePage
-        '
+        ' 
         AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
-        Controls.Add(previewXfa)
-        Controls.Add(lblPreviewGol)
+        Controls.Add(pagValori)
+        Controls.Add(lblNota)
         Margin = New Padding(4, 5, 4, 5)
         Name = "DdfVizualizarePage"
-        Size = New Size(849, 488)
+        Size = New Size(840, 480)
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents previewXfa As XfaXmlPreview
-    Friend WithEvents lblPreviewGol As Label
+    Friend WithEvents pagValori As DdfValoriPage
+    Friend WithEvents lblNota As Label
 End Class

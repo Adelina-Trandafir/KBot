@@ -23,11 +23,14 @@ Imports KBot.Theming
 ''' auto-dimensionare, de umplere sau de strâmtare nu poate ajunge să le suprapună. Podeaua bate
 ''' inclusiv <c>MaxWidth</c> — un plafon mai mic decât pictogramele ar fi o cerere imposibilă.</para>
 '''
-''' <para><b>DPI.</b> Mărimile pictogramelor sunt în pixeli, exact ca la arbore: ce se vede în
-''' designer e ce se desenează. Spațiile (<see cref="KBotDataColumn.HeaderIconPad"/> /
-''' <see cref="KBotDataColumn.HeaderIconGap"/>) se scalează cu DPI-ul, deci pe un ecran la 150%
-''' podeaua rămâne cu câțiva pixeli sub necesar — se plătește din text, care oricum se taie primul,
-''' niciodată din pictograme.</para>
+''' <para><b>DPI (rescris în felia 0035-01).</b> Mărimile pictogramelor sunt în pixeli LOGICI
+''' (96 dpi) — ce se vede în designer — și se scalează la folosire, prin
+''' <c>KBotDataColumn.HeaderLeftIconSizePx</c> / <c>HeaderRightIconSizePx</c> /
+''' <c>ColumnFilterIconSizePx</c>. Spațiile (<see cref="KBotDataColumn.HeaderIconPad"/> /
+''' <see cref="KBotDataColumn.HeaderIconGap"/>) treceau deja prin <c>ScaleDpi</c>.
+''' <b>Podeaua și desenul folosesc acum aceeași sursă de scară</b> (<c>DeviceDpi</c>, vezi
+''' <c>KBotDataView.Dpi.vb</c>): înainte, mărimile nescalate lăsau podeaua cu câțiva pixeli sub
+''' necesar la 150%, iar coloana se putea strâmta sub ce chiar se picta.</para>
 ''' </summary>
 Partial Class KBotDataView
 
@@ -93,7 +96,7 @@ Partial Class KBotDataView
 
         ' 1) Pictograma din DREAPTA se așază apoi — nici ea nu se sacrifică.
         If col.HeaderRightIcon IsNot Nothing Then
-            Dim s As Size = col.HeaderRightIconSize
+            Dim s As Size = col.HeaderRightIconSizePx
             rez.RightIcon = New Rectangle(dreapta - s.Width,
                                           cellRect.Top + (cellRect.Height - s.Height) \ 2,
                                           s.Width, s.Height)
@@ -103,7 +106,7 @@ Partial Class KBotDataView
         ' 2) Pictograma din STÂNGA: doar dacă mai încape ÎNTREAGĂ. Jumătate de pictogramă nu e
         '    o pictogramă mai mică, e una greșită.
         If col.HeaderLeftIcon IsNot Nothing Then
-            Dim s As Size = col.HeaderLeftIconSize
+            Dim s As Size = col.HeaderLeftIconSizePx
             If dreapta - stanga >= s.Width Then
                 rez.LeftIcon = New Rectangle(stanga,
                                              cellRect.Top + (cellRect.Height - s.Height) \ 2,
@@ -139,8 +142,8 @@ Partial Class KBotDataView
     Private Function HeaderIconsExtent(col As KBotDataColumn) As Integer
         Dim gap As Integer = ScaleDpi(KBotDataColumn.HeaderIconGap)
         Dim total As Integer = 0
-        If col.HeaderLeftIcon IsNot Nothing Then total += col.HeaderLeftIconSize.Width + gap
-        If col.HeaderRightIcon IsNot Nothing Then total += col.HeaderRightIconSize.Width + gap
+        If col.HeaderLeftIcon IsNot Nothing Then total += col.HeaderLeftIconSizePx.Width + gap
+        If col.HeaderRightIcon IsNot Nothing Then total += col.HeaderRightIconSizePx.Width + gap
         Dim filtru As Size = FilterIconSizeFor(col)
         If filtru.Width > 0 Then total += filtru.Width + gap
         Return total
@@ -212,7 +215,7 @@ Partial Class KBotDataView
         If pt.Y < 0 OrElse pt.Y >= bandH Then Return Nothing
 
         For Each cl In _frozenLayout
-            Dim r As Rectangle = HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.Width, bandH)).RightIcon
+            Dim r As Rectangle = HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.WidthPx, bandH)).RightIcon
             If Not r.IsEmpty AndAlso r.Contains(pt) Then
                 iconRect = r
                 Return cl.Column
@@ -225,7 +228,7 @@ Partial Class KBotDataView
         Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
             Dim r As Rectangle = HeaderLayoutFor(cl.Column,
-                New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.Width, bandH)).RightIcon
+                New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.WidthPx, bandH)).RightIcon
             If Not r.IsEmpty AndAlso r.Contains(pt) Then
                 iconRect = r
                 Return cl.Column
@@ -247,11 +250,15 @@ Partial Class KBotDataView
             _hotHeaderIconKey = cheie
             Invalidate()
         End If
+        ' Aceeași trecere hrănește și eticheta butoanelor de antet (felia 0035): ea decide singură
+        ' între filtru, pictogramă și titlu — vezi KBotDataView.ButtonTips.vb.
+        RefreshHeaderTip(pt)
         Return col IsNot Nothing
     End Function
 
     ''' <summary>Stinge hover-ul pictogramelor de antet (cursorul a plecat din control).</summary>
     Friend Sub ClearHeaderIconHover()
+        HideButtonTip()
         If _hotHeaderIconKey Is Nothing Then Return
         _hotHeaderIconKey = Nothing
         Invalidate()
@@ -294,14 +301,14 @@ Partial Class KBotDataView
         Dim bandH As Integer = HeaderBandHeight()
         For Each cl In _frozenLayout
             If String.Equals(cl.Column.Key, colKey, StringComparison.Ordinal) Then
-                Return HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.Width, bandH)).RightIcon
+                Return HeaderLayoutFor(cl.Column, New Rectangle(cl.X, 0, cl.Column.WidthPx, bandH)).RightIcon
             End If
         Next
         Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
             If String.Equals(cl.Column.Key, colKey, StringComparison.Ordinal) Then
                 Return HeaderLayoutFor(cl.Column,
-                    New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.Width, bandH)).RightIcon
+                    New Rectangle(_frozenBandWidth + cl.X - hOffset, 0, cl.Column.WidthPx, bandH)).RightIcon
             End If
         Next
         Return Rectangle.Empty

@@ -251,10 +251,42 @@ Public NotInheritable Class ForexeController
         End Try
     End Sub
 
+    ''' <summary>Browserul FOREXE e la vedere acum?</summary>
+    Public ReadOnly Property IsBrowserVisible As Boolean
+        Get
+            Try
+                Return _runner.IsBrowserVisible
+            Catch ex As Exception
+                GlobalErrorLog.Write("ForexeController.IsBrowserVisible", ex)
+                Throw
+            End Try
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Comută vizibilitatea browserului FOREXE. De la felia 0034-02 el PORNEȘTE ascuns
+    ''' (stealth, ca în KBOT_IPC), deci butonul din consolă trebuie să meargă în ambele sensuri —
+    ''' altfel, o dată arătat, n-ar mai putea fi ascuns la loc.
+    ''' </summary>
+    Public Async Function ToggleBrowserAsync() As Task
+        Try
+            If _runner.IsBrowserVisible Then
+                Await _runner.HideBrowserAsync()
+            Else
+                Await _runner.ShowBrowserAsync()
+            End If
+            RaiseEvent StateChanged(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.ToggleBrowserAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ''' <summary>Aduce fereastra browserului FOREXE în față.</summary>
     Public Async Function ShowBrowserAsync() As Task
         Try
             Await _runner.ShowBrowserAsync()
+            RaiseEvent StateChanged(Me, EventArgs.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeController.ShowBrowserAsync", ex)
             Throw

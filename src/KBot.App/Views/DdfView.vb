@@ -62,8 +62,7 @@ Public Class DdfView
     ' cade înapoi pe formele GDI din DdfIcons. Cum se scapă de fallback: pui pozele în listă.
     ' Căutarea cheii e insensibilă la litere mari/mici (ImageList.IndexOfKey), deci «Up» din
     ' listă răspunde și la «up».
-    Private Const ICO_LUNA_INCHIS As String = "folder_closed"
-    Private Const ICO_LUNA_DESCHIS As String = "folder_open"
+    Private Const ICO_MONTH As String = "month"      ' rădăcină de lună (închis sau deschis)
     Private Const ICO_SUS As String = "up"        ' revizie încărcată ▲
     Private Const ICO_JOS As String = "down"      ' revizie preluată ▼
     Private Const ICO_NEUTRU As String = "neutral"
@@ -229,8 +228,12 @@ Public Class DdfView
             End If
             Dim exists As Boolean = Not String.IsNullOrEmpty(pdfPath) AndAlso IO.File.Exists(pdfPath)
 
+            ' Globalii unității pentru antetul paginii «Vizualizare». Sesiunea poate lipsi (teste)
+            ' -> antetul își sare rândurile goale, ca în XfaXmlPreview.
             Return New DdfPageContext(_antet, _nodeRows, _revizii, _nodeIsRoot, _selectedRevizie,
-                                      _requestedCod, pdfPath, exists)
+                                      _requestedCod, pdfPath, exists,
+                                      If(_session Is Nothing, String.Empty, _session.NumeUnitate),
+                                      If(_session Is Nothing, String.Empty, _session.CF))
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.BuildCurrentContext", ex)
             Throw
@@ -390,13 +393,14 @@ Public Class DdfView
 
                 ' Lista poate purta două poze pentru lună (închis / deschis); când n-are decât
                 ' una — sau niciuna — amândouă cad pe aceeași imagine, ca înainte.
-                Dim monthIconInchis As Image = LunaIcon(ICO_LUNA_INCHIS, palette)
-                Dim monthIconDeschis As Image = LunaIcon(ICO_LUNA_DESCHIS, palette)
+                Dim monthIconInchis As Image = LunaIcon(ICO_MONTH, palette)
+                Dim monthIconDeschis As Image = LunaIcon(ICO_MONTH, palette)
                 Dim monthItem As AdvancedTreeControl.TreeItem =
                     tree.AddItem(MonthKeyText(mg.Key), $"{MonthYearLabel(mg.Key)}~~~{Money(monthSum)}",
                                  pLeftIconClosed:=monthIconInchis, pLeftIconOpen:=monthIconDeschis,
                                  pExpanded:=True)
                 monthItem.Tag = New DdfNodeRows(monthLines, isRoot:=True)
+                monthItem.Bold = True
                 ' Roșu doar când PROPRIUL total e negativ (Access copiază culoarea ultimei frunze).
                 If monthSum < 0 AndAlso palette IsNot Nothing Then
                     monthItem.NodeForeColor = palette.ErrorColor
@@ -598,7 +602,7 @@ Public Class DdfView
         If monthKey <= 0 Then Return "(fără dată)"
         Dim y As Integer = monthKey \ 100
         Dim m As Integer = monthKey Mod 100
-        Return $"{MonthLabel(m)}/{y}"
+        Return $"{MonthLabel(m)}" '/{y}"
     End Function
 
     ' Numele lunii în română (Ianuarie…), cu prima literă mare (ca în Plăți/Recepții/Rezervări).
@@ -609,11 +613,21 @@ Public Class DdfView
         Return Char.ToUpper(name(0), _roCulture) & name.Substring(1)
     End Function
 
-    ' Starea vizuală a unei revizii: Incarcat->sus (REV_SUS), altfel Preluat->jos (REV_JOS),
-    ' altfel neutru (REV_NOT) — regula din frmFX_MAIN_DDF.Show_Revizii.
+    ''' <summary>
+    ''' Starea vizuală a unei revizii, dată de SEMNUL TOTALULUI: pozitiv → sus, negativ → jos,
+    ''' exact zero → neutru. Aceeași axă ca la Rezervări (mărire ▲ / micșorare ▼) și aceeași cu
+    ''' a culorii rândului, care e deja roșu când totalul e negativ.
+    '''
+    ''' <para>ÎNAINTE se citea starea de încărcare (<c>Incarcat</c> → sus, altfel <c>Preluat</c>
+    ''' → jos), portare literală din <c>frmFX_MAIN_DDF.Show_Revizii</c>. E o axă DIFERITĂ de
+    ''' semn, și în practică arăta ▼ pe aproape tot, fiindcă reviziile sunt de regulă preluate.
+    ''' Dacă starea de încărcare trebuie să se vadă din nou, are nevoie de propriul semn vizual
+    ''' (o iconiță în dreapta, îngroșare), nu de săgeata care înseamnă acum semnul sumei.</para>
+    ''' </summary>
     Private Shared Function StareOf(r As RevizieRow) As DdfIcons.Stare
-        If r.Incarcat Then Return DdfIcons.Stare.Sus
-        If r.Preluat Then Return DdfIcons.Stare.Jos
+        If r Is Nothing Then Return DdfIcons.Stare.Neutru
+        If r.TotalRevizie > 0 Then Return DdfIcons.Stare.Sus
+        If r.TotalRevizie < 0 Then Return DdfIcons.Stare.Jos
         Return DdfIcons.Stare.Neutru
     End Function
 

@@ -143,7 +143,7 @@ Partial Public Class AdvancedTreeControl
         ' ── VScrollBar manual — imun la layout engine ─────────────────────
         _vScroll.Minimum = 0
         _vScroll.Maximum = 0
-        _vScroll.SmallChange = ItemHeight
+        _vScroll.SmallChange = _itemHeight
         _vScroll.LargeChange = 1
         _vScroll.Visible = False
         _vScroll.Width = SystemInformation.VerticalScrollBarWidth
@@ -199,7 +199,12 @@ Partial Public Class AdvancedTreeControl
         Dim hIcon As Integer = Math.Max(_leftIconSize.Height, _rightIconSize.Height)
         Dim hMax As Integer = Math.Max(hFont, hIcon)
 
-        _itemHeight = hMax + 6
+        ' Font.Height și mărimile de iconiță sunt DEJA în pixeli de ecran (fontul se scalează
+        ' singur, iconițele au trecut prin SX/SY), deci rezultatul e o măsură scalată. Perechea
+        ' logică se completează prin drumul invers, ca o schimbare ulterioară de DPI să pornească
+        ' de la aceeași valoare de la 96 dpi — vezi AdvancedTreeControl.Dpi.vb.
+        _itemHeight = hMax + SY(6)
+        _itemHeightLogic = UnscaleY(_itemHeight)
         RefreshSearchBarMetrics()
         Me.Invalidate()
     End Sub
@@ -219,7 +224,7 @@ Partial Public Class AdvancedTreeControl
         If _footerVisible AndAlso p.Y >= Me.Height - _footerHeight Then Return Nothing
 
         Dim yRel = p.Y - Me.AutoScrollPosition.Y - PaddingTreeTop - headerOff
-        Dim idx As Integer = yRel \ ItemHeight
+        Dim idx As Integer = yRel \ _itemHeight
         Dim visible = GetVisibleItems()
         If idx < 0 OrElse idx >= visible.Count Then Return Nothing
         Return visible(idx)
@@ -231,17 +236,17 @@ Partial Public Class AdvancedTreeControl
         Dim y As Integer = GetItemY(it)
         If y = -1 Then Return Rectangle.Empty
 
-        Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+        Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
 
-        ' Level=0 fără RootExpander → checkbox direct de la gridLeft (fără Indent/Expander gap)
+        ' Level=0 fără RootExpander → checkbox direct de la gridLeft (fără m_Indent/Expander gap)
         Dim xChk As Integer
         If it.Level = 0 AndAlso Not _RootExpander Then
             xChk = gridLeft
         Else
-            xChk = gridLeft + Indent + PaddingExpanderGap
+            xChk = gridLeft + m_Indent + PaddingExpanderGap
         End If
 
-        Dim midY As Integer = y + (ItemHeight \ 2)
+        Dim midY As Integer = y + (_itemHeight \ 2)
         Dim chkSize As Integer = _checkBoxSize
 
         Return New Rectangle(xChk, midY - (chkSize \ 2), chkSize, chkSize)
@@ -253,13 +258,13 @@ Partial Public Class AdvancedTreeControl
 
         ' --- ACTUALIZARE LOGICĂ POZIȚIONARE ---
         ' 1. Punctul de start al grilei
-        Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+        Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
 
         ' 2. Centrul expanderului este la jumătatea indentării curente
-        Dim cx As Integer = gridLeft + (Indent \ 2)
-        Dim cy As Integer = y + (ItemHeight \ 2)
+        Dim cx As Integer = gridLeft + (m_Indent \ 2)
+        Dim cy As Integer = y + (_itemHeight \ 2)
 
-        Return New Rectangle(cx - (ExpanderSize \ 2), cy - (ExpanderSize \ 2), ExpanderSize, ExpanderSize)
+        Return New Rectangle(cx - (m_ExpanderSize \ 2), cy - (m_ExpanderSize \ 2), m_ExpanderSize, m_ExpanderSize)
     End Function
 
     ''' <summary>
@@ -364,17 +369,17 @@ Partial Public Class AdvancedTreeControl
     Private Function GetContentStartX(it As TreeItem) As Integer
         If it Is Nothing Then Return PaddingTreeStart
 
-        Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+        Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
         Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander,
                                   gridLeft,
-                                  gridLeft + Indent + PaddingExpanderGap)
+                                  gridLeft + m_Indent + PaddingExpanderGap)
 
         If NodeHasCheckControl(it) Then
             xBase += _checkBoxSize + PaddingCheckBoxGap
         End If
 
         If _hasNodeIcons AndAlso (it.LeftIconClosed IsNot Nothing OrElse it.LeftIconOpen IsNot Nothing) Then
-            xBase += LeftIconSize.Width + PaddingIconGap
+            xBase += _leftIconSize.Width + PaddingIconGap
         End If
 
         Return xBase
@@ -383,7 +388,7 @@ Partial Public Class AdvancedTreeControl
     Private Function GetItemY(it As TreeItem) As Integer
         Dim idx = GetVisibleItems().IndexOf(it)
         If idx < 0 Then Return -1
-        Return Me.AutoScrollPosition.Y + PaddingTreeTop + TotalHeaderOffset + idx * ItemHeight
+        Return Me.AutoScrollPosition.Y + PaddingTreeTop + TotalHeaderOffset + idx * _itemHeight
     End Function
 
     ' Găsește ancestorul de pe RadioButtonLevel al unui nod
@@ -458,7 +463,7 @@ Partial Public Class AdvancedTreeControl
         ' Nu afișăm tooltip dacă mouse-ul e pe zona RightIcon
         If it.RightIcon IsNot Nothing AndAlso mouseX >= 0 Then
             Dim scrollW As Integer = ScrollBarWidth 'If(Me.VerticalScroll.Visible, SystemInformation.VerticalScrollBarWidth, 0)
-            Dim rightIconMinX As Integer = Me.Width - RightIconSize.Width - _rightIconRightPadding - scrollW
+            Dim rightIconMinX As Integer = Me.Width - _rightIconSize.Width - _rightIconRightPadding - scrollW
             If mouseX >= rightIconMinX Then Return
         End If
 
@@ -496,7 +501,7 @@ Partial Public Class AdvancedTreeControl
         ' Verificare suplimentară: dacă cursorul s-a mutat pe RightIcon între timp
         If pTooltipItem.RightIcon IsNot Nothing Then
             Dim scrollW As Integer = ScrollBarWidth 'If(_vScroll.Visible, _vScroll.Width, 0)
-            Dim rightIconMinX As Integer = Me.Width - RightIconSize.Width - _rightIconRightPadding - scrollW
+            Dim rightIconMinX As Integer = Me.Width - _rightIconSize.Width - _rightIconRightPadding - scrollW
             If _lastMouseX >= rightIconMinX Then Return
         End If
 
@@ -536,7 +541,7 @@ Partial Public Class AdvancedTreeControl
             Dim textSize = g.MeasureString(it.Caption, Me.Font)
 
             ' 1. Calculăm punctul de start al grilei (Sincronizat cu DrawItem / Helpers)
-            Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+            Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
 
             ' 2. Calculăm poziția curentă X (cursorul virtual de desenare)
             '    Pornim de la zona de după Expander
@@ -545,7 +550,7 @@ Partial Public Class AdvancedTreeControl
             If it.Level = 0 AndAlso Not _RootExpander Then
                 currentX = gridLeft
             Else
-                currentX = gridLeft + Indent + PaddingExpanderGap
+                currentX = gridLeft + m_Indent + PaddingExpanderGap
             End If
 
             ' 3. Adăugăm lățimea Checkbox-ului + Spațiul de după el (dacă e activ)
@@ -554,9 +559,9 @@ Partial Public Class AdvancedTreeControl
             End If
 
             ' 4. Adăugăm lățimea Iconiței din stânga + Spațiul de după ea
-            '    Verificăm dacă există iconiță (Closed sau Open, dimensiunea e dată de LeftIconSize)
+            '    Verificăm dacă există iconiță (Closed sau Open, dimensiunea e dată de _leftIconSize)
             If it.LeftIconClosed IsNot Nothing OrElse it.LeftIconOpen IsNot Nothing Then
-                currentX += LeftIconSize.Width + PaddingIconGap
+                currentX += _leftIconSize.Width + PaddingIconGap
             End If
 
             ' 5. Adăugăm lățimea Textului pentru a afla punctul final
@@ -564,7 +569,7 @@ Partial Public Class AdvancedTreeControl
 
             ' 6. Calculăm limita vizibilă a ferestrei
             '    Scădem zona rezervată iconiței din dreapta și o marjă de siguranță (20px)
-            Dim visibleWidth As Integer = Me.Width - RightIconSize.Width - 20
+            Dim visibleWidth As Integer = Me.Width - _rightIconSize.Width - 20
 
             '    Scădem și lățimea barei de scroll vertical dacă este vizibilă
             If Me.VerticalScroll.Visible Then visibleWidth -= SystemInformation.VerticalScrollBarWidth
@@ -585,10 +590,10 @@ Partial Public Class AdvancedTreeControl
         Dim y As Integer = GetItemY(it)
         If y < 0 Then Return Rectangle.Empty
 
-        Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+        Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
         Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander,
                                   gridLeft,
-                                  gridLeft + Indent + PaddingExpanderGap)
+                                  gridLeft + m_Indent + PaddingExpanderGap)
 
         ' Checkbox deplasează xBase
         If NodeHasCheckControl(it) Then
@@ -596,9 +601,9 @@ Partial Public Class AdvancedTreeControl
         End If
 
         Return New Rectangle(xBase,
-                             y + (ItemHeight - LeftIconSize.Height) \ 2,
-                             LeftIconSize.Width,
-                             LeftIconSize.Height)
+                             y + (_itemHeight - _leftIconSize.Height) \ 2,
+                             _leftIconSize.Width,
+                             _leftIconSize.Height)
     End Function
 
     ' Setează starea unui nod, a copiilor săi și actualizează părinții
@@ -754,7 +759,7 @@ Partial Public Class AdvancedTreeControl
                                If(_isSearchMode, _searchBarHeight, 0)
         Dim viewport As Integer = Math.Max(1, Me.Height - headerOff - FooterOffset)
         _vScroll.LargeChange = viewport
-        _vScroll.SmallChange = ItemHeight
+        _vScroll.SmallChange = _itemHeight
 
         If contentHeight <= viewport Then
             If _vScroll.Visible Then
@@ -787,13 +792,13 @@ Partial Public Class AdvancedTreeControl
         ' Bara de derulare se oprește DEASUPRA subsolului — altfel săgeata ei de jos ar cădea
         ' peste butonul de strângere.
         Dim viewport As Integer = Math.Max(1, Me.Height - headerOff - FooterOffset)
-        Dim contentH As Integer = GetVisibleItems().Count * ItemHeight + PaddingTreeTop
+        Dim contentH As Integer = GetVisibleItems().Count * _itemHeight + PaddingTreeTop
 
         _vScroll.Width = SystemInformation.VerticalScrollBarWidth
         _vScroll.Left = Math.Max(0, Me.Width - _vScroll.Width)
         _vScroll.Top = headerOff
         _vScroll.Height = viewport
-        _vScroll.SmallChange = ItemHeight
+        _vScroll.SmallChange = _itemHeight
         _vScroll.LargeChange = viewport
 
         If contentH > viewport Then

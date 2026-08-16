@@ -642,16 +642,34 @@ Public Class CustomPopup
         End Try
     End Sub
 
-    ''' <summary>Alege rândul dat (dacă se poate alege) și închide. Drumul comun al mouse-ului și al tastaturii.</summary>
+    ''' <summary>
+    ''' Alege rândul dat (dacă se poate alege) și închide. Drumul comun al mouse-ului și al
+    ''' tastaturii.
+    '''
+    ''' <para>Un rând-CURSOR se evidențiază, dar NU se alege și nu închide meniul (felia 0036-01):
+    ''' toată ideea lui e să vezi efectul în timp ce tragi. Enter pe el nu e o alegere, deci nu
+    ''' face nimic — iar asta nu e un no-op tăcut, ci refuzul cinstit al unui rând care n-a promis
+    ''' niciodată o alegere (n-are nici literă de acces, tocmai de aceea).</para>
+    ''' </summary>
     Friend Sub ActivateItem(index As Integer)
         If Not IsSelectable(index) Then Return
         SelectedIndex = index
+        If IsSliderRow(index) Then Return
         CloseWith(_items(index), index)
     End Sub
 
-    ''' <summary>Clic în afară = meniu respins. Exact ce face orice meniu de sistem.</summary>
+    ''' <summary>
+    ''' Clic în afară = meniu respins. Exact ce face orice meniu de sistem.
+    '''
+    ''' <para><b>Excepția:</b> cât timp se predă valoarea unui rând-cursor. Gazda face atunci
+    ''' lucruri care REAȘAZĂ toate ferestrele deschise (mărimea textului rescrie fonturile
+    ''' aplicației), iar fereastra de dedesubt se reactivează — deci am pierde activarea din
+    ''' PROPRIA noastră comandă, nu dintr-un clic al operatorului. Fără garda asta, meniul dispărea
+    ''' la prima mișcare a cursorului, ceea ce îl făcea de nefolosit.</para>
+    ''' </summary>
     Protected Overrides Sub OnDeactivate(e As EventArgs)
         MyBase.OnDeactivate(e)
+        If IsCommittingSlider Then Return
         CloseWith(Nothing, -1)
     End Sub
 
@@ -807,7 +825,16 @@ Public Class CustomPopup
                 Dim sz As Size = TextRenderer.MeasureText(If(it.Text, String.Empty), Font,
                                                           New Size(Integer.MaxValue, Integer.MaxValue),
                                                           MeasureFlags())
-                If sz.Width > textW Then textW = sz.Width
+                Dim latime As Integer = sz.Width
+                ' Un rând-CURSOR are, pe lângă etichetă, o șină și o valoare (felia 0036-01). Fără
+                ' cele trei adunate aici, meniul s-ar croi pe cel mai lat TEXT, iar șina ar primi
+                ' ce rămâne — adică, într-un meniu cu etichete scurte, aproape nimic.
+                If it.IsSlider Then
+                    latime += ThemeShapes.ScaleDpi(Me, SliderGapLogical * 2 +
+                                                       SliderValueWidthLogical +
+                                                       SliderMinTrackLogical)
+                End If
+                If latime > textW Then textW = latime
             Next
 
             Dim w As Integer = BorderThickness * 2 + padX + gutter + textW + padX

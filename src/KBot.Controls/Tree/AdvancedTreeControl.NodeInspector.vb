@@ -47,18 +47,18 @@ Partial Public Class AdvancedTreeControl
         ' 2. LAYOUT — calculat exact ca in DrawItem / Painting.vb
         ' ──────────────────────────────────────────────────────────────────────
         Dim y As Integer = GetItemY(it)
-        Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
-        Dim expCX As Integer = gridLeft + (Indent \ 2)   ' centrul expanderului pe X
-        Dim midY As Integer = y + (ItemHeight \ 2)
+        Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+        Dim expCX As Integer = gridLeft + (m_Indent \ 2)   ' centrul expanderului pe X
+        Dim midY As Integer = y + (_itemHeight \ 2)
 
         ' xBase — exact ca in DrawItem
         Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander,
                                   gridLeft,
-                                  gridLeft + Indent + PaddingExpanderGap)
+                                  gridLeft + m_Indent + PaddingExpanderGap)
 
         ' NodeBounds
         info.NodeBounds = If(y = -1, Rectangle.Empty,
-                             New Rectangle(0, y, Me.ClientSize.Width, ItemHeight))
+                             New Rectangle(0, y, Me.ClientSize.Width, _itemHeight))
 
         ' ExpanderBounds — din GetExpanderRect (exact)
         info.ExpanderBounds = GetExpanderRect(it)
@@ -76,7 +76,7 @@ Partial Public Class AdvancedTreeControl
             End If
             If it.LeftIconClosed IsNot Nothing OrElse it.LeftIconOpen IsNot Nothing Then
                 leftIconBounds = New Rectangle(xIcon,
-                                               y + (ItemHeight - _leftIconSize.Height) \ 2,
+                                               y + (_itemHeight - _leftIconSize.Height) \ 2,
                                                _leftIconSize.Width, _leftIconSize.Height)
             End If
         End If
@@ -93,16 +93,16 @@ Partial Public Class AdvancedTreeControl
 
         Dim scrollW As Integer = ScrollBarWidth
         Dim maxRightX As Integer = Me.Width - scrollW - PaddingTreeEnd
-        If it.RightIcon IsNot Nothing Then maxRightX -= (RightIconSize.Width + _rightIconRightPadding)
+        If it.RightIcon IsNot Nothing Then maxRightX -= (_rightIconSize.Width + _rightIconRightPadding)
         info.TextBounds = If(y = -1, Rectangle.Empty,
-                             New Rectangle(textX, y, Math.Max(0, maxRightX - textX), ItemHeight))
+                             New Rectangle(textX, y, Math.Max(0, maxRightX - textX), _itemHeight))
 
         ' RightIconBounds — replica logica din DrawRightIcon
         Dim rightIconBounds As Rectangle = Rectangle.Empty
         If it.RightIcon IsNot Nothing Then
-            Dim rx As Integer = Me.Width - RightIconSize.Width - _rightIconRightPadding - PaddingTreeEnd - scrollW
-            rightIconBounds = New Rectangle(rx, y + (ItemHeight - RightIconSize.Height) \ 2,
-                                            RightIconSize.Width, RightIconSize.Height)
+            Dim rx As Integer = Me.Width - _rightIconSize.Width - _rightIconRightPadding - PaddingTreeEnd - scrollW
+            rightIconBounds = New Rectangle(rx, y + (_itemHeight - _rightIconSize.Height) \ 2,
+                                            _rightIconSize.Width, _rightIconSize.Height)
         End If
         info.RightIconBounds = rightIconBounds
 
@@ -113,19 +113,19 @@ Partial Public Class AdvancedTreeControl
 
         Dim visibleItems = GetVisibleItems()
         info.IndexInVisibleList = visibleItems.IndexOf(it)
-        info.IsInViewport = (y <> -1) AndAlso (y + ItemHeight > 0) AndAlso (y < Me.Height)
+        info.IsInViewport = (y <> -1) AndAlso (y + _itemHeight > 0) AndAlso (y < Me.Height)
 
         ' SelectionBounds — replica logica din DrawSelection
         Dim selStartX As Integer
         If it.Level = 0 AndAlso Not _RootExpander Then
             selStartX = gridLeft
         Else
-            selStartX = gridLeft + ExpanderSize * 2 - 3
+            selStartX = gridLeft + m_ExpanderSize * 2 - 3
         End If
         info.SelectionBounds = If(y = -1, Rectangle.Empty,
                                     New Rectangle(selStartX, y,
                                                   Math.Max(0, Me.ClientSize.Width - selStartX - PaddingTreeEnd),
-                                                  ItemHeight))
+                                                  _itemHeight))
 
         ' ──────────────────────────────────────────────────────────────────────
         ' 3. CELLS — celulele TreeListView
@@ -146,12 +146,12 @@ Partial Public Class AdvancedTreeControl
         ' ──────────────────────────────────────────────────────────────────────
         ' 4. RENDERER — setarile controlului
         ' ──────────────────────────────────────────────────────────────────────
-        info.ItemHeight = Me.ItemHeight
-        info.Indent = Me.Indent
-        info.ExpanderSize = Me.ExpanderSize
+        info.ItemHeight = _itemHeight
+        info.Indent = m_Indent
+        info.ExpanderSize = m_ExpanderSize
         info.CheckBoxSize = Me._checkBoxSize
         info.LeftIconSize = $"{_leftIconSize.Width} × {_leftIconSize.Height}"
-        info.RightIconSize = $"{RightIconSize.Width} × {RightIconSize.Height}"
+        info.RightIconSize = $"{_rightIconSize.Width} × {_rightIconSize.Height}"
         info.HasNodeIcons = Me._hasNodeIcons
         info.CheckBoxes = Me._checkBoxes
         info.RootExpander = Me._RootExpander

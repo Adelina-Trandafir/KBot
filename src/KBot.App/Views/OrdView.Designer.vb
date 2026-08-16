@@ -84,6 +84,10 @@ Partial Class OrdView
         tree.HeaderIconSize = New Size(24, 24)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
         tree.HeaderVisible = True
+        tree.CollapseButtonTooltip = "Strânge arborele la o bandă îngustă." & vbLf & "Rândurile se citesc atunci prin eticheta care iese la survolare."
+        tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
+        tree.FooterRightIconTooltip = "Reîncarcă ordonanțările (ORD) de la server."
+        tree.HeaderSearchIconTooltip = "Caută în arbore." & vbLf & "ESC golește căutarea și închide banda."
         tree.Indent = 8
         tree.ItemHeight = 30
         tree.LeftIconSize = New Size(16, 16)

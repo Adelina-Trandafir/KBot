@@ -265,6 +265,7 @@ Partial Public Class AdvancedTreeControl
         If peCautare = _headerSearchIconHover AndAlso peDreapta = _headerRightIconHover Then Return
         _headerSearchIconHover = peCautare
         _headerRightIconHover = peDreapta
+        RefreshButtonTip()        ' aceeași schimbare de stare hrănește și eticheta butonului
         Me.Invalidate()
     End Sub
 
@@ -276,9 +277,9 @@ Partial Public Class AdvancedTreeControl
     Friend Function NodeRightIconRect(it As TreeItem) As Rectangle
         If it Is Nothing OrElse it.RightIcon Is Nothing Then Return Rectangle.Empty
         Dim scrollW As Integer = ScrollBarWidth
-        Dim rx As Integer = Me.Width - RightIconSize.Width - _rightIconRightPadding - scrollW
-        Dim ry As Integer = GetItemY(it) + (ItemHeight - RightIconSize.Height) \ 2
-        Return New Rectangle(rx, ry, RightIconSize.Width, RightIconSize.Height)
+        Dim rx As Integer = Me.Width - _rightIconSize.Width - _rightIconRightPadding - scrollW
+        Dim ry As Integer = GetItemY(it) + (_itemHeight - _rightIconSize.Height) \ 2
+        Return New Rectangle(rx, ry, _rightIconSize.Width, _rightIconSize.Height)
     End Function
 
     ''' <summary>Survolarea iconiței din dreapta NODULUI de sub cursor.</summary>
@@ -301,6 +302,7 @@ Partial Public Class AdvancedTreeControl
         _footerRightIconHover = False
         _footerLeftIconHover = False
         _nodeRightIconHover = False
+        HideButtonTip()
         Me.Invalidate()
     End Sub
 

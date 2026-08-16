@@ -96,6 +96,11 @@ Public Module DesignerBaseline
                 ctrl.ResetFont()
             End If
 
+            ' Tocmai am repus fontul din designer (drumul schemei «Colorat»), deci ACELA e acum
+            ' baza din care înmulțește mărirea textului — altfel mărirea ar fi calculată față de
+            ' un font pe care controlul nu-l mai are (felia 0036-01).
+            FontBaseline.Rebase(ctrl)
+
             Return True
         Catch ex As Exception
             GlobalErrorLog.Write("DesignerBaseline.Restore", ex)

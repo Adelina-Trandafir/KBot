@@ -195,13 +195,19 @@ Public NotInheritable Class KBotDataColumn
     Private _headerText As String
 
     ''' <summary>
-    ''' Lățimea în pixeli. Nu coboară niciodată sub <see cref="MinWidth"/>.
+    ''' Lățimea în pixeli LOGICI (96 dpi). Nu coboară niciodată sub <see cref="MinWidth"/>.
     '''
     ''' English (slice 0028-05): a write here is the CALLER's width (designer, code, or the
     ''' operator's drag) and is remembered as such — see <see cref="SetLayoutWidth"/>.
+    '''
+    ''' <para>Felia 0035-01: valoarea e și rămâne în pixeli LOGICI (96 dpi) — asta se scrie în
+    ''' designer, asta se citește înapoi. Ce se desenează efectiv pe un ecran la 150% e
+    ''' <see cref="WidthPx"/>, derivată la folosire. Dacă numărul ținut aici ar fi cel scalat,
+    ''' designerul ar reciti 255 acolo unde s-a scris 170, l-ar îngheța, și la următoarea
+    ''' deschidere l-ar scala din nou — capcana <c>ShouldSerialize</c> în formă numerică.</para>
     ''' </summary>
     <Category("K-BOT")>
-    <Description("Lățimea în pixeli. Se limitează întotdeauna la intervalul [MinWidth, MaxWidth].")>
+    <Description("Lățimea în pixeli la 96 dpi (se scalează cu ecranul). Se limitează întotdeauna la intervalul [MinWidth, MaxWidth].")>
     <DefaultValue(100)>
     Public Property Width As Integer
         Get
@@ -238,8 +244,14 @@ Public NotInheritable Class KBotDataColumn
     ''' Scrierea făcută de o trecere de layout (măsurare / umplere / strâmtare): schimbă lățimea
     ''' PICTATĂ, dar NU atinge lățimea cerută de caller. Friend: e mecanismul trecerii, nu API.
     ''' </summary>
+    ''' <remarks>
+    ''' Felia 0035-01: <paramref name="value"/> vine în px de ECRAN — trecerea de layout măsoară
+    ''' text real și împarte spațiu real, deci lucrează în pixeli de ecran de la un capăt la
+    ''' altul. Se păstrează însă LOGIC, ca tot restul modelului de coloană: altfel valoarea
+    ''' scalată ar ajunge în <see cref="Width"/>, iar designerul ar îngheța-o.
+    ''' </remarks>
     Friend Sub SetLayoutWidth(value As Integer)
-        _width = ClampWidth(value)
+        _width = ClampWidth(UnscalePx(value))
     End Sub
 
     ''' <summary>Readuce lățimea la cea cerută de caller. O cheamă trecerea, la începutul ei.</summary>
@@ -254,6 +266,7 @@ Public NotInheritable Class KBotDataColumn
     ''' la care piesele ei se suprapun, adică la un desen greșit cerut de două proprietăți care
     ''' se contrazic.
     ''' </summary>
+    ''' <remarks>Lucrează în px LOGICI, ca tot modelul de coloană.</remarks>
     Private Function ClampWidth(value As Integer) As Integer
         Dim podea As Integer = EffectiveMinWidth
         Dim plafon As Integer = Math.Max(_maxWidth, podea)
@@ -262,7 +275,7 @@ Public NotInheritable Class KBotDataColumn
 
     ''' <summary>Lățimea minimă (px). Implicit 40. Ridicarea ei împinge și <see cref="Width"/>.</summary>
     <Category("K-BOT")>
-    <Description("Lățimea minimă (px). Ridicarea ei împinge și Width.")>
+    <Description("Lățimea minimă, în pixeli la 96 dpi (se scalează cu ecranul). Ridicarea ei împinge și Width.")>
     <DefaultValue(40)>
     Public Property MinWidth As Integer
         Get
@@ -283,7 +296,7 @@ Public NotInheritable Class KBotDataColumn
     ''' <see cref="MinWidth"/>; lowering it re-clamps <see cref="Width"/>.
     ''' </summary>
     <Category("K-BOT")>
-    <Description("Lățimea maximă (px). Implicit nelimitată. Auto-dimensionarea și umplerea nu depășesc niciodată această valoare.")>
+    <Description("Lățimea maximă, în pixeli la 96 dpi (se scalează cu ecranul). Implicit nelimitată. Auto-dimensionarea și umplerea nu depășesc niciodată această valoare.")>
     <DefaultValue(Integer.MaxValue)>
     Public Property MaxWidth As Integer
         Get
@@ -412,6 +425,61 @@ Public NotInheritable Class KBotDataColumn
         HeaderRightIcon = Nothing
     End Sub
 
+    ' ── ETICHETELE de survolare ale antetului (felia 0035) ────────────────────
+    ' Trei texte, fiindcă în antetul unei coloane se pot apăsa trei lucruri diferite: titlul
+    ' (care de obicei sortează), pictograma din dreapta și cea de filtrare. Un singur text pentru
+    ' toate ar explica ceva ce nu s-a survolat. Toate sunt pe MAI MULTE RÂNDURI și acceptă
+    ' marcajele de text îmbogățit — vezi KBotToolTip.
+
+    Private _headerTooltip As String = String.Empty
+    ''' <summary>Eticheta titlului de coloană (nu a pictogramelor). Gol = fără etichetă.</summary>
+    <Category("K-BOT: Header")>
+    <Description("Eticheta de survolare a titlului de coloană (mai multe rânduri; acceptă <b>, <color=#…>).")>
+    <Editor(GetType(Design.MultilineStringEditor), GetType(Drawing.Design.UITypeEditor))>
+    <DefaultValue("")>
+    Public Property HeaderTooltip As String
+        Get
+            Return _headerTooltip
+        End Get
+        Set(value As String)
+            _headerTooltip = If(value, String.Empty)
+        End Set
+    End Property
+
+    Private _headerRightIconTooltip As String = String.Empty
+    ''' <summary>Eticheta pictogramei din dreapta titlului — butonul propriu-zis al antetului.</summary>
+    <Category("K-BOT: Header")>
+    <Description("Eticheta de survolare a pictogramei din dreapta titlului (mai multe rânduri).")>
+    <Editor(GetType(Design.MultilineStringEditor), GetType(Drawing.Design.UITypeEditor))>
+    <DefaultValue("")>
+    Public Property HeaderRightIconTooltip As String
+        Get
+            Return _headerRightIconTooltip
+        End Get
+        Set(value As String)
+            _headerRightIconTooltip = If(value, String.Empty)
+        End Set
+    End Property
+
+    Private _filterIconTooltip As String = String.Empty
+    ''' <summary>
+    ''' Eticheta pictogramei de FILTRARE a coloanei. Gol = cea comună a grilei
+    ''' (<c>KBotDataView.FilterIconTooltip</c>) — filtrul face același lucru pe orice coloană,
+    ''' deci de obicei nu are ce spune diferit.
+    ''' </summary>
+    <Category("K-BOT: Header")>
+    <Description("Eticheta pictogramei de filtrare. Gol = eticheta comună a grilei.")>
+    <Editor(GetType(Design.MultilineStringEditor), GetType(Drawing.Design.UITypeEditor))>
+    <DefaultValue("")>
+    Public Property FilterIconTooltip As String
+        Get
+            Return _filterIconTooltip
+        End Get
+        Set(value As String)
+            _filterIconTooltip = If(value, String.Empty)
+        End Set
+    End Property
+
     ''' <summary>Mărimea (px) a pictogramei din stânga. Implicit 16×16.</summary>
     <Category("K-BOT: Header")>
     <Description("Mărimea (px) a pictogramei din stânga antetului.")>
@@ -538,6 +606,9 @@ Public NotInheritable Class KBotDataColumn
     Private _showColumnFilter As Boolean = False
     Private _columnFilterIcon As Image
     Private _columnFilterIconSize As New Size(16, 16)
+    ' A scris-o operatorul pe COLOANA asta? Cât timp e False, mărimea vine de la grilă
+    ' (KBotDataView.FilterIconSize) — nesetat = «de la gazdă», setat câștigă.
+    Private _columnFilterIconSizeSet As Boolean = False
     Private _columnFilterHoverColor As Color = Color.Empty
 
     ''' <summary>Mărimea implicită a pictogramei de filtrare.</summary>
@@ -595,29 +666,43 @@ Public NotInheritable Class KBotDataColumn
         ColumnFilterIcon = Nothing
     End Sub
 
-    ''' <summary>Mărimea (px) a butonului de filtrare. Implicit 16×16.</summary>
+    ''' <summary>
+    ''' Mărimea (px la 96 dpi) a butonului de filtrare AL ACESTEI COLOANE. Cât timp nu i s-a scris
+    ''' nimic, întoarce mărimea grilei (<c>KBotDataView.FilterIconSize</c>, implicit 16×16) — acolo
+    ''' se pune o dată, pentru tot antetul; aici doar dacă o coloană chiar are nevoie de altceva.
+    ''' </summary>
     <Category("K-BOT: Filtrare")>
-    <Description("Mărimea (px) a butonului de filtrare din antet.")>
+    <Description("Mărimea (px @96dpi) a butonului de filtrare pe ACEASTĂ coloană. Nesetată = mărimea grilei (KBotDataView.FilterIconSize).")>
     Public Property ColumnFilterIconSize As Size
         Get
-            Return _columnFilterIconSize
+            If _columnFilterIconSizeSet Then Return _columnFilterIconSize
+            Return If(Owner Is Nothing, DefaultFilterIconSize, Owner.FilterIconSize)
         End Get
         Set(value As Size)
             Dim nou As New Size(Math.Max(1, value.Width), Math.Max(1, value.Height))
-            If _columnFilterIconSize = nou Then Return
+            If _columnFilterIconSizeSet AndAlso _columnFilterIconSize = nou Then Return
             _columnFilterIconSize = nou
+            _columnFilterIconSizeSet = True
             OnIconsChanged()
         End Set
     End Property
 
     ' Size nu poate purta <DefaultValue> (atributul cere o constantă) — fără perechea
     ' ShouldSerialize/Reset, designerul ar scrie 16×16 în fiecare formular gazdă.
+    '
+    ' Răspunsul e STEAGUL, nu o comparație cu implicitul: o coloană pusă dinadins pe 16×16 într-o
+    ' grilă trecută pe 24×24 e o alegere care trebuie să supraviețuiască salvării.
     Private Function ShouldSerializeColumnFilterIconSize() As Boolean
-        Return _columnFilterIconSize <> DefaultFilterIconSize
+        Return _columnFilterIconSizeSet
     End Function
 
+    ' Reset = «înapoi la mărimea grilei», deci STINGE steagul (nu scrie implicitul prin setter,
+    ' care l-ar reaprinde și ar îngheța 16×16 în .Designer.vb).
     Private Sub ResetColumnFilterIconSize()
-        ColumnFilterIconSize = DefaultFilterIconSize
+        If Not _columnFilterIconSizeSet Then Return
+        _columnFilterIconSizeSet = False
+        _columnFilterIconSize = DefaultFilterIconSize
+        OnIconsChanged()
     End Sub
 
     ''' <summary>
@@ -692,7 +777,8 @@ Public NotInheritable Class KBotDataColumn
         Get
             Dim st As Integer = If(_headerLeftIcon IsNot Nothing, _headerLeftIconSize.Width, 0)
             Dim dr As Integer = If(_headerRightIcon IsNot Nothing, _headerRightIconSize.Width, 0)
-            Dim filtru As Integer = If(FilterEnabled, _columnFilterIconSize.Width, 0)
+            ' Prin PROPRIETATE, nu prin câmp: nesetată, mărimea vine de la grilă.
+            Dim filtru As Integer = If(FilterEnabled, ColumnFilterIconSize.Width, 0)
             If st = 0 AndAlso dr = 0 AndAlso filtru = 0 Then Return 0
             ' Un spațiu între fiecare pereche de piese vecine care există amândouă.
             Dim piese As Integer = If(st > 0, 1, 0) + If(dr > 0, 1, 0) + If(filtru > 0, 1, 0)
@@ -714,6 +800,134 @@ Public NotInheritable Class KBotDataColumn
             Return Math.Max(_minWidth, HeaderIconsWidth)
         End Get
     End Property
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' SCALAREA LA DPI (felia 0035-01)
+    ' ══════════════════════════════════════════════════════════════════════════
+    '
+    ' TOT modelul de coloană — Width, MinWidth, MaxWidth, mărimile de pictogramă — e în pixeli
+    ' LOGICI (96 dpi): ce a scris operatorul în designer, ce se serializează în .Designer.vb, ce
+    ' întorc proprietățile. Nimic nu s-a schimbat la înțelesul lor.
+    '
+    ' Grila desenează însă în pixeli de ECRAN, iar textul, fiind în puncte, se scalează singur.
+    ' Fără accesoriile de mai jos, o coloană de 170 px rămânea 170 px și la 150%, în timp ce
+    ' textul din ea creștea cu jumătate — adică se tăia exact acolo unde operatorul o făcuse
+    ' destul de largă.
+    '
+    ' Scalarea se face deci LA FOLOSIRE, nu la stocare: grila citește `…Px`, iar când trecerea de
+    ' layout scrie înapoi o măsură luată de pe ecran (SetLayoutWidth), aceea se aduce la loc în
+    ' logic. Dacă valoarea scalată ar fi ținută în `_width`, ea ar ajunge în `Width`, iar
+    ' designerul ar citi 255 acolo unde s-a scris 170 și l-ar îngheța — capcana `ShouldSerialize`
+    ' în formă numerică.
+    '
+    ' Scara vine de la GRILĂ (KBotDataView.Dpi.vb). O coloană fără proprietar — cea pe care
+    ' designerul tocmai a construit-o, înainte de a o adăuga în colecție — e la scara 1, ceea ce e
+    ' și corect: nu se știe încă pe ce ecran va ajunge.
+
+    ''' <summary>Factorul de scalare pe orizontală al grilei care ne deține (1 = 96 dpi).</summary>
+    Private ReadOnly Property DpiScale As Single
+        Get
+            Return If(Owner Is Nothing, 1.0F, Owner.DpiScaleX)
+        End Get
+    End Property
+
+    ''' <summary>Valoare logică (px @96dpi) → px de ecran, la scara grilei.</summary>
+    Friend Function ScalePx(logical As Integer) As Integer
+        If logical = Integer.MaxValue Then Return Integer.MaxValue   ' plafon „nelimitat"
+        Return CInt(Math.Round(logical * DpiScale))
+    End Function
+
+    ''' <summary>Drumul invers: px de ecran → valoare logică.</summary>
+    Friend Function UnscalePx(device As Integer) As Integer
+        Dim s As Single = DpiScale
+        If s <= 0 Then Return device
+        Return CInt(Math.Round(device / s))
+    End Function
+
+    ''' <summary>Lățimea PICTATĂ (px de ecran). Cea cu care lucrează așezarea și pictarea.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Friend ReadOnly Property WidthPx As Integer
+        Get
+            Return ScalePx(_width)
+        End Get
+    End Property
+
+    ''' <summary>Podeaua, în px de ecran.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Friend ReadOnly Property EffectiveMinWidthPx As Integer
+        Get
+            Return Math.Max(ScalePx(_minWidth), HeaderIconsWidthPx)
+        End Get
+    End Property
+
+    ''' <summary>Plafonul, în px de ecran (<c>Integer.MaxValue</c> rămâne «nelimitat»).</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Friend ReadOnly Property MaxWidthPx As Integer
+        Get
+            Return ScalePx(_maxWidth)
+        End Get
+    End Property
+
+    ''' <summary>Mărimea pictogramei din stânga antetului, în px de ecran.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Friend ReadOnly Property HeaderLeftIconSizePx As Size
+        Get
+            Return New Size(ScalePx(_headerLeftIconSize.Width), ScalePx(_headerLeftIconSize.Height))
+        End Get
+    End Property
+
+    ''' <summary>Mărimea pictogramei din dreapta antetului, în px de ecran.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Friend ReadOnly Property HeaderRightIconSizePx As Size
+        Get
+            Return New Size(ScalePx(_headerRightIconSize.Width), ScalePx(_headerRightIconSize.Height))
+        End Get
+    End Property
+
+    ''' <summary>Mărimea pictogramei de filtrare, în px de ecran.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Friend ReadOnly Property ColumnFilterIconSizePx As Size
+        Get
+            ' Prin PROPRIETATE: nesetată pe coloană, mărimea logică vine de la grilă.
+            Dim logic As Size = ColumnFilterIconSize
+            Return New Size(ScalePx(logic.Width), ScalePx(logic.Height))
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Cât cer pictogramele de antet, în px de ecran. Se calculează din mărimile SCALATE și din
+    ''' spațiile scalate, nu prin scalarea totalului logic: altfel podeaua și desenul ar ieși din
+    ''' două formule diferite, iar coloana s-ar putea strâmta sub ce chiar se pictează — exact
+    ''' scăparea de câțiva pixeli pe care o descria nota de DPI din <c>KBotDataView.HeaderIcons</c>.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Friend ReadOnly Property HeaderIconsWidthPx As Integer
+        Get
+            Dim st As Integer = If(_headerLeftIcon IsNot Nothing, HeaderLeftIconSizePx.Width, 0)
+            Dim dr As Integer = If(_headerRightIcon IsNot Nothing, HeaderRightIconSizePx.Width, 0)
+            Dim filtru As Integer = If(FilterEnabled, ColumnFilterIconSizePx.Width, 0)
+            If st = 0 AndAlso dr = 0 AndAlso filtru = 0 Then Return 0
+            Dim piese As Integer = If(st > 0, 1, 0) + If(dr > 0, 1, 0) + If(filtru > 0, 1, 0)
+            Dim gap As Integer = Math.Max(0, piese - 1) * ScalePx(HeaderIconGap)
+            Return 2 * ScalePx(HeaderIconPad) + st + dr + filtru + gap
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Re-limitează lățimea după o schimbare de scară. Valoarea rămâne logică — se schimbă doar
+    ''' PODEAUA, fiindcă <see cref="EffectiveMinWidth"/> ține cont de pictogramele de antet, iar
+    ''' rotunjirea lor la alt DPI poate cere un pixel în plus.
+    ''' </summary>
+    Friend Sub RefreshWidthScale()
+        _width = ClampWidth(_width)
+    End Sub
 
     ''' <summary>
     ''' English (slice 0013): set when the operator has dragged this column's edge. A

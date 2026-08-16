@@ -18,6 +18,8 @@ Partial Class ForexeFooterView
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        components = New ComponentModel.Container()
+        tips = New KBot.Controls.KBotToolTip(components)
         btnConectare = New Button()
         lblConexiune = New Label()
         pbProgress = New KBot.Controls.KBotProgressBar()
@@ -106,9 +108,17 @@ Partial Class ForexeFooterView
         Margin = New Padding(4, 5, 4, 5)
         Name = "ForexeFooterView"
         Size = New Size(1171, 52)
+        '
+        ' tips — etichetele de survolare (felia 0035), toate în română.
+        '
+        tips.SetToolTipHeader(btnConectare, "Conectare FOREXE")
+        tips.SetToolTipText(btnConectare, "Pornește sesiunea către portalul FOREXE." & vbLf & "Se cere certificatul o singură dată pe sesiune.")
+        tips.SetToolTipHeader(btnExtinde, "Consolă")
+        tips.SetToolTipText(btnExtinde, "Deschide consola FOREXE: progres detaliat, jurnal și descărcări.")
         ResumeLayout(False)
     End Sub
 
+    Friend WithEvents tips As KBot.Controls.KBotToolTip
     Friend WithEvents btnConectare As Button
     Friend WithEvents lblConexiune As Label
     Friend WithEvents pbProgress As KBot.Controls.KBotProgressBar

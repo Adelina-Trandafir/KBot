@@ -240,6 +240,8 @@ Partial Class KBotDataView
     Protected Overrides Sub OnHandleCreated(e As EventArgs)
         MyBase.OnHandleCreated(e)
         Try
+            ' Abia acum DeviceDpi spune adevărul — vezi KBotDataView.Dpi.vb.
+            SyncDpiScale()
             ApplyScrollBarTheme()
         Catch ex As Exception
             ' Boundary UI: crearea handle-ului nu are voie să arunce în bucla de mesaje.

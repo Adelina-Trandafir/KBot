@@ -24,13 +24,14 @@ Partial Class OrdVizualizarePage
         Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
         grid = New KBotDataView()
+        lblNota = New Label()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
-        '
-        ' grid — liniile FX_ORD_TBL ale ordonanțării selectate. Toate cele ȘASE coloane sunt
-        ' AUTORITE AICI (felia 0033, decizia 5): codul umple doar rândurile.
-        '
+        ' 
+        ' grid
+        ' 
         grid.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        grid.AutoSizeHeaderHeight = False
         grid.BackColor = SystemColors.Window
         grid.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn1.AggregateFormatString = Nothing
@@ -55,6 +56,7 @@ Partial Class OrdVizualizarePage
         KBotDataColumn2.Key = "descriere"
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.ReadOnly = True
+        KBotDataColumn2.Visible = False
         KBotDataColumn2.Width = 270
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
@@ -62,7 +64,7 @@ Partial Class OrdVizualizarePage
         KBotDataColumn3.DecimalPlaces = 2
         KBotDataColumn3.Format = KBotFormat.Standard
         KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderText = "Total" & vbCrLf & "Recepții"
+        KBotDataColumn3.HeaderText = "Recepții"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "total_receptii"
         KBotDataColumn3.MultiLine = True
@@ -77,7 +79,7 @@ Partial Class OrdVizualizarePage
         KBotDataColumn4.DecimalPlaces = 2
         KBotDataColumn4.Format = KBotFormat.Standard
         KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderText = "Plăți" & vbCrLf & "Anterioare"
+        KBotDataColumn4.HeaderText = "Plăți"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "plati_ant"
         KBotDataColumn4.MultiLine = True
@@ -130,19 +132,38 @@ Partial Class OrdVizualizarePage
         grid.FooterHeight = 40
         grid.FooterVisible = True
         grid.FrozenColumnCount = 1
-        grid.Location = New Point(0, 0)
+        grid.HeaderHeight = 40
+        grid.Location = New Point(0, 108)
         grid.Margin = New Padding(4, 5, 4, 5)
         grid.Name = "grid"
         grid.ReadOnlyGrid = True
         grid.ScrollByColumn = True
-        grid.Size = New Size(849, 488)
-        grid.TabIndex = 0
+        grid.ShrinkColumnsToFit = False
+        grid.Size = New Size(849, 380)
+        grid.TabIndex = 1
+        '
+        ' lblNota — banda de antet, perechea celei din DdfVizualizarePage
+        '
+        lblNota.Dock = DockStyle.Top
+        lblNota.Font = New Font("Segoe UI", 10F)
+        lblNota.Location = New Point(0, 0)
+        lblNota.Name = "lblNota"
+        lblNota.Padding = New Padding(8)
+        lblNota.Size = New Size(849, 108)
+        lblNota.TabIndex = 0
+        lblNota.Text = "Selectați o ordonanțare din arbore."
+        lblNota.TextAlign = ContentAlignment.TopLeft
+        ' Antetul e text de date: un «&» dintr-un nume de partener trebuie să se vadă, nu să
+        ' sublinieze litera următoare.
+        lblNota.UseMnemonic = False
         '
         ' OrdVizualizarePage
         '
         AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
+        ' Fill întâi, apoi banda Top (regula cardului).
         Controls.Add(grid)
+        Controls.Add(lblNota)
         Margin = New Padding(4, 5, 4, 5)
         Name = "OrdVizualizarePage"
         Size = New Size(849, 488)
@@ -151,4 +172,5 @@ Partial Class OrdVizualizarePage
     End Sub
 
     Friend WithEvents grid As KBot.Controls.KBotDataView
+    Friend WithEvents lblNota As Label
 End Class

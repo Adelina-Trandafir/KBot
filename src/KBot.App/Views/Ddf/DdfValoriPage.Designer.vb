@@ -25,9 +25,9 @@ Partial Class DdfValoriPage
         grid = New KBotDataView()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
-        '
+        ' 
         ' grid
-        '
+        ' 
         grid.AutoSizeColumnsMode = KBotAutoSizeMode.None
         grid.BackColor = SystemColors.Window
         grid.ColumnFillMode = KBotFillMode.FirstColumn
@@ -48,11 +48,11 @@ Partial Class DdfValoriPage
         KBotDataColumn1.Width = 170
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderText = "Element Fundamentare"
+        KBotDataColumn2.HeaderText = "Element" & vbCrLf & "Fundamentare"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "element"
         KBotDataColumn2.OptionGroup = Nothing
-        KBotDataColumn2.Width = 270
+        KBotDataColumn2.Width = 190
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn3.CellPadding = New Padding(2, 0, 2, 0)
@@ -113,17 +113,18 @@ Partial Class DdfValoriPage
         grid.Name = "grid"
         grid.ReadOnlyGrid = True
         grid.ScrollByColumn = True
-        grid.Size = New Size(849, 488)
+        grid.ShrinkColumnsToFit = False
+        grid.Size = New Size(840, 480)
         grid.TabIndex = 0
-        '
+        ' 
         ' DdfValoriPage
-        '
+        ' 
         AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(grid)
         Margin = New Padding(4, 5, 4, 5)
         Name = "DdfValoriPage"
-        Size = New Size(849, 488)
+        Size = New Size(840, 480)
         CType(grid, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
     End Sub

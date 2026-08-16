@@ -5,7 +5,7 @@ Imports System.Drawing.Drawing2D
 ''' SUBSOLUL arborelui — sora benzii de antet (partiala .Header), plus singura piesă fără
 ''' corespondent sus: BUTONUL DE STRÂNGERE.
 '''
-''' Strângerea aduce arborele la <see cref="MinimumCollapsedWidth"/> (implicit 100px) exact ca
+''' Strângerea aduce arborele la <see cref="_minimumCollapsedWidth"/> (implicit 100px) exact ca
 ''' <c>KBotNavList</c>: lățimea desfășurată se ține minte la fiecare redimensionare făcută de
 ''' altcineva decât noi, ca butonul să aibă unde se întoarce. Din același motiv ca acolo,
 ''' <c>Collapsed</c> NU se serializează — e stare de rulare, nu valoare de designer.
@@ -374,6 +374,7 @@ Partial Public Class AdvancedTreeControl
             _footerButtonHover = hover
             _footerRightIconHover = hoverIcon
             _footerLeftIconHover = hoverLeft
+            RefreshButtonTip()    ' aceeași schimbare de stare hrănește și eticheta butonului
             Me.Invalidate()
         End If
         ' Cursorul în bandă = niciun nod survolat, deci nicio etichetă plutitoare.
@@ -386,6 +387,7 @@ Partial Public Class AdvancedTreeControl
             _footerButtonHover = False
             _footerRightIconHover = False
             _footerLeftIconHover = False
+            HideButtonTip()
             Me.Invalidate()
         End If
         CancelCollapsedFlyout()
@@ -494,12 +496,12 @@ Partial Public Class AdvancedTreeControl
     ''' clipa în care iese fereastra și iluzia de «rând care se desface» s-ar rupe.
     ''' </summary>
     Friend Function NodeTextStartX(it As TreeItem) As Integer
-        Dim gridLeft As Integer = (it.Level * Indent) + PaddingTreeStart
+        Dim gridLeft As Integer = (it.Level * m_Indent) + PaddingTreeStart
         Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander,
-                                  gridLeft, gridLeft + Indent + PaddingExpanderGap)
+                                  gridLeft, gridLeft + m_Indent + PaddingExpanderGap)
         If NodeHasCheckControl(it) Then xBase += _checkBoxSize + PaddingCheckBoxGap
         If it.LeftIconClosed IsNot Nothing AndAlso _hasNodeIcons Then
-            Return xBase + LeftIconSize.Width + PaddingIconGap
+            Return xBase + _leftIconSize.Width + PaddingIconGap
         End If
         Return xBase
     End Function
@@ -510,12 +512,12 @@ Partial Public Class AdvancedTreeControl
         Dim icon As Image = If(it.Expanded, it.LeftIconOpen, it.LeftIconClosed)
         If icon Is Nothing Then icon = If(it.LeftIconClosed, it.LeftIconOpen)
         If icon Is Nothing Then Return Rectangle.Empty
-        Dim gridLeft As Integer = (it.Level * Indent) + PaddingTreeStart
+        Dim gridLeft As Integer = (it.Level * m_Indent) + PaddingTreeStart
         Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander,
-                                  gridLeft, gridLeft + Indent + PaddingExpanderGap)
+                                  gridLeft, gridLeft + m_Indent + PaddingExpanderGap)
         If NodeHasCheckControl(it) Then xBase += _checkBoxSize + PaddingCheckBoxGap
-        Return New Rectangle(xBase, (ItemHeight - LeftIconSize.Height) \ 2,
-                             LeftIconSize.Width, LeftIconSize.Height)
+        Return New Rectangle(xBase, (_itemHeight - _leftIconSize.Height) \ 2,
+                             _leftIconSize.Width, _leftIconSize.Height)
     End Function
 
     ''' <summary>
@@ -590,7 +592,7 @@ Partial Public Class AdvancedTreeControl
         If y < 0 Then Return Rectangle.Empty
         Dim t As Double = Math.Max(0.0, Math.Min(1.0, progress))
         Dim w As Integer = Me.Width + CInt(Math.Round((_flyoutFullWidth - Me.Width) * t))
-        Return New Rectangle(0, y, Math.Max(Me.Width, w), ItemHeight)
+        Return New Rectangle(0, y, Math.Max(Me.Width, w), _itemHeight)
     End Function
 
     ' Cursorul s-a mutat pe alt nod (sau pe niciunul): reprogramează. Același nod = nu se atinge
@@ -744,7 +746,7 @@ Partial Public Class AdvancedTreeControl
             .Fill = If(selectat, SelectedBackColor, HoverBackColor),
             .Border = If(selectat, SelectedBorderColor, LineColor),
             .Radius = SelectionCornerRadius,
-            .ItemHeight = ItemHeight,
+            .ItemHeight = _itemHeight,
             .IconRect = NodeIconRect(it),
             .Icon = icon,
             .TextX = NodeTextStartX(it),
@@ -781,6 +783,8 @@ Partial Public Class AdvancedTreeControl
             _flyoutAnimTimer = Nothing
             _flyout?.Dispose()
             _flyout = Nothing
+            _butonTooltip?.Dispose()
+            _butonTooltip = Nothing
         End If
         MyBase.Dispose(disposing)
     End Sub

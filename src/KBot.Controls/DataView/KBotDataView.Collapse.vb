@@ -479,6 +479,7 @@ Partial Class KBotDataView
         Dim hover As Boolean = Not buton.IsEmpty AndAlso buton.Contains(location)
         If hover <> _collapseButtonHover Then
             _collapseButtonHover = hover
+            RefreshCollapseTip(hover)   ' felia 0035: butonul își spune la ce folosește
             Invalidate()
         End If
         If inFooter Then UpdateFooterIconHover(location) Else ClearFooterIconHover()
@@ -487,6 +488,7 @@ Partial Class KBotDataView
 
     Friend Sub HandleFooterMouseLeave()
         ClearFooterIconHover()
+        HideButtonTip()
         If Not _collapseButtonHover Then Return
         _collapseButtonHover = False
         Invalidate()

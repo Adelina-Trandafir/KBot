@@ -5,6 +5,16 @@ Namespace KBot.Forexe
         Public Property WorkflowName As String = String.Empty
         Public Property WflPath As String = String.Empty
         Public Property Parameters As New Dictionary(Of String, String)
+
+        ''' <summary>
+        ''' Browserul se vede cât rulează job-ul? IMPLICIT NU — exact ca în KBOT_IPC, unde
+        ''' <c>isStealth = Not jobToRun.ShowBrowser</c>. Ascuns înseamnă stealth în executor:
+        ''' fereastra pleacă off-screen (--window-position=-3000,0) și iese din Taskbar/Alt-Tab.
+        ''' Se poate aduce oricând la vedere din consolă (ShowBrowserAsync).
+        ''' Contează doar la RunAsync (conectarea), fiindcă acolo se CREEAZĂ fereastra;
+        ''' un job următor rulează pe fereastra deja deschisă, în starea în care a lăsat-o.
+        ''' </summary>
+        Public Property ShowBrowser As Boolean = False
     End Class
 
     Public Class JobResult

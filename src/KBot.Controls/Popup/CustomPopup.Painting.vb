@@ -49,6 +49,8 @@ Partial Public Class CustomPopup
 
                 If Items(i).IsSeparator Then
                     DrawSeparator(g, r, padX)
+                ElseIf Items(i).IsSlider Then
+                    DrawSliderRow(g, i, r, padX, gutter)
                 Else
                     DrawRow(g, i, r, padX, gutter)
                 End If

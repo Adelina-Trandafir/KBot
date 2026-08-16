@@ -18,6 +18,8 @@ Partial Class ReaderHostPreview
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        components = New ComponentModel.Container()
+        tips = New KBot.Controls.KBotToolTip(components)
         pnlHost = New Panel()
         pnlMissing = New Panel()
         tblMissing = New TableLayoutPanel()
@@ -141,9 +143,15 @@ Partial Class ReaderHostPreview
         pnlMissing.ResumeLayout(False)
         tblMissing.ResumeLayout(False)
         tblMissing.PerformLayout()
+        '
+        ' tips — etichetele de survolare (felia 0035), toate în română.
+        '
+        tips.SetToolTipHeader(btnGenereaza, "Generează")
+        tips.SetToolTipText(btnGenereaza, "Construiește PDF-ul din valorile curente." & vbLf & "Generarea rulează în fundal; fereastra rămâne folosibilă.")
         ResumeLayout(False)
     End Sub
 
+    Friend WithEvents tips As KBot.Controls.KBotToolTip
     Friend WithEvents pnlHost As Panel
     Friend WithEvents pnlMissing As Panel
     Friend WithEvents tblMissing As TableLayoutPanel

@@ -15,6 +15,8 @@ Partial Class LogClearDialog
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        components = New ComponentModel.Container()
+        tips = New KBot.Controls.KBotToolTip(components)
         Dim colSel As New KBot.Controls.KBotDataColumn()
         Dim colFisier As New KBot.Controls.KBotDataColumn()
         Dim colMarime As New KBot.Controls.KBotDataColumn()
@@ -205,9 +207,17 @@ Partial Class LogClearDialog
         CType(grilaFisiere, System.ComponentModel.ISupportInitialize).EndInit()
         pnlJos.ResumeLayout(False)
         pnlJos.PerformLayout()
+        '
+        ' tips — etichetele de survolare (felia 0035), toate în română.
+        '
+        tips.SetToolTipHeader(btnSterge, "Șterge")
+        tips.SetToolTipText(btnSterge, "<b>Șterge definitiv</b> fișierele bifate." & vbLf & "Operația nu se poate desface.")
+        tips.SetToolTipHeader(btnRenunta, "Renunță")
+        tips.SetToolTipText(btnRenunta, "Închide fereastra fără să șteargă nimic.")
         ResumeLayout(False)
     End Sub
 
+    Friend WithEvents tips As KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
     Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
     Friend WithEvents busy As KBot.Controls.KBotBusyBar

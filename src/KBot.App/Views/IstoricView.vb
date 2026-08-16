@@ -78,10 +78,9 @@ Public Class IstoricView
     ''' </summary>
     Public Event RandSchimbat(sender As Object, e As IstoricRandEventArgs)
 
-    Public Sub New(apiClient As IApiClient,
-                   withReauth As Func(Of Func(Of Task(Of IstoricInfo)), Task(Of IstoricInfo)))
-        If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
-        If withReauth Is Nothing Then Throw New ArgumentNullException(NameOf(withReauth))
+    Public Sub New(apiClient As IApiClient, withReauth As Func(Of Func(Of Task(Of IstoricInfo)), Task(Of IstoricInfo)))
+        ArgumentNullException.ThrowIfNull(apiClient)
+        ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
@@ -144,7 +143,7 @@ Public Class IstoricView
     ''' </summary>
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
         Try
-            Dim cod As String = If(info Is Nothing, Nothing, info.CodAngajament)
+            Dim cod As String = info?.CodAngajament
             If String.IsNullOrWhiteSpace(cod) Then
                 ClearAll()
                 ShowEmpty("Selectați un angajament din arbore.")
@@ -230,7 +229,7 @@ Public Class IstoricView
 
     ' Panoul de detaliu urmează selecția din grilă (din datele deja pe rând). Ridică și
     ' evenimentul dormant RandSchimbat cu ID-ul rândului (fără abonat, §7).
-    Private Sub grid_SelectionChanged(sender As Object, e As EventArgs) Handles grid.SelectionChanged
+    Private Sub Grid_SelectionChanged(sender As Object, e As EventArgs) Handles grid.SelectionChanged
         Try
             Dim cur As KBotDataRow = grid.CurrentRow
             Dim r As IstoricRand = If(cur Is Nothing, Nothing, TryCast(cur.Tag, IstoricRand))
@@ -527,36 +526,36 @@ Public Class IstoricView
     End Sub
 
     ' ── Deschiderea meniurilor din butoane ───────────────────────────────────
-    Private Sub btnFiltruClsf_Click(sender As Object, e As EventArgs) Handles btnFiltruClsf.Click
+    Private Sub BtnFiltruClsf_Click(sender As Object, e As EventArgs) Handles btnFiltruClsf.Click
         Try
             menuClsf.Show(btnFiltruClsf, New Point(0, btnFiltruClsf.Height))
         Catch ex As Exception
-            GlobalErrorLog.Write("IstoricView.btnFiltruClsf_Click", ex)
+            GlobalErrorLog.Write("IstoricView.BtnFiltruClsf_Click", ex)
         End Try
     End Sub
 
-    Private Sub btnFiltruTipRand_Click(sender As Object, e As EventArgs) Handles btnFiltruTipRand.Click
+    Private Sub BtnFiltruTipRand_Click(sender As Object, e As EventArgs) Handles btnFiltruTipRand.Click
         Try
             menuTipRand.Show(btnFiltruTipRand, New Point(0, btnFiltruTipRand.Height))
         Catch ex As Exception
-            GlobalErrorLog.Write("IstoricView.btnFiltruTipRand_Click", ex)
+            GlobalErrorLog.Write("IstoricView.BtnFiltruTipRand_Click", ex)
         End Try
     End Sub
 
-    Private Sub btnFiltruData_Click(sender As Object, e As EventArgs) Handles btnFiltruData.Click
+    Private Sub BtnFiltruData_Click(sender As Object, e As EventArgs) Handles btnFiltruData.Click
         Try
             menuData.Show(btnFiltruData, New Point(0, btnFiltruData.Height))
         Catch ex As Exception
-            GlobalErrorLog.Write("IstoricView.btnFiltruData_Click", ex)
+            GlobalErrorLog.Write("IstoricView.BtnFiltruData_Click", ex)
         End Try
     End Sub
 
-    Private Sub btnReset_Click(sender As Object, e As EventArgs) Handles btnReset.Click
+    Private Sub BtnReset_Click(sender As Object, e As EventArgs) Handles btnReset.Click
         Try
             _filter.ClearAll()
             FillFiltered()
         Catch ex As Exception
-            GlobalErrorLog.Write("IstoricView.btnReset_Click", ex)
+            GlobalErrorLog.Write("IstoricView.BtnReset_Click", ex)
         End Try
     End Sub
 

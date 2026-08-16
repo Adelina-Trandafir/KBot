@@ -100,7 +100,7 @@ Partial Class KBotDataView
     ''' </summary>
     Private Function TextOverflowsCell(text As String, font As Font, col As KBotDataColumn) As Boolean
         Dim padX As Integer = ScaleDpi(6)
-        Dim disponibil As Integer = col.Width - 2 * padX
+        Dim disponibil As Integer = col.WidthPx - 2 * padX
         If col.ColumnType = KBotColumnType.Combo Then disponibil -= ScaleDpi(16)
         If disponibil <= 0 Then Return True
         Dim latime As Integer = MeasureText(text, If(font, Me.Font))
@@ -245,14 +245,14 @@ Partial Class KBotDataView
 
         For Each cl In _frozenLayout
             If String.Equals(cl.Column.Key, colKey, StringComparison.Ordinal) Then
-                Return New Rectangle(cl.X, y, cl.Column.Width, _rowHeight)
+                Return New Rectangle(cl.X, y, cl.Column.WidthPx, _rowHeight)
             End If
         Next
 
         Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
             If String.Equals(cl.Column.Key, colKey, StringComparison.Ordinal) Then
-                Return New Rectangle(_frozenBandWidth + cl.X - hOffset, y, cl.Column.Width, _rowHeight)
+                Return New Rectangle(_frozenBandWidth + cl.X - hOffset, y, cl.Column.WidthPx, _rowHeight)
             End If
         Next
 

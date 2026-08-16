@@ -1,12 +1,20 @@
 Option Strict On
 Imports KBot.Common
+Imports KBot.Controls
 Imports KBot.Domain
 Imports KBot.Theming
 
 ''' <summary>
 ''' Vedere-schelet folosită pentru TOATE cele șase vederi în felia de scaffolding:
 ''' „«{Nume}» — în lucru" + CodAngajament când există context. Vederile reale o vor
-''' înlocui una câte una în felii viitoare, fără a atinge shell-ul.
+''' înlocui una câte una în felii viitoare, fără a atinge shell-ul. Azi mai sunt trei
+''' (Indicatori / Revizii / Partener — vezi <c>MainForm.CreateView</c>).
+'''
+''' BANDA DE OCUPARE (cerere de operator, 2026-08-15): peste text stă un
+''' <see cref="KBotBusyBar"/>, ca vederea să arate că aplicația LUCREAZĂ, nu doar să scrie
+''' asta. Banda merge doar cât timp vederea e PE ECRAN: shell-ul își ține vederile create și
+''' doar le ascunde, iar trei cronometre de 15 ms care se învârt în spatele altei vederi
+''' n-ar picta nimic și ar consuma degeaba. Vezi <see cref="Placeholder_VisibleChanged"/>.
 ''' </summary>
 Public Class PlaceholderView
     Implements IAngajamentView, IThemedControl
@@ -22,6 +30,20 @@ Public Class PlaceholderView
         _viewKey = viewKey
         _displayName = displayName
         UpdateText()
+        ' Vederea se creează ascunsă (shell-ul o arată după ce o andochează), deci pornirea NU se
+        ' face aici — o face VisibleChanged. Dacă vine deja vizibilă, tot el o prinde.
+        busy.Running = Visible
+    End Sub
+
+    ''' <summary>
+    ''' Banda merge doar cât timp vederea e pe ecran. Graniță UI: logăm și înghițim.
+    ''' </summary>
+    Private Sub Placeholder_VisibleChanged(sender As Object, e As EventArgs) Handles Me.VisibleChanged
+        Try
+            busy.Running = Visible
+        Catch ex As Exception
+            GlobalErrorLog.Write("PlaceholderView.VisibleChanged", ex)
+        End Try
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements IAngajamentView.ViewKey
@@ -60,6 +82,9 @@ Public Class PlaceholderView
             BackColor = scheme.Palette.SurfaceAltColor
             lblMessage.ForeColor = scheme.Palette.TextDimColor
             lblMessage.BackColor = scheme.Palette.SurfaceAltColor
+            ' Vederea e IThemedControl, deci ThemeManager NU recurge în copiii ei — banda își ia
+            ' accentul doar dacă i-l dăm noi.
+            busy.ApplyTheme(scheme)
         Catch ex As Exception
             ' Boundary UI (cascada de tema): logam si inghitim.
             GlobalErrorLog.Write("PlaceholderView.ApplyTheme", ex)

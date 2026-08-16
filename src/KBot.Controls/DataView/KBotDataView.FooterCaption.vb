@@ -82,9 +82,12 @@ Partial Class KBotDataView
         FooterLeftIcon = Nothing
     End Sub
 
-    ''' <summary>Mărimea (px) a pictogramei din subsol. Implicit 16×16.</summary>
+    ''' <summary>
+    ''' Mărimea (px la 96 dpi) a pictogramei din subsol. Implicit 16×16. Valoare LOGICĂ: scalarea
+    ''' la DPI se face la folosire, prin <see cref="FooterIconSizePx"/> (vezi <c>KBotDataView.Dpi.vb</c>).
+    ''' </summary>
     <Category("K-BOT: Footer")>
-    <Description("Mărimea (px) a pictogramei din subsol.")>
+    <Description("Mărimea (px @96dpi) a pictogramei din subsol.")>
     Public Property FooterIconSize As Size
         Get
             Return _footerIconSize
@@ -168,14 +171,28 @@ Partial Class KBotDataView
                              Math.Max(0, capat - continut.Left), continut.Height)
     End Function
 
+    ''' <summary>
+    ''' Mărimea pictogramei din subsol în px de ECRAN — perechea scalată a lui
+    ''' <see cref="FooterIconSize"/>. Era singura mărime de pictogramă a grilei rămasă nescalată:
+    ''' la 150% pictograma stătea mică într-o bandă crescută, lângă un text care se mărise singur.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Friend ReadOnly Property FooterIconSizePx As Size
+        Get
+            Return New Size(ScaleDpi(_footerIconSize.Width), ScaleDpi(_footerIconSize.Height))
+        End Get
+    End Property
+
     ' Dreptunghiul pictogramei într-o zonă dată (gol = nu e pictogramă sau nu încape întreagă).
     Private Function ComputeFooterIconRect(zone As Rectangle) As Rectangle
         If _footerLeftIcon Is Nothing OrElse zone.Height <= 0 Then Return Rectangle.Empty
         Dim pad As Integer = ScaleDpi(KBotDataColumn.HeaderIconPad)
-        If zone.Width < pad + _footerIconSize.Width Then Return Rectangle.Empty
+        Dim s As Size = FooterIconSizePx
+        If zone.Width < pad + s.Width Then Return Rectangle.Empty
         Return New Rectangle(zone.Left + pad,
-                             zone.Top + (zone.Height - _footerIconSize.Height) \ 2,
-                             _footerIconSize.Width, _footerIconSize.Height)
+                             zone.Top + (zone.Height - s.Height) \ 2,
+                             s.Width, s.Height)
     End Function
 
     ''' <summary>

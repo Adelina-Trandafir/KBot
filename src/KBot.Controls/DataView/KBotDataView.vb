@@ -39,7 +39,12 @@ Public Class KBotDataView
     Private _initializing As Boolean
 
     ' ── Aspect / comportament ───────────────────────────────────────────────────
+    ' MĂSURILE ÎN PIXELI vin în PERECHI: «…Logic» = ce a scris operatorul (px la 96 dpi, valoarea
+    ' pe care o întoarce proprietatea și pe care o serializează designerul); câmpul fără sufix =
+    ' aceeași măsură SCALATĂ la DPI-ul ecranului, cu care se pictează. Vezi KBotDataView.Dpi.vb.
+    Private _rowHeightLogic As Integer = 28
     Private _rowHeight As Integer = 28
+    Private _headerHeightLogic As Integer = 30
     Private _headerHeight As Integer = 30
     Private _showHeader As Boolean = True
     Private _alternatingRows As Boolean = True
@@ -51,6 +56,7 @@ Public Class KBotDataView
     ' virtualizare, selecție, hit-testing și urmărirea modificărilor.
     ' _footerHeight <= 0 înseamnă „urmărește HeaderHeight”; o înălțime reală o suprascrie.
     Private _showFooter As Boolean = False
+    Private _footerHeightLogic As Integer = 0
     Private _footerHeight As Integer = 0
     ' Textul agregat formatat, cache-uit pe cheie de coloană; recalculat când se schimbă modelul
     ' (AddRow / ClearRows / EndUpdate / commit de editare) ca pictarea să nu re-agrege niciodată.
@@ -240,6 +246,7 @@ Public Class KBotDataView
             If Not KBotDesignTime.IsDesignTime(Me) Then
                 ValidateColumns()
                 ValidateGroupLevels()
+                ValidateFillColumn()
             End If
             RefreshActiveLevels()
             RecomputeDerived()
@@ -531,14 +538,15 @@ Public Class KBotDataView
 
     ''' <summary>Înălțimea fixă a unui rând (px). Implicit 28.</summary>
     <Category("K-BOT: Body")>
-    <Description("Înălțimea fixă a unui rând, în pixeli.")>
+    <Description("Înălțimea fixă a unui rând, în pixeli la 96 dpi (se scalează cu ecranul).")>
     <DefaultValue(28)>
     Public Property RowHeight As Integer
         Get
-            Return _rowHeight
+            Return _rowHeightLogic
         End Get
         Set(value As Integer)
-            _rowHeight = Math.Max(1, value)
+            _rowHeightLogic = Math.Max(1, value)
+            _rowHeight = SY(_rowHeightLogic)
             ' Benzile își iau înălțimea de aici (o bandă de grup fără înălțime proprie urmărește
             ' RowHeight), deci offset-urile lor cumulate nu mai sunt valabile.
             InvalidateBands()
@@ -560,10 +568,11 @@ Public Class KBotDataView
     <DefaultValue(30)>
     Public Property HeaderHeight As Integer
         Get
-            Return _headerHeight
+            Return _headerHeightLogic
         End Get
         Set(value As Integer)
-            _headerHeight = Math.Max(0, value)
+            _headerHeightLogic = Math.Max(0, value)
+            _headerHeight = SY(_headerHeightLogic)
             InvalidateHeaderHeight()
             LayoutChanged()
         End Set
@@ -696,10 +705,11 @@ Public Class KBotDataView
     <Description("Înălțimea benzii de subsol (px). 0 => urmărește HeaderHeight.")>
     Public Property FooterHeight As Integer
         Get
-            Return If(_footerHeight > 0, _footerHeight, _headerHeight)
+            Return If(_footerHeightLogic > 0, _footerHeightLogic, _headerHeightLogic)
         End Get
         Set(value As Integer)
-            _footerHeight = Math.Max(0, value)
+            _footerHeightLogic = Math.Max(0, value)
+            _footerHeight = SY(_footerHeightLogic)
             LayoutChanged()
         End Set
     End Property
@@ -709,7 +719,7 @@ Public Class KBotDataView
     ' RESOLVED number (e.g. 30) and pin the band for good — a round-trip that silently changes the
     ' meaning. ShouldSerialize/Reset express "unset" correctly and the designer honours them.
     Private Function ShouldSerializeFooterHeight() As Boolean
-        Return _footerHeight > 0
+        Return _footerHeightLogic > 0
     End Function
 
     Private Sub ResetFooterHeight()

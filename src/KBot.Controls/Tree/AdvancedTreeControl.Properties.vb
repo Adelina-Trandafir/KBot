@@ -29,60 +29,72 @@ Partial Public Class AdvancedTreeControl
     ' A rămas una singură: Font. Odată cu ea au dispărut și accesoriile FontName/FontSize, care
     ' nu erau decât «mută TreeFont» scris pe bucăți.
 
+    ' MĂSURILE ÎN PIXELI vin acum în PERECHI: «…Logic» = ce a scris operatorul (px la 96 dpi,
+    ' valoarea pe care o întoarce proprietatea și pe care o serializează designerul), iar câmpul
+    ' fără sufix = aceeași măsură SCALATĂ la DPI-ul ecranului, cu care se pictează. Recalcularea
+    ' e în AdvancedTreeControl.Dpi.vb (ApplyMetricScale); motivul, tot acolo.
+    Private _expanderSizeLogic As Integer = 12
     Private m_ExpanderSize As Integer = 12
     <Category("K-BOT Arbore")>
-    <Description("Latura (px) a butonului de expandare +/-.")>
+    <Description("Latura (px la 96 dpi) a butonului de expandare +/-.")>
     <DefaultValue(12)>
     Public Property ExpanderSize As Integer
         Get
-            Return m_ExpanderSize
+            Return _expanderSizeLogic
         End Get
         Set(value As Integer)
-            m_ExpanderSize = value
+            _expanderSizeLogic = value
+            m_ExpanderSize = SX(value)
             Me.Invalidate() ' Redesenează imediat controlul când se schimbă setarea
         End Set
     End Property
 
+    Private _indentLogic As Integer = 10
     Private m_Indent As Integer = 10
     <Category("K-BOT Arbore")>
-    <Description("Indentarea (px) pe nivel de adâncime.")>
+    <Description("Indentarea (px la 96 dpi) pe nivel de adâncime.")>
     <DefaultValue(10)>
     Public Property Indent As Integer
         Get
-            Return m_Indent
+            Return _indentLogic
         End Get
         Set(value As Integer)
-            m_Indent = value
+            _indentLogic = value
+            m_Indent = SX(value)
             Me.Invalidate() ' Redesenează imediat controlul când se schimbă setarea
         End Set
     End Property
 
+    Private _checkBoxSizeLogic As Integer = 16
     Private _checkBoxSize As Integer = 16
     <Category("K-BOT Arbore")>
-    <Description("Latura (px) a checkbox-ului/radio-ului de nod.")>
+    <Description("Latura (px la 96 dpi) a checkbox-ului/radio-ului de nod.")>
     <DefaultValue(16)>
     Public Property CheckBoxSize As Integer
         Get
-            Return _checkBoxSize
+            Return _checkBoxSizeLogic
         End Get
         Set(value As Integer)
-            _checkBoxSize = value
+            _checkBoxSizeLogic = value
+            _checkBoxSize = SX(value)
             Me.Invalidate()
         End Set
     End Property
 
     ' Înălțimea rândului (calculată automat sau setată manual)
     Private _autoHeight As Boolean = False
+    Private _itemHeightLogic As Integer = 22
     Private _itemHeight As Integer = 22
     <Category("K-BOT Arbore")>
-    <Description("Înălțimea (px) a unui rând de nod.")>
+    <Description("Înălțimea (px la 96 dpi) a unui rând de nod.")>
     <DefaultValue(22)>
     Public Property ItemHeight As Integer
         Get
-            Return _itemHeight
+            Return _itemHeightLogic
         End Get
         Set(value As Integer)
-            _itemHeight = value
+            _itemHeightLogic = value
+            _itemHeight = SY(value)
             '_autoHeight = False
             RefreshSearchBarMetrics()   ' banda de căutare se dimensionează după rând
             Me.Invalidate()
@@ -90,39 +102,43 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     ' Iconițe - Setarea lor declanșează recalcularea înălțimii rândului
+    Private _leftIconSizeLogic As New Size(18, 18)
     Private _leftIconSize As New Size(18, 18)
     <Category("K-BOT Arbore")>
-    <Description("Dimensiunea iconiței din stânga nodului.")>
+    <Description("Dimensiunea (px la 96 dpi) a iconiței din stânga nodului.")>
     Public Property LeftIconSize As Size
         Get
-            Return _leftIconSize
+            Return _leftIconSizeLogic
         End Get
         Set(value As Size)
-            _leftIconSize = value
+            _leftIconSizeLogic = value
+            _leftIconSize = New Size(SX(value.Width), SY(value.Height))
             RecalculateItemHeight()
         End Set
     End Property
     Public Function ShouldSerializeLeftIconSize() As Boolean
-        Return _leftIconSize <> New Size(18, 18)
+        Return _leftIconSizeLogic <> New Size(18, 18)
     End Function
     Public Sub ResetLeftIconSize()
         LeftIconSize = New Size(18, 18)
     End Sub
 
+    Private _rightIconSizeLogic As New Size(18, 18)
     Private _rightIconSize As New Size(18, 18)
     <Category("K-BOT Arbore")>
-    <Description("Dimensiunea iconiței din dreapta nodului.")>
+    <Description("Dimensiunea (px la 96 dpi) a iconiței din dreapta nodului.")>
     Public Property RightIconSize As Size
         Get
-            Return _rightIconSize
+            Return _rightIconSizeLogic
         End Get
         Set(value As Size)
-            _rightIconSize = value
+            _rightIconSizeLogic = value
+            _rightIconSize = New Size(SX(value.Width), SY(value.Height))
             RecalculateItemHeight()
         End Set
     End Property
     Public Function ShouldSerializeRightIconSize() As Boolean
-        Return _rightIconSize <> New Size(18, 18)
+        Return _rightIconSizeLogic <> New Size(18, 18)
     End Function
     Public Sub ResetRightIconSize()
         RightIconSize = New Size(18, 18)
@@ -496,16 +512,18 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
+    Private _headerHeightLogic As Integer = 32
     Private _headerHeight As Integer = 32
     <Category("K-BOT Arbore - Antet")>
-    <Description("Înălțimea (px) benzii de antet.")>
+    <Description("Înălțimea (px la 96 dpi) benzii de antet.")>
     <DefaultValue(32)>
     Public Property HeaderHeight As Integer
         Get
-            Return _headerHeight
+            Return _headerHeightLogic
         End Get
         Set(value As Integer)
-            _headerHeight = Math.Max(16, value)
+            _headerHeightLogic = Math.Max(16, value)
+            _headerHeight = SY(_headerHeightLogic)
             If _isSearchMode Then PositionSearchTextBox()
             Me.Invalidate()
         End Set
@@ -789,16 +807,18 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
+    Private _footerHeightLogic As Integer = 28
     Private _footerHeight As Integer = 28
     <Category("K-BOT Arbore - Subsol")>
-    <Description("Înălțimea (px) benzii de subsol.")>
+    <Description("Înălțimea (px la 96 dpi) benzii de subsol.")>
     <DefaultValue(28)>
     Public Property FooterHeight As Integer
         Get
-            Return _footerHeight
+            Return _footerHeightLogic
         End Get
         Set(value As Integer)
-            _footerHeight = Math.Max(16, value)
+            _footerHeightLogic = Math.Max(16, value)
+            _footerHeight = SY(_footerHeightLogic)
             RefreshScrollVisibility()
             Me.Invalidate()
         End Set
@@ -1136,16 +1156,18 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
+    Private _minimumCollapsedWidthLogic As Integer = 100
     Private _minimumCollapsedWidth As Integer = 100
     <Category("K-BOT Arbore - Subsol")>
-    <Description("Lățimea (px) la care se strânge arborele. Implicit 100.")>
+    <Description("Lățimea (px la 96 dpi) la care se strânge arborele. Implicit 100.")>
     <DefaultValue(100)>
     Public Property MinimumCollapsedWidth As Integer
         Get
-            Return _minimumCollapsedWidth
+            Return _minimumCollapsedWidthLogic
         End Get
         Set(value As Integer)
-            _minimumCollapsedWidth = Math.Max(16, value)
+            _minimumCollapsedWidthLogic = Math.Max(16, value)
+            _minimumCollapsedWidth = SX(_minimumCollapsedWidthLogic)
             If _collapsed Then ApplyCollapseExtent()
             Me.Invalidate()
         End Set

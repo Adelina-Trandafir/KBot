@@ -5,16 +5,16 @@ Partial Public Class AdvancedTreeControl
     Private Sub DrawItem(g As Graphics, it As TreeItem, y As Integer)
         ' Normalizare
         If it.Level = 0 AndAlso Not _RootExpander AndAlso Not it.Expanded Then it.Expanded = True
-        If Me.ExpanderSize Mod 2 <> 0 Then Me.ExpanderSize -= 1
-        If Me.ItemHeight Mod 2 <> 0 Then Me.ItemHeight -= 1
+        If m_ExpanderSize Mod 2 <> 0 Then m_ExpanderSize -= 1
+        If _itemHeight Mod 2 <> 0 Then _itemHeight -= 1
 
         ' ── Calcul layout comun ──────────────────────────────────────────────────
-        Dim gridLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
-        Dim selectionLeft As Integer = (it.Level * Indent) + Me.AutoScrollPosition.X +  PaddingSelectionLeft
-        Dim expanderCenterX As Integer = gridLeft + (Indent \ 2)
-        Dim midY As Integer = y + (ItemHeight \ 2)
-        Dim expanderRect As New Rectangle(expanderCenterX - (ExpanderSize \ 2), midY - (ExpanderSize \ 2), ExpanderSize, ExpanderSize)
-        Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander, gridLeft, gridLeft + Indent + PaddingExpanderGap)
+        Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+        Dim selectionLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X +  PaddingSelectionLeft
+        Dim expanderCenterX As Integer = gridLeft + (m_Indent \ 2)
+        Dim midY As Integer = y + (_itemHeight \ 2)
+        Dim expanderRect As New Rectangle(expanderCenterX - (m_ExpanderSize \ 2), midY - (m_ExpanderSize \ 2), m_ExpanderSize, m_ExpanderSize)
+        Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander, gridLeft, gridLeft + m_Indent + PaddingExpanderGap)
 
         ' ── Pasul 1: Selecție & Hover ──────────────────────────────────────────── 
         DrawSelection(g, it, y, selectionLeft, xBase)
@@ -46,7 +46,7 @@ Partial Public Class AdvancedTreeControl
     Private Sub DrawSelection(g As Graphics, it As TreeItem, y As Integer, gridLeft As Integer, xBase As Integer)
         Dim selStartX As Integer = If(it.Level = 0 AndAlso Not _RootExpander, gridLeft, xBase - PaddingSelectionLeft)
         Dim selWidth As Integer = Math.Max(0, Me.ClientSize.Width - selStartX - 1)
-        Dim fullRowRect As New Rectangle(selStartX, y, selWidth, ItemHeight)
+        Dim fullRowRect As New Rectangle(selStartX, y, selWidth, _itemHeight)
 
         Dim oldSmooth = g.SmoothingMode
         g.SmoothingMode = SmoothingMode.AntiAlias
@@ -75,8 +75,8 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     Private Sub DrawLoaderItem(g As Graphics, it As TreeItem, y As Integer, xBase As Integer)
-        Dim loaderY As Integer = y + (ItemHeight - 14) \ 2
-        Dim textY As Integer = y + (ItemHeight - Me.Font.Height) \ 2 + 1
+        Dim loaderY As Integer = y + (_itemHeight - 14) \ 2
+        Dim textY As Integer = y + (_itemHeight - Me.Font.Height) \ 2 + 1
 
         Dim oldSmooth = g.SmoothingMode
         g.SmoothingMode = SmoothingMode.AntiAlias
@@ -172,8 +172,8 @@ Partial Public Class AdvancedTreeControl
 
         Try
             ' ══ 1. ICON STÂNGA ════════════════════════════════════════════════════
-            Dim leftIconRect As New Rectangle(xBase, y + (ItemHeight - LeftIconSize.Height) \ 2,
-                                              LeftIconSize.Width, LeftIconSize.Height)
+            Dim leftIconRect As New Rectangle(xBase, y + (_itemHeight - _leftIconSize.Height) \ 2,
+                                              _leftIconSize.Width, _leftIconSize.Height)
             If it.TextWidth = -1 Then it.TextWidth = CInt(g.MeasureString(it.Caption, Me.Font).Width)
 
             If _hasNodeIcons Then
@@ -241,7 +241,7 @@ Partial Public Class AdvancedTreeControl
             ' ══ 5. BACKCOLOR PER NOD ══════════════════════════════════════════════
             If it.NodeBackColor <> Color.Empty AndAlso it IsNot pSelectedItem Then
                 Using bgBrush As New SolidBrush(it.NodeBackColor)
-                    g.FillRectangle(bgBrush, New Rectangle(textX, y, nodeBackWidth, ItemHeight))
+                    g.FillRectangle(bgBrush, New Rectangle(textX, y, nodeBackWidth, _itemHeight))
                 End Using
             End If
 
@@ -249,7 +249,7 @@ Partial Public Class AdvancedTreeControl
             If Not captionAsColumn Then
                 Dim oldClip As Region = g.Clip.Clone()
                 Try
-                    g.SetClip(New Rectangle(textX, y, availableTextWidth, ItemHeight))
+                    g.SetClip(New Rectangle(textX, y, availableTextWidth, _itemHeight))
                     DrawRichText(g, it.Caption, textX, y, nodeFont, baseTextColor, availableTextWidth)
                 Finally
                     g.Clip = oldClip
@@ -267,7 +267,7 @@ Partial Public Class AdvancedTreeControl
 
                     ' Separator vertical la inceputul zonei de coloane
                     Using sepPen As New Pen(Color.FromArgb(COLUMN_SEPARATOR_COLOR_ALPHA, LineColor), 1)
-                        g.DrawLine(sepPen, cx, y, cx, y + ItemHeight)
+                        g.DrawLine(sepPen, cx, y, cx, y + _itemHeight)
                     End Using
 
                     Dim rowVisibleWidth As Integer = Me.Width - scrollW - PaddingTreeEnd - ReservedRightIconWidth() - colStartX
@@ -275,7 +275,7 @@ Partial Public Class AdvancedTreeControl
                     For i As Integer = 0 To rowVisCols - 1
                         Try
                             Dim cd = rowCols(i)
-                            Dim cellRect As New Rectangle(cx, y, cd.Width, ItemHeight)
+                            Dim cellRect As New Rectangle(cx, y, cd.Width, _itemHeight)
 
                             Dim cellData As TreeItem.CellData = Nothing
                             it.Cells.TryGetValue(cd.Name, cellData)
@@ -289,7 +289,7 @@ Partial Public Class AdvancedTreeControl
 
                             ' Separator vertical la capatul coloanei
                             Using sepPen As New Pen(Color.FromArgb(COLUMN_SEPARATOR_COLOR_ALPHA, LineColor), 1)
-                                g.DrawLine(sepPen, cx + cd.Width - 1, y, cx + cd.Width - 1, y + ItemHeight)
+                                g.DrawLine(sepPen, cx + cd.Width - 1, y, cx + cd.Width - 1, y + _itemHeight)
                             End Using
 
                             ' Text celula
@@ -338,17 +338,17 @@ Partial Public Class AdvancedTreeControl
         If IsRightIconHoverOnly(it) AndAlso it IsNot pHoveredItem Then Return
 
         Dim scrollW As Integer = ScrollBarWidth 'If(Me.VerticalScroll.Visible, SystemInformation.VerticalScrollBarWidth, 0)
-        Dim rx As Integer = Me.Width - RightIconSize.Width - _rightIconRightPadding - scrollW
-        Dim ry As Integer = y + (ItemHeight - RightIconSize.Height) \ 2
+        Dim rx As Integer = Me.Width - _rightIconSize.Width - _rightIconRightPadding - scrollW
+        Dim ry As Integer = y + (_itemHeight - _rightIconSize.Height) \ 2
 
         ' Iconița e apăsabilă (ridică RightIconClicked), deci se aprinde ca orice buton — dar
         ' numai pe nodul de sub cursor, altfel s-ar aprinde câte una pe fiecare rând.
         If _nodeRightIconHover AndAlso it Is pHoveredItem Then
-            DrawButtonHover(g, New Rectangle(rx, ry, RightIconSize.Width, RightIconSize.Height),
+            DrawButtonHover(g, New Rectangle(rx, ry, _rightIconSize.Width, _rightIconSize.Height),
                             NodeRightIconHoverColor)
         End If
 
-        g.DrawImage(it.RightIcon, rx, ry, RightIconSize.Width, RightIconSize.Height)
+        g.DrawImage(it.RightIcon, rx, ry, _rightIconSize.Width, _rightIconSize.Height)
     End Sub
 
     Private Sub DrawTreeLines(g As Graphics, it As TreeItem, y As Integer, expCenterX As Integer, midY As Integer, currentGridLeft As Integer)
@@ -365,8 +365,8 @@ Partial Public Class AdvancedTreeControl
             '    Expanderul (white fill) se desenează DUPĂ în Pasul 5 → îl acoperă.
             ' ------------------------------------------------------------------
             If (it.Children.Count > 0 OrElse it.LazyNode) AndAlso it.Expanded Then
-                Dim trunkStartY As Integer = midY + (ExpanderSize \ 2) + 1  ' imediat sub expander
-                Dim trunkEndY As Integer = y + ItemHeight                  ' baza rândului curent
+                Dim trunkStartY As Integer = midY + (m_ExpanderSize \ 2) + 1  ' imediat sub expander
+                Dim trunkEndY As Integer = y + _itemHeight                  ' baza rândului curent
                 If trunkStartY < trunkEndY Then
                     g.DrawLine(p, expCenterX, trunkStartY, expCenterX, trunkEndY)
                 End If
@@ -376,10 +376,10 @@ Partial Public Class AdvancedTreeControl
             If it.Level = 0 Then Return
 
             ' X-ul trunchiului vertical = coloana expanderului PĂRINTELUI
-            Dim parentColX As Integer = ((it.Level - 1) * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart + (Indent \ 2)
+            Dim parentColX As Integer = ((it.Level - 1) * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart + (m_Indent \ 2)
 
             ' Capătul drept al liniei orizontale = imediat înainte de conținut
-            Dim hLineEnd As Integer = currentGridLeft + Indent + PaddingExpanderGap - PaddingTreeLineHMargin
+            Dim hLineEnd As Integer = currentGridLeft + m_Indent + PaddingExpanderGap - PaddingTreeLineHMargin
 
             ' ------------------------------------------------------------------
             ' 1. LINIA ORIZONTALĂ — de la trunchiul părintelui → înainte de conținut
@@ -397,7 +397,7 @@ Partial Public Class AdvancedTreeControl
             ' 3. LINIA VERTICALĂ JOS — jumătatea inferioară (dacă urmează un frate)
             ' ------------------------------------------------------------------
             If it.Parent IsNot Nothing AndAlso Not it.IsLastSibling Then
-                g.DrawLine(p, parentColX, midY, parentColX, y + ItemHeight)
+                g.DrawLine(p, parentColX, midY, parentColX, y + _itemHeight)
             End If
 
             ' ------------------------------------------------------------------
@@ -406,8 +406,8 @@ Partial Public Class AdvancedTreeControl
             Dim ancestor As TreeItem = it.Parent
             While ancestor IsNot Nothing AndAlso ancestor.Parent IsNot Nothing
                 If Not ancestor.IsLastSibling Then
-                    Dim ancParentColX As Integer = ((ancestor.Level - 1) * Indent) + Me.AutoScrollPosition.X + PaddingTreeStart + (Indent \ 2)
-                    g.DrawLine(p, ancParentColX, y, ancParentColX, y + ItemHeight)
+                    Dim ancParentColX As Integer = ((ancestor.Level - 1) * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart + (m_Indent \ 2)
+                    g.DrawLine(p, ancParentColX, y, ancParentColX, y + _itemHeight)
                 End If
                 ancestor = ancestor.Parent
             End While
@@ -486,11 +486,11 @@ Partial Public Class AdvancedTreeControl
                 Dim sz As SizeF = g.MeasureString(part.Text, part.Font, PointF.Empty, fmt)
                 If part.HasBackColor Then
                     Using b As New SolidBrush(part.BackColor)
-                        g.FillRectangle(b, currentX, y, sz.Width, ItemHeight)
+                        g.FillRectangle(b, currentX, y, sz.Width, _itemHeight)
                     End Using
                 End If
                 Using b As New SolidBrush(part.ForeColor)
-                    g.DrawString(part.Text, part.Font, b, currentX, y + (ItemHeight - part.Font.Height) / 2.0F, fmt)
+                    g.DrawString(part.Text, part.Font, b, currentX, y + (_itemHeight - part.Font.Height) / 2.0F, fmt)
                 End Using
                 currentX += sz.Width
             Next
@@ -657,11 +657,11 @@ Partial Public Class AdvancedTreeControl
                 ' Întregul part încape
                 If part.HasBackColor Then
                     Using b As New SolidBrush(part.BackColor)
-                        g.FillRectangle(b, rx, y, partWidth, ItemHeight)
+                        g.FillRectangle(b, rx, y, partWidth, _itemHeight)
                     End Using
                 End If
                 Using b As New SolidBrush(part.ForeColor)
-                    g.DrawString(part.Text, part.Font, b, rx, y + (ItemHeight - part.Font.Height) / 2.0F, fmt)
+                    g.DrawString(part.Text, part.Font, b, rx, y + (_itemHeight - part.Font.Height) / 2.0F, fmt)
                 End Using
                 rx += partWidth
                 drawnSoFar += partWidth
@@ -681,11 +681,11 @@ Partial Public Class AdvancedTreeControl
                     Dim partialW As Single = g.MeasureString(part2, part.Font, PointF.Empty, fmt).Width
                     If part.HasBackColor Then
                         Using b As New SolidBrush(part.BackColor)
-                            g.FillRectangle(b, rx, y, partialW, ItemHeight)
+                            g.FillRectangle(b, rx, y, partialW, _itemHeight)
                         End Using
                     End If
                     Using b As New SolidBrush(part.ForeColor)
-                        g.DrawString(part2, part.Font, b, rx, y + (ItemHeight - part.Font.Height) / 2.0F, fmt)
+                        g.DrawString(part2, part.Font, b, rx, y + (_itemHeight - part.Font.Height) / 2.0F, fmt)
                     End Using
                 End If
                 truncated = True
@@ -696,7 +696,7 @@ Partial Public Class AdvancedTreeControl
         Using b As New SolidBrush(ellipsisColor)
             g.DrawString("...", ellipsisFont, b,
                      startX + budget - ellipsisWidth,
-                     y + (ItemHeight - ellipsisFont.Height) / 2.0F, fmt)
+                     y + (_itemHeight - ellipsisFont.Height) / 2.0F, fmt)
         End Using
 
         Return startX + budget
@@ -710,11 +710,11 @@ Partial Public Class AdvancedTreeControl
             Dim sz As SizeF = g.MeasureString(part.Text, part.Font, PointF.Empty, fmt)
             If part.HasBackColor Then
                 Using b As New SolidBrush(part.BackColor)
-                    g.FillRectangle(b, rx, y, sz.Width, ItemHeight)
+                    g.FillRectangle(b, rx, y, sz.Width, _itemHeight)
                 End Using
             End If
             Using b As New SolidBrush(part.ForeColor)
-                g.DrawString(part.Text, part.Font, b, rx, y + (ItemHeight - part.Font.Height) / 2.0F, fmt)
+                g.DrawString(part.Text, part.Font, b, rx, y + (_itemHeight - part.Font.Height) / 2.0F, fmt)
             End Using
             rx += sz.Width
         Next

@@ -29,6 +29,19 @@ Partial Public NotInheritable Class KBotCaptionBar
     ''' </summary>
     Private Const ThemeEditorKey As String = "@ThemeEditor"
 
+    ''' <summary>
+    ''' Cheia rândului «Opțiuni temă...» — fereastra care reglează SCHEMA (culori, stil, scalare),
+    ''' spre deosebire de «Stiluri...», care pune excepții pe controale anume. Aceeași grijă ca la
+    ''' cheia de mai sus: un «@» în față, ca să nu poată fi confundată cu numele unei scheme.
+    ''' </summary>
+    Private Const ThemeOptionsKey As String = "@ThemeOptions"
+
+    ''' <summary>
+    ''' Cheia rândului-CURSOR pentru mărimea textului. Aceeași grijă ca la celelalte două: un «@»
+    ''' în față, ca să nu poată fi confundată cu numele unei scheme.
+    ''' </summary>
+    Private Const TextScaleKey As String = "@TextScale"
+
     ' Ridicat cât ține deschiderea meniului de temă, ca sinkul comun IPopupAnchor.SetPopupOpen să
     ' știe CARE buton s-a desfășurat. Vezi comentariul de acolo.
     Private _themeMenuOpening As Boolean = False
@@ -54,7 +67,45 @@ Partial Public NotInheritable Class KBotCaptionBar
     End Property
 
     ''' <summary>
-    ''' Ultimul rând al meniului — «Stiluri...», editorul de stiluri — se poate stinge: e o unealtă
+    ''' Rândul «Opțiuni temă...» — fereastra care reglează schema (culori, stil, scalare) — se
+    ''' poate stinge, cu comutatorul LUI. Deliberat separat de <see cref="ShowThemeEditor"/>:
+    ''' cele două unelte fac lucruri diferite (una schimbă tema, cealaltă pune excepții pe
+    ''' controale), deci o fereastră care o vrea pe una n-are de ce s-o capete și pe cealaltă.
+    ''' </summary>
+    ''' <summary>
+    ''' Arată rândul-CURSOR pentru mărimea textului, în capul meniului.
+    '''
+    ''' <para>Stă SUS, deasupra schemelor, dintr-un motiv practic: e singurul rând care nu închide
+    ''' meniul, deci e și singurul pe care operatorul îl folosește de mai multe ori la rând. Pus
+    ''' jos, ar fi trebuit căutat de fiecare dată sub o listă care crește cu fiecare schemă
+    ''' salvată.</para>
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Arată cursorul «Mărime text» în capul meniului de temă. Implicit True.")>
+    <DefaultValue(True)>
+    Public Property ShowTextScaleSlider As Boolean
+        Get
+            Return _showTextScaleSlider
+        End Get
+        Set(value As Boolean)
+            _showTextScaleSlider = value
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Arată rândul «Opțiuni temă...» — culorile, stilul și scalarea schemei. Implicit True.")>
+    <DefaultValue(True)>
+    Public Property ShowThemeOptions As Boolean
+        Get
+            Return _showThemeOptions
+        End Get
+        Set(value As Boolean)
+            _showThemeOptions = value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Rândul «Stiluri...», editorul de excepții pe controale, se poate stinge: e o unealtă
     ''' de reglaj, nu o alegere de zi cu zi, deci nu are ce căuta pe fiecare fereastră.
     ''' </summary>
     <Category("K-BOT")>
@@ -198,6 +249,10 @@ Partial Public NotInheritable Class KBotCaptionBar
             ' singur la închidere.
             Dim meniu As New CustomPopup(elemente)
             AddHandler meniu.ItemClicked, AddressOf ThemeMenu_ItemClicked
+            ' COMMITTED, nu Changed: rescrierea fonturilor întregii aplicații e lucru greu, iar
+            ' făcută la fiecare pixel al tragerii ea reașază toate ferestrele — meniul pierdea
+            ' activarea și se închidea singur la prima mișcare.
+            AddHandler meniu.SliderValueCommitted, AddressOf ThemeMenu_SliderValueChanged
             Try
                 _themeMenuOpening = True
                 meniu.ShowBelow(Me, ancora)
@@ -225,6 +280,16 @@ Partial Public NotInheritable Class KBotCaptionBar
         Dim elemente As New List(Of CustomPopupItem)()
         Dim folosite As New List(Of Char)()
 
+        ' Cursorul de mărime, în CAP. Valoarea e citită din AppScaling la fiecare deschidere, deci
+        ' meniul arată mereu mărimea reală, chiar dacă a fost schimbată din fereastra de opțiuni.
+        If _showTextScaleSlider Then
+            elemente.Add(CustomPopupItem.Slider(TextScaleKey, "Mărime text",
+                                                CInt(Math.Round(AppScaling.MinTextScale * 100)),
+                                                CInt(Math.Round(AppScaling.MaxTextScale * 100)),
+                                                CInt(Math.Round(AppScaling.TextScale * 100))))
+            elemente.Add(CustomPopupItem.Separator())
+        End If
+
         For Each s As ThemeScheme In ThemeManager.AvailableSchemes
             If s Is Nothing Then Continue For
             If String.Equals(s.Name, ThemeManager.Current.Name, StringComparison.OrdinalIgnoreCase) Then Continue For
@@ -233,10 +298,27 @@ Partial Public NotInheritable Class KBotCaptionBar
                                              IconaSchemei(s)))
         Next
 
+        ' Separatorul aparține GRUPULUI de unelte, nu unei unelte anume: se pune o dată, dacă
+        ' rămâne măcar una aprinsă ȘI are ce despărți (un meniu care începe cu o linie e o linie
+        ' degeaba).
+        ' …și niciodată DOI la rând: cu o singură schemă alegibilă (sau niciuna), separatorul
+        ' cursorului de mai sus ar fi rămas lipit de ăsta.
+        If (_showThemeOptions OrElse _showThemeEditor) AndAlso elemente.Count > 0 AndAlso
+           Not elemente(elemente.Count - 1).IsSeparator Then
+            elemente.Add(CustomPopupItem.Separator())
+        End If
+
+        ' Ordinea celor două unelte NU e întâmplătoare: «Opțiuni temă...» reglează SCHEMA
+        ' (culorile, stilul, scalarea) și e ce caută operatorul în nouă din zece cazuri;
+        ' «Stiluri...» pune excepții pe controale anume ale unei ferestre și e unealta rară.
+        ' Numele sunt scrise cât să se deosebească fără să fie nevoie să le încerci pe rând.
+        If _showThemeOptions Then
+            elemente.Add(New CustomPopupItem(ThemeOptionsKey,
+                                             CuLiteraDeAcces("Opțiuni temă...", folosite),
+                                             My.Resources.Resources.switch_theme))
+        End If
+
         If _showThemeEditor Then
-            ' Separator doar dacă are ce despărți: un meniu care începe cu o linie e o linie
-            ' degeaba.
-            If elemente.Count > 0 Then elemente.Add(CustomPopupItem.Separator())
             elemente.Add(New CustomPopupItem(ThemeEditorKey,
                                              CuLiteraDeAcces("Stiluri...", folosite),
                                              My.Resources.Resources.ThemeEditor))
@@ -252,6 +334,11 @@ Partial Public NotInheritable Class KBotCaptionBar
     Private Sub ThemeMenu_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
         Try
             If e Is Nothing OrElse e.Item Is Nothing Then Return
+
+            If String.Equals(e.Item.Key, ThemeOptionsKey, StringComparison.Ordinal) Then
+                DeschideOptiunileDeTema()
+                Return
+            End If
 
             If String.Equals(e.Item.Key, ThemeEditorKey, StringComparison.Ordinal) Then
                 DeschideEditorulDeStiluri()
@@ -292,6 +379,48 @@ Partial Public NotInheritable Class KBotCaptionBar
             GlobalErrorLog.Write("KBotCaptionBar.DeschideEditorulDeStiluri", ex)
             MessageBox.Show(gazda, "Nu s-a putut deschide editorul de stiluri: " & ex.Message,
                             "Stiluri", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' S-a TERMINAT de tras cursorul de mărime — la ridicarea butonului sau a tastei, nu la
+    ''' fiecare pixel.
+    '''
+    ''' <para><b>De ce nu la fiecare pas.</b> Aplicarea rescrie fonturile întregii aplicații și
+    ''' reașază toate ferestrele deschise. Făcută în timpul tragerii, era de nefolosit ca viteză
+    ''' și — mai rău — reactiva fereastra de dedesubt, iar meniul se închidea singur pe
+    ''' <c>Deactivate</c>. Cu munca la sfârșitul gestului, tragerea decurge netulburată: cifra de
+    ''' pe șină se mișcă în timp real (aceea e ieftină, o desenează meniul), iar aplicația se
+    ''' redimensionează o dată, când ridici degetul.</para>
+    '''
+    ''' Frontieră de UI (drumul vine dintr-un mesaj de mouse): logăm și înghițim.
+    ''' </summary>
+    Private Sub ThemeMenu_SliderValueChanged(sender As Object, e As CustomPopupItemEventArgs)
+        Try
+            If e Is Nothing OrElse e.Item Is Nothing Then Return
+            If Not String.Equals(e.Item.Key, TextScaleKey, StringComparison.Ordinal) Then Return
+            AppScaling.SetTextScale(e.Item.SliderValue / 100.0F)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotCaptionBar.ThemeMenu_SliderValueChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Deschide fereastra de opțiuni ale temei pentru fereastra care ține bara. Ca la sora ei de
+    ''' mai sus, eșecul se ARATĂ: operatorul tocmai a cerut o fereastră.
+    '''
+    ''' Ajutor chemat DOAR din <see cref="ThemeMenu_ItemClicked"/>, care e deja înfășurat.
+    ''' </summary>
+    Private Sub DeschideOptiunileDeTema()
+        Dim gazda As Form = FindForm()
+        If gazda Is Nothing Then Throw New InvalidOperationException(
+            "Bara de titlu nu e pe niciun formular — opțiunile de temă n-au de cine să fie deținute.")
+        Try
+            ThemeOptionsForm.ShowFor(gazda)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotCaptionBar.DeschideOptiunileDeTema", ex)
+            MessageBox.Show(gazda, "Nu s-au putut deschide opțiunile de temă: " & ex.Message,
+                            "Opțiuni de temă", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
 

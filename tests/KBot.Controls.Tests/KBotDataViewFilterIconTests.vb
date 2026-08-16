@@ -216,6 +216,80 @@ Public Class KBotDataViewFilterIconTests
         End Using
     End Sub
 
+    ' ── Mărimea pusă pe GRILĂ ────────────────────────────────────────────────────
+
+    <Fact>
+    Public Sub TheGridSize_DrivesEveryColumn()
+        ' Filtrul e o funcție a grilei: mărimea se pune o dată și se vede pe tot antetul.
+        Using dv = Grid()
+            Dim a = dv.AddColumn("a", "A", KBotColumnType.Text, 200)
+            Dim b = dv.AddColumn("b", "B", KBotColumnType.Text, 200)
+            a.ShowColumnFilter = True
+            b.ShowColumnFilter = True
+
+            dv.FilterIconSize = New Size(24, 24)
+            Assert.Equal(New Size(24, 24), a.ColumnFilterIconSize)
+            Assert.Equal(New Size(24, 24), b.ColumnFilterIconSize)
+            Assert.Equal(24, dv.FilterIconSizeFor(a).Width)
+            Assert.Equal(24, dv.DebugFilterIconRect("b").Width)
+            ' Podeaua de lățime crește odată cu pictograma, altfel piesele s-ar suprapune.
+            a.MinWidth = 10
+            Assert.Equal(2 * Pad + 24, a.EffectiveMinWidth)
+        End Using
+    End Sub
+
+    <Fact>
+    Public Sub AColumnThatSaysOtherwise_WinsOverTheGrid()
+        Using dv = Grid()
+            Dim a = dv.AddColumn("a", "A", KBotColumnType.Text, 200)
+            Dim b = dv.AddColumn("b", "B", KBotColumnType.Text, 200)
+            a.ShowColumnFilter = True
+            b.ShowColumnFilter = True
+
+            dv.FilterIconSize = New Size(24, 24)
+            b.ColumnFilterIconSize = New Size(12, 12)
+            Assert.Equal(24, dv.DebugFilterIconRect("a").Width)
+            Assert.Equal(12, dv.DebugFilterIconRect("b").Width)
+
+            ' Mutarea grilei nu mai atinge coloana pe care a scris operatorul.
+            dv.FilterIconSize = New Size(32, 32)
+            Assert.Equal(32, dv.DebugFilterIconRect("a").Width)
+            Assert.Equal(12, dv.DebugFilterIconRect("b").Width)
+        End Using
+    End Sub
+
+    <Fact>
+    Public Sub AnExplicitColumnSize_IsSerialised_EvenWhenItEqualsTheOldDefault()
+        ' 16×16 scris DINADINS pe o coloană dintr-o grilă trecută pe 24 e o alegere, nu o
+        ' întâmplare: trebuie să supraviețuiască salvării.
+        Using dv = Grid()
+            Dim col = dv.AddColumn("a", "A", KBotColumnType.Text, 200)
+            col.ShowColumnFilter = True
+            dv.FilterIconSize = New Size(24, 24)
+
+            col.ColumnFilterIconSize = New Size(16, 16)
+            Assert.True(ShouldSerialize(col, "ColumnFilterIconSize"))
+            Assert.Equal(16, dv.DebugFilterIconRect("a").Width)
+
+            ' Reset = «înapoi la grilă», și nu lasă nimic în urmă în .Designer.vb.
+            TypeDescriptor.GetProperties(col)("ColumnFilterIconSize").ResetValue(col)
+            Assert.False(ShouldSerialize(col, "ColumnFilterIconSize"))
+            Assert.Equal(24, dv.DebugFilterIconRect("a").Width)
+        End Using
+    End Sub
+
+    <Fact>
+    Public Sub AFreshGrid_SerialisesNoFilterIconSize()
+        Using dv = Grid()
+            Assert.Equal(New Size(16, 16), dv.FilterIconSize)
+            Assert.False(ShouldSerialize(dv, "FilterIconSize"))
+            dv.FilterIconSize = New Size(24, 24)
+            Assert.True(ShouldSerialize(dv, "FilterIconSize"))
+            TypeDescriptor.GetProperties(dv)("FilterIconSize").ResetValue(dv)
+            Assert.False(ShouldSerialize(dv, "FilterIconSize"))
+        End Using
+    End Sub
+
     Private Shared Function ShouldSerialize(target As Object, propertyName As String) As Boolean
         Return TypeDescriptor.GetProperties(target)(propertyName).ShouldSerializeValue(target)
     End Function

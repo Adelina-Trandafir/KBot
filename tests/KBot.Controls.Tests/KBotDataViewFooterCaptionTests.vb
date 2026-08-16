@@ -170,6 +170,24 @@ Public Class KBotDataViewFooterCaptionTests
     End Sub
 
     <Fact>
+    Public Sub TheIconRect_ComesFromTheSCALEDSize_NotTheLogicalOne()
+        ' Regresia feliei 0037: dreptunghiul se calcula din câmpul LOGIC, deci pictograma din
+        ' subsol rămânea mică într-o bandă crescută la 150%. Proprietatea publică rămâne logică
+        ' (o serializează designerul); geometria trebuie să treacă prin perechea scalată.
+        Using dv = Grid()
+            dv.FooterLeftIcon = Icon(16)
+            dv.FooterIconSize = New Size(20, 20)
+
+            Assert.Equal(New Size(20, 20), dv.FooterIconSize)          ' logic, neatins
+            Dim px As Size = dv.FooterIconSizePx
+            Dim r As Rectangle = dv.FooterLeftIconRect
+            Assert.False(r.IsEmpty)
+            Assert.Equal(px.Width, r.Width)
+            Assert.Equal(px.Height, r.Height)
+        End Using
+    End Sub
+
+    <Fact>
     Public Sub PaintingWithACaptionDoesNotThrow()
         Using dv = Grid()
             dv.FooterCaption = "Un titlu de subsol destul de lung ca să se taie"

@@ -19,6 +19,9 @@ Namespace KBot.Forexe
 
         Private _logger As RichTextBoxLogger
         Private _executor As WorkflowExecutor
+        ' Gardianul ferestrei de PIN (port din KBOT_IPC): cedează prim-planul cât e PIN-ul pe
+        ' ecran și îl repune după. Trăiește cât sesiunea; se oprește singur la anularea token-ului.
+        Private _guardian As PinWindowGuardian
 
         ' Procesorul Excel (bridge DI către ApiClient.ProcessExcelAsync): executorul
         ' primește prin el conversia Excel->JSON fără ca FOREXE să depindă de KBot.Api.
@@ -68,6 +71,27 @@ Namespace KBot.Forexe
             End Try
         End Function
 
+        ''' <summary>Ascunde la loc fereastra browserului (perechea lui ShowBrowserAsync).</summary>
+        Public Async Function HideBrowserAsync() As Task Implements IForexeRunner.HideBrowserAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then
+                Throw New InvalidOperationException("Nicio sesiune activă — nu există browser de ascuns.")
+            End If
+            Try
+                Await _executor.HideBrowserWindowAsync()
+            Catch ex As Exception
+                _logger?.LogException(ex, "Eroare la ascunderea browserului")
+                Throw
+            End Try
+        End Function
+
+        ''' <summary>Browserul e la vedere acum? False și când nu există sesiune.</summary>
+        Public ReadOnly Property IsBrowserVisible As Boolean Implements IForexeRunner.IsBrowserVisible
+            Get
+                If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return False
+                Return _executor.IsBrowserVisible
+            End Get
+        End Property
+
         Public Async Function RunAsync(job As JobRequest,
                                        certificate As X509Certificate2,
                                        progress As IProgress(Of Integer),
@@ -93,10 +117,14 @@ Namespace KBot.Forexe
                         progress.Report(pct)
                     End Sub
 
+                ' Stealth = INVERSUL lui job.ShowBrowser, exact ca în KBOT_IPC
+                ' (`isStealth = Not jobToRun.ShowBrowser`). Implicit ascuns: fereastra pleacă
+                ' off-screen și iese din Taskbar/Alt-Tab. Operatorul o poate aduce oricând la
+                ' vedere din consolă — vezi ShowBrowserAsync / HideBrowserAsync.
                 _executor = New WorkflowExecutor(
                     logger:=_logger,
                     certificate:=certificate,
-                    stealthMode:=False,   ' Browser ON-screen și mereu vizibil (fără off-screen -3000, fără ascundere din taskbar).
+                    stealthMode:=Not job.ShowBrowser,
                     stepByStep:=False,
                     confirmStep:=Nothing,
                     stepOnlyCheckpoints:=False,
@@ -114,6 +142,13 @@ Namespace KBot.Forexe
 
                 AddHandler _executor.OnStatusUpdate, AddressOf OnExecutorStatus
                 AddHandler _executor.OnBrowserClosed, AddressOf OnExecutorBrowserClosed
+
+                ' Gardianul ferestrei de PIN, pornit ÎNAINTE de lansarea browserului — ca în
+                ' KBOT_IPC, unde StartUiGuardian merge imediat după inițializarea executorului.
+                ' Cu browserul ascuns, dialogul de PIN e singurul lucru vizibil din tot fluxul:
+                ' dacă rămâne acoperit, conectarea pare blocată.
+                _guardian = New PinWindowGuardian(_logger)
+                _guardian.Start()
 
                 _logger.LogInfo("Lansare browser...")
                 Await Task.Run(Function() _executor.LaunchAndPositionBrowserAsync())
@@ -280,6 +315,11 @@ Namespace KBot.Forexe
         End Function
 
         Private Async Function DisposeExecutorAsync() As Task
+            ' Gardianul trăiește cât sesiunea: se oprește ODATĂ cu executorul, altfel ar
+            ' rămâne să scaneze la nesfârșit, câte un fir în plus la fiecare reconectare.
+            _guardian?.Stop()
+            _guardian = Nothing
+
             If _executor Is Nothing Then Return
             Try
                 RemoveHandler _executor.OnStatusUpdate, AddressOf OnExecutorStatus

@@ -127,13 +127,13 @@ Partial Class KBotDataView
     Private Function ColumnAtX(x As Integer) As KBotDataColumn
         If x < _frozenBandWidth Then
             For Each cl In _frozenLayout
-                If x >= cl.X AndAlso x < cl.X + cl.Column.Width Then Return cl.Column
+                If x >= cl.X AndAlso x < cl.X + cl.Column.WidthPx Then Return cl.Column
             Next
             Return Nothing
         End If
         Dim vx As Integer = x - _frozenBandWidth + HScrollOffset()
         For Each cl In _scrollLayout
-            If vx >= cl.X AndAlso vx < cl.X + cl.Column.Width Then Return cl.Column
+            If vx >= cl.X AndAlso vx < cl.X + cl.Column.WidthPx Then Return cl.Column
         Next
         Return Nothing
     End Function
@@ -427,6 +427,13 @@ Partial Class KBotDataView
             Focus()
             ' Orice apăsare închide eticheta: operatorul a trecut la treabă, nu mai citește.
             CancelCellTooltip()
+
+#If DEBUG Then
+            ' Sonda de lățimi (doar în Debug): click dreapta pe un antet spune cât are coloana.
+            ' Vezi KBotDataView.WidthProbe.vb.
+            If e.Button = MouseButtons.Right AndAlso HandleHeaderWidthProbe(e.Location) Then Return
+#End If
+
             If e.Button <> MouseButtons.Left Then Return
 
             ' 0) Banda de subsol (butonul de strângere) — nu e un rând, deci consumă apăsarea.
@@ -447,7 +454,10 @@ Partial Class KBotDataView
             If resizeTarget IsNot Nothing Then
                 _resizingColumn = resizeTarget
                 _resizeStartX = e.X
-                _resizeStartWidth = resizeTarget.Width
+                ' Lățimea PICTATĂ, nu cea logică: tragerea se măsoară în pixeli de ecran (`e.X`),
+                ' deci reperul de pornire trebuie să fie în aceleași unități. Conversia înapoi la
+                ' logic se face la scriere — vezi mai jos (felia 0035-01).
+                _resizeStartWidth = resizeTarget.WidthPx
                 Return
             End If
 
@@ -479,7 +489,12 @@ Partial Class KBotDataView
 
             ' Redimensionare în curs: lățimea urmărește mouse-ul (limitată de MinWidth).
             If _resizingColumn IsNot Nothing Then
-                _resizingColumn.Width = _resizeStartWidth + (e.X - _resizeStartX)
+                ' Tragerea e în pixeli de ECRAN; `Width` e în pixeli LOGICI (ea e ce a cerut
+                ' operatorul și ce s-ar serializa). Se scrie deci lățimea nescalată — altfel, la
+                ' 150%, o coloană trasă la 300 px pe ecran s-ar ține minte ca 300 logici, adică
+                ' 450 pe ecran la următoarea așezare, și ar sări de sub cursor.
+                Dim nouaPx As Integer = _resizeStartWidth + (e.X - _resizeStartX)
+                _resizingColumn.Width = UnscaleX(nouaPx)
                 ' English (slice 0013): a manual drag pins this column — a ToContent pass must
                 ' not undo it. Fill/shrink still applies (via ResetColumnSizing to restore auto).
                 _resizingColumn.UserSized = True
@@ -589,13 +604,13 @@ Partial Class KBotDataView
         Dim tol As Integer = ScaleDpi(4)
 
         For Each cl In _frozenLayout
-            Dim edge As Integer = cl.X + cl.Column.Width
+            Dim edge As Integer = cl.X + cl.Column.WidthPx
             If Math.Abs(pt.X - edge) <= tol Then Return If(cl.Column.Resizable, cl.Column, Nothing)
         Next
 
         Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
-            Dim edge As Integer = _frozenBandWidth + cl.X + cl.Column.Width - hOffset
+            Dim edge As Integer = _frozenBandWidth + cl.X + cl.Column.WidthPx - hOffset
             If Math.Abs(pt.X - edge) <= tol Then Return If(cl.Column.Resizable, cl.Column, Nothing)
         Next
 

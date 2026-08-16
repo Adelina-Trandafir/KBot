@@ -84,7 +84,7 @@ Partial Class KBotDataView
     ' Fontul se cere PE COLOANĂ, nu o dată pe bandă: fiecare coloană poate purta al ei
     ' (KBotDataColumn.HeaderFont), iar banda e doar ce se folosește când ea n-a cerut nimic.
     Private Sub DrawHeaderCell(g As Graphics, col As KBotDataColumn, x As Integer, headerH As Integer)
-        Dim cellRect As New Rectangle(x, 0, col.Width, headerH)
+        Dim cellRect As New Rectangle(x, 0, col.WidthPx, headerH)
         If cellRect.Right < 0 OrElse cellRect.Left > ClientSize.Width Then Return
 
         Dim textRect As Rectangle = DrawHeaderIcons(g, col, cellRect)
@@ -231,17 +231,19 @@ Partial Class KBotDataView
     ' deduce dacă muchia stângă a unei coloane agregate a fost deja desenată de vecin.
     Private Sub DrawFooterCell(g As Graphics, col As KBotDataColumn, stanga As KBotDataColumn,
                                x As Integer, bandTop As Integer, bandH As Integer, tf As Font)
-        Dim cellRect As New Rectangle(x, bandTop, col.Width, bandH)
+        Dim cellRect As New Rectangle(x, bandTop, col.WidthPx, bandH)
+
         If cellRect.Right < 0 OrElse cellRect.Left > ClientSize.Width Then Return
 
         Dim agregata As Boolean = col.Aggregate <> KBotAggregate.None
+        Dim contentRect As Rectangle = CellContentRect(col, cellRect)
 
         If agregata Then
             Dim text As String = FooterTextFor(col)
             Dim padX As Integer = ScaleDpi(8)
             Dim textRect As New Rectangle(cellRect.Left + padX, cellRect.Top,
                                           Math.Max(0, cellRect.Width - 2 * padX), cellRect.Height)
-            TextRenderer.DrawText(g, text, tf, textRect, FooterForeResolved(),
+            TextRenderer.DrawText(g, text, tf, contentRect, FooterForeResolved(),
                 HorizontalFlags(col.TextAlign) Or TextFormatFlags.VerticalCenter Or
                 TextFormatFlags.EndEllipsis)
         End If
@@ -373,7 +375,7 @@ Partial Class KBotDataView
         Dim hOffset As Integer = HScrollOffset()
         For Each cl In _scrollLayout
             DrawCell(g, cl.Column, row, rowIndex,
-                     New Rectangle(_frozenBandWidth + cl.X - hOffset, y, cl.Column.Width, _rowHeight),
+                     New Rectangle(_frozenBandWidth + cl.X - hOffset, y, cl.Column.WidthPx, _rowHeight),
                      backColor, foreColor, rowEnabled)
         Next
         g.Clip = previousClip
@@ -396,7 +398,7 @@ Partial Class KBotDataView
 
         For Each cl In _frozenLayout
             DrawCell(g, cl.Column, row, rowIndex,
-                     New Rectangle(cl.X, y, cl.Column.Width, _rowHeight),
+                     New Rectangle(cl.X, y, cl.Column.WidthPx, _rowHeight),
                      backColor, foreColor, rowEnabled)
         Next
 

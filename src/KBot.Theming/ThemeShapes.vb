@@ -13,17 +13,19 @@ Imports System.Windows.Forms
 Public Module ThemeShapes
 
     ''' <summary>
-    ''' Scalează o valoare logică (px @96dpi) la DPI-ul controlului. Fallback 96 dacă
-    ''' handle-ul încă nu există (DeviceDpi poate arunca înainte de creare).
+    ''' Scalează o valoare logică (px @96dpi) la scara controlului.
+    '''
+    ''' <para>Din felia 0036 formula NU mai stă aici: răspunsul vine din
+    ''' <see cref="AppScaling"/>, sursa unică a scării, fiindcă operatorul o poate acum fixa la
+    ''' 100% sau pune un factor al lui. Funcția rămâne pe loc — o cheamă vreo 157 de locuri din
+    ''' pictura controalelor — dar e un drum, nu o decizie.</para>
+    '''
+    ''' <para>Comportamentul implicit e neschimbat: pe <see cref="ScalingMode.Automatic"/> tot
+    ''' <c>DeviceDpi / 96</c> se calculează, cu aceeași cădere pe 96 când handle-ul încă nu
+    ''' există.</para>
     ''' </summary>
     Public Function ScaleDpi(ctrl As Control, logical As Integer) As Integer
-        Dim dpi As Integer = 96
-        Try
-            If ctrl IsNot Nothing Then dpi = ctrl.DeviceDpi
-        Catch
-            dpi = 96
-        End Try
-        Return CInt(Math.Round(logical * dpi / 96.0))
+        Return AppScaling.Scale(ctrl, logical)
     End Function
 
     ''' <summary>

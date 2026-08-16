@@ -15,6 +15,8 @@ Partial Class ForexeConsoleForm
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        components = New ComponentModel.Container()
+        tips = New KBot.Controls.KBotToolTip(components)
         pnlCard = New Panel()
         rtbLog = New RichTextBox()
         pnlFoot = New Panel()
@@ -187,9 +189,19 @@ Partial Class ForexeConsoleForm
         pnlCard.ResumeLayout(False)
         pnlFoot.ResumeLayout(False)
         pnlStare.ResumeLayout(False)
+        '
+        ' tips — etichetele de survolare (felia 0035), toate în română.
+        '
+        tips.SetToolTipHeader(btnAnulare, "Anulează")
+        tips.SetToolTipText(btnAnulare, "Oprește lucrarea FOREXE în curs." & vbLf & "Ce s-a descărcat deja rămâne pe disc.")
+        tips.SetToolTipHeader(btnAfiseazaBrowser, "Arată browserul")
+        tips.SetToolTipText(btnAfiseazaBrowser, "Aduce în față fereastra de browser prin care lucrează robotul FOREXE." & vbLf & "Folosește-o când portalul cere o confirmare.")
+        tips.SetToolTipHeader(btnAfiseazaLog, "Jurnal")
+        tips.SetToolTipText(btnAfiseazaLog, "Deschide jurnalul lucrării: pașii executați și erorile întâlnite.")
         ResumeLayout(False)
     End Sub
 
+    Friend WithEvents tips As KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
     Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
     Friend WithEvents rtbLog As RichTextBox

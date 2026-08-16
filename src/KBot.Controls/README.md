@@ -21,6 +21,7 @@ e logică (după control), nu după felul fișierului.
 | `BusyBar/` | `KBotBusyBar` |
 | `Notice/` | `KBotNotice`, `NoticeKind` |
 | `TextField/` | `KBotTextField` |
+| `ToolTip/` | `KBotToolTip` (componenta `IExtenderProvider`), `KBotToolTipContent`, `KBotToolTipStyle` + `KBotToolTipBand`/`KBotToolTipSeparator`, `KBotToolTipWindow` (fereastra) și `KBotRichText` (motorul de text îmbogățit: analiză, așezare, desen — pur, măsurabil fără ecran) |
 
 Un control nou => un folder nou. Nu se adaugă fișiere de control în rădăcina proiectului
 (acolo rămân doar `AssemblyInfo.vb`, `.vbproj` și acest README).
