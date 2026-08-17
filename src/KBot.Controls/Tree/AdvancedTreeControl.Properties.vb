@@ -936,7 +936,9 @@ Partial Public Class AdvancedTreeControl
     <Description("Fontul textului din antet (toate atributele); nesetat = Font.")>
     Public Property HeaderFont As Font
         Get
-            Return If(_headerFont, Me.Font)
+            ' Fontul FIXAT trece prin mărirea textului: el nu e Control.Font, deci AppScaling nu-l
+            ' atinge singur (vezi AppScaling.ScaledFont). Nesetat => fontul arborelui, mărit deja.
+            Return If(AppScaling.ScaledFont(Me, _headerFont), Me.Font)
         End Get
         Set(value As Font)
             _headerFont = value
@@ -1283,7 +1285,7 @@ Partial Public Class AdvancedTreeControl
     <Description("Fontul textului din subsol (toate atributele); nesetat = Font.")>
     Public Property FooterCaptionFont As Font
         Get
-            Return If(_footerCaptionFont, Me.Font)
+            Return If(AppScaling.ScaledFont(Me, _footerCaptionFont), Me.Font)
         End Get
         Set(value As Font)
             _footerCaptionFont = value
@@ -1712,6 +1714,10 @@ Partial Public Class AdvancedTreeControl
     <Description("Fontul etichetei de căutare (toate atributele); nesetat = fontul controlului.")>
     Public Property SearchBarLabelFont As Font
         Get
+            ' NU se mărește aici, spre deosebire de HeaderFont: fontul ăsta ajunge pe CONTROALE
+            ' reale (eticheta, caseta, butonul ✕), iar acelea sunt mărite deja de AppScaling prin
+            ' Control.Font. O mărire și aici ar da-o de două ori. Replica DESENATĂ a benzii o cere
+            ' explicit, la locul pictării (vezi DrawSearchBarPreview).
             Return If(_searchBarLabelFont, Me.Font)
         End Get
         Set(value As Font)
@@ -1736,6 +1742,7 @@ Partial Public Class AdvancedTreeControl
     <Description("Fontul casetei de căutare (toate atributele).")>
     Public Property SearchBarFont As Font
         Get
+            ' Vezi nota de la SearchBarLabelFont: ajunge pe controale reale, deci nu se mărește aici.
             Return If(_searchBarFont, Me.Font)
         End Get
         Set(value As Font)

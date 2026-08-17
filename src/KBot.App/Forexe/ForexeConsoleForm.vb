@@ -96,17 +96,42 @@ Public Class ForexeConsoleForm
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Consola se leagă la coordonator din <c>MainForm_Load</c>, dar se ARATĂ abia când operatorul
+    ''' apasă butonul din bandă — iar între cele două momente fereastra n-are handle, deci
+    ''' <see cref="PeFirulDeUI"/> aruncă TOATE evenimentele coordonatorului (nu are unde să le
+    ''' împingă). De aceea starea se recitește la fiecare aducere la vedere: altfel consola arăta
+    ''' pentru totdeauna starea de la legare — «neconectat», cu «Arată browserul» stins — chiar
+    ''' dacă shell-ul era de mult conectat.
+    ''' </summary>
+    Protected Overrides Sub OnVisibleChanged(e As EventArgs)
+        MyBase.OnVisibleChanged(e)
+        Try
+            If Visible Then ActualizeazaStarea()
+        Catch ex As Exception
+            ' Frontieră de UI: logăm și înghițim.
+            GlobalErrorLog.Write("ForexeConsoleForm.OnVisibleChanged", ex)
+        End Try
+    End Sub
+
     ' Starea butoanelor + certificatul, dintr-un singur loc.
     Private Sub ActualizeazaStarea()
         If _controller Is Nothing Then Return
-        btnAnulare.Enabled = _controller.IsBusy
-        btnAfiseazaBrowser.Enabled = _controller.IsConnected
+        Dim conectat As Boolean = _controller.IsConnected
+        Dim ocupat As Boolean = _controller.IsBusy
+
+        btnAnulare.Enabled = ocupat
+        btnAfiseazaBrowser.Enabled = conectat
         ' Eticheta spune ce FACE apăsarea, nu ce se vede acum.
-        btnAfiseazaBrowser.Text = If(_controller.IsConnected AndAlso _controller.IsBrowserVisible,
+        btnAfiseazaBrowser.Text = If(conectat AndAlso _controller.IsBrowserVisible,
                                      "Ascunde browserul", "Arată browserul")
         Dim cert As String = _controller.CertificateName
         lblCert.Text = "Certificat: " & If(String.IsNullOrEmpty(cert), "—", cert)
-        If Not _controller.IsBusy Then pbProgress.Value = 0
+
+        ' Linia de stare și progresul se iau tot de la coordonator, nu doar din evenimente:
+        ' altfel o consolă deschisă târziu ar porni goală, deși robotul lucrează de zece minute.
+        lblStatus.Text = If(_controller.LastStatus.Length > 0, _controller.LastStatus, "În așteptare...")
+        pbProgress.Value = If(ocupat, Math.Max(0, Math.Min(100, _controller.LastPercent)), 0)
     End Sub
 
     ' ── Butoane ──────────────────────────────────────────────────────────

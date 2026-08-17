@@ -127,8 +127,11 @@ Partial Public Class AdvancedTreeControl
     ' (etichetă la PaddingTreeStartPx, casetă până la PaddingTreeEndPx, ✕ lipit în dreapta),
     ' ca trecerea design-time → runtime să nu mute nimic.
     Private Sub DrawSearchBarPreview(g As Graphics, barTop As Integer)
-        Dim labelFont As Font = Me.SearchBarLabelFont
-        Dim boxFont As Font = Me.SearchBarFont
+        ' Replica desenată nu are controale reale în spate, deci mărirea textului trebuie cerută
+        ' aici cu mâna — proprietățile o lasă deoparte tocmai ca să n-o aplice de două ori pe
+        ' banda ADEVĂRATĂ (vezi nota de la SearchBarLabelFont).
+        Dim labelFont As Font = If(AppScaling.ScaledFont(Me, _searchBarLabelFont), Me.Font)
+        Dim boxFont As Font = If(AppScaling.ScaledFont(Me, _searchBarFont), Me.Font)
         Dim x As Integer = PaddingTreeStartPx
 
         If Not String.IsNullOrEmpty(_searchBarLabelText) Then

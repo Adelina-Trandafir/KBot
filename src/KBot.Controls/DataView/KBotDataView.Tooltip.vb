@@ -164,7 +164,9 @@ Partial Class KBotDataView
         End If
 
         Dim col As KBotDataColumn = _columnIndex(_tipColKey)
-        Dim font As Font = If(_cellTooltipOptions.Font, If(_probeCellArgs.Font, Me.Font))
+        ' Fontul etichetei: cel fixat pe opțiuni (mărit, ca orice font ținut de noi), altfel chiar
+        ' fontul CELULEI — care a trecut deja prin CellFontFor, deci e mărit la rândul lui.
+        Dim font As Font = If(Marit(_cellTooltipOptions.Font), If(_probeCellArgs.Font, Me.Font))
         Dim maxTextW As Integer = Math.Max(40, _cellTooltipOptions.MaxWidth - 2 * KBotCellTooltipWindow.PaddingSize.Width)
         Dim masura As Size = TextRenderer.MeasureText(text, font,
                                                       New Size(maxTextW, Integer.MaxValue),

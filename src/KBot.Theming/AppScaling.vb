@@ -1,4 +1,6 @@
 Option Strict On
+Imports System.Collections.Generic
+Imports System.Drawing
 Imports System.Windows.Forms
 Imports KBot.Common
 
@@ -118,6 +120,59 @@ Public Module AppScaling
         End Get
     End Property
 
+    ''' <summary>
+    ''' Mărimea textului pentru un control anume — 1 la design time, unde trebuie să se vadă exact
+    ''' ce s-a autorit. Perechea lui <see cref="FactorFor"/>, dar FĂRĂ partea de ecran: un font e în
+    ''' puncte, deci DPI-ul îl scalează deja sistemul; a-l înmulți și cu scara de ecran l-ar mări de
+    ''' două ori.
+    ''' </summary>
+    Public Function TextFactorFor(ctrl As Control) As Single
+        If ctrl IsNot Nothing AndAlso KBotDesignTime.IsDesignTime(ctrl) Then Return 1.0F
+        Return _textScale
+    End Function
+
+    ''' <summary>
+    ''' Varianta MĂRITĂ a unui font pe care îl ține un control al nostru — fontul unei coloane, al
+    ''' unei benzi, al unei etichete desenate de noi.
+    '''
+    ''' <para><b>De ce e nevoie de ea.</b> <see cref="ApplyTextScale"/> mărește doar
+    ''' <c>Control.Font</c>; un font ținut într-o PROPRIETATE proprie (<c>KBotDataColumn.ColumnFont</c>,
+    ''' <c>KBotDataView.HeaderFont</c>, fonturile de bandă derivate din schemă) nu trece pe acolo și
+    ''' rămâne la mărimea autorită. Exact așa arăta grila: rândurile creșteau cu cursorul, iar textul
+    ''' din celule nu — fiindcă toate coloanele aveau <c>ColumnFont</c> pus în designer.</para>
+    '''
+    ''' <para>Proprietatea publică rămâne cea AUTORITĂ (designerul serializează 9, nu 13,5) — se
+    ''' scalează la FOLOSIRE, ca la lățimile de coloană din felia 0035.</para>
+    '''
+    ''' <para>Fonturile derivate se păstrează într-un cache golit la fiecare schimbare de mărime și
+    ''' NU se eliberează — un <c>Font</c> pe care tocmai îl folosește o pictare nu are voie să
+    ''' dispară sub ea (aceeași alegere ca în <see cref="FontBaseline"/>).</para>
+    ''' </summary>
+    Public Function ScaledFont(ctrl As Control, source As Font) As Font
+        If source Is Nothing Then Return Nothing
+        Try
+            Dim factor As Single = TextFactorFor(ctrl)
+            If Math.Abs(factor - 1.0F) < 0.0001F Then Return source
+
+            Dim gata As Font = Nothing
+            If _scaledFonts.TryGetValue(source, gata) Then Return gata
+
+            Dim marime As Single = source.Size * factor
+            If marime <= 0F Then Return source
+            gata = New Font(source.FontFamily, marime, source.Style, source.Unit,
+                            source.GdiCharSet, source.GdiVerticalFont)
+            _scaledFonts(source) = gata
+            Return gata
+        Catch ex As Exception
+            ' Predicat de pictură: o familie stricată nu are voie să arunce dintr-un OnPaint.
+            GlobalErrorLog.Write("AppScaling.ScaledFont", ex)
+            Return source
+        End Try
+    End Function
+
+    ' Fonturile derivate, pe fontul-sursă. Se golește la fiecare schimbare de mărime.
+    Private ReadOnly _scaledFonts As New Dictionary(Of Font, Font)()
+
     ''' <summary>Aduce un factor între limite. Valorile absurde (0, negative) cad pe 1.</summary>
     Public Function ClampFactor(value As Single) As Single
         If value <= 0F OrElse Single.IsNaN(value) OrElse Single.IsInfinity(value) Then Return 1.0F
@@ -143,6 +198,8 @@ Public Module AppScaling
             Dim nou As Single = ClampTextScale(value)
             If nou = _textScale Then Return
             _textScale = nou
+            ' Fonturile derivate sunt bune doar pentru mărimea cu care au fost făcute.
+            _scaledFonts.Clear()
             ThemeStore.SaveScaling(_mode, _manualFactor, _dpiUnaware, _textScale)
             Broadcast()
             RaiseEvent ScalingChanged(Nothing, EventArgs.Empty)
@@ -226,6 +283,7 @@ Public Module AppScaling
         _manualFactor = ClampFactor(manualFactor)
         _dpiUnaware = dpiUnaware
         _textScale = ClampTextScale(textScale)
+        _scaledFonts.Clear()
     End Sub
 
     ''' <summary>

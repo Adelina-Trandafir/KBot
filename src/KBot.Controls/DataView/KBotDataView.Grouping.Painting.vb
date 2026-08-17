@@ -63,7 +63,7 @@ Partial Class KBotDataView
     Friend Function GroupBandFontFor(nivel As KBotGroupLevel, antet As Boolean) As Font
         If nivel IsNot Nothing Then
             Dim fixat As Font = If(antet, nivel.HeaderFont, nivel.FooterFont)
-            If fixat IsNot Nothing Then Return fixat
+            If fixat IsNot Nothing Then Return Marit(fixat)
         End If
         Return If(antet, ResolvedHeaderFont(), ResolvedFooterFont())
     End Function

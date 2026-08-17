@@ -397,16 +397,26 @@ Partial Class KBotDataView
     ' FONTURILE BENZILOR — rezolvate din temă, cu ultimul cuvânt la operator
     ' ══════════════════════════════════════════════════════════════════════════
 
+    ''' <summary>
+    ''' Varianta MĂRITĂ a unui font fixat de operator. Fonturile ținute în proprietăți proprii
+    ''' (ale coloanei, ale benzilor, ale nivelurilor de grup) nu trec prin <c>Control.Font</c>, deci
+    ''' mărirea textului nu ajunge la ele singură — vezi <c>AppScaling.ScaledFont</c>. Fontul
+    ''' AMBIENT nu trece pe aici: acela e mărit deja, iar a doua înmulțire l-ar dubla.
+    ''' </summary>
+    Private Function Marit(f As Font) As Font
+        Return AppScaling.ScaledFont(Me, f)
+    End Function
+
     ''' <summary>Fontul cu care se scriu titlurile de coloană (fixat de operator sau din temă).</summary>
     Friend Function ResolvedHeaderFont() As Font
-        If _headerFontPinned IsNot Nothing Then Return _headerFontPinned
+        If _headerFontPinned IsNot Nothing Then Return Marit(_headerFontPinned)
         If _headerFont Is Nothing Then _headerFont = BuildBandFont()
         Return _headerFont
     End Function
 
     ''' <summary>Fontul cu care se scriu agregatele din subsol (fixat de operator sau din temă).</summary>
     Friend Function ResolvedFooterFont() As Font
-        If _footerFontPinned IsNot Nothing Then Return _footerFontPinned
+        If _footerFontPinned IsNot Nothing Then Return Marit(_footerFontPinned)
         If _footerFont Is Nothing Then _footerFont = BuildBandFont()
         Return _footerFont
     End Function
@@ -420,7 +430,7 @@ Partial Class KBotDataView
     ''' sub linia de bază.
     ''' </summary>
     Friend Function HeaderFontFor(col As KBotDataColumn) As Font
-        If col IsNot Nothing AndAlso col.HeaderFont IsNot Nothing Then Return col.HeaderFont
+        If col IsNot Nothing AndAlso col.HeaderFont IsNot Nothing Then Return Marit(col.HeaderFont)
         Return ResolvedHeaderFont()
     End Function
 
@@ -431,7 +441,7 @@ Partial Class KBotDataView
     ''' verificarea depășirii care aprinde eticheta.
     ''' </summary>
     Friend Function CellFontFor(col As KBotDataColumn) As Font
-        If col IsNot Nothing AndAlso col.ColumnFont IsNot Nothing Then Return col.ColumnFont
+        If col IsNot Nothing AndAlso col.ColumnFont IsNot Nothing Then Return Marit(col.ColumnFont)
         Return Font
     End Function
 
@@ -446,7 +456,11 @@ Partial Class KBotDataView
     ''' </summary>
     Private Function BuildBandFont() As Font
         Dim numeBaza As String = If(String.IsNullOrWhiteSpace(_schemeFontName), Font.Name, _schemeFontName)
-        Dim marime As Single = If(_schemeFontSize > 0F, _schemeFontSize, Font.Size)
+        ' Mărimea SCHEMEI trece prin mărirea cerută de operator; cea ambientală e mărită deja
+        ' (Control.Font a fost rescris de AppScaling), deci ea se ia ca atare.
+        Dim marime As Single = If(_schemeFontSize > 0F,
+                                  _schemeFontSize * AppScaling.TextFactorFor(Me),
+                                  Font.Size)
         Dim semibold As String = numeBaza & " Semibold"
         If FamilyExists(semibold) Then Return New Font(semibold, marime)
         If FamilyExists(numeBaza) Then Return New Font(numeBaza, marime, FontStyle.Bold)
