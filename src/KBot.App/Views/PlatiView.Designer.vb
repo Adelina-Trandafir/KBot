@@ -18,6 +18,9 @@ Partial Class PlatiView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
+        Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
+        Dim TreeNodeDefinition2 As TreeNodeDefinition = New TreeNodeDefinition()
+        Dim TreeNodeDefinition3 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(PlatiView))
         Dim KBotDataColumn1 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
@@ -79,49 +82,86 @@ Partial Class PlatiView
         ' split.Panel2
         ' 
         split.Panel2.Controls.Add(innerSplit)
-        split.Size = New Size(986, 567)
-        split.SplitterDistance = 275
+        split.Size = New Size(986, 568)
+        split.SplitterDistance = 318
         split.SplitterWidth = 9
         split.TabIndex = 0
         ' 
         ' tree
         ' 
+        tree.BorderColor = SystemColors.ActiveBorder
+        tree.CollapseButtonTooltip = "Strânge arborele la o bandă îngustă." & vbLf & "Rândurile se citesc atunci prin eticheta care iese la survolare."
         tree.Dock = DockStyle.Fill
-        tree.Font = New Font("Calibri", 9.0F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        tree.DynamicColumns = False
+        tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
+        tree.ExpanderSize = 10
+        tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
-        tree.FooterCaption = "Actualizează Plăți"
-        tree.FooterCaptionFont = New Font("Consolas", 8.0F, FontStyle.Bold)
+        tree.FooterCaption = "Actualizează"
+        tree.FooterCaptionFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
-        tree.FooterHeight = 40
-        tree.FooterIconSize = New Size(24, 24)
+        tree.FooterHeight = 30
+        tree.FooterIconSize = New Size(18, 18)
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
+        tree.FooterRightIconTooltip = "Descarcă plățile/încăsările din CAB."
+        tree.FooterSeparatorColor = Color.Gainsboro
+        tree.FooterSeparatorWidth = 2
         tree.FooterTextAlign = ContentAlignment.MiddleRight
         tree.FooterVisible = True
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
-        tree.HeaderCaption = " PLĂȚI"
-        tree.HeaderFont = New Font("Tahoma", 9.0F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        tree.HeaderCaption = " PLĂȚI / ÎNCASĂRI"
+        tree.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.HeaderForeColor = Color.Black
-        tree.HeaderGradientEndColor = Color.CornflowerBlue
-        tree.HeaderHeight = 40
-        tree.HeaderIconSize = New Size(24, 24)
+        tree.HeaderHeight = 30
+        tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
-        tree.HeaderVisible = True
-        tree.CollapseButtonTooltip = "Strânge arborele la o bandă îngustă." & vbLf & "Rândurile se citesc atunci prin eticheta care iese la survolare."
-        tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
-        tree.FooterRightIconTooltip = "Reîncarcă plățile de la server."
         tree.HeaderSearchIconTooltip = "Caută în arbore." & vbLf & "ESC golește căutarea și închide banda."
+        tree.HeaderSeparatorColor = Color.Gainsboro
+        tree.HeaderSeparatorWidth = 2
+        tree.HeaderVisible = True
         tree.Indent = 8
-        tree.ItemHeight = 30
-        tree.LeftIconSize = New Size(16, 16)
+        tree.LeftIconSize = New Size(14, 14)
+        tree.LeftTextWidth = 100
         tree.Location = New Point(0, 0)
-        tree.Margin = New Padding(4, 5, 4, 5)
+        tree.Margin = New Padding(2, 4, 2, 4)
         tree.MinimumCollapsedWidth = 120
         tree.Name = "tree"
         tree.NodeImages = image_list
-        tree.Size = New Size(275, 567)
+        TreeNodeDefinition1.Caption = "Ianuarie~~~12.345.678,99"
+        TreeNodeDefinition1.Expanded = True
+        TreeNodeDefinition1.ImageKey = "month"
+        TreeNodeDefinition1.Key = "1"
+        TreeNodeDefinition1.OpenImageKey = Nothing
+        TreeNodeDefinition1.ParentKey = Nothing
+        TreeNodeDefinition1.RightImageKey = Nothing
+        TreeNodeDefinition1.Tag = Nothing
+        TreeNodeDefinition1.Tooltip = Nothing
+        TreeNodeDefinition2.Caption = "21.01.2026~~~12.345.789.69"
+        TreeNodeDefinition2.ImageKey = "up"
+        TreeNodeDefinition2.Key = "2"
+        TreeNodeDefinition2.OpenImageKey = Nothing
+        TreeNodeDefinition2.ParentKey = "1"
+        TreeNodeDefinition2.RightImageKey = Nothing
+        TreeNodeDefinition2.Tag = Nothing
+        TreeNodeDefinition2.Tooltip = Nothing
+        TreeNodeDefinition3.Caption = "22.01.2026~~~-123.33"
+        TreeNodeDefinition3.ImageKey = "down"
+        TreeNodeDefinition3.Key = Nothing
+        TreeNodeDefinition3.OpenImageKey = Nothing
+        TreeNodeDefinition3.ParentKey = "1"
+        TreeNodeDefinition3.RightImageKey = Nothing
+        TreeNodeDefinition3.Tag = Nothing
+        TreeNodeDefinition3.Tooltip = Nothing
+        tree.Nodes.Add(TreeNodeDefinition1)
+        tree.Nodes.Add(TreeNodeDefinition2)
+        tree.Nodes.Add(TreeNodeDefinition3)
+        tree.PaddingExpanderGap = 10
+        tree.PaddingIconGap = 10
+        tree.PaddingTreeStart = 8
+        tree.Size = New Size(318, 568)
         tree.TabIndex = 0
         ' 
         ' image_list
@@ -137,6 +177,7 @@ Partial Class PlatiView
         ' 
         innerSplit.Dock = DockStyle.Fill
         innerSplit.Location = New Point(0, 0)
+        innerSplit.Margin = New Padding(2)
         innerSplit.Name = "innerSplit"
         innerSplit.Orientation = Orientation.Horizontal
         ' 
@@ -147,7 +188,7 @@ Partial Class PlatiView
         ' innerSplit.Panel2
         ' 
         innerSplit.Panel2.Controls.Add(detailPane)
-        innerSplit.Size = New Size(702, 567)
+        innerSplit.Size = New Size(659, 568)
         innerSplit.SplitterDistance = 340
         innerSplit.SplitterWidth = 9
         innerSplit.TabIndex = 0
@@ -157,13 +198,15 @@ Partial Class PlatiView
         grid.AutoSizeColumnsMode = KBotAutoSizeMode.None
         grid.AutoSizeHeaderHeight = False
         grid.BackColor = SystemColors.Window
+        grid.BorderColor = SystemColors.ActiveBorder
         grid.ColumnFillMode = KBotFillMode.LastColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn1.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn1.ColumnFont = New Font("Calibri", 9.0F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderFont = New Font("Consolas", 9.0F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Clasificație"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clsf"
@@ -172,32 +215,39 @@ Partial Class PlatiView
         KBotDataColumn1.ReadOnly = True
         KBotDataColumn1.ShowColumnFilter = True
         KBotDataColumn1.TextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn1.Width = 190
+        KBotDataColumn1.Width = 120
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn2.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn2.ColumnFilterIcon = My.Resources.Resources.filter
+        KBotDataColumn2.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderText = "Număr Doc."
+        KBotDataColumn2.HeaderText = "Număr"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "nrdoc"
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.ReadOnly = True
         KBotDataColumn2.Visible = False
-        KBotDataColumn2.Width = 150
+        KBotDataColumn2.Width = 80
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn3.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn3.ColumnFilterIcon = My.Resources.Resources.filter
+        KBotDataColumn3.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderText = "Data"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "data"
         KBotDataColumn3.OptionGroup = Nothing
         KBotDataColumn3.ReadOnly = True
+        KBotDataColumn3.TextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.ValueType = KBotValueType.DateTime
-        KBotDataColumn3.Width = 150
+        KBotDataColumn3.Width = 80
         KBotDataColumn4.Aggregate = KBotAggregate.Sum
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn4.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn4.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn4.DecimalPlaces = 2
         KBotDataColumn4.Format = KBotFormat.Standard
         KBotDataColumn4.FormatString = Nothing
@@ -207,31 +257,49 @@ Partial Class PlatiView
         KBotDataColumn4.OptionGroup = Nothing
         KBotDataColumn4.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn4.ValueType = KBotValueType.Number
-        KBotDataColumn4.Width = 150
+        KBotDataColumn4.Width = 80
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn5.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn5.ColumnFilterIcon = My.Resources.Resources.filter
+        KBotDataColumn5.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = "Plătitor"
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "platitor"
         KBotDataColumn5.OptionGroup = Nothing
         KBotDataColumn5.ReadOnly = True
-        KBotDataColumn5.Width = 150
+        KBotDataColumn5.Width = 120
         grid.Columns.Add(KBotDataColumn1)
         grid.Columns.Add(KBotDataColumn2)
         grid.Columns.Add(KBotDataColumn3)
         grid.Columns.Add(KBotDataColumn4)
         grid.Columns.Add(KBotDataColumn5)
         grid.Dock = DockStyle.Fill
+        grid.FilterIconSize = New Size(14, 14)
+        grid.FooterBackColor = SystemColors.Control
+        grid.FooterCaption = "TOTALURI"
+        grid.FooterColumnSeparatorColor = Color.Gainsboro
+        grid.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        grid.FooterForeColor = SystemColors.ActiveCaptionText
+        grid.FooterHeight = 30
+        grid.FooterIconSize = New Size(14, 14)
+        grid.FooterSeparatorColor = Color.Gainsboro
         grid.FooterVisible = True
-        grid.HeaderHeight = 40
+        grid.FrozenColumnCount = 1
+        grid.HeaderBackColor = SystemColors.Control
+        grid.HeaderColumnSeparatorColor = Color.Gainsboro
+        grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        grid.HeaderForeColor = SystemColors.ActiveCaptionText
+        grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 0)
         grid.Margin = New Padding(4, 5, 4, 5)
         grid.Name = "grid"
         grid.ReadOnlyGrid = True
+        grid.RowHeight = 22
         grid.ScrollByColumn = True
-        grid.Size = New Size(702, 340)
+        grid.ShrinkColumnsToFit = False
+        grid.Size = New Size(659, 340)
         grid.TabIndex = 0
         ' 
         ' detailPane
@@ -240,18 +308,20 @@ Partial Class PlatiView
         detailPane.Controls.Add(lblDetailMessage)
         detailPane.Dock = DockStyle.Fill
         detailPane.Location = New Point(0, 0)
+        detailPane.Margin = New Padding(0)
         detailPane.Name = "detailPane"
-        detailPane.Padding = New Padding(8)
-        detailPane.Size = New Size(702, 218)
+        detailPane.Size = New Size(659, 219)
         detailPane.TabIndex = 0
         ' 
         ' detailTable
         ' 
+        detailTable.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single
         detailTable.ColumnCount = 2
-        detailTable.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130.0F))
-        detailTable.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        detailTable.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 236F))
+        detailTable.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         detailTable.Dock = DockStyle.Fill
-        detailTable.Location = New Point(8, 8)
+        detailTable.Location = New Point(0, 0)
+        detailTable.Margin = New Padding(0)
         detailTable.Name = "detailTable"
         detailTable.RowCount = 10
         detailTable.RowStyles.Add(New RowStyle())
@@ -263,18 +333,19 @@ Partial Class PlatiView
         detailTable.RowStyles.Add(New RowStyle())
         detailTable.RowStyles.Add(New RowStyle())
         detailTable.RowStyles.Add(New RowStyle())
-        detailTable.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
-        detailTable.Size = New Size(686, 202)
+        detailTable.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        detailTable.Size = New Size(659, 219)
         detailTable.TabIndex = 0
         detailTable.Visible = False
         ' 
         ' lblDetailMessage
         ' 
         lblDetailMessage.Dock = DockStyle.Fill
-        lblDetailMessage.Font = New Font("Segoe UI", 10.0F)
-        lblDetailMessage.Location = New Point(8, 8)
+        lblDetailMessage.Font = New Font("Segoe UI", 10F)
+        lblDetailMessage.Location = New Point(0, 0)
+        lblDetailMessage.Margin = New Padding(2, 0, 2, 0)
         lblDetailMessage.Name = "lblDetailMessage"
-        lblDetailMessage.Size = New Size(686, 202)
+        lblDetailMessage.Size = New Size(659, 219)
         lblDetailMessage.TabIndex = 1
         lblDetailMessage.Text = "Selectați o plată."
         lblDetailMessage.TextAlign = ContentAlignment.MiddleCenter
@@ -423,24 +494,24 @@ Partial Class PlatiView
         ' lblEmpty
         ' 
         lblEmpty.Dock = DockStyle.Fill
-        lblEmpty.Font = New Font("Segoe UI", 10.0F)
+        lblEmpty.Font = New Font("Segoe UI", 10F)
         lblEmpty.Location = New Point(0, 0)
         lblEmpty.Margin = New Padding(4, 0, 4, 0)
         lblEmpty.Name = "lblEmpty"
-        lblEmpty.Size = New Size(986, 567)
+        lblEmpty.Size = New Size(986, 568)
         lblEmpty.TabIndex = 1
         lblEmpty.Text = "Selectați un angajament din arbore."
         lblEmpty.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' PlatiView
         ' 
-        AutoScaleDimensions = New SizeF(10.0F, 25.0F)
+        AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(split)
         Controls.Add(lblEmpty)
         Margin = New Padding(4, 5, 4, 5)
         Name = "PlatiView"
-        Size = New Size(986, 567)
+        Size = New Size(986, 568)
         split.Panel1.ResumeLayout(False)
         split.Panel2.ResumeLayout(False)
         CType(split, ComponentModel.ISupportInitialize).EndInit()

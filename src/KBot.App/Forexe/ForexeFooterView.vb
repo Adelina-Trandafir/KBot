@@ -4,9 +4,13 @@ Imports KBot.Common
 Imports KBot.Theming
 
 ''' <summary>
-''' Banda FOREXE din subsolul shell-ului (felia 0034): butonul «Conectare», starea conexiunii,
-''' progresul, certificatul ales, ULTIMA linie de stare și butonul care deschide consola.
+''' Banda FOREXE din subsolul shell-ului (felia 0034): starea conexiunii, progresul,
+''' certificatul ales, ULTIMA linie de stare și butonul care deschide consola.
 ''' Înlocuiește <c>lblProgram</c> și înghite ce arăta <c>lblForexe</c>.
+'''
+''' <para>Butonul «Conectare» NU mai stă aici: a urcat în antetul shell-ului
+''' (<c>MainForm.btnConectare</c>, prima celulă din <c>tlyHeader</c>), unde vorbește cu
+''' ACELAȘI <see cref="ForexeController"/> — banda rămâne pur informativă.</para>
 '''
 ''' <para>Suprafață PROASTĂ: nu vorbește cu robotul, ci doar cu <see cref="ForexeController"/> —
 ''' se abonează la evenimentele lui și îi cheamă intențiile. Descărcările NU pornesc de aici,
@@ -23,6 +27,12 @@ Public Class ForexeFooterView
 
     ''' <summary>Operatorul a cerut consola FOREXE (butonul de extindere).</summary>
     Public Event ExpandRequested As EventHandler
+
+    ''' <summary>
+    ''' Operatorul a cerut istoricul acțiunilor FOREXE (felia 0040). Banda rămâne proastă:
+    ''' fereastra o deține și o arată shell-ul, exact ca pe consolă.
+    ''' </summary>
+    Public Event HistoryRequested As EventHandler
 
     Public Sub New()
         InitializeComponent()
@@ -100,8 +110,12 @@ Public Class ForexeFooterView
         Dim conectat As Boolean = _controller.IsConnected
         Dim ocupat As Boolean = _controller.IsBusy
 
-        btnConectare.Enabled = Not ocupat AndAlso Not conectat
         lblConexiune.Text = If(conectat, "● Forexe: conectat", "● Forexe: neconectat")
+
+        ' Linia de stare — perechea lui lblStatus din KBOT_IPC (felia 0040). Sursa e ULTIMA stare
+        ' știută de coordonator, aceeași pe care o împinge StatusChanged: la legare (când încă
+        ' n-a venit niciun eveniment) banda arată repausul, nu un gol care pare defect.
+        lblStatus.Text = If(_controller.LastStatus.Length > 0, _controller.LastStatus, "În așteptare...")
 
         Dim p = ThemeManager.Current.Palette
         lblConexiune.ForeColor = If(conectat, p.SuccessColor, p.TextDimColor)
@@ -121,23 +135,19 @@ Public Class ForexeFooterView
 
     ' ── Butoane ──────────────────────────────────────────────────────────
 
-    Private Async Sub BtnConectare_Click(sender As Object, e As EventArgs) Handles btnConectare.Click
-        Try
-            If _controller Is Nothing Then Return
-            Await _controller.ConnectAsync()
-        Catch ex As Exception
-            ' Frontieră de UI (async Sub): nu poate rearunca — logăm și spunem de ce.
-            GlobalErrorLog.Write("ForexeFooterView.btnConectare_Click", ex)
-            MessageBox.Show(Me, "Conectarea la FOREXE a eșuat: " & ex.Message, "FOREXE",
-                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
-        End Try
-    End Sub
-
     Private Sub BtnExtinde_Click(sender As Object, e As EventArgs) Handles btnExtinde.Click
         Try
             RaiseEvent ExpandRequested(Me, EventArgs.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeFooterView.btnExtinde_Click", ex)
+        End Try
+    End Sub
+
+    Private Sub BtnIstoric_Click(sender As Object, e As EventArgs) Handles btnIstoric.Click
+        Try
+            RaiseEvent HistoryRequested(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeFooterView.btnIstoric_Click", ex)
         End Try
     End Sub
 
@@ -154,8 +164,8 @@ Public Class ForexeFooterView
             lblCert.ForeColor = p.TextDimColor
             lblStatus.ForeColor = p.TextDimColor
 
-            ButtonStyles.ApplyPrimary(btnConectare, scheme)
             ButtonStyles.ApplySecondary(btnExtinde, scheme)
+            ButtonStyles.ApplySecondary(btnIstoric, scheme)
 
             ' Bara de progres e ea însăși IThemedControl, dar banda ASTA e la rândul ei una:
             ' ThemeManager nu recurge în copiii unui IThemedControl, deci schema trebuie

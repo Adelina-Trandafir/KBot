@@ -344,4 +344,194 @@ Public Class KBotDataViewAutoSizeTests
         End Using
     End Sub
 
+    ' ── Coloana elastică cedează chiar cu ShrinkColumnsToFit = False ─────────────
+    '
+    ' Configurația e cea din DdfValoriPage: umplere pe prima coloană, strâmtare generală stinsă,
+    ' lățimi autorate care încap pe lat DOAR cât timp nu e bară verticală. Când bara apare, cei
+    ' 17px ai ei fac diferența, iar înainte de felia asta apărea și bara orizontală — deși coloana
+    ' elastică avea zeci de pixeli deasupra minimului ei.
+
+    ' Un grid ca al paginii Valori: 5 coloane, 410px autorați, umplere pe prima, fără strâmtare.
+    Private Shared Function NewValoriLikeGrid(w As Integer, rows As Integer) As KBotDataView
+        Dim dv = NewGrid(w, 300)
+        dv.BeginUpdate()
+        dv.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        dv.ColumnFillMode = KBotFillMode.FirstColumn
+        dv.ShrinkColumnsToFit = False
+        dv.AddColumn("clsf", "Clasificație", KBotColumnType.Text, 120)
+        dv.Column("clsf").MinWidth = 50
+        dv.AddColumn("element", "Element", KBotColumnType.Text, 50)
+        For Each k In {"valprec", "valcur", "valtot"}
+            dv.AddColumn(k, "Valoare", KBotColumnType.Text, 80)
+        Next
+        For i As Integer = 1 To rows
+            Dim r = dv.AddRow()
+            r("clsf") = "20.01.02"
+        Next
+        dv.EndUpdate()
+        Return dv
+    End Function
+
+    Private Shared Function VScrollVisible(dv As KBotDataView) As Boolean
+        For Each c As Control In dv.Controls
+            If TypeOf c Is VScrollBar Then Return c.Visible
+        Next
+        Return False
+    End Function
+
+    ''' <summary>
+    ''' Cazul raportat: bara verticală apare, iar totalul trebuie să încapă în ce a rămas —
+    ''' fără bară orizontală. Coloana elastică cedează exact cei 17px.
+    ''' </summary>
+    <Fact>
+    Public Sub FillTarget_CedeazaLatimeaBareiVerticale_ChiarFaraShrink()
+        ' 420 clienți, 410 autorați: încape fără bară verticală, NU încape cu ea.
+        Using dv = NewValoriLikeGrid(420, 200)
+            Assert.True(VScrollVisible(dv), "cazul cere bara verticală vizibilă")
+
+            Dim disponibil As Integer = dv.ClientSize.Width - SystemInformation.VerticalScrollBarWidth
+            Assert.Equal(disponibil, SumVisibleWidths(dv))
+            Assert.True(dv.Column("clsf").Width < 120, "coloana elastică trebuie să fi cedat")
+            Assert.True(dv.Column("clsf").Width >= dv.Column("clsf").MinWidth)
+        End Using
+    End Sub
+
+    ''' <summary>Celelalte coloane rămân neatinse — «nu le strâmta» e respectat pentru ele.</summary>
+    <Fact>
+    Public Sub FillTarget_CedeazaSingura_CelelalteRamanLaLatimeaLor()
+        Using dv = NewValoriLikeGrid(420, 200)
+            Assert.Equal(50, dv.Column("element").Width)
+            For Each k In {"valprec", "valcur", "valtot"}
+                Assert.Equal(80, dv.Column(k).Width)
+            Next
+        End Using
+    End Sub
+
+    ''' <summary>
+    ''' Fără bară verticală (puține rânduri) totul încape, iar coloana elastică CREȘTE ca înainte:
+    ''' cedarea e o cale nouă pe depășire, nu o schimbare a umplerii.
+    ''' </summary>
+    <Fact>
+    Public Sub FaraBaraVerticala_ColoanaElasticaCreste_CaInainte()
+        Using dv = NewValoriLikeGrid(420, 2)
+            Assert.False(VScrollVisible(dv))
+            Assert.Equal(dv.ClientSize.Width, SumVisibleWidths(dv))
+            Assert.True(dv.Column("clsf").Width > 120, "spațiul rămas se cheltuie pe coloana aleasă")
+        End Using
+    End Sub
+
+    ''' <summary>
+    ''' Podeaua ține: dacă nici coloana elastică golită până la minim nu ajunge, lățimile se
+    ''' opresc acolo și bara orizontală apare — răspunsul onest, nu text tăiat.
+    ''' </summary>
+    <Fact>
+    Public Sub FillTarget_NuCoboaraSubMinim_SiAtunciBaraOrizontalaEsteCorecta()
+        Using dv = NewValoriLikeGrid(200, 200)
+            Assert.Equal(dv.Column("clsf").MinWidth, dv.Column("clsf").Width)
+            Assert.True(SumVisibleWidths(dv) > dv.ClientSize.Width,
+                        "depășirea rămasă e reală, deci bara orizontală e corectă")
+        End Using
+    End Sub
+
+    ''' <summary>
+    ''' <c>Proportional</c> nu are o singură coloană elastică — acolo «nu strâmta» rămâne întreg,
+    ''' altfel comutatorul n-ar mai însemna nimic.
+    ''' </summary>
+    <Fact>
+    Public Sub Proportional_NuCedeazaNimic_CandShrinkEsteStins()
+        Using dv = NewGrid(200, 300)
+            dv.BeginUpdate()
+            dv.AutoSizeColumnsMode = KBotAutoSizeMode.None
+            dv.ColumnFillMode = KBotFillMode.Proportional
+            dv.ShrinkColumnsToFit = False
+            dv.AddColumn("a", "A", KBotColumnType.Text, 150)
+            dv.AddColumn("b", "B", KBotColumnType.Text, 150)
+            dv.EndUpdate()
+
+            Assert.Equal(150, dv.Column("a").Width)
+            Assert.Equal(150, dv.Column("b").Width)
+        End Using
+    End Sub
+
+    ' ── Rotunjirea logic ↔ scalat nu are voie să depășească ──────────────────────
+    '
+    ' Lățimile se țin LOGIC (px la 96 dpi) și se re-derivă la folosire, deci fiecare scriere a
+    ' trecerii face dus-întorsul round(v / s) * s. La scara 1 e exact, deci toate testele de mai
+    ' sus n-au putut vedea nimic; la 125% dus-întorsul poate ieși cu UN pixel peste cât s-a cerut,
+    ' iar un pixel peste lățimea disponibilă e o bară orizontală. Așa se vedea în DdfValoriPage
+    ' după ce coloana elastică a început să cedeze: 639 disponibili, 640 desenați.
+    '
+    ' Scara e stare GLOBALĂ (AppScaling), deci se pune și se pune la loc în Finally. Se poate
+    ' face fără curse: paralelizarea e stinsă pe tot assembly-ul (vezi TestAssemblyInfo.vb).
+    ' Configure persistă setarea, de aceea restaurarea nu e opțională.
+    Private Shared Sub RunAtScale(factor As Single, body As Action)
+        Dim modVechi As ScalingMode = AppScaling.Mode
+        Dim facVechi As Single = AppScaling.ManualFactor
+        Try
+            AppScaling.Configure(ScalingMode.Manual, factor)
+            body()
+        Finally
+            AppScaling.Configure(modVechi, facVechi)
+        End Try
+    End Sub
+
+    ' Lățimea PICTATĂ a unei coloane. WidthPx e Friend în KBot.Controls, deci se reface aici cu
+    ' aceeași formulă (ScalePx): valoarea logică înmulțită cu scara grilei.
+    Private Shared Function WidthPxOf(dv As KBotDataView, key As String) As Integer
+        Return CInt(Math.Round(dv.Column(key).Width * dv.DpiScaleX))
+    End Function
+
+    Private Shared Function SumWidthsPx(dv As KBotDataView) As Integer
+        Dim total As Integer = 0
+        For Each c In dv.Columns
+            If c.Visible Then total += CInt(Math.Round(c.Width * dv.DpiScaleX))
+        Next
+        Return total
+    End Function
+
+    ''' <summary>
+    ''' La 125%, o grilă ca DdfValoriPage cu bară verticală trebuie să încapă pe lat. Nu se cere
+    ''' potrivire EXACTĂ: un pixel de joc rămas nefolosit nu se vede, unul în plus costă o bară.
+    ''' </summary>
+    <Fact>
+    Public Sub La125_TotalulNuDepasesteSpatiulDisponibil()
+        RunAtScale(1.25F,
+            Sub()
+                For Each w In {500, 656, 700}
+                    Using dv = NewValoriLikeGrid(w, 200)
+                        dv.RefreshDpiMetrics()
+                        Assert.True(VScrollVisible(dv), "cazul cere bara verticală")
+
+                        Dim disponibil As Integer = dv.ClientSize.Width -
+                                                    SystemInformation.VerticalScrollBarWidth
+                        Dim total As Integer = SumWidthsPx(dv)
+                        Assert.True(total <= disponibil,
+                                    $"la client={w}: {total}px desenați în {disponibil}px disponibili")
+                        Assert.True(disponibil - total <= 1,
+                                    $"la client={w}: {disponibil - total}px nefolosiți — prea mult joc")
+                    End Using
+                Next
+            End Sub)
+    End Sub
+
+    ''' <summary>
+    ''' Creșterea coloanei de umplere nu depășește nici ea: e cealaltă jumătate a aceleiași
+    ''' rotunjiri, pe cazul în care există spațiu rămas de cheltuit.
+    ''' </summary>
+    <Fact>
+    Public Sub La125_CrestereaColoaneiElasticeNuDepaseste()
+        RunAtScale(1.25F,
+            Sub()
+                Using dv = NewValoriLikeGrid(900, 2)
+                    dv.RefreshDpiMetrics()
+                    Assert.False(VScrollVisible(dv), "puține rânduri — fără bară verticală")
+
+                    Assert.True(SumWidthsPx(dv) <= dv.ClientSize.Width,
+                                $"{SumWidthsPx(dv)}px desenați în {dv.ClientSize.Width}px")
+                    Assert.True(WidthPxOf(dv, "clsf") > CInt(Math.Round(120 * dv.DpiScaleX)),
+                                "coloana elastică trebuie să fi crescut")
+                End Using
+            End Sub)
+    End Sub
+
 End Class

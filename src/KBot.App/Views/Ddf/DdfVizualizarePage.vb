@@ -1,13 +1,12 @@
 Option Strict On
-Imports System.Collections.Generic
 Imports System.Globalization
 Imports KBot.Common
 Imports KBot.Domain
 Imports KBot.Theming
 
 ''' <summary>
-''' Pagina «Vizualizare» a vederii DDF: liniile de secțiune A ale nodului selectat, într-o grilă
-''' — exact tiparul paginii omonime din ORD (<c>OrdVizualizarePage</c>).
+''' Pagina «Vizualizare» a vederii DDF: ANTETUL documentului (o tabelă de perechi
+''' etichetă/valoare) și, dedesubt, liniile de secțiune A ale nodului selectat.
 '''
 ''' DE CE NU MAI CITEȘTE XFA (revizuire de operator, 2026-08-15): pagina găzduia
 ''' <see cref="XfaXmlPreview"/>, care deschidea PDF-ul (sau siblingul lui .xml) și RECONSTRUIA
@@ -16,9 +15,25 @@ Imports KBot.Theming
 ''' XFA era muncă în plus peste date pe care le aveam, și pica de tot când PDF-ul lipsea
 ''' (o revizie negenerată nu are ce arăta, deși liniile ei există în bază).
 '''
-''' Ce a rămas din vechea suprafață: ANTETUL. <c>lblNota</c> reproduce TOATE rândurile pe care le
-''' arăta tabela de antet a lui <c>XfaXmlPreview</c> — aceleași etichete, aceeași ordine — plus
-''' descrierea dedesubt. Vezi <see cref="NotaFor"/> pentru corespondența câmp-cu-câmp.
+''' ANTETUL (revizuire de operator, 2026-08-16): era UN singur <c>lblNota</c> cu perechile
+''' înșirate într-un bloc de text construit de <c>AntetHeaderText</c> — text monolitic, fără
+''' aliniere între rânduri. Acum e <c>tblHeader</c>, un <c>TableLayoutPanel</c> autorat în
+''' designer: fiecare câmp are eticheta lui și celula lui de valoare, deci coloanele se aliniază
+''' singure și fiecare valoare se poate tema/formata separat. Codul de aici NU face decât să
+''' pună textele — pozițiile, fonturile și rândurile sunt ale designerului.
+'''
+''' SURSA VALORILOR: <see cref="DdfPageContext.Antet"/>, adică rândul FX_DDF adus de
+''' <c>GET /api/forexe/ddf</c> (MariaDB) și ales de <c>DdfView</c> pe IDDF-ul nodului de arbore.
+''' Nicio cerere nouă de rețea și nicio atingere de disc: totul e deja în context. Antetul e al
+''' ANGAJAMENTULUI, nu al reviziei, deci nu se schimbă la click-uri în arbore.
+'''
+''' Corespondența câmp-cu-câmp (coloană FX_DDF -&gt; etichetă):
+'''   CodAngajament -&gt; «Cod angajament»   (cade pe <c>ctx.Cod</c> dacă antetul lipsește)
+'''   CUAL          -&gt; «CUAL»             (numărul unic de înregistrare)
+'''   DataCreare    -&gt; «Data creare»
+'''   Comp          -&gt; «Compartimentul»
+'''   NumePartener  -&gt; «Beneficiar»       (+ codul fiscal AL PARTENERULUI, când există)
+'''   ObiectDDF     -&gt; «Obiect DDF»
 '''
 ''' Grila propriu-zisă e <see cref="DdfValoriPage"/>, găzduită ca sub-control: aceleași coloane,
 ''' aceeași ordonare, un singur designer de întreținut. (Ca pagină de sine stătătoare rămâne
@@ -30,6 +45,13 @@ Imports KBot.Theming
 Public Class DdfVizualizarePage
     Implements IDdfPage, IThemedControl
 
+    ' Ce se pune într-o celulă de valoare când baza n-are nimic acolo. O liniuță spune
+    ' „am întrebat și e gol"; o celulă goală arată ca un antet care nu s-a încărcat.
+    Private Const GOL As String = "—"
+
+    ' Format românesc pentru date (dd.MM.yyyy), la fel ca în restul vederilor.
+    Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
+
     ' Evenimentele contractului: de când suprafața XFA (cu butonul ei «Generează documentul») a
     ' plecat de pe pagină, «Vizualizare» NU le mai ridică niciodată. Generarea a rămas pe pagina
     ' «Document». Rămân declarate ca gazda să se poată abona uniform la toate paginile.
@@ -38,6 +60,9 @@ Public Class DdfVizualizarePage
 
     Public Sub New()
         InitializeComponent()
+        ' Designerul lasă celulele de valoare fără text; le punem pe starea „gol" încă de la
+        ' construcție, ca antetul să arate la fel înainte și după prima selecție.
+        RandeazaAntet(Nothing)
     End Sub
 
     Public ReadOnly Property PageKey As String Implements IDdfPage.PageKey
@@ -47,12 +72,12 @@ Public Class DdfVizualizarePage
     End Property
 
     ''' <summary>
-    ''' Împinge contextul mai departe în grilă și pune nota din revizia selectată. Fără nicio
-    ''' atingere de disc: totul e deja în context.
+    ''' Umple antetul din contextul primit și împinge contextul mai departe în grilă. Fără nicio
+    ''' atingere de disc și fără cerere de rețea: totul e deja în context.
     ''' </summary>
     Public Sub SetContext(ctx As DdfPageContext) Implements IDdfPage.SetContext
         Try
-            lblNota.Text = NotaFor(ctx)
+            RandeazaAntet(ctx)
             pagValori.SetContext(ctx)
         Catch ex As Exception
             GlobalErrorLog.Write("DdfVizualizarePage.SetContext", ex)
@@ -60,70 +85,77 @@ Public Class DdfVizualizarePage
         End Try
     End Sub
 
-    ' Format românesc pentru date (dd.MM.yyyy), la fel ca în restul vederilor.
-    Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
+    ''' <summary>
+    ''' Pune valorile în celulele lui <c>tblHeader</c>. <c>Nothing</c> (nimic selectat) sau un
+    ''' angajament fără rând FX_DDF -&gt; toate celulele arată <see cref="GOL"/>; structura tabelei
+    ''' rămâne pe ecran, deci antetul nu „sare" între o selecție și alta.
+    ''' </summary>
+    Private Sub RandeazaAntet(ctx As DdfPageContext)
+        Dim antet As DdfAntet = If(ctx Is Nothing, Nothing, ctx.Antet)
+
+        ' Codul vine din antet, dar dacă angajamentul n-are rând FX_DDF îl știm oricum din
+        ' contextul de navigare — celula asta n-are de ce să fie goală.
+        Dim cod As String = If(antet Is Nothing, Nothing, antet.CodAngajament)
+        If String.IsNullOrWhiteSpace(cod) AndAlso ctx IsNot Nothing Then cod = ctx.Cod
+
+        lblCod.Text = TextSau(cod)
+        lblCUAL.Text = If(antet Is Nothing, GOL,
+                          antet.Cual.ToString(CultureInfo.InvariantCulture))
+        lblDataCreare.Text = DataText(If(antet Is Nothing, Nothing, antet.DataCreare))
+        lblCompartiment.Text = TextSau(If(antet Is Nothing, Nothing, antet.Comp))
+        lblBeneficiar.Text = BeneficiarText(antet)
+        lblObiectDDF.Text = TextSau(If(antet Is Nothing, Nothing, antet.ObiectDDF))
+    End Sub
 
     ''' <summary>
-    ''' Textul antetului: EXACT perechile pe care le arăta tabela de antet a lui
-    ''' <c>XfaXmlPreview</c> (aceleași etichete, aceeași ordine), plus descrierea pe rândul de
-    ''' jos. Sursa nu mai e XML-ul XFA, ci contextul — dar câmpurile sunt puse în corespondență
-    ''' unu-la-unu cu nodurile pe care le scrie <c>DdfXmlBuilder</c> în «SubformAntet», ca
-    ''' antetul de pe ecran să spună același lucru cu cel tipărit în PDF:
-    '''
-    '''   DenInstPb      -&gt; sesiune «NumeUnitate» (majuscule, ca în XML)
-    '''   cif            -&gt; sesiune «CF»
-    '''   NrUnicInreg    -&gt; Antet.Cual
-    '''   SubtitluDF     -&gt; Antet.ObiectDDF
-    '''   DataRevizuirii -&gt; Revizie.DataRev
-    '''   Revizuirea     -&gt; Revizie.NumarRev
-    '''
-    ''' Perechile cu valoarea goală se sar (regula veche a parserului), deci pe o rădăcină de
-    ''' lună — unde nu există O revizie — banda arată doar rândurile de unitate/document.
+    ''' Beneficiarul: numele partenerului, cu codul lui fiscal în paranteză când baza îl are.
+    ''' Când documentul NU e legat de un partener (<c>PartAng = False</c>, cazul «GENERAL» din
+    ''' convenția de foldere) o spunem explicit — numele ar putea fi rămas pe rând din altă
+    ''' revizie, iar afișarea lui ar minți despre cine e beneficiarul.
     ''' </summary>
-    Private Shared Function NotaFor(ctx As DdfPageContext) As String
-        If ctx Is Nothing Then Return "Selectați un angajament din arbore."
+    Private Shared Function BeneficiarText(antet As DdfAntet) As String
+        If antet Is Nothing Then Return GOL
+        If Not antet.PartAng Then Return "Fără partener"
+        If String.IsNullOrWhiteSpace(antet.NumePartener) Then Return GOL
+        If String.IsNullOrWhiteSpace(antet.CodFiscal) Then Return antet.NumePartener.Trim()
+        ' CodFiscal e AL PARTENERULUI (cel al unității stă în sesiune, vezi DdfPageContext).
+        Return $"{antet.NumePartener.Trim()} (CIF {antet.CodFiscal.Trim()})"
+    End Function
 
-        Dim antet As DdfAntet = ctx.Antet
-        Dim rev As RevizieRow = ctx.Revizie
-
-        Dim perechi As New List(Of KeyValuePair(Of String, String))() From {
-            AntetHeaderText.Pair("Instituția publică", UCaseSafe(ctx.NumeUnitate)),
-            AntetHeaderText.Pair("Cod fiscal", ctx.CodFiscal),
-            AntetHeaderText.Pair("Nr. unic", If(antet Is Nothing, String.Empty,
-                                                antet.Cual.ToString(CultureInfo.InvariantCulture))),
-            AntetHeaderText.Pair("Obiectul documentului", If(antet Is Nothing, String.Empty, antet.ObiectDDF)),
-            AntetHeaderText.Pair("Compartiment", If(antet Is Nothing, String.Empty, UCaseSafe(antet.Comp))),
-            AntetHeaderText.Pair("Data revizuirii", DataText(If(rev Is Nothing, Nothing, rev.DataRev))),
-            AntetHeaderText.Pair("Revizuirea", If(rev Is Nothing, String.Empty,
-                                                  rev.NumarRev.ToString(CultureInfo.InvariantCulture)))
-        }
-
-        Dim text As String = AntetHeaderText.Build(perechi)
-        ' Descrierea, sub perechi: scurtă preferată, altfel lungă — regula lui XfaXmlPreview.Render.
-        Dim desc As String = If(rev Is Nothing, String.Empty,
-                                If(Not String.IsNullOrWhiteSpace(rev.DescScurta), rev.DescScurta, rev.DescLunga))
-        text = AntetHeaderText.WithParagraph(text, desc)
-        If String.IsNullOrEmpty(text) Then Return "Selectați o revizie din arbore."
-        Return text
+    Private Shared Function TextSau(value As String) As String
+        If String.IsNullOrWhiteSpace(value) Then Return GOL
+        Return value.Trim()
     End Function
 
     Private Shared Function DataText(d As Date?) As String
-        Return If(d.HasValue, d.Value.ToString("dd.MM.yyyy", _roCulture), String.Empty)
+        Return If(d.HasValue, d.Value.ToString("dd.MM.yyyy", _roCulture), GOL)
     End Function
 
-    ' Majuscule ca în XML (DenInstPb / ComparimentSpecialitate), fără să pice pe Nothing.
-    Private Shared Function UCaseSafe(value As String) As String
-        Return If(value, String.Empty).ToUpper(_roCulture)
-    End Function
-
-    ''' <summary>Cascadă: nota + pagina de valori găzduită (care își temează singură grila).</summary>
+    ''' <summary>
+    ''' Cascadă: tabela de antet (etichetele estompat, valorile în culoarea textului) + pagina de
+    ''' valori găzduită (care își temează singură grila). Etichetele stau transparente peste
+    ''' fundalul tabelei, deci o singură culoare de fundal se schimbă la schimbarea temei.
+    ''' </summary>
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
+
             BackColor = p.SurfaceAltColor
-            lblNota.ForeColor = p.TextDimColor
-            lblNota.BackColor = p.SurfaceAltColor
+            tblHeader.BackColor = p.SurfaceAltColor
+
+            For Each eticheta As Label In {lblCodCaption, lblDataCreareCaption, lblCompartimentCaption,
+                                           lblStareCaption, lblBeneficiarCaption, lblObiectDDFCaption}
+                eticheta.BackColor = Color.Transparent
+                eticheta.ForeColor = p.TextDimColor
+            Next
+
+            For Each valoare As Label In {lblCod, lblDataCreare, lblCompartiment,
+                                          lblCUAL, lblBeneficiar, lblObiectDDF}
+                valoare.BackColor = Color.Transparent
+                valoare.ForeColor = p.TextColor
+            Next
+
             ' `pagValori` e IThemedControl, deci ThemeManager nu recurge în el — îl cascadăm noi.
             pagValori.ApplyTheme(scheme)
         Catch ex As Exception

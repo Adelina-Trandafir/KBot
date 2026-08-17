@@ -263,7 +263,7 @@ Public Class PlatiView
                                  pLeftIconClosed:=monthIcon, pLeftIconOpen:=monthIcon,
                                  pRightIcon:=monthPlus, pExpanded:=monthContainsPlus)
                 monthItem.Tag = monthRows
-
+                monthItem.Bold = True
                 ' Frunze = ZIUA (toate plățile ei într-un singur nod), cronologic.
                 Dim dayGroups = monthRows.GroupBy(Function(r) DayKeyOf(r.DataPlata)).
                                           OrderBy(Function(g) g.Key)

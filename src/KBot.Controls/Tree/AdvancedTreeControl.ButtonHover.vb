@@ -243,10 +243,13 @@ Partial Public Class AdvancedTreeControl
         If r.IsEmpty OrElse culoare.A = 0 Then Return
         Dim oldSmooth As SmoothingMode = g.SmoothingMode
         g.SmoothingMode = SmoothingMode.AntiAlias
+        ' Umflarea și raza sunt LOGICE: pictograma crește cu scara, deci și inelul de sub ea —
+        ' altfel la 150% plaja s-ar lipi de marginile iconiței.
+        Dim umflare As Integer = SX(BUTTON_HOVER_INFLATE)
         Using b As New SolidBrush(culoare)
             Using path As GraphicsPath = GetRoundedRect(
-                    Rectangle.Inflate(r, BUTTON_HOVER_INFLATE, BUTTON_HOVER_INFLATE),
-                    BUTTON_HOVER_RADIUS)
+                    Rectangle.Inflate(r, umflare, umflare),
+                    SX(BUTTON_HOVER_RADIUS))
                 g.FillPath(b, path)
             End Using
         End Using

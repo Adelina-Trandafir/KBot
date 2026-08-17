@@ -51,18 +51,18 @@ Partial Class SumarView
         pnlHeader.Controls.Add(tblHeader)
         pnlHeader.Dock = DockStyle.Top
         pnlHeader.Location = New Point(0, 0)
-        pnlHeader.Margin = New Padding(3, 4, 3, 4)
+        pnlHeader.Margin = New Padding(4, 5, 4, 5)
         pnlHeader.Name = "pnlHeader"
-        pnlHeader.Padding = New Padding(14)
-        pnlHeader.Size = New Size(914, 166)
+        pnlHeader.Padding = New Padding(18, 18, 18, 18)
+        pnlHeader.Size = New Size(1142, 208)
         pnlHeader.TabIndex = 0
         ' 
         ' tblHeader
         ' 
         tblHeader.ColumnCount = 4
-        tblHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 149F))
+        tblHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 186F))
         tblHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
-        tblHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 149F))
+        tblHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 186F))
         tblHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
         tblHeader.Controls.Add(lblCodCaption, 0, 0)
         tblHeader.Controls.Add(lblCod, 1, 0)
@@ -79,23 +79,24 @@ Partial Class SumarView
         tblHeader.Controls.Add(lblDescriereCaption, 0, 3)
         tblHeader.Controls.Add(lblDescriere, 1, 3)
         tblHeader.Dock = DockStyle.Fill
-        tblHeader.Location = New Point(14, 14)
-        tblHeader.Margin = New Padding(3, 4, 3, 4)
+        tblHeader.Location = New Point(18, 18)
+        tblHeader.Margin = New Padding(4, 5, 4, 5)
         tblHeader.Name = "tblHeader"
         tblHeader.RowCount = 4
-        tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 34F))
-        tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 34F))
-        tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 34F))
-        tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 34F))
-        tblHeader.Size = New Size(886, 138)
+        tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
+        tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
+        tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
+        tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
+        tblHeader.Size = New Size(1106, 172)
         tblHeader.TabIndex = 0
         ' 
         ' lblCodCaption
         ' 
         lblCodCaption.Dock = DockStyle.Fill
-        lblCodCaption.Location = New Point(3, 0)
+        lblCodCaption.Location = New Point(4, 0)
+        lblCodCaption.Margin = New Padding(4, 0, 4, 0)
         lblCodCaption.Name = "lblCodCaption"
-        lblCodCaption.Size = New Size(143, 34)
+        lblCodCaption.Size = New Size(178, 42)
         lblCodCaption.TabIndex = 0
         lblCodCaption.Text = "Cod angajament:"
         lblCodCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -104,18 +105,20 @@ Partial Class SumarView
         ' 
         lblCod.Dock = DockStyle.Fill
         lblCod.Font = New Font("Segoe UI", 9F, FontStyle.Bold)
-        lblCod.Location = New Point(152, 0)
+        lblCod.Location = New Point(190, 0)
+        lblCod.Margin = New Padding(4, 0, 4, 0)
         lblCod.Name = "lblCod"
-        lblCod.Size = New Size(288, 34)
+        lblCod.Size = New Size(359, 42)
         lblCod.TabIndex = 1
         lblCod.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' lblDataFxCaption
         ' 
         lblDataFxCaption.Dock = DockStyle.Fill
-        lblDataFxCaption.Location = New Point(446, 0)
+        lblDataFxCaption.Location = New Point(557, 0)
+        lblDataFxCaption.Margin = New Padding(4, 0, 4, 0)
         lblDataFxCaption.Name = "lblDataFxCaption"
-        lblDataFxCaption.Size = New Size(143, 34)
+        lblDataFxCaption.Size = New Size(178, 42)
         lblDataFxCaption.TabIndex = 2
         lblDataFxCaption.Text = "Data FX:"
         lblDataFxCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -123,18 +126,20 @@ Partial Class SumarView
         ' lblDataFx
         ' 
         lblDataFx.Dock = DockStyle.Fill
-        lblDataFx.Location = New Point(595, 0)
+        lblDataFx.Location = New Point(743, 0)
+        lblDataFx.Margin = New Padding(4, 0, 4, 0)
         lblDataFx.Name = "lblDataFx"
-        lblDataFx.Size = New Size(288, 34)
+        lblDataFx.Size = New Size(359, 42)
         lblDataFx.TabIndex = 3
         lblDataFx.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' lblDataCreareCaption
         ' 
         lblDataCreareCaption.Dock = DockStyle.Fill
-        lblDataCreareCaption.Location = New Point(3, 34)
+        lblDataCreareCaption.Location = New Point(4, 42)
+        lblDataCreareCaption.Margin = New Padding(4, 0, 4, 0)
         lblDataCreareCaption.Name = "lblDataCreareCaption"
-        lblDataCreareCaption.Size = New Size(143, 34)
+        lblDataCreareCaption.Size = New Size(178, 42)
         lblDataCreareCaption.TabIndex = 4
         lblDataCreareCaption.Text = "Data creare:"
         lblDataCreareCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -142,18 +147,20 @@ Partial Class SumarView
         ' lblDataCreare
         ' 
         lblDataCreare.Dock = DockStyle.Fill
-        lblDataCreare.Location = New Point(152, 34)
+        lblDataCreare.Location = New Point(190, 42)
+        lblDataCreare.Margin = New Padding(4, 0, 4, 0)
         lblDataCreare.Name = "lblDataCreare"
-        lblDataCreare.Size = New Size(288, 34)
+        lblDataCreare.Size = New Size(359, 42)
         lblDataCreare.TabIndex = 5
         lblDataCreare.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' lblDataDefCaption
         ' 
         lblDataDefCaption.Dock = DockStyle.Fill
-        lblDataDefCaption.Location = New Point(446, 34)
+        lblDataDefCaption.Location = New Point(557, 42)
+        lblDataDefCaption.Margin = New Padding(4, 0, 4, 0)
         lblDataDefCaption.Name = "lblDataDefCaption"
-        lblDataDefCaption.Size = New Size(143, 34)
+        lblDataDefCaption.Size = New Size(178, 42)
         lblDataDefCaption.TabIndex = 6
         lblDataDefCaption.Text = "Data definitivare:"
         lblDataDefCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -161,18 +168,20 @@ Partial Class SumarView
         ' lblDataDef
         ' 
         lblDataDef.Dock = DockStyle.Fill
-        lblDataDef.Location = New Point(595, 34)
+        lblDataDef.Location = New Point(743, 42)
+        lblDataDef.Margin = New Padding(4, 0, 4, 0)
         lblDataDef.Name = "lblDataDef"
-        lblDataDef.Size = New Size(288, 34)
+        lblDataDef.Size = New Size(359, 42)
         lblDataDef.TabIndex = 7
         lblDataDef.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' lblStareCaption
         ' 
         lblStareCaption.Dock = DockStyle.Fill
-        lblStareCaption.Location = New Point(3, 68)
+        lblStareCaption.Location = New Point(4, 84)
+        lblStareCaption.Margin = New Padding(4, 0, 4, 0)
         lblStareCaption.Name = "lblStareCaption"
-        lblStareCaption.Size = New Size(143, 34)
+        lblStareCaption.Size = New Size(178, 42)
         lblStareCaption.TabIndex = 8
         lblStareCaption.Text = "Stare:"
         lblStareCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -180,18 +189,20 @@ Partial Class SumarView
         ' lblStare
         ' 
         lblStare.Dock = DockStyle.Fill
-        lblStare.Location = New Point(152, 68)
+        lblStare.Location = New Point(190, 84)
+        lblStare.Margin = New Padding(4, 0, 4, 0)
         lblStare.Name = "lblStare"
-        lblStare.Size = New Size(288, 34)
+        lblStare.Size = New Size(359, 42)
         lblStare.TabIndex = 9
         lblStare.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' lblStatusCaption
         ' 
         lblStatusCaption.Dock = DockStyle.Fill
-        lblStatusCaption.Location = New Point(446, 68)
+        lblStatusCaption.Location = New Point(557, 84)
+        lblStatusCaption.Margin = New Padding(4, 0, 4, 0)
         lblStatusCaption.Name = "lblStatusCaption"
-        lblStatusCaption.Size = New Size(143, 34)
+        lblStatusCaption.Size = New Size(178, 42)
         lblStatusCaption.TabIndex = 10
         lblStatusCaption.Text = "Încărcat / Preluat:"
         lblStatusCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -199,18 +210,20 @@ Partial Class SumarView
         ' lblStatus
         ' 
         lblStatus.Dock = DockStyle.Fill
-        lblStatus.Location = New Point(595, 68)
+        lblStatus.Location = New Point(743, 84)
+        lblStatus.Margin = New Padding(4, 0, 4, 0)
         lblStatus.Name = "lblStatus"
-        lblStatus.Size = New Size(288, 34)
+        lblStatus.Size = New Size(359, 42)
         lblStatus.TabIndex = 11
         lblStatus.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' lblDescriereCaption
         ' 
         lblDescriereCaption.Dock = DockStyle.Fill
-        lblDescriereCaption.Location = New Point(3, 102)
+        lblDescriereCaption.Location = New Point(4, 126)
+        lblDescriereCaption.Margin = New Padding(4, 0, 4, 0)
         lblDescriereCaption.Name = "lblDescriereCaption"
-        lblDescriereCaption.Size = New Size(143, 36)
+        lblDescriereCaption.Size = New Size(178, 46)
         lblDescriereCaption.TabIndex = 12
         lblDescriereCaption.Text = "Descriere:"
         lblDescriereCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -219,14 +232,16 @@ Partial Class SumarView
         ' 
         tblHeader.SetColumnSpan(lblDescriere, 3)
         lblDescriere.Dock = DockStyle.Fill
-        lblDescriere.Location = New Point(152, 102)
+        lblDescriere.Location = New Point(190, 126)
+        lblDescriere.Margin = New Padding(4, 0, 4, 0)
         lblDescriere.Name = "lblDescriere"
-        lblDescriere.Size = New Size(731, 36)
+        lblDescriere.Size = New Size(912, 46)
         lblDescriere.TabIndex = 13
         lblDescriere.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' grid
         ' 
+        grid.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
         grid.AutoSizeHeaderHeight = False
         grid.BackColor = SystemColors.Window
         grid.BorderColor = SystemColors.ActiveBorder
@@ -350,14 +365,16 @@ Partial Class SumarView
         grid.Columns.Add(KBotDataColumn6)
         grid.Columns.Add(KBotDataColumn7)
         grid.Dock = DockStyle.Fill
+        grid.FilterIconSize = New Size(14, 14)
         grid.FooterBackColor = SystemColors.Control
         grid.FooterCaption = "TOTALURI"
         grid.FooterColumnSeparatorColor = Color.Gainsboro
         grid.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FooterHeight = 30
+        grid.FooterIconSize = New Size(14, 14)
         grid.FooterLeftIcon = My.Resources.Resources.settings__1_
-        grid.FooterLeftIconHoverColor = SystemColors.Highlight
+        grid.FooterLeftIconHoverColor = Color.Linen
         grid.FooterSeparatorColor = Color.Gainsboro
         grid.FooterVisible = True
         grid.FrozenColumnCount = 1
@@ -366,35 +383,36 @@ Partial Class SumarView
         grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.HeaderSeparatorColor = Color.Gainsboro
-        grid.Location = New Point(0, 166)
-        grid.Margin = New Padding(3, 4, 3, 4)
+        grid.Location = New Point(0, 208)
+        grid.Margin = New Padding(4, 5, 4, 5)
         grid.Name = "grid"
         grid.ReadOnlyGrid = True
-        grid.RowHeight = 20
-        grid.Size = New Size(914, 500)
+        grid.RowHeight = 22
+        grid.Size = New Size(1142, 624)
         grid.TabIndex = 1
         ' 
         ' lblEmpty
         ' 
         lblEmpty.Dock = DockStyle.Fill
         lblEmpty.Font = New Font("Segoe UI", 10F)
-        lblEmpty.Location = New Point(0, 166)
+        lblEmpty.Location = New Point(0, 208)
+        lblEmpty.Margin = New Padding(4, 0, 4, 0)
         lblEmpty.Name = "lblEmpty"
-        lblEmpty.Size = New Size(914, 500)
+        lblEmpty.Size = New Size(1142, 624)
         lblEmpty.TabIndex = 2
         lblEmpty.Text = "Selectați un angajament din arbore."
         lblEmpty.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' SumarView
         ' 
-        AutoScaleDimensions = New SizeF(8F, 20F)
+        AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(grid)
         Controls.Add(lblEmpty)
         Controls.Add(pnlHeader)
-        Margin = New Padding(3, 4, 3, 4)
+        Margin = New Padding(4, 5, 4, 5)
         Name = "SumarView"
-        Size = New Size(914, 666)
+        Size = New Size(1142, 832)
         pnlHeader.ResumeLayout(False)
         tblHeader.ResumeLayout(False)
         CType(grid, ComponentModel.ISupportInitialize).EndInit()

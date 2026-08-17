@@ -47,14 +47,14 @@ Partial Public Class AdvancedTreeControl
         ' 2. LAYOUT — calculat exact ca in DrawItem / Painting.vb
         ' ──────────────────────────────────────────────────────────────────────
         Dim y As Integer = GetItemY(it)
-        Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+        Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStartPx
         Dim expCX As Integer = gridLeft + (m_Indent \ 2)   ' centrul expanderului pe X
         Dim midY As Integer = y + (_itemHeight \ 2)
 
         ' xBase — exact ca in DrawItem
         Dim xBase As Integer = If(it.Level = 0 AndAlso Not _RootExpander,
                                   gridLeft,
-                                  gridLeft + m_Indent + PaddingExpanderGap)
+                                  gridLeft + m_Indent + PaddingExpanderGapPx)
 
         ' NodeBounds
         info.NodeBounds = If(y = -1, Rectangle.Empty,
@@ -72,7 +72,7 @@ Partial Public Class AdvancedTreeControl
             Dim xIcon As Integer = xBase
             ' Daca exista checkbox, iconita incepe dupa el
             If info.CheckBoxBounds <> Rectangle.Empty Then
-                xIcon = info.CheckBoxBounds.Right + PaddingCheckBoxGap
+                xIcon = info.CheckBoxBounds.Right + PaddingCheckBoxGapPx
             End If
             If it.LeftIconClosed IsNot Nothing OrElse it.LeftIconOpen IsNot Nothing Then
                 leftIconBounds = New Rectangle(xIcon,
@@ -84,23 +84,23 @@ Partial Public Class AdvancedTreeControl
 
         ' TextBounds — replica logica din DrawContent
         Dim textX As Integer = If(leftIconBounds <> Rectangle.Empty,
-                                  leftIconBounds.Right + PaddingIconGap,
+                                  leftIconBounds.Right + PaddingIconGapPx,
                                   xBase)
         ' Daca exista checkbox dar nu iconita, textul incepe dupa checkbox
         If leftIconBounds = Rectangle.Empty AndAlso info.CheckBoxBounds <> Rectangle.Empty Then
-            textX = info.CheckBoxBounds.Right + PaddingCheckBoxGap
+            textX = info.CheckBoxBounds.Right + PaddingCheckBoxGapPx
         End If
 
         Dim scrollW As Integer = ScrollBarWidth
-        Dim maxRightX As Integer = Me.Width - scrollW - PaddingTreeEnd
-        If it.RightIcon IsNot Nothing Then maxRightX -= (_rightIconSize.Width + _rightIconRightPadding)
+        Dim maxRightX As Integer = Me.Width - scrollW - PaddingTreeEndPx
+        If it.RightIcon IsNot Nothing Then maxRightX -= (_rightIconSize.Width + RightIconRightPaddingPx)
         info.TextBounds = If(y = -1, Rectangle.Empty,
                              New Rectangle(textX, y, Math.Max(0, maxRightX - textX), _itemHeight))
 
         ' RightIconBounds — replica logica din DrawRightIcon
         Dim rightIconBounds As Rectangle = Rectangle.Empty
         If it.RightIcon IsNot Nothing Then
-            Dim rx As Integer = Me.Width - _rightIconSize.Width - _rightIconRightPadding - PaddingTreeEnd - scrollW
+            Dim rx As Integer = Me.Width - _rightIconSize.Width - RightIconRightPaddingPx - PaddingTreeEndPx - scrollW
             rightIconBounds = New Rectangle(rx, y + (_itemHeight - _rightIconSize.Height) \ 2,
                                             _rightIconSize.Width, _rightIconSize.Height)
         End If
@@ -116,15 +116,18 @@ Partial Public Class AdvancedTreeControl
         info.IsInViewport = (y <> -1) AndAlso (y + _itemHeight > 0) AndAlso (y < Me.Height)
 
         ' SelectionBounds — replica logica din DrawSelection
+        ' Aceeași formulă ca DrawSelection: pleacă din xBase, cu PaddingSelectionLeftPx în stânga.
+        ' Era scrisă aici altfel (`m_ExpanderSize * 2 - 3`, dinaintea marginilor de designer), deci
+        ' inspectorul raporta o selecție pe care arborele n-o desena acolo.
         Dim selStartX As Integer
         If it.Level = 0 AndAlso Not _RootExpander Then
             selStartX = gridLeft
         Else
-            selStartX = gridLeft + m_ExpanderSize * 2 - 3
+            selStartX = xBase - PaddingSelectionLeftPx
         End If
         info.SelectionBounds = If(y = -1, Rectangle.Empty,
                                     New Rectangle(selStartX, y,
-                                                  Math.Max(0, Me.ClientSize.Width - selStartX - PaddingTreeEnd),
+                                                  Math.Max(0, Me.ClientSize.Width - selStartX - 1),
                                                   _itemHeight))
 
         ' ──────────────────────────────────────────────────────────────────────

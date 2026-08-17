@@ -32,7 +32,8 @@ Public Class AdvancedTreePaddingsTests
         {"PaddingIconGap", 16},
         {"PaddingSeparatorGap", 8},
         {"PaddingTooltipIconHit", 3},
-        {"RightIconRightPadding", 6}
+        {"RightIconRightPadding", 6},
+        {"PaddingHeaderLeft", 10}
     }
 
     Private Shared Sub RunSta(body As Action)
@@ -107,6 +108,35 @@ Public Class AdvancedTreePaddingsTests
                        Assert.False(pd.ShouldSerializeValue(tree))
                    End Using
                End Sub)
+    End Sub
+
+    ''' <summary>
+    ''' FIECARE margine are perechea ei în pixeli de ecran (felia 0039).
+    '''
+    ''' <para>Marginile de mai sus sunt LOGICE (px la 96 dpi); pictura și așezarea trebuie să
+    ''' citească varianta <c>…Px</c>, care le trece prin scara curentă. O margine adăugată mai
+    ''' târziu fără accesorul <c>…Px</c> ar funcționa perfect la 100% și s-ar înghesui la 150% —
+    ''' exact defectul greu de văzut pe care felia asta l-a scos. Testul nu poate schimba DPI-ul,
+    ''' dar poate păzi lucrul care se uită: EXISTENȚA perechii.</para>
+    ''' </summary>
+    <Fact>
+    Public Sub Fiecare_margine_are_varianta_in_pixeli_de_ecran()
+        Dim t As Type = GetType(AdvancedTreeControl)
+        Dim caut As Reflection.BindingFlags = Reflection.BindingFlags.NonPublic Or
+                                             Reflection.BindingFlags.Public Or
+                                             Reflection.BindingFlags.Instance
+
+        For Each nume In Implicite.Keys
+            Dim px = t.GetProperty(nume & "Px", caut)
+            Assert.True(px IsNot Nothing,
+                        $"Marginea «{nume}» nu are accesorul «{nume}Px» — la 150% s-ar desena nescalată.")
+            Assert.Equal(GetType(Integer), px.PropertyType)
+        Next
+
+        ' Perechea marginii care e un Padding, nu un Integer.
+        Dim pxPadding = t.GetProperty("SearchClearButtonPaddingPx", caut)
+        Assert.True(pxPadding IsNot Nothing, "SearchClearButtonPadding nu are varianta …Px.")
+        Assert.Equal(GetType(System.Windows.Forms.Padding), pxPadding.PropertyType)
     End Sub
 
     <Fact>

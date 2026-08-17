@@ -41,6 +41,13 @@ Partial Public Class AdvancedTreeControl
         e.Graphics.Clear(Me.BackColor)
         e.Graphics.SmoothingMode = SmoothingMode.None
         e.Graphics.PixelOffsetMode = PixelOffsetMode.Half
+        ' TEXTUL, explicit — nu pe SystemDefault. Controlul e DoubleBuffered, deci pictăm într-un
+        ' bitmap 32bppPArgb, iar acolo GDI+ pe «implicit de sistem» coboară la antialiasing în
+        ' tonuri de gri: exact aspectul «litere spălăcite, ca fără antialiasing» care se vedea la
+        ' 150%. ClearTypeGridFit cere subpixelii ȘI potrivirea pe grila de pixeli. Perechea lui e
+        ' linia de bază ÎNTREAGĂ din TextTop (vezi .Painting) — cu ClearType, un y la jumătate de
+        ' pixel readuce moliciunea pe care hintul tocmai a scos-o.
+        e.Graphics.TextRenderingHint = Drawing.Text.TextRenderingHint.ClearTypeGridFit
 
         Dim headerOff As Integer = TotalHeaderOffset
         Dim footerOff As Integer = FooterOffset
@@ -48,12 +55,12 @@ Partial Public Class AdvancedTreeControl
 
         ' ── 1. Items (cu clip) — se desenează PRIMII ──────────────────────
         Dim visibleItems = GetVisibleItems()
-        Dim contentH As Integer = visibleItems.Count * _itemHeight + PaddingTreeTop
+        Dim contentH As Integer = visibleItems.Count * _itemHeight + PaddingTreeTopPx
 
         Dim oldClip = e.Graphics.Clip.Clone()
         e.Graphics.SetClip(New Rectangle(0, headerOff, Me.Width, zonaNoduri))
 
-        Dim y As Integer = -_vScroll.Value + PaddingTreeTop + headerOff
+        Dim y As Integer = -_vScroll.Value + PaddingTreeTopPx + headerOff
         For Each it In visibleItems
             If y + _itemHeight > headerOff AndAlso y < headerOff + zonaNoduri Then
                 DrawItem(e.Graphics, it, y)
@@ -125,7 +132,7 @@ Partial Public Class AdvancedTreeControl
 
         ' ── Column header area clicks (TreeListView) ─────────────────────────────
         If _treeListViewEnabled AndAlso _treeListView AndAlso _columns.Count > 0 Then
-            Dim colHdrTop As Integer = TotalHeaderOffset - COLUMN_HEADER_HEIGHT
+            Dim colHdrTop As Integer = TotalHeaderOffset - ColumnHeaderHeightPx
             If e.Y >= colHdrTop AndAlso e.Y < TotalHeaderOffset Then
                 Dim colIdx As Integer = GetColumnAtX(e.X)
                 If colIdx >= 0 Then
@@ -176,7 +183,7 @@ Partial Public Class AdvancedTreeControl
         ' --- 1. LOGICĂ ZONĂ MOARTĂ (Folosind constantele din AdvancedTreeControl.vb) ---
         If it IsNot Nothing Then
             ' Calculăm punctul de start exact ca în Painting.vb
-            Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+            Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStartPx
 
             ' Considerăm zona activă începând de la linia expanderului/indentării
             ' Tot ce e în stânga alinierii nivelului → Toggle Expand dacă are copii/LazyNode
@@ -220,7 +227,7 @@ Partial Public Class AdvancedTreeControl
         ' =================================================================
         ' 2. PRIORITATE ZERO: EXPANDER (+/-)
         ' =================================================================
-        ' GetExpanderRect folosește deja PaddingTreeStart intern
+        ' GetExpanderRect folosește deja PaddingTreeStartPx intern
         Dim expRect = GetExpanderRect(it)
 
         ' Verificăm dacă click-ul e în zona expanderului (și dacă are copii)
@@ -339,7 +346,7 @@ Partial Public Class AdvancedTreeControl
         If it.RightIcon IsNot Nothing Then
             Dim scrollW As Integer = ScrollBarWidth 'If(Me.VerticalScroll.Visible, SystemInformation.VerticalScrollBarWidth, 0)
             ' Reconstituim dreptunghiul iconiței exact ca în Painting.vb
-            Dim rIconRect As New Rectangle(Me.Width - _rightIconSize.Width - _rightIconRightPadding - scrollW,
+            Dim rIconRect As New Rectangle(Me.Width - _rightIconSize.Width - RightIconRightPaddingPx - scrollW,
                                            (it.Level * m_Indent) + Me.AutoScrollPosition.Y + (_itemHeight - _rightIconSize.Height) \ 2, ' Aici trebuie calculat Y-ul vizual, nu logic
                                            _rightIconSize.Width,
                                            _rightIconSize.Height)
@@ -347,9 +354,9 @@ Partial Public Class AdvancedTreeControl
             ' Nota: Calculul Y de mai sus e complex pentru ca OnMouseDown nu ne da Y-ul desenat direct.
             ' Mai simplu: stim ca e in dreapta. Verificam doar X-ul.
             ' Padding-ul e CITIT, nu presupus: era scris «6» aici, adică implicitul lui
-            ' RightIconRightPadding, deci zona de clic se despărțea de cea desenată de îndată ce
+            ' RightIconRightPaddingPx, deci zona de clic se despărțea de cea desenată de îndată ce
             ' cineva schimba proprietatea.
-            Dim minX As Integer = Me.Width - _rightIconSize.Width - _rightIconRightPadding - scrollW
+            Dim minX As Integer = Me.Width - _rightIconSize.Width - RightIconRightPaddingPx - scrollW
 
             If e.X >= minX AndAlso e.X <= (minX + _rightIconSize.Width) Then
                 ' Aici ridici un eveniment special
@@ -376,7 +383,7 @@ Partial Public Class AdvancedTreeControl
 
         ' --- Logică Zonă Moartă ---
         If it IsNot Nothing Then
-            Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+            Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStartPx
             If e.X < gridLeft Then
                 it = Nothing
             End If
@@ -440,7 +447,7 @@ Partial Public Class AdvancedTreeControl
         ' --- 1. LOGICĂ ZONĂ MOARTĂ (Folosind constantele din AdvancedTreeControl.vb) ---
         If it IsNot Nothing Then
             ' Calculăm punctul de start exact ca în Painting.vb
-            Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+            Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStartPx
 
             ' Considerăm zona activă începând de la linia expanderului/indentării
             ' Tot ce e în stânga alinierii nivelului este ignorat
@@ -501,8 +508,8 @@ Partial Public Class AdvancedTreeControl
 
         ' --- Logică Zonă Moartă ---
         If it IsNot Nothing Then
-            ' Folosim constanta PaddingTreeStart definită în AdvancedTreeControl.vb
-            Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStart
+            ' Folosim constanta PaddingTreeStartPx definită în AdvancedTreeControl.vb
+            Dim gridLeft As Integer = (it.Level * m_Indent) + Me.AutoScrollPosition.X + PaddingTreeStartPx
 
             ' Opțional: Dacă vrei să ignori mouse-over chiar și pe indentare:
             ' Dim activeAreaStart As Integer = gridLeft ' Sau gridLeft + m_Indent
@@ -566,7 +573,7 @@ Partial Public Class AdvancedTreeControl
             MyBase.OnResize(e)
             RememberExpandedWidth()       ' lățimea la care se întoarce butonul de strângere
             CancelCollapsedFlyout()       ' eticheta plutitoare nu supraviețuiește unei mutări
-            _vScroll.Width = SystemInformation.VerticalScrollBarWidth
+            _vScroll.Width = ScrollBarThicknessPx
             _vScroll.Left = Math.Max(0, Me.Width - _vScroll.Width)
             '_vScroll.Top = 0
             _vScroll.Height = Math.Max(1, Me.Height - FooterOffset)
@@ -583,7 +590,7 @@ Partial Public Class AdvancedTreeControl
             Dim headerOff As Integer = If(_headerVisible, _headerHeight, 0) +
                                    If(_isSearchMode, _searchBarHeight, 0)
             Dim viewport As Integer = Math.Max(1, Me.Height - headerOff - FooterOffset)
-            Dim contentH As Integer = GetVisibleItems().Count * _itemHeight + PaddingTreeTop
+            Dim contentH As Integer = GetVisibleItems().Count * _itemHeight + PaddingTreeTopPx
             If contentH <= viewport Then Return
 
             Dim lines As Integer = SystemInformation.MouseWheelScrollLines

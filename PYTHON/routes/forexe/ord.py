@@ -5,7 +5,8 @@ Ruta ORD pentru vederea Ordonantari (felia 0033).
 Contract (GET /api/forexe/ord?cod=<CodAngajament>):
     { "cod": "<CodAngajament>",
       "ordonantari": [ {...}, ... ],   # FX_ORD     — un rand per IDORDP, cu SUM-ul real
-      "linii":       [ {...}, ... ] }  # FX_ORD_TBL — un rand per IDORDTBLP, PLAT (fara PART)
+      "linii":       [ {...}, ... ] }  # FX_ORD_TBL — un rand per IDORDTBLP, PLAT, dar
+                                       #   fiecare linie isi poarta beneficiarul (FX_ORD_PART)
 
 Scope: baza conectata ESTE unitatea (o baza MariaDB = o unitate), deci nu exista
 parametru db_name / id_unitate — baza vine din sesiune (g.session.db_name), exact ca la
@@ -107,15 +108,34 @@ _SQL_ORDONANTARI = (
     "ORDER BY o.DataORD, o.NrORD"
 )
 
-# Toate liniile ordonantarilor angajamentului, PLAT (fara gruparea pe beneficiar — felie
-# ulterioara). Fiecare linie poarta `IDORDP`, ca sa poata fi filtrata pe client dupa nodul
-# selectat. Legatura cu antetul: `IN (SELECT IDORDP ...)`, nu join (vezi nota FAN-OUT).
+# Toate liniile ordonantarilor angajamentului. Lista ramane PLATA (un rand per IDORDTBLP,
+# fara grupare pe beneficiar in raspuns), dar fiecare linie isi POARTA acum beneficiarul —
+# vezi nota BENEFICIARUL de mai jos. Fiecare linie poarta si `IDORDP`, ca sa poata fi
+# filtrata pe client dupa nodul selectat. Legatura cu antetul: `IN (SELECT IDORDP ...)`,
+# nu join (vezi nota FAN-OUT).
 #
 # Clasificatia: COALESCE(drum direct, drum verificat) — vezi nota de modul. `NULLIF(..., '')`
 # fiindca un cod gol e la fel de inutil ca un NULL.
+#
+# BENEFICIARUL (`den_bene` / `cod_fiscal` / `cont_iban`), documentele justificative
+# (`doc_just`) si obiectul DDF (`obiect_ddf`) — sursele lor, verificate in export, NU
+# reghicite:
+#   * `FX_ORD_PART` (DenBene / CodFiscal / ContIBAN) e legata de linie prin `t.IDORDPARTP`.
+#     JOIN si nu subinterogare fiindca `IDORDPARTP` e CHEIA PRIMARA a lui FX_ORD_PART (vezi
+#     routes/ord/part.py) -> un singur rand prin definitie, deci fan-out imposibil. LEFT,
+#     pentru ca o linie migrata fara PART parinte nu are voie sa DISPARA din grila.
+#     Corespondentul Access e frmFX_ORD_PART (lstDenBene + CodFiscal/ContIBAN/Banca).
+#     `Banca` NU se trimite: pagina nu are camp pentru ea.
+#   * `FX_ORD_DOC` are MAI MULTE randuri per beneficiar, deci ar produce fan-out intr-un
+#     join — se aduna cu GROUP_CONCAT intr-o subinterogare scalara, ordonat determinist.
+#   * `ObiectDDF` sta in `FX_DDF`, la care se ajunge prin `FX_ORD.IDDF`. `LIMIT 1` fiindca
+#     PK-ul FX_DDF e COMPUS (IDDF, CUAL) — acelasi IDDF poate purta mai multe randuri
+#     (aceeasi capcana ca la `PartAng` / `NumePartener` din _SQL_ORDONANTARI).
+#     Se pune pe LINIE, nu pe antet, ca subsolul paginii sa se poata umple si pe o radacina
+#     de luna, unde randul selectat poate veni din oricare ordonantare a lunii.
 _SQL_LINII = (
     "SELECT "
-    "t.IDORDTBLP, t.IDORDP, "
+    "t.IDORDTBLP, t.IDORDP, t.IDORDPARTP, "
     "COALESCE(NULLIF((SELECT c.Clsf FROM Clasificatii c "
     "                 WHERE c.IDClsf = t.IdClsf LIMIT 1), ''), "
     "         (SELECT c.Clsf FROM Clasificatii c "
@@ -124,11 +144,18 @@ _SQL_LINII = (
     "                 WHERE c.IDClsf = t.IdClsf LIMIT 1), ''), "
     "         (SELECT c.Denumire FROM Clasificatii c "
     "          WHERE c.IdClsfAcc = i.IdClsf AND c.IdUnitate = i.IdUnitate LIMIT 1)) AS Denumire, "
-    "t.TotalReceptii, t.PlatiAnt, t.Valoare, t.Ramas "
+    "t.TotalReceptii, t.PlatiAnt, t.Valoare, t.Ramas, "
+    "p.DenBene, p.CodFiscal, p.ContIBAN, "
+    "(SELECT GROUP_CONCAT(DISTINCT d.DocJust ORDER BY d.DocJust SEPARATOR ', ') "
+    "   FROM FX_ORD_DOC d WHERE d.IDORDPARTP = t.IDORDPARTP) AS DocJust, "
+    "(SELECT f.ObiectDDF FROM FX_DDF f "
+    "  JOIN FX_ORD o ON o.IDDF = f.IDDF "
+    "  WHERE o.IDORDP = t.IDORDP LIMIT 1) AS ObiectDDF "
     "FROM FX_ORD_TBL t "
     "LEFT JOIN FX_Indicatori i ON i.CodAI = t.CodAI "
+    "LEFT JOIN FX_ORD_PART p ON p.IDORDPARTP = t.IDORDPARTP "
     "WHERE t.IDORDP IN (SELECT IDORDP FROM FX_ORD WHERE CodAngajament = %s) "
-    "ORDER BY t.IDORDP, Clsf, t.IDORDTBLP"
+    "ORDER BY t.IDORDP, p.DenBene, Clsf, t.IDORDTBLP"
 )
 
 
@@ -226,20 +253,29 @@ def get_ord():
                 "preluat": bool(preluat),
             })
 
-        # --- linii: FX_ORD_TBL (plat, fara FX_ORD_PART) --------------------------------
+        # --- linii: FX_ORD_TBL, plate, cu beneficiarul lor (FX_ORD_PART) ---------------
         cursor.execute(_SQL_LINII, (cod,))
         linii = []
-        for (idordtblp, idordp, clsf, denumire,
-             total_receptii, plati_ant, valoare, ramas) in cursor.fetchall():
+        for (idordtblp, idordp, idordpartp, clsf, denumire,
+             total_receptii, plati_ant, valoare, ramas,
+             den_bene, cod_fiscal, cont_iban, doc_just, obiect_ddf) in cursor.fetchall():
             linii.append({
                 "idordtblp": int(idordtblp) if idordtblp is not None else None,
                 "idordp": int(idordp) if idordp is not None else None,
+                # Beneficiarul liniei (FX_ORD_PART). 0 = linie fara PART parinte.
+                "idordpartp": int(idordpartp) if idordpartp is not None else 0,
                 "clsf": clsf,
                 "descriere": denumire,
                 "total_receptii": _num(total_receptii),
                 "plati_ant": _num(plati_ant),
                 "valoare": _num(valoare),
                 "ramas": _num(ramas),
+                # Subsolul paginii «Vizualizare» + filtrul pe beneficiar din antetul ei.
+                "den_bene": den_bene,
+                "cod_fiscal": cod_fiscal,
+                "cont_iban": cont_iban,
+                "doc_just": doc_just,
+                "obiect_ddf": obiect_ddf,
             })
 
         logger.info("[forexe.ord] %s: cod=%s -> ordonantari=%s linii=%s (cale_pdf=%s)",

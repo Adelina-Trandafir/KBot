@@ -393,16 +393,26 @@ Public NotInheritable Class GetOrdHeaderRow
     Public Property preluat As Boolean
 End Class
 
-' One FX_ORD_TBL record, FLAT (no FX_ORD_PART grouping in this slice). idordp ties the line
-' to its tree node. clsf/descriere come from Clasificatii — the route tries the documented
-' direct FK first and falls back to the 0011-03-verified FX_Indicatori path.
+' One FX_ORD_TBL record. The list stays FLAT (the server does not group), but every line
+' carries its own beneficiary (FX_ORD_PART through idordpartp) plus the documents and the
+' DDF object the page's footer shows. idordp ties the line to its tree node. clsf/descriere
+' come from Clasificatii — the route tries the documented direct FK first and falls back to
+' the 0011-03-verified FX_Indicatori path.
 Public NotInheritable Class GetOrdLinieRow
     Public Property idordtblp As Integer
     Public Property idordp As Integer
+    Public Property idordpartp As Integer
     Public Property clsf As String
     Public Property descriere As String
     Public Property total_receptii As Double
     Public Property plati_ant As Double
     Public Property valoare As Double
     Public Property ramas As Double
+    ' FX_ORD_PART: the beneficiary of this line. Empty when the line has no PART parent.
+    Public Property den_bene As String
+    Public Property cod_fiscal As String
+    Public Property cont_iban As String
+    ' FX_ORD_DOC, GROUP_CONCAT-ed server side; FX_DDF.ObiectDDF through FX_ORD.IDDF.
+    Public Property doc_just As String
+    Public Property obiect_ddf As String
 End Class

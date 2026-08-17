@@ -87,6 +87,20 @@ Partial Public Class AdvancedTreeControl
         End Get
     End Property
 
+    ''' <summary>
+    ''' Aceeași rază, în pixeli de ecran — o cere pictura rândului (felia 0040). Raza de mai sus e
+    ''' LOGICĂ, ca tot restul geometriei: 4 px pe o bandă de 22 se citesc ca un colț rotunjit, dar
+    ''' aceiași 4 px pe banda de 33 de la 150% se pierd, iar rândul selectat redevine dreptunghi
+    ''' într-o schemă Modern altfel rotundă.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Friend ReadOnly Property SelectionCornerRadiusPx As Integer
+        Get
+            Return SX(_selectionCornerRadius)
+        End Get
+    End Property
+
     ' Plafonul de mai sus, într-un singur loc.
     Private Const SELECTION_CORNER_RADIUS_MAX As Integer = 4
 

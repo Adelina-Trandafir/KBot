@@ -33,6 +33,7 @@ Partial Class MainForm
         Dim KBotNavItem7 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
         Dim KBotNavItem8 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
         tips = New KBot.Controls.KBotToolTip(components)
+        btnConectare = New Button()
         btnInfo = New Button()
         btnSort = New Button()
         btnOpt = New Button()
@@ -54,7 +55,6 @@ Partial Class MainForm
         lblOperator = New Label()
         lblSs = New Label()
         lblAn = New Label()
-        lblUnit = New Label()
         busyBar = New Controls.KBotBusyBar()
         capBar = New Controls.KBotCaptionBar()
         pnlRoot.SuspendLayout()
@@ -71,14 +71,34 @@ Partial Class MainForm
         tlyHeader.SuspendLayout()
         SuspendLayout()
         ' 
+        ' btnConectare
+        ' 
+        btnConectare.BackgroundImageLayout = ImageLayout.None
+        btnConectare.Dock = DockStyle.Left
+        btnConectare.FlatAppearance.BorderColor = SystemColors.ActiveBorder
+        btnConectare.FlatStyle = FlatStyle.Flat
+        btnConectare.Font = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        btnConectare.Image = My.Resources.Resources.FX_24
+        btnConectare.ImageAlign = ContentAlignment.MiddleLeft
+        btnConectare.Location = New Point(0, 0)
+        btnConectare.Margin = New Padding(0)
+        btnConectare.Name = "btnConectare"
+        btnConectare.Padding = New Padding(17, 0, 0, 0)
+        btnConectare.Size = New Size(219, 52)
+        btnConectare.TabIndex = 0
+        btnConectare.Text = "Conectare"
+        tips.SetToolTipHeader(btnConectare, "Conectare FOREXE")
+        tips.SetToolTipText(btnConectare, "Pornește sesiunea către portalul FOREXE." & vbLf & "Se cere certificatul o singură dată pe sesiune.")
+        btnConectare.UseVisualStyleBackColor = True
+        ' 
         ' btnInfo
         ' 
         btnInfo.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         btnInfo.FlatStyle = FlatStyle.Flat
-        btnInfo.Location = New Point(302, 5)
-        btnInfo.Margin = New Padding(3, 4, 3, 4)
+        btnInfo.Location = New Point(379, 7)
+        btnInfo.Margin = New Padding(4, 5, 4, 5)
         btnInfo.Name = "btnInfo"
-        btnInfo.Size = New Size(32, 37)
+        btnInfo.Size = New Size(40, 47)
         btnInfo.TabIndex = 1
         btnInfo.Text = "ⓘ"
         tips.SetToolTipHeader(btnInfo, "Informații")
@@ -89,10 +109,10 @@ Partial Class MainForm
         ' 
         btnSort.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         btnSort.FlatStyle = FlatStyle.Flat
-        btnSort.Location = New Point(341, 5)
-        btnSort.Margin = New Padding(3, 4, 3, 4)
+        btnSort.Location = New Point(426, 7)
+        btnSort.Margin = New Padding(4, 5, 4, 5)
         btnSort.Name = "btnSort"
-        btnSort.Size = New Size(32, 37)
+        btnSort.Size = New Size(40, 47)
         btnSort.TabIndex = 1
         btnSort.Text = "↕"
         tips.SetToolTipHeader(btnSort, "Sortare arbore")
@@ -103,10 +123,10 @@ Partial Class MainForm
         ' 
         btnOpt.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         btnOpt.FlatStyle = FlatStyle.Flat
-        btnOpt.Location = New Point(379, 5)
-        btnOpt.Margin = New Padding(3, 4, 3, 4)
+        btnOpt.Location = New Point(474, 7)
+        btnOpt.Margin = New Padding(4, 5, 4, 5)
         btnOpt.Name = "btnOpt"
-        btnOpt.Size = New Size(32, 37)
+        btnOpt.Size = New Size(40, 47)
         btnOpt.TabIndex = 2
         btnOpt.Text = "…"
         tips.SetToolTipHeader(btnOpt, "Opțiuni")
@@ -119,10 +139,10 @@ Partial Class MainForm
         cboAn.DrawMode = DrawMode.OwnerDrawFixed
         cboAn.DropDownStyle = ComboBoxStyle.DropDownList
         cboAn.FlatStyle = FlatStyle.Flat
-        cboAn.Location = New Point(959, 3)
-        cboAn.Margin = New Padding(3, 3, 3, 0)
+        cboAn.Location = New Point(1130, 7)
+        cboAn.Margin = New Padding(0, 7, 0, 0)
         cboAn.Name = "cboAn"
-        cboAn.Size = New Size(114, 28)
+        cboAn.Size = New Size(150, 32)
         cboAn.TabIndex = 3
         tips.SetToolTipHeader(cboAn, "An")
         tips.SetToolTipText(cboAn, "Anul de lucru." & vbLf & "Schimbarea lui reîncarcă arborele și toate ecranele.")
@@ -133,10 +153,10 @@ Partial Class MainForm
         cboSs.DrawMode = DrawMode.OwnerDrawFixed
         cboSs.DropDownStyle = ComboBoxStyle.DropDownList
         cboSs.FlatStyle = FlatStyle.Flat
-        cboSs.Location = New Point(1239, 3)
-        cboSs.Margin = New Padding(3, 3, 3, 0)
+        cboSs.Location = New Point(1480, 7)
+        cboSs.Margin = New Padding(0, 7, 0, 0)
         cboSs.Name = "cboSs"
-        cboSs.Size = New Size(114, 28)
+        cboSs.Size = New Size(150, 32)
         cboSs.TabIndex = 5
         tips.SetToolTipHeader(cboSs, "Subperioadă")
         tips.SetToolTipText(cboSs, "Subperioada (SS) din anul ales." & vbLf & "Ultima aleasă se ține minte pentru data viitoare.")
@@ -149,10 +169,10 @@ Partial Class MainForm
         pnlRoot.Controls.Add(busyBar)
         pnlRoot.Controls.Add(capBar)
         pnlRoot.Dock = DockStyle.Fill
-        pnlRoot.Location = New Point(1, 1)
-        pnlRoot.Margin = New Padding(3, 4, 3, 4)
+        pnlRoot.Location = New Point(1, 2)
+        pnlRoot.Margin = New Padding(4, 5, 4, 5)
         pnlRoot.Name = "pnlRoot"
-        pnlRoot.Size = New Size(1358, 854)
+        pnlRoot.Size = New Size(1639, 996)
         pnlRoot.TabIndex = 0
         pnlRoot.Tag = "Card"
         ' 
@@ -161,34 +181,34 @@ Partial Class MainForm
         pnlWork.Controls.Add(split)
         pnlWork.Controls.Add(navViews)
         pnlWork.Dock = DockStyle.Fill
-        pnlWork.Location = New Point(0, 98)
-        pnlWork.Margin = New Padding(3, 4, 3, 4)
+        pnlWork.Location = New Point(0, 124)
+        pnlWork.Margin = New Padding(4, 5, 4, 5)
         pnlWork.Name = "pnlWork"
-        pnlWork.Padding = New Padding(9, 11, 9, 11)
-        pnlWork.Size = New Size(1358, 697)
+        pnlWork.Padding = New Padding(11, 13, 11, 13)
+        pnlWork.Size = New Size(1639, 799)
         pnlWork.TabIndex = 0
         ' 
         ' split
         ' 
         split.Dock = DockStyle.Fill
-        split.Location = New Point(184, 11)
-        split.Margin = New Padding(3, 4, 3, 4)
+        split.Location = New Point(230, 13)
+        split.Margin = New Padding(4, 5, 4, 5)
         split.Name = "split"
         ' 
         ' split.Panel1
         ' 
         split.Panel1.Controls.Add(pnlTree)
-        split.Panel1.Padding = New Padding(9, 0, 0, 0)
+        split.Panel1.Padding = New Padding(11, 0, 0, 0)
         split.Panel1MinSize = 240
         ' 
         ' split.Panel2
         ' 
         split.Panel2.Controls.Add(viewHost)
-        split.Panel2.Padding = New Padding(9, 0, 0, 0)
+        split.Panel2.Padding = New Padding(11, 0, 0, 0)
         split.Panel2MinSize = 400
-        split.Size = New Size(1165, 675)
-        split.SplitterDistance = 343
-        split.SplitterWidth = 7
+        split.Size = New Size(1398, 773)
+        split.SplitterDistance = 397
+        split.SplitterWidth = 9
         split.TabIndex = 1
         ' 
         ' pnlTree
@@ -196,10 +216,10 @@ Partial Class MainForm
         pnlTree.Controls.Add(tree)
         pnlTree.Controls.Add(pnlTreeHead)
         pnlTree.Dock = DockStyle.Fill
-        pnlTree.Location = New Point(9, 0)
-        pnlTree.Margin = New Padding(3, 4, 3, 4)
+        pnlTree.Location = New Point(11, 0)
+        pnlTree.Margin = New Padding(4, 5, 4, 5)
         pnlTree.Name = "pnlTree"
-        pnlTree.Size = New Size(334, 675)
+        pnlTree.Size = New Size(386, 773)
         pnlTree.TabIndex = 0
         pnlTree.Tag = "Card"
         ' 
@@ -212,7 +232,7 @@ Partial Class MainForm
         tree.Dock = DockStyle.Fill
         tree.DynamicColumns = False
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
-        tree.ExpanderSize = 16
+        tree.ExpanderSize = 10
         tree.FlyoutDelay = 150
         tree.FlyoutSlideDuration = 100
         tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
@@ -246,11 +266,11 @@ Partial Class MainForm
         tree.HeaderSeparatorWidth = 2
         tree.HeaderVisible = True
         tree.ItemHeight = 24
-        tree.LeftIconSize = New Size(16, 16)
+        tree.LeftIconSize = New Size(14, 14)
         tree.Location = New Point(0, 0)
-        tree.Margin = New Padding(3, 4, 3, 4)
+        tree.Margin = New Padding(4, 5, 4, 5)
         tree.Name = "tree"
-        TreeNodeDefinition1.Caption = "elasalqw qwlrlqwl qlrqwlr lqwr "
+        TreeNodeDefinition1.Caption = "Se descarcă informații de pe server"
         TreeNodeDefinition1.ImageKey = Nothing
         TreeNodeDefinition1.Key = "1"
         TreeNodeDefinition1.OpenImageKey = Nothing
@@ -272,7 +292,7 @@ Partial Class MainForm
         tree.SearchIn = KBot.Controls.AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
         tree.SearchSeparatorColor = Color.Gainsboro
         tree.ShowRightIconOnHover = True
-        tree.Size = New Size(334, 675)
+        tree.Size = New Size(386, 773)
         tree.TabIndex = 0
         tree.TooltipShowOnlyOnLeftIcon = True
         tree.TreeListView = True
@@ -284,9 +304,9 @@ Partial Class MainForm
         pnlTreeHead.Controls.Add(btnSort)
         pnlTreeHead.Controls.Add(btnOpt)
         pnlTreeHead.Location = New Point(0, 0)
-        pnlTreeHead.Margin = New Padding(3, 4, 3, 4)
+        pnlTreeHead.Margin = New Padding(4, 5, 4, 5)
         pnlTreeHead.Name = "pnlTreeHead"
-        pnlTreeHead.Size = New Size(417, 48)
+        pnlTreeHead.Size = New Size(521, 60)
         pnlTreeHead.TabIndex = 1
         pnlTreeHead.Tag = "Card"
         pnlTreeHead.Visible = False
@@ -295,19 +315,20 @@ Partial Class MainForm
         ' 
         lblTree.AutoSize = True
         lblTree.Font = New Font("Segoe UI Semibold", 10F)
-        lblTree.Location = New Point(11, 11)
+        lblTree.Location = New Point(14, 13)
+        lblTree.Margin = New Padding(4, 0, 4, 0)
         lblTree.Name = "lblTree"
-        lblTree.Size = New Size(112, 23)
+        lblTree.Size = New Size(133, 28)
         lblTree.TabIndex = 0
         lblTree.Text = "Angajamente"
         ' 
         ' viewHost
         ' 
         viewHost.Dock = DockStyle.Fill
-        viewHost.Location = New Point(9, 0)
-        viewHost.Margin = New Padding(3, 4, 3, 4)
+        viewHost.Location = New Point(11, 0)
+        viewHost.Margin = New Padding(4, 5, 4, 5)
         viewHost.Name = "viewHost"
-        viewHost.Size = New Size(806, 675)
+        viewHost.Size = New Size(981, 773)
         viewHost.TabIndex = 0
         viewHost.Tag = "Card"
         ' 
@@ -358,21 +379,21 @@ Partial Class MainForm
         navViews.Items.Add(KBotNavItem6)
         navViews.Items.Add(KBotNavItem7)
         navViews.Items.Add(KBotNavItem8)
-        navViews.Location = New Point(9, 11)
-        navViews.Margin = New Padding(3, 4, 3, 4)
+        navViews.Location = New Point(11, 13)
+        navViews.Margin = New Padding(4, 5, 4, 5)
         navViews.Name = "navViews"
         navViews.SelectedKey = Nothing
-        navViews.Size = New Size(175, 675)
+        navViews.Size = New Size(219, 773)
         navViews.TabIndex = 0
         ' 
         ' pnlStatus
         ' 
         pnlStatus.Controls.Add(forexeFooter)
         pnlStatus.Dock = DockStyle.Bottom
-        pnlStatus.Location = New Point(0, 795)
-        pnlStatus.Margin = New Padding(3, 4, 3, 4)
+        pnlStatus.Location = New Point(0, 923)
+        pnlStatus.Margin = New Padding(4, 5, 4, 5)
         pnlStatus.Name = "pnlStatus"
-        pnlStatus.Size = New Size(1358, 59)
+        pnlStatus.Size = New Size(1639, 73)
         pnlStatus.TabIndex = 1
         pnlStatus.Tag = "Card"
         ' 
@@ -382,19 +403,20 @@ Partial Class MainForm
         forexeFooter.Location = New Point(0, 0)
         forexeFooter.Margin = New Padding(0)
         forexeFooter.Name = "forexeFooter"
-        forexeFooter.Padding = New Padding(7, 8, 7, 8)
-        forexeFooter.Size = New Size(1358, 59)
+        forexeFooter.Padding = New Padding(9, 10, 9, 10)
+        forexeFooter.Size = New Size(1639, 73)
         forexeFooter.TabIndex = 1
         ' 
         ' pnlHeader
         ' 
-        pnlHeader.BorderStyle = BorderStyle.FixedSingle
+        pnlHeader.BackColor = SystemColors.Window
         pnlHeader.Controls.Add(tlyHeader)
         pnlHeader.Dock = DockStyle.Top
-        pnlHeader.Location = New Point(0, 57)
+        pnlHeader.Location = New Point(0, 72)
         pnlHeader.Margin = New Padding(0)
         pnlHeader.Name = "pnlHeader"
-        pnlHeader.Size = New Size(1358, 41)
+        pnlHeader.Padding = New Padding(9, 0, 0, 0)
+        pnlHeader.Size = New Size(1639, 52)
         pnlHeader.TabIndex = 2
         pnlHeader.Tag = "Card"
         ' 
@@ -403,35 +425,37 @@ Partial Class MainForm
         tlyHeader.BackColor = Color.Transparent
         tlyHeader.ColumnCount = 8
         tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 160F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 40F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 40F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 313F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 50F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 50F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlyHeader.Controls.Add(btnConectare, 0, 0)
         tlyHeader.Controls.Add(lblOperator, 1, 0)
         tlyHeader.Controls.Add(cboSs, 7, 0)
         tlyHeader.Controls.Add(lblSs, 6, 0)
         tlyHeader.Controls.Add(cboAn, 4, 0)
         tlyHeader.Controls.Add(lblAn, 3, 0)
-        tlyHeader.Controls.Add(lblUnit, 0, 0)
         tlyHeader.Dock = DockStyle.Fill
-        tlyHeader.Location = New Point(0, 0)
+        tlyHeader.Location = New Point(9, 0)
         tlyHeader.Margin = New Padding(0)
         tlyHeader.Name = "tlyHeader"
         tlyHeader.RowCount = 1
         tlyHeader.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyHeader.Size = New Size(1356, 39)
+        tlyHeader.Size = New Size(1630, 52)
         tlyHeader.TabIndex = 6
         ' 
         ' lblOperator
         ' 
-        lblOperator.Dock = DockStyle.Left
-        lblOperator.Location = New Point(639, 0)
+        lblOperator.Dock = DockStyle.Fill
+        lblOperator.Font = New Font("Calibri", 10F, FontStyle.Bold Or FontStyle.Italic)
+        lblOperator.Location = New Point(621, 0)
+        lblOperator.Margin = New Padding(4, 0, 4, 0)
         lblOperator.Name = "lblOperator"
-        lblOperator.Padding = New Padding(14, 0, 7, 0)
-        lblOperator.Size = New Size(153, 39)
+        lblOperator.Padding = New Padding(19, 0, 9, 0)
+        lblOperator.Size = New Size(305, 52)
         lblOperator.TabIndex = 6
         lblOperator.Text = "Operator"
         lblOperator.TextAlign = ContentAlignment.MiddleLeft
@@ -440,9 +464,11 @@ Partial Class MainForm
         ' 
         lblSs.AutoSize = True
         lblSs.Dock = DockStyle.Fill
-        lblSs.Location = New Point(1119, 0)
+        lblSs.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
+        lblSs.Location = New Point(1334, 0)
+        lblSs.Margin = New Padding(4, 0, 4, 0)
         lblSs.Name = "lblSs"
-        lblSs.Size = New Size(114, 39)
+        lblSs.Size = New Size(142, 52)
         lblSs.TabIndex = 4
         lblSs.Text = "Sursă/Sector:"
         lblSs.TextAlign = ContentAlignment.MiddleRight
@@ -451,32 +477,22 @@ Partial Class MainForm
         ' 
         lblAn.AutoSize = True
         lblAn.Dock = DockStyle.Fill
-        lblAn.Location = New Point(839, 0)
+        lblAn.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
+        lblAn.Location = New Point(984, 0)
+        lblAn.Margin = New Padding(4, 0, 4, 0)
         lblAn.Name = "lblAn"
-        lblAn.Size = New Size(114, 39)
+        lblAn.Size = New Size(142, 52)
         lblAn.TabIndex = 2
         lblAn.Text = "An Date:"
         lblAn.TextAlign = ContentAlignment.MiddleRight
         ' 
-        ' lblUnit
-        ' 
-        lblUnit.AutoSize = True
-        lblUnit.Dock = DockStyle.Fill
-        lblUnit.Font = New Font("Calibri", 12F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        lblUnit.Location = New Point(3, 0)
-        lblUnit.Name = "lblUnit"
-        lblUnit.Size = New Size(630, 39)
-        lblUnit.TabIndex = 1
-        lblUnit.Text = "Unitate"
-        lblUnit.TextAlign = ContentAlignment.MiddleLeft
-        ' 
         ' busyBar
         ' 
         busyBar.Dock = DockStyle.Top
-        busyBar.Location = New Point(0, 53)
-        busyBar.Margin = New Padding(3, 4, 3, 4)
+        busyBar.Location = New Point(0, 67)
+        busyBar.Margin = New Padding(4, 5, 4, 5)
         busyBar.Name = "busyBar"
-        busyBar.Size = New Size(1358, 4)
+        busyBar.Size = New Size(1639, 5)
         busyBar.TabIndex = 3
         busyBar.TabStop = False
         ' 
@@ -485,7 +501,7 @@ Partial Class MainForm
         capBar.Dock = DockStyle.Top
         capBar.IconImage = My.Resources.Resources.kbot_64
         capBar.Location = New Point(0, 0)
-        capBar.Margin = New Padding(3, 4, 3, 4)
+        capBar.Margin = New Padding(4, 5, 4, 5)
         capBar.Name = "capBar"
         capBar.OptionButtonImage = My.Resources.Resources.settings__1_
         capBar.OptionButtonPadding = 2
@@ -493,7 +509,7 @@ Partial Class MainForm
         capBar.ShowMinimize = True
         capBar.ShowOptionsButton = True
         capBar.ShowThemeButton = True
-        capBar.Size = New Size(1358, 53)
+        capBar.Size = New Size(1639, 67)
         capBar.TabIndex = 4
         capBar.TabStop = False
         capBar.Text = "K-BOT"
@@ -501,16 +517,16 @@ Partial Class MainForm
         ' 
         ' MainForm
         ' 
-        AutoScaleDimensions = New SizeF(8F, 20F)
+        AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(1360, 856)
+        ClientSize = New Size(1641, 1000)
         Controls.Add(pnlRoot)
         FormBorderStyle = FormBorderStyle.None
         Icon = CType(resources.GetObject("$this.Icon"), Icon)
-        Margin = New Padding(3, 4, 3, 4)
-        MinimumSize = New Size(1257, 800)
+        Margin = New Padding(4, 5, 4, 5)
+        MinimumSize = New Size(1571, 1000)
         Name = "MainForm"
-        Padding = New Padding(1)
+        Padding = New Padding(1, 2, 1, 2)
         StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT"
         pnlRoot.ResumeLayout(False)
@@ -534,7 +550,6 @@ Partial Class MainForm
     Friend WithEvents pnlRoot As Panel
     Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
     Friend WithEvents busyBar As KBot.Controls.KBotBusyBar
-    Friend WithEvents pnlHeader As Panel
     Friend WithEvents pnlStatus As Panel
     Friend WithEvents forexeFooter As ForexeFooterView
     Friend WithEvents pnlWork As Panel
@@ -543,16 +558,17 @@ Partial Class MainForm
     Friend WithEvents pnlTree As Panel
     Friend WithEvents pnlTreeHead As Panel
     Friend WithEvents lblTree As Label
+    Friend WithEvents btnConectare As Button
     Friend WithEvents btnInfo As Button
     Friend WithEvents btnSort As Button
     Friend WithEvents btnOpt As Button
     Friend WithEvents tree As KBot.Controls.AdvancedTreeControl
     Friend WithEvents viewHost As Panel
+    Friend WithEvents pnlHeader As Panel
     Friend WithEvents tlyHeader As TableLayoutPanel
+    Friend WithEvents lblOperator As Label
     Friend WithEvents cboSs As Controls.KBotComboBox
     Friend WithEvents lblSs As Label
     Friend WithEvents cboAn As Controls.KBotComboBox
     Friend WithEvents lblAn As Label
-    Friend WithEvents lblUnit As Label
-    Friend WithEvents lblOperator As Label
 End Class

@@ -15,11 +15,63 @@ Partial Public Class AdvancedTreeControl
         Private Shared Function SetWindowPos(hWnd As IntPtr, hWndInsertAfter As IntPtr, X As Integer, Y As Integer, cx As Integer, cy As Integer, uFlags As UInteger) As Boolean
         End Function
 
-        Private Const PADDING_H As Integer = 4
-        Private Const PADDING_V As Integer = 4
-        Private Const MAX_WIDTH As Integer = 400
-        Private Const MAX_LINES As Integer = 10
-        Private Const CORNER_RADIUS As Integer = 6
+        ' ── Măsurile ferestrei, LOGICE (px @96dpi) ────────────────────────────
+        ' Fereastra e a NOASTRĂ, desenată de la zero, deci se supune aceleiași reguli ca arborele:
+        ' fontul crește singur cu scara, geometria nu — până în felia 0040 tooltipul rămânea cu
+        ' aer de 4 px și colțuri de 6 px sub un text cu 50% mai mare, iar lățimea maximă de 400
+        ' tăia la 150% un text care la 100% încăpea. Accesoriile de mai jos poartă ACELEAȘI nume
+        ' ca fostele constante, deci toate locurile de folosire au rămas neatinse.
+        Private Const DEFAULT_PADDING_H As Integer = 4
+        Private Const DEFAULT_PADDING_V As Integer = 4
+        Private Const DEFAULT_MAX_WIDTH As Integer = 400
+        Private Const DEFAULT_CORNER_RADIUS As Integer = 6
+        Private Const MAX_LINES As Integer = 10   ' un număr de LINII, nu de pixeli — nu se scalează
+        ' Decalajul față de cursor și aerul până la marginea ecranului.
+        Private Const CURSOR_OFFSET_X As Integer = 16
+        Private Const CURSOR_OFFSET_Y As Integer = 20
+        Private Const SCREEN_EDGE_GAP As Integer = 4
+        ' Aerul dintre două rânduri de text (se adaugă la înălțimea fontului).
+        Private Const LINE_AIR As Integer = 2
+
+        ''' <summary>
+        ''' Scara ferestrei. Sursa e aceeași ca a arborelui — <see cref="AppScaling"/> — ca cele
+        ''' două să nu se contrazică atunci când operatorul fixează scara la 100%. Fereastra e
+        ''' <c>StartPosition.Manual</c> și fără autoscalare implicită, deci nimic n-o scalează
+        ''' altfel pe la spate.
+        ''' </summary>
+        Private ReadOnly Property ScaraProprie As Single
+            Get
+                Return AppScaling.FactorFor(Me)
+            End Get
+        End Property
+
+        Private Function SP(logical As Integer) As Integer
+            Return CInt(Math.Round(logical * ScaraProprie))
+        End Function
+
+        Private ReadOnly Property PADDING_H As Integer
+            Get
+                Return SP(DEFAULT_PADDING_H)
+            End Get
+        End Property
+
+        Private ReadOnly Property PADDING_V As Integer
+            Get
+                Return SP(DEFAULT_PADDING_V)
+            End Get
+        End Property
+
+        Private ReadOnly Property MAX_WIDTH As Integer
+            Get
+                Return SP(DEFAULT_MAX_WIDTH)
+            End Get
+        End Property
+
+        Private ReadOnly Property CORNER_RADIUS As Integer
+            Get
+                Return SP(DEFAULT_CORNER_RADIUS)
+            End Get
+        End Property
         Private Const BORDER_COLOR_ARG As Integer = 180
         Private Const HWND_TOPMOST As Integer = -1
         Private Const SWP_NOACTIVATE As UInteger = &H10
@@ -107,10 +159,12 @@ Partial Public Class AdvancedTreeControl
                         Dim formHnat As Integer = _tableHeight + PADDING_V * 2
                         Dim scr As Screen = Screen.FromPoint(screenPos)
                         Dim formHt As Integer = Math.Min(formHnat, scr.WorkingArea.Height)
-                        Dim px As Integer = screenPos.X + 16
-                        Dim py As Integer = screenPos.Y + 20
-                        If px + formWt > scr.WorkingArea.Right Then px = screenPos.X - formWt - 4
-                        If py + formHt > scr.WorkingArea.Bottom Then py = scr.WorkingArea.Bottom - formHt - 4
+                        ' Decalajul față de cursor e tot o măsură logică: la 150% săgeata mouse-ului
+                        ' e ea însăși mai mare, deci 16/20 px bruți ar lăsa fereastra sub cursor.
+                        Dim px As Integer = screenPos.X + SP(CURSOR_OFFSET_X)
+                        Dim py As Integer = screenPos.Y + SP(CURSOR_OFFSET_Y)
+                        If px + formWt > scr.WorkingArea.Right Then px = screenPos.X - formWt - SP(SCREEN_EDGE_GAP)
+                        If py + formHt > scr.WorkingArea.Bottom Then py = scr.WorkingArea.Bottom - formHt - SP(SCREEN_EDGE_GAP)
                         If px < scr.WorkingArea.Left Then px = scr.WorkingArea.Left
                         If py < scr.WorkingArea.Top Then py = scr.WorkingArea.Top
 
@@ -142,10 +196,10 @@ Partial Public Class AdvancedTreeControl
                 Dim formH As Integer = _contentHeight + PADDING_V * 2
 
                 Dim vScreen As Screen = Screen.FromPoint(screenPos)
-                Dim posX As Integer = screenPos.X + 16
-                Dim posY As Integer = screenPos.Y + 20
-                If posX + formW > vScreen.WorkingArea.Right Then posX = screenPos.X - formW - 4
-                If posY + formH > vScreen.WorkingArea.Bottom Then posY = screenPos.Y - formH - 4
+                Dim posX As Integer = screenPos.X + SP(CURSOR_OFFSET_X)
+                Dim posY As Integer = screenPos.Y + SP(CURSOR_OFFSET_Y)
+                If posX + formW > vScreen.WorkingArea.Right Then posX = screenPos.X - formW - SP(SCREEN_EDGE_GAP)
+                If posY + formH > vScreen.WorkingArea.Bottom Then posY = screenPos.Y - formH - SP(SCREEN_EDGE_GAP)
 
                 Me.Location = New Point(posX, posY)
                 Me.Size = New Size(formW, formH)
@@ -163,7 +217,7 @@ Partial Public Class AdvancedTreeControl
                 Dim fmt As StringFormat = StringFormat.GenericTypographic
                 fmt.FormatFlags = fmt.FormatFlags Or StringFormatFlags.MeasureTrailingSpaces
 
-                _lineHeight = baseFont.Height + 2
+                _lineHeight = baseFont.Height + SP(LINE_AIR)
 
                 Using g As Graphics = Me.CreateGraphics()
 
@@ -231,11 +285,12 @@ Partial Public Class AdvancedTreeControl
                     Dim maxLineW As Single = 0
                     For Each line In _lines
                         Dim lineW As Single = 0
-                        Dim lineH As Integer = baseFont.Height + 2
+                        Dim aerRand As Integer = SP(LINE_AIR)
+                        Dim lineH As Integer = baseFont.Height + aerRand
                         For Each part In line
                             Dim sz As SizeF = g.MeasureString(If(part.Text = "", " ", part.Text), part.Font, PointF.Empty, fmt)
                             lineW += sz.Width
-                            If part.Font.Height + 2 > lineH Then lineH = part.Font.Height + 2
+                            If part.Font.Height + aerRand > lineH Then lineH = part.Font.Height + aerRand
                         Next
                         If lineW > maxLineW Then maxLineW = lineW
                         If lineH > _lineHeight Then _lineHeight = lineH

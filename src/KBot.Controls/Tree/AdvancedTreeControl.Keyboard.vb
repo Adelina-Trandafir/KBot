@@ -172,7 +172,7 @@
                                    If(_isSearchMode, _searchBarHeight, 0)
         Dim viewport As Integer = Math.Max(1, Me.Height - headerOff - FooterOffset)
         Dim scrollY As Integer = _vScroll.Value
-        Dim nodeTop As Integer = PaddingTreeTop + idx * _itemHeight
+        Dim nodeTop As Integer = PaddingTreeTopPx + idx * _itemHeight
         Dim nodeBot As Integer = nodeTop + _itemHeight
 
         If nodeTop < scrollY Then

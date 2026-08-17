@@ -20,7 +20,9 @@ e logică (după control), nu după felul fișierului.
 | `CaptionBar/` | `KBotCaptionBar` |
 | `BusyBar/` | `KBotBusyBar` |
 | `Notice/` | `KBotNotice`, `NoticeKind` |
-| `TextField/` | `KBotTextField` |
+| `TextField/` | `KBotTextField` (câmpul de o linie de pe `LoginForm`) și `KBotTextBox` (caseta generală: chenar reglabil ca CULOARE și GROSIME, multilinie, cu bare `KBotScrollBar` proprii în locul celor native) |
+| `Scroll/` | `KBotScrollBar` — bara de derulare desenată de noi. Semantica intervalului e a lui `System.Windows.Forms.ScrollBar` (`Minimum .. Maximum - LargeChange + 1`), dar fața e a paletei: barele native sunt ferestre pictate de Windows, deci nicio culoare a schemei nu ajunge pe ele |
+| `Label/` | `KBotLabel` — eticheta cu chenar propriu (culoare + grosime + rază). `BorderStyle` moștenit e ascuns și refuzat: cele trei valori native se desenează în culorile SISTEMULUI |
 | `ToolTip/` | `KBotToolTip` (componenta `IExtenderProvider`), `KBotToolTipContent`, `KBotToolTipStyle` + `KBotToolTipBand`/`KBotToolTipSeparator`, `KBotToolTipWindow` (fereastra) și `KBotRichText` (motorul de text îmbogățit: analiză, așezare, desen — pur, măsurabil fără ecran) |
 
 Un control nou => un folder nou. Nu se adaugă fișiere de control în rădăcina proiectului

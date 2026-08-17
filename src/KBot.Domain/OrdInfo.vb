@@ -63,15 +63,20 @@ Public NotInheritable Class OrdHeaderRow
 End Class
 
 ''' <summary>
-''' O linie de ordonantare = o inregistrare FX_ORD_TBL. Lista e PLATA in felia asta:
-''' gruparea pe beneficiar (FX_ORD_PART) e o felie ulterioara. <see cref="Idordp"/> leaga
-''' linia de frunza din arbore. Coloanele de bani vin deja 0-ate de server.
+''' O linie de ordonantare = o inregistrare FX_ORD_TBL. Lista ramane PLATA — serverul NU
+''' grupeaza pe beneficiar — dar fiecare linie isi POARTA beneficiarul (FX_ORD_PART prin
+''' <see cref="Idordpartp"/>), din care pagina «Vizualizare» isi umple filtrul din antet si
+''' subsolul de sub grila. <see cref="Idordp"/> leaga linia de frunza din arbore. Coloanele
+''' de bani vin deja 0-ate de server.
 ''' </summary>
 Public NotInheritable Class OrdLinieRow
     ''' <summary>Cheia primara MariaDB FX_ORD_TBL (coloana «...P»).</summary>
     Public Property Idordtblp As Integer
     ''' <summary>Ordonantarea parinte — cheia MariaDB, nu id-ul Access.</summary>
     Public Property Idordp As Integer
+    ''' <summary>Beneficiarul liniei — cheia primara MariaDB FX_ORD_PART. 0 = linie fara
+    ''' beneficiar (migrare fara PART parinte); atunci campurile de mai jos sunt goale.</summary>
+    Public Property Idordpartp As Integer
     ''' <summary>Clasificatia afisata in grila (din Clasificatii, rezolvata pe server).</summary>
     Public Property Clsf As String = String.Empty
     ''' <summary>Denumirea clasificatiei — coloana «Descriere» a grilei.</summary>
@@ -80,6 +85,20 @@ Public NotInheritable Class OrdLinieRow
     Public Property PlatiAnt As Double
     Public Property Valoare As Double
     Public Property Ramas As Double
+
+    ''' <summary>Numele beneficiarului (FX_ORD_PART.DenBene) — si valoarea din combo-ul de
+    ''' filtrare, si eticheta «Beneficiar» din subsol.</summary>
+    Public Property DenBene As String = String.Empty
+    ''' <summary>Codul fiscal al BENEFICIARULUI (FX_ORD_PART.CodFiscal), nu al unitatii.</summary>
+    Public Property CodFiscal As String = String.Empty
+    ''' <summary>Contul IBAN al beneficiarului (FX_ORD_PART.ContIBAN).</summary>
+    Public Property ContIban As String = String.Empty
+    ''' <summary>Documentele justificative ale beneficiarului (FX_ORD_DOC.DocJust), adunate
+    ''' pe server intr-un singur text separat prin «, ».</summary>
+    Public Property DocJust As String = String.Empty
+    ''' <summary>Obiectul DDF-ului din care s-a nascut ordonantarea (FX_DDF.ObiectDDF, prin
+    ''' FX_ORD.IDDF). Acelasi pentru toate liniile unei ordonantari.</summary>
+    Public Property ObiectDdf As String = String.Empty
 End Class
 
 ''' <summary>

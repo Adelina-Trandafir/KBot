@@ -660,12 +660,18 @@ Public Class ApiClient
                             result.Linii.Add(New OrdLinieRow() With {
                                 .Idordtblp = l.idordtblp,
                                 .Idordp = l.idordp,
+                                .Idordpartp = l.idordpartp,
                                 .Clsf = If(l.clsf, String.Empty),
                                 .Descriere = If(l.descriere, String.Empty),
                                 .TotalReceptii = l.total_receptii,
                                 .PlatiAnt = l.plati_ant,
                                 .Valoare = l.valoare,
-                                .Ramas = l.ramas
+                                .Ramas = l.ramas,
+                                .DenBene = If(l.den_bene, String.Empty),
+                                .CodFiscal = If(l.cod_fiscal, String.Empty),
+                                .ContIban = If(l.cont_iban, String.Empty),
+                                .DocJust = If(l.doc_just, String.Empty),
+                                .ObiectDdf = If(l.obiect_ddf, String.Empty)
                             })
                         Next
                     End If

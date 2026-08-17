@@ -254,6 +254,30 @@ Public NotInheritable Class KBotDataColumn
         _width = ClampWidth(UnscalePx(value))
     End Sub
 
+    ''' <summary>
+    ''' Ca <see cref="SetLayoutWidth"/>, dar garantat FĂRĂ depășire: lățimea pictată iese cel mult
+    ''' <paramref name="value"/>, niciodată peste.
+    '''
+    ''' <para><b>De ce e nevoie de ea.</b> Lățimea se ține logic și se re-derivă la folosire, deci
+    ''' o scriere face dus-întorsul <c>round(v / s) * s</c>. Acela poate ieși cu un pixel PESTE cât
+    ''' s-a cerut: la 125%, o cerere de 277 se ține ca 222 logic și se recitește 278. Pentru o
+    ''' coloană măsurată după text, un pixel în plus nu se vede. Pentru coloana care ÎNCAPE un
+    ''' spațiu dat, acel pixel e o bară de derulare orizontală — s-a văzut exact așa în
+    ''' <c>DdfValoriPage</c> la 125%: 639 disponibili, 640 desenați.</para>
+    '''
+    ''' <para>De aceea rotunjirea de aici e în JOS. Un pixel pierdut nu se vede; unul câștigat
+    ''' costă o bară. Podeaua <see cref="EffectiveMinWidth"/> bate totuși coborârea, ca la orice
+    ''' scriere de lățime — vezi <c>ClampWidth</c>.</para>
+    ''' </summary>
+    Friend Sub SetLayoutWidthAtMost(value As Integer)
+        Dim s As Single = DpiScale
+        If s <= 0 Then
+            _width = ClampWidth(value)
+            Return
+        End If
+        _width = ClampWidth(CInt(Math.Floor(value / s)))
+    End Sub
+
     ''' <summary>Readuce lățimea la cea cerută de caller. O cheamă trecerea, la începutul ei.</summary>
     Friend Sub RestoreAuthoredWidth()
         _width = ClampWidth(_authoredWidth)

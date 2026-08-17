@@ -87,8 +87,10 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private Sub RecomputeSearchBarHeight()
-        ' Banda de search e ÎNTOTDEAUNA o bandă separată, dimensionată după rând/font.
-        _searchBarHeight = Math.Max(_itemHeight + 8, Me.Font.Height + 10)
+        ' Banda de search e ÎNTOTDEAUNA o bandă separată, dimensionată după rând/font. Rândul și
+        ' fontul cresc cu scara; aerul de deasupra lor e logic, deci trece și el prin SY — altfel
+        ' la 150% banda se strângea pe casetă.
+        _searchBarHeight = Math.Max(_itemHeight + SearchBarRowAirPx, Me.Font.Height + SearchBarFontAirPx)
     End Sub
 
     ''' <summary>Re-dimensionează banda după o schimbare de font / _itemHeight (no-op dacă e închisă).</summary>
@@ -122,12 +124,12 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     ' Replică desenată a benzii. Geometria urmează pas cu pas PositionSearchTextBox
-    ' (etichetă la PaddingTreeStart, casetă până la PaddingTreeEnd, ✕ lipit în dreapta),
+    ' (etichetă la PaddingTreeStartPx, casetă până la PaddingTreeEndPx, ✕ lipit în dreapta),
     ' ca trecerea design-time → runtime să nu mute nimic.
     Private Sub DrawSearchBarPreview(g As Graphics, barTop As Integer)
         Dim labelFont As Font = Me.SearchBarLabelFont
         Dim boxFont As Font = Me.SearchBarFont
-        Dim x As Integer = PaddingTreeStart
+        Dim x As Integer = PaddingTreeStartPx
 
         If Not String.IsNullOrEmpty(_searchBarLabelText) Then
             Dim latime As Integer = CInt(Math.Ceiling(g.MeasureString(_searchBarLabelText, labelFont).Width))
@@ -136,12 +138,12 @@ Partial Public Class AdvancedTreeControl
                 g.DrawString(_searchBarLabelText, labelFont, b,
                              CSng(x), CSng(barTop + (_searchBarHeight - inaltime) \ 2))
             End Using
-            x += latime + 4
+            x += latime + SearchLabelGapPx
         End If
 
         Dim clearW As Integer = If(_searchClearButton, SearchClearButtonWidth, 0)
-        Dim boxW As Integer = Math.Max(40, Me.Width - x - PaddingTreeEnd - clearW)
-        Dim boxH As Integer = boxFont.Height + 2
+        Dim boxW As Integer = Math.Max(SearchBoxMinWidthPx, Me.Width - x - PaddingTreeEndPx - clearW)
+        Dim boxH As Integer = boxFont.Height + SearchBoxAirPx
         Dim boxRect As New Rectangle(x, barTop + (_searchBarHeight - boxH) \ 2, boxW, boxH)
         Dim boxBack As Color = SearchBoxBackColor
 
@@ -170,7 +172,7 @@ Partial Public Class AdvancedTreeControl
             If _searchClearButtonImage IsNot Nothing Then
                 Dim img As Image = _searchClearButtonImage
                 g.DrawImage(img,
-                            clearRect.X + _searchClearButtonPadding.Left,
+                            clearRect.X + SearchClearButtonPaddingPx.Left,
                             clearRect.Y + Math.Max(0, (clearRect.Height - img.Height) \ 2),
                             img.Width, img.Height)
             Else
@@ -264,7 +266,7 @@ Partial Public Class AdvancedTreeControl
     Friend Sub ApplyClearButtonLook()
         If _searchClearBtn Is Nothing Then Return
         _searchClearBtn.Width = SearchClearButtonWidth
-        _searchClearBtn.Padding = _searchClearButtonPadding
+        _searchClearBtn.Padding = SearchClearButtonPaddingPx
         If _searchClearButtonImage IsNot Nothing Then
             _searchClearBtn.Image = _searchClearButtonImage
             _searchClearBtn.Text = String.Empty
@@ -352,13 +354,13 @@ Partial Public Class AdvancedTreeControl
         Dim tbWidth As Integer
 
         If _searchBarLabel IsNot Nothing AndAlso _searchBarLabel.Visible Then
-            _searchBarLabel.Left = PaddingTreeStart
+            _searchBarLabel.Left = PaddingTreeStartPx
             _searchBarLabel.Top = barTop + (_searchBarHeight - _searchBarLabel.Height) \ 2
-            tbLeft = _searchBarLabel.Right + 4
-            tbWidth = Math.Max(40, Me.Width - tbLeft - PaddingTreeEnd - clearW)
+            tbLeft = _searchBarLabel.Right + SearchLabelGapPx
+            tbWidth = Math.Max(SearchBoxMinWidthPx, Me.Width - tbLeft - PaddingTreeEndPx - clearW)
         Else
-            tbLeft = PaddingTreeStart
-            tbWidth = Math.Max(40, Me.Width - PaddingTreeStart - PaddingTreeEnd - clearW)
+            tbLeft = PaddingTreeStartPx
+            tbWidth = Math.Max(SearchBoxMinWidthPx, Me.Width - PaddingTreeStartPx - PaddingTreeEndPx - clearW)
         End If
 
         _searchTextBox.Left = tbLeft
@@ -369,10 +371,10 @@ Partial Public Class AdvancedTreeControl
         ' ── Poziționare ✕ imediat la dreapta textbox-ului, aceeași înălțime ──
         If _searchClearButton AndAlso _searchClearBtn IsNot Nothing AndAlso _searchClearBtn.Visible Then
             _searchClearBtn.Left = _searchTextBox.Right
-            _searchClearBtn.Top = _searchTextBox.Top - _searchClearButtonPadding.Top
+            _searchClearBtn.Top = _searchTextBox.Top - SearchClearButtonPaddingPx.Top
             _searchClearBtn.Width = SearchClearButtonWidth
             _searchClearBtn.Height = _searchTextBox.Height +
-                                     _searchClearButtonPadding.Vertical
+                                     SearchClearButtonPaddingPx.Vertical
         End If
     End Sub
 
@@ -553,9 +555,9 @@ Partial Public Class AdvancedTreeControl
         ' Poziționare doar a butonului × — TextBox rămâne neatins
         If shouldShow AndAlso _searchTextBox IsNot Nothing Then
             _searchClearBtn.Left = _searchTextBox.Right - SearchClearButtonWidth
-            _searchClearBtn.Top = _searchTextBox.Top - _searchClearButtonPadding.Top
+            _searchClearBtn.Top = _searchTextBox.Top - SearchClearButtonPaddingPx.Top
             _searchClearBtn.Width = SearchClearButtonWidth
-            _searchClearBtn.Height = _searchTextBox.Height + _searchClearButtonPadding.Vertical
+            _searchClearBtn.Height = _searchTextBox.Height + SearchClearButtonPaddingPx.Vertical
             _searchClearBtn.BackColor = _searchTextBox.BackColor
             _searchClearBtn.BringToFront()
         End If

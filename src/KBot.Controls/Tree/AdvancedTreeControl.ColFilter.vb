@@ -16,10 +16,28 @@ Partial Public Class AdvancedTreeControl
         Private _separator As Panel
         Private _listBox   As ListBox
 
+        ' Măsurile ferestrei, LOGICE (px @96dpi). Se scalează cu SP() de mai jos — fereastra e
+        ' construită în cod, deci nimic n-o scalează în locul nostru: până în felia 0040 rămânea
+        ' lată de 230 px cu un font cu 50% mai mare, iar lista și caseta se înghesuiau în ea.
+        Private Const LATIME_LOGICA As Integer = 230
+        Private Const INALTIME_TITLU As Integer = 24
+        Private Const MARGINE_CASETA As Integer = 6
+        Private Const TOP_CASETA As Integer = 28
+        Private Const AER_SUB_CASETA As Integer = 6
+        Private Const AER_JOS As Integer = 3
+        Private Const MAX_LINII_LISTA As Integer = 8   ' linii, nu pixeli — nu se scalează
+
+        ' Scara ferestrei — aceeași sursă unică (AppScaling) ca a arborelui care o deschide.
+        Private Function SP(logical As Integer) As Integer
+            Return CInt(Math.Round(logical * AppScaling.FactorFor(Me)))
+        End Function
+
         ' ────────────────────────────────────────────────────────────────
         Friend Sub New(owner As AdvancedTreeControl, colName As String, screenPos As Point)
             _owner   = owner
             _colName = colName
+
+            Dim latime As Integer = SP(LATIME_LOGICA)
 
             ' ── Form ────────────────────────────────────────────────────
             Me.FormBorderStyle = FormBorderStyle.None
@@ -27,7 +45,7 @@ Partial Public Class AdvancedTreeControl
             Me.TopMost         = True
             Me.StartPosition   = FormStartPosition.Manual
             Me.BackColor       = Color.FromArgb(250, 250, 252)
-            Me.Width           = 230
+            Me.Width           = latime
 
             ' ── Title ───────────────────────────────────────────────────
             _lblTitle = New Label() With {
@@ -35,8 +53,8 @@ Partial Public Class AdvancedTreeControl
                 .Font      = New Font(owner.Font, FontStyle.Bold),
                 .BackColor = Color.FromArgb(228, 228, 244),
                 .ForeColor = Color.FromArgb(40, 40, 80),
-                .Height    = 24,
-                .Width     = 230,
+                .Height    = SP(INALTIME_TITLU),
+                .Width     = latime,
                 .Location  = New Point(0, 0),
                 .TextAlign = ContentAlignment.MiddleLeft
             }
@@ -45,8 +63,8 @@ Partial Public Class AdvancedTreeControl
             _textBox = New TextBox() With {
                 .BorderStyle = BorderStyle.FixedSingle,
                 .Font        = owner.Font,
-                .Width       = 218,
-                .Location    = New Point(6, 28)
+                .Width       = latime - SP(MARGINE_CASETA) * 2,
+                .Location    = New Point(SP(MARGINE_CASETA), SP(TOP_CASETA))
             }
             ' Pre-populează cu filtrul activ (dacă există)
             If owner._activeColFilters.ContainsKey(colName) Then
@@ -54,11 +72,11 @@ Partial Public Class AdvancedTreeControl
             End If
 
             ' ── Separator ───────────────────────────────────────────────
-            Dim tbBottom As Integer = _textBox.Top + _textBox.PreferredHeight + 6
+            Dim tbBottom As Integer = _textBox.Top + _textBox.PreferredHeight + SP(AER_SUB_CASETA)
             _separator = New Panel() With {
                 .BackColor = Color.FromArgb(200, 200, 215),
                 .Height    = 1,
-                .Width     = 230,
+                .Width     = latime,
                 .Location  = New Point(0, tbBottom)
             }
 
@@ -68,7 +86,7 @@ Partial Public Class AdvancedTreeControl
                 .Font           = owner.Font,
                 .IntegralHeight = True,
                 .Location       = New Point(0, tbBottom + 1),
-                .Width          = 230
+                .Width          = latime
             }
             _listBox.Items.Add("(Toate)")
             For Each v In owner.GetDistinctColumnValues(colName)
@@ -80,12 +98,12 @@ Partial Public Class AdvancedTreeControl
                 Dim idx As Integer = _listBox.Items.IndexOf(cur)
                 If idx >= 0 Then _listBox.SelectedIndex = idx
             End If
-            ' Înălțime: max 8 linii vizibile
-            Dim visItems As Integer = Math.Min(_listBox.Items.Count, 8)
+            ' Înălțime: max 8 linii vizibile (ItemHeight urmează fontul, deci scara)
+            Dim visItems As Integer = Math.Min(_listBox.Items.Count, MAX_LINII_LISTA)
             _listBox.Height = _listBox.ItemHeight * visItems + 2
 
             ' ── Form height ─────────────────────────────────────────────
-            Me.Height = _listBox.Top + _listBox.Height + 3
+            Me.Height = _listBox.Top + _listBox.Height + SP(AER_JOS)
 
             ' ── Adaugă controalele ──────────────────────────────────────
             Me.Controls.AddRange(New Control() {_lblTitle, _textBox, _separator, _listBox})

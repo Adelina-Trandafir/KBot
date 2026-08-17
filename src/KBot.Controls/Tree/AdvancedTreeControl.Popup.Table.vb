@@ -49,11 +49,17 @@ Partial Public Class AdvancedTreeControl
 
                 Using tableFont As New Font(cfg.FontName, cfg.FontSize, FontStyle.Regular, GraphicsUnit.Point)
 
+                    ' Măsurile din XML sunt LOGICE (px @96dpi) — cine scrie tooltipul le tastează o
+                    ' dată, la 100%, și se așteaptă ca la 150% tabelul să crească odată cu textul
+                    ' (felia 0040). Se scalează AICI, la măsurare, ca tot restul geometriei.
+                    Dim padH As Integer = SP(cfg.CellPaddingH)
+                    Dim padV As Integer = SP(cfg.CellPaddingV)
+
                     ' rowHeight: fix (din config) sau auto (din font + padding vertical)
                     If cfg.RowHeight > 0 Then
-                        _rowHeight = cfg.RowHeight
+                        _rowHeight = SP(cfg.RowHeight)
                     Else
-                        _rowHeight = tableFont.Height + cfg.CellPaddingV * 2
+                        _rowHeight = tableFont.Height + padV * 2
                     End If
 
                     ReDim _colWidths(nCols - 1)
@@ -66,7 +72,7 @@ Partial Public Class AdvancedTreeControl
                         For i As Integer = 0 To lim
                             Dim hc As TtCell = hr.Cells(i)
                             If hc.Width > 0 Then
-                                _colWidths(i) = hc.Width      ' Width = lățimea TOTALĂ a coloanei (px deja scalați DPI)
+                                _colWidths(i) = SP(hc.Width)  ' Width = lățimea TOTALĂ a coloanei, logică
                                 isFixed(i) = True
                             End If
                         Next
@@ -82,15 +88,16 @@ Partial Public Class AdvancedTreeControl
                                     maxContent = Math.Max(maxContent, MeasureCellContent(g, tableFont, RowCellAt(r, i)))
                                 Next
                                 maxContent = Math.Max(maxContent, MeasureCellContent(g, tableFont, RowCellAt(_tableModel.FooterRow, i)))
-                                _colWidths(i) = maxContent + cfg.CellPaddingH * 2
+                                _colWidths(i) = maxContent + padH * 2
                             End If
                         Next
                     End Using
 
                     ' 3. Aplică MaxWidth (S2): strânge DOAR coloanele auto, proporțional, cu plafon minim
                     Dim natural As Integer = _colWidths.Sum()
-                    If cfg.MaxWidth > 0 AndAlso natural > cfg.MaxWidth Then
-                        ShrinkAutoColumns(_colWidths, isFixed, cfg.MaxWidth)
+                    Dim latimeMaxima As Integer = SP(cfg.MaxWidth)
+                    If cfg.MaxWidth > 0 AndAlso natural > latimeMaxima Then
+                        ShrinkAutoColumns(_colWidths, isFixed, latimeMaxima)
                     End If
 
                     ' 4. Dimensiuni finale
@@ -228,11 +235,15 @@ Partial Public Class AdvancedTreeControl
                                     Case Else : fmt.Alignment = StringAlignment.Near
                                 End Select
 
+                                ' Aceleași margini scalate ca la măsurare (MeasureTable) — două
+                                ' interpretări ar însemna un text care nu încape în celula măsurată.
+                                Dim padH As Integer = SP(cfg.CellPaddingH)
+                                Dim padV As Integer = SP(cfg.CellPaddingV)
                                 Dim cellRect As New RectangleF(
-                                    x + cfg.CellPaddingH,
-                                    y + cfg.CellPaddingV,
-                                    Math.Max(0, colW - cfg.CellPaddingH * 2),
-                                    Math.Max(0, _rowHeight - cfg.CellPaddingV * 2))
+                                    x + padH,
+                                    y + padV,
+                                    Math.Max(0, colW - padH * 2),
+                                    Math.Max(0, _rowHeight - padV * 2))
 
                                 Using tb As New SolidBrush(fore)
                                     g.DrawString(cell.Text, cf, tb, cellRect, fmt)
@@ -288,10 +299,12 @@ Partial Public Class AdvancedTreeControl
             Dim avail As Integer = maxWidth - fixedSum
             Dim scale As Double = If(avail > 0, avail / CDbl(autoSum), 0.0)
 
+            ' Plafonul e logic ca tot restul: la 150% «loc de …» înseamnă mai mulți pixeli.
+            Dim plafon As Integer = SP(MIN_AUTO_COL_WIDTH)
             For i As Integer = 0 To widths.Length - 1
                 If Not isFixed(i) Then
                     Dim w As Integer = CInt(Math.Floor(widths(i) * scale))
-                    If w < MIN_AUTO_COL_WIDTH Then w = MIN_AUTO_COL_WIDTH
+                    If w < plafon Then w = plafon
                     widths(i) = w
                 End If
             Next

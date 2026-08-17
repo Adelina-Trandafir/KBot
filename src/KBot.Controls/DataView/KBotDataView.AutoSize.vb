@@ -539,7 +539,43 @@ Partial Class KBotDataView
             DistributeLeftover(vis, available - total)
         ElseIf Not suppressShrink AndAlso _shrinkColumnsToFit Then
             ShrinkToFit(vis, available)
+        Else
+            ' Strâmtarea GENERALĂ e stinsă — dar coloana de umplere rămâne elastică. Vezi
+            ' ShrinkFillTarget: ea e singura care cedează, și doar până la podeaua ei.
+            ShrinkFillTarget(vis, available)
         End If
+    End Sub
+
+    ''' <summary>
+    ''' Deficitul îl absoarbe SINGURĂ coloana de umplere, până la podeaua ei.
+    '''
+    ''' <para><b>De ce există.</b> <see cref="ColumnFillMode"/> numește o coloană ca fiind cea
+    ''' elastică, dar trecerea o lăsa doar să CREASCĂ. Când spațiul scade — tipic: apare bara
+    ''' verticală și înghite lățimea ei, adică 17px — se declara depășire, iar cu
+    ''' <see cref="ShrinkColumnsToFit"/> = False nimeni nu ceda: apărea bara ORIZONTALĂ, deși
+    ''' coloana elastică avea încă zeci de pixeli deasupra propriului minim. Exact cazul din
+    ''' <c>DdfValoriPage</c>: 420 - 17 = 403 disponibili pentru 410 autorați, cu «Clasificație»
+    ''' la 120 și MinWidth 50.</para>
+    '''
+    ''' <para><b>Ce NU face.</b> Nu atinge nicio altă coloană — pe acelea operatorul a spus «nu le
+    ''' strâmta», și motivul lui stă în picioare: o coloană de sume strâmtată la podea își taie
+    ''' cifrele cu elipsă. Comutatorul acela vorbește despre coloanele pe care operatorul NU le-a
+    ''' numit elastice; cea numită își face treaba în ambele sensuri. Iar dacă nici cedarea ei nu
+    ''' ajunge, bara orizontală apare — atunci e răspunsul corect, nu o scăpare.</para>
+    '''
+    ''' <para>La <see cref="KBotFillMode.Proportional"/> nu există o singură coloană elastică
+    ''' (toate sunt), deci nu cedează niciuna: acolo «nu strâmta» rămâne întreg.</para>
+    ''' </summary>
+    Private Sub ShrinkFillTarget(vis As List(Of KBotDataColumn), available As Integer)
+        Dim tinta As KBotDataColumn = FillTargetColumn(vis)
+        If tinta Is Nothing Then Return
+
+        Dim deficit As Integer = SumWidths(vis) - available
+        If deficit <= 0 Then Return
+
+        ' Podeaua e EffectiveMinWidth, ca la ShrinkToFit: o coloană cu pictograme de antet nu poate
+        ' coborî sub cât cer ele, iar MinWidth singur n-ar ști asta.
+        tinta.SetLayoutWidthAtMost(Math.Max(tinta.EffectiveMinWidthPx, tinta.WidthPx - deficit))
     End Sub
 
     ' available > total: hand the leftover to first / last / all columns.
@@ -562,8 +598,12 @@ Partial Class KBotDataView
 
     ' Add extra to a single column. The Width setter clamps at MaxWidth, so an over-cap
     ' remainder is silently dropped (it must not spill into a neighbour).
+    '
+    ' Scrierea e cea care NU depășește (SetLayoutWidthAtMost): coloana asta primește taman spațiul
+    ' rămas, deci un pixel câștigat la rotunjirea logic/scalat ar fi exact un pixel de bară
+    ' orizontală. Vezi nota de la SetLayoutWidthAtMost.
     Private Shared Sub GrowColumn(col As KBotDataColumn, extra As Integer)
-        col.SetLayoutWidth(col.WidthPx + extra)
+        col.SetLayoutWidthAtMost(col.WidthPx + extra)
     End Sub
 
     ' Split the leftover in proportion to each column's current width. Integer division leaves
@@ -587,7 +627,7 @@ Partial Class KBotDataView
         For i As Integer = 0 To vis.Count - 1
             Dim c As KBotDataColumn = vis(i)
             Dim want As Integer = c.WidthPx + shares(i)
-            c.SetLayoutWidth(want)                       ' clamps to MaxWidth
+            c.SetLayoutWidthAtMost(want)                       ' clamps to MaxWidth
             If c.WidthPx < want Then
                 surplus += (want - c.WidthPx)              ' capped: could not take its full share
             ElseIf c.MaxWidthPx > c.WidthPx Then
@@ -614,7 +654,7 @@ Partial Class KBotDataView
         Next
         shares(cols.Count - 1) += (surplus - assigned)
         For i As Integer = 0 To cols.Count - 1
-            cols(i).SetLayoutWidth(cols(i).WidthPx + shares(i))   ' clamps; any residue is dropped
+            cols(i).SetLayoutWidthAtMost(cols(i).WidthPx + shares(i))   ' clamps; any residue is dropped
         Next
     End Sub
 
@@ -632,7 +672,7 @@ Partial Class KBotDataView
         ' worse than a scrollbar the caller did not ask for.
         If minTotal >= available Then
             For Each c In vis
-                c.SetLayoutWidth(c.EffectiveMinWidthPx)
+                c.SetLayoutWidthAtMost(c.EffectiveMinWidthPx)
             Next
             Return
         End If
@@ -664,7 +704,7 @@ Partial Class KBotDataView
             shares(flex.Count - 1) += (deficit - assigned)   ' rounding remainder to last flex
             For i As Integer = 0 To flex.Count - 1
                 Dim c As KBotDataColumn = flex(i)
-                c.SetLayoutWidth(Math.Max(c.EffectiveMinWidthPx, c.WidthPx - shares(i)))   ' floor at the real min
+                c.SetLayoutWidthAtMost(Math.Max(c.EffectiveMinWidthPx, c.WidthPx - shares(i)))   ' floor at the real min
             Next
 
             guard += 1

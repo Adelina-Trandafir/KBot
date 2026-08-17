@@ -644,7 +644,7 @@ Public Class IstoricView
             ' Doar Descriere e un TextBox; grila de valori (gridValori) se auto-temează (IThemedControl).
             txtDescriere.BackColor = p.InputBackColor
             txtDescriere.ForeColor = p.InputTextColor
-            txtDescriere.BorderStyle = BorderStyle.FixedSingle
+            'txtDescriere.BorderStyle = BorderStyle.FixedSingle
 
             ButtonStyles.ApplySecondary(btnFiltruClsf, scheme)
             ButtonStyles.ApplySecondary(btnFiltruTipRand, scheme)

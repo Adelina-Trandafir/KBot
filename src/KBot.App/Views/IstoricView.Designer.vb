@@ -33,8 +33,8 @@ Partial Class IstoricView
         grid = New Controls.KBotDataView()
         pnlDetaliu = New Panel()
         detailTable = New TableLayoutPanel()
-        lblCapDescriere = New Label()
-        txtDescriere = New TextBox()
+        lblCapDescriere = New Controls.KBotLabel()
+        txtDescriere = New Controls.KBotTextBox()
         gridValori = New Controls.KBotDataView()
         pnlFiltre = New Panel()
         TableLayoutPanel1 = New TableLayoutPanel()
@@ -66,7 +66,7 @@ Partial Class IstoricView
         btnFiltruClsf.Location = New Point(2, 2)
         btnFiltruClsf.Margin = New Padding(2)
         btnFiltruClsf.Name = "btnFiltruClsf"
-        btnFiltruClsf.Size = New Size(116, 38)
+        btnFiltruClsf.Size = New Size(146, 48)
         btnFiltruClsf.TabIndex = 1
         btnFiltruClsf.Text = "Clasificație ▾"
         tips.SetToolTipHeader(btnFiltruClsf, "Filtru: clasificații")
@@ -77,10 +77,10 @@ Partial Class IstoricView
         ' 
         btnFiltruTipRand.AutoSize = True
         btnFiltruTipRand.Dock = DockStyle.Fill
-        btnFiltruTipRand.Location = New Point(122, 2)
+        btnFiltruTipRand.Location = New Point(152, 2)
         btnFiltruTipRand.Margin = New Padding(2)
         btnFiltruTipRand.Name = "btnFiltruTipRand"
-        btnFiltruTipRand.Size = New Size(116, 38)
+        btnFiltruTipRand.Size = New Size(146, 48)
         btnFiltruTipRand.TabIndex = 1
         btnFiltruTipRand.Text = "Tip rând ▾"
         tips.SetToolTipHeader(btnFiltruTipRand, "Filtru: tip rând")
@@ -91,10 +91,10 @@ Partial Class IstoricView
         ' 
         btnFiltruData.AutoSize = True
         btnFiltruData.Dock = DockStyle.Fill
-        btnFiltruData.Location = New Point(242, 2)
+        btnFiltruData.Location = New Point(302, 2)
         btnFiltruData.Margin = New Padding(2)
         btnFiltruData.Name = "btnFiltruData"
-        btnFiltruData.Size = New Size(116, 38)
+        btnFiltruData.Size = New Size(146, 48)
         btnFiltruData.TabIndex = 2
         btnFiltruData.Text = "Data ▾"
         tips.SetToolTipHeader(btnFiltruData, "Filtru: dată FX")
@@ -104,10 +104,10 @@ Partial Class IstoricView
         ' btnReset
         ' 
         btnReset.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        btnReset.Location = New Point(1350, 4)
+        btnReset.Location = New Point(1688, 5)
         btnReset.Margin = New Padding(2)
         btnReset.Name = "btnReset"
-        btnReset.Size = New Size(62, 21)
+        btnReset.Size = New Size(78, 26)
         btnReset.TabIndex = 4
         btnReset.Text = "Reset"
         tips.SetToolTipHeader(btnReset, "Șterge filtrele")
@@ -118,7 +118,7 @@ Partial Class IstoricView
         ' 
         splitTree.Dock = DockStyle.Fill
         splitTree.Location = New Point(0, 0)
-        splitTree.Margin = New Padding(3, 4, 3, 4)
+        splitTree.Margin = New Padding(4, 5, 4, 5)
         splitTree.Name = "splitTree"
         ' 
         ' splitTree.Panel1
@@ -128,9 +128,9 @@ Partial Class IstoricView
         ' splitTree.Panel2
         ' 
         splitTree.Panel2.Controls.Add(split)
-        splitTree.Size = New Size(789, 454)
-        splitTree.SplitterDistance = 208
-        splitTree.SplitterWidth = 7
+        splitTree.Size = New Size(986, 568)
+        splitTree.SplitterDistance = 259
+        splitTree.SplitterWidth = 9
         splitTree.TabIndex = 3
         ' 
         ' tree
@@ -168,7 +168,7 @@ Partial Class IstoricView
         tree.ItemHeight = 20
         tree.LeftIconSize = New Size(14, 14)
         tree.Location = New Point(0, 0)
-        tree.Margin = New Padding(3, 4, 3, 4)
+        tree.Margin = New Padding(4, 5, 4, 5)
         tree.MinimumCollapsedWidth = 120
         tree.Name = "tree"
         tree.PaddingExpanderGap = 10
@@ -177,14 +177,14 @@ Partial Class IstoricView
         tree.ReserveRightIconSpace = True
         tree.RightIconSize = New Size(14, 14)
         tree.RightTextWidth = 60
-        tree.Size = New Size(208, 454)
+        tree.Size = New Size(259, 568)
         tree.TabIndex = 0
         ' 
         ' split
         ' 
         split.Dock = DockStyle.Fill
         split.Location = New Point(0, 0)
-        split.Margin = New Padding(3, 4, 3, 4)
+        split.Margin = New Padding(4, 5, 4, 5)
         split.Name = "split"
         split.Orientation = Orientation.Horizontal
         ' 
@@ -195,17 +195,17 @@ Partial Class IstoricView
         ' split.Panel2
         ' 
         split.Panel2.Controls.Add(pnlDetaliu)
-        split.Size = New Size(574, 454)
-        split.SplitterDistance = 307
-        split.SplitterWidth = 7
+        split.Size = New Size(718, 568)
+        split.SplitterDistance = 384
+        split.SplitterWidth = 9
         split.TabIndex = 1
         ' 
         ' grid
         ' 
+        grid.AlternatingRows = False
         grid.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
         grid.BackColor = SystemColors.Window
         grid.BorderColor = SystemColors.ActiveBorder
-        grid.CellTooltip.Enabled = False
         grid.ColumnFillMode = KBot.Controls.KBotFillMode.LastColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
@@ -221,7 +221,7 @@ Partial Class IstoricView
         KBotDataColumn1.ReadOnly = True
         KBotDataColumn1.ShowColumnFilter = True
         KBotDataColumn1.TextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn1.Width = 120
+        KBotDataColumn1.Width = 130
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn2.ColumnFilterIcon = My.Resources.Resources.filter
@@ -264,6 +264,7 @@ Partial Class IstoricView
         grid.EnableGrouping = True
         grid.FilterIconSize = New Size(14, 14)
         grid.FilterIconTooltip = "Filtrează coloana." & vbLf & "Bifează valorile pe care vrei să le vezi; fără nicio bifă, se văd toate."
+        grid.FooterBackColor = SystemColors.Control
         grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FrozenColumnCount = 1
         grid.HeaderBackColor = SystemColors.Control
@@ -272,13 +273,13 @@ Partial Class IstoricView
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 0)
-        grid.Margin = New Padding(3, 4, 3, 4)
+        grid.Margin = New Padding(4, 5, 4, 5)
         grid.Name = "grid"
         grid.ReadOnlyGrid = True
-        grid.RowHeight = 20
+        grid.RowHeight = 22
         grid.ScrollByColumn = True
         grid.ShrinkColumnsToFit = False
-        grid.Size = New Size(574, 307)
+        grid.Size = New Size(718, 384)
         grid.TabIndex = 0
         ' 
         ' pnlDetaliu
@@ -286,10 +287,9 @@ Partial Class IstoricView
         pnlDetaliu.Controls.Add(detailTable)
         pnlDetaliu.Dock = DockStyle.Fill
         pnlDetaliu.Location = New Point(0, 0)
-        pnlDetaliu.Margin = New Padding(2)
+        pnlDetaliu.Margin = New Padding(0)
         pnlDetaliu.Name = "pnlDetaliu"
-        pnlDetaliu.Padding = New Padding(5)
-        pnlDetaliu.Size = New Size(574, 140)
+        pnlDetaliu.Size = New Size(718, 175)
         pnlDetaliu.TabIndex = 0
         pnlDetaliu.Tag = "Card"
         ' 
@@ -302,26 +302,26 @@ Partial Class IstoricView
         detailTable.Controls.Add(txtDescriere, 0, 1)
         detailTable.Controls.Add(gridValori, 1, 0)
         detailTable.Dock = DockStyle.Fill
-        detailTable.Location = New Point(5, 5)
-        detailTable.Margin = New Padding(2)
+        detailTable.Location = New Point(0, 0)
+        detailTable.Margin = New Padding(0)
         detailTable.Name = "detailTable"
         detailTable.RowCount = 2
-        detailTable.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
+        detailTable.RowStyles.Add(New RowStyle(SizeType.Absolute, 25F))
         detailTable.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        detailTable.Size = New Size(564, 130)
+        detailTable.Size = New Size(718, 175)
         detailTable.TabIndex = 0
         ' 
         ' lblCapDescriere
         ' 
         lblCapDescriere.AutoSize = True
-        lblCapDescriere.BorderStyle = BorderStyle.Fixed3D
+        lblCapDescriere.BorderColor = SystemColors.ActiveBorder
         lblCapDescriere.Dock = DockStyle.Fill
         lblCapDescriere.FlatStyle = FlatStyle.Flat
         lblCapDescriere.Font = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        lblCapDescriere.Location = New Point(2, 0)
-        lblCapDescriere.Margin = New Padding(2, 0, 2, 0)
+        lblCapDescriere.Location = New Point(0, 0)
+        lblCapDescriere.Margin = New Padding(0)
         lblCapDescriere.Name = "lblCapDescriere"
-        lblCapDescriere.Size = New Size(278, 20)
+        lblCapDescriere.Size = New Size(359, 25)
         lblCapDescriere.TabIndex = 0
         lblCapDescriere.Text = "Observații"
         lblCapDescriere.TextAlign = ContentAlignment.MiddleCenter
@@ -329,38 +329,49 @@ Partial Class IstoricView
         ' txtDescriere
         ' 
         txtDescriere.BackColor = SystemColors.Window
+        txtDescriere.BorderColor = SystemColors.ActiveBorder
+        txtDescriere.CornerRadius = 0
         txtDescriere.Dock = DockStyle.Fill
-        txtDescriere.Location = New Point(0, 20)
-        txtDescriere.Margin = New Padding(0, 0, 2, 0)
-        txtDescriere.Multiline = True
+        txtDescriere.Location = New Point(0, 25)
+        txtDescriere.Margin = New Padding(0)
         txtDescriere.Name = "txtDescriere"
         txtDescriere.ReadOnly = True
-        txtDescriere.ScrollBars = ScrollBars.Vertical
-        txtDescriere.Size = New Size(280, 110)
+        txtDescriere.Size = New Size(359, 150)
         txtDescriere.TabIndex = 2
+        txtDescriere.TabStop = False
         ' 
         ' gridValori
         ' 
         gridValori.AlternatingRows = False
+        gridValori.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        gridValori.AutoSizeHeaderHeight = False
         gridValori.BackColor = SystemColors.Window
         gridValori.BorderColor = SystemColors.ActiveBorder
+        gridValori.CellTooltip.Enabled = False
         gridValori.ColumnFillMode = KBot.Controls.KBotFillMode.FirstColumn
         KBotDataColumn5.AggregateFormatString = Nothing
+        KBotDataColumn5.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
+        KBotDataColumn5.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = "TIP"
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "vtip"
         KBotDataColumn5.OptionGroup = Nothing
+        KBotDataColumn5.Resizable = False
+        KBotDataColumn5.Width = 140
         KBotDataColumn6.AggregateFormatString = Nothing
+        KBotDataColumn6.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn6.DecimalPlaces = 2
         KBotDataColumn6.Format = KBot.Controls.KBotFormat.Standard
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderText = "Valoare"
-        KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn6.Key = "vval"
         KBotDataColumn6.OptionGroup = Nothing
+        KBotDataColumn6.Resizable = False
+        KBotDataColumn6.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn6.ValueType = KBot.Controls.KBotValueType.Number
-        KBotDataColumn6.Width = 120
+        KBotDataColumn6.Width = 90
         gridValori.Columns.Add(KBotDataColumn5)
         gridValori.Columns.Add(KBotDataColumn6)
         gridValori.Dock = DockStyle.Fill
@@ -368,15 +379,15 @@ Partial Class IstoricView
         gridValori.HeaderColumnSeparatorColor = Color.Gainsboro
         gridValori.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         gridValori.HeaderForeColor = SystemColors.ActiveCaptionText
-        gridValori.HeaderHeight = 20
+        gridValori.HeaderHeight = 25
         gridValori.HeaderSeparatorColor = Color.Gainsboro
-        gridValori.Location = New Point(284, 0)
+        gridValori.Location = New Point(361, 0)
         gridValori.Margin = New Padding(2, 0, 0, 0)
         gridValori.Name = "gridValori"
         gridValori.ReadOnlyGrid = True
-        gridValori.RowHeight = 20
+        gridValori.RowHeight = 22
         detailTable.SetRowSpan(gridValori, 2)
-        gridValori.Size = New Size(280, 130)
+        gridValori.Size = New Size(357, 175)
         gridValori.TabIndex = 3
         ' 
         ' pnlFiltre
@@ -386,7 +397,7 @@ Partial Class IstoricView
         pnlFiltre.Location = New Point(0, 0)
         pnlFiltre.Margin = New Padding(2)
         pnlFiltre.Name = "pnlFiltre"
-        pnlFiltre.Size = New Size(789, 42)
+        pnlFiltre.Size = New Size(986, 52)
         pnlFiltre.TabIndex = 0
         pnlFiltre.Tag = "Card"
         pnlFiltre.Visible = False
@@ -394,10 +405,10 @@ Partial Class IstoricView
         ' TableLayoutPanel1
         ' 
         TableLayoutPanel1.ColumnCount = 5
-        TableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
-        TableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
-        TableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
-        TableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 16F))
+        TableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        TableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        TableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        TableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 20F))
         TableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         TableLayoutPanel1.Controls.Add(btnFiltruClsf, 0, 0)
         TableLayoutPanel1.Controls.Add(btnFiltruTipRand, 1, 0)
@@ -409,16 +420,16 @@ Partial Class IstoricView
         TableLayoutPanel1.Name = "TableLayoutPanel1"
         TableLayoutPanel1.RowCount = 1
         TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        TableLayoutPanel1.Size = New Size(789, 42)
+        TableLayoutPanel1.Size = New Size(986, 52)
         TableLayoutPanel1.TabIndex = 5
         ' 
         ' lblFiltruActiv
         ' 
         lblFiltruActiv.Dock = DockStyle.Fill
-        lblFiltruActiv.Location = New Point(378, 0)
+        lblFiltruActiv.Location = New Point(472, 0)
         lblFiltruActiv.Margin = New Padding(2, 0, 2, 0)
         lblFiltruActiv.Name = "lblFiltruActiv"
-        lblFiltruActiv.Size = New Size(409, 42)
+        lblFiltruActiv.Size = New Size(512, 52)
         lblFiltruActiv.TabIndex = 3
         lblFiltruActiv.TextAlign = ContentAlignment.MiddleLeft
         ' 
@@ -429,7 +440,7 @@ Partial Class IstoricView
         lblEmpty.Location = New Point(0, 0)
         lblEmpty.Margin = New Padding(2, 0, 2, 0)
         lblEmpty.Name = "lblEmpty"
-        lblEmpty.Size = New Size(789, 454)
+        lblEmpty.Size = New Size(986, 568)
         lblEmpty.TabIndex = 2
         lblEmpty.Text = "Selectați un angajament din arbore."
         lblEmpty.TextAlign = ContentAlignment.MiddleCenter
@@ -454,14 +465,14 @@ Partial Class IstoricView
         ' 
         ' IstoricView
         ' 
-        AutoScaleDimensions = New SizeF(8F, 20F)
+        AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(splitTree)
         Controls.Add(pnlFiltre)
         Controls.Add(lblEmpty)
-        Margin = New Padding(3, 4, 3, 4)
+        Margin = New Padding(4, 5, 4, 5)
         Name = "IstoricView"
-        Size = New Size(789, 454)
+        Size = New Size(986, 568)
         splitTree.Panel1.ResumeLayout(False)
         splitTree.Panel2.ResumeLayout(False)
         CType(splitTree, ComponentModel.ISupportInitialize).EndInit()
@@ -488,8 +499,8 @@ Partial Class IstoricView
     Friend WithEvents grid As KBot.Controls.KBotDataView
     Friend WithEvents pnlDetaliu As Panel
     Friend WithEvents detailTable As TableLayoutPanel
-    Friend WithEvents lblCapDescriere As Label
-    Friend WithEvents txtDescriere As TextBox
+    Friend WithEvents lblCapDescriere As KBot.Controls.KBotLabel
+    Friend WithEvents txtDescriere As KBot.Controls.KBotTextBox
     Friend WithEvents gridValori As KBot.Controls.KBotDataView
     Friend WithEvents pnlFiltre As Panel
     Friend WithEvents btnFiltruTipRand As Button

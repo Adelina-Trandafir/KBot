@@ -25,16 +25,16 @@ Partial Public Class AdvancedTreeControl
         Dim midY As Integer = _headerHeight \ 2
 
         ' ── Left icon ────────────────────────────────────────────────
-        Dim x As Integer = PaddingHeaderLeft
+        Dim x As Integer = PaddingHeaderLeftPx
         If _headerLeftIcon IsNot Nothing Then
             Dim iy = midY - (_headerIconSize.Height \ 2)
             g.DrawImage(_headerLeftIcon, x, iy, _headerIconSize.Width, _headerIconSize.Height)
-            x += _headerIconSize.Width + PaddingIconGap
+            x += _headerIconSize.Width + PaddingIconGapPx
         End If
 
         ' ── Right side: RightIcon then SearchIcon (built right-to-left) ──
         Dim scrollW As Integer = ScrollBarWidth 'If(_vScroll.Visible, _vScroll.Width, 0)
-        Dim rx As Integer = Me.Width - PaddingTreeEnd - scrollW
+        Dim rx As Integer = Me.Width - PaddingTreeEndPx - scrollW
 
         _headerRightIconRect = Rectangle.Empty
         If _headerRightIcon IsNot Nothing Then
@@ -45,7 +45,7 @@ Partial Public Class AdvancedTreeControl
                 DrawButtonHover(g, _headerRightIconRect, HeaderRightIconHoverColor)
             End If
             g.DrawImage(_headerRightIcon, _headerRightIconRect)
-            rx -= PaddingIconGap
+            rx -= PaddingIconGapPx
         End If
 
         _headerSearchIconRect = Rectangle.Empty
@@ -57,7 +57,7 @@ Partial Public Class AdvancedTreeControl
                 DrawButtonHover(g, _headerSearchIconRect, HeaderSearchIconHoverColor)
             End If
             g.DrawImage(_headerSearchIcon, _headerSearchIconRect)
-            rx -= PaddingIconGap
+            rx -= PaddingIconGapPx
         End If
 
         ' ── Caption (rich text, in remaining space) ───────────────────
@@ -82,7 +82,11 @@ Partial Public Class AdvancedTreeControl
             Next
 
             Dim cx As Single = AlignStartX(_headerTextAlign, x, availW, latimeTotala)
-            Dim cy As Single = AlignStartY(_headerTextAlign, _headerHeight, inaltimeMax)
+            ' Rotunjit în jos la pixel întreg: AlignStartY întoarce un Single (o jumătate de pixel
+            ' când banda și textul diferă cu impar), iar ClearType desenat între două rânduri de
+            ' pixeli iese moale. Rotunjirea e AICI, nu în AlignStartY — aceea e o funcție pură,
+            ' folosită și de teste, și n-are treabă cu felul în care se pictează.
+            Dim cy As Single = CSng(Math.Floor(AlignStartY(_headerTextAlign, _headerHeight, inaltimeMax)))
 
             For Each part In parts
                 Dim sz = g.MeasureString(part.Text, part.Font, PointF.Empty, fmt)

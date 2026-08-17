@@ -41,7 +41,7 @@ Partial Class ReceptiiView
         ' 
         split.Dock = DockStyle.Fill
         split.Location = New Point(0, 0)
-        split.Margin = New Padding(3, 4, 3, 4)
+        split.Margin = New Padding(4, 5, 4, 5)
         split.Name = "split"
         ' 
         ' split.Panel1
@@ -51,9 +51,9 @@ Partial Class ReceptiiView
         ' split.Panel2
         ' 
         split.Panel2.Controls.Add(grid)
-        split.Size = New Size(789, 454)
-        split.SplitterDistance = 255
-        split.SplitterWidth = 7
+        split.Size = New Size(986, 568)
+        split.SplitterDistance = 318
+        split.SplitterWidth = 9
         split.TabIndex = 0
         ' 
         ' tree
@@ -63,6 +63,7 @@ Partial Class ReceptiiView
         tree.Dock = DockStyle.Fill
         tree.DynamicColumns = False
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
+        tree.ExpanderSize = 10
         tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCaption = "Actualizează"
@@ -89,13 +90,11 @@ Partial Class ReceptiiView
         tree.HeaderSearchIconTooltip = "Caută în arbore." & vbLf & "ESC golește căutarea și închide banda."
         tree.HeaderSeparatorColor = Color.Gainsboro
         tree.HeaderSeparatorWidth = 2
-        tree.HeaderTextAlign = ContentAlignment.MiddleCenter
         tree.HeaderVisible = True
         tree.Indent = 8
-        tree.ItemHeight = 20
-        tree.LeftIconSize = New Size(16, 16)
+        tree.LeftIconSize = New Size(14, 14)
         tree.Location = New Point(0, 0)
-        tree.Margin = New Padding(3, 4, 3, 4)
+        tree.Margin = New Padding(4, 5, 4, 5)
         tree.MinimumCollapsedWidth = 120
         tree.Name = "tree"
         tree.NodeImages = image_list
@@ -131,9 +130,9 @@ Partial Class ReceptiiView
         tree.PaddingIconGap = 10
         tree.PaddingTreeStart = 8
         tree.RightIconSize = New Size(14, 14)
-        tree.RightTextWidth = 90
+        tree.LeftTextWidth = 100
         tree.SearchIn = AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
-        tree.Size = New Size(255, 454)
+        tree.Size = New Size(318, 568)
         tree.TabIndex = 0
         ' 
         ' image_list
@@ -167,7 +166,7 @@ Partial Class ReceptiiView
         KBotDataColumn1.ReadOnly = True
         KBotDataColumn1.ShowColumnFilter = True
         KBotDataColumn1.TextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn1.Width = 110
+        KBotDataColumn1.Width = 120
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn2.CellPadding = New Padding(2, 0, 2, 0)
@@ -202,22 +201,29 @@ Partial Class ReceptiiView
         grid.Dock = DockStyle.Fill
         grid.EnableGrouping = True
         grid.FillColumnKey = "descriere"
+        grid.FilterIconSize = New Size(14, 14)
         grid.FooterBackColor = SystemColors.Control
         grid.FooterCaption = "TOTALURI"
         grid.FooterColumnSeparatorColor = Color.Gainsboro
+        grid.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FooterHeight = 30
+        grid.FooterIconSize = New Size(14, 14)
         grid.FooterSeparatorColor = Color.Gainsboro
         grid.FooterVisible = True
+        grid.FrozenColumnCount = 1
         grid.HeaderBackColor = SystemColors.Control
         grid.HeaderColumnSeparatorColor = Color.Gainsboro
+        grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 0)
-        grid.Margin = New Padding(3, 4, 3, 4)
+        grid.Margin = New Padding(4, 5, 4, 5)
         grid.Name = "grid"
         grid.ReadOnlyGrid = True
-        grid.RowHeight = 20
+        grid.RowHeight = 22
         grid.ShrinkColumnsToFit = False
-        grid.Size = New Size(527, 454)
+        grid.Size = New Size(659, 568)
         grid.TabIndex = 0
         ' 
         ' lblEmpty
@@ -225,21 +231,22 @@ Partial Class ReceptiiView
         lblEmpty.Dock = DockStyle.Fill
         lblEmpty.Font = New Font("Segoe UI", 10F)
         lblEmpty.Location = New Point(0, 0)
+        lblEmpty.Margin = New Padding(4, 0, 4, 0)
         lblEmpty.Name = "lblEmpty"
-        lblEmpty.Size = New Size(789, 454)
+        lblEmpty.Size = New Size(986, 568)
         lblEmpty.TabIndex = 1
         lblEmpty.Text = "Selectați un angajament din arbore."
         lblEmpty.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' ReceptiiView
         ' 
-        AutoScaleDimensions = New SizeF(8F, 20F)
+        AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(split)
         Controls.Add(lblEmpty)
-        Margin = New Padding(3, 4, 3, 4)
+        Margin = New Padding(4, 5, 4, 5)
         Name = "ReceptiiView"
-        Size = New Size(789, 454)
+        Size = New Size(986, 568)
         split.Panel1.ResumeLayout(False)
         split.Panel2.ResumeLayout(False)
         CType(split, ComponentModel.ISupportInitialize).EndInit()

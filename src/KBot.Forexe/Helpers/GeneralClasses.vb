@@ -251,6 +251,21 @@ Public Class GeneralClasses
         Public Property Status As String
         Public Property FullLog As New StringBuilder()
         Public Property SentPipeMessages As New List(Of SentPipeMessage) ' ← NOU: replay fidel
+
+        ''' <summary>
+        ''' Clipa în care lucrarea s-a încheiat (oricum s-a încheiat), sau Nothing cât încă rulează.
+        ''' Adăugată în felia 0040 pentru istoricul din K-BOT: cu <see cref="Timestamp"/> dă durata,
+        ''' iar o lucrare care a rămas fără sfârșit se vede ca atare în loc să pară instantanee.
+        ''' </summary>
+        Public Property FinishedAt As Date?
+
+        ''' <summary>Cât a durat lucrarea; Nothing cât încă rulează.</summary>
+        Public ReadOnly Property Durata As TimeSpan?
+            Get
+                If Not FinishedAt.HasValue Then Return Nothing
+                Return FinishedAt.Value - Timestamp
+            End Get
+        End Property
     End Class
 
     ' Un Manager simplu (Singleton) pentru a ține datele în memorie
@@ -258,6 +273,13 @@ Public Class GeneralClasses
     Public Class JobHistoryManager
         Public Shared ReadOnly History As New List(Of JobHistoryItem)
         Private Shared _currentJob As JobHistoryItem
+
+        ''' <summary>
+        ''' Câte lucrări ținem minte. În KBOT_IPC procesul murea după job, deci lista nu avea
+        ''' cum să crească; în K-BOT shell-ul trăiește toată ziua, iar fiecare intrare ține și
+        ''' jurnalul ei întreg. Cele mai vechi cad primele.
+        ''' </summary>
+        Public Const MaxHistory As Integer = 200
 
         ''' <summary>Apelată la începutul unui job nou.</summary>
         Public Shared Sub StartJob(name As String, inputJson As String)
@@ -268,7 +290,12 @@ Public Class GeneralClasses
             .Status = "In Execuție..."
         }
             _currentJob = newItem
-            History.Add(newItem)
+            SyncLock History
+                History.Add(newItem)
+                While History.Count > MaxHistory
+                    History.RemoveAt(0)
+                End While
+            End SyncLock
         End Sub
 
         ''' <summary>Apelată din RichTextBoxLogger pentru fiecare linie de log.</summary>
@@ -310,6 +337,7 @@ Public Class GeneralClasses
         Public Shared Sub FinishJob(status As String)
             If _currentJob IsNot Nothing Then
                 _currentJob.Status = status
+                _currentJob.FinishedAt = DateTime.Now
                 _currentJob = Nothing
             End If
         End Sub
@@ -318,6 +346,7 @@ Public Class GeneralClasses
         Public Shared Sub FailJob(errorMessage As String)
             If _currentJob IsNot Nothing Then
                 _currentJob.Status = "Eroare"
+                _currentJob.FinishedAt = DateTime.Now
                 _currentJob.OutputData.TryAdd("EROARE", errorMessage)
                 _currentJob = Nothing
             End If

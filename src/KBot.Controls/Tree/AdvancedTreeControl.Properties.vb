@@ -176,7 +176,7 @@ Partial Public Class AdvancedTreeControl
     ''' </summary>
     Friend Function RightIconGutter(it As TreeItem) As Integer
         If it Is Nothing OrElse it.RightIcon Is Nothing Then Return 0
-        Dim latime As Integer = RightIconSize.Width + _rightIconRightPadding
+        Dim latime As Integer = RightIconSize.Width + RightIconRightPaddingPx
         If Not IsRightIconHoverOnly(it) Then Return latime
         If _reserveRightIconSpace Then Return latime
         Return If(it Is pHoveredItem, latime, 0)
@@ -203,7 +203,7 @@ Partial Public Class AdvancedTreeControl
     ''' nod se îngustează la hover — vezi <see cref="RightIconGutter"/>.
     ''' </summary>
     Friend Function ReservedRightIconWidth() As Integer
-        Return If(_reserveRightIconSpace, RightIconSize.Width + _rightIconRightPadding, 0)
+        Return If(_reserveRightIconSpace, RightIconSize.Width + RightIconRightPaddingPx, 0)
     End Function
 
     Private _RootExpander As Boolean = True
@@ -463,7 +463,7 @@ Partial Public Class AdvancedTreeControl
 
     Private m_leftTextWidth As Integer = 0
     <Category("K-BOT Arbore")>
-    <Description("Lățime fixă (px) rezervată textului din stânga caption; 0 = dinamic.")>
+    <Description("Lățime fixă (px @96dpi) rezervată textului din stânga caption; 0 = dinamic.")>
     <DefaultValue(0)>
     Public Property LeftTextWidth As Integer
         Get
@@ -479,7 +479,7 @@ Partial Public Class AdvancedTreeControl
     ' 0 = nelimitat (dinamic)
     Private m_rightTextWidth As Integer = 0
     <Category("K-BOT Arbore")>
-    <Description("Lățime fixă (px) rezervată textului din dreapta caption (separator ~~~); 0 = dinamic.")>
+    <Description("Lățime fixă (px @96dpi) rezervată textului din dreapta caption (separator ~~~); 0 = dinamic.")>
     <DefaultValue(0)>
     Public Property RightTextWidth As Integer
         Get
@@ -489,6 +489,26 @@ Partial Public Class AdvancedTreeControl
             m_rightTextWidth = Math.Max(0, value)
             Me.Invalidate()
         End Set
+    End Property
+
+    ''' <summary>
+    ''' <see cref="LeftTextWidth"/> în pixeli de ecran. Proprietatea publică rămâne LOGICĂ
+    ''' (px @96dpi) — asta a tastat operatorul, asta se serializează —, iar pictura folosește
+    ''' varianta de aici. Fără scalare, la 150% cele 100 de puncte cerute rămâneau 100 de pixeli
+    ''' pe un rând cu litere cu 50% mai mari, adică o rezervare mai strâmtă decât cea cerută,
+    ''' și restul de caption primea aerul rămas (felia 0040).
+    ''' </summary>
+    Friend ReadOnly Property LeftTextWidthPx As Integer
+        Get
+            Return SX(m_leftTextWidth)
+        End Get
+    End Property
+
+    ''' <summary><see cref="RightTextWidth"/> în pixeli de ecran — vezi <see cref="LeftTextWidthPx"/>.</summary>
+    Friend ReadOnly Property RightTextWidthPx As Integer
+        Get
+            Return SX(m_rightTextWidth)
+        End Get
     End Property
 
     <Browsable(False)>
@@ -658,19 +678,25 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
+    ' Perechea logic/scalat, ca la LeftIconSize: proprietatea întoarce ce a tastat operatorul
+    ' (px la 96 dpi), câmpul fără sufix e cel cu care se PICTEAZĂ. Până în felia 0039 exista doar
+    ' al doilea, așa că la 150% iconițele de antet rămâneau de 16 px lângă un text de 1,5×.
+    Private _headerIconSizeLogic As New Size(16, 16)
     Private _headerIconSize As New Size(16, 16)
     <Category("K-BOT Arbore - Antet")>
-    <Description("Dimensiunea iconițelor din antet.")>
+    <Description("Dimensiunea (px la 96 dpi) a iconițelor din antet.")>
     Public Property HeaderIconSize As Size
         Get
-            Return _headerIconSize
+            Return _headerIconSizeLogic
         End Get
         Set(value As Size)
-            _headerIconSize = value : Me.Invalidate()
+            _headerIconSizeLogic = value
+            _headerIconSize = New Size(SX(value.Width), SY(value.Height))
+            Me.Invalidate()
         End Set
     End Property
     Public Function ShouldSerializeHeaderIconSize() As Boolean
-        Return _headerIconSize <> New Size(16, 16)
+        Return _headerIconSizeLogic <> New Size(16, 16)
     End Function
     Public Sub ResetHeaderIconSize()
         HeaderIconSize = New Size(16, 16)
@@ -1104,20 +1130,23 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
+    ' Vezi HeaderIconSize: logic în proprietate, scalat în câmpul cu care se pictează.
+    Private _footerIconSizeLogic As New Size(16, 16)
     Private _footerIconSize As New Size(16, 16)
     <Category("K-BOT Arbore - Subsol")>
-    <Description("Dimensiunea iconiței din subsol.")>
+    <Description("Dimensiunea (px la 96 dpi) a iconiței din subsol.")>
     Public Property FooterIconSize As Size
         Get
-            Return _footerIconSize
+            Return _footerIconSizeLogic
         End Get
         Set(value As Size)
-            _footerIconSize = value
+            _footerIconSizeLogic = value
+            _footerIconSize = New Size(SX(value.Width), SY(value.Height))
             Me.Invalidate()
         End Set
     End Property
     Public Function ShouldSerializeFooterIconSize() As Boolean
-        Return _footerIconSize <> New Size(16, 16)
+        Return _footerIconSizeLogic <> New Size(16, 16)
     End Function
     Public Sub ResetFooterIconSize()
         FooterIconSize = New Size(16, 16)
@@ -1347,16 +1376,19 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
+    ' Logic/scalat, ca iconițele de bandă — butonul stă lângă ele și trebuie să crească la fel.
+    Private _footerCollapseButtonSizeLogic As Integer = 16
     Private _footerCollapseButtonSize As Integer = 16
     <Category("K-BOT Arbore - Subsol")>
-    <Description("Latura (px) a butonului de strângere din subsol.")>
+    <Description("Latura (px la 96 dpi) a butonului de strângere din subsol.")>
     <DefaultValue(16)>
     Public Property FooterCollapseButtonSize As Integer
         Get
-            Return _footerCollapseButtonSize
+            Return _footerCollapseButtonSizeLogic
         End Get
         Set(value As Integer)
-            _footerCollapseButtonSize = Math.Max(8, value)
+            _footerCollapseButtonSizeLogic = Math.Max(8, value)
+            _footerCollapseButtonSize = SX(_footerCollapseButtonSizeLogic)
             Me.Invalidate()
         End Set
     End Property
@@ -1794,9 +1826,11 @@ Partial Public Class AdvancedTreeControl
     ' Lățimea totală rezervată butonului ✕ = glifă/imagine + padding-ul din jur.
     Friend ReadOnly Property SearchClearButtonWidth As Integer
         Get
+            ' Glifa desenată de noi e o măsură LOGICĂ (deci SX); o IMAGINE a operatorului se ia
+            ' cât e — pictogramele nu se măresc, se aleg la rezoluția potrivită.
             Dim latimeGlifa As Integer = If(_searchClearButtonImage IsNot Nothing,
-                                            _searchClearButtonImage.Width, CLEAR_BTN_WIDTH)
-            Return latimeGlifa + _searchClearButtonPadding.Horizontal
+                                            _searchClearButtonImage.Width, SX(CLEAR_BTN_WIDTH))
+            Return latimeGlifa + SearchClearButtonPaddingPx.Horizontal
         End Get
     End Property
 
@@ -1938,6 +1972,22 @@ Partial Public Class AdvancedTreeControl
     Private ReadOnly Property ScrollBarWidth As Integer
         Get
             Return If(_vScroll IsNot Nothing AndAlso _vScroll.Visible, _vScroll.Width, 0)
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Grosimea barei de derulare, la scara arborelui (felia 0040).
+    '''
+    ''' <para><c>SystemInformation.VerticalScrollBarWidth</c> răspunde pentru DPI-ul de la
+    ''' pornirea procesului, nu pentru monitorul pe care stă acum fereastra: pe un al doilea ecran
+    ''' la altă scalare bara ieșea mai îngustă (sau mai lată) decât spațiul rezervat ei, iar textul
+    ''' nodurilor fie se tăia, fie lăsa o dungă goală. Perechea …ForDpi întreabă pentru un DPI
+    ''' anume — i-l dăm pe al nostru, cel din <see cref="AppScaling"/>, ca bara și restul
+    ''' geometriei să crească din aceeași sursă (inclusiv când operatorul fixează scara la 100%).</para>
+    ''' </summary>
+    Private ReadOnly Property ScrollBarThicknessPx As Integer
+        Get
+            Return SystemInformation.GetVerticalScrollBarWidthForDpi(CInt(Math.Round(96 * DpiScaleX)))
         End Get
     End Property
 End Class

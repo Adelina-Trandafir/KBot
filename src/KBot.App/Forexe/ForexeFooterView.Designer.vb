@@ -20,33 +20,46 @@ Partial Class ForexeFooterView
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
         tips = New KBot.Controls.KBotToolTip(components)
-        btnConectare = New Button()
+        btnExtinde = New Button()
+        btnIstoric = New Button()
         lblConexiune = New Label()
-        pbProgress = New KBot.Controls.KBotProgressBar()
+        pbProgress = New Controls.KBotProgressBar()
         lblCert = New Label()
         lblStatus = New Label()
-        btnExtinde = New Button()
         SuspendLayout()
         ' 
-        ' btnConectare
+        ' btnExtinde
         ' 
-        btnConectare.Dock = DockStyle.Left
-        btnConectare.FlatStyle = FlatStyle.Flat
-        btnConectare.Location = New Point(0, 0)
-        btnConectare.Margin = New Padding(4, 5, 4, 5)
-        btnConectare.Name = "btnConectare"
-        btnConectare.Size = New Size(200, 52)
-        btnConectare.TabIndex = 0
-        btnConectare.Text = "Conectare"
-        btnConectare.UseVisualStyleBackColor = True
+        btnExtinde.Dock = DockStyle.Right
+        btnExtinde.FlatStyle = FlatStyle.Flat
+        btnExtinde.Location = New Point(783, 0)
+        btnExtinde.Name = "btnExtinde"
+        btnExtinde.Size = New Size(37, 31)
+        btnExtinde.TabIndex = 6
+        btnExtinde.Text = "▲"
+        tips.SetToolTipHeader(btnExtinde, "Consolă")
+        tips.SetToolTipText(btnExtinde, "Deschide consola FOREXE: progres detaliat, jurnal și descărcări.")
+        btnExtinde.UseVisualStyleBackColor = True
+        ' 
+        ' btnIstoric
+        ' 
+        btnIstoric.Dock = DockStyle.Right
+        btnIstoric.FlatStyle = FlatStyle.Flat
+        btnIstoric.Location = New Point(745, 0)
+        btnIstoric.Name = "btnIstoric"
+        btnIstoric.Size = New Size(38, 31)
+        btnIstoric.TabIndex = 5
+        btnIstoric.Text = "⟲"
+        tips.SetToolTipHeader(btnIstoric, "Istoric")
+        tips.SetToolTipText(btnIstoric, "Istoricul acțiunilor duse prin FOREXE în această sesiune," & vbLf & "cu rezultatul și jurnalul fiecăreia.")
+        btnIstoric.UseVisualStyleBackColor = True
         ' 
         ' lblConexiune
         ' 
         lblConexiune.Dock = DockStyle.Left
-        lblConexiune.Location = New Point(200, 0)
-        lblConexiune.Margin = New Padding(4, 0, 4, 0)
+        lblConexiune.Location = New Point(0, 0)
         lblConexiune.Name = "lblConexiune"
-        lblConexiune.Size = New Size(151, 52)
+        lblConexiune.Size = New Size(106, 31)
         lblConexiune.TabIndex = 1
         lblConexiune.Text = "● Neconectat"
         lblConexiune.TextAlign = ContentAlignment.MiddleCenter
@@ -54,20 +67,19 @@ Partial Class ForexeFooterView
         ' pbProgress
         ' 
         pbProgress.Dock = DockStyle.Left
-        pbProgress.Location = New Point(351, 0)
-        pbProgress.Margin = New Padding(6, 7, 6, 7)
+        pbProgress.Location = New Point(106, 0)
+        pbProgress.Margin = New Padding(4, 4, 4, 4)
         pbProgress.Name = "pbProgress"
-        pbProgress.Size = New Size(257, 52)
+        pbProgress.Size = New Size(142, 31)
         pbProgress.TabIndex = 2
         ' 
         ' lblCert
         ' 
         lblCert.AutoEllipsis = True
         lblCert.Dock = DockStyle.Left
-        lblCert.Location = New Point(608, 0)
-        lblCert.Margin = New Padding(4, 0, 4, 0)
+        lblCert.Location = New Point(248, 0)
         lblCert.Name = "lblCert"
-        lblCert.Size = New Size(227, 52)
+        lblCert.Size = New Size(164, 31)
         lblCert.TabIndex = 3
         lblCert.Text = "Certificat: —"
         lblCert.TextAlign = ContentAlignment.MiddleLeft
@@ -76,53 +88,33 @@ Partial Class ForexeFooterView
         ' 
         lblStatus.AutoEllipsis = True
         lblStatus.Dock = DockStyle.Fill
-        lblStatus.Location = New Point(835, 0)
-        lblStatus.Margin = New Padding(4, 0, 4, 0)
+        lblStatus.Location = New Point(412, 0)
         lblStatus.Name = "lblStatus"
-        lblStatus.Size = New Size(250, 52)
+        lblStatus.Size = New Size(333, 31)
         lblStatus.TabIndex = 4
+        lblStatus.Text = "În așteptare..."
         lblStatus.TextAlign = ContentAlignment.MiddleLeft
-        ' 
-        ' btnExtinde
-        ' 
-        btnExtinde.Dock = DockStyle.Right
-        btnExtinde.FlatStyle = FlatStyle.Flat
-        btnExtinde.Location = New Point(1085, 0)
-        btnExtinde.Margin = New Padding(4, 5, 4, 5)
-        btnExtinde.Name = "btnExtinde"
-        btnExtinde.Size = New Size(86, 52)
-        btnExtinde.TabIndex = 5
-        btnExtinde.Text = "▲"
-        btnExtinde.UseVisualStyleBackColor = True
         ' 
         ' ForexeFooterView
         ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleDimensions = New SizeF(7F, 15F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(lblStatus)
+        Controls.Add(btnIstoric)
         Controls.Add(btnExtinde)
         Controls.Add(lblCert)
         Controls.Add(pbProgress)
         Controls.Add(lblConexiune)
-        Controls.Add(btnConectare)
-        Margin = New Padding(4, 5, 4, 5)
         Name = "ForexeFooterView"
-        Size = New Size(1171, 52)
-        '
-        ' tips — etichetele de survolare (felia 0035), toate în română.
-        '
-        tips.SetToolTipHeader(btnConectare, "Conectare FOREXE")
-        tips.SetToolTipText(btnConectare, "Pornește sesiunea către portalul FOREXE." & vbLf & "Se cere certificatul o singură dată pe sesiune.")
-        tips.SetToolTipHeader(btnExtinde, "Consolă")
-        tips.SetToolTipText(btnExtinde, "Deschide consola FOREXE: progres detaliat, jurnal și descărcări.")
+        Size = New Size(820, 31)
         ResumeLayout(False)
     End Sub
 
     Friend WithEvents tips As KBot.Controls.KBotToolTip
-    Friend WithEvents btnConectare As Button
     Friend WithEvents lblConexiune As Label
     Friend WithEvents pbProgress As KBot.Controls.KBotProgressBar
     Friend WithEvents lblCert As Label
     Friend WithEvents lblStatus As Label
+    Friend WithEvents btnIstoric As Button
     Friend WithEvents btnExtinde As Button
 End Class

@@ -30,7 +30,15 @@ Public Class MainForm
     Private ReadOnly _apiClient As IApiClient
     Private ReadOnly _authApi As IAuthApi
     Private ReadOnly _loginFactory As Func(Of LoginForm)
-    Private _logger As RichTextBoxLogger
+    ''' <summary>
+    ''' Logger-ul FOREXE. Shell-ul îl CONSTRUIEȘTE și îl atașează runner-ului, dar NU scrie
+    ''' niciodată în el: consola FOREXE arată exact ce spune robotul din <c>KBot.Forexe</c>,
+    ''' nimic altceva. Până în felia 0040 shell-ul își punea aici și treburile lui (temă
+    ''' comutată, vedere creată lazy, arbore încărcat, perioade, SS memorat) — un jurnal în
+    ''' care nu mai găseai pașii robotului printre ele. Cine are de raportat o eroare de shell
+    ''' cheamă <c>GlobalErrorLog.Write</c>; cine are de spus ceva operatorului o spune în UI.
+    ''' </summary>
+    Private _forexeLogger As RichTextBoxLogger
     Private _cts As CancellationTokenSource
 
     ' Catalogul an / SS / CodProgram al bazei curente (din /api/auth/periods).
@@ -61,6 +69,8 @@ Public Class MainForm
     ' Consola FOREXE: creată O SINGURĂ DATĂ și doar ascunsă la închidere, fiindcă rtbLog-ul
     ' ei e ținta logger-ului pe toată durata aplicației (vezi EnsureConsole).
     Private _console As ForexeConsoleForm
+    ' Istoricul acțiunilor FOREXE (felia 0040): creat la prima cerere, ascuns la închidere.
+    Private _istoricForexe As ForexeHistoryForm
 
     Public Sub New(forexeRunner As IForexeRunner, session As SessionContext,
                    apiClient As IApiClient, authApi As IAuthApi, loginFactory As Func(Of LoginForm),
@@ -84,7 +94,7 @@ Public Class MainForm
     ''' </summary>
     Private Async Function WithReauth(Of T)(action As Func(Of Task(Of T))) As Task(Of T)
         ' Fără plasă proprie: 401-ul e control-flow (re-login), iar orice alt eșec e deja
-        ' logat + arătat de apelant (LoadAngajamenteAsync / btnSinc_Click via _logger).
+        ' logat (GlobalErrorLog) + arătat de apelant (LoadTreeAsync / SincronizeazaAsync).
         ' VB.NET nu permite Await într-un Catch: capturăm 401-ul și continuăm sub Try.
         Dim expired As ApiException
         Try
@@ -155,7 +165,7 @@ Public Class MainForm
             Try
                 EnsureConsole()
                 _console.CaleJurnal = caleJurnal
-                _logger = New RichTextBoxLogger(_console.LogBox) With {
+                _forexeLogger = New RichTextBoxLogger(_console.LogBox) With {
                     .EnableUI = True,
                     .LogFilePath = caleJurnal
                 }
@@ -169,7 +179,7 @@ Public Class MainForm
 
             Try
                 ' Atașează logger-ul FOREXE la runner (aceeași instanță singleton)
-                DirectCast(_forexeRunner, ForexeRunner).AttachLogger(_logger)
+                DirectCast(_forexeRunner, ForexeRunner).AttachLogger(_forexeLogger)
             Catch ex As Exception
                 MessageBox.Show(Me, "Nu s-a putut atașa logger-ul la runner: " & ex.Message,
                                 "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -179,13 +189,19 @@ Public Class MainForm
             ' Identitate: caption + bara de status (din SessionContext).
             capBar.IconImage = My.Resources.kbot_64
             capBar.Text = If(String.IsNullOrEmpty(_session.NumeUnitate), "K-BOT", "K-BOT — " & _session.NumeUnitate)
-            lblUnit.Text = If(String.IsNullOrEmpty(_session.NumeUnitate), String.Empty, _session.NumeUnitate)
+            'lblUnit.Text = If(String.IsNullOrEmpty(_session.NumeUnitate), String.Empty, _session.NumeUnitate)
             lblOperator.Text = If(String.IsNullOrEmpty(_session.OperatorName), String.Empty, _session.OperatorName)
 
             ' Banda FOREXE din subsol: dialogurile coordonatorului (alegerea certificatului)
             ' primesc shell-ul ca proprietar, iar banda se leagă la coordonator.
             _forexe.Owner = Me
             forexeFooter.Bind(_forexe)
+
+            ' «Conectare» stă acum în antet, nu în bandă. Butonul e al shell-ului, dar starea lui
+            ' vine tot de la coordonator: ne abonăm o singură dată aici și ne dezabonăm la
+            ' închidere (coordonatorul e singleton și ar ține formularul în viață).
+            AddHandler _forexe.StateChanged, AddressOf Forexe_StateChanged
+            ActualizeazaButonConectare()
 
             ' Navigația vederilor — ordinea paginilor din Access, Sumar implicit.
             ' Cele opt intrări (cinci butoane Near, separator Far, DDF/ORD Far) sunt AUTORITE
@@ -219,7 +235,8 @@ Public Class MainForm
                 ' fără login): fără date, fără eșantion tăcut — lista rămâne goală, onest.
                 cboAn.Enabled = False
                 cboSs.Enabled = False
-                _logger?.LogWarning("Fără sesiune autentificată — lista de angajamente rămâne goală (deschidere din harness).")
+                ' Combo-urile dezactivate SPUN deja povestea; consola FOREXE nu e jurnalul
+                ' shell-ului, iar cazul e oricum doar al harness-ului Debug.
             End If
         Catch ex As Exception
             ' Boundary UI (Load): async Sub nu poate rearunca — logăm și înghițim.
@@ -241,7 +258,8 @@ Public Class MainForm
             Catch ex As Exception
                 ' Nu blocăm fereastra, dar nu înghițim tăcut: arătăm operatorului DE CE sunt
                 ' dezactivate combo-urile an/SS (mesajul român al serverului, nu JSON brut).
-                _logger.LogException(ex, "Eroare la citirea perioadelor")
+                ' Detaliul complet merge în jurnalul de erori al shell-ului, nu în consola FOREXE.
+                GlobalErrorLog.Write("MainForm.LoadPeriodsAsync.GetPeriods", ex)
                 cboAn.Enabled = False
                 cboSs.Enabled = False
                 MessageBox.Show(Me,
@@ -251,7 +269,8 @@ Public Class MainForm
             End Try
 
             If _periods Is Nothing OrElse _periods.Count = 0 Then
-                _logger.LogWarning("Nicio perioadă (an/SS) configurată pentru această unitate.")
+                ' Unitatea nu are perioade configurate — nu e o eroare, e o configurare lipsă.
+                ' Combo-urile dezactivate o arată; nu e treaba consolei FOREXE.
                 cboAn.Enabled = False
                 cboSs.Enabled = False
                 Return
@@ -316,7 +335,7 @@ Public Class MainForm
         Try
             Await _authApi.SaveLastSsAsync(_session.Token, ss, CancellationToken.None)
         Catch ex As Exception
-            _logger?.LogWarning($"Nu s-a putut memora SS '{ss}': {ex.Message}")
+            GlobalErrorLog.Write("MainForm.PersistLastSs", ex)
         End Try
     End Sub
 
@@ -366,7 +385,6 @@ Public Class MainForm
                 viewHost.Controls.Add(ctrl)
                 ThemeManager.Apply(ctrl)
                 _views(key) = view
-                _logger?.LogDebug($"Vedere '{key}' creată (lazy).")
             End If
 
             Dim previous As IAngajamentView = _activeView
@@ -422,7 +440,6 @@ Public Class MainForm
     Private Async Function LoadTreeAsync() As Task
         ' Fără an/SS nu există interogare de făcut (combo-uri goale = perioade necitite).
         If cboAn.SelectedItem Is Nothing OrElse cboSs.SelectedItem Is Nothing Then
-            _logger?.LogWarning("Perioadă neselectată (an/SS) — arborele rămâne gol.")
             Return
         End If
 
@@ -436,13 +453,11 @@ Public Class MainForm
                 Await WithReauth(Of IReadOnlyList(Of AngajamentTreeInfo))(
                     Function() _apiClient.GetTreeAsync(an, ss, _includeHidden, ct))
             PopulateTree(rows)
-            _logger?.LogInfo($"Arbore încărcat: {rows.Count} angajamente (an {an}, SS «{ss}»" &
-                             If(_includeHidden, ", inclusiv ascunse", String.Empty) & ").")
         Catch ex As Exception
             ' Fără plasă tăcută: o eroare (server oprit / 401 sesiune moartă / defect de
             ' server după re-login) se arată operatorului cu motivul întors de server,
             ' nu se maschează cu un arbore gol — acela ar minți că unitatea n-are date.
-            _logger?.LogException(ex, "Eroare la încărcarea arborelui de angajamente")
+            GlobalErrorLog.Write("MainForm.LoadTreeAsync", ex)
             MessageBox.Show(Me,
                 "Nu s-a putut încărca arborele de angajamente: " & ex.Message,
                 "Angajamente", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -636,6 +651,70 @@ Public Class MainForm
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Creează fereastra de istoric FOREXE la prima cerere (felia 0040). Ca și consola, se
+    ''' construiește O SINGURĂ DATĂ și se ascunde la închidere — dar, altfel decât consola, nu e
+    ''' nevoie de ea la pornire: nimeni nu ține o referință în ea, istoricul stă în
+    ''' <c>JobHistoryManager</c>, iar fereastra doar îl citește.
+    ''' </summary>
+    Private Sub EnsureIstoricForexe()
+        Try
+            If _istoricForexe IsNot Nothing AndAlso Not _istoricForexe.IsDisposed Then Return
+            _istoricForexe = New ForexeHistoryForm()
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.EnsureIstoricForexe", ex)
+            Throw
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' «Conectare» (prima celulă din <c>tlyHeader</c>) — fostul buton al benzii de subsol,
+    ''' mutat în antet. Face exact ce făcea acolo: cere coordonatorului o sesiune FOREXE.
+    ''' </summary>
+    Private Async Sub BtnConectare_Click(sender As Object, e As EventArgs) Handles btnConectare.Click
+        Try
+            Await _forexe.ConnectAsync()
+        Catch ex As Exception
+            ' Frontieră de UI (async Sub): nu poate rearunca — logăm și spunem de ce.
+            GlobalErrorLog.Write("MainForm.btnConectare_Click", ex)
+            MessageBox.Show(Me, "Conectarea la FOREXE a eșuat: " & ex.Message, "FOREXE",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ' Starea coordonatorului poate veni de pe firul robotului — trecem pe firul de UI.
+    Private Sub Forexe_StateChanged(sender As Object, e As EventArgs)
+        Try
+            If IsDisposed OrElse Disposing OrElse Not IsHandleCreated Then Return
+            If InvokeRequired Then
+                BeginInvoke(New Action(AddressOf ActualizeazaButonConectare))
+            Else
+                ActualizeazaButonConectare()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.Forexe_StateChanged", ex)
+        End Try
+    End Sub
+
+    ' Activ doar cât nu e nimic în lucru ȘI nu există deja sesiune (regula benzii de subsol).
+    Private Sub ActualizeazaButonConectare()
+        Try
+            btnConectare.Enabled = Not _forexe.IsBusy AndAlso Not _forexe.IsConnected
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ActualizeazaButonConectare", ex)
+        End Try
+    End Sub
+
+    ' Coordonatorul e singleton: un abonament rămas ar ține shell-ul în viață după închidere.
+    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        Try
+            RemoveHandler _forexe.StateChanged, AddressOf Forexe_StateChanged
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.OnFormClosed", ex)
+        End Try
+        MyBase.OnFormClosed(e)
+    End Sub
+
     ' Butonul de extindere din banda de subsol: arată consola (nemodal, deținută de shell).
     Private Sub ForexeFooter_ExpandRequested(sender As Object, e As EventArgs) Handles forexeFooter.ExpandRequested
         Try
@@ -646,6 +725,24 @@ Public Class MainForm
             _console.Activate()
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.forexeFooter_ExpandRequested", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Butonul «Istoric» din banda de subsol (felia 0040): arată istoricul acțiunilor FOREXE,
+    ''' nemodal, deținut de shell — exact ca consola. Reîncărcarea se face la FIECARE deschidere:
+    ''' fereastra trăiește cât aplicația, iar între două deschideri au mai rulat lucrări.
+    ''' </summary>
+    Private Sub ForexeFooter_HistoryRequested(sender As Object, e As EventArgs) Handles forexeFooter.HistoryRequested
+        Try
+            EnsureIstoricForexe()
+            If Not _istoricForexe.Visible Then _istoricForexe.Show(Me)
+            If _istoricForexe.WindowState = FormWindowState.Minimized Then _istoricForexe.WindowState = FormWindowState.Normal
+            _istoricForexe.Reincarca()
+            _istoricForexe.BringToFront()
+            _istoricForexe.Activate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.forexeFooter_HistoryRequested", ex)
         End Try
     End Sub
 
@@ -662,18 +759,25 @@ Public Class MainForm
         Try
             Dim mapate As List(Of Angajament) = Await _forexe.DownloadListaAsync()
             If mapate Is Nothing Then
-                _logger.LogWarning("Sincronizare oprită: lista de angajamente nu a putut fi descărcată.")
+                ' Motivul l-a spus deja robotul: coordonatorul a pus linia lui în starea din
+                ' banda FOREXE, iar pașii descărcării sunt în consolă. Aici n-avem ce adăuga.
                 Return
             End If
 
             ' Guard: fără DbName (populat la login) nu putem ținti baza unității.
             If String.IsNullOrEmpty(_session.DbName) Then
-                _logger.LogWarning("DbName nesetat pe sesiune — sar peste upsert (necesită login).")
+                MessageBox.Show(Me,
+                    "Lista a fost descărcată și salvată local, dar nu poate fi trimisă pe server: " &
+                    "sesiunea nu are baza unității (necesită login).",
+                    "Sincronizare", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
 
+            ' Upsert-ul e HTTP, nu robot: rezultatul lui se spune operatorului, nu consolei FOREXE.
             Dim resp As String = Await WithReauth(Function() _apiClient.UpsertAngajamenteAsync(_session.DbName, mapate, _cts.Token))
-            _logger.LogSuccess($"Upsert reușit: {mapate.Count} angajamente în '{_session.DbName}'. Răspuns server: {resp}")
+            MessageBox.Show(Me,
+                $"Sincronizare reușită: {mapate.Count} angajamente trimise în «{_session.DbName}».{Environment.NewLine}{resp}",
+                "Sincronizare", MessageBoxButtons.OK, MessageBoxIcon.Information)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.SincronizeazaAsync", ex)
             Throw
@@ -762,8 +866,11 @@ Public Class MainForm
             lblOperator.ForeColor = p.TextDimColor
             lblAn.ForeColor = p.TextDimColor
             lblSs.ForeColor = p.TextDimColor
-            lblUnit.ForeColor = p.TextColor
+            'lblUnit.ForeColor = p.TextColor
             lblTree.ForeColor = p.TextColor
+
+            ' «Conectare» e butonul principal al antetului (stilul îl avea în banda de subsol).
+            ButtonStyles.ApplyPrimary(btnConectare, scheme)
 
 
             ' Arborele ESTE acum IThemedControl: își ia singur paleta și, mai important,
@@ -808,21 +915,11 @@ Public Class MainForm
         Me.BringToFront()
     End Sub
 
-    ''' <summary>
-    ''' Selectorul de temă a intrat ÎN BARA DE TITLU (felia 0029): <c>capBar.ShowThemeButton</c>.
-    ''' Meniul de scheme, literele de acces, pictogramele, garda de re-deschidere și «Stiluri...»
-    ''' sunt acum ale controlului — vezi <c>KBotCaptionBar.ThemeButton.vb</c>. Aici rămâne doar
-    ''' ce e AL SHELL-ULUI după o comutare: restul se re-tematizează singur, fiindcă
-    ''' <c>ThemeManager.SetScheme</c> difuzează schema peste toate formularele deschise.
-    ''' </summary>
-    Private Sub CapBar_ThemeSchemeChanged(sender As Object, e As ThemeSchemeChangedEventArgs) Handles capBar.ThemeSchemeChanged
-        Try
-            _logger?.LogInfo($"Schemă de temă comutată pe «{e.Scheme.Name}».")
-        Catch ex As Exception
-            ' Boundary UI: un handler nu poate rearunca.
-            GlobalErrorLog.Write("MainForm.capBar_ThemeSchemeChanged", ex)
-        End Try
-    End Sub
+    ' Comutarea schemei de temă NU mai are handler aici. Selectorul a intrat în bara de titlu
+    ' (felia 0029, `capBar.ShowThemeButton`), iar `ThemeManager.SetScheme` difuzează schema peste
+    ' toate formularele deschise — shell-ul n-are nimic de făcut pe urma lui. Singurul rând care
+    ' rămăsese era o linie de jurnal scrisă în consola FOREXE, adică exact zgomotul pe care
+    ' felia 0040 l-a scos de acolo (vezi `_forexeLogger`).
 
     ' Cheile rândurilor din meniul butonului de opțiuni.
     Private Const OPT_JURNAL As String = "jurnal"

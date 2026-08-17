@@ -56,7 +56,7 @@ Public Class DdfView
     Private Const PAGE_PDF As String = "document"
     Private Const PAGE_FISIERE As String = "fisiere"
 
-    ' CHEILE ICONIȚELOR din «tree_image_list» (ImageList-ul pus pe vedere în designer și legat
+    ' CHEILE ICONIȚELOR din «image_list» (ImageList-ul pus pe vedere în designer și legat
     ' de arbore prin tree.NodeImages). Felia 0033 §12 (cererea operatorului): arborele DDF
     ' rezolvă iconițele ÎNTÂI din listă, exact ca RezervariView, și abia dacă lista n-are cheia
     ' cade înapoi pe formele GDI din DdfIcons. Cum se scapă de fallback: pui pozele în listă.
@@ -632,7 +632,7 @@ Public Class DdfView
     End Function
 
     ''' <summary>
-    ''' Iconița stării unei revizii. ÎNTÂI din «tree_image_list» (pozele alese de operator în
+    ''' Iconița stării unei revizii. ÎNTÂI din «image_list» (pozele alese de operator în
     ''' designer), și abia dacă lista n-are cheia respectivă se cade înapoi pe formele GDI din
     ''' <see cref="DdfIcons"/>, colorate din paletă (sus=succes, jos=accent, neutru=estompat).
     ''' Felia 0033 §12: aceeași regulă listă-întâi ca în <c>RezervariView.TipIconOf</c>.

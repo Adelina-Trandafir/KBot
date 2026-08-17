@@ -145,6 +145,12 @@ Partial Public Class AdvancedTreeControl
             _checkBoxSize = SX(_checkBoxSizeLogic)
             _leftIconSize = New Size(SX(_leftIconSizeLogic.Width), SY(_leftIconSizeLogic.Height))
             _rightIconSize = New Size(SX(_rightIconSizeLogic.Width), SY(_rightIconSizeLogic.Height))
+            ' Iconițele DE BANDĂ (antet/subsol) și butonul de strângere. Lipseau de aici până în
+            ' felia 0039 — de aceea la 150% rândurile creșteau, iar lupa, rotița și iconițele de
+            ' subsol rămâneau cât la 96 dpi.
+            _headerIconSize = New Size(SX(_headerIconSizeLogic.Width), SY(_headerIconSizeLogic.Height))
+            _footerIconSize = New Size(SX(_footerIconSizeLogic.Width), SY(_footerIconSizeLogic.Height))
+            _footerCollapseButtonSize = SX(_footerCollapseButtonSizeLogic)
             _minimumCollapsedWidth = SX(_minimumCollapsedWidthLogic)
 
             RefreshSearchBarMetrics()
