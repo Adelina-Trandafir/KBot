@@ -76,6 +76,11 @@ Public Class OrdView
     Private _nodeLinii As List(Of OrdLinieRow)
     Private _nodeIsRoot As Boolean
     Private _selectedOrd As OrdHeaderRow
+    ' Calea REZOLVATĂ a documentului nodului curent (felia 0041): fișierul semnat adus în cache
+    ' de pe server. Gol până când rezolvarea se întoarce.
+    Private _pdfPathRezolvat As String
+    ' Ordonanțarea pentru care s-a rezolvat calea de mai sus — stale-guard, ca la DDF.
+    Private _pdfRezolvatPentruIdordp As Integer
 
     ' Starea splitter-ului dinainte de strângerea arborelui, ca desfacerea să-l pună înapoi
     ' exact unde era (vezi Tree_CollapsedChanged). 0 = arborele n-a fost încă strâns.
@@ -178,12 +183,20 @@ Public Class OrdView
         Try
             If String.IsNullOrWhiteSpace(_requestedCod) OrElse _ordonantari Is Nothing Then Return Nothing
 
+            ' FELIA 0041 — calea rezolvată de EnsureSignedPdfAsync (cache-ul semnat validat prin
+            ' sumă) are întâietate; cât timp rezolvarea nu s-a întors, se folosește calea
+            ' AȘTEPTATĂ, ca un fișier deja prezent să se vadă imediat.
             Dim pdfPath As String = Nothing
             If Not _nodeIsRoot AndAlso _selectedOrd IsNot Nothing Then
-                pdfPath = OrdPdfLocator.ExpectedPath(KBotPaths.Current.OrdPdfRoot, _selectedOrd, _requestedCod)
+                If Not String.IsNullOrEmpty(_pdfPathRezolvat) AndAlso
+                   _pdfRezolvatPentruIdordp = _selectedOrd.Idordp Then
+                    pdfPath = _pdfPathRezolvat
+                Else
+                    pdfPath = OrdPdfLocator.ExpectedPath(KBotPaths.Current.OrdPdfRoot, _selectedOrd, _requestedCod)
+                End If
             End If
-            ' Existența se decide EXCLUSIV printr-o probă pe discul clientului — serverul nu
-            ' știe nimic despre PDF-uri (vezi nota rutei), la fel ca la DDF.
+            ' Existența fișierului se decide printr-o probă pe discul clientului. Serverul spune
+            ' acum dacă EXISTĂ un PDF semnat (`PdfSha256`), dar calea locală rămâne a clientului.
             Dim exists As Boolean = Not String.IsNullOrEmpty(pdfPath) AndAlso IO.File.Exists(pdfPath)
 
             ' Antetul întreg + globalii unității: banda de antet a paginii «Vizualizare» îi
@@ -259,6 +272,8 @@ Public Class OrdView
             _nodeLinii = _linii
             _nodeIsRoot = True
             _selectedOrd = Nothing
+            _pdfPathRezolvat = Nothing
+            _pdfRezolvatPentruIdordp = 0
             PushToActivePage()
             ShowContent()
         Catch ex As ApiException
@@ -347,10 +362,57 @@ Public Class OrdView
             _nodeLinii = payload.Linii
             _nodeIsRoot = payload.IsRoot
             _selectedOrd = payload.Ordonantare
+            ' O selecție nouă anulează calea rezolvată pentru nodul anterior (felia 0041).
+            _pdfPathRezolvat = Nothing
+            _pdfRezolvatPentruIdordp = 0
 
             PushToActivePage()
+            ' Felia 0041: pe o frunză, aducem documentul SEMNAT de pe server (sau confirmăm că
+            ' cel din cache e la zi) și abia apoi re-împingem contextul. Fire-and-forget
+            ' deliberat, ca LoadAsync: metoda își tratează singură toate erorile.
+            EnsureSignedPdfAsync(_selectedOrd)
         Catch ex As Exception
             GlobalErrorLog.Write("OrdView.Tree_NodeMouseUp", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Aduce la zi cache-ul PDF-ului SEMNAT al ordonanțării selectate (felia 0041) și
+    ''' re-împinge contextul. Sora lui <c>DdfView.EnsureSignedPdfAsync</c>, cu aceeași regulă:
+    ''' fără <c>PdfSha256</c> nu se face niciun apel — documentul rămâne unul nesemnat, care se
+    ''' produce local. Boundary UI async: loghează și înghite.
+    ''' </summary>
+    Private Async Sub EnsureSignedPdfAsync(ordonantare As OrdHeaderRow)
+        Try
+            If ordonantare Is Nothing Then Return
+            If Not ordonantare.ArePdfSemnat Then Return
+
+            Dim cachePath As String =
+                OrdPdfLocator.ExpectedPath(KBotPaths.Current.OrdPdfRoot, ordonantare, _requestedCod)
+            If String.IsNullOrEmpty(cachePath) Then Return
+
+            Dim idordp As Integer = ordonantare.Idordp
+            Dim rezultat As PdfCacheResult = Await PdfCache.EnsureAsync(
+                cachePath, ordonantare.PdfSha256,
+                Function(shaLocal) _apiClient.DownloadOrdPdfAsync(idordp, shaLocal, CancellationToken.None)).ConfigureAwait(True)
+
+            ' Stale-guard: între timp operatorul a dat click pe alt nod.
+            If _selectedOrd Is Nothing OrElse _selectedOrd.Idordp <> idordp Then Return
+
+            Select Case rezultat.Status
+                Case PdfCacheStatus.Gata
+                    _pdfPathRezolvat = rezultat.Cale
+                    _pdfRezolvatPentruIdordp = idordp
+                    PushToActivePage()
+                Case PdfCacheStatus.Eroare
+                    ' EXISTĂ un document semnat pe care nu-l putem aduce — o spunem, nu cădem
+                    ' tăcut pe „nu are PDF".
+                    ShowEmpty(rezultat.Mesaj)
+                Case Else
+                    ' Nesemnat (cursă: rândul a dispărut) — rămâne calea așteptată.
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdView.EnsureSignedPdfAsync", ex)
         End Try
     End Sub
 
@@ -399,6 +461,8 @@ Public Class OrdView
         _nodeLinii = Nothing
         _nodeIsRoot = False
         _selectedOrd = Nothing
+        _pdfPathRezolvat = Nothing
+        _pdfRezolvatPentruIdordp = 0
         tree.Clear()
         ' Contextul devine Nothing -> pagina activă își arată starea goală.
         PushToActivePage()

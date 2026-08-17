@@ -103,6 +103,25 @@ Public NotInheritable Class RevizieRow
     ''' <summary>SUM(ValCur) REAL peste sectiunea A a reviziei (0 cand nu are linii).</summary>
     Public Property TotalRevizie As Double
 
+    ''' <summary>
+    ''' Felia 0041 — suma de control a PDF-ului SEMNAT stocat pe server (FX_DDF_PDF), hex
+    ''' minuscule. GOL inseamna «nu exista PDF semnat» — atunci documentul se REGENEREAZA local,
+    ''' in zona de lucru. Cand e populata, e si validatorul cache-ului local: se compara cu suma
+    ''' fisierului de pe disc si se descarca doar la nepotrivire.
+    ''' </summary>
+    Public Property PdfSha256 As String = String.Empty
+    ''' <summary>Marimea in octeti a PDF-ului semnat de pe server; Nothing cand nu exista.</summary>
+    Public Property PdfDimensiune As Integer?
+    ''' <summary>Cand a fost scris ultima data PDF-ul semnat (cu ora); Nothing cand nu exista.</summary>
+    Public Property PdfDataModif As Date?
+
+    ''' <summary>Exista un PDF SEMNAT pe server pentru aceasta revizie?</summary>
+    Public ReadOnly Property ArePdfSemnat As Boolean
+        Get
+            Return Not String.IsNullOrWhiteSpace(PdfSha256)
+        End Get
+    End Property
+
     ''' <summary>Eticheta frunzei: «  0 - 18.01.2026» (numar aliniat la dreapta in 3 spatii).</summary>
     Public ReadOnly Property EtichetaRevizie As String
         Get

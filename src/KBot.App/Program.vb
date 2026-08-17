@@ -59,6 +59,14 @@ Friend Module Program
             ThemeManager.Initialize()
             KBotTheme.WireSubsystems()
 
+            ' Zona de lucru a PDF-urilor NESEMNATE (felia 0041) se golește la fiecare pornire.
+            ' Ele sunt artefacte DERIVATE — se regenerează prin XfaWriter ori de câte ori
+            ' operatorul cere să le vadă — deci un rest de la sesiunea trecută n-are nicio
+            ' valoare și ar putea fi vechi. Cache-ul PDF-urilor SEMNATE (DdfPdfRoot / OrdPdfRoot)
+            ' NU se atinge aici: acolo regula e „se înlocuiește doar când suma nu corespunde".
+            ' Wipe NU aruncă niciodată (un fișier ținut deschis de Adobe se sare cu avertisment).
+            TempPdfStore.Wipe()
+
             Dim services As New ServiceCollection()
             ConfigureServices(services)
 

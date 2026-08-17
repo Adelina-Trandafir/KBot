@@ -97,6 +97,54 @@ Public Interface IApiClient
     Function GetOrdAsync(cod As String, ct As CancellationToken) As Task(Of OrdInfo)
 
     ''' <summary>
+    ''' Descarcă PDF-ul SEMNAT al unei revizii DDF (GET /api/forexe/ddf/pdf/{idrev}).
+    '''
+    ''' <paramref name="cachedSha"/> = suma fișierului din cache-ul local (gol când nu există):
+    ''' se trimite ca <c>If-None-Match</c>, iar un 304 întoarce
+    ''' <see cref="PdfDownloadStatus.NotModified"/> — cache-ul e bun, nu s-a transferat nimic.
+    ''' Un 404 întoarce <see cref="PdfDownloadStatus.NotFound"/>, NU o excepție: „documentul nu
+    ''' are PDF semnat" e o stare normală, iar apelantul cade pe regenerare.
+    '''
+    ''' Pe <see cref="PdfDownloadStatus.Content"/> octeții au trecut DEJA verificarea SHA-256
+    ''' față de <c>ETag</c>-ul serverului — o nepotrivire aruncă <c>ApiException</c> cu motivul
+    ''' <c>SHA_MISMATCH</c> în loc să întoarcă octeți în care nu se poate avea încredere.
+    ''' Baza NU se trimite: serverul o ia din sesiune. Un 401 curge spre WithReauth.
+    ''' </summary>
+    Function DownloadDdfPdfAsync(idrev As Integer, cachedSha As String,
+                                 ct As CancellationToken) As Task(Of PdfDownloadResult)
+
+    ''' <summary>
+    ''' Descarcă PDF-ul SEMNAT al unei ordonanțări (GET /api/forexe/ord/pdf/{idordp}).
+    ''' Sora lui <see cref="DownloadDdfPdfAsync"/>, cu exact același contract.
+    ''' </summary>
+    Function DownloadOrdPdfAsync(idordp As Integer, cachedSha As String,
+                                 ct As CancellationToken) As Task(Of PdfDownloadResult)
+
+    ''' <summary>
+    ''' Încarcă PDF-ul SEMNAT al unei revizii DDF (PUT /api/forexe/ddf/pdf/{idrev}),
+    ''' înlocuind rândul existent dacă e cazul. Corpul sunt OCTEȚII BRUȚI — niciodată JSON,
+    ''' niciodată base64.
+    '''
+    ''' <paramref name="shaPrecedent"/> = suma pe care apelantul a văzut-o ULTIMA DATĂ pentru
+    ''' documentul acesta (gol / «-» când crede că nu există rând pe server). Dacă rândul de pe
+    ''' server are altă sumă, răspunsul e 409 și NU se scrie nimic — nicio semnătură a altcuiva
+    ''' nu se suprascrie în tăcere. Suma octeților trimiși se calculează intern (<c>PdfHash</c>),
+    ''' deci apelantul nu o poate greși; numele fișierului îl derivă SERVERUL.
+    '''
+    ''' Se încarcă DOAR PDF-uri semnate. Cel nesemnat este un artefact derivat, care se
+    ''' regenerează local. Hard-fail (Throw ApiException) la non-2xx; 401 curge spre WithReauth.
+    ''' </summary>
+    Function UploadDdfPdfAsync(idrev As Integer, continut As Byte(), shaPrecedent As String,
+                               ct As CancellationToken) As Task(Of PutPdfResponse)
+
+    ''' <summary>
+    ''' Încarcă PDF-ul SEMNAT al unei ordonanțări (PUT /api/forexe/ord/pdf/{idordp}).
+    ''' Sora lui <see cref="UploadDdfPdfAsync"/>, cu exact același contract.
+    ''' </summary>
+    Function UploadOrdPdfAsync(idordp As Integer, continut As Byte(), shaPrecedent As String,
+                               ct As CancellationToken) As Task(Of PutPdfResponse)
+
+    ''' <summary>
     ''' Trimite un Excel (base64) la server pentru conversie în JSON (/api/tools/process_excel).
     ''' Întoarce conținutul câmpului "data" din răspuns. Autorizare: bearer-ul sesiunii
     ''' curente (în ApiClient). Hard-fail (Throw ApiException) la non-2xx.

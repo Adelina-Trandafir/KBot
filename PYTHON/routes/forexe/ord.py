@@ -101,9 +101,15 @@ _SQL_ORDONANTARI = (
     "COALESCE((SELECT SUM(t.Valoare) FROM FX_ORD_TBL t "
     "          WHERE t.IDORDP = o.IDORDP), 0) AS TotalORD, "
     "(SELECT d.PartAng FROM FX_DDF d WHERE d.IDDF = o.IDDF LIMIT 1) AS PartAng, "
-    "(SELECT d.NumePartener FROM FX_DDF d WHERE d.IDDF = o.IDDF LIMIT 1) AS NumePartener"
+    "(SELECT d.NumePartener FROM FX_DDF d WHERE d.IDDF = o.IDDF LIMIT 1) AS NumePartener, "
+    # Felia 0041 — evidenta PDF-ului SEMNAT stocat pe server. LEFT JOIN (nu subinterogare):
+    # `FX_ORD_PDF.IDORDP` are cheie UNICA, deci cel mult un rand per ordonantare. Cele trei
+    # coloane stau INAINTEA fragmentului optional `{cale_pdf}`, ca pozitiile fixe din
+    # despachetarea de mai jos sa nu depinda de proba de schema.
+    "p.Sha256, p.Dimensiune, p.DataModif"
     "{cale_pdf} "
     "FROM FX_ORD o "
+    "LEFT JOIN FX_ORD_PDF p ON p.IDORDP = o.IDORDP "
     "WHERE o.CodAngajament = %s "
     "ORDER BY o.DataORD, o.NrORD"
 )
@@ -177,6 +183,15 @@ def _iso(value):
         return value.isoformat() if hasattr(value, "isoformat") else str(value)
 
 
+def _iso_dt(value):
+    """DateTime -> ISO CU ora, sau None. Sora lui `_iso`, dar fara `.date()`: `DataModif` din
+    FX_ORD_PDF spune CAND s-a semnat documentul, iar taierea orei ar face doua semnari din
+    aceeasi zi sa arate identic."""
+    if value is None:
+        return None
+    return value.isoformat() if hasattr(value, "isoformat") else str(value)
+
+
 def _num(value):
     """Coloana de bani -> float. None devine 0.0 (server-side), ca grila si totalurile
     arborelui sa arate «0,00», nu gol."""
@@ -235,8 +250,9 @@ def get_ord():
         ordonantari = []
         for row in cursor.fetchall():
             (idordp, nr_ord, data_ord, incarcat, preluat,
-             total_ord, part_ang, nume_partener) = row[:8]
-            cale_pdf = row[8] if are_cale else None
+             total_ord, part_ang, nume_partener,
+             pdf_sha, pdf_dim, pdf_modif) = row[:11]
+            cale_pdf = row[11] if are_cale else None
             ordonantari.append({
                 "idordp": int(idordp) if idordp is not None else None,
                 "nr_ord": int(nr_ord) if nr_ord is not None else 0,
@@ -251,6 +267,12 @@ def get_ord():
                 "nume_partener": nume_partener,
                 "incarcat": bool(incarcat),
                 "preluat": bool(preluat),
+                # Felia 0041 — PDF-ul SEMNAT stocat pe server. `pdf_sha256` non-null INSEAMNA
+                # «exista PDF semnat» si e si validatorul de cache local al clientului. Null
+                # cand nu exista rand. Distinct de `pdf` de mai sus, care e vechea CALE Access.
+                "pdf_sha256": pdf_sha,
+                "pdf_dimensiune": int(pdf_dim) if pdf_dim is not None else None,
+                "pdf_data_modif": _iso_dt(pdf_modif),
             })
 
         # --- linii: FX_ORD_TBL, plate, cu beneficiarul lor (FX_ORD_PART) ---------------

@@ -549,7 +549,10 @@ Public Class ApiClient
                                 .Incarcat = r.incarcat,
                                 .Preluat = r.preluat,
                                 .Semnatura = If(r.semnatura, String.Empty),
-                                .TotalRevizie = r.total_revizie
+                                .TotalRevizie = r.total_revizie,
+                                .PdfSha256 = If(r.pdf_sha256, String.Empty),
+                                .PdfDimensiune = r.pdf_dimensiune,
+                                .PdfDataModif = r.pdf_data_modif
                             })
                         Next
                     End If
@@ -650,7 +653,10 @@ Public Class ApiClient
                                 .PartAng = o.part_ang,
                                 .NumePartener = If(o.nume_partener, String.Empty),
                                 .Incarcat = o.incarcat,
-                                .Preluat = o.preluat
+                                .Preluat = o.preluat,
+                                .PdfSha256 = If(o.pdf_sha256, String.Empty),
+                                .PdfDimensiune = o.pdf_dimensiune,
+                                .PdfDataModif = o.pdf_data_modif
                             })
                         Next
                     End If
@@ -765,6 +771,169 @@ Public Class ApiClient
             Throw
         Catch ex As Exception
             GlobalErrorLog.Write("ApiClient.GetIstoricAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ' ── PDF-uri SEMNATE stocate pe server (felia 0041) ───────────────────────
+    ' Antetele contractului. `X-Sha256` = suma calculata de client peste octetii trimisi;
+    ' `X-Sha-Precedent` = suma pe care clientul a vazut-o ultima data pentru document
+    ' («-» cand crede ca nu exista rand) -> concurenta optimista, 409 la nepotrivire.
+    Private Const H_SHA As String = "X-Sha256"
+    Private Const H_SHA_PREC As String = "X-Sha-Precedent"
+    ''' <summary>Valoarea lui <c>X-Sha-Precedent</c> pentru «cred că nu există rând pe server».</summary>
+    Public Const ShaFaraRand As String = "-"
+
+    ''' <summary>
+    ''' Descarcă PDF-ul semnat al unei revizii DDF (GET /api/forexe/ddf/pdf/{idrev}).
+    ''' Vezi <see cref="IApiClient.DownloadDdfPdfAsync"/> pentru contract.
+    ''' </summary>
+    Public Function DownloadDdfPdfAsync(idrev As Integer, cachedSha As String, ct As CancellationToken) _
+        As Task(Of PdfDownloadResult) Implements IApiClient.DownloadDdfPdfAsync
+
+        Return DownloadPdfAsync($"/api/forexe/ddf/pdf/{idrev}", cachedSha,
+                                "descărcarea PDF-ului documentului de fundamentare",
+                                "ApiClient.DownloadDdfPdfAsync", ct)
+    End Function
+
+    ''' <summary>
+    ''' Descarcă PDF-ul semnat al unei ordonanțări (GET /api/forexe/ord/pdf/{idordp}).
+    ''' </summary>
+    Public Function DownloadOrdPdfAsync(idordp As Integer, cachedSha As String, ct As CancellationToken) _
+        As Task(Of PdfDownloadResult) Implements IApiClient.DownloadOrdPdfAsync
+
+        Return DownloadPdfAsync($"/api/forexe/ord/pdf/{idordp}", cachedSha,
+                                "descărcarea PDF-ului ordonanțării",
+                                "ApiClient.DownloadOrdPdfAsync", ct)
+    End Function
+
+    ''' <summary>
+    ''' Încarcă PDF-ul semnat al unei revizii DDF (PUT /api/forexe/ddf/pdf/{idrev}).
+    ''' Vezi <see cref="IApiClient.UploadDdfPdfAsync"/> pentru contract.
+    ''' </summary>
+    Public Function UploadDdfPdfAsync(idrev As Integer, continut As Byte(), shaPrecedent As String,
+                                      ct As CancellationToken) _
+        As Task(Of PutPdfResponse) Implements IApiClient.UploadDdfPdfAsync
+
+        Return UploadPdfAsync($"/api/forexe/ddf/pdf/{idrev}", continut, shaPrecedent,
+                              "salvarea PDF-ului documentului de fundamentare",
+                              "ApiClient.UploadDdfPdfAsync", ct)
+    End Function
+
+    ''' <summary>
+    ''' Încarcă PDF-ul semnat al unei ordonanțări (PUT /api/forexe/ord/pdf/{idordp}).
+    ''' </summary>
+    Public Function UploadOrdPdfAsync(idordp As Integer, continut As Byte(), shaPrecedent As String,
+                                      ct As CancellationToken) _
+        As Task(Of PutPdfResponse) Implements IApiClient.UploadOrdPdfAsync
+
+        Return UploadPdfAsync($"/api/forexe/ord/pdf/{idordp}", continut, shaPrecedent,
+                              "salvarea PDF-ului ordonanțării",
+                              "ApiClient.UploadOrdPdfAsync", ct)
+    End Function
+
+    ' Descarcarea, o singura data pentru amandoua familiile de documente.
+    '
+    ' OCTETI BRUTI: `ReadAsByteArrayAsync`, NICIODATA `ReadAsStringAsync` — o trecere prin text
+    ' ar schimba octetii si ar rupe semnatura digitala. Pe eroare (non-2xx, non-304) corpul se
+    ' citeste ca text: acolo serverul trimite JSON romanesc, nu PDF.
+    '
+    ' `If-None-Match` cu suma cache-ului local -> 304 -> NotModified: cache-ul e bun, nu se
+    ' descarca nimic. 404 -> NotFound (nu exceptie): «documentul n-are PDF semnat» e o stare
+    ' normala a fluxului, iar apelantul cade pe regenerare.
+    Private Async Function DownloadPdfAsync(url As String, cachedSha As String, actiune As String,
+                                            sink As String, ct As CancellationToken) _
+        As Task(Of PdfDownloadResult)
+        Try
+            EnsureConfigured()
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                If Not String.IsNullOrWhiteSpace(cachedSha) AndAlso
+                   Not String.Equals(cachedSha, ShaFaraRand, StringComparison.Ordinal) Then
+                    ' Ghilimelele fac parte din formatul ETag; serverul le taie la comparare.
+                    msg.Headers.TryAddWithoutValidation("If-None-Match", """" & cachedSha.Trim() & """")
+                End If
+
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    If CInt(resp.StatusCode) = 304 Then Return PdfDownloadResult.NotModified()
+                    If CInt(resp.StatusCode) = 404 Then Return PdfDownloadResult.NotFound()
+                    If Not resp.IsSuccessStatusCode Then
+                        Dim errText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                        Throw BuildApiException(errText, actiune, CInt(resp.StatusCode))
+                    End If
+
+                    Dim octeti As Byte() = Await resp.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(False)
+
+                    ' Regula bit-cu-bit 2, sensul DESCARCARE: recalculam suma peste octetii CHIAR
+                    ' PRIMITI si o comparam cu ETag-ul. La nepotrivire NU intoarcem nimic — un PDF
+                    ' semnat corupt scris in cache ar arata ca un document valid.
+                    Dim etag As String = If(resp.Headers.ETag Is Nothing, String.Empty,
+                                            resp.Headers.ETag.Tag.Trim(""""c))
+                    Dim shaLocal As String = PdfHash.Compute(octeti)
+                    If Not PdfHash.AreEqual(etag, shaLocal) Then
+                        Throw New ApiException(
+                            "Documentul a sosit corupt: suma de control nu corespunde. Încercați din nou.",
+                            CInt(resp.StatusCode), "SHA_MISMATCH")
+                    End If
+
+                    Return PdfDownloadResult.FromContent(octeti, shaLocal)
+                End Using
+            End Using
+        Catch ex As ApiException
+            ' HTTP tipat, tratat de apelant (401 -> WithReauth) — nu logăm.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write(sink, ex)
+            Throw
+        End Try
+    End Function
+
+    ' Incarcarea, o singura data pentru amandoua familiile.
+    '
+    ' Corp = `ByteArrayContent` cu `application/octet-stream` — niciodata JSON, niciodata base64.
+    ' Suma se calculeaza AICI (o singura implementare, `PdfHash`), deci apelantul nu o poate
+    ' gresi. Numele fisierului NU se trimite: il deriva serverul, sursa unica.
+    ' 409 / 400 / 404 ies ca `ApiException` cu mesajul romanesc al serverului, prin acelasi
+    ' parser `ApiErrorBody` ca restul apelurilor.
+    Private Async Function UploadPdfAsync(url As String, continut As Byte(), shaPrecedent As String,
+                                          actiune As String, sink As String, ct As CancellationToken) _
+        As Task(Of PutPdfResponse)
+        Try
+            EnsureConfigured()
+            If continut Is Nothing OrElse continut.Length = 0 Then
+                Throw New ArgumentException("Conținut PDF gol.", NameOf(continut))
+            End If
+
+            Dim sha As String = PdfHash.Compute(continut)
+            ' Gol = «cred ca nu exista rand». Explicit, nu tacut: serverul cere antetul.
+            Dim precedent As String = If(String.IsNullOrWhiteSpace(shaPrecedent), ShaFaraRand, shaPrecedent.Trim())
+
+            Using msg As New HttpRequestMessage(HttpMethod.Put, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Headers.TryAddWithoutValidation(H_SHA, sha)
+                msg.Headers.TryAddWithoutValidation(H_SHA_PREC, precedent)
+                Dim body As New ByteArrayContent(continut)
+                body.Headers.ContentType = New Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream")
+                msg.Content = body
+
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, actiune, CInt(resp.StatusCode))
+                    End If
+                    Dim payload As PutPdfResponse = JsonSerializer.Deserialize(Of PutPdfResponse)(respText, _json)
+                    If payload Is Nothing Then
+                        Throw New ApiException("Serverul a confirmat salvarea, dar fără detalii.",
+                                               CInt(resp.StatusCode))
+                    End If
+                    Return payload
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write(sink, ex)
             Throw
         End Try
     End Function

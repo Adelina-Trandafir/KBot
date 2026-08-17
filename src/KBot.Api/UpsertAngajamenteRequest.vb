@@ -273,6 +273,12 @@ Public NotInheritable Class GetDdfRevizieRow
     Public Property preluat As Boolean
     Public Property semnatura As String
     Public Property total_revizie As Double
+    ' Slice 0041 — the SIGNED PDF held on the server (FX_DDF_PDF). Non-null pdf_sha256 MEANS
+    ' "a signed PDF exists"; it doubles as the local cache validator (If-None-Match on the
+    ' bytes route). All three are null when there is no row.
+    Public Property pdf_sha256 As String
+    Public Property pdf_dimensiune As Integer?
+    Public Property pdf_data_modif As Date?
 End Class
 
 ' One FX_DDF_REV_SA record. parametrii_fund/ss are carried but not displayed (decision 4) —
@@ -391,6 +397,11 @@ Public NotInheritable Class GetOrdHeaderRow
     Public Property nume_partener As String
     Public Property incarcat As Boolean
     Public Property preluat As Boolean
+    ' Slice 0041 — the SIGNED PDF held on the server (FX_ORD_PDF). Distinct from `pdf` above,
+    ' which is the legacy Access CalePDF string. Null when there is no row.
+    Public Property pdf_sha256 As String
+    Public Property pdf_dimensiune As Integer?
+    Public Property pdf_data_modif As Date?
 End Class
 
 ' One FX_ORD_TBL record. The list stays FLAT (the server does not group), but every line

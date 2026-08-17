@@ -101,6 +101,13 @@ Public Class DdfView
     Private _nodeIsRoot As Boolean
     ' Revizia frunzei selectate acum — ținta generării (felia 05) și sursa căii PDF.
     Private _selectedRevizie As RevizieRow
+    ' Calea REZOLVATĂ a documentului nodului curent (felia 0041): fie fișierul semnat adus în
+    ' cache de pe server, fie cel NESEMNAT regenerat în zona de lucru. Gol până când una din
+    ' cele două se întâmplă — de aceea nu se mai compune calea direct în BuildCurrentContext.
+    Private _pdfPathRezolvat As String
+    ' Revizia pentru care s-a rezolvat calea de mai sus — stale-guard: un răspuns care sosește
+    ' după ce operatorul a dat click pe alt nod se aruncă, exact ca stale-guard-ul pe _requestedCod.
+    Private _pdfRezolvatPentruIdrev As Integer
     ' Fișierul ales din lista paginii «Fișiere», care ÎNLOCUIEȘTE calea calculată din revizie
     ' până la următorul click în arbore. Fără el, alegerea unui fișier n-ar avea cum să ajungă la
     ' pagina «Document»: contextul se compune din revizia selectată, nu din listă.
@@ -220,11 +227,22 @@ Public Class DdfView
         Try
             If String.IsNullOrWhiteSpace(_requestedCod) OrElse _revizii Is Nothing Then Return Nothing
 
+            ' FELIA 0041 — de unde vine calea, în ordinea de precedență:
+            '   1. fișierul ales explicit din lista paginii «Fișiere» (are întâietate mereu);
+            '   2. calea REZOLVATĂ de EnsureSignedPdfAsync pentru revizia selectată — fie
+            '      cache-ul semnat validat prin sumă, fie documentul regenerat în zona de lucru;
+            '   3. calea AȘTEPTATĂ a cache-ului semnat, cât timp rezolvarea încă nu s-a întors:
+            '      dacă fișierul e deja acolo, se arată imediat, fără să pâlpâie ecranul gol.
             Dim pdfPath As String = Nothing
             If Not String.IsNullOrEmpty(_pdfPathOverride) Then
                 pdfPath = _pdfPathOverride
             ElseIf Not _nodeIsRoot AndAlso _selectedRevizie IsNot Nothing AndAlso _antet IsNot Nothing Then
-                pdfPath = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, _selectedRevizie.NumarRev)
+                If Not String.IsNullOrEmpty(_pdfPathRezolvat) AndAlso
+                   _pdfRezolvatPentruIdrev = _selectedRevizie.Idrev Then
+                    pdfPath = _pdfPathRezolvat
+                Else
+                    pdfPath = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, _selectedRevizie.NumarRev)
+                End If
             End If
             Dim exists As Boolean = Not String.IsNullOrEmpty(pdfPath) AndAlso IO.File.Exists(pdfPath)
 
@@ -317,6 +335,8 @@ Public Class DdfView
             _nodeIsRoot = True
             _selectedRevizie = Nothing
             _pdfPathOverride = Nothing
+            _pdfPathRezolvat = Nothing
+            _pdfRezolvatPentruIdrev = 0
             PushToActivePage()
             ShowContent()
         Catch ex As ApiException
@@ -440,12 +460,66 @@ Public Class DdfView
             ' Revizia frunzei (Nothing pe o rădăcină) = ținta unei eventuale generări (felia 05)
             ' și sursa căii PDF calculate în BuildCurrentContext.
             _selectedRevizie = payload.Revizie
-            ' O selecție nouă în arbore ANULEAZĂ fișierul ales din lista paginii «Fișiere».
+            ' O selecție nouă în arbore ANULEAZĂ fișierul ales din lista paginii «Fișiere» ȘI
+            ' calea rezolvată pentru nodul anterior.
             _pdfPathOverride = Nothing
+            _pdfPathRezolvat = Nothing
+            _pdfRezolvatPentruIdrev = 0
 
             PushToActivePage()
+            ' Felia 0041: pe o frunză, aducem documentul SEMNAT de pe server (sau confirmăm că
+            ' cel din cache e la zi) și abia apoi re-împingem contextul. Fire-and-forget
+            ' deliberat, ca LoadAsync: metoda își tratează singură toate erorile.
+            EnsureSignedPdfAsync(_selectedRevizie)
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.Tree_NodeMouseUp", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Aduce la zi cache-ul PDF-ului SEMNAT al reviziei selectate (felia 0041) și re-împinge
+    ''' contextul.
+    '''
+    ''' O revizie fără <c>PdfSha256</c> nu are PDF semnat pe server: nu se face niciun apel, iar
+    ''' documentul rămâne pe drumul lui obișnuit — se REGENEREAZĂ la cererea operatorului, în
+    ''' zona de lucru (<c>TempPdf\</c>). Când există, cache-ul se validează prin sumă și se
+    ''' descarcă doar la nepotrivire (vezi <see cref="PdfCache"/>).
+    '''
+    ''' Boundary UI async: loghează și înghite — nu există await care să prindă.
+    ''' </summary>
+    Private Async Sub EnsureSignedPdfAsync(revizie As RevizieRow)
+        Try
+            If revizie Is Nothing OrElse _antet Is Nothing Then Return
+            If Not revizie.ArePdfSemnat Then Return
+
+            Dim cachePath As String =
+                DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, revizie.NumarRev)
+            If String.IsNullOrEmpty(cachePath) Then Return
+
+            Dim idrev As Integer = revizie.Idrev
+            Dim rezultat As PdfCacheResult = Await PdfCache.EnsureAsync(
+                cachePath, revizie.PdfSha256,
+                Function(shaLocal) _apiClient.DownloadDdfPdfAsync(idrev, shaLocal, CancellationToken.None)).ConfigureAwait(True)
+
+            ' Stale-guard: între timp operatorul a dat click pe alt nod. Aruncăm răspunsul —
+            ' altfel am arăta documentul nodului precedent peste selecția curentă.
+            If _selectedRevizie Is Nothing OrElse _selectedRevizie.Idrev <> idrev Then Return
+
+            Select Case rezultat.Status
+                Case PdfCacheStatus.Gata
+                    _pdfPathRezolvat = rezultat.Cale
+                    _pdfRezolvatPentruIdrev = idrev
+                    PushToActivePage()
+                Case PdfCacheStatus.Eroare
+                    ' Documentul semnat nu s-a putut aduce. Nu inventăm o cădere pe regenerare:
+                    ' operatorul trebuie să știe că EXISTĂ un document semnat pe care nu-l vedem.
+                    ShowEmpty(rezultat.Mesaj)
+                Case Else
+                    ' Nesemnat (cursă: rândul a dispărut) — rămâne calea așteptată, iar pagina
+                    ' «Document» arată suprafața „document lipsă" cu butonul de generare.
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.EnsureSignedPdfAsync", ex)
         End Try
     End Sub
 
@@ -527,10 +601,16 @@ Public Class DdfView
                 Dim ctx As DdfXmlBuilder.Context = DdfXmlBuilder.Context.FromSession(_session)
                 Dim xml As String = DdfXmlBuilder.BuildComplete(ctx, _antet, revizie, liniiRev, sbRev, attRev)
 
-                ' 4. Calea PDF (§2.5) + siblingul .xml, sub folderul partener/GENERAL (creat la nevoie).
-                Dim pdfPath As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, revizie.NumarRev)
-                If String.IsNullOrEmpty(pdfPath) Then Return
-                IO.Directory.CreateDirectory(IO.Path.GetDirectoryName(pdfPath))
+                ' 4. FELIA 0041 — documentul generat aici este NESEMNAT, deci un artefact DERIVAT:
+                ' merge în zona de lucru (`<AppDir>\TempPdf\`, golită la fiecare pornire), NU în
+                ' cache-ul persistent al PDF-urilor semnate și NU pe server. Numele fișierului
+                ' rămâne cel din convenție — se schimbă doar folderul, iar zona e plată (fără
+                ' subfolder de partener: se golește oricum). Siblingul .xml stă lângă el.
+                Dim numeFisier As String = IO.Path.GetFileName(
+                    DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, revizie.NumarRev))
+                If String.IsNullOrEmpty(numeFisier) Then Return
+                TempPdfStore.EnsureRoot()
+                Dim pdfPath As String = TempPdfStore.PathFor(numeFisier)
                 Dim xmlPath As String = IO.Path.ChangeExtension(pdfPath, ".xml")
                 IO.File.WriteAllText(xmlPath, xml, New Text.UTF8Encoding(False))
 
@@ -539,12 +619,14 @@ Public Class DdfView
                 ' NU adăugăm un al doilea strat de catch în jur — îl lăsăm să urce în catch-ul de aici.
                 Await Task.Run(Sub() KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "DDF", deschidePdf:=False)).ConfigureAwait(True)
 
-                ' 6. Fără scriere înapoi în bază (§2.4 — cele patru coloane nu există). Existența
-                ' se decide prin scanare de disc: reconstruim contextul (PdfExists tocmai a trecut
-                ' din False în True) și îl re-împingem paginii active, care se re-randează pe calea
-                ' ei normală. Nicio pagină n-are metodă de „reîmprospătare" — SetContext e singura.
-                ' Garda paginii «Document» e pe perechea (cale, existență) tocmai ca acest salt să
-                ' forțeze re-încorporarea deși calea a rămas aceeași.
+                ' 6. Fără scriere înapoi în bază și FĂRĂ încărcare pe server: documentul e
+                ' nesemnat, iar felia 0041 stochează DOAR semnate (încărcarea vine cu felia de
+                ' semnare, 0021). Existența se decide prin probă pe disc: reconstruim contextul
+                ' (PdfExists tocmai a trecut din False în True) și îl re-împingem paginii active,
+                ' care se re-randează pe calea ei normală. Nicio pagină n-are metodă de
+                ' „reîmprospătare" — SetContext e singura. Garda paginii «Document» e pe perechea
+                ' (cale, existență) tocmai ca acest salt să forțeze re-încorporarea deși calea a
+                ' rămas aceeași.
                 _pdfPathOverride = pdfPath
                 PushToActivePage()
             Finally
@@ -565,6 +647,8 @@ Public Class DdfView
         _nodeIsRoot = False
         _selectedRevizie = Nothing
         _pdfPathOverride = Nothing
+        _pdfPathRezolvat = Nothing
+        _pdfRezolvatPentruIdrev = 0
         tree.Clear()
         ' Contextul devine Nothing -> pagina activă își arată starea goală.
         PushToActivePage()

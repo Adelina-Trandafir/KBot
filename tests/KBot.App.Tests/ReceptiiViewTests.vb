@@ -94,6 +94,32 @@ Public Class ReceptiiViewTests
             Throw New NotSupportedException()
         End Function
 
+        ' Felia 0041: rutele de PDF semnat nu sunt exercitate de acest dublu — contractul cere
+        ' metodele, deci le refuzăm zgomotos, ca pe celelalte neatinse.
+        Public Function DownloadDdfPdfAsync(idrev As Integer, cachedSha As String,
+                                            ct As CancellationToken) As Task(Of PdfDownloadResult) _
+            Implements IApiClient.DownloadDdfPdfAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function DownloadOrdPdfAsync(idordp As Integer, cachedSha As String,
+                                            ct As CancellationToken) As Task(Of PdfDownloadResult) _
+            Implements IApiClient.DownloadOrdPdfAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function UploadDdfPdfAsync(idrev As Integer, continut As Byte(), shaPrecedent As String,
+                                          ct As CancellationToken) As Task(Of PutPdfResponse) _
+            Implements IApiClient.UploadDdfPdfAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function UploadOrdPdfAsync(idordp As Integer, continut As Byte(), shaPrecedent As String,
+                                          ct As CancellationToken) As Task(Of PutPdfResponse) _
+            Implements IApiClient.UploadOrdPdfAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public Function ProcessExcelAsync(job As ExcelJob, ct As CancellationToken) As Task(Of String) _
             Implements IApiClient.ProcessExcelAsync
             Throw New NotSupportedException()
