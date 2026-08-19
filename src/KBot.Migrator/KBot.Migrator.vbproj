@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>KBot.Migrator</RootNamespace>
+    <AssemblyName>KBot.Migrator</AssemblyName>
+    <UseWindowsForms>true</UseWindowsForms>
+    <MyType>WindowsFormsWithCustomSubMain</MyType>
+    <StartupObject>KBot.Migrator.Program</StartupObject>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <OptionCompare>Binary</OptionCompare>
+  </PropertyGroup>
+
+  <!-- Versiune componentă K-BOT.
+       FileVersion: incrementează MANUAL, doar când SE SCHIMBĂ acest proiect. Stă la baza
+       comparației din manifestul de update.
+       AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
+       rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Import Include="System.Drawing" />
+    <Import Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <!-- NICIO referință la Access: fără OleDb, fără ACE, fără COM. Utilitarul citește
+       fișierele JSON scrise de mdl_FX_ExportSeed și vorbește HTTP. Asta e chiar motivul
+       pentru care exportul e un modul VBA separat.
+
+       KBot.Api intră DOAR pentru ApiOptions.DefaultBaseUrl — adresa serverului are un
+       singur loc unde e scrisă, iar acela e ApiOptions. NU se folosește ApiClient:
+       rutele de seed sunt păzite cu X-Api-Key (flota FOREXE veche), nu cu tokenul bearer.
+
+       KBot.Theming aduce motorul de teme + KBotThemedForm. KBot.Forexe (unde stă facada
+       KBotTheme) e evitat intenționat: ar târî Playwright într-un utilitar care nu
+       deschide niciun browser. -->
+  <ItemGroup>
+    <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
+    <ProjectReference Include="..\KBot.Theming\KBot.Theming.vbproj" />
+    <ProjectReference Include="..\KBot.Api\KBot.Api.vbproj" />
+  </ItemGroup>
+
+</Project>
