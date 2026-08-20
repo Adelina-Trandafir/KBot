@@ -43,7 +43,7 @@ from config import DB_CONFIG
 from .schema_common import (CONTROL_DB, SchemaSyncError, check_prerequisites,
                             connect, discover_targets, ensure_control_table,
                             fetch_pending, parse_targets, setup_logging,
-                            summarise)
+                            summarise, verify_targets)
 
 
 # ---------------------------------------------------------------------
@@ -294,8 +294,8 @@ def main(argv=None) -> int:
         conn = connect()
         ensure_control_table(conn, logger)
         check_prerequisites(conn, logger)
-        targets = (parse_targets(args.targets) if args.targets
-                   else discover_targets(conn, logger))
+        targets = (verify_targets(conn, parse_targets(args.targets), logger)
+                   if args.targets else discover_targets(conn, logger))
 
         rows = fetch_pending(conn, targets)
         if not rows:

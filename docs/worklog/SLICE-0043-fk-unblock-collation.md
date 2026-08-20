@@ -142,3 +142,97 @@ ALTER TABLE `000_demo`.`fx_modif` ADD CONSTRAINT `fk_modif_parent`
   comparația exactă ar fi mers, iar fragilitatea ar fi rămas ascunsă.
 - Nu s-a rulat pe baza de producție și nu s-au adăugat teste automate (nu au
   fost cerute).
+
+
+---
+
+# Pasul 0043-01 — o singură bază + integritatea legăturilor încrucișate
+
+**Data:** 2026-08-20 (aceeași zi, cerut de operator după verificarea de mai sus)
+
+## 1. Sincronizarea unei singure baze
+
+`--targets` făcea deja exact asta — `--targets 000_DEMO` lucrează numai pe acea
+bază și sare peste tot ce e în `CAI`. Verificat, merge.
+
+Ce **nu** mergea era greșeala de tastare. `--targets 000_DEMOO` producea:
+
+```
+WARNING - Baza `000_demoo` nu există — ignorată.
+INFO    - Schemele sunt deja sincronizate. Nimic de făcut.
+(cod de ieșire 0)
+```
+
+Adică fix ce se vede după o rulare curată pe baza corectă. Nou:
+`verify_targets()` — o bază **indicată explicit** care nu există oprește
+rularea cu un mesaj și cod 1. O bază trecută în `CAI` dar absentă rămâne
+doar avertisment: registrul are voie să fie înaintea realității, un nume
+tastat de mână nu.
+
+## 2. Legăturile spre `AVACONT_COMUN`
+
+Întrebarea operatorului: cheile spre baza externă sunt corecte, sau rămân
+date inconsistente?
+
+Structural erau corecte deja (referința spre `AVACONT_SURSA` se rescrie, cea
+spre `AVACONT_COMUN` se lasă). Ce lipsea era verificarea **datelor**. O cheie
+creată peste rânduri fără părinte eșuează cu 1452 în mijlocul lotului — și
+dacă acea cheie fusese ștearsă de pasul de deblocare, rularea se termina cu
+cheia **pierdută**, deci cu baza mai puțin consistentă decât la început.
+
+Nou: `_validate_foreign_keys()`, singurul loc din diff care se uită la
+rânduri, nu la structură. Pentru fiecare cheie care urmează să fie creată:
+
+1. există tabelul/coloana referită? (pentru `AVACONT_COMUN` se spune explicit
+   că nu se poate repara de aici);
+2. se potrivesc seturile de caractere — comparate cu forma **finală**, nu cu
+   cea curentă. În interiorul țintei coloana referită se repară la pasul 8,
+   înainte ca cheia să fie refăcută la 11; pentru `AVACONT_COMUN`, starea de
+   acum este starea finală. **Prima variantă a comparat greșit** (planificat
+   vs. curent) și a marcat drept imposibile trei chei perfect sănătoase —
+   prins la rulare, nu la citire;
+3. se potrivesc datele? `LEFT JOIN` + `COUNT`, plus trei valori vinovate în
+   mesaj.
+
+Ce nu trece primește `error_msg` și nu se execută (`fetch_pending` sare
+rândurile cu eroare). Iar dacă cheia **există deja** în țintă, refuzul se
+extinde peste tot grupul — ștergerea, schimbarea de charset de pe ambele
+capete și recrearea stau pe loc împreună, altfel cheia s-ar pierde.
+
+## 3. Rulări (măsurate)
+
+Bază de test extinsă cu: o cheie încrucișată nouă spre `AVACONT_COMUN` peste
+rânduri orfane; o cheie existentă peste date strecurate cu
+`FOREIGN_KEY_CHECKS=0`, sub o coloană care avea și nevoie de reparație de
+charset.
+
+| Rulare | Rezultat |
+|---|---|
+| `--targets 000_demoo` (tastare greșită) | oprit, cod 1, «Baze inexistente pe server» |
+| `--run --mode FORCE --targets 000_demo`, date murdare | 11 instrucțiuni: **11 reușite, 0 eșuate**; 5 rânduri amânate cu explicație |
+| starea după | `fk_pl_cod` **încă există**, coloanele ei încă `utf8` — cheia nu s-a pierdut; `fk_ist_tip` necreată |
+| după curățarea datelor, `--run --mode FORCE` | 5 instrucțiuni: **5 reușite, 0 eșuate** |
+| `--view` SAFE și FORCE, după | `000_demo: 0 instrucțiuni` — convergent |
+| chei la final | toate 5, cele încrucișate spre `avacont_comun`, cele proprii spre `000_demo` |
+
+Diacriticele au rămas intacte pe tot parcursul.
+
+Mesajul care contează, așa cum îl vede operatorul:
+
+```
+Cheia `fk_ist_tip` nu poate fi creată: 3 rânduri din `000_demo`.`fx_istoric`
+au în `TipRand` valori care nu există în `avacont_comun`.`defatiprand`
+(de exemplu «X», «Z»). Datele trebuie corectate întâi.
+```
+
+## 4. Ce am aflat, și ce rămâne
+
+- Cazul «charset ireconciliabil spre `AVACONT_COMUN`» **nu se poate construi**:
+  cheia n-ar fi putut fi creată nici în sursă, tot din regula colaționării.
+  Verificarea rămâne, dar e defensivă — poate ieși la iveală doar dacă
+  `AVACONT_COMUN` e schimbată după ce cheile există.
+- Verificarea costă un `COUNT(*)` per cheie de creat. Pe baze mari, pe coloane
+  fără index, poate fi simțită. Nu s-a măsurat pe volum real.
+- Rândurile amânate rămân în `schema_diff_log` cu `error_msg` și sunt
+  regenerate la rularea următoare (`clear_pending` le șterge pe cele
+  neexecutate). Nu se pierd, dar nici nu se reîncearcă singure.

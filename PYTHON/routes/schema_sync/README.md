@@ -145,6 +145,28 @@ peste coloane cu seturi de caractere diferite eșuează cu eroarea 3780.
 
 ---
 
+## O singură bază, pentru probe
+
+`--targets` primește numele bazei și lucrează **numai** pe ea, sărind peste
+tot ce e trecut în `CAI`:
+
+```
+python -m routes.schema_sync.schema_sync --view --targets 000_DEMO
+python -m routes.schema_sync.schema_sync --run --mode FORCE --targets 000_DEMO --allow-destructive
+```
+
+Mai multe baze se despart prin virgulă: `--targets 000_DEMO,018_GRRS`.
+Opțiunea merge la fel și cu `schema_generate`, și cu `schema_execute`.
+
+**Un nume greșit oprește rularea, nu o continuă.** O bază trecută în `CAI`
+dar absentă de pe server este doar ignorată, cu avertisment — registrul are
+voie să fie înaintea realității. Un nume **tastat de mână** e altceva: fără
+verificarea asta, `--targets 000_DEMOO` scria un avertisment, apoi
+«Schemele sunt deja sincronizate», apoi ieșea cu codul 0 — adică exact ce
+se vede după o rulare curată pe baza corectă.
+
+---
+
 ## SAFE și FORCE
 
 **SAFE** — adaugă și repară, dar nu strică nimic din ce nu trebuie:
@@ -158,6 +180,76 @@ Repararea charset-ului rulează **în ambele moduri**. Nu e o preferință, e
 o corecție: lăsată nefăcută, blochează crearea cheilor mai târziu.
 Excepție: dacă aceeași coloană diferă *și* la tip, în SAFE nu se atinge
 deloc — vezi «O limită care rămâne», mai sus.
+
+---
+
+## Legăturile spre alte baze (`AVACONT_COMUN`)
+
+O cheie străină care arată spre `AVACONT_SURSA` înseamnă «schema proprie» și
+este **rescrisă** spre baza țintă. Una care arată spre `AVACONT_COMUN` este
+lăsată așa cum e: aceea chiar este o legătură între baze, intenționat.
+
+`AVACONT_COMUN` **nu este niciodată sincronizată** de acest program. Deci tot
+ce ține de ea — tabelele-părinte și coloanele lor — trebuie să fie deja
+corect înainte de rulare.
+
+### Ce se verifică înainte de a crea o cheie
+
+Înainte ca vreo instrucțiune să ajungă pe server, fiecare cheie care urmează
+să fie creată este trecută prin trei verificări:
+
+1. **există tabelul și coloana spre care arată?** Dacă lipsesc în
+   `AVACONT_COMUN`, se spune limpede că acolo nu se poate repara de aici;
+2. **se potrivesc seturile de caractere?** Comparația se face cu forma pe
+   care coloanele o vor **avea la sfârșit**, nu cu cea de acum: în interiorul
+   țintei, coloana referită este reparată la pasul 8, adică înainte ca cheia
+   să fie refăcută la pasul 11. Pentru `AVACONT_COMUN`, starea de acum **este**
+   starea finală, fiindcă nimic nu o schimbă;
+3. **se potrivesc datele?** Se numără rândurile din țintă a căror valoare nu
+   există în tabelul-părinte. Acestea sunt rândurile care ar face
+   `ADD CONSTRAINT` să eșueze cu eroarea 1452.
+
+Ce nu trece este scris în `schema_diff_log` cu un mesaj în `error_msg` și
+**nu se execută** — rândurile cu eroare sunt sărite. Mesajul numește și
+câteva dintre valorile vinovate:
+
+```
+Cheia `fk_ist_tip` nu poate fi creată: 3 rânduri din `000_DEMO`.`FX_Istoric`
+au în `TipRand` valori care nu există în `AVACONT_COMUN`.`DefaTipRand`
+(de exemplu «X», «Z»). Datele trebuie corectate întâi.
+```
+
+### De ce se amână și ștergerea, nu doar crearea
+
+Dacă o cheie **există deja** în țintă și urma să fie desfăcută doar ca să se
+poată schimba setul de caractere de sub ea, atunci refuzul de a o recrea nu
+poate fi luat singur. Ștergerea ar rămâne, cheia s-ar pierde definitiv, iar
+programul ar lăsa baza mai puțin consistentă decât a găsit-o.
+
+De aceea, într-un asemenea caz **stau pe loc toate**: ștergerea cheii,
+schimbarea de charset de pe ambele capete și recrearea. Se scrie:
+
+```
+Amânat: cheia `fk_pl_cod` de pe `FX_PlatiLinii` nu se poate reface (...),
+deci nu se șterge și nu se schimbă setul de caractere sub ea — altfel cheia
+s-ar pierde definitiv.
+```
+
+Restul lotului merge mai departe. După ce datele sunt corectate, o rulare
+nouă face ce a rămas.
+
+Situația asta apare doar dacă cineva a încărcat date cu
+`FOREIGN_KEY_CHECKS=0`: cât timp cheia e activă, InnoDB nu lasă să intre
+rânduri fără părinte.
+
+### O limită de fond
+
+O coloană aflată sub o cheie spre `AVACONT_COMUN` **nu-și poate schimba
+setul de caractere singură.** MariaDB cere ca cele două capete ale unei chei
+să aibă aceeași colaționare, nu doar același charset (altfel 1005 / errno
+150), deci ori se mută amândouă, ori niciunul. Cum `AVACONT_COMUN` nu este
+sincronizată de aici, o astfel de diferență se raportează, dar nu se repară
+— se corectează în `AVACONT_COMUN`, separat.
 
 ---
 
@@ -235,7 +327,7 @@ schema_sync --drop-legacy --view
 | `--view` | doar afișează; nu execută |
 | `--run` | execută fără a întreba |
 | `--mode SAFE\|FORCE` | implicit `SAFE` |
-| `--targets 000_DEMO,018_GRRS` | doar aceste baze, în loc de tot ce e în `CAI` |
+| `--targets 000_DEMO,018_GRRS` | doar aceste baze, în loc de tot ce e în `CAI`; un nume inexistent oprește rularea |
 | `--out fisier.sql` | unde se scrie SQL-ul generat |
 | `--allow-destructive` | permite operațiile distructive |
 | `--backup-dir CALE` | unde se scriu copiile; implicit `backup` |

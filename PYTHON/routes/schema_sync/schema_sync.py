@@ -33,7 +33,7 @@ import mysql.connector
 from .schema_common import (SchemaSyncError, check_prerequisites, connect,
                             discover_targets, drop_legacy_procedures,
                             ensure_control_table, parse_targets, setup_logging,
-                            summarise)
+                            summarise, verify_targets)
 from .schema_execute import (confirm_destructive, execute_rows,
                              refuse_destructive, render_sql, report,
                              take_backups)
@@ -88,8 +88,8 @@ def main(argv=None) -> int:
         if args.drop_legacy:
             drop_legacy_procedures(conn, logger)
 
-        targets = (parse_targets(args.targets) if args.targets
-                   else discover_targets(conn, logger))
+        targets = (verify_targets(conn, parse_targets(args.targets), logger)
+                   if args.targets else discover_targets(conn, logger))
 
         rows = generate(conn, targets, args.mode, logger,
                         reset=not args.no_reset)

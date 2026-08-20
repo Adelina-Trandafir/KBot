@@ -317,6 +317,29 @@ def parse_targets(spec: str) -> list:
     return targets
 
 
+def verify_targets(conn, targets: list, logger) -> list:
+    """Check that every EXPLICITLY named target exists. Raises if not.
+
+    Discovery warns about a database listed in CAI but absent from the
+    server and moves on -- the registry is allowed to run ahead of
+    reality. A name typed by hand is different: a typo would otherwise
+    produce a warning, "Schemele sunt deja sincronizate" and exit code
+    0, which reads exactly like a clean run against the right database.
+    """
+    existing = {r["SCHEMA_NAME"].lower() for r in query(
+        conn, "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA")}
+
+    missing = [t for t in targets if t.lower() not in existing]
+    if missing:
+        raise SchemaSyncError(
+            f"Baze inexistente pe server: {', '.join(missing)}.\n"
+            f"  Verificați numele. Nu s-a generat și nu s-a executat nimic.")
+
+    logger.info("Ținte (indicate explicit): %d — %s",
+                len(targets), ", ".join(targets))
+    return targets
+
+
 # ---------------------------------------------------------------------
 # Reading pending work
 # ---------------------------------------------------------------------

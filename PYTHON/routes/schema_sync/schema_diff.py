@@ -24,7 +24,7 @@ leaving a mismatch in place makes later key creation fail.
 
 from dataclasses import dataclass
 
-from .schema_common import SOURCE_DB, priority_of
+from .schema_common import SOURCE_DB, priority_of, query
 from .schema_introspect import read_schema
 
 # Rules that never route through the diff.
@@ -203,10 +203,13 @@ def is_narrowing(src, tgt) -> bool:
 class SchemaDiff:
     """Compares one target against the source and produces Statements."""
 
-    def __init__(self, source, target, target_db, mode, logger):
+    def __init__(self, source, target, target_db, mode, logger, conn=None):
         self.src = source
         self.tgt = target
         self.db = target_db
+        # Only needed by the referential-integrity check below, which is
+        # the one part of the diff that has to look at DATA, not schema.
+        self.conn = conn
         self.force = (mode.upper() == "FORCE")
         self.mode = mode.upper()
         self.log = logger
@@ -221,6 +224,8 @@ class SchemaDiff:
         # below does not emit a second DROP or a second ADD.
         self._fk_dropped = set()
         self._fk_created = set()
+        # (table, fk_name) -> the definition each ADD CONSTRAINT will use.
+        self._fk_defs = {}
 
     # -- helper ------------------------------------------------------
     def _emit(self, table, obj_name, obj_type, action, sql,
@@ -245,6 +250,7 @@ class SchemaDiff:
             self._indexes(src_tbl, tgt_tbl)
             self._foreign_keys(src_tbl, tgt_tbl)
         self._unblock_collation()
+        self._validate_foreign_keys()
         return self.statements
 
     # -- 1 / 2: tables -----------------------------------------------
@@ -293,14 +299,23 @@ class SchemaDiff:
                 + f"\n) ENGINE={engine} DEFAULT CHARSET={charset} "
                   f"COLLATE={collation} ROW_FORMAT={row_format};")
 
+    def _ref_schema(self, fk) -> str:
+        """Where the key actually points once written into this target.
+
+        A reference into the source schema means "this unit's own
+        schema" -- rewritten. A reference elsewhere (AVACONT_COMUN) is
+        left alone: that IS a cross-database link, on purpose.
+        """
+        return (self.db if same_schema(fk.ref_schema, SOURCE_DB)
+                else fk.ref_schema)
+
     def _fk_clause(self, fk) -> str:
         cols = ", ".join(q(c) for c in fk.columns)
         ref_cols = ", ".join(q(c) for c in fk.ref_columns)
         # A reference into the source schema means "this unit's own
         # schema" -- rewrite it. A reference elsewhere (AVACONT_COMUN)
         # is left alone.
-        ref_schema = (self.db if same_schema(fk.ref_schema, SOURCE_DB)
-                      else fk.ref_schema)
+        ref_schema = self._ref_schema(fk)
         return (f"CONSTRAINT {q(fk.name)} FOREIGN KEY ({cols}) "
                 f"REFERENCES {q(ref_schema)}.{q(fk.ref_table)} ({ref_cols}) "
                 f"ON DELETE {fk.delete_rule} ON UPDATE {fk.update_rule}")
@@ -508,6 +523,7 @@ class SchemaDiff:
         if (table_name, fk_name) in self._fk_created:
             return
         self._fk_created.add((table_name, fk_name))
+        self._fk_defs[(table_name, fk_name)] = fk
         self._emit(table_name, fk_name, "FK", "CREATE",
                    f"ALTER TABLE {self._t(table_name)} "
                    f"ADD {self._fk_clause(fk)};")
@@ -556,6 +572,168 @@ class SchemaDiff:
                 # Rebuilt from the SOURCE definition, so the key comes
                 # back in its intended shape.
                 self._create_fk(fk.table, name, src_fk)
+
+    # -- referential integrity of the keys about to be created -------
+    def _validate_foreign_keys(self):
+        """Refuse to build a key the DATA cannot support.
+
+        This is the one place the diff looks at rows instead of at
+        structure, and it exists because of what failure costs. An
+        ADD CONSTRAINT whose child rows have no parent fails with errno
+        1452 in the middle of the batch. When the key is one the
+        unblocking pass dropped in order to repair a collation, the run
+        would then end with that key GONE and no way back -- the tool
+        would have left the database less consistent than it found it.
+
+        So every planned key is checked first, against the schema it
+        will actually point at (AVACONT_COMUN stays AVACONT_COMUN; a
+        self-reference is rewritten to this target). What fails is
+        marked with an error and left pending: fetch_pending skips rows
+        carrying an error_msg, so nothing half-done reaches the server.
+        """
+        if self.conn is None:
+            return
+        for (table, name), fk in sorted(self._fk_defs.items()):
+            reason = self._fk_problem(table, fk)
+            if reason:
+                self._block_fk_group(table, name, fk, reason)
+
+    def _fk_problem(self, table, fk) -> str:
+        """Why this key cannot be created, or None when it can."""
+        ref_schema = self._ref_schema(fk)
+        external = not same_schema(ref_schema, self.db)
+
+        # 1. Where does the other end stand -- and WHEN?
+        #    Inside this target, the referenced column is being brought
+        #    to the source's shape by this very batch (priority 8, before
+        #    the key is rebuilt at 11), so the comparison has to be
+        #    against what it WILL be. An external schema is never
+        #    synchronised by this program, so there the live state is the
+        #    final state.
+        if external:
+            ref_col = self._referenced_column(ref_schema, fk.ref_table,
+                                              fk.ref_columns[0])
+            if ref_col is None:
+                return (f"tabelul referit `{ref_schema}`.`{fk.ref_table}` "
+                        f"sau coloana `{fk.ref_columns[0]}` nu există. "
+                        f"`{ref_schema}` nu este niciodată sincronizată de "
+                        f"acest program — trebuie corectată separat")
+            ref_charset, ref_collation = ref_col["cs"], ref_col["co"]
+        else:
+            planned = self._planned_column(fk.ref_table, fk.ref_columns[0])
+            if planned is None:
+                return (f"tabelul referit `{fk.ref_table}` nu există nici în "
+                        f"țintă, nici în sursă")
+            ref_charset, ref_collation = planned.charset, planned.collation
+
+        # 2. Would the charsets match? A key between columns with
+        #    different character sets is refused with errno 3780.
+        mine = self._planned_column(table, fk.columns[0])
+        if (mine is not None and mine.charset and ref_charset
+                and (mine.charset != ref_charset
+                     or mine.collation != ref_collation)):
+            extra = ""
+            if external:
+                extra = (f" `{ref_schema}` nu este sincronizată de acest "
+                         f"program, deci diferența nu se poate repara de aici")
+            return (f"`{fk.columns[0]}` ajunge {mine.charset} / "
+                    f"{mine.collation}, dar `{ref_schema}`.`{fk.ref_table}`."
+                    f"`{fk.ref_columns[0]}` este {ref_charset} / "
+                    f"{ref_collation} — cheia ar fi refuzată cu eroarea "
+                    f"3780.{extra}")
+
+        # 3. Do the rows agree? Only meaningful once both tables exist.
+        if (table not in self.tgt.tables
+                or (not external and fk.ref_table not in self.tgt.tables)):
+            return None
+        n, sample = self._orphan_rows(table, fk, ref_schema)
+        if n:
+            cols = ", ".join("`" + c + "`" for c in fk.columns)
+            shown = ""
+            if sample:
+                shown = " (de exemplu " + ", ".join(
+                    "«" + v + "»" for v in sample) + ")"
+            if n == 1:
+                head = (f"1 rând din `{self.db}`.`{table}` are în {cols} o "
+                        f"valoare care nu există în `{ref_schema}`.")
+            else:
+                head = (f"{n} rânduri din `{self.db}`.`{table}` au în {cols} "
+                        f"valori care nu există în `{ref_schema}`.")
+            return (head +
+                    f"`{fk.ref_table}`{shown}. Datele trebuie corectate întâi")
+        return None
+
+    def _referenced_column(self, schema, table, column) -> dict:
+        """charset / collation of a referenced column, or None if absent."""
+        rows = query(self.conn,
+                     "SELECT CHARACTER_SET_NAME cs, COLLATION_NAME co "
+                     "FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = %s "
+                     "AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+                     (schema, table, column))
+        return rows[0] if rows else None
+
+    def _planned_column(self, table, column):
+        """The column as it will BE after this run -- the source wins."""
+        src_tbl = self.src.tables.get(table)
+        if src_tbl is not None and column in src_tbl.columns:
+            return src_tbl.columns[column]
+        tgt_tbl = self.tgt.tables.get(table)
+        return tgt_tbl.columns.get(column) if tgt_tbl else None
+
+    def _orphan_rows(self, table, fk, ref_schema) -> tuple:
+        """(count, up to three offending values) for one planned key."""
+        on = " AND ".join(f"p.{q(rc)} = c.{q(c)}"
+                          for c, rc in zip(fk.columns, fk.ref_columns))
+        not_null = " AND ".join(f"c.{q(c)} IS NOT NULL" for c in fk.columns)
+        base = (f"FROM {q(self.db)}.{q(table)} c "
+                f"LEFT JOIN {q(ref_schema)}.{q(fk.ref_table)} p ON {on} "
+                f"WHERE {not_null} AND p.{q(fk.ref_columns[0])} IS NULL")
+        n = query(self.conn, f"SELECT COUNT(*) AS n {base}")[0]["n"]
+        if not n:
+            return 0, []
+        cols = ", ".join(f"c.{q(c)}" for c in fk.columns)
+        rows = query(self.conn, f"SELECT DISTINCT {cols} {base} LIMIT 3")
+        return n, ["/".join(str(v) for v in r.values()) for r in rows]
+
+    def _block_fk_group(self, table, name, fk, reason):
+        """Mark the key -- and anything that depended on it -- as blocked.
+
+        When the key already exists in the target it is only being
+        dropped so that a charset can change. Cancelling the ADD without
+        cancelling the DROP would destroy it, so the whole group stands
+        down together: the drop, the charset changes on both sides, and
+        the re-add.
+        """
+        message = f"Cheia `{name}` nu poate fi creată: {reason}."
+        self._mark(table, name, "FK", "CREATE", message)
+
+        # Not logged here: schema_generate reports every statement that
+        # carries an error_msg, so logging again would print the same
+        # sentence once per marked row.
+        existing = (table in self.tgt.tables
+                    and name in self.tgt.tables[table].foreign_keys)
+        if not existing:
+            return
+
+        held = (f"Amânat: cheia `{name}` de pe `{table}` nu se poate reface "
+                f"({reason}), deci nu se șterge și nu se schimbă setul de "
+                f"caractere sub ea — altfel cheia s-ar pierde definitiv.")
+        self._mark(table, name, "FK", "DROP", held)
+        for col in fk.columns:
+            self._mark(table, col, "COLLATION", "MODIFY", held)
+            self._mark(table, col, "COLUMN", "MODIFY", held)
+        if same_schema(self._ref_schema(fk), self.db):
+            for col in fk.ref_columns:
+                self._mark(fk.ref_table, col, "COLLATION", "MODIFY", held)
+                self._mark(fk.ref_table, col, "COLUMN", "MODIFY", held)
+
+    def _mark(self, table, obj_name, obj_type, action, message):
+        """Attach an error to a statement, so it is recorded but skipped."""
+        for st in self.statements:
+            if (st.table_name == table and st.object_name == obj_name
+                    and st.object_type == obj_type
+                    and st.action_type == action and not st.error_msg):
+                st.error_msg = message
 
     def _fk_blocks(self, fk) -> bool:
         """True when this FK touches a column whose charset is changing.
@@ -623,7 +801,7 @@ def build_diff(conn, targets, mode, logger) -> list:
         if not target.exists:
             logger.warning("Baza `%s` nu există — ignorată.", db)
             continue
-        produced = SchemaDiff(source, target, db, mode, logger).run()
+        produced = SchemaDiff(source, target, db, mode, logger, conn).run()
         logger.info("  %s: %d instrucțiuni.", db, len(produced))
         statements.extend(produced)
 

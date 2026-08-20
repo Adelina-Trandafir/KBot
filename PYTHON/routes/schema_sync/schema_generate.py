@@ -28,7 +28,7 @@ import mysql.connector
 from .schema_common import (CONTROL_DB, SchemaSyncError, check_prerequisites,
                             connect, discover_targets, ensure_control_table,
                             fetch_pending, parse_targets, setup_logging,
-                            summarise)
+                            summarise, verify_targets)
 from .schema_diff import build_diff
 
 
@@ -99,8 +99,8 @@ def main(argv=None) -> int:
     try:
         conn = connect()
         check_prerequisites(conn, logger)
-        targets = (parse_targets(args.targets) if args.targets
-                   else discover_targets(conn, logger))
+        targets = (verify_targets(conn, parse_targets(args.targets), logger)
+                   if args.targets else discover_targets(conn, logger))
 
         rows = generate(conn, targets, args.mode, logger,
                         reset=not args.no_reset)
