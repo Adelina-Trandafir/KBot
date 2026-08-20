@@ -55,13 +55,23 @@ folderul lor în `config.MDB_TOOLS_BIN`.
 ### 2. Folderele
 
 ```
-sudo mkdir -p /var/lib/kbot/pushed-accdb /var/lib/kbot/tmp-upload
-sudo chown -R <utilizatorul-gunicorn>:<grupul-lui> /var/lib/kbot
-sudo chmod 750 /var/lib/kbot/pushed-accdb /var/lib/kbot/tmp-upload
+mkdir -p /var/lib/kbot/pushed-accdb /var/lib/kbot/tmp-upload
+chmod 750 /var/lib/kbot/pushed-accdb /var/lib/kbot/tmp-upload
 ```
+
+Fără `chown`: pe serverul de acum `avacont.service` rulează **ca root**
+(`ps -o user= -C gunicorn` → `root`; unitatea nu are `User=`), deci folderele
+făcute tot de root sunt deja scriibile. Dacă serviciul ajunge vreodată să
+ruleze sub un cont propriu, atunci — și abia atunci — e nevoie de
+`chown -R <cont>:<grup> /var/lib/kbot`.
 
 `pushed-accdb` ține fișierele Access complete ale unităților. Nu e public și
 nu trebuie servit de nginx.
+
+> De semnalat, nu de rezolvat aici: fiindcă serviciul rulează ca root,
+> fișierele împinse — baze de unitate întregi — ajung deținute de root, iar
+> orice defect din calea de încărcare scrie cu drepturi de root. Nu blochează
+> migrarea; de reparat când se atinge următoarea dată definiția serviciului.
 
 ### 3. `config.py`
 
@@ -86,8 +96,12 @@ client_max_body_size 20m;
 
 ### 5. Repornire
 
+Unitatea de systemd se numește **`avacont.service`** («AVACONT Server Procesare
+PDF») — verificat pe serverul de acum, nu ghicit:
+
 ```
-sudo systemctl restart kbot-api      # sau cum se numește unitatea de gunicorn
+systemctl restart avacont
+systemctl status avacont --no-pager
 ```
 
 **Un singur worker Gunicorn** rămâne obligatoriu (decizie blocată, cu gardă
@@ -100,6 +114,14 @@ Pachetele Python folosite sunt cele care există deja
 (`flask`, `mysql-connector-python`). **`pyaccdb` nu există pe PyPI** —
 verificat pe index; planul care îl pomenea era scris fără acces la structura
 reală.
+
+**`mdbtools` NU se instalează în `.venv`.** Nu e un pachet Python, ci binare C;
+un mediu virtual izolează doar pachete Python și nu are cum să țină sau să
+rezolve executabile de sistem. `accdb.py` le pornește prin `subprocess`, care
+caută în `PATH`, nu în venv. (Există și un pachet `mdbtools` pe PyPI, dar e o
+învelitoare subțire peste aceleași binare: tot are nevoie de pachetul de
+sistem dedesubt, deci nu aduce nimic.) Alternativa la instalarea în `PATH` e
+compilarea într-un folder propriu și `config.MDB_TOOLS_BIN` către el.
 
 ---
 
