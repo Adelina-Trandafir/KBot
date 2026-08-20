@@ -209,6 +209,13 @@ să fie creată este trecută prin trei verificări:
    există în tabelul-părinte. Acestea sunt rândurile care ar face
    `ADD CONSTRAINT` să eșueze cu eroarea 1452.
 
+Verificarea datelor (3) se face **numai dacă toate coloanele implicate
+există deja**. O coloană pe care chiar acest lot urmează să o adauge (pasul
+7) nu poate fi numărată — întrebarea ar fi `Unknown column`, eroarea 1054.
+În cazul acela cheia se creează fără verificare prealabilă, iar dacă datele
+nu se potrivesc, eșecul apare la execuție, cu 1452, și este scris în
+`schema_diff_log`.
+
 Ce nu trece este scris în `schema_diff_log` cu un mesaj în `error_msg` și
 **nu se execută** — rândurile cu eroare sunt sărite. Mesajul numește și
 câteva dintre valorile vinovate:
@@ -420,6 +427,10 @@ ORDER BY priority, id;
 
 La o rulare nouă, rândurile neexecutate sunt șterse și regenerate, ca să
 nu se dubleze. `--no-reset` păstrează.
+
+Ștergerea se face **după** ce noua comparație s-a încheiat cu bine, nu
+înainte. Altfel, o comparație care crapă la jumătate lăsa tabelul gol: și
+planul vechi șters, și cel nou nescris.
 
 ---
 

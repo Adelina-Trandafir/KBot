@@ -72,10 +72,16 @@ def persist(conn, statements: list, mode: str, logger) -> None:
 def generate(conn, targets, mode, logger, reset=True) -> list:
     """Full generation pass. Returns the pending rows as stored."""
     ensure_control_table(conn, logger)
+
+    # The comparison runs BEFORE the old rows are cleared. Cleared first,
+    # a comparison that then fails half-way would leave the control table
+    # empty: the previous plan deleted, the new one never written, and
+    # nothing at all to look at afterwards. Computing first keeps the old
+    # rows until there is something to put in their place.
+    statements = build_diff(conn, targets, mode, logger)
+
     if reset:
         clear_pending(conn, logger)
-
-    statements = build_diff(conn, targets, mode, logger)
 
     blocked = [s for s in statements if s.error_msg]
     for s in blocked:

@@ -24,7 +24,7 @@ leaving a mismatch in place makes later key creation fail.
 
 from dataclasses import dataclass
 
-from .schema_common import SOURCE_DB, priority_of, query
+from .schema_common import SOURCE_DB, SchemaSyncError, priority_of, query
 from .schema_introspect import read_schema
 
 # Rules that never route through the diff.
@@ -226,6 +226,10 @@ class SchemaDiff:
         self._fk_created = set()
         # (table, fk_name) -> the definition each ADD CONSTRAINT will use.
         self._fk_defs = {}
+        # (schema, table) -> {column: (charset, collation)}, for schemas
+        # this run does not touch (AVACONT_COMUN). Cached: the FK checks
+        # ask for the same handful of parent tables over and over.
+        self._ext_columns = {}
 
     # -- helper ------------------------------------------------------
     def _emit(self, table, obj_name, obj_type, action, sql,
@@ -594,7 +598,16 @@ class SchemaDiff:
         if self.conn is None:
             return
         for (table, name), fk in sorted(self._fk_defs.items()):
-            reason = self._fk_problem(table, fk)
+            try:
+                reason = self._fk_problem(table, fk)
+            except Exception as exc:
+                # Not swallowed -- re-raised with the one detail the bare
+                # MariaDB error lacks: WHICH key was being checked. A
+                # naked "[1054] Unknown column 'c.IdPartener'" in the
+                # middle of 22 databases says nothing about where to look.
+                raise SchemaSyncError(
+                    f"Verificarea cheii `{name}` de pe "
+                    f"`{self.db}`.`{table}` a eșuat: {exc}") from exc
             if reason:
                 self._block_fk_group(table, name, fk, reason)
 
@@ -642,9 +655,11 @@ class SchemaDiff:
                     f"{ref_collation} — cheia ar fi refuzată cu eroarea "
                     f"3780.{extra}")
 
-        # 3. Do the rows agree? Only meaningful once both tables exist.
-        if (table not in self.tgt.tables
-                or (not external and fk.ref_table not in self.tgt.tables)):
+        # 3. Do the rows agree? Only askable once every column involved
+        #    actually EXISTS. A column that this same batch is still
+        #    going to add (priority 7) cannot be counted over -- the
+        #    query would come back with errno 1054, and did.
+        if not self._countable(table, fk, ref_schema, external):
             return None
         n, sample = self._orphan_rows(table, fk, ref_schema)
         if n:
@@ -663,14 +678,42 @@ class SchemaDiff:
                     f"`{fk.ref_table}`{shown}. Datele trebuie corectate întâi")
         return None
 
+    def _external_columns(self, schema, table) -> dict:
+        """{column: (charset, collation)} for a schema we do not sync."""
+        key = (schema.lower(), table.lower())
+        if key not in self._ext_columns:
+            rows = query(self.conn,
+                         "SELECT COLUMN_NAME cn, CHARACTER_SET_NAME cs, "
+                         "COLLATION_NAME co FROM information_schema.COLUMNS "
+                         "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s",
+                         (schema, table))
+            self._ext_columns[key] = {r["cn"]: (r["cs"], r["co"])
+                                      for r in rows}
+        return self._ext_columns[key]
+
     def _referenced_column(self, schema, table, column) -> dict:
         """charset / collation of a referenced column, or None if absent."""
-        rows = query(self.conn,
-                     "SELECT CHARACTER_SET_NAME cs, COLLATION_NAME co "
-                     "FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = %s "
-                     "AND TABLE_NAME = %s AND COLUMN_NAME = %s",
-                     (schema, table, column))
-        return rows[0] if rows else None
+        found = self._external_columns(schema, table).get(column)
+        if found is None:
+            return None
+        return {"cs": found[0], "co": found[1]}
+
+    def _countable(self, table, fk, ref_schema, external) -> bool:
+        """True when both ends already have every column the key needs.
+
+        Answered from the schemas already in memory for this target --
+        no extra query -- and from the cached column list for an
+        external schema.
+        """
+        child = self.tgt.tables.get(table)
+        if child is None or not set(fk.columns) <= set(child.columns):
+            return False
+        if external:
+            parent = set(self._external_columns(ref_schema, fk.ref_table))
+        else:
+            ref_tbl = self.tgt.tables.get(fk.ref_table)
+            parent = set(ref_tbl.columns) if ref_tbl else set()
+        return bool(parent) and set(fk.ref_columns) <= parent
 
     def _planned_column(self, table, column):
         """The column as it will BE after this run -- the source wins."""

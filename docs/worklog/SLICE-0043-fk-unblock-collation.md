@@ -236,3 +236,89 @@ au în `TipRand` valori care nu există în `avacont_comun`.`defatiprand`
 - Rândurile amânate rămân în `schema_diff_log` cu `error_msg` și sunt
   regenerate la rularea următoare (`clear_pending` le șterge pe cele
   neexecutate). Nu se pierd, dar nici nu se reîncearcă singure.
+
+
+---
+
+# Pasul 0043-02 — eroarea 1054 de la prima rulare pe toate bazele
+
+**Data:** 2026-08-20 (raportat de operator din rularea pe cele 22 de baze reale)
+
+## Ce s-a întâmplat
+
+Prima rulare adevărată, pe toate bazele din `CAI`, a mers 21 de baze și a
+căzut pe a 22-a:
+
+```
+053_LTTR: 169 instrucțiuni.
+ERROR - Eroare MariaDB: [1054] 1054 (42S22): Unknown column 'c.IdPartener' in 'where clause'
+```
+
+Eroarea era a verificării de integritate adăugate la pasul 0043-01. Aliasul
+`c` este tabelul-copil din `_orphan_rows`: numărătoarea de rânduri orfane se
+face pe **ținta așa cum e ACUM**, dar coloana `IdPartener` urma abia să fie
+adăugată de acel lot, la prioritatea 7. Deci se cerea o coloană care încă nu
+există.
+
+Reprodus local pe 10.3.32 în ambele variante — coloana lipsă pe partea
+copilului (`c.IdPartener`, cazul operatorului) și pe partea părintelui
+(`p.Cod`).
+
+**Corecția:** verificarea datelor rulează numai dacă ambele capete au deja
+toate coloanele cerute. Când nu le au, nu se poate răspunde la întrebare, deci
+nu se pune. Cheia se creează atunci fără verificare prealabilă; dacă datele nu
+se potrivesc, eșecul apare la execuție, cu 1452, și se scrie în jurnal.
+
+Verificarea prezenței se face din schemele deja citite în memorie (fără
+interogare în plus), iar coloanele schemelor externe (`AVACONT_COMUN`) se
+citesc o dată și se țin în `_ext_columns` — aceleași câteva tabele-părinte
+erau întrebate iar și iar.
+
+## De ce nu s-a salvat nimic în `schema_diff_log`
+
+Ordinea din `generate()` era: golește rândurile neexecutate, apoi compară,
+apoi scrie. Comparația a crăpat între golire și scriere, deci tabelul a rămas
+gol — cele 693 de rânduri vechi șterse, cele noi niciodată scrise. Nu s-a
+pierdut nimic de neînlocuit (se regenerează), dar operatorul rămâne fără nimic
+de citit exact când are mai multă nevoie.
+
+**Corecția:** comparația se face întâi; golirea, abia după ce există ceva de
+pus în loc.
+
+## Mesaje de eroare care spun unde să te uiți
+
+`[1054] Unknown column 'c.IdPartener'`, în mijlocul a 22 de baze și ~3600 de
+instrucțiuni, nu spune nimic. Verificarea fiecărei chei este acum învelită
+astfel încât o eroare de-a ei să fie **relansată** (nu înghițită) cu numele
+cheii și al bazei:
+
+```
+Verificarea cheii `fk_ctr_partener` de pe `101_CCDP`.`FX_Contracte` a eșuat: ...
+```
+
+## Rulări (măsurate)
+
+| Rulare | Rezultat |
+|---|---|
+| scenariul 1054 reprodus, înainte de corecție | `Eroare MariaDB: [1054] Unknown column 'p.Cod'` |
+| același, după corecție, `--run --mode FORCE` | 17 instrucțiuni: **17 reușite, 0 eșuate** |
+| convergență, SAFE și FORCE | `000_demo: 0 instrucțiuni` |
+| regresie — scenariul cu date murdare (0043-01) | cheia `fk_pl_cod` tot păstrată, `fk_ist_tip` tot refuzată cu valorile «X», «Z» |
+| regresie — scenariul curat (0043) | 11 din 11 reușite, verificare finală OK |
+
+## Găsit pe drum, NEREPARAT
+
+Într-o variantă extremă a bazei de test (tabel-țintă fără nicio coloană comună
+cu sursa) au ieșit două erori care **nu țin de această corecție**:
+
+```
+[errno=1072] Key column 'Cod' doesn't exist in table     <- PK MODIFY, prioritatea 3
+[errno=1090] You can't delete all columns with ALTER TABLE
+```
+
+`PK MODIFY` stă la prioritatea 3, dar coloana pe care se construiește cheia
+primară se adaugă abia la 7. `_pk_handled_by_add_column` acoperă doar cazul
+`auto_increment`. Deci o cheie primară mutată pe o coloană **nouă** eșuează.
+Nu a fost atins: e un defect al pasului de chei primare, nu al celui de chei
+străine, și cere verificarea lui separată. De semnalat înainte de următoarea
+rulare pe toate bazele.
