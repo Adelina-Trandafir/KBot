@@ -46,6 +46,31 @@ def _err(message, status=400):
     return _json({"ok": False, "error": message}, status)
 
 
+def _tabele_cerute(body):
+    """
+    Tabelele bifate de operator, sau None pentru toate.
+
+    O listă goală NU înseamnă „toate": înseamnă că nu s-a bifat nimic, și atunci
+    nu e nimic de făcut. Un nume străin oprește cu excepție, niciodată tăcut.
+    """
+    names = body.get("tabele")
+    if names is None:
+        return None
+    if not isinstance(names, list):
+        raise ValueError("Lista de tabele trimisă nu este o listă.")
+    if not names:
+        raise ValueError("Nu e bifat niciun tabel, deci nu e nimic de făcut.")
+    chosen = []
+    for name in names:
+        name = str(name)
+        try:
+            tables.by_name(name)
+        except KeyError:
+            raise ValueError("Tabelul «%s» nu face parte din setul migrat." % name)
+        chosen.append(name)
+    return chosen
+
+
 def _fail(where, exc):
     """Nicio excepție nu se pierde: jurnal cu urmă completă, mesaj în română afară."""
     logger.exception("migrare/%s a eșuat", where)
@@ -177,7 +202,68 @@ def push_final():
 
 
 # -----------------------------------------------------------------------------
-# 4. Analiza -- citeste, ruteaza, masoara. Nu scrie nimic.
+# 4. Inventarul -- ce tabele are fisierul si cate randuri fiecare
+# -----------------------------------------------------------------------------
+
+@migrare_bp.route("/api/migrare/tabele", methods=["POST"])
+@require_api_key
+def tabele_fisier():
+    """
+    Lista celor 16 tabele, cu numarul de randuri din fisier si cu unitatea aleasa
+    deja rezolvata. Migratorul o arata cu bife: un tabel FARA randuri se ofera
+    NEBIFAT, ca operatorul sa nu porneasca scrierea pentru nimic.
+
+    Numararea nu interpreteaza randurile (accdb.count_rows), deci e cu mult mai
+    ieftina decat analiza. Cate dintre randuri sunt ale unitatii alese se afla
+    abia la analiza -- pentru asta chiar trebuie citit fiecare rand.
+    """
+    body = request.get_json(silent=True) or {}
+    db_name = body.get("baza")
+    an = body.get("an")
+    dc = body.get("dc") or db_name
+
+    if not db_name or not _DBNAME_RE.match(db_name):
+        return _err("Numele bazei de unitate este invalid: «%s»." % (db_name or ""), 400)
+
+    try:
+        accdb.ensure_tools()
+        fx_path = storage.pushed_path(storage.fx_file_name(an, dc))
+    except (storage.StorageError, accdb.AccdbError) as exc:
+        return _err(str(exc), 400)
+    except Exception as exc:
+        return _fail("tabele/pregătire", exc)
+
+    def work(job):
+        job.say("Se inventariază «%s»." % fx_path)
+        present = accdb.list_tables(fx_path)
+
+        plan = routing.build_plan(fx_path, db_name, progress=job.say)
+        job.plan = plan
+
+        afară = [t for t in tables.OUT_OF_SCOPE if t in present]
+        if afară:
+            job.say("ATENȚIE: tabele în afara domeniului există în fișier și NU se "
+                    "migrează: %s." % ", ".join(afară))
+
+        out = []
+        for table in tables.ALL:
+            if table.name not in present:
+                job.say("«%s» lipsește din fișier." % table.name)
+                out.append({"nume": table.name, "există": False, "rânduri": 0})
+                continue
+            rows = accdb.count_rows(fx_path, table.name)
+            job.say("«%s»: %d rânduri în fișier." % (table.name, rows))
+            out.append({"nume": table.name, "există": True, "rânduri": rows})
+
+        return {"baza": db_name, "unități": plan.units,
+                "toate_unitățile": plan.all_units, "tabele": out}
+
+    job = jobs.start("inventar", work)
+    return _json({"ok": True, "lucrare": job.id})
+
+
+# -----------------------------------------------------------------------------
+# 5. Analiza -- citeste, selecteaza, masoara. Nu scrie nimic.
 # -----------------------------------------------------------------------------
 
 @migrare_bp.route("/api/migrare/analiza", methods=["POST"])
@@ -192,9 +278,13 @@ def analiza():
         return _err("Numele bazei de unitate este invalid: «%s»." % (db_name or ""), 400)
 
     try:
+        alese = _tabele_cerute(body)
+    except ValueError as exc:
+        return _err(str(exc), 400)
+
+    try:
         accdb.ensure_tools()
         fx_path = storage.pushed_path(storage.fx_file_name(an, dc))
-        cai_path = storage.pushed_path(storage.cai_file_name())
     except (storage.StorageError, accdb.AccdbError) as exc:
         return _err(str(exc), 400)
     except Exception as exc:
@@ -205,7 +295,7 @@ def analiza():
         try:
             job.say("Se citește «%s»." % fx_path)
             present = accdb.list_tables(fx_path)
-            lipsă = [t.name for t in tables.ALL if t.name not in present]
+            lipsă = [t.name for t in tables.selected(alese) if t.name not in present]
             if lipsă:
                 raise validate.ValidationError(
                     "Fișierul Access nu conține tabelele: %s." % ", ".join(lipsă))
@@ -214,21 +304,16 @@ def analiza():
                 job.say("ATENȚIE: tabele în afara domeniului există în fișier și NU se "
                         "migrează: %s." % ", ".join(afară))
 
-            # Cate unitati are fisierul decide daca mai e nevoie de rutare. Una
-            # singura -> totul merge in baza aleasa, si cale.accdb nici nu se
-            # atinge. Mai multe -> se ruteaza prin [Cai], iar daca acela lipseste
-            # rularea se OPRESTE cu unitatile numite; nu se cade inapoi pe „totul
-            # in baza aleasa", fiindca exact asa ar intra tacut randurile altei
-            # unitati in baza asta.
-            plan = routing.resolve_plan(fx_path, cai_path, db_name, progress=job.say)
+            # Fisierul poate purta mai multe unitati; se scrie DOAR unitatea
+            # bazei alese. Cine e unitatea aia se afla din fisierul insusi
+            # (FX_Angajamente poarta si IdUnitate, si DC), nu dintr-un fisier de
+            # rutare pe langa.
+            plan = routing.build_plan(fx_path, db_name, progress=job.say)
             job.plan = plan
-            if plan.mode == routing.RoutingPlan.PRIN_CAI:
-                if db_name not in plan.maps.all_dcs():
-                    job.say("ATENȚIE: baza «%s» nu apare deloc în [Cai]. Se vor găsi "
-                            "doar rândurile care poartă chiar ele DC-ul." % db_name)
 
             conn = get_db_connection(db_name)
-            report = validate.analyze(conn, db_name, fx_path, plan, progress=job.say)
+            report = validate.analyze(conn, db_name, fx_path, plan, only=alese,
+                                      progress=job.say)
             job.report = report
 
             data = report.to_dict()
@@ -245,7 +330,7 @@ def analiza():
 
 
 # -----------------------------------------------------------------------------
-# 5. Rularea -- scrie. Cere id-ul analizei care a aprobat-o.
+# 6. Rularea -- scrie. Cere id-ul analizei care a aprobat-o.
 # -----------------------------------------------------------------------------
 
 @migrare_bp.route("/api/migrare/rulare", methods=["POST"])
@@ -254,6 +339,11 @@ def rulare():
     body = request.get_json(silent=True) or {}
     analiza_id = body.get("analiză") or body.get("analiza")
     force = bool(body.get("forțat") or body.get("force"))
+
+    try:
+        alese = _tabele_cerute(body)
+    except ValueError as exc:
+        return _err(str(exc), 400)
 
     sursa = jobs.get(analiza_id) if analiza_id else None
     if sursa is None or sursa.report is None:
@@ -277,13 +367,15 @@ def rulare():
             "Analiza a găsit probleme de integritate. Folosiți «Forțează rularea» "
             "dacă acceptați ca rândurile vinovate să fie sărite.", 409)
 
-    # Planul de rutare vine de la analiza, nu se rezolva din nou: altfel ramura
-    # aleasa s-ar putea schimba intre masurare si scriere.
+    # Planul unitatii vine de la analiza, nu se rezolva din nou: altfel selectia
+    # s-ar putea schimba intre masurare si scriere.
     plan = sursa.plan
     if plan is None:
         return _err(
-            "Analiza indicată nu a lăsat un plan de rutare. Rulați din nou analiza "
+            "Analiza indicată nu a lăsat un plan al unității. Rulați din nou analiza "
             "înainte de scriere.", 400)
+    if alese is None:
+        alese = list(report.tables) or None
 
     try:
         fx_path = storage.pushed_path(storage.fx_file_name(an, dc))
@@ -296,12 +388,14 @@ def rulare():
             job.say(plan.describe())
             conn = get_db_connection(db_name)
             totals = execute.run(conn, db_name, fx_path, plan, report, force,
-                                 progress=job.say)
+                                 only=alese, progress=job.say)
             scrise = sum(s["scrise"] for s in totals.values())
+            actualizate = sum(s["actualizate"] for s in totals.values())
             sărite = sum(s["sărite"] for s in totals.values())
-            job.say("Scriere încheiată: %d rânduri scrise, %d sărite." % (scrise, sărite))
+            job.say("Scriere încheiată: %d rânduri scrise, %d actualizate, %d sărite."
+                    % (scrise, actualizate, sărite))
             return {"baza": db_name, "forțat": force, "pe_tabel": totals,
-                    "scrise": scrise, "sărite": sărite}
+                    "scrise": scrise, "actualizate": actualizate, "sărite": sărite}
         finally:
             if conn is not None:
                 conn.close()
@@ -311,7 +405,7 @@ def rulare():
 
 
 # -----------------------------------------------------------------------------
-# 6. Starea unei lucrari
+# 7. Starea unei lucrari
 # -----------------------------------------------------------------------------
 
 @migrare_bp.route("/api/migrare/stare/<job_id>", methods=["GET"])

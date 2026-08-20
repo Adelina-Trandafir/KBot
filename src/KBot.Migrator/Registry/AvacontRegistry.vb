@@ -111,20 +111,6 @@ Public Module AvacontRegistry
         End Try
     End Function
 
-    ''' <summary>
-    ''' Unde se așteaptă să stea <c>cale.accdb</c>, fișierul cu tabelul [Cai]:
-    ''' <c>&lt;CaleUnitate&gt;\cale.accdb</c>. Tot o sugestie.
-    ''' </summary>
-    Public Function SuggestCaiPath(dc As AvacontDc) As String
-        Try
-            If dc Is Nothing OrElse String.IsNullOrWhiteSpace(dc.CaleUnitate) Then Return ""
-            Return Path.Combine(dc.CaleUnitate, "cale.accdb")
-        Catch ex As Exception
-            GlobalErrorLog.Write("AvacontRegistry.SuggestCaiPath", ex)
-            Throw
-        End Try
-    End Function
-
     Private Function ReadString(key As RegistryKey, name As String) As String
         Dim value As Object = key.GetValue(name, Nothing)
         Return If(value Is Nothing, "", value.ToString().Trim())

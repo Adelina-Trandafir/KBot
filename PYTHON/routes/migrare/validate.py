@@ -13,7 +13,8 @@
 #               depasire de lungime sau de interval, NULL intr-o coloana NOT NULL.
 #               Cat timp exista unul, NICIUN buton nu porneste.
 #   FORTABIL -- integritatea legaturilor: cheie straina fara corespondent, id DDF
-#               absent, cheie primara dubla, rand care nu se ruteaza in nicio baza.
+#               absent, cheie primara dubla, rand a carui cheie nu exista nicaieri
+#               in fisier.
 #               «Rulează» ramane oprit, «Forțează rularea» porneste si SARE peste
 #               randurile vinovate, fara sa le piarda din raport.
 # -----------------------------------------------------------------------------
@@ -22,7 +23,7 @@ import datetime
 import decimal
 import logging
 
-from . import routing, tables
+from . import tables
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ F_NUL_INTERZIS = "NUL_INTERZIS"
 F_CHEIE_STRAINA = "CHEIE_STRĂINĂ"
 F_DDF_LIPSA = "ID_DDF_LIPSĂ"
 F_CHEIE_DUBLA = "CHEIE_DUBLĂ"
-F_RUTARE = "RUTARE"
+F_SELECTIE = "SELECȚIE"
 
 CLASS_OF = {
     F_TABEL_LIPSA: BLOCANT,
@@ -49,7 +50,7 @@ CLASS_OF = {
     F_CHEIE_STRAINA: FORTABIL,
     F_DDF_LIPSA: FORTABIL,
     F_CHEIE_DUBLA: FORTABIL,
-    F_RUTARE: FORTABIL,
+    F_SELECTIE: FORTABIL,
 }
 
 # Cate exemple pastram pentru fiecare (tabel, coloana, fel). Numaratoarea e
@@ -306,7 +307,8 @@ class Report(object):
     def __init__(self, db_name):
         self.db_name = db_name
         self._buckets = {}      # (tabel, coloana, fel) -> {"număr", "exemple"}
-        self.per_table = {}     # tabel -> {"citite", "rutate", "de_scris", "sărite"}
+        self.tables = []        # tabelele bifate, in ordinea de scriere
+        self.per_table = {}     # tabel -> {"citite", "ale_unității", "de_scris", "sărite"}
         # Valorile de cheie straina care LIPSESC pe tinta, pastrate ca sa poata fi
         # sarite la rulare fara sa mai intrebam serverul inca o data.
         self.missing_fk = {}    # (tabel, coloana) -> set(valori)
@@ -350,6 +352,7 @@ class Report(object):
         constatari.sort(key=lambda c: (c["clasa"] != BLOCANT, c["tabel"], c["fel"]))
         return {
             "baza": self.db_name,
+            "tabele": list(self.tables),
             "curat": self.is_clean(),
             "are_blocante": self.has_blocking(),
             "poate_rula": self.is_clean(),
@@ -364,13 +367,13 @@ class Report(object):
 # Analiza
 # -----------------------------------------------------------------------------
 
-def analyze(conn, db_name, fx_path, plan, progress=None):
+def analyze(conn, db_name, fx_path, plan, only=None, progress=None):
     """
-    Citeste fisierul o data, ruteaza fiecare rand, pastreaza randurile care ajung
-    in `db_name` si le masoara fata de schema tintei.
+    Citeste fisierul o data, pastreaza randurile unitatii alese si le masoara
+    fata de schema tintei.
 
-    `plan` e RoutingPlan-ul rezolvat inainte: fie DIRECT (fisier cu o singura
-    unitate, totul merge in baza aleasa), fie PRIN_CAI (mai multe unitati).
+    `plan` e UnitPlan-ul rezolvat inainte: el spune ce apartine bazei `db_name`.
+    `only` e lista de tabele bifate de operator; None inseamna toate cele 16.
 
     Intoarce un Report. Nu scrie nimic, nicaieri.
     """
@@ -379,11 +382,13 @@ def analyze(conn, db_name, fx_path, plan, progress=None):
         if progress:
             progress(msg)
 
+    chosen = tables.selected(only)
     report = Report(db_name)
-    schema = TargetSchema(conn, db_name, [t.name for t in tables.ALL])
+    report.tables = [t.name for t in chosen]
+    schema = TargetSchema(conn, db_name, [t.name for t in chosen])
 
-    for table in tables.ALL:
-        stats = {"citite": 0, "rutate": 0, "de_scris": 0, "sărite": 0}
+    for table in chosen:
+        stats = {"citite": 0, "ale_unității": 0, "de_scris": 0, "sărite": 0}
         report.per_table[table.name] = stats
 
         if not schema.has(table.name):
@@ -393,7 +398,7 @@ def analyze(conn, db_name, fx_path, plan, progress=None):
 
         say("Se verifică «%s»." % table.name)
         target_columns = schema.columns[table.name]
-        router = plan.router_for(table)
+        selector = plan.selector_for(table)
         pk_columns = schema.primary_key.get(table.name) or [table.primary_key]
         seen_keys = set()
         unknown_reported = set()
@@ -404,15 +409,17 @@ def analyze(conn, db_name, fx_path, plan, progress=None):
 
         for row in _iter_table(fx_path, table.name, say):
             stats["citite"] += 1
-            key = router.primary_key_of(row)
+            key = selector.primary_key_of(row)
 
-            dcs, reject = router.route(row)
+            keep, reject = selector.keep(row)
             if reject:
-                report.add(table.name, "", F_RUTARE, key, reject)
+                report.add(table.name, "", F_SELECTIE, key, reject)
                 continue
-            if db_name not in dcs:
+            if not keep:
+                # Randul e al altei unitati din acelasi fisier. Nu e o problema:
+                # se scrie doar unitatea aleasa.
                 continue
-            stats["rutate"] += 1
+            stats["ale_unității"] += 1
 
             row_ok = True
 

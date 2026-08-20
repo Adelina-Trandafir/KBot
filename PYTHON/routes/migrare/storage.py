@@ -96,16 +96,6 @@ def fx_file_name(an, dc):
     return "fx_%s_%s.accdb" % (validate_an(an), validate_dc(dc).lower())
 
 
-def cai_file_name():
-    """
-    cale.accdb, fișierul care poartă tabelul [Cai] (IdUnitate -> DC).
-
-    Este UNUL singur pentru toate unitățile, deci nu poartă DC în nume. Fără el
-    nu se poate ruta niciun rând care nu are DC propriu.
-    """
-    return "cale.accdb"
-
-
 def pushed_path(name):
     """Calea absolută a unui fișier împins. Numele e deja construit de noi."""
     return os.path.join(pushed_dir(), name)
@@ -136,13 +126,17 @@ def list_pushed():
 
 def begin_upload(kind, an, dc, total_size, sha256):
     """
-    kind: "fx" (fișierul FOREXE al anului) sau "cai" (cale.accdb).
+    kind: „fx" — fișierul FOREXE al anului. E singurul fel de fișier pe care îl
+    ia migrarea; unitatea unui rând se află din fișierul însuși (FX_Angajamente
+    poartă și IdUnitate, și DC), deci nu mai există niciun fișier de rutare.
 
     Întoarce upload_id. Verificarea numelui se face ACUM, nu la finalizare, ca
     operatorul să afle imediat dacă a greșit DC-ul.
     """
-    if kind not in ("fx", "cai"):
-        raise StorageError("Tipul de fișier «%s» nu este cunoscut (fx sau cai)." % (kind or ""))
+    if kind != "fx":
+        raise StorageError(
+            "Tipul de fișier «%s» nu este cunoscut. Migrarea ia un singur fel de "
+            "fișier: «fx»." % (kind or ""))
 
     try:
         total_size = int(total_size)
@@ -155,10 +149,7 @@ def begin_upload(kind, an, dc, total_size, sha256):
     if not re.match(r"^[0-9a-f]{64}$", sha256):
         raise StorageError("Amprenta SHA-256 a fișierului lipsește sau este invalidă.")
 
-    if kind == "fx":
-        name = fx_file_name(an, dc)
-    else:
-        name = cai_file_name()
+    name = fx_file_name(an, dc)
 
     _prune_sessions()
 

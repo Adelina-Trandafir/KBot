@@ -2,7 +2,7 @@
 
 Înlocuiește lanțul feliei 0042 (VBA scrie JSON → `KBot.Migrator` citește
 fișierele → rute de seed). Aici operatorul **împinge chiar fișierul Access**,
-iar serverul face restul: îl citește, rutează rândurile către baze, le
+iar serverul face restul: îl citește, alege rândurile unității cerute, le
 măsoară față de schema MariaDB și abia apoi scrie.
 
 ---
@@ -11,10 +11,10 @@ măsoară față de schema MariaDB și abia apoi scrie.
 
 **Fișierele trebuie să ajungă pe server FĂRĂ parolă de bază de date.**
 
-`FX_2026.accdb` și `cale.accdb` sunt criptate cu parola `andreI`
+`FX_2026.accdb` este criptat cu parola `andreI`
 (`Surse/VBA_MIGRARE/mdl_FX_ExportSeed.bas`). Verificat pe fișierele reale: în
 `DB_STRUCT.accdb`, care nu are parolă, numele de tabele se citesc direct din
-octeți; în cele două de mai sus, nu se citește niciunul. `mdbtools` **nu
+octeți; în `FX_2026.accdb`, nu se citește niciunul. `mdbtools` **nu
 decriptează** — nicio unealtă din lanțul de pe Linux nu o face.
 
 Deci, pe o **copie** (niciodată pe fișierul de lucru):
@@ -134,45 +134,91 @@ compilarea într-un folder propriu și `config.MDB_TOOLS_BIN` către el.
 | `POST /api/migrare/push/init` | deschide o încărcare în bucăți |
 | `POST /api/migrare/push/bucata` | o bucată, cu amprentă SHA-256 |
 | `POST /api/migrare/push/final` | lipește, verifică amprenta întregului fișier, mută în loc |
+| `POST /api/migrare/tabele` | inventarul fișierului: ce tabel există și cu câte rânduri |
 | `POST /api/migrare/analiza` | pornește analiza; întoarce un id de lucrare |
 | `POST /api/migrare/rulare` | pornește scrierea; cere id-ul analizei care a aprobat-o |
 | `GET /api/migrare/stare/<id>` | starea unei lucrări + jurnalul ei |
 
 Garda e `X-Api-Key`, ca pe rutele de seed pe care le înlocuiesc.
 
-Numele fișierelor pe server: `fx_<an>_<dc>.accdb` (litere mici) și, DOAR
-când e nevoie, `cale.accdb` — unul singur pentru toate unitățile.
+Numele fișierului pe server: `fx_<an>_<dc>.accdb` (litere mici). E **singurul**
+fișier pe care îl ia migrarea.
 
 ---
 
-## Când e nevoie de `cale.accdb` (de obicei, niciodată)
+## Un fișier, mai multe unități — se scrie DOAR unitatea aleasă
 
-Operatorul alege deja baza țintă pe ecran, deci în cazul obișnuit nu e nimic de
-calculat: tot ce e în fișier merge acolo. `cale.accdb` intră în joc într-un
-singur caz — fișierul FOREXE poartă **mai multe unități**, iar rândurile
-trebuie despărțite între baze.
+Un `FX_<an>.accdb` poate purta mai multe unități (DC-uri). Operatorul alege pe
+ecran baza țintă, iar migrarea scrie **numai rândurile unității ei**; restul
+rămân în fișier, neatinse. Nu e o eroare și nu se raportează ca atare: e cazul
+obișnuit.
 
-Care caz e, se **măsoară**, nu se presupune: `routing.distinct_units()` citește
-cele șapte tabele care poartă `IdUnitate` (`FX_Angajamente`, `FX_Indicatori`,
-`FX_Receptii`, `FX_Receptii_RHR`, `FX_Plati`, `FX_Extrase_H`, `FX_Extrase` —
-cele grele la Memo nu sunt printre ele) și numără ce găsește:
+**Nu există niciun `cale.accdb`** și niciun tabel `[Cai]`. Perechea
+`IdUnitate ↔ DC` e chiar în fișierul FOREXE (verificat în exportul Access,
+`TABLES/*.md`):
 
-| Ce găsește | Ce face |
+* `FX_Angajamente` poartă **și** `IdUnitate`, **și** `DC`;
+* `FX_Indicatori` poartă `IdUnitate` lângă `CodAngajament`, deci completează
+  angajamentele al căror rând din `FX_Angajamente` n-are unitate.
+
+`routing.build_plan()` citește tabelele-cheie o singură dată și construiește
+mulțimile de chei ale unității alese (tabelele grele la Memo nu sunt printre
+ele):
+
+| Familie | Cheia | De unde |
+|---|---|---|
+| unitate | `IdUnitate` | `FX_Angajamente` + `FX_Indicatori` |
+| angajament | `CodAngajament` | `FX_Angajamente` (DC propriu, altfel `IdUnitate`) |
+| rezervare | `IDRZ` | `FX_Rezervari`, prin angajament |
+| recepție R | `IDRR` | `FX_Receptii_R`, prin angajament |
+| recepție H | `IDRH` | `FX_Receptii_H`, prin angajament |
+| extras | `IDEXF` | `FX_Extrase_H`, prin unitate |
+
+Fiecare mulțime se ține **de două ori**: cheile unității alese și **toate**
+cheile din fișier. Diferența dintre ele e diferența dintre două lucruri care
+NU trebuie confundate:
+
+| Ce e rândul | Ce se întâmplă |
 |---|---|
-| o unitate (sau niciuna declarată) | **DIRECT** — tot fișierul merge în baza aleasă. `cale.accdb` nici nu se atinge. |
-| mai multe unități, `cale.accdb` prezent | **PRIN `[Cai]`** — fiecare rând se rutează, cu hărțile A–E |
-| mai multe unități, `cale.accdb` absent | **se OPREȘTE**, cu numerele unităților în mesaj |
+| al unității alese | se scrie |
+| al altei unități din fișier | se sare, tăcut și pe bună dreptate |
+| cu o cheie care nu există nicăieri în fișier | **constatare `SELECȚIE`** (forțabilă), cu cheia primară și motivul |
 
-Ultimul rând e cel important. Nu se cade înapoi pe «tot în baza aleasă»: exact
-acolo ar intra tăcut rândurile altei unități în baza asta, fără nicio eroare de
-observat.
+Dacă baza aleasă nu apare pe niciun rând din `FX_Angajamente` și fișierul poartă
+mai multe unități, analiza **se OPREȘTE** cu numerele unităților și DC-urile
+găsite în mesaj. Nu se cade înapoi pe «tot în baza aleasă»: exact acolo ar intra
+tăcut rândurile altei unități. Fișierul cu **o singură** unitate merge în baza
+aleasă oricum ar fi scris DC-ul.
 
-Chiar și pe ramura DIRECT rămâne o pază: dacă un rând poartă el însuși o
-coloană `DC` completată, și aceea spune altceva decât ținta, rândul e respins
-cu motivul.
+Un rând cu doi părinți (`FX_Receptii_IMG`, `FX_Receptii_Plati`) în care un
+părinte e al unității alese și celălalt sigur al alteia oprește migrarea: nu se
+ghicește care are dreptate.
 
-Ramura aleasă se rezolvă **o singură dată**, la analiză, și e refolosită
-identic la scriere — altfel s-ar putea schimba între măsurare și scriere.
+Planul se rezolvă **o singură dată**, la analiză, și e refolosit identic la
+scriere — altfel selecția s-ar putea schimba între măsurare și scriere.
+
+---
+
+## Ce tabele se actualizează (lista cu bife)
+
+`POST /api/migrare/tabele` numără rândurile fiecăruia dintre cele 16 tabele din
+fișierul deja împins (`accdb.count_rows` — numără linii, fără să interpreteze
+niciun rând, deci e cu mult mai ieftin decât analiza). Migratorul arată lista
+cu bife, iar **un tabel fără rânduri se oferă NEBIFAT**.
+
+Analiza și scrierea primesc amândouă lista bifată, în câmpul `tabele`:
+
+* lipsa câmpului înseamnă «toate cele 16»;
+* lista goală **nu** înseamnă «toate» — se răspunde cu eroare, fiindcă nu asta
+  a cerut operatorul;
+* un nume care nu face parte din setul migrat oprește cu eroare, niciodată
+  tăcut;
+* bifele se scriu **în ordinea de scriere** (părinții înaintea copiilor), nu în
+  ordinea în care le-a bifat operatorul;
+* un tabel care n-a fost **analizat** nu se poate scrie.
+
+După analiză, coloana «Ale unității» arată câte dintre rândurile citite sunt
+chiar ale bazei alese, iar tabelele cu zero se debifează singure.
 
 ---
 
@@ -186,7 +232,7 @@ buton nu pornește; nici «Forțează rularea» nu trece peste ele, fiindcă ace
 strică date, nu doar legături.
 
 **FORȚABIL** — cheie străină fără corespondent, id `IDDF`/`IDREV` absent,
-cheie primară dublă în fișier, rând care nu se rutează în nicio bază.
+cheie primară dublă în fișier, rând a cărui cheie nu există nicăieri în fișier.
 «Rulează» rămâne oprit, «Forțează rularea» pornește și **sare** peste
 rândurile vinovate — rămân în raport, nu ajung în baza de date.
 
@@ -199,8 +245,12 @@ Serverul verifică regula din nou, la `POST /api/migrare/rulare` și încă o da
 
 * **Nu creează și nu modifică niciun tabel.** Un tabel absent pe țintă
   oprește scrierea cu numele lui; schema se instalează separat (`schema_sync`).
-* **Nu suprascrie rânduri.** `ON DUPLICATE KEY UPDATE <prima coloană> =
-  <prima coloană>` — auto-atribuire fără efect, aleasă deliberat în locul lui
-  `INSERT IGNORE`, care ar degrada la avertisment și erorile de tip.
+* **Nu sare peste rândurile deja existente: le aduce la zi.**
+  `ON DUPLICATE KEY UPDATE <fiecare coloană> = VALUES(...)` — un upsert
+  adevărat, pe toate tabelele. Coloanele de cheie primară rămân în afara listei
+  de actualizat: ele identifică rândul. Deliberat **nu** `INSERT IGNORE`, care
+  ar degrada la avertisment și erorile de tip. Numărătoarea e exactă: MariaDB
+  raportează 1 pentru un rând inserat, 2 pentru unul chiar schimbat și 0 pentru
+  unul deja identic — de acolo vin «scrise / actualizate / deja identice».
 * **Nu traduce id-uri.** `IDDF`/`IDREV` sunt `AUTO_INCREMENT` pe MariaDB și
   nu păstrează id-ul Access alături; se verifică, iar lipsa e o constatare.

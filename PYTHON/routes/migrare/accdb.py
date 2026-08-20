@@ -191,3 +191,39 @@ def iter_rows(path, table, timeout=3600):
             if proc.returncode != 0:
                 raise AccdbError("Citirea tabelului «%s» a eșuat: %s"
                                  % (table, err or "fără detalii"))
+
+
+def count_rows(path, table, timeout=3600):
+    """
+    Câte rânduri are tabelul, fără să interpreteze niciunul.
+
+    mdbtools nu are un „count", deci tot fișierul trece prin `mdb-json` — dar
+    aici se numără doar liniile, fără `json.loads` și fără dicționare, ceea ce e
+    de câteva ori mai ieftin decât o citire adevărată. Asta ține pasul de
+    inventar (lista de tabele cu bife) departe de prețul analizei.
+    """
+    args = [_tool("mdb-json"), "-D", DATE_FORMAT, path, table]
+    try:
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except FileNotFoundError:
+        raise AccdbError("Unealta «mdb-json» nu este instalată pe server.")
+
+    rows = 0
+    try:
+        for raw in proc.stdout:
+            if raw.strip():
+                rows += 1
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.stdout.close()
+            proc.stderr.close()
+            proc.wait()
+        else:
+            err = proc.stderr.read().decode("utf-8", "replace").strip()
+            proc.stdout.close()
+            proc.stderr.close()
+            if proc.returncode != 0:
+                raise AccdbError("Numărarea rândurilor din «%s» a eșuat: %s"
+                                 % (table, err or "fără detalii"))
+    return rows

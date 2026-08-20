@@ -2,12 +2,18 @@
 # -----------------------------------------------------------------------------
 # The write pass. Runs only after an analysis of the SAME file said it may.
 #
-# Insert-if-absent, never overwrite: `ON DUPLICATE KEY UPDATE <prima coloană> =
-# <prima coloană>` -- a self-assignment that does nothing. Deliberately not
-# `INSERT IGNORE`, which would also degrade type errors, truncations and
-# constraint violations to warnings, i.e. swallow real failures. Under this form
-# cursor.rowcount is 1 per inserted row and 0 per skipped duplicate, so the
-# counts reported back are exact.
+# UPSERT everywhere: `ON DUPLICATE KEY UPDATE <fiecare coloană> = VALUES(...)`.
+# A row that is already on the server is BROUGHT UP TO DATE with the one in the
+# Access file, not left as it was -- the Access file is the source of truth of
+# the migration, and a half-migrated row that never gets corrected is worse than
+# no row at all. Deliberately not `INSERT IGNORE`, which would also degrade type
+# errors, truncations and constraint violations to warnings, i.e. swallow real
+# failures.
+#
+# The primary-key columns stay OUT of the UPDATE list: they are what identifies
+# the row, and assigning them to themselves is noise. Under this form MariaDB
+# reports rowcount 1 for an inserted row, 2 for one it actually changed and 0
+# for one that was already identical, so the three counts are exact.
 #
 # The Access primary keys are copied VERBATIM: none of the sixteen tables is
 # AUTO_INCREMENT on MariaDB, and the intra-family FK columns (IDRH, IDRR, IDRZ,
@@ -16,7 +22,7 @@
 
 import logging
 
-from . import accdb, routing, tables, validate
+from . import accdb, tables, validate
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +34,15 @@ class ExecuteError(Exception):
     """Scrierea nu poate continua — mesaj în română."""
 
 
-def run(conn, db_name, fx_path, plan, report, force, progress=None):
+def run(conn, db_name, fx_path, plan, report, force, only=None, progress=None):
     """
     Scrie randurile care au trecut analiza.
 
-    `plan` e ACELASI RoutingPlan folosit la analiza, nu unul nou: altfel ramura
-    aleasa s-ar putea schimba intre masurare si scriere.
+    `plan` e ACELASI UnitPlan folosit la analiza, nu unul nou: altfel selectia
+    s-ar putea schimba intre masurare si scriere.
+
+    `only` sunt tabelele bifate de operator. Trebuie sa fie printre cele
+    ANALIZATE -- un tabel nemasurat nu se scrie.
 
     `report` e Report-ul analizei aceluiasi fisier: de acolo vin valorile de cheie
     straina care lipsesc pe tinta, ca sa nu mai intrebam serverul inca o data.
@@ -58,11 +67,19 @@ def run(conn, db_name, fx_path, plan, report, force, progress=None):
             "permisă; folosiți «Forțează rularea» dacă acceptați ca rândurile "
             "vinovate să fie sărite.")
 
-    schema = validate.TargetSchema(conn, db_name, [t.name for t in tables.ALL])
+    chosen = tables.selected(only)
+    nemasurate = [t.name for t in chosen if report.tables and t.name not in report.tables]
+    if nemasurate:
+        raise ExecuteError(
+            "Tabelele %s nu au fost analizate, deci nu se pot scrie. Rulați din nou "
+            "analiza cu ele bifate." % ", ".join(nemasurate))
+
+    schema = validate.TargetSchema(conn, db_name, [t.name for t in chosen])
     totals = {}
 
-    for table in tables.ALL:
-        stats = {"citite": 0, "rutate": 0, "scrise": 0, "existente": 0, "sărite": 0}
+    for table in chosen:
+        stats = {"citite": 0, "ale_unității": 0, "scrise": 0,
+                 "actualizate": 0, "neschimbate": 0, "sărite": 0}
         totals[table.name] = stats
 
         if not schema.has(table.name):
@@ -71,7 +88,7 @@ def run(conn, db_name, fx_path, plan, report, force, progress=None):
                 % (table.name, db_name))
 
         target_columns = schema.columns[table.name]
-        router = plan.router_for(table)
+        selector = plan.selector_for(table)
         pk_columns = schema.primary_key.get(table.name) or [table.primary_key]
         seen_keys = set()
         missing = dict((column, values)
@@ -92,13 +109,15 @@ def run(conn, db_name, fx_path, plan, report, force, progress=None):
 
         for row in accdb.iter_rows(fx_path, table.name):
             stats["citite"] += 1
-            dcs, reject = router.route(row)
+            keep, reject = selector.keep(row)
             if reject:
                 stats["sărite"] += 1
                 continue
-            if db_name not in dcs:
+            if not keep:
+                # Randul e al altei unitati din acelasi fisier: nu e al bazei
+                # asteia si nu se numara ca sarit.
                 continue
-            stats["rutate"] += 1
+            stats["ale_unității"] += 1
 
             if _row_is_blocked(row, target_columns, pk_columns, seen_keys, missing):
                 stats["sărite"] += 1
@@ -106,15 +125,16 @@ def run(conn, db_name, fx_path, plan, report, force, progress=None):
 
             batch.append(tuple(row.get(c) for c in columns))
             if len(batch) >= BATCH_ROWS:
-                _write(conn, db_name, table.name, columns, batch, stats)
+                _write(conn, db_name, table.name, columns, pk_columns, batch, stats)
                 batch = []
 
         if batch:
-            _write(conn, db_name, table.name, columns, batch, stats)
+            _write(conn, db_name, table.name, columns, pk_columns, batch, stats)
 
         conn.commit()
-        say("«%s»: %d scrise, %d deja existente, %d sărite."
-            % (table.name, stats["scrise"], stats["existente"], stats["sărite"]))
+        say("«%s»: %d scrise, %d actualizate, %d deja identice, %d sărite."
+            % (table.name, stats["scrise"], stats["actualizate"],
+               stats["neschimbate"], stats["sărite"]))
 
     return totals
 
@@ -146,21 +166,36 @@ def _row_is_blocked(row, target_columns, pk_columns, seen_keys, missing):
     return False
 
 
-def _write(conn, db_name, table, columns, rows, stats):
+def _write(conn, db_name, table, columns, pk_columns, rows, stats):
+    """
+    Un rând care nu există se INSEREAZĂ; unul care există se ADUCE LA ZI din
+    fișierul Access. Coloanele de cheie primară rămân în afara listei de
+    actualizat — ele identifică rândul.
+    """
     quoted = ",".join("`%s`" % c for c in columns)
     placeholders = ",".join(["%s"] * len(columns))
-    sql = ("INSERT INTO `%s`.`%s` (%s) VALUES (%s) "
-           "ON DUPLICATE KEY UPDATE `%s` = `%s`"
-           % (db_name, table, quoted, placeholders, columns[0], columns[0]))
+    keys = set(c.lower() for c in pk_columns)
+    updatable = [c for c in columns if c.lower() not in keys]
+    if not updatable:
+        # Tabel din care nimic nu se poate actualiza (toate coloanele comune sunt
+        # cheie): auto-atribuire, ca sa nu esueze pe duplicat.
+        updatable = [columns[0]]
+    updates = ",".join("`%s` = VALUES(`%s`)" % (c, c) for c in updatable)
+
+    sql = ("INSERT INTO `%s`.`%s` (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s"
+           % (db_name, table, quoted, placeholders, updates))
 
     cur = conn.cursor()
     try:
         for row in rows:
             cur.execute(sql, row)
+            # MariaDB: 1 = inserat, 2 = actualizat, 0 = era deja identic.
             if cur.rowcount == 1:
                 stats["scrise"] += 1
+            elif cur.rowcount == 2:
+                stats["actualizate"] += 1
             else:
-                stats["existente"] += 1
+                stats["neschimbate"] += 1
     except Exception as exc:
         conn.rollback()
         raise ExecuteError("Scrierea în «%s» a eșuat: %s" % (table, exc))

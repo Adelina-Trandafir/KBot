@@ -1,132 +1,188 @@
-# Offline unit tests for the slice 0044 router (routes/migrare/routing.py), the
-# server-side port of KBot.Migrator's RowRouter.
+# Offline unit tests for the slice 0044 row selection (routes/migrare/routing.py).
 #   python -m pytest tests/test_migrare_routing.py
 #
-# No config.py, no MariaDB, no Access file: the maps are built by hand, which is
-# the whole point of keeping the routing rule separate from the reading.
+# No config.py, no MariaDB, no Access file: the key sets are built by hand, which
+# is the whole point of keeping the selection rule separate from the reading.
 #
-# The rules under test are the ones that lose data when they are wrong:
-#   * FX_Extrase_F fans out to SEVERAL databases, on purpose;
-#   * a row with two parents that DISAGREE is a hard error, not a fallback;
-#   * a key that resolves nowhere is rejected with a reason, never dropped silently.
+# The rules under test are the ones that lose or misplace data when they are wrong:
+#   * a row of ANOTHER unit in the same file is skipped, silently and on purpose;
+#   * a key that exists nowhere in the file is rejected WITH a reason, never dropped;
+#   * a row with two parents that disagree is a hard error, not a fallback.
 
 import pytest
 
 from routes.migrare import routing, tables
 
 
-def maps():
-    m = routing.RoutingMaps()
-    m.unit_to_dc = {48: "000_DEMO", 75: "005_CEVM", 121: "005_CEVM"}
-    m.angajament = {"aab-001": "000_DEMO", "aab-002": "005_CEVM"}
-    m.rezervare = {10: "000_DEMO"}
-    m.receptie_r = {20: "000_DEMO"}
-    m.receptie_h = {30: "000_DEMO", 31: "005_CEVM"}
-    m.extras_file = {40: {"000_DEMO", "005_CEVM"}, 41: {"000_DEMO"}}
-    return m
+def plan(db_name="005_CEVM", single_unit=False):
+    """Unitatea 75 e a bazei alese; 48 e a altei unități din același fișier."""
+    sets = dict((name, routing.KeySet()) for name in
+                ("unitate", "angajament", "rezervare", "receptie_r", "receptie_h", "extras"))
+    sets["unitate"].add(75, True)
+    sets["unitate"].add(48, False)
+    sets["angajament"].add("aab-002", True)
+    sets["angajament"].add("aab-001", False)
+    sets["rezervare"].add(11, True)
+    sets["rezervare"].add(10, False)
+    sets["receptie_r"].add(21, True)
+    sets["receptie_r"].add(20, False)
+    sets["receptie_h"].add(31, True)
+    sets["receptie_h"].add(30, False)
+    sets["extras"].add(41, True)
+    sets["extras"].add(40, False)
+    return routing.UnitPlan(db_name, sets, {75}, {48, 75}, single_unit)
 
 
-def router(table_name):
-    return routing.RowRouter(tables.by_name(table_name), maps())
+def selector(table_name, **kwargs):
+    return plan(**kwargs).selector_for(tables.by_name(table_name))
 
 
 # --- DC propriu, apoi IdUnitate ----------------------------------------------
 
 def test_dc_propriu_bate_idunitate():
-    dcs, reject = router("FX_Angajamente").route(
+    keep, reject = selector("FX_Angajamente").keep(
         {"CodAngajament": "AAB-001", "DC": "005_CEVM", "IdUnitate": 48})
-    assert (dcs, reject) == (["005_CEVM"], None)
+    assert (keep, reject) == (True, None)
+
+
+def test_dc_propriu_al_altei_unitati_e_sarit_fara_motiv():
+    # Nu e o problemă: fișierul poartă mai multe unități, se scrie doar una.
+    keep, reject = selector("FX_Angajamente").keep(
+        {"CodAngajament": "AAB-001", "DC": "045_CTER", "IdUnitate": 75})
+    assert (keep, reject) == (False, None)
 
 
 def test_fara_dc_propriu_se_cade_pe_idunitate():
-    dcs, reject = router("FX_Angajamente").route(
-        {"CodAngajament": "AAB-001", "IdUnitate": 48})
-    assert (dcs, reject) == (["000_DEMO"], None)
+    keep, reject = selector("FX_Angajamente").keep(
+        {"CodAngajament": "AAB-002", "IdUnitate": 75})
+    assert (keep, reject) == (True, None)
 
 
-def test_idunitate_necunoscut_e_respins_cu_motiv():
-    dcs, reject = router("FX_Angajamente").route(
-        {"CodAngajament": "AAB-009", "IdUnitate": 999})
-    assert dcs == []
-    assert "999" in reject and "[Cai]" in reject
+def test_idunitate_a_altei_unitati_e_sarit():
+    keep, reject = selector("FX_Indicatori").keep({"CodAI": "X", "IdUnitate": 48})
+    assert (keep, reject) == (False, None)
+
+
+def test_idunitate_lipsa_intr_un_fisier_cu_mai_multe_unitati_e_respins():
+    keep, reject = selector("FX_Indicatori").keep({"CodAI": "X"})
+    assert keep is False
+    assert "IdUnitate lipsește" in reject and "48" in reject
+
+
+def test_idunitate_lipsa_intr_un_fisier_cu_o_unitate_e_al_nostru():
+    keep, reject = selector("FX_Indicatori", single_unit=True).keep({"CodAI": "X"})
+    assert (keep, reject) == (True, None)
 
 
 # --- prin angajament ----------------------------------------------------------
 
 def test_copilul_urmeaza_angajamentul_indiferent_de_litere():
-    # Codurile din Access vin cu majuscule amestecate; harta e pe litere mici.
-    dcs, reject = router("FX_Istoric").route({"ID": 1, "CodAngajament": "AaB-002"})
-    assert (dcs, reject) == (["005_CEVM"], None)
+    # Codurile din Access vin cu majuscule amestecate; mulțimea e pe litere mici.
+    keep, reject = selector("FX_Istoric").keep({"ID": 1, "CodAngajament": "AaB-002"})
+    assert (keep, reject) == (True, None)
+
+
+def test_copilul_altei_unitati_e_sarit_nu_respins():
+    keep, reject = selector("FX_Istoric").keep({"ID": 2, "CodAngajament": "AAB-001"})
+    assert (keep, reject) == (False, None)
 
 
 def test_angajamentul_inexistent_e_respins_nu_pierdut():
-    dcs, reject = router("FX_Istoric").route({"ID": 2, "CodAngajament": "ZZZ-999"})
-    assert dcs == []
-    assert "ZZZ-999" in reject
+    keep, reject = selector("FX_Istoric").keep({"ID": 3, "CodAngajament": "ZZZ-999"})
+    assert keep is False
+    assert "ZZZ-999" in reject and "FX_Angajamente" in reject
 
 
 def test_codangajament_lipsa_e_respins():
-    dcs, reject = router("FX_Istoric").route({"ID": 3})
-    assert dcs == []
+    keep, reject = selector("FX_Istoric").keep({"ID": 4})
+    assert keep is False
     assert "CodAngajament" in reject
 
 
 # --- prin rezervare -----------------------------------------------------------
 
 def test_imaginea_urmeaza_rezervarea():
-    dcs, reject = router("FX_Rezervarii_IMG").route({"IDRZC": 1, "IDRZ": 10})
-    assert (dcs, reject) == (["000_DEMO"], None)
+    keep, reject = selector("FX_Rezervarii_IMG").keep({"IDRZC": 1, "IDRZ": 11})
+    assert (keep, reject) == (True, None)
+
+
+def test_imaginea_rezervarii_altei_unitati_e_sarita():
+    keep, reject = selector("FX_Rezervarii_IMG").keep({"IDRZC": 2, "IDRZ": 10})
+    assert (keep, reject) == (False, None)
 
 
 def test_rezervarea_inexistenta_e_respinsa():
-    dcs, reject = router("FX_Rezervarii_IMG").route({"IDRZC": 2, "IDRZ": 77})
-    assert dcs == []
+    keep, reject = selector("FX_Rezervarii_IMG").keep({"IDRZC": 3, "IDRZ": 77})
+    assert keep is False
     assert "FX_Rezervari" in reject
 
 
 # --- doi parinti --------------------------------------------------------------
 
-def test_primul_parinte_castiga_cand_amandoi_sunt_de_acord():
-    dcs, reject = router("FX_Receptii_IMG").route({"IDRDC": 1, "IDRR": 20, "IDRH": 30})
-    assert (dcs, reject) == (["000_DEMO"], None)
+def test_amandoi_parintii_ai_unitatii_alese():
+    keep, reject = selector("FX_Receptii_IMG").keep({"IDRDC": 1, "IDRR": 21, "IDRH": 31})
+    assert (keep, reject) == (True, None)
 
 
-def test_retragerea_pe_al_doilea_parinte_cand_primul_lipseste():
-    dcs, reject = router("FX_Receptii_IMG").route({"IDRDC": 2, "IDRH": 31})
-    assert (dcs, reject) == (["005_CEVM"], None)
+def test_al_doilea_parinte_decide_cand_primul_lipseste():
+    keep, reject = selector("FX_Receptii_IMG").keep({"IDRDC": 2, "IDRH": 31})
+    assert (keep, reject) == (True, None)
 
 
 def test_parinti_care_nu_sunt_de_acord_opresc_migrarea():
     # Nu retragere si nici ghiceala: legaturile din Access se contrazic, iar o
     # alegere ar muta randul in baza gresita.
     with pytest.raises(routing.RoutingError) as info:
-        router("FX_Receptii_IMG").route({"IDRDC": 3, "IDRR": 20, "IDRH": 31})
+        selector("FX_Receptii_IMG").keep({"IDRDC": 3, "IDRR": 21, "IDRH": 30})
     assert "nu sunt de acord" in str(info.value)
 
 
-def test_niciun_parinte_rezolvabil_e_respins():
-    dcs, reject = router("FX_Receptii_IMG").route({"IDRDC": 4, "IDRR": 88, "IDRH": 99})
-    assert dcs == []
+def test_amandoi_parintii_ai_altei_unitati_sunt_sariti():
+    keep, reject = selector("FX_Receptii_IMG").keep({"IDRDC": 4, "IDRR": 20, "IDRH": 30})
+    assert (keep, reject) == (False, None)
+
+
+def test_niciun_parinte_din_fisier_e_respins():
+    keep, reject = selector("FX_Receptii_IMG").keep({"IDRDC": 5, "IDRR": 88, "IDRH": 99})
+    assert keep is False
     assert "IDRR" in reject and "IDRH" in reject
 
 
 def test_ordinea_parintilor_difera_intre_cele_doua_tabele():
-    assert tables.by_name("FX_Receptii_IMG").route_column == "IDRR"
-    assert tables.by_name("FX_Receptii_Plati").route_column == "IDRH"
+    assert tables.by_name("FX_Receptii_IMG").key_column == "IDRR"
+    assert tables.by_name("FX_Receptii_Plati").key_column == "IDRH"
 
 
-# --- multiplicarea intentionata ----------------------------------------------
+# --- extrasele ----------------------------------------------------------------
 
-def test_fisierul_de_extras_ajunge_in_toate_bazele_lui():
-    dcs, reject = router("FX_Extrase_F").route({"IDEXF": 40})
-    assert reject is None
-    assert dcs == ["000_DEMO", "005_CEVM"]
+def test_liniile_extrasului_urmeaza_antetul():
+    keep, reject = selector("FX_Extrase_F").keep({"IDEXF": 41})
+    assert (keep, reject) == (True, None)
+
+
+def test_extrasul_altei_unitati_e_sarit():
+    keep, reject = selector("FX_Extrase_F").keep({"IDEXF": 40})
+    assert (keep, reject) == (False, None)
 
 
 def test_extrasul_fara_antet_e_respins():
-    dcs, reject = router("FX_Extrase_F").route({"IDEXF": 42})
-    assert dcs == []
+    keep, reject = selector("FX_Extrase_F").keep({"IDEXF": 42})
+    assert keep is False
     assert "FX_Extrase_H" in reject
+
+
+# --- nimic din cale.accdb -----------------------------------------------------
+
+def test_nu_mai_exista_nicio_urma_de_cale_accdb():
+    # Hărțile [Cai] și planul care le cerea au dispărut cu totul: unitatea unui
+    # rând se află din fișierul FOREXE însuși.
+    assert not hasattr(routing, "build_maps")
+    assert not hasattr(routing, "resolve_plan")
+    assert not hasattr(routing, "RoutingMaps")
+    assert not hasattr(routing, "RowRouter")
+
+    from routes.migrare import storage
+    assert not hasattr(storage, "cai_file_name")
 
 
 # --- setul de tabele ----------------------------------------------------------
@@ -146,7 +202,102 @@ def test_tabel_necunoscut_arunca_nu_intoarce_tacut_nimic():
         tables.by_name("FX_Parteneri")
 
 
+def test_bifele_se_intorc_in_ordinea_de_scriere_nu_in_cea_bifata():
+    alese = tables.selected(["FX_Rezervarii_IMG", "FX_Angajamente", "FX_Rezervari"])
+    assert [t.name for t in alese] == ["FX_Angajamente", "FX_Rezervari", "FX_Rezervarii_IMG"]
+
+
+def test_bifa_pe_un_tabel_strain_arunca():
+    with pytest.raises(KeyError):
+        tables.selected(["FX_Parteneri"])
+
+
+def test_fara_bife_inseamna_toate():
+    assert len(tables.selected(None)) == 16
+
+
 def test_cheia_primara_e_raportata_pentru_lista_de_respinse():
-    r = router("FX_Istoric")
-    assert r.primary_key_of({"ID": 17}) == "17"
-    assert r.primary_key_of({}) == "?"
+    s = selector("FX_Istoric")
+    assert s.primary_key_of({"ID": 17}) == "17"
+    assert s.primary_key_of({}) == "?"
+
+
+# --- construirea planului din fisierul insusi ---------------------------------
+# accdb.iter_rows e inlocuit cu un dictionar de tabele: aici se verifica REGULA,
+# nu mdbtools.
+
+FISIER_CU_DOUA_UNITATI = {
+    "FX_Angajamente": [
+        {"CodAngajament": "AAB-001", "IdUnitate": 48, "DC": "000_DEMO"},
+        {"CodAngajament": "AAB-002", "IdUnitate": 75, "DC": "005_CEVM"},
+        {"CodAngajament": "AAB-003", "IdUnitate": 75},
+    ],
+    "FX_Indicatori": [
+        {"CodAI": "AAB-004-A", "CodAngajament": "AAB-004", "IdUnitate": 75},
+    ],
+    "FX_Rezervari": [
+        {"IDRZ": 10, "CodAngajament": "AAB-001"},
+        {"IDRZ": 11, "CodAngajament": "AAB-002"},
+    ],
+    "FX_Receptii_R": [{"IDRR": 21, "CodAngajament": "AAB-003"}],
+    "FX_Receptii_H": [{"IDRH": 31, "CodAngajament": "AAB-002"}],
+    "FX_Extrase_H": [
+        {"IDEXH": 1, "IDEXF": 40, "IdUnitate": 48},
+        {"IDEXH": 2, "IDEXF": 41, "IdUnitate": 75},
+    ],
+}
+
+
+def fisier(monkeypatch, continut):
+    from routes.migrare import accdb
+
+    def iter_rows(path, table, timeout=3600):
+        if table not in continut:
+            raise accdb.AccdbError("tabelul «%s» nu există în fișier" % table)
+        for row in continut[table]:
+            yield row
+
+    monkeypatch.setattr(accdb, "iter_rows", iter_rows)
+
+
+def test_planul_afla_unitatea_din_fx_angajamente(monkeypatch):
+    fisier(monkeypatch, FISIER_CU_DOUA_UNITATI)
+    p = routing.build_plan("fără-fișier.accdb", "005_CEVM")
+
+    assert p.units == [75]
+    assert p.all_units == [48, 75]
+    assert p.single_unit is False
+    # AAB-003 nu are DC scris pe rând, dar are IdUnitate 75; AAB-004 vine din
+    # FX_Indicatori, care e a doua sursă de IdUnitate.
+    assert p.sets["angajament"].ours == {"aab-002", "aab-003", "aab-004"}
+    assert p.sets["rezervare"].ours == {11}
+    assert p.sets["receptie_r"].ours == {21}
+    assert p.sets["receptie_h"].ours == {31}
+    assert p.sets["extras"].ours == {41}
+
+
+def test_planul_pentru_cealalta_unitate_alege_altceva(monkeypatch):
+    fisier(monkeypatch, FISIER_CU_DOUA_UNITATI)
+    p = routing.build_plan("fără-fișier.accdb", "000_DEMO")
+    assert p.units == [48]
+    assert p.sets["angajament"].ours == {"aab-001"}
+    assert p.sets["extras"].ours == {40}
+
+
+def test_baza_care_nu_apare_in_fisier_opreste_cu_unitatile_numite(monkeypatch):
+    fisier(monkeypatch, FISIER_CU_DOUA_UNITATI)
+    with pytest.raises(routing.RoutingError) as info:
+        routing.build_plan("fără-fișier.accdb", "045_CTER")
+    mesaj = str(info.value)
+    assert "045_CTER" in mesaj and "48" in mesaj and "75" in mesaj
+
+
+def test_fisierul_cu_o_singura_unitate_merge_oricum_in_baza_aleasa(monkeypatch):
+    fisier(monkeypatch, {
+        "FX_Angajamente": [{"CodAngajament": "AAB-001", "IdUnitate": 75}],
+        "FX_Indicatori": [],
+    })
+    p = routing.build_plan("fără-fișier.accdb", "045_CTER")
+    assert p.single_unit is True
+    assert p.units == [75]
+    assert p.sets["angajament"].ours == {"aab-001"}

@@ -7,18 +7,27 @@ Imports System.Windows.Forms
 Imports KBot.Common
 
 ''' <summary>
-''' Ecranul utilitarului de migrare, cu cei patru pași în ordinea în care îi face
+''' Ecranul utilitarului de migrare, cu cei cinci pași în ordinea în care îi face
 ''' operatorul:
 ''' <list type="number">
 ''' <item><b>Sursa</b> — unitatea (din registrul AVACONT), anul, baza țintă de pe
-''' MariaDB și cele două fișiere Access de pe stație.</item>
-''' <item><b>Împingerea</b> — fișierele urcă pe server, în bucăți, cu amprentă.</item>
-''' <item><b>Analiza</b> — serverul citește, rutează și măsoară. Nu scrie nimic.</item>
+''' MariaDB și fișierul FOREXE al anului, de pe stație.</item>
+''' <item><b>Împingerea</b> — fișierul urcă pe server, în bucăți, cu amprentă.</item>
+''' <item><b>Tabelele</b> — serverul numără rândurile fiecărui tabel din fișier;
+''' cele fără rânduri rămân NEBIFATE, ca operatorul să nu pornească scrierea
+''' pentru nimic.</item>
+''' <item><b>Analiza</b> — serverul citește tabelele bifate și le măsoară. Nu
+''' scrie nimic.</item>
 ''' <item><b>Rularea</b> — «Rulează» pornește doar dacă analiza n-a găsit nimic;
 ''' «Forțează rularea» pornește când singurele probleme sunt de integritate, și
 ''' atunci sare peste rândurile vinovate. Problemele de tip sau de dimensiune
 ''' opresc amândouă butoanele.</item>
 ''' </list>
+'''
+''' Un fișier FOREXE poate purta MAI MULTE unități; se scriu doar rândurile
+''' unității bazei alese. Cine e unitatea aia se află din fișierul însuși
+''' (FX_Angajamente poartă și <c>IdUnitate</c>, și <c>DC</c>; FX_Indicatori
+''' poartă <c>IdUnitate</c>), deci nu mai există niciun fișier de rutare pe lângă.
 '''
 ''' Migratorul NU deschide niciun fișier Access și nicio conexiune MariaDB: din
 ''' .NET nu se referă niciun driver Access — nici OleDb, nici ACE, nici COM.
@@ -105,8 +114,8 @@ Public Class MigratorForm
 
             ' Baza tinta cu acelasi nume, daca serverul o are.
             SelecteazaBaza(dc.Dc)
-            SugereazaCai(dc)
-            ResetAnaliza("Unitatea s-a schimbat — rulează din nou analiza.")
+            SugereazaCalea(dc)
+            ResetInventar("Unitatea s-a schimbat — citește din nou tabelele.")
 
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.cboDc_SelectedIndexChanged", ex)
@@ -116,8 +125,8 @@ Public Class MigratorForm
 
     Private Sub cboAn_TextChanged(sender As Object, e As EventArgs) Handles cboAn.TextChanged
         Try
-            SugereazaCai(TryCast(cboDc.SelectedItem, AvacontDc))
-            ResetAnaliza("Anul s-a schimbat — rulează din nou analiza.")
+            SugereazaCalea(TryCast(cboDc.SelectedItem, AvacontDc))
+            ResetInventar("Anul s-a schimbat — citește din nou tabelele.")
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.cboAn_TextChanged", ex)
         End Try
@@ -125,7 +134,7 @@ Public Class MigratorForm
 
     Private Sub cboBaza_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboBaza.SelectedIndexChanged
         Try
-            ResetAnaliza("Baza țintă s-a schimbat — rulează din nou analiza.")
+            ResetInventar("Baza țintă s-a schimbat — citește din nou tabelele.")
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.cboBaza_SelectedIndexChanged", ex)
         End Try
@@ -137,16 +146,6 @@ Public Class MigratorForm
             If ales IsNot Nothing Then txtFx.Text = ales
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.btnRasfoireFx_Click", ex)
-            ShowError(ex)
-        End Try
-    End Sub
-
-    Private Sub btnRasfoireCai_Click(sender As Object, e As EventArgs) Handles btnRasfoireCai.Click
-        Try
-            Dim ales As String = AlegeFisier(txtCai.Text)
-            If ales IsNot Nothing Then txtCai.Text = ales
-        Catch ex As Exception
-            GlobalErrorLog.Write("MigratorForm.btnRasfoireCai_Click", ex)
             ShowError(ex)
         End Try
     End Sub
@@ -195,43 +194,32 @@ Public Class MigratorForm
                 Return
             End If
 
-            ' «cale.accdb» e OPȚIONAL. Serverul numără singur unitățile din fișier:
-            ' una singură — și acela e cazul obișnuit — înseamnă că tot ce e acolo
-            ' merge în baza aleasă, deci nu e nimic de rutat. Îl cere abia dacă
-            ' fișierul chiar poartă mai multe unități, și atunci o spune pe nume.
-            Dim cai As String = txtCai.Text.Trim()
-            Dim areCai As Boolean = Not String.IsNullOrWhiteSpace(cai) AndAlso File.Exists(cai)
-
             Dim confirm As DialogResult = MessageBox.Show(
                 Me,
                 "Se urcă pe server:" & Environment.NewLine &
                 "  • " & Path.GetFileName(fx) & " → fx_" & an & "_" & dc.ToLowerInvariant() & ".accdb" &
-                If(areCai,
-                   Environment.NewLine & "  • " & Path.GetFileName(cai) & " → cale.accdb",
-                   Environment.NewLine & "  • fără «cale.accdb» — se cere doar dacă fișierul " &
-                   "poartă mai multe unități") &
                 Environment.NewLine & Environment.NewLine &
-                "Fișierele TREBUIE să fie fără parolă de bază de date; serverul nu poate " &
+                "Fișierul TREBUIE să fie fără parolă de bază de date; serverul nu poate " &
                 "decripta. Continui?",
                 "Migrare FX", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
             If confirm <> DialogResult.Yes Then Return
 
-            SetBusy(True, "Se urcă fișierele…")
+            SetBusy(True, "Se urcă fișierul…")
             prgPush.Value = 0
 
             Using cts As New CancellationTokenSource()
-                If areCai Then
-                    AppendLog("Se urcă «" & cai & "» ca [Cai].")
-                    Await _client.PushAsync("cai", an, dc, cai, AddressOf OnPushProgress, cts.Token)
-                End If
-
                 AppendLog("Se urcă «" & fx & "».")
-                Await _client.PushAsync("fx", an, dc, fx, AddressOf OnPushProgress, cts.Token)
+                Await _client.PushAsync(an, dc, fx, AddressOf OnPushProgress, cts.Token)
             End Using
 
             prgPush.Value = prgPush.Maximum
             Await ReciteseFisiereAsync()
-            ResetAnaliza("Fișierele sunt pe server — rulează analiza.")
+            ResetAnaliza("Fișierul e pe server — se citesc tabelele lui.")
+            SetBusy(False, Nothing)
+
+            ' Inventarul urmeaza de la sine: fara el lista de tabele ar ramane
+            ' goala, si operatorul n-ar avea ce bifa.
+            Await InventariazaAsync()
 
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.btnImpinge_Click", ex)
@@ -256,7 +244,63 @@ Public Class MigratorForm
     End Sub
 
     ' =========================================================================
-    ' Regiunea 3 — analiza
+    ' Regiunea 3 — inventarul: ce tabele are fisierul, cu cate randuri
+    ' =========================================================================
+
+    Private Async Sub btnInventar_Click(sender As Object, e As EventArgs) Handles btnInventar.Click
+        Await InventariazaAsync()
+    End Sub
+
+    ''' <summary>
+    ''' Cere serverului numărul de rânduri al fiecărui tabel din fișierul deja
+    ''' împins și umple lista cu bife: <b>bifate doar tabelele care CHIAR au
+    ''' rânduri</b>. Câte dintre ele sunt ale unității alese se află abia la
+    ''' analiză — pentru asta trebuie citit fiecare rând.
+    ''' </summary>
+    Private Async Function InventariazaAsync() As Task
+        Try
+            If _busy Then Return
+
+            Dim baza As String = NumeBazaAleasa()
+            If baza Is Nothing Then Return
+            Dim an As String = cboAn.Text.Trim()
+            If Not ValideazaAn(an) Then Return
+
+            SetBusy(True, "Se citesc tabelele fișierului…")
+            ResetAnaliza(Nothing)
+
+            Dim jobId As String = Await _client.StartInventarAsync(baza, an, baza)
+            Dim stare As StareLucrare = Await AsteaptaLucrareAsync(jobId)
+
+            If stare.EsteEroare Then
+                lblStare.Text = "Citirea tabelelor s-a oprit: " & stare.Eroare
+                Return
+            End If
+
+            Dim inv As InventarFisier = MigrareApiClient.CitesteInventar(stare.Rezultat)
+            UmpleTabele(inv)
+
+            If inv Is Nothing Then
+                lblStare.Text = "Serverul n-a întors inventarul fișierului."
+            Else
+                lblStare.Text = "Fișierul poartă unitățile " &
+                                String.Join(", ", inv.ToateUnitatile) &
+                                "; se scrie doar unitatea bazei «" & baza & "» (" &
+                                String.Join(", ", inv.Unitati) & "). " &
+                                "Bifează tabelele și rulează analiza."
+            End If
+
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.InventariazaAsync", ex)
+            lblStare.Text = "Citirea tabelelor s-a oprit."
+            ShowError(ex)
+        Finally
+            SetBusy(False, Nothing)
+        End Try
+    End Function
+
+    ' =========================================================================
+    ' Regiunea 4 — analiza
     ' =========================================================================
 
     Private Async Sub btnAnalizeaza_Click(sender As Object, e As EventArgs) Handles btnAnalizeaza.Click
@@ -268,11 +312,14 @@ Public Class MigratorForm
             Dim an As String = cboAn.Text.Trim()
             If Not ValideazaAn(an) Then Return
 
+            Dim bifate As List(Of String) = TabeleBifate()
+            If bifate Is Nothing Then Return
+
             SetBusy(True, "Analiză în curs…")
             txtJurnal.Clear()
             ResetAnaliza(Nothing)
 
-            Dim jobId As String = Await _client.StartAnalizaAsync(baza, an, baza)
+            Dim jobId As String = Await _client.StartAnalizaAsync(baza, an, baza, bifate)
             Dim stare As StareLucrare = Await AsteaptaLucrareAsync(jobId)
 
             If stare.EsteEroare Then
@@ -283,6 +330,7 @@ Public Class MigratorForm
             _analizaId = jobId
             _raport = MigrareApiClient.CitesteRaport(stare.Rezultat)
             UmpleGrila(_raport)
+            ActualizeazaTabeleDinRaport(_raport)
             ActualizeazaButoane()
 
             If _raport Is Nothing Then
@@ -307,7 +355,7 @@ Public Class MigratorForm
     End Sub
 
     ' =========================================================================
-    ' Regiunea 4 — rularea
+    ' Regiunea 5 — rularea
     ' =========================================================================
 
     Private Async Sub btnRuleaza_Click(sender As Object, e As EventArgs) Handles btnRuleaza.Click
@@ -326,9 +374,15 @@ Public Class MigratorForm
             Dim an As String = cboAn.Text.Trim()
             Dim baza As String = _raport.Baza
 
+            Dim bifate As List(Of String) = TabeleBifate()
+            If bifate Is Nothing Then Return
+
             Dim mesaj As String =
-                "Se scriu rândurile în baza «" & baza & "»." & Environment.NewLine &
-                "Rândurile deja existente rămân neatinse."
+                "Se scriu rândurile unității bazei «" & baza & "», din tabelele: " &
+                String.Join(", ", bifate) & "." & Environment.NewLine &
+                "Rândurile deja existente pe server se ADUC LA ZI din fișierul Access." &
+                Environment.NewLine &
+                "Rândurile altor unități din același fișier rămân neatinse."
             If fortat Then
                 mesaj &= Environment.NewLine & Environment.NewLine &
                          "RULARE FORȚATĂ: rândurile cu probleme de integritate vor fi SĂRITE. " &
@@ -343,7 +397,7 @@ Public Class MigratorForm
 
             SetBusy(True, If(fortat, "Scriere forțată în curs…", "Scriere în curs…"))
 
-            Dim jobId As String = Await _client.StartRulareAsync(_analizaId, an, baza, fortat)
+            Dim jobId As String = Await _client.StartRulareAsync(_analizaId, an, baza, fortat, bifate)
             Dim stare As StareLucrare = Await AsteaptaLucrareAsync(jobId)
 
             If stare.EsteEroare Then
@@ -402,6 +456,82 @@ Public Class MigratorForm
         lblFisiere.Text = "Pe server: " & fisiere.Count.ToString() & " fișiere, " &
                           (total \ (1024L * 1024L)).ToString() & " MB."
     End Function
+
+    ''' <summary>
+    ''' Umple lista de tabele din inventar. Bifa se pune DOAR pe tabelele care
+    ''' există în fișier și au măcar un rând — un tabel gol n-are ce actualiza.
+    ''' </summary>
+    Private Sub UmpleTabele(inv As InventarFisier)
+        dgvTabele.Rows.Clear()
+        If inv Is Nothing Then Return
+
+        For Each t As TabelFisier In inv.Tabele
+            Dim idx As Integer = dgvTabele.Rows.Add(
+                t.Exista AndAlso t.Randuri > 0,
+                t.Nume,
+                If(t.Exista, t.Randuri.ToString(), "lipsește"),
+                "")
+            ' Un tabel care nu e in fisier nu se poate bifa deloc.
+            dgvTabele.Rows(idx).Cells(0).ReadOnly = Not t.Exista
+        Next
+    End Sub
+
+    ''' <summary>
+    ''' După analiză se știe și câte dintre rânduri sunt ale unității alese.
+    ''' Un tabel care n-are niciunul se DEBIFEAZĂ: are rânduri, dar nu ale noastre.
+    ''' </summary>
+    Private Sub ActualizeazaTabeleDinRaport(raport As RaportAnaliza)
+        If raport Is Nothing Then Return
+
+        For Each rand As DataGridViewRow In dgvTabele.Rows
+            Dim nume As String = TryCast(rand.Cells(1).Value, String)
+            If nume Is Nothing Then Continue For
+
+            Dim numere As Integer() = Nothing
+            If Not raport.PeTabel.TryGetValue(nume, numere) Then Continue For
+
+            rand.Cells(3).Value = numere(1).ToString()
+            If numere(1) = 0 Then rand.Cells(0).Value = False
+        Next
+    End Sub
+
+    ''' <summary>
+    ''' Tabelele bifate, sau <c>Nothing</c> (cu mesaj) dacă nu e bifat niciunul.
+    ''' Lista goală nu se trimite ca «toate»: n-ar fi ce a cerut operatorul.
+    ''' </summary>
+    Private Function TabeleBifate() As List(Of String)
+        Dim alese As New List(Of String)()
+        For Each rand As DataGridViewRow In dgvTabele.Rows
+            If CBool(rand.Cells(0).Value) Then
+                Dim nume As String = TryCast(rand.Cells(1).Value, String)
+                If Not String.IsNullOrEmpty(nume) Then alese.Add(nume)
+            End If
+        Next
+
+        If alese.Count = 0 Then
+            MessageBox.Show(Me,
+                "Nu e bifat niciun tabel. Apasă «Citește tabelele», apoi bifează ce " &
+                "vrei să se actualizeze.",
+                "Migrare FX", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return Nothing
+        End If
+        Return alese
+    End Function
+
+    ''' <summary>
+    ''' Bifa se aplică la clic, nu la ieșirea din celulă: altfel operatorul apasă
+    ''' «Analizează» și pleacă cu bifa veche.
+    ''' </summary>
+    Private Sub dgvTabele_CurrentCellDirtyStateChanged(sender As Object, e As EventArgs) _
+            Handles dgvTabele.CurrentCellDirtyStateChanged
+        Try
+            If dgvTabele.IsCurrentCellDirty Then
+                dgvTabele.CommitEdit(DataGridViewDataErrorContexts.Commit)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvTabele_CurrentCellDirtyStateChanged", ex)
+        End Try
+    End Sub
 
     Private Sub UmpleGrila(raport As RaportAnaliza)
         Dim dt As New DataTable()
@@ -474,7 +604,7 @@ Public Class MigratorForm
         Next
     End Sub
 
-    Private Sub SugereazaCai(dc As AvacontDc)
+    Private Sub SugereazaCalea(dc As AvacontDc)
         If dc Is Nothing Then Return
         Dim an As String = cboAn.Text.Trim()
         If an.Length <> 4 Then Return
@@ -484,11 +614,6 @@ Public Class MigratorForm
         Dim fx As String = AvacontRegistry.SuggestFxPath(dc, an)
         If Not String.IsNullOrEmpty(fx) AndAlso Not File.Exists(txtFx.Text.Trim()) Then
             txtFx.Text = fx
-        End If
-
-        Dim cai As String = AvacontRegistry.SuggestCaiPath(dc)
-        If Not String.IsNullOrEmpty(cai) AndAlso Not File.Exists(txtCai.Text.Trim()) Then
-            txtCai.Text = cai
         End If
     End Sub
 
@@ -529,6 +654,16 @@ Public Class MigratorForm
         Return False
     End Function
 
+    ''' <summary>
+    ''' Inventarul descrie un fișier și o bază anume; când se schimbă vreuna, lista
+    ''' de tabele nu mai are ce descrie și se golește. O bifă rămasă de la altă
+    ''' bază ar fi exact bifa greșită.
+    ''' </summary>
+    Private Sub ResetInventar(mesaj As String)
+        dgvTabele.Rows.Clear()
+        ResetAnaliza(mesaj)
+    End Sub
+
     Private Sub ResetAnaliza(mesaj As String)
         _analizaId = Nothing
         _raport = Nothing
@@ -550,11 +685,12 @@ Public Class MigratorForm
 
     Private Sub SetBusy(busy As Boolean, mesaj As String)
         _busy = busy
+        btnInventar.Enabled = Not busy
         btnAnalizeaza.Enabled = Not busy
         btnImpinge.Enabled = Not busy
         btnReciteste.Enabled = Not busy
         btnRasfoireFx.Enabled = Not busy
-        btnRasfoireCai.Enabled = Not busy
+        dgvTabele.Enabled = Not busy
         cboDc.Enabled = Not busy
         cboAn.Enabled = Not busy
         cboBaza.Enabled = Not busy

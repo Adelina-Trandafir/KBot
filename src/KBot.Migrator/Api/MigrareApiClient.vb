@@ -61,8 +61,28 @@ Public NotInheritable Class RaportAnaliza
     Public Property PoateRula As Boolean
     Public Property PoateForta As Boolean
     Public ReadOnly Property Constatari As New List(Of Constatare)()
-    ''' <summary>tabel → (citite, rutate, de_scris, sărite).</summary>
+    ''' <summary>Tabelele care CHIAR au fost analizate (cele bifate).</summary>
+    Public ReadOnly Property Tabele As New List(Of String)()
+    ''' <summary>tabel → (citite, ale unității, de scris, sărite).</summary>
     Public ReadOnly Property PeTabel As New Dictionary(Of String, Integer())()
+End Class
+
+''' <summary>Un tabel al fișierului Access, așa cum îl vede inventarul. POCO.</summary>
+Public NotInheritable Class TabelFisier
+    Public Property Nume As String
+    Public Property Exista As Boolean
+    Public Property Randuri As Integer
+End Class
+
+''' <summary>
+''' Inventarul fișierului împins: unitatea bazei alese, unitățile pe care le
+''' poartă fișierul cu totul, și cele 16 tabele cu numărul lor de rânduri.
+''' </summary>
+Public NotInheritable Class InventarFisier
+    Public Property Baza As String
+    Public ReadOnly Property Unitati As New List(Of Integer)()
+    Public ReadOnly Property ToateUnitatile As New List(Of Integer)()
+    Public ReadOnly Property Tabele As New List(Of TabelFisier)()
 End Class
 
 ''' <summary>Starea unei lucrări de pe server.</summary>
@@ -190,7 +210,10 @@ Public NotInheritable Class MigrareApiClient
     ' =========================================================================
 
     ''' <summary>
-    ''' Urcă un fișier Access. <paramref name="fel"/> e „fx" sau „cai".
+    ''' Urcă fișierul FOREXE al anului. E singurul fișier pe care îl ia migrarea:
+    ''' unitatea fiecărui rând se află din fișierul însuși (FX_Angajamente poartă
+    ''' și <c>IdUnitate</c>, și <c>DC</c>), deci nu mai există niciun fișier de
+    ''' rutare pe lângă.
     '''
     ''' Bucăți, nu un singur POST: serverul taie orice cerere peste 17 MB
     ''' (<c>MAX_CONTENT_LENGTH</c>), iar FX_2026.accdb are aproape 29.
@@ -198,7 +221,7 @@ Public NotInheritable Class MigrareApiClient
     ''' Fiecare bucată își poartă amprenta, iar la final se verifică amprenta
     ''' întregului fișier — un transfer rupt la mijloc nu se poate încheia „cu bine".
     ''' </summary>
-    Public Async Function PushAsync(fel As String, an As String, dc As String, localPath As String,
+    Public Async Function PushAsync(an As String, dc As String, localPath As String,
                                     progress As Action(Of Integer, Integer),
                                     token As CancellationToken) As Task(Of String)
         Try
@@ -211,7 +234,7 @@ Public NotInheritable Class MigrareApiClient
 
             ' --- init ---------------------------------------------------------
             Dim initPayload As String = BuildJson(Sub(w)
-                                                      w.WriteString("fel", fel)
+                                                      w.WriteString("fel", "fx")
                                                       w.WriteString("an", an)
                                                       w.WriteString("dc", dc)
                                                       w.WriteNumber("octeți", total)
@@ -266,15 +289,75 @@ Public NotInheritable Class MigrareApiClient
     End Function
 
     ' =========================================================================
-    ' 4. Analiza si rularea
+    ' 4. Inventarul fisierului
     ' =========================================================================
 
-    Public Async Function StartAnalizaAsync(baza As String, an As String, dc As String) As Task(Of String)
+    ''' <summary>
+    ''' Pornește inventarul: câte rânduri are fiecare dintre cele 16 tabele în
+    ''' fișierul deja împins. E pasul care umple lista cu bife — un tabel fără
+    ''' rânduri se oferă NEBIFAT.
+    ''' </summary>
+    Public Async Function StartInventarAsync(baza As String, an As String, dc As String) As Task(Of String)
         Try
             Dim payload As String = BuildJson(Sub(w)
                                                   w.WriteString("baza", baza)
                                                   w.WriteString("an", an)
                                                   w.WriteString("dc", dc)
+                                              End Sub)
+            Dim body As String = Await PostJsonAsync(_baseUrl & "/api/migrare/tabele", payload).ConfigureAwait(False)
+            Using doc As JsonDocument = JsonDocument.Parse(body)
+                Return ReadString(doc.RootElement, "lucrare")
+            End Using
+
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigrareApiClient.StartInventarAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>Traduce «rezultat»-ul unei lucrări de inventar.</summary>
+    Public Shared Function CitesteInventar(rezultat As JsonElement) As InventarFisier
+        Try
+            If rezultat.ValueKind <> JsonValueKind.Object Then Return Nothing
+
+            Dim inv As New InventarFisier() With {.Baza = ReadString(rezultat, "baza")}
+            ReadInts(rezultat, "unități", inv.Unitati)
+            ReadInts(rezultat, "toate_unitățile", inv.ToateUnitatile)
+
+            Dim arr As JsonElement
+            If rezultat.TryGetProperty("tabele", arr) AndAlso arr.ValueKind = JsonValueKind.Array Then
+                For Each e As JsonElement In arr.EnumerateArray()
+                    inv.Tabele.Add(New TabelFisier() With {
+                        .Nume = ReadString(e, "nume"),
+                        .Exista = ReadBool(e, "există"),
+                        .Randuri = ReadInt(e, "rânduri")
+                    })
+                Next
+            End If
+            Return inv
+
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigrareApiClient.CitesteInventar", ex)
+            Throw
+        End Try
+    End Function
+
+    ' =========================================================================
+    ' 5. Analiza si rularea
+    ' =========================================================================
+
+    ''' <summary>
+    ''' Pornește analiza. <paramref name="tabele"/> sunt tabelele bifate; lista
+    ''' goală nu se trimite ca «toate», fiindcă nu asta a cerut operatorul.
+    ''' </summary>
+    Public Async Function StartAnalizaAsync(baza As String, an As String, dc As String,
+                                            tabele As IEnumerable(Of String)) As Task(Of String)
+        Try
+            Dim payload As String = BuildJson(Sub(w)
+                                                  w.WriteString("baza", baza)
+                                                  w.WriteString("an", an)
+                                                  w.WriteString("dc", dc)
+                                                  WriteTabele(w, tabele)
                                               End Sub)
             Dim body As String = Await PostJsonAsync(_baseUrl & "/api/migrare/analiza", payload).ConfigureAwait(False)
             Using doc As JsonDocument = JsonDocument.Parse(body)
@@ -288,13 +371,15 @@ Public NotInheritable Class MigrareApiClient
     End Function
 
     Public Async Function StartRulareAsync(analizaId As String, an As String, dc As String,
-                                           fortat As Boolean) As Task(Of String)
+                                           fortat As Boolean,
+                                           tabele As IEnumerable(Of String)) As Task(Of String)
         Try
             Dim payload As String = BuildJson(Sub(w)
                                                   w.WriteString("analiză", analizaId)
                                                   w.WriteString("an", an)
                                                   w.WriteString("dc", dc)
                                                   w.WriteBoolean("forțat", fortat)
+                                                  WriteTabele(w, tabele)
                                               End Sub)
             Dim body As String = Await PostJsonAsync(_baseUrl & "/api/migrare/rulare", payload).ConfigureAwait(False)
             Using doc As JsonDocument = JsonDocument.Parse(body)
@@ -360,6 +445,13 @@ Public NotInheritable Class MigrareApiClient
                 .PoateForta = ReadBool(rezultat, "poate_forța")
             }
 
+            Dim tabele As JsonElement
+            If rezultat.TryGetProperty("tabele", tabele) AndAlso tabele.ValueKind = JsonValueKind.Array Then
+                For Each t As JsonElement In tabele.EnumerateArray()
+                    If t.ValueKind = JsonValueKind.String Then raport.Tabele.Add(If(t.GetString(), ""))
+                Next
+            End If
+
             Dim arr As JsonElement
             If rezultat.TryGetProperty("constatări", arr) AndAlso arr.ValueKind = JsonValueKind.Array Then
                 For Each e As JsonElement In arr.EnumerateArray()
@@ -388,7 +480,7 @@ Public NotInheritable Class MigrareApiClient
             If rezultat.TryGetProperty("pe_tabel", peTabel) AndAlso peTabel.ValueKind = JsonValueKind.Object Then
                 For Each p As JsonProperty In peTabel.EnumerateObject()
                     raport.PeTabel(p.Name) = New Integer() {
-                        ReadInt(p.Value, "citite"), ReadInt(p.Value, "rutate"),
+                        ReadInt(p.Value, "citite"), ReadInt(p.Value, "ale_unității"),
                         ReadInt(p.Value, "de_scris"), ReadInt(p.Value, "sărite")}
                 Next
             End If
@@ -472,6 +564,29 @@ Public NotInheritable Class MigrareApiClient
             Return Encoding.UTF8.GetString(ms.ToArray())
         End Using
     End Function
+
+    ''' <summary>
+    ''' Scrie lista de tabele bifate. <c>Nothing</c> înseamnă «toate» și atunci
+    ''' câmpul nici nu se trimite; o listă goală se trimite ca listă goală, iar
+    ''' serverul o respinge cu mesaj — nu se convertește tăcut în «toate».
+    ''' </summary>
+    Private Shared Sub WriteTabele(w As Utf8JsonWriter, tabele As IEnumerable(Of String))
+        If tabele Is Nothing Then Return
+        w.WriteStartArray("tabele")
+        For Each t As String In tabele
+            w.WriteStringValue(t)
+        Next
+        w.WriteEndArray()
+    End Sub
+
+    Private Shared Sub ReadInts(parent As JsonElement, name As String, target As List(Of Integer))
+        Dim arr As JsonElement
+        If Not parent.TryGetProperty(name, arr) OrElse arr.ValueKind <> JsonValueKind.Array Then Return
+        Dim n As Integer
+        For Each e As JsonElement In arr.EnumerateArray()
+            If e.ValueKind = JsonValueKind.Number AndAlso e.TryGetInt32(n) Then target.Add(n)
+        Next
+    End Sub
 
     Private Shared Function AmprentaOctetilor(data As Byte()) As String
         Using algo As SHA256 = SHA256.Create()

@@ -20,7 +20,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.1.0.0</FileVersion>
+    <FileVersion>1.2.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -29,13 +29,14 @@
     <Import Include="System.Windows.Forms" />
   </ItemGroup>
 
-  <!-- NICIO referință la Access: fără OleDb, fără ACE, fără COM. Utilitarul citește
-       fișierele JSON scrise de mdl_FX_ExportSeed și vorbește HTTP. Asta e chiar motivul
-       pentru care exportul e un modul VBA separat.
+  <!-- NICIO referință la Access: fără OleDb, fără ACE, fără COM. Utilitarul urcă
+       fișierul .accdb pe server și vorbește HTTP; serverul e cel care îl citește
+       (mdbtools). Asta e chiar motivul pentru care nu deschide niciun fișier local.
 
        KBot.Api intră DOAR pentru ApiOptions.DefaultBaseUrl — adresa serverului are un
        singur loc unde e scrisă, iar acela e ApiOptions. NU se folosește ApiClient:
-       rutele de seed sunt păzite cu X-Api-Key (flota FOREXE veche), nu cu tokenul bearer.
+       rutele de migrare sunt păzite cu X-Api-Key (ca cele de seed pe care le
+       înlocuiesc), nu cu tokenul bearer.
 
        KBot.Theming aduce motorul de teme + KBotThemedForm. KBot.Forexe (unde stă facada
        KBotTheme) e evitat intenționat: ar târî Playwright într-un utilitar care nu

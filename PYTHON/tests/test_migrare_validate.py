@@ -145,7 +145,7 @@ def test_data_ilizibila_e_tip():
 
 def test_cheile_de_integritate_sunt_fortabile():
     for fel in (validate.F_CHEIE_STRAINA, validate.F_DDF_LIPSA,
-                validate.F_CHEIE_DUBLA, validate.F_RUTARE):
+                validate.F_CHEIE_DUBLA, validate.F_SELECTIE):
         assert validate.CLASS_OF[fel] == validate.FORTABIL
 
 
