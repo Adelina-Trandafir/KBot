@@ -31,7 +31,14 @@ Friend Module Program
             ' nu-și aplică singur nicio culoare.
             ThemeManager.Initialize()
 
-            Application.Run(New MigratorForm())
+            ' Formularul de pornire (felia 0044): adresa serverului + cheia API, si
+            ' proba ca amandoua sunt bune -- lista bazelor de pe MariaDB. Fara ea nu
+            ' se merge mai departe: ecranul urmator alege chiar din lista aceea.
+            Using conectare As New ConnectForm()
+                If conectare.ShowDialog() <> DialogResult.OK Then Return
+                ' Clientul trece mai departe si e eliberat de MigratorForm.
+                Application.Run(New MigratorForm(conectare.Client, conectare.Baze))
+            End Using
 
         Catch ex As Exception
             GlobalErrorLog.Write("Program.Main", ex)

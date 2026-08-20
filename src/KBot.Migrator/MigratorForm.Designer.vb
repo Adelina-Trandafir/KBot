@@ -6,25 +6,38 @@ Partial Class MigratorForm
     ' (docs/kbot-forms-ui-convention.md). Nimic nu se construiește în cod.
     Private components As System.ComponentModel.IContainer
 
+    ' --- regiunea 1: sursa -----------------------------------------------------
     Friend WithEvents pnlSurse As System.Windows.Forms.Panel
-    Friend WithEvents lblFolder As System.Windows.Forms.Label
-    Friend WithEvents txtFolder As System.Windows.Forms.TextBox
-    Friend WithEvents btnRasfoire As System.Windows.Forms.Button
-    Friend WithEvents btnIncarca As System.Windows.Forms.Button
-    Friend WithEvents lblCheie As System.Windows.Forms.Label
-    Friend WithEvents txtCheie As System.Windows.Forms.TextBox
-    Friend WithEvents lblSurse As System.Windows.Forms.Label
-    Friend WithEvents clbDc As System.Windows.Forms.CheckedListBox
+    Friend WithEvents lblDc As System.Windows.Forms.Label
+    Friend WithEvents cboDc As System.Windows.Forms.ComboBox
+    Friend WithEvents lblUnitate As System.Windows.Forms.Label
+    Friend WithEvents lblAn As System.Windows.Forms.Label
+    Friend WithEvents cboAn As System.Windows.Forms.ComboBox
+    Friend WithEvents lblBaza As System.Windows.Forms.Label
+    Friend WithEvents cboBaza As System.Windows.Forms.ComboBox
+    Friend WithEvents btnReciteste As System.Windows.Forms.Button
+    Friend WithEvents lblFx As System.Windows.Forms.Label
+    Friend WithEvents txtFx As System.Windows.Forms.TextBox
+    Friend WithEvents btnRasfoireFx As System.Windows.Forms.Button
+    Friend WithEvents lblCai As System.Windows.Forms.Label
+    Friend WithEvents txtCai As System.Windows.Forms.TextBox
+    Friend WithEvents btnRasfoireCai As System.Windows.Forms.Button
+    Friend WithEvents btnImpinge As System.Windows.Forms.Button
+    Friend WithEvents prgPush As System.Windows.Forms.ProgressBar
+    Friend WithEvents lblFisiere As System.Windows.Forms.Label
 
+    ' --- regiunea 2: actiuni ---------------------------------------------------
     Friend WithEvents pnlActiuni As System.Windows.Forms.Panel
-    Friend WithEvents btnVerifica As System.Windows.Forms.Button
-    Friend WithEvents btnTransfera As System.Windows.Forms.Button
-    Friend WithEvents chkForteaza As System.Windows.Forms.CheckBox
+    Friend WithEvents btnAnalizeaza As System.Windows.Forms.Button
+    Friend WithEvents btnRuleaza As System.Windows.Forms.Button
+    Friend WithEvents btnForteaza As System.Windows.Forms.Button
     Friend WithEvents lblStare As System.Windows.Forms.Label
 
-    Friend WithEvents dgvRezultate As System.Windows.Forms.DataGridView
+    ' --- regiunea 3: constatari + jurnal --------------------------------------
+    Friend WithEvents dgvConstatari As System.Windows.Forms.DataGridView
     Friend WithEvents txtJurnal As System.Windows.Forms.TextBox
-    Friend WithEvents dlgFolder As System.Windows.Forms.FolderBrowserDialog
+    Friend WithEvents dlgFisier As System.Windows.Forms.OpenFileDialog
+    Friend WithEvents sfat As KBot.Controls.KBotToolTip
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -41,220 +54,324 @@ Partial Class MigratorForm
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Me.pnlSurse = New System.Windows.Forms.Panel()
-        Me.lblFolder = New System.Windows.Forms.Label()
-        Me.txtFolder = New System.Windows.Forms.TextBox()
-        Me.btnRasfoire = New System.Windows.Forms.Button()
-        Me.btnIncarca = New System.Windows.Forms.Button()
-        Me.lblCheie = New System.Windows.Forms.Label()
-        Me.txtCheie = New System.Windows.Forms.TextBox()
-        Me.lblSurse = New System.Windows.Forms.Label()
-        Me.clbDc = New System.Windows.Forms.CheckedListBox()
+        Me.lblDc = New System.Windows.Forms.Label()
+        Me.cboDc = New System.Windows.Forms.ComboBox()
+        Me.lblUnitate = New System.Windows.Forms.Label()
+        Me.lblAn = New System.Windows.Forms.Label()
+        Me.cboAn = New System.Windows.Forms.ComboBox()
+        Me.lblBaza = New System.Windows.Forms.Label()
+        Me.cboBaza = New System.Windows.Forms.ComboBox()
+        Me.btnReciteste = New System.Windows.Forms.Button()
+        Me.lblFx = New System.Windows.Forms.Label()
+        Me.txtFx = New System.Windows.Forms.TextBox()
+        Me.btnRasfoireFx = New System.Windows.Forms.Button()
+        Me.lblCai = New System.Windows.Forms.Label()
+        Me.txtCai = New System.Windows.Forms.TextBox()
+        Me.btnRasfoireCai = New System.Windows.Forms.Button()
+        Me.btnImpinge = New System.Windows.Forms.Button()
+        Me.prgPush = New System.Windows.Forms.ProgressBar()
+        Me.lblFisiere = New System.Windows.Forms.Label()
         Me.pnlActiuni = New System.Windows.Forms.Panel()
-        Me.btnVerifica = New System.Windows.Forms.Button()
-        Me.btnTransfera = New System.Windows.Forms.Button()
-        Me.chkForteaza = New System.Windows.Forms.CheckBox()
+        Me.btnAnalizeaza = New System.Windows.Forms.Button()
+        Me.btnRuleaza = New System.Windows.Forms.Button()
+        Me.btnForteaza = New System.Windows.Forms.Button()
         Me.lblStare = New System.Windows.Forms.Label()
-        Me.dgvRezultate = New System.Windows.Forms.DataGridView()
+        Me.dgvConstatari = New System.Windows.Forms.DataGridView()
         Me.txtJurnal = New System.Windows.Forms.TextBox()
-        Me.dlgFolder = New System.Windows.Forms.FolderBrowserDialog()
+        Me.dlgFisier = New System.Windows.Forms.OpenFileDialog()
+        Me.sfat = New KBot.Controls.KBotToolTip(Me.components)
         Me.pnlSurse.SuspendLayout()
         Me.pnlActiuni.SuspendLayout()
-        CType(Me.dgvRezultate, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.dgvConstatari, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
-        'lblFolder
+        'lblDc
         '
-        Me.lblFolder.AutoSize = True
-        Me.lblFolder.Location = New System.Drawing.Point(12, 15)
-        Me.lblFolder.Name = "lblFolder"
-        Me.lblFolder.Size = New System.Drawing.Size(96, 15)
-        Me.lblFolder.TabIndex = 0
-        Me.lblFolder.Text = "Folder artefacte:"
+        Me.lblDc.AutoSize = True
+        Me.lblDc.Location = New System.Drawing.Point(14, 16)
+        Me.lblDc.Name = "lblDc"
+        Me.lblDc.Size = New System.Drawing.Size(120, 15)
+        Me.lblDc.TabIndex = 0
+        Me.lblDc.Text = "Unitatea (din registru):"
         '
-        'txtFolder
+        'cboDc
         '
-        Me.txtFolder.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.txtFolder.Location = New System.Drawing.Point(140, 12)
-        Me.txtFolder.Name = "txtFolder"
-        Me.txtFolder.Size = New System.Drawing.Size(520, 23)
-        Me.txtFolder.TabIndex = 1
+        Me.cboDc.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.cboDc.Location = New System.Drawing.Point(150, 13)
+        Me.cboDc.Name = "cboDc"
+        Me.cboDc.Size = New System.Drawing.Size(300, 23)
+        Me.cboDc.TabIndex = 1
         '
-        'btnRasfoire
+        'lblUnitate
         '
-        Me.btnRasfoire.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.btnRasfoire.Location = New System.Drawing.Point(666, 11)
-        Me.btnRasfoire.Name = "btnRasfoire"
-        Me.btnRasfoire.Size = New System.Drawing.Size(90, 25)
-        Me.btnRasfoire.TabIndex = 2
-        Me.btnRasfoire.Text = "Răsfoiește…"
-        Me.btnRasfoire.UseVisualStyleBackColor = True
+        Me.lblUnitate.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
+        Me.lblUnitate.Location = New System.Drawing.Point(460, 16)
+        Me.lblUnitate.Name = "lblUnitate"
+        Me.lblUnitate.Size = New System.Drawing.Size(480, 18)
+        Me.lblUnitate.TabIndex = 2
+        Me.lblUnitate.Text = "—"
         '
-        'btnIncarca
+        'lblAn
         '
-        Me.btnIncarca.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.btnIncarca.Location = New System.Drawing.Point(762, 11)
-        Me.btnIncarca.Name = "btnIncarca"
-        Me.btnIncarca.Size = New System.Drawing.Size(110, 25)
-        Me.btnIncarca.TabIndex = 3
-        Me.btnIncarca.Text = "Încarcă DC-urile"
-        Me.btnIncarca.UseVisualStyleBackColor = True
+        Me.lblAn.AutoSize = True
+        Me.lblAn.Location = New System.Drawing.Point(14, 47)
+        Me.lblAn.Name = "lblAn"
+        Me.lblAn.Size = New System.Drawing.Size(24, 15)
+        Me.lblAn.TabIndex = 3
+        Me.lblAn.Text = "An:"
         '
-        'lblCheie
+        'cboAn
         '
-        Me.lblCheie.AutoSize = True
-        Me.lblCheie.Location = New System.Drawing.Point(12, 46)
-        Me.lblCheie.Name = "lblCheie"
-        Me.lblCheie.Size = New System.Drawing.Size(107, 15)
-        Me.lblCheie.TabIndex = 4
-        Me.lblCheie.Text = "Cheie API (X-Api-Key):"
+        Me.cboAn.Location = New System.Drawing.Point(150, 44)
+        Me.cboAn.Name = "cboAn"
+        Me.cboAn.Size = New System.Drawing.Size(100, 23)
+        Me.cboAn.TabIndex = 4
         '
-        'txtCheie
+        'lblBaza
         '
-        Me.txtCheie.Location = New System.Drawing.Point(140, 43)
-        Me.txtCheie.Name = "txtCheie"
-        Me.txtCheie.Size = New System.Drawing.Size(300, 23)
-        Me.txtCheie.TabIndex = 5
-        Me.txtCheie.UseSystemPasswordChar = True
+        Me.lblBaza.AutoSize = True
+        Me.lblBaza.Location = New System.Drawing.Point(276, 47)
+        Me.lblBaza.Name = "lblBaza"
+        Me.lblBaza.Size = New System.Drawing.Size(110, 15)
+        Me.lblBaza.TabIndex = 5
+        Me.lblBaza.Text = "Baza țintă (MariaDB):"
         '
-        'lblSurse
+        'cboBaza
         '
-        Me.lblSurse.AutoSize = True
-        Me.lblSurse.Location = New System.Drawing.Point(12, 77)
-        Me.lblSurse.Name = "lblSurse"
-        Me.lblSurse.Size = New System.Drawing.Size(122, 15)
-        Me.lblSurse.TabIndex = 6
-        Me.lblSurse.Text = "Baze de date (DC):"
+        Me.cboBaza.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        Me.cboBaza.Location = New System.Drawing.Point(400, 44)
+        Me.cboBaza.Name = "cboBaza"
+        Me.cboBaza.Size = New System.Drawing.Size(260, 23)
+        Me.cboBaza.TabIndex = 6
         '
-        'clbDc
+        'btnReciteste
         '
-        Me.clbDc.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.clbDc.CheckOnClick = True
-        Me.clbDc.IntegralHeight = False
-        Me.clbDc.Location = New System.Drawing.Point(140, 74)
-        Me.clbDc.MultiColumn = True
-        Me.clbDc.Name = "clbDc"
-        Me.clbDc.Size = New System.Drawing.Size(732, 84)
-        Me.clbDc.TabIndex = 7
+        Me.btnReciteste.Location = New System.Drawing.Point(670, 43)
+        Me.btnReciteste.Name = "btnReciteste"
+        Me.btnReciteste.Size = New System.Drawing.Size(130, 25)
+        Me.btnReciteste.TabIndex = 7
+        Me.btnReciteste.Text = "Recitește serverul"
+        Me.btnReciteste.UseVisualStyleBackColor = True
+        '
+        'lblFx
+        '
+        Me.lblFx.AutoSize = True
+        Me.lblFx.Location = New System.Drawing.Point(14, 79)
+        Me.lblFx.Name = "lblFx"
+        Me.lblFx.Size = New System.Drawing.Size(100, 15)
+        Me.lblFx.TabIndex = 8
+        Me.lblFx.Text = "Fișier FOREXE:"
+        '
+        'txtFx
+        '
+        Me.txtFx.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
+        Me.txtFx.Location = New System.Drawing.Point(150, 76)
+        Me.txtFx.Name = "txtFx"
+        Me.txtFx.Size = New System.Drawing.Size(680, 23)
+        Me.txtFx.TabIndex = 9
+        '
+        'btnRasfoireFx
+        '
+        Me.btnRasfoireFx.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
+        Me.btnRasfoireFx.Location = New System.Drawing.Point(838, 75)
+        Me.btnRasfoireFx.Name = "btnRasfoireFx"
+        Me.btnRasfoireFx.Size = New System.Drawing.Size(102, 25)
+        Me.btnRasfoireFx.TabIndex = 10
+        Me.btnRasfoireFx.Text = "Răsfoiește…"
+        Me.btnRasfoireFx.UseVisualStyleBackColor = True
+        '
+        'lblCai
+        '
+        Me.lblCai.AutoSize = True
+        Me.lblCai.Location = New System.Drawing.Point(14, 110)
+        Me.lblCai.Name = "lblCai"
+        Me.lblCai.Size = New System.Drawing.Size(100, 15)
+        Me.lblCai.TabIndex = 11
+        Me.lblCai.Text = "Fișier cale.accdb:"
+        '
+        'txtCai
+        '
+        Me.txtCai.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
+        Me.txtCai.Location = New System.Drawing.Point(150, 107)
+        Me.txtCai.Name = "txtCai"
+        Me.txtCai.Size = New System.Drawing.Size(680, 23)
+        Me.txtCai.TabIndex = 12
+        '
+        'btnRasfoireCai
+        '
+        Me.btnRasfoireCai.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
+        Me.btnRasfoireCai.Location = New System.Drawing.Point(838, 106)
+        Me.btnRasfoireCai.Name = "btnRasfoireCai"
+        Me.btnRasfoireCai.Size = New System.Drawing.Size(102, 25)
+        Me.btnRasfoireCai.TabIndex = 13
+        Me.btnRasfoireCai.Text = "Răsfoiește…"
+        Me.btnRasfoireCai.UseVisualStyleBackColor = True
+        '
+        'btnImpinge
+        '
+        Me.btnImpinge.Location = New System.Drawing.Point(150, 139)
+        Me.btnImpinge.Name = "btnImpinge"
+        Me.btnImpinge.Size = New System.Drawing.Size(180, 28)
+        Me.btnImpinge.TabIndex = 14
+        Me.btnImpinge.Text = "Împinge pe server"
+        Me.btnImpinge.UseVisualStyleBackColor = True
+        '
+        'prgPush
+        '
+        Me.prgPush.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
+        Me.prgPush.Location = New System.Drawing.Point(340, 143)
+        Me.prgPush.Name = "prgPush"
+        Me.prgPush.Size = New System.Drawing.Size(300, 20)
+        Me.prgPush.TabIndex = 15
+        '
+        'lblFisiere
+        '
+        Me.lblFisiere.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
+        Me.lblFisiere.Location = New System.Drawing.Point(650, 145)
+        Me.lblFisiere.Name = "lblFisiere"
+        Me.lblFisiere.Size = New System.Drawing.Size(290, 18)
+        Me.lblFisiere.TabIndex = 16
+        Me.lblFisiere.Text = "Pe server: —"
         '
         'pnlSurse
         '
-        Me.pnlSurse.Controls.Add(Me.clbDc)
-        Me.pnlSurse.Controls.Add(Me.lblSurse)
-        Me.pnlSurse.Controls.Add(Me.txtCheie)
-        Me.pnlSurse.Controls.Add(Me.lblCheie)
-        Me.pnlSurse.Controls.Add(Me.btnIncarca)
-        Me.pnlSurse.Controls.Add(Me.btnRasfoire)
-        Me.pnlSurse.Controls.Add(Me.txtFolder)
-        Me.pnlSurse.Controls.Add(Me.lblFolder)
+        Me.pnlSurse.Controls.Add(Me.lblFisiere)
+        Me.pnlSurse.Controls.Add(Me.prgPush)
+        Me.pnlSurse.Controls.Add(Me.btnImpinge)
+        Me.pnlSurse.Controls.Add(Me.btnRasfoireCai)
+        Me.pnlSurse.Controls.Add(Me.txtCai)
+        Me.pnlSurse.Controls.Add(Me.lblCai)
+        Me.pnlSurse.Controls.Add(Me.btnRasfoireFx)
+        Me.pnlSurse.Controls.Add(Me.txtFx)
+        Me.pnlSurse.Controls.Add(Me.lblFx)
+        Me.pnlSurse.Controls.Add(Me.btnReciteste)
+        Me.pnlSurse.Controls.Add(Me.cboBaza)
+        Me.pnlSurse.Controls.Add(Me.lblBaza)
+        Me.pnlSurse.Controls.Add(Me.cboAn)
+        Me.pnlSurse.Controls.Add(Me.lblAn)
+        Me.pnlSurse.Controls.Add(Me.lblUnitate)
+        Me.pnlSurse.Controls.Add(Me.cboDc)
+        Me.pnlSurse.Controls.Add(Me.lblDc)
         Me.pnlSurse.Dock = System.Windows.Forms.DockStyle.Top
         Me.pnlSurse.Location = New System.Drawing.Point(0, 0)
         Me.pnlSurse.Name = "pnlSurse"
-        Me.pnlSurse.Size = New System.Drawing.Size(884, 168)
+        Me.pnlSurse.Size = New System.Drawing.Size(954, 178)
         Me.pnlSurse.TabIndex = 0
         '
-        'btnVerifica
+        'btnAnalizeaza
         '
-        Me.btnVerifica.Location = New System.Drawing.Point(12, 8)
-        Me.btnVerifica.Name = "btnVerifica"
-        Me.btnVerifica.Size = New System.Drawing.Size(140, 28)
-        Me.btnVerifica.TabIndex = 0
-        Me.btnVerifica.Text = "Verificare"
-        Me.btnVerifica.UseVisualStyleBackColor = True
+        Me.btnAnalizeaza.Location = New System.Drawing.Point(14, 14)
+        Me.btnAnalizeaza.Name = "btnAnalizeaza"
+        Me.btnAnalizeaza.Size = New System.Drawing.Size(180, 32)
+        Me.btnAnalizeaza.TabIndex = 0
+        Me.btnAnalizeaza.Text = "Analizează"
+        Me.btnAnalizeaza.UseVisualStyleBackColor = True
         '
-        'btnTransfera
+        'btnRuleaza
         '
-        Me.btnTransfera.Enabled = False
-        Me.btnTransfera.Location = New System.Drawing.Point(158, 8)
-        Me.btnTransfera.Name = "btnTransfera"
-        Me.btnTransfera.Size = New System.Drawing.Size(140, 28)
-        Me.btnTransfera.TabIndex = 1
-        Me.btnTransfera.Text = "Transfer"
-        Me.btnTransfera.UseVisualStyleBackColor = True
+        Me.btnRuleaza.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
+        Me.btnRuleaza.Enabled = False
+        Me.btnRuleaza.Location = New System.Drawing.Point(590, 14)
+        Me.btnRuleaza.Name = "btnRuleaza"
+        Me.btnRuleaza.Size = New System.Drawing.Size(160, 32)
+        Me.btnRuleaza.TabIndex = 1
+        Me.btnRuleaza.Text = "Rulează"
+        Me.btnRuleaza.UseVisualStyleBackColor = True
         '
-        'chkForteaza
+        'btnForteaza
         '
-        Me.chkForteaza.AutoSize = True
-        Me.chkForteaza.Location = New System.Drawing.Point(310, 14)
-        Me.chkForteaza.Name = "chkForteaza"
-        Me.chkForteaza.Size = New System.Drawing.Size(232, 19)
-        Me.chkForteaza.TabIndex = 2
-        Me.chkForteaza.Text = "Permite transferul deși verificarea nu e curată"
-        Me.chkForteaza.UseVisualStyleBackColor = True
+        Me.btnForteaza.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
+        Me.btnForteaza.Enabled = False
+        Me.btnForteaza.Location = New System.Drawing.Point(758, 14)
+        Me.btnForteaza.Name = "btnForteaza"
+        Me.btnForteaza.Size = New System.Drawing.Size(182, 32)
+        Me.btnForteaza.TabIndex = 2
+        Me.btnForteaza.Text = "Forțează rularea"
+        Me.btnForteaza.UseVisualStyleBackColor = True
         '
         'lblStare
         '
         Me.lblStare.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.lblStare.Location = New System.Drawing.Point(560, 14)
+        Me.lblStare.Location = New System.Drawing.Point(204, 20)
         Me.lblStare.Name = "lblStare"
-        Me.lblStare.Size = New System.Drawing.Size(312, 19)
+        Me.lblStare.Size = New System.Drawing.Size(376, 34)
         Me.lblStare.TabIndex = 3
-        Me.lblStare.Text = "Alege folderul VBA_ARTEFACTE și încarcă DC-urile."
-        Me.lblStare.TextAlign = System.Drawing.ContentAlignment.MiddleRight
+        Me.lblStare.Text = "Alege unitatea, anul și baza țintă."
         '
         'pnlActiuni
         '
         Me.pnlActiuni.Controls.Add(Me.lblStare)
-        Me.pnlActiuni.Controls.Add(Me.chkForteaza)
-        Me.pnlActiuni.Controls.Add(Me.btnTransfera)
-        Me.pnlActiuni.Controls.Add(Me.btnVerifica)
-        Me.pnlActiuni.Dock = System.Windows.Forms.DockStyle.Top
-        Me.pnlActiuni.Location = New System.Drawing.Point(0, 168)
+        Me.pnlActiuni.Controls.Add(Me.btnForteaza)
+        Me.pnlActiuni.Controls.Add(Me.btnRuleaza)
+        Me.pnlActiuni.Controls.Add(Me.btnAnalizeaza)
+        Me.pnlActiuni.Dock = System.Windows.Forms.DockStyle.Bottom
+        Me.pnlActiuni.Location = New System.Drawing.Point(0, 561)
         Me.pnlActiuni.Name = "pnlActiuni"
-        Me.pnlActiuni.Size = New System.Drawing.Size(884, 46)
-        Me.pnlActiuni.TabIndex = 1
+        Me.pnlActiuni.Size = New System.Drawing.Size(954, 60)
+        Me.pnlActiuni.TabIndex = 3
         '
-        'dgvRezultate
+        'dgvConstatari
         '
-        Me.dgvRezultate.AllowUserToAddRows = False
-        Me.dgvRezultate.AllowUserToDeleteRows = False
-        Me.dgvRezultate.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill
-        Me.dgvRezultate.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
-        Me.dgvRezultate.Dock = System.Windows.Forms.DockStyle.Top
-        Me.dgvRezultate.Location = New System.Drawing.Point(0, 214)
-        Me.dgvRezultate.Name = "dgvRezultate"
-        Me.dgvRezultate.ReadOnly = True
-        Me.dgvRezultate.RowHeadersVisible = False
-        Me.dgvRezultate.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect
-        Me.dgvRezultate.Size = New System.Drawing.Size(884, 220)
-        Me.dgvRezultate.TabIndex = 2
+        Me.dgvConstatari.AllowUserToAddRows = False
+        Me.dgvConstatari.AllowUserToDeleteRows = False
+        Me.dgvConstatari.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill
+        Me.dgvConstatari.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.dgvConstatari.Location = New System.Drawing.Point(0, 178)
+        Me.dgvConstatari.MultiSelect = False
+        Me.dgvConstatari.Name = "dgvConstatari"
+        Me.dgvConstatari.ReadOnly = True
+        Me.dgvConstatari.RowHeadersVisible = False
+        Me.dgvConstatari.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect
+        Me.dgvConstatari.Size = New System.Drawing.Size(954, 203)
+        Me.dgvConstatari.TabIndex = 1
         '
         'txtJurnal
         '
-        Me.txtJurnal.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.txtJurnal.Location = New System.Drawing.Point(0, 434)
+        Me.txtJurnal.Dock = System.Windows.Forms.DockStyle.Bottom
+        Me.txtJurnal.Location = New System.Drawing.Point(0, 381)
         Me.txtJurnal.Multiline = True
         Me.txtJurnal.Name = "txtJurnal"
         Me.txtJurnal.ReadOnly = True
-        Me.txtJurnal.ScrollBars = System.Windows.Forms.ScrollBars.Both
-        Me.txtJurnal.Size = New System.Drawing.Size(884, 227)
-        Me.txtJurnal.TabIndex = 3
-        Me.txtJurnal.WordWrap = False
+        Me.txtJurnal.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
+        Me.txtJurnal.Size = New System.Drawing.Size(954, 180)
+        Me.txtJurnal.TabIndex = 2
         '
-        'dlgFolder
+        'dlgFisier
         '
-        Me.dlgFolder.Description = "Alege folderul VBA_ARTEFACTE scris de exportul din Access."
-        Me.dlgFolder.UseDescriptionForTitle = True
+        Me.dlgFisier.Filter = "Baze Access (*.accdb)|*.accdb|Toate fișierele (*.*)|*.*"
+        Me.dlgFisier.Title = "Alege fișierul Access"
+        '
+        'sfat
+        '
+        Me.sfat.SetToolTipHeader(Me.cboDc, "Unitățile instalate")
+        Me.sfat.SetToolTipText(Me.cboDc, "Citite din HKCU\Software\VB and VBA Program Settings\AVACONT." & Global.Microsoft.VisualBasic.ChrW(10) & "Migratorul doar citește registrul; nu scrie nimic în el.")
+        Me.sfat.SetToolTipHeader(Me.cboBaza, "Baza de pe MariaDB")
+        Me.sfat.SetToolTipText(Me.cboBaza, "Rândurile se rutează prin [Cai]; se scriu doar cele care ajung aici." & Global.Microsoft.VisualBasic.ChrW(10) & "Migrarea NU creează tabele.")
+        Me.sfat.SetToolTipHeader(Me.txtFx, "Fișierul FOREXE al anului")
+        Me.sfat.SetToolTipText(Me.txtFx, "Trebuie să fie FĂRĂ parolă de bază de date." & Global.Microsoft.VisualBasic.ChrW(10) & "Serverul citește cu mdbtools, care nu poate decripta.")
+        Me.sfat.SetToolTipFooter(Me.txtFx, "În Access: Fișier ▸ Informații ▸ Decriptare bază de date.")
+        Me.sfat.SetToolTipHeader(Me.txtCai, "cale.accdb")
+        Me.sfat.SetToolTipText(Me.txtCai, "Poartă tabelul [Cai] — legătura IdUnitate → bază de date." & Global.Microsoft.VisualBasic.ChrW(10) & "Fără el nu se poate ruta niciun rând. Tot fără parolă.")
+        Me.sfat.SetToolTipHeader(Me.btnRuleaza, "Rulează")
+        Me.sfat.SetToolTipText(Me.btnRuleaza, "Pornește doar dacă analiza n-a găsit absolut nimic.")
+        Me.sfat.SetToolTipHeader(Me.btnForteaza, "Forțează rularea")
+        Me.sfat.SetToolTipText(Me.btnForteaza, "Pornește când singurele probleme sunt de integritate (chei străine," & Global.Microsoft.VisualBasic.ChrW(10) & "id-uri DDF, chei duble, rânduri nerutabile). Acele rânduri se SAR." & Global.Microsoft.VisualBasic.ChrW(10) & "Problemele de tip sau de dimensiune opresc și acest buton.")
         '
         'MigratorForm
         '
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(7.0!, 15.0!)
-        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(884, 661)
-        ' Ordine INVERSĂ de andocare: Fill întâi, apoi Top-urile — ultimul Top adăugat
-        ' andochează cel mai sus (regula casei pentru panourile-card).
+        Me.ClientSize = New System.Drawing.Size(954, 621)
+        Me.Controls.Add(Me.dgvConstatari)
         Me.Controls.Add(Me.txtJurnal)
-        Me.Controls.Add(Me.dgvRezultate)
         Me.Controls.Add(Me.pnlActiuni)
         Me.Controls.Add(Me.pnlSurse)
-        Me.MinimumSize = New System.Drawing.Size(760, 520)
+        Me.MinimumSize = New System.Drawing.Size(900, 600)
         Me.Name = "MigratorForm"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "Migrare FX — Access → MariaDB"
+        Me.Text = "Migrare FX — Access ▸ MariaDB"
         Me.pnlSurse.ResumeLayout(False)
         Me.pnlSurse.PerformLayout()
         Me.pnlActiuni.ResumeLayout(False)
-        Me.pnlActiuni.PerformLayout()
-        CType(Me.dgvRezultate, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(Me.dgvConstatari, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
     End Sub
