@@ -14,8 +14,13 @@ Two things the SQL version got wrong that are fixed here:
     to remove.
 
   * CREATE TABLE now carries ENGINE, DEFAULT CHARSET and ROW_FORMAT.
-    Without ENGINE=InnoDB the foreign keys in the same statement are
+    Without ENGINE=InnoDB a foreign key added to the table later is
     accepted and ignored by some engines.
+
+CREATE TABLE carries no foreign keys of its own. They are emitted as
+separate ADD CONSTRAINT statements at priority 11, because tables are
+created in alphabetical order and a key written inline can reference a
+table the batch has not reached yet.
 
 SAFE vs FORCE is unchanged: SAFE adds only. FORCE also modifies and
 drops. Collation repair runs in BOTH -- it is a correctness fix, and
@@ -29,6 +34,12 @@ from .schema_introspect import read_schema
 
 # Rules that never route through the diff.
 SYSTEM_SCHEMAS = {"information_schema", "performance_schema", "mysql", "sys"}
+
+# How much detail the blocking-data report carries per key. A unit with a
+# genuinely broken table can have tens of thousands of orphan rows, and a
+# report nobody can open helps nobody -- so the COUNT is always exact and
+# only the listing is capped.
+MAX_DETAIL_ROWS = 500
 
 
 def same_schema(a: str, b: str) -> bool:
@@ -230,6 +241,9 @@ class SchemaDiff:
         # this run does not touch (AVACONT_COMUN). Cached: the FK checks
         # ask for the same handful of parent tables over and over.
         self._ext_columns = {}
+        # One record per key that cannot be built, with the offending
+        # values spelled out. Read by schema_generate, written as JSON.
+        self.blocks = []
 
     # -- helper ------------------------------------------------------
     def _emit(self, table, obj_name, obj_type, action, sql,
@@ -287,12 +301,19 @@ class SchemaDiff:
             unique = "UNIQUE " if idx.unique else ""
             lines.append(f"  {unique}INDEX {q(idx.name)} ({cols})")
 
+        # The foreign keys are deliberately NOT part of this statement.
+        # Tables are created in alphabetical order, so a key inside
+        # CREATE TABLE can point at a table that does not exist yet --
+        # FX_Extrase referencing FX_Extrase_H is exactly that, and it
+        # fails with errno 1005 / 150 before the second table is ever
+        # created. Emitted separately at priority 11 instead, once every
+        # table in the batch stands.
         for fk in sorted(tbl.foreign_keys.values(), key=lambda f: f.name):
-            lines.append("  " + self._fk_clause(fk))
+            self._create_fk(tbl.name, fk.name, fk)
 
         # ENGINE / CHARSET / ROW_FORMAT taken from the source table, not
-        # left to the server default: the FKs above need InnoDB, and the
-        # charset must not be inherited from the target database.
+        # left to the server default: the keys added later need InnoDB,
+        # and the charset must not be inherited from the target database.
         engine = tbl.engine or "InnoDB"
         charset = tbl.charset or "utf8"
         collation = tbl.collation or "utf8_general_ci"
@@ -599,7 +620,7 @@ class SchemaDiff:
             return
         for (table, name), fk in sorted(self._fk_defs.items()):
             try:
-                reason = self._fk_problem(table, fk)
+                problem = self._fk_problem(table, fk)
             except Exception as exc:
                 # Not swallowed -- re-raised with the one detail the bare
                 # MariaDB error lacks: WHICH key was being checked. A
@@ -608,11 +629,20 @@ class SchemaDiff:
                 raise SchemaSyncError(
                     f"Verificarea cheii `{name}` de pe "
                     f"`{self.db}`.`{table}` a eșuat: {exc}") from exc
-            if reason:
-                self._block_fk_group(table, name, fk, reason)
+            if problem:
+                problem["baza"] = self.db
+                problem["tabel"] = table
+                problem["cheie"] = name
+                self.blocks.append(problem)
+                self._block_fk_group(table, name, fk, problem["motiv"])
 
-    def _fk_problem(self, table, fk) -> str:
-        """Why this key cannot be created, or None when it can."""
+    def _fk_problem(self, table, fk) -> dict:
+        """Why this key cannot be created, or None when it can.
+
+        Returns a record, not a sentence: the sentence goes in the log and
+        in error_msg, the rest goes into the JSON report, where it can name
+        every offending row instead of three examples.
+        """
         ref_schema = self._ref_schema(fk)
         external = not same_schema(ref_schema, self.db)
 
@@ -627,16 +657,20 @@ class SchemaDiff:
             ref_col = self._referenced_column(ref_schema, fk.ref_table,
                                               fk.ref_columns[0])
             if ref_col is None:
-                return (f"tabelul referit `{ref_schema}`.`{fk.ref_table}` "
-                        f"sau coloana `{fk.ref_columns[0]}` nu există. "
-                        f"`{ref_schema}` nu este niciodată sincronizată de "
-                        f"acest program — trebuie corectată separat")
+                return self._block(
+                    fk, ref_schema, "structura_lipsa",
+                    f"tabelul referit `{ref_schema}`.`{fk.ref_table}` "
+                    f"sau coloana `{fk.ref_columns[0]}` nu există. "
+                    f"`{ref_schema}` nu este niciodată sincronizată de "
+                    f"acest program — trebuie corectată separat")
             ref_charset, ref_collation = ref_col["cs"], ref_col["co"]
         else:
             planned = self._planned_column(fk.ref_table, fk.ref_columns[0])
             if planned is None:
-                return (f"tabelul referit `{fk.ref_table}` nu există nici în "
-                        f"țintă, nici în sursă")
+                return self._block(
+                    fk, ref_schema, "structura_lipsa",
+                    f"tabelul referit `{fk.ref_table}` nu există nici în "
+                    f"țintă, nici în sursă")
             ref_charset, ref_collation = planned.charset, planned.collation
 
         # 2. Would the charsets match? A key between columns with
@@ -649,11 +683,15 @@ class SchemaDiff:
             if external:
                 extra = (f" `{ref_schema}` nu este sincronizată de acest "
                          f"program, deci diferența nu se poate repara de aici")
-            return (f"`{fk.columns[0]}` ajunge {mine.charset} / "
-                    f"{mine.collation}, dar `{ref_schema}`.`{fk.ref_table}`."
-                    f"`{fk.ref_columns[0]}` este {ref_charset} / "
-                    f"{ref_collation} — cheia ar fi refuzată cu eroarea "
-                    f"3780.{extra}")
+            return self._block(
+                fk, ref_schema, "charset_diferit",
+                f"`{fk.columns[0]}` ajunge {mine.charset} / "
+                f"{mine.collation}, dar `{ref_schema}`.`{fk.ref_table}`."
+                f"`{fk.ref_columns[0]}` este {ref_charset} / "
+                f"{ref_collation} — cheia ar fi refuzată cu eroarea "
+                f"3780.{extra}",
+                charset_local=f"{mine.charset} / {mine.collation}",
+                charset_referit=f"{ref_charset} / {ref_collation}")
 
         # 3. Do the rows agree? Only askable once every column involved
         #    actually EXISTS. A column that this same batch is still
@@ -674,9 +712,76 @@ class SchemaDiff:
             else:
                 head = (f"{n} rânduri din `{self.db}`.`{table}` au în {cols} "
                         f"valori care nu există în `{ref_schema}`.")
-            return (head +
-                    f"`{fk.ref_table}`{shown}. Datele trebuie corectate întâi")
+            record = self._block(
+                fk, ref_schema, "date_orfane",
+                head + f"`{fk.ref_table}`{shown}. "
+                       f"Datele trebuie corectate întâi",
+                randuri_afectate=n)
+            record.update(self._orphan_detail(table, fk, ref_schema, n))
+            return record
         return None
+
+    def _block(self, fk, ref_schema, tip, motiv, **extra) -> dict:
+        """One blocking record. `motiv` is what the operator reads."""
+        record = {
+            "tip": tip,
+            "motiv": motiv,
+            "coloane": list(fk.columns),
+            "refera": {
+                "baza": ref_schema,
+                "tabel": fk.ref_table,
+                "coloane": list(fk.ref_columns),
+            },
+        }
+        record.update(extra)
+        return record
+
+    def _orphan_detail(self, table, fk, ref_schema, total) -> dict:
+        """Every offending value, with the primary keys that carry it.
+
+        Three examples in a log line tell the operator that something is
+        wrong. This tells them WHICH rows -- by primary key, so they can be
+        looked at one by one -- and hands back the SELECT that lists them.
+        """
+        tgt_tbl = self.tgt.tables.get(table)
+        pk = tgt_tbl.primary_key if tgt_tbl else None
+        pk_cols = list(pk.columns) if pk else []
+
+        picked = ", ".join(f"c.{q(col)}" for col in pk_cols + list(fk.columns))
+        on = " AND ".join(f"p.{q(rc)} = c.{q(c)}"
+                          for c, rc in zip(fk.columns, fk.ref_columns))
+        not_null = " AND ".join(f"c.{q(c)} IS NOT NULL" for c in fk.columns)
+        base = (f"FROM {q(self.db)}.{q(table)} c "
+                f"LEFT JOIN {q(ref_schema)}.{q(fk.ref_table)} p ON {on} "
+                f"WHERE {not_null} AND p.{q(fk.ref_columns[0])} IS NULL")
+
+        rows = query(self.conn,
+                     f"SELECT {picked} {base} LIMIT {MAX_DETAIL_ROWS}")
+
+        grouped = {}
+        for r in rows:
+            value = tuple(r[c] for c in fk.columns)
+            entry = grouped.setdefault(value, {"randuri": 0, "chei_primare": []})
+            entry["randuri"] += 1
+            if pk_cols:
+                entry["chei_primare"].append({c: r[c] for c in pk_cols})
+
+        valori = []
+        for value, entry in sorted(grouped.items(),
+                                   key=lambda kv: -kv[1]["randuri"]):
+            valori.append({
+                "valoare": dict(zip(fk.columns, value)),
+                "randuri_in_esantion": entry["randuri"],
+                "chei_primare": entry["chei_primare"],
+            })
+
+        return {
+            "cheie_primara": pk_cols,
+            "valori": valori,
+            "esantion_limitat": total > len(rows),
+            "randuri_listate": len(rows),
+            "sql_inspectare": f"SELECT {picked} {base};",
+        }
 
     def _external_columns(self, schema, table) -> dict:
         """{column: (charset, collation)} for a schema we do not sync."""
@@ -824,9 +929,13 @@ def rename_cleanup(source, mode) -> list:
     return out
 
 
-def build_diff(conn, targets, mode, logger) -> list:
+def build_diff(conn, targets, mode, logger, blocks=None) -> list:
     """Compare every target against the source. Returns Statements in
-    execution order."""
+    execution order.
+
+    `blocks`, when given, collects one record per key that cannot be built
+    -- the material for the JSON report of what has to be fixed by hand.
+    """
     from .schema_common import server_version
 
     is_mariadb, version = server_version(conn)
@@ -844,9 +953,12 @@ def build_diff(conn, targets, mode, logger) -> list:
         if not target.exists:
             logger.warning("Baza `%s` nu există — ignorată.", db)
             continue
-        produced = SchemaDiff(source, target, db, mode, logger, conn).run()
+        diff = SchemaDiff(source, target, db, mode, logger, conn)
+        produced = diff.run()
         logger.info("  %s: %d instrucțiuni.", db, len(produced))
         statements.extend(produced)
+        if blocks is not None:
+            blocks.extend(diff.blocks)
 
     statements.extend(rename_cleanup(source, mode))
     statements.sort(key=lambda s: s.priority)

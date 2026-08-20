@@ -307,6 +307,8 @@ def main(argv=None) -> int:
         print()
 
         if args.out:
+            os.makedirs(os.path.dirname(os.path.abspath(args.out)),
+                        exist_ok=True)
             with open(args.out, "w", encoding="utf-8") as fh:
                 fh.write(render_sql(rows))
             logger.info("Scris în %s", os.path.abspath(args.out))

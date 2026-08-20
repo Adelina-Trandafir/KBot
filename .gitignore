@@ -500,3 +500,6 @@ $RECYCLE.BIN/
 /PYTHON/_push
 /FX_System_Export
 /CLAUDE.md
+
+# schema_sync: fisierele .sql generate (output, nu sursa)
+schema_diff/

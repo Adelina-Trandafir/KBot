@@ -21,14 +21,17 @@ Options:
 """
 
 import argparse
+import json
+import os
 import sys
+from datetime import datetime
 
 import mysql.connector
 
-from .schema_common import (CONTROL_DB, SchemaSyncError, check_prerequisites,
-                            connect, discover_targets, ensure_control_table,
-                            fetch_pending, parse_targets, setup_logging,
-                            summarise, verify_targets)
+from .schema_common import (CONTROL_DB, OUT_DIR, SchemaSyncError,
+                            check_prerequisites, connect, discover_targets,
+                            ensure_control_table, fetch_pending, parse_targets,
+                            setup_logging, summarise, verify_targets)
 from .schema_diff import build_diff
 
 
@@ -69,6 +72,41 @@ def persist(conn, statements: list, mode: str, logger) -> None:
     logger.info("Scrise %d instrucțiuni în schema_diff_log.", len(rows))
 
 
+def write_blocks_report(blocks: list, logger) -> str:
+    """Write the blocking data as JSON. Returns the path, or None.
+
+    The log lines name three example values, which is enough to know that
+    something is wrong and not enough to fix it. This file names every
+    offending value, with the primary keys of the rows carrying it and the
+    SELECT that lists them.
+    """
+    if not blocks:
+        return None
+
+    payload = {
+        "generat": datetime.now().isoformat(timespec="seconds"),
+        "blocaje": len(blocks),
+        "explicatie": (
+            "Fiecare intrare este o cheie străină care NU poate fi creată. "
+            "«valori» conține valorile din baza țintă care nu au corespondent "
+            "în tabelul referit; «chei_primare» arată exact rândurile care le "
+            "poartă. Corectați datele, apoi reluați sincronizarea."),
+        "chei_blocate": blocks,
+    }
+
+    os.makedirs(OUT_DIR, exist_ok=True)
+    path = os.path.join(
+        OUT_DIR, f"blocaje_{datetime.now():%Y%m%d_%H%M%S}.json")
+    with open(path, "w", encoding="utf-8") as fh:
+        # default=str: a blocking value can be a date or a Decimal, and a
+        # report that crashes on one row is worth nothing.
+        json.dump(payload, fh, ensure_ascii=False, indent=2, default=str)
+
+    logger.warning("%d chei nu se pot crea din cauza datelor. Lista completă: "
+                   "%s", len(blocks), os.path.abspath(path))
+    return path
+
+
 def generate(conn, targets, mode, logger, reset=True) -> list:
     """Full generation pass. Returns the pending rows as stored."""
     ensure_control_table(conn, logger)
@@ -78,7 +116,8 @@ def generate(conn, targets, mode, logger, reset=True) -> list:
     # empty: the previous plan deleted, the new one never written, and
     # nothing at all to look at afterwards. Computing first keeps the old
     # rows until there is something to put in their place.
-    statements = build_diff(conn, targets, mode, logger)
+    blocks = []
+    statements = build_diff(conn, targets, mode, logger, blocks)
 
     if reset:
         clear_pending(conn, logger)
@@ -86,6 +125,8 @@ def generate(conn, targets, mode, logger, reset=True) -> list:
     blocked = [s for s in statements if s.error_msg]
     for s in blocked:
         logger.error("%s.%s — %s", s.target_db, s.table_name, s.error_msg)
+
+    write_blocks_report(blocks, logger)
 
     persist(conn, statements, mode, logger)
     return fetch_pending(conn, targets)

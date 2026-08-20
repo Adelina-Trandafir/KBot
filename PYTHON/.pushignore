@@ -1,0 +1,31 @@
+# .pushignore — ce NU se trimite pe server.
+#
+# Reguli ca la .gitignore:
+#   nume              orice folder/fișier cu acest nume, la orice nivel
+#   /nume             doar la rădăcina arborelui trimis
+#   nume/             doar dacă e folder
+#   *.ext             după extensie
+#   a/**/b            ** trece peste oricâte foldere
+#   !nume             pune la loc ceva scos de o regulă de mai sus
+#
+# Ultima regulă care se potrivește câștigă, deci o negație se pune DUPĂ
+# regula pe care o desface.
+
+# Rezultatele lui schema_sync — se generează pe server, la fiecare rulare
+schema_diff/
+
+# Copiile de siguranță de dinaintea operațiilor distructive
+backup/
+
+# Jurnale
+*.log
+
+# Unealta de push este o aplicație Windows: nu are ce căuta pe serverul
+# Linux, iar push_settings.json ține adresa și amprenta cheii de gazdă
+AvacontPush/
+_push/
+
+# Fișiere locale de lucru
+.vs/
+*.bak
+*.tmp

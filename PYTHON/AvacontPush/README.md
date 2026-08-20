@@ -44,6 +44,36 @@ from `push_settings.json`). `push_settings.json` is also git-ignored.
 
 Every run is logged to `Logs\push_{timestamp}.log`.
 
+## `.pushignore`
+
+`IgnorePatterns` in `push_settings.json` stays what it always was: a short fixed
+list of build/IDE noise. For everything else there is **`.pushignore`**, a file in
+the root of the pushed tree (`PYTHON\.pushignore`) that travels with the files it
+talks about and needs no rebuild or config edit.
+
+The rules are gitignore's:
+
+| Rule | Meaning |
+|---|---|
+| `# text` | comment |
+| `nume` | any folder or file with that name, at any depth, and everything under it |
+| `/nume` | only at the root of the pushed tree |
+| `nume/` | only when it is a folder |
+| `*.log` | by extension, in any folder |
+| `docs/**/*.tmp` | `**` spans any number of folders |
+| `!nume` | puts back something an earlier rule took out |
+
+**The last matching rule wins**, so a negation must come *after* the rule it
+undoes. `.pushignore` also has the last word over `IgnorePatterns`: a `!` line can
+put back a file the fixed list would have skipped.
+
+Note that the extension allow-list still applies on top. `.pushignore` can only
+*subtract* from what `IncludeExtensions` already permits — a file whose extension
+is not in that list is never pushed, ignore file or not. That also means
+`.pushignore` itself is never pushed: it has no extension.
+
+The scan writes the number of rules read into the run log.
+
 ## Notes
 
 - Timestamps are compared in **UTC** with a 2-second tolerance.

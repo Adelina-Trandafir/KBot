@@ -30,8 +30,8 @@ from datetime import datetime
 
 import mysql.connector
 
-from .schema_common import (SchemaSyncError, check_prerequisites, connect,
-                            discover_targets, drop_legacy_procedures,
+from .schema_common import (OUT_DIR, SchemaSyncError, check_prerequisites,
+                            connect, discover_targets, drop_legacy_procedures,
                             ensure_control_table, parse_targets, setup_logging,
                             summarise, verify_targets)
 from .schema_execute import (confirm_destructive, execute_rows,
@@ -62,7 +62,8 @@ def main(argv=None) -> int:
                         help="Execută fără a întreba.")
     parser.add_argument("--mode", choices=["SAFE", "FORCE"], default="SAFE")
     parser.add_argument("--out", default=None,
-                        help="Fișierul .sql. Implicit: schema_diff_<dată>.sql")
+                        help=f"Fișierul .sql. Implicit: "
+                             f"{OUT_DIR}/schema_diff_<dată>.sql")
     parser.add_argument("--allow-destructive", action="store_true")
     parser.add_argument("--backup-dir", default="backup")
     parser.add_argument("--skip-backup", action="store_true")
@@ -97,7 +98,9 @@ def main(argv=None) -> int:
             logger.info("Schemele sunt deja sincronizate. Nimic de făcut.")
             return 0
 
-        out_path = args.out or f"schema_diff_{datetime.now():%Y%m%d_%H%M%S}.sql"
+        out_path = args.out or os.path.join(
+            OUT_DIR, f"schema_diff_{datetime.now():%Y%m%d_%H%M%S}.sql")
+        os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as fh:
             fh.write(render_sql(rows))
         logger.info("Instrucțiunile scrise în: %s", os.path.abspath(out_path))

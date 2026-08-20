@@ -131,9 +131,26 @@ Partial Public Class Form1
         Dim localRoot = _settings.LocalRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
         Dim remoteRoot = _settings.RemoteRoot.TrimEnd("/"c)
 
+        ' .pushignore, read from the root of the tree being pushed. It sits
+        ' next to the files it talks about, so it travels with them instead
+        ' of living in the app's configuration.
+        Dim ignoreFile = PushIgnore.Load(localRoot)
+        If ignoreFile.Count > 0 Then
+            log.Write($"{PushIgnore.FileName}: {ignoreFile.Count} reguli din {ignoreFile.SourcePath}")
+        End If
+
         For Each localFile In Directory.EnumerateFiles(localRoot, "*", SearchOption.AllDirectories)
             Dim rel = localFile.Substring(localRoot.Length + 1)
-            If IsIgnored(rel, _settings.IgnorePatterns) Then Continue For
+
+            ' .pushignore has the last word: a "!" line there can put back a
+            ' file the fixed JSON list would have skipped.
+            Dim ruled = ignoreFile.Match(rel)
+            If ruled.HasValue Then
+                If ruled.Value Then Continue For
+            ElseIf IsIgnored(rel, _settings.IgnorePatterns) Then
+                Continue For
+            End If
+
             ' Push only allowed source/config extensions (py, json, xml, ...); skip the rest.
             If Not IsIncludedExtension(rel, _settings.IncludeExtensions) Then Continue For
 

@@ -43,6 +43,12 @@ FORBIDDEN_TARGETS = {COMMON_DB, SOURCE_DB, "information_schema",
 LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                         "schema_sync.log")
 
+# Where generated .sql files land when --out is not given. Relative to
+# the directory the tool is run from, and meant to be gitignored whole:
+# every run drops another timestamped file, and they are output, not
+# source.
+OUT_DIR = "schema_diff"
+
 OBJECT_TYPES = ("TABLE", "COLUMN", "COLLATION", "INDEX", "PK", "FK",
                 "RENAME_CLEANUP")
 ACTION_TYPES = ("CREATE", "ADD", "MODIFY", "DROP", "RENAME")

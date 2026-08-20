@@ -143,6 +143,12 @@ Repararea charset-ului stă la pasul 8: **după** ce coloanele există, dar
 **înainte** de a se construi vreo cheie peste ele. O cheie construită
 peste coloane cu seturi de caractere diferite eșuează cu eroarea 3780.
 
+`CREATE TABLE` (pasul 6) **nu conține chei străine**. Ele se emit separat, la
+pasul 11. Tabelele se creează în ordine alfabetică, deci o cheie scrisă în
+interiorul lui `CREATE TABLE` poate arăta spre un tabel la care lotul nu a
+ajuns încă — `FX_Extrase` spre `FX_Extrase_H` este exact cazul, și pică cu
+eroarea 1005 / 150. Scoase la pasul 11, toate tabelele există deja.
+
 ---
 
 ## O singură bază, pentru probe
@@ -226,6 +232,37 @@ au în `TipRand` valori care nu există în `AVACONT_COMUN`.`DefaTipRand`
 (de exemplu «X», «Z»). Datele trebuie corectate întâi.
 ```
 
+### Lista completă: `schema_diff/blocaje_<dată>.json`
+
+Mesajele din jurnal dau trei exemple — destul cât să știți că e o problemă,
+prea puțin cât să o reparați. Lista întreagă se scrie, la fiecare generare
+care găsește blocaje, într-un fișier JSON alături de `.sql`:
+
+```
+2 chei nu se pot crea din cauza datelor. Lista completă:
+/root/AVACONT/schema_diff/blocaje_20260820_093144.json
+```
+
+Pentru fiecare cheie blocată fișierul conține:
+
+| Câmp | Ce e |
+|---|---|
+| `baza`, `tabel`, `cheie` | unde anume |
+| `tip` | `date_orfane`, `charset_diferit` sau `structura_lipsa` |
+| `motiv` | aceeași frază ca în jurnal |
+| `coloane`, `refera` | ce coloană arată spre ce tabel |
+| `randuri_afectate` | numărul **exact**, nu al eșantionului |
+| `valori` | fiecare valoare fără corespondent, cu `chei_primare` — **rândurile exacte** care o poartă |
+| `sql_inspectare` | `SELECT`-ul gata scris care le listează pe toate |
+| `esantion_limitat` | `true` dacă listarea s-a oprit la 500 de rânduri |
+
+Deci: `randuri_afectate` spune cât de mare e problema, `chei_primare` spune
+exact ce rânduri să deschideți, iar `sql_inspectare` se poate copia direct în
+client.
+
+Se scrie și la `--view`, fiindcă blocajele se află la generare, nu la
+execuție.
+
 ### De ce se amână și ștergerea, nu doar crearea
 
 Dacă o cheie **există deja** în țintă și urma să fie desfăcută doar ca să se
@@ -303,7 +340,8 @@ Se pune `python -m routes.schema_sync.` înaintea fiecăreia.
 ```
 schema_sync --view --mode SAFE
 ```
-Calculează diferențele, le scrie într-un fișier `.sql`, afișează
+Calculează diferențele, le scrie într-un fișier `.sql` în folderul
+`schema_diff/`, afișează
 rezumatul. **Nu execută nimic.** Modul recomandat pentru început.
 
 ```
@@ -335,7 +373,7 @@ schema_sync --drop-legacy --view
 | `--run` | execută fără a întreba |
 | `--mode SAFE\|FORCE` | implicit `SAFE` |
 | `--targets 000_DEMO,018_GRRS` | doar aceste baze, în loc de tot ce e în `CAI`; un nume inexistent oprește rularea |
-| `--out fisier.sql` | unde se scrie SQL-ul generat |
+| `--out fisier.sql` | unde se scrie SQL-ul generat; implicit `schema_diff/schema_diff_<dată>.sql`. Folderul se creează singur și este ignorat de git |
 | `--allow-destructive` | permite operațiile distructive |
 | `--backup-dir CALE` | unde se scriu copiile; implicit `backup` |
 | `--skip-backup` | fără copie de siguranță — **nerecomandat** |
@@ -445,6 +483,7 @@ planul vechi șters, și cel nou nescris.
 | 1061 | index cu nume duplicat |
 | 1071 | cheie prea lungă (poate apărea la lărgire, nu la îngustare) |
 | 1060 | coloană cu nume duplicat |
+| 1005 / 150 | cheie străină „prost formată" — de obicei tabelul referit nu există încă, sau cele două capete nu au aceeași colaționare |
 | 1452 | rândurile nu se potrivesc cu cele din tabelul referit — apare dacă o cheie ajunge din greșeală să arate spre altă bază |
 | 1146 | tabelul nu există — o cheie pusă la loc pe un tabel șters între timp |
 
