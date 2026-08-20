@@ -39,8 +39,11 @@ class Job(object):
         self.finished = None
         self.error = None
         self.result = None
-        # Pastrat pentru pasul de scriere: raportul analizei aceluiasi fisier.
+        # Pastrate pentru pasul de scriere: raportul analizei aceluiasi fisier
+        # si planul de rutare pe care l-a folosit. Planul NU se rezolva din nou
+        # la scriere -- ramura aleasa trebuie sa fie aceeasi cu cea masurata.
         self.report = None
+        self.plan = None
         self.lines = []
         self._lock = threading.Lock()
 

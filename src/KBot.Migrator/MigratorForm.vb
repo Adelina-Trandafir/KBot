@@ -195,20 +195,21 @@ Public Class MigratorForm
                 Return
             End If
 
+            ' «cale.accdb» e OPȚIONAL. Serverul numără singur unitățile din fișier:
+            ' una singură — și acela e cazul obișnuit — înseamnă că tot ce e acolo
+            ' merge în baza aleasă, deci nu e nimic de rutat. Îl cere abia dacă
+            ' fișierul chiar poartă mai multe unități, și atunci o spune pe nume.
             Dim cai As String = txtCai.Text.Trim()
-            If String.IsNullOrWhiteSpace(cai) OrElse Not File.Exists(cai) Then
-                MessageBox.Show(Me,
-                    "Alege și «cale.accdb». Fără tabelul [Cai] serverul nu poate ruta " &
-                    "rândurile către baze.",
-                    "Migrare FX", MessageBoxButtons.OK, MessageBoxIcon.Information)
-                Return
-            End If
+            Dim areCai As Boolean = Not String.IsNullOrWhiteSpace(cai) AndAlso File.Exists(cai)
 
             Dim confirm As DialogResult = MessageBox.Show(
                 Me,
                 "Se urcă pe server:" & Environment.NewLine &
-                "  • " & Path.GetFileName(cai) & " → cale.accdb" & Environment.NewLine &
                 "  • " & Path.GetFileName(fx) & " → fx_" & an & "_" & dc.ToLowerInvariant() & ".accdb" &
+                If(areCai,
+                   Environment.NewLine & "  • " & Path.GetFileName(cai) & " → cale.accdb",
+                   Environment.NewLine & "  • fără «cale.accdb» — se cere doar dacă fișierul " &
+                   "poartă mai multe unități") &
                 Environment.NewLine & Environment.NewLine &
                 "Fișierele TREBUIE să fie fără parolă de bază de date; serverul nu poate " &
                 "decripta. Continui?",
@@ -219,8 +220,10 @@ Public Class MigratorForm
             prgPush.Value = 0
 
             Using cts As New CancellationTokenSource()
-                AppendLog("Se urcă «" & cai & "» ca [Cai].")
-                Await _client.PushAsync("cai", an, dc, cai, AddressOf OnPushProgress, cts.Token)
+                If areCai Then
+                    AppendLog("Se urcă «" & cai & "» ca [Cai].")
+                    Await _client.PushAsync("cai", an, dc, cai, AddressOf OnPushProgress, cts.Token)
+                End If
 
                 AppendLog("Se urcă «" & fx & "».")
                 Await _client.PushAsync("fx", an, dc, fx, AddressOf OnPushProgress, cts.Token)

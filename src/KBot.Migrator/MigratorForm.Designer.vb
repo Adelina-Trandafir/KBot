@@ -187,7 +187,7 @@ Partial Class MigratorForm
         Me.lblCai.Name = "lblCai"
         Me.lblCai.Size = New System.Drawing.Size(100, 15)
         Me.lblCai.TabIndex = 11
-        Me.lblCai.Text = "Fișier cale.accdb:"
+        Me.lblCai.Text = "cale.accdb (opțional):"
         '
         'txtCai
         '
@@ -350,8 +350,8 @@ Partial Class MigratorForm
         Me.sfat.SetToolTipHeader(Me.txtFx, "Fișierul FOREXE al anului")
         Me.sfat.SetToolTipText(Me.txtFx, "Trebuie să fie FĂRĂ parolă de bază de date." & Global.Microsoft.VisualBasic.ChrW(10) & "Serverul citește cu mdbtools, care nu poate decripta.")
         Me.sfat.SetToolTipFooter(Me.txtFx, "În Access: Fișier ▸ Informații ▸ Decriptare bază de date.")
-        Me.sfat.SetToolTipHeader(Me.txtCai, "cale.accdb")
-        Me.sfat.SetToolTipText(Me.txtCai, "Poartă tabelul [Cai] — legătura IdUnitate → bază de date." & Global.Microsoft.VisualBasic.ChrW(10) & "Fără el nu se poate ruta niciun rând. Tot fără parolă.")
+        Me.sfat.SetToolTipHeader(Me.txtCai, "cale.accdb — opțional")
+        Me.sfat.SetToolTipText(Me.txtCai, "Necesar DOAR dacă fișierul FOREXE poartă mai multe unități." & Global.Microsoft.VisualBasic.ChrW(10) & "Serverul le numără singur; la o singură unitate, tot ce e în fișier" & Global.Microsoft.VisualBasic.ChrW(10) & "merge în baza aleasă și acesta nici nu se atinge.")
         Me.sfat.SetToolTipHeader(Me.btnRuleaza, "Rulează")
         Me.sfat.SetToolTipText(Me.btnRuleaza, "Pornește doar dacă analiza n-a găsit absolut nimic.")
         Me.sfat.SetToolTipHeader(Me.btnForteaza, "Forțează rularea")

@@ -28,9 +28,12 @@ class ExecuteError(Exception):
     """Scrierea nu poate continua — mesaj în română."""
 
 
-def run(conn, db_name, fx_path, maps, report, force, progress=None):
+def run(conn, db_name, fx_path, plan, report, force, progress=None):
     """
     Scrie randurile care au trecut analiza.
+
+    `plan` e ACELASI RoutingPlan folosit la analiza, nu unul nou: altfel ramura
+    aleasa s-ar putea schimba intre masurare si scriere.
 
     `report` e Report-ul analizei aceluiasi fisier: de acolo vin valorile de cheie
     straina care lipsesc pe tinta, ca sa nu mai intrebam serverul inca o data.
@@ -68,7 +71,7 @@ def run(conn, db_name, fx_path, maps, report, force, progress=None):
                 % (table.name, db_name))
 
         target_columns = schema.columns[table.name]
-        router = routing.RowRouter(table, maps)
+        router = plan.router_for(table)
         pk_columns = schema.primary_key.get(table.name) or [table.primary_key]
         seen_keys = set()
         missing = dict((column, values)

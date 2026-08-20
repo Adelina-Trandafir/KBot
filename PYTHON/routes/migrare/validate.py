@@ -364,10 +364,13 @@ class Report(object):
 # Analiza
 # -----------------------------------------------------------------------------
 
-def analyze(conn, db_name, fx_path, maps, progress=None):
+def analyze(conn, db_name, fx_path, plan, progress=None):
     """
     Citeste fisierul o data, ruteaza fiecare rand, pastreaza randurile care ajung
     in `db_name` si le masoara fata de schema tintei.
+
+    `plan` e RoutingPlan-ul rezolvat inainte: fie DIRECT (fisier cu o singura
+    unitate, totul merge in baza aleasa), fie PRIN_CAI (mai multe unitati).
 
     Intoarce un Report. Nu scrie nimic, nicaieri.
     """
@@ -390,7 +393,7 @@ def analyze(conn, db_name, fx_path, maps, progress=None):
 
         say("Se verifică «%s»." % table.name)
         target_columns = schema.columns[table.name]
-        router = routing.RowRouter(table, maps)
+        router = plan.router_for(table)
         pk_columns = schema.primary_key.get(table.name) or [table.primary_key]
         seen_keys = set()
         unknown_reported = set()

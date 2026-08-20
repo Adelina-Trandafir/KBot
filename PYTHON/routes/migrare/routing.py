@@ -2,10 +2,27 @@
 # -----------------------------------------------------------------------------
 # Which unit database (DC) does a row belong to?
 #
-# Port of src/KBot.Migrator/Routing/{RoutingMaps,RowRouter}.vb, moved server-side
-# now that the .accdb itself is on the server. Only six of the sixteen tables carry
-# IdUnitate; the rest reach a DC through a chain of parents, so every map is built
-# BEFORE any row is routed.
+# TWO ANSWERS, and the file itself decides which one applies (see resolve_plan).
+#
+# 1. DIRECT -- the file holds ONE unit, so every row goes to the database the
+#    operator picked. No maps, no cale.accdb, no parent chains. This is the
+#    normal case and it is the whole point: the operator already told us the
+#    destination, so computing it again is ceremony.
+#
+# 2. PRIN [Cai] -- the file holds SEVERAL units, so the destination has to be
+#    worked out per row. Sending everything to the chosen database would write
+#    another unit's rows into it, silently, with no error to notice. That is the
+#    only thing this machinery buys, and it is why it stays.
+#
+# Which one applies is MEASURED, not assumed: distinct_units() reads the seven
+# tables that carry IdUnitate and counts what it finds. A multi-unit file
+# without cale.accdb stops with the unit numbers named, so the operator decides
+# instead of us guessing.
+#
+# The maps below are a port of src/KBot.Migrator/Routing/{RoutingMaps,RowRouter}.vb
+# and are built only on branch 2. Only six of the sixteen tables carry IdUnitate;
+# the rest reach a DC through a chain of parents, so every map is built BEFORE
+# any row is routed.
 #
 #   Cai : IdUnitate -> DC          (din cale.accdb, tabelul [Cai])
 #   A   : CodAngajament -> DC      (FX_Angajamente)
@@ -16,6 +33,7 @@
 # -----------------------------------------------------------------------------
 
 import logging
+import os
 
 from . import accdb, tables
 
@@ -142,10 +160,38 @@ def _build_from_parent(fx_path, table, key_column, target, maps, say):
     say("Harta «%s»: %d chei." % (table, len(target)))
 
 
+class DirectRouter(object):
+    """
+    Ramura obișnuită: fișierul are o singură unitate, deci fiecare rând merge în
+    baza aleasă de operator. Nu se calculează nimic — destinația era deja știută.
+
+    Singura verificare rămasă: dacă rândul poartă el însuși o coloană `DC`
+    completată și aceea spune ALTCEVA, rândul e respins cu motivul. Nu e o
+    formalitate — e fix cazul în care presupunerea «un singur fișier, o singură
+    unitate» s-ar dovedi greșită, iar tăcerea ar însemna date în baza greșită.
+    """
+
+    def __init__(self, table, db_name):
+        self.table = table
+        self.db_name = db_name
+
+    def primary_key_of(self, row):
+        value = row.get(self.table.primary_key)
+        return "?" if value is None else str(value)
+
+    def route(self, row):
+        propriu = _as_text(row.get("DC"))
+        if propriu and propriu.lower() != self.db_name.lower():
+            return [], ("rândul poartă DC «%s», iar ținta aleasă este «%s»"
+                        % (propriu, self.db_name))
+        return [self.db_name], None
+
+
 class RowRouter(object):
     """
-    Rutează rândurile UNUI tabel. Un rând a cărui cheie nu se rezolvă nu se scrie
-    și nu se pierde tăcut: pleacă în lista de respinse, cu cheia primară și motivul.
+    Ramura prin [Cai]: rutează rândurile UNUI tabel. Un rând a cărui cheie nu se
+    rezolvă nu se scrie și nu se pierde tăcut: pleacă în lista de respinse, cu
+    cheia primară și motivul.
     """
 
     def __init__(self, table, maps):
@@ -254,3 +300,109 @@ class RowRouter(object):
             return None
         mapping = self.maps.receptie_r if column.upper() == "IDRR" else self.maps.receptie_h
         return mapping.get(key)
+
+
+# -----------------------------------------------------------------------------
+# Cate unitati are fisierul, si prin urmare care ramura se aplica
+# -----------------------------------------------------------------------------
+
+# Tabelele care poarta chiar ele IdUnitate. Restul ajung la o baza prin lantul
+# de parinti, deci nu spun nimic in plus despre cate unitati are fisierul.
+TABELE_CU_IDUNITATE = ("FX_Angajamente", "FX_Indicatori", "FX_Receptii",
+                       "FX_Receptii_RHR", "FX_Plati", "FX_Extrase_H", "FX_Extrase")
+
+
+def distinct_units(fx_path, progress=None):
+    """
+    Ce valori de IdUnitate apar in fisier, si in ce tabel s-a vazut fiecare.
+
+    Se citesc doar cele sapte tabele care poarta coloana. Cele grele la Memo
+    (FX_Receptii_IMG, FX_Rezervarii_IMG) nu sunt printre ele, deci pasul asta
+    nu plateste pretul imaginilor.
+
+    Un tabel absent din fisier nu opreste numaratoarea: lipsa lui e o constatare
+    a analizei, iar aici intrebarea e alta.
+    """
+    def say(msg):
+        logger.info("migrare/unități: %s", msg)
+        if progress:
+            progress(msg)
+
+    gasite = {}
+    for nume in TABELE_CU_IDUNITATE:
+        try:
+            for row in accdb.iter_rows(fx_path, nume):
+                unit = _as_long(row.get("IdUnitate"))
+                if unit is not None:
+                    gasite.setdefault(unit, set()).add(nume)
+        except accdb.AccdbError as exc:
+            say("«%s» nu a putut fi citit la numărarea unităților: %s" % (nume, exc))
+
+    say("Unități găsite în fișier: %s."
+        % (", ".join(str(u) for u in sorted(gasite)) if gasite else "niciuna"))
+    return gasite
+
+
+class RoutingPlan(object):
+    """
+    Cum se rutează rândurile fișierului ăstuia. Se rezolvă O SINGURĂ DATĂ, la
+    începutul analizei, și e apoi refolosit identic la scriere.
+    """
+
+    DIRECT = "direct"
+    PRIN_CAI = "prin [Cai]"
+
+    def __init__(self, mode, db_name, maps=None, units=None):
+        self.mode = mode
+        self.db_name = db_name
+        self.maps = maps
+        self.units = sorted(units or [])
+
+    def router_for(self, table):
+        if self.mode == self.DIRECT:
+            return DirectRouter(table, self.db_name)
+        return RowRouter(table, self.maps)
+
+    def describe(self):
+        if self.mode == self.DIRECT:
+            return ("Fișierul are o singură unitate (%s), deci toate rândurile merg "
+                    "în baza aleasă, «%s». Nu e nevoie de «cale.accdb»."
+                    % (self.units[0] if self.units else "niciuna declarată", self.db_name))
+        return ("Fișierul are %d unități (%s), deci fiecare rând se rutează prin [Cai]."
+                % (len(self.units), ", ".join(str(u) for u in self.units)))
+
+
+def resolve_plan(fx_path, cai_path, db_name, progress=None):
+    """
+    Masoara fisierul si alege ramura.
+
+    O unitate (sau niciuna declarata) -> DIRECT, si cale.accdb nici nu se atinge.
+    Mai multe unitati -> PRIN_CAI, iar daca cale.accdb lipseste se OPRESTE cu
+    numerele unitatilor in mesaj. Nu se cade inapoi pe DIRECT: exact acolo ar
+    ajunge randurile altei unitati in baza aleasa, tacut.
+    """
+    def say(msg):
+        logger.info("migrare/plan: %s", msg)
+        if progress:
+            progress(msg)
+
+    gasite = distinct_units(fx_path, progress=progress)
+
+    if len(gasite) <= 1:
+        plan = RoutingPlan(RoutingPlan.DIRECT, db_name, units=gasite.keys())
+        say(plan.describe())
+        return plan
+
+    if not cai_path or not os.path.isfile(cai_path):
+        raise RoutingError(
+            "Fișierul conține %d unități (%s), deci rândurile trebuie despărțite "
+            "între baze. Pentru asta e nevoie de «cale.accdb», care nu se află pe "
+            "server. Fie îl împingeți și pe el, fie folosiți un fișier FOREXE care "
+            "conține o singură unitate."
+            % (len(gasite), ", ".join(str(u) for u in sorted(gasite))))
+
+    plan = RoutingPlan(RoutingPlan.PRIN_CAI, db_name,
+                       maps=build_maps(fx_path, cai_path, progress=progress),
+                       units=gasite.keys())
+    say(plan.describe())
+    return plan

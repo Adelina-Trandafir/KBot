@@ -214,13 +214,21 @@ def analiza():
                 job.say("ATENȚIE: tabele în afara domeniului există în fișier și NU se "
                         "migrează: %s." % ", ".join(afară))
 
-            maps = routing.build_maps(fx_path, cai_path, progress=job.say)
-            if db_name not in maps.all_dcs():
-                job.say("ATENȚIE: baza «%s» nu apare deloc în [Cai]. Se vor găsi doar "
-                        "rândurile care poartă chiar ele DC-ul." % db_name)
+            # Cate unitati are fisierul decide daca mai e nevoie de rutare. Una
+            # singura -> totul merge in baza aleasa, si cale.accdb nici nu se
+            # atinge. Mai multe -> se ruteaza prin [Cai], iar daca acela lipseste
+            # rularea se OPRESTE cu unitatile numite; nu se cade inapoi pe „totul
+            # in baza aleasa", fiindca exact asa ar intra tacut randurile altei
+            # unitati in baza asta.
+            plan = routing.resolve_plan(fx_path, cai_path, db_name, progress=job.say)
+            job.plan = plan
+            if plan.mode == routing.RoutingPlan.PRIN_CAI:
+                if db_name not in plan.maps.all_dcs():
+                    job.say("ATENȚIE: baza «%s» nu apare deloc în [Cai]. Se vor găsi "
+                            "doar rândurile care poartă chiar ele DC-ul." % db_name)
 
             conn = get_db_connection(db_name)
-            report = validate.analyze(conn, db_name, fx_path, maps, progress=job.say)
+            report = validate.analyze(conn, db_name, fx_path, plan, progress=job.say)
             job.report = report
 
             data = report.to_dict()
@@ -269,19 +277,25 @@ def rulare():
             "Analiza a găsit probleme de integritate. Folosiți «Forțează rularea» "
             "dacă acceptați ca rândurile vinovate să fie sărite.", 409)
 
+    # Planul de rutare vine de la analiza, nu se rezolva din nou: altfel ramura
+    # aleasa s-ar putea schimba intre masurare si scriere.
+    plan = sursa.plan
+    if plan is None:
+        return _err(
+            "Analiza indicată nu a lăsat un plan de rutare. Rulați din nou analiza "
+            "înainte de scriere.", 400)
+
     try:
         fx_path = storage.pushed_path(storage.fx_file_name(an, dc))
-        cai_path = storage.pushed_path(storage.cai_file_name())
     except storage.StorageError as exc:
         return _err(str(exc), 400)
 
     def work(job):
         conn = None
         try:
-            job.say("Se reconstruiesc hărțile de rutare.")
-            maps = routing.build_maps(fx_path, cai_path, progress=job.say)
+            job.say(plan.describe())
             conn = get_db_connection(db_name)
-            totals = execute.run(conn, db_name, fx_path, maps, report, force,
+            totals = execute.run(conn, db_name, fx_path, plan, report, force,
                                  progress=job.say)
             scrise = sum(s["scrise"] for s in totals.values())
             sărite = sum(s["sărite"] for s in totals.values())

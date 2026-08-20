@@ -140,10 +140,39 @@ compilarea într-un folder propriu și `config.MDB_TOOLS_BIN` către el.
 
 Garda e `X-Api-Key`, ca pe rutele de seed pe care le înlocuiesc.
 
-Numele fișierelor pe server: `fx_<an>_<dc>.accdb` (litere mici) și
-`cale.accdb`, unul singur pentru toate unitățile — el poartă tabelul `[Cai]`,
-adică legătura `IdUnitate → bază de date`, fără de care nu se poate ruta
-niciun rând.
+Numele fișierelor pe server: `fx_<an>_<dc>.accdb` (litere mici) și, DOAR
+când e nevoie, `cale.accdb` — unul singur pentru toate unitățile.
+
+---
+
+## Când e nevoie de `cale.accdb` (de obicei, niciodată)
+
+Operatorul alege deja baza țintă pe ecran, deci în cazul obișnuit nu e nimic de
+calculat: tot ce e în fișier merge acolo. `cale.accdb` intră în joc într-un
+singur caz — fișierul FOREXE poartă **mai multe unități**, iar rândurile
+trebuie despărțite între baze.
+
+Care caz e, se **măsoară**, nu se presupune: `routing.distinct_units()` citește
+cele șapte tabele care poartă `IdUnitate` (`FX_Angajamente`, `FX_Indicatori`,
+`FX_Receptii`, `FX_Receptii_RHR`, `FX_Plati`, `FX_Extrase_H`, `FX_Extrase` —
+cele grele la Memo nu sunt printre ele) și numără ce găsește:
+
+| Ce găsește | Ce face |
+|---|---|
+| o unitate (sau niciuna declarată) | **DIRECT** — tot fișierul merge în baza aleasă. `cale.accdb` nici nu se atinge. |
+| mai multe unități, `cale.accdb` prezent | **PRIN `[Cai]`** — fiecare rând se rutează, cu hărțile A–E |
+| mai multe unități, `cale.accdb` absent | **se OPREȘTE**, cu numerele unităților în mesaj |
+
+Ultimul rând e cel important. Nu se cade înapoi pe «tot în baza aleasă»: exact
+acolo ar intra tăcut rândurile altei unități în baza asta, fără nicio eroare de
+observat.
+
+Chiar și pe ramura DIRECT rămâne o pază: dacă un rând poartă el însuși o
+coloană `DC` completată, și aceea spune altceva decât ținta, rândul e respins
+cu motivul.
+
+Ramura aleasă se rezolvă **o singură dată**, la analiză, și e refolosită
+identic la scriere — altfel s-ar putea schimba între măsurare și scriere.
 
 ---
 
