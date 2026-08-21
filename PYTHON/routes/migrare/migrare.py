@@ -42,7 +42,16 @@ def _json(payload, status=200):
                     mimetype="application/json; charset=utf-8")
 
 
-def _err(message, status=400):
+def _err(message, status=400, log=True):
+    """
+    Raspunsul de eroare al migrarii -- si singurul loc prin care trec TOATE.
+
+    De aceea logheaza el: un 400 e o greseala de intrare, nu un defect, deci nu
+    are nevoie de urma completa, dar trebuie sa se vada in jurnalul serverului.
+    `log=False` il foloseste doar `_fail`, care a scris deja urma intreaga.
+    """
+    if log:
+        logger.warning("migrare: răspuns %d — %s", status, message)
     return _json({"ok": False, "error": message}, status)
 
 
@@ -138,7 +147,7 @@ def _corelatii_cerute(body):
 def _fail(where, exc):
     """Nicio exceptie nu se pierde: jurnal cu urma completa, mesaj in romana afara."""
     logger.exception("migrare/%s a eșuat", where)
-    return _err(str(exc), 500)
+    return _err(str(exc), 500, log=False)
 
 
 # -----------------------------------------------------------------------------

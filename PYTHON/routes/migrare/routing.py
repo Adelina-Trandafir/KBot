@@ -472,4 +472,7 @@ def _rows(fx_path, table, say):
         for row in accdb.iter_rows(fx_path, table):
             yield row
     except accdb.AccdbError as exc:
+        # Spus operatorului SI serverului: jurnalul lucrarii traieste doua ore,
+        # jurnalul serverului pastreaza urma intreaga.
+        logger.exception("migrare/rutare: «%s» nu a putut fi citit", table)
         say("«%s» nu a putut fi citit la construirea selecției: %s" % (table, exc))

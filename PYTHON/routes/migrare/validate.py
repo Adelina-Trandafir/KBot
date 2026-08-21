@@ -31,7 +31,7 @@ import datetime
 import decimal
 import logging
 
-from . import tables
+from . import parser, tables
 
 logger = logging.getLogger(__name__)
 
@@ -696,6 +696,8 @@ def analyze(conn, db_name, fx_path, plan, only=None, columns=None,
 
         seen_keys = set()
         unknown_reported = set()
+        converted = 0
+        ambiguous = 0
         pk_single = pk_columns[0] if len(pk_columns) == 1 else None
         own_written = set()
         written_pks[table.name] = own_written
@@ -723,6 +725,13 @@ def analyze(conn, db_name, fx_path, plan, only=None, columns=None,
             # aici incolo randul e citit cu numele EXACTE ale tintei. Randul
             # original ramane neatins - selectia l-a citit deja cu numele lui.
             vrow = with_target_names(row, rename)
+            # Shaped for the target BEFORE it is measured, with the same call the
+            # write uses. Measuring the raw value and sending the shaped one --
+            # or the other way round -- is how «04/28/26 15:28:03» passed the
+            # analysis and was then refused by MariaDB.
+            vrow, changes = parser.parse_row(vrow, target_columns)
+            converted += len(changes)
+            ambiguous += sum(1 for c in changes if c.ambiguous)
 
             # coloane care exista in Access si lipsesc din tinta. O coloana pe
             # care operatorul a debifat-o nu se scrie, deci lipsa ei din tinta
@@ -773,6 +782,13 @@ def analyze(conn, db_name, fx_path, plan, only=None, columns=None,
                     _add_key_forms(own_written, vrow.get(pk_single))
             else:
                 stats["sarite"] += 1
+
+        if converted:
+            say("«%s»: %d valori aduse la forma cerută de MariaDB (date, "
+                "zecimale, Da/Nu)%s."
+                % (table.name, converted,
+                   "" if not ambiguous
+                   else ", dintre care %d date cu zi/lună ambiguă" % ambiguous))
 
         _check_foreign_keys(conn, schema, table, fk_values, report, say,
                             db_name, in_run, written_pks)

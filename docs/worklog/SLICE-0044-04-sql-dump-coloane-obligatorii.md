@@ -198,6 +198,192 @@ atinsă — doar consemnarea ei.
 
 ---
 
+## 1.9 Pasul 05 — CAUZA ADEVĂRATĂ: parserul de coloane pierdea coloana
+
+Adăugat după ce operatorul a semnalat că **`CodAngajament` lipsește din grila
+«Coloane»**, deși există în `.accdb`. Tot ce e mai sus apără regula; **defectul
+care a produs eroarea 1364 era mai devreme pe lanț**, iar pasul 04 nu l-a găsit,
+fiindcă planul arăta spre harta de corelații și n-am verificat dacă lista de
+coloane dinspre Access e măcar completă.
+
+`accdb.columns()` citea ieșirea lui `mdb-schema ... mysql` cu O SINGURĂ expresie
+ancorată, care acoperea nume + tip + dimensiune opțională **și nimic altceva**:
+
+```python
+_COL_RE = re.compile(r"^\s*`(?P<name>[^`]+)`\s+(?P<type>[A-Za-z0-9_ ]+?)\s*(?:\((?P<size>[0-9, ]+)\))?\s*,?\s*$")
+```
+
+Orice linie cu ceva **după** dimensiune nu se potrivea, iar coloana era scoasă
+din listă **fără un cuvânt**. Măsurat pe expresia veche:
+
+| linie | vechi |
+|---|---|
+| `` `CodAngajament` varchar (50), `` | păstrată |
+| `` `CodAngajament` varchar (50) NOT NULL, `` | **PIERDUTĂ** |
+| `` `Valoare` numeric (19,4) NOT NULL, `` | **PIERDUTĂ** |
+| `` `IdUnitate` long int NOT NULL, `` | păstrată, dar cu tipul `LONG INT NOT NULL` |
+
+Deci exact **coloanele cu dimensiune care sunt `NOT NULL`** dispăreau —
+`varchar(n)`, `numeric(p,s)`, `text(n)`. `CodAngajament` e `varchar(50)` și e
+cheia primară a lui `FX_Angajamente`, deci `NOT NULL`: lipsea din grilă, lipsea
+din `access_columns`, deci nu intra niciodată în `INSERT`, deci 1364. Un tip fără
+dimensiune scăpa doar fiindcă clasa de caractere înghițea constrângerea în tip.
+
+**Reparat** prin despărțirea a ceea ce trebuie să fie strict de ceea ce e
+best-effort: `_COL_RE` potrivește acum **doar numele** (între accente grave) plus
+restul liniei; `_CONSTRAINT_RE` curăță de la coadă constrângerile
+(`NOT NULL`, `NULL`, `AUTO_INCREMENT`, `PRIMARY KEY`, `UNIQUE`, `DEFAULT …`,
+`COMMENT …`), iar `_TYPE_RE` citește tipul și dimensiunea din ce rămâne.
+
+**Regula care contează:** o coloană nu se pierde NICIODATĂ pentru că nu i s-a
+putut citi tipul. Tipul de acolo nu decide nimic — validarea îl ia din MariaDB,
+care e cea care acceptă sau refuză rândul — pe când un nume lipsă schimbă tăcut
+`INSERT`-ul. Un tip necitit dă `tip = ""` și coloana rămâne.
+
+Parsarea a ieșit din `columns()` în `parse_columns(text)` / `_parse_column(line)`,
+funcții pure de text, ca să poată fi testate fără mdbtools, fără `.accdb` și fără
+server.
+
+**Neverificat, spus limpede:** nu am putut rula `mdb-schema` (nu e pe stația
+Windows și nu există ieșire capturată în depozit), deci **nu am confirmat pe
+octeți că tokenul de după dimensiune este chiar `NOT NULL`**. Ce E verificat, cu
+măsurătoare pe expresia veche: orice text după `(dimensiune)` făcea linia să nu
+se potrivească, iar coloana se pierdea. Reparația nu depinde de care e tokenul —
+parserul păstrează acum coloana oricare ar fi el.
+
+### Teste noi
+
+`PYTHON/tests/test_migrare_accdb_columns.py` — 11 teste, offline, fără mdbtools:
+că o coloană `NOT NULL` cu dimensiune nu se pierde, că toate coloanele și
+ordinea lor se păstrează, că tipul nu mai înghite constrângerea, dimensiunea
+(inclusiv perechea zecimală), și cele două care apără regula de mai sus — un tip
+de necitit și o constrângere necunoscută **nu costă coloana**.
+
+> Pasul 04 spunea «fără teste automate noi». Asta e alt pas și alt defect: o
+> regresie care a costat o rulare merită un test, și e ieftin fiindcă parsarea a
+> devenit text pur.
+
+---
+
+## 1.10 Pasul 06 — parserul Access ▸ MariaDB (`parser.py`)
+
+Semnalat de operator imediat după pasul 05:
+
+```
+EROARE: Scrierea în «FX_Angajamente» a eșuat: 1292 (22007): Incorrect datetime
+value: '04/28/26 15:28:03' for column `000_DEMO`.`FX_Angajamente`.`DTQ` at row 1
+```
+
+Aceeași boală ca la §1.9, cu un etaj mai jos. `validate._DATE_FORMATS` conținea
+DEJA `"%m/%d/%y %H:%M:%S"`, deci analiza **accepta** valoarea — o convertea ca
+s-o judece — dar scrierea trimitea **șirul original**. Un verificator care
+convertește ca să judece, lângă un scriitor care nu convertește, e un
+verificator care minte.
+
+**`PYTHON/routes/migrare/parser.py`**, modul nou: singurul loc care traduce, și
+îl cheamă **amândouă** — `validate.analyze()` și `execute.run()`, în același
+punct al buclei, imediat după `with_target_names`. Ce s-a măsurat e ce pleacă.
+
+**Ținta decide.** Forma o dă tipul coloanei MariaDB; Access e doar proveniența.
+
+| Ce vine | Ce pleacă |
+|---|---|
+| `04/28/26 15:28:03`, `28/04/2026`, `28.04.2026`, `04/28/2026`, ISO, cu/fără oră, `AM`/`PM` | `datetime` / `date` adevărat |
+| `1234,56` | `Decimal("1234.56")` |
+| `-1`/`0`, `True`/`False`, `Da`/`Nu` pe `tinyint(1)` | `1` / `0` |
+| text gol într-o coloană ne-text | `NULL` |
+| dată întreagă spre o coloană `time` | `15:28:03` |
+
+**Nu inventează.** Ce nu poate citi trece **neschimbat**, ca `check_value` să-l
+raporteze drept `TIP` — constatare blocantă. Un zero pus în locul unei valori
+necitite e mai rău decât o rulare oprită. (`31/02/2026` și `nu e o dată` ies
+exact așa, verificat.)
+
+Trei decizii luate anume, fiindcă ghicitul aici strică date:
+
+1. **`tinyint(1)` e boolean, `tinyint` simplu NU.** `-1` e un tinyint valid; pe o
+   coloană care numără ceva, `-1 → 1` ar fi corupție, nu conversie. Recunoașterea
+   se face pe `tip_complet`, nu pe `tip`.
+2. **Fără separator de mii** — informație de la operator (2026-08-21): Access nu
+   scrie separator de mii nici când coloana are format de afișare, fiindcă
+   formatul e cum se ARATĂ valoarea, nu cum se păstrează. Deci `,` = separator
+   zecimal, punct. Prima variantă pe care o scrisesem avea o euristică
+   „separatorul cel mai din dreapta e cel zecimal"; a fost **scoasă** — era
+   invenție. Un șir cu amândoi separatorii sau cu spațiu între cifre rămâne
+   neatins: nu poate veni din Access, deci nu există citire sigură a lui
+   `1.234,56`.
+3. **Ziua/luna când sunt amândouă ≤ 12** — an din 2 cifre cu `/` → **luna prima**
+   (formatul propriu al lui mdbtools, `%m/%d/%y`, și mdbtools ne produce
+   rândurile); an din 4 cifre cu `/` → **ziua prima**; `.` sau `-` → **ziua
+   prima**. Cele două reguli sunt constante sus în `parser.py`. **Fiecare** dată
+   ambiguă intră în `_02_parsare.log` cu citirea aleasă — auditabilă, nu de
+   crezut pe cuvânt. Separatorul e **capturat** de expresie (`(?P=sep)`), nu
+   căutat după aceea: `.` și `/` se citesc diferit, deci a ghici care a fost
+   înseamnă a ghici ziua și luna.
+
+**Un defect al meu, prins la verificare:** prima versiune identifica anul cu
+`c > 31`, ceea ce arunca **toți anii din două cifre** — adică exact formatul
+raportat. Al treilea număr e anul, punct; pivotul e 70 (sub → 2000, de la 70 →
+1900), ca la POSIX și MariaDB.
+
+### `_02_parsare.log`
+
+Cerut de operator: parsarea să lase o urmă în `MIGRARE_SQL_DIR`, pe DC-ul ei.
+Fișier nou în dosarul rulării (care e deja pe DC), cu mânerul lui, deschis pe
+toată rularea fiindcă schimbările vin amestecate de la toate tabelele:
+
+```
+=== FX_Angajamente ===
+CodAngajament=AN-2026-0001 | DTQ | «04/28/26 15:28:03» → 2026-04-28 15:28:03
+CodAngajament=AN-2026-0001 | Valoare | «1234,56» → 1234.56
+CodAngajament=AN-2026-0001 | Activ | -1 → 1 (Access folosește -1 pentru «da»)
+
+--- Totaluri ---
+3 conversii, dintre care 0 cu zi/lună ambiguă.
+  FX_Angajamente.Activ: 1  …
+```
+
+**Numai ce s-a schimbat.** O valoare trecută neatinsă n-are ce spune, iar scrisul
+tuturor celulelor ar face fișierul de neconsultat exact pentru cel care caută o
+conversie greșită. `_99_final.txt` capătă o linie cu totalul conversiilor și cu
+câte au fost ambigue. `flush` pe lot, ca restul dosarului; păzit de același
+`_guard`, deci nici jurnalul de parsare nu poate rupe migrarea. Analiza NU scrie
+în dosar (decizia rămâne), dar spune pe tabel, în jurnalul lucrării, câte valori
+a adus la formă și câte date au fost ambigue.
+
+### Jurnalizarea erorilor (cerută explicit)
+
+* `migrare._err()` **loghează acum el însuși**, `logger.warning`, cu codul și
+  mesajul — și e singurul loc prin care trec TOATE răspunsurile de eroare ale
+  migrării, deci o singură schimbare le acoperă pe toate ~20. `_fail()` îi
+  trimite `log=False`: el a scris deja urma completă cu `logger.exception`.
+* `routing._key_rows()` înghițea un `AccdbError` în jurnalul LUCRĂRII (care
+  trăiește două ore) fără să-l pună în jurnalul SERVERULUI. Acum face amândouă.
+* `parser.parse_value()` prinde orice și loghează cu `logger.exception`, apoi
+  întoarce valoarea neatinsă: parsarea nu poate omorî migrarea.
+
+**Ce am lăsat anume nelogat, și de ce:** predicatele `_as_int` / `_as_decimal` /
+`_as_float` / `_as_datetime` din `validate.py` și `routing.py`,
+`parser._number_from_text` și `parser._valid`. Alea nu sunt erori, sunt
+întrebări — «e numărul ăsta un întreg?». Ele răspund `None` pentru fiecare
+celulă care nu e un număr, iar asta e chiar mecanismul prin care `check_value`
+produce constatarea. Logate, ar scrie o linie per celulă neconformă — milioane
+de linii care ar îneca erorile adevărate. La fel cele trei `except ImportError`
+(`config`, `mysql.connector`): sunt sonde de capabilitate, documentate, iar
+`logger` nici nu e configurat la momentul importului.
+
+### Teste noi
+
+`PYTHON/tests/test_migrare_parser.py` — 37 de teste, offline: eșecul raportat,
+cele șase forme de dată, ora AM/PM, pivotul anului din două cifre, coloanele
+`date`/`time`, data imposibilă și textul care nu e dată (amândouă rămân
+neatinse), cele trei reguli de ambiguitate, virgula zecimală, refuzul de a ghici
+`1.234,56` și `1 234`, `tinyint(1)` față de `tinyint` simplu, textul gol, și
+promisiunea că `parse_row` **nu aruncă niciodată** (un obiect al cărui `__str__`
+explodează trece neatins).
+
+---
+
 ## 2. Fișiere atinse
 
 | Fișier | Ce |
@@ -207,6 +393,11 @@ atinsă — doar consemnarea ei.
 | `PYTHON/routes/migrare/dump.py` | **nou** — `SqlDump` |
 | `PYTHON/routes/migrare/storage.py` | `sql_dir()` (`MIGRARE_SQL_DIR`) |
 | `PYTHON/routes/migrare/migrare.py` | `rulare` construiește și pasează `SqlDump` |
+| `PYTHON/routes/migrare/parser.py` | **nou** — traducerea Access ▸ MariaDB (date, zecimale, Da/Nu, text gol), chemată identic de analiză și de scriere |
+| `PYTHON/tests/test_migrare_parser.py` | **nou** — 37 de teste de parser |
+| `PYTHON/routes/migrare/routing.py` | `AccdbError` înghițit ajunge acum și în jurnalul serverului |
+| `PYTHON/routes/migrare/accdb.py` | **cauza adevărată** — `_COL_RE` potrivește acum doar numele; `_CONSTRAINT_RE` + `_TYPE_RE` citesc restul best-effort; parsarea scoasă în `parse_columns` / `_parse_column` |
+| `PYTHON/tests/test_migrare_accdb_columns.py` | **nou** — 11 teste de regresie pe parser |
 | `PYTHON/routes/migrare/README.md` | `MIGRARE_SQL_DIR` în `config.py` + `mkdir`; secțiune «Coloane obligatorii — a treia pază»; secțiune «Ce SQL s-a rulat (dosarul de instrucțiuni)»; refuzul nou în «Corelațiile de coloane»; `COLOANA_OBLIGATORIE` în lista BLOCANT |
 
 ---
@@ -215,11 +406,11 @@ atinsă — doar consemnarea ei.
 
 ```
 PYTHON/.venv/Scripts/python -m pytest tests/ -q
-150 passed, 15 skipped in 21.37s
+198 passed, 15 skipped in 21.95s
 ```
 
-Verde, neschimbat față de înainte. **Fără teste automate noi** — pasul asta nu
-le cerea.
+Verde. 150 la sfârșitul pasului 04, 161 după pasul 05 (11 teste de parsare a
+coloanelor), 198 după pasul 06 (37 de teste de parser de valori).
 
 Verificat pe lângă suită, cu scripturi de unică folosință (nu în depozit):
 

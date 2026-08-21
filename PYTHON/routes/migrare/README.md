@@ -336,8 +336,22 @@ trimis. Un dosar pe bază de unitate, un fișier pe tabel:
       FX_Angajamente.sql  antet + o instrucțiune pe rând
       FX_Indicatori.sql
       …
+      _02_parsare.log     fiecare valoare pe care parserul a schimbat-o
       _99_final.txt       COMMIT + totaluri, sau ROLLBACK + eroarea + instrucțiunea
 ```
+
+`_02_parsare.log` ține **numai ce s-a schimbat**, cu valoarea dinainte, cea de
+după și motivul — plus totaluri pe coloană la sfârșit:
+
+```
+=== FX_Angajamente ===
+CodAngajament=AN-2026-0001 | DTQ | «04/28/26 15:28:03» → 2026-04-28 15:28:03
+CodAngajament=AN-2026-0001 | Valoare | «1234,56» → 1234.56
+CodAngajament=AN-2026-0001 | Activ | -1 → 1 (Access folosește -1 pentru «da»)
+```
+
+O valoare care a trecut neatinsă n-are ce spune, iar scrisul tuturor celulelor ar
+face fișierul de neconsultat exact pentru cel care caută o conversie greșită.
 
 * Subdosarul cu marcaj de timp există ca **rularea eșuată — singura care merită
   citită — să nu fie acoperită de următoarea încercare**.
@@ -366,6 +380,58 @@ Fără `MIGRARE_SQL_DIR` în `config.py`, scrierea **nu pornește**, cu numele c
 consemnării **în timpul** rulării nu oprește migrarea: se scrie în jurnalul
 serverului cu urma completă, se spune o dată în jurnalul lucrării, iar
 consemnarea se oprește de acolo încolo.
+
+---
+
+## Parsarea Access ▸ MariaDB (`parser.py`)
+
+Access spune valorile într-un fel, MariaDB le acceptă în altul. `parser.py` e
+**singurul** loc care traduce, iar analiza și scrierea îl cheamă pe **același**:
+ce s-a măsurat e ce pleacă. Altfel se întâmplă exact ce s-a întâmplat —
+`validate._DATE_FORMATS` ACCEPTA deja `04/28/26 15:28:03` la verificare, dar
+scrierea trimitea șirul original, iar MariaDB răspundea:
+
+```
+1292 (22007): Incorrect datetime value: '04/28/26 15:28:03'
+for column `000_DEMO`.`FX_Angajamente`.`DTQ` at row 1
+```
+
+**Ținta decide, întotdeauna.** Forma o dă tipul coloanei de pe MariaDB; Access e
+doar locul din care vine valoarea. Nimic nu se ghicește din tipul Access.
+
+| Ce vine | Ce pleacă |
+|---|---|
+| `04/28/26 15:28:03`, `28/04/2026`, `28.04.2026`, `04/28/2026`, `2026-04-28`, cu sau fără oră, `AM`/`PM` | `datetime` / `date` adevărat |
+| `1234,56` (virgulă zecimală) | `1234.56` |
+| `-1` / `0`, `True`/`False`, `Da`/`Nu` pe o coloană `tinyint(1)` | `1` / `0` |
+| text gol într-o coloană care nu e text | `NULL` |
+| o coloană `time` primind o dată întreagă | doar ora, `15:28:03` |
+
+**Ce NU face: nu inventează.** O valoare pe care n-o poate citi trece mai departe
+**neschimbată**, ca `validate.check_value` s-o raporteze drept constatarea `TIP`
+care este — și aceea e blocantă. Un zero pus în locul unei valori pe care nimeni
+n-a putut-o citi e mai rău decât o rulare oprită.
+
+Trei lucruri decise anume, fiindcă ghicitul aici strică date:
+
+* **`tinyint(1)` e boolean, `tinyint` simplu NU.** `-1` e un tinyint perfect
+  valid; pe o coloană care numără ceva, transformarea lui în `1` ar fi corupție,
+  nu conversie.
+* **Fără separator de mii.** Access nu-l scrie, nici când coloana are format de
+  afișare (confirmat de operator, 2026-08-21) — formatul e cum se ARATĂ valoarea,
+  nu cum se păstrează. Deci `,` e separator zecimal, punct. Un șir cu **amândoi**
+  separatorii, sau cu spațiu între cifre, **nu se ghicește**: nu poate veni din
+  Access, deci înseamnă că valoarea nu e ce credem, și nu există citire sigură a
+  lui `1.234,56`. Rămâne neatins și îl raportează analiza.
+* **Ziua și luna, când sunt amândouă ≤ 12.** `04/28/26` nu e ambiguu — 28 nu
+  poate fi lună. `05/04/26` este, și cineva trebuie să decidă:
+  an din **două** cifre cu `/` → **luna prima** (e formatul propriu al lui
+  mdbtools, `%m/%d/%y`, iar mdbtools e cel care ne produce rândurile);
+  an din **patru** cifre cu `/` → **ziua prima**;
+  `.` sau `-` → **ziua prima**, notație europeană.
+  **Fiecare** dată ambiguă intră în `_02_parsare.log` cu citirea aleasă, ca
+  operatorul să poată verifica alegerea în loc s-o creadă pe cuvânt. Cele două
+  reguli stau în constante, sus în `parser.py`.
 
 ---
 

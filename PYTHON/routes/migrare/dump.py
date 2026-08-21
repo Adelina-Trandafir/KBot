@@ -52,6 +52,13 @@ class SqlDump(object):
         self._handle = None
         self._table = None
         self._notes = []
+        # Jurnalul de parsare isi tine mainerul lui, deschis pe toata rularea:
+        # conversiile vin amestecate de la toate tabelele, in ordinea scrierii.
+        self._parse_handle = None
+        self._parse_table = None
+        self._parse_totals = {}
+        self._parsed_count = 0
+        self._ambiguous_count = 0
         stamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         # The run subfolder is what keeps the failed run -- the interesting one --
         # from being overwritten by the next attempt.
@@ -136,6 +143,60 @@ class SqlDump(object):
             self._close_handle()
         self._guard("close_table", body)
 
+    def parsed(self, table, key, changes):
+        """
+        _02_parsare.log — fiecare valoare pe care parserul a schimbat-o, cu
+        valoarea dinainte, cea de după și motivul.
+
+        Numai ce s-a SCHIMBAT. O valoare care a trecut neatinsă n-are ce spune,
+        iar scrisul tuturor celulelor ar face fișierul de neconsultat exact
+        pentru cel care caută o conversie greșită. Câte au trecut neatinse se
+        vede din numărul de rânduri scrise, care e în `_99_final.txt`.
+        """
+        def body():
+            if not changes:
+                return
+            if self._parse_handle is None:
+                path = os.path.join(self.dir, "_02_parsare.log")
+                self._parse_handle = open(path, "a", encoding="utf-8",
+                                          newline="\n")
+                self._parse_handle.write(
+                    "Conversii Access ▸ MariaDB — lucrare %s, %s\n"
+                    "Se scrie DOAR ce s-a schimbat.\n\n" % (self.job_id, _now()))
+            if table != self._parse_table:
+                self._parse_handle.write("\n=== %s ===\n" % table)
+                self._parse_table = table
+            for change in changes:
+                self._parsed_count += 1
+                if change.ambiguous:
+                    self._ambiguous_count += 1
+                slot = (table, change.column)
+                self._parse_totals[slot] = self._parse_totals.get(slot, 0) + 1
+                self._parse_handle.write(
+                    "%s | %s | %s\n" % (key or "—", change.column, change.note))
+        self._guard("parsed", body)
+
+    def parse_flush(self):
+        def body():
+            if self._parse_handle is not None:
+                self._parse_handle.flush()
+        self._guard("parse_flush", body)
+
+    def _close_parse_handle(self):
+        """Inchide jurnalul de parsare, dupa ce ii scrie totalurile."""
+        if self._parse_handle is None:
+            return
+        try:
+            self._parse_handle.write("\n\n--- Totaluri ---\n")
+            self._parse_handle.write(
+                "%d conversii, dintre care %d cu zi/lună ambiguă.\n"
+                % (self._parsed_count, self._ambiguous_count))
+            for (table, column), count in sorted(self._parse_totals.items()):
+                self._parse_handle.write("  %s.%s: %d\n" % (table, column, count))
+            self._parse_handle.close()
+        finally:
+            self._parse_handle = None
+
     def note(self, text):
         """O observatie care ajunge in _99_final.txt (valori nereprezentabile)."""
         def body():
@@ -147,6 +208,7 @@ class SqlDump(object):
         """_99_final.txt, calea buna."""
         def body():
             self._close_handle()
+            self._close_parse_handle()
             scrise = sum(s.get("scrise", 0) for s in totals.values())
             actualizate = sum(s.get("actualizate", 0) for s in totals.values())
             sarite = sum(s.get("sarite", 0) for s in totals.values())
@@ -159,6 +221,8 @@ class SqlDump(object):
                     "%s %d/%d/%d" % (name, s.get("scrise", 0),
                                      s.get("actualizate", 0), s.get("sarite", 0))
                     for name, s in totals.items()),
+                "Conversii: %d (vezi _02_parsare.log), %d cu zi/lună ambiguă"
+                % (self._parsed_count, self._ambiguous_count),
             ]
             self._write_file("_99_final.txt",
                              "\n".join(lines + self._note_lines()) + "\n")
@@ -177,6 +241,7 @@ class SqlDump(object):
             if self._finished:
                 return
             self._close_handle()
+            self._close_parse_handle()
             lines = [
                 "Încheiat:  %s" % _now(),
                 "Rezultat:  ROLLBACK",
@@ -229,6 +294,7 @@ class SqlDump(object):
             self.disabled = True
             logger.exception("migrare/consemnare SQL: %s a eșuat", where)
             self._handle = None
+            self._parse_handle = None
             self._say("ATENȚIE: consemnarea SQL în «%s» a eșuat (%s). Migrarea "
                       "continuă; de la acest punct nu se mai scrie nimic în "
                       "dosarul de instrucțiuni." % (self.dir, exc))

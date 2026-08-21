@@ -23,7 +23,7 @@
 import binascii
 import logging
 
-from . import accdb, tables, validate
+from . import accdb, parser, tables, validate
 
 # The driver's OWN escaping, so the SQL written into the dump folder is not a
 # hand-rolled guess at what MariaDB received. `MySQLConverter` is pure Python and
@@ -214,6 +214,12 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
                 # The row under the target's exact column names; the selector
                 # above already read it with the Access ones.
                 vrow = validate.with_target_names(row, rename)
+                # Shaped for the target -- the SAME call the analysis made, so
+                # what was measured is what travels. Every change is recorded in
+                # _02_parsare.log.
+                vrow, changes = parser.parse_row(vrow, target_columns)
+                if dump is not None and changes:
+                    dump.parsed(table.name, _row_key(vrow, pk_columns), changes)
 
                 if _row_is_blocked(vrow, target_columns, pk_columns, seen_keys,
                                    missing, chosen_cols):
@@ -225,6 +231,8 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
                     _write(conn, db_name, table.name, columns, pk_columns, batch,
                            stats, dump=dump)
                     batch = []
+                    if dump is not None:
+                        dump.parse_flush()
 
             if batch:
                 _write(conn, db_name, table.name, columns, pk_columns, batch,
@@ -399,6 +407,11 @@ def _statement_text(db_name, table, quoted, updates, columns, pk_columns, row,
         "VALUES (%s)" % ",".join(parts),
         "ON DUPLICATE KEY UPDATE %s;" % updates,
     ])
+
+
+def _row_key(vrow, pk_columns):
+    """The row's primary key, from a dict keyed by the target's column names."""
+    return ", ".join("%s=%s" % (c, vrow.get(c)) for c in pk_columns)
 
 
 def _key_text(columns, pk_columns, row):
