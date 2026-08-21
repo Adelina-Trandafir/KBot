@@ -20,14 +20,31 @@
 # IDEXF, IDR, IDH ...) only stay valid if the ids do.
 # -----------------------------------------------------------------------------
 
+import binascii
 import logging
 
 from . import accdb, tables, validate
+
+# The driver's OWN escaping, so the SQL written into the dump folder is not a
+# hand-rolled guess at what MariaDB received. `MySQLConverter` is pure Python and
+# needs no connection, so it works whatever connection type the deployment uses
+# (the server runs the C extension, whose connection does not expose a converter
+# the same way). Guarded like `storage.config`: the pure modules stay importable
+# on a workstation without the driver, and the write path fails loudly there.
+try:
+    from mysql.connector.conversion import MySQLConverter
+except ImportError:                                  # pragma: no cover - off-host
+    MySQLConverter = None
 
 logger = logging.getLogger(__name__)
 
 # Cate randuri intr-un singur executemany.
 BATCH_ROWS = 500
+
+# Cate nume de coloana scriem in jurnal inainte de „… si inca N".
+MAX_LOGGED_COLUMNS = 30
+
+_CONVERTER = MySQLConverter() if MySQLConverter is not None else None
 
 
 class ExecuteError(Exception):
@@ -35,7 +52,7 @@ class ExecuteError(Exception):
 
 
 def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
-        progress=None):
+        progress=None, dump=None):
     """
     Write the rows that passed the analysis.
 
@@ -62,6 +79,10 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
                     transaction, committed only at the very end. Any error rolls
                     the whole thing back: no half-deleted, half-written state
                     survives.
+
+    `dump` is an optional `dump.SqlDump`: it records on disk the statements this
+    run sent. None means record nothing, which is what every caller that only
+    wants the write does. It never influences the migration -- see dump.py.
     """
     def say(msg):
         logger.info("migrare/scriere: %s", msg)
@@ -105,28 +126,38 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
     chosen = [t for t in chosen if t.name not in absent]
 
     totals = {}
+    current = None
+    if dump is not None:
+        dump.info([t.name for t in chosen])
     try:
         if replace:
             say("Mod «Înlocuiește tot»: se golesc întâi tabelele alese, într-o "
                 "singură tranzacție — la orice eroare totul se întoarce la loc.")
-            _empty_tables(conn, db_name, [t.name for t in reversed(chosen)], say)
+            _empty_tables(conn, db_name, [t.name for t in reversed(chosen)], say,
+                          dump=dump)
 
         for name in absent:
             say("«%s» lipsește din baza «%s» și niciun tabel bifat nu depinde "
                 "de el — sărit." % (name, db_name))
 
         for table in chosen:
+            current = table.name
             stats = {"citite": 0, "ale_unitatii": 0, "scrise": 0,
                      "actualizate": 0, "neschimbate": 0, "sarite": 0}
             totals[table.name] = stats
 
             target_columns = schema.columns[table.name]
+            pk_columns = schema.primary_key.get(table.name) or [table.primary_key]
+            # The columns MariaDB will not let out of the INSERT. They are what
+            # an «(nu se scrie)» correlation may NOT delete, so they are resolved
+            # before the rename map, and from the TARGET alone.
+            protected = validate.required_columns_of(
+                target_columns, schema.primary_key.get(table.name))
             # The SAME correlations the analysis measured against -- they travel
             # on the report, not in the run's own request.
             rename = validate.column_rename_map(table.name, target_columns,
-                                                report.mappings)
+                                                report.mappings, protected)
             selector = plan.selector_for(table)
-            pk_columns = schema.primary_key.get(table.name) or [table.primary_key]
             chosen_cols = validate.chosen_columns_of(table.name, report.columns,
                                                     pk_columns, rename)
             seen_keys = set()
@@ -134,34 +165,38 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
                            for (t, column), values in report.missing_fk.items()
                            if t == table.name)
 
-            say("Se scrie «%s»." % table.name)
             # Only the columns BOTH sides have -- correlated by `rename` (the
             # by-name match, plus the operator's «Corelatii coloane») -- narrowed
             # to what he ticked, and written under the TARGET's exact spelling. A
             # column that stays out keeps the target's default; one that exists
             # only in Access was either unticked (fine) or already reported as
-            # missing by the analysis, so it never gets here.
+            # missing by the analysis, so it never gets here. Built by the SAME
+            # function the analysis used -- see validate.insert_columns.
             access_columns = [c["nume"] for c in accdb.columns(fx_path, table.name)]
-            columns = []
-            for c in access_columns:
-                target_name = rename.get(c.lower())
-                if target_name is None:
-                    continue
-                if chosen_cols is not None and target_name not in chosen_cols:
-                    continue
-                if target_name in columns:
-                    # Two Access columns correlated onto one target column: one
-                    # of the two values would be dropped, and nobody can say
-                    # which. Stop before the first row is written.
-                    raise ExecuteError(
-                        "În «%s», două coloane din Access sunt corelate cu «%s» "
-                        "de pe MariaDB. Repară corelațiile și analizează din nou."
-                        % (table.name, target_name))
-                columns.append(target_name)
+            try:
+                columns, skipped = validate.insert_columns(
+                    table.name, access_columns, rename, chosen_cols)
+            except validate.ValidationError as exc:
+                raise ExecuteError(str(exc))
             if not columns:
                 raise ExecuteError(
                     "Tabelul «%s» nu are nicio coloană comună între Access și «%s»."
                     % (table.name, db_name))
+            # The third check of the same rule (interface, analysis, here): a
+            # required target column left out of the statement would come back as
+            # MariaDB 1364 twenty tables later, about a column list nobody logged.
+            lipsa = validate.missing_required(target_columns, columns)
+            if lipsa:
+                raise ExecuteError(
+                    validate.required_columns_message(table.name, lipsa))
+
+            say("«%s»: %d coloane — %s."
+                % (table.name, len(columns), _name_list(columns)))
+            if skipped:
+                say("«%s»: coloane Access sărite — %s."
+                    % (table.name, validate.describe_skipped(skipped)))
+            if dump is not None:
+                dump.open_table(table.name, columns, skipped)
             batch = []
 
             for row in accdb.iter_rows(fx_path, table.name):
@@ -187,23 +222,36 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
 
                 batch.append(tuple(vrow.get(c) for c in columns))
                 if len(batch) >= BATCH_ROWS:
-                    _write(conn, db_name, table.name, columns, pk_columns, batch, stats)
+                    _write(conn, db_name, table.name, columns, pk_columns, batch,
+                           stats, dump=dump)
                     batch = []
 
             if batch:
-                _write(conn, db_name, table.name, columns, pk_columns, batch, stats)
+                _write(conn, db_name, table.name, columns, pk_columns, batch,
+                       stats, dump=dump)
 
             if not replace:
                 # Un tabel incheiat ramane scris chiar daca urmatorul pica.
                 conn.commit()
+            if dump is not None:
+                dump.close_table(stats)
             say("«%s»: %d scrise, %d actualizate, %d deja identice, %d sărite."
                 % (table.name, stats["scrise"], stats["actualizate"],
                    stats["neschimbate"], stats["sarite"]))
 
+        current = None
         if replace:
             conn.commit()
             say("Tranzacția «Înlocuiește tot» a fost încheiată (commit).")
-    except Exception:
+        if dump is not None:
+            dump.finish("COMMIT", totals)
+    except Exception as exc:
+        # The dump records what was ATTEMPTED; `_write` already named the exact
+        # statement when the failure came from a row, and the dump ignores the
+        # second call. Written before the rollback, deliberately: the file is the
+        # only thing that survives it.
+        if dump is not None:
+            dump.failure(current, None, exc)
         # In replace mode NOTHING must survive a half-run; in normal mode only
         # the current table's uncommitted rows are open. Either way: rollback.
         try:
@@ -215,7 +263,15 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
     return totals
 
 
-def _empty_tables(conn, db_name, table_names, say):
+def _name_list(names):
+    """Numele, plafonate: un tabel cu 60 de coloane nu inunda jurnalul."""
+    if len(names) <= MAX_LOGGED_COLUMNS:
+        return ", ".join(names)
+    return "%s … și încă %d" % (", ".join(names[:MAX_LOGGED_COLUMNS]),
+                                len(names) - MAX_LOGGED_COLUMNS)
+
+
+def _empty_tables(conn, db_name, table_names, say, dump=None):
     """
     DELETE, deliberately not TRUNCATE: TRUNCATE is DDL and commits implicitly,
     which would make the rollback promise a lie. Children first (the caller
@@ -225,7 +281,10 @@ def _empty_tables(conn, db_name, table_names, say):
     cur = conn.cursor()
     try:
         for name in table_names:
-            cur.execute("DELETE FROM `%s`.`%s`" % (db_name, name))
+            statement = "DELETE FROM `%s`.`%s`" % (db_name, name)
+            cur.execute(statement)
+            if dump is not None:
+                dump.delete(statement, cur.rowcount)
             say("«%s»: %d rânduri șterse (netrimis încă — se confirmă la final)."
                 % (name, cur.rowcount))
     except Exception as exc:
@@ -266,7 +325,7 @@ def _row_is_blocked(row, target_columns, pk_columns, seen_keys, missing,
     return False
 
 
-def _write(conn, db_name, table, columns, pk_columns, rows, stats):
+def _write(conn, db_name, table, columns, pk_columns, rows, stats, dump=None):
     """
     A row that does not exist is INSERTED; one that does is BROUGHT UP TO DATE
     from the Access file. The primary-key columns stay out of the update list --
@@ -285,9 +344,17 @@ def _write(conn, db_name, table, columns, pk_columns, rows, stats):
     sql = ("INSERT INTO `%s`.`%s` (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s"
            % (db_name, table, quoted, placeholders, updates))
 
+    last = None
     cur = conn.cursor()
     try:
         for row in rows:
+            if dump is not None:
+                # BEFORE the execute, never after: the row that fails is the one
+                # worth reading, and it only reaches the file if it is written
+                # first.
+                last = _statement_text(db_name, table, quoted, updates, columns,
+                                       pk_columns, row, dump)
+                dump.row(last)
             cur.execute(sql, row)
             # MariaDB: 1 = inserted, 2 = updated, 0 = already identical.
             if cur.rowcount == 1:
@@ -296,8 +363,79 @@ def _write(conn, db_name, table, columns, pk_columns, rows, stats):
                 stats["actualizate"] += 1
             else:
                 stats["neschimbate"] += 1
+        if dump is not None:
+            # Per batch, not at the end: a killed job leaves on disk everything
+            # up to the last completed batch.
+            dump.flush()
     except Exception as exc:
+        if dump is not None:
+            dump.failure(table, last, exc)
         conn.rollback()
         raise ExecuteError("Scrierea în «%s» a eșuat: %s" % (table, exc))
     finally:
         cur.close()
+
+
+def _statement_text(db_name, table, quoted, updates, columns, pk_columns, row,
+                    dump):
+    """
+    The statement as SQL TEXT, for the dump folder. The driver sends parameters,
+    not text, so this is a reconstruction -- an honest one, because the values go
+    through the driver's own escaping (see `_literal`), but a reconstruction. The
+    header of every dumped table file says so.
+    """
+    parts = []
+    for name, value in zip(columns, row):
+        text, ok = _literal(value)
+        if not ok:
+            dump.note("«%s».«%s»: valoare nereprezentabilă (%s) pe rândul cu "
+                      "cheia %s — instrucțiunea trimisă nu e afectată, doar "
+                      "consemnarea ei."
+                      % (table, name, type(value).__name__,
+                         _key_text(columns, pk_columns, row)))
+        parts.append(text)
+    return "\n".join([
+        "INSERT INTO `%s`.`%s` (%s)" % (db_name, table, quoted),
+        "VALUES (%s)" % ",".join(parts),
+        "ON DUPLICATE KEY UPDATE %s;" % updates,
+    ])
+
+
+def _key_text(columns, pk_columns, row):
+    """The row's primary key, for a note that has to say WHICH row."""
+    values = dict(zip(columns, row))
+    return ", ".join("%s=%s" % (c, values.get(c)) for c in pk_columns) or "necunoscută"
+
+
+def _literal(value):
+    """
+    The value as MariaDB would receive it, written as SQL text. Returns
+    (text, ok); `ok` is False when nothing honest could be produced, and the
+    caller records which column and row that was.
+
+    The escaping is the DRIVER's own (`MySQLConverter`), so the reconstruction is
+    not a hand-rolled guess. `bytes` are the one thing written by hand, as an
+    `0x…` literal: the driver's quoting of them is raw octets, which have no
+    business in a UTF-8 text file.
+    """
+    if value is None:
+        return "NULL", True
+    if isinstance(value, (bytes, bytearray)):
+        raw = bytes(value)
+        if not raw:
+            return "''", True
+        return "0x" + binascii.hexlify(raw).decode("ascii"), True
+    if _CONVERTER is None:
+        return "/* VALOARE NEREPREZENTABILĂ: driverul MySQL lipsește */", False
+    try:
+        out = _CONVERTER.quote(_CONVERTER.escape(_CONVERTER.to_mysql(value)))
+    except Exception:
+        # Not swallowed: the caller turns this into a line in _99_final.txt, and
+        # the server log gets the trace. Inventing an escape here would be worse
+        # than saying nothing.
+        logger.exception("migrare/scriere: valoare nereprezentabilă în SQL (%s)",
+                         type(value).__name__)
+        return "/* VALOARE NEREPREZENTABILĂ: %s */" % type(value).__name__, False
+    if isinstance(out, (bytes, bytearray)):
+        out = bytes(out).decode("utf-8", "replace")
+    return out, True

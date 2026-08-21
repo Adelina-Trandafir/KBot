@@ -79,10 +79,18 @@ nu trebuie servit de nginx.
 PUSHED_ACCDB_DIR = "/var/lib/kbot/pushed-accdb"
 TEMP_UPLOAD_DIR  = "/var/lib/kbot/tmp-upload"   # există deja pentru routes/ftp.py
 MDB_TOOLS_BIN    = None                          # sau folderul binarelor mdbtools
+MIGRARE_SQL_DIR  = "/var/lib/kbot/migrare-sql"   # dosarul de instrucțiuni (felia 0044-04)
 ```
 
 Fără `PUSHED_ACCDB_DIR` rutele răspund cu numele cheii lipsă, nu scriu
-undeva la întâmplare.
+undeva la întâmplare. La fel `MIGRARE_SQL_DIR`: fără el **scrierea nu
+pornește deloc**, cu numele cheii în mesaj — vezi «Ce SQL s-a rulat» mai jos.
+Folderul se face o dată, ca celelalte două:
+
+```
+mkdir -p /var/lib/kbot/migrare-sql
+chmod 750 /var/lib/kbot/migrare-sql
+```
 
 ### 4. nginx
 
@@ -246,6 +254,16 @@ motivul pentru care există fila «Corelații coloane» din migrator:
 * în **MariaDB** cele două își schimbă numele: `IdClsfAcc` ține id-ul Access,
   iar `IdClsf` ține id-ul MariaDB.
 
+**O țintă vidă pe o coloană obligatorie este REFUZATĂ, nu ascultată.** Migratorul
+trimite harta de corelații ÎNTREAGĂ pentru fiecare tabel bifat, deci un singur
+«(nu se scrie)» pus pe o cheie primară ștergea coloana din `INSERT`, iar MariaDB
+răspundea `1364 (HY000): Field '<col>' doesn't have a default value` — o eroare
+despre LISTA DE COLOANE, nu despre valori (un NULL într-o coloană `NOT NULL` ar
+fi 1048, altă eroare). De la felia 0044-04, analiza se oprește cu 400 și spune
+tabelul, coloana din Access și coloana de pe MariaDB. «Obligatorie» înseamnă
+`NOT NULL`, fără valoare implicită și necompletată de server: `auto_increment`,
+coloanele generate și cele cu `on update` **nu** sunt obligatorii.
+
 Corelate după nume, cele două id-uri ar intra fiecare în coloana celuilalt.
 Regulile stau în `tables.COLUMN_RENAMES` și se aplică **doar acolo unde ținta
 chiar are coloana pe care o numesc** — un tabel al cărui echivalent MariaDB
@@ -276,12 +294,88 @@ chiar ale bazei alese, iar tabelele cu zero se debifează singure.
 
 ---
 
+## Coloane obligatorii — a treia pază
+
+O coloană poate cădea din `INSERT` pe două drumuri: **necorelată** (harta de
+corelații n-o trimite nicăieri) sau **debifată** (operatorul a scos-o din
+`coloane`). Cheile primare erau apărate doar de al doilea drum. Regula se
+verifică acum pe REZULTAT, nu pe drumuri, și de trei ori:
+
+1. corelația «(nu se scrie)» pe o coloană obligatorie — **400** la
+   `POST /api/migrare/analiza`;
+2. coloana obligatorie absentă din listă din orice alt motiv — constatare
+   **`COLOANA_OBLIGATORIE`**, clasă **BLOCANT**, deci niciun buton nu pornește
+   și coloana e numită în grila de constatări;
+3. aceeași condiție în `execute.run()`, **înainte de primul rând**.
+
+Lista de coloane a analizei și cea a scrierii se construiesc cu **aceeași**
+funcție (`validate.insert_columns`) — două copii ale regulii care se depărtează
+una de alta sunt chiar felul în care s-a născut defectul.
+
+Jurnalul lucrării spune acum, pe fiecare tabel, ce coloane se scriu și ce
+coloane Access s-au sărit, cu motivul fiecăreia:
+
+```
+«FX_Angajamente»: 23 coloane — CodAngajament, Denumire, DataCreare, …
+«FX_Angajamente»: coloane Access sărite — IdUnitate (necorelată), DC (debifată).
+```
+
+---
+
+## Ce SQL s-a rulat (dosarul de instrucțiuni)
+
+Fiecare **scriere** lasă pe disc, în text simplu, instrucțiunile pe care le-a
+trimis. Un dosar pe bază de unitate, un fișier pe tabel:
+
+```
+<MIGRARE_SQL_DIR>/
+  000_DEMO/
+    20260821_142942_scriere/
+      _00_info.txt        bază, an, fișier, lucrare, mod, forțat, ordinea de scriere
+      _01_stergeri.sql    doar în «Înlocuiește tot», cu numărul de rânduri șterse
+      FX_Angajamente.sql  antet + o instrucțiune pe rând
+      FX_Indicatori.sql
+      …
+      _99_final.txt       COMMIT + totaluri, sau ROLLBACK + eroarea + instrucțiunea
+```
+
+* Subdosarul cu marcaj de timp există ca **rularea eșuată — singura care merită
+  citită — să nu fie acoperită de următoarea încercare**.
+* **Nu se șterge nimic, niciodată.** Migrarea se face o dată pe bază de unitate;
+  un an întreg înseamnă 20–40 MB pe rulare.
+* Toate fișierele sunt UTF-8, cu diacritice adevărate.
+* **Analiza nu scrie nimic** în dosar. Doar scrierea.
+
+Două lucruri care trebuie spuse, și sunt spuse și în fișiere:
+
+**RECONSTRUCȚIE.** Driverul trimite **parametri**, nu text. Valorile din fișiere
+trec prin funcția de escape a driverului însuși (`MySQLConverter`), deci sunt
+fidele — dar fișierul **nu** e o transcriere a octeților de pe fir. O valoare pe
+care driverul n-o poate reprezenta apare ca
+`/* VALOARE NEREPREZENTABILĂ: <tip> */`, iar coloana și cheia rândului se trec
+în `_99_final.txt`; instrucțiunea chiar trimisă nu e atinsă, doar consemnarea ei.
+
+**Scrisul pe disc NU face parte din tranzacție.** Dosarul consemnează ce s-a
+ÎNCERCAT. La o rulare «Înlocuiește tot» eșuată, `_99_final.txt` spune `ROLLBACK`,
+iar fișierele `.sql` de deasupra descriu o muncă ce **nu mai există** în baza de
+date. Așa e proiectat — dar cine citește dosarul trebuie să știe, altfel ia acele
+fișiere drept dovadă că rândurile sunt acolo.
+
+Fără `MIGRARE_SQL_DIR` în `config.py`, scrierea **nu pornește**, cu numele cheii
+în mesaj: nu există cale de rezervă și nu se scrie nimic altundeva. Un eșec al
+consemnării **în timpul** rulării nu oprește migrarea: se scrie în jurnalul
+serverului cu urma completă, se spune o dată în jurnalul lucrării, iar
+consemnarea se oprește de acolo încolo.
+
+---
+
 ## Cele două butoane
 
 Constatările analizei au două clase, și clasa e cea care aprinde butoanele:
 
 **BLOCANT** — tabel lipsă, coloană lipsă, tip greșit, depășire de lungime sau
-de interval, NULL într-o coloană `NOT NULL`. Cât timp există una, **niciun**
+de interval, NULL într-o coloană `NOT NULL`, coloană obligatorie care nu ajunge
+în `INSERT` (`COLOANA_OBLIGATORIE`). Cât timp există una, **niciun**
 buton nu pornește; nici «Forțează rularea» nu trece peste ele, fiindcă acelea
 strică date, nu doar legături.
 

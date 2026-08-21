@@ -24,7 +24,7 @@ from flask import Blueprint, Response, request
 from utils.database import get_db_connection
 from utils.security import require_api_key
 
-from . import accdb, execute, jobs, routing, storage, tables, validate
+from . import accdb, dump, execute, jobs, routing, storage, tables, validate
 
 migrare_bp = Blueprint("migrare", __name__)
 logger = logging.getLogger(__name__)
@@ -495,9 +495,16 @@ def rulare():
         conn = None
         try:
             job.say(plan.describe())
+            # Ce SQL s-a trimis ramane pe disc, in text simplu. Se face INAINTE
+            # de conexiune: MIGRARE_SQL_DIR lipsa opreste scrierea cu numele
+            # cheii, nu scrie undeva la intamplare si nu porneste pe jumatate.
+            consemnare = dump.SqlDump(db_name, an, fx_path, job.id, replace,
+                                      force, progress=job.say)
+            job.say("Instrucțiunile SQL se scriu în «%s»." % consemnare.dir)
             conn = get_db_connection(db_name)
             totals = execute.run(conn, db_name, fx_path, plan, report, force,
-                                 only=alese, replace=replace, progress=job.say)
+                                 only=alese, replace=replace, progress=job.say,
+                                 dump=consemnare)
             scrise = sum(s["scrise"] for s in totals.values())
             actualizate = sum(s["actualizate"] for s in totals.values())
             sarite = sum(s["sarite"] for s in totals.values())
