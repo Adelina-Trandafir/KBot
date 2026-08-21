@@ -53,10 +53,40 @@ def _tool(name):
     return os.path.join(folder, name) if folder else name
 
 
+def _de_ce_nu_merge(name):
+    """
+    De ce n-a putut fi pornita unealta — cu FAPTE, nu cu presupuneri.
+
+    „Nu este instalata" era o ghiceala, si de cele mai multe ori gresita: pachetul
+    e instalat, dar procesul serverului nu-l vede. Cele doua cauze reale, si
+    amandoua se vad de aici:
+
+      * `config.MDB_TOOLS_BIN` arata spre un folder in care binarul nu e;
+      * PATH-ul procesului nu-l contine — shell-ul lui root are `/usr/bin`, dar
+        serviciul systemd poate porni cu alt PATH (de exemplu doar `.venv/bin`,
+        daca unitatea are `Environment=PATH=...`).
+
+    Mesajul spune ce cale s-a incercat si ce PATH are CHIAR procesul asta, ca
+    operatorul sa nu mai reinstaleze un pachet deja instalat.
+    """
+    folder = getattr(config, "MDB_TOOLS_BIN", None)
+    cale = os.environ.get("PATH", "")
+    if folder:
+        return ("s-a căutat exact în «%s» (config.MDB_TOOLS_BIN). Fie binarul nu e "
+                "acolo, fie MDB_TOOLS_BIN trebuie scos din config.py ca să se caute "
+                "în PATH." % os.path.join(folder, name))
+    return ("config.MDB_TOOLS_BIN nu e pus, deci s-a căutat în PATH-ul procesului "
+            "serverului: «%s». Dacă pachetul e instalat (de obicei în /usr/bin), "
+            "atunci PATH-ul serviciului e cel care nu-l conține — verificați "
+            "`systemctl show avacont -p Environment` sau puneți "
+            "MDB_TOOLS_BIN = \"/usr/bin\" în config.py." % (cale or "(gol)"))
+
+
 def ensure_tools():
     """
     Uneltele exista si raspund? Apelat inaintea oricarei analize, ca esecul sa fie
-    „mdbtools nu e instalat", nu o eroare de parsare cu zece randuri mai jos.
+    „mdbtools nu poate fi pornit, si iata de ce", nu o eroare de parsare cu zece
+    randuri mai jos.
     """
     for name in ("mdb-tables", "mdb-schema", "mdb-json"):
         try:
@@ -65,8 +95,9 @@ def ensure_tools():
                            timeout=30, check=False)
         except FileNotFoundError:
             raise AccdbError(
-                "Unealta «%s» nu este instalată pe server. Instalați pachetul "
-                "mdbtools (vezi README-ul feliei 0044)." % name)
+                "Unealta «%s» nu a putut fi pornită: %s Dacă pachetul chiar "
+                "lipsește: «sudo apt install -y mdbtools» (vezi README-ul feliei "
+                "0044)." % (name, _de_ce_nu_merge(name)))
         except OSError as exc:
             raise AccdbError("Unealta «%s» nu poate fi pornită: %s" % (name, exc))
 
@@ -76,7 +107,8 @@ def _run(args, timeout):
         proc = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                               timeout=timeout, check=False)
     except FileNotFoundError:
-        raise AccdbError("Unealta «%s» nu este instalată pe server." % args[0])
+        raise AccdbError("Unealta «%s» nu a putut fi pornită: %s"
+                         % (os.path.basename(args[0]), _de_ce_nu_merge(os.path.basename(args[0]))))
     except subprocess.TimeoutExpired:
         raise AccdbError("Citirea fișierului Access a depășit timpul alocat (%ds)." % timeout)
 
@@ -164,7 +196,8 @@ def iter_rows(path, table, timeout=3600):
     try:
         proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except FileNotFoundError:
-        raise AccdbError("Unealta «mdb-json» nu este instalată pe server.")
+        raise AccdbError("Unealta «mdb-json» nu a putut fi pornită: %s"
+                         % _de_ce_nu_merge("mdb-json"))
 
     try:
         for raw in proc.stdout:
@@ -206,7 +239,8 @@ def count_rows(path, table, timeout=3600):
     try:
         proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except FileNotFoundError:
-        raise AccdbError("Unealta «mdb-json» nu este instalată pe server.")
+        raise AccdbError("Unealta «mdb-json» nu a putut fi pornită: %s"
+                         % _de_ce_nu_merge("mdb-json"))
 
     rows = 0
     try:
