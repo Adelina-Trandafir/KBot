@@ -522,7 +522,13 @@ Public NotInheritable Class MigrareApiClient
             form.Add(New StringContent(index.ToString()), "index")
             form.Add(New StringContent(AmprentaOctetilor(data)), "sha256")
             Dim part As New ByteArrayContent(data)
-            form.Add(part, "fișier", "bucata.bin")
+            ' Numele câmpului merge în antetul Content-Disposition, iar HttpClient
+            ' scrie antetele în Latin-1, unde «ș» (U+0219) NU există: un nume cu
+            ' diacritice ajunge stricat pe server, care apoi nu-l mai găsește
+            ' («Bucata de fișier lipsește din cerere»). Numele de câmp rămân ASCII —
+            ' ca pe toate celelalte rute de încărcare (routes/ftp.py, routes/tools.py).
+            ' Diacriticele din CORPUL JSON sunt în regulă: acela e UTF-8.
+            form.Add(part, "file", "bucata.bin")
 
             Using resp As HttpResponseMessage = Await _http.PostAsync(url, form, token).ConfigureAwait(False)
                 Dim body As String = Await resp.Content.ReadAsStringAsync().ConfigureAwait(False)

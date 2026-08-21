@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # The write pass. Runs only after an analysis of the SAME file said it may.
 #
-# UPSERT everywhere: `ON DUPLICATE KEY UPDATE <fiecare coloană> = VALUES(...)`.
+# UPSERT everywhere: `ON DUPLICATE KEY UPDATE <every column> = VALUES(...)`.
 # A row that is already on the server is BROUGHT UP TO DATE with the one in the
 # Access file, not left as it was -- the Access file is the source of truth of
 # the migration, and a half-migrated row that never gets corrected is worse than
@@ -36,21 +36,21 @@ class ExecuteError(Exception):
 
 def run(conn, db_name, fx_path, plan, report, force, only=None, progress=None):
     """
-    Scrie randurile care au trecut analiza.
+    Write the rows that passed the analysis.
 
-    `plan` e ACELASI UnitPlan folosit la analiza, nu unul nou: altfel selectia
-    s-ar putea schimba intre masurare si scriere.
+    `plan` is the SAME UnitPlan the analysis used, not a fresh one: otherwise the
+    selection could shift between measuring and writing.
 
-    `only` sunt tabelele bifate de operator. Trebuie sa fie printre cele
-    ANALIZATE -- un tabel nemasurat nu se scrie.
+    `only` are the tables the operator ticked. They must be among the ANALYSED
+    ones -- an unmeasured table is not written.
 
-    `report` e Report-ul analizei aceluiasi fisier: de acolo vin valorile de cheie
-    straina care lipsesc pe tinta, ca sa nu mai intrebam serverul inca o data.
+    `report` is the Report of the analysis of the same file: the foreign-key
+    values missing on the target come from there, so the server is not asked twice.
 
-    force=False -> orice constatare opreste scrierea (apelantul nu ar fi trebuit
-                   sa ajunga aici; verificam oricum, nu ne bazam pe interfata).
-    force=True  -> randurile vinovate se SAR, si sunt numarate; blocantele opresc
-                   in continuare, si aici, nu doar in interfata.
+    force=False -> any finding stops the write (the caller should not have got
+                   here; we check anyway rather than trusting the UI).
+    force=True  -> the offending rows are SKIPPED and counted; blocking findings
+                   still stop the write here too, not only in the UI.
     """
     def say(msg):
         logger.info("migrare/scriere: %s", msg)
@@ -68,11 +68,11 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, progress=None):
             "vinovate să fie sărite.")
 
     chosen = tables.selected(only)
-    nemasurate = [t.name for t in chosen if report.tables and t.name not in report.tables]
-    if nemasurate:
+    unmeasured = [t.name for t in chosen if report.tables and t.name not in report.tables]
+    if unmeasured:
         raise ExecuteError(
             "Tabelele %s nu au fost analizate, deci nu se pot scrie. Rulați din nou "
-            "analiza cu ele bifate." % ", ".join(nemasurate))
+            "analiza cu ele bifate." % ", ".join(unmeasured))
 
     schema = validate.TargetSchema(conn, db_name, [t.name for t in chosen])
     totals = {}
@@ -96,9 +96,9 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, progress=None):
                        if t == table.name)
 
         say("Se scrie «%s»." % table.name)
-        # Doar coloanele pe care le au AMANDOUA. O coloana care exista numai pe
-        # tinta isi pastreaza valoarea implicita; una care exista numai in Access
-        # a fost deja raportata ca lipsa la analiza, deci nu ajungem aici cu ea.
+        # Only the columns BOTH sides have. A column that exists only on the
+        # target keeps its default; one that exists only in Access was already
+        # reported as missing by the analysis, so it never gets here.
         access_columns = [c["nume"] for c in accdb.columns(fx_path, table.name)]
         columns = [c for c in access_columns if c in target_columns]
         if not columns:
@@ -114,8 +114,8 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, progress=None):
                 stats["sărite"] += 1
                 continue
             if not keep:
-                # Randul e al altei unitati din acelasi fisier: nu e al bazei
-                # asteia si nu se numara ca sarit.
+                # The row belongs to another unit in the same file: it is not this
+                # database's, and it does not count as skipped.
                 continue
             stats["ale_unității"] += 1
 
@@ -141,9 +141,9 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, progress=None):
 
 def _row_is_blocked(row, target_columns, pk_columns, seen_keys, missing):
     """
-    Aceleasi reguli ca la analiza, aplicate rand cu rand. Deliberat rescrise aici
-    si nu citite dintr-o lista de chei salvata: lista ar putea sa nu mai
-    corespunda fisierului, iar o nepotrivire ar scrie exact randul gresit.
+    The same rules as the analysis, applied row by row. Deliberately re-evaluated
+    here rather than read from a saved list of keys: the list could no longer match
+    the file, and a mismatch would write exactly the wrong row.
     """
     for name, meta in target_columns.items():
         if meta["auto"] and name not in row:
@@ -168,17 +168,17 @@ def _row_is_blocked(row, target_columns, pk_columns, seen_keys, missing):
 
 def _write(conn, db_name, table, columns, pk_columns, rows, stats):
     """
-    Un rând care nu există se INSEREAZĂ; unul care există se ADUCE LA ZI din
-    fișierul Access. Coloanele de cheie primară rămân în afara listei de
-    actualizat — ele identifică rândul.
+    A row that does not exist is INSERTED; one that does is BROUGHT UP TO DATE
+    from the Access file. The primary-key columns stay out of the update list --
+    they identify the row.
     """
     quoted = ",".join("`%s`" % c for c in columns)
     placeholders = ",".join(["%s"] * len(columns))
     keys = set(c.lower() for c in pk_columns)
     updatable = [c for c in columns if c.lower() not in keys]
     if not updatable:
-        # Tabel din care nimic nu se poate actualiza (toate coloanele comune sunt
-        # cheie): auto-atribuire, ca sa nu esueze pe duplicat.
+        # A table where nothing can be updated (every shared column is part of the
+        # key): self-assignment, so a duplicate does not fail.
         updatable = [columns[0]]
     updates = ",".join("`%s` = VALUES(`%s`)" % (c, c) for c in updatable)
 
@@ -189,7 +189,7 @@ def _write(conn, db_name, table, columns, pk_columns, rows, stats):
     try:
         for row in rows:
             cur.execute(sql, row)
-            # MariaDB: 1 = inserat, 2 = actualizat, 0 = era deja identic.
+            # MariaDB: 1 = inserted, 2 = updated, 0 = already identical.
             if cur.rowcount == 1:
                 stats["scrise"] += 1
             elif cur.rowcount == 2:

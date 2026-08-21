@@ -12,9 +12,8 @@
 #   BLOCANT  -- structura sau valoarea nu incap: tabel/coloana lipsa, tip gresit,
 #               depasire de lungime sau de interval, NULL intr-o coloana NOT NULL.
 #               Cat timp exista unul, NICIUN buton nu porneste.
-#   FORTABIL -- integritatea legaturilor: cheie straina fara corespondent, id DDF
-#               absent, cheie primara dubla, rand a carui cheie nu exista nicaieri
-#               in fisier.
+#   FORTABIL -- link integrity: foreign key with no match, missing DDF id,
+#               duplicate primary key, row whose key exists nowhere in the file.
 #               «Rulează» ramane oprit, «Forțează rularea» porneste si SARE peste
 #               randurile vinovate, fara sa le piarda din raport.
 # -----------------------------------------------------------------------------
@@ -39,7 +38,7 @@ F_NUL_INTERZIS = "NUL_INTERZIS"
 F_CHEIE_STRAINA = "CHEIE_STRĂINĂ"
 F_DDF_LIPSA = "ID_DDF_LIPSĂ"
 F_CHEIE_DUBLA = "CHEIE_DUBLĂ"
-F_SELECTIE = "SELECȚIE"
+F_SELECTION = "SELECȚIE"
 
 CLASS_OF = {
     F_TABEL_LIPSA: BLOCANT,
@@ -50,7 +49,7 @@ CLASS_OF = {
     F_CHEIE_STRAINA: FORTABIL,
     F_DDF_LIPSA: FORTABIL,
     F_CHEIE_DUBLA: FORTABIL,
-    F_SELECTIE: FORTABIL,
+    F_SELECTION: FORTABIL,
 }
 
 # Cate exemple pastram pentru fiecare (tabel, coloana, fel). Numaratoarea e
@@ -307,7 +306,7 @@ class Report(object):
     def __init__(self, db_name):
         self.db_name = db_name
         self._buckets = {}      # (tabel, coloana, fel) -> {"număr", "exemple"}
-        self.tables = []        # tabelele bifate, in ordinea de scriere
+        self.tables = []        # the ticked tables, in write order
         self.per_table = {}     # tabel -> {"citite", "ale_unității", "de_scris", "sărite"}
         # Valorile de cheie straina care LIPSESC pe tinta, pastrate ca sa poata fi
         # sarite la rulare fara sa mai intrebam serverul inca o data.
@@ -369,13 +368,13 @@ class Report(object):
 
 def analyze(conn, db_name, fx_path, plan, only=None, progress=None):
     """
-    Citeste fisierul o data, pastreaza randurile unitatii alese si le masoara
-    fata de schema tintei.
+    Read the file once, keep the chosen unit's rows and measure them against the
+    target schema.
 
-    `plan` e UnitPlan-ul rezolvat inainte: el spune ce apartine bazei `db_name`.
-    `only` e lista de tabele bifate de operator; None inseamna toate cele 16.
+    `plan` is the UnitPlan resolved beforehand: it says what belongs to `db_name`.
+    `only` is the list of tables the operator ticked; None means all sixteen.
 
-    Intoarce un Report. Nu scrie nimic, nicaieri.
+    Returns a Report. Writes nothing, nowhere.
     """
     def say(msg):
         logger.info("migrare/analiză: %s", msg)
@@ -413,11 +412,11 @@ def analyze(conn, db_name, fx_path, plan, only=None, progress=None):
 
             keep, reject = selector.keep(row)
             if reject:
-                report.add(table.name, "", F_SELECTIE, key, reject)
+                report.add(table.name, "", F_SELECTION, key, reject)
                 continue
             if not keep:
-                # Randul e al altei unitati din acelasi fisier. Nu e o problema:
-                # se scrie doar unitatea aleasa.
+                # The row belongs to another unit in the same file. Not a
+                # problem: only the chosen unit gets written.
                 continue
             stats["ale_unității"] += 1
 

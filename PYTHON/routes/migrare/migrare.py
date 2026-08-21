@@ -173,12 +173,20 @@ def push_bucata():
         upload_id = (request.form.get("id") or "").strip()
         index = request.form.get("index")
         sha = request.form.get("sha256")
-        if "fișier" in request.files:
-            payload = request.files["fișier"].read()
-        elif "file" in request.files:
+        # „file" e numele adevarat, ASCII, ca pe toate celelalte rute de incarcare:
+        # numele campului merge intr-un antet, iar un client care scrie antetele in
+        # Latin-1 (HttpClient) stalceste orice diacritica. „fișier" ramane acceptat
+        # pentru clientii care il trimit corect.
+        if "file" in request.files:
             payload = request.files["file"].read()
+        elif "fișier" in request.files:
+            payload = request.files["fișier"].read()
         else:
-            return _err("Bucata de fișier lipsește din cerere.", 400)
+            # Mesajul spune si CE a venit: daca numele a ajuns stalcit, se vede aici.
+            primite = ", ".join("«%s»" % k for k in request.files.keys()) or "niciun fișier"
+            return _err(
+                "Bucata de fișier lipsește din cerere. Se aștepta câmpul «file»; "
+                "au venit: %s." % primite, 400)
 
         storage.store_chunk(upload_id, index, payload, sha)
         return _json({"ok": True})

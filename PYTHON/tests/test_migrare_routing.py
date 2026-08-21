@@ -17,19 +17,19 @@ from routes.migrare import routing, tables
 def plan(db_name="005_CEVM", single_unit=False):
     """Unitatea 75 e a bazei alese; 48 e a altei unități din același fișier."""
     sets = dict((name, routing.KeySet()) for name in
-                ("unitate", "angajament", "rezervare", "receptie_r", "receptie_h", "extras"))
-    sets["unitate"].add(75, True)
-    sets["unitate"].add(48, False)
-    sets["angajament"].add("aab-002", True)
-    sets["angajament"].add("aab-001", False)
-    sets["rezervare"].add(11, True)
-    sets["rezervare"].add(10, False)
-    sets["receptie_r"].add(21, True)
-    sets["receptie_r"].add(20, False)
-    sets["receptie_h"].add(31, True)
-    sets["receptie_h"].add(30, False)
-    sets["extras"].add(41, True)
-    sets["extras"].add(40, False)
+                routing.FAMILIES)
+    sets["unit"].add(75, True)
+    sets["unit"].add(48, False)
+    sets["commitment"].add("aab-002", True)
+    sets["commitment"].add("aab-001", False)
+    sets["reservation"].add(11, True)
+    sets["reservation"].add(10, False)
+    sets["receipt_r"].add(21, True)
+    sets["receipt_r"].add(20, False)
+    sets["receipt_h"].add(31, True)
+    sets["receipt_h"].add(30, False)
+    sets["statement"].add(41, True)
+    sets["statement"].add(40, False)
     return routing.UnitPlan(db_name, sets, {75}, {48, 75}, single_unit)
 
 
@@ -269,19 +269,19 @@ def test_planul_afla_unitatea_din_fx_angajamente(monkeypatch):
     assert p.single_unit is False
     # AAB-003 nu are DC scris pe rând, dar are IdUnitate 75; AAB-004 vine din
     # FX_Indicatori, care e a doua sursă de IdUnitate.
-    assert p.sets["angajament"].ours == {"aab-002", "aab-003", "aab-004"}
-    assert p.sets["rezervare"].ours == {11}
-    assert p.sets["receptie_r"].ours == {21}
-    assert p.sets["receptie_h"].ours == {31}
-    assert p.sets["extras"].ours == {41}
+    assert p.sets["commitment"].ours == {"aab-002", "aab-003", "aab-004"}
+    assert p.sets["reservation"].ours == {11}
+    assert p.sets["receipt_r"].ours == {21}
+    assert p.sets["receipt_h"].ours == {31}
+    assert p.sets["statement"].ours == {41}
 
 
 def test_planul_pentru_cealalta_unitate_alege_altceva(monkeypatch):
     fisier(monkeypatch, FISIER_CU_DOUA_UNITATI)
     p = routing.build_plan("fără-fișier.accdb", "000_DEMO")
     assert p.units == [48]
-    assert p.sets["angajament"].ours == {"aab-001"}
-    assert p.sets["extras"].ours == {40}
+    assert p.sets["commitment"].ours == {"aab-001"}
+    assert p.sets["statement"].ours == {40}
 
 
 def test_baza_care_nu_apare_in_fisier_opreste_cu_unitatile_numite(monkeypatch):
@@ -300,4 +300,4 @@ def test_fisierul_cu_o_singura_unitate_merge_oricum_in_baza_aleasa(monkeypatch):
     p = routing.build_plan("fără-fișier.accdb", "045_CTER")
     assert p.single_unit is True
     assert p.units == [75]
-    assert p.sets["angajament"].ours == {"aab-001"}
+    assert p.sets["commitment"].ours == {"aab-001"}

@@ -46,28 +46,29 @@ class AccdbError(Exception):
 
 def _tool(name):
     """
-    Calea unei unelte mdbtools. config.MDB_TOOLS_BIN, daca e pus, e folderul in
-    care stau binarele; altfel se cauta in PATH.
+    Path of one mdbtools binary. config.MDB_TOOLS_BIN, when set, is the folder
+    holding them; otherwise the name is looked up in PATH.
     """
     folder = getattr(config, "MDB_TOOLS_BIN", None)
     return os.path.join(folder, name) if folder else name
 
 
-def _de_ce_nu_merge(name):
+def _why_it_failed(name):
     """
-    De ce n-a putut fi pornita unealta — cu FAPTE, nu cu presupuneri.
+    Why the tool could not be started -- from FACTS, not from a guess.
 
-    „Nu este instalata" era o ghiceala, si de cele mai multe ori gresita: pachetul
-    e instalat, dar procesul serverului nu-l vede. Cele doua cauze reale, si
-    amandoua se vad de aici:
+    "Not installed" was a guess, and usually a wrong one: the package is there,
+    but the server process cannot see it. The two real causes, both visible from
+    here:
 
-      * `config.MDB_TOOLS_BIN` arata spre un folder in care binarul nu e;
-      * PATH-ul procesului nu-l contine — shell-ul lui root are `/usr/bin`, dar
-        serviciul systemd poate porni cu alt PATH (de exemplu doar `.venv/bin`,
-        daca unitatea are `Environment=PATH=...`).
+      * `config.MDB_TOOLS_BIN` points at a folder the binary is not in;
+      * the process PATH does not contain it -- root's shell has /usr/bin, but the
+        systemd service can start with a different PATH (only `.venv/bin`, for
+        instance, when the unit sets `Environment=PATH=...`). Measured on the live
+        server 2026-08-21: that is exactly what it was.
 
-    Mesajul spune ce cale s-a incercat si ce PATH are CHIAR procesul asta, ca
-    operatorul sa nu mai reinstaleze un pachet deja instalat.
+    The message names the path that was tried and the PATH THIS process actually
+    has, so nobody reinstalls an already installed package.
     """
     folder = getattr(config, "MDB_TOOLS_BIN", None)
     cale = os.environ.get("PATH", "")
@@ -84,9 +85,9 @@ def _de_ce_nu_merge(name):
 
 def ensure_tools():
     """
-    Uneltele exista si raspund? Apelat inaintea oricarei analize, ca esecul sa fie
-    „mdbtools nu poate fi pornit, si iata de ce", nu o eroare de parsare cu zece
-    randuri mai jos.
+    Do the tools exist and answer? Called before any analysis, so that a failure
+    reads "mdbtools cannot be started, and here is why" instead of a parse error
+    ten lines further down.
     """
     for name in ("mdb-tables", "mdb-schema", "mdb-json"):
         try:
@@ -97,7 +98,7 @@ def ensure_tools():
             raise AccdbError(
                 "Unealta «%s» nu a putut fi pornită: %s Dacă pachetul chiar "
                 "lipsește: «sudo apt install -y mdbtools» (vezi README-ul feliei "
-                "0044)." % (name, _de_ce_nu_merge(name)))
+                "0044)." % (name, _why_it_failed(name)))
         except OSError as exc:
             raise AccdbError("Unealta «%s» nu poate fi pornită: %s" % (name, exc))
 
@@ -108,7 +109,7 @@ def _run(args, timeout):
                               timeout=timeout, check=False)
     except FileNotFoundError:
         raise AccdbError("Unealta «%s» nu a putut fi pornită: %s"
-                         % (os.path.basename(args[0]), _de_ce_nu_merge(os.path.basename(args[0]))))
+                         % (os.path.basename(args[0]), _why_it_failed(os.path.basename(args[0]))))
     except subprocess.TimeoutExpired:
         raise AccdbError("Citirea fișierului Access a depășit timpul alocat (%ds)." % timeout)
 
@@ -197,7 +198,7 @@ def iter_rows(path, table, timeout=3600):
         proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except FileNotFoundError:
         raise AccdbError("Unealta «mdb-json» nu a putut fi pornită: %s"
-                         % _de_ce_nu_merge("mdb-json"))
+                         % _why_it_failed("mdb-json"))
 
     try:
         for raw in proc.stdout:
@@ -228,19 +229,19 @@ def iter_rows(path, table, timeout=3600):
 
 def count_rows(path, table, timeout=3600):
     """
-    Câte rânduri are tabelul, fără să interpreteze niciunul.
+    How many rows the table has, without interpreting a single one.
 
-    mdbtools nu are un „count", deci tot fișierul trece prin `mdb-json` — dar
-    aici se numără doar liniile, fără `json.loads` și fără dicționare, ceea ce e
-    de câteva ori mai ieftin decât o citire adevărată. Asta ține pasul de
-    inventar (lista de tabele cu bife) departe de prețul analizei.
+    mdbtools has no "count", so the whole file still goes through `mdb-json` --
+    but here only the lines are counted, with no `json.loads` and no dicts, which
+    is several times cheaper than a real read. That keeps the inventory step (the
+    table checklist) away from the price of the analysis.
     """
     args = [_tool("mdb-json"), "-D", DATE_FORMAT, path, table]
     try:
         proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except FileNotFoundError:
         raise AccdbError("Unealta «mdb-json» nu a putut fi pornită: %s"
-                         % _de_ce_nu_merge("mdb-json"))
+                         % _why_it_failed("mdb-json"))
 
     rows = 0
     try:

@@ -32,157 +32,197 @@ Partial Class ConnectForm
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        Me.components = New System.ComponentModel.Container()
-        Me.lblTitlu = New System.Windows.Forms.Label()
-        Me.lblServer = New System.Windows.Forms.Label()
-        Me.txtServer = New System.Windows.Forms.TextBox()
-        Me.lblCheie = New System.Windows.Forms.Label()
-        Me.txtCheie = New System.Windows.Forms.TextBox()
-        Me.btnConecteaza = New System.Windows.Forms.Button()
-        Me.lblBaze = New System.Windows.Forms.Label()
-        Me.lstBaze = New System.Windows.Forms.ListBox()
-        Me.lblStare = New System.Windows.Forms.Label()
-        Me.btnContinua = New System.Windows.Forms.Button()
-        Me.btnRenunta = New System.Windows.Forms.Button()
-        Me.sfat = New KBot.Controls.KBotToolTip(Me.components)
-        Me.SuspendLayout()
-        '
-        'lblTitlu
-        '
-        Me.lblTitlu.AutoSize = True
-        Me.lblTitlu.Font = New System.Drawing.Font("Segoe UI Semibold", 12.0!)
-        Me.lblTitlu.Location = New System.Drawing.Point(16, 14)
-        Me.lblTitlu.Name = "lblTitlu"
-        Me.lblTitlu.Size = New System.Drawing.Size(300, 21)
-        Me.lblTitlu.TabIndex = 0
-        Me.lblTitlu.Text = "Conectare la serverul de migrare"
-        '
-        'lblServer
-        '
-        Me.lblServer.AutoSize = True
-        Me.lblServer.Location = New System.Drawing.Point(16, 52)
-        Me.lblServer.Name = "lblServer"
-        Me.lblServer.Size = New System.Drawing.Size(48, 15)
-        Me.lblServer.TabIndex = 1
-        Me.lblServer.Text = "Server:"
-        '
-        'txtServer
-        '
-        Me.txtServer.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.txtServer.Location = New System.Drawing.Point(130, 49)
-        Me.txtServer.Name = "txtServer"
-        Me.txtServer.Size = New System.Drawing.Size(340, 23)
-        Me.txtServer.TabIndex = 2
-        '
-        'lblCheie
-        '
-        Me.lblCheie.AutoSize = True
-        Me.lblCheie.Location = New System.Drawing.Point(16, 83)
-        Me.lblCheie.Name = "lblCheie"
-        Me.lblCheie.Size = New System.Drawing.Size(108, 15)
-        Me.lblCheie.TabIndex = 3
-        Me.lblCheie.Text = "Cheie API (X-Api-Key):"
-        '
-        'txtCheie
-        '
-        Me.txtCheie.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.txtCheie.Location = New System.Drawing.Point(130, 80)
-        Me.txtCheie.Name = "txtCheie"
-        Me.txtCheie.Size = New System.Drawing.Size(340, 23)
-        Me.txtCheie.TabIndex = 4
-        Me.txtCheie.UseSystemPasswordChar = True
-        '
-        'btnConecteaza
-        '
-        Me.btnConecteaza.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.btnConecteaza.Location = New System.Drawing.Point(130, 113)
-        Me.btnConecteaza.Name = "btnConecteaza"
-        Me.btnConecteaza.Size = New System.Drawing.Size(140, 28)
-        Me.btnConecteaza.TabIndex = 5
-        Me.btnConecteaza.Text = "Conectează"
-        Me.btnConecteaza.UseVisualStyleBackColor = True
-        '
-        'lblBaze
-        '
-        Me.lblBaze.AutoSize = True
-        Me.lblBaze.Location = New System.Drawing.Point(16, 156)
-        Me.lblBaze.Name = "lblBaze"
-        Me.lblBaze.Size = New System.Drawing.Size(180, 15)
-        Me.lblBaze.TabIndex = 6
-        Me.lblBaze.Text = "Baze de unitate găsite pe MariaDB:"
-        '
-        'lstBaze
-        '
-        Me.lstBaze.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.lstBaze.FormattingEnabled = True
-        Me.lstBaze.ItemHeight = 15
-        Me.lstBaze.Location = New System.Drawing.Point(16, 176)
-        Me.lstBaze.Name = "lstBaze"
-        Me.lstBaze.Size = New System.Drawing.Size(454, 154)
-        Me.lstBaze.TabIndex = 7
-        '
-        'lblStare
-        '
-        Me.lblStare.Anchor = CType(System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.lblStare.Location = New System.Drawing.Point(16, 340)
-        Me.lblStare.Name = "lblStare"
-        Me.lblStare.Size = New System.Drawing.Size(454, 34)
-        Me.lblStare.TabIndex = 8
-        Me.lblStare.Text = "Completează adresa serverului și cheia API, apoi apasă «Conectează»."
-        '
-        'btnContinua
-        '
-        Me.btnContinua.Anchor = CType(System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.btnContinua.Enabled = False
-        Me.btnContinua.Location = New System.Drawing.Point(250, 381)
-        Me.btnContinua.Name = "btnContinua"
-        Me.btnContinua.Size = New System.Drawing.Size(110, 30)
-        Me.btnContinua.TabIndex = 9
-        Me.btnContinua.Text = "Continuă"
-        Me.btnContinua.UseVisualStyleBackColor = True
-        '
-        'btnRenunta
-        '
-        Me.btnRenunta.Anchor = CType(System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.btnRenunta.DialogResult = System.Windows.Forms.DialogResult.Cancel
-        Me.btnRenunta.Location = New System.Drawing.Point(366, 381)
-        Me.btnRenunta.Name = "btnRenunta"
-        Me.btnRenunta.Size = New System.Drawing.Size(104, 30)
-        Me.btnRenunta.TabIndex = 10
-        Me.btnRenunta.Text = "Renunță"
-        Me.btnRenunta.UseVisualStyleBackColor = True
-        '
-        'sfat
-        '
-        Me.sfat.SetToolTipHeader(Me.txtServer, "Adresa serverului")
-        Me.sfat.SetToolTipText(Me.txtServer, "Trebuie să înceapă cu «https://». Implicit: adresa din ApiOptions.")
-        Me.sfat.SetToolTipHeader(Me.txtCheie, "Cheia API")
-        Me.sfat.SetToolTipText(Me.txtCheie, "Rutele de migrare sunt păzite cu X-Api-Key, nu cu token bearer." & Global.Microsoft.VisualBasic.ChrW(10) & "Se poate preîncărca din variabila de mediu KBOT_SEED_API_KEY.")
-        Me.sfat.SetToolTipHeader(Me.lstBaze, "Bazele de pe MariaDB")
-        Me.sfat.SetToolTipText(Me.lstBaze, "Cele care nu au toate cele 16 tabele FX_ sunt marcate." & Global.Microsoft.VisualBasic.ChrW(10) & "Migrarea NU creează tabele — schema se instalează separat.")
-        '
-        'ConnectForm
-        '
-        Me.AcceptButton = Me.btnConecteaza
-        Me.CancelButton = Me.btnRenunta
-        Me.ClientSize = New System.Drawing.Size(486, 425)
-        Me.Controls.Add(Me.btnRenunta)
-        Me.Controls.Add(Me.btnContinua)
-        Me.Controls.Add(Me.lblStare)
-        Me.Controls.Add(Me.lstBaze)
-        Me.Controls.Add(Me.lblBaze)
-        Me.Controls.Add(Me.btnConecteaza)
-        Me.Controls.Add(Me.txtCheie)
-        Me.Controls.Add(Me.lblCheie)
-        Me.Controls.Add(Me.txtServer)
-        Me.Controls.Add(Me.lblServer)
-        Me.Controls.Add(Me.lblTitlu)
-        Me.MinimumSize = New System.Drawing.Size(502, 464)
-        Me.Name = "ConnectForm"
-        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "Migrare FX — conectare"
-        Me.ResumeLayout(False)
-        Me.PerformLayout()
+        components = New ComponentModel.Container()
+        lblTitlu = New Label()
+        lblServer = New Label()
+        txtServer = New TextBox()
+        lblCheie = New Label()
+        txtCheie = New TextBox()
+        btnConecteaza = New Button()
+        lblBaze = New Label()
+        lstBaze = New ListBox()
+        lblStare = New Label()
+        btnContinua = New Button()
+        btnRenunta = New Button()
+        sfat = New KBot.Controls.KBotToolTip(components)
+        TableLayoutPanel1 = New TableLayoutPanel()
+        TableLayoutPanel1.SuspendLayout()
+        SuspendLayout()
+        ' 
+        ' lblTitlu
+        ' 
+        lblTitlu.AutoSize = True
+        TableLayoutPanel1.SetColumnSpan(lblTitlu, 2)
+        lblTitlu.Dock = DockStyle.Fill
+        lblTitlu.Font = New Font("Segoe UI Semibold", 12F)
+        lblTitlu.Location = New Point(3, 0)
+        lblTitlu.Name = "lblTitlu"
+        lblTitlu.Size = New Size(715, 42)
+        lblTitlu.TabIndex = 0
+        lblTitlu.Text = "Conectare la serverul de migrare"
+        lblTitlu.TextAlign = ContentAlignment.MiddleCenter
+        ' 
+        ' lblServer
+        ' 
+        lblServer.AutoSize = True
+        lblServer.Dock = DockStyle.Fill
+        lblServer.Location = New Point(10, 50)
+        lblServer.Margin = New Padding(10, 0, 0, 0)
+        lblServer.Name = "lblServer"
+        lblServer.Size = New Size(186, 40)
+        lblServer.TabIndex = 1
+        lblServer.Text = "Server:"
+        lblServer.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' txtServer
+        ' 
+        txtServer.Dock = DockStyle.Fill
+        txtServer.Location = New Point(199, 53)
+        txtServer.Name = "txtServer"
+        txtServer.Size = New Size(519, 31)
+        txtServer.TabIndex = 2
+        sfat.SetToolTipHeader(txtServer, "Adresa serverului")
+        sfat.SetToolTipText(txtServer, "Trebuie să înceapă cu «https://». Implicit: adresa din ApiOptions.")
+        ' 
+        ' lblCheie
+        ' 
+        lblCheie.AutoSize = True
+        lblCheie.Dock = DockStyle.Fill
+        lblCheie.Location = New Point(10, 90)
+        lblCheie.Margin = New Padding(10, 0, 0, 0)
+        lblCheie.Name = "lblCheie"
+        lblCheie.Size = New Size(186, 40)
+        lblCheie.TabIndex = 3
+        lblCheie.Text = "Cheie API (X-Api-Key):"
+        lblCheie.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' txtCheie
+        ' 
+        txtCheie.Dock = DockStyle.Fill
+        txtCheie.Location = New Point(199, 93)
+        txtCheie.Name = "txtCheie"
+        txtCheie.Size = New Size(519, 31)
+        txtCheie.TabIndex = 4
+        sfat.SetToolTipHeader(txtCheie, "Cheia API")
+        sfat.SetToolTipText(txtCheie, "Rutele de migrare sunt păzite cu X-Api-Key, nu cu token bearer." & vbLf & "Se poate preîncărca din variabila de mediu KBOT_SEED_API_KEY.")
+        txtCheie.UseSystemPasswordChar = True
+        ' 
+        ' btnConecteaza
+        ' 
+        btnConecteaza.Dock = DockStyle.Right
+        btnConecteaza.Location = New Point(578, 133)
+        btnConecteaza.Name = "btnConecteaza"
+        btnConecteaza.Size = New Size(140, 34)
+        btnConecteaza.TabIndex = 5
+        btnConecteaza.Text = "Conectează"
+        btnConecteaza.UseVisualStyleBackColor = True
+        ' 
+        ' lblBaze
+        ' 
+        lblBaze.AutoSize = True
+        TableLayoutPanel1.SetColumnSpan(lblBaze, 2)
+        lblBaze.Dock = DockStyle.Fill
+        lblBaze.Location = New Point(3, 178)
+        lblBaze.Name = "lblBaze"
+        lblBaze.Size = New Size(715, 40)
+        lblBaze.TabIndex = 6
+        lblBaze.Text = "Baze de unitate găsite pe MariaDB:"
+        ' 
+        ' lstBaze
+        ' 
+        TableLayoutPanel1.SetColumnSpan(lstBaze, 2)
+        lstBaze.Dock = DockStyle.Fill
+        lstBaze.FormattingEnabled = True
+        lstBaze.ItemHeight = 25
+        lstBaze.Location = New Point(3, 221)
+        lstBaze.Name = "lstBaze"
+        lstBaze.Size = New Size(715, 248)
+        lstBaze.TabIndex = 7
+        sfat.SetToolTipHeader(lstBaze, "Bazele de pe MariaDB")
+        sfat.SetToolTipText(lstBaze, "Cele care nu au toate cele 16 tabele FX_ sunt marcate." & vbLf & "Migrarea NU creează tabele — schema se instalează separat.")
+        ' 
+        ' lblStare
+        ' 
+        TableLayoutPanel1.SetColumnSpan(lblStare, 2)
+        lblStare.Dock = DockStyle.Fill
+        lblStare.Location = New Point(0, 472)
+        lblStare.Margin = New Padding(0)
+        lblStare.Name = "lblStare"
+        lblStare.Size = New Size(721, 20)
+        lblStare.TabIndex = 8
+        lblStare.Text = "Completează adresa serverului și cheia API, apoi apasă «Conectează»."
+        ' 
+        ' btnContinua
+        ' 
+        btnContinua.Dock = DockStyle.Right
+        btnContinua.Enabled = False
+        btnContinua.Location = New Point(588, 503)
+        btnContinua.Name = "btnContinua"
+        btnContinua.Size = New Size(130, 38)
+        btnContinua.TabIndex = 9
+        btnContinua.Text = "Continuă"
+        btnContinua.UseVisualStyleBackColor = True
+        ' 
+        ' btnRenunta
+        ' 
+        btnRenunta.DialogResult = DialogResult.Cancel
+        btnRenunta.Dock = DockStyle.Left
+        btnRenunta.Location = New Point(3, 503)
+        btnRenunta.Name = "btnRenunta"
+        btnRenunta.Size = New Size(130, 38)
+        btnRenunta.TabIndex = 10
+        btnRenunta.Text = "Renunță"
+        btnRenunta.UseVisualStyleBackColor = True
+        ' 
+        ' TableLayoutPanel1
+        ' 
+        TableLayoutPanel1.ColumnCount = 2
+        TableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 27.1844654F))
+        TableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 72.81554F))
+        TableLayoutPanel1.Controls.Add(lblTitlu, 0, 0)
+        TableLayoutPanel1.Controls.Add(btnRenunta, 0, 10)
+        TableLayoutPanel1.Controls.Add(lblServer, 0, 2)
+        TableLayoutPanel1.Controls.Add(btnContinua, 1, 10)
+        TableLayoutPanel1.Controls.Add(lblCheie, 0, 3)
+        TableLayoutPanel1.Controls.Add(lblStare, 0, 8)
+        TableLayoutPanel1.Controls.Add(txtServer, 1, 2)
+        TableLayoutPanel1.Controls.Add(lstBaze, 0, 7)
+        TableLayoutPanel1.Controls.Add(txtCheie, 1, 3)
+        TableLayoutPanel1.Controls.Add(lblBaze, 0, 6)
+        TableLayoutPanel1.Controls.Add(btnConecteaza, 1, 4)
+        TableLayoutPanel1.Dock = DockStyle.Fill
+        TableLayoutPanel1.Location = New Point(0, 0)
+        TableLayoutPanel1.Name = "TableLayoutPanel1"
+        TableLayoutPanel1.RowCount = 11
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 8F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 8F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 8F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 44F))
+        TableLayoutPanel1.Size = New Size(721, 544)
+        TableLayoutPanel1.TabIndex = 11
+        ' 
+        ' ConnectForm
+        ' 
+        AcceptButton = btnConecteaza
+        CancelButton = btnRenunta
+        ClientSize = New Size(721, 544)
+        Controls.Add(TableLayoutPanel1)
+        MinimumSize = New Size(502, 464)
+        Name = "ConnectForm"
+        StartPosition = FormStartPosition.CenterScreen
+        Text = "Migrare FX — conectare"
+        TableLayoutPanel1.ResumeLayout(False)
+        TableLayoutPanel1.PerformLayout()
+        ResumeLayout(False)
     End Sub
+
+    Friend WithEvents TableLayoutPanel1 As TableLayoutPanel
 
 End Class

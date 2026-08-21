@@ -126,12 +126,12 @@ def list_pushed():
 
 def begin_upload(kind, an, dc, total_size, sha256):
     """
-    kind: „fx" — fișierul FOREXE al anului. E singurul fel de fișier pe care îl
-    ia migrarea; unitatea unui rând se află din fișierul însuși (FX_Angajamente
-    poartă și IdUnitate, și DC), deci nu mai există niciun fișier de rutare.
+    kind: "fx" -- the year's FOREXE file. It is the only kind of file the
+    migration takes; a row's unit is found in the file itself (FX_Angajamente
+    carries both IdUnitate and DC), so there is no routing file any more.
 
-    Întoarce upload_id. Verificarea numelui se face ACUM, nu la finalizare, ca
-    operatorul să afle imediat dacă a greșit DC-ul.
+    Returns upload_id. The name is validated NOW, not at finalisation, so the
+    operator learns immediately if he got the DC wrong.
     """
     if kind != "fx":
         raise StorageError(

@@ -65,6 +65,8 @@ Partial Class MigratorForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
+        Dim DataGridViewCellStyle1 As DataGridViewCellStyle = New DataGridViewCellStyle()
+        Dim DataGridViewCellStyle2 As DataGridViewCellStyle = New DataGridViewCellStyle()
         pnlSurse = New Panel()
         tlpSurse = New TableLayoutPanel()
         lblDc = New Label()
@@ -82,12 +84,12 @@ Partial Class MigratorForm
         lblFisiere = New Label()
         btnRasfoireFx = New Button()
         pnlTabele = New Panel()
-        lblTabele = New Label()
         dgvTabele = New DataGridView()
         colBifa = New DataGridViewCheckBoxColumn()
         colTabel = New DataGridViewTextBoxColumn()
         colRanduri = New DataGridViewTextBoxColumn()
         colAleUnitatii = New DataGridViewTextBoxColumn()
+        lblTabele = New Label()
         pnlActiuni = New Panel()
         tlpActiuni = New TableLayoutPanel()
         btnInventar = New Button()
@@ -322,31 +324,20 @@ Partial Class MigratorForm
         btnRasfoireFx.TabIndex = 10
         btnRasfoireFx.Text = "Răsfoiește…"
         btnRasfoireFx.UseVisualStyleBackColor = True
-        '
+        ' 
         ' pnlTabele
-        '
-        ' Copiii se adauga in ordinea INVERSA a andocarii: Fill intai, Top dupa.
+        ' 
         pnlTabele.Controls.Add(dgvTabele)
         pnlTabele.Controls.Add(lblTabele)
         pnlTabele.Dock = DockStyle.Left
         pnlTabele.Location = New Point(0, 219)
         pnlTabele.Name = "pnlTabele"
         pnlTabele.Padding = New Padding(8, 6, 4, 6)
-        pnlTabele.Size = New Size(330, 279)
+        pnlTabele.Size = New Size(442, 279)
         pnlTabele.TabIndex = 1
-        '
-        ' lblTabele
-        '
-        lblTabele.Dock = DockStyle.Top
-        lblTabele.Location = New Point(8, 6)
-        lblTabele.Name = "lblTabele"
-        lblTabele.Size = New Size(318, 30)
-        lblTabele.TabIndex = 0
-        lblTabele.Text = "Tabele de actualizat:"
-        lblTabele.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' dgvTabele
-        '
+        ' 
         dgvTabele.AllowUserToAddRows = False
         dgvTabele.AllowUserToDeleteRows = False
         dgvTabele.AllowUserToResizeRows = False
@@ -359,43 +350,59 @@ Partial Class MigratorForm
         dgvTabele.RowHeadersVisible = False
         dgvTabele.RowHeadersWidth = 62
         dgvTabele.SelectionMode = DataGridViewSelectionMode.FullRowSelect
-        dgvTabele.Size = New Size(318, 237)
+        dgvTabele.Size = New Size(430, 237)
         dgvTabele.TabIndex = 1
         sfat.SetToolTipHeader(dgvTabele, "Ce se actualizează")
         sfat.SetToolTipText(dgvTabele, "Un tabel fără rânduri în fișierul Access se oferă NEBIFAT." & vbLf & "«Ale unității» se completează abia după analiză: acolo se află" & vbLf & "câte dintre rânduri sunt chiar ale bazei alese.")
-        '
+        ' 
         ' colBifa
-        '
+        ' 
         colBifa.HeaderText = ""
+        colBifa.MinimumWidth = 8
         colBifa.Name = "colBifa"
         colBifa.Resizable = DataGridViewTriState.False
         colBifa.Width = 40
-        '
+        ' 
         ' colTabel
-        '
+        ' 
         colTabel.HeaderText = "Tabel"
+        colTabel.MinimumWidth = 8
         colTabel.Name = "colTabel"
         colTabel.ReadOnly = True
         colTabel.Width = 150
-        '
+        ' 
         ' colRanduri
-        '
-        colRanduri.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight
+        ' 
+        DataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight
+        colRanduri.DefaultCellStyle = DataGridViewCellStyle1
         colRanduri.HeaderText = "Rânduri"
+        colRanduri.MinimumWidth = 8
         colRanduri.Name = "colRanduri"
         colRanduri.ReadOnly = True
         colRanduri.Width = 70
-        '
+        ' 
         ' colAleUnitatii
-        '
-        colAleUnitatii.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight
+        ' 
+        DataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleRight
+        colAleUnitatii.DefaultCellStyle = DataGridViewCellStyle2
         colAleUnitatii.HeaderText = "Ale unității"
+        colAleUnitatii.MinimumWidth = 8
         colAleUnitatii.Name = "colAleUnitatii"
         colAleUnitatii.ReadOnly = True
         colAleUnitatii.Width = 90
-        '
+        ' 
+        ' lblTabele
+        ' 
+        lblTabele.Dock = DockStyle.Top
+        lblTabele.Location = New Point(8, 6)
+        lblTabele.Name = "lblTabele"
+        lblTabele.Size = New Size(430, 30)
+        lblTabele.TabIndex = 0
+        lblTabele.Text = "Tabele de actualizat:"
+        lblTabele.TextAlign = ContentAlignment.MiddleLeft
+        ' 
         ' pnlActiuni
-        '
+        ' 
         pnlActiuni.Controls.Add(tlpActiuni)
         pnlActiuni.Dock = DockStyle.Bottom
         pnlActiuni.Location = New Point(0, 652)
@@ -425,9 +432,9 @@ Partial Class MigratorForm
         tlpActiuni.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlpActiuni.Size = New Size(954, 60)
         tlpActiuni.TabIndex = 0
-        '
+        ' 
         ' btnInventar
-        '
+        ' 
         btnInventar.Dock = DockStyle.Fill
         btnInventar.Location = New Point(3, 3)
         btnInventar.Margin = New Padding(3, 3, 6, 3)
@@ -439,9 +446,9 @@ Partial Class MigratorForm
         sfat.SetToolTipHeader(btnInventar, "Citește tabelele")
         sfat.SetToolTipText(btnInventar, "Numără rândurile fiecărui tabel din fișierul deja împins." & vbLf & "Tabelele fără rânduri rămân nebifate.")
         btnInventar.UseVisualStyleBackColor = True
-        '
+        ' 
         ' btnAnalizeaza
-        '
+        ' 
         btnAnalizeaza.Dock = DockStyle.Fill
         btnAnalizeaza.Location = New Point(182, 3)
         btnAnalizeaza.Margin = New Padding(3, 3, 6, 3)
@@ -500,14 +507,14 @@ Partial Class MigratorForm
         dgvConstatari.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
         dgvConstatari.ColumnHeadersHeight = 34
         dgvConstatari.Dock = DockStyle.Fill
-        dgvConstatari.Location = New Point(330, 219)
+        dgvConstatari.Location = New Point(442, 219)
         dgvConstatari.MultiSelect = False
         dgvConstatari.Name = "dgvConstatari"
         dgvConstatari.ReadOnly = True
         dgvConstatari.RowHeadersVisible = False
         dgvConstatari.RowHeadersWidth = 62
         dgvConstatari.SelectionMode = DataGridViewSelectionMode.FullRowSelect
-        dgvConstatari.Size = New Size(624, 279)
+        dgvConstatari.Size = New Size(512, 279)
         dgvConstatari.TabIndex = 2
         ' 
         ' txtJurnal

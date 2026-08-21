@@ -9,16 +9,16 @@
 # -----------------------------------------------------------------------------
 
 # --- selection kinds ---------------------------------------------------------
-OWN_DC_THEN_UNIT = "own_dc_then_unit"   # coloana DC proprie, altfel IdUnitate
-OWN_UNIT = "own_unit"                   # IdUnitate propriu
-BY_ANGAJAMENT = "by_angajament"         # CodAngajament, prin multimea angajamentelor
-BY_REZERVARE = "by_rezervare"           # IDRZ, prin multimea rezervarilor
-TWO_PARENTS = "two_parents"             # doi parinti candidati
-BY_EXTRAS = "by_extras"                 # IDEXF, prin antetele din FX_Extrase_H
+OWN_DC_THEN_UNIT = "own_dc_then_unit"   # its own DC column, else IdUnitate
+OWN_UNIT = "own_unit"                   # its own IdUnitate
+BY_ANGAJAMENT = "by_angajament"         # CodAngajament, through the commitment set
+BY_REZERVARE = "by_rezervare"           # IDRZ, through the reservation set
+TWO_PARENTS = "two_parents"             # two candidate parents
+BY_EXTRAS = "by_extras"                 # IDEXF, through the FX_Extrase_H headers
 
 
 class SeedTable(object):
-    """Descrierea unui tabel migrat. Fără logică."""
+    """Description of one migrated table. No logic."""
 
     def __init__(self, name, primary_key, selection,
                  key_column=None, key_column2=None, ddf_columns=None):
@@ -27,15 +27,15 @@ class SeedTable(object):
         self.selection = selection
         self.key_column = key_column
         self.key_column2 = key_column2
-        # Coloanele care arata spre familia DDF (IDDF / IDREV). Se VERIFICA pe
-        # MariaDB inainte de scriere, niciodata traduse: acolo id-urile sunt
-        # AUTO_INCREMENT si nu pastreaza id-ul Access alaturi.
+        # The columns pointing at the DDF family (IDDF / IDREV). They are
+        # CHECKED against MariaDB before writing, never translated: the ids there
+        # are AUTO_INCREMENT and do not keep the Access id alongside.
         self.ddf_columns = list(ddf_columns or [])
 
 
 ALL = [
-    # FX_Angajamente e radacina, si singurul tabel care poarta si IdUnitate si DC:
-    # de acolo se afla ce IdUnitate are baza aleasa de operator.
+    # FX_Angajamente is the root, and the only table carrying both IdUnitate and
+    # DC: that is where the chosen database's IdUnitate comes from.
     SeedTable("FX_Angajamente", "CodAngajament", OWN_DC_THEN_UNIT, ddf_columns=["IDDF"]),
     SeedTable("FX_Indicatori", "CodAI", OWN_UNIT),
     SeedTable("FX_Istoric", "ID", BY_ANGAJAMENT, key_column="CodAngajament",
@@ -49,15 +49,15 @@ ALL = [
     SeedTable("FX_Receptii_H", "IDRH", BY_ANGAJAMENT, key_column="CodAngajament"),
     SeedTable("FX_Receptii", "IDR", OWN_UNIT, ddf_columns=["IDREV"]),
     SeedTable("FX_Receptii_RHR", "IDRHR", OWN_UNIT),
-    # Doi parinti: IDRR intai, apoi IDRH.
+    # Two parents: IDRR first, then IDRH.
     SeedTable("FX_Receptii_IMG", "IDRDC", TWO_PARENTS,
               key_column="IDRR", key_column2="IDRH"),
     SeedTable("FX_Plati", "IdPlataFX", OWN_UNIT, ddf_columns=["IDREV"]),
-    # Doi parinti, in ordinea inversa celui de mai sus.
+    # Two parents, in the reverse order of the one above.
     SeedTable("FX_Receptii_Plati", "IDRP", TWO_PARENTS,
               key_column="IDRH", key_column2="IDRR"),
-    # Un fisier de extras poate purta linii ale mai multor unitati; e al nostru
-    # daca macar un antet din FX_Extrase_H al lui e al unitatii alese.
+    # A statement file can carry lines of several units; it is ours if at least
+    # one of its FX_Extrase_H headers belongs to the chosen unit.
     SeedTable("FX_Extrase_F", "IDEXF", BY_EXTRAS, key_column="IDEXF"),
     SeedTable("FX_Extrase_H", "IDEXH", OWN_UNIT),
     SeedTable("FX_Extrase", "IDFXE", OWN_UNIT),
@@ -65,15 +65,15 @@ ALL = [
 
 BY_NAME = dict((t.name, t) for t in ALL)
 
-# Tabelul MariaDB al fiecarui id DDF verificat.
+# The MariaDB table behind each checked DDF id.
 DDF_ID_TABLE = {"IDDF": ("FX_DDF", "IDDF"), "IDREV": ("FX_DDF_REV", "IDREV")}
 
-# Declarate in afara domeniului. Daca apar in fisier sunt RAPORTATE si NU migrate.
+# Declared out of scope. If they appear in the file they are REPORTED, not migrated.
 OUT_OF_SCOPE = ("FX_PRT_EXPL", "FX_CopacAngajamente")
 
 
 def by_name(name):
-    """Cheie necunoscută → excepție, niciodată un no-op tăcut."""
+    """Unknown key -> exception, never a silent no-op."""
     table = BY_NAME.get(name)
     if table is None:
         raise KeyError("Tabelul «%s» nu face parte din setul migrat." % name)
@@ -82,11 +82,11 @@ def by_name(name):
 
 def selected(names):
     """
-    Tabelele bifate de operator, în ORDINEA DE SCRIERE (părinții înaintea
-    copiilor), nu în ordinea în care le-a bifat el. `None` înseamnă toate.
+    The tables the operator ticked, in WRITE ORDER (parents before children), not
+    in the order he ticked them. `None` means all of them.
 
-    Un nume care nu face parte din setul migrat oprește cu excepție; nu se
-    ignoră tăcut, altfel operatorul ar crede că a bifat ceva ce nu se scrie.
+    A name outside the migrated set raises; it is never ignored silently, or the
+    operator would believe he ticked something that does not get written.
     """
     if names is None:
         return list(ALL)
