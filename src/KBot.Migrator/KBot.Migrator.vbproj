@@ -20,7 +20,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.2.0.0</FileVersion>
+    <FileVersion>1.3.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -45,8 +45,10 @@
     <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
     <ProjectReference Include="..\KBot.Theming\KBot.Theming.vbproj" />
     <ProjectReference Include="..\KBot.Api\KBot.Api.vbproj" />
-    <!-- Doar pentru KBotToolTip: regula casei spune ca etichetele plutitoare NU se
-         fac cu System.Windows.Forms.ToolTip, care nu poate fi tematizat. -->
+    <!-- KBotToolTip (regula casei spune ca etichetele plutitoare NU se fac cu
+         System.Windows.Forms.ToolTip, care nu poate fi tematizat) si, din felia
+         0044-03, KBotDataView: toate cele patru grile ale migratorului sunt
+         grila K-BOT, nu DataGridView. -->
     <ProjectReference Include="..\KBot.Controls\KBot.Controls.vbproj" />
   </ItemGroup>
 

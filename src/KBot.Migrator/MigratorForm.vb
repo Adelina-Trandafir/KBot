@@ -1,36 +1,40 @@
-Imports System.Collections.Generic
-Imports System.Data
+﻿Imports System.Collections.Generic
 Imports System.IO
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports KBot.Common
+Imports KBot.Controls
 
 ''' <summary>
-''' Ecranul utilitarului de migrare, cu cei cinci pași în ordinea în care îi face
+''' Ecranul utilitarului de migrare, cu cei cinci pasi in ordinea in care ii face
 ''' operatorul:
 ''' <list type="number">
-''' <item><b>Sursa</b> — unitatea (din registrul AVACONT), anul, baza țintă de pe
-''' MariaDB și fișierul FOREXE al anului, de pe stație.</item>
-''' <item><b>Împingerea</b> — fișierul urcă pe server, în bucăți, cu amprentă.</item>
-''' <item><b>Tabelele</b> — serverul numără rândurile fiecărui tabel din fișier;
-''' cele fără rânduri rămân NEBIFATE, ca operatorul să nu pornească scrierea
-''' pentru nimic.</item>
-''' <item><b>Analiza</b> — serverul citește tabelele bifate și le măsoară. Nu
+''' <item><b>Sursa</b> — unitatea (din registrul AVACONT), anul, baza tinta de pe
+''' MariaDB si fisierul FOREXE al anului, de pe statie.</item>
+''' <item><b>Impingerea</b> — fisierul urca pe server, in bucati, cu amprenta.</item>
+''' <item><b>Tabelele</b> — serverul numara randurile fiecarui tabel din fisier;
+''' cele fara randuri raman NEBIFATE, ca operatorul sa nu porneasca scrierea
+''' pentru nimic. Ordinea din lista e ORDINEA DE SCRIERE (sageti sau tragere cu
+''' mouse-ul), iar pentru tabelul ales se vad coloanele lui: doar cele bifate
+''' calatoresc — cheile primare mereu, coloanele absente din tinta pornesc
+''' nebifate. Fila <b>Corelatii coloane</b> spune, tot pentru tabelul ales, in
+''' CE coloana de pe MariaDB ajunge fiecare coloana din Access.</item>
+''' <item><b>Analiza</b> — serverul citeste tabelele bifate si le masoara. Nu
 ''' scrie nimic.</item>
-''' <item><b>Rularea</b> — «Rulează» pornește doar dacă analiza n-a găsit nimic;
-''' «Forțează rularea» pornește când singurele probleme sunt de integritate, și
-''' atunci sare peste rândurile vinovate. Problemele de tip sau de dimensiune
-''' opresc amândouă butoanele.</item>
+''' <item><b>Rularea</b> — «Ruleaza» porneste doar daca analiza n-a gasit nimic;
+''' «Forteaza rularea» porneste cand singurele probleme sunt de integritate, si
+''' atunci sare peste randurile vinovate. Problemele de tip sau de dimensiune
+''' opresc amandoua butoanele.</item>
 ''' </list>
 '''
-''' Un fișier FOREXE poate purta MAI MULTE unități; se scriu doar rândurile
-''' unității bazei alese. Cine e unitatea aia se află din fișierul însuși
-''' (FX_Angajamente poartă și <c>IdUnitate</c>, și <c>DC</c>; FX_Indicatori
-''' poartă <c>IdUnitate</c>), deci nu mai există niciun fișier de rutare pe lângă.
+''' Un fisier FOREXE poate purta MAI MULTE unitati; se scriu doar randurile
+''' unitatii bazei alese. Cine e unitatea aia se afla din fisierul insusi
+''' (FX_Angajamente poarta si <c>IdUnitate</c>, si <c>DC</c>; FX_Indicatori
+''' poarta <c>IdUnitate</c>), deci nu mai exista niciun fisier de rutare pe langa.
 '''
-''' Migratorul NU deschide niciun fișier Access și nicio conexiune MariaDB: din
-''' .NET nu se referă niciun driver Access — nici OleDb, nici ACE, nici COM.
+''' Migratorul NU deschide niciun fisier Access si nicio conexiune MariaDB: din
+''' .NET nu se refera niciun driver Access — nici OleDb, nici ACE, nici COM.
 ''' </summary>
 Public Class MigratorForm
 
@@ -40,9 +44,42 @@ Public Class MigratorForm
     Private _raport As RaportAnaliza
     Private _busy As Boolean
 
+    ''' <summary>Coloanele fiecarui tabel din inventar, cu bifele operatorului.</summary>
+    Private ReadOnly _coloane As New Dictionary(Of String, List(Of ColoanaFisier))(StringComparer.OrdinalIgnoreCase)
+
+    ''' <summary>Coloanele pe care le are fiecare tabel PE MARIADB (tinta corelatiei).</summary>
+    Private ReadOnly _coloaneTinta As New Dictionary(Of String, List(Of String))(StringComparer.OrdinalIgnoreCase)
+
     ''' <summary>
-    ''' Clientul vine gata conectat din <see cref="ConnectForm"/>. Formularul îl
-    ''' și eliberează la închidere — e ultimul care îl folosește.
+    ''' Lista de tabele, in ordinea de scriere — MODELUL ei, nu grila.
+    ''' <see cref="KBotDataView"/> nu-si muta randurile singura (modelul e al
+    ''' gazdei), deci rearanjarea se face aici, iar grila se reumple din lista.
+    ''' </summary>
+    Private ReadOnly _tabele As New List(Of RandTabel)()
+
+    ' Tragerea unui rand din lista de tabele: de unde a pornit si pragul de la
+    ' care un clic devine tragere (altfel bifarea s-ar transforma in drag).
+    Private _dragIndex As Integer = -1
+    Private _dragStart As Rectangle = Rectangle.Empty
+
+    ''' <summary>Ce se alege in «Se scrie in» pentru o coloana fara pereche pe MariaDB.</summary>
+    Private Const FaraTinta As String = "(nu se scrie)"
+
+    ''' <summary>
+    ''' Un rand al listei de tabele: ce a spus inventarul, plus bifa operatorului
+    ''' si numaratoarea adusa de analiza. POCO.
+    ''' </summary>
+    Private NotInheritable Class RandTabel
+        Public Property Nume As String
+        Public Property Exista As Boolean
+        Public Property Randuri As Integer
+        Public Property Bifat As Boolean
+        Public Property AleUnitatii As String
+    End Class
+
+    ''' <summary>
+    ''' Clientul vine gata conectat din <see cref="ConnectForm"/>. Formularul il
+    ''' si elibereaza la inchidere — e ultimul care il foloseste.
     ''' </summary>
     Public Sub New(client As MigrareApiClient, baze As List(Of BazaInfo))
         If client Is Nothing Then Throw New ArgumentNullException(NameOf(client))
@@ -252,10 +289,10 @@ Public Class MigratorForm
     End Sub
 
     ''' <summary>
-    ''' Cere serverului numărul de rânduri al fiecărui tabel din fișierul deja
-    ''' împins și umple lista cu bife: <b>bifate doar tabelele care CHIAR au
-    ''' rânduri</b>. Câte dintre ele sunt ale unității alese se află abia la
-    ''' analiză — pentru asta trebuie citit fiecare rând.
+    ''' Cere serverului numarul de randuri al fiecarui tabel din fisierul deja
+    ''' impins si umple lista cu bife: <b>bifate doar tabelele care CHIAR au
+    ''' randuri</b>. Cate dintre ele sunt ale unitatii alese se afla abia la
+    ''' analiza — pentru asta trebuie citit fiecare rand.
     ''' </summary>
     Private Async Function InventariazaAsync() As Task
         Try
@@ -319,7 +356,9 @@ Public Class MigratorForm
             txtJurnal.Clear()
             ResetAnaliza(Nothing)
 
-            Dim jobId As String = Await _client.StartAnalizaAsync(baza, an, baza, bifate)
+            Dim jobId As String = Await _client.StartAnalizaAsync(baza, an, baza, bifate,
+                                                                 ColoaneAlese(bifate),
+                                                                 CorelatiiAlese(bifate))
             Dim stare As StareLucrare = Await AsteaptaLucrareAsync(jobId)
 
             If stare.EsteEroare Then
@@ -376,11 +415,16 @@ Public Class MigratorForm
 
             Dim bifate As List(Of String) = TabeleBifate()
             If bifate Is Nothing Then Return
+            Dim inlocuieste As Boolean = chkInlocuieste.Checked
 
             Dim mesaj As String =
-                "Se scriu rândurile unității bazei «" & baza & "», din tabelele: " &
+                "Se scriu rândurile unității bazei «" & baza & "», din tabelele (în ordinea din listă): " &
                 String.Join(", ", bifate) & "." & Environment.NewLine &
-                "Rândurile deja existente pe server se ADUC LA ZI din fișierul Access." &
+                If(inlocuieste,
+                   "ÎNLOCUIEȘTE TOT: datele existente din tabelele bifate se ȘTERG întâi de pe " &
+                   "server, apoi se scriu cele din fișier. Totul într-o singură tranzacție — " &
+                   "la orice eroare, baza rămâne exact cum era.",
+                   "Rândurile deja existente pe server se ADUC LA ZI din fișierul Access.") &
                 Environment.NewLine &
                 "Rândurile altor unități din același fișier rămân neatinse."
             If fortat Then
@@ -390,14 +434,17 @@ Public Class MigratorForm
             End If
             mesaj &= Environment.NewLine & Environment.NewLine & "Continui?"
 
+            Dim pictograma As MessageBoxIcon =
+                If(inlocuieste, MessageBoxIcon.Warning, MessageBoxIcon.Question)
             If MessageBox.Show(Me, mesaj, "Migrare FX",
-                               MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
+                               MessageBoxButtons.YesNo, pictograma) <> DialogResult.Yes Then
                 Return
             End If
 
             SetBusy(True, If(fortat, "Scriere forțată în curs…", "Scriere în curs…"))
 
-            Dim jobId As String = Await _client.StartRulareAsync(_analizaId, an, baza, fortat, bifate)
+            Dim jobId As String = Await _client.StartRulareAsync(_analizaId, an, baza, fortat,
+                                                                 bifate, inlocuieste)
             Dim stare As StareLucrare = Await AsteaptaLucrareAsync(jobId)
 
             If stare.EsteEroare Then
@@ -420,8 +467,8 @@ Public Class MigratorForm
     End Function
 
     ''' <summary>
-    ''' Urmărește o lucrare până se încheie, aducând jurnalul pe măsură ce crește.
-    ''' Interogare la o secundă: lucrările durează minute, nu milisecunde.
+    ''' Urmareste o lucrare pana se incheie, aducand jurnalul pe masura ce creste.
+    ''' Interogare la o secunda: lucrarile dureaza minute, nu milisecunde.
     ''' </summary>
     Private Async Function AsteaptaLucrareAsync(jobId As String) As Task(Of StareLucrare)
         Dim vazute As Integer = 0
@@ -459,53 +506,490 @@ Public Class MigratorForm
 
     ''' <summary>
     ''' Umple lista de tabele din inventar. Bifa se pune DOAR pe tabelele care
-    ''' există în fișier și au măcar un rând — un tabel gol n-are ce actualiza.
+    ''' exista in fisier si au macar un rand — un tabel gol n-are ce actualiza.
+    ''' Coloanele fiecarui tabel se pastreaza pe formular, cu bifele lor de
+    ''' pornire (cheile mereu; restul doar daca exista si pe MariaDB).
     ''' </summary>
     Private Sub UmpleTabele(inv As InventarFisier)
-        dgvTabele.Rows.Clear()
-        If inv Is Nothing Then Return
+        _tabele.Clear()
+        _coloane.Clear()
+        _coloaneTinta.Clear()
+        dgvColoane.ClearRows()
+        dgvCorelatii.ClearRows()
+        If inv IsNot Nothing Then
+            For Each t As TabelFisier In inv.Tabele
+                _tabele.Add(New RandTabel() With {
+                    .Nume = t.Nume,
+                    .Exista = t.Exista,
+                    .Randuri = t.Randuri,
+                    .Bifat = t.Exista AndAlso t.Randuri > 0,
+                    .AleUnitatii = ""
+                })
+                _coloane(t.Nume) = New List(Of ColoanaFisier)(t.Coloane)
+                _coloaneTinta(t.Nume) = New List(Of String)(t.ColoaneTinta)
+            Next
+        End If
 
-        For Each t As TabelFisier In inv.Tabele
-            Dim idx As Integer = dgvTabele.Rows.Add(
-                t.Exista AndAlso t.Randuri > 0,
-                t.Nume,
-                If(t.Exista, t.Randuri.ToString(), "lipsește"),
-                "")
-            ' Un tabel care nu e in fisier nu se poate bifa deloc.
-            dgvTabele.Rows(idx).Cells(0).ReadOnly = Not t.Exista
-        Next
+        ReumpleTabele(0)
     End Sub
 
     ''' <summary>
-    ''' După analiză se știe și câte dintre rânduri sunt ale unității alese.
-    ''' Un tabel care n-are niciunul se DEBIFEAZĂ: are rânduri, dar nu ale noastre.
+    ''' Scrie <see cref="_tabele"/> in grila si pune selectia pe randul cerut.
+    ''' Reumplerea e drumul prin care lista isi schimba ORDINEA: grila nu muta
+    ''' randuri, modelul da.
+    ''' </summary>
+    Private Sub ReumpleTabele(selectat As Integer)
+        dgvTabele.BeginUpdate()
+        Try
+            dgvTabele.ClearRows()
+            For Each t As RandTabel In _tabele
+                Dim rand As KBotDataRow = dgvTabele.AddRow()
+                rand("bifa") = t.Bifat
+                rand("tabel") = t.Nume
+                rand("randuri") = If(t.Exista, t.Randuri.ToString(), "lipsește")
+                rand("ale_unitatii") = t.AleUnitatii
+                rand.Tag = t
+            Next
+        Finally
+            dgvTabele.EndUpdate()
+        End Try
+
+        If _tabele.Count = 0 Then
+            UmpleColoane(Nothing)
+            Return
+        End If
+        dgvTabele.CurrentRowIndex = Math.Max(0, Math.Min(selectat, _tabele.Count - 1))
+        UmpleColoane(TabelCurent())
+    End Sub
+
+    ''' <summary>Numele tabelului de pe randul selectat, sau Nothing.</summary>
+    Private Function TabelCurent() As String
+        Dim idx As Integer = dgvTabele.CurrentRowIndex
+        If idx < 0 OrElse idx >= _tabele.Count Then Return Nothing
+        Return _tabele(idx).Nume
+    End Function
+
+    ''' <summary>
+    ''' Un tabel care nu e in fisier nu se poate bifa deloc: bifa lui se stinge
+    ''' aici, la pictare, fiindca activarea unei CELULE nu e o proprietate de
+    ''' coloana — vine din <c>CellFormatting</c>, exact ca la grila de coloane.
+    ''' </summary>
+    Private Sub dgvTabele_CellFormatting(sender As Object, e As KBotCellFormattingEventArgs) _
+            Handles dgvTabele.CellFormatting
+        Try
+            If Not String.Equals(e.ColumnKey, "bifa", StringComparison.Ordinal) Then Return
+            Dim t As RandTabel = TryCast(e.Row.Tag, RandTabel)
+            If t IsNot Nothing AndAlso Not t.Exista Then e.Enabled = False
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvTabele_CellFormatting", ex)
+        End Try
+    End Sub
+
+    ''' <summary>Bifa din grila se scrie inapoi in modelul listei de tabele.</summary>
+    Private Sub dgvTabele_CellValueChanged(sender As Object, e As KBotCellValueEventArgs) _
+            Handles dgvTabele.CellValueChanged
+        Try
+            If Not String.Equals(e.ColumnKey, "bifa", StringComparison.Ordinal) Then Return
+            If e.RowIndex < 0 OrElse e.RowIndex >= _tabele.Count Then Return
+            _tabele(e.RowIndex).Bifat = CBool(e.NewValue)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvTabele_CellValueChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Arata coloanele tabelului ales: bifa spune ce calatoreste. Cheia primara
+    ''' e mereu bifata si nu se poate atinge; o coloana absenta din baza tinta e
+    ''' scrisa apasat, ca sa se vada de ce porneste nebifata.
+    ''' </summary>
+    Private Sub UmpleColoane(tabel As String)
+        Try
+            dgvColoane.BeginUpdate()
+            Try
+                dgvColoane.ClearRows()
+                If tabel Is Nothing OrElse Not _coloane.ContainsKey(tabel) Then
+                    lblColoane.Text = "Coloane:"
+                    Return
+                End If
+
+                lblColoane.Text = "Coloane — " & tabel & ":"
+                For Each c As ColoanaFisier In _coloane(tabel)
+                    Dim rand As KBotDataRow = dgvColoane.AddRow()
+                    rand("bifa") = c.Aleasa
+                    rand("nume") = c.Nume
+                    rand("stare") = If(c.Cheie, "cheie", If(c.InBaza, "da", "LIPSEȘTE"))
+                    rand.Tag = c
+                Next
+            Finally
+                dgvColoane.EndUpdate()
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.UmpleColoane", ex)
+        Finally
+            ' Cele doua file descriu ACELASI tabel: se schimba impreuna.
+            UmpleCorelatii(tabel)
+        End Try
+    End Sub
+
+    Private Sub dgvTabele_SelectionChanged(sender As Object, e As EventArgs) _
+            Handles dgvTabele.SelectionChanged
+        Try
+            UmpleColoane(TabelCurent())
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvTabele_SelectionChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Cheia primara calatoreste intotdeauna: serverul o adauga oricum, deci bifa
+    ''' ei nu e o alegere si nu se poate schimba.
+    ''' </summary>
+    Private Sub dgvColoane_CellFormatting(sender As Object, e As KBotCellFormattingEventArgs) _
+            Handles dgvColoane.CellFormatting
+        Try
+            If Not String.Equals(e.ColumnKey, "bifa", StringComparison.Ordinal) Then Return
+            Dim c As ColoanaFisier = TryCast(e.Row.Tag, ColoanaFisier)
+            If c IsNot Nothing AndAlso c.Cheie Then e.Enabled = False
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvColoane_CellFormatting", ex)
+        End Try
+    End Sub
+
+    ''' <summary>Bifa din grila se scrie inapoi in modelul coloanelor.</summary>
+    Private Sub dgvColoane_CellValueChanged(sender As Object, e As KBotCellValueEventArgs) _
+            Handles dgvColoane.CellValueChanged
+        Try
+            If Not String.Equals(e.ColumnKey, "bifa", StringComparison.Ordinal) Then Return
+            Dim c As ColoanaFisier = TryCast(dgvColoane.Rows(e.RowIndex).Tag, ColoanaFisier)
+            If c Is Nothing Then Return
+            c.Aleasa = c.Cheie OrElse CBool(e.NewValue)
+            ' O coloana debifata nu mai calatoreste, deci corelatia ei nu mai are
+            ' ce spune — se vede in coloana «Stare» din fila de dincolo.
+            For i As Integer = 0 To dgvCorelatii.RowCount - 1
+                If ReferenceEquals(dgvCorelatii.Rows(i).Tag, c) Then
+                    dgvCorelatii("stare", i) = StareCorelatie(c)
+                    Exit For
+                End If
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvColoane_CellValueChanged", ex)
+        End Try
+    End Sub
+
+    ' =========================================================================
+    ' Fila «Corelatii coloane» — in ce coloana de pe MariaDB ajunge fiecare
+    ' coloana din Access
+    ' =========================================================================
+
+    ''' <summary>
+    ''' Arata corelatiile tabelului ales. Serverul le propune (unu-la-unu dupa
+    ''' nume, cu exceptia perechii clasificatiilor: Access <c>IdClsf</c> ▸ MariaDB
+    ''' <c>IdClsfAcc</c>, Access <c>IdClsfPY</c> ▸ MariaDB <c>IdClsf</c>), iar
+    ''' operatorul le poate schimba rand cu rand. Lista din care alege sunt
+    ''' COLOANELE TINTEI, plus «(nu se scrie)».
+    ''' </summary>
+    Private Sub UmpleCorelatii(tabel As String)
+        Try
+            dgvCorelatii.BeginUpdate()
+            Try
+                dgvCorelatii.ClearRows()
+                If tabel Is Nothing OrElse Not _coloane.ContainsKey(tabel) Then
+                    lblCorelatii.Text = "Corelații:"
+                    Return
+                End If
+
+                lblCorelatii.Text = "Corelații — " & tabel & " ▸ MariaDB:"
+
+                Dim optiuni As New List(Of Object)() From {FaraTinta}
+                Dim tinte As List(Of String) = Nothing
+                If _coloaneTinta.TryGetValue(tabel, tinte) Then
+                    For Each t As String In tinte
+                        optiuni.Add(t)
+                    Next
+                End If
+                dgvCorelatii.Column("tinta").ComboItems = optiuni
+
+                For Each c As ColoanaFisier In _coloane(tabel)
+                    Dim rand As KBotDataRow = dgvCorelatii.AddRow()
+                    rand("access") = c.Nume
+                    rand("tinta") = If(String.IsNullOrEmpty(c.Tinta), FaraTinta, c.Tinta)
+                    rand("implicit") = If(String.IsNullOrEmpty(c.TintaImplicita), FaraTinta, c.TintaImplicita)
+                    rand("stare") = StareCorelatie(c)
+                    rand.Tag = c
+                Next
+            Finally
+                dgvCorelatii.EndUpdate()
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.UmpleCorelatii", ex)
+        End Try
+    End Sub
+
+    ''' <summary>Ce se scrie in coloana «Stare» a unei corelatii.</summary>
+    Private Shared Function StareCorelatie(c As ColoanaFisier) As String
+        If c.Cheie Then Return "cheie primară"
+        If Not c.Aleasa Then Return "coloană debifată"
+        If String.IsNullOrEmpty(c.Tinta) Then Return "fără pereche"
+        If Not String.Equals(c.Tinta, c.TintaImplicita, StringComparison.OrdinalIgnoreCase) Then
+            Return "schimbată de tine"
+        End If
+        If Not String.Equals(c.Tinta, c.Nume, StringComparison.OrdinalIgnoreCase) Then
+            Return "corelare încrucișată"
+        End If
+        Return ""
+    End Function
+
+    ''' <summary>
+    ''' Doua coloane din Access nu pot merge in ACEEASI coloana de pe MariaDB —
+    ''' una dintre valori s-ar pierde, si nu se poate spune care. Serverul refuza
+    ''' si el, dar aici operatorul afla pe loc, nu dupa ce porneste analiza.
+    ''' </summary>
+    Private Sub dgvCorelatii_CellValidating(sender As Object, e As KBotCellValidatingEventArgs) _
+            Handles dgvCorelatii.CellValidating
+        Try
+            If Not String.Equals(e.ColumnKey, "tinta", StringComparison.Ordinal) Then Return
+            Dim tinta As String = If(TryCast(e.ProposedValue, String), String.Empty).Trim()
+            If tinta.Length = 0 OrElse String.Equals(tinta, FaraTinta, StringComparison.Ordinal) Then
+                e.ProposedValue = FaraTinta
+                Return
+            End If
+
+            ' Editorul combo se poate si TASTA, nu doar alege: un nume care nu e al
+            ' unei coloane de pe MariaDB se refuza aici. Serverul ar ignora-o tacut,
+            ' iar operatorul ar ramane cu o corelatie care nu face nimic.
+            Dim tabel As String = TabelCurent()
+            Dim tinte As List(Of String) = Nothing
+            If tabel Is Nothing OrElse Not _coloaneTinta.TryGetValue(tabel, tinte) Then Return
+            Dim exact As String = Nothing
+            For Each t As String In tinte
+                If String.Equals(t, tinta, StringComparison.OrdinalIgnoreCase) Then
+                    exact = t
+                    Exit For
+                End If
+            Next
+            If exact Is Nothing Then
+                e.Cancel = True
+                MessageBox.Show(Me,
+                    "Baza «" & tabel & "» n-are nicio coloană «" & tinta & "». " &
+                    "Alege una din listă, sau «" & FaraTinta & "».",
+                    "Migrare FX", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            ' Pe MariaDB se scrie cu ortografia EXACTA a tintei.
+            tinta = exact
+            e.ProposedValue = exact
+
+            For i As Integer = 0 To dgvCorelatii.RowCount - 1
+                If i = e.RowIndex Then Continue For
+                Dim alta As String = TryCast(dgvCorelatii("tinta", i), String)
+                If Not String.Equals(alta, tinta, StringComparison.OrdinalIgnoreCase) Then Continue For
+
+                e.Cancel = True
+                MessageBox.Show(Me,
+                    "Coloana «" & tinta & "» de pe MariaDB e deja corelată cu «" &
+                    CStr(dgvCorelatii("access", i)) & "» din Access. O coloană a " &
+                    "țintei poate primi o singură coloană din Access.",
+                    "Migrare FX", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvCorelatii_CellValidating", ex)
+        End Try
+    End Sub
+
+    ''' <summary>Corelatia aleasa se scrie inapoi in modelul coloanelor.</summary>
+    Private Sub dgvCorelatii_CellValueChanged(sender As Object, e As KBotCellValueEventArgs) _
+            Handles dgvCorelatii.CellValueChanged
+        Try
+            If Not String.Equals(e.ColumnKey, "tinta", StringComparison.Ordinal) Then Return
+            Dim c As ColoanaFisier = TryCast(dgvCorelatii.Rows(e.RowIndex).Tag, ColoanaFisier)
+            If c Is Nothing Then Return
+
+            Dim tinta As String = If(TryCast(e.NewValue, String), String.Empty)
+            c.Tinta = If(String.Equals(tinta, FaraTinta, StringComparison.Ordinal), String.Empty, tinta)
+            dgvCorelatii("stare", e.RowIndex) = StareCorelatie(c)
+            ResetAnaliza("Corelațiile s-au schimbat — analizează din nou.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvCorelatii_CellValueChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Corelatiile pentru analiza, pe tabel. Se trimit INTREGI pentru fiecare
+    ''' tabel bifat — si cele nemodificate: serverul le-a propus, dar analiza
+    ''' trebuie sa masoare exact ce vede operatorul pe ecran, nu ce ar recalcula
+    ''' el singur.
+    ''' </summary>
+    Private Function CorelatiiAlese(bifate As IEnumerable(Of String)) As Dictionary(Of String, Dictionary(Of String, String))
+        Dim alese As New Dictionary(Of String, Dictionary(Of String, String))(StringComparer.OrdinalIgnoreCase)
+        For Each tabel As String In bifate
+            Dim lista As List(Of ColoanaFisier) = Nothing
+            If Not _coloane.TryGetValue(tabel, lista) OrElse lista.Count = 0 Then Continue For
+
+            Dim harta As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
+            For Each c As ColoanaFisier In lista
+                harta(c.Nume) = If(c.Tinta, String.Empty)
+            Next
+            alese(tabel) = harta
+        Next
+        Return alese
+    End Function
+
+    ''' <summary>
+    ''' Coloanele alese, pe tabel, pentru analiza. Un tabel cu TOATE coloanele
+    ''' bifate nu se trimite deloc — «toate» e si intelesul lipsei — deci
+    ''' dictionarul poarta doar tabelele unde operatorul chiar a debifat ceva.
+    ''' </summary>
+    Private Function ColoaneAlese(bifate As IEnumerable(Of String)) As Dictionary(Of String, List(Of String))
+        Dim alese As New Dictionary(Of String, List(Of String))(StringComparer.OrdinalIgnoreCase)
+        For Each tabel As String In bifate
+            Dim lista As List(Of ColoanaFisier) = Nothing
+            If Not _coloane.TryGetValue(tabel, lista) OrElse lista.Count = 0 Then Continue For
+
+            Dim toate As Boolean = True
+            Dim nume As New List(Of String)()
+            For Each c As ColoanaFisier In lista
+                If c.Aleasa OrElse c.Cheie Then
+                    nume.Add(c.Nume)
+                Else
+                    toate = False
+                End If
+            Next
+            If Not toate Then alese(tabel) = nume
+        Next
+        Return alese
+    End Function
+
+    ' =========================================================================
+    ' Ordinea tabelelor: sageti + tragere cu mouse-ul
+    ' =========================================================================
+
+    Private Sub btnSus_Click(sender As Object, e As EventArgs) Handles btnSus.Click
+        Try
+            MutaTabelCurent(-1)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.btnSus_Click", ex)
+        End Try
+    End Sub
+
+    Private Sub btnJos_Click(sender As Object, e As EventArgs) Handles btnJos.Click
+        Try
+            MutaTabelCurent(1)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.btnJos_Click", ex)
+        End Try
+    End Sub
+
+    Private Sub MutaTabelCurent(pas As Integer)
+        Dim idx As Integer = dgvTabele.CurrentRowIndex
+        If idx < 0 Then Return
+        MutaRand(idx, idx + pas)
+    End Sub
+
+    ''' <summary>
+    ''' Muta un rand al listei de tabele pe alta pozitie. Ordinea din lista e
+    ''' ORDINEA DE SCRIERE — parintii trebuie sa ramana inaintea copiilor, iar
+    ''' asta e pe mana operatorului, exact cum a cerut. Se muta MODELUL, apoi
+    ''' grila se reumple din el.
+    ''' </summary>
+    Private Sub MutaRand(deLa As Integer, la As Integer)
+        If deLa < 0 OrElse deLa >= _tabele.Count Then Return
+        If la < 0 OrElse la >= _tabele.Count OrElse la = deLa Then Return
+
+        Dim rand As RandTabel = _tabele(deLa)
+        _tabele.RemoveAt(deLa)
+        _tabele.Insert(la, rand)
+        ReumpleTabele(la)
+    End Sub
+
+    Private Sub dgvTabele_MouseDown(sender As Object, e As MouseEventArgs) _
+            Handles dgvTabele.MouseDown
+        Try
+            Dim rowIndex As Integer = dgvTabele.RowIndexAt(e.Location)
+            ' Din celula cu bifa nu se porneste tragerea: acolo clicul E bifa.
+            ' Latimea coloanei e LOGICA (px la 96 dpi), iar `e.X` e in pixeli de
+            ' ecran — de aceea se scaleaza, din aceeasi sursa ca grila.
+            Dim latimeBifa As Integer =
+                dgvTabele.Column("bifa").Width * dgvTabele.DeviceDpi \ 96
+            Dim peBifa As Boolean = rowIndex >= 0 AndAlso e.X < latimeBifa
+            If rowIndex >= 0 AndAlso Not peBifa Then
+                _dragIndex = rowIndex
+                Dim prag As Size = SystemInformation.DragSize
+                _dragStart = New Rectangle(New Point(e.X - prag.Width \ 2,
+                                                     e.Y - prag.Height \ 2), prag)
+            Else
+                _dragIndex = -1
+                _dragStart = Rectangle.Empty
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvTabele_MouseDown", ex)
+        End Try
+    End Sub
+
+    Private Sub dgvTabele_MouseMove(sender As Object, e As MouseEventArgs) _
+            Handles dgvTabele.MouseMove
+        Try
+            If e.Button <> MouseButtons.Left OrElse _dragIndex < 0 Then Return
+            If _dragStart <> Rectangle.Empty AndAlso _dragStart.Contains(e.X, e.Y) Then Return
+            dgvTabele.DoDragDrop(_dragIndex, DragDropEffects.Move)
+            _dragIndex = -1
+            _dragStart = Rectangle.Empty
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvTabele_MouseMove", ex)
+        End Try
+    End Sub
+
+    Private Sub dgvTabele_DragOver(sender As Object, e As DragEventArgs) _
+            Handles dgvTabele.DragOver
+        Try
+            e.Effect = If(e.Data.GetDataPresent(GetType(Integer)),
+                          DragDropEffects.Move, DragDropEffects.None)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvTabele_DragOver", ex)
+        End Try
+    End Sub
+
+    Private Sub dgvTabele_DragDrop(sender As Object, e As DragEventArgs) _
+            Handles dgvTabele.DragDrop
+        Try
+            If Not e.Data.GetDataPresent(GetType(Integer)) Then Return
+            Dim deLa As Integer = CInt(e.Data.GetData(GetType(Integer)))
+            Dim punct As Point = dgvTabele.PointToClient(New Point(e.X, e.Y))
+            Dim rowIndex As Integer = dgvTabele.RowIndexAt(punct)
+            Dim la As Integer = If(rowIndex >= 0, rowIndex, _tabele.Count - 1)
+            MutaRand(deLa, la)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvTabele_DragDrop", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Dupa analiza se stie si cate dintre randuri sunt ale unitatii alese.
+    ''' Un tabel care n-are niciunul se DEBIFEAZA: are randuri, dar nu ale noastre.
     ''' </summary>
     Private Sub ActualizeazaTabeleDinRaport(raport As RaportAnaliza)
         If raport Is Nothing Then Return
 
-        For Each rand As DataGridViewRow In dgvTabele.Rows
-            Dim nume As String = TryCast(rand.Cells(1).Value, String)
-            If nume Is Nothing Then Continue For
-
+        For i As Integer = 0 To _tabele.Count - 1
+            Dim t As RandTabel = _tabele(i)
             Dim numere As Integer() = Nothing
-            If Not raport.PeTabel.TryGetValue(nume, numere) Then Continue For
+            If Not raport.PeTabel.TryGetValue(t.Nume, numere) Then Continue For
 
-            rand.Cells(3).Value = numere(1).ToString()
-            If numere(1) = 0 Then rand.Cells(0).Value = False
+            t.AleUnitatii = numere(1).ToString()
+            If numere(1) = 0 Then t.Bifat = False
+            dgvTabele("ale_unitatii", i) = t.AleUnitatii
+            dgvTabele("bifa", i) = t.Bifat
         Next
     End Sub
 
     ''' <summary>
-    ''' Tabelele bifate, sau <c>Nothing</c> (cu mesaj) dacă nu e bifat niciunul.
-    ''' Lista goală nu se trimite ca «toate»: n-ar fi ce a cerut operatorul.
+    ''' Tabelele bifate, sau <c>Nothing</c> (cu mesaj) daca nu e bifat niciunul.
+    ''' Lista goala nu se trimite ca «toate»: n-ar fi ce a cerut operatorul.
     ''' </summary>
     Private Function TabeleBifate() As List(Of String)
         Dim alese As New List(Of String)()
-        For Each rand As DataGridViewRow In dgvTabele.Rows
-            If CBool(rand.Cells(0).Value) Then
-                Dim nume As String = TryCast(rand.Cells(1).Value, String)
-                If Not String.IsNullOrEmpty(nume) Then alese.Add(nume)
-            End If
+        For Each t As RandTabel In _tabele
+            If t.Bifat AndAlso Not String.IsNullOrEmpty(t.Nume) Then alese.Add(t.Nume)
         Next
 
         If alese.Count = 0 Then
@@ -518,53 +1002,37 @@ Public Class MigratorForm
         Return alese
     End Function
 
-    ''' <summary>
-    ''' Bifa se aplică la clic, nu la ieșirea din celulă: altfel operatorul apasă
-    ''' «Analizează» și pleacă cu bifa veche.
-    ''' </summary>
-    Private Sub dgvTabele_CurrentCellDirtyStateChanged(sender As Object, e As EventArgs) _
-            Handles dgvTabele.CurrentCellDirtyStateChanged
+    Private Sub UmpleGrila(raport As RaportAnaliza)
+        dgvConstatari.BeginUpdate()
         Try
-            If dgvTabele.IsCurrentCellDirty Then
-                dgvTabele.CommitEdit(DataGridViewDataErrorContexts.Commit)
-            End If
-        Catch ex As Exception
-            GlobalErrorLog.Write("MigratorForm.dgvTabele_CurrentCellDirtyStateChanged", ex)
+            dgvConstatari.ClearRows()
+            If raport Is Nothing Then Return
+
+            For Each c As Constatare In raport.Constatari
+                Dim primul As ExempluConstatare = If(c.Exemple.Count > 0, c.Exemple(0), Nothing)
+                Dim rand As KBotDataRow = dgvConstatari.AddRow()
+                rand("clasa") = c.Clasa
+                rand("tabel") = c.Tabel
+                rand("coloana") = c.Coloana
+                rand("fel") = c.Fel
+                rand("randuri") = c.Numar.ToString()
+                rand("cheie") = If(primul Is Nothing, "", primul.Cheie)
+                rand("mesaj") = If(primul Is Nothing, "", primul.Mesaj)
+                rand("valoare") = If(primul Is Nothing, "", primul.Valoare)
+            Next
+        Finally
+            dgvConstatari.EndUpdate()
         End Try
     End Sub
 
-    Private Sub UmpleGrila(raport As RaportAnaliza)
-        Dim dt As New DataTable()
-        dt.Columns.Add("Clasă", GetType(String))
-        dt.Columns.Add("Tabel", GetType(String))
-        dt.Columns.Add("Coloană", GetType(String))
-        dt.Columns.Add("Fel", GetType(String))
-        dt.Columns.Add("Rânduri", GetType(Integer))
-        dt.Columns.Add("Exemplu — cheie", GetType(String))
-        dt.Columns.Add("Exemplu — ce nu e în regulă", GetType(String))
-        dt.Columns.Add("Exemplu — valoare", GetType(String))
-
-        If raport IsNot Nothing Then
-            For Each c As Constatare In raport.Constatari
-                Dim primul As ExempluConstatare = If(c.Exemple.Count > 0, c.Exemple(0), Nothing)
-                dt.Rows.Add(c.Clasa, c.Tabel, c.Coloana, c.Fel, c.Numar,
-                            If(primul Is Nothing, "", primul.Cheie),
-                            If(primul Is Nothing, "", primul.Mesaj),
-                            If(primul Is Nothing, "", primul.Valoare))
-            Next
-        End If
-
-        dgvConstatari.DataSource = dt
-    End Sub
-
-    Private Sub dgvConstatari_CellDoubleClick(sender As Object, e As DataGridViewCellEventArgs) _
+    Private Sub dgvConstatari_CellDoubleClick(sender As Object, e As KBotCellEventArgs) _
             Handles dgvConstatari.CellDoubleClick
         Try
             If _raport Is Nothing Then Return
             If e.RowIndex < 0 OrElse e.RowIndex >= _raport.Constatari.Count Then Return
 
-            ' Rândul din grilă are un singur exemplu; restul se scriu în jurnal, unde
-            ' încap și pot fi copiate.
+            ' Randul din grila are un singur exemplu; restul se scriu in jurnal, unde
+            ' incap si pot fi copiate.
             Dim c As Constatare = _raport.Constatari(e.RowIndex)
             AppendLog("— " & c.Tabel & "." & c.Coloana & " · " & c.Fel & " · " &
                       c.Numar.ToString() & " rânduri:")
@@ -626,7 +1094,7 @@ Public Class MigratorForm
         Return Nothing
     End Function
 
-    ''' <summary>Baza bifată, sau Nothing (cu mesaj) dacă nu e aleasă niciuna.</summary>
+    ''' <summary>Baza bifata, sau Nothing (cu mesaj) daca nu e aleasa niciuna.</summary>
     Private Function NumeBazaAleasa() As String
         Dim b As BazaInfo = TryCast(cboBaza.SelectedItem, BazaInfo)
         If b Is Nothing Then
@@ -637,8 +1105,9 @@ Public Class MigratorForm
         If Not b.Complet Then
             Dim raspuns As DialogResult = MessageBox.Show(
                 Me,
-                "Baza «" & b.Nume & "» are doar " & b.TabeleFx.ToString() & " din cele 16 tabele FX_. " &
-                "Migrarea NU creează tabele, deci se va opri la primul care lipsește." &
+                "Baza «" & b.Nume & "» are doar " & b.TabeleFx.ToString() & " dintre tabelele FX_ migrate. " &
+                "Migrarea NU creează tabele: un tabel lipsă se sare dacă nimic bifat nu depinde " &
+                "de el, altfel oprește scrierea." &
                 Environment.NewLine & Environment.NewLine & "Continui oricum?",
                 "Migrare FX", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
             If raspuns <> DialogResult.Yes Then Return Nothing
@@ -655,12 +1124,19 @@ Public Class MigratorForm
     End Function
 
     ''' <summary>
-    ''' Inventarul descrie un fișier și o bază anume; când se schimbă vreuna, lista
-    ''' de tabele nu mai are ce descrie și se golește. O bifă rămasă de la altă
-    ''' bază ar fi exact bifa greșită.
+    ''' Inventarul descrie un fisier si o baza anume; cand se schimba vreuna, lista
+    ''' de tabele nu mai are ce descrie si se goleste. O bifa ramasa de la alta
+    ''' baza ar fi exact bifa gresita.
     ''' </summary>
     Private Sub ResetInventar(mesaj As String)
-        dgvTabele.Rows.Clear()
+        _tabele.Clear()
+        _coloane.Clear()
+        _coloaneTinta.Clear()
+        dgvTabele.ClearRows()
+        dgvColoane.ClearRows()
+        dgvCorelatii.ClearRows()
+        lblColoane.Text = "Coloane:"
+        lblCorelatii.Text = "Corelații:"
         ResetAnaliza(mesaj)
     End Sub
 
@@ -673,9 +1149,9 @@ Public Class MigratorForm
     End Sub
 
     ''' <summary>
-    ''' Cele două butoane, exact după regula din analiză: «Rulează» doar pe un
-    ''' raport curat, «Forțează» doar când nu există nicio constatare blocantă.
-    ''' Serverul verifică din nou amândouă — interfața nu e singura pază.
+    ''' Cele doua butoane, exact dupa regula din analiza: «Ruleaza» doar pe un
+    ''' raport curat, «Forteaza» doar cand nu exista nicio constatare blocanta.
+    ''' Serverul verifica din nou amandoua — interfata nu e singura paza.
     ''' </summary>
     Private Sub ActualizeazaButoane()
         Dim gata As Boolean = Not _busy AndAlso _raport IsNot Nothing
@@ -691,6 +1167,11 @@ Public Class MigratorForm
         btnReciteste.Enabled = Not busy
         btnRasfoireFx.Enabled = Not busy
         dgvTabele.Enabled = Not busy
+        dgvColoane.Enabled = Not busy
+        dgvCorelatii.Enabled = Not busy
+        btnSus.Enabled = Not busy
+        btnJos.Enabled = Not busy
+        chkInlocuieste.Enabled = Not busy
         cboDc.Enabled = Not busy
         cboAn.Enabled = Not busy
         cboBaza.Enabled = Not busy

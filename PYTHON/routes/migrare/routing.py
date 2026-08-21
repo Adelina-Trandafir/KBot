@@ -26,6 +26,12 @@
 #   receipt_r  : IDRR            (FX_Receptii_R, through the commitment)
 #   receipt_h  : IDRH            (FX_Receptii_H, through the commitment)
 #   statement  : IDEXF           (FX_Extrase_H, through the unit)
+#   statement_h: IDEXH           (FX_Extrase_H itself — the header a statement
+#                                 line reaches through IDFXH when it carries no
+#                                 IdUnitate of its own)
+#   ddf        : IDDF            (FX_DDF, by its own DC/IdUnitate)
+#   rev        : IDREV           (FX_DDF_REV, through the DDF)
+#   ord        : IDORD           (FX_ORD, through the commitment)
 #
 # Every set is kept TWICE: `ours` (the chosen unit's keys) and `known`
 # (everything the file carries). The difference between them is the difference
@@ -187,6 +193,38 @@ class TableSelector(object):
             return self._by_set("statement", _as_long(row.get(self.table.key_column)),
                                 self.table.key_column, "FX_Extrase_H")
 
+        if kind == tables.BY_EXTRAS_HEADER:
+            # The row's own IdUnitate wins when it is filled in; most statement
+            # lines leave it NULL and carry only IDFXH, the header. The header
+            # has the unit, so the line is routed through it -- a NULL IdUnitate
+            # is NOT an error here (that reading is what once rejected 3110
+            # perfectly attributable FX_Extrase rows).
+            unit = _as_long(row.get("IdUnitate"))
+            if unit is not None:
+                return unit in self.plan.sets["unit"].ours, None
+            header = _as_long(row.get(self.table.key_column))
+            if header is None:
+                if self.plan.single_unit:
+                    return True, None
+                return False, ("nici IdUnitate, nici %s nu sunt completate, iar "
+                               "fișierul poartă mai multe unități (%s)"
+                               % (self.table.key_column,
+                                  ", ".join(str(u) for u in self.plan.all_units)))
+            return self._by_set("statement_h", header, self.table.key_column,
+                                "FX_Extrase_H")
+
+        if kind == tables.BY_DDF:
+            return self._by_set("ddf", _as_long(row.get(self.table.key_column)),
+                                self.table.key_column, "FX_DDF")
+
+        if kind == tables.BY_REV:
+            return self._by_set("rev", _as_long(row.get(self.table.key_column)),
+                                self.table.key_column, "FX_DDF_REV")
+
+        if kind == tables.BY_ORD:
+            return self._by_set("ord", _as_long(row.get(self.table.key_column)),
+                                self.table.key_column, "FX_ORD")
+
         if kind == tables.TWO_PARENTS:
             return self._two_parents(row)
 
@@ -264,7 +302,8 @@ class TableSelector(object):
 # Building the plan
 # -----------------------------------------------------------------------------
 
-FAMILIES = ("unit", "commitment", "reservation", "receipt_r", "receipt_h", "statement")
+FAMILIES = ("unit", "commitment", "reservation", "receipt_r", "receipt_h",
+            "statement", "statement_h", "ddf", "rev", "ord")
 
 
 def build_plan(fx_path, db_name, progress=None):
@@ -356,16 +395,55 @@ def build_plan(fx_path, db_name, progress=None):
 
     say("Se citește FX_Extrase_H (fișierele de extras ale unității).")
     for row in _rows(fx_path, "FX_Extrase_H", say):
+        unit = _as_long(row.get("IdUnitate"))
+        ours = unit in units if unit is not None else single_unit
+
+        # The header itself, for the FX_Extrase lines that reach their unit
+        # through IDFXH.
+        header = _as_long(row.get("IDEXH"))
+        if header is not None:
+            sets["statement_h"].add(header, ours)
+
         statement = _as_long(row.get("IDEXF"))
         if statement is None:
             continue
-        unit = _as_long(row.get("IdUnitate"))
-        ours = unit in units if unit is not None else single_unit
         # One statement file can carry lines of several units; if ONE header is
         # ours, the file is ours too.
         sets["statement"].add(statement, ours or statement in sets["statement"].ours)
     say("Extrase: %d fișiere ale unității din %d."
         % (len(sets["statement"].ours), len(sets["statement"].known)))
+
+    # The DDF chain: FX_DDF decides by its own DC/IdUnitate (the same rule its
+    # selector applies), FX_DDF_REV follows the DDF, and the REV_* children
+    # follow the revision.
+    say("Se citește FX_DDF (angajamentele de plată ale unității).")
+    for row in _rows(fx_path, "FX_DDF", say):
+        ddf = _as_long(row.get("IDDF"))
+        if ddf is None:
+            continue
+        dc = _as_text(row.get("DC"))
+        unit = _as_long(row.get("IdUnitate"))
+        if dc:
+            ours = dc.lower() == db_name.lower()
+        elif unit is not None:
+            ours = unit in units
+        else:
+            ours = single_unit
+        sets["ddf"].add(ddf, ours)
+    say("DDF: %d ale unității din %d."
+        % (len(sets["ddf"].ours), len(sets["ddf"].known)))
+
+    say("Se citește FX_DDF_REV (reviziile).")
+    for row in _rows(fx_path, "FX_DDF_REV", say):
+        rev = _as_long(row.get("IDREV"))
+        if rev is None:
+            continue
+        ddf = _as_long(row.get("IDDF"))
+        sets["rev"].add(rev, ddf in sets["ddf"].ours if ddf is not None else False)
+    say("Revizii: %d ale unității din %d."
+        % (len(sets["rev"].ours), len(sets["rev"].known)))
+
+    _children_of_commitment(fx_path, "FX_ORD", "IDORD", sets, "ord", say)
 
     plan = UnitPlan(db_name, sets, units, all_units, single_unit)
     say(plan.describe())

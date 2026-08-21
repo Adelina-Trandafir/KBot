@@ -2,8 +2,8 @@
 Partial Class ConnectForm
     Inherits KBot.Theming.KBotThemedForm
 
-    ' Toate controalele sunt declarate AICI, ca formularul să se randeze în designerul VS
-    ' (docs/kbot-forms-ui-convention.md). Nimic nu se construiește în cod.
+    ' Toate controalele sunt declarate AICI, ca formularul sa se randeze in designerul VS
+    ' (docs/kbot-forms-ui-convention.md). Nimic nu se construieste in cod.
     Private components As System.ComponentModel.IContainer
 
     Friend WithEvents lblTitlu As System.Windows.Forms.Label
@@ -139,7 +139,7 @@ Partial Class ConnectForm
         lstBaze.Size = New Size(715, 248)
         lstBaze.TabIndex = 7
         sfat.SetToolTipHeader(lstBaze, "Bazele de pe MariaDB")
-        sfat.SetToolTipText(lstBaze, "Cele care nu au toate cele 16 tabele FX_ sunt marcate." & vbLf & "Migrarea NU creează tabele — schema se instalează separat.")
+        sfat.SetToolTipText(lstBaze, "Cele care nu au toate tabelele FX_ migrate sunt marcate." & vbLf & "Migrarea NU creează tabele — schema se instalează separat.")
         ' 
         ' lblStare
         ' 

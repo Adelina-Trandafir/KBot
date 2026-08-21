@@ -71,9 +71,9 @@ care există în Access și lipsesc din țintă.
 
 **Cele două clase de constatări** sunt tot mecanismul celor două butoane:
 
-- `BLOCANT` — `TABEL_LIPSĂ`, `COLOANĂ_LIPSĂ`, `TIP`, `DIMENSIUNE`, `NUL_INTERZIS`. Cât timp
+- `BLOCANT` — `TABEL_LIPSA`, `COLOANA_LIPSA`, `TIP`, `DIMENSIUNE`, `NUL_INTERZIS`. Cât timp
   există una, **niciun** buton nu pornește.
-- `FORȚABIL` — `CHEIE_STRĂINĂ`, `ID_DDF_LIPSĂ`, `CHEIE_DUBLĂ`, `RUTARE`. «Rulează» stă
+- `FORTABIL` — `CHEIE_STRAINA`, `ID_DDF_LIPSĂ`, `CHEIE_DUBLA`, `RUTARE`. «Rulează» stă
   oprit, «Forțează rularea» pornește și **sare** peste rândurile vinovate.
 
 Regula e verificată de **trei** ori: în interfață, la `POST /api/migrare/rulare`, și încă o

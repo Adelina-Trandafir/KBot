@@ -97,12 +97,12 @@ def fx_file_name(an, dc):
 
 
 def pushed_path(name):
-    """Calea absolută a unui fișier împins. Numele e deja construit de noi."""
+    """Calea absoluta a unui fisier impins. Numele e deja construit de noi."""
     return os.path.join(pushed_dir(), name)
 
 
 def list_pushed():
-    """Ce se află pe server acum: nume, dimensiune, data ultimei scrieri."""
+    """Ce se afla pe server acum: nume, dimensiune, data ultimei scrieri."""
     out = []
     for name in sorted(os.listdir(pushed_dir())):
         if not name.lower().endswith(".accdb"):

@@ -173,6 +173,10 @@ ele):
 | recepție R | `IDRR` | `FX_Receptii_R`, prin angajament |
 | recepție H | `IDRH` | `FX_Receptii_H`, prin angajament |
 | extras | `IDEXF` | `FX_Extrase_H`, prin unitate |
+| antet de extras | `IDEXH` | `FX_Extrase_H` însuși — liniile `FX_Extrase` fără `IdUnitate` propriu se rutează prin `IDFXH` spre antetul lor |
+| ddf | `IDDF` | `FX_DDF`, prin DC propriu / `IdUnitate` |
+| revizie | `IDREV` | `FX_DDF_REV`, prin DDF |
+| ord | `IDORD` | `FX_ORD`, prin angajament |
 
 Fiecare mulțime se ține **de două ori**: cheile unității alese și **toate**
 cheile din fișier. Diferența dintre ele e diferența dintre două lucruri care
@@ -182,7 +186,7 @@ NU trebuie confundate:
 |---|---|
 | al unității alese | se scrie |
 | al altei unități din fișier | se sare, tăcut și pe bună dreptate |
-| cu o cheie care nu există nicăieri în fișier | **constatare `SELECȚIE`** (forțabilă), cu cheia primară și motivul |
+| cu o cheie care nu există nicăieri în fișier | **constatare `SELECTIE`** (forțabilă), cu cheia primară și motivul |
 
 Dacă baza aleasă nu apare pe niciun rând din `FX_Angajamente` și fișierul poartă
 mai multe unități, analiza **se OPREȘTE** cu numerele unităților și DC-urile
@@ -208,14 +212,64 @@ cu bife, iar **un tabel fără rânduri se oferă NEBIFAT**.
 
 Analiza și scrierea primesc amândouă lista bifată, în câmpul `tabele`:
 
-* lipsa câmpului înseamnă «toate cele 16»;
+* lipsa câmpului înseamnă «tot setul migrat» (cele 12 tabele de bază, familia
+  DDF, familia ORD, plus Salarii/IMG/Receptii_Plati — 27 în total), în ordinea
+  implicită;
 * lista goală **nu** înseamnă «toate» — se răspunde cu eroare, fiindcă nu asta
   a cerut operatorul;
 * un nume care nu face parte din setul migrat oprește cu eroare, niciodată
-  tăcut;
-* bifele se scriu **în ordinea de scriere** (părinții înaintea copiilor), nu în
-  ordinea în care le-a bifat operatorul;
+  tăcut; un nume trimis de două ori la fel;
+* bifele se scriu **în ordinea trimisă** — migratorul lasă tabelele să fie
+  rearanjate (săgeți sau tragere), iar acea ordine ESTE ordinea de scriere.
+  Lipsa câmpului dă ordinea implicită, cu părinții înaintea copiilor;
 * un tabel care n-a fost **analizat** nu se poate scrie.
+
+Analiza mai primește și `coloane` — `{tabel: [coloane]}`, coloanele Access pe
+care operatorul vrea să le scrie. Un tabel absent din dicționar își păstrează
+toate coloanele; cheile primare se adaugă pe server oricum. O coloană debifată
+nu se scrie, deci nu e nici măsurată și nici raportată ca lipsă din țintă —
+așa ies din drum coloanele de rutare (`IdUnitate`, `DC`) scoase intenționat
+din MariaDB. Scrierea folosește coloanele DE PE RAPORTUL analizei, nu o
+alegere nouă. Numele de coloane se potrivesc FĂRĂ litere mari/mici — Access e
+case-insensitive («Cual» și «CUAL» sunt aceeași coloană acolo) — iar pe
+MariaDB se scrie întotdeauna cu numele exact al țintei.
+
+---
+
+## Corelațiile de coloane (Access ▸ MariaDB)
+
+Potrivirea după nume nu e întotdeauna cea bună. Perechea clasificațiilor e
+motivul pentru care există fila «Corelații coloane» din migrator:
+
+* în **Access**, `IdClsf` arată spre un tabel din ALT `.accdb`, iar `IdClsfPY`
+  poartă id-ul rândului din `Clasificatii` de pe MariaDB;
+* în **MariaDB** cele două își schimbă numele: `IdClsfAcc` ține id-ul Access,
+  iar `IdClsf` ține id-ul MariaDB.
+
+Corelate după nume, cele două id-uri ar intra fiecare în coloana celuilalt.
+Regulile stau în `tables.COLUMN_RENAMES` și se aplică **doar acolo unde ținta
+chiar are coloana pe care o numesc** — un tabel al cărui echivalent MariaDB
+n-a căpătat niciodată `IdClsfAcc` rămâne cu potrivirea simplă după nume.
+
+`POST /api/migrare/tabele` întoarce, pe fiecare tabel, `coloane_tinta` (numele
+de pe MariaDB) și, pe fiecare coloană, `tinta` — corelația **propusă**.
+Migratorul le arată și le lasă schimbate rând cu rând; ce a aranjat operatorul
+vine înapoi la analiză în `corelatii` — `{tabel: {coloana_access:
+coloana_tinta}}`. O țintă vidă înseamnă «coloana asta nu călătorește»; o țintă
+pe care baza n-o are e ignorată, nu ascultată. **Două coloane din Access
+corelate cu aceeași coloană de pe MariaDB opresc totul** (400 la analiză,
+`ExecuteError` la scriere): una dintre valori s-ar pierde și nu se poate spune
+care. Rutarea NU e atinsă de nimic din toate astea — ea citește rândul cu
+numele lui din **Access** (`IdUnitate`, `DC`, `CodAngajament`), înainte de
+orice corelație. Ca și coloanele bifate, corelațiile călătoresc pe RAPORTUL
+analizei: scrierea folosește exact ce a măsurat analiza.
+
+Scrierea mai primește `inlocuieste` (bool): **Înlocuiește tot pe server** —
+tabelele bifate se golesc întâi (`DELETE`, copiii înaintea părinților, adică
+ordinea de scriere inversată), apoi se umplu din fișier, totul într-o
+**singură tranzacție** cu commit doar la final. Orice eroare întoarce totul —
+deliberat `DELETE`, nu `TRUNCATE`, fiindcă `TRUNCATE` e DDL și face commit
+implicit, ceea ce ar face promisiunea de rollback o minciună.
 
 După analiză, coloana «Ale unității» arată câte dintre rândurile citite sunt
 chiar ale bazei alese, iar tabelele cu zero se debifează singure.
@@ -231,10 +285,18 @@ de interval, NULL într-o coloană `NOT NULL`. Cât timp există una, **niciun**
 buton nu pornește; nici «Forțează rularea» nu trece peste ele, fiindcă acelea
 strică date, nu doar legături.
 
-**FORȚABIL** — cheie străină fără corespondent, id `IDDF`/`IDREV` absent,
-cheie primară dublă în fișier, rând a cărui cheie nu există nicăieri în fișier.
-«Rulează» rămâne oprit, «Forțează rularea» pornește și **sare** peste
-rândurile vinovate — rămân în raport, nu ajung în baza de date.
+**FORȚABIL** — cheie străină fără corespondent, cheie primară dublă în fișier,
+rând a cărui cheie nu există nicăieri în fișier. «Rulează» rămâne oprit,
+«Forțează rularea» pornește și **sare** peste rândurile vinovate — rămân în
+raport, nu ajung în baza de date.
+
+O cheie străină spre un tabel scris **în aceeași rulare** se verifică pe
+reuniunea dintre rândurile țintei și rândurile pe care chiar această rulare le
+va scrie: pe o bază goală, altfel, absolut totul ar ieși «lipsă» — exact pe
+dos. (Verificarea id-urilor `IDDF`/`IDREV` împotriva `FX_DDF`/`FX_DDF_REV` a
+fost SCOASĂ: tabelele acelea nu fac parte din setul migrat, deci pe o bază
+proaspătă sunt goale, iar verificarea marca totul și arunca rândurile la
+rularea forțată.)
 
 Serverul verifică regula din nou, la `POST /api/migrare/rulare` și încă o dată
 în `execute.run()`. Interfața nu e singura pază.
@@ -252,5 +314,5 @@ Serverul verifică regula din nou, la `POST /api/migrare/rulare` și încă o da
   ar degrada la avertisment și erorile de tip. Numărătoarea e exactă: MariaDB
   raportează 1 pentru un rând inserat, 2 pentru unul chiar schimbat și 0 pentru
   unul deja identic — de acolo vin «scrise / actualizate / deja identice».
-* **Nu traduce id-uri.** `IDDF`/`IDREV` sunt `AUTO_INCREMENT` pe MariaDB și
-  nu păstrează id-ul Access alături; se verifică, iar lipsa e o constatare.
+* **Nu traduce id-uri.** `IDDF`/`IDREV` se copiază cum sunt; nu se mai
+  verifică împotriva `FX_DDF`/`FX_DDF_REV` (tabele din afara setului migrat).

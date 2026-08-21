@@ -1,4 +1,4 @@
-Imports System.Collections.Generic
+﻿Imports System.Collections.Generic
 Imports System.IO
 Imports System.Net.Http
 Imports System.Security.Cryptography
@@ -9,7 +9,7 @@ Imports System.Threading.Tasks
 Imports KBot.Api
 Imports KBot.Common
 
-''' <summary>O bază de unitate văzută pe MariaDB. POCO.</summary>
+''' <summary>O baza de unitate vazuta pe MariaDB. POCO.</summary>
 Public NotInheritable Class BazaInfo
     Public Property Nume As String
     Public Property TabeleFx As Integer
@@ -20,7 +20,7 @@ Public NotInheritable Class BazaInfo
     End Function
 End Class
 
-''' <summary>Un fișier Access aflat deja pe server. POCO.</summary>
+''' <summary>Un fisier Access aflat deja pe server. POCO.</summary>
 Public NotInheritable Class FisierInfo
     Public Property Nume As String
     Public Property Octeti As Long
@@ -35,8 +35,8 @@ Public NotInheritable Class ExempluConstatare
 End Class
 
 ''' <summary>
-''' O constatare a analizei: un fel de problemă, pe o coloană, cu numărul total de
-''' rânduri atinse și câteva exemple. POCO.
+''' O constatare a analizei: un fel de problema, pe o coloana, cu numarul total de
+''' randuri atinse si cateva exemple. POCO.
 ''' </summary>
 Public NotInheritable Class Constatare
     Public Property Tabel As String
@@ -48,12 +48,12 @@ Public NotInheritable Class Constatare
 
     Public ReadOnly Property EsteBlocanta As Boolean
         Get
-            Return String.Equals(Clasa, "blocant", StringComparison.OrdinalIgnoreCase)
+            Return String.Equals(Clasa, "BLOCANT", StringComparison.OrdinalIgnoreCase)
         End Get
     End Property
 End Class
 
-''' <summary>Raportul întors de analiză.</summary>
+''' <summary>Raportul intors de analiza.</summary>
 Public NotInheritable Class RaportAnaliza
     Public Property Baza As String
     Public Property Curat As Boolean
@@ -63,20 +63,52 @@ Public NotInheritable Class RaportAnaliza
     Public ReadOnly Property Constatari As New List(Of Constatare)()
     ''' <summary>Tabelele care CHIAR au fost analizate (cele bifate).</summary>
     Public ReadOnly Property Tabele As New List(Of String)()
-    ''' <summary>tabel → (citite, ale unității, de scris, sărite).</summary>
+    ''' <summary>tabel → (citite, ale unitatii, de scris, sarite).</summary>
     Public ReadOnly Property PeTabel As New Dictionary(Of String, Integer())()
 End Class
 
-''' <summary>Un tabel al fișierului Access, așa cum îl vede inventarul. POCO.</summary>
+''' <summary>
+''' O coloana a unui tabel din fisierul Access, cu ce stie serverul despre ea:
+''' daca exista si pe MariaDB si daca face parte din cheia primara. «Aleasa» e
+''' starea bifei din ecran — cheile primare calatoresc intotdeauna, restul cum
+''' hotaraste operatorul; o coloana absenta din baza porneste nebifata.
+'''
+''' <see cref="Tinta"/> e coloana de pe MariaDB in care se scrie coloana asta —
+''' corelatia. Serverul o propune (unu-la-unu dupa nume, cu exceptia perechii
+''' IdClsf / IdClsfPY), operatorul o schimba din fila «Corelatii coloane», iar
+''' un sir vid inseamna «coloana asta nu are pereche pe MariaDB».
+''' </summary>
+Public NotInheritable Class ColoanaFisier
+    Public Property Nume As String
+    Public Property InBaza As Boolean
+    Public Property Cheie As Boolean
+    Public Property Aleasa As Boolean
+    Public Property Tinta As String
+
+    ''' <summary>
+    ''' Corelatia asa cum a PROPUS-O serverul, pastrata neatinsa: ea e reperul
+    ''' fata de care ecranul spune «schimbata de tine».
+    ''' </summary>
+    Public Property TintaImplicita As String
+End Class
+
+''' <summary>Un tabel al fisierului Access, asa cum il vede inventarul. POCO.</summary>
 Public NotInheritable Class TabelFisier
     Public Property Nume As String
     Public Property Exista As Boolean
     Public Property Randuri As Integer
+    Public ReadOnly Property Coloane As New List(Of ColoanaFisier)()
+
+    ''' <summary>
+    ''' Numele coloanelor pe care le are tabelul PE MARIADB — lista din care se
+    ''' alege corelatia fiecarei coloane Access.
+    ''' </summary>
+    Public ReadOnly Property ColoaneTinta As New List(Of String)()
 End Class
 
 ''' <summary>
-''' Inventarul fișierului împins: unitatea bazei alese, unitățile pe care le
-''' poartă fișierul cu totul, și cele 16 tabele cu numărul lor de rânduri.
+''' Inventarul fisierului impins: unitatea bazei alese, unitatile pe care le
+''' poarta fisierul cu totul, si tabelele migrate cu numarul lor de randuri.
 ''' </summary>
 Public NotInheritable Class InventarFisier
     Public Property Baza As String
@@ -85,7 +117,7 @@ Public NotInheritable Class InventarFisier
     Public ReadOnly Property Tabele As New List(Of TabelFisier)()
 End Class
 
-''' <summary>Starea unei lucrări de pe server.</summary>
+''' <summary>Starea unei lucrari de pe server.</summary>
 Public NotInheritable Class StareLucrare
     Public Property Id As String
     Public Property Fel As String
@@ -93,7 +125,7 @@ Public NotInheritable Class StareLucrare
     Public Property Eroare As String
     Public Property JurnalTotal As Integer
     Public ReadOnly Property Jurnal As New List(Of String)()
-    ''' <summary>Corpul brut al câmpului «rezultat», păstrat pentru interpretare.</summary>
+    ''' <summary>Corpul brut al campului «rezultat», pastrat pentru interpretare.</summary>
     Public Property Rezultat As JsonElement
 
     Public ReadOnly Property EsteGata As Boolean
@@ -111,14 +143,14 @@ End Class
 
 ''' <summary>
 ''' Clientul HTTP al rutelor de migrare (felia 0044). Transportul e HTTP prin
-''' Flask; migratorul NU deschide nicio conexiune MariaDB și NU citește niciun
-''' fișier Access — serverul face amândouă.
+''' Flask; migratorul NU deschide nicio conexiune MariaDB si NU citeste niciun
+''' fisier Access — serverul face amandoua.
 '''
-''' Garda e <c>X-Api-Key</c>, ca pe rutele de seed pe care le înlocuiește:
-''' migratorul e un utilitar de administrare, nu aplicația operatorului, deci nu
+''' Garda e <c>X-Api-Key</c>, ca pe rutele de seed pe care le inlocuieste:
+''' migratorul e un utilitar de administrare, nu aplicatia operatorului, deci nu
 ''' are token bearer.
 '''
-''' Toate metodele publice sunt de graniță (HTTP + JSON): logăm și RE-ARUNCĂM.
+''' Toate metodele publice sunt de granita (HTTP + JSON): logam si RE-ARUNCAM.
 ''' </summary>
 Public NotInheritable Class MigrareApiClient
     Implements IDisposable
@@ -187,7 +219,7 @@ Public NotInheritable Class MigrareApiClient
             Dim result As New List(Of FisierInfo)()
             Using doc As JsonDocument = JsonDocument.Parse(body)
                 Dim arr As JsonElement
-                If doc.RootElement.TryGetProperty("fișiere", arr) AndAlso arr.ValueKind = JsonValueKind.Array Then
+                If doc.RootElement.TryGetProperty("fisiere", arr) AndAlso arr.ValueKind = JsonValueKind.Array Then
                     For Each e As JsonElement In arr.EnumerateArray()
                         result.Add(New FisierInfo() With {
                             .Nume = ReadString(e, "nume"),
@@ -210,16 +242,16 @@ Public NotInheritable Class MigrareApiClient
     ' =========================================================================
 
     ''' <summary>
-    ''' Urcă fișierul FOREXE al anului. E singurul fișier pe care îl ia migrarea:
-    ''' unitatea fiecărui rând se află din fișierul însuși (FX_Angajamente poartă
-    ''' și <c>IdUnitate</c>, și <c>DC</c>), deci nu mai există niciun fișier de
-    ''' rutare pe lângă.
+    ''' Urca fisierul FOREXE al anului. E singurul fisier pe care il ia migrarea:
+    ''' unitatea fiecarui rand se afla din fisierul insusi (FX_Angajamente poarta
+    ''' si <c>IdUnitate</c>, si <c>DC</c>), deci nu mai exista niciun fisier de
+    ''' rutare pe langa.
     '''
-    ''' Bucăți, nu un singur POST: serverul taie orice cerere peste 17 MB
+    ''' Bucati, nu un singur POST: serverul taie orice cerere peste 17 MB
     ''' (<c>MAX_CONTENT_LENGTH</c>), iar FX_2026.accdb are aproape 29.
     '''
-    ''' Fiecare bucată își poartă amprenta, iar la final se verifică amprenta
-    ''' întregului fișier — un transfer rupt la mijloc nu se poate încheia „cu bine".
+    ''' Fiecare bucata isi poarta amprenta, iar la final se verifica amprenta
+    ''' intregului fisier — un transfer rupt la mijloc nu se poate incheia „cu bine".
     ''' </summary>
     Public Async Function PushAsync(an As String, dc As String, localPath As String,
                                     progress As Action(Of Integer, Integer),
@@ -237,7 +269,7 @@ Public NotInheritable Class MigrareApiClient
                                                       w.WriteString("fel", "fx")
                                                       w.WriteString("an", an)
                                                       w.WriteString("dc", dc)
-                                                      w.WriteNumber("octeți", total)
+                                                      w.WriteNumber("octeti", total)
                                                       w.WriteString("sha256", sha)
                                                   End Sub)
             Dim uploadId As String
@@ -247,7 +279,7 @@ Public NotInheritable Class MigrareApiClient
             Using doc As JsonDocument = JsonDocument.Parse(initBody)
                 uploadId = ReadString(doc.RootElement, "id")
                 nume = ReadString(doc.RootElement, "nume")
-                chunkSize = ReadInt(doc.RootElement, "bucată_maximă")
+                chunkSize = ReadInt(doc.RootElement, "bucata_maxima")
             End Using
             If String.IsNullOrEmpty(uploadId) Then
                 Throw New InvalidOperationException("Serverul nu a deschis o sesiune de încărcare.")
@@ -277,7 +309,7 @@ Public NotInheritable Class MigrareApiClient
             ' --- final --------------------------------------------------------
             Dim finalPayload As String = BuildJson(Sub(w)
                                                        w.WriteString("id", uploadId)
-                                                       w.WriteNumber("bucăți", index)
+                                                       w.WriteNumber("bucati", index)
                                                    End Sub)
             Await PostJsonAsync(_baseUrl & "/api/migrare/push/final", finalPayload).ConfigureAwait(False)
             Return nume
@@ -293,9 +325,9 @@ Public NotInheritable Class MigrareApiClient
     ' =========================================================================
 
     ''' <summary>
-    ''' Pornește inventarul: câte rânduri are fiecare dintre cele 16 tabele în
-    ''' fișierul deja împins. E pasul care umple lista cu bife — un tabel fără
-    ''' rânduri se oferă NEBIFAT.
+    ''' Porneste inventarul: cate randuri are fiecare dintre tabelele migrate in
+    ''' fisierul deja impins. E pasul care umple lista cu bife — un tabel fara
+    ''' randuri se ofera NEBIFAT.
     ''' </summary>
     Public Async Function StartInventarAsync(baza As String, an As String, dc As String) As Task(Of String)
         Try
@@ -315,23 +347,49 @@ Public NotInheritable Class MigrareApiClient
         End Try
     End Function
 
-    ''' <summary>Traduce «rezultat»-ul unei lucrări de inventar.</summary>
+    ''' <summary>Traduce «rezultat»-ul unei lucrari de inventar.</summary>
     Public Shared Function CitesteInventar(rezultat As JsonElement) As InventarFisier
         Try
             If rezultat.ValueKind <> JsonValueKind.Object Then Return Nothing
 
             Dim inv As New InventarFisier() With {.Baza = ReadString(rezultat, "baza")}
-            ReadInts(rezultat, "unități", inv.Unitati)
-            ReadInts(rezultat, "toate_unitățile", inv.ToateUnitatile)
+            ReadInts(rezultat, "unitati", inv.Unitati)
+            ReadInts(rezultat, "toate_unitatile", inv.ToateUnitatile)
 
             Dim arr As JsonElement
             If rezultat.TryGetProperty("tabele", arr) AndAlso arr.ValueKind = JsonValueKind.Array Then
                 For Each e As JsonElement In arr.EnumerateArray()
-                    inv.Tabele.Add(New TabelFisier() With {
+                    Dim tabel As New TabelFisier() With {
                         .Nume = ReadString(e, "nume"),
-                        .Exista = ReadBool(e, "există"),
-                        .Randuri = ReadInt(e, "rânduri")
-                    })
+                        .Exista = ReadBool(e, "exista"),
+                        .Randuri = ReadInt(e, "randuri")
+                    }
+                    Dim tinte As JsonElement
+                    If e.TryGetProperty("coloane_tinta", tinte) AndAlso tinte.ValueKind = JsonValueKind.Array Then
+                        For Each t As JsonElement In tinte.EnumerateArray()
+                            If t.ValueKind = JsonValueKind.String Then tabel.ColoaneTinta.Add(If(t.GetString(), ""))
+                        Next
+                    End If
+                    Dim cols As JsonElement
+                    If e.TryGetProperty("coloane", cols) AndAlso cols.ValueKind = JsonValueKind.Array Then
+                        For Each c As JsonElement In cols.EnumerateArray()
+                            Dim inBaza As Boolean = ReadBool(c, "in_baza")
+                            Dim cheie As Boolean = ReadBool(c, "cheie")
+                            ' Bifa de pornire: cheile mereu, restul doar daca exista
+                            ' pe MariaDB — o coloana scoasa intentionat din tinta
+                            ' (IdUnitate) nu mai blocheaza analiza din oficiu.
+                            Dim tinta As String = ReadString(c, "tinta")
+                            tabel.Coloane.Add(New ColoanaFisier() With {
+                                .Nume = ReadString(c, "nume"),
+                                .InBaza = inBaza,
+                                .Cheie = cheie,
+                                .Aleasa = cheie OrElse inBaza,
+                                .Tinta = tinta,
+                                .TintaImplicita = tinta
+                            })
+                        Next
+                    End If
+                    inv.Tabele.Add(tabel)
                 Next
             End If
             Return inv
@@ -347,17 +405,26 @@ Public NotInheritable Class MigrareApiClient
     ' =========================================================================
 
     ''' <summary>
-    ''' Pornește analiza. <paramref name="tabele"/> sunt tabelele bifate; lista
-    ''' goală nu se trimite ca «toate», fiindcă nu asta a cerut operatorul.
+    ''' Porneste analiza. <paramref name="tabele"/> sunt tabelele bifate, IN
+    ''' ORDINEA din ecran — aceea e ordinea de scriere; lista goala nu se trimite
+    ''' ca «toate», fiindca nu asta a cerut operatorul. <paramref name="coloane"/>
+    ''' sunt coloanele alese pe tabel; un tabel absent din dictionar isi pastreaza
+    ''' toate coloanele. <paramref name="corelatii"/> sunt corelatiile Access ▸
+    ''' MariaDB pe tabel; o coloana absenta din harta isi pastreaza corelatia
+    ''' implicita, iar o tinta vida inseamna ca nu calatoreste.
     ''' </summary>
     Public Async Function StartAnalizaAsync(baza As String, an As String, dc As String,
-                                            tabele As IEnumerable(Of String)) As Task(Of String)
+                                            tabele As IEnumerable(Of String),
+                                            coloane As IDictionary(Of String, List(Of String)),
+                                            corelatii As IDictionary(Of String, Dictionary(Of String, String))) As Task(Of String)
         Try
             Dim payload As String = BuildJson(Sub(w)
                                                   w.WriteString("baza", baza)
                                                   w.WriteString("an", an)
                                                   w.WriteString("dc", dc)
                                                   WriteTabele(w, tabele)
+                                                  WriteColoane(w, coloane)
+                                                  WriteCorelatii(w, corelatii)
                                               End Sub)
             Dim body As String = Await PostJsonAsync(_baseUrl & "/api/migrare/analiza", payload).ConfigureAwait(False)
             Using doc As JsonDocument = JsonDocument.Parse(body)
@@ -370,15 +437,22 @@ Public NotInheritable Class MigrareApiClient
         End Try
     End Function
 
+    ''' <summary>
+    ''' Porneste scrierea. <paramref name="inlocuieste"/> = «Inlocuieste tot pe
+    ''' server»: tabelele bifate se GOLESC intai, apoi se umplu din fisier, totul
+    ''' intr-o singura tranzactie — la orice eroare serverul o intoarce pe toata.
+    ''' </summary>
     Public Async Function StartRulareAsync(analizaId As String, an As String, dc As String,
                                            fortat As Boolean,
-                                           tabele As IEnumerable(Of String)) As Task(Of String)
+                                           tabele As IEnumerable(Of String),
+                                           inlocuieste As Boolean) As Task(Of String)
         Try
             Dim payload As String = BuildJson(Sub(w)
-                                                  w.WriteString("analiză", analizaId)
+                                                  w.WriteString("analiza", analizaId)
                                                   w.WriteString("an", an)
                                                   w.WriteString("dc", dc)
-                                                  w.WriteBoolean("forțat", fortat)
+                                                  w.WriteBoolean("fortat", fortat)
+                                                  w.WriteBoolean("inlocuieste", inlocuieste)
                                                   WriteTabele(w, tabele)
                                               End Sub)
             Dim body As String = Await PostJsonAsync(_baseUrl & "/api/migrare/rulare", payload).ConfigureAwait(False)
@@ -393,8 +467,8 @@ Public NotInheritable Class MigrareApiClient
     End Function
 
     ''' <summary>
-    ''' Starea unei lucrări. <paramref name="deLa"/> e numărul de rânduri de jurnal
-    ''' deja văzute, ca fiecare interogare să aducă doar ce e nou.
+    ''' Starea unei lucrari. <paramref name="deLa"/> e numarul de randuri de jurnal
+    ''' deja vazute, ca fiecare interogare sa aduca doar ce e nou.
     ''' </summary>
     Public Async Function GetStareAsync(jobId As String, deLa As Integer) As Task(Of StareLucrare)
         Try
@@ -432,7 +506,7 @@ Public NotInheritable Class MigrareApiClient
         End Try
     End Function
 
-    ''' <summary>Traduce «rezultat»-ul unei lucrări de analiză în raport.</summary>
+    ''' <summary>Traduce «rezultat»-ul unei lucrari de analiza in raport.</summary>
     Public Shared Function CitesteRaport(rezultat As JsonElement) As RaportAnaliza
         Try
             If rezultat.ValueKind <> JsonValueKind.Object Then Return Nothing
@@ -442,7 +516,7 @@ Public NotInheritable Class MigrareApiClient
                 .Curat = ReadBool(rezultat, "curat"),
                 .AreBlocante = ReadBool(rezultat, "are_blocante"),
                 .PoateRula = ReadBool(rezultat, "poate_rula"),
-                .PoateForta = ReadBool(rezultat, "poate_forța")
+                .PoateForta = ReadBool(rezultat, "poate_forta")
             }
 
             Dim tabele As JsonElement
@@ -453,14 +527,14 @@ Public NotInheritable Class MigrareApiClient
             End If
 
             Dim arr As JsonElement
-            If rezultat.TryGetProperty("constatări", arr) AndAlso arr.ValueKind = JsonValueKind.Array Then
+            If rezultat.TryGetProperty("constatari", arr) AndAlso arr.ValueKind = JsonValueKind.Array Then
                 For Each e As JsonElement In arr.EnumerateArray()
                     Dim c As New Constatare() With {
                         .Tabel = ReadString(e, "tabel"),
                         .Coloana = ReadString(e, "coloana"),
                         .Fel = ReadString(e, "fel"),
                         .Clasa = ReadString(e, "clasa"),
-                        .Numar = ReadInt(e, "număr")
+                        .Numar = ReadInt(e, "numar")
                     }
                     Dim exemple As JsonElement
                     If e.TryGetProperty("exemple", exemple) AndAlso exemple.ValueKind = JsonValueKind.Array Then
@@ -480,8 +554,8 @@ Public NotInheritable Class MigrareApiClient
             If rezultat.TryGetProperty("pe_tabel", peTabel) AndAlso peTabel.ValueKind = JsonValueKind.Object Then
                 For Each p As JsonProperty In peTabel.EnumerateObject()
                     raport.PeTabel(p.Name) = New Integer() {
-                        ReadInt(p.Value, "citite"), ReadInt(p.Value, "ale_unității"),
-                        ReadInt(p.Value, "de_scris"), ReadInt(p.Value, "sărite")}
+                        ReadInt(p.Value, "citite"), ReadInt(p.Value, "ale_unitatii"),
+                        ReadInt(p.Value, "de_scris"), ReadInt(p.Value, "sarite")}
                 Next
             End If
 
@@ -522,12 +596,12 @@ Public NotInheritable Class MigrareApiClient
             form.Add(New StringContent(index.ToString()), "index")
             form.Add(New StringContent(AmprentaOctetilor(data)), "sha256")
             Dim part As New ByteArrayContent(data)
-            ' Numele câmpului merge în antetul Content-Disposition, iar HttpClient
-            ' scrie antetele în Latin-1, unde «ș» (U+0219) NU există: un nume cu
-            ' diacritice ajunge stricat pe server, care apoi nu-l mai găsește
-            ' («Bucata de fișier lipsește din cerere»). Numele de câmp rămân ASCII —
-            ' ca pe toate celelalte rute de încărcare (routes/ftp.py, routes/tools.py).
-            ' Diacriticele din CORPUL JSON sunt în regulă: acela e UTF-8.
+            ' Numele campului merge in antetul Content-Disposition, iar HttpClient
+            ' scrie antetele in Latin-1, unde «s» (U+0219) NU exista: un nume cu
+            ' diacritice ajunge stricat pe server, care apoi nu-l mai gaseste
+            ' («Bucata de fisier lipseste din cerere»). Numele de camp raman ASCII —
+            ' ca pe toate celelalte rute de incarcare (routes/ftp.py, routes/tools.py).
+            ' Diacriticele din CORPUL JSON sunt in regula: acela e UTF-8.
             form.Add(part, "file", "bucata.bin")
 
             Using resp As HttpResponseMessage = Await _http.PostAsync(url, form, token).ConfigureAwait(False)
@@ -538,8 +612,8 @@ Public NotInheritable Class MigrareApiClient
     End Function
 
     ''' <summary>
-    ''' Serverul întoarce mesaje în română, în câmpul «error». Operatorului i se
-    ''' arată acel mesaj, niciodată JSON brut.
+    ''' Serverul intoarce mesaje in romana, in campul «error». Operatorului i se
+    ''' arata acel mesaj, niciodata JSON brut.
     ''' </summary>
     Private Shared Sub EnsureOk(resp As HttpResponseMessage, body As String, url As String)
         If resp.IsSuccessStatusCode Then Return
@@ -572,9 +646,9 @@ Public NotInheritable Class MigrareApiClient
     End Function
 
     ''' <summary>
-    ''' Scrie lista de tabele bifate. <c>Nothing</c> înseamnă «toate» și atunci
-    ''' câmpul nici nu se trimite; o listă goală se trimite ca listă goală, iar
-    ''' serverul o respinge cu mesaj — nu se convertește tăcut în «toate».
+    ''' Scrie lista de tabele bifate. <c>Nothing</c> inseamna «toate» si atunci
+    ''' campul nici nu se trimite; o lista goala se trimite ca lista goala, iar
+    ''' serverul o respinge cu mesaj — nu se converteste tacut in «toate».
     ''' </summary>
     Private Shared Sub WriteTabele(w As Utf8JsonWriter, tabele As IEnumerable(Of String))
         If tabele Is Nothing Then Return
@@ -583,6 +657,42 @@ Public NotInheritable Class MigrareApiClient
             w.WriteStringValue(t)
         Next
         w.WriteEndArray()
+    End Sub
+
+    ''' <summary>
+    ''' Scrie coloanele alese pe tabel. <c>Nothing</c> sau dictionarul gol
+    ''' inseamna «toate coloanele, peste tot» si campul nu se trimite deloc.
+    ''' </summary>
+    Private Shared Sub WriteColoane(w As Utf8JsonWriter,
+                                    coloane As IDictionary(Of String, List(Of String)))
+        If coloane Is Nothing OrElse coloane.Count = 0 Then Return
+        w.WriteStartObject("coloane")
+        For Each pereche As KeyValuePair(Of String, List(Of String)) In coloane
+            w.WriteStartArray(pereche.Key)
+            For Each c As String In pereche.Value
+                w.WriteStringValue(c)
+            Next
+            w.WriteEndArray()
+        Next
+        w.WriteEndObject()
+    End Sub
+
+    ''' <summary>
+    ''' Scrie corelatiile de coloane pe tabel. <c>Nothing</c> sau dictionarul gol
+    ''' inseamna «corelatia implicita, peste tot» si campul nu se trimite deloc.
+    ''' </summary>
+    Private Shared Sub WriteCorelatii(w As Utf8JsonWriter,
+                                      corelatii As IDictionary(Of String, Dictionary(Of String, String)))
+        If corelatii Is Nothing OrElse corelatii.Count = 0 Then Return
+        w.WriteStartObject("corelatii")
+        For Each pereche As KeyValuePair(Of String, Dictionary(Of String, String)) In corelatii
+            w.WriteStartObject(pereche.Key)
+            For Each c As KeyValuePair(Of String, String) In pereche.Value
+                w.WriteString(c.Key, If(c.Value, String.Empty))
+            Next
+            w.WriteEndObject()
+        Next
+        w.WriteEndObject()
     End Sub
 
     Private Shared Sub ReadInts(parent As JsonElement, name As String, target As List(Of Integer))

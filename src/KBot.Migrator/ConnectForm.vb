@@ -1,38 +1,38 @@
-Imports System.Collections.Generic
+﻿Imports System.Collections.Generic
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports KBot.Api
 Imports KBot.Common
 
 ''' <summary>
-''' Formularul de pornire al migratorului: adresa serverului, cheia API, și proba
-''' că amândouă sunt bune — lista bazelor de unitate de pe MariaDB.
+''' Formularul de pornire al migratorului: adresa serverului, cheia API, si proba
+''' ca amandoua sunt bune — lista bazelor de unitate de pe MariaDB.
 '''
-''' De ce ecranul ăsta există: fără el, prima greșeală de cheie sau de adresă ar
-''' apărea abia la prima operație lungă, după ce operatorul a ales deja DC-ul,
-''' anul și fișierul. Aici e o cerere mică, iar răspunsul ei e chiar lista din
-''' care se alege pe ecranul următor.
+''' De ce ecranul asta exista: fara el, prima greseala de cheie sau de adresa ar
+''' aparea abia la prima operatie lunga, dupa ce operatorul a ales deja DC-ul,
+''' anul si fisierul. Aici e o cerere mica, iar raspunsul ei e chiar lista din
+''' care se alege pe ecranul urmator.
 '''
 ''' Clientul construit aici trece mai departe la <see cref="MigratorForm"/>, care
-''' îl și eliberează.
+''' il si elibereaza.
 ''' </summary>
 Public Class ConnectForm
 
-    ''' <summary>Variabila de mediu din care se preia cheia, dacă e pusă.</summary>
+    ''' <summary>Variabila de mediu din care se preia cheia, daca e pusa.</summary>
     Public Const ApiKeyEnvVar As String = "KBOT_SEED_API_KEY"
 
     Private _client As MigrareApiClient
     Private _baze As List(Of BazaInfo)
     Private _busy As Boolean
 
-    ''' <summary>Clientul conectat. Valid doar după DialogResult.OK.</summary>
+    ''' <summary>Clientul conectat. Valid doar dupa DialogResult.OK.</summary>
     Public ReadOnly Property Client As MigrareApiClient
         Get
             Return _client
         End Get
     End Property
 
-    ''' <summary>Bazele citite la conectare. Valide doar după DialogResult.OK.</summary>
+    ''' <summary>Bazele citite la conectare. Valide doar dupa DialogResult.OK.</summary>
     Public ReadOnly Property Baze As List(Of BazaInfo)
         Get
             Return _baze

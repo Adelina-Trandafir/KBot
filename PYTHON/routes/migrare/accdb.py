@@ -41,7 +41,7 @@ SHORT_TIMEOUT = 120
 
 
 class AccdbError(Exception):
-    """Eroare de citire a fișierului Access, cu mesaj în română."""
+    """Eroare de citire a fisierului Access, cu mesaj in romana."""
 
 
 def _tool(name):

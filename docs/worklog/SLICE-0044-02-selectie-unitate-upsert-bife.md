@@ -39,7 +39,7 @@ să nu se confunde două lucruri diferite:
 |---|---|
 | al unității alese | se scrie |
 | al altei unități din fișier | se sare **tăcut** — e normal, nu e problemă |
-| cu o cheie care nu există nicăieri în fișier | constatare `SELECȚIE` (forțabilă), cu cheia primară și motivul |
+| cu o cheie care nu există nicăieri în fișier | constatare `SELECTIE` (forțabilă), cu cheia primară și motivul |
 
 Dacă baza aleasă nu apare pe niciun rând și fișierul are mai multe unități,
 analiza **se oprește** cu unitățile și DC-urile numite — nu se cade înapoi pe
@@ -123,7 +123,7 @@ zero rânduri ale unității se debifează singure.
 * `count_rows` presupune că `mdb-json` scoate **o linie per rând**; e forma pe
   care se bazează și `iter_rows`, dar numărul n-a fost comparat cu unul real.
 * Cazul «rând fără `IdUnitate` într-un fișier cu mai multe unități» se
-  raportează ca `SELECȚIE` forțabilă. Dacă pe date reale se dovedește frecvent
+  raportează ca `SELECTIE` forțabilă. Dacă pe date reale se dovedește frecvent
   (ex.: `FX_Extrase` fără unitate), regula merită discutată cu operatorul — nu
   schimbată tăcut.
 * Ordinea în care operatorul bifează nu contează, dar **dependențele dintre

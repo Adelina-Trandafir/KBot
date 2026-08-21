@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Windows.Forms
@@ -101,6 +101,22 @@ Partial Class KBotDataView
         Dim banda As KBotBand = BandAt(bi)
         If banda.Kind <> KBotGroupBandKind.Data Then Return -1
         Return ModelIndexAt(banda.ViewPosition)
+    End Function
+
+    ''' <summary>
+    ''' Indexul de MODEL al randului de sub un punct client, sau -1 (antet, subsol, banda de
+    ''' grup, gol). Versiunea PUBLICA a hit-testului pe randuri, pentru gazdele care conduc
+    ''' singure mouse-ul peste grila — tragerea unui rand ca sa-i schimbe locul, de pilda
+    ''' (migratorul rearanjeaza asa ordinea de scriere a tabelelor). Grila nu muta randuri
+    ''' singura: modelul e al gazdei, deci si rearanjarea.
+    ''' </summary>
+    Public Function RowIndexAt(pt As Point) As Integer
+        Try
+            Return RowAtPoint(pt)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.RowIndexAt", ex)
+            Throw
+        End Try
     End Function
 
     ''' <summary>

@@ -1,11 +1,11 @@
-Imports System.Threading.Tasks
+﻿Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports KBot.Common
 Imports KBot.Theming
 
 ''' <summary>
-''' Punctul de intrare al utilitarului de migrare. Aceleași plase globale ca în KBot.App:
-''' nicio excepție ne-tratată nu se pierde, totul ajunge în
+''' Punctul de intrare al utilitarului de migrare. Aceleasi plase globale ca in KBot.App:
+''' nicio exceptie ne-tratata nu se pierde, totul ajunge in
 ''' <c>&lt;AppDir&gt;\Logs\harness_errors.log</c>.
 ''' </summary>
 Friend Module Program
@@ -27,8 +27,8 @@ Friend Module Program
                 Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)
             End If
 
-            ' Tema, înaintea primului formular. MigratorForm moștenește KBotThemedForm, deci
-            ' nu-și aplică singur nicio culoare.
+            ' Tema, inaintea primului formular. MigratorForm mosteneste KBotThemedForm, deci
+            ' nu-si aplica singur nicio culoare.
             ThemeManager.Initialize()
 
             ' Formularul de pornire (felia 0044): adresa serverului + cheia API, si
@@ -63,8 +63,8 @@ Friend Module Program
     End Sub
 
     ''' <summary>
-    ''' Ultima plasă vizibilă. Nu re-aruncăm de aici: procesul e deja pe drumul spre ieșire,
-    ''' iar detaliul complet e deja în jurnal.
+    ''' Ultima plasa vizibila. Nu re-aruncam de aici: procesul e deja pe drumul spre iesire,
+    ''' iar detaliul complet e deja in jurnal.
     ''' </summary>
     Private Sub ShowFatal(ex As Exception)
         Try

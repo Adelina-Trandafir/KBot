@@ -120,6 +120,28 @@
   <metadata name="sfat.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>150, 17</value>
   </metadata>
+  <data name="dgvTabele.ToolTipText" xml:space="preserve">
+    <value>Un tabel fără rânduri în fișierul Access se oferă NEBIFAT.
+«Ale unității» se completează abia după analiză: acolo se află
+câte dintre rânduri sunt chiar ale bazei alese.
+Ordinea din listă e ORDINEA DE SCRIERE: trage rândurile cu mouse-ul
+sau folosește săgețile ▲ ▼ de dedesubt.</value>
+  </data>
+  <data name="dgvColoane.ToolTipText" xml:space="preserve">
+    <value>Doar coloanele bifate se scriu pe MariaDB.
+Cheia primară călătorește întotdeauna și nu se poate debifa.
+O coloană care lipsește din baza țintă pornește nebifată —
+bifat-o doar dacă vrei ca analiza să o raporteze ca lipsă.</value>
+  </data>
+  <data name="dgvCorelatii.ToolTipText" xml:space="preserve">
+    <value>Coloanele pornesc corelate unu-la-unu după nume.
+Excepția e perechea clasificațiilor: în Access, «IdClsf» arată spre un
+tabel din alt .accdb, iar «IdClsfPY» poartă id-ul de pe MariaDB; acolo
+cele două își schimbă numele, deci «IdClsf» se scrie în «IdClsfAcc»,
+iar «IdClsfPY» se scrie în «IdClsf».
+Alege «(nu se scrie)» pentru o coloană care nu are pereche.
+Două coloane din Access nu pot merge în aceeași coloană de pe MariaDB.</value>
+  </data>
   <metadata name="dlgFisier.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>

@@ -2,11 +2,11 @@
 Partial Class MigratorForm
     Inherits KBot.Theming.KBotThemedForm
 
-    ' Toate controalele sunt declarate AICI, ca formularul să se randeze în designerul VS
-    ' (docs/kbot-forms-ui-convention.md). Nimic nu se construiește în cod.
-    ' Fiecare panou mare își ține câmpurile într-un TableLayoutPanel, ca aranjarea să se
-    ' facă din celule (rânduri/coloane), nu din coordonate scrise de mână. Singura
-    ' excepție este grila de constatări, andocată direct pe formular.
+    ' Toate controalele sunt declarate AICI, ca formularul sa se randeze in designerul VS
+    ' (docs/kbot-forms-ui-convention.md). Nimic nu se construieste in cod.
+    ' Fiecare panou mare isi tine campurile intr-un TableLayoutPanel, ca aranjarea sa se
+    ' faca din celule (randuri/coloane), nu din coordonate scrise de mana. Singura
+    ' exceptie este grila de constatari, andocata direct pe formular.
     Private components As System.ComponentModel.IContainer
 
     ' --- regiunea 1: sursa -----------------------------------------------------
@@ -30,11 +30,15 @@ Partial Class MigratorForm
     ' --- regiunea 2: tabelele de actualizat ------------------------------------
     Friend WithEvents pnlTabele As System.Windows.Forms.Panel
     Friend WithEvents lblTabele As System.Windows.Forms.Label
-    Friend WithEvents dgvTabele As System.Windows.Forms.DataGridView
-    Friend WithEvents colBifa As System.Windows.Forms.DataGridViewCheckBoxColumn
-    Friend WithEvents colTabel As System.Windows.Forms.DataGridViewTextBoxColumn
-    Friend WithEvents colRanduri As System.Windows.Forms.DataGridViewTextBoxColumn
-    Friend WithEvents colAleUnitatii As System.Windows.Forms.DataGridViewTextBoxColumn
+    Friend WithEvents dgvTabele As KBot.Controls.KBotDataView
+    Friend WithEvents pnlOrdine As System.Windows.Forms.Panel
+    Friend WithEvents btnSus As System.Windows.Forms.Button
+    Friend WithEvents btnJos As System.Windows.Forms.Button
+
+    ' --- regiunea 2b: coloanele tabelului ales ---------------------------------
+    Friend WithEvents pnlColoane As System.Windows.Forms.Panel
+    Friend WithEvents lblColoane As System.Windows.Forms.Label
+    Friend WithEvents dgvColoane As KBot.Controls.KBotDataView
 
     ' --- regiunea 3: actiuni ---------------------------------------------------
     Friend WithEvents pnlActiuni As System.Windows.Forms.Panel
@@ -43,10 +47,18 @@ Partial Class MigratorForm
     Friend WithEvents btnAnalizeaza As System.Windows.Forms.Button
     Friend WithEvents btnRuleaza As System.Windows.Forms.Button
     Friend WithEvents btnForteaza As System.Windows.Forms.Button
+    Friend WithEvents chkInlocuieste As System.Windows.Forms.CheckBox
     Friend WithEvents lblStare As System.Windows.Forms.Label
 
-    ' --- regiunea 4: constatari + jurnal --------------------------------------
-    Friend WithEvents dgvConstatari As System.Windows.Forms.DataGridView
+    ' --- regiunea 4: constatari / corelatii (file) + jurnal --------------------
+    ' Cele doua file impart acelasi loc din dreapta: «Constatari» e ce a gasit
+    ' analiza, «Corelatii coloane» e harta Access - MariaDB a tabelului ales.
+    Friend WithEvents tabRezultate As System.Windows.Forms.TabControl
+    Friend WithEvents tabPagConstatari As System.Windows.Forms.TabPage
+    Friend WithEvents dgvConstatari As KBot.Controls.KBotDataView
+    Friend WithEvents tabPagCorelatii As System.Windows.Forms.TabPage
+    Friend WithEvents lblCorelatii As System.Windows.Forms.Label
+    Friend WithEvents dgvCorelatii As KBot.Controls.KBotDataView
     Friend WithEvents txtJurnal As System.Windows.Forms.TextBox
     Friend WithEvents dlgFisier As System.Windows.Forms.OpenFileDialog
     Friend WithEvents sfat As KBot.Controls.KBotToolTip
@@ -65,8 +77,28 @@ Partial Class MigratorForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim DataGridViewCellStyle1 As DataGridViewCellStyle = New DataGridViewCellStyle()
-        Dim DataGridViewCellStyle2 As DataGridViewCellStyle = New DataGridViewCellStyle()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(MigratorForm))
+        ' Coloanele celor patru grile, in ordinea in care se adauga:
+        ' 1-4 dgvTabele, 5-7 dgvColoane, 8-15 dgvConstatari, 16-19 dgvCorelatii.
+        Dim KBotDataColumn1 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn2 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn3 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn4 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn5 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn6 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn7 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn8 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn9 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn10 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn11 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn12 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn13 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn14 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn15 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn16 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn17 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn18 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn19 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         pnlSurse = New Panel()
         tlpSurse = New TableLayoutPanel()
         lblDc = New Label()
@@ -84,12 +116,14 @@ Partial Class MigratorForm
         lblFisiere = New Label()
         btnRasfoireFx = New Button()
         pnlTabele = New Panel()
-        dgvTabele = New DataGridView()
-        colBifa = New DataGridViewCheckBoxColumn()
-        colTabel = New DataGridViewTextBoxColumn()
-        colRanduri = New DataGridViewTextBoxColumn()
-        colAleUnitatii = New DataGridViewTextBoxColumn()
+        dgvTabele = New Controls.KBotDataView()
+        pnlOrdine = New Panel()
+        btnSus = New Button()
+        btnJos = New Button()
         lblTabele = New Label()
+        pnlColoane = New Panel()
+        dgvColoane = New Controls.KBotDataView()
+        lblColoane = New Label()
         pnlActiuni = New Panel()
         tlpActiuni = New TableLayoutPanel()
         btnInventar = New Button()
@@ -97,7 +131,13 @@ Partial Class MigratorForm
         lblStare = New Label()
         btnRuleaza = New Button()
         btnForteaza = New Button()
-        dgvConstatari = New DataGridView()
+        chkInlocuieste = New CheckBox()
+        tabRezultate = New TabControl()
+        tabPagConstatari = New TabPage()
+        dgvConstatari = New Controls.KBotDataView()
+        tabPagCorelatii = New TabPage()
+        dgvCorelatii = New Controls.KBotDataView()
+        lblCorelatii = New Label()
         txtJurnal = New TextBox()
         dlgFisier = New OpenFileDialog()
         sfat = New KBot.Controls.KBotToolTip(components)
@@ -105,9 +145,16 @@ Partial Class MigratorForm
         tlpSurse.SuspendLayout()
         pnlTabele.SuspendLayout()
         CType(dgvTabele, ComponentModel.ISupportInitialize).BeginInit()
+        pnlOrdine.SuspendLayout()
+        pnlColoane.SuspendLayout()
+        CType(dgvColoane, ComponentModel.ISupportInitialize).BeginInit()
         pnlActiuni.SuspendLayout()
         tlpActiuni.SuspendLayout()
         CType(dgvConstatari, ComponentModel.ISupportInitialize).BeginInit()
+        CType(dgvCorelatii, ComponentModel.ISupportInitialize).BeginInit()
+        tabRezultate.SuspendLayout()
+        tabPagConstatari.SuspendLayout()
+        tabPagCorelatii.SuspendLayout()
         SuspendLayout()
         ' 
         ' pnlSurse
@@ -117,7 +164,7 @@ Partial Class MigratorForm
         pnlSurse.Location = New Point(0, 0)
         pnlSurse.Name = "pnlSurse"
         pnlSurse.Padding = New Padding(10, 8, 10, 8)
-        pnlSurse.Size = New Size(954, 219)
+        pnlSurse.Size = New Size(1240, 219)
         pnlSurse.TabIndex = 0
         ' 
         ' tlpSurse
@@ -153,7 +200,7 @@ Partial Class MigratorForm
         tlpSurse.RowStyles.Add(New RowStyle(SizeType.Absolute, 15F))
         tlpSurse.RowStyles.Add(New RowStyle(SizeType.Absolute, 44F))
         tlpSurse.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlpSurse.Size = New Size(934, 203)
+        tlpSurse.Size = New Size(1220, 203)
         tlpSurse.TabIndex = 0
         ' 
         ' lblDc
@@ -188,7 +235,7 @@ Partial Class MigratorForm
         lblUnitate.Location = New Point(515, 0)
         lblUnitate.Margin = New Padding(8, 0, 3, 0)
         lblUnitate.Name = "lblUnitate"
-        lblUnitate.Size = New Size(416, 40)
+        lblUnitate.Size = New Size(702, 40)
         lblUnitate.TabIndex = 2
         lblUnitate.Text = "—"
         lblUnitate.TextAlign = ContentAlignment.MiddleLeft
@@ -231,7 +278,7 @@ Partial Class MigratorForm
         cboBaza.Location = New Point(510, 44)
         cboBaza.Margin = New Padding(3, 4, 3, 4)
         cboBaza.Name = "cboBaza"
-        cboBaza.Size = New Size(210, 33)
+        cboBaza.Size = New Size(496, 33)
         cboBaza.TabIndex = 6
         sfat.SetToolTipHeader(cboBaza, "Baza de pe MariaDB")
         sfat.SetToolTipText(cboBaza, "Rândurile se rutează prin [Cai]; se scriu doar cele care ajung aici." & vbLf & "Migrarea NU creează tabele.")
@@ -241,7 +288,7 @@ Partial Class MigratorForm
         tlpSurse.SetColumnSpan(btnReciteste, 2)
         btnReciteste.Dock = DockStyle.Fill
         btnReciteste.Font = New Font("Calibri", 9F, FontStyle.Bold)
-        btnReciteste.Location = New Point(725, 42)
+        btnReciteste.Location = New Point(1011, 42)
         btnReciteste.Margin = New Padding(2)
         btnReciteste.MinimumSize = New Size(130, 25)
         btnReciteste.Name = "btnReciteste"
@@ -268,7 +315,7 @@ Partial Class MigratorForm
         txtFx.Location = New Point(200, 88)
         txtFx.Margin = New Padding(3, 4, 3, 4)
         txtFx.Name = "txtFx"
-        txtFx.Size = New Size(520, 31)
+        txtFx.Size = New Size(806, 31)
         txtFx.TabIndex = 9
         sfat.SetToolTipFooter(txtFx, "În Access: Fișier ▸ Informații ▸ Decriptare bază de date.")
         sfat.SetToolTipHeader(txtFx, "Fișierul FOREXE al anului")
@@ -295,7 +342,7 @@ Partial Class MigratorForm
         prgPush.Location = New Point(325, 152)
         prgPush.Margin = New Padding(8, 9, 8, 9)
         prgPush.Name = "prgPush"
-        prgPush.Size = New Size(390, 26)
+        prgPush.Size = New Size(676, 26)
         prgPush.TabIndex = 15
         ' 
         ' lblFisiere
@@ -303,7 +350,7 @@ Partial Class MigratorForm
         lblFisiere.AutoEllipsis = True
         tlpSurse.SetColumnSpan(lblFisiere, 2)
         lblFisiere.Dock = DockStyle.Fill
-        lblFisiere.Location = New Point(731, 143)
+        lblFisiere.Location = New Point(1017, 143)
         lblFisiere.Margin = New Padding(8, 0, 3, 0)
         lblFisiere.Name = "lblFisiere"
         lblFisiere.Size = New Size(200, 44)
@@ -316,7 +363,7 @@ Partial Class MigratorForm
         tlpSurse.SetColumnSpan(btnRasfoireFx, 2)
         btnRasfoireFx.Dock = DockStyle.Fill
         btnRasfoireFx.Font = New Font("Calibri", 9F, FontStyle.Bold)
-        btnRasfoireFx.Location = New Point(725, 86)
+        btnRasfoireFx.Location = New Point(1011, 86)
         btnRasfoireFx.Margin = New Padding(2)
         btnRasfoireFx.MinimumSize = New Size(102, 25)
         btnRasfoireFx.Name = "btnRasfoireFx"
@@ -328,87 +375,175 @@ Partial Class MigratorForm
         ' pnlTabele
         ' 
         pnlTabele.Controls.Add(dgvTabele)
+        pnlTabele.Controls.Add(pnlOrdine)
         pnlTabele.Controls.Add(lblTabele)
         pnlTabele.Dock = DockStyle.Left
         pnlTabele.Location = New Point(0, 219)
+        pnlTabele.Margin = New Padding(0)
         pnlTabele.Name = "pnlTabele"
-        pnlTabele.Padding = New Padding(8, 6, 4, 6)
-        pnlTabele.Size = New Size(442, 279)
+        pnlTabele.Size = New Size(442, 243)
         pnlTabele.TabIndex = 1
         ' 
         ' dgvTabele
         ' 
-        dgvTabele.AllowUserToAddRows = False
-        dgvTabele.AllowUserToDeleteRows = False
-        dgvTabele.AllowUserToResizeRows = False
-        dgvTabele.ColumnHeadersHeight = 34
-        dgvTabele.Columns.AddRange(New DataGridViewColumn() {colBifa, colTabel, colRanduri, colAleUnitatii})
+        KBotDataColumn1.ColumnType = KBot.Controls.KBotColumnType.CheckBox
+        KBotDataColumn1.HeaderText = ""
+        KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn1.Key = "bifa"
+        KBotDataColumn1.MinWidth = 40
+        KBotDataColumn1.Resizable = False
+        KBotDataColumn1.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn1.Width = 40
+        KBotDataColumn2.HeaderText = "Tabel"
+        KBotDataColumn2.Key = "tabel"
+        KBotDataColumn2.MinWidth = 110
+        KBotDataColumn2.ReadOnly = True
+        KBotDataColumn2.Width = 170
+        KBotDataColumn3.HeaderText = "Rânduri"
+        KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn3.Key = "randuri"
+        KBotDataColumn3.MinWidth = 70
+        KBotDataColumn3.ReadOnly = True
+        KBotDataColumn3.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn3.Width = 80
+        KBotDataColumn4.HeaderText = "Ale unității"
+        KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn4.Key = "ale_unitatii"
+        KBotDataColumn4.MinWidth = 90
+        KBotDataColumn4.ReadOnly = True
+        KBotDataColumn4.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn4.Width = 100
+        dgvTabele.AllowDrop = True
+        dgvTabele.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        dgvTabele.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
+        dgvTabele.Columns.Add(KBotDataColumn1)
+        dgvTabele.Columns.Add(KBotDataColumn2)
+        dgvTabele.Columns.Add(KBotDataColumn3)
+        dgvTabele.Columns.Add(KBotDataColumn4)
         dgvTabele.Dock = DockStyle.Fill
-        dgvTabele.Location = New Point(8, 36)
-        dgvTabele.MultiSelect = False
+        dgvTabele.FillColumnKey = "tabel"
+        dgvTabele.HeaderHeight = 30
+        dgvTabele.Location = New Point(0, 30)
         dgvTabele.Name = "dgvTabele"
-        dgvTabele.RowHeadersVisible = False
-        dgvTabele.RowHeadersWidth = 62
-        dgvTabele.SelectionMode = DataGridViewSelectionMode.FullRowSelect
-        dgvTabele.Size = New Size(430, 237)
+        dgvTabele.RowHeight = 26
+        dgvTabele.Size = New Size(442, 163)
         dgvTabele.TabIndex = 1
-        sfat.SetToolTipHeader(dgvTabele, "Ce se actualizează")
-        sfat.SetToolTipText(dgvTabele, "Un tabel fără rânduri în fișierul Access se oferă NEBIFAT." & vbLf & "«Ale unității» se completează abia după analiză: acolo se află" & vbLf & "câte dintre rânduri sunt chiar ale bazei alese.")
+        sfat.SetToolTipHeader(dgvTabele, "Ce se actualizează, și în ce ordine")
+        sfat.SetToolTipText(dgvTabele, resources.GetString("dgvTabele.ToolTipText"))
         ' 
-        ' colBifa
+        ' pnlOrdine
         ' 
-        colBifa.HeaderText = ""
-        colBifa.MinimumWidth = 8
-        colBifa.Name = "colBifa"
-        colBifa.Resizable = DataGridViewTriState.False
-        colBifa.Width = 40
+        pnlOrdine.Controls.Add(btnSus)
+        pnlOrdine.Controls.Add(btnJos)
+        pnlOrdine.Dock = DockStyle.Bottom
+        pnlOrdine.Location = New Point(0, 193)
+        pnlOrdine.Name = "pnlOrdine"
+        pnlOrdine.Size = New Size(442, 50)
+        pnlOrdine.TabIndex = 2
         ' 
-        ' colTabel
+        ' btnSus
         ' 
-        colTabel.HeaderText = "Tabel"
-        colTabel.MinimumWidth = 8
-        colTabel.Name = "colTabel"
-        colTabel.ReadOnly = True
-        colTabel.Width = 150
+        btnSus.Dock = DockStyle.Right
+        btnSus.Location = New Point(342, 0)
+        btnSus.MinimumSize = New Size(60, 25)
+        btnSus.Name = "btnSus"
+        btnSus.Size = New Size(100, 50)
+        btnSus.TabIndex = 0
+        btnSus.Text = "▲ Sus"
+        sfat.SetToolTipHeader(btnSus, "Mută mai devreme")
+        sfat.SetToolTipText(btnSus, "Urcă tabelul ales cu un loc: se va scrie mai devreme." & vbLf & "Părinții trebuie scriși înaintea copiilor.")
+        btnSus.UseVisualStyleBackColor = True
         ' 
-        ' colRanduri
+        ' btnJos
         ' 
-        DataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.MiddleRight
-        colRanduri.DefaultCellStyle = DataGridViewCellStyle1
-        colRanduri.HeaderText = "Rânduri"
-        colRanduri.MinimumWidth = 8
-        colRanduri.Name = "colRanduri"
-        colRanduri.ReadOnly = True
-        colRanduri.Width = 70
-        ' 
-        ' colAleUnitatii
-        ' 
-        DataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleRight
-        colAleUnitatii.DefaultCellStyle = DataGridViewCellStyle2
-        colAleUnitatii.HeaderText = "Ale unității"
-        colAleUnitatii.MinimumWidth = 8
-        colAleUnitatii.Name = "colAleUnitatii"
-        colAleUnitatii.ReadOnly = True
-        colAleUnitatii.Width = 90
+        btnJos.Dock = DockStyle.Left
+        btnJos.Location = New Point(0, 0)
+        btnJos.MinimumSize = New Size(60, 25)
+        btnJos.Name = "btnJos"
+        btnJos.Size = New Size(100, 50)
+        btnJos.TabIndex = 1
+        btnJos.Text = "▼ Jos"
+        sfat.SetToolTipHeader(btnJos, "Mută mai târziu")
+        sfat.SetToolTipText(btnJos, "Coboară tabelul ales cu un loc: se va scrie mai târziu.")
+        btnJos.UseVisualStyleBackColor = True
         ' 
         ' lblTabele
         ' 
         lblTabele.Dock = DockStyle.Top
-        lblTabele.Location = New Point(8, 6)
+        lblTabele.Location = New Point(0, 0)
         lblTabele.Name = "lblTabele"
-        lblTabele.Size = New Size(430, 30)
+        lblTabele.Size = New Size(442, 30)
         lblTabele.TabIndex = 0
         lblTabele.Text = "Tabele de actualizat:"
         lblTabele.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' pnlColoane
+        ' 
+        pnlColoane.Controls.Add(dgvColoane)
+        pnlColoane.Controls.Add(lblColoane)
+        pnlColoane.Dock = DockStyle.Left
+        pnlColoane.Location = New Point(442, 219)
+        pnlColoane.Margin = New Padding(0)
+        pnlColoane.Name = "pnlColoane"
+        pnlColoane.Padding = New Padding(4, 0, 4, 0)
+        pnlColoane.Size = New Size(300, 243)
+        pnlColoane.TabIndex = 5
+        ' 
+        ' dgvColoane
+        ' 
+        KBotDataColumn5.ColumnType = KBot.Controls.KBotColumnType.CheckBox
+        KBotDataColumn5.HeaderText = ""
+        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn5.Key = "bifa"
+        KBotDataColumn5.MinWidth = 40
+        KBotDataColumn5.Resizable = False
+        KBotDataColumn5.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn5.Width = 40
+        KBotDataColumn6.HeaderText = "Coloană"
+        KBotDataColumn6.Key = "nume"
+        KBotDataColumn6.MinWidth = 110
+        KBotDataColumn6.ReadOnly = True
+        KBotDataColumn6.Width = 150
+        KBotDataColumn7.HeaderText = "Pe MariaDB"
+        KBotDataColumn7.Key = "stare"
+        KBotDataColumn7.MinWidth = 95
+        KBotDataColumn7.ReadOnly = True
+        KBotDataColumn7.Width = 95
+        dgvColoane.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        dgvColoane.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
+        dgvColoane.Columns.Add(KBotDataColumn5)
+        dgvColoane.Columns.Add(KBotDataColumn6)
+        dgvColoane.Columns.Add(KBotDataColumn7)
+        dgvColoane.Dock = DockStyle.Fill
+        dgvColoane.FillColumnKey = "nume"
+        dgvColoane.HeaderHeight = 30
+        dgvColoane.Location = New Point(4, 30)
+        dgvColoane.Margin = New Padding(0)
+        dgvColoane.Name = "dgvColoane"
+        dgvColoane.RowHeight = 26
+        dgvColoane.Size = New Size(292, 213)
+        dgvColoane.TabIndex = 1
+        sfat.SetToolTipHeader(dgvColoane, "Ce coloane călătoresc")
+        sfat.SetToolTipText(dgvColoane, resources.GetString("dgvColoane.ToolTipText"))
+        ' 
+        ' lblColoane
+        ' 
+        lblColoane.Dock = DockStyle.Top
+        lblColoane.Location = New Point(4, 0)
+        lblColoane.Name = "lblColoane"
+        lblColoane.Size = New Size(292, 30)
+        lblColoane.TabIndex = 0
+        lblColoane.Text = "Coloane:"
+        lblColoane.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' pnlActiuni
         ' 
         pnlActiuni.Controls.Add(tlpActiuni)
         pnlActiuni.Dock = DockStyle.Bottom
-        pnlActiuni.Location = New Point(0, 652)
+        pnlActiuni.Location = New Point(0, 616)
         pnlActiuni.Margin = New Padding(0)
         pnlActiuni.Name = "pnlActiuni"
-        pnlActiuni.Size = New Size(954, 60)
+        pnlActiuni.Size = New Size(1240, 96)
         pnlActiuni.TabIndex = 4
         ' 
         ' tlpActiuni
@@ -424,13 +559,15 @@ Partial Class MigratorForm
         tlpActiuni.Controls.Add(lblStare, 2, 0)
         tlpActiuni.Controls.Add(btnRuleaza, 3, 0)
         tlpActiuni.Controls.Add(btnForteaza, 4, 0)
+        tlpActiuni.Controls.Add(chkInlocuieste, 0, 1)
         tlpActiuni.Dock = DockStyle.Fill
         tlpActiuni.Location = New Point(0, 0)
         tlpActiuni.Margin = New Padding(0)
         tlpActiuni.Name = "tlpActiuni"
-        tlpActiuni.RowCount = 1
+        tlpActiuni.RowCount = 2
+        tlpActiuni.RowStyles.Add(New RowStyle(SizeType.Absolute, 60F))
         tlpActiuni.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlpActiuni.Size = New Size(954, 60)
+        tlpActiuni.Size = New Size(1240, 96)
         tlpActiuni.TabIndex = 0
         ' 
         ' btnInventar
@@ -465,7 +602,7 @@ Partial Class MigratorForm
         lblStare.Location = New Point(376, 3)
         lblStare.Margin = New Padding(8, 3, 8, 3)
         lblStare.Name = "lblStare"
-        lblStare.Size = New Size(210, 54)
+        lblStare.Size = New Size(496, 54)
         lblStare.TabIndex = 2
         lblStare.Text = "Alege unitatea, anul și baza țintă."
         lblStare.TextAlign = ContentAlignment.MiddleLeft
@@ -474,7 +611,7 @@ Partial Class MigratorForm
         ' 
         btnRuleaza.Dock = DockStyle.Fill
         btnRuleaza.Enabled = False
-        btnRuleaza.Location = New Point(600, 3)
+        btnRuleaza.Location = New Point(886, 3)
         btnRuleaza.Margin = New Padding(6, 3, 3, 3)
         btnRuleaza.MinimumSize = New Size(160, 32)
         btnRuleaza.Name = "btnRuleaza"
@@ -489,7 +626,7 @@ Partial Class MigratorForm
         ' 
         btnForteaza.Dock = DockStyle.Fill
         btnForteaza.Enabled = False
-        btnForteaza.Location = New Point(769, 3)
+        btnForteaza.Location = New Point(1055, 3)
         btnForteaza.Margin = New Padding(6, 3, 3, 3)
         btnForteaza.MinimumSize = New Size(182, 32)
         btnForteaza.Name = "btnForteaza"
@@ -497,35 +634,186 @@ Partial Class MigratorForm
         btnForteaza.TabIndex = 4
         btnForteaza.Text = "Forțează rularea"
         sfat.SetToolTipHeader(btnForteaza, "Forțează rularea")
-        sfat.SetToolTipText(btnForteaza, "Pornește când singurele probleme sunt de integritate (chei străine," & vbLf & "id-uri DDF, chei duble, rânduri nerutabile). Acele rânduri se SAR." & vbLf & "Problemele de tip sau de dimensiune opresc și acest buton.")
+        sfat.SetToolTipText(btnForteaza, "Pornește când singurele probleme sunt de integritate (chei străine," & vbLf & "chei duble, rânduri nerutabile). Acele rânduri se SAR." & vbLf & "Problemele de tip sau de dimensiune opresc și acest buton.")
         btnForteaza.UseVisualStyleBackColor = True
+        ' 
+        ' chkInlocuieste
+        ' 
+        chkInlocuieste.Anchor = AnchorStyles.Left
+        chkInlocuieste.AutoSize = True
+        tlpActiuni.SetColumnSpan(chkInlocuieste, 5)
+        chkInlocuieste.Location = New Point(6, 63)
+        chkInlocuieste.Margin = New Padding(6, 3, 3, 3)
+        chkInlocuieste.Name = "chkInlocuieste"
+        chkInlocuieste.Size = New Size(641, 29)
+        chkInlocuieste.TabIndex = 5
+        chkInlocuieste.Text = "Înlocuiește tot pe server — golește întâi tabelele bifate, apoi le scrie din fișier"
+        sfat.SetToolTipHeader(chkInlocuieste, "Înlocuiește tot pe server")
+        sfat.SetToolTipText(chkInlocuieste, "Datele existente din tabelele BIFATE se șterg întâi de pe server," & vbLf & "apoi se scriu cele din fișierul Access. Totul într-o SINGURĂ" & vbLf & "tranzacție: la orice eroare, baza rămâne exact cum era.")
+        chkInlocuieste.UseVisualStyleBackColor = True
+        ' 
+        ' tabRezultate
+        ' 
+        tabRezultate.Controls.Add(tabPagConstatari)
+        tabRezultate.Controls.Add(tabPagCorelatii)
+        tabRezultate.Dock = DockStyle.Fill
+        tabRezultate.Location = New Point(742, 219)
+        tabRezultate.Margin = New Padding(0)
+        tabRezultate.Name = "tabRezultate"
+        tabRezultate.SelectedIndex = 0
+        tabRezultate.Size = New Size(498, 243)
+        tabRezultate.TabIndex = 2
+        ' 
+        ' tabPagConstatari
+        ' 
+        tabPagConstatari.Controls.Add(dgvConstatari)
+        tabPagConstatari.Location = New Point(4, 34)
+        tabPagConstatari.Name = "tabPagConstatari"
+        tabPagConstatari.Padding = New Padding(3)
+        tabPagConstatari.Size = New Size(490, 205)
+        tabPagConstatari.TabIndex = 0
+        tabPagConstatari.Text = "Constatări"
+        tabPagConstatari.UseVisualStyleBackColor = True
         ' 
         ' dgvConstatari
         ' 
-        dgvConstatari.AllowUserToAddRows = False
-        dgvConstatari.AllowUserToDeleteRows = False
-        dgvConstatari.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
-        dgvConstatari.ColumnHeadersHeight = 34
+        KBotDataColumn8.HeaderText = "Clasă"
+        KBotDataColumn8.Key = "clasa"
+        KBotDataColumn8.MinWidth = 80
+        KBotDataColumn8.ReadOnly = True
+        KBotDataColumn8.Width = 90
+        KBotDataColumn9.HeaderText = "Tabel"
+        KBotDataColumn9.Key = "tabel"
+        KBotDataColumn9.MinWidth = 110
+        KBotDataColumn9.ReadOnly = True
+        KBotDataColumn9.Width = 140
+        KBotDataColumn10.HeaderText = "Coloană"
+        KBotDataColumn10.Key = "coloana"
+        KBotDataColumn10.MinWidth = 90
+        KBotDataColumn10.ReadOnly = True
+        KBotDataColumn10.Width = 120
+        KBotDataColumn11.HeaderText = "Fel"
+        KBotDataColumn11.Key = "fel"
+        KBotDataColumn11.MinWidth = 100
+        KBotDataColumn11.ReadOnly = True
+        KBotDataColumn11.Width = 140
+        KBotDataColumn12.HeaderText = "Rânduri"
+        KBotDataColumn12.HeaderTextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn12.Key = "randuri"
+        KBotDataColumn12.MinWidth = 70
+        KBotDataColumn12.ReadOnly = True
+        KBotDataColumn12.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn12.Width = 80
+        KBotDataColumn13.HeaderText = "Exemplu — cheie"
+        KBotDataColumn13.Key = "cheie"
+        KBotDataColumn13.MinWidth = 100
+        KBotDataColumn13.ReadOnly = True
+        KBotDataColumn13.Width = 130
+        KBotDataColumn14.HeaderText = "Exemplu — ce nu e în regulă"
+        KBotDataColumn14.Key = "mesaj"
+        KBotDataColumn14.MinWidth = 160
+        KBotDataColumn14.ReadOnly = True
+        KBotDataColumn14.Width = 280
+        KBotDataColumn15.HeaderText = "Exemplu — valoare"
+        KBotDataColumn15.Key = "valoare"
+        KBotDataColumn15.MinWidth = 110
+        KBotDataColumn15.ReadOnly = True
+        KBotDataColumn15.Width = 150
+        dgvConstatari.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        dgvConstatari.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
+        dgvConstatari.Columns.Add(KBotDataColumn8)
+        dgvConstatari.Columns.Add(KBotDataColumn9)
+        dgvConstatari.Columns.Add(KBotDataColumn10)
+        dgvConstatari.Columns.Add(KBotDataColumn11)
+        dgvConstatari.Columns.Add(KBotDataColumn12)
+        dgvConstatari.Columns.Add(KBotDataColumn13)
+        dgvConstatari.Columns.Add(KBotDataColumn14)
+        dgvConstatari.Columns.Add(KBotDataColumn15)
         dgvConstatari.Dock = DockStyle.Fill
-        dgvConstatari.Location = New Point(442, 219)
-        dgvConstatari.MultiSelect = False
+        dgvConstatari.FillColumnKey = "mesaj"
+        dgvConstatari.HeaderHeight = 30
+        dgvConstatari.Location = New Point(3, 3)
+        dgvConstatari.Margin = New Padding(0)
         dgvConstatari.Name = "dgvConstatari"
-        dgvConstatari.ReadOnly = True
-        dgvConstatari.RowHeadersVisible = False
-        dgvConstatari.RowHeadersWidth = 62
-        dgvConstatari.SelectionMode = DataGridViewSelectionMode.FullRowSelect
-        dgvConstatari.Size = New Size(512, 279)
-        dgvConstatari.TabIndex = 2
+        dgvConstatari.ReadOnlyGrid = True
+        dgvConstatari.RowHeight = 26
+        dgvConstatari.Size = New Size(484, 199)
+        dgvConstatari.TabIndex = 0
+        sfat.SetToolTipHeader(dgvConstatari, "Ce a găsit analiza")
+        sfat.SetToolTipText(dgvConstatari, "Un rând = un FEL de problemă, cu numărul de rânduri lovite și un exemplu." & vbLf & "Dublu-click pe rând scrie TOATE exemplele lui în jurnal, de unde se pot copia.")
+        ' 
+        ' tabPagCorelatii
+        ' 
+        tabPagCorelatii.Controls.Add(dgvCorelatii)
+        tabPagCorelatii.Controls.Add(lblCorelatii)
+        tabPagCorelatii.Location = New Point(4, 34)
+        tabPagCorelatii.Name = "tabPagCorelatii"
+        tabPagCorelatii.Padding = New Padding(3)
+        tabPagCorelatii.Size = New Size(490, 205)
+        tabPagCorelatii.TabIndex = 1
+        tabPagCorelatii.Text = "Corelații coloane"
+        tabPagCorelatii.UseVisualStyleBackColor = True
+        ' 
+        ' dgvCorelatii
+        ' 
+        KBotDataColumn16.HeaderText = "Coloană în Access"
+        KBotDataColumn16.Key = "access"
+        KBotDataColumn16.MinWidth = 140
+        KBotDataColumn16.ReadOnly = True
+        KBotDataColumn16.Width = 190
+        KBotDataColumn17.ColumnType = KBot.Controls.KBotColumnType.Combo
+        KBotDataColumn17.HeaderText = "Se scrie în (MariaDB)"
+        KBotDataColumn17.Key = "tinta"
+        KBotDataColumn17.MinWidth = 140
+        KBotDataColumn17.Width = 200
+        KBotDataColumn18.HeaderText = "Propus de server"
+        KBotDataColumn18.Key = "implicit"
+        KBotDataColumn18.MinWidth = 130
+        KBotDataColumn18.ReadOnly = True
+        KBotDataColumn18.Width = 180
+        KBotDataColumn19.HeaderText = "Stare"
+        KBotDataColumn19.Key = "stare"
+        KBotDataColumn19.MinWidth = 120
+        KBotDataColumn19.ReadOnly = True
+        KBotDataColumn19.Width = 150
+        dgvCorelatii.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        dgvCorelatii.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
+        dgvCorelatii.Columns.Add(KBotDataColumn16)
+        dgvCorelatii.Columns.Add(KBotDataColumn17)
+        dgvCorelatii.Columns.Add(KBotDataColumn18)
+        dgvCorelatii.Columns.Add(KBotDataColumn19)
+        dgvCorelatii.Dock = DockStyle.Fill
+        dgvCorelatii.FillColumnKey = "stare"
+        dgvCorelatii.HeaderHeight = 30
+        dgvCorelatii.Location = New Point(3, 33)
+        dgvCorelatii.Margin = New Padding(0)
+        dgvCorelatii.Name = "dgvCorelatii"
+        dgvCorelatii.RowHeight = 26
+        dgvCorelatii.Size = New Size(484, 169)
+        dgvCorelatii.TabIndex = 1
+        sfat.SetToolTipFooter(dgvCorelatii, "Dublu-click sau F2 pe «Se scrie în» deschide lista.")
+        sfat.SetToolTipHeader(dgvCorelatii, "În ce coloană de pe MariaDB ajunge fiecare coloană din Access")
+        sfat.SetToolTipText(dgvCorelatii, resources.GetString("dgvCorelatii.ToolTipText"))
+        ' 
+        ' lblCorelatii
+        ' 
+        lblCorelatii.Dock = DockStyle.Top
+        lblCorelatii.Location = New Point(3, 3)
+        lblCorelatii.Name = "lblCorelatii"
+        lblCorelatii.Size = New Size(484, 30)
+        lblCorelatii.TabIndex = 0
+        lblCorelatii.Text = "Corelații:"
+        lblCorelatii.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' txtJurnal
         ' 
         txtJurnal.Dock = DockStyle.Bottom
-        txtJurnal.Location = New Point(0, 498)
+        txtJurnal.Location = New Point(0, 462)
         txtJurnal.Multiline = True
         txtJurnal.Name = "txtJurnal"
         txtJurnal.ReadOnly = True
         txtJurnal.ScrollBars = ScrollBars.Vertical
-        txtJurnal.Size = New Size(954, 154)
+        txtJurnal.Size = New Size(1240, 154)
         txtJurnal.TabIndex = 3
         ' 
         ' dlgFisier
@@ -535,13 +823,14 @@ Partial Class MigratorForm
         ' 
         ' MigratorForm
         ' 
-        ClientSize = New Size(954, 712)
-        Controls.Add(dgvConstatari)
+        ClientSize = New Size(1240, 712)
+        Controls.Add(tabRezultate)
+        Controls.Add(pnlColoane)
         Controls.Add(pnlTabele)
         Controls.Add(txtJurnal)
         Controls.Add(pnlActiuni)
         Controls.Add(pnlSurse)
-        MinimumSize = New Size(900, 600)
+        MinimumSize = New Size(1140, 640)
         Name = "MigratorForm"
         StartPosition = FormStartPosition.CenterScreen
         Text = "Migrare FX — Access ▸ MariaDB"
@@ -550,9 +839,17 @@ Partial Class MigratorForm
         tlpSurse.PerformLayout()
         pnlTabele.ResumeLayout(False)
         CType(dgvTabele, ComponentModel.ISupportInitialize).EndInit()
+        pnlOrdine.ResumeLayout(False)
+        pnlColoane.ResumeLayout(False)
+        CType(dgvColoane, ComponentModel.ISupportInitialize).EndInit()
         pnlActiuni.ResumeLayout(False)
         tlpActiuni.ResumeLayout(False)
+        tlpActiuni.PerformLayout()
         CType(dgvConstatari, ComponentModel.ISupportInitialize).EndInit()
+        CType(dgvCorelatii, ComponentModel.ISupportInitialize).EndInit()
+        tabPagConstatari.ResumeLayout(False)
+        tabPagCorelatii.ResumeLayout(False)
+        tabRezultate.ResumeLayout(False)
         ResumeLayout(False)
         PerformLayout()
     End Sub

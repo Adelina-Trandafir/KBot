@@ -31,26 +31,37 @@ BATCH_ROWS = 500
 
 
 class ExecuteError(Exception):
-    """Scrierea nu poate continua — mesaj în română."""
+    """Scrierea nu poate continua — mesaj in romana."""
 
 
-def run(conn, db_name, fx_path, plan, report, force, only=None, progress=None):
+def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
+        progress=None):
     """
     Write the rows that passed the analysis.
 
     `plan` is the SAME UnitPlan the analysis used, not a fresh one: otherwise the
     selection could shift between measuring and writing.
 
-    `only` are the tables the operator ticked. They must be among the ANALYSED
-    ones -- an unmeasured table is not written.
+    `only` are the tables the operator ticked, in the operator's order — that
+    order IS the write order. They must be among the ANALYSED ones -- an
+    unmeasured table is not written.
 
     `report` is the Report of the analysis of the same file: the foreign-key
-    values missing on the target come from there, so the server is not asked twice.
+    values missing on the target come from there, so the server is not asked
+    twice — and the CHOSEN COLUMNS come from there too, so the write uses
+    exactly what the analysis measured.
 
     force=False -> any finding stops the write (the caller should not have got
                    here; we check anyway rather than trusting the UI).
     force=True  -> the offending rows are SKIPPED and counted; blocking findings
                    still stop the write here too, not only in the UI.
+
+    replace=True -> «Inlocuieste tot pe server»: the chosen tables are EMPTIED
+                    first (children before parents, i.e. the reverse of the
+                    write order), then filled from the file — everything in ONE
+                    transaction, committed only at the very end. Any error rolls
+                    the whole thing back: no half-deleted, half-written state
+                    survives.
     """
     def say(msg):
         logger.info("migrare/scriere: %s", msg)
@@ -75,71 +86,156 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, progress=None):
             "analiza cu ele bifate." % ", ".join(unmeasured))
 
     schema = validate.TargetSchema(conn, db_name, [t.name for t in chosen])
-    totals = {}
-
+    chosen_names = [t.name for t in chosen]
+    # A table absent from the target is SKIPPED when nothing ticked depends on
+    # it (the analysis applied the same rule); it stops the run only when a
+    # ticked table's foreign key points at it. Writing cannot create tables.
+    absent = []
     for table in chosen:
-        stats = {"citite": 0, "ale_unității": 0, "scrise": 0,
-                 "actualizate": 0, "neschimbate": 0, "sărite": 0}
-        totals[table.name] = stats
-
-        if not schema.has(table.name):
+        if schema.has(table.name):
+            continue
+        dependents = validate.missing_table_dependents(schema, chosen_names,
+                                                       table.name, db_name)
+        if dependents:
             raise ExecuteError(
-                "Tabelul «%s» lipsește din baza «%s». Migrarea nu creează tabele."
-                % (table.name, db_name))
+                "Tabelul «%s» lipsește din baza «%s», iar %s arată spre el prin "
+                "cheie străină. Migrarea nu creează tabele."
+                % (table.name, db_name, ", ".join(dependents)))
+        absent.append(table.name)
+    chosen = [t for t in chosen if t.name not in absent]
 
-        target_columns = schema.columns[table.name]
-        selector = plan.selector_for(table)
-        pk_columns = schema.primary_key.get(table.name) or [table.primary_key]
-        seen_keys = set()
-        missing = dict((column, values)
-                       for (t, column), values in report.missing_fk.items()
-                       if t == table.name)
+    totals = {}
+    try:
+        if replace:
+            say("Mod «Înlocuiește tot»: se golesc întâi tabelele alese, într-o "
+                "singură tranzacție — la orice eroare totul se întoarce la loc.")
+            _empty_tables(conn, db_name, [t.name for t in reversed(chosen)], say)
 
-        say("Se scrie «%s»." % table.name)
-        # Only the columns BOTH sides have. A column that exists only on the
-        # target keeps its default; one that exists only in Access was already
-        # reported as missing by the analysis, so it never gets here.
-        access_columns = [c["nume"] for c in accdb.columns(fx_path, table.name)]
-        columns = [c for c in access_columns if c in target_columns]
-        if not columns:
-            raise ExecuteError(
-                "Tabelul «%s» nu are nicio coloană comună între Access și «%s»."
-                % (table.name, db_name))
-        batch = []
+        for name in absent:
+            say("«%s» lipsește din baza «%s» și niciun tabel bifat nu depinde "
+                "de el — sărit." % (name, db_name))
 
-        for row in accdb.iter_rows(fx_path, table.name):
-            stats["citite"] += 1
-            keep, reject = selector.keep(row)
-            if reject:
-                stats["sărite"] += 1
-                continue
-            if not keep:
-                # The row belongs to another unit in the same file: it is not this
-                # database's, and it does not count as skipped.
-                continue
-            stats["ale_unității"] += 1
+        for table in chosen:
+            stats = {"citite": 0, "ale_unitatii": 0, "scrise": 0,
+                     "actualizate": 0, "neschimbate": 0, "sarite": 0}
+            totals[table.name] = stats
 
-            if _row_is_blocked(row, target_columns, pk_columns, seen_keys, missing):
-                stats["sărite"] += 1
-                continue
+            target_columns = schema.columns[table.name]
+            # The SAME correlations the analysis measured against -- they travel
+            # on the report, not in the run's own request.
+            rename = validate.column_rename_map(table.name, target_columns,
+                                                report.mappings)
+            selector = plan.selector_for(table)
+            pk_columns = schema.primary_key.get(table.name) or [table.primary_key]
+            chosen_cols = validate.chosen_columns_of(table.name, report.columns,
+                                                    pk_columns, rename)
+            seen_keys = set()
+            missing = dict((column, values)
+                           for (t, column), values in report.missing_fk.items()
+                           if t == table.name)
 
-            batch.append(tuple(row.get(c) for c in columns))
-            if len(batch) >= BATCH_ROWS:
+            say("Se scrie «%s»." % table.name)
+            # Only the columns BOTH sides have -- correlated by `rename` (the
+            # by-name match, plus the operator's «Corelatii coloane») -- narrowed
+            # to what he ticked, and written under the TARGET's exact spelling. A
+            # column that stays out keeps the target's default; one that exists
+            # only in Access was either unticked (fine) or already reported as
+            # missing by the analysis, so it never gets here.
+            access_columns = [c["nume"] for c in accdb.columns(fx_path, table.name)]
+            columns = []
+            for c in access_columns:
+                target_name = rename.get(c.lower())
+                if target_name is None:
+                    continue
+                if chosen_cols is not None and target_name not in chosen_cols:
+                    continue
+                if target_name in columns:
+                    # Two Access columns correlated onto one target column: one
+                    # of the two values would be dropped, and nobody can say
+                    # which. Stop before the first row is written.
+                    raise ExecuteError(
+                        "În «%s», două coloane din Access sunt corelate cu «%s» "
+                        "de pe MariaDB. Repară corelațiile și analizează din nou."
+                        % (table.name, target_name))
+                columns.append(target_name)
+            if not columns:
+                raise ExecuteError(
+                    "Tabelul «%s» nu are nicio coloană comună între Access și «%s»."
+                    % (table.name, db_name))
+            batch = []
+
+            for row in accdb.iter_rows(fx_path, table.name):
+                stats["citite"] += 1
+                keep, reject = selector.keep(row)
+                if reject:
+                    stats["sarite"] += 1
+                    continue
+                if not keep:
+                    # The row belongs to another unit in the same file: it is not
+                    # this database's, and it does not count as skipped.
+                    continue
+                stats["ale_unitatii"] += 1
+
+                # The row under the target's exact column names; the selector
+                # above already read it with the Access ones.
+                vrow = validate.with_target_names(row, rename)
+
+                if _row_is_blocked(vrow, target_columns, pk_columns, seen_keys,
+                                   missing, chosen_cols):
+                    stats["sarite"] += 1
+                    continue
+
+                batch.append(tuple(vrow.get(c) for c in columns))
+                if len(batch) >= BATCH_ROWS:
+                    _write(conn, db_name, table.name, columns, pk_columns, batch, stats)
+                    batch = []
+
+            if batch:
                 _write(conn, db_name, table.name, columns, pk_columns, batch, stats)
-                batch = []
 
-        if batch:
-            _write(conn, db_name, table.name, columns, pk_columns, batch, stats)
+            if not replace:
+                # Un tabel incheiat ramane scris chiar daca urmatorul pica.
+                conn.commit()
+            say("«%s»: %d scrise, %d actualizate, %d deja identice, %d sărite."
+                % (table.name, stats["scrise"], stats["actualizate"],
+                   stats["neschimbate"], stats["sarite"]))
 
-        conn.commit()
-        say("«%s»: %d scrise, %d actualizate, %d deja identice, %d sărite."
-            % (table.name, stats["scrise"], stats["actualizate"],
-               stats["neschimbate"], stats["sărite"]))
+        if replace:
+            conn.commit()
+            say("Tranzacția «Înlocuiește tot» a fost încheiată (commit).")
+    except Exception:
+        # In replace mode NOTHING must survive a half-run; in normal mode only
+        # the current table's uncommitted rows are open. Either way: rollback.
+        try:
+            conn.rollback()
+        except Exception:
+            logger.exception("migrare/scriere: rollback-ul însuși a eșuat")
+        raise
 
     return totals
 
 
-def _row_is_blocked(row, target_columns, pk_columns, seen_keys, missing):
+def _empty_tables(conn, db_name, table_names, say):
+    """
+    DELETE, deliberately not TRUNCATE: TRUNCATE is DDL and commits implicitly,
+    which would make the rollback promise a lie. Children first (the caller
+    passes the reverse of the write order), so the intra-family foreign keys do
+    not object.
+    """
+    cur = conn.cursor()
+    try:
+        for name in table_names:
+            cur.execute("DELETE FROM `%s`.`%s`" % (db_name, name))
+            say("«%s»: %d rânduri șterse (netrimis încă — se confirmă la final)."
+                % (name, cur.rowcount))
+    except Exception as exc:
+        raise ExecuteError("Golirea tabelului a eșuat: %s" % exc)
+    finally:
+        cur.close()
+
+
+def _row_is_blocked(row, target_columns, pk_columns, seen_keys, missing,
+                    chosen_cols):
     """
     The same rules as the analysis, applied row by row. Deliberately re-evaluated
     here rather than read from a saved list of keys: the list could no longer match
@@ -148,7 +244,11 @@ def _row_is_blocked(row, target_columns, pk_columns, seen_keys, missing):
     for name, meta in target_columns.items():
         if meta["auto"] and name not in row:
             continue
-        if validate.check_value(meta, row.get(name)):
+        value = row.get(name)
+        if chosen_cols is not None and name not in chosen_cols:
+            # An unticked column is not written; the target sees NULL/default.
+            value = None
+        if validate.check_value(meta, value):
             return True
 
     pk_value = tuple(row.get(c) for c in pk_columns)

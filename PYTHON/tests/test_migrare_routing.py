@@ -15,7 +15,7 @@ from routes.migrare import routing, tables
 
 
 def plan(db_name="005_CEVM", single_unit=False):
-    """Unitatea 75 e a bazei alese; 48 e a altei unități din același fișier."""
+    """Unitatea 75 e a bazei alese; 48 e a altei unitati din acelasi fisier."""
     sets = dict((name, routing.KeySet()) for name in
                 routing.FAMILIES)
     sets["unit"].add(75, True)
@@ -30,6 +30,14 @@ def plan(db_name="005_CEVM", single_unit=False):
     sets["receipt_h"].add(30, False)
     sets["statement"].add(41, True)
     sets["statement"].add(40, False)
+    sets["statement_h"].add(51, True)
+    sets["statement_h"].add(50, False)
+    sets["ddf"].add(61, True)
+    sets["ddf"].add(60, False)
+    sets["rev"].add(71, True)
+    sets["rev"].add(70, False)
+    sets["ord"].add(81, True)
+    sets["ord"].add(80, False)
     return routing.UnitPlan(db_name, sets, {75}, {48, 75}, single_unit)
 
 
@@ -46,7 +54,7 @@ def test_dc_propriu_bate_idunitate():
 
 
 def test_dc_propriu_al_altei_unitati_e_sarit_fara_motiv():
-    # Nu e o problemă: fișierul poartă mai multe unități, se scrie doar una.
+    # Nu e o problema: fisierul poarta mai multe unitati, se scrie doar una.
     keep, reject = selector("FX_Angajamente").keep(
         {"CodAngajament": "AAB-001", "DC": "045_CTER", "IdUnitate": 75})
     assert (keep, reject) == (False, None)
@@ -77,7 +85,7 @@ def test_idunitate_lipsa_intr_un_fisier_cu_o_unitate_e_al_nostru():
 # --- prin angajament ----------------------------------------------------------
 
 def test_copilul_urmeaza_angajamentul_indiferent_de_litere():
-    # Codurile din Access vin cu majuscule amestecate; mulțimea e pe litere mici.
+    # Codurile din Access vin cu majuscule amestecate; multimea e pe litere mici.
     keep, reject = selector("FX_Istoric").keep({"ID": 1, "CodAngajament": "AaB-002"})
     assert (keep, reject) == (True, None)
 
@@ -171,11 +179,47 @@ def test_extrasul_fara_antet_e_respins():
     assert "FX_Extrase_H" in reject
 
 
+# --- liniile de extras (FX_Extrase): IdUnitate propriu, apoi antetul ----------
+
+def test_linia_de_extras_cu_idunitate_propriu_il_foloseste():
+    keep, reject = selector("FX_Extrase").keep({"IDFXE": 1, "IdUnitate": 75, "IDFXH": 50})
+    assert (keep, reject) == (True, None)
+
+
+def test_linia_de_extras_fara_idunitate_urmeaza_antetul():
+    # Cazul care a respins pe nedrept 3110 randuri: IdUnitate e NULL pe linie,
+    # dar IDFXH duce la un antet al unitatii alese.
+    keep, reject = selector("FX_Extrase").keep({"IDFXE": 2, "IDFXH": 51})
+    assert (keep, reject) == (True, None)
+
+
+def test_linia_de_extras_a_altei_unitati_e_sarita_prin_antet():
+    keep, reject = selector("FX_Extrase").keep({"IDFXE": 3, "IDFXH": 50})
+    assert (keep, reject) == (False, None)
+
+
+def test_linia_de_extras_cu_antet_inexistent_e_respinsa():
+    keep, reject = selector("FX_Extrase").keep({"IDFXE": 4, "IDFXH": 99})
+    assert keep is False
+    assert "FX_Extrase_H" in reject
+
+
+def test_linia_de_extras_fara_nimic_intr_un_fisier_multiunitate_e_respinsa():
+    keep, reject = selector("FX_Extrase").keep({"IDFXE": 5})
+    assert keep is False
+    assert "IdUnitate" in reject and "IDFXH" in reject
+
+
+def test_linia_de_extras_fara_nimic_intr_un_fisier_cu_o_unitate_e_a_noastra():
+    keep, reject = selector("FX_Extrase", single_unit=True).keep({"IDFXE": 6})
+    assert (keep, reject) == (True, None)
+
+
 # --- nimic din cale.accdb -----------------------------------------------------
 
 def test_nu_mai_exista_nicio_urma_de_cale_accdb():
-    # Hărțile [Cai] și planul care le cerea au dispărut cu totul: unitatea unui
-    # rând se află din fișierul FOREXE însuși.
+    # Hartile [Cai] si planul care le cerea au disparut cu totul: unitatea unui
+    # rand se afla din fisierul FOREXE insusi.
     assert not hasattr(routing, "build_maps")
     assert not hasattr(routing, "resolve_plan")
     assert not hasattr(routing, "RoutingMaps")
@@ -187,14 +231,22 @@ def test_nu_mai_exista_nicio_urma_de_cale_accdb():
 
 # --- setul de tabele ----------------------------------------------------------
 
-def test_setul_are_sasesprezece_tabele_in_ordinea_de_scriere():
-    assert len(tables.ALL) == 16
+def test_setul_are_ordinea_ceruta_de_operator():
     nume = [t.name for t in tables.ALL]
-    # Parintii inaintea copiilor: fiecare regula depinde de tabelul de dinaintea ei.
-    assert nume.index("FX_Angajamente") == 0
+    assert len(nume) == 27
+    # Ordinea numerotata de operator (2026-08-21): cele 23, apoi cele patru
+    # ramase in afara numerotarii, cu parintii mereu inaintea copiilor.
+    assert nume[:23] == [
+        "FX_Angajamente", "FX_Indicatori", "FX_Istoric", "FX_Rezervari",
+        "FX_Receptii_R", "FX_Receptii_RHR", "FX_Receptii_H", "FX_Receptii",
+        "FX_Plati", "FX_Extrase_F", "FX_Extrase_H", "FX_Extrase",
+        "FX_DDF", "FX_DDF_REV", "FX_DDF_REV_SA", "FX_DDF_REV_SB",
+        "FX_DDF_REV_ATT", "FX_DDF_REV_PRT",
+        "FX_ORD", "FX_ORD_PART", "FX_ORD_TBL", "FX_ORD_DOC", "FX_ORD_ATT"]
     assert nume.index("FX_Rezervari") < nume.index("FX_Rezervarii_IMG")
     assert nume.index("FX_Receptii_R") < nume.index("FX_Receptii_IMG")
     assert nume.index("FX_Receptii_H") < nume.index("FX_Receptii_Plati")
+    assert nume.index("FX_Angajamente") < nume.index("FX_Salarii")
 
 
 def test_tabel_necunoscut_arunca_nu_intoarce_tacut_nimic():
@@ -202,9 +254,16 @@ def test_tabel_necunoscut_arunca_nu_intoarce_tacut_nimic():
         tables.by_name("FX_Parteneri")
 
 
-def test_bifele_se_intorc_in_ordinea_de_scriere_nu_in_cea_bifata():
+def test_bifele_se_intorc_in_ordinea_operatorului():
+    # Ordinea trimisa ESTE ordinea de scriere: migratorul lasa tabelele sa fie
+    # rearanjate, iar serverul o respecta intocmai.
     alese = tables.selected(["FX_Rezervarii_IMG", "FX_Angajamente", "FX_Rezervari"])
-    assert [t.name for t in alese] == ["FX_Angajamente", "FX_Rezervari", "FX_Rezervarii_IMG"]
+    assert [t.name for t in alese] == ["FX_Rezervarii_IMG", "FX_Angajamente", "FX_Rezervari"]
+
+
+def test_un_tabel_trimis_de_doua_ori_arunca():
+    with pytest.raises(KeyError):
+        tables.selected(["FX_Angajamente", "FX_Angajamente"])
 
 
 def test_bifa_pe_un_tabel_strain_arunca():
@@ -213,7 +272,45 @@ def test_bifa_pe_un_tabel_strain_arunca():
 
 
 def test_fara_bife_inseamna_toate():
-    assert len(tables.selected(None)) == 16
+    assert len(tables.selected(None)) == 27
+
+
+# --- familiile DDF / ORD ------------------------------------------------------
+
+def test_ddf_cu_dc_propriu_il_foloseste():
+    keep, reject = selector("FX_DDF").keep({"IDDF": 1, "DC": "005_CEVM", "IdUnitate": 48})
+    assert (keep, reject) == (True, None)
+
+
+def test_revizia_urmeaza_ddf_ul():
+    keep, reject = selector("FX_DDF_REV").keep({"IDREV": 1, "IDDF": 61})
+    assert (keep, reject) == (True, None)
+
+
+def test_copilul_reviziei_urmeaza_revizia():
+    keep, reject = selector("FX_DDF_REV_SA").keep({"ID": 1, "IDREV": 71})
+    assert (keep, reject) == (True, None)
+
+
+def test_revizia_altei_unitati_e_sarita():
+    keep, reject = selector("FX_DDF_REV_SB").keep({"ID": 2, "IDREV": 70})
+    assert (keep, reject) == (False, None)
+
+
+def test_ord_urmeaza_angajamentul():
+    keep, reject = selector("FX_ORD").keep({"IDORD": 1, "CodAngajament": "AAB-002"})
+    assert (keep, reject) == (True, None)
+
+
+def test_copilul_ord_urmeaza_ord_ul():
+    keep, reject = selector("FX_ORD_PART").keep({"IDORDPART": 1, "IDORD": 81})
+    assert (keep, reject) == (True, None)
+
+
+def test_copilul_ord_inexistent_e_respins():
+    keep, reject = selector("FX_ORD_DOC").keep({"IDORDDOC": 1, "IDORD": 999})
+    assert keep is False
+    assert "FX_ORD" in reject
 
 
 def test_cheia_primara_e_raportata_pentru_lista_de_respinse():
@@ -267,13 +364,14 @@ def test_planul_afla_unitatea_din_fx_angajamente(monkeypatch):
     assert p.units == [75]
     assert p.all_units == [48, 75]
     assert p.single_unit is False
-    # AAB-003 nu are DC scris pe rând, dar are IdUnitate 75; AAB-004 vine din
-    # FX_Indicatori, care e a doua sursă de IdUnitate.
+    # AAB-003 nu are DC scris pe rand, dar are IdUnitate 75; AAB-004 vine din
+    # FX_Indicatori, care e a doua sursa de IdUnitate.
     assert p.sets["commitment"].ours == {"aab-002", "aab-003", "aab-004"}
     assert p.sets["reservation"].ours == {11}
     assert p.sets["receipt_r"].ours == {21}
     assert p.sets["receipt_h"].ours == {31}
     assert p.sets["statement"].ours == {41}
+    assert p.sets["statement_h"].ours == {2}
 
 
 def test_planul_pentru_cealalta_unitate_alege_altceva(monkeypatch):
