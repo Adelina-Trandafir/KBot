@@ -12,10 +12,21 @@
 #   BLOCANT  -- structura sau valoarea nu incap: tabel/coloana lipsa, tip gresit,
 #               depasire de lungime sau de interval, NULL intr-o coloana NOT NULL.
 #               Cat timp exista unul, NICIUN buton nu porneste.
-#   FORTABIL -- link integrity: foreign key with no match, duplicate primary
-#               key, row whose key exists nowhere in the file. «Ruleaza» ramane
-#               oprit, «Forteaza rularea» porneste si SARE peste randurile
-#               vinovate, fara sa le piarda din raport.
+#   FORTABIL -- link integrity: duplicate primary key, row whose key exists
+#               nowhere in the file, foreign key with no match on a column that
+#               ACCEPTS NULL. «Ruleaza» ramane oprit, «Forteaza rularea»
+#               porneste si SARE peste randurile vinovate, fara sa le piarda din
+#               raport.
+#
+# A foreign key with no match on a NOT NULL column is BLOCANT instead: there is
+# no NULL to fall back on, so the row can be neither written nor emptied. On a
+# nullable one the row IS written, with that column set to NULL -- the row is
+# kept and only the link is lost (operator decision, 2026-08-22).
+#
+# The write ORDER is checked too, before any row is read: a ticked table written
+# before a ticked table it depends on is BLOCANT, because a foreign key needs
+# the referenced row present at INSERT time and emptying the parent first makes
+# that failure certain rather than avoiding it.
 #
 # The operator can narrow WHICH Access columns travel (the `columns` argument):
 # an unticked column is simply not written, so it is neither reported as missing
@@ -24,7 +35,10 @@
 #
 # A foreign key whose parent table is written IN THE SAME RUN is checked against
 # the union of the target's rows and the rows this run itself will write: on an
-# empty database everything is "missing" otherwise, which is exactly wrong.
+# empty database everything is "missing" otherwise, which is exactly wrong. Ten
+# of the constraints point outside the migrated set (Parteneri, Clasificatii,
+# Unitati); there is no "will be written" to add, so the target's rows are the
+# whole answer.
 # -----------------------------------------------------------------------------
 
 import datetime
@@ -51,6 +65,12 @@ F_SELECTION = "SELECTIE"
 # NULL with no default) that is not in it -- unticked or uncorrelated. ASCII on
 # the wire like every other token here (rule 0), so the migrator can match it.
 F_COLOANA_OBLIGATORIE = "COLOANA_OBLIGATORIE"
+# A ticked table written BEFORE a ticked table it depends on. Read from the live
+# constraint set, never from a list in tables.py.
+F_ORDINE_TABELE = "ORDINE_TABELE"
+# A foreign-key value with no parent, in a NOT NULL column: NULL is not
+# available there, so the row cannot be kept and nothing may be written.
+F_CHEIE_STRAINA_OBLIGATORIE = "CHEIE_STRAINA_OBLIGATORIE"
 
 CLASS_OF = {
     F_TABEL_LIPSA: BLOCANT,
@@ -62,6 +82,8 @@ CLASS_OF = {
     F_CHEIE_DUBLA: FORTABIL,
     F_SELECTION: FORTABIL,
     F_COLOANA_OBLIGATORIE: BLOCANT,
+    F_ORDINE_TABELE: BLOCANT,
+    F_CHEIE_STRAINA_OBLIGATORIE: BLOCANT,
 }
 
 # Cate exemple pastram pentru fiecare (tabel, coloana, fel). Numaratoarea e
@@ -99,10 +121,26 @@ class TargetSchema(object):
         self.columns = {}       # tabel -> {coloana: meta}
         self.primary_key = {}   # tabel -> [coloane]
         self.foreign_keys = {}  # tabel -> [ {coloana, tabel_ref, coloana_ref, nume} ]
+        # (schema, tabel, coloana) -> auto_increment?, for the columns the
+        # foreign keys POINT AT -- including the ones outside the migrated set
+        # (Parteneri, Clasificatii, Unitati), which `columns` never loads.
+        self.referenced = {}
         self._load(conn, table_names)
 
     def has(self, table):
         return table in self.columns
+
+    def referenced_is_auto(self, fk):
+        """
+        Is the column this foreign key points at AUTO_INCREMENT?
+
+        It decides how a 0 reads: no auto-increment table can hold a row 0, so a
+        0 in the child is an orphan whatever a probe of the parent answers.
+        Unknown (the parent could not be read) answers False -- we do not invent
+        an orphan.
+        """
+        return bool(self.referenced.get(
+            (fk["schema_ref"], fk["tabel_ref"], fk["coloana_ref"])))
 
     def _load(self, conn, table_names):
         placeholders = ",".join(["%s"] * len(table_names))
@@ -162,6 +200,26 @@ class TargetSchema(object):
                     "coloana_ref": ref_column,
                     "nume": name,
                 })
+
+            # One more pass over information_schema, for the tables the keys
+            # POINT AT. Ten of the constraints leave the migrated set entirely
+            # (Parteneri, Clasificatii, Unitati), so their columns are not in
+            # `self.columns` and there is nowhere else to read this from.
+            wanted = {}
+            for fks in self.foreign_keys.values():
+                for fk in fks:
+                    wanted.setdefault(fk["schema_ref"], set()).add(fk["tabel_ref"])
+            for ref_schema, ref_tables in wanted.items():
+                names = sorted(ref_tables)
+                slots = ",".join(["%s"] * len(names))
+                cur.execute(
+                    "SELECT TABLE_NAME, COLUMN_NAME, EXTRA "
+                    "  FROM information_schema.COLUMNS "
+                    " WHERE TABLE_SCHEMA = %s AND TABLE_NAME IN (" + slots + ")",
+                    tuple([ref_schema] + names))
+                for ref_table, ref_column, extra in cur.fetchall():
+                    self.referenced[(ref_schema, ref_table, ref_column)] = (
+                        "auto_increment" in (extra or "").lower())
         finally:
             cur.close()
 
@@ -440,6 +498,10 @@ class Report(object):
         # Valorile de cheie straina care LIPSESC pe tinta, pastrate ca sa poata fi
         # sarite la rulare fara sa mai intrebam serverul inca o data.
         self.missing_fk = {}    # (tabel, coloana) -> set(valori)
+        # Aceleasi valori, dar pe coloane care ACCEPTA NULL: acolo randul se
+        # pastreaza si se pierde doar legatura, deci scrierea le goleste in loc
+        # sa sara randul. Cele doua dictionare nu se suprapun niciodata.
+        self.null_fk = {}       # (tabel, coloana) -> set(valori)
         # Coloanele alese de operator (tabel -> [coloane]), pastrate pe raport ca
         # scrierea sa foloseasca EXACT ce a masurat analiza, nu o alta alegere.
         self.columns = None
@@ -447,10 +509,16 @@ class Report(object):
         # acelasi motiv: rularea scrie in coloanele pe care le-a MASURAT analiza.
         self.mappings = None
 
-    def add(self, table, column, kind, key, message, value=None):
+    def add(self, table, column, kind, key, message, value=None, count=1):
+        """
+        `count` > 1 says «this same finding, on this many rows». The foreign-key
+        checks use it: they collect DISTINCT values but the operator needs to
+        read how many ROWS carry each one. The example list still shows the
+        first row's key, which is the one worth looking up.
+        """
         bucket = self._buckets.setdefault((table, column, kind),
                                           {"numar": 0, "exemple": []})
-        bucket["numar"] += 1
+        bucket["numar"] += count
         if len(bucket["exemple"]) < MAX_EXAMPLES:
             bucket["exemple"].append({
                 "cheie": key,
@@ -519,6 +587,51 @@ def missing_table_dependents(schema, chosen_names, missing_name, db_name):
                 dependents.append(name)
                 break
     return dependents
+
+
+def order_findings(schema, chosen_names, db_name):
+    """
+    The child-before-parent pairs in the order the operator arranged, measured
+    against the LIVE constraint set.
+
+    A foreign key needs the referenced row PRESENT AT INSERT TIME. Emptying the
+    parent first in «Inlocuieste tot» does not relax that -- it makes the failure
+    certain. So a ticked table written before a ticked table it depends on is a
+    refusal, not a warning.
+
+    Read from `information_schema` (through TargetSchema), never from a list in
+    tables.py: the constraint that failed the run of 2026-08-21,
+    FX_Rezervari__FX_DDF_REV, did not exist in the schema dump we had. Adding a
+    constraint to the database has to change this answer with no code change.
+
+    Returns [(child, parent, constraint_name, child_column)], each pair once.
+    A key a table has on ITSELF cannot be ordered away and is left alone; so is
+    one whose parent the operator did not tick (that parent is not written in
+    this run at all, and its rows are checked against the target as they stand).
+    """
+    position = dict((name, index) for index, name in enumerate(chosen_names))
+    seen = set()
+    out = []
+    for name in chosen_names:
+        for fk in schema.foreign_keys.get(name, []):
+            parent = fk["tabel_ref"]
+            if fk["schema_ref"] != db_name or parent == name:
+                continue
+            if parent not in position or position[parent] < position[name]:
+                continue
+            key = (name, parent, fk["nume"])
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append((name, parent, fk["nume"], fk["coloana"]))
+    return out
+
+
+def order_message(child, parent, constraint, column):
+    """The one sentence both the analysis and the write say about it."""
+    return ("«%s» se scrie înaintea lui «%s», dar depinde de el prin «%s» (%s). "
+            "Mută-l după el în lista de tabele."
+            % (child, parent, constraint, column))
 
 
 def column_case_map(target_columns):
@@ -649,6 +762,14 @@ def analyze(conn, db_name, fx_path, plan, only=None, columns=None,
     report.mappings = mappings
     schema = TargetSchema(conn, db_name, [t.name for t in chosen])
     in_run = set(t.name for t in chosen)
+
+    # The arrangement, before a single row is read: a child written before its
+    # parent cannot succeed whatever the rows say.
+    for child, parent, constraint, column in order_findings(
+            schema, [t.name for t in chosen], db_name):
+        report.add(child, column, F_ORDINE_TABELE, "",
+                   order_message(child, parent, constraint, column))
+
     # Cheile primare pe care ACEASTA rulare le va scrie, tabel cu tabel, ca o
     # cheie straina spre un parinte migrat in acelasi lot sa nu fie "lipsa".
     written_pks = {}
@@ -774,7 +895,14 @@ def analyze(conn, db_name, fx_path, plan, only=None, columns=None,
             for (column, name), collected in fk_values.items():
                 value = vrow.get(column)
                 if value is not None and value != "":
-                    collected.setdefault(value, key)
+                    seen_value = collected.get(value)
+                    if seen_value is None:
+                        # First row carrying it: its key is the example. The
+                        # count is what the operator reads -- one orphan value
+                        # on 300 rows is a different problem from one on one.
+                        collected[value] = {"cheie": key, "numar": 1}
+                    else:
+                        seen_value["numar"] += 1
 
             if row_ok:
                 stats["de_scris"] += 1
@@ -791,7 +919,7 @@ def analyze(conn, db_name, fx_path, plan, only=None, columns=None,
                    else ", dintre care %d date cu zi/lună ambiguă" % ambiguous))
 
         _check_foreign_keys(conn, schema, table, fk_values, report, say,
-                            db_name, in_run, written_pks)
+                            db_name, in_run, written_pks, target_columns)
 
     return report
 
@@ -841,7 +969,7 @@ def _iter_table(fx_path, table_name, say):
 
 
 def _check_foreign_keys(conn, schema, table, fk_values, report, say,
-                        db_name, in_run, written_pks):
+                        db_name, in_run, written_pks, target_columns):
     """
     O interogare pe cheie straina, in loturi. Nu incarcam tabelul referit in
     memorie: pot fi nomenclatoare de zeci de mii de randuri.
@@ -850,6 +978,20 @@ def _check_foreign_keys(conn, schema, table, fk_values, report, say,
     inaintea acestuia in ordinea de scriere), o valoare care nu e inca pe tinta
     dar E printre randurile care se vor scrie NU lipseste: pe o baza goala
     absolut totul ar iesi «lipsa» altfel — exact pe dos.
+
+    Ten of the constraints point OUTSIDE the migrated set (Parteneri,
+    Clasificatii, Unitati). «Inlocuieste tot» cannot help there -- those parents
+    are neither emptied nor written -- so the probe below is the only answer, and
+    it is the same probe: `incoming` is simply None for them.
+
+    An orphan is then judged by the CHILD COLUMN, not by the table:
+
+      * the column accepts NULL -> the row is WRITTEN, with that column emptied.
+        The row is kept; only the link is lost. FORTABIL, one finding per row.
+        (Operator decision, 2026-08-22, replacing «skip the row» for this case.)
+      * the column is NOT NULL -> NULL is not available, so there is no way to
+        keep the row and nothing may be written. BLOCANT, with the column named.
+        FX_ORD_TBL.IdUnitate is the one that will meet this.
     """
     for fk in schema.foreign_keys.get(table.name, []):
         collected = fk_values.get((fk["coloana"], fk["nume"]))
@@ -868,6 +1010,11 @@ def _check_foreign_keys(conn, schema, table, fk_values, report, say,
                "" if incoming is None
                else "; se socotesc și rândurile scrise în aceeași rulare"))
 
+        # A parent whose key is AUTO_INCREMENT can hold no row 0, so a 0 in the
+        # child is an orphan whatever the probe answers -- including when this
+        # very run would write a 0 into the parent.
+        zero_is_orphan = schema.referenced_is_auto(fk)
+
         ref = "`%s`.`%s`" % (fk["schema_ref"], fk["tabel_ref"])
         values = list(collected.keys())
         present = set()
@@ -885,12 +1032,39 @@ def _check_foreign_keys(conn, schema, table, fk_values, report, say,
         finally:
             cur.close()
 
-        missing = [v for v in values
-                   if not _key_known(present, v)
-                   and not (incoming is not None and _key_known(incoming, v))]
-        if missing:
+        def _orphan(value):
+            if zero_is_orphan and _as_int(value) == 0:
+                return True
+            if _key_known(present, value):
+                return False
+            return not (incoming is not None and _key_known(incoming, value))
+
+        missing = [v for v in values if _orphan(v)]
+        if not missing:
+            continue
+
+        meta = target_columns.get(fk["coloana"]) or {}
+        rows = sum(collected[v]["numar"] for v in missing)
+        if meta.get("accepta_nul"):
+            report.null_fk.setdefault((table.name, fk["coloana"]), set()).update(missing)
+            for value in missing:
+                report.add(table.name, fk["coloana"], F_CHEIE_STRAINA,
+                           collected[value]["cheie"],
+                           "valoarea nu există în %s.%s — coloana acceptă NULL, "
+                           "deci rândul se scrie cu «%s» gol"
+                           % (fk["tabel_ref"], fk["coloana_ref"], fk["coloana"]),
+                           value, count=collected[value]["numar"])
+            say("«%s»: %d valori %s fără corespondent, scrise ca NULL."
+                % (table.name, rows, fk["coloana"]))
+        else:
             report.missing_fk.setdefault((table.name, fk["coloana"]), set()).update(missing)
             for value in missing:
-                report.add(table.name, fk["coloana"], F_CHEIE_STRAINA, collected[value],
-                           "valoarea nu există în %s.%s"
-                           % (fk["tabel_ref"], fk["coloana_ref"]), value)
+                report.add(table.name, fk["coloana"], F_CHEIE_STRAINA_OBLIGATORIE,
+                           collected[value]["cheie"],
+                           "valoarea nu există în %s.%s, iar «%s» nu acceptă NULL "
+                           "— rândul nu poate fi nici scris, nici golit"
+                           % (fk["tabel_ref"], fk["coloana_ref"], fk["coloana"]),
+                           value, count=collected[value]["numar"])
+            say("«%s»: %d rânduri au «%s» fără corespondent, iar coloana nu "
+                "acceptă NULL — blocant."
+                % (table.name, rows, fk["coloana"]))

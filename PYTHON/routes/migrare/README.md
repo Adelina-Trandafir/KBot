@@ -230,7 +230,39 @@ Analiza și scrierea primesc amândouă lista bifată, în câmpul `tabele`:
 * bifele se scriu **în ordinea trimisă** — migratorul lasă tabelele să fie
   rearanjate (săgeți sau tragere), iar acea ordine ESTE ordinea de scriere.
   Lipsa câmpului dă ordinea implicită, cu părinții înaintea copiilor;
-* un tabel care n-a fost **analizat** nu se poate scrie.
+* un tabel care n-a fost **analizat** nu se poate scrie;
+* **o ordine care pune un copil înaintea părintelui lui e refuzată** — vezi mai
+  jos.
+
+### Ordinea de scriere și cheile străine
+
+O cheie străină cere rândul părinte **prezent la INSERT**. Golirea părintelui
+întâi, în «Înlocuiește tot», nu ajută deloc: face eșecul sigur, nu îl evită.
+Asta a picat pe 21.08 — `FX_Rezervari.IDREV` are cheie străină pe `FX_DDF_REV`
+(`FX_Rezervari__FX_DDF_REV`), iar `FX_Rezervari` se scria pe poziția 4 și
+`FX_DDF_REV` pe 14: `1452`.
+
+Două schimbări, pe 22.08:
+
+* **ordinea implicită** mută perechea `FX_DDF` / `FX_DDF_REV` pe pozițiile 3 și
+  4, imediat după `FX_Angajamente` și `FX_Indicatori`. Nimic altceva nu se mută.
+  `FX_DDF` are nevoie doar de `FX_Angajamente`, iar `FX_DDF_REV` doar de
+  `FX_DDF`;
+* **analiza verifică ordinea pe care a trimis-o operatorul**, citind
+  constrângerile din `information_schema.KEY_COLUMN_USAGE`. Un copil scris
+  înaintea unui părinte **bifat și el** e o constatare **BLOCANT**:
+
+  ```
+  «FX_Rezervari» se scrie înaintea lui «FX_DDF_REV», dar depinde de el prin
+  «FX_Rezervari__FX_DDF_REV» (IDREV). Mută-l după el în lista de tabele.
+  ```
+
+  Se citește din bază, **nu** dintr-o listă din `tables.py`: constrângerea care
+  a picat rularea nici nu exista în copia de schemă pe care o aveam. O
+  constrângere adăugată în bază schimbă răspunsul fără nicio schimbare de cod.
+  `execute.run()` face aceeași verificare încă o dată, pe ordinea cererii de
+  rulare. Ordinea implicită e deci un punct de plecare bun, nu o promisiune pe
+  care se sprijină codul.
 
 Analiza mai primește și `coloane` — `{tabel: [coloane]}`, coloanele Access pe
 care operatorul vrea să le scrie. Un tabel absent din dicționar își păstrează
@@ -268,6 +300,46 @@ Corelate după nume, cele două id-uri ar intra fiecare în coloana celuilalt.
 Regulile stau în `tables.COLUMN_RENAMES` și se aplică **doar acolo unde ținta
 chiar are coloana pe care o numesc** — un tabel al cărui echivalent MariaDB
 n-a căpătat niciodată `IdClsfAcc` rămâne cu potrivirea simplă după nume.
+
+**Familia ORD — id-urile din Access SUNT id-urile de pe MariaDB** (decizia
+operatorului, 22.08). Pe MariaDB cheile familiei sunt coloanele cu `P` la
+coadă, iar ele sunt `AUTO_INCREMENT`; dar auto-increment-ul pornește doar când
+coloana **lipsește** din `INSERT`. Scrisă explicit, valoarea din Access intră
+cum e — exact ce fac deja `FX_DDF.IDDF` și `FX_DDF_REV.IDREV`, tot
+`AUTO_INCREMENT` amândouă, și de-aia ține lanțul DDF și nu ținea cel ORD. Fără
+hartă de id-uri, fără `lastrowid`, fără a doua trecere.
+
+| Access | MariaDB |
+|---|---|
+| `IDORD` | `IDORDP` |
+| `IDORDPART` | `IDORDPARTP` |
+| `IDORDTBL` | `IDORDTBLP` |
+| `IDORDDOC` | `IDORDDOCP` |
+| `IDORDATT` | `IDORDATTP` |
+
+Trei urmări, toate voite: coloana Access `IDORDP` (măsurată numai zerouri,
+144/144 pe `FX_ORD_PART`) **nu mai călătorește deloc**; legăturile către părinte
+supraviețuiesc fiindcă numerele supraviețuiesc; și upsert-ul lui `FX_ORD` începe
+să funcționeze — cheia lui adevărată e `IDORDP`, deci `ON DUPLICATE KEY UPDATE`
+are în sfârșit pe ce să se potrivească. Până acum nu avea: `tables.py` declara
+cheia `IDORD`, cea de pe MariaDB e `IDORDP`, iar `IDORD` n-are index unic — deci
+o a doua rulare «Adaugă/actualizează» insera din nou toate cele 38 de ordine.
+
+**O corelație eliberează potrivirea după nume pe care o înlocuiește.** Dacă
+`IDORD` intră în `IDORDP`, atunci coloana Access `IDORDP` nu mai are corelație:
+altfel două coloane din Access ar ajunge pe aceeași coloană de pe MariaDB, ceea
+ce oprește totul. Coloana care e ea însăși SURSA unei corelații e lăsată în pace
+(`IdClsf` e și revendicat de `IdClsfPY`, și redenumit în `IdClsfAcc`).
+
+Coloanele vechi de pe MariaDB (`FX_ORD.IDORD`, `COMMENT 'ACCESS'`, și
+perechile ei de pe copii) rămân astfel **negoale de nimeni**. Dacă vreuna e
+`NOT NULL` fără valoare implicită, analiza o numește ca `COLOANA_OBLIGATORIE`
+și **oprește rularea** — zgomotos, cu numele coloanei, înainte să se scrie ceva.
+
+> `primary_key` din `tables.py` e numele de pe **țintă**; `key_column` și
+> `access_key` sunt nume din **Access**. Pe familia ORD cele două chiar diferă,
+> ceea ce e nou. Rutarea citește rândul cu numele lui din Access, înainte de
+> orice corelație, iar `access_key` e numele sub care rândul apare în raport.
 
 `POST /api/migrare/tabele` întoarce, pe fiecare tabel, `coloane_tinta` (numele
 de pe MariaDB) și, pe fiecare coloană, `tinta` — corelația **propusă**.
@@ -441,14 +513,16 @@ Constatările analizei au două clase, și clasa e cea care aprinde butoanele:
 
 **BLOCANT** — tabel lipsă, coloană lipsă, tip greșit, depășire de lungime sau
 de interval, NULL într-o coloană `NOT NULL`, coloană obligatorie care nu ajunge
-în `INSERT` (`COLOANA_OBLIGATORIE`). Cât timp există una, **niciun**
+în `INSERT` (`COLOANA_OBLIGATORIE`), un copil scris înaintea părintelui lui
+(`ORDINE_TABELE`), cheie străină fără corespondent pe o coloană `NOT NULL`
+(`CHEIE_STRAINA_OBLIGATORIE`). Cât timp există una, **niciun**
 buton nu pornește; nici «Forțează rularea» nu trece peste ele, fiindcă acelea
 strică date, nu doar legături.
 
-**FORȚABIL** — cheie străină fără corespondent, cheie primară dublă în fișier,
-rând a cărui cheie nu există nicăieri în fișier. «Rulează» rămâne oprit,
-«Forțează rularea» pornește și **sare** peste rândurile vinovate — rămân în
-raport, nu ajung în baza de date.
+**FORȚABIL** — cheie primară dublă în fișier, rând a cărui cheie nu există
+nicăieri în fișier, cheie străină fără corespondent **pe o coloană care acceptă
+NULL**. «Rulează» rămâne oprit, «Forțează rularea» pornește și **sare** peste
+rândurile vinovate — rămân în raport, nu ajung în baza de date.
 
 O cheie străină spre un tabel scris **în aceeași rulare** se verifică pe
 reuniunea dintre rândurile țintei și rândurile pe care chiar această rulare le
@@ -457,6 +531,55 @@ dos. (Verificarea id-urilor `IDDF`/`IDREV` împotriva `FX_DDF`/`FX_DDF_REV` a
 fost SCOASĂ: tabelele acelea nu fac parte din setul migrat, deci pe o bază
 proaspătă sunt goale, iar verificarea marca totul și arunca rândurile la
 rularea forțată.)
+
+---
+
+## Cheile străine: orfanii
+
+O valoare de cheie străină fără părinte — nici pe țintă, nici printre rândurile
+pe care le scrie chiar această rulare — se judecă după **coloana copilului**, nu
+după tabel (decizia operatorului, 22.08):
+
+* **coloana acceptă NULL** → rândul se **scrie**, cu coloana aceea golită.
+  Rândul se păstrează; se pierde doar legătura. Constatare **FORȚABIL**, una pe
+  rând, cu tabelul, cheia, coloana și valoarea aruncată; o linie pe tabel în
+  jurnalul lucrării — `«FX_Rezervari»: 3 valori IDREV fără corespondent, scrise
+  ca NULL.` — și aceeași linie în `_99_final.txt` din dosarul de instrucțiuni;
+* **coloana e `NOT NULL`** → NULL nu e disponibil, deci rândul nu poate fi nici
+  scris, nici golit. Constatare **BLOCANT**
+  (`CHEIE_STRAINA_OBLIGATORIE`), cu coloana numită, și nu se scrie nimic.
+  `FX_ORD_TBL.IdUnitate` e cea care va întâlni asta.
+
+Un **`0`** e orfan oriunde cheia părintelui e `AUTO_INCREMENT`: un asemenea rând
+nu poate exista. (`FX_Rezervari.IDREV`, măsurat: 125 NULL, 0 zerouri, 34 reale.)
+
+### Chei străine care ies din setul migrat
+
+Zece dintre ele arată spre tabele pe care migrarea nu le atinge, iar
+«Înlocuiește tot» nu poate ajuta cu niciuna: părinții aceia nici nu se golesc,
+nici nu se scriu, deci **valorile trebuie să existe deja pe țintă**.
+
+```
+FX_DDF_REV_SA   IdPartener -> Parteneri   IdClsf -> Clasificatii   IdUnitate -> Unitati
+FX_DDF_REV_SB   IdPartener -> Parteneri   IdClsf -> Clasificatii   IdUnitate -> Unitati
+FX_DDF_REV_PRT  IdClsf -> Clasificatii
+FX_ORD_TBL      IdPartener -> Parteneri   IdClsf -> Clasificatii   IdUnitate -> Unitati
+```
+
+Se verifică pe rândurile țintei și atât — nu există «se va scrie în rularea
+asta» de adăugat. `FX_ORD_TBL.IdClsf` acceptă NULL, deci o clasificație
+nepotrivită devine NULL după regula de mai sus: rândul supraviețuiește,
+legătura nu. E o pierdere de înțeles adevărată, de-aia apare în raport, nu doar
+într-o linie de jurnal. Aici trebuie să fie corectă perechea
+`IdClsf` / `IdClsfPY`.
+
+`FX_ORD_TBL.IdUnitate` e `int(11) NOT NULL`, cheie străină spre
+`Unitati(IdUnitate)`, și **călătorește din Access** — nu se completează pe
+server. Arată a coloană de rutare și coloanele de rutare se debifează din
+obișnuință, dar fiind `NOT NULL` fără valoare implicită, debifarea ei oprește
+rularea și o numește (`COLOANA_OBLIGATORIE`). **Înainte de prima rulare
+adevărată: verificați că `Unitati` de pe țintă chiar conține id-urile de unitate
+pe care le poartă fișierul** — altfel toate rândurile `FX_ORD_TBL` pică deodată.
 
 Serverul verifică regula din nou, la `POST /api/migrare/rulare` și încă o dată
 în `execute.run()`. Interfața nu e singura pază.

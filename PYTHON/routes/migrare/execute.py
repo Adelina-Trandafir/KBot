@@ -108,6 +108,14 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
 
     schema = validate.TargetSchema(conn, db_name, [t.name for t in chosen])
     chosen_names = [t.name for t in chosen]
+    # The same rule the analysis reported, checked again here on the order THIS
+    # request sent: the analysis measured an arrangement, and nothing else stops
+    # a different one arriving at `rulare`. A foreign key needs the referenced
+    # row present at INSERT time, so a child before its parent cannot succeed.
+    disorder = validate.order_findings(schema, chosen_names, db_name)
+    if disorder:
+        raise ExecuteError(" ".join(
+            validate.order_message(*pair) for pair in disorder))
     # A table absent from the target is SKIPPED when nothing ticked depends on
     # it (the analysis applied the same rule); it stops the run only when a
     # ticked table's foreign key points at it. Writing cannot create tables.
@@ -164,6 +172,13 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
             missing = dict((column, values)
                            for (t, column), values in report.missing_fk.items()
                            if t == table.name)
+            # Orphan values on columns that ACCEPT NULL: the row is written and
+            # only the link is lost. Measured by the analysis, applied here --
+            # the same two dictionaries, and they never overlap.
+            nullable = dict((column, values)
+                            for (t, column), values in report.null_fk.items()
+                            if t == table.name)
+            nulled = {}
 
             # Only the columns BOTH sides have -- correlated by `rename` (the
             # by-name match, plus the operator's «Corelatii coloane») -- narrowed
@@ -221,10 +236,19 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
                 if dump is not None and changes:
                     dump.parsed(table.name, _row_key(vrow, pk_columns), changes)
 
+                # BEFORE the row is judged: the column accepts NULL, so the
+                # emptied value passes `check_value` on its own terms.
+                emptied = _null_orphans(vrow, nullable)
+
                 if _row_is_blocked(vrow, target_columns, pk_columns, seen_keys,
                                    missing, chosen_cols):
                     stats["sarite"] += 1
                     continue
+
+                # Counted only now: a row skipped for some OTHER reason was not
+                # «written with the column emptied», and the log line says it was.
+                for column in emptied:
+                    nulled[column] = nulled.get(column, 0) + 1
 
                 batch.append(tuple(vrow.get(c) for c in columns))
                 if len(batch) >= BATCH_ROWS:
@@ -237,6 +261,15 @@ def run(conn, db_name, fx_path, plan, report, force, only=None, replace=False,
             if batch:
                 _write(conn, db_name, table.name, columns, pk_columns, batch,
                        stats, dump=dump)
+
+            for column in sorted(nulled):
+                line = ("«%s»: %d valori %s fără corespondent, scrise ca NULL."
+                        % (table.name, nulled[column], column))
+                say(line)
+                if dump is not None:
+                    # In _99_final.txt too: the folder has to say what the rows
+                    # in the .sql files above it are missing.
+                    dump.note(line)
 
             if not replace:
                 # Un tabel incheiat ramane scris chiar daca urmatorul pica.
@@ -299,6 +332,30 @@ def _empty_tables(conn, db_name, table_names, say, dump=None):
         raise ExecuteError("Golirea tabelului a eșuat: %s" % exc)
     finally:
         cur.close()
+
+
+def _null_orphans(row, nullable):
+    """
+    Empty every foreign-key value the analysis found no parent for, on the
+    columns that accept NULL. The row is KEPT: only the link is lost.
+
+    Returns the columns it emptied, so the caller can count them AFTER the row
+    is known to survive -- a row skipped for another reason was not written with
+    anything emptied.
+
+    The values are matched the same way `_row_is_blocked` matches its own --
+    as they came and as an int -- because that is how the analysis collected
+    them.
+    """
+    emptied = []
+    for column, bad_values in nullable.items():
+        value = row.get(column)
+        if value is None:
+            continue
+        if value in bad_values or validate.as_int(value) in bad_values:
+            row[column] = None
+            emptied.append(column)
+    return emptied
 
 
 def _row_is_blocked(row, target_columns, pk_columns, seen_keys, missing,

@@ -351,16 +351,22 @@ def tabele_fisier():
             # case-insensitive («Cual» si «CUAL» sunt aceeasi coloana acolo).
             target_names = list(schema.columns.get(table.name, {}))
             target_lower = set(n.lower() for n in target_names)
-            pk_lower = set(p.lower() for p in
-                           (schema.primary_key.get(table.name) or [table.primary_key]))
+            pk_names = set(schema.primary_key.get(table.name)
+                           or [table.primary_key])
             access_names = [c["nume"] for c in accdb.columns(fx_path, table.name)]
             # Corelatia propusa: unu-la-unu dupa nume, cu exceptiile din
-            # tables.COLUMN_RENAMES (perechea IdClsf / IdClsfPY). Migratorul o
-            # arata in «Corelatii coloane» si o poate schimba rand cu rand.
+            # tables.COLUMN_RENAMES (perechea IdClsf / IdClsfPY, si cele cinci
+            # id-uri ale familiei ORD). Migratorul o arata in «Corelatii
+            # coloane» si o poate schimba rand cu rand.
             proposed = tables.default_correlations(access_names, target_names)
+            # «Cheie» se judeca pe TINTA corelatiei, nu pe numele din Access:
+            # pe familia ORD cheia de pe MariaDB e coloana cu P (`IDORDPARTP`),
+            # iar coloana Access care ajunge in ea se cheama altfel
+            # (`IDORDPART`). Potrivirea pe nume ar bifa acolo exact coloana
+            # gresita — cea care in Access e numai zerouri.
             cols = [{"nume": name,
                      "in_baza": name.lower() in target_lower,
-                     "cheie": name.lower() in pk_lower,
+                     "cheie": (proposed.get(name) or "") in pk_names,
                      "tinta": proposed.get(name) or ""}
                     for name in access_names]
             out.append({"nume": table.name, "exista": True, "randuri": rows,
