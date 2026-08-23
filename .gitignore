@@ -503,3 +503,5 @@ $RECYCLE.BIN/
 
 # schema_sync: fisierele .sql generate (output, nu sursa)
 schema_diff/
+/Avacont
+/MariaDB_Schema

@@ -151,3 +151,140 @@ Plus cele din §11 al planului ramase deschise: biblioteca MariaDB (recomandare:
 utilizatorului si a drepturilor.
 
 **Pasul se opreste aici, cum cere §12.3.**
+
+---
+
+# Revizia 1 — 23.08.2026, cu schema MariaDB reala
+
+Operatorul a pus `MariaDB_Schema/000_DEMO.sql` (84.779 B, 22.08.2026) si a raspuns la
+intrebarile care blocau. Golul principal semnalat mai sus — «schema reala MariaDB nu a fost
+citita» — e **inchis**: ambele laturi vin acum din sursa. `docs/MAPARE_NOMENCLATOARE.md` a
+fost rescris in intregime pe DDL real; nu mai contine nicio lista de coloane dedusa dintr-un
+`INSERT` de ruta Flask.
+
+## Deciziile operatorului (acum in §0 al livrabilului)
+
+| # | Ce | Decizia |
+|---|---|---|
+| D1 | `Clasificatii_Buget.An` | **2026**, scris fix. Transferul e **o singura data**, tot pentru 2026 |
+| D2 | Ce unitati se transfera | **operatorul alege `IdUnitate`** — selectie pe formular, nu «toate din DC» |
+| D3 | `ParteneriSI` | afara |
+| D4 | `FX_Salarii`, `FX_Receptii_Plati` | **afara din scopul MariaDB** — nu exista nici in `.accdb`, nici in schema. `FX_ORD_TBL.IDRP` e coloana orfana prin constructie |
+| D5 | `ClasificatiiV` / `RectificariV` | nu in aceasta felie |
+| D6 | `Avacont/` negitignorat | rezolvat de operator; `/MariaDB_Schema` la fel |
+
+D2 rezolva si intrebarea despre unitatile fara fisier FX (`cai` 110 si 114, `CaleForexe=NULL`):
+daca operatorul le alege, isi trec nomenclatoarele si nu au date `FX_*`.
+
+Confirmat din schema, nu intrebat: **`AVACONT_SURSA` are doar tabele** — dump-ul nu contine
+nicio vedere, niciun declansator, nicio rutina (era §11 Q5).
+
+## Constatari noi, din schema
+
+**F6 — `000_DEMO` NU e goala, si asta poate fi o re-sincronizare, nu o prima migrare.**
+Cea mai grea constatare din tot pasul. Semnele `AUTO_INCREMENT`: `Clasificatii` 1497,
+`Parteneri` 7680, `FX_ORD` 134, `FX_ORD_TBL` 891, `FX_ORD_DOC` 719, `FX_ORD_PART` 402,
+`FX_DDF` 65, `FX_DDF_REV` 109. Puse langa valorile din Access: `Clasificatii.IdClsfPY`
+1354–1373, `Parteneri.IdPartener` 7605–7621, `FX_ORD.IDORDP` 117–123,
+`FX_ORD_TBL.IDORDTBLP` 430–444 — **toate INAUNTRUL intervalelor tintei**. Nu sunt id-uri
+moarte de pe un server scos din uz; sunt id-uri VII pe acesta. Unitatea a mai fost
+sincronizata in `000_DEMO`, iar fisierul Access carauseste inapoi rezultatul acelei
+sincronizari in coloanele-oglinda. Doua urmari: optiunea (A) scrie `FX_ORD.IDORD` 1..17 in
+cheia `IDORDP` si aterizeaza pe **randuri existente** 1..17, pe care `ON DUPLICATE KEY UPDATE`
+le suprascrie (la fel `FX_DDF.IDDF`=33 si `FX_DDF_REV.IDREV`=44..47); si refuzul din §4 pasul 4
+al planului se declanseaza imediat, fiindca fiecare tabel din scop are randuri.
+
+**Cinci chei straine spre ALTA baza de date.** `Clasificatii` are sase constrangeri, iar cinci
+arata spre `AVACONT_COMUN`: `ClsfE`▸`DefaClsfE`, `ClsfF`▸`DefaClsfF`, `Titlu`▸`DefaTitlu`,
+`SS`▸`DefaSursaSector` (toate patru pe coloane **generate**) si `Articol`▸`DefaArticol` (pe o
+coloana scrisa). Deci un rand de clasificatie e refuzat cu `1452` daca cele cinci valori nu
+exista in dictionarele din `AVACONT_COMUN` — iar patru dintre ele nu sunt scrise de migrator
+si nu pot fi privite inainte de INSERT, fiindca ies din `concat`/`left`/`replace` peste ce
+scrie. Planul nu are aceasta poarta. Si `CREATE DATABASE` din `AVACONT_SURSA` **nu ajunge**:
+`AVACONT_COMUN` e alta baza si nu e creata de bucla aceea.
+
+**Noua coloane generate pe `Clasificatii`, una pe `Clasificatii_Buget`.** `Clsf`, `Titlu`,
+`ClsfSal`, `ClsfF`, `ClsfE`, `ClsfX`, `Sector`, `Sursa`, `SS` sunt
+`GENERATED ALWAYS … PERSISTENT`, la fel `Clasificatii_Buget.TOTAL`. Toate au omonim in Access.
+Le nimerisem ✗ in revizia 0 fiindca ruta nu le scria; motivul adevarat e ca **nu POT fi
+scrise** — un INSERT peste ele e eroare, nu ignorare.
+
+**`Clasificatii` nu are cheie unica pe `(IdClsfAcc, IdUnitate)`.** Singurul index unic e
+`PRIMARY KEY (IDClsf)`; `IdClsfAcc` si `IdUnitate` au fiecare index NEunic si nu exista
+compus. Deci `ON DUPLICATE KEY UPDATE` — regula §7 a planului, «pe fiecare tabel» — **nu are
+pe ce sa se potriveasca aici**, iar a doua rulare insereaza inca 54 de clasificatii cu
+`IDClsf` noi, si harta de rezolvare arata tacut spre ultimele copii. E singurul tabel din set
+in situatia asta: `Clasificatii_Buget` `(IdClsf, An)`, `Clasificatii_Rectificari`
+`(IdClsf, Data, Document)`, `Parteneri` `(IdUnitate, CodPartener)` si `Parteneri_Coduri`
+`(IdPartener, IdClsf)` isi au toate cheia.
+
+**Ingustari de latime pe `Clasificatii`.** Access are `WChar(50)` pe Capitol / Subcapitol /
+Articol / Alineat; tinta are `varchar(5)`, `varchar(5)`, `varchar(5)`, `varchar(2)`. Datele de
+azi incap fix (`65.01`, `05.00`, `10.01`, `01`), dar nimic nu impune asta pe latura Access, iar
+in mod strict o valoare prea lunga e `1406`. Paza §5.3 a planului prinde doar coloanele
+OBLIGATORII LIPSA, nu valorile PREA LARGI. La fel `Denumire`: nulabil in Access, **`NOT NULL`**
+pe tinta.
+
+**`Unitati` e o preconditie, nu o tinta.** `IdUnitate` e cheie primara **fara**
+`AUTO_INCREMENT`, iar `Clasificatii`, `Clasificatii_Buget`, `Parteneri` si `FX_ORD_TBL` au
+toate cheie straina spre ea. Randul unitatii alese trebuie sa EXISTE inainte de primul INSERT
+de nomenclator, altfel `1452`. Nimic din plan nu scrie `Unitati`.
+
+**`Parteneri.Ascuns` are tinta.** In revizia 0 il pusesem ✗ fiindca ruta Flask nu-l scrie;
+schema arata `Ascuns tinyint(4) NULL`. Ar trebui sa calatoreasca.
+
+## Corectii datorate lui `MAPARE_ACCESS_MARIADB.md` — acum SAPTE
+
+Fisierul tot nu a fost editat (§12.3). Un punct s-a schimbat fata de revizia 0 si doua sunt
+noi:
+
+- **#3 corectat fata de revizia 0.** Spusesem «e nevoie de conversie pe latura ORD», presupunand
+  ca tinta e `int`. Nu e: `FX_ORD.CUAL` e `varchar(255)` pe MariaDB si `WChar(255)` in Access.
+  Deci Regula 2 e gresita **pe amandoua laturile** pentru `FX_ORD`, iar text ▸ text **nu cere
+  nicio conversie azi**. Schimbarea e insa tot datorata (§5 al acelui fisier), si abia atunci
+  apare conversia. Conteaza: decide ce cod se scrie.
+- **#6 NOU si blocant.** §5 al acelui fisier spune apasat «**`IdClsfAcc` nu mai blocheaza
+  nimic** … pus sa accepte NULL pe 22.08». **Fals in schema din 22.08**:
+  `FX_DDF_REV_SA.IdClsfAcc` si `FX_DDF_REV_SB.IdClsfAcc` sunt amandoua `int(11) NOT NULL`,
+  fara implicit, fara `auto_increment` — deci chiar paza §5.3 a planului opreste rularea si le
+  numeste. `FX_ORD_TBL.IdClsfAcc` chiar e nulabil.
+- **#7 NOU.** `FX_ORD_PDF` **exista** in schema (gol); §2 al acelui fisier il numeste «planned
+  table, does not exist yet».
+- Neschimbate: #1 `ESpeciala` absent din Access (pe MariaDB e `tinyint(1) NULL DEFAULT 0`, deci
+  pur si simplu nu calatoreste), #2 `FX_ORD` citit din sursa, #4 `FX_ORD.IDORDP` nu e 0 — si
+  acum se stie si de ce conteaza (F6), #5 `CodAI`.
+
+## Fisiere atinse in revizia 1
+
+| Fisier | Ce |
+|---|---|
+| `docs/MAPARE_NOMENCLATOARE.md` | rescris integral pe DDL real; §0 decizii, F6, §3.1/§3.2/§3.3, §7 `Unitati`, §9 sapte corectii, §10 sase intrebari |
+| `docs/worklog/SLICE-0045-01-descoperire-nomenclatoare.md` | aceasta sectiune |
+| `docs/worklog/KBOT_STATUS.md` | randul 0045-01 + Current focus, aduse la zi |
+
+Cod: **niciunul**. `KBot.sln`, `src/KBot.Migrator` si spike-ul, neatinse. Pasul e tot
+descoperire.
+
+## Ce a ramas deschis
+
+Cinci, in §10 al livrabilului, plus una nedecisa:
+
+1. **Q1 — `000_DEMO` are deja datele acestei unitati (F6).** Ce face o rulare? Se goleste
+   tinta si id-urile Access sunt autoritatea; sau tinta e o baza cu adevarat noua si `000_DEMO`
+   a fost doar sablonul de schema; sau optiunea (A) e gresita pentru o tinta populata si
+   id-urile trebuie remapate. Decide si §11 Q4 al planului.
+2. **Q2 — `Clasificatii` fara cheie unica pe `(IdClsfAcc, IdUnitate)`.** Se adauga indexul
+   unic, sau se accepta ca tabelul e doar-inserare si rularea e exact o data?
+3. **Q3 — `IdClsfAcc` `NOT NULL` pe SA si SB.** Se scrie `IdClsf`-ul Access in ele (ceea ce
+   inseamna chiar `IdClsfAcc` pe `Clasificatii`, deci ar fi consecvent), sau se fac nulabile
+   cum spune §5?
+4. **Q4 — `ParteneriAng` ▸ `Parteneri_Coduri` in scop?** Ambele capete exista, se potrivesc,
+   tinta are cheia unica de care upsert-ul are nevoie. 2 randuri in fisierul acestei unitati.
+5. **Q5 — `Unitati`**: popularea ei e in scopul uneltei sau e o preconditie pregatita de
+   operator? Aceeasi intrebare cu §11 Q6 (utilizator si drepturi pentru un DC nou).
+6. **Q6 — biblioteca MariaDB**, inca nedecisa. Recomandarea ramane `MySqlConnector`.
+
+Neverificat, in §11 al livrabilului: schema e un instantaneu fara date (semnele
+`AUTO_INCREMENT` sunt maxime, nu numaratori — confirma pe serverul viu inainte de a actiona pe
+Q1); **`AVACONT_COMUN` nu a fost vazuta deloc**, desi cinci chei straine arata spre ea si
+continutul ei decide daca un rand de clasificatie e primit.
