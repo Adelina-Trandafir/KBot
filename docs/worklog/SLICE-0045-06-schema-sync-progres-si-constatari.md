@@ -26,14 +26,23 @@ apare exact cand se aplica** — dupa o verificare care a gasit o baza fara tabe
 vede niciodata altfel. E si mai corect ca flux: nu e un pas al migrarii, e leacul unei singure
 constatari.
 
-## 2. schema_sync pentru o baza existenta dar goala
+## 2. schema_sync pentru o baza existenta dar goala — PE SERVER
 
-`Schema/SchemaSyncRunner.vb` — nou. Ruleaza scriptul Python care construieste structura.
+`Schema/SchemaSyncRunner.vb` — nou. Ruleaza scriptul Python care construieste structura,
+**pe VPS, prin SSH**. Niciodata pe masina operatorului.
+
+> **Corectie fata de prima scriere a acestui pas.** Prima varianta pornea venv-ul local al
+> depozitului. **Gresit, si operatorul a spus-o direct:** scriptul trebuie sa ruleze pe server.
+> Motivul e mai adanc decat comoditatea — proiectul Python **desfasurat pe VPS**, cu `config.py`
+> al lui si interpretorul lui, e cel care are voie sa modifice bazele. Un exemplar local pornit
+> peste aceleasi baze ar fi **alt cod** indreptat spre acelasi server: alta versiune, alta
+> configurare, alte dependinte. Diferenta nu se vede pana nu strica ceva.
 
 Drumul intreg: `Verifier` gaseste ca baza-tinta exista dar are **zero tabele** → constatare
 noua **`BAZA_FARA_TABELE`** (Blocant) → `VerifyAsync` o vede si cheama `OfferSchemaSyncAsync`
-→ intrebare in romana → se ruleaza scriptul cu iesirea lui **linie cu linie in jurnalul
-rularii** (`   | ` pentru stdout, `   ! ` pentru stderr) → **verificarea se reia singura**.
+→ intrebare in romana, care **numeste serverul** → se lanseaza `ssh.exe` cu iesirea scriptului
+**linie cu linie in jurnalul rularii** (`   | ` pentru stdout, `   ! ` pentru stderr) →
+**verificarea se reia singura**.
 
 Constatarea e deliberat **distincta de `TABEL_LIPSA`**: un tabel lipsa e o schema care a
 derivat, dar ZERO tabele e o baza pe care cineva a creat-o goala, si are alt leac.
@@ -42,40 +51,73 @@ Reluarea se face cu `offerSchemaSync:=False`. Daca scriptul raporteaza succes da
 nimic, a doua trecere **spune o data si se opreste**, in loc sa ofere la nesfarsit aceeasi
 rulare.
 
-### Doua abateri de la comanda primita, amandoua consemnate
+### Comanda: ce s-a pastrat si ce s-a adaugat
 
 Comanda din observatia operatorului era
 `python3 -m routes.schema_sync.schema_sync --mode FORCE --targets [chosen_Dc]`.
-Sablonul implicit are **doua diferente**, si amandoua sunt necesare:
+**`python3` ramane exact asa** — e grafia corecta pe partea cealalta, care e Linux. Sablonul
+implicit adauga doua lucruri, si amandoua sunt necesare:
 
-1. **`--run` e adaugat si trebuie sa ramana.** Fara el `schema_sync.py` ajunge la
-   `_ask("Executați acum?")` si **citeste de la stdin**. Pornit dintr-un formular cu fluxurile
-   redirectate, citirea aia da EOF — scriptul ori abandoneaza, ori sta acolo la infinit in timp
-   ce formularul asteapta un proces care asteapta un om. Cu `--run` e neinteractiv, singura
-   forma care poate merge de aici. (In plus stdin se inchide imediat dupa `Start`, ca o
-   versiune viitoare care totusi intreaba sa pice repede, nu sa blocheze formularul.)
-2. **`python3` e o grafie de Linux.** Pe parcul asta interpretorul care are dependintele e venv-ul
-   depozitului, `PYTHON\.venv\Scripts\python.exe`, iar modulul `routes.schema_sync.schema_sync`
-   se rezolva doar cu dosarul de lucru pe `PYTHON\`.
+1. **`--run`, care trebuie sa ramana.** Fara el `schema_sync.py` ajunge la
+   `_ask("Executați acum?")` si **citeste de la stdin**. Pe un canal SSH neinteractiv citirea
+   aia da EOF — scriptul ori abandoneaza, ori sta acolo la infinit in timp ce formularul
+   asteapta un proces care asteapta un om. (In plus stdin se inchide imediat dupa `Start`, si
+   clientul primeste `-n`, ca sa nu citeasca fluxul nostru deloc.)
+2. **`cd` catre radacina proiectului de pe server.** Modulul `routes.schema_sync.schema_sync`
+   se rezolva doar de acolo. Dosarul din implicit e un **substituent** — nimeni din depozit nu
+   stie unde sta proiectul pe VPS.
 
-Amandoua sunt **setari, nu constante** (`pythonExecutable`, `pythonWorkingFolder`,
-`schemaSyncArguments` in `migrator-settings.json`), deci un operator cu alta asezare le poate
-muta fara recompilare. Implicitul se **ghiceste**: `GuessPythonFolder` urca pana la sapte
-nivele de la executabil cautand `PYTHON\routes\schema_sync` (urca in loc sa presupuna o
-adancime fixa, fiindca aplicatia ruleaza si din `bin\Debug\net8.0-windows`, si din dosarul
-instalat), iar `GuessPythonExecutable` prefera venv-ul.
+### Cele patru reguli ale conexiunii
 
-`Validate` verifica interpretorul si dosarul **inainte** de pornire, ca o configuratie gresita
-sa fie spusa in romana, nu ca eroare Win32.
+- **`BatchMode=yes`** — jumatatea SSH a aceleiasi reguli ca `--run`: clientul **pica** in loc
+  sa ceara o parola sau o fraza de acces. O intrebare nu poate fi raspunsa dintr-un formular,
+  deci singura alternativa la esec ar fi blocarea. Inseamna si ca **autentificarea e pe CHEIE**:
+  unealta nu cere, nu tasteaza, nu pastreaza si nu trimite nicio parola.
+- **`StrictHostKeyChecking` ramane pe implicit**, nu pe `accept-new`. O unealta de migrare nu
+  are ce cauta in rolul de a decide tacut ca are incredere intr-un server pe care nu l-a mai
+  vazut. Cu `BatchMode=yes` o gazda necunoscuta pica repede, iar `HostKeyHint()` ii spune
+  operatorului sa se conecteze o data de mana si sa accepte el amprenta.
+- **`IdentitiesOnly=yes`** cand e data o cheie — altfel un agent poate oferi intai altele si
+  serverul poate rupe conexiunea pentru prea multe incercari.
+- **Codul 255 e numit explicit** in jurnal SI in caseta: vine de la CLIENTUL SSH, nu de la
+  script, deci scriptul nu a pornit. Fara asta operatorul ar cauta pe server urmele unei rulari
+  care nu a existat.
 
-`PYTHONIOENCODING=utf-8` e pus pe proces: partea Python scrie romana cu diacritice, si fara el
-ar ajunge mojibake in jurnal pe o masina a carei pagina de cod a consolei nu e UTF-8.
+### Doua lucruri de siguranta
 
-Oprirea omoara **arborele de procese**, nu doar procesul lansat.
+- **Numele DC-ului e verificat cu o lista alba** (`^[A-Za-z0-9_]+$`) inainte sa intre in
+  comanda de pe server. Asta e **singurul loc** in care o data citita dintr-un fisier Access
+  trece intr-un interpretor de comenzi de pe alta masina; un DC vine din `cai.DC`, e data de
+  operator, nu constanta, iar un nume cu accent grav, punct-si-virgula sau `$(` **ar rula ca
+  o comanda pe server**. Verificat, nu escapat — orice DC real arata ca `000_DEMO`, deci nu se
+  refuza nimic legitim.
+- **Argumentele se dau prin `ArgumentList`, nu ca un sir concatenat**, ca sa plece comanda
+  la distanta ca **un singur argument** desi are in ea spatii, punct-si-virgula si ghilimele.
+
+`Validate` verifica clientul, tinta, cheia si portul **inainte** de pornire, ca o configurare
+gresita sa fie spusa in romana, nu ca eroare Win32. Dosarul **de pe server** nu poate fi
+verificat de aici — un `cd` gresit se vede ca «No such file or directory» in jurnal, imediat si
+zgomotos, la prima rulare.
+
+`PYTHONIOENCODING=utf-8` se pune **pe latura cealalta** (`export … ; comanda`), fiindca partea
+Python scrie romana cu diacritice si fara el ar ajunge mojibake ori de cate ori locala
+serverului nu e UTF-8. E pus de cod, nu lasat in setare, ca un operator care editeaza comanda
+sa nu-l poata scapa din greseala.
+
+Oprirea omoara **arborele de procese** al clientului. Mesajul spune «se inchide conexiunea
+SSH», nu «se opreste schema_sync», fiindca **asta e adevarul**: ce face scriptul de pe server
+dupa ce cade canalul e treaba serverului. O schema aplicata pe jumatate e exact ce cauta
+verificarea care urmeaza.
+
+**Setarile** (`sshExecutable`, `sshTarget`, `sshKeyFile`, `sshPort`, `schemaSyncRemoteCommand`)
+stau in `migrator-settings.json`. **Se ghiceste doar CLIENTUL** — `ssh.exe` e parte fixa a
+Windows-ului de la 10 incoace, deci acolo exista un raspuns corect. Serverul, cheia si dosarul
+de pe server **nu se ghicesc deloc**: niciunul nu e scris nicaieri in depozit, iar o inventie
+plauzibila e mai rea decat un camp gol, care macar spune ca e gol.
 
 **Nicio parola nu ajunge la script si niciuna nu apare pe linia de comanda** — scriptul isi ia
-singur configurarea de pe latura Python. Linia de comanda **se scrie in jurnal**, tocmai fiindca
-nu poarta nicio acreditare.
+singur configurarea din `config.py`-ul serverului. Tocmai de aceea linia de comanda **se scrie
+in jurnal**: nu poarta nicio acreditare.
 
 ## 3. Bara de progres se misca si la verificare
 
@@ -122,6 +164,13 @@ Randul se ia tot din `Tag`, nu din indice.
 
 ## Ce ramane nedovedit
 
-Nimic din pasul asta nu a fost vazut pe ecran si niciun `schema_sync` nu a fost rulat din
-formular. `dotnet build KBot.sln` — **0 erori**. Fara teste automate si fara pas de regresie,
-la cererea explicita a operatorului (si conform §9 al planului).
+Nimic din pasul asta nu a fost vazut pe ecran. **Niciun `ssh` nu a fost lansat, nicio
+conexiune la VPS nu a fost deschisa, `schema_sync` nu a fost rulat niciodata din formular** —
+si nici nu putea fi: `sshTarget` e gol implicit, fiindca adresa serverului nu e scrisa nicaieri
+in depozit. Prima rulare reala are deci de dovedit patru lucruri deodata: ca `sshTarget` si
+cheia sunt bune, ca amprenta gazdei e deja acceptata (altfel cod 255), ca dosarul din
+`schemaSyncRemoteCommand` chiar exista pe server, si ca `python3` de acolo vede modulul.
+Esecurile sunt in ordinea asta si toate se citesc din jurnal.
+
+`dotnet build KBot.sln` — **0 erori**. Fara teste automate si fara pas de regresie, la cererea
+explicita a operatorului (si conform §9 al planului).

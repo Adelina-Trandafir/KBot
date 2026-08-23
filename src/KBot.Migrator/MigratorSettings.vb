@@ -51,33 +51,53 @@ Public NotInheritable Class MigratorSettings
     <JsonPropertyName("templateDatabase")>
     Public Property TemplateDatabase As String = "AVACONT_SURSA"
 
-    ''' <summary>The Python interpreter that runs schema_sync.</summary>
+    ' ---- schema_sync, which runs ON THE SERVER over SSH -----------------------------------
+    '
+    ' The Python project lives on the VPS and the deployed copy there is the one allowed to
+    ' alter the databases, so none of these describe anything on the operator's machine except
+    ' the SSH client itself. Authentication is by KEY - see SchemaSyncRunner for why a password
+    ' cannot work here even if someone wanted one.
+
+    ''' <summary>The SSH client. A bare name is resolved from PATH.</summary>
+    <JsonPropertyName("sshExecutable")>
+    Public Property SshExecutable As String = String.Empty
+
+    ''' <summary>The server, written as <c>user@host</c>.</summary>
     ''' <remarks>
-    ''' Not "python3": that is a Linux spelling, and the interpreter that carries the
-    ''' dependencies on this estate is the repository venv.
+    ''' Empty by default and deliberately NOT guessed: the address of the production server is
+    ''' not written down anywhere in this repository, and inventing a plausible one is how a
+    ''' tool ends up pointed at the wrong machine.
     ''' </remarks>
-    <JsonPropertyName("pythonExecutable")>
-    Public Property PythonExecutable As String = String.Empty
+    <JsonPropertyName("sshTarget")>
+    Public Property SshTarget As String = String.Empty
+
+    ''' <summary>The private key file. Empty means "whatever ssh would use by default".</summary>
+    <JsonPropertyName("sshKeyFile")>
+    Public Property SshKeyFile As String = String.Empty
+
+    <JsonPropertyName("sshPort")>
+    Public Property SshPort As Integer = 22
 
     ''' <summary>
-    ''' The folder schema_sync is launched from - the repository's <c>PYTHON</c> folder.
+    ''' The command run on the SERVER. <c>{dc}</c> is replaced with the chosen DC.
     ''' </summary>
     ''' <remarks>
-    ''' The module path <c>routes.schema_sync.schema_sync</c> only resolves from there.
-    ''' </remarks>
-    <JsonPropertyName("pythonWorkingFolder")>
-    Public Property PythonWorkingFolder As String = String.Empty
-
-    ''' <summary>
-    ''' The schema_sync argument template. <c>{dc}</c> is replaced with the chosen DC.
-    ''' </summary>
-    ''' <remarks>
+    ''' <para>
+    ''' The folder in the default is a PLACEHOLDER - only the operator knows where the project
+    ''' sits on the server, it cannot be checked from here, and a wrong one shows up as
+    ''' «No such file or directory» on the first run. The <c>cd</c> itself is not optional:
+    ''' the module path <c>routes.schema_sync.schema_sync</c> only resolves from the project
+    ''' root.
+    ''' </para>
+    ''' <para>
     ''' <c>--run</c> is deliberate and must stay: without it the script asks
-    ''' «Executați acum?» on stdin, which cannot be answered from a form.
+    ''' «Executați acum?» on stdin, which cannot be answered over a non-interactive channel.
+    ''' </para>
     ''' </remarks>
-    <JsonPropertyName("schemaSyncArguments")>
-    Public Property SchemaSyncArguments As String =
-        "-m routes.schema_sync.schema_sync --mode FORCE --targets {dc} --run"
+    <JsonPropertyName("schemaSyncRemoteCommand")>
+    Public Property SchemaSyncRemoteCommand As String =
+        "cd /var/www/AVACONT-PY && python3 -m routes.schema_sync.schema_sync " &
+        "--mode FORCE --targets {dc} --run"
 
     ''' <summary>Reads the settings file, or returns defaults when there is none.</summary>
     Public Shared Function Load() As MigratorSettings
@@ -108,44 +128,29 @@ Public NotInheritable Class MigratorSettings
         Dim settings As New MigratorSettings()
         settings.RegistryPath = "C:\AVACONT\cale.accdb"
         settings.JournalFolder = LogPaths.Combine("Migrare")
-        settings.PythonWorkingFolder = GuessPythonFolder()
-        settings.PythonExecutable = GuessPythonExecutable(settings.PythonWorkingFolder)
+        settings.SshExecutable = GuessSshExecutable()
         Return settings
     End Function
 
     ''' <summary>
-    ''' Walks up from the executable looking for the repository's <c>PYTHON</c> folder.
+    ''' Finds the SSH client that ships with Windows.
     ''' </summary>
     ''' <remarks>
-    ''' A guess, and only a starting value - the operator can point it anywhere. It walks up
-    ''' rather than assuming a fixed depth because the app runs from bin\Debug\net8.0-windows
-    ''' during development and from the install folder afterwards.
+    ''' Only the CLIENT is guessed - it is a fixed part of the operating system since Windows
+    ''' 10, so there is a right answer. The server, the key and the remote folder are not
+    ''' guessed at all: none of them is recorded anywhere in this repository, and a plausible
+    ''' invention would be worse than an empty field, which at least says so.
     ''' </remarks>
-    Private Shared Function GuessPythonFolder() As String
+    Private Shared Function GuessSshExecutable() As String
         Try
-            Dim folder As New DirectoryInfo(AppContext.BaseDirectory)
-            For depth = 0 To 7
-                If folder Is Nothing Then Exit For
-                Dim candidate = Path.Combine(folder.FullName, "PYTHON")
-                If Directory.Exists(Path.Combine(candidate, "routes", "schema_sync")) Then Return candidate
-                folder = folder.Parent
-            Next
+            Dim shipped = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.System), "OpenSSH", "ssh.exe")
+            If File.Exists(shipped) Then Return shipped
         Catch ex As Exception
-            GlobalErrorLog.Write("MigratorSettings.GuessPythonFolder", ex)
+            GlobalErrorLog.Write("MigratorSettings.GuessSshExecutable", ex)
         End Try
-        Return String.Empty
-    End Function
-
-    Private Shared Function GuessPythonExecutable(pythonFolder As String) As String
-        Try
-            If pythonFolder.Length > 0 Then
-                Dim venv = Path.Combine(pythonFolder, ".venv", "Scripts", "python.exe")
-                If File.Exists(venv) Then Return venv
-            End If
-        Catch ex As Exception
-            GlobalErrorLog.Write("MigratorSettings.GuessPythonExecutable", ex)
-        End Try
-        Return String.Empty
+        ' Left to PATH. Validate() accepts a bare name for exactly this case.
+        Return "ssh.exe"
     End Function
 
     Private Shared Function SettingsPath() As String

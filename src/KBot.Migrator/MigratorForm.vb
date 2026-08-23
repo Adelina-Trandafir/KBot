@@ -311,7 +311,7 @@ Public Class MigratorForm
     ' ---- schema_sync ------------------------------------------------------------------------
 
     ''' <summary>
-    ''' Offers to build an empty target database's structure, then verifies again.
+    ''' Offers to build an empty target database's structure ON THE SERVER, then verifies again.
     ''' </summary>
     ''' <remarks>
     ''' Deliberately a prompt rather than a button: the form's layout is the operator's, and
@@ -320,25 +320,27 @@ Public Class MigratorForm
     ''' </remarks>
     Private Async Function OfferSchemaSyncAsync(dc As String) As Task
         Dim runner As New SchemaSyncRunner(
-            _settings.PythonExecutable, _settings.PythonWorkingFolder,
-            _settings.SchemaSyncArguments, AddressOf SayFromWorker)
+            _settings.SshExecutable, _settings.SshTarget, _settings.SshKeyFile,
+            _settings.SshPort, _settings.SchemaSyncRemoteCommand, AddressOf SayFromWorker)
 
         Dim reason As String = Nothing
         If Not runner.Validate(reason) Then
-            Warn("Structura bazei ar putea fi construită cu «schema_sync», dar configurația " &
-                 "nu permite pornirea lui." & Environment.NewLine & Environment.NewLine & reason &
+            Warn("Structura bazei ar putea fi construită pe server cu «schema_sync», dar " &
+                 "configurația nu permite pornirea lui." &
+                 Environment.NewLine & Environment.NewLine & reason &
                  Environment.NewLine & Environment.NewLine &
-                 "Se corectează în «migrator-settings.json», lângă executabil: " &
-                 "«pythonExecutable», «pythonWorkingFolder», «schemaSyncArguments».")
+                 "Se corectează în «migrator-settings.json», lângă executabil: «sshTarget», " &
+                 "«sshKeyFile», «sshPort», «schemaSyncRemoteCommand».")
             Return
         End If
 
         Dim answer = MessageBox.Show(
             $"Baza «{dc}» există, dar nu are niciun tabel." & Environment.NewLine & Environment.NewLine &
-            "Structura poate fi construită acum cu «schema_sync», după «" &
-            _settings.TemplateDatabase & "»." & Environment.NewLine & Environment.NewLine &
+            "Structura poate fi construită acum rulând «schema_sync» PE SERVER (" &
+            _settings.SshTarget & "), după «" & _settings.TemplateDatabase & "»." &
+            Environment.NewLine & Environment.NewLine &
             "După aceea verificarea se reia automat." & Environment.NewLine & Environment.NewLine &
-            "Rulați «schema_sync»?",
+            "Rulați «schema_sync» pe server?",
             "Bază fără tabele", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
         If answer <> DialogResult.Yes Then
             Say("schema_sync nu a fost pornit. Baza rămâne fără tabele.")
@@ -368,8 +370,17 @@ Public Class MigratorForm
         If result Is Nothing Then Return
 
         If Not result.Succeeded Then
+            ' 255 means the SSH client failed, so the script never started - a different
+            ' problem, in a different place, and worth saying so in the box and not only in
+            ' the log.
+            Dim extra = If(result.ExitCode = 255,
+                           Environment.NewLine & Environment.NewLine &
+                           "Codul 255 vine de la clientul SSH: conexiunea sau autentificarea " &
+                           "a eșuat, deci scriptul nu a pornit pe server." &
+                           Environment.NewLine & Environment.NewLine & runner.HostKeyHint(),
+                           String.Empty)
             Warn($"«schema_sync» s-a încheiat cu codul {result.ExitCode}." & Environment.NewLine &
-                 Environment.NewLine & "Ieșirea completă este în jurnalul de mai jos.")
+                 Environment.NewLine & "Ieșirea completă este în jurnalul de mai jos." & extra)
             Return
         End If
 
