@@ -54,10 +54,40 @@ Recorded so nobody re-derives them. Operator's answers to §9 of the first revis
 | D4 | `FX_Salarii`, `FX_Receptii_Plati` | **Out of MariaDB's scope entirely** — they exist in neither the `.accdb` nor the schema. Drop both from the §6 write order. `FX_ORD_TBL.IDRP` is therefore **an orphan column by construction** and travels as NULL |
 | D5 | `ClasificatiiV` / `RectificariV` (venituri) | **Not in this slice** |
 | D6 | `Avacont/` untracked but not gitignored | **Done** — added to `.gitignore`, along with `/MariaDB_Schema` |
+| D7 | `000_DEMO` already holds rows; where does a run write? | **A brand-new empty database**, created from `AVACONT_SURSA` per plan §4. `000_DEMO` was only ever the schema template. **Option (A) is therefore safe** — nothing pre-exists to collide with, and the Access ids stay authoritative. F6 below is retained as the reason, not as a live hazard |
+| D8 | `Clasificatii` has no unique key for its upsert (§3.2) | **Insert-only, run exactly once.** No schema change. The tool **refuses to run** when the target's `Clasificatii` already holds rows for a selected unit, so a second run is impossible rather than silently duplicating |
+| D9 | `IdClsfAcc` is `NOT NULL` on `FX_DDF_REV_SA`/`_SB` (§9 #6) | **Write the Access `IdClsf` into it.** That is exactly what `IdClsfAcc` means on `Clasificatii`, so it stays consistent, needs no server change, and the column is being retired anyway |
+| D10 | MariaDB client library | **`MySqlConnector`** — MIT, actively maintained, genuinely async, drop-in for the ADO.NET interfaces |
 
 Confirmed by the schema rather than asked: **`AVACONT_SURSA` carries tables only** — the
 `000_DEMO` dump has no view, trigger or routine, so §4 step 3 of the plan (copy every table
 via `SHOW CREATE TABLE`) is sufficient. That was §11 Q5.
+
+### ⚠ What D7 costs: a fresh database starts with an empty `Unitati`
+
+`CREATE DATABASE` + `SHOW CREATE TABLE` copies **structure, not rows**. So on a brand-new
+database `Unitati` is empty — and `Clasificatii.IdUnitate`, `Clasificatii_Buget.IdUnitate`,
+`Parteneri.IdUnitate` and `FX_ORD_TBL.IdUnitate` all carry a foreign key into it (§7).
+
+**Nothing can be written at all until `Unitati` holds the selected units.** This is no longer
+a "check it first" nicety; it is a precondition of the very first INSERT. Every value it needs
+is available:
+
+| `Unitati` column | Source |
+|---|---|
+| `IdUnitate` `int(11)` PK, **not** `AUTO_INCREMENT` | `cai.IdUnitate` |
+| `Detalii` `varchar(255) NOT NULL` | `cai.NumeUnitate` (or `UNIT.Detalii` in the unit's own file) |
+| `SursaSector` `varchar(3) NOT NULL` | `cai.SURSA` — `01A` / `02A` / `02E`, already 3 characters |
+| `An` `int(4) NOT NULL` | `2026` (D1) |
+| `CodProgram` `varchar(255) NULL` | `UNIT.CodProgram` |
+| `Ascuns` `tinyint(4) NOT NULL DEFAULT 0` | `0` |
+
+So the tool **can** populate it, and on D7's fresh-database path it has to. Confirm — §10 Q2.
+
+`AVACONT_COMUN` (§3.1) is the other half of the same problem and D7 does not touch it: it is a
+**separate database**, not created by the `AVACONT_SURSA` loop, and five of `Clasificatii`'s
+six foreign keys point into it. A fresh database still cannot accept one classification row
+until `AVACONT_COMUN` exists and is populated on that server.
 
 ---
 
