@@ -34,6 +34,16 @@ Public NotInheritable Class Finding
     Public Const UNITATE_LIPSA As String = "UNITATE_LIPSA"
     Public Const BAZA_COMUNA_LIPSA As String = "BAZA_COMUNA_LIPSA"
     Public Const DICTIONAR_COMUN_LIPSA As String = "DICTIONAR_COMUN_LIPSA"
+    ''' <summary>
+    ''' The target database exists but holds no tables at all.
+    ''' </summary>
+    ''' <remarks>
+    ''' Distinct from TABEL_LIPSA on purpose: one missing table is a schema that has drifted,
+    ''' but ZERO tables is a database somebody created empty, and it has its own remedy -
+    ''' schema_sync builds the whole structure in one go. The form offers exactly that when
+    ''' it sees this kind, so the two must not be confused.
+    ''' </remarks>
+    Public Const BAZA_FARA_TABELE As String = "BAZA_FARA_TABELE"
     Public Const RANDURI_EXISTENTE As String = "RANDURI_EXISTENTE"
     Public Const ORDINE_TABELE As String = "ORDINE_TABELE"
     Public Const CICLU_TABELE As String = "CICLU_TABELE"

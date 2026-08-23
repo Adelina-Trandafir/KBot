@@ -25,8 +25,6 @@ Partial Class MigratorForm
     Friend WithEvents btnRasfoireRegistru As System.Windows.Forms.Button
     Friend WithEvents lblParolaUnitati As System.Windows.Forms.Label
     Friend WithEvents txtParolaUnitati As KBot.Controls.KBotTextField
-    Friend WithEvents lblParolaForexe As System.Windows.Forms.Label
-    Friend WithEvents txtParolaForexe As KBot.Controls.KBotTextField
     Friend WithEvents lblJurnal As System.Windows.Forms.Label
     Friend WithEvents txtJurnal As KBot.Controls.KBotTextField
     Friend WithEvents btnRasfoireJurnal As System.Windows.Forms.Button
@@ -72,522 +70,856 @@ Partial Class MigratorForm
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        Me.components = New System.ComponentModel.Container()
-
-        Me.tlpRoot = New System.Windows.Forms.TableLayoutPanel()
-        Me.grpFisiere = New System.Windows.Forms.GroupBox()
-        Me.tlpFisiere = New System.Windows.Forms.TableLayoutPanel()
-        Me.lblRegistru = New System.Windows.Forms.Label()
-        Me.txtRegistru = New KBot.Controls.KBotTextField()
-        Me.btnRasfoireRegistru = New System.Windows.Forms.Button()
-        Me.lblParolaUnitati = New System.Windows.Forms.Label()
-        Me.txtParolaUnitati = New KBot.Controls.KBotTextField()
-        Me.lblParolaForexe = New System.Windows.Forms.Label()
-        Me.txtParolaForexe = New KBot.Controls.KBotTextField()
-        Me.lblJurnal = New System.Windows.Forms.Label()
-        Me.txtJurnal = New KBot.Controls.KBotTextField()
-        Me.btnRasfoireJurnal = New System.Windows.Forms.Button()
-        Me.grpServer = New System.Windows.Forms.GroupBox()
-        Me.tlpServer = New System.Windows.Forms.TableLayoutPanel()
-        Me.lblGazda = New System.Windows.Forms.Label()
-        Me.txtGazda = New KBot.Controls.KBotTextField()
-        Me.lblPort = New System.Windows.Forms.Label()
-        Me.txtPort = New KBot.Controls.KBotTextField()
-        Me.lblUtilizator = New System.Windows.Forms.Label()
-        Me.txtUtilizator = New KBot.Controls.KBotTextField()
-        Me.lblParolaServer = New System.Windows.Forms.Label()
-        Me.txtParolaServer = New KBot.Controls.KBotTextField()
-        Me.btnTesteaza = New System.Windows.Forms.Button()
-        Me.lblStareServer = New System.Windows.Forms.Label()
-        Me.grpUnitate = New System.Windows.Forms.GroupBox()
-        Me.pnlUnitateSus = New System.Windows.Forms.Panel()
-        Me.lblDc = New System.Windows.Forms.Label()
-        Me.cboDc = New System.Windows.Forms.ComboBox()
-        Me.btnCitesteRegistru = New System.Windows.Forms.Button()
-        Me.lblBazaTinta = New System.Windows.Forms.Label()
-        Me.dgvUnitati = New KBot.Controls.KBotDataView()
-        Me.grpTransfer = New System.Windows.Forms.GroupBox()
-        Me.tlpTransfer = New System.Windows.Forms.TableLayoutPanel()
-        Me.pnlButoane = New System.Windows.Forms.Panel()
-        Me.btnVerifica = New System.Windows.Forms.Button()
-        Me.btnTransfera = New System.Windows.Forms.Button()
-        Me.btnOpreste = New System.Windows.Forms.Button()
-        Me.prgTransfer = New System.Windows.Forms.ProgressBar()
-        Me.tlpGrile = New System.Windows.Forms.TableLayoutPanel()
-        Me.dgvTabele = New KBot.Controls.KBotDataView()
-        Me.tlpDreapta = New System.Windows.Forms.TableLayoutPanel()
-        Me.dgvConstatari = New KBot.Controls.KBotDataView()
-        Me.rtbJurnal = New System.Windows.Forms.RichTextBox()
-        Me.tipMigrator = New KBot.Controls.KBotToolTip(Me.components)
-
-        CType(Me.dgvUnitati, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(Me.dgvTabele, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(Me.dgvConstatari, System.ComponentModel.ISupportInitialize).BeginInit()
-        Me.tlpRoot.SuspendLayout()
-        Me.grpFisiere.SuspendLayout()
-        Me.tlpFisiere.SuspendLayout()
-        Me.grpServer.SuspendLayout()
-        Me.tlpServer.SuspendLayout()
-        Me.grpUnitate.SuspendLayout()
-        Me.pnlUnitateSus.SuspendLayout()
-        Me.grpTransfer.SuspendLayout()
-        Me.tlpTransfer.SuspendLayout()
-        Me.pnlButoane.SuspendLayout()
-        Me.tlpGrile.SuspendLayout()
-        Me.tlpDreapta.SuspendLayout()
-        Me.SuspendLayout()
-
-        '
+        components = New ComponentModel.Container()
+        Dim KBotDataColumn1 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn2 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn3 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn4 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn5 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn6 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn7 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn8 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn9 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn10 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn11 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn12 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn13 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn14 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn15 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        tlpRoot = New TableLayoutPanel()
+        grpFisiere = New GroupBox()
+        tlpFisiere = New TableLayoutPanel()
+        lblRegistru = New Label()
+        txtRegistru = New Controls.KBotTextField()
+        btnRasfoireRegistru = New Button()
+        lblJurnal = New Label()
+        txtJurnal = New Controls.KBotTextField()
+        btnRasfoireJurnal = New Button()
+        txtParolaUnitati = New Controls.KBotTextField()
+        lblParolaUnitati = New Label()
+        grpServer = New GroupBox()
+        tlpServer = New TableLayoutPanel()
+        lblGazda = New Label()
+        txtGazda = New Controls.KBotTextField()
+        lblPort = New Label()
+        txtPort = New Controls.KBotTextField()
+        lblUtilizator = New Label()
+        txtUtilizator = New Controls.KBotTextField()
+        lblParolaServer = New Label()
+        txtParolaServer = New Controls.KBotTextField()
+        btnTesteaza = New Button()
+        lblStareServer = New Label()
+        grpUnitate = New GroupBox()
+        dgvUnitati = New Controls.KBotDataView()
+        pnlUnitateSus = New Panel()
+        lblDc = New Label()
+        cboDc = New ComboBox()
+        btnCitesteRegistru = New Button()
+        lblBazaTinta = New Label()
+        grpTransfer = New GroupBox()
+        tlpTransfer = New TableLayoutPanel()
+        pnlButoane = New Panel()
+        tlpButoane = New TableLayoutPanel()
+        btnVerifica = New Button()
+        prgTransfer = New ProgressBar()
+        btnOpreste = New Button()
+        btnTransfera = New Button()
+        tlpGrile = New TableLayoutPanel()
+        dgvTabele = New Controls.KBotDataView()
+        tlpDreapta = New TableLayoutPanel()
+        dgvConstatari = New Controls.KBotDataView()
+        rtbJurnal = New RichTextBox()
+        rtbInfoRowConstatari = New RichTextBox()
+        tipMigrator = New KBot.Controls.KBotToolTip(components)
+        tlpRoot.SuspendLayout()
+        grpFisiere.SuspendLayout()
+        tlpFisiere.SuspendLayout()
+        grpServer.SuspendLayout()
+        tlpServer.SuspendLayout()
+        grpUnitate.SuspendLayout()
+        CType(dgvUnitati, ComponentModel.ISupportInitialize).BeginInit()
+        pnlUnitateSus.SuspendLayout()
+        grpTransfer.SuspendLayout()
+        tlpTransfer.SuspendLayout()
+        pnlButoane.SuspendLayout()
+        tlpButoane.SuspendLayout()
+        tlpGrile.SuspendLayout()
+        CType(dgvTabele, ComponentModel.ISupportInitialize).BeginInit()
+        tlpDreapta.SuspendLayout()
+        CType(dgvConstatari, ComponentModel.ISupportInitialize).BeginInit()
+        SuspendLayout()
+        ' 
         ' tlpRoot
-        '
-        Me.tlpRoot.ColumnCount = 1
-        Me.tlpRoot.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.tlpRoot.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.tlpRoot.Name = "tlpRoot"
-        Me.tlpRoot.Padding = New System.Windows.Forms.Padding(12, 8, 12, 12)
-        Me.tlpRoot.RowCount = 4
-        Me.tlpRoot.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        Me.tlpRoot.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize))
-        Me.tlpRoot.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 34.0!))
-        Me.tlpRoot.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 66.0!))
-        Me.tlpRoot.TabIndex = 0
-        ' Reverse dock order inside the root: Fill first, then the rows above it.
-        Me.tlpRoot.Controls.Add(Me.grpFisiere, 0, 0)
-        Me.tlpRoot.Controls.Add(Me.grpServer, 0, 1)
-        Me.tlpRoot.Controls.Add(Me.grpUnitate, 0, 2)
-        Me.tlpRoot.Controls.Add(Me.grpTransfer, 0, 3)
-
-        '
+        ' 
+        tlpRoot.ColumnCount = 1
+        tlpRoot.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpRoot.Controls.Add(grpFisiere, 0, 0)
+        tlpRoot.Controls.Add(grpServer, 0, 1)
+        tlpRoot.Controls.Add(grpUnitate, 0, 2)
+        tlpRoot.Controls.Add(grpTransfer, 0, 3)
+        tlpRoot.Dock = DockStyle.Fill
+        tlpRoot.Location = New Point(0, 0)
+        tlpRoot.Margin = New Padding(4, 5, 4, 5)
+        tlpRoot.Name = "tlpRoot"
+        tlpRoot.RowCount = 4
+        tlpRoot.RowStyles.Add(New RowStyle())
+        tlpRoot.RowStyles.Add(New RowStyle())
+        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 30.77922F))
+        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 69.22078F))
+        tlpRoot.Size = New Size(1483, 1044)
+        tlpRoot.TabIndex = 0
+        ' 
         ' grpFisiere
-        '
-        Me.grpFisiere.AutoSize = True
-        Me.grpFisiere.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
-        Me.grpFisiere.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.grpFisiere.Name = "grpFisiere"
-        Me.grpFisiere.Padding = New System.Windows.Forms.Padding(10, 6, 10, 10)
-        Me.grpFisiere.TabIndex = 0
-        Me.grpFisiere.TabStop = False
-        Me.grpFisiere.Text = "Fișiere"
-        Me.grpFisiere.Controls.Add(Me.tlpFisiere)
-
-        '
+        ' 
+        grpFisiere.AutoSize = True
+        grpFisiere.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        grpFisiere.Controls.Add(tlpFisiere)
+        grpFisiere.Dock = DockStyle.Fill
+        grpFisiere.Location = New Point(4, 5)
+        grpFisiere.Margin = New Padding(4, 5, 4, 5)
+        grpFisiere.Name = "grpFisiere"
+        grpFisiere.Padding = New Padding(14, 4, 14, 4)
+        grpFisiere.Size = New Size(1475, 137)
+        grpFisiere.TabIndex = 0
+        grpFisiere.TabStop = False
+        grpFisiere.Text = "Fișiere"
+        ' 
         ' tlpFisiere
-        '
-        Me.tlpFisiere.AutoSize = True
-        Me.tlpFisiere.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
-        Me.tlpFisiere.ColumnCount = 3
-        Me.tlpFisiere.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 190.0!))
-        Me.tlpFisiere.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.tlpFisiere.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 120.0!))
-        Me.tlpFisiere.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.tlpFisiere.Name = "tlpFisiere"
-        Me.tlpFisiere.RowCount = 4
-        Me.tlpFisiere.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42.0!))
-        Me.tlpFisiere.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42.0!))
-        Me.tlpFisiere.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42.0!))
-        Me.tlpFisiere.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42.0!))
-        Me.tlpFisiere.TabIndex = 0
-        Me.tlpFisiere.Controls.Add(Me.lblRegistru, 0, 0)
-        Me.tlpFisiere.Controls.Add(Me.txtRegistru, 1, 0)
-        Me.tlpFisiere.Controls.Add(Me.btnRasfoireRegistru, 2, 0)
-        Me.tlpFisiere.Controls.Add(Me.lblParolaUnitati, 0, 1)
-        Me.tlpFisiere.Controls.Add(Me.txtParolaUnitati, 1, 1)
-        Me.tlpFisiere.Controls.Add(Me.lblParolaForexe, 0, 2)
-        Me.tlpFisiere.Controls.Add(Me.txtParolaForexe, 1, 2)
-        Me.tlpFisiere.Controls.Add(Me.lblJurnal, 0, 3)
-        Me.tlpFisiere.Controls.Add(Me.txtJurnal, 1, 3)
-        Me.tlpFisiere.Controls.Add(Me.btnRasfoireJurnal, 2, 3)
-
-        Me.lblRegistru.AutoSize = True
-        Me.lblRegistru.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.lblRegistru.Name = "lblRegistru"
-        Me.lblRegistru.TabIndex = 0
-        Me.lblRegistru.Text = "Registrul AVACONT (cale.accdb)"
-        Me.lblRegistru.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-
-        Me.txtRegistru.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.txtRegistru.Margin = New System.Windows.Forms.Padding(3, 3, 3, 3)
-        Me.txtRegistru.Name = "txtRegistru"
-        Me.txtRegistru.PlaceholderText = "C:\AVACONT\cale.accdb"
-        Me.txtRegistru.TabIndex = 1
-
-        Me.btnRasfoireRegistru.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnRasfoireRegistru.Margin = New System.Windows.Forms.Padding(3, 3, 3, 3)
-        Me.btnRasfoireRegistru.Name = "btnRasfoireRegistru"
-        Me.btnRasfoireRegistru.TabIndex = 2
-        Me.btnRasfoireRegistru.Text = "Răsfoiește…"
-        Me.btnRasfoireRegistru.UseVisualStyleBackColor = True
-
-        Me.lblParolaUnitati.AutoSize = True
-        Me.lblParolaUnitati.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.lblParolaUnitati.Name = "lblParolaUnitati"
-        Me.lblParolaUnitati.TabIndex = 3
-        Me.lblParolaUnitati.Text = "Parolă fișiere de unitate"
-        Me.lblParolaUnitati.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-
-        Me.txtParolaUnitati.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.txtParolaUnitati.Margin = New System.Windows.Forms.Padding(3, 3, 3, 3)
-        Me.txtParolaUnitati.Name = "txtParolaUnitati"
-        Me.txtParolaUnitati.PlaceholderText = "lăsați gol dacă nu sunt protejate"
-        Me.txtParolaUnitati.TabIndex = 4
-        Me.txtParolaUnitati.UseSystemPasswordChar = True
-
-        Me.lblParolaForexe.AutoSize = True
-        Me.lblParolaForexe.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.lblParolaForexe.Name = "lblParolaForexe"
-        Me.lblParolaForexe.TabIndex = 5
-        Me.lblParolaForexe.Text = "Parolă fișiere FOREXE"
-        Me.lblParolaForexe.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-
-        Me.txtParolaForexe.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.txtParolaForexe.Margin = New System.Windows.Forms.Padding(3, 3, 3, 3)
-        Me.txtParolaForexe.Name = "txtParolaForexe"
-        Me.txtParolaForexe.PlaceholderText = "lăsați gol dacă nu sunt protejate"
-        Me.txtParolaForexe.TabIndex = 6
-        Me.txtParolaForexe.UseSystemPasswordChar = True
-
-        Me.lblJurnal.AutoSize = True
-        Me.lblJurnal.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.lblJurnal.Name = "lblJurnal"
-        Me.lblJurnal.TabIndex = 7
-        Me.lblJurnal.Text = "Dosarul jurnalului SQL"
-        Me.lblJurnal.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-
-        Me.txtJurnal.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.txtJurnal.Margin = New System.Windows.Forms.Padding(3, 3, 3, 3)
-        Me.txtJurnal.Name = "txtJurnal"
-        Me.txtJurnal.TabIndex = 8
-
-        Me.btnRasfoireJurnal.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnRasfoireJurnal.Margin = New System.Windows.Forms.Padding(3, 3, 3, 3)
-        Me.btnRasfoireJurnal.Name = "btnRasfoireJurnal"
-        Me.btnRasfoireJurnal.TabIndex = 9
-        Me.btnRasfoireJurnal.Text = "Răsfoiește…"
-        Me.btnRasfoireJurnal.UseVisualStyleBackColor = True
-
-        '
+        ' 
+        tlpFisiere.AutoSize = True
+        tlpFisiere.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        tlpFisiere.ColumnCount = 5
+        tlpFisiere.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 271F))
+        tlpFisiere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpFisiere.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 155F))
+        tlpFisiere.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 352F))
+        tlpFisiere.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 201F))
+        tlpFisiere.Controls.Add(lblRegistru, 0, 0)
+        tlpFisiere.Controls.Add(txtRegistru, 1, 0)
+        tlpFisiere.Controls.Add(btnRasfoireRegistru, 4, 0)
+        tlpFisiere.Controls.Add(lblJurnal, 0, 1)
+        tlpFisiere.Controls.Add(txtJurnal, 1, 1)
+        tlpFisiere.Controls.Add(btnRasfoireJurnal, 4, 1)
+        tlpFisiere.Controls.Add(txtParolaUnitati, 3, 0)
+        tlpFisiere.Controls.Add(lblParolaUnitati, 2, 0)
+        tlpFisiere.Dock = DockStyle.Fill
+        tlpFisiere.Location = New Point(14, 28)
+        tlpFisiere.Margin = New Padding(4, 5, 4, 5)
+        tlpFisiere.Name = "tlpFisiere"
+        tlpFisiere.RowCount = 2
+        tlpFisiere.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
+        tlpFisiere.RowStyles.Add(New RowStyle(SizeType.Absolute, 53F))
+        tlpFisiere.Size = New Size(1447, 105)
+        tlpFisiere.TabIndex = 0
+        ' 
+        ' lblRegistru
+        ' 
+        lblRegistru.AutoSize = True
+        lblRegistru.Dock = DockStyle.Fill
+        lblRegistru.Location = New Point(4, 0)
+        lblRegistru.Margin = New Padding(4, 0, 4, 0)
+        lblRegistru.Name = "lblRegistru"
+        lblRegistru.Size = New Size(263, 52)
+        lblRegistru.TabIndex = 0
+        lblRegistru.Text = "Registrul AVACONT (cale.accdb)"
+        lblRegistru.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' txtRegistru
+        ' 
+        txtRegistru.BackColor = Color.Transparent
+        txtRegistru.Dock = DockStyle.Fill
+        txtRegistru.Location = New Point(275, 5)
+        txtRegistru.Margin = New Padding(4, 5, 4, 5)
+        txtRegistru.MaxLength = 32767
+        txtRegistru.Name = "txtRegistru"
+        txtRegistru.PlaceholderText = "C:\AVACONT\cale.accdb"
+        txtRegistru.Size = New Size(460, 42)
+        txtRegistru.TabIndex = 1
+        txtRegistru.TabStop = False
+        tipMigrator.SetToolTipHeader(txtRegistru, "Registrul AVACONT")
+        tipMigrator.SetToolTipText(txtRegistru, "Fișierul «cale.accdb». Din el se citesc DC-urile, unitățile și căile" & vbLf & "către fișierele fiecărei unități — nu trebuie tastate una câte una.")
+        txtRegistru.UseSystemPasswordChar = False
+        ' 
+        ' btnRasfoireRegistru
+        ' 
+        btnRasfoireRegistru.Dock = DockStyle.Fill
+        btnRasfoireRegistru.Location = New Point(1246, 0)
+        btnRasfoireRegistru.Margin = New Padding(0)
+        btnRasfoireRegistru.Name = "btnRasfoireRegistru"
+        btnRasfoireRegistru.Size = New Size(201, 52)
+        btnRasfoireRegistru.TabIndex = 2
+        btnRasfoireRegistru.Text = "Răsfoiește…"
+        btnRasfoireRegistru.UseVisualStyleBackColor = True
+        ' 
+        ' lblJurnal
+        ' 
+        lblJurnal.AutoSize = True
+        lblJurnal.Dock = DockStyle.Fill
+        lblJurnal.Location = New Point(4, 52)
+        lblJurnal.Margin = New Padding(4, 0, 4, 0)
+        lblJurnal.Name = "lblJurnal"
+        lblJurnal.Size = New Size(263, 53)
+        lblJurnal.TabIndex = 7
+        lblJurnal.Text = "Dosarul jurnalului SQL"
+        lblJurnal.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' txtJurnal
+        ' 
+        txtJurnal.BackColor = Color.Transparent
+        tlpFisiere.SetColumnSpan(txtJurnal, 3)
+        txtJurnal.Dock = DockStyle.Fill
+        txtJurnal.Location = New Point(275, 57)
+        txtJurnal.Margin = New Padding(4, 5, 4, 5)
+        txtJurnal.MaxLength = 32767
+        txtJurnal.Name = "txtJurnal"
+        txtJurnal.PlaceholderText = ""
+        txtJurnal.Size = New Size(967, 43)
+        txtJurnal.TabIndex = 8
+        txtJurnal.TabStop = False
+        tipMigrator.SetToolTipHeader(txtJurnal, "Dosarul jurnalului")
+        tipMigrator.SetToolTipText(txtJurnal, "Fiecare rulare lasă aici un subdosar cu marcaj de timp, un «.sql» pe tabel" & vbLf & "și «_99_final.txt» cu COMMIT sau ROLLBACK. Fără el, transferul nu pornește.")
+        txtJurnal.UseSystemPasswordChar = False
+        ' 
+        ' btnRasfoireJurnal
+        ' 
+        btnRasfoireJurnal.Dock = DockStyle.Fill
+        btnRasfoireJurnal.Location = New Point(1246, 52)
+        btnRasfoireJurnal.Margin = New Padding(0)
+        btnRasfoireJurnal.Name = "btnRasfoireJurnal"
+        btnRasfoireJurnal.Size = New Size(201, 53)
+        btnRasfoireJurnal.TabIndex = 9
+        btnRasfoireJurnal.Text = "Răsfoiește…"
+        btnRasfoireJurnal.UseVisualStyleBackColor = True
+        ' 
+        ' txtParolaUnitati
+        ' 
+        txtParolaUnitati.BackColor = Color.Transparent
+        txtParolaUnitati.Location = New Point(898, 5)
+        txtParolaUnitati.Margin = New Padding(4, 5, 4, 5)
+        txtParolaUnitati.MaxLength = 32767
+        txtParolaUnitati.Name = "txtParolaUnitati"
+        txtParolaUnitati.PlaceholderText = "lăsați gol dacă nu sunt protejate"
+        txtParolaUnitati.Size = New Size(344, 42)
+        txtParolaUnitati.TabIndex = 4
+        txtParolaUnitati.TabStop = False
+        txtParolaUnitati.UseSystemPasswordChar = True
+        ' 
+        ' lblParolaUnitati
+        ' 
+        lblParolaUnitati.AutoSize = True
+        lblParolaUnitati.Dock = DockStyle.Fill
+        lblParolaUnitati.Location = New Point(743, 0)
+        lblParolaUnitati.Margin = New Padding(4, 0, 4, 0)
+        lblParolaUnitati.Name = "lblParolaUnitati"
+        lblParolaUnitati.Size = New Size(147, 52)
+        lblParolaUnitati.TabIndex = 3
+        lblParolaUnitati.Text = "Parolă fișiere"
+        lblParolaUnitati.TextAlign = ContentAlignment.MiddleRight
+        ' 
         ' grpServer
-        '
-        Me.grpServer.AutoSize = True
-        Me.grpServer.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
-        Me.grpServer.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.grpServer.Name = "grpServer"
-        Me.grpServer.Padding = New System.Windows.Forms.Padding(10, 6, 10, 10)
-        Me.grpServer.TabIndex = 1
-        Me.grpServer.TabStop = False
-        Me.grpServer.Text = "Server MariaDB"
-        Me.grpServer.Controls.Add(Me.tlpServer)
-
-        Me.tlpServer.AutoSize = True
-        Me.tlpServer.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink
-        Me.tlpServer.ColumnCount = 4
-        Me.tlpServer.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 190.0!))
-        Me.tlpServer.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
-        Me.tlpServer.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 150.0!))
-        Me.tlpServer.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
-        Me.tlpServer.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.tlpServer.Name = "tlpServer"
-        Me.tlpServer.RowCount = 3
-        Me.tlpServer.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42.0!))
-        Me.tlpServer.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42.0!))
-        Me.tlpServer.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42.0!))
-        Me.tlpServer.TabIndex = 0
-        Me.tlpServer.Controls.Add(Me.lblGazda, 0, 0)
-        Me.tlpServer.Controls.Add(Me.txtGazda, 1, 0)
-        Me.tlpServer.Controls.Add(Me.lblPort, 2, 0)
-        Me.tlpServer.Controls.Add(Me.txtPort, 3, 0)
-        Me.tlpServer.Controls.Add(Me.lblUtilizator, 0, 1)
-        Me.tlpServer.Controls.Add(Me.txtUtilizator, 1, 1)
-        Me.tlpServer.Controls.Add(Me.lblParolaServer, 2, 1)
-        Me.tlpServer.Controls.Add(Me.txtParolaServer, 3, 1)
-        Me.tlpServer.Controls.Add(Me.btnTesteaza, 0, 2)
-        Me.tlpServer.Controls.Add(Me.lblStareServer, 1, 2)
-        Me.tlpServer.SetColumnSpan(Me.lblStareServer, 3)
-
-        Me.lblGazda.AutoSize = True
-        Me.lblGazda.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.lblGazda.Name = "lblGazda"
-        Me.lblGazda.TabIndex = 0
-        Me.lblGazda.Text = "Gazdă"
-        Me.lblGazda.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-
-        Me.txtGazda.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.txtGazda.Margin = New System.Windows.Forms.Padding(3, 3, 3, 3)
-        Me.txtGazda.Name = "txtGazda"
-        Me.txtGazda.TabIndex = 1
-
-        Me.lblPort.AutoSize = True
-        Me.lblPort.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.lblPort.Name = "lblPort"
-        Me.lblPort.TabIndex = 2
-        Me.lblPort.Text = "Port"
-        Me.lblPort.TextAlign = System.Drawing.ContentAlignment.MiddleRight
-
-        Me.txtPort.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.txtPort.Margin = New System.Windows.Forms.Padding(3, 3, 3, 3)
-        Me.txtPort.Name = "txtPort"
-        Me.txtPort.TabIndex = 3
-
-        Me.lblUtilizator.AutoSize = True
-        Me.lblUtilizator.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.lblUtilizator.Name = "lblUtilizator"
-        Me.lblUtilizator.TabIndex = 4
-        Me.lblUtilizator.Text = "Utilizator administrator"
-        Me.lblUtilizator.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-
-        Me.txtUtilizator.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.txtUtilizator.Margin = New System.Windows.Forms.Padding(3, 3, 3, 3)
-        Me.txtUtilizator.Name = "txtUtilizator"
-        Me.txtUtilizator.TabIndex = 5
-
-        Me.lblParolaServer.AutoSize = True
-        Me.lblParolaServer.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.lblParolaServer.Name = "lblParolaServer"
-        Me.lblParolaServer.TabIndex = 6
-        Me.lblParolaServer.Text = "Parolă"
-        Me.lblParolaServer.TextAlign = System.Drawing.ContentAlignment.MiddleRight
-
-        Me.txtParolaServer.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.txtParolaServer.Margin = New System.Windows.Forms.Padding(3, 3, 3, 3)
-        Me.txtParolaServer.Name = "txtParolaServer"
-        Me.txtParolaServer.TabIndex = 7
-        Me.txtParolaServer.UseSystemPasswordChar = True
-
-        Me.btnTesteaza.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.btnTesteaza.Margin = New System.Windows.Forms.Padding(3, 5, 3, 5)
-        Me.btnTesteaza.Name = "btnTesteaza"
-        Me.btnTesteaza.TabIndex = 8
-        Me.btnTesteaza.Text = "Testează conexiunea"
-        Me.btnTesteaza.UseVisualStyleBackColor = True
-
-        Me.lblStareServer.AutoSize = True
-        Me.lblStareServer.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.lblStareServer.Name = "lblStareServer"
-        Me.lblStareServer.TabIndex = 9
-        Me.lblStareServer.Text = "Neconectat."
-        Me.lblStareServer.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-
-        '
+        ' 
+        grpServer.AutoSize = True
+        grpServer.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        grpServer.Controls.Add(tlpServer)
+        grpServer.Dock = DockStyle.Fill
+        grpServer.Location = New Point(4, 152)
+        grpServer.Margin = New Padding(4, 5, 4, 5)
+        grpServer.Name = "grpServer"
+        grpServer.Padding = New Padding(14, 4, 14, 4)
+        grpServer.Size = New Size(1475, 84)
+        grpServer.TabIndex = 1
+        grpServer.TabStop = False
+        grpServer.Text = "Server MariaDB"
+        ' 
+        ' tlpServer
+        ' 
+        tlpServer.AutoSize = True
+        tlpServer.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        tlpServer.ColumnCount = 10
+        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 100F))
+        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 100F))
+        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 100F))
+        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 100F))
+        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 200F))
+        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpServer.Controls.Add(lblGazda, 0, 0)
+        tlpServer.Controls.Add(txtGazda, 1, 0)
+        tlpServer.Controls.Add(lblPort, 2, 0)
+        tlpServer.Controls.Add(txtPort, 3, 0)
+        tlpServer.Controls.Add(lblUtilizator, 4, 0)
+        tlpServer.Controls.Add(txtUtilizator, 5, 0)
+        tlpServer.Controls.Add(lblParolaServer, 6, 0)
+        tlpServer.Controls.Add(txtParolaServer, 7, 0)
+        tlpServer.Controls.Add(btnTesteaza, 8, 0)
+        tlpServer.Controls.Add(lblStareServer, 9, 0)
+        tlpServer.Dock = DockStyle.Fill
+        tlpServer.Location = New Point(14, 28)
+        tlpServer.Margin = New Padding(4, 5, 4, 5)
+        tlpServer.Name = "tlpServer"
+        tlpServer.RowCount = 1
+        tlpServer.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
+        tlpServer.Size = New Size(1447, 52)
+        tlpServer.TabIndex = 0
+        ' 
+        ' lblGazda
+        ' 
+        lblGazda.AutoSize = True
+        lblGazda.Dock = DockStyle.Fill
+        lblGazda.Location = New Point(4, 0)
+        lblGazda.Margin = New Padding(4, 0, 4, 0)
+        lblGazda.Name = "lblGazda"
+        lblGazda.Size = New Size(92, 52)
+        lblGazda.TabIndex = 0
+        lblGazda.Text = "Gazdă"
+        lblGazda.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' txtGazda
+        ' 
+        txtGazda.BackColor = Color.Transparent
+        txtGazda.Dock = DockStyle.Fill
+        txtGazda.Location = New Point(104, 5)
+        txtGazda.Margin = New Padding(4, 5, 4, 5)
+        txtGazda.MaxLength = 32767
+        txtGazda.Name = "txtGazda"
+        txtGazda.PlaceholderText = ""
+        txtGazda.Size = New Size(142, 42)
+        txtGazda.TabIndex = 1
+        txtGazda.TabStop = False
+        txtGazda.UseSystemPasswordChar = False
+        ' 
+        ' lblPort
+        ' 
+        lblPort.AutoSize = True
+        lblPort.Dock = DockStyle.Fill
+        lblPort.Location = New Point(254, 0)
+        lblPort.Margin = New Padding(4, 0, 4, 0)
+        lblPort.Name = "lblPort"
+        lblPort.Size = New Size(92, 52)
+        lblPort.TabIndex = 2
+        lblPort.Text = "Port"
+        lblPort.TextAlign = ContentAlignment.MiddleRight
+        ' 
+        ' txtPort
+        ' 
+        txtPort.BackColor = Color.Transparent
+        txtPort.Dock = DockStyle.Fill
+        txtPort.Location = New Point(354, 5)
+        txtPort.Margin = New Padding(4, 5, 4, 5)
+        txtPort.MaxLength = 32767
+        txtPort.Name = "txtPort"
+        txtPort.PlaceholderText = ""
+        txtPort.Size = New Size(142, 42)
+        txtPort.TabIndex = 3
+        txtPort.TabStop = False
+        txtPort.UseSystemPasswordChar = False
+        ' 
+        ' lblUtilizator
+        ' 
+        lblUtilizator.AutoSize = True
+        lblUtilizator.Dock = DockStyle.Fill
+        lblUtilizator.Location = New Point(504, 0)
+        lblUtilizator.Margin = New Padding(4, 0, 4, 0)
+        lblUtilizator.Name = "lblUtilizator"
+        lblUtilizator.Size = New Size(92, 52)
+        lblUtilizator.TabIndex = 4
+        lblUtilizator.Text = "Utilizator"
+        lblUtilizator.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' txtUtilizator
+        ' 
+        txtUtilizator.BackColor = Color.Transparent
+        txtUtilizator.Dock = DockStyle.Fill
+        txtUtilizator.Location = New Point(604, 5)
+        txtUtilizator.Margin = New Padding(4, 5, 4, 5)
+        txtUtilizator.MaxLength = 32767
+        txtUtilizator.Name = "txtUtilizator"
+        txtUtilizator.PlaceholderText = ""
+        txtUtilizator.Size = New Size(142, 42)
+        txtUtilizator.TabIndex = 5
+        txtUtilizator.TabStop = False
+        txtUtilizator.UseSystemPasswordChar = False
+        ' 
+        ' lblParolaServer
+        ' 
+        lblParolaServer.AutoSize = True
+        lblParolaServer.Dock = DockStyle.Fill
+        lblParolaServer.Location = New Point(754, 0)
+        lblParolaServer.Margin = New Padding(4, 0, 4, 0)
+        lblParolaServer.Name = "lblParolaServer"
+        lblParolaServer.Size = New Size(92, 52)
+        lblParolaServer.TabIndex = 6
+        lblParolaServer.Text = "Parolă"
+        lblParolaServer.TextAlign = ContentAlignment.MiddleRight
+        ' 
+        ' txtParolaServer
+        ' 
+        txtParolaServer.BackColor = Color.Transparent
+        txtParolaServer.Dock = DockStyle.Fill
+        txtParolaServer.Location = New Point(854, 5)
+        txtParolaServer.Margin = New Padding(4, 5, 4, 5)
+        txtParolaServer.MaxLength = 32767
+        txtParolaServer.Name = "txtParolaServer"
+        txtParolaServer.PlaceholderText = ""
+        txtParolaServer.Size = New Size(192, 42)
+        txtParolaServer.TabIndex = 7
+        txtParolaServer.TabStop = False
+        txtParolaServer.UseSystemPasswordChar = True
+        ' 
+        ' btnTesteaza
+        ' 
+        btnTesteaza.Dock = DockStyle.Fill
+        btnTesteaza.Location = New Point(1050, 0)
+        btnTesteaza.Margin = New Padding(0)
+        btnTesteaza.Name = "btnTesteaza"
+        btnTesteaza.Size = New Size(150, 52)
+        btnTesteaza.TabIndex = 8
+        btnTesteaza.Text = "Testează"
+        btnTesteaza.UseVisualStyleBackColor = True
+        ' 
+        ' lblStareServer
+        ' 
+        lblStareServer.AutoSize = True
+        lblStareServer.Dock = DockStyle.Fill
+        lblStareServer.Location = New Point(1204, 0)
+        lblStareServer.Margin = New Padding(4, 0, 4, 0)
+        lblStareServer.Name = "lblStareServer"
+        lblStareServer.Size = New Size(239, 52)
+        lblStareServer.TabIndex = 9
+        lblStareServer.Text = "Neconectat."
+        lblStareServer.TextAlign = ContentAlignment.MiddleLeft
+        ' 
         ' grpUnitate
-        '
-        Me.grpUnitate.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.grpUnitate.Name = "grpUnitate"
-        Me.grpUnitate.Padding = New System.Windows.Forms.Padding(10, 6, 10, 10)
-        Me.grpUnitate.TabIndex = 2
-        Me.grpUnitate.TabStop = False
-        Me.grpUnitate.Text = "Unitate"
-        ' Reverse dock order: Fill first, then Top.
-        Me.grpUnitate.Controls.Add(Me.dgvUnitati)
-        Me.grpUnitate.Controls.Add(Me.pnlUnitateSus)
-
-        Me.pnlUnitateSus.Dock = System.Windows.Forms.DockStyle.Top
-        Me.pnlUnitateSus.Height = 44
-        Me.pnlUnitateSus.Name = "pnlUnitateSus"
-        Me.pnlUnitateSus.TabIndex = 0
-        Me.pnlUnitateSus.Controls.Add(Me.lblDc)
-        Me.pnlUnitateSus.Controls.Add(Me.cboDc)
-        Me.pnlUnitateSus.Controls.Add(Me.btnCitesteRegistru)
-        Me.pnlUnitateSus.Controls.Add(Me.lblBazaTinta)
-
-        Me.lblDc.AutoSize = True
-        Me.lblDc.Location = New System.Drawing.Point(3, 12)
-        Me.lblDc.Name = "lblDc"
-        Me.lblDc.Size = New System.Drawing.Size(30, 20)
-        Me.lblDc.TabIndex = 0
-        Me.lblDc.Text = "DC"
-
-        Me.cboDc.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
-        Me.cboDc.Location = New System.Drawing.Point(45, 8)
-        Me.cboDc.Name = "cboDc"
-        Me.cboDc.Size = New System.Drawing.Size(220, 28)
-        Me.cboDc.TabIndex = 1
-
-        Me.btnCitesteRegistru.Location = New System.Drawing.Point(280, 6)
-        Me.btnCitesteRegistru.Name = "btnCitesteRegistru"
-        Me.btnCitesteRegistru.Size = New System.Drawing.Size(150, 32)
-        Me.btnCitesteRegistru.TabIndex = 2
-        Me.btnCitesteRegistru.Text = "Citește registrul"
-        Me.btnCitesteRegistru.UseVisualStyleBackColor = True
-
-        Me.lblBazaTinta.AutoSize = True
-        Me.lblBazaTinta.Location = New System.Drawing.Point(450, 12)
-        Me.lblBazaTinta.Name = "lblBazaTinta"
-        Me.lblBazaTinta.Size = New System.Drawing.Size(200, 20)
-        Me.lblBazaTinta.TabIndex = 3
-        Me.lblBazaTinta.Text = "Baza-țintă: (necunoscută)"
-
-        Me.dgvUnitati.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.dgvUnitati.Name = "dgvUnitati"
-        Me.dgvUnitati.TabIndex = 1
-        Me.dgvUnitati.AddColumn("bifa", "Transferă", KBot.Controls.KBotColumnType.CheckBox, 90)
-        Me.dgvUnitati.AddColumn("id", "IdUnitate", KBot.Controls.KBotColumnType.Text, 90)
-        Me.dgvUnitati.AddColumn("nume", "Unitate", KBot.Controls.KBotColumnType.Text, 240)
-        Me.dgvUnitati.AddColumn("sursa", "Sursă", KBot.Controls.KBotColumnType.Text, 70)
-        Me.dgvUnitati.AddColumn("nomenclator", "Fișier nomenclatoare", KBot.Controls.KBotColumnType.Text, 300)
-        Me.dgvUnitati.AddColumn("forexe", "Fișier FOREXE", KBot.Controls.KBotColumnType.Text, 300)
-
-        '
+        ' 
+        grpUnitate.Controls.Add(dgvUnitati)
+        grpUnitate.Controls.Add(pnlUnitateSus)
+        grpUnitate.Dock = DockStyle.Fill
+        grpUnitate.Location = New Point(4, 246)
+        grpUnitate.Margin = New Padding(4, 5, 4, 5)
+        grpUnitate.Name = "grpUnitate"
+        grpUnitate.Padding = New Padding(14, 4, 14, 4)
+        grpUnitate.Size = New Size(1475, 237)
+        grpUnitate.TabIndex = 2
+        grpUnitate.TabStop = False
+        grpUnitate.Text = "Unitate"
+        ' 
+        ' dgvUnitati
+        ' 
+        dgvUnitati.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        dgvUnitati.BackColor = SystemColors.Window
+        dgvUnitati.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
+        KBotDataColumn1.AggregateFormatString = Nothing
+        KBotDataColumn1.ColumnType = KBot.Controls.KBotColumnType.CheckBox
+        KBotDataColumn1.FormatString = Nothing
+        KBotDataColumn1.HeaderText = "Transferă"
+        KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn1.Key = "bifa"
+        KBotDataColumn1.OptionGroup = Nothing
+        KBotDataColumn2.AggregateFormatString = Nothing
+        KBotDataColumn2.FormatString = Nothing
+        KBotDataColumn2.HeaderText = "IdUnitate"
+        KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn2.Key = "id"
+        KBotDataColumn2.OptionGroup = Nothing
+        KBotDataColumn3.AggregateFormatString = Nothing
+        KBotDataColumn3.FormatString = Nothing
+        KBotDataColumn3.HeaderText = "Unitate"
+        KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn3.Key = "nume"
+        KBotDataColumn3.OptionGroup = Nothing
+        KBotDataColumn3.Width = 300
+        KBotDataColumn4.AggregateFormatString = Nothing
+        KBotDataColumn4.FormatString = Nothing
+        KBotDataColumn4.HeaderText = "Sursă"
+        KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn4.Key = "sursa"
+        KBotDataColumn4.OptionGroup = Nothing
+        KBotDataColumn4.Width = 70
+        KBotDataColumn5.AggregateFormatString = Nothing
+        KBotDataColumn5.FormatString = Nothing
+        KBotDataColumn5.HeaderText = "Fișier nomenclatoare"
+        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn5.Key = "nomenclator"
+        KBotDataColumn5.OptionGroup = Nothing
+        KBotDataColumn5.Width = 350
+        KBotDataColumn6.AggregateFormatString = Nothing
+        KBotDataColumn6.FormatString = Nothing
+        KBotDataColumn6.HeaderText = "Fișier FOREXE"
+        KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn6.Key = "forexe"
+        KBotDataColumn6.OptionGroup = Nothing
+        KBotDataColumn6.Visible = False
+        KBotDataColumn6.Width = 350
+        dgvUnitati.Columns.Add(KBotDataColumn1)
+        dgvUnitati.Columns.Add(KBotDataColumn2)
+        dgvUnitati.Columns.Add(KBotDataColumn3)
+        dgvUnitati.Columns.Add(KBotDataColumn4)
+        dgvUnitati.Columns.Add(KBotDataColumn5)
+        dgvUnitati.Columns.Add(KBotDataColumn6)
+        dgvUnitati.Dock = DockStyle.Fill
+        dgvUnitati.FillColumnKey = "nume"
+        dgvUnitati.Location = New Point(402, 28)
+        dgvUnitati.Margin = New Padding(4, 5, 4, 5)
+        dgvUnitati.Name = "dgvUnitati"
+        dgvUnitati.Size = New Size(1059, 205)
+        dgvUnitati.TabIndex = 1
+        ' 
+        ' pnlUnitateSus
+        ' 
+        pnlUnitateSus.Controls.Add(lblDc)
+        pnlUnitateSus.Controls.Add(cboDc)
+        pnlUnitateSus.Controls.Add(btnCitesteRegistru)
+        pnlUnitateSus.Controls.Add(lblBazaTinta)
+        pnlUnitateSus.Dock = DockStyle.Left
+        pnlUnitateSus.Location = New Point(14, 28)
+        pnlUnitateSus.Margin = New Padding(4, 5, 4, 5)
+        pnlUnitateSus.Name = "pnlUnitateSus"
+        pnlUnitateSus.Padding = New Padding(10, 0, 10, 10)
+        pnlUnitateSus.Size = New Size(388, 205)
+        pnlUnitateSus.TabIndex = 0
+        ' 
+        ' lblDc
+        ' 
+        lblDc.AutoSize = True
+        lblDc.Location = New Point(14, 20)
+        lblDc.Margin = New Padding(4, 0, 4, 0)
+        lblDc.Name = "lblDc"
+        lblDc.Size = New Size(36, 25)
+        lblDc.TabIndex = 0
+        lblDc.Text = "DC"
+        ' 
+        ' cboDc
+        ' 
+        cboDc.DropDownStyle = ComboBoxStyle.DropDownList
+        cboDc.Location = New Point(64, 13)
+        cboDc.Margin = New Padding(4, 5, 4, 5)
+        cboDc.Name = "cboDc"
+        cboDc.Size = New Size(313, 33)
+        cboDc.TabIndex = 1
+        ' 
+        ' btnCitesteRegistru
+        ' 
+        btnCitesteRegistru.Dock = DockStyle.Bottom
+        btnCitesteRegistru.Location = New Point(10, 142)
+        btnCitesteRegistru.Margin = New Padding(0)
+        btnCitesteRegistru.Name = "btnCitesteRegistru"
+        btnCitesteRegistru.Padding = New Padding(10, 0, 10, 0)
+        btnCitesteRegistru.Size = New Size(368, 53)
+        btnCitesteRegistru.TabIndex = 2
+        btnCitesteRegistru.Text = "Citește registrul"
+        btnCitesteRegistru.UseVisualStyleBackColor = True
+        ' 
+        ' lblBazaTinta
+        ' 
+        lblBazaTinta.AutoSize = True
+        lblBazaTinta.Location = New Point(653, 20)
+        lblBazaTinta.Margin = New Padding(4, 0, 4, 0)
+        lblBazaTinta.Name = "lblBazaTinta"
+        lblBazaTinta.Size = New Size(208, 25)
+        lblBazaTinta.TabIndex = 3
+        lblBazaTinta.Text = "Baza-țintă: (necunoscută)"
+        ' 
         ' grpTransfer
-        '
-        Me.grpTransfer.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.grpTransfer.Name = "grpTransfer"
-        Me.grpTransfer.Padding = New System.Windows.Forms.Padding(10, 6, 10, 10)
-        Me.grpTransfer.TabIndex = 3
-        Me.grpTransfer.TabStop = False
-        Me.grpTransfer.Text = "Transfer"
-        Me.grpTransfer.Controls.Add(Me.tlpTransfer)
-
-        Me.tlpTransfer.ColumnCount = 1
-        Me.tlpTransfer.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.tlpTransfer.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.tlpTransfer.Name = "tlpTransfer"
-        Me.tlpTransfer.RowCount = 2
-        Me.tlpTransfer.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 48.0!))
-        Me.tlpTransfer.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.tlpTransfer.TabIndex = 0
-        Me.tlpTransfer.Controls.Add(Me.pnlButoane, 0, 0)
-        Me.tlpTransfer.Controls.Add(Me.tlpGrile, 0, 1)
-
-        Me.pnlButoane.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.pnlButoane.Name = "pnlButoane"
-        Me.pnlButoane.TabIndex = 0
-        Me.pnlButoane.Controls.Add(Me.btnVerifica)
-        Me.pnlButoane.Controls.Add(Me.btnTransfera)
-        Me.pnlButoane.Controls.Add(Me.btnOpreste)
-        Me.pnlButoane.Controls.Add(Me.prgTransfer)
-
-        Me.btnVerifica.Location = New System.Drawing.Point(3, 6)
-        Me.btnVerifica.Name = "btnVerifica"
-        Me.btnVerifica.Size = New System.Drawing.Size(150, 34)
-        Me.btnVerifica.TabIndex = 0
-        Me.btnVerifica.Text = "Verifică"
-        Me.btnVerifica.UseVisualStyleBackColor = True
-
-        Me.btnTransfera.Enabled = False
-        Me.btnTransfera.Location = New System.Drawing.Point(162, 6)
-        Me.btnTransfera.Name = "btnTransfera"
-        Me.btnTransfera.Size = New System.Drawing.Size(150, 34)
-        Me.btnTransfera.TabIndex = 1
-        Me.btnTransfera.Text = "Transferă"
-        Me.btnTransfera.UseVisualStyleBackColor = True
-
-        Me.btnOpreste.Enabled = False
-        Me.btnOpreste.Location = New System.Drawing.Point(321, 6)
-        Me.btnOpreste.Name = "btnOpreste"
-        Me.btnOpreste.Size = New System.Drawing.Size(120, 34)
-        Me.btnOpreste.TabIndex = 2
-        Me.btnOpreste.Text = "Oprește"
-        Me.btnOpreste.UseVisualStyleBackColor = True
-
-        Me.prgTransfer.Anchor = CType(System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right, System.Windows.Forms.AnchorStyles)
-        Me.prgTransfer.Location = New System.Drawing.Point(456, 12)
-        Me.prgTransfer.Name = "prgTransfer"
-        Me.prgTransfer.Size = New System.Drawing.Size(600, 22)
-        Me.prgTransfer.TabIndex = 3
-
-        Me.tlpGrile.ColumnCount = 2
-        Me.tlpGrile.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 38.0!))
-        Me.tlpGrile.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 62.0!))
-        Me.tlpGrile.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.tlpGrile.Name = "tlpGrile"
-        Me.tlpGrile.RowCount = 1
-        Me.tlpGrile.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.tlpGrile.TabIndex = 1
-        Me.tlpGrile.Controls.Add(Me.dgvTabele, 0, 0)
-        Me.tlpGrile.Controls.Add(Me.tlpDreapta, 1, 0)
-
-        Me.dgvTabele.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.dgvTabele.Name = "dgvTabele"
-        Me.dgvTabele.TabIndex = 0
-        Me.dgvTabele.AddColumn("bifa", "Scrie", KBot.Controls.KBotColumnType.CheckBox, 70)
-        Me.dgvTabele.AddColumn("tabel", "Tabel", KBot.Controls.KBotColumnType.Text, 200)
-        Me.dgvTabele.AddColumn("sursa", "Sursă", KBot.Controls.KBotColumnType.Text, 130)
-        Me.dgvTabele.AddColumn("randuri", "Rânduri Access", KBot.Controls.KBotColumnType.Text, 130)
-
-        Me.tlpDreapta.ColumnCount = 1
-        Me.tlpDreapta.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.tlpDreapta.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.tlpDreapta.Name = "tlpDreapta"
-        Me.tlpDreapta.RowCount = 2
-        Me.tlpDreapta.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 45.0!))
-        Me.tlpDreapta.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 55.0!))
-        Me.tlpDreapta.TabIndex = 1
-        Me.tlpDreapta.Controls.Add(Me.dgvConstatari, 0, 0)
-        Me.tlpDreapta.Controls.Add(Me.rtbJurnal, 0, 1)
-
-        Me.dgvConstatari.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.dgvConstatari.Name = "dgvConstatari"
-        Me.dgvConstatari.TabIndex = 0
-        Me.dgvConstatari.AddColumn("clasa", "Clasă", KBot.Controls.KBotColumnType.Text, 100)
-        Me.dgvConstatari.AddColumn("fel", "Fel", KBot.Controls.KBotColumnType.Text, 200)
-        Me.dgvConstatari.AddColumn("tabel", "Tabel", KBot.Controls.KBotColumnType.Text, 150)
-        Me.dgvConstatari.AddColumn("coloana", "Coloană", KBot.Controls.KBotColumnType.Text, 140)
-        Me.dgvConstatari.AddColumn("mesaj", "Mesaj", KBot.Controls.KBotColumnType.Text, 620)
-
-        Me.rtbJurnal.Dock = System.Windows.Forms.DockStyle.Fill
-        Me.rtbJurnal.Name = "rtbJurnal"
-        Me.rtbJurnal.ReadOnly = True
-        Me.rtbJurnal.TabIndex = 1
-        Me.rtbJurnal.Text = ""
-        Me.rtbJurnal.WordWrap = False
-
-        '
-        ' tooltips - Romanian, authored here, never a System.Windows.Forms.ToolTip
-        '
-        Me.tipMigrator.SetToolTipHeader(Me.txtRegistru, "Registrul AVACONT")
-        Me.tipMigrator.SetToolTipText(Me.txtRegistru,
-            "Fișierul «cale.accdb». Din el se citesc DC-urile, unitățile și căile" & vbLf &
-            "către fișierele fiecărei unități — nu trebuie tastate una câte una.")
-        Me.tipMigrator.SetToolTipHeader(Me.txtJurnal, "Dosarul jurnalului")
-        Me.tipMigrator.SetToolTipText(Me.txtJurnal,
-            "Fiecare rulare lasă aici un subdosar cu marcaj de timp, un «.sql» pe tabel" & vbLf &
-            "și «_99_final.txt» cu COMMIT sau ROLLBACK. Fără el, transferul nu pornește.")
-        Me.tipMigrator.SetToolTipHeader(Me.btnVerifica, "Verifică")
-        Me.tipMigrator.SetToolTipText(Me.btnVerifica,
-            "Rulează toate porțile fără să scrie nimic: fișiere, bază, AVACONT_COMUN," & vbLf &
-            "Unitati, coloane obligatorii, lățimi, rezoluții, ordinea de scriere.")
-        Me.tipMigrator.SetToolTipHeader(Me.btnTransfera, "Transferă")
-        Me.tipMigrator.SetToolTipText(Me.btnTransfera,
-            "Se activează doar după o verificare fără constatări blocante." & vbLf &
-            "Scrie totul într-o singură tranzacție; orice eșec derulează tot înapoi.")
-        Me.tipMigrator.SetToolTipHeader(Me.btnOpreste, "Oprește")
-        Me.tipMigrator.SetToolTipText(Me.btnOpreste,
-            "Oprirea derulează tranzacția înapoi — baza rămâne exact cum era.")
-
-        '
+        ' 
+        grpTransfer.Controls.Add(tlpTransfer)
+        grpTransfer.Dock = DockStyle.Fill
+        grpTransfer.Location = New Point(4, 493)
+        grpTransfer.Margin = New Padding(4, 5, 4, 5)
+        grpTransfer.Name = "grpTransfer"
+        grpTransfer.Padding = New Padding(14, 4, 14, 4)
+        grpTransfer.Size = New Size(1475, 546)
+        grpTransfer.TabIndex = 3
+        grpTransfer.TabStop = False
+        grpTransfer.Text = "Transfer"
+        ' 
+        ' tlpTransfer
+        ' 
+        tlpTransfer.ColumnCount = 1
+        tlpTransfer.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpTransfer.Controls.Add(pnlButoane, 0, 0)
+        tlpTransfer.Controls.Add(tlpGrile, 0, 1)
+        tlpTransfer.Dock = DockStyle.Fill
+        tlpTransfer.Location = New Point(14, 28)
+        tlpTransfer.Margin = New Padding(4, 5, 4, 5)
+        tlpTransfer.Name = "tlpTransfer"
+        tlpTransfer.RowCount = 2
+        tlpTransfer.RowStyles.Add(New RowStyle(SizeType.Absolute, 65F))
+        tlpTransfer.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlpTransfer.Size = New Size(1447, 514)
+        tlpTransfer.TabIndex = 0
+        ' 
+        ' pnlButoane
+        ' 
+        pnlButoane.Controls.Add(tlpButoane)
+        pnlButoane.Dock = DockStyle.Fill
+        pnlButoane.Location = New Point(0, 0)
+        pnlButoane.Margin = New Padding(0)
+        pnlButoane.Name = "pnlButoane"
+        pnlButoane.Size = New Size(1447, 65)
+        pnlButoane.TabIndex = 0
+        ' 
+        ' tlpButoane
+        ' 
+        tlpButoane.ColumnCount = 4
+        tlpButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpButoane.Controls.Add(btnVerifica, 0, 0)
+        tlpButoane.Controls.Add(prgTransfer, 3, 0)
+        tlpButoane.Controls.Add(btnOpreste, 2, 0)
+        tlpButoane.Controls.Add(btnTransfera, 1, 0)
+        tlpButoane.Dock = DockStyle.Fill
+        tlpButoane.Location = New Point(0, 0)
+        tlpButoane.Name = "tlpButoane"
+        tlpButoane.RowCount = 1
+        tlpButoane.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlpButoane.Size = New Size(1447, 65)
+        tlpButoane.TabIndex = 4
+        ' 
+        ' btnVerifica
+        ' 
+        btnVerifica.Dock = DockStyle.Fill
+        btnVerifica.Location = New Point(4, 5)
+        btnVerifica.Margin = New Padding(4, 5, 4, 5)
+        btnVerifica.Name = "btnVerifica"
+        btnVerifica.Size = New Size(142, 55)
+        btnVerifica.TabIndex = 0
+        btnVerifica.Text = "Verifică"
+        tipMigrator.SetToolTipHeader(btnVerifica, "Verifică")
+        tipMigrator.SetToolTipText(btnVerifica, "Rulează toate porțile fără să scrie nimic: fișiere, bază, AVACONT_COMUN," & vbLf & "Unitati, coloane obligatorii, lățimi, rezoluții, ordinea de scriere.")
+        btnVerifica.UseVisualStyleBackColor = True
+        ' 
+        ' prgTransfer
+        ' 
+        prgTransfer.Dock = DockStyle.Fill
+        prgTransfer.Location = New Point(454, 5)
+        prgTransfer.Margin = New Padding(4, 5, 4, 5)
+        prgTransfer.Name = "prgTransfer"
+        prgTransfer.Size = New Size(989, 55)
+        prgTransfer.TabIndex = 3
+        ' 
+        ' btnOpreste
+        ' 
+        btnOpreste.Dock = DockStyle.Fill
+        btnOpreste.Enabled = False
+        btnOpreste.Location = New Point(304, 5)
+        btnOpreste.Margin = New Padding(4, 5, 4, 5)
+        btnOpreste.Name = "btnOpreste"
+        btnOpreste.Size = New Size(142, 55)
+        btnOpreste.TabIndex = 2
+        btnOpreste.Text = "Oprește"
+        tipMigrator.SetToolTipHeader(btnOpreste, "Oprește")
+        tipMigrator.SetToolTipText(btnOpreste, "Oprirea derulează tranzacția înapoi — baza rămâne exact cum era.")
+        btnOpreste.UseVisualStyleBackColor = True
+        ' 
+        ' btnTransfera
+        ' 
+        btnTransfera.Dock = DockStyle.Fill
+        btnTransfera.Enabled = False
+        btnTransfera.Location = New Point(154, 5)
+        btnTransfera.Margin = New Padding(4, 5, 4, 5)
+        btnTransfera.Name = "btnTransfera"
+        btnTransfera.Size = New Size(142, 55)
+        btnTransfera.TabIndex = 1
+        btnTransfera.Text = "Transferă"
+        tipMigrator.SetToolTipHeader(btnTransfera, "Transferă")
+        tipMigrator.SetToolTipText(btnTransfera, "Se activează doar după o verificare fără constatări blocante." & vbLf & "Scrie totul într-o singură tranzacție; orice eșec derulează tot înapoi.")
+        btnTransfera.UseVisualStyleBackColor = True
+        ' 
+        ' tlpGrile
+        ' 
+        tlpGrile.ColumnCount = 2
+        tlpGrile.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 40F))
+        tlpGrile.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 60F))
+        tlpGrile.Controls.Add(dgvTabele, 0, 0)
+        tlpGrile.Controls.Add(tlpDreapta, 1, 0)
+        tlpGrile.Dock = DockStyle.Fill
+        tlpGrile.Location = New Point(4, 70)
+        tlpGrile.Margin = New Padding(4, 5, 4, 5)
+        tlpGrile.Name = "tlpGrile"
+        tlpGrile.RowCount = 1
+        tlpGrile.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlpGrile.Size = New Size(1439, 439)
+        tlpGrile.TabIndex = 1
+        ' 
+        ' dgvTabele
+        ' 
+        dgvTabele.BackColor = SystemColors.Window
+        KBotDataColumn7.AggregateFormatString = Nothing
+        KBotDataColumn7.ColumnType = KBot.Controls.KBotColumnType.CheckBox
+        KBotDataColumn7.FormatString = Nothing
+        KBotDataColumn7.HeaderText = "Scrie"
+        KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn7.Key = "bifa"
+        KBotDataColumn7.OptionGroup = Nothing
+        KBotDataColumn7.Width = 70
+        KBotDataColumn8.AggregateFormatString = Nothing
+        KBotDataColumn8.FormatString = Nothing
+        KBotDataColumn8.HeaderText = "Tabel"
+        KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn8.Key = "tabel"
+        KBotDataColumn8.OptionGroup = Nothing
+        KBotDataColumn8.Width = 200
+        KBotDataColumn9.AggregateFormatString = Nothing
+        KBotDataColumn9.FormatString = Nothing
+        KBotDataColumn9.HeaderText = "Sursă"
+        KBotDataColumn9.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn9.Key = "sursa"
+        KBotDataColumn9.OptionGroup = Nothing
+        KBotDataColumn9.Width = 130
+        KBotDataColumn10.AggregateFormatString = Nothing
+        KBotDataColumn10.FormatString = Nothing
+        KBotDataColumn10.HeaderText = "Rânduri Access"
+        KBotDataColumn10.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn10.Key = "randuri"
+        KBotDataColumn10.OptionGroup = Nothing
+        KBotDataColumn10.Width = 130
+        dgvTabele.Columns.Add(KBotDataColumn7)
+        dgvTabele.Columns.Add(KBotDataColumn8)
+        dgvTabele.Columns.Add(KBotDataColumn9)
+        dgvTabele.Columns.Add(KBotDataColumn10)
+        dgvTabele.Dock = DockStyle.Fill
+        dgvTabele.Location = New Point(4, 5)
+        dgvTabele.Margin = New Padding(4, 5, 4, 5)
+        dgvTabele.Name = "dgvTabele"
+        dgvTabele.Size = New Size(567, 429)
+        dgvTabele.TabIndex = 0
+        ' 
+        ' tlpDreapta
+        ' 
+        tlpDreapta.ColumnCount = 2
+        tlpDreapta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 500F))
+        tlpDreapta.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpDreapta.Controls.Add(dgvConstatari, 0, 0)
+        tlpDreapta.Controls.Add(rtbJurnal, 0, 1)
+        tlpDreapta.Controls.Add(rtbInfoRowConstatari, 1, 0)
+        tlpDreapta.Dock = DockStyle.Fill
+        tlpDreapta.Location = New Point(575, 0)
+        tlpDreapta.Margin = New Padding(0)
+        tlpDreapta.Name = "tlpDreapta"
+        tlpDreapta.RowCount = 2
+        tlpDreapta.RowStyles.Add(New RowStyle(SizeType.Percent, 61.810154F))
+        tlpDreapta.RowStyles.Add(New RowStyle(SizeType.Percent, 38.189846F))
+        tlpDreapta.Size = New Size(864, 439)
+        tlpDreapta.TabIndex = 1
+        ' 
+        ' dgvConstatari
+        ' 
+        dgvConstatari.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        dgvConstatari.BackColor = SystemColors.Window
+        dgvConstatari.ColumnFillMode = KBot.Controls.KBotFillMode.FirstColumn
+        KBotDataColumn11.AggregateFormatString = Nothing
+        KBotDataColumn11.FormatString = Nothing
+        KBotDataColumn11.HeaderText = "Clasă"
+        KBotDataColumn11.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn11.Key = "clasa"
+        KBotDataColumn11.OptionGroup = Nothing
+        KBotDataColumn12.AggregateFormatString = Nothing
+        KBotDataColumn12.FormatString = Nothing
+        KBotDataColumn12.HeaderText = "Fel"
+        KBotDataColumn12.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn12.Key = "fel"
+        KBotDataColumn12.OptionGroup = Nothing
+        KBotDataColumn12.Width = 200
+        KBotDataColumn13.AggregateFormatString = Nothing
+        KBotDataColumn13.FormatString = Nothing
+        KBotDataColumn13.HeaderText = "Tabel"
+        KBotDataColumn13.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn13.Key = "tabel"
+        KBotDataColumn13.OptionGroup = Nothing
+        KBotDataColumn13.Width = 150
+        KBotDataColumn14.AggregateFormatString = Nothing
+        KBotDataColumn14.FormatString = Nothing
+        KBotDataColumn14.HeaderText = "Coloană"
+        KBotDataColumn14.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn14.Key = "coloana"
+        KBotDataColumn14.OptionGroup = Nothing
+        KBotDataColumn14.Visible = False
+        KBotDataColumn14.Width = 140
+        KBotDataColumn15.AggregateFormatString = Nothing
+        KBotDataColumn15.FormatString = Nothing
+        KBotDataColumn15.HeaderText = "Mesaj"
+        KBotDataColumn15.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn15.Key = "mesaj"
+        KBotDataColumn15.OptionGroup = Nothing
+        KBotDataColumn15.Visible = False
+        KBotDataColumn15.Width = 620
+        dgvConstatari.Columns.Add(KBotDataColumn11)
+        dgvConstatari.Columns.Add(KBotDataColumn12)
+        dgvConstatari.Columns.Add(KBotDataColumn13)
+        dgvConstatari.Columns.Add(KBotDataColumn14)
+        dgvConstatari.Columns.Add(KBotDataColumn15)
+        dgvConstatari.Dock = DockStyle.Fill
+        dgvConstatari.Location = New Point(4, 5)
+        dgvConstatari.Margin = New Padding(4, 5, 4, 5)
+        dgvConstatari.Name = "dgvConstatari"
+        dgvConstatari.Size = New Size(492, 261)
+        dgvConstatari.TabIndex = 0
+        ' 
+        ' rtbJurnal
+        ' 
+        tlpDreapta.SetColumnSpan(rtbJurnal, 2)
+        rtbJurnal.Dock = DockStyle.Fill
+        rtbJurnal.Location = New Point(4, 276)
+        rtbJurnal.Margin = New Padding(4, 5, 4, 5)
+        rtbJurnal.Name = "rtbJurnal"
+        rtbJurnal.ReadOnly = True
+        rtbJurnal.Size = New Size(856, 158)
+        rtbJurnal.TabIndex = 1
+        rtbJurnal.Text = ""
+        rtbJurnal.WordWrap = False
+        ' 
+        ' rtbInfoRowConstatari
+        ' 
+        rtbInfoRowConstatari.BackColor = SystemColors.Control
+        rtbInfoRowConstatari.Dock = DockStyle.Fill
+        rtbInfoRowConstatari.Location = New Point(503, 3)
+        rtbInfoRowConstatari.Name = "rtbInfoRowConstatari"
+        rtbInfoRowConstatari.Size = New Size(358, 265)
+        rtbInfoRowConstatari.TabIndex = 2
+        rtbInfoRowConstatari.Text = ""
+        ' 
         ' MigratorForm
-        '
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(7.0!, 15.0!)
-        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1240, 860)
-        Me.MinimumSize = New System.Drawing.Size(1060, 720)
-        Me.Name = "MigratorForm"
-        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "K-BOT — migrare Access ▸ MariaDB"
-        Me.Controls.Add(Me.tlpRoot)
-
-        CType(Me.dgvUnitati, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(Me.dgvTabele, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(Me.dgvConstatari, System.ComponentModel.ISupportInitialize).EndInit()
-        Me.tlpDreapta.ResumeLayout(False)
-        Me.tlpGrile.ResumeLayout(False)
-        Me.pnlButoane.ResumeLayout(False)
-        Me.tlpTransfer.ResumeLayout(False)
-        Me.grpTransfer.ResumeLayout(False)
-        Me.pnlUnitateSus.ResumeLayout(False)
-        Me.pnlUnitateSus.PerformLayout()
-        Me.grpUnitate.ResumeLayout(False)
-        Me.tlpServer.ResumeLayout(False)
-        Me.tlpServer.PerformLayout()
-        Me.grpServer.ResumeLayout(False)
-        Me.grpServer.PerformLayout()
-        Me.tlpFisiere.ResumeLayout(False)
-        Me.tlpFisiere.PerformLayout()
-        Me.grpFisiere.ResumeLayout(False)
-        Me.grpFisiere.PerformLayout()
-        Me.tlpRoot.ResumeLayout(False)
-        Me.tlpRoot.PerformLayout()
-        Me.ResumeLayout(False)
+        ' 
+        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleMode = AutoScaleMode.Font
+        ClientSize = New Size(1483, 1044)
+        Controls.Add(tlpRoot)
+        Margin = New Padding(4, 5, 4, 5)
+        MinimumSize = New Size(1505, 900)
+        Name = "MigratorForm"
+        StartPosition = FormStartPosition.CenterScreen
+        Text = "K-BOT — migrare Access ▸ MariaDB"
+        tlpRoot.ResumeLayout(False)
+        tlpRoot.PerformLayout()
+        grpFisiere.ResumeLayout(False)
+        grpFisiere.PerformLayout()
+        tlpFisiere.ResumeLayout(False)
+        tlpFisiere.PerformLayout()
+        grpServer.ResumeLayout(False)
+        grpServer.PerformLayout()
+        tlpServer.ResumeLayout(False)
+        tlpServer.PerformLayout()
+        grpUnitate.ResumeLayout(False)
+        CType(dgvUnitati, ComponentModel.ISupportInitialize).EndInit()
+        pnlUnitateSus.ResumeLayout(False)
+        pnlUnitateSus.PerformLayout()
+        grpTransfer.ResumeLayout(False)
+        tlpTransfer.ResumeLayout(False)
+        pnlButoane.ResumeLayout(False)
+        tlpButoane.ResumeLayout(False)
+        tlpGrile.ResumeLayout(False)
+        CType(dgvTabele, ComponentModel.ISupportInitialize).EndInit()
+        tlpDreapta.ResumeLayout(False)
+        CType(dgvConstatari, ComponentModel.ISupportInitialize).EndInit()
+        ResumeLayout(False)
     End Sub
+
+    Friend WithEvents rtbInfoRowConstatari As RichTextBox
+    Friend WithEvents tlpButoane As TableLayoutPanel
 
 End Class

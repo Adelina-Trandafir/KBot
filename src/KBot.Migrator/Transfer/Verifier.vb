@@ -28,13 +28,32 @@ Imports MySqlConnector
 ''' </remarks>
 Public NotInheritable Class Verifier
 
+    ''' <summary>
+    ''' How many steps <see cref="Run"/> reports, so a progress bar has a scale.
+    ''' </summary>
+    ''' <remarks>
+    ''' A constant rather than a count of anything: the gates are a fixed list, and a bar
+    ''' that rescales itself halfway through reads as a bug even when it is not.
+    ''' </remarks>
+    Public Const StepCount As Integer = 11
+
     Private ReadOnly _request As TransferRequest
     Private ReadOnly _log As Action(Of String)
+    Private ReadOnly _progress As Action(Of Integer, Integer, String)
+    Private _step As Integer
 
-    Public Sub New(request As TransferRequest, log As Action(Of String))
+    Public Sub New(request As TransferRequest, log As Action(Of String),
+                   progress As Action(Of Integer, Integer, String))
         If request Is Nothing Then Throw New ArgumentNullException(NameOf(request))
         _request = request
         _log = log
+        _progress = progress
+    End Sub
+
+    ''' <summary>Advances the reported step and names what is happening.</summary>
+    Private Sub Step1(label As String)
+        _step += 1
+        _progress?.Invoke(Math.Min(_step, StepCount), StepCount, label)
     End Sub
 
     ''' <summary>Runs every gate and returns what it found.</summary>
@@ -55,9 +74,11 @@ Public NotInheritable Class Verifier
                 Return report
             End If
 
+            Step1("Se verifică fișierele Access…")
             CheckAccessFiles(report)
             cancel.ThrowIfCancellationRequested()
 
+            Step1("Se caută baza-țintă…")
             Dim exists = _request.Server.DatabaseExists(_request.TargetDatabase)
             If Not exists Then
                 If Not _request.CreateDatabaseIfMissing Then
@@ -74,40 +95,64 @@ Public NotInheritable Class Verifier
             End If
 
             Using cn = _request.Server.Open(_request.TargetDatabase)
+                Step1("Se citește schema țintei…")
                 Dim schema = TargetSchema.Load(cn, _request.TargetDatabase)
                 Say($"Schema țintei citită: {schema.TableNames.Count} tabele.")
+
+                ' Zero tables is its own kind, not a pile of TABEL_LIPSA. The database was
+                ' created empty by somebody, and schema_sync builds the whole structure in
+                ' one go - which is what the form offers when it sees this. Reporting it as
+                ' 28 missing tables would bury that remedy in noise.
+                If schema.TableNames.Count = 0 Then
+                    report.Add(Finding.BAZA_FARA_TABELE, FindingClass.Blocant,
+                               String.Empty, String.Empty,
+                               $"Baza «{_request.TargetDatabase}» există pe server, dar nu are " &
+                               "NICIUN tabel. Structura poate fi construită cu «schema_sync».")
+                    Say(report.Summary())
+                    Return report
+                End If
 
                 Dim maps = TableMaps.All().
                     Where(Function(m) _request.IsTableSelected(m.TargetTable)).
                     ToList()
 
+                Step1("Se verifică existența tabelelor…")
                 CheckTablesExist(report, schema, maps)
                 cancel.ThrowIfCancellationRequested()
 
+                Step1("Se verifică «Unitati»…")
                 CheckUnitati(report, cn, schema)
                 cancel.ThrowIfCancellationRequested()
 
+                Step1("Se citesc clasificațiile din Access…")
                 Dim clasificatii = ReadClasificatii(report)
                 cancel.ThrowIfCancellationRequested()
 
+                Step1("Se verifică dicționarele din baza comună…")
                 CheckCommonDictionaries(report, cn, schema, clasificatii)
                 cancel.ThrowIfCancellationRequested()
 
+                Step1("Se compun listele de coloane…")
                 CheckColumnPlans(report, schema, maps, clasificatii)
                 cancel.ThrowIfCancellationRequested()
 
+                Step1("Se verifică lățimile…")
                 CheckClasificatiiWidths(report, schema, clasificatii)
                 cancel.ThrowIfCancellationRequested()
 
+                Step1("Se rezolvă clasificațiile (uscat)…")
                 CheckClasificatiiResolution(report, maps, clasificatii)
                 cancel.ThrowIfCancellationRequested()
 
+                Step1("Se rezolvă partenerii…")
                 CheckParteneriResolution(report, maps)
                 cancel.ThrowIfCancellationRequested()
 
+                Step1("Se caută rânduri deja scrise…")
                 CheckExistingRows(report, cn, schema, maps)
                 cancel.ThrowIfCancellationRequested()
 
+                Step1("Se deduce ordinea de scriere…")
                 CheckWriteOrder(report, schema, maps)
                 NoteNameMatchedTables(report, maps)
             End Using

@@ -51,6 +51,34 @@ Public NotInheritable Class MigratorSettings
     <JsonPropertyName("templateDatabase")>
     Public Property TemplateDatabase As String = "AVACONT_SURSA"
 
+    ''' <summary>The Python interpreter that runs schema_sync.</summary>
+    ''' <remarks>
+    ''' Not "python3": that is a Linux spelling, and the interpreter that carries the
+    ''' dependencies on this estate is the repository venv.
+    ''' </remarks>
+    <JsonPropertyName("pythonExecutable")>
+    Public Property PythonExecutable As String = String.Empty
+
+    ''' <summary>
+    ''' The folder schema_sync is launched from - the repository's <c>PYTHON</c> folder.
+    ''' </summary>
+    ''' <remarks>
+    ''' The module path <c>routes.schema_sync.schema_sync</c> only resolves from there.
+    ''' </remarks>
+    <JsonPropertyName("pythonWorkingFolder")>
+    Public Property PythonWorkingFolder As String = String.Empty
+
+    ''' <summary>
+    ''' The schema_sync argument template. <c>{dc}</c> is replaced with the chosen DC.
+    ''' </summary>
+    ''' <remarks>
+    ''' <c>--run</c> is deliberate and must stay: without it the script asks
+    ''' «Executați acum?» on stdin, which cannot be answered from a form.
+    ''' </remarks>
+    <JsonPropertyName("schemaSyncArguments")>
+    Public Property SchemaSyncArguments As String =
+        "-m routes.schema_sync.schema_sync --mode FORCE --targets {dc} --run"
+
     ''' <summary>Reads the settings file, or returns defaults when there is none.</summary>
     Public Shared Function Load() As MigratorSettings
         Try
@@ -80,7 +108,44 @@ Public NotInheritable Class MigratorSettings
         Dim settings As New MigratorSettings()
         settings.RegistryPath = "C:\AVACONT\cale.accdb"
         settings.JournalFolder = LogPaths.Combine("Migrare")
+        settings.PythonWorkingFolder = GuessPythonFolder()
+        settings.PythonExecutable = GuessPythonExecutable(settings.PythonWorkingFolder)
         Return settings
+    End Function
+
+    ''' <summary>
+    ''' Walks up from the executable looking for the repository's <c>PYTHON</c> folder.
+    ''' </summary>
+    ''' <remarks>
+    ''' A guess, and only a starting value - the operator can point it anywhere. It walks up
+    ''' rather than assuming a fixed depth because the app runs from bin\Debug\net8.0-windows
+    ''' during development and from the install folder afterwards.
+    ''' </remarks>
+    Private Shared Function GuessPythonFolder() As String
+        Try
+            Dim folder As New DirectoryInfo(AppContext.BaseDirectory)
+            For depth = 0 To 7
+                If folder Is Nothing Then Exit For
+                Dim candidate = Path.Combine(folder.FullName, "PYTHON")
+                If Directory.Exists(Path.Combine(candidate, "routes", "schema_sync")) Then Return candidate
+                folder = folder.Parent
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorSettings.GuessPythonFolder", ex)
+        End Try
+        Return String.Empty
+    End Function
+
+    Private Shared Function GuessPythonExecutable(pythonFolder As String) As String
+        Try
+            If pythonFolder.Length > 0 Then
+                Dim venv = Path.Combine(pythonFolder, ".venv", "Scripts", "python.exe")
+                If File.Exists(venv) Then Return venv
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorSettings.GuessPythonExecutable", ex)
+        End Try
+        Return String.Empty
     End Function
 
     Private Shared Function SettingsPath() As String

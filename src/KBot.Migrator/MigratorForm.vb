@@ -1,3 +1,4 @@
+Imports System.Drawing
 Imports System.Globalization
 Imports System.IO
 Imports System.Threading
@@ -11,16 +12,18 @@ Imports KBot.Common
 ''' </summary>
 ''' <remarks>
 ''' <para>
-''' Every control is declared in the designer file. This class only wires behaviour.
+''' Every control is declared in the designer file, which the operator owns. This class only
+''' wires behaviour and must follow the designer, never the other way round.
 ''' </para>
 ''' <para>
-''' The two long operations run OFF the UI thread and are cancellable; cancelling a
-''' transfer rolls the transaction back, so the database is left exactly as it was.
+''' The long operations run OFF the UI thread and are cancellable; cancelling a transfer
+''' rolls the transaction back, so the database is left exactly as it was.
 ''' «Transferă» stays disabled until a verification passes with no blocking finding.
 ''' </para>
 ''' <para>
-''' Passwords are read from the boxes at the moment a request is built and are never
-''' stored, logged or written to disk.
+''' Passwords are read from the boxes at the moment a request is built and are never stored,
+''' logged or written to disk. There is ONE Access password box - «Parolă fișiere» - and it
+''' covers both the unit files and the Forexe files, which is the shape of this estate.
 ''' </para>
 ''' </remarks>
 Public Class MigratorForm
@@ -29,6 +32,8 @@ Public Class MigratorForm
     Private _units As New List(Of CaiUnit)()
     Private _cancellation As CancellationTokenSource
     Private _busy As Boolean
+    Private _boldFont As Font
+    Private _normalFont As Font
 
     Public Sub New()
         InitializeComponent()
@@ -45,6 +50,8 @@ Public Class MigratorForm
             txtUtilizator.Text = _settings.User
 
             FillTableList()
+            ResetProgress()
+
             Say("Alegeți registrul «cale.accdb» și apăsați «Citește registrul».")
             Say("Anul transferului este fixat la " &
                 TableMaps.TransferYear.ToString(CultureInfo.InvariantCulture) & ".")
@@ -69,6 +76,15 @@ Public Class MigratorForm
             SaveSettings()
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.FormClosing", ex)
+        End Try
+    End Sub
+
+    Private Sub MigratorForm_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
+        Try
+            _boldFont?.Dispose()
+            _normalFont?.Dispose()
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.FormClosed", ex)
         End Try
     End Sub
 
@@ -120,7 +136,7 @@ Public Class MigratorForm
                 Return
             End If
 
-            _units = CaiRegistry.Read(path, txtParolaUnitati.Text)
+            _units = CaiRegistry.Read(path, AccessPassword())
             Say($"Registrul citit: {_units.Count} unități.")
 
             Dim previous = _settings.Dc
@@ -151,6 +167,17 @@ Public Class MigratorForm
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Fills the unit grid, binding each <see cref="CaiUnit"/> to its row's
+    ''' <see cref="KBot.Controls.KBotDataRow.Tag"/>.
+    ''' </summary>
+    ''' <remarks>
+    ''' The Tag is the point. Reading the ticks back by ROW INDEX would silently assume the
+    ''' grid's order still matches the source list - true today, because KBotDataView does
+    ''' not reorder itself, but it is an invisible coupling that breaks the day anyone adds
+    ''' sorting, and it breaks by migrating the WRONG UNIT rather than by failing. The Tag
+    ''' carries the object itself, so order stops mattering entirely.
+    ''' </remarks>
     Private Sub FillUnitList()
         Dim dc = Convert.ToString(cboDc.SelectedItem, CultureInfo.InvariantCulture)
         lblBazaTinta.Text = $"Baza-țintă: {dc}"
@@ -160,6 +187,7 @@ Public Class MigratorForm
             dgvUnitati.ClearRows()
             For Each unit In CaiRegistry.UnitsOf(_units, dc)
                 Dim row = dgvUnitati.AddRow()
+                row.Tag = unit
                 row("bifa") = False
                 row("id") = unit.IdUnitate.ToString(CultureInfo.InvariantCulture)
                 row("nume") = unit.NumeUnitate
@@ -174,12 +202,14 @@ Public Class MigratorForm
         Say($"DC «{dc}»: {dgvUnitati.RowCount} unități. Bifați-le pe cele de transferat.")
     End Sub
 
+    ''' <summary>Fills the table grid, binding each <see cref="TableMap"/> to its row.</summary>
     Private Sub FillTableList()
         dgvTabele.BeginUpdate()
         Try
             dgvTabele.ClearRows()
             For Each map In TableMaps.All()
                 Dim row = dgvTabele.AddRow()
+                row.Tag = map
                 row("bifa") = True
                 row("tabel") = map.TargetTable
                 row("sursa") = SourceLabel(map.Source)
@@ -226,37 +256,130 @@ Public Class MigratorForm
 
     Private Async Sub btnVerifica_Click(sender As Object, e As EventArgs) Handles btnVerifica.Click
         Try
-            Dim request = BuildRequest()
-            If request Is Nothing Then Return
-
-            btnTransfera.Enabled = False
-            dgvConstatari.ClearRows()
-            SetBusy(True)
-            _cancellation = New CancellationTokenSource()
-
-            Try
-                Dim token = _cancellation.Token
-                Dim report = Await Task.Run(Function() New Verifier(request, AddressOf SayFromWorker).Run(token), token)
-                ShowFindings(report)
-                btnTransfera.Enabled = report.CanRun
-                If report.CanRun Then
-                    Say("«Transferă» este acum activ.")
-                Else
-                    Say("«Transferă» rămâne inactiv până când nu mai există constatări blocante.")
-                End If
-            Finally
-                SetBusy(False)
-                _cancellation?.Dispose()
-                _cancellation = Nothing
-            End Try
-
-        Catch ex As OperationCanceledException
-            Say("Verificare oprită.")
+            Await VerifyAsync(offerSchemaSync:=True)
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.btnVerifica_Click", ex)
             Warn("Verificarea a eșuat." & Environment.NewLine & Environment.NewLine & ex.Message)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Runs every gate, shows the findings, and enables «Transferă» if nothing blocks.
+    ''' </summary>
+    ''' <param name="offerSchemaSync">
+    ''' When the target turns out to hold no tables at all, offer to build its structure with
+    ''' schema_sync and then verify again. False on that second pass, so a script that fails
+    ''' to create anything cannot start an endless offer-run-offer loop.
+    ''' </param>
+    Private Async Function VerifyAsync(offerSchemaSync As Boolean) As Task
+        Dim request = BuildRequest()
+        If request Is Nothing Then Return
+
+        btnTransfera.Enabled = False
+        dgvConstatari.ClearRows()
+        ClearFindingDetail()
+        SetBusy(True)
+        _cancellation = New CancellationTokenSource()
+
+        Dim report As VerificationReport = Nothing
+        Try
+            Dim token = _cancellation.Token
+            BeginProgress(Verifier.StepCount)
+            report = Await Task.Run(
+                Function() New Verifier(request, AddressOf SayFromWorker, AddressOf StepFromWorker).Run(token),
+                token)
+            ShowFindings(report)
+            btnTransfera.Enabled = report.CanRun
+            Say(If(report.CanRun,
+                   "«Transferă» este acum activ.",
+                   "«Transferă» rămâne inactiv până când nu mai există constatări blocante."))
+        Catch ex As OperationCanceledException
+            Say("Verificare oprită.")
+        Finally
+            EndProgress()
+            SetBusy(False)
+            _cancellation?.Dispose()
+            _cancellation = Nothing
+        End Try
+
+        If report Is Nothing OrElse Not offerSchemaSync Then Return
+        If Not report.Findings.Any(Function(f) f.Kind = Finding.BAZA_FARA_TABELE) Then Return
+
+        Await OfferSchemaSyncAsync(request.TargetDatabase)
+    End Function
+
+    ' ---- schema_sync ------------------------------------------------------------------------
+
+    ''' <summary>
+    ''' Offers to build an empty target database's structure, then verifies again.
+    ''' </summary>
+    ''' <remarks>
+    ''' Deliberately a prompt rather than a button: the form's layout is the operator's, and
+    ''' this is a remedy for one specific finding rather than a step of the normal flow. It
+    ''' appears exactly when it applies.
+    ''' </remarks>
+    Private Async Function OfferSchemaSyncAsync(dc As String) As Task
+        Dim runner As New SchemaSyncRunner(
+            _settings.PythonExecutable, _settings.PythonWorkingFolder,
+            _settings.SchemaSyncArguments, AddressOf SayFromWorker)
+
+        Dim reason As String = Nothing
+        If Not runner.Validate(reason) Then
+            Warn("Structura bazei ar putea fi construită cu «schema_sync», dar configurația " &
+                 "nu permite pornirea lui." & Environment.NewLine & Environment.NewLine & reason &
+                 Environment.NewLine & Environment.NewLine &
+                 "Se corectează în «migrator-settings.json», lângă executabil: " &
+                 "«pythonExecutable», «pythonWorkingFolder», «schemaSyncArguments».")
+            Return
+        End If
+
+        Dim answer = MessageBox.Show(
+            $"Baza «{dc}» există, dar nu are niciun tabel." & Environment.NewLine & Environment.NewLine &
+            "Structura poate fi construită acum cu «schema_sync», după «" &
+            _settings.TemplateDatabase & "»." & Environment.NewLine & Environment.NewLine &
+            "După aceea verificarea se reia automat." & Environment.NewLine & Environment.NewLine &
+            "Rulați «schema_sync»?",
+            "Bază fără tabele", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+        If answer <> DialogResult.Yes Then
+            Say("schema_sync nu a fost pornit. Baza rămâne fără tabele.")
+            Return
+        End If
+
+        SetBusy(True)
+        BeginProgress(0)
+        _cancellation = New CancellationTokenSource()
+
+        Dim result As SchemaSyncResult = Nothing
+        Try
+            Dim token = _cancellation.Token
+            result = Await Task.Run(Function() runner.Run(dc, token), token)
+        Catch ex As OperationCanceledException
+            Say("schema_sync a fost oprit.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.OfferSchemaSyncAsync", ex)
+            Warn("«schema_sync» nu a putut fi rulat." & Environment.NewLine & Environment.NewLine & ex.Message)
+        Finally
+            EndProgress()
+            SetBusy(False)
+            _cancellation?.Dispose()
+            _cancellation = Nothing
+        End Try
+
+        If result Is Nothing Then Return
+
+        If Not result.Succeeded Then
+            Warn($"«schema_sync» s-a încheiat cu codul {result.ExitCode}." & Environment.NewLine &
+                 Environment.NewLine & "Ieșirea completă este în jurnalul de mai jos.")
+            Return
+        End If
+
+        Say("Structura a fost construită. Se reia verificarea.")
+        ' offerSchemaSync:=False - if the script reported success but created nothing, the
+        ' second pass reports it once and stops, rather than offering the same run again.
+        Await VerifyAsync(offerSchemaSync:=False)
+    End Function
+
+    ' ---- findings ---------------------------------------------------------------------------
 
     Private Sub ShowFindings(report As VerificationReport)
         dgvConstatari.BeginUpdate()
@@ -267,6 +390,9 @@ Public Class MigratorForm
                 OrderByDescending(Function(f) CInt(f.Severity)).
                 ThenBy(Function(f) f.Table, StringComparer.OrdinalIgnoreCase)
                 Dim row = dgvConstatari.AddRow()
+                ' The finding itself rides on the row, so the detail pane reads the object
+                ' rather than re-parsing the cells it just wrote.
+                row.Tag = finding
                 row("clasa") = finding.Severity.ToString()
                 row("fel") = finding.Kind
                 row("tabel") = finding.Table
@@ -281,6 +407,76 @@ Public Class MigratorForm
         If report.WriteOrder IsNot Nothing AndAlso report.WriteOrder.Count > 0 Then
             Say("Ordinea de scriere: " & String.Join(" ▸ ", report.WriteOrder))
         End If
+    End Sub
+
+    Private Sub dgvConstatari_CellClick(sender As Object, e As KBot.Controls.KBotCellEventArgs) _
+        Handles dgvConstatari.CellClick
+        Try
+            ShowFindingDetail(FindingAt(e.RowIndex))
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.dgvConstatari_CellClick", ex)
+        End Try
+    End Sub
+
+    Private Function FindingAt(rowIndex As Integer) As Finding
+        If rowIndex < 0 OrElse rowIndex >= dgvConstatari.Rows.Count Then Return Nothing
+        Return TryCast(dgvConstatari.Rows(rowIndex).Tag, Finding)
+    End Function
+
+    ''' <summary>
+    ''' Writes the clicked finding into the detail pane, each label in bold.
+    ''' </summary>
+    Private Sub ShowFindingDetail(finding As Finding)
+        If finding Is Nothing Then
+            ClearFindingDetail()
+            Return
+        End If
+
+        rtbInfoRowConstatari.Clear()
+        AppendLabelled("COLOANĂ", If(finding.Column.Length > 0, finding.Column, "—"))
+        AppendLabelled("MESAJ", finding.Message)
+        rtbInfoRowConstatari.SelectionStart = 0
+        rtbInfoRowConstatari.ScrollToCaret()
+    End Sub
+
+    Private Sub ClearFindingDetail()
+        rtbInfoRowConstatari.Clear()
+    End Sub
+
+    ''' <summary>Appends «<b>LABEL</b> - value» plus a newline.</summary>
+    Private Sub AppendLabelled(label As String, value As String)
+        EnsureDetailFonts()
+
+        rtbInfoRowConstatari.SelectionStart = rtbInfoRowConstatari.TextLength
+        rtbInfoRowConstatari.SelectionLength = 0
+        rtbInfoRowConstatari.SelectionFont = _boldFont
+        rtbInfoRowConstatari.AppendText(label)
+
+        rtbInfoRowConstatari.SelectionStart = rtbInfoRowConstatari.TextLength
+        rtbInfoRowConstatari.SelectionLength = 0
+        rtbInfoRowConstatari.SelectionFont = _normalFont
+        rtbInfoRowConstatari.AppendText(" - " & If(value, String.Empty) & Environment.NewLine)
+    End Sub
+
+    ''' <summary>
+    ''' Builds the two fonts the detail pane needs, rebuilding them if the theme changed the
+    ''' control's font since the last time.
+    ''' </summary>
+    ''' <remarks>
+    ''' Cached rather than made per click: a new Font on every click leaks a GDI handle each
+    ''' time, and this pane is clicked once per finding.
+    ''' </remarks>
+    Private Sub EnsureDetailFonts()
+        Dim current = rtbInfoRowConstatari.Font
+        If _normalFont IsNot Nothing AndAlso _normalFont.FontFamily.Equals(current.FontFamily) AndAlso
+           Math.Abs(_normalFont.Size - current.Size) < 0.01F Then
+            Return
+        End If
+
+        _boldFont?.Dispose()
+        _normalFont?.Dispose()
+        _normalFont = New Font(current, FontStyle.Regular)
+        _boldFont = New Font(current, FontStyle.Bold)
     End Sub
 
     ' ---- transfer -------------------------------------------------------------------------
@@ -299,7 +495,7 @@ Public Class MigratorForm
             If confirmation <> DialogResult.Yes Then Return
 
             SetBusy(True)
-            prgTransfer.Style = ProgressBarStyle.Marquee
+            BeginProgress(0)
             _cancellation = New CancellationTokenSource()
 
             Try
@@ -308,7 +504,7 @@ Public Class MigratorForm
                 Dim result = Await Task.Run(Function() runner.Run(token), token)
                 ShowResult(result)
             Finally
-                prgTransfer.Style = ProgressBarStyle.Blocks
+                EndProgress()
                 SetBusy(False)
                 _cancellation?.Dispose()
                 _cancellation = Nothing
@@ -359,6 +555,14 @@ Public Class MigratorForm
 
     ' ---- building the request --------------------------------------------------------------
 
+    ''' <summary>
+    ''' The one Access password. The form has a single «Parolă fișiere» box, and it covers
+    ''' the unit files and the Forexe files alike.
+    ''' </summary>
+    Private Function AccessPassword() As String
+        Return txtParolaUnitati.Text
+    End Function
+
     Private Function ParsePort() As Integer
         Dim port As Integer
         If Integer.TryParse(txtPort.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, port) AndAlso
@@ -386,6 +590,11 @@ Public Class MigratorForm
     ''' Assembles everything the verifier or the runner needs, or Nothing after telling the
     ''' operator what is missing.
     ''' </summary>
+    ''' <remarks>
+    ''' The ticked units and tables are read from each row's Tag - the object itself - never
+    ''' from a row index matched against a separate list. Order cannot desynchronise a thing
+    ''' that carries its own identity.
+    ''' </remarks>
     Private Function BuildRequest() As TransferRequest
         Dim server = BuildServer()
         If server Is Nothing Then Return Nothing
@@ -403,9 +612,10 @@ Public Class MigratorForm
             Return Nothing
         End If
 
+        Dim password = AccessPassword()
         Dim request As New TransferRequest(server, dc) With {
-            .UnitFilePassword = txtParolaUnitati.Text,
-            .ForexeFilePassword = txtParolaForexe.Text,
+            .UnitFilePassword = password,
+            .ForexeFilePassword = password,
             .JournalFolder = journal,
             .CommonDatabase = _settings.CommonDatabase,
             .TemplateDatabase = _settings.TemplateDatabase,
@@ -413,19 +623,20 @@ Public Class MigratorForm
             .PopulateUnitati = True
         }
 
-        Dim chosen = CaiRegistry.UnitsOf(_units, dc)
-        For index = 0 To dgvUnitati.RowCount - 1
-            If Not TrueAt(dgvUnitati, "bifa", index) Then Continue For
-            If index < chosen.Count Then request.Units.Add(chosen(index))
+        For Each row In dgvUnitati.Rows
+            If Not IsTicked(row) Then Continue For
+            Dim unit = TryCast(row.Tag, CaiUnit)
+            If unit IsNot Nothing Then request.Units.Add(unit)
         Next
         If request.Units.Count = 0 Then
             Warn("Nu a fost bifată nicio unitate.")
             Return Nothing
         End If
 
-        For index = 0 To dgvTabele.RowCount - 1
-            If Not TrueAt(dgvTabele, "bifa", index) Then Continue For
-            request.SelectedTables.Add(Convert.ToString(dgvTabele("tabel", index), CultureInfo.InvariantCulture))
+        For Each row In dgvTabele.Rows
+            If Not IsTicked(row) Then Continue For
+            Dim map = TryCast(row.Tag, TableMap)
+            If map IsNot Nothing Then request.SelectedTables.Add(map.TargetTable)
         Next
         If request.SelectedTables.Count = 0 Then
             Warn("Nu a fost bifat niciun tabel. Lista goală nu înseamnă «toate».")
@@ -436,22 +647,63 @@ Public Class MigratorForm
         Return request
     End Function
 
-    Private Shared Function TrueAt(grid As KBot.Controls.KBotDataView, key As String, index As Integer) As Boolean
-        Dim value = grid(key, index)
-        If value Is Nothing Then Return False
+    Private Shared Function IsTicked(row As KBot.Controls.KBotDataRow) As Boolean
+        Dim value = row("bifa")
         Return TypeOf value Is Boolean AndAlso CBool(value)
     End Function
 
-    ' ---- log and busy state ------------------------------------------------------------------
+    ' ---- progress, log and busy state ----------------------------------------------------------
 
-    Private Sub SetBusy(busy As Boolean)
-        _busy = busy
-        btnVerifica.Enabled = Not busy
-        btnTesteaza.Enabled = Not busy
-        btnCitesteRegistru.Enabled = Not busy
-        btnOpreste.Enabled = busy
-        If busy Then btnTransfera.Enabled = False
-        Cursor = If(busy, Cursors.WaitCursor, Cursors.Default)
+    ''' <summary>
+    ''' Puts the bar into a known state. <paramref name="steps"/> of 0 means "unknown length",
+    ''' which is the marquee.
+    ''' </summary>
+    Private Sub BeginProgress(steps As Integer)
+        If steps > 0 Then
+            prgTransfer.Style = ProgressBarStyle.Blocks
+            prgTransfer.Minimum = 0
+            prgTransfer.Maximum = steps
+            prgTransfer.Value = 0
+        Else
+            prgTransfer.Style = ProgressBarStyle.Marquee
+        End If
+    End Sub
+
+    Private Sub EndProgress()
+        prgTransfer.Style = ProgressBarStyle.Blocks
+        prgTransfer.Value = prgTransfer.Maximum
+    End Sub
+
+    Private Sub ResetProgress()
+        prgTransfer.Style = ProgressBarStyle.Blocks
+        prgTransfer.Minimum = 0
+        prgTransfer.Maximum = 100
+        prgTransfer.Value = 0
+    End Sub
+
+    ''' <summary>Verification step, from the worker thread.</summary>
+    Private Sub StepFromWorker(done As Integer, total As Integer, label As String)
+        Try
+            If InvokeRequired Then
+                BeginInvoke(New Action(Of Integer, Integer, String)(AddressOf ShowStep), done, total, label)
+                Return
+            End If
+            ShowStep(done, total, label)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.StepFromWorker", ex)
+        End Try
+    End Sub
+
+    Private Sub ShowStep(done As Integer, total As Integer, label As String)
+        Try
+            If total > 0 Then
+                prgTransfer.Maximum = total
+                prgTransfer.Value = Math.Max(0, Math.Min(done, total))
+            End If
+            If Not String.IsNullOrEmpty(label) Then Say(label)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.ShowStep", ex)
+        End Try
     End Sub
 
     ''' <summary>Log line from a worker thread. Marshals onto the UI thread.</summary>
@@ -479,6 +731,16 @@ Public Class MigratorForm
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.Say", ex)
         End Try
+    End Sub
+
+    Private Sub SetBusy(busy As Boolean)
+        _busy = busy
+        btnVerifica.Enabled = Not busy
+        btnTesteaza.Enabled = Not busy
+        btnCitesteRegistru.Enabled = Not busy
+        btnOpreste.Enabled = busy
+        If busy Then btnTransfera.Enabled = False
+        Cursor = If(busy, Cursors.WaitCursor, Cursors.Default)
     End Sub
 
     Private Sub Warn(message As String)
