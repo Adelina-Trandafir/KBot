@@ -6,6 +6,10 @@
     <RootNamespace>KBot.Migrator</RootNamespace>
     <AssemblyName>KBot.Migrator</AssemblyName>
     <UseWindowsForms>true</UseWindowsForms>
+    <!-- x64, NOT AnyCPU. The ACE provider is 64-bit only on this estate; AnyCPU with
+         prefer-32-bit fails at OleDbConnection.Open with "provider is not registered".
+         Slice 0045-01 verified ACE 16.0 and 12.0 are both registered 64-bit here. -->
+    <PlatformTarget>x64</PlatformTarget>
     <MyType>WindowsFormsWithCustomSubMain</MyType>
     <StartupObject>KBot.Migrator.Program</StartupObject>
     <OptionStrict>On</OptionStrict>
@@ -27,6 +31,17 @@
   <ItemGroup>
     <Import Include="System.Drawing" />
     <Import Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <!-- Slice 0045: the migrator talks to Access and MariaDB itself. No Flask, no HTTP,
+       no pushing the .accdb to the server.
+
+       System.Data.OleDb is a NuGet package on .NET 8 - OleDb left the BCL after
+       .NET Framework. MySqlConnector over MySql.Data: MIT rather than GPL-with-
+       exception, and a drop-in for the ADO.NET interfaces (decision D10). -->
+  <ItemGroup>
+    <PackageReference Include="System.Data.OleDb" Version="8.0.0" />
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
   </ItemGroup>
 
   <!-- NICIO referință la Access: fără OleDb, fără ACE, fără COM. Utilitarul urcă
