@@ -27,18 +27,16 @@ Friend Module Program
                 Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)
             End If
 
-            ' Tema, inaintea primului formular. MigratorForm mosteneste KBotThemedForm, deci
-            ' nu-si aplica singur nicio culoare.
+            ' The theme, before the first form. MigratorForm inherits KBotThemedForm, so it
+            ' applies no colour of its own.
             ThemeManager.Initialize()
 
-            ' Formularul de pornire (felia 0044): adresa serverului + cheia API, si
-            ' proba ca amandoua sunt bune -- lista bazelor de pe MariaDB. Fara ea nu
-            ' se merge mai departe: ecranul urmator alege chiar din lista aceea.
-            Using conectare As New ConnectForm()
-                If conectare.ShowDialog() <> DialogResult.OK Then Return
-                ' Clientul trece mai departe si e eliberat de MigratorForm.
-                Application.Run(New MigratorForm(conectare.Client, conectare.Baze))
-            End Using
+            ' Slice 0045: no connect dialog any more. Slice 0044's ConnectForm existed to
+            ' prove a server address and an API key before anything else could happen,
+            ' because the whole chain ran over HTTP. This tool opens Access and MariaDB
+            ' itself, so the server credentials are just another field on the one form, and
+            ' «Testează conexiunea» is the proof.
+            Application.Run(New MigratorForm())
 
         Catch ex As Exception
             GlobalErrorLog.Write("Program.Main", ex)

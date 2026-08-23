@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Throwaway harness for slice 0045-05. NOT in KBot.sln.
+       Proves the PRODUCTION Access classes (AccessProvider, AccessSchema,
+       AccessTableReader, CaiRegistry) work against the real files - not just the
+       0045-01 spike, which was separate code in a separate process. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <UseWindowsForms>true</UseWindowsForms>
+    <OptionStrict>On</OptionStrict>
+    <StartupObject>MigratorSmoke.Smoke</StartupObject>
+    <RootNamespace>MigratorSmoke</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\KBot.Migrator\KBot.Migrator.vbproj" />
+  </ItemGroup>
+
+</Project>

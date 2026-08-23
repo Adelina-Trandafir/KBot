@@ -44,26 +44,21 @@
     <PackageReference Include="MySqlConnector" Version="2.6.2" />
   </ItemGroup>
 
-  <!-- NICIO referință la Access: fără OleDb, fără ACE, fără COM. Utilitarul urcă
-       fișierul .accdb pe server și vorbește HTTP; serverul e cel care îl citește
-       (mdbtools). Asta e chiar motivul pentru care nu deschide niciun fișier local.
+  <!-- Slice 0045 reversed slice 0044's whole shape. The tool no longer pushes the .accdb
+       to the server and talks HTTP; it opens Access AND MariaDB itself. So the KBot.Api
+       reference is gone (there is no server address and no API key any more - the MariaDB
+       credentials are fields on the one form), and the two data packages above are the
+       point of the project rather than something deliberately avoided.
 
-       KBot.Api intră DOAR pentru ApiOptions.DefaultBaseUrl — adresa serverului are un
-       singur loc unde e scrisă, iar acela e ApiOptions. NU se folosește ApiClient:
-       rutele de migrare sunt păzite cu X-Api-Key (ca cele de seed pe care le
-       înlocuiesc), nu cu tokenul bearer.
-
-       KBot.Theming aduce motorul de teme + KBotThemedForm. KBot.Forexe (unde stă facada
-       KBotTheme) e evitat intenționat: ar târî Playwright într-un utilitar care nu
-       deschide niciun browser. -->
+       KBot.Theming brings the theme engine plus KBotThemedForm. KBot.Forexe - where the
+       KBotTheme facade lives - is avoided on purpose: it would drag Playwright into a
+       utility that opens no browser. -->
   <ItemGroup>
     <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
     <ProjectReference Include="..\KBot.Theming\KBot.Theming.vbproj" />
-    <ProjectReference Include="..\KBot.Api\KBot.Api.vbproj" />
-    <!-- KBotToolTip (regula casei spune ca etichetele plutitoare NU se fac cu
-         System.Windows.Forms.ToolTip, care nu poate fi tematizat) si, din felia
-         0044-03, KBotDataView: toate cele patru grile ale migratorului sunt
-         grila K-BOT, nu DataGridView. -->
+    <!-- KBotToolTip (the house rule is that floating labels are NOT made with
+         System.Windows.Forms.ToolTip, which cannot be themed) and KBotDataView: every
+         grid on this form is a K-BOT grid, never a bare DataGridView. -->
     <ProjectReference Include="..\KBot.Controls\KBot.Controls.vbproj" />
   </ItemGroup>
 
