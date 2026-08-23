@@ -62,6 +62,14 @@ Public NotInheritable Class TargetServer
         _connection = connection
     End Sub
 
+    ''' <summary>
+    ''' <c>user@host:port</c> - the form safe to put in a log or a journal header.
+    ''' </summary>
+    ''' <remarks>The password never leaves <see cref="TargetConnection"/>.</remarks>
+    Public Function Describe() As String
+        Return _connection.Describe()
+    End Function
+
     ''' <summary>Opens a connection, optionally with a default database.</summary>
     Public Function Open(database As String) As MySqlConnection
         Dim cn As MySqlConnection = Nothing

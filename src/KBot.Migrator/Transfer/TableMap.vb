@@ -1,3 +1,12 @@
+''' <summary>Which resolution map a table feeds as it is written.</summary>
+Public Enum ResolutionTarget
+    None = 0
+    ''' <summary>(Access IdClsf, unit) ▸ the assigned Clasificatii.IDClsf.</summary>
+    Clasificatii = 1
+    ''' <summary>(CodPartener, unit) ▸ the assigned Parteneri.IdPartener.</summary>
+    Parteneri = 2
+End Enum
+
 ''' <summary>Which Access file a table is read from.</summary>
 Public Enum SourceFile
     ''' <summary>No Access file at all - built from the cai registry (Unitati).</summary>
@@ -82,6 +91,21 @@ Public NotInheritable Class TableMap
     Public Property Note As String
 
     ''' <summary>
+    ''' Which resolution map this table FEEDS as it is written.
+    ''' </summary>
+    ''' <remarks>
+    ''' Two tables have their key assigned by the server and are looked up later:
+    ''' Clasificatii (by IdClsfAcc + unit) and Parteneri (by CodPartener + unit). Those two
+    ''' are written a row at a time so LAST_INSERT_ID() belongs to exactly one row - a
+    ''' multi-row INSERT returns only the FIRST id of the batch, and consecutive ids are
+    ''' not guaranteed under every innodb_autoinc_lock_mode.
+    ''' </remarks>
+    Public Property Feeds As ResolutionTarget = ResolutionTarget.None
+
+    ''' <summary>The Access column whose value keys the map this table feeds.</summary>
+    Public Property FeedKeyColumn As String
+
+    ''' <summary>
     ''' True when neither MAPARE file documents this table column by column, so every
     ''' column travels on a case-insensitive name match.
     ''' </summary>
@@ -125,6 +149,13 @@ Public NotInheritable Class TableMap
 
     Public Function ScopedBy(unitScopeColumn As String) As TableMap
         Me.UnitScopeColumn = unitScopeColumn
+        Return Me
+    End Function
+
+    ''' <summary>Declares which resolution map this table feeds, and on which Access key.</summary>
+    Public Function Feeding(target As ResolutionTarget, accessKeyColumn As String) As TableMap
+        Feeds = target
+        FeedKeyColumn = accessKeyColumn
         Return Me
     End Function
 

@@ -76,6 +76,7 @@ Public NotInheritable Class TableMaps
                     "DTQ", "Esinc", "Document", "Data", "IdLegatura",
                     "Trim1", "Trim2", "Trim3", "Trim4").
             AsInsertOnly("IdUnitate").
+            Feeding(ResolutionTarget.Clasificatii, "IDClsf").
             WithNote("D8: fără cheie unică pe (IdClsfAcc, IdUnitate), deci NU se poate " &
                      "face upsert. Se scrie o singură dată; o a doua rulare e refuzată."))
 
@@ -117,6 +118,7 @@ Public NotInheritable Class TableMaps
             Exclude("IdPartener", "IDPART", "NumePartener", "ContPl", "F8", "F9",
                     "CodClient", "DTQ", "Esinc").
             ScopedBy("IdUnitate").
+            Feeding(ResolutionTarget.Parteneri, "CodPartener").
             WithNote("«Ascuns» călătorește - ruta Flask nu-l scrie, dar ținta îl are."))
 
         ' --- Parteneri_Coduri ------------------------------------------------------
