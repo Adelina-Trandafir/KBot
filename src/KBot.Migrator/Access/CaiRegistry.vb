@@ -22,7 +22,8 @@ Imports KBot.Common
 Public NotInheritable Class CaiUnit
 
     Public Sub New(idUnitate As Integer, dc As String, numeUnitate As String, sursa As String,
-                   unitFilePath As String, forexeFilePath As String, anDate As String)
+                   unitFilePath As String, forexeFilePath As String, anDate As String,
+                   alteDetalii As String)
         Me.IdUnitate = idUnitate
         Me.Dc = dc
         Me.NumeUnitate = numeUnitate
@@ -30,6 +31,7 @@ Public NotInheritable Class CaiUnit
         Me.UnitFilePath = unitFilePath
         Me.ForexeFilePath = forexeFilePath
         Me.AnDate = anDate
+        Me.AlteDetalii = alteDetalii
     End Sub
 
     Public ReadOnly Property IdUnitate As Integer
@@ -46,6 +48,9 @@ Public NotInheritable Class CaiUnit
     ''' <summary>The year as the registry spells it, text. Informational only - the
     ''' transfer year is fixed at 2026 by decision D1.</summary>
     Public ReadOnly Property AnDate As String
+    ''' <summary><c>LOCAL</c> / <c>ISJ</c> / <c>VEN</c> / <c>VENITURI</c> / <c>REPUBLICAN</c>.
+    ''' Fallback source for Unitati.Detalii when the unit file's own UNIT.Detalii is blank.</summary>
+    Public ReadOnly Property AlteDetalii As String
 
     ''' <summary>True when this unit has a Forexe file to read FX_* tables from.</summary>
     Public ReadOnly Property HasForexeFile As Boolean
@@ -106,7 +111,8 @@ Public NotInheritable Class CaiRegistry
                             Text(reader.ValueOrMissing("SURSA")),
                             ResolvePath(baseFolder, Text(reader.ValueOrMissing("FullPath"))),
                             ResolvePath(baseFolder, Text(reader.ValueOrMissing("CaleForexe"))),
-                            Text(reader.ValueOrMissing("AnDate"))))
+                            Text(reader.ValueOrMissing("AnDate")),
+                            Text(reader.ValueOrMissing("AlteDetalii"))))
                     End While
                 End Using
             End Using

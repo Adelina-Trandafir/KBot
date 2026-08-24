@@ -346,6 +346,24 @@ Public NotInheritable Class Verifier
                            "răspunde 1364.")
             Next
 
+            ' Rule 1 at the writing end, checked on the RESULT like the 1364 guard above.
+            ' The target's IdClsf is the id MariaDB assigned; the Access one is local to
+            ' the file. FX_DDF_REV_SA/SB and FX_ORD_TBL resolve it explicitly, so only a
+            ' name-matched table can reach here - and only when the target really has the
+            ' column, which is why this asks the plan rather than the catalogue.
+            For Each mapping In plan.Mappings
+                If mapping.Kind <> ColumnSourceKind.AccessColumn Then Continue For
+                If Not String.Equals(mapping.TargetColumn, "IdClsf", StringComparison.OrdinalIgnoreCase) Then Continue For
+
+                report.Add(Finding.CLASIFICATIE_NECORELATA, FindingClass.Atentie, map.TargetTable,
+                           mapping.TargetColumn,
+                           $"«IdClsf» primește direct coloana Access «{mapping.AccessColumn}», pe " &
+                           "potrivire după nume. Pe țintă «IdClsf» e id-ul atribuit de MariaDB, " &
+                           "iar în Access e id-ul local al fișierului — Regula 1 spune că nu " &
+                           "călătorește. Tabelul are nevoie de o corelație explicită, ca la " &
+                           "«FX_DDF_REV_SA».")
+            Next
+
             If Not schema.CanUpsert(map.TargetTable, plan.ColumnNames()) AndAlso Not map.InsertOnly Then
                 report.Add(Finding.FARA_CHEIE_UPSERT, FindingClass.Atentie, map.TargetTable, String.Empty,
                            $"Coloanele scrise nu acoperă nicio cheie unică a lui «{map.TargetTable}», " &
@@ -429,8 +447,13 @@ Public NotInheritable Class Verifier
             ToList()
         If consumers.Count = 0 Then Return
 
-        For Each unit In _request.Units
-            If Not unit.HasForexeFile Then Continue For
+        ' Rows with no determinable unit are the same rows on every pass, so they are
+        ' reported on the first pass only rather than once per selected unit.
+        Dim withFile = _request.Units.Where(Function(u) u.HasForexeFile).ToList()
+        If withFile.Count = 0 Then Return
+        Dim firstUnit = withFile(0).IdUnitate
+
+        For Each unit In withFile
 
             Using cn = AccessProvider.Open(unit.ForexeFilePath, _request.ForexeFilePassword)
                 For Each map In consumers
@@ -438,12 +461,30 @@ Public NotInheritable Class Verifier
                     If realName Is Nothing Then Continue For
 
                     Dim mapping = map.Derived.First(Function(d) d.Kind = ColumnSourceKind.ResolvedClasificatie)
+                    Dim ownership = UnitOwnership.Build(cn, map)
                     Dim misses As New Dictionary(Of String, Integer)(StringComparer.Ordinal)
+                    Dim nullUnit = 0
+                    Dim noUnitColumn = 0
 
                     Using reader = AccessSchema.OpenReader(cn, realName)
                         While reader.Read()
-                            Dim rowUnit = AsInteger(reader.ValueOrMissing("IdUnitate"))
-                            If rowUnit.HasValue AndAlso rowUnit.Value <> unit.IdUnitate Then Continue While
+                            ' The row names its unit, or its parent does. A NULL IdUnitate
+                            ' is not a wildcard: with one Forexe file per DC it would
+                            ' check every unit's rows against every unit's nomenclator.
+                            Dim rowUnit As Integer
+                            Select Case UnitOwnership.Resolve(reader, ownership, rowUnit)
+                                Case UnitScope.Named
+                                    If rowUnit <> unit.IdUnitate Then Continue While
+                                Case UnitScope.ParentScoped
+                                    ' Being scoped by the parents is enough to WRITE a row,
+                                    ' but not to resolve a classification: that needs the
+                                    ' unit by name. No consumer is in this state today.
+                                    noUnitColumn += 1
+                                    Continue While
+                                Case Else
+                                    nullUnit += 1
+                                    Continue While
+                            End Select
 
                             Dim idClsf = AsInteger(reader.ValueOrMissing(mapping.AccessColumn))
                             If Not idClsf.HasValue OrElse idClsf.Value = 0 Then Continue While
@@ -456,6 +497,30 @@ Public NotInheritable Class Verifier
                             misses(key) = count + 1
                         End While
                     End Using
+
+                    ' Reported on the first pass only: the rows are the same every time,
+                    ' and one finding per selected unit would say the same thing twice.
+                    If unit.IdUnitate = firstUnit Then
+                        If nullUnit > 0 Then
+                            report.Add(Finding.UNITATE_NEDETERMINATA, FindingClass.Blocant,
+                                       map.TargetTable, UnitOwnership.UnitColumn,
+                                       $"{nullUnit} rânduri au «IdUnitate» gol și nicio " &
+                                       "legătură de proprietate care să spună cărei unități " &
+                                       "le aparțin. Un fișier FOREXE ține rândurile tuturor " &
+                                       "unităților din DC, deci nu pot fi atribuite unității " &
+                                       "care se scrie — s-ar rezolva pe nomenclatorul greșit.",
+                                       nullUnit)
+                        End If
+                        If noUnitColumn > 0 Then
+                            report.Add(Finding.UNITATE_NEDETERMINATA, FindingClass.Blocant,
+                                       map.TargetTable, UnitOwnership.UnitColumn,
+                                       $"Tabelul nu are deloc coloana «IdUnitate», dar îi " &
+                                       $"trebuie una: cele {noUnitColumn} rânduri își rezolvă " &
+                                       "clasificația pe nomenclatorul unei unități, iar " &
+                                       "fișierul FOREXE le ține pe toate. Declarați " &
+                                       "proprietarul cu «OwnedVia».", noUnitColumn)
+                        End If
+                    End If
 
                     If misses.Count = 0 Then Continue For
 

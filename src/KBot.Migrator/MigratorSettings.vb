@@ -1,4 +1,4 @@
-Imports System.IO
+﻿Imports System.IO
 Imports System.Text
 Imports System.Text.Json
 Imports System.Text.Json.Serialization
@@ -9,10 +9,10 @@ Imports KBot.Common
 ''' </summary>
 ''' <remarks>
 ''' <para>
-''' <b>Never a password.</b> Not the two Access ones, not the MariaDB one. They live in
-''' memory for the duration of a run and nowhere else - not here, not in the log, not in
-''' the SQL journal. That is why this type has no password field at all rather than a
-''' field someone could later decide to fill.
+''' <b>Never a secret.</b> Not the two Access passwords, not the MariaDB one, and not the
+''' server's API key. They live in memory for the duration of a run and nowhere else - not
+''' here, not in the log, not in the SQL journal. That is why this type has no such field at
+''' all rather than a field someone could later decide to fill.
 ''' </para>
 ''' <para>
 ''' The plan asked for persistence "through the existing KBot.LocalStore mechanism".
@@ -51,53 +51,29 @@ Public NotInheritable Class MigratorSettings
     <JsonPropertyName("templateDatabase")>
     Public Property TemplateDatabase As String = "AVACONT_SURSA"
 
-    ' ---- schema_sync, which runs ON THE SERVER over SSH -----------------------------------
+    ' ---- schema_sync, which runs ON THE SERVER over the migration API ----------------------
     '
     ' The Python project lives on the VPS and the deployed copy there is the one allowed to
-    ' alter the databases, so none of these describe anything on the operator's machine except
-    ' the SSH client itself. Authentication is by KEY - see SchemaSyncRunner for why a password
-    ' cannot work here even if someone wanted one.
+    ' alter the databases. Starting it used to mean an SSH session, which in turn meant a shell
+    ' account and a private key file on every operator's machine, for one step run rarely. The
+    ' server exposes it as a route now, so what is left of that whole apparatus is ONE address.
+    '
+    ' There is no second setting beside it, and in particular no key: the route is guarded by
+    ' the same X-Api-Key as the rest of the migration API, and a key is a secret, so it is
+    ' typed into the form for the run and kept nowhere - like the two passwords, and for the
+    ' same reason. See the note at the top of this class.
 
-    ''' <summary>The SSH client. A bare name is resolved from PATH.</summary>
-    <JsonPropertyName("sshExecutable")>
-    Public Property SshExecutable As String = String.Empty
-
-    ''' <summary>The server, written as <c>user@host</c>.</summary>
+    ''' <summary>
+    ''' The API server, written as <c>https://server.exemplu.ro</c>. Edited in the first box
+    ''' of the server group on the form.
+    ''' </summary>
     ''' <remarks>
     ''' Empty by default and deliberately NOT guessed: the address of the production server is
     ''' not written down anywhere in this repository, and inventing a plausible one is how a
     ''' tool ends up pointed at the wrong machine.
     ''' </remarks>
-    <JsonPropertyName("sshTarget")>
-    Public Property SshTarget As String = String.Empty
-
-    ''' <summary>The private key file. Empty means "whatever ssh would use by default".</summary>
-    <JsonPropertyName("sshKeyFile")>
-    Public Property SshKeyFile As String = String.Empty
-
-    <JsonPropertyName("sshPort")>
-    Public Property SshPort As Integer = 22
-
-    ''' <summary>
-    ''' The command run on the SERVER. <c>{dc}</c> is replaced with the chosen DC.
-    ''' </summary>
-    ''' <remarks>
-    ''' <para>
-    ''' The folder in the default is a PLACEHOLDER - only the operator knows where the project
-    ''' sits on the server, it cannot be checked from here, and a wrong one shows up as
-    ''' «No such file or directory» on the first run. The <c>cd</c> itself is not optional:
-    ''' the module path <c>routes.schema_sync.schema_sync</c> only resolves from the project
-    ''' root.
-    ''' </para>
-    ''' <para>
-    ''' <c>--run</c> is deliberate and must stay: without it the script asks
-    ''' «Executați acum?» on stdin, which cannot be answered over a non-interactive channel.
-    ''' </para>
-    ''' </remarks>
-    <JsonPropertyName("schemaSyncRemoteCommand")>
-    Public Property SchemaSyncRemoteCommand As String =
-        "cd /var/www/AVACONT-PY && python3 -m routes.schema_sync.schema_sync " &
-        "--mode FORCE --targets {dc} --run"
+    <JsonPropertyName("serverUrl")>
+    Public Property ServerUrl As String = String.Empty
 
     ''' <summary>Reads the settings file, or returns defaults when there is none.</summary>
     Public Shared Function Load() As MigratorSettings
@@ -106,7 +82,12 @@ Public NotInheritable Class MigratorSettings
             If Not File.Exists(path) Then Return Defaults()
             Dim json = File.ReadAllText(path, Encoding.UTF8)
             Dim loaded = JsonSerializer.Deserialize(Of MigratorSettings)(json)
-            Return If(loaded, Defaults())
+            If loaded Is Nothing Then Return Defaults()
+            ' A settings file written by the SSH-era build carries «sshTarget» and friends.
+            ' They are simply ignored - System.Text.Json drops properties it does not know -
+            ' and the file loses them the next time it is written. Nothing to migrate: an
+            ' SSH target is not an address this build could use anyway.
+            Return loaded
         Catch ex As Exception
             ' A corrupt settings file must never stop the tool starting.
             GlobalErrorLog.Write("MigratorSettings.Load", ex)
@@ -128,29 +109,7 @@ Public NotInheritable Class MigratorSettings
         Dim settings As New MigratorSettings()
         settings.RegistryPath = "C:\AVACONT\cale.accdb"
         settings.JournalFolder = LogPaths.Combine("Migrare")
-        settings.SshExecutable = GuessSshExecutable()
         Return settings
-    End Function
-
-    ''' <summary>
-    ''' Finds the SSH client that ships with Windows.
-    ''' </summary>
-    ''' <remarks>
-    ''' Only the CLIENT is guessed - it is a fixed part of the operating system since Windows
-    ''' 10, so there is a right answer. The server, the key and the remote folder are not
-    ''' guessed at all: none of them is recorded anywhere in this repository, and a plausible
-    ''' invention would be worse than an empty field, which at least says so.
-    ''' </remarks>
-    Private Shared Function GuessSshExecutable() As String
-        Try
-            Dim shipped = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.System), "OpenSSH", "ssh.exe")
-            If File.Exists(shipped) Then Return shipped
-        Catch ex As Exception
-            GlobalErrorLog.Write("MigratorSettings.GuessSshExecutable", ex)
-        End Try
-        ' Left to PATH. Validate() accepts a bare name for exactly this case.
-        Return "ssh.exe"
     End Function
 
     Private Shared Function SettingsPath() As String

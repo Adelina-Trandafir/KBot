@@ -30,6 +30,28 @@ Public NotInheritable Class Finding
     Public Const COLOANA_OBLIGATORIE As String = "COLOANA_OBLIGATORIE"
     Public Const COLOANA_PREA_INGUSTA As String = "COLOANA_PREA_INGUSTA"
     Public Const CLASIFICATIE_NEREZOLVATA As String = "CLASIFICATIE_NEREZOLVATA"
+    ''' <summary>
+    ''' A row carries an <c>IdUnitate</c> column, it is NULL, and no owner chain says
+    ''' which unit the row belongs to.
+    ''' </summary>
+    ''' <remarks>
+    ''' Its own kind rather than CLASIFICATIE_NEREZOLVATA, because the remedy is
+    ''' different: the classification is not missing, the row's UNIT is unknown, and the
+    ''' fix is either the Access data or a <see cref="TableMap.OwnedVia"/> declaration.
+    ''' Reading NULL as "belongs to the unit being written" is what produced the mirrored
+    ''' 141 / 97+374 findings of 23.08.
+    ''' </remarks>
+    Public Const UNITATE_NEDETERMINATA As String = "UNITATE_NEDETERMINATA"
+    ''' <summary>
+    ''' An Access column lands in the target's <c>IdClsf</c> on a plain name match.
+    ''' </summary>
+    ''' <remarks>
+    ''' Rule 1 again, at the other end: the target's <c>IdClsf</c> is the id MariaDB
+    ''' assigned, the Access one is local to the file. FX_DDF_REV_SA/SB and FX_ORD_TBL
+    ''' resolve it through <see cref="ClasificatiiMap"/>; a name-matched table that
+    ''' carries the column has nothing to resolve it and would write the local id.
+    ''' </remarks>
+    Public Const CLASIFICATIE_NECORELATA As String = "CLASIFICATIE_NECORELATA"
     Public Const PARTENER_NEREZOLVAT As String = "PARTENER_NEREZOLVAT"
     Public Const UNITATE_LIPSA As String = "UNITATE_LIPSA"
     Public Const BAZA_COMUNA_LIPSA As String = "BAZA_COMUNA_LIPSA"

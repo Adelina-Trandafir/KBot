@@ -19,6 +19,13 @@ Public Enum ColumnSourceKind
     ''' and the count is logged per table.
     ''' </summary>
     ForcedNull = 5
+    ''' <summary>
+    ''' Written outside ColumnPlan entirely, by a hardcoded writer (e.g.
+    ''' TransferRunner.WriteUnitati). Carries no real value - it exists only so
+    ''' ColumnPlan.Build reports the column as covered, keeping the verifier and the
+    ''' actual writer in agreement.
+    ''' </summary>
+    WrittenElsewhere = 6
 End Enum
 
 ''' <summary>
@@ -79,6 +86,10 @@ Public NotInheritable Class ColumnMapping
         Return New ColumnMapping(targetColumn, ColumnSourceKind.ForcedNull, Nothing, Nothing, False)
     End Function
 
+    Public Shared Function WrittenElsewhere(targetColumn As String) As ColumnMapping
+        Return New ColumnMapping(targetColumn, ColumnSourceKind.WrittenElsewhere, Nothing, Nothing, False)
+    End Function
+
     Public Overrides Function ToString() As String
         Select Case Kind
             Case ColumnSourceKind.AccessColumn
@@ -91,6 +102,8 @@ Public NotInheritable Class ColumnMapping
                 Return $"{AccessColumn} (clasificatie rezolvata) -> {TargetColumn}"
             Case ColumnSourceKind.ResolvedPartener
                 Return $"{AccessColumn} (partener rezolvat) -> {TargetColumn}"
+            Case ColumnSourceKind.WrittenElsewhere
+                Return $"(scrisă de WriteUnitati) -> {TargetColumn}"
             Case Else
                 Return $"(NULL) -> {TargetColumn}"
         End Select

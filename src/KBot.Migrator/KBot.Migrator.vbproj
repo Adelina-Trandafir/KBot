@@ -24,7 +24,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.3.0.0</FileVersion>
+    <FileVersion>1.5.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -33,8 +33,11 @@
     <Import Include="System.Windows.Forms" />
   </ItemGroup>
 
-  <!-- Slice 0045: the migrator talks to Access and MariaDB itself. No Flask, no HTTP,
-       no pushing the .accdb to the server.
+  <!-- Slice 0045: the migrator opens Access and MariaDB itself. Nothing is pushed to the
+       server and no migration data travels over HTTP. The ONE exception is building the
+       structure of a database somebody created empty, which is the Python schema tool's job
+       and only runs where the databases are - one call to /api/migrare/schema-sync, over
+       HttpClient, which is in the shared framework and needs no package.
 
        System.Data.OleDb is a NuGet package on .NET 8 - OleDb left the BCL after
        .NET Framework. MySqlConnector over MySql.Data: MIT rather than GPL-with-
@@ -45,10 +48,14 @@
   </ItemGroup>
 
   <!-- Slice 0045 reversed slice 0044's whole shape. The tool no longer pushes the .accdb
-       to the server and talks HTTP; it opens Access AND MariaDB itself. So the KBot.Api
-       reference is gone (there is no server address and no API key any more - the MariaDB
-       credentials are fields on the one form), and the two data packages above are the
-       point of the project rather than something deliberately avoided.
+       to the server; it opens Access AND MariaDB itself, and the two data packages above
+       are the point of the project rather than something deliberately avoided.
+
+       The KBot.Api reference stayed gone even when the schema-sync call brought a little
+       HTTP back. KBot.Api is the APPLICATION's client - bearer tokens, a login, a hostname
+       constant - and this needs none of that: one route, one X-Api-Key header, one address
+       the operator types. SchemaSyncClient carries its own HttpClient rather than dragging
+       in a project built for a different conversation.
 
        KBot.Theming brings the theme engine plus KBotThemedForm. KBot.Forexe - where the
        KBotTheme facade lives - is avoided on purpose: it would drag Playwright into a
@@ -60,6 +67,20 @@
          System.Windows.Forms.ToolTip, which cannot be themed) and KBotDataView: every
          grid on this form is a K-BOT grid, never a bare DataGridView. -->
     <ProjectReference Include="..\KBot.Controls\KBot.Controls.vbproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="My Project\Resources.Designer.vb">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="My Project\Resources.resx">
+      <CustomToolNamespace>My.Resources</CustomToolNamespace>
+      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

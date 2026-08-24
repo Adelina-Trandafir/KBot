@@ -9,6 +9,7 @@
 #   POST /api/migrare/push/final    -> lipeste, verifica amprenta, muta in loc
 #   POST /api/migrare/analiza       -> porneste analiza; intoarce un id de lucrare
 #   POST /api/migrare/rulare        -> porneste scrierea; cere id-ul analizei
+#   POST /api/migrare/schema-sync   -> construieste structura unei baze goale
 #   GET  /api/migrare/stare/<id>    -> starea unei lucrari + jurnalul ei
 #
 # Garda e X-Api-Key, ca pe rutele de seed pe care le inlocuieste. Migratorul este
@@ -23,6 +24,11 @@ from flask import Blueprint, Response, request
 
 from utils.database import get_db_connection
 from utils.security import require_api_key
+
+# The schema tool lives in its own package and keeps its own command lines.
+# Only the callable entry point is imported here -- see schema_service for why
+# schema_sync.py itself cannot be driven from a request.
+from routes.schema_sync import schema_service
 
 from . import accdb, dump, execute, jobs, routing, storage, tables, validate
 
@@ -537,7 +543,68 @@ def rulare():
 
 
 # -----------------------------------------------------------------------------
-# 7. Starea unei lucrari
+# 7. Structura unei baze goale -- schema_sync, in acest proces
+# -----------------------------------------------------------------------------
+#
+# The migrator's one case: the target database exists but holds no tables,
+# because somebody created it empty. Building it from AVACONT_SURSA is the
+# schema tool's job, and the schema tool only runs where the databases are.
+#
+# This route is why the migrator needs no shell on the server. It is guarded by
+# the same X-Api-Key as every other route here, it starts a job and hands back
+# an id, and the caller then polls /api/migrare/stare/<id> exactly as it does
+# for the analysis and the write -- one polling loop in the client, not two.
+#
+# WHAT THE BODY MEANS:
+#   dc                    baza tinta, obligatorie. Una singura, pe cerere.
+#   mod                   SAFE (implicit) sau FORCE. Vezi schema_diff.
+#   permite_distructive   inlocuieste DA-ul tastat al liniei de comanda.
+#                         Fara el, un plan care contine fie si o singura
+#                         instructiune distructiva nu se executa DELOC.
+#   doar_vezi             genereaza si scrie .sql-ul, nu executa nimic.
+
+
+@migrare_bp.route("/api/migrare/schema-sync", methods=["POST"])
+@require_api_key
+def schema_sync_start():
+    body = request.get_json(silent=True) or {}
+    db_name = (body.get("dc") or body.get("baza") or "").strip()
+    mode = (body.get("mod") or "SAFE").strip().upper()
+    allow_destructive = bool(body.get("permite_distructive"))
+    view_only = bool(body.get("doar_vezi"))
+
+    # Same shape check as /baze, and for the same reason: a unit database is
+    # the only thing this route may touch. AVACONT_SURSA and AVACONT_COMUN are
+    # refused by the schema tool as well, but being told which name was wrong
+    # beats reading it out of a job that failed.
+    if not db_name:
+        return _err("Lipsește baza țintă («dc»).", 400)
+    if db_name in _NOT_UNIT_DBS or not _DBNAME_RE.match(db_name):
+        return _err(
+            "«%s» nu are forma unei baze de unitate («000_DEMO»), deci nu "
+            "poate fi țintă pentru sincronizarea de schemă." % db_name, 400)
+    if mode not in schema_service.MODES:
+        return _err("Mod necunoscut «%s». Acceptate: %s."
+                    % (mode, ", ".join(schema_service.MODES)), 400)
+
+    def work(job):
+        job.say("Sincronizare de schemă pentru «%s», mod %s." % (db_name, mode))
+        if allow_destructive:
+            job.say("Operațiile DISTRUCTIVE au fost permise explicit de "
+                    "operator. Se face întâi o copie de siguranță.")
+        # A second sync already in flight comes back as SchemaSyncError from
+        # here, which jobs.start turns into a failed job with that message.
+        # Checking before starting the job would have been a race.
+        return schema_service.run_sync(
+            db_name, mode=mode, allow_destructive=allow_destructive,
+            view_only=view_only, progress=job.say)
+
+    job = jobs.start("schema", work)
+    return _json({"ok": True, "lucrare": job.id})
+
+
+# -----------------------------------------------------------------------------
+# 8. Starea unei lucrari
 # -----------------------------------------------------------------------------
 
 @migrare_bp.route("/api/migrare/stare/<job_id>", methods=["GET"])

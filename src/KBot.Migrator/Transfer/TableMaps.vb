@@ -58,9 +58,15 @@ Public NotInheritable Class TableMaps
             Add(ColumnMapping.FromUnit("IdUnitate")).
             Add(ColumnMapping.FromConstant("An", TransferYear)).
             Add(ColumnMapping.FromConstant("Ascuns", 0)).
+            Add(ColumnMapping.WrittenElsewhere("Detalii")).
+            Add(ColumnMapping.WrittenElsewhere("SursaSector")).
+            Add(ColumnMapping.WrittenElsewhere("CodProgram")).
             ScopedBy("IdUnitate").
-            WithNote("Construit din registrul «cai»; «Detalii», «SursaSector» și " &
-                     "«CodProgram» vin din rândul unității."))
+            WithNote("Construit din registrul «cai»; «Detalii», «SursaSector» și «CodProgram» " &
+                     "sunt scrise de TransferRunner.WriteUnitati, în afara acestui plan - " &
+                     "declarația lor aici există doar ca verificatorul să le vadă acoperite, " &
+                     "nu ca să poarte o valoare reală. «Detalii» ia UNIT.Detalii, apoi " &
+                     "«AlteDetalii» din «cai», apoi numele unității."))
 
         ' --- Clasificatii ----------------------------------------------------------
         ' Rule 1: Access IDClsf goes into IdClsfAcc, and MariaDB assigns IDClsf.
@@ -165,7 +171,21 @@ Public NotInheritable Class TableMaps
         maps.Add(NameMatched("FX_Plati"))
         maps.Add(NameMatched("FX_Extrase_F"))
         maps.Add(NameMatched("FX_Extrase_H"))
-        maps.Add(NameMatched("FX_Extrase"))
+
+        ' FX_Extrase carries an IdUnitate column and it is NULL on ALL 3.110 rows, so
+        ' without a chain the whole table would be read as belonging to every selected
+        ' unit and written once per unit. The owner is the statement header: every row
+        ' joins FX_Extrase_H on IDFXH ▸ IDEXH with zero orphans (checked 23.08 on the
+        ' live file, 3.110 rows against 338 headers), and FX_Extrase_H.IdUnitate is
+        ' filled in on all of them.
+        ' FromUnit for the same reason: the rows are filtered to their real owner now, so
+        ' the unit of the pass IS the row's unit, and writing it beats writing the NULL
+        ' the Access column holds.
+        maps.Add(NameMatched("FX_Extrase").
+            OwnedVia("FX_Extrase_H", "IDFXH", "IDEXH").
+            Add(ColumnMapping.FromUnit("IdUnitate")).
+            WithNote("«IdUnitate» e gol pe toate cele 3.110 rânduri Access; unitatea vine " &
+                     "din «FX_Extrase_H» prin «IDFXH» ▸ «IDEXH» și se scrie pe țintă."))
         maps.Add(NameMatched("FX_Receptii_R"))
 
         ' --- FX_DDF_REV_SA ---------------------------------------------------------
@@ -175,20 +195,31 @@ Public NotInheritable Class TableMaps
         ' not. Decision D9: write the Access IdClsf into it, which is exactly what
         ' IdClsfAcc means on Clasificatii.
         ' IdPartener travels as NULL (§5.2) and the count is logged per table.
+        ' OwnedVia: four of the 32 rows carry IdUnitate = NULL (verified 23.08 on the live
+        ' file). Their unit comes from FX_DDF through IDDF - 138 ▸ IDDF 73 ▸ unit 76, and
+        ' 146/150/152 ▸ IDDF 77/79/80 ▸ unit 75. Without the chain each of the four was
+        ' checked against EVERY selected unit and resolved IdClsf against the wrong
+        ' nomenclator, which is what produced the mirrored 141 / 97+374 findings.
         maps.Add(New TableMap("FX_DDF_REV_SA", "FX_DDF_REV_SA", SourceFile.ForexeFile).
             Add(ColumnMapping.FromClasificatie("IdClsf", "IdClsf", True)).
             Add(ColumnMapping.FromAccess("IdClsfAcc", "IdClsf")).
             Add(ColumnMapping.AlwaysNull("IdPartener")).
+            Add(ColumnMapping.FromUnit("IdUnitate")).
             Exclude("ID", "IdClsfPY").
+            OwnedVia("FX_DDF", "IDDF", "IDDF").
             WithNote("D9: «IdClsfAcc» e NOT NULL fără implicit, deci primește IdClsf-ul " &
-                     "Access. «IdPartener» pleacă NULL (§5.2)."))
+                     "Access. «IdPartener» pleacă NULL (§5.2). Rândurile cu «IdUnitate» " &
+                     "gol își află unitatea din «FX_DDF» prin «IDDF», și pe țintă se " &
+                     "scrie unitatea aflată, nu golul din Access."))
 
         maps.Add(New TableMap("FX_DDF_REV_SB", "FX_DDF_REV_SB", SourceFile.ForexeFile).
             Add(ColumnMapping.FromClasificatie("IdClsf", "IdClsf", True)).
             Add(ColumnMapping.FromAccess("IdClsfAcc", "IdClsf")).
             Add(ColumnMapping.AlwaysNull("IdPartener")).
+            Add(ColumnMapping.FromUnit("IdUnitate")).
             Exclude("ID", "IdClsfPY").
-            WithNote("Aceeași formă ca SA."))
+            OwnedVia("FX_DDF", "IDDF", "IDDF").
+            WithNote("Aceeași formă ca SA, inclusiv cele patru rânduri fără «IdUnitate»."))
 
         ' --- FX_ORD ----------------------------------------------------------------
         ' Option (A), MAPARE_ACCESS_MARIADB.md §0: the Access id is written explicitly

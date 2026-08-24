@@ -1,4 +1,4 @@
-Imports System.Drawing
+﻿Imports System.Drawing
 Imports System.Globalization
 Imports System.IO
 Imports System.Threading
@@ -32,8 +32,14 @@ Public Class MigratorForm
     Private _units As New List(Of CaiUnit)()
     Private _cancellation As CancellationTokenSource
     Private _busy As Boolean
+    ''' <summary>Resolved by SetBusy(False), i.e. only once the running operation's own
+    ''' Finally has disposed every Access/MariaDB connection it opened. FormClosing awaits
+    ''' this instead of closing the window - and the process behind it - while ACE is still
+    ''' mid-call, which used to crash on exit.</summary>
+    Private _operationFinished As TaskCompletionSource(Of Boolean)
     Private _boldFont As Font
     Private _normalFont As Font
+    Private _journalPath As String
 
     Public Sub New()
         InitializeComponent()
@@ -44,10 +50,11 @@ Public Class MigratorForm
     Private Sub MigratorForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Try
             txtRegistru.Text = _settings.RegistryPath
-            txtJurnal.Text = _settings.JournalFolder
+            _journalPath = _settings.JournalFolder
             txtGazda.Text = _settings.Host
             txtPort.Text = _settings.Port.ToString(CultureInfo.InvariantCulture)
             txtUtilizator.Text = _settings.User
+            txtServerUrl.Text = _settings.ServerUrl
 
             FillTableList()
             ResetProgress()
@@ -60,7 +67,7 @@ Public Class MigratorForm
         End Try
     End Sub
 
-    Private Sub MigratorForm_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
+    Private Async Sub MigratorForm_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
         Try
             If _busy Then
                 Dim answer = MessageBox.Show(
@@ -71,7 +78,18 @@ Public Class MigratorForm
                     e.Cancel = True
                     Return
                 End If
+
+                ' Cancelling only asks the background operation to stop - it still has to unwind
+                ' through its Using blocks and close its Access/MariaDB connections. Closing the
+                ' window right away closed the process out from under it instead, mid ACE call,
+                ' which is what showed up as a crash-on-exit dialog. Block this close, wait for
+                ' SetBusy(False) (set only after that unwind finishes), then close for real.
+                e.Cancel = True
                 _cancellation?.Cancel()
+                Dim pending = _operationFinished
+                If pending IsNot Nothing Then Await pending.Task
+                Close()
+                Return
             End If
             SaveSettings()
         Catch ex As Exception
@@ -88,14 +106,30 @@ Public Class MigratorForm
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Copies every box the operator can edit into the settings and writes them to disk.
+    ''' </summary>
+    ''' <remarks>
+    ''' The server's ADDRESS belongs to the «Server Python» group and lives here between runs.
+    ''' Its API KEY does not: a key is a secret, and this class holds none - see the note at
+    ''' the top of <see cref="MigratorSettings"/>. It is read out of its box at the moment a
+    ''' request is built, exactly like the two passwords.
+    ''' <para>
+    ''' Called from <see cref="BuildRequest"/> too, before anything is launched, so
+    ''' <see cref="OfferSchemaSyncAsync"/> reads what the operator typed and not what was on
+    ''' disk when the form opened.
+    ''' </para>
+    ''' </remarks>
     Private Sub SaveSettings()
         _settings.RegistryPath = txtRegistru.Text.Trim()
-        _settings.JournalFolder = txtJurnal.Text.Trim()
+        _settings.JournalFolder = If(_journalPath, String.Empty).Trim()
         _settings.Host = txtGazda.Text.Trim()
         _settings.Port = ParsePort()
         _settings.User = txtUtilizator.Text.Trim()
         _settings.Dc = Convert.ToString(cboDc.SelectedItem, CultureInfo.InvariantCulture)
-        ' No password reaches this call - MigratorSettings has no field for one.
+        _settings.ServerUrl = txtServerUrl.Text.Trim()
+        ' No secret reaches this call - MigratorSettings has no field for one. The API key
+        ' stays in its box and dies with the window.
         _settings.Save()
     End Sub
 
@@ -114,12 +148,12 @@ Public Class MigratorForm
         End Try
     End Sub
 
-    Private Sub btnRasfoireJurnal_Click(sender As Object, e As EventArgs) Handles btnRasfoireJurnal.Click
+    Private Sub btnRasfoireJurnal_Click(sender As Object, e As EventArgs)
         Try
-            Using dialog As New FolderBrowserDialog()
+            Using dialog As New FolderBrowserDialog
                 dialog.Description = "Alegeți dosarul jurnalului SQL"
-                If Directory.Exists(txtJurnal.Text) Then dialog.SelectedPath = txtJurnal.Text
-                If dialog.ShowDialog(Me) = DialogResult.OK Then txtJurnal.Text = dialog.SelectedPath
+                If Directory.Exists(_journalPath) Then dialog.SelectedPath = _journalPath
+                If dialog.ShowDialog(Me) = DialogResult.OK Then _journalPath = dialog.SelectedPath
             End Using
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.btnRasfoireJurnal_Click", ex)
@@ -319,31 +353,29 @@ Public Class MigratorForm
     ''' appears exactly when it applies.
     ''' </remarks>
     Private Async Function OfferSchemaSyncAsync(dc As String) As Task
-        Dim runner As New SchemaSyncRunner(
-            _settings.SshExecutable, _settings.SshTarget, _settings.SshKeyFile,
-            _settings.SshPort, _settings.SchemaSyncRemoteCommand, AddressOf SayFromWorker)
+        ' Straight from the «Server Python» boxes, not from the copy on disk: the operator may
+        ' have just typed a different address, and the key is never on disk to begin with.
+        Dim address = txtServerUrl.Text.Trim()
+        Dim apiKey = txtCheieApi.Text
 
         Dim reason As String = Nothing
-        If Not runner.Validate(reason) Then
-            Warn("Structura bazei ar putea fi construită pe server cu «schema_sync», dar " &
-                 "configurația nu permite pornirea lui." &
-                 Environment.NewLine & Environment.NewLine & reason &
-                 Environment.NewLine & Environment.NewLine &
-                 "Se corectează în «migrator-settings.json», lângă executabil: «sshTarget», " &
-                 "«sshKeyFile», «sshPort», «schemaSyncRemoteCommand».")
+        If Not SchemaSyncClient.Validate(address, apiKey, reason) Then
+            Warn("Structura bazei ar putea fi construită pe server, dar configurația nu " &
+                 "permite pornirea." &
+                 Environment.NewLine & Environment.NewLine & reason)
             Return
         End If
 
         Dim answer = MessageBox.Show(
             $"Baza «{dc}» există, dar nu are niciun tabel." & Environment.NewLine & Environment.NewLine &
-            "Structura poate fi construită acum rulând «schema_sync» PE SERVER (" &
-            _settings.SshTarget & "), după «" & _settings.TemplateDatabase & "»." &
+            "Structura poate fi construită acum PE SERVER (" & address & "), după «" &
+            _settings.TemplateDatabase & "»." &
             Environment.NewLine & Environment.NewLine &
             "După aceea verificarea se reia automat." & Environment.NewLine & Environment.NewLine &
-            "Rulați «schema_sync» pe server?",
+            "Construiți structura acum?",
             "Bază fără tabele", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
         If answer <> DialogResult.Yes Then
-            Say("schema_sync nu a fost pornit. Baza rămâne fără tabele.")
+            Say("Structura nu a fost construită. Baza rămâne fără tabele.")
             Return
         End If
 
@@ -354,12 +386,17 @@ Public Class MigratorForm
         Dim result As SchemaSyncResult = Nothing
         Try
             Dim token = _cancellation.Token
-            result = Await Task.Run(Function() runner.Run(dc, token), token)
+            ' Disposed with the run: one HttpClient per run, not one per form. This is used
+            ' once in a blue moon - only for a database somebody created empty - so a client
+            ' living for the lifetime of the window would sit idle holding a key header.
+            Using client As New SchemaSyncClient(address, apiKey, AddressOf SayFromWorker)
+                result = Await client.RunAsync(dc, token)
+            End Using
         Catch ex As OperationCanceledException
-            Say("schema_sync a fost oprit.")
+            Say("Urmărirea a fost oprită.")
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.OfferSchemaSyncAsync", ex)
-            Warn("«schema_sync» nu a putut fi rulat." & Environment.NewLine & Environment.NewLine & ex.Message)
+            Warn("Structura nu a putut fi construită." & Environment.NewLine & Environment.NewLine & ex.Message)
         Finally
             EndProgress()
             SetBusy(False)
@@ -370,22 +407,23 @@ Public Class MigratorForm
         If result Is Nothing Then Return
 
         If Not result.Succeeded Then
-            ' 255 means the SSH client failed, so the script never started - a different
-            ' problem, in a different place, and worth saying so in the box and not only in
-            ' the log.
-            Dim extra = If(result.ExitCode = 255,
-                           Environment.NewLine & Environment.NewLine &
-                           "Codul 255 vine de la clientul SSH: conexiunea sau autentificarea " &
-                           "a eșuat, deci scriptul nu a pornit pe server." &
-                           Environment.NewLine & Environment.NewLine & runner.HostKeyHint(),
-                           String.Empty)
-            Warn($"«schema_sync» s-a încheiat cu codul {result.ExitCode}." & Environment.NewLine &
-                 Environment.NewLine & "Ieșirea completă este în jurnalul de mai jos." & extra)
+            ' A refusal is not a failure of the server: the plan contained something
+            ' destructive, which a database with no tables cannot legitimately produce. Said
+            ' plainly, because the answer is to go and look at the database, not to retry.
+            Dim detail = If(result.Refused,
+                            $"Din cele {result.Statements} instrucțiuni calculate, " &
+                            $"{result.Destructive} ar șterge ceva, iar o bază goală nu are ce " &
+                            "pierde. Nu s-a executat nimic. Verificați dacă baza este într-adevăr " &
+                            "cea potrivită.",
+                            $"{result.Failed} din {result.Statements} instrucțiuni au eșuat.")
+            Warn("Structura nu a fost construită complet." & Environment.NewLine &
+                 Environment.NewLine & detail & Environment.NewLine & Environment.NewLine &
+                 "Toate liniile serverului sunt în jurnalul de mai jos.")
             Return
         End If
 
         Say("Structura a fost construită. Se reia verificarea.")
-        ' offerSchemaSync:=False - if the script reported success but created nothing, the
+        ' offerSchemaSync:=False - if the server reported success but created nothing, the
         ' second pass reports it once and stops, rather than offering the same run again.
         Await VerifyAsync(offerSchemaSync:=False)
     End Function
@@ -616,7 +654,7 @@ Public Class MigratorForm
             Return Nothing
         End If
 
-        Dim journal = txtJurnal.Text.Trim()
+        Dim journal = If(_journalPath, String.Empty).Trim()
         If journal.Length = 0 Then
             Warn("Dosarul jurnalului SQL lipsește. Fără el transferul nu pornește, " &
                  "ca să nu existe o migrare nescrisă nicăieri.")
@@ -752,11 +790,16 @@ Public Class MigratorForm
         btnOpreste.Enabled = busy
         If busy Then btnTransfera.Enabled = False
         Cursor = If(busy, Cursors.WaitCursor, Cursors.Default)
+
+        If busy Then
+            _operationFinished = New TaskCompletionSource(Of Boolean)(TaskCreationOptions.RunContinuationsAsynchronously)
+        Else
+            _operationFinished?.TrySetResult(True)
+        End If
     End Sub
 
     Private Sub Warn(message As String)
         Say(message.Replace(Environment.NewLine, " "))
         MessageBox.Show(message, "Migrare", MessageBoxButtons.OK, MessageBoxIcon.Warning)
     End Sub
-
 End Class

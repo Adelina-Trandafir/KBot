@@ -129,8 +129,9 @@ Public NotInheritable Class TransferRunner
     ''' created from the template has structure but no rows, and Clasificatii,
     ''' Clasificatii_Buget, Parteneri and FX_ORD_TBL all carry a foreign key into Unitati.
     ''' IdUnitate is a primary key WITHOUT auto_increment, so it can only arrive here.
-    ''' Detalii, SursaSector and CodProgram come from the cai row and the unit's own UNIT
-    ''' table; An is 2026 (D1).
+    ''' SursaSector and CodProgram come from the cai row and the unit's own UNIT table; An is
+    ''' 2026 (D1). Detalii prefers the unit's own UNIT.Detalii, falls back to the cai row's
+    ''' AlteDetalii, and falls back again to the unit's display name.
     ''' </remarks>
     Private Function WriteUnitati(cn As MySqlConnection, transaction As MySqlTransaction,
                                   schema As TargetSchema, dump As SqlDumpWriter,
@@ -153,9 +154,11 @@ Public NotInheritable Class TransferRunner
                 outcome.RowsRead += 1
 
                 Dim details = ReadUnitDetails(unit)
+                Dim detalii = If(String.IsNullOrWhiteSpace(details.Detalii), unit.AlteDetalii, details.Detalii)
+                detalii = If(String.IsNullOrWhiteSpace(detalii), unit.NumeUnitate, detalii)
                 Dim values As New Dictionary(Of String, Object)(StringComparer.OrdinalIgnoreCase) From {
                     {"IdUnitate", unit.IdUnitate},
-                    {"Detalii", If(String.IsNullOrWhiteSpace(details.Detalii), unit.NumeUnitate, details.Detalii)},
+                    {"Detalii", detalii},
                     {"SursaSector", unit.Sursa},
                     {"An", TableMaps.TransferYear},
                     {"CodProgram", If(String.IsNullOrEmpty(details.CodProgram), CObj(DBNull.Value), details.CodProgram)},
@@ -223,6 +226,11 @@ Public NotInheritable Class TransferRunner
                     Continue For
                 End If
 
+                ' Built per unit rather than cached: the parent tables are small (FX_DDF
+                ' has 9 rows, FX_Extrase_H has 338) and a cache keyed by file path would
+                ' outlive the connection it was read through.
+                Dim ownership = UnitOwnership.Build(accessCn, map)
+
                 Dim accessColumns = AccessSchema.Columns(accessCn, realName).Select(Function(c) c.Name).ToList()
                 Dim plan = ColumnPlan.Build(map, accessColumns, schema)
                 If plan.Mappings.Count = 0 Then Continue For
@@ -244,7 +252,7 @@ Public NotInheritable Class TransferRunner
                             cancel.ThrowIfCancellationRequested()
                             outcome.RowsRead += 1
 
-                            If Not BelongsToUnit(reader, unit) Then
+                            If Not BelongsToUnit(reader, unit, map, ownership) Then
                                 outcome.RowsOtherUnit += 1
                                 Continue While
                             End If
@@ -359,12 +367,30 @@ Public NotInheritable Class TransferRunner
     ''' <see cref="ParentsTravelled"/> answers from the keys already written.
     ''' A row belonging to another unit is skipped SILENTLY: that is the normal shape of a
     ''' shared file, not a finding.
+    '''
+    ''' A NULL IdUnitate is NOT "belongs to whoever is being written". It used to be read
+    ''' that way, and the four FX_DDF_REV_SA rows that carry one were then written once
+    ''' per selected unit, each time resolving IdClsf against the wrong nomenclator. The
+    ''' unit now comes from the parent chain the map declares, and a row that still
+    ''' cannot be attributed stops the run - the verifier refuses it first.
     ''' </remarks>
-    Private Shared Function BelongsToUnit(reader As AccessTableReader, unit As CaiUnit) As Boolean
-        If Not reader.HasColumn("IdUnitate") Then Return True
-        Dim value = Verifier.AsInteger(reader.ValueOrMissing("IdUnitate"))
-        If Not value.HasValue Then Return True
-        Return value.Value = unit.IdUnitate
+    Private Shared Function BelongsToUnit(reader As AccessTableReader, unit As CaiUnit,
+                                          map As TableMap, ownership As UnitOwnership) As Boolean
+        Dim rowUnit As Integer
+        Select Case UnitOwnership.Resolve(reader, ownership, rowUnit)
+            Case UnitScope.Named
+                Return rowUnit = unit.IdUnitate
+            Case UnitScope.ParentScoped
+                ' No IdUnitate column at all: the row reaches its unit through its
+                ' parents, and ParentsTravelled answers that.
+                Return True
+            Case Else
+                Throw New TransferException(
+                    $"«{map.TargetTable}»: un rând are «IdUnitate» gol și nicio legătură " &
+                    "de proprietate care să spună cărei unități îi aparține. Un fișier " &
+                    "FOREXE ține rândurile tuturor unităților din DC, deci rândul NU " &
+                    "poate fi atribuit unității care se scrie acum.")
+        End Select
     End Function
 
     ''' <summary>

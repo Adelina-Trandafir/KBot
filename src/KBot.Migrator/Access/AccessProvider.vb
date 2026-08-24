@@ -121,6 +121,12 @@ Public NotInheritable Class AccessProvider
         If Not String.IsNullOrEmpty(password) Then
             builder(PasswordProperty) = password
         End If
+        ' -4 turns off native resource (session) pooling and auto transaction enlistment.
+        ' Without it a pooled ACE session can outlive cn.Dispose(), sitting in a
+        ' process-wide native pool until the CLR's own non-deterministic cleanup - a
+        ' known source of an access violation racing against process teardown on the
+        ' .NET 8 System.Data.OleDb port.
+        builder("OLE DB Services") = "-4"
         Return builder.ConnectionString
     End Function
 

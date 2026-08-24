@@ -1,4 +1,5 @@
-﻿Imports System.Threading.Tasks
+﻿Imports System.Data.OleDb
+Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports KBot.Common
 Imports KBot.Theming
@@ -41,6 +42,16 @@ Friend Module Program
         Catch ex As Exception
             GlobalErrorLog.Write("Program.Main", ex)
             ShowFatal(ex)
+        Finally
+            ' A synchronous drain of any pooled native ACE objects while the process and
+            ' its COM apartment are still fully alive, run unconditionally right before
+            ' Main returns. Belt-and-suspenders alongside AccessProvider's "OLE DB
+            ' Services=-4" - see AccessProvider.BuildConnectionString.
+            Try
+                OleDbConnection.ReleaseObjectPool()
+            Catch poolEx As Exception
+                GlobalErrorLog.Write("Program.ReleaseObjectPool", poolEx)
+            End Try
         End Try
     End Sub
 

@@ -91,6 +91,30 @@ Public NotInheritable Class TableMap
     Public Property Note As String
 
     ''' <summary>
+    ''' The Access table a row's unit comes from when its own <c>IdUnitate</c> is NULL.
+    ''' </summary>
+    ''' <remarks>
+    ''' One Forexe file holds every unit of the DC, so a row with a NULL <c>IdUnitate</c>
+    ''' cannot be read as "belongs to the unit currently being processed" - it belongs to
+    ''' exactly one unit, and this chain says which. See <see cref="UnitOwnership"/>.
+    ''' </remarks>
+    Public Property UnitOwnerTable As String
+
+    ''' <summary>The column on THIS table that points at the owner.</summary>
+    Public Property UnitOwnerChildColumn As String
+
+    ''' <summary>The key column on the owner table.</summary>
+    Public Property UnitOwnerParentColumn As String
+
+    Public ReadOnly Property HasUnitOwner As Boolean
+        Get
+            Return Not String.IsNullOrEmpty(UnitOwnerTable) AndAlso
+                   Not String.IsNullOrEmpty(UnitOwnerChildColumn) AndAlso
+                   Not String.IsNullOrEmpty(UnitOwnerParentColumn)
+        End Get
+    End Property
+
+    ''' <summary>
     ''' Which resolution map this table FEEDS as it is written.
     ''' </summary>
     ''' <remarks>
@@ -149,6 +173,17 @@ Public NotInheritable Class TableMap
 
     Public Function ScopedBy(unitScopeColumn As String) As TableMap
         Me.UnitScopeColumn = unitScopeColumn
+        Return Me
+    End Function
+
+    ''' <summary>
+    ''' Declares where a row's unit comes from when its own <c>IdUnitate</c> is NULL.
+    ''' </summary>
+    Public Function OwnedVia(accessParentTable As String, childKeyColumn As String,
+                             parentKeyColumn As String) As TableMap
+        UnitOwnerTable = accessParentTable
+        UnitOwnerChildColumn = childKeyColumn
+        UnitOwnerParentColumn = parentKeyColumn
         Return Me
     End Function
 
