@@ -151,11 +151,14 @@ Public NotInheritable Class TableMaps
         maps.Add(NameMatched("FX_Indicatori"))
 
         ' --- FX_DDF ----------------------------------------------------------------
-        ' MAPARE_ACCESS_MARIADB.md §3. The upsert matches on (IDDF, CUAL), both present.
-        ' Cual is Integer on both sides here - Rule 2 holds for FX_DDF.
+        ' MAPARE_ACCESS_MARIADB.md §3. PK is IDDF alone as of 24.08 - the operator
+        ' dropped the CUAL half of the old composite key, which is also what let
+        ' WrittenKeys track FX_DDF at all (PrimaryKeyColumn only handles single-column
+        ' PKs) and fixed the FX_DDF_REV orphan-parent check. Cual still travels as an
+        ' ordinary column - Rule 2 still holds for it, it's just not part of the key.
         maps.Add(New TableMap("FX_DDF", "FX_DDF", SourceFile.ForexeFile).
             Exclude("IdUnitate", "IdPartener", "CodPartener", "SS", "DTQ").
-            WithNote("Cheia de upsert e (IDDF, CUAL), compusă."))
+            WithNote("Cheia e IDDF (fostă compusă cu CUAL, până pe 24.08)."))
 
         ' --- FX_DDF_REV ------------------------------------------------------------
         ' ESpeciala is on MariaDB and absent from Access (verified 0045-01 on the live

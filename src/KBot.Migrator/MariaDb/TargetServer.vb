@@ -150,25 +150,73 @@ Public NotInheritable Class TargetServer
     ''' The charset and collation a database was declared with.
     ''' </summary>
     Public Function CharacterSetOf(database As String, ByRef collation As String) As String
-        collation = String.Empty
         Try
             Using cn = Open(Nothing)
-                Const sql As String =
-                    "SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME " &
-                    "FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = @name"
-                Using cmd As New MySqlCommand(sql, cn)
-                    cmd.Parameters.AddWithValue("@name", database)
-                    Using reader = cmd.ExecuteReader()
-                        If Not reader.Read() Then Return String.Empty
-                        collation = reader.GetString(1)
-                        Return reader.GetString(0)
-                    End Using
-                End Using
+                Return CharacterSetOf(cn, database, collation)
             End Using
         Catch ex As Exception
             GlobalErrorLog.Write("TargetServer.CharacterSetOf", ex)
             Throw
         End Try
+    End Function
+
+    Private Shared Function CharacterSetOf(cn As MySqlConnection, database As String,
+                                           ByRef collation As String) As String
+        collation = String.Empty
+        Const sql As String =
+            "SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME " &
+            "FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = @name"
+        Using cmd As New MySqlCommand(sql, cn)
+            cmd.Parameters.AddWithValue("@name", database)
+            Using reader = cmd.ExecuteReader()
+                If Not reader.Read() Then Return String.Empty
+                collation = reader.GetString(1)
+                Return reader.GetString(0)
+            End Using
+        End Using
+    End Function
+
+    ''' <summary>
+    ''' Copies every BASE TABLE of <paramref name="template"/> into
+    ''' <paramref name="database"/> via <c>SHOW CREATE TABLE</c>, with
+    ''' <c>FOREIGN_KEY_CHECKS</c> off for the duration.
+    ''' </summary>
+    ''' <remarks>
+    ''' Creation order does not matter while the checks are off, so the tables need no
+    ''' sorting here - unlike the DATA, which is written with the checks ON precisely so
+    ''' that a wrong order fails loudly.
+    ''' <para>
+    ''' Runs on the connection the caller already checked the database over, so that no
+    ''' second connection can find the database in a different state than the checks did.
+    ''' The DDL that <c>SHOW CREATE TABLE</c> returns names its table WITHOUT a schema, so
+    ''' each <c>CREATE TABLE</c> lands in whatever the session's default database is:
+    ''' <see cref="MySqlConnection.ChangeDatabase"/> points the session at the target here
+    ''' rather than trusting the caller to have opened it that way.
+    ''' </para>
+    ''' <para>
+    ''' Both callers have already confirmed the database is in the state they need before
+    ''' this runs; this method does no such checking itself.
+    ''' </para>
+    ''' </remarks>
+    ''' <param name="progress">Called with each table name as it is created. May be Nothing.</param>
+    ''' <returns>The number of tables created.</returns>
+    Private Shared Function CopyStructure(cn As MySqlConnection, database As String,
+                                          template As String,
+                                          progress As Action(Of String)) As Integer
+        Dim created = 0
+        cn.ChangeDatabase(database)
+        Execute(cn, "SET FOREIGN_KEY_CHECKS = 0")
+        Try
+            For Each table In TablesOf(cn, template)
+                Dim ddl = ShowCreateTable(cn, template, table)
+                Execute(cn, RetargetSchema(ddl, template, database))
+                created += 1
+                progress?.Invoke(table)
+            Next
+        Finally
+            Execute(cn, "SET FOREIGN_KEY_CHECKS = 1")
+        End Try
+        Return created
     End Function
 
     ''' <summary>
@@ -186,21 +234,24 @@ Public NotInheritable Class TargetServer
     '''
     ''' CREATE DATABASE is DDL and cannot be rolled back, so this runs outside any
     ''' transaction and is reported as its own step.
+    '''
+    ''' One connection for the whole method: the checks and the copy must not be able to
+    ''' see the server in two different states.
     ''' </remarks>
     ''' <param name="progress">Called with each table name as it is created. May be Nothing.</param>
     ''' <returns>The number of tables created.</returns>
     Public Function CreateDatabaseFrom(database As String, template As String,
                                        progress As Action(Of String)) As Integer
         Try
-            Dim collation As String = Nothing
-            Dim charset = CharacterSetOf(template, collation)
-            If String.IsNullOrEmpty(charset) Then
-                Throw New InvalidOperationException(
-                    $"Baza-șablon «{template}» nu există pe server, deci baza «{database}» " &
-                    "nu poate fi creată după ea.")
-            End If
-
             Using cn = Open(Nothing)
+                Dim collation As String = Nothing
+                Dim charset = CharacterSetOf(cn, template, collation)
+                If String.IsNullOrEmpty(charset) Then
+                    Throw New InvalidOperationException(
+                        $"Baza-șablon «{template}» nu există pe server, deci baza «{database}» " &
+                        "nu poate fi creată după ea.")
+                End If
+
                 If DatabaseExists(cn, database) Then
                     Throw New InvalidOperationException(
                         $"Baza «{database}» există deja pe server. Crearea a fost oprită.")
@@ -208,30 +259,74 @@ Public NotInheritable Class TargetServer
 
                 Execute(cn, $"CREATE DATABASE {Quote(database)} " &
                             $"CHARACTER SET {charset} COLLATE {collation}")
-            End Using
 
-            Dim created = 0
-            Using cn = Open(database)
-                ' Creation order does not matter while the checks are off, so the tables
-                ' need no sorting here - unlike the DATA, which is written with the checks
-                ' ON precisely so that a wrong order fails loudly.
-                Execute(cn, "SET FOREIGN_KEY_CHECKS = 0")
-                Try
-                    For Each table In TablesOf(cn, template)
-                        Dim ddl = ShowCreateTable(cn, template, table)
-                        Execute(cn, RetargetSchema(ddl, template, database))
-                        created += 1
-                        progress?.Invoke(table)
-                    Next
-                Finally
-                    Execute(cn, "SET FOREIGN_KEY_CHECKS = 1")
-                End Try
+                Return CopyStructure(cn, database, template, progress)
             End Using
-
-            Return created
 
         Catch ex As Exception
             GlobalErrorLog.Write("TargetServer.CreateDatabaseFrom", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Builds an ALREADY-EXISTING but empty database's structure from
+    ''' <paramref name="template"/>. The direct replacement for the schema_sync/SSH remedy
+    ''' to <see cref="Finding.BAZA_FARA_TABELE"/>.
+    ''' </summary>
+    ''' <remarks>
+    ''' schema_sync's own route broke once the migrator's target moved to a different server
+    ''' than schema_sync's <c>DB_CONFIG</c>: it compared the DC name against the OLD server,
+    ''' where it was already fully populated, and reported nothing to build - leaving the
+    ''' real target, on the NEW server, still empty. This runs on the SAME connection the
+    ''' migrator already has open, so there is no second server to be pointed at the wrong
+    ''' place.
+    ''' <para>
+    ''' Refuses outright if the database is missing (use <see cref="CreateDatabaseFrom"/>
+    ''' for that) or already holds any table at all - this is a one-shot remedy for a
+    ''' database somebody created empty, not a diff tool, and running it twice against a
+    ''' database that has moved on would be worse than doing nothing.
+    ''' </para>
+    ''' <para>
+    ''' One connection for the whole method - the "is it empty" check and the copy that
+    ''' relies on the answer run over the SAME session, so nothing can create a table in
+    ''' the gap between them and have it silently survive the copy.
+    ''' </para>
+    ''' </remarks>
+    ''' <param name="progress">Called with each table name as it is created. May be Nothing.</param>
+    ''' <returns>The number of tables created.</returns>
+    Public Function BuildStructureInEmptyDatabase(database As String, template As String,
+                                                  progress As Action(Of String)) As Integer
+        Try
+            Using cn = Open(Nothing)
+                Dim collation As String = Nothing
+                If String.IsNullOrEmpty(CharacterSetOf(cn, template, collation)) Then
+                    Throw New InvalidOperationException(
+                        $"Baza-șablon «{template}» nu există pe server, deci structura bazei " &
+                        $"«{database}» nu poate fi construită după ea.")
+                End If
+
+                If Not DatabaseExists(cn, database) Then
+                    Throw New InvalidOperationException(
+                        $"Baza «{database}» nu există pe server. Această operație construiește " &
+                        "structura unei baze care EXISTĂ deja, dar e goală — pentru o bază " &
+                        "lipsă cu totul, folosiți crearea din șablon.")
+                End If
+
+                Dim existing = TablesOf(cn, database)
+                If existing.Count > 0 Then
+                    Throw New InvalidOperationException(
+                        $"Baza «{database}» are deja {existing.Count} tabel(e) — nu mai e goală. " &
+                        "Refuz să rulez peste o bază care a ieșit din starea pentru care există " &
+                        "această operație, ca structura să nu fie construită de două ori peste " &
+                        "aceeași bază.")
+                End If
+
+                Return CopyStructure(cn, database, template, progress)
+            End Using
+
+        Catch ex As Exception
+            GlobalErrorLog.Write("TargetServer.BuildStructureInEmptyDatabase", ex)
             Throw
         End Try
     End Function

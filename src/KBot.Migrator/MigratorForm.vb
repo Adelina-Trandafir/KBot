@@ -1,11 +1,9 @@
-﻿Imports System.Drawing
-Imports System.Globalization
+﻿Imports System.Globalization
 Imports System.IO
 Imports System.Threading
-Imports System.Threading.Tasks
-Imports System.Windows.Forms
 Imports KBot.Common
-
+Imports System.Data.OleDb
+Imports System.Runtime.InteropServices
 ''' <summary>
 ''' The migration console: pick the registry, the server, the units and the tables, verify,
 ''' then transfer.
@@ -27,6 +25,13 @@ Imports KBot.Common
 ''' </para>
 ''' </remarks>
 Public Class MigratorForm
+    <DllImport("kernel32.dll", SetLastError:=True)>
+    Private Shared Function TerminateProcess(hProcess As IntPtr, uExitCode As UInteger) As Boolean
+    End Function
+
+    <DllImport("kernel32.dll")>
+    Private Shared Function GetCurrentProcess() As IntPtr
+    End Function
 
     Private ReadOnly _settings As MigratorSettings = MigratorSettings.Load()
     Private _units As New List(Of CaiUnit)()
@@ -67,34 +72,51 @@ Public Class MigratorForm
         End Try
     End Sub
 
-    Private Async Sub MigratorForm_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
-        Try
-            If _busy Then
-                Dim answer = MessageBox.Show(
-                    "O operație este în curs. Închiderea o oprește și derulează tranzacția înapoi." &
-                    Environment.NewLine & "Închideți oricum?",
-                    "Migrare", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
-                If answer <> DialogResult.Yes Then
-                    e.Cancel = True
-                    Return
-                End If
+    'Private Async Sub MigratorForm_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
+    '    Try
+    '        If _busy Then
+    '            Dim answer = MessageBox.Show(
+    '                "O operație este în curs. Închiderea o oprește și derulează tranzacția înapoi." &
+    '                Environment.NewLine & "Închideți oricum?",
+    '                "Migrare", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
+    '            If answer <> DialogResult.Yes Then
+    '                e.Cancel = True
+    '                Return
+    '            End If
 
-                ' Cancelling only asks the background operation to stop - it still has to unwind
-                ' through its Using blocks and close its Access/MariaDB connections. Closing the
-                ' window right away closed the process out from under it instead, mid ACE call,
-                ' which is what showed up as a crash-on-exit dialog. Block this close, wait for
-                ' SetBusy(False) (set only after that unwind finishes), then close for real.
-                e.Cancel = True
-                _cancellation?.Cancel()
-                Dim pending = _operationFinished
-                If pending IsNot Nothing Then Await pending.Task
-                Close()
-                Return
-            End If
-            SaveSettings()
-        Catch ex As Exception
-            GlobalErrorLog.Write("MigratorForm.FormClosing", ex)
-        End Try
+    '            ' Cancelling only asks the background operation to stop - it still has to unwind
+    '            ' through its Using blocks and close its Access/MariaDB connections. Closing the
+    '            ' window right away closed the process out from under it instead, mid ACE call,
+    '            ' which is what showed up as a crash-on-exit dialog. Block this close, wait for
+    '            ' SetBusy(False) (set only after that unwind finishes), then close for real.
+    '            e.Cancel = True
+    '            _cancellation?.Cancel()
+    '            Dim pending = _operationFinished
+    '            If pending IsNot Nothing Then Await pending.Task
+    '            Close()
+    '            Return
+    '        End If
+    '        SaveSettings()
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("MigratorForm.FormClosing", ex)
+    '    End Try
+    'End Sub
+
+    ''' <summary>
+    ''' Kills the process without DLL_PROCESS_DETACH running for any loaded module.
+    ''' </summary>
+    ''' <remarks>
+    ''' The WinDbg trace pins this down exactly: Environment.Exit -&gt; the OS's
+    ''' ExitProcess -&gt; ntdll!LdrShutdownProcess -&gt; DLL_PROCESS_DETACH to every loaded
+    ''' DLL -&gt; mso98win32client.dll's own static destructor for its Floodgate telemetry
+    ''' client crashes on a bad pointer. That is a bug in Office's shared component, and
+    ''' it fires on ANY exit through ExitProcess - Environment.Exit included, which is why
+    ''' that "fix" changed nothing, and a Sleep beforehand changed nothing either, because
+    ''' there is no race to win: DLL_PROCESS_DETACH runs every time, not sometimes.
+    ''' TerminateProcess is the one documented way to skip DLL notification entirely.
+    ''' </remarks>
+    Private Shared Sub KillProcessNow()
+        TerminateProcess(GetCurrentProcess(), 0)
     End Sub
 
     Private Sub MigratorForm_FormClosed(sender As Object, e As FormClosedEventArgs) Handles MyBase.FormClosed
@@ -115,9 +137,8 @@ Public Class MigratorForm
     ''' the top of <see cref="MigratorSettings"/>. It is read out of its box at the moment a
     ''' request is built, exactly like the two passwords.
     ''' <para>
-    ''' Called from <see cref="BuildRequest"/> too, before anything is launched, so
-    ''' <see cref="OfferSchemaSyncAsync"/> reads what the operator typed and not what was on
-    ''' disk when the form opened.
+    ''' Called from <see cref="BuildRequest"/> too, before anything is launched, so every
+    ''' step reads what the operator typed and not what was on disk when the form opened.
     ''' </para>
     ''' </remarks>
     Private Sub SaveSettings()
@@ -301,8 +322,8 @@ Public Class MigratorForm
     ''' Runs every gate, shows the findings, and enables «Transferă» if nothing blocks.
     ''' </summary>
     ''' <param name="offerSchemaSync">
-    ''' When the target turns out to hold no tables at all, offer to build its structure with
-    ''' schema_sync and then verify again. False on that second pass, so a script that fails
+    ''' When the target turns out to hold no tables at all, offer to build its structure from
+    ''' the template and then verify again. False on that second pass, so a copy that fails
     ''' to create anything cannot start an endless offer-run-offer loop.
     ''' </param>
     Private Async Function VerifyAsync(offerSchemaSync As Boolean) As Task
@@ -339,37 +360,28 @@ Public Class MigratorForm
         If report Is Nothing OrElse Not offerSchemaSync Then Return
         If Not report.Findings.Any(Function(f) f.Kind = Finding.BAZA_FARA_TABELE) Then Return
 
-        Await OfferSchemaSyncAsync(request.TargetDatabase)
+        Await OfferBuildStructureAsync(request)
     End Function
 
-    ' ---- schema_sync ------------------------------------------------------------------------
+    ' ---- structure for an empty database ----------------------------------------------------
 
     ''' <summary>
-    ''' Offers to build an empty target database's structure ON THE SERVER, then verifies again.
+    ''' Offers to build an empty target database's structure directly - the same MariaDB
+    ''' connection the migrator already has open, no HTTP and no separate server involved.
     ''' </summary>
     ''' <remarks>
-    ''' Deliberately a prompt rather than a button: the form's layout is the operator's, and
-    ''' this is a remedy for one specific finding rather than a step of the normal flow. It
-    ''' appears exactly when it applies.
+    ''' Replaces the schema_sync/SSH route (see remarks on
+    ''' <see cref="TargetServer.BuildStructureInEmptyDatabase"/> for why it broke).
+    ''' Deliberately a prompt rather than a button, same as before: the form's layout is the
+    ''' operator's, and this is a remedy for one specific finding, not a step of the normal
+    ''' flow. It appears exactly when it applies.
     ''' </remarks>
-    Private Async Function OfferSchemaSyncAsync(dc As String) As Task
-        ' Straight from the «Server Python» boxes, not from the copy on disk: the operator may
-        ' have just typed a different address, and the key is never on disk to begin with.
-        Dim address = txtServerUrl.Text.Trim()
-        Dim apiKey = txtCheieApi.Text
-
-        Dim reason As String = Nothing
-        If Not SchemaSyncClient.Validate(address, apiKey, reason) Then
-            Warn("Structura bazei ar putea fi construită pe server, dar configurația nu " &
-                 "permite pornirea." &
-                 Environment.NewLine & Environment.NewLine & reason)
-            Return
-        End If
-
+    Private Async Function OfferBuildStructureAsync(request As TransferRequest) As Task
+        Dim dc = request.TargetDatabase
         Dim answer = MessageBox.Show(
             $"Baza «{dc}» există, dar nu are niciun tabel." & Environment.NewLine & Environment.NewLine &
-            "Structura poate fi construită acum PE SERVER (" & address & "), după «" &
-            _settings.TemplateDatabase & "»." &
+            "Structura poate fi construită acum după «" & request.TemplateDatabase & "», " &
+            "pe serverul MariaDB de mai sus." &
             Environment.NewLine & Environment.NewLine &
             "După aceea verificarea se reia automat." & Environment.NewLine & Environment.NewLine &
             "Construiți structura acum?",
@@ -383,20 +395,20 @@ Public Class MigratorForm
         BeginProgress(0)
         _cancellation = New CancellationTokenSource()
 
-        Dim result As SchemaSyncResult = Nothing
         Try
             Dim token = _cancellation.Token
-            ' Disposed with the run: one HttpClient per run, not one per form. This is used
-            ' once in a blue moon - only for a database somebody created empty - so a client
-            ' living for the lifetime of the window would sit idle holding a key header.
-            Using client As New SchemaSyncClient(address, apiKey, AddressOf SayFromWorker)
-                result = Await client.RunAsync(dc, token)
-            End Using
+            Dim created = Await Task.Run(
+                Function() request.Server.BuildStructureInEmptyDatabase(
+                    dc, request.TemplateDatabase, AddressOf SayFromWorker),
+                token)
+            Say($"Structură construită: {created} tabele.")
         Catch ex As OperationCanceledException
-            Say("Urmărirea a fost oprită.")
+            Say("Construirea a fost oprită.")
         Catch ex As Exception
-            GlobalErrorLog.Write("MigratorForm.OfferSchemaSyncAsync", ex)
-            Warn("Structura nu a putut fi construită." & Environment.NewLine & Environment.NewLine & ex.Message)
+            GlobalErrorLog.Write("MigratorForm.OfferBuildStructureAsync", ex)
+            Warn("Structura nu a putut fi construită." &
+                 Environment.NewLine & Environment.NewLine & ex.Message)
+            Return
         Finally
             EndProgress()
             SetBusy(False)
@@ -404,26 +416,7 @@ Public Class MigratorForm
             _cancellation = Nothing
         End Try
 
-        If result Is Nothing Then Return
-
-        If Not result.Succeeded Then
-            ' A refusal is not a failure of the server: the plan contained something
-            ' destructive, which a database with no tables cannot legitimately produce. Said
-            ' plainly, because the answer is to go and look at the database, not to retry.
-            Dim detail = If(result.Refused,
-                            $"Din cele {result.Statements} instrucțiuni calculate, " &
-                            $"{result.Destructive} ar șterge ceva, iar o bază goală nu are ce " &
-                            "pierde. Nu s-a executat nimic. Verificați dacă baza este într-adevăr " &
-                            "cea potrivită.",
-                            $"{result.Failed} din {result.Statements} instrucțiuni au eșuat.")
-            Warn("Structura nu a fost construită complet." & Environment.NewLine &
-                 Environment.NewLine & detail & Environment.NewLine & Environment.NewLine &
-                 "Toate liniile serverului sunt în jurnalul de mai jos.")
-            Return
-        End If
-
-        Say("Structura a fost construită. Se reia verificarea.")
-        ' offerSchemaSync:=False - if the server reported success but created nothing, the
+        ' offerSchemaSync:=False - if the copy reported success but created nothing, the
         ' second pass reports it once and stops, rather than offering the same run again.
         Await VerifyAsync(offerSchemaSync:=False)
     End Function
@@ -801,5 +794,33 @@ Public Class MigratorForm
     Private Sub Warn(message As String)
         Say(message.Replace(Environment.NewLine, " "))
         MessageBox.Show(message, "Migrare", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+    End Sub
+
+    Private Async Sub MigratorForm_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
+        Try
+            If _busy Then
+                Dim answer = MessageBox.Show(
+                    "O operație este în curs. Închiderea o oprește și derulează tranzacția înapoi." &
+                    Environment.NewLine & "Închideți oricum?",
+                    "Migrare", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
+                If answer <> DialogResult.Yes Then
+                    e.Cancel = True
+                    Return
+                End If
+
+                e.Cancel = True
+                _cancellation?.Cancel()
+                Dim pending = _operationFinished
+                If pending IsNot Nothing Then Await pending.Task
+                Close()
+                Return
+            End If
+
+            SaveSettings()
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.FormClosing", ex)
+        End Try
+
+        KillProcessNow()
     End Sub
 End Class

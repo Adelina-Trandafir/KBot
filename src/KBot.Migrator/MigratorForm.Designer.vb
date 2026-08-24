@@ -201,6 +201,7 @@ Partial Class MigratorForm
         grpPython.TabIndex = 0
         grpPython.TabStop = False
         grpPython.Text = "Server Python"
+        grpPython.Visible = False
         ' 
         ' tplPython
         ' 
