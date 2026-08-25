@@ -21,6 +21,8 @@ Partial Class MigratorForm
     Friend WithEvents btnRasfoireRegistru As System.Windows.Forms.Button
     Friend WithEvents lblParolaUnitati As System.Windows.Forms.Label
     Friend WithEvents txtParolaUnitati As KBot.Controls.KBotTextField
+    Friend WithEvents lblCodFiscal As System.Windows.Forms.Label
+    Friend WithEvents txtCodFiscal As KBot.Controls.KBotTextField
 
     ' --- region 1.5: python -------------------------------------------------------
     Friend WithEvents grpPython As System.Windows.Forms.GroupBox
@@ -115,6 +117,8 @@ Partial Class MigratorForm
         btnCitesteRegistru = New Button()
         cboDc = New ComboBox()
         lblDc = New Label()
+        lblCodFiscal = New Label()
+        txtCodFiscal = New Controls.KBotTextField()
         lblBazaTinta = New Label()
         grpTransfer = New GroupBox()
         tlpTransfer = New TableLayoutPanel()
@@ -558,16 +562,18 @@ Partial Class MigratorForm
         TableLayoutPanel1.Controls.Add(btnCitesteRegistru, 2, 1)
         TableLayoutPanel1.Controls.Add(cboDc, 1, 2)
         TableLayoutPanel1.Controls.Add(lblDc, 0, 2)
+        TableLayoutPanel1.Controls.Add(lblCodFiscal, 0, 3)
+        TableLayoutPanel1.Controls.Add(txtCodFiscal, 1, 3)
         TableLayoutPanel1.Dock = DockStyle.Fill
         TableLayoutPanel1.Location = New Point(0, 0)
         TableLayoutPanel1.Margin = New Padding(0)
         TableLayoutPanel1.Name = "TableLayoutPanel1"
         TableLayoutPanel1.RowCount = 5
         TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
-        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
         TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 38F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
         TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
         TableLayoutPanel1.Size = New Size(503, 187)
         TableLayoutPanel1.TabIndex = 4
         ' 
@@ -607,7 +613,7 @@ Partial Class MigratorForm
         txtParolaUnitati.MaxLength = 32767
         txtParolaUnitati.Name = "txtParolaUnitati"
         txtParolaUnitati.PlaceholderText = "lăsați gol dacă nu sunt protejate"
-        txtParolaUnitati.Size = New Size(301, 42)
+        txtParolaUnitati.Size = New Size(301, 40)
         txtParolaUnitati.TabIndex = 4
         txtParolaUnitati.TabStop = False
         txtParolaUnitati.UseSystemPasswordChar = True
@@ -631,7 +637,7 @@ Partial Class MigratorForm
         lblParolaUnitati.Location = New Point(4, 50)
         lblParolaUnitati.Margin = New Padding(4, 0, 4, 0)
         lblParolaUnitati.Name = "lblParolaUnitati"
-        lblParolaUnitati.Size = New Size(123, 52)
+        lblParolaUnitati.Size = New Size(123, 50)
         lblParolaUnitati.TabIndex = 3
         lblParolaUnitati.Text = "Parolă fișiere"
         lblParolaUnitati.TextAlign = ContentAlignment.MiddleLeft
@@ -648,7 +654,7 @@ Partial Class MigratorForm
         btnCitesteRegistru.Location = New Point(444, 54)
         btnCitesteRegistru.Margin = New Padding(4)
         btnCitesteRegistru.Name = "btnCitesteRegistru"
-        btnCitesteRegistru.Size = New Size(55, 44)
+        btnCitesteRegistru.Size = New Size(55, 42)
         btnCitesteRegistru.TabIndex = 2
         tipMigrator.SetToolTipHeader(btnCitesteRegistru, "Citește CALE.ACCDB")
         btnCitesteRegistru.UseVisualStyleBackColor = False
@@ -657,7 +663,7 @@ Partial Class MigratorForm
         ' 
         cboDc.Dock = DockStyle.Fill
         cboDc.DropDownStyle = ComboBoxStyle.DropDownList
-        cboDc.Location = New Point(135, 107)
+        cboDc.Location = New Point(135, 105)
         cboDc.Margin = New Padding(4, 5, 4, 5)
         cboDc.Name = "cboDc"
         cboDc.Size = New Size(301, 33)
@@ -667,13 +673,41 @@ Partial Class MigratorForm
         ' 
         lblDc.AutoSize = True
         lblDc.Dock = DockStyle.Fill
-        lblDc.Location = New Point(4, 102)
+        lblDc.Location = New Point(4, 100)
         lblDc.Margin = New Padding(4, 0, 4, 0)
         lblDc.Name = "lblDc"
         lblDc.Size = New Size(123, 38)
         lblDc.TabIndex = 0
         lblDc.Text = "DC"
         lblDc.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' lblCodFiscal
+        ' 
+        lblCodFiscal.AutoSize = True
+        lblCodFiscal.Dock = DockStyle.Fill
+        lblCodFiscal.Location = New Point(4, 138)
+        lblCodFiscal.Margin = New Padding(4, 0, 4, 0)
+        lblCodFiscal.Name = "lblCodFiscal"
+        lblCodFiscal.Size = New Size(123, 50)
+        lblCodFiscal.TabIndex = 6
+        lblCodFiscal.Text = "Cod fiscal"
+        lblCodFiscal.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' txtCodFiscal
+        ' 
+        txtCodFiscal.BackColor = Color.Transparent
+        txtCodFiscal.Dock = DockStyle.Fill
+        txtCodFiscal.Location = New Point(135, 143)
+        txtCodFiscal.Margin = New Padding(4, 5, 4, 5)
+        txtCodFiscal.MaxLength = 32
+        txtCodFiscal.Name = "txtCodFiscal"
+        txtCodFiscal.PlaceholderText = "se completează la alegerea DC-ului"
+        txtCodFiscal.Size = New Size(301, 40)
+        txtCodFiscal.TabIndex = 5
+        txtCodFiscal.TabStop = True
+        tipMigrator.SetToolTipHeader(txtCodFiscal, "Cod fiscal (suprascrie registry)")
+        tipMigrator.SetToolTipText(txtCodFiscal, resources.GetString("txtCodFiscal.ToolTipText"))
+        txtCodFiscal.UseSystemPasswordChar = False
         ' 
         ' lblBazaTinta
         ' 

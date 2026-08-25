@@ -35,7 +35,7 @@ Public NotInheritable Class Verifier
     ''' A constant rather than a count of anything: the gates are a fixed list, and a bar
     ''' that rescales itself halfway through reads as a bug even when it is not.
     ''' </remarks>
-    Public Const StepCount As Integer = 11
+    Public Const StepCount As Integer = 13
 
     Private ReadOnly _request As TransferRequest
     Private ReadOnly _log As Action(Of String)
@@ -116,6 +116,17 @@ Public NotInheritable Class Verifier
                     Where(Function(m) _request.IsTableSelected(m.TargetTable)).
                     ToList()
 
+                Step1("Se stabilește proprietatea rândurilor…")
+                ' Built HERE and nowhere else. The report carries it out to the form, which
+                ' hands the same object to TransferRunner - so the selection the operator
+                ' was shown is the selection that gets written, and there is no second
+                ' construction site to drift from this one.
+                report.Ownership = OwnershipPlan.Build(_request, _log)
+                For Each finding In report.Ownership.Findings
+                    report.Add(finding)
+                Next
+                cancel.ThrowIfCancellationRequested()
+
                 Step1("Se verifică existența tabelelor…")
                 CheckTablesExist(report, schema, maps)
                 cancel.ThrowIfCancellationRequested()
@@ -138,6 +149,10 @@ Public NotInheritable Class Verifier
 
                 Step1("Se verifică lățimile…")
                 CheckClasificatiiWidths(report, schema, clasificatii)
+                cancel.ThrowIfCancellationRequested()
+
+                Step1("Se verifică cheile părinților…")
+                CheckParentKeysTrackable(report, schema, maps)
                 cancel.ThrowIfCancellationRequested()
 
                 Step1("Se rezolvă clasificațiile (uscat)…")
@@ -432,9 +447,22 @@ Public NotInheritable Class Verifier
 
     ' ---- gate 7 and 8: the resolutions, run dry -----------------------------------
 
+    ''' <summary>
+    ''' Every FX_* classification must resolve against the Clasificatii about to be written.
+    ''' </summary>
+    ''' <remarks>
+    ''' Run once per FILE now, not once per selected unit. The row's unit comes from
+    ''' <see cref="OwnershipPlan.Decide"/> - the same function the writer asks - so a row
+    ''' is checked against ITS nomenclator and against no other. Reading it once per unit
+    ''' is what made the same rows produce a finding N times and, worse, produce mirrored
+    ''' findings that contradicted each other on real data.
+    ''' </remarks>
     Private Sub CheckClasificatiiResolution(report As VerificationReport,
                                             maps As IEnumerable(Of TableMap),
                                             clasificatii As List(Of ClasificatieRow))
+        Dim ownership = report.Ownership
+        If ownership Is Nothing Then Return
+
         ' What the transferred nomenclator WOULD cover.
         Dim covered As New HashSet(Of String)(StringComparer.Ordinal)
         For Each row In clasificatii
@@ -447,49 +475,33 @@ Public NotInheritable Class Verifier
             ToList()
         If consumers.Count = 0 Then Return
 
-        ' Rows with no determinable unit are the same rows on every pass, so they are
-        ' reported on the first pass only rather than once per selected unit.
-        Dim withFile = _request.Units.Where(Function(u) u.HasForexeFile).ToList()
-        If withFile.Count = 0 Then Return
-        Dim firstUnit = withFile(0).IdUnitate
-
-        For Each unit In withFile
-
-            Using cn = AccessProvider.Open(unit.ForexeFilePath, _request.ForexeFilePassword)
+        For Each pass In ForexePasses()
+            Using cn = AccessProvider.Open(pass.Path, _request.ForexeFilePassword)
                 For Each map In consumers
                     Dim realName = AccessSchema.ResolveTableName(cn, map.AccessTable)
                     If realName Is Nothing Then Continue For
 
                     Dim mapping = map.Derived.First(Function(d) d.Kind = ColumnSourceKind.ResolvedClasificatie)
-                    Dim ownership = UnitOwnership.Build(cn, map)
                     Dim misses As New Dictionary(Of String, Integer)(StringComparer.Ordinal)
-                    Dim nullUnit = 0
-                    Dim noUnitColumn = 0
+                    Dim withoutUnit = 0
 
                     Using reader = AccessSchema.OpenReader(cn, realName)
                         While reader.Read()
-                            ' The row names its unit, or its parent does. A NULL IdUnitate
-                            ' is not a wildcard: with one Forexe file per DC it would
-                            ' check every unit's rows against every unit's nomenclator.
-                            Dim rowUnit As Integer
-                            Select Case UnitOwnership.Resolve(reader, ownership, rowUnit)
-                                Case UnitScope.Named
-                                    If rowUnit <> unit.IdUnitate Then Continue While
-                                Case UnitScope.ParentScoped
-                                    ' Being scoped by the parents is enough to WRITE a row,
-                                    ' but not to resolve a classification: that needs the
-                                    ' unit by name. No consumer is in this state today.
-                                    noUnitColumn += 1
-                                    Continue While
-                                Case Else
-                                    nullUnit += 1
-                                    Continue While
-                            End Select
+                            Dim verdict = ownership.Decide(map, reader, pass.Units)
+                            If verdict.Disposition <> RowDisposition.Travels Then Continue While
+
+                            If Not verdict.HasUnit Then
+                                ' Travelling is enough to WRITE a row, but not to resolve a
+                                ' classification: that needs one unit by name. No consumer
+                                ' is in this state today, and the writer refuses it too.
+                                withoutUnit += 1
+                                Continue While
+                            End If
 
                             Dim idClsf = AsInteger(reader.ValueOrMissing(mapping.AccessColumn))
                             If Not idClsf.HasValue OrElse idClsf.Value = 0 Then Continue While
 
-                            Dim key = $"{idClsf.Value}|{unit.IdUnitate}"
+                            Dim key = $"{idClsf.Value}|{verdict.IdUnitate}"
                             If covered.Contains(key) Then Continue While
 
                             Dim count As Integer
@@ -498,44 +510,62 @@ Public NotInheritable Class Verifier
                         End While
                     End Using
 
-                    ' Reported on the first pass only: the rows are the same every time,
-                    ' and one finding per selected unit would say the same thing twice.
-                    If unit.IdUnitate = firstUnit Then
-                        If nullUnit > 0 Then
-                            report.Add(Finding.UNITATE_NEDETERMINATA, FindingClass.Blocant,
-                                       map.TargetTable, UnitOwnership.UnitColumn,
-                                       $"{nullUnit} rânduri au «IdUnitate» gol și nicio " &
-                                       "legătură de proprietate care să spună cărei unități " &
-                                       "le aparțin. Un fișier FOREXE ține rândurile tuturor " &
-                                       "unităților din DC, deci nu pot fi atribuite unității " &
-                                       "care se scrie — s-ar rezolva pe nomenclatorul greșit.",
-                                       nullUnit)
-                        End If
-                        If noUnitColumn > 0 Then
-                            report.Add(Finding.UNITATE_NEDETERMINATA, FindingClass.Blocant,
-                                       map.TargetTable, UnitOwnership.UnitColumn,
-                                       $"Tabelul nu are deloc coloana «IdUnitate», dar îi " &
-                                       $"trebuie una: cele {noUnitColumn} rânduri își rezolvă " &
-                                       "clasificația pe nomenclatorul unei unități, iar " &
-                                       "fișierul FOREXE le ține pe toate. Declarați " &
-                                       "proprietarul cu «OwnedVia».", noUnitColumn)
-                        End If
+                    If withoutUnit > 0 Then
+                        report.Add(Finding.UNITATE_NEDETERMINATA, FindingClass.Blocant,
+                                   map.TargetTable, UnitOwnership.UnitColumn,
+                                   $"{withoutUnit} rânduri călătoresc, dar nu numesc UNA " &
+                                   "singură unitate, iar clasificația lor se rezolvă pe " &
+                                   "nomenclatorul unei unități. Un fișier FOREXE ține " &
+                                   "rândurile tuturor unităților din DC, deci nu pot fi " &
+                                   "atribuite uneia alese la întâmplare — s-ar rezolva pe " &
+                                   "nomenclatorul greșit.", withoutUnit)
                     End If
 
                     If misses.Count = 0 Then Continue For
 
-                    Dim total = misses.Values.Sum()
-                    Dim shown = String.Join(", ", misses.Keys.Take(10).Select(Function(k) k.Split("|"c)(0)))
-                    report.Add(Finding.CLASIFICATIE_NEREZOLVATA,
-                               If(mapping.BlockingOnMiss, FindingClass.Blocant, FindingClass.Atentie),
-                               map.TargetTable, mapping.TargetColumn,
-                               $"Unitatea {unit.IdUnitate}: {misses.Count} clasificații de pe " &
-                               $"{total} rânduri nu se regăsesc în «Clasificatii» care se " &
-                               $"transferă (IdClsf: {shown}).", total)
+                    ' Grouped by unit, because "unit 75 is missing 141" and "unit 76 is
+                    ' missing 141" are different facts with different remedies.
+                    For Each group In misses.GroupBy(Function(kv) kv.Key.Split("|"c)(1)).
+                                             OrderBy(Function(g) g.Key, StringComparer.Ordinal)
+                        Dim total = group.Sum(Function(kv) kv.Value)
+                        Dim shown = String.Join(", ", group.Take(10).Select(Function(kv) kv.Key.Split("|"c)(0)))
+                        report.Add(Finding.CLASIFICATIE_NEREZOLVATA,
+                                   If(mapping.BlockingOnMiss, FindingClass.Blocant, FindingClass.Atentie),
+                                   map.TargetTable, mapping.TargetColumn,
+                                   $"Unitatea {group.Key}: {group.Count()} clasificații de pe " &
+                                   $"{total} rânduri nu se regăsesc în «Clasificatii» care se " &
+                                   $"transferă (IdClsf: {shown}).", total)
+                    Next
                 Next
             End Using
         Next
     End Sub
+
+    ''' <summary>
+    ''' One entry per distinct Forexe FILE, with the selected units pointing at it.
+    ''' </summary>
+    ''' <remarks>
+    ''' The verifier's half of <c>TransferRunner.FilePasses</c>. Eleven of the thirteen
+    ''' <c>cai</c> rows name the same file, so this is one pass where the old code did
+    ''' eleven - and the eleven were the reason the same finding appeared "de două ori".
+    ''' </remarks>
+    Private Function ForexePasses() As List(Of ForexePass)
+        Dim byPath As New Dictionary(Of String, ForexePass)(StringComparer.OrdinalIgnoreCase)
+        Dim ordered As New List(Of ForexePass)()
+
+        For Each unit In _request.Units
+            If Not unit.HasForexeFile Then Continue For
+            Dim pass As ForexePass = Nothing
+            If Not byPath.TryGetValue(unit.ForexeFilePath, pass) Then
+                pass = New ForexePass(unit.ForexeFilePath)
+                byPath(unit.ForexeFilePath) = pass
+                ordered.Add(pass)
+            End If
+            pass.Units.Add(unit)
+        Next
+
+        Return ordered
+    End Function
 
     ''' <summary>
     ''' Every partner code <c>Parteneri_Coduri</c> needs must exist in the
@@ -644,6 +674,82 @@ Public NotInheritable Class Verifier
                                CInt(Math.Min(count, Integer.MaxValue)))
                 End If
             Next
+        Next
+    End Sub
+
+    ' ---- gate: a parent must be able to record the key its children are checked on ----
+
+    ''' <summary>
+    ''' Every table in the write set that is a PARENT of another table in the write set
+    ''' must be able to record the key value its children will be checked against.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>
+    ''' Decision D13, written because of a defect that ran in total silence.
+    ''' <c>TransferRunner.PrimaryKeyColumn</c> returns Nothing for a multi-column primary
+    ''' key. <c>FX_DDF</c> was <c>PRIMARY KEY (IDDF, CUAL)</c>, so <c>RecordPrimaryKey</c>
+    ''' recorded nothing, <c>WrittenKeys.Tracks("FX_DDF")</c> stayed False, and the first
+    ''' line of <c>ParentsTravelled</c> - <c>If Not _written.Tracks(...) Then Continue For</c>
+    ''' - dropped the FX_DDF link for EVERY child pointing at it. The orphan check for
+    ''' FX_DDF_REV, FX_ORD and tblDocFund_Revizii_Clsf was disarmed, and the run died much
+    ''' later on <c>1452</c> naming the child rather than the cause.
+    ''' </para>
+    ''' <para>
+    ''' The operator has since made the key <c>IDDF</c> alone, so the immediate cause is
+    ''' gone. This gate exists because a parent whose keys are silently not tracked must
+    ''' never again be a silent condition - it is cheap, it asks the LIVE schema, and it
+    ''' would have caught the original before the first row was written.
+    ''' </para>
+    ''' <para>
+    ''' A table that FEEDS a resolution map is exempt: its key is assigned by the server and
+    ''' recorded from <c>LAST_INSERT_ID()</c>, never from the primary-key column.
+    ''' </para>
+    ''' </remarks>
+    Private Shared Sub CheckParentKeysTrackable(report As VerificationReport, schema As TargetSchema,
+                                                maps As IReadOnlyList(Of TableMap))
+        Dim inScope As New Dictionary(Of String, TableMap)(StringComparer.OrdinalIgnoreCase)
+        For Each map In maps
+            inScope(map.TargetTable) = map
+        Next
+
+        ' parent ▸ the children in scope that point at it, with the constraint that does it.
+        Dim needed As New Dictionary(Of String, List(Of String))(StringComparer.OrdinalIgnoreCase)
+        For Each map In maps
+            If Not schema.HasTable(map.TargetTable) Then Continue For
+
+            For Each fk In schema.ForeignKeysOf(map.TargetTable)
+                If fk.IsCrossSchema(schema.SchemaName) Then Continue For
+                If String.Equals(fk.ChildTable, fk.ParentTable, StringComparison.OrdinalIgnoreCase) Then Continue For
+                If Not inScope.ContainsKey(fk.ParentTable) Then Continue For
+
+                Dim children As List(Of String) = Nothing
+                If Not needed.TryGetValue(fk.ParentTable, children) Then
+                    children = New List(Of String)()
+                    needed(fk.ParentTable) = children
+                End If
+                children.Add($"«{fk.ChildTable}».«{fk.ChildColumn}» ({fk.ConstraintName})")
+            Next
+        Next
+
+        For Each entry In needed.OrderBy(Function(e) e.Key, StringComparer.OrdinalIgnoreCase)
+            Dim parentMap = inScope(entry.Key)
+            If parentMap.Feeds <> ResolutionTarget.None Then Continue For
+            If Not schema.HasTable(entry.Key) Then Continue For
+            If TransferRunner.PrimaryKeyColumn(schema, entry.Key) IsNot Nothing Then Continue For
+
+            Dim primary = schema.UniqueKeysOf(entry.Key).FirstOrDefault(Function(k) k.IsPrimary)
+            Dim keyText = If(primary Is Nothing,
+                             "nu are deloc cheie primară",
+                             $"are cheia primară compusă ({String.Join(", ", primary.Columns)})")
+
+            report.Add(Finding.CHEIE_PARINTE_NEURMARITA, FindingClass.Blocant, entry.Key, String.Empty,
+                       $"«{entry.Key}» {keyText}, deci unealta nu poate ține minte ce chei a " &
+                       $"scris pentru el — iar {entry.Value.Count} copii din transfer sunt " &
+                       $"verificați tocmai pe ele: {String.Join(", ", entry.Value.Take(6))}. " &
+                       "Verificarea «părintele a călătorit?» s-ar dezarma TĂCUT pentru toți, " &
+                       "iar rularea ar muri mai târziu cu 1452 pe copil, nu pe cauză. " &
+                       "Cheia primară a părintelui trebuie să fie pe o singură coloană.",
+                       entry.Value.Count)
         Next
     End Sub
 
@@ -758,6 +864,19 @@ Public NotInheritable Class Verifier
 
         Return New List(Of String)()
     End Function
+
+End Class
+
+''' <summary>One Forexe file, with the selected units that point at it.</summary>
+Friend NotInheritable Class ForexePass
+
+    Public Sub New(path As String)
+        Me.Path = path
+        Units = New List(Of CaiUnit)()
+    End Sub
+
+    Public ReadOnly Property Path As String
+    Public ReadOnly Property Units As List(Of CaiUnit)
 
 End Class
 

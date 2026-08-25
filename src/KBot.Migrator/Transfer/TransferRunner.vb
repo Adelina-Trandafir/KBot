@@ -38,10 +38,25 @@ Public NotInheritable Class TransferRunner
     Private ReadOnly _parteneri As New ParteneriMap()
     Private ReadOnly _written As New WrittenKeys()
 
-    Public Sub New(request As TransferRequest, log As Action(Of String),
-                   progress As Action(Of String, Long, Long))
+    ''' <summary>
+    ''' Which rows travel. Built by the verification that unlocked this run, and handed in
+    ''' rather than rebuilt.
+    ''' </summary>
+    ''' <remarks>
+    ''' Handed in on purpose, and required rather than optional. The selection has to be
+    ''' resolved once and reused unchanged, or it could shift between the run that MEASURED
+    ''' it and the run that WRITES it - and «Transferă» is only ever enabled by a
+    ''' verification that has just built one, so there is nothing to fall back to and no
+    ''' second construction site to drift.
+    ''' </remarks>
+    Private ReadOnly _ownership As OwnershipPlan
+
+    Public Sub New(request As TransferRequest, ownership As OwnershipPlan,
+                   log As Action(Of String), progress As Action(Of String, Long, Long))
         If request Is Nothing Then Throw New ArgumentNullException(NameOf(request))
+        If ownership Is Nothing Then Throw New ArgumentNullException(NameOf(ownership))
         _request = request
+        _ownership = ownership
         _log = log
         _progress = progress
     End Sub
@@ -202,6 +217,28 @@ Public NotInheritable Class TransferRunner
 
     ' ---- one table ------------------------------------------------------------------
 
+    ''' <summary>
+    ''' Writes one table: one pass per distinct Access FILE, not per unit.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>
+    ''' <b>Decision D4 collapsed the per-unit loop.</b> One target database holds every
+    ''' IdUnitate of its DC, and eleven of the thirteen <c>cai</c> rows name the SAME
+    ''' Forexe file - so looping the units meant reading that one file once per ticked
+    ''' unit and asking "is this row unit 75's?" instead of "is this row one of ours?".
+    ''' The question is membership in the selected set now, asked once per row, and the
+    ''' double-counting of <see cref="TableOutcome.RowsWritten"/> that slice 0045-07 left
+    ''' open disappears with the second pass.
+    ''' </para>
+    ''' <para>
+    ''' It is grouped by FILE rather than flattened to a single pass because the
+    ''' nomenclators are genuinely per unit: each unit has its own <c>baza2026.accdb</c>,
+    ''' and those rows carry no <c>IdUnitate</c> at all - the FILE is the unit. A pass over
+    ''' a file that exactly one unit points at still knows whose rows it is reading, which
+    ''' is what keeps <see cref="ColumnSourceKind.UnitId"/> honest on Clasificatii and
+    ''' Parteneri without any of them needing a column Access never had.
+    ''' </para>
+    ''' </remarks>
     Private Function WriteTable(cn As MySqlConnection, transaction As MySqlTransaction,
                                 schema As TargetSchema, map As TableMap,
                                 dump As SqlDumpWriter, cancel As CancellationToken) As TableOutcome
@@ -211,32 +248,23 @@ Public NotInheritable Class TransferRunner
         Dim links = ParentLinks(schema, map.TargetTable)
         Dim primaryKey = PrimaryKeyColumn(schema, map.TargetTable)
 
-        For Each unit In _request.Units
+        For Each pass In FilePasses(map)
             cancel.ThrowIfCancellationRequested()
 
-            Dim path = If(map.Source = SourceFile.UnitFile, unit.UnitFilePath, unit.ForexeFilePath)
-            Dim password = If(map.Source = SourceFile.UnitFile, _request.UnitFilePassword, _request.ForexeFilePassword)
-            If String.IsNullOrEmpty(path) OrElse Not IO.File.Exists(path) Then Continue For
-
-            Using accessCn = AccessProvider.Open(path, password)
+            Using accessCn = AccessProvider.Open(pass.Path, pass.Password)
                 Dim realName = AccessSchema.ResolveTableName(accessCn, map.AccessTable)
                 If realName Is Nothing Then
                     dump.WriteComment(map.TargetTable,
-                                      $"unitatea {unit.IdUnitate}: tabelul Access «{map.AccessTable}» lipsește")
+                                      $"«{pass.Path}»: tabelul Access «{map.AccessTable}» lipsește")
                     Continue For
                 End If
-
-                ' Built per unit rather than cached: the parent tables are small (FX_DDF
-                ' has 9 rows, FX_Extrase_H has 338) and a cache keyed by file path would
-                ' outlive the connection it was read through.
-                Dim ownership = UnitOwnership.Build(accessCn, map)
 
                 Dim accessColumns = AccessSchema.Columns(accessCn, realName).Select(Function(c) c.Name).ToList()
                 Dim plan = ColumnPlan.Build(map, accessColumns, schema)
                 If plan.Mappings.Count = 0 Then Continue For
                 outcome.ColumnsWritten = plan.Mappings.Count
 
-                LogPlan(map, plan, unit)
+                LogPlan(map, plan, pass)
 
                 Dim columnNames = plan.ColumnNames()
                 Dim sql = BuildUpsert(map.TargetTable, columnNames, schema)
@@ -252,20 +280,25 @@ Public NotInheritable Class TransferRunner
                             cancel.ThrowIfCancellationRequested()
                             outcome.RowsRead += 1
 
-                            If Not BelongsToUnit(reader, unit, map, ownership) Then
-                                outcome.RowsOtherUnit += 1
-                                Continue While
-                            End If
+                            Dim verdict = _ownership.Decide(map, reader, pass.Units)
+                            Select Case verdict.Disposition
+                                Case RowDisposition.OtherUnit
+                                    outcome.RowsOtherUnit += 1
+                                    Continue While
+                                Case RowDisposition.SubtreeStayedBehind
+                                    outcome.RowsSubtreeSkipped += 1
+                                    Continue While
+                            End Select
 
                             Dim values As Dictionary(Of String, Object) = Nothing
                             Dim skip = False
-                            values = BuildValues(map, plan, schema, reader, unit, outcome, skip)
+                            values = BuildValues(map, plan, schema, reader, verdict, outcome, skip)
                             If skip Then
                                 outcome.RowsOrphanParent += 1
                                 Continue While
                             End If
 
-                            If Not ParentsTravelled(reader, links, outcome) Then
+                            If Not ParentsTravelled(reader, links, values, outcome) Then
                                 outcome.RowsOrphanParent += 1
                                 Continue While
                             End If
@@ -278,7 +311,7 @@ Public NotInheritable Class TransferRunner
                             cmd.ExecuteNonQuery()
                             outcome.RowsWritten += 1
 
-                            RecordAssignedId(cmd, map, reader, unit)
+                            RecordAssignedId(cmd, map, reader, verdict)
                             RecordPrimaryKey(cmd, map, primaryKey, values)
 
                             If outcome.RowsWritten Mod BatchSize = 0 Then
@@ -296,10 +329,63 @@ Public NotInheritable Class TransferRunner
         Return outcome
     End Function
 
+    ''' <summary>
+    ''' The Access files this table must be read from, each with the units that point at it.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>
+    ''' <b>Only the FOREXE side is grouped.</b> That is where D4 pays: eleven of the
+    ''' thirteen <c>cai</c> rows name the same <c>FX_2026.accdb</c>, so grouping turns
+    ''' eleven reads of one file into one, and turns "is this row unit 75's?" into "is this
+    ''' row one of ours?".
+    ''' </para>
+    ''' <para>
+    ''' A NOMENCLATOR file keeps one pass per unit, deliberately. Each unit has its own
+    ''' <c>baza2026.accdb</c> today (verified on the live registry, 24.08: thirteen units,
+    ''' thirteen distinct paths, none shared), and those rows carry no <c>IdUnitate</c> at
+    ''' all - the file IS the unit. If two <c>cai</c> rows ever pointed at ONE nomenclator
+    ''' file, grouping them would leave the rows with no single unit and stop the run,
+    ''' where writing the same classifications once per unit is a defensible reading and
+    ''' the behaviour every earlier slice had. Not grouping costs nothing - the paths are
+    ''' distinct anyway - and it declines to turn an untested shape into a refusal.
+    ''' </para>
+    ''' </remarks>
+    Private Function FilePasses(map As TableMap) As List(Of FilePass)
+        Dim ordered As New List(Of FilePass)()
+        Dim byPath As New Dictionary(Of String, FilePass)(StringComparer.OrdinalIgnoreCase)
+        Dim groupByFile = map.Source <> SourceFile.UnitFile
+
+        For Each unit In _request.Units
+            Dim path = If(map.Source = SourceFile.UnitFile, unit.UnitFilePath, unit.ForexeFilePath)
+            If String.IsNullOrEmpty(path) OrElse Not IO.File.Exists(path) Then Continue For
+            Dim password = If(map.Source = SourceFile.UnitFile,
+                              _request.UnitFilePassword, _request.ForexeFilePassword)
+
+            Dim pass As FilePass = Nothing
+            If Not groupByFile OrElse Not byPath.TryGetValue(path, pass) Then
+                pass = New FilePass(path, password)
+                If groupByFile Then byPath(path) = pass
+                ordered.Add(pass)
+            End If
+            pass.Units.Add(unit)
+        Next
+
+        Return ordered
+    End Function
+
     ' ---- values ---------------------------------------------------------------------
 
+    ''' <summary>
+    ''' One row's values, with every derived column resolved against the ROW's own unit.
+    ''' </summary>
+    ''' <remarks>
+    ''' Since D4 there is no loop unit to borrow. <paramref name="verdict"/> carries the
+    ''' unit the row itself named - or says it has none, in which case a mapping that
+    ''' needs one stops the run rather than picking a nomenclator at random. That is the
+    ''' whole lesson of 0045-07 expressed as a signature: the unit arrives with the row.
+    ''' </remarks>
     Private Function BuildValues(map As TableMap, plan As ColumnPlan, schema As TargetSchema,
-                                 reader As AccessTableReader, unit As CaiUnit,
+                                 reader As AccessTableReader, verdict As RowVerdict,
                                  outcome As TableOutcome, ByRef skipRow As Boolean) As Dictionary(Of String, Object)
         Dim values As New Dictionary(Of String, Object)(StringComparer.OrdinalIgnoreCase)
 
@@ -308,7 +394,7 @@ Public NotInheritable Class TransferRunner
 
             Select Case mapping.Kind
                 Case ColumnSourceKind.UnitId
-                    values(mapping.TargetColumn) = unit.IdUnitate
+                    values(mapping.TargetColumn) = RowUnit(map, verdict, mapping.TargetColumn)
 
                 Case ColumnSourceKind.Constant
                     values(mapping.TargetColumn) = If(mapping.ConstantValue, DBNull.Value)
@@ -318,15 +404,16 @@ Public NotInheritable Class TransferRunner
                     outcome.ValuesNulled += 1
 
                 Case ColumnSourceKind.ResolvedClasificatie
+                    Dim clsfUnit = RowUnit(map, verdict, mapping.TargetColumn)
                     Dim accessId = Verifier.AsInteger(reader.ValueOrMissing(mapping.AccessColumn))
                     Dim assigned As Integer
                     If accessId.HasValue AndAlso accessId.Value <> 0 AndAlso
-                       _clasificatii.TryResolve(accessId.Value, unit.IdUnitate, assigned) Then
+                       _clasificatii.TryResolve(accessId.Value, clsfUnit, assigned) Then
                         values(mapping.TargetColumn) = assigned
                     ElseIf mapping.BlockingOnMiss Then
                         Throw New TransferException(
                             $"«{map.TargetTable}»: clasificația Access {If(accessId.HasValue, accessId.Value.ToString(CultureInfo.InvariantCulture), "(lipsă)")} " &
-                            $"a unității {unit.IdUnitate} nu se regăsește în «Clasificatii» transferate. " &
+                            $"a unității {clsfUnit} nu se regăsește în «Clasificatii» transferate. " &
                             "Rularea s-a oprit — un rând neclasificat tăcut e mai rău decât un refuz.")
                     Else
                         values(mapping.TargetColumn) = DBNull.Value
@@ -334,13 +421,14 @@ Public NotInheritable Class TransferRunner
                     End If
 
                 Case ColumnSourceKind.ResolvedPartener
+                    Dim partnerUnit = RowUnit(map, verdict, mapping.TargetColumn)
                     Dim code = Verifier.AsText(reader.ValueOrMissing(mapping.AccessColumn))
                     Dim assigned As Integer
-                    If _parteneri.TryResolve(code, unit.IdUnitate, assigned) Then
+                    If _parteneri.TryResolve(code, partnerUnit, assigned) Then
                         values(mapping.TargetColumn) = assigned
                     ElseIf mapping.BlockingOnMiss Then
                         Throw New TransferException(
-                            $"«{map.TargetTable}»: partenerul «{code}» al unității {unit.IdUnitate} " &
+                            $"«{map.TargetTable}»: partenerul «{code}» al unității {partnerUnit} " &
                             "nu se regăsește în «Parteneri» transferați.")
                     Else
                         values(mapping.TargetColumn) = DBNull.Value
@@ -359,50 +447,55 @@ Public NotInheritable Class TransferRunner
     ' ---- unit and parent filtering ---------------------------------------------------
 
     ''' <summary>
-    ''' True when this Access row belongs to the unit being written.
+    ''' The unit a derived mapping must resolve against, or a refusal.
     ''' </summary>
     ''' <remarks>
-    ''' Only the tables that carry IdUnitate can answer this directly - one Forexe file can
-    ''' hold rows for several units. The rest reach their unit through their parents, which
-    ''' <see cref="ParentsTravelled"/> answers from the keys already written.
-    ''' A row belonging to another unit is skipped SILENTLY: that is the normal shape of a
-    ''' shared file, not a finding.
-    '''
-    ''' A NULL IdUnitate is NOT "belongs to whoever is being written". It used to be read
-    ''' that way, and the four FX_DDF_REV_SA rows that carry one were then written once
-    ''' per selected unit, each time resolving IdClsf against the wrong nomenclator. The
-    ''' unit now comes from the parent chain the map declares, and a row that still
-    ''' cannot be attributed stops the run - the verifier refuses it first.
+    ''' There is no loop unit any more (D4), so "which nomenclator?" has exactly one honest
+    ''' source: the row. When the row has no single unit - a DDF header serving several, or
+    ''' a table with no unit column read from the shared Forexe file - the answer is not
+    ''' available and the run stops. It does NOT pick one. Picking one is precisely what
+    ''' produced the mirrored 141 / 97+374 findings of 23.08, and the verifier refuses this
+    ''' case before a single row is written, so reaching here means the catalogue changed
+    ''' under the gate.
     ''' </remarks>
-    Private Shared Function BelongsToUnit(reader As AccessTableReader, unit As CaiUnit,
-                                          map As TableMap, ownership As UnitOwnership) As Boolean
-        Dim rowUnit As Integer
-        Select Case UnitOwnership.Resolve(reader, ownership, rowUnit)
-            Case UnitScope.Named
-                Return rowUnit = unit.IdUnitate
-            Case UnitScope.ParentScoped
-                ' No IdUnitate column at all: the row reaches its unit through its
-                ' parents, and ParentsTravelled answers that.
-                Return True
-            Case Else
-                Throw New TransferException(
-                    $"«{map.TargetTable}»: un rând are «IdUnitate» gol și nicio legătură " &
-                    "de proprietate care să spună cărei unități îi aparține. Un fișier " &
-                    "FOREXE ține rândurile tuturor unităților din DC, deci rândul NU " &
-                    "poate fi atribuit unității care se scrie acum.")
-        End Select
+    Private Shared Function RowUnit(map As TableMap, verdict As RowVerdict,
+                                    targetColumn As String) As Integer
+        If verdict.HasUnit Then Return verdict.IdUnitate
+
+        Dim why = If(verdict.Scope = UnitScope.SharedByMany,
+                     "rândul servește mai multe unități deodată",
+                     "tabelul nu are deloc coloana «IdUnitate», iar fișierul FOREXE ține rândurile tuturor unităților din DC")
+        Throw New TransferException(
+            $"«{map.TargetTable}».«{targetColumn}» are nevoie de UNA singură, dar {why}. " &
+            "Unealta nu alege o unitate la întâmplare — s-ar rezolva pe nomenclatorul " &
+            "greșit, tăcut. Declarați proprietarul rândului sau scoateți coloana din " &
+            "maparea derivată.")
     End Function
 
     ''' <summary>
     ''' True when every parent this row points at actually travelled.
     ''' </summary>
     ''' <remarks>
+    ''' <para>
     ''' The parent key sets come from <see cref="WrittenKeys"/>, filled as the parents were
     ''' written - and the topological order guarantees they are complete by now. This is
-    ''' what replaces slice 0044's hand-built A-E routing maps.
+    ''' what replaces slice 0044's hand-built A-E routing maps. Since slice 0046 it is the
+    ''' BACKSTOP rather than the only defence: <see cref="OwnershipPlan"/> holds whole
+    ''' subtrees back up front, so a child normally never gets this far.
+    ''' </para>
+    ''' <para>
+    ''' <b>D14 - the nullable path now actually blanks the value.</b> It used to increment
+    ''' <see cref="TableOutcome.ValuesNulled"/> and move on, while
+    ''' <see cref="BuildValues"/> had no orphan branch at all - <c>ForcedNull</c> is a
+    ''' DECLARED mapping, not an orphan decision - so the orphan value went to the server
+    ''' unchanged and the reported count was a lie. The operator's rule of 22.08 ("nullable
+    ''' column ▸ the row is written with that column emptied") had therefore never once
+    ''' happened. It needs the values dictionary, which is why that arrived as a parameter.
+    ''' </para>
     ''' </remarks>
     Private Function ParentsTravelled(reader As AccessTableReader,
                                       links As IReadOnlyList(Of ParentLink),
+                                      values As Dictionary(Of String, Object),
                                       outcome As TableOutcome) As Boolean
         For Each link In links
             If Not _written.Tracks(link.ParentTable) Then Continue For
@@ -415,7 +508,13 @@ Public NotInheritable Class TransferRunner
 
             ' The parent is in scope but this value was not written for it.
             If link.ChildColumnIsNullable Then
-                outcome.ValuesNulled += 1
+                ' The column is named on the TARGET side; the values dictionary is keyed
+                ' the same way, so a link whose column is not being written at all simply
+                ' finds nothing to blank - and then there is no dangling id to write either.
+                If values.ContainsKey(link.ChildColumn) Then
+                    values(link.ChildColumn) = DBNull.Value
+                    outcome.ValuesNulled += 1
+                End If
                 Continue For
             End If
             Return False
@@ -443,20 +542,25 @@ Public NotInheritable Class TransferRunner
     ' ---- key bookkeeping --------------------------------------------------------------
 
     Private Sub RecordAssignedId(cmd As MySqlCommand, map As TableMap,
-                                 reader As AccessTableReader, unit As CaiUnit)
+                                 reader As AccessTableReader, verdict As RowVerdict)
         If map.Feeds = ResolutionTarget.None Then Return
 
         Dim assigned = CInt(cmd.LastInsertedId)
         If assigned = 0 Then Return
 
+        ' Both maps are keyed on (key, unit), and the unit is the ROW's - which for the two
+        ' tables that feed them is the unit of the nomenclator file they came from, since
+        ' Access Clasificatii and Parteneri carry no IdUnitate column at all.
+        Dim unit = RowUnit(map, verdict, map.FeedKeyColumn)
+
         Select Case map.Feeds
             Case ResolutionTarget.Clasificatii
                 Dim accessId = Verifier.AsInteger(reader.ValueOrMissing(map.FeedKeyColumn))
-                If accessId.HasValue Then _clasificatii.Add(accessId.Value, unit.IdUnitate, assigned)
+                If accessId.HasValue Then _clasificatii.Add(accessId.Value, unit, assigned)
                 _written.Add(map.TargetTable, assigned)
             Case ResolutionTarget.Parteneri
                 Dim code = Verifier.AsText(reader.ValueOrMissing(map.FeedKeyColumn))
-                If code.Length > 0 Then _parteneri.Add(code, unit.IdUnitate, assigned)
+                If code.Length > 0 Then _parteneri.Add(code, unit, assigned)
                 _written.Add(map.TargetTable, assigned)
         End Select
     End Sub
@@ -476,7 +580,21 @@ Public NotInheritable Class TransferRunner
         If cmd.LastInsertedId <> 0 Then _written.Add(map.TargetTable, cmd.LastInsertedId)
     End Sub
 
-    Private Shared Function PrimaryKeyColumn(schema As TargetSchema, targetTable As String) As String
+    ''' <summary>
+    ''' The single-column primary key whose values are recorded, or Nothing.
+    ''' </summary>
+    ''' <remarks>
+    ''' <b>Returning Nothing for a composite key is honest; the SILENCE was the defect.</b>
+    ''' <c>FX_DDF</c> was <c>PRIMARY KEY (IDDF, CUAL)</c>, so <see cref="RecordPrimaryKey"/>
+    ''' recorded nothing, <c>WrittenKeys.Tracks("FX_DDF")</c> stayed False, and the first
+    ''' line of <see cref="ParentsTravelled"/> then dropped the FX_DDF link for EVERY child
+    ''' pointing at it - FX_DDF_REV, FX_ORD and tblDocFund_Revizii_Clsf alike. Nothing said
+    ''' a word, and the run died later on a 1452 that named the child.
+    ''' The behaviour here is unchanged on purpose. What changed is that
+    ''' <c>Verifier.CheckParentKeysTrackable</c> now refuses the run by name when a parent
+    ''' in the write set lands in this state, so the condition can never again be silent.
+    ''' </remarks>
+    Friend Shared Function PrimaryKeyColumn(schema As TargetSchema, targetTable As String) As String
         Dim primary = schema.UniqueKeysOf(targetTable).FirstOrDefault(Function(k) k.IsPrimary)
         If primary Is Nothing OrElse primary.Columns.Count <> 1 Then Return Nothing
         Return primary.Columns(0)
@@ -540,8 +658,8 @@ Public NotInheritable Class TransferRunner
 
     ' ---- logging ------------------------------------------------------------------------
 
-    Private Sub LogPlan(map As TableMap, plan As ColumnPlan, unit As CaiUnit)
-        Say($"«{map.TargetTable}» (unitatea {unit.IdUnitate}): se scriu {plan.Mappings.Count} coloane — " &
+    Private Sub LogPlan(map As TableMap, plan As ColumnPlan, pass As FilePass)
+        Say($"«{map.TargetTable}» ({pass.Describe()}): se scriu {plan.Mappings.Count} coloane — " &
             String.Join(", ", plan.ColumnNames()))
         If plan.Skipped.Count > 0 Then
             Say($"   sărite: {String.Join("; ", plan.Skipped)}")
@@ -551,6 +669,7 @@ Public NotInheritable Class TransferRunner
     Private Shared Function Describe(outcome As TableOutcome) As String
         Dim line = $"«{outcome.TargetTable}»: {outcome.RowsWritten} scrise din {outcome.RowsRead} citite"
         If outcome.RowsOtherUnit > 0 Then line &= $", {outcome.RowsOtherUnit} ale altei unități"
+        If outcome.RowsSubtreeSkipped > 0 Then line &= $", {outcome.RowsSubtreeSkipped} cu documentul rămas în urmă"
         If outcome.RowsOrphanParent > 0 Then line &= $", {outcome.RowsOrphanParent} cu părinte netransferat"
         If outcome.ValuesNulled > 0 Then line &= $", {outcome.ValuesNulled} valori golite"
         Return line & "."
@@ -563,6 +682,14 @@ Public NotInheritable Class TransferRunner
         lines.Add($"Șablon:    {_request.TemplateDatabase}")
         lines.Add($"Comună:    {_request.CommonDatabase}")
         lines.Add($"An:        {TableMaps.TransferYear}")
+        ' D16: BOTH values, always. A journal that recorded only the one used could not
+        ' answer "was this run done on the registry's code, or on a typed one?" months
+        ' later, which is exactly when somebody will ask.
+        Dim fromRegistry = _request.RegistryCodFiscal()
+        Dim used = _request.ResolvedCodFiscal()
+        lines.Add($"Cod fiscal din registry: {If(fromRegistry.Length = 0, "(lipsă)", fromRegistry)}")
+        lines.Add($"Cod fiscal folosit:      {If(used.Length = 0, "(lipsă)", used)}" &
+                  If(String.Equals(used, fromRegistry, StringComparison.Ordinal), String.Empty, "   ◂ SUPRASCRIS de operator"))
         lines.Add($"Operator:  {_request.OperatorName}")
         lines.Add($"Pornit:    {DateTime.Now:yyyy-MM-dd HH:mm:ss}")
         lines.Add(String.Empty)
@@ -580,6 +707,37 @@ Public NotInheritable Class TransferRunner
     Private Sub Say(message As String)
         _log?.Invoke(message)
     End Sub
+
+End Class
+
+''' <summary>
+''' One Access file, and the selected units that point at it.
+''' </summary>
+''' <remarks>
+''' The unit of a PASS, not of a row. It is one unit for a nomenclator file - where the
+''' rows carry no <c>IdUnitate</c> and the file IS the unit - and eleven for the shared
+''' Forexe file, where it says nothing at all about who a row belongs to and
+''' <see cref="OwnershipPlan"/> answers instead. Keeping the whole list rather than a count
+''' is what lets the single-unit case stay honest without special-casing the table names.
+''' </remarks>
+Friend NotInheritable Class FilePass
+
+    Public Sub New(path As String, password As String)
+        Me.Path = path
+        Me.Password = password
+        Units = New List(Of CaiUnit)()
+    End Sub
+
+    Public ReadOnly Property Path As String
+    Public ReadOnly Property Password As String
+    Public ReadOnly Property Units As List(Of CaiUnit)
+
+    ''' <summary>How the pass names itself in the log.</summary>
+    Public Function Describe() As String
+        If Units.Count = 1 Then Return $"unitatea {Units(0).IdUnitate}"
+        Return $"{Units.Count} unități: " &
+               String.Join(", ", Units.Select(Function(u) u.IdUnitate.ToString(CultureInfo.InvariantCulture)))
+    End Function
 
 End Class
 
@@ -601,6 +759,16 @@ Friend NotInheritable Class ParentLink
     ''' answers "no such column" for the rest, which is a skip rather than a wrong answer.
     ''' </summary>
     Public ReadOnly Property AccessColumn As String
+    ''' <summary>
+    ''' The same name read as the TARGET column, which is how the values dictionary is
+    ''' keyed. One string, two roles: <see cref="AccessColumn"/> is what the reader is
+    ''' asked for, this is what gets blanked when the parent turns out to be absent (D14).
+    ''' </summary>
+    Public ReadOnly Property ChildColumn As String
+        Get
+            Return AccessColumn
+        End Get
+    End Property
     Public ReadOnly Property ChildColumnIsNullable As Boolean
     Public ReadOnly Property ParentKeyIsAutoIncrement As Boolean
 

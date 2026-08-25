@@ -2,7 +2,18 @@
 Public Enum ColumnSourceKind
     ''' <summary>Read straight off the Access row.</summary>
     AccessColumn = 0
-    ''' <summary>The IdUnitate of the file being read - the nomenclator rows do not carry it.</summary>
+    ''' <summary>
+    ''' THIS ROW's own resolved unit - not the unit of any loop.
+    ''' </summary>
+    ''' <remarks>
+    ''' It said the opposite until slice 0046, and the opposite was true until D4 collapsed
+    ''' the per-unit loop away. The two readings only ever agreed while a pass had exactly
+    ''' one unit, which is still the case for the nomenclator files (Access
+    ''' <c>Clasificatii</c> and <c>Parteneri</c> carry no <c>IdUnitate</c> column at all, so
+    ''' the FILE is the unit) and was never the case for the Forexe file eleven units
+    ''' share. Where the row has no single unit, <c>TransferRunner.RowUnit</c> stops the run
+    ''' rather than borrowing one.
+    ''' </remarks>
     UnitId = 1
     ''' <summary>A fixed value, e.g. An = 2026 (decision D1) or Ascuns = 0.</summary>
     Constant = 2

@@ -156,9 +156,21 @@ Public NotInheritable Class TableMaps
         ' WrittenKeys track FX_DDF at all (PrimaryKeyColumn only handles single-column
         ' PKs) and fixed the FX_DDF_REV orphan-parent check. Cual still travels as an
         ' ordinary column - Rule 2 still holds for it, it's just not part of the key.
+        ' The verifier no longer TRUSTS that: slice 0046 added a gate that refuses the run
+        ' when a parent's recordable key cannot be determined, so a composite key here
+        ' stops the run by name instead of silently disarming every child's orphan check.
+        '
+        ' D1: IdUnitate is a RELIC on this table. It is excluded not because a mirror
+        ' column would be wrong, but because it is never read to decide anything - one
+        ' IDDF serves many units, and the live file proves it holds 0 on five of nine rows
+        ' while their section A names units 75 and 76. The authority is declared below.
         maps.Add(New TableMap("FX_DDF", "FX_DDF", SourceFile.ForexeFile).
             Exclude("IdUnitate", "IdPartener", "CodPartener", "SS", "DTQ").
-            WithNote("Cheia e IDDF (fostă compusă cu CUAL, până pe 24.08)."))
+            OwnedVia("FX_DDF_REV_SA", "IDDF", "IDDF").
+            WithNote("Cheia e IDDF (fostă compusă cu CUAL, până pe 24.08). D1: «IdUnitate» " &
+                     "de aici e o relicvă și nu se citește niciodată — un IDDF poate servi " &
+                     "mai multe unități. Unitățile documentului vin din «FX_DDF_REV_SA» (D2), " &
+                     "citite înainte de prima scriere de «OwnershipPlan»."))
 
         ' --- FX_DDF_REV ------------------------------------------------------------
         ' ESpeciala is on MariaDB and absent from Access (verified 0045-01 on the live
@@ -172,23 +184,40 @@ Public NotInheritable Class TableMaps
         maps.Add(NameMatched("FX_Receptii_H"))
         maps.Add(NameMatched("FX_Receptii"))
         maps.Add(NameMatched("FX_Plati"))
-        maps.Add(NameMatched("FX_Extrase_F"))
-        maps.Add(NameMatched("FX_Extrase_H"))
+        ' --- the Extrase family, selected by CodFiscal (D8) -------------------------
+        ' FX_Extrase_F.NumeFisier reads
+        ' TREZ521_ExtrasEP_PDFCLI_2842919_XML_SIGNED_03062026h1717.pdf. The file travels
+        ' when ANY segment that is entirely digits equals the DC's CodFiscal. No positional
+        ' rule and no digging inside a segment: a name with an extra piece in front still
+        ' works, and 03062026h1717.pdf cannot collide because it is not all digits. All 72
+        ' rows of the live file carry exactly one all-digit segment, 2842919, which is what
+        ' the registry holds for 000_DEMO. There is no RO prefix on either side.
+        maps.Add(NameMatched("FX_Extrase_F").
+            WithNote("Se alege după codul fiscal din numele fișierului (D8): orice segment " &
+                     "numeric întreg dintre «_» care e egal cu codul fiscal al DC-ului."))
 
-        ' FX_Extrase carries an IdUnitate column and it is NULL on ALL 3.110 rows, so
-        ' without a chain the whole table would be read as belonging to every selected
-        ' unit and written once per unit. The owner is the statement header: every row
-        ' joins FX_Extrase_H on IDFXH ▸ IDEXH with zero orphans (checked 23.08 on the
-        ' live file, 3.110 rows against 338 headers), and FX_Extrase_H.IdUnitate is
-        ' filled in on all of them.
-        ' FromUnit for the same reason: the rows are filtered to their real owner now, so
-        ' the unit of the pass IS the row's unit, and writing it beats writing the NULL
-        ' the Access column holds.
+        ' D10: IdUnitate travels here BY NAME and unfiltered - it is the operator's
+        ' information, not an authority. Nothing is derived from it and nothing is filtered
+        ' by it, which is why unit 77 (112 rows) and unit 0 (7 rows) no longer raise
+        ' anything: the column has no foreign key on the target, so they cost nothing.
+        maps.Add(NameMatched("FX_Extrase_H").
+            WithNote("D10: «IdUnitate» călătorește ca informație, nefiltrat — antetul " &
+                     "pleacă dacă fișierul lui de extras a plecat (D11)."))
+
+        ' D10: the Extrase family carries no LIVE unit at all, and slice 0046 stopped
+        ' pretending otherwise. FX_Extrase.IdUnitate is a relic - NULL on all 3.110 rows -
+        ' and it leaves the map entirely: the target column is nullable, so nothing needs
+        ' to fill it, and the FromUnit that used to write the pass's unit into it was
+        ' writing an answer nobody had asked for. Statements are selected by CodFiscal
+        ' against FX_Extrase_F.NumeFisier (D8), and a file that travels takes its headers
+        ' and their lines with it (D11) - so the row filter is a subtree lookup, not a
+        ' unit comparison, and OwnershipPlan holds it.
         maps.Add(NameMatched("FX_Extrase").
-            OwnedVia("FX_Extrase_H", "IDFXH", "IDEXH").
-            Add(ColumnMapping.FromUnit("IdUnitate")).
-            WithNote("«IdUnitate» e gol pe toate cele 3.110 rânduri Access; unitatea vine " &
-                     "din «FX_Extrase_H» prin «IDFXH» ▸ «IDEXH» și se scrie pe țintă."))
+            Exclude("IdUnitate").
+            WithNote("D10: «IdUnitate» e relicvă (gol pe toate cele 3.110 rânduri) și nu " &
+                     "călătorește deloc — coloana-țintă e nulabilă. Rândul pleacă dacă " &
+                     "antetul lui a plecat, iar antetul dacă fișierul de extras s-a " &
+                     "potrivit pe cod fiscal (D8, D11)."))
         maps.Add(NameMatched("FX_Receptii_R"))
 
         ' --- FX_DDF_REV_SA ---------------------------------------------------------
@@ -198,31 +227,39 @@ Public NotInheritable Class TableMaps
         ' not. Decision D9: write the Access IdClsf into it, which is exactly what
         ' IdClsfAcc means on Clasificatii.
         ' IdPartener travels as NULL (§5.2) and the count is logged per table.
-        ' OwnedVia: four of the 32 rows carry IdUnitate = NULL (verified 23.08 on the live
-        ' file). Their unit comes from FX_DDF through IDDF - 138 ▸ IDDF 73 ▸ unit 76, and
-        ' 146/150/152 ▸ IDDF 77/79/80 ▸ unit 75. Without the chain each of the four was
-        ' checked against EVERY selected unit and resolved IdClsf against the wrong
-        ' nomenclator, which is what produced the mirrored 141 / 97+374 findings.
+        '
+        ' D12 reverses slice 0045-07 here on two counts, and both reversals matter.
+        ' (1) FromUnit is GONE. The loop's unit is not the row's unit: this table IS the
+        '     authority (D2), so its own IdUnitate is the answer and it travels by name.
+        '     Writing the pass's unit over it was only ever safe while the pass had one
+        '     unit, and D4 collapsed the per-unit loop away.
+        ' (2) OwnedVia("FX_DDF", ...) is GONE. The arrow points the other way now - the
+        '     parent asks SA, SA never asks the parent - and the declaration moved onto
+        '     FX_DDF, where it reads as what it is.
+        ' Four of the 32 rows carry IdUnitate = NULL (verified 23.08, still true 24.08:
+        ' IDDF 73, 77, 79, 80, one line each). Under D5 those four documents keep their
+        ' whole subtree behind, so a NULL never reaches the target and the nullable target
+        ' column stays unexercised - it is NOT filled from FX_DDF any more, because that
+        ' column is a relic (D1).
         maps.Add(New TableMap("FX_DDF_REV_SA", "FX_DDF_REV_SA", SourceFile.ForexeFile).
             Add(ColumnMapping.FromClasificatie("IdClsf", "IdClsf", True)).
             Add(ColumnMapping.FromAccess("IdClsfAcc", "IdClsf")).
             Add(ColumnMapping.AlwaysNull("IdPartener")).
-            Add(ColumnMapping.FromUnit("IdUnitate")).
             Exclude("ID", "IdClsfPY").
-            OwnedVia("FX_DDF", "IDDF", "IDDF").
             WithNote("D9: «IdClsfAcc» e NOT NULL fără implicit, deci primește IdClsf-ul " &
-                     "Access. «IdPartener» pleacă NULL (§5.2). Rândurile cu «IdUnitate» " &
-                     "gol își află unitatea din «FX_DDF» prin «IDDF», și pe țintă se " &
-                     "scrie unitatea aflată, nu golul din Access."))
+                     "Access. «IdPartener» pleacă NULL (§5.2). D2/D12: tabelul ăsta E " &
+                     "autoritatea — «IdUnitate» al lui e răspunsul, călătorește ca atare, " &
+                     "și el spune cărei unități aparține documentul, nu invers."))
 
         maps.Add(New TableMap("FX_DDF_REV_SB", "FX_DDF_REV_SB", SourceFile.ForexeFile).
             Add(ColumnMapping.FromClasificatie("IdClsf", "IdClsf", True)).
             Add(ColumnMapping.FromAccess("IdClsfAcc", "IdClsf")).
             Add(ColumnMapping.AlwaysNull("IdPartener")).
-            Add(ColumnMapping.FromUnit("IdUnitate")).
             Exclude("ID", "IdClsfPY").
-            OwnedVia("FX_DDF", "IDDF", "IDDF").
-            WithNote("Aceeași formă ca SA, inclusiv cele patru rânduri fără «IdUnitate»."))
+            WithNote("Aceeași formă ca SA, dar NU e autoritate: D2 spune că unitatea " &
+                     "documentului vine din «FX_DDF_REV_SA» și din nicio altă parte, " &
+                     "deși coloana există și aici. «IdUnitate» al rândului decide doar " &
+                     "dacă pleacă rândul, nu dacă pleacă documentul."))
 
         ' --- FX_ORD ----------------------------------------------------------------
         ' Option (A), MAPARE_ACCESS_MARIADB.md §0: the Access id is written explicitly
@@ -234,11 +271,17 @@ Public NotInheritable Class TableMaps
         ' Access IDORDP carries 117..123, the OLD server's ids, and is never sent.
         ' CUAL is varchar on BOTH sides here, so no conversion - Rule 2 is wrong both
         ' ways for FX_ORD.
+        ' D3: FX_ORD carries no IdUnitate at all - vestigial or otherwise - so the only
+        ' place an order's units exist is FX_ORD_TBL, and that is where they are read from.
+        ' Verified on the live file: all seventeen orders resolve to unit 76, none NULL.
         maps.Add(New TableMap("FX_ORD", "FX_ORD", SourceFile.ForexeFile).
             Rename("IDORD", "IDORDP").
             Exclude("IDORDP", "IDRR", "IDRH", "ArePDF", "CalePDF", "DTQ").
+            OwnedVia("FX_ORD_TBL", "IDORD", "IDORD").
             WithNote("Opțiunea (A): IDORD-ul Access se scrie explicit în IDORDP. " &
-                     "IDORDP-ul Access (117+) NU pleacă."))
+                     "IDORDP-ul Access (117+) NU pleacă. D3: tabelul n-are deloc " &
+                     "«IdUnitate» — unitățile ordonanțării vin din «FX_ORD_TBL», citite " &
+                     "înainte de prima scriere de «OwnershipPlan»."))
 
         maps.Add(New TableMap("FX_ORD_PART", "FX_ORD_PART", SourceFile.ForexeFile).
             Rename("IDORDPART", "IDORDPARTP").

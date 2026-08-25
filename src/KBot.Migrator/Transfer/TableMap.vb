@@ -91,26 +91,36 @@ Public NotInheritable Class TableMap
     Public Property Note As String
 
     ''' <summary>
-    ''' The Access table a row's unit comes from when its own <c>IdUnitate</c> is NULL.
+    ''' The Access table that says which units THIS table's rows serve.
     ''' </summary>
     ''' <remarks>
-    ''' One Forexe file holds every unit of the DC, so a row with a NULL <c>IdUnitate</c>
-    ''' cannot be read as "belongs to the unit currently being processed" - it belongs to
-    ''' exactly one unit, and this chain says which. See <see cref="UnitOwnership"/>.
+    ''' <para>
+    ''' <b>The arrow points UP from the children, since slice 0046.</b> Until then this was
+    ''' a PARENT declaration: an <c>FX_DDF_REV_SA</c> row with a NULL <c>IdUnitate</c>
+    ''' asked <c>FX_DDF</c> whose it was. Decision D1 killed that reading -
+    ''' <c>FX_DDF.IdUnitate</c> is a relic, never read, and one <c>IDDF</c> can serve many
+    ''' units, so it could not have answered honestly even where it was filled in.
+    ''' </para>
+    ''' <para>
+    ''' The two declarations now are <c>FX_DDF</c> ▸ <c>FX_DDF_REV_SA</c> (D2) and
+    ''' <c>FX_ORD</c> ▸ <c>FX_ORD_TBL</c> (D3): the head names the child that holds the
+    ''' authority, and <see cref="OwnershipPlan"/> reads it once, before the first row is
+    ''' written, because the authority table is written AFTER the head it answers for.
+    ''' </para>
     ''' </remarks>
-    Public Property UnitOwnerTable As String
+    Public Property UnitAuthorityTable As String
 
-    ''' <summary>The column on THIS table that points at the owner.</summary>
-    Public Property UnitOwnerChildColumn As String
+    ''' <summary>The key column on THIS table.</summary>
+    Public Property UnitAuthorityOwnKeyColumn As String
 
-    ''' <summary>The key column on the owner table.</summary>
-    Public Property UnitOwnerParentColumn As String
+    ''' <summary>The matching key column on the authority table.</summary>
+    Public Property UnitAuthorityKeyColumn As String
 
-    Public ReadOnly Property HasUnitOwner As Boolean
+    Public ReadOnly Property HasUnitAuthority As Boolean
         Get
-            Return Not String.IsNullOrEmpty(UnitOwnerTable) AndAlso
-                   Not String.IsNullOrEmpty(UnitOwnerChildColumn) AndAlso
-                   Not String.IsNullOrEmpty(UnitOwnerParentColumn)
+            Return Not String.IsNullOrEmpty(UnitAuthorityTable) AndAlso
+                   Not String.IsNullOrEmpty(UnitAuthorityOwnKeyColumn) AndAlso
+                   Not String.IsNullOrEmpty(UnitAuthorityKeyColumn)
         End Get
     End Property
 
@@ -177,13 +187,18 @@ Public NotInheritable Class TableMap
     End Function
 
     ''' <summary>
-    ''' Declares where a row's unit comes from when its own <c>IdUnitate</c> is NULL.
+    ''' Declares which CHILD table holds the authority on this table's units.
     ''' </summary>
-    Public Function OwnedVia(accessParentTable As String, childKeyColumn As String,
-                             parentKeyColumn As String) As TableMap
-        UnitOwnerTable = accessParentTable
-        UnitOwnerChildColumn = childKeyColumn
-        UnitOwnerParentColumn = parentKeyColumn
+    ''' <remarks>
+    ''' Read by <see cref="OwnershipPlan"/> before the run starts. It is not a parent
+    ''' chain any more - see <see cref="UnitAuthorityTable"/> for why the direction turned
+    ''' around in slice 0046.
+    ''' </remarks>
+    Public Function OwnedVia(authorityTable As String, ownKeyColumn As String,
+                             authorityKeyColumn As String) As TableMap
+        UnitAuthorityTable = authorityTable
+        UnitAuthorityOwnKeyColumn = ownKeyColumn
+        UnitAuthorityKeyColumn = authorityKeyColumn
         Return Me
     End Function
 

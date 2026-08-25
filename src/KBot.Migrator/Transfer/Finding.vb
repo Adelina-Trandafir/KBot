@@ -52,6 +52,49 @@ Public NotInheritable Class Finding
     ''' carries the column has nothing to resolve it and would write the local id.
     ''' </remarks>
     Public Const CLASIFICATIE_NECORELATA As String = "CLASIFICATIE_NECORELATA"
+    ''' <summary>
+    ''' An authority row names a unit that appears in NO <c>cai</c> row at all.
+    ''' </summary>
+    ''' <remarks>
+    ''' Decision D7 case C, and distinct from every other unit finding: the unit is not
+    ''' unknown to the RUN, it is unknown to the REGISTRY. A unit belonging to another DC
+    ''' (case B) is the normal shape of a shared Forexe file and is skipped in silence -
+    ''' one <c>FX_2026.accdb</c> legitimately holds several DCs. This kind means the file
+    ''' and the registry disagree, and neither can be guessed past.
+    ''' </remarks>
+    Public Const UNITATE_NECUNOSCUTA As String = "UNITATE_NECUNOSCUTA"
+    ''' <summary>
+    ''' A DDF with no <c>FX_DDF_REV_SA</c> row at all.
+    ''' </summary>
+    ''' <remarks>
+    ''' The operator says this is impossible (D6). It is BLOCANT precisely because it is
+    ''' impossible: an impossible case that passes quietly is how bad data arrives. With
+    ''' the authority gone the document has no unit and no way to get one - it is not the
+    ''' NULL case, where the column exists and is empty.
+    ''' </remarks>
+    Public Const DDF_FARA_SECTIUNE_A As String = "DDF_FARA_SECTIUNE_A"
+    ''' <summary>
+    ''' The DC's CodFiscal is absent from the registry and the override box is blank.
+    ''' </summary>
+    ''' <remarks>
+    ''' D15: BLOCANT rather than "no statements matched". Matching nothing would look
+    ''' exactly like "this file has no extrase for us", which is the wrong answer arrived
+    ''' at without a word.
+    ''' </remarks>
+    Public Const COD_FISCAL_LIPSA As String = "COD_FISCAL_LIPSA"
+    ''' <summary>
+    ''' A parent table in the write set cannot record the key its children are checked on.
+    ''' </summary>
+    ''' <remarks>
+    ''' Decision D13, and it exists because of a defect that ran silently:
+    ''' <c>PrimaryKeyColumn</c> returns Nothing for a multi-column primary key, so
+    ''' <c>FX_DDF</c> (then <c>PRIMARY KEY (IDDF, CUAL)</c>) recorded nothing,
+    ''' <c>WrittenKeys.Tracks("FX_DDF")</c> stayed False, and the first line of
+    ''' <c>ParentsTravelled</c> dropped the FX_DDF link for EVERY child pointing at it.
+    ''' The gate would have caught that before the first row was written. The silence was
+    ''' the defect, not the Nothing.
+    ''' </remarks>
+    Public Const CHEIE_PARINTE_NEURMARITA As String = "CHEIE_PARINTE_NEURMARITA"
     Public Const PARTENER_NEREZOLVAT As String = "PARTENER_NEREZOLVAT"
     Public Const UNITATE_LIPSA As String = "UNITATE_LIPSA"
     Public Const BAZA_COMUNA_LIPSA As String = "BAZA_COMUNA_LIPSA"
@@ -115,6 +158,17 @@ Public NotInheritable Class VerificationReport
 
     ''' <summary>The write order the sort produced, target table names.</summary>
     Public Property WriteOrder As IReadOnlyList(Of String)
+
+    ''' <summary>
+    ''' Which rows this verification decided would travel.
+    ''' </summary>
+    ''' <remarks>
+    ''' Carried out of the verification on purpose: the form hands this very object to
+    ''' <see cref="TransferRunner"/>, so the selection the operator was shown is the
+    ''' selection that gets written. Resolving it twice - once to measure, once to write -
+    ''' is how a selection shifts between the two without anybody touching a line of code.
+    ''' </remarks>
+    Public Property Ownership As OwnershipPlan
 
     ''' <summary>Access row counts per target table, as measured.</summary>
     Public ReadOnly Property RowCounts As New Dictionary(Of String, Long)(StringComparer.OrdinalIgnoreCase)

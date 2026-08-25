@@ -133,6 +133,16 @@ călătorește într-un antet și nu pleacă niciodată necriptată.
 Se folosește la un singur lucru: construirea structurii unei
 baze goale. Restul migrării merge direct la MariaDB.</value>
   </data>
+  <data name="txtCodFiscal.ToolTipText" xml:space="preserve">
+    <value>Extrasele de cont se aleg după codul fiscal din numele fișierului.
+La alegerea unui DC caseta se completează cu valoarea din registrul Windows,
+de unde o citește și aplicația VBA. Caseta rămâne editabilă: ce scrieți peste
+se folosește la rulare, iar gol înseamnă tot «ia-l din registry».
+
+Valoarea NU se salvează: la fiecare alegere de DC se recitește din registru,
+ca o suprascriere de probă să nu influențeze tăcut o migrare reală.
+Jurnalul rulării scrie amândouă valorile — cea din registry și cea folosită.</value>
+  </data>
   <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>84</value>
   </metadata>

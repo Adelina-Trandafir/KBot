@@ -35,6 +35,13 @@ Public Class MigratorForm
 
     Private ReadOnly _settings As MigratorSettings = MigratorSettings.Load()
     Private _units As New List(Of CaiUnit)()
+    ''' <summary>
+    ''' The ownership plan the last passing verification produced, handed on to the
+    ''' transfer so the selection cannot shift between measuring and writing. Cleared
+    ''' whenever «Transferă» is disabled, so a stale plan can never outlive the
+    ''' verification that justified it.
+    ''' </summary>
+    Private _ownership As OwnershipPlan
     Private _cancellation As CancellationTokenSource
     Private _busy As Boolean
     ''' <summary>Resolved by SetBusy(False), i.e. only once the running operation's own
@@ -151,6 +158,13 @@ Public Class MigratorForm
         _settings.ServerUrl = txtServerUrl.Text.Trim()
         ' No secret reaches this call - MigratorSettings has no field for one. The API key
         ' stays in its box and dies with the window.
+        '
+        ' txtCodFiscal is deliberately NOT here, and MigratorSettings has no field for it
+        ' either (D16). It is an override for ONE run: persisting it would let a value
+        ' typed to test something quietly select the wrong statements in a real migration
+        ' weeks later, and the box would look empty-by-default while not being it. The
+        ' journal header records both the registry value and the value used, which is where
+        ' that history belongs.
         _settings.Save()
     End Sub
 
@@ -217,9 +231,42 @@ Public Class MigratorForm
     Private Sub cboDc_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboDc.SelectedIndexChanged
         Try
             FillUnitList()
+            ShowCodFiscal()
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.cboDc_SelectedIndexChanged", ex)
         End Try
+    End Sub
+
+    ''' <summary>
+    ''' Shows the selected DC's CodFiscal as it stands in the Windows registry, so the
+    ''' operator SEES the value a run would use instead of inferring it from an empty box.
+    ''' </summary>
+    ''' <remarks>
+    ''' The box stays editable: what is shown is a starting point, not a lock. Typing over
+    ''' it is still the D16 override, and because a shown value equals the registry value,
+    ''' <see cref="TransferRequest.ResolvedCodFiscal"/> answers the same either way - the
+    ''' displayed text only becomes an override once the operator changes it.
+    ''' <para>
+    ''' The value comes from <see cref="CodFiscalRegistry"/>, i.e. from
+    ''' HKCU\Software\VB and VBA Program Settings\AVACONT\&lt;DC&gt;, NOT from cai.accdb -
+    ''' the registry file knows the paths, the Windows store knows the fiscal code.
+    ''' </para>
+    ''' <para>
+    ''' Re-run on every DC change, overwriting whatever is in the box. A code typed while
+    ''' another DC was selected belonged to that DC; carrying it over to the next one is
+    ''' precisely the silent mismatch D16 exists to avoid.
+    ''' </para>
+    ''' </remarks>
+    Private Sub ShowCodFiscal()
+        Dim dc = Convert.ToString(cboDc.SelectedItem, CultureInfo.InvariantCulture)
+        Dim code = CodFiscalRegistry.ForDc(dc)
+        txtCodFiscal.Text = code
+
+        If code.Length > 0 Then
+            Say($"Cod fiscal din registrul Windows pentru «{dc}»: {code}.")
+        Else
+            Say($"Registrul Windows nu are cod fiscal pentru «{dc}». Completați-l manual.")
+        End If
     End Sub
 
     ''' <summary>
@@ -331,6 +378,7 @@ Public Class MigratorForm
         If request Is Nothing Then Return
 
         btnTransfera.Enabled = False
+        _ownership = Nothing
         dgvConstatari.ClearRows()
         ClearFindingDetail()
         SetBusy(True)
@@ -345,6 +393,9 @@ Public Class MigratorForm
                 token)
             ShowFindings(report)
             btnTransfera.Enabled = report.CanRun
+            ' Kept only while it is allowed to be used. A plan from a verification that
+            ' found something blocking must not sit around waiting to be picked up.
+            _ownership = If(report.CanRun, report.Ownership, Nothing)
             Say(If(report.CanRun,
                    "«Transferă» este acum activ.",
                    "«Transferă» rămâne inactiv până când nu mai există constatări blocante."))
@@ -528,6 +579,16 @@ Public Class MigratorForm
             Dim request = BuildRequest()
             If request Is Nothing Then Return
 
+            ' The plan the VERIFICATION built, not a fresh one. «Transferă» is only enabled
+            ' by a verification that has just built one, so this is never Nothing in
+            ' practice - and reusing it is the point: what the operator was shown is what
+            ' gets written, with no chance of the selection shifting in between.
+            If _ownership Is Nothing Then
+                Warn("Rulați întâi «Verifică»: proprietatea rândurilor se stabilește acolo, " &
+                     "iar transferul scrie exact ce s-a verificat.")
+                Return
+            End If
+
             Dim confirmation = MessageBox.Show(
                 $"Se scriu {request.SelectedTables.Count} tabele pentru {request.Units.Count} unități " &
                 $"în baza «{request.TargetDatabase}»." & Environment.NewLine & Environment.NewLine &
@@ -542,7 +603,8 @@ Public Class MigratorForm
 
             Try
                 Dim token = _cancellation.Token
-                Dim runner As New TransferRunner(request, AddressOf SayFromWorker, AddressOf ProgressFromWorker)
+                Dim runner As New TransferRunner(request, _ownership,
+                                                 AddressOf SayFromWorker, AddressOf ProgressFromWorker)
                 Dim result = Await Task.Run(Function() runner.Run(token), token)
                 ShowResult(result)
             Finally
@@ -662,8 +724,15 @@ Public Class MigratorForm
             .CommonDatabase = _settings.CommonDatabase,
             .TemplateDatabase = _settings.TemplateDatabase,
             .OperatorName = Environment.UserName,
-            .PopulateUnitati = True
+            .PopulateUnitati = True,
+            .CodFiscalOverride = txtCodFiscal.Text
         }
+
+        ' The WHOLE registry, not the selection. Decision D7 needs three answers: a unit of
+        ' another DC is a normal shape of a shared Forexe file and is skipped in silence,
+        ' while a unit in no cai row at all means the file and the registry disagree and
+        ' stops the run. Only the full list can tell those two apart.
+        request.RegistryUnits.AddRange(_units)
 
         For Each row In dgvUnitati.Rows
             If Not IsTicked(row) Then Continue For

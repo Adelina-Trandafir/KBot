@@ -162,6 +162,29 @@ Public NotInheritable Class AccessSchema
         End Try
     End Function
 
+    ''' <summary>
+    ''' A reader over NAMED columns only, rather than <c>SELECT *</c>.
+    ''' </summary>
+    ''' <remarks>
+    ''' <see cref="OpenReader"/> pulls every column, Memo and OLE Object included. The
+    ''' ownership pass reads keys and nothing else: FX_Extrase_F carries the signed XML of
+    ''' each statement in a Memo column, and reading 72 of those to learn 72 file names is
+    ''' work the pass has no reason to do.
+    ''' </remarks>
+    Public Shared Function OpenKeyReader(cn As OleDbConnection, tableName As String,
+                                         columns As IEnumerable(Of String)) As AccessTableReader
+        Dim cmd As OleDbCommand = Nothing
+        Try
+            Dim list = String.Join(", ", columns.Select(Function(c) $"[{c}]"))
+            cmd = New OleDbCommand($"SELECT {list} FROM [{tableName}]", cn)
+            Return New AccessTableReader(cmd, cmd.ExecuteReader())
+        Catch ex As Exception
+            If cmd IsNot Nothing Then cmd.Dispose()
+            GlobalErrorLog.Write("AccessSchema.OpenKeyReader", ex)
+            Throw
+        End Try
+    End Function
+
     Private Shared Function ToInt32(value As Object, fallback As Integer) As Integer
         If value Is Nothing OrElse value Is DBNull.Value Then Return fallback
         Return Convert.ToInt32(value, CultureInfo.InvariantCulture)
