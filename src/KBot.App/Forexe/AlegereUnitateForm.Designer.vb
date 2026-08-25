@@ -34,12 +34,16 @@ Partial Class AlegereUnitateForm
     Private components As System.ComponentModel.IContainer
 
     Private Sub InitializeComponent()
-        Dim colUnitate As KBotDataColumn = New KBotDataColumn()
-        Dim colSursa As KBotDataColumn = New KBotDataColumn()
-        Dim colProgram As KBotDataColumn = New KBotDataColumn()
-        Dim colCod As KBotDataColumn = New KBotDataColumn()
         components = New ComponentModel.Container()
-        tips = New Controls.KBotToolTip(components)
+        Dim KBotDataColumn1 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
+        tips = New KBotToolTip(components)
+        grid = New KBotDataView()
+        chkRetine = New CheckBox()
+        btnAlege = New Button()
+        btnRenunta = New Button()
         pnlCard = New Panel()
         tlpBody = New TableLayoutPanel()
         lblTitle = New Label()
@@ -51,33 +55,142 @@ Partial Class AlegereUnitateForm
         lblIndicator = New Label()
         lblCapClsf = New Label()
         lblClsf = New Label()
-        grid = New Controls.KBotDataView()
-        chkRetine = New CheckBox()
-        ntfError = New Controls.KBotNotice()
+        ntfError = New KBotNotice()
         tlpButtons = New TableLayoutPanel()
-        btnRenunta = New Button()
-        btnAlege = New Button()
-        capBar = New Controls.KBotCaptionBar()
+        capBar = New KBotCaptionBar()
+        CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         pnlCard.SuspendLayout()
         tlpBody.SuspendLayout()
         tlpInfo.SuspendLayout()
         tlpButtons.SuspendLayout()
-        CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
-        '
+        ' 
+        ' grid
+        ' 
+        grid.AlternatingRows = False
+        grid.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        grid.BackColor = SystemColors.Window
+        grid.CellTooltip.Enabled = False
+        grid.ColumnFillMode = KBotFillMode.FirstColumn
+        KBotDataColumn1.AggregateFormatString = Nothing
+        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn1.FormatString = Nothing
+        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn1.HeaderText = "Unitate"
+        KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn1.Key = "unitate"
+        KBotDataColumn1.MinWidth = 120
+        KBotDataColumn1.OptionGroup = Nothing
+        KBotDataColumn1.ReadOnly = True
+        KBotDataColumn1.Width = 250
+        KBotDataColumn2.AggregateFormatString = Nothing
+        KBotDataColumn2.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn2.FormatString = Nothing
+        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn2.HeaderText = "Sursă / Sector"
+        KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn2.Key = "sursa"
+        KBotDataColumn2.MinWidth = 60
+        KBotDataColumn2.OptionGroup = Nothing
+        KBotDataColumn2.ReadOnly = True
+        KBotDataColumn2.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn2.Width = 150
+        KBotDataColumn3.AggregateFormatString = Nothing
+        KBotDataColumn3.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn3.FormatString = Nothing
+        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn3.HeaderText = "Program"
+        KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn3.Key = "program"
+        KBotDataColumn3.MinWidth = 60
+        KBotDataColumn3.OptionGroup = Nothing
+        KBotDataColumn3.ReadOnly = True
+        KBotDataColumn3.Width = 150
+        KBotDataColumn4.AggregateFormatString = Nothing
+        KBotDataColumn4.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn4.FormatString = Nothing
+        KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn4.HeaderText = "Cod"
+        KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn4.Key = "cod"
+        KBotDataColumn4.MinWidth = 50
+        KBotDataColumn4.OptionGroup = Nothing
+        KBotDataColumn4.ReadOnly = True
+        KBotDataColumn4.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn4.Width = 150
+        grid.Columns.Add(KBotDataColumn1)
+        grid.Columns.Add(KBotDataColumn2)
+        grid.Columns.Add(KBotDataColumn3)
+        grid.Columns.Add(KBotDataColumn4)
+        grid.Dock = DockStyle.Fill
+        grid.Location = New Point(33, 216)
+        grid.Margin = New Padding(4, 5, 4, 5)
+        grid.Name = "grid"
+        grid.ReadOnlyGrid = True
+        grid.RowHeight = 26
+        grid.ShrinkColumnsToFit = False
+        grid.Size = New Size(818, 224)
+        grid.TabIndex = 3
+        tips.SetToolTipHeader(grid, "Unități posibile")
+        tips.SetToolTipText(grid, "Fiecare rând este o unitate căreia îi poate aparține clasificația." & vbLf & "Alegeți-o pe cea potrivită; dublu-click confirmă direct.")
+        ' 
+        ' chkRetine
+        ' 
+        chkRetine.AutoSize = True
+        chkRetine.Dock = DockStyle.Top
+        chkRetine.Location = New Point(33, 458)
+        chkRetine.Margin = New Padding(4, 13, 4, 10)
+        chkRetine.Name = "chkRetine"
+        chkRetine.Size = New Size(818, 29)
+        chkRetine.TabIndex = 4
+        chkRetine.Text = "Nu mă mai întreba pentru această combinație"
+        tips.SetToolTipHeader(chkRetine, "Nu mă mai întreba")
+        tips.SetToolTipText(chkRetine, "Ține minte răspunsul pentru ACEASTĂ combinație (sursă + clasificație)." & vbLf & "Data viitoare se aplică singur, fără să te mai întrebe." & vbLf & "O combinație nouă se întreabă oricum din nou.")
+        chkRetine.UseVisualStyleBackColor = True
+        ' 
+        ' btnAlege
+        ' 
+        btnAlege.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        btnAlege.FlatStyle = FlatStyle.Flat
+        btnAlege.Font = New Font("Segoe UI Semibold", 9F)
+        btnAlege.Location = New Point(422, 5)
+        btnAlege.Margin = New Padding(9, 5, 4, 5)
+        btnAlege.Name = "btnAlege"
+        btnAlege.Size = New Size(400, 58)
+        btnAlege.TabIndex = 0
+        btnAlege.Text = "Alege unitatea"
+        tips.SetToolTipHeader(btnAlege, "Alege unitatea")
+        tips.SetToolTipText(btnAlege, "Trimite din nou aceleași date, cu unitatea aleasă atașată.")
+        btnAlege.UseVisualStyleBackColor = True
+        ' 
+        ' btnRenunta
+        ' 
+        btnRenunta.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        btnRenunta.FlatStyle = FlatStyle.Flat
+        btnRenunta.Location = New Point(4, 5)
+        btnRenunta.Margin = New Padding(4, 5, 9, 5)
+        btnRenunta.Name = "btnRenunta"
+        btnRenunta.Size = New Size(400, 58)
+        btnRenunta.TabIndex = 1
+        btnRenunta.Text = "Renunță"
+        tips.SetToolTipHeader(btnRenunta, "Renunță")
+        tips.SetToolTipText(btnRenunta, "Oprește salvarea. Nu s-a scris nimic și nimic nu se va scrie.")
+        btnRenunta.UseVisualStyleBackColor = True
+        ' 
         ' pnlCard
-        '
+        ' 
         pnlCard.Controls.Add(tlpBody)
         pnlCard.Controls.Add(capBar)
         pnlCard.Dock = DockStyle.Fill
-        pnlCard.Location = New Point(1, 2)
+        pnlCard.Location = New Point(1, 3)
+        pnlCard.Margin = New Padding(4, 5, 4, 5)
         pnlCard.Name = "pnlCard"
-        pnlCard.Size = New Size(618, 576)
+        pnlCard.Size = New Size(884, 729)
         pnlCard.TabIndex = 0
         pnlCard.Tag = "Card"
-        '
+        ' 
         ' tlpBody
-        '
+        ' 
         tlpBody.ColumnCount = 1
         tlpBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpBody.Controls.Add(lblTitle, 0, 0)
@@ -88,9 +201,10 @@ Partial Class AlegereUnitateForm
         tlpBody.Controls.Add(ntfError, 0, 5)
         tlpBody.Controls.Add(tlpButtons, 0, 6)
         tlpBody.Dock = DockStyle.Fill
-        tlpBody.Location = New Point(0, 46)
+        tlpBody.Location = New Point(0, 67)
+        tlpBody.Margin = New Padding(4, 5, 4, 5)
         tlpBody.Name = "tlpBody"
-        tlpBody.Padding = New Padding(20, 8, 20, 12)
+        tlpBody.Padding = New Padding(29, 13, 29, 20)
         tlpBody.RowCount = 7
         tlpBody.RowStyles.Add(New RowStyle())
         tlpBody.RowStyles.Add(New RowStyle())
@@ -99,39 +213,39 @@ Partial Class AlegereUnitateForm
         tlpBody.RowStyles.Add(New RowStyle())
         tlpBody.RowStyles.Add(New RowStyle())
         tlpBody.RowStyles.Add(New RowStyle())
-        tlpBody.Size = New Size(618, 530)
+        tlpBody.Size = New Size(884, 662)
         tlpBody.TabIndex = 0
         tlpBody.Tag = "Card"
-        '
+        ' 
         ' lblTitle
-        '
+        ' 
         lblTitle.AutoSize = True
         lblTitle.Dock = DockStyle.Top
         lblTitle.Font = New Font("Segoe UI", 13F, FontStyle.Bold)
-        lblTitle.Location = New Point(23, 8)
-        lblTitle.Margin = New Padding(3, 0, 3, 2)
+        lblTitle.Location = New Point(33, 13)
+        lblTitle.Margin = New Padding(4, 0, 4, 3)
         lblTitle.Name = "lblTitle"
-        lblTitle.Size = New Size(572, 25)
+        lblTitle.Size = New Size(818, 36)
         lblTitle.TabIndex = 0
         lblTitle.Text = "Alegeți unitatea"
-        '
+        ' 
         ' lblIntro
-        '
+        ' 
         lblIntro.AutoSize = True
         lblIntro.Dock = DockStyle.Top
-        lblIntro.Location = New Point(23, 35)
-        lblIntro.Margin = New Padding(3, 0, 3, 10)
+        lblIntro.Location = New Point(33, 52)
+        lblIntro.Margin = New Padding(4, 0, 4, 17)
         lblIntro.Name = "lblIntro"
-        lblIntro.Size = New Size(572, 30)
+        lblIntro.Size = New Size(818, 50)
         lblIntro.TabIndex = 1
         lblIntro.Text = "Clasificația de mai jos aparține mai multor unități, așa că salvarea s-a oprit și nu s-a scris nimic. Alegeți unitatea potrivită."
-        '
+        ' 
         ' tlpInfo
-        '
+        ' 
         tlpInfo.AutoSize = True
         tlpInfo.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpInfo.ColumnCount = 2
-        tlpInfo.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 110F))
+        tlpInfo.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 157F))
         tlpInfo.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpInfo.Controls.Add(lblCapAngajament, 0, 0)
         tlpInfo.Controls.Add(lblAngajament, 1, 0)
@@ -140,163 +254,106 @@ Partial Class AlegereUnitateForm
         tlpInfo.Controls.Add(lblCapClsf, 0, 2)
         tlpInfo.Controls.Add(lblClsf, 1, 2)
         tlpInfo.Dock = DockStyle.Top
-        tlpInfo.Location = New Point(23, 75)
-        tlpInfo.Margin = New Padding(3, 0, 3, 10)
+        tlpInfo.Location = New Point(33, 119)
+        tlpInfo.Margin = New Padding(4, 0, 4, 17)
         tlpInfo.Name = "tlpInfo"
         tlpInfo.RowCount = 3
         tlpInfo.RowStyles.Add(New RowStyle())
         tlpInfo.RowStyles.Add(New RowStyle())
         tlpInfo.RowStyles.Add(New RowStyle())
-        tlpInfo.Size = New Size(572, 60)
+        tlpInfo.Size = New Size(818, 75)
         tlpInfo.TabIndex = 2
         tlpInfo.Tag = "Card"
-        '
+        ' 
         ' lblCapAngajament
-        '
+        ' 
         lblCapAngajament.AutoSize = True
         lblCapAngajament.Dock = DockStyle.Fill
-        lblCapAngajament.Location = New Point(3, 0)
+        lblCapAngajament.Location = New Point(4, 0)
+        lblCapAngajament.Margin = New Padding(4, 0, 4, 0)
         lblCapAngajament.Name = "lblCapAngajament"
-        lblCapAngajament.Size = New Size(104, 20)
+        lblCapAngajament.Size = New Size(149, 25)
         lblCapAngajament.TabIndex = 0
         lblCapAngajament.Text = "Angajament"
         lblCapAngajament.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' lblAngajament
-        '
+        ' 
         lblAngajament.AutoSize = True
         lblAngajament.Dock = DockStyle.Fill
         lblAngajament.Font = New Font("Segoe UI Semibold", 9F)
-        lblAngajament.Location = New Point(113, 0)
+        lblAngajament.Location = New Point(161, 0)
+        lblAngajament.Margin = New Padding(4, 0, 4, 0)
         lblAngajament.Name = "lblAngajament"
-        lblAngajament.Size = New Size(456, 20)
+        lblAngajament.Size = New Size(653, 25)
         lblAngajament.TabIndex = 1
         lblAngajament.Text = "—"
         lblAngajament.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' lblCapIndicator
-        '
+        ' 
         lblCapIndicator.AutoSize = True
         lblCapIndicator.Dock = DockStyle.Fill
-        lblCapIndicator.Location = New Point(3, 20)
+        lblCapIndicator.Location = New Point(4, 25)
+        lblCapIndicator.Margin = New Padding(4, 0, 4, 0)
         lblCapIndicator.Name = "lblCapIndicator"
-        lblCapIndicator.Size = New Size(104, 20)
+        lblCapIndicator.Size = New Size(149, 25)
         lblCapIndicator.TabIndex = 2
         lblCapIndicator.Text = "Indicator"
         lblCapIndicator.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' lblIndicator
-        '
+        ' 
         lblIndicator.AutoSize = True
         lblIndicator.Dock = DockStyle.Fill
         lblIndicator.Font = New Font("Segoe UI Semibold", 9F)
-        lblIndicator.Location = New Point(113, 20)
+        lblIndicator.Location = New Point(161, 25)
+        lblIndicator.Margin = New Padding(4, 0, 4, 0)
         lblIndicator.Name = "lblIndicator"
-        lblIndicator.Size = New Size(456, 20)
+        lblIndicator.Size = New Size(653, 25)
         lblIndicator.TabIndex = 3
         lblIndicator.Text = "—"
         lblIndicator.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' lblCapClsf
-        '
+        ' 
         lblCapClsf.AutoSize = True
         lblCapClsf.Dock = DockStyle.Fill
-        lblCapClsf.Location = New Point(3, 40)
+        lblCapClsf.Location = New Point(4, 50)
+        lblCapClsf.Margin = New Padding(4, 0, 4, 0)
         lblCapClsf.Name = "lblCapClsf"
-        lblCapClsf.Size = New Size(104, 20)
+        lblCapClsf.Size = New Size(149, 25)
         lblCapClsf.TabIndex = 4
         lblCapClsf.Text = "Clasificație"
         lblCapClsf.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' lblClsf
-        '
+        ' 
         lblClsf.AutoSize = True
         lblClsf.Dock = DockStyle.Fill
         lblClsf.Font = New Font("Segoe UI Semibold", 9F)
-        lblClsf.Location = New Point(113, 40)
+        lblClsf.Location = New Point(161, 50)
+        lblClsf.Margin = New Padding(4, 0, 4, 0)
         lblClsf.Name = "lblClsf"
-        lblClsf.Size = New Size(456, 20)
+        lblClsf.Size = New Size(653, 25)
         lblClsf.TabIndex = 5
         lblClsf.Text = "—"
         lblClsf.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' grid
-        '
-        grid.AlternatingRows = True
-        grid.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        grid.CellTooltip.Enabled = False
-        grid.ColumnFillMode = KBotFillMode.FirstColumn
-        colUnitate.HeaderText = "Unitate"
-        colUnitate.HeaderTextAlign = ContentAlignment.MiddleLeft
-        colUnitate.Key = "unitate"
-        colUnitate.MinWidth = 120
-        colUnitate.[ReadOnly] = True
-        colUnitate.ShowColumnFilter = False
-        colUnitate.TextAlign = ContentAlignment.MiddleLeft
-        colUnitate.Width = 250
-        colSursa.HeaderText = "Sursă / Sector"
-        colSursa.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colSursa.Key = "sursa"
-        colSursa.MinWidth = 60
-        colSursa.[ReadOnly] = True
-        colSursa.ShowColumnFilter = False
-        colSursa.TextAlign = ContentAlignment.MiddleCenter
-        colSursa.Width = 110
-        colProgram.HeaderText = "Program"
-        colProgram.HeaderTextAlign = ContentAlignment.MiddleLeft
-        colProgram.Key = "program"
-        colProgram.MinWidth = 60
-        colProgram.[ReadOnly] = True
-        colProgram.ShowColumnFilter = False
-        colProgram.TextAlign = ContentAlignment.MiddleLeft
-        colProgram.Width = 130
-        colCod.HeaderText = "Cod"
-        colCod.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colCod.Key = "cod"
-        colCod.MinWidth = 50
-        colCod.[ReadOnly] = True
-        colCod.ShowColumnFilter = False
-        colCod.TextAlign = ContentAlignment.MiddleCenter
-        colCod.Width = 70
-        grid.Columns.Add(colUnitate)
-        grid.Columns.Add(colSursa)
-        grid.Columns.Add(colProgram)
-        grid.Columns.Add(colCod)
-        grid.Dock = DockStyle.Fill
-        grid.FooterVisible = False
-        grid.Location = New Point(23, 145)
-        grid.Name = "grid"
-        grid.ReadOnlyGrid = True
-        grid.RowHeight = 26
-        grid.Size = New Size(572, 260)
-        grid.TabIndex = 3
-        '
-        ' chkRetine
-        '
-        chkRetine.AutoSize = True
-        chkRetine.Dock = DockStyle.Top
-        chkRetine.Location = New Point(23, 413)
-        chkRetine.Margin = New Padding(3, 8, 3, 6)
-        chkRetine.Name = "chkRetine"
-        chkRetine.Size = New Size(572, 24)
-        chkRetine.TabIndex = 4
-        chkRetine.Text = "Nu mă mai întreba pentru această combinație"
-        chkRetine.UseVisualStyleBackColor = True
-        '
+        ' 
         ' ntfError
-        '
+        ' 
         ntfError.BackColor = Color.Transparent
         ntfError.Dock = DockStyle.Top
-        ntfError.Location = New Point(23, 443)
-        ntfError.Margin = New Padding(3, 0, 3, 6)
+        ntfError.Location = New Point(33, 497)
+        ntfError.Margin = New Padding(4, 0, 4, 10)
         ntfError.Name = "ntfError"
-        ntfError.Size = New Size(572, 40)
+        ntfError.Size = New Size(818, 67)
         ntfError.TabIndex = 5
         ntfError.TabStop = False
         ntfError.Visible = False
-        '
+        ' 
         ' tlpButtons
-        '
+        ' 
         tlpButtons.AutoSize = True
         tlpButtons.AutoSizeMode = AutoSizeMode.GrowAndShrink
         tlpButtons.ColumnCount = 2
@@ -305,89 +362,54 @@ Partial Class AlegereUnitateForm
         tlpButtons.Controls.Add(btnRenunta, 0, 0)
         tlpButtons.Controls.Add(btnAlege, 1, 0)
         tlpButtons.Dock = DockStyle.Top
-        tlpButtons.Location = New Point(20, 489)
+        tlpButtons.Location = New Point(29, 574)
         tlpButtons.Margin = New Padding(0)
         tlpButtons.Name = "tlpButtons"
         tlpButtons.RowCount = 1
         tlpButtons.RowStyles.Add(New RowStyle())
-        tlpButtons.Size = New Size(578, 41)
+        tlpButtons.Size = New Size(826, 68)
         tlpButtons.TabIndex = 6
         tlpButtons.Tag = "Card"
-        '
-        ' btnRenunta
-        '
-        btnRenunta.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
-        btnRenunta.FlatStyle = FlatStyle.Flat
-        btnRenunta.Location = New Point(3, 3)
-        btnRenunta.Margin = New Padding(3, 3, 6, 3)
-        btnRenunta.Name = "btnRenunta"
-        btnRenunta.Size = New Size(280, 35)
-        btnRenunta.TabIndex = 1
-        btnRenunta.Text = "Renunță"
-        btnRenunta.UseVisualStyleBackColor = True
-        '
-        ' btnAlege
-        '
-        btnAlege.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
-        btnAlege.FlatStyle = FlatStyle.Flat
-        btnAlege.Font = New Font("Segoe UI Semibold", 9F)
-        btnAlege.Location = New Point(295, 3)
-        btnAlege.Margin = New Padding(6, 3, 3, 3)
-        btnAlege.Name = "btnAlege"
-        btnAlege.Size = New Size(280, 35)
-        btnAlege.TabIndex = 0
-        btnAlege.Text = "Alege unitatea"
-        btnAlege.UseVisualStyleBackColor = True
-        '
+        ' 
         ' capBar
-        '
+        ' 
         capBar.Dock = DockStyle.Top
+        capBar.IconImage = My.Resources.Resources.kbot_64
         capBar.Location = New Point(0, 0)
+        capBar.Margin = New Padding(4, 5, 4, 5)
         capBar.Name = "capBar"
         capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
-        capBar.ShowMaximize = False
-        capBar.ShowMinimize = False
-        capBar.Size = New Size(618, 46)
+        capBar.ShowTextScaleSlider = False
+        capBar.ShowThemeEditor = False
+        capBar.ShowThemeOptions = False
+        capBar.Size = New Size(884, 67)
         capBar.TabIndex = 1
         capBar.TabStop = False
         capBar.Text = "K-BOT — Alegerea unității"
-        '
+        ' 
         ' AlegereUnitateForm
-        '
-        AutoScaleDimensions = New SizeF(7F, 15F)
+        ' 
+        AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(620, 580)
+        ClientSize = New Size(886, 735)
         Controls.Add(pnlCard)
         FormBorderStyle = FormBorderStyle.None
+        Margin = New Padding(4, 5, 4, 5)
         MaximizeBox = False
         MinimizeBox = False
         Name = "AlegereUnitateForm"
-        Padding = New Padding(1, 2, 1, 2)
+        Padding = New Padding(1, 3, 1, 3)
         ShowInTaskbar = False
         StartPosition = FormStartPosition.CenterParent
         Text = "K-BOT — Alegerea unității"
+        CType(grid, ComponentModel.ISupportInitialize).EndInit()
         pnlCard.ResumeLayout(False)
         tlpBody.ResumeLayout(False)
         tlpBody.PerformLayout()
         tlpInfo.ResumeLayout(False)
         tlpInfo.PerformLayout()
         tlpButtons.ResumeLayout(False)
-        CType(grid, ComponentModel.ISupportInitialize).EndInit()
-        '
-        ' tips — etichetele de survolare (felia 0035). Toate în română.
-        '
-        tips.SetToolTipHeader(grid, "Unități posibile")
-        tips.SetToolTipText(grid, "Fiecare rând este o unitate căreia îi poate aparține clasificația." & vbLf &
-                                  "Alegeți-o pe cea potrivită; dublu-click confirmă direct.")
-        tips.SetToolTipHeader(chkRetine, "Nu mă mai întreba")
-        tips.SetToolTipText(chkRetine, "Ține minte răspunsul pentru ACEASTĂ combinație (sursă + clasificație)." & vbLf &
-                                       "Data viitoare se aplică singur, fără să te mai întrebe." & vbLf &
-                                       "O combinație nouă se întreabă oricum din nou.")
-        tips.SetToolTipHeader(btnAlege, "Alege unitatea")
-        tips.SetToolTipText(btnAlege, "Trimite din nou aceleași date, cu unitatea aleasă atașată.")
-        tips.SetToolTipHeader(btnRenunta, "Renunță")
-        tips.SetToolTipText(btnRenunta, "Oprește salvarea. Nu s-a scris nimic și nimic nu se va scrie.")
         ResumeLayout(False)
     End Sub
 
