@@ -154,9 +154,9 @@ Partial Class MainForm
         cboSs.DropDownStyle = ComboBoxStyle.DropDownList
         cboSs.FlatStyle = FlatStyle.Flat
         cboSs.Location = New Point(1480, 7)
-        cboSs.Margin = New Padding(0, 7, 0, 0)
+        cboSs.Margin = New Padding(0, 7, 10, 0)
         cboSs.Name = "cboSs"
-        cboSs.Size = New Size(150, 32)
+        cboSs.Size = New Size(140, 32)
         cboSs.TabIndex = 5
         tips.SetToolTipHeader(cboSs, "Subperioadă")
         tips.SetToolTipText(cboSs, "Subperioada (SS) din anul ales." & vbLf & "Ultima aleasă se ține minte pentru data viitoare.")
@@ -181,11 +181,11 @@ Partial Class MainForm
         pnlWork.Controls.Add(split)
         pnlWork.Controls.Add(navViews)
         pnlWork.Dock = DockStyle.Fill
-        pnlWork.Location = New Point(0, 124)
+        pnlWork.Location = New Point(0, 114)
         pnlWork.Margin = New Padding(4, 5, 4, 5)
         pnlWork.Name = "pnlWork"
         pnlWork.Padding = New Padding(11, 13, 11, 13)
-        pnlWork.Size = New Size(1639, 799)
+        pnlWork.Size = New Size(1639, 809)
         pnlWork.TabIndex = 0
         ' 
         ' split
@@ -206,7 +206,7 @@ Partial Class MainForm
         split.Panel2.Controls.Add(viewHost)
         split.Panel2.Padding = New Padding(11, 0, 0, 0)
         split.Panel2MinSize = 400
-        split.Size = New Size(1398, 773)
+        split.Size = New Size(1398, 783)
         split.SplitterDistance = 397
         split.SplitterWidth = 9
         split.TabIndex = 1
@@ -219,7 +219,7 @@ Partial Class MainForm
         pnlTree.Location = New Point(11, 0)
         pnlTree.Margin = New Padding(4, 5, 4, 5)
         pnlTree.Name = "pnlTree"
-        pnlTree.Size = New Size(386, 773)
+        pnlTree.Size = New Size(386, 783)
         pnlTree.TabIndex = 0
         pnlTree.Tag = "Card"
         ' 
@@ -292,7 +292,7 @@ Partial Class MainForm
         tree.SearchIn = KBot.Controls.AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
         tree.SearchSeparatorColor = Color.Gainsboro
         tree.ShowRightIconOnHover = True
-        tree.Size = New Size(386, 773)
+        tree.Size = New Size(386, 783)
         tree.TabIndex = 0
         tree.TooltipShowOnlyOnLeftIcon = True
         tree.TreeListView = True
@@ -328,7 +328,7 @@ Partial Class MainForm
         viewHost.Location = New Point(11, 0)
         viewHost.Margin = New Padding(4, 5, 4, 5)
         viewHost.Name = "viewHost"
-        viewHost.Size = New Size(981, 773)
+        viewHost.Size = New Size(981, 783)
         viewHost.TabIndex = 0
         viewHost.Tag = "Card"
         ' 
@@ -383,7 +383,7 @@ Partial Class MainForm
         navViews.Margin = New Padding(4, 5, 4, 5)
         navViews.Name = "navViews"
         navViews.SelectedKey = Nothing
-        navViews.Size = New Size(219, 773)
+        navViews.Size = New Size(219, 783)
         navViews.TabIndex = 0
         ' 
         ' pnlStatus
@@ -412,7 +412,7 @@ Partial Class MainForm
         pnlHeader.BackColor = SystemColors.Window
         pnlHeader.Controls.Add(tlyHeader)
         pnlHeader.Dock = DockStyle.Top
-        pnlHeader.Location = New Point(0, 72)
+        pnlHeader.Location = New Point(0, 62)
         pnlHeader.Margin = New Padding(0)
         pnlHeader.Name = "pnlHeader"
         pnlHeader.Padding = New Padding(9, 0, 0, 0)
@@ -489,7 +489,7 @@ Partial Class MainForm
         ' busyBar
         ' 
         busyBar.Dock = DockStyle.Top
-        busyBar.Location = New Point(0, 67)
+        busyBar.Location = New Point(0, 57)
         busyBar.Margin = New Padding(4, 5, 4, 5)
         busyBar.Name = "busyBar"
         busyBar.Size = New Size(1639, 5)
@@ -509,7 +509,7 @@ Partial Class MainForm
         capBar.ShowMinimize = True
         capBar.ShowOptionsButton = True
         capBar.ShowThemeButton = True
-        capBar.Size = New Size(1639, 67)
+        capBar.Size = New Size(1639, 57)
         capBar.TabIndex = 4
         capBar.TabStop = False
         capBar.Text = "K-BOT"

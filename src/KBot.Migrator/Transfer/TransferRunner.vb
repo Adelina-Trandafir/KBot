@@ -298,7 +298,7 @@ Public NotInheritable Class TransferRunner
                                 Continue While
                             End If
 
-                            If Not ParentsTravelled(reader, links, values, outcome) Then
+                            If Not ParentsTravelled(links, values, outcome) Then
                                 outcome.RowsOrphanParent += 1
                                 Continue While
                             End If
@@ -492,29 +492,44 @@ Public NotInheritable Class TransferRunner
     ''' column ▸ the row is written with that column emptied") had therefore never once
     ''' happened. It needs the values dictionary, which is why that arrived as a parameter.
     ''' </para>
+    ''' <para>
+    ''' <b>D15 - the check reads the OUTGOING value, never the Access row.</b> It used to
+    ''' re-read the Access column of the same name, and for every link whose child column
+    ''' is DERIVED that is a different number entirely. <c>Clasificatii</c> is the case
+    ''' that hurt: <see cref="WrittenKeys"/> holds the ids MariaDB assigned (1..n), while
+    ''' the Access column holds <c>IdClsf</c> - so the comparison asked "is Access 123 one
+    ''' of the assigned ids?" and answered by accident, True for anything that happened to
+    ''' fall inside 1..n and False for the rest. On the 25.08 run that dropped 26 of 32
+    ''' <c>FX_DDF_REV_SA</c> rows, 89 of 101 <c>Clasificatii_Buget</c> rows and 31 of 36
+    ''' <c>Parteneri_Coduri</c> rows, and blanked <c>IdClsf</c> on 383 of 461
+    ''' <c>FX_ORD_TBL</c> rows - all of them with the RESOLVED id sitting correctly in
+    ''' <paramref name="values"/>, which is what actually reached the server.
+    ''' The same mismatch hid behind every rename: <c>FX_ORD_TBL.IDORDP</c> is the target
+    ''' name for Access <c>IDORD</c>, and Access has its OWN <c>IDORDP</c> column holding
+    ''' the old server's ids.
+    ''' <paramref name="values"/> is the row as it will be written, and
+    ''' <see cref="RecordPrimaryKey"/> fills <see cref="WrittenKeys"/> from that same
+    ''' dictionary - so comparing the two is the only reading where both sides mean the
+    ''' same thing. A link whose column is not being written at all sends no id and
+    ''' therefore cannot dangle: it is skipped, not guessed at.
+    ''' </para>
     ''' </remarks>
-    Private Function ParentsTravelled(reader As AccessTableReader,
-                                      links As IReadOnlyList(Of ParentLink),
+    Private Function ParentsTravelled(links As IReadOnlyList(Of ParentLink),
                                       values As Dictionary(Of String, Object),
                                       outcome As TableOutcome) As Boolean
         For Each link In links
             If Not _written.Tracks(link.ParentTable) Then Continue For
-            If Not reader.HasColumn(link.AccessColumn) Then Continue For
 
-            Dim raw = reader.ValueOrMissing(link.AccessColumn)
-            If raw Is Nothing OrElse raw Is DBNull.Value Then Continue For
-            If ValueConverter.IsOrphanValue(raw, link.ParentKeyIsAutoIncrement) Then Continue For
-            If _written.Contains(link.ParentTable, raw) Then Continue For
+            Dim outgoing As Object = Nothing
+            If Not values.TryGetValue(link.ChildColumn, outgoing) Then Continue For
+            If outgoing Is Nothing OrElse outgoing Is DBNull.Value Then Continue For
+            If ValueConverter.IsOrphanValue(outgoing, link.ParentKeyIsAutoIncrement) Then Continue For
+            If _written.Contains(link.ParentTable, outgoing) Then Continue For
 
             ' The parent is in scope but this value was not written for it.
             If link.ChildColumnIsNullable Then
-                ' The column is named on the TARGET side; the values dictionary is keyed
-                ' the same way, so a link whose column is not being written at all simply
-                ' finds nothing to blank - and then there is no dangling id to write either.
-                If values.ContainsKey(link.ChildColumn) Then
-                    values(link.ChildColumn) = DBNull.Value
-                    outcome.ValuesNulled += 1
-                End If
+                values(link.ChildColumn) = DBNull.Value
+                outcome.ValuesNulled += 1
                 Continue For
             End If
             Return False
@@ -744,31 +759,27 @@ End Class
 ''' <summary>One foreign key, reduced to what the row filter needs.</summary>
 Friend NotInheritable Class ParentLink
 
-    Public Sub New(parentTable As String, accessColumn As String,
+    Public Sub New(parentTable As String, childColumn As String,
                    childColumnIsNullable As Boolean, parentKeyIsAutoIncrement As Boolean)
         Me.ParentTable = parentTable
-        Me.AccessColumn = accessColumn
+        Me.ChildColumn = childColumn
         Me.ChildColumnIsNullable = childColumnIsNullable
         Me.ParentKeyIsAutoIncrement = parentKeyIsAutoIncrement
     End Sub
 
     Public ReadOnly Property ParentTable As String
     ''' <summary>
-    ''' The child column's name, which is also the Access column's name for every link the
-    ''' filter can use - a renamed key is looked up under the TARGET name, and the reader
-    ''' answers "no such column" for the rest, which is a skip rather than a wrong answer.
+    ''' The TARGET column carrying the foreign key - which is also how the values
+    ''' dictionary is keyed, so it is both what gets looked up and what gets blanked when
+    ''' the parent turns out to be absent (D14).
     ''' </summary>
-    Public ReadOnly Property AccessColumn As String
-    ''' <summary>
-    ''' The same name read as the TARGET column, which is how the values dictionary is
-    ''' keyed. One string, two roles: <see cref="AccessColumn"/> is what the reader is
-    ''' asked for, this is what gets blanked when the parent turns out to be absent (D14).
-    ''' </summary>
+    ''' <remarks>
+    ''' It is a TARGET name and nothing else. It used to double as the Access column name
+    ''' too, on the theory that the two agree wherever the filter can act - they do not
+    ''' (D15): a derived column holds a resolved id and Access holds the raw one, and a
+    ''' renamed key finds a same-named Access column that means something else entirely.
+    ''' </remarks>
     Public ReadOnly Property ChildColumn As String
-        Get
-            Return AccessColumn
-        End Get
-    End Property
     Public ReadOnly Property ChildColumnIsNullable As Boolean
     Public ReadOnly Property ParentKeyIsAutoIncrement As Boolean
 

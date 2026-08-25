@@ -506,3 +506,4 @@ schema_diff/
 /Avacont
 /MariaDB_Schema
 /PYTHON/config.py
+/PYTHON/routes/auth/auth.py
