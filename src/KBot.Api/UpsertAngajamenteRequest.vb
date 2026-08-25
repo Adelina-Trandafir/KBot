@@ -427,3 +427,66 @@ Public NotInheritable Class GetOrdLinieRow
     Public Property doc_just As String
     Public Property obiect_ddf As String
 End Class
+
+' ── POST /api/forexe/prelucrare (ingestia FOREXE, felia 0048) ─────────────────────────
+' Property names ARE the JSON keys (PropertyNamingPolicy=Nothing) — lower case verbatim,
+' matching routes/forexe/prelucrare.py exactly. ApiClient maps them onto the Prelucrare
+' POCOs in KBot.Domain so the wire spelling stops at the boundary.
+'
+' `alegeri` is the only field that is ever RE-SENT: the first attempt leaves it empty, and
+' if the server answers 409 (a classification matching several units) the client asks the
+' operator and posts THE SAME payload again with the answers attached. That is why the
+' request DTO carries the whole result rather than a token — the server keeps no state
+' between the two attempts, so there is nothing to resume.
+Public NotInheritable Class PostPrelucrareRequest
+    Public Property cod As String
+    Public Property workflow As String
+    Public Property moment As Date
+    Public Property scalari As New Dictionary(Of String, String)()
+    Public Property tabele As New Dictionary(Of String, List(Of Dictionary(Of String, String)))()
+    Public Property alegeri As New List(Of PostPrelucrareAlegere)()
+End Class
+
+' One answer. `retine` is the tick box: True asks the server to remember this pair in
+' FX_Alegeri_Unitate and stop asking. A different (ss, clsfe) pair is still asked.
+Public NotInheritable Class PostPrelucrareAlegere
+    Public Property ss As String
+    Public Property clsfe As String
+    Public Property id_unitate As Integer
+    Public Property retine As Boolean
+End Class
+
+' The 200 body. `are` is the port of FX_Angajament_Are; while steps 3-8 are unported it
+' carries only the Indicatori flag, so a missing key means "the step did not run" rather
+' than "the step ran and found nothing".
+Public NotInheritable Class PostPrelucrareResponse
+    Public Property cod As String
+    Public Property are As New Dictionary(Of String, Boolean)()
+    Public Property scrise As New Dictionary(Of String, Integer)()
+    Public Property avertismente As New List(Of String)()
+End Class
+
+' The 409 body (reason = ALEGERE_UNITATE). NOT an error: nothing was written, and the
+' server is asking a question only a person can answer.
+Public NotInheritable Class PostPrelucrareChoiceBody
+    Public Property [error] As String
+    Public Property reason As String
+    Public Property cod As String
+    Public Property alegeri_necesare As New List(Of PostPrelucrareAlegereNecesara)()
+End Class
+
+Public NotInheritable Class PostPrelucrareAlegereNecesara
+    Public Property ss As String
+    Public Property clsfe As String
+    Public Property clsf As String
+    Public Property cod_indicator As String
+    Public Property indicatori As New List(Of String)()
+    Public Property unitati As New List(Of PostPrelucrareUnitate)()
+End Class
+
+Public NotInheritable Class PostPrelucrareUnitate
+    Public Property id_unitate As Integer
+    Public Property detalii As String
+    Public Property sursa_sector As String
+    Public Property cod_program As String
+End Class

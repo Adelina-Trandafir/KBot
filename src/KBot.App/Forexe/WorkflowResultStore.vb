@@ -146,16 +146,5 @@ Public NotInheritable Class WorkflowResultStore
 
 End Class
 
-''' <summary>
-''' Rezultatul BRUT al unei prelucrări complete, în forma în care se salvează: cele cinci
-''' tabele (vezi <see cref="WorkflowCatalog.PrelucrareCompletaTables"/>) plus scalarii citiți
-''' din antetul angajamentului. POCO — fără logică, deci fără Try/Catch (regula casei).
-''' </summary>
-Public NotInheritable Class PrelucrareRezultat
-    Public Property CodAngajament As String = String.Empty
-    Public Property Moment As DateTime
-    ''' <summary>Mesajul workflow-ului care l-a produs (completă vs. REVERSE).</summary>
-    Public Property Workflow As String = String.Empty
-    Public Property Scalari As New Dictionary(Of String, String)
-    Public Property Tabele As New Dictionary(Of String, List(Of Dictionary(Of String, String)))
-End Class
+' PrelucrareRezultat s-a mutat in KBot.Domain (felia 0048-02): KBot.Api il are nevoie
+' ca sa compuna cererea POST /api/forexe/prelucrare si nu poate referi KBot.App.

@@ -27,6 +27,14 @@ Public Class RezervariViewTests
     Private NotInheritable Class FakeApiClient
         Implements IApiClient
 
+        ' Felia 0048-02: ingestia FOREXE. Nefolosita de vederile astea.
+        Public Function TrimitePrelucrareAsync(rezultat As PrelucrareRezultat,
+                                               alegeri As IReadOnlyList(Of AlegereUnitate),
+                                               ct As CancellationToken) As Task(Of PrelucrareRaspuns) _
+            Implements IApiClient.TrimitePrelucrareAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public ReadOnly RequestedCods As New List(Of String)()
         Public ReadOnly Pending As New Dictionary(Of String, TaskCompletionSource(Of RezervariInfo))(StringComparer.Ordinal)
 

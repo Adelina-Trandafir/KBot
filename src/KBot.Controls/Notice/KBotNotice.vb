@@ -36,6 +36,24 @@ Public NotInheritable Class KBotNotice
         Height = 40
     End Sub
 
+    ''' <summary>
+    ''' Mesajul afișat acum, sau gol când caseta e goală. Doar-citire: se pune prin
+    ''' <see cref="Show"/> și se șterge prin <see cref="Clear"/>.
+    ''' </summary>
+    ''' <remarks>
+    ''' <c>Visible</c> NU răspunde la «s-a arătat ceva?»: getterul lui urcă prin părinți, deci
+    ''' pe un formular neafișat răspunde False chiar după <see cref="Show"/>. Proprietatea asta
+    ''' răspunde. <c>Browsable(False)</c> + serializare ascunsă: e stare, nu ceva ce se pune
+    ''' din designer.
+    ''' </remarks>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property Message As String
+        Get
+            Return _message
+        End Get
+    End Property
+
     ''' <summary>Afișează notificarea cu mesajul și felul date.</summary>
     Public Overloads Sub Show(message As String, kind As NoticeKind)
         _message = If(message, String.Empty)

@@ -1007,6 +1007,136 @@ Public Class ApiClient
 
     ' Non-2xx -> ApiException cu mesajul român al serverului (câmpul "error"), codul
     ' HTTP și codul-motiv ("reason"). Nu mai expunem niciodată corpul JSON brut.
+    ' ── POST /api/forexe/prelucrare (ingestia FOREXE, felia 0048) ─────────────────────
+    ' Un 409 cu reason=ALEGERE_UNITATE NU este o eroare: serverul a derulat tranzacția
+    ' înapoi și cere o informație pe care doar operatorul o are (ca formularul modal
+    ' FX_Unitate din Access). Se întoarce ca STARE, nu ca excepție — același tipar ca
+    ' PdfDownloadStatus.NotFound, unde „nu există" e o cale normală, nu un eșec.
+    ' Fără retry aici: cererea nu e idempotentă la nivel de rețea în sensul reîncercării
+    ' oarbe, iar un 401 curge spre WithReauth.
+    Public Async Function TrimitePrelucrareAsync(rezultat As PrelucrareRezultat,
+                                                 alegeri As IReadOnlyList(Of AlegereUnitate),
+                                                 ct As CancellationToken) As Task(Of PrelucrareRaspuns) Implements IApiClient.TrimitePrelucrareAsync
+        Try
+            EnsureConfigured()
+            If rezultat Is Nothing Then Throw New ArgumentNullException(NameOf(rezultat))
+            If String.IsNullOrWhiteSpace(rezultat.CodAngajament) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(rezultat))
+            End If
+
+            Dim req As New PostPrelucrareRequest() With {
+                .cod = rezultat.CodAngajament,
+                .workflow = If(rezultat.Workflow, String.Empty),
+                .moment = rezultat.Moment
+            }
+            If rezultat.Scalari IsNot Nothing Then
+                req.scalari = New Dictionary(Of String, String)(rezultat.Scalari)
+            End If
+            If rezultat.Tabele IsNot Nothing Then
+                req.tabele = New Dictionary(Of String, List(Of Dictionary(Of String, String)))(rezultat.Tabele)
+            End If
+            If alegeri IsNot Nothing Then
+                For Each a As AlegereUnitate In alegeri
+                    req.alegeri.Add(New PostPrelucrareAlegere() With {
+                        .ss = a.Ss, .clsfe = a.ClsfE,
+                        .id_unitate = a.IdUnitate, .retine = a.Retine})
+                Next
+            End If
+
+            Dim body As String = JsonSerializer.Serialize(req, _json)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/prelucrare")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+
+                    If CInt(resp.StatusCode) = 409 Then
+                        Dim intrebare As PrelucrareRaspuns = CitesteAlegeri(respText)
+                        ' 409 fără corpul așteptat = alt conflict, nu întrebarea noastră.
+                        If intrebare IsNot Nothing Then Return intrebare
+                    End If
+
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "trimiterea prelucrării", CInt(resp.StatusCode))
+                    End If
+
+                    Return CitesteSalvat(respText, rezultat.CodAngajament)
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.TrimitePrelucrareAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Corpul de 200 -> POCO-ul de domeniu. Cheia «Indicatori» din `are` poate LIPSI: la
+    ' server, o cheie absentă înseamnă „pasul nu a rulat", nu „a rulat și n-a găsit nimic".
+    Private Shared Function CitesteSalvat(respText As String, cod As String) As PrelucrareRaspuns
+        Dim payload As PostPrelucrareResponse =
+            JsonSerializer.Deserialize(Of PostPrelucrareResponse)(respText, _json)
+        Dim raspuns As New PrelucrareRaspuns() With {
+            .Stare = PrelucrareStare.Salvat,
+            .CodAngajament = cod
+        }
+        If payload Is Nothing Then Return raspuns
+        If Not String.IsNullOrEmpty(payload.cod) Then raspuns.CodAngajament = payload.cod
+        Dim areIndicatori As Boolean = False
+        If payload.are IsNot Nothing Then payload.are.TryGetValue("Indicatori", areIndicatori)
+        raspuns.AreIndicatori = areIndicatori
+        If payload.scrise IsNot Nothing Then
+            For Each kvp In payload.scrise
+                raspuns.Scrise(kvp.Key) = kvp.Value
+            Next
+        End If
+        If payload.avertismente IsNot Nothing Then raspuns.Avertismente.AddRange(payload.avertismente)
+        Return raspuns
+    End Function
+
+    ' Corpul de 409 -> POCO-ul de domeniu, sau Nothing dacă nu e întrebarea noastră
+    ' (alt cod-motiv, corp non-JSON, listă goală). Nothing lasă apelantul să arunce
+    ' ApiException, ca la orice alt conflict.
+    Private Shared Function CitesteAlegeri(respText As String) As PrelucrareRaspuns
+        Dim payload As PostPrelucrareChoiceBody
+        Try
+            payload = JsonSerializer.Deserialize(Of PostPrelucrareChoiceBody)(respText, _json)
+        Catch ex As JsonException
+            ' Corp non-JSON pe un 409 — cale normală, apelantul cade pe ApiException.
+            Return Nothing
+        End Try
+        If payload Is Nothing Then Return Nothing
+        If Not String.Equals(payload.reason, PrelucrareRaspuns.MotivAlegereUnitate, StringComparison.Ordinal) Then Return Nothing
+        If payload.alegeri_necesare Is Nothing OrElse payload.alegeri_necesare.Count = 0 Then Return Nothing
+
+        Dim raspuns As New PrelucrareRaspuns() With {
+            .Stare = PrelucrareStare.AlegereUnitate,
+            .CodAngajament = If(payload.cod, String.Empty),
+            .Mesaj = If(payload.error, String.Empty)
+        }
+        For Each n As PostPrelucrareAlegereNecesara In payload.alegeri_necesare
+            Dim necesara As New AlegereNecesara() With {
+                .Ss = If(n.ss, String.Empty),
+                .ClsfE = If(n.clsfe, String.Empty),
+                .Clsf = If(n.clsf, String.Empty),
+                .CodIndicator = If(n.cod_indicator, String.Empty)
+            }
+            If n.indicatori IsNot Nothing Then necesara.Indicatori.AddRange(n.indicatori)
+            If n.unitati IsNot Nothing Then
+                For Each u As PostPrelucrareUnitate In n.unitati
+                    necesara.Unitati.Add(New UnitateCandidat() With {
+                        .IdUnitate = u.id_unitate,
+                        .Detalii = If(u.detalii, String.Empty),
+                        .SursaSector = If(u.sursa_sector, String.Empty),
+                        .CodProgram = If(u.cod_program, String.Empty)})
+                Next
+            End If
+            raspuns.AlegeriNecesare.Add(necesara)
+        Next
+        Return raspuns
+    End Function
+
     Private Shared Function BuildApiException(respText As String, actiune As String, status As Integer) As ApiException
         Dim body As ApiErrorBody = ApiErrorBody.Parse(respText)
         Return New ApiException(body.MessageOrFallback(actiune, status), status, body.Reason)

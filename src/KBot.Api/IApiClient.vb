@@ -151,6 +151,28 @@ Public Interface IApiClient
     ''' </summary>
     Function ProcessExcelAsync(job As ExcelJob, ct As CancellationToken) As Task(Of String)
 
+    ''' <summary>
+    ''' Trimite rezultatul unei prelucrări complete FOREXE la ingestie
+    ''' (POST /api/forexe/prelucrare) și întoarce ce a răspuns serverul.
+    '''
+    ''' DOUĂ răspunsuri normale, amândouă fără excepție — de-asta întoarce un
+    ''' <see cref="PrelucrareRaspuns"/> cu stare, nu un simplu rezultat:
+    ''' <list type="bullet">
+    ''' <item>200 — s-a scris. <c>Stare = Salvat</c>.</item>
+    ''' <item>409 cu <c>reason = ALEGERE_UNITATE</c> — o clasificație se potrivește cu mai
+    ''' multe unități, serverul a derulat tranzacția înapoi și NU a scris nimic.
+    ''' <c>Stare = AlegereUnitate</c>, iar <c>AlegeriNecesare</c> poartă întrebările.
+    ''' Apelantul întreabă operatorul și cheamă din nou cu ACEEAȘI sarcină, de data asta
+    ''' cu <paramref name="alegeri"/> completat.</item>
+    ''' </list>
+    '''
+    ''' Baza NU se trimite: serverul o ia din sesiune. Hard-fail (Throw ApiException) la
+    ''' orice alt non-2xx; un 401 curge spre WithReauth (fără retry aici).
+    ''' </summary>
+    Function TrimitePrelucrareAsync(rezultat As PrelucrareRezultat,
+                                    alegeri As IReadOnlyList(Of AlegereUnitate),
+                                    ct As CancellationToken) As Task(Of PrelucrareRaspuns)
+
     Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T)
     Function PostAsync(Of TRequest, TResponse)(relativeUrl As String, payload As TRequest, ct As CancellationToken) As Task(Of TResponse)
 End Interface

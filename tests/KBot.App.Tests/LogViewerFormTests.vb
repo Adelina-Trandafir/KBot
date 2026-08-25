@@ -31,6 +31,14 @@ Public Class LogViewerFormTests
     Private NotInheritable Class FailingApiClient
         Implements IApiClient
 
+        ' Felia 0048-02: ingestia FOREXE. Nefolosita de vederile astea.
+        Public Function TrimitePrelucrareAsync(rezultat As PrelucrareRezultat,
+                                               alegeri As IReadOnlyList(Of AlegereUnitate),
+                                               ct As CancellationToken) As Task(Of PrelucrareRaspuns) _
+            Implements IApiClient.TrimitePrelucrareAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T) _
             Implements IApiClient.GetAsync
             Return Task.FromException(Of T)(New ApiException("Serverul nu răspunde.", 503, "SERVER_DOWN"))
