@@ -505,3 +505,4 @@ $RECYCLE.BIN/
 schema_diff/
 /Avacont
 /MariaDB_Schema
+/PYTHON/config.py
