@@ -606,7 +606,35 @@ Public Class MigratorForm
                 Dim runner As New TransferRunner(request, _ownership,
                                                  AddressOf SayFromWorker, AddressOf ProgressFromWorker)
                 Dim result = Await Task.Run(Function() runner.Run(token), token)
-                ShowResult(result)
+
+                ' The LAST thing that happens to a unit database — see
+                ' docs/PLAN_ForexeIngest.md §3. It runs ONLY after a COMMIT, and never on
+                ' AVACONT_SURSA; AutoIncrementStep refuses both cases itself, so the guard
+                ' lives in one place rather than being restated here.
+                '
+                ' Its failure is NOT the transfer's failure: the rows are already committed
+                ' and stay committed. Reported separately so the operator is never told a
+                ' successful transfer was rolled back.
+                Dim autoIncrement As AutoIncrementReport = Nothing
+                If result.Committed Then
+                    Try
+                        Dim finalStep As New AutoIncrementStep(
+                            request.Server, request.TargetDatabase,
+                            request.TemplateDatabase, request.CommonDatabase,
+                            AddressOf SayFromWorker)
+                        autoIncrement = Await Task.Run(Function() finalStep.Run(True, token), token)
+                    Catch stepError As Exception
+                        GlobalErrorLog.Write("MigratorForm.AutoIncrementStep", stepError)
+                        Warn("Transferul a reușit și rândurile sunt scrise, dar pasul final " &
+                             "(AUTO_INCREMENT pe cheile primare) a eșuat:" & Environment.NewLine &
+                             Environment.NewLine & stepError.Message & Environment.NewLine &
+                             Environment.NewLine &
+                             "Baza NU este completă până când pasul acesta nu trece. " &
+                             "Poate fi rulat din nou — tabelele deja convertite sunt sărite.")
+                    End Try
+                End If
+
+                ShowResult(result, autoIncrement)
             Finally
                 EndProgress()
                 SetBusy(False)
@@ -622,7 +650,8 @@ Public Class MigratorForm
         End Try
     End Sub
 
-    Private Sub ShowResult(result As TransferResult)
+    Private Sub ShowResult(result As TransferResult,
+                           Optional autoIncrement As AutoIncrementReport = Nothing)
         For Each line In result.Totals()
             Say("   " & line)
         Next
@@ -631,6 +660,7 @@ Public Class MigratorForm
             Say($"Transfer încheiat cu COMMIT. Jurnalul: {result.JournalFolder}")
             MessageBox.Show(
                 $"Transfer încheiat: {result.TotalWritten} rânduri scrise." & Environment.NewLine &
+                AutoIncrementSummary(autoIncrement) &
                 Environment.NewLine & "Jurnalul rulării: " & result.JournalFolder,
                 "Transferă", MessageBoxButtons.OK, MessageBoxIcon.Information)
             ' A committed run cannot be repeated on the insert-only tables, so the button
@@ -646,6 +676,33 @@ Public Class MigratorForm
                  "Instrucțiunea care a picat este în " & result.JournalFolder & "\_99_final.txt.")
         End If
     End Sub
+
+    ''' <summary>
+    ''' One line about the final AUTO_INCREMENT step for the transfer's message box.
+    ''' Empty when the step did not run at all (a transfer that did not commit).
+    ''' </summary>
+    Private Shared Function AutoIncrementSummary(report As AutoIncrementReport) As String
+        If report Is Nothing Then Return String.Empty
+
+        If report.RefusedBecause IsNot Nothing Then
+            Return Environment.NewLine &
+                   "Pasul AUTO_INCREMENT nu a rulat: " & report.RefusedBecause & Environment.NewLine
+        End If
+
+        If Not report.Succeeded Then
+            Return Environment.NewLine & "Pasul AUTO_INCREMENT NU s-a încheiat." & Environment.NewLine
+        End If
+
+        Dim converted = report.Tables.Where(Function(t) Not t.Missing AndAlso Not t.AlreadyDone).Count()
+        Dim already = report.Tables.Where(Function(t) t.AlreadyDone).Count()
+        Dim missing = report.Tables.Where(Function(t) t.Missing).Count()
+
+        Dim text = Environment.NewLine &
+                   $"AUTO_INCREMENT: {converted} chei convertite"
+        If already > 0 Then text &= $", {already} deja gata"
+        If missing > 0 Then text &= $", {missing} tabele absente"
+        Return text & "." & Environment.NewLine
+    End Function
 
     Private Sub btnOpreste_Click(sender As Object, e As EventArgs) Handles btnOpreste.Click
         Try

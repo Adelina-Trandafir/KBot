@@ -163,7 +163,7 @@
       <Log message="Lista recepții citită. Încep iterarea..." level="info" />
 
       <ForEachVar source="ListaReceptii" itemPrefix="R" indexVariable="idx"
-        collectFields="Tip,Data,Suma,DescriereReceptie,Detaliu"> <!-- TipReceptie,CodIndicator, -->
+        collectFields="Tip,Data,Suma,TipReceptie,DescriereReceptie,CodIndicator,Detaliu">
 
         <Log message="Procesez recepția [[idx]]: [[R.Tip]] / [[R.Data]] / [[R.Suma]]..."
           level="info" />
