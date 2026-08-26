@@ -5,6 +5,7 @@ Imports System.Threading
 Imports System.Threading.Tasks
 Imports GeneralClasses   ' JobHistoryManager (istoricul lucrărilor FOREXE).
 Imports KBot.Common      ' ExcelJob (payload-ul parseExcel dat procesorului).
+Imports KBot.Domain      ' CelulaTabel / RandTabel / TabelRezultat (decizia D-N).
 Imports Newtonsoft.Json.Linq
 Imports WorkflowModels   ' Workflow (modelele). WorkflowExecutor e în namespace global.
 
@@ -295,7 +296,7 @@ Namespace KBot.Forexe
             Dim vars As Dictionary(Of String, String) = _executor.GetAllVariables()
             For Each kvp In vars
                 result.Data(kvp.Key) = kvp.Value
-                Dim table As List(Of Dictionary(Of String, String)) = TryParseTable(kvp.Value)
+                Dim table As TabelRezultat = TryParseTable(kvp.Value)
                 If table IsNot Nothing Then result.Tables(kvp.Key) = table
             Next
         End Sub
@@ -307,7 +308,16 @@ Namespace KBot.Forexe
         ''' Public: this is the single raw-JSON -> Tables() parsing seam; the harness
         ''' test ListaAngajamenteEnrichmentTest exercises it directly.
         ''' </summary>
-        Public Shared Function TryParseTable(value As String) As List(Of Dictionary(Of String, String))
+        ''' <remarks>
+        ''' STRUCTURA SE PĂSTREAZĂ (decizia D-N, 26.08.2026). Până atunci fiecare celulă
+        ''' trecea prin <c>prop.Value.ToString()</c>. Pentru un scalar e fără pierdere;
+        ''' pentru o celulă imbricată — <c>ListaReceptii.Detaliu</c>,
+        ''' <c>TabelIndicatori.BugetIndicator</c> — dădea textul JSON, adică o listă
+        ''' deghizată în text, pe care serverul trebuia apoi să o parseze a doua oară.
+        ''' Executorul păstrează deja structura (<c>BuildCollectedRow</c> face
+        ''' <c>JToken.Parse</c>); aici se pierdea, și aici s-a oprit.
+        ''' </remarks>
+        Public Shared Function TryParseTable(value As String) As TabelRezultat
             If String.IsNullOrWhiteSpace(value) Then Return Nothing
             Dim trimmed As String = value.Trim()
             If Not trimmed.StartsWith("["c) Then Return Nothing
@@ -322,17 +332,56 @@ Namespace KBot.Forexe
             Dim arr As JArray = TryCast(token, JArray)
             If arr Is Nothing OrElse arr.Count = 0 Then Return Nothing
 
-            Dim rows As New List(Of Dictionary(Of String, String))
+            Dim rows As New TabelRezultat()
             For Each item In arr
                 Dim obj As JObject = TryCast(item, JObject)
                 If obj Is Nothing Then Return Nothing   ' array de valori, nu de obiecte
-                Dim row As New Dictionary(Of String, String)
+                Dim row As New RandTabel()
                 For Each prop In obj.Properties()
-                    row(prop.Name) = If(prop.Value?.ToString(), String.Empty)
+                    row.Pune(prop.Name, DinJToken(prop.Value))
                 Next
-                rows.Add(row)
+                rows.Adauga(row)
             Next
             Return rows
+        End Function
+
+        ''' <summary>
+        ''' Un <c>JToken</c> al lui Newtonsoft ▸ o <see cref="CelulaTabel"/>, recursiv.
+        ''' Singurul loc din soluție în care cele două reprezentări se ating: executorul
+        ''' lucrează cu Newtonsoft, restul lanțului cu <c>CelulaTabel</c> și
+        ''' <c>System.Text.Json</c>, iar <c>KBot.Domain</c> nu referă Newtonsoft.
+        ''' </summary>
+        ''' <remarks>
+        ''' Numerele și valorile logice devin TEXT, fiindcă exact asta produce scraperul
+        ''' (celulele vin din HTML) și exact asta parsează fiecare consumator
+        ''' (<c>parse_amount</c> și frații lui). O celulă numerică inventată aici ar da
+        ''' aceleiași coloane două forme — chiar lucrul de care scăpăm.
+        ''' </remarks>
+        Friend Shared Function DinJToken(token As JToken) As CelulaTabel
+            If token Is Nothing Then Return CelulaTabel.Gol
+
+            Select Case token.Type
+                Case JTokenType.Array
+                    Dim elemente As New List(Of CelulaTabel)()
+                    For Each element As JToken In CType(token, JArray)
+                        elemente.Add(DinJToken(element))
+                    Next
+                    Return CelulaTabel.DinLista(elemente)
+
+                Case JTokenType.Object
+                    Dim membri As New List(Of KeyValuePair(Of String, CelulaTabel))()
+                    For Each prop In CType(token, JObject).Properties()
+                        membri.Add(New KeyValuePair(Of String, CelulaTabel)(
+                            prop.Name, DinJToken(prop.Value)))
+                    Next
+                    Return CelulaTabel.DinObiect(membri)
+
+                Case JTokenType.Null, JTokenType.Undefined
+                    Return CelulaTabel.Gol
+
+                Case Else
+                    Return CelulaTabel.DinText(If(token.ToString(), String.Empty))
+            End Select
         End Function
 
         ''' <summary>
@@ -417,11 +466,17 @@ Namespace KBot.Forexe
         Private Shared Sub InregistreazaRezultat(result As JobResult)
             Dim rezumat As New Dictionary(Of String, String)
             For Each kvp In result.Data
-                Dim tabel As List(Of Dictionary(Of String, String)) = Nothing
+                Dim tabel As TabelRezultat = Nothing
                 If result.Tables.TryGetValue(kvp.Key, tabel) Then
                     Dim coloane As String = If(tabel.Count > 0, String.Join(", ", tabel(0).Keys), "—")
+                    ' Coloanele IMBRICATE se numesc pe litere. Istoricul lucrărilor e primul
+                    ' loc în care cineva se uită după o descărcare, iar «Detaliu e o listă»
+                    ' e chiar lucrul care se pierdea tăcut înainte de decizia D-N.
+                    Dim imbricate As IReadOnlyList(Of String) = tabel.ColoaneImbricate()
                     rezumat(kvp.Key) = $"{tabel.Count} rânduri × {If(tabel.Count > 0, tabel(0).Count, 0)} coloane" &
-                                       Environment.NewLine & "Coloane: " & coloane
+                                       Environment.NewLine & "Coloane: " & coloane &
+                                       If(imbricate.Count = 0, String.Empty,
+                                          Environment.NewLine & "Imbricate: " & String.Join(", ", imbricate))
                 Else
                     rezumat(kvp.Key) = Scurteaza(kvp.Value, 2000)
                 End If

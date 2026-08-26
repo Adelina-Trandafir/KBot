@@ -24,6 +24,19 @@ Friend Module Program
         AddHandler TaskScheduler.UnobservedTaskException, AddressOf OnUnobservedTaskException
 
         Try
+            ' Setarile de folder se VALIDEAZA INAINTE DE ORICE, chiar inaintea temei
+            ' (decizia D-O, 26.08.2026). Doua motive, amandoua practice:
+            '
+            '   * o cale configurata gresit trebuie sa opreasca LANSAREA, nu o ingestie
+            '     ajunsa la jumatate. La prima folosire ar fi prea tarziu;
+            '   * validarea CREEAZA folderele in care se scrie, deci tot ce vine dupa --
+            '     jurnalul de erori inclusiv -- are unde sa scrie.
+            '
+            ' Niciodata o cadere tacuta pe implicit: un operator care a pus o cale si a
+            ' primit-o pe cea veche a fost mintit, iar minciuna se descopera abia cand
+            ' cauta un fisier care nu e unde l-a trimis.
+            If Not ValideazaSetarileDeFolder() Then Return
+
             Application.EnableVisualStyles()
             Application.SetCompatibleTextRenderingDefault(False)
             ' PerMonitorV2 (0025-05), nu SystemAware. SystemAware citește DPI-ul monitorului
@@ -206,6 +219,43 @@ Friend Module Program
     End Sub
 
     ' ---------- plase globale de erori + dialog fatal ----------
+    ''' <summary>
+    ''' Verifică setările de folder și creează folderele în care se scrie. Întoarce False
+    ''' dacă aplicația nu poate porni — apelantul iese, fără fereastră principală.
+    ''' </summary>
+    ''' <remarks>
+    ''' Graniță de UI: nu re-aruncă. Mesajul e cel din <see cref="SetariFoldereException"/>,
+    ''' care numește SETAREA și CALEA, nu doar faptul că ceva n-a mers — un «acces refuzat»
+    ''' fără cale nu-i spune operatorului ce să corecteze.
+    '''
+    ''' Problemele NEblocante ale fișierului (o cheie necunoscută, un JSON stricat pe care
+    ''' s-a căzut pe implicite) se scriu în jurnal ACUM: <c>SetariFoldere.Incarca</c> nu are
+    ''' voie să logheze, fiindcă jurnalul stă tocmai în folderul pe care el îl rezolvă.
+    ''' </remarks>
+    Private Function ValideazaSetarileDeFolder() As Boolean
+        Try
+            KBotPaths.ValideazaFoldere()
+            For Each problema As String In KBotPaths.Foldere.Probleme
+                GlobalErrorLog.Write("Program.SetariFoldere",
+                                     New InvalidOperationException(problema))
+            Next
+            Return True
+
+        Catch ex As SetariFoldereException
+            GlobalErrorLog.Write("Program.ValideazaSetarileDeFolder", ex)
+            MessageBox.Show(ex.Message, "K-BOT — setări de folder",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Return False
+
+        Catch ex As Exception
+            GlobalErrorLog.Write("Program.ValideazaSetarileDeFolder", ex)
+            MessageBox.Show(
+                "Setările de folder nu s-au putut verifica: " & ex.Message,
+                "K-BOT — setări de folder", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Return False
+        End Try
+    End Function
+
     Private Sub OnThreadException(sender As Object, e As ThreadExceptionEventArgs)
         GlobalErrorLog.Write("Application.ThreadException", e.Exception)
         ShowFatal(e.Exception)
@@ -224,7 +274,7 @@ Friend Module Program
 
     Private Sub ShowFatal(ex As Exception)
         Try
-            Dim logFile As String = Path.Combine(AppContext.BaseDirectory, "Logs", "harness_errors.log")
+            Dim logFile As String = LogPaths.Combine("harness_errors.log")
             Dim msg As String = "Eroare neașteptată. Detalii complete în:" & Environment.NewLine & logFile &
                                 Environment.NewLine & Environment.NewLine & If(ex IsNot Nothing, ex.Message, "<necunoscut>")
             MessageBox.Show(msg, "K-BOT — eroare", MessageBoxButtons.OK, MessageBoxIcon.Error)

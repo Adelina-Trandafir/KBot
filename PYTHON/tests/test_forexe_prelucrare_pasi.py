@@ -347,33 +347,89 @@ def test_the_iban_classification_mask_groups_from_the_right():
     assert P._format_clsf_iban("12345") == "1.23.45"
 
 
-def test_detaliu_is_accepted_both_as_a_list_and_as_a_json_string():
-    """
-    Clientul K-BOT trimite `Detaliu` ca SIR care contine JSON, fiindca
-    ForexeRunner.TryParseTable aplaneaza fiecare celula cu `.ToString()`. Sarcina utila
-    din era Access il trimite ca lista imbricata. Serverul primeste amandoua forme si
-    trebuie sa scrie acelasi lucru.
-    """
-    ca_lista = _receptie_payload()
-    ca_sir = _receptie_payload()
-    ca_sir["Detaliu"] = json.dumps(ca_sir["Detaliu"])
+# ===========================================================================
+# Forma coloanelor imbricate (decizia D-N)
+# ===========================================================================
+# Coloanele care sosesc ca LISTA nu se ghicesc: sunt citite din definitiile de workflow.
+# Tiparul e un `ForEachVar` al carui `collectFields` numeste un camp pe care un
+# `ScrapeTable` interior il scrie cu `saveTo`. Peste toate cele sase `.wfl` din
+# `src/KBot.Forexe/Workflows/` sunt exact doua:
+#
+#     ListaReceptii_results[].Detaliu          -- liniile receptiei, CITITE de pasul 4b
+#     TabelIndicatori_results[].BugetIndicator -- bugetul indicatorului, necitit (D18)
+#
+# Pana pe 26.08.2026 amandoua puteau sosi si ca SIR care contine JSON, fiindca
+# `ForexeRunner.TryParseTable` aplatiza fiecare celula cu `.ToString()`. Calea toleranta
+# a plecat odata cu aplatizarea; testele de mai jos pinuiaza plecarea ei.
+def test_detaliu_as_a_list_is_accepted():
+    rec = _receptie_payload()
+    cur = FakeCursor({"SELECT CodIndicator FROM FX_Receptii_RHR": [],
+                      "SELECT MAX(NRCRT)": [], "SELECT IDRR, DataR": []})
+    P.step4b_receptii_prelucrare(cur, COD, [rec], indicatori("AAB"))
+    assert len(cur.inserts("FX_Receptii_RHR")) == 1
 
-    rezultate = []
-    for rec in (ca_lista, ca_sir):
-        cur = FakeCursor({"SELECT CodIndicator FROM FX_Receptii_RHR": [],
-                          "SELECT MAX(NRCRT)": [], "SELECT IDRR, DataR": []})
+
+def test_a_flattened_detaliu_string_is_rejected_and_the_message_names_the_column():
+    """
+    Un `Detaliu` aplatizat e RESPINS, chiar daca sirul contine JSON perfect valid.
+
+    Mesajul spune coloana SI spune ce e in neregula cu clientul -- nu «JSON nevalid»,
+    care ar trimite pe cine il citeste sa caute o virgula lipsa intr-un sir corect.
+    """
+    rec = _receptie_payload()
+    rec["Detaliu"] = json.dumps(rec["Detaliu"])          # JSON valid, dar TURTIT
+    cur = FakeCursor({"SELECT CodIndicator FROM FX_Receptii_RHR": [],
+                      "SELECT MAX(NRCRT)": []})
+    with pytest.raises(ValueError) as e:
         P.step4b_receptii_prelucrare(cur, COD, [rec], indicatori("AAB"))
-        rezultate.append(cur.inserts("FX_Receptii_RHR"))
-    assert rezultate[0] == rezultate[1]
-    assert len(rezultate[0]) == 1
+    mesaj = str(e.value)
+    assert "Detaliu" in mesaj
+    assert "aplatizat" in mesaj
+    assert "listă" in mesaj
 
 
-def test_a_detaliu_string_that_is_not_json_raises():
-    """Fara degradare tacuta: un sir nevalid ar scrie o receptie fara linii."""
+def test_a_detaliu_string_that_is_not_json_is_rejected_the_same_way():
+    """
+    Acelasi mesaj si pentru un sir care NU e JSON. Diferenta dintre cele doua siruri nu
+    mai intereseaza pe nimeni: niciunul nu e o lista, si asta e tot ce conteaza.
+    """
     rec = _receptie_payload()
     rec["Detaliu"] = "nu-i JSON"
     cur = FakeCursor({"SELECT CodIndicator FROM FX_Receptii_RHR": [],
                       "SELECT MAX(NRCRT)": []})
     with pytest.raises(ValueError) as e:
         P.step4b_receptii_prelucrare(cur, COD, [rec], indicatori("AAB"))
-    assert "JSON" in str(e.value)
+    assert "Detaliu" in str(e.value)
+
+
+def test_an_empty_detaliu_is_still_rejected_as_empty():
+    """
+    Un `Detaliu` gol nu e o aplatizare, e o receptie fara linii -- si tot nu trece.
+    Mesajul e cel vechi, ca sa nu trimita pe nimeni sa caute un client stricat.
+    """
+    rec = _receptie_payload()
+    rec["Detaliu"] = ""
+    cur = FakeCursor({"SELECT CodIndicator FROM FX_Receptii_RHR": [],
+                      "SELECT MAX(NRCRT)": []})
+    with pytest.raises(ValueError) as e:
+        P.step4b_receptii_prelucrare(cur, COD, [rec], indicatori("AAB"))
+    assert "este gol" in str(e.value)
+
+
+def test_cere_lista_accepts_a_list_and_rejects_a_flattened_string():
+    """Ajutorul in sine, pe cele patru intrari pe care le poate primi."""
+    assert P.cere_lista([{"a": 1}], "undeva", "Detaliu") == [{"a": 1}]
+
+    with pytest.raises(ValueError) as e:
+        P.cere_lista('[{"a": 1}]', "undeva", "Detaliu")
+    assert "aplatizat" in str(e.value)
+
+    # `gol_permis` acopera un tabel interior care chiar nu a avut randuri:
+    # `BuildCollectedRow` scrie "" cand variabila iteratiei a ramas goala.
+    assert P.cere_lista("", "undeva", "BugetIndicator", gol_permis=True) == []
+    with pytest.raises(ValueError):
+        P.cere_lista("", "undeva", "Detaliu")
+
+    with pytest.raises(ValueError) as e:
+        P.cere_lista(17, "undeva", "Detaliu")
+    assert "nu este o listă" in str(e.value)

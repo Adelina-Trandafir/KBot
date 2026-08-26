@@ -82,6 +82,7 @@ _SELECTS_GOALE = (
     "SELECT IDRH, CodIndicator",        # citeste_instantanee, liniile
     "SELECT IDRR, SumaAntet",           # 4c, candidatii trecerii automate
     "SELECT DISTINCT IDRR",             # 4d, recepțiile de recalculat
+    "SELECT IDRR FROM FX_Receptii_R",   # F28, reconstituirile angajamentului
 )
 
 # Amprenta (2.3): o baza goala are zero peste tot. Valorile conteaza doar prin faptul ca
@@ -94,9 +95,13 @@ class FakeCursor:
     def __init__(self, conn):
         self.conn = conn
         self._result = []
+        # Pasul 8 il citeste dupa fiecare UPDATE. Zero e raspunsul corect pentru o baza
+        # goala; testul care il conteaza si-l pune singur prin `conn.extrase_atinse`.
+        self.rowcount = 0
 
     def execute(self, sql, params=None):
         self.conn.executed.append((sql, params))
+        self.rowcount = 0
         if sql.startswith("SELECT 1 FROM FX_Angajamente"):
             self._result = [{"1": 1}] if self.conn.angajament_exists else []
         elif sql.startswith("SELECT 1 FROM FX_Indicatori"):
@@ -119,6 +124,10 @@ class FakeCursor:
             self._result = []
         elif "SELECT DISTINCT IdClsfAcc" in sql:
             self._result = list(self.conn.clsf.get((params[0], params[1]), []))
+        elif sql.startswith("UPDATE FX_Extrase"):
+            # Pasul 8. Cele doua instructiuni raporteaza pe rand cate randuri au atins.
+            self._result = []
+            self.rowcount = self.conn.extrase_atinse.pop(0)                 if self.conn.extrase_atinse else 0
         elif sql.startswith(("INSERT INTO FX_Angajamente", "UPDATE FX_Angajamente",
                              "INSERT INTO FX_Indicatori", "UPDATE FX_Indicatori")):
             self._result = []
@@ -137,7 +146,10 @@ class FakeCursor:
 
 class FakeConnection:
     def __init__(self, candidates=None, remembered=None, clsf=None,
-                 angajament_exists=False):
+                 angajament_exists=False, extrase_atinse=None):
+        # Cate randuri raporteaza fiecare dintre cele doua UPDATE-uri ale pasului 8,
+        # in ordine. Gol = zero, ca pe o baza fara extrase.
+        self.extrase_atinse = list(extrase_atinse or [])
         self.candidates = candidates or {}
         self.remembered = remembered or {}
         self.clsf = clsf or {}
@@ -303,23 +315,87 @@ def test_an_unknown_mode_is_400(client, auth_headers, fake_db):
     assert r.status_code == 400
 
 
-def test_the_response_says_step_8_did_not_run(client, auth_headers, fake_db):
-    """
-    Pasul 8 scrie doar FX_Extrase, care e in afara scopului feliei. Nu e uitat si nu e
-    inlocuit cu ceva aproximativ: fiecare raspuns spune ca nu s-a executat.
-    """
+# ---------------------------------------------------------------------------
+# Pasul 8 -- FX_Indicatori_Actualizare_Extrase
+# ---------------------------------------------------------------------------
+# Portat pe 26.08.2026. Avertismentul care spunea ca pasul NU ruleaza -- si testul care
+# il pinuia -- s-au sters odata cu el: nu mai e adevarat.
+def _amprenta(client, auth_headers, fake_db):
+    """Amprenta pe care o intoarce o propunere pe o baza falsa goala."""
     fake_db(FakeConnection())
+    return client.post(URL, headers=auth_headers,
+                       data=payload(rows=[])).get_json()["amprenta"]
+
+
+def test_step8_runs_unconditionally_even_with_an_empty_payload(client, auth_headers,
+                                                               fake_db):
+    """
+    NECONDITIONAT. Un payload gol nu scrie nicio plata, deci niciun steag `are` nu se
+    ridica -- si pasul 8 tot ruleaza. Asa face si originalul Access, si asta e chiar ce
+    recupereaza randurile ramase in urma din rulari mai vechi.
+    """
+    amp = _amprenta(client, auth_headers, fake_db)
+    conn = fake_db(FakeConnection())
+    r = client.post(URL, headers=auth_headers,
+                    data=payload(rows=[], mod="salvare", decizii=[], amprenta=amp))
+    assert r.status_code == 200
+    assert conn.wrote("UPDATE FX_Extrase") == 2
+    assert conn.committed
+
+
+def test_step8_reports_its_row_count_under_fx_extrase(client, auth_headers, fake_db):
+    """Contorul e SUMA celor doua instructiuni, si iese sub numele tabelului."""
+    amp = _amprenta(client, auth_headers, fake_db)
+    fake_db(FakeConnection(extrase_atinse=[3, 2]))
+    r = client.post(URL, headers=auth_headers,
+                    data=payload(rows=[], mod="salvare", decizii=[], amprenta=amp))
+    assert r.status_code == 200
+    assert r.get_json()["scrise"]["FX_Extrase"] == 5
+
+
+def test_step8_result_is_not_reported_in_the_proposal(client, auth_headers, fake_db):
+    """
+    Pasul 8 CHIAR ruleaza in faza intai -- amandoua fazele parcurg acelasi drum -- dar
+    rezultatul lui nu apare in tabloul propunerii: nu e ceva despre care operatorul are
+    de decis, e o legatura mecanica intre extrase si plati.
+    """
+    conn = fake_db(FakeConnection(extrase_atinse=[3, 2]))
     r = client.post(URL, headers=auth_headers, data=payload(rows=[]))
     assert r.status_code == 200
-    assert any("Pasul 8" in w for w in r.get_json()["avertismente"])
+    assert conn.wrote("UPDATE FX_Extrase") == 2          # a rulat
+    assert conn.rolled_back                              # si s-a derulat inapoi
+    assert "FX_Extrase" not in r.get_json()["scrise"]    # dar nu se raporteaza
+
+
+def test_step8_sql_joins_on_referinta_then_referintadest_in_that_order():
+    """
+    Forma SQL-ului, pinuita prin ACELASI ajutor pe care il cheama ruta -- o constanta
+    copiata in test ar ramane verde si dupa ce ruta ar inceta sa o mai foloseasca.
+
+    Ordinea nu e o intamplare si cele doua NU se pot contopi intr-una cu `OR`: a doua
+    trebuie sa vada randurile pe care prima le-a completat deja, fiindca amandoua
+    filtreaza pe `CodAI IS NULL`.
+    """
+    from routes.forexe.prelucrare_pasi import pas8_instructiuni
+    unu, doi = pas8_instructiuni()
+
+    assert "E.Referinta = P.Referinta_TREZOR" in unu
+    assert "E.ReferintaDest = P.Referinta_TREZOR" in doi
+    assert "ReferintaDest" not in unu
+    for sql in (unu, doi):
+        assert sql.startswith("UPDATE FX_Extrase")
+        assert "INNER JOIN FX_Plati" in sql
+        assert "SET E.CodAI = P.CodAI" in sql
+        assert sql.rstrip().endswith("WHERE E.CodAI IS NULL")
+        assert " OR " not in sql
 
 
 def test_diacritics_are_literal_utf8_not_escaped(client, auth_headers, fake_db):
     fake_db(FakeConnection())
     r = client.post(URL, headers=auth_headers, data=payload(rows=[]))
     text = r.data.decode("utf-8")
-    assert "FX_Extrase" in text
-    assert "în afara scopului" in text
+    assert "instantanee" in text
+    assert "amprenta" in text
     assert "\\u" not in text
 
 
@@ -402,3 +478,73 @@ def test_a_classification_with_no_unit_is_400_and_rolls_back(client, auth_header
     assert r.status_code == 400
     assert "AAB" in r.get_json()["error"]
     assert conn.rolled_back and not conn.committed
+
+
+# ---------------------------------------------------------------------------
+# Coloanele imbricate ale sarcinii utile (decizia D-N)
+# ---------------------------------------------------------------------------
+# Sunt exact doua, si nu sunt ghicite: se citesc din definitiile de workflow. Tiparul e
+# un `ForEachVar` al carui `collectFields` numeste un camp pe care un `ScrapeTable`
+# interior il scrie cu `saveTo`.
+#
+#     ListaReceptii_results[].Detaliu          -- liniile receptiei, CITITE de pasul 4b
+#     TabelIndicatori_results[].BugetIndicator -- bugetul indicatorului, NECITIT (D18)
+#
+# `BugetIndicator` nu e consumat de nimeni -- VBA-ul il pazeste cu `Exists(
+# "BugetIndicatori")`, cu «i» la coada, deci testul e mereu fals si defectul e portat
+# deliberat. Forma i se verifica totusi: daca EL soseste ca text, clientul aplatizeaza,
+# iar clientul acela aplatizeaza si `Detaliu`, pe care chiar il citim.
+def test_a_flattened_buget_indicator_is_rejected_by_name(client, auth_headers, fake_db):
+    fake_db(_fake_unit())
+    rand = indicator_row()
+    rand["BugetIndicator"] = '[{"Denumire": "Titlul II", "Suma": "1.000,00"}]'
+    r = client.post(URL, headers=auth_headers, data=payload(rows=[rand]))
+    assert r.status_code == 400
+    mesaj = r.get_json()["error"]
+    assert "BugetIndicator" in mesaj
+    assert "aplatizat" in mesaj
+
+
+def test_a_nested_buget_indicator_is_accepted(client, auth_headers, fake_db):
+    conn = fake_db(_fake_unit())
+    rand = indicator_row()
+    rand["BugetIndicator"] = [{"Denumire": "Titlul II", "Suma": "1.000,00"}]
+    r = client.post(URL, headers=auth_headers, data=payload(rows=[rand]))
+    assert r.status_code == 200
+    # Necitit, deci nu ajunge nicaieri -- dar nici nu blocheaza rularea.
+    assert conn.wrote("INSERT INTO FX_Indicatori") == 1
+
+
+def test_an_empty_buget_indicator_is_accepted(client, auth_headers, fake_db):
+    """
+    `BuildCollectedRow` scrie "" cand tabelul interior nu a avut randuri. Un sir GOL
+    inseamna «nu a fost nimic de citit», nu «s-a aplatizat ceva», si trece.
+    """
+    fake_db(_fake_unit())
+    rand = indicator_row()
+    rand["BugetIndicator"] = ""
+    r = client.post(URL, headers=auth_headers, data=payload(rows=[rand]))
+    assert r.status_code == 200
+
+
+def test_a_missing_buget_indicator_is_accepted(client, auth_headers, fake_db):
+    """Workflow-urile care nu au bucla de indicatori nu trimit coloana deloc."""
+    fake_db(_fake_unit())
+    r = client.post(URL, headers=auth_headers, data=payload(rows=[indicator_row()]))
+    assert r.status_code == 200
+
+
+def test_a_nested_scalar_column_is_rejected_by_name(client, auth_headers, fake_db):
+    """
+    Cealalta jumatate a regulii: o coloana SCALARA care soseste imbricata se oprește cu
+    numele ei. Inainte, `str()` peste o listă ar fi scris linistit «[{'a': 1}]» intr-o
+    coloana de baza de date si nimeni nu ar fi aflat vreodata.
+    """
+    fake_db(_fake_unit())
+    rand = indicator_row()
+    rand["Sector_Sursa_Indicator"] = [{"a": 1}]
+    r = client.post(URL, headers=auth_headers, data=payload(rows=[rand]))
+    assert r.status_code == 400
+    mesaj = r.get_json()["error"]
+    assert "Sector_Sursa_Indicator" in mesaj
+    assert "listă" in mesaj

@@ -417,3 +417,51 @@ def test_the_fingerprint_reads_only_the_angajament():
     sql, params = cur.executed[0]
     assert params == (COD,) * 8
     assert "DTQ" not in sql          # nimic care se misca la citire
+
+
+# ---------------------------------------------------------------------------
+# F28 -- reconstituirea neverificabila
+# ---------------------------------------------------------------------------
+# Regula e o functie PURA peste lista de IDRR reconstituite ale angajamentului, deci se
+# testeaza fara nicio baza. Conditia e exact cea a lui F27 si nimic mai larg.
+def test_a_single_reconstruction_is_not_marked_uncertain():
+    """
+    Una singura ▸ nimic. Instantaneele ei nu concureaza cu ale nimanui, deci gruparea e
+    ingradita de F13/F14/F16 si atat -- ceea ce e destul.
+    """
+    assert A.f28_de_marcat([17]) == []
+
+
+def test_two_reconstructions_mark_both_not_just_the_new_one():
+    """
+    Ambiguitatea e INTRE ele. Fiecare instantaneu al oricareia ar fi putut sta pe
+    cealalta, deci nu apartine niciuneia singure -- si nici celei adaugate ultima.
+    """
+    assert A.f28_de_marcat([17, 18]) == [17, 18]
+
+
+def test_three_reconstructions_mark_all_three():
+    assert A.f28_de_marcat([4, 9, 12]) == [4, 9, 12]
+
+
+def test_no_reconstruction_marks_nothing():
+    assert A.f28_de_marcat([]) == []
+
+
+def test_the_flag_is_never_cleared_by_a_later_run_seeing_only_one():
+    """
+    Steagul NU se sterge. Functia spune doar pe cine sa marchezi, niciodata pe cine sa
+    demarchezi: o rulare de mai tarziu care vede o singura reconstituire nu face
+    gruparea de atunci mai verificabila decat era in clipa in care s-a facut.
+
+    Testul pinuiaza chiar absenta acelui drum -- daca cineva ar adauga o «curatare», ea
+    ar trebui sa treaca pe aici, si aici nu are ce sa intoarca.
+    """
+    # Rularea 1: doua reconstituiri ▸ amandoua marcate.
+    marcate = set(A.f28_de_marcat([17, 18]))
+    assert marcate == {17, 18}
+
+    # Rularea 3: una dintre ele a disparut din tabel (sters, sau alt angajament).
+    # Functia nu cere demarcarea celeilalte -- nu are cum, nu intoarce demarcari.
+    assert A.f28_de_marcat([18]) == []
+    assert marcate == {17, 18}

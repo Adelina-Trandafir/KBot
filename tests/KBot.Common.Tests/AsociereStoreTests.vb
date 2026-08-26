@@ -31,8 +31,8 @@ Public Class AsociereStoreTests
             .Moment = New Date(2026, 8, 26, 10, 0, 0),
             .Workflow = "adlop - Prelucrare Completa.wfl"}
         payload.Scalari("DescriereAngajament") = "2026 - NOVA WATER"
-        payload.Tabele("TabelIstoric") = New List(Of Dictionary(Of String, String)) From {
-            New Dictionary(Of String, String) From {
+        payload.Tabele("TabelIstoric") = New TabelRezultat From {
+            New RandTabel From {
                 {"Timp", "10/02/2026 22:46:54"},
                 {"Descriere", "Salvare receptie."},
                 {"Observatii", "Receptie: PLATA FACT., valoare: 510, (activ:true)"}}}

@@ -158,7 +158,7 @@ Public Class MainForm
             ' și rămâne ascunsă până o cere operatorul — RichTextBoxLogger cere controlul la
             ' construcție și îl ține cât trăiește aplicația, deci ținta trebuie să existe
             ' înainte de prima acțiune FOREXE, nu abia când se deschide fereastra.
-            Dim logDir As String = Path.Combine(AppContext.BaseDirectory, "Logs")
+            Dim logDir As String = LogPaths.LogsDirectory()
             Directory.CreateDirectory(logDir)
             Dim caleJurnal As String = Path.Combine(logDir, $"Log_{DateTime.Now:yyyyMMdd_HHmmss}.txt")
 

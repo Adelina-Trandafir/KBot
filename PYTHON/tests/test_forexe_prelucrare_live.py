@@ -250,3 +250,214 @@ def test_the_save_phase_commits_and_is_repeatable(client, auth_headers, curat):
     din_nou = client.post(URL, headers=auth_headers,
                           data=_payload(mod="propunere")).get_json()
     assert din_nou["scrise"]["FX_Istoric"] == 0
+
+
+# ===========================================================================
+# Pasul 8 -- FX_Indicatori_Actualizare_Extrase (felia 0048-03-completare)
+# ===========================================================================
+# Cele doua UPDATE-uri se pot pinui offline pe FORMA lor (vezi
+# test_forexe_prelucrare_route.py). Ce NU se poate verifica fara o baza e EFECTUL lor:
+# ca legatura chiar se face, ca a doua instructiune vede randurile pe care prima le-a
+# completat deja, si ca filtrul `CodAI IS NULL` nu rescrie o legatura existenta.
+def test_step8_links_an_extras_to_a_payment_by_referinta(client, auth_headers, curat):
+    """
+    Un rand `FX_Extrase` cu `Referinta` egala cu `Referinta_TREZOR`-ul unei plati scrise
+    de pasul 5 primeste `CodAI`-ul acelei plati.
+    """
+    cod = curat
+    conn = get_kbot_connection(DB_NAME)
+    try:
+        cur = conn.cursor()
+        # Se scriu intai platile (salvare), apoi extrasul care le refera.
+        prop = client.post(URL, headers=auth_headers,
+                           data=_payload(mod="propunere")).get_json()
+        decizii = [{"rand_istoric": i["rand_istoric"], "data_h": i["data_h"],
+                    "actiune": "ignorat"} for i in prop["instantanee"]]
+        client.post(URL, headers=auth_headers, data=_payload(
+            mod="salvare", decizii=decizii, amprenta=prop["amprenta"]))
+
+        cur.execute("SELECT Referinta_TREZOR, CodAI FROM FX_Plati "
+                    "WHERE CodAngajament = %s AND Referinta_TREZOR IS NOT NULL LIMIT 1",
+                    (cod,))
+        rand = cur.fetchone()
+        if rand is None:
+            pytest.skip("sarcina utila de proba nu contine plati cu referinta de trezorerie")
+        referinta, cod_ai = rand
+
+        # `FX_Extrase.IDFXE` NU e AUTO_INCREMENT, deci cheia se da.
+        cur.execute("SELECT COALESCE(MAX(IDFXE), 0) + 1 FROM FX_Extrase")
+        idfxe = cur.fetchone()[0]
+        cur.execute("INSERT INTO FX_Extrase (IDFXE, Referinta, CodAI) VALUES (%s, %s, NULL)",
+                    (idfxe, referinta))
+        conn.commit()
+        try:
+            prop2 = client.post(URL, headers=auth_headers,
+                                data=_payload(mod="propunere")).get_json()
+            decizii2 = [{"rand_istoric": i["rand_istoric"], "data_h": i["data_h"],
+                         "actiune": "ignorat"} for i in prop2["instantanee"]]
+            r = client.post(URL, headers=auth_headers, data=_payload(
+                mod="salvare", decizii=decizii2, amprenta=prop2["amprenta"]))
+            assert r.status_code == 200
+            assert r.get_json()["scrise"]["FX_Extrase"] >= 1
+
+            cur.execute("SELECT CodAI FROM FX_Extrase WHERE IDFXE = %s", (idfxe,))
+            assert cur.fetchone()[0] == cod_ai
+        finally:
+            cur.execute("DELETE FROM FX_Extrase WHERE IDFXE = %s", (idfxe,))
+            conn.commit()
+        cur.close()
+    finally:
+        conn.close()
+
+
+def test_step8_does_not_overwrite_an_extras_that_already_has_a_codai(client, auth_headers,
+                                                                    curat):
+    """
+    Amandoua instructiunile filtreaza pe `CodAI IS NULL`. Un extras legat deja -- de o
+    rulare mai veche, sau de mana -- ramane cum e.
+    """
+    cod = curat
+    conn = get_kbot_connection(DB_NAME)
+    try:
+        cur = conn.cursor()
+        prop = client.post(URL, headers=auth_headers,
+                           data=_payload(mod="propunere")).get_json()
+        decizii = [{"rand_istoric": i["rand_istoric"], "data_h": i["data_h"],
+                    "actiune": "ignorat"} for i in prop["instantanee"]]
+        client.post(URL, headers=auth_headers, data=_payload(
+            mod="salvare", decizii=decizii, amprenta=prop["amprenta"]))
+
+        cur.execute("SELECT Referinta_TREZOR FROM FX_Plati "
+                    "WHERE CodAngajament = %s AND Referinta_TREZOR IS NOT NULL LIMIT 1",
+                    (cod,))
+        rand = cur.fetchone()
+        if rand is None:
+            pytest.skip("sarcina utila de proba nu contine plati cu referinta de trezorerie")
+
+        cur.execute("SELECT COALESCE(MAX(IDFXE), 0) + 1 FROM FX_Extrase")
+        idfxe = cur.fetchone()[0]
+        cur.execute("INSERT INTO FX_Extrase (IDFXE, Referinta, CodAI) VALUES (%s, %s, %s)",
+                    (idfxe, rand[0], "NU-MA-ATINGE"))
+        conn.commit()
+        try:
+            prop2 = client.post(URL, headers=auth_headers,
+                                data=_payload(mod="propunere")).get_json()
+            decizii2 = [{"rand_istoric": i["rand_istoric"], "data_h": i["data_h"],
+                         "actiune": "ignorat"} for i in prop2["instantanee"]]
+            client.post(URL, headers=auth_headers, data=_payload(
+                mod="salvare", decizii=decizii2, amprenta=prop2["amprenta"]))
+
+            cur.execute("SELECT CodAI FROM FX_Extrase WHERE IDFXE = %s", (idfxe,))
+            assert cur.fetchone()[0] == "NU-MA-ATINGE"
+        finally:
+            cur.execute("DELETE FROM FX_Extrase WHERE IDFXE = %s", (idfxe,))
+            conn.commit()
+        cur.close()
+    finally:
+        conn.close()
+
+
+def test_the_proposal_rolls_step8_back_like_everything_else(client, auth_headers, curat):
+    """
+    Pasul 8 ruleaza si in faza intai -- amandoua fazele parcurg acelasi drum -- deci
+    trebuie sa se deruleze inapoi cu restul. Testul de mai sus
+    (`…leaves_every_table_byte_identical`) nu-l acopera: `FX_Extrase` nu e in `TABELE`,
+    fiindca nu poarta `CodAngajament` si nu se poate lua un instantaneu al lui pe cod.
+    """
+    cod = curat
+    conn = get_kbot_connection(DB_NAME)
+    try:
+        cur = conn.cursor()
+        prop = client.post(URL, headers=auth_headers,
+                           data=_payload(mod="propunere")).get_json()
+        decizii = [{"rand_istoric": i["rand_istoric"], "data_h": i["data_h"],
+                    "actiune": "ignorat"} for i in prop["instantanee"]]
+        client.post(URL, headers=auth_headers, data=_payload(
+            mod="salvare", decizii=decizii, amprenta=prop["amprenta"]))
+
+        cur.execute("SELECT Referinta_TREZOR FROM FX_Plati "
+                    "WHERE CodAngajament = %s AND Referinta_TREZOR IS NOT NULL LIMIT 1",
+                    (cod,))
+        rand = cur.fetchone()
+        if rand is None:
+            pytest.skip("sarcina utila de proba nu contine plati cu referinta de trezorerie")
+
+        cur.execute("SELECT COALESCE(MAX(IDFXE), 0) + 1 FROM FX_Extrase")
+        idfxe = cur.fetchone()[0]
+        cur.execute("INSERT INTO FX_Extrase (IDFXE, Referinta, CodAI) VALUES (%s, %s, NULL)",
+                    (idfxe, rand[0]))
+        conn.commit()
+        try:
+            client.post(URL, headers=auth_headers, data=_payload(mod="propunere"))
+            cur.execute("SELECT CodAI FROM FX_Extrase WHERE IDFXE = %s", (idfxe,))
+            assert cur.fetchone()[0] is None
+        finally:
+            cur.execute("DELETE FROM FX_Extrase WHERE IDFXE = %s", (idfxe,))
+            conn.commit()
+        cur.close()
+    finally:
+        conn.close()
+
+
+# ===========================================================================
+# F28 -- reconstituirea neverificabila
+# ===========================================================================
+# Regula in sine e o functie pura si se testeaza offline
+# (test_forexe_prelucrare_asociere.py). Ce cere o baza e coloana:
+# `sql/0049_receptii_stergere.sql` trebuie aplicat, altfel fiecare ruta care citeste
+# `FX_Receptii_R` cade cu «Unknown column».
+def test_the_reconstituit_nesigur_column_exists():
+    """
+    Precondiție, nu comportament: `sql/0049_receptii_stergere.sql` aplicat pe baza.
+    Fara el, conducta nu poate rula deloc, iar mesajul MariaDB nu spune care felie.
+    """
+    conn = get_kbot_connection(DB_NAME)
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT "
+            "FROM information_schema.COLUMNS "
+            "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'FX_Receptii_R' "
+            "  AND COLUMN_NAME IN ('Sters', 'Reconstituit', 'ReconstituitNesigur')",
+            (DB_NAME,))
+        gasite = {r[0]: r for r in cur.fetchall()}
+        assert set(gasite) == {"Sters", "Reconstituit", "ReconstituitNesigur"}, (
+            "sql/0049_receptii_stergere.sql nu e aplicat pe " + DB_NAME)
+        for nume, (_, tip, nulabil, implicit) in gasite.items():
+            assert tip == "tinyint(1)", nume
+            assert nulabil == "NO", nume
+            assert str(implicit) == "0", nume
+        cur.close()
+    finally:
+        conn.close()
+
+
+def test_two_reconstructions_on_one_angajament_flag_both(client, auth_headers, curat):
+    """
+    F28 la capat de fir: doua reconstituiri pe acelasi angajament ▸ AMANDOUA marcate, si
+    raspunsul spune care. Nu se poate scrie fara baza, fiindcă marcarea recitește
+    reconstituirile DIN TABEL — ca sa prinda si pe cele ramase din rulari mai vechi.
+    """
+    prop = client.post(URL, headers=auth_headers,
+                       data=_payload(mod="propunere")).get_json()
+
+    stergeri = [i for i in prop["instantanee"] if i["stergere"]]
+    if len(stergeri) < 2:
+        pytest.skip("sarcina utila de proba nu contine doua stergeri de receptie")
+
+    decizii = []
+    for n, inst in enumerate(stergeri[:2]):
+        decizii.append({"rand_istoric": inst["rand_istoric"], "data_h": inst["data_h"],
+                        "actiune": "stergere", "receptie_noua": f"R{n}"})
+    vazute = {d["rand_istoric"] for d in decizii}
+    for inst in prop["instantanee"]:
+        if inst["rand_istoric"] not in vazute:
+            decizii.append({"rand_istoric": inst["rand_istoric"],
+                            "data_h": inst["data_h"], "actiune": "ignorat"})
+
+    r = client.post(URL, headers=auth_headers, data=_payload(
+        mod="salvare", decizii=decizii, amprenta=prop["amprenta"]))
+    assert r.status_code == 200
+    corp = r.get_json()
+    assert corp["scrise"]["reconstituiri_nesigure"] == 2
+    assert any("nesigur" in a for a in corp["avertismente"])

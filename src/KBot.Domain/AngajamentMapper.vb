@@ -20,6 +20,42 @@ Public NotInheritable Class AngajamentMapper
         Return FromListaAngajamenteResult(rows, New DefaultAngajamenteColumnMap())
     End Function
 
+    ' Overload over the shape JobResult.Tables carries since 26.08.2026 (decision D-N).
+    ' ListaAngajamente is a FLAT table -- no ForEachVar, so no inner ScrapeTable, so no
+    ' nested cell can occur in it. That is stated here as an expectation rather than
+    ' assumed: a nested cell throws by name instead of being rendered as text, because a
+    ' column that silently turned into a list is a FOREXE change we need to hear about.
+    Public Shared Function FromListaAngajamenteResult(
+        rows As TabelRezultat) As List(Of Angajament)
+
+        Return FromListaAngajamenteResult(rows, New DefaultAngajamenteColumnMap())
+    End Function
+
+    Public Shared Function FromListaAngajamenteResult(
+        rows As TabelRezultat,
+        map As IAngajamenteColumnMap) As List(Of Angajament)
+
+        If rows Is Nothing Then Throw New ArgumentNullException(NameOf(rows))
+
+        Dim plate As New List(Of Dictionary(Of String, String))()
+        For Each row As RandTabel In rows
+            If row Is Nothing Then Continue For
+            Dim plat As New Dictionary(Of String, String)()
+            For Each kvp As KeyValuePair(Of String, CelulaTabel) In row
+                Dim celula As CelulaTabel = If(kvp.Value, CelulaTabel.Gol)
+                If Not celula.EsteScalar Then
+                    Throw New InvalidOperationException(
+                        $"Coloana «{kvp.Key}» din ListaAngajamente a sosit ca " &
+                        $"{CelulaTabel.NumeFel(celula.Felul)}, nu ca text. Tabelul acesta " &
+                        "nu are coloane imbricate; FOREXE l-a schimbat.")
+                End If
+                plat(kvp.Key) = celula.Text
+            Next
+            plate.Add(plat)
+        Next
+        Return FromListaAngajamenteResult(plate, map)
+    End Function
+
     ' Maps scraped rows -> domain Angajament using the supplied column map.
     '   - Key lookup is case-insensitive and trimmed.
     '   - Every other scraped column (Nr_crt, Angajament_legal, Col_9, anything FOREXE

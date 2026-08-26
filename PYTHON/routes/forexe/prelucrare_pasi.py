@@ -1,6 +1,6 @@
 # routes/forexe/prelucrare_pasi.py
 """
-Pasii 3, 4a, 4b, 4d, 5 si 7 ai ingestiei FOREXE (felia 0048-03).
+Pasii 3, 4a, 4b, 4d, 5, 7 si 8 ai ingestiei FOREXE (feliile 0048-03 si 0048-03-completare).
 
 Pasii 0-2 (tranzactia, FX_Angajamente, FX_Indicatori) stau in prelucrare.py, de unde
 au venit in felia 0048-02. Pasul 4c (asocierea) sta in prelucrare_asociere.py, fiindca
@@ -196,10 +196,15 @@ def step3a_populeaza_istoric(cursor, cod: str, randuri: List[dict],
     for i, row in enumerate(randuri):
         if not isinstance(row, dict):
             raise ValueError(f"{TABLE_ISTORIC}[{i}] nu este un obiect.")
-        descriere = row.get("Descriere") or ""
-        observatii = row.get("Observatii") or ""
-        utilizator = row.get("Utilizator") or ""
-        data_fx = parse_timp_istoric(row.get("Timp"))
+        # Cele patru celule de payload ale randului de istoric. `TabelIstoric` e razuit
+        # de un `ScrapeTable` simplu, fara `ForEachVar`, deci NICIUNA nu poate fi
+        # imbricata -- spus aici ca asteptare, nu presupus: daca vreuna devine o lista,
+        # ne oprim cu numele ei in loc sa crapam mai incolo cu `AttributeError`.
+        unde = f"{TABLE_ISTORIC}[{i}]"
+        descriere = text_celula(row.get("Descriere"), unde, "Descriere")
+        observatii = text_celula(row.get("Observatii"), unde, "Observatii")
+        utilizator = text_celula(row.get("Utilizator"), unde, "Utilizator")
+        data_fx = parse_timp_istoric(text_celula(row.get("Timp"), unde, "Timp"))
         if data_fx is None:
             raise ValueError(
                 f"{TABLE_ISTORIC}[{i}] nu are «Timp»; rândul nu poate fi datat."
@@ -812,7 +817,8 @@ _RHR_INDICATORI_VAZUTI_SQL = (
 )
 
 
-def _detaliu(det: dict, cod: str, indicatori: Dict[str, dict]) -> dict:
+def _detaliu(det: dict, cod: str, indicatori: Dict[str, dict],
+             unde: str = TABLE_RECEPTII) -> dict:
     """
     Port al lui ObtineDateDetaliu -- o linie din `Detaliu`.
 
@@ -823,50 +829,103 @@ def _detaliu(det: dict, cod: str, indicatori: Dict[str, dict]) -> dict:
     """
     from .prelucrare_helpers import fx_receptii_normalize_ssi, parse_loose_number
 
-    ci = str(det.get("Cod") or "").strip()
+    # Celulele-frunza din interiorul lui `Detaliu`. `CelulaTabel` promite imbricarea
+    # RECURSIV, deci nici la nivelul asta «e text» nu e o certitudine -- se cere.
+    ci = text_celula(det.get("Cod"), unde, "Detaliu.Cod").strip()
     cheie = cod_ai(cod, ci)
     ind = indicatori.get(cheie)
     return {
         "CodIndicator": ci,
         "CodAI": cheie,
-        "CodSSI": fx_receptii_normalize_ssi(det.get("Sector_Sursa_Indicator") or ""),
-        "CreditBugetar": parse_loose_number(det.get("Credit_bugetar_rezervat_definitiv")),
-        "Valoare": parse_loose_number(det.get("Valoare")),
-        "ValoareN": parse_loose_number(det.get("Valoare_nereceptionata")),
+        "CodSSI": fx_receptii_normalize_ssi(
+            text_celula(det.get("Sector_Sursa_Indicator"), unde,
+                        "Detaliu.Sector_Sursa_Indicator")),
+        "CreditBugetar": parse_loose_number(
+            text_celula(det.get("Credit_bugetar_rezervat_definitiv"), unde,
+                        "Detaliu.Credit_bugetar_rezervat_definitiv")),
+        "Valoare": parse_loose_number(
+            text_celula(det.get("Valoare"), unde, "Detaliu.Valoare")),
+        "ValoareN": parse_loose_number(
+            text_celula(det.get("Valoare_nereceptionata"), unde,
+                        "Detaliu.Valoare_nereceptionata")),
         "IdClsf": None if ind is None else ind["IdClsf"],
         "IdUnitate": None if ind is None else ind["IdUnitate"],
     }
 
 
-def _ca_lista(valoare, unde: str):
+def text_celula(valoare, unde: str, coloana: str) -> str:
     """
-    `Detaliu` soseste in DOUA forme, si amandoua sunt legitime.
+    O celula de payload citita ca TEXT, cu asteptarea spusa pe fata.
 
-    * Ca LISTA imbricata -- asa arata sarcina utila produsa de FOREXE/Access
-      (FB_JOBS/resend/*.json), unde JSON-ul e pastrat structurat.
-    * Ca SIR care contine JSON -- asa il trimite clientul K-BOT. `JobResult.Tables` e
-      `Dictionary(Of String, String)`, iar `ForexeRunner.TryParseTable` aplaneaza fiecare
-      celula cu `prop.Value.ToString()`; pentru un JArray imbricat, asta da chiar textul
-      JSON. Verificat citind functia, nu presupus.
+    De ce exista (decizia D-N, 26.08.2026). De cand structura calatoreste end-to-end, o
+    celula poate sosi ca lista sau ca obiect, nu doar ca text. Un `.strip()` peste o lista
+    ar crapa cu `AttributeError` la prima rulare reala, iar un `str()` peste ea ar fi si
+    mai rau: ar scrie linistit «[{'Cod': 'AAB'}]» intr-o coloana de baza de date si nimeni
+    nu ar afla niciodata.
 
-    Se accepta amandoua fiindca serverul chiar le primeste pe amandoua: fisierele de
-    retrimitere din era Access si clientul nou. Un sir care NU e o lista JSON ridica --
-    nu se degradeaza tacut in «fara detalii», ceea ce ar scrie o receptie fara linii.
+    Deci fiecare loc care citeste o celula ca text o cere prin functia asta, si o coloana
+    care s-a facut imbricata se opreste pe loc, cu numele ei in mesaj.
+
+    `None` devine sirul gol -- pentru un tabel razuit o valoare lipsa si una goala sunt
+    acelasi lucru, si asa se comporta si codul dinaintea acestei felii.
+    """
+    if valoare is None:
+        return ""
+    if isinstance(valoare, str):
+        return valoare
+    if isinstance(valoare, (list, dict)):
+        fel = "o listă" if isinstance(valoare, list) else "un obiect"
+        raise ValueError(
+            f"{unde}: «{coloana}» a sosit ca {fel}, dar aici se citește ca text. "
+            f"Coloana s-a schimbat în FOREXE, ori se citește greșit."
+        )
+    # Numar sau boolean: le producea deja `str()` inainte, si asa le si trimite clientul
+    # (celulele vin din HTML, deci sunt text). Se pastreaza, ca sa nu se schimbe nimic
+    # pentru sarcinile utile care chiar poarta asa ceva.
+    return str(valoare)
+
+
+def cere_lista(valoare, unde: str, coloana: str, gol_permis: bool = False):
+    """
+    O coloana IMBRICATA trebuie sa soseasca drept LISTA. Nimic altceva nu se accepta.
+
+    DE CE E STRICT (decizia D-N, 26.08.2026). Pana atunci coloana asta sosea in DOUA
+    forme: ca lista imbricata din sarcina utila produsa de FOREXE/Access, si ca SIR care
+    contine JSON de la clientul K-BOT -- fiindca `ForexeRunner.TryParseTable` aplatiza
+    fiecare celula cu `prop.Value.ToString()`, iar pentru un JArray asta da chiar textul
+    JSON. Serverul le accepta pe amandoua, si tocmai asta era problema: cat timp calea
+    toleranta traieste, clientul care pierde structura traieste cu ea. Clientul s-a
+    reparat (structura calatoreste acum end-to-end), deci calea toleranta a plecat odata
+    cu el.
+
+    NU EXISTA SARCINI UTILE STOCATE IN FORMA VECHE de recuperat: D2 spune ca Access e
+    scos din uz si nu exista un al doilea scriitor, iar conducta asta nu a rulat inca
+    niciodata pe o baza reala. Nu se pierde nimic; se inchide o usa.
+
+    Un sir NEGOL e deci un client care aplatizeaza, si mesajul spune exact asta -- nu
+    «JSON nevalid», care ar trimite pe cine il citeste sa caute o virgula lipsa.
+
+    `gol_permis` acopera cazul in care tabelul interior chiar nu a avut randuri:
+    `BuildCollectedRow` scrie "" cand variabila iteratiei a ramas goala, deci un sir GOL
+    inseamna «nu a fost nimic de citit», nu «s-a aplatizat ceva».
     """
     if isinstance(valoare, list):
         return valoare
+
     if isinstance(valoare, str):
-        text = valoare.strip()
-        if text == "":
-            raise ValueError(f"{unde}: «Detaliu» este gol.")
-        try:
-            parsat = json.loads(text)
-        except ValueError as err:
-            raise ValueError(f"{unde}: «Detaliu» nu este JSON valid.") from err
-        if not isinstance(parsat, list):
-            raise ValueError(f"{unde}: «Detaliu» nu este o listă.")
-        return parsat
-    raise ValueError(f"{unde}: «Detaliu» nu este o listă.")
+        if valoare.strip() == "":
+            if gol_permis:
+                return []
+            raise ValueError(f"{unde}: «{coloana}» este gol.")
+        raise ValueError(
+            f"{unde}: «{coloana}» a sosit ca text, dar trebuie să fie o listă. "
+            f"Clientul trimite valoarea aplatizată — structura se pierde pe drum. "
+            f"Trimite coloana ca listă JSON, nu ca șir care conține JSON."
+        )
+
+    raise ValueError(
+        f"{unde}: «{coloana}» nu este o listă (a sosit ca {type(valoare).__name__})."
+    )
 
 
 def step4b_receptii_prelucrare(cursor, cod: str, randuri: List[dict],
@@ -905,17 +964,30 @@ def step4b_receptii_prelucrare(cursor, cod: str, randuri: List[dict],
             raise ValueError(f"{TABLE_RECEPTII}[{i}] nu este un obiect.")
         if "Detaliu" not in rec or rec["Detaliu"] is None:
             raise ValueError(f"{TABLE_RECEPTII}[{i}]: lipsește colecția «Detaliu».")
-        detalii = _ca_lista(rec["Detaliu"], f"{TABLE_RECEPTII}[{i}]")
 
-        data_r = fx_receptii_parse_ro_date(rec.get("Data"))
+        unde = f"{TABLE_RECEPTII}[{i}]"
+        # `Detaliu` E imbricat, prin constructie: `ForEachVar` peste `ListaReceptii` il
+        # numeste in `collectFields`, iar un `ScrapeTable` interior il scrie cu `saveTo`.
+        detalii = cere_lista(rec["Detaliu"], unde, "Detaliu")
+
+        # Restul coloanelor sunt scalare, si o cer explicit.
+        data_r = fx_receptii_parse_ro_date(text_celula(rec.get("Data"), unde, "Data"))
         if data_r is None:
-            raise ValueError(f"{TABLE_RECEPTII}[{i}]: «Data» lipsește sau e invalidă.")
-        suma = parse_loose_number(rec.get("Suma"))
+            raise ValueError(f"{unde}: «Data» lipsește sau e invalidă.")
+        suma = parse_loose_number(text_celula(rec.get("Suma"), unde, "Suma"))
         # Hash-ul de identitate foloseste `Tip`, NU `TipReceptie` -- verificat citind
-        # ObtineDateHeader. (Planul parinte 5.3 cerea un 400 la lipsa lui `TipReceptie`;
-        # functia reala nu citeste niciodata cheia aceea, deci cerinta cade. Consemnat.)
+        # ObtineDateHeader.
+        #
+        # `TipReceptie` RAMANE in `collectFields` din «adlop - Prelucrare Completa.wfl»
+        # (decizia D11 cere ca cele doua fisiere de workflow sa se potriveasca, si o
+        # coloana necitita in plus nu costa nimic), dar NIMIC nu o consuma: in Access ea
+        # exista ca sa se decida, dupa umplerea tabelelor temporare, daca un rand real
+        # trebuie inserat sau actualizat -- o decizie care aici nu exista. Cerinta
+        # planului parinte 5.3 (400 la lipsa ei) e RETRASA pe 26.08.2026 din motivul asta.
         hash_ident = fx_receptii_h_get_hash_ident(
-            cod, data_r, rec.get("Tip"), rec.get("DescriereReceptie"))
+            cod, data_r,
+            text_celula(rec.get("Tip"), unde, "Tip"),
+            text_celula(rec.get("DescriereReceptie"), unde, "DescriereReceptie"))
 
         cursor.execute(_R_CANDIDATI_SQL, (cod, data_r))
         candidati = cursor.fetchall()
@@ -931,7 +1003,7 @@ def step4b_receptii_prelucrare(cursor, cod: str, randuri: List[dict],
             existente = {str(x["CodIndicator"]): x for x in cursor.fetchall()}
 
             for det in detalii:
-                d = _detaliu(det, cod, indicatori)
+                d = _detaliu(det, cod, indicatori, f"{TABLE_RECEPTII}[{i}]")
                 vechi = existente.get(d["CodIndicator"])
                 if vechi is not None:
                     if round(float(vechi["Valoare"] or 0), 2) != round(d["Valoare"], 2):
@@ -956,7 +1028,7 @@ def step4b_receptii_prelucrare(cursor, cod: str, randuri: List[dict],
             r_scrise += 1
 
             for det in detalii:
-                d = _detaliu(det, cod, indicatori)
+                d = _detaliu(det, cod, indicatori, f"{TABLE_RECEPTII}[{i}]")
                 cursor.execute(_RHR_INSERT_SQL, (
                     idrr, cod, d["CodIndicator"], d["CodAI"], d["IdClsf"],
                     d["IdUnitate"], d["CodSSI"], d["CreditBugetar"],
@@ -1199,30 +1271,73 @@ def step7_actualizeaza_rezolvat(cursor, ids: List[int]) -> int:
 
 
 # ===========================================================================
-# PASUL 8 -- FX_Indicatori_Actualizare_Extrase: NEPORTAT, DELIBERAT
+# PASUL 8 -- FX_Indicatori_Actualizare_Extrase
 # ===========================================================================
-# Functia a fost CITITA (mdl_FX_Tasks_Receive_DWN.md, «Private Function
-# FX_Indicatori_Actualizare_Extrase»). Are exact doua instructiuni si amandoua scriu
-# `FX_Extrase`:
+# Port al functiei din mdl_FX_Tasks_Receive_DWN. Are exact doua instructiuni, si
+# amandoua leaga `FX_Extrase` de platile scrise la pasul 5 prin referinta de trezorerie.
 #
+# Access:
 #   UPDATE FX_Extrase INNER JOIN FX_Plati ON FX_Extrase.Referinta     = FX_Plati.Referinta_TREZOR
-#      SET FX_Extrase.CodAI = FX_Plati.CodAI WHERE FX_Extrase.CodAI Is Null
+#      SET FX_Extrase.CodAI = [FX_Plati]![CodAI] WHERE FX_Extrase.CodAI Is Null
 #   UPDATE FX_Extrase INNER JOIN FX_Plati ON FX_Extrase.ReferintaDest = FX_Plati.Referinta_TREZOR
-#      SET FX_Extrase.CodAI = FX_Plati.CodAI WHERE FX_Extrase.CodAI Is Null
+#      SET FX_Extrase.CodAI = [FX_Plati]![CodAI] WHERE FX_Extrase.CodAI Is Null
 #
-# `FX_Extrase` e scos din scop de planul parinte 12. Planul acestei felii 0 spune, textual:
-# «If it requires FX_Extrase, report that and stop rather than porting half of it.»
+# ORDINEA CELOR DOUA NU E O INTAMPLARE, si de-aia NU se contopesc intr-una singura cu
+# `OR`. A doua trebuie sa VADA randurile pe care prima le-a completat deja: filtrul e
+# `CodAI IS NULL` pe amandoua, deci un rand legat pe `Referinta` iese din multimea celei
+# de-a doua. Contopite cu `OR`, `Referinta` si `ReferintaDest` ar concura pe acelasi rand
+# si ar castiga oricare, tacut.
 #
-# Deci pasul 8 NU se executa. Nu e uitat, nu e mort si nu e inlocuit cu ceva
-# aproximativ: e raportat. D-G («pasul 8 e portat») ramane valabil ca intentie si se
-# implementeaza in felia care aduce FX_Extrase in scop.
+# NECONDITIONAT. Nu se pazeste cu niciun steag `are` si nu se sare cand pasul 5 n-a
+# scris nimic -- exact ca originalul Access, care il cheama la coada fiecarei rulari.
+# `FX_Extrase` poate purta randuri ramase in urma din rulari mai vechi, iar filtrul
+# `CodAI IS NULL` inseamna ca fiecare trecere recupereaza tot restantul.
 #
-# ATENTIE la ce inseamna absenta lui: randurile din `FX_Extrase` care s-ar fi legat de
-# platile scrise la pasul 5 raman cu `CodAI` NULL. Nimic nu se strica; o legatura nu se
-# face. Cand FX_Extrase intra in scop, cele doua UPDATE-uri de mai sus recupereaza tot
-# ce a ramas in urma, fiindca amandoua sunt filtrate pe `CodAI Is Null`.
-MESAJ_PAS8 = (
-    "Pasul 8 (FX_Indicatori_Actualizare_Extrase) nu s-a executat: scrie doar "
-    "«FX_Extrase», care este în afara scopului acestei felii. Legăturile "
-    "«FX_Extrase.CodAI» rămân goale și se pot completa ulterior."
+# NUMELE COLOANELOR sunt verificate in `MariaDB_Schema/000_DEMO.sql`, nu presupuse:
+# `FX_Extrase`.`Referinta`, `.ReferintaDest`, `.CodAI`; `FX_Plati`.`Referinta_TREZOR`,
+# `.CodAI`.
+#
+# DACA DOUA RANDURI `FX_Plati` IMPART O `Referinta_TREZOR`, MariaDB alege unul dintre ele
+# fara sa spuna care -- exact comportamentul pe care il are si Access. Pasul 5
+# deduplica platile chiar pe `Referinta_TREZOR` (`_PLATI_DEDUP_SQL`), deci situatia nu ar
+# trebui sa apara; nota exista ca cine vine dupa sa stie ca a fost cantarita, nu ratata.
+#
+# `FX_Extrase` NU e filtrat pe angajament: nu poarta `CodAngajament`. Legatura se face
+# prin `FX_Plati`, care e. Un extras al altui angajament nu se poate potrivi decat daca
+# imparte referinta de trezorerie cu o plata a acestuia, adica in cazul de mai sus.
+_PAS8_SQL = (
+    "UPDATE FX_Extrase E INNER JOIN FX_Plati P ON E.Referinta = P.Referinta_TREZOR "
+    "SET E.CodAI = P.CodAI WHERE E.CodAI IS NULL",
+    "UPDATE FX_Extrase E INNER JOIN FX_Plati P ON E.ReferintaDest = P.Referinta_TREZOR "
+    "SET E.CodAI = P.CodAI WHERE E.CodAI IS NULL",
 )
+
+
+def pas8_instructiuni() -> Tuple[str, ...]:
+    """
+    Cele doua instructiuni ale pasului 8, in ordinea in care se executa.
+
+    Exista ca functie -- si nu doar ca o constanta citita direct din test -- fiindca
+    testele care pinuiesc forma SQL-ului trebuie sa treaca prin ACELASI drum pe care il
+    ia ruta. O constanta copiata in test ar ramane verde dupa ce ruta ar inceta sa o mai
+    foloseasca.
+    """
+    return _PAS8_SQL
+
+
+def step8_actualizeaza_extrase(cursor) -> int:
+    """
+    Completeaza `FX_Extrase.CodAI` din `FX_Plati`, pe referinta de trezorerie.
+
+    Intoarce numarul TOTAL de randuri atinse de cele doua instructiuni. Ruleaza in
+    aceeasi tranzactie cu pasii 1-7 si se deruleaza inapoi cu ei in faza «propunere»,
+    ca orice altceva: nu are nicio ramura proprie de faza.
+    """
+    atinse = 0
+    for sql in pas8_instructiuni():
+        cursor.execute(sql)
+        # `rowcount` dupa un UPDATE = randurile CHIAR schimbate. Un -1 (driverul nu
+        # stie) nu se numara ca zero tacut: se trateaza ca zero si atat, fiindca
+        # singurul lui consumator e contorul raportat operatorului.
+        atinse += max(int(cursor.rowcount or 0), 0)
+    return atinse

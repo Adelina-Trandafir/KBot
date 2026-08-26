@@ -61,8 +61,8 @@ Public Class PrelucrareApiClientTests
             .Moment = New DateTime(2026, 8, 25, 10, 12, 0)
         }
         p.Scalari("DataAngajament") = "10/02/2026"
-        p.Tabele("TabelIndicatori_results") = New List(Of Dictionary(Of String, String)) From {
-            New Dictionary(Of String, String) From {
+        p.Tabele("TabelIndicatori_results") = New TabelRezultat From {
+            New RandTabel From {
                 {"Indicator_ang", "AAB"},
                 {"Sector_Sursa_Indicator", "02E- 65. 04. 02. 20. 01. 01"}}
         }

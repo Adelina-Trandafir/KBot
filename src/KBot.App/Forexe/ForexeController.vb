@@ -126,7 +126,7 @@ Public NotInheritable Class ForexeController
             Try
                 Dim job As New JobRequest With {
                     .WorkflowName = "Conectare",
-                    .WflPath = Path.Combine(AppContext.BaseDirectory, "Workflows", "adlop - Conectare.wfl")
+                    .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.ConectareFile)
                 }
                 RaporteazaStare("Conectare la FOREXE...")
                 Dim rezultat As JobResult = Await _runner.RunAsync(job, cert, Progres(), _cts.Token)
@@ -167,7 +167,7 @@ Public NotInheritable Class ForexeController
                     Return Nothing
                 End If
 
-                Dim randuri As List(Of Dictionary(Of String, String)) = Nothing
+                Dim randuri As TabelRezultat = Nothing
                 If Not rezultat.Tables.TryGetValue(WorkflowCatalog.ListaAngajamenteTable, randuri) Then
                     RaporteazaStare($"Tabelul «{WorkflowCatalog.ListaAngajamenteTable}» lipsește din rezultat (0 rânduri).")
                     Return Nothing

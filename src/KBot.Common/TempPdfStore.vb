@@ -32,7 +32,7 @@ Public NotInheritable Class TempPdfStore
     ''' </summary>
     Public Shared ReadOnly Property Root As String
         Get
-            Return Path.Combine(AppContext.BaseDirectory, FolderName)
+            Return KBotPaths.FolderPdfTemporar
         End Get
     End Property
 

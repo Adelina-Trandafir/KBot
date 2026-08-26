@@ -378,6 +378,8 @@ Public Class ApiClient
                                 .SumaAntet = r.suma_antet,
                                 .Incarcat = r.incarcat,
                                 .Preluat = r.preluat,
+                                .Reconstituit = r.reconstituit,
+                                .ReconstituitNesigur = r.reconstituit_nesigur,
                                 .Idrh = r.idrh,
                                 .NrCrtH = r.nrcrt_h,
                                 .DataH = r.data_h,
@@ -1046,7 +1048,7 @@ Public Class ApiClient
                 req.scalari = New Dictionary(Of String, String)(rezultat.Scalari)
             End If
             If rezultat.Tabele IsNot Nothing Then
-                req.tabele = New Dictionary(Of String, List(Of Dictionary(Of String, String)))(rezultat.Tabele)
+                req.tabele = TabeleJson.Catre(rezultat.Tabele)
             End If
             If alegeri IsNot Nothing Then
                 For Each a As AlegereUnitate In alegeri
@@ -1183,7 +1185,7 @@ Public Class ApiClient
             req.scalari = New Dictionary(Of String, String)(rezultat.Scalari)
         End If
         If rezultat.Tabele IsNot Nothing Then
-            req.tabele = New Dictionary(Of String, List(Of Dictionary(Of String, String)))(rezultat.Tabele)
+            req.tabele = TabeleJson.Catre(rezultat.Tabele)
         End If
         If alegeri IsNot Nothing Then
             For Each a As AlegereUnitate In alegeri

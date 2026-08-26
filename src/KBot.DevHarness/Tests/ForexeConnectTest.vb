@@ -4,6 +4,7 @@ Imports System.Security.Cryptography.X509Certificates
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
+Imports KBot.Common   ' LogPaths (decizia D-O).
 Imports KBot.Forexe
 
 ' FOREXE, LIVE: reproduce exact pașii de conectare din MainForm.btnConnect_Click (calea A3),
@@ -52,7 +53,7 @@ Public NotInheritable Class ForexeConnectTest
         ' 3) Același JobRequest ca MainForm pentru "adlop - Conectare.wfl".
         Dim job As New JobRequest With {
             .WorkflowName = "Conectare",
-            .WflPath = Path.Combine(AppContext.BaseDirectory, "Workflows", "adlop - Conectare.wfl")
+            .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.ConectareFile)
         }
         If Not File.Exists(job.WflPath) Then
             Return HarnessTestResult.Failed("Workflow lipsă: " & job.WflPath,
@@ -66,7 +67,7 @@ Public NotInheritable Class ForexeConnectTest
         ' 4b) Logger FOREXE doar-fișier pentru rulările din harness (nu există RichTextBox FOREXE aici).
         '     Scrie într-un fișier separat de test_*.log al RunLogger (doi writers pe un fișier = corupție).
         '     RichTextBox real, neafișat (nu Nothing): SetColorScheme→RefreshDisplay dereferențiază controlul.
-        Dim logsDir As String = Path.Combine(AppContext.BaseDirectory, "Logs")
+        Dim logsDir As String = LogPaths.LogsDirectory()
         Directory.CreateDirectory(logsDir)   ' idempotent
         Dim forexeLogPath As String = Path.Combine(logsDir, $"forexe_connect_{DateTime.Now:yyyyMMdd_HHmmss}.log")
 

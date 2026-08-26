@@ -14,15 +14,25 @@ Imports System.IO
 ''' </summary>
 Public Module LogPaths
 
-    ''' <summary>Numele folderului, lângă executabil.</summary>
+    ''' <summary>Numele folderului implicit, lângă executabil.</summary>
     Public Const FolderName As String = "Logs"
 
     ''' <summary>
     ''' Calea folderului de jurnale. NU creează nimic pe disc — o poate apela și un cititor
     ''' care doar vrea să știe unde să se uite.
     ''' </summary>
+    ''' <remarks>
+    ''' Din 26.08.2026 (D-O) calea vine de la <see cref="KBotPaths"/>, singurul rezolvator
+    ''' de căi din soluție; implicitul e tot <c>&lt;AppDir&gt;\Logs</c>, deci un operator
+    ''' care nu configurează nimic nu vede nicio schimbare.
+    '''
+    ''' ATENȚIE la buclă: <c>KBotPaths.Foldere</c> NU are voie să logheze la încărcare,
+    ''' fiindcă <c>GlobalErrorLog</c> scrie tocmai în folderul cerut de aici. De-aia
+    ''' <c>SetariFoldere.Incarca</c> strânge problemele într-o listă în loc să le logheze,
+    ''' și le raportează abia la validarea de pornire.
+    ''' </remarks>
     Public Function LogsDirectory() As String
-        Return Path.Combine(AppContext.BaseDirectory, FolderName)
+        Return KBotPaths.FolderJurnale
     End Function
 
     ''' <summary>

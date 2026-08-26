@@ -165,6 +165,16 @@
       <ForEachVar source="ListaReceptii" itemPrefix="R" indexVariable="idx"
         collectFields="Tip,Data,Suma,TipReceptie,DescriereReceptie,CodIndicator,Detaliu">
 
+      <!-- NOTA (26.08.2026): «TipReceptie» ramane in collectFields fiindca D11 cere ca
+           cele doua fisiere de workflow sa se potriveasca, si o coloana necitita in plus
+           nu costa nimic. NIMIC nu o consuma insa pe server: hash-ul de identitate al
+           antetului se face din «Tip», iar FX_Receptii_R.TipReceptie e calculat
+           (NOU/EDIT). Cerinta unui 400 la lipsa ei e RETRASA. Vezi corectia C5 din
+           docs/FUNDAMENT_Asociere_Receptii.md.
+           «Detaliu», in schimb, E citit, si soseste ca LISTA imbricata: un ScrapeTable
+           interior il scrie cu saveTo, iar decizia D-N spune ca structura calatoreste
+           pana la server neaplatizata. -->
+
         <Log message="Procesez recepția [[idx]]: [[R.Tip]] / [[R.Data]] / [[R.Suma]]..."
           level="info" />
 

@@ -1,7 +1,9 @@
 # Reception association — why `FX_DUBII` exists
 
-**Status:** findings and decisions. Nothing is implemented yet.
-**Written:** 26.08.2026. Supersedes the first version of the same day.
+**Status:** findings and decisions. The pipeline half is implemented (slices 0048-01…03 and
+0048-03-completare); the association FORM is not (slice 0048-04).
+**Written:** 26.08.2026. Supersedes the first version of the same day. Revised the same day:
+F17 amended, F20 withdrawn, F28 added, D-N and D-O added, O3 and O5 closed.
 **Location:** `docs/FUNDAMENT_Asociere_Receptii.md` (moved here from the repo root in slice 0048-03).
 
 This document exists because the association form could not be explained to its users. Working
@@ -216,9 +218,24 @@ contain the previous one's. — `OPERATOR`, 26.08.2026.
 
 ### What the form shows and offers
 
-**F17.** A snapshot equal to the latest snapshot already in a reception's chain is a **no-op save**
-and must be labelled as such. Without the label the operator sees duplicate numbers and assumes an
-error. — `DERIVED` from F7.
+**F17.** **AMENDED 26.08.2026.** A snapshot equal to the latest snapshot already in a reception's
+chain is **shown as such, and nothing more**. Without the note the operator sees duplicate numbers
+and assumes an error; with it, they can decide.
+
+There is **no automatic no-op classification, at any point.** Two blocks carrying the same numbers
+may be a save that changed nothing, or may be a real edit on a *different* reception that happens to
+hold the same amount — the machine cannot tell the two apart, and the operator can. "Identical to
+the previous snapshot in this chain" is therefore information on the form, computed live from the
+chain the operator has currently built and recomputed on every drag. It never writes anything and it
+never sets a marker.
+
+The marker itself is an **operator action**: `FX_Receptii_H.Sters`, which already exists in the base
+schema and which the Access form (`frmFX_DUBII_LISTA_HN`) set through a checkbox — clearing
+`DIFH`/`DIFHC` on the header and `DIF`/`DIFC` on the lines when ticked, and gating the save
+(`frmFX_DUBII.btnSav_Click` refuses while any snapshot has `TmpIDRecR IS NULL AND Sters=False`).
+Not to be confused with `FX_Receptii_R.Sters`, which D-L defines as "this reception was deleted on
+the site" — a different fact on a different table. — `DERIVED` from F7; amendment `OPERATOR`,
+26.08.2026.
 
 **F18.** Automatically placed snapshots are **marked as automatic**, because under F11 the automatic
 pass can be wrong rather than merely incomplete. — `DERIVED` from F11.
@@ -229,10 +246,19 @@ creation, so the reception's earlier snapshots are already in `FX_Receptii_H` �
 downloaded before the deletion*. Where it did not, the chain genuinely has no home and is
 reconstructed. See F21 and F26.
 
-**F20.** `DIFH = 0` may mark a no-op save. Suggested by `tmpFX_Receptii_H` rows 414/415 (same
+**F20.** ~~`DIFH = 0` may mark a no-op save. Suggested by `tmpFX_Receptii_H` rows 414/415 (same
 reception, both 1723,58, one minute apart) and 417/418 (both 441,74, one minute apart), each pair
-showing the full amount then 0. — `UNVERIFIED`. Confirm on live data; the fallback is comparing the
-lines directly.
+showing the full amount then 0.~~ **WITHDRAWN 26.08.2026.**
+
+`DIFH` is not something FOREXE sends. It is computed locally, by us, in
+`FX_CalculeazaDIF_Receptii_Tmp`, **after** a snapshot has been associated with a reception — step 4d,
+which Access calls only from 4c onward. At the moment a no-change judgement would be needed, `DIFH`
+does not exist yet, so it cannot inform that judgement.
+
+Withdrawn on the reasoning, not on a measurement: **no query against live data is owed**, and O3 is
+closed by the withdrawal. Nothing in the pipeline reads `DIFH` to decide anything; the display use in
+Recepții (slice 0015-02) is a legitimate consumer of a computed figure, not a classification. See the
+amended F17 for what replaces it.
 
 **F21.** A history row with `Descriere = "Stergere receptie"` (exact spelling, no diacritics) is a
 **deletion**. It carries `(activ:true)` and no per-indicator rows, so it becomes an ordinary
@@ -273,6 +299,16 @@ snapshots are indistinguishable except by amount and indicator, and the operator
 verified by the machine. F14, F16 and the one-deletion-per-chain rule are guards, not a proof. —
 `DERIVED` from F26.
 
+**F28.** Where two or more receptions on one angajament are reconstructed, **all of them carry
+`ReconstituitNesigur = 1`**; the flag records that the grouping was constrained by F13/F14/F16 but
+not verified. It is set at commit, counting the receptions with `Reconstituit = 1` after the run —
+existing ones included, because two reconstructions made in two different sessions are exactly as
+indistinguishable as two made in one. It is **never cleared**: a later run that happens to see only
+one reconstruction does not make the earlier grouping any more provable than it was when it was made.
+The commit response names the affected receptions, and the Recepții tree marks them. — `OPERATOR`,
+26.08.2026. Records in the data the limit F27 states, so a total that does not add up months later
+can be traced back to a grouping that was a judgement rather than a check.
+
 ---
 
 # Part 3 — Corrections to existing documents
@@ -286,6 +322,10 @@ It links a payment to the ordonanțare line that consumed it. Three places carry
 
 1. `docs/PLAN_ForexeIngest.md` §2 D5 — the `FX_ORD_TBL_REC` half is withdrawn.
 2. The migrator exclusion list (locked decisions, slice 0046) — remove it; it migrates normally.
+   **DONE** — slice 0048-03 (`db0e71d`), completed in slice 0048-03-completare: off the exclusion
+   list in `KBot.Migrator/Transfer/TableMaps.vb`, mapped there and in `routes/migrare/tables.py`
+   (selection kind `BY_ORD_TBL`), and written after both its parents — pinned offline by
+   `test_fx_ord_tbl_rec_is_written_after_both_its_parents`.
 3. Any text describing `FX_ORD_TBL.IDRP` as untouched on the strength of D5.
 
 Schema, read from `000_DEMO.sql`:
@@ -326,6 +366,37 @@ transactional POST. D1/D3 were the deviation, not the correction.
 D4 said an unmatched header is written with `IDRR` NULL and the run continues. Under the two-phase
 contract nothing is written until the operator has resolved everything, so no row is ever committed
 with `IDRR` NULL by this pipeline.
+
+## C5 — `PLAN_ForexeIngestSteps3to8.md` is not in the repository, and its §6 was wrong
+
+Two document corrections were asked for on 26.08.2026 and **could not be applied where they were
+meant to go**, because the target files are not there. Recorded here instead, because this document
+is the one that survives.
+
+**The plan file itself is absent.** `PLAN_ForexeIngestSteps3to8.md` is referenced by F26 (§4c-bis),
+by O1, by the slice 0048-03 worklog and by the headers of `routes/forexe/prelucrare.py` — but it is
+in neither `docs/` nor anywhere else on the machine, and it appears in no commit. It was written and
+worked from, never committed. Everything it decided that still matters has been carried into this
+document or into the code comments; anyone looking for the file should stop looking.
+
+**Its §6 asked for two things that cannot both be true.** It wanted the local decisions store in
+`KBot.App` *and* exercised from `KBot.DevHarness`. `KBot.App` **references** `KBot.DevHarness` (on
+Debug, `KBot.App.vbproj:82`), so the arrow runs App ▸ DevHarness and a type in App is invisible to
+the harness. Corrected: `AsociereStore` lives in **`KBot.Common`**, beside `KBotPaths` — the other
+file-backed store next to the executable, and the shape §6 itself named as the one to follow — and
+the POCO `AsociereDosar` lives in `KBot.Domain`. Both are visible to App and to the harness. This is
+settled; it is not to be re-opened.
+
+**Its §5.3 asked for a 400 on a missing `TipReceptie`. Withdrawn.** In Access the column existed so
+the code could decide, after filling the temporary tables, whether a real row needed inserting or
+updating. That decision does not exist here, and nothing reads the field —
+`FX_Receptii_H_GetHashIdent` is built from `Tip`, not `TipReceptie`, and `FX_Receptii_R.TipReceptie`
+is computed (`NOU`/`EDIT`). The rejection is not written. The key stays in `collectFields` in the
+`.wfl` — D11's purpose was to make the two workflow files match, and carrying one unread column
+costs nothing — with a comment at the reading site recording that nothing consumes it.
+
+**And the stale copy of this document is already gone.** It was moved from the repository root into
+`docs/` during slice 0048-03 (worklog §0.1). There is no second revision in circulation.
 
 ---
 
@@ -371,6 +442,25 @@ a drop-validation veto rather than being buried in drop handling.
 deletion-date column — F21 makes `DataH` the date. Applied to `AVACONT_SURSA` as well: new defaulted
 columns the migration never writes.
 
+**D-N. Structure travels.** Values arriving from the site keep their shape end to end. A list stays
+a list, including lists inside lists. Nothing is flattened to text at any point in the chain. The
+nested columns are read off the workflow definitions, not guessed: a `ForEachVar` whose
+`collectFields` names a field that an inner `ScrapeTable` also writes with `saveTo` produces a nested
+cell. Across all six `.wfl` files that is exactly two — `ListaReceptii.Detaliu` and
+`TabelIndicatori.BugetIndicator`. `ForexeRunner.TryParseTable` no longer flattens, the request body
+carries real JSON arrays, and the server **rejects** a flattened string instead of tolerating it. —
+`OPERATOR`, 26.08.2026.
+
+**D-O. Paths belong to the operator.** Every folder the application writes to is configurable at
+runtime, from `%APPDATA%\\AVACONT\\KBot\\settings.json`, one entry per folder.
+`KBot.Common.KBotPaths` is the only place a path is resolved. Defaults preserve today's behaviour
+exactly. A missing file, missing key or blank value gives the default; a relative value resolves
+against the application directory; a configured folder that does not exist is created at startup; a
+configured folder that cannot be written **stops the application with a Romanian message naming the
+setting and the path** — never a silent fall back to the default, because an operator who set a path
+and got the old one anyway has been lied to. Every value is validated at startup, so a bad path
+fails on launch rather than halfway through an ingest. — `OPERATOR`, 26.08.2026.
+
 **D-M. Reconstructed receptions are built** (F26). The form offers "starts a reception that no longer
 exists" as a fourth action on a snapshot; the operator drags the rest of the chain onto it, ending
 with its deletion row; the commit path materialises it. Same drag, same vetoes, same chain rules — no
@@ -388,14 +478,20 @@ cannot be verified — only constrained.
 **O2. F23 must be confirmed** before the two-phase contract is built. If `IDH` is not a stable
 FOREXE-side id, the decisions need a different natural key and the contract changes shape.
 
-**O3. F20 must be confirmed or discarded** — whether `DIFH = 0` marks a no-op save, or whether the
-lines have to be compared directly.
+**O3 — closed 26.08.2026, by F20's withdrawal, not by confirmation.** `DIFH` is computed locally
+after association and does not exist in the incoming payload, so it cannot mark anything at the
+moment the judgement would be needed. No live-data query is owed. What replaces it is in the amended
+F17: the form shows "identical to the previous snapshot in this chain", and the operator marks it
+through `FX_Receptii_H.Sters`.
 
 **O4. Form layout** is not specified: pane arrangement, what the grid shows, what the right-icon
 menus offer. Belongs in the 0048-04 plan.
 
-**O5.** `FX_Indicatori_Actualizare_Extrase` has not been read. If porting it requires `FX_Extrase`,
-which `PLAN_ForexeIngest` §12 puts out of scope, that is to be reported, not worked around.
+**O5 — closed 26.08.2026.** `FX_Indicatori_Actualizare_Extrase` was read in slice 0048-01 (D20) and
+is **ported** in slice 0048-03-completare: two statements, in that order, unconditional, inside the
+same transaction as steps 1–7. `PLAN_ForexeIngest` §12 is amended — `FX_Extrase` stays out of scope
+**except** those two statements, which are step 8 and were never optional. D-G stands, and is now
+implemented rather than intended.
 
 **O6.** `Descriere` on a history block matches the reception description, but operators rarely write
 anything distinctive there, so it is not usable as a discriminator today. Parked: it becomes the

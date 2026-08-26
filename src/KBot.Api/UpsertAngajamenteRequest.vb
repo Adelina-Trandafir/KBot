@@ -163,6 +163,9 @@ Public NotInheritable Class GetReceptieRow
     Public Property suma_antet As Double
     Public Property incarcat As Boolean
     Public Property preluat As Boolean
+    ' F28: receptie reconstituita (F26), si daca gruparea ei a putut fi VERIFICATA sau nu.
+    Public Property reconstituit As Boolean
+    Public Property reconstituit_nesigur As Boolean
     Public Property idrh As Integer
     Public Property nrcrt_h As Integer?
     Public Property data_h As Date?
@@ -443,7 +446,11 @@ Public NotInheritable Class PostPrelucrareRequest
     Public Property workflow As String
     Public Property moment As Date
     Public Property scalari As New Dictionary(Of String, String)()
-    Public Property tabele As New Dictionary(Of String, List(Of Dictionary(Of String, String)))()
+    ' Celula e `CelulaTabel`, nu `String` (decizia D-N, 26.08.2026): o coloana imbricata
+    ' -- `ListaReceptii.Detaliu`, `TabelIndicatori.BugetIndicator` -- pleaca pe fir ca un
+    ' ARRAY JSON adevarat, nu ca un sir care contine JSON. `CelulaTabelJsonConverter` scrie
+    ' forma direct, fara plic si fara discriminator: forma JSON E discriminatorul.
+    Public Property tabele As Text.Json.Nodes.JsonObject = New Text.Json.Nodes.JsonObject()
     Public Property alegeri As New List(Of PostPrelucrareAlegere)()
     ' Felia 0048-03. `mod` = "propunere" | "salvare"; celelalte doua se trimit DOAR la
     ' salvare si raman Nothing altfel. `mod` e cuvant rezervat in VB, de-asta parantezele

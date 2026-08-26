@@ -1,4 +1,5 @@
 Imports System.Collections.Generic
+Imports KBot.Domain      ' CelulaTabel / RandTabel / TabelRezultat (decizia D-N).
 
 Namespace KBot.Forexe
     Public Class JobRequest
@@ -24,8 +25,15 @@ Namespace KBot.Forexe
         ' Consumatorii existenți (dicționar plat) rămân neatinși.
         Public Property Data As New Dictionary(Of String, String)
         ' Îmbogățire aditivă: rezultatele tabelare (ex. ScrapeTable) sparte pe
-        ' variabilă -> listă de rânduri (coloană -> valoare). Populat de RunJobAsync
+        ' variabilă -> listă de rânduri (coloană -> celulă). Populat de RunJobAsync
         ' pentru orice variabilă care conține un JSON array de obiecte.
-        Public Property Tables As New Dictionary(Of String, List(Of Dictionary(Of String, String)))
+        '
+        ' CELULA E `CelulaTabel`, NU `String`, DIN 26.08.2026 (decizia D-N). Un
+        ' `ForEachVar` al cărui `collectFields` numește un câmp pe care un `ScrapeTable`
+        ' interior îl scrie cu `saveTo` produce o celulă IMBRICATĂ, iar executorul o
+        ' păstrează ca atare (`BuildCollectedRow` face `JToken.Parse`). Aici se turtea
+        ' înapoi în text cu `.ToString()`, și serverul trebuia să țină vie o a doua cale
+        ' de citire pentru ea. Structura călătorește; nimic nu se aplatizează.
+        Public Property Tables As New Dictionary(Of String, TabelRezultat)
     End Class
 End Namespace

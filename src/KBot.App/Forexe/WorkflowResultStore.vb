@@ -55,7 +55,7 @@ Public NotInheritable Class WorkflowResultStore
     ''' <summary>Folderul de ieșire (creat la nevoie).</summary>
     Public Shared ReadOnly Property OutputFolder As String
         Get
-            Return Path.Combine(AppContext.BaseDirectory, OutputFolderName)
+            Return KBotPaths.FolderRezultateWorkflow
         End Get
     End Property
 
@@ -118,7 +118,7 @@ Public NotInheritable Class WorkflowResultStore
                 .Moment = DateTime.Now,
                 .Workflow = If(rezultat.Message, String.Empty),
                 .Scalari = scalari,
-                .Tabele = New Dictionary(Of String, List(Of Dictionary(Of String, String)))(rezultat.Tables)
+                .Tabele = New Dictionary(Of String, TabelRezultat)(rezultat.Tables)
             }
         Catch ex As Exception
             GlobalErrorLog.Write("WorkflowResultStore.DinJobResult", ex)

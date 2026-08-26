@@ -252,7 +252,8 @@ Public Class ReceptiiView
                     Dim root As AdvancedTreeControl.TreeItem = Nothing
                     If Not roots.TryGetValue(r.Idrr, root) Then
                         Dim icon As Image = ValoareIconOf(r.SumaAntet, palette)
-                        Dim caption As String = $"{ShortDate(r.DataR)}~~~{Money(r.SumaAntet)}"
+                        Dim caption As String =
+                            $"{ShortDate(r.DataR)}{SemnReconstituire(r)}~~~{Money(r.SumaAntet)}"
                         root = tree.AddItem($"r_{r.Idrr}", caption, monthItem,
                                             pLeftIconClosed:=icon, pLeftIconOpen:=icon)
                         Dim rr As New List(Of ReceptieRow)()
@@ -277,6 +278,27 @@ Public Class ReceptiiView
             Throw
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Semnul pus lângă data unei recepții RECONSTITUITE (F26) — și, dacă gruparea ei nu a
+    ''' putut fi verificată de program, semnul mai apăsat al lui F28.
+    ''' </summary>
+    ''' <remarks>
+    ''' Recepția reconstituită s-a construit din propriile ei instantanee, fiindcă a fost
+    ''' creată ȘI ștearsă înainte ca K-BOT să fi descărcat vreodată angajamentul. Când pe
+    ''' același angajament sunt DOUĂ astfel de recepții, instantaneele lor nu se pot deosebi
+    ''' altfel decât după sumă și indicator (F27): gruparea a fost o judecată a operatorului,
+    ''' nu o verificare. Cine citește un total peste luni trebuie să poată afla asta din
+    ''' arbore, nu dintr-un worklog.
+    '''
+    ''' Text, nu pictogramă: nu se adaugă și nu se scoate niciun control din designer, iar
+    ''' semnul se vede și pe un rând îngust.
+    ''' </remarks>
+    Private Shared Function SemnReconstituire(r As ReceptieRow) As String
+        If r.ReconstituitNesigur Then Return "  ⚠ reconstituită (grupare neverificată)"
+        If r.Reconstituit Then Return "  ⟲ reconstituită"
+        Return String.Empty
+    End Function
 
     ' ── Tooltip de reconciliere (lună + recepție) ────────────────────────────
     ' Oglindește NewRootPlatiTooltip din frmFX_MAIN_REC, generalizat la lună (revizuire

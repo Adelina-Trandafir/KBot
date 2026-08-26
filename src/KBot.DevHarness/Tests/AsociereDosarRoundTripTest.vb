@@ -147,11 +147,11 @@ Public NotInheritable Class AsociereDosarRoundTripTest
             .Workflow = "adlop - Prelucrare Completa.wfl"
         }
         payload.Scalari("DescriereAngajament") = "2026 - NOVA WATER"
-        payload.Tabele("TabelIstoric") = New List(Of Dictionary(Of String, String)) From {
-            New Dictionary(Of String, String) From {
+        payload.Tabele("TabelIstoric") = New TabelRezultat From {
+            New RandTabel From {
                 {"Timp", "10/02/2026 22:46:54"}, {"Descriere", "Salvare receptie."},
                 {"Observatii", "Receptie: PLATA FACT., valoare: 510, (activ:true)"}},
-            New Dictionary(Of String, String) From {
+            New RandTabel From {
                 {"Timp", "30/05/2026 08:19:33"}, {"Descriere", "Stergere receptie"},
                 {"Observatii", "Receptie: Plata ces, valoare: 7150, (activ:true)"}}
         }

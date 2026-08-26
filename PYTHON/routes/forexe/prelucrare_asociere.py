@@ -123,7 +123,8 @@ def amprenta(cursor, cod: str) -> str:
 # Citirea tabloului: receptii si instantanee
 # ===========================================================================
 _RECEPTII_SQL = (
-    "SELECT IDRR, NRCRT, DataR, SumaAntet, Descriere, Sters, Reconstituit "
+    "SELECT IDRR, NRCRT, DataR, SumaAntet, Descriere, Sters, Reconstituit, "
+    "       ReconstituitNesigur "
     "FROM FX_Receptii_R WHERE CodAngajament = %s ORDER BY DataR, IDRR"
 )
 _RHR_SQL = (
@@ -179,6 +180,11 @@ def citeste_receptii(cursor, cod: str) -> List[dict]:
             "descriere": r["Descriere"] or "",
             "sters": bool(r["Sters"]),
             "reconstituit": bool(r["Reconstituit"]),
+            # F28. Formularul (0048-04) o foloseste ca sa avertizeze operatorul IN CLIPA
+            # in care porneste o a doua reconstituire pe acelasi angajament -- inainte de
+            # drag-uri, cand avertismentul inca valoreaza ceva -- si ca sa puna un semn pe
+            # randurile deja marcate.
+            "reconstituit_nesigur": bool(r["ReconstituitNesigur"]),
             "rhr": linii.get(idrr, []),
         })
     return out
@@ -645,6 +651,77 @@ def materializeaza_reconstituite(cursor, cod: str, decizii: List[dict],
 
     return rezolvate
 
+
+# ===========================================================================
+# F28 -- reconstituirea neverificabila
+# ===========================================================================
+# F27 spune limita: cand DOUA receptii ale aceluiasi angajament au fost si create, si
+# sterse inainte de prima descarcare, instantaneele lor sunt de nedeosebit unele de
+# altele altfel decat dupa suma si indicator. F14, F16 si regula «exact o stergere pe
+# lant» ingradesc gruparea operatorului; NU o demonstreaza.
+#
+# F28 (26.08.2026) consemneaza cazul in date. Un total care peste luni nu se inchide
+# poate atunci fi urmarit inapoi pana la gruparea care a fost o judecata, nu o
+# verificare. Fara steag, ambiguitatea traieste doar in capul omului care a facut-o.
+_RECONSTITUITE_SQL = (
+    "SELECT IDRR FROM FX_Receptii_R "
+    "WHERE CodAngajament = %s AND Reconstituit = 1 ORDER BY IDRR"
+)
+_MARCHEAZA_NESIGUR_SQL = (
+    "UPDATE FX_Receptii_R SET ReconstituitNesigur = 1 WHERE IDRR IN ({})"
+)
+
+
+def f28_de_marcat(reconstituite: List[int]) -> List[int]:
+    """
+    Care receptii reconstituite ale unui angajament devin `ReconstituitNesigur`.
+
+    Functie PURA, peste lista de `IDRR` reconstituite ale angajamentului dupa rularea
+    curenta -- cele de acum SI cele din rulari mai vechi. Regula e exact conditia lui
+    F27 si nimic mai larg:
+
+      * una singura  ▸ lista goala. Instantaneele ei nu concureaza cu nimic, deci
+                       gruparea e ingradita de F14/F16 si atat -- ceea ce e destul.
+      * doua sau mai ▸ TOATE. Ambiguitatea e INTRE ele, deci nu apartine niciuneia
+                       singure, si nici macar celei adaugate ultima: fiecare instantaneu
+                       al oricareia dintre ele ar fi putut sta pe cealalta.
+
+    NU SE STERGE NICIODATA, si de-aia functia asta spune doar pe cine sa marchezi, nu si
+    pe cine sa demarchezi. O rulare de mai tarziu care vede o singura reconstituire nu
+    face gruparea de atunci mai verificabila decat era in clipa in care s-a facut.
+    """
+    return list(reconstituite) if len(reconstituite) >= 2 else []
+
+
+def marcheaza_reconstituirile_nesigure(cursor, cod: str,
+                                       warnings: List[str]) -> int:
+    """
+    Aplica F28 dupa ce toate deciziile au fost scrise. Intoarce cate randuri s-au marcat.
+
+    Se cheama in faza de SALVARE, la coada pasului 4c, fiindca abia atunci exista
+    receptiile reconstituite in tabel. Se recitesc din baza -- nu se numara deciziile --
+    ca sa intre in socoteala si reconstituirile ramase din rulari mai vechi: doua
+    reconstituiri facute in doua sesiuni diferite sunt exact la fel de imposibil de
+    deosebit ca doua facute in aceeasi sesiune.
+    """
+    cursor.execute(_RECONSTITUITE_SQL, (cod,))
+    reconstituite = [int(r["IDRR"]) for r in cursor.fetchall()]
+
+    de_marcat = f28_de_marcat(reconstituite)
+    if not de_marcat:
+        return 0
+
+    locuri = ", ".join(["%s"] * len(de_marcat))
+    cursor.execute(_MARCHEAZA_NESIGUR_SQL.format(locuri), tuple(de_marcat))
+
+    warnings.append(
+        "Pe acest angajament sunt acum " + str(len(de_marcat)) + " recepții "
+        "reconstituite (nr. " + ", ".join(str(x) for x in de_marcat) + "). "
+        "Instantaneele lor nu se pot deosebi între ele decât după sumă și indicator, "
+        "deci gruparea nu a putut fi verificată de program — a fost o judecată a "
+        "operatorului (F27). Toate au fost marcate «reconstituire nesigură»."
+    )
+    return len(de_marcat)
 
 # ===========================================================================
 # Validarile de plasare (F13, F14, F15, F16)

@@ -875,7 +875,11 @@ Report **real** counts. Do not copy numbers from another worklog.
 - `FX_Angajament_Resetare_Valori_Forexe` as an operator command.
 - The upload direction — `mdl_FX_Tasks_Receive_UPL` (CreareAngajament, definitivare, încărcare
   rezervări). Different workflows, different plan.
-- `FX_Extrase` / SNM.
+- `FX_Extrase` / SNM — **EXCEPT the two statements of step 8** (`FX_Indicatori_Actualizare_Extrase`),
+  amended 26.08.2026. Those two fill `FX_Extrase.CodAI` from `FX_Plati` on the treasury reference and
+  are step 8 of this very pipeline: they were never optional, and D-G says so. They run unconditionally,
+  in order, inside the same transaction as steps 1–7. Everything else about `FX_Extrase` — reading it,
+  writing any other column, the SNM side — stays out of scope.
 - Batch ingest of many angajamente in one call. One angajament, one POST.
 
 ## 13. Open items to carry into the worklog
@@ -885,7 +889,10 @@ Report **real** counts. Do not copy numbers from another worklog.
    and whether any of those disagreed on `IdUnitate` — i.e. whether the operator's invariant holds
    on the live nomenclator. A test that reports, not one that fails.
 2. Whether `DataInceputDerulare` has a column at all (§7 step 1).
-3. Whether `FX_Indicatori_Actualizare_Extrase` is live or dead (§7 step 8).
+3. ~~Whether `FX_Indicatori_Actualizare_Extrase` is live or dead (§7 step 8).~~ **CLOSED
+   26.08.2026.** It is live and it is ported (slice 0048-03-completare). Two statements, in order,
+   unconditional, in-transaction; row counts reported under `FX_Extrase`; §12 amended above. The
+   warning that used to say it had not run is deleted, along with the test that pinned it.
 4. The hash match rate against migrated data (§8).
 5. Whether InnoDB set the auto-increment counters correctly on the first database (§3.3).
 6. `FX_Istoric.Val_Receptie_T` — present on MariaDB, not obviously written by any of the ported

@@ -22,7 +22,7 @@ al fiecarei descarcari. Nimic nu are voie sa ajunga in baza inainte ca omul sa f
 raspuns, fiindca o asociere gresita e tacuta si permanenta (F12).
 
 FAZA UNU -- "mod": "propunere"
-    Serverul ruleaza pasii 1..7 intr-o tranzactie, exact cum i-ar rula pe bune, si apoi
+    Serverul ruleaza pasii 1..8 intr-o tranzactie, exact cum i-ar rula pe bune, si apoi
     DERULEAZA INAPOI NECONDITIONAT. Nu e o rulare pe uscat si nu e o ramura paralela
     strecurata prin codul pasilor: e acelasi drum, terminat cu rollback() in loc de
     commit(). Doua implementari ar aluneca una fata de alta si alunecarea nu s-ar vedea
@@ -83,8 +83,9 @@ from .prelucrare_unitate import (
     resolve_units,
 )
 from .prelucrare_pasi import (
-    MESAJ_PAS8,
     TABLE_ISTORIC,
+    cere_lista,
+    text_celula,
     TABLE_RECEPTII,
     read_indicatori,
     step3a_populeaza_istoric,
@@ -96,6 +97,7 @@ from .prelucrare_pasi import (
     step4d_calculeaza_dif,
     step5_plati_incasari,
     step7_actualizeaza_rezolvat,
+    step8_actualizeaza_extrase,
 )
 from .prelucrare_asociere import (
     MSG_STARE_MODIFICATA,
@@ -105,6 +107,7 @@ from .prelucrare_asociere import (
     aplica_decizii,
     citeste_instantanee,
     citeste_receptii,
+    marcheaza_reconstituirile_nesigure,
     normalizeaza_decizii,
     pas4c_automat,
 )
@@ -242,22 +245,41 @@ def _read_indicators(cod: str, rows) -> list:
     for i, row in enumerate(rows):
         if not isinstance(row, dict):
             raise ValueError(f"{TABLE_INDICATORI}[{i}] nu este un obiect.")
-        cod_ind = (_field(row, "Indicator_ang", "Indicator ang") or "").strip()
+        unde = f"{TABLE_INDICATORI}[{i}]"
+        cod_ind = text_celula(
+            _field(row, "Indicator_ang", "Indicator ang"), unde, "Indicator_ang").strip()
         if cod_ind == "":
             continue
-        raw = _field(row, "Sector_Sursa_Indicator", "Sector - Sursa - Indicator")
-        if raw is None or str(raw).strip() == "":
+        raw = text_celula(
+            _field(row, "Sector_Sursa_Indicator", "Sector - Sursa - Indicator"),
+            unde, "Sector_Sursa_Indicator")
+        if raw.strip() == "":
             raise ValueError(
                 f"Indicatorul {cod_ind} nu are «Sector_Sursa_Indicator»; "
                 f"unitatea și clasificația nu pot fi determinate."
             )
+        # `BugetIndicator` e a DOUA coloana imbricata a sarcinii utile (prima e
+        # `ListaReceptii.Detaliu`). Amandoua vin din acelasi tipar de workflow: un
+        # `ForEachVar` al carui `collectFields` numeste un camp pe care un `ScrapeTable`
+        # interior il scrie cu `saveTo` -- vezi «adlop - Prelucrare Completa.wfl».
+        #
+        # NIMIC NU O CITESTE, si asta e portat deliberat: VBA-ul pazeste
+        # `dInd("BugetIndicator")` cu `Exists("BugetIndicatori")` -- cu «i» la coada --
+        # deci testul e mereu fals (D18). Forma i se verifica totusi, fiindca daca ea
+        # soseste ca text inseamna ca CLIENTUL aplatizeaza, iar clientul acela
+        # aplatizeaza si `Detaliu`, pe care chiar il citim. E cel mai ieftin loc in care
+        # se poate prinde regresia, si prinde intreaga sarcina utila deodata.
+        if "BugetIndicator" in row and row["BugetIndicator"] is not None:
+            cere_lista(row["BugetIndicator"],
+                       f"{TABLE_INDICATORI}[{i}]", "BugetIndicator", gol_permis=True)
+
         ss, clsf_sal, clsf_e = split_sector_sursa_indicator(raw)
         out.append({
             "cod_indicator": cod_ind,
             "ss": ss,
             "clsf_sal": clsf_sal,
             "clsf_e": clsf_e,
-            "clsf_raw": str(raw),
+            "clsf_raw": raw,
             "row": row,
         })
     return out
@@ -290,14 +312,20 @@ def _step2_indicatori(cursor, cod: str, indicators: list, units: dict,
         id_clsf = find_id_clsf_acc(cursor, id_unitate, ind["clsf_sal"],
                                    ind["clsf_raw"], ind["cod_indicator"], warnings)
 
-        prevedere = parse_amount(_field(row, "Credit_bugetar", "Credit bugetar"))
-        credit_init = parse_amount(
-            _field(row, "Total_credit_angajament", "Total credit angajament"))
-        ang_legal = parse_amount(_field(row, "Angajament_legal", "Angajament legal"))
-        credit_def = parse_amount(_field(
-            row,
-            "Credit_bugetar_rezervat_definitiv_an_curent",
-            "Credit bugetar rezervat definitiv an curent"))
+        # Cele patru celule de bani ale indicatorului. Scalare, si o cer explicit --
+        # `parse_amount` peste o lista ar da tacut zero, adica un buget inventat.
+        unde = f"{TABLE_INDICATORI}[{ind['cod_indicator']}]"
+        prevedere = parse_amount(text_celula(
+            _field(row, "Credit_bugetar", "Credit bugetar"), unde, "Credit_bugetar"))
+        credit_init = parse_amount(text_celula(
+            _field(row, "Total_credit_angajament", "Total credit angajament"),
+            unde, "Total_credit_angajament"))
+        ang_legal = parse_amount(text_celula(
+            _field(row, "Angajament_legal", "Angajament legal"), unde, "Angajament_legal"))
+        credit_def = parse_amount(text_celula(
+            _field(row, "Credit_bugetar_rezervat_definitiv_an_curent",
+                   "Credit bugetar rezervat definitiv an curent"),
+            unde, "Credit_bugetar_rezervat_definitiv_an_curent"))
 
         cursor.execute(_IND_EXISTS_SQL, (cod, ind["cod_indicator"]))
         exists = cursor.fetchone() is not None
@@ -335,7 +363,7 @@ def _step2_indicatori(cursor, cod: str, indicators: list, units: dict,
 # ---------------------------------------------------------------------------
 def _ruleaza_pasii(cursor, cod, scalari, tabele, db_name, un, supplied, warnings):
     """
-    Pasii 1..5 si 7, in ordinea impusa de cheile straine.
+    Pasii 1..5, 7 si 8, in ordinea impusa de cheile straine.
 
     Nu stie in ce faza e. Singurul lucru care difera intre faze -- pasul 4c -- se
     intampla la apelant, dupa ce functia asta se termina.
@@ -412,10 +440,35 @@ def _ruleaza_pasii(cursor, cod, scalari, tabele, db_name, un, supplied, warnings
     # marcheaza NICIODATA istoricul ca prelucrat -- exact ce face rularea repetabila.
     step7_actualizeaza_rezolvat(cursor, ids_noi)
 
-    # --- pasul 8 -- NEPORTAT, deliberat. Vezi nota din prelucrare_pasi.py.
-    warnings.append(MESAJ_PAS8)
+    # --- pasul 8 -----------------------------------------------------------
+    # NECONDITIONAT, la coada, in aceeasi tranzactie -- exact ca originalul Access.
+    # Nu se pazeste cu niciun steag `are` si nu se sare cand pasul 5 n-a scris nimic:
+    # `FX_Extrase` poate purta randuri ramase in urma din rulari mai vechi, iar
+    # filtrul `CodAI IS NULL` face ca fiecare trecere sa recupereze tot restantul.
+    scrise["FX_Extrase"] = step8_actualizeaza_extrase(cursor)
 
     return scrise, are, index_la_id
+
+
+def _pas4d_pe_receptiile_atinse(cursor, cod: str) -> None:
+    """
+    Pasul 4d peste fiecare receptie a angajamentului care are un lant.
+
+    Access cheama `FX_CalculeazaDIF_Receptii_Tmp` exact aici -- DUPA asociere (4c) --
+    fiindca inainte de ea un instantaneu nu apartine inca niciunei receptii si nu are
+    lant in care sa i se calculeze diferenta.
+
+    IESIREA LUI NU DECIDE NIMIC. `DIFH` se calculeaza LOCAL, de noi, dupa ce
+    instantaneul a fost deja asezat; nu vine din payload si nu poate deci sa spuna daca
+    o salvare a schimbat ceva. (Regula F20 a fundamentului, care propunea `DIFH = 0` ca
+    marcaj de salvare-fara-schimbare, e RETRASA pe 26.08.2026 chiar din motivul asta.)
+    Cifrele de aici hranesc eticheta plutitoare din Recepții si atat.
+    """
+    cursor.execute(
+        "SELECT DISTINCT IDRR FROM FX_Receptii_H "
+        "WHERE CodAngajament = %s AND IDRR IS NOT NULL", (cod,))
+    for r in cursor.fetchall():
+        step4d_calculeaza_dif(cursor, cod, int(r["IDRR"]))
 
 
 # ---------------------------------------------------------------------------
@@ -500,6 +553,19 @@ def post_prelucrare():
                     f"și trebuie așezate de operator."
                 )
 
+            # --- pasul 4d, si in faza intai --------------------------------
+            # Ruleaza pe lanturile care EXISTA deja (rulari anterioare), fiindcă faza
+            # intai nu aseaza nimic. Se deruleaza inapoi cu tot restul. E aici ca cele
+            # doua faze sa parcurga acelasi drum: o ramura care ruleaza doar la salvare
+            # e o ramura care nu se testeaza decat la salvare.
+            _pas4d_pe_receptiile_atinse(cursor, cod)
+
+            # `FX_Extrase` NU se raporteaza in propunere. Pasul 8 chiar a rulat -- si s-a
+            # derulat inapoi cu restul -- dar el nu e o propunere despre care operatorul
+            # are ceva de decis: e o legatura mecanica intre extrase si plati. Un contor
+            # in tabloul de decizii ar cere un raspuns care nu i se cere.
+            scrise_propuse = {k: v for k, v in scrise.items() if k != "FX_Extrase"}
+
             corp = {
                 "cod": cod,
                 "faza": MOD_PROPUNERE,
@@ -520,7 +586,7 @@ def post_prelucrare():
                 "are": are,
                 # `scrise` raporteaza ce S-AR FI scris. Tranzactia se deruleaza inapoi
                 # imediat dupa; contorul arata a rezultat, dar descrie o rulare anulata.
-                "scrise": scrise,
+                "scrise": scrise_propuse,
                 "avertismente": warnings,
             }
             # DERULARE INAPOI NECONDITIONATA. Nu e o cale de eroare: e chiar contractul.
@@ -531,12 +597,14 @@ def post_prelucrare():
         numarat = aplica_decizii(cursor, cod, decizii, instantanee, receptii, warnings)
         scrise["asocieri"] = numarat
 
+        # F28: doua sau mai multe reconstituiri pe acelasi angajament fac gruparea
+        # imposibil de verificat (F27). Se marcheaza TOATE, se numara si cele ramase din
+        # rulari mai vechi, si marcajul nu se sterge niciodata.
+        scrise["reconstituiri_nesigure"] = marcheaza_reconstituirile_nesigure(
+            cursor, cod, warnings)
+
         # --- pasul 4d, per receptie atinsa ------------------------------------
-        cursor.execute(
-            "SELECT DISTINCT IDRR FROM FX_Receptii_H "
-            "WHERE CodAngajament = %s AND IDRR IS NOT NULL", (cod,))
-        for r in cursor.fetchall():
-            step4d_calculeaza_dif(cursor, cod, int(r["IDRR"]))
+        _pas4d_pe_receptiile_atinse(cursor, cod)
 
         conn.commit()
         return _json_utf8({

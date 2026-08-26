@@ -2,6 +2,7 @@ Option Strict On
 Imports System.Collections.Generic
 Imports System.Threading
 Imports System.Threading.Tasks
+Imports KBot.Domain
 Imports KBot.Forexe
 
 ' Offline test: the raw JSON-array string a .wfl leaves in the executor variable
@@ -45,7 +46,7 @@ Public NotInheritable Class ListaAngajamenteEnrichmentTest
         As Task(Of HarnessTestResult) Implements IHarnessTest.RunAsync
 
         ' ACT: the real parser PopulateResult uses to build Tables("ListaAngajamente").
-        Dim table As List(Of Dictionary(Of String, String)) = ForexeRunner.TryParseTable(RAW_JSON)
+        Dim table As TabelRezultat = ForexeRunner.TryParseTable(RAW_JSON)
         If table Is Nothing Then
             ' TryParseTable classifies non-tables as Nothing; for this payload that is a failure.
             Return Task.FromResult(HarnessTestResult.Failed(
@@ -56,18 +57,28 @@ Public NotInheritable Class ListaAngajamenteEnrichmentTest
             Return Task.FromResult(HarnessTestResult.Failed($"Expected 3 parsed rows, got {table.Count}."))
         End If
 
-        Dim first As Dictionary(Of String, String) = table(0)
+        Dim first As RandTabel = table(0)
         For Each requiredKey In New String() {"Cod", "Descriere", "Stare"}
             If Not first.ContainsKey(requiredKey) Then
                 Return Task.FromResult(HarnessTestResult.Failed(
                     $"Missing key '{requiredKey}'. Actual keys: {String.Join(",", first.Keys)}"))
             End If
         Next
-        If first("Cod") <> "AAB5AF3PCM4" Then
-            Return Task.FromResult(HarnessTestResult.Failed($"First Cod wrong: '{first("Cod")}'."))
+        If first("Cod").Text <> "AAB5AF3PCM4" Then
+            Return Task.FromResult(HarnessTestResult.Failed($"First Cod wrong: '{first("Cod").Text}'."))
+        End If
+
+        ' ListaAngajamente is FLAT: no ForEachVar in its .wfl, so no inner ScrapeTable, so
+        ' no nested cell can occur. Asserted rather than assumed — since decision D-N the
+        ' parser CAN produce a nested cell, and this table is where we would notice first
+        ' that FOREXE started nesting one.
+        If table.ColoaneImbricate().Count <> 0 Then
+            Return Task.FromResult(HarnessTestResult.Failed(
+                "ListaAngajamente carries nested columns now: " &
+                String.Join(", ", table.ColoaneImbricate())))
         End If
 
         Return Task.FromResult(HarnessTestResult.Passed(
-            $"Parsed {table.Count} rows; keys Cod/Descriere/Stare present; first Cod correct."))
+            $"Parsed {table.Count} rows; keys Cod/Descriere/Stare present; first Cod correct; no nested columns."))
     End Function
 End Class

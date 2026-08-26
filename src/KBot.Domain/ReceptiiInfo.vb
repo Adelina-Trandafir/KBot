@@ -28,6 +28,19 @@ Public NotInheritable Class ReceptieRow
     ''' <summary>Receptie preluata -> iconita „jos" (daca nu e si Incarcat).</summary>
     Public Property Preluat As Boolean
 
+    ''' <summary>
+    ''' Recepție construită din propriile ei instantanee, fiindcă a fost creată ȘI ștearsă
+    ''' înainte ca K-BOT să fi descărcat vreodată angajamentul (F26).
+    ''' </summary>
+    Public Property Reconstituit As Boolean
+
+    ''' <summary>
+    ''' F28: în clipa reconstituirii, o altă reconstituire pe același angajament făcea
+    ''' gruparea imposibil de verificat (F27). Recepția e bună; ce nu se poate demonstra e
+    ''' că instantaneele ei sunt ale ei și nu ale celeilalte.
+    ''' </summary>
+    Public Property ReconstituitNesigur As Boolean
+
     ' --- antetul (H) ---
     ''' <summary>Cheia primara FX_Receptii_H — identitatea antetului (nodul arborelui).</summary>
     Public Property Idrh As Integer

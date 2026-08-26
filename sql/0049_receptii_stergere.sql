@@ -2,7 +2,7 @@
 -- Felia 0048-03 — stergerea si reconstituirea receptiilor.
 --
 -- ATENTIE — SE APLICA PE FIECARE BAZA DE UNITATE, plus pe AVACONT_SURSA.
---   Trei coloane NOI, toate cu DEFAULT, pe care migrarea nu le scrie niciodata. Se aplica
+--   Patru coloane NOI, toate cu DEFAULT, pe care migrarea nu le scrie niciodata. Se aplica
 --   SI pe AVACONT_SURSA ca bazele create de acum inainte sa le aiba din nastere si ca
 --   schema_sync sa nu raporteze o diferenta pe veci — exact regula feliei 0048-02
 --   (sql/0048_alegeri_unitate.sql), din exact acelasi motiv.
@@ -42,6 +42,27 @@
 --   reconstituita nu are bloc de sarcina utila pe care sa-l hasuim — dar ar putrezi din
 --   prima zi in care altceva lasa un hash gol.
 --
+-- FX_Receptii_R.ReconstituitNesigur
+--   F28 (26.08.2026). Cand DOUA sau mai multe receptii ale aceluiasi angajament sunt
+--   reconstituite, instantaneele lor sunt de nedeosebit unele de altele altfel decat dupa
+--   suma si indicator (F27). Gruparea pe care o face operatorul e atunci o JUDECATA, nu o
+--   verificare: F14, F16 si regula «exact o stergere pe lant» o ingradesc, dar nu o
+--   demonstreaza.
+--
+--   Steagul consemneaza chiar asta, ca peste luni un total care nu se inchide sa poata fi
+--   urmarit inapoi pana la gruparea care nu a fost niciodata verificabila. Se pune pe
+--   TOATE receptiile reconstituite ale angajamentului, nu doar pe cele adaugate acum:
+--   ambiguitatea e intre ele, deci nu apartine niciuneia singure.
+--
+--   NU SE STERGE NICIODATA. O rulare de mai tarziu care vede o singura reconstituire nu
+--   face gruparea de atunci mai verificabila decat era in clipa in care a fost facuta.
+--
+--   Al TREILEA fapt distinct, si nu se colapseaza nici el in celelalte doua:
+--     Sters                = receptia a fost stearsa pe site
+--     Reconstituit         = a fost reconstruita din propriile instantanee
+--     ReconstituitNesigur  = in clipa reconstituirii, o alta reconstituire pe acelasi
+--                            angajament facea gruparea imposibil de verificat
+--
 -- FX_Receptii_H.EsteStergere
 --   Randul de istoric cu `Descriere = "Stergere receptie"` (ortografia exact asa, fara
 --   diacritice — confirmat de operator 26.08.2026) poarta `(activ:true)` ca orice antet,
@@ -66,7 +87,7 @@
 --   SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT
 --     FROM information_schema.COLUMNS
 --    WHERE TABLE_SCHEMA = '<BAZA>'
---      AND ( (TABLE_NAME = 'FX_Receptii_R' AND COLUMN_NAME IN ('IDRR','Sters','Reconstituit'))
+--      AND ( (TABLE_NAME = 'FX_Receptii_R' AND COLUMN_NAME IN ('IDRR','Sters','Reconstituit','ReconstituitNesigur'))
 --         OR (TABLE_NAME = 'FX_Receptii_H' AND COLUMN_NAME IN ('IDRH','Sters','EsteStergere')) )
 --    ORDER BY TABLE_NAME, COLUMN_NAME;
 --
@@ -77,15 +98,16 @@
 --
 -- Daca `FX_Receptii_H.Sters` LIPSESTE — opreste-te si raporteaza. Nu e o baza pe care
 -- fisierul asta stie sa lucreze, si nu ghici ce mai lipseste.
--- Daca `Sters` / `Reconstituit` / `EsteStergere` APAR deja — fisierul a fost rulat; nu-l
+-- Daca `Sters` / `Reconstituit` / `ReconstituitNesigur` / `EsteStergere` APAR deja — fisierul a fost rulat; nu-l
 -- rula a doua oara (ALTER ... ADD COLUMN nu e idempotent, esueaza cu 1060).
 --
--- ASTEPTAT DUPA rulare — cinci randuri, cele trei noi fiind:
---   FX_Receptii_H | EsteStergere | tinyint(1) | NO | 0
---   FX_Receptii_R | Reconstituit | tinyint(1) | NO | 0
---   FX_Receptii_R | Sters        | tinyint(1) | NO | 0
+-- ASTEPTAT DUPA rulare — sase randuri, cele PATRU noi fiind:
+--   FX_Receptii_H | EsteStergere        | tinyint(1) | NO | 0
+--   FX_Receptii_R | Reconstituit        | tinyint(1) | NO | 0
+--   FX_Receptii_R | ReconstituitNesigur | tinyint(1) | NO | 0
+--   FX_Receptii_R | Sters               | tinyint(1) | NO | 0
 --
--- NOT NULL DEFAULT 0 pe toate trei, deliberat: raspunsul «nu stiu daca e stearsa» nu are
+-- NOT NULL DEFAULT 0 pe toate patru, deliberat: raspunsul «nu stiu daca e stearsa» nu are
 -- niciun inteles. Randurile existente devin toate «nestearsa, neconstituita, nu e
 -- stergere», ceea ce e adevarat pentru fiecare rand care exista azi — nimic nu putea fi
 -- marcat inainte ca marcajul sa existe.
@@ -98,6 +120,10 @@ ALTER TABLE FX_Receptii_R
 ALTER TABLE FX_Receptii_R
     ADD COLUMN Reconstituit tinyint(1) NOT NULL DEFAULT 0
     COMMENT 'Receptie construita din propriile instantanee, creata SI stearsa inainte de prima descarcare (F26). Mereu impreuna cu Sters=1, dar alt fapt.';
+
+ALTER TABLE FX_Receptii_R
+    ADD COLUMN ReconstituitNesigur tinyint(1) NOT NULL DEFAULT 0
+    COMMENT 'F28: la reconstituire, alta reconstituire pe acelasi angajament facea gruparea neverificabila (F27). Se pune pe toate, nu se sterge niciodata.';
 
 ALTER TABLE FX_Receptii_H
     ADD COLUMN EsteStergere tinyint(1) NOT NULL DEFAULT 0

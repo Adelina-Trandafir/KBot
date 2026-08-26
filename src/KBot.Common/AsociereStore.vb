@@ -55,7 +55,7 @@ Public NotInheritable Class AsociereStore
     ''' <summary>Folderul dosarelor (creat la nevoie).</summary>
     Public Shared ReadOnly Property Folder As String
         Get
-            Return Path.Combine(AppContext.BaseDirectory, FolderName)
+            Return KBotPaths.FolderAsociere
         End Get
     End Property
 

@@ -52,11 +52,39 @@ Public NotInheritable Class KBotPaths
     ''' <summary>Numele fișierului de configurare, lângă executabil.</summary>
     Public Const FileName As String = "kbot_paths.json"
 
-    ''' <summary>Rădăcina în care se caută PDF-urile DDF (recursiv). Nu e niciodată gol.</summary>
+    ''' <summary>
+    ''' Rădăcina în care se caută PDF-urile DDF (recursiv). Nu e niciodată goală.
+    ''' </summary>
+    ''' <remarks>
+    ''' Din 26.08.2026 (D-O) o valoare pusă în <c>settings.json</c> are ultimul cuvânt.
+    ''' <c>kbot_paths.json</c> rămâne citit ca al doilea, ca un operator care a configurat-o
+    ''' deja acolo să nu se trezească tăcut cu implicitul — vezi <see cref="RadacinaDdfPdf"/>.
+    ''' </remarks>
     Public Property DdfPdfRoot As String = DefaultDdfPdfRoot
 
     ''' <summary>Rădăcina în care se caută PDF-urile ORD (felia 0033). Nu e niciodată goală.</summary>
     Public Property OrdPdfRoot As String = DefaultOrdPdfRoot
+
+    ''' <summary>
+    ''' Rădăcina DDF, rezolvată: <c>settings.json</c> întâi, apoi <c>kbot_paths.json</c>,
+    ''' apoi implicitul.
+    ''' </summary>
+    Public Shared ReadOnly Property RadacinaDdfPdf As String
+        Get
+            Dim dinSetari As String = Foldere.Bruta(SetariFoldere.CheieDdfPdf)
+            If dinSetari IsNot Nothing Then Return Foldere.Cale(SetariFoldere.CheieDdfPdf)
+            Return Current.DdfPdfRoot
+        End Get
+    End Property
+
+    ''' <summary>Rădăcina ORD, rezolvată la fel ca <see cref="RadacinaDdfPdf"/>.</summary>
+    Public Shared ReadOnly Property RadacinaOrdPdf As String
+        Get
+            Dim dinSetari As String = Foldere.Bruta(SetariFoldere.CheieOrdPdf)
+            If dinSetari IsNot Nothing Then Return Foldere.Cale(SetariFoldere.CheieOrdPdf)
+            Return Current.OrdPdfRoot
+        End Get
+    End Property
 
     ''' <summary>
     ''' Profilul gazdei Adobe: «Auto» (detectează), «Modern» sau «Classic». Se păstrează ca TEXT,
@@ -76,6 +104,83 @@ Public NotInheritable Class KBotPaths
 
     Private Shared ReadOnly _gate As New Object()
     Private Shared _current As KBotPaths
+
+    ' ── Folderele, ca setări ale operatorului (decizia D-O, 26.08.2026) ──
+    '
+    ' KBotPaths E singurul rezolvator de căi din soluție. Nimeni nu mai compune un
+    ' `Path.Combine(AppContext.BaseDirectory, "…")` pe cont propriu — șapte locuri o
+    ' făceau, iar asta însemna că nu exista niciun loc în care operatorul să le schimbe.
+    '
+    ' Valorile stau în `%APPDATA%\AVACONT\KBot\settings.json` (vezi SetariFoldere), separat
+    ' de `kbot_paths.json` de mai sus, care ține opțiunile de COMPORTAMENT ale gazdei
+    ' Adobe. Cele două rădăcini de PDF trăiesc în amândouă: `settings.json` are ultimul
+    ' cuvânt, iar `kbot_paths.json` rămâne citit ca să nu se schimbe pe nevăzute căile
+    ' unui operator care le-a pus deja acolo.
+
+    Private Shared _foldere As SetariFoldere
+
+    ''' <summary>Setările de folder, încărcate o singură dată. Thread-safe.</summary>
+    Public Shared ReadOnly Property Foldere As SetariFoldere
+        Get
+            If _foldere Is Nothing Then
+                SyncLock _gate
+                    If _foldere Is Nothing Then _foldere = SetariFoldere.Incarca()
+                End SyncLock
+            End If
+            Return _foldere
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Verifică setările de folder la PORNIRE și creează folderele în care se scrie.
+    ''' Aruncă <see cref="SetariFoldereException"/> pe o cale pe care nu o poate folosi —
+    ''' niciodată o cădere tăcută pe implicit.
+    ''' </summary>
+    Public Shared Sub ValideazaFoldere()
+        Foldere.Valideaza()
+    End Sub
+
+    ''' <summary>Folderul de jurnale. Implicit <c>&lt;AppDir&gt;\Logs</c>.</summary>
+    Public Shared ReadOnly Property FolderJurnale As String
+        Get
+            Return Foldere.Cale(SetariFoldere.CheieLogs)
+        End Get
+    End Property
+
+    ''' <summary>Dosarele locale de asociere. Implicit <c>&lt;AppDir&gt;\Asociere</c>.</summary>
+    Public Shared ReadOnly Property FolderAsociere As String
+        Get
+            Return Foldere.Cale(SetariFoldere.CheieAsociere)
+        End Get
+    End Property
+
+    ''' <summary>Rezultatele brute FOREXE. Implicit <c>&lt;AppDir&gt;\WorkflowResults</c>.</summary>
+    Public Shared ReadOnly Property FolderRezultateWorkflow As String
+        Get
+            Return Foldere.Cale(SetariFoldere.CheieWorkflowResults)
+        End Get
+    End Property
+
+    ''' <summary>PDF-urile temporare. Implicit <c>&lt;AppDir&gt;\TempPdf</c>.</summary>
+    Public Shared ReadOnly Property FolderPdfTemporar As String
+        Get
+            Return Foldere.Cale(SetariFoldere.CheieTempPdf)
+        End Get
+    End Property
+
+    ''' <summary>Definițiile «.wfl». Implicit <c>&lt;AppDir&gt;\Workflows</c>. Doar se citesc.</summary>
+    Public Shared ReadOnly Property FolderWorkflows As String
+        Get
+            Return Foldere.Cale(SetariFoldere.CheieWorkflows)
+        End Get
+    End Property
+
+    ''' <summary>Exporturile bancului de probe. Implicit <c>&lt;AppDir&gt;\Exports</c>.</summary>
+    Public Shared ReadOnly Property FolderExporturi As String
+        Get
+            Return Foldere.Cale(SetariFoldere.CheieExports)
+        End Get
+    End Property
 
     ''' <summary>
     ''' Instanța curentă, încărcată o singură dată din <c>&lt;AppDir&gt;\kbot_paths.json</c>.

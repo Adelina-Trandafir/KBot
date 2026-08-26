@@ -89,7 +89,7 @@ Public NotInheritable Class ListaAngajamenteRoundTripLiveTest
         End If
 
         ' 5) Map the scraped table (same seam MainForm uses).
-        Dim rows As List(Of Dictionary(Of String, String)) = Nothing
+        Dim rows As TabelRezultat = Nothing
         If Not result.Tables.TryGetValue(WorkflowCatalog.ListaAngajamenteTable, rows) OrElse rows Is Nothing Then
             Return HarnessTestResult.Skipped(
                 $"No '{WorkflowCatalog.ListaAngajamenteTable}' table in result (0 rows scraped)." & logHint)

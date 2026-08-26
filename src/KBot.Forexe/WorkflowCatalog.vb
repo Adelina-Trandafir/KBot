@@ -1,11 +1,13 @@
 Option Strict On
 Imports System.IO
+Imports KBot.Common   ' KBotPaths — singurul rezolvator de căi (decizia D-O).
 
 Namespace KBot.Forexe
 
     ' Catalog al workflow-urilor cunoscute + rezolvarea căii lor pe disc.
-    ' .wfl-urile sunt copiate lângă executabil în folderul "Workflows"
-    ' (vezi MainForm.btnConnect_Click care rezolvă "adlop - Conectare.wfl" la fel).
+    ' .wfl-urile sunt copiate lângă executabil în folderul "Workflows" — folder pe care
+    ' operatorul îl poate muta din `settings.json` (decizia D-O). Calea se rezolvă
+    ' EXCLUSIV prin `ResolvePath`, deci prin `KBotPaths`.
     Public NotInheritable Class WorkflowCatalog
 
         Private Sub New()
@@ -15,6 +17,11 @@ Namespace KBot.Forexe
         ' vezi publish-debug.ps1 §5). Workflow-ul scrie rezultatul tabelar în variabila
         ' "ListaAngajamente" (ScrapeTable saveTo), paginat cu a[rel='next'].
         Public Const ListaAngajamenteFile As String = "adlop - Lista Angajamente Curente.wfl"
+
+        ' Workflow-ul de conectare. A fost compus de mână în DOUĂ locuri (ForexeController
+        ' și ForexeConnectTest) până pe 26.08.2026; acum e o constantă, ca toate celelalte,
+        ' iar calea se rezolvă prin `ResolvePath` — deci prin KBotPaths, ca orice altă cale.
+        Public Const ConectareFile As String = "adlop - Conectare.wfl"
 
         ' Numele variabilei tabelare produse de .wfl (ScrapeTable saveTo). Cheie în
         ' JobResult.Tables după RunJobAsync.
@@ -48,7 +55,7 @@ Namespace KBot.Forexe
 
         ''' <summary>Calea absolută a unui .wfl din folderul Workflows de lângă executabil.</summary>
         Public Shared Function ResolvePath(fileName As String) As String
-            Return Path.Combine(AppContext.BaseDirectory, "Workflows", fileName)
+            Return Path.Combine(KBotPaths.FolderWorkflows, fileName)
         End Function
 
     End Class

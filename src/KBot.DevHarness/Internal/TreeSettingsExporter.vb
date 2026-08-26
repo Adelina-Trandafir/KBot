@@ -120,7 +120,7 @@ Public NotInheritable Class TreeSettingsExporter
     ''' </summary>
     Public Shared Function Save(continut As String) As String
         Try
-            Dim dosar As String = Path.Combine(AppContext.BaseDirectory, "Exports")
+            Dim dosar As String = KBotPaths.FolderExporturi
             Directory.CreateDirectory(dosar)
             Dim cale As String = Path.Combine(
                 dosar, "tree-designer-" & DateTime.Now.ToString("yyyyMMdd-HHmmss", _inv) & ".vb.txt")

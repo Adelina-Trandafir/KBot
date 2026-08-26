@@ -433,3 +433,41 @@ def test_fisierul_cu_o_singura_unitate_merge_oricum_in_baza_aleasa(monkeypatch):
     assert p.single_unit is True
     assert p.units == [75]
     assert p.sets["commitment"].ours == {"aab-001"}
+
+
+# ---------------------------------------------------------------------------
+# C1 -- FX_ORD_TBL_REC: ordinea de scriere
+# ---------------------------------------------------------------------------
+# Doua chei straine REALE, amandoua `ON DELETE CASCADE`, citite din
+# `MariaDB_Schema/000_DEMO.sql`:
+#
+#   CONSTRAINT FX_ORD_TBL_REC__FX_ORD_TBL FOREIGN KEY (IDORDTBLP) REFERENCES FX_ORD_TBL
+#   CONSTRAINT FX_ORD_TBL_REC__FX_Plati   FOREIGN KEY (IdPlataFX) REFERENCES FX_Plati
+#
+# O cheie straina cere randul PARINTE prezent la momentul INSERT-ului, deci amandoi
+# parintii trebuie scrisi inainte. `tables.ALL` e ordinea implicita, si asta se verifica
+# aici; latura VB.NET (`WriteOrder.Derive`) deduce ordinea din cheile straine VII ale
+# tintei, deci ajunge in acelasi loc prin alt drum.
+def test_fx_ord_tbl_rec_is_written_after_both_its_parents():
+    from routes.migrare import tables as T
+
+    nume = [t.name for t in T.ALL]
+    assert "FX_ORD_TBL_REC" in nume, "C1: tabelul trebuie sa migreze"
+    assert nume.index("FX_ORD_TBL") < nume.index("FX_ORD_TBL_REC")
+    assert nume.index("FX_Plati") < nume.index("FX_ORD_TBL_REC")
+
+
+def test_fx_plati_is_in_the_migrated_set_at_all():
+    """
+    Fara `FX_Plati`, `FX_ORD_TBL_REC` nu poate migra: `IdPlataFX` ar ramane o cheie in
+    gol. Se verifica separat, fiindca «e mai jos in lista» si «exista» sunt doua lucruri.
+    """
+    from routes.migrare import tables as T
+    assert "FX_Plati" in [t.name for t in T.ALL]
+
+
+def test_fx_receptii_plati_stays_out_of_scope():
+    """C2: gol, si scos COMPLET din migrare. Era in lista -- asta era greseala."""
+    from routes.migrare import tables as T
+    assert "FX_Receptii_Plati" not in [t.name for t in T.ALL]
+    assert "FX_Receptii_Plati" in T.OUT_OF_SCOPE
