@@ -1,4 +1,4 @@
-# Route tests for POST /api/forexe/prelucrare (slice 0048-02).
+# Route tests for POST /api/forexe/prelucrare (slices 0048-02 and 0048-03).
 #
 # OFFLINE, and deliberately so. Two things usually force a route test to be host-only:
 # the database, and `from main import app` (which drags in the whole server, pandas
@@ -35,7 +35,7 @@ COD = "AAB37CNBK95"
 RAW_02E = "02E- 65. 04. 02. 20. 01. 01"
 
 
-def payload(rows=None, alegeri=None):
+def payload(rows=None, alegeri=None, mod=None, decizii=None, amprenta=None):
     body = {
         "cod": COD,
         "workflow": "adlop - Prelucrare Completa.wfl",
@@ -46,6 +46,12 @@ def payload(rows=None, alegeri=None):
     }
     if alegeri is not None:
         body["alegeri"] = alegeri
+    if mod is not None:
+        body["mod"] = mod
+    if decizii is not None:
+        body["decizii"] = decizii
+    if amprenta is not None:
+        body["amprenta"] = amprenta
     return json.dumps(body)
 
 
@@ -59,6 +65,31 @@ def indicator_row(cod="AAB", raw=RAW_02E):
 # ---------------------------------------------------------------------------
 # The fake database
 # ---------------------------------------------------------------------------
+# Interogarile de CITIRE pe care pasii 3-8 le emit chiar si cu un payload gol. Toate
+# raspund cu zero randuri, deci conducta trece prin ele fara sa faca nimic. Sunt
+# enumerate explicit, nu prinse cu un `startswith("SELECT")` general: paza de la coada
+# trebuie sa prinda in continuare orice SQL pe care testul nu il asteapta -- si mai ales
+# orice SCRIERE nedorita, care e chiar ce testul asta pazeste.
+_SELECTS_GOALE = (
+    "SELECT MAX(Rez_Ord)",              # 3a, multiplicatorul Rez_Ord
+    "SELECT ID, DataFX",                # 3a, randurile de istoric existente
+    "SELECT I.CodAI",                   # read_indicatori
+    "SELECT ID, HASH",                  # 4a, randurile de receptie neprelucrate
+    "SELECT ID, Observatii",            # 5, randurile de plata neprelucrate
+    "SELECT IDRR, NRCRT",               # citeste_receptii, antetele
+    "SELECT IDRR, CodIndicator",        # citeste_receptii, liniile RHR
+    "SELECT IDRH, IDH",                 # citeste_instantanee, antetele
+    "SELECT IDRH, CodIndicator",        # citeste_instantanee, liniile
+    "SELECT IDRR, SumaAntet",           # 4c, candidatii trecerii automate
+    "SELECT DISTINCT IDRR",             # 4d, recepțiile de recalculat
+)
+
+# Amprenta (2.3): o baza goala are zero peste tot. Valorile conteaza doar prin faptul ca
+# sunt STABILE intre cele doua faze -- testul de salvare se sprijina pe asta.
+_AMPRENTA_GOALA = {"ic": 0, "im": 0, "id_": "1900-01-01",
+                   "rc": 0, "rm": 0, "hc": 0, "hm": 0, "hn": 0}
+
+
 class FakeCursor:
     def __init__(self, conn):
         self.conn = conn
@@ -69,6 +100,14 @@ class FakeCursor:
         if sql.startswith("SELECT 1 FROM FX_Angajamente"):
             self._result = [{"1": 1}] if self.conn.angajament_exists else []
         elif sql.startswith("SELECT 1 FROM FX_Indicatori"):
+            self._result = []
+        elif "(SELECT COUNT(*) FROM FX_Istoric" in sql:
+            self._result = [dict(_AMPRENTA_GOALA)]
+        # ATENTIE LA ORDINE: interogarea lui read_indicatori poarta si ea
+        # «FROM Clasificatii C», in subinterogarile ei scalare pentru Clsf si CodSSI.
+        # Daca ramura de candidati ar veni prima, ar inghiti-o si ar cauta parametrul
+        # al doilea intr-un tuplu care are unul singur.
+        elif sql.startswith(_SELECTS_GOALE):
             self._result = []
         elif "FROM Clasificatii C" in sql:
             self._result = list(self.conn.candidates.get((params[0], params[1]), []))
@@ -186,36 +225,102 @@ def test_malformed_alegeri_returns_400(client, auth_headers):
 # ---------------------------------------------------------------------------
 # The happy path
 # ---------------------------------------------------------------------------
-def test_one_candidate_writes_and_commits(client, auth_headers, fake_db):
-    conn = fake_db(FakeConnection(
+def _fake_unit():
+    return FakeConnection(
         candidates={("02E", "200101"): [unit(76, "ENERGETIC ISJ")]},
-        clsf={(76, "650402200101"): [{"IdClsfAcc": 1204}]}))
-    r = client.post(URL, headers=auth_headers,
-                    data=payload(rows=[indicator_row()]))
+        clsf={(76, "650402200101"): [{"IdClsfAcc": 1204}]})
+
+
+def test_the_default_mode_is_the_proposal_and_it_never_commits(client, auth_headers,
+                                                               fake_db):
+    """
+    Un client care nu trimite «mod» primeste faza care NU scrie.
+
+    Asta e chiar poarta contractului in doua faze: tacerea nu are voie sa insemne
+    «salveaza». Pasii chiar ruleaza -- INSERT-urile sunt emise -- dar tranzactia se
+    deruleaza inapoi neconditionat, deci nimic nu ramane.
+    """
+    conn = fake_db(_fake_unit())
+    r = client.post(URL, headers=auth_headers, data=payload(rows=[indicator_row()]))
     assert r.status_code == 200
     body = r.get_json()
-    assert body["cod"] == COD
-    assert body["are"]["Indicatori"] is True
-    assert body["scrise"] == {"FX_Angajamente": 1, "FX_Indicatori": 1}
-    assert conn.committed and not conn.rolled_back
+    assert body["faza"] == "propunere"
+    assert body["amprenta"]
+    assert conn.rolled_back and not conn.committed
+    # Conducta chiar a rulat: scrierile s-au emis si abia apoi au fost anulate.
     assert conn.wrote("INSERT INTO FX_Angajamente") == 1
     assert conn.wrote("INSERT INTO FX_Indicatori") == 1
 
 
-def test_the_response_always_says_which_steps_are_missing(client, auth_headers,
-                                                          fake_db):
+def test_the_save_phase_commits_and_echoes_the_fingerprint(client, auth_headers,
+                                                           fake_db):
+    """Drumul complet: propunere, apoi salvare cu amprenta primita inapoi."""
+    conn = fake_db(_fake_unit())
+    prop = client.post(URL, headers=auth_headers,
+                       data=payload(rows=[indicator_row()])).get_json()
+    assert prop["instantanee"] == []      # baza falsa e goala, deci nimic de asezat
+
+    conn2 = fake_db(_fake_unit())
+    r = client.post(URL, headers=auth_headers, data=payload(
+        rows=[indicator_row()], mod="salvare", decizii=[],
+        amprenta=prop["amprenta"]))
+    assert r.status_code == 200
+    body = r.get_json()
+    assert body["faza"] == "salvare"
+    assert body["are"]["Indicatori"] is True
+    assert body["scrise"]["FX_Angajamente"] == 1
+    assert body["scrise"]["FX_Indicatori"] == 1
+    assert conn2.committed and not conn2.rolled_back
+
+
+def test_a_stale_fingerprint_is_409_and_writes_nothing(client, auth_headers, fake_db):
+    conn = fake_db(_fake_unit())
+    r = client.post(URL, headers=auth_headers, data=payload(
+        rows=[indicator_row()], mod="salvare", decizii=[],
+        amprenta="amprenta-dintr-o-alta-viata"))
+    assert r.status_code == 409
+    assert r.get_json()["reason"] == "STARE_MODIFICATA"
+    assert conn.rolled_back and not conn.committed
+    # Verificarea se face INAINTEA oricarei scrieri.
+    assert conn.wrote("INSERT INTO FX_Angajamente") == 0
+
+
+def test_save_without_decizii_or_amprenta_is_400(client, auth_headers, fake_db):
+    fake_db(_fake_unit())
+    r = client.post(URL, headers=auth_headers,
+                    data=payload(rows=[indicator_row()], mod="salvare",
+                                 amprenta="x"))
+    assert r.status_code == 400
+    r = client.post(URL, headers=auth_headers,
+                    data=payload(rows=[indicator_row()], mod="salvare", decizii=[]))
+    assert r.status_code == 400
+
+
+def test_an_unknown_mode_is_400(client, auth_headers, fake_db):
+    fake_db(_fake_unit())
+    r = client.post(URL, headers=auth_headers,
+                    data=payload(rows=[indicator_row()], mod="poate"))
+    assert r.status_code == 400
+
+
+def test_the_response_says_step_8_did_not_run(client, auth_headers, fake_db):
+    """
+    Pasul 8 scrie doar FX_Extrase, care e in afara scopului feliei. Nu e uitat si nu e
+    inlocuit cu ceva aproximativ: fiecare raspuns spune ca nu s-a executat.
+    """
     fake_db(FakeConnection())
     r = client.post(URL, headers=auth_headers, data=payload(rows=[]))
     assert r.status_code == 200
-    # No run may look complete while steps 3-8 are not ported.
-    assert any("Pașii 3–8" in w for w in r.get_json()["avertismente"])
+    assert any("Pasul 8" in w for w in r.get_json()["avertismente"])
 
 
 def test_diacritics_are_literal_utf8_not_escaped(client, auth_headers, fake_db):
     fake_db(FakeConnection())
     r = client.post(URL, headers=auth_headers, data=payload(rows=[]))
-    assert "Pașii" in r.data.decode("utf-8")
-    assert "\\u" not in r.data.decode("utf-8")
+    text = r.data.decode("utf-8")
+    assert "FX_Extrase" in text
+    assert "în afara scopului" in text
+    assert "\\u" not in text
 
 
 # ---------------------------------------------------------------------------
@@ -254,7 +359,10 @@ def test_resending_with_the_choice_writes_it(client, auth_headers, fake_db):
         alegeri=[{"ss": "02E", "clsfe": "200101", "id_unitate": 76,
                   "retine": False}]))
     assert r.status_code == 200
-    assert conn.committed
+    # Cererea nu poarta «mod», deci e o PROPUNERE: raspunsul e 200 si tranzactia se
+    # deruleaza inapoi. Ce dovedeste testul e ca alegerea operatorului a ajuns in
+    # INSERT -- nu ca s-a comis, ceea ce e treaba fazei a doua.
+    assert conn.rolled_back and not conn.committed
     # The chosen unit is what went into the row.
     ins = [p for sql, p in conn.executed if sql.startswith("INSERT INTO FX_Indicatori")]
     assert 76 in ins[0]
@@ -280,8 +388,11 @@ def test_a_stored_choice_means_no_question_at_all(client, auth_headers, fake_db)
         remembered={("02E", "200101"): 76},
         clsf={(76, "650402200101"): [{"IdClsfAcc": 1204}]}))
     r = client.post(URL, headers=auth_headers, data=payload(rows=[indicator_row()]))
+    # Nicio intrebare: 200, si niciun `alegeri_necesare` in corp.
     assert r.status_code == 200
-    assert conn.committed
+    assert "alegeri_necesare" not in r.get_json()
+    ins = [p for sql, p in conn.executed if sql.startswith("INSERT INTO FX_Indicatori")]
+    assert 76 in ins[0]
 
 
 def test_a_classification_with_no_unit_is_400_and_rolls_back(client, auth_headers,

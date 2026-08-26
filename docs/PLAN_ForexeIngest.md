@@ -100,8 +100,20 @@ Helpers to port alongside: `GetHashForRow_Istoric`, `GetHashFromDict`, `GetHashF
 Settled by the operator or by reading the schema. Do not re-open; if one turns out to be wrong,
 stop and report rather than working around it.
 
-**D1 — everything runs in Flask.** One endpoint, one transaction, one round trip. The client sends
-the FOREXE result and receives counters.
+**D1 — everything runs in Flask.** One endpoint, one transaction. The client sends the FOREXE
+result and receives counters.
+
+> **AMENDED in slice 0048-03 (correction C3 of `docs/FUNDAMENT_Asociere_Receptii.md`).** The
+> "one round trip" half is withdrawn. The ingest is **two-phase**: a *proposal* that runs the whole
+> pipeline and then rolls it back unconditionally, and a *commit* that carries the operator's
+> association decisions. Everything else about D1 stands — it is still one endpoint, still one
+> transaction per call, still all in Flask.
+>
+> The reason is not a change of taste. FOREXE history never names the reception (F4), so the
+> automatic pass can only place the LAST snapshot of a chain (F9); the rest — roughly
+> *(snapshots − receptions)* per angajament (F10) — must be placed by a person. A wrong placement is
+> silent and permanent (F12). Nothing may reach the database before the operator has answered.
+> `PLAN MIGRARE` §3.2 already described this shape; D1 was the deviation.
 
 **D2 — Access is gone.** No parallel writer. K-BOT is the only thing that writes these tables, so
 the ingest does not have to stay byte-compatible with a second implementation. It still has to be
@@ -115,16 +127,54 @@ directly. Consequence: `FX_Incarca_Receptii_Temporare` and `FX_Salveaza_Receptii
 disappear as functions; their **comparison and update rules** move into steps 4b–4d and must be
 ported faithfully — read them before writing step 4.
 
+> **AMENDED in slice 0048-03 (C3).** The surviving half — "incoming rows are compared against the
+> live tables inside the transaction" — is what the ported steps do, and it is unchanged. What
+> changed is that the transaction may end in `rollback()` rather than `commit()`: the proposal
+> phase writes to the live tables exactly as the commit phase does, and then undoes it. There are
+> still no temp tables.
+
 **D4 — `frmFX_DUBII` is a later slice.** In Access, a reception header that could not be matched
 to a reception (`TmpIDRecR IS NULL`) opened a modal dialog, and refusing to resolve it wiped the
-angajament. Here: **the header is written with `IDRR` left NULL** and the ingest continues. The
-response names those headers so the client can show them. Nothing is wiped.
+angajament. Nothing is wiped here.
 *(The operator wrote "IDRH null" — `IDRH` is the primary key of `FX_Receptii_H`; the link column
 that stays empty is `IDRR`.)*
 
-**D5 — `FX_Receptii_Plati` and `FX_ORD_TBL_REC` are relics.** Not written, not read, not created.
-Steps H, I and J of `FX_Salveaza_Receptii_Temporare` are dropped entirely. `FX_ORD_TBL.IDRP` keeps
-whatever the migration put there and this pipeline never touches it.
+> **AMENDED in slice 0048-03 (correction C4).** "The header is written with `IDRR` left NULL and
+> the ingest continues" no longer describes what happens. Under the two-phase contract nothing is
+> committed until the operator has resolved **every** snapshot, and a missing decision is a `400`,
+> not a default — silence must not be interpretable as a choice.
+>
+> One narrow case still commits with `IDRR` NULL, and it is deliberate: the `ignorat` action, for a
+> save that recorded no change (F17). Such a snapshot gets `Sters = 1` and stays unattached.
+> Ignoring is lossless; forcing it onto a reception injects a false value into that reception's
+> timeline. The `antete_neasociate` field of the response is gone with the rest of D4 — the
+> proposal's `instantanee` array replaces it, and it carries *every* unplaced snapshot, not only
+> the ones this run produced (D-F).
+>
+> The association form itself is slice **0048-04**, and D-A forbids a build where the ingest can
+> produce unresolved snapshots with nowhere to resolve them — which is why 0048-03 deliberately
+> does **not** wire the coordinator into `DownloadNodeAsync`.
+
+**D5 — SPLIT in slice 0048-03. Read both halves; the original decision was half wrong.**
+
+> **D5a — `FX_ORD_TBL_REC` is NOT a relic (correction C1).** The operator withdrew this on
+> 26.08.2026: *«PLAN_ForexeIngest.md IS WRONG. The FX_ORD_TBL_REC IS NOT A RELIC. I WAS WRONG! it
+> needs to travel through migration and it needs to be used.»* It links a payment to the
+> ordonanțare line that consumed it. It **migrates normally** and it **will be used**. It has two
+> real foreign keys (`IDORDTBLP` ▸ `FX_ORD_TBL`, `IdPlataFX` ▸ `FX_Plati`), so both parents are
+> written before it. This pipeline still does not write it — ORD is a later slice — but "relic" was
+> wrong and the migrator now carries it.
+>
+> **D5b — `FX_Receptii_Plati` IS dead, and more so than D5 said (correction C2).** *«NOT used
+> anymore. it contains no data anymore. Excluded completely from migration.»* It was an early
+> attempt to join a reception to a payment directly, made before the flow was understood. It is
+> empty and is now excluded from migration entirely — it was previously *in* the migrator's table
+> list, which was the actual mistake. `FX_ORD_TBL_REC.IDRP` pointed at it and is dead too: the
+> column stays in the schema, unmapped and unwritten, carrying 0 on every sample row and no FK
+> constraint on MariaDB.
+>
+> Steps H, I and J of `FX_Salveaza_Receptii_Temporare` are still dropped entirely — that half of
+> D5 was right.
 
 **D6 — keys become `AUTO_INCREMENT`, as a prerequisite, not as part of this work.** See §3.
 
@@ -818,8 +868,10 @@ Report **real** counts. Do not copy numbers from another worklog.
 
 ## 12. Explicitly out of scope
 
-- `frmFX_DUBII` and its four subforms (D4) — the association UI is its own slice.
-- `FX_Receptii_Plati`, `FX_ORD_TBL_REC` (D5).
+- `frmFX_DUBII` and its four subforms (D4) — the association UI is slice **0048-04**.
+- `FX_Receptii_Plati` (D5b) — dead, and excluded from migration entirely.
+- `FX_ORD_TBL_REC` is **no longer out of scope** (D5a / C1). It migrates; writing it belongs to the
+  ORD slice, not to this one.
 - `FX_Angajament_Resetare_Valori_Forexe` as an operator command.
 - The upload direction — `mdl_FX_Tasks_Receive_UPL` (CreareAngajament, definitivare, încărcare
   rezervări). Different workflows, different plan.

@@ -173,6 +173,46 @@ Public Interface IApiClient
                                     alegeri As IReadOnlyList(Of AlegereUnitate),
                                     ct As CancellationToken) As Task(Of PrelucrareRaspuns)
 
+    ''' <summary>
+    ''' FAZA UNU a ingestiei (felia 0048-03): cere serverului tabloul, fără să scrie nimic.
+    '''
+    ''' Serverul rulează pașii 1–7 într-o tranzacție, exact cum i-ar rula pe bune, și apoi
+    ''' o derulează înapoi NECONDIȚIONAT. Ce se întoarce sunt recepțiile angajamentului,
+    ''' instantaneele rămase neașezate și amprenta stării — nimic nu s-a scris.
+    '''
+    ''' <para>Poate răspunde tot cu 409 <c>ALEGERE_UNITATE</c>, ca
+    ''' <see cref="TrimitePrelucrareAsync"/>: un angajament poate avea nevoie de DOUĂ
+    ''' drumuri dus-întors înainte ca operatorul să vadă formularul de asociere. Atunci
+    ''' <paramref name="alegeri"/> se completează și se cheamă din nou.</para>
+    '''
+    ''' <para>Rezultatul poartă starea: <c>Stare = Propunere</c> cu
+    ''' <see cref="PrelucrareRaspuns.Propunere"/> completat, sau
+    ''' <c>Stare = AlegereUnitate</c> cu întrebările. Un singur tip pentru amândouă,
+    ''' fiindcă apelantul trebuie oricum să distingă între ele.</para>
+    ''' </summary>
+    Function CerePropunereAsync(rezultat As PrelucrareRezultat,
+                                alegeri As IReadOnlyList(Of AlegereUnitate),
+                                ct As CancellationToken) As Task(Of PrelucrareRaspuns)
+
+    ''' <summary>
+    ''' FAZA DOI a ingestiei (felia 0048-03): trimite deciziile operatorului și COMITE.
+    '''
+    ''' <paramref name="rezultat"/> trebuie să fie ACELAȘI payload pe care l-a văzut
+    ''' propunerea — <c>RandIstoric</c> din decizii este indicele rândului în
+    ''' <c>TabelIstoric</c> (F24), nu o cheie de bază de date. De-asta fișierul local
+    ''' păstrează sarcina utilă exact cum a fost trimisă.
+    '''
+    ''' <para>Un 409 cu <c>reason = STARE_MODIFICATA</c> înseamnă că baza s-a schimbat între
+    ''' cele două faze: nimic nu s-a scris, iar operatorul trebuie să descarce din nou.
+    ''' Ajunge ca <see cref="ApiException"/> cu <c>Reason</c> completat, nu ca stare — spre
+    ''' deosebire de ALEGERE_UNITATE, aici nu există nimic de răspuns, doar de reluat.</para>
+    ''' </summary>
+    Function SalveazaAsociereaAsync(rezultat As PrelucrareRezultat,
+                                    amprenta As String,
+                                    decizii As IReadOnlyList(Of DecizieAsociere),
+                                    alegeri As IReadOnlyList(Of AlegereUnitate),
+                                    ct As CancellationToken) As Task(Of PrelucrareRaspuns)
+
     Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T)
     Function PostAsync(Of TRequest, TResponse)(relativeUrl As String, payload As TRequest, ct As CancellationToken) As Task(Of TResponse)
 End Interface

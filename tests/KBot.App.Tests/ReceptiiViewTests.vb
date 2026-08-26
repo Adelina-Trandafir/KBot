@@ -1,4 +1,4 @@
-﻿Option Strict On
+Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.Threading
@@ -32,6 +32,22 @@ Public Class ReceptiiViewTests
                                                alegeri As IReadOnlyList(Of AlegereUnitate),
                                                ct As CancellationToken) As Task(Of PrelucrareRaspuns) _
             Implements IApiClient.TrimitePrelucrareAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function CerePropunereAsync(rezultat As PrelucrareRezultat,
+                                           alegeri As IReadOnlyList(Of AlegereUnitate),
+                                           ct As CancellationToken) As Task(Of PrelucrareRaspuns) _
+            Implements IApiClient.CerePropunereAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function SalveazaAsociereaAsync(rezultat As PrelucrareRezultat,
+                                               amprenta As String,
+                                               decizii As IReadOnlyList(Of DecizieAsociere),
+                                               alegeri As IReadOnlyList(Of AlegereUnitate),
+                                               ct As CancellationToken) As Task(Of PrelucrareRaspuns) _
+            Implements IApiClient.SalveazaAsociereaAsync
             Throw New NotSupportedException()
         End Function
 

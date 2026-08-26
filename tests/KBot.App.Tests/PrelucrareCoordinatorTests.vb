@@ -36,6 +36,32 @@ Public Class PrelucrareCoordinatorTests
             Return Task.FromResult(Queue.Dequeue())
         End Function
 
+        ' Faza UNU (felia 0048-03). Aceeasi evidenta ca mai sus: bucla de intrebari e
+        ' identica, deci se scripteaza la fel.
+        Public Function CerePropunereAsync(rezultat As PrelucrareRezultat,
+                                           alegeri As IReadOnlyList(Of AlegereUnitate),
+                                           ct As CancellationToken) As Task(Of PrelucrareRaspuns) _
+            Implements IApiClient.CerePropunereAsync
+            Attempts.Add(New List(Of AlegereUnitate)(alegeri))
+            Return Task.FromResult(Queue.Dequeue())
+        End Function
+
+        ''' <summary>Deciziile cu care s-a chemat salvarea, in ordine.</summary>
+        Public ReadOnly Salvari As New List(Of List(Of DecizieAsociere))()
+        Public Property AmprentaPrimita As String
+
+        Public Function SalveazaAsociereaAsync(rezultat As PrelucrareRezultat,
+                                               amprenta As String,
+                                               decizii As IReadOnlyList(Of DecizieAsociere),
+                                               alegeri As IReadOnlyList(Of AlegereUnitate),
+                                               ct As CancellationToken) As Task(Of PrelucrareRaspuns) _
+            Implements IApiClient.SalveazaAsociereaAsync
+            AmprentaPrimita = amprenta
+            Salvari.Add(New List(Of DecizieAsociere)(decizii))
+            Attempts.Add(New List(Of AlegereUnitate)(alegeri))
+            Return Task.FromResult(Queue.Dequeue())
+        End Function
+
         ' --- restul contractului: nefolosit aici ---
         Public Function UpsertAngajamenteAsync(dbName As String, rows As IReadOnlyList(Of Angajament),
                                                ct As CancellationToken) As Task(Of String) _

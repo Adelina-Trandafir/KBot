@@ -445,6 +445,12 @@ Public NotInheritable Class PostPrelucrareRequest
     Public Property scalari As New Dictionary(Of String, String)()
     Public Property tabele As New Dictionary(Of String, List(Of Dictionary(Of String, String)))()
     Public Property alegeri As New List(Of PostPrelucrareAlegere)()
+    ' Felia 0048-03. `mod` = "propunere" | "salvare"; celelalte doua se trimit DOAR la
+    ' salvare si raman Nothing altfel. `mod` e cuvant rezervat in VB, de-asta parantezele
+    ' patrate — numele proprietatii ramane exact cheia JSON pe care o citeste serverul.
+    Public Property [mod] As String
+    Public Property amprenta As String
+    Public Property decizii As List(Of PostPrelucrareDecizie)
 End Class
 
 ' One answer. `retine` is the tick box: True asks the server to remember this pair in
@@ -489,4 +495,73 @@ Public NotInheritable Class PostPrelucrareUnitate
     Public Property detalii As String
     Public Property sursa_sector As String
     Public Property cod_program As String
+End Class
+
+' ── Felia 0048-03: contractul in DOUA FAZE ───────────────────────────────────────────
+' Aceleasi reguli de ortografie ca mai sus: numele proprietatilor SUNT cheile JSON, litera
+' mica verbatim, potrivite cu routes/forexe/prelucrare.py si prelucrare_asociere.py.
+'
+' `mod` alege faza. LIPSA lui inseamna «propunere» la server — faza care NU scrie. Clientul
+' il trimite oricum explicit, ca sa nu depinda de un implicit al celeilalte laturi.
+Public NotInheritable Class PostPrelucrareDecizie
+    Public Property rand_istoric As Integer
+    Public Property data_h As String
+    Public Property actiune As String
+    ' Nullable: serverul cere EXACT una dintre `idrr` si `receptie_noua` pentru asociat si
+    ' stergere, si NICIUNA pentru ignorat. Un Integer nenulabil ar trimite 0, iar 0 ar fi
+    ' citit ca «receptia zero», nu ca «niciuna».
+    Public Property idrr As Integer?
+    Public Property receptie_noua As String
+End Class
+
+' Corpul de 200 al fazei «propunere».
+Public NotInheritable Class PostPropunereResponse
+    Public Property cod As String
+    Public Property faza As String
+    Public Property amprenta As String
+    Public Property receptii As New List(Of PostPropunereReceptie)()
+    Public Property instantanee As New List(Of PostPropunereInstantaneu)()
+    Public Property are As New Dictionary(Of String, Boolean)()
+    Public Property scrise As New Dictionary(Of String, Integer)()
+    Public Property avertismente As New List(Of String)()
+End Class
+
+Public NotInheritable Class PostPropunereReceptie
+    Public Property idrr As Integer
+    Public Property data_r As String
+    Public Property suma_antet As Double
+    Public Property descriere As String
+    Public Property sters As Boolean
+    Public Property reconstituit As Boolean
+    Public Property rhr As New List(Of PostPropunereLinieR)()
+End Class
+
+Public NotInheritable Class PostPropunereLinieR
+    Public Property cod_indicator As String
+    Public Property cod_ai As String
+    Public Property cod_ssi As String
+    Public Property credit_bugetar As Double
+    Public Property valoare As Double
+    Public Property valoare_n As Double
+End Class
+
+Public NotInheritable Class PostPropunereInstantaneu
+    Public Property rand_istoric As Integer
+    Public Property data_h As String
+    Public Property descriere As String
+    Public Property total As Double
+    Public Property stergere As Boolean
+    ' Nullable: serverul trimite null cand trecerea automata nu a avut raspuns. Zero ar fi
+    ' o receptie, null e o tacere.
+    Public Property sugestie_idrr As Integer?
+    Public Property sugestie_automata As Boolean
+    Public Property linii As New List(Of PostPropunereLinieI)()
+End Class
+
+Public NotInheritable Class PostPropunereLinieI
+    Public Property cod_indicator As String
+    Public Property cod_ai As String
+    Public Property cod_ssi As String
+    Public Property id_clsf As Integer?
+    Public Property valoare As Double
 End Class

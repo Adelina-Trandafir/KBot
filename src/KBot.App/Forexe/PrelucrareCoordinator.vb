@@ -110,6 +110,56 @@ Public NotInheritable Class PrelucrareCoordinator
         End Try
     End Function
 
+
+    ''' <summary>
+    ''' FAZA UNU (felia 0048-03): cere propunerea, întrebând operatorul ori de câte ori
+    ''' serverul are nevoie de o alegere de unitate — exact aceeași buclă ca
+    ''' <see cref="TrimiteAsync"/>, fiindcă 409 ALEGERE_UNITATE se poate declanșa și aici.
+    '''
+    ''' <para>Rezultatul poartă și alegerile făcute, în <paramref name="alegeriFacute"/>:
+    ''' ele trebuie RETRIMISE la salvare. Bifa «nu mă mai întreba» se scrie în
+    ''' <c>FX_Alegeri_Unitate</c> înăuntrul tranzacției, deci se derulează înapoi împreună
+    ''' cu propunerea, iar serverul nu și-o amintește. Fără ele, faza de salvare ar primi
+    ''' din nou 409 pentru o întrebare la care operatorul a răspuns deja.</para>
+    '''
+    ''' <para>Nimic din felia asta nu cheamă metoda din fluxul de descărcare — se exercită
+    ''' din <c>KBot.DevHarness</c>. Legarea vine în 0048-04, împreună cu formularul.</para>
+    ''' </summary>
+    ''' <returns>Propunerea, sau Nothing dacă operatorul a renunțat la o întrebare.</returns>
+    Public Async Function CerePropunereAsync(rezultat As PrelucrareRezultat,
+                                             alegeriFacute As List(Of AlegereUnitate),
+                                             ct As CancellationToken) As Task(Of PrelucrarePropunere)
+        Try
+            ArgumentNullException.ThrowIfNull(rezultat)
+            ArgumentNullException.ThrowIfNull(alegeriFacute)
+
+            For runda As Integer = 1 To MaxRunde
+                ' Fără ConfigureAwait(False): continuarea trebuie să se întoarcă pe firul
+                ' UI, altfel ShowDialog de mai jos ar rula pe fir greșit.
+                Dim raspuns As PrelucrareRaspuns =
+                    Await _api.CerePropunereAsync(rezultat, alegeriFacute, ct)
+
+                If raspuns Is Nothing Then Return Nothing
+                If raspuns.Stare = PrelucrareStare.Propunere Then Return raspuns.Propunere
+
+                Dim raspunsuriNoi As List(Of AlegereUnitate) =
+                    IntreabaOperatorul(raspuns, rezultat.CodAngajament)
+                ' Nothing = a renunțat. Nimic nu s-a scris — propunerea oricum nu scrie.
+                If raspunsuriNoi Is Nothing Then Return Nothing
+                alegeriFacute.AddRange(raspunsuriNoi)
+            Next
+
+            Throw New InvalidOperationException(
+                $"Propunerea a cerut alegerea unității de mai mult de {MaxRunde} ori pentru " &
+                $"«{rezultat.CodAngajament}». S-a oprit; nu s-a scris nimic.")
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrelucrareCoordinator.CerePropunereAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ''' <summary>
     ''' Deschide dialogul o dată pentru fiecare întrebare. Întoarce Nothing la prima
     ''' renunțare — o alegere lipsă nu se poate compensa, iar restul întrebărilor nu mai au

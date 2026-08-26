@@ -13,6 +13,12 @@ Public Enum PrelucrareStare
     ''' întrebat, iar aceeași sarcină se retrimite cu alegerile atașate.
     ''' </summary>
     AlegereUnitate = 1
+    ''' <summary>
+    ''' Faza UNU a ingestiei (felia 0048-03): serverul a construit tabloul, l-a derulat
+    ''' înapoi și l-a întors. NU s-a scris nimic. <see cref="PrelucrareRaspuns.Propunere"/>
+    ''' poartă recepțiile, instantaneele neașezate și amprenta.
+    ''' </summary>
+    Propunere = 2
 End Enum
 
 ''' <summary>
@@ -51,6 +57,12 @@ Public NotInheritable Class PrelucrareRaspuns
     ''' <see cref="Stare"/> este <see cref="PrelucrareStare.Salvat"/>.
     ''' </summary>
     Public Property AlegeriNecesare As New List(Of AlegereNecesara)
+
+    ''' <summary>
+    ''' Tabloul propus (felia 0048-03). Completat DOAR când <see cref="Stare"/> este
+    ''' <see cref="PrelucrareStare.Propunere"/>; Nothing altfel.
+    ''' </summary>
+    Public Property Propunere As PrelucrarePropunere
 End Class
 
 ''' <summary>

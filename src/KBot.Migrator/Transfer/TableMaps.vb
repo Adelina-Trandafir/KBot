@@ -28,14 +28,24 @@ Public NotInheritable Class TableMaps
     ''' Tables deliberately NOT migrated - MAPARE_ACCESS_MARIADB.md §2 plus decision D4.
     ''' </summary>
     ''' <remarks>
-    ''' FX_ORD_TBL_REC is the link between a payment and the order line it settled
-    ''' (FX_Plati ▸ FX_ORD_TBL_REC ▸ FX_ORD_TBL). Both its parents are migrated; leaving
-    ''' it out is deliberate, and the link does not survive the migration.
-    ''' FX_Salarii and FX_Receptii_Plati (D4) exist in neither the .accdb nor the MariaDB
-    ''' schema, which is why FX_ORD_TBL.IDRP is an orphan column by construction.
+    ''' FX_ORD_TBL_REC WAS on this list. It came OFF on 26.08.2026 — correction C1 of
+    ''' docs/FUNDAMENT_Asociere_Receptii.md. The operator: «PLAN_ForexeIngest.md IS WRONG.
+    ''' The FX_ORD_TBL_REC IS NOT A RELIC. I WAS WRONG! it needs to travel through
+    ''' migration and it needs to be used.» It is the link between a payment and the
+    ''' ordonanțare line that settled it (FX_Plati ▸ FX_ORD_TBL_REC ▸ FX_ORD_TBL), both
+    ''' parents migrate, and the link now survives. Its map is in <see cref="Forexe"/>.
+    '''
+    ''' FX_Receptii_Plati STAYS out, and more firmly than before (correction C2): «NOT
+    ''' used anymore. it contains no data anymore. Excluded completely from migration.»
+    ''' It was an early attempt to join a reception to a payment directly, made before the
+    ''' flow was understood, and it is empty. FX_ORD_TBL.IDRP pointed at it and is dead
+    ''' too — the column stays in the schema, unmapped and unwritten, carrying 0 on every
+    ''' sample row and no foreign key on MariaDB.
+    '''
+    ''' FX_Salarii exists in neither the .accdb nor the MariaDB schema.
     ''' </remarks>
     Public Shared ReadOnly Excluded As IReadOnlyList(Of String) = New String() {
-        "FX_DDF_REV_ATT", "FX_DDF_REV_PRT", "FX_ORD_ATT", "FX_ORD_TBL_REC", "FX_ORD_PDF",
+        "FX_DDF_REV_ATT", "FX_DDF_REV_PRT", "FX_ORD_ATT", "FX_ORD_PDF",
         "FX_Salarii", "FX_Receptii_Plati",
         "ClasificatiiV", "RectificariV", "ParteneriSI"
     }
@@ -304,7 +314,8 @@ Public NotInheritable Class TableMaps
             Add(ColumnMapping.FromClasificatie("IdClsf", "IdClsf", True)).
             Add(ColumnMapping.AlwaysNull("IdPartener")).
             Exclude("IDORDTBLP", "IDORDP", "IdClsfPY", "IDRR", "IDORDT", "IDRD", "IDRP").
-            WithNote("«IDRP» e orfan prin construcție (FX_Receptii_Plati nu călătorește, D4). " &
+            WithNote("«IDRP» e mort: arăta către FX_Receptii_Plati, care e gol și exclus " &
+                     "complet din migrare (corecția C2). Rămâne în schemă, nemapat. " &
                      "«CodAI» - a treia grafie a coloanei; potrivirea e neinsensibilă la caz."))
 
         maps.Add(New TableMap("FX_ORD_DOC", "FX_ORD_DOC", SourceFile.ForexeFile).
@@ -314,6 +325,24 @@ Public NotInheritable Class TableMaps
             Exclude("IDORDDOCP", "IDORDP", "IDORDJ").
             WithNote("Oglinzile Access au derivat vizibil (17▸40, 18▸41, 19▸42), " &
                      "de-aia nu sunt o sursă folosibilă."))
+
+        ' --- FX_ORD_TBL_REC --------------------------------------------------------
+        ' Legătura plată ▸ rând de ordonanțare. Ambii părinți sunt deja scriși mai sus:
+        ' FX_Plati și FX_ORD_TBL. Coloanele Access, citite din fișierul real
+        ' (artifacts/accdb-schema/FX_2026.md):
+        '
+        '   IDORDREC   1..n     cheia Access — călătorește ca ea însăși
+        '   IDORDRECP  475..    oglinda serverului VECHI — NU călătorește; pe MariaDB
+        '                       coloana omonimă e AUTO_INCREMENT și și-o pune singură
+        '   IDORDTBL            rândul de ordonanțare ▸ se redenumește IDORDTBLP, fiindcă
+        '                       acolo a aterizat cheia lui FX_ORD_TBL (vezi harta de mai sus)
+        '   IDRP       0 peste tot — MORT (corecția C2), nemapat
+        '   Valoare, IdPlataFX  direct
+        maps.Add(New TableMap("FX_ORD_TBL_REC", "FX_ORD_TBL_REC", SourceFile.ForexeFile).
+            Rename("IDORDTBL", "IDORDTBLP").
+            Exclude("IDORDRECP", "IDRP", "IdClsfPY", "DTQ").
+            WithNote("Scos din lista de excluderi pe 26.08.2026 (corecția C1): NU e o " &
+                     "relicvă. «IDRP» rămâne nemapat — arăta către FX_Receptii_Plati, mort."))
 
         maps.Add(NameMatched("FX_Receptii_RHR"))
         maps.Add(NameMatched("FX_Rezervarii_IMG"))

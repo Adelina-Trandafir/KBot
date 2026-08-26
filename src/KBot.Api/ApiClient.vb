@@ -24,6 +24,19 @@ Public Class ApiClient
     Private Shared ReadOnly _json As JsonSerializerOptions =
         New JsonSerializerOptions With {.PropertyNamingPolicy = Nothing}
 
+    ' Optiuni SEPARATE, folosite doar la scrierea cererii de prelucrare (felia 0048-03).
+    ' WhenWritingNull tine campurile care apartin doar fazei de salvare (`amprenta`,
+    ' `decizii`) afara din corp cand sunt Nothing, ca o propunere sa arate pe fir exact
+    ' cum arata inainte de felia asta.
+    '
+    ' De ce nu s-a schimbat `_json` de mai sus: el serializeaza TOATE celelalte cereri ale
+    ' clientului, iar «omite null-urile» e o schimbare de contract pentru fiecare dintre
+    ' ele. O ruta care deosebeste «cheia lipseste» de «cheia e null» s-ar schimba tacut.
+    Private Shared ReadOnly _jsonFaraNull As JsonSerializerOptions =
+        New JsonSerializerOptions With {
+            .PropertyNamingPolicy = Nothing,
+            .DefaultIgnoreCondition = Serialization.JsonIgnoreCondition.WhenWritingNull}
+
     Public Sub New(http As HttpClient, options As ApiOptions, session As SessionContext)
         If http Is Nothing Then Throw New ArgumentNullException(NameOf(http))
         If options Is Nothing Then Throw New ArgumentNullException(NameOf(options))
@@ -1140,6 +1153,252 @@ Public Class ApiClient
     Private Shared Function BuildApiException(respText As String, actiune As String, status As Integer) As ApiException
         Dim body As ApiErrorBody = ApiErrorBody.Parse(respText)
         Return New ApiException(body.MessageOrFallback(actiune, status), status, body.Reason)
+    End Function
+
+
+    ' ── Felia 0048-03: cele DOUA faze ────────────────────────────────────────────────
+    ' Ambele lovesc ACEEASI ruta, cu `mod` diferit. Ce le desparte nu e adresa, ci ce are
+    ' voie serverul sa faca la coada tranzactiei: sa o deruleze inapoi, sau sa o comita.
+    '
+    ' Sarcina utila e IDENTICA in amandoua. `RandIstoric` din decizii e indicele randului
+    ' in TabelIstoric (F24), nu o cheie de baza de date, deci faza a doua TREBUIE sa
+    ' trimita exact ce a vazut faza intai. De-asta fisierul local pastreaza payload-ul, nu
+    ' doar deciziile.
+
+    Private Function ConstruiesteCerere(rezultat As PrelucrareRezultat,
+                                        alegeri As IReadOnlyList(Of AlegereUnitate),
+                                        modul As String) As PostPrelucrareRequest
+        If rezultat Is Nothing Then Throw New ArgumentNullException(NameOf(rezultat))
+        If String.IsNullOrWhiteSpace(rezultat.CodAngajament) Then
+            Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(rezultat))
+        End If
+
+        Dim req As New PostPrelucrareRequest() With {
+            .cod = rezultat.CodAngajament,
+            .workflow = If(rezultat.Workflow, String.Empty),
+            .moment = rezultat.Moment,
+            .mod = modul
+        }
+        If rezultat.Scalari IsNot Nothing Then
+            req.scalari = New Dictionary(Of String, String)(rezultat.Scalari)
+        End If
+        If rezultat.Tabele IsNot Nothing Then
+            req.tabele = New Dictionary(Of String, List(Of Dictionary(Of String, String)))(rezultat.Tabele)
+        End If
+        If alegeri IsNot Nothing Then
+            For Each a As AlegereUnitate In alegeri
+                req.alegeri.Add(New PostPrelucrareAlegere() With {
+                    .ss = a.Ss, .clsfe = a.ClsfE,
+                    .id_unitate = a.IdUnitate, .retine = a.Retine})
+            Next
+        End If
+        Return req
+    End Function
+
+    Public Async Function CerePropunereAsync(rezultat As PrelucrareRezultat,
+                                             alegeri As IReadOnlyList(Of AlegereUnitate),
+                                             ct As CancellationToken) As Task(Of PrelucrareRaspuns) Implements IApiClient.CerePropunereAsync
+        Try
+            EnsureConfigured()
+            Dim req As PostPrelucrareRequest = ConstruiesteCerere(rezultat, alegeri, "propunere")
+            Dim body As String = JsonSerializer.Serialize(req, _jsonFaraNull)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/prelucrare")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+
+                    ' 409 ALEGERE_UNITATE se poate declansa SI in faza intai — un angajament
+                    ' poate avea nevoie de doua drumuri dus-intors inainte ca operatorul sa
+                    ' vada formularul de asociere. Nu e o eroare; nu s-a scris nimic.
+                    If CInt(resp.StatusCode) = 409 Then
+                        Dim intrebare As PrelucrareRaspuns = CitesteAlegeri(respText)
+                        If intrebare IsNot Nothing Then Return intrebare
+                    End If
+
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "cererea propunerii", CInt(resp.StatusCode))
+                    End If
+
+                    Return New PrelucrareRaspuns() With {
+                        .Stare = PrelucrareStare.Propunere,
+                        .CodAngajament = rezultat.CodAngajament,
+                        .Propunere = CitestePropunere(respText, rezultat.CodAngajament)
+                    }
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.CerePropunereAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function SalveazaAsociereaAsync(rezultat As PrelucrareRezultat,
+                                                 amprenta As String,
+                                                 decizii As IReadOnlyList(Of DecizieAsociere),
+                                                 alegeri As IReadOnlyList(Of AlegereUnitate),
+                                                 ct As CancellationToken) As Task(Of PrelucrareRaspuns) Implements IApiClient.SalveazaAsociereaAsync
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(amprenta) Then
+                Throw New ArgumentException("Amprenta propunerii este obligatorie.", NameOf(amprenta))
+            End If
+            If decizii Is Nothing Then Throw New ArgumentNullException(NameOf(decizii))
+
+            Dim req As PostPrelucrareRequest = ConstruiesteCerere(rezultat, alegeri, "salvare")
+            req.amprenta = amprenta
+            req.decizii = New List(Of PostPrelucrareDecizie)()
+            For Each d As DecizieAsociere In decizii
+                req.decizii.Add(CatreFir(d))
+            Next
+
+            Dim body As String = JsonSerializer.Serialize(req, _jsonFaraNull)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/prelucrare")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+
+                    If CInt(resp.StatusCode) = 409 Then
+                        Dim intrebare As PrelucrareRaspuns = CitesteAlegeri(respText)
+                        If intrebare IsNot Nothing Then Return intrebare
+                    End If
+
+                    ' STARE_MODIFICATA ajunge ca EXCEPTIE, nu ca stare: spre deosebire de
+                    ' ALEGERE_UNITATE, aici nu exista nimic de raspuns. Baza s-a miscat, nu
+                    ' s-a scris nimic, si singurul drum inainte e o descarcare noua.
+                    ' BuildApiException pune deja `reason` in ApiException.Reason, deci
+                    ' apelantul poate testa dupa PrelucrarePropunere.MotivStareModificata.
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "salvarea asocierii", CInt(resp.StatusCode))
+                    End If
+
+                    Return CitesteSalvat(respText, rezultat.CodAngajament)
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.SalveazaAsociereaAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ' O decizie -> forma de pe fir. Regula celor doua tinte care se exclud traieste la
+    ' server (care respinge cu 400); aici se trimite doar ce a fost pus, fara sa se
+    ' fabrice nimic: `Idrr = 0` inseamna «niciuna» si devine null, nu zero.
+    Private Shared Function CatreFir(d As DecizieAsociere) As PostPrelucrareDecizie
+        Dim pe As New PostPrelucrareDecizie() With {
+            .rand_istoric = d.RandIstoric,
+            .data_h = d.DataH.ToString("yyyy-MM-ddTHH:mm:ss", Globalization.CultureInfo.InvariantCulture),
+            .actiune = NumeActiune(d.Actiune)
+        }
+        If d.Idrr > 0 Then pe.idrr = d.Idrr
+        If Not String.IsNullOrWhiteSpace(d.ReceptieNoua) Then pe.receptie_noua = d.ReceptieNoua
+        Return pe
+    End Function
+
+    ' Numele de pe fir sunt ASCII pe amandoua laturile (regula 0) si sunt exact cele patru
+    ' pe care le accepta routes/forexe/prelucrare_asociere.py. O valoare necunoscuta de
+    ' enum ridica — fara implicit tacut.
+    Private Shared Function NumeActiune(a As ActiuneAsociere) As String
+        Select Case a
+            Case ActiuneAsociere.Asociat : Return "asociat"
+            Case ActiuneAsociere.Ignorat : Return "ignorat"
+            Case ActiuneAsociere.Stergere : Return "stergere"
+            Case ActiuneAsociere.Reconstituire : Return "reconstituire"
+            Case Else
+                Throw New ArgumentException($"Acțiune necunoscută: {a}", NameOf(a))
+        End Select
+    End Function
+
+    ' Corpul de 200 al propunerii -> POCO-ul de domeniu.
+    Private Shared Function CitestePropunere(respText As String, cod As String) As PrelucrarePropunere
+        Dim payload As PostPropunereResponse =
+            JsonSerializer.Deserialize(Of PostPropunereResponse)(respText, _json)
+        Dim p As New PrelucrarePropunere() With {.CodAngajament = cod}
+        If payload Is Nothing Then Return p
+
+        If Not String.IsNullOrEmpty(payload.cod) Then p.CodAngajament = payload.cod
+        p.Amprenta = If(payload.amprenta, String.Empty)
+
+        If payload.are IsNot Nothing Then
+            For Each kvp In payload.are
+                p.Are(kvp.Key) = kvp.Value
+            Next
+        End If
+        If payload.scrise IsNot Nothing Then
+            For Each kvp In payload.scrise
+                p.Scrise(kvp.Key) = kvp.Value
+            Next
+        End If
+        If payload.avertismente IsNot Nothing Then p.Avertismente.AddRange(payload.avertismente)
+
+        If payload.receptii IsNot Nothing Then
+            For Each r As PostPropunereReceptie In payload.receptii
+                Dim rec As New ReceptiePropusa() With {
+                    .Idrr = r.idrr,
+                    .DataR = CitesteData(r.data_r),
+                    .SumaAntet = r.suma_antet,
+                    .Descriere = If(r.descriere, String.Empty),
+                    .Sters = r.sters,
+                    .Reconstituit = r.reconstituit}
+                If r.rhr IsNot Nothing Then
+                    For Each l As PostPropunereLinieR In r.rhr
+                        rec.Rhr.Add(New LinieReceptie() With {
+                            .CodIndicator = If(l.cod_indicator, String.Empty),
+                            .CodAi = If(l.cod_ai, String.Empty),
+                            .CodSsi = If(l.cod_ssi, String.Empty),
+                            .CreditBugetar = l.credit_bugetar,
+                            .Valoare = l.valoare,
+                            .ValoareN = l.valoare_n})
+                    Next
+                End If
+                p.Receptii.Add(rec)
+            Next
+        End If
+
+        If payload.instantanee IsNot Nothing Then
+            For Each i As PostPropunereInstantaneu In payload.instantanee
+                Dim inst As New InstantaneuPropus() With {
+                    .RandIstoric = i.rand_istoric,
+                    .DataH = CitesteData(i.data_h),
+                    .Descriere = If(i.descriere, String.Empty),
+                    .Total = i.total,
+                    .Stergere = i.stergere,
+                    .SugestieIdrr = If(i.sugestie_idrr.HasValue, i.sugestie_idrr.Value, 0),
+                    .SugestieAutomata = i.sugestie_automata}
+                If i.linii IsNot Nothing Then
+                    For Each l As PostPropunereLinieI In i.linii
+                        inst.Linii.Add(New LinieInstantaneu() With {
+                            .CodIndicator = If(l.cod_indicator, String.Empty),
+                            .CodAi = If(l.cod_ai, String.Empty),
+                            .CodSsi = If(l.cod_ssi, String.Empty),
+                            .IdClsf = If(l.id_clsf.HasValue, l.id_clsf.Value, 0),
+                            .Valoare = l.valoare})
+                    Next
+                End If
+                p.Instantanee.Add(inst)
+            Next
+        End If
+
+        Return p
+    End Function
+
+    ' Datele sosesc ca text: Flask serializeaza datetime-urile MariaDB cu `default=str`,
+    ' deci "2026-05-20 00:36:12". Se citesc cu cultura INVARIANTA — cultura masinii nu are
+    ' nimic de-a face cu ce a scris serverul. O data necitibila ridica: o dată tăcut zero
+    ' ar strica vetoul de dată (F13), care e chiar paza contra asocierii greșite.
+    Private Shared Function CitesteData(text As String) As Date
+        If String.IsNullOrWhiteSpace(text) Then Return Nothing
+        Dim d As Date
+        If Date.TryParse(text, Globalization.CultureInfo.InvariantCulture,
+                         Globalization.DateTimeStyles.None, d) Then Return d
+        Throw New ApiException($"Serverul a trimis o dată pe care nu o pot citi: «{text}».")
     End Function
 
     Public Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T) Implements IApiClient.GetAsync

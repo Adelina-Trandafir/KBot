@@ -156,9 +156,35 @@ def test_niciun_parinte_din_fisier_e_respins():
     assert "IDRR" in reject and "IDRH" in reject
 
 
-def test_ordinea_parintilor_difera_intre_cele_doua_tabele():
+def test_receptii_img_ia_idrr_ca_prim_parinte():
+    # Perechea acestui test era FX_Receptii_Plati, care avea parintii in ordine inversa.
+    # Tabelul a fost scos din migrare pe 26.08.2026 (corectia C2 din
+    # docs/FUNDAMENT_Asociere_Receptii.md): e gol si nu mai e folosit. A ramas un singur
+    # tabel cu doi parinti, deci ce se poate afirma acum e doar ordinea LUI.
     assert tables.by_name("FX_Receptii_IMG").key_column == "IDRR"
-    assert tables.by_name("FX_Receptii_Plati").key_column == "IDRH"
+    assert tables.by_name("FX_Receptii_IMG").key_column2 == "IDRH"
+
+
+def test_receptii_plati_e_scos_din_migrare():
+    # Corectia C2: «NOT used anymore. it contains no data anymore. Excluded completely
+    # from migration.» Daca apare in fisier, se RAPORTEAZA, nu se migreaza.
+    assert "FX_Receptii_Plati" in tables.OUT_OF_SCOPE
+    with pytest.raises(KeyError):
+        tables.by_name("FX_Receptii_Plati")
+
+
+def test_ord_tbl_rec_migreaza_dupa_ambii_lui_parinti():
+    # Corectia C1: NU e o relicva. Are doua chei straine reale — IDORDTBLP catre
+    # FX_ORD_TBL si IdPlataFX catre FX_Plati — deci amandoua trebuie scrise inaintea lui.
+    t = tables.by_name("FX_ORD_TBL_REC")
+    assert t.primary_key == "IDORDRECP"     # cheia MariaDB
+    assert t.access_key == "IDORDREC"       # cheia Access, alt nume
+    assert t.selection == tables.BY_ORD_TBL
+    assert t.key_column == "IDORDTBL"
+
+    nume = [x.name for x in tables.selected(None)]
+    assert nume.index("FX_ORD_TBL") < nume.index("FX_ORD_TBL_REC")
+    assert nume.index("FX_Plati") < nume.index("FX_ORD_TBL_REC")
 
 
 # --- extrasele ----------------------------------------------------------------
@@ -253,7 +279,7 @@ def test_setul_are_ordinea_ceruta_de_operator():
     assert nume.index("FX_DDF_REV") < nume.index("FX_Rezervari")
     assert nume.index("FX_Rezervari") < nume.index("FX_Rezervarii_IMG")
     assert nume.index("FX_Receptii_R") < nume.index("FX_Receptii_IMG")
-    assert nume.index("FX_Receptii_H") < nume.index("FX_Receptii_Plati")
+    assert nume.index("FX_ORD_TBL") < nume.index("FX_ORD_TBL_REC")
     assert nume.index("FX_Angajamente") < nume.index("FX_Salarii")
 
 
