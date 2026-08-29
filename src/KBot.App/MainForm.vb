@@ -1,4 +1,4 @@
-Imports System
+﻿Imports System
 Imports System.Collections.Generic
 Imports System.Drawing
 Imports System.IO
@@ -412,7 +412,8 @@ Public Class MainForm
                 Case "revizii" : Return New PlaceholderView(key, "Revizii")
                 Case "rezervari" : Return New RezervariView(_apiClient, Function(op) WithReauth(Of RezervariInfo)(op))
                 Case "partener" : Return New PlaceholderView(key, "Partener")
-                Case "receptii" : Return New ReceptiiView(_apiClient, Function(op) WithReauth(Of ReceptiiInfo)(op))
+                Case "receptii" : Return New ReceptiiView(_apiClient, Function(op) WithReauth(Of ReceptiiInfo)(op),
+                                                         AddressOf DeschideLegaturileReceptiilor)
                 Case "plati" : Return New PlatiView(_apiClient, Function(op) WithReauth(Of PlatiInfo)(op))
                 Case "ddf" : Return New DdfView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op), _session)
                 Case "ord" : Return New OrdView(_apiClient, Function(op) WithReauth(Of OrdInfo)(op), _session)
@@ -424,6 +425,37 @@ Public Class MainForm
             Throw
         End Try
     End Function
+
+    ''' <summary>
+    ''' Deschide editorul de legături recepție ▸ instantaneu (felia 0048-04), MODAL.
+    '''
+    ''' <para>Trăiește aici, nu în vedere, dintr-un singur motiv: formularul are nevoie de plasa
+    ''' de re-autentificare pe DOUĂ forme de răspuns, iar <c>WithReauth</c> e privat și generic
+    ''' în shell. Vederea primește doar acțiunea asta, deci politica de re-login rămâne, ca peste
+    ''' tot, într-un singur loc.</para>
+    '''
+    ''' <para>D-I: modal. După o salvare, recepțiile se reîncarcă — legăturile schimbate mută
+    ''' anteturile între recepții, deci ce a rămas pe ecran nu mai e adevărat.</para>
+    ''' </summary>
+    Private Sub DeschideLegaturileReceptiilor(cod As String)
+        Try
+            If String.IsNullOrWhiteSpace(cod) Then Return
+            Using f As New AsociereForm(_apiClient, cod,
+                                        Function(op) WithReauth(Of AsociereStare)(op),
+                                        Function(op) WithReauth(Of AsociereRezultat)(op))
+                f.ShowDialog(Me)
+                If f.SAuSalvatModificari Then
+                    Dim vedere As ReceptiiView = TryCast(_activeView, ReceptiiView)
+                    vedere?.Reincarca()
+                End If
+            End Using
+        Catch ex As Exception
+            ' Graniță de UI: se loghează și se arată; un throw de aici ar cădea pe firul de UI.
+            GlobalErrorLog.Write("MainForm.DeschideLegaturileReceptiilor", ex)
+            MessageBox.Show(Me, "Editorul de legături nu a putut fi deschis. Detalii în jurnalul de erori.",
+                            "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
 
     ' ---------------- lista de angajamente ----------------
 

@@ -52,6 +52,18 @@ Public Enum ActiuneAsociere
     ''' operatorul il construieste pe ea.
     ''' </summary>
     Reconstituire = 3
+
+    ''' <summary>
+    ''' Instantaneul se rupe de recepția pe care sta acum si ramane neasezat
+    ''' (<c>IDRR = NULL</c>, <c>Sters = 0</c>).
+    '''
+    ''' EXISTA DOAR IN EDITORUL DE ORICAND (felia 0048-04, <c>ComandaAsociere</c>).
+    ''' Contractul in doua faze nu o are, fiindca acolo nimic nu e inca atasat si deci nu
+    ''' e nimic de desprins; <c>ApiClient.NumeActiune</c> o refuza pe calea de ingestie,
+    ''' iar asta e purtarea corecta, nu o scapare. E <c>btnDel_Click</c> din
+    ''' <c>frmFX_DUBII_LISTA_HA</c>.
+    ''' </summary>
+    Desprins = 4
 End Enum
 
 ''' <summary>
@@ -121,6 +133,17 @@ Public NotInheritable Class ReceptiePropusa
     ''' cu ea, <c>Reconstituit</c> spune de unde stim ca a existat.
     ''' </summary>
     Public Property Reconstituit As Boolean
+
+    ''' <summary>
+    ''' F28: in clipa reconstituirii, o ALTA reconstituire pe acelasi angajament facea gruparea
+    ''' imposibil de verificat (F27), deci ea a fost o judecata, nu o verificare.
+    '''
+    ''' Al TREILEA fapt, si nu se colapseaza in celelalte doua: <c>Sters</c> = stearsa pe site,
+    ''' <c>Reconstituit</c> = reconstruita din propriile instantanee, asta = gruparea nu a putut
+    ''' fi probata. Nu se sterge niciodata — o rulare de mai tarziu care vede una singura nu
+    ''' face gruparea de atunci mai verificabila decat era in clipa in care s-a facut.
+    ''' </summary>
+    Public Property ReconstituitNesigur As Boolean
 
     Public Property Rhr As New List(Of LinieReceptie)
 End Class

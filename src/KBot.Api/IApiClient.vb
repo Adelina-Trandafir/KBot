@@ -213,6 +213,35 @@ Public Interface IApiClient
                                     alegeri As IReadOnlyList(Of AlegereUnitate),
                                     ct As CancellationToken) As Task(Of PrelucrareRaspuns)
 
+    ''' <summary>
+    ''' Tabloul de asociere al unui angajament, citit DIRECT din bază (felia 0048-04).
+    '''
+    ''' Fără sarcină utilă și fără fază de propunere: operatorul deschide legăturile deja
+    ''' scrise, oricând, fără să fi descărcat nimic. Ancora fiecărui instantaneu este
+    ''' <c>IDRH</c>, cheia reală — nu indicele de rând din <c>TabelIstoric</c>, care are
+    ''' sens doar cât timp există o sarcină utilă care să-l dea.
+    '''
+    ''' <para>Un angajament fără recepții întoarce 200 cu liste goale, nu 404.</para>
+    ''' </summary>
+    Function GetAsociereAsync(cod As String, ct As CancellationToken) As Task(Of AsociereStare)
+
+    ''' <summary>
+    ''' Aplică un set PARȚIAL de modificări peste legăturile R ▸ H (felia 0048-04).
+    '''
+    ''' O singură fază, o singură tranzacție: aici nu există nimic de derulat înapoi și
+    ''' nimic de re-rulat. <paramref name="amprenta"/> rămâne, fiindcă două sesiuni pot
+    ''' edita același angajament în același timp.
+    '''
+    ''' <para>Două refuzuri sosesc ca <see cref="ApiException"/> cu <c>Reason</c> completat:
+    ''' <c>STARE_MODIFICATA</c> (baza s-a mișcat — se reîncarcă tabloul) și
+    ''' <c>INSTANTANEU_BLOCAT</c> (o comandă atinge o legătură pe care o ordonanțare sau
+    ''' plățile ulterioare au înghețat-o). În ambele cazuri nu s-a scris nimic.</para>
+    ''' </summary>
+    Function SalveazaLegaturiAsync(cod As String,
+                                   amprenta As String,
+                                   comenzi As IReadOnlyList(Of ComandaAsociere),
+                                   ct As CancellationToken) As Task(Of AsociereRezultat)
+
     Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T)
     Function PostAsync(Of TRequest, TResponse)(relativeUrl As String, payload As TRequest, ct As CancellationToken) As Task(Of TResponse)
 End Interface

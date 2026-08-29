@@ -540,6 +540,9 @@ Public NotInheritable Class PostPropunereReceptie
     Public Property descriere As String
     Public Property sters As Boolean
     Public Property reconstituit As Boolean
+    ' F28 — al treilea steag, distinct de celelalte doua. Serverul il trimite din
+    ' `citeste_receptii`, folosit de amandoua rutele.
+    Public Property reconstituit_nesigur As Boolean
     Public Property rhr As New List(Of PostPropunereLinieR)()
 End Class
 
@@ -571,4 +574,70 @@ Public NotInheritable Class PostPropunereLinieI
     Public Property cod_ssi As String
     Public Property id_clsf As Integer?
     Public Property valoare As Double
+End Class
+
+' ══════════════════════════════════════════════════════════════════════════════════════
+' Felia 0048-04 — editorul de asociere R <-> H, disponibil ORICAND.
+' Pereche: routes/forexe/asociere.py. Ancora e `idrh`, cheia reala din baza, NU un indice
+' de rand: aici nu exista sarcina utila si nu se deruleaza nimic inapoi.
+' ══════════════════════════════════════════════════════════════════════════════════════
+
+' Corpul de 200 al lui GET /api/forexe/asociere.
+Public NotInheritable Class GetAsociereResponse
+    Public Property cod As String
+    Public Property amprenta As String
+    ' Recepțiile au aceeasi forma ca in propunere — acelasi `citeste_receptii` pe server —
+    ' deci se refolosesc DTO-urile de acolo in loc sa se scrie o a doua copie care ar
+    ' aluneca fata de prima fara sa se vada.
+    Public Property receptii As New List(Of PostPropunereReceptie)()
+    Public Property instantanee As New List(Of GetAsociereInstantaneu)()
+    Public Property plati As New List(Of GetAsocierePlata)()
+End Class
+
+Public NotInheritable Class GetAsociereInstantaneu
+    Public Property idrh As Integer
+    ' Serverul trimite 0 pentru «neasezat» (nu null): aici zero NU poate fi o receptie,
+    ' fiindca `FX_Receptii_R.IDRR` e cheie primara Access si incepe de la 1.
+    Public Property idrr As Integer
+    Public Property idh As Integer
+    Public Property data_h As String
+    Public Property descriere As String
+    Public Property total As Double
+    Public Property tip_receptie As String
+    Public Property stergere As Boolean
+    Public Property ignorat As Boolean
+    Public Property blocat As Boolean
+    Public Property motive As New List(Of String)()
+    Public Property linii As New List(Of PostPropunereLinieI)()
+End Class
+
+Public NotInheritable Class GetAsocierePlata
+    Public Property data_plata As String
+    Public Property suma As Double
+    Public Property nr_op As String
+End Class
+
+' Corpul lui POST /api/forexe/asociere.
+Public NotInheritable Class PostAsociereRequest
+    Public Property cod As String
+    Public Property amprenta As String
+    Public Property comenzi As New List(Of PostAsociereComanda)()
+End Class
+
+Public NotInheritable Class PostAsociereComanda
+    Public Property idrh As Integer
+    Public Property actiune As String
+    ' Nullable, din acelasi motiv ca la decizii: serverul cere EXACT una dintre `idrr` si
+    ' `receptie_noua` pentru asociat/stergere si NICIUNA pentru desprins/ignorat. Un
+    ' Integer nenulabil ar trimite 0, iar 0 ar fi citit ca o tinta, nu ca o tacere.
+    Public Property idrr As Integer?
+    Public Property receptie_noua As String
+End Class
+
+' Corpul de 200 al lui POST /api/forexe/asociere.
+Public NotInheritable Class PostAsociereResponse
+    Public Property cod As String
+    Public Property amprenta As String
+    Public Property scrise As New Dictionary(Of String, Integer)()
+    Public Property avertismente As New List(Of String)()
 End Class

@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.Threading
@@ -63,6 +63,19 @@ Public Class PrelucrareCoordinatorTests
         End Function
 
         ' --- restul contractului: nefolosit aici ---
+        Public Function GetAsociereAsync(cod As String, ct As CancellationToken) _
+            As Task(Of AsociereStare) Implements IApiClient.GetAsociereAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function SalveazaLegaturiAsync(cod As String,
+                                              amprenta As String,
+                                              comenzi As IReadOnlyList(Of ComandaAsociere),
+                                              ct As CancellationToken) As Task(Of AsociereRezultat) _
+            Implements IApiClient.SalveazaLegaturiAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public Function UpsertAngajamenteAsync(dbName As String, rows As IReadOnlyList(Of Angajament),
                                                ct As CancellationToken) As Task(Of String) _
             Implements IApiClient.UpsertAngajamenteAsync

@@ -735,14 +735,32 @@ def _indicatori_instantaneu(inst: dict) -> Set[str]:
 
 
 def valideaza_plasarile(lanturi: Dict[int, List[dict]],
-                        receptii: Dict[int, dict]) -> None:
+                        receptii: Dict[int, dict],
+                        f15_ca_avertisment: bool = False,
+                        avertismente: Optional[List[str]] = None) -> None:
     """
     Toate regulile care pot spune «nu acolo», rulate pe tabloul REZULTAT.
 
     Clientul face veto la momentul plasarii; serverul NU se increde in el. Fiecare
     verificare RIDICA -- nu corecteaza, nu avertizeaza si merge mai departe -- fiindca o
     asociere gresita e tacuta si permanenta (F12).
+
+    `f15_ca_avertisment` (implicit False = purtarea de pana acum, calea de INGESTIE)
+    coboara DOAR F15, capatul de lant, de la veto la semnalare. Il foloseste editorul de
+    asociere de oricand (routes/forexe/asociere.py, felia 0048-04), si nu ca sa fie
+    ingaduitor: acolo se DESPRIND legaturi, iar desprinderea ultimului instantaneu lasa,
+    prin definitie, un lant care nu se mai inchide. Un veto acolo ar face imposibil tocmai
+    lucrul pentru care exista editorul. Fundamentul insusi descrie F15 ca pe un SEMN
+    aratat per recepție (§1.5), iar Access nu il verifica deloc la desprindere.
+
+    F13, F14 si F16 raman vetouri in AMANDOUA cazurile: sunt absolute. O recepție nu poate
+    detine un instantaneu dinainte sa fi existat, un instantaneu nu poate numi indicatori
+    pe care recepția nu ii are, un indicator nu poate disparea din lant.
     """
+    if f15_ca_avertisment and avertismente is None:
+        raise ValueError(
+            "f15_ca_avertisment cere o listă «avertismente» în care să scrie; "
+            "altfel semnalarea s-ar pierde în tăcere.")
     for idrr, lant in lanturi.items():
         rec = receptii[idrr]
         lant = sorted(lant, key=lambda x: (x["data_h"], x["idrh"]))
@@ -793,17 +811,28 @@ def valideaza_plasarile(lanturi: Dict[int, List[dict]],
             # stergere; a-l compara cu starea de ACUM nu inseamna nimic. Receptiile
             # reconstituite sunt mereu in categoria asta.
             continue
+        def _f15(mesaj: str) -> None:
+            """Veto in ingestie, semnalare in editorul de oricand. Vezi docstring-ul."""
+            if f15_ca_avertisment:
+                avertismente.append(mesaj)
+            else:
+                raise DecizieInvalida(mesaj)
+
         if round(ultimul["total"], 2) != round(rec["suma_antet"], 2):
-            raise DecizieInvalida(
+            _f15(
                 f"Recepția {idrr}: ultimul instantaneu ({ultimul['data_h']}) are "
                 f"totalul {ultimul['total']:.2f}, dar recepția valorează acum "
                 f"{rec['suma_antet']:.2f}. Lanțul nu se închide."
             )
+            # In modul VETO randul de sus a ridicat deja. In modul AVERTISMENT se iese
+            # aici in mod deliberat: daca totalul nu se potriveste, nici liniile nu au
+            # cum, iar a doua semnalare ar fi aceeasi veste spusa de doua ori.
+            continue
         val_inst = {l["cod_indicator"]: round(l["valoare"], 2)
                     for l in ultimul["linii"]}
         val_rec = {l["cod_indicator"]: round(l["valoare"], 2) for l in rec["rhr"]}
         if val_inst and val_inst != val_rec:
-            raise DecizieInvalida(
+            _f15(
                 f"Recepția {idrr}: liniile ultimului instantaneu nu se potrivesc cu "
                 f"cele ale recepției. Lanțul nu se închide."
             )

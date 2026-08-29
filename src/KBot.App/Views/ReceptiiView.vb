@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System.Globalization
 Imports System.Text
 Imports System.Threading
@@ -45,6 +45,14 @@ Public Class ReceptiiView
     ' politica de re-login rămâne într-un singur loc, vederea doar o folosește.
     Private ReadOnly _withReauth As Func(Of Func(Of Task(Of ReceptiiInfo)), Task(Of ReceptiiInfo))
 
+    ' Deschiderea editorului de legături R ▸ H (felia 0048-04). Vine de la shell fiindcă
+    ' formularul are nevoie de plasa de re-autentificare pe DOUĂ forme de răspuns, iar
+    ' politica aia trăiește într-un singur loc, în MainForm.
+    '
+    ' Nothing = gazda nu îl oferă. Atunci iconița din antet se STINGE, nu rămâne un buton
+    ' care nu face nimic: un no-op tăcut e mai rău decât un buton lipsă.
+    Private ReadOnly _deschideLegaturi As Action(Of String)
+
     ' Codul angajamentului CERUT ultima dată — vezi stale-guard din LoadAsync (identic cu
     ' Sumar/Rezervări): operatorul parcurge arborele rapid, iar un răspuns depășit se aruncă.
     Private _requestedCod As String
@@ -61,14 +69,58 @@ Public Class ReceptiiView
     Private _panel1MinSizeDesfasurat As Integer
 
     Public Sub New(apiClient As IApiClient,
-                   withReauth As Func(Of Func(Of Task(Of ReceptiiInfo)), Task(Of ReceptiiInfo)))
+                   withReauth As Func(Of Func(Of Task(Of ReceptiiInfo)), Task(Of ReceptiiInfo)),
+                   Optional deschideLegaturi As Action(Of String) = Nothing)
         If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
         If withReauth Is Nothing Then Throw New ArgumentNullException(NameOf(withReauth))
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
+        _deschideLegaturi = deschideLegaturi
+        If _deschideLegaturi Is Nothing Then
+            tree.HeaderRightIcon = Nothing
+            tree.HeaderRightIconTooltip = String.Empty
+        End If
         'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
+    End Sub
+
+    ''' <summary>
+    ''' Iconița din antetul arborelui deschide editorul de legături recepție ▸ instantaneu.
+    '''
+    ''' <para>ORICÂND, nu doar după o descărcare — cerința operatorului din 29.08.2026, și
+    ''' totodată ce făcea și Access prin gazda `frmFX_ASOC`. Are nevoie doar de angajamentul
+    ''' selectat; dacă nu e niciunul, spune asta în loc să deschidă o fereastră goală.</para>
+    ''' </summary>
+    Private Sub tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
+        Try
+            If _deschideLegaturi Is Nothing Then Return
+            If String.IsNullOrWhiteSpace(_requestedCod) Then
+                MessageBox.Show(Me, "Selectați întâi un angajament din arbore.",
+                                "K-BOT — Legăturile recepțiilor",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            _deschideLegaturi(_requestedCod)
+        Catch ex As Exception
+            ' Graniță de UI: se loghează și se înghite — un throw dintr-un tratator de eveniment
+            ' ar cădea pe firul de UI.
+            GlobalErrorLog.Write("ReceptiiView.tree_HeaderRightIconClicked", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Reîncarcă recepțiile angajamentului curent. O cheamă shell-ul după ce editorul de
+    ''' legături a salvat ceva: legăturile schimbate mută anteturile între recepții, deci ce
+    ''' se vede pe ecran nu mai e adevărat.
+    ''' </summary>
+    Public Sub Reincarca()
+        Try
+            If String.IsNullOrWhiteSpace(_requestedCod) Then Return
+            LoadAsync(_requestedCod)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReceptiiView.Reincarca", ex)
+        End Try
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements IAngajamentView.ViewKey

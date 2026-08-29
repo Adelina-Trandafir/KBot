@@ -252,6 +252,11 @@ Partial Public Class AdvancedTreeControl
             _autoTooltipBack = p.SurfaceColor
             _autoTooltipFore = p.TextColor
 
+            ' Ținta tragerii (felia 0048-04): accentul când primește, eroarea când refuză.
+            ' Amândouă sunt „auto" — o culoare aleasă în designer nu e Empty și câștigă.
+            _autoDragHighlight = p.AccentColor
+            _autoDragForbidden = p.ErrorColor
+
             ' MyBase, nu Me: scrisul propriu al temei NU are voie să treacă drept alegere a
             ' operatorului (vezi ShouldSerializeBackColor).
             _autoNodeBack = p.SurfaceAltColor

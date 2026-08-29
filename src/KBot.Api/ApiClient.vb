@@ -1294,6 +1294,14 @@ Public Class ApiClient
     ' server (care respinge cu 400); aici se trimite doar ce a fost pus, fara sa se
     ' fabrice nimic: `Idrr = 0` inseamna «niciuna» si devine null, nu zero.
     Private Shared Function CatreFir(d As DecizieAsociere) As PostPrelucrareDecizie
+        ' `Desprins` exista doar in editorul de oricand (felia 0048-04): in ingestie nimic
+        ' nu e inca atasat, deci nu e nimic de desprins, iar serverul nici nu cunoaste
+        ' numele pe calea aceea. Se refuza aici, nu la server, ca mesajul sa spuna DE CE.
+        If d.Actiune = ActiuneAsociere.Desprins Then
+            Throw New ArgumentException(
+                "Acțiunea «desprins» nu are sens în ingestie: acolo niciun instantaneu " &
+                "nu este încă atașat. Ea aparține editorului de asociere.", NameOf(d))
+        End If
         Dim pe As New PostPrelucrareDecizie() With {
             .rand_istoric = d.RandIstoric,
             .data_h = d.DataH.ToString("yyyy-MM-ddTHH:mm:ss", Globalization.CultureInfo.InvariantCulture),
@@ -1304,18 +1312,194 @@ Public Class ApiClient
         Return pe
     End Function
 
-    ' Numele de pe fir sunt ASCII pe amandoua laturile (regula 0) si sunt exact cele patru
-    ' pe care le accepta routes/forexe/prelucrare_asociere.py. O valoare necunoscuta de
-    ' enum ridica — fara implicit tacut.
+    ' Numele de pe fir sunt ASCII pe amandoua laturile (regula 0). Primele patru sunt cele
+    ' pe care le accepta routes/forexe/prelucrare_asociere.py; a cincea, «desprins»,
+    ' traieste doar in routes/forexe/asociere.py si e refuzata in `CatreFir`, pe calea de
+    ' ingestie. O valoare necunoscuta de enum ridica — fara implicit tacut.
     Private Shared Function NumeActiune(a As ActiuneAsociere) As String
         Select Case a
             Case ActiuneAsociere.Asociat : Return "asociat"
             Case ActiuneAsociere.Ignorat : Return "ignorat"
             Case ActiuneAsociere.Stergere : Return "stergere"
             Case ActiuneAsociere.Reconstituire : Return "reconstituire"
+            Case ActiuneAsociere.Desprins : Return "desprins"
             Case Else
                 Throw New ArgumentException($"Acțiune necunoscută: {a}", NameOf(a))
         End Select
+    End Function
+
+    ' ── GET / POST /api/forexe/asociere (editorul R ▸ H de ORICAND, felia 0048-04) ────
+    ' Un singur parametru la citire: cod = CodAngajament, escapat in query string. NU se
+    ' trimite baza (o citeste serverul din sesiune). Un angajament fara recepții intoarce
+    ' 200 cu liste goale, deci aici rezulta un AsociereStare gol, nu o exceptie.
+    Public Async Function GetAsociereAsync(cod As String, ct As CancellationToken) _
+        As Task(Of AsociereStare) Implements IApiClient.GetAsociereAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim url As String = $"/api/forexe/asociere?cod={Uri.EscapeDataString(cod)}"
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea asocierii recepțiilor", CInt(resp.StatusCode))
+                    End If
+                    Return CitesteAsociere(respText, cod)
+                End Using
+            End Using
+        Catch ex As ApiException
+            ' 401/HTTP tipat, tratat de apelant (WithReauth) — nu logăm.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetAsociereAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function SalveazaLegaturiAsync(cod As String,
+                                                amprenta As String,
+                                                comenzi As IReadOnlyList(Of ComandaAsociere),
+                                                ct As CancellationToken) As Task(Of AsociereRezultat) Implements IApiClient.SalveazaLegaturiAsync
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+            If String.IsNullOrWhiteSpace(amprenta) Then
+                Throw New ArgumentException("Amprenta tabloului este obligatorie.", NameOf(amprenta))
+            End If
+            If comenzi Is Nothing Then Throw New ArgumentNullException(NameOf(comenzi))
+            If comenzi.Count = 0 Then
+                ' O salvare fara nicio comanda nu e o salvare partiala, e o greseala de
+                ' apelant. Serverul o refuza si el; se opreste aici ca sa nu plece degeaba.
+                Throw New ArgumentException("Nu s-a cerut nicio modificare.", NameOf(comenzi))
+            End If
+
+            Dim req As New PostAsociereRequest() With {.cod = cod, .amprenta = amprenta}
+            For Each c As ComandaAsociere In comenzi
+                Dim pc As New PostAsociereComanda() With {
+                    .idrh = c.Idrh, .actiune = NumeActiune(c.Actiune)}
+                ' `Idrr = 0` inseamna «niciuna» si devine null, nu zero — la fel ca la
+                ' decizii. Zero ar fi citit ca o tinta, nu ca o tacere.
+                If c.Idrr > 0 Then pc.idrr = c.Idrr
+                If Not String.IsNullOrWhiteSpace(c.ReceptieNoua) Then pc.receptie_noua = c.ReceptieNoua
+                req.comenzi.Add(pc)
+            Next
+
+            Dim body As String = JsonSerializer.Serialize(req, _jsonFaraNull)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/asociere")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+
+                    ' STARE_MODIFICATA si INSTANTANEU_BLOCAT ajung ca EXCEPTIE cu `Reason`
+                    ' completat (BuildApiException il extrage): in niciunul dintre cazuri
+                    ' nu exista ceva de raspuns aici, doar de reincarcat tabloul.
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "salvarea legăturilor", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As PostAsociereResponse =
+                        JsonSerializer.Deserialize(Of PostAsociereResponse)(respText, _json)
+                    Dim rez As New AsociereRezultat() With {.CodAngajament = cod}
+                    If payload Is Nothing Then Return rez
+
+                    If Not String.IsNullOrEmpty(payload.cod) Then rez.CodAngajament = payload.cod
+                    rez.Amprenta = If(payload.amprenta, String.Empty)
+                    If payload.scrise IsNot Nothing Then
+                        For Each kvp In payload.scrise
+                            rez.Scrise(kvp.Key) = kvp.Value
+                        Next
+                    End If
+                    If payload.avertismente IsNot Nothing Then rez.Avertismente.AddRange(payload.avertismente)
+                    Return rez
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.SalveazaLegaturiAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Corpul de 200 al citirii -> POCO-ul de domeniu.
+    Private Shared Function CitesteAsociere(respText As String, cod As String) As AsociereStare
+        Dim payload As GetAsociereResponse =
+            JsonSerializer.Deserialize(Of GetAsociereResponse)(respText, _json)
+        Dim s As New AsociereStare() With {.CodAngajament = cod}
+        If payload Is Nothing Then Return s
+
+        If Not String.IsNullOrEmpty(payload.cod) Then s.CodAngajament = payload.cod
+        s.Amprenta = If(payload.amprenta, String.Empty)
+
+        If payload.receptii IsNot Nothing Then
+            For Each r As PostPropunereReceptie In payload.receptii
+                Dim rec As New ReceptiePropusa() With {
+                    .Idrr = r.idrr,
+                    .DataR = CitesteData(r.data_r),
+                    .SumaAntet = r.suma_antet,
+                    .Descriere = If(r.descriere, String.Empty),
+                    .Sters = r.sters,
+                    .Reconstituit = r.reconstituit,
+                    .ReconstituitNesigur = r.reconstituit_nesigur}
+                If r.rhr IsNot Nothing Then
+                    For Each l As PostPropunereLinieR In r.rhr
+                        rec.Rhr.Add(New LinieReceptie() With {
+                            .CodIndicator = If(l.cod_indicator, String.Empty),
+                            .CodAi = If(l.cod_ai, String.Empty),
+                            .CodSsi = If(l.cod_ssi, String.Empty),
+                            .CreditBugetar = l.credit_bugetar,
+                            .Valoare = l.valoare,
+                            .ValoareN = l.valoare_n})
+                    Next
+                End If
+                s.Receptii.Add(rec)
+            Next
+        End If
+
+        If payload.instantanee IsNot Nothing Then
+            For Each i As GetAsociereInstantaneu In payload.instantanee
+                Dim inst As New InstantaneuLegat() With {
+                    .Idrh = i.idrh,
+                    .Idrr = i.idrr,
+                    .Idh = i.idh,
+                    .DataH = CitesteData(i.data_h),
+                    .Descriere = If(i.descriere, String.Empty),
+                    .Total = i.total,
+                    .TipReceptie = If(i.tip_receptie, String.Empty),
+                    .Stergere = i.stergere,
+                    .Ignorat = i.ignorat,
+                    .Blocat = i.blocat}
+                If i.motive IsNot Nothing Then inst.Motive.AddRange(i.motive)
+                If i.linii IsNot Nothing Then
+                    For Each l As PostPropunereLinieI In i.linii
+                        inst.Linii.Add(New LinieInstantaneu() With {
+                            .CodIndicator = If(l.cod_indicator, String.Empty),
+                            .CodAi = If(l.cod_ai, String.Empty),
+                            .CodSsi = If(l.cod_ssi, String.Empty),
+                            .IdClsf = If(l.id_clsf.HasValue, l.id_clsf.Value, 0),
+                            .Valoare = l.valoare})
+                    Next
+                End If
+                s.Instantanee.Add(inst)
+            Next
+        End If
+
+        If payload.plati IsNot Nothing Then
+            For Each p As GetAsocierePlata In payload.plati
+                s.Plati.Add(New PlataAsociere() With {
+                    .DataPlata = CitesteData(p.data_plata),
+                    .Suma = p.suma,
+                    .NrOp = If(p.nr_op, String.Empty)})
+            Next
+        End If
+
+        Return s
     End Function
 
     ' Corpul de 200 al propunerii -> POCO-ul de domeniu.
@@ -1348,7 +1532,8 @@ Public Class ApiClient
                     .SumaAntet = r.suma_antet,
                     .Descriere = If(r.descriere, String.Empty),
                     .Sters = r.sters,
-                    .Reconstituit = r.reconstituit}
+                    .Reconstituit = r.reconstituit,
+                    .ReconstituitNesigur = r.reconstituit_nesigur}
                 If r.rhr IsNot Nothing Then
                     For Each l As PostPropunereLinieR In r.rhr
                         rec.Rhr.Add(New LinieReceptie() With {

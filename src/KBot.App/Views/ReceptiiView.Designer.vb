@@ -87,6 +87,8 @@ Partial Class ReceptiiView
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
+        tree.HeaderRightIcon = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
+        tree.HeaderRightIconTooltip = "Legăturile recepțiilor" & vbLf & "Deschide editorul de legături recepție ▸ instantaneu de istoric." & vbLf & "Se poate deschide oricând, nu doar după o descărcare. Legăturile pe care s-a construit o ordonanțare sau peste care s-au calculat plăți rămân vizibile, dar nu se mai pot muta."
         tree.HeaderSearchIconTooltip = "Caută în arbore." & vbLf & "ESC golește căutarea și închide banda."
         tree.HeaderSeparatorColor = Color.Gainsboro
         tree.HeaderSeparatorWidth = 2

@@ -77,6 +77,10 @@ Partial Public Class AdvancedTreeControl
         ' ── 2b. Column headers (TreeListView) — deseneaza DUPA items, DUPA header ──
         If _treeListViewEnabled AndAlso _treeListView Then DrawColumnHeaders(e.Graphics)
 
+        ' ── 2c. Ținta tragerii (felia 0048-04) — peste rânduri, sub bordură. Își pune singură
+        ' clip-ul pe zona de noduri, deci nu poate scrie peste antet sau subsol.
+        DrawDropTarget(e.Graphics)
+
         ' ── 3. Scrollbar visibility (BeginInvoke — nu din interiorul OnPaint) ──
         Dim viewport As Integer = Math.Max(1, zonaNoduri)
         Dim needsScroll As Boolean = contentH > viewport
@@ -154,6 +158,12 @@ Partial Public Class AdvancedTreeControl
         End If
 
         Dim it = HitTestItem(e.Location)
+
+        ' Se reține DE UNDE s-ar putea porni o tragere (felia 0048-04). Nu pornește nimic:
+        ' pragul sistemului se măsoară abia în OnMouseMove, altfel orice clic cu un pixel de
+        ' tremur ar deveni o tragere.
+        ArmDrag(it, e.Location, e.Button)
+
         If it Is Nothing Then
             pSelectedItem = Nothing
             Me.Invalidate()
@@ -379,6 +389,9 @@ Partial Public Class AdvancedTreeControl
       Try
         MyBase.OnMouseUp(e)
 
+        ' Apăsarea s-a terminat fără să se depărteze: nu mai e nimic de tras de aici.
+        _dragCandidate = Nothing
+
         Dim it = HitTestItem(e.Location)
 
         ' --- Logică Zonă Moartă ---
@@ -486,6 +499,12 @@ Partial Public Class AdvancedTreeControl
     Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
       Try
         MyBase.OnMouseMove(e)
+
+        ' Tragerea, dacă butonul stâng s-a depărtat destul de locul apăsării (felia 0048-04).
+        ' MaybeBeginDrag intră în bucla MODALĂ a sistemului și se întoarce abia la aruncare
+        ' sau la anulare — de-asta se iese aici: survolarea și eticheta de sub cursor descriu
+        ' o stare de dinaintea buclei și nu mai au ce spune despre cea de acum.
+        If MaybeBeginDrag(e.Location, e.Button) Then Return
 
         ' Subsolul își ia întâi partea (hover pe buton + eticheta plutitoare a arborelui strâns);
         ' cursorul în bandă înseamnă că niciun nod nu e survolat.

@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.Threading
@@ -48,6 +48,19 @@ Public Class RezervariViewTests
                                                alegeri As IReadOnlyList(Of AlegereUnitate),
                                                ct As CancellationToken) As Task(Of PrelucrareRaspuns) _
             Implements IApiClient.SalveazaAsociereaAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function GetAsociereAsync(cod As String, ct As CancellationToken) _
+            As Task(Of AsociereStare) Implements IApiClient.GetAsociereAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function SalveazaLegaturiAsync(cod As String,
+                                              amprenta As String,
+                                              comenzi As IReadOnlyList(Of ComandaAsociere),
+                                              ct As CancellationToken) As Task(Of AsociereRezultat) _
+            Implements IApiClient.SalveazaLegaturiAsync
             Throw New NotSupportedException()
         End Function
 
