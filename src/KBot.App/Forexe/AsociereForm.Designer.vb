@@ -72,10 +72,8 @@ Partial Class AsociereForm
         treeLant.Dock = DockStyle.Fill
         treeLant.DragEnabled = True
         treeLant.ExpanderSize = 10
-        treeLant.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         treeLant.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         treeLant.HeaderCaption = " RECEPȚII ȘI LANȚURILE LOR"
-        treeLant.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         treeLant.HeaderHeight = 26
         treeLant.HeaderIconSize = New Size(16, 16)
         treeLant.HeaderVisible = True
@@ -93,10 +91,8 @@ Partial Class AsociereForm
         treeLibere.Dock = DockStyle.Fill
         treeLibere.DragEnabled = True
         treeLibere.ExpanderSize = 10
-        treeLibere.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         treeLibere.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         treeLibere.HeaderCaption = " INSTANTANEE NEAȘEZATE"
-        treeLibere.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         treeLibere.HeaderHeight = 26
         treeLibere.HeaderIconSize = New Size(16, 16)
         treeLibere.HeaderVisible = True

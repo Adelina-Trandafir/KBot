@@ -24,7 +24,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.0.22.0</FileVersion>
+    <FileVersion>1.0.23.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -87,6 +87,13 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Fonts shipped with the application; registered at startup by FontLoader (KBot.Theming).
+         A wildcard, so the build does not fail when the .ttf files have not been dropped in yet. -->
+    <None Include="Fonts\*.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fonts\*.otf" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

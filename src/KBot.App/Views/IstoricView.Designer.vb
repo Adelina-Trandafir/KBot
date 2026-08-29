@@ -139,7 +139,6 @@ Partial Class IstoricView
         tree.CollapseButtonTooltip = "Strânge arborele la o bandă îngustă." & vbLf & "Rândurile se citesc atunci prin eticheta care iese la survolare."
         tree.Dock = DockStyle.Fill
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
-        tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCaption = "Perioade"
         tree.FooterCaptionFont = New Font("Consolas", 8F, FontStyle.Bold)
@@ -155,7 +154,6 @@ Partial Class IstoricView
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " ISTORIC"
-        tree.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         tree.HeaderForeColor = SystemColors.ActiveCaptionText
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
@@ -210,9 +208,7 @@ Partial Class IstoricView
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Clasificația"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clsf"
@@ -226,7 +222,6 @@ Partial Class IstoricView
         KBotDataColumn2.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn2.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn2.HeaderText = "Tipul"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "tip"
@@ -238,7 +233,6 @@ Partial Class IstoricView
         KBotDataColumn3.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn3.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn3.HeaderText = "Data"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "data"
@@ -250,7 +244,6 @@ Partial Class IstoricView
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn4.HeaderText = "Descriere"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "desc"
@@ -269,7 +262,6 @@ Partial Class IstoricView
         grid.FrozenColumnCount = 1
         grid.HeaderBackColor = SystemColors.Control
         grid.HeaderColumnSeparatorColor = Color.Gainsboro
-        grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 0)
@@ -377,7 +369,6 @@ Partial Class IstoricView
         gridValori.Dock = DockStyle.Fill
         gridValori.HeaderBackColor = SystemColors.Control
         gridValori.HeaderColumnSeparatorColor = Color.Gainsboro
-        gridValori.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         gridValori.HeaderForeColor = SystemColors.ActiveCaptionText
         gridValori.HeaderHeight = 25
         gridValori.HeaderSeparatorColor = Color.Gainsboro

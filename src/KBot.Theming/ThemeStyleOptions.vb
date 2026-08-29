@@ -35,6 +35,60 @@ Public NotInheritable Class ThemeStyleOptions
     ''' <summary>Dimensiunea fontului de bază (pt). 0 sau negativ => nu schimbă fontul.</summary>
     Public Property BaseFontSize As Single = 0F
 
+    ''' <summary>
+    ''' Recolour monochrome icons from the palette instead of drawing them as authored.
+    '''
+    ''' <para>Off everywhere except Modern, and deliberately so: the K-BOT icon set is not all
+    ''' monochrome, and flattening a multi-coloured icon to one palette colour would lose the very
+    ''' thing that makes it recognisable. A scheme opts in when its artwork is monochrome.</para>
+    ''' </summary>
+    Public Property TintIcons As Boolean = False
+
+    ' ── Carduri si geometrie de rand (felia 0049) ─────────────────────────────
+    ' Every one of these is 0 / "no opinion" by default, which is exactly today's output:
+    ' a scheme written before this slice deserializes into the neutral behaviour.
+
+    ''' <summary>
+    ''' Raza colturilor unui card, in px logici @96dpi. 0 = card dreptunghiular, si atunci
+    ''' pictura ia calea PLATA: nicio cale rotunjita, niciun antialias, niciun colt umplut.
+    ''' Distincta de <see cref="CornerRadius"/>, care e raza CONTROALELOR (butoane, inputuri,
+    ''' randuri) — un card vrea un colt mult mai generos decat un buton.
+    ''' </summary>
+    Public Property CardRadius As Integer = 0
+
+    ''' <summary>
+    ''' Cat de departe cade umbra unui card, in px logici. 0 = fara umbra, si atunci nu se
+    ''' aloca si nu se deseneaza absolut nimic — pasul de umbra e sarit din radacina.
+    ''' </summary>
+    Public Property CardShadow As Integer = 0
+
+    ''' <summary>
+    ''' Cat de apasata e umbra, 0..100 (procent de opacitate la marginea cardului, de unde
+    ''' scade spre exterior). Traieste separat de <c>Palette.Shadow</c> fiindca paleta se
+    ''' serializeaza ca "#RRGGBB" si nu are canal alfa — vezi <see cref="ColorHex"/>.
+    ''' </summary>
+    Public Property CardShadowOpacity As Integer = 0
+
+    ''' <summary>
+    ''' Aerul pe care motorul il lasa in jurul cardurilor, in px logici, scriindu-l ca
+    ''' <c>Padding</c> pe PARINTELE lor. 0 = nu atinge padding-ul parintelui, deci suprafetele
+    ''' autorite in designer raman exact unde sunt. Fara el, un card lipit de marginea
+    ''' parintelui n-are unde sa-si arunce umbra.
+    ''' </summary>
+    Public Property CardGutter As Integer = 0
+
+    ''' <summary>Inaltimea unui element din bara de navigare, px logici. 0 = cea a controlului.</summary>
+    Public Property NavItemHeight As Integer = 0
+
+    ''' <summary>Inaltimea unui rand de arbore/lista, px logici. 0 = cea a controlului.</summary>
+    Public Property ListRowHeight As Integer = 0
+
+    ''' <summary>Inaltimea unui rand de grila, px logici. 0 = cea a controlului.</summary>
+    Public Property GridRowHeight As Integer = 0
+
+    ''' <summary>Inaltimea benzii de antet a grilei, px logici. 0 = cea a controlului.</summary>
+    Public Property GridHeaderHeight As Integer = 0
+
     ''' <summary>Padding intern pentru inputuri/butoane (serializat ca 4 întregi).</summary>
     Public Property ControlPadding As PaddingDto = New PaddingDto()
 

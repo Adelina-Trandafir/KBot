@@ -32,13 +32,16 @@ Public Class BuiltInSchemesTests
     End Sub
 
     <Fact>
-    Public Sub Modern_HasRoundedOwnerDrawnButtons_AndVariableFont()
+    Public Sub Modern_HasRoundedOwnerDrawnButtons_AndShippedFont()
         Dim s = BuiltInSchemes.Modern()
         Assert.False(s.IsDark)
         Assert.False(s.Style.UseSystemColors)
         Assert.True(s.Style.CornerRadius > 0)
         Assert.Equal(ButtonRenderStyle.ModernOwnerDrawn, s.Style.ButtonRender)
-        Assert.Equal("Segoe UI Variable Text", s.Style.BaseFontName)
+        ' Slice 0049 swapped "Segoe UI Variable Text" for Inter, which now ships in …\Fonts and is
+        ' registered at startup. The name is part of the contract: FontLoader must register the
+        ' family under exactly this name or the scheme silently falls back.
+        Assert.Equal("Inter", s.Style.BaseFontName)
         Assert.True(s.Style.FocusAccent)
     End Sub
 

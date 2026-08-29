@@ -59,6 +59,8 @@ Public Module BuiltInSchemes
             .[Error] = "#BE1E1E", .Success = "#009933", .Warning = "#E18C00",
             .FocusRing = "#0078D7", .DisabledText = "#6D6D6D"
         }
+        p.ApplyNeutralCardDefaults()
+
         Dim s As New ThemeStyleOptions With {
             .UseSystemColors = True,
             .FlatControls = False,
@@ -102,6 +104,8 @@ Public Module BuiltInSchemes
             .[Error] = "#F07878", .Success = "#3FB950", .Warning = "#E18C00",
             .FocusRing = "#007ACC", .DisabledText = "#737373"
         }
+        p.ApplyNeutralCardDefaults()
+
         Dim s As New ThemeStyleOptions With {
             .UseSystemColors = False,
             .FlatControls = True,
@@ -118,32 +122,64 @@ Public Module BuiltInSchemes
     End Function
 
     ''' <summary>
-    ''' Modern — paletă light modernă, controale plate, colțuri rotunjite, Segoe UI
-    ''' Variable, focus accent. Payload-ul vizual care omoară look-ul „1998”.
+    ''' Modern — rebuilt from the ground up in slice 0049, against the approved mockup: white
+    ''' cards floating on a grey-blue canvas, generous corners, a low shadow, a livelier blue and
+    ''' taller rows.
+    '''
+    ''' <para><b>What is new</b>: the card slots
+    ''' (<c>Canvas</c>/<c>Card</c>/<c>CardBorder</c>/<c>Shadow</c>) and the card and row geometry
+    ''' in <see cref="ThemeStyleOptions"/>. The other three schemes receive those NEUTRAL (see
+    ''' <c>ApplyNeutralCardDefaults</c>), so nothing in this slice touches them.</para>
+    '''
+    ''' <para><b>The numbers are READ OFF THE MOCKUP, at 100%.</b> They are a starting point, not
+    ''' a measurement — and they all live in the scheme precisely so that tuning them later is an
+    ''' edit in the options window rather than a code change.</para>
+    '''
+    ''' <para><b>The font.</b> Inter ships with the application in <c>…\Fonts</c> and is registered
+    ''' at startup on BOTH GDI paths (see <see cref="FontLoader"/>). A missing file is not an
+    ''' error: GDI falls back to the default font and the application starts normally.</para>
     ''' </summary>
     Public Function Modern() As ThemeScheme
         Dim p As New ThemePalette With {
-            .Surface = "#FAFAFA", .SurfaceAlt = "#FFFFFF",
-            .Text = "#1E1E1E", .TextDim = "#6E6E6E", .Border = "#E2E2E2",
-            .InputBack = "#FFFFFF", .InputText = "#1E1E1E", .InputBorder = "#CCCCCC",
-            .ButtonBack = "#F3F3F3", .ButtonBorder = "#D0D0D0",
-            .ButtonHover = "#E8F1FB", .ButtonPressed = "#CCE4F7", .ButtonText = "#1E1E1E",
-            .Accent = "#185FA5", .AccentText = "#FFFFFF", .AccentHover = "#378ADD",
-            .TabAccent = "#185FA5", .TabInactive = "#ECECEC",
-            .[Error] = "#C42B1C", .Success = "#0F7B0F", .Warning = "#C07000",
-            .FocusRing = "#185FA5", .DisabledText = "#A0A0A0"
+            .Surface = "#F4F6FA", .SurfaceAlt = "#FFFFFF",
+            .Text = "#1E293B", .TextDim = "#64748B", .Border = "#E6EAF0",
+            .InputBack = "#FFFFFF", .InputText = "#1E293B", .InputBorder = "#CBD5E1",
+            .ButtonBack = "#F1F5F9", .ButtonBorder = "#CBD5E1",
+            .ButtonHover = "#EAF1FE", .ButtonPressed = "#DBE7FD", .ButtonText = "#1E293B",
+            .Accent = "#2563EB", .AccentText = "#FFFFFF", .AccentHover = "#3B82F6",
+            .TabAccent = "#2563EB", .TabInactive = "#EDF0F5",
+            .[Error] = "#DC2626", .Success = "#22C55E", .Warning = "#F59E0B",
+            .FocusRing = "#2563EB", .DisabledText = "#94A3B8",
+            .Canvas = "#F4F6FA",
+            .Card = "#FFFFFF",
+            .CardBorder = "#E6EAF0",
+            .Shadow = "#0F172A",
+            .NavSelectedBack = "#EAF1FE",
+            .HeaderBand = "#FFFFFF",
+            .RowSeparator = "#EDF0F5",
+            .DotOk = "#22C55E",
+            .DotIdle = "#94A3B8"
         }
         Dim s As New ThemeStyleOptions With {
             .UseSystemColors = False,
             .FlatControls = True,
             .ButtonRender = ButtonRenderStyle.ModernOwnerDrawn,
             .CornerRadius = 8,
-            .BaseFontName = "Segoe UI Variable Text",
-            .BaseFontSize = 9.0F,
+            .BaseFontName = "Inter",
+            .BaseFontSize = 9.75F,
             .ControlPadding = New PaddingDto(12, 8, 12, 8),
             .FocusAccent = True,
             .DarkTitleBar = False,
-            .OwnerDrawTabs = False
+            .OwnerDrawTabs = False,
+            .CardRadius = 14,
+            .CardShadow = 10,
+            .CardShadowOpacity = 6,
+            .CardGutter = 12,
+            .NavItemHeight = 44,
+            .ListRowHeight = 34,
+            .GridRowHeight = 40,
+            .GridHeaderHeight = 44,
+            .TintIcons = True
         }
         Return New ThemeScheme(ModernName, False, p, s)
     End Function
@@ -175,6 +211,8 @@ Public Module BuiltInSchemes
             .[Error] = "#D62828", .Success = "#2B9348", .Warning = "#F08C00",
             .FocusRing = "#2F6FED", .DisabledText = "#97A3B6"
         }
+        p.ApplyNeutralCardDefaults()
+
         Dim s As New ThemeStyleOptions With {
             .UseSystemColors = False,
             .FlatControls = False,

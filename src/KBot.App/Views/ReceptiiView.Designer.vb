@@ -64,10 +64,8 @@ Partial Class ReceptiiView
         tree.DynamicColumns = False
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
         tree.ExpanderSize = 10
-        tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCaption = "Actualizează"
-        tree.FooterCaptionFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
@@ -82,7 +80,6 @@ Partial Class ReceptiiView
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " RECEPȚII"
-        tree.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.HeaderForeColor = Color.Black
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
@@ -157,9 +154,7 @@ Partial Class ReceptiiView
         KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn1.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Clasificație"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clsf"
@@ -172,9 +167,7 @@ Partial Class ReceptiiView
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn2.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn2.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.HeaderText = "Descriere"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "descriere"
@@ -184,11 +177,9 @@ Partial Class ReceptiiView
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn3.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn3.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.DecimalPlaces = 2
         KBotDataColumn3.Format = KBotFormat.Standard
         KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.HeaderText = "Valoare"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "valoare"
@@ -207,7 +198,6 @@ Partial Class ReceptiiView
         grid.FooterBackColor = SystemColors.Control
         grid.FooterCaption = "TOTALURI"
         grid.FooterColumnSeparatorColor = Color.Gainsboro
-        grid.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FooterHeight = 30
         grid.FooterIconSize = New Size(14, 14)
@@ -216,7 +206,6 @@ Partial Class ReceptiiView
         grid.FrozenColumnCount = 1
         grid.HeaderBackColor = SystemColors.Control
         grid.HeaderColumnSeparatorColor = Color.Gainsboro
-        grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 0)

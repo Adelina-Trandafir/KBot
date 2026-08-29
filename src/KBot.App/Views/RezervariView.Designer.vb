@@ -66,10 +66,8 @@ Partial Class RezervariView
         tree.DynamicColumns = False
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
         tree.ExpanderSize = 10
-        tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCaption = "Actualizează"
-        tree.FooterCaptionFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
@@ -84,7 +82,6 @@ Partial Class RezervariView
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " REZERVĂRI"
-        tree.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.HeaderForeColor = Color.Black
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
@@ -161,9 +158,7 @@ Partial Class RezervariView
         KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn1.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Clasificație"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clsf"
@@ -176,11 +171,9 @@ Partial Class RezervariView
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn2.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn2.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn2.DecimalPlaces = 2
         KBotDataColumn2.Format = KBotFormat.Standard
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.HeaderText = "Credit Bugetar"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "credit_bug"
@@ -192,11 +185,9 @@ Partial Class RezervariView
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn3.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn3.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn3.DecimalPlaces = 2
         KBotDataColumn3.Format = KBotFormat.Standard
         KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.HeaderText = "Rezervare Inițială"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "r_initiala"
@@ -209,11 +200,9 @@ Partial Class RezervariView
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn4.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn4.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn4.DecimalPlaces = 2
         KBotDataColumn4.Format = KBotFormat.Standard
         KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn4.HeaderText = "Rezervare Curentă"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "r_valoare"
@@ -225,11 +214,9 @@ Partial Class RezervariView
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn5.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn5.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn5.DecimalPlaces = 2
         KBotDataColumn5.Format = KBotFormat.Standard
         KBotDataColumn5.FormatString = Nothing
-        KBotDataColumn5.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn5.HeaderText = "Rezervare Definitivă"
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "r_definitiva"
@@ -249,7 +236,6 @@ Partial Class RezervariView
         grid.FooterBackColor = SystemColors.Control
         grid.FooterCaption = "TOTALURI"
         grid.FooterColumnSeparatorColor = Color.Gainsboro
-        grid.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FooterHeight = 30
         grid.FooterSeparatorColor = Color.Gainsboro
@@ -257,7 +243,6 @@ Partial Class RezervariView
         grid.FrozenColumnCount = 1
         grid.HeaderBackColor = SystemColors.Control
         grid.HeaderColumnSeparatorColor = Color.Gainsboro
-        grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 0)

@@ -17,6 +17,19 @@ Public NotInheritable Class ThemePalette
     Public Property TextDim As String = "#737373"
     Public Property Border As String = "#B4B4B4"
 
+    ' ── Carduri (felia 0049) ──────────────────────────────────────────────────
+    ' Modern paints floating cards on a tinted canvas. On the neutral schemes these slots
+    ' point at the ones already in use, so their output does not change.
+    Public Property Canvas As String = "#F0F0F0"           ' suprafata pe care stau cardurile
+    Public Property Card As String = "#FFFFFF"              ' umplerea cardului
+    Public Property CardBorder As String = "#B4B4B4"        ' conturul de 1px al cardului
+    Public Property Shadow As String = "#0F172A"            ' culoarea umbrei (intensitatea = Style.CardShadowOpacity)
+    Public Property NavSelectedBack As String = "#E5F1FB"   ' fundalul elementului de navigare selectat
+    Public Property HeaderBand As String = "#FFFFFF"        ' banda de antet a grilei
+    Public Property RowSeparator As String = "#EDF0F5"      ' linia fina dintre randuri
+    Public Property DotOk As String = "#22C55E"             ' bulina de stare «in regula»
+    Public Property DotIdle As String = "#94A3B8"           ' bulina de stare «inactiv»
+
     ' ── Câmpuri de input ──────────────────────────────────────────────────────
     Public Property InputBack As String = "#FFFFFF"
     Public Property InputText As String = "#000000"
@@ -162,4 +175,77 @@ Public NotInheritable Class ThemePalette
         End Get
     End Property
 
+
+    ' ── Accesori Color pentru sloturile de card (felia 0049) ──────────────────
+    <JsonIgnore> Public ReadOnly Property CanvasColor As Color
+        Get
+            Return ColorHex.FromHex(Canvas)
+        End Get
+    End Property
+    <JsonIgnore> Public ReadOnly Property CardColor As Color
+        Get
+            Return ColorHex.FromHex(Card)
+        End Get
+    End Property
+    <JsonIgnore> Public ReadOnly Property CardBorderColor As Color
+        Get
+            Return ColorHex.FromHex(CardBorder)
+        End Get
+    End Property
+    <JsonIgnore> Public ReadOnly Property ShadowColor As Color
+        Get
+            Return ColorHex.FromHex(Shadow)
+        End Get
+    End Property
+    <JsonIgnore> Public ReadOnly Property NavSelectedBackColor As Color
+        Get
+            Return ColorHex.FromHex(NavSelectedBack)
+        End Get
+    End Property
+    <JsonIgnore> Public ReadOnly Property HeaderBandColor As Color
+        Get
+            Return ColorHex.FromHex(HeaderBand)
+        End Get
+    End Property
+    <JsonIgnore> Public ReadOnly Property RowSeparatorColor As Color
+        Get
+            Return ColorHex.FromHex(RowSeparator)
+        End Get
+    End Property
+    <JsonIgnore> Public ReadOnly Property DotOkColor As Color
+        Get
+            Return ColorHex.FromHex(DotOk)
+        End Get
+    End Property
+    <JsonIgnore> Public ReadOnly Property DotIdleColor As Color
+        Get
+            Return ColorHex.FromHex(DotIdle)
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Points the card slots (felia 0049) at the slots this palette already used, so a scheme
+    ''' that predates cards keeps painting exactly what it painted before.
+    '''
+    ''' <para>The values are COMPUTED, never written out as hex: <c>NavSelectedBack</c> in
+    ''' particular has to equal <c>Blend(SurfaceAlt, Accent, 0.14)</c> to the byte, because that
+    ''' is the expression <c>KBotNavList.ApplyTheme</c> used before the slot existed. Copying a
+    ''' hand-rounded hex in here would drift by a unit and quietly break the «Classic and Dark
+    ''' render identically» guarantee this slice is measured against.</para>
+    '''
+    ''' <para>The geometry half needs no counterpart: <c>CardRadius</c>, <c>CardShadow</c>,
+    ''' <c>CardGutter</c> and the four row heights all default to 0, which already means «leave
+    ''' it alone».</para>
+    ''' </summary>
+    Public Sub ApplyNeutralCardDefaults()
+        Canvas = Surface
+        Card = SurfaceAlt
+        CardBorder = Border
+        Shadow = Text                                  ' unused: Style.CardShadowOpacity stays 0
+        NavSelectedBack = ColorHex.ToHex(ThemeShapes.Blend(SurfaceAltColor, AccentColor, 0.14))
+        HeaderBand = SurfaceAlt
+        RowSeparator = Border
+        DotOk = Success
+        DotIdle = TextDim
+    End Sub
 End Class

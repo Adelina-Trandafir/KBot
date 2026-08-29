@@ -249,7 +249,6 @@ Partial Class SumarView
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn1.ColumnFilterIconSize = New Size(14, 14)
-        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.Frozen = True
         KBotDataColumn1.HeaderLeftIconSize = New Size(14, 14)
@@ -264,7 +263,6 @@ Partial Class SumarView
         KBotDataColumn1.Width = 250
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn2.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderText = "Indicator"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -277,7 +275,6 @@ Partial Class SumarView
         KBotDataColumn3.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn3.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.DecimalPlaces = 2
         KBotDataColumn3.Format = KBot.Controls.KBotFormat.Standard
         KBotDataColumn3.FormatString = Nothing
@@ -294,7 +291,6 @@ Partial Class SumarView
         KBotDataColumn4.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn4.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn4.DecimalPlaces = 2
         KBotDataColumn4.Format = KBot.Controls.KBotFormat.Standard
         KBotDataColumn4.FormatString = Nothing
@@ -311,7 +307,6 @@ Partial Class SumarView
         KBotDataColumn5.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn5.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn5.DecimalPlaces = 2
         KBotDataColumn5.Format = KBot.Controls.KBotFormat.Standard
         KBotDataColumn5.FormatString = Nothing
@@ -328,7 +323,6 @@ Partial Class SumarView
         KBotDataColumn6.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn6.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn6.DecimalPlaces = 2
         KBotDataColumn6.Format = KBot.Controls.KBotFormat.Standard
         KBotDataColumn6.FormatString = Nothing
@@ -344,7 +338,6 @@ Partial Class SumarView
         KBotDataColumn7.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn7.AggregateFormatString = Nothing
         KBotDataColumn7.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn7.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn7.DecimalPlaces = 2
         KBotDataColumn7.Format = KBot.Controls.KBotFormat.Standard
         KBotDataColumn7.FormatString = Nothing
@@ -369,7 +362,6 @@ Partial Class SumarView
         grid.FooterBackColor = SystemColors.Control
         grid.FooterCaption = "TOTALURI"
         grid.FooterColumnSeparatorColor = Color.Gainsboro
-        grid.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FooterHeight = 30
         grid.FooterIconSize = New Size(14, 14)
@@ -380,7 +372,6 @@ Partial Class SumarView
         grid.FrozenColumnCount = 1
         grid.HeaderBackColor = SystemColors.Control
         grid.HeaderColumnSeparatorColor = Color.Gainsboro
-        grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 208)

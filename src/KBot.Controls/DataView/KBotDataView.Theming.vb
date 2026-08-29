@@ -164,10 +164,12 @@ Partial Class KBotDataView
             _bandGradient = (st.ButtonRender = ButtonRenderStyle.ModernOwnerDrawn) OrElse st.CornerRadius > 0
             DisposeBandFonts()
 
-            ' Antet.
-            _cHeaderBack = p.SurfaceAltColor
+            ' Header. Since slice 0049 the band has a slot of its own (HeaderBand): on the neutral
+            ' schemes it IS SurfaceAlt, so nothing changes there, but Modern wants a white band
+            ' separated from the data by a rule rather than by a darker fill.
+            _cHeaderBack = p.HeaderBandColor
             _cHeaderText = p.TextColor
-            _cHeaderSep = p.BorderColor
+            _cHeaderSep = p.RowSeparatorColor
             _cHeaderBaseline = p.AccentColor
             _cHeaderGradientEnd = Blend(p.SurfaceAltColor, p.SurfaceColor, 0.65)
 
@@ -193,7 +195,7 @@ Partial Class KBotDataView
             _cRowBack = p.InputBackColor
             _cRowAltBack = Blend(p.InputBackColor, p.SurfaceColor, 0.5)
             _cCellText = p.TextColor
-            _cGridLine = p.BorderColor
+            _cGridLine = p.RowSeparatorColor
 
             ' Selecție: spălare ușoară de accent peste fundalul REAL al rândului, ca textul
             ' să rămână lizibil (de aceea două variante: rând normal / rând alternant).
@@ -227,6 +229,11 @@ Partial Class KBotDataView
             editCombo.BackColor = p.InputBackColor
             editCombo.ForeColor = p.InputTextColor
             editCombo.FlatStyle = FlatStyle.Flat
+
+            ' Row and header heights, if the scheme asks for any (slice 0049). Goes through the
+            ' return path in KBotDataView.vb: whatever the designer authored is kept, and comes
+            ' back once the active scheme has no preference of its own.
+            ApplyHeightsFromScheme(scheme)
 
             BackColor = _cRowBack
             ApplyScrollBarTheme()

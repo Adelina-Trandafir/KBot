@@ -247,7 +247,11 @@ Partial Public Class AdvancedTreeControl
             _autoHoverBack = p.ButtonHoverColor
             _autoSelectedBack = p.ButtonPressedColor
             _autoSelectedBorder = p.AccentColor
-            _autoLine = p.BorderColor
+            ' Since slice 0049 the line between rows has a slot of its own. On the neutral schemes
+            ' that slot IS Border (ApplyNeutralCardDefaults), so they draw exactly the same line;
+            ' Modern wants it far fainter than the control outline, which could not be asked for
+            ' before.
+            _autoLine = p.RowSeparatorColor
             _autoBorder = Color.Transparent
             _autoTooltipBack = p.SurfaceColor
             _autoTooltipFore = p.TextColor
@@ -270,6 +274,11 @@ Partial Public Class AdvancedTreeControl
                 _scrollBarTheme = If(scheme.IsDark, En_ScrollBarTheme.DarkMode, En_ScrollBarTheme.Explorer)
                 ApplyScrollBarTheme()
             End If
+
+            ' The row height, if the scheme asks for one (slice 0049). Goes through the return path
+            ' in .Properties: whatever the designer authored is kept, and comes back once the
+            ' active scheme has no preference of its own.
+            ApplyRowHeightFromScheme(scheme)
 
             RestyleSearchChildren()
             CancelCollapsedFlyout()   ' o etichetă afară ar rămâne cu culorile schemei vechi

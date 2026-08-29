@@ -66,10 +66,8 @@ Partial Class DdfView
         tree.DynamicColumns = False
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
         tree.ExpanderSize = 10
-        tree.Font = New Font("Calibri", 9.0F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCaption = "Adaugă"
-        tree.FooterCaptionFont = New Font("Calibri", 9.0F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCollapseButton = True
         tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
@@ -84,7 +82,6 @@ Partial Class DdfView
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " DDF / REVIZII"
-        tree.HeaderFont = New Font("Calibri", 9.0F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.HeaderForeColor = Color.Black
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)

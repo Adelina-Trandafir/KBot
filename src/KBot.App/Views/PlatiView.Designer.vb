@@ -95,10 +95,8 @@ Partial Class PlatiView
         tree.DynamicColumns = False
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
         tree.ExpanderSize = 10
-        tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCaption = "Actualizează"
-        tree.FooterCaptionFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
@@ -113,7 +111,6 @@ Partial Class PlatiView
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " PLĂȚI / ÎNCASĂRI"
-        tree.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.HeaderForeColor = Color.Black
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
@@ -204,9 +201,7 @@ Partial Class PlatiView
         KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn1.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Clasificație"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clsf"
@@ -220,7 +215,6 @@ Partial Class PlatiView
         KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn2.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn2.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn2.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderText = "Număr"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -233,7 +227,6 @@ Partial Class PlatiView
         KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn3.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn3.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn3.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderText = "Data"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -247,7 +240,6 @@ Partial Class PlatiView
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn4.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn4.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn4.DecimalPlaces = 2
         KBotDataColumn4.Format = KBotFormat.Standard
         KBotDataColumn4.FormatString = Nothing
@@ -262,7 +254,6 @@ Partial Class PlatiView
         KBotDataColumn5.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn5.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn5.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn5.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = "Plătitor"
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -280,7 +271,6 @@ Partial Class PlatiView
         grid.FooterBackColor = SystemColors.Control
         grid.FooterCaption = "TOTALURI"
         grid.FooterColumnSeparatorColor = Color.Gainsboro
-        grid.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FooterHeight = 30
         grid.FooterIconSize = New Size(14, 14)
@@ -289,7 +279,6 @@ Partial Class PlatiView
         grid.FrozenColumnCount = 1
         grid.HeaderBackColor = SystemColors.Control
         grid.HeaderColumnSeparatorColor = Color.Gainsboro
-        grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 0)

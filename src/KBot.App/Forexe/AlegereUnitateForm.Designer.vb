@@ -73,9 +73,7 @@ Partial Class AlegereUnitateForm
         grid.CellTooltip.Enabled = False
         grid.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn1.AggregateFormatString = Nothing
-        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Unitate"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "unitate"
@@ -84,9 +82,7 @@ Partial Class AlegereUnitateForm
         KBotDataColumn1.ReadOnly = True
         KBotDataColumn1.Width = 250
         KBotDataColumn2.AggregateFormatString = Nothing
-        KBotDataColumn2.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.HeaderText = "Sursă / Sector"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "sursa"
@@ -96,9 +92,7 @@ Partial Class AlegereUnitateForm
         KBotDataColumn2.TextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Width = 150
         KBotDataColumn3.AggregateFormatString = Nothing
-        KBotDataColumn3.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.HeaderText = "Program"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "program"
@@ -107,9 +101,7 @@ Partial Class AlegereUnitateForm
         KBotDataColumn3.ReadOnly = True
         KBotDataColumn3.Width = 150
         KBotDataColumn4.AggregateFormatString = Nothing
-        KBotDataColumn4.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn4.HeaderText = "Cod"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "cod"

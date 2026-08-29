@@ -88,6 +88,13 @@ Public Module ThemeManager
         If _initialized Then Return
         _initialized = True
 
+        ' SHIPPED FONTS FIRST, before anything reads a font name. A scheme may name a family
+        ' that this machine has never had installed (Modern asks for «Inter»), and a Font built
+        ' before registration resolves to the fallback and never re-resolves. Lives here rather
+        ' than in Program.Main so that the harness and the tests get it too, and so nothing in
+        ' KBot.App has to know that the theme engine has fonts of its own.
+        FontLoader.Initialize()
+
         ' Scalarea ÎNAINTE de orice altceva: e citită de fiecare control la prima pictare, deci
         ' trebuie să fie deja așezată când se construiește primul formular (felia 0036).
         ThemeStore.LoadScaling()
@@ -151,6 +158,7 @@ Public Module ThemeManager
     Public Sub SetScheme(scheme As ThemeScheme)
         If scheme Is Nothing Then Throw New ArgumentNullException(NameOf(scheme))
         _current = scheme
+        IconTint.Clear()
         ThemeStore.SaveActive(scheme.Name)
 
         ' Difuzare: registru ∪ OpenForms, deduplicat pe identitate de referință.
@@ -171,6 +179,7 @@ Public Module ThemeManager
     ''' </summary>
     Public Sub Refresh()
         Try
+            IconTint.Clear()
             For Each f As Form In CollectTargets()
                 Apply(f)
             Next
@@ -326,6 +335,10 @@ Public Module ThemeManager
             StyleControl(ctrl)
         End If
 
+        ' Rounded corners + shadow for a Tag="CardSurface" panel (felia 0049). Sync both attaches
+        ' and detaches, so a scheme without cards actively removes what a previous one put on.
+        CardPainter.Sync(ctrl, _current)
+
         If TypeOf ctrl Is SplitContainer Then
             Dim sc = DirectCast(ctrl, SplitContainer)
             For Each child As Control In sc.Panel1.Controls
@@ -462,7 +475,7 @@ Public Module ThemeManager
             ctrl.BackColor = p.SurfaceAltColor
 
         ElseIf IsCard(ctrl) Then
-            ctrl.BackColor = p.SurfaceAltColor
+            ctrl.BackColor = If(CardPainter.IsCardSurface(ctrl), p.CardColor, p.SurfaceAltColor)
 
         ElseIf TypeOf ctrl Is TableLayoutPanel Then
             ctrl.BackColor = p.SurfaceColor
@@ -769,7 +782,12 @@ Public Module ThemeManager
     ' =========================================================================
     Private Function IsCard(ctrl As Control) As Boolean
         If TypeOf ctrl IsNot Panel AndAlso TypeOf ctrl IsNot TableLayoutPanel Then Return False
-        Return ctrl.Tag IsNot Nothing AndAlso String.Equals(ctrl.Tag.ToString(), "Card", StringComparison.Ordinal)
+        If ctrl.Tag Is Nothing Then Return False
+        Dim tag As String = ctrl.Tag.ToString()
+        ' Two tags, one surface colour. "CardSurface" (felia 0049) additionally earns the rounded
+        ' corners and the shadow — see CardPainter for why the two had to be told apart.
+        Return String.Equals(tag, "Card", StringComparison.Ordinal) OrElse
+               String.Equals(tag, CardPainter.CardSurfaceTag, StringComparison.Ordinal)
     End Function
 
     ' =========================================================================

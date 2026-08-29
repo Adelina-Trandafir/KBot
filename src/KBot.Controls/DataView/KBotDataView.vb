@@ -545,6 +545,11 @@ Public Class KBotDataView
             Return _rowHeightLogic
         End Get
         Set(value As Integer)
+            ' A write from OUTSIDE (designer or host code) is the operator's choice and becomes the
+            ' height the grid RETURNS TO once the scheme stops asking for one of its own. The
+            ' theme's write (slice 0049) raises the flag so it does not read as a choice — see
+            ' ApplyHeightsFromScheme.
+            If Not _heightsFromTheme Then _rowHeightAuthored = Math.Max(1, value)
             _rowHeightLogic = Math.Max(1, value)
             _rowHeight = SY(_rowHeightLogic)
             ' Benzile își iau înălțimea de aici (o bandă de grup fără înălțime proprie urmărește
@@ -571,12 +576,45 @@ Public Class KBotDataView
             Return _headerHeightLogic
         End Get
         Set(value As Integer)
+            If Not _heightsFromTheme Then _headerHeightAuthored = Math.Max(0, value)
             _headerHeightLogic = Math.Max(0, value)
             _headerHeight = SY(_headerHeightLogic)
             InvalidateHeaderHeight()
             LayoutChanged()
         End Set
     End Property
+
+    ''' <summary>The heights the operator authored — slice 0049's return point.</summary>
+    Private _rowHeightAuthored As Integer = 28
+    Private _headerHeightAuthored As Integer = 30
+
+    ''' <summary>True only while the theme is writing the heights — see the setters above.</summary>
+    Private _heightsFromTheme As Boolean = False
+
+    ''' <summary>
+    ''' Applies the heights the scheme asks for, or restores the authored ones when it asks for
+    ''' none (<c>GridRowHeight</c> / <c>GridHeaderHeight</c> = 0 — every scheme but Modern).
+    '''
+    ''' <para>The return path is not a luxury: without it a single trip through Modern would stay
+    ''' in the grid for good, because the scheme's number would have landed in the "authored"
+    ''' fields and would from then on read as the operator's own choice.</para>
+    ''' </summary>
+    Private Sub ApplyHeightsFromScheme(scheme As ThemeScheme)
+        Dim st As ThemeStyleOptions = If(scheme IsNot Nothing, scheme.Style, Nothing)
+        Dim wantRow As Integer = If(st IsNot Nothing AndAlso st.GridRowHeight > 0,
+                                    st.GridRowHeight, _rowHeightAuthored)
+        Dim wantHead As Integer = If(st IsNot Nothing AndAlso st.GridHeaderHeight > 0,
+                                     st.GridHeaderHeight, _headerHeightAuthored)
+        If wantRow = _rowHeightLogic AndAlso wantHead = _headerHeightLogic Then Return
+
+        _heightsFromTheme = True
+        Try
+            If wantRow <> _rowHeightLogic Then RowHeight = wantRow
+            If wantHead <> _headerHeightLogic Then HeaderHeight = wantHead
+        Finally
+            _heightsFromTheme = False
+        End Try
+    End Sub
 
     ''' <summary>
     ''' Banda de antet se măsoară după text (implicit, <c>True</c>), sau rămâne fix la

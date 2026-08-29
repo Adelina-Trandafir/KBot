@@ -891,8 +891,16 @@ Public NotInheritable Class KBotNavList
         Invalidate()
     End Sub
 
+    ''' <summary>
+    ''' Item height, in device pixels. Since slice 0049 it comes from the SCHEME: Modern wants
+    ''' taller items than the historic 36, and the number has to be adjustable from the options
+    ''' window rather than recompiled. 0 on a scheme means "leave it as it was", so the other
+    ''' three schemes do not move by a pixel.
+    ''' </summary>
     Private Function ItemThickness() As Integer
-        Return ThemeShapes.ScaleDpi(Me, 36)
+        Dim fromScheme As Integer = If(_scheme IsNot Nothing AndAlso _scheme.Style IsNot Nothing,
+                                       _scheme.Style.NavItemHeight, 0)
+        Return ThemeShapes.ScaleDpi(Me, If(fromScheme > 0, fromScheme, 36))
     End Function
 
     Private Function SeparatorExtent() As Integer
@@ -1271,7 +1279,7 @@ Public NotInheritable Class KBotNavList
 
         Dim it As KBotNavItem = _items(_flyoutIndex)
         If _flyout Is Nothing Then _flyout = New KBotNavFlyout()
-        _flyout.SetContent(it.Text, it.Image, it.Badge, it.Enabled, BuildFlyoutStyle(it))
+        _flyout.SetContent(it.Text, ItemIcon(it, String.Equals(it.Key, _selectedKey, StringComparison.Ordinal)), it.Badge, it.Enabled, BuildFlyoutStyle(it))
         _flyout.Bounds = RectangleToScreen(rect)
         If Not _flyout.Visible Then _flyout.Show(host)
     End Sub
@@ -1556,7 +1564,7 @@ Public NotInheritable Class KBotNavList
         EnsureLayout()
         Dim it As KBotNavItem = _items(index)
         Dim fly As New KBotNavFlyout()
-        fly.SetContent(it.Text, it.Image, it.Badge, it.Enabled, BuildFlyoutStyle(it))
+        fly.SetContent(it.Text, ItemIcon(it, String.Equals(it.Key, _selectedKey, StringComparison.Ordinal)), it.Badge, it.Enabled, BuildFlyoutStyle(it))
         Dim r As Rectangle = FlyoutClientBounds(index, 1.0)
         fly.Size = New Size(Math.Max(1, r.Width), Math.Max(1, r.Height))
         Return fly
@@ -1578,9 +1586,11 @@ Public NotInheritable Class KBotNavList
         If scheme Is Nothing Then Return
         _scheme = scheme
         Dim p As ThemePalette = scheme.Palette
-        ' Accent „soft" pentru fundalul selecției: paleta nu are un slot AccentSoft —
-        ' se derivă amestecând 14% accent în SurfaceAlt (nu adăugăm slot nou).
-        _selectedFill = ThemeShapes.Blend(p.SurfaceAltColor, p.AccentColor, 0.14)
+        ' Since slice 0049 the selection fill has a slot of its own: NavSelectedBack. On the
+        ' neutral schemes that slot is filled with EXACTLY the blend used until now — 14% accent
+        ' into SurfaceAlt, computed in ThemePalette.ApplyNeutralCardDefaults rather than copied by
+        ' hand — so they paint byte for byte as before, while Modern picks its own colour.
+        _selectedFill = p.NavSelectedBackColor
         _accent = p.AccentColor
         _hoverFill = p.ButtonHoverColor
         _textNormal = p.TextDimColor
@@ -1589,6 +1599,10 @@ Public NotInheritable Class KBotNavList
         _badgeText = p.TextDimColor
         _separatorColor = p.BorderColor
         BackColor = p.SurfaceColor
+        ' LAYOUT too, not only colours: since slice 0049 the item height comes from the scheme
+        ' (Style.NavItemHeight), so a scheme change moves every slot. With a bare Invalidate the
+        ' bar would repaint in the new colours over the old geometry.
+        InvalidateLayout()
         Invalidate()
         RefreshFlyout()                 ' schema s-a schimbat cu eticheta afară
     End Sub
@@ -1699,7 +1713,7 @@ Public NotInheritable Class KBotNavList
                 ' Pictograma (stânga), înaintea textului — ea decide de unde începe textul.
                 Dim iconR As Rectangle = IconRect(it, r)
                 If Not iconR.IsEmpty Then
-                    DrawItemImage(g, it.Image, iconR, it.Enabled)
+                    DrawItemImage(g, ItemIcon(it, isSelected), iconR, it.Enabled)
                 End If
 
                 ' Text.
@@ -1810,6 +1824,26 @@ Public NotInheritable Class KBotNavList
             If Not seen.Add(it.Key) Then dup.Add(it.Key)
         Next
         Return dup
+    End Function
+
+    ''' <summary>
+    ''' The image an item is painted with: the authored one, or a palette-recoloured version if the
+    ''' scheme asked for it (<c>Style.TintIcons</c>, slice 0049).
+    '''
+    ''' <para>Recolouring is OPT-IN, per scheme, precisely because the K-BOT icon set is not all
+    ''' monochrome: poured over a multi-coloured icon, a single palette tone erases the very thing
+    ''' that makes it recognisable. A scheme that asks for nothing gets the image untouched, as
+    ''' before.</para>
+    '''
+    ''' <para>The result belongs to <see cref="IconTint"/> and is NOT disposed here — the cache
+    ''' empties itself when the scheme changes.</para>
+    ''' </summary>
+    Private Function ItemIcon(it As KBotNavItem, selected As Boolean) As Image
+        If it.Image Is Nothing Then Return Nothing
+        If _scheme Is Nothing OrElse _scheme.Style Is Nothing OrElse Not _scheme.Style.TintIcons Then
+            Return it.Image
+        End If
+        Return IconTint.Tint(it.Image, If(selected, _accent, _textNormal))
     End Function
 
     ' Desenează pictograma scalată în pătratul ei. Pe un element DEZACTIVAT o estompează

@@ -60,7 +60,6 @@ Partial Class XfaXmlPreview
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderFont = New Font("Consolas", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Clasificație"

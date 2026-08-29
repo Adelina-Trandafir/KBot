@@ -499,6 +499,238 @@ Public NotInheritable Class SchemeOptionsProxy
     End Property
 
     ''' <summary>
+    ' ── 10. Carduri ──────────────────────────────────────────────────────────────
+    ' Slice 0049. On the neutral schemes these slots point at the ones the scheme was already
+    ' using (see ThemePalette.ApplyNeutralCardDefaults), so they can be inspected without changing
+    ' anything — until the geometry in the next category gives them something to paint.
+
+    <Category("10. Carduri")>
+    <DisplayName("Pânză")>
+    <Description("Suprafața pe care stau cardurile. Trebuie să fie o culoare plină: colțurile rotunjite se obțin vopsind penele de colț cu ea, deci o imagine sau un degrade în spate ar strica rotunjirea.")>
+    Public Property Panza As Color
+        Get
+            Return _scheme.Palette.CanvasColor
+        End Get
+        Set(value As Color)
+            Apply(Sub() _scheme.Palette.Canvas = ColorHex.ToHex(value), "Canvas")
+        End Set
+    End Property
+
+    <Category("10. Carduri")>
+    <DisplayName("Fundal card")>
+    <Description("Umplerea unui card.")>
+    Public Property FundalCard As Color
+        Get
+            Return _scheme.Palette.CardColor
+        End Get
+        Set(value As Color)
+            Apply(Sub() _scheme.Palette.Card = ColorHex.ToHex(value), "Card")
+        End Set
+    End Property
+
+    <Category("10. Carduri")>
+    <DisplayName("Contur card")>
+    <Description("Chenarul de un pixel al cardului.")>
+    Public Property ConturCard As Color
+        Get
+            Return _scheme.Palette.CardBorderColor
+        End Get
+        Set(value As Color)
+            Apply(Sub() _scheme.Palette.CardBorder = ColorHex.ToHex(value), "CardBorder")
+        End Set
+    End Property
+
+    <Category("10. Carduri")>
+    <DisplayName("Culoare umbră")>
+    <Description("Culoarea umbrei de sub carduri. Cât de tare se vede se dă separat, din «Intensitate umbră» — paleta se salvează ca «#RRGGBB» și n-are canal de transparență.")>
+    Public Property CuloareUmbra As Color
+        Get
+            Return _scheme.Palette.ShadowColor
+        End Get
+        Set(value As Color)
+            Apply(Sub() _scheme.Palette.Shadow = ColorHex.ToHex(value), "Shadow")
+        End Set
+    End Property
+
+    <Category("10. Carduri")>
+    <DisplayName("Navigare selectată")>
+    <Description("Fundalul elementului ales din bara de navigare.")>
+    Public Property NavigareSelectata As Color
+        Get
+            Return _scheme.Palette.NavSelectedBackColor
+        End Get
+        Set(value As Color)
+            Apply(Sub() _scheme.Palette.NavSelectedBack = ColorHex.ToHex(value), "NavSelectedBack")
+        End Set
+    End Property
+
+    <Category("10. Carduri")>
+    <DisplayName("Bandă antet")>
+    <Description("Fundalul benzii cu titlurile de coloană din grilă.")>
+    Public Property BandaAntet As Color
+        Get
+            Return _scheme.Palette.HeaderBandColor
+        End Get
+        Set(value As Color)
+            Apply(Sub() _scheme.Palette.HeaderBand = ColorHex.ToHex(value), "HeaderBand")
+        End Set
+    End Property
+
+    <Category("10. Carduri")>
+    <DisplayName("Linie între rânduri")>
+    <Description("Linia fină care desparte două rânduri, în grilă și în arbore.")>
+    Public Property LinieRanduri As Color
+        Get
+            Return _scheme.Palette.RowSeparatorColor
+        End Get
+        Set(value As Color)
+            Apply(Sub() _scheme.Palette.RowSeparator = ColorHex.ToHex(value), "RowSeparator")
+        End Set
+    End Property
+
+    <Category("10. Carduri")>
+    <DisplayName("Bulină «în regulă»")>
+    <Description("Culoarea bulinei de stare pentru ce merge bine.")>
+    Public Property BulinaOk As Color
+        Get
+            Return _scheme.Palette.DotOkColor
+        End Get
+        Set(value As Color)
+            Apply(Sub() _scheme.Palette.DotOk = ColorHex.ToHex(value), "DotOk")
+        End Set
+    End Property
+
+    <Category("10. Carduri")>
+    <DisplayName("Bulină «inactiv»")>
+    <Description("Culoarea bulinei de stare pentru ce e oprit sau nefolosit.")>
+    Public Property BulinaInactiv As Color
+        Get
+            Return _scheme.Palette.DotIdleColor
+        End Get
+        Set(value As Color)
+            Apply(Sub() _scheme.Palette.DotIdle = ColorHex.ToHex(value), "DotIdle")
+        End Set
+    End Property
+
+    ' ── 11. Card and row geometry ────────────────────────────────────────────────
+    ' All in logical pixels at 96 dpi, scaled at paint time. 0 means "change nothing" everywhere,
+    ' which is exactly what was painted before slice 0049 — which is why an older scheme, saved
+    ' without any of these fields, loads and looks unchanged.
+
+    <Category("11. Geometrie carduri și rânduri")>
+    <DisplayName("Rază card")>
+    <Description("Cât de rotunjite sunt colțurile unui card, în pixeli logici. 0 = card cu colțuri drepte, și atunci nu se pictează nimic în plus. Altceva decât «Rază colț», care e raza controalelor obișnuite — un card vrea un colț mult mai mare decât un buton.")>
+    Public Property RazaCard As Integer
+        Get
+            Return _scheme.Style.CardRadius
+        End Get
+        Set(value As Integer)
+            If value < 0 Then Throw New ArgumentException("Raza cardului nu poate fi negativă.")
+            Apply(Sub() _scheme.Style.CardRadius = value, "CardRadius")
+        End Set
+    End Property
+
+    <Category("11. Geometrie carduri și rânduri")>
+    <DisplayName("Întindere umbră")>
+    <Description("Cât de departe cade umbra în jurul cardului, în pixeli logici. 0 = fără umbră.")>
+    Public Property IntindereUmbra As Integer
+        Get
+            Return _scheme.Style.CardShadow
+        End Get
+        Set(value As Integer)
+            If value < 0 OrElse value > 64 Then Throw New ArgumentException(
+                "Întinderea umbrei trebuie să fie între 0 (fără umbră) și 64.")
+            Apply(Sub() _scheme.Style.CardShadow = value, "CardShadow")
+        End Set
+    End Property
+
+    <Category("11. Geometrie carduri și rânduri")>
+    <DisplayName("Intensitate umbră (%)")>
+    <Description("Cât de apăsată e umbra lângă card, în procente; spre exterior scade oricum până la zero. 0 = fără umbră.")>
+    Public Property IntensitateUmbra As Integer
+        Get
+            Return _scheme.Style.CardShadowOpacity
+        End Get
+        Set(value As Integer)
+            If value < 0 OrElse value > 100 Then Throw New ArgumentException(
+                "Intensitatea umbrei trebuie să fie între 0 și 100.")
+            Apply(Sub() _scheme.Style.CardShadowOpacity = value, "CardShadowOpacity")
+        End Set
+    End Property
+
+    <Category("11. Geometrie carduri și rânduri")>
+    <DisplayName("Aer în jurul cardurilor")>
+    <Description("Spațiul lăsat în jurul cardurilor, în pixeli logici. Fără el, un card lipit de marginea suprafeței n-are unde să-și arunce umbra. 0 = nu se atinge spațierea autorită în designer.")>
+    Public Property AerCarduri As Integer
+        Get
+            Return _scheme.Style.CardGutter
+        End Get
+        Set(value As Integer)
+            If value < 0 OrElse value > 64 Then Throw New ArgumentException(
+                "Aerul din jurul cardurilor trebuie să fie între 0 și 64.")
+            Apply(Sub() _scheme.Style.CardGutter = value, "CardGutter")
+        End Set
+    End Property
+
+    <Category("11. Geometrie carduri și rânduri")>
+    <DisplayName("Înălțime element navigare")>
+    <Description("Înălțimea unui buton din bara de navigare, în pixeli logici. 0 = cea a controlului.")>
+    Public Property InaltimeNavigare As Integer
+        Get
+            Return _scheme.Style.NavItemHeight
+        End Get
+        Set(value As Integer)
+            Apply(Sub() _scheme.Style.NavItemHeight = ValidHeight(value, "Înălțimea elementului de navigare"), "NavItemHeight")
+        End Set
+    End Property
+
+    <Category("11. Geometrie carduri și rânduri")>
+    <DisplayName("Înălțime rând listă")>
+    <Description("Înălțimea unui rând de arbore sau de listă, în pixeli logici. 0 = cea a controlului.")>
+    Public Property InaltimeRandLista As Integer
+        Get
+            Return _scheme.Style.ListRowHeight
+        End Get
+        Set(value As Integer)
+            Apply(Sub() _scheme.Style.ListRowHeight = ValidHeight(value, "Înălțimea rândului de listă"), "ListRowHeight")
+        End Set
+    End Property
+
+    <Category("11. Geometrie carduri și rânduri")>
+    <DisplayName("Înălțime rând grilă")>
+    <Description("Înălțimea unui rând de grilă, în pixeli logici. 0 = cea a controlului.")>
+    Public Property InaltimeRandGrila As Integer
+        Get
+            Return _scheme.Style.GridRowHeight
+        End Get
+        Set(value As Integer)
+            Apply(Sub() _scheme.Style.GridRowHeight = ValidHeight(value, "Înălțimea rândului de grilă"), "GridRowHeight")
+        End Set
+    End Property
+
+    <Category("11. Geometrie carduri și rânduri")>
+    <DisplayName("Înălțime antet grilă")>
+    <Description("Înălțimea benzii cu titlurile de coloană, în pixeli logici. 0 = cea a controlului.")>
+    Public Property InaltimeAntetGrila As Integer
+        Get
+            Return _scheme.Style.GridHeaderHeight
+        End Get
+        Set(value As Integer)
+            Apply(Sub() _scheme.Style.GridHeaderHeight = ValidHeight(value, "Înălțimea antetului de grilă"), "GridHeaderHeight")
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' The same check for all four heights. The ceiling of 200 is not superstition: a row taller
+    ''' than that fills a grid on its own, and the number arrives from a box where anything can be
+    ''' typed — an extra zero included.
+    ''' </summary>
+    Private Shared Function ValidHeight(value As Integer, what As String) As Integer
+        If value < 0 OrElse value > 200 Then Throw New ArgumentException(
+            $"{what} trebuie să fie între 0 (cea a controlului) și 200.")
+        Return value
+    End Function
+
     ''' Frontieră de editare. O proprietate din PropertyGrid nu are voie să arunce pentru un
     ''' motiv INTERN (grila arată un dialog urât și rămâne pe o valoare inconsistentă), deci
     ''' scrierea se loghează și se înghite. Validările de mai sus, în schimb, aruncă ÎNAINTE de a

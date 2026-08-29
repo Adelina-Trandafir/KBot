@@ -37,9 +37,7 @@ Partial Class DdfValoriPage
         KBotDataColumn1.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn1.ColumnFilterIconSize = New Size(14, 14)
-        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Clasificație"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clsf"
@@ -110,7 +108,6 @@ Partial Class DdfValoriPage
         grid.FooterBackColor = SystemColors.Control
         grid.FooterCaption = "TOTAL"
         grid.FooterColumnSeparatorColor = Color.Gainsboro
-        grid.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FooterHeight = 30
         grid.FooterSeparatorColor = Color.Gainsboro
@@ -118,7 +115,6 @@ Partial Class DdfValoriPage
         grid.FrozenColumnCount = 1
         grid.HeaderBackColor = SystemColors.Control
         grid.HeaderColumnSeparatorColor = Color.Gainsboro
-        grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 0)

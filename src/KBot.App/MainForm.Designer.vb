@@ -221,7 +221,7 @@ Partial Class MainForm
         pnlTree.Name = "pnlTree"
         pnlTree.Size = New Size(386, 783)
         pnlTree.TabIndex = 0
-        pnlTree.Tag = "Card"
+        pnlTree.Tag = "CardSurface"
         ' 
         ' tree
         ' 
@@ -235,11 +235,9 @@ Partial Class MainForm
         tree.ExpanderSize = 10
         tree.FlyoutDelay = 150
         tree.FlyoutSlideDuration = 100
-        tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCaption = "Actualizează"
         tree.FooterCaptionBackColor = SystemColors.Control
-        tree.FooterCaptionFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCaptionForeColor = SystemColors.ActiveCaptionText
         tree.FooterHeight = 30
         tree.FooterLeftIcon = My.Resources.Resources.database
@@ -253,7 +251,6 @@ Partial Class MainForm
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " LISTĂ ANGAJAMENTE"
-        tree.HeaderFont = New Font("Calibri", 10F, FontStyle.Bold)
         tree.HeaderForeColor = Color.Black
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
@@ -284,7 +281,6 @@ Partial Class MainForm
         tree.RightIconSize = New Size(16, 16)
         tree.RootExpander = False
         tree.ScrollBarTheme = KBot.Controls.AdvancedTreeControl.En_ScrollBarTheme.Default
-        tree.SearchBarFont = New Font("Calibri", 9F)
         tree.SearchBoxBackColor = SystemColors.Control
         tree.SearchClearButton = True
         tree.SearchClearButtonHoverColor = SystemColors.Control
@@ -330,7 +326,7 @@ Partial Class MainForm
         viewHost.Name = "viewHost"
         viewHost.Size = New Size(981, 783)
         viewHost.TabIndex = 0
-        viewHost.Tag = "Card"
+        viewHost.Tag = "CardSurface"
         ' 
         ' navViews
         ' 

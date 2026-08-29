@@ -93,6 +93,11 @@ Partial Public Class AdvancedTreeControl
             Return _itemHeightLogic
         End Get
         Set(value As Integer)
+            ' Who wrote last? A write from OUTSIDE (designer or host code) is the operator's choice
+            ' and becomes the height the control RETURNS TO once the scheme stops asking for one of
+            ' its own. The theme's write (slice 0049) goes through ApplyRowHeightFromScheme, which
+            ' raises the flag below precisely so it is not mistaken for a choice.
+            If Not _rowHeightFromTheme Then _itemHeightAuthored = value
             _itemHeightLogic = value
             _itemHeight = SY(value)
             '_autoHeight = False
@@ -100,6 +105,40 @@ Partial Public Class AdvancedTreeControl
             Me.Invalidate()
         End Set
     End Property
+
+    ''' <summary>
+    ''' The height the operator authored — the control's own default until someone writes
+    ''' <see cref="ItemHeight"/> from the designer or from code. Slice 0049 uses it as the return
+    ''' point: a scheme that wants taller rows only wants them while it is the active one.
+    ''' </summary>
+    Private _itemHeightAuthored As Integer = 22
+
+    ''' <summary>True only while the theme is writing the height — see the setter above.</summary>
+    Private _rowHeightFromTheme As Boolean = False
+
+    ''' <summary>
+    ''' Applies the row height the scheme asks for, or restores the authored one when the scheme
+    ''' asks for none (<c>Style.ListRowHeight = 0</c> — every scheme but Modern).
+    '''
+    ''' <para>Without this return path a single trip through Modern would leave the rows tall for
+    ''' good: the scheme's number would have landed in <c>_itemHeightAuthored</c> and would from
+    ''' then on read as the operator's own choice.</para>
+    ''' </summary>
+    Private Sub ApplyRowHeightFromScheme(scheme As ThemeScheme)
+        Dim wanted As Integer = _itemHeightAuthored
+        If scheme IsNot Nothing AndAlso scheme.Style IsNot Nothing AndAlso
+           scheme.Style.ListRowHeight > 0 Then
+            wanted = scheme.Style.ListRowHeight
+        End If
+        If wanted = _itemHeightLogic Then Return
+
+        _rowHeightFromTheme = True
+        Try
+            ItemHeight = wanted
+        Finally
+            _rowHeightFromTheme = False
+        End Try
+    End Sub
 
     ' Iconițe - Setarea lor declanșează recalcularea înălțimii rândului
     Private _leftIconSizeLogic As New Size(18, 18)

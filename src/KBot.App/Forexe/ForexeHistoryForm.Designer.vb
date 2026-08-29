@@ -65,9 +65,7 @@ Partial Class ForexeHistoryForm
         ' «~~~»: în stânga ora și numele, în dreapta rezultatul, cu lățime rezervată.
         '
         treeJobs.Dock = DockStyle.Fill
-        treeJobs.Font = New Font("Calibri", 9F)
         treeJobs.HeaderCaption = " ISTORIC FOREXE"
-        treeJobs.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         treeJobs.HeaderHeight = 30
         treeJobs.HeaderVisible = True
         treeJobs.Indent = 10
