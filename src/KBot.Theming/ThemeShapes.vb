@@ -133,11 +133,18 @@ Public Module ThemeShapes
         Dim oldMode As SmoothingMode = g.SmoothingMode
         g.SmoothingMode = SmoothingMode.AntiAlias
         Try
-            ' Conturul i se umfla cu i px de jur imprejur. Alfa scade patratic, nu liniar:
-            ' o cadere liniara lasa o margine vizibila acolo unde umbra se termina brusc.
+            ' Each outline is inflated by i px all round. Alpha falls QUADRATICALLY, not linearly:
+            ' a linear fall leaves a visible edge where the shadow stops.
+            '
+            ' `opacity` is the alpha of the ring TOUCHING the card, as a percentage — nothing more
+            ' elaborate. The rings are 1px outlines at different offsets, so they barely overlap
+            ' and each pixel takes essentially one ring's alpha; that makes the number mean on
+            ' screen what it says on the tin. An earlier version also divided by `size` to keep the
+            ' total ink constant, which drove a 6% shadow down to alpha 3 out of 255 — present in
+            ' the bitmap, invisible to a human.
             For i As Integer = size To 1 Step -1
-                Dim fade As Double = CDbl(size - i + 1) / CDbl(size)     ' 1 langa card, ~0 la capat
-                Dim a As Integer = CInt(Math.Round(255.0 * (op / 100.0) * fade * fade / size * 2.0))
+                Dim fade As Double = CDbl(size - i + 1) / CDbl(size)     ' 1 next to the card, ~0 at the far edge
+                Dim a As Integer = CInt(Math.Round(255.0 * (op / 100.0) * fade * fade))
                 If a <= 0 Then Continue For
                 If a > 255 Then a = 255
                 Dim r As New Rectangle(bounds.X - i, bounds.Y - i,

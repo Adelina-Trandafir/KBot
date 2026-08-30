@@ -1,5 +1,6 @@
 Imports System.IO
 Imports System.Text.Json
+Imports System.Text.Json.Nodes
 Imports System.Text.Json.Serialization
 Imports KBot.Common
 
@@ -179,10 +180,27 @@ Public Module ThemeStore
     End Function
 
     ''' <summary>
-    ''' Încarcă toate schemele utilizator din …\AVACONT\Themes\*.json. Un fișier
-    ''' malformat e SĂRIT + logat, nu oprește pornirea și nu contaminează restul.
+    ''' Loads every user scheme from …\AVACONT\Themes\*.json. A malformed file is SKIPPED and
+    ''' logged; it never blocks startup and never contaminates the rest.
+    '''
+    ''' <para><b><paramref name="builtInFor"/> is what keeps an old file from freezing the
+    ''' application in the past</b> (slice 0049). When a stored file carries the name of a built-in
+    ''' scheme it REPLACES that scheme — that is how editing «Modern» is persisted. But a file
+    ''' written by an older build knows nothing about any key added since, so a straight
+    ''' deserialize hands every one of them the type's default: a saved «Modern» from before this
+    ''' slice silently switched off every card, the shipped font and all four row heights, and the
+    ''' application looked *exactly* as it had before — with no error anywhere to say why.</para>
+    '''
+    ''' <para>So the stored file is OVERLAID on the compiled scheme instead: what the file actually
+    ''' says wins, key by key, and everything it does not mention keeps the value compiled in.
+    ''' The operator's edits survive; keys invented after they saved arrive with their new
+    ''' defaults. Pass <c>Nothing</c> to get the old replace-wholesale behaviour.</para>
     ''' </summary>
-    Public Function LoadUserSchemes() As List(Of ThemeScheme)
+    ''' <param name="builtInFor">
+    ''' Returns the compiled scheme for a name, or <c>Nothing</c> when the name is not a built-in
+    ''' (a scheme the operator invented has nothing to be overlaid on, so it is read as it stands).
+    ''' </param>
+    Public Function LoadUserSchemes(Optional builtInFor As Func(Of String, ThemeScheme) = Nothing) As List(Of ThemeScheme)
         Dim result As New List(Of ThemeScheme)()
         Try
             If Not Directory.Exists(ThemesFolder) Then Return result
@@ -190,12 +208,19 @@ Public Module ThemeStore
                 Try
                     Dim json As String = File.ReadAllText(filePath)
                     Dim scheme As ThemeScheme = JsonSerializer.Deserialize(Of ThemeScheme)(json, _jsonOptions)
-                    If scheme IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(scheme.Name) Then
-                        result.Add(scheme)
-                    Else
+                    If scheme Is Nothing OrElse String.IsNullOrWhiteSpace(scheme.Name) Then
                         GlobalErrorLog.Write("ThemeStore.LoadUserSchemes",
                             New InvalidDataException($"Schemă utilizator invalidă (nume gol): {filePath}"))
+                        Continue For
                     End If
+
+                    Dim compiled As ThemeScheme = If(builtInFor IsNot Nothing, builtInFor(scheme.Name), Nothing)
+                    If compiled IsNot Nothing Then
+                        Dim merged As ThemeScheme = OverlayOnto(compiled, json)
+                        If merged IsNot Nothing Then scheme = merged
+                    End If
+
+                    result.Add(scheme)
                 Catch exFile As Exception
                     ' Un fișier corupt nu blochează restul; logăm și continuăm.
                     GlobalErrorLog.Write($"ThemeStore.LoadUserSchemes({Path.GetFileName(filePath)})", exFile)
@@ -205,6 +230,60 @@ Public Module ThemeStore
             GlobalErrorLog.Write("ThemeStore.LoadUserSchemes(enumerate)", ex)
         End Try
         Return result
+    End Function
+
+    ''' <summary>
+    ''' The compiled scheme with the stored file's values written over it, key by key and nesting
+    ''' level by nesting level. Anything the file does not mention keeps the compiled value.
+    '''
+    ''' <para>Deliberately generic — it walks the JSON rather than naming properties — so a key
+    ''' added to <see cref="ThemePalette"/> or <see cref="ThemeStyleOptions"/> in some future slice
+    ''' is carried through without anybody remembering to come back here.</para>
+    '''
+    ''' <para>Returns <c>Nothing</c> if the overlay cannot be built, so the caller keeps whatever
+    ''' it already had rather than losing the operator's file over a parsing problem.</para>
+    ''' </summary>
+    Friend Function OverlayOnto(compiled As ThemeScheme, storedJson As String) As ThemeScheme
+        If compiled Is Nothing OrElse String.IsNullOrWhiteSpace(storedJson) Then Return Nothing
+        Try
+            Dim baseNode As JsonObject = TryCast(JsonSerializer.SerializeToNode(compiled, _jsonOptions), JsonObject)
+            Dim storedNode As JsonObject = TryCast(JsonNode.Parse(storedJson), JsonObject)
+            If baseNode Is Nothing OrElse storedNode Is Nothing Then Return Nothing
+
+            Overlay(baseNode, storedNode)
+            Return baseNode.Deserialize(Of ThemeScheme)(_jsonOptions)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ThemeStore.OverlayOnto", ex)
+            Return Nothing
+        End Try
+    End Function
+
+    ' Writes source over target in place. An object meets an object => descend; anything else =>
+    ' the source value replaces the target one outright. A JsonNode cannot have two parents, hence
+    ' the DeepClone on every value that crosses over.
+    Private Sub Overlay(target As JsonObject, source As JsonObject)
+        For Each pair As KeyValuePair(Of String, JsonNode) In source
+            Dim key As String = MatchingKey(target, pair.Key)
+            Dim sourceObj As JsonObject = TryCast(pair.Value, JsonObject)
+            Dim targetObj As JsonObject = If(key Is Nothing, Nothing, TryCast(target(key), JsonObject))
+
+            If sourceObj IsNot Nothing AndAlso targetObj IsNot Nothing Then
+                Overlay(targetObj, sourceObj)
+            Else
+                target(If(key, pair.Key)) = If(pair.Value Is Nothing, Nothing, pair.Value.DeepClone())
+            End If
+        Next
+    End Sub
+
+    ' The key as TARGET spells it, so an overlay never ends up with "surface" beside "Surface".
+    ' Deserialization is case-insensitive, but two spellings of one key in the same object is a
+    ' coin toss over which one lands.
+    Private Function MatchingKey(target As JsonObject, key As String) As String
+        If target.ContainsKey(key) Then Return key
+        For Each pair As KeyValuePair(Of String, JsonNode) In target
+            If String.Equals(pair.Key, key, StringComparison.OrdinalIgnoreCase) Then Return pair.Key
+        Next
+        Return Nothing
     End Function
 
     ''' <summary>

@@ -173,7 +173,7 @@ Public Module BuiltInSchemes
             .OwnerDrawTabs = False,
             .CardRadius = 14,
             .CardShadow = 10,
-            .CardShadowOpacity = 6,
+            .CardShadowOpacity = 14,
             .CardGutter = 12,
             .NavItemHeight = 44,
             .ListRowHeight = 34,

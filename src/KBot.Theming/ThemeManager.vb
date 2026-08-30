@@ -102,13 +102,31 @@ Public Module ThemeManager
         ' Scheme utilizator — inclusiv fișierele care SUPRASCRIU o schemă built-in editată din
         ' fereastra de opțiuni. Un fișier corupt e sărit + logat, nu crapă pornirea.
         _userSchemes.Clear()
-        _userSchemes.AddRange(ThemeStore.LoadUserSchemes())
+        ' The resolver is what stops an OLD saved file from freezing the application in the past:
+        ' a stored scheme that carries a built-in's name is now OVERLAID on the compiled one, so
+        ' keys invented since the operator last pressed «Salvează» arrive with their new defaults
+        ' instead of the type's. Without it, a «Modern.json» saved before slice 0049 switched off
+        ' every card, the shipped font and all four row heights — invisibly, with nothing logged.
+        _userSchemes.AddRange(ThemeStore.LoadUserSchemes(AddressOf CompiledSchemeFor))
 
         ' Numele schemei active persistat; fallback documentat = Classic.
         Dim activeName As String = ThemeStore.LoadActiveName()
         Dim resolved As ThemeScheme = ResolveByName(activeName)
         _current = If(resolved, BuiltInSchemes.Classic())
     End Sub
+
+    ''' <summary>
+    ''' The COMPILED scheme for a name — never a user file. Used as the base a stored scheme is
+    ''' overlaid on, so it must not consult <see cref="AvailableSchemes"/>, which already contains
+    ''' the stored ones and would make the overlay circular.
+    ''' </summary>
+    Private Function CompiledSchemeFor(name As String) As ThemeScheme
+        If String.IsNullOrWhiteSpace(name) Then Return Nothing
+        For Each s As ThemeScheme In BuiltInSchemes.All()
+            If String.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase) Then Return s
+        Next
+        Return Nothing
+    End Function
 
     ''' <summary>Rezolvă un nume la o schemă (built-in sau utilizator); Nothing dacă nu există.</summary>
     ''' <remarks>

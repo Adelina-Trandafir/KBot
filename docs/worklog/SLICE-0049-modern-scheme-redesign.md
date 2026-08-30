@@ -231,3 +231,54 @@ designer.
   dar în `KBot.App`, pe care felia asta nu-l atinge.
 - Cele **10 avertismente `MSB3825`** rămân. Sunt vechi, țin de `BinaryFormatter` în șase `.resx`
   de vederi, și n-au legătură cu tema.
+
+---
+
+## 7. CORECȚIE, la prima privire pe ecran — de ce nu se vedea NIMIC
+
+Prima livrare a feliei a produs, pe mașina operatorului, **exact interfața de dinainte**: nicio
+umbră, niciun colț, niciun card. Nu era o problemă de pictură. Erau două lucruri:
+
+### 7.1 Un fișier vechi ținea aplicația în trecut
+
+`%AppData%\AVACONT\Themes\Modern.json`, salvat pe 17 august din fereastra de opțiuni.
+`ThemeManager.AvailableSchemes` tratează un fișier care poartă numele unei scheme built-in ca
+**ÎNLOCUITOR**, nu ca strat peste ea — și asta e corect, așa se persistă editarea lui «Modern».
+
+Dar un fișier scris de o versiune mai veche nu știe nimic despre nicio cheie adăugată de atunci,
+așa că deserializarea a dat fiecărei chei noi implicitul TIPULUI: `CardRadius = 0`,
+`CardShadow = 0`, cele patru înălțimi 0, `TintIcons = False`, `BaseFontName` cel vechi. Adică
+felia întreagă, stinsă. **Fără nicio eroare nicăieri** — din punctul de vedere al codului nu se
+întâmplase nimic rău.
+
+**Reparația: SUPRAPUNERE în loc de înlocuire.** `ThemeStore.LoadUserSchemes` primește acum un
+rezolvator către schema COMPILATĂ, iar `OverlayOnto` scrie fișierul stocat peste ea cheie cu
+cheie, pe toate nivelurile de imbricare. Ce a ales operatorul câștige mai departe; cheile
+inventate după ce el a apăsat «Salvează» vin cu implicitele lor noi. Mersul e generic — umblă
+prin JSON, nu numește proprietăți — deci o cheie adăugată în vreo felie viitoare trece singură,
+fără ca cineva să-și amintească să se întoarcă aici.
+
+Fișierul operatorului a fost redenumit `Modern.json.pre-slice-0049.bak` (reversibil), ca să vadă
+«Modern» cel nou și nu varianta lui de pe 17 august. Calea normală pentru asta e butonul
+«Restaurează implicit» din fereastra de opțiuni.
+
+Șase teste noi (`StaleUserSchemeTests`) rulează pe JSON-ul REAL, copiat verbatim.
+
+### 7.2 Umbra era în bitmap, dar invizibilă pentru un om
+
+Formula de alfa împărțea la `size` și înmulțea cu 2, ca să țină cerneala totală constantă
+indiferent de întindere. Efectul: la `CardShadowOpacity = 6`, inelul lipit de card ieșea cu alfa
+**3 din 255**. Prezent la o verificare pe pixeli, inexistent pentru ochi — și exact de asta
+testele de pixeli trecuseră.
+
+Acum `opacity` înseamnă literal ce spune: alfa inelului care atinge cardul, în procente. Inelele
+sunt contururi de 1px la offseturi diferite, deci abia se suprapun și fiecare pixel ia practic
+alfa unui singur inel. Implicitul lui «Modern» a urcat de la 6 la **14**, ales privind randarea.
+
+### 7.3 Ce s-a învățat despre verificare
+
+Am scris în §5 «nimic n-a fost văzut pe ecran» și am livrat așa. Asta a fost greșeala: două
+defecte care ANULAU felia stăteau amândouă sub pragul la care ajung testele scrise. O randare
+`DrawToBitmap` a formei, pe un ecran virtual, ar fi prins amândouă în câteva minute — n-are
+nevoie nici de bază de date, nici de autentificare. Pentru orice felie de aspect de-acum înainte,
+acela e minimul, nu testele de pixeli pe primitive.
