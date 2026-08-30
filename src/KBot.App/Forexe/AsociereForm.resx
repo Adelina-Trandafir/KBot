@@ -120,4 +120,7 @@
   <metadata name="tips.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <data name="lblIntro.Text" xml:space="preserve">
+    <value>Trage un instantaneu peste recepția căreia îi aparține. Trage-l înapoi la dreapta ca să-l desprinzi. Legăturile pe care s-a construit deja o ordonanțare sau pe care s-au calculat plăți rămân vizibile, dar nu se mai pot muta.</value>
+  </data>
 </root>

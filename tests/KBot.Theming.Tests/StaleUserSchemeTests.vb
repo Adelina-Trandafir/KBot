@@ -133,7 +133,7 @@ Public Class StaleUserSchemeTests
                                BuiltInSchemes.Modern(), Nothing))
 
             Dim modern As ThemeScheme = loaded.Single()
-            Assert.True(modern.Style.CardRadius > 0, "Cardurile s-au pierdut la incarcarea din folder.")
+            Assert.True(modern.Style.CardGutter > 0, "Cardurile s-au pierdut la incarcarea din folder.")
             Assert.True(modern.Style.CardShadow > 0)
             Assert.Equal("#185FA5", modern.Palette.Accent)     ' operator's choice survives
         Finally

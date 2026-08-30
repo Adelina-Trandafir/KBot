@@ -74,7 +74,10 @@ Public Class CardSchemeTests
     <Fact>
     Public Sub Modern_AsksForCards()
         Dim st As ThemeStyleOptions = BuiltInSchemes.Modern().Style
-        Assert.True(st.CardRadius > 0)
+        ' Colturi DREPTE, si asta e o decizie, nu o scapare: vezi comentariul din BuiltInSchemes.
+        ' Un card ii poate rotunji doar propria pictura, iar copilul care il umple se picteaza
+        ' peste colturi; taiat cu o regiune de fereastra, iese in trepte. Cardul ramane umbra.
+        Assert.Equal(0, st.CardRadius)
         Assert.True(st.CardShadow > 0)
         Assert.InRange(st.CardShadowOpacity, 1, 100)
         Assert.True(st.CardGutter > 0)

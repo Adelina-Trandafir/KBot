@@ -326,3 +326,217 @@ def test_lantul_terminat_in_stergere_nu_se_masoara():
     P.valideaza_plasarile(lanturi, receptii, f15_ca_avertisment=True,
                           avertismente=avertismente)
     assert avertismente == []
+
+
+# ===========================================================================
+# Rutele, cu o baza falsa -- si cu cursorul luat in serios
+# ===========================================================================
+# DE CE EXISTA SECTIUNEA ASTA: toate testele de mai sus hranesc functiile cu dictionare
+# gata facute, deci nu au cum sa vada CUM cere ruta randurile de la baza. Ruta le-a cerut
+# la inceput cu un cursor obisnuit -- care in mysql.connector intoarce TUPLURI -- iar
+# fiecare r["IDRH"] de dupa a murit cu «tuple indices must be integers or slices, not
+# str», in fata operatorului, la prima deschidere a formularului.
+#
+# De-asta cursorul fals de aici respecta steagul `dictionary` exact ca cel adevarat:
+# dictionare cand e cerut, tupluri cand nu. Daca ruta se intoarce vreodata la cursorul
+# obisnuit, testele astea cad cu aceeasi eroare, aici, in loc de pe ecranul operatorului.
+import json as _json
+
+from flask import Flask as _Flask
+
+try:
+    from routes.forexe import forexe_bp as _forexe_bp
+    from routes.auth.session_store import STORE as _STORE
+except Exception as e:                              # pragma: no cover - broken install
+    pytest.skip(f"blueprint imports unavailable: {e}", allow_module_level=True)
+
+_app = _Flask(__name__)
+_app.register_blueprint(_forexe_bp)
+DB_NAME = "000_DEMO"
+URL = "/api/forexe/asociere"
+
+# Amprenta unui angajament cu o recepție si un instantaneu. Valorile nu conteaza in sine;
+# conteaza ca sunt STABILE, fiindca POST-ul compara.
+_AMPRENTA = {"ic": 1, "im": 7, "id_": "2026-02-10", "rc": 1, "rm": 3,
+             "hc": 1, "hm": 5, "hn": 0}
+
+
+class FakeCursor:
+    """Cursor mysql.connector in miniatura: `dictionary` decide forma randurilor."""
+
+    def __init__(self, conn, dictionary):
+        self.conn = conn
+        self.dictionary = dictionary
+        self._rows = []
+        self.rowcount = 0
+
+    def execute(self, sql, params=None):
+        self.conn.executed.append((sql, params))
+        self._rows = self.conn.rows_for(sql)
+
+    def _shape(self, rand):
+        # Cursorul adevarat intoarce tupluri cand nu i s-a cerut altceva -- si tocmai
+        # forma asta face r["coloana"] sa ridice. Dictionarele pastreaza ordinea
+        # cheilor, deci tuplul iese in ordinea coloanelor, ca la baza.
+        return dict(rand) if self.dictionary else tuple(rand.values())
+
+    def fetchall(self):
+        return [self._shape(r) for r in self._rows]
+
+    def fetchone(self):
+        return self._shape(self._rows[0]) if self._rows else None
+
+    def close(self):
+        pass
+
+
+class FakeConnection:
+    def __init__(self, **tabele):
+        self.tabele = tabele
+        self.executed = []
+        self.committed = False
+        self.rolled_back = False
+        self.closed = False
+
+    def rows_for(self, sql):
+        if "(SELECT COUNT(*) FROM FX_Istoric" in sql:
+            return [dict(_AMPRENTA)]
+        if sql.startswith("SELECT IDRR, CodIndicator"):
+            return self.tabele.get("rhr", [])
+        if sql.startswith("SELECT IDRR, NRCRT"):
+            return self.tabele.get("receptii", [])
+        if sql.startswith("SELECT H.IDRH"):
+            return self.tabele.get("blocaje", [])
+        if sql.startswith("SELECT IDRH, CodIndicator"):
+            return self.tabele.get("linii", [])
+        if sql.startswith("SELECT IDRH, IDRR"):
+            return self.tabele.get("instantanee", [])
+        if sql.startswith("SELECT Data_plata"):
+            return self.tabele.get("plati", [])
+        raise AssertionError("unexpected SQL: " + sql)       # pragma: no cover - guard
+
+    def cursor(self, dictionary=False):
+        return FakeCursor(self, dictionary)
+
+    def commit(self):
+        self.committed = True
+
+    def rollback(self):
+        self.rolled_back = True
+
+    def close(self):
+        self.closed = True
+
+
+def baza_cu_un_lant():
+    """O recepție, un instantaneu asezat pe ea, o plata. Nimic blocat."""
+    return FakeConnection(
+        receptii=[{"IDRR": 3, "NRCRT": 1, "DataR": dt("2026-02-10 00:00:00"),
+                   "SumaAntet": 1000.0, "Descriere": "Plata fact.", "Sters": 0,
+                   "Reconstituit": 0, "ReconstituitNesigur": 0}],
+        rhr=[{"IDRR": 3, "CodIndicator": "AAB", "CodAI": COD + "-AAB", "CodSSI": "",
+              "CreditBugetar": 10502.19, "Valoare": 1000.0, "ValoareN": 0.0}],
+        instantanee=[{"IDRH": 5, "IDRR": 3, "IDH": 9, "DataH": dt("2026-02-11 00:00:00"),
+                      "Total": 1000.0, "Descriere": "Plata fact.", "TipReceptie": "",
+                      "Sters": 0, "EsteStergere": 0}],
+        linii=[{"IDRH": 5, "CodIndicator": "AAB", "CodAI": COD + "-AAB", "CodSSI": "",
+                "IdClsf": 1, "Valoare": 1000.0}],
+        plati=[{"Data_plata": dt("2026-03-01 00:00:00"), "Suma": 400.0, "NrOP": "112"}],
+    )
+
+
+@pytest.fixture
+def client():
+    _app.config["TESTING"] = True
+    with _app.test_client() as c:
+        yield c
+
+
+@pytest.fixture
+def auth_headers():
+    token, _ = _STORE.create(username="pytest-op", password="unused",
+                             id_unitate=0, db_name=DB_NAME,
+                             ctx={"DbName": DB_NAME}, pcname="PYTEST")
+    yield {"Authorization": "Bearer " + token, "Content-Type": "application/json"}
+    _STORE.revoke(token)
+
+
+@pytest.fixture
+def conn(monkeypatch):
+    c = baza_cu_un_lant()
+    monkeypatch.setattr(A, "get_kbot_connection", lambda db=None: c)
+    return c
+
+
+def test_get_citeste_tabloul_cu_cursor_pe_dictionar(client, auth_headers, conn):
+    r = client.get(URL + "?cod=" + COD, headers=auth_headers)
+    assert r.status_code == 200, r.get_data(as_text=True)
+    date = r.get_json()
+    assert date["cod"] == COD
+    assert [x["idrr"] for x in date["receptii"]] == [3]
+    assert [x["idrh"] for x in date["instantanee"]] == [5]
+    assert date["instantanee"][0]["idrr"] == 3
+    assert date["instantanee"][0]["linii"][0]["cod_indicator"] == "AAB"
+    assert date["instantanee"][0]["blocat"] is False
+    assert date["plati"][0]["nr_op"] == "112"
+    assert date["amprenta"]
+    assert conn.closed
+
+
+def test_get_cere_explicit_cursor_pe_dictionar(client, auth_headers, conn):
+    """Paza directa: un cursor pe tupluri e chiar defectul care a ajuns la operator."""
+    cerute = []
+    original = conn.cursor
+
+    def spion(dictionary=False):
+        cerute.append(dictionary)
+        return original(dictionary=dictionary)
+
+    conn.cursor = spion
+    client.get(URL + "?cod=" + COD, headers=auth_headers)
+    assert cerute == [True]
+
+
+def test_post_cere_si_el_cursor_pe_dictionar(client, auth_headers, conn):
+    """Amprenta veche => 409, dar numai dupa ce randul amprentei a fost citit pe nume."""
+    corp = _json.dumps({"cod": COD, "amprenta": "amprenta-veche",
+                        "comenzi": [cmd(5, A.ACTIUNE_DESPRINS)]})
+    r = client.post(URL, data=corp, headers=auth_headers)
+    assert r.status_code == 409
+    assert r.get_json()["reason"] == P.REASON_STARE_MODIFICATA
+    assert conn.rolled_back
+
+
+def test_un_instantaneu_blocat_ajunge_la_client_cu_motive(client, auth_headers,
+                                                          monkeypatch):
+    c = baza_cu_un_lant()
+    c.tabele["blocaje"] = [{"IDRH": 5, "ord_h": 0, "ord_h_nr": None, "ord_r": 0,
+                            "ord_r_data": None, "plati": 2,
+                            "plati_data": dt("2026-03-01 00:00:00")}]
+    monkeypatch.setattr(A, "get_kbot_connection", lambda db=None: c)
+
+    date = client.get(URL + "?cod=" + COD, headers=auth_headers).get_json()
+    inst5 = date["instantanee"][0]
+    assert inst5["blocat"] is True
+    assert "01.03.2026" in inst5["motive"][0]
+
+
+def test_post_pe_o_legatura_blocata_da_409(client, auth_headers, monkeypatch):
+    c = baza_cu_un_lant()
+    c.tabele["blocaje"] = [{"IDRH": 5, "ord_h": 1, "ord_h_nr": "77", "ord_r": 0,
+                            "ord_r_data": None, "plati": 0, "plati_data": None}]
+    monkeypatch.setattr(A, "get_kbot_connection", lambda db=None: c)
+
+    # Amprenta buna, ca sa treaca de paza de concurenta si sa cada exact pe blocaj.
+    amp = P.amprenta(c.cursor(dictionary=True), COD)
+    c.executed.clear()
+
+    corp = _json.dumps({"cod": COD, "amprenta": amp,
+                        "comenzi": [cmd(5, A.ACTIUNE_DESPRINS)]})
+    r = client.post(URL, data=corp, headers=auth_headers)
+    assert r.status_code == 409
+    date = r.get_json()
+    assert date["reason"] == A.REASON_INSTANTANEU_BLOCAT
+    assert "77" in date["error"]
+    assert c.rolled_back
+    assert not c.committed

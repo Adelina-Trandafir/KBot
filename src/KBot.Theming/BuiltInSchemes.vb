@@ -160,6 +160,13 @@ Public Module BuiltInSchemes
             .DotOk = "#22C55E",
             .DotIdle = "#94A3B8"
         }
+        ' CardRadius = 0: colturi DREPTE, umbra ramane. Rotunjirea a fost data jos dupa ce a fost
+        ' vazuta pe ecran. Motivul e structural, nu o valoare gresita: un card nu-si poate rotunji
+        ' decat propria pictura, iar orice copil care il umple — arborele, o vedere — se picteaza
+        ' PESTE colturi, fiindca un copil e o fereastra de sine statatoare care deseneaza dupa
+        ' parintele ei. Singurul mod de a-l opri e sa i se taie o regiune de fereastra, iar aia se
+        ' taie pe pixeli intregi, fara antialias — deci colturile ies in trepte. Nu se reia fara
+        ' alt mecanism.
         Dim s As New ThemeStyleOptions With {
             .UseSystemColors = False,
             .FlatControls = True,
@@ -171,7 +178,7 @@ Public Module BuiltInSchemes
             .FocusAccent = True,
             .DarkTitleBar = False,
             .OwnerDrawTabs = False,
-            .CardRadius = 14,
+            .CardRadius = 0,
             .CardShadow = 10,
             .CardShadowOpacity = 14,
             .CardGutter = 12,
