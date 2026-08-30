@@ -41,6 +41,7 @@ Partial Class AsociereForm
         Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AsociereForm))
         tips = New KBotToolTip(components)
         pnlCard = New Panel()
         split = New SplitContainer()
@@ -49,11 +50,12 @@ Partial Class AsociereForm
         treeLibere = New AdvancedTreeControl()
         grid = New KBotDataView()
         ntfMesaj = New KBotNotice()
-        tlpButtons = New TableLayoutPanel()
+        lblIntro = New Label()
         btnRenunta = New Button()
         btnSalveaza = New Button()
-        lblIntro = New Label()
         capBar = New KBotCaptionBar()
+        tlyAsociere = New TableLayoutPanel()
+        il = New ImageList(components)
         pnlCard.SuspendLayout()
         CType(split, ComponentModel.ISupportInitialize).BeginInit()
         split.Panel1.SuspendLayout()
@@ -64,32 +66,90 @@ Partial Class AsociereForm
         splitDreapta.Panel2.SuspendLayout()
         splitDreapta.SuspendLayout()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
-        tlpButtons.SuspendLayout()
+        tlyAsociere.SuspendLayout()
         SuspendLayout()
-        '
+        ' 
+        ' pnlCard
+        ' 
+        tlyAsociere.SetColumnSpan(pnlCard, 2)
+        pnlCard.Controls.Add(split)
+        pnlCard.Controls.Add(ntfMesaj)
+        pnlCard.Controls.Add(lblIntro)
+        pnlCard.Dock = DockStyle.Fill
+        pnlCard.Location = New Point(0, 67)
+        pnlCard.Margin = New Padding(0)
+        pnlCard.Name = "pnlCard"
+        pnlCard.Padding = New Padding(17, 0, 17, 20)
+        pnlCard.Size = New Size(1084, 741)
+        pnlCard.TabIndex = 0
+        pnlCard.Tag = "Card"
+        ' 
+        ' split
+        ' 
+        split.Dock = DockStyle.Fill
+        split.Location = New Point(17, 71)
+        split.Margin = New Padding(4, 5, 4, 5)
+        split.Name = "split"
+        ' 
+        ' split.Panel1
+        ' 
+        split.Panel1.Controls.Add(treeLant)
+        split.Panel1MinSize = 160
+        ' 
+        ' split.Panel2
+        ' 
+        split.Panel2.Controls.Add(splitDreapta)
+        split.Panel2MinSize = 160
+        split.Size = New Size(1050, 557)
+        split.SplitterDistance = 407
+        split.SplitterWidth = 9
+        split.TabIndex = 2
+        ' 
         ' treeLant
-        '
+        ' 
         treeLant.Dock = DockStyle.Fill
         treeLant.DragEnabled = True
         treeLant.ExpanderSize = 10
         treeLant.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
-        treeLant.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         treeLant.HeaderCaption = " RECEPȚII ȘI LANȚURILE LOR"
         treeLant.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        treeLant.HeaderHeight = 26
-        treeLant.HeaderIconSize = New Size(16, 16)
+        treeLant.HeaderHeight = 30
         treeLant.HeaderVisible = True
         treeLant.Indent = 12
         treeLant.Location = New Point(0, 0)
+        treeLant.Margin = New Padding(4, 5, 4, 5)
         treeLant.MinimumCollapsedWidth = 120
         treeLant.Name = "treeLant"
+        treeLant.NodeImages = il
         treeLant.PaddingExpanderGap = 8
         treeLant.PaddingIconGap = 8
-        treeLant.Size = New Size(470, 452)
+        treeLant.Size = New Size(407, 557)
         treeLant.TabIndex = 0
-        '
+        ' 
+        ' splitDreapta
+        ' 
+        splitDreapta.Dock = DockStyle.Fill
+        splitDreapta.Location = New Point(0, 0)
+        splitDreapta.Margin = New Padding(4, 5, 4, 5)
+        splitDreapta.Name = "splitDreapta"
+        splitDreapta.Orientation = Orientation.Horizontal
+        ' 
+        ' splitDreapta.Panel1
+        ' 
+        splitDreapta.Panel1.Controls.Add(treeLibere)
+        splitDreapta.Panel1MinSize = 80
+        ' 
+        ' splitDreapta.Panel2
+        ' 
+        splitDreapta.Panel2.Controls.Add(grid)
+        splitDreapta.Panel2MinSize = 80
+        splitDreapta.Size = New Size(634, 557)
+        splitDreapta.SplitterDistance = 308
+        splitDreapta.SplitterWidth = 10
+        splitDreapta.TabIndex = 1
+        ' 
         ' treeLibere
-        '
+        ' 
         treeLibere.Dock = DockStyle.Fill
         treeLibere.DragEnabled = True
         treeLibere.ExpanderSize = 10
@@ -97,26 +157,27 @@ Partial Class AsociereForm
         treeLibere.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         treeLibere.HeaderCaption = " INSTANTANEE NEAȘEZATE"
         treeLibere.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        treeLibere.HeaderHeight = 26
-        treeLibere.HeaderIconSize = New Size(16, 16)
+        treeLibere.HeaderHeight = 30
         treeLibere.HeaderVisible = True
         treeLibere.Indent = 12
         treeLibere.Location = New Point(0, 0)
+        treeLibere.Margin = New Padding(4, 5, 4, 5)
         treeLibere.Name = "treeLibere"
         treeLibere.PaddingExpanderGap = 8
         treeLibere.PaddingIconGap = 8
-        treeLibere.Size = New Size(414, 250)
+        treeLibere.Size = New Size(634, 308)
         treeLibere.TabIndex = 0
-        '
+        ' 
         ' grid
-        '
-        grid.AlternatingRows = True
+        ' 
         grid.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        grid.BackColor = SystemColors.Window
         grid.CellTooltip.Enabled = False
         grid.ColumnFillMode = KBotFillMode.LastColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderText = "Indicator"
+        KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn1.Key = "indicator"
         KBotDataColumn1.MinWidth = 60
         KBotDataColumn1.OptionGroup = Nothing
@@ -125,6 +186,7 @@ Partial Class AsociereForm
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderText = "Cod SSI"
+        KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn2.Key = "ssi"
         KBotDataColumn2.MinWidth = 80
         KBotDataColumn2.OptionGroup = Nothing
@@ -156,168 +218,127 @@ Partial Class AsociereForm
         grid.Columns.Add(KBotDataColumn4)
         grid.Dock = DockStyle.Fill
         grid.Location = New Point(0, 0)
+        grid.Margin = New Padding(4, 5, 4, 5)
         grid.Name = "grid"
         grid.RowHeight = 22
-        grid.Size = New Size(414, 198)
+        grid.Size = New Size(634, 239)
         grid.TabIndex = 0
-        '
-        ' splitDreapta.Panel1
-        '
-        splitDreapta.Panel1.Controls.Add(treeLibere)
-        '
-        ' splitDreapta.Panel2
-        '
-        splitDreapta.Panel2.Controls.Add(grid)
-        '
-        ' splitDreapta
-        '
-        splitDreapta.Dock = DockStyle.Fill
-        splitDreapta.Location = New Point(0, 0)
-        splitDreapta.Name = "splitDreapta"
-        splitDreapta.Orientation = Orientation.Horizontal
-        splitDreapta.Panel1MinSize = 80
-        splitDreapta.Panel2MinSize = 80
-        splitDreapta.Size = New Size(414, 452)
-        splitDreapta.SplitterDistance = 250
-        splitDreapta.SplitterWidth = 6
-        splitDreapta.TabIndex = 1
-        '
-        ' split.Panel1
-        '
-        split.Panel1.Controls.Add(treeLant)
-        '
-        ' split.Panel2
-        '
-        split.Panel2.Controls.Add(splitDreapta)
-        '
-        ' split
-        '
-        split.Dock = DockStyle.Fill
-        split.Location = New Point(12, 78)
-        split.Name = "split"
-        split.Panel1MinSize = 160
-        split.Panel2MinSize = 160
-        split.Size = New Size(890, 452)
-        split.SplitterDistance = 470
-        split.SplitterWidth = 6
-        split.TabIndex = 2
-        '
+        ' 
         ' ntfMesaj
-        '
+        ' 
         ntfMesaj.BackColor = Color.Transparent
         ntfMesaj.Dock = DockStyle.Bottom
-        ntfMesaj.Location = New Point(12, 530)
-        ntfMesaj.Margin = New Padding(0, 6, 0, 6)
+        ntfMesaj.Location = New Point(17, 628)
+        ntfMesaj.Margin = New Padding(0, 10, 0, 10)
         ntfMesaj.Name = "ntfMesaj"
-        ntfMesaj.Size = New Size(890, 56)
+        ntfMesaj.Size = New Size(1050, 93)
         ntfMesaj.TabIndex = 3
         ntfMesaj.TabStop = False
         ntfMesaj.Visible = False
-        '
+        ' 
+        ' lblIntro
+        ' 
+        lblIntro.Dock = DockStyle.Top
+        lblIntro.Location = New Point(17, 0)
+        lblIntro.Margin = New Padding(4, 0, 4, 0)
+        lblIntro.Name = "lblIntro"
+        lblIntro.Padding = New Padding(0, 0, 0, 13)
+        lblIntro.Size = New Size(1050, 71)
+        lblIntro.TabIndex = 1
+        lblIntro.Text = resources.GetString("lblIntro.Text")
+        lblIntro.TextAlign = ContentAlignment.MiddleCenter
+        ' 
         ' btnRenunta
-        '
+        ' 
         btnRenunta.AutoSize = True
-        btnRenunta.Dock = DockStyle.Fill
-        btnRenunta.Location = New Point(3, 3)
+        btnRenunta.Dock = DockStyle.Left
+        btnRenunta.Location = New Point(4, 813)
+        btnRenunta.Margin = New Padding(4, 5, 4, 5)
         btnRenunta.Name = "btnRenunta"
-        btnRenunta.Padding = New Padding(12, 6, 12, 6)
-        btnRenunta.Size = New Size(439, 33)
+        btnRenunta.Padding = New Padding(17, 10, 17, 10)
+        btnRenunta.Size = New Size(404, 60)
         btnRenunta.TabIndex = 0
         btnRenunta.Text = "Renunță"
         btnRenunta.UseVisualStyleBackColor = True
-        '
+        ' 
         ' btnSalveaza
-        '
+        ' 
         btnSalveaza.AutoSize = True
-        btnSalveaza.Dock = DockStyle.Fill
+        btnSalveaza.Dock = DockStyle.Right
         btnSalveaza.Enabled = False
-        btnSalveaza.Location = New Point(448, 3)
+        btnSalveaza.Location = New Point(675, 813)
+        btnSalveaza.Margin = New Padding(4, 5, 4, 5)
         btnSalveaza.Name = "btnSalveaza"
-        btnSalveaza.Padding = New Padding(12, 6, 12, 6)
-        btnSalveaza.Size = New Size(439, 33)
+        btnSalveaza.Padding = New Padding(17, 10, 17, 10)
+        btnSalveaza.Size = New Size(405, 60)
         btnSalveaza.TabIndex = 1
         btnSalveaza.Text = "Salvează legăturile"
         btnSalveaza.UseVisualStyleBackColor = True
-        '
-        ' tlpButtons
-        '
-        tlpButtons.AutoSize = True
-        tlpButtons.AutoSizeMode = AutoSizeMode.GrowAndShrink
-        tlpButtons.ColumnCount = 2
-        tlpButtons.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
-        tlpButtons.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
-        tlpButtons.Controls.Add(btnRenunta, 0, 0)
-        tlpButtons.Controls.Add(btnSalveaza, 1, 0)
-        tlpButtons.Dock = DockStyle.Bottom
-        tlpButtons.Location = New Point(12, 586)
-        tlpButtons.Margin = New Padding(0)
-        tlpButtons.Name = "tlpButtons"
-        tlpButtons.RowCount = 1
-        tlpButtons.RowStyles.Add(New RowStyle())
-        tlpButtons.Size = New Size(890, 39)
-        tlpButtons.TabIndex = 4
-        tlpButtons.Tag = "Card"
-        '
-        ' lblIntro
-        '
-        lblIntro.Dock = DockStyle.Top
-        lblIntro.Location = New Point(12, 44)
-        lblIntro.Name = "lblIntro"
-        lblIntro.Padding = New Padding(0, 0, 0, 8)
-        lblIntro.Size = New Size(890, 34)
-        lblIntro.TabIndex = 1
-        lblIntro.Text = "Trage un instantaneu peste recepția căreia îi aparține. Trage-l înapoi la dreapta ca să-l desprinzi. Legăturile pe care s-a construit deja o ordonanțare sau pe care s-au calculat plăți rămân vizibile, dar nu se mai pot muta."
-        '
+        ' 
         ' capBar
-        '
-        capBar.Dock = DockStyle.Top
+        ' 
+        tlyAsociere.SetColumnSpan(capBar, 2)
+        capBar.Dock = DockStyle.Fill
         capBar.IconImage = My.Resources.Resources.kbot_64
-        capBar.Location = New Point(12, 0)
+        capBar.Location = New Point(0, 0)
+        capBar.Margin = New Padding(0)
         capBar.Name = "capBar"
         capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
         capBar.ShowTextScaleSlider = False
         capBar.ShowThemeEditor = False
         capBar.ShowThemeOptions = False
-        capBar.Size = New Size(890, 44)
-        capBar.TabIndex = 0
+        capBar.Size = New Size(1084, 67)
+        capBar.TabIndex = 1
         capBar.TabStop = False
         capBar.Text = "K-BOT — Legăturile recepțiilor"
-        '
-        ' pnlCard
-        '
-        ' ÎN ORDINE INVERSĂ DE ANDOCARE (regula casei): Fill întâi, apoi Bottom, apoi Top.
-        ' Ultimul Top adăugat ajunge cel mai sus, ultimul Bottom cel mai jos.
-        pnlCard.Controls.Add(split)
-        pnlCard.Controls.Add(ntfMesaj)
-        pnlCard.Controls.Add(tlpButtons)
-        pnlCard.Controls.Add(lblIntro)
-        pnlCard.Controls.Add(capBar)
-        pnlCard.Dock = DockStyle.Fill
-        pnlCard.Location = New Point(1, 3)
-        pnlCard.Name = "pnlCard"
-        pnlCard.Padding = New Padding(12, 0, 12, 12)
-        pnlCard.Size = New Size(914, 637)
-        pnlCard.TabIndex = 0
-        pnlCard.Tag = "Card"
-        '
+        ' 
+        ' tlyAsociere
+        ' 
+        tlyAsociere.ColumnCount = 2
+        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
+        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
+        tlyAsociere.Controls.Add(btnSalveaza, 1, 2)
+        tlyAsociere.Controls.Add(btnRenunta, 0, 2)
+        tlyAsociere.Controls.Add(capBar, 0, 0)
+        tlyAsociere.Controls.Add(pnlCard, 0, 1)
+        tlyAsociere.Dock = DockStyle.Fill
+        tlyAsociere.Location = New Point(1, 5)
+        tlyAsociere.Margin = New Padding(0)
+        tlyAsociere.Name = "tlyAsociere"
+        tlyAsociere.RowCount = 3
+        tlyAsociere.RowStyles.Add(New RowStyle())
+        tlyAsociere.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyAsociere.RowStyles.Add(New RowStyle(SizeType.Absolute, 70F))
+        tlyAsociere.Size = New Size(1084, 878)
+        tlyAsociere.TabIndex = 2
+        ' 
+        ' il
+        ' 
+        il.ColorDepth = ColorDepth.Depth32Bit
+        il.ImageStream = CType(resources.GetObject("il.ImageStream"), ImageListStreamer)
+        il.TransparentColor = Color.Transparent
+        il.Images.SetKeyName(0, "link_del")
+        il.Images.SetKeyName(1, "link_break")
+        il.Images.SetKeyName(2, "link_add")
+        ' 
         ' AsociereForm
-        '
-        AutoScaleDimensions = New SizeF(7F, 15F)
+        ' 
+        AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(916, 643)
-        Controls.Add(pnlCard)
+        ClientSize = New Size(1086, 888)
+        Controls.Add(tlyAsociere)
         FormBorderStyle = FormBorderStyle.None
+        Margin = New Padding(4, 5, 4, 5)
         MaximizeBox = False
         MinimizeBox = False
-        MinimumSize = New Size(760, 520)
+        MinimumSize = New Size(1086, 867)
         Name = "AsociereForm"
-        Padding = New Padding(1, 3, 1, 3)
+        Padding = New Padding(1, 5, 1, 5)
         ShowInTaskbar = False
         StartPosition = FormStartPosition.CenterParent
         Text = "K-BOT — Legăturile recepțiilor"
         pnlCard.ResumeLayout(False)
-        pnlCard.PerformLayout()
         split.Panel1.ResumeLayout(False)
         split.Panel2.ResumeLayout(False)
         CType(split, ComponentModel.ISupportInitialize).EndInit()
@@ -327,14 +348,13 @@ Partial Class AsociereForm
         CType(splitDreapta, ComponentModel.ISupportInitialize).EndInit()
         splitDreapta.ResumeLayout(False)
         CType(grid, ComponentModel.ISupportInitialize).EndInit()
-        tlpButtons.ResumeLayout(False)
-        tlpButtons.PerformLayout()
+        tlyAsociere.ResumeLayout(False)
+        tlyAsociere.PerformLayout()
         ResumeLayout(False)
     End Sub
 
     Friend WithEvents tips As KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
-    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
     Friend WithEvents lblIntro As Label
     Friend WithEvents split As SplitContainer
     Friend WithEvents treeLant As KBot.Controls.AdvancedTreeControl
@@ -342,7 +362,9 @@ Partial Class AsociereForm
     Friend WithEvents treeLibere As KBot.Controls.AdvancedTreeControl
     Friend WithEvents grid As KBot.Controls.KBotDataView
     Friend WithEvents ntfMesaj As KBot.Controls.KBotNotice
-    Friend WithEvents tlpButtons As TableLayoutPanel
     Friend WithEvents btnRenunta As Button
     Friend WithEvents btnSalveaza As Button
+    Friend WithEvents capBar As KBotCaptionBar
+    Friend WithEvents tlyAsociere As TableLayoutPanel
+    Friend WithEvents il As ImageList
 End Class

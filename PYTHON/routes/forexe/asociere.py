@@ -579,7 +579,11 @@ def get_asociere():
     conn = None
     try:
         conn = get_kbot_connection(db_name)
-        cursor = conn.cursor()
+        # Cursor pe DICTIONAR: tot fisierul asta -- si tot ce imprumuta din
+        # prelucrare_asociere -- citeste randurile pe NUME de coloana (r["IDRH"]).
+        # Un cursor obisnuit intoarce tupluri, si prima citire moare cu
+        # «tuple indices must be integers»; exact drumul pe care a cazut GET-ul.
+        cursor = conn.cursor(dictionary=True)
 
         amp = amprenta(cursor, cod)
         receptii = citeste_receptii(cursor, cod)
@@ -640,7 +644,11 @@ def post_asociere():
         comenzi = normalizeaza_comenzi(date.get("comenzi"))
 
         conn = get_kbot_connection(db_name)
-        cursor = conn.cursor()
+        # Cursor pe DICTIONAR: tot fisierul asta -- si tot ce imprumuta din
+        # prelucrare_asociere -- citeste randurile pe NUME de coloana (r["IDRH"]).
+        # Un cursor obisnuit intoarce tupluri, si prima citire moare cu
+        # «tuple indices must be integers»; exact drumul pe care a cazut GET-ul.
+        cursor = conn.cursor(dictionary=True)
 
         # Amprenta INAINTE de orice scriere; altfel ar descrie starea scrisa.
         amp_server = amprenta(cursor, cod)

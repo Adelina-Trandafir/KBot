@@ -521,7 +521,7 @@ Public Class AsociereForm
         Dim asezat As Boolean = PozitiaLui(inst) > 0
         Dim intrari As New List(Of CustomPopupItem)()
         If asezat Then
-            intrari.Add(New CustomPopupItem(MENIU_DESPRINDE, "&Desprinde de recepție"))
+            intrari.Add(New CustomPopupItem(MENIU_DESPRINDE, "&Desprinde de recepție", il.Images.Item("link_break")))
             If EsteStergere(inst.Idrh) Then
                 intrari.Add(New CustomPopupItem(MENIU_NU_STERGERE, "Nu mai e rândul de ș&tergere"))
             Else

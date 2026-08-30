@@ -353,7 +353,7 @@ Partial Class MainForm
         KBotNavItem3.Image = My.Resources.Resources.database
         KBotNavItem3.Key = "rezervari"
         KBotNavItem3.Text = "Rezervări"
-        KBotNavItem4.Image = My.Resources.Resources.binvoice
+        KBotNavItem4.Image = CType(resources.GetObject("KBotNavItem4.Image"), Image)
         KBotNavItem4.Key = "receptii"
         KBotNavItem4.Text = "Recepții"
         KBotNavItem5.Image = My.Resources.Resources.credit_card
