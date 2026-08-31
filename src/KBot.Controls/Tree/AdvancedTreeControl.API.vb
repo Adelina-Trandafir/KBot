@@ -151,4 +151,41 @@ Partial Public Class AdvancedTreeControl
         Me.Invalidate()
         Me.Update()
     End Sub
+
+    ''' <summary>
+    ''' Selects <paramref name="node"/> and does whatever it takes for it to be ON SCREEN: expands
+    ''' every ancestor that hides it, then scrolls the least amount needed.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Writing <see cref="SelectedNode"/> on its own is not enough, and that is the whole
+    ''' reason this exists. A node inside a collapsed parent is not in the visible list at all, so
+    ''' the selection is real but invisible and the operator sees a click that did nothing. Every
+    ''' caller that selects from OUTSIDE the tree — a point on a chart, a search hit, a row in a
+    ''' list beside it — wants both halves, and each of them writing the same three lines is how
+    ''' the two halves eventually drift apart.</para>
+    ''' <para>Focus is deliberately NOT taken. The operator clicked something else; pulling the
+    ''' caret over here would make their next arrow key move a tree they were not looking at.</para>
+    ''' <para>A node that is not in this tree is a no-op, not an error: the caller is usually
+    ''' matching two lists and «no match here» is an ordinary answer.</para>
+    ''' </remarks>
+    Public Sub SelectAndReveal(node As TreeItem)
+        Try
+            If node Is Nothing Then Return
+
+            Dim ancestor As TreeItem = node.Parent
+            While ancestor IsNot Nothing
+                ancestor.Expanded = True
+                ancestor = ancestor.Parent
+            End While
+
+            SelectedNode = node
+            ' The expanding above changed how tall the content is, and EnsureNodeVisible measures
+            ' against the scrollbar — so the range has to be right BEFORE it is asked.
+            RefreshScrollVisibility()
+            EnsureNodeVisible(node)
+            Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.SelectAndReveal", ex)
+        End Try
+    End Sub
 End Class

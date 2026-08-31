@@ -24,6 +24,7 @@ e logică (după control), nu după felul fișierului.
 | `Scroll/` | `KBotScrollBar` — bara de derulare desenată de noi. Semantica intervalului e a lui `System.Windows.Forms.ScrollBar` (`Minimum .. Maximum - LargeChange + 1`), dar fața e a paletei: barele native sunt ferestre pictate de Windows, deci nicio culoare a schemei nu ajunge pe ele |
 | `Label/` | `KBotLabel` — eticheta cu chenar propriu (culoare + grosime + rază). `BorderStyle` moștenit e ascuns și refuzat: cele trei valori native se desenează în culorile SISTEMULUI |
 | `ToolTip/` | `KBotToolTip` (componenta `IExtenderProvider`), `KBotToolTipContent`, `KBotToolTipStyle` + `KBotToolTipBand`/`KBotToolTipSeparator`, `KBotToolTipWindow` (fereastra) și `KBotRichText` (motorul de text îmbogățit: analiză, așezare, desen — pur, măsurabil fără ecran) |
+| `Chart/` | `KBotChartView` (+ partial-ul `.Painting`) — graficul de timp desenat de noi, cu banda SINGLE-SELECT de butoane pe post de tabcontrol; `KBotChartSeries`/`KBotChartSeriesCollection`, `KBotChartPoint`/`KBotChartPointCollection`, `KBotChartTab`/`KBotChartTabCollection`, enum-urile `KBotChartMarkerStyle`/`KBotChartTabAlign`/`KBotChartValueAxisMode`. Singurul folder scris integral în engleză, inclusiv numele categoriilor din grila de proprietăți (felia 0048-05) |
 
 Un control nou => un folder nou. Nu se adaugă fișiere de control în rădăcina proiectului
 (acolo rămân doar `AssemblyInfo.vb`, `.vbproj` și acest README).

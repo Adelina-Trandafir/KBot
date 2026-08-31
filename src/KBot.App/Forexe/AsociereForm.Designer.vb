@@ -8,10 +8,12 @@ Imports KBot.Controls
 ' subformularele sunt in `FX_System_Export/FORMS`. Regulile vin de acolo si sunt portate;
 ' ASPECTUL de mai jos este PROIECTAT, nu portat. Consemnat in worklog ca neverificat.
 '
-' Cele patru panouri Access devin trei zone, fiindca aici mutarea se face TRAGAND:
-'   stanga        = recepțiile cu lanturile lor      (Access: `_LISTA` + `_LISTA_HA`)
-'   dreapta sus   = instantaneele inca neasezate     (Access: `_LISTA_HN`)
+' Cele patru panouri Access devin patru zone, fiindca aici mutarea se face TRAGAND:
+'   stanga sus    = recepțiile cu lanturile lor      (Access: `_LISTA` + `_LISTA_HA`)
+'   stanga jos    = instantaneele inca neasezate     (Access: `_LISTA_HN`)
 '   dreapta jos   = liniile rândului selectat        (Access: `_LISTA_RH`)
+'   dreapta sus   = graficul evolutiei (`grafic`), care NU are corespondent in Access —
+'                   e locul ramas liber dupa ce cele doua liste au trecut in stanga
 ' Combo-ul de asezare din `_LISTA_HN` si butonul de desprindere din `_LISTA_HA` se
 ' contopesc intr-o singura miscare: tragi la stanga ca sa asezi, tragi la dreapta ca sa
 ' desprinzi.
@@ -37,17 +39,24 @@ Partial Class AsociereForm
 
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AsociereForm))
+        Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
+        Dim TreeNodeDefinition2 As TreeNodeDefinition = New TreeNodeDefinition()
+        Dim KBotChartTab1 As KBotChartTab = New KBotChartTab()
+        Dim KBotChartTab2 As KBotChartTab = New KBotChartTab()
         Dim KBotDataColumn1 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AsociereForm))
         tips = New KBotToolTip(components)
         pnlCard = New Panel()
         split = New SplitContainer()
+        SplitContainer1 = New SplitContainer()
         treeLant = New AdvancedTreeControl()
-        splitDreapta = New SplitContainer()
+        Il_Receptii = New ImageList(components)
         treeLibere = New AdvancedTreeControl()
+        splitDreapta = New SplitContainer()
+        grafic = New KBotChartView()
         grid = New KBotDataView()
         ntfMesaj = New KBotNotice()
         lblIntro = New Label()
@@ -55,16 +64,20 @@ Partial Class AsociereForm
         btnSalveaza = New Button()
         capBar = New KBotCaptionBar()
         tlyAsociere = New TableLayoutPanel()
-        il = New ImageList(components)
         pnlCard.SuspendLayout()
         CType(split, ComponentModel.ISupportInitialize).BeginInit()
         split.Panel1.SuspendLayout()
         split.Panel2.SuspendLayout()
         split.SuspendLayout()
+        CType(SplitContainer1, ComponentModel.ISupportInitialize).BeginInit()
+        SplitContainer1.Panel1.SuspendLayout()
+        SplitContainer1.Panel2.SuspendLayout()
+        SplitContainer1.SuspendLayout()
         CType(splitDreapta, ComponentModel.ISupportInitialize).BeginInit()
         splitDreapta.Panel1.SuspendLayout()
         splitDreapta.Panel2.SuspendLayout()
         splitDreapta.SuspendLayout()
+        CType(grafic, ComponentModel.ISupportInitialize).BeginInit()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         tlyAsociere.SuspendLayout()
         SuspendLayout()
@@ -93,7 +106,7 @@ Partial Class AsociereForm
         ' 
         ' split.Panel1
         ' 
-        split.Panel1.Controls.Add(treeLant)
+        split.Panel1.Controls.Add(SplitContainer1)
         split.Panel1MinSize = 160
         ' 
         ' split.Panel2
@@ -105,26 +118,118 @@ Partial Class AsociereForm
         split.SplitterWidth = 9
         split.TabIndex = 2
         ' 
+        ' SplitContainer1
+        ' 
+        SplitContainer1.Dock = DockStyle.Fill
+        SplitContainer1.Location = New Point(0, 0)
+        SplitContainer1.Margin = New Padding(0)
+        SplitContainer1.Name = "SplitContainer1"
+        SplitContainer1.Orientation = Orientation.Horizontal
+        ' 
+        ' SplitContainer1.Panel1
+        ' 
+        SplitContainer1.Panel1.Controls.Add(treeLant)
+        ' 
+        ' SplitContainer1.Panel2
+        ' 
+        SplitContainer1.Panel2.Controls.Add(treeLibere)
+        SplitContainer1.Size = New Size(407, 557)
+        SplitContainer1.SplitterDistance = 314
+        SplitContainer1.TabIndex = 1
+        ' 
         ' treeLant
         ' 
+        treeLant.BorderColor = SystemColors.ActiveBorder
         treeLant.Dock = DockStyle.Fill
         treeLant.DragEnabled = True
         treeLant.ExpanderSize = 10
         treeLant.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        treeLant.HeaderBackColor = SystemColors.Control
         treeLant.HeaderCaption = " RECEPȚII ȘI LANȚURILE LOR"
         treeLant.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         treeLant.HeaderHeight = 30
+        treeLant.HeaderIconSize = New Size(18, 18)
+        treeLant.HeaderLeftIcon = CType(resources.GetObject("treeLant.HeaderLeftIcon"), Image)
+        treeLant.HeaderLeftIconKey = "Receptii"
+        treeLant.HeaderSeparatorColor = SystemColors.ActiveBorder
+        treeLant.HeaderSeparatorWidth = 2
         treeLant.HeaderVisible = True
         treeLant.Indent = 12
+        treeLant.ItemHeight = 24
         treeLant.Location = New Point(0, 0)
         treeLant.Margin = New Padding(4, 5, 4, 5)
         treeLant.MinimumCollapsedWidth = 120
         treeLant.Name = "treeLant"
-        treeLant.NodeImages = il
-        treeLant.PaddingExpanderGap = 8
+        treeLant.NodeImages = Il_Receptii
+        TreeNodeDefinition1.Caption = "01/01/2026~~~1.234.567,89 (1)"
+        TreeNodeDefinition1.Expanded = True
+        TreeNodeDefinition1.ImageKey = "Receptii"
+        TreeNodeDefinition1.Key = "1"
+        TreeNodeDefinition1.OpenImageKey = Nothing
+        TreeNodeDefinition1.ParentKey = Nothing
+        TreeNodeDefinition1.RightImageKey = Nothing
+        TreeNodeDefinition1.Tag = Nothing
+        TreeNodeDefinition1.Tooltip = Nothing
+        TreeNodeDefinition2.Caption = "01/01/2026 12:34:56~~~1.234.567,89 (X)"
+        TreeNodeDefinition2.ImageKey = "Receptii_Link"
+        TreeNodeDefinition2.Key = "2"
+        TreeNodeDefinition2.OpenImageKey = Nothing
+        TreeNodeDefinition2.ParentKey = "1"
+        TreeNodeDefinition2.RightImageKey = Nothing
+        TreeNodeDefinition2.Tag = Nothing
+        TreeNodeDefinition2.Tooltip = Nothing
+        treeLant.Nodes.Add(TreeNodeDefinition1)
+        treeLant.Nodes.Add(TreeNodeDefinition2)
+        treeLant.PaddingExpanderGap = 2
         treeLant.PaddingIconGap = 8
-        treeLant.Size = New Size(407, 557)
-        treeLant.TabIndex = 0
+        treeLant.ReserveRightIconSpace = True
+        treeLant.RightIconSize = New Size(12, 12)
+        treeLant.RootExpander = False
+        treeLant.Size = New Size(407, 314)
+        treeLant.TabIndex = 1
+        treeLant.TooltipShowOnlyOnRightIcon = True
+        ' 
+        ' Il_Receptii
+        ' 
+        Il_Receptii.ColorDepth = ColorDepth.Depth32Bit
+        Il_Receptii.ImageStream = CType(resources.GetObject("Il_Receptii.ImageStream"), ImageListStreamer)
+        Il_Receptii.TransparentColor = Color.Transparent
+        Il_Receptii.Images.SetKeyName(0, "Receptii")
+        Il_Receptii.Images.SetKeyName(1, "Receptii_Add")
+        Il_Receptii.Images.SetKeyName(2, "Receptii_Del")
+        Il_Receptii.Images.SetKeyName(3, "Receptii_Edit")
+        Il_Receptii.Images.SetKeyName(4, "Receptii_Error")
+        Il_Receptii.Images.SetKeyName(5, "Receptii_Link")
+        Il_Receptii.Images.SetKeyName(6, "Receptii_Move")
+        Il_Receptii.Images.SetKeyName(7, "Lock")
+        ' 
+        ' treeLibere
+        ' 
+        treeLibere.BorderColor = SystemColors.ActiveBorder
+        treeLibere.Dock = DockStyle.Fill
+        treeLibere.DragEnabled = True
+        treeLibere.ExpanderSize = 10
+        treeLibere.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        treeLibere.HeaderBackColor = SystemColors.Control
+        treeLibere.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
+        treeLibere.HeaderCaption = " INSTANTANEE NEAȘEZATE"
+        treeLibere.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        treeLibere.HeaderHeight = 30
+        treeLibere.HeaderIconSize = New Size(18, 18)
+        treeLibere.HeaderLeftIcon = CType(resources.GetObject("treeLibere.HeaderLeftIcon"), Image)
+        treeLibere.HeaderLeftIconKey = "Receptii_Link"
+        treeLibere.HeaderSeparatorColor = SystemColors.ActiveBorder
+        treeLibere.HeaderSeparatorWidth = 2
+        treeLibere.HeaderVisible = True
+        treeLibere.Indent = 12
+        treeLibere.Location = New Point(0, 0)
+        treeLibere.Margin = New Padding(4, 5, 4, 5)
+        treeLibere.Name = "treeLibere"
+        treeLibere.NodeImages = Il_Receptii
+        treeLibere.PaddingExpanderGap = 8
+        treeLibere.PaddingIconGap = 8
+        treeLibere.Size = New Size(407, 239)
+        treeLibere.TabIndex = 1
         ' 
         ' splitDreapta
         ' 
@@ -136,7 +241,7 @@ Partial Class AsociereForm
         ' 
         ' splitDreapta.Panel1
         ' 
-        splitDreapta.Panel1.Controls.Add(treeLibere)
+        splitDreapta.Panel1.Controls.Add(grafic)
         splitDreapta.Panel1MinSize = 80
         ' 
         ' splitDreapta.Panel2
@@ -148,25 +253,33 @@ Partial Class AsociereForm
         splitDreapta.SplitterWidth = 10
         splitDreapta.TabIndex = 1
         ' 
-        ' treeLibere
+        ' grafic
         ' 
-        treeLibere.Dock = DockStyle.Fill
-        treeLibere.DragEnabled = True
-        treeLibere.ExpanderSize = 10
-        treeLibere.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
-        treeLibere.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
-        treeLibere.HeaderCaption = " INSTANTANEE NEAȘEZATE"
-        treeLibere.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        treeLibere.HeaderHeight = 30
-        treeLibere.HeaderVisible = True
-        treeLibere.Indent = 12
-        treeLibere.Location = New Point(0, 0)
-        treeLibere.Margin = New Padding(4, 5, 4, 5)
-        treeLibere.Name = "treeLibere"
-        treeLibere.PaddingExpanderGap = 8
-        treeLibere.PaddingIconGap = 8
-        treeLibere.Size = New Size(634, 308)
-        treeLibere.TabIndex = 0
+        grafic.Dock = DockStyle.Fill
+        grafic.EmptyText = "Alege o recepție în stânga ca să-i vezi evoluția."
+        grafic.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        grafic.HeaderCaption = " EVOLUȚIA VALORII"
+        grafic.HeaderGradient = 5
+        grafic.HeaderHeight = 30
+        grafic.HeaderSeparatorWidth = 2
+        grafic.LegendVisible = False
+        grafic.Location = New Point(0, 0)
+        grafic.Margin = New Padding(4, 5, 4, 5)
+        grafic.Name = "grafic"
+        grafic.PlotMargin = 2
+        grafic.SelectedTabKey = "receptie"
+        grafic.Size = New Size(634, 308)
+        grafic.TabHeight = 26
+        grafic.TabIndex = 0
+        grafic.TabPadding = 4
+        KBotChartTab1.Key = "receptie"
+        KBotChartTab1.Text = "Recepția"
+        KBotChartTab1.Tooltip = "Evoluția recepției alese" & vbCrLf & "Fiecare punct este un instantaneu al lanțului ei, la ora la care a fost salvat."
+        KBotChartTab2.Key = "angajament"
+        KBotChartTab2.Text = "Tot angajamentul"
+        KBotChartTab2.Tooltip = "Evoluția întregului angajament" & vbCrLf & "Câte o linie pentru fiecare recepție, plus linia îngroșată a totalului."
+        grafic.Tabs.Add(KBotChartTab1)
+        grafic.Tabs.Add(KBotChartTab2)
         ' 
         ' grid
         ' 
@@ -217,6 +330,9 @@ Partial Class AsociereForm
         grid.Columns.Add(KBotDataColumn3)
         grid.Columns.Add(KBotDataColumn4)
         grid.Dock = DockStyle.Fill
+        grid.HeaderBackColor = SystemColors.Control
+        grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        grid.HeaderSeparatorColor = SystemColors.ActiveBorder
         grid.Location = New Point(0, 0)
         grid.Margin = New Padding(4, 5, 4, 5)
         grid.Name = "grid"
@@ -313,15 +429,6 @@ Partial Class AsociereForm
         tlyAsociere.Size = New Size(1084, 878)
         tlyAsociere.TabIndex = 2
         ' 
-        ' il
-        ' 
-        il.ColorDepth = ColorDepth.Depth32Bit
-        il.ImageStream = CType(resources.GetObject("il.ImageStream"), ImageListStreamer)
-        il.TransparentColor = Color.Transparent
-        il.Images.SetKeyName(0, "link_del")
-        il.Images.SetKeyName(1, "link_break")
-        il.Images.SetKeyName(2, "link_add")
-        ' 
         ' AsociereForm
         ' 
         AutoScaleDimensions = New SizeF(10F, 25F)
@@ -343,10 +450,15 @@ Partial Class AsociereForm
         split.Panel2.ResumeLayout(False)
         CType(split, ComponentModel.ISupportInitialize).EndInit()
         split.ResumeLayout(False)
+        SplitContainer1.Panel1.ResumeLayout(False)
+        SplitContainer1.Panel2.ResumeLayout(False)
+        CType(SplitContainer1, ComponentModel.ISupportInitialize).EndInit()
+        SplitContainer1.ResumeLayout(False)
         splitDreapta.Panel1.ResumeLayout(False)
         splitDreapta.Panel2.ResumeLayout(False)
         CType(splitDreapta, ComponentModel.ISupportInitialize).EndInit()
         splitDreapta.ResumeLayout(False)
+        CType(grafic, ComponentModel.ISupportInitialize).EndInit()
         CType(grid, ComponentModel.ISupportInitialize).EndInit()
         tlyAsociere.ResumeLayout(False)
         tlyAsociere.PerformLayout()
@@ -357,14 +469,16 @@ Partial Class AsociereForm
     Friend WithEvents pnlCard As Panel
     Friend WithEvents lblIntro As Label
     Friend WithEvents split As SplitContainer
-    Friend WithEvents treeLant As KBot.Controls.AdvancedTreeControl
     Friend WithEvents splitDreapta As SplitContainer
-    Friend WithEvents treeLibere As KBot.Controls.AdvancedTreeControl
+    Friend WithEvents grafic As KBot.Controls.KBotChartView
     Friend WithEvents grid As KBot.Controls.KBotDataView
     Friend WithEvents ntfMesaj As KBot.Controls.KBotNotice
     Friend WithEvents btnRenunta As Button
     Friend WithEvents btnSalveaza As Button
     Friend WithEvents capBar As KBotCaptionBar
     Friend WithEvents tlyAsociere As TableLayoutPanel
-    Friend WithEvents il As ImageList
+    Friend WithEvents Il_Receptii As ImageList
+    Friend WithEvents SplitContainer1 As SplitContainer
+    Friend WithEvents treeLant As AdvancedTreeControl
+    Friend WithEvents treeLibere As AdvancedTreeControl
 End Class
