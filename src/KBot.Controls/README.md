@@ -1,5 +1,9 @@
 # KBot.Controls
 
+> Per-control documentation (capabilities + limits, English, one `.md` next to each
+> control) is indexed in [CONTROLS.md](CONTROLS.md). The shared conventions `C1..C9` live
+> there too, so each control doc lists only its own exceptions.
+
 **Toate controalele K-BOT trăiesc aici.** Nu există control K-BOT în alt proiect: nici în
 `KBot.Theming` (acolo a rămas doar motorul de teme plus form-urile de bază), nici în
 `KBot.App`.
