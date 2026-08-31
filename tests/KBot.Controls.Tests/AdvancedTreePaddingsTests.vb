@@ -6,7 +6,7 @@ Imports Xunit
 Imports KBot.Controls
 
 ''' <summary>
-''' MARGINILE ARBORELUI ca proprietăți de designer (categoria «K-BOT Arbore - Paddings»).
+''' MARGINILE ARBORELUI ca proprietăți de designer (categoria «K-BOT: Paddings»).
 '''
 ''' Erau constante private; acum sunt proprietăți. Testul păzește trei lucruri:
 '''  1. toate stau în categoria cerută (operatorul le vrea într-un singur loc în grilă);
@@ -18,7 +18,7 @@ Imports KBot.Controls
 ''' </summary>
 Public Class AdvancedTreePaddingsTests
 
-    Private Const CATEGORIE As String = "K-BOT Arbore - Paddings"
+    Private Const CATEGORIE As String = "K-BOT: Paddings"
 
     ' Numele proprietății → valoarea implicită (fosta constantă)
     Private Shared ReadOnly Implicite As New Dictionary(Of String, Integer) From {

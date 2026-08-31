@@ -55,7 +55,7 @@ Partial Public Class AdvancedTreeControl
     ' ══════════════════════════════════════════════════════════════════════════
 
     Private _dragEnabled As Boolean = False
-    <Category("K-BOT Arbore - Tragere")>
+    <Category("K-BOT: DND")>
     <Description("Permite tragerea unui nod peste altul. Controlul nu mută nimic singur — doar ridică evenimentele.")>
     <DefaultValue(False)>
     Public Property DragEnabled As Boolean
@@ -78,7 +78,7 @@ Partial Public Class AdvancedTreeControl
     ''' <c>Color.Empty</c> = din temă (accentul).
     ''' </summary>
     Private _dragHighlightColor As Color = Color.Empty
-    <Category("K-BOT Arbore - Tragere")>
+    <Category("K-BOT: DND")>
     <Description("Chenarul rândului care poate primi nodul. Empty = din temă.")>
     Public Property DragHighlightColor As Color
         Get
@@ -103,7 +103,7 @@ Partial Public Class AdvancedTreeControl
     ''' Culoarea rândului care NU poate primi nodul. <c>Color.Empty</c> = din temă (eroarea).
     ''' </summary>
     Private _dragForbiddenColor As Color = Color.Empty
-    <Category("K-BOT Arbore - Tragere")>
+    <Category("K-BOT: DND")>
     <Description("Chenarul rândului care refuză nodul. Empty = din temă.")>
     Public Property DragForbiddenColor As Color
         Get

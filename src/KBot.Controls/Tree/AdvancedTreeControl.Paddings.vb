@@ -2,7 +2,7 @@ Imports System.ComponentModel
 
 ''' <summary>
 ''' TOATE marginile/spațierile geometrice ale arborelui, într-un singur loc și expuse în grila
-''' de proprietăți sub categoria «K-BOT Arbore - Paddings».
+''' de proprietăți sub categoria «K-BOT: Paddings».
 '''
 ''' Erau constante private (PADDING_TREE_START, PADDING_EXPANDER_GAP, …) împrăștiate prin
 ''' partiale: singura cale de a schimba o margine era recompilarea. Acum sunt proprietăți cu
@@ -50,7 +50,7 @@ Partial Public Class AdvancedTreeControl
     Private _paddingHeaderLeft As Integer = DEFAULT_PADDING_HEADER_LEFT
 
     ''' <summary>Marginea din stânga a antetului (bandă de căutare).</summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Marginea (px) din stânga antetului (bandă de căutare).")>
     <DefaultValue(DEFAULT_PADDING_HEADER_LEFT)>
     Public Property PaddingHeaderLeft As Integer
@@ -64,7 +64,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     ''' <summary>Marginea globală din STÂNGA a întregului arbore (nodul rădăcină nu stă lipit de bordură).</summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Marginea (px) din stânga întregului arbore — de aici începe grila nivelului 0.")>
     <DefaultValue(DEFAULT_PADDING_TREE_START)>
     Public Property PaddingTreeStart As Integer
@@ -78,7 +78,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     ''' <summary>Cât în stânga conținutului începe dreptunghiul de selecție/survolare.</summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Marginea (px) cu care banda de selecție/hover depășește la stânga conținutul rândului.")>
     <DefaultValue(DEFAULT_PADDING_SELECTION_LEFT)>
     Public Property PaddingSelectionLeft As Integer
@@ -92,7 +92,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     ''' <summary>Spațiul dinaintea primului nod (sub antet/bandă de căutare).</summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Marginea (px) din vârful arborelui — spațiul de dinaintea primului nod.")>
     <DefaultValue(DEFAULT_PADDING_TREE_TOP)>
     Public Property PaddingTreeTop As Integer
@@ -107,7 +107,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     ''' <summary>Marginea globală din DREAPTA a arborelui (înaintea iconiței de rând / barei de derulare).</summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Marginea (px) din dreapta întregului arbore — unde se oprește textul nodului.")>
     <DefaultValue(DEFAULT_PADDING_TREE_END)>
     Public Property PaddingTreeEnd As Integer
@@ -121,7 +121,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     ''' <summary>Spațiul dintre expander/linia de arbore și conținut (checkbox sau iconiță).</summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Spațiul (px) dintre expander/linia de arbore și conținutul rândului (bifă sau iconiță).")>
     <DefaultValue(DEFAULT_PADDING_EXPANDER_GAP)>
     Public Property PaddingExpanderGap As Integer
@@ -135,7 +135,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     ''' <summary>Cu cât se oprește linia orizontală de arbore înainte de conținut.</summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Spațiul (px) dintre capătul liniei orizontale de arbore și conținut (bifă/iconiță).")>
     <DefaultValue(DEFAULT_PADDING_TREE_LINE_H_MARGIN)>
     Public Property PaddingTreeLineHMargin As Integer
@@ -149,7 +149,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     ''' <summary>Spațiul dintre checkbox/radio și elementul următor (iconiță sau text).</summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Spațiul (px) dintre bifa nodului și elementul următor (iconiță sau text).")>
     <DefaultValue(DEFAULT_PADDING_CHECKBOX_GAP)>
     Public Property PaddingCheckBoxGap As Integer
@@ -163,7 +163,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     ''' <summary>Spațiul dintre iconița din stânga și textul nodului.</summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Spațiul (px) dintre iconița din stânga și textul nodului.")>
     <DefaultValue(DEFAULT_PADDING_ICON_GAP)>
     Public Property PaddingIconGap As Integer
@@ -177,7 +177,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     ''' <summary>Gapul minim dintre textul din stânga și textul din dreapta (separatorul «~~~»).</summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Gapul minim (px) dintre capătul textului stâng și începutul textului drept (separator ~~~).")>
     <DefaultValue(DEFAULT_PADDING_SEPARATOR_GAP)>
     Public Property PaddingSeparatorGap As Integer
@@ -194,7 +194,7 @@ Partial Public Class AdvancedTreeControl
     ''' Lărgirea zonei de hit-test a iconiței din stânga, folosită când tooltipul apare doar
     ''' peste iconiță (<see cref="TooltipShowOnlyOnLeftIcon"/>).
     ''' </summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Marja (px) în jurul iconiței din stânga pentru hit-testul tooltipului " &
                  "(când TooltipShowOnlyOnLeftIcon = True).")>
     <DefaultValue(DEFAULT_PADDING_TOOLTIP_ICON_HIT)>
@@ -208,7 +208,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     ''' <summary>Marginea dintre iconița din dreapta nodului și bordura controlului.</summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Marginea (px) dintre iconița din dreapta și bordura controlului.")>
     <DefaultValue(DEFAULT_PADDING_RIGHT_ICON_RIGHT)>
     Public Property RightIconRightPadding As Integer
@@ -226,7 +226,7 @@ Partial Public Class AdvancedTreeControl
     ''' Integer, deci nu poate purta <c>DefaultValue</c> (atributul cere o constantă) — de aici
     ''' perechea ShouldSerialize/Reset, fără de care designerul l-ar scrie în fiecare formular.
     ''' </summary>
-    <Category("K-BOT Arbore - Paddings")>
+    <Category("K-BOT: Paddings")>
     <Description("Spațiul din jurul butonului de golire al benzii de căutare " &
                  "(se adaugă la lățimea rezervată lui).")>
     Public Property SearchClearButtonPadding As Padding

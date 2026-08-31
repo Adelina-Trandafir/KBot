@@ -140,6 +140,19 @@ Partial Public Class AdvancedTreeControl
         If Not String.IsNullOrEmpty(_footerRightIconKey) Then
             If cache.TryGetValue(_footerRightIconKey, img) Then _footerRightIcon = img
         End If
+        If Not String.IsNullOrEmpty(_footerCollapseExpandedImageKey) Then
+            If cache.TryGetValue(_footerCollapseExpandedImageKey, img) Then _footerCollapseExpandedImage = img
+        End If
+        If Not String.IsNullOrEmpty(_footerCollapseCollapsedImageKey) Then
+            If cache.TryGetValue(_footerCollapseCollapsedImageKey, img) Then _footerCollapseCollapsedImage = img
+        End If
+        If Not String.IsNullOrEmpty(_searchClearButtonImageKey) Then
+            If cache.TryGetValue(_searchClearButtonImageKey, img) Then
+                _searchClearButtonImage = img
+                ApplyClearButtonLook()
+                If _isSearchMode Then PositionSearchTextBox()
+            End If
+        End If
 
         ' Auto-open: SearchShow = True și nu există iconiță toggle
         ApplySearchShow()

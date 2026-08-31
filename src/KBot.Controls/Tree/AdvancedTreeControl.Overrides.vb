@@ -543,7 +543,7 @@ Partial Public Class AdvancedTreeControl
             pHoveredItem = it
             ResetTooltip(it, e.X)
             Me.Invalidate()
-        ElseIf _tooltipShowOnlyOnLeftIcon AndAlso it IsNot Nothing _
+        ElseIf (_tooltipShowOnlyOnLeftIcon OrElse _tooltipShowOnlyOnRightIcon) AndAlso it IsNot Nothing _
                AndAlso Not TooltipTimer.Enabled _
                AndAlso (pTooltipPopup Is Nothing OrElse Not pTooltipPopup.Visible) Then
             ' Tooltip nu rulează și nu e vizibil — re-evaluăm zona iconului

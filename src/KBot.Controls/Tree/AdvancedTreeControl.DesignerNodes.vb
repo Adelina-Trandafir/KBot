@@ -25,7 +25,7 @@ Partial Public Class AdvancedTreeControl
     Private _rebuildingDefinitions As Boolean = False
 
     ''' <summary>Nodurile scrise în designer. Gol = arborele se umple la rulare, ca până acum.</summary>
-    <Category("K-BOT Arbore - Noduri")>
+    <Category("K-BOT: Nodes")>
     <Description("Nodurile autorite în designer (cheie, text, cheia părintelui, chei de imagini).")>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Content)>
     Public ReadOnly Property Nodes As TreeNodeDefinitionCollection
@@ -35,11 +35,11 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     ''' <summary>
-    ''' Sursa de imagini pentru cheile de iconițe (noduri ȘI antet). Arborele NU deține lista
+    ''' Sursa de imagini pentru cheile de iconițe (noduri ȘI benzi). Arborele NU deține lista
     ''' și nu o eliberează niciodată — aparține formularului, exact ca la <c>KBotNavItem.Image</c>.
     ''' </summary>
-    <Category("K-BOT Arbore - Noduri")>
-    <Description("Lista de imagini din care se rezolvă cheile de iconițe (noduri și antet).")>
+    <Category("K-BOT: Nodes")>
+    <Description("Lista de imagini din care se rezolvă cheile de iconițe (noduri, antet, subsol, căutare).")>
     <DefaultValue(GetType(ImageList), Nothing)>
     Public Property NodeImages As ImageList
         Get
@@ -48,7 +48,7 @@ Partial Public Class AdvancedTreeControl
         Set(value As ImageList)
             If ReferenceEquals(_nodeImages, value) Then Return
             _nodeImages = value
-            ResolveHeaderIconsFromNodeImages()
+            ResolveIconsFromNodeImages()
             RebuildFromDefinitions()
             Me.Invalidate()
         End Set
@@ -136,11 +136,11 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     ''' <summary>
-    ''' Rezolvă cheile de iconițe de antet ȘI de subsol din <see cref="NodeImages"/>. Cheia câștigă
-    ''' doar dacă găsește o imagine — o iconiță aleasă direct în designer nu e ștearsă de o cheie
-    ''' greșită.
+    ''' Resolves EVERY non-node icon key — header, footer, collapse button, search clear button —
+    ''' against <see cref="NodeImages"/>. A key only wins when it actually finds a picture, so a
+    ''' misspelled key never wipes an icon picked straight from the designer's image picker.
     ''' </summary>
-    Friend Sub ResolveHeaderIconsFromNodeImages()
+    Friend Sub ResolveIconsFromNodeImages()
         If _nodeImages Is Nothing Then Return
         Dim img As Image
 
@@ -156,10 +156,23 @@ Partial Public Class AdvancedTreeControl
         img = NodeImage(_footerRightIconKey)
         If img IsNot Nothing Then _footerRightIcon = img
 
+        img = NodeImage(_footerCollapseExpandedImageKey)
+        If img IsNot Nothing Then _footerCollapseExpandedImage = img
+
+        img = NodeImage(_footerCollapseCollapsedImageKey)
+        If img IsNot Nothing Then _footerCollapseCollapsedImage = img
+
+        img = NodeImage(_searchClearButtonImageKey)
+        If img IsNot Nothing Then
+            _searchClearButtonImage = img
+            ApplyClearButtonLook()          ' a picture instead of the drawn glyph, and its width with it
+            If _isSearchMode Then PositionSearchTextBox()
+        End If
+
         img = NodeImage(_headerSearchIconKey)
         If img IsNot Nothing Then
             _headerSearchIcon = img
-            ApplySearchShow()      ' o iconiță de toggle schimbă regimul benzii de căutare
+            ApplySearchShow()      ' a toggle icon changes what the search band's mode means
         End If
     End Sub
 

@@ -40,7 +40,7 @@ Partial Public Class AdvancedTreeControl
     ''' Eticheta plutitoare cu care arborele își explică butoanele. Se poate îmbrăca din grila de
     ''' proprietăți (<c>ButtonTooltip.Style.…</c>) — culori, antet, subsol, linie despărțitoare.
     ''' </summary>
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Eticheta plutitoare care explică butoanele din antet și din subsol.")>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Content)>
     Public ReadOnly Property ButtonTooltip As KBotToolTip
@@ -55,7 +55,7 @@ Partial Public Class AdvancedTreeControl
     ' ══════════════════════════════════════════════════════════════════════════
 
     Private _tipHeaderSearchIcon As String = String.Empty
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Eticheta iconiței de căutare din antet (mai multe rânduri; acceptă <b>, <color=#…>).")>
     <Editor(GetType(MultilineStringEditor), GetType(UITypeEditor))>
     <DefaultValue("")>
@@ -69,7 +69,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private _tipHeaderRightIcon As String = String.Empty
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Eticheta iconiței din dreapta antetului (mai multe rânduri).")>
     <Editor(GetType(MultilineStringEditor), GetType(UITypeEditor))>
     <DefaultValue("")>
@@ -83,7 +83,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private _tipFooterLeftIcon As String = String.Empty
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Eticheta iconiței din stânga subsolului (mai multe rânduri).")>
     <Editor(GetType(MultilineStringEditor), GetType(UITypeEditor))>
     <DefaultValue("")>
@@ -97,7 +97,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private _tipFooterRightIcon As String = String.Empty
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Eticheta iconiței din dreapta subsolului (mai multe rânduri).")>
     <Editor(GetType(MultilineStringEditor), GetType(UITypeEditor))>
     <DefaultValue("")>
@@ -115,7 +115,7 @@ Partial Public Class AdvancedTreeControl
     ''' „strânge" cât e desfăcut și „desfă" cât e strâns. Un singur text ar minți jumătate din timp.
     ''' </summary>
     Private _tipCollapseButton As String = String.Empty
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Eticheta butonului de strângere, cât arborele e DESFĂCUT (mai multe rânduri).")>
     <Editor(GetType(MultilineStringEditor), GetType(UITypeEditor))>
     <DefaultValue("")>
@@ -129,7 +129,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private _tipExpandButton As String = String.Empty
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Eticheta butonului de strângere, cât arborele e STRÂNS. Gol = același text ca la desfăcut.")>
     <Editor(GetType(MultilineStringEditor), GetType(UITypeEditor))>
     <DefaultValue("")>

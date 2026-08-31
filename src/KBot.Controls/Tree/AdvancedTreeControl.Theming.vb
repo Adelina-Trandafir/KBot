@@ -120,7 +120,7 @@ Partial Public Class AdvancedTreeControl
     Private _autoNodeBack As Color = Color.White     ' implicitul istoric al arborelui
     Private _autoNodeFore As Color = Color.Empty     ' Empty ⇒ lasă Control să decidă
 
-    <Category("K-BOT Arbore - Culori")>
+    <Category("K-BOT: Colors")>
     <Description("Fundalul zonei de noduri; nefixat aici, urmează tema.")>
     Public Overrides Property BackColor As Color
         Get
@@ -158,7 +158,7 @@ Partial Public Class AdvancedTreeControl
         Me.Invalidate()
     End Sub
 
-    <Category("K-BOT Arbore - Culori")>
+    <Category("K-BOT: Colors")>
     <Description("Culoarea textului de nod; nefixată aici, urmează tema.")>
     Public Overrides Property ForeColor As Color
         Get
@@ -192,7 +192,7 @@ Partial Public Class AdvancedTreeControl
     ' schemei pe FORMULAR și se bazează pe moștenire — deci arborele ar fi rămas surd la el.
     Private _fontPinned As Boolean = False
 
-    <Category("K-BOT Arbore")>
+    <Category("K-BOT Tree")>
     <Description("Fontul ambiant al controlului (etichete, casetă de căutare); nefixat aici, urmează tema.")>
     Public Overrides Property Font As Font
         Get

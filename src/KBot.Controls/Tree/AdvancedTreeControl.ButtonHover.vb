@@ -48,7 +48,7 @@ Partial Public Class AdvancedTreeControl
         Return Color.FromArgb(BUTTON_HOVER_AUTO_ALPHA, foreColor)
     End Function
 
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Fundalul iconiței de căutare din antet, la survolare; gol = automat din HeaderForeColor.")>
     Public Property HeaderSearchIconHoverColor As Color
         Get
@@ -68,7 +68,7 @@ Partial Public Class AdvancedTreeControl
         Me.Invalidate()
     End Sub
 
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Fundalul iconiței din dreapta antetului, la survolare; gol = automat din HeaderForeColor.")>
     Public Property HeaderRightIconHoverColor As Color
         Get
@@ -88,7 +88,7 @@ Partial Public Class AdvancedTreeControl
         Me.Invalidate()
     End Sub
 
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Fundalul iconiței din dreapta subsolului, la survolare; gol = automat din FooterForeColor.")>
     Public Property FooterRightIconHoverColor As Color
         Get
@@ -108,7 +108,7 @@ Partial Public Class AdvancedTreeControl
         Me.Invalidate()
     End Sub
 
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Fundalul iconiței din stânga subsolului, la survolare; gol = automat din FooterForeColor.")>
     Public Property FooterLeftIconHoverColor As Color
         Get
@@ -128,7 +128,7 @@ Partial Public Class AdvancedTreeControl
         Me.Invalidate()
     End Sub
 
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Fundalul butonului de strângere, la survolare; gol = automat din FooterForeColor.")>
     Public Property FooterCollapseButtonHoverColor As Color
         Get
@@ -148,7 +148,7 @@ Partial Public Class AdvancedTreeControl
         Me.Invalidate()
     End Sub
 
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Fundalul iconiței din dreapta unui nod, la survolarea ei; gol = automat din ForeColor.")>
     Public Property NodeRightIconHoverColor As Color
         Get
@@ -174,7 +174,7 @@ Partial Public Class AdvancedTreeControl
     ''' i-o dăm noi din MouseEnter/MouseLeave, schimbându-i fundalul. Gol = fundalul casetei de
     ''' căutare amestecat un pic spre culoarea textului.
     ''' </summary>
-    <Category("K-BOT Arbore - Butoane")>
+    <Category("K-BOT: Buttons")>
     <Description("Fundalul butonului ✕ din banda de căutare, la survolare; gol = automat din SearchBoxBackColor.")>
     Public Property SearchClearButtonHoverColor As Color
         Get
@@ -280,7 +280,7 @@ Partial Public Class AdvancedTreeControl
     Friend Function NodeRightIconRect(it As TreeItem) As Rectangle
         If it Is Nothing OrElse it.RightIcon Is Nothing Then Return Rectangle.Empty
         Dim scrollW As Integer = ScrollBarWidth
-        Dim rx As Integer = Me.Width - _rightIconSize.Width - _rightIconRightPadding - scrollW
+        Dim rx As Integer = Me.Width - _rightIconSize.Width - RightIconRightPaddingPx - scrollW
         Dim ry As Integer = GetItemY(it) + (_itemHeight - _rightIconSize.Height) \ 2
         Return New Rectangle(rx, ry, _rightIconSize.Width, _rightIconSize.Height)
     End Function

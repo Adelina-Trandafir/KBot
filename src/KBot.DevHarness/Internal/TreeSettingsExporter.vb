@@ -223,14 +223,14 @@ Public NotInheritable Class TreeSettingsExporter
         Next
     End Sub
 
+    ''' <summary>
+    ''' Every non-node icon has BOTH pickers, so the hint always offers both roads: the image
+    ''' picker, which writes the picture into the host form's .resx, and the key picker, which
+    ''' points at a picture already held by the ImageList bound to NodeImages.
+    ''' </summary>
     Private Shared Function NotaImagine(nume As String, img As Image) As String
-        Dim sfat As String
-        If nume.StartsWith("Header", StringComparison.Ordinal) Then
-            sfat = $"alege-o în designer (selectorul de imagini o scrie în .resx) sau setează " &
-                   $"Me.{Placeholder}.{nume}Key = ""<cheie din NodeImages>"""
-        Else
-            sfat = "alege-o în designer (selectorul de imagini o scrie în .resx)"
-        End If
+        Dim sfat As String = $"alege-o în designer (selectorul de imagini o scrie în .resx) sau setează " &
+                             $"Me.{Placeholder}.{nume}Key = ""<cheie din NodeImages>"""
         Return $"' {nume} = imagine {img.Width}×{img.Height} — nu are literal de designer; {sfat}."
     End Function
 

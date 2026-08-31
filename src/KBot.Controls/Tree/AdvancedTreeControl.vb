@@ -27,7 +27,7 @@ Partial Public Class AdvancedTreeControl
     Private _pendingMouseArgs As MouseEventArgs = Nothing
 
     ' TOATE marginile arborelui au devenit proprietăți de designer — vezi partiala
-    ' .Paddings (categoria «K-BOT Arbore - Paddings»). Aici a rămas doar ce nu e margine.
+    ' .Paddings (categoria «K-BOT: Paddings»). Aici a rămas doar ce nu e margine.
 
     ' Raza colțurilor pentru selecție și hover. Implicitul istoric (1 = practic drept) e cel al
     ' schemelor Classic/Dark; pe o schemă cu colțuri rotunjite (Modern) o urcă ApplyTheme —
@@ -482,8 +482,11 @@ Partial Public Class AdvancedTreeControl
         If Not TooltipShow Then Return
         If it Is Nothing Then Return
 
-        ' Nu afișăm tooltip dacă mouse-ul e pe zona RightIcon
-        If it.RightIcon IsNot Nothing AndAlso mouseX >= 0 Then
+        ' The right icon's strip normally swallows the row tooltip — the icon has its own job
+        ' there. TooltipShowOnlyOnRightIcon asks for the tooltip in exactly that strip, so the
+        ' veto stands down for it; otherwise the two settings would cancel each other out and the
+        ' tooltip would never appear at all.
+        If Not _tooltipShowOnlyOnRightIcon AndAlso it.RightIcon IsNot Nothing AndAlso mouseX >= 0 Then
             Dim scrollW As Integer = ScrollBarWidth 'If(Me.VerticalScroll.Visible, SystemInformation.VerticalScrollBarWidth, 0)
             Dim rightIconMinX As Integer = Me.Width - _rightIconSize.Width - RightIconRightPaddingPx - scrollW
             If mouseX >= rightIconMinX Then Return
@@ -506,6 +509,24 @@ Partial Public Class AdvancedTreeControl
             End If
         End If
 
+        ' TooltipShowOnlyOnRightIcon: verificare zonă icon dreapta
+        If _tooltipShowOnlyOnRightIcon AndAlso mouseX >= 0 Then
+            Dim iconRect As Rectangle = GetRightIconRect(it)
+            If iconRect = Rectangle.Empty Then
+                ' Nodul nu are icon dreapta → fallback la comportament normal, continuăm
+            Else
+                ' Extindem zona cu padding pentru un hit-test mai generos
+                Dim hitRect As New Rectangle(
+                    iconRect.X - PaddingTooltipIconHitPx,
+                    iconRect.Y - PaddingTooltipIconHitPx,
+                    iconRect.Width + PaddingTooltipIconHitPx * 2,
+                    iconRect.Height + PaddingTooltipIconHitPx * 2)
+                ' Verificăm doar X (Y-ul îl garantează HitTest că suntem pe rândul corect)
+                If mouseX < hitRect.Left OrElse mouseX > hitRect.Right Then Return
+            End If
+        End If
+
+
         ' Dacă are Tooltip custom → afișăm ÎNTOTDEAUNA (ignorăm TextFits)
         ' Dacă NU are Tooltip → afișăm doar dacă textul nu încape (comportamentul vechi)
         If String.IsNullOrEmpty(it.Tooltip) Then
@@ -520,8 +541,10 @@ Partial Public Class AdvancedTreeControl
         TooltipTimer.Stop()
         If pTooltipItem Is Nothing OrElse pTooltipItem IsNot pHoveredItem Then Return
 
-        ' Verificare suplimentară: dacă cursorul s-a mutat pe RightIcon între timp
-        If pTooltipItem.RightIcon IsNot Nothing Then
+        ' Verificare suplimentară: dacă cursorul s-a mutat pe RightIcon între timp.
+        ' Same stand-down as in ResetTooltip: when the tooltip was asked FOR that strip, landing
+        ' in it is the reason to show, not to cancel.
+        If Not _tooltipShowOnlyOnRightIcon AndAlso pTooltipItem.RightIcon IsNot Nothing Then
             Dim scrollW As Integer = ScrollBarWidth 'If(_vScroll.Visible, _vScroll.Width, 0)
             Dim rightIconMinX As Integer = Me.Width - _rightIconSize.Width - RightIconRightPaddingPx - scrollW
             If _lastMouseX >= rightIconMinX Then Return
@@ -531,6 +554,20 @@ Partial Public Class AdvancedTreeControl
         ' cursorul a ieșit din zona iconului, anulăm afișarea
         If _tooltipShowOnlyOnLeftIcon Then
             Dim iconRect As Rectangle = GetLeftIconRect(pTooltipItem)
+            If iconRect <> Rectangle.Empty Then
+                Dim hitRect As New Rectangle(
+                    iconRect.X - PaddingTooltipIconHitPx,
+                    iconRect.Y - PaddingTooltipIconHitPx,
+                    iconRect.Width + PaddingTooltipIconHitPx * 2,
+                    iconRect.Height + PaddingTooltipIconHitPx * 2)
+                If _lastMouseX < hitRect.Left OrElse _lastMouseX > hitRect.Right Then Return
+            End If
+        End If
+
+        ' Verificare suplimentară: TooltipShowOnlyOnRightIcon — the right-hand twin of the check
+        ' above. Without it the delay could elapse with the cursor already off the icon.
+        If _tooltipShowOnlyOnRightIcon Then
+            Dim iconRect As Rectangle = GetRightIconRect(pTooltipItem)
             If iconRect <> Rectangle.Empty Then
                 Dim hitRect As New Rectangle(
                     iconRect.X - PaddingTooltipIconHitPx,
@@ -626,6 +663,22 @@ Partial Public Class AdvancedTreeControl
                              y + (_itemHeight - _leftIconSize.Height) \ 2,
                              _leftIconSize.Width,
                              _leftIconSize.Height)
+    End Function
+
+
+    ''' <summary>
+    ''' The right icon's rectangle for the given node — the SAME area DrawRightIcon paints, taken
+    ''' from the one formula both of them share (NodeRightIconRect). It used to be a copy of
+    ''' GetLeftIconRect, so the hit area sat on the far LEFT of the row.
+    '''
+    ''' Rectangle.Empty when the node carries no right icon or its row is off screen. HasNodeIcons
+    ''' is deliberately NOT consulted: DrawRightIcon does not consult it either, and a hit area
+    ''' must never claim ground the picture does not occupy.
+    ''' </summary>
+    Private Function GetRightIconRect(it As TreeItem) As Rectangle
+        If it Is Nothing OrElse it.RightIcon Is Nothing Then Return Rectangle.Empty
+        If GetItemY(it) < 0 Then Return Rectangle.Empty
+        Return NodeRightIconRect(it)
     End Function
 
     ' Setează starea unui nod, a copiilor săi și actualizează părinții

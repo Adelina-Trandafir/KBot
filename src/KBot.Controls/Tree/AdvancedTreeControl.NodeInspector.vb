@@ -97,14 +97,10 @@ Partial Public Class AdvancedTreeControl
         info.TextBounds = If(y = -1, Rectangle.Empty,
                              New Rectangle(textX, y, Math.Max(0, maxRightX - textX), _itemHeight))
 
-        ' RightIconBounds — replica logica din DrawRightIcon
-        Dim rightIconBounds As Rectangle = Rectangle.Empty
-        If it.RightIcon IsNot Nothing Then
-            Dim rx As Integer = Me.Width - _rightIconSize.Width - RightIconRightPaddingPx - PaddingTreeEndPx - scrollW
-            rightIconBounds = New Rectangle(rx, y + (_itemHeight - _rightIconSize.Height) \ 2,
-                                            _rightIconSize.Width, _rightIconSize.Height)
-        End If
-        info.RightIconBounds = rightIconBounds
+        ' RightIconBounds — taken from NodeRightIconRect, the one formula DrawRightIcon and the
+        ' tooltip hit test both use. It used to subtract PaddingTreeEndPx as well, which
+        ' DrawRightIcon never does, so the inspector reported the icon left of where it is drawn.
+        info.RightIconBounds = If(y = -1, Rectangle.Empty, NodeRightIconRect(it))
 
         info.GridLeft = gridLeft
         info.XBase = xBase
