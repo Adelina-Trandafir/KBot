@@ -21,6 +21,7 @@ Public NotInheritable Class KBotChartSeries
 
     Private ReadOnly _points As New KBotChartPointCollection()
     Private _lineColor As Color = Color.Empty
+    Private _lineMode As KBotChartLineMode = KBotChartLineMode.Straight
 
     ''' <summary>Parameterless constructor — required by the designer collection dialog.</summary>
     Public Sub New()
@@ -88,6 +89,45 @@ Public NotInheritable Class KBotChartSeries
     <Description("True => the area between the line and the baseline is tinted with the line colour (see AreaFillOpacity on the chart).")>
     <DefaultValue(False)>
     Public Property FillArea As Boolean
+
+    ''' <summary>
+    ''' Straight segments, or a staircase that holds each value until the next point changes it.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>On the SERIES rather than on the chart because it is a statement about what the
+    ''' DATA is, not about how the control looks. A quantity sampled by snapshots is a staircase;
+    ''' a quantity measured continuously is not; a chart that mixes the two has to be able to say
+    ''' so. In practice a host usually sets the same mode on every series it builds — that is the
+    ''' host agreeing with itself about its own data, not the property being in the wrong place.
+    ''' </para>
+    ''' <para>The tinted area of <see cref="FillArea"/> follows the stepped path, so the wash
+    ''' keeps agreeing with the line above it.</para>
+    ''' </remarks>
+    <Category("K-BOT Chart Series")>
+    <Description("Straight = a slope from one point to the next. Step = the value holds until the next point changes it, then jumps.")>
+    <DefaultValue(KBotChartLineMode.Straight)>
+    Public Property LineMode As KBotChartLineMode
+        Get
+            Return _lineMode
+        End Get
+        Set(value As KBotChartLineMode)
+            _lineMode = value
+            OwnerChart?.Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' <c>DefaultValue</c> already keeps the default out of a host's .Designer.vb, but the pair
+    ''' is written anyway: the property grid's Reset command needs somewhere to go, and the two
+    ''' are read together everywhere else in this family.
+    ''' </summary>
+    Public Function ShouldSerializeLineMode() As Boolean
+        Return _lineMode <> KBotChartLineMode.Straight
+    End Function
+
+    Public Sub ResetLineMode()
+        LineMode = KBotChartLineMode.Straight
+    End Sub
 
     <Category("K-BOT Chart Series")>
     <Description("The points, in the order they are walked. They are NOT sorted for you: a line that walks backwards is an honest sign that the caller's query is out of order.")>

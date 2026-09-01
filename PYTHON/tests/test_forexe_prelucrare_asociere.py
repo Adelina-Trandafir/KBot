@@ -228,25 +228,34 @@ def test_a_well_formed_reconstructed_chain_passes():
 
 
 # ===========================================================================
-# F13 -- the date veto
+# F13 -- RETRAS ca veto pe 31.08.2026; a ramas SEMN
 # ===========================================================================
-def test_the_date_veto_rejects_on_a_one_second_difference():
-    """
-    TIMESTAMP COMPLET, nu trunchiat la zi: operatorii salveaza aceeasi receptie de mai
-    multe ori intr-un minut, deci granularitatea de zi ar lasa sa treaca exact cazul pe
-    care regula il pazeste.
-    """
-    r = rec(1, "2026-02-11 10:00:01", 510)
-    i = inst(9, "2026-02-11 10:00:00", 510)
-    with pytest.raises(DecizieInvalida) as e:
-        A.valideaza_plasarile({1: [i]}, {1: r})
-    assert "după instantaneul" in str(e.value)
+# Cele doua teste de mai jos verificau vetoul. Au fost rescrise, nu sterse: regula nu a
+# disparut, a coborat. `DataR` e un camp tastat pe site si schimbabil dupa aceea, iar
+# `FX_Receptii_R` nu are nicio coloana cu momentul crearii (F29), deci un refuz cladit pe
+# el poate opri o plasare corecta -- si pe calea de ingestie asta infunda operatorul pe o
+# receptie pe care nu o poate repara (F10).
+def test_the_date_rule_no_longer_rejects_and_warns_instead():
+    r = rec(1, "2026-03-01 08:00:00", 510)
+    i = inst(9, "2026-01-19 10:00:00", 510)
+    avertismente = []
+    A.valideaza_plasarile({1: [i]}, {1: r}, avertismente=avertismente)   # nu ridica
+    assert len(avertismente) == 1
+    assert "mai vechi decât data recepției" in avertismente[0]
 
 
-def test_the_date_veto_allows_the_same_second():
-    r = rec(1, "2026-02-11 10:00:00", 510)
+def test_the_date_sign_is_measured_on_the_DAY_not_on_the_second():
+    """
+    Formularea veche cerea timestamp complet, pornind de la ideea ca ambele capete sunt
+    momente. Nu sunt: `DataR` e o data TASTATA, deci soseste la miezul noptii, iar `DataH`
+    e ceasul sistemului. Comparate ca momente, orice instantaneu din chiar ziua receptiei
+    ar iesi «inainte de ea», si semnul s-ar aprinde pe date perfect corecte.
+    """
+    r = rec(1, "2026-02-11 00:00:00", 510)
     i = inst(9, "2026-02-11 10:00:00", 510)
-    A.valideaza_plasarile({1: [i]}, {1: r})       # nu ridica
+    avertismente = []
+    A.valideaza_plasarile({1: [i]}, {1: r}, avertismente=avertismente)
+    assert avertismente == []
 
 
 # ===========================================================================

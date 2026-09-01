@@ -100,6 +100,13 @@ Public Class AsociereForm
     Private ReadOnly _nodReceptie As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)
     Private ReadOnly _nodInstantaneu As New Dictionary(Of Integer, RandDeArbore)
 
+    ' Aceleași două dicționare, pentru banda de așezare. Se umplu la construirea benzilor și se
+    ' citesc de pasul de culori — un instantaneu are ACUM trei înfățișări pe ecran (rândul din
+    ' arbore, punctul din grafic, marcajul de pe bandă) și toate trei trebuie să poarte aceeași
+    ' culoare, altfel culoarea nu mai leagă nimic de nimic.
+    Private ReadOnly _bandaReceptie As New Dictionary(Of Integer, KBotLane)
+    Private ReadOnly _marcajInstantaneu As New Dictionary(Of Integer, KBotLaneMarker)
+
     ''' <summary>True dacă s-a salvat ceva — gazda reîncarcă recepțiile abia atunci.</summary>
     Public ReadOnly Property SAuSalvatModificari As Boolean
 
@@ -183,6 +190,11 @@ Public Class AsociereForm
             ' no longer on screen, and colouring it would look exactly like doing nothing.
             _nodReceptie.Clear()
             _nodInstantaneu.Clear()
+            ' Benzile se golesc AICI, cu arborii, nu în `ReconstruiesteBenzi` — pe drumul de mai
+            ' jos cu `_stare Is Nothing` metoda aia nici nu se mai cheamă, iar o suprafață rămasă
+            ' plină lângă doi arbori goliți ar fi singurul lucru de pe ecran care mai susține că
+            ' există date.
+            ReconstruiesteBenzi()
             If _stare Is Nothing Then Return
 
             ' ── stânga: recepțiile, fiecare cu lanțul ei ordonat după DataH ──────────
@@ -198,9 +210,9 @@ Public Class AsociereForm
 
                 For Each inst As InstantaneuLegat In lant
                     Dim frunza As AdvancedTreeControl.TreeItem =
-                        treeLant.AddItem(CHEIE_INSTANTANEU & inst.Idrh, CaptionInstantaneu(inst), nod, pLeftIconClosed:=Il_Receptii.Images.Item("Receptii_Link"))
+                        treeLant.AddItem(CHEIE_INSTANTANEU & inst.Idrh, CaptionInstantaneu(inst, rec), nod, pLeftIconClosed:=Il_Receptii.Images.Item("Receptii_Link"))
                     frunza.Tag = inst
-                    frunza.Tooltip = TooltipInstantaneu(inst)
+                    frunza.Tooltip = TooltipInstantaneu(inst, rec)
                     If inst.Blocat Then frunza.RightIcon = Il_Receptii.Images.Item("Lock")
                     ColoreazaInstantaneu(frunza, inst)
                     _nodInstantaneu(inst.Idrh) = New RandDeArbore(treeLant, frunza)
@@ -268,11 +280,15 @@ Public Class AsociereForm
         Return $"{rec.DataR:dd.MM.yyyy}~~~{Bani(rec.SumaAntet)} ({lant.Count}){semne}"
     End Function
 
-    Private Function CaptionInstantaneu(inst As InstantaneuLegat) As String
+    Private Function CaptionInstantaneu(inst As InstantaneuLegat, Optional rec As ReceptiePropusa = Nothing) As String
         Dim semne As String = String.Empty
         'If inst.Blocat Then semne &= "  🔒"
         If EsteStergere(inst.Idrh) Then semne &= "  [ștergere]"
         If EsteIgnorat(inst.Idrh) Then semne &= "  [fără schimbare]"
+        ' Semnul care a rămas din F13 retras. Scris pe rând, nu ridicat ca refuz: plasarea e
+        ' permisă, iar operatorul decide dacă data recepției e greșită sau instantaneul e al
+        ' altei recepții.
+        If EsteInainteDeDataReceptiei(inst, rec) Then semne &= "  [înainte de data recepției]"
         Return $"{inst.DataH:dd.MM.yyyy HH:mm}~~~{Bani(inst.Total)}{semne}"
     End Function
 
@@ -319,18 +335,47 @@ Public Class AsociereForm
         Else
             sb.AppendLine("Nu are niciun instantaneu.")
         End If
+        ' Câte instantanee cad înaintea datei scrise pe recepție. Numărul contează mai mult decât
+        ' faptul: unul singur e o ciudățenie, tot lanțul înseamnă că data recepției e greșită.
+        ' `.Where(...).Count()`, nu `.Count(...)`: pe un `List(Of T)`, `Count` e PROPRIETATE și
+        ' umbrește supraîncărcarea LINQ cu predicat, deci varianta scurtă nici nu compilează.
+        Dim inainte As Integer = lant.Where(Function(x) EsteInainteDeDataReceptiei(x, rec)).Count()
+        If inainte > 0 Then
+            sb.AppendLine($"⚠ {inainte} din {lant.Count} instantanee sunt mai vechi decât data recepției " &
+                          $"({rec.DataR:dd.MM.yyyy}). Data se scrie de mână pe site, deci nu e o piedică — " &
+                          "dar merită privită.")
+        End If
         If rec.ReconstituitNesigur Then
             sb.AppendLine("⚠ Reconstituire nesigură: gruparea a fost o judecată, nu o verificare.")
         End If
         Return sb.ToString().TrimEnd()
     End Function
 
-    Private Function TooltipInstantaneu(inst As InstantaneuLegat) As String
+    ''' <summary>Lanțul se închide pe valoarea de acum (F15) — semnul de la capătul benzii.</summary>
+    ''' <remarks>
+    ''' Nu se aplică pe un lanț terminat în ștergere: a compara rândul de ștergere cu starea de
+    ''' ACUM nu înseamnă nimic (F15 spune asta explicit). Nici pe un lanț gol — nu are capăt.
+    ''' </remarks>
+    Private Function SemnulCapatului(rec As ReceptiePropusa, lant As List(Of InstantaneuLegat)) As KBotLaneEndMark
+        If rec Is Nothing OrElse lant Is Nothing OrElse lant.Count = 0 Then Return KBotLaneEndMark.None
+        Dim ultimul As InstantaneuLegat = lant.Last()
+        If EsteStergere(ultimul.Idrh) Then Return KBotLaneEndMark.None
+        If Math.Round(ultimul.Total, 2) = Math.Round(rec.SumaAntet, 2) Then Return KBotLaneEndMark.Ok
+        Return KBotLaneEndMark.Warning
+    End Function
+
+    Private Function TooltipInstantaneu(inst As InstantaneuLegat, Optional rec As ReceptiePropusa = Nothing) As String
         Dim sb As New Text.StringBuilder()
         sb.AppendLine($"{inst.DataH:dd.MM.yyyy HH:mm:ss} · {Bani(inst.Total)}")
         If Not String.IsNullOrWhiteSpace(inst.Descriere) Then sb.AppendLine(inst.Descriere)
         Dim ind As String = String.Join(", ", inst.Indicatori().OrderBy(Function(x) x))
         If ind <> "" Then sb.AppendLine($"Indicatori: {ind}")
+        If EsteInainteDeDataReceptiei(inst, rec) Then
+            sb.AppendLine()
+            sb.AppendLine($"⚠ Instantaneul e mai vechi decât data recepției ({rec.DataR:dd.MM.yyyy}). " &
+                          "Data recepției se scrie de mână pe site și se poate schimba, deci asta NU " &
+                          "împiedică așezarea — dar ori data e greșită, ori instantaneul e al altei recepții.")
+        End If
         If inst.Blocat Then
             sb.AppendLine()
             sb.AppendLine("NU SE MAI POATE MUTA:")
@@ -426,19 +471,18 @@ Public Class AsociereForm
     ''' <summary>
     ''' Vetourile, aplicate ÎNAINTE de aruncare. Șir gol = se poate.
     '''
-    ''' <para>F13 (data), F14 (indicatorii) și F16 (mulțimile doar cresc) — aceleași trei pe
-    ''' care le verifică și serverul, și tot ridicând, nu corectând. Se repetă aici nu din
-    ''' neîncredere, ci ca refuzul să ajungă la operator în timpul gestului. F15 (capătul
-    ''' lanțului) NU e aici: el e un semn, nu un veto, și trăiește în eticheta recepției.</para>
+    ''' <para>F14 (indicatorii) și F16 (mulțimile doar cresc) — aceleași două pe care le
+    ''' verifică și serverul, și tot ridicând, nu corectând. Se repetă aici nu din neîncredere,
+    ''' ci ca refuzul să ajungă la operator în timpul gestului. F15 (capătul lanțului) NU e
+    ''' aici: el e un semn, nu un veto, și trăiește în eticheta recepției.</para>
+    '''
+    ''' <para><b>F13 nu mai e aici deloc</b> — retras pe 31.08.2026. <c>FX_Receptii_R.DataR</c>
+    ''' nu e momentul creării: e un câmp obișnuit, pe care operatorul îl scrie pe site și îl
+    ''' poate schimba după aceea, iar <c>FX_Receptii_R</c> nu are NICIO coloană cu momentul
+    ''' creării (F29). Un veto clădit pe un câmp tastat refuză plasări corecte. Comparația
+    ''' supraviețuiește ca SEMN, în <see cref="EsteInainteDeDataReceptiei"/>, și atât.</para>
     ''' </summary>
     Private Function MotivulRefuzului(inst As InstantaneuLegat, rec As ReceptiePropusa) As String
-        ' F13 — vetoul de dată, TIMESTAMP COMPLET, nu trunchiat la zi: operatorii salvează
-        ' aceeași recepție de mai multe ori într-un minut.
-        If rec.DataR > inst.DataH Then
-            Return $"Recepția este creată la {rec.DataR:dd.MM.yyyy HH:mm}, după instantaneul de la " &
-                   $"{inst.DataH:dd.MM.yyyy HH:mm}. O recepție nu poate deține un instantaneu anterior creării ei."
-        End If
-
         Dim indInst As HashSet(Of String) = inst.Indicatori()
         Dim indRec As New HashSet(Of String)(
             rec.Rhr.Where(Function(l) Not String.IsNullOrEmpty(l.CodIndicator)).Select(Function(l) l.CodIndicator),
@@ -468,6 +512,27 @@ Public Class AsociereForm
         End If
 
         Return String.Empty
+    End Function
+
+    ''' <summary>
+    ''' Instantaneul este mai vechi decât data scrisă pe recepție — un SEMN, niciodată un refuz.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Asta a fost F13 până pe 31.08.2026, când operatorul a corectat premisa: <c>DataR</c>
+    ''' nu spune când a apărut recepția, ci ce a tastat cineva în câmpul ăla pe site — și îl poate
+    ''' retasta oricând (F29). Ca veto, regula putea refuza o plasare corectă; pe calea de
+    ''' ingestie asta însemna un operator blocat pe o recepție pe care nu avea cum s-o repare,
+    ''' adică exact înfundarea pe care F10 spune că nu are voie să existe.</para>
+    ''' <para>Ca semn rămâne utilă: dacă instantaneele unei recepții cad înaintea datei ei, ori
+    ''' data e greșită, ori instantaneele sunt ale altei recepții. Care dintre ele — vede
+    ''' operatorul, nu mașina.</para>
+    ''' </remarks>
+    Private Shared Function EsteInainteDeDataReceptiei(inst As InstantaneuLegat, rec As ReceptiePropusa) As Boolean
+        If inst Is Nothing OrElse rec Is Nothing Then Return False
+        ' Pe ZI, nu pe timestamp complet: `DataR` e o dată tastată, deci sosește la miezul nopții,
+        ' iar `DataH` e ceasul sistemului. Comparate ca momente, ORICE instantaneu din chiar ziua
+        ' recepției ar ieși «înainte de ea» — un semn care s-ar aprinde pe date perfect corecte.
+        Return rec.DataR.Date > inst.DataH.Date
     End Function
 
     Private Sub TreeLant_NodeDropped(sender As Object, e As TreeDropEventArgs) Handles treeLant.NodeDropped
@@ -680,7 +745,6 @@ Public Class AsociereForm
                 Dim inst As InstantaneuLegat = TryCast(rand.Nod.Tag, InstantaneuLegat)
                 rand.Nod.NodeForeColor = If(inst Is Nothing, Color.Empty, CuloareDeBaza(inst))
             Next
-
             For Each serie As KBotChartSeries In grafic.Series
                 If String.Equals(serie.Key, SERIA_TOTAL, StringComparison.Ordinal) Then Continue For
 
@@ -704,11 +768,55 @@ Public Class AsociereForm
                 Next
             Next
 
+            AplicaCulorileBenzii(_bandaReceptie, _marcajInstantaneu)
+
             treeLant.Invalidate()
             treeLibere.Invalidate()
         Catch ex As Exception
             GlobalErrorLog.Write("AsociereForm.SincronizeazaCulorile", ex)
         End Try
+    End Sub
+
+    ''' <summary>
+    ''' Aceeași trecere de culori, pentru o bandă oarecare — a formularului sau a ferestrei mari.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Un instantaneu are acum TREI înfățișări pe ecran: rândul din arbore, punctul din
+    ''' grafic și marcajul de pe bandă. Rostul culorii e să spună că sunt același lucru, deci ea
+    ''' vine dintr-un singur loc — graficul — și e purtată de aici către celelalte.</para>
+    ''' <para><b>Benzile nu se golesc de culoare, doar marcajele.</b> O bandă își păstrează
+    ''' culoarea scrisă la construire fiindcă pe fila «Recepția» graficul are o părere doar despre
+    ''' un singur lanț; dacă s-ar goli tot, restul benzilor ar rămâne incolore exact atunci când
+    ''' suprafața e cea mai încărcată, iar culoarea n-ar mai lega nimic de nimic.</para>
+    ''' </remarks>
+    Private Sub AplicaCulorileBenzii(bandaDupaIdrr As Dictionary(Of Integer, KBotLane),
+                                     marcajDupaIdrh As Dictionary(Of Integer, KBotLaneMarker))
+        If bandaDupaIdrr Is Nothing OrElse marcajDupaIdrh Is Nothing Then Return
+
+        For Each marcaj As KBotLaneMarker In marcajDupaIdrh.Values
+            marcaj.MarkerColor = Color.Empty
+        Next
+
+        For Each serie As KBotChartSeries In grafic.Series
+            If String.Equals(serie.Key, SERIA_TOTAL, StringComparison.Ordinal) Then Continue For
+
+            Dim idrr As Integer = IdrrDinCheie(serie.Key)
+            Dim banda As KBotLane = Nothing
+            If idrr > 0 AndAlso bandaDupaIdrr.TryGetValue(idrr, banda) AndAlso
+               serie.LineColor <> Color.Empty Then
+                banda.LaneColor = serie.LineColor
+            End If
+
+            For Each punct As KBotChartPoint In serie.Points
+                If punct.PointColor = Color.Empty Then Continue For
+                Dim inst As InstantaneuLegat = TryCast(punct.Tag, InstantaneuLegat)
+                If inst Is Nothing Then Continue For
+                Dim marcaj As KBotLaneMarker = Nothing
+                If marcajDupaIdrh.TryGetValue(inst.Idrh, marcaj) Then
+                    marcaj.MarkerColor = punct.PointColor
+                End If
+            Next
+        Next
     End Sub
 
     ''' <summary>The receipt behind a series key, or 0 if the key is not one of ours.</summary>
@@ -735,6 +843,7 @@ Public Class AsociereForm
         Dim serie As KBotChartSeries = grafic.AddSeries(CheiaSeriei(_receptieSelectata), EtichetaReceptiei(_receptieSelectata))
         serie.Emphasis = True
         serie.FillArea = True
+        serie.LineMode = KBotChartLineMode.Step
 
         ' Every point gets its OWN colour here — this is the view where a point and a tree row are
         ' the same snapshot, so the pair has to be findable by colour alone. The segment leaving a
@@ -774,6 +883,7 @@ Public Class AsociereForm
             ' and a colour nobody wrote down is a colour the tree cannot be told about.
             serie.LineColor = grafic.AutoColor(lanturi.Count - 1)
             serie.FillArea = _receptieSelectata IsNot Nothing AndAlso rec.Idrr = _receptieSelectata.Idrr
+            serie.LineMode = KBotChartLineMode.Step
             For Each inst As InstantaneuLegat In lant
                 AdaugaPunct(serie, inst, rec)
             Next
@@ -803,6 +913,11 @@ Public Class AsociereForm
 
         Dim serie As KBotChartSeries = grafic.AddSeries(SERIA_TOTAL, "Total angajament")
         serie.Emphasis = True
+        ' În TREPTE, ca toate celelalte, și aici e cel mai vizibil de ce: totalul de mai jos se
+        ' calculează chiar așa — `ValoareaLa` ia valoarea celui mai nou instantaneu de la sau
+        ' dinaintea momentului, adică «o valoare ține până o schimbă următorul instantaneu».
+        ' Desenat drept, graficul ar contrazice aritmetica pe care tocmai a făcut-o.
+        serie.LineMode = KBotChartLineMode.Step
         ' Deliberately NOT a colour from AutoColor: that set belongs to the receipts, and the
         ' total is not one more receipt. The theme's plain text colour reads as «the sum» and, not
         ' being any row's colour, cannot be mistaken for a chain.
@@ -870,6 +985,345 @@ Public Class AsociereForm
         If semne.Count > 0 Then punct.TooltipFooter = String.Join(" · ", semne)
         Return punct
     End Function
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' Benzile de așezare
+    ' ══════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>
+    ''' Reconstruiește banda de așezare din tabloul LOCAL: o bandă per recepție, un marcaj per
+    ''' instantaneu, un separator, apoi banda instantaneelor neașezate.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>Tot, niciodată peticit</b> — aceeași regulă ca la arbori și la grafic, și din
+    ''' același motiv: trei suprafețe peticite fiecare pe cont propriu ajung să spună trei
+    ''' povești, iar cea care minte e ecranul.</para>
+    ''' <para><b>De ce mai există, dacă arborele arată aceleași date.</b> Arborele arată UN lanț
+    ''' deodată, pe verticală, cu restul derulat afară din vedere. Aici se văd toate lanțurile în
+    ''' aceeași privire, pe aceeași axă a timpului, cu liniile plăților traversându-le pe toate —
+    ''' deci «instantaneul ăsta a căzut de partea greșită a plății» e o observație pe care o face
+    ''' ochiul, în timpul tragerii, nu una la care trebuie să te gândești după.</para>
+    ''' <para>Fără text, deliberat: douăzeci de benzi a câte douăzeci de marcaje e cazul obișnuit
+    ''' după spusele operatorului, iar la scara aia denumirile nu mai sunt o citire. Ele sunt la o
+    ''' plimbare de mouse distanță, iar fereastra mare (<see cref="AsociereBenziForm"/>) le
+    ''' scrie pe toate.</para>
+    ''' </remarks>
+    Private Sub ReconstruiesteBenzi()
+        ConstruiesteBenzi(benzi, _bandaReceptie, _marcajInstantaneu, stapanulReperelor:=True)
+    End Sub
+
+    ''' <summary>
+    ''' Construcția propriu-zisă, pe o suprafață dată și cu dicționarele ei.
+    ''' </summary>
+    ''' <param name="stapanulReperelor">
+    ''' True doar pentru banda din formular: ea e cea care scrie și reperele plăților în grafic,
+    ''' deci tot ea are dreptul să le și șteargă.
+    ''' </param>
+    ''' <remarks>
+    ''' Parametrizată, nu scrisă de două ori, fiindcă fereastra mare arată ACELEAȘI benzi la altă
+    ''' mărime. Două construcții separate ar fi două locuri în care se hotărăște ce e un marcaj de
+    ''' ștergere sau când se închide un lanț — și primul lucru care s-ar abate ar fi tocmai cel pe
+    ''' care operatorul îl privește când vrea să fie sigur.
+    ''' </remarks>
+    Private Sub ConstruiesteBenzi(tinta As KBotLaneView,
+                                  bandaDupaIdrr As Dictionary(Of Integer, KBotLane),
+                                  marcajDupaIdrh As Dictionary(Of Integer, KBotLaneMarker),
+                                  stapanulReperelor As Boolean)
+        tinta.BeginUpdate()
+        Try
+            tinta.ClearLanes()
+            tinta.ClearGuides()
+            bandaDupaIdrr.Clear()
+            marcajDupaIdrh.Clear()
+            If stapanulReperelor Then grafic.ClearGuides()
+            If _stare Is Nothing Then Return
+
+            Dim i As Integer = 0
+            For Each rec As ReceptiePropusa In _stare.Receptii.OrderBy(Function(r) r.DataR).ThenBy(Function(r) r.Idrr)
+                Dim lant As List(Of InstantaneuLegat) = LantulReceptiei(rec)
+
+                Dim banda As KBotLane = tinta.AddLane(CheiaSeriei(rec), EtichetaReceptiei(rec))
+                banda.Tag = rec
+                banda.Tooltip = TooltipBanda(rec, lant)
+                ' Culoarea se scrie EXPLICIT, nu se lasă pe seama controlului: aceeași recepție
+                ' are o linie în grafic și un rând în arbore, iar o culoare pe care n-a scris-o
+                ' nimeni e o culoare despre care celelalte două nu pot fi anunțate.
+                banda.LaneColor = tinta.AutoColor(i)
+                banda.EndMark = SemnulCapatului(rec, lant)
+                bandaDupaIdrr(rec.Idrr) = banda
+
+                For Each inst As InstantaneuLegat In lant
+                    Dim marcaj As KBotLaneMarker = banda.AddMarker(inst.DataH, Bani(inst.Total))
+                    marcaj.Tag = inst
+                    marcaj.Tooltip = TooltipInstantaneu(inst, rec)
+                    marcaj.Style = StilulMarcajului(inst, asezat:=True)
+                    marcajDupaIdrh(inst.Idrh) = marcaj
+                Next
+                i += 1
+            Next
+
+            ' Banda de jos: instantaneele neașezate. E ȘI ținta de desprindere — a trage un marcaj
+            ' în jos înseamnă exact ce înseamnă a-l trage în `treeLibere`.
+            Dim libere As List(Of InstantaneuLegat) =
+                _stare.Instantanee.Where(Function(x) PozitiaLui(x) = 0).
+                                   OrderBy(Function(x) x.DataH).ThenBy(Function(x) x.Idrh).ToList()
+
+            Dim bandaLibere As KBotLane = tinta.AddLane(CHEIE_LIBERE, $"Neașezate ({libere.Count})")
+            bandaLibere.SeparatorAbove = True
+            bandaLibere.Tooltip = "Instantaneele care nu stau pe nicio recepție." & Environment.NewLine &
+                                  "Trage un marcaj aici ca să-l desprinzi de recepția lui."
+            For Each inst As InstantaneuLegat In libere
+                Dim marcaj As KBotLaneMarker = bandaLibere.AddMarker(inst.DataH, Bani(inst.Total))
+                marcaj.Tag = inst
+                marcaj.Tooltip = TooltipInstantaneu(inst)
+                marcaj.Style = StilulMarcajului(inst, asezat:=False)
+                marcajDupaIdrh(inst.Idrh) = marcaj
+            Next
+
+            ConstruiesteReperelePlatilor(tinta, stapanulReperelor)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AsociereForm.ConstruiesteBenzi", ex)
+        Finally
+            tinta.EndUpdate()
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Ce spune forma unui marcaj. Ordinea contează: se răspunde întâi la întrebarea pe care
+    ''' operatorul o pune prima.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Pe banda de jos, «neașezat» nu e o informație — TOATE marcajele de acolo sunt
+    ''' neașezate. Ce se poate spune acolo e F17: «asta nu consemnează nicio schimbare», adică
+    ''' motivul pentru care instantaneul e lăsat deoparte deliberat, nu unul încă neatins.</para>
+    ''' <para>Pe benzile de sus, prima întrebare la un marcaj care nu se mișcă e «de ce nu se
+    ''' mișcă», deci lacătul bate rândul de ștergere. Nu se pierde nimic: eticheta plutitoare le
+    ''' spune pe amândouă, iar rândul din arbore poartă marcajul [ștergere] oricum.</para>
+    ''' </remarks>
+    Private Function StilulMarcajului(inst As InstantaneuLegat, asezat As Boolean) As KBotLaneMarkerStyle
+        If Not asezat Then
+            Return If(EsteIgnorat(inst.Idrh), KBotLaneMarkerStyle.NoChange, KBotLaneMarkerStyle.Loose)
+        End If
+        If inst.Blocat Then Return KBotLaneMarkerStyle.Locked
+        If EsteStergere(inst.Idrh) Then Return KBotLaneMarkerStyle.Deletion
+        Return KBotLaneMarkerStyle.Normal
+    End Function
+
+    ''' <summary>
+    ''' Eticheta benzii unei recepții: ce spune arborele, plus câte marcaje sunt pe ea.
+    ''' </summary>
+    ''' <remarks>
+    ''' Numărul e aici fiindcă banda nu-l poate arăta: mai multe salvări în același minut cad pe
+    ''' aceeași coloană de pixeli și se desenează una peste alta. Toate se desenează, niciuna nu
+    ''' se ascunde și niciuna nu se contopește — dar «sunt trei aici, nu unul» trebuie scris
+    ''' undeva, și ăsta e locul.
+    ''' </remarks>
+    Private Function TooltipBanda(rec As ReceptiePropusa, lant As List(Of InstantaneuLegat)) As String
+        Dim sb As New Text.StringBuilder()
+        sb.AppendLine(TooltipReceptie(rec, lant))
+        sb.AppendLine()
+        sb.AppendLine($"{lant.Count} instantanee pe bandă.")
+        Return sb.ToString().TrimEnd()
+    End Function
+
+    ''' <summary>
+    ''' Plățile angajamentului, ca linii verticale, pe AMÂNDOUĂ suprafețele.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Astea sunt rostul întregii felii. §1.3 din fundament: fiecare ordonanțare citește
+    ''' totalul recepției AȘA CUM STĂTEA la data plății. Deci partea pe care cade un instantaneu
+    ''' față de o plată nu e un amănunt de aspect — e diferența dintre o cifră corectă și una
+    ''' greșită, tăcut și pentru totdeauna (F12).</para>
+    ''' <para><b>Câte un reper pentru fiecare suprafață, construite în ACEEAȘI buclă din aceeași
+    ''' plată.</b> Prima variantă punea un singur obiect în amândouă colecțiile — «nu au cum să nu
+    ''' fie de acord asupra unei date» — dar un reper are UN singur proprietar, cel care îl
+    ''' repictează când i se schimbă culoarea, iar al doilea adăugat îl fura pe primul. Un obiect
+    ''' cu doi stăpâni și un singur câmp de stăpân e o capcană pusă pentru mai târziu. Garanția
+    ''' rămâne la fel de tare fără el: amândouă reperele primesc <c>plata.DataPlata</c>, aceeași
+    ''' valoare, în același pas al aceleiași bucle.</para>
+    ''' </remarks>
+    Private Sub ConstruiesteReperelePlatilor(tinta As KBotLaneView, siInGrafic As Boolean)
+        If _stare Is Nothing Then Return
+
+        For Each plata As PlataAsociere In _stare.Plati.OrderBy(Function(p) p.DataPlata)
+            Dim titlu As String = $"Plată {plata.DataPlata:dd.MM.yyyy} · {Bani(plata.Suma)}"
+            Dim corp As String = If(String.IsNullOrWhiteSpace(plata.NrOp),
+                                    "Totalul recepțiilor la data asta a intrat în ordonanțare.",
+                                    $"OP {plata.NrOp}" & Environment.NewLine &
+                                    "Totalul recepțiilor la data asta a intrat în ordonanțare.")
+
+            Dim peBenzi As KBotChartGuide = tinta.AddGuide(plata.DataPlata, titlu)
+            peBenzi.Tooltip = corp
+            peBenzi.Tag = plata
+
+            If siInGrafic Then
+                Dim peGrafic As KBotChartGuide = grafic.AddGuide(plata.DataPlata, titlu)
+                peGrafic.Tooltip = corp
+                peGrafic.Tag = plata
+            End If
+        Next
+    End Sub
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' Tragerea pe benzi
+    ' ══════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>
+    ''' Recepția din spatele unei benzi. <c>Nothing</c> pentru banda «neașezate», care e o țintă
+    ''' adevărată, dar nu o recepție.
+    ''' </summary>
+    Private Function ReceptiaBenzii(banda As KBotLane) As ReceptiePropusa
+        Return TryCast(banda?.Tag, ReceptiePropusa)
+    End Function
+
+    Private Sub Benzi_MarkerDragStarting(sender As Object, e As LaneDragStartEventArgs) Handles benzi.MarkerDragStarting
+        Try
+            ntfMesaj.Clear()
+            Dim inst = TryCast(e.Marker?.Tag, InstantaneuLegat)
+            If inst Is Nothing Then e.Cancel = True : Return
+            ' Legătură înghețată de o ordonanțare sau de o plată: vizibilă, dar nu de mutat. Se
+            ' oprește din pornire, ca operatorul să simtă refuzul înainte de gest, nu după.
+            If inst.Blocat Then
+                e.Cancel = True
+                ntfMesaj.Show("Această legătură nu se mai poate modifica. " &
+                              String.Join(" ", inst.Motive), NoticeKind.Warning)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AsociereForm.Benzi_MarkerDragStarting", ex)
+            e.Cancel = True
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Aceleași vetouri ca la arbore, pe aceeași funcție — <see cref="MotivulRefuzului"/>.
+    ''' </summary>
+    ''' <remarks>
+    ''' <b>F13 nu se consultă</b> (retras 31.08.2026). Dacă momentul cade înaintea lui
+    ''' <c>DataR</c> al recepției-țintă, aruncarea se face oricum, iar observația o poartă semnul
+    ''' de pe rând și eticheta plutitoare.
+    ''' </remarks>
+    Private Sub Benzi_MarkerDragOver(sender As Object, e As LaneDragOverEventArgs) Handles benzi.MarkerDragOver
+        Try
+            Dim inst = TryCast(e.Marker?.Tag, InstantaneuLegat)
+            If inst Is Nothing Then e.Allow = False : Return
+
+            Dim rec As ReceptiePropusa = ReceptiaBenzii(e.Target)
+            If rec Is Nothing Then
+                ' Banda de jos = desprinderea.
+                If PozitiaLui(inst) = 0 Then
+                    e.Allow = False
+                    e.Reason = "Instantaneul este deja neașezat."
+                    Return
+                End If
+                e.Allow = True
+                Return
+            End If
+
+            If PozitiaLui(inst) = rec.Idrr Then
+                e.Allow = False
+                e.Reason = "Instantaneul este deja pe această recepție."
+                Return
+            End If
+
+            Dim motiv As String = MotivulRefuzului(inst, rec)
+            e.Allow = motiv = String.Empty
+            e.Reason = motiv
+        Catch ex As Exception
+            GlobalErrorLog.Write("AsociereForm.Benzi_MarkerDragOver", ex)
+            e.Allow = False
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Aruncarea scrie în ACELAȘI <c>_pozitie</c> în care scrie și tragerea din arbore.
+    ''' </summary>
+    ''' <remarks>
+    ''' Cele două suprafețe sunt două vederi ale unui singur tablou local, deci există exact un
+    ''' loc în care se consemnează o așezare. Dacă ar exista două, s-ar putea contrazice.
+    ''' </remarks>
+    Private Sub Benzi_MarkerDropped(sender As Object, e As LaneDropEventArgs) Handles benzi.MarkerDropped
+        Try
+            ntfMesaj.Clear()
+            Dim inst = TryCast(e.Marker?.Tag, InstantaneuLegat)
+            If inst Is Nothing Then Return
+
+            Dim rec As ReceptiePropusa = ReceptiaBenzii(e.Target)
+            If rec Is Nothing Then
+                _pozitie(inst.Idrh) = 0
+                _stergere(inst.Idrh) = False
+            Else
+                _pozitie(inst.Idrh) = rec.Idrr
+                ' Un instantaneu așezat nu mai e «fără schimbare»: cele două se exclud, fiindcă
+                ' `Sters = 1` înseamnă tocmai «lăsat deliberat neatașat».
+                _ignorat(inst.Idrh) = False
+            End If
+            Reconstruieste()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AsociereForm.Benzi_MarkerDropped", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Deschide fereastra mare. Aceleași benzi, la altă mărime — nu o a doua funcție.
+    ''' </summary>
+    ''' <remarks>
+    ''' Modal, și se reconstruiește la întoarcere: tabloul local e comun, deci fereastra mare a
+    ''' putut muta ceva, iar strâmta trebuie să arate ce s-a hotărât. Nu e nimic de împăcat între
+    ''' ele — amândouă citesc aceleași dicționare.
+    ''' </remarks>
+    Private Sub Benzi_EnlargeRequested() Handles benzi.EnlargeRequested
+        Try
+            If _stare Is Nothing Then Return
+            Using f As New AsociereBenziForm(Me)
+                f.ShowDialog(Me)
+            End Using
+            Reconstruieste()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AsociereForm.Benzi_EnlargeRequested", ex)
+            ntfMesaj.Show("Nu am putut deschide benzile mari. Vedeți jurnalul de erori.", NoticeKind.Error)
+        End Try
+    End Sub
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' Ce împrumută fereastra mare
+    ' ══════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>
+    ''' Umple banda unei alte ferestre din ACELAȘI tablou local, prin aceeași metodă.
+    ''' </summary>
+    ''' <remarks>
+    ''' <see cref="AsociereBenziForm"/> nu are date proprii și nu are voie să aibă: e aceeași
+    ''' suprafață la altă mărime. Împrumută construcția și cei trei tratatori de tragere, deci nu
+    ''' există o a doua regulă de așezare care s-ar putea abate de la prima.
+    ''' </remarks>
+    Friend Sub UmpleBenzile(tinta As KBotLaneView,
+                            banda As Dictionary(Of Integer, KBotLane),
+                            marcaj As Dictionary(Of Integer, KBotLaneMarker))
+        If tinta Is Nothing Then Throw New ArgumentNullException(NameOf(tinta))
+        If banda Is Nothing Then Throw New ArgumentNullException(NameOf(banda))
+        If marcaj Is Nothing Then Throw New ArgumentNullException(NameOf(marcaj))
+        ' `stapanulReperelor:=False`: reperele graficului aparțin benzii din formular. Fereastra
+        ' mare își pune reperele ei pe suprafața ei și nu se atinge de grafic — altfel golirea
+        ' lor de aici ar șterge, la deschiderea ferestrei, exact liniile pe care le desenează
+        ' graficul de dedesubt.
+        ConstruiesteBenzi(tinta, banda, marcaj, stapanulReperelor:=False)
+        AplicaCulorileBenzii(banda, marcaj)
+    End Sub
+
+    ''' <summary>Tratatorii de tragere ai formularului, pentru banda ferestrei mari.</summary>
+    Friend Sub LeagaBanda(tinta As KBotLaneView)
+        If tinta Is Nothing Then Throw New ArgumentNullException(NameOf(tinta))
+        AddHandler tinta.MarkerDragStarting, AddressOf Benzi_MarkerDragStarting
+        AddHandler tinta.MarkerDragOver, AddressOf Benzi_MarkerDragOver
+        AddHandler tinta.MarkerDropped, AddressOf Benzi_MarkerDropped
+    End Sub
+
+    Friend Sub DezleagaBanda(tinta As KBotLaneView)
+        If tinta Is Nothing Then Return
+        RemoveHandler tinta.MarkerDragStarting, AddressOf Benzi_MarkerDragStarting
+        RemoveHandler tinta.MarkerDragOver, AddressOf Benzi_MarkerDragOver
+        RemoveHandler tinta.MarkerDropped, AddressOf Benzi_MarkerDropped
+    End Sub
 
     ''' <summary>
     ''' Meniul unui instantaneu: cele două marcaje pe care tragerea nu le poate exprima.

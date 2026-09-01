@@ -56,7 +56,9 @@ Partial Class AsociereForm
         Il_Receptii = New ImageList(components)
         treeLibere = New AdvancedTreeControl()
         splitDreapta = New SplitContainer()
+        splitSus = New SplitContainer()
         grafic = New KBotChartView()
+        benzi = New KBotLaneView()
         grid = New KBotDataView()
         ntfMesaj = New KBotNotice()
         lblIntro = New Label()
@@ -77,7 +79,12 @@ Partial Class AsociereForm
         splitDreapta.Panel1.SuspendLayout()
         splitDreapta.Panel2.SuspendLayout()
         splitDreapta.SuspendLayout()
+        CType(splitSus, ComponentModel.ISupportInitialize).BeginInit()
+        splitSus.Panel1.SuspendLayout()
+        splitSus.Panel2.SuspendLayout()
+        splitSus.SuspendLayout()
         CType(grafic, ComponentModel.ISupportInitialize).BeginInit()
+        CType(benzi, ComponentModel.ISupportInitialize).BeginInit()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         tlyAsociere.SuspendLayout()
         SuspendLayout()
@@ -241,7 +248,7 @@ Partial Class AsociereForm
         ' 
         ' splitDreapta.Panel1
         ' 
-        splitDreapta.Panel1.Controls.Add(grafic)
+        splitDreapta.Panel1.Controls.Add(splitSus)
         splitDreapta.Panel1MinSize = 80
         ' 
         ' splitDreapta.Panel2
@@ -252,12 +259,35 @@ Partial Class AsociereForm
         splitDreapta.SplitterDistance = 308
         splitDreapta.SplitterWidth = 10
         splitDreapta.TabIndex = 1
-        ' 
+        '
+        ' splitSus
+        '
+        splitSus.Dock = DockStyle.Fill
+        splitSus.Location = New Point(0, 0)
+        splitSus.Margin = New Padding(0)
+        splitSus.Name = "splitSus"
+        splitSus.Orientation = Orientation.Horizontal
+        '
+        ' splitSus.Panel1
+        '
+        splitSus.Panel1.Controls.Add(grafic)
+        splitSus.Panel1MinSize = 80
+        '
+        ' splitSus.Panel2
+        '
+        splitSus.Panel2.Controls.Add(benzi)
+        splitSus.Panel2MinSize = 60
+        splitSus.Size = New Size(634, 308)
+        splitSus.SplitterDistance = 180
+        splitSus.SplitterWidth = 8
+        splitSus.TabIndex = 0
+        '
         ' grafic
-        ' 
+        '
         grafic.Dock = DockStyle.Fill
         grafic.EmptyText = "Alege o recepție în stânga ca să-i vezi evoluția."
         grafic.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        grafic.HeaderBackColor = SystemColors.Control
         grafic.HeaderCaption = " EVOLUȚIA VALORII"
         grafic.HeaderGradient = 5
         grafic.HeaderHeight = 30
@@ -268,7 +298,7 @@ Partial Class AsociereForm
         grafic.Name = "grafic"
         grafic.PlotMargin = 2
         grafic.SelectedTabKey = "receptie"
-        grafic.Size = New Size(634, 308)
+        grafic.Size = New Size(634, 180)
         grafic.TabHeight = 26
         grafic.TabIndex = 0
         grafic.TabPadding = 4
@@ -280,9 +310,25 @@ Partial Class AsociereForm
         KBotChartTab2.Tooltip = "Evoluția întregului angajament" & vbCrLf & "Câte o linie pentru fiecare recepție, plus linia îngroșată a totalului."
         grafic.Tabs.Add(KBotChartTab1)
         grafic.Tabs.Add(KBotChartTab2)
-        ' 
+        '
+        ' benzi
+        '
+        benzi.Dock = DockStyle.Fill
+        benzi.EmptyText = "Trage un instantaneu dintr-o bandă în alta ca să-l muți."
+        benzi.EnlargeButtonTooltip = "Deschide benzile mari" & vbCrLf & "Aceleași benzi, cu denumiri, sume și date — pentru când tragerea cere loc."
+        benzi.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        benzi.HeaderCaption = " AȘEZAREA INSTANTANEELOR"
+        benzi.HeaderGradient = 5
+        benzi.HeaderHeight = 30
+        benzi.HeaderSeparatorWidth = 2
+        benzi.Location = New Point(0, 0)
+        benzi.Margin = New Padding(4, 5, 4, 5)
+        benzi.Name = "benzi"
+        benzi.Size = New Size(634, 120)
+        benzi.TabIndex = 1
+        '
         ' grid
-        ' 
+        '
         grid.AutoSizeColumnsMode = KBotAutoSizeMode.None
         grid.BackColor = SystemColors.Window
         grid.CellTooltip.Enabled = False
@@ -458,7 +504,12 @@ Partial Class AsociereForm
         splitDreapta.Panel2.ResumeLayout(False)
         CType(splitDreapta, ComponentModel.ISupportInitialize).EndInit()
         splitDreapta.ResumeLayout(False)
+        splitSus.Panel1.ResumeLayout(False)
+        splitSus.Panel2.ResumeLayout(False)
+        CType(splitSus, ComponentModel.ISupportInitialize).EndInit()
+        splitSus.ResumeLayout(False)
         CType(grafic, ComponentModel.ISupportInitialize).EndInit()
+        CType(benzi, ComponentModel.ISupportInitialize).EndInit()
         CType(grid, ComponentModel.ISupportInitialize).EndInit()
         tlyAsociere.ResumeLayout(False)
         tlyAsociere.PerformLayout()
@@ -470,7 +521,9 @@ Partial Class AsociereForm
     Friend WithEvents lblIntro As Label
     Friend WithEvents split As SplitContainer
     Friend WithEvents splitDreapta As SplitContainer
+    Friend WithEvents splitSus As SplitContainer
     Friend WithEvents grafic As KBot.Controls.KBotChartView
+    Friend WithEvents benzi As KBot.Controls.KBotLaneView
     Friend WithEvents grid As KBot.Controls.KBotDataView
     Friend WithEvents ntfMesaj As KBot.Controls.KBotNotice
     Friend WithEvents btnRenunta As Button

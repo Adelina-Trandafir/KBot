@@ -192,7 +192,7 @@ Partial Public Class AdvancedTreeControl
     ' schemei pe FORMULAR și se bazează pe moștenire — deci arborele ar fi rămas surd la el.
     Private _fontPinned As Boolean = False
 
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Fontul ambiant al controlului (etichete, casetă de căutare); nefixat aici, urmează tema.")>
     Public Overrides Property Font As Font
         Get

@@ -258,8 +258,17 @@ Public Class AsociereFormTests
     ' Refuzul: vetourile de plasare
     ' ══════════════════════════════════════════════════════════════════════════
 
+    ''' <summary>
+    ''' F13 a fost RETRAS pe 31.08.2026 și e acum doar un semn — testul îl urmează.
+    ''' </summary>
+    ''' <remarks>
+    ''' Rescris, nu șters: regula n-a dispărut, a coborât. <c>DataR</c> nu spune când a apărut
+    ''' recepția — e un câmp pe care omul îl tastează pe site și îl poate schimba după aceea, iar
+    ''' <c>FX_Receptii_R</c> nu are nicio coloană cu momentul creării (F29). Un refuz clădit pe
+    ''' el poate opri o plasare corectă. Aruncarea trece; observația o poartă rândul.
+    ''' </remarks>
     <Fact>
-    Public Sub F13_ORecepțieMaiNouaDecatInstantaneul_ERefuzata()
+    Public Sub F13Retras_ORecepțieMaiNouaDecatInstantaneul_ETotusiPrimita()
         ' Recepția 2 e creată în februarie; instantaneul 41 e din ianuarie.
         RunSta(Sub()
                    Dim stare As AsociereStare = StandardStare()
@@ -270,8 +279,8 @@ Public Class AsociereFormTests
                        Dim e = IntreabaAruncarea(f, "TreeLant_NodeDragOver",
                                                  Nod(Arbore(f, "treeLibere"), "H:41"),
                                                  Nod(Arbore(f, "treeLant"), "R:2"))
-                       Assert.False(e.Allow)
-                       Assert.Contains("anterior creării ei", e.Motiv)
+                       Assert.True(e.Allow)
+                       Assert.Equal(String.Empty, e.Motiv)
                    End Using
                End Sub)
     End Sub

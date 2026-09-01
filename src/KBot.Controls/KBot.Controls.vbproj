@@ -16,7 +16,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.37.0.0</FileVersion>
+    <FileVersion>1.38.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -38,8 +38,12 @@
          CaptionBar\, BusyBar\, Notice\ (+ NoticeKind), Label\ (KBotLabel)
          TextField\  KBotTextField (câmpul de o linie) și KBotTextBox (caseta generală)
          Scroll\     KBotScrollBar (bara de derulare desenată de noi, tematizată)
+         Lane\       KBotLaneView (+ .Painting, .Drag) și tipurile lui: KBotLane,
+                     KBotLaneMarker cu colecțiile lor, KBotLaneMarkerStyle/KBotLaneEndMark
          Chart\      KBotChartView (+ .Painting) și tipurile lui: KBotChartSeries/Point/Tab
-                     cu colecțiile lor, KBotChartMarkerStyle/TabAlign/ValueAxisMode
+                     și KBotChartGuide cu colecțiile lor, KBotChartMarkerStyle/TabAlign/
+                     ValueAxisMode/LineMode, plus KBotAutoPalette — setul de culori
+                     automate, împărțit cu Lane\ ca cele două suprafețe să nu se contrazică
 
        KBotThemedForm / KBotShellForm NU sunt controale, ci form-uri de bază: rămân în
        KBot.Theming, împreună cu motorul de teme. -->

@@ -95,6 +95,7 @@ Partial Public NotInheritable Class KBotChartView
                                   Math.Max(0, plotBottom - plotTop))
 
         ProjectPoints()
+        ProjectGuides()
     End Sub
 
     ''' <summary>
@@ -232,6 +233,31 @@ Partial Public NotInheritable Class KBotChartView
         Next
     End Sub
 
+    ''' <summary>
+    ''' Puts each guide on the horizontal axis, or takes it off the plot entirely.
+    ''' </summary>
+    ''' <remarks>
+    ''' A guide OUTSIDE the time span of the points gets <c>PlotX = -1</c> and is not drawn. It
+    ''' deliberately does not stretch the axis to reach itself: the axis belongs to the
+    ''' measurements, and a payment made months after the last snapshot would otherwise squash
+    ''' the whole chain against one edge to make room for a line that says nothing about it.
+    ''' </remarks>
+    Private Sub ProjectGuides()
+        Dim plotted As Boolean = _plotRect.Width > 0 AndAlso _plotRect.Height > 0 AndAlso _axisMax > _axisMin
+        For Each gd As KBotChartGuide In _guides
+            If Not plotted OrElse Not gd.Visible Then
+                gd.PlotX = -1
+                Continue For
+            End If
+            Dim t As Double = CDbl(gd.Moment.Ticks)
+            If t < _minTicks OrElse t > _maxTicks Then
+                gd.PlotX = -1
+                Continue For
+            End If
+            gd.PlotX = MomentToX(gd.Moment)
+        Next
+    End Sub
+
     Private Function MomentToX(moment As Date) As Integer
         Dim span As Double = _maxTicks - _minTicks
         ' Everything at the same instant: one column in the middle, not a line pinned to the left.
@@ -314,6 +340,9 @@ Partial Public NotInheritable Class KBotChartView
 
             If HasAnyVisibleSeries() AndAlso _axisMax > _axisMin Then
                 DrawGridAndAxes(g)
+                ' BEHIND the series, deliberately: a guide is context to read the lines against,
+                ' so it must never hide one.
+                DrawGuides(g)
                 DrawAllSeries(g)
                 DrawHoverHighlight(g)
                 DrawLegend(g)
@@ -531,6 +560,32 @@ Partial Public NotInheritable Class KBotChartView
     End Sub
 
     ''' <summary>
+    ''' The dated lines, floor to ceiling of the plot, thin and dotted.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>One logical pixel wide whatever the emphasis of the series around it: a guide that
+    ''' competes with a line for attention has stopped being background. The one under the pointer
+    ''' is drawn solid instead of thicker — same weight, so nothing moves, but it is unmistakably
+    ''' the one the floating label is naming.</para>
+    ''' <para><b>Never red</b>, and never from the automatic set either: <c>Color.Empty</c>
+    ''' resolves to the dimmed text colour, the same colour the axis labels already use for
+    ''' "quiet fact about the plot rather than a measurement in it".</para>
+    ''' </remarks>
+    Private Sub DrawGuides(g As Graphics)
+        If _guides.Count = 0 OrElse _plotRect.Width <= 0 OrElse _plotRect.Height <= 0 Then Return
+        Dim fallback As Color = Palette().TextDimColor
+        Dim width As Single = CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, 1)))
+        For i As Integer = 0 To _guides.Count - 1
+            Dim gd As KBotChartGuide = _guides(i)
+            If gd.PlotX < 0 Then Continue For
+            Using pen As New Pen(If(gd.LineColor = Color.Empty, fallback, gd.LineColor), width)
+                pen.DashStyle = If(i = _hoverGuideIndex, DashStyle.Solid, gd.DashStyle)
+                g.DrawLine(pen, gd.PlotX, _plotRect.Top, gd.PlotX, _plotRect.Bottom)
+            End Using
+        Next
+    End Sub
+
+    ''' <summary>
     ''' Draws every visible series, ordinary ones first and the emphasised ones last, so a total
     ''' line is never buried under the parts it sums.
     ''' </summary>
@@ -558,6 +613,11 @@ Partial Public NotInheritable Class KBotChartView
     ''' colour of whichever point happened to be first.</para>
     ''' <para>When no point names a colour, every segment gets <paramref name="lineColor"/> and
     ''' this draws exactly what a single <c>DrawLines</c> used to draw.</para>
+    ''' <para><b>Step mode</b> (<see cref="KBotChartSeries.LineMode"/>) replaces each segment with
+    ''' two — flat across, then straight up or down at the moment of the change — and BOTH keep the
+    ''' left point's colour, because both belong to the stretch that point started. The corner
+    ''' between them is the only vertex the data does not contain, and it carries no marker: a
+    ''' marker there would claim a measurement nobody took.</para>
     ''' </remarks>
     Private Sub DrawOneSeries(g As Graphics, s As KBotChartSeries, lineColor As Color)
         Dim pts As New List(Of Point)()
@@ -569,15 +629,20 @@ Partial Public NotInheritable Class KBotChartView
         Next
         If pts.Count = 0 Then Return
 
+        Dim stepped As Boolean = s.LineMode = KBotChartLineMode.Step
+
         Dim alpha As Integer = CInt(255.0 * _areaFillOpacity / 100.0)
         If s.FillArea AndAlso alpha > 0 AndAlso pts.Count > 1 Then
             For i As Integer = 0 To pts.Count - 2
                 ' A strip can be empty when two snapshots share a moment; a zero-width polygon is
                 ' not an error, just nothing to fill.
                 If pts(i + 1).X = pts(i).X Then Continue For
+                ' Stepped: the strip is a RECTANGLE at the left point's height, because that is
+                ' what the value was for the whole stretch. Straight: the trapezoid under the slope.
+                Dim topRight As Integer = If(stepped, pts(i).Y, pts(i + 1).Y)
                 Dim strip() As Point = {
                     pts(i),
-                    pts(i + 1),
+                    New Point(pts(i + 1).X, topRight),
                     New Point(pts(i + 1).X, _plotRect.Bottom),
                     New Point(pts(i).X, _plotRect.Bottom)}
                 Using b As New SolidBrush(Color.FromArgb(alpha, cols(i)))
@@ -591,7 +656,15 @@ Partial Public NotInheritable Class KBotChartView
             Using pen As New Pen(cols(i), width)
                 pen.StartCap = LineCap.Round
                 pen.EndCap = LineCap.Round
-                g.DrawLine(pen, pts(i), pts(i + 1))
+                If stepped Then
+                    Dim corner As New Point(pts(i + 1).X, pts(i).Y)
+                    ' Both halves are skipped when they would be a point: two snapshots at the
+                    ' same moment give no horizontal run, two equal values give no riser.
+                    If corner.X <> pts(i).X Then g.DrawLine(pen, pts(i), corner)
+                    If corner.Y <> pts(i + 1).Y Then g.DrawLine(pen, corner, pts(i + 1))
+                Else
+                    g.DrawLine(pen, pts(i), pts(i + 1))
+                End If
             End Using
         Next
 
@@ -684,113 +757,23 @@ Partial Public NotInheritable Class KBotChartView
         If s.LineColor <> Color.Empty Then Return s.LineColor
         Return AutoColor(index)
     End Function
-
-    ''' <summary>First hue of the automatic set, just past the red wedge. See <see cref="AutoColor"/>.</summary>
-    Private Const HueFirst As Double = 30.0
-
-    ''' <summary>Last hue of the automatic set, just before the red wedge starts again.</summary>
-    Private Const HueLast As Double = 330.0
-
-    ''' <summary>
-    ''' The step of the automatic set, as a fraction of the hue range: the golden ratio, chosen
-    ''' because it is the number a sequence stays furthest from repeating with. See
-    ''' <see cref="AutoColor"/>.
-    ''' </summary>
-    Private Const GoldenStep As Double = 0.6180339887498949
-
     ''' <summary>
     ''' The <paramref name="index"/>-th colour of the automatic set — what a series or a point left
     ''' at <see cref="Color.Empty"/> is drawn in.
     ''' </summary>
     ''' <remarks>
     ''' <para><b>Public</b> because a host that colours something OUTSIDE the chart — a list beside
-    ''' it, whose rows are the same facts as the points — has to be able to ask for the same
-    ''' colours rather than invent a parallel set that drifts on the next theme change.</para>
-    '''
-    ''' <para><b>Never red.</b> Red is what this application spends on something being wrong, so a
-    ''' chart that hands it out by turn teaches the operator to stop reading it. The hues live
-    ''' strictly between <see cref="HueFirst"/> and <see cref="HueLast"/>: the red wedge around
-    ''' zero is not «skipped over», it is outside the range, so nothing can land there whatever the
-    ''' accent of the active scheme happens to be. A host that means «this one is bad» still writes
-    ''' <c>LineColor</c>/<c>PointColor</c> itself, which is the only way red should ever reach this
-    ''' control.</para>
-    '''
-    ''' <para><b>Why not the palette's accents.</b> The first version handed out the five accents of
-    ''' the scheme and then repeated them a step lighter. At four or five lines that reads fine; at
-    ''' the dozen a real commitment has, «a step lighter» is not a difference an eye can hold, and
-    ''' two of them looked like one. So the HUE is what moves now, by the golden fraction of the
-    ''' range per step: consecutive indexes land as far apart as a sequence can put them, and they
-    ''' keep landing far apart however long the list gets — that is the property this particular
-    ''' irrational number is picked for. Lightness alternates in three steps on top of it, so even
-    ''' two indexes that eventually come back to a similar hue still differ in weight.</para>
-    '''
-    ''' <para>Nothing here is a hardcoded colour: the starting hue, the saturation and the middle
-    ''' lightness are read off the ACTIVE scheme's accent, so the whole set turns with the theme.
-    ''' The literals are limits — how dark is still readable on this background — which is the same
-    ''' kind of number <c>ThemeShapes.Lighten</c> already takes.</para>
-    '''
-    ''' <para>Any index is accepted, negative ones included, so a caller never has to bound-check a
-    ''' loop.</para>
+    ''' it, or the lane view under it, whose rows are the same facts as the points — has to be able
+    ''' to ask for the same colours rather than invent a parallel set that drifts on the next theme
+    ''' change.</para>
+    ''' <para>The set itself lives in <c>KBotAutoPalette</c>, shared with <c>KBotLaneView</c> so the
+    ''' two surfaces cannot disagree about what the n-th colour is. Read it there for why the
+    ''' sequence is built the way it is, and for why it never contains red.</para>
     ''' </remarks>
     Public Function AutoColor(index As Integer) As Color
-        Dim accent As Color = Palette().AccentColor
-        Dim i As Integer = Math.Abs(index)
-
-        ' Where in the allowed arc the active accent sits: the set starts from the scheme's own
-        ' colour instead of from a fixed hue, and walks on from there.
-        Dim anchor As Double = Math.Min(HueLast, Math.Max(HueFirst, CDbl(accent.GetHue())))
-        Dim span As Double = HueLast - HueFirst
-        Dim t As Double = (anchor - HueFirst) / span + i * GoldenStep
-        t -= Math.Floor(t)
-        Dim hue As Double = HueFirst + t * span
-
-        Dim sat As Double = Math.Min(0.85, Math.Max(0.55, CDbl(accent.GetSaturation())))
-        Dim middle As Double = CDbl(accent.GetBrightness())
-        If _isDarkScheme Then
-            ' On a dark plot a mid-dark line sinks into it, so the whole set is lifted.
-            middle = Math.Min(0.72, Math.Max(0.58, middle + 0.12))
-        Else
-            middle = Math.Min(0.52, Math.Max(0.34, middle))
-        End If
-        Dim steps() As Double = {0.0, -0.1, 0.1}
-        Dim light As Double = Math.Min(0.82, Math.Max(0.24, middle + steps(i Mod steps.Length)))
-
-        Return FromHsl(hue, sat, light)
+        Return KBotAutoPalette.ColorAt(Palette().AccentColor, _isDarkScheme, index)
     End Function
 
-    ''' <summary>
-    ''' Hue (0..360), saturation and lightness (0..1) back to a colour. Deliberately HSL — the same
-    ''' space <see cref="Color.GetHue"/>, <c>GetSaturation</c> and <c>GetBrightness</c> report in,
-    ''' so a palette colour taken apart by those and put together again here comes out unchanged.
-    ''' </summary>
-    Private Shared Function FromHsl(hue As Double, sat As Double, light As Double) As Color
-        Dim chroma As Double = (1.0 - Math.Abs(2.0 * light - 1.0)) * sat
-        Dim turn As Double = ((hue Mod 360.0) + 360.0) Mod 360.0
-        Dim sector As Double = turn / 60.0
-        Dim second As Double = chroma * (1.0 - Math.Abs((sector Mod 2.0) - 1.0))
-        Dim bottom As Double = light - chroma / 2.0
-        Dim r, g, b As Double
-        Select Case CInt(Math.Floor(sector))
-            Case 0
-                r = chroma : g = second : b = 0.0
-            Case 1
-                r = second : g = chroma : b = 0.0
-            Case 2
-                r = 0.0 : g = chroma : b = second
-            Case 3
-                r = 0.0 : g = second : b = chroma
-            Case 4
-                r = second : g = 0.0 : b = chroma
-            Case Else
-                r = chroma : g = 0.0 : b = second
-        End Select
-        Return Color.FromArgb(Channel(r + bottom), Channel(g + bottom), Channel(b + bottom))
-    End Function
-
-    ''' <summary>One 0..1 channel to its 0..255 byte, clamped.</summary>
-    Private Shared Function Channel(value As Double) As Integer
-        Return Math.Min(255, Math.Max(0, CInt(Math.Round(value * 255.0))))
-    End Function
 
     ' =====================================================================
     ' MOUSE
@@ -811,6 +794,15 @@ Partial Public NotInheritable Class KBotChartView
             Dim pi As Integer = -1
             If tabIndex < 0 Then HitTestPoint(e.Location, si, pi)
 
+            ' Only once nothing else has the pointer: a marker can be clicked, a guide cannot, so
+            ' the marker always wins the pixel they share.
+            Dim gi As Integer = -1
+            If tabIndex < 0 AndAlso si < 0 Then gi = HitTestGuide(e.Location)
+            If gi <> _hoverGuideIndex Then
+                _hoverGuideIndex = gi
+                Invalidate()
+            End If
+
             If si <> _hoverSeriesIndex OrElse pi <> _hoverPointIndex Then
                 _hoverSeriesIndex = si
                 _hoverPointIndex = pi
@@ -827,11 +819,13 @@ Partial Public NotInheritable Class KBotChartView
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
         MyBase.OnMouseLeave(e)
         Try
-            Dim changed As Boolean = _hoverTabIndex <> -1 OrElse _hoverSeriesIndex <> -1
+            Dim changed As Boolean = _hoverTabIndex <> -1 OrElse _hoverSeriesIndex <> -1 OrElse
+                                     _hoverGuideIndex <> -1
             Dim hadPoint As Boolean = _hoverSeriesIndex <> -1
             _hoverTabIndex = -1
             _hoverSeriesIndex = -1
             _hoverPointIndex = -1
+            _hoverGuideIndex = -1
             HideChartTip()
             If changed Then Invalidate()
             If hadPoint Then RaiseEvent PointHovered(Nothing, -1)
@@ -923,6 +917,32 @@ Partial Public NotInheritable Class KBotChartView
         Next
     End Sub
 
+    ''' <summary>
+    ''' The guide nearest the pointer, within <see cref="HoverRadius"/>. Returns -1 for none.
+    ''' </summary>
+    ''' <remarks>
+    ''' <b>Horizontal distance only.</b> A guide is a whole column of the plot, not a spot on it:
+    ''' the operator points at "that payment", and where their pointer sits vertically says
+    ''' nothing about which one they mean. Measuring the real distance would make a guide
+    ''' unreachable near the top and bottom of a tall plot for no reason the operator could guess.
+    ''' </remarks>
+    Private Function HitTestGuide(location As Point) As Integer
+        If _guides.Count = 0 OrElse Not _plotRect.Contains(location) Then Return -1
+        Dim reach As Integer = ThemeShapes.ScaleDpi(Me, _hoverRadius)
+        Dim best As Integer = reach + 1
+        Dim found As Integer = -1
+        For i As Integer = 0 To _guides.Count - 1
+            Dim gd As KBotChartGuide = _guides(i)
+            If gd.PlotX < 0 Then Continue For
+            Dim d As Integer = Math.Abs(gd.PlotX - location.X)
+            If d <= reach AndAlso d < best Then
+                best = d
+                found = i
+            End If
+        Next
+        Return found
+    End Function
+
     ' =====================================================================
     ' THE FLOATING LABEL
     ' =====================================================================
@@ -947,6 +967,17 @@ Partial Public NotInheritable Class KBotChartView
                                     p.TooltipText)
             ShowChartTip($"pt:{_hoverSeriesIndex}:{_hoverPointIndex}", header, body, p.TooltipFooter)
             Return
+        End If
+        If _hoverGuideIndex >= 0 AndAlso _hoverGuideIndex < _guides.Count Then
+            Dim gd As KBotChartGuide = _guides(_hoverGuideIndex)
+            ' A guide with NO text at all opens nothing: an unnamed line is a mark on the plot the
+            ' host chose not to explain, and a label saying only its date would add nothing.
+            If Not String.IsNullOrEmpty(gd.Text) OrElse Not String.IsNullOrEmpty(gd.Tooltip) Then
+                Dim body As String = If(String.IsNullOrEmpty(gd.Tooltip),
+                                        gd.Moment.ToString(_momentFormat), gd.Tooltip)
+                ShowChartTip($"gd:{_hoverGuideIndex}", gd.Text, body, Nothing)
+                Return
+            End If
         End If
         HideChartTip()
     End Sub
@@ -1074,6 +1105,18 @@ Partial Public NotInheritable Class KBotChartView
     Friend Sub DebugClickAt(location As Point)
         OnMouseDown(New MouseEventArgs(MouseButtons.Left, 1, location.X, location.Y, 0))
     End Sub
+
+    ''' <summary>Friend test hook: where a guide landed on the horizontal axis (-1 if not drawn).</summary>
+    Friend Function DebugGuideX(index As Integer) As Integer
+        EnsureLayout()
+        Return _guides(index).PlotX
+    End Function
+
+    ''' <summary>Friend test hook: the guide nearest a client point, or -1.</summary>
+    Friend Function DebugHitTestGuide(location As Point) As Integer
+        EnsureLayout()
+        Return HitTestGuide(location)
+    End Function
 
     ''' <summary>Friend test hook: the marker nearest a client point, as (seriesIndex, pointIndex).</summary>
     Friend Function DebugHitTest(location As Point) As Integer()

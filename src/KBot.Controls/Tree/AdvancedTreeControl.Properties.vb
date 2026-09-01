@@ -35,7 +35,7 @@ Partial Public Class AdvancedTreeControl
     ' e în AdvancedTreeControl.Dpi.vb (ApplyMetricScale); motivul, tot acolo.
     Private _expanderSizeLogic As Integer = 12
     Private m_ExpanderSize As Integer = 12
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Latura (px la 96 dpi) a butonului de expandare +/-.")>
     <DefaultValue(12)>
     Public Property ExpanderSize As Integer
@@ -51,7 +51,7 @@ Partial Public Class AdvancedTreeControl
 
     Private _indentLogic As Integer = 10
     Private m_Indent As Integer = 10
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Indentarea (px la 96 dpi) pe nivel de adâncime.")>
     <DefaultValue(10)>
     Public Property Indent As Integer
@@ -67,7 +67,7 @@ Partial Public Class AdvancedTreeControl
 
     Private _checkBoxSizeLogic As Integer = 16
     Private _checkBoxSize As Integer = 16
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Latura (px la 96 dpi) a checkbox-ului/radio-ului de nod.")>
     <DefaultValue(16)>
     Public Property CheckBoxSize As Integer
@@ -85,7 +85,7 @@ Partial Public Class AdvancedTreeControl
     Private _autoHeight As Boolean = False
     Private _itemHeightLogic As Integer = 22
     Private _itemHeight As Integer = 22
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Înălțimea (px la 96 dpi) a unui rând de nod.")>
     <DefaultValue(22)>
     Public Property ItemHeight As Integer
@@ -104,7 +104,7 @@ Partial Public Class AdvancedTreeControl
     ' Iconițe - Setarea lor declanșează recalcularea înălțimii rândului
     Private _leftIconSizeLogic As New Size(18, 18)
     Private _leftIconSize As New Size(18, 18)
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Dimensiunea (px la 96 dpi) a iconiței din stânga nodului.")>
     Public Property LeftIconSize As Size
         Get
@@ -125,7 +125,7 @@ Partial Public Class AdvancedTreeControl
 
     Private _rightIconSizeLogic As New Size(18, 18)
     Private _rightIconSize As New Size(18, 18)
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Dimensiunea (px la 96 dpi) a iconiței din dreapta nodului.")>
     Public Property RightIconSize As Size
         Get
@@ -151,7 +151,7 @@ Partial Public Class AdvancedTreeControl
     ' chiar apare (la hover). Pus pe True, locul e ținut permanent: textul nu se mai mișcă la
     ' hover, cu prețul unei fâșii goale pe fiecare rând.
     Private _reserveRightIconSpace As Boolean = False
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Ține permanent locul iconiței din dreapta (textul nu se mai îngustează la hover). " &
                  "Implicit False: locul se ia doar cât iconița e pe ecran.")>
     <DefaultValue(False)>
@@ -207,7 +207,7 @@ Partial Public Class AdvancedTreeControl
     End Function
 
     Private _RootExpander As Boolean = True
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Afișează expanderul pe nodurile rădăcină (Level 0).")>
     <DefaultValue(True)>
     Public Property RootExpander As Boolean
@@ -221,7 +221,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private _rightClickFunc As String = ""
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Numele funcției VBA apelate la click-dreapta (integrare FOREXE).")>
     <DefaultValue("")>
     Public Property RightClickFunction As String
@@ -252,7 +252,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private _checkBoxes As Boolean = False
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Activează checkbox-urile de nod (mod normal, fără radio).")>
     <DefaultValue(False)>
     Public Property CheckBoxes As Boolean
@@ -266,7 +266,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private _hasNodeIcons As Boolean = True
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Desenează iconițele de nod (stânga).")>
     <DefaultValue(True)>
     Public Property HasNodeIcons As Boolean
@@ -280,7 +280,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private _isPopupTree As Boolean = False
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Arborele rulează ca popup (nu ridică dublu-click de nod).")>
     <DefaultValue(False)>
     Public Property IsPopupTree As Boolean
@@ -294,7 +294,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private _popupGraceMs As Integer = 1500
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Timpul de grație (ms) înainte de închiderea automată a popup-ului.")>
     <DefaultValue(1500)>
     Public Property PopupGraceMs() As Integer
@@ -307,7 +307,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private _radioButtonLevel As Integer = -1  ' -1 = dezactivat
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Nivelul care primește butoane radio; -1 = dezactivat.")>
     <DefaultValue(-1)>
     Public Property RadioButtonLevel As Integer
@@ -462,7 +462,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private m_leftTextWidth As Integer = 0
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Lățime fixă (px @96dpi) rezervată textului din stânga caption; 0 = dinamic.")>
     <DefaultValue(0)>
     Public Property LeftTextWidth As Integer
@@ -478,7 +478,7 @@ Partial Public Class AdvancedTreeControl
     ' Lățime fixă rezervată pentru textul drept din caption cu separator ~~~
     ' 0 = nelimitat (dinamic)
     Private m_rightTextWidth As Integer = 0
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Lățime fixă (px @96dpi) rezervată textului din dreapta caption (separator ~~~); 0 = dinamic.")>
     <DefaultValue(0)>
     Public Property RightTextWidth As Integer
@@ -523,7 +523,7 @@ Partial Public Class AdvancedTreeControl
     ' Spațiul din dreapta e rezervat întotdeauna (textul nu sare la hover).
     ' Per-nod: TreeItem.ShowRightIconOnHover suprascrie globalul DOAR pentru nodul respectiv.
     Private _showRightIconOnHover As Boolean = False
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Iconița din dreapta apare doar la hover pe nod (spațiul rămâne rezervat).")>
     <DefaultValue(False)>
     Public Property ShowRightIconOnHover As Boolean
@@ -1906,7 +1906,7 @@ Partial Public Class AdvancedTreeControl
     End Property
 
     Private _scrollBarTheme As En_ScrollBarTheme = En_ScrollBarTheme.Explorer
-    <Category("K-BOT Tree")>
+    <Category("K-BOT")>
     <Description("Tema barei de derulare verticale (Default/Explorer/DarkMode).")>
     <DefaultValue(En_ScrollBarTheme.Explorer)>
     Public Property ScrollBarTheme As En_ScrollBarTheme

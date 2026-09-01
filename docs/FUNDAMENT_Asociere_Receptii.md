@@ -4,6 +4,11 @@
 0048-03-completare); the association FORM is not (slice 0048-04).
 **Written:** 26.08.2026. Supersedes the first version of the same day. Revised the same day:
 F17 amended, F20 withdrawn, F28 added, D-N and D-O added, O3 and O5 closed.
+**Revised 31.08.2026 (slice 0048-07): F13 WITHDRAWN** — `DataR` is a hand-typed, editable field,
+not a creation timestamp, so the date veto rested on nothing; it survives as a sign only, on both
+paths. **F25 amended** — step 4b matches on `CLng(DataR)`, not on the header hash. **F29 added**
+(the premise itself). **F30 added** — a recorded, deliberately unfixed hazard that follows from
+F25's real key. §1.5 rewritten accordingly; O2 closed, O7 added.
 **Location:** `docs/FUNDAMENT_Asociere_Receptii.md` (moved here from the repo root in slice 0048-03).
 
 This document exists because the association form could not be explained to its users. Working
@@ -107,13 +112,16 @@ confirm it.*
 ## 1.5 What the data can check for us
 
 These cannot identify the right reception. They can only rule out wrong ones. Since most angajamente
-carry a single indicator, what is really left is the date rule, the chain-end mark, and the
-operator's memory — so the form's job is not to be clever. It is to make each placement cheap,
-reversible, and immediately visible in its consequences.
+carry a single indicator, and since the date rule turned out not to be a rule at all (see below),
+what is really left is the chain-end mark and the operator's memory — so the form's job is not to be
+clever. **It cannot usefully refuse a placement, so it must instead make every placement cheap to
+undo and instantly visible in its consequences.** That is the whole design brief.
 
-- **Date rule.** A reception created in March cannot own a January snapshot. Full timestamp
-  comparison, not day granularity: operators save the same reception several times within one
-  minute.
+- **Date rule — WITHDRAWN 31.08.2026, see F13.** ~~A reception created in March cannot own a
+  January snapshot.~~ `DataR` is not a creation date: it is typed by hand on the site and can be
+  changed afterwards, and `FX_Receptii_R` has no creation timestamp at all (F29). What is left is a
+  **sign** — "this snapshot is older than the date written on the reception" — which says that
+  either the date is wrong or the snapshot belongs elsewhere, and leaves the operator to say which.
 - **Indicator subset.** Indicators get added to a reception over time and fall to zero, but never
   disappear from the block, so a snapshot naming an indicator the reception does not have cannot
   belong to it. Correct but weak: usually one indicator per angajament.
@@ -200,9 +208,18 @@ from F5 + F7 + F9.
 
 ### Constraints the form enforces
 
-**F13.** **Date veto.** A reception whose `DataR` is later than a snapshot's `DataH` cannot own it.
-**Full timestamp**, not truncated to the day. — `OPERATOR`, 26.08.2026. New rule, no Access
-equivalent.
+**F13.** ~~**Date veto.** A reception whose `DataR` is later than a snapshot's `DataH` cannot own
+it. **Full timestamp**, not truncated to the day.~~ **WITHDRAWN 31.08.2026.** `DataR` is an
+ordinary editable field typed by the operator on the site, not a creation timestamp, and
+`FX_Receptii_R` has no creation timestamp at all (F29). A veto built on a typed field can refuse a
+correct placement, and on the ingest path that is a deadlock in exactly the situation F10 says must
+never deadlock — the operator is stuck on a reception the form gives them no way to repair.
+
+**The comparison survives as a SIGN only**, never as a refusal, on both the ingest path and the
+editor. The "full timestamp, not day granularity" wording goes with it: comparing a system-clock
+`DataH` against a hand-typed midnight was never a real comparison, and as a sign it would light up
+on every snapshot saved on the reception's own date. The sign is measured **on the day**. —
+`OPERATOR`, 31.08.2026.
 
 **F14.** **Indicator subset.** A snapshot naming an indicator absent from the reception's current
 `RHR` cannot belong to it. Implement as a veto; do not rely on it — most angajamente carry one
@@ -280,11 +297,23 @@ is stable by construction and survives the proposal's rollback. `DataFX` travels
 checked on arrival, so a stale decisions file fails loudly rather than associating the wrong row. —
 `DERIVED` from F23's withdrawal.
 
-**F25.** Step 4b **never matches an incoming payload reception against a stored reception with
-`Sters = 1`.** A deleted reception cannot reappear in `ListaReceptii`, so an apparent match is a
-collision. The match is on `CLng(DataR)` — day granularity — so without this rule a reception created
-on the same calendar day as a deleted one would be re-matched onto it and silently overwritten with
-another reception's values. — `OPERATOR`, 26.08.2026.
+**F25.** **AMENDED 31.08.2026 — the match key is named correctly now.** Step 4b **never matches an
+incoming payload reception against a stored reception with `Sters = 1`.** A deleted reception cannot
+reappear in `ListaReceptii`, so an apparent match is a collision. The rule itself stands unchanged.
+
+What was wrong was the key. This document (and the reading it came from) said 4b matches on the
+header hash. **It does not.** Verified in the real `Receptii_Prelucrare`, supplied by the operator
+on 31.08.2026:
+
+```vba
+rsTmpR_Snap.FindFirst "CLng(DataR)=" & CLng(dtDataR)
+```
+
+`sHashIdent` is computed by `ObtineDateHeader` and **stored** in `tmpFX_Receptii_R!HASH` on insert,
+but it is **never read for matching**. The match key is `CLng(DataR)` — day granularity, `FindFirst`,
+first hit wins. That is why F25 matters at all: without it, a reception created on the same calendar
+day as a deleted one would be re-matched onto it and silently overwritten with another reception's
+values. — `VERIFIED` in `Receptii_Prelucrare`; `OPERATOR`, 26.08.2026 and 31.08.2026.
 
 **F26.** A reception created **and** deleted before K-BOT first downloaded the angajament has no
 `FX_Receptii_R` row: its whole history arrives at once and `ListaReceptii` does not contain it. Its
@@ -300,7 +329,7 @@ verified by the machine. F14, F16 and the one-deletion-per-chain rule are guards
 `DERIVED` from F26.
 
 **F28.** Where two or more receptions on one angajament are reconstructed, **all of them carry
-`ReconstituitNesigur = 1`**; the flag records that the grouping was constrained by F13/F14/F16 but
+`ReconstituitNesigur = 1`**; the flag records that the grouping was constrained by F14/F16 (and, until 31.08.2026, by F13) but
 not verified. It is set at commit, counting the receptions with `Reconstituit = 1` after the run —
 existing ones included, because two reconstructions made in two different sessions are exactly as
 indistinguishable as two made in one. It is **never cleared**: a later run that happens to see only
@@ -308,6 +337,30 @@ one reconstruction does not make the earlier grouping any more provable than it 
 The commit response names the affected receptions, and the Recepții tree marks them. — `OPERATOR`,
 26.08.2026. Records in the data the limit F27 states, so a total that does not add up months later
 can be traced back to a grouping that was a judgement rather than a check.
+
+**F29.** `FX_Receptii_R.DataR` is **operator-editable, including after creation**, and
+`FX_Receptii_R` carries no creation timestamp. The table is
+`IDRR, NRCRT, CodAngajament, Tip, DataR, SumaAntet, Descriere, HASH, TipReceptie, Incarcat, Preluat`
+— there is no such column anywhere in it, and the sample rows carry `dd.MM.yyyy` with no time
+component, which is what a typed date looks like. **No rule may treat `DataR` as a fact about when
+the reception came into existence.** — `OPERATOR`, 31.08.2026; `VERIFIED` against
+`MariaDB_Schema/000_DEMO.sql` and `FX_System_Export/TABLES/FX_Receptii_R.md`.
+
+**F30.** **A known hazard, recorded and deliberately NOT fixed.** Because step 4b matches on
+`CLng(DataR)` with `FindFirst` (F25), **two receptions carrying the same `DataR` collide on every
+download after the first**: both incoming receptions find the same stored row, the second overwrites
+the first's `SumaAntet` and `RHR` values, and no second row is inserted. On the *first* download both
+are inserted, which is how such pairs come to exist — `AAB2HFBEEAF` rows 268 and 269 in the sample
+data are both dated 16.01.2026, and they even share an identical `HASH`, so the hash would not
+discriminate either.
+
+Editing `DataR` on the site (F29) produces the mirror failure: the key moves, 4b no longer recognises
+the reception, and a duplicate is inserted while the original keeps its chain.
+
+The operator states he has never seen the `DataR` edit happen in practice, and that the same-day
+behaviour is "not right all the time, but mostly works". **Recorded, deliberately not fixed here.**
+If a duplicate or a silently overwritten reception ever appears after a download, this is the first
+place to look. — `VERIFIED` in `Receptii_Prelucrare`; `OPERATOR`, 31.08.2026.
 
 ---
 
@@ -475,8 +528,17 @@ What remains is not a decision but a limit: F27. Two receptions both created and
 first download cannot be told apart by the machine, and the operator's grouping of their snapshots
 cannot be verified — only constrained.
 
-**O2. F23 must be confirmed** before the two-phase contract is built. If `IDH` is not a stable
-FOREXE-side id, the decisions need a different natural key and the contract changes shape.
+**O2 — closed 31.08.2026.** F23 was withdrawn on 26.08 (`IDH` is a foreign key into `FX_Istoric`,
+whose `ID` is a LOCAL key), and F24 replaced it: a snapshot's durable identity across the two phases
+is the position of its history row in the `TabelIstoric` payload, with `DataFX` travelling alongside
+so a stale decisions file fails loudly. Neither F23 nor F24 depends on anything still open here, and
+the two-phase contract has been built and shipped on F24. Nothing is owed.
+
+**O7 — not a decision, an accepted hazard: F30.** Two receptions sharing a `DataR` collide on every
+download after the first, and an edited `DataR` inserts a duplicate. Recorded in F30 with the
+evidence; no code was written for it in slice 0048-07, on the operator's judgement that it has not
+been seen in practice. It is listed here so that a duplicate or a silently overwritten reception is
+diagnosed in one step rather than investigated from scratch.
 
 **O3 — closed 26.08.2026, by F20's withdrawal, not by confirmation.** `DIFH` is computed locally
 after association and does not exist in the incoming payload, so it cannot mark anything at the

@@ -13,6 +13,7 @@ lists only its exceptions.
 | `AdvancedTreeControl` | [Tree/AdvancedTreeControl.md](Tree/AdvancedTreeControl.md) | Owner-drawn tree / TreeListView, header + search + footer + collapse |
 | `KBotDataView` | [DataView/KBotDataView.md](DataView/KBotDataView.md) | Owner-drawn virtualized grid, unbound, group/filter/sort/aggregate |
 | `KBotChartView` | [Chart/KBotChartView.md](Chart/KBotChartView.md) | Time chart + single-select tab band |
+| `KBotLaneView` | [Lane/KBotLaneView.md](Lane/KBotLaneView.md) | Placement surface: dated markers on draggable lanes, one time axis |
 | `KBotNavList` | [NavList/KBotNavList.md](NavList/KBotNavList.md) | Sidebar / toolbar of keyed buttons, 3-state collapse, flyout |
 | `CustomPopup` | [Popup/CustomPopup.md](Popup/CustomPopup.md) | Themed context menu window (icons, mnemonics, sliders) |
 | `KBotToolTip` | [ToolTip/KBotToolTip.md](ToolTip/KBotToolTip.md) | Extender tooltip: header/body/footer, rich-text markup |

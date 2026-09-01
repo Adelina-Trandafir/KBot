@@ -43,9 +43,11 @@ Partial Public NotInheritable Class KBotChartView
     Inherits Control
     Implements IThemedControl
     Implements ISupportInitialize
+    Implements IKBotGuideHost
 
     Private ReadOnly _series As New KBotChartSeriesCollection()
     Private ReadOnly _tabs As New KBotChartTabCollection()
+    Private ReadOnly _guides As New KBotChartGuideCollection()
 
     ' ── Header band ──────────────────────────────────────────────────────────
     Private _headerVisible As Boolean = True
@@ -145,6 +147,10 @@ Partial Public NotInheritable Class KBotChartView
     Private _hoverTabIndex As Integer = -1
     Private _focusTabIndex As Integer = -1
 
+    ' The guide under the pointer, or -1. A guide is hunted only once nothing else claimed the
+    ' pointer: a marker is something the operator can act on, a guide is only something to read.
+    Private _hoverGuideIndex As Integer = -1
+
     ' The key of whatever is "in the label" right now. Without it every pixel of movement over the
     ' same marker would reschedule the label and it would never actually appear.
     Private _currentTipKey As String
@@ -186,6 +192,7 @@ Partial Public NotInheritable Class KBotChartView
         TabStop = True
         _series.Owner = Me
         _tabs.Owner = Me
+        _guides.Owner = Me
     End Sub
 
     ' =====================================================================
@@ -307,6 +314,49 @@ Partial Public NotInheritable Class KBotChartView
             Return _series
         End Get
     End Property
+
+    ''' <summary>
+    ''' The dated lines drawn straight down the plot, BEHIND every series — moments that matter
+    ''' without being measurements. See <see cref="KBotChartGuide"/>.
+    ''' </summary>
+    ''' <remarks>
+    ''' They do not enter the time range: a guide outside the span of the points is simply not
+    ''' drawn, rather than stretching the axis to reach it. A payment made long after the last
+    ''' snapshot would otherwise squeeze the whole chain into the left edge of the plot to make
+    ''' room for a line that says nothing about it.
+    ''' </remarks>
+    <Category("K-BOT Chart Data")>
+    <Description("Dated vertical lines drawn behind the series — payments and the like. They do not stretch the time axis; a guide outside the span of the points is not drawn.")>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Content)>
+    Public ReadOnly Property Guides As KBotChartGuideCollection
+        Get
+            Return _guides
+        End Get
+    End Property
+
+    ''' <summary>Removes every guide. Series, tabs and settings are untouched.</summary>
+    Public Sub ClearGuides()
+        _guides.Clear()
+    End Sub
+
+    ' The guide collection is shared with KBotLaneView, so it talks to its owner through an
+    ' interface rather than to a chart. Private implementations: a host never holds one of these.
+    Private Sub InvalidateGuides() Implements IKBotGuideHost.InvalidateGuides
+        InvalidateChartLayout()
+    End Sub
+
+    Private ReadOnly Property GuideHostControl As Control Implements IKBotGuideHost.GuideHostControl
+        Get
+            Return Me
+        End Get
+    End Property
+
+    ''' <summary>Convenience for code: append a guide and return it.</summary>
+    Public Function AddGuide(moment As Date, text As String) As KBotChartGuide
+        Dim gd As New KBotChartGuide(moment, text)
+        _guides.Add(gd)
+        Return gd
+    End Function
 
     ''' <summary>Text drawn in the middle of the plot when there is nothing to draw.</summary>
     <Category("K-BOT Chart Data")>

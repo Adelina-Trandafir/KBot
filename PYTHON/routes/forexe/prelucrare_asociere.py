@@ -153,8 +153,8 @@ def citeste_receptii(cursor, cod: str) -> List[dict]:
     asta nu le-a atins si inclusiv cele sterse.
 
     Formularul are nevoie de toate ca tinte de plasare: o receptie stearsa poate primi
-    in continuare un instantaneu ANTERIOR stergerii ei (regula de veto e pe data, F13,
-    nu pe steagul de stergere).
+    in continuare un instantaneu ANTERIOR stergerii ei. Steagul `Sters` nu o scoate din
+    joc -- si cu atat mai putin acum, de cand F13 nu mai refuza nimic pe data (31.08.2026).
     """
     cursor.execute(_RHR_SQL, (cod,))
     linii: Dict[int, List[dict]] = {}
@@ -724,7 +724,7 @@ def marcheaza_reconstituirile_nesigure(cursor, cod: str,
     return len(de_marcat)
 
 # ===========================================================================
-# Validarile de plasare (F13, F14, F15, F16)
+# Validarile de plasare (F14, F15, F16 -- si F13, retras ca veto, ramas semn)
 # ===========================================================================
 def _indicatori_receptie(rec: dict) -> Set[str]:
     return {l["cod_indicator"] for l in rec["rhr"] if l["cod_indicator"]}
@@ -753,9 +753,35 @@ def valideaza_plasarile(lanturi: Dict[int, List[dict]],
     lucrul pentru care exista editorul. Fundamentul insusi descrie F15 ca pe un SEMN
     aratat per recepție (§1.5), iar Access nu il verifica deloc la desprindere.
 
-    F13, F14 si F16 raman vetouri in AMANDOUA cazurile: sunt absolute. O recepție nu poate
-    detine un instantaneu dinainte sa fi existat, un instantaneu nu poate numi indicatori
-    pe care recepția nu ii are, un indicator nu poate disparea din lant.
+    F14 si F16 raman vetouri in AMANDOUA cazurile: sunt absolute. Un instantaneu nu poate
+    numi indicatori pe care recepția nu ii are, iar un indicator nu poate disparea din lant.
+
+    F13 A FOST RETRAS (31.08.2026) SI E ACUM UN SEMN, PE AMANDOUA CAILE
+    ------------------------------------------------------------------
+    Vetoul de data se sprijinea pe premisa ca `FX_Receptii_R.DataR` spune cand a aparut
+    receptia. Operatorul a corectat premisa: `DataR` e un camp OBISNUIT, pe care omul il
+    tasteaza pe site si il poate schimba dupa aceea, iar `FX_Receptii_R` nu are NICIO
+    coloana cu momentul crearii (F29 -- verificat in `000_DEMO.sql` si in
+    `FX_System_Export/TABLES/FX_Receptii_R.md`).
+
+    Un veto cladit pe un camp tastat poate refuza o plasare corecta. Pe calea de INGESTIE
+    asta e mai rau decat incomod: operatorul ramane blocat pe o receptie pe care nu are cum
+    s-o repare din formular, adica exact infundarea despre care F10 spune ca nu are voie sa
+    existe. De-asta coborarea se aplica pe amandoua caile, nu doar in editor.
+
+    Comparatia supravietuieste ca SEMN: se scrie in `avertismente`, si atat.
+
+    Se compara pe ZI, nu pe timestamp complet. Formularea veche -- «timestamp complet, nu
+    granularitate de zi» -- pleca de la ideea ca ambele capete sunt momente. Nu sunt:
+    `DataR` e o data tastata, deci soseste la miezul noptii, iar `DataH` e ceasul
+    sistemului. Comparate ca momente, ORICE instantaneu din chiar ziua receptiei ar iesi
+    «inainte de ea», si semnul s-ar aprinde pe date perfect corecte.
+
+    `avertismente` este OPTIONAL, si un apelant care nu-l da renunta la semnele F13/F15.
+    Nu e un no-op tacut: o regula care prin definitie nu refuza nu are cum sa se faca
+    auzita altfel, iar AMANDOI apelantii din productie (`aplica_decizii` de mai jos si
+    `aplica_comenzi` din `asociere.py`) trec o lista adevarata, care ajunge in raspuns.
+    Fara lista raman doar testele de logica pura, care nu au unde arata nimic oricum.
     """
     if f15_ca_avertisment and avertismente is None:
         raise ValueError(
@@ -769,14 +795,18 @@ def valideaza_plasarile(lanturi: Dict[int, List[dict]],
 
         precedente: Set[str] = set()
         for inst in lant:
-            # --- F13, vetoul de data. TIMESTAMP COMPLET, nu trunchiat la zi:
-            # operatorii salveaza aceeasi receptie de mai multe ori intr-un minut.
-            if rec["data_r"] is not None and inst["data_h"] is not None:
-                if _ca_datetime(rec["data_r"]) > _ca_datetime(inst["data_h"]):
-                    raise DecizieInvalida(
-                        f"Recepția {idrr} este creată la {rec['data_r']}, după "
-                        f"instantaneul de la {inst['data_h']}. O recepție nu poate "
-                        f"deține un instantaneu anterior creării ei."
+            # --- F13, RETRAS ca veto pe 31.08.2026 -- ramane SEMN. Vezi docstring-ul:
+            # `DataR` e tastat de om si se poate schimba, deci nu spune cand a aparut
+            # receptia. Pe ZI, nu pe timestamp: o data tastata soseste la miezul noptii.
+            if (avertismente is not None
+                    and rec["data_r"] is not None and inst["data_h"] is not None):
+                if _ca_datetime(rec["data_r"]).date() > _ca_datetime(inst["data_h"]).date():
+                    avertismente.append(
+                        f"Recepția {idrr}: instantaneul de la {inst['data_h']} este mai "
+                        f"vechi decât data recepției ({rec['data_r']}). Data recepției se "
+                        f"scrie de mână pe site și se poate schimba, deci asta nu "
+                        f"împiedică asocierea — dar ori data e greșită, ori instantaneul "
+                        f"este al altei recepții."
                     )
 
             ind_inst = _indicatori_instantaneu(inst)
@@ -923,7 +953,10 @@ def aplica_decizii(cursor, cod: str, decizii: List[dict], instantanee: List[dict
                 "stergere": bool(r["EsteStergere"]), "linii": linii,
             })
 
-    valideaza_plasarile(lanturi, toate)
+    # `warnings` se da si aici, nu doar in editor: de cand F13 e semn si nu veto (31.08.2026),
+    # calea de ingestie are si ea ce semnala, iar un semn pe care nu-l poate scrie nicaieri e
+    # un semn pierdut. F15 ramane veto aici -- `f15_ca_avertisment` ramane implicit False.
+    valideaza_plasarile(lanturi, toate, avertismente=warnings)
 
     # --- scrierea ---------------------------------------------------------------
     numarat = {"asociat": 0, "ignorat": 0, "stergere": 0, "reconstituit": len(noi)}

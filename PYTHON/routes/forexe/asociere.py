@@ -71,10 +71,17 @@ s-ar mai putea ingera. Asimetria e consemnata aici ca sa nu fie «reparata» din
 
 CE SE VERIFICA SI CE DOAR SE SEMNALEAZA
 =======================================
-F13 (veto de data), F14 (submultimea de indicatori) si F16 (multimile doar cresc) RIDICA,
-la fel ca in ingestie: sunt absolute. O recepție nu poate detine un instantaneu dinainte
-sa fi existat; un instantaneu nu poate numi indicatori pe care recepția nu ii are; un
-indicator nu poate disparea din lant.
+F14 (submultimea de indicatori) si F16 (multimile doar cresc) RIDICA, la fel ca in
+ingestie: sunt absolute. Un instantaneu nu poate numi indicatori pe care recepția nu ii
+are; un indicator nu poate disparea din lant.
+
+F13 (data) NU MAI RIDICA, DE NICAIERI -- retras pe 31.08.2026. Se sprijinea pe premisa ca
+`FX_Receptii_R.DataR` spune cand a aparut receptia; operatorul a corectat premisa: e un
+camp obisnuit, tastat pe site si schimbabil dupa aceea, iar tabelul nu are nicio coloana
+cu momentul crearii (F29). Un veto cladit pe un camp tastat refuza plasari corecte, si pe
+calea de ingestie asta inseamna un operator infundat pe o receptie pe care nu o poate
+repara -- exact ce interzice F10. Comparatia a ramas ca SEMN, in `avertismente`, pe
+amandoua caile. Detaliile si comparatia pe ZI: docstring-ul lui `valideaza_plasarile`.
 
 F15 (capatul lantului) doar AVERTIZEAZA aici. Fundamentul §1.5 chiar asa il descrie --
 «aratat per recepție ca un SEMN» -- iar un editor in care nu poti desprinde ultimul
@@ -501,7 +508,7 @@ def aplica_comenzi(cursor, cod: str, comenzi: list, instantanee: list,
 
     lanturi = _lanturi_rezultate(comenzi, instantanee, _tinta)
 
-    # F13 / F14 / F16 ridica; F15 doar avertizeaza -- vezi nota din antet.
+    # F14 / F16 ridica; F13 si F15 doar avertizeaza -- vezi nota din antet.
     valideaza_plasarile(lanturi, toate, f15_ca_avertisment=True,
                         avertismente=avertismente)
 

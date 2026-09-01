@@ -280,13 +280,18 @@ def test_f15_ramane_veto_in_ingestie():
         P.valideaza_plasarile(lanturi, receptii)
 
 
-def test_f13_ramane_veto_si_in_editor():
-    """Vetoul de data e absolut: o recepție nu poate detine un instantaneu de dinainte."""
+def test_f13_nu_mai_e_veto_ci_semn():
+    """
+    RETRAS pe 31.08.2026. `DataR` nu spune cand a aparut receptia -- e un camp tastat pe
+    site, schimbabil dupa aceea, iar tabelul nu are nicio coloana cu momentul crearii
+    (F29). Comparatia a ramas ca semn, pe amandoua caile.
+    """
     lanturi = {5: [inst(10, "2026-01-19 10:00:00", 100, idrr=5)]}
     receptii = {5: rec(5, "2026-03-01 08:00:00", 100)}
-    with pytest.raises(DecizieInvalida, match="după instantaneul"):
-        P.valideaza_plasarile(lanturi, receptii, f15_ca_avertisment=True,
-                              avertismente=[])
+    avertismente = []
+    P.valideaza_plasarile(lanturi, receptii, f15_ca_avertisment=True,
+                          avertismente=avertismente)          # nu ridica
+    assert any("mai vechi decât data recepției" in a for a in avertismente)
 
 
 def test_f14_ramane_veto_si_in_editor():
