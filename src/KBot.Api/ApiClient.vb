@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.Net.Http
@@ -1005,6 +1005,568 @@ Public Class ApiClient
             GlobalErrorLog.Write("ApiClient.ProcessExcelAsync", ex)
             Throw
         End Try
+    End Function
+
+    ' ══════════════════════════════════════════════════════════════════════════════════
+    ' EDITORUL DE ORDONANTARE (felia 0049)
+    '
+    ' Opt apeluri, toate pe rutele noi din `routes/forexe/ord_edit.py`. Baza NU se trimite
+    ' niciodata: serverul o ia din sesiune (o baza = o unitate). Un 401 curge spre
+    ' `WithReauth` (fara retry aici), exact ca la restul clientului.
+    '
+    ' Traducerea DTO ▸ POCO traieste aici, intr-un singur loc: `KBot.Api` cunoaste
+    ' snake_case-ul firului, `KBot.Domain` nu-l vede niciodata.
+    ' ══════════════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>
+    ''' Cere serverului graful PROPUS al unei ordonantari noi (POST /api/forexe/ord/genereaza).
+    ''' NIMIC nu se scrie — e portul lui <c>Genereaza_ORD</c>, mutat pe server fiindca
+    ''' interogarile lui bat numai tabele care traiesc acum in MariaDB.
+    ''' </summary>
+    Public Async Function GenereazaOrdAsync(cod As String, dataOrd As Date, idPlataFx As Integer?,
+                                            ct As CancellationToken) _
+        As Task(Of OrdDraft) Implements IApiClient.GenereazaOrdAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim req As New GenereazaOrdRequest() With {
+                .cod = cod,
+                .data = dataOrd.ToString("yyyy-MM-dd", Globalization.CultureInfo.InvariantCulture)}
+            ' `id_plata_fx` lipsa = toate platile neordonantate ale zilei (VBA: `"*"`).
+            If idPlataFx.HasValue AndAlso idPlataFx.Value > 0 Then req.id_plata_fx = idPlataFx.Value
+
+            Dim body As String = JsonSerializer.Serialize(req, _jsonFaraNull)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/ord/genereaza")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        ' Inclusiv 404 «nu exista plati neordonantate in ziua asta»: e un
+                        ' refuz cu motiv, nu o lista goala care ar minti operatorul.
+                        Throw BuildApiException(respText, "generarea ordonanțării", CInt(resp.StatusCode))
+                    End If
+                    Return CitesteDraft(respText, cod)
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GenereazaOrdAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Citeste graful unei ordonantari EXISTENTE, in forma pe care o editeaza formularul
+    ''' (GET /api/forexe/ord/draft/{idordp}).
+    '''
+    ''' <para>De ce nu <c>GetOrdAsync</c>: acela e apelul VEDERII 0033 si isi alege coloanele
+    ''' deliberat — nu intoarce CodAI, CodIndicator, IdClsf, CodSSI, Explicatie, partenerul
+    ''' liniei, randurile de document una cate una (le aduna intr-un singur text), legaturile
+    ''' cu platile sau atasamentele. Editorul are nevoie de toate.</para>
+    ''' </summary>
+    Public Async Function GetOrdDraftAsync(idordp As Integer, ct As CancellationToken) _
+        As Task(Of OrdDraft) Implements IApiClient.GetOrdDraftAsync
+
+        Try
+            EnsureConfigured()
+            If idordp <= 0 Then Throw New ArgumentException("idordp invalid.", NameOf(idordp))
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, $"/api/forexe/ord/draft/{idordp}")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea ordonanțării", CInt(resp.StatusCode))
+                    End If
+                    Return CitesteDraft(respText, String.Empty)
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetOrdDraftAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Zilele cu plati neordonantate ale unui angajament (GET /api/forexe/ord/zile) —
+    ''' sursa modului in lot. <paramref name="luna"/> / <paramref name="an"/> sunt optionale.
+    '''
+    ''' <para>Access filtra cu <c>Month &amp; "/" &amp; Year LIKE "*"</c>; aici filtrul e
+    ''' explicit, fiindca <c>*</c> nu e metacaracter in MariaDB si un LIKE cu el ar fi tacut
+    ''' gresit.</para>
+    ''' </summary>
+    Public Async Function GetOrdZileAsync(cod As String, luna As Integer?, an As Integer?,
+                                          ct As CancellationToken) _
+        As Task(Of OrdZileInfo) Implements IApiClient.GetOrdZileAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim url As String = $"/api/forexe/ord/zile?cod={Uri.EscapeDataString(cod)}"
+            If luna.HasValue Then url &= $"&luna={luna.Value}"
+            If an.HasValue Then url &= $"&an={an.Value}"
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea zilelor cu plăți", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As OrdZileResponse =
+                        JsonSerializer.Deserialize(Of OrdZileResponse)(respText, _json)
+                    Dim rez As New OrdZileInfo() With {.Cod = cod}
+                    If payload Is Nothing Then Return rez
+                    If Not String.IsNullOrEmpty(payload.cod) Then rez.Cod = payload.cod
+                    rez.TotalEstimat = payload.total_estimat
+                    If payload.zile IsNot Nothing Then
+                        For Each z As OrdZiDto In payload.zile
+                            rez.Zile.Add(New OrdZiCandidat() With {
+                                .Data = z.data, .Plati = z.plati, .Ordonantari = z.ordonantari})
+                        Next
+                    End If
+                    Return rez
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetOrdZileAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Scrie TOT graful ordonantarii intr-o singura tranzactie (POST /api/forexe/ord/save)
+    ''' si intoarce cheile reale.
+    '''
+    ''' <para>Lantul VBA in cinci pasi (staging pe server ▸ proba locala ▸ confirmare ▸
+    ''' actualizarea id-urilor ▸ commit local) NU are corespondent: e un singur apel. Un refuz
+    ''' de validare soseste ca <see cref="ApiException"/> cu mesajul romanesc al serverului,
+    ''' care enumera TOATE motivele deodata, nu primul.</para>
+    '''
+    ''' <para>Octetii atasamentelor NU pleaca de aici — un <c>IDORDATTP</c> trebuie sa existe
+    ''' inainte ca ei sa poata atarna de el. Se urca dupa, cu
+    ''' <see cref="PutOrdAtasamentAsync"/>, folosind harta din raspuns.</para>
+    ''' </summary>
+    Public Async Function SaveOrdAsync(draft As OrdDraft, ct As CancellationToken) _
+        As Task(Of OrdSaveRezultat) Implements IApiClient.SaveOrdAsync
+
+        Try
+            EnsureConfigured()
+            If draft Is Nothing Then Throw New ArgumentNullException(NameOf(draft))
+
+            Dim dto As OrdDraftDto = CatreFir(draft)
+            Dim body As String = JsonSerializer.Serialize(dto, _jsonFaraNull)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/ord/save")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "salvarea ordonanțării", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As OrdSaveResponse =
+                        JsonSerializer.Deserialize(Of OrdSaveResponse)(respText, _json)
+                    If payload Is Nothing OrElse payload.idordp <= 0 Then
+                        Throw New ApiException(
+                            "Serverul a confirmat salvarea, dar nu a întors cheia ordonanțării.",
+                            CInt(resp.StatusCode))
+                    End If
+
+                    Dim rez As New OrdSaveRezultat() With {
+                        .Idordp = payload.idordp, .NrOrd = payload.nr_ord}
+                    If payload.harta IsNot Nothing Then
+                        CopiazaHarta(payload.harta.parts, rez.Parts)
+                        CopiazaHarta(payload.harta.linii, rez.Linii)
+                        CopiazaHarta(payload.harta.rec, rez.Rec)
+                        CopiazaHarta(payload.harta.doc, rez.Doc)
+                        CopiazaHarta(payload.harta.att, rez.Att)
+                    End If
+                    Return rez
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.SaveOrdAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Sterge o ordonantare cu tot ce atarna de ea (DELETE /api/forexe/ord/{idordp}).
+    '''
+    ''' <para>Cascadele bazei fac treaba; serverul numara INAINTE, deci raspunsul poate spune
+    ''' un numar adevarat in loc de «gata». Platile se intorc singure in rezerva de
+    ''' neordonantate, fiindca raspunsul la «plata asta e ordonantata?» sta tocmai in
+    ''' <c>FX_ORD_TBL_REC</c>, pe care cascada il goleste.</para>
+    ''' </summary>
+    Public Async Function DeleteOrdAsync(idordp As Integer, ct As CancellationToken) _
+        As Task(Of OrdStergereRezultat) Implements IApiClient.DeleteOrdAsync
+
+        Try
+            EnsureConfigured()
+            If idordp <= 0 Then Throw New ArgumentException("idordp invalid.", NameOf(idordp))
+
+            Using msg As New HttpRequestMessage(HttpMethod.Delete, $"/api/forexe/ord/{idordp}")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "ștergerea ordonanțării", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As OrdStergereResponse =
+                        JsonSerializer.Deserialize(Of OrdStergereResponse)(respText, _json)
+                    Dim rez As New OrdStergereRezultat() With {.Idordp = idordp}
+                    If payload Is Nothing Then Return rez
+                    rez.Idordp = payload.idordp
+                    rez.NrOrd = payload.nr_ord
+                    rez.DataOrd = payload.data_ord
+                    rez.Cod = If(payload.cod, String.Empty)
+                    If payload.sterse IsNot Nothing Then
+                        rez.Parteneri = payload.sterse.parteneri
+                        rez.Linii = payload.sterse.linii
+                        rez.Documente = payload.sterse.documente
+                        rez.Atasamente = payload.sterse.atasamente
+                        rez.Pdf = payload.sterse.pdf
+                        rez.PlatiEliberate = payload.sterse.plati_eliberate
+                    End If
+                    Return rez
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.DeleteOrdAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Descarca octetii imaginii unui atasament
+    ''' (GET /api/forexe/ord/att/{idordattp}/imagine). Acelasi contract ca la PDF-uri:
+    ''' <paramref name="cachedSha"/> merge ca <c>If-None-Match</c>, un 304 intoarce
+    ''' <see cref="PdfDownloadStatus.NotModified"/>, un 404 intoarce
+    ''' <see cref="PdfDownloadStatus.NotFound"/> (nu exceptie — «atasamentul n-are imagine» e
+    ''' o stare normala), iar octetii primiti sunt DEJA verificati pe SHA-256 fata de ETag.
+    ''' </summary>
+    Public Function GetOrdAtasamentAsync(idordattp As Integer, cachedSha As String,
+                                         ct As CancellationToken) _
+        As Task(Of PdfDownloadResult) Implements IApiClient.GetOrdAtasamentAsync
+
+        Return DownloadPdfAsync($"/api/forexe/ord/att/{idordattp}/imagine", cachedSha,
+                                "citirea imaginii atașamentului",
+                                "ApiClient.GetOrdAtasamentAsync", ct)
+    End Function
+
+    ''' <summary>
+    ''' Urca octetii imaginii unui atasament (PUT /api/forexe/ord/att/{idordattp}/imagine).
+    '''
+    ''' <para>Spre deosebire de PDF-uri, numele fisierului SE TRIMITE (antetul
+    ''' <c>X-Nume-Fisier</c>): la ordonantare el e alegerea operatorului, nu o conventie pe
+    ''' care serverul ar putea-o deriva singur. Tipul MIME, in schimb, il deduce serverul din
+    ''' primii octeti — la fel cum facea <c>DetectMimeType</c> in Access, dar peste octeti
+    ''' bruti, nu peste base64.</para>
+    '''
+    ''' <para><paramref name="shaPrecedent"/> = suma pe care apelantul a vazut-o ULTIMA DATA
+    ''' (gol / «-» cand crede ca nu exista rand). O suma diferita pe server da 409 si nu se
+    ''' scrie nimic.</para>
+    ''' </summary>
+    Public Async Function PutOrdAtasamentAsync(idordattp As Integer, numeFisier As String,
+                                               continut As Byte(), shaPrecedent As String,
+                                               ct As CancellationToken) _
+        As Task(Of PutAtasamentResponse) Implements IApiClient.PutOrdAtasamentAsync
+
+        Try
+            EnsureConfigured()
+            If idordattp <= 0 Then Throw New ArgumentException("idordattp invalid.", NameOf(idordattp))
+            If continut Is Nothing OrElse continut.Length = 0 Then
+                Throw New ArgumentException("Conținut imagine gol.", NameOf(continut))
+            End If
+            If String.IsNullOrWhiteSpace(numeFisier) Then
+                Throw New ArgumentException("Numele fișierului este obligatoriu.", NameOf(numeFisier))
+            End If
+
+            Dim sha As String = PdfHash.Compute(continut)
+            Dim precedent As String = If(String.IsNullOrWhiteSpace(shaPrecedent), ShaFaraRand, shaPrecedent.Trim())
+
+            Using msg As New HttpRequestMessage(HttpMethod.Put, $"/api/forexe/ord/att/{idordattp}/imagine")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Headers.TryAddWithoutValidation(H_SHA, sha)
+                msg.Headers.TryAddWithoutValidation(H_SHA_PREC, precedent)
+                msg.Headers.TryAddWithoutValidation("X-Nume-Fisier", numeFisier.Trim())
+                Dim payloadBody As New ByteArrayContent(continut)
+                payloadBody.Headers.ContentType = New Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream")
+                msg.Content = payloadBody
+
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "salvarea imaginii atașamentului",
+                                                CInt(resp.StatusCode))
+                    End If
+                    Dim payload As PutAtasamentResponse =
+                        JsonSerializer.Deserialize(Of PutAtasamentResponse)(respText, _json)
+                    If payload Is Nothing Then
+                        Throw New ApiException("Serverul a confirmat salvarea, dar fără detalii.",
+                                               CInt(resp.StatusCode))
+                    End If
+                    Return payload
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.PutOrdAtasamentAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Sterge octetii imaginii unui atasament, lasand randul de atasament pe loc
+    ''' (DELETE /api/forexe/ord/att/{idordattp}/imagine).
+    ''' </summary>
+    Public Async Function DeleteOrdAtasamentAsync(idordattp As Integer, ct As CancellationToken) _
+        As Task Implements IApiClient.DeleteOrdAtasamentAsync
+
+        Try
+            EnsureConfigured()
+            If idordattp <= 0 Then Throw New ArgumentException("idordattp invalid.", NameOf(idordattp))
+
+            Using msg As New HttpRequestMessage(HttpMethod.Delete, $"/api/forexe/ord/att/{idordattp}/imagine")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                        Throw BuildApiException(respText, "ștergerea imaginii atașamentului",
+                                                CInt(resp.StatusCode))
+                    End If
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.DeleteOrdAtasamentAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ' ── Traducerile fir ▸ domeniu si domeniu ▸ fir ───────────────────────────────────────
+
+    ' Corpul de 200 al generarii / citirii -> POCO-ul de domeniu. Aceeasi functie pentru
+    ' amandoua rutele: ele intorc EXACT aceeasi forma, ca formularul sa nu poata deosebi o
+    ' ordonantare propusa de una existenta in altceva decat `Idordp`.
+    Private Shared Function CitesteDraft(respText As String, codImplicit As String) As OrdDraft
+        Dim payload As OrdDraftDto = JsonSerializer.Deserialize(Of OrdDraftDto)(respText, _json)
+        Dim d As New OrdDraft() With {.CodAngajament = If(codImplicit, String.Empty)}
+        If payload Is Nothing Then Return d
+
+        If Not String.IsNullOrEmpty(payload.cod) Then d.CodAngajament = payload.cod
+
+        If payload.antet IsNot Nothing Then
+            Dim a As OrdDraftAntetDto = payload.antet
+            d.Idordp = a.idordp
+            d.NrOrd = a.nr_ord
+            d.DataOrd = CitesteZi(a.data_ord)
+            d.Iddf = If(a.iddf.HasValue, a.iddf.Value, 0)
+            d.Cual = If(a.cual, String.Empty)
+            d.Comp = If(a.comp, String.Empty)
+            If Not String.IsNullOrEmpty(a.cod_angajament) Then d.CodAngajament = a.cod_angajament
+            d.Incarcat = a.incarcat
+            d.Preluat = a.preluat
+            d.ObiectDdf = If(a.obiect_ddf, String.Empty)
+            d.PartAng = a.part_ang
+            d.NumePartener = If(a.nume_partener, String.Empty)
+        End If
+
+        If payload.parteneri IsNot Nothing Then
+            For Each p As OrdDraftPartDto In payload.parteneri
+                d.Parteneri.Add(New OrdDraftPart() With {
+                    .TempId = p.temp_id, .Idordpartp = p.idordpartp,
+                    .Counter = If(p.counter, String.Empty),
+                    .DenBene = If(p.den_bene, String.Empty),
+                    .CodFiscal = If(p.cod_fiscal, String.Empty),
+                    .ContIban = If(p.cont_iban, String.Empty),
+                    .Banca = If(p.banca, String.Empty)})
+            Next
+        End If
+
+        If payload.linii IsNot Nothing Then
+            For Each l As OrdDraftLinieDto In payload.linii
+                d.Linii.Add(New OrdDraftLinie() With {
+                    .TempId = l.temp_id, .Idordtblp = l.idordtblp,
+                    .PartTempId = l.part_temp_id, .Idordpartp = l.idordpartp,
+                    .CodAi = If(l.cod_ai, String.Empty),
+                    .CodAngajament = If(l.cod_angajament, String.Empty),
+                    .CodIndicator = If(l.cod_indicator, String.Empty),
+                    .CodSsi = If(l.cod_ssi, String.Empty),
+                    .IdClsf = If(l.id_clsf.HasValue, l.id_clsf.Value, 0),
+                    .IdClsfAcc = If(l.id_clsf_acc.HasValue, l.id_clsf_acc.Value, 0),
+                    .Clsf = If(l.clsf, String.Empty),
+                    .Denumire = If(l.denumire, String.Empty),
+                    .IdUnitate = If(l.id_unitate.HasValue, l.id_unitate.Value, 0),
+                    .TotalReceptii = l.total_receptii, .PlatiAnt = l.plati_ant,
+                    .Valoare = l.valoare, .Ramas = l.ramas,
+                    .Explicatie = If(l.explicatie, String.Empty),
+                    .CodPartener = If(l.cod_partener, String.Empty),
+                    .IdPartener = If(l.id_partener.HasValue, l.id_partener.Value, 0)})
+            Next
+        End If
+
+        If payload.rec IsNot Nothing Then
+            For Each r As OrdDraftRecDto In payload.rec
+                d.Rec.Add(New OrdDraftRec() With {
+                    .TempId = r.temp_id, .Idordrecp = r.idordrecp,
+                    .LinieTempId = r.linie_temp_id, .Idordtblp = r.idordtblp,
+                    .IdPlataFx = If(r.id_plata_fx.HasValue, r.id_plata_fx.Value, 0),
+                    .Valoare = r.valoare})
+            Next
+        End If
+
+        If payload.documente IsNot Nothing Then
+            For Each o As OrdDraftDocDto In payload.documente
+                d.Documente.Add(New OrdDraftDoc() With {
+                    .TempId = o.temp_id, .Idorddocp = o.idorddocp,
+                    .PartTempId = o.part_temp_id, .Idordpartp = o.idordpartp,
+                    .DocJust = If(o.doc_just, String.Empty),
+                    .NumeDoc = If(o.nume_doc, String.Empty),
+                    .TipDoc = If(o.tip_doc, "text")})
+            Next
+        End If
+
+        If payload.atasamente IsNot Nothing Then
+            For Each t As OrdDraftAttDto In payload.atasamente
+                d.Atasamente.Add(New OrdDraftAtt() With {
+                    .TempId = t.temp_id, .Idordattp = t.idordattp,
+                    .PartTempId = t.part_temp_id, .Idordpartp = t.idordpartp,
+                    .NumeFisier = If(t.nume_fisier, String.Empty),
+                    .TipMime = If(t.tip_mime, String.Empty),
+                    .Dimensiune = t.dimensiune,
+                    .Sha256 = If(t.sha256, String.Empty),
+                    .DataModif = t.data_modif})
+            Next
+        End If
+
+        If payload.avertismente IsNot Nothing Then d.Avertismente.AddRange(payload.avertismente)
+        Return d
+    End Function
+
+    ' POCO-ul de domeniu -> forma de pe fir. Oglinda exacta a lui `CitesteDraft`.
+    Private Shared Function CatreFir(d As OrdDraft) As OrdDraftDto
+        Dim dto As New OrdDraftDto() With {
+            .cod = d.CodAngajament,
+            .antet = New OrdDraftAntetDto() With {
+                .idordp = d.Idordp,
+                .nr_ord = d.NrOrd,
+                .data_ord = If(d.DataOrd.HasValue,
+                               d.DataOrd.Value.ToString("yyyy-MM-dd", Globalization.CultureInfo.InvariantCulture),
+                               Nothing),
+                .cual = d.Cual,
+                .comp = d.Comp,
+                .cod_angajament = d.CodAngajament,
+                .incarcat = d.Incarcat,
+                .preluat = d.Preluat,
+                .obiect_ddf = d.ObiectDdf,
+                .part_ang = d.PartAng,
+                .nume_partener = d.NumePartener}}
+        ' `Iddf = 0` inseamna «niciunul» si pleaca drept null, nu zero — zero ar fi citit ca
+        ' o cheie straina reala. Aceeasi regula ca la `Idrr` din asociere.
+        If d.Iddf > 0 Then dto.antet.iddf = d.Iddf
+
+        For Each p As OrdDraftPart In d.Parteneri
+            dto.parteneri.Add(New OrdDraftPartDto() With {
+                .temp_id = p.TempId, .idordpartp = p.Idordpartp, .counter = p.Counter,
+                .den_bene = p.DenBene, .cod_fiscal = p.CodFiscal,
+                .cont_iban = p.ContIban, .banca = p.Banca})
+        Next
+
+        For Each l As OrdDraftLinie In d.Linii
+            Dim ldto As New OrdDraftLinieDto() With {
+                .temp_id = l.TempId, .idordtblp = l.Idordtblp,
+                .part_temp_id = l.PartTempId, .idordpartp = l.Idordpartp,
+                .cod_ai = l.CodAi, .cod_angajament = l.CodAngajament,
+                .cod_indicator = l.CodIndicator, .cod_ssi = l.CodSsi,
+                .clsf = l.Clsf, .denumire = l.Denumire,
+                .total_receptii = l.TotalReceptii, .plati_ant = l.PlatiAnt,
+                .valoare = l.Valoare, .ramas = l.Ramas,
+                .explicatie = l.Explicatie, .cod_partener = l.CodPartener}
+            If l.IdClsf > 0 Then ldto.id_clsf = l.IdClsf
+            If l.IdClsfAcc > 0 Then ldto.id_clsf_acc = l.IdClsfAcc
+            If l.IdUnitate > 0 Then ldto.id_unitate = l.IdUnitate
+            If l.IdPartener > 0 Then ldto.id_partener = l.IdPartener
+            dto.linii.Add(ldto)
+        Next
+
+        For Each r As OrdDraftRec In d.Rec
+            Dim rdto As New OrdDraftRecDto() With {
+                .temp_id = r.TempId, .idordrecp = r.Idordrecp,
+                .linie_temp_id = r.LinieTempId, .idordtblp = r.Idordtblp,
+                .valoare = r.Valoare}
+            If r.IdPlataFx > 0 Then rdto.id_plata_fx = r.IdPlataFx
+            dto.rec.Add(rdto)
+        Next
+
+        ' `NumeDoc` gol pleaca drept null: pe server, `NumeDoc IS NULL` INSEAMNA «rand
+        ' text», iar un sir vid n-ar mai fi NULL si randul n-ar mai fi text.
+        For Each o As OrdDraftDoc In d.Documente
+            dto.documente.Add(New OrdDraftDocDto() With {
+                .temp_id = o.TempId, .idorddocp = o.Idorddocp,
+                .part_temp_id = o.PartTempId, .idordpartp = o.Idordpartp,
+                .doc_just = o.DocJust,
+                .nume_doc = If(String.IsNullOrWhiteSpace(o.NumeDoc), Nothing, o.NumeDoc),
+                .tip_doc = If(String.IsNullOrWhiteSpace(o.TipDoc), "text", o.TipDoc)})
+        Next
+
+        ' Octetii NU pleaca aici (faza a doua); doar randul si metadatele lui.
+        For Each t As OrdDraftAtt In d.Atasamente
+            dto.atasamente.Add(New OrdDraftAttDto() With {
+                .temp_id = t.TempId, .idordattp = t.Idordattp,
+                .part_temp_id = t.PartTempId, .idordpartp = t.Idordpartp,
+                .nume_fisier = t.NumeFisier, .tip_mime = t.TipMime,
+                .dimensiune = t.Dimensiune, .sha256 = t.Sha256})
+        Next
+
+        Return dto
+    End Function
+
+    ' Harta de pe fir (cheile sunt text, fiindca asa arata cheile unui obiect JSON) -> harta
+    ' de domeniu, cu chei intregi. O cheie care nu e numar se SARE: e un rand pe care nu-l
+    ' putem lega de nimic, iar o exceptie aici ar arunca o salvare deja reusita.
+    Private Shared Sub CopiazaHarta(sursa As Dictionary(Of String, Integer),
+                                    tinta As Dictionary(Of Integer, Integer))
+        If sursa Is Nothing OrElse tinta Is Nothing Then Return
+        For Each kvp As KeyValuePair(Of String, Integer) In sursa
+            Dim cheie As Integer
+            If Integer.TryParse(kvp.Key, Globalization.NumberStyles.Integer,
+                                Globalization.CultureInfo.InvariantCulture, cheie) Then
+                tinta(cheie) = kvp.Value
+            End If
+        Next
+    End Sub
+
+    ' «AAAA-LL-ZZ» (sau ISO cu ora) -> Date?. Un text neinteles intoarce Nothing, nu ziua de
+    ' azi: o data inventata s-ar scrie tacut in document la urmatoarea salvare.
+    Private Shared Function CitesteZi(text As String) As Date?
+        If String.IsNullOrWhiteSpace(text) Then Return Nothing
+        Dim rezultat As Date
+        If Date.TryParse(text, Globalization.CultureInfo.InvariantCulture,
+                         Globalization.DateTimeStyles.None, rezultat) Then
+            Return rezultat.Date
+        End If
+        Return Nothing
     End Function
 
     ' Apelurile de date cer o adresă de server ȘI o sesiune autentificată (token viu).

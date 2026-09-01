@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System.Globalization
 Imports System.Threading
 Imports System.Threading.Tasks
@@ -64,6 +64,24 @@ Public Class OrdView
     ' Contextul împins paginilor: reconstruit la fiecare schimbare de nod.
     Private _currentCtx As OrdPageContext
 
+    ' Actiunea de SCRIERE (felia 0049), data de shell: vederea ramane read-only, comenzile care
+    ' scriu (adauga / modifica / sterge / lot) traiesc in MainForm, unde e plasa de re-login.
+    ' Nothing in teste si in orice gazda care nu le da.
+    Private ReadOnly _executaComanda As Action(Of OrdComanda)
+
+    ' Ordonantarea de re-selectat dupa o reincarcare (dupa o salvare, de pilda); 0 = niciuna.
+    Private _idordpDeSelectat As Integer
+
+    ' Frunzele arborelui dupa IDORDP, umplute la construirea lui. Arborele nu are cautare
+    ' dupa cheie, iar re-selectarea de dupa o salvare are nevoie de nodul insusi.
+    Private ReadOnly _noduriOrd As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
+
+    ' Cheile meniului contextual.
+    Private Const MENIU_ADAUGA As String = "adauga"
+    Private Const MENIU_MODIFICA As String = "modifica"
+    Private Const MENIU_STERGE As String = "sterge"
+    Private Const MENIU_LOT As String = "lot"
+
     ' Codul angajamentului CERUT ultima dată — stale-guard (identic cu DDF/Plăți/Rezervări).
     Private _requestedCod As String
 
@@ -89,15 +107,100 @@ Public Class OrdView
 
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of OrdInfo)), Task(Of OrdInfo)),
-                   Optional session As SessionContext = Nothing)
+                   Optional session As SessionContext = Nothing,
+                   Optional executaComanda As Action(Of OrdComanda) = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
         _session = session
+        _executaComanda = executaComanda
         BuildNav()
         ShowEmpty("Selectați un angajament din arbore.")
+    End Sub
+
+    ' ── Punctele de intrare ale EDITORULUI (felia 0049) ─────────────────────────
+
+    ''' <summary>
+    ''' Reincarca ordonantarile angajamentului curent si, daca i se cere, selecteaza o anume.
+    ''' Gazda o cheama dupa fiecare salvare sau stergere: ce a ramas pe ecran nu mai e adevarat.
+    ''' </summary>
+    Public Sub Reincarca(Optional idordpDeSelectat As Integer = 0)
+        Try
+            If String.IsNullOrWhiteSpace(_requestedCod) Then Return
+            _idordpDeSelectat = idordpDeSelectat
+            ShowEmpty("Se încarcă ordonanțările…")
+            LoadAsync(_requestedCod)
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdView.Reincarca", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Butonul din subsolul arborelui («+ Adauga Ordonantare») — punctul de intrare
+    ''' «Adauga». Cere shell-ului comanda; toata reteaua traieste acolo.
+    ''' </summary>
+    Private Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
+        Try
+            CereComanda(OrdActiune.Adauga)
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdView.Tree_FooterRightIconClicked", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Meniul contextual al arborelui: cele patru puncte de intrare, poarta fiecaruia fiind
+    ''' ce e selectat. «Modifica» si «Sterge» au nevoie de o FRUNZA (o ordonantare anume);
+    ''' «Adauga» si «Generare in lot» au nevoie doar de un angajament incarcat.
+    ''' </summary>
+    Private Sub AratatMeniulContextual(nod As AdvancedTreeControl.TreeItem)
+        If String.IsNullOrWhiteSpace(_requestedCod) Then Return
+
+        Dim payload As OrdNodePayload = TryCast(If(nod Is Nothing, Nothing, nod.Tag), OrdNodePayload)
+        Dim ordonantare As OrdHeaderRow = If(payload Is Nothing, Nothing, payload.Ordonantare)
+
+        Dim intrari As New List(Of CustomPopupItem)()
+        intrari.Add(New CustomPopupItem(MENIU_ADAUGA, "&Adaugă ordonanțare…"))
+        If ordonantare IsNot Nothing Then
+            intrari.Add(New CustomPopupItem(MENIU_MODIFICA, "&Modifică ordonanțarea"))
+            intrari.Add(New CustomPopupItem(MENIU_STERGE, "Șter&ge ordonanțarea"))
+        End If
+        intrari.Add(New CustomPopupItem(MENIU_LOT, "Generare în &lot…"))
+
+        Dim meniu As New CustomPopup(intrari)
+        AddHandler meniu.ItemClicked,
+            Sub(s As Object, ev As CustomPopupItemEventArgs) AplicaComandaDeMeniu(ev.Item.Key, ordonantare)
+        meniu.ShowAtCursor(tree)
+    End Sub
+
+    Private Sub AplicaComandaDeMeniu(cheie As String, ordonantare As OrdHeaderRow)
+        Try
+            Select Case cheie
+                Case MENIU_ADAUGA : CereComanda(OrdActiune.Adauga)
+                Case MENIU_MODIFICA : CereComanda(OrdActiune.Modifica, ordonantare)
+                Case MENIU_STERGE : CereComanda(OrdActiune.Sterge, ordonantare)
+                Case MENIU_LOT : CereComanda(OrdActiune.Lot)
+                Case Else
+                    ' Fara no-op-uri tacute: o cheie necunoscuta e un defect de programare.
+                    Throw New ArgumentException($"Comandă de meniu necunoscută: {cheie}", NameOf(cheie))
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdView.AplicaComandaDeMeniu", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Trimite comanda spre shell. Fara actiune legata (teste, sau o gazda care nu o da), se
+    ''' spune operatorului — nu se inghite tacut.
+    ''' </summary>
+    Private Sub CereComanda(actiune As OrdActiune, Optional ordonantare As OrdHeaderRow = Nothing)
+        If _executaComanda Is Nothing Then
+            MessageBox.Show(Me, "Editorul de ordonanțări nu este disponibil în acest context.",
+                            "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        _executaComanda(New OrdComanda(actiune, _requestedCod, ordonantare))
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements IAngajamentView.ViewKey
@@ -267,6 +370,23 @@ Public Class OrdView
             _ordonantari = ordonantari
             _linii = If(data.Linii, New List(Of OrdLinieRow)())
             BuildTree(ordonantari)
+            ' Dupa o salvare, gazda cere sa se revina pe ordonantarea scrisa (felia 0049).
+            If _idordpDeSelectat > 0 Then
+                Dim tinta As OrdHeaderRow = ordonantari.FirstOrDefault(Function(o) o.Idordp = _idordpDeSelectat)
+                _idordpDeSelectat = 0
+                If tinta IsNot Nothing Then
+                    _nodeLinii = LiniiFor(tinta.Idordp)
+                    _nodeIsRoot = False
+                    _selectedOrd = tinta
+                    _pdfPathRezolvat = Nothing
+                    _pdfRezolvatPentruIdordp = 0
+                    Dim nod As AdvancedTreeControl.TreeItem = Nothing
+                    If _noduriOrd.TryGetValue(tinta.Idordp, nod) Then tree.SelectAndReveal(nod)
+                    PushToActivePage()
+                    ShowContent()
+                    Return
+                End If
+            End If
             ' „Nimic selectat" -> paginile văd TOATE liniile angajamentului, ca la DDF: e
             ' aceeași vedere ca a unei rădăcini de lună, doar peste toate ordonanțările.
             _nodeLinii = _linii
@@ -306,6 +426,7 @@ Public Class OrdView
     Private Sub BuildTree(ordonantari As List(Of OrdHeaderRow))
         Try
             tree.Clear()
+            _noduriOrd.Clear()
             Dim palette As ThemePalette = TryGetPalette()
 
             Dim months = ordonantari.GroupBy(Function(o) MonthKeyOf(o.DataOrd)).
@@ -338,6 +459,7 @@ Public Class OrdView
                         tree.AddItem($"ORD_{o.Idordp}", $"{o.EtichetaOrd}~~~{Money(o.TotalOrd)}",
                                      root, pLeftIconClosed:=leafIcon, pLeftIconOpen:=leafIcon)
                     leaf.Tag = New OrdNodePayload(LiniiFor(o.Idordp), isRoot:=False, ordonantare:=o)
+                    _noduriOrd(o.Idordp) = leaf
                     If o.TotalOrd < 0 AndAlso palette IsNot Nothing Then
                         leaf.NodeForeColor = palette.ErrorColor
                     End If
@@ -358,6 +480,17 @@ Public Class OrdView
             If pNode Is Nothing Then Return
             Dim payload As OrdNodePayload = TryCast(pNode.Tag, OrdNodePayload)
             If payload Is Nothing Then Return
+
+            ' Clic DREAPTA -> meniul de comenzi (felia 0049). Selectia se muta intai, ca meniul
+            ' sa se refere la nodul de sub cursor, nu la cel de dinainte.
+            If e IsNot Nothing AndAlso e.Button = MouseButtons.Right Then
+                _nodeLinii = payload.Linii
+                _nodeIsRoot = payload.IsRoot
+                _selectedOrd = payload.Ordonantare
+                PushToActivePage()
+                AratatMeniulContextual(pNode)
+                Return
+            End If
 
             _nodeLinii = payload.Linii
             _nodeIsRoot = payload.IsRoot

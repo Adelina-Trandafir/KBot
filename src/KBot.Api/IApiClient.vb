@@ -1,4 +1,4 @@
-Imports System.Collections.Generic
+﻿Imports System.Collections.Generic
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports KBot.Common
@@ -241,6 +241,86 @@ Public Interface IApiClient
                                    amprenta As String,
                                    comenzi As IReadOnlyList(Of ComandaAsociere),
                                    ct As CancellationToken) As Task(Of AsociereRezultat)
+
+    ' ── EDITORUL DE ORDONANTARE (felia 0049) ────────────────────────────────────────────
+    ' Opt apeluri peste `routes/forexe/ord_edit.py`. Baza NU se trimite niciodata (serverul o
+    ' ia din sesiune); un 401 curge spre WithReauth, fara retry in client.
+
+    ''' <summary>
+    ''' Cere graful PROPUS al unei ordonantari noi (POST /api/forexe/ord/genereaza). NIMIC nu
+    ''' se scrie — portul lui <c>Genereaza_ORD</c>, mutat pe server fiindca interogarile lui
+    ''' bat numai tabele care traiesc acum in MariaDB.
+    '''
+    ''' <para><paramref name="idPlataFx"/> completat = calea interactiva pentru O SINGURA
+    ''' plata; <c>Nothing</c> = toate platile neordonantate ale zilei (VBA: <c>"*"</c>).</para>
+    '''
+    ''' <para>O zi fara plati neordonantate intoarce 404 cu motiv, deci ajunge aici ca
+    ''' <see cref="ApiException"/> — NU un draft gol, care ar arata ca un document valid fara
+    ''' nicio linie.</para>
+    ''' </summary>
+    Function GenereazaOrdAsync(cod As String, dataOrd As Date, idPlataFx As Integer?,
+                               ct As CancellationToken) As Task(Of OrdDraft)
+
+    ''' <summary>
+    ''' Citeste graful unei ordonantari EXISTENTE, in forma editorului
+    ''' (GET /api/forexe/ord/draft/{idordp}). Distinct de <see cref="GetOrdAsync"/>, care e
+    ''' apelul vederii 0033 si nu intoarce cheile, codurile si legaturile de care are nevoie
+    ''' editarea.
+    ''' </summary>
+    Function GetOrdDraftAsync(idordp As Integer, ct As CancellationToken) As Task(Of OrdDraft)
+
+    ''' <summary>
+    ''' Zilele cu plati neordonantate ale unui angajament (GET /api/forexe/ord/zile) — sursa
+    ''' modului in lot. Fiecare zi spune si cate ordonantari ii trebuie (limita de 25 de
+    ''' parteneri per document). <paramref name="luna"/> / <paramref name="an"/> sunt optionale.
+    ''' </summary>
+    Function GetOrdZileAsync(cod As String, luna As Integer?, an As Integer?,
+                             ct As CancellationToken) As Task(Of OrdZileInfo)
+
+    ''' <summary>
+    ''' Scrie TOT graful ordonantarii intr-o singura tranzactie (POST /api/forexe/ord/save) si
+    ''' intoarce cheile reale plus hartile <c>TempId ▸ cheie</c>.
+    '''
+    ''' <para>Un refuz de validare soseste ca <see cref="ApiException"/> cu mesajul romanesc
+    ''' al serverului, care enumera TOATE motivele deodata, nu primul.</para>
+    '''
+    ''' <para>Octetii atasamentelor NU pleaca de aici: un <c>IDORDATTP</c> trebuie sa existe
+    ''' inainte ca ei sa poata atarna de el. Se urca dupa, cu
+    ''' <see cref="PutOrdAtasamentAsync"/>, folosind harta din raspuns.</para>
+    ''' </summary>
+    Function SaveOrdAsync(draft As OrdDraft, ct As CancellationToken) As Task(Of OrdSaveRezultat)
+
+    ''' <summary>
+    ''' Sterge o ordonantare cu tot ce atarna de ea (DELETE /api/forexe/ord/{idordp}) si
+    ''' intoarce cate randuri s-au dus, per tabela — inclusiv cate plati s-au intors in
+    ''' rezerva de neordonantate si daca a plecat si PDF-ul stocat.
+    ''' </summary>
+    Function DeleteOrdAsync(idordp As Integer, ct As CancellationToken) As Task(Of OrdStergereRezultat)
+
+    ''' <summary>
+    ''' Descarca octetii imaginii unui atasament
+    ''' (GET /api/forexe/ord/att/{idordattp}/imagine). Acelasi contract ca la PDF-uri: 304 pe
+    ''' cache valid, 404 pe «nu are imagine» (stare normala, nu exceptie), iar octetii primiti
+    ''' sunt deja verificati pe SHA-256 fata de ETag.
+    ''' </summary>
+    Function GetOrdAtasamentAsync(idordattp As Integer, cachedSha As String,
+                                  ct As CancellationToken) As Task(Of PdfDownloadResult)
+
+    ''' <summary>
+    ''' Urca octetii imaginii unui atasament (PUT /api/forexe/ord/att/{idordattp}/imagine).
+    ''' Numele fisierului SE TRIMITE (e alegerea operatorului, nu o conventie derivabila);
+    ''' tipul MIME il deduce serverul din primii octeti. <paramref name="shaPrecedent"/> e
+    ''' concurenta optimista: o suma diferita pe server da 409 si nu se scrie nimic.
+    ''' </summary>
+    Function PutOrdAtasamentAsync(idordattp As Integer, numeFisier As String,
+                                  continut As Byte(), shaPrecedent As String,
+                                  ct As CancellationToken) As Task(Of PutAtasamentResponse)
+
+    ''' <summary>
+    ''' Sterge octetii imaginii unui atasament, lasand randul de atasament pe loc
+    ''' (DELETE /api/forexe/ord/att/{idordattp}/imagine).
+    ''' </summary>
+    Function DeleteOrdAtasamentAsync(idordattp As Integer, ct As CancellationToken) As Task
 
     Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T)
     Function PostAsync(Of TRequest, TResponse)(relativeUrl As String, payload As TRequest, ct As CancellationToken) As Task(Of TResponse)

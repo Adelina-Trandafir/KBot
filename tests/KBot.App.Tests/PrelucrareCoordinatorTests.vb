@@ -148,7 +148,56 @@ Public Class PrelucrareCoordinatorTests
             Implements IApiClient.GetAsync
             Throw New NotSupportedException()
         End Function
-        Public Function PostAsync(Of TRequest, TResponse)(relativeUrl As String, payload As TRequest,
+    
+    ' ── Editorul de ordonanțare (felia 0049) ────────────────────────────────────────────
+    ' Cioturi: dublura asta nu exersează scrierea ORD. Aruncă, nu întoarce gol — un dublu
+    ' care ar răspunde tăcut ar face un test să treacă pe un drum pe care nimeni nu l-a scris.
+    Public Function GenereazaOrdAsync(cod As String, dataOrd As Date, idPlataFx As Integer?,
+                                      ct As CancellationToken) As Task(Of OrdDraft) _
+        Implements IApiClient.GenereazaOrdAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function GetOrdDraftAsync(idordp As Integer, ct As CancellationToken) As Task(Of OrdDraft) _
+        Implements IApiClient.GetOrdDraftAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function GetOrdZileAsync(cod As String, luna As Integer?, an As Integer?,
+                                    ct As CancellationToken) As Task(Of OrdZileInfo) _
+        Implements IApiClient.GetOrdZileAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function SaveOrdAsync(draft As OrdDraft, ct As CancellationToken) As Task(Of OrdSaveRezultat) _
+        Implements IApiClient.SaveOrdAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function DeleteOrdAsync(idordp As Integer, ct As CancellationToken) As Task(Of OrdStergereRezultat) _
+        Implements IApiClient.DeleteOrdAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function GetOrdAtasamentAsync(idordattp As Integer, cachedSha As String,
+                                         ct As CancellationToken) As Task(Of PdfDownloadResult) _
+        Implements IApiClient.GetOrdAtasamentAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function PutOrdAtasamentAsync(idordattp As Integer, numeFisier As String,
+                                         continut As Byte(), shaPrecedent As String,
+                                         ct As CancellationToken) As Task(Of PutAtasamentResponse) _
+        Implements IApiClient.PutOrdAtasamentAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function DeleteOrdAtasamentAsync(idordattp As Integer, ct As CancellationToken) As Task _
+        Implements IApiClient.DeleteOrdAtasamentAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function PostAsync(Of TRequest, TResponse)(relativeUrl As String, payload As TRequest,
                                                           ct As CancellationToken) As Task(Of TResponse) _
             Implements IApiClient.PostAsync
             Throw New NotSupportedException()

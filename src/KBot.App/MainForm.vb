@@ -416,7 +416,8 @@ Public Class MainForm
                                                          AddressOf DeschideLegaturileReceptiilor)
                 Case "plati" : Return New PlatiView(_apiClient, Function(op) WithReauth(Of PlatiInfo)(op))
                 Case "ddf" : Return New DdfView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op), _session)
-                Case "ord" : Return New OrdView(_apiClient, Function(op) WithReauth(Of OrdInfo)(op), _session)
+                Case "ord" : Return New OrdView(_apiClient, Function(op) WithReauth(Of OrdInfo)(op), _session,
+                                                AddressOf ExecutaComandaOrd)
                 Case Else
                     Throw New ArgumentException($"Vedere necunoscută: '{key}'.", NameOf(key))
             End Select
@@ -456,6 +457,254 @@ Public Class MainForm
                             "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
+
+    ' ══════════════════════════════════════════════════════════════════════════════════
+    ' EDITORUL DE ORDONANTARE (felia 0049) — cele patru puncte de intrare
+    '
+    ' Traiesc AICI, nu in vedere, dintr-un singur motiv: fiecare are nevoie de plasa de
+    ' re-autentificare pe una sau mai multe forme de raspuns, iar `WithReauth` e privat si
+    ' generic in shell. `OrdView` primeste o singura actiune si ramane read-only; politica
+    ' de re-login ramane, ca peste tot, intr-un singur loc. Acelasi tipar ca
+    ' `DeschideLegaturileReceptiilor` (felia 0048-04).
+    ' ══════════════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>
+    ''' Executa o comanda de scriere ceruta de <c>OrdView</c>. Granita de UI: se logheaza si
+    ''' se arata; un throw de aici ar cadea pe firul de interfata.
+    ''' </summary>
+    Private Async Sub ExecutaComandaOrd(comanda As OrdComanda)
+        Try
+            If comanda Is Nothing OrElse String.IsNullOrWhiteSpace(comanda.Cod) Then Return
+
+            Select Case comanda.Actiune
+                Case OrdActiune.Adauga : Await AdaugaOrdonantareAsync(comanda.Cod).ConfigureAwait(True)
+                Case OrdActiune.Modifica : Await ModificaOrdonantareAsync(comanda.Ordonantare).ConfigureAwait(True)
+                Case OrdActiune.Sterge : Await StergeOrdonantareAsync(comanda.Ordonantare).ConfigureAwait(True)
+                Case OrdActiune.Lot : Await GenereazaInLotAsync(comanda.Cod).ConfigureAwait(True)
+                Case Else
+                    ' Fara no-op-uri tacute: o actiune necunoscuta e un defect de programare.
+                    Throw New ArgumentException($"Acțiune ORD necunoscută: {comanda.Actiune}", NameOf(comanda))
+            End Select
+        Catch ex As ApiException
+            GlobalErrorLog.Write("MainForm.ExecutaComandaOrd", ex)
+            MessageBox.Show(Me, ex.Message, "Ordonanțare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ExecutaComandaOrd", ex)
+            MessageBox.Show(Me, "Comanda nu a putut fi executată. Detalii în jurnalul de erori.",
+                            "Ordonanțare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' «Adauga» — cere data, genereaza graful pe server (nimic scris) si deschide editorul.
+    ''' Portul lui <c>FX_Adaugare_ORD_Din_Plati</c> pe calea «toate platile zilei»
+    ''' (<c>sIdPlataFX = "*"</c>). Avertismentul de peste 25 de parteneri vine de la server,
+    ''' in <c>Avertismente</c>, si il arata formularul.
+    ''' </summary>
+    Private Async Function AdaugaOrdonantareAsync(cod As String) As Task
+        Dim zi As Date? = CereZiua(cod)
+        If Not zi.HasValue Then Return
+
+        busyBar.Running = True
+        Dim draft As OrdDraft
+        Try
+            draft = Await WithReauth(Of OrdDraft)(
+                Function() _apiClient.GenereazaOrdAsync(cod, zi.Value, Nothing, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        DeschideEditorulOrd(draft)
+    End Function
+
+    ''' <summary>
+    ''' «Modifica» — incarca ordonantarea selectata in forma editorului si o deschide.
+    '''
+    ''' <para>Se citeste prin <c>GET /api/forexe/ord/draft/{idordp}</c>, NU prin apelul
+    ''' vederii: acela e al lui <c>OrdView</c> si isi alege coloanele deliberat (felia 0033) —
+    ''' nu intoarce CodAI, CodIndicator, IdClsf, CodSSI, explicatia, partenerul liniei,
+    ''' randurile de document una cate una sau legaturile cu platile, toate necesare editarii.
+    ''' `routes/forexe/ord.py` ramane neatinsa.</para>
+    ''' </summary>
+    Private Async Function ModificaOrdonantareAsync(ordonantare As OrdHeaderRow) As Task
+        If ordonantare Is Nothing OrElse ordonantare.Idordp <= 0 Then
+            MessageBox.Show(Me, "Selectați o ordonanțare din arbore.",
+                            "Ordonanțare", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        busyBar.Running = True
+        Dim draft As OrdDraft
+        Try
+            Dim idordp As Integer = ordonantare.Idordp
+            draft = Await WithReauth(Of OrdDraft)(
+                Function() _apiClient.GetOrdDraftAsync(idordp, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        DeschideEditorulOrd(draft)
+    End Function
+
+    ''' <summary>Deschide editorul MODAL si, la salvare, reincarca vederea pe documentul scris.</summary>
+    Private Sub DeschideEditorulOrd(draft As OrdDraft)
+        If draft Is Nothing Then Return
+
+        Using f As New OrdEditForm(_apiClient, draft,
+                                   Function(op) WithReauth(Of OrdSaveRezultat)(op),
+                                   Function(op) WithReauth(Of PutAtasamentResponse)(op),
+                                   Function(op) WithReauth(Of PdfDownloadResult)(op))
+            f.ShowDialog(Me)
+            If f.SAuSalvatModificari Then
+                ' Ce a ramas pe ecran nu mai e adevarat: liniile s-au schimbat, platile
+                ' acoperite s-au schimbat, iar o ordonantare noua nici macar nu era acolo.
+                Dim vedere As OrdView = TryCast(_activeView, OrdView)
+                vedere?.Reincarca(f.IdordpSalvat)
+            End If
+        End Using
+    End Sub
+
+    ''' <summary>
+    ''' «Sterge» — confirmarea numeste numarul, data si totalul, si SPUNE ce mai pleaca odata
+    ''' cu documentul: PDF-ul stocat pe server si legaturile cu platile (care se intorc astfel
+    ''' in rezerva de neordonantate). Stergerea propriu-zisa e un singur DELETE pe antet;
+    ''' cascadele bazei duc restul.
+    ''' </summary>
+    Private Async Function StergeOrdonantareAsync(ordonantare As OrdHeaderRow) As Task
+        If ordonantare Is Nothing OrElse ordonantare.Idordp <= 0 Then
+            MessageBox.Show(Me, "Selectați o ordonanțare din arbore.",
+                            "Ordonanțare", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim ro As New Globalization.CultureInfo("ro-RO")
+        Dim data As String = If(ordonantare.DataOrd.HasValue,
+                                ordonantare.DataOrd.Value.ToString("dd.MM.yyyy"), "fără dată")
+        Dim intrebare As String =
+            $"Ștergeți ordonanțarea nr. {ordonantare.NrOrd} din {data}, în valoare de " &
+            $"{ordonantare.TotalOrd.ToString("N2", ro)} lei?" & vbCrLf & vbCrLf &
+            "Odată cu ea se șterg beneficiarii, rândurile de plată, documentele justificative, " &
+            "atașamentele și PDF-ul semnat stocat pe server." & vbCrLf &
+            "Plățile acoperite redevin neordonanțate."
+
+        If MessageBox.Show(Me, intrebare, "Șterge ordonanțarea",
+                           MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
+            Return
+        End If
+
+        busyBar.Running = True
+        Dim rez As OrdStergereRezultat
+        Try
+            Dim idordp As Integer = ordonantare.Idordp
+            rez = Await WithReauth(Of OrdStergereRezultat)(
+                Function() _apiClient.DeleteOrdAsync(idordp, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        MessageBox.Show(Me,
+            $"Ordonanțarea nr. {rez.NrOrd} a fost ștearsă." & vbCrLf &
+            $"Beneficiari: {rez.Parteneri} · rânduri de plată: {rez.Linii} · " &
+            $"documente: {rez.Documente} · atașamente: {rez.Atasamente} · PDF: {rez.Pdf}." & vbCrLf &
+            $"Plăți redevenite neordonanțate: {rez.PlatiEliberate}.",
+            "Șterge ordonanțarea", MessageBoxButtons.OK, MessageBoxIcon.Information)
+
+        Dim vedere As OrdView = TryCast(_activeView, OrdView)
+        vedere?.Reincarca()
+    End Function
+
+    ''' <summary>
+    ''' «Generare in lot» — portul lui <c>FX_Adaugare_ORD_Din_Plati_Batch</c>, restructurat.
+    '''
+    ''' <para>Bucla VBA reinteroga zilele cu plati neordonantate si se oprea cand lista se
+    ''' golea, fiindca fiecare ORD salvat isi scotea platile din multimea candidata prin
+    ''' <c>FX_ORD_TBL_REC</c>. Forma se pastreaza: se cer zilele, iar pentru fiecare se cheama
+    ''' genereaza ▸ salveaza, fara formular si fara interactiune.</para>
+    '''
+    ''' <para><b>La prima eroare se OPRESTE</b>, se spune care zi a picat si cate au reusit —
+    ''' exact ca VBA-ul, si pentru acelasi motiv: o bucla nesupravegheata care merge mai
+    ''' departe dupa un esec produce o mizerie pe care nimeni n-o mai poate reconstitui.</para>
+    '''
+    ''' <para>NU exista o tranzactie uriasa care sa cuprinda tot lotul: o ordonantare, o
+    ''' tranzactie.</para>
+    ''' </summary>
+    Private Async Function GenereazaInLotAsync(cod As String) As Task
+        busyBar.Running = True
+        Dim zile As OrdZileInfo
+        Try
+            zile = Await WithReauth(Of OrdZileInfo)(
+                Function() _apiClient.GetOrdZileAsync(cod, Nothing, Nothing, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        If zile Is Nothing OrElse zile.Zile.Count = 0 Then
+            MessageBox.Show(Me, $"Nu există plăți neordonanțate pentru {cod}.",
+                            "Generare în lot", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim intrebare As String =
+            $"Se generează ordonanțări pentru {zile.Zile.Count} zile cu plăți neordonanțate " &
+            $"({zile.TotalEstimat} ordonanțări estimate)." & vbCrLf & vbCrLf &
+            "Fiecare zi se salvează separat, fără să vă mai fie cerută confirmarea." & vbCrLf &
+            "La prima eroare, generarea se oprește. Continuați?"
+        If MessageBox.Show(Me, intrebare, "Generare în lot",
+                           MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
+            Return
+        End If
+
+        Dim reusite As Integer = 0
+        Dim ziEsuata As String = Nothing
+        Dim motiv As String = Nothing
+
+        busyBar.Running = True
+        Try
+            For Each zi As OrdZiCandidat In zile.Zile
+                Dim data As Date = zi.Data
+                Try
+                    Dim draft As OrdDraft = Await WithReauth(Of OrdDraft)(
+                        Function() _apiClient.GenereazaOrdAsync(cod, data, Nothing, CancellationToken.None))
+                    Await WithReauth(Of OrdSaveRezultat)(
+                        Function() _apiClient.SaveOrdAsync(draft, CancellationToken.None))
+                    reusite += 1
+                Catch ex As Exception
+                    GlobalErrorLog.Write("MainForm.GenereazaInLotAsync", ex)
+                    ziEsuata = data.ToString("dd.MM.yyyy")
+                    motiv = ex.Message
+                    Exit For
+                End Try
+            Next
+        Finally
+            busyBar.Running = False
+        End Try
+
+        If ziEsuata Is Nothing Then
+            MessageBox.Show(Me, $"{reusite} ordonanțări au fost generate și salvate.",
+                            "Generare în lot", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        Else
+            MessageBox.Show(Me,
+                $"Generarea s-a oprit la data {ziEsuata}." & vbCrLf &
+                $"Motiv: {motiv}" & vbCrLf & vbCrLf &
+                $"Până acolo s-au salvat {reusite} ordonanțări; ele RĂMÂN salvate. " &
+                "Rezolvați cauza și reluați — zilele deja acoperite nu se mai propun.",
+                "Generare în lot", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End If
+
+        Dim vedere As OrdView = TryCast(_activeView, OrdView)
+        vedere?.Reincarca()
+    End Function
+
+    ''' <summary>
+    ''' Cere operatorului ziua pentru care se genereaza ordonantarea. Implicit: ziua de azi.
+    ''' <c>Nothing</c> daca operatorul a renuntat.
+    ''' </summary>
+    Private Function CereZiua(cod As String) As Date?
+        Using dlg As New OrdZiuaForm(cod)
+            If dlg.ShowDialog(Me) <> DialogResult.OK Then Return Nothing
+            Return dlg.Ziua
+        End Using
+    End Function
 
     ' ---------------- lista de angajamente ----------------
 
