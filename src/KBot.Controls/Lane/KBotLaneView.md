@@ -54,10 +54,11 @@ placed on anything) ·
   glyph), `EnlargeButtonSize = 16×16`, `EnlargeButtonTooltip`
 - Layout: `LaneHeight = 13`, `LaneSpacing = 2`, `LaneCaptionsVisible = False`,
   `LaneCaptionWidth = 120`, `MarkerLabelsVisible = False`, `MarkerSize = 7`,
-  `LaneLineWidth = 1`, `LaneLineColor`, `LaneHoverBackColor`, `SeparatorColor`,
-  `SeparatorWidth = 1`, `EndMarkSize = 9`
+  `LaneLineWidth = 1`, `LaneLineColor`, `SegmentedRail = True`, `SegmentWidth = 0`
+  (0 ⇒ `LaneLineWidth`), `LaneHoverBackColor`, `SeparatorColor`, `SeparatorWidth = 1`,
+  `EndMarkSize = 9`
 - Plot: `PlotMargin = 6`, `PlotBackColor`, `BorderVisible = True`, `BorderColor`,
-  `CornerRadius = -1`
+  `BorderWidth = 1`, `CornerRadius = -1`, `TrailingSpace = 0`
 - Axis: `AxisVisible = False`, `AxisTextColor`, `AxisFont`, `MomentFormat = "dd.MM.yy"`,
   `AxisLabelGap = 4`
 - Range: `RangeStart` / `RangeEnd` (runtime only, `Date.MinValue` = work it out from the
@@ -88,8 +89,22 @@ placed on anything) ·
 - **Nothing is greyed out.** `Locked` is drawn in full colour with a padlock — dimming was
   tried on the chart in slice 0048-06 and, where most of a chain is locked, turned the whole
   surface grey and destroyed the colour pairing that is colour's only job here.
+- **Every marker paints the stretch it owns** (`SegmentedRail`, on by default): from itself
+  to the next marker along, and — for the last one — to the right-hand end. That is a
+  statement about the data, the same one the chart makes with a step line: what a marker
+  records holds until the next one changes it. The plain `LaneLineColor` rail is still drawn
+  underneath, full width, so an empty lane stays visible as somewhere to drop and the run
+  before the first marker reads as empty rather than as absent. A `Loose` marker paints
+  nothing — it is placed on nothing, so it owns nothing, and a stretch out of it would draw a
+  chain where there is none.
+- **`TrailingSpace` is what makes the last stretch visible.** Without it the latest marker
+  lands exactly on the right edge and owns zero pixels — the one stretch still open is the
+  one that disappears. The room is taken out of the time AXIS, not out of the surface, so
+  markers and guides keep their relative dates and the axis labels move with them. Clamped to
+  a quarter of the surface.
 - Markers are **not sorted for you**, and two at the same moment are both drawn — several
-  saves inside one minute is the case this was built for.
+  saves inside one minute is the case this was built for. The stretches are ordered by X
+  before they are drawn, since one running to a marker on its LEFT would run backwards.
 - Guides do **not** stretch the time axis: one outside the span of the markers is simply not
   drawn.
 - The caption gutter and the end-mark gutter are reserved unconditionally when switched on,

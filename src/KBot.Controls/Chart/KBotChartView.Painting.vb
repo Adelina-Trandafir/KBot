@@ -359,7 +359,7 @@ Partial Public NotInheritable Class KBotChartView
     End Sub
 
     Private Sub DrawOuterBorder(g As Graphics)
-        If Not _borderVisible Then Return
+        If Not _borderVisible OrElse _borderWidth <= 0 Then Return
         Dim radius As Integer = EffectiveCornerRadius()
         Dim r As New Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1))
         Using path As GraphicsPath = ThemeShapes.RoundedRect(r, radius)

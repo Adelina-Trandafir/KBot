@@ -65,12 +65,13 @@ Partial Class AsociereBenziForm
         benziMari.LaneHeight = 26
         benziMari.LaneSpacing = 4
         benziMari.Location = New Point(12, 8)
-        benziMari.MarkerLabelsVisible = True
         benziMari.MarkerSize = 11
         benziMari.Name = "benziMari"
         benziMari.PlotMargin = 10
+        benziMari.SegmentWidth = 5
         benziMari.Size = New Size(976, 536)
         benziMari.TabIndex = 0
+        benziMari.TrailingSpace = 60
         '
         ' capBar
         '

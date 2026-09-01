@@ -51,7 +51,7 @@ HOLDS until the next point changes it, then jumps).
   `TabIconSize`
 - Plot: `PlotMargin = 10`, `LineWidth = 2`, `EmphasisLineWidth = 3`, `MarkerSize = 6`,
   `MarkerStyle = Circle`, `AreaFillOpacity = 18`, `PlotBackColor`, `BorderVisible = True`,
-  `BorderColor`, `CornerRadius = -1`
+  `BorderColor`, `BorderWidth = 1`, `CornerRadius = -1`
 - Axes: `AxisVisible = True`, `AxisColor`, `AxisTextColor`, `GridColor`,
   `HorizontalGridLines = True`, `VerticalGridLines = False`, `ValueTickCount = 4`,
   `AxisFont`, `ValueFormat = "N0"`, `MomentFormat = "dd.MM.yy"`, `AxisLabelGap = 6`,
@@ -65,7 +65,11 @@ HOLDS until the next point changes it, then jumps).
   itself lives in `KBotAutoPalette`, shared with `KBotLaneView` so the two surfaces cannot
   disagree about what the n-th colour is. **Never red**: red is what this application spends
   on something being wrong, so the hues live strictly outside the red wedge whatever the
-  scheme's accent happens to be.
+  scheme's accent happens to be. **Never too pale, either**: every colour is pushed along its
+  own lightness — hue fixed, since hue is what tells two series apart — until it clears 3:1
+  against the scheme's background, the WCAG floor for graphics. Without that, HSL lightness
+  alone let a yellow and a blue at the same value sit two contrast steps apart, and on the
+  Classic and Modern schemes the set handed out colours nobody could find on the surface.
 - `BeginInit`/`EndInit`, `ApplyTheme(scheme)`. `BackColor`/`ForeColor`/`Font` overridden (C4).
 
 ## Rules

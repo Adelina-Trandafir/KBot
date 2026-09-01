@@ -105,6 +105,15 @@ Public Class KBotToolTip
     Private _pozitieAsteptata As Point
     Private _fontAsteptat As Font
 
+    ' What the label SAYS on screen, and what it has been asked to say — not just which object
+    ' carries it. The controls we draw ourselves (the tree, the grid, the chart, the lanes) own ONE
+    ' content object and rewrite it before every request, so a guard on the reference alone answers
+    ' "already on screen" for the second and every later thing that control shows: the label sticks
+    ' on the first one until the pointer leaves the whole control. The fingerprint is what tells
+    ' "the same label" apart from "different text in the same object".
+    Private _shownFingerprint As String
+    Private _pendingFingerprint As String
+
     Private _active As Boolean = True
     Private _initialDelay As Integer = 500
     Private _autoPopDelay As Integer = 8000
@@ -421,6 +430,8 @@ Public Class KBotToolTip
             _tintaAsteptata = Nothing
             _continutAsteptat = Nothing
             _fontAsteptat = Nothing
+            _shownFingerprint = Nothing
+            _pendingFingerprint = Nothing
             _fereastra?.HideTip()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotToolTip.HideNow", ex)
@@ -434,15 +445,31 @@ Public Class KBotToolTip
         Dim st As KBotToolTipStyle = If(content.Style, _style)
         If content.IsEmpty(st) Then Return
 
-        ' Aceeași țintă, aceeași etichetă deja pe ecran: n-o mai clipim.
+        Dim fingerprint As String = FingerprintOf(content)
+
+        ' Same target, SAME TEXT, already on screen: do not blink it. The text is part of the
+        ' condition and not just the object, because the controls we draw ourselves rewrite one
+        ' content object before every request — a guard on the reference alone would stick the
+        ' label on the first thing that control ever showed.
         If ReferenceEquals(_continutAsteptat, content) AndAlso
+           String.Equals(fingerprint, _shownFingerprint, StringComparison.Ordinal) AndAlso
            _fereastra IsNot Nothing AndAlso _fereastra.Visible Then Return
 
         _tintaAsteptata = owner
         _continutAsteptat = content
         _pozitieAsteptata = screenPos
         _fontAsteptat = f
+        _pendingFingerprint = fingerprint
         _intarziere.Stop()
+
+        ' The label is ALREADY open and something else has come under the pointer: it changes now.
+        ' A second delay would leave the name of one thing standing over another for half a second,
+        ' which is the one thing a label must never do.
+        If _fereastra IsNot Nothing AndAlso Not _fereastra.IsDisposed AndAlso _fereastra.Visible Then
+            ShowScheduled()
+            Return
+        End If
+
         _intarziere.Interval = _initialDelay
         _intarziere.Start()
     End Sub
@@ -450,22 +477,37 @@ Public Class KBotToolTip
     Private Sub IntarziereTick(sender As Object, e As EventArgs)
         Try
             _intarziere.Stop()
-            If Not _active OrElse _continutAsteptat Is Nothing Then Return
-
-            ' Între programare și acum, cursorul poate fi plecat de pe control. O etichetă care
-            ' apare peste un control pe care nu mai stă nimeni e o etichetă rătăcită.
-            If _tintaAsteptata IsNot Nothing Then
-                If _tintaAsteptata.IsDisposed OrElse Not _tintaAsteptata.Visible Then Return
-                If Not _tintaAsteptata.ClientRectangle.Contains(
-                        _tintaAsteptata.PointToClient(Cursor.Position)) Then Return
-            End If
-
-            Dim st As KBotToolTipStyle = If(_continutAsteptat.Style, _style)
-            EnsureWindow().ShowTip(_continutAsteptat, st, _fontAsteptat, Cursor.Position, _autoPopDelay)
+            ShowScheduled()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotToolTip.IntarziereTick", ex)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Puts the scheduled label on screen, if it still makes sense. One place, reached both from
+    ''' the delay's tick and from a swap on a label that is already open.
+    ''' </summary>
+    Private Sub ShowScheduled()
+        If Not _active OrElse _continutAsteptat Is Nothing Then Return
+
+        ' Between the scheduling and now the pointer may have left the control. A label appearing
+        ' over a control nobody is on any more is a stray label.
+        If _tintaAsteptata IsNot Nothing Then
+            If _tintaAsteptata.IsDisposed OrElse Not _tintaAsteptata.Visible Then Return
+            If Not _tintaAsteptata.ClientRectangle.Contains(
+                    _tintaAsteptata.PointToClient(Cursor.Position)) Then Return
+        End If
+
+        Dim st As KBotToolTipStyle = If(_continutAsteptat.Style, _style)
+        EnsureWindow().ShowTip(_continutAsteptat, st, _fontAsteptat, Cursor.Position, _autoPopDelay)
+        _shownFingerprint = _pendingFingerprint
+    End Sub
+
+    ''' <summary>What the label SAYS, as one string — the key that tells it has changed.</summary>
+    Private Shared Function FingerprintOf(content As KBotToolTipContent) As String
+        If content Is Nothing Then Return Nothing
+        Return String.Concat(content.HeaderText, ChrW(1), content.Text, ChrW(1), content.FooterText)
+    End Function
 
     ' O singură fereastră per componentă, creată la prima afișare și moartă odată cu ea: la
     ' design time n-o instanțiem NICIODATĂ (designerul n-are voie să deschidă ferestre).

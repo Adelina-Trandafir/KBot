@@ -8,8 +8,19 @@ Imports KBot.Controls
 ''' <para><b>Nu e o a doua funcție, e aceeași suprafață mai mare.</b> Banda strâmtă din
 ''' <see cref="AsociereForm"/> e compactă tocmai fiindcă trebuie să încapă douăzeci de benzi a
 ''' câte douăzeci de marcaje — și la scara aia nu mai încape text. Aici încape: denumirile
-''' benzilor, sumele de lângă marcaje, datele pe axă. Datele sunt aceleași, construcția e aceeași
-''' metodă, iar tragerea trece prin ACEIAȘI trei tratatori.</para>
+''' benzilor și datele de pe axă. Datele sunt aceleași, construcția e aceeași metodă, iar
+''' tragerea trece prin ACEIAȘI trei tratatori.</para>
+'''
+''' <para><b>Nicio sumă lângă marcaje</b> (<c>MarkerLabelsVisible</c> rămâne False). Suma scrisă
+''' lângă fiecare marcaj acoperă banda de dedesubt exact pe bucata în care ochiul compară două
+''' lanțuri — adică singurul lucru pentru care există suprafața asta. Întrebarea la care răspunde
+''' banda e UNDE stă un instantaneu, nu cât valorează; valoarea o spun arborele, graficul și
+''' eticheta plutitoare, fiecare într-un loc unde nu acoperă nimic.</para>
+'''
+''' <para><b>Ce se vede în schimb:</b> fiecare marcaj își pictează bucata de bandă pe care o
+''' stăpânește — de la el până la următorul, iar ultimul până la capătul din dreapta, unde
+''' <c>TrailingSpace</c> îi face loc. Așa se citește dintr-o privire de unde până unde ține fiecare
+''' instantaneu, ceea ce e chiar întrebarea pe care o pune o plată căzută la mijloc.</para>
 '''
 ''' <para><b>De ce nu are date proprii.</b> Tabloul local — cine pe ce stă — trăiește într-un
 ''' singur loc, în dicționarele lui <see cref="AsociereForm"/>. Fereastra asta împrumută

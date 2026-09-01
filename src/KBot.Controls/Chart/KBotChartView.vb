@@ -80,6 +80,7 @@ Partial Public NotInheritable Class KBotChartView
     Private _plotBackColor As Color = Color.Empty
     Private _borderVisible As Boolean = True
     Private _borderColor As Color = Color.Empty
+    Private _borderWidth As Integer = 1
     Private _cornerRadius As Integer = -1
 
     ' ── Axes ─────────────────────────────────────────────────────────────────
@@ -836,6 +837,8 @@ Partial Public NotInheritable Class KBotChartView
         End Get
         Set(value As Color)
             _borderColor = value
+            ' The outline pen is CACHED, so a colour that only invalidates repaints the old one.
+            RebuildThemeResources()
             Invalidate()
         End Set
     End Property
@@ -847,6 +850,21 @@ Partial Public NotInheritable Class KBotChartView
     Public Sub ResetBorderColor()
         BorderColor = Color.Empty
     End Sub
+
+    ''' <summary>Thickness of the outline, in LOGICAL pixels — scaled at paint time like every other measure here.</summary>
+    <Category("K-BOT Chart Plot")>
+    <Description("Thickness of the outline (logical px). 0 = no outline, the same as BorderVisible = False.")>
+    <DefaultValue(1)>
+    Public Property BorderWidth As Integer
+        Get
+            Return _borderWidth
+        End Get
+        Set(value As Integer)
+            _borderWidth = Math.Max(0, value)
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
 
     <Category("K-BOT Chart Plot")>
     <Description("Corner radius of the control (logical px). -1 = the radius of the active scheme; 0 = square corners.")>
@@ -1356,7 +1374,7 @@ Partial Public NotInheritable Class KBotChartView
         Dim border As Color = If(_borderColor = Color.Empty, p.BorderColor, _borderColor)
         _axisPen = New Pen(axis)
         _gridPen = New Pen(grid)
-        _borderPen = New Pen(border)
+        _borderPen = New Pen(border, CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, Math.Max(1, _borderWidth)))))
     End Sub
 
     ' =====================================================================
@@ -1493,11 +1511,15 @@ Partial Public NotInheritable Class KBotChartView
     Protected Overrides Sub OnHandleCreated(e As EventArgs)
         MyBase.OnHandleCreated(e)
         RebuildDerivedFonts()
+        ' Before the handle exists, DeviceDpi answers 96 whatever the screen is, so the outline pen
+        ' built earlier carries the wrong thickness. Rebuilt here, where the answer is finally true.
+        RebuildThemeResources()
         InvalidateChartLayout()
     End Sub
 
     Protected Overrides Sub OnDpiChangedAfterParent(e As EventArgs)
         MyBase.OnDpiChangedAfterParent(e)
+        RebuildThemeResources()
         InvalidateChartLayout()
     End Sub
 

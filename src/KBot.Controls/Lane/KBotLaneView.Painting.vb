@@ -298,12 +298,29 @@ Partial Public NotInheritable Class KBotLaneView
         Next
     End Sub
 
+    ''' <summary>
+    ''' The run of the time axis in device pixels: the surface, less whatever
+    ''' <see cref="TrailingSpace"/> keeps free past the latest moment.
+    ''' </summary>
+    ''' <remarks>
+    ''' The trailing room is taken out of the AXIS, not out of the surface, so the stretch owned by
+    ''' the latest marker runs into it and everything else — markers, guides — stays on the same
+    ''' relative dates. Clamped to a quarter of the surface: a trailing space large enough to
+    ''' squash the axis has stopped being room for the last stretch and become a second, empty
+    ''' surface.
+    ''' </remarks>
+    Private Function AxisRun() As Integer
+        If _trailingSpace <= 0 Then Return _plotRect.Width
+        Dim trailing As Integer = Math.Min(ThemeShapes.ScaleDpi(Me, _trailingSpace), _plotRect.Width \ 4)
+        Return Math.Max(0, _plotRect.Width - trailing)
+    End Function
+
     Private Function MomentToX(moment As Date) As Integer
         Dim span As Double = _maxTicks - _minTicks
         ' Everything at the same instant: one column in the middle, not a stack pinned to the left.
-        If span <= 0 Then Return _plotRect.Left + _plotRect.Width \ 2
+        If span <= 0 Then Return _plotRect.Left + AxisRun() \ 2
         Dim ratio As Double = (CDbl(moment.Ticks) - _minTicks) / span
-        Return _plotRect.Left + CInt(Math.Round(ratio * _plotRect.Width))
+        Return _plotRect.Left + CInt(Math.Round(ratio * AxisRun()))
     End Function
 
     Private Function HasAnyVisibleMarker() As Boolean
@@ -374,7 +391,7 @@ Partial Public NotInheritable Class KBotLaneView
     ''' </summary>
     Private Sub DrawOuterBorder(g As Graphics, designTime As Boolean)
         Dim broken As Boolean = designTime AndAlso HasDuplicateOrEmptyKeys()
-        If Not _borderVisible AndAlso Not broken Then Return
+        If (Not _borderVisible OrElse _borderWidth <= 0) AndAlso Not broken Then Return
         Dim radius As Integer = EffectiveCornerRadius()
         Dim r As New Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1))
         Using path As GraphicsPath = ThemeShapes.RoundedRect(r, radius)
@@ -530,9 +547,13 @@ Partial Public NotInheritable Class KBotLaneView
 
             If _laneLineWidth > 0 Then
                 Dim mid As Integer = ln.Bounds.Top + ln.Bounds.Height \ 2
+                ' The plain rail, always, full width and underneath: a lane holding no marker has
+                ' to stay visible as somewhere to drop, and the run before the first marker has to
+                ' read as empty rather than as absent.
                 Using pen As New Pen(LaneLinePen.Color, CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, _laneLineWidth))))
                     g.DrawLine(pen, _plotRect.Left, mid, _plotRect.Right, mid)
                 End Using
+                If _segmentedRail Then DrawLaneSegments(g, ln, i, mid)
             End If
 
             If _laneCaptionsVisible AndAlso _laneCaptionWidth > 0 AndAlso Not String.IsNullOrEmpty(ln.Text) Then
@@ -544,6 +565,50 @@ Partial Public NotInheritable Class KBotLaneView
             End If
 
             DrawEndMark(g, ln)
+        Next
+    End Sub
+
+    ''' <summary>
+    ''' The stretch each marker OWNS: from itself to the next marker along, and — for the last one
+    ''' — to the right-hand end of the surface, in that marker's own colour.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>A statement about the data, not decoration: what a marker records holds until the
+    ''' next marker changes it. That is the same truth <c>KBotChartView</c> draws as a step line,
+    ''' and drawing it here too is what lets the operator see, at the moment of a drop, which
+    ''' stretch of the lane a snapshot has just taken over.</para>
+    ''' <para>Ordered by X and not by the host's order: the collection is deliberately left
+    ''' unsorted (the doc says so), and a stretch drawn to a marker that is to its LEFT would run
+    ''' backwards over the one before it.</para>
+    ''' <para>Two markers on the same pixel column own nothing, and nothing is drawn for them —
+    ''' the same answer the surface already gives for several saves inside one minute.</para>
+    ''' </remarks>
+    Private Sub DrawLaneSegments(g As Graphics, ln As KBotLane, laneIndex As Integer, mid As Integer)
+        If ln.Markers.Count = 0 Then Return
+        Dim laneColor As Color = EffectiveLaneColor(ln, laneIndex)
+
+        Dim drawn As New List(Of KBotLaneMarker)()
+        For Each m As KBotLaneMarker In ln.Markers
+            If m.Plotted Then drawn.Add(m)
+        Next
+        If drawn.Count = 0 Then Return
+        drawn.Sort(Function(a, b) a.PlotLocation.X.CompareTo(b.PlotLocation.X))
+
+        Dim logical As Integer = If(_segmentWidth > 0, _segmentWidth, _laneLineWidth)
+        Dim w As Single = CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, logical)))
+
+        For k As Integer = 0 To drawn.Count - 1
+            Dim m As KBotLaneMarker = drawn(k)
+            ' A Loose marker owns NOTHING. It is not placed on anything, so a stretch running from
+            ' it to the next one would draw a chain out of a row of things that are precisely not a
+            ' chain — the one claim the unplaced lane must never make.
+            If m.Style = KBotLaneMarkerStyle.Loose Then Continue For
+            Dim x1 As Integer = m.PlotLocation.X
+            Dim x2 As Integer = If(k < drawn.Count - 1, drawn(k + 1).PlotLocation.X, _plotRect.Right)
+            If x2 <= x1 Then Continue For
+            Using pen As New Pen(If(m.MarkerColor = Color.Empty, laneColor, m.MarkerColor), w)
+                g.DrawLine(pen, x1, mid, x2, mid)
+            End Using
         Next
     End Sub
 
@@ -715,12 +780,16 @@ Partial Public NotInheritable Class KBotLaneView
         Dim h As Integer = TextRenderer.MeasureText("0", f).Height
         Dim y As Integer = _plotRect.Bottom + gap
 
+        ' The axis names the ends of the TIME RUN, not the ends of the rectangle: with a trailing
+        ' space the two are no longer the same place, and a date written under empty room would
+        ' name a moment nothing on the surface stands at.
+        Dim run As Integer = AxisRun()
         TextRenderer.DrawText(g, _minMoment.ToString(_momentFormat), f,
-                              New Rectangle(_plotRect.Left, y, _plotRect.Width \ 2, h), fore,
+                              New Rectangle(_plotRect.Left, y, run \ 2, h), fore,
                               TextFormatFlags.Left)
         If _maxTicks > _minTicks Then
             TextRenderer.DrawText(g, _maxMoment.ToString(_momentFormat), f,
-                                  New Rectangle(_plotRect.Left + _plotRect.Width \ 2, y, _plotRect.Width \ 2, h),
+                                  New Rectangle(_plotRect.Left + run \ 2, y, run - run \ 2, h),
                                   fore, TextFormatFlags.Right)
         End If
     End Sub

@@ -465,4 +465,112 @@ Public Class AsociereFormTests
                    End Using
                End Sub)
     End Sub
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' Reperele plăților: socoteala §1.3 scrisă pe etichetă
+    ' ══════════════════════════════════════════════════════════════════════════
+
+    Private Shared Function Banda(f As AsociereForm) As KBotLaneView
+        Dim flags = Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance
+        ' Aceeași capcană ca la `Arbore`: un `Friend WithEvents` e o PROPRIETATE, nu un câmp.
+        Dim prop = f.GetType().GetProperty("benzi", flags)
+        Assert.NotNull(prop)
+        Return CType(prop.GetValue(f), KBotLaneView)
+    End Function
+
+    Private Shared Function Reper(f As AsociereForm, moment As Date) As KBotChartGuide
+        For Each gd As KBotChartGuide In Banda(f).Guides
+            If gd.Moment = moment Then Return gd
+        Next
+        Return Nothing
+    End Function
+
+    ' Chiar tabelul din §1.3 al fundamentului: o recepție de 100 pe 01/01, plătită integral pe
+    ' 02/01, urcată la 200 pe 03/01, plătită cu încă 50 pe 04/01.
+    Private Shared Function StareCuPlati() As AsociereStare
+        Dim s As New AsociereStare() With {.CodAngajament = "A100", .Amprenta = "amp1"}
+        s.Receptii.Add(Rec(1, New Date(2026, 1, 1), 200.0, "AAB"))
+        s.Instantanee.Add(Inst(11, New Date(2026, 1, 1, 9, 0, 0), 100.0, idrr:=1))
+        s.Instantanee.Add(Inst(12, New Date(2026, 1, 3, 9, 0, 0), 200.0, idrr:=1))
+        s.Plati.Add(New PlataAsociere() With {.DataPlata = New Date(2026, 1, 2), .Suma = 100.0, .NrOp = "7"})
+        s.Plati.Add(New PlataAsociere() With {.DataPlata = New Date(2026, 1, 4), .Suma = 50.0})
+        Return s
+    End Function
+
+    <Fact>
+    Public Sub ReperulPlatii_ScrieTotalulReceptiilorAsaCumStateaLaDataAia()
+        RunSta(Sub()
+                   Dim api As New AsociereFakeApi() With {.Stare = StareCuPlati()}
+                   Using f As AsociereForm = Formular(api)
+                       Incarca(f)
+
+                       ' Prima plată: doar instantaneul de 100 e de dinaintea ei — cel de 200 vine
+                       ' după, deci NU are ce căuta în total.
+                       Dim prima As KBotChartGuide = Reper(f, New Date(2026, 1, 2))
+                       Assert.NotNull(prima)
+                       Assert.Contains("Total recepții la data plății: <b>100,00</b>", prima.Tooltip)
+                       Assert.Contains("Plata asta: 100,00", prima.Tooltip)
+                       Assert.Contains("Diferență (recepții - plăți): 0,00", prima.Tooltip)
+                       ' Nu există plăți înaintea primei, deci linia lipsește cu totul.
+                       Assert.DoesNotContain("Plăți anterioare", prima.Tooltip)
+                       Assert.Contains("OP 7", prima.Tooltip)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ReperulPlatii_ScadePlatileDeDinainteaLui()
+        RunSta(Sub()
+                   Dim api As New AsociereFakeApi() With {.Stare = StareCuPlati()}
+                   Using f As AsociereForm = Formular(api)
+                       Incarca(f)
+
+                       Dim adoua As KBotChartGuide = Reper(f, New Date(2026, 1, 4))
+                       Assert.NotNull(adoua)
+                       Assert.Contains("Total recepții la data plății: <b>200,00</b>", adoua.Tooltip)
+                       Assert.Contains("Plăți anterioare: 100,00", adoua.Tooltip)
+                       Assert.Contains("Plata asta: 50,00", adoua.Tooltip)
+                       Assert.Contains("Diferență (recepții - plăți): 50,00", adoua.Tooltip)
+                   End Using
+               End Sub)
+    End Sub
+
+    ' Un instantaneu neașezat, dinaintea plății, care ar urca recepția 2 de la 200 la 250.
+    Private Shared Function StareCuNeasezatInaintePlatii() As AsociereStare
+        Dim s As New AsociereStare() With {.CodAngajament = "A100", .Amprenta = "amp1"}
+        s.Receptii.Add(Rec(1, New Date(2026, 1, 1), 100.0, "AAB"))
+        s.Receptii.Add(Rec(2, New Date(2026, 2, 1), 250.0, "AAB"))
+        s.Instantanee.Add(Inst(11, New Date(2026, 1, 19, 10, 0, 0), 100.0, idrr:=1))
+        s.Instantanee.Add(Inst(21, New Date(2026, 2, 16, 10, 0, 0), 200.0, idrr:=2))
+        s.Instantanee.Add(Inst(31, New Date(2026, 3, 10, 10, 0, 0), 250.0, idrr:=0))
+        s.Plati.Add(New PlataAsociere() With {.DataPlata = New Date(2026, 3, 20), .Suma = 300.0})
+        Return s
+    End Function
+
+    <Fact>
+    Public Sub ReperulPlatii_SeRefaceLaFiecareTragere_SiSpuneCateAuRamasPeJos()
+        ' Ăsta e rostul cifrei: se schimbă în timp ce operatorul trage, altfel n-ar răspunde la
+        ' întrebarea «instantaneul ăsta e de partea bună a plății».
+        RunSta(Sub()
+                   Dim api As New AsociereFakeApi() With {.Stare = StareCuNeasezatInaintePlatii()}
+                   Using f As AsociereForm = Formular(api)
+                       Incarca(f)
+                       Dim data As Date = New Date(2026, 3, 20)
+
+                       Dim inainte As String = Reper(f, data).Tooltip
+                       Assert.Contains("Total recepții la data plății: <b>300,00</b>", inainte)
+                       Assert.Contains("1 instantanee neașezate până la data asta", inainte)
+
+                       Arunca(f, "TreeLant_NodeDropped",
+                              Nod(Arbore(f, "treeLibere"), "H:31"),
+                              Nod(Arbore(f, "treeLant"), "R:2"))
+
+                       Dim dupa As String = Reper(f, data).Tooltip
+                       Assert.Contains("Total recepții la data plății: <b>350,00</b>", dupa)
+                       Assert.Contains("Diferență (recepții - plăți): 50,00", dupa)
+                       ' Nu mai e nimic pe jos, deci nici avertismentul nu mai are ce spune.
+                       Assert.DoesNotContain("neașezate până la data asta", dupa)
+                   End Using
+               End Sub)
+    End Sub
 End Class

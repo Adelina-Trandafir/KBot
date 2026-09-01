@@ -29,6 +29,13 @@ Imports System.Drawing
 ''' picked for. Lightness alternates in three steps on top of it, so even two indexes that
 ''' eventually come back to a similar hue still differ in weight.</para>
 '''
+''' <para><b>Never too pale, either.</b> The hue walk alone was not enough on the Classic and
+''' Modern schemes: HSL lightness is not how visible something is, so at one and the same
+''' lightness a yellow and a blue sit two contrast steps apart, and by turn the set handed out
+''' colours the operator could not find on the surface. Every colour is now pushed along its own
+''' lightness until it clears 3:1 against the scheme's background — the WCAG floor for graphics —
+''' with the HUE never moved, because the hue is what tells two series apart.</para>
+'''
 ''' <para>Nothing here is a hardcoded colour: the starting hue, the saturation and the middle
 ''' lightness are read off the ACTIVE scheme's accent, so the whole set turns with the theme. The
 ''' literals are limits — how dark is still readable on this background — which is the same kind of
@@ -77,7 +84,63 @@ Friend Module KBotAutoPalette
         Dim steps() As Double = {0.0, -0.1, 0.1}
         Dim light As Double = Math.Min(0.82, Math.Max(0.24, middle + steps(i Mod steps.Length)))
 
-        Return FromHsl(hue, sat, light)
+        Return Readable(FromHsl(hue, sat, light), hue, sat, light, isDark)
+    End Function
+
+    ''' <summary>
+    ''' Cel mai mic contrast pe care o linie subțire îl mai are față de fundal. 3:1 e pragul WCAG
+    ''' pentru grafică — mai puțin de atât înseamnă o linie de un pixel pe care operatorul o caută.
+    ''' </summary>
+    Private Const MinContrast As Double = 3.0
+
+    ''' <summary>Luminanța fundalului deschis (alb) și a celui închis, în relativă WCAG.</summary>
+    Private Const LightBackLuminance As Double = 1.0
+
+    Private Const DarkBackLuminance As Double = 0.015
+
+    ''' <summary>
+    ''' Aceeași culoare, împinsă până se VEDE pe fundalul schemei active.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Lightness-ul din HSL nu spune cât de tare se vede ceva: la aceeași valoare, un galben
+    ''' și un albastru sunt la doi pași de contrast unul de altul. Pe schemele Clasic și Modern
+    ''' asta scotea, pe rând, culori pe care nu le mai vedea nimeni — o treime din set era
+    ''' nefolosibilă, și tocmai culoarea e singura care leagă un marcaj de rândul lui.</para>
+    ''' <para>Corecția se face pe LIGHTNESS, nu pe hue și nu pe saturație: hue-ul e ce deosebește
+    ''' două serii între ele, deci e singurul lucru care nu are voie să se miște. Pașii sunt mici
+    ''' și mărginiți — o culoare care tot nu ajunge la prag după ei rămâne unde a ajuns, fiindcă un
+    ''' set împins până la negru ar strica exact deosebirea pentru care există.</para>
+    ''' </remarks>
+    Private Function Readable(c As Color, hue As Double, sat As Double, light As Double, isDark As Boolean) As Color
+        Dim back As Double = If(isDark, DarkBackLuminance, LightBackLuminance)
+        Dim result As Color = c
+        Dim l As Double = light
+
+        For pas As Integer = 1 To 12
+            If Contrast(RelativeLuminance(result), back) >= MinContrast Then Return result
+            l = If(isDark, l + 0.04, l - 0.04)
+            ' Marginile: nici alb spălăcit pe întuneric, nici aproape-negru pe lumină.
+            If l > 0.88 OrElse l < 0.16 Then Exit For
+            result = FromHsl(hue, sat, l)
+        Next
+        Return result
+    End Function
+
+    ''' <summary>Luminanța relativă WCAG a unei culori (0 = negru, 1 = alb).</summary>
+    Private Function RelativeLuminance(c As Color) As Double
+        Return 0.2126 * Linear(c.R) + 0.7152 * Linear(c.G) + 0.0722 * Linear(c.B)
+    End Function
+
+    Private Function Linear(channel As Integer) As Double
+        Dim v As Double = channel / 255.0
+        If v <= 0.03928 Then Return v / 12.92
+        Return Math.Pow((v + 0.055) / 1.055, 2.4)
+    End Function
+
+    Private Function Contrast(a As Double, b As Double) As Double
+        Dim hi As Double = Math.Max(a, b)
+        Dim lo As Double = Math.Min(a, b)
+        Return (hi + 0.05) / (lo + 0.05)
     End Function
 
     ''' <summary>

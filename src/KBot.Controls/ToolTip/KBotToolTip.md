@@ -25,6 +25,16 @@ Conventions: [C1..C9](../CONTROLS.md). Status: code-green (slice 0035), never se
   `SetIconFor(ctrl, icon)`, `Get/SetStyleFor(ctrl, style)`, `CanExtend(o)`
 - `ShowAt(owner, content, screenPos)`, `HideNow()`
 
+**A content object may be REWRITTEN between calls, and it is.** Every drawn-region caller
+owns one `KBotToolTipContent` and rewrites its fields before each `ShowAt`, so what decides
+"this label is already up" is the TEXT, not the object identity. A guard on the reference
+alone stuck the label on the first thing a control ever showed: on the lane surface, moving
+from one marker to another inside the same lane left the previous marker's name standing, and
+only leaving the whole control put it right. Two consequences, both deliberate:
+- a request whose text differs from what is on screen always goes through, same object or not;
+- when the label is already open, the swap happens **immediately**, without the initial delay
+  — a second delay would leave one thing's name standing over another for half a second.
+
 **Different looks on one form**: `SetStyleFor(ctrl, Style.Clone())` — the style is a VALUE,
 not a component. Do not widen a control's internal tooltip object.
 

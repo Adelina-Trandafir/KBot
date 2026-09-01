@@ -77,6 +77,8 @@ Partial Public NotInheritable Class KBotLaneView
     Private _markerLabelsVisible As Boolean = False
     Private _markerSize As Integer = 7
     Private _laneLineWidth As Integer = 1
+    Private _segmentedRail As Boolean = True
+    Private _segmentWidth As Integer = 0
     Private _laneLineColor As Color = Color.Empty
     Private _laneHoverBackColor As Color = Color.Empty
     Private _separatorColor As Color = Color.Empty
@@ -88,7 +90,9 @@ Partial Public NotInheritable Class KBotLaneView
     Private _plotBackColor As Color = Color.Empty
     Private _borderVisible As Boolean = True
     Private _borderColor As Color = Color.Empty
+    Private _borderWidth As Integer = 1
     Private _cornerRadius As Integer = -1
+    Private _trailingSpace As Integer = 0
 
     ' ── Axis ─────────────────────────────────────────────────────────────────
     Private _axisVisible As Boolean = False
@@ -735,6 +739,72 @@ Partial Public NotInheritable Class KBotLaneView
         End Set
     End Property
 
+    ''' <summary>
+    ''' Every marker paints the stretch of rail it OWNS: from itself to the next marker, and — for
+    ''' the last one — to the right-hand end of the surface.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>This is a statement about the data, not a decoration. What a marker records holds
+    ''' until the next marker changes it; the same truth the chart draws as a step line. A single
+    ''' flat rail said the opposite — that the lane is one undifferentiated thing — and it made the
+    ''' one question the surface exists to answer ("which stretch is this, and where does it end")
+    ''' something the operator had to work out from marker positions alone.</para>
+    ''' <para>The plain rail is still drawn UNDERNEATH, full width, in
+    ''' <see cref="LaneLineColor"/>: a lane holding no marker at all has to stay visible as
+    ''' somewhere to drop, and a lane whose markers start late has to show the empty run before
+    ''' them as empty rather than as absent.</para>
+    ''' <para>Use <see cref="TrailingSpace"/> to give the last stretch of every lane somewhere to
+    ''' be. Without it the last marker sits exactly on the right edge and owns no pixels.</para>
+    ''' </remarks>
+    <Category("K-BOT Lane Layout")>
+    <Description("True => each marker paints the rail from itself to the next one (the last, to the right-hand end), in its own colour. False => one flat rail.")>
+    <DefaultValue(True)>
+    Public Property SegmentedRail As Boolean
+        Get
+            Return _segmentedRail
+        End Get
+        Set(value As Boolean)
+            _segmentedRail = value
+            Invalidate()
+        End Set
+    End Property
+
+    <Category("K-BOT Lane Layout")>
+    <Description("Thickness of the coloured stretch a marker owns (logical px). 0 = the same thickness as LaneLineWidth.")>
+    <DefaultValue(0)>
+    Public Property SegmentWidth As Integer
+        Get
+            Return _segmentWidth
+        End Get
+        Set(value As Integer)
+            _segmentWidth = Math.Max(0, value)
+            Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Room kept at the right-hand end of the time axis, past the latest moment (logical px).
+    ''' </summary>
+    ''' <remarks>
+    ''' The latest marker lands on the right edge of the surface, so the stretch it owns is zero
+    ''' pixels wide and the operator cannot see it at all — the one marker whose stretch is still
+    ''' open is the one that disappears. This is the space it runs into. Guides move with it: the
+    ''' whole time axis is compressed into the narrower run, so a payment line still falls where
+    ''' its date falls.
+    ''' </remarks>
+    <Category("K-BOT Lane Plot")>
+    <Description("Room kept to the right of the latest moment (logical px), so the last stretch of every lane is visible.")>
+    <DefaultValue(0)>
+    Public Property TrailingSpace As Integer
+        Get
+            Return _trailingSpace
+        End Get
+        Set(value As Integer)
+            _trailingSpace = Math.Max(0, value)
+            InvalidateLaneLayout()
+        End Set
+    End Property
+
     <Category("K-BOT Lane Layout")>
     <Description("Colour of the line drawn along a lane. Empty = the border colour of the theme, so the rail stays behind the markers.")>
     Public Property LaneLineColor As Color
@@ -894,6 +964,21 @@ Partial Public NotInheritable Class KBotLaneView
     Public Sub ResetBorderColor()
         BorderColor = Color.Empty
     End Sub
+
+    ''' <summary>Thickness of the frame, in LOGICAL pixels — scaled at paint time like every other measure here.</summary>
+    <Category("K-BOT Lane Plot")>
+    <Description("Thickness of the frame (logical px). 0 = no frame, the same as BorderVisible = False.")>
+    <DefaultValue(1)>
+    Public Property BorderWidth As Integer
+        Get
+            Return _borderWidth
+        End Get
+        Set(value As Integer)
+            _borderWidth = Math.Max(0, value)
+            RebuildThemeResources()
+            Invalidate()
+        End Set
+    End Property
 
     <Category("K-BOT Lane Plot")>
     <Description("Corner radius of the frame (logical px). -1 = the radius of the active scheme; 0 = square corners.")>
@@ -1191,7 +1276,8 @@ Partial Public NotInheritable Class KBotLaneView
         _laneLinePen?.Dispose()
         _separatorPen?.Dispose()
         Dim pal As ThemePalette = Palette()
-        _borderPen = New Pen(If(_borderColor = Color.Empty, pal.BorderColor, _borderColor))
+        _borderPen = New Pen(If(_borderColor = Color.Empty, pal.BorderColor, _borderColor),
+                             CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, Math.Max(1, _borderWidth)))))
         _laneLinePen = New Pen(If(_laneLineColor = Color.Empty, pal.BorderColor, _laneLineColor))
         _separatorPen = New Pen(If(_separatorColor = Color.Empty, pal.BorderColor, _separatorColor))
     End Sub
@@ -1333,11 +1419,15 @@ Partial Public NotInheritable Class KBotLaneView
     Protected Overrides Sub OnHandleCreated(e As EventArgs)
         MyBase.OnHandleCreated(e)
         ApplyScrollBarTheme()
+        ' Before the handle exists, DeviceDpi answers 96 whatever the screen is, so the frame pen
+        ' built earlier carries the wrong thickness. Rebuilt here, where the answer is finally true.
+        RebuildThemeResources()
         InvalidateLaneLayout()
     End Sub
 
     Protected Overrides Sub OnDpiChangedAfterParent(e As EventArgs)
         MyBase.OnDpiChangedAfterParent(e)
+        RebuildThemeResources()
         InvalidateLaneLayout()
     End Sub
 

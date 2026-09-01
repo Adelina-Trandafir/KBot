@@ -265,6 +265,9 @@
   <data name="Iconoir-Team-Iconoir-Sidebar-collapse.16 (1)" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Iconoir-Team-Iconoir-Sidebar-collapse.16 (1).png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="Fatcow-Farm-Fresh-Chart-curve.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Forexe\Receptii_Icons\Fatcow-Farm-Fresh-Chart-curve.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="collapse" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\collapse.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -282,6 +285,9 @@
   </data>
   <data name="Umut-Pulat-Tulliana-2-File-temporary.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Umut-Pulat-Tulliana-2-File-temporary.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="kbot_64" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\kbot_64.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -316,7 +322,7 @@
   <data name="expand_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\expand_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="FX_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\FX_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="Fatcow-Farm-Fresh-Barchart.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Forexe\Receptii_Icons\Fatcow-Farm-Fresh-Barchart.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

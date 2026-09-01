@@ -124,6 +124,10 @@ Public Class AsociereForm
         _withReauthStare = withReauthStare
         _withReauthSalvare = withReauthSalvare
         capBar.Text = $"K-BOT — Legăturile recepțiilor · {_cod}"
+        ' Vederea implicită e graficul. Scrisă și aici, nu doar în designer: cheia din designer
+        ' trece prin `EndInit`, care în procesul Visual Studio nu o aplică deloc — deci pe drumul
+        ' ăla singura garanție e `benzi.Visible = False`, iar asta e o valoare, nu o alegere.
+        AplicaVedereaDinDreaptaSus(VEDEREA_GRAFIC)
     End Sub
 
     ' ══════════════════════════════════════════════════════════════════════════
@@ -657,6 +661,49 @@ Public Class AsociereForm
         End Try
     End Sub
 
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' Cele două vederi din dreapta sus
+    ' ══════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>Cheile din <c>navGrafice</c> — aceleași două șiruri pe care le scrie designerul.</summary>
+    Private Const VEDEREA_GRAFIC As String = "grafic"
+
+    Private Const VEDEREA_BENZI As String = "benzi"
+
+    ''' <summary>
+    ''' Graficul și benzile împart același loc, iar <c>navGrafice</c> alege care se vede.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>Una peste alta, nu una lângă alta.</b> Împărțite pe verticală, amândouă primeau
+    ''' vreo sută cincizeci de pixeli: prea puțin pentru un grafic ca să i se citească scara și
+    ''' prea puțin pentru benzi ca să încapă mai mult de câteva rânduri fără derulare. Sunt oricum
+    ''' două întrebări diferite puse pe rând — «cum a evoluat» și «unde stă» — deci fiecare ia tot
+    ''' locul cât e întrebată.</para>
+    ''' <para><b>Nimic nu se reconstruiește aici.</b> Amândouă suprafețele sunt ținute la zi de
+    ''' <c>Reconstruieste</c> chiar și cât sunt ascunse, deci comutarea e o schimbare de vizibilitate
+    ''' și atât. O reconstrucție la fiecare apăsare ar face butonul să pară lent fără să adauge
+    ''' nimic — ce arată e deja adevărat.</para>
+    ''' </remarks>
+    Private Sub NavGrafice_SelectionChanged(key As String) Handles navGrafice.SelectionChanged
+        Try
+            AplicaVedereaDinDreaptaSus(key)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AsociereForm.NavGrafice_SelectionChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Arată vederea cerută. Orice altceva decât cheia benzilor înseamnă graficul — inclusiv
+    ''' <c>Nothing</c>, fiindcă graficul e vederea implicită și un formular fără nimic ales trebuie
+    ''' totuși să arate ceva.
+    ''' </summary>
+    Private Sub AplicaVedereaDinDreaptaSus(key As String)
+        If grafic Is Nothing OrElse benzi Is Nothing Then Return
+        Dim aratBenzi As Boolean = String.Equals(key, VEDEREA_BENZI, StringComparison.Ordinal)
+        benzi.Visible = aratBenzi
+        grafic.Visible = Not aratBenzi
+    End Sub
+
     Private Sub Grafic_TabSelected(tabKey As String) Handles grafic.TabSelected
         Try
             ReconstruiesteGrafic()
@@ -768,7 +815,7 @@ Public Class AsociereForm
                 Next
             Next
 
-            AplicaCulorileBenzii(_bandaReceptie, _marcajInstantaneu)
+            AplicaCulorileBenzii(benzi, _bandaReceptie)
 
             treeLant.Invalidate()
             treeLibere.Invalidate()
@@ -781,21 +828,24 @@ Public Class AsociereForm
     ''' Aceeași trecere de culori, pentru o bandă oarecare — a formularului sau a ferestrei mari.
     ''' </summary>
     ''' <remarks>
-    ''' <para>Un instantaneu are acum TREI înfățișări pe ecran: rândul din arbore, punctul din
-    ''' grafic și marcajul de pe bandă. Rostul culorii e să spună că sunt același lucru, deci ea
-    ''' vine dintr-un singur loc — graficul — și e purtată de aici către celelalte.</para>
-    ''' <para><b>Benzile nu se golesc de culoare, doar marcajele.</b> O bandă își păstrează
-    ''' culoarea scrisă la construire fiindcă pe fila «Recepția» graficul are o părere doar despre
-    ''' un singur lanț; dacă s-ar goli tot, restul benzilor ar rămâne incolore exact atunci când
-    ''' suprafața e cea mai încărcată, iar culoarea n-ar mai lega nimic de nimic.</para>
+    ''' <para><b>Banda citește graficul, marcajul nu.</b> O bandă întreagă înseamnă o recepție, iar
+    ''' aceeași recepție are o linie în grafic și un rând în arbore — deci culoarea benzii vine de
+    ''' acolo, ca și până acum, și leagă cele trei suprafețe între ele.</para>
+    ''' <para><b>Marcajele nu mai spun «care lanț», ci «ce s-a întâmplat»</b> — verde dacă
+    ''' instantaneul a urcat valoarea recepției, roșu dacă a coborât-o. Vezi
+    ''' <see cref="ColoreazaMarcajeleDupaSchimbare"/>: banda întreagă e deja a unei recepții, deci
+    ''' pe ea nu mai e nimic de deosebit între marcaje, iar culoarea lor rămâne liberă pentru
+    ''' singurul lucru pe care nici forma marcajului, nici arborele nu-l arată — direcția
+    ''' schimbării.</para>
+    ''' <para><b>Graficul nu se schimbă cu nimic.</b> Punctele lui își păstrează culorile de până
+    ''' acum și legătura punct–rând-de-arbore rămâne întreagă: aici se ia doar culoarea LINIEI unei
+    ''' serii, adică exact ce se lua și înainte.</para>
     ''' </remarks>
-    Private Sub AplicaCulorileBenzii(bandaDupaIdrr As Dictionary(Of Integer, KBotLane),
-                                     marcajDupaIdrh As Dictionary(Of Integer, KBotLaneMarker))
-        If bandaDupaIdrr Is Nothing OrElse marcajDupaIdrh Is Nothing Then Return
+    Private Sub AplicaCulorileBenzii(tinta As KBotLaneView,
+                                     bandaDupaIdrr As Dictionary(Of Integer, KBotLane))
+        If tinta Is Nothing OrElse bandaDupaIdrr Is Nothing Then Return
 
-        For Each marcaj As KBotLaneMarker In marcajDupaIdrh.Values
-            marcaj.MarkerColor = Color.Empty
-        Next
+        ColoreazaMarcajeleDupaSchimbare(tinta)
 
         For Each serie As KBotChartSeries In grafic.Series
             If String.Equals(serie.Key, SERIA_TOTAL, StringComparison.Ordinal) Then Continue For
@@ -806,15 +856,48 @@ Public Class AsociereForm
                serie.LineColor <> Color.Empty Then
                 banda.LaneColor = serie.LineColor
             End If
+        Next
+    End Sub
 
-            For Each punct As KBotChartPoint In serie.Points
-                If punct.PointColor = Color.Empty Then Continue For
-                Dim inst As InstantaneuLegat = TryCast(punct.Tag, InstantaneuLegat)
+    ''' <summary>
+    ''' Culoarea marcajelor de pe benzi: verde dacă instantaneul a URCAT valoarea recepției, roșu
+    ''' dacă a coborât-o.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Fiecare marcaj pictează și bucata de bandă dintre el și următorul, deci o bandă se
+    ''' citește de la stânga la dreapta ca un șir de urcări și coborâri — chiar întrebarea pe care
+    ''' operatorul o pune când se uită la lanțul unei recepții.</para>
+    ''' <para><b>Un instantaneu care nu schimbă valoarea nu primește nicio culoare</b>, adică
+    ''' rămâne pe culoarea benzii, care e culoarea recepției din grafic. Nici verde, nici roșu:
+    ''' n-a fost nici urcare, nici coborâre, iar o culoare acolo ar fi o afirmație pe care datele
+    ''' n-o susțin.</para>
+    ''' <para><b>Primul marcaj al unui lanț se măsoară față de zero</b> — înainte de el recepția
+    ''' nu avea nicio valoare, deci el o urcă.</para>
+    ''' <para><b>Banda de jos rămâne pe culorile ei.</b> Instantaneele neașezate nu formează un
+    ''' lanț, deci diferența dintre două marcaje vecine de acolo nu înseamnă nimic — «a crescut»
+    ''' ar fi o minciună despre două lucruri care n-au nicio legătură între ele.</para>
+    ''' </remarks>
+    Private Sub ColoreazaMarcajeleDupaSchimbare(tinta As KBotLaneView)
+        If tinta Is Nothing Then Return
+        Dim paleta As ThemePalette = ThemeManager.Current?.Palette
+        If paleta Is Nothing Then Return
+
+        For Each banda As KBotLane In tinta.Lanes
+            If String.Equals(banda.Key, CHEIE_LIBERE, StringComparison.Ordinal) Then Continue For
+
+            Dim anterior As Double = 0
+            For j As Integer = 0 To banda.Markers.Count - 1
+                Dim marcaj As KBotLaneMarker = banda.Markers(j)
+                Dim inst As InstantaneuLegat = TryCast(marcaj.Tag, InstantaneuLegat)
                 If inst Is Nothing Then Continue For
-                Dim marcaj As KBotLaneMarker = Nothing
-                If marcajDupaIdrh.TryGetValue(inst.Idrh, marcaj) Then
-                    marcaj.MarkerColor = punct.PointColor
+                If inst.Total > anterior Then
+                    marcaj.MarkerColor = paleta.SuccessColor
+                ElseIf inst.Total < anterior Then
+                    marcaj.MarkerColor = paleta.ErrorColor
+                Else
+                    marcaj.MarkerColor = Color.Empty
                 End If
+                anterior = inst.Total
             Next
         Next
     End Sub
@@ -1052,7 +1135,8 @@ Public Class AsociereForm
                 banda.EndMark = SemnulCapatului(rec, lant)
                 bandaDupaIdrr(rec.Idrr) = banda
 
-                For Each inst As InstantaneuLegat In lant
+                For j As Integer = 0 To lant.Count - 1
+                    Dim inst As InstantaneuLegat = lant(j)
                     Dim marcaj As KBotLaneMarker = banda.AddMarker(inst.DataH, Bani(inst.Total))
                     marcaj.Tag = inst
                     marcaj.Tooltip = TooltipInstantaneu(inst, rec)
@@ -1072,13 +1156,20 @@ Public Class AsociereForm
             bandaLibere.SeparatorAbove = True
             bandaLibere.Tooltip = "Instantaneele care nu stau pe nicio recepție." & Environment.NewLine &
                                   "Trage un marcaj aici ca să-l desprinzi de recepția lui."
-            For Each inst As InstantaneuLegat In libere
+            For j As Integer = 0 To libere.Count - 1
+                Dim inst As InstantaneuLegat = libere(j)
                 Dim marcaj As KBotLaneMarker = bandaLibere.AddMarker(inst.DataH, Bani(inst.Total))
                 marcaj.Tag = inst
                 marcaj.Tooltip = TooltipInstantaneu(inst)
                 marcaj.Style = StilulMarcajului(inst, asezat:=False)
+                marcaj.MarkerColor = tinta.AutoColor(j)
                 marcajDupaIdrh(inst.Idrh) = marcaj
             Next
+
+            ' Culorile marcajelor de pe benzile așezate — urcare verde, coborâre roșie. Aici, la
+            ' construire, ca banda să spună asta și înainte ca trecerea de culori să apuce să
+            ' treacă pe la ea.
+            ColoreazaMarcajeleDupaSchimbare(tinta)
 
             ConstruiesteReperelePlatilor(tinta, stapanulReperelor)
         Catch ex As Exception
@@ -1141,16 +1232,27 @@ Public Class AsociereForm
     ''' cu doi stăpâni și un singur câmp de stăpân e o capcană pusă pentru mai târziu. Garanția
     ''' rămâne la fel de tare fără el: amândouă reperele primesc <c>plata.DataPlata</c>, aceeași
     ''' valoare, în același pas al aceleiași bucle.</para>
+    ''' <para><b>Eticheta face socoteala §1.3, nu o descrie.</b> Vezi
+    ''' <see cref="CorpulReperului"/>: acolo se scrie de ce.</para>
     ''' </remarks>
     Private Sub ConstruiesteReperelePlatilor(tinta As KBotLaneView, siInGrafic As Boolean)
         If _stare Is Nothing Then Return
 
+        ' Lanțurile o SINGURĂ dată, nu unul pe plată: sunt aceleași pentru toate reperele, iar
+        ' douăzeci de recepții × douăzeci de plăți înseamnă patru sute de treceri prin toate
+        ' instantaneele pentru un răspuns pe care îl aveam deja de la prima.
+        Dim lanturi As List(Of List(Of InstantaneuLegat)) =
+            _stare.Receptii.Select(Function(r) LantulReceptiei(r)).
+                            Where(Function(l) l.Count > 0).ToList()
+
+        ' Plățile deja făcute până la reperul curent. Se adună PE PARCURS, în ordinea datelor,
+        ' fiindcă asta e chiar definiția lui `PlatiAnt` din §1.3 — plățile de dinaintea ăsteia.
+        Dim platiAnterioare As Double = 0
+
         For Each plata As PlataAsociere In _stare.Plati.OrderBy(Function(p) p.DataPlata)
             Dim titlu As String = $"Plată {plata.DataPlata:dd.MM.yyyy} · {Bani(plata.Suma)}"
-            Dim corp As String = If(String.IsNullOrWhiteSpace(plata.NrOp),
-                                    "Totalul recepțiilor la data asta a intrat în ordonanțare.",
-                                    $"OP {plata.NrOp}" & Environment.NewLine &
-                                    "Totalul recepțiilor la data asta a intrat în ordonanțare.")
+            Dim corp As String = CorpulReperului(plata, lanturi, platiAnterioare)
+            platiAnterioare += plata.Suma
 
             Dim peBenzi As KBotChartGuide = tinta.AddGuide(plata.DataPlata, titlu)
             peBenzi.Tooltip = corp
@@ -1163,6 +1265,77 @@ Public Class AsociereForm
             End If
         Next
     End Sub
+
+    ''' <summary>
+    ''' Eticheta unei plăți: socoteala din §1.3, făcută pe tabloul LOCAL, la data plății.
+    ''' </summary>
+    ''' <param name="platiAnterioare">Plățile de dinaintea ăsteia — <c>PlatiAnt</c> din §1.3.</param>
+    ''' <remarks>
+    ''' <para><b>De ce nu mai scrie doar «totalul a intrat în ordonanțare».</b> Propoziția aia
+    ''' spunea CE se întâmplă, iar operatorul știa asta oricum; ce n-avea era CIFRA. Ordonanțarea
+    ''' citește totalul recepțiilor așa cum stătea la data plății, adică suma ultimului instantaneu
+    ''' al fiecărei recepții de la sau dinaintea acelei date — exact ce calculează
+    ''' <see cref="ValoareaLa"/>, exact ce desenează linia «Total angajament». Scrisă lângă plată,
+    ''' cifra asta răspunde direct la întrebarea pentru care există toată suprafața: instantaneele
+    ''' astea sunt de partea bună a plății?</para>
+    ''' <para><b>De ce apar și plățile anterioare, deși nu s-au cerut.</b> Fără ele diferența n-ar
+    ''' avea niciun prag: prima plată ar ieși zero și toate celelalte n-ar ieși, la un angajament
+    ''' plătit perfect. Cu ele, diferența e <c>Ramas</c> din tabelul §1.3 — ce mai are angajamentul
+    ''' de plătit la momentul ăla — deci un număr care se poate citi ca număr.</para>
+    ''' <para><b>Ce e greșit și ce e doar rest.</b> O diferență pozitivă e obișnuită: recepții
+    ''' încă neplătite. O diferență NEGATIVĂ nu poate fi rest — s-ar fi plătit mai mult decât
+    ''' arătau recepțiile atunci — deci ori un instantaneu care ar fi trebuit să cadă înaintea
+    ''' plății stă acum după ea, ori stă pe recepția greșită. Doar aia se colorează, și de aia
+    ''' numai ea: o culoare pusă pe un rest normal ar învăța ochiul să nu se mai uite la culoare.</para>
+    ''' <para><b>Instantaneele neașezate se numără</b> fiindcă ele nu intră în niciun lanț, deci
+    ''' nu intră nici în total. Cu ele pe jos, cifra de deasupra e provizorie, iar asta trebuie
+    ''' spus acolo unde se citește cifra, nu ghicit de pe banda de jos.</para>
+    ''' </remarks>
+    Private Function CorpulReperului(plata As PlataAsociere,
+                                     lanturi As List(Of List(Of InstantaneuLegat)),
+                                     platiAnterioare As Double) As String
+        Dim totalReceptii As Double = 0
+        For Each lant As List(Of InstantaneuLegat) In lanturi
+            totalReceptii += ValoareaLa(lant, plata.DataPlata)
+        Next
+        Dim ramas As Double = totalReceptii - platiAnterioare - plata.Suma
+
+        Dim sb As New Text.StringBuilder()
+        If Not String.IsNullOrWhiteSpace(plata.NrOp) Then sb.AppendLine($"OP {plata.NrOp}")
+        sb.AppendLine($"Total recepții la data plății: <b>{Bani(totalReceptii)}</b>")
+        If platiAnterioare <> 0 Then sb.AppendLine($"Plăți anterioare: {Bani(platiAnterioare)}")
+        sb.AppendLine($"Plata asta: {Bani(plata.Suma)}")
+        sb.AppendLine(LiniaDiferentei(ramas))
+
+        If _stare IsNot Nothing Then
+            Dim neasezate As Integer =
+                _stare.Instantanee.Where(Function(i) PozitiaLui(i) = 0 AndAlso i.DataH <= plata.DataPlata).Count()
+            If neasezate > 0 Then
+                sb.AppendLine()
+                sb.AppendLine($"{neasezate} instantanee neașezate până la data asta — totalul de mai sus nu le cuprinde.")
+            End If
+        End If
+        Return sb.ToString().TrimEnd()
+    End Function
+
+    ''' <summary>
+    ''' Linia diferenței, colorată doar când e imposibilă (vezi nota de la <see cref="CorpulReperului"/>).
+    ''' </summary>
+    ''' <remarks>
+    ''' Culoarea se ia din paletă și se scrie în text ca marcaj — o valoare copiată, nu o legătură,
+    ''' deci la schimbarea temei nu se corectează singură. Nu e o scăpare: eticheta se reface din
+    ''' <c>OnThemeChanged</c> odată cu benzile, ca toate celelalte culori copiate de formularul ăsta.
+    ''' </remarks>
+    Private Shared Function LiniaDiferentei(ramas As Double) As String
+        Dim text As String = $"Diferență (recepții - plăți): {Bani(ramas)}"
+        ' Bani de la un Double: un rest de o miime de leu e zgomot de virgulă mobilă, nu o plată
+        ' în plus, iar pragul e sub cel mai mic ban care se poate scrie.
+        If ramas >= -0.005 Then Return text
+        Dim paleta As ThemePalette = ThemeManager.Current?.Palette
+        If paleta Is Nothing Then Return text
+        Dim c As Color = paleta.ErrorColor
+        Return $"<color=#{c.R:X2}{c.G:X2}{c.B:X2}>{text}</color>"
+    End Function
 
     ' ══════════════════════════════════════════════════════════════════════════
     ' Tragerea pe benzi
@@ -1307,7 +1480,7 @@ Public Class AsociereForm
         ' lor de aici ar șterge, la deschiderea ferestrei, exact liniile pe care le desenează
         ' graficul de dedesubt.
         ConstruiesteBenzi(tinta, banda, marcaj, stapanulReperelor:=False)
-        AplicaCulorileBenzii(banda, marcaj)
+        AplicaCulorileBenzii(tinta, banda)
     End Sub
 
     ''' <summary>Tratatorii de tragere ai formularului, pentru banda ferestrei mari.</summary>
