@@ -33,11 +33,12 @@ Partial Class OrdEditForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(OrdEditForm))
+        Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem5 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
-        dtpData = New DateTimePicker()
+        dtpData = New KBotDatePicker()
         lblNrOrd = New Label()
         btnSalveaza = New Button()
         btnRenunta = New Button()
@@ -65,21 +66,25 @@ Partial Class OrdEditForm
         ' 
         ' dtpData
         ' 
-        dtpData.CustomFormat = "dd.MM.yyyy"
+        dtpData.ButtonPadding = New Padding(0, 0, 4, 0)
+        dtpData.ButtonWidth = 16
         dtpData.Dock = DockStyle.Fill
-        dtpData.Format = DateTimePickerFormat.Custom
+        dtpData.FocusBorderColor = SystemColors.Highlight
+        dtpData.ForeColor = SystemColors.ActiveCaptionText
+        dtpData.GlyphColor = SystemColors.ActiveCaptionText
+        dtpData.GlyphSize = 16
         dtpData.Location = New Point(694, 4)
         dtpData.Margin = New Padding(4, 4, 4, 10)
         dtpData.Name = "dtpData"
-        dtpData.Size = New Size(142, 31)
+        dtpData.Size = New Size(181, 26)
         dtpData.TabIndex = 5
+        dtpData.TabStop = False
         tips.SetToolTipHeader(dtpData, "Data ordonanțării")
         tips.SetToolTipText(dtpData, "Data care se scrie în document." & vbLf & "Plățile propuse rămân cele ale zilei pentru care s-a generat ordonanțarea.")
         ' 
         ' lblNrOrd
         ' 
         lblNrOrd.AutoSize = True
-        ' Se poate da clic pe el: intreaba serverul din nou care ar fi numarul urmator.
         lblNrOrd.Cursor = Cursors.Hand
         lblNrOrd.Dock = DockStyle.Fill
         lblNrOrd.Font = New Font("Calibri", 9F, FontStyle.Bold)
@@ -91,7 +96,7 @@ Partial Class OrdEditForm
         lblNrOrd.Text = "se alocă la salvare"
         lblNrOrd.TextAlign = ContentAlignment.MiddleLeft
         tips.SetToolTipHeader(lblNrOrd, "Numărul ordonanțării")
-        tips.SetToolTipText(lblNrOrd, "«probabil N» e numărul pe care l-ar primi ordonanțarea dacă ați salva acum: cel mai mare număr din bază, plus unu." & vbLf & "Nu e rezervat. Dacă altcineva salvează înaintea dumneavoastră, primiți numărul următor liber." & vbLf & "Numărul adevărat se alocă tot de server, în tranzacția de salvare — așa nu pot primi două salvări simultane același număr." & vbLf & "Clic pe număr = întreabă serverul din nou.")
+        tips.SetToolTipText(lblNrOrd, resources.GetString("lblNrOrd.ToolTipText"))
         ' 
         ' btnSalveaza
         ' 
@@ -139,9 +144,9 @@ Partial Class OrdEditForm
         tlyMain.RowCount = 8
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 57F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 7F))
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 115F))
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 97F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 7F))
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 39F))
         tlyMain.RowStyles.Add(New RowStyle())
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyMain.RowStyles.Add(New RowStyle())
@@ -184,8 +189,8 @@ Partial Class OrdEditForm
         tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
         tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
         tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
-        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
-        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
+        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 189F))
+        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 118F))
         tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyAntet.Controls.Add(lblCodCaption, 0, 0)
         tlyAntet.Controls.Add(lblCod, 1, 0)
@@ -205,7 +210,7 @@ Partial Class OrdEditForm
         tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
         tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
         tlyAntet.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyAntet.Size = New Size(1188, 105)
+        tlyAntet.Size = New Size(1188, 87)
         tlyAntet.TabIndex = 2
         ' 
         ' lblCodCaption
@@ -264,10 +269,10 @@ Partial Class OrdEditForm
         lblTotalCaption.AutoSize = True
         lblTotalCaption.Dock = DockStyle.Fill
         lblTotalCaption.Font = New Font("Calibri", 9F)
-        lblTotalCaption.Location = New Point(844, 0)
+        lblTotalCaption.Location = New Point(883, 0)
         lblTotalCaption.Margin = New Padding(4, 0, 4, 0)
         lblTotalCaption.Name = "lblTotalCaption"
-        lblTotalCaption.Size = New Size(112, 40)
+        lblTotalCaption.Size = New Size(110, 40)
         lblTotalCaption.TabIndex = 6
         lblTotalCaption.Text = "Total"
         lblTotalCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -277,10 +282,10 @@ Partial Class OrdEditForm
         lblTotal.AutoSize = True
         lblTotal.Dock = DockStyle.Fill
         lblTotal.Font = New Font("Calibri", 12F, FontStyle.Bold)
-        lblTotal.Location = New Point(964, 0)
+        lblTotal.Location = New Point(1001, 0)
         lblTotal.Margin = New Padding(4, 0, 4, 0)
         lblTotal.Name = "lblTotal"
-        lblTotal.Size = New Size(220, 40)
+        lblTotal.Size = New Size(183, 40)
         lblTotal.TabIndex = 7
         lblTotal.Text = "0,00"
         lblTotal.TextAlign = ContentAlignment.MiddleLeft
@@ -315,7 +320,7 @@ Partial Class OrdEditForm
         ' 
         ntfMesaj.BackColor = Color.Transparent
         ntfMesaj.Dock = DockStyle.Fill
-        ntfMesaj.Location = New Point(4, 231)
+        ntfMesaj.Location = New Point(4, 212)
         ntfMesaj.Margin = New Padding(4, 5, 4, 5)
         ntfMesaj.Name = "ntfMesaj"
         ntfMesaj.Size = New Size(1188, 10)
@@ -329,37 +334,37 @@ Partial Class OrdEditForm
         navSub.IconSize = 16
         navSub.ItemCornerRadius = 0
         navSub.ItemPadding = New Padding(3, 0, 3, 0)
-        KBotNavItem1.AutoSize = True
-        KBotNavItem1.Image = My.Resources.Resources.vertical
-        KBotNavItem1.Key = "beneficiari"
-        KBotNavItem1.Text = "Beneficiari"
-        KBotNavItem2.AutoSize = True
-        KBotNavItem2.Image = My.Resources.Resources.binvoice
-        KBotNavItem2.Key = "documente"
-        KBotNavItem2.Text = "Documente justificative"
-        KBotNavItem3.AutoSize = True
-        KBotNavItem3.Image = My.Resources.Resources.cells
-        KBotNavItem3.Key = "atasamente"
-        KBotNavItem3.Text = "Atașamente"
-        navSub.Items.Add(KBotNavItem1)
-        navSub.Items.Add(KBotNavItem2)
-        navSub.Items.Add(KBotNavItem3)
-        navSub.Location = New Point(0, 186)
+        KBotNavItem4.AutoSize = True
+        KBotNavItem4.Image = My.Resources.Resources.vertical
+        KBotNavItem4.Key = "beneficiari"
+        KBotNavItem4.Text = "Beneficiari"
+        KBotNavItem5.AutoSize = True
+        KBotNavItem5.Image = My.Resources.Resources.binvoice
+        KBotNavItem5.Key = "documente"
+        KBotNavItem5.Text = "Documente justificative"
+        KBotNavItem6.AutoSize = True
+        KBotNavItem6.Image = My.Resources.Resources.cells
+        KBotNavItem6.Key = "atasamente"
+        KBotNavItem6.Text = "Atașamente"
+        navSub.Items.Add(KBotNavItem4)
+        navSub.Items.Add(KBotNavItem5)
+        navSub.Items.Add(KBotNavItem6)
+        navSub.Location = New Point(0, 168)
         navSub.Margin = New Padding(0)
         navSub.Name = "navSub"
         navSub.Orientation = KBotNavOrientation.Horizontal
         navSub.SelectedKey = Nothing
-        navSub.Size = New Size(1196, 40)
+        navSub.Size = New Size(1196, 39)
         navSub.TabIndex = 4
         ' 
         ' pnlPages
         ' 
         pnlPages.AutoSizeMode = AutoSizeMode.GrowAndShrink
         pnlPages.Dock = DockStyle.Fill
-        pnlPages.Location = New Point(0, 246)
+        pnlPages.Location = New Point(0, 227)
         pnlPages.Margin = New Padding(0)
         pnlPages.Name = "pnlPages"
-        pnlPages.Size = New Size(1196, 692)
+        pnlPages.Size = New Size(1196, 711)
         pnlPages.TabIndex = 5
         ' 
         ' tlySubsol
@@ -412,7 +417,7 @@ Partial Class OrdEditForm
     Friend WithEvents lblNrOrdCaption As Label
     Friend WithEvents lblNrOrd As Label
     Friend WithEvents lblDataCaption As Label
-    Friend WithEvents dtpData As DateTimePicker
+    Friend WithEvents dtpData As KBotDatePicker
     Friend WithEvents lblTotalCaption As Label
     Friend WithEvents lblTotal As Label
     Friend WithEvents lblObiectCaption As Label

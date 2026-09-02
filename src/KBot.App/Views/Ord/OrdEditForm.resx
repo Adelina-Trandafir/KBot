@@ -120,4 +120,10 @@
   <metadata name="tips.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <data name="lblNrOrd.ToolTipText" xml:space="preserve">
+    <value>«probabil N» e numărul pe care l-ar primi ordonanțarea dacă ați salva acum: cel mai mare număr din bază, plus unu.
+Nu e rezervat. Dacă altcineva salvează înaintea dumneavoastră, primiți numărul următor liber.
+Numărul adevărat se alocă tot de server, în tranzacția de salvare — așa nu pot primi două salvări simultane același număr.
+Clic pe număr = întreabă serverul din nou.</value>
+  </data>
 </root>
