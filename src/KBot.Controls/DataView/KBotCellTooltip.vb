@@ -31,6 +31,7 @@ Public NotInheritable Class KBotCellTooltipOptions
     Private _borderColor As Color = Color.Empty
     Private _font As Font = Nothing
     Private _cornerRadius As Integer = 4
+    Private _overlayCell As Boolean = True
 
     ''' <summary>Grila care ne deține — ca o schimbare de setare să repicteze/închidă eticheta.</summary>
     Friend Property Owner As KBotDataView
@@ -50,6 +51,31 @@ Public NotInheritable Class KBotCellTooltipOptions
             If _enabled = value Then Return
             _enabled = value
             If Not _enabled Then Owner?.CancelCellTooltip()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Eticheta se așază EXACT PESTE celulă — același colț stânga-sus, aceeași înălțime cât
+    ''' timp textul încape pe un rând — și se întinde spre dreapta până la marginea grilei, ca și
+    ''' cum celula însăși s-ar fi lățit. Ce nu încape nici așa coboară pe rânduri noi, tot de la
+    ''' colțul stânga-sus al celulei. Implicit True.
+    '''
+    ''' <para>Stinsă, eticheta revine la purtarea de balon: sub celulă, lată cât
+    ''' <see cref="MaxWidth"/>, întoarsă deasupra dacă n-are loc. <see cref="MaxWidth"/> NU se aplică
+    ''' peste celulă — acolo marginea din dreapta a grilei e singura limită.</para>
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Eticheta stă peste celulă și se întinde până la marginea grilei. Stinsă = balon sub celulă.")>
+    <DefaultValue(True)>
+    Public Property OverlayCell As Boolean
+        Get
+            Return _overlayCell
+        End Get
+        Set(value As Boolean)
+            If _overlayCell = value Then Return
+            _overlayCell = value
+            ' O etichetă deja ieșită a fost așezată după regula veche — se închide, nu se mută.
+            Owner?.CancelCellTooltip()
         End Set
     End Property
 
@@ -215,6 +241,10 @@ Friend NotInheritable Class KBotCellTooltipWindow
     Private _fill As Color = SystemColors.Info
     Private _border As Color = SystemColors.ActiveBorder
     Private _radius As Integer = 4
+    ' Dreptunghiul în care se scrie textul (coordonate client). Gol = se calculează din
+    ' PaddingSize, ca la balonul clasic; grila îl dă explicit când eticheta stă PESTE celulă,
+    ' fiindcă atunci textul trebuie să cadă exact peste textul tăiat al celulei.
+    Private _textBounds As Rectangle = Rectangle.Empty
 
     Public Sub New()
         FormBorderStyle = FormBorderStyle.None
@@ -252,9 +282,14 @@ Friend NotInheritable Class KBotCellTooltipWindow
         If m.Msg = WM_NCHITTEST Then m.Result = New IntPtr(HTTRANSPARENT)
     End Sub
 
-    ''' <summary>Ce scrie și cum arată. Fontul e ÎMPRUMUTAT — fereastra nu-l deține.</summary>
+    ''' <summary>
+    ''' Ce scrie și cum arată. Fontul e ÎMPRUMUTAT — fereastra nu-l deține.
+    ''' <paramref name="textBounds"/> gol = marginea obișnuită (<see cref="PaddingSize"/>).
+    ''' </summary>
     Friend Sub SetContent(text As String, font As Font, fore As Color, fill As Color,
-                          border As Color, radius As Integer)
+                          border As Color, radius As Integer,
+                          Optional textBounds As Rectangle = Nothing)
+        _textBounds = textBounds
         _text = If(text, String.Empty)
         _font = font
         _fore = fore
@@ -302,9 +337,12 @@ Friend NotInheritable Class KBotCellTooltipWindow
             End Using
 
             If String.IsNullOrEmpty(_text) OrElse _font Is Nothing Then Return
-            Dim textRect As New Rectangle(PaddingSize.Width, PaddingSize.Height,
-                                          Math.Max(0, ClientSize.Width - 2 * PaddingSize.Width),
-                                          Math.Max(0, ClientSize.Height - 2 * PaddingSize.Height))
+            Dim textRect As Rectangle = _textBounds
+            If textRect.IsEmpty Then
+                textRect = New Rectangle(PaddingSize.Width, PaddingSize.Height,
+                                         Math.Max(0, ClientSize.Width - 2 * PaddingSize.Width),
+                                         Math.Max(0, ClientSize.Height - 2 * PaddingSize.Height))
+            End If
             TextRenderer.DrawText(g, _text, _font, textRect, _fore,
                 TextFormatFlags.Left Or TextFormatFlags.Top Or TextFormatFlags.WordBreak)
         Catch ex As Exception

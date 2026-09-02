@@ -24,6 +24,9 @@ Partial Class KBotDataView
     ' declanșează Leave, care altfel ar re-intra în CommitEdit.
     Private _suppressEditorEvents As Boolean = False
 
+    Private _arrowKeyEditing As Boolean = True
+    Private _enterKeyMode As KBotEnterKeyMode = KBotEnterKeyMode.NextRow
+
     ''' <summary>Ridicat înaintea scrierii valorii; handler-ul poate respinge sau corecta.</summary>
     Public Event CellValidating As EventHandler(Of KBotCellValidatingEventArgs)
 
@@ -34,6 +37,52 @@ Partial Class KBotDataView
         Get
             Return _editing
         End Get
+    End Property
+
+    ''' <summary>
+    ''' Săgețile mută EDITAREA din celulă în celulă, fără a mai închide editorul: sus/jos schimbă
+    ''' rândul (aceeași coloană), stânga/dreapta trec la următoarea celulă EDITABILĂ a rândului,
+    ''' sărind peste cele read-only. Implicit True.
+    '''
+    ''' <para>Stânga/dreapta lucrează doar de la CAPĂTUL textului: cu cursorul în mijlocul unui
+    ''' cuvânt ele rămân ce au fost dintotdeauna, o mutare de cursor — altfel corectarea unei
+    ''' litere greșite ar arunca operatorul în altă celulă. La un combo desfășurat, săgețile
+    ''' rămân tot ale lui, fiindcă acolo aleg o valoare.</para>
+    '''
+    ''' <para>Stinsă, săgețile din editor își păstrează purtarea de casetă de text, iar mutarea
+    ''' între celule rămâne pe seama lui Tab și Enter.</para>
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Săgețile mută editarea între celulele editabile. Stinsă = săgețile mută doar cursorul din text.")>
+    <DefaultValue(True)>
+    Public Property ArrowKeyEditing As Boolean
+        Get
+            Return _arrowKeyEditing
+        End Get
+        Set(value As Boolean)
+            _arrowKeyEditing = value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Unde duce Enter: pe rândul următor în aceeași coloană (implicit, formularul continuu
+    ''' clasic) sau pe următoarea celulă editabilă din același rând. Vezi
+    ''' <see cref="KBotEnterKeyMode"/> — alegerea ține de felul în care se completează tabelul,
+    ''' pe coloane sau pe rânduri.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Unde duce Enter: rândul următor (aceeași coloană) sau următoarea celulă editabilă a rândului.")>
+    <DefaultValue(KBotEnterKeyMode.NextRow)>
+    Public Property EnterKeyMode As KBotEnterKeyMode
+        Get
+            Return _enterKeyMode
+        End Get
+        Set(value As KBotEnterKeyMode)
+            If Not [Enum].IsDefined(GetType(KBotEnterKeyMode), value) Then
+                Throw New ArgumentException("Mod de tastă Enter necunoscut: " & value.ToString(), NameOf(value))
+            End If
+            _enterKeyMode = value
+        End Set
     End Property
 
     ' Legarea evenimentelor celor doi editori (din constructor).
@@ -238,7 +287,7 @@ Partial Class KBotDataView
         Try
             Select Case e.KeyCode
                 Case Keys.Enter
-                    If CommitEdit() Then MoveRow(1)          ' Enter => commit + un rând mai jos
+                    If CommitEdit() Then MoveAfterEnter(True)
                     e.Handled = True
                     e.SuppressKeyPress = True
                 Case Keys.Escape
@@ -251,11 +300,131 @@ Partial Class KBotDataView
                     If CommitEdit() Then MoveColumn(If(shift, -1, 1))
                     e.Handled = True
                     e.SuppressKeyPress = True
+                Case Keys.Up, Keys.Down
+                    If Not _arrowKeyEditing Then Return
+                    ' Combo desfășurat: săgețile aleg o valoare, nu mută celula.
+                    If editCombo.Visible AndAlso editCombo.DroppedDown Then Return
+                    If CommitEdit() Then
+                        MoveRow(If(e.KeyCode = Keys.Down, 1, -1))
+                        ReopenEditorAtCurrentCell()
+                    End If
+                    e.Handled = True
+                    e.SuppressKeyPress = True
+                Case Keys.Left, Keys.Right
+                    If Not _arrowKeyEditing Then Return
+                    If Not CaretAtTextEdge(e.KeyCode = Keys.Left) Then Return
+                    If CommitEdit() Then MoveEditableColumn(If(e.KeyCode = Keys.Left, -1, 1))
+                    e.Handled = True
+                    e.SuppressKeyPress = True
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnEditorKeyDown", ex)
         End Try
     End Sub
+
+    ' ========================================================================
+    ' NAVIGAȚIA DE LA TASTATURĂ PRIN CELULELE EDITABILE
+    ' ========================================================================
+
+    ''' <summary>
+    ''' Următoarea coloană EDITABILĂ pe rândul dat, în direcția dată (+1/-1). Sare peste coloanele
+    ''' read-only, dezactivate sau de alt tip (bifă, buton, bară); fără wrap. <c>Nothing</c> =
+    ''' nu există niciuna. Cheie de plecare <c>Nothing</c> = se caută de la capătul potrivit.
+    '''
+    ''' Friend: e și poarta prin care testele pot verifica ordinea de completare fără tastatură.
+    ''' </summary>
+    Friend Function NextEditableColumn(fromKey As String, direction As Integer, rowIndex As Integer) As KBotDataColumn
+        Try
+            Dim cols As List(Of KBotDataColumn) = VisibleColumns()
+            If cols.Count = 0 OrElse direction = 0 Then Return Nothing
+
+            Dim start As Integer = -1
+            If fromKey IsNot Nothing Then
+                For i As Integer = 0 To cols.Count - 1
+                    If String.Equals(cols(i).Key, fromKey, StringComparison.Ordinal) Then
+                        start = i
+                        Exit For
+                    End If
+                Next
+            End If
+
+            ' Fără punct de plecare, prima celulă editabilă a rândului (ultima, la mers înapoi).
+            Dim idx As Integer = If(start < 0, If(direction > 0, 0, cols.Count - 1), start + direction)
+            While idx >= 0 AndAlso idx < cols.Count
+                If CanEdit(cols(idx).Key, rowIndex) Then Return cols(idx)
+                idx += direction
+            End While
+            Return Nothing
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.NextEditableColumn", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Trece editarea pe următoarea celulă editabilă a rândului. La capăt de rând nu se pierde
+    ' editarea: se redeschide pe celula de unde am plecat, ca operatorul să nu rămână cu grila
+    ' focalizată și cu textul pe jumătate scris în cap.
+    Private Sub MoveEditableColumn(direction As Integer)
+        Dim tinta As KBotDataColumn = NextEditableColumn(_currentColumnKey, direction, _currentRowIndex)
+        If tinta Is Nothing Then
+            BeginEdit(_currentColumnKey, _currentRowIndex)
+            Return
+        End If
+        SetCurrentCell(_currentRowIndex, tinta.Key)
+        ReopenEditorAtCurrentCell()
+    End Sub
+
+    ''' <summary>
+    ''' Unde duce Enter, după <see cref="EnterKeyMode"/>. <paramref name="reopen"/> = apăsarea a
+    ''' venit dintr-un editor, deci celula nouă intră la rândul ei în editare — asta face ca un
+    ''' tabel întreg să se completeze din tastatură, fără nicio apăsare de mouse.
+    ''' </summary>
+    Private Sub MoveAfterEnter(reopen As Boolean)
+        If _enterKeyMode = KBotEnterKeyMode.NextEditableCell Then
+            Dim urmatoarea As KBotDataColumn = NextEditableColumn(_currentColumnKey, 1, _currentRowIndex)
+            If urmatoarea IsNot Nothing Then
+                SetCurrentCell(_currentRowIndex, urmatoarea.Key)
+                If reopen Then ReopenEditorAtCurrentCell()
+                Return
+            End If
+
+            ' Capăt de rând: se coboară și se ia primul câmp editabil al rândului următor. Dacă
+            ' rândul nu s-a schimbat (eram pe ultimul), nu ne întoarcem la începutul aceluiași
+            ' rând — asta ar rescrie ce tocmai s-a completat.
+            Dim randVechi As Integer = _currentRowIndex
+            MoveRow(1)
+            If _currentRowIndex <> randVechi Then
+                Dim primul As KBotDataColumn = NextEditableColumn(Nothing, 1, _currentRowIndex)
+                If primul IsNot Nothing Then SetCurrentCell(_currentRowIndex, primul.Key)
+            End If
+            If reopen Then ReopenEditorAtCurrentCell()
+            Return
+        End If
+
+        MoveRow(1)                                   ' senzația de formular continuu Access
+        If reopen Then ReopenEditorAtCurrentCell()
+    End Sub
+
+    ' Redeschide editorul pe celula curentă. Nu e editabilă (rând dezactivat, coloană read-only)?
+    ' Focusul se întoarce la grilă, ca săgețile să navigheze mai departe.
+    Private Sub ReopenEditorAtCurrentCell()
+        If _currentRowIndex < 0 OrElse String.IsNullOrEmpty(_currentColumnKey) Then Return
+        If CanEdit(_currentColumnKey, _currentRowIndex) Then
+            BeginEdit(_currentColumnKey, _currentRowIndex)
+        Else
+            Focus()
+        End If
+    End Sub
+
+    ' Săgeata stânga/dreapta mută CELULA doar de la capătul textului; în rest rămâne mutare de
+    ' cursor. O selecție în curs (Shift+săgeți) ține tot de text, deci nu mută nimic.
+    Private Function CaretAtTextEdge(spreStanga As Boolean) As Boolean
+        If editCombo.Visible Then Return Not editCombo.DroppedDown
+        If Not editText.Visible Then Return True
+        If editText.SelectionLength > 0 Then Return False
+        If spreStanga Then Return editText.SelectionStart <= 0
+        Return editText.SelectionStart >= editText.TextLength
+    End Function
 
     ' Pierderea focusului comite (comportament de formular continuu).
     Private Sub OnEditorLeave(sender As Object, e As EventArgs)

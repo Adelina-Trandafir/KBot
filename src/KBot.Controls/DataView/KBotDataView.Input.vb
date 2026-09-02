@@ -351,7 +351,9 @@ Partial Class KBotDataView
                         MoveColumn(1)
                     End If
                 Case Keys.Enter
-                    MoveRow(1)                       ' senzația de formular continuu Access
+                    ' Fără editor deschis, Enter duce în același loc ca din editor (EnterKeyMode),
+                    ' dar nu deschide nimic acolo: navigație, nu completare.
+                    MoveAfterEnter(False)
                 Case Keys.Tab
                     MoveColumn(If(shift, -1, 1))
                 Case Keys.PageUp

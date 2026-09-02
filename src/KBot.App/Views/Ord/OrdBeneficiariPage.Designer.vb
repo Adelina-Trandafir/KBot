@@ -234,8 +234,6 @@ Partial Class OrdBeneficiariPage
         grdLinii.RowHeight = 22
         grdLinii.Size = New Size(918, 538)
         grdLinii.TabIndex = 1
-        tips.SetToolTipHeader(grdLinii, "Rândurile de plată")
-        tips.SetToolTipText(grdLinii, "Se editează «Valoare» și «Explicație»." & vbLf & "«Rămas» se recalculează singur: recepții − plăți anterioare − valoare.")
         ' 
         ' split
         ' 

@@ -99,8 +99,9 @@ Partial Class KBotDataView
     ''' apărea taman pentru textele ascunse SUB săgeata de derulare.
     ''' </summary>
     Private Function TextOverflowsCell(text As String, font As Font, col As KBotDataColumn) As Boolean
-        Dim padX As Integer = ScaleDpi(6)
-        Dim disponibil As Integer = col.WidthPx - 2 * padX
+        ' Marginile sunt ale COLOANEI, aceleași pe care le folosește și eticheta așezată peste
+        ' celulă: măsurate altfel, eticheta ar apărea pentru un text care încăpea (sau invers).
+        Dim disponibil As Integer = col.WidthPx - ScaleDpi(col.CellPadding.Left) - ScaleDpi(col.CellPadding.Right)
         If col.ColumnType = KBotColumnType.Combo Then disponibil -= ScaleDpi(16)
         If disponibil <= 0 Then Return True
         Dim latime As Integer = MeasureText(text, If(font, Me.Font))
@@ -149,7 +150,7 @@ Partial Class KBotDataView
         End Try
     End Sub
 
-    ' Scoate fereastra lângă celulă. Transitiv acoperită de boundary-ul tick-ului.
+    ' Scoate fereastra la locul ei. Transitiv acoperită de boundary-ul tick-ului.
     Private Sub ShowCellTooltip()
         Dim text As String = CellTooltipTextFor(_tipColKey, _tipRowIndex)
         If text Is Nothing Then
@@ -167,18 +168,97 @@ Partial Class KBotDataView
         ' Fontul etichetei: cel fixat pe opțiuni (mărit, ca orice font ținut de noi), altfel chiar
         ' fontul CELULEI — care a trecut deja prin CellFontFor, deci e mărit la rândul lui.
         Dim font As Font = If(Marit(_cellTooltipOptions.Font), If(_probeCellArgs.Font, Me.Font))
+
+        Dim bounds As Rectangle
+        Dim textRect As Rectangle
+        If _cellTooltipOptions.OverlayCell Then
+            MeasureOverlayTooltip(text, font, col, cellRect, bounds, textRect)
+        Else
+            MeasureBalloonTooltip(text, font, cellRect, bounds, textRect)
+        End If
+
+        If _tipWindow Is Nothing Then _tipWindow = New KBotCellTooltipWindow()
+        _tipWindow.SetContent(text, font, TooltipForeColor(), TooltipBackColor(),
+                              TooltipBorderColor(), _cellTooltipOptions.CornerRadius, textRect)
+        _tipWindow.Bounds = bounds
+        If Not _tipWindow.Visible Then _tipWindow.Show()
+    End Sub
+
+    ''' <summary>
+    ''' Geometria etichetei care stă PESTE celulă: același colț stânga-sus, aceleași margini
+    ''' interioare ca ale celulei, întinsă spre dreapta până la marginea zonei utile a grilei.
+    ''' Ce nu încape nici pe banda aceea se rupe pe rânduri și COBOARĂ — mereu de la colțul de sus
+    ''' al celulei, niciodată de sub ea.
+    '''
+    ''' <para>Ideea e ca operatorul să citească textul acolo unde se aștepta să-l găsească:
+    ''' eticheta nu pare o fereastră pusă alături, ci celula lățită cât ar fi trebuit să fie de la
+    ''' început. De aceea marginile și alinierea sunt ale CELULEI, nu ale unui balon.</para>
+    ''' </summary>
+    Private Sub MeasureOverlayTooltip(text As String, font As Font, col As KBotDataColumn,
+                                      cellRect As Rectangle,
+                                      ByRef bounds As Rectangle, ByRef textRect As Rectangle)
+        Dim padS As Integer = ScaleDpi(col.CellPadding.Left)
+        Dim padD As Integer = ScaleDpi(col.CellPadding.Right)
+        ' Margine de respirație pe verticală DOAR când eticheta crește peste înălțimea rândului:
+        ' cât timp e de un rând, ea trebuie să fie exact celula, deci nu se umflă cu nimic.
+        Dim padY As Integer = ScaleDpi(3)
+
+        ' Colțul stânga-sus e al celulei; o coloană derulată pe jumătate sub banda înghețată nu
+        ' are voie să împingă eticheta în afara grilei.
+        Dim stanga As Integer = Math.Max(0, cellRect.Left)
+        ' Banda de care dispune: până la marginea din dreapta a zonei utile (fără bara verticală).
+        ' MaxWidth nu se aplică aici — peste celulă, marginea grilei ESTE limita.
+        Dim latimeMax As Integer = Math.Max(cellRect.Width, ViewportWidth() - stanga)
+        Dim latTextMax As Integer = Math.Max(ScaleDpi(20), latimeMax - padS - padD)
+
+        Dim masura As Size
+        Dim latime As Integer
+        Dim inaltime As Integer
+        Dim latSimpla As Integer = MeasureText(text, font)
+        If latSimpla <= latTextMax Then
+            ' Încape pe un rând în banda rămasă: eticheta e chiar celula, lățită cât trebuie.
+            masura = New Size(latSimpla, TextRenderer.MeasureText(text, font).Height)
+            latime = Math.Min(latimeMax, Math.Max(cellRect.Width, latSimpla + padS + padD))
+            inaltime = cellRect.Height
+        Else
+            ' Nu încape nici așa: se ia toată banda și textul coboară pe rânduri noi.
+            masura = TextRenderer.MeasureText(text, font,
+                                              New Size(latTextMax, Integer.MaxValue),
+                                              TextFormatFlags.WordBreak)
+            latime = latimeMax
+            inaltime = Math.Max(cellRect.Height, masura.Height + 2 * padY)
+        End If
+
+        ' Textul, centrat pe verticală în ce a ieșit: un rând cade fix peste rândul celulei, iar
+        ' unul rupt pornește de sus, ca dintr-o celulă mai înaltă.
+        Dim sus As Integer = Math.Max(0, (inaltime - masura.Height) \ 2)
+        textRect = New Rectangle(padS, sus, Math.Max(0, latime - padS - padD), masura.Height)
+
+        Dim ancora As Point = PointToScreen(New Point(stanga, cellRect.Top))
+        Dim zona As Rectangle = Screen.FromControl(Me).WorkingArea
+        Dim x As Integer = Math.Max(zona.Left, Math.Min(ancora.X, zona.Right - latime))
+        ' Singura abatere de la «exact peste celulă»: un text crescut care ar ieși sub marginea
+        ' ecranului se urcă atât cât să rămână citibil — o etichetă pe jumătate afară nu ajută.
+        Dim y As Integer = Math.Max(zona.Top, Math.Min(ancora.Y, zona.Bottom - inaltime))
+        bounds = New Rectangle(x, y, latime, inaltime)
+    End Sub
+
+    ''' <summary>
+    ''' Geometria BALONULUI clasic (<see cref="KBotCellTooltipOptions.OverlayCell"/> stins): sub
+    ''' celulă, aliniat la stânga ei, lat cel mult cât <c>MaxWidth</c>; dacă n-are loc dedesubt,
+    ''' deasupra.
+    ''' </summary>
+    Private Sub MeasureBalloonTooltip(text As String, font As Font, cellRect As Rectangle,
+                                      ByRef bounds As Rectangle, ByRef textRect As Rectangle)
         Dim maxTextW As Integer = Math.Max(40, _cellTooltipOptions.MaxWidth - 2 * KBotCellTooltipWindow.PaddingSize.Width)
         Dim masura As Size = TextRenderer.MeasureText(text, font,
                                                       New Size(maxTextW, Integer.MaxValue),
                                                       TextFormatFlags.WordBreak)
         Dim latime As Integer = masura.Width + 2 * KBotCellTooltipWindow.PaddingSize.Width
         Dim inaltime As Integer = masura.Height + 2 * KBotCellTooltipWindow.PaddingSize.Height
+        ' Dreptunghi gol = fereastra își pune singură marginea obișnuită.
+        textRect = Rectangle.Empty
 
-        If _tipWindow Is Nothing Then _tipWindow = New KBotCellTooltipWindow()
-        _tipWindow.SetContent(text, font, TooltipForeColor(), TooltipBackColor(),
-                              TooltipBorderColor(), _cellTooltipOptions.CornerRadius)
-
-        ' Sub celulă, aliniată la stânga ei; dacă n-are loc, deasupra / împinsă în ecran.
         Dim ancora As Point = PointToScreen(New Point(cellRect.Left, cellRect.Bottom + 1))
         Dim zona As Rectangle = Screen.FromControl(Me).WorkingArea
         Dim x As Integer = Math.Max(zona.Left, Math.Min(ancora.X, zona.Right - latime))
@@ -187,9 +267,7 @@ Partial Class KBotDataView
             y = PointToScreen(New Point(cellRect.Left, cellRect.Top)).Y - inaltime - 1
         End If
         y = Math.Max(zona.Top, Math.Min(y, zona.Bottom - inaltime))
-
-        _tipWindow.Bounds = New Rectangle(x, y, latime, inaltime)
-        If Not _tipWindow.Visible Then _tipWindow.Show()
+        bounds = New Rectangle(x, y, latime, inaltime)
     End Sub
 
     ''' <summary>

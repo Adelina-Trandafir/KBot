@@ -29,7 +29,8 @@ Status: heavily unit-tested (`KBotDataView*Tests`); visual harness
 - `KBotAutoSizeMode` = `Inherit(-1)` `None` `ToContent` · `KBotFillMode` = `None
   FirstColumn LastColumn Proportional SpecificColumn` · `KBotSortDirection` ·
   `KBotCollapseDirection` = `Horizontal|Vertical` · `KBotGroupBandKind` = `Data
-  GroupHeader GroupFooter` · `KBotFooterButtonPosition` = `Right|Left`
+  GroupHeader GroupFooter` · `KBotFooterButtonPosition` = `Right|Left` ·
+  `KBotEnterKeyMode` = `NextRow|NextEditableCell`
 
 ## Data
 - `Columns` (designer-authorable), `AddColumn(key, headerText, type, width)`, `Column(key)`
@@ -109,9 +110,34 @@ the event, and the host moves its own splitter.
 `SetOptionValue(colKey, rowIndex, value)`, `IsRowEnabled`, `IsCellEnabled`,
 `CellFormatting` (per-cell text / colour / font / alignment / enabled), `RowFormatting`.
 
+### Keyboard editing (designer-authorable)
+`ArrowKeyEditing = True` — the arrows carry the EDITOR from cell to cell instead of closing
+it: Up/Down commit and step one row in the same column, Left/Right commit and step to the
+next EDITABLE cell of the row (`NextEditableColumn`, read-only / check / button / progress
+columns skipped, no wrap). Left/Right only move from the EDGE of the text — mid-word they
+stay a caret move, and an open combo keeps its own arrows — otherwise fixing one letter
+would throw the operator into another cell. At the end of a row the editor reopens where it
+was, so nothing is lost. Off = the editors behave like plain text boxes again.
+`EnterKeyMode = NextRow` (`KBotEnterKeyMode`) — `NextRow` is the Access continuous form
+(next row, same column); `NextEditableCell` walks the row field by field and drops to the
+first editable field of the next row when it runs out. Enter pressed IN an editor reopens
+the editor on the cell it lands on (a whole table fills in without the mouse); Enter on the
+grid only moves. Tab / Shift+Tab are unchanged: next / previous ENABLED column, editable or
+not.
+
 ## Tooltips
 `CellTooltip: KBotCellTooltipOptions` — the label for cells whose text does not fit
-(`Enabled`, `Delay = 450`, `MaxWidth = 480`, colours, `Font`, `CornerRadius = 4`).
+(`Enabled`, `Delay = 450`, `MaxWidth = 480`, colours, `Font`, `CornerRadius = 4`,
+`OverlayCell = True`).
+`OverlayCell` puts the label EXACTLY over the cell — same top-left corner, same cell padding
+and alignment, the row's height while one line is enough — stretched right to the grid's
+usable edge (`MaxWidth` does not apply there; the grid margin is the limit). Text that still
+does not fit wraps and grows DOWNWARD from the same top-left corner, so the label reads as
+the cell widened rather than a balloon parked next to it. It only climbs if the grown label
+would fall off the bottom of the screen. Off = the old balloon: under the cell, `MaxWidth`
+wide, flipped above when there is no room.
+The overflow test itself uses the column's `CellPadding` (same measurements as the overlay),
+so the label appears exactly when the painted text is clipped.
 `ButtonTooltip: KBotToolTip` — the label for the DRAWN header/footer buttons, plus
 `FilterIconTooltip`, `CollapseButtonTooltip`, `ExpandButtonTooltip` (C8).
 
