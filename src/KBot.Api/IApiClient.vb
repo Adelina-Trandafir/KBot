@@ -278,6 +278,16 @@ Public Interface IApiClient
                              ct As CancellationToken) As Task(Of OrdZileInfo)
 
     ''' <summary>
+    ''' Numarul pe care l-ar primi ACUM o ordonantare noua (GET /api/forexe/ord/nr-urmator).
+    '''
+    ''' <para>E o PRESUPUNERE, nu o rezervare: numarul adevarat se aloca tot in tranzactia de
+    ''' salvare, care e singurul loc unde doua salvari concurente se pot aseza la rand. Intre
+    ''' intrebare si salvare altcineva poate salva primul, si atunci raspunsul de aici va fi
+    ''' fost gresit — de asta interfata il arata ca pe o presupunere, nu ca pe un numar.</para>
+    ''' </summary>
+    Function GetOrdNrUrmatorAsync(ct As CancellationToken) As Task(Of Integer)
+
+    ''' <summary>
     ''' Scrie TOT graful ordonantarii intr-o singura tranzactie (POST /api/forexe/ord/save) si
     ''' intoarce cheile reale plus hartile <c>TempId ▸ cheie</c>.
     '''

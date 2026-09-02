@@ -1146,6 +1146,37 @@ Public Class ApiClient
     End Function
 
     ''' <summary>
+    ''' Numarul pe care l-ar primi ACUM o ordonantare noua (GET /api/forexe/ord/nr-urmator).
+    ''' Presupunere, nu rezervare — vezi <see cref="IApiClient.GetOrdNrUrmatorAsync"/>.
+    ''' </summary>
+    Public Async Function GetOrdNrUrmatorAsync(ct As CancellationToken) _
+        As Task(Of Integer) Implements IApiClient.GetOrdNrUrmatorAsync
+
+        Try
+            EnsureConfigured()
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, "/api/forexe/ord/nr-urmator")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea numărului următor", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As OrdNrUrmatorResponse =
+                        JsonSerializer.Deserialize(Of OrdNrUrmatorResponse)(respText, _json)
+                    Return If(payload Is Nothing, 0, payload.nr_ord)
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetOrdNrUrmatorAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
     ''' Scrie TOT graful ordonantarii intr-o singura tranzactie (POST /api/forexe/ord/save)
     ''' si intoarce cheile reale.
     '''

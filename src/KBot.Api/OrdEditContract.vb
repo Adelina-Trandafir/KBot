@@ -188,6 +188,12 @@ Public NotInheritable Class OrdZileResponse
     Public Property total_estimat As Integer
 End Class
 
+' Response of GET /api/forexe/ord/nr-urmator — the number a NEW ordonantare would take
+' right now. A guess, not a reservation: the real one is allocated inside the save transaction.
+Public NotInheritable Class OrdNrUrmatorResponse
+    Public Property nr_ord As Integer
+End Class
+
 ' Response of PUT /api/forexe/ord/att/{idordattp}/imagine.
 Public NotInheritable Class PutAtasamentResponse
     Public Property idordattp As Integer

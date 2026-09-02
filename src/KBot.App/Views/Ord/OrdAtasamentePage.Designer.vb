@@ -38,17 +38,15 @@ Partial Class OrdAtasamentePage
         Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
+        btnAdauga = New Button()
+        btnSterge = New Button()
+        btnLipeste = New Button()
         dlgImagine = New OpenFileDialog()
         split = New SplitContainer()
         grdBene = New KBotDataView()
         splitDreapta = New SplitContainer()
         tlyLista = New TableLayoutPanel()
-        lblLista = New Label()
         grdAtasamente = New KBotDataView()
-        tlyButoane = New FlowLayoutPanel()
-        btnAdauga = New Button()
-        btnLipeste = New Button()
-        btnSterge = New Button()
         pnlPreview = New Panel()
         picPreview = New PictureBox()
         lblPreviewGol = New Label()
@@ -63,40 +61,89 @@ Partial Class OrdAtasamentePage
         splitDreapta.SuspendLayout()
         tlyLista.SuspendLayout()
         CType(grdAtasamente, ComponentModel.ISupportInitialize).BeginInit()
-        tlyButoane.SuspendLayout()
         pnlPreview.SuspendLayout()
         CType(picPreview, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
-        '
+        ' 
+        ' btnAdauga
+        ' 
+        btnAdauga.AutoSize = True
+        btnAdauga.Dock = DockStyle.Left
+        btnAdauga.Location = New Point(0, 500)
+        btnAdauga.Margin = New Padding(0)
+        btnAdauga.Name = "btnAdauga"
+        btnAdauga.Padding = New Padding(11, 3, 11, 3)
+        btnAdauga.Size = New Size(136, 50)
+        btnAdauga.TabIndex = 0
+        btnAdauga.Text = "Adaugă"
+        tips.SetToolTipHeader(btnAdauga, "Adaugă imagine")
+        tips.SetToolTipText(btnAdauga, "Alege una sau mai multe imagini de pe disc." & vbLf & "Se încarcă pe server după salvarea ordonanțării.")
+        btnAdauga.UseVisualStyleBackColor = True
+        ' 
+        ' btnSterge
+        ' 
+        btnSterge.AutoSize = True
+        btnSterge.Dock = DockStyle.Right
+        btnSterge.Location = New Point(136, 500)
+        btnSterge.Margin = New Padding(0)
+        btnSterge.Name = "btnSterge"
+        btnSterge.Padding = New Padding(11, 3, 11, 3)
+        btnSterge.Size = New Size(136, 50)
+        btnSterge.TabIndex = 3
+        btnSterge.Text = "Șterge"
+        tips.SetToolTipHeader(btnSterge, "Șterge imaginea")
+        tips.SetToolTipText(btnSterge, "Scoate imaginea din ordonanțare." & vbLf & "Dispare de pe server la următoarea salvare.")
+        btnSterge.UseVisualStyleBackColor = True
+        ' 
+        ' btnLipeste
+        ' 
+        btnLipeste.AutoSize = True
+        btnLipeste.Dock = DockStyle.Right
+        btnLipeste.Location = New Point(272, 500)
+        btnLipeste.Margin = New Padding(0)
+        btnLipeste.Name = "btnLipeste"
+        btnLipeste.Padding = New Padding(11, 3, 11, 3)
+        btnLipeste.Size = New Size(138, 50)
+        btnLipeste.TabIndex = 4
+        btnLipeste.Text = "Lipește"
+        tips.SetToolTipHeader(btnLipeste, "Șterge imaginea")
+        tips.SetToolTipText(btnLipeste, "Scoate imaginea din ordonanțare." & vbLf & "Dispare de pe server la următoarea salvare.")
+        btnLipeste.UseVisualStyleBackColor = True
+        ' 
         ' dlgImagine
-        '
-        ' Aceleasi filtre ca `SelectFile` din frmFX_ORD_PRTSCR_S.
+        ' 
         dlgImagine.Filter = "Imagini|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tif;*.tiff|Toate fișierele|*.*"
         dlgImagine.Multiselect = True
         dlgImagine.Title = "Selectează imagine"
-        '
+        ' 
         ' split
-        '
+        ' 
         split.Dock = DockStyle.Fill
         split.Location = New Point(0, 0)
+        split.Margin = New Padding(4, 5, 4, 5)
         split.Name = "split"
-        '
+        ' 
         ' split.Panel1
-        '
+        ' 
         split.Panel1.Controls.Add(grdBene)
+        split.Panel1.Padding = New Padding(10, 0, 0, 10)
         split.Panel1MinSize = 180
-        '
+        ' 
         ' split.Panel2
-        '
+        ' 
         split.Panel2.Controls.Add(splitDreapta)
+        split.Panel2.Padding = New Padding(0, 0, 10, 10)
         split.Panel2MinSize = 380
-        split.Size = New Size(980, 520)
-        split.SplitterDistance = 260
-        split.SplitterWidth = 6
+        split.Size = New Size(1187, 560)
+        split.SplitterDistance = 314
+        split.SplitterWidth = 9
         split.TabIndex = 0
-        '
+        ' 
         ' grdBene
-        '
+        ' 
+        grdBene.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        grdBene.BackColor = SystemColors.Window
+        grdBene.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn1.CellPadding = New Padding(4, 0, 4, 0)
@@ -109,74 +156,67 @@ Partial Class OrdAtasamentePage
         KBotDataColumn1.MinWidth = 80
         KBotDataColumn1.OptionGroup = Nothing
         KBotDataColumn1.ReadOnly = True
-        KBotDataColumn1.TextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn1.Width = 240
         grdBene.Columns.Add(KBotDataColumn1)
-        grdBene.ColumnFillMode = KBotFillMode.SpecificColumn
         grdBene.Dock = DockStyle.Fill
         grdBene.FillColumnKey = "eticheta"
-        grdBene.FooterVisible = False
+        grdBene.HeaderBackColor = SystemColors.Control
         grdBene.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        grdBene.Location = New Point(0, 0)
+        grdBene.HeaderSeparatorColor = SystemColors.ActiveBorder
+        grdBene.Location = New Point(10, 0)
         grdBene.Margin = New Padding(0)
         grdBene.Name = "grdBene"
         grdBene.ReadOnlyGrid = True
         grdBene.RowHeight = 22
-        grdBene.Size = New Size(260, 520)
+        grdBene.Size = New Size(304, 550)
         grdBene.TabIndex = 0
-        '
+        ' 
         ' splitDreapta
-        '
+        ' 
         splitDreapta.Dock = DockStyle.Fill
         splitDreapta.Location = New Point(0, 0)
+        splitDreapta.Margin = New Padding(4, 5, 4, 5)
         splitDreapta.Name = "splitDreapta"
-        '
+        ' 
         ' splitDreapta.Panel1
-        '
+        ' 
         splitDreapta.Panel1.Controls.Add(tlyLista)
         splitDreapta.Panel1MinSize = 180
-        '
+        ' 
         ' splitDreapta.Panel2
-        '
+        ' 
         splitDreapta.Panel2.Controls.Add(pnlPreview)
         splitDreapta.Panel2MinSize = 200
-        splitDreapta.Size = New Size(714, 520)
-        splitDreapta.SplitterDistance = 300
-        splitDreapta.SplitterWidth = 6
+        splitDreapta.Size = New Size(854, 550)
+        splitDreapta.SplitterDistance = 410
+        splitDreapta.SplitterWidth = 9
         splitDreapta.TabIndex = 0
-        '
+        ' 
         ' tlyLista
-        '
-        tlyLista.ColumnCount = 1
-        tlyLista.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyLista.Controls.Add(grdAtasamente, 0, 1)
-        tlyLista.Controls.Add(lblLista, 0, 0)
-        tlyLista.Controls.Add(tlyButoane, 0, 2)
+        ' 
+        tlyLista.ColumnCount = 3
+        tlyLista.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 33.3333321F))
+        tlyLista.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 33.3333359F))
+        tlyLista.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 33.3333359F))
+        tlyLista.Controls.Add(btnLipeste, 2, 1)
+        tlyLista.Controls.Add(btnSterge, 1, 1)
+        tlyLista.Controls.Add(grdAtasamente, 0, 0)
+        tlyLista.Controls.Add(btnAdauga, 0, 1)
         tlyLista.Dock = DockStyle.Fill
         tlyLista.Location = New Point(0, 0)
         tlyLista.Margin = New Padding(0)
         tlyLista.Name = "tlyLista"
-        tlyLista.RowCount = 3
-        tlyLista.RowStyles.Add(New RowStyle(SizeType.Absolute, 26F))
+        tlyLista.RowCount = 2
         tlyLista.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyLista.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
-        tlyLista.Size = New Size(300, 520)
+        tlyLista.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
+        tlyLista.Size = New Size(410, 550)
         tlyLista.TabIndex = 0
-        '
-        ' lblLista
-        '
-        lblLista.AutoSize = True
-        lblLista.Dock = DockStyle.Fill
-        lblLista.Font = New Font("Segoe UI", 9F, FontStyle.Bold)
-        lblLista.Location = New Point(3, 0)
-        lblLista.Name = "lblLista"
-        lblLista.Size = New Size(294, 26)
-        lblLista.TabIndex = 0
-        lblLista.Text = "Imagini atașate"
-        lblLista.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' grdAtasamente
-        '
+        ' 
+        grdAtasamente.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        grdAtasamente.BackColor = SystemColors.Window
+        grdAtasamente.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn2.CellPadding = New Padding(4, 0, 4, 0)
@@ -188,7 +228,6 @@ Partial Class OrdAtasamentePage
         KBotDataColumn2.Key = "nume_fisier"
         KBotDataColumn2.MinWidth = 100
         KBotDataColumn2.OptionGroup = Nothing
-        KBotDataColumn2.TextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn2.Width = 200
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
@@ -206,104 +245,61 @@ Partial Class OrdAtasamentePage
         KBotDataColumn3.Width = 90
         grdAtasamente.Columns.Add(KBotDataColumn2)
         grdAtasamente.Columns.Add(KBotDataColumn3)
-        grdAtasamente.ColumnFillMode = KBotFillMode.SpecificColumn
+        tlyLista.SetColumnSpan(grdAtasamente, 3)
         grdAtasamente.Dock = DockStyle.Fill
         grdAtasamente.FillColumnKey = "nume_fisier"
-        grdAtasamente.FooterVisible = False
+        grdAtasamente.HeaderBackColor = SystemColors.Control
         grdAtasamente.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        grdAtasamente.Location = New Point(0, 26)
+        grdAtasamente.HeaderSeparatorColor = SystemColors.ActiveBorder
+        grdAtasamente.Location = New Point(0, 0)
         grdAtasamente.Margin = New Padding(0)
         grdAtasamente.Name = "grdAtasamente"
-        grdAtasamente.ReadOnlyGrid = False
         grdAtasamente.RowHeight = 22
-        grdAtasamente.Size = New Size(300, 454)
+        grdAtasamente.Size = New Size(410, 500)
         grdAtasamente.TabIndex = 1
-        '
-        ' tlyButoane
-        '
-        tlyButoane.Controls.Add(btnAdauga)
-        tlyButoane.Controls.Add(btnLipeste)
-        tlyButoane.Controls.Add(btnSterge)
-        tlyButoane.Dock = DockStyle.Fill
-        tlyButoane.Location = New Point(0, 480)
-        tlyButoane.Margin = New Padding(0)
-        tlyButoane.Name = "tlyButoane"
-        tlyButoane.Padding = New Padding(0, 5, 0, 5)
-        tlyButoane.Size = New Size(300, 40)
-        tlyButoane.TabIndex = 2
-        '
-        ' btnAdauga
-        '
-        btnAdauga.AutoSize = True
-        btnAdauga.Location = New Point(3, 8)
-        btnAdauga.Name = "btnAdauga"
-        btnAdauga.Padding = New Padding(8, 2, 8, 2)
-        btnAdauga.Size = New Size(100, 28)
-        btnAdauga.TabIndex = 0
-        btnAdauga.Text = "Adaugă"
-        btnAdauga.UseVisualStyleBackColor = True
-        '
-        ' btnLipeste
-        '
-        btnLipeste.AutoSize = True
-        btnLipeste.Location = New Point(109, 8)
-        btnLipeste.Name = "btnLipeste"
-        btnLipeste.Padding = New Padding(8, 2, 8, 2)
-        btnLipeste.Size = New Size(100, 28)
-        btnLipeste.TabIndex = 1
-        btnLipeste.Text = "Lipește"
-        btnLipeste.UseVisualStyleBackColor = True
-        '
-        ' btnSterge
-        '
-        btnSterge.AutoSize = True
-        btnSterge.Location = New Point(215, 8)
-        btnSterge.Name = "btnSterge"
-        btnSterge.Padding = New Padding(8, 2, 8, 2)
-        btnSterge.Size = New Size(100, 28)
-        btnSterge.TabIndex = 2
-        btnSterge.Text = "Șterge"
-        btnSterge.UseVisualStyleBackColor = True
-        '
+        ' 
         ' pnlPreview
-        '
+        ' 
         pnlPreview.Controls.Add(picPreview)
         pnlPreview.Controls.Add(lblPreviewGol)
         pnlPreview.Dock = DockStyle.Fill
         pnlPreview.Location = New Point(0, 0)
         pnlPreview.Margin = New Padding(0)
         pnlPreview.Name = "pnlPreview"
-        pnlPreview.Size = New Size(408, 520)
+        pnlPreview.Size = New Size(435, 550)
         pnlPreview.TabIndex = 0
-        '
+        ' 
         ' picPreview
-        '
+        ' 
         picPreview.Dock = DockStyle.Fill
         picPreview.Location = New Point(0, 0)
+        picPreview.Margin = New Padding(4, 5, 4, 5)
         picPreview.Name = "picPreview"
-        picPreview.Size = New Size(408, 520)
+        picPreview.Size = New Size(435, 550)
         picPreview.SizeMode = PictureBoxSizeMode.Zoom
         picPreview.TabIndex = 0
         picPreview.TabStop = False
-        '
+        ' 
         ' lblPreviewGol
-        '
+        ' 
         lblPreviewGol.Dock = DockStyle.Fill
         lblPreviewGol.Font = New Font("Segoe UI", 10F)
         lblPreviewGol.Location = New Point(0, 0)
+        lblPreviewGol.Margin = New Padding(4, 0, 4, 0)
         lblPreviewGol.Name = "lblPreviewGol"
-        lblPreviewGol.Size = New Size(408, 520)
+        lblPreviewGol.Size = New Size(435, 550)
         lblPreviewGol.TabIndex = 1
         lblPreviewGol.Text = "Selectați o imagine din listă."
         lblPreviewGol.TextAlign = ContentAlignment.MiddleCenter
-        '
+        ' 
         ' OrdAtasamentePage
-        '
-        AutoScaleDimensions = New SizeF(7F, 15F)
+        ' 
+        AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(split)
+        Margin = New Padding(4, 5, 4, 5)
         Name = "OrdAtasamentePage"
-        Size = New Size(980, 520)
+        Size = New Size(1187, 560)
         split.Panel1.ResumeLayout(False)
         split.Panel2.ResumeLayout(False)
         CType(split, ComponentModel.ISupportInitialize).EndInit()
@@ -316,16 +312,8 @@ Partial Class OrdAtasamentePage
         tlyLista.ResumeLayout(False)
         tlyLista.PerformLayout()
         CType(grdAtasamente, ComponentModel.ISupportInitialize).EndInit()
-        tlyButoane.ResumeLayout(False)
-        tlyButoane.PerformLayout()
         pnlPreview.ResumeLayout(False)
         CType(picPreview, ComponentModel.ISupportInitialize).EndInit()
-        tips.SetToolTipHeader(btnAdauga, "Adaugă imagine")
-        tips.SetToolTipText(btnAdauga, "Alege una sau mai multe imagini de pe disc." & vbLf & "Se încarcă pe server după salvarea ordonanțării.")
-        tips.SetToolTipHeader(btnLipeste, "Lipește din clipboard")
-        tips.SetToolTipText(btnLipeste, "Ia captura de ecran din memoria temporară a Windows-ului." & vbLf & "Se salvează ca PNG.")
-        tips.SetToolTipHeader(btnSterge, "Șterge imaginea")
-        tips.SetToolTipText(btnSterge, "Scoate imaginea din ordonanțare." & vbLf & "Dispare de pe server la următoarea salvare.")
         ResumeLayout(False)
     End Sub
 
@@ -335,13 +323,11 @@ Partial Class OrdAtasamentePage
     Friend WithEvents grdBene As KBot.Controls.KBotDataView
     Friend WithEvents splitDreapta As SplitContainer
     Friend WithEvents tlyLista As TableLayoutPanel
-    Friend WithEvents lblLista As Label
     Friend WithEvents grdAtasamente As KBot.Controls.KBotDataView
-    Friend WithEvents tlyButoane As FlowLayoutPanel
     Friend WithEvents btnAdauga As Button
-    Friend WithEvents btnLipeste As Button
-    Friend WithEvents btnSterge As Button
     Friend WithEvents pnlPreview As Panel
     Friend WithEvents picPreview As PictureBox
     Friend WithEvents lblPreviewGol As Label
+    Friend WithEvents btnSterge As Button
+    Friend WithEvents btnLipeste As Button
 End Class

@@ -414,7 +414,12 @@ Public Class MainForm
                 Case "partener" : Return New PlaceholderView(key, "Partener")
                 Case "receptii" : Return New ReceptiiView(_apiClient, Function(op) WithReauth(Of ReceptiiInfo)(op),
                                                          AddressOf DeschideLegaturileReceptiilor)
-                Case "plati" : Return New PlatiView(_apiClient, Function(op) WithReauth(Of PlatiInfo)(op))
+                ' «+» din arborele de plati cere ordonantarea zilei / lotul lunii — Access:
+                ' fxPlati_AdaugareOrdonantare / fxPlati_AdaugareOrdonantari din frmFX_MAIN.
+                ' Trece prin ACEEASI ExecutaComandaOrd ca OrdView: o singura politica de
+                ' re-login, un singur loc unde se deschide editorul.
+                Case "plati" : Return New PlatiView(_apiClient, Function(op) WithReauth(Of PlatiInfo)(op),
+                                                    AddressOf ExecutaComandaOrd)
                 Case "ddf" : Return New DdfView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op), _session)
                 Case "ord" : Return New OrdView(_apiClient, Function(op) WithReauth(Of OrdInfo)(op), _session,
                                                 AddressOf ExecutaComandaOrd)
@@ -477,10 +482,12 @@ Public Class MainForm
             If comanda Is Nothing OrElse String.IsNullOrWhiteSpace(comanda.Cod) Then Return
 
             Select Case comanda.Actiune
-                Case OrdActiune.Adauga : Await AdaugaOrdonantareAsync(comanda.Cod).ConfigureAwait(True)
+                Case OrdActiune.Adauga
+                    Await AdaugaOrdonantareAsync(comanda.Cod, comanda.Ziua, comanda.IdPlataFx).ConfigureAwait(True)
                 Case OrdActiune.Modifica : Await ModificaOrdonantareAsync(comanda.Ordonantare).ConfigureAwait(True)
                 Case OrdActiune.Sterge : Await StergeOrdonantareAsync(comanda.Ordonantare).ConfigureAwait(True)
-                Case OrdActiune.Lot : Await GenereazaInLotAsync(comanda.Cod).ConfigureAwait(True)
+                Case OrdActiune.Lot
+                    Await GenereazaInLotAsync(comanda.Cod, comanda.Luna, comanda.An).ConfigureAwait(True)
                 Case Else
                     ' Fara no-op-uri tacute: o actiune necunoscuta e un defect de programare.
                     Throw New ArgumentException($"Acțiune ORD necunoscută: {comanda.Actiune}", NameOf(comanda))
@@ -496,20 +503,32 @@ Public Class MainForm
     End Sub
 
     ''' <summary>
-    ''' «Adauga» — cere data, genereaza graful pe server (nimic scris) si deschide editorul.
-    ''' Portul lui <c>FX_Adaugare_ORD_Din_Plati</c> pe calea «toate platile zilei»
-    ''' (<c>sIdPlataFX = "*"</c>). Avertismentul de peste 25 de parteneri vine de la server,
-    ''' in <c>Avertismente</c>, si il arata formularul.
+    ''' «Adauga» — genereaza graful pe server (nimic scris) si deschide editorul. Portul lui
+    ''' <c>FX_Adaugare_ORD_Din_Plati</c>. Avertismentul de peste 25 de parteneri vine de la
+    ''' server, in <c>Avertismente</c>, si il arata formularul.
+    '''
+    ''' <para><paramref name="ziCeruta"/> <c>Nothing</c> = ziua NU e stiuta si se cere
+    ''' operatorului; asa intra <c>OrdView</c>, care n-are din ce s-o deduca. Cand comanda vine
+    ''' de pe «+»-ul arborelui de plati, ziua e chiar nodul apasat, deci nu se mai intreaba —
+    ''' exact ca in Access, unde <c>fxPlati_AdaugareOrdonantare</c> primea <c>vDataPlata</c>
+    ''' gata ales.</para>
+    '''
+    ''' <para><paramref name="idPlataFx"/> <c>Nothing</c> = toate platile neordonantate ale
+    ''' zilei (VBA: <c>vIdPlataFX = -1</c> ▸ <c>sIdPlataFX = "*"</c>). Frunza arborelui de
+    ''' plati e ZIUA, nu plata, deci azi nimeni nu trimite o plata anume; parametrul exista
+    ''' fiindca ruta il accepta si fiindca nivelul de plata al Access-ului poate reveni.</para>
     ''' </summary>
-    Private Async Function AdaugaOrdonantareAsync(cod As String) As Task
-        Dim zi As Date? = CereZiua(cod)
+    Private Async Function AdaugaOrdonantareAsync(cod As String,
+                                                  Optional ziCeruta As Date? = Nothing,
+                                                  Optional idPlataFx As Integer? = Nothing) As Task
+        Dim zi As Date? = If(ziCeruta.HasValue, ziCeruta, CereZiua(cod))
         If Not zi.HasValue Then Return
 
         busyBar.Running = True
         Dim draft As OrdDraft
         Try
             draft = Await WithReauth(Of OrdDraft)(
-                Function() _apiClient.GenereazaOrdAsync(cod, zi.Value, Nothing, CancellationToken.None))
+                Function() _apiClient.GenereazaOrdAsync(cod, zi.Value, idPlataFx, CancellationToken.None))
         Finally
             busyBar.Running = False
         End Try
@@ -553,13 +572,13 @@ Public Class MainForm
         Using f As New OrdEditForm(_apiClient, draft,
                                    Function(op) WithReauth(Of OrdSaveRezultat)(op),
                                    Function(op) WithReauth(Of PutAtasamentResponse)(op),
-                                   Function(op) WithReauth(Of PdfDownloadResult)(op))
+                                   Function(op) WithReauth(Of PdfDownloadResult)(op),
+                                   Function(op) WithReauth(Of Integer)(op))
             f.ShowDialog(Me)
             If f.SAuSalvatModificari Then
                 ' Ce a ramas pe ecran nu mai e adevarat: liniile s-au schimbat, platile
                 ' acoperite s-au schimbat, iar o ordonantare noua nici macar nu era acolo.
-                Dim vedere As OrdView = TryCast(_activeView, OrdView)
-                vedere?.Reincarca(f.IdordpSalvat)
+                DupaScriereaOrdonantarii(f.IdordpSalvat)
             End If
         End Using
     End Sub
@@ -609,8 +628,9 @@ Public Class MainForm
             $"Plăți redevenite neordonanțate: {rez.PlatiEliberate}.",
             "Șterge ordonanțarea", MessageBoxButtons.OK, MessageBoxIcon.Information)
 
-        Dim vedere As OrdView = TryCast(_activeView, OrdView)
-        vedere?.Reincarca()
+        ' Stergerea nu poate APRINDE AreORD (poate doar sa-l stinga, iar cate au mai ramas nu
+        ' stim de aici) — deci poarta nu se atinge.
+        DupaScriereaOrdonantarii(maiExistaOrdonantari:=False)
     End Function
 
     ''' <summary>
@@ -627,25 +647,37 @@ Public Class MainForm
     '''
     ''' <para>NU exista o tranzactie uriasa care sa cuprinda tot lotul: o ordonantare, o
     ''' tranzactie.</para>
+    '''
+    ''' <para><paramref name="luna"/> / <paramref name="an"/> <c>Nothing</c> = tot
+    ''' angajamentul; asa intra <c>OrdView</c>. Cand comanda vine de pe «+»-ul unei LUNI din
+    ''' arborele de plati, lotul se margineste la luna aceea — VBA: <c>vLunaAn</c>, care in
+    ''' Access era textul «luna/an» pus in <c>LIKE</c>. Aici sunt doi parametri numerici,
+    ''' fiindca <c>*</c> nu e metacaracter in MariaDB (vezi felia 0049 §1.4).</para>
     ''' </summary>
-    Private Async Function GenereazaInLotAsync(cod As String) As Task
+    Private Async Function GenereazaInLotAsync(cod As String,
+                                               Optional luna As Integer? = Nothing,
+                                               Optional an As Integer? = Nothing) As Task
         busyBar.Running = True
         Dim zile As OrdZileInfo
         Try
             zile = Await WithReauth(Of OrdZileInfo)(
-                Function() _apiClient.GetOrdZileAsync(cod, Nothing, Nothing, CancellationToken.None))
+                Function() _apiClient.GetOrdZileAsync(cod, luna, an, CancellationToken.None))
         Finally
             busyBar.Running = False
         End Try
 
+        ' Numele perioadei, pentru mesaje: fara luna/an e tot angajamentul.
+        Dim perioada As String = If(luna.HasValue AndAlso an.HasValue,
+                                    $" în {NumeLuna(luna.Value)} {an.Value}", String.Empty)
+
         If zile Is Nothing OrElse zile.Zile.Count = 0 Then
-            MessageBox.Show(Me, $"Nu există plăți neordonanțate pentru {cod}.",
+            MessageBox.Show(Me, $"Nu există plăți neordonanțate pentru {cod}{perioada}.",
                             "Generare în lot", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If
 
         Dim intrebare As String =
-            $"Se generează ordonanțări pentru {zile.Zile.Count} zile cu plăți neordonanțate " &
+            $"Se generează ordonanțări pentru {zile.Zile.Count} zile cu plăți neordonanțate{perioada} " &
             $"({zile.TotalEstimat} ordonanțări estimate)." & vbCrLf & vbCrLf &
             "Fiecare zi se salvează separat, fără să vă mai fie cerută confirmarea." & vbCrLf &
             "La prima eroare, generarea se oprește. Continuați?"
@@ -691,8 +723,8 @@ Public Class MainForm
                 "Generare în lot", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End If
 
-        Dim vedere As OrdView = TryCast(_activeView, OrdView)
-        vedere?.Reincarca()
+        ' Poarta se aprinde doar daca lotul chiar a scris ceva.
+        DupaScriereaOrdonantarii(maiExistaOrdonantari:=reusite > 0)
     End Function
 
     ''' <summary>
@@ -705,6 +737,57 @@ Public Class MainForm
             Return dlg.Ziua
         End Using
     End Function
+
+    ' Numele lunii in romana, cu prima litera mare — doar pentru mesajele lotului.
+    Private Shared Function NumeLuna(luna As Integer) As String
+        If luna < 1 OrElse luna > 12 Then Return CStr(luna)
+        Dim ro As New Globalization.CultureInfo("ro-RO")
+        Dim nume As String = ro.DateTimeFormat.GetMonthName(luna)
+        If String.IsNullOrEmpty(nume) Then Return CStr(luna)
+        Return Char.ToUpper(nume(0), ro) & nume.Substring(1)
+    End Function
+
+    ''' <summary>
+    ''' Ce se reimprospateaza dupa orice SCRIERE de ordonantare (adaugare, modificare,
+    ''' stergere, lot). Portul liniilor de dupa <c>FX_Adaugare_ORD_*</c> din
+    ''' <c>frmFX_MAIN</c>: acolo urmau <c>RefreshTreeQuery</c> si
+    ''' <c>fxPlati.RefreshPlati CodAngajament, True</c>.
+    '''
+    ''' <para>Trei lucruri, in ordinea asta:</para>
+    ''' <list type="number">
+    ''' <item>vederea ORD, daca e cea activa — documentul scris trebuie sa apara;</item>
+    ''' <item>vederea PLATI, daca a fost deschisa — platile acoperite nu mai sunt
+    ''' neordonantate, deci «+»-ul sta pe o zi gresita si starea nodurilor minte. Se
+    ''' reimprospateaza chiar daca nu e vederea activa: altfel ar minti tacut pana la
+    ''' urmatoarea schimbare de angajament;</item>
+    ''' <item>poarta vederilor: prima ordonantare a unui angajament ii aprinde
+    ''' <c>AreORD</c>. Se ridica LOCAL, nu prin re-citirea arborelui mare — un
+    ''' <c>LoadTreeAsync</c> de aici ar goli selectia si ar arunca operatorul inapoi pe
+    ''' «sumar» exact dupa ce si-a salvat documentul. Flagul se corecteaza oricum de la
+    ''' server la urmatoarea schimbare de an/SS sau la urmatoarea descarcare.</item>
+    ''' </list>
+    ''' </summary>
+    Private Sub DupaScriereaOrdonantarii(Optional idordpSalvat As Integer? = Nothing,
+                                         Optional maiExistaOrdonantari As Boolean = True)
+        Try
+            TryCast(_activeView, OrdView)?.Reincarca(If(idordpSalvat, 0))
+
+            Dim vederePlati As IAngajamentView = Nothing
+            If _views.TryGetValue("plati", vederePlati) Then
+                TryCast(vederePlati, PlatiView)?.Reincarca()
+            End If
+
+            If maiExistaOrdonantari AndAlso _currentInfo IsNot Nothing AndAlso Not _currentInfo.AreORD Then
+                _currentInfo.AreORD = True
+                ApplyViewGating(_currentInfo)
+            End If
+        Catch ex As Exception
+            ' Granita de UI: reimprospatarea a esuat, dar SCRIEREA a reusit deja. Se
+            ' logheaza si se merge mai departe — un throw de aici ar face sa para ca
+            ' salvarea a picat.
+            GlobalErrorLog.Write("MainForm.DupaScriereaOrdonantarii", ex)
+        End Try
+    End Sub
 
     ' ---------------- lista de angajamente ----------------
 

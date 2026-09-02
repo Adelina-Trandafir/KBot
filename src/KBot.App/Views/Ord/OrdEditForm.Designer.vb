@@ -37,6 +37,10 @@ Partial Class OrdEditForm
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
+        dtpData = New DateTimePicker()
+        lblNrOrd = New Label()
+        btnSalveaza = New Button()
+        btnRenunta = New Button()
         tlyMain = New TableLayoutPanel()
         capBar = New KBotCaptionBar()
         busyBar = New KBotBusyBar()
@@ -44,9 +48,7 @@ Partial Class OrdEditForm
         lblCodCaption = New Label()
         lblCod = New Label()
         lblNrOrdCaption = New Label()
-        lblNrOrd = New Label()
         lblDataCaption = New Label()
-        dtpData = New DateTimePicker()
         lblTotalCaption = New Label()
         lblTotal = New Label()
         lblObiectCaption = New Label()
@@ -55,42 +57,99 @@ Partial Class OrdEditForm
         navSub = New KBotNavList()
         pnlPages = New Panel()
         tlySubsol = New TableLayoutPanel()
-        btnRenunta = New Button()
-        btnSalveaza = New Button()
         tlyMain.SuspendLayout()
         tlyAntet.SuspendLayout()
         CType(navSub, ComponentModel.ISupportInitialize).BeginInit()
         tlySubsol.SuspendLayout()
         SuspendLayout()
-        '
+        ' 
+        ' dtpData
+        ' 
+        dtpData.CustomFormat = "dd.MM.yyyy"
+        dtpData.Dock = DockStyle.Fill
+        dtpData.Format = DateTimePickerFormat.Custom
+        dtpData.Location = New Point(694, 4)
+        dtpData.Margin = New Padding(4, 4, 4, 10)
+        dtpData.Name = "dtpData"
+        dtpData.Size = New Size(142, 31)
+        dtpData.TabIndex = 5
+        tips.SetToolTipHeader(dtpData, "Data ordonanțării")
+        tips.SetToolTipText(dtpData, "Data care se scrie în document." & vbLf & "Plățile propuse rămân cele ale zilei pentru care s-a generat ordonanțarea.")
+        ' 
+        ' lblNrOrd
+        ' 
+        lblNrOrd.AutoSize = True
+        ' Se poate da clic pe el: intreaba serverul din nou care ar fi numarul urmator.
+        lblNrOrd.Cursor = Cursors.Hand
+        lblNrOrd.Dock = DockStyle.Fill
+        lblNrOrd.Font = New Font("Calibri", 9F, FontStyle.Bold)
+        lblNrOrd.Location = New Point(424, 0)
+        lblNrOrd.Margin = New Padding(4, 0, 4, 0)
+        lblNrOrd.Name = "lblNrOrd"
+        lblNrOrd.Size = New Size(142, 40)
+        lblNrOrd.TabIndex = 3
+        lblNrOrd.Text = "se alocă la salvare"
+        lblNrOrd.TextAlign = ContentAlignment.MiddleLeft
+        tips.SetToolTipHeader(lblNrOrd, "Numărul ordonanțării")
+        tips.SetToolTipText(lblNrOrd, "«probabil N» e numărul pe care l-ar primi ordonanțarea dacă ați salva acum: cel mai mare număr din bază, plus unu." & vbLf & "Nu e rezervat. Dacă altcineva salvează înaintea dumneavoastră, primiți numărul următor liber." & vbLf & "Numărul adevărat se alocă tot de server, în tranzacția de salvare — așa nu pot primi două salvări simultane același număr." & vbLf & "Clic pe număr = întreabă serverul din nou.")
+        ' 
+        ' btnSalveaza
+        ' 
+        btnSalveaza.Dock = DockStyle.Fill
+        btnSalveaza.Location = New Point(910, 4)
+        btnSalveaza.Margin = New Padding(0, 4, 10, 4)
+        btnSalveaza.Name = "btnSalveaza"
+        btnSalveaza.Padding = New Padding(14, 7, 14, 7)
+        btnSalveaza.Size = New Size(276, 50)
+        btnSalveaza.TabIndex = 1
+        btnSalveaza.Text = "Salvează ordonanțarea"
+        tips.SetToolTipHeader(btnSalveaza, "Salvează")
+        tips.SetToolTipText(btnSalveaza, "Trimite tot documentul într-o singură tranzacție." & vbLf & "Imaginile atașate se încarcă imediat după, când rândurile lor au chei.")
+        btnSalveaza.UseVisualStyleBackColor = True
+        ' 
+        ' btnRenunta
+        ' 
+        btnRenunta.Dock = DockStyle.Fill
+        btnRenunta.Location = New Point(10, 4)
+        btnRenunta.Margin = New Padding(10, 4, 0, 4)
+        btnRenunta.Name = "btnRenunta"
+        btnRenunta.Padding = New Padding(14, 7, 14, 7)
+        btnRenunta.Size = New Size(219, 50)
+        btnRenunta.TabIndex = 0
+        btnRenunta.Text = "Renunță"
+        tips.SetToolTipHeader(btnRenunta, "Renunță")
+        tips.SetToolTipText(btnRenunta, "Închide fără să salveze nimic.")
+        btnRenunta.UseVisualStyleBackColor = True
+        ' 
         ' tlyMain
-        '
+        ' 
         tlyMain.ColumnCount = 1
         tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyMain.Controls.Add(capBar, 0, 0)
         tlyMain.Controls.Add(busyBar, 0, 1)
         tlyMain.Controls.Add(tlyAntet, 0, 2)
-        tlyMain.Controls.Add(ntfMesaj, 0, 3)
+        tlyMain.Controls.Add(ntfMesaj, 0, 4)
         tlyMain.Controls.Add(navSub, 0, 4)
         tlyMain.Controls.Add(pnlPages, 0, 5)
         tlyMain.Controls.Add(tlySubsol, 0, 6)
         tlyMain.Dock = DockStyle.Fill
-        tlyMain.Location = New Point(1, 1)
+        tlyMain.Location = New Point(1, 2)
         tlyMain.Margin = New Padding(0)
         tlyMain.Name = "tlyMain"
-        tlyMain.RowCount = 7
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 46F))
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 4F))
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 76F))
-        tlyMain.RowStyles.Add(New RowStyle())
+        tlyMain.RowCount = 8
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 57F))
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 7F))
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 115F))
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 7F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        tlyMain.RowStyles.Add(New RowStyle())
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
-        tlyMain.Size = New Size(1100, 720)
+        tlyMain.RowStyles.Add(New RowStyle())
+        tlyMain.Size = New Size(1196, 996)
         tlyMain.TabIndex = 0
-        '
+        ' 
         ' capBar
-        '
+        ' 
         capBar.Dock = DockStyle.Fill
         capBar.IconImage = My.Resources.Resources.kbot_64
         capBar.Location = New Point(0, 0)
@@ -98,35 +157,36 @@ Partial Class OrdEditForm
         capBar.Name = "capBar"
         capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
+        capBar.ShowMaximize = True
         capBar.ShowTextScaleSlider = False
         capBar.ShowThemeEditor = False
         capBar.ShowThemeOptions = False
-        capBar.Size = New Size(1100, 46)
+        capBar.Size = New Size(1196, 57)
         capBar.TabIndex = 0
         capBar.TabStop = False
         capBar.Text = "K-BOT — Ordonanțare de plată"
-        '
+        ' 
         ' busyBar
-        '
+        ' 
         busyBar.Dock = DockStyle.Fill
-        busyBar.Location = New Point(0, 46)
+        busyBar.Location = New Point(0, 57)
         busyBar.Margin = New Padding(0)
         busyBar.Name = "busyBar"
-        busyBar.Size = New Size(1100, 4)
+        busyBar.Size = New Size(1196, 7)
         busyBar.TabIndex = 1
         busyBar.TabStop = False
-        '
+        ' 
         ' tlyAntet
-        '
+        ' 
         tlyAntet.ColumnCount = 8
+        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
         tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
-        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 30F))
-        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 90F))
+        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
         tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
-        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 60F))
-        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 140F))
-        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 60F))
-        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 70F))
+        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
+        tlyAntet.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyAntet.Controls.Add(lblCodCaption, 0, 0)
         tlyAntet.Controls.Add(lblCod, 1, 0)
         tlyAntet.Controls.Add(lblNrOrdCaption, 2, 0)
@@ -138,142 +198,137 @@ Partial Class OrdEditForm
         tlyAntet.Controls.Add(lblObiectCaption, 0, 1)
         tlyAntet.Controls.Add(lblObiect, 1, 1)
         tlyAntet.Dock = DockStyle.Fill
-        tlyAntet.Location = New Point(3, 53)
+        tlyAntet.Location = New Point(4, 69)
+        tlyAntet.Margin = New Padding(4, 5, 4, 5)
         tlyAntet.Name = "tlyAntet"
-        tlyAntet.RowCount = 2
-        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 36F))
-        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 32F))
-        tlyAntet.Size = New Size(1094, 70)
+        tlyAntet.RowCount = 3
+        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyAntet.Size = New Size(1188, 105)
         tlyAntet.TabIndex = 2
-        '
+        ' 
         ' lblCodCaption
-        '
+        ' 
         lblCodCaption.AutoSize = True
         lblCodCaption.Dock = DockStyle.Fill
-        lblCodCaption.Location = New Point(3, 0)
+        lblCodCaption.Font = New Font("Calibri", 9F)
+        lblCodCaption.Location = New Point(4, 0)
+        lblCodCaption.Margin = New Padding(4, 0, 4, 0)
         lblCodCaption.Name = "lblCodCaption"
-        lblCodCaption.Size = New Size(114, 36)
+        lblCodCaption.Size = New Size(142, 40)
         lblCodCaption.TabIndex = 0
         lblCodCaption.Text = "Cod angajament"
         lblCodCaption.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' lblCod
-        '
+        ' 
         lblCod.AutoSize = True
         lblCod.Dock = DockStyle.Fill
-        lblCod.Font = New Font("Segoe UI", 9F, FontStyle.Bold)
-        lblCod.Location = New Point(123, 0)
+        lblCod.Font = New Font("Calibri", 12F, FontStyle.Bold)
+        lblCod.Location = New Point(154, 0)
+        lblCod.Margin = New Padding(4, 0, 4, 0)
         lblCod.Name = "lblCod"
-        lblCod.Size = New Size(200, 36)
+        lblCod.Size = New Size(142, 40)
         lblCod.TabIndex = 1
         lblCod.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' lblNrOrdCaption
-        '
+        ' 
         lblNrOrdCaption.AutoSize = True
         lblNrOrdCaption.Dock = DockStyle.Fill
-        lblNrOrdCaption.Location = New Point(329, 0)
+        lblNrOrdCaption.Font = New Font("Calibri", 9F)
+        lblNrOrdCaption.Location = New Point(304, 0)
+        lblNrOrdCaption.Margin = New Padding(4, 0, 4, 0)
         lblNrOrdCaption.Name = "lblNrOrdCaption"
-        lblNrOrdCaption.Size = New Size(84, 36)
+        lblNrOrdCaption.Size = New Size(112, 40)
         lblNrOrdCaption.TabIndex = 2
         lblNrOrdCaption.Text = "Număr"
         lblNrOrdCaption.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' lblNrOrd
-        '
-        lblNrOrd.AutoSize = True
-        lblNrOrd.Dock = DockStyle.Fill
-        lblNrOrd.Font = New Font("Segoe UI", 9F, FontStyle.Bold)
-        lblNrOrd.Location = New Point(419, 0)
-        lblNrOrd.Name = "lblNrOrd"
-        lblNrOrd.Size = New Size(114, 36)
-        lblNrOrd.TabIndex = 3
-        lblNrOrd.Text = "se alocă la salvare"
-        lblNrOrd.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' lblDataCaption
-        '
+        ' 
         lblDataCaption.AutoSize = True
         lblDataCaption.Dock = DockStyle.Fill
-        lblDataCaption.Location = New Point(539, 0)
+        lblDataCaption.Font = New Font("Calibri", 9F)
+        lblDataCaption.Location = New Point(574, 0)
+        lblDataCaption.Margin = New Padding(4, 0, 4, 0)
         lblDataCaption.Name = "lblDataCaption"
-        lblDataCaption.Size = New Size(54, 36)
+        lblDataCaption.Size = New Size(112, 40)
         lblDataCaption.TabIndex = 4
         lblDataCaption.Text = "Data"
         lblDataCaption.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' dtpData
-        '
-        dtpData.Dock = DockStyle.Fill
-        dtpData.Format = DateTimePickerFormat.Custom
-        dtpData.CustomFormat = "dd.MM.yyyy"
-        dtpData.Location = New Point(599, 6)
-        dtpData.Margin = New Padding(3, 6, 3, 6)
-        dtpData.Name = "dtpData"
-        dtpData.Size = New Size(134, 23)
-        dtpData.TabIndex = 5
-        '
+        ' 
         ' lblTotalCaption
-        '
+        ' 
         lblTotalCaption.AutoSize = True
         lblTotalCaption.Dock = DockStyle.Fill
-        lblTotalCaption.Location = New Point(739, 0)
+        lblTotalCaption.Font = New Font("Calibri", 9F)
+        lblTotalCaption.Location = New Point(844, 0)
+        lblTotalCaption.Margin = New Padding(4, 0, 4, 0)
         lblTotalCaption.Name = "lblTotalCaption"
-        lblTotalCaption.Size = New Size(54, 36)
+        lblTotalCaption.Size = New Size(112, 40)
         lblTotalCaption.TabIndex = 6
         lblTotalCaption.Text = "Total"
         lblTotalCaption.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' lblTotal
-        '
+        ' 
         lblTotal.AutoSize = True
         lblTotal.Dock = DockStyle.Fill
-        lblTotal.Font = New Font("Segoe UI", 11F, FontStyle.Bold)
-        lblTotal.Location = New Point(799, 0)
+        lblTotal.Font = New Font("Calibri", 12F, FontStyle.Bold)
+        lblTotal.Location = New Point(964, 0)
+        lblTotal.Margin = New Padding(4, 0, 4, 0)
         lblTotal.Name = "lblTotal"
-        lblTotal.Size = New Size(292, 36)
+        lblTotal.Size = New Size(220, 40)
         lblTotal.TabIndex = 7
         lblTotal.Text = "0,00"
         lblTotal.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' lblObiectCaption
-        '
+        ' 
         lblObiectCaption.AutoSize = True
         lblObiectCaption.Dock = DockStyle.Fill
-        lblObiectCaption.Location = New Point(3, 36)
+        lblObiectCaption.Font = New Font("Calibri", 9F)
+        lblObiectCaption.Location = New Point(4, 40)
+        lblObiectCaption.Margin = New Padding(4, 0, 4, 0)
         lblObiectCaption.Name = "lblObiectCaption"
-        lblObiectCaption.Size = New Size(114, 32)
+        lblObiectCaption.Size = New Size(142, 40)
         lblObiectCaption.TabIndex = 8
         lblObiectCaption.Text = "Obiect DDF"
         lblObiectCaption.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' lblObiect
-        '
-        tlyAntet.SetColumnSpan(lblObiect, 7)
+        ' 
         lblObiect.AutoEllipsis = True
+        tlyAntet.SetColumnSpan(lblObiect, 7)
         lblObiect.Dock = DockStyle.Fill
-        lblObiect.Location = New Point(123, 36)
+        lblObiect.Font = New Font("Calibri", 12F, FontStyle.Bold)
+        lblObiect.Location = New Point(154, 40)
+        lblObiect.Margin = New Padding(4, 0, 4, 0)
         lblObiect.Name = "lblObiect"
-        lblObiect.Size = New Size(968, 32)
+        lblObiect.Size = New Size(1030, 40)
         lblObiect.TabIndex = 9
         lblObiect.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' ntfMesaj
-        '
+        ' 
+        ntfMesaj.BackColor = Color.Transparent
         ntfMesaj.Dock = DockStyle.Fill
-        ntfMesaj.Location = New Point(3, 126)
+        ntfMesaj.Location = New Point(4, 231)
+        ntfMesaj.Margin = New Padding(4, 5, 4, 5)
         ntfMesaj.Name = "ntfMesaj"
-        ntfMesaj.Size = New Size(1094, 1)
+        ntfMesaj.Size = New Size(1188, 10)
         ntfMesaj.TabIndex = 3
         ntfMesaj.TabStop = False
         ntfMesaj.Visible = False
-        '
+        ' 
         ' navSub
-        '
+        ' 
         navSub.Dock = DockStyle.Fill
         navSub.IconSize = 16
-        navSub.ItemCornerRadius = 2
-        navSub.ItemPadding = New Padding(3)
+        navSub.ItemCornerRadius = 0
+        navSub.ItemPadding = New Padding(3, 0, 3, 0)
         KBotNavItem1.AutoSize = True
         KBotNavItem1.Image = My.Resources.Resources.vertical
         KBotNavItem1.Key = "beneficiari"
@@ -289,76 +344,53 @@ Partial Class OrdEditForm
         navSub.Items.Add(KBotNavItem1)
         navSub.Items.Add(KBotNavItem2)
         navSub.Items.Add(KBotNavItem3)
-        navSub.Location = New Point(0, 129)
+        navSub.Location = New Point(0, 186)
         navSub.Margin = New Padding(0)
         navSub.Name = "navSub"
         navSub.Orientation = KBotNavOrientation.Horizontal
         navSub.SelectedKey = Nothing
-        navSub.Size = New Size(1100, 40)
+        navSub.Size = New Size(1196, 40)
         navSub.TabIndex = 4
-        '
+        ' 
         ' pnlPages
-        '
+        ' 
+        pnlPages.AutoSizeMode = AutoSizeMode.GrowAndShrink
         pnlPages.Dock = DockStyle.Fill
-        pnlPages.Location = New Point(0, 169)
+        pnlPages.Location = New Point(0, 246)
         pnlPages.Margin = New Padding(0)
         pnlPages.Name = "pnlPages"
-        pnlPages.Size = New Size(1100, 499)
+        pnlPages.Size = New Size(1196, 692)
         pnlPages.TabIndex = 5
-        '
+        ' 
         ' tlySubsol
-        '
+        ' 
         tlySubsol.ColumnCount = 3
+        tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 229F))
         tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 160F))
-        tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 200F))
-        tlySubsol.Controls.Add(btnRenunta, 1, 0)
+        tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 286F))
+        tlySubsol.Controls.Add(btnRenunta, 0, 0)
         tlySubsol.Controls.Add(btnSalveaza, 2, 0)
         tlySubsol.Dock = DockStyle.Fill
-        tlySubsol.Location = New Point(0, 668)
+        tlySubsol.Location = New Point(0, 938)
         tlySubsol.Margin = New Padding(0)
         tlySubsol.Name = "tlySubsol"
         tlySubsol.RowCount = 1
         tlySubsol.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlySubsol.Size = New Size(1100, 52)
+        tlySubsol.Size = New Size(1196, 58)
         tlySubsol.TabIndex = 6
-        '
-        ' btnRenunta
-        '
-        btnRenunta.Dock = DockStyle.Fill
-        btnRenunta.Location = New Point(743, 6)
-        btnRenunta.Margin = New Padding(3, 6, 3, 6)
-        btnRenunta.Name = "btnRenunta"
-        btnRenunta.Padding = New Padding(10, 4, 10, 4)
-        btnRenunta.Size = New Size(154, 40)
-        btnRenunta.TabIndex = 0
-        btnRenunta.Text = "Renunță"
-        btnRenunta.UseVisualStyleBackColor = True
-        '
-        ' btnSalveaza
-        '
-        btnSalveaza.Dock = DockStyle.Fill
-        btnSalveaza.Location = New Point(903, 6)
-        btnSalveaza.Margin = New Padding(3, 6, 3, 6)
-        btnSalveaza.Name = "btnSalveaza"
-        btnSalveaza.Padding = New Padding(10, 4, 10, 4)
-        btnSalveaza.Size = New Size(194, 40)
-        btnSalveaza.TabIndex = 1
-        btnSalveaza.Text = "Salvează ordonanțarea"
-        btnSalveaza.UseVisualStyleBackColor = True
-        '
+        ' 
         ' OrdEditForm
-        '
-        AutoScaleDimensions = New SizeF(7F, 15F)
+        ' 
+        AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(1102, 722)
+        ClientSize = New Size(1198, 1000)
         Controls.Add(tlyMain)
         FormBorderStyle = FormBorderStyle.None
+        Margin = New Padding(4, 5, 4, 5)
         MaximizeBox = False
         MinimizeBox = False
-        MinimumSize = New Size(900, 600)
         Name = "OrdEditForm"
-        Padding = New Padding(1)
+        Padding = New Padding(1, 2, 1, 2)
         ShowInTaskbar = False
         StartPosition = FormStartPosition.CenterParent
         Text = "K-BOT — Ordonanțare de plată"
@@ -367,14 +399,6 @@ Partial Class OrdEditForm
         tlyAntet.PerformLayout()
         CType(navSub, ComponentModel.ISupportInitialize).EndInit()
         tlySubsol.ResumeLayout(False)
-        tips.SetToolTipHeader(dtpData, "Data ordonanțării")
-        tips.SetToolTipText(dtpData, "Data care se scrie în document." & vbLf & "Plățile propuse rămân cele ale zilei pentru care s-a generat ordonanțarea.")
-        tips.SetToolTipHeader(lblNrOrd, "Numărul ordonanțării")
-        tips.SetToolTipText(lblNrOrd, "Se alocă de server, în tranzacția de salvare." & vbLf & "Așa nu pot primi două salvări simultane același număr.")
-        tips.SetToolTipHeader(btnSalveaza, "Salvează")
-        tips.SetToolTipText(btnSalveaza, "Trimite tot documentul într-o singură tranzacție." & vbLf & "Imaginile atașate se încarcă imediat după, când rândurile lor au chei.")
-        tips.SetToolTipHeader(btnRenunta, "Renunță")
-        tips.SetToolTipText(btnRenunta, "Închide fără să salveze nimic.")
         ResumeLayout(False)
     End Sub
 
@@ -393,10 +417,10 @@ Partial Class OrdEditForm
     Friend WithEvents lblTotal As Label
     Friend WithEvents lblObiectCaption As Label
     Friend WithEvents lblObiect As Label
-    Friend WithEvents ntfMesaj As KBot.Controls.KBotNotice
     Friend WithEvents navSub As KBot.Controls.KBotNavList
-    Friend WithEvents pnlPages As Panel
     Friend WithEvents tlySubsol As TableLayoutPanel
     Friend WithEvents btnRenunta As Button
     Friend WithEvents btnSalveaza As Button
+    Friend WithEvents ntfMesaj As KBotNotice
+    Friend WithEvents pnlPages As Panel
 End Class

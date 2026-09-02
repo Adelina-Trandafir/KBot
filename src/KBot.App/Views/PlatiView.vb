@@ -59,21 +59,52 @@ Public Class PlatiView
     Private _panel1MinSizeDesfasurat As Integer
 
     ''' <summary>«+» apăsat pe rădăcina unei luni (nivel 0) — oglindește
-    ''' RaiseEvent AdaugareOrdonantari(LunaAn). Fără abonat în această felie.</summary>
+    ''' RaiseEvent AdaugareOrdonantari(LunaAn), pe care Access il prinde in
+    ''' <c>fxPlati_AdaugareOrdonantari</c>. Abonatul de azi e chiar aceasta vedere: il
+    ''' traduce in <c>OrdComanda.LotPeLuna</c> si il da shell-ului. Ramane public fiindca e
+    ''' semnalul brut al arborelui — un alt abonat (teste, o gazda viitoare) il poate asculta
+    ''' fara sa treaca prin comanda.</summary>
     Public Event AdaugaOrdonantariCerut(sender As Object, e As LunaAnEventArgs)
 
-    ''' <summary>«+» apăsat pe o plată (nivel 1) — oglindește RaiseEvent
-    ''' AdaugareOrdonantare(IdPlataFX, DataPlata). Fără abonat în această felie.</summary>
+    ''' <summary>«+» apasat pe o zi (nivel 1) — oglindeste RaiseEvent
+    ''' AdaugareOrdonantare(IdPlataFX, DataPlata), pe care Access il prinde in
+    ''' <c>fxPlati_AdaugareOrdonantare</c>. Vezi nota de mai sus.</summary>
     Public Event AdaugaOrdonantareCerut(sender As Object, e As PlataOrdEventArgs)
 
-    Public Sub New(apiClient As IApiClient, withReauth As Func(Of Func(Of Task(Of PlatiInfo)), Task(Of PlatiInfo)))
+    ' Comanda de ordonantare, data shell-ului (MainForm.ExecutaComandaOrd). Nothing = vederea
+    ' a fost construita fara ea (teste headless, gazde vechi) — atunci «+» doar ridica
+    ' evenimentele de mai sus, ca inainte de felia asta, fara no-op tacut si fara sa cada.
+    Private ReadOnly _executaComandaOrd As Action(Of OrdComanda)
+
+    Public Sub New(apiClient As IApiClient, withReauth As Func(Of Func(Of Task(Of PlatiInfo)), Task(Of PlatiInfo)),
+                   Optional executaComandaOrd As Action(Of OrdComanda) = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
+        _executaComandaOrd = executaComandaOrd
         BuildDetailRows()
         ShowEmpty("Selectați un angajament din arbore.")
+    End Sub
+
+    ''' <summary>
+    ''' Reincarca platile angajamentului curent. Portul lui
+    ''' <c>fxPlati.RefreshPlati CodAngajament, True</c> din <c>frmFX_MAIN</c>: dupa ce s-a
+    ''' scris o ordonantare, platile ei nu mai sunt neordonantate, deci «+»-ul sta pe o zi
+    ''' gresita si starea nodurilor minte. Fara angajament curent nu face nimic.
+    ''' </summary>
+    Public Sub Reincarca()
+        Try
+            If String.IsNullOrWhiteSpace(_requestedCod) Then Return
+            ShowEmpty("Se încarcă plățile…")
+            ' Fire-and-forget deliberat, ca in SetContext: LoadAsync isi trateaza singura
+            ' TOATE erorile.
+            LoadAsync(_requestedCod)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PlatiView.Reincarca", ex)
+            Throw
+        End Try
     End Sub
 
     ''' <summary>
@@ -338,26 +369,61 @@ Public Class PlatiView
         End Try
     End Sub
 
-    ' Click pe iconița «+» -> ridicăm evenimentele dormante (mcTree_RightIconClick), fără abonat
-    ' în această felie. Pe două niveluri, exact ca Access: nivel 0 (lună) ->
-    ' AdaugaOrdonantariCerut(LunaAn); nivel 1 (zi) -> AdaugaOrdonantareCerut(-1, data), unde
-    ' -1 înseamnă „toată ziua, nu o plată anume". Ramura Access de nivel 2 (o plată anume) n-are
-    ' nod care s-o ridice cât timp frunza e ziua.
+    ' Click pe iconita «+» -> ordonantarea platilor nodului (mcTree_RightIconClick din Access).
+    ' Pe doua niveluri, exact ca acolo:
+    '   nivel 0 (luna) -> AdaugaOrdonantariCerut(LunaAn) -> FX_Adaugare_ORD_Din_Plati_Batch,
+    '                     adica OrdComanda.LotPeLuna: se genereaza SI SE SALVEAZA, fara editor,
+    '                     cate o ordonantare pentru fiecare zi a lunii cu plati neordonantate;
+    '   nivel 1 (ziua)  -> AdaugaOrdonantareCerut(-1, data) -> FX_Adaugare_ORD_Din_Plati cu
+    '                     vIdPlataFX = -1, adica OrdComanda.DinPlati fara plata anume: se
+    '                     genereaza graful (nimic scris) si SE DESCHIDE editorul.
+    ' Ramura Access de nivel 2 (o plata anume) n-are nod care s-o ridice cat timp frunza e ziua;
+    ' de-asta comanda de zi pleaca mereu cu IdPlataFx = Nothing.
+    '
+    ' Evenimentele raman ridicate INAINTE de comanda — ele sunt semnalul brut al arborelui, iar
+    ' un abonat (test, gazda viitoare) trebuie sa-l vada chiar daca shell-ul n-a dat comanda.
     Private Sub Tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
         Try
             If pNode Is Nothing Then Return
             Dim rows As List(Of PlataRow) = TryCast(pNode.Tag, List(Of PlataRow))
             If rows Is Nothing OrElse rows.Count = 0 Then Return
+            If String.IsNullOrWhiteSpace(_requestedCod) Then Return
 
             Select Case pNode.Level
                 Case 0
                     RaiseEvent AdaugaOrdonantariCerut(Me, New LunaAnEventArgs(LunaAnOf(rows(0))))
+                    Dim luna As Date? = PrimaDataDin(rows)
+                    ' Gruparea nodului e chiar luna, deci prima data din el o numeste. O luna
+                    ' fara nicio data (grupul «fara data», MonthKeyOf = 0) n-are ce lot sa ceara.
+                    If luna.HasValue Then
+                        CereComandaOrd(OrdComanda.LotPeLuna(_requestedCod, luna.Value.Month, luna.Value.Year))
+                    End If
                 Case 1
-                    RaiseEvent AdaugaOrdonantareCerut(Me, New PlataOrdEventArgs(-1, DayOf(rows(0))))
+                    Dim zi As Date? = PrimaDataDin(rows)
+                    RaiseEvent AdaugaOrdonantareCerut(Me, New PlataOrdEventArgs(-1, If(zi, Date.MinValue)))
+                    If zi.HasValue Then
+                        CereComandaOrd(OrdComanda.DinPlati(_requestedCod, zi.Value))
+                    End If
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("PlatiView.tree_RightIconClicked", ex)
         End Try
+    End Sub
+
+    ' Prima data reala din randurile unui nod (nodurile sunt grupate pe luna/zi, deci oricare
+    ' rand cu data o numeste). Nothing pentru grupul «fara data».
+    Private Shared Function PrimaDataDin(rows As List(Of PlataRow)) As Date?
+        For Each r As PlataRow In rows
+            If r.DataPlata.HasValue Then Return r.DataPlata.Value.Date
+        Next
+        Return Nothing
+    End Function
+
+    ' Da comanda shell-ului, daca vederea a primit una. Fara shell (teste headless) raman doar
+    ' evenimentele — si se spune de ce, ca sa nu treaca drept no-op tacut.
+    Private Sub CereComandaOrd(comanda As OrdComanda)
+        If _executaComandaOrd Is Nothing Then Return
+        _executaComandaOrd(comanda)
     End Sub
 
     ' ── Panoul de detaliu (extrasul bancar) ──────────────────────────────────
@@ -457,9 +523,9 @@ Public Class PlatiView
         Return $"{r.DataPlata.Value.Month}/{r.DataPlata.Value.Year}"
     End Function
 
-    Private Shared Function DayOf(r As PlataRow) As Date
-        Return If(r.DataPlata.HasValue, r.DataPlata.Value.Date, Date.MinValue)
-    End Function
+    ' NOTA: `DayOf(r)` a disparut aici — singurul lui apel, din Tree_RightIconClicked, a trecut
+    ' pe `PrimaDataDin(rows)`, care scaneaza randurile pana gaseste una cu data in loc sa se
+    ' bazeze pe primul rand si sa cada pe Date.MinValue cand acela n-are.
 
     Private Shared Function SameDay(a As Date?, b As Date?) As Boolean
         Return a.HasValue AndAlso b.HasValue AndAlso a.Value.Date = b.Value.Date

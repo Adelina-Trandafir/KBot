@@ -169,6 +169,11 @@ Public Class PrelucrareCoordinatorTests
         Throw New NotSupportedException()
     End Function
 
+    Public Function GetOrdNrUrmatorAsync(ct As CancellationToken) As Task(Of Integer) _
+        Implements IApiClient.GetOrdNrUrmatorAsync
+        Throw New NotSupportedException()
+    End Function
+
     Public Function SaveOrdAsync(draft As OrdDraft, ct As CancellationToken) As Task(Of OrdSaveRezultat) _
         Implements IApiClient.SaveOrdAsync
         Throw New NotSupportedException()

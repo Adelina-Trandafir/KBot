@@ -90,7 +90,7 @@ from datetime import date, datetime
 from flask import request, g, current_app
 
 from routes.auth.guard import require_session
-from utils.database import get_kbot_connection
+from utils.database import get_kbot_connection, COMMON_DB
 
 from . import forexe_bp
 
@@ -234,44 +234,34 @@ def _zi_ceruta(brut, nume_camp: str):
 # Dictionarele. VBA le incarca O SINGURA DATA inainte de bucla si le citeste cu
 # `Exists`/index; aici sunt cinci SELECT-uri materializate in dicts, exact la fel.
 
-# `Incarca_DicBanci` citeste tabela `BIC` (Cod -> Banca). `BIC` NU exista in MariaDB — nu e
-# in MariaDB_Schema/000_DEMO.sql, nu e in FX_System_Export/TABLES si nicio ruta Python n-o
-# pomeneste: traia in front-end-ul Access. Deci tabela se PROBEAZA (information_schema) si,
-# daca lipseste, dictionarul e gol si `Banca` ramane necompletata — camp informativ, nu
-# obligatoriu. NU se inventeaza o alta sursa pentru numele bancii.
-_SQL_ARE_BIC = (
-    "SELECT COUNT(*) FROM information_schema.TABLES "
-    "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'BIC'"
-)
-_are_bic_cache: dict = {}
-
-
-def _are_bic(cursor, db_name: str) -> bool:
-    """Exista tabela `BIC` pe baza asta? Proba se face O SINGURA DATA per baza."""
-    if db_name in _are_bic_cache:
-        return _are_bic_cache[db_name]
-    try:
-        # Cursorul e pe dictionar peste tot in acest fisier (cheile se citesc pe nume),
-        # deci coloana primeste un alias in loc sa fie luata pe pozitie.
-        cursor.execute(_SQL_ARE_BIC.replace("COUNT(*)", "COUNT(*) AS N"), (db_name,))
-        row = cursor.fetchone()
-        exista = bool(row and row["N"])
-    except Exception as e:
-        logger.warning("[forexe.ord_edit] %s: proba tabelei BIC a esuat (%s); se continua fara", db_name, e)
-        exista = False
-    _are_bic_cache[db_name] = exista
-    return exista
-
-
+# `Incarca_DicBanci` citeste tabela `BIC` (Cod -> Banca). Ea NU sta pe baza unitatii — nu e in
+# MariaDB_Schema/000_DEMO.sql si nu e in FX_System_Export/TABLES — ci pe baza COMUNA,
+# `AVACONT_COMUN` (spus de operator, 02.09.2026): nomenclatorul bancilor e acelasi pentru toate
+# unitatile, deci o singura copie, nu una per baza. Se citeste cu numele bazei in fata, pe
+# ACEEASI conexiune — tiparul pe care il foloseste deja `schema_sync/schema_common.py` pentru
+# `AVACONT_COMUN`.`CAI`.
+#
+# NU se mai PROBEAZA intai in `information_schema` (03.09.2026). Proba spunea «tabela lipseste»
+# desi tabela exista: `information_schema.TABLES` arata doar obiectele pe care contul are vreun
+# drept, deci raspundea «0» de fiecare data cand dreptul pe `AVACONT_COMUN`.`BIC` nu era dat
+# contului cu care merge serverul. O proba care poate raspunde gresit tocmai in cazul bun nu
+# apara nimic: se incearca de-a dreptul SELECT-ul, iar esecul LUI e singurul raspuns de
+# incredere. Tabela existenta dar goala da un dictionar gol si NICIUN avertisment — nu e o
+# eroare, doar un nomenclator nepopulat.
 def incarca_dic_banci(cursor, db_name: str, avertismente: list) -> dict:
-    """Cod BIC (4 caractere) -> numele bancii. Gol cand tabela `BIC` nu exista pe baza."""
-    if not _are_bic(cursor, db_name):
+    """Cod BIC (4 caractere) -> numele bancii, din `AVACONT_COMUN`.`BIC`."""
+    try:
+        cursor.execute(f"SELECT Cod, Banca FROM `{COMMON_DB}`.`BIC`")
+        return {str(r["Cod"]): _txt(r["Banca"]) for r in cursor.fetchall() if r["Cod"] is not None}
+    except Exception as e:
+        # Tabela lipseste sau contul nu are drept pe ea: se SPUNE, nu se cade — generarea nu
+        # depinde de numele bancii, e camp informativ.
+        logger.warning("[forexe.ord_edit] %s: citirea lui `%s`.BIC a esuat (%s); se continua fara",
+                       db_name, COMMON_DB, e)
         avertismente.append(
-            "Tabela «BIC» nu există în această bază, deci numele băncilor nu s-a putut "
-            "completa automat. Completați-l manual, dacă e nevoie.")
+            f"Tabela «BIC» din baza comună «{COMMON_DB}» nu a putut fi citită, deci numele "
+            "băncilor nu s-a putut completa automat. Completați-l manual, dacă e nevoie.")
         return {}
-    cursor.execute("SELECT Cod, Banca FROM BIC")
-    return {str(r["Cod"]): _txt(r["Banca"]) for r in cursor.fetchall() if r["Cod"] is not None}
 
 
 # `Incarca_DicPartInd`: CodIndicator -> (CodPartener, IdPartener), din sectiunea A a
@@ -542,6 +532,13 @@ def construieste_graf(randuri: list, dic_banci: dict, dic_part_ind: dict,
     urmator_rec = -1
     urmator_doc = -1
 
+    # Un document justificativ e UNIC la un beneficiar (cerinta operatorului, 02.09.2026).
+    # `Adauga_Ord_Doc` scria cate unul pentru FIECARE rand-sursa, deci trei plati cu aceeasi
+    # descriere la acelasi beneficiar dadeau trei randuri identice — nedeosebite pe ecran si
+    # fara niciun inteles in plus in PDF. Se pastreaza primul si se numara restul.
+    doc_vazute = set()
+    doc_duplicate = 0
+
     # `DicPlatiAnt` se ACTUALIZEAZA in bucla (VBA: dupa fiecare linie adauga valoarea la
     # indicatorul ei), deci se lucreaza pe o copie ca dictionarul citit sa nu fie stricat.
     plati_curente = dict(dic_plati)
@@ -678,16 +675,28 @@ def construieste_graf(randuri: list, dic_banci: dict, dic_part_ind: dict,
         else:
             doc_just = _txt(r["Descriere"]).upper()
 
-        documente.append({
-            "temp_id": urmator_doc,
-            "idorddocp": 0,
-            "part_temp_id": part["temp_id"],
-            "idordpartp": 0,
-            "doc_just": doc_just,
-            "nume_doc": None,
-            "tip_doc": "text",
-        })
-        urmator_doc -= 1
+        cheie_doc = (part["temp_id"], doc_just, None, "text")
+        if cheie_doc in doc_vazute:
+            doc_duplicate += 1
+        else:
+            doc_vazute.add(cheie_doc)
+            documente.append({
+                "temp_id": urmator_doc,
+                "idorddocp": 0,
+                "part_temp_id": part["temp_id"],
+                "idordpartp": 0,
+                "doc_just": doc_just,
+                "nume_doc": None,
+                "tip_doc": "text",
+            })
+            urmator_doc -= 1
+
+    if doc_duplicate:
+        # Nu e un avertisment pentru operator: se intampla la aproape orice zi cu mai multe
+        # plati la fel, si nu-l pune sa faca nimic. Se scrie in jurnal ca sa se poata raspunde
+        # la «de ce am mai putine documente decat linii».
+        logger.info("[forexe.ord_edit] genereaza: %s document(e) justificativ(e) duplicat(e) "
+                    "sarite (unic per beneficiar)", doc_duplicate)
 
     return {
         "antet": antet,
@@ -1053,6 +1062,40 @@ def get_ord_zile():
             conn.close()
 
 
+@forexe_bp.route("/api/forexe/ord/nr-urmator", methods=["GET"])
+@require_session
+def get_ord_nr_urmator():
+    """Numarul pe care l-ar primi ACUM o ordonantare noua. Raspuns: { "nr_ord": N }.
+
+    E o PRESUPUNERE, nu o rezervare. Numarul adevarat se aloca tot in tranzactia de salvare
+    (`_scrie_graf`, D8: `MAX(NrORD) + 1` cu `FOR UPDATE`), fiindca acolo e singurul loc in
+    care doua salvari concurente se pot aseza la rand. Ruta asta raspunde la o intrebare pe
+    care operatorul o punea oricum inainte de a incepe sa scrie — «al catelea va fi?» — si o
+    raspunde fara sa incuie nimic: un `FOR UPDATE` aici ar tine lacatul pe toata durata
+    editarii si ar opri restul casei din salvat.
+
+    Consecinta, spusa pe fata in interfata: intre intrebare si salvare altcineva poate salva
+    primul, si atunci numarul real va fi altul.
+    """
+    db_name = g.session.db_name
+    conn = None
+    try:
+        conn = get_kbot_connection(db_name)
+        cursor = conn.cursor(dictionary=True)
+        # Fara `FOR UPDATE` — vezi mai sus. Predicatul Access `DC='…'` s-a retras si aici:
+        # o baza = o unitate, deci selecta oricum tot.
+        cursor.execute("SELECT COALESCE(MAX(NrORD), 0) + 1 AS Urmator FROM FX_ORD")
+        nr_ord = int(cursor.fetchone()["Urmator"])
+        logger.info("[forexe.ord_edit] %s: nr-urmator -> %s", db_name, nr_ord)
+        return _json_utf8({"nr_ord": nr_ord}, 200)
+    except Exception as e:
+        logger.error(f"[forexe.ord_edit] nr-urmator: {e}", exc_info=True)
+        return _json_utf8({"error": f"Eroare la citirea numărului următor: {e}"}, 500)
+    finally:
+        if conn is not None:
+            conn.close()
+
+
 # =========================================================================================
 # SALVAREA
 # =========================================================================================
@@ -1245,6 +1288,44 @@ def _cheie_parinte(item: dict, cheie_reala: str, cheie_temp: str, harta: dict, e
     if real:
         return real
     raise DateInvalide(f"{eticheta}: rândul nu are părinte.")
+
+
+def _fara_duplicate_doc(documente: list) -> list:
+    """Un document justificativ ramane UNIC la un beneficiar (cerinta operatorului, 02.09.2026).
+
+    Din mai multe randuri cu ACELEASI `IDORDPARTP` + `DocJust` + `NumeDoc` + `TipDoc` se scrie
+    unul singur; restul se arunca. Generarea nu mai propune duplicate, iar editorul nu le mai
+    lasa sa apara, dar ordonantarile scrise inainte de regula asta le au inca, si ele intra
+    inapoi pe aici la prima salvare.
+
+    Dintre doua randuri identice ramane cel care EXISTA deja in tabela: altfel un `IDORDDOCP`
+    viu s-ar sterge doar ca sa se scrie altul la loc, cu exact acelasi continut.
+    """
+    vazute = {}          # cheia de valoare -> pozitia lui in `pastrate`
+    pastrate = []
+    for d in documente:
+        real_part = _int_or_none(d.get("idordpartp")) or 0
+        temp_part = _int_or_none(d.get("part_temp_id")) or 0
+        nume_doc = d.get("nume_doc")
+        cheie = (real_part if real_part > 0 else temp_part,
+                 _txt(d.get("doc_just")),
+                 None if nume_doc in (None, "") else str(nume_doc),
+                 _txt(d.get("tip_doc")) or "text")
+        poz = vazute.get(cheie)
+        if poz is None:
+            vazute[cheie] = len(pastrate)
+            pastrate.append(d)
+        elif ((_int_or_none(d.get("idorddocp")) or 0) > 0 and
+              (_int_or_none(pastrate[poz].get("idorddocp")) or 0) <= 0):
+            pastrate[poz] = d
+
+    sarite = len(documente) - len(pastrate)
+    if sarite:
+        # Randurile REALE aruncate se sterg oricum prin `_sterge_absentii`, deci raspunsul le
+        # numara deja in `sterse["documente"]`; aici se spune doar de ce.
+        logger.info("[forexe.ord_edit] save: %s document(e) justificativ(e) duplicat(e) "
+                    "aruncat(e) (unic per beneficiar)", sarite)
+    return pastrate
 
 
 def _sterge_absentii(cursor, tabela: str, cheie: str, idordp: int, pastrate: set) -> int:
@@ -1452,7 +1533,7 @@ def _scrie_graf(cursor, sarcina: dict) -> dict:
             harta_rec[temp] = real
 
     # ---- 5. documentele justificative ---------------------------------------------------
-    documente = _lista(sarcina, "documente")
+    documente = _fara_duplicate_doc(_lista(sarcina, "documente"))
     pastrate_doc = set()
     for d in documente:
         # Un document poate apartine INTREGII ordonantari, nu unui beneficiar: atunci

@@ -53,9 +53,16 @@ Public Class OrdEditForm
     Private ReadOnly _withReauthSalvare As Func(Of Func(Of Task(Of OrdSaveRezultat)), Task(Of OrdSaveRezultat))
     Private ReadOnly _withReauthIncarcare As Func(Of Func(Of Task(Of PutAtasamentResponse)), Task(Of PutAtasamentResponse))
     Private ReadOnly _withReauthImagine As Func(Of Func(Of Task(Of PdfDownloadResult)), Task(Of PdfDownloadResult))
+    Private ReadOnly _withReauthNumar As Func(Of Func(Of Task(Of Integer)), Task(Of Integer))
 
     Private ReadOnly _pages As New Dictionary(Of String, IOrdEditPage)(StringComparer.Ordinal)
     Private _activePage As IOrdEditPage
+
+    ''' <summary>Numarul PRESUPUS, adus de la server; 0 cat timp nu s-a intrebat sau raspunsul
+    ''' n-a venit. Nu are nimic de-a face cu numarul real, care se aloca la salvare.</summary>
+    Private _nrProbabil As Integer
+    ' O intrebare deodata: clicurile repezite pe eticheta nu se pun la coada.
+    Private _seIntreabaNumarul As Boolean
 
     ''' <summary>Cheia ordonantarii salvate; 0 cat timp nu s-a salvat nimic.</summary>
     Public ReadOnly Property IdordpSalvat As Integer
@@ -67,12 +74,14 @@ Public Class OrdEditForm
                    draft As OrdDraft,
                    withReauthSalvare As Func(Of Func(Of Task(Of OrdSaveRezultat)), Task(Of OrdSaveRezultat)),
                    withReauthIncarcare As Func(Of Func(Of Task(Of PutAtasamentResponse)), Task(Of PutAtasamentResponse)),
-                   withReauthImagine As Func(Of Func(Of Task(Of PdfDownloadResult)), Task(Of PdfDownloadResult)))
-        If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
-        If draft Is Nothing Then Throw New ArgumentNullException(NameOf(draft))
-        If withReauthSalvare Is Nothing Then Throw New ArgumentNullException(NameOf(withReauthSalvare))
-        If withReauthIncarcare Is Nothing Then Throw New ArgumentNullException(NameOf(withReauthIncarcare))
-        If withReauthImagine Is Nothing Then Throw New ArgumentNullException(NameOf(withReauthImagine))
+                   withReauthImagine As Func(Of Func(Of Task(Of PdfDownloadResult)), Task(Of PdfDownloadResult)),
+                   withReauthNumar As Func(Of Func(Of Task(Of Integer)), Task(Of Integer)))
+        ArgumentNullException.ThrowIfNull(apiClient)
+        ArgumentNullException.ThrowIfNull(draft)
+        ArgumentNullException.ThrowIfNull(withReauthSalvare)
+        ArgumentNullException.ThrowIfNull(withReauthIncarcare)
+        ArgumentNullException.ThrowIfNull(withReauthImagine)
+        ArgumentNullException.ThrowIfNull(withReauthNumar)
 
         InitializeComponent()
         _apiClient = apiClient
@@ -80,6 +89,7 @@ Public Class OrdEditForm
         _withReauthSalvare = withReauthSalvare
         _withReauthIncarcare = withReauthIncarcare
         _withReauthImagine = withReauthImagine
+        _withReauthNumar = withReauthNumar
     End Sub
 
     ' ══════════════════════════════════════════════════════════════════════════
@@ -94,7 +104,7 @@ Public Class OrdEditForm
 
             lblCod.Text = _draft.CodAngajament
             lblObiect.Text = _draft.ObiectDdf
-            dtpData.Value = If(_draft.DataOrd.HasValue, _draft.DataOrd.Value, Date.Today)
+            dtpData.Value = If(_draft.DataOrd, Date.Today)
             ActualizeazaAntet()
 
             ' Avertismentele generarii (clasificatie lipsa, tabela BIC absenta, ziua are peste
@@ -118,6 +128,7 @@ Public Class OrdEditForm
     Private Async Sub OrdEditForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         Try
             Await AduImaginileAsync().ConfigureAwait(True)
+            Await IntreabaNumarulAsync(spuneEsecul:=False).ConfigureAwait(True)
         Catch ex As Exception
             GlobalErrorLog.Write("OrdEditForm.OrdEditForm_Shown", ex)
         End Try
@@ -236,10 +247,69 @@ Public Class OrdEditForm
     End Sub
 
     ''' <summary>Rescrie numarul si totalul. Totalul se RECALCULEAZA din linii — o cifra care
-    ''' ar ramane de la editarea trecuta e mai rea decat lipsa ei.</summary>
+    ''' ar ramane de la editarea trecuta e mai rea decat lipsa ei.
+    '''
+    ''' <para>Numarul are trei stari: cel REAL (ordonantare deja salvata), cel PRESUPUS
+    ''' («probabil N», adus de <see cref="IntreabaNumarulAsync"/>) si niciunul. Presupusul
+    ''' isi poarta cuvantul «probabil» in text, nu doar in sfat: o cifra goala langa eticheta
+    ''' «Număr» s-ar citi ca numarul documentului.</para></summary>
     Private Sub ActualizeazaAntet()
-        lblNrOrd.Text = If(_draft.NrOrd > 0, _draft.NrOrd.ToString(_roCulture), "se alocă la salvare")
+        If _draft.NrOrd > 0 Then
+            lblNrOrd.Text = _draft.NrOrd.ToString(_roCulture)
+            ' Alocat: nu mai e nimic de intrebat, deci nici degetul de aratat.
+            lblNrOrd.Cursor = Cursors.Default
+        ElseIf _nrProbabil > 0 Then
+            lblNrOrd.Text = "probabil " & _nrProbabil.ToString(_roCulture)
+            lblNrOrd.Cursor = Cursors.Hand
+        Else
+            lblNrOrd.Text = "se alocă la salvare"
+            lblNrOrd.Cursor = Cursors.Hand
+        End If
         lblTotal.Text = _draft.Total.ToString("N2", _roCulture)
+    End Sub
+
+    ''' <summary>
+    ''' Intreaba serverul ce numar ar primi ACUM o ordonantare noua si il arata ca presupunere.
+    '''
+    ''' <para>Numarul NU se rezerva: alocarea adevarata ramane unde era, in tranzactia de
+    ''' salvare, singurul loc in care doua salvari concurente se pot aseza la rand. Cat timp
+    ''' operatorul editeaza, altcineva poate salva primul — de asta cifra se arata cu
+    ''' «probabil» in fata, iar sfatul etichetei spune pe sleau ce e si ce nu e.</para>
+    '''
+    ''' <para>Pe o ordonantare DEJA salvata nu se intreaba nimic: numarul ei e alocat.</para>
+    ''' </summary>
+    ''' <param name="spuneEsecul">Un esec se arata doar cand operatorul a cerut el numarul.
+    ''' La deschidere se trece peste in tacere: ordonantarea se editeaza si fara presupunere,
+    ''' iar un mesaj de eroare in fata unui formular abia deschis ar opri lucrul degeaba.</param>
+    Private Async Function IntreabaNumarulAsync(spuneEsecul As Boolean) As Task
+        If _draft.NrOrd > 0 OrElse _seIntreabaNumarul Then Return
+
+        _seIntreabaNumarul = True
+        busyBar.Running = True
+        Try
+            _nrProbabil = Await _withReauthNumar(
+                Function() _apiClient.GetOrdNrUrmatorAsync(CancellationToken.None)).ConfigureAwait(True)
+            ActualizeazaAntet()
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdEditForm.IntreabaNumarulAsync", ex)
+            If spuneEsecul Then
+                ntfMesaj.Show("Nu am putut afla ce număr ar primi ordonanțarea. " &
+                              "Numărul se alocă oricum la salvare.", NoticeKind.Warning)
+                ntfMesaj.Visible = True
+            End If
+        Finally
+            busyBar.Running = False
+            _seIntreabaNumarul = False
+        End Try
+    End Function
+
+    ' Boundary UI async: se logheaza si se inghite.
+    Private Async Sub LblNrOrd_Click(sender As Object, e As EventArgs) Handles lblNrOrd.Click
+        Try
+            Await IntreabaNumarulAsync(spuneEsecul:=True).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdEditForm.LblNrOrd_Click", ex)
+        End Try
     End Sub
 
     Private Sub DtpData_ValueChanged(sender As Object, e As EventArgs) Handles dtpData.ValueChanged
