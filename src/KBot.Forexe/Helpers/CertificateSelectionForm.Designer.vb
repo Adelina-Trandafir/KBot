@@ -2,7 +2,7 @@
 
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class CertificateSelectionForm
-    Inherits System.Windows.Forms.Form
+    Inherits KBot.Theming.KBotThemedForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
@@ -160,7 +160,7 @@ Partial Class CertificateSelectionForm
         ' CertificateSelectionForm
         '
         AcceptButton = btnSelect
-        AutoScaleDimensions = New System.Drawing.SizeF(8.0F, 20.0F)
+        AutoScaleDimensions = New System.Drawing.SizeF(8F, 18F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Drawing.Color.White
         CancelButton = btnCancel

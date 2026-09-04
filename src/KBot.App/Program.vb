@@ -72,6 +72,16 @@ Friend Module Program
             ThemeManager.Initialize()
             KBotTheme.WireSubsystems()
 
+            ' Fontul de bază lipsește de pe mașină (felia 0052). Se spune O SINGURĂ DATĂ, aici,
+            ' fiindcă e o proprietate a calculatorului, nu a ferestrei: aplicația merge înainte pe
+            ' fontul de sistem, dar formularele au fost proiectate pe Calibri, deci măsurile lor nu
+            ' se mai potrivesc și operatorul trebuie să știe de ce arată altfel. Tăcerea aici ar
+            ' produce exact defectul pe care felia îl repară, doar că fără nicio explicație.
+            If KBotFonts.IsFallback Then
+                MessageBox.Show(KBotFonts.MissingFontMessage, KBotFonts.MissingFontCaption,
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            End If
+
             ' Zona de lucru a PDF-urilor NESEMNATE (felia 0041) se golește la fiecare pornire.
             ' Ele sunt artefacte DERIVATE — se regenerează prin XfaWriter ori de câte ori
             ' operatorul cere să le vadă — deci un rest de la sesiunea trecută n-are nicio

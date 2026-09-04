@@ -1,6 +1,6 @@
 ﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class HistoryForm
-    Inherits System.Windows.Forms.Form
+    Inherits KBot.Theming.KBotThemedForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
@@ -162,7 +162,7 @@ Partial Class HistoryForm
         '
         ' HistoryForm
         '
-        AutoScaleDimensions = New System.Drawing.SizeF(10.0F, 25.0F)
+        AutoScaleDimensions = New System.Drawing.SizeF(9F, 22F)
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         ClientSize = New System.Drawing.Size(1014, 500)
         Controls.Add(SplitContainer1)

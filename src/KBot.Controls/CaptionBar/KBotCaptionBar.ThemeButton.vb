@@ -42,6 +42,45 @@ Partial Public NotInheritable Class KBotCaptionBar
     ''' </summary>
     Private Const TextScaleKey As String = "@TextScale"
 
+    ''' <summary>
+    ''' Cheia rândului bifabil «Font din temă». Aceeași grijă ca la celelalte: un «@» în față, ca
+    ''' să nu poată fi confundată cu numele unei scheme.
+    ''' </summary>
+    Private Const ThemeFontKey As String = "@ThemeFont"
+
+    ' Bifa desenată pentru rândul de mai sus, ținută pe culoarea cu care a fost făcută. Se reface
+    ' când se schimbă schema (deci culoarea textului) și NU se eliberează — o imagine pe care
+    ' tocmai o desenează un meniu n-are voie să dispară sub el (aceeași alegere ca în FontBaseline).
+    Private Shared _bifa As Bitmap
+    Private Shared _bifaCuloare As Integer
+
+    ''' <summary>
+    ''' Bifa rândului «Font din temă», în culoarea textului din schema curentă — sau Nothing când
+    ''' comutatorul e stins. Un rând fără pictogramă nu iese din coloană: jgheabul de pictograme e
+    ''' al MENIULUI, iar un element fără imagine își lasă slotul gol (vezi CustomPopup.Painting).
+    ''' </summary>
+    Private Shared Function BifaPentru(pornit As Boolean) As Image
+        If Not pornit Then Return Nothing
+        Dim culoare As Color = ThemeManager.Current.Palette.TextColor
+        If _bifa IsNot Nothing AndAlso _bifaCuloare = culoare.ToArgb() Then Return _bifa
+
+        ' 16x16 e mărimea celorlalte pictograme ale meniului; popup-ul o scalează la ImageSize.
+        Dim bmp As New Bitmap(16, 16)
+        Using g As Graphics = Graphics.FromImage(bmp)
+            g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+            g.Clear(Color.Transparent)
+            Using pen As New Pen(culoare, 2.0F)
+                pen.StartCap = Drawing2D.LineCap.Round
+                pen.EndCap = Drawing2D.LineCap.Round
+                pen.LineJoin = Drawing2D.LineJoin.Round
+                g.DrawLines(pen, New Point() {New Point(3, 8), New Point(6, 12), New Point(13, 4)})
+            End Using
+        End Using
+        _bifa = bmp
+        _bifaCuloare = culoare.ToArgb()
+        Return _bifa
+    End Function
+
     ' Ridicat cât ține deschiderea meniului de temă, ca sinkul comun IPopupAnchor.SetPopupOpen să
     ' știe CARE buton s-a desfășurat. Vezi comentariul de acolo.
     Private _themeMenuOpening As Boolean = False
@@ -242,7 +281,10 @@ Partial Public NotInheritable Class KBotCaptionBar
             If ancora.IsEmpty Then Return
 
             Dim elemente As List(Of CustomPopupItem) = ConstruiesteElementeleMeniului()
-            If elemente.Count = 0 Then Return   ' o singură schemă și fără editor: n-ai ce alege
+            ' Gardă defensivă. De la felia 0052 rândul «Font din temă» e mereu acolo, deci lista nu
+            ' mai poate fi goală — dar un meniu gol tot n-are ce să arate, iar construirea listei
+            ' nu e treaba acestei metode.
+            If elemente.Count = 0 Then Return
 
             ' Nicio selecție inițială: rândul «curent» lipsește din listă tocmai fiindcă e curent,
             ' deci n-are ce fi evidențiat. NU în «Using»: arătat nemodal, popup-ul se eliberează
@@ -282,13 +324,26 @@ Partial Public NotInheritable Class KBotCaptionBar
 
         ' Cursorul de mărime, în CAP. Valoarea e citită din AppScaling la fiecare deschidere, deci
         ' meniul arată mereu mărimea reală, chiar dacă a fost schimbată din fereastra de opțiuni.
-        If _showTextScaleSlider Then
+        '
+        ' Ascuns cât timp tema NU scrie fontul formularului (felia 0052): mărirea textului trece
+        ' tocmai prin scrierea fontului pe formular, deci cu comutatorul stins cursorul ar fi tras
+        ' degeaba pe jumătate din ferestre. Proprietatea ShowTextScaleSlider rămâne a
+        ' OPERATORULUI — o sting șapte formulare din designer — deci se citesc amândouă, nu se
+        ' derivă una din cealaltă.
+        If _showTextScaleSlider AndAlso ThemeManager.WritesFormFont Then
             elemente.Add(CustomPopupItem.Slider(TextScaleKey, "Mărime text",
                                                 CInt(Math.Round(AppScaling.MinTextScale * 100)),
                                                 CInt(Math.Round(AppScaling.MaxTextScale * 100)),
                                                 CInt(Math.Round(AppScaling.TextScale * 100))))
-            elemente.Add(CustomPopupItem.Separator())
         End If
+
+        ' Comutatorul fontului, sub cursor. Bifat = tema scrie fontul de bază peste cel pe care
+        ' formularul îl are deja din constructor. Fiind ACELAȘI font, stingerea nu mișcă nimic pe
+        ' ecran — vezi ThemeManager.WritesFormFont pentru de ce rândul există totuși.
+        elemente.Add(New CustomPopupItem(ThemeFontKey,
+                                         CuLiteraDeAcces("Font din temă", folosite),
+                                         BifaPentru(ThemeManager.WritesFormFont)))
+        elemente.Add(CustomPopupItem.Separator())
 
         For Each s As ThemeScheme In ThemeManager.AvailableSchemes
             If s Is Nothing Then Continue For
@@ -334,6 +389,13 @@ Partial Public NotInheritable Class KBotCaptionBar
     Private Sub ThemeMenu_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
         Try
             If e Is Nothing OrElse e.Item Is Nothing Then Return
+
+            If String.Equals(e.Item.Key, ThemeFontKey, StringComparison.Ordinal) Then
+                ' Setterul persistă, repune fontul din designer pe ferestrele deschise și ridică
+                ' ThemeChanged — aici nu mai e nimic de făcut.
+                ThemeManager.WritesFormFont = Not ThemeManager.WritesFormFont
+                Return
+            End If
 
             If String.Equals(e.Item.Key, ThemeOptionsKey, StringComparison.Ordinal) Then
                 DeschideOptiunileDeTema()

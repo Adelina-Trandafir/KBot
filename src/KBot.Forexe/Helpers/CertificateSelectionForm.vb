@@ -21,7 +21,10 @@ Public Class CertificateSelectionForm
         InitializeComponent()
         _manualPin = manualPin
         grpPin.Visible = False
-        KBotTheme.ApplyTheme(Me)
+        ' No ApplyTheme call: the form now inherits KBotThemedForm, which applies and re-applies
+        ' the scheme from OnLoad. This is the migration KBotThemedForm's own summary describes --
+        ' change the Inherits line, drop the hand-rolled call. Slice 0052 moved it here so the
+        ' form would pick up the Calibri base font from the base constructor.
     End Sub
 
     Private Sub CertificateSelectionForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load

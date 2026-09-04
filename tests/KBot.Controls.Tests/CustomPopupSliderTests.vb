@@ -407,8 +407,12 @@ Public Class CustomPopupSliderTests
 
                        Assert.True(elemente(0).IsSlider)
                        Assert.Equal("@TextScale", elemente(0).Key)
-                       Assert.True(elemente(1).IsSeparator)
                        Assert.Equal(CInt(Math.Round(AppScaling.TextScale * 100)), elemente(0).SliderValue)
+                       ' Felia 0052 a pus comutatorul de font între cursor și separator: amândouă
+                       ' rândurile de sus reglează același lucru — fontul cu care se măsoară
+                       ' fereastra — deci stau împreună, deasupra liniei care le desparte de scheme.
+                       Assert.Equal("@ThemeFont", elemente(1).Key)
+                       Assert.True(elemente(2).IsSeparator)
                    End Using
                End Sub)
     End Sub

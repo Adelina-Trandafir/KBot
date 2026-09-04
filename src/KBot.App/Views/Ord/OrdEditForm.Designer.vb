@@ -14,7 +14,11 @@ Imports KBot.Controls
 ' Consecinta: `btnSav` de pe frmFX_ORD_DOC dispare — exista O SINGURA salvare, aici.
 '
 ' Toate controalele se declara AICI (docs/kbot-forms-ui-convention.md).
-' Coordonatele sunt scrise la 96 dpi si AutoScaleDimensions le insoteste.
+' Coordonatele sunt scrise la 144 dpi -- fisierul a fost salvat din designer pe un ecran la
+' 150%, iar Visual Studio rescrie ATUNCI si coordonatele, si perechea. AutoScaleDimensions
+' le insoteste: Calibri 9 se masoara (9, 22) acolo (felia 0052). Cele doua se schimba
+' INTOTDEAUNA impreuna; o pereche luata de la alt font sau de la alt dpi turteste fereastra
+' la deschidere, fara ca nimic din designer s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class OrdEditForm
     Inherits KBot.Theming.KBotShellForm
@@ -386,9 +390,9 @@ Partial Class OrdEditForm
         ' 
         ' OrdEditForm
         ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleDimensions = New SizeF(9F, 22F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(1300, 1000)
+        ClientSize = New Size(1641, 1000)
         Controls.Add(tlyMain)
         FormBorderStyle = FormBorderStyle.None
         Margin = New Padding(4, 5, 4, 5)

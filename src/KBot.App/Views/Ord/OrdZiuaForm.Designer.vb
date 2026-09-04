@@ -8,7 +8,10 @@ Imports KBot.Controls
 ' locul unei date ghicite.
 '
 ' Toate controalele se declara AICI (docs/kbot-forms-ui-convention.md).
-' Coordonatele sunt scrise la 96 dpi si AutoScaleDimensions le insoteste.
+' Coordonatele sunt scrise la 96 dpi si AutoScaleDimensions le insoteste: Calibri 9 se
+' masoara (6, 14) acolo (felia 0052). Cele doua se schimba INTOTDEAUNA impreuna, si numai
+' din designer -- o pereche luata de la alt font sau de la alt dpi turteste fereastra la
+' deschidere, fara ca nimic din designer s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class OrdZiuaForm
     Inherits KBot.Theming.KBotThemedForm
@@ -143,7 +146,7 @@ Partial Class OrdZiuaForm
         ' OrdZiuaForm
         '
         AcceptButton = btnOk
-        AutoScaleDimensions = New SizeF(7F, 15F)
+        AutoScaleDimensions = New SizeF(6F, 14F)
         AutoScaleMode = AutoScaleMode.Font
         CancelButton = btnRenunta
         ClientSize = New Size(432, 220)

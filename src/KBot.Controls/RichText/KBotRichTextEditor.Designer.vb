@@ -22,10 +22,14 @@ Imports KBot.Controls
 ' dropped on a form looks right before anyone touches a property.
 '
 ' All controls are declared HERE (docs/kbot-forms-ui-convention.md).
-' Coordinates are written at 96 dpi and AutoScaleDimensions goes with them.
+' Coordinates are written at 144 dpi -- the file was saved from the designer on a 150% screen,
+' and Visual Studio rewrites the coordinates and the stamp together when it does.
+' AutoScaleDimensions goes with them: Calibri 9 measures (9, 22) there (slice 0052). The two
+' always change together; a stamp taken from another font or another dpi squashes the window
+' on open, with nothing in the designer to show it.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class KBotRichTextEditor
-    Inherits UserControl
+    Inherits KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -261,7 +265,7 @@ Partial Class KBotRichTextEditor
         ' 
         ' KBotRichTextEditor
         ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleDimensions = New SizeF(9F, 22F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(rtb)
         Controls.Add(pnlHeader)

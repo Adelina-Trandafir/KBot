@@ -15,7 +15,11 @@ Imports KBot.Controls
 ' cineva unde s-au dus.)
 '
 ' Toate controalele se declara AICI (docs/kbot-forms-ui-convention.md).
-' Coordonatele sunt scrise la 96 dpi si AutoScaleDimensions le insoteste.
+' Coordonatele sunt scrise la 144 dpi -- fisierul a fost salvat din designer pe un ecran la
+' 150%, iar Visual Studio rescrie ATUNCI si coordonatele, si perechea. AutoScaleDimensions
+' le insoteste: Calibri 9 se masoara (9, 22) acolo (felia 0052). Cele doua se schimba
+' INTOTDEAUNA impreuna; o pereche luata de la alt font sau de la alt dpi turteste fereastra
+' la deschidere, fara ca nimic din designer s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class OrdAtasamentePage
     Inherits System.Windows.Forms.UserControl
@@ -294,7 +298,7 @@ Partial Class OrdAtasamentePage
         ' 
         ' OrdAtasamentePage
         ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleDimensions = New SizeF(9F, 22F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(split)
         Margin = New Padding(4, 5, 4, 5)

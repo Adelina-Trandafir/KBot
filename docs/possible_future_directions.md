@@ -209,3 +209,28 @@ not belong in a feature commit, and it would bury the slice's own diff.
 
 **To decide:** whether to do the sweep as its own commit, all at once, so that from then on any
 diacritic outside a string literal is a genuine defect and can be caught mechanically.
+
+---
+
+## Nothing guards the `AutoScaleDimensions` stamp at build time
+
+*Found while writing slice 0052.*
+
+A form's font and its `AutoScaleDimensions` stamp are two halves of one measurement. WinForms
+multiplies every child rectangle and `ClientSize` by the ratio between them, so a stamp that
+belongs to a different font -- or to the same font at a different dpi -- silently resizes the
+window at launch. Slice 0052 found every window in the application opening at 90% of its
+authored width and 88% of its authored height for exactly this reason, with nothing in the
+designer to show it and nothing in the build to complain.
+
+The failure mode is not a one-off. **Visual Studio re-stamps the file whenever a form is opened
+and saved on a machine at a different scaling**, rewriting the coordinates to match -- which is
+correct in itself, but means the pair drifts per developer machine and per session. Commit
+`ab69142` is literally titled "designer re-save at 150% DPI"; seven files still carried a
+comment claiming 96 dpi long after their stamp said otherwise.
+
+**To decide:** a build-time check that reads every `AutoScaleDimensions` line and fails the build
+on a value that is not one of the three legal Calibri 9 pairs -- `(6F, 14F)` at 96 dpi,
+`(8F, 18F)` at 120, `(9F, 22F)` at 144. It cannot tell whether the *coordinates* match the stamp,
+so it would not catch everything; what it would catch is the case that actually happened, which
+is a stamp from the wrong font entirely.

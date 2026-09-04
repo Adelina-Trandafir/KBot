@@ -132,7 +132,7 @@ Partial Class StartupLauncherForm
         ' StartupLauncherForm
         '
         AcceptButton = btnPorneste
-        AutoScaleDimensions = New SizeF(7.0F, 15.0F)
+        AutoScaleDimensions = New SizeF(6F, 14F)
         AutoScaleMode = AutoScaleMode.Font
         CancelButton = btnIesire
         ClientSize = New Size(440, 360)

@@ -284,7 +284,7 @@ Partial Class ThemeOptionsForm
         '
         ' ThemeOptionsForm
         '
-        AutoScaleDimensions = New SizeF(7F, 15F)
+        AutoScaleDimensions = New SizeF(6F, 14F)
         AutoScaleMode = AutoScaleMode.Font
         ClientSize = New Size(584, 540)
         ' Ordine INVERSĂ de andocare (regula casei): Fill primul, apoi Bottom-urile — cel adăugat

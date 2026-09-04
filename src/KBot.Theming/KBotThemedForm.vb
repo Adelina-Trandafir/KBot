@@ -14,6 +14,25 @@ Imports KBot.Common
 Public Class KBotThemedForm
     Inherits Form
 
+    ''' <summary>
+    ''' Puts the application's base font on the form BEFORE anything else (slice 0052).
+    '''
+    ''' <para>The timing is the whole point, not a detail. A derived form's constructor calls
+    ''' <c>InitializeComponent</c>, and that is where <c>AutoScaleDimensions</c> and
+    ''' <c>AutoScaleMode.Font</c> are assigned — at which moment WinForms measures the font the
+    ''' form is CURRENTLY wearing and scales every child by the ratio against the stamped pair.
+    ''' A base constructor runs before the derived one, so assigning here is the only way the
+    ''' form is already wearing the right font when it gets measured.</para>
+    '''
+    ''' <para>It also fixes the designer surface: Visual Studio instantiates the BASE type to
+    ''' render a derived form, so the designer now lays out in the same font the operator will
+    ''' see. Designer and runtime finally measure the same thing — see <see cref="KBotFonts"/>
+    ''' for what they used to measure instead.</para>
+    ''' </summary>
+    Public Sub New()
+        Font = KBotFonts.Base
+    End Sub
+
     Protected Overrides Sub OnLoad(e As EventArgs)
         Try
             MyBase.OnLoad(e)

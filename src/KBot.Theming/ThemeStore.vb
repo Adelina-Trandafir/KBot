@@ -130,6 +130,26 @@ Public Module ThemeStore
     End Sub
 
     ''' <summary>
+    ''' Salvează comutatorul «tema scrie fontul formularului», PĂSTRÂND tot restul fișierului.
+    ''' Aceeași citire-modificare-scriere ca <see cref="SaveActive"/> și <see cref="SaveScaling"/>,
+    ''' din același motiv: cele trei se scriu din locuri diferite și n-au voie să se calce.
+    ''' </summary>
+    Public Sub SaveThemeWritesFormFont(value As Boolean)
+        Dim cfg As ActiveConfig = If(LoadConfig(), New ActiveConfig())
+        cfg.ThemeWritesFormFont = value
+        SaveConfig(cfg)
+    End Sub
+
+    ''' <summary>
+    ''' Citește comutatorul de mai sus. Fișier lipsă sau corupt ⇒ True, adică implicitul
+    ''' documentat: tema scrie fontul, ca înainte de felia 0052.
+    ''' </summary>
+    Public Function LoadThemeWritesFormFont() As Boolean
+        Dim cfg As ActiveConfig = LoadConfig()
+        Return If(cfg Is Nothing, True, cfg.ThemeWritesFormFont)
+    End Function
+
+    ''' <summary>
     ''' Scrie o schemă ÎNTREAGĂ în …\AVACONT\Themes\&lt;Nume&gt;.json. Așa se persistă și editarea
     ''' unei scheme built-in: fișierul are numele ei, iar <c>ThemeManager</c> îl pune PESTE cea
     ''' compilată la pornire (vezi <c>MergeSchemes</c>). Ștergerea fișierului readuce implicitul —
@@ -233,6 +253,14 @@ Public Module ThemeStore
         ''' <summary>Mărimea textului și a controalelor (1 = 100%). Felia 0036-01.</summary>
         <JsonPropertyName("textScale")>
         Public Property TextScale As Single = 1.0F
+
+        ''' <summary>
+        ''' «Tema are voie să scrie fontul formularului?» (felia 0052). Implicit True, adică exact
+        ''' comportamentul dinaintea feliei — un theme.json vechi, fără câmpul ăsta, îl primește pe
+        ''' el, ca la toate celelalte câmpuri adăugate ulterior.
+        ''' </summary>
+        <JsonPropertyName("themeWritesFormFont")>
+        Public Property ThemeWritesFormFont As Boolean = True
     End Class
 
 End Module

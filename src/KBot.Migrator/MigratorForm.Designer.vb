@@ -986,7 +986,7 @@ Partial Class MigratorForm
         ' 
         ' MigratorForm
         ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleDimensions = New SizeF(9F, 22F)
         AutoScaleMode = AutoScaleMode.Font
         ClientSize = New Size(1505, 1044)
         ControlBox = False

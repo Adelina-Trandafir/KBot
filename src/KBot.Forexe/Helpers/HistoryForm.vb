@@ -64,7 +64,8 @@ Public Class HistoryForm
         BuildResendTab()
 
         LoadData()
-        KBotTheme.ApplyTheme(Me)
+        ' No ApplyTheme call -- see CertificateSelectionForm: the form inherits KBotThemedForm now
+        ' and is themed from OnLoad, which is also where it gets re-themed on a scheme switch.
     End Sub
 
     ' =========================================================

@@ -31,7 +31,11 @@ Imports KBot.Controls
 ' again from «Salveaza» -- the operator can press the button without leaving the field.
 '
 ' All controls are declared HERE (docs/kbot-forms-ui-convention.md).
-' Coordinates are written at 96 dpi and AutoScaleDimensions goes with them.
+' Coordinates are written at 144 dpi -- the file was saved from the designer on a 150% screen,
+' and Visual Studio rewrites the coordinates and the stamp together when it does.
+' AutoScaleDimensions goes with them: Calibri 9 measures (9, 22) there (slice 0052). The two
+' always change together; a stamp taken from another font or another dpi squashes the window
+' on open, with nothing in the designer to show it.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfEditForm
     Inherits KBot.Theming.KBotShellForm
@@ -631,9 +635,9 @@ Partial Class DdfEditForm
         ' 
         ' DdfEditForm
         ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleDimensions = New SizeF(9F, 22F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(1300, 1000)
+        ClientSize = New Size(1641, 1000)
         Controls.Add(tlyMain)
         FormBorderStyle = FormBorderStyle.None
         Margin = New Padding(4, 5, 4, 5)

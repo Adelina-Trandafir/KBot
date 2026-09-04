@@ -30,7 +30,7 @@ Imports KBot.Controls
 ' All controls are declared HERE (docs/kbot-forms-ui-convention.md).
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfEditFisierePage
-    Inherits UserControl
+    Inherits KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -227,7 +227,7 @@ Partial Class DdfEditFisierePage
         ' 
         ' DdfEditFisierePage
         ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleDimensions = New SizeF(9F, 22F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(tlyRoot)
         Margin = New Padding(0)

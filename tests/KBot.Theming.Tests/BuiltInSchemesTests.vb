@@ -31,14 +31,23 @@ Public Class BuiltInSchemesTests
         Assert.Equal(Color.FromArgb(0, 122, 204).ToArgb(), p.TabAccentColor.ToArgb())     ' CLR_TAB_ACCENT
     End Sub
 
+    ''' <summary>
+    ''' Felia 0052 a scos «Segoe UI Variable Text» de aici. Nu era o preferință de aspect: fontul
+    ''' acela se măsoară altfel decât cel cu care se proiectează în designer, iar schema îl scria
+    ''' peste el la rulare, deci fiecare fereastră se redimensiona la deschidere. Fontul de bază e
+    ''' acum unul singur pentru toată aplicația — <see cref="KBotFonts.BaseFontName"/> — și tocmai
+    ''' de aceea se verifică față de constantă, nu față de un literal: un literal aici ar permite
+    ''' schemei să se despartă tăcut de restul aplicației, adică exact defectul reparat.
+    ''' </summary>
     <Fact>
-    Public Sub Modern_HasRoundedOwnerDrawnButtons_AndVariableFont()
+    Public Sub Modern_HasRoundedOwnerDrawnButtons_AndBaseFont()
         Dim s = BuiltInSchemes.Modern()
         Assert.False(s.IsDark)
         Assert.False(s.Style.UseSystemColors)
         Assert.True(s.Style.CornerRadius > 0)
         Assert.Equal(ButtonRenderStyle.ModernOwnerDrawn, s.Style.ButtonRender)
-        Assert.Equal("Segoe UI Variable Text", s.Style.BaseFontName)
+        Assert.Equal(KBotFonts.BaseFontName, s.Style.BaseFontName)
+        Assert.Equal(KBotFonts.BaseFontSize, s.Style.BaseFontSize)
         Assert.True(s.Style.FocusAccent)
     End Sub
 
@@ -55,7 +64,13 @@ Public Class BuiltInSchemesTests
         Assert.False(s.Style.UseSystemColors)
         Assert.Equal(ButtonRenderStyle.System, s.Style.ButtonRender)   ' n-ar mai fi culoarea aleasă
         Assert.False(s.Style.FocusAccent)                              ' inelul ar picta peste input
-        Assert.Equal(0F, s.Style.BaseFontSize)                         ' 0 = «nu atinge fontul»
+
+        ' Fontul NU se mai apără printr-un 0 (felia 0052). Schema poartă acum fontul de bază ca
+        ' oricare alta, iar «nu atinge fontul» vine din DRUM, nu din valoare: PreserveDesignerColors
+        ' o trimite prin PreserveDesigner, care repune fontul din designer și nu ajunge niciodată
+        ' la ApplyBaseFont. Steagul verificat mai sus e deci ȘI garanția pentru font.
+        Assert.Equal(KBotFonts.BaseFontName, s.Style.BaseFontName)
+        Assert.Equal(KBotFonts.BaseFontSize, s.Style.BaseFontSize)
     End Sub
 
     ''' <summary>Doar Colorful ridică steagul — celelalte trei rămân scriitoare de culori.</summary>

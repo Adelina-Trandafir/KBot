@@ -32,6 +32,13 @@ Friend Module Program
             ' applies no colour of its own.
             ThemeManager.Initialize()
 
+            ' Same one-off warning as KBot.App: MigratorForm inherits KBotThemedForm, so it is
+            ' laid out against Calibri too and drifts the same way if the face is missing.
+            If KBotFonts.IsFallback Then
+                MessageBox.Show(KBotFonts.MissingFontMessage, KBotFonts.MissingFontCaption,
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            End If
+
             ' Slice 0045: no connect dialog any more. Slice 0044's ConnectForm existed to
             ' prove a server address and an API key before anything else could happen,
             ' because the whole chain ran over HTTP. This tool opens Access and MariaDB

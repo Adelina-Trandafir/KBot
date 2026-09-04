@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class ForexeFooterView
-    Inherits System.Windows.Forms.UserControl
+    Inherits KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -97,7 +97,7 @@ Partial Class ForexeFooterView
         ' 
         ' ForexeFooterView
         ' 
-        AutoScaleDimensions = New SizeF(7F, 15F)
+        AutoScaleDimensions = New SizeF(6F, 14F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(lblStatus)
         Controls.Add(btnIstoric)

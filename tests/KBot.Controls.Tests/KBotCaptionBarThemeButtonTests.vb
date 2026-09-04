@@ -115,11 +115,13 @@ Public Class KBotCaptionBarThemeButtonTests
                    Using bar As KBotCaptionBar = Bara()
                        Dim elemente = bar.ConstruiesteElementeleMeniului()
                        ' Nu sunt scheme: cele DOUĂ rânduri de unealtă («Opțiuni temă...» din felia
-                       ' 0036 și «Stiluri...») și cursorul de mărime (0036-01).
+                       ' 0036 și «Stiluri...»), cursorul de mărime (0036-01) și comutatorul de
+                       ' font (0052).
                        Dim scheme = elemente.Where(Function(i) Not i.IsSeparator AndAlso
                                                                Not i.IsSlider AndAlso
                                                                i.Key <> "@ThemeEditor" AndAlso
-                                                               i.Key <> "@ThemeOptions").ToList()
+                                                               i.Key <> "@ThemeOptions" AndAlso
+                                                               i.Key <> "@ThemeFont").ToList()
 
                        Assert.Equal(ThemeManager.AvailableSchemes.Count - 1, scheme.Count)
                        Assert.DoesNotContain(scheme,
@@ -193,11 +195,17 @@ Public Class KBotCaptionBarThemeButtonTests
     End Sub
 
     ''' <summary>
-    ''' Stins TOT ce nu e schemă, nu mai rămâne niciun separator: o linie care nu mai desparte
-    ''' nimic e o linie degeaba, iar meniul ar începe sau s-ar termina cu ea.
+    ''' Stins TOT ce se poate stinge, pleacă și separatorul UNELTELOR: o linie care nu mai desparte
+    ''' nimic e o linie degeaba, iar meniul s-ar termina cu ea.
+    '''
+    ''' <para>Ce NU pleacă e rândul «Font din temă» și linia lui (felia 0052). Rândul acela e
+    ''' singura cale prin care operatorul poate arăta cu degetul că fontul temei nu e cauza unei
+    ''' ferestre care s-a redimensionat — un comutator care poate fi ascuns tocmai de formularul
+    ''' pe care s-ar investiga problema n-ar fi bun la nimic. Deci meniul nu mai poate rămâne fără
+    ''' niciun separator; poate rămâne cu exact unul.</para>
     ''' </summary>
     <Fact>
-    Public Sub Fara_nicio_unealta_pleaca_si_separatorul()
+    Public Sub Fara_nicio_unealta_pleaca_separatorul_uneltelor()
         RunSta(Sub()
                    Using bar As KBotCaptionBar = Bara()
                        Dim complet = bar.ConstruiesteElementeleMeniului()
@@ -207,9 +215,14 @@ Public Class KBotCaptionBarThemeButtonTests
                        bar.ShowThemeEditor = False
                        Dim doarScheme = bar.ConstruiesteElementeleMeniului()
 
-                       Assert.DoesNotContain(doarScheme, Function(i) i.IsSeparator)
-                       ' Au plecat: cursorul + separatorul lui, separatorul uneltelor + cele două unelte.
-                       Assert.Equal(complet.Count - 5, doarScheme.Count)
+                       ' Rămâne linia de sub «Font din temă», și doar ea.
+                       ' .Where(...).Count(), nu .Count(...): pe un List(Of T), «Count» se rezolvă
+                       ' la proprietatea listei, nu la extensia LINQ, iar compilatorul o respinge.
+                       Assert.Equal(1, doarScheme.Where(Function(i) i.IsSeparator).Count())
+                       Assert.False(doarScheme(doarScheme.Count - 1).IsSeparator,
+                                    "meniul nu are voie să se termine cu o linie")
+                       ' Au plecat: cursorul, separatorul uneltelor și cele două unelte.
+                       Assert.Equal(complet.Count - 4, doarScheme.Count)
                    End Using
                End Sub)
     End Sub

@@ -18,7 +18,7 @@ Imports KBot.Controls
 ' All controls are declared HERE (docs/kbot-forms-ui-convention.md).
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfEditDescrierePage
-    Inherits UserControl
+    Inherits KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -150,7 +150,7 @@ Partial Class DdfEditDescrierePage
         ' 
         ' DdfEditDescrierePage
         ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleDimensions = New SizeF(9F, 22F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(tlyRoot)
         Margin = New Padding(0)

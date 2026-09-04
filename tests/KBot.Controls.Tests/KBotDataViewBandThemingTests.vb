@@ -26,23 +26,34 @@ Public Class KBotDataViewBandThemingTests
 
     ' ── Fontul benzilor vine din schemă ──────────────────────────────────────────
 
+    ''' <summary>
+    ''' Fontul benzii vine din SCHEMĂ, nu dintr-o familie scrisă în control.
+    '''
+    ''' <para>Testul nu mai compară două scheme built-in (felia 0052). Le comparaa fiindcă atunci
+    ''' Modern cerea «Segoe UI Variable Text» iar Classic nu cerea nimic — dar tocmai acea
+    ''' nepotrivire era defectul: fontul schemei se măsura altfel decât cel cu care se proiectase
+    ''' fereastra, deci fiecare fereastră se redimensiona la comutarea temei. Acum toate patru
+    ''' poartă același font, deci două built-in-uri nu mai pot proba nimic — ceea ce nu înseamnă
+    ''' că proprietatea a dispărut, ci că trebuie probată pe o schemă care CHIAR cere altceva.</para>
+    '''
+    ''' <para>E și o probă mai bună decât cea veche: nu depinde de ce fonturi sunt instalate pe
+    ''' mașina de test, și nu se strică data viitoare când cineva aliniază încă o schemă.</para>
+    ''' </summary>
     <Fact>
     Public Sub BandFont_FollowsTheActiveSchemesFont_NotAHardcodedFamily()
         Using dv = Grid()
-            dv.ApplyTheme(BuiltInSchemes.Classic())
-            Dim clasic As Font = dv.ResolvedHeaderFont()
-
             dv.ApplyTheme(BuiltInSchemes.Modern())
-            Dim modern As Font = dv.ResolvedHeaderFont()
+            Dim implicit_ As Font = dv.ResolvedHeaderFont()
 
-            ' Modern cere «Segoe UI Variable Text» la 9pt, Classic «Segoe UI» pe mărimea ambientală.
-            ' Dacă familia nu e instalată pe mașina de test, cel puțin MĂRIMEA trebuie să difere —
-            ' altfel fontul nu vine din schemă deloc, ceea ce e chiar bug-ul reparat aici.
-            Dim schimbat As Boolean =
-                Not String.Equals(clasic.Name, modern.Name, StringComparison.OrdinalIgnoreCase) OrElse
-                Math.Abs(clasic.Size - modern.Size) > 0.01F
-            Assert.True(schimbat,
-                        $"fontul benzii nu s-a schimbat cu schema: {clasic.Name}/{clasic.Size} vs {modern.Name}/{modern.Size}")
+            ' Schemele sunt mutabile prin design (vezi BuiltInSchemes) — cerem o mărime pe care
+            ' n-o poate produce nimic altceva.
+            Dim alta As ThemeScheme = BuiltInSchemes.Modern()
+            alta.Style.BaseFontSize = implicit_.Size + 5.0F
+            dv.ApplyTheme(alta)
+            Dim ceruta As Font = dv.ResolvedHeaderFont()
+
+            Assert.True(Math.Abs(ceruta.Size - implicit_.Size) > 0.01F,
+                        $"fontul benzii nu urmează schema: {implicit_.Name}/{implicit_.Size} vs {ceruta.Name}/{ceruta.Size}")
         End Using
     End Sub
 

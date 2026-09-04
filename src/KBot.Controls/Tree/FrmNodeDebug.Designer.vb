@@ -117,7 +117,7 @@ Partial Public Class frmNodeDebug
         ' 
         ' frmNodeDebug
         ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleDimensions = New SizeF(9F, 22F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Color.FromArgb(CByte(24), CByte(24), CByte(24))
         ClientSize = New Size(638, 636)

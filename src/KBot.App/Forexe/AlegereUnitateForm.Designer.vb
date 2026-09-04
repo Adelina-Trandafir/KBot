@@ -14,10 +14,11 @@ Imports KBot.Controls
 ' Toate controalele se declara AICI (docs/kbot-forms-ui-convention.md): formularul trebuie
 ' sa se randeze in designerul Visual Studio, nu sa se construiasca la rulare.
 '
-' Coordonatele sunt scrise la 96 dpi si AutoScaleDimensions le insoteste (7, 15) — perechea
-' care corespunde fontului implicit Segoe UI 9pt nesetat. Alte formulare din depozit sunt
-' autorizate la 150% (10, 25); AutoScaleMode.Font le face echivalente la rulare, dar cele
-' doua NU se pot amesteca in acelasi fisier.
+' Coordonatele sunt scrise la 144 dpi -- fisierul a fost salvat din designer pe un ecran la
+' 150%, iar Visual Studio rescrie ATUNCI si coordonatele, si perechea. AutoScaleDimensions
+' le insoteste: Calibri 9 se masoara (9, 22) acolo (felia 0052). Cele doua se schimba
+' INTOTDEAUNA impreuna; o pereche luata de la alt font sau de la alt dpi turteste fereastra
+' la deschidere, fara ca nimic din designer s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class AlegereUnitateForm
     Inherits KBot.Theming.KBotThemedForm
@@ -390,7 +391,7 @@ Partial Class AlegereUnitateForm
         ' 
         ' AlegereUnitateForm
         ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleDimensions = New SizeF(9F, 22F)
         AutoScaleMode = AutoScaleMode.Font
         ClientSize = New Size(886, 735)
         Controls.Add(pnlCard)

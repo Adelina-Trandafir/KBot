@@ -102,7 +102,7 @@ Partial Class InternalInfoForm
         '
         ' InternalInfoForm
         '
-        AutoScaleDimensions = New SizeF(7.0F, 15.0F)
+        AutoScaleDimensions = New SizeF(6F, 14F)
         AutoScaleMode = AutoScaleMode.Font
         ClientSize = New Size(380, 520)
         Controls.Add(pnlCard)

@@ -19,6 +19,54 @@ Public Module ThemeManager
     Private ReadOnly _userSchemes As New List(Of ThemeScheme)()
     Private ReadOnly _forms As New List(Of WeakReference(Of Form))()
     Private _initialized As Boolean = False
+    Private _writesFormFont As Boolean = True
+
+    ''' <summary>
+    ''' «Are tema voie să scrie fontul formularului?» (felia 0052). Implicit True.
+    '''
+    ''' <para><b>De ce e nevoie de un comutator pentru ceva care nu se vede.</b> De la felia 0052
+    ''' fontul de bază e același în două locuri: îl pune constructorul lui
+    ''' <see cref="KBotThemedForm"/> (deci și designerul îl vede), iar schema îl scrie din nou prin
+    ''' <c>ApplyBaseFont</c>. Fiind același font, scrierea e un no-op și stingerea comutatorului nu
+    ''' mișcă nimic pe ecran. Asta E treaba lui: îi dă operatorului cum să PROBEZE că nu mișcă
+    ''' nimic, și o ieșire dintr-un singur clic dacă o mașină ajunge totuși să măsoare altfel
+    ''' Calibri — caz în care fereastra s-ar redimensiona la comutarea temei, iar cauza ar fi
+    ''' altfel imposibil de arătat cu degetul.</para>
+    '''
+    ''' <para>Stins, fontul din designer se pune ÎNAPOI pe loc, nu la pornirea următoare — vezi
+    ''' setterul.</para>
+    ''' </summary>
+    Public Property WritesFormFont As Boolean
+        Get
+            Return _writesFormFont
+        End Get
+        Set(value As Boolean)
+            Try
+                If value = _writesFormFont Then Return
+                _writesFormFont = value
+                ThemeStore.SaveThemeWritesFormFont(value)
+
+                For Each f As Form In CollectTargets()
+                    ' Stins ⇒ punem fontul din designer înapoi ACUM. Apply singur n-ar face-o:
+                    ' ApplyBaseFont iese devreme, deci pe formular ar rămâne fontul scris de
+                    ' schema precedentă, iar comutatorul ar părea să nu facă nimic până la
+                    ' repornire. DesignerBaseline.Restore știe deja distincția care contează
+                    ' (pus în designer ⇒ atribuie; moștenit ⇒ ResetFont) și rebazează singur
+                    ' mărirea textului.
+                    If Not value Then DesignerBaseline.Restore(f)
+                    ' Restore a repus și cele două culori ambientale; Apply le scrie la loc pe ale
+                    ' schemei imediat, în ordinea documentată (temă întâi, mărimea textului la
+                    ' urmă), deci nu rămâne nimic restaurat pe jumătate.
+                    Apply(f)
+                Next
+
+                RaiseEvent ThemeChanged(Nothing, EventArgs.Empty)
+            Catch ex As Exception
+                GlobalErrorLog.Write("ThemeManager.WritesFormFont", ex)
+                Throw
+            End Try
+        End Set
+    End Property
 
     ''' <summary>Schema activă curentă.</summary>
     Public ReadOnly Property Current As ThemeScheme
@@ -91,6 +139,10 @@ Public Module ThemeManager
         ' Scalarea ÎNAINTE de orice altceva: e citită de fiecare control la prima pictare, deci
         ' trebuie să fie deja așezată când se construiește primul formular (felia 0036).
         ThemeStore.LoadScaling()
+
+        ' Comutatorul «tema scrie fontul formularului» (felia 0052), tot înaintea primului
+        ' formular: ApplyBaseFont îl citește la prima aplicare a temei.
+        _writesFormFont = ThemeStore.LoadThemeWritesFormFont()
 
         ' Scheme utilizator — inclusiv fișierele care SUPRASCRIU o schemă built-in editată din
         ' fereastra de opțiuni. Un fișier corupt e sărit + logat, nu crapă pornirea.
@@ -683,8 +735,14 @@ Public Module ThemeManager
     End Sub
 
     ' Aplică fontul de bază al schemei pe formular (copiii moștenesc fontul ambiant).
-    ' „Segoe UI Variable Text” lipsă => GDI cade elegant pe fontul default (fără excepție).
+    '
+    ' De la felia 0052 fontul e ACELAȘI cu cel pus de constructorul lui KBotThemedForm, deci
+    ' scrierea de aici nu mai schimbă mărimea nimănui — vezi KBotFonts pentru ce se întâmpla
+    ' înainte, când nu era. Un font care lipsește de pe mașină e prins o dată în KBotFonts, nu
+    ' aici: acolo se și verifică numele REZOLVAT, fiindcă GDI substituie tăcut și constructorul
+    ' reușește oricum.
     Private Sub ApplyBaseFont(ctrl As Control, st As ThemeStyleOptions)
+        If Not _writesFormFont Then Return
         If String.IsNullOrWhiteSpace(st.BaseFontName) OrElse st.BaseFontSize <= 0F Then Return
         Try
             ctrl.Font = New Font(st.BaseFontName, st.BaseFontSize, ctrl.Font.Style)

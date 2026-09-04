@@ -139,10 +139,11 @@ Partial Class MainForm
         cboAn.DrawMode = DrawMode.OwnerDrawFixed
         cboAn.DropDownStyle = ComboBoxStyle.DropDownList
         cboAn.FlatStyle = FlatStyle.Flat
+        cboAn.ItemHeight = 28
         cboAn.Location = New Point(1130, 7)
         cboAn.Margin = New Padding(0, 7, 0, 0)
         cboAn.Name = "cboAn"
-        cboAn.Size = New Size(150, 32)
+        cboAn.Size = New Size(150, 34)
         cboAn.TabIndex = 3
         tips.SetToolTipHeader(cboAn, "An")
         tips.SetToolTipText(cboAn, "Anul de lucru." & vbLf & "Schimbarea lui reîncarcă arborele și toate ecranele.")
@@ -153,10 +154,11 @@ Partial Class MainForm
         cboSs.DrawMode = DrawMode.OwnerDrawFixed
         cboSs.DropDownStyle = ComboBoxStyle.DropDownList
         cboSs.FlatStyle = FlatStyle.Flat
+        cboSs.ItemHeight = 28
         cboSs.Location = New Point(1480, 7)
         cboSs.Margin = New Padding(0, 7, 10, 0)
         cboSs.Name = "cboSs"
-        cboSs.Size = New Size(140, 32)
+        cboSs.Size = New Size(140, 34)
         cboSs.TabIndex = 5
         tips.SetToolTipHeader(cboSs, "Subperioadă")
         tips.SetToolTipText(cboSs, "Subperioada (SS) din anul ales." & vbLf & "Ultima aleasă se ține minte pentru data viitoare.")
@@ -400,6 +402,7 @@ Partial Class MainForm
         ' forexeFooter
         ' 
         forexeFooter.Dock = DockStyle.Fill
+        forexeFooter.Font = New Font("Calibri", 9F)
         forexeFooter.Location = New Point(0, 0)
         forexeFooter.Margin = New Padding(0)
         forexeFooter.Name = "forexeFooter"
@@ -517,7 +520,7 @@ Partial Class MainForm
         ' 
         ' MainForm
         ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
+        AutoScaleDimensions = New SizeF(9F, 22F)
         AutoScaleMode = AutoScaleMode.Font
         ClientSize = New Size(1641, 1000)
         Controls.Add(pnlRoot)

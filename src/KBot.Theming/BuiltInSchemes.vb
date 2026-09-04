@@ -6,6 +6,26 @@
 ''' </summary>
 Public Module BuiltInSchemes
 
+    ' ─────────────────────────────────────────────────────────────────────────────
+    ' THE BASE FONT, ON ALL FOUR SCHEMES (slice 0052)
+    '
+    ' All four now carry Calibri 9. Two of them ACT on it and two do not, and the difference is
+    ' worth stating plainly rather than leaving to be discovered:
+    '
+    '   Dark, Modern    -> routed through ThemeManager.StylePalette, which calls ApplyBaseFont.
+    '                      These two write the font onto the form.
+    '   Classic         -> routed through StyleSystem (UseSystemColors), which has no font code
+    '                      at all. Nothing reads BaseFontName/BaseFontSize here.
+    '   Colorful        -> routed through PreserveDesigner (PreserveDesignerColors), which puts
+    '                      the DESIGNER's font back instead of writing one. Also does not read it.
+    '
+    ' The values are written on all four anyway, deliberately, as the declared intent of the
+    ' scheme; and the behaviour is identical either way, because the form already wears Calibri 9
+    ' from the KBotThemedForm constructor before any scheme is applied. What was NOT done is
+    ' teaching StyleSystem to write a font: Classic's entire definition is that it paints nothing,
+    ' and a scheme that writes a font is no longer that scheme.
+    ' ─────────────────────────────────────────────────────────────────────────────
+
     Public Const ClassicName As String = "Classic"
     Public Const DarkName As String = "Dark"
     Public Const ModernName As String = "Modern"
@@ -64,8 +84,8 @@ Public Module BuiltInSchemes
             .FlatControls = False,
             .ButtonRender = ButtonRenderStyle.System,
             .CornerRadius = 0,
-            .BaseFontName = "Segoe UI",
-            .BaseFontSize = 0F,
+            .BaseFontName = KBotFonts.BaseFontName,   ' declared, NOT read — see the block at the top
+            .BaseFontSize = KBotFonts.BaseFontSize,
             .ControlPadding = New PaddingDto(0),
             .FocusAccent = False,
             .DarkTitleBar = False,
@@ -107,8 +127,8 @@ Public Module BuiltInSchemes
             .FlatControls = True,
             .ButtonRender = ButtonRenderStyle.Flat,
             .CornerRadius = 0,
-            .BaseFontName = "Segoe UI",
-            .BaseFontSize = 0F,
+            .BaseFontName = KBotFonts.BaseFontName,   ' read — Dark goes through StylePalette
+            .BaseFontSize = KBotFonts.BaseFontSize,
             .ControlPadding = New PaddingDto(0),
             .FocusAccent = False,
             .DarkTitleBar = True,
@@ -118,8 +138,15 @@ Public Module BuiltInSchemes
     End Function
 
     ''' <summary>
-    ''' Modern — paletă light modernă, controale plate, colțuri rotunjite, Segoe UI
-    ''' Variable, focus accent. Payload-ul vizual care omoară look-ul „1998”.
+    ''' Modern — paletă light modernă, controale plate, colțuri rotunjite, focus accent.
+    ''' Payload-ul vizual care omoară look-ul „1998”.
+    '''
+    ''' <para>Fontul NU mai e „Segoe UI Variable Text” (felia 0052). Acela era măsurat altfel decât
+    ''' fontul cu care se proiecta în designer, iar schema îl scria peste el la rulare: pe un ecran
+    ''' la 150%, Segoe UI 9 se măsoară (10, 25) și Segoe UI Variable Text 9 se măsoară (10, 24),
+    ''' deci FIECARE fereastră se turtea pe verticală cu 4% la deschidere, fără ca nimic din
+    ''' designer s-o arate. Acum scrie același Calibri 9 pe care formularul îl are deja din
+    ''' constructor, deci raportul e 1 și nu se mai mișcă nimic.</para>
     ''' </summary>
     Public Function Modern() As ThemeScheme
         Dim p As New ThemePalette With {
@@ -138,8 +165,8 @@ Public Module BuiltInSchemes
             .FlatControls = True,
             .ButtonRender = ButtonRenderStyle.ModernOwnerDrawn,
             .CornerRadius = 8,
-            .BaseFontName = "Segoe UI Variable Text",
-            .BaseFontSize = 9.0F,
+            .BaseFontName = KBotFonts.BaseFontName,   ' read — Modern goes through StylePalette
+            .BaseFontSize = KBotFonts.BaseFontSize,
             .ControlPadding = New PaddingDto(12, 8, 12, 8),
             .FocusAccent = True,
             .DarkTitleBar = False,
@@ -160,8 +187,10 @@ Public Module BuiltInSchemes
     ''' «<c>Color.Empty</c> = din temă» al fiecărui control.
     '''
     ''' Două opțiuni de stil sunt deliberat NEUTRE: <c>ButtonRender = System</c> și
-    ''' <c>FocusAccent = False</c>, fiindcă amândouă ar picta peste alegerile operatorului; iar
-    ''' <c>BaseFontSize = 0</c> înseamnă «nu atinge fontul», la fel ca la Classic.
+    ''' <c>FocusAccent = False</c>, fiindcă amândouă ar picta peste alegerile operatorului. Fontul
+    ''' de bază e scris și aici (felia 0052), dar schema NU-l citește: drumul ei e
+    ''' <c>PreserveDesigner</c>, care repune fontul din designer în loc să scrie unul — vezi blocul
+    ''' din capul fișierului.
     ''' </summary>
     Public Function Colorful() As ThemeScheme
         Dim p As New ThemePalette With {
@@ -180,8 +209,8 @@ Public Module BuiltInSchemes
             .FlatControls = False,
             .ButtonRender = ButtonRenderStyle.System,
             .CornerRadius = 6,
-            .BaseFontName = "Segoe UI",
-            .BaseFontSize = 0F,
+            .BaseFontName = KBotFonts.BaseFontName,   ' declared, NOT read — see the block at the top
+            .BaseFontSize = KBotFonts.BaseFontSize,
             .ControlPadding = New PaddingDto(0),
             .FocusAccent = False,
             .DarkTitleBar = False,
