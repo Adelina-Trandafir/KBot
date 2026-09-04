@@ -34,9 +34,9 @@ Partial Class OrdEditForm
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(OrdEditForm))
-        Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem5 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         dtpData = New KBotDatePicker()
         lblNrOrd = New Label()
@@ -101,7 +101,7 @@ Partial Class OrdEditForm
         ' btnSalveaza
         ' 
         btnSalveaza.Dock = DockStyle.Fill
-        btnSalveaza.Location = New Point(910, 4)
+        btnSalveaza.Location = New Point(1012, 4)
         btnSalveaza.Margin = New Padding(0, 4, 10, 4)
         btnSalveaza.Name = "btnSalveaza"
         btnSalveaza.Padding = New Padding(14, 7, 14, 7)
@@ -150,7 +150,7 @@ Partial Class OrdEditForm
         tlyMain.RowStyles.Add(New RowStyle())
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyMain.RowStyles.Add(New RowStyle())
-        tlyMain.Size = New Size(1196, 996)
+        tlyMain.Size = New Size(1298, 996)
         tlyMain.TabIndex = 0
         ' 
         ' capBar
@@ -166,7 +166,7 @@ Partial Class OrdEditForm
         capBar.ShowTextScaleSlider = False
         capBar.ShowThemeEditor = False
         capBar.ShowThemeOptions = False
-        capBar.Size = New Size(1196, 57)
+        capBar.Size = New Size(1298, 57)
         capBar.TabIndex = 0
         capBar.TabStop = False
         capBar.Text = "K-BOT — Ordonanțare de plată"
@@ -177,7 +177,7 @@ Partial Class OrdEditForm
         busyBar.Location = New Point(0, 57)
         busyBar.Margin = New Padding(0)
         busyBar.Name = "busyBar"
-        busyBar.Size = New Size(1196, 7)
+        busyBar.Size = New Size(1298, 7)
         busyBar.TabIndex = 1
         busyBar.TabStop = False
         ' 
@@ -210,7 +210,7 @@ Partial Class OrdEditForm
         tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
         tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
         tlyAntet.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyAntet.Size = New Size(1188, 87)
+        tlyAntet.Size = New Size(1290, 87)
         tlyAntet.TabIndex = 2
         ' 
         ' lblCodCaption
@@ -285,7 +285,7 @@ Partial Class OrdEditForm
         lblTotal.Location = New Point(1001, 0)
         lblTotal.Margin = New Padding(4, 0, 4, 0)
         lblTotal.Name = "lblTotal"
-        lblTotal.Size = New Size(183, 40)
+        lblTotal.Size = New Size(285, 40)
         lblTotal.TabIndex = 7
         lblTotal.Text = "0,00"
         lblTotal.TextAlign = ContentAlignment.MiddleLeft
@@ -312,7 +312,7 @@ Partial Class OrdEditForm
         lblObiect.Location = New Point(154, 40)
         lblObiect.Margin = New Padding(4, 0, 4, 0)
         lblObiect.Name = "lblObiect"
-        lblObiect.Size = New Size(1030, 40)
+        lblObiect.Size = New Size(1132, 40)
         lblObiect.TabIndex = 9
         lblObiect.TextAlign = ContentAlignment.MiddleLeft
         ' 
@@ -323,7 +323,7 @@ Partial Class OrdEditForm
         ntfMesaj.Location = New Point(4, 212)
         ntfMesaj.Margin = New Padding(4, 5, 4, 5)
         ntfMesaj.Name = "ntfMesaj"
-        ntfMesaj.Size = New Size(1188, 10)
+        ntfMesaj.Size = New Size(1290, 10)
         ntfMesaj.TabIndex = 3
         ntfMesaj.TabStop = False
         ntfMesaj.Visible = False
@@ -334,27 +334,27 @@ Partial Class OrdEditForm
         navSub.IconSize = 16
         navSub.ItemCornerRadius = 0
         navSub.ItemPadding = New Padding(3, 0, 3, 0)
-        KBotNavItem4.AutoSize = True
-        KBotNavItem4.Image = My.Resources.Resources.vertical
-        KBotNavItem4.Key = "beneficiari"
-        KBotNavItem4.Text = "Beneficiari"
-        KBotNavItem5.AutoSize = True
-        KBotNavItem5.Image = My.Resources.Resources.binvoice
-        KBotNavItem5.Key = "documente"
-        KBotNavItem5.Text = "Documente justificative"
-        KBotNavItem6.AutoSize = True
-        KBotNavItem6.Image = My.Resources.Resources.cells
-        KBotNavItem6.Key = "atasamente"
-        KBotNavItem6.Text = "Atașamente"
-        navSub.Items.Add(KBotNavItem4)
-        navSub.Items.Add(KBotNavItem5)
-        navSub.Items.Add(KBotNavItem6)
+        KBotNavItem1.AutoSize = True
+        KBotNavItem1.Image = My.Resources.Resources.vertical
+        KBotNavItem1.Key = "beneficiari"
+        KBotNavItem1.Text = "Beneficiari"
+        KBotNavItem2.AutoSize = True
+        KBotNavItem2.Image = My.Resources.Resources.binvoice
+        KBotNavItem2.Key = "documente"
+        KBotNavItem2.Text = "Documente justificative"
+        KBotNavItem3.AutoSize = True
+        KBotNavItem3.Image = My.Resources.Resources.cells
+        KBotNavItem3.Key = "atasamente"
+        KBotNavItem3.Text = "Atașamente"
+        navSub.Items.Add(KBotNavItem1)
+        navSub.Items.Add(KBotNavItem2)
+        navSub.Items.Add(KBotNavItem3)
         navSub.Location = New Point(0, 168)
         navSub.Margin = New Padding(0)
         navSub.Name = "navSub"
         navSub.Orientation = KBotNavOrientation.Horizontal
         navSub.SelectedKey = Nothing
-        navSub.Size = New Size(1196, 39)
+        navSub.Size = New Size(1298, 39)
         navSub.TabIndex = 4
         ' 
         ' pnlPages
@@ -364,7 +364,7 @@ Partial Class OrdEditForm
         pnlPages.Location = New Point(0, 227)
         pnlPages.Margin = New Padding(0)
         pnlPages.Name = "pnlPages"
-        pnlPages.Size = New Size(1196, 711)
+        pnlPages.Size = New Size(1298, 711)
         pnlPages.TabIndex = 5
         ' 
         ' tlySubsol
@@ -381,14 +381,14 @@ Partial Class OrdEditForm
         tlySubsol.Name = "tlySubsol"
         tlySubsol.RowCount = 1
         tlySubsol.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlySubsol.Size = New Size(1196, 58)
+        tlySubsol.Size = New Size(1298, 58)
         tlySubsol.TabIndex = 6
         ' 
         ' OrdEditForm
         ' 
         AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(1198, 1000)
+        ClientSize = New Size(1300, 1000)
         Controls.Add(tlyMain)
         FormBorderStyle = FormBorderStyle.None
         Margin = New Padding(4, 5, 4, 5)
@@ -397,7 +397,7 @@ Partial Class OrdEditForm
         Name = "OrdEditForm"
         Padding = New Padding(1, 2, 1, 2)
         ShowInTaskbar = False
-        StartPosition = FormStartPosition.CenterParent
+        StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT — Ordonanțare de plată"
         tlyMain.ResumeLayout(False)
         tlyAntet.ResumeLayout(False)

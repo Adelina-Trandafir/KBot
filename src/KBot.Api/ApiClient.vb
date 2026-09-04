@@ -1,4 +1,4 @@
-﻿Option Strict On
+Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.Net.Http
@@ -2179,6 +2179,783 @@ Public Class ApiClient
         If Date.TryParse(text, Globalization.CultureInfo.InvariantCulture,
                          Globalization.DateTimeStyles.None, d) Then Return d
         Throw New ApiException($"Serverul a trimis o dată pe care nu o pot citi: «{text}».")
+    End Function
+
+    ' ══════════════════════════════════════════════════════════════════════════════════
+    ' THE DDF EDITOR (slice 0051)
+    '
+    ' Sixteen calls, all on the new routes in `routes/forexe/ddf_edit.py`. The database is
+    ' NEVER sent: the server takes it from the session (one database = one unit). A 401
+    ' flows out to `WithReauth` (no retry here), exactly as in the rest of the client.
+    '
+    ' The DTO -> POCO translation lives here, in one place: `KBot.Api` knows the wire's
+    ' snake_case, `KBot.Domain` never sees it.
+    ' ══════════════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>
+    ''' Asks the server for the PROPOSED graph of a fundamentation document
+    ''' (POST /api/forexe/ddf/genereaza). NOTHING is written -- not even the numbers, which
+    ''' the lock holds separately.
+    '''
+    ''' <para><paramref name="rev0"/> selects the HEADER treatment (the initial revision or a
+    ''' subsequent one), NOT the line source: the server picks that from the data, and
+    ''' refuses loudly when neither source has rows.</para>
+    ''' </summary>
+    Public Async Function GenereazaDdfAsync(cod As String, rev0 As Boolean,
+                                            ct As CancellationToken) _
+        As Task(Of DdfDraft) Implements IApiClient.GenereazaDdfAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim req As New GenereazaDdfRequest() With {.cod = cod, .rev0 = rev0}
+            Dim body As String = JsonSerializer.Serialize(req, _jsonFaraNull)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/ddf/genereaza")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        ' Including "this angajament has neither reservations nor history":
+                        ' a refusal with a reason, not an empty graph that would look like a
+                        ' valid document with no lines.
+                        Throw BuildApiException(respText, "generarea documentului de fundamentare",
+                                                CInt(resp.StatusCode))
+                    End If
+                    Return CitesteDdfDraft(respText, cod)
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GenereazaDdfAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Reads an EXISTING revision in the form the editor works on
+    ''' (GET /api/forexe/ddf/draft/{iddf}/{idrev}).
+    '''
+    ''' <para>Why not <c>GetDdfAsync</c>: that is the call of the read-only view of slice
+    ''' 0020 and chooses its columns deliberately -- it returns neither the section-A keys and
+    ''' classifications, nor the section-B rows, nor the attachment rows. The editor needs
+    ''' all of them.</para>
+    ''' </summary>
+    Public Async Function GetDdfDraftAsync(iddf As Integer, idrev As Integer,
+                                           ct As CancellationToken) _
+        As Task(Of DdfDraft) Implements IApiClient.GetDdfDraftAsync
+
+        Try
+            EnsureConfigured()
+            If iddf <= 0 Then Throw New ArgumentException("iddf invalid.", NameOf(iddf))
+            If idrev <= 0 Then Throw New ArgumentException("idrev invalid.", NameOf(idrev))
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, $"/api/forexe/ddf/draft/{iddf}/{idrev}")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea reviziei", CInt(resp.StatusCode))
+                    End If
+                    Return CitesteDdfDraft(respText, String.Empty)
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetDdfDraftAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The section-A classification combo (GET /api/forexe/ddf/clasificatii).
+    '''
+    ''' <para>NOT a flat list: rows carry <c>SortOrd</c> 1 (already on this angajament), 2
+    ''' (one synthetic separator, <c>IdClsf = -1</c>) and 3 (the rest of the same
+    ''' <c>Titlu</c>). The separator is rendered disabled and picking it is refused.</para>
+    '''
+    ''' <para>Access also excluded the classifications ALREADY in section A. There is no
+    ''' staging table to do that with, so THE CLIENT filters those out locally, against the
+    ''' draft it holds -- the draft is never sent here.</para>
+    ''' </summary>
+    Public Async Function GetDdfClasificatiiAsync(cod As String, manual As Boolean,
+                                                  titlu As String, ct As CancellationToken) _
+        As Task(Of List(Of DdfClasificatie)) Implements IApiClient.GetDdfClasificatiiAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim url As String = $"/api/forexe/ddf/clasificatii?cod={Uri.EscapeDataString(cod)}" &
+                                $"&manual={If(manual, "1", "0")}"
+            If Not String.IsNullOrWhiteSpace(titlu) Then
+                url &= $"&titlu={Uri.EscapeDataString(titlu.Trim())}"
+            End If
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea clasificațiilor", CInt(resp.StatusCode))
+                    End If
+                    Dim payload As DdfClasificatiiResponse =
+                        JsonSerializer.Deserialize(Of DdfClasificatiiResponse)(respText, _json)
+                    Dim rezultat As New List(Of DdfClasificatie)()
+                    If payload Is Nothing OrElse payload.clasificatii Is Nothing Then Return rezultat
+                    For Each c As DdfClasificatieDto In payload.clasificatii
+                        rezultat.Add(New DdfClasificatie() With {
+                            .IdClsf = c.id_clsf, .IdClsfAcc = c.id_clsf_acc,
+                            .Clsf = If(c.clsf, String.Empty),
+                            .Denumire = If(c.denumire, String.Empty),
+                            .Ss = If(c.ss, String.Empty),
+                            .CodSsi = If(c.cod_ssi, String.Empty),
+                            .Titlu = If(c.titlu, String.Empty),
+                            .IdUnitate = c.id_unitate, .SortOrd = c.sort_ord,
+                            .ValPrec = c.val_prec, .ValRec = c.val_rec,
+                            .CodIndicator = If(c.cod_indicator, String.Empty)})
+                    Next
+                    Return rezultat
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetDdfClasificatiiAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The header partner combo (GET /api/forexe/ddf/parteneri), scoped to the units the
+    ''' angajament's indicators belong to.
+    ''' </summary>
+    Public Async Function GetDdfParteneriAsync(cod As String, ct As CancellationToken) _
+        As Task(Of List(Of DdfPartener)) Implements IApiClient.GetDdfParteneriAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get,
+                                                $"/api/forexe/ddf/parteneri?cod={Uri.EscapeDataString(cod)}")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea partenerilor", CInt(resp.StatusCode))
+                    End If
+                    Dim payload As DdfParteneriResponse =
+                        JsonSerializer.Deserialize(Of DdfParteneriResponse)(respText, _json)
+                    Dim rezultat As New List(Of DdfPartener)()
+                    If payload Is Nothing OrElse payload.parteneri Is Nothing Then Return rezultat
+                    For Each p As DdfPartenerDto In payload.parteneri
+                        rezultat.Add(New DdfPartener() With {
+                            .CodFiscal = If(p.cod_fiscal, String.Empty),
+                            .NumePartener = If(p.nume_partener, String.Empty),
+                            .Randuri = p.randuri})
+                    Next
+                    Return rezultat
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetDdfParteneriAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The compartments already used on this unit's documents (GET /api/forexe/ddf/comp).
+    '''
+    ''' <para>MAY LEGITIMATELY BE EMPTY, and that is not an error. Access read a linked table
+    ''' called <c>Oper</c> that has no MariaDB counterpart, so the list is built from previous
+    ''' documents; on a database with none, the operator types the first compartment. The
+    ''' combo is therefore editable rather than a closed dropdown.</para>
+    ''' </summary>
+    Public Async Function GetDdfCompAsync(ct As CancellationToken) _
+        As Task(Of List(Of String)) Implements IApiClient.GetDdfCompAsync
+
+        Try
+            EnsureConfigured()
+            Using msg As New HttpRequestMessage(HttpMethod.Get, "/api/forexe/ddf/comp")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea compartimentelor", CInt(resp.StatusCode))
+                    End If
+                    Dim payload As DdfCompResponse =
+                        JsonSerializer.Deserialize(Of DdfCompResponse)(respText, _json)
+                    If payload Is Nothing OrElse payload.comp Is Nothing Then Return New List(Of String)()
+                    Return payload.comp
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetDdfCompAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Writes the WHOLE graph in one transaction (POST /api/forexe/ddf/save) and returns the
+    ''' real keys plus the <c>TempId -&gt; key</c> maps.
+    '''
+    ''' <para>A validation refusal arrives as an <see cref="ApiException"/> carrying the
+    ''' server's Romanian message, which lists ALL the reasons at once rather than the first.</para>
+    '''
+    ''' <para>The attachment BYTES do not leave from here: an <c>IdRevAtt</c> has to exist
+    ''' before they can hang off it. They go up afterwards, with
+    ''' <see cref="PutDdfFisierAsync"/>, using the map in the response.</para>
+    ''' </summary>
+    Public Async Function SaveDdfAsync(draft As DdfDraft, ct As CancellationToken) _
+        As Task(Of DdfSaveRezultat) Implements IApiClient.SaveDdfAsync
+
+        Try
+            EnsureConfigured()
+            If draft Is Nothing Then Throw New ArgumentNullException(NameOf(draft))
+
+            Dim dto As DdfDraftDto = CatreFir(draft)
+            Dim body As String = JsonSerializer.Serialize(dto, _jsonFaraNull)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/ddf/save")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "salvarea documentului de fundamentare",
+                                                CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As DdfSaveResponse =
+                        JsonSerializer.Deserialize(Of DdfSaveResponse)(respText, _json)
+                    If payload Is Nothing OrElse payload.iddf <= 0 OrElse payload.idrev <= 0 Then
+                        Throw New ApiException(
+                            "Serverul a confirmat salvarea, dar nu a întors cheile documentului.",
+                            CInt(resp.StatusCode))
+                    End If
+
+                    Dim rez As New DdfSaveRezultat() With {
+                        .Iddf = payload.iddf, .Cual = payload.cual,
+                        .Idrev = payload.idrev, .NumarRev = payload.numar_rev,
+                        .RezervariLegate = payload.rezervari_legate}
+                    If payload.harta IsNot Nothing Then
+                        CopiazaHarta(payload.harta.linii_a, rez.LiniiA)
+                        CopiazaHarta(payload.harta.linii_b, rez.LiniiB)
+                        CopiazaHarta(payload.harta.att, rez.Att)
+                    End If
+                    Return rez
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.SaveDdfAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>Deletes one revision (DELETE /api/forexe/ddf/rev/{idrev}).</summary>
+    Public Function DeleteDdfRevizieAsync(idrev As Integer, ct As CancellationToken) _
+        As Task(Of DdfStergereRezultat) Implements IApiClient.DeleteDdfRevizieAsync
+
+        If idrev <= 0 Then Throw New ArgumentException("idrev invalid.", NameOf(idrev))
+        Return StergeDdfAsync($"/api/forexe/ddf/rev/{idrev}", "ștergerea reviziei",
+                              "ApiClient.DeleteDdfRevizieAsync", ct)
+    End Function
+
+    ''' <summary>
+    ''' Deletes the whole document (DELETE /api/forexe/ddf/{iddf}).
+    '''
+    ''' <para>Refused while any ordonantare points at it. That refusal exists twice over:
+    ''' <c>FX_ORD.IDDF</c> is a RESTRICT foreign key, so the database would stop it anyway --
+    ''' the server's guard is the readable version of the same "no".</para>
+    ''' </summary>
+    Public Function DeleteDdfAsync(iddf As Integer, ct As CancellationToken) _
+        As Task(Of DdfStergereRezultat) Implements IApiClient.DeleteDdfAsync
+
+        If iddf <= 0 Then Throw New ArgumentException("iddf invalid.", NameOf(iddf))
+        Return StergeDdfAsync($"/api/forexe/ddf/{iddf}", "ștergerea documentului",
+                              "ApiClient.DeleteDdfAsync", ct)
+    End Function
+
+    ''' <summary>
+    ''' Deletes a month's revisions (DELETE /api/forexe/ddf/{iddf}/luna/{an}/{luna}).
+    '''
+    ''' <para>When the month holds EVERY revision the document has, the server deletes the
+    ''' DOCUMENT instead of the last revision, and says so through
+    ''' <c>DdfStergereRezultat.DocumentSters</c>. That is Access's behaviour, kept.</para>
+    ''' </summary>
+    Public Function DeleteDdfLunaAsync(iddf As Integer, an As Integer, luna As Integer,
+                                       ct As CancellationToken) _
+        As Task(Of DdfStergereRezultat) Implements IApiClient.DeleteDdfLunaAsync
+
+        If iddf <= 0 Then Throw New ArgumentException("iddf invalid.", NameOf(iddf))
+        If luna < 1 OrElse luna > 12 Then Throw New ArgumentException("luna invalidă.", NameOf(luna))
+        Return StergeDdfAsync($"/api/forexe/ddf/{iddf}/luna/{an}/{luna}",
+                              "ștergerea reviziilor lunii", "ApiClient.DeleteDdfLunaAsync", ct)
+    End Function
+
+    ' The three DELETE routes answer with the same body, so they share one implementation.
+    ' `eticheta` becomes part of the operator-facing message; `sursa` goes to the error log.
+    Private Async Function StergeDdfAsync(url As String, eticheta As String, sursa As String,
+                                          ct As CancellationToken) As Task(Of DdfStergereRezultat)
+        Try
+            EnsureConfigured()
+            Using msg As New HttpRequestMessage(HttpMethod.Delete, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, eticheta, CInt(resp.StatusCode))
+                    End If
+                    Dim payload As DdfStergereResponse =
+                        JsonSerializer.Deserialize(Of DdfStergereResponse)(respText, _json)
+                    Dim rez As New DdfStergereRezultat()
+                    If payload Is Nothing Then Return rez
+                    rez.Iddf = payload.iddf
+                    rez.Idrev = payload.idrev
+                    rez.Cod = If(payload.cod, String.Empty)
+                    rez.Revizii = payload.revizii
+                    rez.LiniiA = payload.linii_a
+                    rez.LiniiB = payload.linii_b
+                    rez.Atasamente = payload.atasamente
+                    rez.RezervariEliberate = payload.rezervari_eliberate
+                    rez.DocumentSters = payload.document_sters
+                    Return rez
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write(sursa, ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Downloads the bytes of one attached file
+    ''' (GET /api/forexe/ddf/att/{idrevatt}/imagine). Same contract as the PDFs: 304 on a
+    ''' valid cache, 404 for "this row has no file yet" (a normal state, not an exception),
+    ''' and the bytes returned are already checked against the ETag's SHA-256.
+    ''' </summary>
+    Public Function GetDdfFisierAsync(idrevatt As Integer, cachedSha As String,
+                                      ct As CancellationToken) _
+        As Task(Of PdfDownloadResult) Implements IApiClient.GetDdfFisierAsync
+
+        Return DownloadPdfAsync($"/api/forexe/ddf/att/{idrevatt}/imagine", cachedSha,
+                                "citirea fișierului atașat",
+                                "ApiClient.GetDdfFisierAsync", ct)
+    End Function
+
+    ''' <summary>
+    ''' Uploads the bytes of one attached file (PUT /api/forexe/ddf/att/{idrevatt}/imagine).
+    '''
+    ''' <para>The file name IS sent (header <c>X-Nume-Fisier</c>): it is the operator's
+    ''' choice, and <c>FX_DDF_REV_ATT</c> has nowhere to keep it -- the name lives on the blob
+    ''' table. The MIME type is deduced by the server from the first bytes.</para>
+    '''
+    ''' <para><paramref name="shaPrecedent"/> is optimistic concurrency: a different checksum
+    ''' on the server gives 409 and nothing is written.</para>
+    ''' </summary>
+    Public Async Function PutDdfFisierAsync(idrevatt As Integer, numeFisier As String,
+                                            continut As Byte(), shaPrecedent As String,
+                                            ct As CancellationToken) _
+        As Task(Of PutDdfFisierResponse) Implements IApiClient.PutDdfFisierAsync
+
+        Try
+            EnsureConfigured()
+            If idrevatt <= 0 Then Throw New ArgumentException("idrevatt invalid.", NameOf(idrevatt))
+            If continut Is Nothing OrElse continut.Length = 0 Then
+                Throw New ArgumentException("Conținut fișier gol.", NameOf(continut))
+            End If
+            If String.IsNullOrWhiteSpace(numeFisier) Then
+                Throw New ArgumentException("Numele fișierului este obligatoriu.", NameOf(numeFisier))
+            End If
+
+            Dim sha As String = PdfHash.Compute(continut)
+            Dim precedent As String = If(String.IsNullOrWhiteSpace(shaPrecedent), ShaFaraRand, shaPrecedent.Trim())
+
+            Using msg As New HttpRequestMessage(HttpMethod.Put, $"/api/forexe/ddf/att/{idrevatt}/imagine")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Headers.TryAddWithoutValidation(H_SHA, sha)
+                msg.Headers.TryAddWithoutValidation(H_SHA_PREC, precedent)
+                msg.Headers.TryAddWithoutValidation("X-Nume-Fisier", numeFisier.Trim())
+                Dim payloadBody As New ByteArrayContent(continut)
+                payloadBody.Headers.ContentType = New Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream")
+                msg.Content = payloadBody
+
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "salvarea fișierului atașat",
+                                                CInt(resp.StatusCode))
+                    End If
+                    Dim payload As PutDdfFisierResponse =
+                        JsonSerializer.Deserialize(Of PutDdfFisierResponse)(respText, _json)
+                    If payload Is Nothing Then
+                        Throw New ApiException("Serverul a confirmat salvarea, dar fără detalii.",
+                                               CInt(resp.StatusCode))
+                    End If
+                    Return payload
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.PutDdfFisierAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Deletes the bytes of an attached file, leaving the attachment row in place
+    ''' (DELETE /api/forexe/ddf/att/{idrevatt}/imagine).
+    ''' </summary>
+    Public Async Function DeleteDdfFisierAsync(idrevatt As Integer, ct As CancellationToken) _
+        As Task Implements IApiClient.DeleteDdfFisierAsync
+
+        Try
+            EnsureConfigured()
+            If idrevatt <= 0 Then Throw New ArgumentException("idrevatt invalid.", NameOf(idrevatt))
+
+            Using msg As New HttpRequestMessage(HttpMethod.Delete, $"/api/forexe/ddf/att/{idrevatt}/imagine")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                        Throw BuildApiException(respText, "ștergerea fișierului atașat",
+                                                CInt(resp.StatusCode))
+                    End If
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.DeleteDdfFisierAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Takes the next free number of the given kind and HOLDS it
+    ''' (POST /api/forexe/ddf/numar/rezerva).
+    '''
+    ''' <para>Deliberately unlike <see cref="GetOrdNrUrmatorAsync"/>, which only guesses. The
+    ''' DDF's numbers are shown to the operator and can be retyped, so they have to be really
+    ''' held; the ORD's number is allocated inside the save transaction and a wrong guess
+    ''' costs nothing. Do not harmonise the two.</para>
+    ''' </summary>
+    Public Function RezervaNumarDdfAsync(tip As String, cod As String, dc As String,
+                                         ct As CancellationToken) _
+        As Task(Of DdfNumarLock) Implements IApiClient.RezervaNumarDdfAsync
+
+        If String.IsNullOrWhiteSpace(tip) Then Throw New ArgumentException("tip gol.", NameOf(tip))
+        If String.IsNullOrWhiteSpace(dc) Then Throw New ArgumentException("dc gol.", NameOf(dc))
+        Dim req As New RezervaNumarRequest() With {.tip = tip, .cod = cod, .dc = dc}
+        Return PostNumarAsync("/api/forexe/ddf/numar/rezerva", req, "rezervarea numărului",
+                              "ApiClient.RezervaNumarDdfAsync", ct)
+    End Function
+
+    ''' <summary>
+    ''' Moves the lock to a number the operator typed
+    ''' (POST /api/forexe/ddf/numar/{idLock}/schimba).
+    '''
+    ''' <para>A refusal arrives as an <see cref="ApiException"/> whose message distinguishes
+    ''' "already used" from "currently held by another operator" -- one is permanent, the
+    ''' other is worth waiting out, and the operator needs to know which.</para>
+    ''' </summary>
+    Public Function SchimbaNumarDdfAsync(idLock As Integer, valoare As Integer,
+                                         ct As CancellationToken) _
+        As Task(Of DdfNumarLock) Implements IApiClient.SchimbaNumarDdfAsync
+
+        If idLock <= 0 Then Throw New ArgumentException("idLock invalid.", NameOf(idLock))
+        If valoare < 0 Then Throw New ArgumentException("valoare invalidă.", NameOf(valoare))
+        Dim req As New SchimbaNumarRequest() With {.valoare = valoare}
+        Return PostNumarAsync($"/api/forexe/ddf/numar/{idLock}/schimba", req,
+                              "schimbarea numărului", "ApiClient.SchimbaNumarDdfAsync", ct)
+    End Function
+
+    ''' <summary>
+    ''' Heartbeat: pushes the lock's expiry out (POST /api/forexe/ddf/numar/{idLock}/prelungeste).
+    ''' The form calls it every five minutes against a sixty-minute lifetime, so a lock only
+    ''' ever expires after a crash.
+    ''' </summary>
+    Public Function PrelungesteNumarDdfAsync(idLock As Integer, ct As CancellationToken) _
+        As Task(Of DdfNumarLock) Implements IApiClient.PrelungesteNumarDdfAsync
+
+        If idLock <= 0 Then Throw New ArgumentException("idLock invalid.", NameOf(idLock))
+        Return PostNumarAsync(Of Object)($"/api/forexe/ddf/numar/{idLock}/prelungeste", Nothing,
+                                         "prelungirea rezervării",
+                                         "ApiClient.PrelungesteNumarDdfAsync", ct)
+    End Function
+
+    ''' <summary>
+    ''' Releases a lock (DELETE /api/forexe/ddf/numar/{idLock}). Called from the form's
+    ''' <c>FormClosed</c>, whatever closed it.
+    ''' </summary>
+    Public Async Function ElibereazaNumarDdfAsync(idLock As Integer, ct As CancellationToken) _
+        As Task Implements IApiClient.ElibereazaNumarDdfAsync
+
+        Try
+            EnsureConfigured()
+            If idLock <= 0 Then Throw New ArgumentException("idLock invalid.", NameOf(idLock))
+
+            Using msg As New HttpRequestMessage(HttpMethod.Delete, $"/api/forexe/ddf/numar/{idLock}")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                        Throw BuildApiException(respText, "eliberarea numărului", CInt(resp.StatusCode))
+                    End If
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.ElibereazaNumarDdfAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ' The three POST lock routes answer with the same body, so they share one implementation.
+    Private Async Function PostNumarAsync(Of TReq)(url As String, req As TReq, eticheta As String,
+                                                   sursa As String, ct As CancellationToken) _
+        As Task(Of DdfNumarLock)
+        Try
+            EnsureConfigured()
+            Using msg As New HttpRequestMessage(HttpMethod.Post, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Dim body As String = If(req Is Nothing, "{}", JsonSerializer.Serialize(req, _jsonFaraNull))
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, eticheta, CInt(resp.StatusCode))
+                    End If
+                    Dim payload As DdfNumarLockResponse =
+                        JsonSerializer.Deserialize(Of DdfNumarLockResponse)(respText, _json)
+                    If payload Is Nothing OrElse payload.id_lock <= 0 Then
+                        Throw New ApiException(
+                            "Serverul nu a întors rezervarea numărului.", CInt(resp.StatusCode))
+                    End If
+                    Return New DdfNumarLock() With {
+                        .IdLock = payload.id_lock,
+                        .Tip = If(payload.tip, String.Empty),
+                        .Valoare = payload.valoare,
+                        .ExpiraLa = CitesteZiOra(payload.expira_la)}
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write(sursa, ex)
+            Throw
+        End Try
+    End Function
+
+    ' ── DDF: wire -> domain and domain -> wire ───────────────────────────────────────────
+
+    ' The 200 body of `genereaza` / `draft` -> the domain POCO. One function for both routes:
+    ' they return EXACTLY the same shape, so the form cannot tell a proposal from an existing
+    ' revision by anything other than the keys.
+    Private Shared Function CitesteDdfDraft(respText As String, codImplicit As String) As DdfDraft
+        Dim payload As DdfDraftDto = JsonSerializer.Deserialize(Of DdfDraftDto)(respText, _json)
+        Dim d As New DdfDraft() With {.CodAngajament = If(codImplicit, String.Empty)}
+        If payload Is Nothing Then Return d
+
+        ' Which source the server chose (decision D5). Kept rather than dropped: it gates
+        ' section A, because a document generated from FX_Rezervari is not edited by hand.
+        d.Sursa = If(payload.sursa, String.Empty)
+
+        If payload.antet IsNot Nothing Then
+            Dim a As DdfDraftAntetDto = payload.antet
+            d.Iddf = a.iddf
+            d.Cual = a.cual
+            If Not String.IsNullOrEmpty(a.cod_angajament) Then d.CodAngajament = a.cod_angajament
+            d.Comp = If(a.comp, String.Empty)
+            d.Salarii = a.salarii
+            d.DataCreare = CitesteZi(a.data_creare)
+            d.Dc = If(a.dc, String.Empty)
+            d.Program = If(a.program, String.Empty)
+            d.DataDef = CitesteZi(a.data_def)
+            d.Incarcat = a.incarcat
+            d.Preluat = a.preluat
+            d.Buget = a.buget
+            d.Manual = a.manual
+            d.ObiectDdf = If(a.obiect_ddf, String.Empty)
+            d.Stare = If(a.stare, String.Empty)
+            d.PartAng = a.part_ang
+            d.CodFiscal = If(a.cod_fiscal, String.Empty)
+            d.NumePartener = If(a.nume_partener, String.Empty)
+            d.Nou = a.nou
+        End If
+
+        If payload.revizie IsNot Nothing Then
+            Dim r As DdfDraftRevizieDto = payload.revizie
+            d.Revizie.Idrev = r.idrev
+            d.Revizie.Iddf = If(r.iddf > 0, r.iddf, d.Iddf)
+            d.Revizie.CodAngajament = If(String.IsNullOrEmpty(r.cod_angajament),
+                                         d.CodAngajament, r.cod_angajament)
+            d.Revizie.NumarRev = r.numar_rev
+            d.Revizie.DataRev = CitesteZi(r.data_rev)
+            d.Revizie.Tip = If(r.tip, String.Empty)
+            d.Revizie.DescScurta = If(r.desc_scurta, String.Empty)
+            d.Revizie.DescLunga = If(r.desc_lunga, String.Empty)
+            d.Revizie.DescLungaAnsi = If(r.desc_lunga_ansi, String.Empty)
+            d.Revizie.Incarcat = r.incarcat
+            d.Revizie.Preluat = r.preluat
+            d.RevizieNoua = r.noua
+        End If
+
+        If payload.linii_a IsNot Nothing Then
+            For Each l As DdfDraftLinieADto In payload.linii_a
+                d.Revizie.LiniiA.Add(New DdfDraftLinieA() With {
+                    .TempId = l.temp_id, .IdSecA = l.id_sec_a,
+                    .CodAngajament = If(l.cod_angajament, String.Empty),
+                    .CodIndicator = If(l.cod_indicator, String.Empty),
+                    .IdClsf = l.id_clsf, .IdClsfAcc = l.id_clsf_acc,
+                    .Clsf = If(l.clsf, String.Empty),
+                    .Ss = If(l.ss, String.Empty),
+                    .IdUnitate = l.id_unitate,
+                    .ElementFund = If(l.element_fund, String.Empty),
+                    .ParametriiFund = If(l.parametrii_fund, String.Empty),
+                    .CodPartener = If(l.cod_partener, String.Empty),
+                    .IdPartener = l.id_partener, .PartInd = l.part_ind,
+                    .ValPrec = l.val_prec, .ValCur = l.val_cur, .ValTot = l.val_tot,
+                    .Ramane = l.ramane, .Buget = l.buget, .ValRec = l.val_rec,
+                    .GrpIdrz = If(l.grp_idrz, String.Empty)})
+            Next
+        End If
+
+        If payload.linii_b IsNot Nothing Then
+            For Each b As DdfDraftLinieBDto In payload.linii_b
+                d.Revizie.LiniiB.Add(New DdfDraftLinieB() With {
+                    .TempId = b.temp_id, .IdSecB = b.id_sec_b,
+                    .CodAngajament = If(b.cod_angajament, String.Empty),
+                    .CodIndicator = If(b.cod_indicator, String.Empty),
+                    .IdClsf = b.id_clsf, .IdClsfAcc = b.id_clsf_acc,
+                    .CodSsi = If(b.cod_ssi, String.Empty),
+                    .Ss = If(b.ss, String.Empty),
+                    .IdUnitate = b.id_unitate,
+                    .CodPartener = If(b.cod_partener, String.Empty),
+                    .IdPartener = b.id_partener,
+                    .CaAnterior = b.ca_anterior, .Inf1 = b.inf1, .CaCurent = b.ca_curent,
+                    .CbAnterior = b.cb_anterior, .Inf2 = b.inf2, .CbCurent = b.cb_curent})
+            Next
+        End If
+
+        If payload.atasamente IsNot Nothing Then
+            For Each t As DdfDraftAttDto In payload.atasamente
+                d.Revizie.Atasamente.Add(New DdfDraftAtt() With {
+                    .TempId = t.temp_id, .IdRevAtt = t.id_rev_att,
+                    .NumeFisier = If(t.nume_fisier, String.Empty),
+                    .CaleFisier = If(t.cale_fisier, String.Empty),
+                    .TipMime = If(t.tip_mime, String.Empty),
+                    .Dimensiune = t.dimensiune,
+                    .Sha256 = If(t.sha256, String.Empty),
+                    .PrtScr = t.prt_scr})
+            Next
+        End If
+
+        If payload.avertismente IsNot Nothing Then d.Avertismente.AddRange(payload.avertismente)
+        Return d
+    End Function
+
+    ' The domain POCO -> the save body. `buget` and `val_rec` ride along even though the
+    ' server drops them: one DTO serves both directions, and a second shape for the way up
+    ' would be one more place to drift.
+    Private Shared Function CatreFir(d As DdfDraft) As DdfDraftDto
+        Dim dto As New DdfDraftDto() With {
+            .sursa = d.Sursa,
+            .id_lock_cual = d.IdLockCual,
+            .id_lock_numar_rev = d.IdLockNumarRev,
+            .antet = New DdfDraftAntetDto() With {
+                .iddf = d.Iddf, .cual = d.Cual,
+                .cod_angajament = d.CodAngajament, .comp = d.Comp,
+                .salarii = d.Salarii,
+                .data_creare = ScrieZi(d.DataCreare),
+                .dc = d.Dc, .program = d.Program,
+                .data_def = ScrieZi(d.DataDef),
+                .incarcat = d.Incarcat, .preluat = d.Preluat,
+                .buget = d.Buget, .manual = d.Manual,
+                .obiect_ddf = d.ObiectDdf, .stare = d.Stare,
+                .part_ang = d.PartAng,
+                .cod_fiscal = d.CodFiscal, .nume_partener = d.NumePartener,
+                .nou = d.Nou},
+            .revizie = New DdfDraftRevizieDto() With {
+                .idrev = d.Revizie.Idrev, .iddf = d.Iddf,
+                .cod_angajament = d.CodAngajament,
+                .numar_rev = d.Revizie.NumarRev,
+                .data_rev = ScrieZi(d.Revizie.DataRev),
+                .tip = d.Revizie.Tip,
+                .desc_scurta = d.Revizie.DescScurta,
+                .desc_lunga = d.Revizie.DescLunga,
+                .desc_lunga_ansi = d.Revizie.DescLungaAnsi,
+                .incarcat = d.Revizie.Incarcat, .preluat = d.Revizie.Preluat,
+                .noua = d.RevizieNoua}}
+
+        For Each l As DdfDraftLinieA In d.Revizie.LiniiA
+            dto.linii_a.Add(New DdfDraftLinieADto() With {
+                .temp_id = l.TempId, .id_sec_a = l.IdSecA,
+                .cod_angajament = l.CodAngajament, .cod_indicator = l.CodIndicator,
+                .id_clsf = l.IdClsf, .id_clsf_acc = l.IdClsfAcc,
+                .clsf = l.Clsf, .ss = l.Ss, .id_unitate = l.IdUnitate,
+                .element_fund = l.ElementFund, .parametrii_fund = l.ParametriiFund,
+                .cod_partener = l.CodPartener, .id_partener = l.IdPartener,
+                .part_ind = l.PartInd,
+                .val_prec = l.ValPrec, .val_cur = l.ValCur, .val_tot = l.ValTot,
+                .ramane = l.Ramane, .buget = l.Buget, .val_rec = l.ValRec,
+                .grp_idrz = l.GrpIdrz})
+        Next
+
+        For Each b As DdfDraftLinieB In d.Revizie.LiniiB
+            dto.linii_b.Add(New DdfDraftLinieBDto() With {
+                .temp_id = b.TempId, .id_sec_b = b.IdSecB,
+                .cod_angajament = b.CodAngajament, .cod_indicator = b.CodIndicator,
+                .id_clsf = b.IdClsf, .id_clsf_acc = b.IdClsfAcc,
+                .cod_ssi = b.CodSsi, .ss = b.Ss, .id_unitate = b.IdUnitate,
+                .cod_partener = b.CodPartener, .id_partener = b.IdPartener,
+                .ca_anterior = b.CaAnterior, .inf1 = b.Inf1, .ca_curent = b.CaCurent,
+                .cb_anterior = b.CbAnterior, .inf2 = b.Inf2, .cb_curent = b.CbCurent})
+        Next
+
+        For Each t As DdfDraftAtt In d.Revizie.Atasamente
+            dto.atasamente.Add(New DdfDraftAttDto() With {
+                .temp_id = t.TempId, .id_rev_att = t.IdRevAtt,
+                .nume_fisier = t.NumeFisier, .cale_fisier = t.CaleFisier,
+                .tip_mime = t.TipMime, .dimensiune = t.Dimensiune,
+                .sha256 = t.Sha256, .prt_scr = t.PrtScr})
+        Next
+
+        Return dto
+    End Function
+
+    ' Date? -> "YYYY-MM-DD", or Nothing. The INVARIANT culture, always: the machine's culture
+    ' has nothing to do with what the server expects to parse.
+    Private Shared Function ScrieZi(zi As Date?) As String
+        If Not zi.HasValue Then Return Nothing
+        Return zi.Value.ToString("yyyy-MM-dd", Globalization.CultureInfo.InvariantCulture)
+    End Function
+
+    ' An ISO timestamp -> Date?. Unreadable text gives Nothing rather than a fabricated
+    ' moment: the value is a lock's expiry, and a wrong one would silently mislead.
+    Private Shared Function CitesteZiOra(text As String) As Date?
+        If String.IsNullOrWhiteSpace(text) Then Return Nothing
+        Dim rezultat As Date
+        If Date.TryParse(text, Globalization.CultureInfo.InvariantCulture,
+                         Globalization.DateTimeStyles.None, rezultat) Then
+            Return rezultat
+        End If
+        Return Nothing
     End Function
 
     Public Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T) Implements IApiClient.GetAsync

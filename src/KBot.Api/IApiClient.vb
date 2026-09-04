@@ -1,4 +1,4 @@
-﻿Imports System.Collections.Generic
+Imports System.Collections.Generic
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports KBot.Common
@@ -331,6 +331,122 @@ Public Interface IApiClient
     ''' (DELETE /api/forexe/ord/att/{idordattp}/imagine).
     ''' </summary>
     Function DeleteOrdAtasamentAsync(idordattp As Integer, ct As CancellationToken) As Task
+
+    ' ── THE DDF EDITOR (slice 0051) ──────────────────────────────────────────────────────
+    ' Sixteen calls on `routes/forexe/ddf_edit.py`. The read route of slice 0020
+    ' (`GetDdfAsync`) is untouched and stays the view's call; these are the write half.
+
+    ''' <summary>
+    ''' Asks for the PROPOSED graph of a fundamentation document
+    ''' (POST /api/forexe/ddf/genereaza). NOTHING is written.
+    '''
+    ''' <para><paramref name="rev0"/> selects the HEADER treatment -- the initial revision or
+    ''' a subsequent one -- and NOT the line source. The server chooses that from the data:
+    ''' un-DDF'd reservations if there are any, otherwise initial-reservation history rows,
+    ''' otherwise a refusal naming both conditions. An empty graph is never returned.</para>
+    ''' </summary>
+    Function GenereazaDdfAsync(cod As String, rev0 As Boolean,
+                               ct As CancellationToken) As Task(Of DdfDraft)
+
+    ''' <summary>
+    ''' Reads an EXISTING revision in the editor's form
+    ''' (GET /api/forexe/ddf/draft/{iddf}/{idrev}). Distinct from <see cref="GetDdfAsync"/>,
+    ''' which is the view's call and returns neither the section keys nor the attachment rows.
+    ''' </summary>
+    Function GetDdfDraftAsync(iddf As Integer, idrev As Integer,
+                              ct As CancellationToken) As Task(Of DdfDraft)
+
+    ''' <summary>
+    ''' The section-A classification combo (GET /api/forexe/ddf/clasificatii).
+    ''' <paramref name="manual"/> picks the variant for a manually created angajament (its
+    ''' code starts with "!"); <paramref name="titlu"/> narrows that variant to one Titlu and
+    ''' may be <c>Nothing</c>.
+    ''' </summary>
+    Function GetDdfClasificatiiAsync(cod As String, manual As Boolean, titlu As String,
+                                     ct As CancellationToken) As Task(Of List(Of DdfClasificatie))
+
+    ''' <summary>The header partner combo (GET /api/forexe/ddf/parteneri).</summary>
+    Function GetDdfParteneriAsync(cod As String, ct As CancellationToken) As Task(Of List(Of DdfPartener))
+
+    ''' <summary>
+    ''' The compartments already used on this unit's documents (GET /api/forexe/ddf/comp).
+    ''' May legitimately be EMPTY: Access read a linked table that has no MariaDB counterpart,
+    ''' so on a database with no documents the operator types the first compartment.
+    ''' </summary>
+    Function GetDdfCompAsync(ct As CancellationToken) As Task(Of List(Of String))
+
+    ''' <summary>
+    ''' Writes the WHOLE graph in one transaction (POST /api/forexe/ddf/save) and returns the
+    ''' real keys plus the <c>TempId</c> maps.
+    '''
+    ''' <para>A validation refusal arrives as an <see cref="ApiException"/> carrying the
+    ''' server's Romanian message, which lists ALL the reasons at once.</para>
+    '''
+    ''' <para>The attachment bytes do NOT go from here: an <c>IdRevAtt</c> has to exist first.
+    ''' They follow with <see cref="PutDdfFisierAsync"/>, using the map in the response.</para>
+    ''' </summary>
+    Function SaveDdfAsync(draft As DdfDraft, ct As CancellationToken) As Task(Of DdfSaveRezultat)
+
+    ''' <summary>Deletes one revision (DELETE /api/forexe/ddf/rev/{idrev}).</summary>
+    Function DeleteDdfRevizieAsync(idrev As Integer, ct As CancellationToken) As Task(Of DdfStergereRezultat)
+
+    ''' <summary>Deletes the whole document (DELETE /api/forexe/ddf/{iddf}). Refused while any
+    ''' ordonantare points at it.</summary>
+    Function DeleteDdfAsync(iddf As Integer, ct As CancellationToken) As Task(Of DdfStergereRezultat)
+
+    ''' <summary>
+    ''' Deletes a month's revisions (DELETE /api/forexe/ddf/{iddf}/luna/{an}/{luna}). When the
+    ''' month holds every revision the document has, the DOCUMENT goes instead of the last
+    ''' revision -- the result says which happened.
+    ''' </summary>
+    Function DeleteDdfLunaAsync(iddf As Integer, an As Integer, luna As Integer,
+                                ct As CancellationToken) As Task(Of DdfStergereRezultat)
+
+    ''' <summary>
+    ''' Downloads the bytes of one attached file
+    ''' (GET /api/forexe/ddf/att/{idrevatt}/imagine). Same contract as the PDFs: 304 on a
+    ''' valid cache, 404 for "no file yet" (a normal state, not an exception).
+    ''' </summary>
+    Function GetDdfFisierAsync(idrevatt As Integer, cachedSha As String,
+                               ct As CancellationToken) As Task(Of PdfDownloadResult)
+
+    ''' <summary>
+    ''' Uploads the bytes of one attached file (PUT /api/forexe/ddf/att/{idrevatt}/imagine).
+    ''' The file name IS sent -- it is the operator's choice, and <c>FX_DDF_REV_ATT</c> has no
+    ''' column for it. <paramref name="shaPrecedent"/> is optimistic concurrency.
+    ''' </summary>
+    Function PutDdfFisierAsync(idrevatt As Integer, numeFisier As String, continut As Byte(),
+                               shaPrecedent As String,
+                               ct As CancellationToken) As Task(Of PutDdfFisierResponse)
+
+    ''' <summary>Deletes the bytes, leaving the attachment row in place
+    ''' (DELETE /api/forexe/ddf/att/{idrevatt}/imagine).</summary>
+    Function DeleteDdfFisierAsync(idrevatt As Integer, ct As CancellationToken) As Task
+
+    ''' <summary>
+    ''' Takes the next free number of the given kind and HOLDS it
+    ''' (POST /api/forexe/ddf/numar/rezerva). <paramref name="tip"/> is «CUAL» or «NUMARREV».
+    '''
+    ''' <para>Deliberately unlike <see cref="GetOrdNrUrmatorAsync"/>, which only guesses: the
+    ''' DDF's numbers are shown to the operator and can be retyped, so they are really held.</para>
+    ''' </summary>
+    Function RezervaNumarDdfAsync(tip As String, cod As String, dc As String,
+                                  ct As CancellationToken) As Task(Of DdfNumarLock)
+
+    ''' <summary>
+    ''' Moves the lock to a number the operator typed
+    ''' (POST /api/forexe/ddf/numar/{idLock}/schimba). A refusal says WHICH kind it is:
+    ''' already used, or currently held by another operator.
+    ''' </summary>
+    Function SchimbaNumarDdfAsync(idLock As Integer, valoare As Integer,
+                                  ct As CancellationToken) As Task(Of DdfNumarLock)
+
+    ''' <summary>Heartbeat for a held number
+    ''' (POST /api/forexe/ddf/numar/{idLock}/prelungeste).</summary>
+    Function PrelungesteNumarDdfAsync(idLock As Integer, ct As CancellationToken) As Task(Of DdfNumarLock)
+
+    ''' <summary>Releases a held number (DELETE /api/forexe/ddf/numar/{idLock}).</summary>
+    Function ElibereazaNumarDdfAsync(idLock As Integer, ct As CancellationToken) As Task
 
     Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T)
     Function PostAsync(Of TRequest, TResponse)(relativeUrl As String, payload As TRequest, ct As CancellationToken) As Task(Of TResponse)

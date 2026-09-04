@@ -14,12 +14,13 @@ would be noise.
 
 import logging
 import os
+import re
 import sys
 from logging.handlers import RotatingFileHandler
 
 import mysql.connector
 
-from config import DB_CONFIG
+from config import DB_CONFIG_NEW
 
 # The unit registry. Source of the target list. Never itself a target.
 COMMON_DB = "AVACONT_COMUN"
@@ -95,6 +96,11 @@ def is_exempt_column(table_name: str, column_name: str) -> bool:
 
 FORBIDDEN_TARGETS = {COMMON_DB, SOURCE_DB, "information_schema",
                      "performance_schema", "mysql", "sys"}
+
+# A unit database is named with a three-digit prefix (000_DEMO, 001_...).
+# Everything else on the server -- the template, the registry, the server's
+# own schemas -- is not a unit and is never offered as a target.
+UNIT_DB_RE = re.compile(r"^\d{3}")
 
 LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                         "schema_sync.log")
@@ -186,7 +192,7 @@ def setup_logging(verbose: bool = False) -> logging.Logger:
 def connect(database: str = None):
     """Open a connection. autocommit on -- DDL commits implicitly in
     MariaDB regardless, so pretending otherwise would be a lie."""
-    cfg = dict(DB_CONFIG)
+    cfg = dict(DB_CONFIG_NEW)
     if database:
         cfg["database"] = database
     cfg.setdefault("charset", "utf8mb4")
@@ -400,6 +406,49 @@ def verify_targets(conn, targets: list, logger) -> list:
     logger.info("Ținte (indicate explicit): %d — %s",
                 len(targets), ", ".join(targets))
     return targets
+
+
+def list_unit_databases(conn) -> list:
+    """The unit databases that ACTUALLY EXIST, plus what CAI only claims.
+
+    The server is the source, not the registry: every schema in
+    information_schema.SCHEMATA whose name starts with three digits, with
+    exists=True. CAI is consulted for one thing only -- in_cai, so a real
+    database absent from the registry is visible instead of quietly gone.
+
+    A name CAI lists that the server does NOT have is appended with
+    exists=False. It can never be a target, and the caller is expected to
+    show it disabled: dropping it silently would hide a broken registry
+    row, which is exactly the thing worth seeing.
+
+    Reads nothing else and writes nothing: safe to call before the
+    control table exists.
+    """
+    registered = {}
+    for r in query(conn, f"SELECT DISTINCT DbName FROM `{COMMON_DB}`.`CAI` "
+                         f"WHERE DbName IS NOT NULL AND DbName <> ''"):
+        registered[r["DbName"].lower()] = r["DbName"]
+
+    # Every schema, not just the unit ones: a CAI row naming AVACONT_COMUN
+    # must not be reported as missing from the server.
+    on_server = {r["name"].lower() for r in query(
+        conn, "SELECT SCHEMA_NAME AS name FROM information_schema.SCHEMATA")}
+
+    rows = query(conn, "SELECT SCHEMA_NAME AS name "
+                       "FROM information_schema.SCHEMATA "
+                       "ORDER BY SCHEMA_NAME")
+
+    listed = [{"name": r["name"],
+               "in_cai": r["name"].lower() in registered,
+               "exists": True}
+              for r in rows
+              if UNIT_DB_RE.match(r["name"] or "")
+              and r["name"] not in FORBIDDEN_TARGETS]
+
+    listed.extend({"name": registered[k], "in_cai": True, "exists": False}
+                  for k in sorted(registered) if k not in on_server)
+
+    return listed
 
 
 # ---------------------------------------------------------------------

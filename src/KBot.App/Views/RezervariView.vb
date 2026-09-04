@@ -58,17 +58,28 @@ Public Class RezervariView
     Private _splitterDistanceDesfasurat As Integer
     Private _panel1MinSizeDesfasurat As Integer
 
-    ''' <summary>«+» a fost apăsat pe o frunză (grup fără DDF). Felia curentă doar
-    ''' semnalează; workflow-ul IncarcaRezervare/DDF este o felie ulterioară.</summary>
-    Public Event AdaugaDdfCerut(tip As RezervareTip, data As Date)
+    ''' <summary>
+    ''' The DDF write commands (slice 0051), executed by the shell. Optional: a host that does
+    ''' not supply one (the tests) still gets the whole read-only view, and the "+" icon says
+    ''' so rather than doing nothing.
+    '''
+    ''' <para>This took the place of the dormant <c>AdaugaDdfCerut</c> event of slice 0014.
+    ''' That event existed because the DDF workflow was a later slice; the later slice is
+    ''' here. The command goes through the shell for the same reason <c>DdfView</c>'s does --
+    ''' the 401 re-login net is private and generic in <c>MainForm</c>, so the policy stays in
+    ''' one place.</para>
+    ''' </summary>
+    Private ReadOnly _executaComanda As Action(Of DdfComanda)
 
     Public Sub New(apiClient As IApiClient,
-                   withReauth As Func(Of Func(Of Task(Of RezervariInfo)), Task(Of RezervariInfo)))
+                   withReauth As Func(Of Func(Of Task(Of RezervariInfo)), Task(Of RezervariInfo)),
+                   Optional executaComanda As Action(Of DdfComanda) = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
+        _executaComanda = executaComanda
         'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
@@ -375,16 +386,68 @@ Public Class RezervariView
         End Try
     End Sub
 
-    ' Click pe iconița «+» a unei frunze -> semnalăm doar (workflow DDF = felie ulterioară).
+    ''' <summary>
+    ''' The "+" icon of a leaf -- the port of <c>mcTree_RightIconClick</c> in
+    ''' <c>frmFX_MAIN_REZ</c>, which raised <c>AdaugaRevizie(CBool(cNode.Value2))</c> and
+    ''' landed in <c>FX_Adaugare_DDF</c>. Here it opens the DDF editor (slice 0051) through
+    ''' the shell.
+    '''
+    ''' <para><c>Value2</c> was the row's <c>EInitiala</c>, and that flag is the whole of the
+    ''' choice between the two add actions: an INITIAL reservation opens the first revision,
+    ''' which also creates the document; anything else opens a further revision on the
+    ''' document that already exists. The choice is NOT second-guessed here. The server
+    ''' refuses each of the two when the document's state contradicts it -- in Romanian --
+    ''' and that refusal reaches the operator through <c>MainForm.ExecutaComandaDdf</c>.</para>
+    '''
+    ''' <para>The row consulted is the FIRST one of the leaf that has no DDF, not simply
+    ''' <c>rows(0)</c>: that is the row <c>Show_Rezervari</c> was standing on when it set the
+    ''' icon, and one leaf can hold rows of both kinds.</para>
+    ''' </summary>
     Private Sub Tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
         Try
             If pNode Is Nothing Then Return
             Dim rows As List(Of RezervareRow) = TryCast(pNode.Tag, List(Of RezervareRow))
             If rows Is Nothing OrElse rows.Count = 0 Then Return
-            Dim first As RezervareRow = rows(0)
-            RaiseEvent AdaugaDdfCerut(first.Tip, first.DataRezervare)
+            If String.IsNullOrWhiteSpace(_requestedCod) Then Return
+
+            Dim tinta As RezervareRow = rows.FirstOrDefault(Function(r) Not r.AreDDF)
+            If tinta Is Nothing Then tinta = rows(0)
+
+            Dim actiune As DdfActiune = If(tinta.EInitiala,
+                                           DdfActiune.AdaugaRevizieInitiala,
+                                           DdfActiune.Adauga)
+            CereComanda(New DdfComanda(actiune, _requestedCod))
         Catch ex As Exception
             GlobalErrorLog.Write("RezervariView.tree_RightIconClicked", ex)
+        End Try
+    End Sub
+
+    ''' <summary>Sends the command to the shell. With no action bound (the tests, or a host
+    ''' that does not supply one) the operator is told -- it is not swallowed.</summary>
+    Private Sub CereComanda(comanda As DdfComanda)
+        If _executaComanda Is Nothing Then
+            MessageBox.Show(Me, "Editorul de documente de fundamentare nu este disponibil în acest context.",
+                            "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        _executaComanda(comanda)
+    End Sub
+
+    ''' <summary>
+    ''' Reloads the angajament after a DDF write (called by <c>MainForm.DupaScriereaDdf</c>).
+    ''' A save marks reservations as having a DDF and a delete releases them again, so the
+    ''' "+" icon this tree draws is no longer where it belongs. Goes through the SAME
+    ''' <c>LoadAsync</c> a normal selection uses -- there is no second loading route to keep
+    ''' in step, and its stale-guard still applies.
+    ''' </summary>
+    Public Sub Reincarca()
+        Try
+            Dim cod As String = _requestedCod
+            If String.IsNullOrWhiteSpace(cod) Then Return
+            ShowEmpty("Se încarcă rezervările…")
+            LoadAsync(cod)
+        Catch ex As Exception
+            GlobalErrorLog.Write("RezervariView.Reincarca", ex)
         End Try
     End Sub
 

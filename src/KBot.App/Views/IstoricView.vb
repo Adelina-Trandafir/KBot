@@ -74,7 +74,7 @@ Public Class IstoricView
     ''' Rândul selectat s-a schimbat — oglindește evenimentul dormant Access
     ''' <c>Public Event RowChanged(key)</c> (cu <c>RaiseEvent</c> comentat) și textbox-ul ascuns
     ''' <c>CL = Me!ID</c>. Poartă <c>ID</c>-ul rândului. INTENȚIONAT fără abonat în această felie
-    ''' (aceeași formă ca <c>AdaugaDdfCerut</c> din Rezervări) — a NU se „curăța" ca membru nefolosit.
+    ''' — a NU se „curăța" ca membru nefolosit.
     ''' </summary>
     Public Event RandSchimbat(sender As Object, e As IstoricRandEventArgs)
 

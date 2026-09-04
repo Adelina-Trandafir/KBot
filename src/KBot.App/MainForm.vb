@@ -410,7 +410,12 @@ Public Class MainForm
                 Case "indicatori" : Return New PlaceholderView(key, "Indicatori")
                 Case "istoric" : Return New IstoricView(_apiClient, Function(op) WithReauth(Of IstoricInfo)(op))
                 Case "revizii" : Return New PlaceholderView(key, "Revizii")
-                Case "rezervari" : Return New RezervariView(_apiClient, Function(op) WithReauth(Of RezervariInfo)(op))
+                ' The "+" icon on the reservations tree asks for a DDF on that reservation --
+                ' Access: fxRezervari_AdaugaRevizie in frmFX_MAIN. It goes through the SAME
+                ' ExecutaComandaDdf as DdfView: one re-login policy, one place where the editor
+                ' opens.
+                Case "rezervari" : Return New RezervariView(_apiClient, Function(op) WithReauth(Of RezervariInfo)(op),
+                                                            AddressOf ExecutaComandaDdf)
                 Case "partener" : Return New PlaceholderView(key, "Partener")
                 Case "receptii" : Return New ReceptiiView(_apiClient, Function(op) WithReauth(Of ReceptiiInfo)(op),
                                                          AddressOf DeschideLegaturileReceptiilor)
@@ -420,7 +425,8 @@ Public Class MainForm
                 ' re-login, un singur loc unde se deschide editorul.
                 Case "plati" : Return New PlatiView(_apiClient, Function(op) WithReauth(Of PlatiInfo)(op),
                                                     AddressOf ExecutaComandaOrd)
-                Case "ddf" : Return New DdfView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op), _session)
+                Case "ddf" : Return New DdfView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op), _session,
+                                                AddressOf ExecutaComandaDdf)
                 Case "ord" : Return New OrdView(_apiClient, Function(op) WithReauth(Of OrdInfo)(op), _session,
                                                 AddressOf ExecutaComandaOrd)
                 Case Else
@@ -786,6 +792,301 @@ Public Class MainForm
             ' logheaza si se merge mai departe — un throw de aici ar face sa para ca
             ' salvarea a picat.
             GlobalErrorLog.Write("MainForm.DupaScriereaOrdonantarii", ex)
+        End Try
+    End Sub
+
+
+    ' ══════════════════════════════════════════════════════════════════════════════════
+    ' THE DDF EDITOR (slice 0051)
+    '
+    ' The same shape as `ExecutaComandaOrd` above: the view asks, the shell executes. Every
+    ' call goes through `WithReauth`, which is private and generic here, so the re-login
+    ' policy stays in one place.
+    ' ══════════════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>
+    ''' Executes one write command of the fundamentation document.
+    '''
+    ''' <para><c>Adauga</c> and <c>AdaugaRevizieInitiala</c> are asked for by the "+" icon on
+    ''' the RESERVATIONS tree (<c>RezervariView.Tree_RightIconClicked</c>) -- which is where
+    ''' Access asked for them too: <c>fxRezervari_AdaugaRevizie</c> in <c>frmFX_MAIN</c>.
+    ''' Which of the two is decided there, from the reservation's <c>EInitiala</c>, exactly as
+    ''' <c>cNode.Value2</c> decided it in <c>frmFX_MAIN_REZ</c>. They had no caller when slice
+    ''' 0051 shipped (decision D20); they have one now.</para>
+    ''' </summary>
+    Private Async Sub ExecutaComandaDdf(comanda As DdfComanda)
+        Try
+            If comanda Is Nothing OrElse String.IsNullOrWhiteSpace(comanda.Cod) Then Return
+
+            Select Case comanda.Actiune
+                Case DdfActiune.Adauga
+                    Await AdaugaDdfAsync(comanda.Cod, rev0:=False).ConfigureAwait(True)
+                Case DdfActiune.AdaugaRevizieInitiala
+                    Await AdaugaDdfAsync(comanda.Cod, rev0:=True).ConfigureAwait(True)
+                Case DdfActiune.Modifica
+                    Await ModificaDdfAsync(comanda.Revizie).ConfigureAwait(True)
+                Case DdfActiune.StergeRevizie
+                    Await StergeRevizieDdfAsync(comanda.Revizie).ConfigureAwait(True)
+                Case DdfActiune.Sterge
+                    Await StergeDocumentDdfAsync(comanda.Revizie).ConfigureAwait(True)
+                Case DdfActiune.StergeLuna
+                    Await StergeLunaDdfAsync(comanda).ConfigureAwait(True)
+                Case Else
+                    ' No silent no-ops: an unknown action is a programming defect.
+                    Throw New ArgumentException($"Acțiune DDF necunoscută: {comanda.Actiune}", NameOf(comanda))
+            End Select
+        Catch ex As ApiException
+            GlobalErrorLog.Write("MainForm.ExecutaComandaDdf", ex)
+            MessageBox.Show(Me, ex.Message, "Document de fundamentare",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ExecutaComandaDdf", ex)
+            MessageBox.Show(Me, "Comanda nu a putut fi executată. Detalii în jurnalul de erori.",
+                            "Document de fundamentare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' «Adauga» -- generates the graph on the server (NOTHING is written) and opens the
+    ''' editor. The port of <c>FX_Adaugare_DDF</c>.
+    '''
+    ''' <para><paramref name="rev0"/> selects the HEADER treatment: the initial revision, which
+    ''' also creates the document, or a subsequent one on a document that exists. It does NOT
+    ''' select the line source -- the server takes that from the data, and refuses loudly when
+    ''' neither source has rows.</para>
+    '''
+    ''' <para>Called from the "+" icon on the reservations tree; see
+    ''' <see cref="ExecutaComandaDdf"/>.</para>
+    ''' </summary>
+    Private Async Function AdaugaDdfAsync(cod As String, rev0 As Boolean) As Task
+        busyBar.Running = True
+        Dim draft As DdfDraft
+        Try
+            draft = Await WithReauth(Of DdfDraft)(
+                Function() _apiClient.GenereazaDdfAsync(cod, rev0, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        DeschideEditorulDdf(draft)
+    End Function
+
+    ''' <summary>
+    ''' «Modifica» -- loads the selected revision in the editor's shape and opens it.
+    '''
+    ''' <para>Read through <c>GET /api/forexe/ddf/draft/{iddf}/{idrev}</c>, NOT through the
+    ''' view's call: that one is the read-only view's and chooses its columns deliberately --
+    ''' it returns neither the section-A keys and classifications, nor the section-B rows, nor
+    ''' the attachment rows, all of which editing needs.</para>
+    ''' </summary>
+    Private Async Function ModificaDdfAsync(revizie As RevizieRow) As Task
+        If revizie Is Nothing OrElse revizie.Idrev <= 0 OrElse revizie.Iddf <= 0 Then
+            MessageBox.Show(Me, "Selectați o revizie din arbore.", "Document de fundamentare",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        busyBar.Running = True
+        Dim draft As DdfDraft
+        Try
+            Dim iddf As Integer = revizie.Iddf
+            Dim idrev As Integer = revizie.Idrev
+            draft = Await WithReauth(Of DdfDraft)(
+                Function() _apiClient.GetDdfDraftAsync(iddf, idrev, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        DeschideEditorulDdf(draft)
+    End Function
+
+    ''' <summary>Opens the editor MODALLY and, on a save, reloads the view onto what was written.</summary>
+    Private Sub DeschideEditorulDdf(draft As DdfDraft)
+        If draft Is Nothing Then Return
+
+        ' Seven specialisations of the 401 net, named rather than positional: `WithReauth` is
+        ' private and generic, so the form needs one closure per response shape, and seven
+        ' identical-looking delegates in a row is an argument order nobody gets right twice.
+        Dim reauth As New DdfEditReauth(
+            Function(op) WithReauth(Of DdfSaveRezultat)(op),
+            Function(op) WithReauth(Of PutDdfFisierResponse)(op),
+            Function(op) WithReauth(Of PdfDownloadResult)(op),
+            Function(op) WithReauth(Of DdfNumarLock)(op),
+            Function(op) WithReauth(Of List(Of String))(op),
+            Function(op) WithReauth(Of List(Of DdfPartener))(op),
+            Function(op) WithReauth(Of List(Of DdfClasificatie))(op))
+
+        Using f As New DdfEditForm(_apiClient, draft, reauth)
+            f.ShowDialog(Me)
+            If f.SAuSalvatModificari Then
+                ' What is still on screen is no longer true: the lines changed, the reservations
+                ' consumed changed, and a new revision was not there at all.
+                DupaScriereaDdf(f.IdrevSalvat)
+            End If
+        End Using
+    End Sub
+
+    ''' <summary>
+    ''' «Sterge revizia» -- the port of <c>FX_Stergere_Revizie</c>. The confirmation names the
+    ''' revision, the way Access's <c>FX_Info_DDF</c> summary did.
+    ''' </summary>
+    Private Async Function StergeRevizieDdfAsync(revizie As RevizieRow) As Task
+        If revizie Is Nothing OrElse revizie.Idrev <= 0 Then
+            MessageBox.Show(Me, "Selectați o revizie din arbore.", "Document de fundamentare",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim intrebare As String =
+            "Dorești ștergerea Reviziei curente?" & vbCrLf & vbCrLf &
+            RezumatRevizie(revizie) & vbCrLf & vbCrLf &
+            "Odată cu ea se șterg rândurile din secțiunile A și B și fișierele atașate." & vbCrLf &
+            "Rezervările acoperite redevin fără DDF."
+
+        If MessageBox.Show(Me, intrebare, "Șterge revizia",
+                           MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
+            Return
+        End If
+
+        busyBar.Running = True
+        Dim rez As DdfStergereRezultat
+        Try
+            Dim idrev As Integer = revizie.Idrev
+            rez = Await WithReauth(Of DdfStergereRezultat)(
+                Function() _apiClient.DeleteDdfRevizieAsync(idrev, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        AratatRezultatulStergerii(rez, "Șterge revizia")
+        DupaScriereaDdf()
+    End Function
+
+    ''' <summary>
+    ''' «Sterge documentul» -- the port of <c>FX_Stergere_DDF</c>.
+    '''
+    ''' <para>Refused while any ordonantare points at the document. That refusal exists twice
+    ''' over: <c>FX_ORD.IDDF</c> is a RESTRICT foreign key, so the database would stop it
+    ''' anyway -- the server's guard is the readable version of the same "no", and it arrives
+    ''' here as an <see cref="ApiException"/> with the Romanian message.</para>
+    ''' </summary>
+    Private Async Function StergeDocumentDdfAsync(revizie As RevizieRow) As Task
+        If revizie Is Nothing OrElse revizie.Iddf <= 0 Then
+            MessageBox.Show(Me, "Selectați o revizie din arbore.", "Document de fundamentare",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim intrebare As String =
+            "Dorești ștergerea Documentului curent?" & vbCrLf & vbCrLf &
+            RezumatRevizie(revizie) & vbCrLf & vbCrLf &
+            "Se șterg TOATE reviziile documentului, cu rândurile și fișierele lor." & vbCrLf &
+            "Rezervările acoperite redevin fără DDF."
+
+        If MessageBox.Show(Me, intrebare, "Șterge documentul",
+                           MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
+            Return
+        End If
+
+        busyBar.Running = True
+        Dim rez As DdfStergereRezultat
+        Try
+            Dim iddf As Integer = revizie.Iddf
+            rez = Await WithReauth(Of DdfStergereRezultat)(
+                Function() _apiClient.DeleteDdfAsync(iddf, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        AratatRezultatulStergerii(rez, "Șterge documentul")
+        DupaScriereaDdf()
+    End Function
+
+    ''' <summary>
+    ''' «Sterge TOATE reviziile lunii» -- the port of <c>FX_Stergere_Revizii</c>.
+    '''
+    ''' <para>When the month holds EVERY revision the document has, the server deletes the
+    ''' DOCUMENT instead of the last revision and says so in the result. That is Access's
+    ''' behaviour, kept -- an empty document pointing at nothing is worse than none.</para>
+    ''' </summary>
+    Private Async Function StergeLunaDdfAsync(comanda As DdfComanda) As Task
+        If comanda.Iddf <= 0 OrElse comanda.An <= 0 OrElse comanda.Luna < 1 OrElse comanda.Luna > 12 Then
+            MessageBox.Show(Me, "Selectați o lună din arbore.", "Document de fundamentare",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim intrebare As String =
+            "Dorești ștergerea tuturor Reviziilor din luna selectată?" & vbCrLf & vbCrLf &
+            $"Luna {comanda.Luna:00}.{comanda.An}, angajamentul {comanda.Cod}." & vbCrLf & vbCrLf &
+            "Dacă luna conține toate reviziile documentului, se șterge documentul întreg." & vbCrLf &
+            "Rezervările acoperite redevin fără DDF."
+
+        If MessageBox.Show(Me, intrebare, "Șterge reviziile lunii",
+                           MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
+            Return
+        End If
+
+        busyBar.Running = True
+        Dim rez As DdfStergereRezultat
+        Try
+            Dim iddf As Integer = comanda.Iddf
+            Dim an As Integer = comanda.An
+            Dim luna As Integer = comanda.Luna
+            rez = Await WithReauth(Of DdfStergereRezultat)(
+                Function() _apiClient.DeleteDdfLunaAsync(iddf, an, luna, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        AratatRezultatulStergerii(rez, "Șterge reviziile lunii")
+        DupaScriereaDdf()
+    End Function
+
+    ''' <summary>The <c>FX_Info_DDF</c> summary, built client-side from what the view already
+    ''' holds rather than fetched: every field in it is already on the revision row.</summary>
+    Private Shared Function RezumatRevizie(revizie As RevizieRow) As String
+        Dim ro As New Globalization.CultureInfo("ro-RO")
+        Dim data As String = If(revizie.DataRev.HasValue,
+                                revizie.DataRev.Value.ToString("dd.MM.yyyy"), "fără dată")
+        Dim descriere As String = If(String.IsNullOrWhiteSpace(revizie.DescScurta),
+                                     "fără descriere", revizie.DescScurta)
+        Return $"Revizia nr. {revizie.NumarRev} din {data}, în valoare de " &
+               $"{revizie.TotalRevizie.ToString("N2", ro)} lei." & vbCrLf & descriere
+    End Function
+
+    ''' <summary>Reports what actually went, with real counts rather than a bare "done".</summary>
+    Private Sub AratatRezultatulStergerii(rez As DdfStergereRezultat, titlu As String)
+        If rez Is Nothing Then Return
+        Dim ce As String = If(rez.DocumentSters, "Documentul de fundamentare a fost șters.",
+                                                 "Reviziile au fost șterse.")
+        MessageBox.Show(Me,
+            ce & vbCrLf &
+            $"Revizii: {rez.Revizii} · secțiunea A: {rez.LiniiA} · secțiunea B: {rez.LiniiB} · " &
+            $"fișiere: {rez.Atasamente}." & vbCrLf &
+            $"Rezervări redevenite fără DDF: {rez.RezervariEliberate}.",
+            titlu, MessageBoxButtons.OK, MessageBoxIcon.Information)
+    End Sub
+
+    ''' <summary>
+    ''' Refreshes what a DDF write invalidated. The reservations view is refreshed too: a save
+    ''' marks reservations as having a DDF and a delete releases them again, so what it shows
+    ''' is no longer true either.
+    ''' </summary>
+    Private Sub DupaScriereaDdf(Optional idrevSalvat As Integer = 0)
+        Try
+            TryCast(_activeView, DdfView)?.Reincarca(idrevSalvat)
+
+            ' The reservations view too: a save marks reservations as having a DDF and a delete
+            ' releases them again, so the "+" icon that view draws -- now the trigger for the
+            ' editor -- is no longer where it belongs. Only the ACTIVE view is refreshed:
+            ' `ActivateView` calls `SetContext` on every activation, so an inactive one reloads
+            ' by itself when the operator switches to it.
+            TryCast(_activeView, RezervariView)?.Reincarca()
+        Catch ex As Exception
+            ' UI boundary: the refresh failed, but the WRITE already succeeded. Logged, and we
+            ' carry on -- a throw here would make it look as though the save had failed.
+            GlobalErrorLog.Write("MainForm.DupaScriereaDdf", ex)
         End Try
     End Sub
 

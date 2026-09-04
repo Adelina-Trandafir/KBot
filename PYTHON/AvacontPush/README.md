@@ -44,6 +44,53 @@ from `push_settings.json`). `push_settings.json` is also git-ignored.
 
 Every run is logged to `Logs\push_{timestamp}.log`.
 
+## Sincronizare schemă (second tab)
+
+The same SSH connection also runs `routes.schema_sync.schema_sync` on the server,
+so the schema of a unit database can be brought to `AVACONT_SURSA` without a
+terminal session. The list of databases has to come from the server: schema_sync
+reads its credentials from `config.py`, which is host-only and never travels with
+a push.
+
+1. **Citește bazele** — runs `--list-targets` and fills the list with every
+   database whose name starts with three digits (`000_DEMO`, `001_…`). One marked
+   `(lipsă din CAI)` exists on the server but is not in the `AVACONT_COMUN.CAI`
+   registry — shown rather than hidden, because that is worth knowing.
+2. Tick the databases, pick **SAFE** or **FORCE**.
+3. **Vezi (nu execută)** — `--view`: generates the statements, writes them to the
+   server's `.sql` file and prints the summary. Executes nothing.
+4. **Execută** — runs for real, after a confirmation dialog.
+
+**Python** is the interpreter used on the server (`RemotePython`). It defaults to
+`/root/AVACONT/.venv/bin/python`, because the service runs from that virtual
+environment and the system `python3` cannot import `mysql.connector` — with it
+every run dies on `ModuleNotFoundError: No module named 'mysql'`. If the venv
+ever moves, type the new path in the box; it is saved on the next action. A
+config still holding the bare `python3` is upgraded to the venv path on load,
+since that value never worked here.
+
+### How the destructive gate is answered
+
+Commands run over this channel have **no terminal and no stdin**, so every prompt
+the tool would show reads end-of-file. Three consequences, all handled:
+
+- Runs always carry `--run`. Without it, «Executați acum?» would read EOF, take
+  the last answer (`nu`) and exit 0 — a cancelled run that looks like a clean one.
+- **Execută** goes out first *without* `--allow-destructive`. If the sync involves
+  destructive DDL the tool refuses the whole thing (exit code 2) and **nothing is
+  executed**; the app then shows the refusal and asks the operator.
+- Only if the operator agrees does a second run go out with
+  `--allow-destructive`, with the typed `DA` piped into it. The gate is not
+  removed — it is answered in the dialog instead of at a terminal that does not
+  exist here.
+
+`PYTHONIOENCODING=utf-8` is set on every run: stdout here is a pipe, not a
+terminal, so on a server under the `C` locale the first Romanian message with
+diacritics would otherwise raise `UnicodeEncodeError`.
+
+Output arrives only when the command **ends** — the channel hands over stdout and
+stderr in one piece — so a long sync shows nothing until it is done.
+
 ## `.pushignore`
 
 `IgnorePatterns` in `push_settings.json` stays what it always was: a short fixed
@@ -82,5 +129,7 @@ The scan writes the number of rules read into the run log.
 - Host-key pinning: if the server fingerprint ever changes, the app refuses to
   connect (possible MITM). To re-pin intentionally, clear `HostKeyFingerprint` in
   `push_settings.json`.
+- A schema sync run must be able to write on the server: the `.sql` file it
+  produces, and the `mysqldump` backups it takes before destructive work.
 - Verify the `SSH.NET` package version in `AvacontPush.vbproj` is the latest stable
   before building.

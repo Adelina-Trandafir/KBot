@@ -16,7 +16,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.41.0.0</FileVersion>
+    <FileVersion>1.44.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -41,6 +41,10 @@
          CaptionBar\, BusyBar\, Notice\ (+ NoticeKind), Label\ (KBotLabel)
          TextField\  KBotTextField (câmpul de o linie) și KBotTextBox (caseta generală)
          Scroll\     KBotScrollBar (bara de derulare desenată de noi, tematizată)
+         RichText\   KBotRichTextEditor (+ partial-urile .Properties/.Theming) și piesele lui:
+                     KBotRichTextBand (benzile de antet/subsol), KBotNoFocusButton (butoanele
+                     barei), RichTextImageKeyConverter (lista cheilor de pictograme) și
+                     RichTextImageLayout (cum se desenează pictogramele pe butoane)
          Lane\       KBotLaneView (+ .Painting, .Drag) și tipurile lui: KBotLane,
                      KBotLaneMarker cu colecțiile lor, KBotLaneMarkerStyle/KBotLaneEndMark
          Chart\      KBotChartView (+ .Painting) și tipurile lui: KBotChartSeries/Point/Tab

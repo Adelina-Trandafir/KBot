@@ -142,3 +142,70 @@ before the column can be ignored.
 Note that `FX_ORD_DOC` keeps its own base64-in-`DocJust` file attachments unchanged — that
 one **is** live (719 rows), so slice 0049 ports it as it stands rather than migrating it.
 Whether the two attachment mechanisms should be unified is a separate question.
+
+---
+
+## ~~`KBotComboBox` cannot be editable~~ — CLOSED by slice 0051-02
+
+*Found while writing slice 0051, closed by slice 0051-02.*
+
+`KBotComboBox` used to throw on any `DropDownStyle` other than `DropDownList`, so slice 0051
+had to spell the `Comp` field as two controls: a `KBotTextField` holding the authoritative
+value next to a `KBotComboBox` that only wrote into it.
+
+The premise turned out to be wrong. The native `EDIT` child **does** take our colours: a combo
+sends `WM_CTLCOLOREDIT` to its parent, WinForms reflects it back to the control, and
+`Control.WmCtlColor` answers with the control's own `BackColor` / `ForeColor`. So the control
+now has `Editable` and `LimitToList`, and only `DropDownStyle.Simple` still throws. See
+[Combo/KBotComboBox.md](../src/KBot.Controls/Combo/KBotComboBox.md).
+
+**What is left:** `DdfEditForm` still carries the `txtComp` + `cmbComp` pair from slice 0051.
+Collapsing it into one `Editable` combo touches the DDF save path, so it was left for whoever
+next opens that form — not swept in with the control change.
+
+---
+
+## The FOREXE upload of a fundamentation document
+
+*Found while writing slice 0051 (plan §10.4).*
+
+In Access the upload was a manual step: the operator saved the document, then drove the FOREXE
+portal by hand. Slice 0051 ports the save only.
+
+`src/KBot.App/Views/Ddf/IDdfForexeUpload.vb` exists as the seam — one method, and an
+implementation that throws `NotImplementedException` rather than silently doing nothing. The
+Playwright work belongs in `KBot.Forexe`, alongside `ForexeRunner`.
+
+**To decide:** whether the upload runs from the editor's save handler (and therefore blocks
+the operator until the portal answers) or as a queued job the way `ExcelJob` works.
+
+---
+
+## `RezervariView` has no refresh entry point
+
+*Found while writing slice 0051.*
+
+After a DDF is saved, reservations change: `FX_Rezervari` rows are marked as used or released.
+`DdfView` reloads because it has `Reincarca`; `RezervariView` does not have one, so it shows
+stale rows until the operator reselects the angajament.
+
+**To decide:** give the views a common refresh contract (a small interface the shell can call
+on whatever view is showing) rather than adding one-off `Reincarca` methods per view as each
+write path lands.
+
+---
+
+## RULE 0 across the older files
+
+*Found while writing slice 0051.*
+
+RULE 0 says diacritics belong only in strings the operator reads on screen, and that where old
+code disagrees "the old code is wrong and gets swept". Large parts of the pre-0051 tree still
+carry Romanian comments with diacritics — `ApiClient.vb`, `IApiClient.vb`, `MainForm.vb` and
+`DdfView.vb` alone hold several hundred such lines.
+
+Slice 0051 deliberately did **not** sweep them: a 400-line change to unrelated comments does
+not belong in a feature commit, and it would bury the slice's own diff.
+
+**To decide:** whether to do the sweep as its own commit, all at once, so that from then on any
+diacritic outside a string literal is a genuine defect and can be caught mechanically.

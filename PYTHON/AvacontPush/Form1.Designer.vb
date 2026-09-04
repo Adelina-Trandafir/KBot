@@ -36,6 +36,23 @@ Partial Class Form1
     Friend WithEvents chkRestart As CheckBox
     Friend WithEvents btnPush As Button
 
+    ' Schema sync: the same SSH connection, running routes.schema_sync on the server.
+    Friend WithEvents tlpSchema As TableLayoutPanel
+    Friend WithEvents tlpSchemaActions As TableLayoutPanel
+    Friend WithEvents btnSchemaTargets As Button
+    Friend WithEvents lblSchemaMode As Label
+    Friend WithEvents cmbSchemaMode As ComboBox
+    Friend WithEvents lblRemotePython As Label
+    Friend WithEvents txtRemotePython As TextBox
+    Friend WithEvents btnSchemaView As Button
+    Friend WithEvents btnSchemaRun As Button
+    Friend WithEvents clbTargets As CheckedListBox
+    Friend WithEvents lblSchemaHint As Label
+
+    Friend WithEvents tabsMain As TabControl
+    Friend WithEvents tabFiles As TabPage
+    Friend WithEvents tabSchema As TabPage
+    Friend WithEvents tlpFiles As TableLayoutPanel
     Friend WithEvents tvFiles As TreeView
     Friend WithEvents rtbOutput As RichTextBox
 
@@ -77,7 +94,22 @@ Partial Class Form1
         btnScan = New Button()
         chkRestart = New CheckBox()
         btnPush = New Button()
+        tlpSchema = New TableLayoutPanel()
+        tlpSchemaActions = New TableLayoutPanel()
+        btnSchemaTargets = New Button()
+        lblSchemaMode = New Label()
+        cmbSchemaMode = New ComboBox()
+        lblRemotePython = New Label()
+        txtRemotePython = New TextBox()
+        btnSchemaView = New Button()
+        btnSchemaRun = New Button()
+        clbTargets = New CheckedListBox()
+        lblSchemaHint = New Label()
         splitMain = New SplitContainer()
+        tabsMain = New TabControl()
+        tabFiles = New TabPage()
+        tabSchema = New TabPage()
+        tlpFiles = New TableLayoutPanel()
         tvFiles = New TreeView()
         rtbOutput = New RichTextBox()
         tlpStatus = New TableLayoutPanel()
@@ -90,6 +122,12 @@ Partial Class Form1
         tlpRemote.SuspendLayout()
         tlpConn.SuspendLayout()
         tlpActions.SuspendLayout()
+        tlpSchema.SuspendLayout()
+        tlpSchemaActions.SuspendLayout()
+        tabsMain.SuspendLayout()
+        tabFiles.SuspendLayout()
+        tabSchema.SuspendLayout()
+        tlpFiles.SuspendLayout()
         CType(splitMain, System.ComponentModel.ISupportInitialize).BeginInit()
         splitMain.Panel1.SuspendLayout()
         splitMain.Panel2.SuspendLayout()
@@ -124,16 +162,14 @@ Partial Class Form1
         tlpInputs.Controls.Add(tlpLocal, 0, 0)
         tlpInputs.Controls.Add(tlpRemote, 0, 1)
         tlpInputs.Controls.Add(tlpConn, 0, 2)
-        tlpInputs.Controls.Add(tlpActions, 0, 3)
         tlpInputs.Dock = DockStyle.Fill
         tlpInputs.Location = New Point(9, 9)
         tlpInputs.Name = "tlpInputs"
-        tlpInputs.RowCount = 4
+        tlpInputs.RowCount = 3
         tlpInputs.RowStyles.Add(New RowStyle())
         tlpInputs.RowStyles.Add(New RowStyle())
         tlpInputs.RowStyles.Add(New RowStyle())
-        tlpInputs.RowStyles.Add(New RowStyle())
-        tlpInputs.Size = New Size(882, 146)
+        tlpInputs.Size = New Size(882, 111)
         tlpInputs.TabIndex = 0
         ' 
         ' tlpLocal
@@ -335,7 +371,7 @@ Partial Class Form1
         tlpActions.Controls.Add(chkRestart, 1, 0)
         tlpActions.Controls.Add(btnPush, 2, 0)
         tlpActions.Dock = DockStyle.Fill
-        tlpActions.Location = New Point(0, 111)
+        tlpActions.Location = New Point(0, 0)
         tlpActions.Margin = New Padding(0)
         tlpActions.Name = "tlpActions"
         tlpActions.RowCount = 1
@@ -382,7 +418,7 @@ Partial Class Form1
         ' 
         ' splitMain.Panel1
         ' 
-        splitMain.Panel1.Controls.Add(tvFiles)
+        splitMain.Panel1.Controls.Add(tabsMain)
         splitMain.Panel1MinSize = 80
         ' 
         ' splitMain.Panel2
@@ -394,6 +430,191 @@ Partial Class Form1
         splitMain.SplitterWidth = 6
         splitMain.TabIndex = 1
         ' 
+        ' tabsMain
+        ' 
+        tabsMain.Controls.Add(tabFiles)
+        tabsMain.Controls.Add(tabSchema)
+        tabsMain.Dock = DockStyle.Fill
+        tabsMain.Location = New Point(0, 0)
+        tabsMain.Name = "tabsMain"
+        tabsMain.SelectedIndex = 0
+        tabsMain.Size = New Size(882, 261)
+        tabsMain.TabIndex = 0
+        ' 
+        ' tabFiles
+        ' 
+        tabFiles.Controls.Add(tlpFiles)
+        tabFiles.Location = New Point(4, 34)
+        tabFiles.Name = "tabFiles"
+        tabFiles.Padding = New Padding(6)
+        tabFiles.Size = New Size(874, 223)
+        tabFiles.TabIndex = 0
+        tabFiles.Text = "Fișiere"
+        tabFiles.UseVisualStyleBackColor = True
+        ' 
+        ' tlpFiles
+        ' 
+        tlpFiles.ColumnCount = 1
+        tlpFiles.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpFiles.Controls.Add(tlpActions, 0, 0)
+        tlpFiles.Controls.Add(tvFiles, 0, 1)
+        tlpFiles.Dock = DockStyle.Fill
+        tlpFiles.Location = New Point(6, 6)
+        tlpFiles.Margin = New Padding(0)
+        tlpFiles.Name = "tlpFiles"
+        tlpFiles.RowCount = 2
+        tlpFiles.RowStyles.Add(New RowStyle())
+        tlpFiles.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlpFiles.Size = New Size(862, 211)
+        tlpFiles.TabIndex = 0
+        ' 
+        ' tabSchema
+        ' 
+        tabSchema.Controls.Add(tlpSchema)
+        tabSchema.Location = New Point(4, 34)
+        tabSchema.Name = "tabSchema"
+        tabSchema.Padding = New Padding(6)
+        tabSchema.Size = New Size(874, 223)
+        tabSchema.TabIndex = 1
+        tabSchema.Text = "Sincronizare schemă"
+        tabSchema.UseVisualStyleBackColor = True
+        ' 
+        ' tlpSchema
+        ' 
+        tlpSchema.ColumnCount = 1
+        tlpSchema.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpSchema.Controls.Add(tlpSchemaActions, 0, 0)
+        tlpSchema.Controls.Add(clbTargets, 0, 1)
+        tlpSchema.Controls.Add(lblSchemaHint, 0, 2)
+        tlpSchema.Dock = DockStyle.Fill
+        tlpSchema.Location = New Point(6, 6)
+        tlpSchema.Margin = New Padding(0)
+        tlpSchema.Name = "tlpSchema"
+        tlpSchema.RowCount = 3
+        tlpSchema.RowStyles.Add(New RowStyle())
+        tlpSchema.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlpSchema.RowStyles.Add(New RowStyle())
+        tlpSchema.Size = New Size(862, 211)
+        tlpSchema.TabIndex = 0
+        ' 
+        ' tlpSchemaActions
+        ' 
+        tlpSchemaActions.AutoSize = True
+        tlpSchemaActions.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        tlpSchemaActions.ColumnCount = 7
+        tlpSchemaActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 170F))
+        tlpSchemaActions.ColumnStyles.Add(New ColumnStyle())
+        tlpSchemaActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 110F))
+        tlpSchemaActions.ColumnStyles.Add(New ColumnStyle())
+        tlpSchemaActions.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpSchemaActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 180F))
+        tlpSchemaActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130F))
+        tlpSchemaActions.Controls.Add(btnSchemaTargets, 0, 0)
+        tlpSchemaActions.Controls.Add(lblSchemaMode, 1, 0)
+        tlpSchemaActions.Controls.Add(cmbSchemaMode, 2, 0)
+        tlpSchemaActions.Controls.Add(lblRemotePython, 3, 0)
+        tlpSchemaActions.Controls.Add(txtRemotePython, 4, 0)
+        tlpSchemaActions.Controls.Add(btnSchemaView, 5, 0)
+        tlpSchemaActions.Controls.Add(btnSchemaRun, 6, 0)
+        tlpSchemaActions.Dock = DockStyle.Fill
+        tlpSchemaActions.Location = New Point(0, 0)
+        tlpSchemaActions.Margin = New Padding(0)
+        tlpSchemaActions.Name = "tlpSchemaActions"
+        tlpSchemaActions.RowCount = 1
+        tlpSchemaActions.RowStyles.Add(New RowStyle())
+        tlpSchemaActions.Size = New Size(862, 35)
+        tlpSchemaActions.TabIndex = 0
+        ' 
+        ' btnSchemaTargets
+        ' 
+        btnSchemaTargets.Dock = DockStyle.Fill
+        btnSchemaTargets.Location = New Point(0, 0)
+        btnSchemaTargets.Margin = New Padding(0)
+        btnSchemaTargets.Name = "btnSchemaTargets"
+        btnSchemaTargets.Size = New Size(170, 35)
+        btnSchemaTargets.TabIndex = 0
+        btnSchemaTargets.Text = "Citește bazele"
+        ' 
+        ' lblSchemaMode
+        ' 
+        lblSchemaMode.Anchor = AnchorStyles.Left
+        lblSchemaMode.AutoSize = True
+        lblSchemaMode.Location = New Point(176, 5)
+        lblSchemaMode.Name = "lblSchemaMode"
+        lblSchemaMode.Size = New Size(46, 25)
+        lblSchemaMode.TabIndex = 1
+        lblSchemaMode.Text = "Mod:"
+        ' 
+        ' cmbSchemaMode
+        ' 
+        cmbSchemaMode.Anchor = AnchorStyles.Left Or AnchorStyles.Right
+        cmbSchemaMode.DropDownStyle = ComboBoxStyle.DropDownList
+        cmbSchemaMode.Items.AddRange(New Object() {"SAFE", "FORCE"})
+        cmbSchemaMode.Location = New Point(228, 2)
+        cmbSchemaMode.Name = "cmbSchemaMode"
+        cmbSchemaMode.Size = New Size(104, 33)
+        cmbSchemaMode.TabIndex = 2
+        ' 
+        ' lblRemotePython
+        ' 
+        lblRemotePython.Anchor = AnchorStyles.Left
+        lblRemotePython.AutoSize = True
+        lblRemotePython.Location = New Point(338, 5)
+        lblRemotePython.Name = "lblRemotePython"
+        lblRemotePython.Size = New Size(74, 25)
+        lblRemotePython.TabIndex = 3
+        lblRemotePython.Text = "Python:"
+        ' 
+        ' txtRemotePython
+        ' 
+        txtRemotePython.Anchor = AnchorStyles.Left Or AnchorStyles.Right
+        txtRemotePython.Location = New Point(418, 2)
+        txtRemotePython.Name = "txtRemotePython"
+        txtRemotePython.Size = New Size(128, 31)
+        txtRemotePython.TabIndex = 4
+        ' 
+        ' btnSchemaView
+        ' 
+        btnSchemaView.Dock = DockStyle.Fill
+        btnSchemaView.Location = New Point(552, 0)
+        btnSchemaView.Margin = New Padding(0)
+        btnSchemaView.Name = "btnSchemaView"
+        btnSchemaView.Size = New Size(180, 35)
+        btnSchemaView.TabIndex = 5
+        btnSchemaView.Text = "Vezi (nu execută)"
+        ' 
+        ' btnSchemaRun
+        ' 
+        btnSchemaRun.Dock = DockStyle.Fill
+        btnSchemaRun.Location = New Point(732, 0)
+        btnSchemaRun.Margin = New Padding(0)
+        btnSchemaRun.Name = "btnSchemaRun"
+        btnSchemaRun.Size = New Size(130, 35)
+        btnSchemaRun.TabIndex = 6
+        btnSchemaRun.Text = "Execută"
+        ' 
+        ' clbTargets
+        ' 
+        clbTargets.CheckOnClick = True
+        clbTargets.Dock = DockStyle.Fill
+        clbTargets.Font = New Font("Consolas", 9F)
+        clbTargets.FormattingEnabled = True
+        clbTargets.IntegralHeight = False
+        clbTargets.Location = New Point(3, 38)
+        clbTargets.Name = "clbTargets"
+        clbTargets.Size = New Size(856, 140)
+        clbTargets.TabIndex = 1
+        ' 
+        ' lblSchemaHint
+        ' 
+        lblSchemaHint.AutoSize = True
+        lblSchemaHint.Dock = DockStyle.Fill
+        lblSchemaHint.Location = New Point(3, 181)
+        lblSchemaHint.Name = "lblSchemaHint"
+        lblSchemaHint.Size = New Size(856, 25)
+        lblSchemaHint.TabIndex = 2
+        lblSchemaHint.Text = "Lista vine de pe server. «lipsă din CAI» = baza există, dar registrul nu o listează; «nu există pe server» = numai în CAI, deci nu poate fi bifată."
+        ' 
         ' tvFiles
         ' 
         tvFiles.CheckBoxes = True
@@ -402,9 +623,10 @@ Partial Class Form1
         tvFiles.HideSelection = False
         tvFiles.Location = New Point(0, 0)
         tvFiles.Name = "tvFiles"
+        tvFiles.Margin = New Padding(0, 6, 0, 0)
         tvFiles.ShowNodeToolTips = True
-        tvFiles.Size = New Size(882, 261)
-        tvFiles.TabIndex = 0
+        tvFiles.Size = New Size(862, 170)
+        tvFiles.TabIndex = 1
         ' 
         ' rtbOutput
         ' 
@@ -477,6 +699,15 @@ Partial Class Form1
         tlpConn.PerformLayout()
         tlpActions.ResumeLayout(False)
         tlpActions.PerformLayout()
+        tlpFiles.ResumeLayout(False)
+        tlpFiles.PerformLayout()
+        tabFiles.ResumeLayout(False)
+        tlpSchemaActions.ResumeLayout(False)
+        tlpSchemaActions.PerformLayout()
+        tlpSchema.ResumeLayout(False)
+        tlpSchema.PerformLayout()
+        tabSchema.ResumeLayout(False)
+        tabsMain.ResumeLayout(False)
         splitMain.Panel1.ResumeLayout(False)
         splitMain.Panel2.ResumeLayout(False)
         CType(splitMain, System.ComponentModel.ISupportInitialize).EndInit()

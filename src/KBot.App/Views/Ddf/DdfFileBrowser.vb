@@ -18,6 +18,8 @@ Imports KBot.Theming
 Public Class DdfFileBrowser
     Implements IThemedControl
 
+    ' The column keys. The columns themselves are declared in the .Designer.vb; these are only
+    ' the names the cells are written through, and must stay identical to the designer's.
     Private Const COL_FOLDER As String = "folder"
     Private Const COL_NAME As String = "name"
     Private Const COL_CUAL As String = "cual"
@@ -32,23 +34,7 @@ Public Class DdfFileBrowser
 
     Public Sub New()
         InitializeComponent()
-        BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
-    End Sub
-
-    Private Sub BuildColumns()
-        Try
-            grid.AddColumn(COL_FOLDER, "Folder", KBotColumnType.Text, 150)
-            grid.AddColumn(COL_NAME, "Nume fișier", KBotColumnType.Text, 320)
-            grid.AddColumn(COL_CUAL, "CUAL", KBotColumnType.Text, 70)
-            grid.AddColumn(COL_REV, "Rev.", KBotColumnType.Text, 60)
-            Dim colSize As KBotDataColumn = grid.AddColumn(COL_SIZE, "Dimensiune", KBotColumnType.Text, 100)
-            colSize.TextAlign = ContentAlignment.MiddleRight
-            grid.AddColumn(COL_MOD, "Modificat", KBotColumnType.Text, 140)
-        Catch ex As Exception
-            GlobalErrorLog.Write("DdfFileBrowser.BuildColumns", ex)
-            Throw
-        End Try
     End Sub
 
     ''' <summary>

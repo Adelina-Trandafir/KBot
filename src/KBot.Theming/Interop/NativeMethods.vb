@@ -76,6 +76,292 @@ Public Module NativeMethods
     Private Function SendMessage(hWnd As IntPtr, msg As Integer, wParam As IntPtr, lParam As IntPtr) As IntPtr
     End Function
 
+    <DllImport("user32.dll")>
+    Private Function SetWindowPos(hWnd As IntPtr, hWndInsertAfter As IntPtr, X As Integer, Y As Integer,
+                                  cx As Integer, cy As Integer, uFlags As UInteger) As Boolean
+    End Function
+
+    Private Const SWP_NOZORDER As UInteger = &H4
+    Private Const SWP_NOACTIVATE As UInteger = &H10
+
+    ' -- The edit box of an editable combo (KBotComboBox.Editable) --------------
+    ' A DropDown-style combo creates an EDIT child of its own, with its own HWND. We do not
+    ' draw it, but we have to know WHERE it is in order to line its text up with the text we
+    ' do draw, on the closed face and on the list rows.
+    Private Const EM_SETMARGINS As Integer = &HD3
+    Private Const EC_LEFTMARGIN As Integer = 1
+    Private Const EC_RIGHTMARGIN As Integer = 2
+
+    ' A single-line EDIT does NOT centre its line vertically: it draws it at the top of its own
+    ' client rectangle, so where the glyphs land is decided by the EDIT's TOP alone -- its height
+    ' plays no part. Centring the text therefore needs two numbers Windows only gives when asked:
+    ' the font's line height (GetTextMetrics on the EDIT's own DC, with the EDIT's own font) and
+    ' the EDIT's internal top offset (EM_POSFROMCHAR on character 0).
+    Private Const WM_GETFONT As Integer = &H31
+    Private Const WM_GETTEXTLENGTH As Integer = &HE
+    Private Const EM_POSFROMCHAR As Integer = &HD6
+
+    ' The W variant, so the four character fields marshal as Char and not as Byte. Only tmHeight is
+    ' read, but the whole layout still has to be right or the marshaller reads garbage into it.
+    <StructLayout(LayoutKind.Sequential, CharSet:=CharSet.Unicode)>
+    Private Structure TEXTMETRICW
+        Public tmHeight As Integer
+        Public tmAscent As Integer
+        Public tmDescent As Integer
+        Public tmInternalLeading As Integer
+        Public tmExternalLeading As Integer
+        Public tmAveCharWidth As Integer
+        Public tmMaxCharWidth As Integer
+        Public tmWeight As Integer
+        Public tmOverhang As Integer
+        Public tmDigitizedAspectX As Integer
+        Public tmDigitizedAspectY As Integer
+        Public tmFirstChar As Char
+        Public tmLastChar As Char
+        Public tmDefaultChar As Char
+        Public tmBreakChar As Char
+        Public tmItalic As Byte
+        Public tmUnderlined As Byte
+        Public tmStruckOut As Byte
+        Public tmPitchAndFamily As Byte
+        Public tmCharSet As Byte
+    End Structure
+
+    <DllImport("user32.dll")>
+    Private Function GetDC(hWnd As IntPtr) As IntPtr
+    End Function
+
+    <DllImport("user32.dll")>
+    Private Function ReleaseDC(hWnd As IntPtr, hDC As IntPtr) As Integer
+    End Function
+
+    <DllImport("gdi32.dll")>
+    Private Function SelectObject(hdc As IntPtr, hObj As IntPtr) As IntPtr
+    End Function
+
+    <DllImport("gdi32.dll", CharSet:=CharSet.Unicode, EntryPoint:="GetTextMetricsW")>
+    Private Function GetTextMetrics(hdc As IntPtr, ByRef tm As TEXTMETRICW) As Boolean
+    End Function
+
+    <StructLayout(LayoutKind.Sequential)>
+    Private Structure NativeRect
+        Public Left As Integer
+        Public Top As Integer
+        Public Right As Integer
+        Public Bottom As Integer
+    End Structure
+
+    <StructLayout(LayoutKind.Sequential)>
+    Private Structure COMBOBOXINFO
+        Public cbSize As Integer
+        Public rcItem As NativeRect
+        Public rcButton As NativeRect
+        Public stateButton As Integer
+        Public hwndCombo As IntPtr
+        Public hwndItem As IntPtr
+        Public hwndList As IntPtr
+    End Structure
+
+    <DllImport("user32.dll")>
+    Private Function GetComboBoxInfo(hWnd As IntPtr, ByRef pcbi As COMBOBOXINFO) As Boolean
+    End Function
+
+    <DllImport("gdi32.dll")>
+    Private Function SetTextColor(hdc As IntPtr, crColor As Integer) As Integer
+    End Function
+
+    <DllImport("gdi32.dll")>
+    Private Function SetBkColor(hdc As IntPtr, crColor As Integer) As Integer
+    End Function
+
+    <DllImport("gdi32.dll")>
+    Private Function CreateSolidBrush(crColor As Integer) As IntPtr
+    End Function
+
+    Private _comboInfoLogged As Boolean = False
+
+    ' One brush per colour, kept for the life of the process. A WM_CTLCOLOR* answer must return a
+    ' brush the caller does NOT own, so it cannot be deleted after the message; caching it is the
+    ' only way to answer without leaking one brush per repaint. The set is bounded by the number of
+    ' distinct input colours across the schemes — single digits.
+    Private ReadOnly _solidBrushes As New Dictionary(Of Integer, IntPtr)()
+
+    ''' <summary>
+    ''' Answers a <c>WM_CTLCOLOR*</c> for a native child that we do not paint (the EDIT of an
+    ''' editable combo): puts our colours on its DC and hands back the matching background brush.
+    ''' <c>IntPtr.Zero</c> = it could not be done, and the caller must fall back to the default
+    ''' handling — which is exactly what leaves a white box on a dark scheme.
+    ''' </summary>
+    Public Function ApplyControlColors(hdc As IntPtr, back As Color, fore As Color) As IntPtr
+        If hdc = IntPtr.Zero Then Return IntPtr.Zero
+        Try
+            Dim backRef As Integer = ColorTranslator.ToWin32(back)
+            SetTextColor(hdc, ColorTranslator.ToWin32(fore))
+            SetBkColor(hdc, backRef)
+
+            Dim brush As IntPtr
+            If Not _solidBrushes.TryGetValue(backRef, brush) Then
+                brush = CreateSolidBrush(backRef)
+                If brush = IntPtr.Zero Then Return IntPtr.Zero
+                _solidBrushes(backRef) = brush
+            End If
+            Return brush
+        Catch ex As Exception
+            If Not _comboInfoLogged Then
+                _comboInfoLogged = True
+                GlobalErrorLog.Write("NativeMethods.ApplyControlColors", ex)
+            End If
+            Return IntPtr.Zero
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The rectangle of an editable combo's edit box, in the combo's own client coordinates.
+    ''' <c>Rectangle.Empty</c> = there is none (DropDownList style) or the call failed.
+    ''' PUBLIC for the same reason as <see cref="ApplyWindowTheme"/>: KBotComboBox needs it, and
+    ''' it lives in KBot.Controls.
+    ''' </summary>
+    Public Function GetComboEditBounds(combo As Control) As Rectangle
+        If combo Is Nothing OrElse Not combo.IsHandleCreated Then Return Rectangle.Empty
+        Try
+            Dim info As New COMBOBOXINFO()
+            info.cbSize = Marshal.SizeOf(Of COMBOBOXINFO)()
+            If Not GetComboBoxInfo(combo.Handle, info) Then Return Rectangle.Empty
+            If info.hwndItem = IntPtr.Zero Then Return Rectangle.Empty
+            Return Rectangle.FromLTRB(info.rcItem.Left, info.rcItem.Top,
+                                      info.rcItem.Right, info.rcItem.Bottom)
+        Catch ex As Exception
+            If Not _comboInfoLogged Then
+                _comboInfoLogged = True
+                GlobalErrorLog.Write("NativeMethods.GetComboEditBounds", ex)
+            End If
+            Return Rectangle.Empty
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The inner margins of an editable combo's edit box, in device pixels. Without them the
+    ''' typed text would start ~3 px in, while we draw the closed face and the list rows with a
+    ''' different padding — the jog would be visible.
+    ''' </summary>
+    Public Sub SetComboEditMargins(combo As Control, leftPx As Integer, rightPx As Integer)
+        If combo Is Nothing OrElse Not combo.IsHandleCreated Then Return
+        Try
+            Dim info As New COMBOBOXINFO()
+            info.cbSize = Marshal.SizeOf(Of COMBOBOXINFO)()
+            If Not GetComboBoxInfo(combo.Handle, info) Then Return
+            If info.hwndItem = IntPtr.Zero Then Return
+            Dim left As Integer = Math.Max(0, Math.Min(leftPx, Short.MaxValue))
+            Dim right As Integer = Math.Max(0, Math.Min(rightPx, Short.MaxValue))
+            Dim packed As Integer = (right << 16) Or (left And &HFFFF)
+            SendMessage(info.hwndItem, EM_SETMARGINS,
+                        New IntPtr(EC_LEFTMARGIN Or EC_RIGHTMARGIN), New IntPtr(packed))
+        Catch ex As Exception
+            If Not _comboInfoLogged Then
+                _comboInfoLogged = True
+                GlobalErrorLog.Write("NativeMethods.SetComboEditMargins", ex)
+            End If
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Moves/resizes the EDIT child of an editable combo, in the combo's own client
+    ''' coordinates (the same space <see cref="GetComboEditBounds"/> reads). Backs the vertical
+    ''' centring done in <c>KBotComboBox.AlignEditText</c>: a vertical position is not something
+    ''' <c>EM_SETMARGINS</c> can express (it is horizontal-only), so the child window has to move.
+    ''' </summary>
+    Public Sub SetComboEditBounds(combo As Control, bounds As Rectangle)
+        If combo Is Nothing OrElse Not combo.IsHandleCreated Then Return
+        Try
+            Dim info As New COMBOBOXINFO()
+            info.cbSize = Marshal.SizeOf(Of COMBOBOXINFO)()
+            If Not GetComboBoxInfo(combo.Handle, info) Then Return
+            If info.hwndItem = IntPtr.Zero Then Return
+            SetWindowPos(info.hwndItem, IntPtr.Zero, bounds.Left, bounds.Top, bounds.Width, bounds.Height,
+                        SWP_NOZORDER Or SWP_NOACTIVATE)
+        Catch ex As Exception
+            If Not _comboInfoLogged Then
+                _comboInfoLogged = True
+                GlobalErrorLog.Write("NativeMethods.SetComboEditBounds", ex)
+            End If
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' The line height of an editable combo's EDIT child, in DEVICE pixels -- measured on the
+    ''' EDIT's own DC with the EDIT's own font, which is the only number that says how tall the
+    ''' text really is. <c>0</c> = there is no EDIT (DropDownList style), or the call failed.
+    ''' </summary>
+    Public Function GetComboEditLineHeight(combo As Control) As Integer
+        If combo Is Nothing OrElse Not combo.IsHandleCreated Then Return 0
+        Try
+            Dim info As New COMBOBOXINFO()
+            info.cbSize = Marshal.SizeOf(Of COMBOBOXINFO)()
+            If Not GetComboBoxInfo(combo.Handle, info) Then Return 0
+            If info.hwndItem = IntPtr.Zero Then Return 0
+
+            ' IntPtr.Zero is NOT an error here: it means the EDIT uses the stock system font, which
+            ' is already the DC's default -- in that case there is simply nothing to select in.
+            Dim hFont As IntPtr = SendMessage(info.hwndItem, WM_GETFONT, IntPtr.Zero, IntPtr.Zero)
+
+            Dim hdc As IntPtr = GetDC(info.hwndItem)
+            If hdc = IntPtr.Zero Then Return 0
+            Dim oldFont As IntPtr = IntPtr.Zero
+            Try
+                If hFont <> IntPtr.Zero Then oldFont = SelectObject(hdc, hFont)
+                Dim tm As New TEXTMETRICW()
+                If Not GetTextMetrics(hdc, tm) Then Return 0
+                Return tm.tmHeight
+            Finally
+                If oldFont <> IntPtr.Zero Then SelectObject(hdc, oldFont)
+                ReleaseDC(info.hwndItem, hdc)
+            End Try
+        Catch ex As Exception
+            If Not _comboInfoLogged Then
+                _comboInfoLogged = True
+                GlobalErrorLog.Write("NativeMethods.GetComboEditLineHeight", ex)
+            End If
+            Return 0
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The y of character 0 inside the EDIT's OWN client area -- the internal top offset the EDIT
+    ''' adds on top of its window position (normally 0 or 1 px). <c>Integer.MinValue</c> = it could
+    ''' not be measured (no EDIT, an empty box, or <c>EM_POSFROMCHAR</c> refused); that is the
+    ''' sentinel, because <c>0</c> is a perfectly legal answer.
+    ''' </summary>
+    Public Function GetComboEditTextTop(combo As Control) As Integer
+        If combo Is Nothing OrElse Not combo.IsHandleCreated Then Return Integer.MinValue
+        Try
+            Dim info As New COMBOBOXINFO()
+            info.cbSize = Marshal.SizeOf(Of COMBOBOXINFO)()
+            If Not GetComboBoxInfo(combo.Handle, info) Then Return Integer.MinValue
+            If info.hwndItem = IntPtr.Zero Then Return Integer.MinValue
+
+            ' No character in the box, nothing to ask about.
+            If SendMessage(info.hwndItem, WM_GETTEXTLENGTH, IntPtr.Zero, IntPtr.Zero) = IntPtr.Zero Then
+                Return Integer.MinValue
+            End If
+
+            Dim r As IntPtr = SendMessage(info.hwndItem, EM_POSFROMCHAR, New IntPtr(0), IntPtr.Zero)
+            ' ToInt32 would overflow on x64 -- take the low 32 bits explicitly.
+            Dim v As Integer = CInt(r.ToInt64() And &HFFFFFFFFL)
+            If v = -1 Then Return Integer.MinValue
+
+            ' HIWORD, signed.
+            Dim y As Integer = (v >> 16) And &HFFFF
+            If y > &H7FFF Then y -= &H10000
+            Return y
+        Catch ex As Exception
+            If Not _comboInfoLogged Then
+                _comboInfoLogged = True
+                GlobalErrorLog.Write("NativeMethods.GetComboEditTextTop", ex)
+            End If
+            Return Integer.MinValue
+        End Try
+    End Function
+
     ' Guard-uri „loghează o singură dată” — pe versiuni de OS nesuportate eșecul e
     ' cronic și previzibil; nu vrem un log per formular.
     Private _dwmLogged As Boolean = False

@@ -3,9 +3,21 @@ Imports System.Text
 Imports Renci.SshNet
 Imports Renci.SshNet.Common
 
-' Wraps a single SshClient to run the restart sequence. Same host-key pinning
-' as the SFTP service (the server is already trusted from the scan, but verified again).
-Public NotInheritable Class SshRestartService
+' What one remote command produced. ExitStatus is -1 when the server sent none.
+Public NotInheritable Class SshResult
+    Public Property ExitStatus As Integer = -1
+    Public Property StdOut As String = ""
+    Public Property StdErr As String = ""
+End Class
+
+' Wraps a single SshClient to run commands on the server: the service restart
+' sequence, and the schema_sync runs. Same host-key pinning as the SFTP service
+' (the server is already trusted from the scan, but verified again).
+'
+' Commands run WITHOUT a terminal and with no stdin: anything that would prompt
+' reads end-of-file instead. Whatever needs answering is answered on the command
+' line, or piped in (see SchemaSyncService).
+Public NotInheritable Class SshCommandService
     Implements IDisposable
 
     Private ReadOnly _settings As PushSettings
@@ -56,6 +68,20 @@ Public NotInheritable Class SshRestartService
             exitStatus = If(cmd.ExitStatus, -1)
         End Using
         Return exitStatus = 0
+    End Function
+
+    ' Same as RunCommand, packed into one object. Used where the caller wants to
+    ' keep the whole exchange (a schema sync run) rather than three variables.
+    Public Function Run(commandText As String) As SshResult
+        Dim exitStatus As Integer = -1
+        Dim stdOut As String = ""
+        Dim stdErr As String = ""
+        RunCommand(commandText, exitStatus, stdOut, stdErr)
+        Return New SshResult With {
+            .ExitStatus = exitStatus,
+            .StdOut = If(stdOut, ""),
+            .StdErr = If(stdErr, "")
+        }
     End Function
 
     Private Shared Function FormatFingerprint(bytes As Byte()) As String

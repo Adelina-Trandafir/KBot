@@ -1,4 +1,4 @@
-﻿Option Strict On
+Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.Threading
@@ -199,6 +199,98 @@ Public Class PrelucrareCoordinatorTests
 
     Public Function DeleteOrdAtasamentAsync(idordattp As Integer, ct As CancellationToken) As Task _
         Implements IApiClient.DeleteOrdAtasamentAsync
+        Throw New NotSupportedException()
+    End Function
+
+    ' ── Slice 0051: the DDF editor. Compilation bookkeeping, NOT coverage. ───────────────
+    ' These sixteen members exist so this double still satisfies `IApiClient`. Nothing here
+    ' is exercised by any test, and `NotSupportedException` says so out loud -- a stub that
+    ' returned a plausible empty value would let a test pass while testing nothing.
+
+    Public Function GenereazaDdfAsync(cod As String, rev0 As Boolean, ct As CancellationToken) _
+        As Task(Of DdfDraft) Implements IApiClient.GenereazaDdfAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function GetDdfDraftAsync(iddf As Integer, idrev As Integer, ct As CancellationToken) _
+        As Task(Of DdfDraft) Implements IApiClient.GetDdfDraftAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function GetDdfClasificatiiAsync(cod As String, manual As Boolean, titlu As String,
+                                            ct As CancellationToken) _
+        As Task(Of List(Of DdfClasificatie)) Implements IApiClient.GetDdfClasificatiiAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function GetDdfParteneriAsync(cod As String, ct As CancellationToken) _
+        As Task(Of List(Of DdfPartener)) Implements IApiClient.GetDdfParteneriAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function GetDdfCompAsync(ct As CancellationToken) _
+        As Task(Of List(Of String)) Implements IApiClient.GetDdfCompAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function SaveDdfAsync(draft As DdfDraft, ct As CancellationToken) _
+        As Task(Of DdfSaveRezultat) Implements IApiClient.SaveDdfAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function DeleteDdfRevizieAsync(idrev As Integer, ct As CancellationToken) _
+        As Task(Of DdfStergereRezultat) Implements IApiClient.DeleteDdfRevizieAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function DeleteDdfAsync(iddf As Integer, ct As CancellationToken) _
+        As Task(Of DdfStergereRezultat) Implements IApiClient.DeleteDdfAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function DeleteDdfLunaAsync(iddf As Integer, an As Integer, luna As Integer,
+                                       ct As CancellationToken) _
+        As Task(Of DdfStergereRezultat) Implements IApiClient.DeleteDdfLunaAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function GetDdfFisierAsync(idrevatt As Integer, cachedSha As String,
+                                      ct As CancellationToken) _
+        As Task(Of PdfDownloadResult) Implements IApiClient.GetDdfFisierAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function PutDdfFisierAsync(idrevatt As Integer, numeFisier As String,
+                                      continut As Byte(), shaPrecedent As String,
+                                      ct As CancellationToken) _
+        As Task(Of PutDdfFisierResponse) Implements IApiClient.PutDdfFisierAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function DeleteDdfFisierAsync(idrevatt As Integer, ct As CancellationToken) _
+        As Task Implements IApiClient.DeleteDdfFisierAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function RezervaNumarDdfAsync(tip As String, cod As String, dc As String,
+                                         ct As CancellationToken) _
+        As Task(Of DdfNumarLock) Implements IApiClient.RezervaNumarDdfAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function SchimbaNumarDdfAsync(idLock As Integer, valoare As Integer,
+                                         ct As CancellationToken) _
+        As Task(Of DdfNumarLock) Implements IApiClient.SchimbaNumarDdfAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function PrelungesteNumarDdfAsync(idLock As Integer, ct As CancellationToken) _
+        As Task(Of DdfNumarLock) Implements IApiClient.PrelungesteNumarDdfAsync
+        Throw New NotSupportedException()
+    End Function
+
+    Public Function ElibereazaNumarDdfAsync(idLock As Integer, ct As CancellationToken) _
+        As Task Implements IApiClient.ElibereazaNumarDdfAsync
         Throw New NotSupportedException()
     End Function
 

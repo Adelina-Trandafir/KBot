@@ -120,15 +120,24 @@ Public Class DdfView
     Private _splitterDistanceDesfasurat As Integer
     Private _panel1MinSizeDesfasurat As Integer
 
+    ''' <summary>
+    ''' The write commands of slice 0051, executed by the shell. Optional: a host that does
+    ''' not supply it (the tests) still gets the full read-only view, and the menu says so
+    ''' rather than doing nothing.
+    ''' </summary>
+    Private ReadOnly _executaComanda As Action(Of DdfComanda)
+
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of DdfInfo)), Task(Of DdfInfo)),
-                   Optional session As SessionContext = Nothing)
+                   Optional session As SessionContext = Nothing,
+                   Optional executaComanda As Action(Of DdfComanda) = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
         _session = session
+        _executaComanda = executaComanda
         BuildNav()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
@@ -328,6 +337,28 @@ Public Class DdfView
             _revizii = revizii
             _liniiByRev = GroupLinii(data.Linii)
             BuildTree(revizii)
+
+            ' Slice 0051: after a save or a delete, land back on the revision the operator was
+            ' working on rather than resetting to "nothing selected". A revision that no
+            ' longer exists (it was the one deleted) falls through to the normal path below.
+            If _idrevDeReselectat > 0 Then
+                Dim tinta As RevizieRow = revizii.FirstOrDefault(Function(r) r.Idrev = _idrevDeReselectat)
+                _idrevDeReselectat = 0
+                If tinta IsNot Nothing Then
+                    _nodeRows = LiniiFor(tinta.Idrev)
+                    _nodeIsRoot = False
+                    _selectedRevizie = tinta
+                    _pdfPathOverride = Nothing
+                    _pdfPathRezolvat = Nothing
+                    _pdfRezolvatPentruIdrev = 0
+                    Dim nod As AdvancedTreeControl.TreeItem = Nothing
+                    If _noduriRevizie.TryGetValue(tinta.Idrev, nod) Then tree.SelectAndReveal(nod)
+                    PushToActivePage()
+                    ShowContent()
+                    Return
+                End If
+            End If
+
             ' „Nimic selectat" -> grila arată TOATE liniile angajamentului, ca în ReceptiiView
             ' (revizuire operator 2026-08-13). E aceeași vedere ca a unei rădăcini de lună,
             ' doar peste toate reviziile: listă plată, fără un document unic.
@@ -397,6 +428,7 @@ Public Class DdfView
     Private Sub BuildTree(revizii As List(Of RevizieRow))
         Try
             tree.Clear()
+            _noduriRevizie.Clear()
             Dim palette As ThemePalette = TryGetPalette()
 
             Dim monthGroups = revizii.GroupBy(Function(r) MonthKeyOf(r.DataRev)).
@@ -433,6 +465,9 @@ Public Class DdfView
                         tree.AddItem($"RC_{r.Idrev}", $"{r.EtichetaRevizie}~~~{Money(r.TotalRevizie)}",
                                      monthItem, pLeftIconClosed:=leafIcon, pLeftIconOpen:=leafIcon)
                     leafItem.Tag = New DdfNodeRows(LiniiFor(r.Idrev), isRoot:=False, revizie:=r)
+                    ' Slice 0051: remembered so `Reincarca` can land back on the revision the
+                    ' operator was working on. Read-only behaviour is untouched by this.
+                    _noduriRevizie(r.Idrev) = leafItem
                     leafItem.Tooltip = r.DescScurta
                     If r.TotalRevizie < 0 AndAlso palette IsNot Nothing Then
                         leafItem.NodeForeColor = palette.ErrorColor
@@ -471,6 +506,13 @@ Public Class DdfView
             ' cel din cache e la zi) și abia apoi re-împingem contextul. Fire-and-forget
             ' deliberat, ca LoadAsync: metoda își tratează singură toate erorile.
             EnsureSignedPdfAsync(_selectedRevizie)
+
+            ' Slice 0051: the right button opens the write commands. Wired AFTER the read
+            ' path above, so a failure to build the menu cannot stop the selection from
+            ' working -- the view stays usable read-only whatever happens here.
+            If e IsNot Nothing AndAlso e.Button = MouseButtons.Right Then
+                AratatMeniulContextual(pNode, payload)
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.Tree_NodeMouseUp", ex)
         End Try
@@ -799,6 +841,146 @@ Public Class DdfView
         Catch ex As Exception
             ' Boundary UI (cascada de temă): logăm și înghițim.
             GlobalErrorLog.Write("DdfView.ApplyTheme", ex)
+        End Try
+    End Sub
+
+
+    ' ══════════════════════════════════════════════════════════════════════════════════
+    ' THE WRITE COMMANDS (slice 0051)
+    '
+    ' The read path above is untouched. This is the only thing the write slice added to the
+    ' view: a context menu on the tree, plus a reload after each command.
+    ' ══════════════════════════════════════════════════════════════════════════════════
+
+    Private Const MENIU_MODIFICA As String = "modifica"
+    Private Const MENIU_STERGE_REVIZIE As String = "sterge-revizie"
+    Private Const MENIU_STERGE_DOC As String = "sterge-document"
+    Private Const MENIU_STERGE_LUNA As String = "sterge-luna"
+
+    ''' <summary>Which revision the next tree build should land on; 0 = leave the selection
+    ''' where the build puts it.</summary>
+    Private _idrevDeReselectat As Integer
+
+    ''' <summary>The leaf node of each revision, filled by the tree build. Only used to put
+    ''' the selection back after a reload.</summary>
+    Private ReadOnly _noduriRevizie As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
+
+    ''' <summary>
+    ''' The tree's context menu. What it offers depends on WHICH LEVEL was clicked: a month
+    ''' root can only have its whole month deleted; a revision leaf can be edited, deleted, or
+    ''' have its whole document deleted.
+    '''
+    ''' <para>There is deliberately NO «Adauga» entry. The two add commands are triggered from
+    ''' the RESERVATIONS tree instead -- the "+" icon on a reservation leaf -- which is where
+    ''' Access triggered them (<c>fxRezervari_AdaugaRevizie</c>). One trigger, in one
+    ''' place.</para>
+    ''' </summary>
+    Private Sub AratatMeniulContextual(nod As AdvancedTreeControl.TreeItem, payload As DdfNodeRows)
+        If String.IsNullOrWhiteSpace(_requestedCod) Then Return
+        If payload Is Nothing Then Return
+
+        Dim intrari As New List(Of CustomPopupItem)()
+        If payload.IsRoot Then
+            intrari.Add(New CustomPopupItem(MENIU_STERGE_LUNA, "Șterge &TOATE reviziile lunii"))
+        Else
+            intrari.Add(New CustomPopupItem(MENIU_MODIFICA, "&Modifică revizia"))
+            intrari.Add(New CustomPopupItem(MENIU_STERGE_REVIZIE, "Șter&ge revizia"))
+            intrari.Add(New CustomPopupItem(MENIU_STERGE_DOC, "Șterge &documentul"))
+        End If
+
+        Dim cheieNod As String = If(nod Is Nothing, String.Empty, nod.Key)
+        Dim revizie As RevizieRow = payload.Revizie
+        Dim meniu As New CustomPopup(intrari)
+        AddHandler meniu.ItemClicked,
+            Sub(s As Object, ev As CustomPopupItemEventArgs)
+                AplicaComandaDeMeniu(ev.Item.Key, revizie, cheieNod)
+            End Sub
+        meniu.ShowAtCursor(tree)
+    End Sub
+
+    Private Sub AplicaComandaDeMeniu(cheie As String, revizie As RevizieRow, cheieNod As String)
+        Try
+            Select Case cheie
+                Case MENIU_MODIFICA
+                    CereComanda(New DdfComanda(DdfActiune.Modifica, _requestedCod, revizie))
+                Case MENIU_STERGE_REVIZIE
+                    CereComanda(New DdfComanda(DdfActiune.StergeRevizie, _requestedCod, revizie))
+                Case MENIU_STERGE_DOC
+                    CereComanda(New DdfComanda(DdfActiune.Sterge, _requestedCod, revizie))
+                Case MENIU_STERGE_LUNA
+                    Dim an As Integer, luna As Integer
+                    If Not CitesteLunaDinCheie(cheieNod, an, luna) Then
+                        MessageBox.Show(Me, "Nu pot determina luna nodului selectat.", "K-BOT",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                        Return
+                    End If
+                    CereComanda(DdfComanda.PeLuna(_requestedCod, IddfCurent(), an, luna))
+                Case Else
+                    ' No silent no-ops: an unknown key is a programming defect.
+                    Throw New ArgumentException($"Comandă de meniu necunoscută: {cheie}", NameOf(cheie))
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.AplicaComandaDeMeniu", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' The month behind a root node's key. The key is «LA_{yyyy}_{M}», written by
+    ''' <c>MonthKeyText</c>, so it is parsed rather than guessed -- and a key that does not
+    ''' parse returns False instead of a silent zero, which would delete the wrong month.
+    ''' </summary>
+    Private Shared Function CitesteLunaDinCheie(cheie As String, ByRef an As Integer,
+                                                ByRef luna As Integer) As Boolean
+        an = 0
+        luna = 0
+        If String.IsNullOrWhiteSpace(cheie) OrElse Not cheie.StartsWith("LA_", StringComparison.Ordinal) Then
+            Return False
+        End If
+        Dim parti As String() = cheie.Substring(3).Split("_"c)
+        If parti.Length <> 2 Then Return False
+        If Not Integer.TryParse(parti(0), NumberStyles.Integer, CultureInfo.InvariantCulture, an) Then Return False
+        If Not Integer.TryParse(parti(1), NumberStyles.Integer, CultureInfo.InvariantCulture, luna) Then Return False
+        Return an > 0 AndAlso luna >= 1 AndAlso luna <= 12
+    End Function
+
+    ''' <summary>
+    ''' The document key of the angajament currently loaded. Every revision of one angajament
+    ''' belongs to the same document, so the first one that carries a key answers for all --
+    ''' and a month root, which carries no revision of its own, needs exactly that.
+    ''' </summary>
+    Private Function IddfCurent() As Integer
+        If _revizii Is Nothing Then Return 0
+        For Each r As RevizieRow In _revizii
+            If r.Iddf > 0 Then Return r.Iddf
+        Next
+        Return 0
+    End Function
+
+    ''' <summary>Sends the command to the shell. With no action bound (the tests, or a host
+    ''' that does not supply one) the operator is told -- it is not swallowed.</summary>
+    Private Sub CereComanda(comanda As DdfComanda)
+        If _executaComanda Is Nothing Then
+            MessageBox.Show(Me, "Editorul de documente de fundamentare nu este disponibil în acest context.",
+                            "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        _executaComanda(comanda)
+    End Sub
+
+    ''' <summary>
+    ''' Reloads the angajament after a write command and, when asked, remembers which revision
+    ''' to land on. Goes through the existing <c>SetContext</c> path, so the reload is the same
+    ''' one a normal selection performs -- there is no second loading route to keep in step.
+    ''' </summary>
+    Public Sub Reincarca(Optional idrevDeSelectat As Integer = 0)
+        Try
+            Dim cod As String = _requestedCod
+            If String.IsNullOrWhiteSpace(cod) Then Return
+            _idrevDeReselectat = idrevDeSelectat
+            ShowEmpty("Se încarcă documentul de fundamentare…")
+            LoadAsync(cod)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.Reincarca", ex)
         End Try
     End Sub
 

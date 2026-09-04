@@ -19,6 +19,12 @@ Public Class PushSettings
     Public Property LocalRoot As String = ""
     Public Property RemoteRoot As String = "/root/AVACONT"
     Public Property PreserveMTime As Boolean = True
+
+    ' Interpreter used for the remote schema_sync runs. The server runs from a
+    ' virtual environment, and the SYSTEM python3 is not it: it has no
+    ' mysql.connector, so every run dies with ModuleNotFoundError. Hence the
+    ' venv interpreter as the default, not "python3".
+    Public Property RemotePython As String = "/root/AVACONT/.venv/bin/python"
     Public Property HostKeyFingerprint As String = ""
 
     ' Folders/patterns skipped by the scan. Editable in the config file.
@@ -84,6 +90,17 @@ Public Module AppConfigStore
 
         If settings.IncludeExtensions Is Nothing OrElse settings.IncludeExtensions.Count = 0 Then
             settings.IncludeExtensions = defaults.IncludeExtensions
+        End If
+
+        ' A config written before RemotePython existed has it missing (Nothing).
+        ' A bare "python3" is treated the same way: that was the first default,
+        ' it is the SYSTEM interpreter, and on this server it cannot import
+        ' mysql.connector - so it was never a deliberate choice, only a value
+        ' that got saved before anyone tried it. An absolute path the operator
+        ' typed is left exactly as it is.
+        If String.IsNullOrWhiteSpace(settings.RemotePython) OrElse
+           String.Equals(settings.RemotePython.Trim(), "python3", StringComparison.Ordinal) Then
+            settings.RemotePython = defaults.RemotePython
         End If
 
         If settings.IgnorePatterns Is Nothing Then

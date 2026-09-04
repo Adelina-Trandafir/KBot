@@ -50,6 +50,8 @@ Partial Public Class Form1
         txtPassword.Text = _settings.Password
         txtLocalRoot.Text = _settings.LocalRoot
         txtRemoteRoot.Text = _settings.RemoteRoot
+        txtRemotePython.Text = _settings.RemotePython
+        cmbSchemaMode.SelectedIndex = 0   ' SAFE, the tool's own default
     End Sub
 
     ' Copies the editable UI fields back into _settings. Throws (Romanian) on bad input.
@@ -65,10 +67,12 @@ Partial Public Class Form1
         _settings.Password = txtPassword.Text
         _settings.LocalRoot = txtLocalRoot.Text.Trim()
         _settings.RemoteRoot = txtRemoteRoot.Text.Trim().TrimEnd("/"c)
+        _settings.RemotePython = txtRemotePython.Text.Trim()
 
         If _settings.Host = "" Then Throw New ApplicationException("Hostul nu poate fi gol.")
         If _settings.User = "" Then Throw New ApplicationException("Utilizatorul nu poate fi gol.")
         If _settings.RemoteRoot = "" Then Throw New ApplicationException("Rădăcina server nu poate fi goală.")
+        If _settings.RemotePython = "" Then Throw New ApplicationException("Interpretorul Python de pe server nu poate fi gol.")
     End Sub
 
     Private Sub btnBrowseLocal_Click(sender As Object, e As EventArgs) Handles btnBrowseLocal.Click
@@ -416,7 +420,7 @@ Partial Public Class Form1
     ' Runs daemon-reload, restart, then journalctl. journalctl always runs so a
     ' failed restart is still visible. Runs on the worker thread; reports via IProgress.
     Private Sub RunRestart(progress As IProgress(Of String), log As RunLogger)
-        Using ssh As New SshRestartService(_settings)
+        Using ssh As New SshCommandService(_settings)
             ssh.Connect()
 
             ' Loop var is cmdText, not "command": VB resolves "command" to the built-in Command() function.
@@ -440,6 +444,205 @@ Partial Public Class Form1
         End Using
     End Sub
 
+    ' -------------------------------------------------------- SCHEMA SYNC
+
+    ' Reads the unit databases from the server. They cannot be worked out here:
+    ' schema_sync gets its credentials from config.py, which is host-only and
+    ' never travels with a push.
+    Private Async Sub btnSchemaTargets_Click(sender As Object, e As EventArgs) Handles btnSchemaTargets.Click
+        Try
+            ApplyUiToSettings()
+            AppConfigStore.Save(_settings)
+
+            SetBusy(True, "Se citesc bazele de pe server...")
+            rtbOutput.Clear()
+            clbTargets.Items.Clear()
+
+            Dim svc As New SchemaSyncService(_settings)
+            Dim result = Await RunRemoteAsync(svc.ListCommand())
+
+            If result.ExitStatus <> 0 Then
+                SetBusy(False, "Citirea bazelor a eșuat.")
+                MessageBox.Show($"Serverul a răspuns cu codul {result.ExitStatus}. Detaliile sunt în panoul de jos.",
+                                "Eroare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End If
+
+            Dim targets = SchemaSyncService.ParseTargets(result.StdOut)
+            For Each t In targets
+                clbTargets.Items.Add(t)
+            Next
+
+            If targets.Count = 0 Then
+                SetBusy(False, "Serverul nu a raportat nicio bază de unitate.")
+            Else
+                SetBusy(False, $"{targets.Count} baze citite de pe server. Bifați ce sincronizați.")
+            End If
+        Catch ex As Exception
+            SetBusy(False, "Citirea bazelor a eșuat.")
+            MessageBox.Show(ex.Message, "Eroare la citirea bazelor", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ' Generates the statements and shows them. Executes nothing.
+    Private Async Sub btnSchemaView_Click(sender As Object, e As EventArgs) Handles btnSchemaView.Click
+        Try
+            Dim names = CheckedTargetNames()
+            If names.Count = 0 Then
+                MessageBox.Show("Nu este bifată nicio bază.",
+                                "Informație", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+
+            ApplyUiToSettings()
+            AppConfigStore.Save(_settings)
+
+            SetBusy(True, "Se generează diferențele... poate dura.")
+            rtbOutput.Clear()
+
+            Dim svc As New SchemaSyncService(_settings)
+            Dim result = Await RunRemoteAsync(
+                svc.SyncCommand(SelectedMode(), names, view:=True, allowDestructive:=False))
+
+            SetBusy(False, If(result.ExitStatus = 0,
+                              "Generare completă. Nu s-a executat nimic.",
+                              $"Generarea s-a încheiat cu codul {result.ExitStatus}."))
+        Catch ex As Exception
+            SetBusy(False, "Generarea a eșuat.")
+            MessageBox.Show(ex.Message, "Eroare la generare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ' Executes. Two passes on purpose: the first runs without
+    ' --allow-destructive, so the tool itself decides whether anything
+    ' destructive is involved and refuses the WHOLE run if so (exit code 2,
+    ' nothing executed). Only then is the operator asked, and only then does the
+    ' second pass go out with the typed DA piped in. The gate is not removed -
+    ' it is answered here instead of at a terminal the SSH channel does not have.
+    Private Async Sub btnSchemaRun_Click(sender As Object, e As EventArgs) Handles btnSchemaRun.Click
+        Try
+            Dim names = CheckedTargetNames()
+            If names.Count = 0 Then
+                MessageBox.Show("Nu este bifată nicio bază.",
+                                "Informație", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+
+            ApplyUiToSettings()
+            AppConfigStore.Save(_settings)
+
+            Dim mode = SelectedMode()
+            If MessageBox.Show(
+                    $"Se modifică structura pe: {String.Join(", ", names)}" & Environment.NewLine &
+                    $"Mod: {mode}." & Environment.NewLine & Environment.NewLine &
+                    "Continuați?",
+                    "Confirmare sincronizare", MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
+                Return
+            End If
+
+            SetBusy(True, "Se sincronizează structura... poate dura.")
+            rtbOutput.Clear()
+
+            Dim svc As New SchemaSyncService(_settings)
+            Dim first = Await RunRemoteAsync(
+                svc.SyncCommand(mode, names, view:=False, allowDestructive:=False))
+
+            If first.ExitStatus <> SchemaSyncService.ExitDestructiveRefused Then
+                SetBusy(False, SchemaRunStatus(first.ExitStatus))
+                Return
+            End If
+
+            SetBusy(False, "Refuzat: operații distructive. Nimic nu s-a executat.")
+            If MessageBox.Show(
+                    "Sincronizarea conține operații DISTRUCTIVE (ștergeri de coloane, indexuri sau chei). " &
+                    "Nu s-a executat nimic; lista lor este în panoul de jos." & Environment.NewLine & Environment.NewLine &
+                    "Le executați? DDL nu se poate anula.",
+                    "Confirmare operații distructive", MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
+                SetBusy(False, "Anulat. Nimic nu s-a executat.")
+                Return
+            End If
+
+            SetBusy(True, "Se execută, inclusiv operațiile distructive...")
+            Dim second = Await RunRemoteAsync(
+                svc.SyncCommand(mode, names, view:=False, allowDestructive:=True))
+            SetBusy(False, SchemaRunStatus(second.ExitStatus))
+        Catch ex As Exception
+            SetBusy(False, "Sincronizarea a eșuat.")
+            MessageBox.Show(ex.Message, "Eroare la sincronizare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ' Runs one remote command on a worker thread, then mirrors the whole
+    ' exchange into the output pane and the run log. Nothing arrives while the
+    ' command runs: the channel hands over stdout and stderr only when it ends.
+    Private Async Function RunRemoteAsync(commandText As String) As Task(Of SshResult)
+        Dim result As SshResult = Nothing
+
+        Await Task.Run(
+            Sub()
+                Using log As New RunLogger()
+                    Using ssh As New SshCommandService(_settings)
+                        ssh.Connect()
+                        log.Write("CMD " & commandText)
+                        result = ssh.Run(commandText)
+                        log.Write($"-> exit {result.ExitStatus}")
+                        If result.StdOut.Trim() <> "" Then log.Write(result.StdOut.TrimEnd())
+                        If result.StdErr.Trim() <> "" Then log.Write("STDERR " & result.StdErr.TrimEnd())
+                    End Using
+                End Using
+            End Sub)
+
+        AppendOutput($"$ {commandText}   (exit {result.ExitStatus})")
+        If result.StdOut.Trim() <> "" Then AppendOutput(result.StdOut.TrimEnd())
+        If result.StdErr.Trim() <> "" Then AppendOutput(result.StdErr.TrimEnd())
+        AppendOutput("")
+        Return result
+    End Function
+
+    Private Function SelectedMode() As String
+        Return If(cmbSchemaMode.SelectedItem Is Nothing, "SAFE", cmbSchemaMode.SelectedItem.ToString())
+    End Function
+
+    Private Function CheckedTargetNames() As List(Of String)
+        Dim names As New List(Of String)()
+        For Each item In clbTargets.CheckedItems
+            Dim t = TryCast(item, SchemaTarget)
+            If t IsNot Nothing AndAlso t.Exists Then names.Add(t.Name)
+        Next
+        Return names
+    End Function
+
+    ' A database CAI lists but the server does not have cannot be a target:
+    ' the tick is refused here rather than sent out to fail on the server.
+    ' CheckedListBox has no per-item disabled state, so this is what "disabled"
+    ' means for those rows - the text already says why.
+    Private Sub clbTargets_ItemCheck(sender As Object, e As ItemCheckEventArgs) Handles clbTargets.ItemCheck
+        If e.NewValue <> CheckState.Checked Then Return
+
+        Dim t = TryCast(clbTargets.Items(e.Index), SchemaTarget)
+        If t Is Nothing OrElse t.Exists Then Return
+
+        e.NewValue = CheckState.Unchecked
+        lblStatus.Text = $"«{t.Name}» este trecută în CAI, dar nu există pe server."
+    End Sub
+
+    ' The tool's exit codes, in the operator's words. 2 and 3 are refusals, not
+    ' failures: in both cases nothing at all was executed.
+    Private Shared Function SchemaRunStatus(exitStatus As Integer) As String
+        Select Case exitStatus
+            Case 0
+                Return "Sincronizare completă."
+            Case SchemaSyncService.ExitDestructiveRefused
+                Return "Refuzat: operații distructive. Nimic nu s-a executat."
+            Case 3
+                Return "Anulat. Nimic nu s-a executat."
+            Case Else
+                Return $"Sincronizarea s-a încheiat cu codul {exitStatus}. Citiți panoul de jos."
+        End Select
+    End Function
+
     ' ---------------------------------------------------------------- UI helpers
 
     Private Sub AppendOutput(msg As String)
@@ -452,6 +655,11 @@ Partial Public Class Form1
         btnScan.Enabled = Not busy
         btnPush.Enabled = Not busy
         btnBrowseLocal.Enabled = Not busy
+        btnSchemaTargets.Enabled = Not busy
+        btnSchemaView.Enabled = Not busy
+        btnSchemaRun.Enabled = Not busy
+        cmbSchemaMode.Enabled = Not busy
+        clbTargets.Enabled = Not busy
         lblStatus.Text = status
         Me.UseWaitCursor = busy
     End Sub

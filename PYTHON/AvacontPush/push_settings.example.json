@@ -5,6 +5,7 @@
   "LocalRoot": "",
   "RemoteRoot": "/root/AVACONT",
   "PreserveMTime": true,
+  "RemotePython": "/root/AVACONT/.venv/bin/python",
   "HostKeyFingerprint": "",
   "IgnorePatterns": [ ".git", ".venv", "venv", "__pycache__", "*.pyc", ".vscode", ".vs", "bin", "obj" ],
   "IncludeExtensions": [ "py", "json", "xml", "yaml", "yml", "ini", "cfg", "toml", "txt", "sql", "html", "css", "js", "md" ]
