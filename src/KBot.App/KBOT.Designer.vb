@@ -1,6 +1,6 @@
 ﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
-Partial Class MainForm
-    Inherits KBot.Theming.KBotShellForm
+Partial Class KBOT
+    Inherits Global.KBot.Theming.KBotShellForm
 
     'Form overrides dispose to clean up the component list.
     <System.Diagnostics.DebuggerNonUserCode()>
@@ -22,17 +22,17 @@ Partial Class MainForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim TreeNodeDefinition1 As KBot.Controls.TreeNodeDefinition = New Controls.TreeNodeDefinition()
-        Dim KBotNavItem1 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(MainForm))
-        Dim KBotNavItem2 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim KBotNavItem3 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim KBotNavItem4 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim KBotNavItem5 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim KBotNavItem6 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim KBotNavItem7 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim KBotNavItem8 As KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        tips = New KBot.Controls.KBotToolTip(components)
+        Dim TreeNodeDefinition1 As Global.KBot.Controls.TreeNodeDefinition = New Controls.TreeNodeDefinition()
+        Dim KBotNavItem1 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KBOT))
+        Dim KBotNavItem2 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem3 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem4 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem5 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem6 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem7 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        Dim KBotNavItem8 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
+        tips = New Global.KBot.Controls.KBotToolTip(components)
         btnConectare = New Button()
         btnInfo = New Button()
         btnSort = New Button()
@@ -253,7 +253,7 @@ Partial Class MainForm
         tree.FooterTextAlign = ContentAlignment.MiddleRight
         tree.FooterVisible = True
         tree.HeaderBackColor = SystemColors.Control
-        tree.HeaderBackStyle = KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
+        tree.HeaderBackStyle = Global.KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " LISTĂ ANGAJAMENTE"
         tree.HeaderFont = New Font("Calibri", 10F, FontStyle.Bold)
         tree.HeaderForeColor = Color.Black
@@ -285,13 +285,13 @@ Partial Class MainForm
         tree.ReserveRightIconSpace = True
         tree.RightIconSize = New Size(16, 16)
         tree.RootExpander = False
-        tree.ScrollBarTheme = KBot.Controls.AdvancedTreeControl.En_ScrollBarTheme.Default
+        tree.ScrollBarTheme = Global.KBot.Controls.AdvancedTreeControl.En_ScrollBarTheme.Default
         tree.SearchBarFont = New Font("Calibri", 9F)
         tree.SearchBoxBackColor = SystemColors.Control
         tree.SearchClearButton = True
         tree.SearchClearButtonHoverColor = SystemColors.Control
         tree.SearchDefaultText = "... tastează minim 3 caractere ..."
-        tree.SearchIn = KBot.Controls.AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
+        tree.SearchIn = Global.KBot.Controls.AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
         tree.SearchSeparatorColor = Color.Gainsboro
         tree.ShowRightIconOnHover = True
         tree.Size = New Size(386, 783)
@@ -338,7 +338,7 @@ Partial Class MainForm
         ' 
         navViews.CollapseButtonSize = 14
         navViews.CollapseCollapsedImage = My.Resources.Resources.expand_24
-        navViews.CollapseCorner = KBot.Controls.KBotNavCorner.BottomLeft
+        navViews.CollapseCorner = Global.KBot.Controls.KBotNavCorner.BottomLeft
         navViews.CollapseExpandedImage = My.Resources.Resources.collapse_24
         navViews.Collapsible = True
         navViews.Dock = DockStyle.Left
@@ -361,15 +361,15 @@ Partial Class MainForm
         KBotNavItem5.Image = My.Resources.Resources.credit_card
         KBotNavItem5.Key = "plati"
         KBotNavItem5.Text = "Plăți"
-        KBotNavItem6.Align = KBot.Controls.KBotNavAlign.Far
+        KBotNavItem6.Align = Global.KBot.Controls.KBotNavAlign.Far
         KBotNavItem6.IsSeparator = True
         KBotNavItem6.Key = "__sep_1"
         KBotNavItem6.Text = Nothing
-        KBotNavItem7.Align = KBot.Controls.KBotNavAlign.Far
+        KBotNavItem7.Align = Global.KBot.Controls.KBotNavAlign.Far
         KBotNavItem7.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_temporary_32
         KBotNavItem7.Key = "ddf"
         KBotNavItem7.Text = "Fundamentare"
-        KBotNavItem8.Align = KBot.Controls.KBotNavAlign.Far
+        KBotNavItem8.Align = Global.KBot.Controls.KBotNavAlign.Far
         KBotNavItem8.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
         KBotNavItem8.Key = "ord"
         KBotNavItem8.Text = "Ordonanțare"
@@ -549,14 +549,14 @@ Partial Class MainForm
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlRoot As Panel
-    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
-    Friend WithEvents busyBar As KBot.Controls.KBotBusyBar
+    Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
+    Friend WithEvents busyBar As Global.KBot.Controls.KBotBusyBar
     Friend WithEvents pnlStatus As Panel
     Friend WithEvents forexeFooter As ForexeFooterView
     Friend WithEvents pnlWork As Panel
-    Friend WithEvents navViews As KBot.Controls.KBotNavList
+    Friend WithEvents navViews As Global.KBot.Controls.KBotNavList
     Friend WithEvents split As SplitContainer
     Friend WithEvents pnlTree As Panel
     Friend WithEvents pnlTreeHead As Panel
@@ -565,7 +565,7 @@ Partial Class MainForm
     Friend WithEvents btnInfo As Button
     Friend WithEvents btnSort As Button
     Friend WithEvents btnOpt As Button
-    Friend WithEvents tree As KBot.Controls.AdvancedTreeControl
+    Friend WithEvents tree As Global.KBot.Controls.AdvancedTreeControl
     Friend WithEvents viewHost As Panel
     Friend WithEvents pnlHeader As Panel
     Friend WithEvents tlyHeader As TableLayoutPanel

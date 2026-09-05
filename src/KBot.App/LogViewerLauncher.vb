@@ -12,7 +12,7 @@ Imports Microsoft.Extensions.DependencyInjection
 ''' nu una a bancului).
 ''' </summary>
 Friend NotInheritable Class LogViewerLauncher
-    Implements KBot.DevHarness.ILogViewerLauncher
+    Implements Global.KBot.DevHarness.ILogViewerLauncher
 
     Private ReadOnly _provider As IServiceProvider
 
@@ -22,7 +22,7 @@ Friend NotInheritable Class LogViewerLauncher
 
     ' Instanță nouă la fiecare cerere: proba vizuală o arată modal și o eliberează, deci una
     ' refolosită ar fi deja eliberată la a doua rulare.
-    Public Function CreateLogViewer() As Form Implements KBot.DevHarness.ILogViewerLauncher.CreateLogViewer
+    Public Function CreateLogViewer() As Form Implements Global.KBot.DevHarness.ILogViewerLauncher.CreateLogViewer
         Return _provider.GetRequiredService(Of LogViewerForm)()
     End Function
 

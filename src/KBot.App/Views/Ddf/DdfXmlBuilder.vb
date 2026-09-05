@@ -54,7 +54,7 @@ Public NotInheritable Class DdfXmlBuilder
         ''' <summary>Codul de program (globCodProgram). Gol -> «0000000000».</summary>
         Public Property CodProgram As String = String.Empty
 
-        Public Shared Function FromSession(s As KBot.Common.SessionContext) As Context
+        Public Shared Function FromSession(s As Global.KBot.Common.SessionContext) As Context
             If s Is Nothing Then Return New Context()
             Return New Context() With {
                 .NumeUnitate = If(s.NumeUnitate, String.Empty),

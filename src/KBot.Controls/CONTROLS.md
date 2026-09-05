@@ -31,6 +31,7 @@ lists only its exceptions.
 | `KBotBusyBar` | [BusyBar/KBotBusyBar.md](BusyBar/KBotBusyBar.md) | Indeterminate 3px activity bar |
 | `KBotNotice` | [Notice/KBotNotice.md](Notice/KBotNotice.md) | Error / warning / success message box |
 | `AdobeReaderHost` | [Adobe/AdobeReaderHost.md](Adobe/AdobeReaderHost.md) | PDF viewing: reparented Adobe window, or AcroPDF ActiveX |
+| `OfficeDocumentHost` | [Office/OfficeDocumentHost.md](Office/OfficeDocumentHost.md) | Excel / Word viewing: private instance, chrome stripped, window reparented |
 | `ThemeEditorForm` | [ThemeEditor/ThemeEditorForm.md](ThemeEditor/ThemeEditorForm.md) | Per-control colour/font overrides (form, not a control) |
 | `ThemeOptionsForm` | [ThemeOptions/ThemeOptionsForm.md](ThemeOptions/ThemeOptionsForm.md) | Edits the active scheme itself (form, not a control) |
 

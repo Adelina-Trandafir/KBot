@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfFileBrowser
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -15,12 +15,12 @@ Partial Class DdfFileBrowser
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        Dim KBotDataColumn1 As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
-        Dim KBotDataColumn2 As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
-        Dim KBotDataColumn3 As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
-        Dim KBotDataColumn4 As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
-        Dim KBotDataColumn5 As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
-        Dim KBotDataColumn6 As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
+        Dim KBotDataColumn1 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
+        Dim KBotDataColumn2 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
+        Dim KBotDataColumn3 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
+        Dim KBotDataColumn4 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
+        Dim KBotDataColumn5 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
+        Dim KBotDataColumn6 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
         grid = New Controls.KBotDataView()
         lblEmpty = New Label()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
@@ -29,7 +29,7 @@ Partial Class DdfFileBrowser
         ' grid — lista PDF-urilor (read-only)
         '
         grid.AlternatingRows = True
-        grid.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.ToContent
+        grid.AutoSizeColumnsMode = Global.KBot.Controls.KBotAutoSizeMode.ToContent
         grid.BackColor = SystemColors.Window
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
@@ -76,7 +76,7 @@ Partial Class DdfFileBrowser
         KBotDataColumn6.Key = "mod"
         KBotDataColumn6.OptionGroup = Nothing
         KBotDataColumn6.Width = 140
-        grid.ColumnFillMode = KBot.Controls.KBotFillMode.LastColumn
+        grid.ColumnFillMode = Global.KBot.Controls.KBotFillMode.LastColumn
         grid.Columns.Add(KBotDataColumn1)
         grid.Columns.Add(KBotDataColumn2)
         grid.Columns.Add(KBotDataColumn3)
@@ -116,6 +116,6 @@ Partial Class DdfFileBrowser
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents grid As KBot.Controls.KBotDataView
+    Friend WithEvents grid As Global.KBot.Controls.KBotDataView
     Friend WithEvents lblEmpty As Label
 End Class

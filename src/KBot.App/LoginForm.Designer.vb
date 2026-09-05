@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class LoginForm
-    Inherits KBot.Theming.KBotThemedForm
+    Inherits Global.KBot.Theming.KBotThemedForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -345,23 +345,23 @@ Partial Class LoginForm
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
-    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
-    Friend WithEvents busyBar As KBot.Controls.KBotBusyBar
+    Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
+    Friend WithEvents busyBar As Global.KBot.Controls.KBotBusyBar
     Friend WithEvents tlpBody As TableLayoutPanel
     Friend WithEvents picLogo As PictureBox
     Friend WithEvents lblTitle As Label
     Friend WithEvents lblSubtitle As Label
     Friend WithEvents lblUser As Label
-    Friend WithEvents txtUser As KBot.Controls.KBotTextField
+    Friend WithEvents txtUser As Global.KBot.Controls.KBotTextField
     Friend WithEvents lblPass As Label
-    Friend WithEvents txtPass As KBot.Controls.KBotTextField
+    Friend WithEvents txtPass As Global.KBot.Controls.KBotTextField
     Friend WithEvents btnContinue As Button
     Friend WithEvents pnlUnit As TableLayoutPanel
     Friend WithEvents lblUnit As Label
-    Friend WithEvents cboUnit As KBot.Controls.KBotComboBox
+    Friend WithEvents cboUnit As Global.KBot.Controls.KBotComboBox
     Friend WithEvents btnBack As Button
     Friend WithEvents btnLogin As Button
-    Friend WithEvents ntfError As KBot.Controls.KBotNotice
+    Friend WithEvents ntfError As Global.KBot.Controls.KBotNotice
 End Class

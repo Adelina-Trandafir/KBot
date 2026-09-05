@@ -21,7 +21,7 @@ Imports KBot.Controls
 ' la deschidere, fara ca nimic din designer s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class AlegereUnitateForm
-    Inherits KBot.Theming.KBotThemedForm
+    Inherits Global.KBot.Theming.KBotThemedForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -414,9 +414,9 @@ Partial Class AlegereUnitateForm
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
-    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
+    Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents tlpBody As TableLayoutPanel
     Friend WithEvents lblTitle As Label
     Friend WithEvents lblIntro As Label
@@ -427,9 +427,9 @@ Partial Class AlegereUnitateForm
     Friend WithEvents lblIndicator As Label
     Friend WithEvents lblCapClsf As Label
     Friend WithEvents lblClsf As Label
-    Friend WithEvents grid As KBot.Controls.KBotDataView
+    Friend WithEvents grid As Global.KBot.Controls.KBotDataView
     Friend WithEvents chkRetine As CheckBox
-    Friend WithEvents ntfError As KBot.Controls.KBotNotice
+    Friend WithEvents ntfError As Global.KBot.Controls.KBotNotice
     Friend WithEvents tlpButtons As TableLayoutPanel
     Friend WithEvents btnRenunta As Button
     Friend WithEvents btnAlege As Button

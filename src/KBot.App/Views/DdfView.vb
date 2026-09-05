@@ -659,7 +659,7 @@ Public Class DdfView
                 ' 5. Generarea PROPRIU-ZISĂ pe thread de fundal (descarcă macheta, completează XFA,
                 ' embedează atașamentele, scrie PDF-ul). XfaWriter loghează + rearuncă la graniță;
                 ' NU adăugăm un al doilea strat de catch în jur — îl lăsăm să urce în catch-ul de aici.
-                Await Task.Run(Sub() KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "DDF", deschidePdf:=False)).ConfigureAwait(True)
+                Await Task.Run(Sub() Call Global.KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "DDF", deschidePdf:=False)).ConfigureAwait(True)
 
                 ' 6. Fără scriere înapoi în bază și FĂRĂ încărcare pe server: documentul e
                 ' nesemnat, iar felia 0041 stochează DOAR semnate (încărcarea vine cu felia de

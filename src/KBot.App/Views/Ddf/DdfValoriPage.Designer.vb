@@ -2,7 +2,7 @@ Imports KBot.Controls
 
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfValoriPage
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -143,5 +143,5 @@ Partial Class DdfValoriPage
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents grid As KBot.Controls.KBotDataView
+    Friend WithEvents grid As Global.KBot.Controls.KBotDataView
 End Class

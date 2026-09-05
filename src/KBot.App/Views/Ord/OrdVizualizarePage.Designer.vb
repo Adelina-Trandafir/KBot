@@ -2,7 +2,7 @@ Imports KBot.Controls
 
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class OrdVizualizarePage
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -394,7 +394,7 @@ Partial Class OrdVizualizarePage
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents grid As KBot.Controls.KBotDataView
+    Friend WithEvents grid As Global.KBot.Controls.KBotDataView
     Friend WithEvents tlyMain As TableLayoutPanel
     Friend WithEvents tlyHeader As TableLayoutPanel
     Friend WithEvents lblSelecteazaBeneficiar As Label

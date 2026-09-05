@@ -2,7 +2,7 @@
 
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class ReceptiiView
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -258,8 +258,8 @@ Partial Class ReceptiiView
     End Sub
 
     Friend WithEvents split As SplitContainer
-    Friend WithEvents tree As KBot.Controls.AdvancedTreeControl
-    Friend WithEvents grid As KBot.Controls.KBotDataView
+    Friend WithEvents tree As Global.KBot.Controls.AdvancedTreeControl
+    Friend WithEvents grid As Global.KBot.Controls.KBotDataView
     Friend WithEvents lblEmpty As Label
     Friend WithEvents image_list As ImageList
 End Class

@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfFisierePage
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)

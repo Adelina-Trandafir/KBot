@@ -28,7 +28,7 @@ Imports KBot.Controls
 ' la deschidere, fara ca nimic din designer s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class AsociereForm
-    Inherits KBot.Theming.KBotThemedForm
+    Inherits Global.KBot.Theming.KBotThemedForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -528,15 +528,15 @@ Partial Class AsociereForm
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
     Friend WithEvents lblIntro As Label
     Friend WithEvents split As SplitContainer
     Friend WithEvents splitDreapta As SplitContainer
-    Friend WithEvents grafic As KBot.Controls.KBotChartView
-    Friend WithEvents benzi As KBot.Controls.KBotLaneView
-    Friend WithEvents grid As KBot.Controls.KBotDataView
-    Friend WithEvents ntfMesaj As KBot.Controls.KBotNotice
+    Friend WithEvents grafic As Global.KBot.Controls.KBotChartView
+    Friend WithEvents benzi As Global.KBot.Controls.KBotLaneView
+    Friend WithEvents grid As Global.KBot.Controls.KBotDataView
+    Friend WithEvents ntfMesaj As Global.KBot.Controls.KBotNotice
     Friend WithEvents btnRenunta As Button
     Friend WithEvents btnSalveaza As Button
     Friend WithEvents capBar As KBotCaptionBar

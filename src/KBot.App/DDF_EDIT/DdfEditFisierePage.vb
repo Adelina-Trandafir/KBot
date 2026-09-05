@@ -94,6 +94,81 @@ Public Class DdfEditFisierePage
         Finally
             grd.EndUpdate()
         End Try
+
+        ' Filling the grid leaves a row selected, so the pane follows it rather than sitting empty
+        ' next to a highlighted row. This runs on ACTIVATION, not when the editor opens: the form
+        ' calls SetDraft on the page the operator switched to (see IDdfEditPage.SetDraft), so
+        ' nothing starts Excel until «Fisiere» is actually opened. Repeated activations cost
+        ' nothing -- the pane skips a key it is already showing.
+        ArataSelectia()
+    End Sub
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' The preview pane
+    ' ══════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>
+    ''' THE GRID IS OFF WHILE A DOCUMENT OPENS. Starting Excel takes a second or two, and a grid
+    ''' left live during it collects every row the operator clicks in the meantime, then delivers
+    ''' them one after another the moment it is free -- one impatient double-click turning into a
+    ''' queue of Office instances. Disabled, those clicks land on nothing and are dropped.
+    '''
+    ''' <para>The pane says when: <c>ArataOffice</c> blocks the UI thread and the asynchronous PDF
+    ''' path does not, so the page cannot work out the window on its own and is told instead.</para>
+    ''' </summary>
+    Private Sub Prv_OcupatChanged(ocupat As Boolean) Handles prv.OcupatChanged
+        Try
+            grd.Enabled = Not ocupat
+            ' Painted NOW, not at the next idle: the blocking open starts immediately after this
+            ' returns, so an unpainted grid would look live for the whole wait.
+            grd.Refresh()
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfEditFisierePage.Prv_OcupatChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Moving between rows with the mouse or the keyboard. The pane is driven from exactly one
+    ''' place -- <see cref="ArataSelectia"/> -- so the two entry points cannot drift apart.
+    ''' </summary>
+    Private Sub Grd_SelectionChanged(sender As Object, e As EventArgs) Handles grd.SelectionChanged
+        ' UI boundary: ArataSelectia logs and swallows on its own.
+        ArataSelectia()
+    End Sub
+
+    ''' <summary>
+    ''' Clicking the row that is ALREADY current. That raises no selection change, so without this
+    ''' the first row -- selected by the grid the moment it is filled -- could never be previewed by
+    ''' clicking it. Clicking a row already on screen costs nothing: the pane skips a repeated key.
+    ''' </summary>
+    Private Sub Grd_MouseUp(sender As Object, e As MouseEventArgs) Handles grd.MouseUp
+        If e.Button <> MouseButtons.Left Then Return
+        ArataSelectia()
+    End Sub
+
+    ''' <summary>
+    ''' Shows the selected attachment. The bytes are read from the draft and never re-fetched, and
+    ''' nothing on this path writes back to it.
+    ''' </summary>
+    Private Sub ArataSelectia()
+        Try
+            Dim i As Integer = grd.CurrentRowIndex
+            If i < 0 OrElse i >= grd.RowCount Then
+                prv.Clear()
+                Return
+            End If
+
+            Dim t As DdfDraftAtt = TryCast(grd.Rows(i).Tag, DdfDraftAtt)
+            If t Is Nothing Then
+                prv.Clear()
+                Return
+            End If
+
+            prv.ShowAttachment(t.Cheie, t.NumeFisier, t.Continut)
+        Catch ex As Exception
+            ' UI boundary: log and swallow. A preview that cannot open must not take the page with it.
+            GlobalErrorLog.Write("DdfEditFisierePage.ArataSelectia", ex)
+        End Try
     End Sub
 
     ''' <summary>

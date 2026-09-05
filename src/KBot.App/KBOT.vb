@@ -23,7 +23,7 @@ Imports KBot.Theming
 ''' create lazy (PlaceholderView în această felie); starea nodului selectat circulă
 ''' ca AngajamentTreeInfo, nu ca textbox-uri ascunse.
 ''' </summary>
-Public Class MainForm
+Public Class KBOT
 
     Private ReadOnly _forexeRunner As IForexeRunner
     Private ReadOnly _session As SessionContext

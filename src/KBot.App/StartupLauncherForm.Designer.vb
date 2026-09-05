@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class StartupLauncherForm
-    Inherits KBot.Theming.KBotThemedForm
+    Inherits Global.KBot.Theming.KBotThemedForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -16,11 +16,11 @@ Partial Class StartupLauncherForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New KBot.Controls.KBotToolTip(components)
+        tips = New Global.KBot.Controls.KBotToolTip(components)
         tlyRadacina = New TableLayoutPanel()
-        capBar = New KBot.Controls.KBotCaptionBar()
+        capBar = New Global.KBot.Controls.KBotCaptionBar()
         lblIntro = New Label()
-        navPorniri = New KBot.Controls.KBotNavList()
+        navPorniri = New Global.KBot.Controls.KBotNavList()
         tlyButoane = New TableLayoutPanel()
         btnPorneste = New Button()
         btnIesire = New Button()
@@ -82,7 +82,7 @@ Partial Class StartupLauncherForm
         navPorniri.Location = New Point(12, 84)
         navPorniri.Margin = New Padding(12, 0, 12, 0)
         navPorniri.Name = "navPorniri"
-        navPorniri.Orientation = KBot.Controls.KBotNavOrientation.Vertical
+        navPorniri.Orientation = Global.KBot.Controls.KBotNavOrientation.Vertical
         navPorniri.SelectedKey = Nothing
         navPorniri.Size = New Size(414, 222)
         navPorniri.TabIndex = 2
@@ -161,11 +161,11 @@ Partial Class StartupLauncherForm
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents tlyRadacina As TableLayoutPanel
-    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
+    Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents lblIntro As Label
-    Friend WithEvents navPorniri As KBot.Controls.KBotNavList
+    Friend WithEvents navPorniri As Global.KBot.Controls.KBotNavList
     Friend WithEvents tlyButoane As TableLayoutPanel
     Friend WithEvents btnPorneste As Button
     Friend WithEvents btnIesire As Button

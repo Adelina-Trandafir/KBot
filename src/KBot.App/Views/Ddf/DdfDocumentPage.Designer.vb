@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfDocumentPage
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -16,7 +16,7 @@ Partial Class DdfDocumentPage
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New KBot.Controls.KBotToolTip(components)
+        tips = New Global.KBot.Controls.KBotToolTip(components)
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DdfDocumentPage))
         tlyPDF = New TableLayoutPanel()
         previewPdf = New ReaderHostPreview()
@@ -242,7 +242,7 @@ Partial Class DdfDocumentPage
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents tlyPDF As TableLayoutPanel
     Friend WithEvents previewPdf As ReaderHostPreview
     Friend WithEvents pnlBottomButtons As Panel

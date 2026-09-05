@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class LogClearDialog
-    Inherits KBot.Theming.KBotThemedForm
+    Inherits Global.KBot.Theming.KBotThemedForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -16,22 +16,22 @@ Partial Class LogClearDialog
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New KBot.Controls.KBotToolTip(components)
-        Dim colSel As New KBot.Controls.KBotDataColumn()
-        Dim colFisier As New KBot.Controls.KBotDataColumn()
-        Dim colMarime As New KBot.Controls.KBotDataColumn()
-        Dim colIntrari As New KBot.Controls.KBotDataColumn()
-        Dim colStare As New KBot.Controls.KBotDataColumn()
+        tips = New Global.KBot.Controls.KBotToolTip(components)
+        Dim colSel As New Global.KBot.Controls.KBotDataColumn()
+        Dim colFisier As New Global.KBot.Controls.KBotDataColumn()
+        Dim colMarime As New Global.KBot.Controls.KBotDataColumn()
+        Dim colIntrari As New Global.KBot.Controls.KBotDataColumn()
+        Dim colStare As New Global.KBot.Controls.KBotDataColumn()
 
         pnlCard = New Panel()
-        capBar = New KBot.Controls.KBotCaptionBar()
+        capBar = New Global.KBot.Controls.KBotCaptionBar()
         lblAntet = New Label()
-        grilaFisiere = New KBot.Controls.KBotDataView()
+        grilaFisiere = New Global.KBot.Controls.KBotDataView()
         pnlJos = New Panel()
         lblTotal = New Label()
         btnSterge = New Button()
         btnRenunta = New Button()
-        busy = New KBot.Controls.KBotBusyBar()
+        busy = New Global.KBot.Controls.KBotBusyBar()
 
         pnlCard.SuspendLayout()
         CType(grilaFisiere, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -84,9 +84,9 @@ Partial Class LogClearDialog
         '
         ' grilaFisiere
         '
-        grilaFisiere.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
-        grilaFisiere.ColumnFillMode = KBot.Controls.KBotFillMode.FirstColumn
-        colSel.ColumnType = KBot.Controls.KBotColumnType.CheckBox
+        grilaFisiere.AutoSizeColumnsMode = Global.KBot.Controls.KBotAutoSizeMode.None
+        grilaFisiere.ColumnFillMode = Global.KBot.Controls.KBotFillMode.FirstColumn
+        colSel.ColumnType = Global.KBot.Controls.KBotColumnType.CheckBox
         colSel.FormatString = Nothing
         colSel.HeaderText = "Șterge"
         colSel.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -217,12 +217,12 @@ Partial Class LogClearDialog
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
-    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
-    Friend WithEvents busy As KBot.Controls.KBotBusyBar
+    Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
+    Friend WithEvents busy As Global.KBot.Controls.KBotBusyBar
     Friend WithEvents lblAntet As Label
-    Friend WithEvents grilaFisiere As KBot.Controls.KBotDataView
+    Friend WithEvents grilaFisiere As Global.KBot.Controls.KBotDataView
     Friend WithEvents pnlJos As Panel
     Friend WithEvents lblTotal As Label
     Friend WithEvents btnSterge As Button

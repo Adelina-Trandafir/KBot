@@ -27,10 +27,15 @@ Imports KBot.Controls
 '   Documente  *.doc;*.docx;*.pdf
 '   Tabele     *.xls;*.xlsx
 '
+' THE SECOND COLUMN IS THE PREVIEW. `tlyRoot` is 65/35: the grid and the three buttons on the left,
+' `prv` (cell 1;0) and `lblStare` (cell 1;1) on the right. `DdfFisierPreview` shows images, Word and
+' Excel documents and PDFs; every other type gets a sentence saying so. Selecting a row is the only
+' thing that drives it -- nothing about the preview can change the draft.
+'
 ' All controls are declared HERE (docs/kbot-forms-ui-convention.md).
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfEditFisierePage
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -57,9 +62,10 @@ Partial Class DdfEditFisierePage
         dlgAlege = New OpenFileDialog()
         dlgSalveaza = New SaveFileDialog()
         tlyRoot = New TableLayoutPanel()
+        lblStare = New Label()
         grd = New KBotDataView()
         tlyButoane = New TableLayoutPanel()
-        lblStare = New Label()
+        prv = New DdfFisierPreview()
         tlyRoot.SuspendLayout()
         CType(grd, ComponentModel.ISupportInitialize).BeginInit()
         tlyButoane.SuspendLayout()
@@ -72,7 +78,7 @@ Partial Class DdfEditFisierePage
         btnAdauga.Location = New Point(11, 8)
         btnAdauga.Margin = New Padding(11, 8, 6, 8)
         btnAdauga.Name = "btnAdauga"
-        btnAdauga.Size = New Size(269, 67)
+        btnAdauga.Size = New Size(203, 67)
         btnAdauga.TabIndex = 0
         btnAdauga.Text = "Atașează fișier"
         tips.SetToolTipHeader(btnAdauga, "Atașează un fișier")
@@ -82,10 +88,10 @@ Partial Class DdfEditFisierePage
         ' btnSterge
         ' 
         btnSterge.Dock = DockStyle.Fill
-        btnSterge.Location = New Point(292, 8)
+        btnSterge.Location = New Point(226, 8)
         btnSterge.Margin = New Padding(6, 8, 6, 8)
         btnSterge.Name = "btnSterge"
-        btnSterge.Size = New Size(274, 67)
+        btnSterge.Size = New Size(208, 67)
         btnSterge.TabIndex = 1
         btnSterge.Text = "Șterge fișierul"
         tips.SetToolTipHeader(btnSterge, "Șterge fișierul")
@@ -95,10 +101,10 @@ Partial Class DdfEditFisierePage
         ' btnSalveazaPeDisc
         ' 
         btnSalveazaPeDisc.Dock = DockStyle.Fill
-        btnSalveazaPeDisc.Location = New Point(578, 8)
+        btnSalveazaPeDisc.Location = New Point(446, 8)
         btnSalveazaPeDisc.Margin = New Padding(6, 8, 6, 8)
         btnSalveazaPeDisc.Name = "btnSalveazaPeDisc"
-        btnSalveazaPeDisc.Size = New Size(302, 67)
+        btnSalveazaPeDisc.Size = New Size(209, 67)
         btnSalveazaPeDisc.TabIndex = 2
         btnSalveazaPeDisc.Text = "Salvează pe disc"
         tips.SetToolTipHeader(btnSalveazaPeDisc, "Salvează pe disc")
@@ -116,10 +122,13 @@ Partial Class DdfEditFisierePage
         ' 
         ' tlyRoot
         ' 
-        tlyRoot.ColumnCount = 1
-        tlyRoot.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyRoot.ColumnCount = 2
+        tlyRoot.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 65F))
+        tlyRoot.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 35F))
+        tlyRoot.Controls.Add(lblStare, 1, 1)
         tlyRoot.Controls.Add(grd, 0, 0)
         tlyRoot.Controls.Add(tlyButoane, 0, 1)
+        tlyRoot.Controls.Add(prv, 1, 0)
         tlyRoot.Dock = DockStyle.Fill
         tlyRoot.Location = New Point(0, 0)
         tlyRoot.Margin = New Padding(0)
@@ -129,6 +138,18 @@ Partial Class DdfEditFisierePage
         tlyRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 83F))
         tlyRoot.Size = New Size(1018, 609)
         tlyRoot.TabIndex = 0
+        ' 
+        ' lblStare
+        ' 
+        lblStare.AutoSize = True
+        lblStare.Dock = DockStyle.Fill
+        lblStare.Font = New Font("Calibri", 9F)
+        lblStare.Location = New Point(667, 526)
+        lblStare.Margin = New Padding(6, 0, 11, 0)
+        lblStare.Name = "lblStare"
+        lblStare.Size = New Size(340, 83)
+        lblStare.TabIndex = 4
+        lblStare.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' grd
         ' 
@@ -176,6 +197,7 @@ Partial Class DdfEditFisierePage
         KBotDataColumn4.Key = "cale_fisier"
         KBotDataColumn4.OptionGroup = Nothing
         KBotDataColumn4.ReadOnly = True
+        KBotDataColumn4.Visible = False
         KBotDataColumn4.Width = 460
         grd.Columns.Add(KBotDataColumn1)
         grd.Columns.Add(KBotDataColumn2)
@@ -190,40 +212,37 @@ Partial Class DdfEditFisierePage
         grd.Name = "grd"
         grd.ReadOnlyGrid = True
         grd.ShrinkColumnsToFit = False
-        grd.Size = New Size(1006, 512)
+        grd.Size = New Size(649, 512)
         grd.TabIndex = 0
         ' 
         ' tlyButoane
         ' 
-        tlyButoane.ColumnCount = 4
-        tlyButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 286F))
-        tlyButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 286F))
-        tlyButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 314F))
-        tlyButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyButoane.ColumnCount = 3
+        tlyButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 33.3333321F))
+        tlyButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 33.3333321F))
+        tlyButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 33.3333321F))
+        tlyButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 20F))
         tlyButoane.Controls.Add(btnAdauga, 0, 0)
         tlyButoane.Controls.Add(btnSterge, 1, 0)
         tlyButoane.Controls.Add(btnSalveazaPeDisc, 2, 0)
-        tlyButoane.Controls.Add(lblStare, 3, 0)
         tlyButoane.Dock = DockStyle.Fill
         tlyButoane.Location = New Point(0, 526)
         tlyButoane.Margin = New Padding(0)
         tlyButoane.Name = "tlyButoane"
         tlyButoane.RowCount = 1
         tlyButoane.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyButoane.Size = New Size(1018, 83)
+        tlyButoane.Size = New Size(661, 83)
         tlyButoane.TabIndex = 1
         ' 
-        ' lblStare
+        ' prv
         ' 
-        lblStare.AutoSize = True
-        lblStare.Dock = DockStyle.Fill
-        lblStare.Font = New Font("Calibri", 9F)
-        lblStare.Location = New Point(892, 0)
-        lblStare.Margin = New Padding(6, 0, 11, 0)
-        lblStare.Name = "lblStare"
-        lblStare.Size = New Size(115, 83)
-        lblStare.TabIndex = 3
-        lblStare.TextAlign = ContentAlignment.MiddleLeft
+        prv.Dock = DockStyle.Fill
+        prv.Font = New Font("Calibri", 9F)
+        prv.Location = New Point(667, 7)
+        prv.Margin = New Padding(6, 7, 11, 7)
+        prv.Name = "prv"
+        prv.Size = New Size(340, 512)
+        prv.TabIndex = 3
         ' 
         ' DdfEditFisierePage
         ' 
@@ -234,20 +253,21 @@ Partial Class DdfEditFisierePage
         Name = "DdfEditFisierePage"
         Size = New Size(1018, 609)
         tlyRoot.ResumeLayout(False)
+        tlyRoot.PerformLayout()
         CType(grd, ComponentModel.ISupportInitialize).EndInit()
         tlyButoane.ResumeLayout(False)
-        tlyButoane.PerformLayout()
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents dlgAlege As OpenFileDialog
     Friend WithEvents dlgSalveaza As SaveFileDialog
     Friend WithEvents tlyRoot As TableLayoutPanel
-    Friend WithEvents grd As KBot.Controls.KBotDataView
+    Friend WithEvents grd As Global.KBot.Controls.KBotDataView
     Friend WithEvents tlyButoane As TableLayoutPanel
     Friend WithEvents btnAdauga As Button
     Friend WithEvents btnSterge As Button
     Friend WithEvents btnSalveazaPeDisc As Button
     Friend WithEvents lblStare As Label
+    Friend WithEvents prv As DdfFisierPreview
 End Class

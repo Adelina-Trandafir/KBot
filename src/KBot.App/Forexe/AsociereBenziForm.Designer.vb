@@ -16,7 +16,7 @@ Imports KBot.Controls
 ' deschidere, fara ca nimic din designer s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class AsociereBenziForm
-    Inherits KBot.Theming.KBotThemedForm
+    Inherits Global.KBot.Theming.KBotThemedForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -147,7 +147,7 @@ Partial Class AsociereBenziForm
     End Sub
 
     Friend WithEvents pnlCard As Panel
-    Friend WithEvents benziMari As KBot.Controls.KBotLaneView
+    Friend WithEvents benziMari As Global.KBot.Controls.KBotLaneView
     Friend WithEvents capBar As KBotCaptionBar
     Friend WithEvents btnInchide As Button
     Friend WithEvents tlyBenzi As TableLayoutPanel

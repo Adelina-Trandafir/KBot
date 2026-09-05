@@ -38,7 +38,7 @@ Imports KBot.Controls
 ' on open, with nothing in the designer to show it.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfEditForm
-    Inherits KBot.Theming.KBotShellForm
+    Inherits Global.KBot.Theming.KBotShellForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -656,36 +656,36 @@ Partial Class DdfEditForm
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents tmrLock As Timer
     Friend WithEvents tlyMain As TableLayoutPanel
-    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
-    Friend WithEvents busyBar As KBot.Controls.KBotBusyBar
+    Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
+    Friend WithEvents busyBar As Global.KBot.Controls.KBotBusyBar
     Friend WithEvents tlyAntet As TableLayoutPanel
     Friend WithEvents lblCodCaption As Label
     Friend WithEvents lblCod As Label
     Friend WithEvents lblCualCaption As Label
-    Friend WithEvents txtCual As KBot.Controls.KBotTextField
+    Friend WithEvents txtCual As Global.KBot.Controls.KBotTextField
     Friend WithEvents lblDataCreareCaption As Label
-    Friend WithEvents dtpDataCreare As KBot.Controls.KBotDatePicker
+    Friend WithEvents dtpDataCreare As Global.KBot.Controls.KBotDatePicker
     Friend WithEvents lblTotalCaption As Label
     Friend WithEvents lblTotal As Label
     Friend WithEvents lblObiectCaption As Label
-    Friend WithEvents txtObiect As KBot.Controls.KBotTextField
+    Friend WithEvents txtObiect As Global.KBot.Controls.KBotTextField
     Friend WithEvents lblProgramCaption As Label
-    Friend WithEvents cmbProgram As KBot.Controls.KBotComboBox
+    Friend WithEvents cmbProgram As Global.KBot.Controls.KBotComboBox
     Friend WithEvents lblCompCaption As Label
-    Friend WithEvents cmbComp As KBot.Controls.KBotComboBox
+    Friend WithEvents cmbComp As Global.KBot.Controls.KBotComboBox
     Friend WithEvents chkPartAng As CheckBox
-    Friend WithEvents cmbPartener As KBot.Controls.KBotComboBox
+    Friend WithEvents cmbPartener As Global.KBot.Controls.KBotComboBox
     Friend WithEvents lblNumarRevCaption As Label
-    Friend WithEvents txtNumarRev As KBot.Controls.KBotTextField
+    Friend WithEvents txtNumarRev As Global.KBot.Controls.KBotTextField
     Friend WithEvents lblDataRevCaption As Label
-    Friend WithEvents dtpDataRev As KBot.Controls.KBotDatePicker
+    Friend WithEvents dtpDataRev As Global.KBot.Controls.KBotDatePicker
     Friend WithEvents lblDescScurtaCaption As Label
-    Friend WithEvents txtDescScurta As KBot.Controls.KBotTextField
-    Friend WithEvents ntfMesaj As KBot.Controls.KBotNotice
-    Friend WithEvents navSub As KBot.Controls.KBotNavList
+    Friend WithEvents txtDescScurta As Global.KBot.Controls.KBotTextField
+    Friend WithEvents ntfMesaj As Global.KBot.Controls.KBotNotice
+    Friend WithEvents navSub As Global.KBot.Controls.KBotNavList
     Friend WithEvents pnlPages As Panel
     Friend WithEvents tlySubsol As TableLayoutPanel
     Friend WithEvents btnRenunta As Button

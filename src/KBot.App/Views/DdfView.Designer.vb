@@ -2,7 +2,7 @@ Imports KBot.Controls
 
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfView
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -211,8 +211,8 @@ Partial Class DdfView
     End Sub
 
     Friend WithEvents split As SplitContainer
-    Friend WithEvents tree As KBot.Controls.AdvancedTreeControl
-    Friend WithEvents navSub As KBot.Controls.KBotNavList
+    Friend WithEvents tree As Global.KBot.Controls.AdvancedTreeControl
+    Friend WithEvents navSub As Global.KBot.Controls.KBotNavList
     Friend WithEvents pnlPages As Panel
     Friend WithEvents lblEmpty As Label
     Friend WithEvents image_list As ImageList

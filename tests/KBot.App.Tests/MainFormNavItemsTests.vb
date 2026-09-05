@@ -41,7 +41,7 @@ Public Class MainFormNavItemsTests
     <Fact>
     Public Sub Designer_AuthorsTheEightNavEntries_InOrder()
         RunSta(Sub()
-                   Using f As New MainForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
+                   Using f As New KBOT(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
                        Dim items = f.navViews.Items
                        Assert.Equal(8, items.Count)
 
@@ -69,7 +69,7 @@ Public Class MainFormNavItemsTests
     <Fact>
     Public Sub Designer_WroteLiteralDiacritics_NotEscapes()
         RunSta(Sub()
-                   Using f As New MainForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
+                   Using f As New KBOT(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
                        Dim byKey = f.navViews.Items.Where(Function(i) Not i.IsSeparator).
                                                     ToDictionary(Function(i) i.Key, Function(i) i.Text)
                        Assert.Equal("Sumar", byKey("sumar"))
@@ -89,7 +89,7 @@ Public Class MainFormNavItemsTests
         ' My Project\Resources.resx prin accesorul KBot.App.Resources. A doua cale se rupe tăcut
         ' dacă un nume din .resx nu mai are proprietate tipizată — aici se vede.
         RunSta(Sub()
-                   Using f As New MainForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
+                   Using f As New KBOT(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
                        For Each it In f.navViews.Items.Where(Function(i) Not i.IsSeparator)
                            Assert.NotNull(it.Image)
                        Next
@@ -102,7 +102,7 @@ Public Class MainFormNavItemsTests
         ' The designer does not write a key on a separator; EndInit assigns «__sep_N». If the
         ' BeginInit/EndInit pair ever goes missing from InitializeComponent, this is what notices.
         RunSta(Sub()
-                   Using f As New MainForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
+                   Using f As New KBOT(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
                        Assert.StartsWith("__sep_", f.navViews.Items(5).Key)
                    End Using
                End Sub)
@@ -113,7 +113,7 @@ Public Class MainFormNavItemsTests
         ' ApplyViewGating calls SetItemVisible with these keys, and SetItemVisible throws on an
         ' unknown one. Proving the lookups resolve is proving the gating cannot break at startup.
         RunSta(Sub()
-                   Using f As New MainForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
+                   Using f As New KBOT(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
                        For Each key In {"istoric", "rezervari", "receptii", "plati", "ddf", "ord"}
                            f.navViews.SetItemVisible(key, False)
                            f.navViews.SetItemVisible(key, True)
@@ -130,7 +130,7 @@ Public Class MainFormNavItemsTests
         ' Re-adding any of the eight from code would hit AddItem's duplicate-key throw on the very
         ' first run. This pins the reason the AddItem block had to go.
         RunSta(Sub()
-                   Using f As New MainForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
+                   Using f As New KBOT(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
                        Assert.Throws(Of ArgumentException)(Sub() f.navViews.AddItem("sumar", "Sumar"))
                        Assert.Throws(Of ArgumentException)(Sub() f.navViews.AddItem("ddf", "DDF", KBotNavAlign.Far))
                    End Using

@@ -2,7 +2,7 @@ Imports KBot.Controls
 
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class XfaXmlPreview
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -18,7 +18,7 @@ Partial Class XfaXmlPreview
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New KBot.Controls.KBotToolTip(components)
+        tips = New Global.KBot.Controls.KBotToolTip(components)
         Dim KBotDataColumn1 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
@@ -258,9 +258,9 @@ Partial Class XfaXmlPreview
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlContent As Panel
-    Friend WithEvents grid As KBot.Controls.KBotDataView
+    Friend WithEvents grid As Global.KBot.Controls.KBotDataView
     Friend WithEvents pnlHeader As Panel
     Friend WithEvents lblNota As Label
     Friend WithEvents tblHeader As TableLayoutPanel

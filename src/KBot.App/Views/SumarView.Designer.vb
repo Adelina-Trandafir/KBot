@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class SumarView
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -15,13 +15,13 @@ Partial Class SumarView
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        Dim KBotDataColumn1 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn2 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn3 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn4 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn5 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn6 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn7 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn1 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn2 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn3 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn4 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn5 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn6 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn7 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         pnlHeader = New Panel()
         tblHeader = New TableLayoutPanel()
         lblCodCaption = New Label()
@@ -241,11 +241,11 @@ Partial Class SumarView
         ' 
         ' grid
         ' 
-        grid.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        grid.AutoSizeColumnsMode = Global.KBot.Controls.KBotAutoSizeMode.None
         grid.AutoSizeHeaderHeight = False
         grid.BackColor = SystemColors.Window
         grid.BorderColor = SystemColors.ActiveBorder
-        grid.ColumnFillMode = KBot.Controls.KBotFillMode.FirstColumn
+        grid.ColumnFillMode = Global.KBot.Controls.KBotFillMode.FirstColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn1.ColumnFilterIconSize = New Size(14, 14)
@@ -274,12 +274,12 @@ Partial Class SumarView
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.ReadOnly = True
         KBotDataColumn2.Width = 80
-        KBotDataColumn3.Aggregate = KBot.Controls.KBotAggregate.Sum
+        KBotDataColumn3.Aggregate = Global.KBot.Controls.KBotAggregate.Sum
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn3.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.DecimalPlaces = 2
-        KBotDataColumn3.Format = KBot.Controls.KBotFormat.Standard
+        KBotDataColumn3.Format = Global.KBot.Controls.KBotFormat.Standard
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderText = "Rezervări"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -289,14 +289,14 @@ Partial Class SumarView
         KBotDataColumn3.OptionGroup = Nothing
         KBotDataColumn3.ReadOnly = True
         KBotDataColumn3.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn3.ValueType = KBot.Controls.KBotValueType.Number
+        KBotDataColumn3.ValueType = Global.KBot.Controls.KBotValueType.Number
         KBotDataColumn3.Width = 110
-        KBotDataColumn4.Aggregate = KBot.Controls.KBotAggregate.Sum
+        KBotDataColumn4.Aggregate = Global.KBot.Controls.KBotAggregate.Sum
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn4.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn4.DecimalPlaces = 2
-        KBotDataColumn4.Format = KBot.Controls.KBotFormat.Standard
+        KBotDataColumn4.Format = Global.KBot.Controls.KBotFormat.Standard
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderText = "Recepții"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -306,14 +306,14 @@ Partial Class SumarView
         KBotDataColumn4.OptionGroup = Nothing
         KBotDataColumn4.ReadOnly = True
         KBotDataColumn4.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn4.ValueType = KBot.Controls.KBotValueType.Number
+        KBotDataColumn4.ValueType = Global.KBot.Controls.KBotValueType.Number
         KBotDataColumn4.Width = 110
-        KBotDataColumn5.Aggregate = KBot.Controls.KBotAggregate.Sum
+        KBotDataColumn5.Aggregate = Global.KBot.Controls.KBotAggregate.Sum
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn5.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn5.DecimalPlaces = 2
-        KBotDataColumn5.Format = KBot.Controls.KBotFormat.Standard
+        KBotDataColumn5.Format = Global.KBot.Controls.KBotFormat.Standard
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = "Plăți"
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -323,14 +323,14 @@ Partial Class SumarView
         KBotDataColumn5.OptionGroup = Nothing
         KBotDataColumn5.ReadOnly = True
         KBotDataColumn5.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn5.ValueType = KBot.Controls.KBotValueType.Number
+        KBotDataColumn5.ValueType = Global.KBot.Controls.KBotValueType.Number
         KBotDataColumn5.Width = 110
-        KBotDataColumn6.Aggregate = KBot.Controls.KBotAggregate.Sum
+        KBotDataColumn6.Aggregate = Global.KBot.Controls.KBotAggregate.Sum
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn6.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn6.DecimalPlaces = 2
-        KBotDataColumn6.Format = KBot.Controls.KBotFormat.Standard
+        KBotDataColumn6.Format = Global.KBot.Controls.KBotFormat.Standard
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderText = "Revizii"
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -339,14 +339,14 @@ Partial Class SumarView
         KBotDataColumn6.MinWidth = 80
         KBotDataColumn6.OptionGroup = Nothing
         KBotDataColumn6.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn6.ValueType = KBot.Controls.KBotValueType.Number
+        KBotDataColumn6.ValueType = Global.KBot.Controls.KBotValueType.Number
         KBotDataColumn6.Width = 110
-        KBotDataColumn7.Aggregate = KBot.Controls.KBotAggregate.Sum
+        KBotDataColumn7.Aggregate = Global.KBot.Controls.KBotAggregate.Sum
         KBotDataColumn7.AggregateFormatString = Nothing
         KBotDataColumn7.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn7.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn7.DecimalPlaces = 2
-        KBotDataColumn7.Format = KBot.Controls.KBotFormat.Standard
+        KBotDataColumn7.Format = Global.KBot.Controls.KBotFormat.Standard
         KBotDataColumn7.FormatString = Nothing
         KBotDataColumn7.HeaderText = "Ordonanțări"
         KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -355,7 +355,7 @@ Partial Class SumarView
         KBotDataColumn7.MinWidth = 80
         KBotDataColumn7.OptionGroup = Nothing
         KBotDataColumn7.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn7.ValueType = KBot.Controls.KBotValueType.Number
+        KBotDataColumn7.ValueType = Global.KBot.Controls.KBotValueType.Number
         KBotDataColumn7.Width = 110
         grid.Columns.Add(KBotDataColumn1)
         grid.Columns.Add(KBotDataColumn2)
@@ -435,6 +435,6 @@ Partial Class SumarView
     Friend WithEvents lblStatus As Label
     Friend WithEvents lblDescriereCaption As Label
     Friend WithEvents lblDescriere As Label
-    Friend WithEvents grid As KBot.Controls.KBotDataView
+    Friend WithEvents grid As Global.KBot.Controls.KBotDataView
     Friend WithEvents lblEmpty As Label
 End Class

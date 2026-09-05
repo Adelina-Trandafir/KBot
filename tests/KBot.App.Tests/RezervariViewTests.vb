@@ -604,7 +604,7 @@ Public Class RezervariViewTests
     End Sub
 
     Private Shared Function ThemeManagerErrorColor() As Drawing.Color
-        Return KBot.Theming.ThemeManager.Current.Palette.ErrorColor
+        Return Global.KBot.Theming.ThemeManager.Current.Palette.ErrorColor
     End Function
 
 End Class

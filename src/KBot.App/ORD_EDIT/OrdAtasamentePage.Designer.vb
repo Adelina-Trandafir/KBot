@@ -321,13 +321,13 @@ Partial Class OrdAtasamentePage
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents dlgImagine As OpenFileDialog
     Friend WithEvents split As SplitContainer
-    Friend WithEvents grdBene As KBot.Controls.KBotDataView
+    Friend WithEvents grdBene As Global.KBot.Controls.KBotDataView
     Friend WithEvents splitDreapta As SplitContainer
     Friend WithEvents tlyLista As TableLayoutPanel
-    Friend WithEvents grdAtasamente As KBot.Controls.KBotDataView
+    Friend WithEvents grdAtasamente As Global.KBot.Controls.KBotDataView
     Friend WithEvents btnAdauga As Button
     Friend WithEvents pnlPreview As Panel
     Friend WithEvents picPreview As PictureBox

@@ -566,7 +566,7 @@ Public Class IstoricViewTests
                        Next
                        Assert.Equal(New String() {"clsf", "tip", "data", "desc", "obs"}, keys.ToArray())
                        Assert.False(g.FooterVisible)                          ' fără rând de totaluri
-                       Assert.Equal(KBot.Controls.KBotFillMode.LastColumn, g.ColumnFillMode)
+                       Assert.Equal(Global.KBot.Controls.KBotFillMode.LastColumn, g.ColumnFillMode)
                    End Using
                End Sub)
     End Sub

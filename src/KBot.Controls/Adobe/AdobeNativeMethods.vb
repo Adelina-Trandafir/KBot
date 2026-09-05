@@ -27,6 +27,9 @@ Friend NotInheritable Class AdobeNativeMethods
     Public Const WS_SYSMENU As Long = &H80000L
     Public Const WS_MINIMIZEBOX As Long = &H20000L
     Public Const WS_MAXIMIZEBOX As Long = &H10000L
+    ' A window's OWN visibility bit, as opposed to IsWindowVisible, which is only true when every
+    ' ancestor is showing too. See AdobeNativeMethods.IsVisibleStyleSet.
+    Public Const WS_VISIBLE As Long = &H10000000L
 
     ' The styles a top-level window must LOSE to behave as a hosted child.
     Public Const StandaloneStyles As Long =
@@ -58,6 +61,11 @@ Friend NotInheritable Class AdobeNativeMethods
     ' get its layout to agree with the result.
     Public Const WM_LBUTTONDOWN As UInteger = &H201UI
     Public Const WM_LBUTTONUP As UInteger = &H202UI
+
+    ' Sent by Windows to tell a window that its APPLICATION became active or inactive. A hosted
+    ' window never gets it again — its top-level ancestor now belongs to us — and Office decides
+    ' from it whether to accept mouse buttons at all. See OfficeDocumentHost.PulseActivation.
+    Public Const WM_ACTIVATEAPP As UInteger = &H1CUI
 
     ''' <summary>Packs client-area coordinates into an lParam for the mouse messages.</summary>
     Public Shared Function MakeLParam(x As Integer, y As Integer) As IntPtr
@@ -134,12 +142,23 @@ Friend NotInheritable Class AdobeNativeMethods
     Public Shared Function GetWindowRect(hWnd As IntPtr, ByRef lpRect As RECT) As Boolean
     End Function
 
+    ' The CLIENT rectangle: always at 0,0, so only its size means anything. Needed to fill a
+    ' foreign window's own children -- GetWindowRect would include whatever border the window has,
+    ' and a child placed against that is a few pixels wrong on every edge.
+    <DllImport("user32.dll", SetLastError:=True)>
+    Public Shared Function GetClientRect(hWnd As IntPtr, ByRef lpRect As RECT) As Boolean
+    End Function
+
     <DllImport("user32.dll")>
     Public Shared Function ShowWindow(hWnd As IntPtr, nCmdShow As Integer) As Boolean
     End Function
 
     <DllImport("user32.dll", SetLastError:=True)>
     Public Shared Function SetFocus(hWnd As IntPtr) As IntPtr
+    End Function
+
+    <DllImport("user32.dll")>
+    Public Shared Function GetForegroundWindow() As IntPtr
     End Function
 
     <DllImport("user32.dll", SetLastError:=True)>
@@ -206,6 +225,25 @@ Friend NotInheritable Class AdobeNativeMethods
         Return New IntPtr(SetWindowLong32(hWnd, nIndex, val.ToInt32()))
     End Function
 
+    ''' <summary>
+    ''' Whether a window carries <c>WS_VISIBLE</c> ITSELF, without asking about its ancestors.
+    '''
+    ''' <para><b>This is not the same question as <see cref="IsWindowVisible"/>, and the difference
+    ''' matters for every window we have reparented.</b> IsWindowVisible walks the whole parent chain
+    ''' and answers False if ANY link in it is hidden. Once an Office frame is a child of one of our
+    ''' panels, that chain runs through our own controls — so a panel that is momentarily not showing
+    ''' (a pane displaying «Se deschide documentul…» while the document opens) makes every window
+    ''' inside the hosted frame report itself invisible, including the ones that are perfectly real
+    ''' and about to be on screen.</para>
+    '''
+    ''' <para>Use this wherever the question is «did Office lay this window out, or is it a scrap it
+    ''' has parked», and keep IsWindowVisible for top-level windows, where the two agree.</para>
+    ''' </summary>
+    Public Shared Function IsVisibleStyleSet(hWnd As IntPtr) As Boolean
+        If hWnd = IntPtr.Zero Then Return False
+        Return (GetWindowLongPtrSafe(hWnd, GWL_STYLE).ToInt64() And WS_VISIBLE) <> 0
+    End Function
+
     Public Shared Function GetClass(hWnd As IntPtr) As String
         Dim sb As New StringBuilder(256)
         GetClassName(hWnd, sb, sb.Capacity)
@@ -237,6 +275,14 @@ Friend NotInheritable Class AdobeNativeMethods
         If parent = IntPtr.Zero Then Return r.ToRectangle()
         MapWindowPoints(IntPtr.Zero, parent, r, 2)
         Return r.ToRectangle()
+    End Function
+
+    ''' <summary>The size of a window's client area (Empty when it cannot be read).</summary>
+    Public Shared Function ClientSize(hWnd As IntPtr) As Size
+        If hWnd = IntPtr.Zero OrElse Not IsWindow(hWnd) Then Return Size.Empty
+        Dim r As RECT
+        If Not GetClientRect(hWnd, r) Then Return Size.Empty
+        Return New Size(r.Right - r.Left, r.Bottom - r.Top)
     End Function
 
     ''' <summary>A window's rectangle in SCREEN coordinates (Empty when it cannot be read).</summary>

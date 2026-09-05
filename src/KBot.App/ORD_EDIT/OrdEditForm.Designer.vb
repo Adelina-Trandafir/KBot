@@ -21,7 +21,7 @@ Imports KBot.Controls
 ' la deschidere, fara ca nimic din designer s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class OrdEditForm
-    Inherits KBot.Theming.KBotShellForm
+    Inherits Global.KBot.Theming.KBotShellForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -411,10 +411,10 @@ Partial Class OrdEditForm
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents tlyMain As TableLayoutPanel
-    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
-    Friend WithEvents busyBar As KBot.Controls.KBotBusyBar
+    Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
+    Friend WithEvents busyBar As Global.KBot.Controls.KBotBusyBar
     Friend WithEvents tlyAntet As TableLayoutPanel
     Friend WithEvents lblCodCaption As Label
     Friend WithEvents lblCod As Label
@@ -426,7 +426,7 @@ Partial Class OrdEditForm
     Friend WithEvents lblTotal As Label
     Friend WithEvents lblObiectCaption As Label
     Friend WithEvents lblObiect As Label
-    Friend WithEvents navSub As KBot.Controls.KBotNavList
+    Friend WithEvents navSub As Global.KBot.Controls.KBotNavList
     Friend WithEvents tlySubsol As TableLayoutPanel
     Friend WithEvents btnRenunta As Button
     Friend WithEvents btnSalveaza As Button

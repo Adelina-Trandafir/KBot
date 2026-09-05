@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class ForexeHistoryForm
-    Inherits KBot.Theming.KBotShellForm
+    Inherits Global.KBot.Theming.KBotShellForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -16,16 +16,16 @@ Partial Class ForexeHistoryForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New KBot.Controls.KBotToolTip(components)
+        tips = New Global.KBot.Controls.KBotToolTip(components)
         pnlCard = New Panel()
         splitMain = New SplitContainer()
-        treeJobs = New KBot.Controls.AdvancedTreeControl()
+        treeJobs = New Global.KBot.Controls.AdvancedTreeControl()
         rtbDetalii = New RichTextBox()
         pnlFoot = New Panel()
         btnReimprospateaza = New Button()
         btnExport = New Button()
         btnInchide = New Button()
-        capBar = New KBot.Controls.KBotCaptionBar()
+        capBar = New Global.KBot.Controls.KBotCaptionBar()
         pnlCard.SuspendLayout()
         CType(splitMain, ComponentModel.ISupportInitialize).BeginInit()
         splitMain.Panel1.SuspendLayout()
@@ -185,11 +185,11 @@ Partial Class ForexeHistoryForm
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
-    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
+    Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents splitMain As SplitContainer
-    Friend WithEvents treeJobs As KBot.Controls.AdvancedTreeControl
+    Friend WithEvents treeJobs As Global.KBot.Controls.AdvancedTreeControl
     Friend WithEvents rtbDetalii As RichTextBox
     Friend WithEvents pnlFoot As Panel
     Friend WithEvents btnReimprospateaza As Button

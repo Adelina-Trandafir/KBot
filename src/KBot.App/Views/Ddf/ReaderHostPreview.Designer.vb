@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class ReaderHostPreview
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -19,7 +19,7 @@ Partial Class ReaderHostPreview
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New KBot.Controls.KBotToolTip(components)
+        tips = New Global.KBot.Controls.KBotToolTip(components)
         pnlHost = New Panel()
         pnlMissing = New Panel()
         tblMissing = New TableLayoutPanel()
@@ -151,7 +151,7 @@ Partial Class ReaderHostPreview
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlHost As Panel
     Friend WithEvents pnlMissing As Panel
     Friend WithEvents tblMissing As TableLayoutPanel

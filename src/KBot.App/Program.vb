@@ -150,13 +150,13 @@ Friend Module Program
     ' orfană sau dispose în ordine greșită a serviciilor DI.
     Private Sub RunHarness(provider As ServiceProvider)
         Try
-            Dim harness As KBot.DevHarness.DevHarnessForm = provider.GetRequiredService(Of KBot.DevHarness.DevHarnessForm)()
+            Dim harness As Global.KBot.DevHarness.DevHarnessForm = provider.GetRequiredService(Of Global.KBot.DevHarness.DevHarnessForm)()
 
-            Dim harnessMain As MainForm = Nothing
+            Dim harnessMain As KBOT = Nothing
             harness.OpenMainFormAction =
                 Sub()
                     If harnessMain Is Nothing OrElse harnessMain.IsDisposed Then
-                        harnessMain = provider.GetRequiredService(Of MainForm)()
+                        harnessMain = provider.GetRequiredService(Of KBOT)()
                         AddHandler harnessMain.FormClosed, Sub() harnessMain = Nothing
                     End If
                     harnessMain.Show()
@@ -207,7 +207,7 @@ Friend Module Program
             Dim session As SessionContext = provider.GetRequiredService(Of SessionContext)()
             Dim authApi As IAuthApi = provider.GetRequiredService(Of IAuthApi)()
 
-            Application.Run(provider.GetRequiredService(Of MainForm)())
+            Application.Run(provider.GetRequiredService(Of KBOT)())
 
             'trebuie sa aduca in prim plan fereastra main, daca loginul a fost facut cu succes si s-a inchis formularul login
 
@@ -346,7 +346,7 @@ Friend Module Program
         services.AddSingleton(Of ForexeController)()
 
         ' Forms.
-        services.AddTransient(Of MainForm)()
+        services.AddTransient(Of KBOT)()
         services.AddTransient(Of LoginForm)()
         ' Vizualizatorul de jurnale (felia 0031-04). Transient: se deschide nemodal din meniul
         ' butonului de opțiuni al shell-ului și modal din bancul de probă — două vieți diferite,
@@ -361,10 +361,10 @@ Friend Module Program
 
 #If DEBUG Then
         ' Banc de probă (Dev Harness) — doar pe Debug.
-        services.AddTransient(Of KBot.DevHarness.DevHarnessForm)()
+        services.AddTransient(Of Global.KBot.DevHarness.DevHarnessForm)()
         ' Puntea prin care proba vizuală a jurnalelor deschide fereastra din KBot.App fără ca
         ' bancul să refere KBot.App (vezi ILogViewerLauncher).
-        services.AddSingleton(Of KBot.DevHarness.ILogViewerLauncher)(
+        services.AddSingleton(Of Global.KBot.DevHarness.ILogViewerLauncher)(
             Function(sp) New LogViewerLauncher(sp))
 #End If
     End Sub

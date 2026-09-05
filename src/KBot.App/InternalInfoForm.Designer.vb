@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class InternalInfoForm
-    Inherits KBot.Theming.KBotThemedForm
+    Inherits Global.KBot.Theming.KBotThemedForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -16,9 +16,9 @@ Partial Class InternalInfoForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New KBot.Controls.KBotToolTip(components)
+        tips = New Global.KBot.Controls.KBotToolTip(components)
         pnlCard = New Panel()
-        capBar = New KBot.Controls.KBotCaptionBar()
+        capBar = New Global.KBot.Controls.KBotCaptionBar()
         lblHeader = New Label()
         txtInfo = New TextBox()
         pnlFoot = New Panel()
@@ -126,9 +126,9 @@ Partial Class InternalInfoForm
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
-    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
+    Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents lblHeader As Label
     Friend WithEvents txtInfo As TextBox
     Friend WithEvents pnlFoot As Panel

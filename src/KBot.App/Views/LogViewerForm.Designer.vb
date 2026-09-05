@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class LogViewerForm
-    Inherits KBot.Theming.KBotShellForm
+    Inherits Global.KBot.Theming.KBotShellForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -16,13 +16,13 @@ Partial Class LogViewerForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New KBot.Controls.KBotToolTip(components)
-        Dim KBotDataColumn1 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn2 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn3 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn4 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn5 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn6 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        tips = New Global.KBot.Controls.KBotToolTip(components)
+        Dim KBotDataColumn1 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn2 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn3 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn4 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn5 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn6 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         pnlFisiere = New Panel()
         navFisiere = New Controls.KBotNavList()
         noticeServer = New Controls.KBotNotice()
@@ -109,9 +109,9 @@ Partial Class LogViewerForm
         ' 
         ' grila
         ' 
-        grila.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        grila.AutoSizeColumnsMode = Global.KBot.Controls.KBotAutoSizeMode.None
         grila.BackColor = SystemColors.Window
-        grila.ColumnFillMode = KBot.Controls.KBotFillMode.LastColumn
+        grila.ColumnFillMode = Global.KBot.Controls.KBotFillMode.LastColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderText = "Ora"
@@ -547,25 +547,25 @@ Partial Class LogViewerForm
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents lblCauta As Label
-    Friend WithEvents txtCauta As KBot.Controls.KBotTextField
+    Friend WithEvents txtCauta As Global.KBot.Controls.KBotTextField
     Friend WithEvents lblDeLa As Label
-    Friend WithEvents txtDeLa As KBot.Controls.KBotTextField
+    Friend WithEvents txtDeLa As Global.KBot.Controls.KBotTextField
     Friend WithEvents lblPanaLa As Label
-    Friend WithEvents txtPanaLa As KBot.Controls.KBotTextField
+    Friend WithEvents txtPanaLa As Global.KBot.Controls.KBotTextField
     Friend WithEvents btnReimprospateaza As Button
-    Friend WithEvents chipNiveluri As KBot.Controls.KBotChipBar
-    Friend WithEvents navFisiere As KBot.Controls.KBotNavList
+    Friend WithEvents chipNiveluri As Global.KBot.Controls.KBotChipBar
+    Friend WithEvents navFisiere As Global.KBot.Controls.KBotNavList
     Friend WithEvents pnlGrila As Panel
-    Friend WithEvents grila As KBot.Controls.KBotDataView
-    Friend WithEvents noticeGol As KBot.Controls.KBotNotice
+    Friend WithEvents grila As Global.KBot.Controls.KBotDataView
+    Friend WithEvents noticeGol As Global.KBot.Controls.KBotNotice
     Friend WithEvents txtDetaliu As TextBox
     Friend WithEvents btnCopiaza As Button
     Friend WithEvents btnExporta As Button
     Friend WithEvents btnDeschideDosar As Button
     Friend WithEvents btnGoleste As Button
-    Friend WithEvents busy As KBot.Controls.KBotBusyBar
+    Friend WithEvents busy As Global.KBot.Controls.KBotBusyBar
     Friend WithEvents lblStare As Label
     Friend WithEvents tmrCautare As Timer
     Friend WithEvents tlyFilter As TableLayoutPanel

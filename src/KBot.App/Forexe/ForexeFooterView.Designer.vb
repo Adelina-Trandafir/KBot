@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class ForexeFooterView
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -19,7 +19,7 @@ Partial Class ForexeFooterView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New KBot.Controls.KBotToolTip(components)
+        tips = New Global.KBot.Controls.KBotToolTip(components)
         btnExtinde = New Button()
         btnIstoric = New Button()
         lblConexiune = New Label()
@@ -110,9 +110,9 @@ Partial Class ForexeFooterView
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents lblConexiune As Label
-    Friend WithEvents pbProgress As KBot.Controls.KBotProgressBar
+    Friend WithEvents pbProgress As Global.KBot.Controls.KBotProgressBar
     Friend WithEvents lblCert As Label
     Friend WithEvents lblStatus As Label
     Friend WithEvents btnIstoric As Button

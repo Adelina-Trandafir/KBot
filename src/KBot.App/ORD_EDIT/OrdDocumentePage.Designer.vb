@@ -344,16 +344,16 @@ Partial Class OrdDocumentePage
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents dlgFisiere As OpenFileDialog
     Friend WithEvents split As SplitContainer
-    Friend WithEvents grdBene As KBot.Controls.KBotDataView
+    Friend WithEvents grdBene As Global.KBot.Controls.KBotDataView
     Friend WithEvents splitDreapta As SplitContainer
     Friend WithEvents tlyText As TableLayoutPanel
-    Friend WithEvents grdText As KBot.Controls.KBotDataView
+    Friend WithEvents grdText As Global.KBot.Controls.KBotDataView
     Friend WithEvents btnAdaugaText As Button
     Friend WithEvents tlyFisiere As TableLayoutPanel
-    Friend WithEvents grdFisiere As KBot.Controls.KBotDataView
+    Friend WithEvents grdFisiere As Global.KBot.Controls.KBotDataView
     Friend WithEvents btnAdaugaFisier As Button
     Friend WithEvents btnStergeText As Button
     Friend WithEvents btnStergeFisier As Button

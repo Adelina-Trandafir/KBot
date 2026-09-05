@@ -492,22 +492,22 @@ Partial Class OrdBeneficiariPage
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents split As SplitContainer
     Friend WithEvents tlyStanga As TableLayoutPanel
     Friend WithEvents chkClsf As CheckBox
-    Friend WithEvents grdStanga As KBot.Controls.KBotDataView
+    Friend WithEvents grdStanga As Global.KBot.Controls.KBotDataView
     Friend WithEvents tlyDreapta As TableLayoutPanel
     Friend WithEvents tlyAntetBene As TableLayoutPanel
     Friend WithEvents lblDenBene As Label
-    Friend WithEvents txtDenBene As KBot.Controls.KBotTextField
+    Friend WithEvents txtDenBene As Global.KBot.Controls.KBotTextField
     Friend WithEvents lblCodPartener As Label
-    Friend WithEvents cboCodPartener As KBot.Controls.KBotComboBox
+    Friend WithEvents cboCodPartener As Global.KBot.Controls.KBotComboBox
     Friend WithEvents lblCodFiscal As Label
-    Friend WithEvents txtCodFiscal As KBot.Controls.KBotTextField
+    Friend WithEvents txtCodFiscal As Global.KBot.Controls.KBotTextField
     Friend WithEvents lblContIban As Label
-    Friend WithEvents txtContIban As KBot.Controls.KBotTextField
+    Friend WithEvents txtContIban As Global.KBot.Controls.KBotTextField
     Friend WithEvents lblBanca As Label
-    Friend WithEvents txtBanca As KBot.Controls.KBotTextField
-    Friend WithEvents grdLinii As KBot.Controls.KBotDataView
+    Friend WithEvents txtBanca As Global.KBot.Controls.KBotTextField
+    Friend WithEvents grdLinii As Global.KBot.Controls.KBotDataView
 End Class

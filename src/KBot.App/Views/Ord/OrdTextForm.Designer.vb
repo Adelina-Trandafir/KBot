@@ -15,7 +15,7 @@ Imports KBot.Controls
 ' deschidere, fara ca nimic din designer s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class OrdTextForm
-    Inherits KBot.Theming.KBotThemedForm
+    Inherits Global.KBot.Theming.KBotThemedForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -165,9 +165,9 @@ Partial Class OrdTextForm
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents tlyMain As TableLayoutPanel
-    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
+    Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents lblIntro As Label
     Friend WithEvents txtDoc As TextBox
     Friend WithEvents tlySubsol As TableLayoutPanel

@@ -42,7 +42,7 @@ Public NotInheritable Class LoginForm
             capBar.IconImage = My.Resources.kbot_64
 #If DEBUG Then
             txtUser.Text = "scavatarsoft@gmail.com"
-            txtPass.Text = "Par0laN0u"
+            txtPass.Text = "Par0laN0u@"
 #End If
             Me.KeyPreview = True                ' Escape inchide (nu mai exista X nativ)
             CaptureFormHeights()
@@ -162,7 +162,7 @@ Public NotInheritable Class LoginForm
 
     ' ---------------- helpers ----------------
     Private Sub ShowError(message As String)
-        ntfError.Show(message, KBot.Controls.NoticeKind.Error)
+        ntfError.Show(message, Global.KBot.Controls.NoticeKind.Error)
     End Sub
 
     Private Sub ClearError()

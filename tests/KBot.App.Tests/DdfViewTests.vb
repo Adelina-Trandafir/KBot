@@ -605,7 +605,7 @@ Public Class DdfViewTests
                    Dim api As New FakeApiClient()
                    Using view As New DdfView(api, PassThrough())
                        Dim t = Loaded(api, view)
-                       Dim rosu As Color = KBot.Theming.ThemeManager.Current.Palette.ErrorColor
+                       Dim rosu As Color = Global.KBot.Theming.ThemeManager.Current.Palette.ErrorColor
 
                        ' Februarie: frunza -900 e roșie ȘI rădăcina (total -900) e roșie.
                        Assert.Equal(rosu, t.Items(1).Children(1).NodeForeColor)

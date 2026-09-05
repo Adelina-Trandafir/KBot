@@ -407,7 +407,7 @@ Public Class PlatiViewTests
     End Sub
 
     Private Shared Function GreenColor() As Color
-        Return KBot.Theming.ThemeManager.Current.Palette.SuccessColor
+        Return Global.KBot.Theming.ThemeManager.Current.Palette.SuccessColor
     End Function
 
     ' Egalitate de imagine pe conținut. ImageList.Images(i) materializează un Bitmap nou la

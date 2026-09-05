@@ -38,7 +38,7 @@ Imports KBot.Controls
 ' All controls are declared HERE (docs/kbot-forms-ui-convention.md).
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfEditSectiuneaAPage
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -313,9 +313,9 @@ Partial Class DdfEditSectiuneaAPage
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents tlyRoot As TableLayoutPanel
-    Friend WithEvents grd As KBot.Controls.KBotDataView
+    Friend WithEvents grd As Global.KBot.Controls.KBotDataView
     Friend WithEvents tlyButoane As TableLayoutPanel
     Friend WithEvents btnAdauga As Button
     Friend WithEvents btnSterge As Button

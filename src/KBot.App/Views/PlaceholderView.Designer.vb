@@ -2,7 +2,7 @@ Imports KBot.Controls
 
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class PlaceholderView
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -52,5 +52,5 @@ Partial Class PlaceholderView
     End Sub
 
     Friend WithEvents lblMessage As Label
-    Friend WithEvents busy As KBot.Controls.KBotBusyBar
+    Friend WithEvents busy As Global.KBot.Controls.KBotBusyBar
 End Class

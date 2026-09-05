@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class IstoricView
-    Inherits KBot.Theming.KBotThemedUserControl
+    Inherits Global.KBot.Theming.KBotThemedUserControl
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -16,13 +16,13 @@ Partial Class IstoricView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim KBotDataColumn1 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn2 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn3 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn4 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn5 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        Dim KBotDataColumn6 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        tips = New KBot.Controls.KBotToolTip(components)
+        Dim KBotDataColumn1 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn2 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn3 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn4 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn5 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn6 As Global.KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        tips = New Global.KBot.Controls.KBotToolTip(components)
         btnFiltruClsf = New Button()
         btnFiltruTipRand = New Button()
         btnFiltruData = New Button()
@@ -144,7 +144,7 @@ Partial Class IstoricView
         tree.FooterCaption = "Perioade"
         tree.FooterCaptionFont = New Font("Consolas", 8F, FontStyle.Bold)
         tree.FooterCollapseButton = True
-        tree.FooterCollapseButtonPosition = KBot.Controls.AdvancedTreeControl.En_FooterButtonPosition.Left
+        tree.FooterCollapseButtonPosition = Global.KBot.Controls.AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
         tree.FooterHeight = 40
@@ -153,7 +153,7 @@ Partial Class IstoricView
         tree.FooterRightIconTooltip = "Reîncarcă istoricul angajamentului de la server."
         tree.FooterTextAlign = ContentAlignment.MiddleRight
         tree.HeaderBackColor = SystemColors.Control
-        tree.HeaderBackStyle = KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
+        tree.HeaderBackStyle = Global.KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " ISTORIC"
         tree.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         tree.HeaderForeColor = SystemColors.ActiveCaptionText
@@ -203,12 +203,12 @@ Partial Class IstoricView
         ' grid
         ' 
         grid.AlternatingRows = False
-        grid.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        grid.AutoSizeColumnsMode = Global.KBot.Controls.KBotAutoSizeMode.None
         grid.BackColor = SystemColors.Window
         grid.BorderColor = SystemColors.ActiveBorder
-        grid.ColumnFillMode = KBot.Controls.KBotFillMode.LastColumn
+        grid.ColumnFillMode = Global.KBot.Controls.KBotFillMode.LastColumn
         KBotDataColumn1.AggregateFormatString = Nothing
-        KBotDataColumn1.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
+        KBotDataColumn1.AutoSizeMode = Global.KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
@@ -223,7 +223,7 @@ Partial Class IstoricView
         KBotDataColumn1.TextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Width = 130
         KBotDataColumn2.AggregateFormatString = Nothing
-        KBotDataColumn2.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
+        KBotDataColumn2.AutoSizeMode = Global.KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn2.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
@@ -235,7 +235,7 @@ Partial Class IstoricView
         KBotDataColumn2.ShowColumnFilter = True
         KBotDataColumn2.Width = 110
         KBotDataColumn3.AggregateFormatString = Nothing
-        KBotDataColumn3.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
+        KBotDataColumn3.AutoSizeMode = Global.KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn3.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
@@ -245,10 +245,10 @@ Partial Class IstoricView
         KBotDataColumn3.OptionGroup = Nothing
         KBotDataColumn3.ReadOnly = True
         KBotDataColumn3.TextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn3.ValueType = KBot.Controls.KBotValueType.DateTime
+        KBotDataColumn3.ValueType = Global.KBot.Controls.KBotValueType.DateTime
         KBotDataColumn3.Width = 85
         KBotDataColumn4.AggregateFormatString = Nothing
-        KBotDataColumn4.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
+        KBotDataColumn4.AutoSizeMode = Global.KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn4.HeaderText = "Descriere"
@@ -343,14 +343,14 @@ Partial Class IstoricView
         ' gridValori
         ' 
         gridValori.AlternatingRows = False
-        gridValori.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        gridValori.AutoSizeColumnsMode = Global.KBot.Controls.KBotAutoSizeMode.None
         gridValori.AutoSizeHeaderHeight = False
         gridValori.BackColor = SystemColors.Window
         gridValori.BorderColor = SystemColors.ActiveBorder
         gridValori.CellTooltip.Enabled = False
-        gridValori.ColumnFillMode = KBot.Controls.KBotFillMode.FirstColumn
+        gridValori.ColumnFillMode = Global.KBot.Controls.KBotFillMode.FirstColumn
         KBotDataColumn5.AggregateFormatString = Nothing
-        KBotDataColumn5.AutoSizeMode = KBot.Controls.KBotAutoSizeMode.None
+        KBotDataColumn5.AutoSizeMode = Global.KBot.Controls.KBotAutoSizeMode.None
         KBotDataColumn5.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = "TIP"
@@ -362,7 +362,7 @@ Partial Class IstoricView
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn6.DecimalPlaces = 2
-        KBotDataColumn6.Format = KBot.Controls.KBotFormat.Standard
+        KBotDataColumn6.Format = Global.KBot.Controls.KBotFormat.Standard
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderText = "Valoare"
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -370,7 +370,7 @@ Partial Class IstoricView
         KBotDataColumn6.OptionGroup = Nothing
         KBotDataColumn6.Resizable = False
         KBotDataColumn6.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn6.ValueType = KBot.Controls.KBotValueType.Number
+        KBotDataColumn6.ValueType = Global.KBot.Controls.KBotValueType.Number
         KBotDataColumn6.Width = 90
         gridValori.Columns.Add(KBotDataColumn5)
         gridValori.Columns.Add(KBotDataColumn6)
@@ -492,16 +492,16 @@ Partial Class IstoricView
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents splitTree As SplitContainer
-    Friend WithEvents tree As KBot.Controls.AdvancedTreeControl
+    Friend WithEvents tree As Global.KBot.Controls.AdvancedTreeControl
     Friend WithEvents split As SplitContainer
-    Friend WithEvents grid As KBot.Controls.KBotDataView
+    Friend WithEvents grid As Global.KBot.Controls.KBotDataView
     Friend WithEvents pnlDetaliu As Panel
     Friend WithEvents detailTable As TableLayoutPanel
-    Friend WithEvents lblCapDescriere As KBot.Controls.KBotLabel
-    Friend WithEvents txtDescriere As KBot.Controls.KBotTextBox
-    Friend WithEvents gridValori As KBot.Controls.KBotDataView
+    Friend WithEvents lblCapDescriere As Global.KBot.Controls.KBotLabel
+    Friend WithEvents txtDescriere As Global.KBot.Controls.KBotTextBox
+    Friend WithEvents gridValori As Global.KBot.Controls.KBotDataView
     Friend WithEvents pnlFiltre As Panel
     Friend WithEvents btnFiltruTipRand As Button
     Friend WithEvents btnFiltruData As Button

@@ -1,6 +1,6 @@
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class ForexeConsoleForm
-    Inherits KBot.Theming.KBotShellForm
+    Inherits Global.KBot.Theming.KBotShellForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
@@ -16,7 +16,7 @@ Partial Class ForexeConsoleForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New KBot.Controls.KBotToolTip(components)
+        tips = New Global.KBot.Controls.KBotToolTip(components)
         btnAnulare = New Button()
         btnAfiseazaBrowser = New Button()
         btnAfiseazaLog = New Button()
@@ -198,12 +198,12 @@ Partial Class ForexeConsoleForm
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As KBot.Controls.KBotToolTip
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
-    Friend WithEvents capBar As KBot.Controls.KBotCaptionBar
+    Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents rtbLog As RichTextBox
     Friend WithEvents pnlStare As Panel
-    Friend WithEvents pbProgress As KBot.Controls.KBotProgressBar
+    Friend WithEvents pbProgress As Global.KBot.Controls.KBotProgressBar
     Friend WithEvents lblCert As Label
     Friend WithEvents lblStatus As Label
     Friend WithEvents pnlFoot As Panel
