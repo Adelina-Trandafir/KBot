@@ -86,6 +86,11 @@ Partial Public Class WorkflowExecutor
 
     Public Async Function HideBrowserWindowAsync() As Task
         If _page Is Nothing Then Return
+        ' While docked the browser must stay over the host panel (see WorkflowExecutor.Docking.vb).
+        If _isDocked Then
+            _logger.LogWarning("Browserul este andocat: ascunderea ferestrei a fost ignorată.")
+            Return
+        End If
 
         Dim hwnd = Await GetOrRefreshBrowserHwndAsync()
         If hwnd = IntPtr.Zero Then Return
@@ -143,6 +148,11 @@ Partial Public Class WorkflowExecutor
 
     Public Async Function ShowBrowserWindowAsync() As Task
         If _page Is Nothing Then Return
+        ' While docked the browser must stay over the host panel (see WorkflowExecutor.Docking.vb).
+        If _isDocked Then
+            _logger.LogWarning("Browserul este andocat: repoziționarea ferestrei a fost ignorată.")
+            Return
+        End If
 
         Dim hwnd = Await GetOrRefreshBrowserHwndAsync()
         If hwnd = IntPtr.Zero Then Return
