@@ -518,6 +518,13 @@ Public NotInheritable Class PostPrelucrareDecizie
     ' stergere, si NICIUNA pentru ignorat. Un Integer nenulabil ar trimite 0, iar 0 ar fi
     ' citit ca «receptia zero», nu ca «niciuna».
     Public Property idrr As Integer?
+    ' A treia tinta, si singura care poate numi o recepție NASCUTA de rularea curenta:
+    ' indicele randului ei in `ListaReceptii`. `IDRR`-ul dat in faza de propunere nu
+    ' supravietuieste derularii inapoi (contorul AUTO_INCREMENT nu se deruleaza cu
+    ' tranzactia), deci nu are voie sa fie numele purtat de decizie. Nullable din acelasi
+    ' motiv ca `idrr` — indicele ZERO e un rand adevarat, deci santinela trebuie sa fie
+    ' absenta, nu o valoare.
+    Public Property rand_receptie As Integer?
     Public Property receptie_noua As String
 End Class
 
@@ -528,6 +535,11 @@ Public NotInheritable Class PostPropunereResponse
     Public Property amprenta As String
     Public Property receptii As New List(Of PostPropunereReceptie)()
     Public Property instantanee As New List(Of PostPropunereInstantaneu)()
+    ' CONTEXTUL (felia 0056): restul instantaneelor angajamentului si platile lui. Aceleasi
+    ' DTO-uri ca ale editorului de oricand, fiindca serverul le trimite in aceeasi forma —
+    ' o a doua copie ar aluneca fata de prima fara sa se vada.
+    Public Property instantanee_asezate As New List(Of GetAsociereInstantaneu)()
+    Public Property plati As New List(Of GetAsocierePlata)()
     Public Property are As New Dictionary(Of String, Boolean)()
     Public Property scrise As New Dictionary(Of String, Integer)()
     Public Property avertismente As New List(Of String)()
@@ -543,6 +555,10 @@ Public NotInheritable Class PostPropunereReceptie
     ' F28 — al treilea steag, distinct de celelalte doua. Serverul il trimite din
     ' `citeste_receptii`, folosit de amandoua rutele.
     Public Property reconstituit_nesigur As Boolean
+    ' Indicele randului in `ListaReceptii`, si NUMAI pentru recepțiile nascute de rularea
+    ' curenta; null pentru toate celelalte, si null pe toata linia in raspunsul editorului
+    ' de oricand (acolo nu exista sarcina utila si fiecare IDRR e deja real).
+    Public Property rand_receptie As Integer?
     Public Property rhr As New List(Of PostPropunereLinieR)()
 End Class
 

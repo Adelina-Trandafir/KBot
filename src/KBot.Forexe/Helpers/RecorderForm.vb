@@ -9,10 +9,10 @@ Imports WorkflowModels
 ' =============================================================================
 '  RecorderForm - the K-BOT recorder bench.
 '
-'  The browser is not reparented into pnlBrowser: WorkflowExecutor.Docking.vb only
-'  keeps the real Chromium window over that panel and just above this form in the
-'  z-order. That is why the form is never TopMost - a TopMost form would sit on top
-'  of the very window it is supposed to frame.
+'  The browser is reparented INTO pnlBrowser (WorkflowExecutor.Docking.vb): while docked
+'  the Chromium window is a child control of that panel, so it moves and clips with the
+'  form and cannot fall behind it. It also dies with the panel, which is why FormClosing
+'  undocks before anything else is disposed.
 '
 '  Every operator edit (a different candidate, a per step WaitFor, a deletion, a
 '  reorder, a global option) regenerates the preview through RecorderCompactor and
@@ -23,6 +23,9 @@ Imports WorkflowModels
 Public Class RecorderForm
 
     Private _executor As WorkflowExecutor = Nothing
+    ' The Wicket monitor window. Its own FormClosing hides instead of closing, so it is
+    ' created once and only ever disposed from here.
+    Private _monitor As WicketMonitorForm = Nothing
     Private ReadOnly _steps As New List(Of RecordedStep)
     Private _updatingDetail As Boolean = False
     Private _closingDown As Boolean = False
@@ -157,13 +160,17 @@ Public Class RecorderForm
         _executor = executor
         If executor Is Nothing Then Return
         AddHandler executor.OnRecordedStep, AddressOf HandleRecordedStep
+        ' The monitor window listens to the same executor - it must follow the swap.
+        _monitor?.AttachExecutor(executor)
         UpdateButtons()
     End Sub
 
     Public Sub DetachExecutor()
         If _executor Is Nothing Then Return
         RemoveHandler _executor.OnRecordedStep, AddressOf HandleRecordedStep
+        _monitor?.DetachExecutor()
         _executor = Nothing
+        UpdateButtons()
     End Sub
 
     ' =========================================================================
@@ -303,6 +310,41 @@ Public Class RecorderForm
             RefreshPreview()
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.BtnCurata_Click", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Opens the Wicket monitor beside the recorder. The monitor is fed by
+    ''' OnWicketStateChange, so the executor side monitor has to be running first -
+    ''' otherwise the window would sit there empty and look broken.
+    ''' </summary>
+    Private Async Sub BtnMonitor_Click(sender As Object, e As EventArgs) Handles btnMonitor.Click
+        Try
+            If _executor Is Nothing Then
+                MsgBox("Nu există o sesiune de browser atașată.", MsgBoxStyle.Exclamation, "K-BOT Recorder")
+                Return
+            End If
+
+            If Not _executor.WicketMonitoringActive Then
+                Await _executor.StartWicketMonitoringAsync()
+            End If
+
+            If _monitor Is Nothing OrElse _monitor.IsDisposed Then
+                _monitor = New WicketMonitorForm()
+                _monitor.AttachExecutor(_executor)
+            End If
+
+            If _monitor.Visible Then
+                If _monitor.WindowState = FormWindowState.Minimized Then
+                    _monitor.WindowState = FormWindowState.Normal
+                End If
+                _monitor.Activate()
+            Else
+                _monitor.Show(Me)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("RecorderForm.BtnMonitor_Click", ex)
+            MsgBox(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
         End Try
     End Sub
 
@@ -544,6 +586,7 @@ Public Class RecorderForm
     End Sub
 
     Private Sub UpdateButtons()
+        If Me.IsDisposed Then Return
         Dim hasExecutor As Boolean = _executor IsNot Nothing
         Dim docked As Boolean = hasExecutor AndAlso _executor.IsDocked
         Dim recording As Boolean = hasExecutor AndAlso _executor.RecordingActive
@@ -553,6 +596,8 @@ Public Class RecorderForm
         btnResincronizeaza.Enabled = docked
         btnPornesteInreg.Enabled = docked AndAlso Not recording
         btnOpresteInreg.Enabled = recording
+        ' The monitor only needs a live executor - it works undocked too.
+        btnMonitor.Enabled = hasExecutor
     End Sub
 
     ' =========================================================================
@@ -578,7 +623,10 @@ Public Class RecorderForm
     ''' <summary>Debounce: a drag fires hundreds of events, CDP must not see them all.</summary>
     Private Sub ScheduleResync()
         Try
-            If _executor Is Nothing OrElse Not _executor.IsDocked Then Return
+            If _executor Is Nothing Then Return
+            ' Undocked the timer still has work to do - it pushes the browser back above this
+            ' form. Only a session with no browser at all leaves it idle.
+            If Not _executor.IsDocked AndAlso Not _executor.IsBrowserOpen Then Return
             tmrResync.Stop()
             tmrResync.Start()
         Catch ex As Exception
@@ -589,8 +637,14 @@ Public Class RecorderForm
     Private Async Sub TmrResync_Tick(sender As Object, e As EventArgs) Handles tmrResync.Tick
         tmrResync.Stop()
         Try
-            If _executor Is Nothing OrElse Not _executor.IsDocked Then Return
-            Await _executor.SyncDockedBoundsAsync()
+            If _executor Is Nothing Then Return
+            If _executor.IsDocked Then
+                Await _executor.SyncDockedBoundsAsync()
+            ElseIf _executor.IsBrowserOpen Then
+                ' Not docked, so nothing moves the browser - but activating this form would
+                ' bury it. Put it back just above us, without stealing the focus.
+                Await _executor.RaiseBrowserAboveAsync(Me)
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.TmrResync_Tick", ex)
         End Try
@@ -629,6 +683,12 @@ Public Class RecorderForm
                 GlobalErrorLog.Write("RecorderForm.Dispose", ex)
             End Try
             DetachExecutor()
+            ' The monitor cancels a user close and hides instead, so nothing but this
+            ' disposes it. Dispose bypasses FormClosing, which is exactly what is wanted.
+            If _monitor IsNot Nothing Then
+                _monitor.Dispose()
+                _monitor = Nothing
+            End If
             If _themeHooked Then
                 RemoveHandler ThemeManager.ThemeChanged, AddressOf HandleThemeChanged
                 _themeHooked = False

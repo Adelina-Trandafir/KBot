@@ -240,6 +240,20 @@ def motive_blocare(rand: dict) -> list:
     return motive
 
 
+def citeste_plati(cursor, cod: str) -> list:
+    """
+    Platile angajamentului, contextul in care se citeste orice lant.
+
+    Publica fiindca o cheama SI ingestia (routes/forexe/prelucrare.py): reperele de plata
+    sunt chiar rostul asezarii -- §1.3 din fundament, fiecare ordonantare citeste totalul
+    receptiei ASA CUM STATEA la data platii -- deci ele trebuie sa fie pe ecran cand se
+    aseaza, nu abia dupa.
+    """
+    cursor.execute(_PLATI_SQL, (cod,))
+    return [{"data_plata": r["Data_plata"], "suma": float(r["Suma"] or 0),
+             "nr_op": r["NrOP"] or ""} for r in cursor.fetchall()]
+
+
 def citeste_blocaje(cursor, cod: str) -> dict:
     """{IDRH: [motiv, ...]} pentru instantaneele asociate ale angajamentului."""
     cursor.execute(_BLOCAJE_SQL, (cod,))
@@ -597,9 +611,7 @@ def get_asociere():
         blocaje = citeste_blocaje(cursor, cod)
         instantanee = citeste_instantanee(cursor, cod, blocaje)
 
-        cursor.execute(_PLATI_SQL, (cod,))
-        plati = [{"data_plata": r["Data_plata"], "suma": float(r["Suma"] or 0),
-                  "nr_op": r["NrOP"] or ""} for r in cursor.fetchall()]
+        plati = citeste_plati(cursor, cod)
 
         logger.info(
             "[forexe.asociere] %s: cod=%s -> %s recepții, %s instantanee "

@@ -2,6 +2,7 @@ Imports System
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Threading
 Imports System.Threading.Tasks
+Imports System.Windows.Forms
 
 Namespace KBot.Forexe
     ' Semnătura A3 (decizia #3): certificatul ales de utilizator este injectat în RunAsync.
@@ -38,5 +39,10 @@ Namespace KBot.Forexe
 
         ' Browserul e la vedere acum? (pentru butonul care comută)
         ReadOnly Property IsBrowserVisible As Boolean
+
+        ' Deschide bancul de înregistrare (felia 0053) peste sesiunea vie. Formularul
+        ' trăiește în KBot.Forexe fiindcă are nevoie de WorkflowExecutor, care rămâne
+        ' privat în runner; gazdele cer doar «arată-l», nu executorul.
+        Sub ShowRecorder(owner As IWin32Window)
     End Interface
 End Namespace

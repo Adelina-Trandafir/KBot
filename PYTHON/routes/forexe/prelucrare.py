@@ -106,11 +106,16 @@ from .prelucrare_asociere import (
     amprenta,
     aplica_decizii,
     citeste_instantanee,
+    citeste_instantanee_context,
     citeste_receptii,
     marcheaza_reconstituirile_nesigure,
     normalizeaza_decizii,
     pas4c_automat,
 )
+# Din ruta VECINA, nu invers: `asociere.py` importa deja din `prelucrare_asociere`, deci
+# regulile de blocare si platile stau acolo, iar aici se imprumuta. Nu se face ciclu --
+# `asociere.py` nu importa fisierul asta.
+from .asociere import citeste_blocaje, citeste_plati
 
 logger = logging.getLogger(__name__)
 
@@ -368,7 +373,11 @@ def _ruleaza_pasii(cursor, cod, scalari, tabele, db_name, un, supplied, warnings
     Nu stie in ce faza e. Singurul lucru care difera intre faze -- pasul 4c -- se
     intampla la apelant, dupa ce functia asta se termina.
 
-    Intoarce (scrise, are, index_la_id).
+    Intoarce (scrise, are, index_la_id, ancore_receptii).
+
+    `ancore_receptii` = {indice in ListaReceptii -> IDRR} pentru receptiile NASCUTE in
+    rularea asta. Numele lor de pe fir, fiindca `IDRR`-ul lor nu supravietuieste
+    derularii inapoi a propunerii -- vezi `step4b_receptii_prelucrare`.
     """
     scrise = {}
     are = {}
@@ -423,8 +432,8 @@ def _ruleaza_pasii(cursor, cod, scalari, tabele, db_name, un, supplied, warnings
     randuri_receptii = tabele.get(TABLE_RECEPTII) or []
     if not isinstance(randuri_receptii, list):
         raise ValueError(f"«{TABLE_RECEPTII}» trebuie să fie o listă.")
-    r_scrise, rhr_scrise = step4b_receptii_prelucrare(cursor, cod, randuri_receptii,
-                                                      indicatori)
+    r_scrise, rhr_scrise, ancore_receptii = step4b_receptii_prelucrare(
+        cursor, cod, randuri_receptii, indicatori)
     scrise["FX_Receptii_R"] = r_scrise
     scrise["FX_Receptii_RHR"] = rhr_scrise
     are["Receptii"] = (r_scrise + rhr_scrise) > 0
@@ -447,7 +456,7 @@ def _ruleaza_pasii(cursor, cod, scalari, tabele, db_name, un, supplied, warnings
     # filtrul `CodAI IS NULL` face ca fiecare trecere sa recupereze tot restantul.
     scrise["FX_Extrase"] = step8_actualizeaza_extrase(cursor)
 
-    return scrise, are, index_la_id
+    return scrise, are, index_la_id, ancore_receptii
 
 
 def _pas4d_pe_receptiile_atinse(cursor, cod: str) -> None:
@@ -537,10 +546,10 @@ def post_prelucrare():
                 "cod": cod,
             }, 409)
 
-        scrise, are, index_la_id = _ruleaza_pasii(
+        scrise, are, index_la_id, ancore_receptii = _ruleaza_pasii(
             cursor, cod, scalari, tabele, db_name, un, supplied, warnings)
 
-        receptii = citeste_receptii(cursor, cod)
+        receptii = citeste_receptii(cursor, cod, ancore_receptii)
         instantanee = citeste_instantanee(cursor, cod, index_la_id, warnings)
 
         if mod == MOD_PROPUNERE:
@@ -566,6 +575,15 @@ def post_prelucrare():
             # in tabloul de decizii ar cere un raspuns care nu i se cere.
             scrise_propuse = {k: v for k, v in scrise.items() if k != "FX_Extrase"}
 
+            # CONTEXTUL: restul instantaneelor angajamentului si platile lui. Nu se
+            # decide nimic despre ele -- se ARATA. Vezi
+            # `citeste_instantanee_context`: fara ele o receptie al carei lant e deja
+            # legat ajunge pe ecran goala, iar formularul nu vede lantul intreg pe care
+            # serverul isi da deja vetourile F15 / F16.
+            context = citeste_instantanee_context(
+                cursor, cod, {i["idrh"] for i in instantanee},
+                citeste_blocaje(cursor, cod))
+
             corp = {
                 "cod": cod,
                 "faza": MOD_PROPUNERE,
@@ -573,6 +591,8 @@ def post_prelucrare():
                 "receptii": [
                     {k: v for k, v in r.items() if k != "nr_crt"} for r in receptii
                 ],
+                "instantanee_asezate": context,
+                "plati": citeste_plati(cursor, cod),
                 "instantanee": [{
                     "rand_istoric": i["rand_istoric"],
                     "data_h": i["data_h"],
@@ -594,7 +614,8 @@ def post_prelucrare():
             return _json_utf8(corp, 200)
 
         # --- PASUL 4c, FAZA DOI: se aplica deciziile, se ignora automatul ------
-        numarat = aplica_decizii(cursor, cod, decizii, instantanee, receptii, warnings)
+        numarat = aplica_decizii(cursor, cod, decizii, instantanee, receptii, warnings,
+                                 ancore_receptii)
         scrise["asocieri"] = numarat
 
         # F28: doua sau mai multe reconstituiri pe acelasi angajament fac gruparea

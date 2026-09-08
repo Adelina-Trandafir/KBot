@@ -59,6 +59,97 @@ Public NotInheritable Class AsociereStare
         Next
         Return Nothing
     End Function
+
+    ''' <summary>
+    ''' Propunerea unei descărcări, adusă la forma pe care o citește editorul (felia 0055).
+    '''
+    ''' <para><b>De ce se convertește în loc să se scrie a doua oară același ecran.</b> Cele
+    ''' două tablouri descriu ACEEAȘI treabă — care instantaneu ține de care recepție — și
+    ''' diferă doar prin ancoră și prin cine le-a propus. Un al doilea formular ar fi însemnat
+    ''' două desene ale aceleiași hotărâri, care alunecă unul față de altul, și două locuri de
+    ''' învățat pentru operator.</para>
+    '''
+    ''' <para><b>Ancora călătorește ca <see cref="InstantaneuLegat.Idrh"/>, dar NU este un
+    ''' IDRH.</b> În propunere fiecare instantaneu e ancorat pe INDICELE rândului lui în
+    ''' <c>TabelIstoric</c> (F24): id-urile atribuite în faza întâi dispar la derularea înapoi
+    ''' și nu se întorc identice. Indicele intră aici în locul cheii fiindcă editorul are
+    ''' nevoie doar de un număr STABIL pe care să-și țină dicționarele, iar la salvare el
+    ''' pleacă înapoi ca <c>rand_istoric</c>, exact de unde a venit. Cele două numere nu se
+    ''' amestecă niciodată: un tablou vine sau dintr-o propunere, sau din bază, niciodată din
+    ''' amândouă.</para>
+    '''
+    ''' <para><see cref="InstantaneuLegat.Idrr"/> primește SUGESTIA automată a serverului, ca
+    ''' operatorul să vadă unde ar cădea rândul dacă n-ar face nimic — se ARATĂ ca sugestie,
+    ''' nu ca fapt (F18), fiindcă trecerea automată poate fi și greșită, nu doar incompletă.
+    ''' <see cref="InstantaneuLegat.Blocat"/> rămâne False: nimic nu e încă scris, deci nimic
+    ''' nu poate fi înghețat de o ordonanțare.</para>
+    '''
+    ''' <para><b>CONTEXTUL vine si el, si e o schimbare din 08.09.2026.</b> Pana atunci
+    ''' tabloul propunerii continea DOAR randurile de asezat, deci o recepție al carei lanț
+    ''' era deja legat sosea aici goală: fără linie în grafic (graficul sare peste lanțurile
+    ''' de lungime zero), fără marcaje pe bandă, fără nimic sub ea în arbore. De la locul
+    ''' operatorului, «recepțiile vechi nu mai vin». Erau acolo; povestea lor nu era.
+    ''' <see cref="PrelucrarePropunere.InstantaneeAsezate"/> aduce restul, iar
+    ''' <see cref="PrelucrarePropunere.Plati"/> aduce reperele de plată — §1.3, chiar miza
+    ''' așezării.</para>
+    '''
+    ''' <para><b>Cheile lor sunt NEGATIVE, și de-asta.</b> Un rând de decis e ancorat pe
+    ''' indicele lui (0, 1, 2…), unul de context pe <c>IDRH</c>, cheia reală — două
+    ''' numerotări din spații diferite, care ar avea toate șansele să se ciocnească în
+    ''' <c>_pozitie</c> și în dicționarele de rânduri. Se păstrează deci ca <c>-IDRH</c>:
+    ''' negarea e reversibilă (<c>IDRH</c> pornește de la 1), nu poate atinge un indice, și
+    ''' spune dintr-o privire că rândul nu poartă o hotărâre. Nimic nu le trimite înapoi —
+    ''' toate sunt <see cref="InstantaneuLegat.Blocat"/>, iar formularul nu construiește
+    ''' decizii din rânduri blocate.</para>
+    ''' </summary>
+    Public Shared Function DinPropunere(propunere As PrelucrarePropunere) As AsociereStare
+        If propunere Is Nothing Then Throw New ArgumentNullException(NameOf(propunere))
+
+        Dim stare As New AsociereStare() With {
+            .CodAngajament = propunere.CodAngajament,
+            .Amprenta = propunere.Amprenta
+        }
+        stare.Receptii.AddRange(propunere.Receptii)
+        stare.Plati.AddRange(propunere.Plati)
+
+        For Each p As InstantaneuPropus In propunere.Instantanee
+            Dim legat As New InstantaneuLegat() With {
+                .Idrh = p.RandIstoric,
+                .Idrr = p.SugestieIdrr,
+                .Idh = 0,
+                .DataH = p.DataH,
+                .Descriere = p.Descriere,
+                .Total = p.Total,
+                .Stergere = p.Stergere,
+                .Ignorat = False,
+                .Blocat = False
+            }
+            legat.Linii.AddRange(p.Linii)
+            stare.Instantanee.Add(legat)
+        Next
+
+        ' `Blocat = True` fara exceptie, si nu e o parere a clientului: acoperirea ceruta de
+        ' server e exact multimea de decis, iar o decizie pentru un rand din afara ei e
+        ' respinsa cu 400. Corectarea unei legaturi vechi ramane treaba editorului de oricand.
+        For Each c As InstantaneuLegat In propunere.InstantaneeAsezate
+            Dim legat As New InstantaneuLegat() With {
+                .Idrh = -c.Idrh,
+                .Idrr = c.Idrr,
+                .Idh = c.Idh,
+                .DataH = c.DataH,
+                .Descriere = c.Descriere,
+                .Total = c.Total,
+                .TipReceptie = c.TipReceptie,
+                .Stergere = c.Stergere,
+                .Ignorat = c.Ignorat,
+                .Blocat = True
+            }
+            legat.Motive.AddRange(c.Motive)
+            legat.Linii.AddRange(c.Linii)
+            stare.Instantanee.Add(legat)
+        Next
+        Return stare
+    End Function
 End Class
 
 ''' <summary>
@@ -101,6 +192,10 @@ Public NotInheritable Class InstantaneuLegat
     ''' Legatura nu mai poate fi modificata, dar RAMANE VIZIBILA. Adevarat doar pentru un
     ''' instantaneu care are deja o recepție: unul neasezat nu are legatura, deci nu are
     ''' ce sa fie blocat.
+    '''
+    ''' <para>EXCEPTIE, in modul propunere: acolo TOT contextul e blocat, si randurile
+    ''' neasezate care nu si-au gasit randul de istoric in descarcarea asta. Vezi
+    ''' <see cref="AsociereStare.DinPropunere"/>.</para>
     ''' </summary>
     Public Property Blocat As Boolean
 

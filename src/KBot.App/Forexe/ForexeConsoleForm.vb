@@ -122,6 +122,8 @@ Public Class ForexeConsoleForm
 
         btnAnulare.Enabled = ocupat
         btnAfiseazaBrowser.Enabled = conectat
+        ' Recorderul andochează browserul sesiunii: fără sesiune n-are ce înregistra.
+        btnRecorder.Enabled = conectat
         ' Eticheta spune ce FACE apăsarea, nu ce se vede acum.
         btnAfiseazaBrowser.Text = If(conectat AndAlso _controller.IsBrowserVisible,
                                      "Ascunde browserul", "Arată browserul")
@@ -156,6 +158,26 @@ Public Class ForexeConsoleForm
             ' Frontieră de UI (async Sub): nu poate rearunca — logăm și spunem de ce.
             GlobalErrorLog.Write("ForexeConsoleForm.btnAfiseazaBrowser_Click", ex)
             MessageBox.Show(Me, "Browserul nu a putut fi adus în față: " & ex.Message, "Consolă FOREXE",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Deschide bancul de înregistrare peste sesiunea FOREXE. Fereastra e modeless și
+    ''' o ține runner-ul, nu consola: o consolă ascunsă nu are voie să închidă recorderul.
+    ''' </summary>
+    Private Sub BtnRecorder_Click(sender As Object, e As EventArgs) Handles btnRecorder.Click
+        Try
+            If _controller Is Nothing Then Return
+            If Not _controller.IsConnected Then
+                MessageBox.Show(Me, "Recorderul are nevoie de o sesiune FOREXE activă. Conectează-te întâi.",
+                                "Consolă FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            _controller.ShowRecorder()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeConsoleForm.btnRecorder_Click", ex)
+            MessageBox.Show(Me, "Recorderul nu a putut fi deschis: " & ex.Message, "Consolă FOREXE",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
@@ -216,6 +238,7 @@ Public Class ForexeConsoleForm
             ButtonStyles.ApplyPrimary(btnAnulare, schema)
             ButtonStyles.ApplySecondary(btnAfiseazaBrowser, schema)
             ButtonStyles.ApplySecondary(btnAfiseazaLog, schema)
+            ButtonStyles.ApplySecondary(btnRecorder, schema)
         Catch ex As Exception
             ' Frontieră de UI (cascada de temă/paint): logăm și înghițim.
             GlobalErrorLog.Write("ForexeConsoleForm.OnThemeChanged", ex)

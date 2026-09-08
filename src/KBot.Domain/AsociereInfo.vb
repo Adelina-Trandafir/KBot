@@ -103,6 +103,36 @@ Public NotInheritable Class PrelucrarePropunere
     ''' </summary>
     Public Property Instantanee As New List(Of InstantaneuPropus)
 
+    ''' <summary>
+    ''' RESTUL instantaneelor angajamentului: cele deja legate si cele marcate «fara nicio
+    ''' schimbare». CONTEXT — se arata, nu se decid, si toate vin cu
+    ''' <see cref="InstantaneuLegat.Blocat"/> pus.
+    '''
+    ''' <para><b>De ce sunt aici</b> (08.09.2026). Fara ele, o recepție al carei lant era
+    ''' deja legat sosea pe ecran goala: nicio linie in grafic, niciun marcaj pe banda,
+    ''' nimic sub ea in arbore. Vazut de la locul operatorului, «recepțiile vechi nu mai
+    ''' vin». Erau acolo; povestea lor nu era. Si nu e doar aspect: serverul isi da deja
+    ''' vetourile F15 / F16 pe lantul INTREG, deci pana acum formularul era singurul care
+    ''' nu vedea ce vede vetoul.</para>
+    '''
+    ''' <para>Ancora lor e <c>IDRH</c>, cheia reala — nu un indice de rand. Nu se ciocnesc
+    ''' cu indicii din <see cref="Instantanee"/> fiindca nu ajung niciodata in aceleasi
+    ''' dictionare cu ei; vezi <c>AsociereStare.DinPropunere</c>, care le da chei negative
+    ''' tocmai pentru asta.</para>
+    ''' </summary>
+    Public Property InstantaneeAsezate As New List(Of InstantaneuLegat)
+
+    ''' <summary>
+    ''' Plățile angajamentului, contextul in care se citeste orice lant.
+    '''
+    ''' <para>§1.3 din fundament: fiecare ordonanțare citeste totalul recepției AȘA CUM
+    ''' STĂTEA la data plății. Partea pe care cade un instantaneu față de o plată nu e un
+    ''' amănunt de aspect — e diferența dintre o cifră corectă și una greșită, tăcut și
+    ''' pentru totdeauna (F12). Deci reperele trebuie sa fie pe ecran CAND se așază, nu
+    ''' abia după.</para>
+    ''' </summary>
+    Public Property Plati As New List(Of PlataAsociere)
+
     ''' <summary>Steagurile <c>FX_Angajament_Are</c>, per pas.</summary>
     Public Property Are As New Dictionary(Of String, Boolean)
 
@@ -116,6 +146,24 @@ End Class
 ''' <summary>O receptie asa cum sta acum, cu liniile ei pe indicator. POCO.</summary>
 Public NotInheritable Class ReceptiePropusa
     Public Property Idrr As Integer
+
+    ''' <summary>
+    ''' INDICELE randului ei in <c>ListaReceptii</c>, si NUMAI daca receptia s-a nascut in
+    ''' rularea curenta. Nothing pentru toate celelalte.
+    '''
+    ''' <para><b>De ce exista</b> (08.09.2026, dupa prima rulare adevarata). Faza intai
+    ''' deruleaza tranzactia inapoi neconditionat, dar contorul AUTO_INCREMENT NU se
+    ''' deruleaza cu ea: o recepție nascuta in propunere primeste ALT <c>IDRR</c> la
+    ''' salvare. O decizie care o numea prin <see cref="Idrr"/> cadea deci cu «Recepția N
+    ''' nu există pe acest angajament» — si asa a si cazut. Indicele e stabil prin
+    ''' constructie, fiindca amandoua fazele poarta acelasi payload; acelasi rationament ca
+    ''' <see cref="InstantaneuPropus.RandIstoric"/> (F24).</para>
+    '''
+    ''' <para><see cref="Idrr"/> RAMANE, si ramane cheia pe care formularul isi tine
+    ''' dictionarele: e unica in tabloul primit. Doar ca, pentru recepțiile astea, nu e un
+    ''' nume care se poate trimite inapoi.</para>
+    ''' </summary>
+    Public Property RandReceptie As Integer?
     ''' <summary>Data CREARII recepției. Nu are nimic de-a face cu <c>DataH</c> (F6).</summary>
     Public Property DataR As Date
     Public Property SumaAntet As Double
@@ -229,6 +277,13 @@ Public NotInheritable Class DecizieAsociere
 
     ''' <summary>Receptia existenta pe care se aseaza. 0 = niciuna.</summary>
     Public Property Idrr As Integer
+
+    ''' <summary>
+    ''' Indicele randului in <c>ListaReceptii</c> al unei recepții NASCUTE de rularea
+    ''' curenta. Nothing = niciuna. Vezi <see cref="ReceptiePropusa.RandReceptie"/>: pentru
+    ''' recepțiile astea <see cref="Idrr"/> nu supravietuieste pana la salvare.
+    ''' </summary>
+    Public Property RandReceptie As Integer?
 
     ''' <summary>Eticheta unei recepții reconstituite. Nothing = niciuna.</summary>
     Public Property ReceptieNoua As String

@@ -929,7 +929,7 @@ def cere_lista(valoare, unde: str, coloana: str, gol_permis: bool = False):
 
 
 def step4b_receptii_prelucrare(cursor, cod: str, randuri: List[dict],
-                               indicatori: Dict[str, dict]) -> Tuple[int, int]:
+                               indicatori: Dict[str, dict]) -> Tuple[int, int, Dict[int, int]]:
     """
     Aduce `FX_Receptii_R` / `FX_Receptii_RHR` la zi din payload.
 
@@ -939,14 +939,31 @@ def step4b_receptii_prelucrare(cursor, cod: str, randuri: List[dict],
       * receptie gasita si suma diferita  -> UPDATE `R` + `RHR`;
       * receptie negasita                 -> INSERT `R` + toate `RHR`.
 
-    Intoarce (receptii scrise, linii RHR scrise).
+    Intoarce (receptii scrise, linii RHR scrise, ANCORE).
+
+    ANCORELE, si de ce exista (08.09.2026, dupa prima rulare adevarata a contractului in
+    doua faze). `IDRR`-ul unei receptii pe care O CREEAZA RULAREA ASTA nu supravietuieste
+    fazei intai: propunerea deruleaza tranzactia inapoi neconditionat, iar contorul
+    AUTO_INCREMENT al InnoDB NU se deruleaza odata cu ea -- la salvare aceeasi receptie
+    primeste alt numar. O decizie care numea numarul din propunere cadea deci cu
+    «Recepția N nu există pe acest angajament», si asa a si cazut.
+
+    Ancora e INDICELE randului in `ListaReceptii`, exact acelasi rationament ca
+    `rand_istoric` pentru instantanee (F24): indicele e stabil prin constructie, fiindca
+    AMANDOUA fazele poarta acelasi payload. `{indice: IDRR}`, doar pentru randurile a
+    caror receptie s-a NASCUT in rularea asta -- restul au un `IDRR` real, dinainte, care
+    nu se misca.
+
+    Se numara receptia ca «nascuta acum» dupa IDRR, nu dupa ramura care a rulat: doua
+    randuri de payload din aceeasi zi se potrivesc pe acelasi rand, deci al doilea poate
+    ajunge, prin potrivire, pe o receptie pe care tocmai a inserat-o primul.
     """
     from .prelucrare_helpers import (
         fx_receptii_h_get_hash_ident, fx_receptii_parse_ro_date, parse_loose_number,
     )
 
     if not randuri:
-        return 0, 0
+        return 0, 0, {}
 
     cursor.execute(_RHR_INDICATORI_VAZUTI_SQL, (cod,))
     vazuti = {str(r["CodIndicator"]) for r in cursor.fetchall()
@@ -958,6 +975,9 @@ def step4b_receptii_prelucrare(cursor, cod: str, randuri: List[dict],
 
     r_scrise = 0
     rhr_scrise = 0
+    # IDRR-urile nascute in rularea asta, si ancorele randurilor care ajung pe ele.
+    nascute = set()
+    ancore: Dict[int, int] = {}
 
     for i, rec in enumerate(randuri):
         if not isinstance(rec, dict):
@@ -1024,6 +1044,7 @@ def step4b_receptii_prelucrare(cursor, cod: str, randuri: List[dict],
                 nr_crt, cod, rec.get("Tip"), data_r, suma,
                 rec.get("DescriereReceptie"), hash_ident))
             idrr = int(cursor.lastrowid)
+            nascute.add(idrr)
             nr_crt += 1
             r_scrise += 1
 
@@ -1037,7 +1058,10 @@ def step4b_receptii_prelucrare(cursor, cod: str, randuri: List[dict],
                 vazuti.add(d["CodIndicator"])
                 rhr_scrise += 1
 
-    return r_scrise, rhr_scrise
+        if idrr in nascute:
+            ancore[i] = idrr
+
+    return r_scrise, rhr_scrise, ancore
 
 
 # ===========================================================================

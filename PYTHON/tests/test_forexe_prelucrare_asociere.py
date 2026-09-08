@@ -474,3 +474,160 @@ def test_the_flag_is_never_cleared_by_a_later_run_seeing_only_one():
     # Functia nu cere demarcarea celeilalte -- nu are cum, nu intoarce demarcari.
     assert A.f28_de_marcat([18]) == []
     assert marcate == {17, 18}
+
+
+# ===========================================================================
+# `rand_receptie` -- a treia tinta a unei decizii (felia 0056)
+# ===========================================================================
+# Prima rulare adevarata a contractului in doua faze (08.09.2026) a cazut cu «Recepția 188
+# nu există pe acest angajament». `IDRR`-ul din propunere fusese dat INAUNTRUL tranzactiei
+# derulate inapoi, iar contorul AUTO_INCREMENT nu se deruleaza cu ea: la salvare aceeasi
+# receptie primea alt numar. Ancora corecta e indicele randului in `ListaReceptii`, exact
+# ca `rand_istoric` pentru instantanee (F24).
+def dec_rand(rand, actiune, data_h, rand_receptie):
+    return {"rand_istoric": rand, "actiune": actiune, "data_h": data_h,
+            "rand_receptie": rand_receptie}
+
+
+def test_rand_receptie_is_a_third_target_and_the_three_exclude_each_other():
+    ok = A.normalizeaza_decizii([dec_rand(0, "asociat", "2026-01-01 00:00:00", 3)])
+    assert ok[0]["rand_receptie"] == 3
+    assert ok[0]["idrr"] is None and ok[0]["receptie_noua"] is None
+
+    with pytest.raises(DecizieInvalida):
+        A.normalizeaza_decizii([{"rand_istoric": 0, "actiune": "asociat",
+                                 "data_h": "2026-01-01 00:00:00",
+                                 "idrr": 5, "rand_receptie": 3}])
+    with pytest.raises(DecizieInvalida):
+        A.normalizeaza_decizii([{"rand_istoric": 0, "actiune": "asociat",
+                                 "data_h": "2026-01-01 00:00:00",
+                                 "rand_receptie": 3, "receptie_noua": "R1"}])
+
+
+def test_rand_receptie_must_be_a_number():
+    with pytest.raises(DecizieInvalida) as e:
+        A.normalizeaza_decizii([dec_rand(0, "asociat", "2026-01-01 00:00:00", "trei")])
+    assert "rand_receptie" in str(e.value)
+
+
+def test_ignorat_and_reconstituire_refuse_a_rand_receptie():
+    with pytest.raises(DecizieInvalida):
+        A.normalizeaza_decizii([dec_rand(0, "ignorat", "2026-01-01 00:00:00", 3)])
+    with pytest.raises(DecizieInvalida):
+        A.normalizeaza_decizii([{"rand_istoric": 0, "actiune": "reconstituire",
+                                 "data_h": "2026-01-01 00:00:00",
+                                 "receptie_noua": "R1", "rand_receptie": 3}])
+
+
+def test_citeste_receptii_names_only_the_receptions_born_in_this_run():
+    """
+    `rand_receptie` pleaca DOAR pe receptiile pe care le-a nascut rularea curenta. Restul
+    au un `IDRR` real, dinainte, care nu se misca -- si el ramane numele lor.
+    """
+    from datetime import datetime as _d
+    cur = FakeCursor([
+        [],                                          # liniile RHR
+        [{"IDRR": 271, "NRCRT": 1, "DataR": _d(2026, 2, 11), "SumaAntet": 510.0,
+          "Descriere": "veche", "Sters": 0, "Reconstituit": 0, "ReconstituitNesigur": 0},
+         {"IDRR": 900, "NRCRT": 2, "DataR": _d(2026, 5, 3), "SumaAntet": 700.0,
+          "Descriere": "nascuta acum", "Sters": 0, "Reconstituit": 0,
+          "ReconstituitNesigur": 0}],
+    ])
+    out = A.citeste_receptii(cur, COD, {4: 900})
+    dupa_idrr = {r["idrr"]: r for r in out}
+    assert dupa_idrr[900]["rand_receptie"] == 4
+    assert dupa_idrr[271]["rand_receptie"] is None
+
+
+def _cursor_pentru_aplica(receptii_randuri, linii=None):
+    """Falsul cu care `aplica_decizii` ajunge pana la `_tinta`: doua citiri de receptii."""
+    return FakeCursor([linii or [], receptii_randuri])
+
+
+def _linie_rhr(idrr, cod_ind="AAB", valoare=510.0):
+    return {"IDRR": idrr, "CodIndicator": cod_ind, "CodAI": f"{COD}-{cod_ind}",
+            "CodSSI": "", "CreditBugetar": 10502.19, "Valoare": valoare,
+            "ValoareN": 0.0}
+
+
+def _rand_receptie_db(idrr, suma):
+    from datetime import datetime as _d
+    return {"IDRR": idrr, "NRCRT": 1, "DataR": _d(2026, 2, 11), "SumaAntet": float(suma),
+            "Descriere": "PLATA FACT.", "Sters": 0, "Reconstituit": 0,
+            "ReconstituitNesigur": 0}
+
+
+def test_a_decision_anchored_on_a_row_lands_on_the_id_of_THIS_run():
+    """
+    Chiar drumul care cadea. Propunerea a numit receptia 188; la salvare ea s-a nascut cu
+    901. Decizia poarta indicele randului, deci ateriza pe 901 fara sa stie nimic despre
+    188.
+    """
+    i = inst(0, "2026-02-12 10:00:00", 510)
+    d = A.normalizeaza_decizii([dec_rand(0, "asociat", "2026-02-12 10:00:00", 2)])
+    cur = _cursor_pentru_aplica([_rand_receptie_db(901, 510)], [_linie_rhr(901)])
+
+    numarat = A.aplica_decizii(cur, COD, d, [i], [], [], ancore={2: 901})
+
+    assert numarat["asociat"] == 1
+    scrieri = [(sql, p) for sql, p in cur.executed
+               if sql.startswith("UPDATE FX_Receptii_H SET IDRR")]
+    assert scrieri and scrieri[0][1] == (901, 0, i["idrh"])
+
+
+def test_a_rand_receptie_that_created_nothing_in_this_run_is_rejected_loudly():
+    d = A.normalizeaza_decizii([dec_rand(0, "asociat", "2026-02-12 10:00:00", 7)])
+    cur = _cursor_pentru_aplica([_rand_receptie_db(901, 510)])
+    with pytest.raises(DecizieInvalida) as e:
+        A.aplica_decizii(cur, COD, d, [inst(0, "2026-02-12 10:00:00", 510)], [], [],
+                         ancore={2: 901})
+    assert "ListaReceptii" in str(e.value)
+
+
+def test_an_idrr_that_does_not_exist_still_fails_loudly():
+    """Purtarea veche ramane neatinsa pentru receptiile numite prin `IDRR`."""
+    d = A.normalizeaza_decizii([dec(0, "asociat", "2026-02-12 10:00:00", idrr=188)])
+    cur = _cursor_pentru_aplica([_rand_receptie_db(901, 510)])
+    with pytest.raises(DecizieInvalida) as e:
+        A.aplica_decizii(cur, COD, d, [inst(0, "2026-02-12 10:00:00", 510)], [], [])
+    assert "188" in str(e.value)
+
+
+# ===========================================================================
+# Contextul propunerii -- restul instantaneelor (felia 0056)
+# ===========================================================================
+def _rand_h(idrh, idrr, data_h, total=510.0, sters=0, tip="Final"):
+    return {"IDRH": idrh, "IDRR": idrr, "IDH": 70 + idrh, "DataH": dt(data_h),
+            "Total": total, "Descriere": "Salvare receptie.", "TipReceptie": tip,
+            "Sters": sters, "EsteStergere": 0}
+
+
+def test_the_context_is_exactly_the_complement_of_the_rows_to_decide():
+    cur = FakeCursor([
+        [],                                          # liniile
+        [_rand_h(11, 5, "2026-02-12 10:00:00"),      # deja asezat -> context
+         _rand_h(12, None, "2026-03-01 09:00:00"),   # de decis    -> lipseste de aici
+         _rand_h(13, None, "2026-04-01 09:00:00", sters=1)],   # ignorat -> context
+    ])
+    out = A.citeste_instantanee_context(cur, COD, {12}, {})
+    assert [r["idrh"] for r in out] == [11, 13]
+    assert all(r["blocat"] for r in out)
+    assert out[1]["ignorat"] is True
+
+
+def test_a_placed_snapshot_carries_the_real_blocking_reasons():
+    cur = FakeCursor([[], [_rand_h(11, 5, "2026-02-12 10:00:00")]])
+    out = A.citeste_instantanee_context(cur, COD, set(), {11: ["Are ordonanțarea nr. 4."]})
+    assert out[0]["motive"] == ["Are ordonanțarea nr. 4."]
+
+
+def test_an_unresolvable_unplaced_snapshot_says_why_instead_of_claiming_a_link():
+    """
+    Un instantaneu neasezat care nu si-a gasit randul de istoric in descarcarea asta
+    ajunge tot in context -- altfel ar disparea de pe ecran cu totul -- dar motivul lui NU
+    e «legătura este deja scrisă»: nu are nicio legatura.
+    """
+    cur = FakeCursor([[], [_rand_h(14, None, "2026-05-01 09:00:00")]])
+    out = A.citeste_instantanee_context(cur, COD, set(), {})
+    assert out[0]["idrr"] == 0
+    assert out[0]["motive"] == [A.MOTIV_FARA_ISTORIC]

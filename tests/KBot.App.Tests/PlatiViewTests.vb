@@ -29,13 +29,6 @@ Public Class PlatiViewTests
         Implements IApiClient
 
         ' Felia 0048-02: ingestia FOREXE. Nefolosita de vederile astea.
-        Public Function TrimitePrelucrareAsync(rezultat As PrelucrareRezultat,
-                                               alegeri As IReadOnlyList(Of AlegereUnitate),
-                                               ct As CancellationToken) As Task(Of PrelucrareRaspuns) _
-            Implements IApiClient.TrimitePrelucrareAsync
-            Throw New NotSupportedException()
-        End Function
-
         Public Function CerePropunereAsync(rezultat As PrelucrareRezultat,
                                            alegeri As IReadOnlyList(Of AlegereUnitate),
                                            ct As CancellationToken) As Task(Of PrelucrareRaspuns) _

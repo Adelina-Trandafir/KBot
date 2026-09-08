@@ -62,54 +62,13 @@ Public NotInheritable Class PrelucrareCoordinator
         End Using
     End Function
 
-    ''' <summary>
-    ''' Trimite pachetul la ingestie, întrebând operatorul ori de câte ori serverul are
-    ''' nevoie de o alegere de unitate.
-    ''' </summary>
-    ''' <returns>
-    ''' Răspunsul de succes, sau <c>Nothing</c> dacă operatorul a renunțat la o întrebare —
-    ''' caz în care NU s-a scris nimic, fiindcă ultimul răspuns al serverului a fost un 409
-    ''' cu tranzacția deja derulată înapoi.
-    ''' </returns>
-    Public Async Function TrimiteAsync(rezultat As PrelucrareRezultat,
-                                       ct As CancellationToken) As Task(Of PrelucrareRaspuns)
-        Try
-            ArgumentNullException.ThrowIfNull(rezultat)
-
-            ' Alegerile se ADUNĂ între runde: o pereche la care s-a răspuns o dată nu are
-            ' voie să fie întrebată din nou în runda următoare.
-            Dim alegeri As New List(Of AlegereUnitate)()
-
-            For runda As Integer = 1 To MaxRunde
-                ' Fără ConfigureAwait(False): continuarea trebuie să se întoarcă pe firul
-                ' UI, altfel ShowDialog de mai jos ar rula pe fir greșit.
-                Dim raspuns As PrelucrareRaspuns =
-                    Await _api.TrimitePrelucrareAsync(rezultat, alegeri, ct)
-
-                If raspuns Is Nothing OrElse raspuns.Stare = PrelucrareStare.Salvat Then
-                    Return raspuns
-                End If
-
-                Dim raspunsuriNoi As List(Of AlegereUnitate) =
-                    IntreabaOperatorul(raspuns, rezultat.CodAngajament)
-                ' Nothing = a renunțat. Nu se retrimite nimic; nimic nu s-a scris.
-                If raspunsuriNoi Is Nothing Then Return Nothing
-                alegeri.AddRange(raspunsuriNoi)
-            Next
-
-            ' Nu se retrimite la nesfârșit: mai bine o eroare care spune ce s-a întâmplat.
-            Throw New InvalidOperationException(
-                $"Salvarea a cerut alegerea unității de mai mult de {MaxRunde} ori pentru " &
-                $"«{rezultat.CodAngajament}». S-a oprit; nu s-a scris nimic.")
-        Catch ex As ApiException
-            ' Excepție tipată, tratată de apelant (401 -> WithReauth): control-flow.
-            Throw
-        Catch ex As Exception
-            GlobalErrorLog.Write("PrelucrareCoordinator.TrimiteAsync", ex)
-            Throw
-        End Try
-    End Function
-
+    ' NU EXISTĂ O TRIMITERE ÎNTR-O SINGURĂ FAZĂ (felia 0055). A existat una — `TrimiteAsync`,
+    ' din felia 0048-02, scrisă înainte ca ruta să capete cele două faze — și era o capcană:
+    ' clientul ei nu punea deloc câmpul «mod», iar serverul citește lipsa lui ca «propunere»
+    ' («Tăcerea nu are voie să însemne „salvează"»). Rula deci toți pașii, derula tranzacția
+    ' înapoi și răspundea 200; clientul citea acel 200 ca `PrelucrareStare.Salvat` și raporta
+    ' o salvare care nu se întâmplase. S-a retras cu tot cu `IApiClient.TrimitePrelucrareAsync`.
+    ' Drumul întreg trece azi prin cele două metode de mai jos și prin `AsociereForm`.
 
     ''' <summary>
     ''' FAZA UNU (felia 0048-03): cere propunerea, întrebând operatorul ori de câte ori
@@ -156,6 +115,65 @@ Public NotInheritable Class PrelucrareCoordinator
             Throw
         Catch ex As Exception
             GlobalErrorLog.Write("PrelucrareCoordinator.CerePropunereAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' FAZA DOI: retrimite ACELAȘI pachet, cu amprenta și hotărârile, iar serverul comite —
+    ''' cu aceeași buclă de întrebări ca faza întâi.
+    '''
+    ''' <para><b>De ce are și ea buclă.</b> 409 ALEGERE_UNITATE se poate declanșa și la
+    ''' salvare: pașii rulează din nou, iar între cele două faze poate să fi apărut o
+    ''' clasificație nouă. Fără bucla asta, apelantul ar primi un răspuns cu
+    ''' <c>Stare = AlegereUnitate</c> pe care l-ar lua drept succes — adică exact minciuna
+    ''' pentru care s-a retras <c>TrimiteAsync</c>.</para>
+    '''
+    ''' <para>Alegerile se adaugă în <paramref name="alegeriFacute"/>, aceeași listă care a
+    ''' trecut prin faza întâi: bifa «nu mă mai întreba» s-a derulat înapoi cu propunerea,
+    ''' deci serverul n-o ține minte.</para>
+    ''' </summary>
+    ''' <returns>
+    ''' Răspunsul de succes, sau <c>Nothing</c> dacă operatorul a renunțat la o întrebare —
+    ''' caz în care NU s-a scris nimic: ultimul răspuns al serverului a fost un 409 cu
+    ''' tranzacția deja derulată înapoi.
+    ''' </returns>
+    Public Async Function SalveazaAsync(rezultat As PrelucrareRezultat,
+                                        amprenta As String,
+                                        decizii As IReadOnlyList(Of DecizieAsociere),
+                                        alegeriFacute As List(Of AlegereUnitate),
+                                        ct As CancellationToken) As Task(Of PrelucrareRaspuns)
+        Try
+            ArgumentNullException.ThrowIfNull(rezultat)
+            ArgumentNullException.ThrowIfNull(decizii)
+            ArgumentNullException.ThrowIfNull(alegeriFacute)
+
+            For runda As Integer = 1 To MaxRunde
+                ' Fără ConfigureAwait(False): continuarea trebuie să se întoarcă pe firul
+                ' UI, altfel ShowDialog de mai jos ar rula pe fir greșit.
+                Dim raspuns As PrelucrareRaspuns =
+                    Await _api.SalveazaAsociereaAsync(rezultat, amprenta, decizii, alegeriFacute, ct)
+
+                If raspuns Is Nothing OrElse raspuns.Stare <> PrelucrareStare.AlegereUnitate Then
+                    Return raspuns
+                End If
+
+                Dim raspunsuriNoi As List(Of AlegereUnitate) =
+                    IntreabaOperatorul(raspuns, rezultat.CodAngajament)
+                ' Nothing = a renunțat. Nu se retrimite nimic; nimic nu s-a scris.
+                If raspunsuriNoi Is Nothing Then Return Nothing
+                alegeriFacute.AddRange(raspunsuriNoi)
+            Next
+
+            Throw New InvalidOperationException(
+                $"Salvarea a cerut alegerea unității de mai mult de {MaxRunde} ori pentru " &
+                $"«{rezultat.CodAngajament}». S-a oprit; nu s-a scris nimic.")
+        Catch ex As ApiException
+            ' Excepție tipată, tratată de apelant (401 -> WithReauth, STARE_MODIFICATA ->
+            ' mesajul propriu al formularului): control-flow.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrelucrareCoordinator.SalveazaAsync", ex)
             Throw
         End Try
     End Function

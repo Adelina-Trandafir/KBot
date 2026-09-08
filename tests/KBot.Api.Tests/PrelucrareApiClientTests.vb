@@ -12,14 +12,18 @@ Imports KBot.Api
 Imports KBot.Common
 Imports KBot.Domain
 
-' Offline tests for ApiClient.TrimitePrelucrareAsync (slice 0048-02). A stub
-' HttpMessageHandler captures the request body and returns a configured response — no
-' network, no server.
+' Offline tests for the REQUEST side of POST /api/forexe/prelucrare — route, headers and the
+' exact JSON keys routes/forexe/prelucrare.py reads. A stub HttpMessageHandler captures the
+' body and returns a configured response; no network, no server.
 '
-' The point of the whole method is that a 409 is NOT a failure: the server rolled its
-' transaction back and is asking a question. These tests pin that both directions of the
-' round trip survive the wire: the question comes back as data, and the answer goes out
-' under the exact JSON keys routes/forexe/prelucrare.py reads.
+' They ride on CerePropunereAsync because both phases share one payload builder
+' (ConstruiesteCerere). Until slice 0055 they rode on TrimitePrelucrareAsync, the phaseless
+' call — retired there because it sent no «mod», so the server read it as «propunere», rolled
+' everything back, and the client still reported PrelucrareStare.Salvat. The RESPONSE side of
+' the two phases is pinned in AsociereApiClientTests.
+'
+' The point of the 409 tests: a 409 is NOT a failure here. The server rolled its transaction
+' back and is asking a question, so it has to survive the wire as data, in both directions.
 Public Class PrelucrareApiClientTests
 
     Private NotInheritable Class StubHandler
@@ -77,30 +81,18 @@ Public Class PrelucrareApiClientTests
         "{""id_unitate"":75,""detalii"":""SC29 LOCAL"",""sursa_sector"":""02A"",""cod_program"":""P75""}," &
         "{""id_unitate"":76,""detalii"":""ENERGETIC ISJ"",""sursa_sector"":""02E"",""cod_program"":""P76""}]}]}"
 
-    Private Const CorpSalvat As String =
-        "{""cod"":""AAB37CNBK95"",""are"":{""Indicatori"":true}," &
-        """scrise"":{""FX_Angajamente"":1,""FX_Indicatori"":2}," &
-        """avertismente"":[""Pașii 3–8 ai ingestiei nu sunt încă portați.""]}"
+    ' Un corp de fază unu, minim: aceste teste privesc CEREREA, iar ce se citește din
+    ' răspunsul propunerii e pus la punct în AsociereApiClientTests.
+    Private Const CorpPropunere As String =
+        "{""cod"":""AAB37CNBK95"",""faza"":""propunere"",""amprenta"":""a1b2""," &
+        """receptii"":[],""instantanee"":[],""are"":{""Indicatori"":true}," &
+        """scrise"":{""FX_Angajamente"":1,""FX_Indicatori"":2},""avertismente"":[]}"
 
     ' ── 200 ───────────────────────────────────────────────────────────────
     <Fact>
-    Public Async Function Salvat_MapeazaContoareleSiAvertismentele() As Task
-        Dim h As New StubHandler With {.ResponseBody = CorpSalvat}
-        Dim r = Await NewClient(h).TrimitePrelucrareAsync(Pachet(), Nothing, CancellationToken.None)
-
-        Assert.Equal(PrelucrareStare.Salvat, r.Stare)
-        Assert.Equal("AAB37CNBK95", r.CodAngajament)
-        Assert.True(r.AreIndicatori)
-        Assert.Equal(1, r.Scrise("FX_Angajamente"))
-        Assert.Equal(2, r.Scrise("FX_Indicatori"))
-        Assert.Single(r.Avertismente)
-        Assert.Empty(r.AlegeriNecesare)
-    End Function
-
-    <Fact>
-    Public Async Function Salvat_PosteazaPeRutaCorecta_CuBearer() As Task
-        Dim h As New StubHandler With {.ResponseBody = CorpSalvat}
-        Await NewClient(h).TrimitePrelucrareAsync(Pachet(), Nothing, CancellationToken.None)
+    Public Async Function Propunerea_PosteazaPeRutaCorecta_CuBearer() As Task
+        Dim h As New StubHandler With {.ResponseBody = CorpPropunere}
+        Await NewClient(h).CerePropunereAsync(Pachet(), Nothing, CancellationToken.None)
 
         Assert.Equal(HttpMethod.Post, h.LastMethod)
         Assert.Equal("/api/forexe/prelucrare", h.LastRequestUri.AbsolutePath)
@@ -110,16 +102,16 @@ Public Class PrelucrareApiClientTests
     ' Baza NU se trimite niciodată: serverul o ia din sesiune (o bază = o unitate).
     <Fact>
     Public Async Function Cererea_NuPoartaNumeleBazei() As Task
-        Dim h As New StubHandler With {.ResponseBody = CorpSalvat}
-        Await NewClient(h).TrimitePrelucrareAsync(Pachet(), Nothing, CancellationToken.None)
+        Dim h As New StubHandler With {.ResponseBody = CorpPropunere}
+        Await NewClient(h).CerePropunereAsync(Pachet(), Nothing, CancellationToken.None)
 
         Assert.DoesNotContain("db_name", h.LastBody)
     End Function
 
     <Fact>
     Public Async Function Cererea_PoartaCheileCititeDeServer() As Task
-        Dim h As New StubHandler With {.ResponseBody = CorpSalvat}
-        Await NewClient(h).TrimitePrelucrareAsync(Pachet(), Nothing, CancellationToken.None)
+        Dim h As New StubHandler With {.ResponseBody = CorpPropunere}
+        Await NewClient(h).CerePropunereAsync(Pachet(), Nothing, CancellationToken.None)
 
         Using doc As JsonDocument = JsonDocument.Parse(h.LastBody)
             Dim root = doc.RootElement
@@ -135,7 +127,7 @@ Public Class PrelucrareApiClientTests
     <Fact>
     Public Async Function Alegere_NuAruncaCiIntoarceIntrebarea() As Task
         Dim h As New StubHandler With {.Status = CType(409, HttpStatusCode), .ResponseBody = CorpAlegere}
-        Dim r = Await NewClient(h).TrimitePrelucrareAsync(Pachet(), Nothing, CancellationToken.None)
+        Dim r = Await NewClient(h).CerePropunereAsync(Pachet(), Nothing, CancellationToken.None)
 
         Assert.Equal(PrelucrareStare.AlegereUnitate, r.Stare)
         Assert.Equal("AAB37CNBK95", r.CodAngajament)
@@ -161,7 +153,7 @@ Public Class PrelucrareApiClientTests
             .Status = CType(409, HttpStatusCode),
             .ResponseBody = "{""error"":""Altceva."",""reason"":""SHA_MISMATCH""}"}
         Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
-            Function() NewClient(h).TrimitePrelucrareAsync(Pachet(), Nothing, CancellationToken.None))
+            Function() NewClient(h).CerePropunereAsync(Pachet(), Nothing, CancellationToken.None))
         Assert.Equal(409, ex.StatusCode)
         Assert.Equal("SHA_MISMATCH", ex.Reason)
     End Function
@@ -171,17 +163,17 @@ Public Class PrelucrareApiClientTests
     Public Async Function Alegere_CorpNeJson_Arunca() As Task
         Dim h As New StubHandler With {.Status = CType(409, HttpStatusCode), .ResponseBody = "<html/>"}
         Await Assert.ThrowsAsync(Of ApiException)(
-            Function() NewClient(h).TrimitePrelucrareAsync(Pachet(), Nothing, CancellationToken.None))
+            Function() NewClient(h).CerePropunereAsync(Pachet(), Nothing, CancellationToken.None))
     End Function
 
     ' ── retrimiterea cu alegeri ────────────────────────────────────────────
     <Fact>
     Public Async Function Alegerile_MergPeFirCuCheileServerului() As Task
-        Dim h As New StubHandler With {.ResponseBody = CorpSalvat}
+        Dim h As New StubHandler With {.ResponseBody = CorpPropunere}
         Dim alegeri As New List(Of AlegereUnitate) From {
             New AlegereUnitate() With {.Ss = "02E", .ClsfE = "200101",
                                        .IdUnitate = 76, .Retine = True}}
-        Await NewClient(h).TrimitePrelucrareAsync(Pachet(), alegeri, CancellationToken.None)
+        Await NewClient(h).CerePropunereAsync(Pachet(), alegeri, CancellationToken.None)
 
         Using doc As JsonDocument = JsonDocument.Parse(h.LastBody)
             Dim a = doc.RootElement.GetProperty("alegeri")(0)
@@ -194,8 +186,8 @@ Public Class PrelucrareApiClientTests
 
     <Fact>
     Public Async Function FaraAlegeri_ListaEGoalaNuLipsa() As Task
-        Dim h As New StubHandler With {.ResponseBody = CorpSalvat}
-        Await NewClient(h).TrimitePrelucrareAsync(Pachet(), Nothing, CancellationToken.None)
+        Dim h As New StubHandler With {.ResponseBody = CorpPropunere}
+        Await NewClient(h).CerePropunereAsync(Pachet(), Nothing, CancellationToken.None)
 
         Using doc As JsonDocument = JsonDocument.Parse(h.LastBody)
             Assert.Equal(0, doc.RootElement.GetProperty("alegeri").GetArrayLength())
@@ -209,15 +201,15 @@ Public Class PrelucrareApiClientTests
             .Status = HttpStatusCode.BadRequest,
             .ResponseBody = "{""error"":""Clasificația «02E» nu aparține niciunei unități.""}"}
         Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
-            Function() NewClient(h).TrimitePrelucrareAsync(Pachet(), Nothing, CancellationToken.None))
+            Function() NewClient(h).CerePropunereAsync(Pachet(), Nothing, CancellationToken.None))
         Assert.Contains("nu aparține niciunei unități", ex.Message)
     End Function
 
     <Fact>
     Public Async Function CodGol_ERespinsInainteDeRetea() As Task
-        Dim h As New StubHandler With {.ResponseBody = CorpSalvat}
+        Dim h As New StubHandler With {.ResponseBody = CorpPropunere}
         Await Assert.ThrowsAsync(Of ArgumentException)(
-            Function() NewClient(h).TrimitePrelucrareAsync(New PrelucrareRezultat(), Nothing,
+            Function() NewClient(h).CerePropunereAsync(New PrelucrareRezultat(), Nothing,
                                                            CancellationToken.None))
         Assert.Null(h.LastRequestUri)
     End Function

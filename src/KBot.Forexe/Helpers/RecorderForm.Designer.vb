@@ -18,6 +18,7 @@ Partial Class RecorderForm
     Friend WithEvents btnPornesteInreg As System.Windows.Forms.Button
     Friend WithEvents btnOpresteInreg As System.Windows.Forms.Button
     Friend WithEvents btnCurata As System.Windows.Forms.Button
+    Friend WithEvents btnMonitor As System.Windows.Forms.Button
 
     Friend WithEvents pnlOptiuni As System.Windows.Forms.Panel
     Friend WithEvents chkWaitForAutomat As System.Windows.Forms.CheckBox
@@ -64,6 +65,7 @@ Partial Class RecorderForm
         btnPornesteInreg = New System.Windows.Forms.Button()
         btnOpresteInreg = New System.Windows.Forms.Button()
         btnCurata = New System.Windows.Forms.Button()
+        btnMonitor = New System.Windows.Forms.Button()
         pnlOptiuni = New System.Windows.Forms.Panel()
         chkWaitForAutomat = New System.Windows.Forms.CheckBox()
         chkBlocReset = New System.Windows.Forms.CheckBox()
@@ -168,6 +170,7 @@ Partial Class RecorderForm
         '
         ' pnlToolbarRec
         '
+        pnlToolbarRec.Controls.Add(btnMonitor)
         pnlToolbarRec.Controls.Add(btnCurata)
         pnlToolbarRec.Controls.Add(btnOpresteInreg)
         pnlToolbarRec.Controls.Add(btnPornesteInreg)
@@ -204,6 +207,15 @@ Partial Class RecorderForm
         btnCurata.TabIndex = 2
         btnCurata.Text = "Golește lista"
         btnCurata.UseVisualStyleBackColor = True
+        '
+        ' btnMonitor
+        '
+        btnMonitor.Location = New System.Drawing.Point(374, 6)
+        btnMonitor.Name = "btnMonitor"
+        btnMonitor.Size = New System.Drawing.Size(74, 28)
+        btnMonitor.TabIndex = 3
+        btnMonitor.Text = "Monitor"
+        btnMonitor.UseVisualStyleBackColor = True
         '
         ' pnlOptiuni
         '

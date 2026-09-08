@@ -113,6 +113,13 @@ Public Class DdfEditForm
             AddHandler txtCual.InnerTextBox.Leave, AddressOf TxtCual_Leave
             AddHandler txtNumarRev.InnerTextBox.Leave, AddressOf TxtNumarRev_Leave
 
+            ' A document tied to a partner hands that partner down to its lines. It has to
+            ' run BEFORE the first page is built -- the pages read the lines -- and it is the
+            ' only way in for a NEW revision: the header's picker is locked there
+            ' (`AplicaEnablement`) and the section-A Partener column is hidden, so without
+            ' this the save was refused for a field nobody could reach.
+            _draft.InheritHeaderPartner()
+
             IncarcaAntetul()
             AplicaEnablement()
 

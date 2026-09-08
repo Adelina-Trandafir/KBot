@@ -152,38 +152,15 @@ Public Interface IApiClient
     Function ProcessExcelAsync(job As ExcelJob, ct As CancellationToken) As Task(Of String)
 
     ''' <summary>
-    ''' Trimite rezultatul unei prelucrări complete FOREXE la ingestie
-    ''' (POST /api/forexe/prelucrare) și întoarce ce a răspuns serverul.
-    '''
-    ''' DOUĂ răspunsuri normale, amândouă fără excepție — de-asta întoarce un
-    ''' <see cref="PrelucrareRaspuns"/> cu stare, nu un simplu rezultat:
-    ''' <list type="bullet">
-    ''' <item>200 — s-a scris. <c>Stare = Salvat</c>.</item>
-    ''' <item>409 cu <c>reason = ALEGERE_UNITATE</c> — o clasificație se potrivește cu mai
-    ''' multe unități, serverul a derulat tranzacția înapoi și NU a scris nimic.
-    ''' <c>Stare = AlegereUnitate</c>, iar <c>AlegeriNecesare</c> poartă întrebările.
-    ''' Apelantul întreabă operatorul și cheamă din nou cu ACEEAȘI sarcină, de data asta
-    ''' cu <paramref name="alegeri"/> completat.</item>
-    ''' </list>
-    '''
-    ''' Baza NU se trimite: serverul o ia din sesiune. Hard-fail (Throw ApiException) la
-    ''' orice alt non-2xx; un 401 curge spre WithReauth (fără retry aici).
-    ''' </summary>
-    Function TrimitePrelucrareAsync(rezultat As PrelucrareRezultat,
-                                    alegeri As IReadOnlyList(Of AlegereUnitate),
-                                    ct As CancellationToken) As Task(Of PrelucrareRaspuns)
-
-    ''' <summary>
     ''' FAZA UNU a ingestiei (felia 0048-03): cere serverului tabloul, fără să scrie nimic.
     '''
     ''' Serverul rulează pașii 1–7 într-o tranzacție, exact cum i-ar rula pe bune, și apoi
     ''' o derulează înapoi NECONDIȚIONAT. Ce se întoarce sunt recepțiile angajamentului,
     ''' instantaneele rămase neașezate și amprenta stării — nimic nu s-a scris.
     '''
-    ''' <para>Poate răspunde tot cu 409 <c>ALEGERE_UNITATE</c>, ca
-    ''' <see cref="TrimitePrelucrareAsync"/>: un angajament poate avea nevoie de DOUĂ
-    ''' drumuri dus-întors înainte ca operatorul să vadă formularul de asociere. Atunci
-    ''' <paramref name="alegeri"/> se completează și se cheamă din nou.</para>
+    ''' <para>Poate răspunde cu 409 <c>ALEGERE_UNITATE</c>: un angajament poate avea nevoie
+    ''' de DOUĂ drumuri dus-întors înainte ca operatorul să vadă formularul de asociere.
+    ''' Atunci <paramref name="alegeri"/> se completează și se cheamă din nou.</para>
     '''
     ''' <para>Rezultatul poartă starea: <c>Stare = Propunere</c> cu
     ''' <see cref="PrelucrareRaspuns.Propunere"/> completat, sau

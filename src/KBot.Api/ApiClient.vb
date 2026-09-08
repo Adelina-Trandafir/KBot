@@ -1613,72 +1613,16 @@ Public Class ApiClient
         End If
     End Sub
 
-    ' Non-2xx -> ApiException cu mesajul român al serverului (câmpul "error"), codul
-    ' HTTP și codul-motiv ("reason"). Nu mai expunem niciodată corpul JSON brut.
     ' ── POST /api/forexe/prelucrare (ingestia FOREXE, felia 0048) ─────────────────────
+    ' Ruta are DOUĂ faze, iar clientul are câte o metodă pentru fiecare: CerePropunereAsync
+    ' («propunere», nu scrie nimic) și SalveazaAsociereaAsync («salvare», comite). Nu există
+    ' o a treia, fără fază: o cerere fără «mod» primește implicit «propunere», deci ar
+    ' raporta o salvare care s-a derulat înapoi. Vezi felia 0055.
+    '
     ' Un 409 cu reason=ALEGERE_UNITATE NU este o eroare: serverul a derulat tranzacția
     ' înapoi și cere o informație pe care doar operatorul o are (ca formularul modal
     ' FX_Unitate din Access). Se întoarce ca STARE, nu ca excepție — același tipar ca
     ' PdfDownloadStatus.NotFound, unde „nu există" e o cale normală, nu un eșec.
-    ' Fără retry aici: cererea nu e idempotentă la nivel de rețea în sensul reîncercării
-    ' oarbe, iar un 401 curge spre WithReauth.
-    Public Async Function TrimitePrelucrareAsync(rezultat As PrelucrareRezultat,
-                                                 alegeri As IReadOnlyList(Of AlegereUnitate),
-                                                 ct As CancellationToken) As Task(Of PrelucrareRaspuns) Implements IApiClient.TrimitePrelucrareAsync
-        Try
-            EnsureConfigured()
-            If rezultat Is Nothing Then Throw New ArgumentNullException(NameOf(rezultat))
-            If String.IsNullOrWhiteSpace(rezultat.CodAngajament) Then
-                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(rezultat))
-            End If
-
-            Dim req As New PostPrelucrareRequest() With {
-                .cod = rezultat.CodAngajament,
-                .workflow = If(rezultat.Workflow, String.Empty),
-                .moment = rezultat.Moment
-            }
-            If rezultat.Scalari IsNot Nothing Then
-                req.scalari = New Dictionary(Of String, String)(rezultat.Scalari)
-            End If
-            If rezultat.Tabele IsNot Nothing Then
-                req.tabele = TabeleJson.Catre(rezultat.Tabele)
-            End If
-            If alegeri IsNot Nothing Then
-                For Each a As AlegereUnitate In alegeri
-                    req.alegeri.Add(New PostPrelucrareAlegere() With {
-                        .ss = a.Ss, .clsfe = a.ClsfE,
-                        .id_unitate = a.IdUnitate, .retine = a.Retine})
-                Next
-            End If
-
-            Dim body As String = JsonSerializer.Serialize(req, _json)
-
-            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/prelucrare")
-                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
-                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
-                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
-                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
-
-                    If CInt(resp.StatusCode) = 409 Then
-                        Dim intrebare As PrelucrareRaspuns = CitesteAlegeri(respText)
-                        ' 409 fără corpul așteptat = alt conflict, nu întrebarea noastră.
-                        If intrebare IsNot Nothing Then Return intrebare
-                    End If
-
-                    If Not resp.IsSuccessStatusCode Then
-                        Throw BuildApiException(respText, "trimiterea prelucrării", CInt(resp.StatusCode))
-                    End If
-
-                    Return CitesteSalvat(respText, rezultat.CodAngajament)
-                End Using
-            End Using
-        Catch ex As ApiException
-            Throw
-        Catch ex As Exception
-            GlobalErrorLog.Write("ApiClient.TrimitePrelucrareAsync", ex)
-            Throw
-        End Try
-    End Function
 
     ' Corpul de 200 -> POCO-ul de domeniu. Cheia «Indicatori» din `are` poate LIPSI: la
     ' server, o cheie absentă înseamnă „pasul nu a rulat", nu „a rulat și n-a găsit nimic".
@@ -1900,7 +1844,14 @@ Public Class ApiClient
             .data_h = d.DataH.ToString("yyyy-MM-ddTHH:mm:ss", Globalization.CultureInfo.InvariantCulture),
             .actiune = NumeActiune(d.Actiune)
         }
-        If d.Idrr > 0 Then pe.idrr = d.Idrr
+        ' Ordinea conteaza: `RandReceptie` are intaietate fiindca e singurul nume valid
+        ' al unei recepții nascute de rularea curenta. `Idrr` e pus si pe ele — e cheia
+        ' locala a tabloului —, deci trimise amandoua serverul ar raspunde 400 «exact una».
+        If d.RandReceptie.HasValue Then
+            pe.rand_receptie = d.RandReceptie.Value
+        ElseIf d.Idrr > 0 Then
+            pe.idrr = d.Idrr
+        End If
         If Not String.IsNullOrWhiteSpace(d.ReceptieNoua) Then pe.receptie_noua = d.ReceptieNoua
         Return pe
     End Function
@@ -2020,6 +1971,69 @@ Public Class ApiClient
         End Try
     End Function
 
+    ' O recepție de pe fir -> POCO. UN SINGUR loc: cele doua rute o trimit in aceeasi
+    ' forma (acelasi `citeste_receptii` pe server), iar doua copii ale conversiei ar aluneca
+    ' una fata de alta fara sa se vada.
+    Private Shared Function CitesteReceptie(r As PostPropunereReceptie) As ReceptiePropusa
+        Dim rec As New ReceptiePropusa() With {
+            .Idrr = r.idrr,
+            .RandReceptie = r.rand_receptie,
+            .DataR = CitesteData(r.data_r),
+            .SumaAntet = r.suma_antet,
+            .Descriere = If(r.descriere, String.Empty),
+            .Sters = r.sters,
+            .Reconstituit = r.reconstituit,
+            .ReconstituitNesigur = r.reconstituit_nesigur}
+        If r.rhr IsNot Nothing Then
+            For Each l As PostPropunereLinieR In r.rhr
+                rec.Rhr.Add(New LinieReceptie() With {
+                    .CodIndicator = If(l.cod_indicator, String.Empty),
+                    .CodAi = If(l.cod_ai, String.Empty),
+                    .CodSsi = If(l.cod_ssi, String.Empty),
+                    .CreditBugetar = l.credit_bugetar,
+                    .Valoare = l.valoare,
+                    .ValoareN = l.valoare_n})
+            Next
+        End If
+        Return rec
+    End Function
+
+    ' Un instantaneu ancorat pe IDRH -> POCO. Il folosesc amandoua rutele: editorul de
+    ' oricand pentru TOATE randurile lui, ingestia pentru contextul propunerii.
+    Private Shared Function CitesteInstantaneuLegat(i As GetAsociereInstantaneu) As InstantaneuLegat
+        Dim inst As New InstantaneuLegat() With {
+            .Idrh = i.idrh,
+            .Idrr = i.idrr,
+            .Idh = i.idh,
+            .DataH = CitesteData(i.data_h),
+            .Descriere = If(i.descriere, String.Empty),
+            .Total = i.total,
+            .TipReceptie = If(i.tip_receptie, String.Empty),
+            .Stergere = i.stergere,
+            .Ignorat = i.ignorat,
+            .Blocat = i.blocat}
+        If i.motive IsNot Nothing Then inst.Motive.AddRange(i.motive)
+        If i.linii IsNot Nothing Then
+            For Each l As PostPropunereLinieI In i.linii
+                inst.Linii.Add(New LinieInstantaneu() With {
+                    .CodIndicator = If(l.cod_indicator, String.Empty),
+                    .CodAi = If(l.cod_ai, String.Empty),
+                    .CodSsi = If(l.cod_ssi, String.Empty),
+                    .IdClsf = If(l.id_clsf.HasValue, l.id_clsf.Value, 0),
+                    .Valoare = l.valoare})
+            Next
+        End If
+        Return inst
+    End Function
+
+    ' O plata de pe fir -> POCO. Context pe amandoua caile (§1.3 din fundament).
+    Private Shared Function CitestePlata(p As GetAsocierePlata) As PlataAsociere
+        Return New PlataAsociere() With {
+            .DataPlata = CitesteData(p.data_plata),
+            .Suma = p.suma,
+            .NrOp = If(p.nr_op, String.Empty)}
+    End Function
+
     ' Corpul de 200 al citirii -> POCO-ul de domeniu.
     Private Shared Function CitesteAsociere(respText As String, cod As String) As AsociereStare
         Dim payload As GetAsociereResponse =
@@ -2032,63 +2046,19 @@ Public Class ApiClient
 
         If payload.receptii IsNot Nothing Then
             For Each r As PostPropunereReceptie In payload.receptii
-                Dim rec As New ReceptiePropusa() With {
-                    .Idrr = r.idrr,
-                    .DataR = CitesteData(r.data_r),
-                    .SumaAntet = r.suma_antet,
-                    .Descriere = If(r.descriere, String.Empty),
-                    .Sters = r.sters,
-                    .Reconstituit = r.reconstituit,
-                    .ReconstituitNesigur = r.reconstituit_nesigur}
-                If r.rhr IsNot Nothing Then
-                    For Each l As PostPropunereLinieR In r.rhr
-                        rec.Rhr.Add(New LinieReceptie() With {
-                            .CodIndicator = If(l.cod_indicator, String.Empty),
-                            .CodAi = If(l.cod_ai, String.Empty),
-                            .CodSsi = If(l.cod_ssi, String.Empty),
-                            .CreditBugetar = l.credit_bugetar,
-                            .Valoare = l.valoare,
-                            .ValoareN = l.valoare_n})
-                    Next
-                End If
-                s.Receptii.Add(rec)
+                s.Receptii.Add(CitesteReceptie(r))
             Next
         End If
 
         If payload.instantanee IsNot Nothing Then
             For Each i As GetAsociereInstantaneu In payload.instantanee
-                Dim inst As New InstantaneuLegat() With {
-                    .Idrh = i.idrh,
-                    .Idrr = i.idrr,
-                    .Idh = i.idh,
-                    .DataH = CitesteData(i.data_h),
-                    .Descriere = If(i.descriere, String.Empty),
-                    .Total = i.total,
-                    .TipReceptie = If(i.tip_receptie, String.Empty),
-                    .Stergere = i.stergere,
-                    .Ignorat = i.ignorat,
-                    .Blocat = i.blocat}
-                If i.motive IsNot Nothing Then inst.Motive.AddRange(i.motive)
-                If i.linii IsNot Nothing Then
-                    For Each l As PostPropunereLinieI In i.linii
-                        inst.Linii.Add(New LinieInstantaneu() With {
-                            .CodIndicator = If(l.cod_indicator, String.Empty),
-                            .CodAi = If(l.cod_ai, String.Empty),
-                            .CodSsi = If(l.cod_ssi, String.Empty),
-                            .IdClsf = If(l.id_clsf.HasValue, l.id_clsf.Value, 0),
-                            .Valoare = l.valoare})
-                    Next
-                End If
-                s.Instantanee.Add(inst)
+                s.Instantanee.Add(CitesteInstantaneuLegat(i))
             Next
         End If
 
         If payload.plati IsNot Nothing Then
             For Each p As GetAsocierePlata In payload.plati
-                s.Plati.Add(New PlataAsociere() With {
-                    .DataPlata = CitesteData(p.data_plata),
-                    .Suma = p.suma,
-                    .NrOp = If(p.nr_op, String.Empty)})
+                s.Plati.Add(CitestePlata(p))
             Next
         End If
 
@@ -2119,26 +2089,20 @@ Public Class ApiClient
 
         If payload.receptii IsNot Nothing Then
             For Each r As PostPropunereReceptie In payload.receptii
-                Dim rec As New ReceptiePropusa() With {
-                    .Idrr = r.idrr,
-                    .DataR = CitesteData(r.data_r),
-                    .SumaAntet = r.suma_antet,
-                    .Descriere = If(r.descriere, String.Empty),
-                    .Sters = r.sters,
-                    .Reconstituit = r.reconstituit,
-                    .ReconstituitNesigur = r.reconstituit_nesigur}
-                If r.rhr IsNot Nothing Then
-                    For Each l As PostPropunereLinieR In r.rhr
-                        rec.Rhr.Add(New LinieReceptie() With {
-                            .CodIndicator = If(l.cod_indicator, String.Empty),
-                            .CodAi = If(l.cod_ai, String.Empty),
-                            .CodSsi = If(l.cod_ssi, String.Empty),
-                            .CreditBugetar = l.credit_bugetar,
-                            .Valoare = l.valoare,
-                            .ValoareN = l.valoare_n})
-                    Next
-                End If
-                p.Receptii.Add(rec)
+                p.Receptii.Add(CitesteReceptie(r))
+            Next
+        End If
+
+        ' Contextul: restul instantaneelor si plățile. Nu se decide nimic despre ele — se
+        ' arată. Vezi `PrelucrarePropunere.InstantaneeAsezate`.
+        If payload.instantanee_asezate IsNot Nothing Then
+            For Each i As GetAsociereInstantaneu In payload.instantanee_asezate
+                p.InstantaneeAsezate.Add(CitesteInstantaneuLegat(i))
+            Next
+        End If
+        If payload.plati IsNot Nothing Then
+            For Each pl As GetAsocierePlata In payload.plati
+                p.Plati.Add(CitestePlata(pl))
             Next
         End If
 

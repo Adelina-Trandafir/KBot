@@ -64,6 +64,21 @@ Public Class AsociereForm
     Private ReadOnly _withReauthStare As Func(Of Func(Of Task(Of AsociereStare)), Task(Of AsociereStare))
     Private ReadOnly _withReauthSalvare As Func(Of Func(Of Task(Of AsociereRezultat)), Task(Of AsociereRezultat))
 
+    ' ── Modul PROPUNERE (felia 0055) ─────────────────────────────────────────────────
+    ' Câmpurile de mai jos sunt Nothing în modul de oricând și pline în modul propunere.
+    Private ReadOnly _mod As ModAsociere
+    Private ReadOnly _propunere As PrelucrarePropunere
+    ' Payload-ul descărcării. Se RETRIMITE neschimbat la salvare: `rand_istoric` din decizii
+    ' e indicele rândului în `TabelIstoric`, nu o cheie de bază, deci faza a doua trebuie să
+    ' vadă exact ce a văzut faza întâi. O re-descărcare între faze cere o propunere nouă.
+    Private ReadOnly _pachet As PrelucrareRezultat
+    ' Alegerile de unitate deja făcute. Merg înapoi cu salvarea: bifa «nu mă mai întreba» s-a
+    ' scris în FX_Alegeri_Unitate ÎNĂUNTRUL tranzacției propunerii, deci s-a derulat înapoi
+    ' odată cu ea — fără ele, faza a doua ar primi din nou 409 pentru o întrebare la care
+    ' operatorul a răspuns deja.
+    Private ReadOnly _alegeri As List(Of AlegereUnitate)
+    Private ReadOnly _withReauthPrelucrare As Func(Of Func(Of Task(Of PrelucrareRaspuns)), Task(Of PrelucrareRaspuns))
+
     ' Tabloul citit de la server. `_stare` e ADEVĂRUL DE PE SERVER și nu se modifică local —
     ' altfel n-am mai avea cu ce compara ca să știm ce s-a schimbat.
     Private _stare As AsociereStare
@@ -130,6 +145,44 @@ Public Class AsociereForm
         AplicaVedereaDinDreaptaSus(VEDEREA_GRAFIC)
     End Sub
 
+    ''' <summary>
+    ''' MODUL PROPUNERE (felia 0055): același editor, dar peste tabloul pe care tocmai l-a
+    ''' propus o descărcare, nu peste ce e scris în bază.
+    '''
+    ''' <para><b>Miza e alta, și de-asta se și poartă altfel.</b> În modul de oricând, o
+    ''' închidere fără salvare pierde niște corecturi. Aici pierde ÎNTREAGA descărcare: faza
+    ''' întâi a rulat toți pașii și a derulat tranzacția înapoi necondiționat, deci până la
+    ''' butonul de salvare nu există în bază nici recepțiile, nici plățile, nici istoricul.
+    ''' De aceea fiecare instantaneu are nevoie de o hotărâre înainte ca butonul să se
+    ''' aprindă (serverul refuză cu 400 o acoperire incompletă: tăcerea nu are voie să
+    ''' însemne «ignoră-l»), iar închiderea spune limpede ce se pierde.</para>
+    ''' </summary>
+    ''' <param name="propunere">Tabloul întors de faza întâi.</param>
+    ''' <param name="pachet">Payload-ul descărcării, retrimis NESCHIMBAT la salvare.</param>
+    ''' <param name="alegeri">Alegerile de unitate deja făcute; merg înapoi cu salvarea.</param>
+    Public Sub New(apiClient As IApiClient,
+                   cod As String,
+                   propunere As PrelucrarePropunere,
+                   pachet As PrelucrareRezultat,
+                   alegeri As IReadOnlyList(Of AlegereUnitate),
+                   withReauthPrelucrare As Func(Of Func(Of Task(Of PrelucrareRaspuns)), Task(Of PrelucrareRaspuns)))
+        If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
+        If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+        If propunere Is Nothing Then Throw New ArgumentNullException(NameOf(propunere))
+        If pachet Is Nothing Then Throw New ArgumentNullException(NameOf(pachet))
+        If withReauthPrelucrare Is Nothing Then Throw New ArgumentNullException(NameOf(withReauthPrelucrare))
+        InitializeComponent()
+        _apiClient = apiClient
+        _cod = cod.Trim()
+        _mod = ModAsociere.Propunere
+        _propunere = propunere
+        _pachet = pachet
+        _alegeri = If(alegeri Is Nothing, New List(Of AlegereUnitate)(), New List(Of AlegereUnitate)(alegeri))
+        _withReauthPrelucrare = withReauthPrelucrare
+        capBar.Text = $"K-BOT — Așezarea recepțiilor descărcate · {_cod}"
+        AplicaVedereaDinDreaptaSus(VEDEREA_GRAFIC)
+    End Sub
+
     ' ══════════════════════════════════════════════════════════════════════════
     ' Încărcarea
     ' ══════════════════════════════════════════════════════════════════════════
@@ -144,8 +197,15 @@ Public Class AsociereForm
         Try
             Cursor = Cursors.WaitCursor
             btnSalveaza.Enabled = False
-            Dim stare As AsociereStare =
-                Await _withReauthStare(Function() _apiClient.GetAsociereAsync(_cod, CancellationToken.None))
+            Dim stare As AsociereStare
+            If _mod = ModAsociere.Propunere Then
+                ' Nimic de cerut: tabloul a venit odată cu propunerea, iar o a doua citire ar
+                ' arăta baza AȘA CUM E ACUM — adică fără nimic din descărcarea asta, fiindcă
+                ' faza întâi s-a derulat înapoi.
+                stare = AsociereStare.DinPropunere(_propunere)
+            Else
+                stare = Await _withReauthStare(Function() _apiClient.GetAsociereAsync(_cod, CancellationToken.None))
+            End If
 
             _stare = stare
             _receptieSelectata = Nothing
@@ -244,7 +304,23 @@ Public Class AsociereForm
                 _nodInstantaneu(inst.Idrh) = New RandDeArbore(treeLibere, frunza)
             Next
 
-            btnSalveaza.Enabled = Comenzi().Count > 0
+            If _mod = ModAsociere.Propunere Then
+                ' Acoperire OBLIGATORIE: serverul refuză cu 400 o salvare căreia îi lipsește
+                ' fie și o singură hotărâre. Butonul spune asta înainte, iar mesajul numără cât
+                ' a mai rămas — altfel operatorul ar afla abia din eroare.
+                Dim ramase As Integer = NehotarateleCount()
+                btnSalveaza.Enabled = (ramase = 0)
+                If ramase > 0 Then
+                    ntfMesaj.Show($"Mai sunt {ramase} instantanee neașezate. Trage-le pe recepția lor " &
+                                  "sau marchează-le «fără schimbare»; până atunci nimic nu se scrie.",
+                                  NoticeKind.Warning)
+                Else
+                    ntfMesaj.Show("Toate instantaneele au primit o hotărâre — poți salva descărcarea.",
+                                  NoticeKind.Success)
+                End If
+            Else
+                btnSalveaza.Enabled = Comenzi().Count > 0
+            End If
             treeLant.Invalidate()
             treeLibere.Invalidate()
             ' The chart reads the LOCAL picture too, so a drag has to move it as well. Rebuilding
@@ -1608,8 +1684,160 @@ Public Class AsociereForm
         Return out
     End Function
 
+    ''' <summary>
+    ''' Câte instantanee nu au încă o hotărâre: neașezate ȘI nemarcate «fără schimbare».
+    ''' Zero e condiția ca butonul de salvare să se aprindă în modul propunere.
+    ''' </summary>
+    Private Function NehotarateleCount() As Integer
+        If _stare Is Nothing Then Return 0
+        ' `.Where(...).Count()`, nu `.Count(...)`: proprietatea `Count` a listei umbrește
+        ' extensia LINQ cu predicat, iar compilatorul o citește ca indexare. Aceeași formă ca
+        ' în restul formularului.
+        ' `Not i.Blocat`: rândurile de CONTEXT (felia 0056) nu poartă hotărâri, deci nu au
+        ' cum să lipsească din ele. Unul neașezat printre ele — cel al cărui rând de istoric
+        ' nu e în descărcarea asta — ar stinge butonul pentru totdeauna.
+        Return _stare.Instantanee.
+            Where(Function(i) Not i.Blocat AndAlso PozitiaLui(i) = 0 AndAlso
+                              Not EsteIgnorat(i.Idrh)).Count()
+    End Function
+
+    ''' <summary>
+    ''' Hotărârea operatorului pentru FIECARE instantaneu — spre deosebire de
+    ''' <see cref="Comenzi"/>, care trimite doar ce s-a schimbat.
+    '''
+    ''' <para>Acoperirea e totală fiindcă serverul o cere: un instantaneu fără decizie e 400,
+    ''' nu o valoare implicită, tocmai ca tăcerea să nu poată însemna «ignoră-l». Un rând
+    ''' rămas pe sugestia automată e tot o hotărâre — operatorul a văzut-o și a apăsat
+    ''' «Salvează» peste ea (F18).</para>
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Shared și cu tabloul dat pe parametri, ca să poată fi verificată fără să se
+    ''' deschidă fereastra: <c>ShowDialog</c> e modal și ar bloca o rulare de teste.</para>
+    ''' <para><b>Recepțiile intră aici ca să se poată numi corect</b> (felia 0056). O recepție
+    ''' pe care o naște CHIAR descărcarea asta nu poate fi numită prin <c>IDRR</c>: numărul ei
+    ''' s-a dat înăuntrul tranzacției pe care faza întâi a derulat-o înapoi, iar contorul
+    ''' AUTO_INCREMENT nu se derulează odată cu ea — la salvare primește altul. Numele care
+    ''' ține e <see cref="ReceptiePropusa.RandReceptie"/>, indicele rândului ei în
+    ''' <c>ListaReceptii</c>. Parametrul e OBLIGATORIU tocmai fiindcă aici s-a greșit o dată:
+    ''' un implicit tăcut ar reînvia «Recepția N nu există pe acest angajament».</para>
+    ''' </remarks>
+    Friend Shared Function DeciziiDin(instantanee As IEnumerable(Of InstantaneuLegat),
+                                      receptii As IEnumerable(Of ReceptiePropusa),
+                                      pozitie As IReadOnlyDictionary(Of Integer, Integer),
+                                      ignorat As IReadOnlyDictionary(Of Integer, Boolean),
+                                      stergere As IReadOnlyDictionary(Of Integer, Boolean)) As List(Of DecizieAsociere)
+        If instantanee Is Nothing Then Throw New ArgumentNullException(NameOf(instantanee))
+        If receptii Is Nothing Then Throw New ArgumentNullException(NameOf(receptii))
+
+        ' IDRR-ul local ▸ numele care supraviețuiește. Doar recepțiile născute de rularea
+        ' asta au unul; restul se numesc prin IDRR, care e real și nu se mișcă.
+        Dim ancora As New Dictionary(Of Integer, Integer)()
+        For Each r As ReceptiePropusa In receptii
+            If r.RandReceptie.HasValue Then ancora(r.Idrr) = r.RandReceptie.Value
+        Next
+
+        Dim out As New List(Of DecizieAsociere)()
+
+        For Each inst As InstantaneuLegat In instantanee
+            ' Rândurile de CONTEXT nu poartă hotărâri: acoperirea cerută de server e exact
+            ' mulțimea de așezat, iar o decizie pentru un rând din afara ei e respinsă cu 400
+            ' — și pe drept, ar rescrie tăcut legături vechi la fiecare descărcare.
+            If inst.Blocat Then Continue For
+
+            Dim idrr As Integer = inst.Idrr
+            If pozitie IsNot Nothing AndAlso pozitie.ContainsKey(inst.Idrh) Then idrr = pozitie(inst.Idrh)
+            Dim eIgnorat As Boolean = ignorat IsNot Nothing AndAlso
+                                      ignorat.ContainsKey(inst.Idrh) AndAlso ignorat(inst.Idrh)
+            Dim eStergere As Boolean = stergere IsNot Nothing AndAlso
+                                       stergere.ContainsKey(inst.Idrh) AndAlso stergere(inst.Idrh)
+
+            Dim d As New DecizieAsociere() With {
+                .RandIstoric = inst.Idrh,      ' în modul propunere ancora ESTE indicele rândului
+                .DataH = inst.DataH
+            }
+            If eIgnorat Then
+                d.Actiune = ActiuneAsociere.Ignorat
+            ElseIf idrr = 0 Then
+                ' Nu se inventează o hotărâre pentru un rând pe care operatorul nu l-a atins.
+                ' Butonul e stins tocmai ca drumul ăsta să nu se poată parcurge.
+                Throw New InvalidOperationException(
+                    $"Instantaneul de la rândul {inst.Idrh} nu are nicio hotărâre.")
+            Else
+                d.Actiune = If(eStergere, ActiuneAsociere.Stergere, ActiuneAsociere.Asociat)
+                ' UNA dintre cele două, niciodată amândouă: serverul cere exact o țintă.
+                If ancora.ContainsKey(idrr) Then
+                    d.RandReceptie = ancora(idrr)
+                Else
+                    d.Idrr = idrr
+                End If
+            End If
+            out.Add(d)
+        Next
+        Return out
+    End Function
+
+    ''' <summary>
+    ''' FAZA A DOUA: retrimite ACELAȘI payload, cu amprenta și hotărârile, iar serverul
+    ''' comite. Abia acum ajunge descărcarea în tabele — toată, nu doar legăturile.
+    ''' </summary>
+    Private Async Function SalveazaPropunereaAsync() As Task
+        Try
+            Dim decizii As List(Of DecizieAsociere) =
+                DeciziiDin(_stare.Instantanee, _stare.Receptii, _pozitie, _ignorat, _stergere)
+
+            Cursor = Cursors.WaitCursor
+            btnSalveaza.Enabled = False
+            ' Prin coordonator, nu direct pe client: 409 ALEGERE_UNITATE se poate declanșa ȘI
+            ' la salvare — pașii rulează din nou —, iar un răspuns de întrebare luat drept
+            ' succes ar fi exact minciuna pentru care s-a retras `TrimiteAsync`.
+            Dim coordonator As New PrelucrareCoordinator(_apiClient)
+            Dim raspuns As PrelucrareRaspuns =
+                Await _withReauthPrelucrare(Function() coordonator.SalveazaAsync(
+                    _pachet, _propunere.Amprenta, decizii, _alegeri, CancellationToken.None))
+
+            If raspuns Is Nothing Then
+                ' Operatorul a renunțat la o alegere de unitate: serverul a derulat înapoi.
+                ntfMesaj.Show("Salvarea s-a oprit la o alegere de unitate — nu s-a scris nimic. " &
+                              "Apasă din nou «Salvează» ca să reiei.", NoticeKind.Warning)
+                btnSalveaza.Enabled = (NehotarateleCount() = 0)
+                Return
+            End If
+
+            _SAuSalvatModificari = True
+            ' NU se reîncarcă: propunerea e consumată, iar o a doua citire ar cere celălalt mod.
+            ' Corecturile de după se fac în editorul de oricând, care e la un clic distanță.
+            ntfMesaj.Show(TextDupaSalvare(raspuns),
+                          If(raspuns IsNot Nothing AndAlso raspuns.Avertismente.Count > 0,
+                             NoticeKind.Warning, NoticeKind.Success))
+        Catch ex As Exception
+            GlobalErrorLog.Write("AsociereForm.SalveazaPropunereaAsync", ex)
+            ntfMesaj.Show(TextDeEroare(ex, "Nu am putut salva descărcarea"), NoticeKind.Error)
+            btnSalveaza.Enabled = (NehotarateleCount() = 0)
+        Finally
+            Cursor = Cursors.Default
+        End Try
+    End Function
+
+    ''' <summary>Ce s-a scris, pe tabele — cifrele serverului, nu o repovestire.</summary>
+    Private Shared Function TextDupaSalvare(raspuns As PrelucrareRaspuns) As String
+        If raspuns Is Nothing Then Return "Descărcarea a fost salvată."
+        Dim scrise As String = String.Join(", ",
+            raspuns.Scrise.Where(Function(kvp) kvp.Value > 0).
+                           OrderBy(Function(kvp) kvp.Key).
+                           Select(Function(kvp) $"{kvp.Key}: {kvp.Value}"))
+        Dim mesaj As String = If(scrise = "",
+                                 "Descărcarea a fost salvată (nimic nou de scris).",
+                                 "Descărcarea a fost salvată — " & scrise & ".")
+        If raspuns.Avertismente.Count > 0 Then mesaj &= " " & String.Join(" ", raspuns.Avertismente)
+        Return mesaj
+    End Function
+
     Private Async Sub btnSalveaza_Click(sender As Object, e As EventArgs) Handles btnSalveaza.Click
         Try
+            If _mod = ModAsociere.Propunere Then
+                Await SalveazaPropunereaAsync()
+                Return
+            End If
             ' `deTrimis`, nu `comenzi`: VB e insensibil la litere mari/mici, deci o variabilă
             ' numită `comenzi` ar umbri metoda `Comenzi()` pentru tot restul procedurii — și
             ' apelul din Catch ar deveni o indexare de listă. Capcana e consemnată în notele
@@ -1677,6 +1905,23 @@ Public Class AsociereForm
     ''' </summary>
     Private Sub AsociereForm_FormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
         Try
+            If _mod = ModAsociere.Propunere Then
+                ' Aici nu se pierd niște corecturi, ci TOATĂ descărcarea: faza întâi a derulat
+                ' tranzacția înapoi, deci fără salvare nu rămâne în bază nici recepțiile, nici
+                ' plățile, nici istoricul. Merită spus pe litere, nu cu formula obișnuită.
+                If SAuSalvatModificari Then Return
+                Dim raspunsul As DialogResult = MessageBox.Show(
+                    Me,
+                    "Închizi fără să salvezi. NIMIC din descărcare nu ajunge în tabele — nici " &
+                    "recepțiile, nici plățile, nici istoricul —, fiindcă serverul a derulat " &
+                    "înapoi tot ce a pregătit." & Environment.NewLine &
+                    "Va trebui reluată descărcarea. Închizi oricum?",
+                    "K-BOT — Așezarea recepțiilor descărcate",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2)
+                If raspunsul = DialogResult.No Then e.Cancel = True
+                Return
+            End If
+
             If Comenzi().Count = 0 Then Return
             Dim raspuns As DialogResult = MessageBox.Show(
                 Me,
@@ -1711,3 +1956,19 @@ Public Class AsociereForm
         Public ReadOnly Property Nod As AdvancedTreeControl.TreeItem
     End Class
 End Class
+
+''' <summary>
+''' Peste ce lucrează editorul: peste legăturile DIN BAZĂ, sau peste tabloul pe care tocmai
+''' l-a propus o descărcare (felia 0055).
+''' </summary>
+''' <remarks>
+''' Aceeași treabă și același ecran; ce diferă e de unde vine tabloul, unde pleacă hotărârea
+''' și cât costă o închidere fără salvare. Vezi al doilea constructor al formularului.
+''' </remarks>
+Public Enum ModAsociere
+    ''' <summary>Editorul de oricând: citește <c>GET /api/forexe/asociere</c>, trimite comenzi.</summary>
+    Oricand = 0
+
+    ''' <summary>Faza a doua a ingestiei: tabloul vine din propunere, hotărârile pleacă cu payload-ul.</summary>
+    Propunere = 1
+End Enum

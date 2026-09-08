@@ -119,8 +119,15 @@ Public NotInheritable Class ForexeController
             If IsConnected Then Return True
             If _busy Then Return False
 
-            Dim cert As X509Certificate2 = SelectCertificate()
-            If cert Is Nothing Then Return False   ' anulat / fără certificat
+            Dim cert As X509Certificate2 = Nothing
+            If NoTokenInDebug() Then
+                ' With no token the certificate dialog is pointless: it opens empty and says
+                ' so itself. Go straight on, without a certificate.
+                RaporteazaStare("Fără token — pornesc sesiunea NEAUTENTIFICATĂ (doar Debug).")
+            Else
+                cert = SelectCertificate()
+                If cert Is Nothing Then Return False   ' anulat / fără certificat
+            End If
 
             IntraInLucru()
             Try
@@ -153,22 +160,38 @@ Public NotInheritable Class ForexeController
     ''' Întoarce rândurile mapate, sau Nothing dacă fluxul nu a putut porni ori a eșuat.
     ''' </summary>
     Public Async Function DownloadListaAsync() As Task(Of List(Of Angajament))
+        ' Cutia neagră a descărcării (felia 0054): se deschide ÎNAINTE de orice ieșire, ca
+        ' până și o cerere respinsă din start să lase o urmă pe disc.
+        Dim jurnal As New ForexeRunDump("ListaAngajamente", String.Empty, _session)
         Try
-            If _busy Then Return Nothing
-            If Not Await AsiguraSesiuneAsync() Then Return Nothing
+            If _busy Then
+                jurnal.Note("motiv", "O alta operatie FOREXE era deja in curs.")
+                ScrieJurnal(jurnal, "ocupat", Nothing)
+                RaporteazaStare("Rulează deja o operație FOREXE — cererea a fost ignorată.")
+                Return Nothing
+            End If
+            If Not Await AsiguraSesiuneAsync() Then
+                jurnal.Note("motiv", "Sesiunea FOREXE nu s-a deschis (anulat sau esuat).")
+                ScrieJurnal(jurnal, "fara-sesiune", Nothing)
+                Return Nothing
+            End If
 
             IntraInLucru()
             Try
                 RaporteazaStare("Descarc lista de angajamente...")
                 Dim job As JobRequest = JobBuilder.BuildListaAngajamente(_session)
+                jurnal.NoteRequest(job)
                 Dim rezultat As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
                 If Not rezultat.Success Then
+                    ScrieJurnal(jurnal, "esuat", rezultat)
                     RaporteazaStare("Lista de angajamente a eșuat: " & rezultat.Message)
                     Return Nothing
                 End If
 
                 Dim randuri As TabelRezultat = Nothing
                 If Not rezultat.Tables.TryGetValue(WorkflowCatalog.ListaAngajamenteTable, randuri) Then
+                    jurnal.Note("tabel_asteptat", WorkflowCatalog.ListaAngajamenteTable)
+                    ScrieJurnal(jurnal, "tabel-lipsa", rezultat)
                     RaporteazaStare($"Tabelul «{WorkflowCatalog.ListaAngajamenteTable}» lipsește din rezultat (0 rânduri).")
                     Return Nothing
                 End If
@@ -181,12 +204,15 @@ Public NotInheritable Class ForexeController
 
                 Dim mapate As List(Of Angajament) = AngajamentMapper.FromListaAngajamenteResult(randuri)
                 Dim cale As String = _store.SalveazaLista(mapate)
+                ScrieJurnal(jurnal, "ok", rezultat, mapate)
                 RaporteazaStare($"{mapate.Count} angajamente mapate (din {randuri.Count} brute) → {Path.GetFileName(cale)}")
                 Return mapate
             Finally
                 IesDinLucru()
             End Try
         Catch ex As Exception
+            jurnal.Note("exceptie", ex.ToString())
+            ScrieJurnal(jurnal, "exceptie", Nothing)
             GlobalErrorLog.Write("ForexeController.DownloadListaAsync", ex)
             Throw
         End Try
@@ -200,16 +226,31 @@ Public NotInheritable Class ForexeController
     ''' </summary>
     Public Async Function DownloadNodeAsync(cod As String,
                                             citesteIstoric As Func(Of String, CancellationToken, Task(Of IstoricInfo))) As Task(Of PrelucrareRezultat)
+        ' Cutia neagră a descărcării (felia 0054) — vezi DownloadListaAsync.
+        Dim jurnal As New ForexeRunDump("PrelucrareCompleta", cod, _session)
         Try
             If String.IsNullOrWhiteSpace(cod) Then
                 Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
             End If
-            If _busy Then Return Nothing
-            If Not Await AsiguraSesiuneAsync() Then Return Nothing
+            If _busy Then
+                jurnal.Note("motiv", "O alta operatie FOREXE era deja in curs.")
+                ScrieJurnal(jurnal, "ocupat", Nothing)
+                RaporteazaStare($"Rulează deja o operație FOREXE — cererea pentru «{cod}» a fost ignorată.")
+                Return Nothing
+            End If
+            If Not Await AsiguraSesiuneAsync() Then
+                jurnal.Note("motiv", "Sesiunea FOREXE nu s-a deschis (anulat sau esuat).")
+                ScrieJurnal(jurnal, "fara-sesiune", Nothing)
+                Return Nothing
+            End If
 
             IntraInLucru()
             Try
                 Dim ultimaData As Date? = Await UltimaDataIstoric(cod, citesteIstoric)
+                jurnal.Note("istoric_local",
+                            If(ultimaData.HasValue,
+                               $"REVERSE de la {ultimaData.Value:yyyy-MM-dd HH:mm:ss}",
+                               "fara istoric local -> prelucrare completa"))
 
                 Dim job As JobRequest
                 If ultimaData.HasValue Then
@@ -219,9 +260,11 @@ Public NotInheritable Class ForexeController
                     RaporteazaStare($"Descarc «{cod}» (prelucrare completă)...")
                     job = JobBuilder.BuildPrelucrareCompleta(cod)
                 End If
+                jurnal.NoteRequest(job)
 
                 Dim rezultat As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
                 If Not rezultat.Success Then
+                    ScrieJurnal(jurnal, "esuat", rezultat)
                     RaporteazaStare($"Prelucrarea lui «{cod}» a eșuat: " & rezultat.Message)
                     Return Nothing
                 End If
@@ -229,12 +272,21 @@ Public NotInheritable Class ForexeController
                 Dim pachet As PrelucrareRezultat = WorkflowResultStore.DinJobResult(cod, rezultat)
                 Dim cale As String = _store.SalveazaNod(cod, pachet)
                 Dim total As Integer = pachet.Tabele.Values.Sum(Function(t) t.Count)
+                ScrieJurnal(jurnal, "ok", rezultat, pachet)
                 RaporteazaStare($"«{cod}»: {pachet.Tabele.Count} tabele, {total} rânduri → {Path.GetFileName(cale)}")
+                ' Aici se termină treaba ROBOTULUI: pachetul e pe disc, nimic n-a plecat încă
+                ' spre server. Ingestia (propunere ▸ așezare ▸ salvare, felia 0055) pornește din
+                ' shell, cu pachetul întors mai jos — coordonatorul aduce datele, shell-ul le
+                ' duce mai departe. Se spune pe consolă fiindcă între cele două trepte poate sta
+                ' un dialog: dacă operatorul îl închide, descărcarea rămâne doar locală.
+                RaporteazaStare($"«{cod}»: descărcarea s-a încheiat — pachetul e local; urmează ingestia.")
                 Return pachet
             Finally
                 IesDinLucru()
             End Try
         Catch ex As Exception
+            jurnal.Note("exceptie", ex.ToString())
+            ScrieJurnal(jurnal, "exceptie", Nothing)
             GlobalErrorLog.Write("ForexeController.DownloadNodeAsync", ex)
             Throw
         End Try
@@ -293,6 +345,20 @@ Public NotInheritable Class ForexeController
         End Try
     End Function
 
+    ''' <summary>
+    ''' Deschide bancul de înregistrare (K-BOT Recorder, felia 0053) peste sesiunea FOREXE.
+    ''' Fereastra e modeless și trăiește în KBot.Forexe, lângă executorul pe care îl andochează;
+    ''' aici trece doar intenția și proprietarul dialogului.
+    ''' </summary>
+    Public Sub ShowRecorder()
+        Try
+            _runner.ShowRecorder(Owner)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.ShowRecorder", ex)
+            Throw
+        End Try
+    End Sub
+
     ' ── Interne ──────────────────────────────────────────────────────────
 
     ''' <summary>
@@ -317,10 +383,50 @@ Public NotInheritable Class ForexeController
         End Try
     End Function
 
+    ''' <summary>
+    ''' Scrie cutia neagră a unei descărcări și SPUNE unde a ajuns. Calea se anunță pe consolă
+    ''' pentru că folderul e tot rostul feliei: operatorul trebuie să-l poată trimite mai
+    ''' departe fără să-l caute. Dacă scrierea însăși a eșuat, se spune și asta — un jurnal
+    ''' lipsă nu are voie să treacă neobservat.
+    ''' </summary>
+    Private Sub ScrieJurnal(jurnal As ForexeRunDump, rezultatFinal As String,
+                            rezultat As JobResult, Optional mapat As Object = Nothing)
+        Dim cale As String = jurnal.Save(rezultatFinal, rezultat, mapat)
+        If String.IsNullOrEmpty(cale) Then
+            RaporteazaStare("Jurnalul descărcării nu s-a putut scrie — vezi Logs\harness_errors.log.")
+        Else
+            RaporteazaStare("Jurnalul descărcării: " & cale)
+        End If
+    End Sub
+
     ' Deschide sesiunea dacă nu există; False = operatorul a anulat sau conectarea a eșuat.
     Private Async Function AsiguraSesiuneAsync() As Task(Of Boolean)
         If IsConnected Then Return True
         Return Await ConnectAsync()
+    End Function
+
+    ''' <summary>
+    ''' Debug AND no certificate on the token/smartcard: Connect goes ahead WITHOUT one.
+    ''' Authenticating to FOREXE will fail, but the browser stays open (decision A3 in
+    ''' <c>ForexeRunner.RunAsync</c>), so docking, the recorder and the Wicket monitor can be
+    ''' tried on a machine that does not have the token at hand.
+    '''
+    ''' <para>Release has no such door: there a missing token stops the connection, as before.
+    ''' Neither does Debug when the token IS present - the certificate dialog opens normally
+    ''' and an operator cancel stays a cancel.</para>
+    ''' </summary>
+    Private Shared Function NoTokenInDebug() As Boolean
+#If DEBUG Then
+        Try
+            Return CertificateService.GetSmartcardCertificates().Count = 0
+        Catch ex As Exception
+            ' The reader itself may be missing from the machine - still "no token".
+            GlobalErrorLog.Write("ForexeController.NoTokenInDebug", ex)
+            Return True
+        End Try
+#Else
+        Return False
+#End If
     End Function
 
     ''' <summary>Picker de certificat în mod manual de PIN (utilizatorul tastează PIN-ul în dialogul Windows).</summary>

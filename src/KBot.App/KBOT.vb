@@ -39,6 +39,10 @@ Public Class KBOT
     ''' cheamă <c>GlobalErrorLog.Write</c>; cine are de spus ceva operatorului o spune în UI.
     ''' </summary>
     Private _forexeLogger As RichTextBoxLogger
+    ' ATENȚIE: sursa asta e A SINCRONIZĂRII, nu a formularului — se naște în
+    ' SincronizeazaAsync, chiar înaintea singurei ei folosiri, și rămâne Nothing până
+    ' atunci. Nu o citiți din alt flux (felia 0055 a făcut-o și a picat NullReference
+    ' înainte de a pleca vreo cerere). Restul shell-ului folosește CancellationToken.None.
     Private _cts As CancellationTokenSource
 
     ' Catalogul an / SS / CodProgram al bazei curente (din /api/auth/periods).
@@ -921,7 +925,10 @@ Public Class KBOT
             If f.SAuSalvatModificari Then
                 ' What is still on screen is no longer true: the lines changed, the reservations
                 ' consumed changed, and a new revision was not there at all.
-                DupaScriereaDdf(f.IdrevSalvat)
+                ' `IddfSalvat` is the key the server returned, so it also answers "does this
+                ' angajament have a document now?" -- which is what the «ddf» nav entry asks.
+                DupaScriereaDdf(f.IdrevSalvat, draft.CodAngajament,
+                                iddfDocument:=f.IddfSalvat)
             End If
         End Using
     End Sub
@@ -959,7 +966,9 @@ Public Class KBOT
         End Try
 
         AratatRezultatulStergerii(rez, "Șterge revizia")
-        DupaScriereaDdf()
+        ' The server decides whether the DOCUMENT survived: deleting one revision leaves it
+        ' standing even when it was the last, while the document and month deletes can take it.
+        DupaScriereaDdf(cod:=rez?.Cod, documentSters:=(rez IsNot Nothing AndAlso rez.DocumentSters))
     End Function
 
     ''' <summary>
@@ -999,7 +1008,7 @@ Public Class KBOT
         End Try
 
         AratatRezultatulStergerii(rez, "Șterge documentul")
-        DupaScriereaDdf()
+        DupaScriereaDdf(cod:=rez?.Cod, documentSters:=(rez IsNot Nothing AndAlso rez.DocumentSters))
     End Function
 
     ''' <summary>
@@ -1040,7 +1049,7 @@ Public Class KBOT
         End Try
 
         AratatRezultatulStergerii(rez, "Șterge reviziile lunii")
-        DupaScriereaDdf()
+        DupaScriereaDdf(cod:=rez?.Cod, documentSters:=(rez IsNot Nothing AndAlso rez.DocumentSters))
     End Function
 
     ''' <summary>The <c>FX_Info_DDF</c> summary, built client-side from what the view already
@@ -1073,7 +1082,19 @@ Public Class KBOT
     ''' marks reservations as having a DDF and a delete releases them again, so what it shows
     ''' is no longer true either.
     ''' </summary>
-    Private Sub DupaScriereaDdf(Optional idrevSalvat As Integer = 0)
+    ''' <param name="idrevSalvat">The revision to land on after a save; 0 after a delete.</param>
+    ''' <param name="cod">The angajament the write was for. The view gate is only touched when
+    ''' the selected node is still that one -- flipping the flag on somebody else's angajament
+    ''' would be worse than leaving it stale.</param>
+    ''' <param name="iddfDocument">The document key after a save, which also means «the document
+    ''' exists»; 0 when this write says nothing about whether it does.</param>
+    ''' <param name="documentSters">The whole document went. Only the document delete and the
+    ''' month delete can say this -- deleting a single revision leaves the document standing,
+    ''' even when it was the last one.</param>
+    Private Sub DupaScriereaDdf(Optional idrevSalvat As Integer = 0,
+                                Optional cod As String = Nothing,
+                                Optional iddfDocument As Integer = 0,
+                                Optional documentSters As Boolean = False)
         Try
             TryCast(_activeView, DdfView)?.Reincarca(idrevSalvat)
 
@@ -1083,11 +1104,51 @@ Public Class KBOT
             ' `ActivateView` calls `SetContext` on every activation, so an inactive one reloads
             ' by itself when the operator switches to it.
             TryCast(_activeView, RezervariView)?.Reincarca()
+
+            ActualizeazaPoartaDdf(cod, iddfDocument, documentSters)
         Catch ex As Exception
             ' UI boundary: the refresh failed, but the WRITE already succeeded. Logged, and we
             ' carry on -- a throw here would make it look as though the save had failed.
             GlobalErrorLog.Write("MainForm.DupaScriereaDdf", ex)
         End Try
+    End Sub
+
+    ''' <summary>
+    ''' The «ddf» entry in the vertical navigation, after a write changed whether the
+    ''' angajament has a document at all.
+    '''
+    ''' <para><b>Why it is needed.</b> <c>ApplyViewGating</c> reads
+    ''' <c>AngajamentTreeInfo.AreDDF</c>, which is filled once, when the tree is loaded, and
+    ''' is <c>FX_Angajamente.IDDF IS NOT NULL</c> on the server. The FIRST document of an
+    ''' angajament (revision 0, added from the reservations tree) writes that <c>IDDF</c>, but
+    ''' nothing told the shell -- so the entry stayed hidden and the document the operator had
+    ''' just saved could not be opened until the next year/SS change reloaded the tree.</para>
+    '''
+    ''' <para>Raised LOCALLY, exactly as <see cref="DupaScriereaOrdonantarii"/> raises
+    ''' <c>AreORD</c>: a <c>LoadTreeAsync</c> from here would clear the selection and drop the
+    ''' operator back onto «sumar» the moment they saved. <c>IDDF</c> is carried along with
+    ''' the flag rather than left to drift, because that column is what the flag MEANS.</para>
+    ''' </summary>
+    Private Sub ActualizeazaPoartaDdf(cod As String, iddfDocument As Integer, documentSters As Boolean)
+        If _currentInfo Is Nothing Then Return
+        ' Nothing to say about the document either way -- a single revision went, and the
+        ' document is still standing.
+        If iddfDocument <= 0 AndAlso Not documentSters Then Return
+
+        ' The write may have been for an angajament the operator has since moved off. Silence
+        ' beats flipping the flag on the wrong node.
+        If Not String.IsNullOrEmpty(cod) AndAlso
+           Not String.Equals(cod, _currentInfo.CodAngajament, StringComparison.OrdinalIgnoreCase) Then
+            Return
+        End If
+
+        Dim areAcum As Boolean = Not documentSters
+        _currentInfo.IDDF = If(documentSters, CType(Nothing, Long?), CLng(iddfDocument))
+        If _currentInfo.AreDDF = areAcum Then Return
+
+        _currentInfo.AreDDF = areAcum
+        ' Also re-pushes «sumar» when the active view was the one that just disappeared.
+        ApplyViewGating(_currentInfo)
     End Sub
 
     ' ---------------- lista de angajamente ----------------
@@ -1267,30 +1328,94 @@ Public Class KBOT
 
     ''' <summary>
     ''' Iconița din dreapta unui NOD = descarcă din FOREXE angajamentul acela întreg
-    ''' («Prelucrare Completa», sau varianta REVERSE dacă are deja istoric local). Rezultatul
-    ''' rămâne LOCAL, brut — nu există încă mapper de ingestie pentru fluxul ăsta.
+    ''' («Prelucrare Completa», sau varianta REVERSE dacă are deja istoric local) ȘI îl duce
+    ''' până în tabele, prin cele două faze ale ingestiei (felia 0055).
     ''' </summary>
     Private Async Sub Tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
         Try
             Dim cod As String = If(pNode Is Nothing, Nothing, TryCast(pNode.Tag, String))
             If String.IsNullOrEmpty(cod) Then Return
 
+            Dim pachet As PrelucrareRezultat
             busyBar.Running = True
             Try
                 ' Istoricul LOCAL decide înainte/înapoi (Access FX_Angajament_InfoComplete):
                 ' îl citim prin aceeași plasă de re-login ca restul shell-ului.
-                Await _forexe.DownloadNodeAsync(
+                pachet = Await _forexe.DownloadNodeAsync(
                     cod,
                     Function(c, ct) WithReauth(Of IstoricInfo)(Function() _apiClient.GetIstoricAsync(c, ct)))
             Finally
                 busyBar.Running = False
             End Try
+
+            ' Nothing = robotul n-a pornit sau a eșuat; a spus deja de ce pe consolă.
+            If pachet Is Nothing Then Return
+            Await DuLaIngestieAsync(cod, pachet)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.tree_RightIconClicked", ex)
             MessageBox.Show(Me, "Descărcarea angajamentului a eșuat: " & ex.Message,
                             "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Drumul de la pachetul descărcat până în tabele (felia 0055), în două faze.
+    '''
+    ''' <para><b>FAZA UNU</b> — <c>PrelucrareCoordinator.CerePropunereAsync</c>: serverul
+    ''' rulează toți pașii într-o tranzacție și o derulează înapoi NECONDIȚIONAT, apoi
+    ''' întoarce tabloul. Nimic nu s-a scris. Dacă o clasificație se potrivește cu mai multe
+    ''' unități, coordonatorul deschide singur dialogul de alegere, de câte ori e nevoie.</para>
+    '''
+    ''' <para><b>FAZA DOI</b> — butonul din <c>AsociereForm</c>: retrimite ACELAȘI pachet, cu
+    ''' amprenta și cu hotărârile operatorului, iar serverul comite. De-asta se ține pachetul
+    ''' în viață între faze: <c>rand_istoric</c> din decizii e indicele rândului în
+    ''' <c>TabelIstoric</c>, nu o cheie de bază, deci a doua fază trebuie să vadă exact ce a
+    ''' văzut prima.</para>
+    '''
+    ''' <para>Închiderea formularului fără salvare NU e o cale de eroare: e alegerea
+    ''' operatorului de a nu scrie descărcarea. Formularul îl avertizează ce pierde.</para>
+    ''' </summary>
+    Private Async Function DuLaIngestieAsync(cod As String, pachet As PrelucrareRezultat) As Task
+        Try
+            ' Alegerile de unitate se ADUNĂ aici, nu în coordonator: aceeași listă merge și în
+            ' faza a doua, fiindcă bifa «nu mă mai întreba» s-a derulat înapoi cu propunerea.
+            Dim alegeri As New List(Of AlegereUnitate)()
+            Dim coordonator As New PrelucrareCoordinator(_apiClient)
+
+            Dim propunere As PrelucrarePropunere
+            busyBar.Running = True
+            Try
+                ' CancellationToken.None, ca la orice apel pornit de operator din shell. NU
+                ' `_cts.Token`: acel câmp se naște numai în SincronizeazaAsync, deci e Nothing
+                ' până când operatorul cere o sincronizare — iar aici pica NullReference
+                ' înainte de a pleca vreo cerere. Ingestia n-are buton de anulare; când va
+                ' avea, sursa se face aici, lângă el.
+                propunere = Await WithReauth(Of PrelucrarePropunere)(
+                    Function() coordonator.CerePropunereAsync(pachet, alegeri, CancellationToken.None))
+            Finally
+                busyBar.Running = False
+            End Try
+
+            ' Nothing = operatorul a renunțat la o alegere de unitate. Nimic nu s-a scris.
+            If propunere Is Nothing Then Return
+
+            Using f As New AsociereForm(_apiClient, cod, propunere, pachet, alegeri,
+                                        Function(op) WithReauth(Of PrelucrareRaspuns)(op))
+                f.ShowDialog(Me)
+                If Not f.SAuSalvatModificari Then Return
+            End Using
+
+            ' S-a scris: arborele are alte steaguri Are* (istoric, recepții, plăți apar acum),
+            ' iar vederea deschisă arată cifre vechi. Se recitesc amândouă.
+            Await LoadTreeAsync()
+            _activeView?.SetContext(_currentInfo)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.DuLaIngestieAsync", ex)
+            MessageBox.Show(Me, "Ingestia descărcării a eșuat: " & ex.Message & Environment.NewLine &
+                            "Pachetul a rămas în «WorkflowResults».",
+                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Function
 
     ' ---------------- FOREXE: consolă + sincronizare ----------------
     '

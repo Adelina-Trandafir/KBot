@@ -3,6 +3,7 @@ Imports System.IO
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Threading
 Imports System.Threading.Tasks
+Imports System.Windows.Forms   ' RecorderForm (bancul de înregistrare) + IWin32Window.
 Imports GeneralClasses   ' JobHistoryManager (istoricul lucrărilor FOREXE).
 Imports KBot.Common      ' ExcelJob (payload-ul parseExcel dat procesorului).
 Imports KBot.Domain      ' CelulaTabel / RandTabel / TabelRezultat (decizia D-N).
@@ -24,6 +25,10 @@ Namespace KBot.Forexe
         ' Gardianul ferestrei de PIN (port din KBOT_IPC): cedează prim-planul cât e PIN-ul pe
         ' ecran și îl repune după. Trăiește cât sesiunea; se oprește singur la anularea token-ului.
         Private _guardian As PinWindowGuardian
+
+        ' Bancul de înregistrare (felia 0053). Modeless, creat la prima cerere și ținut cât
+        ' trăiește: se închide singur, iar la închidere se anulează referința de aici.
+        Private _recorder As RecorderForm
 
         ' Procesorul Excel (bridge DI către ApiClient.ProcessExcelAsync): executorul
         ' primește prin el conversia Excel->JSON fără ca FOREXE să depindă de KBot.Api.
@@ -102,6 +107,65 @@ Namespace KBot.Forexe
                 Return _executor.IsBrowserVisible
             End Get
         End Property
+
+        ''' <summary>
+        ''' Deschide bancul de înregistrare peste sesiunea curentă. Fără sesiune vie nu are ce
+        ''' andoca și ce înregistra, deci aruncă — apelantul trebuie să afle de ce nu se
+        ''' întâmplă nimic, la fel ca la «Arată browserul».
+        ''' </summary>
+        Public Sub ShowRecorder(owner As IWin32Window) Implements IForexeRunner.ShowRecorder
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then
+                Throw New InvalidOperationException(
+                    "Nicio sesiune activă — recorderul are nevoie de un browser pornit.")
+            End If
+
+            Try
+                If _recorder Is Nothing OrElse _recorder.IsDisposed Then
+                    _recorder = New RecorderForm()
+                    AddHandler _recorder.FormClosed, AddressOf Recorder_FormClosed
+                End If
+
+                ' Legarea se reface la fiecare deschidere: o reconectare a schimbat executorul.
+                _recorder.AttachExecutor(_executor)
+
+                If _recorder.Visible Then
+                    If _recorder.WindowState = FormWindowState.Minimized Then
+                        _recorder.WindowState = FormWindowState.Normal
+                    End If
+                    _recorder.Activate()
+                ElseIf owner Is Nothing Then
+                    _recorder.Show()
+                Else
+                    _recorder.Show(owner)
+                End If
+            Catch ex As Exception
+                _logger?.LogException(ex, "Eroare la deschiderea recorderului")
+                Throw
+            End Try
+        End Sub
+
+        Private Sub Recorder_FormClosed(sender As Object, e As FormClosedEventArgs)
+            _recorder = Nothing
+        End Sub
+
+        ''' <summary>
+        ''' Desprinde recorderul de executorul care urmează să moară. Fără asta ar rămâne cu un
+        ''' executor închis în mână și cu butoanele de andocare aprinse degeaba.
+        ''' </summary>
+        Private Sub DetachRecorder()
+            Dim form As RecorderForm = _recorder
+            If form Is Nothing OrElse form.IsDisposed Then Return
+            Try
+                If form.IsHandleCreated AndAlso form.InvokeRequired Then
+                    form.BeginInvoke(Sub() form.DetachExecutor())
+                Else
+                    form.DetachExecutor()
+                End If
+            Catch ex As Exception
+                ' Curățenie: o desprindere ratată nu are voie să oprească închiderea sesiunii.
+                _logger?.LogException(ex, "Eroare la desprinderea recorderului")
+            End Try
+        End Sub
 
         Public Async Function RunAsync(job As JobRequest,
                                        certificate As X509Certificate2,
@@ -489,6 +553,9 @@ Namespace KBot.Forexe
             ' rămâne să scaneze la nesfârșit, câte un fir în plus la fiecare reconectare.
             _guardian?.Stop()
             _guardian = Nothing
+
+            ' Recorderul ține executorul curent: îl desprindem ÎNAINTE de a-l închide.
+            DetachRecorder()
 
             If _executor Is Nothing Then Return
             Try

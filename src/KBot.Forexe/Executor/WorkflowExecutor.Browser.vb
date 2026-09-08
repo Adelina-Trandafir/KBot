@@ -259,9 +259,17 @@ Partial Public Class WorkflowExecutor
         })
         '            .SlowMo = 100,
 
+        ' NoViewport, not a size: Playwright's default is an EMULATED 1280x720 viewport pushed
+        ' with Emulation.setDeviceMetricsOverride, and that emulated size does not follow the
+        ' window. Docked, the window is the host panel, so an emulated page keeps laying itself
+        ' out at the old width - its scrollbars fall outside the panel and the page looks cut
+        ' off. Clearing the override afterwards is not enough either: Playwright pushes it back.
+        ' With NoViewport nothing is emulated and the page simply is the size of its window,
+        ' which is right both docked and free.
         _context = Await _browser.NewContextAsync(New BrowserNewContextOptions() With {
             .IgnoreHTTPSErrors = True,
-            .AcceptDownloads = True
+            .AcceptDownloads = True,
+            .ViewportSize = ViewportSize.NoViewport
         })
 
         '_context = Await _browser.NewContextAsync(New BrowserNewContextOptions() With {
@@ -273,6 +281,14 @@ Partial Public Class WorkflowExecutor
         ' Deschide pagină goală (about:blank)
         _page = Await _context.NewPageAsync()
         Await _page.EvaluateAsync($"document.title = '{_browserWindowTitle}';")
+
+        ' Resolve the window handle NOW, while the marker title is still on the page. After
+        ' the first real navigation the caption belongs to the site, and everything that
+        ' needs the window - docking above all - would be left searching for a title that
+        ' is no longer there.
+        If Await GetOrRefreshBrowserHwndAsync() = IntPtr.Zero Then
+            _logger.LogWarning("Fereastra browserului nu a fost identificată la pornire.")
+        End If
 
         ' Acum facem Snap pe pagina goală
         If _useSnapAssist Then
@@ -326,25 +342,6 @@ Partial Public Class WorkflowExecutor
     End Function
 
 
-    Private Async Function GetBrowserHwndAsync() As Task(Of IntPtr)
-        Dim hwnd As IntPtr = IntPtr.Zero
-
-        For i = 1 To 20
-            Await Task.Delay(200)
-            For Each p In Process.GetProcesses()
-                Try
-                    If p.MainWindowHandle <> IntPtr.Zero AndAlso
-                   p.MainWindowTitle = _browserWindowTitle Then
-                        Return p.MainWindowHandle
-                    End If
-                Catch
-                End Try
-            Next
-        Next
-
-        Return IntPtr.Zero
-    End Function
-
     Private Async Function GetChromeWindowIdAsync() As Task(Of Integer)
         Dim cdp = Await _page.Context.NewCDPSessionAsync(_page)
 
@@ -367,38 +364,103 @@ Partial Public Class WorkflowExecutor
     }
     End Function
 
-    Private Async Function GetOrRefreshBrowserHwndAsync() As Task(Of IntPtr)
+    ' =========================================================================
+    '  Browser window lookup
+    '
+    '  The window is found by TITLE: the unique marker _browserWindowTitle is written
+    '  into document.title and Chromium puts that title in the frame caption. The marker
+    '  only lives until the page navigates somewhere real, so the handle is resolved once
+    '  at launch and cached from then on; a later lookup stamps the marker back on, finds
+    '  the window, and puts the real title back.
+    '
+    '  EnumWindows, not Process.MainWindowTitle: it sees the frame window even when it is
+    '  not the process main window, and it does not walk every process on the machine.
+    ' =========================================================================
+    Private Delegate Function EnumWindowsProc(hWnd As IntPtr, lParam As IntPtr) As Boolean
 
-        ' 1. Dacă avem deja HWND și e valid → îl folosim
-        If _browserHwnd <> IntPtr.Zero AndAlso IsWindow(_browserHwnd) Then
-            Return _browserHwnd
+    <DllImport("user32.dll", SetLastError:=True)>
+    Private Shared Function EnumWindows(callback As EnumWindowsProc, lParam As IntPtr) As Boolean
+    End Function
+
+    <DllImport("user32.dll", CharSet:=CharSet.Unicode, SetLastError:=True)>
+    Private Shared Function GetWindowText(hWnd As IntPtr, lpString As System.Text.StringBuilder, nMaxCount As Integer) As Integer
+    End Function
+
+    <DllImport("user32.dll", CharSet:=CharSet.Unicode, SetLastError:=True)>
+    Private Shared Function GetClassName(hWnd As IntPtr, lpClassName As System.Text.StringBuilder, nMaxCount As Integer) As Integer
+    End Function
+
+    ''' <summary>Class name of the Chromium top level frame window.</summary>
+    Private Const ChromeFrameClass As String = "Chrome_WidgetWin_1"
+
+    ''' <summary>
+    ''' The browser window handle. Free once resolved; when the cache is empty the marker
+    ''' title is put back on the page for as long as the search takes.
+    ''' </summary>
+    Private Async Function GetOrRefreshBrowserHwndAsync() As Task(Of IntPtr)
+        If _browserHwnd <> IntPtr.Zero AndAlso IsWindow(_browserHwnd) Then Return _browserHwnd
+
+        _browserHwnd = IntPtr.Zero
+        If _page Is Nothing OrElse _page.IsClosed Then Return IntPtr.Zero
+
+        ' Read the real title BEFORE overwriting it: the operator must not be left with a
+        ' window called WF_BROWSER_<guid>.
+        Dim realTitle As String = Nothing
+        Try
+            realTitle = Await _page.TitleAsync()
+            Await _page.EvaluateAsync("t => { document.title = t; }", _browserWindowTitle)
+        Catch ex As Exception
+            _logger.LogWarning($"Nu am putut marca titlul paginii: {ex.Message}")
+        End Try
+
+        For attempt As Integer = 1 To 12
+            Dim found As IntPtr = FindWindowByTitleMarker(_browserWindowTitle)
+            If found <> IntPtr.Zero Then
+                _browserHwnd = found
+                Exit For
+            End If
+            Await Task.Delay(150)
+        Next
+
+        If realTitle IsNot Nothing AndAlso
+           Not String.Equals(realTitle, _browserWindowTitle, StringComparison.Ordinal) Then
+            Try
+                Await _page.EvaluateAsync("t => { document.title = t; }", realTitle)
+            Catch ex As Exception
+                _logger.LogWarning($"Nu am putut reface titlul paginii: {ex.Message}")
+            End Try
         End If
 
-        ' 2. Altfel, căutăm din nou după titlul unic
+        If _browserHwnd = IntPtr.Zero Then
+            _logger.LogWarning("Fereastra browserului nu a fost găsită după titlu.")
+        End If
+        Return _browserHwnd
+    End Function
 
-        Dim hwnd As IntPtr = IntPtr.Zero
-        Dim found As Boolean = False
-        Dim attempts As Integer = 0
+    ''' <summary>
+    ''' First top level Chromium frame window whose caption carries <paramref name="marker"/>.
+    ''' The class filter matters: Chromium hangs invisible helper windows off the same title,
+    ''' and moving one of those around would look exactly like docking doing nothing.
+    ''' </summary>
+    Private Shared Function FindWindowByTitleMarker(marker As String) As IntPtr
+        Dim result As IntPtr = IntPtr.Zero
+        Dim titleBuf As New System.Text.StringBuilder(512)
+        Dim classBuf As New System.Text.StringBuilder(256)
 
-        While Not found AndAlso attempts < 20
-            Await Task.Delay(250)
-            attempts += 1
-            Dim processes = Process.GetProcesses()
-            For Each p In processes
-                Try
-                    If Not String.IsNullOrEmpty(p.MainWindowTitle) AndAlso p.MainWindowTitle.Contains(_browserWindowTitle) Then
-                        hwnd = p.MainWindowHandle
-                        _browserHwnd = hwnd
-                        Return hwnd
-                    End If
-                Catch
-                End Try
-            Next
-        End While
+        EnumWindows(Function(hWnd As IntPtr, lParam As IntPtr) As Boolean
+                        titleBuf.Clear()
+                        If GetWindowText(hWnd, titleBuf, titleBuf.Capacity) = 0 Then Return True
+                        If titleBuf.ToString().IndexOf(marker, StringComparison.Ordinal) < 0 Then Return True
 
-        ' 3. Nu am găsit nimic
-        _browserHwnd = IntPtr.Zero
-        Return IntPtr.Zero
+                        classBuf.Clear()
+                        GetClassName(hWnd, classBuf, classBuf.Capacity)
+                        If Not String.Equals(classBuf.ToString(), ChromeFrameClass, StringComparison.Ordinal) Then Return True
+
+                        result = hWnd
+                        Return False   ' found it, stop enumerating
+                    End Function, IntPtr.Zero)
+
+        Return result
     End Function
 
     Private Sub ConfigureAutoSelectCertificatePolicy()

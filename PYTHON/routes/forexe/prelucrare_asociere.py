@@ -145,9 +145,17 @@ _LINII_SQL = (
     "SELECT IDRH, CodIndicator, CodAI, CodSSI, IdClsf, Valoare "
     "FROM FX_Receptii WHERE CodAngajament = %s ORDER BY IDRH, CodIndicator"
 )
+# Toate instantaneele angajamentului, pentru CONTEXTUL propunerii. Aceleasi coloane ca in
+# routes/forexe/asociere.py, ca sa poata calatori in aceeasi forma pe fir.
+_TOATE_INSTANTANEELE_SQL = (
+    "SELECT IDRH, IDRR, IDH, DataH, Total, Descriere, TipReceptie, "
+    "       COALESCE(Sters, 0) AS Sters, COALESCE(EsteStergere, 0) AS EsteStergere "
+    "FROM FX_Receptii_H WHERE CodAngajament = %s ORDER BY DataH, IDRH"
+)
 
 
-def citeste_receptii(cursor, cod: str) -> List[dict]:
+def citeste_receptii(cursor, cod: str,
+                     ancore: Optional[Dict[int, int]] = None) -> List[dict]:
     """
     Fiecare receptie a angajamentului, cu liniile ei -- INCLUSIV cele pe care rularea
     asta nu le-a atins si inclusiv cele sterse.
@@ -155,7 +163,22 @@ def citeste_receptii(cursor, cod: str) -> List[dict]:
     Formularul are nevoie de toate ca tinte de plasare: o receptie stearsa poate primi
     in continuare un instantaneu ANTERIOR stergerii ei. Steagul `Sters` nu o scoate din
     joc -- si cu atat mai putin acum, de cand F13 nu mai refuza nimic pe data (31.08.2026).
+
+    `ancore` sunt cele intoarse de `step4b_receptii_prelucrare`: {indice in ListaReceptii
+    -> IDRR}, doar pentru receptiile NASCUTE in rularea curenta. Fiecare astfel de
+    receptie pleaca spre client si cu `rand_receptie`, indicele ei -- singurul nume al ei
+    care supravietuieste derularii inapoi a propunerii. Pentru toate celelalte campul e
+    `None`, iar numele care conteaza ramane `idrr`.
+
+    Editorul de ORICAND (routes/forexe/asociere.py) cheama fara `ancore`: acolo nu exista
+    sarcina utila, nu se deruleaza nimic inapoi, si fiecare `IDRR` e deja real.
     """
+    rand_dupa_idrr: Dict[int, int] = {}
+    for rand, idrr in (ancore or {}).items():
+        # Doua randuri de payload din aceeasi zi pot ajunge pe aceeasi receptie; se tine
+        # PRIMUL indice, ca sa fie o singura ancora pentru o singura receptie.
+        if idrr not in rand_dupa_idrr:
+            rand_dupa_idrr[idrr] = rand
     cursor.execute(_RHR_SQL, (cod,))
     linii: Dict[int, List[dict]] = {}
     for r in cursor.fetchall():
@@ -185,6 +208,8 @@ def citeste_receptii(cursor, cod: str) -> List[dict]:
             # drag-uri, cand avertismentul inca valoreaza ceva -- si ca sa puna un semn pe
             # randurile deja marcate.
             "reconstituit_nesigur": bool(r["ReconstituitNesigur"]),
+            # Vezi docstring-ul: numele care supravietuieste fazei intai, sau None.
+            "rand_receptie": rand_dupa_idrr.get(idrr),
             "rhr": linii.get(idrr, []),
         })
     return out
@@ -251,6 +276,88 @@ def citeste_instantanee(cursor, cod: str, index_la_id: Dict[int, int],
             f"{fara_indice} instantanee neasociate nu au rândul lor de istoric în "
             f"această descărcare și nu pot fi rezolvate acum. Rămân neasociate."
         )
+    return out
+
+
+# Frazele puse pe un instantaneu care nu e blocat de nicio ordonantare si de nicio plata,
+# dar nici nu se poate misca DE AICI: in ingestie deciziile acopera doar randurile de
+# asezat, si nimic altceva. Doua cazuri, si nu se confunda -- unul are o legatura scrisa,
+# celalalt n-are cu ce sa fie rezolvat acum.
+MOTIV_CONTEXT = (
+    "Legătura este deja scrisă. Se corectează în editorul de asociere, nu în timpul "
+    "descărcării."
+)
+MOTIV_FARA_ISTORIC = (
+    "Rândul lui de istoric nu este în această descărcare, deci nu poate fi așezat acum. "
+    "Rămâne neasociat."
+)
+
+
+def citeste_instantanee_context(cursor, cod: str, de_decis: Set[int],
+                                blocaje: Dict[int, List[str]]) -> List[dict]:
+    """
+    RESTUL instantaneelor angajamentului: tot ce nu e de decis in rularea asta.
+
+    DE CE EXISTA (08.09.2026, cerinta operatorului dupa prima rulare adevarata). Tabloul
+    propunerii continea doar randurile de asezat -- `IDRR IS NULL AND Sters = 0` --, deci
+    o receptie al carei lant era deja legat sosea pe ecran GOALA: fara linie in grafic
+    (formularul sare peste lanturile de lungime zero), fara marcaje pe banda, fara nimic
+    sub ea in arbore. Vazut de la locul operatorului, «recepțiile vechi nu mai vin».
+    Erau acolo; povestea lor nu era.
+
+    Nu e doar aspect: serverul JUDECA deja pe lantul intreg -- `aplica_decizii` aduce
+    instantaneele deja asociate ale acelorasi receptii inainte de `valideaza_plasarile`,
+    fiindca F15 si F16 se refera la lant, nu la ce se adauga acum. Pana la felia asta,
+    formularul era singurul care nu vedea ce vede vetoul.
+
+    SE ARATA, NU SE MISCA. Toate ies cu `blocat = True`: acoperirea ceruta de
+    `verifica_acoperirea` e exact multimea de decis, iar o decizie pentru un rand din
+    afara ei e respinsa (si pe drept -- ar rescrie tacut legaturi vechi la fiecare
+    descarcare). Corectarea unei legaturi vechi ramane treaba editorului de oricand.
+
+    `de_decis` sunt IDRH-urile intoarse de `citeste_instantanee`. Complementul lor, nu un
+    filtru SQL paralel: asa nu poate exista un rand pe care sa nu-l ia niciuna dintre cele
+    doua liste -- nici macar cel lasat afara fiindca nu si-a gasit randul de istoric in
+    descarcarea asta.
+    """
+    cursor.execute(_LINII_SQL, (cod,))
+    linii: Dict[int, List[dict]] = {}
+    for r in cursor.fetchall():
+        if r["IDRH"] is None:
+            continue
+        linii.setdefault(int(r["IDRH"]), []).append({
+            "cod_indicator": r["CodIndicator"] or "",
+            "cod_ai": r["CodAI"] or "",
+            "cod_ssi": r["CodSSI"] or "",
+            "id_clsf": r["IdClsf"],
+            "valoare": float(r["Valoare"] or 0),
+        })
+
+    cursor.execute(_TOATE_INSTANTANEELE_SQL, (cod,))
+    out = []
+    for r in cursor.fetchall():
+        idrh = int(r["IDRH"])
+        if idrh in de_decis:
+            continue
+        idrr = int(r["IDRR"]) if r["IDRR"] is not None else 0
+        motive = list(blocaje.get(idrh, []))
+        if not motive:
+            motive = [MOTIV_CONTEXT if idrr else MOTIV_FARA_ISTORIC]
+        out.append({
+            "idrh": idrh,
+            "idrr": idrr,
+            "idh": int(r["IDH"]) if r["IDH"] is not None else 0,
+            "data_h": r["DataH"],
+            "descriere": r["Descriere"] or "",
+            "total": float(r["Total"] or 0),
+            "tip_receptie": r["TipReceptie"] or "",
+            "stergere": bool(r["EsteStergere"]),
+            # F17: marcat de operator ca «nu consemneaza nicio schimbare».
+            "ignorat": bool(r["Sters"]),
+            "blocat": True,
+            "motive": motive,
+            "linii": linii.get(idrh, []),
+        })
     return out
 
 
@@ -362,6 +469,7 @@ def normalizeaza_decizii(brut) -> List[dict]:
             raise DecizieInvalida(f"«decizii»[{i}]: «data_h» este obligatorie.")
 
         idrr = item.get("idrr")
+        rand_receptie = item.get("rand_receptie")
         eticheta = item.get("receptie_noua")
         if idrr is not None:
             try:
@@ -369,29 +477,40 @@ def normalizeaza_decizii(brut) -> List[dict]:
             except (TypeError, ValueError) as err:
                 raise DecizieInvalida(
                     f"«decizii»[{i}]: «idrr» nu este un număr.") from err
+        if rand_receptie is not None:
+            try:
+                rand_receptie = int(rand_receptie)
+            except (TypeError, ValueError) as err:
+                raise DecizieInvalida(
+                    f"«decizii»[{i}]: «rand_receptie» nu este un număr.") from err
         if eticheta is not None:
             eticheta = str(eticheta).strip()
             if eticheta == "":
                 raise DecizieInvalida(
                     f"«decizii»[{i}]: «receptie_noua» nu poate fi șir gol.")
 
-        # `asociat` si `stergere` cer EXACT una dintre cele doua tinte.
+        # `asociat` si `stergere` cer EXACT una dintre cele TREI tinte. A treia,
+        # `rand_receptie`, e indicele randului in `ListaReceptii` si numeste o receptie
+        # pe care o naste CHIAR RULAREA ASTA: `IDRR`-ul ei din propunere nu supravietuieste
+        # derularii inapoi (vezi `step4b_receptii_prelucrare`), deci nu are voie sa fie
+        # numele pe care il poarta decizia.
+        tinte = [x is not None for x in (idrr, rand_receptie, eticheta)]
         if actiune in (ACTIUNE_ASOCIAT, ACTIUNE_STERGERE):
-            if (idrr is None) == (eticheta is None):
+            if sum(tinte) != 1:
                 raise DecizieInvalida(
-                    f"«decizii»[{i}] ({actiune}): trebuie exact una dintre «idrr» și "
-                    f"«receptie_noua», nu ambele și nu niciuna."
+                    f"«decizii»[{i}] ({actiune}): trebuie exact una dintre «idrr», "
+                    f"«rand_receptie» și «receptie_noua»."
                 )
         elif actiune == ACTIUNE_RECONSTITUIRE:
             if eticheta is None:
                 raise DecizieInvalida(
                     f"«decizii»[{i}] (reconstituire): «receptie_noua» este obligatorie.")
-            if idrr is not None:
+            if idrr is not None or rand_receptie is not None:
                 raise DecizieInvalida(
-                    f"«decizii»[{i}] (reconstituire): «idrr» nu are sens — recepția "
-                    f"încă nu există.")
+                    f"«decizii»[{i}] (reconstituire): «idrr» / «rand_receptie» nu au "
+                    f"sens — recepția încă nu există.")
         else:   # ignorat
-            if idrr is not None or eticheta is not None:
+            if any(tinte):
                 raise DecizieInvalida(
                     f"«decizii»[{i}] (ignorat): nu poate purta o recepție.")
 
@@ -400,6 +519,7 @@ def normalizeaza_decizii(brut) -> List[dict]:
             "actiune": actiune,
             "data_h": str(data_h),
             "idrr": idrr,
+            "rand_receptie": rand_receptie,
             "receptie_noua": eticheta,
         })
     return out
@@ -896,9 +1016,15 @@ _H_LANT_SQL = (
 
 
 def aplica_decizii(cursor, cod: str, decizii: List[dict], instantanee: List[dict],
-                   receptii: List[dict], warnings: List[str]) -> Dict[str, int]:
+                   receptii: List[dict], warnings: List[str],
+                   ancore: Optional[Dict[int, int]] = None) -> Dict[str, int]:
     """
     Faza a doua a pasului 4c. Aplica `decizii` si ignora complet trecerea automata.
+
+    `ancore` = {indice in ListaReceptii -> IDRR}, cele intoarse de
+    `step4b_receptii_prelucrare` DIN RULAREA ASTA. Prin ele se rezolva deciziile care
+    numesc o receptie prin `rand_receptie`; vezi docstring-ul pasului 4b pentru de ce
+    `idrr`-ul din propunere nu are voie sa fie numele.
 
     Intoarce numaratorile scrise.
     """
@@ -914,7 +1040,21 @@ def aplica_decizii(cursor, cod: str, decizii: List[dict], instantanee: List[dict
     # Tabloul receptiilor se reciteste, ca sa contina si cele tocmai create.
     toate = {r["idrr"]: r for r in citeste_receptii(cursor, cod)}
 
+    ancore = ancore or {}
+
     def _tinta(d: dict) -> int:
+        if d["rand_receptie"] is not None:
+            idrr = ancore.get(d["rand_receptie"])
+            if idrr is None:
+                # Randul acela nu a nascut nicio receptie in rularea de fata. Ori sarcina
+                # utila s-a schimbat intre faze, ori deciziile vin dintr-un dosar mai
+                # vechi. In ambele cazuri tabloul descris nu mai exista.
+                raise DecizieInvalida(
+                    f"Rândul {d['rand_receptie']} din «ListaReceptii» nu a creat nicio "
+                    f"recepție în această salvare. Descărcarea nu mai este aceeași — "
+                    f"reluați-o."
+                )
+            return idrr
         if d["idrr"] is not None:
             if d["idrr"] not in toate:
                 raise DecizieInvalida(

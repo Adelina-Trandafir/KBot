@@ -9,9 +9,15 @@ Imports KBot.App
 Imports KBot.Common
 Imports KBot.Domain
 
-' Tests for PrelucrareCoordinator (slice 0048-02) — the loop "post, and if the server
-' answers that a classification matches several units, ask the operator and post the SAME
-' payload again with the answers attached".
+' Tests for PrelucrareCoordinator — the loop "ask, and if the server answers that a
+' classification matches several units, ask the operator and send the SAME payload again
+' with the answers attached".
+'
+' They run on CerePropunereAsync (phase one). Until slice 0055 they ran on TrimiteAsync, the
+' phaseless send, which was retired with IApiClient.TrimitePrelucrareAsync: it left «mod» out
+' of the request, the server read that as «propunere», rolled everything back, and the client
+' still reported PrelucrareStare.Salvat. The ask-loop itself is unchanged — it is the same
+' loop in both methods, which is why the whole file moved over without losing a case.
 '
 ' No windows: the coordinator takes the question-asker as a delegate, so these tests hand
 ' it a stub instead of AlegereUnitateForm. That seam is the reason the loop is testable at
@@ -26,18 +32,10 @@ Public Class PrelucrareCoordinatorTests
         Public ReadOnly Attempts As New List(Of List(Of AlegereUnitate))()
         Public ReadOnly Queue As New Queue(Of PrelucrareRaspuns)()
 
-        Public Function TrimitePrelucrareAsync(rezultat As PrelucrareRezultat,
-                                               alegeri As IReadOnlyList(Of AlegereUnitate),
-                                               ct As CancellationToken) As Task(Of PrelucrareRaspuns) _
-            Implements IApiClient.TrimitePrelucrareAsync
-            ' Copy: the coordinator keeps adding to the same list between rounds, so a
-            ' stored reference would show the FINAL contents on every recorded attempt.
-            Attempts.Add(New List(Of AlegereUnitate)(alegeri))
-            Return Task.FromResult(Queue.Dequeue())
-        End Function
-
-        ' Faza UNU (felia 0048-03). Aceeasi evidenta ca mai sus: bucla de intrebari e
-        ' identica, deci se scripteaza la fel.
+        ' Faza UNU. Records every attempt (the choices it was given) and hands back the
+        ' queued responses in order, so a test scripts the whole conversation up front.
+        ' Copy, not reference: the coordinator keeps adding to the same list between rounds,
+        ' so a stored reference would show the FINAL contents on every recorded attempt.
         Public Function CerePropunereAsync(rezultat As PrelucrareRezultat,
                                            alegeri As IReadOnlyList(Of AlegereUnitate),
                                            ct As CancellationToken) As Task(Of PrelucrareRaspuns) _
@@ -305,9 +303,13 @@ Public Class PrelucrareCoordinatorTests
         Return New PrelucrareRezultat() With {.CodAngajament = "AAB37CNBK95"}
     End Function
 
-    Private Shared Function Salvat() As PrelucrareRaspuns
+    ' Raspunsul care incheie bucla: faza intai s-a terminat si a produs tabloul.
+    Private Shared Function Propunerea() As PrelucrareRaspuns
         Return New PrelucrareRaspuns() With {
-            .Stare = PrelucrareStare.Salvat, .CodAngajament = "AAB37CNBK95"}
+            .Stare = PrelucrareStare.Propunere,
+            .CodAngajament = "AAB37CNBK95",
+            .Propunere = New PrelucrarePropunere() With {
+                .CodAngajament = "AAB37CNBK95", .Amprenta = "a1b2"}}
     End Function
 
     Private Shared Function Intreaba(ParamArray perechi As String()) As PrelucrareRaspuns
@@ -333,7 +335,7 @@ Public Class PrelucrareCoordinatorTests
     <Fact>
     Public Async Function FaraAmbiguitate_UnSingurDrumDusIntors() As Task
         Dim api As New FakeApiClient()
-        api.Queue.Enqueue(Salvat())
+        api.Queue.Enqueue(Propunerea())
         Dim intrebat As Integer = 0
         Dim c As New PrelucrareCoordinator(api,
             Function(q, cod, poz, total)
@@ -341,9 +343,9 @@ Public Class PrelucrareCoordinatorTests
                 Return Nothing
             End Function)
 
-        Dim r = Await c.TrimiteAsync(Pachet(), CancellationToken.None)
+        Dim r = Await c.CerePropunereAsync(Pachet(), New List(Of AlegereUnitate)(), CancellationToken.None)
 
-        Assert.Equal(PrelucrareStare.Salvat, r.Stare)
+        Assert.Equal("AAB37CNBK95", r.CodAngajament)
         Assert.Single(api.Attempts)
         Assert.Empty(api.Attempts(0))
         Assert.Equal(0, intrebat)
@@ -354,12 +356,12 @@ Public Class PrelucrareCoordinatorTests
     Public Async Function Ambiguitate_IntreabaApoiRetrimiteAceleasiDateCuAlegerea() As Task
         Dim api As New FakeApiClient()
         api.Queue.Enqueue(Intreaba("200101"))
-        api.Queue.Enqueue(Salvat())
+        api.Queue.Enqueue(Propunerea())
         Dim c As New PrelucrareCoordinator(api, AlegeAlDoilea(retine:=False))
 
-        Dim r = Await c.TrimiteAsync(Pachet(), CancellationToken.None)
+        Dim r = Await c.CerePropunereAsync(Pachet(), New List(Of AlegereUnitate)(), CancellationToken.None)
 
-        Assert.Equal(PrelucrareStare.Salvat, r.Stare)
+        Assert.Equal("AAB37CNBK95", r.CodAngajament)
         Assert.Equal(2, api.Attempts.Count)
         Assert.Empty(api.Attempts(0))                       ' prima încercare, fără alegeri
         Dim a = Assert.Single(api.Attempts(1))
@@ -373,10 +375,10 @@ Public Class PrelucrareCoordinatorTests
     Public Async Function BifaAjungePeFir() As Task
         Dim api As New FakeApiClient()
         api.Queue.Enqueue(Intreaba("200101"))
-        api.Queue.Enqueue(Salvat())
+        api.Queue.Enqueue(Propunerea())
         Dim c As New PrelucrareCoordinator(api, AlegeAlDoilea(retine:=True))
 
-        Await c.TrimiteAsync(Pachet(), CancellationToken.None)
+        Await c.CerePropunereAsync(Pachet(), New List(Of AlegereUnitate)(), CancellationToken.None)
 
         Assert.True(api.Attempts(1)(0).Retine)
     End Function
@@ -387,7 +389,7 @@ Public Class PrelucrareCoordinatorTests
     Public Async Function DouaPerechi_SeIntreabaAmandouaInaintaDeRetrimitere() As Task
         Dim api As New FakeApiClient()
         api.Queue.Enqueue(Intreaba("200101", "200301"))
-        api.Queue.Enqueue(Salvat())
+        api.Queue.Enqueue(Propunerea())
         Dim vazute As New List(Of String)()
         Dim c As New PrelucrareCoordinator(api,
             Function(q, cod, poz, total)
@@ -395,7 +397,7 @@ Public Class PrelucrareCoordinatorTests
                 Return New AlegereUnitate() With {.Ss = q.Ss, .ClsfE = q.ClsfE, .IdUnitate = 75}
             End Function)
 
-        Await c.TrimiteAsync(Pachet(), CancellationToken.None)
+        Await c.CerePropunereAsync(Pachet(), New List(Of AlegereUnitate)(), CancellationToken.None)
 
         Assert.Equal(New String() {"200101 1/2", "200301 2/2"}, vazute)
         Assert.Equal(2, api.Attempts.Count)
@@ -407,7 +409,7 @@ Public Class PrelucrareCoordinatorTests
     Public Async Function CodulAngajamentuluiAjungeInIntrebare() As Task
         Dim api As New FakeApiClient()
         api.Queue.Enqueue(Intreaba("200101"))
-        api.Queue.Enqueue(Salvat())
+        api.Queue.Enqueue(Propunerea())
         Dim codVazut As String = Nothing
         Dim c As New PrelucrareCoordinator(api,
             Function(q, cod, poz, total)
@@ -415,7 +417,7 @@ Public Class PrelucrareCoordinatorTests
                 Return New AlegereUnitate() With {.Ss = q.Ss, .ClsfE = q.ClsfE, .IdUnitate = 75}
             End Function)
 
-        Await c.TrimiteAsync(Pachet(), CancellationToken.None)
+        Await c.CerePropunereAsync(Pachet(), New List(Of AlegereUnitate)(), CancellationToken.None)
 
         Assert.Equal("AAB37CNBK95", codVazut)
     End Function
@@ -427,7 +429,7 @@ Public Class PrelucrareCoordinatorTests
         api.Queue.Enqueue(Intreaba("200101"))
         Dim c As New PrelucrareCoordinator(api, Function(q, cod, poz, total) Nothing)
 
-        Dim r = Await c.TrimiteAsync(Pachet(), CancellationToken.None)
+        Dim r = Await c.CerePropunereAsync(Pachet(), New List(Of AlegereUnitate)(), CancellationToken.None)
 
         ' Nothing = s-a renunțat; ultimul răspuns al serverului a fost 409, deci nimic scris.
         Assert.Null(r)
@@ -445,7 +447,7 @@ Public Class PrelucrareCoordinatorTests
                 Return New AlegereUnitate() With {.Ss = q.Ss, .ClsfE = q.ClsfE, .IdUnitate = 75}
             End Function)
 
-        Assert.Null(Await c.TrimiteAsync(Pachet(), CancellationToken.None))
+        Assert.Null(Await c.CerePropunereAsync(Pachet(), New List(Of AlegereUnitate)(), CancellationToken.None))
         Assert.Single(api.Attempts)
     End Function
 
@@ -459,7 +461,7 @@ Public Class PrelucrareCoordinatorTests
         Dim c As New PrelucrareCoordinator(api, AlegeAlDoilea(retine:=False))
 
         Dim ex = Await Assert.ThrowsAsync(Of InvalidOperationException)(
-            Function() c.TrimiteAsync(Pachet(), CancellationToken.None))
+            Function() c.CerePropunereAsync(Pachet(), New List(Of AlegereUnitate)(), CancellationToken.None))
         Assert.Contains("nu s-a scris nimic", ex.Message)
         Assert.Equal(PrelucrareCoordinator.MaxRunde, api.Attempts.Count)
     End Function
@@ -468,7 +470,66 @@ Public Class PrelucrareCoordinatorTests
     Public Async Function PachetLipsa_Arunca() As Task
         Dim c As New PrelucrareCoordinator(New FakeApiClient())
         Await Assert.ThrowsAsync(Of ArgumentNullException)(
-            Function() c.TrimiteAsync(Nothing, CancellationToken.None))
+            Function() c.CerePropunereAsync(Nothing, New List(Of AlegereUnitate)(), CancellationToken.None))
+    End Function
+
+    ' ── faza a doua: aceeași buclă, fiindcă 409 se poate declanșa și la salvare ─────────
+    '
+    ' Cazul ăsta e chiar defectul pentru care s-a retras TrimiteAsync, în alt loc: un răspuns
+    ' care întreabă, luat drept răspuns care confirmă. Serverul rulează pașii DIN NOU la
+    ' salvare, deci o clasificație nouă apărută între faze cere iar o alegere.
+    <Fact>
+    Public Async Function Salvarea_Intreaba_Apoi_Retrimite_Cu_Alegerea() As Task
+        Dim api As New FakeApiClient()
+        api.Queue.Enqueue(Intreaba("200101"))
+        api.Queue.Enqueue(Propunerea())          ' al doilea răspuns: 200, s-a comis
+        Dim c As New PrelucrareCoordinator(api, AlegeAlDoilea(retine:=False))
+        Dim alegeri As New List(Of AlegereUnitate)()
+
+        Dim r = Await c.SalveazaAsync(Pachet(), "a1b2", New List(Of DecizieAsociere)(),
+                                      alegeri, CancellationToken.None)
+
+        Assert.NotNull(r)
+        Assert.NotEqual(PrelucrareStare.AlegereUnitate, r.Stare)
+        Assert.Equal(2, api.Attempts.Count)
+        Assert.Empty(api.Attempts(0))
+        Assert.Equal(76, Assert.Single(api.Attempts(1)).IdUnitate)
+        ' Alegerea rămâne în lista apelantului: aceeași care a trecut prin faza întâi.
+        Assert.Single(alegeri)
+        Assert.Equal("a1b2", api.AmprentaPrimita)
+    End Function
+
+    <Fact>
+    Public Async Function Salvarea_FaraIntrebare_MergeDinPrimaIncercare() As Task
+        Dim api As New FakeApiClient()
+        api.Queue.Enqueue(Propunerea())
+        Dim c As New PrelucrareCoordinator(api, Function(q, cod, poz, total) Nothing)
+
+        Dim r = Await c.SalveazaAsync(Pachet(), "a1b2", New List(Of DecizieAsociere)(),
+                                      New List(Of AlegereUnitate)(), CancellationToken.None)
+
+        Assert.NotNull(r)
+        Assert.Single(api.Attempts)
+    End Function
+
+    <Fact>
+    Public Async Function Renuntarea_La_Salvare_NuRetrimiteNimic() As Task
+        Dim api As New FakeApiClient()
+        api.Queue.Enqueue(Intreaba("200101"))
+        Dim c As New PrelucrareCoordinator(api, Function(q, cod, poz, total) Nothing)
+
+        ' Nothing = s-a renunțat; ultimul răspuns al serverului a fost 409, deci nimic scris.
+        Assert.Null(Await c.SalveazaAsync(Pachet(), "a1b2", New List(Of DecizieAsociere)(),
+                                          New List(Of AlegereUnitate)(), CancellationToken.None))
+        Assert.Single(api.Attempts)
+    End Function
+
+    <Fact>
+    Public Async Function Salvarea_FaraDecizii_Arunca() As Task
+        Dim c As New PrelucrareCoordinator(New FakeApiClient())
+        Await Assert.ThrowsAsync(Of ArgumentNullException)(
+            Function() c.SalveazaAsync(Pachet(), "a1b2", Nothing, New List(Of AlegereUnitate)(),
+                                       CancellationToken.None))
     End Function
 
 End Class

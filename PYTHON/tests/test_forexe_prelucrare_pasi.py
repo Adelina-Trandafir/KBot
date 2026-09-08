@@ -245,8 +245,8 @@ def _receptie_payload(data="11/02/2026", suma="510,00", cod_ind="AAB"):
 def test_a_new_reception_is_inserted_with_its_lines():
     cur = FakeCursor({"SELECT CodIndicator FROM FX_Receptii_RHR": [],
                       "SELECT MAX(NRCRT)": [], "SELECT IDRR, DataR": []})
-    r, rhr = P.step4b_receptii_prelucrare(cur, COD, [_receptie_payload()],
-                                          indicatori("AAB"))
+    r, rhr, _ = P.step4b_receptii_prelucrare(cur, COD, [_receptie_payload()],
+                                             indicatori("AAB"))
     assert (r, rhr) == (1, 1)
     assert len(cur.inserts("FX_Receptii_R")) == 1
     assert len(cur.inserts("FX_Receptii_RHR")) == 1
@@ -266,8 +266,8 @@ def test_step4b_never_matches_a_deleted_reception_even_on_the_same_calendar_day(
     cur = FakeCursor({"SELECT CodIndicator FROM FX_Receptii_RHR": [],
                       "SELECT MAX(NRCRT)": [],
                       "SELECT IDRR, DataR": []})     # cel stears nu e printre candidati
-    r, _ = P.step4b_receptii_prelucrare(cur, COD, [_receptie_payload()],
-                                        indicatori("AAB"))
+    r, _, _ = P.step4b_receptii_prelucrare(cur, COD, [_receptie_payload()],
+                                           indicatori("AAB"))
     candidati = [sql for sql, _ in cur.executed if sql.startswith("SELECT IDRR, DataR")]
     assert candidati and "Sters = 0" in candidati[0]
     assert r == 1                                   # inserata, nu suprascrisa
@@ -304,8 +304,8 @@ def test_an_identical_sum_still_checks_the_lines():
                                 "SumaAntet": 510.0}],
         "SELECT IDRHR, CodIndicator": [],      # indicatorul nu e inca acolo
     })
-    r, rhr = P.step4b_receptii_prelucrare(cur, COD, [_receptie_payload()],
-                                          indicatori("AAB"))
+    r, rhr, _ = P.step4b_receptii_prelucrare(cur, COD, [_receptie_payload()],
+                                             indicatori("AAB"))
     assert r == 0                                   # antetul nu s-a atins
     assert rhr == 1 and len(cur.inserts("FX_Receptii_RHR")) == 1
 
@@ -433,3 +433,96 @@ def test_cere_lista_accepts_a_list_and_rejects_a_flattened_string():
     with pytest.raises(ValueError) as e:
         P.cere_lista(17, "undeva", "Detaliu")
     assert "nu este o listă" in str(e.value)
+
+
+# ===========================================================================
+# PASUL 4b -- ANCORELE receptiilor nascute in rularea curenta (felia 0056)
+# ===========================================================================
+# De ce exista ancorele, pe scurt: propunerea deruleaza tranzactia inapoi, dar contorul
+# AUTO_INCREMENT nu se deruleaza cu ea, deci `IDRR`-ul unei receptii nascute in faza intai
+# nu mai e al ei in faza a doua. Numele care supravietuieste e INDICELE randului in
+# `ListaReceptii` -- acelasi rationament ca `rand_istoric` pentru instantanee (F24).
+class CursorCuInserturi(FakeCursor):
+    """
+    Ca `FakeCursor`, dar candidatii de la `SELECT IDRR, DataR` se dau PE RAND.
+
+    Fara asta nu se poate scrie cazul in care al doilea rand de payload cade pe receptia
+    pe care tocmai a nascut-o primul: dispecerul pe prefix da acelasi raspuns de fiecare
+    data, deci ori se potrivesc amandoua, ori niciuna.
+    """
+
+    def __init__(self, raspunsuri, candidati_pe_rand):
+        super().__init__(raspunsuri)
+        self.candidati = list(candidati_pe_rand)
+
+    def execute(self, sql, params=None):
+        plat = " ".join(sql.split())
+        if plat.startswith("SELECT IDRR, DataR"):
+            self.executed.append((plat, params))
+            self._result = self.candidati.pop(0) if self.candidati else []
+            return
+        super().execute(sql, params)
+
+
+def test_step4b_anchors_the_reception_it_creates():
+    cur = FakeCursor({"SELECT CodIndicator FROM FX_Receptii_RHR": [],
+                      "SELECT MAX(NRCRT)": [], "SELECT IDRR, DataR": []})
+    _, _, ancore = P.step4b_receptii_prelucrare(cur, COD, [_receptie_payload()],
+                                                indicatori("AAB"))
+    # 501 = primul `lastrowid` pe care il da falsul, adica antetul de receptie: el e
+    # prima instructiune INSERT a pasului. Cheia e INDICELE randului de payload (0),
+    # valoarea e IDRR-ul din rularea asta.
+    assert ancore == {0: 501}
+    assert len(cur.inserts("FX_Receptii_R")) == 1
+
+
+def test_step4b_does_not_anchor_a_reception_that_was_already_there():
+    """
+    O receptie care exista DINAINTE isi pastreaza `IDRR`-ul prin amandoua fazele, deci nu
+    are nevoie de alt nume -- si nu trebuie sa primeasca unul, altfel decizia ar fi
+    rezolvata prin harta rularii in loc de cheia reala.
+    """
+    from datetime import date
+    cur = FakeCursor({"SELECT CodIndicator FROM FX_Receptii_RHR": [],
+                      "SELECT MAX(NRCRT)": [],
+                      "SELECT IDRR, DataR": [{"IDRR": 271, "DataR": date(2026, 2, 11),
+                                              "SumaAntet": 510.0}],
+                      "SELECT IDRHR, CodIndicator": []})
+    _, _, ancore = P.step4b_receptii_prelucrare(cur, COD, [_receptie_payload()],
+                                                indicatori("AAB"))
+    assert ancore == {}
+
+
+def test_step4b_anchors_a_row_that_landed_on_a_reception_born_one_row_earlier():
+    """
+    Doua randuri din ACEEASI zi: primul insereaza, al doilea se potriveste pe ce tocmai a
+    inserat primul. Al doilea nu a creat nimic, dar receptia pe care sta e la fel de noua,
+    deci `IDRR`-ul ei e la fel de trecator -- si el are nevoie de ancora.
+
+    De-asta «nascuta acum» se masoara pe IDRR, nu pe ramura care a rulat.
+    """
+    cur = CursorCuInserturi(
+        {"SELECT CodIndicator FROM FX_Receptii_RHR": [], "SELECT MAX(NRCRT)": [],
+         "SELECT IDRHR, CodIndicator": []},
+        candidati_pe_rand=[[], "de-completat"])
+
+    # Al doilea rand vede randul inserat de primul. Se completeaza dupa prima inserare,
+    # fiindca abia atunci se stie ce IDRR i-a dat baza.
+    randuri = [_receptie_payload(), _receptie_payload(suma="700,00")]
+    original = cur.execute
+
+    from datetime import date
+
+    def execute(sql, params=None):
+        original(sql, params)
+        if " ".join(sql.split()).startswith("INSERT INTO FX_Receptii_R ") and \
+                cur.candidati and cur.candidati[0] == "de-completat":
+            cur.candidati[0] = [{"IDRR": cur.lastrowid, "DataR": date(2026, 2, 11),
+                                 "SumaAntet": 510.0}]
+
+    cur.execute = execute
+    _, _, ancore = P.step4b_receptii_prelucrare(cur, COD, randuri, indicatori("AAB"))
+
+    assert len(cur.inserts("FX_Receptii_R")) == 1       # al doilea NU a mai inserat
+    assert sorted(ancore) == [0, 1]                     # dar amandoua sunt ancorate
+    assert ancore[0] == ancore[1]                       # pe aceeasi receptie

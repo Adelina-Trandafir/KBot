@@ -464,6 +464,48 @@ Public NotInheritable Class DdfDraft
     End Sub
 
     ''' <summary>
+    ''' The header's partner, carried down onto the section-A lines that do not carry one yet.
+    ''' The editor runs it once, when it opens.
+    '''
+    ''' <para><b>Why it exists.</b> A NEW revision on a document already tied to a partner
+    ''' comes back from <c>/genereaza</c> with <c>PartAng</c> and <c>CodFiscal</c> on the
+    ''' header -- carried forward from revision 0 -- but with an EMPTY partner on every
+    ''' generated line: the two source queries (reservations, indicators) know nothing about
+    ''' the document's partner. The header's picker is locked for a new revision (Access's
+    ''' <c>PartAng.Enabled = DDF_NOU Or DDF_MOD</c>) and the section-A <c>Partener</c> column
+    ''' is hidden, so there was no way in at all and the save was refused for a field the
+    ''' operator could not reach. The partner is already decided by the document, so it is
+    ''' inherited rather than asked for.</para>
+    '''
+    ''' <para><b>Only EMPTY lines are filled</b> -- that is the whole difference from
+    ''' <see cref="ImpingePartenerulPeLinii"/>, which overwrites every line and is right only
+    ''' when the operator has just PICKED a partner. One <c>CodFiscal</c> can stand behind
+    ''' several <c>IdUnitate</c>, so a line that already carries a partner is somebody's
+    ''' choice -- the previous revision's or the operator's -- and it is left alone.</para>
+    '''
+    ''' <para>Does nothing when the document has no partner. Purely in-memory.</para>
+    ''' </summary>
+    ''' <returns>How many section-A lines were filled in.</returns>
+    Public Function InheritHeaderPartner() As Integer
+        If Not PartAng Then Return 0
+        If String.IsNullOrWhiteSpace(CodFiscal) Then Return 0
+
+        Dim filled As Integer = 0
+        For Each a As DdfDraftLinieA In Revizie.LiniiA
+            If Not String.IsNullOrWhiteSpace(a.CodPartener) Then Continue For
+            a.CodPartener = CodFiscal
+            ' `PartInd` is the per-line "this line carries its own partner" flag; the
+            ' section-A cell handler derives it the same way, from a non-empty code.
+            a.PartInd = True
+            filled += 1
+        Next
+
+        ' Section B mirrors section A's partner, so it is rebuilt rather than patched.
+        If filled > 0 Then Revizie.RecalculeazaSectiuneaB()
+        Return filled
+    End Function
+
+    ''' <summary>
     ''' Applies the map <c>TempId -&gt; real key</c> returned by the save: new rows get their
     ''' keys. After this, saving the same form a second time UPDATEs instead of INSERTing again.
     ''' </summary>
