@@ -97,6 +97,10 @@ from flask import request, g, current_app
 
 from routes.auth.guard import require_session
 from utils.database import COMMON_DB, get_kbot_connection
+# Cronometrul, in `forexe_timing.log` (vezi utils/timing.py). Ruta asta e a doua
+# jumatate a ingestiei: parsare XML plus scrieri rand cu rand, deci despartirea
+# «sql» / «propriu» chiar spune care din doua tine timpul.
+from utils import timing
 
 from .prelucrare_helpers import (
     extract_obs_value,
@@ -560,6 +564,7 @@ def get_ultima_data_extras():
 
 @forexe_bp.route("/api/forexe/extrase/import", methods=["POST"])
 @require_session
+@timing.timed("extrase-import")
 def import_extrase():
     """
     Importa extrasele descarcate de robot. Portul lui FX_Extrase_Prelucrare.
@@ -576,28 +581,34 @@ def import_extrase():
         return _json_utf8({"error": "«extrase» trebuie să fie listă"}, 400)
 
     db_name = g.session.db_name
+    timing.note(dc=db_name, user=g.session.username, octeti=request.content_length)
+    timing.count(extrase=len(extrase))
     conn = None
     try:
-        conn = get_kbot_connection(db_name)
-        cursor = conn.cursor()
-        conn.start_transaction()
+        with timing.stage("conectare MariaDB"):
+            conn = get_kbot_connection(db_name)
+            cursor = timing.watch(conn.cursor())
+            conn.start_transaction()
 
-        nom = _Nomenclatoare(cursor)
+        with timing.stage("nomenclatoare"):
+            nom = _Nomenclatoare(cursor)
         avertismente = list(nom.avertismente)
 
         # Ce stim deja, pe cheia naturala (vezi antetul: NU pe sirul HASH).
-        cursor.execute(_F_EXISTENTE_SQL)
-        fisiere_vazute = {
-            (str(nume), data_ex.date() if data_ex is not None else None)
-            for (nume, data_ex) in cursor.fetchall()
-        }
-        cursor.execute(_E_EXISTENTE_SQL)
-        # DataDoc e TEXT in tabela; `str(...) if not None` o pastreaza asa si de partea
-        # asta, ca perechea (citit, scris) sa se compare intre ele si nu o data cu un sir.
-        operatiuni_vazute = {
-            (None if dd is None else str(dd), nd, cui, _f(sd), _f(sc))
-            for (dd, nd, cui, sd, sc) in cursor.fetchall()
-        }
+        with timing.stage("citeste ce e deja importat"):
+            cursor.execute(_F_EXISTENTE_SQL)
+            fisiere_vazute = {
+                (str(nume), data_ex.date() if data_ex is not None else None)
+                for (nume, data_ex) in cursor.fetchall()
+            }
+            cursor.execute(_E_EXISTENTE_SQL)
+            # DataDoc e TEXT in tabela; `str(...) if not None` o pastreaza asa si de
+            # partea asta, ca perechea (citit, scris) sa se compare intre ele si nu o
+            # data cu un sir.
+            operatiuni_vazute = {
+                (None if dd is None else str(dd), nd, cui, _f(sd), _f(sc))
+                for (dd, nd, cui, sd, sc) in cursor.fetchall()
+            }
 
         importate = 0
         sarite = 0
@@ -614,7 +625,11 @@ def import_extrase():
             cale_fisier = extras.get("CaleLocala") or ""
 
             try:
-                radacina = ElementTree.fromstring(xml_text)
+                # Etapa se deschide o data pe extras si se aduna intr-un singur rand
+                # de raport, cu `n` = cate extrase si maximul lor. Un XML de cateva
+                # megaocteti se vede aici, si NU in coloana «sql».
+                with timing.stage("parsare XML"):
+                    radacina = ElementTree.fromstring(xml_text)
             except ElementTree.ParseError as err:
                 # Access ridica «XML invalid (Fisier=...)» si oprea tot. Aici se
                 # numeste fisierul si se merge mai departe: un extras stricat nu are
@@ -630,27 +645,30 @@ def import_extrase():
                 continue
             fisiere_vazute.add(cheie_fisier)
 
-            cursor.execute(_F_INSERT_SQL, (
-                pdf_fisier,
-                cale_fisier,
-                data_extras,
-                xml_text,
-                hash_fisier(pdf_fisier, data_fisier),
-            ))
-            idexf = _id_nou(cursor, "FX_Extrase_F")
+            with timing.stage("scrie FX_Extrase_F"):
+                cursor.execute(_F_INSERT_SQL, (
+                    pdf_fisier,
+                    cale_fisier,
+                    data_extras,
+                    xml_text,
+                    hash_fisier(pdf_fisier, data_fisier),
+                ))
+                idexf = _id_nou(cursor, "FX_Extrase_F")
             importate += 1
 
-            for cont_ext in radacina.findall("cont_ext"):
-                idexh, id_unitate, id_clsf = _scrie_antet(
-                    cursor, nom, cont_ext, idexf, avertismente)
-                if idexh is None:
-                    continue
-                for cont_misc in cont_ext.findall("cont_misc"):
-                    if _scrie_operatiune(cursor, nom, cont_misc, idexh, id_unitate,
-                                         id_clsf, operatiuni_vazute):
-                        randuri_scrise += 1
+            with timing.stage("scrie antete + operatiuni"):
+                for cont_ext in radacina.findall("cont_ext"):
+                    idexh, id_unitate, id_clsf = _scrie_antet(
+                        cursor, nom, cont_ext, idexf, avertismente)
+                    if idexh is None:
+                        continue
+                    for cont_misc in cont_ext.findall("cont_misc"):
+                        if _scrie_operatiune(cursor, nom, cont_misc, idexh, id_unitate,
+                                             id_clsf, operatiuni_vazute):
+                            randuri_scrise += 1
 
-        conn.commit()
+        with timing.stage("commit"):
+            conn.commit()
         logger.info(
             f"[forexe.extrase.import] {db_name}: primite={len(extrase)} "
             f"importate={importate} sarite={sarite} randuri={randuri_scrise}"

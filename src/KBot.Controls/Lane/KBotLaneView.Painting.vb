@@ -40,6 +40,38 @@ Partial Public NotInheritable Class KBotLaneView
         If Not _layoutValid Then RecalcLayout()
     End Sub
 
+    ' =====================================================================
+    ' SCRATCH GDI+ OBJECTS
+    ' =====================================================================
+
+    ''' <summary>
+    ''' One of the four scratch objects, set up for the shape about to be drawn.
+    ''' </summary>
+    ''' <remarks>
+    ''' EVERY property is written on every call, never only the ones this caller cares about: a
+    ''' round cap or a dashed style left behind by the previous shape would surface as a defect
+    ''' in some unrelated method three shapes later. See the field declarations for why these
+    ''' exist at all.
+    ''' </remarks>
+    Private Shared Function ScratchPen(ByRef p As Pen, c As Color, w As Single,
+                                       Optional cap As LineCap = LineCap.Flat,
+                                       Optional dash As DashStyle = DashStyle.Solid) As Pen
+        If p Is Nothing Then p = New Pen(c, w)
+        p.Color = c
+        p.Width = w
+        p.StartCap = cap
+        p.EndCap = cap
+        p.DashStyle = dash
+        Return p
+    End Function
+
+    ''' <summary>The brush twin of <see cref="ScratchPen"/>.</summary>
+    Private Shared Function ScratchBrush(ByRef b As SolidBrush, c As Color) As SolidBrush
+        If b Is Nothing Then b = New SolidBrush(c)
+        b.Color = c
+        Return b
+    End Function
+
     ''' <summary>
     ''' Cuts the control into its band and its surface, works out the time range, then stacks the
     ''' lanes and puts every marker on the axis.
@@ -55,6 +87,12 @@ Partial Public NotInheritable Class KBotLaneView
         _headerRect = Rectangle.Empty
         _enlargeRect = Rectangle.Empty
         _plotRect = Rectangle.Empty
+
+        ' The three hairlines the painter uses inside its per-marker loops. Here, once, because
+        ' DPI cannot change without the layout being invalidated (OnDpiChangedAfterParent).
+        _px1 = Math.Max(1, ThemeShapes.ScaleDpi(Me, 1))
+        _px2 = Math.Max(1, ThemeShapes.ScaleDpi(Me, 2))
+        _px3 = Math.Max(2, ThemeShapes.ScaleDpi(Me, 3))
 
         Dim client As Rectangle = ClientRectangle
         If client.Width <= 0 OrElse client.Height <= 0 Then Return
@@ -260,6 +298,7 @@ Partial Public NotInheritable Class KBotLaneView
     Private Sub ProjectMarkers()
         Dim plotted As Boolean = _plotRect.Width > 0 AndAlso _plotRect.Height > 0
         For Each ln As KBotLane In _lanes
+            ln.PlottedInOrder.Clear()
             Dim laneDrawn As Boolean = plotted AndAlso ln.Visible AndAlso ln.Bounds.Height > 0
             For Each m As KBotLaneMarker In ln.Markers
                 If Not laneDrawn OrElse Not m.Visible Then
@@ -278,7 +317,12 @@ Partial Public NotInheritable Class KBotLaneView
                 End If
                 m.PlotLocation = New Point(MomentToX(m.Moment), ln.Bounds.Top + ln.Bounds.Height \ 2)
                 m.Plotted = True
+                ln.PlottedInOrder.Add(m)
             Next
+            ' Left to right, ONCE per layout. See KBotLane.PlottedInOrder for why this cannot
+            ' stay inside the painter: the collection is deliberately unsorted, and a stretch
+            ' drawn to a marker on its left would run backwards over the one before it.
+            ln.PlottedInOrder.Sort(Function(a, b) a.PlotLocation.X.CompareTo(b.PlotLocation.X))
         Next
     End Sub
 
@@ -340,7 +384,13 @@ Partial Public NotInheritable Class KBotLaneView
     Protected Overrides Sub OnPaint(e As PaintEventArgs)
         Dim designTime As Boolean = KBotDesignTime.IsDesignTime(Me)
         Try
-            If _updateDepth > 0 Then Return
+            If _updateDepth > 0 Then
+                ' Mid-rebuild: nothing is drawn, but the surface still has to be COVERED. With
+                ' ControlStyles.Opaque set, WinForms no longer erases it for us, so a bare
+                ' Return here would leave whatever the buffer happened to hold.
+                e.Graphics.Clear(BackColor)
+                Return
+            End If
             EnsureLayout()
 
             Dim g As Graphics = e.Graphics
@@ -489,9 +539,7 @@ Partial Public NotInheritable Class KBotLaneView
         If _plotRect.Width <= 0 OrElse _plotRect.Height <= 0 Then Return
         Dim r As Rectangle = SurfaceClip()
         If r.Height <= 0 Then Return
-        Using b As New SolidBrush(EffectivePlotBackColor())
-            g.FillRectangle(b, r)
-        End Using
+        g.FillRectangle(ScratchBrush(_fillBrush, EffectivePlotBackColor()), r)
     End Sub
 
     ''' <summary>
@@ -507,14 +555,15 @@ Partial Public NotInheritable Class KBotLaneView
         Dim surface As Rectangle = SurfaceClip()
         If surface.Height <= 0 Then Return
         Dim fallback As Color = Palette().TextDimColor
-        Dim width As Single = CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, 1)))
+        Dim width As Single = CSng(_px1)
         For i As Integer = 0 To _guides.Count - 1
             Dim gd As KBotChartGuide = _guides(i)
             If gd.PlotX < 0 Then Continue For
-            Using pen As New Pen(If(gd.LineColor = Color.Empty, fallback, gd.LineColor), width)
-                pen.DashStyle = If(i = _hoverGuideIndex, DashStyle.Solid, gd.DashStyle)
-                g.DrawLine(pen, gd.PlotX, surface.Top, gd.PlotX, surface.Bottom)
-            End Using
+            Dim pen As Pen = ScratchPen(_detailPen,
+                                        If(gd.LineColor = Color.Empty, fallback, gd.LineColor),
+                                        width, LineCap.Flat,
+                                        If(i = _hoverGuideIndex, DashStyle.Solid, gd.DashStyle))
+            g.DrawLine(pen, gd.PlotX, surface.Top, gd.PlotX, surface.Bottom)
         Next
     End Sub
 
@@ -524,6 +573,7 @@ Partial Public NotInheritable Class KBotLaneView
         Dim capFont As Font = EffectiveAxisFont()
         Dim gap As Integer = ThemeShapes.ScaleDpi(Me, _axisLabelGap)
         Dim sepW As Integer = ThemeShapes.ScaleDpi(Me, Math.Max(1, _separatorWidth))
+        Dim railW As Integer = Math.Max(1, ThemeShapes.ScaleDpi(Me, _laneLineWidth))
 
         For i As Integer = 0 To _lanes.Count - 1
             Dim ln As KBotLane = _lanes(i)
@@ -532,17 +582,14 @@ Partial Public NotInheritable Class KBotLaneView
 
             If ln.SeparatorAbove AndAlso _separatorWidth > 0 Then
                 Dim y As Integer = ln.Bounds.Top - ThemeShapes.ScaleDpi(Me, _laneSpacing) - sepW \ 2
-                Using pen As New Pen(SeparatorPen.Color, CSng(sepW))
-                    g.DrawLine(pen, ln.Bounds.Left, y, ln.Bounds.Right, y)
-                End Using
+                g.DrawLine(ScratchPen(_detailPen, SeparatorPen.Color, CSng(sepW)),
+                           ln.Bounds.Left, y, ln.Bounds.Right, y)
             End If
 
             ' The lane under the pointer gets a wash, so a drag has something to aim at even where
             ' the lane happens to hold no marker at all.
             If i = _hoverLaneIndex Then
-                Using b As New SolidBrush(EffectiveLaneHoverBackColor())
-                    g.FillRectangle(b, ln.Bounds)
-                End Using
+                g.FillRectangle(ScratchBrush(_fillBrush, EffectiveLaneHoverBackColor()), ln.Bounds)
             End If
 
             If _laneLineWidth > 0 Then
@@ -550,9 +597,8 @@ Partial Public NotInheritable Class KBotLaneView
                 ' The plain rail, always, full width and underneath: a lane holding no marker has
                 ' to stay visible as somewhere to drop, and the run before the first marker has to
                 ' read as empty rather than as absent.
-                Using pen As New Pen(LaneLinePen.Color, CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, _laneLineWidth))))
-                    g.DrawLine(pen, _plotRect.Left, mid, _plotRect.Right, mid)
-                End Using
+                g.DrawLine(ScratchPen(_detailPen, LaneLinePen.Color, CSng(railW)),
+                           _plotRect.Left, mid, _plotRect.Right, mid)
                 If _segmentedRail Then DrawLaneSegments(g, ln, i, mid)
             End If
 
@@ -584,15 +630,11 @@ Partial Public NotInheritable Class KBotLaneView
     ''' the same answer the surface already gives for several saves inside one minute.</para>
     ''' </remarks>
     Private Sub DrawLaneSegments(g As Graphics, ln As KBotLane, laneIndex As Integer, mid As Integer)
-        If ln.Markers.Count = 0 Then Return
-        Dim laneColor As Color = EffectiveLaneColor(ln, laneIndex)
-
-        Dim drawn As New List(Of KBotLaneMarker)()
-        For Each m As KBotLaneMarker In ln.Markers
-            If m.Plotted Then drawn.Add(m)
-        Next
+        ' Already plotted and already in X order — the layout pass did both. See
+        ' KBotLane.PlottedInOrder.
+        Dim drawn As List(Of KBotLaneMarker) = ln.PlottedInOrder
         If drawn.Count = 0 Then Return
-        drawn.Sort(Function(a, b) a.PlotLocation.X.CompareTo(b.PlotLocation.X))
+        Dim laneColor As Color = EffectiveLaneColor(ln, laneIndex)
 
         Dim logical As Integer = If(_segmentWidth > 0, _segmentWidth, _laneLineWidth)
         Dim w As Single = CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, logical)))
@@ -606,9 +648,8 @@ Partial Public NotInheritable Class KBotLaneView
             Dim x1 As Integer = m.PlotLocation.X
             Dim x2 As Integer = If(k < drawn.Count - 1, drawn(k + 1).PlotLocation.X, _plotRect.Right)
             If x2 <= x1 Then Continue For
-            Using pen As New Pen(If(m.MarkerColor = Color.Empty, laneColor, m.MarkerColor), w)
-                g.DrawLine(pen, x1, mid, x2, mid)
-            End Using
+            g.DrawLine(ScratchPen(_edgePen, If(m.MarkerColor = Color.Empty, laneColor, m.MarkerColor), w),
+                       x1, mid, x2, mid)
         Next
     End Sub
 
@@ -627,26 +668,26 @@ Partial Public NotInheritable Class KBotLaneView
         Dim r As New Rectangle(_plotRect.Right + gap,
                                ln.Bounds.Top + (ln.Bounds.Height - side) \ 2, side, side)
         Dim c As Color = If(ln.EndMark = KBotLaneEndMark.Ok, Palette().SuccessColor, Palette().WarningColor)
-        Using pen As New Pen(c, CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, 2))))
-            pen.StartCap = LineCap.Round
-            pen.EndCap = LineCap.Round
-            If ln.EndMark = KBotLaneEndMark.Ok Then
-                ' A tick.
-                g.DrawLine(pen, r.Left, r.Top + r.Height \ 2, r.Left + r.Width \ 3, r.Bottom - 1)
-                g.DrawLine(pen, r.Left + r.Width \ 3, r.Bottom - 1, r.Right - 1, r.Top)
-            Else
-                ' An exclamation: a stroke and a dot under it.
-                Dim x As Integer = r.Left + r.Width \ 2
-                g.DrawLine(pen, x, r.Top, x, r.Top + CInt(r.Height * 0.6))
-                g.DrawLine(pen, x, r.Bottom - 1, x, r.Bottom - 1)
-            End If
-        End Using
+        Dim pen As Pen = ScratchPen(_detailPen, c, CSng(_px2), LineCap.Round)
+        If ln.EndMark = KBotLaneEndMark.Ok Then
+            ' A tick.
+            g.DrawLine(pen, r.Left, r.Top + r.Height \ 2, r.Left + r.Width \ 3, r.Bottom - 1)
+            g.DrawLine(pen, r.Left + r.Width \ 3, r.Bottom - 1, r.Right - 1, r.Top)
+        Else
+            ' An exclamation: a stroke and a dot under it.
+            Dim x As Integer = r.Left + r.Width \ 2
+            g.DrawLine(pen, x, r.Top, x, r.Top + CInt(r.Height * 0.6))
+            g.DrawLine(pen, x, r.Bottom - 1, x, r.Bottom - 1)
+        End If
     End Sub
 
     Private Sub DrawMarkers(g As Graphics)
         Dim surface As Rectangle = SurfaceClip()
         Dim side As Integer = ThemeShapes.ScaleDpi(Me, _markerSize)
         Dim labelFont As Font = EffectiveAxisFont()
+        ' Read ONCE, not once per marker: it resolves the scheme and the palette every time, and
+        ' every marker asked for it two or three times.
+        Dim plotBack As Color = EffectivePlotBackColor()
 
         For i As Integer = 0 To _lanes.Count - 1
             Dim ln As KBotLane = _lanes(i)
@@ -659,7 +700,7 @@ Partial Public NotInheritable Class KBotLaneView
                 If Not m.Plotted Then Continue For
                 Dim c As Color = If(m.MarkerColor = Color.Empty, laneColor, m.MarkerColor)
                 Dim hovered As Boolean = (i = _hoverLaneIndex AndAlso j = _hoverMarkerIndex)
-                DrawMarker(g, m, m.PlotLocation, side, c, hovered)
+                DrawMarker(g, m, m.PlotLocation, side, c, hovered, plotBack)
 
                 If _markerLabelsVisible AndAlso Not String.IsNullOrEmpty(m.Text) Then
                     Dim r As New Rectangle(m.PlotLocation.X + side, ln.Bounds.Top,
@@ -684,61 +725,57 @@ Partial Public NotInheritable Class KBotLaneView
     ''' to the same fact somewhere else on screen.
     ''' </remarks>
     Private Sub DrawMarker(g As Graphics, m As KBotLaneMarker, center As Point, side As Integer,
-                           c As Color, hovered As Boolean)
+                           c As Color, hovered As Boolean, plotBack As Color)
         Dim r As New Rectangle(center.X - side \ 2, center.Y - side \ 2, side, side)
-        Dim thin As Single = CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, 1)))
+        Dim thin As Single = CSng(_px1)
 
-        Using fill As New SolidBrush(c), edge As New Pen(EffectivePlotBackColor(), thin)
-            Select Case m.Style
-                Case KBotLaneMarkerStyle.Loose
-                    Dim pts() As Point = {
-                        New Point(center.X, r.Top),
-                        New Point(r.Right, center.Y),
-                        New Point(center.X, r.Bottom),
-                        New Point(r.Left, center.Y)}
-                    g.FillPolygon(fill, pts)
-                    g.DrawPolygon(edge, pts)
+        ' Scratch objects rather than `Using New …`: see the field declarations. `fill` and
+        ' `edge` are set up first because three of the four branches use them.
+        Dim fill As SolidBrush = ScratchBrush(_fillBrush, c)
+        Dim edge As Pen = ScratchPen(_edgePen, plotBack, thin)
 
-                Case KBotLaneMarkerStyle.NoChange
-                    ' Hollow, with an "=" inside: the shape says "this recorded nothing", so the
-                    ' operator is not left explaining a duplicate number to themselves.
-                    Using back As New SolidBrush(EffectivePlotBackColor())
-                        g.FillEllipse(back, r)
-                    End Using
-                    Using pen As New Pen(c, thin)
-                        g.DrawEllipse(pen, r)
-                        Dim x1 As Integer = r.Left + r.Width \ 4
-                        Dim x2 As Integer = r.Right - r.Width \ 4
-                        g.DrawLine(pen, x1, center.Y - Math.Max(1, r.Height \ 6), x2, center.Y - Math.Max(1, r.Height \ 6))
-                        g.DrawLine(pen, x1, center.Y + Math.Max(1, r.Height \ 6), x2, center.Y + Math.Max(1, r.Height \ 6))
-                    End Using
+        Select Case m.Style
+            Case KBotLaneMarkerStyle.Loose
+                Dim pts() As Point = {
+                    New Point(center.X, r.Top),
+                    New Point(r.Right, center.Y),
+                    New Point(center.X, r.Bottom),
+                    New Point(r.Left, center.Y)}
+                g.FillPolygon(fill, pts)
+                g.DrawPolygon(edge, pts)
 
-                Case KBotLaneMarkerStyle.Deletion
-                    ' A cross cap: the end of a chain has to read as an end, not as one more entry.
-                    Using pen As New Pen(c, CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, 2))))
-                        pen.StartCap = LineCap.Round
-                        pen.EndCap = LineCap.Round
-                        g.DrawLine(pen, r.Left, r.Top, r.Right, r.Bottom)
-                        g.DrawLine(pen, r.Right, r.Top, r.Left, r.Bottom)
-                    End Using
+            Case KBotLaneMarkerStyle.NoChange
+                ' Hollow, with an "=" inside: the shape says "this recorded nothing", so the
+                ' operator is not left explaining a duplicate number to themselves.
+                g.FillEllipse(ScratchBrush(_backBrush, plotBack), r)
+                Dim pen As Pen = ScratchPen(_detailPen, c, thin)
+                g.DrawEllipse(pen, r)
+                Dim x1 As Integer = r.Left + r.Width \ 4
+                Dim x2 As Integer = r.Right - r.Width \ 4
+                Dim dy As Integer = Math.Max(1, r.Height \ 6)
+                g.DrawLine(pen, x1, center.Y - dy, x2, center.Y - dy)
+                g.DrawLine(pen, x1, center.Y + dy, x2, center.Y + dy)
 
-                Case KBotLaneMarkerStyle.Locked
-                    g.FillEllipse(fill, r)
-                    g.DrawEllipse(edge, r)
-                    DrawPadlock(g, r, EffectivePlotBackColor())
+            Case KBotLaneMarkerStyle.Deletion
+                ' A cross cap: the end of a chain has to read as an end, not as one more entry.
+                Dim pen As Pen = ScratchPen(_detailPen, c, CSng(_px2), LineCap.Round)
+                g.DrawLine(pen, r.Left, r.Top, r.Right, r.Bottom)
+                g.DrawLine(pen, r.Right, r.Top, r.Left, r.Bottom)
 
-                Case Else
-                    g.FillEllipse(fill, r)
-                    g.DrawEllipse(edge, r)
-            End Select
-        End Using
+            Case KBotLaneMarkerStyle.Locked
+                g.FillEllipse(fill, r)
+                g.DrawEllipse(edge, r)
+                DrawPadlock(g, r, plotBack)
+
+            Case Else
+                g.FillEllipse(fill, r)
+                g.DrawEllipse(edge, r)
+        End Select
 
         If hovered Then
-            Dim grow As Integer = Math.Max(2, ThemeShapes.ScaleDpi(Me, 3))
+            Dim grow As Integer = _px3
             Dim ring As New Rectangle(r.X - grow, r.Y - grow, r.Width + grow * 2, r.Height + grow * 2)
-            Using pen As New Pen(c, CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, 2))))
-                g.DrawEllipse(pen, ring)
-            End Using
+            g.DrawEllipse(ScratchPen(_detailPen, c, CSng(_px2)), ring)
         End If
     End Sub
 
@@ -756,14 +793,10 @@ Partial Public NotInheritable Class KBotLaneView
         Dim bodyW As Integer = Math.Max(2, r.Width - r.Width \ 3)
         Dim body As New Rectangle(r.Left + (r.Width - bodyW) \ 2, r.Bottom - bodyH - Math.Max(1, r.Height \ 8),
                                   bodyW, bodyH)
-        Using b As New SolidBrush(c)
-            g.FillRectangle(b, body)
-        End Using
-        Using pen As New Pen(c, CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, 1))))
-            Dim shackle As New Rectangle(body.Left + body.Width \ 4, body.Top - body.Height \ 2,
-                                         Math.Max(1, body.Width \ 2), Math.Max(1, body.Height))
-            g.DrawArc(pen, shackle, 180, 180)
-        End Using
+        g.FillRectangle(ScratchBrush(_backBrush, c), body)
+        Dim shackle As New Rectangle(body.Left + body.Width \ 4, body.Top - body.Height \ 2,
+                                     Math.Max(1, body.Width \ 2), Math.Max(1, body.Height))
+        g.DrawArc(ScratchPen(_detailPen, c, CSng(_px1)), shackle, 180, 180)
     End Sub
 
     ''' <summary>The two end dates, under the surface.</summary>

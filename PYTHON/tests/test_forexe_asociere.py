@@ -280,18 +280,19 @@ def test_f15_ramane_veto_in_ingestie():
         P.valideaza_plasarile(lanturi, receptii)
 
 
-def test_f13_nu_mai_e_veto_ci_semn():
+def test_f13_nu_mai_exista_nici_ca_semn():
     """
-    RETRAS pe 31.08.2026. `DataR` nu spune cand a aparut receptia -- e un camp tastat pe
-    site, schimbabil dupa aceea, iar tabelul nu are nicio coloana cu momentul crearii
-    (F29). Comparatia a ramas ca semn, pe amandoua caile.
+    RETRAS ca veto pe 31.08.2026, STERS si ca semn pe 09.09.2026. `DataR` nu spune cand a
+    aparut receptia -- e un camp tastat pe site, schimbabil dupa aceea, iar tabelul nu are
+    nicio coloana cu momentul crearii (F29). Ca semn se aprindea pe date perfect corecte,
+    deci operatorul l-a cerut scos cu totul: nici in `avertismente`, nici in formular.
     """
     lanturi = {5: [inst(10, "2026-01-19 10:00:00", 100, idrr=5)]}
     receptii = {5: rec(5, "2026-03-01 08:00:00", 100)}
     avertismente = []
     P.valideaza_plasarile(lanturi, receptii, f15_ca_avertisment=True,
                           avertismente=avertismente)          # nu ridica
-    assert any("mai vechi decât data recepției" in a for a in avertismente)
+    assert avertismente == []
 
 
 def test_f14_ramane_veto_si_in_editor():

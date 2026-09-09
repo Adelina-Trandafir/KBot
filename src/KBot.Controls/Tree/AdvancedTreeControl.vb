@@ -802,6 +802,44 @@ Partial Public Class AdvancedTreeControl
     ' iar designerul le-ar scrie în fiecare formular gazdă («tree.AutoScrollMinSize = New
     ' Size(0, 0)» era în toate cinci). Sunt stare de derulare, nu setări de operator.
     ' WinForms convention: getter returnează Y negativ, setter primește Y pozitiv
+    ''' <summary>
+    ''' How far down the tree is scrolled, in pixels — readable BEFORE a rebuild and writable
+    ''' after it, so a host that clears and refills the tree can put the operator back where
+    ''' they were looking.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>Why this exists and <see cref="AutoScrollPosition"/> is not enough.</b>
+    ''' <c>Clear</c> deliberately zeroes the scroll AND the scroll range, and the range is only
+    ''' rebuilt on the next paint. Writing <c>AutoScrollPosition</c> straight after refilling
+    ''' therefore clamps against a maximum of zero and silently lands on the first row — which
+    ''' is exactly what the operator sees as "it jumped to the top after every drag". The setter
+    ''' here refreshes the range first, then clamps against the real one.</para>
+    ''' <para>Scroll state, not an operator setting: hidden from the designer like the two
+    ''' shadow properties below it.</para>
+    ''' </remarks>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property ScrollOffsetY As Integer
+        Get
+            Return _vScroll.Value
+        End Get
+        Set(value As Integer)
+            Try
+                RefreshScrollVisibility()
+                Dim maxVal As Integer = Math.Max(0, _vScroll.Maximum - _vScroll.LargeChange + 1)
+                Dim clamped As Integer = Math.Max(0, Math.Min(value, maxVal))
+                If _vScroll.Value <> clamped Then
+                    _vScroll.Value = clamped
+                    Me.Invalidate()
+                End If
+            Catch ex As Exception
+                ' UI boundary: a scroll that cannot be restored must not take the rebuild with
+                ' it. The tree stays where it is, which is the old behaviour, not a new defect.
+                If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("AdvancedTreeControl.ScrollOffsetY", ex)
+            End Try
+        End Set
+    End Property
+
     <Browsable(False)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Shadows Property AutoScrollPosition As Point

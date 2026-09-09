@@ -1490,23 +1490,30 @@ Public Class KBOT
     ''' Iconița din dreapta unui NOD = descarcă din FOREXE angajamentul acela întreg
     ''' («Prelucrare Completa», sau varianta REVERSE dacă are deja istoric local) ȘI îl duce
     ''' până în tabele, prin cele două faze ale ingestiei (felia 0055).
+    '''
+    ''' <para><b>A second press no longer downloads out of reflex</b> (operator, 09.09.2026).
+    ''' When this angajament was already downloaded while the application stayed open and the
+    ''' package is fit (it exists and has rows), the operator is asked whether to reuse it. See
+    ''' <see cref="IntreabaDacaRefolosescPachetul"/> for why it is worth asking.</para>
     ''' </summary>
     Private Async Sub Tree_RightIconClicked(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
         Try
             Dim cod As String = If(pNode Is Nothing, Nothing, TryCast(pNode.Tag, String))
             If String.IsNullOrEmpty(cod) Then Return
 
-            Dim pachet As PrelucrareRezultat
-            busyBar.Running = True
-            Try
-                ' Istoricul LOCAL decide înainte/înapoi (Access FX_Angajament_InfoComplete):
-                ' îl citim prin aceeași plasă de re-login ca restul shell-ului.
-                pachet = Await _forexe.DownloadNodeAsync(
-                    cod,
-                    Function(c, ct) WithReauth(Of IstoricInfo)(Function() _apiClient.GetIstoricAsync(c, ct)))
-            Finally
-                busyBar.Running = False
-            End Try
+            Dim pachet As PrelucrareRezultat = IntreabaDacaRefolosescPachetul(cod)
+            If pachet Is Nothing Then
+                busyBar.Running = True
+                Try
+                    ' Istoricul LOCAL decide înainte/înapoi (Access FX_Angajament_InfoComplete):
+                    ' îl citim prin aceeași plasă de re-login ca restul shell-ului.
+                    pachet = Await _forexe.DownloadNodeAsync(
+                        cod,
+                        Function(c, ct) WithReauth(Of IstoricInfo)(Function() _apiClient.GetIstoricAsync(c, ct)))
+                Finally
+                    busyBar.Running = False
+                End Try
+            End If
 
             ' Nothing = robotul n-a pornit sau a eșuat; a spus deja de ce pe consolă.
             If pachet Is Nothing Then Return
@@ -1517,6 +1524,92 @@ Public Class KBOT
                             "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' THE IN-MEMORY PACKAGE, when the operator wants it. Nothing = download again.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>Why it asks instead of deciding on its own</b> (operator, 09.09.2026). A FOREXE
+    ''' download takes minutes: it opens the browser, authenticates on the token, walks the
+    ''' whole flow. And a second press on the same icon is almost always a RETRY — the placement
+    ''' form was closed without saving, or something was placed wrong — not a request for fresher
+    ''' data. Downloading every time throws the operator's minutes away; reusing every time
+    ''' would hide whatever changed on FOREXE meanwhile. Hence the question, with the moment of
+    ''' the download written into it, because that is exactly the fact they can decide from.</para>
+    ''' <para><b>Only what is fit to reuse is offered</b> — see
+    ''' <c>WorkflowResultStore.PachetBunDeRefolosit</c>: a package enters the store only after
+    ''' the robot reported success, and one with no rows is not offered at all, because the
+    ''' ingest would refuse it anyway.</para>
+    ''' <para><b>Reuse is safe by construction.</b> The ingest has a two-phase contract over the
+    ''' SAME payload (slice 0055): the proposal is asked for with the package, the save resends
+    ''' it unchanged. A package held in memory is the very object a download would have handed
+    ''' back, so both phases see exactly the same thing.</para>
+    ''' </remarks>
+    ''' <summary>
+    ''' THE ANGAJAMENTE LIST from memory, when the operator wants it. Nothing = download again.
+    ''' The twin of <see cref="IntreabaDacaRefolosescPachetul"/>, on the synchronise button.
+    ''' </summary>
+    ''' <remarks>
+    ''' "Downloaded correctly" means here: it reached the store (so the robot reported success)
+    ''' and it holds at least one row. An empty list would have nothing to send to the upsert,
+    ''' so it is not offered.
+    ''' </remarks>
+    Private Function IntreabaDacaRefolosescLista() As List(Of Angajament)
+        Try
+            Dim lista As IReadOnlyList(Of Angajament) = _forexe.Rezultate.UltimaLista
+            Dim moment As Date? = _forexe.Rezultate.MomentLista
+            If lista Is Nothing OrElse lista.Count = 0 OrElse Not moment.HasValue Then Return Nothing
+
+            Dim raspuns As DialogResult = KBotMessage.Show(
+                Me,
+                $"Lista de angajamente a fost deja descărcată din FOREXE la " &
+                $"{moment.Value:HH:mm:ss} ({moment.Value:dd.MM.yyyy}), cu {lista.Count} " &
+                "angajamente, și este încă în memorie." & Environment.NewLine &
+                Environment.NewLine &
+                "Da = trimit pe server lista din memorie (imediat)." & Environment.NewLine &
+                "Nu = descarc lista din nou din FOREXE.",
+                "Sincronizare",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1)
+            If raspuns <> DialogResult.Yes Then Return Nothing
+
+            _forexe.SpuneStare($"Se folosește lista descărcată la {moment.Value:HH:mm:ss} " &
+                               "(din memorie, fără o descărcare nouă).")
+            Return New List(Of Angajament)(lista)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.IntreabaDacaRefolosescLista", ex)
+            Return Nothing
+        End Try
+    End Function
+
+    Private Function IntreabaDacaRefolosescPachetul(cod As String) As PrelucrareRezultat
+        Try
+            Dim pachet As PrelucrareRezultat = _forexe.Rezultate.PachetBunDeRefolosit(cod)
+            If pachet Is Nothing Then Return Nothing
+
+            Dim randuri As Integer = WorkflowResultStore.NumaraRanduri(pachet)
+            Dim raspuns As DialogResult = KBotMessage.Show(
+                Me,
+                $"Angajamentul «{cod}» a fost deja descărcat din FOREXE la " &
+                $"{pachet.Moment:HH:mm:ss} ({pachet.Moment:dd.MM.yyyy}), cu {randuri} rânduri, " &
+                "și datele sunt încă în memorie." & Environment.NewLine &
+                Environment.NewLine &
+                "Da = folosesc datele din memorie (imediat)." & Environment.NewLine &
+                "Nu = descarc din nou din FOREXE (durează, dar aduce orice s-a schimbat între timp).",
+                "FOREXE — descărcare",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1)
+            If raspuns <> DialogResult.Yes Then Return Nothing
+
+            _forexe.SpuneStare($"«{cod}»: se folosesc datele descărcate la {pachet.Moment:HH:mm:ss} " &
+                               "(din memorie, fără o descărcare nouă).")
+            Return pachet
+        Catch ex As Exception
+            ' UI boundary: if the question itself fails, download again. Never the other way
+            ' round — a silent reuse after an error is precisely the decision the machine does
+            ' not get to take.
+            GlobalErrorLog.Write("MainForm.IntreabaDacaRefolosescPachetul", ex)
+            Return Nothing
+        End Try
+    End Function
 
     ''' <summary>
     ''' Drumul de la pachetul descărcat până în tabele (felia 0055), în două faze.
@@ -1731,7 +1824,10 @@ Public Class KBOT
         busyBar.Running = True
         _cts = New CancellationTokenSource()
         Try
-            Dim mapate As List(Of Angajament) = Await _forexe.DownloadListaAsync()
+            ' The same offer as on an angajament download (slice 0058): when the list is already
+            ' in memory from this session, the operator picks between it and a fresh download.
+            Dim mapate As List(Of Angajament) = IntreabaDacaRefolosescLista()
+            If mapate Is Nothing Then mapate = Await _forexe.DownloadListaAsync()
             If mapate Is Nothing Then
                 ' Motivul l-a spus deja robotul: coordonatorul a pus linia lui în starea din
                 ' banda FOREXE, iar pașii descărcării sunt în consolă. Aici n-avem ce adăuga.

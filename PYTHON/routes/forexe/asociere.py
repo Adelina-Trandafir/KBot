@@ -75,13 +75,12 @@ F14 (submultimea de indicatori) si F16 (multimile doar cresc) RIDICA, la fel ca 
 ingestie: sunt absolute. Un instantaneu nu poate numi indicatori pe care recepția nu ii
 are; un indicator nu poate disparea din lant.
 
-F13 (data) NU MAI RIDICA, DE NICAIERI -- retras pe 31.08.2026. Se sprijinea pe premisa ca
-`FX_Receptii_R.DataR` spune cand a aparut receptia; operatorul a corectat premisa: e un
-camp obisnuit, tastat pe site si schimbabil dupa aceea, iar tabelul nu are nicio coloana
-cu momentul crearii (F29). Un veto cladit pe un camp tastat refuza plasari corecte, si pe
-calea de ingestie asta inseamna un operator infundat pe o receptie pe care nu o poate
-repara -- exact ce interzice F10. Comparatia a ramas ca SEMN, in `avertismente`, pe
-amandoua caile. Detaliile si comparatia pe ZI: docstring-ul lui `valideaza_plasarile`.
+F13 (data) NU MAI EXISTA DELOC -- retras ca veto pe 31.08.2026, sters si ca semn pe
+09.09.2026. Se sprijinea pe premisa ca `FX_Receptii_R.DataR` spune cand a aparut receptia;
+operatorul a corectat premisa: e un camp obisnuit, tastat pe site si schimbabil dupa
+aceea, iar tabelul nu are nicio coloana cu momentul crearii (F29). Ca semn se aprindea pe
+date perfect corecte, deci nu mai apare NICAIERI -- nici in `avertismente`, nici in
+formular. Detaliile: docstring-ul lui `valideaza_plasarile`.
 
 F15 (capatul lantului) doar AVERTIZEAZA aici. Fundamentul §1.5 chiar asa il descrie --
 «aratat per recepție ca un SEMN» -- iar un editor in care nu poti desprinde ultimul
@@ -96,6 +95,7 @@ from flask import request, g, current_app
 
 from routes.auth.guard import require_session
 from utils.database import get_kbot_connection
+from utils import asociere_log as journal
 
 from . import forexe_bp
 from .prelucrare_asociere import (
@@ -305,6 +305,17 @@ def citeste_instantanee(cursor, cod: str, blocaje: dict) -> list:
             "motive": motive,
             "linii": linii.get(idrh, []),
         })
+
+    journal.section("instantaneele angajamentului (%d)" % len(out))
+    journal.table(
+        ("IDRH", "IDRR", "DataH", "Total", "tip", "stergere", "ignorat", "blocat",
+         "linii"),
+        [(i["idrh"], i["idrr"], i["data_h"], i["total"], i["tip_receptie"],
+          i["stergere"], i["ignorat"], i["blocat"],
+          journal.sume_pe_indicator(i["linii"])) for i in out])
+    for i in out:
+        if i["motive"]:
+            journal.line("IDRH %s blocat: %s", i["idrh"], " ".join(i["motive"]))
     return out
 
 
@@ -506,6 +517,16 @@ def aplica_comenzi(cursor, cod: str, comenzi: list, instantanee: list,
       4. `Final` / `Partial`, o singura data per recepție atinsa;
       5. F28.
     """
+    journal.section("comenzile operatorului (%d)" % len(comenzi))
+    dupa_idrh = {i["idrh"]: i for i in instantanee}
+    journal.table(
+        ("IDRH", "acțiune", "IDRR cerut", "receptie_noua", "IDRR de acum", "DataH",
+         "Total"),
+        [(c["idrh"], c["actiune"], c["idrr"], c["receptie_noua"],
+          dupa_idrh.get(c["idrh"], {}).get("idrr"),
+          dupa_idrh.get(c["idrh"], {}).get("data_h"),
+          dupa_idrh.get(c["idrh"], {}).get("total")) for c in comenzi])
+
     etichete = verifica_etichetele(comenzi)
     noi = materializeaza_reconstituite(cursor, cod, comenzi, instantanee,
                                        etichete, avertismente)
@@ -554,11 +575,17 @@ def aplica_comenzi(cursor, cod: str, comenzi: list, instantanee: list,
     # Steagul `Sters` de pe recepțiile care si-au pierdut randul de stergere.
     for idrr in sorted(de_recalculat):
         cursor.execute(_R_DEMARCHEAZA_SQL, (idrr, idrr))
+        if cursor.rowcount:
+            journal.line("recepția %s nu mai are rând de ștergere: Sters = 0", idrr)
 
     for idrr in sorted(de_recalculat):
         recalculeaza_final(cursor, idrr)
 
     marcheaza_reconstituirile_nesigure(cursor, cod, avertismente)
+    journal.section("ce s-a scris")
+    journal.line("legături: %s", numarat)
+    for a in avertismente:
+        journal.line("avertisment: %s", a)
     return numarat
 
 
@@ -581,6 +608,7 @@ def _serializeaza(v):
 
 @forexe_bp.route("/api/forexe/asociere", methods=["GET"])
 @require_session
+@journal.traced("asociere GET")
 def get_asociere():
     """
     Tabloul de asociere al unui angajament, citit DIRECT din baza.
@@ -597,6 +625,7 @@ def get_asociere():
     cod = str(cod).strip()
 
     db_name = g.session.db_name
+    journal.note(dc=db_name, user=g.session.username, cod=cod)
     conn = None
     try:
         conn = get_kbot_connection(db_name)
@@ -626,6 +655,7 @@ def get_asociere():
         }, 200)
     except Exception as e:
         # Fara inghitire: o lista goala ar minti operatorul ca nu are ce edita.
+        journal.refusal("citirea tabloului a căzut: %s", e)
         logger.error(f"[forexe.asociere] {e}", exc_info=True)
         return _json_utf8(
             {"error": f"Eroare la citirea asocierii: {e}"}, 500)
@@ -636,6 +666,7 @@ def get_asociere():
 
 @forexe_bp.route("/api/forexe/asociere", methods=["POST"])
 @require_session
+@journal.traced("asociere POST")
 def post_asociere():
     """
     Aplica un set PARTIAL de modificari peste legaturile R <-> H.
@@ -658,6 +689,7 @@ def post_asociere():
         return _json_utf8({"error": "Câmp lipsă: amprenta"}, 400)
 
     db_name = g.session.db_name
+    journal.note(dc=db_name, user=g.session.username, cod=cod)
     conn = None
     try:
         comenzi = normalizeaza_comenzi(date.get("comenzi"))
@@ -673,6 +705,8 @@ def post_asociere():
         amp_server = amprenta(cursor, cod)
         if amp_server != amp_client:
             conn.rollback()
+            journal.refusal("amprenta nu se potrivește: formularul are %s, baza are "
+                            "%s. Nu s-a scris nimic.", amp_client, amp_server)
             return _json_utf8({"error": MSG_STARE_MODIFICATA,
                                "reason": REASON_STARE_MODIFICATA}, 409)
 
@@ -682,6 +716,7 @@ def post_asociere():
 
         avertismente = []
         numarat = aplica_comenzi(cursor, cod, comenzi, instantanee, avertismente)
+        journal.line("commit")
         conn.commit()
 
         # Amprenta noua, ca formularul sa poata continua fara sa reincarce tot.
@@ -693,15 +728,18 @@ def post_asociere():
     except InstantaneuBlocat as e:
         if conn is not None:
             conn.rollback()
+        journal.refusal("%s -- nu s-a scris nimic (rollback)", e)
         return _json_utf8({"error": str(e),
                            "reason": REASON_INSTANTANEU_BLOCAT}, 409)
     except DecizieInvalida as e:
         if conn is not None:
             conn.rollback()
+        journal.refusal("%s -- nu s-a scris nimic (rollback)", e)
         return _json_utf8({"error": str(e)}, 400)
     except Exception as e:
         if conn is not None:
             conn.rollback()
+        journal.refusal("salvarea a căzut: %s -- rollback", e)
         logger.error(f"[forexe.asociere] {e}", exc_info=True)
         return _json_utf8({"error": f"Eroare la salvarea asocierii: {e}"}, 500)
     finally:

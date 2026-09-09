@@ -149,6 +149,20 @@ Public NotInheritable Class KBotLane
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Friend Property Bounds As Rectangle = Rectangle.Empty
 
+    ''' <summary>
+    ''' The lane's PLOTTED markers, already in left-to-right order — filled by the layout pass,
+    ''' read by the painter.
+    ''' </summary>
+    ''' <remarks>
+    ''' It lives here rather than being worked out while painting because the segmented rail
+    ''' needs the markers in X order and the collection is deliberately left unsorted. Building
+    ''' and sorting that list inside <c>OnPaint</c> meant one allocation plus one sort per lane
+    ''' PER REPAINT — and a repaint happens every time the pointer crosses a lane or a marker,
+    ''' which is what made the surface lag under the mouse. The order only changes when the
+    ''' layout changes, and every path that changes it invalidates the layout.
+    ''' </remarks>
+    Friend ReadOnly Property PlottedInOrder As New List(Of KBotLaneMarker)
+
     ''' <summary>Ask the owning view for a fresh layout. Called by the marker collection.</summary>
     Friend Sub InvalidateOwnerView()
         OwnerView?.InvalidateLaneLayout()

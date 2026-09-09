@@ -410,6 +410,24 @@ Public NotInheritable Class ForexeController
                End Sub
     End Function
 
+    ''' <summary>
+    ''' Writes one line on the FOREXE console without starting anything — for the shell, when it
+    ''' takes a decision about the robot that the robot itself never sees.
+    ''' </summary>
+    ''' <remarks>
+    ''' The only caller today (slice 0058) is the reuse of an in-memory package: no download
+    ''' starts, so the console would have no way of knowing the work ran on data from ten
+    ''' minutes ago. Without this line the log would show an ingest with no download behind it.
+    ''' </remarks>
+    Public Sub SpuneStare(mesaj As String)
+        Try
+            RaporteazaStare(mesaj)
+        Catch ex As Exception
+            ' Event boundary: a subscriber that throws must not stop the caller.
+            GlobalErrorLog.Write("ForexeController.SpuneStare", ex)
+        End Try
+    End Sub
+
     ''' <summary>Anulează operația în curs (butonul «Anulează» din consolă).</summary>
     Public Sub Cancel()
         Try

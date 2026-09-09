@@ -35,6 +35,7 @@ Public NotInheritable Class WorkflowResultStore
 
     ' ── Starea în memorie ────────────────────────────────────────────────
     Private _ultimaLista As IReadOnlyList(Of Angajament)
+    Private _momentLista As Date?
     Private ReadOnly _ultimulNod As New Dictionary(Of String, PrelucrareRezultat)(StringComparer.OrdinalIgnoreCase)
 
     ''' <summary>Ultima listă de angajamente descărcată (mapată). Nothing = nicio descărcare.</summary>
@@ -44,11 +45,59 @@ Public NotInheritable Class WorkflowResultStore
         End Get
     End Property
 
+    ''' <summary>
+    ''' When the list in <see cref="UltimaLista"/> was downloaded. Nothing = no download in
+    ''' this session.
+    ''' </summary>
+    ''' <remarks>
+    ''' Kept because it is the very question the operator asks before deciding whether to reuse
+    ''' what is in memory: "how old is this?". A node package carries its own moment
+    ''' (<see cref="PrelucrareRezultat.Moment"/>); the list has nowhere to carry one, so here.
+    ''' </remarks>
+    Public ReadOnly Property MomentLista As Date?
+        Get
+            Return _momentLista
+        End Get
+    End Property
+
     ''' <summary>Ultimul rezultat de prelucrare pentru un cod (Nothing = nedescărcat).</summary>
     Public Function RezultatNod(cod As String) As PrelucrareRezultat
         If String.IsNullOrEmpty(cod) Then Return Nothing
         Dim rezultat As PrelucrareRezultat = Nothing
         _ultimulNod.TryGetValue(cod, rezultat)
+        Return rezultat
+    End Function
+
+    ''' <summary>
+    ''' How many rows a processing package holds in all, across every table.
+    ''' </summary>
+    ''' <remarks>
+    ''' ROWS, not tables: the workflow returns its five tables even when all of them are empty,
+    ''' so <c>Tabele.Count</c> would answer 5 for a package with nothing in it. The same
+    ''' arithmetic is in <c>ForexeController.DownloadNodeAsync</c> and in
+    ''' <c>MainForm.DuLaIngestieAsync</c>; it lives here as a function because it decides
+    ''' whether a package in memory is good enough to be offered instead of a fresh download.
+    ''' </remarks>
+    Public Shared Function NumaraRanduri(rezultat As PrelucrareRezultat) As Integer
+        If rezultat Is Nothing OrElse rezultat.Tabele Is Nothing Then Return 0
+        Return rezultat.Tabele.Values.Sum(Function(t) If(t Is Nothing, 0, t.Count))
+    End Function
+
+    ''' <summary>
+    ''' The in-memory package for <paramref name="cod"/>, BUT only when it is fit to reuse: it
+    ''' exists and holds at least one row. Nothing in every other case.
+    ''' </summary>
+    ''' <remarks>
+    ''' "Only if they were downloaded correctly" (operator, 09.09.2026). The store receives a
+    ''' package only after the robot reported success — a failed download never reaches here —
+    ''' so the one check still missing is the one the ingest itself makes before anything goes
+    ''' to the server: a package without a single row is not a download, it is an empty one, and
+    ''' offering it instead of a fresh download would close the operator into a circle.
+    ''' </remarks>
+    Public Function PachetBunDeRefolosit(cod As String) As PrelucrareRezultat
+        Dim rezultat As PrelucrareRezultat = RezultatNod(cod)
+        If rezultat Is Nothing Then Return Nothing
+        If NumaraRanduri(rezultat) = 0 Then Return Nothing
         Return rezultat
     End Function
 
@@ -66,6 +115,7 @@ Public NotInheritable Class WorkflowResultStore
         Try
             ArgumentNullException.ThrowIfNull(randuri)
             _ultimaLista = randuri
+            _momentLista = DateTime.Now
             Dim cale As String = Path.Combine(OutputFolder,
                                               $"ListaAngajamente_{DateTime.Now:yyyyMMdd_HHmmss}.json")
             Scrie(cale, randuri)

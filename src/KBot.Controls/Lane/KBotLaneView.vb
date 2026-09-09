@@ -161,6 +161,33 @@ Partial Public NotInheritable Class KBotLaneView
     Private _laneLinePen As Pen
     Private _separatorPen As Pen
 
+    ' SCRATCH GDI+ objects, reused across a paint pass instead of allocated per shape.
+    '
+    ' Why: a surface with twenty lanes of twenty markers used to build and free well over a
+    ' thousand Pens and Brushes on EVERY repaint — and a repaint happens each time the pointer
+    ' crosses a lane, a marker or a guide. That is what the operator saw as "huge lag when I
+    ' move the mouse" (09.09.2026). Double buffering was already on and was never the problem:
+    ' the cost was in the drawing, not in the flicker.
+    '
+    ' Four of them, not one, because some shapes are drawn while another is still set up:
+    ' `_fillBrush` is the marker's own colour while `_backBrush` is the surface colour showing
+    ' through it, and `_edgePen` outlines a marker while `_detailPen` draws what is inside it.
+    ' They are ONLY ever touched from the paint path, which is single-threaded (WM_PAINT), and
+    ' every user goes through ScratchPen/ScratchBrush, which re-sets EVERY property — a cap or
+    ' a dash left over from the previous shape would be a defect that shows up three shapes
+    ' later, in a different method.
+    Private _fillBrush As SolidBrush
+    Private _backBrush As SolidBrush
+    Private _edgePen As Pen
+    Private _detailPen As Pen
+
+    ' DPI-scaled hairlines, recomputed with the layout. `ScaleDpi` is cheap, but it was being
+    ' called four or five times per marker; a couple of hundred markers make that thousands of
+    ' calls per repaint for three numbers that cannot change between two markers.
+    Private _px1 As Integer = 1
+    Private _px2 As Integer = 2
+    Private _px3 As Integer = 3
+
     ' Font DERIVED from Font (bold header). Cached because deriving a font on every paint
     ' allocates a GDI handle per repaint; rebuilt whenever Font or the override changes.
     Private _derivedHeaderFont As Font
@@ -185,9 +212,12 @@ Partial Public NotInheritable Class KBotLaneView
     Public Event MarkerHovered(laneKey As String, markerIndex As Integer)
 
     Public Sub New()
+        ' `Opaque` joins the four that were already here (09.09.2026). Without it WinForms still
+        ' erases the whole client rectangle before OnPaint runs, and OnPaint's first act is
+        ' `g.Clear(BackColor)` — the same surface filled twice on every repaint, for nothing.
         SetStyle(ControlStyles.UserPaint Or ControlStyles.AllPaintingInWmPaint Or
                  ControlStyles.OptimizedDoubleBuffer Or ControlStyles.ResizeRedraw Or
-                 ControlStyles.Selectable, True)
+                 ControlStyles.Opaque Or ControlStyles.Selectable, True)
         TabStop = True
         _lanes.Owner = Me
         _guides.Owner = Me
@@ -1436,6 +1466,10 @@ Partial Public NotInheritable Class KBotLaneView
             _borderPen?.Dispose()
             _laneLinePen?.Dispose()
             _separatorPen?.Dispose()
+            _fillBrush?.Dispose()
+            _backBrush?.Dispose()
+            _edgePen?.Dispose()
+            _detailPen?.Dispose()
             _derivedHeaderFont?.Dispose()
             _derivedAxisFont?.Dispose()
             _markerTooltip?.Dispose()

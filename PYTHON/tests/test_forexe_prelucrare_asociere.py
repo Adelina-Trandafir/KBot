@@ -228,29 +228,24 @@ def test_a_well_formed_reconstructed_chain_passes():
 
 
 # ===========================================================================
-# F13 -- RETRAS ca veto pe 31.08.2026; a ramas SEMN
+# F13 -- RETRAS ca veto pe 31.08.2026, STERS si ca semn pe 09.09.2026
 # ===========================================================================
-# Cele doua teste de mai jos verificau vetoul. Au fost rescrise, nu sterse: regula nu a
-# disparut, a coborat. `DataR` e un camp tastat pe site si schimbabil dupa aceea, iar
-# `FX_Receptii_R` nu are nicio coloana cu momentul crearii (F29), deci un refuz cladit pe
-# el poate opri o plasare corecta -- si pe calea de ingestie asta infunda operatorul pe o
-# receptie pe care nu o poate repara (F10).
-def test_the_date_rule_no_longer_rejects_and_warns_instead():
+# Testele astea au trecut prin trei forme. La inceput verificau vetoul; pe 31.08.2026 au
+# fost rescrise pe semn; acum verifica TACEREA. Motivul e acelasi de fiecare data si e in
+# date, nu in gust: `DataR` e un camp tastat pe site si schimbabil dupa aceea, iar
+# `FX_Receptii_R` nu are nicio coloana cu momentul crearii (F29). Ca semn se aprindea pe
+# date perfect corecte -- o data tastata soseste la miezul noptii -- deci aparea pe rand
+# dupa rand fara sa spuna nimic. Operatorul a cerut sa dispara cu totul (09.09.2026).
+def test_the_date_rule_neither_rejects_nor_warns_any_more():
     r = rec(1, "2026-03-01 08:00:00", 510)
     i = inst(9, "2026-01-19 10:00:00", 510)
     avertismente = []
     A.valideaza_plasarile({1: [i]}, {1: r}, avertismente=avertismente)   # nu ridica
-    assert len(avertismente) == 1
-    assert "mai vechi decât data recepției" in avertismente[0]
+    assert avertismente == []
 
 
-def test_the_date_sign_is_measured_on_the_DAY_not_on_the_second():
-    """
-    Formularea veche cerea timestamp complet, pornind de la ideea ca ambele capete sunt
-    momente. Nu sunt: `DataR` e o data TASTATA, deci soseste la miezul noptii, iar `DataH`
-    e ceasul sistemului. Comparate ca momente, orice instantaneu din chiar ziua receptiei
-    ar iesi «inainte de ea», si semnul s-ar aprinde pe date perfect corecte.
-    """
+def test_a_snapshot_on_the_very_day_of_the_reception_is_silent_too():
+    """Cazul care a starnit prima data «se aprinde pe date corecte»."""
     r = rec(1, "2026-02-11 00:00:00", 510)
     i = inst(9, "2026-02-11 10:00:00", 510)
     avertismente = []
@@ -302,6 +297,81 @@ def test_the_chain_end_check_fails_when_the_last_snapshot_disagrees():
     with pytest.raises(DecizieInvalida) as e:
         A.valideaza_plasarile({1: lant}, {1: r})
     assert "Lanțul nu se închide" in str(e.value)
+
+
+def test_several_lines_on_one_indicator_are_summed_not_overwritten():
+    """
+    Plangerea din 09.09.2026: «pun corect recepțiile la locul lor si tot imi apare
+    mesajul». Comparatia veche era o dictionar-comprehensiune pe `cod_indicator`, deci o
+    receptie cu doua linii pe acelasi indicator pastra doar ULTIMA -- si cele doua laturi,
+    citite din tabele diferite, puteau pastra linii diferite. Aici totalurile se potrivesc
+    (300 = 100 + 200) si liniile la fel, doar ca sunt sparte altfel pe cele doua laturi.
+    """
+    r = rec(1, "2026-01-01 00:00:00", 300)
+    r["rhr"] = [
+        {"cod_indicator": "AAB", "cod_ai": "x", "cod_ssi": "S1",
+         "credit_bugetar": 0.0, "valoare": 100.0, "valoare_n": 0.0},
+        {"cod_indicator": "AAB", "cod_ai": "x", "cod_ssi": "S2",
+         "credit_bugetar": 0.0, "valoare": 200.0, "valoare_n": 0.0},
+    ]
+    i = inst(9, "2026-02-01 10:00:00", 300)
+    i["linii"] = [
+        {"cod_indicator": "AAB", "cod_ai": "x", "cod_ssi": "S2",
+         "id_clsf": 1, "valoare": 200.0},
+        {"cod_indicator": "AAB", "cod_ai": "x", "cod_ssi": "S1",
+         "id_clsf": 1, "valoare": 100.0},
+    ]
+    A.valideaza_plasarile({1: [i]}, {1: r})       # nu ridica
+
+
+def test_an_indicator_that_fell_to_zero_does_not_break_the_chain_end():
+    """F16 spune ca un indicator poate cadea la zero. Zerourile ies din comparatie."""
+    r = rec(1, "2026-01-01 00:00:00", 300)
+    r["rhr"].append({"cod_indicator": "AA2", "cod_ai": "x", "cod_ssi": "",
+                     "credit_bugetar": 0.0, "valoare": 0.0, "valoare_n": 0.0})
+    i = inst(9, "2026-02-01 10:00:00", 300)
+    A.valideaza_plasarile({1: [i]}, {1: r})       # nu ridica
+
+
+def test_a_real_line_mismatch_is_still_refused_and_says_which_indicator():
+    r = rec(1, "2026-01-01 00:00:00", 300, indicatori=("AAB", "AA2"))
+    # 150 + 150 pe receptie, 300 + 0 pe instantaneu: acelasi total, alta impartire.
+    r["rhr"][0]["valoare"] = 150.0
+    r["rhr"][1]["valoare"] = 150.0
+    r["suma_antet"] = 300.0
+    i = inst(9, "2026-02-01 10:00:00", 300, indicatori=("AAB", "AA2"))
+    i["linii"][0]["valoare"] = 300.0
+    i["linii"][1]["valoare"] = 0.0
+    with pytest.raises(DecizieInvalida) as e:
+        A.valideaza_plasarile({1: [i]}, {1: r})
+    assert "AAB" in str(e.value)
+    assert "Lanțul nu se închide" in str(e.value)
+
+
+def test_on_the_ingest_path_the_message_names_the_reception_by_date_and_value():
+    """
+    `IDRR`-ul unei receptii nascute in rularea curenta se da inauntrul tranzactiei si nu
+    supravietuieste derularii inapoi, deci «Recepția 235» nu se gaseste nicaieri in lista
+    operatorului (plangere, 09.09.2026). Cu `id_stabil=False` numarul nu se scrie deloc.
+    """
+    r = rec(235, "2026-02-11 00:00:00", 460)
+    lant = [inst(9, "2026-02-01 10:00:00", 460),
+            inst(13, "2026-03-01 10:00:00", 510)]
+    with pytest.raises(DecizieInvalida) as e:
+        A.valideaza_plasarile({235: lant}, {235: r}, id_stabil=False)
+    mesaj = str(e.value)
+    assert "235" not in mesaj
+    assert "11.02.2026" in mesaj
+    assert "460.00" in mesaj
+
+
+def test_in_the_anytime_editor_the_number_is_real_and_stays_in_the_message():
+    r = rec(41, "2026-02-11 00:00:00", 460)
+    lant = [inst(9, "2026-02-01 10:00:00", 460),
+            inst(13, "2026-03-01 10:00:00", 510)]
+    with pytest.raises(DecizieInvalida) as e:
+        A.valideaza_plasarile({41: lant}, {41: r})
+    assert "Recepția 41" in str(e.value)
 
 
 def test_the_chain_end_check_is_skipped_for_a_chain_ending_in_a_deletion():

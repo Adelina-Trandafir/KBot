@@ -180,6 +180,10 @@ Public Class AsociereForm
         _alegeri = If(alegeri Is Nothing, New List(Of AlegereUnitate)(), New List(Of AlegereUnitate)(alegeri))
         _withReauthPrelucrare = withReauthPrelucrare
         capBar.Text = $"K-BOT — Așezarea recepțiilor descărcate · {_cod}"
+        ' Clearing the placements means something ONLY here. The anytime editor has no "current
+        ' step": every link there is an old one, and a button that detached them all would be a
+        ' tool for breaking, not for starting over. See btnReseteaza_Click.
+        btnReseteaza.Visible = True
         AplicaVedereaDinDreaptaSus(VEDEREA_GRAFIC)
     End Sub
 
@@ -244,9 +248,19 @@ Public Class AsociereForm
     ''' de date ajung, după câteva trageri, să spună lucruri diferite — iar aici cel care minte
     ''' e ecranul, adică exact ce nu-și poate permite un formular al cărui rost e să arate ce
     ''' s-a hotărât.</para>
+    '''
+    ''' <para><b>The scroll of both trees survives the rebuild</b> (operator, 09.09.2026).
+    ''' <c>Clear</c> zeroes the scroll — rightly, it is an emptying — so every drag threw the
+    ''' operator back to the first row, which is precisely away from the receipt they were
+    ''' working on. It is read BEFORE and put back AFTER; <c>ScrollOffsetY</c> rebuilds the
+    ''' bar's range first, or the value would clamp to zero because the emptying left it with no
+    ''' content. What is NOT remembered is the SELECTION: it carries meaning here (the chosen
+    ''' row feeds the grid and the chart) and a drag changes it anyway.</para>
     ''' </summary>
     Private Sub Reconstruieste()
         Try
+            Dim derulareLant As Integer = treeLant.ScrollOffsetY
+            Dim derulareLibere As Integer = treeLibere.ScrollOffsetY
             treeLant.Clear()
             treeLibere.Clear()
             grid.ClearRows()
@@ -269,14 +283,21 @@ Public Class AsociereForm
                     treeLant.AddItem(CHEIE_RECEPTIE & rec.Idrr, CaptionReceptie(rec, lant), pExpanded:=True, pLeftIconClosed:=Il_Receptii.Images.Item("Receptii"))
                 nod.Tag = rec
                 nod.Bold = True
+                ' ITALIC = a receipt BORN by this download (operator, 09.09.2026). Every root is
+                ' bold, so bold alone told nothing apart; italic on top of it reads at a glance
+                ' and costs no new control. The sign is `RandReceptie`, not a list kept on the
+                ' side: the server sets it on EXACTLY the receipts created in the current run
+                ' (it is their index in `ListaReceptii`, slice 0056) and leaves it Nothing for
+                ' every other one. The ones that came from the server stay merely bold.
+                nod.Italic = rec.RandReceptie.HasValue
                 nod.Tooltip = TooltipReceptie(rec, lant)
                 _nodReceptie(rec.Idrr) = nod
 
                 For Each inst As InstantaneuLegat In lant
                     Dim frunza As AdvancedTreeControl.TreeItem =
-                        treeLant.AddItem(CHEIE_INSTANTANEU & inst.Idrh, CaptionInstantaneu(inst, rec), nod, pLeftIconClosed:=Il_Receptii.Images.Item("Receptii_Link"))
+                        treeLant.AddItem(CHEIE_INSTANTANEU & inst.Idrh, CaptionInstantaneu(inst), nod, pLeftIconClosed:=Il_Receptii.Images.Item("Receptii_Link"))
                     frunza.Tag = inst
-                    frunza.Tooltip = TooltipInstantaneu(inst, rec)
+                    frunza.Tooltip = TooltipInstantaneu(inst)
                     If inst.Blocat Then frunza.RightIcon = Il_Receptii.Images.Item("Lock")
                     ColoreazaInstantaneu(frunza, inst)
                     _nodInstantaneu(inst.Idrh) = New RandDeArbore(treeLant, frunza)
@@ -321,6 +342,10 @@ Public Class AsociereForm
             Else
                 btnSalveaza.Enabled = Comenzi().Count > 0
             End If
+            ' The scroll, restored AFTER both trees are full: the setter rebuilds the bar's
+            ' range first, so only now does it have anything to measure against.
+            treeLant.ScrollOffsetY = derulareLant
+            treeLibere.ScrollOffsetY = derulareLibere
             treeLant.Invalidate()
             treeLibere.Invalidate()
             ' The chart reads the LOCAL picture too, so a drag has to move it as well. Rebuilding
@@ -360,15 +385,18 @@ Public Class AsociereForm
         Return $"{rec.DataR:dd.MM.yyyy}~~~{Bani(rec.SumaAntet)} ({lant.Count}){semne}"
     End Function
 
-    Private Function CaptionInstantaneu(inst As InstantaneuLegat, Optional rec As ReceptiePropusa = Nothing) As String
+    Private Function CaptionInstantaneu(inst As InstantaneuLegat) As String
         Dim semne As String = String.Empty
         'If inst.Blocat Then semne &= "  🔒"
         If EsteStergere(inst.Idrh) Then semne &= "  [ștergere]"
         If EsteIgnorat(inst.Idrh) Then semne &= "  [fără schimbare]"
-        ' Semnul care a rămas din F13 retras. Scris pe rând, nu ridicat ca refuz: plasarea e
-        ' permisă, iar operatorul decide dacă data recepției e greșită sau instantaneul e al
-        ' altei recepții.
-        If EsteInainteDeDataReceptiei(inst, rec) Then semne &= "  [înainte de data recepției]"
+        ' NOTHING about `DataR` here, and nothing in the two tooltips either (operator,
+        ' 09.09.2026). This was the last remnant of the withdrawn F13: a sign that lit up on
+        ' perfectly correct data, on row after row, because `DataR` is typed by hand on the
+        ' site and says nothing about when the receipt appeared (F29). A warning that is
+        ' almost always wrong is not an observation, it is noise on every line — so it is
+        ' gone, veto and sign both. The `rec` parameter stays: the caller has it, and the two
+        ' call sites read better naming the receipt the snapshot sits on.
         Return $"{inst.DataH:dd.MM.yyyy HH:mm}~~~{Bani(inst.Total)}{semne}"
     End Function
 
@@ -400,7 +428,15 @@ Public Class AsociereForm
 
     Private Function TooltipReceptie(rec As ReceptiePropusa, lant As List(Of InstantaneuLegat)) As String
         Dim sb As New Text.StringBuilder()
-        sb.AppendLine($"Recepția {rec.Idrr} · creată {rec.DataR:dd.MM.yyyy}")
+        ' The number is written ONLY when it is a real one. A receipt born by this download got
+        ' its `IDRR` inside the transaction phase one rolled back, so the number it carries now
+        ' is not the one it will have after the save — showing it would send the operator
+        ' looking for something that does not exist (slice 0056, and the 09.09.2026 complaint).
+        If rec.RandReceptie.HasValue Then
+            sb.AppendLine($"Recepție NOUĂ, din descărcarea curentă · creată {rec.DataR:dd.MM.yyyy}")
+        Else
+            sb.AppendLine($"Recepția {rec.Idrr} · creată {rec.DataR:dd.MM.yyyy}")
+        End If
         sb.AppendLine($"Valoare acum: {Bani(rec.SumaAntet)}")
         If lant.Count > 0 Then
             Dim ultimul As InstantaneuLegat = lant.Last()
@@ -415,16 +451,7 @@ Public Class AsociereForm
         Else
             sb.AppendLine("Nu are niciun instantaneu.")
         End If
-        ' Câte instantanee cad înaintea datei scrise pe recepție. Numărul contează mai mult decât
-        ' faptul: unul singur e o ciudățenie, tot lanțul înseamnă că data recepției e greșită.
-        ' `.Where(...).Count()`, nu `.Count(...)`: pe un `List(Of T)`, `Count` e PROPRIETATE și
-        ' umbrește supraîncărcarea LINQ cu predicat, deci varianta scurtă nici nu compilează.
-        Dim inainte As Integer = lant.Where(Function(x) EsteInainteDeDataReceptiei(x, rec)).Count()
-        If inainte > 0 Then
-            sb.AppendLine($"⚠ {inainte} din {lant.Count} instantanee sunt mai vechi decât data recepției " &
-                          $"({rec.DataR:dd.MM.yyyy}). Data se scrie de mână pe site, deci nu e o piedică — " &
-                          "dar merită privită.")
-        End If
+        ' No "older than the receipt's date" count here any more - see CaptionInstantaneu.
         If rec.ReconstituitNesigur Then
             sb.AppendLine("⚠ Reconstituire nesigură: gruparea a fost o judecată, nu o verificare.")
         End If
@@ -444,18 +471,13 @@ Public Class AsociereForm
         Return KBotLaneEndMark.Warning
     End Function
 
-    Private Function TooltipInstantaneu(inst As InstantaneuLegat, Optional rec As ReceptiePropusa = Nothing) As String
+    Private Function TooltipInstantaneu(inst As InstantaneuLegat) As String
         Dim sb As New Text.StringBuilder()
         sb.AppendLine($"{inst.DataH:dd.MM.yyyy HH:mm:ss} · {Bani(inst.Total)}")
         If Not String.IsNullOrWhiteSpace(inst.Descriere) Then sb.AppendLine(inst.Descriere)
         Dim ind As String = String.Join(", ", inst.Indicatori().OrderBy(Function(x) x))
         If ind <> "" Then sb.AppendLine($"Indicatori: {ind}")
-        If EsteInainteDeDataReceptiei(inst, rec) Then
-            sb.AppendLine()
-            sb.AppendLine($"⚠ Instantaneul e mai vechi decât data recepției ({rec.DataR:dd.MM.yyyy}). " &
-                          "Data recepției se scrie de mână pe site și se poate schimba, deci asta NU " &
-                          "împiedică așezarea — dar ori data e greșită, ori instantaneul e al altei recepții.")
-        End If
+        ' No "older than the receipt's date" warning here any more — see CaptionInstantaneu.
         If inst.Blocat Then
             sb.AppendLine()
             sb.AppendLine("NU SE MAI POATE MUTA:")
@@ -559,8 +581,10 @@ Public Class AsociereForm
     ''' <para><b>F13 nu mai e aici deloc</b> — retras pe 31.08.2026. <c>FX_Receptii_R.DataR</c>
     ''' nu e momentul creării: e un câmp obișnuit, pe care operatorul îl scrie pe site și îl
     ''' poate schimba după aceea, iar <c>FX_Receptii_R</c> nu are NICIO coloană cu momentul
-    ''' creării (F29). Un veto clădit pe un câmp tastat refuză plasări corecte. Comparația
-    ''' supraviețuiește ca SEMN, în <see cref="EsteInainteDeDataReceptiei"/>, și atât.</para>
+    ''' creării (F29). Un veto clădit pe un câmp tastat refuză plasări corecte. Comparația a mai
+    ''' trăit un timp ca SEMN pe rând și în etichete; pe 09.09.2026 operatorul a cerut și acel
+    ''' rest scos — se aprindea pe date corecte, deci nu spunea nimic. <b>Nu mai există nicăieri
+    ''' în formular niciun cuvânt despre <c>DataR</c> ca avertisment.</b></para>
     ''' </summary>
     Private Function MotivulRefuzului(inst As InstantaneuLegat, rec As ReceptiePropusa) As String
         Dim indInst As HashSet(Of String) = inst.Indicatori()
@@ -594,26 +618,12 @@ Public Class AsociereForm
         Return String.Empty
     End Function
 
-    ''' <summary>
-    ''' Instantaneul este mai vechi decât data scrisă pe recepție — un SEMN, niciodată un refuz.
-    ''' </summary>
-    ''' <remarks>
-    ''' <para>Asta a fost F13 până pe 31.08.2026, când operatorul a corectat premisa: <c>DataR</c>
-    ''' nu spune când a apărut recepția, ci ce a tastat cineva în câmpul ăla pe site — și îl poate
-    ''' retasta oricând (F29). Ca veto, regula putea refuza o plasare corectă; pe calea de
-    ''' ingestie asta însemna un operator blocat pe o recepție pe care nu avea cum s-o repare,
-    ''' adică exact înfundarea pe care F10 spune că nu are voie să existe.</para>
-    ''' <para>Ca semn rămâne utilă: dacă instantaneele unei recepții cad înaintea datei ei, ori
-    ''' data e greșită, ori instantaneele sunt ale altei recepții. Care dintre ele — vede
-    ''' operatorul, nu mașina.</para>
-    ''' </remarks>
-    Private Shared Function EsteInainteDeDataReceptiei(inst As InstantaneuLegat, rec As ReceptiePropusa) As Boolean
-        If inst Is Nothing OrElse rec Is Nothing Then Return False
-        ' Pe ZI, nu pe timestamp complet: `DataR` e o dată tastată, deci sosește la miezul nopții,
-        ' iar `DataH` e ceasul sistemului. Comparate ca momente, ORICE instantaneu din chiar ziua
-        ' recepției ar ieși «înainte de ea» — un semn care s-ar aprinde pe date perfect corecte.
-        Return rec.DataR.Date > inst.DataH.Date
-    End Function
+    ' `EsteInainteDeDataReceptiei` USED TO BE HERE and was DELETED on 09.09.2026 at the
+    ' operator's request: the last remnant of F13 (withdrawn as a veto on 31.08.2026) lived on
+    ' as a sign on the row and in the two floating labels, and it lit up on perfectly correct
+    ' data — `DataR` is typed on the site and says nothing about when the receipt appeared
+    ' (F29). A rule that cannot be applied is not kept half-way; the fundament still describes
+    ' it, and its history is in `SLICE-0058`.
 
     Private Sub TreeLant_NodeDropped(sender As Object, e As TreeDropEventArgs) Handles treeLant.NodeDropped
         Try
@@ -1215,7 +1225,7 @@ Public Class AsociereForm
                     Dim inst As InstantaneuLegat = lant(j)
                     Dim marcaj As KBotLaneMarker = banda.AddMarker(inst.DataH, Bani(inst.Total))
                     marcaj.Tag = inst
-                    marcaj.Tooltip = TooltipInstantaneu(inst, rec)
+                    marcaj.Tooltip = TooltipInstantaneu(inst)
                     marcaj.Style = StilulMarcajului(inst, asezat:=True)
                     marcajDupaIdrh(inst.Idrh) = marcaj
                 Next
@@ -1447,9 +1457,9 @@ Public Class AsociereForm
     ''' Aceleași vetouri ca la arbore, pe aceeași funcție — <see cref="MotivulRefuzului"/>.
     ''' </summary>
     ''' <remarks>
-    ''' <b>F13 nu se consultă</b> (retras 31.08.2026). Dacă momentul cade înaintea lui
-    ''' <c>DataR</c> al recepției-țintă, aruncarea se face oricum, iar observația o poartă semnul
-    ''' de pe rând și eticheta plutitoare.
+    ''' <b>F13 nu se consultă</b> (retras 31.08.2026, iar semnul care îi rămăsese a fost șters
+    ''' pe 09.09.2026). Dacă momentul cade înaintea lui <c>DataR</c> al recepției-țintă,
+    ''' aruncarea se face oricum și nimic nu comentează asta.
     ''' </remarks>
     Private Sub Benzi_MarkerDragOver(sender As Object, e As LaneDragOverEventArgs) Handles benzi.MarkerDragOver
         Try
@@ -1897,6 +1907,64 @@ Public Class AsociereForm
 
     Private Sub btnRenunta_Click(sender As Object, e As EventArgs) Handles btnRenunta.Click
         Close()
+    End Sub
+
+    ''' <summary>
+    ''' EMPTIES THE CURRENT STEP'S PLACEMENTS (operator, 09.09.2026): everything this download
+    ''' brought goes back to the "unplaced" basket, and whatever was already written on the
+    ''' server is left untouched.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>The dividing line is not a list kept on the side, it is <c>Blocat</c>.</b> In
+    ''' proposal mode the server marks <c>Blocat = True</c> on EVERY context row — that is, on
+    ''' everything already linked in the database — and <c>False</c> on exactly the set to be
+    ''' decided in this run (see <c>AsociereStare.DinPropunere</c>). The same line is what
+    ''' <see cref="NehotarateleCount"/> and <see cref="DeciziiDin"/> read, so this button cannot
+    ''' end up believing something different from the rest of the form.</para>
+    ''' <para><b>It empties to UNPLACED, it does not restore the automatic suggestion.</b> The
+    ''' button exists to wipe everything decided since the window opened; going back to the
+    ''' suggestion would leave behind decisions the operator never took, which is exactly what
+    ''' they were trying to get out of. The save button switches itself off on the rebuild —
+    ''' there is no decided row left.</para>
+    ''' <para>It asks for confirmation: this deletes work, and there is no Undo out of it.</para>
+    ''' </remarks>
+    Private Sub btnReseteaza_Click(sender As Object, e As EventArgs) Handles btnReseteaza.Click
+        Try
+            If _stare Is Nothing Then Return
+            Dim deGolit As List(Of InstantaneuLegat) =
+                _stare.Instantanee.Where(Function(i) Not i.Blocat).ToList()
+            If deGolit.Count = 0 Then
+                ntfMesaj.Show("Descărcarea asta n-a adus niciun instantaneu de așezat — " &
+                              "nu e nimic de golit.", NoticeKind.Warning)
+                Return
+            End If
+
+            Dim raspuns As DialogResult = KBotMessage.Show(
+                Me,
+                $"Se pun înapoi în «Neașezate» toate cele {deGolit.Count} instantanee aduse de " &
+                "descărcarea curentă, iar ștergerile și marcajele «fără schimbare» puse de " &
+                "dumneavoastră se anulează." & Environment.NewLine &
+                "Legăturile care erau deja pe server NU se ating." & Environment.NewLine &
+                "Goliți așezările?",
+                "K-BOT — Așezarea recepțiilor descărcate",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2)
+            If raspuns <> DialogResult.Yes Then Return
+
+            For Each inst As InstantaneuLegat In deGolit
+                _pozitie(inst.Idrh) = 0
+                _ignorat(inst.Idrh) = False
+                _stergere(inst.Idrh) = False
+            Next
+            _receptieSelectata = Nothing
+            grid.ClearRows()
+            Reconstruieste()
+            ' `Reconstruieste` has already put up the "how many are left to decide" notice, and
+            ' that is the right one now, so nothing is written over it.
+        Catch ex As Exception
+            ' UI boundary: cannot re-throw.
+            GlobalErrorLog.Write("AsociereForm.btnReseteaza_Click", ex)
+            ntfMesaj.Show(TextDeEroare(ex, "Nu am putut goli așezările"), NoticeKind.Error)
+        End Try
     End Sub
 
     ''' <summary>

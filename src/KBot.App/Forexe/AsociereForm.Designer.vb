@@ -69,6 +69,7 @@ Partial Class AsociereForm
         ntfMesaj = New KBotNotice()
         lblIntro = New Label()
         btnRenunta = New Button()
+        btnReseteaza = New Button()
         btnSalveaza = New Button()
         capBar = New KBotCaptionBar()
         tlyAsociere = New TableLayoutPanel()
@@ -94,7 +95,7 @@ Partial Class AsociereForm
         ' 
         ' pnlCard
         ' 
-        tlyAsociere.SetColumnSpan(pnlCard, 2)
+        tlyAsociere.SetColumnSpan(pnlCard, 3)
         pnlCard.Controls.Add(split)
         pnlCard.Controls.Add(ntfMesaj)
         pnlCard.Controls.Add(lblIntro)
@@ -437,24 +438,38 @@ Partial Class AsociereForm
         btnRenunta.TabIndex = 0
         btnRenunta.Text = "Renunță"
         btnRenunta.UseVisualStyleBackColor = True
-        ' 
+        '
+        ' btnReseteaza
+        '
+        btnReseteaza.AutoSize = True
+        btnReseteaza.Dock = DockStyle.Fill
+        btnReseteaza.Location = New Point(365, 813)
+        btnReseteaza.Margin = New Padding(4, 5, 4, 5)
+        btnReseteaza.Name = "btnReseteaza"
+        btnReseteaza.Padding = New Padding(17, 10, 17, 10)
+        btnReseteaza.Size = New Size(353, 60)
+        btnReseteaza.TabIndex = 1
+        btnReseteaza.Text = "Golește așezările"
+        btnReseteaza.UseVisualStyleBackColor = True
+        btnReseteaza.Visible = False
+        '
         ' btnSalveaza
-        ' 
+        '
         btnSalveaza.AutoSize = True
         btnSalveaza.Dock = DockStyle.Right
         btnSalveaza.Enabled = False
-        btnSalveaza.Location = New Point(675, 813)
+        btnSalveaza.Location = New Point(722, 813)
         btnSalveaza.Margin = New Padding(4, 5, 4, 5)
         btnSalveaza.Name = "btnSalveaza"
         btnSalveaza.Padding = New Padding(17, 10, 17, 10)
-        btnSalveaza.Size = New Size(405, 60)
-        btnSalveaza.TabIndex = 1
+        btnSalveaza.Size = New Size(358, 60)
+        btnSalveaza.TabIndex = 2
         btnSalveaza.Text = "Salvează legăturile"
         btnSalveaza.UseVisualStyleBackColor = True
         ' 
         ' capBar
         ' 
-        tlyAsociere.SetColumnSpan(capBar, 2)
+        tlyAsociere.SetColumnSpan(capBar, 3)
         capBar.Dock = DockStyle.Fill
         capBar.IconImage = My.Resources.Resources.kbot_64
         capBar.Location = New Point(0, 0)
@@ -472,10 +487,12 @@ Partial Class AsociereForm
         ' 
         ' tlyAsociere
         ' 
-        tlyAsociere.ColumnCount = 2
-        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
-        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
-        tlyAsociere.Controls.Add(btnSalveaza, 1, 2)
+        tlyAsociere.ColumnCount = 3
+        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 34F))
+        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 33F))
+        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 33F))
+        tlyAsociere.Controls.Add(btnSalveaza, 2, 2)
+        tlyAsociere.Controls.Add(btnReseteaza, 1, 2)
         tlyAsociere.Controls.Add(btnRenunta, 0, 2)
         tlyAsociere.Controls.Add(capBar, 0, 0)
         tlyAsociere.Controls.Add(pnlCard, 0, 1)
@@ -538,6 +555,7 @@ Partial Class AsociereForm
     Friend WithEvents grid As Global.KBot.Controls.KBotDataView
     Friend WithEvents ntfMesaj As Global.KBot.Controls.KBotNotice
     Friend WithEvents btnRenunta As Button
+    Friend WithEvents btnReseteaza As Button
     Friend WithEvents btnSalveaza As Button
     Friend WithEvents capBar As KBotCaptionBar
     Friend WithEvents tlyAsociere As TableLayoutPanel
