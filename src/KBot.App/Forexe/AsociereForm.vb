@@ -1910,7 +1910,7 @@ Public Class AsociereForm
                 ' tranzacția înapoi, deci fără salvare nu rămâne în bază nici recepțiile, nici
                 ' plățile, nici istoricul. Merită spus pe litere, nu cu formula obișnuită.
                 If SAuSalvatModificari Then Return
-                Dim raspunsul As DialogResult = MessageBox.Show(
+                Dim raspunsul As DialogResult = KBotMessage.Show(
                     Me,
                     "Închizi fără să salvezi. NIMIC din descărcare nu ajunge în tabele — nici " &
                     "recepțiile, nici plățile, nici istoricul —, fiindcă serverul a derulat " &
@@ -1923,7 +1923,7 @@ Public Class AsociereForm
             End If
 
             If Comenzi().Count = 0 Then Return
-            Dim raspuns As DialogResult = MessageBox.Show(
+            Dim raspuns As DialogResult = KBotMessage.Show(
                 Me,
                 "Ai schimbat legături care nu au fost salvate. Se pierd dacă închizi acum." & Environment.NewLine &
                 "Închizi oricum?",

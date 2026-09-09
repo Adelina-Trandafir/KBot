@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System.Collections.Generic
 Imports System.Collections.ObjectModel
 Imports System.IO
@@ -73,6 +73,7 @@ Public NotInheritable Class SetariFoldere
     Public Const CheieTempPdf As String = "TempPdf"
     Public Const CheieWorkflows As String = "Workflows"
     Public Const CheieExports As String = "Exports"
+    Public Const CheieExtrase As String = "Extrase"
     Public Const CheieDdfPdf As String = "DdfPdf"
     Public Const CheieOrdPdf As String = "OrdPdf"
 
@@ -100,6 +101,8 @@ Public NotInheritable Class SetariFoldere
                        "Definițiile de workflow FOREXE («.wfl»). Doar se citesc.", False),
             New Setare(CheieExports, "Exports",
                        "Exporturile bancului de probe (numai pe Debug).", True),
+            New Setare(CheieExtrase, "Extrase",
+                       "Extrasele de cont (SNM) descărcate din FOREXE, ca PDF.", True),
             New Setare(CheieDdfPdf, "C:\AVACONT\FOREXE\PDF\DDF\",
                        "Rădăcina în care se caută PDF-urile DDF.", False),
             New Setare(CheieOrdPdf, "C:\AVACONT\FOREXE\PDF\ORD\",

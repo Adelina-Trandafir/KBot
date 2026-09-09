@@ -391,7 +391,7 @@ Public Class OrdAtasamentePage
             RaiseEvent DraftModificat(Me, EventArgs.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("OrdAtasamentePage.BtnAdauga_Click", ex)
-            MessageBox.Show(Me, "Imaginea nu a putut fi citită: " & ex.Message,
+            KBotMessage.Show(Me, "Imaginea nu a putut fi citită: " & ex.Message,
                             "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -406,7 +406,7 @@ Public Class OrdAtasamentePage
         Try
             If _draft Is Nothing Then Return
             If Not Clipboard.ContainsImage Then
-                MessageBox.Show(Me, "În memoria temporară nu se află nicio imagine.",
+                KBotMessage.Show(Me, "În memoria temporară nu se află nicio imagine.",
                                 "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
@@ -427,7 +427,7 @@ Public Class OrdAtasamentePage
             RaiseEvent DraftModificat(Me, EventArgs.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("OrdAtasamentePage.BtnLipeste_Click", ex)
-            MessageBox.Show(Me, "Imaginea din memoria temporară nu a putut fi preluată: " & ex.Message,
+            KBotMessage.Show(Me, "Imaginea din memoria temporară nu a putut fi preluată: " & ex.Message,
                             "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -445,7 +445,7 @@ Public Class OrdAtasamentePage
             ' operatorul, si nici n-ar avea de ce: acolo «a intregii ordonantari» si «a lui»
             ' inseamna acelasi lucru.
             If AreRandSintetic() AndAlso _cheieBene <> 0 AndAlso grup.Any(Function(a) CheiaPart(a) = 0) Then
-                MessageBox.Show(Me,
+                KBotMessage.Show(Me,
                     "Imaginea selectată nu este a beneficiarului curent, ci a întregii " &
                     "ordonanțări. Nu se poate șterge de aici." & vbCrLf &
                     "Selectați «" & TOTI_BENEFICIARII & "» dacă vreți să o ștergeți.",

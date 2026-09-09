@@ -1,4 +1,4 @@
-Imports KBot.Common
+﻿Imports KBot.Common
 
 ''' <summary>
 ''' The Access ▸ MariaDB catalogue, in write order.
@@ -43,11 +43,16 @@ Public NotInheritable Class TableMaps
     ''' sample row and no foreign key on MariaDB.
     '''
     ''' FX_Salarii exists in neither the .accdb nor the MariaDB schema.
+    '''
+    ''' ClasificatiiV and RectificariV CAME OFF this list on 09.09.2026. Decision D5 had
+    ''' parked them as "not in this slice"; the operator then built them targets, so the
+    ''' reason to keep them out was gone. They are now mapped in <see cref="Nomenclators"/>
+    ''' as Clasificatii_Venituri and Clasificatii_Venituri_Rectificari. ParteneriSI stays.
     ''' </remarks>
     Public Shared ReadOnly Excluded As IReadOnlyList(Of String) = New String() {
         "FX_DDF_REV_ATT", "FX_DDF_REV_PRT", "FX_ORD_ATT", "FX_ORD_PDF",
         "FX_Salarii", "FX_Receptii_Plati",
-        "ClasificatiiV", "RectificariV", "ParteneriSI"
+        "ParteneriSI"
     }
 
     Private Sub New()
@@ -122,6 +127,68 @@ Public NotInheritable Class TableMaps
             Exclude("ID", "DTQ", "Esinc").
             WithNote("Gol în fișierul disponibil - maparea e doar de schemă, " &
                      "niciun rând nu a trecut vreodată prin ea."))
+
+        ' --- Clasificatii_Venituri -------------------------------------------------
+        ' Access ClasificatiiV, renamed by the operator on 09.09.2026 and given a target
+        ' in sql/AVACONT_SURSA.sql. THE TARGET IS 1=1 WITH THE ACCESS TABLE (operator),
+        ' so the whole map is a plain name match with nothing to exclude - Access spells
+        ' it "Subcapitol" and the target "SubCapitol", which the case-insensitive match
+        ' handles by design (Rule 4).
+        '
+        ' THE ACCESS IdClsfV TRAVELS AS THE KEY, and that is the whole difference from
+        ' Clasificatii above. There, Rule 1 renames IDClsf to IdClsfAcc and lets MariaDB
+        ' assign its own IDClsf, because the target keeps both. Here there is no second
+        ' column to park the Access id in, and two things already point AT that id:
+        ' FX_Extrase_H.IdClsfV (written by Extrase_H_Add and by the extrase route) and
+        ' Clasificatii_Venituri_Rectificari.IdClsfV, a real foreign key. Reseating the key
+        ' would break both silently, so the id is preserved verbatim.
+        '
+        ' The key column is plain INT UNSIGNED NOT NULL on the server since 09.09.2026 -
+        ' it arrived AUTO_INCREMENT and the operator made it plain - so it now has the
+        ' same guard as the other ten keys: a row with a missing, NULL or zero id RAISES
+        ' here instead of receiving a fabricated key that FX_Extrase_H would then point
+        ' at. AutoIncrementStep converts it at the END, like the rest. NOTE that
+        ' sql/AVACONT_SURSA.sql in the repository still shows AUTO_INCREMENT: the server
+        ' was changed, the local dump was not.
+        '
+        ' No IdUnitate anywhere: in Access the table held the WHOLE directorate's revenue
+        ' classifications, and the target keeps it that way. The nomenclator loop still
+        ' runs once per unit file, so the file that holds the rows writes them and the
+        ' others find an empty table - the operator: only one Access database has data
+        ' here. The upsert makes that repetition harmless; PRIMARY KEY (IdClsfV) is a real
+        ' unique key, so unlike Clasificatii (D8) this one does NOT need InsertOnly.
+        maps.Add(New TableMap("ClasificatiiV", "Clasificatii_Venituri", SourceFile.UnitFile).
+            WithNote("Fostul «ClasificatiiV», 1=1 cu tabela Access. «IdClsfV»-ul Access " &
+                     "călătorește NESCHIMBAT: e cheia pe care o arată «FX_Extrase_H.IdClsfV» " &
+                     "și cheia străină a rectificărilor de venituri. Fără «IdUnitate» - " &
+                     "tabela ține clasificațiile întregii direcții. Un singur fișier Access " &
+                     "are rânduri."))
+
+        ' --- Clasificatii_Venituri_Rectificari --------------------------------------
+        ' Access RectificariV, renamed the same day. 1=1 with Access as well, so again a
+        ' plain name match. The Access side is NOT in C:\AVACONT\FX_System_Export (only
+        ' the FX_* tables are exported), so its column list has still never been READ -
+        ' the plan log will say what actually matched on the first real run.
+        '
+        ' ID IS NOT EXCLUDED, unlike Clasificatii_Rectificari. That sibling drops the
+        ' Access ID and leans on UNIQUE (IdClsf, Data, Document) to stay idempotent. This
+        ' table has no such key - PRIMARY KEY (ID) is the only unique index - so dropping
+        ' the Access id would make MariaDB mint a new one on EVERY run and duplicate every
+        ' rectification. Carrying it keeps the upsert able to match. The column is
+        ' AUTO_INCREMENT and stays that way: InnoDB pushes its counter past an explicit
+        ' value, so nothing is needed at the end and it is NOT an AutoIncrementStep target.
+        '
+        ' DTQ travels too, for the same reason it does not on Clasificatii_Rectificari:
+        ' there the target has no such column, here it does. It is DEFAULT NOW() on the
+        ' server, but a migrated row carries the Access value - a DEFAULT only applies to
+        ' a column the INSERT leaves out, and this one names it.
+        maps.Add(New TableMap("RectificariV", "Clasificatii_Venituri_Rectificari", SourceFile.UnitFile).
+            WithNote("Fostul «RectificariV», 1=1 cu tabela Access. «ID»-ul Access " &
+                     "călătorește - spre deosebire de «Clasificatii_Rectificari», aici nu " &
+                     "există altă cheie unică, deci fără el fiecare rulare ar dubla " &
+                     "rândurile. Coloanele Access n-au fost citite niciodată (tabela nu e " &
+                     "în exportul Access): jurnalul planului spune la prima rulare ce s-a " &
+                     "potrivit. Cheia străină «IdClsfV» cere «Clasificatii_Venituri» înainte."))
 
         ' --- Parteneri -------------------------------------------------------------
         ' Access carries THREE id-shaped columns and only CodPartener travels:

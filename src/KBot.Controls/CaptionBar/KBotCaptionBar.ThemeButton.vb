@@ -439,7 +439,7 @@ Partial Public NotInheritable Class KBotCaptionBar
             ThemeEditorForm.ShowFor(gazda)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotCaptionBar.DeschideEditorulDeStiluri", ex)
-            MessageBox.Show(gazda, "Nu s-a putut deschide editorul de stiluri: " & ex.Message,
+            KBotMessage.Show(gazda, "Nu s-a putut deschide editorul de stiluri: " & ex.Message,
                             "Stiluri", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -481,7 +481,7 @@ Partial Public NotInheritable Class KBotCaptionBar
             ThemeOptionsForm.ShowFor(gazda)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotCaptionBar.DeschideOptiunileDeTema", ex)
-            MessageBox.Show(gazda, "Nu s-au putut deschide opțiunile de temă: " & ex.Message,
+            KBotMessage.Show(gazda, "Nu s-au putut deschide opțiunile de temă: " & ex.Message,
                             "Opțiuni de temă", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub

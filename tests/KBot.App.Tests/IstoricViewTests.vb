@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.Threading
@@ -100,6 +100,23 @@ Public Class IstoricViewTests
         Public Function UpsertAngajamenteAsync(dbName As String, rows As IReadOnlyList(Of Angajament),
                                                ct As CancellationToken) As Task(Of String) _
             Implements IApiClient.UpsertAngajamenteAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function AdaugaAngajamenteNoiAsync(dbName As String, rows As IReadOnlyList(Of Angajament),
+                                               ct As CancellationToken) As Task(Of AngajamenteAdaugate) _
+            Implements IApiClient.AdaugaAngajamenteNoiAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function GetUltimaDataExtrasAsync(ct As CancellationToken) As Task(Of Date?) _
+                                               Implements IApiClient.GetUltimaDataExtrasAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function ImportaExtraseAsync(extrase As IReadOnlyList(Of ExtrasPentruImport),
+                                               ct As CancellationToken) As Task(Of ImportExtraseRezultat) _
+                                               Implements IApiClient.ImportaExtraseAsync
             Throw New NotSupportedException()
         End Function
 

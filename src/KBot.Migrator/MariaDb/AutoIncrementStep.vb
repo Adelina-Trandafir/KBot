@@ -1,9 +1,9 @@
-Imports System.Threading
+﻿Imports System.Threading
 Imports KBot.Common
 Imports MySqlConnector
 
 ''' <summary>
-''' One of the seven primary keys that becomes AUTO_INCREMENT at the end of a migration.
+''' One of the primary keys that becomes AUTO_INCREMENT at the end of a migration.
 ''' </summary>
 Public NotInheritable Class AutoIncrementTarget
 
@@ -82,8 +82,8 @@ Public NotInheritable Class AutoIncrementReport
 End Class
 
 ''' <summary>
-''' The LAST thing that happens to a unit database: turns the seven migrated primary keys
-''' into AUTO_INCREMENT. See docs/PLAN_ForexeIngest.md §3.
+''' The LAST thing that happens to a unit database: turns the eleven migrated primary
+''' keys into AUTO_INCREMENT. See docs/PLAN_ForexeIngest.md §3.
 '''
 ''' WHY THE KEYS ARE NOT AUTO_INCREMENT ALREADY, and why this must stay a separate,
 ''' final step rather than part of the reference schema:
@@ -101,13 +101,41 @@ End Class
 ''' </summary>
 Public NotInheritable Class AutoIncrementStep
 
-    ' The seven pairs, verified against MariaDB_Schema/000_DEMO.sql. Written out in full
+    ' The eleven pairs, verified against MariaDB_Schema/000_DEMO.sql and
+    ' sql/AVACONT_SURSA.sql. Written out in full
     ' rather than derived from a rule: a rule such as "every primary key of an FX_ table"
     ' would silently widen the moment a table is added.
     '
-    ' The SAME seven pairs are exempted from schema_sync, in
+    ' The SAME eleven pairs are exempted from schema_sync, in
     ' PYTHON/routes/schema_sync/schema_common.py (EXEMPT_COLUMNS). If this list ever
     ' changes, that one has to change with it — they describe one decision.
+    '
+    ' THE LAST THREE joined on 08.09.2026, when the SNM statement import (slice 0057)
+    ' became the first thing that WRITES those tables from K-BOT: routes/forexe/extrase.py
+    ' links each child row through `cursor.lastrowid`, which a plain INT key answers as 0.
+    ' The route refuses a 0 loudly rather than parenting rows on it, so on a migrated
+    ' database the import could not run at all until these three were converted.
+    '
+    ' Their Access ids still travel VERBATIM, like every other key, and that stays safe:
+    ' IDEXF / IDEXH / IDFXE are AutoNumbers in Access -- mdl_FX_Extrase never assigns one,
+    ' it reads the value back after `rsExF.Update` -- so they are never 0 and never NULL,
+    ' which is the ONLY case where an AUTO_INCREMENT column invents a key instead of
+    ' raising. MariaDB accepts an explicit non-zero value into an AUTO_INCREMENT column
+    ' and reseeds the counter to MAX + 1 at the ALTER, which is exactly why the order
+    ' (create from AVACONT_SURSA > migrate > verify > ALTER) is what keeps the guard --
+    ' and why these must not be altered by hand ahead of a migration.
+    '
+    ' THE ELEVENTH, Clasificatii_Venituri.IdClsfV, joined on 09.09.2026. The table is the
+    ' Access ClasificatiiV renamed, and it arrived in AVACONT_SURSA declared
+    ' AUTO_INCREMENT -- which would have skipped the guard above for the one key that two
+    ' other things point at: FX_Extrase_H.IdClsfV, and the foreign key on
+    ' Clasificatii_Venituri_Rectificari. The operator made it plain INT UNSIGNED NOT NULL
+    ' on the server the same day, so it now converts here like the other ten.
+    '
+    ' NOTE for whoever reads a local dump: sql/AVACONT_SURSA.sql in the repository still
+    ' shows AUTO_INCREMENT on that column. The server was changed, the file was not. This
+    ' step does not read either one -- it asks the LIVE database (IsAutoIncrement) and
+    ' reports AlreadyDone when the column is converted -- so it is correct against both.
     Public Shared ReadOnly Property Targets As IReadOnlyList(Of AutoIncrementTarget) =
         New List(Of AutoIncrementTarget) From {
             New AutoIncrementTarget("FX_Istoric", "ID"),
@@ -116,7 +144,11 @@ Public NotInheritable Class AutoIncrementStep
             New AutoIncrementTarget("FX_Receptii", "IDR"),
             New AutoIncrementTarget("FX_Receptii_RHR", "IDRHR"),
             New AutoIncrementTarget("FX_Plati", "IdPlataFX"),
-            New AutoIncrementTarget("FX_Rezervari", "IDRZ")
+            New AutoIncrementTarget("FX_Rezervari", "IDRZ"),
+            New AutoIncrementTarget("FX_Extrase_F", "IDEXF"),
+            New AutoIncrementTarget("FX_Extrase_H", "IDEXH"),
+            New AutoIncrementTarget("FX_Extrase", "IDFXE"),
+            New AutoIncrementTarget("Clasificatii_Venituri", "IdClsfV")
         }
 
     Private ReadOnly _server As TargetServer
@@ -136,7 +168,7 @@ Public NotInheritable Class AutoIncrementStep
     End Sub
 
     ''' <summary>
-    ''' Runs the seven ALTERs. <paramref name="transferCommitted"/> is the ONLY thing that
+    ''' Runs the ALTERs. <paramref name="transferCommitted"/> is the ONLY thing that
     ''' authorises it: a transfer that rolled back, was cancelled, or never ran leaves the
     ''' database in a state where fabricated keys are exactly the risk §3.1 describes.
     ''' </summary>

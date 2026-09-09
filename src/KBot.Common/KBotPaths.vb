@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System.IO
 Imports System.Text
 Imports System.Text.Json
@@ -179,6 +179,19 @@ Public NotInheritable Class KBotPaths
     Public Shared ReadOnly Property FolderExporturi As String
         Get
             Return Foldere.Cale(SetariFoldere.CheieExports)
+        End Get
+    End Property
+    ''' <summary>
+    ''' Where the SNM bank statements land as PDF (slice 0057). The default is a folder
+    ''' next to the executable, NOT the Access one (C:\AVACONT\FOREXE\EXTRASE\): that path
+    ''' is validated at startup, and a machine without a writable C:\AVACONT would stop
+    ''' launching over a feature it may never use. An operator who wants the old folder
+    ''' names it in settings.json, and the path actually used is recorded per file in
+    ''' FX_Extrase_F.CaleFisier, so the database never claims a folder we did not write to.
+    ''' </summary>
+    Public Shared ReadOnly Property FolderExtrase As String
+        Get
+            Return Foldere.Cale(SetariFoldere.CheieExtrase)
         End Get
     End Property
 

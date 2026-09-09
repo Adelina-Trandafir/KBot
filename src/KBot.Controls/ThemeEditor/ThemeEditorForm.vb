@@ -230,7 +230,7 @@ Public Class ThemeEditorForm
     Private Sub btnResetAll_Click(sender As Object, e As EventArgs) Handles btnResetAll.Click
         Try
             If _scope Is Nothing Then Return
-            If MessageBox.Show(Me,
+            If KBotMessage.Show(Me,
                     $"Se șterg toate alegerile pentru «{_scope.ScopeName}» și controalele revin la valorile din designer. Continui?",
                     "Reset tot", MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
 
@@ -312,7 +312,7 @@ Public Class ThemeEditorForm
                 ' Avertisment, nu refuz: un set autorit pe altă suprafață poate fi util aici (căile
                 ' care nu se potrivesc sunt sărite oricum de aplicator).
                 If Not String.Equals(loaded.Scope, _scope.ScopeName, StringComparison.OrdinalIgnoreCase) Then
-                    If MessageBox.Show(Me,
+                    If KBotMessage.Show(Me,
                             $"Fișierul a fost autorit pentru «{loaded.Scope}», iar suprafața curentă e «{_scope.ScopeName}». Îl aplic oricum?",
                             "Suprafață diferită", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then Return
                 End If
@@ -353,7 +353,7 @@ Public Class ThemeEditorForm
 
     Private Sub ShowError(title As String, ex As Exception)
         SetStatus(title)
-        MessageBox.Show(Me, $"{title}{Environment.NewLine}{ex.Message}", "Editor de stiluri",
+        KBotMessage.Show(Me, $"{title}{Environment.NewLine}{ex.Message}", "Editor de stiluri",
                         MessageBoxButtons.OK, MessageBoxIcon.Error)
     End Sub
 

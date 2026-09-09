@@ -2105,7 +2105,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
                 RhpLog("HKCU rând invalid: " & m)
             Next
             ShowStatus("Rând HKCU invalid — nu s-a scris nimic.")
-            MessageBox.Show(Me,
+            KBotMessage.Show(Me,
                 "Un rând din «Preferințe Adobe» nu poate fi interpretat:" & Environment.NewLine &
                 Environment.NewLine & String.Join(Environment.NewLine, bad) & Environment.NewLine &
                 Environment.NewLine &
@@ -2143,7 +2143,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
             If Not v.Matches Then
                 RefreshPrefsGrid()
                 ShowStatus("Scriere HKCU neconfirmată — vezi " & RHP_LOG_NAME & ".")
-                MessageBox.Show(Me,
+                KBotMessage.Show(Me,
                     "Valoarea nu a rămas scrisă în registry:" & Environment.NewLine & Environment.NewLine &
                     v.Message & Environment.NewLine & Environment.NewLine &
                     "Scenariul se oprește aici — o preferință care nu se aplică ar face rezultatele " &
@@ -2206,7 +2206,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Try
             Dim alive As List(Of Process) = foreign.Where(Function(p) Not HasExitedSafe(p)).ToList()
             If alive.Count > 0 Then
-                Dim r As DialogResult = MessageBox.Show(Me,
+                Dim r As DialogResult = KBotMessage.Show(Me,
                     $"Există {alive.Count} proces(e) Adobe deschise în afara bancului de probă." & Environment.NewLine &
                     "Adobe își rescrie preferințele la ieșire, deci scrierea în registry ar fi suprascrisă." & Environment.NewLine &
                     "Le închid forțat acum? (Documentele nesalvate din acele ferestre se pierd.)",
@@ -2278,7 +2278,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
             Catch logEx As Exception
                 GlobalErrorLog.Write("AdobeReaderHarnessForm.RestoreUserPrefsOnClose.Log", logEx)
             End Try
-            MessageBox.Show(Me,
+            KBotMessage.Show(Me,
                 "Restaurarea automată a valorilor Adobe a eșuat. Curățare manuală necesară la:" &
                 Environment.NewLine & keys,
                 "K-BOT — restaurare registry", MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -2541,7 +2541,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
             _scenarioPath = Nothing
             lblScenario.Text = "(niciun scenariu)"
             btnRunScenario.Enabled = False
-            MessageBox.Show(Me,
+            KBotMessage.Show(Me,
                 "Scenariul nu a putut fi încărcat:" & Environment.NewLine & Environment.NewLine &
                 String.Join(Environment.NewLine, result.Errors),
                 "K-BOT — scenariu invalid", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -2752,14 +2752,14 @@ Public NotInheritable Class AdobeReaderHarnessForm
             Case BaselineVerdict.Block
                 RhpLog("Scenariu REFUZAT: requireCleanBaseline = true și mașina nu e neutră." &
                        Environment.NewLine & baseline.Describe())
-                MessageBox.Show(Me, baseline.BlockedText(), "K-BOT — bază de pornire contaminată",
+                KBotMessage.Show(Me, baseline.BlockedText(), "K-BOT — bază de pornire contaminată",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
                 ShowStatus($"Scenariu refuzat: bază contaminată ({baseline.Policies.Count} politici HKLM, " &
                            $"{baseline.Preferences.Count} preferințe HKCU).")
                 Return
             Case BaselineVerdict.Warn
                 RhpLog("ATENȚIE bază de pornire: mașina nu e neutră —" & Environment.NewLine & baseline.Describe())
-                If MessageBox.Show(Me, baseline.WarningText(), "K-BOT — bază de pornire contaminată",
+                If KBotMessage.Show(Me, baseline.WarningText(), "K-BOT — bază de pornire contaminată",
                                    MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) <> DialogResult.OK Then
                     RhpLog("Scenariu abandonat de operator la avertismentul de bază contaminată.")
                     ShowStatus("Rularea scenariului a fost abandonată.")
@@ -2926,7 +2926,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
             End If
             If sb.Length = 0 Then Return True
 
-            Dim r As DialogResult = MessageBox.Show(Me,
+            Dim r As DialogResult = KBotMessage.Show(Me,
                 "Se vor scrie următoarele valori în registry:" & Environment.NewLine & Environment.NewLine &
                 sb.ToString() & Environment.NewLine &
                 "Continui?",
@@ -3261,7 +3261,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHarnessForm.ReportPolicyStillActive.Status", ex)
         End Try
-        MessageBox.Show(Me, text, "K-BOT — mașina rămâne modificată", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        KBotMessage.Show(Me, text, "K-BOT — mașina rămâne modificată", MessageBoxButtons.OK, MessageBoxIcon.Warning)
     End Sub
 
     ' ══ Marcaj de stare a mașinii (supraviețuiește închiderii bancului) ═════════
@@ -3318,7 +3318,7 @@ Public NotInheritable Class AdobeReaderHarnessForm
                    "zero. Revoc-o («Revocă (cere elevare)») înainte de a trage concluzii."
         End If
         RhpLog("ATENȚIE la pornire: " & text.Replace(Environment.NewLine, " "))
-        MessageBox.Show(Me, text, "K-BOT — mașină modificată", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        KBotMessage.Show(Me, text, "K-BOT — mașină modificată", MessageBoxButtons.OK, MessageBoxIcon.Warning)
     End Sub
 
     ' ── gridPrefs: cerut vs curent ──────────────────────────────────────────────

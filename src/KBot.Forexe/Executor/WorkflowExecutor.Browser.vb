@@ -500,11 +500,20 @@ Partial Public Class WorkflowExecutor
             ' PASUL 2: ELEVARE
             ' ==============================================================
             ' Creăm un fișier .reg temporar (e cel mai sigur mod de a trece JSON cu ghilimele)
-            Dim result = MessageBox.Show(
-                                        "Aplicația va solicita permisiuni de Administrator pentru a configura politica de selecție automată a certificatului." & vbCrLf & vbCrLf &
-                                        "Acest lucru este NECESAR pentru ca browserul să selecteze automat certificatul tău." & vbCrLf & vbCrLf &
-                                        "Te rog să accepți promptul UAC când apare." & vbCrLf & vbCrLf &
-                                        "Continui?",
+            ' THE ONE dialog in the solution that does NOT go through KBotMessage, and the
+            ' reason is written right here: this `MessageBox` is WPF's (`Imports System.Windows`,
+            ' and the project sets UseWPF), with different argument types -- MessageBoxButton /
+            ' MessageBoxImage / MessageBoxResult, not the WinForms pair. KBot.Theming has no WPF
+            ' and has no reason to gain it just to cover one call. The rule still holds, by hand:
+            ' the text is written to the log BEFORE it is shown.
+            Dim intrebare As String =
+                "Aplicația va solicita permisiuni de Administrator pentru a configura politica de selecție automată a certificatului." & vbCrLf & vbCrLf &
+                "Acest lucru este NECESAR pentru ca browserul să selecteze automat certificatul tău." & vbCrLf & vbCrLf &
+                "Te rog să accepți promptul UAC când apare." & vbCrLf & vbCrLf &
+                "Continui?"
+            KBot.Common.OperatorLog.Write("WorkflowExecutor.ConfigureAutoSelectCertificatePolicy",
+                              "Permisiuni Administrator Necesare", intrebare)
+            Dim result = MessageBox.Show(intrebare,
                                         "Permisiuni Administrator Necesare",
                                         MessageBoxButton.YesNo,
                                         MessageBoxImage.Information)

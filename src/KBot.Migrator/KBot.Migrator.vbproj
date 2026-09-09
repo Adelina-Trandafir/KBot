@@ -24,13 +24,18 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.7.0.0</FileVersion>
+    <FileVersion>1.8.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <Import Include="System.Drawing" />
     <Import Include="System.Windows.Forms" />
+    <!-- KBotMessage: poarta unica prin care se arata o caseta operatorului si, in
+         aceeasi miscare, se scrie in Logs\mesaje_operator.log. Import la nivel de
+         proiect ca regula sa fie disponibila in ORICE fisier, fara sa depinda de lista
+         de Imports a fiecaruia. -->
+    <Import Include="KBot.Theming" />
   </ItemGroup>
 
   <!-- Slice 0045: the migrator opens Access and MariaDB itself. Nothing is pushed to the

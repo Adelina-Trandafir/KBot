@@ -1,4 +1,4 @@
-Imports System
+﻿Imports System
 Imports System.IO
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Threading
@@ -244,6 +244,16 @@ Namespace KBot.Forexe
                 Anunta($"Execut: {Path.GetFileName(job.WflPath)}...")
                 Await Task.Run(Function() _executor.ExecuteAsync(workflow))
 
+                ' Same rule as RunJobAsync (slice 0057): a flow that stopped itself has not
+                ' connected. «Conectare» carries no <Exit> today, but the two paths must not
+                ' answer differently if one is ever added.
+                Dim opritDeExit As String = _executor.ExitMessage
+                If Not String.IsNullOrWhiteSpace(opritDeExit) Then
+                    _logger.LogWarning("Conectare oprită — " & opritDeExit)
+                    RidicaStare("Oprit: " & opritDeExit)
+                    Return Failed(opritDeExit)
+                End If
+
                 _logger.LogSuccess("Conectare reușită!")
                 RidicaStare("Conectat. În așteptare...")
                 JobHistoryManager.FinishJob("Succes")
@@ -297,6 +307,30 @@ Namespace KBot.Forexe
 
                 Dim xml As String = File.ReadAllText(job.WflPath)
 
+                ' THE EXECUTOR'S MEMORY IS CLEARED BEFORE EVERY JOB.
+                '
+                ' `SetVariable` APPENDS to a per-name list, and `GetAllVariables` wraps a list
+                ' holding more than one value into a JArray. A FOREXE session keeps ONE executor
+                ' for all its jobs, so without this the values piled up across runs: by the third
+                ' press `CodAngajament` went to the server as
+                ' `["AAB3TTGSA3T","AAB4SN5DKFN","AAB4SN5DKFN"]` -- the first code belonging to an
+                ' angajament downloaded on some other day entirely. The server then rejected
+                ' `DataAngajament`, correctly, as "Data invalida (asteptat zz.ll.aaaa)": it was
+                ' handed a list where the contract asks for a date (operator, 08.09.2026).
+                ' `PopulateResult` reads the same dictionary, which is why another job's table
+                ' travelled along too.
+                '
+                ' KBOT_IPC did exactly this -- `ResetVariables()` after each flow and
+                ' `ClearAllVariables()` in its Finally (see `_reference/KBOT_IPC.WorkFlow.vb`) --
+                ' and the clearing was lost in the port. It happens BEFORE, not after: a run that
+                ' died on an exception or was cancelled never gets to tidy up after itself, and
+                ' the next job still has to start on an empty memory.
+                '
+                ' The place is HERE, ahead of the injection below, and NOT in `ExecuteAsync`: the
+                ' job's JSON parameters also go in through `SetVariable`, so clearing from inside
+                ' the executor would wipe exactly the ones just put there.
+                _executor.ClearAllVariables()
+
                 ' Injectare variabile — separat pe tip (ca în KBOT_IPC.WorkFlow):
                 ' JSON -> executor (SetVariable), plate -> substituție în XML (ApplyVariables).
                 If job.Parameters IsNot Nothing AndAlso job.Parameters.Count > 0 Then
@@ -325,6 +359,19 @@ Namespace KBot.Forexe
                 RidicaStare($"Execut: {Path.GetFileName(job.WflPath)}...")
                 Await Task.Run(Function() _executor.ExecuteAsync(workflow))
 
+                ' Slice 0057 -- an <Exit> STOPS here. All four workflows that carry one use
+                ' it the same way: the angajament (or the code) was not found, so there is
+                ' nothing to bring back. Before this the run reported Success with zero
+                ' tables and the shell carried an empty package on to the server, which then
+                ' worked on nothing. The Exit's own message is the one the operator reads:
+                ' the workflow wrote it for exactly this moment.
+                Dim opritDeExit As String = _executor.ExitMessage
+                If Not String.IsNullOrWhiteSpace(opritDeExit) Then
+                    _logger.LogWarning($"'{job.WorkflowName}': flux oprit — {opritDeExit}")
+                    RidicaStare("Oprit: " & opritDeExit)
+                    Return Failed(opritDeExit)
+                End If
+
                 Dim result As New JobResult With {.Success = True, .Message = $"'{job.WorkflowName}' rulat."}
                 ' Perechea lui «Salvare raport final...» din KBOT_IPC. Acolo se scria fișierul de
                 ' output; aici se strâng variabilele executorului, iar salvarea locală o face
@@ -349,6 +396,63 @@ Namespace KBot.Forexe
                 _logger.LogError("[DIAG] " & ex.GetType().FullName & ": " & ex.Message)
                 _logger.LogError("[DIAG][STACK] " & ex.ToString())
                 Return Failed(ex.Message)
+            End Try
+        End Function
+
+
+        ''' <summary>
+        ''' Downloads the SNM bank statements on the EXISTING session -- slice 0057.
+        ''' </summary>
+        ''' <remarks>
+        ''' There is no .wfl behind this one and there never was: FOREXE's message inbox is a
+        ''' plain JSON endpoint, and the old system called this path SNM_INTERNAL for the same
+        ''' reason. It still goes through the runner rather than straight from the coordinator,
+        ''' because the runner is the only thing that owns a live page — and because the job
+        ''' history must carry this download like every other.
+        '''
+        ''' Throws instead of returning a failed JobResult: this is not a workflow run, so
+        ''' there is no JobResult to hand back, and the coordinator above turns the exception
+        ''' into the operator's message.
+        ''' </remarks>
+        Public Async Function DescarcaExtraseAsync(folderDescarcare As String,
+                                                   dataDeLa As Date?,
+                                                   progres As Action(Of Integer, Integer, String),
+                                                   ct As CancellationToken) As Task(Of List(Of ExtrasDescarcat)) Implements IForexeRunner.DescarcaExtraseAsync
+            If _logger Is Nothing Then
+                Throw New InvalidOperationException("Logger neatașat — apelează AttachLogger înainte de DescarcaExtraseAsync.")
+            End If
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then
+                Throw New InvalidOperationException("Nicio sesiune activă — rulează Conectare (RunAsync) înainte de DescarcaExtraseAsync.")
+            End If
+
+            Dim descriere As String = If(dataDeLa.HasValue,
+                                         $"Extrase SNM de la {dataDeLa.Value:dd.MM.yyyy}",
+                                         "Extrase SNM (toată cutia)")
+            JobHistoryManager.StartJob("ExtraseSNM", descriere)
+
+            Try
+                ct.ThrowIfCancellationRequested()
+                RidicaStare("Descarc extrasele de cont...")
+
+                Dim extrase As List(Of ExtrasDescarcat) =
+                    Await ForexeSNM.DescarcaExtraseAsync(_executor.CurrentPage, _logger,
+                                                         folderDescarcare, dataDeLa, progres, ct).ConfigureAwait(False)
+
+                RidicaStare("În așteptare...")
+                JobHistoryManager.FinishJob("Succes")
+                Return extrase
+
+            Catch ex As OperationCanceledException
+                _logger.LogWarning("Descărcarea extraselor a fost anulată.")
+                RidicaStare("Operație anulată.")
+                JobHistoryManager.FinishJob("Anulat")
+                Throw
+
+            Catch ex As Exception
+                _logger.LogException(ex, "Eroare descărcare extrase SNM")
+                RidicaStare("Eroare!")
+                JobHistoryManager.FailJob(ex.Message)
+                Throw
             End Try
         End Function
 

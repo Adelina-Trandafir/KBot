@@ -96,7 +96,7 @@ Public Class ReceptiiView
         Try
             If _deschideLegaturi Is Nothing Then Return
             If String.IsNullOrWhiteSpace(_requestedCod) Then
-                MessageBox.Show(Me, "Selectați întâi un angajament din arbore.",
+                KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
                                 "K-BOT — Legăturile recepțiilor",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return

@@ -194,7 +194,7 @@ Public Class LogClearDialog
             sb.AppendLine()
             sb.AppendLine("Total: " & Marime(bifate.Sum(Function(r) r.Info.Length)) & ". Operația NU se poate anula.")
 
-            If MessageBox.Show(Me, sb.ToString(), "Confirmare ștergere",
+            If KBotMessage.Show(Me, sb.ToString(), "Confirmare ștergere",
                                MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
                                MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then Return
 
@@ -203,7 +203,7 @@ Public Class LogClearDialog
             Close()
         Catch ex As Exception
             GlobalErrorLog.Write("LogClearDialog.btnSterge_Click", ex)
-            MessageBox.Show(Me, "Ștergerea nu a reușit: " & ex.Message, "Golește jurnale",
+            KBotMessage.Show(Me, "Ștergerea nu a reușit: " & ex.Message, "Golește jurnale",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
@@ -247,7 +247,7 @@ Public Class LogClearDialog
 
         If esecuri.Count > 0 Then
             ' Eșecurile se arată pe nume: «unele n-au mers» nu e un raport.
-            MessageBox.Show(Me,
+            KBotMessage.Show(Me,
                             "Aceste fișiere nu au putut fi șterse:" & Environment.NewLine & Environment.NewLine &
                             String.Join(Environment.NewLine, esecuri),
                             "Golește jurnale", MessageBoxButtons.OK, MessageBoxIcon.Warning)

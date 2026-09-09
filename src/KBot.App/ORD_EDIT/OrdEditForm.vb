@@ -399,12 +399,12 @@ Public Class OrdEditForm
                 For Each m As String In motive
                     mesaj.Append(vbCrLf).Append("- ").Append(m)
                 Next
-                MessageBox.Show(Me, mesaj.ToString(), "Salvează ordonanțarea",
+                KBotMessage.Show(Me, mesaj.ToString(), "Salvează ordonanțarea",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
                 Return
             End If
 
-            If MessageBox.Show(Me, "Salvez datele?", "Salvează ordonanțarea",
+            If KBotMessage.Show(Me, "Salvez datele?", "Salvează ordonanțarea",
                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
                 Return
             End If
@@ -429,7 +429,7 @@ Public Class OrdEditForm
                 If esuate.Count > 0 Then
                     ' Ordonantarea E salvata. NU se deruleaza nimic inapoi: un document pe
                     ' jumatate derulat e mai rau decat unul caruia ii lipseste o poza.
-                    MessageBox.Show(Me,
+                    KBotMessage.Show(Me,
                         "Ordonanțarea a fost salvată, dar aceste imagini nu s-au putut încărca: " &
                         String.Join(", ", esuate) & "." & vbCrLf & vbCrLf &
                         "Redeschideți ordonanțarea și încercați din nou să le atașați.",
@@ -446,11 +446,11 @@ Public Class OrdEditForm
         Catch ex As ApiException
             ' Mesajul serverului e deja in romana si enumera toate motivele de refuz.
             GlobalErrorLog.Write("OrdEditForm.BtnSalveaza_Click", ex)
-            MessageBox.Show(Me, ex.Message, "Salvează ordonanțarea",
+            KBotMessage.Show(Me, ex.Message, "Salvează ordonanțarea",
                             MessageBoxButtons.OK, MessageBoxIcon.Error)
         Catch ex As Exception
             GlobalErrorLog.Write("OrdEditForm.BtnSalveaza_Click", ex)
-            MessageBox.Show(Me, "Ordonanțarea nu a putut fi salvată. Detalii în jurnalul de erori.",
+            KBotMessage.Show(Me, "Ordonanțarea nu a putut fi salvată. Detalii în jurnalul de erori.",
                             "Salvează ordonanțarea", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub

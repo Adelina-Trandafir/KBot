@@ -57,6 +57,8 @@ forexe_bp = Blueprint("forexe", __name__)
 # pdf.py         -> GET/PUT /api/forexe/ddf/pdf/<idrev>, GET/PUT /api/forexe/ord/pdf/<idordp>
 # prelucrare.py  -> POST /api/forexe/prelucrare (ingestia FOREXE; pasii 1-2 in 0048-02)
 # asociere.py    -> GET/POST /api/forexe/asociere (editorul R<->H de ORICAND, 0048-04)
+# extrase.py     -> POST /api/forexe/extrase/import, GET /api/forexe/extrase/ultima
+#                   (extrasele de cont SNM, felia 0057)
 from . import angajamente  # noqa: E402,F401
 from . import tree  # noqa: E402,F401
 from . import sumar  # noqa: E402,F401
@@ -79,3 +81,6 @@ from . import ddf_edit  # noqa: E402,F401
 from . import pdf  # noqa: E402,F401
 from . import prelucrare  # noqa: E402,F401
 from . import asociere  # noqa: E402,F401
+# extrase.py = importul extraselor de cont SNM (felia 0057): portul lui
+# mdl_FX_Extrase.FX_Extrase_Prelucrare, mutat de pe partea de Access pe server.
+from . import extrase  # noqa: E402,F401

@@ -192,7 +192,7 @@ Public Class DdfEditFisierePage
     Private Function AtasamentulSelectat(actiune As String) As DdfDraftAtt
         Dim i As Integer = grd.CurrentRowIndex
         If i < 0 OrElse i >= grd.RowCount Then
-            MessageBox.Show(Me, $"Selectează întâi fișierul {actiune}.", "Fișiere",
+            KBotMessage.Show(Me, $"Selectează întâi fișierul {actiune}.", "Fișiere",
                             MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return Nothing
         End If
@@ -218,17 +218,17 @@ Public Class DdfEditFisierePage
             Dim cale As String = dlgAlege.FileName
             Dim info As New FileInfo(cale)
             If Not info.Exists Then
-                MessageBox.Show(Me, "Fișierul ales nu mai există.", "Fișiere",
+                KBotMessage.Show(Me, "Fișierul ales nu mai există.", "Fișiere",
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
             If info.Length = 0 Then
-                MessageBox.Show(Me, "Fișierul ales este gol.", "Fișiere",
+                KBotMessage.Show(Me, "Fișierul ales este gol.", "Fișiere",
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
             If info.Length > MAX_FISIER_BYTES Then
-                MessageBox.Show(Me,
+                KBotMessage.Show(Me,
                     $"Fișierul are {info.Length:N0} octeți și depășește limita de " &
                     $"{MAX_FISIER_BYTES \ (1024L * 1024L)} MB.",
                     "Fișiere", MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -254,15 +254,15 @@ Public Class DdfEditFisierePage
             RaiseEvent DraftModificat(Me, EventArgs.Empty)
         Catch ex As IOException
             GlobalErrorLog.Write("DdfEditFisierePage.BtnAdauga_Click", ex)
-            MessageBox.Show(Me, "Fișierul nu a putut fi citit: " & ex.Message, "Fișiere",
+            KBotMessage.Show(Me, "Fișierul nu a putut fi citit: " & ex.Message, "Fișiere",
                             MessageBoxButtons.OK, MessageBoxIcon.Error)
         Catch ex As UnauthorizedAccessException
             GlobalErrorLog.Write("DdfEditFisierePage.BtnAdauga_Click", ex)
-            MessageBox.Show(Me, "Nu ai dreptul să citești fișierul ales.", "Fișiere",
+            KBotMessage.Show(Me, "Nu ai dreptul să citești fișierul ales.", "Fișiere",
                             MessageBoxButtons.OK, MessageBoxIcon.Error)
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditFisierePage.BtnAdauga_Click", ex)
-            MessageBox.Show(Me, "Fișierul nu a putut fi atașat. Detalii în jurnalul de erori.",
+            KBotMessage.Show(Me, "Fișierul nu a putut fi atașat. Detalii în jurnalul de erori.",
                             "Fișiere", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -275,14 +275,14 @@ Public Class DdfEditFisierePage
             If t Is Nothing Then Return
 
             If Not t.EsteEditabil Then
-                MessageBox.Show(Me,
+                KBotMessage.Show(Me,
                     "Print screen-urile venite din FOREXE nu se pot șterge de aici. " &
                     "Le poți salva pe disc.", "Fișiere",
                     MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
 
-            If MessageBox.Show(Me, $"Ștergi fișierul «{t.NumeFisier}»?", "Fișiere",
+            If KBotMessage.Show(Me, $"Ștergi fișierul «{t.NumeFisier}»?", "Fișiere",
                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
                 Return
             End If
@@ -292,7 +292,7 @@ Public Class DdfEditFisierePage
             RaiseEvent DraftModificat(Me, EventArgs.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditFisierePage.BtnSterge_Click", ex)
-            MessageBox.Show(Me, "Fișierul nu a putut fi șters. Detalii în jurnalul de erori.",
+            KBotMessage.Show(Me, "Fișierul nu a putut fi șters. Detalii în jurnalul de erori.",
                             "Fișiere", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -309,7 +309,7 @@ Public Class DdfEditFisierePage
             If t.Continut Is Nothing OrElse t.Continut.Length = 0 Then
                 ' Said plainly rather than writing an empty file: the bytes are fetched by the
                 ' form when the document opens, and a failure there was already reported.
-                MessageBox.Show(Me,
+                KBotMessage.Show(Me,
                     "Conținutul fișierului nu este disponibil. Închide și redeschide " &
                     "documentul; dacă nici atunci nu apare, fișierul nu se poate citi de pe server.",
                     "Fișiere", MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -327,15 +327,15 @@ Public Class DdfEditFisierePage
             lblStare.Text = $"«{t.NumeFisier}» a fost salvat."
         Catch ex As IOException
             GlobalErrorLog.Write("DdfEditFisierePage.BtnSalveazaPeDisc_Click", ex)
-            MessageBox.Show(Me, "Fișierul nu a putut fi scris: " & ex.Message, "Fișiere",
+            KBotMessage.Show(Me, "Fișierul nu a putut fi scris: " & ex.Message, "Fișiere",
                             MessageBoxButtons.OK, MessageBoxIcon.Error)
         Catch ex As UnauthorizedAccessException
             GlobalErrorLog.Write("DdfEditFisierePage.BtnSalveazaPeDisc_Click", ex)
-            MessageBox.Show(Me, "Nu ai dreptul să scrii în locul ales.", "Fișiere",
+            KBotMessage.Show(Me, "Nu ai dreptul să scrii în locul ales.", "Fișiere",
                             MessageBoxButtons.OK, MessageBoxIcon.Error)
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditFisierePage.BtnSalveazaPeDisc_Click", ex)
-            MessageBox.Show(Me, "Fișierul nu a putut fi salvat. Detalii în jurnalul de erori.",
+            KBotMessage.Show(Me, "Fișierul nu a putut fi salvat. Detalii în jurnalul de erori.",
                             "Fișiere", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub

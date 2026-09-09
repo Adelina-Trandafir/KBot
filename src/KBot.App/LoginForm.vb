@@ -213,7 +213,7 @@ Public NotInheritable Class LoginForm
             ShowError(ex.Message)                              ' mesajul roman al serverului
         Catch ex As Exception
             ShowError("Eroare la conectare. Verificați rețeaua.")
-            Write("LoginForm.GetUnits", ex)     ' log detaliul complet; nu inghitim
+            GlobalErrorLog.Write("LoginForm.GetUnits", ex)     ' log detaliul complet; nu inghitim
         Finally
             SetBusy(False)
         End Try
@@ -245,7 +245,7 @@ Public NotInheritable Class LoginForm
             SetBusy(False)
         Catch ex As Exception
             ShowError("Eroare la autentificare. Verificați rețeaua.")
-            Write("LoginForm.Login", ex)
+            GlobalErrorLog.Write("LoginForm.Login", ex)
             SetBusy(False)
         End Try
     End Sub

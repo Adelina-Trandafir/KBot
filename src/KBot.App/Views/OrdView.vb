@@ -196,7 +196,7 @@ Public Class OrdView
     ''' </summary>
     Private Sub CereComanda(actiune As OrdActiune, Optional ordonantare As OrdHeaderRow = Nothing)
         If _executaComanda Is Nothing Then
-            MessageBox.Show(Me, "Editorul de ordonanțări nu este disponibil în acest context.",
+            KBotMessage.Show(Me, "Editorul de ordonanțări nu este disponibil în acest context.",
                             "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If

@@ -35,6 +35,16 @@ Partial Public Class WorkflowExecutor
     Private _confirmStep As Func(Of String, StepResult)
     Private _workflowPath As String = Nothing
 
+    ' The message of the <Exit> that stopped the last run, or Nothing when the run went
+    ' all the way through. Slice 0057: an <Exit> is NOT a normal ending. Every one of the
+    ' four workflows that has one uses it for the same thing -- "the thing I was sent to
+    ' fetch is not there, I am stopping" -- so a run that ends this way has produced no
+    ' tables, and the caller must be able to tell that apart from a run that succeeded and
+    ' found nothing. Before this it could not: ExecuteAsync swallowed WorkflowExitException
+    ' as a graceful stop, the runner reported Success, and the shell carried an empty
+    ' package on to the server.
+    Private _exitMessage As String = Nothing
+
 
     Private ReadOnly _windowsSecurityAutomation As WindowsSecurityAutomation
     Private ReadOnly _variables As New Dictionary(Of String, List(Of String))
@@ -110,6 +120,16 @@ Partial Public Class WorkflowExecutor
     Public ReadOnly Property IsBrowserOpen As Boolean
         Get
             Return _page IsNot Nothing AndAlso Not _page.IsClosed
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' The message of the &lt;Exit&gt; that stopped the last run, or Nothing if none did.
+    ''' Reset at the start of every ExecuteAsync, so it always describes THIS run.
+    ''' </summary>
+    Public ReadOnly Property ExitMessage As String
+        Get
+            Return _exitMessage
         End Get
     End Property
 

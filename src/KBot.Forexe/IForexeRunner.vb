@@ -1,4 +1,5 @@
-Imports System
+﻿Imports System
+Imports System.Collections.Generic
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Threading
 Imports System.Threading.Tasks
@@ -19,6 +20,15 @@ Namespace KBot.Forexe
         Function RunJobAsync(job As JobRequest,
                              progress As IProgress(Of Integer),
                              ct As CancellationToken) As Task(Of JobResult)
+
+        ' Downloading the SNM bank statements, slice 0057. Not a workflow: FOREXE answers
+        ' this one in JSON, and the old system called the path SNM_INTERNAL. It goes through
+        ' the runner because the runner is the only thing holding a live page. Needs a live
+        ' session and THROWS on failure (it has no JobResult to hand back).
+        Function DescarcaExtraseAsync(folderDescarcare As String,
+                                      dataDeLa As Date?,
+                                      progres As Action(Of Integer, Integer, String),
+                                      ct As CancellationToken) As Task(Of List(Of ExtrasDescarcat))
 
         ' Linia de stare a executorului, împinsă mai departe (felia 0034). Până acum se
         ' termina în logger; suprafețele de UI (banda de subsol + consola) au nevoie de ea

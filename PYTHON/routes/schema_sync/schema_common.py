@@ -41,7 +41,7 @@ EXCLUDED_TABLES = {"schema_diff_log"}
 # ---------------------------------------------------------------------
 # Columns the sync must not look at -- see docs/PLAN_ForexeIngest.md 3.2
 # ---------------------------------------------------------------------
-# These seven primary keys are plain `INT NOT NULL` in AVACONT_SURSA and
+# These eleven primary keys are plain `INT NOT NULL` in AVACONT_SURSA and
 # `INT NOT NULL AUTO_INCREMENT` in every MIGRATED unit database. That is
 # deliberate and permanent, not drift:
 #
@@ -53,7 +53,7 @@ EXCLUDED_TABLES = {"schema_diff_log"}
 #     never applied to AVACONT_SURSA.
 #
 # So every migrated database differs from the reference on exactly these
-# seven columns, forever, and the sync must neither report nor rewrite
+# eleven columns, forever, and the sync must neither report nor rewrite
 # that difference.
 #
 # WRITTEN OUT AS A NAMED LIST ON PURPOSE. A rule such as "skip anything
@@ -62,7 +62,7 @@ EXCLUDED_TABLES = {"schema_diff_log"}
 #
 # ACCEPTED COST, stated plainly: the exemption covers the WHOLE column,
 # not merely its AUTO_INCREMENT attribute. If anyone ever deliberately
-# changes one of these seven columns in AVACONT_SURSA -- a type change, a
+# changes one of these eleven columns in AVACONT_SURSA -- a type change, a
 # width change -- it will NOT propagate, and the divergence will NOT be
 # reported. This list is where they will have to look.
 #
@@ -80,6 +80,21 @@ EXEMPT_COLUMNS = {
     ("FX_Receptii_RHR", "IDRHR"),
     ("FX_Plati",        "IdPlataFX"),
     ("FX_Rezervari",    "IDRZ"),
+    # Adaugate 08.09.2026, odata cu importul de extrase (felia 0057): routes/forexe/
+    # extrase.py leaga randurile copil prin `cursor.lastrowid`, care pe o cheie INT
+    # simpla raspunde 0. Aceeasi lista ca AutoIncrementStep.Targets din KBot.Migrator --
+    # cele doua descriu O SINGURA decizie si se schimba impreuna.
+    ("FX_Extrase_F",    "IDEXF"),
+    ("FX_Extrase_H",    "IDEXH"),
+    ("FX_Extrase",      "IDFXE"),
+    # Adaugata 09.09.2026. `Clasificatii_Venituri` e Access-ul `ClasificatiiV`
+    # redenumit, si a intrat in AVACONT_SURSA declarata AUTO_INCREMENT -- adica
+    # exact fara paza descrisa mai sus, pe singura cheie spre care arata alte
+    # doua lucruri: `FX_Extrase_H.IdClsfV` si cheia straina a lui
+    # `Clasificatii_Venituri_Rectificari`. Operatorul a facut-o INT UNSIGNED NOT
+    # NULL pe server in aceeasi zi, deci acum se poarta ca celelalte zece:
+    # simpla in referinta, AUTO_INCREMENT dupa migrare.
+    ("Clasificatii_Venituri", "IdClsfV"),
 }
 
 # Lower-cased once at import so the per-column test below is a plain set

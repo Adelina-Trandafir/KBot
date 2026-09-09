@@ -259,7 +259,7 @@ Public Class HistoryForm
         Dim msg = job.SentPipeMessages(idx)
         Dim label = _lbxMessages.SelectedItem?.ToString()
 
-        Dim confirm = MessageBox.Show(
+        Dim confirm = KBotMessage.Show(
             $"Retrimitem mesajul:{Environment.NewLine}{Environment.NewLine}" &
             $"{label}{Environment.NewLine}{Environment.NewLine}" &
             $"Atenție: VBA trebuie să fie în așteptare pentru a procesa răspunsul!",
@@ -308,11 +308,11 @@ Public Class HistoryForm
                     Next
 
                     tempRtb.SaveFile(sfd.FileName, RichTextBoxStreamType.RichText)
-                    MessageBox.Show($"Istoricul a fost salvat:{Environment.NewLine}{sfd.FileName}",
+                    KBotMessage.Show($"Istoricul a fost salvat:{Environment.NewLine}{sfd.FileName}",
                                     "Salvare reușită", MessageBoxButtons.OK, MessageBoxIcon.Information)
 
                 Catch ex As Exception
-                    MessageBox.Show($"Eroare la salvare:{Environment.NewLine}{ex.Message}",
+                    KBotMessage.Show($"Eroare la salvare:{Environment.NewLine}{ex.Message}",
                                     "Eroare", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 Finally
                     headerFont.Dispose()
@@ -459,7 +459,7 @@ Public Class HistoryForm
     ' =========================================================
     Private Sub BtnExportOutput_Click(sender As Object, e As EventArgs) Handles btnExportOutput.Click
         If tvHistory.SelectedNode Is Nothing OrElse tvHistory.SelectedNode.Tag Is Nothing Then
-            MessageBox.Show("Selectează un job din listă înainte de export.",
+            KBotMessage.Show("Selectează un job din listă înainte de export.",
                             "Niciun job selectat", MessageBoxButtons.OK, MessageBoxIcon.Warning)
             Return
         End If
@@ -482,26 +482,26 @@ Public Class HistoryForm
                 Select Case sfd.FilterIndex
                     Case 1
                         ExportOutputRtf(basePath & ".rtf", job)
-                        MessageBox.Show($"Exportat RTF:{Environment.NewLine}{basePath}.rtf",
+                        KBotMessage.Show($"Exportat RTF:{Environment.NewLine}{basePath}.rtf",
                                         "Export reușit", MessageBoxButtons.OK, MessageBoxIcon.Information)
                     Case 2
                         ExportOutputJson(basePath & ".json", job)
-                        MessageBox.Show($"Exportat JSON:{Environment.NewLine}{basePath}.json",
+                        KBotMessage.Show($"Exportat JSON:{Environment.NewLine}{basePath}.json",
                                         "Export reușit", MessageBoxButtons.OK, MessageBoxIcon.Information)
                     Case 3
                         ExportOutputXml(job, sfd.FileName)
-                        MessageBox.Show($"Exportat XML:{Environment.NewLine}{sfd.FileName}",
+                        KBotMessage.Show($"Exportat XML:{Environment.NewLine}{sfd.FileName}",
                                         "Export reușit", MessageBoxButtons.OK, MessageBoxIcon.Information)
                     Case 4
                         ExportOutputRtf(basePath & ".rtf", job)
                         ExportOutputJson(basePath & ".json", job)
                         ExportOutputXml(job, basePath & ".xml")
-                        MessageBox.Show($"Exportate:{Environment.NewLine}{basePath}.rtf{Environment.NewLine}{basePath}.json{Environment.NewLine}{basePath}.xml",
+                        KBotMessage.Show($"Exportate:{Environment.NewLine}{basePath}.rtf{Environment.NewLine}{basePath}.json{Environment.NewLine}{basePath}.xml",
                                         "Export reușit", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 End Select
 
             Catch ex As Exception
-                MessageBox.Show($"Eroare la export:{Environment.NewLine}{ex.Message}",
+                KBotMessage.Show($"Eroare la export:{Environment.NewLine}{ex.Message}",
                                 "Eroare", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
         End Using

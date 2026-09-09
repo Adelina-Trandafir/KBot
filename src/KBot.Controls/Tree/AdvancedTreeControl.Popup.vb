@@ -561,7 +561,6 @@ Partial Public Class AdvancedTreeControl
         Protected Overrides Sub OnActivated(e As EventArgs)
             Try
                 MyBase.OnActivated(e)
-                MessageBox.Show("OnActivated fired")
             Catch ex As Exception
                 GlobalErrorLog.Write("TooltipPopup.OnActivated", ex)
             End Try
@@ -570,7 +569,6 @@ Partial Public Class AdvancedTreeControl
         Protected Overrides Sub OnGotFocus(e As EventArgs)
             Try
                 MyBase.OnGotFocus(e)
-                MessageBox.Show("OnGotFocus fired")
             Catch ex As Exception
                 GlobalErrorLog.Write("TooltipPopup.OnGotFocus", ex)
             End Try

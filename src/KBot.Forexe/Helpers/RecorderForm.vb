@@ -237,14 +237,14 @@ Public Class RecorderForm
     Private Async Sub BtnAndocheaza_Click(sender As Object, e As EventArgs) Handles btnAndocheaza.Click
         Try
             If _executor Is Nothing Then
-                MsgBox("Nu există o sesiune de browser atașată.", MsgBoxStyle.Exclamation, "K-BOT Recorder")
+                KBotMessage.Show("Nu există o sesiune de browser atașată.", MsgBoxStyle.Exclamation, "K-BOT Recorder")
                 Return
             End If
             Await _executor.DockBrowserToAsync(pnlBrowser)
             UpdateButtons()
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.BtnAndocheaza_Click", ex)
-            MsgBox(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
+            KBotMessage.Show(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
         End Try
     End Sub
 
@@ -255,7 +255,7 @@ Public Class RecorderForm
             UpdateButtons()
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.BtnDetaseaza_Click", ex)
-            MsgBox(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
+            KBotMessage.Show(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
         End Try
     End Sub
 
@@ -265,7 +265,7 @@ Public Class RecorderForm
             Await _executor.SyncDockedBoundsAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.BtnResincronizeaza_Click", ex)
-            MsgBox(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
+            KBotMessage.Show(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
         End Try
     End Sub
 
@@ -275,12 +275,12 @@ Public Class RecorderForm
     Private Async Sub BtnPornesteInreg_Click(sender As Object, e As EventArgs) Handles btnPornesteInreg.Click
         Try
             If _executor Is Nothing Then
-                MsgBox("Nu există o sesiune de browser atașată.", MsgBoxStyle.Exclamation, "K-BOT Recorder")
+                KBotMessage.Show("Nu există o sesiune de browser atașată.", MsgBoxStyle.Exclamation, "K-BOT Recorder")
                 Return
             End If
             ' Recording a browser the operator cannot see is pointless.
             If Not _executor.IsDocked Then
-                MsgBox("Andochează browserul înainte de a începe înregistrarea.",
+                KBotMessage.Show("Andochează browserul înainte de a începe înregistrarea.",
                        MsgBoxStyle.Exclamation, "K-BOT Recorder")
                 Return
             End If
@@ -288,7 +288,7 @@ Public Class RecorderForm
             UpdateButtons()
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.BtnPornesteInreg_Click", ex)
-            MsgBox(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
+            KBotMessage.Show(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
         End Try
     End Sub
 
@@ -321,7 +321,7 @@ Public Class RecorderForm
     Private Async Sub BtnMonitor_Click(sender As Object, e As EventArgs) Handles btnMonitor.Click
         Try
             If _executor Is Nothing Then
-                MsgBox("Nu există o sesiune de browser atașată.", MsgBoxStyle.Exclamation, "K-BOT Recorder")
+                KBotMessage.Show("Nu există o sesiune de browser atașată.", MsgBoxStyle.Exclamation, "K-BOT Recorder")
                 Return
             End If
 
@@ -344,7 +344,7 @@ Public Class RecorderForm
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.BtnMonitor_Click", ex)
-            MsgBox(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
+            KBotMessage.Show(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
         End Try
     End Sub
 
@@ -532,7 +532,7 @@ Public Class RecorderForm
     Private Sub BtnSalveaza_Click(sender As Object, e As EventArgs) Handles btnSalveaza.Click
         Try
             If _steps.Count = 0 Then
-                MsgBox("Nu există niciun pas înregistrat.", MsgBoxStyle.Information, "K-BOT Recorder")
+                KBotMessage.Show("Nu există niciun pas înregistrat.", MsgBoxStyle.Information, "K-BOT Recorder")
                 Return
             End If
 
@@ -545,12 +545,12 @@ Public Class RecorderForm
                 Dim numeWorkflow As String = Path.GetFileNameWithoutExtension(dialog.FileName)
                 Dim xml As String = BuildWfl(numeWorkflow)
                 File.WriteAllText(dialog.FileName, xml, New UTF8Encoding(True))
-                MsgBox($"Fișierul a fost salvat: {dialog.FileName}",
+                KBotMessage.Show($"Fișierul a fost salvat: {dialog.FileName}",
                        MsgBoxStyle.Information, "K-BOT Recorder")
             End Using
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.BtnSalveaza_Click", ex)
-            MsgBox(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
+            KBotMessage.Show(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
         End Try
     End Sub
 

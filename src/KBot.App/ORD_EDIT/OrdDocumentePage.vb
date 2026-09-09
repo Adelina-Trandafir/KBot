@@ -348,7 +348,7 @@ Public Class OrdDocumentePage
                     _suspenda = False
                 End Try
                 grdText.InvalidateRow(e.RowIndex)
-                MessageBox.Show(Me,
+                KBotMessage.Show(Me,
                     "Beneficiarul are deja un document justificativ cu textul ăsta. " &
                     "Un document nu se repetă la același beneficiar.",
                     "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -384,7 +384,7 @@ Public Class OrdDocumentePage
 
             Dim adaugate As List(Of OrdDraftDoc) = AdaugaRanduri(text, String.Empty, "text")
             If adaugate.Count = 0 Then
-                MessageBox.Show(Me,
+                KBotMessage.Show(Me,
                     If(_cheieBene = 0,
                        "Toți beneficiarii au deja un document justificativ cu textul ăsta.",
                        "Beneficiarul are deja un document justificativ cu textul ăsta."),
@@ -397,7 +397,7 @@ Public Class OrdDocumentePage
             RaiseEvent DraftModificat(Me, EventArgs.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("OrdDocumentePage.BtnAdaugaText_Click", ex)
-            MessageBox.Show(Me, "Rândul nu a putut fi adăugat. Detalii în jurnalul de erori.",
+            KBotMessage.Show(Me, "Rândul nu a putut fi adăugat. Detalii în jurnalul de erori.",
                             "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -438,7 +438,7 @@ Public Class OrdDocumentePage
             If sarite.Count > 0 Then
                 ' Acelasi fisier de doua ori la acelasi beneficiar nu inseamna nimic in plus, si
                 ' nici nu se mai poate deosebi dupa aceea. Se spune care s-au sarit.
-                MessageBox.Show(Me,
+                KBotMessage.Show(Me,
                     "Fișierele următoare erau deja anexate și nu s-au adăugat încă o dată:" &
                     vbCrLf & String.Join(vbCrLf, sarite),
                     "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -451,7 +451,7 @@ Public Class OrdDocumentePage
             ' Granita de UI peste I/O de fisier: se logheaza SI se arata; un throw de aici ar
             ' cadea pe firul de interfata.
             GlobalErrorLog.Write("OrdDocumentePage.BtnAdaugaFisier_Click", ex)
-            MessageBox.Show(Me, "Fișierul nu a putut fi citit: " & ex.Message,
+            KBotMessage.Show(Me, "Fișierul nu a putut fi citit: " & ex.Message,
                             "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -553,7 +553,7 @@ Public Class OrdDocumentePage
         ' operatorul, si nici n-ar avea de ce: acolo «al intregii ordonantari» si «al lui»
         ' inseamna acelasi lucru.
         If AreRandSintetic() AndAlso _cheieBene <> 0 AndAlso grup.Any(Function(d) CheiaPart(d) = 0) Then
-            MessageBox.Show(Me,
+            KBotMessage.Show(Me,
                 "Documentul selectat nu este al beneficiarului curent, ci al întregii " &
                 "ordonanțări. Nu se poate șterge de aici." & vbCrLf &
                 "Selectați «" & TOTI_BENEFICIARII & "» dacă vreți să-l ștergeți.",

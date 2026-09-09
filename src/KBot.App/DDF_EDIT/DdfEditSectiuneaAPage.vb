@@ -374,14 +374,14 @@ Public Class DdfEditSectiuneaAPage
                     Dim c As DdfClasificatie = ClasificatiaDupaEticheta(TryCast(e.ProposedValue, String))
                     If c Is Nothing Then Return
                     If c.IdClsf = CLSF_SEPARATOR Then
-                        MessageBox.Show(Me, "Rândul acesta este doar un separator, nu o clasificație.",
+                        KBotMessage.Show(Me, "Rândul acesta este doar un separator, nu o clasificație.",
                                         "Clasificație", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                         e.Cancel = True
                     End If
 
                 Case COL_ELEMENT
                     If String.IsNullOrWhiteSpace(TryCast(e.ProposedValue, String)) Then
-                        MessageBox.Show(Me, "Elementul de fundamentare este un câmp obligatoriu!",
+                        KBotMessage.Show(Me, "Elementul de fundamentare este un câmp obligatoriu!",
                                         "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                         e.Cancel = True
                     End If
@@ -390,20 +390,20 @@ Public Class DdfEditSectiuneaAPage
                     Dim valoare As Double
                     If Not Double.TryParse(Convert.ToString(e.ProposedValue, _roCulture),
                                            NumberStyles.Any, _roCulture, valoare) Then
-                        MessageBox.Show(Me, "Valoarea curentă nu este un număr.",
+                        KBotMessage.Show(Me, "Valoarea curentă nu este un număr.",
                                         "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                         e.Cancel = True
                         Return
                     End If
                     If valoare = 0.0R Then
-                        MessageBox.Show(Me, "Valoarea curentă este un câmp obligatoriu!",
+                        KBotMessage.Show(Me, "Valoarea curentă este un câmp obligatoriu!",
                                         "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                         e.Cancel = True
                         Return
                     End If
                     If valoare < 0.0R AndAlso
                        Math.Round(valoare + a.ValPrec, 2) < Math.Round(a.ValRec, 2) Then
-                        MessageBox.Show(Me,
+                        KBotMessage.Show(Me,
                             "Valoarea rămasă nu poate fi mai mică decât valoarea recepțiilor!",
                             "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                         e.Cancel = True
@@ -503,7 +503,7 @@ Public Class DdfEditSectiuneaAPage
             AlegeClasificatie(grd.RowCount - 1)
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditSectiuneaAPage.BtnAdauga_Click", ex)
-            MessageBox.Show(Me, "Rândul nu a putut fi adăugat. Detalii în jurnalul de erori.",
+            KBotMessage.Show(Me, "Rândul nu a putut fi adăugat. Detalii în jurnalul de erori.",
                             "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -517,7 +517,7 @@ Public Class DdfEditSectiuneaAPage
             If _draft Is Nothing Then Return
             Dim i As Integer = grd.CurrentRowIndex
             If i < 0 OrElse i >= grd.RowCount Then
-                MessageBox.Show(Me, "Selectează întâi rândul de șters.", "Secțiunea A",
+                KBotMessage.Show(Me, "Selectează întâi rândul de șters.", "Secțiunea A",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
@@ -525,7 +525,7 @@ Public Class DdfEditSectiuneaAPage
             Dim a As DdfDraftLinieA = TryCast(grd.Rows(i).Tag, DdfDraftLinieA)
             If a Is Nothing Then Return
 
-            If MessageBox.Show(Me, $"Ștergi rândul «{a.Clsf}»?", "Secțiunea A",
+            If KBotMessage.Show(Me, $"Ștergi rândul «{a.Clsf}»?", "Secțiunea A",
                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
                 Return
             End If
@@ -536,7 +536,7 @@ Public Class DdfEditSectiuneaAPage
             RaiseEvent DraftModificat(Me, EventArgs.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditSectiuneaAPage.BtnSterge_Click", ex)
-            MessageBox.Show(Me, "Rândul nu a putut fi șters. Detalii în jurnalul de erori.",
+            KBotMessage.Show(Me, "Rândul nu a putut fi șters. Detalii în jurnalul de erori.",
                             "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub

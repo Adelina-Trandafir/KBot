@@ -182,7 +182,7 @@ Public Class ThemeOptionsForm
     End Sub
 
     Private Function ConfirmaPierderea() As Boolean
-        Return MessageBox.Show(Me,
+        Return KBotMessage.Show(Me,
             $"Schema «{BuiltInSchemes.DisplayName(ThemeManager.Current.Name)}» are modificări nesalvate. Le pierzi?",
             "Modificări nesalvate", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) = DialogResult.Yes
     End Function
@@ -205,7 +205,7 @@ Public Class ThemeOptionsForm
     Private Sub btnReset_Click(sender As Object, e As EventArgs) Handles btnReset.Click
         Try
             Dim nume As String = ThemeManager.Current.Name
-            If MessageBox.Show(Me,
+            If KBotMessage.Show(Me,
                     $"Schema «{BuiltInSchemes.DisplayName(nume)}» revine la valorile din program, iar personalizarea salvată se șterge. Continui?",
                     "Restaurează implicit", MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
 
@@ -235,7 +235,7 @@ Public Class ThemeOptionsForm
             MyBase.OnFormClosing(e)
             If Not _dirty Then Return
 
-            Dim raspuns As DialogResult = MessageBox.Show(Me,
+            Dim raspuns As DialogResult = KBotMessage.Show(Me,
                 $"Schema «{BuiltInSchemes.DisplayName(ThemeManager.Current.Name)}» are modificări nesalvate. Le salvez?",
                 "Modificări nesalvate", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning)
 
@@ -413,7 +413,7 @@ Public Class ThemeOptionsForm
 
     Private Sub ShowError(title As String, ex As Exception)
         SetStatus(title)
-        MessageBox.Show(Me, $"{title}{Environment.NewLine}{ex.Message}", "Opțiuni de temă",
+        KBotMessage.Show(Me, $"{title}{Environment.NewLine}{ex.Message}", "Opțiuni de temă",
                         MessageBoxButtons.OK, MessageBoxIcon.Error)
     End Sub
 

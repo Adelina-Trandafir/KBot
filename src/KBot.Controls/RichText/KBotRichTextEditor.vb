@@ -724,7 +724,7 @@ Public Class KBotRichTextEditor
             ' A family that cannot render the current style. Reported, never swallowed into a
             ' half-applied format.
             GlobalErrorLog.Write("KBotRichTextEditor.CmbFont_SelectedIndexChanged", ex)
-            MessageBox.Show(Me, "Fontul ales nu poate reda stilul curent al textului.",
+            KBotMessage.Show(Me, "Fontul ales nu poate reda stilul curent al textului.",
                             "Font", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotRichTextEditor.CmbFont_SelectedIndexChanged", ex)

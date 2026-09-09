@@ -78,7 +78,7 @@ Friend Module Program
             ' se mai potrivesc și operatorul trebuie să știe de ce arată altfel. Tăcerea aici ar
             ' produce exact defectul pe care felia îl repară, doar că fără nicio explicație.
             If KBotFonts.IsFallback Then
-                MessageBox.Show(KBotFonts.MissingFontMessage, KBotFonts.MissingFontCaption,
+                KBotMessage.Show(KBotFonts.MissingFontMessage, KBotFonts.MissingFontCaption,
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning)
             End If
 
@@ -253,13 +253,13 @@ Friend Module Program
 
         Catch ex As SetariFoldereException
             GlobalErrorLog.Write("Program.ValideazaSetarileDeFolder", ex)
-            MessageBox.Show(ex.Message, "K-BOT — setări de folder",
+            KBotMessage.Show(ex.Message, "K-BOT — setări de folder",
                             MessageBoxButtons.OK, MessageBoxIcon.Error)
             Return False
 
         Catch ex As Exception
             GlobalErrorLog.Write("Program.ValideazaSetarileDeFolder", ex)
-            MessageBox.Show(
+            KBotMessage.Show(
                 "Setările de folder nu s-au putut verifica: " & ex.Message,
                 "K-BOT — setări de folder", MessageBoxButtons.OK, MessageBoxIcon.Error)
             Return False
@@ -287,7 +287,7 @@ Friend Module Program
             Dim logFile As String = LogPaths.Combine("harness_errors.log")
             Dim msg As String = "Eroare neașteptată. Detalii complete în:" & Environment.NewLine & logFile &
                                 Environment.NewLine & Environment.NewLine & If(ex IsNot Nothing, ex.Message, "<necunoscut>")
-            MessageBox.Show(msg, "K-BOT — eroare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            KBotMessage.Show(msg, "K-BOT — eroare", MessageBoxButtons.OK, MessageBoxIcon.Error)
         Catch dialogEx As Exception
             ' SINK TERMINAL: dialogul nu poate fi afișat (ex. fără UI pe firul curent).
             ' Eroarea principală e deja în harness_errors.log; suprafațăm pe Trace, NU rearuncăm.

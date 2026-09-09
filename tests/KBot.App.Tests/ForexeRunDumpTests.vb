@@ -123,6 +123,40 @@ Public Class ForexeRunDumpTests
         End Try
     End Sub
 
+    ' A nested cell (ListaReceptii.Detaliu) used to kill the whole dump: System.Text.Json
+    ' walked CelulaTabel's public properties and hit `Text`, which throws by design on
+    ' anything but a scalar. The run that most needs a black box -- the one with nested
+    ' rows -- was the one that left none. It goes through TabeleJson.Catre now.
+    <Fact>
+    Public Sub Save_CuCelulaImbricata_ScrieTabeleleCaArbore()
+        Dim detaliu As CelulaTabel = CelulaTabel.DinLista({
+            CelulaTabel.DinObiect({New KeyValuePair(Of String, CelulaTabel)(
+                "Suma", CelulaTabel.DinText("100"))}),
+            CelulaTabel.DinObiect({New KeyValuePair(Of String, CelulaTabel)(
+                "Suma", CelulaTabel.DinText("250"))})})
+        Dim r As New JobResult With {.Success = True, .Message = "ok"}
+        r.Tables("ListaReceptii") = New TabelRezultat From {
+            New RandTabel From {{"Cod", "AAB2MAACHXB"}, {"Detaliu", detaliu}}}
+
+        Dim dump As New ForexeRunDump("PrelucrareCompleta", "AAB2MAACHXB", Sesiune())
+        Dim folder As String = dump.Save("ok", r)
+        Try
+            Dim cale As String = Path.Combine(folder, "tables.json")
+            Assert.True(File.Exists(cale))
+            Using doc As JsonDocument = JsonDocument.Parse(File.ReadAllText(cale))
+                Dim rand As JsonElement = doc.RootElement.GetProperty("ListaReceptii")(0)
+                Assert.Equal("AAB2MAACHXB", rand.GetProperty("Cod").GetString())
+                ' A real JSON array, not a string that happens to contain JSON.
+                Dim d As JsonElement = rand.GetProperty("Detaliu")
+                Assert.Equal(JsonValueKind.Array, d.ValueKind)
+                Assert.Equal(2, d.GetArrayLength())
+                Assert.Equal("250", d(1).GetProperty("Suma").GetString())
+            End Using
+        Finally
+            Curata(folder)
+        End Try
+    End Sub
+
     <Fact>
     Public Sub Folder_PoartaCodulSiOperatia()
         Dim dump As New ForexeRunDump("PrelucrareCompleta", "AAB2MAACHXB", Sesiune())

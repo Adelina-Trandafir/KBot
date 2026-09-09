@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System.Collections.Generic
 Imports System.IO
 Imports System.Linq
@@ -33,6 +33,14 @@ Public NotInheritable Class ForexeController
     Private _busy As Boolean
     Private _ultimulProcent As Integer
     Private _ultimaStare As String = String.Empty
+
+    ' Why the LAST intent came back empty, or String.Empty when nothing went wrong.
+    ' Slice 0057. A download can return Nothing for two very different reasons: the robot
+    ' failed (or the workflow stopped itself because the angajament is not in the FOREXE
+    ' list), or the operator simply cancelled the certificate dialog. The shell shows a
+    ' message box for the first and stays quiet for the second, so the two must be told
+    ' apart -- and a cancel deliberately leaves this EMPTY.
+    Private _ultimulEsec As String = String.Empty
 
     ''' <summary>
     ''' Fereastra-părinte pentru dialogurile modale (alegerea certificatului). O pune
@@ -94,6 +102,17 @@ Public NotInheritable Class ForexeController
         End Get
     End Property
 
+    ''' <summary>
+    ''' Why the last intent came back empty, in Romanian, ready to be shown to the operator;
+    ''' String.Empty when it succeeded or when the operator cancelled it themselves.
+    ''' Set fresh by every intent, so it always describes the most recent one.
+    ''' </summary>
+    Public ReadOnly Property LastFailure As String
+        Get
+            Return _ultimulEsec
+        End Get
+    End Property
+
     ''' <summary>Depozitul local (memorie + JSON) al rezultatelor descărcate.</summary>
     Public ReadOnly Property Rezultate As WorkflowResultStore
         Get
@@ -118,6 +137,7 @@ Public NotInheritable Class ForexeController
         Try
             If IsConnected Then Return True
             If _busy Then Return False
+            _ultimulEsec = String.Empty
 
             Dim cert As X509Certificate2 = Nothing
             If NoTokenInDebug() Then
@@ -141,7 +161,7 @@ Public NotInheritable Class ForexeController
                     _certificat = cert
                     RaporteazaStare("Conectat.")
                 Else
-                    RaporteazaStare("Conectare eșuată: " & rezultat.Message)
+                    RaporteazaEsec("Conectare eșuată: " & rezultat.Message)
                 End If
                 Return rezultat.Success
             Finally
@@ -164,10 +184,11 @@ Public NotInheritable Class ForexeController
         ' până și o cerere respinsă din start să lase o urmă pe disc.
         Dim jurnal As New ForexeRunDump("ListaAngajamente", String.Empty, _session)
         Try
+            _ultimulEsec = String.Empty
             If _busy Then
                 jurnal.Note("motiv", "O alta operatie FOREXE era deja in curs.")
                 ScrieJurnal(jurnal, "ocupat", Nothing)
-                RaporteazaStare("Rulează deja o operație FOREXE — cererea a fost ignorată.")
+                RaporteazaEsec("Rulează deja o operație FOREXE — cererea a fost ignorată.")
                 Return Nothing
             End If
             If Not Await AsiguraSesiuneAsync() Then
@@ -184,7 +205,7 @@ Public NotInheritable Class ForexeController
                 Dim rezultat As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
                 If Not rezultat.Success Then
                     ScrieJurnal(jurnal, "esuat", rezultat)
-                    RaporteazaStare("Lista de angajamente a eșuat: " & rezultat.Message)
+                    RaporteazaEsec("Lista de angajamente a eșuat: " & rezultat.Message)
                     Return Nothing
                 End If
 
@@ -192,7 +213,7 @@ Public NotInheritable Class ForexeController
                 If Not rezultat.Tables.TryGetValue(WorkflowCatalog.ListaAngajamenteTable, randuri) Then
                     jurnal.Note("tabel_asteptat", WorkflowCatalog.ListaAngajamenteTable)
                     ScrieJurnal(jurnal, "tabel-lipsa", rezultat)
-                    RaporteazaStare($"Tabelul «{WorkflowCatalog.ListaAngajamenteTable}» lipsește din rezultat (0 rânduri).")
+                    RaporteazaEsec($"Tabelul «{WorkflowCatalog.ListaAngajamenteTable}» lipsește din rezultat (0 rânduri).")
                     Return Nothing
                 End If
 
@@ -229,13 +250,14 @@ Public NotInheritable Class ForexeController
         ' Cutia neagră a descărcării (felia 0054) — vezi DownloadListaAsync.
         Dim jurnal As New ForexeRunDump("PrelucrareCompleta", cod, _session)
         Try
+            _ultimulEsec = String.Empty
             If String.IsNullOrWhiteSpace(cod) Then
                 Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
             End If
             If _busy Then
                 jurnal.Note("motiv", "O alta operatie FOREXE era deja in curs.")
                 ScrieJurnal(jurnal, "ocupat", Nothing)
-                RaporteazaStare($"Rulează deja o operație FOREXE — cererea pentru «{cod}» a fost ignorată.")
+                RaporteazaEsec($"Rulează deja o operație FOREXE — cererea pentru «{cod}» a fost ignorată.")
                 Return Nothing
             End If
             If Not Await AsiguraSesiuneAsync() Then
@@ -264,8 +286,14 @@ Public NotInheritable Class ForexeController
 
                 Dim rezultat As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
                 If Not rezultat.Success Then
+                    ' Slice 0057. This branch now ALSO catches the flow that stopped
+                    ' itself because the angajament is not in the FOREXE list: RunJobAsync
+                    ' turns an <Exit> into a failed job, so the download ends HERE, with
+                    ' nothing sent to the server, and the shell shows the reason instead of
+                    ' the operator reading it in the console while an empty package
+                    ' travels on.
                     ScrieJurnal(jurnal, "esuat", rezultat)
-                    RaporteazaStare($"Prelucrarea lui «{cod}» a eșuat: " & rezultat.Message)
+                    RaporteazaEsec($"Prelucrarea lui «{cod}» a eșuat: " & rezultat.Message)
                     Return Nothing
                 End If
 
@@ -290,6 +318,96 @@ Public NotInheritable Class ForexeController
             GlobalErrorLog.Write("ForexeController.DownloadNodeAsync", ex)
             Throw
         End Try
+    End Function
+
+    ''' <summary>
+    ''' Downloads the SNM bank statements from FOREXE and keeps them locally -- slice 0057.
+    ''' The LEFT icon of the tree footer. Like the list, it writes NOTHING to the server:
+    ''' the import is a separate step, started by the shell with what comes back from here.
+    ''' </summary>
+    ''' <param name="citesteUltimaData">
+    ''' The most recent statement date already imported, so a press does not re-download the
+    ''' whole FOREXE inbox. Nothing (or a read that failed) means «take everything», which is
+    ''' correct, only slower -- the server rejects the duplicates anyway.
+    ''' Same shape as <c>citesteIstoric</c> in <see cref="DownloadNodeAsync"/>.
+    ''' </param>
+    ''' <returns>
+    ''' The statements downloaded (an empty list is a real answer: there were no new ones),
+    ''' or Nothing when the flow could not start or failed -- in which case
+    ''' <see cref="LastFailure"/> says why.
+    ''' </returns>
+    Public Async Function DownloadExtraseAsync(
+            citesteUltimaData As Func(Of CancellationToken, Task(Of Date?))) As Task(Of List(Of ExtrasDescarcat))
+        Try
+            _ultimulEsec = String.Empty
+            If _busy Then
+                RaporteazaEsec("Rulează deja o operație FOREXE — cererea de extrase a fost ignorată.")
+                Return Nothing
+            End If
+            If Not Await AsiguraSesiuneAsync() Then Return Nothing
+
+            IntraInLucru()
+            Try
+                Dim deLa As Date? = Await UltimaDataExtras(citesteUltimaData)
+                If deLa.HasValue Then
+                    RaporteazaStare($"Descarc extrasele de cont, de la {deLa.Value:dd.MM.yyyy}...")
+                Else
+                    RaporteazaStare("Descarc extrasele de cont (toată cutia de mesaje)...")
+                End If
+
+                Dim folder As String = KBotPaths.FolderExtrase
+                Dim extrase As List(Of ExtrasDescarcat) =
+                    Await _runner.DescarcaExtraseAsync(folder, deLa, ProgresExtrase(), _cts.Token)
+
+                RaporteazaStare($"{extrase.Count} extrase descărcate în «{folder}».")
+                Return extrase
+            Finally
+                IesDinLucru()
+            End Try
+        Catch ex As OperationCanceledException
+            ' The operator's own cancel: said on the console, but NOT a failure, so the
+            ' shell stays quiet about it -- same rule as a cancelled certificate dialog.
+            GlobalErrorLog.Write("ForexeController.DownloadExtraseAsync", ex)
+            RaporteazaStare("Descărcarea extraselor a fost anulată.")
+            Return Nothing
+        Catch ex As Exception
+            ' Boundary: the robot throws (it has no JobResult to hand back) and it stops
+            ' here -- the shell reads the reason from LastFailure and shows it.
+            GlobalErrorLog.Write("ForexeController.DownloadExtraseAsync", ex)
+            RaporteazaEsec("Descărcarea extraselor a eșuat: " & ex.Message)
+            Return Nothing
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The most recent statement date already imported, or Nothing. A read that fails does
+    ''' NOT stop the download: it takes the whole inbox (more work, but correct) and says so
+    ''' on the console -- never a made-up date. The twin of <c>UltimaDataIstoric</c>.
+    ''' </summary>
+    Private Async Function UltimaDataExtras(
+            citeste As Func(Of CancellationToken, Task(Of Date?))) As Task(Of Date?)
+        If citeste Is Nothing Then Return Nothing
+        Try
+            Return Await citeste(_cts.Token)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.UltimaDataExtras", ex)
+            RaporteazaStare($"Nu s-a putut citi data ultimului extras ({ex.Message}) — descarc toată cutia.")
+            Return Nothing
+        End Try
+    End Function
+
+    ' The statements' progress bridge: the robot's counter becomes a percentage for both UI
+    ' surfaces, and its status line passes through unchanged. With no total (0) the bar does
+    ' not move: a percentage worked out by dividing by zero would be an invented figure.
+    Private Function ProgresExtrase() As Action(Of Integer, Integer, String)
+        Return Sub(facute As Integer, total As Integer, mesaj As String)
+                   If total > 0 Then
+                       Dim procent As Integer = CInt(Math.Min(100L, 100L * facute \ total))
+                       _ultimulProcent = procent
+                       RaiseEvent ProgressChanged(Me, procent)
+                   End If
+                   RaporteazaStare(mesaj)
+               End Sub
     End Function
 
     ''' <summary>Anulează operația în curs (butonul «Anulează» din consolă).</summary>
@@ -468,6 +586,16 @@ Public NotInheritable Class ForexeController
     Private Sub RaporteazaStare(mesaj As String)
         _ultimaStare = If(mesaj, String.Empty)
         RaiseEvent StatusChanged(Me, _ultimaStare)
+    End Sub
+
+    ''' <summary>
+    ''' Says it on the console AND remembers it as the reason the intent came back empty,
+    ''' so the shell can put it in front of the operator. Only for things that actually went
+    ''' wrong -- an operator cancel goes through RaporteazaStare and leaves LastFailure empty.
+    ''' </summary>
+    Private Sub RaporteazaEsec(mesaj As String)
+        _ultimulEsec = If(mesaj, String.Empty)
+        RaporteazaStare(mesaj)
     End Sub
 
     ' Starea venită din executor (prin runner) merge mai departe neschimbată.

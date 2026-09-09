@@ -101,6 +101,17 @@ Public Class SumarView
             End If
 
             _requestedCod = cod
+
+            ' THE HEADER IS FILLED NOW, from the tree row (operator, 08.09.2026).
+            ' An angajament that is only in the list -- added by the footer's right icon, with a
+            ' header and nothing else -- has no indicators, so `GetSumarAsync` returns no header
+            ' and the view stayed completely blank: not even the code the operator had just
+            ' selected. The tree row already carries nearly the whole header (code, description,
+            ' state, the two dates, loaded/taken), so what is KNOWN shows immediately and only
+            ' then does whatever the server brings land on top. Nothing is invented: DataFX is
+            ' the one header field the tree does not have, and it stays empty until the server
+            ' answers.
+            FillHeaderFromTree(info)
             ShowEmpty("Se încarcă sumarul…")
             ' Fire-and-forget deliberat: SetContext e apelat dintr-un handler sincron
             ' al shell-ului, iar încărcarea nu are voie să blocheze firul UI. Metoda
@@ -124,9 +135,12 @@ Public Class SumarView
             If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
 
             If data Is Nothing OrElse data.Header Is Nothing Then
-                ClearHeader()
+                ' The header is NOT cleared any more: the one SetContext put there from the
+                ' tree row is everything known about this angajament, and it beats nothing. The
+                ' server has no header because there are no indicators -- that does not delete
+                ' what we already have.
                 grid.ClearRows()
-                ShowEmpty("Angajamentul nu are indicatori.")
+                ShowEmpty("Angajamentul nu are indicatori. Se arată doar datele din listă.")
                 Return
             End If
 
@@ -135,14 +149,14 @@ Public Class SumarView
         Catch ex As ApiException
             If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
             GlobalErrorLog.Write("SumarView.LoadAsync", ex)
-            ClearHeader()
+            ' The tree header STAYS on the error path too: the server did not answer, but the
+            ' selected angajament is still the same one, and the operator has to see which.
             grid.ClearRows()
             ' Mesajul din câmpul «error» al serverului, deja în română — niciodată JSON brut.
             ShowEmpty(ex.Message)
         Catch ex As Exception
             If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
             GlobalErrorLog.Write("SumarView.LoadAsync", ex)
-            ClearHeader()
             grid.ClearRows()
             ShowEmpty("Sumarul nu a putut fi încărcat. Detalii în jurnalul de erori.")
         End Try
@@ -156,6 +170,26 @@ Public Class SumarView
         lblStare.Text = header.Stare
         lblDescriere.Text = header.Descriere
         lblStatus.Text = $"{YesNo(header.Incarcat)} / {YesNo(header.Preluat)}"
+    End Sub
+
+    ''' <summary>
+    ''' The header taken from the TREE ROW, shown before any network call, so that an
+    ''' angajament which is only in the list (no indicators, no history) is still seen with what
+    ''' it has: code, description, state, the dates, and loaded/taken.
+    ''' </summary>
+    ''' <remarks>
+    ''' <c>DataFX</c> stays EMPTY: it is the one header field <c>GET /api/forexe/tree</c> does
+    ''' not return, so there is nowhere to take it from here. It fills in if and when
+    ''' <c>GetSumarAsync</c> answers.
+    ''' </remarks>
+    Private Sub FillHeaderFromTree(info As AngajamentTreeInfo)
+        lblCod.Text = If(info.CodAngajament, String.Empty)
+        lblDataFx.Text = String.Empty
+        lblDataCreare.Text = FormatDate(info.DataCreare)
+        lblDataDef.Text = FormatDate(info.DataDefinitivare)
+        lblStare.Text = If(info.Stare, String.Empty)
+        lblDescriere.Text = If(info.Descriere, String.Empty)
+        lblStatus.Text = $"{YesNo(info.EIncarcat)} / {YesNo(info.EPreluat)}"
     End Sub
 
     Private Sub ClearHeader()

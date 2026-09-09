@@ -174,7 +174,7 @@ Public Class KBOT
                     .LogFilePath = caleJurnal
                 }
             Catch ex As Exception
-                MessageBox.Show(Me, "Nu s-a putut crea logger-ul FOREXE: " & ex.Message,
+                KBotMessage.Show(Me, "Nu s-a putut crea logger-ul FOREXE: " & ex.Message,
                                 "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 ' Logger-ul e esențial pentru a vedea progresul și erorile din fluxurile FOREXE; fără el, shell-ul nu poate funcționa.
                 Close()
@@ -185,7 +185,7 @@ Public Class KBOT
                 ' Atașează logger-ul FOREXE la runner (aceeași instanță singleton)
                 DirectCast(_forexeRunner, ForexeRunner).AttachLogger(_forexeLogger)
             Catch ex As Exception
-                MessageBox.Show(Me, "Nu s-a putut atașa logger-ul la runner: " & ex.Message,
+                KBotMessage.Show(Me, "Nu s-a putut atașa logger-ul la runner: " & ex.Message,
                                 "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 Close()
             End Try
@@ -266,7 +266,7 @@ Public Class KBOT
                 GlobalErrorLog.Write("MainForm.LoadPeriodsAsync.GetPeriods", ex)
                 cboAn.Enabled = False
                 cboSs.Enabled = False
-                MessageBox.Show(Me,
+                KBotMessage.Show(Me,
                     "Nu s-au putut citi perioadele (an/SS): " & ex.Message,
                     "Perioade", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
@@ -468,7 +468,7 @@ Public Class KBOT
         Catch ex As Exception
             ' Graniță de UI: se loghează și se arată; un throw de aici ar cădea pe firul de UI.
             GlobalErrorLog.Write("MainForm.DeschideLegaturileReceptiilor", ex)
-            MessageBox.Show(Me, "Editorul de legături nu a putut fi deschis. Detalii în jurnalul de erori.",
+            KBotMessage.Show(Me, "Editorul de legături nu a putut fi deschis. Detalii în jurnalul de erori.",
                             "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -504,10 +504,10 @@ Public Class KBOT
             End Select
         Catch ex As ApiException
             GlobalErrorLog.Write("MainForm.ExecutaComandaOrd", ex)
-            MessageBox.Show(Me, ex.Message, "Ordonanțare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            KBotMessage.Show(Me, ex.Message, "Ordonanțare", MessageBoxButtons.OK, MessageBoxIcon.Error)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ExecutaComandaOrd", ex)
-            MessageBox.Show(Me, "Comanda nu a putut fi executată. Detalii în jurnalul de erori.",
+            KBotMessage.Show(Me, "Comanda nu a putut fi executată. Detalii în jurnalul de erori.",
                             "Ordonanțare", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -557,7 +557,7 @@ Public Class KBOT
     ''' </summary>
     Private Async Function ModificaOrdonantareAsync(ordonantare As OrdHeaderRow) As Task
         If ordonantare Is Nothing OrElse ordonantare.Idordp <= 0 Then
-            MessageBox.Show(Me, "Selectați o ordonanțare din arbore.",
+            KBotMessage.Show(Me, "Selectați o ordonanțare din arbore.",
                             "Ordonanțare", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If
@@ -601,7 +601,7 @@ Public Class KBOT
     ''' </summary>
     Private Async Function StergeOrdonantareAsync(ordonantare As OrdHeaderRow) As Task
         If ordonantare Is Nothing OrElse ordonantare.Idordp <= 0 Then
-            MessageBox.Show(Me, "Selectați o ordonanțare din arbore.",
+            KBotMessage.Show(Me, "Selectați o ordonanțare din arbore.",
                             "Ordonanțare", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If
@@ -616,7 +616,7 @@ Public Class KBOT
             "atașamentele și PDF-ul semnat stocat pe server." & vbCrLf &
             "Plățile acoperite redevin neordonanțate."
 
-        If MessageBox.Show(Me, intrebare, "Șterge ordonanțarea",
+        If KBotMessage.Show(Me, intrebare, "Șterge ordonanțarea",
                            MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
             Return
         End If
@@ -631,7 +631,7 @@ Public Class KBOT
             busyBar.Running = False
         End Try
 
-        MessageBox.Show(Me,
+        KBotMessage.Show(Me,
             $"Ordonanțarea nr. {rez.NrOrd} a fost ștearsă." & vbCrLf &
             $"Beneficiari: {rez.Parteneri} · rânduri de plată: {rez.Linii} · " &
             $"documente: {rez.Documente} · atașamente: {rez.Atasamente} · PDF: {rez.Pdf}." & vbCrLf &
@@ -681,7 +681,7 @@ Public Class KBOT
                                     $" în {NumeLuna(luna.Value)} {an.Value}", String.Empty)
 
         If zile Is Nothing OrElse zile.Zile.Count = 0 Then
-            MessageBox.Show(Me, $"Nu există plăți neordonanțate pentru {cod}{perioada}.",
+            KBotMessage.Show(Me, $"Nu există plăți neordonanțate pentru {cod}{perioada}.",
                             "Generare în lot", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If
@@ -691,7 +691,7 @@ Public Class KBOT
             $"({zile.TotalEstimat} ordonanțări estimate)." & vbCrLf & vbCrLf &
             "Fiecare zi se salvează separat, fără să vă mai fie cerută confirmarea." & vbCrLf &
             "La prima eroare, generarea se oprește. Continuați?"
-        If MessageBox.Show(Me, intrebare, "Generare în lot",
+        If KBotMessage.Show(Me, intrebare, "Generare în lot",
                            MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
             Return
         End If
@@ -722,10 +722,10 @@ Public Class KBOT
         End Try
 
         If ziEsuata Is Nothing Then
-            MessageBox.Show(Me, $"{reusite} ordonanțări au fost generate și salvate.",
+            KBotMessage.Show(Me, $"{reusite} ordonanțări au fost generate și salvate.",
                             "Generare în lot", MessageBoxButtons.OK, MessageBoxIcon.Information)
         Else
-            MessageBox.Show(Me,
+            KBotMessage.Show(Me,
                 $"Generarea s-a oprit la data {ziEsuata}." & vbCrLf &
                 $"Motiv: {motiv}" & vbCrLf & vbCrLf &
                 $"Până acolo s-au salvat {reusite} ordonanțări; ele RĂMÂN salvate. " &
@@ -841,11 +841,11 @@ Public Class KBOT
             End Select
         Catch ex As ApiException
             GlobalErrorLog.Write("MainForm.ExecutaComandaDdf", ex)
-            MessageBox.Show(Me, ex.Message, "Document de fundamentare",
+            KBotMessage.Show(Me, ex.Message, "Document de fundamentare",
                             MessageBoxButtons.OK, MessageBoxIcon.Error)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ExecutaComandaDdf", ex)
-            MessageBox.Show(Me, "Comanda nu a putut fi executată. Detalii în jurnalul de erori.",
+            KBotMessage.Show(Me, "Comanda nu a putut fi executată. Detalii în jurnalul de erori.",
                             "Document de fundamentare", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -885,7 +885,7 @@ Public Class KBOT
     ''' </summary>
     Private Async Function ModificaDdfAsync(revizie As RevizieRow) As Task
         If revizie Is Nothing OrElse revizie.Idrev <= 0 OrElse revizie.Iddf <= 0 Then
-            MessageBox.Show(Me, "Selectați o revizie din arbore.", "Document de fundamentare",
+            KBotMessage.Show(Me, "Selectați o revizie din arbore.", "Document de fundamentare",
                             MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If
@@ -939,7 +939,7 @@ Public Class KBOT
     ''' </summary>
     Private Async Function StergeRevizieDdfAsync(revizie As RevizieRow) As Task
         If revizie Is Nothing OrElse revizie.Idrev <= 0 Then
-            MessageBox.Show(Me, "Selectați o revizie din arbore.", "Document de fundamentare",
+            KBotMessage.Show(Me, "Selectați o revizie din arbore.", "Document de fundamentare",
                             MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If
@@ -950,7 +950,7 @@ Public Class KBOT
             "Odată cu ea se șterg rândurile din secțiunile A și B și fișierele atașate." & vbCrLf &
             "Rezervările acoperite redevin fără DDF."
 
-        If MessageBox.Show(Me, intrebare, "Șterge revizia",
+        If KBotMessage.Show(Me, intrebare, "Șterge revizia",
                            MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
             Return
         End If
@@ -981,7 +981,7 @@ Public Class KBOT
     ''' </summary>
     Private Async Function StergeDocumentDdfAsync(revizie As RevizieRow) As Task
         If revizie Is Nothing OrElse revizie.Iddf <= 0 Then
-            MessageBox.Show(Me, "Selectați o revizie din arbore.", "Document de fundamentare",
+            KBotMessage.Show(Me, "Selectați o revizie din arbore.", "Document de fundamentare",
                             MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If
@@ -992,7 +992,7 @@ Public Class KBOT
             "Se șterg TOATE reviziile documentului, cu rândurile și fișierele lor." & vbCrLf &
             "Rezervările acoperite redevin fără DDF."
 
-        If MessageBox.Show(Me, intrebare, "Șterge documentul",
+        If KBotMessage.Show(Me, intrebare, "Șterge documentul",
                            MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
             Return
         End If
@@ -1020,7 +1020,7 @@ Public Class KBOT
     ''' </summary>
     Private Async Function StergeLunaDdfAsync(comanda As DdfComanda) As Task
         If comanda.Iddf <= 0 OrElse comanda.An <= 0 OrElse comanda.Luna < 1 OrElse comanda.Luna > 12 Then
-            MessageBox.Show(Me, "Selectați o lună din arbore.", "Document de fundamentare",
+            KBotMessage.Show(Me, "Selectați o lună din arbore.", "Document de fundamentare",
                             MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If
@@ -1031,7 +1031,7 @@ Public Class KBOT
             "Dacă luna conține toate reviziile documentului, se șterge documentul întreg." & vbCrLf &
             "Rezervările acoperite redevin fără DDF."
 
-        If MessageBox.Show(Me, intrebare, "Șterge reviziile lunii",
+        If KBotMessage.Show(Me, intrebare, "Șterge reviziile lunii",
                            MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
             Return
         End If
@@ -1069,7 +1069,7 @@ Public Class KBOT
         If rez Is Nothing Then Return
         Dim ce As String = If(rez.DocumentSters, "Documentul de fundamentare a fost șters.",
                                                  "Reviziile au fost șterse.")
-        MessageBox.Show(Me,
+        KBotMessage.Show(Me,
             ce & vbCrLf &
             $"Revizii: {rez.Revizii} · secțiunea A: {rez.LiniiA} · secțiunea B: {rez.LiniiB} · " &
             $"fișiere: {rez.Atasamente}." & vbCrLf &
@@ -1184,7 +1184,7 @@ Public Class KBOT
             ' server după re-login) se arată operatorului cu motivul întors de server,
             ' nu se maschează cu un arbore gol — acela ar minți că unitatea n-are date.
             GlobalErrorLog.Write("MainForm.LoadTreeAsync", ex)
-            MessageBox.Show(Me,
+            KBotMessage.Show(Me,
                 "Nu s-a putut încărca arborele de angajamente: " & ex.Message,
                 "Angajamente", MessageBoxButtons.OK, MessageBoxIcon.Error)
         Finally
@@ -1306,23 +1306,183 @@ Public Class KBOT
     ' strângerea; asta a fost doar a shell-ului.
 
     ''' <summary>
-    ''' Iconița din STÂNGA subsolului arborelui = descarcă din FOREXE lista de angajamente
-    ''' («adlop - Lista Angajamente Curente.wfl»). Rezultatul rămâne LOCAL (memorie + JSON);
-    ''' scrierea pe server e rândul «Sincronizare (server)» din meniul de opțiuni.
+    ''' The LEFT icon of the tree footer (slice 0057) = download the SNM bank statements
+    ''' from FOREXE and send them to the import.
     ''' </summary>
+    ''' <remarks>
+    ''' Two steps, like downloading one angajament: the robot brings the PDFs and unwraps
+    ''' the XML from them, then the server reads the XML and writes FX_Extrase_F / _H /
+    ''' FX_Extrase. The first step does not depend on the second -- if the import falls
+    ''' over, the PDFs stay on disk and can be retried; the second run skips what is
+    ''' already written.
+    ''' </remarks>
     Private Async Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
         Try
+            Dim extrase As List(Of ExtrasDescarcat)
             busyBar.Running = True
             Try
-                Await _forexe.DownloadListaAsync()
+                ' The last imported statement's date stops the walk through the inbox.
+                ' Read through the same re-login net as the rest of the shell; if that
+                ' read fails, the robot takes the whole inbox (slower, but correct).
+                extrase = Await _forexe.DownloadExtraseAsync(
+                    Function(ct) WithReauth(Of Date?)(Function() _apiClient.GetUltimaDataExtrasAsync(ct)))
             Finally
                 busyBar.Running = False
             End Try
+
+            ' Nothing = the robot did not start, or it failed. LastFailure is empty only
+            ' when the operator gave up themselves -- no box for that.
+            If extrase Is Nothing Then
+                ShowForexeFailure("Extrase de cont")
+                Return
+            End If
+            If extrase.Count = 0 Then
+                KBotMessage.Show(Me, "Nu există extrase noi de descărcat.", "Extrase de cont",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+
+            Await ImportaExtraseAsync(extrase)
         Catch ex As Exception
-            ' Frontieră de UI (async Sub): nu poate rearunca — logăm și spunem de ce.
+            ' UI boundary (async Sub): cannot re-throw -- log it and say why.
             GlobalErrorLog.Write("MainForm.tree_FooterLeftIconClicked", ex)
-            MessageBox.Show(Me, "Descărcarea listei de angajamente a eșuat: " & ex.Message,
-                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            KBotMessage.Show(Me, "Descărcarea extraselor de cont a eșuat: " & ex.Message,
+                            "Extrase de cont", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' The statements' second step: the downloaded package goes to
+    ''' <c>/api/forexe/extrase/import</c>, and the server reads the XML and writes the
+    ''' tables. Its warnings (missing nomenclatoare) are SHOWN, not swallowed: without
+    ''' those lookups every account header stays without a unit, and that has to be seen
+    ''' now rather than months later.
+    ''' </summary>
+    Private Async Function ImportaExtraseAsync(extrase As List(Of ExtrasDescarcat)) As Task
+        Try
+            Dim pentruServer As New List(Of ExtrasPentruImport)()
+            For Each x As ExtrasDescarcat In extrase
+                pentruServer.Add(New ExtrasPentruImport() With {
+                    .PdfFisier = x.PdfFisier,
+                    .DataFisier = x.DataFisier,
+                    .XmlContent = x.XmlContent,
+                    .CaleLocala = x.CaleLocala
+                })
+            Next
+
+            Dim rezultat As ImportExtraseRezultat
+            busyBar.Running = True
+            Try
+                rezultat = Await WithReauth(Of ImportExtraseRezultat)(
+                    Function() _apiClient.ImportaExtraseAsync(pentruServer, CancellationToken.None))
+            Finally
+                busyBar.Running = False
+            End Try
+
+            Dim mesaj As New Text.StringBuilder()
+            mesaj.AppendLine($"Extrase descărcate: {extrase.Count}.")
+            mesaj.AppendLine($"Importate: {rezultat.Importate} · sărite (deja cunoscute): {rezultat.Sarite}.")
+            mesaj.AppendLine($"Operațiuni scrise: {rezultat.Randuri}.")
+            Dim iconita As MessageBoxIcon = MessageBoxIcon.Information
+            If rezultat.Avertismente.Count > 0 Then
+                iconita = MessageBoxIcon.Warning
+                mesaj.AppendLine()
+                mesaj.AppendLine("Avertismente de la server:")
+                For Each a As String In rezultat.Avertismente
+                    mesaj.AppendLine(" - " & a)
+                Next
+            End If
+            KBotMessage.Show(Me, mesaj.ToString(), "Extrase de cont",
+                            MessageBoxButtons.OK, iconita)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ImportaExtraseAsync", ex)
+            KBotMessage.Show(Me,
+                "Importul extraselor a eșuat: " & ex.Message & Environment.NewLine &
+                "PDF-urile au rămas pe disc — o nouă apăsare reia doar ce lipsește.",
+                "Extrase de cont", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The RIGHT icon of the tree footer (slice 0057) = refresh the angajamente list
+    ''' from FOREXE.
+    ''' </summary>
+    ''' <remarks>
+    ''' The rule the operator asked for: an angajament the server already has is LEFT
+    ''' ALONE -- neither Descriere nor Stare is touched; one that is missing is added
+    ''' empty (its header only, no indicatori / receptii / plati) and only then shows up
+    ''' in the tree. Downloading it whole stays the right icon of the NODE.
+    '''
+    ''' The figures come from the server; they are not counted here. The tree shows one
+    ''' period only (a year + an SS), so an angajament from another period would look new
+    ''' to it.
+    ''' </remarks>
+    Private Async Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
+        Try
+            Dim mapate As List(Of Angajament)
+            busyBar.Running = True
+            Try
+                mapate = Await _forexe.DownloadListaAsync()
+            Finally
+                busyBar.Running = False
+            End Try
+
+            If mapate Is Nothing Then
+                ShowForexeFailure("Listă angajamente")
+                Return
+            End If
+
+            ' With no DbName (no login -- possible only in the Debug harness) we cannot
+            ' aim at the unit's database. The list was saved locally by the coordinator
+            ' either way.
+            If String.IsNullOrEmpty(_session.DbName) Then
+                KBotMessage.Show(Me,
+                    "Lista a fost descărcată și salvată local, dar nu poate fi trimisă pe server: " &
+                    "sesiunea nu are baza unității (necesită login).",
+                    "Listă angajamente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+
+            Dim rezultat As AngajamenteAdaugate
+            busyBar.Running = True
+            Try
+                rezultat = Await WithReauth(Of AngajamenteAdaugate)(
+                    Function() _apiClient.AdaugaAngajamenteNoiAsync(_session.DbName, mapate,
+                                                                    CancellationToken.None))
+            Finally
+                busyBar.Running = False
+            End Try
+
+            ' The tree is re-read ONLY when something was written: a reload clears the
+            ' selection and drops the operator back on «sumar», which is pointless when no
+            ' new angajament appeared.
+            If rezultat.Inserate > 0 Then Await LoadTreeAsync()
+
+            KBotMessage.Show(Me,
+                $"Angajamente în FOREXE: {rezultat.Candidate}." & Environment.NewLine &
+                $"Adăugate acum: {rezultat.Inserate} · deja existente (neatinse): {rezultat.Existente}.",
+                "Listă angajamente", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        Catch ex As Exception
+            ' UI boundary (async Sub): cannot re-throw -- log it and say why.
+            GlobalErrorLog.Write("MainForm.tree_FooterRightIconClicked", ex)
+            KBotMessage.Show(Me, "Actualizarea listei de angajamente a eșuat: " & ex.Message,
+                            "Listă angajamente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Shows why a FOREXE intent came back empty — but ONLY when it was a failure.
+    ''' LastFailure stays empty when the operator cancelled it themselves (closed the
+    ''' certificate dialog, pressed Cancel), and a box telling them that back would
+    ''' be noise.
+    ''' </summary>
+    Private Sub ShowForexeFailure(titlu As String)
+        Try
+            Dim motiv As String = _forexe.LastFailure
+            If String.IsNullOrWhiteSpace(motiv) Then Return
+            KBotMessage.Show(Me, motiv, titlu, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ShowForexeFailure", ex)
         End Try
     End Sub
 
@@ -1353,7 +1513,7 @@ Public Class KBOT
             Await DuLaIngestieAsync(cod, pachet)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.tree_RightIconClicked", ex)
-            MessageBox.Show(Me, "Descărcarea angajamentului a eșuat: " & ex.Message,
+            KBotMessage.Show(Me, "Descărcarea angajamentului a eșuat: " & ex.Message,
                             "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
@@ -1377,6 +1537,30 @@ Public Class KBOT
     ''' </summary>
     Private Async Function DuLaIngestieAsync(cod As String, pachet As PrelucrareRezultat) As Task
         Try
+            ' EMPTY PACKAGE > THE SERVER IS NOT TOUCHED (operator, 08.09.2026).
+            '
+            ' A package without a single row has nothing to ask the server: the proposal would
+            ' run every step over nothing and come back empty, and the operator would get either
+            ' an association window with no lines or the server's error for a request it had no
+            ' reason to receive. Say it plainly, here, and stop.
+            '
+            ' ROWS are counted, not tables: the workflow returns its five tables even when all
+            ' of them are empty, so `Tabele.Count` would be 5 for a package with nothing in it.
+            ' Same arithmetic as `total` in `ForexeController.DownloadNodeAsync`.
+            Dim randuri As Integer = 0
+            If pachet IsNot Nothing AndAlso pachet.Tabele IsNot Nothing Then
+                randuri = pachet.Tabele.Values.Sum(Function(t) If(t Is Nothing, 0, t.Count))
+            End If
+            If randuri = 0 Then
+                KBotMessage.Show(Me,
+                    $"Pachetul descărcat pentru «{cod}» e gol: FOREXE n-a întors niciun rând." &
+                    Environment.NewLine &
+                    "Nu s-a trimis nimic pe server. Verificați dacă angajamentul chiar are date " &
+                    "în FOREXE și reluați descărcarea.",
+                    "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+
             ' Alegerile de unitate se ADUNĂ aici, nu în coordonator: aceeași listă merge și în
             ' faza a doua, fiindcă bifa «nu mă mai întreba» s-a derulat înapoi cu propunerea.
             Dim alegeri As New List(Of AlegereUnitate)()
@@ -1411,7 +1595,7 @@ Public Class KBOT
             _activeView?.SetContext(_currentInfo)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DuLaIngestieAsync", ex)
-            MessageBox.Show(Me, "Ingestia descărcării a eșuat: " & ex.Message & Environment.NewLine &
+            KBotMessage.Show(Me, "Ingestia descărcării a eșuat: " & ex.Message & Environment.NewLine &
                             "Pachetul a rămas în «WorkflowResults».",
                             "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
@@ -1467,7 +1651,7 @@ Public Class KBOT
         Catch ex As Exception
             ' Frontieră de UI (async Sub): nu poate rearunca — logăm și spunem de ce.
             GlobalErrorLog.Write("MainForm.btnConectare_Click", ex)
-            MessageBox.Show(Me, "Conectarea la FOREXE a eșuat: " & ex.Message, "FOREXE",
+            KBotMessage.Show(Me, "Conectarea la FOREXE a eșuat: " & ex.Message, "FOREXE",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
@@ -1556,7 +1740,7 @@ Public Class KBOT
 
             ' Guard: fără DbName (populat la login) nu putem ținti baza unității.
             If String.IsNullOrEmpty(_session.DbName) Then
-                MessageBox.Show(Me,
+                KBotMessage.Show(Me,
                     "Lista a fost descărcată și salvată local, dar nu poate fi trimisă pe server: " &
                     "sesiunea nu are baza unității (necesită login).",
                     "Sincronizare", MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -1565,7 +1749,7 @@ Public Class KBOT
 
             ' Upsert-ul e HTTP, nu robot: rezultatul lui se spune operatorului, nu consolei FOREXE.
             Dim resp As String = Await WithReauth(Function() _apiClient.UpsertAngajamenteAsync(_session.DbName, mapate, _cts.Token))
-            MessageBox.Show(Me,
+            KBotMessage.Show(Me,
                 $"Sincronizare reușită: {mapate.Count} angajamente trimise în «{_session.DbName}».{Environment.NewLine}{resp}",
                 "Sincronizare", MessageBoxButtons.OK, MessageBoxIcon.Information)
         Catch ex As Exception
@@ -1581,7 +1765,7 @@ Public Class KBOT
     Private Sub BtnSort_Click(sender As Object, e As EventArgs) Handles btnSort.Click
         Try
             ' TODO felie: sortarea arborelui (Access btnSort / m_SortTree).
-            MessageBox.Show(Me, "În lucru.", "Sortare", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            KBotMessage.Show(Me, "În lucru.", "Sortare", MessageBoxButtons.OK, MessageBoxIcon.Information)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.btnSort_Click", ex)
         End Try
@@ -1765,7 +1949,7 @@ Public Class KBOT
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.MeniuOptiuni_ItemClicked", ex)
-            MessageBox.Show(Me, "Comanda nu a putut fi executată: " & ex.Message, "K-BOT",
+            KBotMessage.Show(Me, "Comanda nu a putut fi executată: " & ex.Message, "K-BOT",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub

@@ -426,7 +426,7 @@ Public Class RezervariView
     ''' that does not supply one) the operator is told -- it is not swallowed.</summary>
     Private Sub CereComanda(comanda As DdfComanda)
         If _executaComanda Is Nothing Then
-            MessageBox.Show(Me, "Editorul de documente de fundamentare nu este disponibil în acest context.",
+            KBotMessage.Show(Me, "Editorul de documente de fundamentare nu este disponibil în acest context.",
                             "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If

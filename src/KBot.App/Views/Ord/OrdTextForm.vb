@@ -50,7 +50,7 @@ Public Class OrdTextForm
     Private Sub BtnOk_Click(sender As Object, e As EventArgs) Handles btnOk.Click
         Try
             If Textul = "" Then
-                MessageBox.Show(Me, "Scrieți textul documentului justificativ.",
+                KBotMessage.Show(Me, "Scrieți textul documentului justificativ.",
                                 "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 ActiveControl = txtDoc
                 Return

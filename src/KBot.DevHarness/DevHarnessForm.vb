@@ -230,7 +230,7 @@ Public NotInheritable Class DevHarnessForm
             ' SINK TERMINAL: runlog indisponibil; eroarea principală e deja în harness_errors.log.
             Trace.WriteLine("HandleUiError: scrierea în runlog a eșuat pentru " & source & ": " & traceEx.Message)
         End Try
-        MessageBox.Show(Me, ex.Message, "K-BOT — eroare (" & source & ")", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        KBotMessage.Show(Me, ex.Message, "K-BOT — eroare (" & source & ")", MessageBoxButtons.OK, MessageBoxIcon.Error)
     End Sub
 
     ' ---------- run loop ----------
@@ -242,7 +242,7 @@ Public NotInheritable Class DevHarnessForm
             _runLog = New RunLogger(logPath)
         Catch ex As Exception
             GlobalErrorLog.Write("RunTestsAsync.OpenLog", ex)
-            MessageBox.Show(Me,
+            KBotMessage.Show(Me,
                 "Nu pot crea fișierul de rezultate:" & Environment.NewLine & logPath & Environment.NewLine & Environment.NewLine &
                 ex.Message & Environment.NewLine & Environment.NewLine &
                 "Rularea NU pornește (rezultatele trebuie scrise în fișier). Verifică drepturile de scriere pe directorul de instalare.",
@@ -340,7 +340,7 @@ Public NotInheritable Class DevHarnessForm
         Dim kind As String = If(test.IsDestructive, "DESTRUCTIVE", "LIVE")
         Dim msg As String = "Testul '" & test.Name & "' este " & kind & "." & Environment.NewLine &
                             "Yes = rulează,  No = sari peste,  Cancel = oprește rularea."
-        Return MessageBox.Show(Me, msg, "Confirmare test " & kind, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning)
+        Return KBotMessage.Show(Me, msg, "Confirmare test " & kind, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning)
     End Function
 
     Private Sub SetRunningState(running As Boolean)

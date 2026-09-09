@@ -186,10 +186,15 @@ Public Module LogFileLoader
     Private Function BuildParsers(fileDate As Date) As List(Of ILogEntryParser)
         ' Ordinea contează: cele cu antet strict înaintea celor permisive. FallbackParser NU e în
         ' listă — ar accepta orice linie și ar face inutilă orice alegere.
+        ' OperatorLogParser sits BEFORE AdobeHostParser: both start with the same timestamp
+        ' followed by two spaces, and the Adobe one takes whatever comes after -- so placed
+        ' first it would swallow every operator-message line and lose its level and source.
+        ' The strict one before the permissive one, as everywhere else in this list.
         Return New List(Of ILogEntryParser) From {
             New HarnessErrorParser(),
             New ApiServerParser(),
             New TreeLoggerParser(fileDate),
+            New OperatorLogParser(),
             New AdobeHostParser(),
             New RunLogParser()}
     End Function
@@ -212,6 +217,8 @@ Public Module LogFileLoader
             wanted = "HarnessError"
         ElseIf baseName = "adobe_preview.log" Then
             wanted = "AdobeHost"
+        ElseIf baseName = OperatorLog.FileNameOnly Then
+            wanted = "OperatorLog"
         ElseIf baseName.StartsWith("api_", StringComparison.Ordinal) Then
             wanted = "ApiServer"
         ElseIf baseName.StartsWith("test_", StringComparison.Ordinal) Then

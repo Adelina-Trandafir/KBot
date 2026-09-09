@@ -143,7 +143,7 @@ Public Class ForexeConsoleForm
             _controller?.Cancel()
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeConsoleForm.btnAnulare_Click", ex)
-            MessageBox.Show(Me, "Anularea nu a putut fi cerută: " & ex.Message, "Consolă FOREXE",
+            KBotMessage.Show(Me, "Anularea nu a putut fi cerută: " & ex.Message, "Consolă FOREXE",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
@@ -157,7 +157,7 @@ Public Class ForexeConsoleForm
         Catch ex As Exception
             ' Frontieră de UI (async Sub): nu poate rearunca — logăm și spunem de ce.
             GlobalErrorLog.Write("ForexeConsoleForm.btnAfiseazaBrowser_Click", ex)
-            MessageBox.Show(Me, "Browserul nu a putut fi adus în față: " & ex.Message, "Consolă FOREXE",
+            KBotMessage.Show(Me, "Browserul nu a putut fi adus în față: " & ex.Message, "Consolă FOREXE",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
@@ -170,14 +170,14 @@ Public Class ForexeConsoleForm
         Try
             If _controller Is Nothing Then Return
             If Not _controller.IsConnected Then
-                MessageBox.Show(Me, "Recorderul are nevoie de o sesiune FOREXE activă. Conectează-te întâi.",
+                KBotMessage.Show(Me, "Recorderul are nevoie de o sesiune FOREXE activă. Conectează-te întâi.",
                                 "Consolă FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
             _controller.ShowRecorder()
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeConsoleForm.btnRecorder_Click", ex)
-            MessageBox.Show(Me, "Recorderul nu a putut fi deschis: " & ex.Message, "Consolă FOREXE",
+            KBotMessage.Show(Me, "Recorderul nu a putut fi deschis: " & ex.Message, "Consolă FOREXE",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
@@ -185,14 +185,14 @@ Public Class ForexeConsoleForm
     Private Sub BtnAfiseazaLog_Click(sender As Object, e As EventArgs) Handles btnAfiseazaLog.Click
         Try
             If String.IsNullOrEmpty(_caleJurnal) OrElse Not File.Exists(_caleJurnal) Then
-                MessageBox.Show(Me, "Fișierul de jurnal nu există (încă).", "Consolă FOREXE",
+                KBotMessage.Show(Me, "Fișierul de jurnal nu există (încă).", "Consolă FOREXE",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
             Process.Start(New ProcessStartInfo(_caleJurnal) With {.UseShellExecute = True})
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeConsoleForm.btnAfiseazaLog_Click", ex)
-            MessageBox.Show(Me, "Jurnalul nu a putut fi deschis: " & ex.Message, "Consolă FOREXE",
+            KBotMessage.Show(Me, "Jurnalul nu a putut fi deschis: " & ex.Message, "Consolă FOREXE",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub

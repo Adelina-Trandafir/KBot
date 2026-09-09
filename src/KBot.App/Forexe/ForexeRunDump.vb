@@ -8,6 +8,7 @@ Imports System.Text.Json
 Imports System.Text.Unicode
 Imports GeneralClasses
 Imports KBot.Common
+Imports KBot.Domain      ' TabeleJson - the CelulaTabel -> JSON bridge (decision D-N).
 Imports KBot.Forexe
 
 ''' <summary>
@@ -138,7 +139,12 @@ Public NotInheritable Class ForexeRunDump
                 ' could not turn it into a table, which is the whole point of keeping both.
                 Write("raw.json", result.Data)
                 If result.Tables IsNot Nothing AndAlso result.Tables.Count > 0 Then
-                    Write("tables.json", result.Tables)
+                    ' THROUGH THE BRIDGE, never the tables directly: a cell is a `CelulaTabel`,
+                    ' and System.Text.Json would read its public properties - `Text` included,
+                    ' which THROWS on a nested cell (ListaReceptii.Detaliu) by design. That is
+                    ' what killed this dump. `TabeleJson.Catre` writes the same data as a JSON
+                    ' tree: string, array or object, following the cell's real shape.
+                    Write("tables.json", TabeleJson.Catre(result.Tables))
                 End If
             End If
             If mapped IsNot Nothing Then Write("mapped.json", mapped)

@@ -35,7 +35,7 @@ Friend Module Program
             ' Same one-off warning as KBot.App: MigratorForm inherits KBotThemedForm, so it is
             ' laid out against Calibri too and drifts the same way if the face is missing.
             If KBotFonts.IsFallback Then
-                MessageBox.Show(KBotFonts.MissingFontMessage, KBotFonts.MissingFontCaption,
+                KBotMessage.Show(KBotFonts.MissingFontMessage, KBotFonts.MissingFontCaption,
                                 MessageBoxButtons.OK, MessageBoxIcon.Warning)
             End If
 
@@ -84,7 +84,7 @@ Friend Module Program
     ''' </summary>
     Private Sub ShowFatal(ex As Exception)
         Try
-            MessageBox.Show(
+            KBotMessage.Show(
                 "A apărut o eroare neașteptată." & Environment.NewLine & Environment.NewLine &
                 If(ex IsNot Nothing, ex.Message, "Eroare necunoscută.") & Environment.NewLine & Environment.NewLine &
                 "Detaliul complet e în " & LogPaths.Combine(GlobalErrorLog.FileNameOnly) & ".",

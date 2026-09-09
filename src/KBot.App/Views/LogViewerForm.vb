@@ -674,7 +674,7 @@ Public Class LogViewerForm
             lblStare.Text = "Copiat în clipboard."
         Catch ex As Exception
             GlobalErrorLog.Write("LogViewerForm.btnCopiaza_Click", ex)
-            MessageBox.Show(Me, "Copierea nu a reușit: " & ex.Message, "Jurnale",
+            KBotMessage.Show(Me, "Copierea nu a reușit: " & ex.Message, "Jurnale",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
@@ -712,7 +712,7 @@ Public Class LogViewerForm
             End Using
         Catch ex As Exception
             GlobalErrorLog.Write("LogViewerForm.btnExporta_Click", ex)
-            MessageBox.Show(Me, "Exportul nu a reușit: " & ex.Message, "Jurnale",
+            KBotMessage.Show(Me, "Exportul nu a reușit: " & ex.Message, "Jurnale",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
@@ -723,7 +723,7 @@ Public Class LogViewerForm
             Diagnostics.Process.Start("explorer.exe", """" & dir & """")
         Catch ex As Exception
             GlobalErrorLog.Write("LogViewerForm.btnDeschideDosar_Click", ex)
-            MessageBox.Show(Me, "Dosarul nu s-a putut deschide: " & ex.Message, "Jurnale",
+            KBotMessage.Show(Me, "Dosarul nu s-a putut deschide: " & ex.Message, "Jurnale",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
@@ -750,7 +750,7 @@ Public Class LogViewerForm
             Dim ignorat = IncarcaSelectiaAsync
         Catch ex As Exception
             GlobalErrorLog.Write("LogViewerForm.btnGoleste_Click", ex)
-            MessageBox.Show(Me, "Golirea nu a reușit: " & ex.Message, "Jurnale",
+            KBotMessage.Show(Me, "Golirea nu a reușit: " & ex.Message, "Jurnale",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub

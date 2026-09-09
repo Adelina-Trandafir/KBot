@@ -12,6 +12,9 @@ Partial Public Class WorkflowExecutor
             _logger.LogInfo($"Pornesc execuția pașilor pentru: {workflow.Name}")
             _currentWorkflow = workflow
             _currentActionIndex = 0
+            ' This run's own verdict: a stop left over from the previous workflow must not
+            ' be read as this one's.
+            _exitMessage = Nothing
 
             ' VERIFICARE CRITICĂ: Dacă browserul nu e pornit, îl pornim acum (fallback)
             If _page Is Nothing Then
@@ -51,6 +54,13 @@ Partial Public Class WorkflowExecutor
         Catch ex As WorkflowExitException
             _progressCallback?(workflow.Actions.Count, workflow.Actions.Count)
             _logger.LogWarning($"Execuție oprită: {ex.Message}")
+            ' Remembered, not swallowed (slice 0057). The exception still does NOT travel
+            ' out of here -- an <Exit> is a deliberate stop, not a crash, and the browser
+            ' must stay open behind it -- but the run is no longer indistinguishable from
+            ' one that finished. ForexeRunner reads this and reports a FAILED job, so the
+            ' shell stops instead of carrying an empty package on to the server.
+            _exitMessage = If(String.IsNullOrWhiteSpace(ex.Message),
+                              "Fluxul s-a oprit singur, fără mesaj.", ex.Message)
         Catch ex As Exception
             errorOccurred = True
             errorException = ex

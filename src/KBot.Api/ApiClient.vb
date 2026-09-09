@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.Net.Http
@@ -57,50 +57,213 @@ Public Class ApiClient
             If rows Is Nothing Then Throw New ArgumentNullException(NameOf(rows))
 
             Dim req As New UpsertAngajamenteRequest() With {.db_name = dbName}
-            For Each a In rows
-                req.rows.Add(New AngajamentRow() With {
-                    .Cod = a.CodAngajament,
-                    .Descriere = a.Descriere,
-                    .Stare = a.Stare
-                })
-            Next
-
-            Dim body As String = JsonSerializer.Serialize(req, _json)
-
-            Dim maxAttempts As Integer = Math.Max(1, _options.MaxRetries)
-            Dim attempt As Integer = 0
-            Do
-                attempt += 1
-                ' VB.NET nu permite Await într-un Catch; marcăm reîncercarea și așteptăm după.
-                Dim retryDelay As TimeSpan = TimeSpan.Zero
-                Try
-                    Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/angajamente/upsert")
-                        msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
-                        msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
-                        Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
-                            Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
-                            If Not resp.IsSuccessStatusCode Then
-                                ' ApiException NU e prinsă de catch-urile tranzitorii de mai jos:
-                                ' un 401 iese direct spre stratul App (re-login §4.9), fără retry aici.
-                                Throw BuildApiException(respText, "upsert angajamente", CInt(resp.StatusCode))
-                            End If
-                            Return respText
-                        End Using
-                    End Using
-                Catch ex As HttpRequestException When attempt < maxAttempts
-                    retryDelay = TimeSpan.FromSeconds(2 * attempt)
-                Catch ex As TaskCanceledException When (Not ct.IsCancellationRequested) AndAlso attempt < maxAttempts
-                    ' Timeout tranzitoriu (nu anulare de la apelant) — reîncercăm.
-                    retryDelay = TimeSpan.FromSeconds(2 * attempt)
-                End Try
-                Await Task.Delay(retryDelay, ct).ConfigureAwait(False)
-            Loop
+            UmpleRandurile(req, rows)
+            Return Await PostUpsertAngajamenteAsync(req, ct).ConfigureAwait(False)
         Catch ex As ApiException
             ' Excepție tipată, cu sens, tratată de apelant (ex. 401 -> WithReauth):
             ' control-flow, nu eroare — rearuncăm fără să poluăm sink-ul.
             Throw
         Catch ex As Exception
             GlobalErrorLog.Write("ApiClient.UpsertAngajamenteAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Same route with `doar_noi = true` (slice 0057): existing codes are left ALONE and
+    ''' only the missing ones are inserted. The two counts come back from the server,
+    ''' which is the only side that can produce them -- see AngajamenteAdaugate.
+    ''' </summary>
+    Public Async Function AdaugaAngajamenteNoiAsync(dbName As String,
+                                                    rows As IReadOnlyList(Of Angajament),
+                                                    ct As CancellationToken) As Task(Of AngajamenteAdaugate) Implements IApiClient.AdaugaAngajamenteNoiAsync
+        Try
+            EnsureConfigured()
+            If String.IsNullOrEmpty(dbName) Then Throw New ArgumentException("dbName gol.", NameOf(dbName))
+            If rows Is Nothing Then Throw New ArgumentNullException(NameOf(rows))
+
+            Dim req As New UpsertAngajamenteRequest() With {.db_name = dbName, .doar_noi = True}
+            UmpleRandurile(req, rows)
+
+            Dim respText As String = Await PostUpsertAngajamenteAsync(req, ct).ConfigureAwait(False)
+            Dim payload As UpsertAngajamenteResponse =
+                JsonSerializer.Deserialize(Of UpsertAngajamenteResponse)(respText, _json)
+            If payload Is Nothing Then
+                ' A 2xx whose body is not our object is a broken contract, not an empty
+                ' result: the write DID happen and we cannot say how much of it. Loud.
+                Throw New InvalidOperationException(
+                    "Raspuns neasteptat de la upsert-ul de angajamente (corp JSON gol).")
+            End If
+
+            Return New AngajamenteAdaugate() With {
+                .Primite = payload.received,
+                .Candidate = payload.candidates,
+                .Inserate = payload.inserate,
+                .Existente = payload.existente
+            }
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.AdaugaAngajamenteNoiAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Domain rows -> wire rows. Shared by both upsert entry points so the body they send
+    ' cannot drift apart; the route reads Cod / Descriere / Stare and nothing else.
+    Private Shared Sub UmpleRandurile(req As UpsertAngajamenteRequest,
+                                      rows As IReadOnlyList(Of Angajament))
+        For Each a As Angajament In rows
+            req.rows.Add(New AngajamentRow() With {
+                .Cod = a.CodAngajament,
+                .Descriere = a.Descriere,
+                .Stare = a.Stare
+            })
+        Next
+    End Sub
+
+    ''' <summary>
+    ''' The POST itself, with the transient-retry loop both upsert entry points share.
+    ''' Returns the raw response body; a non-2xx throws ApiException, and a 401 travels
+    ''' straight out to WithReauth without being retried here.
+    ''' </summary>
+    Private Async Function PostUpsertAngajamenteAsync(req As UpsertAngajamenteRequest,
+                                                      ct As CancellationToken) As Task(Of String)
+        Dim body As String = JsonSerializer.Serialize(req, _json)
+
+        Dim maxAttempts As Integer = Math.Max(1, _options.MaxRetries)
+        Dim attempt As Integer = 0
+        Do
+            attempt += 1
+            ' VB.NET does not allow Await inside a Catch; mark the retry and wait after it.
+            Dim retryDelay As TimeSpan = TimeSpan.Zero
+            Try
+                Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/angajamente/upsert")
+                    msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                    msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                    Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                        Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                        If Not resp.IsSuccessStatusCode Then
+                            ' ApiException is NOT caught by the transient handlers below:
+                            ' a 401 goes straight to the App layer (re-login), no retry here.
+                            Throw BuildApiException(respText, "upsert angajamente", CInt(resp.StatusCode))
+                        End If
+                        Return respText
+                    End Using
+                End Using
+            Catch ex As HttpRequestException When attempt < maxAttempts
+                retryDelay = TimeSpan.FromSeconds(2 * attempt)
+            Catch ex As TaskCanceledException When (Not ct.IsCancellationRequested) AndAlso attempt < maxAttempts
+                ' Transient timeout (not a caller cancel) -- try again.
+                retryDelay = TimeSpan.FromSeconds(2 * attempt)
+            End Try
+            Await Task.Delay(retryDelay, ct).ConfigureAwait(False)
+        Loop
+    End Function
+
+    ''' <summary>
+    ''' The date of the newest statement already imported (slice 0057), or Nothing when
+    ''' there is none. The robot uses it as the point where it stops paging back through
+    ''' the FOREXE inbox; a Nothing simply means the first run walks the whole of it.
+    ''' </summary>
+    Public Async Function GetUltimaDataExtrasAsync(ct As CancellationToken) _
+        As Task(Of Date?) Implements IApiClient.GetUltimaDataExtrasAsync
+
+        Try
+            EnsureConfigured()
+            Using msg As New HttpRequestMessage(HttpMethod.Get, "/api/forexe/extrase/ultima")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea ultimului extras", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As UltimaDataExtrasResponse =
+                        JsonSerializer.Deserialize(Of UltimaDataExtrasResponse)(respText, _json)
+                    If payload Is Nothing OrElse String.IsNullOrWhiteSpace(payload.data_extras) Then
+                        Return Nothing
+                    End If
+
+                    ' ISO, invariant. A date we cannot read is NOT quietly turned into
+                    ' "no date": that would silently re-download the whole inbox and look
+                    ' like a slow day rather than a broken contract.
+                    Dim rezultat As Date
+                    If Not Date.TryParse(payload.data_extras,
+                                         Globalization.CultureInfo.InvariantCulture,
+                                         Globalization.DateTimeStyles.None, rezultat) Then
+                        Throw New InvalidOperationException(
+                            $"Data ultimului extras a sosit necitibilă: «{payload.data_extras}».")
+                    End If
+                    Return rezultat
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetUltimaDataExtrasAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Sends the downloaded SNM statements to /api/forexe/extrase/import (slice 0057).
+    ''' The server parses the XML and writes FX_Extrase_F / _H / FX_Extrase; the client
+    ''' only carries the three fields the Access robot carried, plus the local path.
+    ''' </summary>
+    Public Async Function ImportaExtraseAsync(extrase As IReadOnlyList(Of ExtrasPentruImport),
+                                              ct As CancellationToken) _
+        As Task(Of ImportExtraseRezultat) Implements IApiClient.ImportaExtraseAsync
+
+        Try
+            EnsureConfigured()
+            If extrase Is Nothing Then Throw New ArgumentNullException(NameOf(extrase))
+
+            Dim req As New ImportExtraseRequest()
+            For Each e As ExtrasPentruImport In extrase
+                req.extrase.Add(New ExtrasRow() With {
+                    .PdfFisier = e.PdfFisier,
+                    .DataFisier = e.DataFisier,
+                    .XmlContent = e.XmlContent,
+                    .CaleLocala = e.CaleLocala
+                })
+            Next
+            Dim body As String = JsonSerializer.Serialize(req, _json)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/extrase/import")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "importul extraselor de cont", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As ImportExtraseResponse =
+                        JsonSerializer.Deserialize(Of ImportExtraseResponse)(respText, _json)
+                    If payload Is Nothing Then
+                        ' A 2xx that is not our object means the write happened and we
+                        ' cannot say how much of it. Loud, never a made-up zero.
+                        Throw New InvalidOperationException(
+                            "Răspuns neașteptat de la importul extraselor (corp JSON gol).")
+                    End If
+
+                    Dim rezultat As New ImportExtraseRezultat() With {
+                        .Primite = payload.primite,
+                        .Importate = payload.importate,
+                        .Sarite = payload.sarite,
+                        .Randuri = payload.randuri
+                    }
+                    If payload.avertismente IsNot Nothing Then
+                        rezultat.Avertismente.AddRange(payload.avertismente)
+                    End If
+                    Return rezultat
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.ImportaExtraseAsync", ex)
             Throw
         End Try
     End Function
@@ -1638,14 +1801,41 @@ Public Class ApiClient
         Dim areIndicatori As Boolean = False
         If payload.are IsNot Nothing Then payload.are.TryGetValue("Indicatori", areIndicatori)
         raspuns.AreIndicatori = areIndicatori
-        If payload.scrise IsNot Nothing Then
-            For Each kvp In payload.scrise
-                raspuns.Scrise(kvp.Key) = kvp.Value
-            Next
-        End If
+        PuneScrise(payload.scrise, raspuns.Scrise)
         If payload.avertismente IsNot Nothing Then raspuns.Avertismente.AddRange(payload.avertismente)
         Return raspuns
     End Function
+
+    ''' <summary>
+    ''' Copies the save phase's «scrise» counters into the flat domain dictionary.
+    ''' </summary>
+    ''' <remarks>
+    ''' On the wire `scrise` has TWO shapes: steps 1-8 report one number per table, while
+    ''' step 4c reports `asocieri` as an OBJECT ({asociat, ignorat, stergere, reconstituit}).
+    ''' The object's keys are flattened into «asocieri.asociat» and friends, so the operator
+    ''' still sees the server's own figures rather than a retelling. Any other shape is
+    ''' skipped: a new counter nobody here knows about must not break a save that the server
+    ''' has already committed.
+    ''' </remarks>
+    Private Shared Sub PuneScrise(sursa As Dictionary(Of String, JsonElement),
+                                  tinta As Dictionary(Of String, Integer))
+        If sursa Is Nothing OrElse tinta Is Nothing Then Return
+        For Each kvp As KeyValuePair(Of String, JsonElement) In sursa
+            Select Case kvp.Value.ValueKind
+                Case JsonValueKind.Number
+                    Dim n As Integer
+                    If kvp.Value.TryGetInt32(n) Then tinta(kvp.Key) = n
+                Case JsonValueKind.Object
+                    For Each membru As JsonProperty In kvp.Value.EnumerateObject()
+                        Dim m As Integer
+                        If membru.Value.ValueKind = JsonValueKind.Number AndAlso
+                           membru.Value.TryGetInt32(m) Then
+                            tinta(kvp.Key & "." & membru.Name) = m
+                        End If
+                    Next
+            End Select
+        Next
+    End Sub
 
     ' Corpul de 409 -> POCO-ul de domeniu, sau Nothing dacă nu e întrebarea noastră
     ' (alt cod-motiv, corp non-JSON, listă goală). Nothing lasă apelantul să arunce

@@ -244,10 +244,10 @@ Partial Class KBOT
         tree.FooterCaptionFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCaptionForeColor = SystemColors.ActiveCaptionText
         tree.FooterHeight = 30
-        tree.FooterLeftIcon = My.Resources.Resources.database
-        tree.FooterLeftIconTooltip = "Sursa datelor: unitatea și perioada din care s-a încărcat arborele."
+        tree.FooterLeftIcon = My.Resources.Resources.credit_card
+        tree.FooterLeftIconTooltip = "Descarcă extrasele de cont (SNM) din FOREXE." & vbLf & "Se conectează întâi, dacă nu există sesiune."
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
-        tree.FooterRightIconTooltip = "Actualizează lista de angajamente din FOREXE." & vbLf & "Se conectează întâi, dacă nu există sesiune."
+        tree.FooterRightIconTooltip = "Actualizează lista de angajamente din FOREXE." & vbLf & "Cele noi se adaugă; cele existente rămân neatinse."
         tree.FooterSeparatorColor = Color.Gainsboro
         tree.FooterSeparatorWidth = 2
         tree.FooterTextAlign = ContentAlignment.MiddleRight

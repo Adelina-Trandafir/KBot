@@ -12,13 +12,13 @@ Partial Public Class AdvancedTreeControl
         Dim model As TooltipTableModel = Nothing
         Dim err As String = Nothing
         If Not TooltipTableParser.TryParse(xml, model, err) Then
-            MessageBox.Show("TryParse FAIL: " & err, "TT_MeasureDump")
+            KBotMessage.Show("TryParse FAIL: " & err, "TT_MeasureDump")
             Return
         End If
 
         Dim p As New TooltipPopup()
         Dim forceHandle = p.Handle      ' MeasureTable folosește Me.CreateGraphics
-        MessageBox.Show(p.DebugMeasure(model), "TT_MeasureDump - dimensiuni")
+        KBotMessage.Show(p.DebugMeasure(model), "TT_MeasureDump - dimensiuni")
         p.Dispose()
     End Sub
 

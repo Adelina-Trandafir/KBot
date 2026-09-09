@@ -82,7 +82,7 @@ Public Class MigratorForm
     'Private Async Sub MigratorForm_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
     '    Try
     '        If _busy Then
-    '            Dim answer = MessageBox.Show(
+    '            Dim answer = KBotMessage.Show(
     '                "O operație este în curs. Închiderea o oprește și derulează tranzacția înapoi." &
     '                Environment.NewLine & "Închideți oricum?",
     '                "Migrare", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
@@ -429,7 +429,7 @@ Public Class MigratorForm
     ''' </remarks>
     Private Async Function OfferBuildStructureAsync(request As TransferRequest) As Task
         Dim dc = request.TargetDatabase
-        Dim answer = MessageBox.Show(
+        Dim answer = KBotMessage.Show(
             $"Baza «{dc}» există, dar nu are niciun tabel." & Environment.NewLine & Environment.NewLine &
             "Structura poate fi construită acum după «" & request.TemplateDatabase & "», " &
             "pe serverul MariaDB de mai sus." &
@@ -589,7 +589,7 @@ Public Class MigratorForm
                 Return
             End If
 
-            Dim confirmation = MessageBox.Show(
+            Dim confirmation = KBotMessage.Show(
                 $"Se scriu {request.SelectedTables.Count} tabele pentru {request.Units.Count} unități " &
                 $"în baza «{request.TargetDatabase}»." & Environment.NewLine & Environment.NewLine &
                 "Totul într-o singură tranzacție: orice eșec derulează tot înapoi." & Environment.NewLine &
@@ -658,7 +658,7 @@ Public Class MigratorForm
 
         If result.Committed Then
             Say($"Transfer încheiat cu COMMIT. Jurnalul: {result.JournalFolder}")
-            MessageBox.Show(
+            KBotMessage.Show(
                 $"Transfer încheiat: {result.TotalWritten} rânduri scrise." & Environment.NewLine &
                 AutoIncrementSummary(autoIncrement) &
                 Environment.NewLine & "Jurnalul rulării: " & result.JournalFolder,
@@ -919,13 +919,13 @@ Public Class MigratorForm
 
     Private Sub Warn(message As String)
         Say(message.Replace(Environment.NewLine, " "))
-        MessageBox.Show(message, "Migrare", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        KBotMessage.Show(message, "Migrare", MessageBoxButtons.OK, MessageBoxIcon.Warning)
     End Sub
 
     Private Async Sub MigratorForm_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
         Try
             If _busy Then
-                Dim answer = MessageBox.Show(
+                Dim answer = KBotMessage.Show(
                     "O operație este în curs. Închiderea o oprește și derulează tranzacția înapoi." &
                     Environment.NewLine & "Închideți oricum?",
                     "Migrare", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)

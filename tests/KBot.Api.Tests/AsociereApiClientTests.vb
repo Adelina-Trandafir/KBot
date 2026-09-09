@@ -258,4 +258,32 @@ Public Class AsociereApiClientTests
         Assert.Equal(PrelucrarePropunere.MotivStareModificata, ex.Reason)
         Assert.Contains("modificat", ex.Message)
     End Function
+
+    ' The save body is the ONE place where `scrise` is not flat: step 4c reports
+    ' `asocieri` as an object. Read as Dictionary(Of String, Integer) it threw
+    ' «Cannot get the value of a token type 'StartObject' as a number» AFTER the server
+    ' had already committed -- the operator saw a failed save that had, in fact, succeeded.
+    <Fact>
+    Public Async Function Salvarea_Citeste_Si_Contoarele_Imbricate_Din_Scrise() As Task
+        Dim h As New StubHandler() With {
+            .ResponseBody = "{""cod"": ""AAB37CNBK95"", ""faza"": ""salvare"", ""are"": {}," &
+                            """scrise"": {""FX_Angajamente"": 1, ""FX_Istoric"": 44," &
+                            """asocieri"": {""asociat"": 3, ""ignorat"": 1, ""stergere"": 0," &
+                            """reconstituit"": 2}, ""reconstituiri_nesigure"": 0}," &
+                            """avertismente"": []}"}
+        Dim r = Await NewClient(h).SalveazaAsociereaAsync(Pachet(), "a1b2c3", Decizii(),
+                                                          Nothing, CancellationToken.None)
+
+        Assert.Equal(PrelucrareStare.Salvat, r.Stare)
+        Assert.Equal(1, r.Scrise("FX_Angajamente"))
+        Assert.Equal(44, r.Scrise("FX_Istoric"))
+        ' The object's members arrive flattened, one key each, with the server's figures.
+        Assert.Equal(3, r.Scrise("asocieri.asociat"))
+        Assert.Equal(1, r.Scrise("asocieri.ignorat"))
+        Assert.Equal(0, r.Scrise("asocieri.stergere"))
+        Assert.Equal(2, r.Scrise("asocieri.reconstituit"))
+        Assert.Equal(0, r.Scrise("reconstituiri_nesigure"))
+        ' The envelope key itself is NOT a count and must not be invented as one.
+        Assert.False(r.Scrise.ContainsKey("asocieri"))
+    End Function
 End Class

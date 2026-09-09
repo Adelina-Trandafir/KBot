@@ -43,7 +43,7 @@ Public Class CertificateSelectionForm
             Dim certs As List(Of X509Certificate2) = CertificateService.GetSmartcardCertificates()
 
             If certs.Count = 0 Then
-                MessageBox.Show("Nu a fost detectat niciun certificat pe Token/SmartCard." & vbCrLf &
+                KBotMessage.Show("Nu a fost detectat niciun certificat pe Token/SmartCard." & vbCrLf &
                                 "Te rog introdu token-ul și apasă OK pentru a reîncerca.",
                                 "Lipsă Token", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Else
@@ -53,7 +53,7 @@ Public Class CertificateSelectionForm
             End If
 
         Catch ex As Exception
-            MessageBox.Show("Eroare la citirea certificatelor: " & ex.Message, "Eroare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            KBotMessage.Show("Eroare la citirea certificatelor: " & ex.Message, "Eroare", MessageBoxButtons.OK, MessageBoxIcon.Error)
         Finally
             lstCertificates.EndUpdate()
         End Try
@@ -135,7 +135,7 @@ Public Class CertificateSelectionForm
     Private Sub btnSelect_Click(sender As Object, e As EventArgs) Handles btnSelect.Click
         Try
             If lstCertificates.SelectedIndex < 0 Then
-                MessageBox.Show("Te rog selectează un certificat din listă.", "Atenție", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                KBotMessage.Show("Te rog selectează un certificat din listă.", "Atenție", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
 
@@ -144,7 +144,7 @@ Public Class CertificateSelectionForm
             If Not _manualPin Then
                 Dim validation = CertificateService.ValidatePin(SelectedCertificate)
                 If Not validation.Success Then
-                    MessageBox.Show(validation.Message, "Eroare PIN", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    KBotMessage.Show(validation.Message, "Eroare PIN", MessageBoxButtons.OK, MessageBoxIcon.Error)
                     txtPin.Clear()
                     Return
                 End If

@@ -41,10 +41,10 @@ Partial Public Class WorkflowExecutor
         End If
 
         If action.ShowErrorMessage Then
-            MessageBox.Show($"{attributeValue}", "EROARE", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            KBotMessage.Show($"{attributeValue}", "EROARE", MessageBoxButtons.OK, MessageBoxIcon.Error)
             _logger.LogError($"Atribut '{resolvedAttribute}' pentru selector '{resolvedSelector}': {attributeValue}")
         ElseIf action.ShowNormalMessage Then
-            MessageBox.Show($"{attributeValue}", "INFORMATIE", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            KBotMessage.Show($"{attributeValue}", "INFORMATIE", MessageBoxButtons.OK, MessageBoxIcon.Information)
             _logger.LogInfo($"Atribut '{resolvedAttribute}' pentru selector '{resolvedSelector}': {attributeValue}")
         End If
     End Function

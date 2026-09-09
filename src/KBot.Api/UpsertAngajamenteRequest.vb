@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System.Collections.Generic
 
 ' DTO-uri de wire pentru POST /api/forexe/angajamente/upsert.
@@ -7,6 +7,13 @@ Imports System.Collections.Generic
 ' Descriere / Stare — trebuie să corespundă exact cheilor citite de ruta Python.
 Public NotInheritable Class UpsertAngajamenteRequest
     Public Property db_name As String
+    ' Felia 0057. False = upsert-ul dintotdeauna (inserare + reimprospatarea
+    ' Descriere/Stare la duplicat). True = ruta lasa in pace codurile care exista deja
+    ' si insereaza numai ce lipseste, apoi raspunde cu `inserate` / `existente`.
+    ' Se serializeaza mereu, si cand e False: ruta trateaza cheia absenta ca False,
+    ' deci corpul spune acelasi lucru fie ca o trimite fie ca nu, iar un corp complet
+    ' se citeste mai usor intr-un jurnal de retea.
+    Public Property doar_noi As Boolean
     Public Property rows As New List(Of AngajamentRow)()
 End Class
 
@@ -14,6 +21,19 @@ Public NotInheritable Class AngajamentRow
     Public Property Cod As String
     Public Property Descriere As String
     Public Property Stare As String
+End Class
+
+' The 200 body of the `doar_noi` upsert (slice 0057). `inserate` / `existente` are exact:
+' the route reads the existing codes inside the same transaction, so it can count them,
+' unlike `rowcount`, which under ON DUPLICATE KEY counts 1 per insert and 2 per update and
+' cannot be taken apart again. The flat upsert answers with `rowcount` instead and never
+' with these two, so they stay Integer with a natural 0 default.
+Public NotInheritable Class UpsertAngajamenteResponse
+    Public Property status As String
+    Public Property received As Integer
+    Public Property candidates As Integer
+    Public Property inserate As Integer
+    Public Property existente As Integer
 End Class
 
 ' Wire DTO for GET /api/forexe/angajamente (list view). Property names match the
@@ -472,10 +492,18 @@ End Class
 ' The 200 body. `are` is the port of FX_Angajament_Are; while steps 3-8 are unported it
 ' carries only the Indicatori flag, so a missing key means "the step did not run" rather
 ' than "the step ran and found nothing".
+'
+' `scrise` IS NOT FLAT. Every step reports a row count, but step 4c (aplica_decizii)
+' reports `asocieri` as an OBJECT -- {asociat, ignorat, stergere, reconstituit} -- so a
+' Dictionary(Of String, Integer) blew up on the save phase with "Cannot get the value of
+' a token type 'StartObject' as a number". JsonElement takes both shapes; ApiClient
+' flattens the nested one into "asocieri.asociat" and friends. Only THIS response is
+' mixed: the propunere body drops `asocieri` (it is set after the rollback point) and
+' /api/forexe/asociere counts stay flat, so those two keep Integer.
 Public NotInheritable Class PostPrelucrareResponse
     Public Property cod As String
     Public Property are As New Dictionary(Of String, Boolean)()
-    Public Property scrise As New Dictionary(Of String, Integer)()
+    Public Property scrise As New Dictionary(Of String, Text.Json.JsonElement)()
     Public Property avertismente As New List(Of String)()
 End Class
 
@@ -656,4 +684,35 @@ Public NotInheritable Class PostAsociereResponse
     Public Property amprenta As String
     Public Property scrise As New Dictionary(Of String, Integer)()
     Public Property avertismente As New List(Of String)()
+End Class
+
+' Wire DTOs for the SNM statements (slice 0057). Property names ARE the JSON keys
+' (PropertyNamingPolicy = Nothing), and the four request ones are the SAME four the
+' Access robot pushed over the pipe -- PdfFisier / DataFisier / XmlContent -- plus the
+' local path, which only the file table records. Renaming any of them breaks the import.
+Public NotInheritable Class ImportExtraseRequest
+    Public Property extrase As New List(Of ExtrasRow)()
+End Class
+
+Public NotInheritable Class ExtrasRow
+    Public Property PdfFisier As String
+    Public Property DataFisier As String
+    Public Property XmlContent As String
+    Public Property CaleLocala As String
+End Class
+
+' The 200 body of the import.
+Public NotInheritable Class ImportExtraseResponse
+    Public Property primite As Integer
+    Public Property importate As Integer
+    Public Property sarite As Integer
+    Public Property randuri As Integer
+    Public Property avertismente As List(Of String)
+End Class
+
+' The 200 body of GET /api/forexe/extrase/ultima. `data_extras` is null when nothing has
+' been imported yet -- which is a legitimate answer, not an error: the first run walks
+' the whole FOREXE inbox.
+Public NotInheritable Class UltimaDataExtrasResponse
+    Public Property data_extras As String
 End Class

@@ -506,7 +506,7 @@ Public NotInheritable Class TreePlaygroundForm
 
             _log("export setări arbore → " & cale)
             lblInfo.Text = "Export scris în " & cale
-            MessageBox.Show(Me,
+            KBotMessage.Show(Me,
                             If(inClipboard,
                                "Setările au fost copiate în clipboard și scrise în:",
                                "Clipboard-ul nu a putut fi scris. Setările sunt în fișier:") &
@@ -514,7 +514,7 @@ Public NotInheritable Class TreePlaygroundForm
                             "Export setări arbore", MessageBoxButtons.OK, MessageBoxIcon.Information)
         Catch ex As Exception
             GlobalErrorLog.Write("TreePlaygroundForm.btnExport_Click", ex)
-            MessageBox.Show(Me, "Exportul a eșuat: " & ex.Message, "Export setări arbore",
+            KBotMessage.Show(Me, "Exportul a eșuat: " & ex.Message, "Export setări arbore",
                             MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub

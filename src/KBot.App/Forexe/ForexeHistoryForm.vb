@@ -99,7 +99,7 @@ Public Class ForexeHistoryForm
         Catch ex As Exception
             ' Frontieră publică de UI: logăm și spunem, nu lăsăm o listă pe jumătate fără motiv.
             GlobalErrorLog.Write("ForexeHistoryForm.Reincarca", ex)
-            MessageBox.Show(Me, "Istoricul nu s-a putut afișa: " & ex.Message, "Istoric FOREXE",
+            KBotMessage.Show(Me, "Istoricul nu s-a putut afișa: " & ex.Message, "Istoric FOREXE",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
@@ -219,13 +219,13 @@ Public Class ForexeHistoryForm
                 If sfd.ShowDialog(Me) <> DialogResult.OK Then Return
 
                 File.WriteAllText(sfd.FileName, ComponeExport(), New UTF8Encoding(True))
-                MessageBox.Show(Me, "Istoricul a fost scris în:" & Environment.NewLine & sfd.FileName,
+                KBotMessage.Show(Me, "Istoricul a fost scris în:" & Environment.NewLine & sfd.FileName,
                                 "Istoric FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Information)
             End Using
         Catch ex As Exception
             ' Frontieră de UI, dar cu I/O în spate: logăm detaliul și spunem operatorului de ce.
             GlobalErrorLog.Write("ForexeHistoryForm.btnExport_Click", ex)
-            MessageBox.Show(Me, "Istoricul nu s-a putut scrie: " & ex.Message, "Istoric FOREXE",
+            KBotMessage.Show(Me, "Istoricul nu s-a putut scrie: " & ex.Message, "Istoric FOREXE",
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub

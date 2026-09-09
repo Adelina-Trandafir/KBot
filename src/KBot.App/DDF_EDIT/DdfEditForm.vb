@@ -330,7 +330,7 @@ Public Class DdfEditForm
                                           eticheta As String) As Task(Of Integer)
         Dim ceruta As Integer
         If Not Integer.TryParse(camp.Text.Trim(), NumberStyles.Integer, _roCulture, ceruta) Then
-            MessageBox.Show(Me, $"«{camp.Text}» nu este un număr.", eticheta,
+            KBotMessage.Show(Me, $"«{camp.Text}» nu este un număr.", eticheta,
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
             camp.Text = valoareCurenta.ToString(_roCulture)
             Return valoareCurenta
@@ -340,7 +340,7 @@ Public Class DdfEditForm
         If idLock <= 0 Then
             ' Nothing is held, so nothing can be moved. That happens when the lock could not
             ' be taken at all; the number stays what it was rather than pretending otherwise.
-            MessageBox.Show(Me, "Numărul nu este rezervat pe server, deci nu poate fi schimbat aici.",
+            KBotMessage.Show(Me, "Numărul nu este rezervat pe server, deci nu poate fi schimbat aici.",
                             eticheta, MessageBoxButtons.OK, MessageBoxIcon.Warning)
             camp.Text = valoareCurenta.ToString(_roCulture)
             Return valoareCurenta
@@ -357,12 +357,12 @@ Public Class DdfEditForm
             ' The server's message already distinguishes «already used» from «held by
             ' someone else», which is exactly the distinction the operator needs.
             GlobalErrorLog.Write("DdfEditForm.SchimbaNumarul", ex)
-            MessageBox.Show(Me, ex.Message, eticheta, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            KBotMessage.Show(Me, ex.Message, eticheta, MessageBoxButtons.OK, MessageBoxIcon.Warning)
             camp.Text = valoareCurenta.ToString(_roCulture)
             Return valoareCurenta
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditForm.SchimbaNumarul", ex)
-            MessageBox.Show(Me, "Numărul nu a putut fi schimbat. Detalii în jurnalul de erori.",
+            KBotMessage.Show(Me, "Numărul nu a putut fi schimbat. Detalii în jurnalul de erori.",
                             eticheta, MessageBoxButtons.OK, MessageBoxIcon.Error)
             camp.Text = valoareCurenta.ToString(_roCulture)
             Return valoareCurenta
@@ -920,12 +920,12 @@ Public Class DdfEditForm
                 For Each m As String In motive
                     mesaj.Append(vbCrLf).Append("- ").Append(m)
                 Next
-                MessageBox.Show(Me, mesaj.ToString(), "Salvează documentul",
+                KBotMessage.Show(Me, mesaj.ToString(), "Salvează documentul",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
                 Return
             End If
 
-            If MessageBox.Show(Me, "Salvez datele?", "Salvează documentul",
+            If KBotMessage.Show(Me, "Salvez datele?", "Salvează documentul",
                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
                 Return
             End If
@@ -958,7 +958,7 @@ Public Class DdfEditForm
                 If esuate.Count > 0 Then
                     ' The document IS saved. NOTHING is rolled back: a half-rolled-back
                     ' document is worse than one missing a file.
-                    MessageBox.Show(Me,
+                    KBotMessage.Show(Me,
                         "Documentul a fost salvat, dar aceste fișiere nu s-au putut încărca: " &
                         String.Join(", ", esuate) & "." & vbCrLf & vbCrLf &
                         "Redeschide documentul și încearcă din nou să le atașezi.",
@@ -975,11 +975,11 @@ Public Class DdfEditForm
         Catch ex As ApiException
             ' The server's message is already in Romanian and lists every reason for refusal.
             GlobalErrorLog.Write("DdfEditForm.BtnSalveaza_Click", ex)
-            MessageBox.Show(Me, ex.Message, "Salvează documentul",
+            KBotMessage.Show(Me, ex.Message, "Salvează documentul",
                             MessageBoxButtons.OK, MessageBoxIcon.Error)
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditForm.BtnSalveaza_Click", ex)
-            MessageBox.Show(Me, "Documentul nu a putut fi salvat. Detalii în jurnalul de erori.",
+            KBotMessage.Show(Me, "Documentul nu a putut fi salvat. Detalii în jurnalul de erori.",
                             "Salvează documentul", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub

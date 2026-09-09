@@ -1,4 +1,4 @@
-Imports System.Collections.Generic
+﻿Imports System.Collections.Generic
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports KBot.Common
@@ -13,6 +13,32 @@ Public Interface IApiClient
     Function UpsertAngajamenteAsync(dbName As String,
                                     rows As IReadOnlyList(Of Angajament),
                                     ct As CancellationToken) As Task(Of String)
+
+    ''' <summary>
+    ''' Same route, `doar_noi = true` (slice 0057): the codes the server already has are
+    ''' NOT touched -- neither Descriere nor Stare -- and only the missing ones are
+    ''' inserted. This is what the tree footer's right-hand icon asks for; the question
+    ''' there is «which angajamente are new since I last looked», not «bring everything
+    ''' FOREXE knows up to date». Hard-fail (Throw) on non-2xx; a 401 flows to WithReauth.
+    ''' </summary>
+    Function AdaugaAngajamenteNoiAsync(dbName As String,
+                                       rows As IReadOnlyList(Of Angajament),
+                                       ct As CancellationToken) As Task(Of AngajamenteAdaugate)
+    ''' <summary>
+    ''' The date of the newest SNM statement already imported (GET
+    ''' /api/forexe/extrase/ultima), or Nothing when there is none — a legitimate answer:
+    ''' the first run walks the whole FOREXE inbox. Slice 0057.
+    ''' </summary>
+    Function GetUltimaDataExtrasAsync(ct As CancellationToken) As Task(Of Date?)
+
+    ''' <summary>
+    ''' Sends the downloaded SNM statements to POST /api/forexe/extrase/import. The server
+    ''' reads the XML and writes FX_Extrase_F / FX_Extrase_H / FX_Extrase; the client only
+    ''' carries the fields the robot brought back. Slice 0057.
+    ''' </summary>
+    Function ImportaExtraseAsync(extrase As IReadOnlyList(Of ExtrasPentruImport),
+                                 ct As CancellationToken) As Task(Of ImportExtraseRezultat)
+
     ''' <summary>
     ''' Aduce lista de angajamente pentru vederea-listă din MainForm (oglindește
     ''' Angajamente_SQL). Filtrează după COALESCE(IdUnitate,0)=idUnitate; doarAnulate
