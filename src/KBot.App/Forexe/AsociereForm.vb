@@ -105,6 +105,16 @@ Public Class AsociereForm
     ' trebuiască ștearsă de cineva.
     Private ReadOnly _receptiiNoi As New List(Of ReceptiePropusa)
 
+    ' IDRH-urile care ÎNCHID un lanț pornit aici. Tot o proiecție a lui `_pozitie`, refăcută în
+    ' aceeași trecere cu lista de mai sus.
+    '
+    ' Pe o recepție pornită aici rândul de ștergere NU e o alegere a operatorului, cum e pe una
+    ' venită de la server: recepția asta există tocmai fiindcă a fost ștearsă (F26), deci ultimul
+    ' instantaneu al lanțului ESTE ștergerea ei, oricare ar fi el. `_stergere` nu are niciun
+    ' cuvânt aici — un steag rămas de pe o așezare anterioară ar arăta pe ecran un rând de
+    ' ștergere pe care firul nu-l trimite.
+    Private ReadOnly _stergereNoua As New HashSet(Of Integer)
+
     ''' <summary>Banda de mesaje arată ACUM un avertisment pus de verificarea recepțiilor noi.</summary>
     ''' <remarks>
     ''' Se ține minte fiindcă banda e comună: numai cine a pus un mesaj are voie să-l ia jos, altfel
@@ -240,6 +250,7 @@ Public Class AsociereForm
             ' Recepțiile pornite aici s-au dus odată cu salvarea: ce s-a scris se întoarce din
             ' `stare` cu IDRR-ul lui adevărat, iar ce nu s-a scris nu mai are pe ce sta.
             _receptiiNoi.Clear()
+            _stergereNoua.Clear()
             _avertismentReceptiiNoi = False
             For Each i As InstantaneuLegat In stare.Instantanee
                 _pozitie(i.Idrh) = i.Idrr
@@ -321,6 +332,7 @@ Public Class AsociereForm
                 ' O recepție pornită de operator din coșul celor neașezate e tot una care încă
                 ' nu există în bază, deci poartă același semn ca una născută de descărcare.
                 nod.Italic = rec.RandReceptie.HasValue OrElse EsteReceptieNoua(rec)
+                ColoreazaReceptia(nod, rec)
                 nod.Tooltip = TooltipReceptie(rec, lant)
                 _nodReceptie(rec.Idrr) = nod
 
@@ -420,7 +432,29 @@ Public Class AsociereForm
         Return False
     End Function
 
+    ''' <summary>
+    ''' Instantaneul stă pe o recepție pornită AICI? Se citește direct din <c>_pozitie</c>, fiindcă
+    ''' numai de acolo poate veni un IDRR negativ — serverul nu trimite niciodată unul.
+    ''' </summary>
+    Private Function EstePeReceptieNoua(idrh As Integer) As Boolean
+        Dim idrr As Integer
+        If _pozitie.TryGetValue(idrh, idrr) Then Return idrr < 0
+        Return False
+    End Function
+
+    ''' <summary>
+    ''' Instantaneul e rândul de ștergere al lanțului lui (F21).
+    ''' </summary>
+    ''' <remarks>
+    ''' Două regimuri, fiindcă sunt două întrebări diferite. Pe o recepție venită de la server,
+    ''' ștergerea e o HOTĂRÂRE a operatorului: recepția poate foarte bine să fie încă vie, iar
+    ''' mașina nu poate ghici dacă ultimul instantaneu o închide sau e doar cel mai recent. Pe o
+    ''' recepție pornită aici nu e nimic de hotărât — ea există tocmai fiindcă a fost ștearsă
+    ''' (F26), altfel ar fi venit în `ListaReceptii` ca toate celelalte —, deci ultimul
+    ''' instantaneu al lanțului e ștergerea ei și nu are cine să spună altceva.
+    ''' </remarks>
     Private Function EsteStergere(idrh As Integer) As Boolean
+        If EstePeReceptieNoua(idrh) Then Return _stergereNoua.Contains(idrh)
         Dim v As Boolean
         If _stergere.TryGetValue(idrh, v) Then Return v
         Return False
@@ -463,10 +497,13 @@ Public Class AsociereForm
     ''' <para><b>Cifrele se recalculează, nu se rețin de la creare.</b> Serverul le va scrie
     ''' chiar așa: <c>DataR</c> = momentul celui mai vechi instantaneu din lanț, <c>SumaAntet</c>
     ''' = totalul rândului de ștergere (cât valora când a plecat). Un rând care ar arăta altceva
-    ''' decât ce se va scrie ar fi singura minciună de pe ecran.</para>
+    ''' decât ce se va scrie ar fi singura minciună de pe ecran. Din același motiv poartă și
+    ''' <c>Sters</c>, și <c>Reconstituit</c>: <c>_R_INSERT_RECONST_SQL</c> le scrie pe amândouă
+    ''' cu 1, deci o recepție pornită aici e ștearsă din clipa în care se naște.</para>
     ''' </summary>
     Private Sub ActualizeazaReceptiileNoi()
         _receptiiNoi.Clear()
+        _stergereNoua.Clear()
         If _stare Is Nothing Then Return
 
         For Each idrr As Integer In _stare.Instantanee.Select(AddressOf PozitiaLui).
@@ -478,11 +515,18 @@ Public Class AsociereForm
             If lant.Count = 0 Then Continue For
 
             Dim ultimul As InstantaneuLegat = lant.Last()
+            ' Ultimul ÎNCHIDE lanțul — dar numai dintr-un lanț adevărat. Cât are un singur
+            ' instantaneu, recepția e pe jumătate făcută: acela o pornește, și n-are ce închide
+            ' încă. Marcat oricum, ecranul ar arăta o recepție gata (bandă terminată cu cruce,
+            ' valoare căzută la zero după ea) exact acolo unde salvarea e oprită.
+            If lant.Count > 1 Then _stergereNoua.Add(ultimul.Idrh)
             _receptiiNoi.Add(New ReceptiePropusa() With {
                 .Idrr = idrr,
                 .DataR = lant(0).DataH.Date,
                 .SumaAntet = ultimul.Total,
-                .Descriere = ultimul.Descriere})
+                .Descriere = ultimul.Descriere,
+                .Sters = True,
+                .Reconstituit = True})
         Next
 
         ' Selecția putea sta pe o recepție care tocmai s-a golit. Se lasă goală în loc să
@@ -511,10 +555,13 @@ Public Class AsociereForm
     ''' Ce mai lipsește ca recepțiile pornite aici să poată fi scrise. Șir gol = se poate salva.
     '''
     ''' <para>Se verifică ÎNAINTE de salvare fiindcă serverul refuză toată salvarea, nu doar
-    ''' recepția cu pricina, iar operatorul ar afla abia din eroare ce anume îi lipsea. Cele
-    ''' trei condiții sunt ale serverului, cuvânt cu cuvânt (§4c-bis): o recepție reconstituită
-    ''' există TOCMAI fiindcă a fost ștearsă, deci lanțul ei are exact un rând de ștergere, iar
-    ''' acela e ultimul — nimic nu se mai poate întâmpla cu o recepție după ce a plecat.</para>
+    ''' recepția cu pricina, iar operatorul ar afla abia din eroare ce anume îi lipsea.</para>
+    '''
+    ''' <para>A rămas o singură condiție, și e a serverului cuvânt cu cuvânt (§4c-bis): un lanț
+    ''' reconstituit are exact o «reconstituire» și exact o «ștergere», iar ștergerea e ultima.
+    ''' Celelalte două nu se mai pot încălca de când capetele lanțului sunt CITITE din el, nu
+    ''' marcate: ultimul e ștergerea, primul o declară, deci singurul fel în care se pot ciocni e
+    ''' să fie unul și același — adică lanțul să aibă un singur instantaneu.</para>
     ''' </summary>
     Private Function ProblemaReceptiilorNoi() As String
         For Each rec As ReceptiePropusa In _receptiiNoi
@@ -528,44 +575,39 @@ Public Class AsociereForm
     Private Function ProblemaUneiReceptiiNoi(rec As ReceptiePropusa,
                                              lant As List(Of InstantaneuLegat)) As String
         If rec Is Nothing OrElse lant Is Nothing Then Return String.Empty
-        Dim cand As String = $"Recepția nouă din {rec.DataR:dd.MM.yyyy}"
         If lant.Count < 2 Then
-            Return $"{cand} are un singur instantaneu. Îi mai trebuie cel puțin unul: " &
-                   "cel dintâi o pornește, ultimul e rândul de ștergere."
-        End If
-        Dim stergeri As Integer = lant.Where(Function(i) EsteStergere(i.Idrh)).Count()
-        If stergeri = 0 Then
-            Return $"{cand} nu are rândul de ștergere. Marchează-l pe ultimul din lanț " &
-                   "cu «Este rândul de ștergere» — o recepție reconstituită există tocmai " &
-                   "fiindcă a fost ștearsă."
-        End If
-        If stergeri > 1 Then
-            Return $"{cand} are {stergeri} rânduri de ștergere. Trebuie exact unul."
-        End If
-        If Not EsteStergere(lant.Last().Idrh) Then
-            Return $"{cand} are rândul de ștergere la mijlocul lanțului. El trebuie să fie " &
-                   "ultimul: nimic nu se mai întâmplă cu o recepție după ce a fost ștearsă."
-        End If
-        If lant(0).Idrh = lant.Last().Idrh Then
-            Return $"{cand}: același instantaneu nu poate și porni recepția, și să fie " &
-                   "rândul ei de ștergere."
+            Return $"Recepția nouă din {rec.DataR:dd.MM.yyyy} are un singur instantaneu. " &
+                   "Mai trage cel puțin unul pe ea: cel dintâi o pornește, ultimul e ștergerea " &
+                   "ei, iar același instantaneu nu poate fi și una, și alta."
         End If
         Return String.Empty
     End Function
 
+    ''' <summary>Cele două capete ale unui lanț pornit aici, citite dintr-o singură ordonare.</summary>
+    Private Structure CapeteLant
+        ''' <summary>Primul după DataH — el DECLARĂ eticheta, prin «reconstituire».</summary>
+        Public Declara As Integer
+        ''' <summary>Ultimul după DataH — el e rândul de ȘTERGERE, fiindcă recepția a fost ștearsă.</summary>
+        Public Inchide As Integer
+    End Structure
+
     ''' <summary>
-    ''' Cine DECLARĂ fiecare recepție nouă: primul instantaneu al lanțului, după DataH.
+    ''' Capetele fiecărei recepții pornite aici.
     ''' </summary>
     ''' <remarks>
-    ''' Alegerea se face o singură dată, aici, nu în bucla care scrie comenzile: serverul cere
-    ''' EXACT o «reconstituire» per etichetă, iar o alegere luată rând cu rând ar putea nimeri
-    ''' două — sau niciuna.
+    ''' Se calculează o singură dată, aici, nu în bucla care scrie comenzile: serverul cere EXACT
+    ''' o «reconstituire» și EXACT o «ștergere» per etichetă, iar o alegere luată rând cu rând ar
+    ''' putea nimeri două — sau niciuna. Amândouă capetele ies din aceeași ordonare, ca să nu
+    ''' existe două locuri în care se hotărăște ce înseamnă «primul» și «ultimul».
     ''' </remarks>
-    Private Function DeclarantiiReceptiilorNoi() As Dictionary(Of Integer, Integer)
-        Dim out As New Dictionary(Of Integer, Integer)()
+    Private Function CapeteleReceptiilorNoi() As Dictionary(Of Integer, CapeteLant)
+        Dim out As New Dictionary(Of Integer, CapeteLant)()
         For Each rec As ReceptiePropusa In _receptiiNoi
             Dim lant As List(Of InstantaneuLegat) = LantulReceptiei(rec)
-            If lant.Count > 0 Then out(rec.Idrr) = lant(0).Idrh
+            If lant.Count = 0 Then Continue For
+            out(rec.Idrr) = New CapeteLant() With {
+                .Declara = lant(0).Idrh,
+                .Inchide = lant.Last().Idrh}
         Next
         Return out
     End Function
@@ -574,11 +616,11 @@ Public Class AsociereForm
     ''' Aceeași alegere, calculată din tabloul dat pe parametri — pentru <see cref="DeciziiDin"/>,
     ''' care e <c>Shared</c> și nu are voie să citească câmpurile formularului.
     ''' </summary>
-    Private Shared Function DeclarantiiDin(instantanee As IEnumerable(Of InstantaneuLegat),
-                                           pozitie As IReadOnlyDictionary(Of Integer, Integer)) _
-                                           As Dictionary(Of Integer, Integer)
-        Dim out As New Dictionary(Of Integer, Integer)()
+    Private Shared Function CapeteleDin(instantanee As IEnumerable(Of InstantaneuLegat),
+                                        pozitie As IReadOnlyDictionary(Of Integer, Integer)) _
+                                        As Dictionary(Of Integer, CapeteLant)
         Dim primul As New Dictionary(Of Integer, InstantaneuLegat)()
+        Dim ultimul As New Dictionary(Of Integer, InstantaneuLegat)()
         For Each inst As InstantaneuLegat In instantanee
             Dim idrr As Integer = inst.Idrr
             If pozitie IsNot Nothing AndAlso pozitie.ContainsKey(inst.Idrh) Then idrr = pozitie(inst.Idrh)
@@ -589,36 +631,114 @@ Public Class AsociereForm
                (inst.DataH = decand.DataH AndAlso inst.Idrh < decand.Idrh) Then
                 primul(idrr) = inst
             End If
+            If Not ultimul.TryGetValue(idrr, decand) OrElse
+               inst.DataH > decand.DataH OrElse
+               (inst.DataH = decand.DataH AndAlso inst.Idrh > decand.Idrh) Then
+                ultimul(idrr) = inst
+            End If
         Next
+        Dim out As New Dictionary(Of Integer, CapeteLant)()
         For Each kvp As KeyValuePair(Of Integer, InstantaneuLegat) In primul
-            out(kvp.Key) = kvp.Value.Idrh
+            out(kvp.Key) = New CapeteLant() With {
+                .Declara = kvp.Value.Idrh,
+                .Inchide = ultimul(kvp.Key).Idrh}
         Next
         Return out
     End Function
 
     ''' <summary>
-    ''' Ce acțiune poartă un instantaneu așezat pe o recepție pornită aici: prima o DECLARĂ,
-    ''' rândul marcat o închide, restul se așază pe ea.
+    ''' Ce acțiune poartă un instantaneu așezat pe o recepție pornită aici: primul o DECLARĂ,
+    ''' ultimul o închide, restul se așază pe ea.
     ''' </summary>
-    Private Shared Function ActiuneaPeReceptieNoua(idrh As Integer, idrhDeclara As Integer,
-                                                   eStergere As Boolean) As ActiuneAsociere
-        If idrh = idrhDeclara Then Return ActiuneAsociere.Reconstituire
-        If eStergere Then Return ActiuneAsociere.Stergere
+    ''' <remarks>
+    ''' Declarația se verifică prima, și de-asta nu mai trebuie nimic pentru lanțul de un singur
+    ''' instantaneu: acolo cele două capete sunt același rând, iar el pornește recepția. Că nu o
+    ''' și închide o spune <see cref="ProblemaUneiReceptiiNoi"/>, care oprește salvarea înainte
+    ''' să se ajungă aici.
+    ''' </remarks>
+    Private Shared Function ActiuneaPeReceptieNoua(idrh As Integer, capete As CapeteLant) As ActiuneAsociere
+        If idrh = capete.Declara Then Return ActiuneAsociere.Reconstituire
+        If idrh = capete.Inchide Then Return ActiuneAsociere.Stergere
         Return ActiuneAsociere.Asociat
     End Function
 
     Private Function CaptionReceptie(rec As ReceptiePropusa, lant As List(Of InstantaneuLegat)) As String
         Dim semne As String = String.Empty
-        ' TEXT, nu pictograme: cele trei steaguri sunt fapte diferite și au nevoie fiecare de
-        ' cuvântul lui, iar o pictogramă ar cere un control nou în designer.
-        If rec.Sters Then semne &= " [ștearsă]"
-        If rec.Reconstituit Then semne &= " [reconstituită]"
-        ' DOAR atât, pe rând. Ce anume îi mai lipsește recepției se scrie în tooltip și în banda
-        ' de mesaje, care au loc pentru o propoziție; partea din dreapta a rândului e ALINIATĂ LA
-        ' DREAPTA și, când nu încape, arborele o lasă nedesenată cu totul — verificat pe ecran,
-        ' un semn mai lung a făcut să dispară și suma, și numărul de instantanee.
-        If EsteReceptieNoua(rec) Then semne &= " [recepție nouă]"
+        If EsteReceptieNoua(rec) Then
+            ' UN singur semn, deși recepția poartă și `Sters`, și `Reconstituit`: cele trei scrise
+            ' unul după altul ar spune de trei ori același lucru și ar umple rândul. «Ștearsă» e
+            ' partea care NU se subînțelege — o recepție pornită aici e ștearsă prin definiție, și
+            ' e singurul fel în care poate exista (F26).
+            '
+            ' Și DOAR atât: ce anume îi mai lipsește se scrie în tooltip și în banda de mesaje,
+            ' care au loc pentru o propoziție. Partea din dreapta a rândului e ALINIATĂ LA DREAPTA
+            ' și, când nu încape, arborele o lasă nedesenată cu totul — verificat pe ecran, un
+            ' semn mai lung a făcut să dispară și suma, și numărul de instantanee.
+            semne = " [nouă, ștearsă]"
+        Else
+            ' TEXT, nu pictograme: cele două steaguri sunt fapte diferite și au nevoie fiecare de
+            ' cuvântul lui, iar o pictogramă ar cere un control nou în designer.
+            If rec.Sters Then semne &= " [ștearsă]"
+            If rec.Reconstituit Then semne &= " [reconstituită]"
+        End If
         Return $"{rec.DataR:dd.MM.yyyy}~~~{Bani(rec.SumaAntet)} ({lant.Count}){semne}"
+    End Function
+
+    ''' <summary>
+    ''' Culoarea rândului-recepție: o recepție ȘTEARSĂ se scrie stins, oricare ar fi ea.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Stins, nu roșu, și nu scos din calcule: recepția ștearsă rămâne o recepție
+    ''' întreagă. Ordonanțările dinaintea ștergerii îi citesc totalul așa cum stătea atunci
+    ''' (§1.3), lanțul ei e în grafic și pe benzi ca oricare altul, iar un instantaneu ANTERIOR
+    ''' ștergerii se poate așeza pe ea în continuare. Culoarea spune «asta nu mai e pe site», nu
+    ''' «asta nu contează».</para>
+    ''' <para>Aceeași culoare și pentru cele de la server, și pentru cele pornite aici. E același
+    ''' fapt, iar două recepții amândouă șterse, dintre care numai una se vede că e, ar fi mai
+    ''' rău decât nicio culoare.</para>
+    ''' </remarks>
+    ''' <remarks>
+    ''' <para><b>FONDUL, nu culoarea textului.</b> Textul rândului-recepție e deja luat: pe fila
+    ''' «Tot angajamentul» el poartă culoarea liniei din grafic, adică lucrul care leagă rândul de
+    ''' linia lui (<see cref="SincronizeazaCulorile"/>). Scrisă tot acolo, ștergerea ar fi ori
+    ''' ștearsă de identitate, ori ar șterge-o pe ea — și tocmai la recepția pornită aici
+    ''' operatorul are mai multă nevoie să vadă care linie e a ei. Fondul nu e cerut de nimeni
+    ''' altcineva, deci cele două fapte încap amândouă, pe amândouă filele.</para>
+    ''' <para>O nuanță, nu o culoare tare: recepția ștearsă rămâne o recepție întreagă.
+    ''' Ordonanțările dinaintea ștergerii îi citesc totalul așa cum stătea atunci (§1.3), lanțul ei
+    ''' e în grafic și pe benzi ca oricare altul, iar un instantaneu ANTERIOR ștergerii se poate
+    ''' așeza pe ea în continuare. Fondul spune «asta nu mai e pe site», nu «asta nu contează».</para>
+    ''' <para>Aceeași nuanță și pentru cele de la server, și pentru cele pornite aici: e același
+    ''' fapt. Două recepții amândouă șterse, dintre care numai una se vede că e, ar fi mai rău
+    ''' decât nicio culoare.</para>
+    ''' </remarks>
+    Private Sub ColoreazaReceptia(nod As AdvancedTreeControl.TreeItem, rec As ReceptiePropusa)
+        If nod Is Nothing Then Return
+        Dim paleta As ThemePalette = ThemeManager.Current?.Palette
+        If paleta Is Nothing OrElse rec Is Nothing Then Return
+        ' `SurfaceAlt` singur nu se vede: în temele deschise e chiar alb, adică fondul arborelui.
+        ' Nuanța se AMESTECĂ, deci vine tot din paletă și se întoarce singură pe dos în tema
+        ' întunecată — acolo textul stins e mai deschis decât fondul, deci banda iese mai
+        ' deschisă, nu mai închisă.
+        nod.NodeBackColor = If(rec.Sters,
+                               Amesteca(paleta.SurfaceAltColor, paleta.TextDimColor, 0.14),
+                               Color.Empty)
+    End Sub
+
+    ''' <summary>Două culori din paletă, amestecate. Nicio culoare scrisă în cod (regula casei).</summary>
+    ''' <remarks>
+    ''' Canalele se URCĂ la <c>Double</c> înainte de scădere. <c>Color.R</c> e un <c>Byte</c>, iar
+    ''' în VB scăderea a doi Byte se face tot pe Byte: la prima recepție ștearsă cu fondul mai
+    ''' deschis decât textul, diferența e negativă și aruncă <c>OverflowException</c>. Prins pe
+    ''' ecran, nu de teste — arborele își înghite excepția (graniță de UI) și se oprea din desenat
+    ''' la jumătate, cu rândul-recepție scris și fără niciun instantaneu sub el.
+    ''' </remarks>
+    Private Shared Function Amesteca(fond As Color, peste As Color, cat As Double) As Color
+        Dim k As Double = Math.Max(0.0, Math.Min(1.0, cat))
+        Return Color.FromArgb(
+            CInt(Math.Round(CDbl(fond.R) + (CDbl(peste.R) - CDbl(fond.R)) * k)),
+            CInt(Math.Round(CDbl(fond.G) + (CDbl(peste.G) - CDbl(fond.G)) * k)),
+            CInt(Math.Round(CDbl(fond.B) + (CDbl(peste.B) - CDbl(fond.B)) * k)))
     End Function
 
     Private Function CaptionInstantaneu(inst As InstantaneuLegat) As String
@@ -674,6 +794,13 @@ Public Class AsociereForm
             ' `ActualizeazaReceptiileNoi`).
             sb.AppendLine("Recepție pornită de dumneavoastră, încă nescrisă în bază.")
             sb.AppendLine($"Data ei va fi {rec.DataR:dd.MM.yyyy} — cel mai vechi instantaneu al lanțului.")
+            ' Se spune, nu se subînțelege. O recepție pornită de aici există TOCMAI fiindcă a
+            ' fost ștearsă înainte de prima descărcare (F26) — altfel ar fi venit în
+            ' `ListaReceptii` ca toate celelalte. Nu e o stare pe care operatorul o poate alege,
+            ' deci nici nu i se cere: se scrie ce se va întâmpla.
+            sb.AppendLine("Se va scrie ca recepție ȘTEARSĂ și reconstituită — o recepție de " &
+                          "aici există tocmai fiindcă a fost ștearsă, altfel n-ar fi lipsit " &
+                          "din listă. Ultimul instantaneu al lanțului e ștergerea ei.")
             ' Ce îi mai lipsește se scrie AICI, nu pe rând: tooltipul are loc pentru o propoziție,
             ' iar rândul o pierde întreagă când nu încape (vezi CaptionReceptie).
             Dim lipsa As String = ProblemaUneiReceptiiNoi(rec, lant)
@@ -683,7 +810,12 @@ Public Class AsociereForm
         Else
             sb.AppendLine($"Recepția {rec.Idrr} · creată {rec.DataR:dd.MM.yyyy}")
         End If
-        sb.AppendLine($"Valoare acum: {Bani(rec.SumaAntet)}")
+        ' «Acum» ar fi o minciună pentru o recepție pornită aici: suma ei e cât valora în clipa
+        ' ștergerii, fiindcă exact aia se scrie în `SumaAntet` (vezi `ActualizeazaReceptiileNoi`).
+        ' Pentru celelalte rămâne cum era — ce le-a trimis serverul, oricare ar fi povestea lor.
+        sb.AppendLine(If(EsteReceptieNoua(rec),
+                         $"Valoarea la ștergere: {Bani(rec.SumaAntet)}",
+                         $"Valoare acum: {Bani(rec.SumaAntet)}"))
         If lant.Count > 0 Then
             Dim ultimul As InstantaneuLegat = lant.Last()
             sb.AppendLine($"Ultimul instantaneu: {ultimul.DataH:dd.MM.yyyy} · {Bani(ultimul.Total)}")
@@ -1123,6 +1255,9 @@ Public Class AsociereForm
     ''' </summary>
     Private Sub SincronizeazaCulorile()
         Try
+            ' Doar CULOAREA TEXTULUI se ia de la zero — fondul nu, fiindcă nu e al graficului: el
+            ' spune dacă recepția e ștearsă, iar asta nu se schimbă când operatorul trece de pe o
+            ' filă pe alta (vezi `ColoreazaReceptia`).
             For Each nod As AdvancedTreeControl.TreeItem In _nodReceptie.Values
                 nod.NodeForeColor = Color.Empty
             Next
@@ -1134,9 +1269,12 @@ Public Class AsociereForm
                 If String.Equals(serie.Key, SERIA_TOTAL, StringComparison.Ordinal) Then Continue For
 
                 ' The whole-commitment view: the line names the receipt, so the ROOT row takes it.
+                ' `<> 0`, nu `> 0`: o recepție pornită aici are un IDRR NEGATIV, și are în grafic
+                ' o linie ca oricare alta. Cu `> 0` rândul ei rămânea singurul care nu se lega de
+                ' linia lui — adică exact recepția despre care operatorul are mai multe întrebări.
                 Dim idrr As Integer = IdrrDinCheie(serie.Key)
                 Dim radacina As AdvancedTreeControl.TreeItem = Nothing
-                If idrr > 0 AndAlso _nodReceptie.TryGetValue(idrr, radacina) AndAlso
+                If idrr <> 0 AndAlso _nodReceptie.TryGetValue(idrr, radacina) AndAlso
                    serie.LineColor <> Color.Empty Then
                     radacina.NodeForeColor = serie.LineColor
                 End If
@@ -1188,9 +1326,11 @@ Public Class AsociereForm
         For Each serie As KBotChartSeries In grafic.Series
             If String.Equals(serie.Key, SERIA_TOTAL, StringComparison.Ordinal) Then Continue For
 
+            ' `<> 0` din același motiv ca la arbore: banda unei recepții pornite aici trebuie să
+            ' aibă culoarea liniei ei, altfel cele trei suprafețe nu mai spun același lucru.
             Dim idrr As Integer = IdrrDinCheie(serie.Key)
             Dim banda As KBotLane = Nothing
-            If idrr > 0 AndAlso bandaDupaIdrr.TryGetValue(idrr, banda) AndAlso
+            If idrr <> 0 AndAlso bandaDupaIdrr.TryGetValue(idrr, banda) AndAlso
                serie.LineColor <> Color.Empty Then
                 banda.LaneColor = serie.LineColor
             End If
@@ -1868,14 +2008,24 @@ Public Class AsociereForm
             Return
         End If
 
-        Dim asezat As Boolean = PozitiaLui(inst) > 0
+        ' `<> 0`, nu `> 0`: un instantaneu așezat pe o recepție pornită AICI poartă un IDRR
+        ' negativ, și e tot așezat. Cu `> 0` cădea pe ramura coșului — i se ofereau «nu
+        ' consemnează nicio schimbare» și «începe o recepție nouă» pe ceva care stă deja pe una,
+        ' și nu i se oferea desprinderea.
+        Dim asezat As Boolean = PozitiaLui(inst) <> 0
         Dim intrari As New List(Of CustomPopupItem)()
         If asezat Then
             intrari.Add(New CustomPopupItem(MENIU_DESPRINDE, "&Desprinde de recepție", Il_Receptii.Images.Item("link_break")))
-            If EsteStergere(inst.Idrh) Then
-                intrari.Add(New CustomPopupItem(MENIU_NU_STERGERE, "Nu mai e rândul de ș&tergere"))
-            Else
-                intrari.Add(New CustomPopupItem(MENIU_STERGERE, "Este rândul de ș&tergere"))
+            ' Ștergerea se oferă doar pe o recepție venită de la server. Pe una pornită aici nu e
+            ' nimic de hotărât — ultimul instantaneu al lanțului E ștergerea ei (vezi
+            ' `EsteStergere`) —, iar o intrare de meniu care nu schimbă nimic e mai rea decât
+            ' niciuna: operatorul o apasă și ecranul îi răspunde că n-a apăsat.
+            If Not EstePeReceptieNoua(inst.Idrh) Then
+                If EsteStergere(inst.Idrh) Then
+                    intrari.Add(New CustomPopupItem(MENIU_NU_STERGERE, "Nu mai e rândul de ș&tergere"))
+                Else
+                    intrari.Add(New CustomPopupItem(MENIU_STERGERE, "Este rândul de ș&tergere"))
+                End If
             End If
         Else
             If EsteIgnorat(inst.Idrh) Then
@@ -1984,7 +2134,7 @@ Public Class AsociereForm
         Dim out As New List(Of ComandaAsociere)()
         If _stare Is Nothing Then Return out
 
-        Dim declara As Dictionary(Of Integer, Integer) = DeclarantiiReceptiilorNoi()
+        Dim capete As Dictionary(Of Integer, CapeteLant) = CapeteleReceptiilorNoi()
 
         For Each inst As InstantaneuLegat In _stare.Instantanee
             Dim idrrNou As Integer = PozitiaLui(inst)
@@ -2006,11 +2156,13 @@ Public Class AsociereForm
                 ' Recepție pornită aici: nu are IDRR de trimis, ci o ETICHETĂ. Serverul o
                 ' materializează la salvare din chiar lanțul de mai jos și abia atunci îi dă
                 ' cheia. `Idrr` rămâne nescris — serverul cere exact una dintre cele două.
-                Dim idrhDeclara As Integer = 0
-                declara.TryGetValue(idrrNou, idrhDeclara)
+                ' Ștergerea NU se citește din `_stergere`: capetele lanțului o dau, ca și pe
+                ' ecran (vezi `EsteStergere`).
+                Dim capeteleLui As CapeteLant = Nothing
+                capete.TryGetValue(idrrNou, capeteleLui)
                 out.Add(New ComandaAsociere() With {
                     .Idrh = inst.Idrh,
-                    .Actiune = ActiuneaPeReceptieNoua(inst.Idrh, idrhDeclara, stergereNou),
+                    .Actiune = ActiuneaPeReceptieNoua(inst.Idrh, capeteleLui),
                     .ReceptieNoua = EtichetaTrimisa(idrrNou)})
             Else
                 out.Add(New ComandaAsociere() With {
@@ -2074,10 +2226,10 @@ Public Class AsociereForm
             If r.RandReceptie.HasValue Then ancora(r.Idrr) = r.RandReceptie.Value
         Next
 
-        ' Cine declară fiecare recepție pornită de operator (IDRR negativ). Se calculează o
-        ' dată, din același tablou, ca acoperirea de mai jos să nu poată nimeri două
-        ' «reconstituiri» pentru aceeași etichetă.
-        Dim declara As Dictionary(Of Integer, Integer) = DeclarantiiDin(instantanee, pozitie)
+        ' Capetele fiecărei recepții pornite de operator (IDRR negativ). Se calculează o dată,
+        ' din același tablou, ca acoperirea de mai jos să nu poată nimeri două «reconstituiri»
+        ' — sau două «ștergeri» — pentru aceeași etichetă.
+        Dim capete As Dictionary(Of Integer, CapeteLant) = CapeteleDin(instantanee, pozitie)
 
         Dim out As New List(Of DecizieAsociere)()
 
@@ -2103,10 +2255,12 @@ Public Class AsociereForm
             ElseIf idrr < 0 Then
                 ' Recepție pornită de operator din coșul celor neașezate (F26): se numește
                 ' printr-o etichetă, fiindcă nu există nici măcar local — nici IDRR, nici rând
-                ' în `ListaReceptii`. Serverul o creează din lanțul ăsta.
-                Dim idrhDeclara As Integer = 0
-                declara.TryGetValue(idrr, idrhDeclara)
-                d.Actiune = ActiuneaPeReceptieNoua(inst.Idrh, idrhDeclara, eStergere)
+                ' în `ListaReceptii`. Serverul o creează din lanțul ăsta. `eStergere` nu se
+                ' citește aici: pe o recepție care există TOCMAI fiindcă a fost ștearsă,
+                ' ștergerea e ultimul rând al lanțului, nu un steag pus de cineva.
+                Dim capeteleLui As CapeteLant = Nothing
+                capete.TryGetValue(idrr, capeteleLui)
+                d.Actiune = ActiuneaPeReceptieNoua(inst.Idrh, capeteleLui)
                 d.ReceptieNoua = EtichetaTrimisa(idrr)
             ElseIf idrr = 0 Then
                 ' Nu se inventează o hotărâre pentru un rând pe care operatorul nu l-a atins.

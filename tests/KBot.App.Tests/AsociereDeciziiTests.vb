@@ -201,16 +201,16 @@ Public Class AsociereDeciziiTests
     End Sub
 
     <Fact>
-    Public Sub ORecepțiePornitaDeOperator_SeNumestePrintrOEticheta_NuPrintrUnIdrr()
+    Public Sub AReceiptStartedByTheOperator_IsNamedByALabel_NotByAnIdrr()
         ' F26 în modul propunere: recepția nu există nici pe site, nici local, deci nu are IDRR
         ' de numit. Formularul o ține pe un IDRR NEGATIV, iar pe fir pleacă eticheta.
-        ' Primul instantaneu al lanțului o DECLARĂ; ultimul, marcat, îl închide.
+        ' Primul instantaneu al lanțului o DECLARĂ; ULTIMUL o închide — fără ca nimeni să-l
+        ' marcheze, de-aia dicționarul de ștergeri e gol aici.
         Dim pozitie As New Dictionary(Of Integer, Integer) From {{0, -1}, {2, -1}}
-        Dim stergere As New Dictionary(Of Integer, Boolean) From {{2, True}}
 
         Dim d = AsociereForm.DeciziiDin(
             New List(Of InstantaneuLegat) From {Instantaneu(0, 0, 19), Instantaneu(2, 0, 21)},
-            FaraAncore(), pozitie, Gol(Of Boolean)(), stergere)
+            FaraAncore(), pozitie, Gol(Of Boolean)(), Gol(Of Boolean)())
 
         Assert.Equal(2, d.Count)
         Dim porneste = d.Single(Function(x) x.RandIstoric = 0)
@@ -226,18 +226,19 @@ Public Class AsociereDeciziiTests
     End Sub
 
     <Fact>
-    Public Sub DoarPrimulInstantaneuAlLantuluiDeclara_RestulDoarSeAseaza()
-        ' Serverul cere EXACT o «reconstituire» per etichetă; două ar fi o etichetă declarată
-        ' de două ori, iar zero ar fi una folosită fără să fie declarată.
+    Public Sub OnlyTheFirstSnapshotDeclares_AndOnlyTheLastCloses()
+        ' Serverul cere EXACT o «reconstituire» și EXACT o «ștergere» per etichetă; două ar fi o
+        ' etichetă declarată (sau închisă) de două ori, iar zero ar fi una folosită fără să fie
+        ' declarată. Amândouă se citesc din capetele lanțului, nu dintr-un steag.
         Dim pozitie As New Dictionary(Of Integer, Integer) From {{0, -1}, {1, -1}, {2, -1}}
-        Dim stergere As New Dictionary(Of Integer, Boolean) From {{2, True}}
 
         Dim d = AsociereForm.DeciziiDin(
             New List(Of InstantaneuLegat) From {
                 Instantaneu(0, 0, 19), Instantaneu(1, 0, 20), Instantaneu(2, 0, 21)},
-            FaraAncore(), pozitie, Gol(Of Boolean)(), stergere)
+            FaraAncore(), pozitie, Gol(Of Boolean)(), Gol(Of Boolean)())
 
         Assert.Single(d.Where(Function(x) x.Actiune = ActiuneAsociere.Reconstituire))
+        Assert.Single(d.Where(Function(x) x.Actiune = ActiuneAsociere.Stergere))
         Assert.Equal(ActiuneAsociere.Reconstituire, d.Single(Function(x) x.RandIstoric = 0).Actiune)
         Assert.Equal(ActiuneAsociere.Asociat, d.Single(Function(x) x.RandIstoric = 1).Actiune)
         Assert.Equal(ActiuneAsociere.Stergere, d.Single(Function(x) x.RandIstoric = 2).Actiune)
@@ -245,7 +246,25 @@ Public Class AsociereDeciziiTests
     End Sub
 
     <Fact>
-    Public Sub DouaRecepțiiPornite_AuEticheteDiferite()
+    Public Sub AStaleDeletionFlagInTheMiddleOfAReconstructedChain_ChangesNothing()
+        ' Steagul poate rămâne pe un instantaneu care a stat mai devreme pe o recepție de la
+        ' server. Citit și aici, lanțul ar pleca cu DOUĂ ștergeri, iar serverul refuză salvarea
+        ' întreagă (§4c-bis). Pe o recepție pornită de operator hotărăsc capetele lanțului.
+        Dim pozitie As New Dictionary(Of Integer, Integer) From {{0, -1}, {1, -1}, {2, -1}}
+        Dim stergere As New Dictionary(Of Integer, Boolean) From {{1, True}}
+
+        Dim d = AsociereForm.DeciziiDin(
+            New List(Of InstantaneuLegat) From {
+                Instantaneu(0, 0, 19), Instantaneu(1, 0, 20), Instantaneu(2, 0, 21)},
+            FaraAncore(), pozitie, Gol(Of Boolean)(), stergere)
+
+        Assert.Single(d.Where(Function(x) x.Actiune = ActiuneAsociere.Stergere))
+        Assert.Equal(ActiuneAsociere.Asociat, d.Single(Function(x) x.RandIstoric = 1).Actiune)
+        Assert.Equal(ActiuneAsociere.Stergere, d.Single(Function(x) x.RandIstoric = 2).Actiune)
+    End Sub
+
+    <Fact>
+    Public Sub TwoStartedReceipts_GetDifferentLabels()
         Dim pozitie As New Dictionary(Of Integer, Integer) From {{0, -1}, {2, -2}}
         Dim d = AsociereForm.DeciziiDin(
             New List(Of InstantaneuLegat) From {Instantaneu(0, 0, 19), Instantaneu(2, 0, 21)},
