@@ -220,12 +220,19 @@ Partial Public NotInheritable Class KBotLaneView
         _dropAllowed = False
         _dropReason = String.Empty
         HideLaneTip()
+
+        ' Timed on its own, and NOT counted as a mouse move: this call does not return until the
+        ' operator lets go, so its duration is how long the drag lasted, not what it cost.
+        Dim mark As Long = KBotLaneLog.Mark()
+        KBotLaneLog.Note("DRAG-START", $"marker={If(m.Text, "?")} from={If(m.OwnerLane?.Key, "?")}")
         Try
             ' The system's modal loop. It returns only on the drop, on ESC or on losing the
             ' window — all three leave by the same road, through CancelDrag below.
             DoDragDrop(m, DragDropEffects.Move)
         Finally
             CancelDrag()
+            KBotLaneLog.Done("DRAG-WHOLE", mark, "modal loop, from press to release")
+            KBotLaneLog.Flush()
         End Try
         Return True
     End Function
@@ -239,7 +246,7 @@ Partial Public NotInheritable Class KBotLaneView
         _dropAllowed = False
         _dropReason = String.Empty
         _dropTipTarget = Nothing
-        _markerTooltip?.HideNow()
+        markerTip?.HideNow()
         _currentTipKey = Nothing
         If wasSomething Then Invalidate()
     End Sub
@@ -266,12 +273,14 @@ Partial Public NotInheritable Class KBotLaneView
         Try
             MyBase.OnDragEnter(drgevent)
             drgevent.Effect = DragDropEffects.None
+            KBotLaneLog.Note("DRAG-ENTER", $"pt={drgevent.X},{drgevent.Y}")
         Catch ex As Exception
             GlobalErrorLog.Write("KBotLaneView.OnDragEnter", ex)
         End Try
     End Sub
 
     Protected Overrides Sub OnDragOver(drgevent As DragEventArgs)
+        Dim mark As Long = KBotLaneLog.Mark()
         Try
             MyBase.OnDragOver(drgevent)
             drgevent.Effect = DragDropEffects.None
@@ -282,7 +291,7 @@ Partial Public NotInheritable Class KBotLaneView
             EnsureLayout()
             Dim p As Point = PointToClient(New Point(drgevent.X, drgevent.Y))
             Dim idx As Integer = LaneIndexAt(p)
-            Dim target As KBotLane = If(idx >= 0, _lanes(idx), Nothing)
+            Dim target As KBotLane = If(idx >= 0, VisibleLanes(idx), Nothing)
 
             ' A lane that is not a target is not offered at all — the host's veto never sees it,
             ' because "this lane is a heading, not a destination" is a fact about the lane rather
@@ -299,16 +308,23 @@ Partial Public NotInheritable Class KBotLaneView
             End If
 
             If Not ReferenceEquals(target, _dropTarget) OrElse allow <> _dropAllowed Then
+                Dim previous As KBotLane = _dropTarget
                 _dropTarget = target
                 _dropAllowed = allow
                 _dropReason = reason
-                Invalidate()
+                ' The two bands that changed, not the surface: the pointer sends moves faster than
+                ' a full repaint of the enlarged window takes. Same reason as in OnMouseMove.
+                InvalidateLaneBand(previous)
+                InvalidateLaneBand(target)
             Else
                 _dropReason = reason
             End If
 
             drgevent.Effect = If(allow, DragDropEffects.Move, DragDropEffects.None)
             ShowRefusalReason(target, allow)
+            KBotLaneLog.Done("DRAG-OVER", mark,
+                             $"pt={p.X},{p.Y} target={If(target?.Key, "-")} allow={If(allow, "yes", "no")}" &
+                             If(String.IsNullOrEmpty(reason), String.Empty, " reason=" & reason))
         Catch ex As Exception
             GlobalErrorLog.Write("KBotLaneView.OnDragOver", ex)
         End Try
@@ -318,19 +334,22 @@ Partial Public NotInheritable Class KBotLaneView
         Try
             MyBase.OnDragLeave(e)
             If _dropTarget IsNot Nothing Then
+                Dim previous As KBotLane = _dropTarget
                 _dropTarget = Nothing
                 _dropAllowed = False
-                Invalidate()
+                InvalidateLaneBand(previous)
             End If
             _dropTipTarget = Nothing
-            _markerTooltip?.HideNow()
+            markerTip?.HideNow()
             _currentTipKey = Nothing
+            KBotLaneLog.Note("DRAG-LEAVE")
         Catch ex As Exception
             GlobalErrorLog.Write("KBotLaneView.OnDragLeave", ex)
         End Try
     End Sub
 
     Protected Overrides Sub OnDragDrop(drgevent As DragEventArgs)
+        Dim mark As Long = KBotLaneLog.Mark()
         Try
             MyBase.OnDragDrop(drgevent)
             ' From the data object, not from the field: on a drag between two lane views the
@@ -341,8 +360,18 @@ Partial Public NotInheritable Class KBotLaneView
             Dim from As KBotLane = If(source Is Nothing, Nothing, source.OwnerLane)
             CancelDrag()
 
-            If Not allowed OrElse source Is Nothing OrElse target Is Nothing Then Return
+            If Not allowed OrElse source Is Nothing OrElse target Is Nothing Then
+                KBotLaneLog.Done("DROP", mark,
+                                 $"refused: allowed={If(allowed, "yes", "no")} " &
+                                 $"marker={If(source Is Nothing, "-", "yes")} target={If(target?.Key, "-")}")
+                Return
+            End If
+            ' The host's handler runs INSIDE this measurement on purpose: what the operator feels
+            ' after letting go is the whole round trip, and the control's own share of it is
+            ' usually the smaller half.
             RaiseEvent MarkerDropped(Me, New LaneDropEventArgs(source, from, target))
+            KBotLaneLog.Done("DROP", mark,
+                             $"marker={If(source.Text, "?")} from={If(from?.Key, "-")} to={If(target.Key, "-")}")
         Catch ex As Exception
             GlobalErrorLog.Write("KBotLaneView.OnDragDrop", ex)
         End Try
@@ -361,7 +390,7 @@ Partial Public NotInheritable Class KBotLaneView
         If allowed OrElse target Is Nothing OrElse String.IsNullOrWhiteSpace(_dropReason) Then
             If _dropTipTarget IsNot Nothing Then
                 _dropTipTarget = Nothing
-                _markerTooltip?.HideNow()
+                markerTip?.HideNow()
                 _currentTipKey = Nothing
             End If
             Return

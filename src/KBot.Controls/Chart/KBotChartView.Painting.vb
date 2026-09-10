@@ -36,6 +36,41 @@ Partial Public NotInheritable Class KBotChartView
     Private _axisStep As Double
 
     ' =====================================================================
+    ' SCRATCH GDI+ OBJECTS
+    ' =====================================================================
+
+    ''' <summary>
+    ''' One of the scratch objects, set up for the shape about to be drawn.
+    ''' </summary>
+    ''' <remarks>
+    ''' EVERY property is written on every call, never only the ones this caller cares about: a
+    ''' round cap or a dashed style left behind by the previous shape would surface as a defect
+    ''' in some unrelated method three shapes later. See the field declarations for why these
+    ''' exist at all.
+    ''' </remarks>
+    Private Shared Function ScratchPen(ByRef p As Pen, c As Color, w As Single,
+                                       Optional cap As LineCap = LineCap.Flat) As Pen
+        If p Is Nothing Then p = New Pen(c, w)
+        p.Color = c
+        p.Width = w
+        p.StartCap = cap
+        p.EndCap = cap
+        ' Round, always: a run of segments drawn as ONE polyline gets joins where it used to get
+        ' caps, and a mitred join on a sharp turn of the data would grow a spike the data has not
+        ' got. See DrawOneSeries for why the segments are drawn in runs.
+        p.LineJoin = LineJoin.Round
+        p.DashStyle = DashStyle.Solid
+        Return p
+    End Function
+
+    ''' <summary>The brush twin of <see cref="ScratchPen"/>.</summary>
+    Private Shared Function ScratchBrush(ByRef b As SolidBrush, c As Color) As SolidBrush
+        If b Is Nothing Then b = New SolidBrush(c)
+        b.Color = c
+        Return b
+    End Function
+
+    ' =====================================================================
     ' LAYOUT
     ' =====================================================================
 
@@ -234,7 +269,26 @@ Partial Public NotInheritable Class KBotChartView
     End Sub
 
     ''' <summary>
-    ''' Puts each guide on the horizontal axis, or takes it off the plot entirely.
+    ''' One dated line as the painter sees it: a pixel column and a colour, nothing else.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>A guide and a drawn line are NOT the same count. Guides land on the axis by date, and
+    ''' the axis is only ever as wide as the plot: a thousand payments spread over a year fall on
+    ''' a few hundred distinct pixel columns, and everything past the first line in a column is
+    ''' drawing over a line that is already there.</para>
+    ''' <para>The colour is part of the identity, not just the position - two guides on the same
+    ''' column in two colours are two different lines, and only the second one would be visible.
+    ''' <c>0</c> means "the dimmed text colour of the active scheme", so a theme change does not
+    ''' make this list stale.</para>
+    ''' </remarks>
+    Private Structure GuideColumn
+        Public X As Integer
+        Public Argb As Integer
+    End Structure
+
+    ''' <summary>
+    ''' Puts each guide on the horizontal axis, or takes it off the plot entirely, and builds the
+    ''' folded column list the painter walks.
     ''' </summary>
     ''' <remarks>
     ''' A guide OUTSIDE the time span of the points gets <c>PlotX = -1</c> and is not drawn. It
@@ -244,6 +298,7 @@ Partial Public NotInheritable Class KBotChartView
     ''' </remarks>
     Private Sub ProjectGuides()
         Dim plotted As Boolean = _plotRect.Width > 0 AndAlso _plotRect.Height > 0 AndAlso _axisMax > _axisMin
+        _guideColumns.Clear()
         For Each gd As KBotChartGuide In _guides
             If Not plotted OrElse Not gd.Visible Then
                 gd.PlotX = -1
@@ -255,7 +310,40 @@ Partial Public NotInheritable Class KBotChartView
                 Continue For
             End If
             gd.PlotX = MomentToX(gd.Moment)
+
+            Dim col As GuideColumn
+            col.X = gd.PlotX
+            col.Argb = If(gd.LineColor = Color.Empty, 0, gd.LineColor.ToArgb())
+            _guideColumns.Add(col)
         Next
+        FoldGuideColumns()
+    End Sub
+
+    ''' <summary>
+    ''' Sorts the columns and drops the ones that would land on top of each other.
+    ''' </summary>
+    ''' <remarks>
+    ''' Left to right, because the painter walks the list in axis order: sorted, it can skip
+    ''' everything to the left of the invalidated strip and STOP at the first column past its right
+    ''' edge, instead of testing every guide each time a corner of the plot repaints.
+    ''' </remarks>
+    Private Sub FoldGuideColumns()
+        If _guideColumns.Count < 2 Then Return
+        _guideColumns.Sort(Function(a, b)
+                               Dim byX As Integer = a.X.CompareTo(b.X)
+                               If byX <> 0 Then Return byX
+                               Return a.Argb.CompareTo(b.Argb)
+                           End Function)
+
+        Dim kept As Integer = 1
+        For i As Integer = 1 To _guideColumns.Count - 1
+            Dim col As GuideColumn = _guideColumns(i)
+            Dim last As GuideColumn = _guideColumns(kept - 1)
+            If col.X = last.X AndAlso col.Argb = last.Argb Then Continue For
+            _guideColumns(kept) = col
+            kept += 1
+        Next
+        _guideColumns.RemoveRange(kept, _guideColumns.Count - kept)
     End Sub
 
     Private Function MomentToX(moment As Date) As Integer
@@ -332,7 +420,14 @@ Partial Public NotInheritable Class KBotChartView
             EnsureLayout()
 
             Dim g As Graphics = e.Graphics
-            g.SmoothingMode = SmoothingMode.AntiAlias
+            ' SMOOTHING OFF BY DEFAULT, and switched on only around the round and the slanted -
+            ' the band, the buttons, the series, the markers, the hover ring, the frame.
+            ' Everything else here is axis-aligned: the plot fill, the grid, the axes, the dated
+            ' lines, the legend swatches. Antialiasing those buys no pixel anyone can see and is
+            ' paid for by the SURFACE, so it is the one cost that grows with the window rather
+            ' than with the data - which is why a full-screen chart crawled while a narrow one
+            ' felt fine.
+            g.SmoothingMode = SmoothingMode.None
             g.Clear(BackColor)
 
             DrawHeaderBand(g, designTime)
@@ -342,8 +437,8 @@ Partial Public NotInheritable Class KBotChartView
                 DrawGridAndAxes(g)
                 ' BEHIND the series, deliberately: a guide is context to read the lines against,
                 ' so it must never hide one.
-                DrawGuides(g)
-                DrawAllSeries(g)
+                DrawGuides(g, e.ClipRectangle)
+                DrawAllSeries(g, e.ClipRectangle)
                 DrawHoverHighlight(g)
                 DrawLegend(g)
             Else
@@ -362,9 +457,16 @@ Partial Public NotInheritable Class KBotChartView
         If Not _borderVisible OrElse _borderWidth <= 0 Then Return
         Dim radius As Integer = EffectiveCornerRadius()
         Dim r As New Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1))
-        Using path As GraphicsPath = ThemeShapes.RoundedRect(r, radius)
-            g.DrawPath(BorderPen, path)
-        End Using
+        ' Rounded corners, so this one does want smoothing - see the note in OnPaint.
+        Dim old As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+        Try
+            Using path As GraphicsPath = ThemeShapes.RoundedRect(r, radius)
+                g.DrawPath(BorderPen, path)
+            End Using
+        Finally
+            g.SmoothingMode = old
+        End Try
     End Sub
 
     Private Function EffectiveCornerRadius() As Integer
@@ -379,20 +481,34 @@ Partial Public NotInheritable Class KBotChartView
         Return ThemeShapes.ScaleDpi(Me, Math.Max(0, logical))
     End Function
 
+    ''' <summary>
+    ''' The band, its separator, its caption and its buttons.
+    ''' </summary>
+    ''' <remarks>
+    ''' Smoothing is switched on for the whole band and back off after it - see the note in
+    ''' <c>OnPaint</c>. It is a strip a few dozen pixels tall carrying rounded buttons, so the
+    ''' cost is bounded by the band rather than by the window, and the corners need it.
+    ''' </remarks>
     Private Sub DrawHeaderBand(g As Graphics, designTime As Boolean)
         If _headerRect.Width <= 0 OrElse _headerRect.Height <= 0 Then Return
-        Using path As GraphicsPath = ThemeShapes.RoundedRect(_headerRect, 0)
-            ThemeShapes.FillModern(g, path, _headerRect, EffectiveHeaderBackColor(), _headerGradient)
-        End Using
-
-        If _headerSeparatorWidth > 0 Then
-            Using pen As New Pen(EffectiveHeaderSeparatorColor(), ThemeShapes.ScaleDpi(Me, _headerSeparatorWidth))
-                g.DrawLine(pen, _headerRect.Left, _headerRect.Bottom - 1, _headerRect.Right, _headerRect.Bottom - 1)
+        Dim old As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+        Try
+            Using path As GraphicsPath = ThemeShapes.RoundedRect(_headerRect, 0)
+                ThemeShapes.FillModern(g, path, _headerRect, EffectiveHeaderBackColor(), _headerGradient)
             End Using
-        End If
 
-        DrawHeaderCaption(g)
-        DrawTabs(g, designTime)
+            If _headerSeparatorWidth > 0 Then
+                Using pen As New Pen(EffectiveHeaderSeparatorColor(), ThemeShapes.ScaleDpi(Me, _headerSeparatorWidth))
+                    g.DrawLine(pen, _headerRect.Left, _headerRect.Bottom - 1, _headerRect.Right, _headerRect.Bottom - 1)
+                End Using
+            End If
+
+            DrawHeaderCaption(g)
+            DrawTabs(g, designTime)
+        Finally
+            g.SmoothingMode = old
+        End Try
     End Sub
 
     ' The title takes the end the buttons did not take, and stops where the first button starts.
@@ -560,44 +676,136 @@ Partial Public NotInheritable Class KBotChartView
     End Sub
 
     ''' <summary>
-    ''' The dated lines, floor to ceiling of the plot, thin and dotted.
+    ''' The dated lines, floor to ceiling of the plot, thin and dimmed.
     ''' </summary>
     ''' <remarks>
     ''' <para>One logical pixel wide whatever the emphasis of the series around it: a guide that
-    ''' competes with a line for attention has stopped being background. The one under the pointer
-    ''' is drawn solid instead of thicker — same weight, so nothing moves, but it is unmistakably
-    ''' the one the floating label is naming.</para>
+    ''' competes with a line for attention has stopped being background.</para>
+    '''
+    ''' <para><b>SOLID, and <see cref="KBotChartGuide.DashStyle"/> is deliberately ignored here.</b>
+    ''' A dotted line is not one line to GDI+, it is one segment per dot, and a plot carrying a
+    ''' payment line per instalment was rasterizing tens of thousands of segments per frame for
+    ''' something the operator reads as a faint mark. Dimmed instead of dotted reads the same at
+    ''' one pixel and costs a fraction. The property stays on the guide because it is public and
+    ''' serialized; nothing paints from it any more, on either surface.</para>
+    '''
     ''' <para><b>Never red</b>, and never from the automatic set either: <c>Color.Empty</c>
     ''' resolves to the dimmed text colour, the same colour the axis labels already use for
     ''' "quiet fact about the plot rather than a measurement in it".</para>
+    '''
+    ''' <para><b>Three things keep this cheap</b>, and all three matter: the columns are folded
+    ''' (see <see cref="GuideColumn"/>), only the columns inside <paramref name="clip"/> are walked
+    ''' and only the invalidated stretch of each is drawn, and the pen is rewritten once per RUN of
+    ''' one colour rather than once per line - every write to a <c>Pen</c> throws away what GDI+
+    ''' built from the last one.</para>
     ''' </remarks>
-    Private Sub DrawGuides(g As Graphics)
-        If _guides.Count = 0 OrElse _plotRect.Width <= 0 OrElse _plotRect.Height <= 0 Then Return
+    Private Sub DrawGuides(g As Graphics, clip As Rectangle)
+        If _guideColumns.Count = 0 OrElse _plotRect.Width <= 0 OrElse _plotRect.Height <= 0 Then Return
+
+        ' The strip that was actually asked for, rather than the whole plot every time.
+        Dim top As Integer = Math.Max(_plotRect.Top, clip.Top)
+        Dim bottom As Integer = Math.Min(_plotRect.Bottom, clip.Bottom)
+        If bottom <= top Then Return
+        ' Opened by a pixel on each side: a line standing exactly on the edge of the strip still
+        ' has to be repainted, or the band leaves a gap in it.
+        Dim left As Integer = clip.Left - 1
+        Dim right As Integer = clip.Right + 1
+
         Dim fallback As Color = Palette().TextDimColor
         Dim width As Single = CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, 1)))
-        For i As Integer = 0 To _guides.Count - 1
-            Dim gd As KBotChartGuide = _guides(i)
-            If gd.PlotX < 0 Then Continue For
-            Using pen As New Pen(If(gd.LineColor = Color.Empty, fallback, gd.LineColor), width)
-                pen.DashStyle = If(i = _hoverGuideIndex, DashStyle.Solid, gd.DashStyle)
-                g.DrawLine(pen, gd.PlotX, _plotRect.Top, gd.PlotX, _plotRect.Bottom)
-            End Using
+        Dim pen As Pen = Nothing
+        Dim penArgb As Integer = Integer.MinValue
+
+        For i As Integer = 0 To _guideColumns.Count - 1
+            Dim col As GuideColumn = _guideColumns(i)
+            If col.X < left Then Continue For
+            ' Sorted left to right, so the first column past the strip ends the walk.
+            If col.X > right Then Exit For
+            If col.Argb <> penArgb Then
+                pen = ScratchPen(_detailPen,
+                                 DimmedGuideColor(If(col.Argb = 0, fallback, Color.FromArgb(col.Argb))),
+                                 width)
+                penArgb = col.Argb
+            End If
+            g.DrawLine(pen, col.X, top, col.X, bottom)
         Next
+
+        DrawHoveredGuide(g, top, bottom, fallback)
+    End Sub
+
+    ''' <summary>
+    ''' How far a dated line is taken back toward the plot background. Half.
+    ''' </summary>
+    ''' <remarks>
+    ''' A dotted line covers about half the pixels of the column it stands in, so half is what the
+    ''' operator was already reading. A solid line at full strength is a different thing entirely:
+    ''' it stops being background and starts competing with the series drawn over it. Dimming
+    ''' brings back the exact reading the dots gave, without the dots.
+    ''' </remarks>
+    Private Const GuideDimming As Double = 0.5
+
+    ''' <summary>
+    ''' A guide colour, mixed toward the plot background - see <see cref="GuideDimming"/>.
+    ''' </summary>
+    ''' <remarks>
+    ''' Mixed here rather than drawn with an alpha, and the two are the same picture: guides go
+    ''' down BEFORE the series and the hover ring, so a dated line never has anything under it but
+    ''' the plot background. An opaque pen over one known colour is the fast path, and blending
+    ''' every line of every frame is exactly the cost this pass exists to get rid of.
+    ''' </remarks>
+    Private Function DimmedGuideColor(c As Color) As Color
+        Dim back As Color = EffectivePlotBackColor()
+        Return Color.FromArgb(Mix(c.R, back.R), Mix(c.G, back.G), Mix(c.B, back.B))
+    End Function
+
+    Private Shared Function Mix(from As Byte, toward As Byte) As Integer
+        Dim v As Integer = CInt(Math.Round(from + (CInt(toward) - CInt(from)) * GuideDimming))
+        Return Math.Max(0, Math.Min(255, v))
+    End Function
+
+    ''' <summary>
+    ''' The line under the pointer, drawn over the top of the others and thicker.
+    ''' </summary>
+    ''' <remarks>
+    ''' Hover used to be the one guide drawn solid among dotted ones. Now that they are all solid
+    ''' the difference is carried by weight instead: this one line is drawn at its FULL colour
+    ''' rather than dimmed (see <see cref="GuideDimming"/>) and two pixels wide rather than one.
+    ''' Its own colour, though, never another - a payment line that changed hue under the pointer
+    ''' would read as a different KIND of line, which is the one thing it must not do.
+    ''' </remarks>
+    Private Sub DrawHoveredGuide(g As Graphics, top As Integer, bottom As Integer, fallback As Color)
+        If _hoverGuideIndex < 0 OrElse _hoverGuideIndex >= _guides.Count Then Return
+        Dim gd As KBotChartGuide = _guides(_hoverGuideIndex)
+        If gd.PlotX < 0 Then Return
+        g.DrawLine(ScratchPen(_detailPen, If(gd.LineColor = Color.Empty, fallback, gd.LineColor),
+                              CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, 2)))),
+                   gd.PlotX, top, gd.PlotX, bottom)
     End Sub
 
     ''' <summary>
     ''' Draws every visible series, ordinary ones first and the emphasised ones last, so a total
     ''' line is never buried under the parts it sums.
     ''' </summary>
-    Private Sub DrawAllSeries(g As Graphics)
-        For pass As Integer = 0 To 1
-            For i As Integer = 0 To _series.Count - 1
-                Dim s As KBotChartSeries = _series(i)
-                If Not s.Visible OrElse s.Points.Count = 0 Then Continue For
-                If (pass = 0) = s.Emphasis Then Continue For
-                DrawOneSeries(g, s, SeriesColor(s, i))
+    ''' <remarks>
+    ''' Smoothing is on for the series and off again after them - see the note in <c>OnPaint</c>.
+    ''' A series is the one thing on this surface that is genuinely slanted, and a staircase where
+    ''' a slope belongs would be read as data.
+    ''' </remarks>
+    Private Sub DrawAllSeries(g As Graphics, clip As Rectangle)
+        Dim old As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+        Try
+            For pass As Integer = 0 To 1
+                For i As Integer = 0 To _series.Count - 1
+                    Dim s As KBotChartSeries = _series(i)
+                    If Not s.Visible OrElse s.Points.Count = 0 Then Continue For
+                    If (pass = 0) = s.Emphasis Then Continue For
+                    DrawOneSeries(g, s, SeriesColor(s, i), clip)
+                Next
             Next
-        Next
+        Finally
+            g.SmoothingMode = old
+        End Try
     End Sub
 
     ''' <summary>
@@ -619,7 +827,7 @@ Partial Public NotInheritable Class KBotChartView
     ''' between them is the only vertex the data does not contain, and it carries no marker: a
     ''' marker there would claim a measurement nobody took.</para>
     ''' </remarks>
-    Private Sub DrawOneSeries(g As Graphics, s As KBotChartSeries, lineColor As Color)
+    Private Sub DrawOneSeries(g As Graphics, s As KBotChartSeries, lineColor As Color, clip As Rectangle)
         Dim pts As New List(Of Point)()
         Dim cols As New List(Of Color)()
         For Each p As KBotChartPoint In s.Points
@@ -630,54 +838,118 @@ Partial Public NotInheritable Class KBotChartView
         If pts.Count = 0 Then Return
 
         Dim stepped As Boolean = s.LineMode = KBotChartLineMode.Step
-
         Dim alpha As Integer = CInt(255.0 * _areaFillOpacity / 100.0)
-        If s.FillArea AndAlso alpha > 0 AndAlso pts.Count > 1 Then
-            For i As Integer = 0 To pts.Count - 2
-                ' A strip can be empty when two snapshots share a moment; a zero-width polygon is
-                ' not an error, just nothing to fill.
-                If pts(i + 1).X = pts(i).X Then Continue For
-                ' Stepped: the strip is a RECTANGLE at the left point's height, because that is
-                ' what the value was for the whole stretch. Straight: the trapezoid under the slope.
-                Dim topRight As Integer = If(stepped, pts(i).Y, pts(i + 1).Y)
-                Dim strip() As Point = {
-                    pts(i),
-                    New Point(pts(i + 1).X, topRight),
-                    New Point(pts(i + 1).X, _plotRect.Bottom),
-                    New Point(pts(i).X, _plotRect.Bottom)}
-                Using b As New SolidBrush(Color.FromArgb(alpha, cols(i)))
-                    g.FillPolygon(b, strip)
-                End Using
-            Next
-        End If
-
+        Dim fills As Boolean = s.FillArea AndAlso alpha > 0 AndAlso pts.Count > 1
         Dim width As Integer = ThemeShapes.ScaleDpi(Me, If(s.Emphasis, _emphasisLineWidth, _lineWidth))
-        For i As Integer = 0 To pts.Count - 2
-            Using pen As New Pen(cols(i), width)
-                pen.StartCap = LineCap.Round
-                pen.EndCap = LineCap.Round
-                If stepped Then
-                    Dim corner As New Point(pts(i + 1).X, pts(i).Y)
-                    ' Both halves are skipped when they would be a point: two snapshots at the
-                    ' same moment give no horizontal run, two equal values give no riser.
-                    If corner.X <> pts(i).X Then g.DrawLine(pen, pts(i), corner)
-                    If corner.Y <> pts(i + 1).Y Then g.DrawLine(pen, corner, pts(i + 1))
-                Else
-                    g.DrawLine(pen, pts(i), pts(i + 1))
+
+        ' Segments are drawn in SLICES: a stretch of consecutive segments that share one colour AND
+        ' reach into the invalidated strip. Two things come out of that.
+        '
+        ' One call per stretch instead of one per segment - a chain of twenty snapshots nobody
+        ' coloured by hand is a single stretch, so it is one DrawLines and one FillPolygon rather
+        ' than twenty of each, and each of those calls was building a Pen or a Brush and setting up
+        ' a path of its own. Merging also takes away the faint seam the old strips left where two
+        ' antialiased edges met over the same column.
+        '
+        ' And the ones outside the strip are never handed over at all. GDI+ does not cheaply reject
+        ' a polyline that runs the width of the plot: it rasterizes the whole thing and throws away
+        ' what falls outside the clip, which is why a hover asking for one narrow column was paying
+        ' for every line on the surface (measured: 70 ms of a 70 ms strip repaint).
+        Dim side As Integer = If(_markerStyle = KBotChartMarkerStyle.None, 0, ThemeShapes.ScaleDpi(Me, _markerSize))
+        Dim padX As Integer = width + side \ 2 + 4
+        Dim lo As Integer = clip.Left - padX
+        Dim hi As Integer = clip.Right + padX
+
+        Dim first As Integer = 0
+        While first < pts.Count - 1
+            Dim runArgb As Integer = cols(first).ToArgb()
+            Dim last As Integer = first
+            While last < pts.Count - 1 AndAlso cols(last).ToArgb() = runArgb
+                last += 1
+            End While
+
+            Dim sliceStart As Integer = -1
+            For i As Integer = first To last - 1
+                If Math.Max(pts(i).X, pts(i + 1).X) >= lo AndAlso Math.Min(pts(i).X, pts(i + 1).X) <= hi Then
+                    If sliceStart < 0 Then sliceStart = i
+                ElseIf sliceStart >= 0 Then
+                    DrawRunSlice(g, pts, sliceStart, i, cols(first), width, stepped, fills, alpha)
+                    sliceStart = -1
                 End If
-            End Using
-        Next
+            Next
+            If sliceStart >= 0 Then
+                DrawRunSlice(g, pts, sliceStart, last, cols(first), width, stepped, fills, alpha)
+            End If
+            first = last
+        End While
 
         If _markerStyle = KBotChartMarkerStyle.None OrElse _markerSize <= 0 Then Return
-        Dim side As Integer = ThemeShapes.ScaleDpi(Me, _markerSize)
-        Using edge As New Pen(EffectivePlotBackColor(), Math.Max(1, ThemeShapes.ScaleDpi(Me, 1)))
-            For i As Integer = 0 To pts.Count - 1
-                Using fill As New SolidBrush(cols(i))
-                    DrawMarker(g, pts(i), side, fill, edge)
-                End Using
-            Next
-        End Using
+        Dim edge As Pen = ScratchPen(_edgePen, EffectivePlotBackColor(),
+                                     CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, 1))))
+        Dim fill As SolidBrush = Nothing
+        Dim fillArgb As Integer = 0
+        Dim reach As Integer = side \ 2 + 2
+        For i As Integer = 0 To pts.Count - 1
+            ' A marker outside the invalidated strip is drawn for GDI+ to throw away again. On a
+            ' hover, which asks for one narrow column, that is nearly every marker on the plot.
+            If pts(i).X + reach < clip.Left OrElse pts(i).X - reach > clip.Right Then Continue For
+            If pts(i).Y + reach < clip.Top OrElse pts(i).Y - reach > clip.Bottom Then Continue For
+            If fill Is Nothing OrElse cols(i).ToArgb() <> fillArgb Then
+                fill = ScratchBrush(_fillBrush, cols(i))
+                fillArgb = cols(i).ToArgb()
+            End If
+            DrawMarker(g, pts(i), side, fill, edge)
+        Next
     End Sub
+
+    ''' <summary>
+    ''' One stretch of the line, and the wash under it, in a single pair of calls.
+    ''' </summary>
+    ''' <remarks>
+    ''' The wash is closed by dropping straight to the floor of the plot at each end of the
+    ''' stretch. Those two vertical edges are the only part of the shape the data does not
+    ''' describe, and a stretch is only ever cut where it is outside the invalidated strip, so
+    ''' neither edge can appear on screen as a seam.
+    ''' </remarks>
+    Private Sub DrawRunSlice(g As Graphics, pts As List(Of Point), first As Integer, last As Integer,
+                             c As Color, width As Integer, stepped As Boolean,
+                             fills As Boolean, alpha As Integer)
+        Dim poly As Point() = RunPolyline(pts, first, last, stepped)
+        If poly.Length < 2 Then Return
+        If fills Then
+            Dim under(poly.Length + 1) As Point
+            Array.Copy(poly, under, poly.Length)
+            under(poly.Length) = New Point(poly(poly.Length - 1).X, _plotRect.Bottom)
+            under(poly.Length + 1) = New Point(poly(0).X, _plotRect.Bottom)
+            g.FillPolygon(ScratchBrush(_fillBrush, Color.FromArgb(alpha, c)), under)
+        End If
+        g.DrawLines(ScratchPen(_detailPen, c, CSng(width), LineCap.Round), poly)
+    End Sub
+
+    ''' <summary>
+    ''' The points of one stretch as a single polyline, ready for <c>DrawLines</c>.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>Step mode</b> (<see cref="KBotChartSeries.LineMode"/>) puts a corner between every
+    ''' pair - flat across, then straight up or down at the moment of the change - and both halves
+    ''' keep the left point's colour, because both belong to the stretch that point started.</para>
+    ''' <para>A vertex identical to the one before it is dropped rather than emitted: two snapshots
+    ''' at the same moment give no horizontal run and two equal values give no riser, and a
+    ''' zero-length segment under a round cap would paint a dot nobody measured.</para>
+    ''' </remarks>
+    Private Shared Function RunPolyline(pts As List(Of Point), first As Integer, last As Integer,
+                                        stepped As Boolean) As Point()
+        Dim outp As New List(Of Point)((last - first + 1) * If(stepped, 2, 1))
+        outp.Add(pts(first))
+        For i As Integer = first To last - 1
+            If stepped Then
+                Dim corner As New Point(pts(i + 1).X, pts(i).Y)
+                If corner <> outp(outp.Count - 1) Then outp.Add(corner)
+            End If
+            If pts(i + 1) <> outp(outp.Count - 1) Then outp.Add(pts(i + 1))
+        Next
+        Return outp.ToArray()
+    End Function
 
     Private Sub DrawMarker(g As Graphics, center As Point, side As Integer, fill As Brush, edge As Pen)
         Dim r As New Rectangle(center.X - side \ 2, center.Y - side \ 2, side, side)
@@ -710,9 +982,16 @@ Partial Public NotInheritable Class KBotChartView
         Dim side As Integer = ThemeShapes.ScaleDpi(Me, Math.Max(4, _markerSize) + 4)
         Dim r As New Rectangle(p.PlotLocation.X - side \ 2, p.PlotLocation.Y - side \ 2, side, side)
         Dim ring As Color = If(p.PointColor = Color.Empty, SeriesColor(s, _hoverSeriesIndex), p.PointColor)
-        Using pen As New Pen(ring, Math.Max(1, ThemeShapes.ScaleDpi(Me, 2)))
-            g.DrawEllipse(pen, r)
-        End Using
+        ' A circle, so this one does want smoothing - see the note in OnPaint.
+        Dim old As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+        Try
+            Using pen As New Pen(ring, Math.Max(1, ThemeShapes.ScaleDpi(Me, 2)))
+                g.DrawEllipse(pen, r)
+            End Using
+        Finally
+            g.SmoothingMode = old
+        End Try
     End Sub
 
     Private Sub DrawLegend(g As Graphics)
@@ -799,8 +1078,12 @@ Partial Public NotInheritable Class KBotChartView
             Dim gi As Integer = -1
             If tabIndex < 0 AndAlso si < 0 Then gi = HitTestGuide(e.Location)
             If gi <> _hoverGuideIndex Then
+                ' Only the two columns, not the whole plot: the pointer crossing a surface full of
+                ' payment lines used to ask for a full repaint per line it passed.
+                Dim wasGuide As Integer = _hoverGuideIndex
                 _hoverGuideIndex = gi
-                Invalidate()
+                InvalidateGuideColumn(wasGuide)
+                InvalidateGuideColumn(gi)
             End If
 
             If si <> _hoverSeriesIndex OrElse pi <> _hoverPointIndex Then
@@ -814,6 +1097,19 @@ Partial Public NotInheritable Class KBotChartView
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotChartView.OnMouseMove", ex)
         End Try
+    End Sub
+
+    ''' <summary>Repaints the column one dated line stands in, top to bottom of the plot.</summary>
+    ''' <remarks>
+    ''' Wide enough for the hovered line at its two-pixel weight plus a pixel each side, so the
+    ''' line that stops being hovered leaves no crumb of its thicker self behind.
+    ''' </remarks>
+    Private Sub InvalidateGuideColumn(index As Integer)
+        If index < 0 OrElse index >= _guides.Count Then Return
+        Dim gd As KBotChartGuide = _guides(index)
+        If gd.PlotX < 0 OrElse _plotRect.Height <= 0 Then Return
+        Dim half As Integer = Math.Max(1, ThemeShapes.ScaleDpi(Me, 3))
+        Invalidate(New Rectangle(gd.PlotX - half, _plotRect.Top, half * 2 + 1, _plotRect.Height))
     End Sub
 
     Protected Overrides Sub OnMouseLeave(e As EventArgs)

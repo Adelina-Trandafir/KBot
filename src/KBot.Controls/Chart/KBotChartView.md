@@ -27,7 +27,8 @@ HOLDS until the next point changes it, then jumps).
   continuously is not, and a chart that mixes the two must be able to say so. `FillArea`
   follows the stepped path, so the wash keeps agreeing with the line above it.
 - **KBotChartGuide**: `Moment`, `Text` (tooltip title; empty ⇒ no label at all), `Tooltip`,
-  `LineColor` (Empty = the dimmed text colour — **never red**, see below), `DashStyle = Dot`,
+  `LineColor` (Empty = the dimmed text colour — **never red**, see below), `DashStyle` (kept for
+  compatibility, **no longer painted from** — see below),
   `Visible = True`, `Tag`. A dated line drawn straight down the plot BEHIND every series — a
   moment that matters without being a measurement (a payment). Not a series: no value, no
   marker, no legend entry, no key, no click. Hovering names it, and that is all it does.
@@ -82,6 +83,16 @@ HOLDS until the next point changes it, then jumps).
   guide is a whole column of the plot, not a spot on it. A marker always wins the pixel they
   share, because a marker can be clicked and a guide cannot. Guides do **not** stretch the
   time axis: one outside the span of the points is simply not drawn.
+- Guides are drawn **solid and dimmed**, never dotted, and `KBotChartGuide.DashStyle` is
+  ignored on both surfaces. A dotted line is one rasterized segment per dot: on a surface
+  holding a thousand payments that was 198 ms of every 205 ms paint, against under 2 ms for
+  everything else on it. A solid line taken half-way back toward the plot background reads
+  exactly the way a 50%-duty dot pattern read. The line under the pointer is what changes:
+  full colour at two pixels, rather than "the solid one among dotted ones".
+- The painter draws **columns, not guides**. Guides landing on the same pixel column in the
+  same colour are folded into one line, the list is walked in axis order so the invalidated
+  strip can be entered and left early, and the pen is rewritten once per run of one colour.
+  A hover repaints the two columns involved, not the whole plot.
 - In `Step` mode the corner between the flat run and the riser carries no marker: it is the
   only vertex the data does not contain, and a marker there would claim a measurement nobody
   took. Both halves take the LEFT point's colour, because both belong to the stretch it

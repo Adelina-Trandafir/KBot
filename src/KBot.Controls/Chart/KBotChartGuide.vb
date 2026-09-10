@@ -108,8 +108,21 @@ Public NotInheritable Class KBotChartGuide
         LineColor = Color.Empty
     End Sub
 
+    ''' <summary>
+    ''' <b>No longer painted from.</b> Both surfaces draw a guide solid and dimmed instead.
+    ''' </summary>
+    ''' <remarks>
+    ''' A dotted line is not one line to GDI+, it is one segment per dot. A surface holding a
+    ''' thousand payments was rasterizing something like half a million segments per frame, and
+    ''' the timing journal had the dated lines at 198 ms of every 205 ms paint while everything
+    ''' else on the surface together cost under 2 ms. A solid line taken half-way back toward the
+    ''' plot background reads exactly the way a 50%-duty dot pattern read, for a fraction of the
+    ''' work - see <c>KBotLaneView.DrawGuides</c> and <c>KBotChartView.DrawGuides</c>.
+    ''' <para>The property is KEPT rather than removed: it is public, it is serialized, and a host
+    ''' that already set it in its .Designer.vb must keep compiling. It simply has no effect.</para>
+    ''' </remarks>
     <Category("K-BOT Chart Guide")>
-    <Description("Dash pattern of the line. Dotted by default, so it reads as background rather than as one more series.")>
+    <Description("Not used any more. Guides are drawn solid and dimmed on both the chart and the lane view.")>
     <DefaultValue(Drawing2D.DashStyle.Dot)>
     Public Property DashStyle As Drawing2D.DashStyle = Drawing2D.DashStyle.Dot
 

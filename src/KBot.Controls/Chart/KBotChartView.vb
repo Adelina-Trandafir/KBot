@@ -143,6 +143,11 @@ Partial Public NotInheritable Class KBotChartView
     Private _maxMoment As Date = Date.MinValue
     Private _minValue As Double
     Private _maxValue As Double
+
+    ' The dated lines the painter actually draws - one entry per COLUMN rather than one per guide.
+    ' Filled by ProjectGuides, read by DrawGuides. See the structure for why the two are not the
+    ' same number.
+    Private ReadOnly _guideColumns As New List(Of GuideColumn)
     Private _hoverSeriesIndex As Integer = -1
     Private _hoverPointIndex As Integer = -1
     Private _hoverTabIndex As Integer = -1
@@ -163,6 +168,18 @@ Partial Public NotInheritable Class KBotChartView
     Private _axisPen As Pen
     Private _gridPen As Pen
     Private _borderPen As Pen
+
+    ' Scratch GDI+ objects, reused instead of allocated per shape. A chart with a few hundred
+    ' points and a surface full of dated lines was building one Pen per segment and one per guide
+    ' on EVERY repaint, and a repaint happens each time the pointer crosses a marker or a guide.
+    ' They are ONLY ever touched from the paint path, which is single-threaded (WM_PAINT), and
+    ' every user goes through ScratchPen/ScratchBrush, which re-sets EVERY property - a cap left
+    ' over from the previous shape would be a defect that shows up in a different method.
+    ' Two pens, not one, because the outline of a marker is drawn while the pen that drew the
+    ' segment leading to it is still set up.
+    Private _detailPen As Pen
+    Private _edgePen As Pen
+    Private _fillBrush As SolidBrush
 
     ' Fonts DERIVED from Font (bold header, smaller axis). Cached because deriving a font on every
     ' paint allocates a GDI handle per repaint; rebuilt whenever Font or the override changes.
@@ -1531,6 +1548,14 @@ Partial Public NotInheritable Class KBotChartView
             _gridPen = Nothing
             _borderPen?.Dispose()
             _borderPen = Nothing
+            ' The scratch objects exist so that a repaint does not allocate one per shape; the
+            ' price of that is that they outlive the paint pass and have to be freed by hand.
+            _detailPen?.Dispose()
+            _detailPen = Nothing
+            _edgePen?.Dispose()
+            _edgePen = Nothing
+            _fillBrush?.Dispose()
+            _fillBrush = Nothing
             _derivedHeaderFont?.Dispose()
             _derivedHeaderFont = Nothing
             _derivedAxisFont?.Dispose()

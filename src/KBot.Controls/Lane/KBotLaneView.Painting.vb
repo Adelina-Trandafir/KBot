@@ -83,7 +83,13 @@ Partial Public NotInheritable Class KBotLaneView
     ''' end mark.
     ''' </remarks>
     Private Sub RecalcLayout()
+        Dim mark As Long = KBotLaneLog.Mark()
         _layoutValid = True
+
+        ' First, because everything under it measures the collection this decides on: inside the
+        ' designer with no lanes authored, the surface lays out the SAMPLE (KBotLaneView.Preview).
+        RefreshPreviewState()
+
         _headerRect = Rectangle.Empty
         _enlargeRect = Rectangle.Empty
         _plotRect = Rectangle.Empty
@@ -127,7 +133,7 @@ Partial Public NotInheritable Class KBotLaneView
                                      Math.Max(0, rest.Height - margin * 2 - bottomGutter))
 
         LayoutScrollBar(surface)
-        If _vScroll.Visible Then surface.Width = Math.Max(0, surface.Width - _vScroll.Width)
+        If vScroll.Visible Then surface.Width = Math.Max(0, surface.Width - vScroll.Width)
 
         _plotRect = New Rectangle(surface.Left + leftGutter, surface.Top,
                                   Math.Max(0, surface.Width - leftGutter - rightGutter),
@@ -136,7 +142,23 @@ Partial Public NotInheritable Class KBotLaneView
         LayoutLanes(surface)
         ProjectMarkers()
         ProjectGuides()
+
+        KBotLaneLog.Done("LAYOUT", mark,
+                         $"lanes={VisibleLanes.Count} markers={CountVisibleMarkers()} " &
+                         $"guides={VisibleGuides.Count} cols={_guideColumns.Count} " &
+                         $"client={client.Width}x{client.Height} plot={_plotRect.Width}x{_plotRect.Height} " &
+                         $"content={_contentHeight} bar={If(vScroll.Visible, "yes", "no")}" &
+                         If(_previewActive, " preview", String.Empty))
     End Sub
+
+    ''' <summary>How many markers the last layout actually put on the surface. For the journal.</summary>
+    Private Function CountVisibleMarkers() As Integer
+        Dim n As Integer = 0
+        For Each ln As KBotLane In VisibleLanes
+            n += ln.PlottedInOrder.Count
+        Next
+        Return n
+    End Function
 
     ''' <summary>
     ''' The time span of everything drawn — from the markers, unless the host pinned it.
@@ -151,7 +173,7 @@ Partial Public NotInheritable Class KBotLaneView
         Dim minTicks As Double = 0
         Dim maxTicks As Double = 0
 
-        For Each ln As KBotLane In _lanes
+        For Each ln As KBotLane In VisibleLanes
             If Not ln.Visible Then Continue For
             For Each m As KBotLaneMarker In ln.Markers
                 If Not m.Visible Then Continue For
@@ -204,9 +226,9 @@ Partial Public NotInheritable Class KBotLaneView
         Dim spacing As Integer = ThemeShapes.ScaleDpi(Me, _laneSpacing)
         Dim sep As Integer = If(_separatorWidth > 0, ThemeShapes.ScaleDpi(Me, _separatorWidth) + spacing, 0)
 
-        Dim y As Integer = surface.Top - _vScroll.Value
+        Dim y As Integer = surface.Top - vScroll.Value
         Dim total As Integer = 0
-        For Each ln As KBotLane In _lanes
+        For Each ln As KBotLane In VisibleLanes
             If Not ln.Visible Then
                 ln.Bounds = Rectangle.Empty
                 Continue For
@@ -234,47 +256,49 @@ Partial Public NotInheritable Class KBotLaneView
     ''' </remarks>
     Private Sub LayoutScrollBar(surface As Rectangle)
         If KBotDesignTime.IsDesignTime(Me) Then
-            _vScroll.Visible = False
+            vScroll.Visible = False
             Return
         End If
 
         Dim viewport As Integer = Math.Max(1, surface.Height)
         Dim needed As Boolean = _contentHeight > viewport
         If Not needed Then
-            If _vScroll.Visible Then
-                _vScroll.Value = 0
-                _vScroll.Visible = False
+            If vScroll.Visible Then
+                vScroll.Value = 0
+                vScroll.Visible = False
             End If
             Return
         End If
 
-        _vScroll.Width = SystemInformation.VerticalScrollBarWidth
-        _vScroll.Left = Math.Max(0, surface.Right - _vScroll.Width)
-        _vScroll.Top = surface.Top
-        _vScroll.Height = viewport
-        _vScroll.SmallChange = Math.Max(1, ThemeShapes.ScaleDpi(Me, _laneHeight + _laneSpacing))
-        _vScroll.LargeChange = viewport
+        vScroll.Width = SystemInformation.VerticalScrollBarWidth
+        vScroll.Left = Math.Max(0, surface.Right - vScroll.Width)
+        vScroll.Top = surface.Top
+        vScroll.Height = viewport
+        vScroll.SmallChange = Math.Max(1, ThemeShapes.ScaleDpi(Me, _laneHeight + _laneSpacing))
+        vScroll.LargeChange = viewport
         ' WinForms: the largest reachable Value is Maximum - LargeChange + 1, so Maximum has to be
         ' the content height plus the viewport minus one for the last lane to come fully into view.
-        _vScroll.Maximum = _contentHeight + viewport - 1
-        If _vScroll.Value > _contentHeight - viewport Then
-            _vScroll.Value = Math.Max(0, _contentHeight - viewport)
+        vScroll.Maximum = _contentHeight + viewport - 1
+        If vScroll.Value > _contentHeight - viewport Then
+            vScroll.Value = Math.Max(0, _contentHeight - viewport)
         End If
-        _vScroll.Visible = True
+        vScroll.Visible = True
     End Sub
 
     Private Sub ApplyScrollBarTheme()
-        If _vScroll Is Nothing OrElse Not _vScroll.IsHandleCreated Then Return
-        Dim unused As Integer = SetWindowTheme(_vScroll.Handle,
+        If vScroll Is Nothing OrElse Not vScroll.IsHandleCreated Then Return
+        Dim unused As Integer = SetWindowTheme(vScroll.Handle,
                                                If(_isDarkScheme, "DarkMode_Explorer", "Explorer"), Nothing)
     End Sub
 
-    Private Sub OnVScrollScroll(sender As Object, e As ScrollEventArgs)
+    Private Sub OnVScrollScroll(sender As Object, e As ScrollEventArgs) Handles vScroll.Scroll
+        Dim mark As Long = KBotLaneLog.Mark()
         Try
             ' The bar moved, so every lane rectangle is now wrong. Nothing else changed, but the
             ' whole stack is recomputed anyway: a surface patched by an offset and a surface laid
             ' out from scratch drift apart, and here the one that lies is the screen.
             InvalidateLaneLayout()
+            KBotLaneLog.Done("SCROLL", mark, $"type={e.Type} value={e.NewValue}")
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotLaneView.OnVScrollScroll", ex)
         End Try
@@ -297,7 +321,7 @@ Partial Public NotInheritable Class KBotLaneView
 
     Private Sub ProjectMarkers()
         Dim plotted As Boolean = _plotRect.Width > 0 AndAlso _plotRect.Height > 0
-        For Each ln As KBotLane In _lanes
+        For Each ln As KBotLane In VisibleLanes
             ln.PlottedInOrder.Clear()
             Dim laneDrawn As Boolean = plotted AndAlso ln.Visible AndAlso ln.Bounds.Height > 0
             For Each m As KBotLaneMarker In ln.Markers
@@ -326,9 +350,28 @@ Partial Public NotInheritable Class KBotLaneView
         Next
     End Sub
 
+    ''' <summary>
+    ''' One dated line as the painter needs it: a column and a colour, nothing else.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>A guide and a drawn line are NOT the same count. Guides land on the axis by date, and
+    ''' the axis is only ever as wide as the surface: a thousand payments spread over a year fall
+    ''' on a few hundred distinct pixel columns, and everything past the first line in a column is
+    ''' drawing over a line that is already there.</para>
+    ''' <para>The colour is part of the identity, not just the position — two guides on the same
+    ''' column in two colours are two different lines, and only the second one would be visible.
+    ''' <c>0</c> means "the dimmed text colour of the active scheme", so a theme change does not
+    ''' make this list stale.</para>
+    ''' </remarks>
+    Private Structure GuideColumn
+        Public X As Integer
+        Public Argb As Integer
+    End Structure
+
     Private Sub ProjectGuides()
         Dim plotted As Boolean = _plotRect.Width > 0 AndAlso _plotRect.Height > 0
-        For Each gd As KBotChartGuide In _guides
+        _guideColumns.Clear()
+        For Each gd As KBotChartGuide In VisibleGuides
             If Not plotted OrElse Not gd.Visible Then
                 gd.PlotX = -1
                 Continue For
@@ -339,7 +382,40 @@ Partial Public NotInheritable Class KBotLaneView
                 Continue For
             End If
             gd.PlotX = MomentToX(gd.Moment)
+
+            Dim col As GuideColumn
+            col.X = gd.PlotX
+            col.Argb = If(gd.LineColor = Color.Empty, 0, gd.LineColor.ToArgb())
+            _guideColumns.Add(col)
         Next
+        FoldGuideColumns()
+    End Sub
+
+    ''' <summary>
+    ''' Sorts the columns and drops the ones that would land on top of each other.
+    ''' </summary>
+    ''' <remarks>
+    ''' Left to right, because the painter walks the list in axis order: sorted, it can skip
+    ''' everything to the left of the invalidated strip and STOP at the first column past its right
+    ''' edge, instead of testing all thousand every time a lane band repaints.
+    ''' </remarks>
+    Private Sub FoldGuideColumns()
+        If _guideColumns.Count < 2 Then Return
+        _guideColumns.Sort(Function(a, b)
+                               Dim byX As Integer = a.X.CompareTo(b.X)
+                               If byX <> 0 Then Return byX
+                               Return a.Argb.CompareTo(b.Argb)
+                           End Function)
+
+        Dim kept As Integer = 1
+        For i As Integer = 1 To _guideColumns.Count - 1
+            Dim col As GuideColumn = _guideColumns(i)
+            Dim last As GuideColumn = _guideColumns(kept - 1)
+            If col.X = last.X AndAlso col.Argb = last.Argb Then Continue For
+            _guideColumns(kept) = col
+            kept += 1
+        Next
+        _guideColumns.RemoveRange(kept, _guideColumns.Count - kept)
     End Sub
 
     ''' <summary>
@@ -368,7 +444,7 @@ Partial Public NotInheritable Class KBotLaneView
     End Function
 
     Private Function HasAnyVisibleMarker() As Boolean
-        For Each ln As KBotLane In _lanes
+        For Each ln As KBotLane In VisibleLanes
             If Not ln.Visible Then Continue For
             For Each m As KBotLaneMarker In ln.Markers
                 If m.Visible Then Return True
@@ -383,6 +459,9 @@ Partial Public NotInheritable Class KBotLaneView
 
     Protected Overrides Sub OnPaint(e As PaintEventArgs)
         Dim designTime As Boolean = KBotDesignTime.IsDesignTime(Me)
+        Dim mark As Long = KBotLaneLog.Mark()
+        Dim asked As Integer = _invalidateCount
+        _invalidateCount = 0
         Try
             If _updateDepth > 0 Then
                 ' Mid-rebuild: nothing is drawn, but the surface still has to be COVERED. With
@@ -394,21 +473,40 @@ Partial Public NotInheritable Class KBotLaneView
             EnsureLayout()
 
             Dim g As Graphics = e.Graphics
-            g.SmoothingMode = SmoothingMode.AntiAlias
+            ' SMOOTHING OFF BY DEFAULT, and switched on only around the round and the slanted —
+            ' the markers, the end marks, the frame, the enlarge glyph. Everything else here is
+            ' axis-aligned: the fills, the rails, the dated lines, the separators. Antialiasing
+            ' those buys no pixel anyone can see and is paid for by the surface, so it is the one
+            ' cost that grows with the WINDOW rather than with the data — which is exactly why
+            ' the big window used to crawl while the narrow one felt fine (slice 0058).
+            g.SmoothingMode = SmoothingMode.None
             g.Clear(BackColor)
 
             DrawHeaderBand(g, designTime)
             DrawPlotBackground(g)
 
-            If _lanes.Count > 0 Then
+            If VisibleLanes.Count > 0 Then
                 ' Everything below the band is clipped to the surface, so a lane scrolled halfway
                 ' out is cut cleanly instead of spilling over the band or the axis.
                 Dim oldClip As Region = g.Clip.Clone()
                 Try
                     g.SetClip(SurfaceClip(), CombineMode.Intersect)
-                    DrawGuides(g)
+                    ' Each phase timed separately. The whole reason this journal exists is that
+                    ' "the surface is slow" is not an answer: the guides, the rails and the
+                    ' markers grow with three different numbers, and only one of them is ever
+                    ' the one eating the frame.
+                    Dim phase As Long = KBotLaneLog.Mark()
+                    DrawGuides(g, e.ClipRectangle)
+                    KBotLaneLog.Done("  guides", phase)
+
+                    phase = KBotLaneLog.Mark()
                     DrawLanes(g)
+                    KBotLaneLog.Done("  lanes", phase)
+
+                    phase = KBotLaneLog.Mark()
                     DrawMarkers(g)
+                    KBotLaneLog.Done("  markers", phase)
+
                     DrawDropTarget(g)
                 Finally
                     g.Clip = oldClip
@@ -421,6 +519,14 @@ Partial Public NotInheritable Class KBotLaneView
             End If
 
             DrawOuterBorder(g, designTime)
+
+            ' `asked` is the number of repaint REQUESTS this one paint answers. It is the number
+            ' that explains a surface feeling stuck: a hover that asks for four invalidations and
+            ' gets four full paints is a different defect from one paint that is simply slow.
+            KBotLaneLog.Done("PAINT", mark,
+                             $"clip={e.ClipRectangle.Width}x{e.ClipRectangle.Height}@{e.ClipRectangle.X},{e.ClipRectangle.Y} " &
+                             $"lanes={VisibleLanes.Count} markers={CountVisibleMarkers()} asked={asked}" &
+                             If(_previewActive, " preview", String.Empty))
         Catch ex As Exception
             ' UI boundary: a throw out of a paint body kills the process, so it logs and returns.
             ' Nothing is logged from inside the designer process (see KBotDesignTime).
@@ -444,17 +550,29 @@ Partial Public NotInheritable Class KBotLaneView
         If (Not _borderVisible OrElse _borderWidth <= 0) AndAlso Not broken Then Return
         Dim radius As Integer = EffectiveCornerRadius()
         Dim r As New Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1))
-        Using path As GraphicsPath = ThemeShapes.RoundedRect(r, radius)
-            If broken Then
-                Using pen As New Pen(Palette().ErrorColor, CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, 2))))
-                    g.DrawPath(pen, path)
-                End Using
-            Else
-                g.DrawPath(BorderPen, path)
-            End If
-        End Using
+        ' Rounded corners, so this one does want smoothing — see the note in OnPaint.
+        Dim old As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+        Try
+            Using path As GraphicsPath = ThemeShapes.RoundedRect(r, radius)
+                If broken Then
+                    Using pen As New Pen(Palette().ErrorColor, CSng(Math.Max(1, ThemeShapes.ScaleDpi(Me, 2))))
+                        g.DrawPath(pen, path)
+                    End Using
+                Else
+                    g.DrawPath(BorderPen, path)
+                End If
+            End Using
+        Finally
+            g.SmoothingMode = old
+        End Try
     End Sub
 
+    ''' <summary>
+    ''' Reads the HOST's lanes, never the design-time sample: the red frame reports a defect in
+    ''' the data somebody authored, and a sample of ours has no business either raising it or
+    ''' hiding it.
+    ''' </summary>
     Private Function HasDuplicateOrEmptyKeys() As Boolean
         Dim seen As New HashSet(Of String)(StringComparer.Ordinal)
         For Each ln As KBotLane In _lanes
@@ -484,12 +602,15 @@ Partial Public NotInheritable Class KBotLaneView
             End Using
         End If
 
-        If Not String.IsNullOrEmpty(_headerCaption) Then
+        ' On the design surface a control with no caption of its own borrows its type name, so a
+        ' band sitting above the sample says what it belongs to instead of being a blank strip.
+        Dim caption As String = If(String.IsNullOrEmpty(_headerCaption), PreviewCaption(), _headerCaption)
+        If Not String.IsNullOrEmpty(caption) Then
             Dim pad As Integer = ThemeShapes.ScaleDpi(Me, 8)
             Dim right As Integer = If(_enlargeRect.Width > 0, _enlargeRect.Left - pad, _headerRect.Right - pad)
             Dim r As New Rectangle(_headerRect.Left + pad, _headerRect.Top,
                                    Math.Max(0, right - _headerRect.Left - pad), _headerRect.Height)
-            TextRenderer.DrawText(g, _headerCaption, EffectiveHeaderFont(), r, EffectiveHeaderTextColor(),
+            TextRenderer.DrawText(g, caption, EffectiveHeaderFont(), r, EffectiveHeaderTextColor(),
                                   TextFormatFlags.Left Or TextFormatFlags.VerticalCenter Or
                                   TextFormatFlags.EndEllipsis)
         End If
@@ -503,7 +624,17 @@ Partial Public NotInheritable Class KBotLaneView
     ''' </summary>
     Private Sub DrawEnlargeButton(g As Graphics, designTime As Boolean)
         If _enlargeRect.Width <= 0 OrElse _enlargeRect.Height <= 0 Then Return
+        ' A rounded wash and a diagonal — smoothing on, over a few dozen pixels. See OnPaint.
+        Dim old As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+        Try
+            DrawEnlargeGlyph(g, designTime)
+        Finally
+            g.SmoothingMode = old
+        End Try
+    End Sub
 
+    Private Sub DrawEnlargeGlyph(g As Graphics, designTime As Boolean)
         If _hoverEnlarge AndAlso Not designTime Then
             Dim pad As Integer = ThemeShapes.ScaleDpi(Me, 3)
             Dim back As New Rectangle(_enlargeRect.X - pad, _enlargeRect.Y - pad,
@@ -543,28 +674,114 @@ Partial Public NotInheritable Class KBotLaneView
     End Sub
 
     ''' <summary>
-    ''' The dated lines, top to bottom of the whole surface, thin and dotted.
+    ''' The dated lines, top to bottom of the whole surface, one pixel wide and dimmed.
     ''' </summary>
     ''' <remarks>
-    ''' Across ALL lanes rather than per lane, because that is the whole point of them: the
+    ''' <para>Across ALL lanes rather than per lane, because that is the whole point of them: the
     ''' operator is asking "is this marker before or after that payment", and the answer is only
-    ''' free to read when the line runs past every lane the marker could be dropped on.
+    ''' free to read when the line runs past every lane the marker could be dropped on.</para>
+    '''
+    ''' <para><b>SOLID, and <see cref="KBotChartGuide.DashStyle"/> is deliberately ignored here.</b>
+    ''' A dotted line is not one line to GDI+, it is one segment per dot — a surface holding a
+    ''' thousand payments down a full-screen window was rasterizing something like half a million
+    ''' segments per frame, and the journal had guides at 198 ms of every 205 ms paint while the
+    ''' rails and the markers together cost under 2 ms. Dimmed instead of dotted reads the same at
+    ''' one pixel and costs a fraction. The property stays on the guide only because it is public
+    ''' and serialized; <c>KBotChartView</c> stopped painting from it too.</para>
+    '''
+    ''' <para><b>Three things keep this cheap</b>, and all three matter: the columns are folded
+    ''' (see <see cref="GuideColumn"/>), only the columns inside <paramref name="clip"/> are
+    ''' walked and only the invalidated stretch of each is drawn, and the pen is rewritten once per
+    ''' RUN of one colour rather than once per line — every write to a <c>Pen</c> throws away what
+    ''' GDI+ built from the last one.</para>
     ''' </remarks>
-    Private Sub DrawGuides(g As Graphics)
-        If _guides.Count = 0 Then Return
+    Private Sub DrawGuides(g As Graphics, clip As Rectangle)
+        If _guideColumns.Count = 0 Then Return
         Dim surface As Rectangle = SurfaceClip()
         If surface.Height <= 0 Then Return
+
+        ' The strip that was actually asked for. A hover moving between two lanes invalidates two
+        ' bands out of a 1300-pixel surface, and drawing the full height of every line to have GDI+
+        ' throw all but 69 rows of it away is the whole cost paid for nothing.
+        Dim top As Integer = Math.Max(surface.Top, clip.Top)
+        Dim bottom As Integer = Math.Min(surface.Bottom, clip.Bottom)
+        If bottom <= top Then Return
+        ' Opened by a pixel on each side: a line standing exactly on the edge of the strip still
+        ' has to be repainted, or the band leaves a gap in it.
+        Dim left As Integer = clip.Left - 1
+        Dim right As Integer = clip.Right + 1
+
         Dim fallback As Color = Palette().TextDimColor
         Dim width As Single = CSng(_px1)
-        For i As Integer = 0 To _guides.Count - 1
-            Dim gd As KBotChartGuide = _guides(i)
-            If gd.PlotX < 0 Then Continue For
-            Dim pen As Pen = ScratchPen(_detailPen,
-                                        If(gd.LineColor = Color.Empty, fallback, gd.LineColor),
-                                        width, LineCap.Flat,
-                                        If(i = _hoverGuideIndex, DashStyle.Solid, gd.DashStyle))
-            g.DrawLine(pen, gd.PlotX, surface.Top, gd.PlotX, surface.Bottom)
+        Dim pen As Pen = Nothing
+        Dim penArgb As Integer = Integer.MinValue
+
+        For i As Integer = 0 To _guideColumns.Count - 1
+            Dim col As GuideColumn = _guideColumns(i)
+            If col.X < left Then Continue For
+            ' Sorted left to right, so the first column past the strip ends the walk.
+            If col.X > right Then Exit For
+            If col.Argb <> penArgb Then
+                pen = ScratchPen(_detailPen,
+                                 DimmedGuideColor(If(col.Argb = 0, fallback, Color.FromArgb(col.Argb))),
+                                 width)
+                penArgb = col.Argb
+            End If
+            g.DrawLine(pen, col.X, top, col.X, bottom)
         Next
+
+        DrawHoveredGuide(g, top, bottom, fallback)
+    End Sub
+
+    ''' <summary>
+    ''' How far a dated line is taken back toward the plot background. Half.
+    ''' </summary>
+    ''' <remarks>
+    ''' A dotted line covers about half the pixels of the column it stands in, so half is what the
+    ''' operator was already reading — one dated line looked like a quiet mark, and a surface
+    ''' carrying a thousand of them looked like a wash with the background showing through. A solid
+    ''' line at full strength is neither: it turns a busy surface into one flat block, because at a
+    ''' thousand payments over a few hundred pixels there IS a line in every column. Dimming brings
+    ''' back the exact reading the dots gave, without the dots.
+    ''' </remarks>
+    Private Const GuideDimming As Double = 0.5
+
+    ''' <summary>
+    ''' A guide colour, mixed toward the plot background — see <see cref="GuideDimming"/>.
+    ''' </summary>
+    ''' <remarks>
+    ''' Mixed here rather than drawn with an alpha, and the two are the same picture: guides go
+    ''' down BEFORE the rails and the hover wash, so a dated line never has anything under it but
+    ''' the plot background. An opaque pen over one known colour is the fast path, and blending a
+    ''' thousand lines per frame is exactly the cost this pass exists to get rid of.
+    ''' </remarks>
+    Private Function DimmedGuideColor(c As Color) As Color
+        Dim back As Color = EffectivePlotBackColor()
+        Return Color.FromArgb(Mix(c.R, back.R), Mix(c.G, back.G), Mix(c.B, back.B))
+    End Function
+
+    Private Shared Function Mix(from As Byte, toward As Byte) As Integer
+        Dim v As Integer = CInt(Math.Round(from + (CInt(toward) - CInt(from)) * GuideDimming))
+        Return Math.Max(0, Math.Min(255, v))
+    End Function
+
+    ''' <summary>
+    ''' The line under the pointer, drawn over the top of the others and thicker.
+    ''' </summary>
+    ''' <remarks>
+    ''' Hover used to be the one guide drawn solid among dotted ones. Now that they are all solid
+    ''' the difference is carried by weight instead: this one line is drawn at its FULL colour
+    ''' rather than dimmed (see <see cref="GuideDimming"/>) and two pixels wide rather than one.
+    ''' Its own colour, though, never another — a payment line that changed hue under the pointer
+    ''' would read as a different KIND of line, which is the one thing it must not do.
+    ''' </remarks>
+    Private Sub DrawHoveredGuide(g As Graphics, top As Integer, bottom As Integer, fallback As Color)
+        If _hoverGuideIndex < 0 OrElse _hoverGuideIndex >= VisibleGuides.Count Then Return
+        Dim gd As KBotChartGuide = VisibleGuides(_hoverGuideIndex)
+        If gd.PlotX < 0 Then Return
+        g.DrawLine(ScratchPen(_detailPen, If(gd.LineColor = Color.Empty, fallback, gd.LineColor),
+                              CSng(_px2)),
+                   gd.PlotX, top, gd.PlotX, bottom)
     End Sub
 
     ''' <summary>The rails, the separators, the captions and the end marks.</summary>
@@ -575,8 +792,8 @@ Partial Public NotInheritable Class KBotLaneView
         Dim sepW As Integer = ThemeShapes.ScaleDpi(Me, Math.Max(1, _separatorWidth))
         Dim railW As Integer = Math.Max(1, ThemeShapes.ScaleDpi(Me, _laneLineWidth))
 
-        For i As Integer = 0 To _lanes.Count - 1
-            Dim ln As KBotLane = _lanes(i)
+        For i As Integer = 0 To VisibleLanes.Count - 1
+            Dim ln As KBotLane = VisibleLanes(i)
             If Not ln.Visible OrElse ln.Bounds.Height <= 0 Then Continue For
             If ln.Bounds.Bottom < surface.Top OrElse ln.Bounds.Top > surface.Bottom Then Continue For
 
@@ -663,6 +880,17 @@ Partial Public NotInheritable Class KBotLaneView
     ''' </remarks>
     Private Sub DrawEndMark(g As Graphics, ln As KBotLane)
         If ln.EndMark = KBotLaneEndMark.None OrElse _endMarkSize <= 0 Then Return
+        ' A tick is two slanted strokes, so smoothing goes on for the one glyph. See OnPaint.
+        Dim old As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+        Try
+            DrawEndMarkGlyph(g, ln)
+        Finally
+            g.SmoothingMode = old
+        End Try
+    End Sub
+
+    Private Sub DrawEndMarkGlyph(g As Graphics, ln As KBotLane)
         Dim side As Integer = ThemeShapes.ScaleDpi(Me, _endMarkSize)
         Dim gap As Integer = ThemeShapes.ScaleDpi(Me, _axisLabelGap)
         Dim r As New Rectangle(_plotRect.Right + gap,
@@ -682,6 +910,18 @@ Partial Public NotInheritable Class KBotLaneView
     End Sub
 
     Private Sub DrawMarkers(g As Graphics)
+        ' The one pass that is all circles and diamonds, so smoothing goes on ONCE for the whole
+        ' pass rather than per marker — setting it costs a state change each time. See OnPaint.
+        Dim oldMode As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+        Try
+            DrawMarkerPass(g)
+        Finally
+            g.SmoothingMode = oldMode
+        End Try
+    End Sub
+
+    Private Sub DrawMarkerPass(g As Graphics)
         Dim surface As Rectangle = SurfaceClip()
         Dim side As Integer = ThemeShapes.ScaleDpi(Me, _markerSize)
         Dim labelFont As Font = EffectiveAxisFont()
@@ -689,8 +929,8 @@ Partial Public NotInheritable Class KBotLaneView
         ' every marker asked for it two or three times.
         Dim plotBack As Color = EffectivePlotBackColor()
 
-        For i As Integer = 0 To _lanes.Count - 1
-            Dim ln As KBotLane = _lanes(i)
+        For i As Integer = 0 To VisibleLanes.Count - 1
+            Dim ln As KBotLane = VisibleLanes(i)
             If Not ln.Visible OrElse ln.Bounds.Height <= 0 Then Continue For
             If ln.Bounds.Bottom < surface.Top OrElse ln.Bounds.Top > surface.Bottom Then Continue For
             Dim laneColor As Color = EffectiveLaneColor(ln, i)
@@ -851,6 +1091,7 @@ Partial Public NotInheritable Class KBotLaneView
 
     Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
         MyBase.OnMouseDown(e)
+        Dim mark As Long = KBotLaneLog.Mark()
         Try
             If e.Button <> MouseButtons.Left Then Return
             Focus()
@@ -868,7 +1109,8 @@ Partial Public NotInheritable Class KBotLaneView
             Dim li As Integer = -1
             Dim mi As Integer = -1
             HitTestMarker(e.Location, li, mi)
-            If li >= 0 Then ArmDrag(_lanes(li).Markers(mi), e.Location, e.Button)
+            If li >= 0 Then ArmDrag(VisibleLanes(li).Markers(mi), e.Location, e.Button)
+            KBotLaneLog.Done("DOWN", mark, $"pt={e.X},{e.Y} lane={li} marker={mi}")
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotLaneView.OnMouseDown", ex)
         End Try
@@ -876,8 +1118,10 @@ Partial Public NotInheritable Class KBotLaneView
 
     Protected Overrides Sub OnMouseUp(e As MouseEventArgs)
         MyBase.OnMouseUp(e)
+        Dim mark As Long = KBotLaneLog.Mark()
         Try
             CancelDragArming()
+            KBotLaneLog.Done("UP", mark, $"pt={e.X},{e.Y}")
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotLaneView.OnMouseUp", ex)
         End Try
@@ -885,17 +1129,28 @@ Partial Public NotInheritable Class KBotLaneView
 
     Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
         MyBase.OnMouseMove(e)
+        Dim mark As Long = KBotLaneLog.Mark()
         Try
             ' The drag takes over the whole modal loop, so the rest of this handler has nothing
             ' left to do when it returns — the pointer is somewhere else entirely by then.
-            If MaybeBeginDrag(e.Location, e.Button) Then Return
+            If MaybeBeginDrag(e.Location, e.Button) Then
+                ' NOT counted as a move: the elapsed time would be the whole drag, and one line
+                ' of eleven seconds in a column of tenths of a millisecond would wreck the rollup.
+                Return
+            End If
 
             EnsureLayout()
+
+            ' For the journal only: did this move actually change anything on the surface? A run
+            ' of "changed=no" moves that still cost time is the signature of a hit-test doing too
+            ' much work, and it looks nothing like a run of moves that each repaint two bands.
+            Dim changed As Boolean = False
 
             Dim overEnlarge As Boolean = _enlargeRect.Width > 0 AndAlso _enlargeRect.Contains(e.Location)
             If overEnlarge <> _hoverEnlarge Then
                 _hoverEnlarge = overEnlarge
-                Invalidate()
+                InvalidateEnlargeButton()
+                changed = True
             End If
 
             Dim li As Integer = -1
@@ -915,16 +1170,31 @@ Partial Public NotInheritable Class KBotLaneView
             If laneHover <> _hoverLaneIndex OrElse mi <> _hoverMarkerIndex OrElse gi <> _hoverGuideIndex Then
                 Dim markerChanged As Boolean = (If(li >= 0, li, -1) <> If(_hoverMarkerIndex >= 0, _hoverLaneIndex, -1)) OrElse
                                                mi <> _hoverMarkerIndex
+                Dim wasLane As Integer = _hoverLaneIndex
+                Dim wasGuide As Integer = _hoverGuideIndex
                 _hoverLaneIndex = laneHover
                 _hoverMarkerIndex = mi
                 _hoverGuideIndex = gi
-                Invalidate()
+                ' Only what CHANGED, never the whole surface. A hover moves a wash from one band to
+                ' another and a ring from one marker to another, and both of those live inside the
+                ' two bands — so two strips are repainted instead of the entire window. On the
+                ' enlarged window the whole surface costs about sixteen milliseconds, and the mouse
+                ' sends moves far faster than that: repainting all of it per move is what made the
+                ' big benzi feel stuck while the narrow ones felt fine (slice 0058).
+                InvalidateLaneBand(wasLane)
+                InvalidateLaneBand(laneHover)
+                InvalidateGuideColumn(wasGuide)
+                InvalidateGuideColumn(gi)
                 If markerChanged Then
-                    RaiseEvent MarkerHovered(If(mi >= 0 AndAlso laneHover >= 0, _lanes(laneHover).Key, Nothing), mi)
+                    RaiseEvent MarkerHovered(If(mi >= 0 AndAlso laneHover >= 0, VisibleLanes(laneHover).Key, Nothing), mi)
                 End If
+                changed = True
             End If
 
             RefreshLaneTip()
+            KBotLaneLog.Done("MOVE", mark,
+                             $"pt={e.X},{e.Y} lane={laneHover} marker={mi} guide={gi} " &
+                             $"btn={If(_hoverEnlarge, "yes", "no")} changed={If(changed, "yes", "no")}")
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotLaneView.OnMouseMove", ex)
         End Try
@@ -932,16 +1202,27 @@ Partial Public NotInheritable Class KBotLaneView
 
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
         MyBase.OnMouseLeave(e)
+        Dim mark As Long = KBotLaneLog.Mark()
         Try
-            Dim changed As Boolean = _hoverLaneIndex <> -1 OrElse _hoverGuideIndex <> -1 OrElse _hoverEnlarge
             Dim hadMarker As Boolean = _hoverMarkerIndex <> -1
+            Dim wasLane As Integer = _hoverLaneIndex
+            Dim wasGuide As Integer = _hoverGuideIndex
+            Dim wasEnlarge As Boolean = _hoverEnlarge
             _hoverLaneIndex = -1
             _hoverMarkerIndex = -1
             _hoverGuideIndex = -1
             _hoverEnlarge = False
             HideLaneTip()
-            If changed Then Invalidate()
+            ' Same as the move: only the strips that were lit. See OnMouseMove.
+            InvalidateLaneBand(wasLane)
+            InvalidateGuideColumn(wasGuide)
+            If wasEnlarge Then InvalidateEnlargeButton()
             If hadMarker Then RaiseEvent MarkerHovered(Nothing, -1)
+            KBotLaneLog.Done("LEAVE", mark, $"was lane={wasLane} guide={wasGuide}")
+            ' The pointer leaving the surface is exactly the moment somebody goes to READ the
+            ' journal, so the batch is written out here rather than waiting for the next event
+            ' or for the form to close. Off the measured path: nothing is being drawn now.
+            KBotLaneLog.Flush()
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotLaneView.OnMouseLeave", ex)
         End Try
@@ -949,24 +1230,76 @@ Partial Public NotInheritable Class KBotLaneView
 
     Protected Overrides Sub OnMouseWheel(e As MouseEventArgs)
         MyBase.OnMouseWheel(e)
+        Dim mark As Long = KBotLaneLog.Mark()
         Try
-            If Not _vScroll.Visible Then Return
+            If Not vScroll.Visible Then Return
             Dim lines As Integer = SystemInformation.MouseWheelScrollLines
             If lines <= 0 Then lines = 3
-            Dim delta As Integer = -(e.Delta \ 120) * lines * _vScroll.SmallChange
-            Dim top As Integer = Math.Max(0, _vScroll.Maximum - _vScroll.LargeChange + 1)
-            _vScroll.Value = Math.Max(0, Math.Min(top, _vScroll.Value + delta))
+            Dim delta As Integer = -(e.Delta \ 120) * lines * vScroll.SmallChange
+            Dim top As Integer = Math.Max(0, vScroll.Maximum - vScroll.LargeChange + 1)
+            vScroll.Value = Math.Max(0, Math.Min(top, vScroll.Value + delta))
             InvalidateLaneLayout()
+            KBotLaneLog.Done("WHEEL", mark, $"delta={e.Delta} value={vScroll.Value}")
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotLaneView.OnMouseWheel", ex)
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Repaints ONE lane's strip — the band plus the room a marker sticks out into.
+    ''' </summary>
+    ''' <remarks>
+    ''' Full width on purpose, and not the marker's own little square: the caption sits left of the
+    ''' plot, the end mark sits right of it, and the hover wash runs the length of the band, so a
+    ''' strip is the smallest shape that holds everything one lane can change. It is also cheap —
+    ''' a band is a couple of dozen rows of pixels against the eleven hundred the surface has.
+    ''' </remarks>
+    Private Sub InvalidateLaneBand(index As Integer)
+        If index < 0 OrElse index >= VisibleLanes.Count Then Return
+        InvalidateLaneBand(VisibleLanes(index))
+    End Sub
+
+    ''' <summary>The same strip, for the callers that hold the lane rather than its index.</summary>
+    Friend Sub InvalidateLaneBand(ln As KBotLane)
+        If ln Is Nothing Then Return
+        Dim b As Rectangle = ln.Bounds
+        If b.Height <= 0 Then Return
+        ' A marker is centred on the rail and its hover ring grows past it, so the strip is opened
+        ' by half a marker plus the ring — otherwise the ring would leave a crumb behind it.
+        Dim pad As Integer = ThemeShapes.ScaleDpi(Me, _markerSize) \ 2 + _px3 + _px2
+        _invalidateCount += 1
+        KBotLaneLog.Note("inval-band", $"lane={If(ln.Key, "?")} y={b.Top} h={b.Height + pad * 2}")
+        Invalidate(New Rectangle(0, b.Top - pad, Width, b.Height + pad * 2))
+    End Sub
+
+    ''' <summary>Repaints the column one dated line stands in, top to bottom of the surface.</summary>
+    Private Sub InvalidateGuideColumn(index As Integer)
+        If index < 0 OrElse index >= VisibleGuides.Count Then Return
+        Dim gd As KBotChartGuide = VisibleGuides(index)
+        If gd.PlotX < 0 Then Return
+        Dim surface As Rectangle = SurfaceClip()
+        If surface.Height <= 0 Then Return
+        Dim half As Integer = _px2 + _px1
+        _invalidateCount += 1
+        KBotLaneLog.Note("inval-guide", $"guide={index} x={gd.PlotX}")
+        Invalidate(New Rectangle(gd.PlotX - half, surface.Top, half * 2 + 1, surface.Height))
+    End Sub
+
+    ''' <summary>Repaints the enlarge button and the wash that appears behind it.</summary>
+    Private Sub InvalidateEnlargeButton()
+        If _enlargeRect.Width <= 0 OrElse _enlargeRect.Height <= 0 Then Return
+        Dim pad As Integer = ThemeShapes.ScaleDpi(Me, 4)
+        _invalidateCount += 1
+        KBotLaneLog.Note("inval-btn", $"hover={If(_hoverEnlarge, "yes", "no")}")
+        Invalidate(New Rectangle(_enlargeRect.X - pad, _enlargeRect.Y - pad,
+                                 _enlargeRect.Width + pad * 2, _enlargeRect.Height + pad * 2))
+    End Sub
+
     ''' <summary>The lane whose band contains <paramref name="location"/>, or -1.</summary>
     Friend Function LaneIndexAt(location As Point) As Integer
         If Not SurfaceClip().Contains(location) Then Return -1
-        For i As Integer = 0 To _lanes.Count - 1
-            Dim ln As KBotLane = _lanes(i)
+        For i As Integer = 0 To VisibleLanes.Count - 1
+            Dim ln As KBotLane = VisibleLanes(i)
             If ln.Visible AndAlso ln.Bounds.Height > 0 AndAlso ln.Bounds.Contains(location) Then Return i
         Next
         Return -1
@@ -990,8 +1323,8 @@ Partial Public NotInheritable Class KBotLaneView
         Dim reach As Integer = ThemeShapes.ScaleDpi(Me, _hoverRadius)
         Dim best As Double = CDbl(reach) * reach + 1
 
-        For i As Integer = 0 To _lanes.Count - 1
-            Dim ln As KBotLane = _lanes(i)
+        For i As Integer = 0 To VisibleLanes.Count - 1
+            Dim ln As KBotLane = VisibleLanes(i)
             If Not ln.Visible Then Continue For
             For j As Integer = 0 To ln.Markers.Count - 1
                 Dim m As KBotLaneMarker = ln.Markers(j)
@@ -1018,12 +1351,12 @@ Partial Public NotInheritable Class KBotLaneView
     ''' nothing about which one they mean.
     ''' </remarks>
     Private Function HitTestGuide(location As Point) As Integer
-        If _guides.Count = 0 OrElse Not SurfaceClip().Contains(location) Then Return -1
+        If VisibleGuides.Count = 0 OrElse Not SurfaceClip().Contains(location) Then Return -1
         Dim reach As Integer = ThemeShapes.ScaleDpi(Me, _hoverRadius)
         Dim best As Integer = reach + 1
         Dim found As Integer = -1
-        For i As Integer = 0 To _guides.Count - 1
-            Dim gd As KBotChartGuide = _guides(i)
+        For i As Integer = 0 To VisibleGuides.Count - 1
+            Dim gd As KBotChartGuide = VisibleGuides(i)
             If gd.PlotX < 0 Then Continue For
             Dim d As Integer = Math.Abs(gd.PlotX - location.X)
             If d <= reach AndAlso d < best Then
@@ -1051,8 +1384,8 @@ Partial Public NotInheritable Class KBotLaneView
             Return
         End If
 
-        If _hoverLaneIndex >= 0 AndAlso _hoverLaneIndex < _lanes.Count Then
-            Dim ln As KBotLane = _lanes(_hoverLaneIndex)
+        If _hoverLaneIndex >= 0 AndAlso _hoverLaneIndex < VisibleLanes.Count Then
+            Dim ln As KBotLane = VisibleLanes(_hoverLaneIndex)
             If _hoverMarkerIndex >= 0 AndAlso _hoverMarkerIndex < ln.Markers.Count Then
                 Dim m As KBotLaneMarker = ln.Markers(_hoverMarkerIndex)
                 Dim header As String = If(String.IsNullOrEmpty(m.Text), If(ln.Text, String.Empty), m.Text)
@@ -1067,8 +1400,8 @@ Partial Public NotInheritable Class KBotLaneView
             End If
         End If
 
-        If _hoverGuideIndex >= 0 AndAlso _hoverGuideIndex < _guides.Count Then
-            Dim gd As KBotChartGuide = _guides(_hoverGuideIndex)
+        If _hoverGuideIndex >= 0 AndAlso _hoverGuideIndex < VisibleGuides.Count Then
+            Dim gd As KBotChartGuide = VisibleGuides(_hoverGuideIndex)
             ' A guide with NO text at all opens nothing: an unnamed line is a mark the host chose
             ' not to explain, and a label saying only its date would add nothing.
             If Not String.IsNullOrEmpty(gd.Text) OrElse Not String.IsNullOrEmpty(gd.Tooltip) Then
@@ -1090,11 +1423,13 @@ Partial Public NotInheritable Class KBotLaneView
     Friend Sub ShowLaneTip(key As String, header As String, body As String, footer As String)
         If KBotDesignTime.IsDesignTime(Me) Then Return
         If String.Equals(key, _currentTipKey, StringComparison.Ordinal) Then Return
+        Dim mark As Long = KBotLaneLog.Mark()
         _currentTipKey = key
 
         If String.IsNullOrEmpty(key) OrElse
            (String.IsNullOrEmpty(header) AndAlso String.IsNullOrEmpty(body) AndAlso String.IsNullOrEmpty(footer)) Then
-            _markerTooltip?.HideNow()
+            markerTip?.HideNow()
+            KBotLaneLog.Done("TIP-HIDE", mark)
             Return
         End If
 
@@ -1102,6 +1437,7 @@ Partial Public NotInheritable Class KBotLaneView
         _tipContent.Text = If(body, String.Empty)
         _tipContent.FooterText = If(footer, String.Empty)
         MarkerTooltip.ShowAt(Me, _tipContent, Cursor.Position)
+        KBotLaneLog.Done("TIP-SHOW", mark, $"key={key}")
     End Sub
 
     ''' <summary>Puts out the label (the pointer left everything that has one).</summary>
@@ -1130,6 +1466,7 @@ Partial Public NotInheritable Class KBotLaneView
     ''' </remarks>
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
         MyBase.OnKeyDown(e)
+        Dim mark As Long = KBotLaneLog.Mark()
         Try
             Select Case e.KeyCode
                 Case Keys.Space, Keys.Enter
@@ -1138,21 +1475,22 @@ Partial Public NotInheritable Class KBotLaneView
                         e.Handled = True
                     End If
                 Case Keys.Up, Keys.Down, Keys.PageUp, Keys.PageDown, Keys.Home, Keys.End
-                    If Not _vScroll.Visible Then Return
-                    Dim top As Integer = Math.Max(0, _vScroll.Maximum - _vScroll.LargeChange + 1)
-                    Dim v As Integer = _vScroll.Value
+                    If Not vScroll.Visible Then Return
+                    Dim top As Integer = Math.Max(0, vScroll.Maximum - vScroll.LargeChange + 1)
+                    Dim v As Integer = vScroll.Value
                     Select Case e.KeyCode
-                        Case Keys.Up : v -= _vScroll.SmallChange
-                        Case Keys.Down : v += _vScroll.SmallChange
-                        Case Keys.PageUp : v -= _vScroll.LargeChange
-                        Case Keys.PageDown : v += _vScroll.LargeChange
+                        Case Keys.Up : v -= vScroll.SmallChange
+                        Case Keys.Down : v += vScroll.SmallChange
+                        Case Keys.PageUp : v -= vScroll.LargeChange
+                        Case Keys.PageDown : v += vScroll.LargeChange
                         Case Keys.Home : v = 0
                         Case Else : v = top
                     End Select
-                    _vScroll.Value = Math.Max(0, Math.Min(top, v))
+                    vScroll.Value = Math.Max(0, Math.Min(top, v))
                     InvalidateLaneLayout()
                     e.Handled = True
             End Select
+            KBotLaneLog.Done("KEY", mark, $"key={e.KeyCode} handled={If(e.Handled, "yes", "no")}")
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotLaneView.OnKeyDown", ex)
         End Try
@@ -1176,19 +1514,19 @@ Partial Public NotInheritable Class KBotLaneView
     ''' <summary>Friend test hook: the computed band of one lane (Empty if hidden).</summary>
     Friend Function DebugLaneBounds(index As Integer) As Rectangle
         EnsureLayout()
-        Return _lanes(index).Bounds
+        Return VisibleLanes(index).Bounds
     End Function
 
     ''' <summary>Friend test hook: where a marker landed (Empty if it was not drawn).</summary>
     Friend Function DebugMarkerLocation(laneIndex As Integer, markerIndex As Integer) As Point
         EnsureLayout()
-        Return _lanes(laneIndex).Markers(markerIndex).PlotLocation
+        Return VisibleLanes(laneIndex).Markers(markerIndex).PlotLocation
     End Function
 
     ''' <summary>Friend test hook: where a guide landed on the horizontal axis (-1 if not drawn).</summary>
     Friend Function DebugGuideX(index As Integer) As Integer
         EnsureLayout()
-        Return _guides(index).PlotX
+        Return VisibleGuides(index).PlotX
     End Function
 
     ''' <summary>Friend test hook: the marker nearest a client point, as (laneIndex, markerIndex).</summary>

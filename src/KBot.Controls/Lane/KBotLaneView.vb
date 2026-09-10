@@ -106,7 +106,8 @@ Partial Public NotInheritable Class KBotLaneView
     Private _emptyTextColor As Color = Color.Empty
 
     ' ── Hovering and the floating label ──────────────────────────────────────
-    Private _markerTooltip As KBotToolTip
+    ' The label itself is `markerTip`, declared in KBotLaneView.Designer.vb with the scrollbar:
+    ' under the house rule every child control and component a control owns is declared there.
     Private _markerTooltipEnabled As Boolean = True
     Private _hoverRadius As Integer = 10
 
@@ -136,6 +137,16 @@ Partial Public NotInheritable Class KBotLaneView
     ' The whole stack of lanes, in device pixels, before scrolling. What the scrollbar measures.
     Private _contentHeight As Integer
 
+    ' The dated lines the painter actually draws — one entry per COLUMN rather than one per guide.
+    ' Filled by ProjectGuides, read by DrawGuides. See the structure for why the two are not the
+    ' same number.
+    Private ReadOnly _guideColumns As New List(Of GuideColumn)
+
+    ' Repaint REQUESTS since the last paint, for the Debug journal only. Read and zeroed by
+    ' OnPaint. A hover that asks four times and is answered four times is a different defect from
+    ' one paint that is simply slow, and the two are indistinguishable without this number.
+    Private _invalidateCount As Integer
+
     Private _hoverLaneIndex As Integer = -1
     Private _hoverMarkerIndex As Integer = -1
     Private _hoverGuideIndex As Integer = -1
@@ -150,11 +161,11 @@ Partial Public NotInheritable Class KBotLaneView
     Private _currentTipKey As String
     Private ReadOnly _tipContent As New KBotToolTipContent()
 
-    ' Vertical only. A lane view never scrolls sideways: the horizontal axis is TIME, and a time
-    ' axis that runs off the edge has stopped being a comparison between lanes, which is the one
-    ' thing this surface is for. Too many lanes to fit is an ordinary scroll; too long a span is
-    ' answered by the enlarged window.
-    Private ReadOnly _vScroll As New VScrollBar()
+    ' The vertical scrollbar is `vScroll`, declared in KBotLaneView.Designer.vb. Vertical only: a
+    ' lane view never scrolls sideways, because the horizontal axis is TIME and a time axis that
+    ' runs off the edge has stopped being a comparison between lanes, which is the one thing this
+    ' surface is for. Too many lanes to fit is an ordinary scroll; too long a span is answered by
+    ' the enlarged window.
 
     ' Pens that do NOT depend on a lane are built once, in ApplyTheme, and freed in Dispose.
     Private _borderPen As Pen
@@ -222,11 +233,9 @@ Partial Public NotInheritable Class KBotLaneView
         _lanes.Owner = Me
         _guides.Owner = Me
 
-        _vScroll.Minimum = 0
-        _vScroll.Maximum = 0
-        _vScroll.Visible = False
-        AddHandler _vScroll.Scroll, AddressOf OnVScrollScroll
-        Controls.Add(_vScroll)
+        ' The scrollbar and the floating label live in KBotLaneView.Designer.vb, like the children
+        ' of every other control in this solution. The scroll handler is wired by `Handles`.
+        InitializeComponent()
 
         ' AllowDrop is what makes a control receive DragOver/DragDrop. Set here rather than in a
         ' property because this control exists in order to be dropped on — unlike the tree, whose
@@ -1126,10 +1135,10 @@ Partial Public NotInheritable Class KBotLaneView
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Content)>
     Public ReadOnly Property MarkerTooltip As KBotToolTip
         Get
-            ' Created lazily, at first need, and NEVER inside the designer: that would mean a
-            ' window opened inside Visual Studio.
-            If _markerTooltip Is Nothing Then _markerTooltip = New KBotToolTip()
-            Return _markerTooltip
+            ' Built by InitializeComponent, not lazily on first hover. A KBotToolTip opens no
+            ' window until something calls ShowAt, and ShowLaneTip returns before it ever does
+            ' under KBotDesignTime.IsDesignTime — so nothing opens inside Visual Studio.
+            Return markerTip
         End Get
     End Property
 
@@ -1168,11 +1177,13 @@ Partial Public NotInheritable Class KBotLaneView
     ''' </summary>
     Public Sub BeginUpdate()
         _updateDepth += 1
+        KBotLaneLog.Note("UPDATE-IN", $"depth={_updateDepth}")
     End Sub
 
     ''' <summary>Ends the block opened by <see cref="BeginUpdate"/> and repaints once.</summary>
     Public Sub EndUpdate()
         If _updateDepth > 0 Then _updateDepth -= 1
+        KBotLaneLog.Note("UPDATE-OUT", $"depth={_updateDepth} lanes={_lanes.Count}")
         If _updateDepth = 0 Then InvalidateLaneLayout()
     End Sub
 
@@ -1279,6 +1290,7 @@ Partial Public NotInheritable Class KBotLaneView
 
     ''' <summary>Reapplies the colours of the scheme and rebuilds the cached pens.</summary>
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
+        Dim mark As Long = KBotLaneLog.Mark()
         Try
             If scheme Is Nothing Then Return
             _scheme = scheme
@@ -1290,7 +1302,9 @@ Partial Public NotInheritable Class KBotLaneView
             MyBase.ForeColor = scheme.Palette.TextColor
             RebuildThemeResources()
             ApplyScrollBarTheme()
+            _invalidateCount += 1
             Invalidate()
+            KBotLaneLog.Done("THEME", mark, $"scheme={If(scheme.Name, "?")} dark={If(_isDarkScheme, "yes", "no")}")
         Catch ex As Exception
             GlobalErrorLog.Write("KBotLaneView.ApplyTheme", ex)
         End Try
@@ -1401,6 +1415,8 @@ Partial Public NotInheritable Class KBotLaneView
     Friend Sub InvalidateLaneLayout()
         _layoutValid = False
         If _initializing OrElse _updateDepth > 0 Then Return
+        _invalidateCount += 1
+        KBotLaneLog.Note("inval-all", "whole surface, layout dropped")
         Invalidate()
     End Sub
 
@@ -1461,19 +1477,5 @@ Partial Public NotInheritable Class KBotLaneView
         InvalidateLaneLayout()
     End Sub
 
-    Protected Overrides Sub Dispose(disposing As Boolean)
-        If disposing Then
-            _borderPen?.Dispose()
-            _laneLinePen?.Dispose()
-            _separatorPen?.Dispose()
-            _fillBrush?.Dispose()
-            _backBrush?.Dispose()
-            _edgePen?.Dispose()
-            _detailPen?.Dispose()
-            _derivedHeaderFont?.Dispose()
-            _derivedAxisFont?.Dispose()
-            _markerTooltip?.Dispose()
-        End If
-        MyBase.Dispose(disposing)
-    End Sub
+    ' Dispose lives in KBotLaneView.Designer.vb, next to the components it frees.
 End Class
