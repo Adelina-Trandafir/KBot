@@ -573,4 +573,207 @@ Public Class AsociereFormTests
                    End Using
                End Sub)
     End Sub
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' Recepțiile pornite din coșul celor neașezate (F26)
+    ' ══════════════════════════════════════════════════════════════════════════
+
+    ' Două instantanee neașezate, unul după altul: exact atât cât trebuie ca un lanț
+    ' reconstituit să se poată închide — primul îl pornește, al doilea e rândul de ștergere.
+    Private Shared Function StareCuDouaNeasezate() As AsociereStare
+        Dim s As New AsociereStare() With {.CodAngajament = "A100", .Amprenta = "amp1"}
+        s.Receptii.Add(Rec(1, New Date(2026, 1, 1), 100.0, "AAB"))
+        s.Instantanee.Add(Inst(11, New Date(2026, 1, 19, 10, 0, 0), 100.0, idrr:=1))
+        s.Instantanee.Add(Inst(41, New Date(2026, 4, 5, 9, 0, 0), 70.0, idrr:=0))
+        s.Instantanee.Add(Inst(42, New Date(2026, 5, 6, 9, 0, 0), 70.0, idrr:=0))
+        Return s
+    End Function
+
+    Private Shared Function Buton(f As AsociereForm, nume As String) As Control
+        Dim flags = Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance
+        Dim prop = f.GetType().GetProperty(nume, flags)
+        Assert.NotNull(prop)
+        Return CType(prop.GetValue(f), Control)
+    End Function
+
+    Private Shared Function Problema(f As AsociereForm) As String
+        Dim m = f.GetType().GetMethod("ProblemaReceptiilorNoi",
+            Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance)
+        Return CStr(m.Invoke(f, Nothing))
+    End Function
+
+    Private Shared Function Instantaneul(f As AsociereForm, numeArbore As String, cheie As String) As InstantaneuLegat
+        Return CType(Nod(Arbore(f, numeArbore), cheie).Tag, InstantaneuLegat)
+    End Function
+
+    <Fact>
+    Public Sub MeniulDinCos_PorneșteORecepțieNoua_SiScoateInstantaneulDinNeasezate()
+        ' Gestul cerut de operator: un instantaneu din coș nu are întotdeauna o recepție pe care
+        ' să fie pus — dacă recepția lui a fost creată ȘI ștearsă înainte de prima descărcare,
+        ' ea nu există nicăieri (F26) și trebuie pornită de aici.
+        RunSta(Sub()
+                   Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
+                   Using f As AsociereForm = Formular(api)
+                       Incarca(f)
+                       Meniu(f, Instantaneul(f, "treeLibere", "H:41"), "receptie_noua")
+
+                       ' A plecat din coș și a apărut sub un rând-recepție al ei, în stânga.
+                       Assert.Null(Nod(Arbore(f, "treeLibere"), "H:41"))
+                       Dim radacina = Nod(Arbore(f, "treeLant"), "R:-1")
+                       Assert.NotNull(radacina)
+                       Assert.NotNull(Nod(Arbore(f, "treeLant"), "H:41"))
+                       Assert.Contains("[recepție nouă]", radacina.Caption)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ORecepțieNouaCuUnSingurInstantaneu_NuSePoateSalva()
+        ' Serverul cere EXACT un rând de ștergere pe fiecare lanț reconstituit, iar acela nu
+        ' poate fi chiar cel care pornește lanțul. Refuzul vine aici, nu de la server: acolo ar
+        ' pica salvarea ÎNTREAGĂ, iar operatorul ar afla abia din eroare ce îi lipsea.
+        RunSta(Sub()
+                   Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
+                   Using f As AsociereForm = Formular(api)
+                       Incarca(f)
+                       Meniu(f, Instantaneul(f, "treeLibere", "H:41"), "receptie_noua")
+
+                       Assert.Contains("un singur instantaneu", Problema(f))
+                       Assert.False(Buton(f, "btnSalveaza").Enabled)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ORecepțieNouaFaraRandDeStergere_NuSePoateSalva()
+        RunSta(Sub()
+                   Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
+                   Using f As AsociereForm = Formular(api)
+                       Incarca(f)
+                       Meniu(f, Instantaneul(f, "treeLibere", "H:41"), "receptie_noua")
+                       Arunca(f, "TreeLant_NodeDropped",
+                              Nod(Arbore(f, "treeLibere"), "H:42"),
+                              Nod(Arbore(f, "treeLant"), "R:-1"))
+
+                       Assert.Contains("nu are rândul de ștergere", Problema(f))
+                       Assert.False(Buton(f, "btnSalveaza").Enabled)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub RandulDeStergerePeInstantaneulCarePornesteLantul_ERefuzat()
+        ' Nimic nu se mai întâmplă cu o recepție după ce a fost ștearsă, deci rândul de
+        ' ștergere e ULTIMUL. Pus pe primul, gruparea e greșită.
+        RunSta(Sub()
+                   Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
+                   Using f As AsociereForm = Formular(api)
+                       Incarca(f)
+                       Meniu(f, Instantaneul(f, "treeLibere", "H:41"), "receptie_noua")
+                       Arunca(f, "TreeLant_NodeDropped",
+                              Nod(Arbore(f, "treeLibere"), "H:42"),
+                              Nod(Arbore(f, "treeLant"), "R:-1"))
+                       Meniu(f, Instantaneul(f, "treeLant", "H:41"), "stergere")
+
+                       Assert.Contains("la mijlocul lanțului", Problema(f))
+                       Assert.False(Buton(f, "btnSalveaza").Enabled)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub UnLantReconstituitIntreg_DaReconstituireSiStergere_PeAceeasiEticheta()
+        ' Ce pleacă pe fir: prima comandă DECLARĂ eticheta, ultima o închide, și niciuna nu
+        ' poartă IDRR — recepția nu există încă, deci nu are cheie de numit.
+        RunSta(Sub()
+                   Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
+                   Using f As AsociereForm = Formular(api)
+                       Incarca(f)
+                       Meniu(f, Instantaneul(f, "treeLibere", "H:41"), "receptie_noua")
+                       Arunca(f, "TreeLant_NodeDropped",
+                              Nod(Arbore(f, "treeLibere"), "H:42"),
+                              Nod(Arbore(f, "treeLant"), "R:-1"))
+                       Meniu(f, Instantaneul(f, "treeLant", "H:42"), "stergere")
+
+                       Assert.Equal(String.Empty, Problema(f))
+                       Assert.True(Buton(f, "btnSalveaza").Enabled)
+
+                       Dim c = Comenzi(f)
+                       Assert.Equal(2, c.Count)
+                       Dim porneste = c.Single(Function(x) x.Idrh = 41)
+                       Assert.Equal(ActiuneAsociere.Reconstituire, porneste.Actiune)
+                       Assert.Equal("R1", porneste.ReceptieNoua)
+                       Assert.Equal(0, porneste.Idrr)
+
+                       Dim inchide = c.Single(Function(x) x.Idrh = 42)
+                       Assert.Equal(ActiuneAsociere.Stergere, inchide.Actiune)
+                       Assert.Equal("R1", inchide.ReceptieNoua)
+                       Assert.Equal(0, inchide.Idrr)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub ADouaRecepțieNoua_PrimesteAltaEticheta()
+        ' Etichetele nu se reciclează: două recepții pornite una după alta pe același număr ar
+        ' ajunge la server cu același nume, iar acolo o etichetă se declară o singură dată.
+        RunSta(Sub()
+                   Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
+                   Using f As AsociereForm = Formular(api)
+                       Incarca(f)
+                       Meniu(f, Instantaneul(f, "treeLibere", "H:41"), "receptie_noua")
+                       Meniu(f, Instantaneul(f, "treeLibere", "H:42"), "receptie_noua")
+
+                       Assert.NotNull(Nod(Arbore(f, "treeLant"), "R:-1"))
+                       Assert.NotNull(Nod(Arbore(f, "treeLant"), "R:-2"))
+                       Dim etichete = Comenzi(f).Select(Function(x) x.ReceptieNoua).
+                                                 OrderBy(Function(x) x).ToList()
+                       Assert.Equal(New String() {"R1", "R2"}, etichete)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub RenuntareaLaRecepțiaNoua_PuneToateInstantaneeleInapoiInCos()
+        RunSta(Sub()
+                   Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
+                   Using f As AsociereForm = Formular(api)
+                       Incarca(f)
+                       Meniu(f, Instantaneul(f, "treeLibere", "H:41"), "receptie_noua")
+                       Arunca(f, "TreeLant_NodeDropped",
+                              Nod(Arbore(f, "treeLibere"), "H:42"),
+                              Nod(Arbore(f, "treeLant"), "R:-1"))
+
+                       Dim rec = CType(Nod(Arbore(f, "treeLant"), "R:-1").Tag, ReceptiePropusa)
+                       f.GetType().GetMethod("RenuntaLaReceptiaNoua",
+                           Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance).
+                           Invoke(f, New Object() {rec})
+
+                       ' Recepția a pierit cu ultimul instantaneu care stătea pe ea.
+                       Assert.Null(Nod(Arbore(f, "treeLant"), "R:-1"))
+                       Assert.NotNull(Nod(Arbore(f, "treeLibere"), "H:41"))
+                       Assert.NotNull(Nod(Arbore(f, "treeLibere"), "H:42"))
+                       Assert.Empty(Comenzi(f))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub F14NuSeAplicaUneiRecepțiiNoi_FiindcaLiniileEiSeScriuDinChiarLantulAsta()
+        ' O recepție pornită aici nu are linii pe indicator și nici nu poate avea: serverul i le
+        ' scrie la salvare din instantaneele lanțului. Verificat, F14 ar refuza chiar gestul care
+        ' o creează.
+        RunSta(Sub()
+                   Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
+                   Using f As AsociereForm = Formular(api)
+                       Incarca(f)
+                       Meniu(f, Instantaneul(f, "treeLibere", "H:41"), "receptie_noua")
+
+                       Dim e = IntreabaAruncarea(f, "TreeLant_NodeDragOver",
+                                                 Nod(Arbore(f, "treeLibere"), "H:42"),
+                                                 Nod(Arbore(f, "treeLant"), "R:-1"))
+                       Assert.True(e.Allow, e.Motiv)
+                   End Using
+               End Sub)
+    End Sub
 End Class

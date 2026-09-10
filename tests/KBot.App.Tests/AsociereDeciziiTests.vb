@@ -201,6 +201,61 @@ Public Class AsociereDeciziiTests
     End Sub
 
     <Fact>
+    Public Sub ORecepțiePornitaDeOperator_SeNumestePrintrOEticheta_NuPrintrUnIdrr()
+        ' F26 în modul propunere: recepția nu există nici pe site, nici local, deci nu are IDRR
+        ' de numit. Formularul o ține pe un IDRR NEGATIV, iar pe fir pleacă eticheta.
+        ' Primul instantaneu al lanțului o DECLARĂ; ultimul, marcat, îl închide.
+        Dim pozitie As New Dictionary(Of Integer, Integer) From {{0, -1}, {2, -1}}
+        Dim stergere As New Dictionary(Of Integer, Boolean) From {{2, True}}
+
+        Dim d = AsociereForm.DeciziiDin(
+            New List(Of InstantaneuLegat) From {Instantaneu(0, 0, 19), Instantaneu(2, 0, 21)},
+            FaraAncore(), pozitie, Gol(Of Boolean)(), stergere)
+
+        Assert.Equal(2, d.Count)
+        Dim porneste = d.Single(Function(x) x.RandIstoric = 0)
+        Assert.Equal(ActiuneAsociere.Reconstituire, porneste.Actiune)
+        Assert.Equal("R1", porneste.ReceptieNoua)
+        Assert.Equal(0, porneste.Idrr)
+        Assert.False(porneste.RandReceptie.HasValue)
+
+        Dim inchide = d.Single(Function(x) x.RandIstoric = 2)
+        Assert.Equal(ActiuneAsociere.Stergere, inchide.Actiune)
+        Assert.Equal("R1", inchide.ReceptieNoua)
+        Assert.Equal(0, inchide.Idrr)
+    End Sub
+
+    <Fact>
+    Public Sub DoarPrimulInstantaneuAlLantuluiDeclara_RestulDoarSeAseaza()
+        ' Serverul cere EXACT o «reconstituire» per etichetă; două ar fi o etichetă declarată
+        ' de două ori, iar zero ar fi una folosită fără să fie declarată.
+        Dim pozitie As New Dictionary(Of Integer, Integer) From {{0, -1}, {1, -1}, {2, -1}}
+        Dim stergere As New Dictionary(Of Integer, Boolean) From {{2, True}}
+
+        Dim d = AsociereForm.DeciziiDin(
+            New List(Of InstantaneuLegat) From {
+                Instantaneu(0, 0, 19), Instantaneu(1, 0, 20), Instantaneu(2, 0, 21)},
+            FaraAncore(), pozitie, Gol(Of Boolean)(), stergere)
+
+        Assert.Single(d.Where(Function(x) x.Actiune = ActiuneAsociere.Reconstituire))
+        Assert.Equal(ActiuneAsociere.Reconstituire, d.Single(Function(x) x.RandIstoric = 0).Actiune)
+        Assert.Equal(ActiuneAsociere.Asociat, d.Single(Function(x) x.RandIstoric = 1).Actiune)
+        Assert.Equal(ActiuneAsociere.Stergere, d.Single(Function(x) x.RandIstoric = 2).Actiune)
+        Assert.All(d, Sub(x) Assert.Equal("R1", x.ReceptieNoua))
+    End Sub
+
+    <Fact>
+    Public Sub DouaRecepțiiPornite_AuEticheteDiferite()
+        Dim pozitie As New Dictionary(Of Integer, Integer) From {{0, -1}, {2, -2}}
+        Dim d = AsociereForm.DeciziiDin(
+            New List(Of InstantaneuLegat) From {Instantaneu(0, 0, 19), Instantaneu(2, 0, 21)},
+            FaraAncore(), pozitie, Gol(Of Boolean)(), Gol(Of Boolean)())
+
+        Assert.Equal("R1", d.Single(Function(x) x.RandIstoric = 0).ReceptieNoua)
+        Assert.Equal("R2", d.Single(Function(x) x.RandIstoric = 2).ReceptieNoua)
+    End Sub
+
+    <Fact>
     Public Sub ReceptiileLipsa_Arunca()
         Assert.Throws(Of ArgumentNullException)(
             Function() AsociereForm.DeciziiDin(Trei(), Nothing, Gol(Of Integer)(),
