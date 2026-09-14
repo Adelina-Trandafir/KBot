@@ -74,7 +74,7 @@ Partial Class ReceptiiView
         tree.FooterHeight = 30
         tree.FooterIconSize = New Size(18, 18)
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
-        tree.FooterRightIconTooltip = "Reîncarcă recepțiile de la server."
+        tree.FooterRightIconTooltip = "Reîmprospătează recepțiile din FOREXE (întreabă întâi pe care)."
         tree.FooterSeparatorColor = Color.Gainsboro
         tree.FooterSeparatorWidth = 2
         tree.FooterTextAlign = ContentAlignment.MiddleRight

@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.Collections.Generic
 Imports KBot.Common
 
 Namespace KBot.Forexe
@@ -40,7 +41,9 @@ Namespace KBot.Forexe
         ''' Fișierul consumă o singură variabilă — {{COD_ANGAJAMENT}} — și scrie CINCI tabele,
         ''' nu unul (vezi WorkflowCatalog.PrelucrareCompletaTables).
         ''' </summary>
-        Public Shared Function BuildPrelucrareCompleta(cod As String) As JobRequest
+        Public Shared Function BuildPrelucrareCompleta(
+                cod As String,
+                Optional receptiiSarite As IEnumerable(Of Date) = Nothing) As JobRequest
             If String.IsNullOrWhiteSpace(cod) Then
                 Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
             End If
@@ -50,6 +53,7 @@ Namespace KBot.Forexe
                 .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.PrelucrareCompletaFile)
             }
             job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
+            PuneReceptiileSarite(job, receptiiSarite)
             Return job
         End Function
 
@@ -59,7 +63,9 @@ Namespace KBot.Forexe
         ''' când coloana «Timp» ajunge la <paramref name="ultimaData"/>. Oglindește exact
         ''' Access FX_Angajament_InfoComplete (DMax("DataFX", "FX_Istoric", ...)).
         ''' </summary>
-        Public Shared Function BuildPrelucrareCompletaReverse(cod As String, ultimaData As Date) As JobRequest
+        Public Shared Function BuildPrelucrareCompletaReverse(
+                cod As String, ultimaData As Date,
+                Optional receptiiSarite As IEnumerable(Of Date) = Nothing) As JobRequest
             If String.IsNullOrWhiteSpace(cod) Then
                 Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
             End If
@@ -74,8 +80,74 @@ Namespace KBot.Forexe
             job.Parameters(WorkflowCatalog.VarDataIesire) =
                 ultimaData.ToString(WorkflowCatalog.DataIesireFormat,
                                     Globalization.CultureInfo.InvariantCulture)
+            PuneReceptiileSarite(job, receptiiSarite)
             Return job
         End Function
+
+        ''' <summary>
+        ''' Reimprospatarea PARTIALA a receptiilor unui angajament (felia 0060) —
+        ''' «adlop - Receptii Angajament.wfl», iconita din dreapta subsolului arborelui de
+        ''' receptii. Acelasi drum prin site ca sectiunea 2 a prelucrarii complete, fara
+        ''' indicatori si fara istoric.
+        ''' </summary>
+        ''' <param name="receptiiSarite">
+        ''' Datele receptiilor pe care operatorul NU le-a bifat. Nothing sau lista goala = se
+        ''' descarca toate.
+        ''' </param>
+        Public Shared Function BuildReceptiiAngajament(
+                cod As String,
+                Optional receptiiSarite As IEnumerable(Of Date) = Nothing) As JobRequest
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
+            End If
+
+            Dim job As New JobRequest With {
+                .WorkflowName = "ReceptiiAngajament",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.ReceptiiAngajamentFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
+            PuneReceptiileSarite(job, receptiiSarite)
+            Return job
+        End Function
+
+        ''' <summary>
+        ''' Reimprospatarea PARTIALA a rezervarilor (felia 0060) —
+        ''' «adlop - Rezervari Angajament.wfl», iconita din dreapta subsolului arborelui de
+        ''' rezervari. Antet + indicatori + istoric: FX_Rezervari se scrie pe server DIN
+        ''' FX_Istoric (pasii 3c/3d), deci istoricul E sursa rezervarilor.
+        ''' </summary>
+        ''' <remarks>
+        ''' Nu ia <c>DATA_IESIRE</c>: fluxul citeste istoricul INAINTE, nu in REVERSE. Motivul
+        ''' e scris in .wfl — o data lipsa ar face oprirea sa se potriveasca cu primul rand.
+        ''' </remarks>
+        Public Shared Function BuildRezervariAngajament(cod As String) As JobRequest
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
+            End If
+
+            Dim job As New JobRequest With {
+                .WorkflowName = "RezervariAngajament",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.RezervariAngajamentFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
+            Return job
+        End Function
+
+        ''' <summary>
+        ''' Pune <c>RECEPTII_SARITE</c> pe lucrare — INTOTDEAUNA, chiar si goala.
+        ''' </summary>
+        ''' <remarks>
+        ''' Un parametru nedat lasa in XML chiar textul <c>{{RECEPTII_SARITE}}</c>, fiindca
+        ''' substitutia se face prin <c>WorkflowParser.ApplyVariables</c> peste continutul
+        ''' fisierului. <c>IfVar</c> l-ar citi atunci ca valoare literala si nu s-ar potrivi cu
+        ''' nicio data, deci s-ar descarca tot — corect, dar din intamplare. Aici se trimite
+        ''' explicit sirul gol, ca «nu sari peste niciuna» sa fie o valoare, nu un accident.
+        ''' </remarks>
+        Private Shared Sub PuneReceptiileSarite(job As JobRequest,
+                                                receptiiSarite As IEnumerable(Of Date))
+            job.Parameters(WorkflowCatalog.VarReceptiiSarite) =
+                WorkflowCatalog.ListaDatelorSarite(receptiiSarite)
+        End Sub
 
     End Class
 End Namespace

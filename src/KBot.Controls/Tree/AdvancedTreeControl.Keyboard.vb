@@ -110,11 +110,27 @@
                     End If
                 End If
 
+            Case Keys.A
+                ' Ctrl+A ia TOATA radacina randului curent, fara randul-radacina insusi. Numai cu
+                ' MultiSelect aprins: altfel tasta ramane netratata si merge unde mergea si pana
+                ' acum (un buton implicit al formularului, de pilda).
+                If (e.Modifiers And Keys.Control) = Keys.Control AndAlso MultiSelect Then
+                    If SelectWholeRoot() Then
+                        e.Handled = True
+                        e.SuppressKeyPress = True
+                        Return
+                    End If
+                End If
+
         End Select
 
         If handled Then
             e.Handled = True
             e.SuppressKeyPress = True
+
+            ' Randul cu focus s-a mutat deja; ABIA acum se hotaraste ce se intampla cu grupul:
+            ' cu Shift se intinde de la ancora pana aici, fara Shift grupul cade (.MultiSelect).
+            ApplyKeySelection(e.Modifiers)
 
             If pSelectedItem IsNot Nothing Then
                 EnsureNodeVisible(pSelectedItem)

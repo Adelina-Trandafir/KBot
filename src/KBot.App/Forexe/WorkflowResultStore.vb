@@ -101,6 +101,117 @@ Public NotInheritable Class WorkflowResultStore
         Return rezultat
     End Function
 
+    ''' <summary>
+    ''' Pastreaza un pachet PARTIAL (felia 0060): il scrie ca JSON, dar NU il pune in memoria
+    ''' din care se ofera reutilizarea. Intoarce calea fisierului scris.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>De ce nu intra in <c>_ultimulNod</c>.</b> Acolo sta raspunsul la intrebarea
+    ''' «angajamentul asta a fost deja descarcat?», iar <see cref="PachetBunDeRefolosit"/> il
+    ''' ofera la urmatoarea apasare a iconitei de nod ca pe o descarcare INTREAGA. O
+    ''' reimprospatare doar pe receptii n-are nici indicatori, nici istoric; oferita in locul
+    ''' unei descarcari complete, ea ar duce ingestia sa creada ca angajamentul nu mai are
+    ''' istoric deloc. Deci se scrie pe disc, unde e de folos la citit, si nu se raspunde
+    ''' niciodata cu ea.</para>
+    ''' </remarks>
+    ''' <param name="eticheta">Prefixul numelui de fisier — familia reimprospatata.</param>
+    Public Function SalveazaPartial(cod As String, rezultat As PrelucrareRezultat,
+                                    eticheta As String) As String
+        Try
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
+            End If
+            ArgumentNullException.ThrowIfNull(rezultat)
+            If String.IsNullOrWhiteSpace(eticheta) Then
+                Throw New ArgumentException("Eticheta este obligatorie.", NameOf(eticheta))
+            End If
+
+            Dim cale As String = Path.Combine(
+                OutputFolder,
+                $"{eticheta}_{CodSigur(cod)}_{DateTime.Now:yyyyMMdd_HHmmss}.json")
+            Scrie(cale, rezultat)
+            Return cale
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowResultStore.SalveazaPartial", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>Numele coloanei de data din «ListaReceptii», asa cum o scrie site-ul.</summary>
+    Private Const COL_DATA_RECEPTIE As String = "Data"
+
+    ''' <summary>Numele tabelului de receptii din pachet.</summary>
+    Private Const TABEL_RECEPTII As String = "ListaReceptii"
+
+    ''' <summary>
+    ''' ACELASI pachet, dar fara randurile receptiilor pe care operatorul nu le-a bifat (felia
+    ''' 0060). Un pachet din care nu e nimic de scos se intoarce NESCHIMBAT, aceeasi instanta.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>De ce se taie AICI si nu doar in .wfl.</b> Workflow-ul sare peste DETALIUL unei
+    ''' receptii nebifate — acolo sunt minutele — dar randul ei fusese deja citit de
+    ''' <c>ScrapeTable</c> si ar pleca spre server cu suma proaspata de pe site si cu detaliul
+    ''' gol. Serverul ar actualiza atunci antetul (<c>_R_UPDATE_SUMA_SQL</c>) fara sa-i atinga
+    ''' liniile, adica ar lasa in baza o receptie a carei suma nu mai da suma liniilor ei. Un
+    ''' rand SCOS nu e atins de nimeni: pasul 4b lucreaza rand cu rand.</para>
+    ''' <para><b>Un rand a carui data NU se poate citi RAMANE.</b> «Nu stiu care e» nu are voie
+    ''' sa devina «sigur nu e bifata» — asta ar scoate tacut din descarcare tocmai o receptie
+    ''' pe care operatorul a cerut-o.</para>
+    ''' </remarks>
+    Public Shared Function FaraReceptiileSarite(rezultat As PrelucrareRezultat,
+                                                dateSarite As IEnumerable(Of Date)) As PrelucrareRezultat
+        Try
+            If rezultat Is Nothing OrElse rezultat.Tabele Is Nothing Then Return rezultat
+            If dateSarite Is Nothing Then Return rezultat
+
+            Dim desarit As New HashSet(Of Date)(dateSarite.Select(Function(d) d.Date))
+            If desarit.Count = 0 Then Return rezultat
+
+            Dim receptii As TabelRezultat = Nothing
+            If Not rezultat.Tabele.TryGetValue(TABEL_RECEPTII, receptii) OrElse receptii Is Nothing Then
+                Return rezultat
+            End If
+
+            Dim pastrate As New TabelRezultat()
+            For Each rand As RandTabel In receptii
+                If Not EDeSarit(rand, desarit) Then pastrate.Adauga(rand)
+            Next
+            If pastrate.Count = receptii.Count Then Return rezultat
+
+            Dim tabele As New Dictionary(Of String, TabelRezultat)(rezultat.Tabele)
+            tabele(TABEL_RECEPTII) = pastrate
+            Return New PrelucrareRezultat With {
+                .CodAngajament = rezultat.CodAngajament,
+                .Moment = rezultat.Moment,
+                .Workflow = rezultat.Workflow,
+                .Scalari = rezultat.Scalari,
+                .Tabele = tabele
+            }
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowResultStore.FaraReceptiileSarite", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Randul asta e al unei receptii nebifate? Data se citeste EXACT cum o scrie site-ul
+    ''' (<c>zz/ll/aaaa</c>, <see cref="WorkflowCatalog.DataReceptieFormat"/>) — acelasi format
+    ''' pe care il cere si serverul in <c>fx_receptii_parse_ro_date</c>. O celula care nu se
+    ''' poate citi intoarce False, deci randul ramane.
+    ''' </summary>
+    Private Shared Function EDeSarit(rand As RandTabel, desarit As HashSet(Of Date)) As Boolean
+        If rand Is Nothing Then Return False
+        Dim celula As CelulaTabel = Nothing
+        If Not rand.TryGetValue(COL_DATA_RECEPTIE, celula) OrElse celula Is Nothing Then Return False
+        Dim text As String = celula.TextSau(String.Empty).Trim()
+        If text = String.Empty Then Return False
+        Dim data As Date
+        If Not Date.TryParseExact(text, WorkflowCatalog.DataReceptieFormat,
+                                  Globalization.CultureInfo.InvariantCulture,
+                                  Globalization.DateTimeStyles.None, data) Then Return False
+        Return desarit.Contains(data.Date)
+    End Function
+
     ''' <summary>Folderul de ieșire (creat la nevoie).</summary>
     Public Shared ReadOnly Property OutputFolder As String
         Get

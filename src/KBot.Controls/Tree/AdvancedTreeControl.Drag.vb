@@ -38,6 +38,20 @@ Partial Public Class AdvancedTreeControl
 
     ' Nodul tras și nodul de sub cursor, cât ține tragerea. Ambele Nothing în afara ei.
     Private _dragSource As TreeItem = Nothing
+
+    ''' <summary>
+    ''' Rândurile care se trag ACUM, când sunt mai multe (vezi partiala .MultiSelect).
+    '''
+    ''' <para><b>De ce e Shared.</b> Bucla de tragere a sistemului e MODALĂ și e una singură pe
+    ''' proces: în orice clipă se trage cel mult un lucru, deci un câmp comun nu poate fi citit
+    ''' de o a doua tragere. Iar tragerea ÎNTRE doi arbori are nevoie exact de asta: arborele
+    ''' care primește nu e cel care a pornit tragerea, deci câmpurile lui de instanță sunt goale,
+    ''' și el trebuie totuși să afle că vin cinci rânduri, nu unul.</para>
+    '''
+    ''' <para>Obiectul de date rămâne ce era — rândul APĂSAT — ca tot ce citea de acolo înainte
+    ''' să citească la fel și acum.</para>
+    ''' </summary>
+    Private Shared _draggedGroup As List(Of TreeItem) = Nothing
     Private _dropTarget As TreeItem = Nothing
     Private _dropAllowed As Boolean = False
     Private _dropMotiv As String = String.Empty
@@ -191,19 +205,34 @@ Partial Public Class AdvancedTreeControl
         Dim it As TreeItem = _dragCandidate
         _dragCandidate = Nothing
 
+        ' Apăsarea a devenit tragere, deci strângerea grupului la un rând NU se mai face: exact
+        ' asta e gestul prin care se trag mai multe deodată (vezi .MultiSelect).
+        _pendingSingleSelect = Nothing
+
         Dim start As New TreeDragStartEventArgs(it)
+        start.SetItems(DragGroupFor(it))
         RaiseEvent NodeDragStarting(Me, start)
         If start.Cancel Then Return False
+
+        ' Gazda poate SCOATE rânduri din grup (unul înghețat printre cele bune, de pildă). Dacă
+        ' le scoate pe toate, nu mai e nimic de tras — și nu e o eroare, e un răspuns.
+        Dim grup As New List(Of TreeItem)()
+        For Each rand As TreeItem In start.Items
+            If rand IsNot Nothing Then grup.Add(rand)
+        Next
+        If grup.Count = 0 Then Return False
 
         _dragSource = it
         _dropTarget = Nothing
         _dropAllowed = False
         _dropMotiv = String.Empty
+        _draggedGroup = grup
         Try
             ' Bucla modală a sistemului. Se întoarce abia la aruncare, la ESC sau la pierderea
             ' ferestrei — toate trei ies pe același drum, prin CancelDrag de mai jos.
             Me.DoDragDrop(it, DragDropEffects.Move)
         Finally
+            _draggedGroup = Nothing
             CancelDrag()
         End Try
         Return True
@@ -211,6 +240,9 @@ Partial Public Class AdvancedTreeControl
 
     ''' <summary>Stinge orice urmă de tragere. Sigură de chemat oricând.</summary>
     Friend Sub CancelDrag()
+        ' Fantomele ies pe ACEST drum, oricare ar fi fost sfârșitul tragerii — aruncare, ESC sau
+        ' ieșirea din fereastră. Un al doilea drum ar fi unul care se poate uita.
+        ClearDropPreview()
         Dim eraCeva As Boolean = _dragSource IsNot Nothing OrElse _dropTarget IsNot Nothing
         _dragSource = Nothing
         _dragCandidate = Nothing
@@ -252,25 +284,64 @@ Partial Public Class AdvancedTreeControl
         Return TryCast(date_.GetData(GetType(TreeItem)), TreeItem)
     End Function
 
+    ''' <summary>
+    ''' TOATE rândurile care se trag: grupul, dacă apăsarea a pornit dintr-unul, altfel rândul
+    ''' din obiectul de date, singur.
+    '''
+    ''' <para>Grupul se ia în seamă numai dacă îl CONȚINE pe cel apăsat. Altfel o selecție
+    ''' rămasă de la un gest de dinainte s-ar lipi de o tragere care n-are nimic cu ea.</para>
+    ''' </summary>
+    Private Shared Function ItemsDinDate(date_ As IDataObject) As List(Of TreeItem)
+        Dim rezultat As New List(Of TreeItem)()
+        Dim apasat As TreeItem = ItemDinDate(date_)
+        If apasat Is Nothing Then Return rezultat
+
+        Dim grup As List(Of TreeItem) = _draggedGroup
+        If grup IsNot Nothing AndAlso grup.Count > 0 Then
+            For Each rand As TreeItem In grup
+                If rand Is apasat Then
+                    rezultat.AddRange(grup)
+                    Return rezultat
+                End If
+            Next
+        End If
+
+        rezultat.Add(apasat)
+        Return rezultat
+    End Function
+
+    ''' <summary>Este rândul acesta printre cele care se trag?</summary>
+    Private Shared Function EstePrintre(lista As List(Of TreeItem), it As TreeItem) As Boolean
+        If lista Is Nothing OrElse it Is Nothing Then Return False
+        For Each rand As TreeItem In lista
+            If rand Is it Then Return True
+        Next
+        Return False
+    End Function
+
     Protected Overrides Sub OnDragOver(drgevent As DragEventArgs)
         Try
             MyBase.OnDragOver(drgevent)
             drgevent.Effect = DragDropEffects.None
             If Not _dragEnabled Then Return
 
-            Dim sursa As TreeItem = ItemDinDate(drgevent.Data)
-            If sursa Is Nothing Then Return
+            Dim surse As List(Of TreeItem) = ItemsDinDate(drgevent.Data)
+            If surse.Count = 0 Then Return
+            Dim sursa As TreeItem = surse(0)
 
             Dim p As Point = Me.PointToClient(New Point(drgevent.X, drgevent.Y))
-            Dim tinta As TreeItem = HitTestItem(p)
+            ' Cursorul poate sta chiar pe un rând-fantomă pus de previzualizare. Fantoma nu e un
+            ' nod al datelor, dar locul ei înseamnă «rădăcina asta» — vezi partiala .DropPreview.
+            Dim tinta As TreeItem = RandReal(HitTestItem(p))
 
-            ' Un nod nu se poate arunca pe el însuși.
-            If tinta Is sursa Then tinta = Nothing
+            ' Un nod nu se poate arunca pe el însuși — nici pe vreunul din grupul care se trage.
+            If EstePrintre(surse, tinta) Then tinta = Nothing
 
             Dim permis As Boolean = False
             Dim motiv As String = String.Empty
             If tinta IsNot Nothing Then
                 Dim args As New TreeDragOverEventArgs(sursa, tinta)
+                args.SetSources(surse)
                 RaiseEvent NodeDragOver(Me, args)
                 permis = args.Allow
                 motiv = If(args.Motiv, String.Empty)
@@ -295,6 +366,9 @@ Partial Public Class AdvancedTreeControl
     Protected Overrides Sub OnDragLeave(e As EventArgs)
         Try
             MyBase.OnDragLeave(e)
+            ' Cursorul a plecat din arbore: previzualizarea vorbea despre o aruncare care nu se
+            ' mai întâmplă aici.
+            ClearDropPreview()
             If _dropTarget IsNot Nothing Then
                 _dropTarget = Nothing
                 _dropAllowed = False
@@ -312,13 +386,15 @@ Partial Public Class AdvancedTreeControl
             MyBase.OnDragDrop(drgevent)
             ' Din obiectul de date, nu din câmp: la o tragere între doi arbori, ținta n-a
             ' pornit tragerea și n-are ce să aibă în `_dragSource`.
-            Dim sursa As TreeItem = ItemDinDate(drgevent.Data)
+            Dim surse As List(Of TreeItem) = ItemsDinDate(drgevent.Data)
             Dim tinta As TreeItem = _dropTarget
             Dim permis As Boolean = _dropAllowed
             CancelDrag()
 
-            If Not permis OrElse sursa Is Nothing OrElse tinta Is Nothing Then Return
-            RaiseEvent NodeDropped(Me, New TreeDropEventArgs(sursa, tinta))
+            If Not permis OrElse surse.Count = 0 OrElse tinta Is Nothing Then Return
+            Dim args As New TreeDropEventArgs(surse(0), tinta)
+            args.SetSources(surse)
+            RaiseEvent NodeDropped(Me, args)
         Catch ex As Exception
             GlobalErrorLog.Write("AdvancedTreeControl.OnDragDrop", ex)
         End Try
@@ -406,10 +482,37 @@ Public NotInheritable Class TreeDragStartEventArgs
 
     Public Sub New(item As AdvancedTreeControl.TreeItem)
         Me.Item = item
+        _items = New List(Of AdvancedTreeControl.TreeItem)()
+        If item IsNot Nothing Then _items.Add(item)
     End Sub
 
     ''' <summary>Nodul pe care operatorul a început să-l tragă.</summary>
     Public ReadOnly Property Item As AdvancedTreeControl.TreeItem
+
+    Private ReadOnly _items As List(Of AdvancedTreeControl.TreeItem)
+
+    ''' <summary>
+    ''' TOATE rândurile care pleacă în tragere — grupul selectat, dacă apăsarea a pornit
+    ''' dintr-unul, altfel doar <see cref="Item"/>.
+    '''
+    ''' <para>Lista se poate MODIFICA: gazda scoate din ea rândurile pe care nu le lasă să
+    ''' plece (unul înghețat printre cele bune) în loc să refuze tot gestul. Golită de tot,
+    ''' tragerea nu mai pornește.</para>
+    ''' </summary>
+    Public ReadOnly Property Items As IList(Of AdvancedTreeControl.TreeItem)
+        Get
+            Return _items
+        End Get
+    End Property
+
+    ''' <summary>Umplut de control înainte de a ridica evenimentul.</summary>
+    Friend Sub SetItems(items As IEnumerable(Of AdvancedTreeControl.TreeItem))
+        _items.Clear()
+        If items Is Nothing Then Return
+        For Each it As AdvancedTreeControl.TreeItem In items
+            If it IsNot Nothing Then _items.Add(it)
+        Next
+    End Sub
 
     ''' <summary>Pune-l pe True ca nodul să NU poată fi tras.</summary>
     Public Property Cancel As Boolean
@@ -424,8 +527,27 @@ Public NotInheritable Class TreeDragOverEventArgs
         Me.Target = target
     End Sub
 
-    ''' <summary>Nodul tras.</summary>
+    ''' <summary>Nodul tras — cel APĂSAT, când se trag mai multe.</summary>
     Public ReadOnly Property Source As AdvancedTreeControl.TreeItem
+
+    Private _sources As IReadOnlyList(Of AdvancedTreeControl.TreeItem) = Nothing
+
+    ''' <summary>
+    ''' TOATE rândurile care se trag. Când e unul singur, e o listă cu <see cref="Source"/> în ea
+    ''' — deci gazda poate scrie o singură dată bucla și acoperă amândouă cazurile.
+    ''' </summary>
+    Public ReadOnly Property Sources As IReadOnlyList(Of AdvancedTreeControl.TreeItem)
+        Get
+            If _sources IsNot Nothing Then Return _sources
+            If Source Is Nothing Then Return Array.Empty(Of AdvancedTreeControl.TreeItem)()
+            Return New AdvancedTreeControl.TreeItem() {Source}
+        End Get
+    End Property
+
+    ''' <summary>Umplut de control înainte de a ridica evenimentul.</summary>
+    Friend Sub SetSources(items As IReadOnlyList(Of AdvancedTreeControl.TreeItem))
+        _sources = items
+    End Sub
 
     ''' <summary>Nodul de sub cursor.</summary>
     Public ReadOnly Property Target As AdvancedTreeControl.TreeItem
@@ -452,8 +574,27 @@ Public NotInheritable Class TreeDropEventArgs
         Me.Target = target
     End Sub
 
-    ''' <summary>Nodul tras.</summary>
+    ''' <summary>Nodul tras — cel APĂSAT, când s-au tras mai multe.</summary>
     Public ReadOnly Property Source As AdvancedTreeControl.TreeItem
+
+    Private _sources As IReadOnlyList(Of AdvancedTreeControl.TreeItem) = Nothing
+
+    ''' <summary>
+    ''' TOATE rândurile aruncate. Una singură când s-a tras unul singur — vezi
+    ''' <see cref="TreeDragOverEventArgs.Sources"/>.
+    ''' </summary>
+    Public ReadOnly Property Sources As IReadOnlyList(Of AdvancedTreeControl.TreeItem)
+        Get
+            If _sources IsNot Nothing Then Return _sources
+            If Source Is Nothing Then Return Array.Empty(Of AdvancedTreeControl.TreeItem)()
+            Return New AdvancedTreeControl.TreeItem() {Source}
+        End Get
+    End Property
+
+    ''' <summary>Umplut de control înainte de a ridica evenimentul.</summary>
+    Friend Sub SetSources(items As IReadOnlyList(Of AdvancedTreeControl.TreeItem))
+        _sources = items
+    End Sub
 
     ''' <summary>Nodul pe care a fost aruncat.</summary>
     Public ReadOnly Property Target As AdvancedTreeControl.TreeItem

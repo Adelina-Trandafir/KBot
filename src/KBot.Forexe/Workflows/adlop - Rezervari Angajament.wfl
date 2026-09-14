@@ -1,21 +1,31 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Workflow name="Prelucrare completă {{COD_ANGAJAMENT}}" startUrl="current"
+<Workflow name="Rezervări {{COD_ANGAJAMENT}}" startUrl="current"
   expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
-  <!-- V.5 - 13/08/2026
-    Flux combinat — prelucrare completă angajament
+  <!-- V.1 - 10/09/2026 — felia 0060
+    Flux PARȚIAL — numai rezervările unui angajament
     ───────────────────────────────────────────────
     SEC. 0 — Citire date angajament (din .well)
-    SEC. 1 — Scrape tabel indicatori (tab0)
-    SEC. 2 — Recepții (tab1) cu detaliu per recepție
+    SEC. 1 — Indicatori (tab0) cu bugetul fiecăruia
     SEC. 4 — Istoric (cu paginare)
 
-    Toate secțiunile cu tabel sunt protejate cu IfExists —
-    dacă tab-ul sau tabelul lipsește, fluxul continuă fără eroare.
+    DE CE ISTORICUL. «Rezervare» nu are pagină proprie în FOREXE: FX_Rezervari se scrie de
+    pe server DIN FX_Istoric (pașii 3c/3d — `step3cd_populeaza_rezervari`), iar indicatorii
+    dau clasificația și unitatea fiecărui rând. Deci reîmprospătarea rezervărilor înseamnă
+    exact secțiunile astea două, plus antetul.
 
-    Variabile așteptate din VBA: {{COD_ANGAJAMENT}}  — codul angajamentului de procesat
+    LIPSEȘTE secțiunea 2 (recepțiile) — și aia e chiar economia: o deschidere de pagină pe
+    recepție. Serverul citește «ListaReceptii» cu `tabele.get(...) or []`, deci pasul 4b se
+    întoarce imediat și nicio recepție nu se atinge.
 
-    13/08/2026 — V.5 — modificare timeout din 5 secunde în 15 secunde pentru WaitFor și Click, pentru a
-                       evita erori de tip timeout la paginile cu tabele mari.
+    ISTORICUL SE CITEȘTE ÎNAINTE, nu în REVERSE. Varianta REVERSE are nevoie de
+    DATA_IESIRE, iar o dată lipsă ar face `exitIfCellEquals="Timp:~:^"` să se
+    potrivească cu ORICE rând, adică să oprească citirea la primul. Fluxul ăsta se poate
+    cere și pe un angajament fără istoric local, deci merge pe varianta care nu are cum să
+    mintă. ⚠ Pe un angajament cu istoric lung asta e mai lent decât REVERSE — de rezolvat
+    când există o a doua variantă, la fel ca perechea prelucrării complete.
+
+    Variabile așteptate:
+      {{COD_ANGAJAMENT}}  — codul angajamentului de procesat
   -->
 
   <!-- ═══════════════════════════════════════════════════════
@@ -139,120 +149,6 @@
   </IfExists>
 
   <!-- ═══════════════════════════════════════════════════════
-       SECȚIUNEA 2 — RECEPȚII (tab1)
-       Guard nivel 1: tab-ul există în DOM.
-       Guard nivel 2: tabelul are cel puțin un rând.
-       Selector exterior: table.table-striped.table-bordered.table-condensed
-       Selector interior: table.table-striped.table-bordered.table-hover.table-condensed
-       ═══════════════════════════════════════════════════════ -->
-
-  <Log message="══ SECȚIUNEA 2: Recepții ══" level="action" />
-
-  <IfExists selector="li.tab1" timeout="15">
-
-    <Click selector="li.tab1 a" timeout="15" />
-    <WaitFor selector="li.tab1.active" state="visible" timeout="15" />
-
-    <!-- Guard nivel 2: tab activ dar posibil gol -->
-    <IfExists selector="table.table-striped.table-bordered.table-condensed tbody tr" timeout="15">
-
-      <ScrapeTable selector="table.table-striped.table-bordered.table-condensed"
-        saveTo="ListaReceptii"
-        timeout="15" />
-
-      <Log message="Lista recepții citită. Încep iterarea..." level="info" />
-
-      <ForEachVar source="ListaReceptii" itemPrefix="R" indexVariable="idx"
-        collectFields="Tip,Data,Suma,TipReceptie,DescriereReceptie,CodIndicator,Detaliu">
-
-      <!-- NOTA (26.08.2026): «TipReceptie» ramane in collectFields fiindca D11 cere ca
-           cele doua fisiere de workflow sa se potriveasca, si o coloana necitita in plus
-           nu costa nimic. NIMIC nu o consuma insa pe server: hash-ul de identitate al
-           antetului se face din «Tip», iar FX_Receptii_R.TipReceptie e calculat
-           (NOU/EDIT). Cerinta unui 400 la lipsa ei e RETRASA. Vezi corectia C5 din
-           docs/FUNDAMENT_Asociere_Receptii.md.
-           «Detaliu», in schimb, E citit, si soseste ca LISTA imbricata: un ScrapeTable
-           interior il scrie cu saveTo, iar decizia D-N spune ca structura calatoreste
-           pana la server neaplatizata. -->
-
-        <!-- ═══ SELECȚIA OPERATORULUI (felia 0060) ═══════════════════════════
-             {{RECEPTII_SARITE}} = datele recepțiilor pe care operatorul NU le-a bifat în
-             macheta de reîmprospătare, zz/ll/aaaa, separate prin virgulă. GOL = nu se sare
-             peste niciuna, adică exact comportamentul dinainte de felia asta.
-
-             Se sare peste DETALIUL recepției, nu peste rândul ei: rândul rămâne în
-             «ListaReceptii» fiindcă ScrapeTable l-a citit deja, iar clientul îl scoate
-             înainte de trimitere (WorkflowResultStore.FaraReceptiileSarite). Aici se
-             economisesc chiar minutele: o deschidere de pagină pe recepție.
-
-             Cele patru variabile scrise în iterație se GOLESC pe ramura asta. Obligatoriu,
-             nu igienă: BuildCollectedRow citește un câmp lipsă din variabila cu același
-             nume, iar SetVariable adaugă într-o listă din care se ia ULTIMA valoare — deci
-             fără golire, recepția sărită ar pleca spre server cu «Detaliu»-ul VECINEI ei.
-             "[]" pentru Detaliu, nu "": serverul cere o listă acolo (cere_lista), iar un
-             șir gol e refuzat. -->
-        <IfVar value="{{RECEPTII_SARITE}}" compare="regex:(^|,)[[R.Data]](,|$)">
-
-          <Log message="Recepția [[idx]] ([[R.Data]]) nu a fost bifată — sar peste detaliul ei."
-            level="info" />
-          <SetInternalVar name="Detaliu" value="[]" />
-          <SetInternalVar name="TipReceptie" value="" />
-          <SetInternalVar name="DescriereReceptie" value="" />
-          <SetInternalVar name="CodIndicator" value="" />
-
-          <Else>
-          <Log message="Procesez recepția [[idx]]: [[R.Tip]] / [[R.Data]] / [[R.Suma]]..."
-            level="info" />
-
-          <!-- nth-child e 1-based, exact ca idx -->
-          <Click
-            selector="table.table-striped.table-bordered.table-condensed tbody tr:nth-child([[idx]]) .glyphicon-eye-open"
-            waitNavigation="false" timeout="15" />
-
-          <WaitFor selector="h3.heading:has-text('Modifică recepție')" timeout="15" />
-          <WaitFor selector="select[name='receptie']" timeout="15" />
-
-          <Read selector="select[name='receptie']" saveTo="TipReceptie" />
-          <Read selector="textarea[name='descriere']" saveTo="DescriereReceptie" />
-
-          <!-- Tabelul interior: selector cu table-hover — diferențiator față de tabelul exterior -->
-          <ScrapeTable selector="table.table-striped.table-bordered.table-hover.table-condensed"
-            saveTo="Detaliu"
-            nextPageSelector="a[rel='next']"
-            waitSelector="table.table-striped.table-bordered.table-hover.table-condensed"
-            fingerprintSelector="table.table-striped.table-bordered.table-hover.table-condensed tbody tr:last-child td:last-child"
-            timeout="15" />
-
-          <!-- Cod din primul rând al tabelului interior -->
-          <Read
-            selector="table.table-striped.table-bordered.table-hover.table-condensed tbody tr:first-child td:nth-child(1) span"
-            saveTo="CodIndicator" />
-
-          <Log message="✓ Recepția [[idx]] procesată. Revin la listă..." level="success" />
-
-          <!-- GoBack via browser — butonul 'Înapoi' din UI afișează confirmare modală -->
-          <GoBack />
-          <WaitFor selector="li.tab1.active" state="visible" timeout="15" />
-          </Else>
-        </IfVar>
-
-      </ForEachVar>
-
-      <Log message="✓ Secțiunea Recepții finalizată." level="success" />
-
-      <Else>
-        <Log message="Tab Recepții există dar nu conține înregistrări pentru {{COD_ANGAJAMENT}}."
-          level="warning" />
-      </Else>
-    </IfExists>
-
-    <Else>
-      <Log message="Tab-ul Recepții (tab1) nu este disponibil pentru {{COD_ANGAJAMENT}}."
-        level="warning" />
-    </Else>
-  </IfExists>
-
-  <!-- ═══════════════════════════════════════════════════════
        SECȚIUNEA 4 — ISTORIC
        Butonul Istoric e accesibil doar din tab0 — revenim explicit.
        Guard: dacă tabelul nu există, sărim secțiunea silențios.
@@ -286,7 +182,7 @@
        FINAL
        ═══════════════════════════════════════════════════════ -->
 
-  <Log message="══ Flux complet finalizat pentru angajamentul {{COD_ANGAJAMENT}}. ══"
+  <Log message="══ Rezervările angajamentului {{COD_ANGAJAMENT}} au fost citite. ══"
     level="success" />
 
 </Workflow>

@@ -53,13 +53,44 @@ caption into a left and a right part; `LeftTextWidth` / `RightTextWidth` (0 = dy
 `Indeterminate`, `RadioButtonLevel = -1` (the level that gets radios; -1 = off),
 `SetRadioSelected(item)`, `HasNodeIcons = True`.
 
+### Several rows at once (`MultiSelect`, slice 0061)
+`MultiSelect = False`. Turned on, Ctrl and Shift pick several rows the way Windows does:
+Ctrl toggles one, Shift takes the range from the anchor. `SelectedNodes` (screen order,
+never Nothing), `SelectedNodeCount`, `IsNodeSelected(node)`, `SelectNodes(nodes)`,
+`ClearNodeSelection()`, event `SelectedNodesChanged`.
+
+- **One root at a time.** A group never spans two roots (a root = the level-0 ancestor).
+  Ctrl/Shift on a row of another root starts a new group there instead of extending.
+- `SelectedNode` stays what it always was — the focus row, always inside the group, and the
+  only row that gets the selection BORDER (the rest only get the fill). Writing it from
+  outside collapses the group to that one row.
+- A plain click inside a group collapses it on mouse **up**, not down, so that the press can
+  start a drag of the WHOLE group. `DragGroupFor` feeds `TreeDragStartEventArgs.Items`
+  (which the host may trim) and the target reads `Sources` on the drag-over / drop args —
+  one row or many, the host writes one loop.
+- Keyboard: Shift + arrows/Home/End/PgUp/PgDn stretch the range; Ctrl+A takes the focus
+  row's whole root (root row itself excepted). Both are inert with `MultiSelect` off.
+- `Clear()` forgets the group — the rows it named are gone anyway.
+
+### Where the dragged row would land (`SetDropPreview`, slice 0061)
+For trees where the position of a row is NOT the operator's choice (a receipt chain is
+ordered by the snapshot's hour), a frame around the row under the cursor lies. During the
+drag the host can call `SetDropPreview(root, ghosts)` with `TreeDropGhost(index, caption)`
+positions computed in the RESULTING order: the root lights up whole (dashed, in
+`DragHighlightColor`) and a ghost row appears at each position. `ClearDropPreview()` takes
+them down, and `CancelDrag` / `OnDragLeave` already call it, so a drop, an ESC or leaving
+the window all clean up on their own. Ghosts are real `TreeItem`s (`IsDropGhost = True`)
+inserted in the root's `Children`, so they paint, scroll and measure like every other row;
+a drag-over that lands on one is reported to the host as its parent.
+
 ## Events
 `NodeMouseDown` · `NodeMouseUp` · `NodeDoubleClicked` · `NodeChecked` ·
 `NodeRadioSelected(nodeOn, nodeOff)` · `RequestLazyLoad(sender, item)` ·
 `RightIconClicked` · `HeaderRightIconClicked` · `FooterRightIconClicked` ·
 `FooterLeftIconClicked` · `SearchFinished(matchingItems, searchText)` ·
-`CollapsedChanged(collapsed)` · drag: `NodeDragStarting` (cancellable) / `NodeDragOver`
-(`Allow` + `Motiv`) / `NodeDropped`.
+`CollapsedChanged(collapsed)` · `SelectedNodesChanged` · drag: `NodeDragStarting`
+(cancellable, `Items` trimmable) / `NodeDragOver` (`Allow` + `Motiv`, `Sources`) /
+`NodeDropped` (`Sources`).
 
 ## Geometry (all logical px, C2)
 `ItemHeight = 22`, `Indent = 10`, `ExpanderSize = 12`, `CheckBoxSize = 16`,
@@ -159,6 +190,9 @@ The header/footer BUTTONS use `ButtonTooltip: KBotToolTip` instead (C8), with
 - Vertical scrolling only for the node area; no virtualization — every visible node is
   walked on paint.
 - No built-in sorting (the header sort buttons are still a placeholder `MsgBox` at the host
-  level), no multi-select, no in-place node editing, no node reordering by the control.
+  level), no in-place node editing, no node reordering by the control.
+- Multi-select (0061) is **one root deep and one tree wide**: no group across two roots, no
+  group carried between two trees, and no rubber-band selection. The drop preview does not
+  scroll the tree to show a ghost that fell outside the viewport.
 - `WndProc` is deliberately left unwrapped (the global `Application.ThreadException` net
   catches it) — wrapping it risks breaking the window-message contract.

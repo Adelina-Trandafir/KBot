@@ -1,21 +1,28 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Workflow name="Prelucrare completă {{COD_ANGAJAMENT}}" startUrl="current"
+<Workflow name="Recepții {{COD_ANGAJAMENT}}" startUrl="current"
   expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
-  <!-- V.5 - 13/08/2026
-    Flux combinat — prelucrare completă angajament
+  <!-- V.1 - 10/09/2026 — felia 0060
+    Flux PARȚIAL — numai recepțiile unui angajament
     ───────────────────────────────────────────────
     SEC. 0 — Citire date angajament (din .well)
-    SEC. 1 — Scrape tabel indicatori (tab0)
     SEC. 2 — Recepții (tab1) cu detaliu per recepție
-    SEC. 4 — Istoric (cu paginare)
 
-    Toate secțiunile cu tabel sunt protejate cu IfExists —
-    dacă tab-ul sau tabelul lipsește, fluxul continuă fără eroare.
+    E o TĂIETURĂ din «adlop - Prelucrare Completa.wfl», nu un drum nou prin site: aceleași
+    selectoare, aceiași pași, aceleași nume de tabele. Lipsesc secțiunile 1 (indicatori) și
+    4 (istoric), fiindcă butonul din subsolul arborelui de RECEPȚII cere recepțiile, iar
+    celelalte două secțiuni sunt exact partea care costă timp fără să răspundă la întrebare.
+    Când unul dintre fișiere se schimbă într-o secțiune comună, se schimbă și celălalt —
+    decizia D11.
 
-    Variabile așteptate din VBA: {{COD_ANGAJAMENT}}  — codul angajamentului de procesat
+    Serverul primește un pachet FĂRĂ «TabelIndicatori» și FĂRĂ «TabelIstoric»: le citește cu
+    `tabele.get(...) or []`, deci pașii lor nu scriu nimic, iar pasul 4b are nevoie de
+    indicatori din BAZĂ (`read_indicatori`), nu din sarcina utilă. Verificat citind
+    routes/forexe/prelucrare.py.
 
-    13/08/2026 — V.5 — modificare timeout din 5 secunde în 15 secunde pentru WaitFor și Click, pentru a
-                       evita erori de tip timeout la paginile cu tabele mari.
+    Variabile așteptate:
+      {{COD_ANGAJAMENT}}   — codul angajamentului de procesat
+      {{RECEPTII_SARITE}}  — datele recepțiilor nebifate (zz/ll/aaaa, separate prin virgulă);
+                             GOL = se descarcă toate
   -->
 
   <!-- ═══════════════════════════════════════════════════════
@@ -80,63 +87,6 @@
   <Read selector=".well.well-small span.label" saveTo="StareAngajament" />
 
   <Log message="✓ Date angajament citite: [[CodAngajament]] / [[StareAngajament]]" level="success" />
-
-  <!-- ═══════════════════════════════════════════════════════
-       SECȚIUNEA 1 — INDICATORI (tab0)
-       Guard: dacă tabelul nu există, sărim secțiunea silențios.
-       Selector exterior: table.table-striped.table-bordered.table-condensed
-       Selector interior: table.table-bordered.table-hover.table-condensed
-       ═══════════════════════════════════════════════════════ -->
-
-  <Log message="══ SECȚIUNEA 1: Indicatori ══" level="action" />
-
-  <WaitFor selector="li.tab0.active" timeout="15" />
-
-  <IfExists selector="table.table-striped.table-bordered.table-condensed tbody tr" timeout="15">
-
-    <ScrapeTable selector="table.table-striped.table-bordered.table-condensed"
-      saveTo="TabelIndicatori"
-      nextPageSelector="a[rel='next']"
-      waitSelector="table.table-striped.table-bordered.table-condensed"
-      fingerprintSelector="table.table-striped.table-bordered.table-condensed tbody tr:last-child td:last-child"
-      isCheckpoint="true"
-      timeout="15" />
-
-    <Log message="Lista indicatori citită. Încep iterarea..." level="info" />
-
-    <ForEachVar source="TabelIndicatori" itemPrefix="R" indexVariable="idx"
-      collectFields="Indicator_ang,Program,Obiectiv,Proiect,Sector_Sursa_Indicator,Limita_credit_angajament,Total_credit_angajament,Credit_bugetar,Angajament_legal,Credit_bugetar_rezervat_definitiv_an_curent,Credit_bugetar_rezervat_definitiv_ani_urmatori,Col_12,BugetIndicator">
-
-      <Log
-        message="Procesez indicatorul [[idx]]: [[R.Indicator_ang]] / [[R.Sector_Sursa_Indicator]]..."
-        level="info" />
-
-      <Click
-        selector="table.table-striped.table-bordered.table-condensed tbody tr:nth-child([[idx]]) .glyphicon-eye-open"
-        waitNavigation="false" timeout="15" />
-
-      <WaitFor selector="table.table-bordered.table-hover.table-condensed" timeout="15" />
-
-      <ScrapeTable selector="table.table-bordered.table-hover.table-condensed"
-        saveTo="BugetIndicator"
-        nextPageSelector="a[rel='next']"
-        waitSelector="table.table-bordered.table-hover.table-condensed"
-        fingerprintSelector="table.table-bordered.table-hover.table-condensed tbody tr:last-child td:last-child"
-        timeout="15" />
-
-      <Log message="✓ Indicatorul [[idx]] procesat. Revin la listă..." level="success" />
-
-      <GoBack />
-      <WaitFor selector="li.tab0.active" state="visible" timeout="15" />
-
-    </ForEachVar>
-
-    <Log message="✓ Secțiunea Indicatori finalizată." level="success" />
-
-    <Else>
-      <Log message="Tab0 nu conține indicatori pentru {{COD_ANGAJAMENT}}." level="warning" />
-    </Else>
-  </IfExists>
 
   <!-- ═══════════════════════════════════════════════════════
        SECȚIUNEA 2 — RECEPȚII (tab1)
@@ -253,40 +203,10 @@
   </IfExists>
 
   <!-- ═══════════════════════════════════════════════════════
-       SECȚIUNEA 4 — ISTORIC
-       Butonul Istoric e accesibil doar din tab0 — revenim explicit.
-       Guard: dacă tabelul nu există, sărim secțiunea silențios.
-       ═══════════════════════════════════════════════════════ -->
-
-  <Log message="══ SECȚIUNEA 4: Istoric angajament ══" level="action" />
-
-  <Click selector="li.tab0 a" timeout="15" />
-  <WaitFor selector="li.tab0.active" timeout="15" />
-
-  <Click selector="button.btn-success:has-text('Istoric')" waitNavigation="true" timeout="15" />
-  <WaitFor selector="h3.heading:has-text('Istoric angajament')" timeout="15" />
-
-  <IfExists selector="table.table-striped tbody tr" timeout="15">
-
-    <ScrapeTable selector="table.table-striped"
-      saveTo="TabelIstoric"
-      nextPageSelector="a[rel='next']"
-      waitSelector="table.table-striped"
-      fingerprintSelector="table.table-striped tbody tr:last-child td:last-child"
-      timeout="15" />
-    <Log message="✓ Istoric salvat cu succes." level="success" />
-
-    <Else>
-      <Log message="Pagina Istoric nu conține înregistrări pentru {{COD_ANGAJAMENT}}."
-        level="warning" />
-    </Else>
-  </IfExists>
-
-  <!-- ═══════════════════════════════════════════════════════
        FINAL
        ═══════════════════════════════════════════════════════ -->
 
-  <Log message="══ Flux complet finalizat pentru angajamentul {{COD_ANGAJAMENT}}. ══"
+  <Log message="══ Recepțiile angajamentului {{COD_ANGAJAMENT}} au fost citite. ══"
     level="success" />
 
 </Workflow>

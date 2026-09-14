@@ -8,15 +8,21 @@ Imports KBot.Controls
 ' subformularele sunt in `FX_System_Export/FORMS`. Regulile vin de acolo si sunt portate;
 ' ASPECTUL de mai jos este PROIECTAT, nu portat. Consemnat in worklog ca neverificat.
 '
-' Cele patru panouri Access devin patru zone, fiindca aici mutarea se face TRAGAND:
+' Cele patru panouri Access devin patru zone, fiindca aici mutarea se face TRAGAND. Asezarea
+' de mai jos e cea din felia 0061, ceruta de operator:
 '   stanga sus    = recepțiile cu lanturile lor      (Access: `_LISTA` + `_LISTA_HA`)
-'   stanga jos    = instantaneele inca neasezate     (Access: `_LISTA_HN`)
-'   dreapta jos   = liniile rândului selectat        (Access: `_LISTA_RH`)
-'   dreapta sus   = graficul evolutiei (`grafic`), care NU are corespondent in Access —
-'                   e locul ramas liber dupa ce cele doua liste au trecut in stanga
+'   stanga jos    = indicatorii randului ales acolo  (Access: `_LISTA_RH`)
+'   dreapta sus   = instantaneele inca neasezate     (Access: `_LISTA_HN`)
+'   dreapta jos   = indicatorii randului ales acolo  (Access: `_LISTA_RH`, a doua oara)
 ' Combo-ul de asezare din `_LISTA_HN` si butonul de desprindere din `_LISTA_HA` se
 ' contopesc intr-o singura miscare: tragi la stanga ca sa asezi, tragi la dreapta ca sa
 ' desprinzi.
+'
+' GRAFICUL SI BENZILE NU MAI SUNT AICI. Stau in `pnlGrafice`, un panou ASCUNS al cardului,
+' si se muta intreg in `GraficeAsociereForm` la apasarea butonului «Grafice si benzi».
+' Declarate tot aici (regula casei: toate controalele in .Designer.vb), fiindca datele si
+' toti tratatorii lor sunt in `AsociereForm.vb` — fereastra le imprumuta suprafata, nu
+' logica. Ecranul asta a ramas unul de LUCRU: doi arbori si, sub fiecare, indicatorii lui.
 '
 ' Toate controalele se declara AICI (docs/kbot-forms-ui-convention.md): formularul trebuie
 ' sa se randeze in designerul Visual Studio, nu sa se construiasca la rulare.
@@ -54,6 +60,10 @@ Partial Class AsociereForm
         Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn7 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn8 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         pnlCard = New Panel()
         split = New SplitContainer()
@@ -62,18 +72,22 @@ Partial Class AsociereForm
         Il_Receptii = New ImageList(components)
         treeLibere = New AdvancedTreeControl()
         splitDreapta = New SplitContainer()
+        pnlGrafice = New Panel()
         benzi = New KBotLaneView()
         grafic = New KBotChartView()
         navGrafice = New KBotNavList()
-        grid = New KBotDataView()
+        gridLant = New KBotDataView()
+        gridLibere = New KBotDataView()
         ntfMesaj = New KBotNotice()
         lblIntro = New Label()
         btnRenunta = New Button()
+        btnGrafice = New Button()
         btnReseteaza = New Button()
         btnSalveaza = New Button()
         capBar = New KBotCaptionBar()
         tlyAsociere = New TableLayoutPanel()
         pnlCard.SuspendLayout()
+        pnlGrafice.SuspendLayout()
         CType(split, ComponentModel.ISupportInitialize).BeginInit()
         split.Panel1.SuspendLayout()
         split.Panel2.SuspendLayout()
@@ -89,14 +103,16 @@ Partial Class AsociereForm
         CType(benzi, ComponentModel.ISupportInitialize).BeginInit()
         CType(grafic, ComponentModel.ISupportInitialize).BeginInit()
         CType(navGrafice, ComponentModel.ISupportInitialize).BeginInit()
-        CType(grid, ComponentModel.ISupportInitialize).BeginInit()
+        CType(gridLant, ComponentModel.ISupportInitialize).BeginInit()
+        CType(gridLibere, ComponentModel.ISupportInitialize).BeginInit()
         tlyAsociere.SuspendLayout()
         SuspendLayout()
         ' 
         ' pnlCard
         ' 
-        tlyAsociere.SetColumnSpan(pnlCard, 3)
+        tlyAsociere.SetColumnSpan(pnlCard, 4)
         pnlCard.Controls.Add(split)
+        pnlCard.Controls.Add(pnlGrafice)
         pnlCard.Controls.Add(ntfMesaj)
         pnlCard.Controls.Add(lblIntro)
         pnlCard.Dock = DockStyle.Fill
@@ -142,10 +158,12 @@ Partial Class AsociereForm
         SplitContainer1.Panel1.Controls.Add(treeLant)
         ' 
         ' SplitContainer1.Panel2
-        ' 
-        SplitContainer1.Panel2.Controls.Add(treeLibere)
+        '
+        SplitContainer1.Panel2.Controls.Add(gridLant)
+        SplitContainer1.Panel1MinSize = 120
+        SplitContainer1.Panel2MinSize = 80
         SplitContainer1.Size = New Size(407, 557)
-        SplitContainer1.SplitterDistance = 314
+        SplitContainer1.SplitterDistance = 340
         SplitContainer1.TabIndex = 1
         ' 
         ' treeLant
@@ -170,6 +188,7 @@ Partial Class AsociereForm
         treeLant.Location = New Point(0, 0)
         treeLant.Margin = New Padding(4, 5, 4, 5)
         treeLant.MinimumCollapsedWidth = 120
+        treeLant.MultiSelect = True
         treeLant.Name = "treeLant"
         treeLant.NodeImages = Il_Receptii
         TreeNodeDefinition1.Caption = "01/01/2026~~~1.234.567,89 (1)"
@@ -235,6 +254,7 @@ Partial Class AsociereForm
         treeLibere.Indent = 12
         treeLibere.Location = New Point(0, 0)
         treeLibere.Margin = New Padding(4, 5, 4, 5)
+        treeLibere.MultiSelect = True
         treeLibere.Name = "treeLibere"
         treeLibere.NodeImages = Il_Receptii
         treeLibere.PaddingExpanderGap = 8
@@ -251,23 +271,37 @@ Partial Class AsociereForm
         splitDreapta.Orientation = Orientation.Horizontal
         ' 
         ' splitDreapta.Panel1
-        ' 
-        splitDreapta.Panel1.Controls.Add(benzi)
-        splitDreapta.Panel1.Controls.Add(grafic)
-        splitDreapta.Panel1.Controls.Add(navGrafice)
-        splitDreapta.Panel1MinSize = 80
-        ' 
+        '
+        splitDreapta.Panel1.Controls.Add(treeLibere)
+        splitDreapta.Panel1MinSize = 120
+        '
         ' splitDreapta.Panel2
-        ' 
-        splitDreapta.Panel2.Controls.Add(grid)
+        '
+        splitDreapta.Panel2.Controls.Add(gridLibere)
         splitDreapta.Panel2MinSize = 80
         splitDreapta.Size = New Size(634, 557)
-        splitDreapta.SplitterDistance = 308
+        splitDreapta.SplitterDistance = 340
         splitDreapta.SplitterWidth = 10
         splitDreapta.TabIndex = 1
-        ' 
+        '
+        ' pnlGrafice
+        '
+        ' Copiii in ordine INVERSA de andocare: Fill intai, apoi Top (regula casei pentru
+        ' panourile-card). Panoul sta ascuns in formular si se muta INTREG in fereastra
+        ' graficelor la apasarea butonului — vezi GraficeAsociereForm.
+        pnlGrafice.Controls.Add(benzi)
+        pnlGrafice.Controls.Add(grafic)
+        pnlGrafice.Controls.Add(navGrafice)
+        pnlGrafice.Dock = DockStyle.Fill
+        pnlGrafice.Location = New Point(17, 71)
+        pnlGrafice.Margin = New Padding(0)
+        pnlGrafice.Name = "pnlGrafice"
+        pnlGrafice.Size = New Size(1050, 557)
+        pnlGrafice.TabIndex = 4
+        pnlGrafice.Visible = False
+        '
         ' benzi
-        ' 
+        '
         benzi.AxisVisible = True
         benzi.Dock = DockStyle.Fill
         benzi.EmptyText = "Trage un instantaneu dintr-o bandă în alta ca să-l muți."
@@ -345,16 +379,16 @@ Partial Class AsociereForm
         ' 
         ' grid
         ' 
-        grid.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        grid.BackColor = SystemColors.Window
-        grid.CellTooltip.Enabled = False
-        grid.ColumnFillMode = KBotFillMode.LastColumn
+        gridLant.AutoSizeColumnsMode = KBotAutoSizeMode.ToContent
+        gridLant.BackColor = SystemColors.Window
+        gridLant.CellTooltip.Enabled = False
+        gridLant.ColumnFillMode = KBotFillMode.LastColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderText = "Indicator"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn1.Key = "indicator"
-        KBotDataColumn1.MinWidth = 60
+        KBotDataColumn1.MinWidth = 50
         KBotDataColumn1.OptionGroup = Nothing
         KBotDataColumn1.ReadOnly = True
         KBotDataColumn1.Width = 90
@@ -363,7 +397,7 @@ Partial Class AsociereForm
         KBotDataColumn2.HeaderText = "Cod SSI"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn2.Key = "ssi"
-        KBotDataColumn2.MinWidth = 80
+        KBotDataColumn2.MinWidth = 60
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.ReadOnly = True
         KBotDataColumn2.Width = 150
@@ -372,7 +406,7 @@ Partial Class AsociereForm
         KBotDataColumn3.HeaderText = "Credit bugetar"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleRight
         KBotDataColumn3.Key = "credit"
-        KBotDataColumn3.MinWidth = 80
+        KBotDataColumn3.MinWidth = 70
         KBotDataColumn3.OptionGroup = Nothing
         KBotDataColumn3.ReadOnly = True
         KBotDataColumn3.TextAlign = ContentAlignment.MiddleRight
@@ -382,28 +416,90 @@ Partial Class AsociereForm
         KBotDataColumn4.HeaderText = "Valoare"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleRight
         KBotDataColumn4.Key = "valoare"
-        KBotDataColumn4.MinWidth = 80
+        KBotDataColumn4.MinWidth = 70
         KBotDataColumn4.OptionGroup = Nothing
         KBotDataColumn4.ReadOnly = True
         KBotDataColumn4.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn4.Width = 120
-        grid.Columns.Add(KBotDataColumn1)
-        grid.Columns.Add(KBotDataColumn2)
-        grid.Columns.Add(KBotDataColumn3)
-        grid.Columns.Add(KBotDataColumn4)
-        grid.Dock = DockStyle.Fill
-        grid.HeaderBackColor = SystemColors.Control
-        grid.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        grid.HeaderSeparatorColor = SystemColors.ActiveBorder
-        grid.Location = New Point(0, 0)
-        grid.Margin = New Padding(4, 5, 4, 5)
-        grid.Name = "grid"
-        grid.RowHeight = 22
-        grid.Size = New Size(634, 239)
-        grid.TabIndex = 0
-        ' 
+        gridLant.Columns.Add(KBotDataColumn1)
+        gridLant.Columns.Add(KBotDataColumn2)
+        gridLant.Columns.Add(KBotDataColumn3)
+        gridLant.Columns.Add(KBotDataColumn4)
+        gridLant.Dock = DockStyle.Fill
+        gridLant.HeaderBackColor = SystemColors.Control
+        gridLant.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        gridLant.HeaderSeparatorColor = SystemColors.ActiveBorder
+        gridLant.Location = New Point(0, 0)
+        gridLant.Margin = New Padding(4, 5, 4, 5)
+        gridLant.Name = "grid"
+        gridLant.RowHeight = 22
+        gridLant.Size = New Size(407, 213)
+        gridLant.TabIndex = 0
+        '
+        ' gridLibere
+        '
+        ' Aceleasi patru coloane ca la stanga, si nu din lene: cele doua grile arata ACELASI
+        ' fel de rand — liniile pe indicator ale randului ales — doar ca fiecare il ia din
+        ' arborele de deasupra ei. Doua seturi de coloane ar spune ca sunt doua feluri de date.
+        gridLibere.AutoSizeColumnsMode = KBotAutoSizeMode.ToContent
+        gridLibere.BackColor = SystemColors.Window
+        gridLibere.CellTooltip.Enabled = False
+        gridLibere.ColumnFillMode = KBotFillMode.LastColumn
+        KBotDataColumn5.AggregateFormatString = Nothing
+        KBotDataColumn5.FormatString = Nothing
+        KBotDataColumn5.HeaderText = "Indicator"
+        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn5.Key = "indicator"
+        KBotDataColumn5.MinWidth = 50
+        KBotDataColumn5.OptionGroup = Nothing
+        KBotDataColumn5.ReadOnly = True
+        KBotDataColumn5.Width = 90
+        KBotDataColumn6.AggregateFormatString = Nothing
+        KBotDataColumn6.FormatString = Nothing
+        KBotDataColumn6.HeaderText = "Cod SSI"
+        KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn6.Key = "ssi"
+        KBotDataColumn6.MinWidth = 60
+        KBotDataColumn6.OptionGroup = Nothing
+        KBotDataColumn6.ReadOnly = True
+        KBotDataColumn6.Width = 150
+        KBotDataColumn7.AggregateFormatString = Nothing
+        KBotDataColumn7.FormatString = Nothing
+        KBotDataColumn7.HeaderText = "Credit bugetar"
+        KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn7.Key = "credit"
+        KBotDataColumn7.MinWidth = 70
+        KBotDataColumn7.OptionGroup = Nothing
+        KBotDataColumn7.ReadOnly = True
+        KBotDataColumn7.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn7.Width = 120
+        KBotDataColumn8.AggregateFormatString = Nothing
+        KBotDataColumn8.FormatString = Nothing
+        KBotDataColumn8.HeaderText = "Valoare"
+        KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn8.Key = "valoare"
+        KBotDataColumn8.MinWidth = 70
+        KBotDataColumn8.OptionGroup = Nothing
+        KBotDataColumn8.ReadOnly = True
+        KBotDataColumn8.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn8.Width = 120
+        gridLibere.Columns.Add(KBotDataColumn5)
+        gridLibere.Columns.Add(KBotDataColumn6)
+        gridLibere.Columns.Add(KBotDataColumn7)
+        gridLibere.Columns.Add(KBotDataColumn8)
+        gridLibere.Dock = DockStyle.Fill
+        gridLibere.HeaderBackColor = SystemColors.Control
+        gridLibere.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        gridLibere.HeaderSeparatorColor = SystemColors.ActiveBorder
+        gridLibere.Location = New Point(0, 0)
+        gridLibere.Margin = New Padding(4, 5, 4, 5)
+        gridLibere.Name = "gridLibere"
+        gridLibere.RowHeight = 22
+        gridLibere.Size = New Size(634, 213)
+        gridLibere.TabIndex = 0
+        '
         ' ntfMesaj
-        ' 
+        '
         ntfMesaj.BackColor = Color.Transparent
         ntfMesaj.Dock = DockStyle.Bottom
         ntfMesaj.Location = New Point(17, 628)
@@ -421,7 +517,9 @@ Partial Class AsociereForm
         lblIntro.Margin = New Padding(4, 0, 4, 0)
         lblIntro.Name = "lblIntro"
         lblIntro.Padding = New Padding(0, 0, 0, 13)
-        lblIntro.Size = New Size(1050, 71)
+        ' Un rand mai inalt decat era: textul spune de acum si despre alegerea mai multor
+        ' instantanee si despre locul dat de ora, iar la 144 dpi un rand de Calibri 9 cere 22 px.
+        lblIntro.Size = New Size(1050, 105)
         lblIntro.TabIndex = 1
         lblIntro.Text = resources.GetString("lblIntro.Text")
         lblIntro.TextAlign = ContentAlignment.MiddleCenter
@@ -438,6 +536,21 @@ Partial Class AsociereForm
         btnRenunta.TabIndex = 0
         btnRenunta.Text = "Renunță"
         btnRenunta.UseVisualStyleBackColor = True
+        '
+        ' btnGrafice
+        '
+        btnGrafice.AutoSize = True
+        btnGrafice.Dock = DockStyle.Fill
+        btnGrafice.Location = New Point(275, 813)
+        btnGrafice.Margin = New Padding(4, 5, 4, 5)
+        btnGrafice.Name = "btnGrafice"
+        btnGrafice.Padding = New Padding(17, 10, 17, 10)
+        btnGrafice.Size = New Size(263, 60)
+        btnGrafice.TabIndex = 1
+        btnGrafice.Text = "Grafice și benzi"
+        btnGrafice.UseVisualStyleBackColor = True
+        tips.SetToolTipHeader(btnGrafice, "Grafice și benzi")
+        tips.SetToolTipText(btnGrafice, "Evoluția valorii și așezarea instantaneelor, într-o fereastră de sine stătătoare, pe care o poți mări cât ecranul.")
         '
         ' btnReseteaza
         '
@@ -469,7 +582,7 @@ Partial Class AsociereForm
         ' 
         ' capBar
         ' 
-        tlyAsociere.SetColumnSpan(capBar, 3)
+        tlyAsociere.SetColumnSpan(capBar, 4)
         capBar.Dock = DockStyle.Fill
         capBar.IconImage = My.Resources.Resources.kbot_64
         capBar.Location = New Point(0, 0)
@@ -487,12 +600,14 @@ Partial Class AsociereForm
         ' 
         ' tlyAsociere
         ' 
-        tlyAsociere.ColumnCount = 3
-        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 34F))
-        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 33F))
-        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 33F))
-        tlyAsociere.Controls.Add(btnSalveaza, 2, 2)
-        tlyAsociere.Controls.Add(btnReseteaza, 1, 2)
+        tlyAsociere.ColumnCount = 4
+        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 25F))
+        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 25F))
+        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 25F))
+        tlyAsociere.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 25F))
+        tlyAsociere.Controls.Add(btnSalveaza, 3, 2)
+        tlyAsociere.Controls.Add(btnReseteaza, 2, 2)
+        tlyAsociere.Controls.Add(btnGrafice, 1, 2)
         tlyAsociere.Controls.Add(btnRenunta, 0, 2)
         tlyAsociere.Controls.Add(capBar, 0, 0)
         tlyAsociere.Controls.Add(pnlCard, 0, 1)
@@ -539,7 +654,9 @@ Partial Class AsociereForm
         CType(benzi, ComponentModel.ISupportInitialize).EndInit()
         CType(grafic, ComponentModel.ISupportInitialize).EndInit()
         CType(navGrafice, ComponentModel.ISupportInitialize).EndInit()
-        CType(grid, ComponentModel.ISupportInitialize).EndInit()
+        CType(gridLant, ComponentModel.ISupportInitialize).EndInit()
+        CType(gridLibere, ComponentModel.ISupportInitialize).EndInit()
+        pnlGrafice.ResumeLayout(False)
         tlyAsociere.ResumeLayout(False)
         tlyAsociere.PerformLayout()
         ResumeLayout(False)
@@ -552,9 +669,12 @@ Partial Class AsociereForm
     Friend WithEvents splitDreapta As SplitContainer
     Friend WithEvents grafic As Global.KBot.Controls.KBotChartView
     Friend WithEvents benzi As Global.KBot.Controls.KBotLaneView
-    Friend WithEvents grid As Global.KBot.Controls.KBotDataView
+    Friend WithEvents gridLant As Global.KBot.Controls.KBotDataView
+    Friend WithEvents gridLibere As Global.KBot.Controls.KBotDataView
+    Friend WithEvents pnlGrafice As Panel
     Friend WithEvents ntfMesaj As Global.KBot.Controls.KBotNotice
     Friend WithEvents btnRenunta As Button
+    Friend WithEvents btnGrafice As Button
     Friend WithEvents btnReseteaza As Button
     Friend WithEvents btnSalveaza As Button
     Friend WithEvents capBar As KBotCaptionBar

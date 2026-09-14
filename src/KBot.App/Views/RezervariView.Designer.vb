@@ -76,7 +76,7 @@ Partial Class RezervariView
         tree.FooterHeight = 30
         tree.FooterIconSize = New Size(18, 18)
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
-        tree.FooterRightIconTooltip = "Reîncarcă rezervările de la server."
+        tree.FooterRightIconTooltip = "Reîmprospătează rezervările din FOREXE (antet, indicatori, istoric)."
         tree.FooterSeparatorColor = Color.Gainsboro
         tree.FooterSeparatorWidth = 2
         tree.FooterTextAlign = ContentAlignment.MiddleRight
@@ -89,6 +89,8 @@ Partial Class RezervariView
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
+        tree.HeaderRightIcon = My.Resources.Resources.Fatcow_Farm_Fresh_Chart_curve_32
+        tree.HeaderRightIconTooltip = "Graficul rezervărilor" & vbLf & "Deschide, într-o fereastră de sine stătătoare, evoluția rezervărilor angajamentului și totalurile lui pe luni." & vbLf & "Sunt aceleași sume pe care le scrie arborele — nimic nu se cere din nou de la server."
         tree.HeaderSearchIconTooltip = "Caută în arbore." & vbLf & "ESC golește căutarea și închide banda."
         tree.HeaderSeparatorColor = Color.Gainsboro
         tree.HeaderSeparatorWidth = 2

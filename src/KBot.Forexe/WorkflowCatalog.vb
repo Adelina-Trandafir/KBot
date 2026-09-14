@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.Collections.Generic
 Imports System.IO
 Imports KBot.Common   ' KBotPaths — singurul rezolvator de căi (decizia D-O).
 
@@ -34,9 +35,39 @@ Namespace KBot.Forexe
         Public Const PrelucrareCompletaFile As String = "adlop - Prelucrare Completa.wfl"
         Public Const PrelucrareCompletaReverseFile As String = "adlop - Prelucrare Completa Reverse.wfl"
 
+        ' VERIFIED against the real files (slice 0060): the two PARTIAL refreshes, each one a
+        ' cut of the complete flow rather than a new road through the site.
+        '   * Receptii  = section 0 (header) + section 2 (receptions, with their detail).
+        '   * Rezervari = section 0 + section 1 (indicators + budget) + section 4 (history),
+        '                 because FX_Rezervari is written FROM FX_Istoric (server steps 3c/3d),
+        '                 not from a page of its own.
+        ' They exist so the footer icon of each view can refresh its own family without paying
+        ' for the other sections -- the reception detail alone costs one page load per
+        ' reception, and that is where the minutes go.
+        Public Const ReceptiiAngajamentFile As String = "adlop - Receptii Angajament.wfl"
+        Public Const RezervariAngajamentFile As String = "adlop - Rezervari Angajament.wfl"
+
         ' Variabilele consumate de cele două .wfl (verificate în fișiere).
         Public Const VarCodAngajament As String = "COD_ANGAJAMENT"
         Public Const VarDataIesire As String = "DATA_IESIRE"
+
+        ''' <summary>
+        ''' The receptions the operator did NOT tick, as the workflow reads them: their dates,
+        ''' comma-separated, in the site's own spelling.
+        ''' </summary>
+        ''' <remarks>
+        ''' <para><b>Why DATES.</b> The whole pipeline already names a reception by its date: the
+        ''' server matches a payload row to a stored reception with
+        ''' <c>DATE(DataR) = %s AND Sters = 0</c> and takes the first candidate
+        ''' (<c>step4b_receptii_prelucrare</c>), and slice 0058 named them to the operator by date
+        ''' and value for the same reason. A row index would be a second, weaker identity that only
+        ''' holds while the site's ordering does.</para>
+        ''' <para><b>Empty means «skip nothing»</b>, and the parameter is ALWAYS sent, even empty: a
+        ''' placeholder left unsubstituted would reach <c>IfVar</c> as the literal text
+        ''' <c>{{RECEPTII_SARITE}}</c>, which happens to be safe here (it matches no date, so
+        ''' everything is downloaded) but only by accident.</para>
+        ''' </remarks>
+        Public Const VarReceptiiSarite As String = "RECEPTII_SARITE"
 
         ''' <summary>
         ''' Formatul EXACT al lui DATA_IESIRE, copiat din Access mdl_FX_Tasks_Send:
@@ -51,6 +82,41 @@ Namespace KBot.Forexe
         ' scalari citiți cu <Read saveTo>. Vezi WorkflowResultStore, care le salvează pe toate.
         Public Shared ReadOnly PrelucrareCompletaTables As String() = {
             "TabelIndicatori", "BugetIndicator", "ListaReceptii", "Detaliu", "TabelIstoric"
+        }
+
+        ''' <summary>
+        ''' Formatul EXACT in care site-ul scrie coloana «Data» din <c>ListaReceptii</c>:
+        ''' <c>zz/ll/aaaa</c>. Verificat pe serverul care o citeste --
+        ''' <c>fx_receptii_parse_ro_date</c> sparge dupa "/" si cere exact trei bucati.
+        ''' Invariant, nu locale: valoarea intra intr-o expresie regulata comparata cu textul
+        ''' din pagina, deci un separator schimbat de Windows ar rupe potrivirea.
+        ''' </summary>
+        Public Const DataReceptieFormat As String = "dd/MM/yyyy"
+
+        ''' <summary>
+        ''' Datele de sarit, in forma in care le citeste <c>&lt;IfVar&gt;</c> din .wfl: separate
+        ''' prin virgula, fara spatii. O lista goala (sau Nothing) da sirul gol, adica «nu sari
+        ''' peste niciuna».
+        ''' </summary>
+        Public Shared Function ListaDatelorSarite(dateSarite As IEnumerable(Of Date)) As String
+            If dateSarite Is Nothing Then Return String.Empty
+            Dim vazute As New List(Of String)()
+            For Each d As Date In dateSarite
+                Dim text As String = d.ToString(DataReceptieFormat,
+                                                Globalization.CultureInfo.InvariantCulture)
+                If Not vazute.Contains(text) Then vazute.Add(text)
+            Next
+            Return String.Join(",", vazute)
+        End Function
+
+        ''' <summary>Tabelele produse de fluxul PARTIAL de receptii.</summary>
+        Public Shared ReadOnly ReceptiiAngajamentTables As String() = {
+            "ListaReceptii", "Detaliu"
+        }
+
+        ''' <summary>Tabelele produse de fluxul PARTIAL de rezervari.</summary>
+        Public Shared ReadOnly RezervariAngajamentTables As String() = {
+            "TabelIndicatori", "BugetIndicator", "TabelIstoric"
         }
 
         ''' <summary>Calea absolută a unui .wfl din folderul Workflows de lângă executabil.</summary>

@@ -127,6 +127,12 @@ Public Class AsociereForm
     ' theirs among all the others.
     Private _receptieSelectata As ReceptiePropusa
 
+    ' Fereastra graficelor, cât e deschisă. Se ține minte pentru un singur lucru: arborele
+    ' recepțiilor e împrumutat de ea, iar la benzi trebuie strâns — iar cine află că s-a schimbat
+    ' vederea e tratatorul de aici, nu fereastra (banda de nume e și ea a formularului ăstuia).
+    ' `Nothing` când fereastra e închisă, deci apelurile de mai jos sunt scrise cu `?`.
+    Private _fereastraGrafice As GraficeAsociereForm
+
     ' Chart tab keys — the same two strings the designer writes into `grafic.Tabs`.
     Private Const GRAFIC_RECEPTIE As String = "receptie"
     Private Const GRAFIC_ANGAJAMENT As String = "angajament"
@@ -145,6 +151,11 @@ Public Class AsociereForm
     ' can be in either, so it carries its own (see RandDeArbore).
     Private ReadOnly _nodReceptie As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)
     Private ReadOnly _nodInstantaneu As New Dictionary(Of Integer, RandDeArbore)
+
+    ' Rădăcina coșului celor neașezate, reținută la construirea lui. E singurul rând al arborelui
+    ' din dreapta care nu ține de un instantaneu, deci nu are cum să fie găsit prin dicționarele
+    ' de mai sus — iar previzualizarea aruncării are nevoie exact de el.
+    Private _nodLibere As AdvancedTreeControl.TreeItem
 
     ' Aceleași două dicționare, pentru banda de așezare. Se umplu la construirea benzilor și se
     ' citesc de pasul de culori — un instantaneu are ACUM trei înfățișări pe ecran (rândul din
@@ -299,11 +310,15 @@ Public Class AsociereForm
             Dim derulareLibere As Integer = treeLibere.ScrollOffsetY
             treeLant.Clear()
             treeLibere.Clear()
-            grid.ClearRows()
+            ' AMANDOUA grilele: fiecare arata randul ales in arborele de deasupra ei, iar amandoi
+            ' arborii tocmai s-au golit. O grila ramasa plina ar descrie un rand care nu mai e.
+            gridLant.ClearRows()
+            gridLibere.ClearRows()
             ' Cleared with the trees, never after: a stale entry here points at a TreeItem that is
             ' no longer on screen, and colouring it would look exactly like doing nothing.
             _nodReceptie.Clear()
             _nodInstantaneu.Clear()
+            _nodLibere = Nothing
             ' ÎNAINTE de benzi și de arbori, fiindcă amândouă le desenează: lista recepțiilor
             ' pornite aici se reface din `_pozitie`, deci trebuie să fie deja la zi când începe
             ' prima suprafață să citească.
@@ -357,6 +372,7 @@ Public Class AsociereForm
             Dim radacina As AdvancedTreeControl.TreeItem =
                 treeLibere.AddItem(CHEIE_LIBERE, $"Neașezate ({libere.Count})", pExpanded:=True)
             radacina.Bold = True
+            _nodLibere = radacina
             radacina.Tooltip = "Trage aici un instantaneu ca să-l desprinzi de recepția lui." &
                                Environment.NewLine &
                                "Clic dreapta pe un instantaneu de aici: «Începe o recepție nouă»."
@@ -882,33 +898,82 @@ Public Class AsociereForm
             ' Legătură înghețată: vizibilă, dar nu de mutat. Se oprește din pornire, ca operatorul
             ' să simtă refuzul înainte să facă gestul, nu după.
             If inst.Blocat Then e.Cancel = True : Return
+
+            ' Restul grupului selectat: din el ies rândurile care nu se mută — o rădăcină prinsă
+            ' din greșeală într-o selecție cu Shift, o legătură înghețată. Se SCOT, nu se refuză
+            ' tot gestul: rândul apăsat a trecut deja proba de mai sus, deci operatorul chiar
+            ' trage ceva ce se poate trage, și n-are de ce să rămână cu mâna goală.
+            For i As Integer = e.Items.Count - 1 To 0 Step -1
+                Dim alt = TryCast(e.Items(i).Tag, InstantaneuLegat)
+                If alt Is Nothing OrElse alt.Blocat Then e.Items.RemoveAt(i)
+            Next
+            If e.Items.Count = 0 Then e.Cancel = True
         Catch ex As Exception
             GlobalErrorLog.Write("AsociereForm.Tree_NodeDragStarting", ex)
             e.Cancel = True
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Instantaneele din spatele rândurilor trase. Se trag unul sau mai multe — vezi
+    ''' <c>AdvancedTreeControl.MultiSelect</c> —, iar tot ce urmează e scris o singură dată,
+    ''' pentru amândouă cazurile.
+    ''' </summary>
+    Private Function InstantaneeleTrase(surse As IReadOnlyList(Of AdvancedTreeControl.TreeItem)) As List(Of InstantaneuLegat)
+        Dim lista As New List(Of InstantaneuLegat)()
+        If surse Is Nothing Then Return lista
+        For Each nod As AdvancedTreeControl.TreeItem In surse
+            Dim inst = TryCast(nod?.Tag, InstantaneuLegat)
+            If inst IsNot Nothing AndAlso Not inst.Blocat Then lista.Add(inst)
+        Next
+        Return lista
+    End Function
+
     Private Sub TreeLant_NodeDragOver(sender As Object, e As TreeDragOverEventArgs) Handles treeLant.NodeDragOver
         Try
-            Dim inst = TryCast(e.Source?.Tag, InstantaneuLegat)
-            If inst Is Nothing Then e.Allow = False : Return
+            Dim trase As List(Of InstantaneuLegat) = InstantaneeleTrase(e.Sources)
+            If trase.Count = 0 Then
+                e.Allow = False
+                treeLant.ClearDropPreview()
+                Return
+            End If
 
             Dim rec = ReceptiaTintei(e.Target)
             If rec Is Nothing Then
                 e.Allow = False
-                e.Motiv = "Aruncă instantaneul pe o recepție."
+                e.Motiv = If(trase.Count = 1, "Aruncă instantaneul pe o recepție.",
+                                              "Aruncă instantaneele pe o recepție.")
+                treeLant.ClearDropPreview()
                 Return
             End If
 
-            If PozitiaLui(inst) = rec.Idrr Then
+            ' Cele care stau deja pe recepția asta nu sunt un refuz, sunt o mutare care nu are ce
+            ' muta. Se scot din socoteală și se merge mai departe cu restul; se refuză abia când
+            ' nu mai rămâne nimic de mutat.
+            Dim deMutat As List(Of InstantaneuLegat) =
+                trase.Where(Function(i) PozitiaLui(i) <> rec.Idrr).ToList()
+            If deMutat.Count = 0 Then
                 e.Allow = False
-                e.Motiv = "Instantaneul este deja pe această recepție."
+                e.Motiv = If(trase.Count = 1, "Instantaneul este deja pe această recepție.",
+                                              "Instantaneele sunt deja pe această recepție.")
+                treeLant.ClearDropPreview()
                 Return
             End If
 
-            Dim motiv = MotivulRefuzului(inst, rec)
-            e.Allow = motiv = String.Empty
-            e.Motiv = motiv
+            For Each inst As InstantaneuLegat In deMutat
+                Dim motiv As String = MotivulRefuzului(inst, rec)
+                If motiv = String.Empty Then Continue For
+                e.Allow = False
+                ' Cu mai multe trase, motivul trebuie să spună și DESPRE CARE e vorba: altfel
+                ' operatorul citește un refuz care pare să fie despre tot grupul.
+                e.Motiv = If(deMutat.Count = 1, motiv,
+                             $"Instantaneul din {inst.DataH:dd.MM.yyyy HH:mm}: {motiv}")
+                treeLant.ClearDropPreview()
+                Return
+            Next
+
+            e.Allow = True
+            AratLocul(rec, deMutat)
         Catch ex As Exception
             GlobalErrorLog.Write("AsociereForm.TreeLant_NodeDragOver", ex)
             e.Allow = False
@@ -917,20 +982,92 @@ Public Class AsociereForm
 
     Private Sub TreeLibere_NodeDragOver(sender As Object, e As TreeDragOverEventArgs) Handles treeLibere.NodeDragOver
         Try
-            Dim inst = TryCast(e.Source?.Tag, InstantaneuLegat)
-            If inst Is Nothing Then e.Allow = False : Return
-
-            If PozitiaLui(inst) = 0 Then
+            Dim trase As List(Of InstantaneuLegat) = InstantaneeleTrase(e.Sources)
+            If trase.Count = 0 Then
                 e.Allow = False
-                e.Motiv = "Instantaneul este deja neașezat."
+                treeLibere.ClearDropPreview()
                 Return
             End If
+
+            Dim deMutat As List(Of InstantaneuLegat) =
+                trase.Where(Function(i) PozitiaLui(i) <> 0).ToList()
+            If deMutat.Count = 0 Then
+                e.Allow = False
+                e.Motiv = If(trase.Count = 1, "Instantaneul este deja neașezat.",
+                                              "Instantaneele sunt deja neașezate.")
+                treeLibere.ClearDropPreview()
+                Return
+            End If
+
             e.Allow = True
+            AratLoculInCos(deMutat)
         Catch ex As Exception
             GlobalErrorLog.Write("AsociereForm.TreeLibere_NodeDragOver", ex)
             e.Allow = False
         End Try
     End Sub
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' Unde ar cădea instantaneul (previzualizarea aruncării)
+    ' ══════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>
+    ''' Aprinde recepția care ar primi și arată, ÎN EA, locul pe care l-ar lua fiecare instantaneu
+    ''' tras.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Cerința operatorului din 10.09.2026, și e o cerință despre adevăr, nu despre
+    ''' înfrumusețare: în lanțul unei recepții locul unui instantaneu NU se alege — e dat de
+    ''' <c>DataH</c>, ora la care a fost salvat pe site. Chenarul de pe rândul de sub cursor
+    ''' spunea deci ceva fals, «aici, unde arăt», iar operatorul afla abia după aruncare că rândul
+    ''' s-a dus în altă parte a lanțului.</para>
+    ''' <para>Locul se calculează AICI, fiindcă ordinea e a datelor: arborele nu știe nimic despre
+    ''' <c>DataH</c> și nu are de unde. El primește pozițiile gata socotite și le desenează.</para>
+    ''' </remarks>
+    Private Sub AratLocul(rec As ReceptiePropusa, deMutat As List(Of InstantaneuLegat))
+        Dim radacina As AdvancedTreeControl.TreeItem = Nothing
+        If rec Is Nothing OrElse Not _nodReceptie.TryGetValue(rec.Idrr, radacina) Then
+            treeLant.ClearDropPreview()
+            Return
+        End If
+        treeLant.SetDropPreview(radacina, Fantomele(LantulReceptiei(rec), deMutat))
+    End Sub
+
+    ''' <summary>Același lucru pentru coșul celor neașezate, ordonat tot după <c>DataH</c>.</summary>
+    Private Sub AratLoculInCos(deMutat As List(Of InstantaneuLegat))
+        If _stare Is Nothing OrElse _nodLibere Is Nothing Then
+            treeLibere.ClearDropPreview()
+            Return
+        End If
+        Dim libere As List(Of InstantaneuLegat) =
+            _stare.Instantanee.Where(Function(i) PozitiaLui(i) = 0).
+                               OrderBy(Function(i) i.DataH).ThenBy(Function(i) i.Idrh).ToList()
+        treeLibere.SetDropPreview(_nodLibere, Fantomele(libere, deMutat))
+    End Sub
+
+    ''' <summary>
+    ''' Pe ce poziții ar intra instantaneele trase într-un șir ordonat după <c>DataH</c>.
+    ''' </summary>
+    ''' <remarks>
+    ''' Pozițiile sunt cele din șirul REZULTAT — cel cu instantaneele trase în el. Așa le cere
+    ''' arborele (vezi <c>TreeDropGhost</c>), și tot așa se citesc și când se trag trei deodată:
+    ''' fiecare își are locul lui printre celelalte, nu unul socotit în șirul de dinainte.
+    ''' </remarks>
+    Private Function Fantomele(sir As List(Of InstantaneuLegat),
+                               deMutat As List(Of InstantaneuLegat)) As List(Of TreeDropGhost)
+        Dim rezultat As New List(Of InstantaneuLegat)(sir)
+        rezultat.AddRange(deMutat)
+        rezultat = rezultat.OrderBy(Function(i) i.DataH).ThenBy(Function(i) i.Idrh).ToList()
+
+        Dim mutate As New HashSet(Of Integer)(deMutat.Select(Function(i) i.Idrh))
+        Dim fantome As New List(Of TreeDropGhost)()
+        For i As Integer = 0 To rezultat.Count - 1
+            If Not mutate.Contains(rezultat(i).Idrh) Then Continue For
+            fantome.Add(New TreeDropGhost(i, CaptionInstantaneu(rezultat(i))) With {
+                .Icon = Il_Receptii.Images.Item("Receptii_Move")})
+        Next
+        Return fantome
+    End Function
 
     ''' <summary>
     ''' Recepția pe care s-a aruncat: fie rândul-recepție însuși, fie recepția rândului pe care
@@ -1011,14 +1148,16 @@ Public Class AsociereForm
 
     Private Sub TreeLant_NodeDropped(sender As Object, e As TreeDropEventArgs) Handles treeLant.NodeDropped
         Try
-            Dim inst = TryCast(e.Source?.Tag, InstantaneuLegat)
+            Dim trase As List(Of InstantaneuLegat) = InstantaneeleTrase(e.Sources)
             Dim rec = ReceptiaTintei(e.Target)
-            If inst Is Nothing OrElse rec Is Nothing Then Return
+            If trase.Count = 0 OrElse rec Is Nothing Then Return
 
-            _pozitie(inst.Idrh) = rec.Idrr
-            ' Un instantaneu așezat nu mai e «fără schimbare»: cele două se exclud, fiindcă
-            ' `Sters = 1` înseamnă tocmai «lăsat deliberat neatașat».
-            _ignorat(inst.Idrh) = False
+            For Each inst As InstantaneuLegat In trase
+                _pozitie(inst.Idrh) = rec.Idrr
+                ' Un instantaneu așezat nu mai e «fără schimbare»: cele două se exclud, fiindcă
+                ' `Sters = 1` înseamnă tocmai «lăsat deliberat neatașat».
+                _ignorat(inst.Idrh) = False
+            Next
             Reconstruieste()
         Catch ex As Exception
             GlobalErrorLog.Write("AsociereForm.TreeLant_NodeDropped", ex)
@@ -1027,10 +1166,12 @@ Public Class AsociereForm
 
     Private Sub TreeLibere_NodeDropped(sender As Object, e As TreeDropEventArgs) Handles treeLibere.NodeDropped
         Try
-            Dim inst = TryCast(e.Source?.Tag, InstantaneuLegat)
-            If inst Is Nothing Then Return
-            _pozitie(inst.Idrh) = 0
-            _stergere(inst.Idrh) = False
+            Dim trase As List(Of InstantaneuLegat) = InstantaneeleTrase(e.Sources)
+            If trase.Count = 0 Then Return
+            For Each inst As InstantaneuLegat In trase
+                _pozitie(inst.Idrh) = 0
+                _stergere(inst.Idrh) = False
+            Next
             Reconstruieste()
         Catch ex As Exception
             GlobalErrorLog.Write("AsociereForm.TreeLibere_NodeDropped", ex)
@@ -1041,7 +1182,23 @@ Public Class AsociereForm
     ' Selecția și meniul contextual
     ' ══════════════════════════════════════════════════════════════════════════
 
-    Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles treeLant.NodeMouseUp, treeLibere.NodeMouseUp
+    ''' <summary>
+    ''' Clic în arborele recepțiilor. Perechea de mai jos există fiindcă evenimentul de nod NU
+    ''' spune din ce arbore vine, iar de acum răspunsul contează de două ori: fiecare arbore își
+    ''' umple GRILA LUI, și meniul se aplică grupului selectat în ACEL arbore.
+    ''' </summary>
+    Private Sub TreeLant_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles treeLant.NodeMouseUp
+        DupaClicPeNod(treeLant, gridLant, pNode, e)
+    End Sub
+
+    Private Sub TreeLibere_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles treeLibere.NodeMouseUp
+        DupaClicPeNod(treeLibere, gridLibere, pNode, e)
+    End Sub
+
+    Private Sub DupaClicPeNod(arbore As AdvancedTreeControl,
+                              tinta As KBotDataView,
+                              pNode As AdvancedTreeControl.TreeItem,
+                              e As MouseEventArgs)
         Try
             ' The notice box is transient feedback about the row that was just refused, saved or
             ' loaded. Picking another row means the operator has moved on, so the message goes
@@ -1050,11 +1207,11 @@ Public Class AsociereForm
             ' it were about that one.
             ntfMesaj.Clear()
             _receptieSelectata = ReceptiaNodului(pNode)
-            UmpleGrila(pNode)
+            UmpleGrila(pNode, tinta)
             ReconstruiesteGrafic()
-            If e.Button = MouseButtons.Right Then AratMeniul(pNode)
+            If e.Button = MouseButtons.Right Then AratMeniul(arbore, pNode)
         Catch ex As Exception
-            GlobalErrorLog.Write("AsociereForm.Tree_NodeMouseUp", ex)
+            GlobalErrorLog.Write("AsociereForm.DupaClicPeNod", ex)
         End Try
     End Sub
 
@@ -1074,15 +1231,25 @@ Public Class AsociereForm
         Return Receptiile().FirstOrDefault(Function(r) r.Idrr = idrr)
     End Function
 
-    ''' <summary>Liniile pe indicator ale rândului selectat — recepție sau instantaneu.</summary>
-    Private Sub UmpleGrila(nod As AdvancedTreeControl.TreeItem)
-        grid.BeginUpdate()
+    ''' <summary>
+    ''' Liniile pe indicator ale rândului selectat — recepție sau instantaneu — în grila
+    ''' arborelui din care vine rândul.
+    ''' </summary>
+    ''' <remarks>
+    ''' Fiecare arbore își are grila lui sub el (cerința operatorului din 10.09.2026). O singură
+    ''' grilă pentru amândoi ar însemna că un clic în dreapta șterge de pe ecran indicatorii
+    ''' rândului ales în stânga — adică tocmai perechea pe care operatorul o compară când
+    ''' hotărăște unde se duce un instantaneu.
+    ''' </remarks>
+    Private Sub UmpleGrila(nod As AdvancedTreeControl.TreeItem, tinta As KBotDataView)
+        If tinta Is Nothing Then Throw New ArgumentNullException(NameOf(tinta))
+        tinta.BeginUpdate()
         Try
-            grid.ClearRows()
+            tinta.ClearRows()
             Dim rec As ReceptiePropusa = TryCast(nod?.Tag, ReceptiePropusa)
             If rec IsNot Nothing Then
                 For Each l As LinieReceptie In rec.Rhr
-                    Dim r As KBotDataRow = grid.AddRow()
+                    Dim r As KBotDataRow = tinta.AddRow()
                     r(COL_INDICATOR) = l.CodIndicator
                     r(COL_SSI) = l.CodSsi
                     r(COL_CREDIT) = Bani(l.CreditBugetar)
@@ -1093,7 +1260,7 @@ Public Class AsociereForm
             Dim inst As InstantaneuLegat = TryCast(nod?.Tag, InstantaneuLegat)
             If inst Is Nothing Then Return
             For Each l As LinieInstantaneu In inst.Linii
-                Dim r As KBotDataRow = grid.AddRow()
+                Dim r As KBotDataRow = tinta.AddRow()
                 r(COL_INDICATOR) = l.CodIndicator
                 r(COL_SSI) = l.CodSsi
                 ' Instantaneul nu poartă creditul bugetar — el e al INDICATORULUI, nu al
@@ -1102,7 +1269,7 @@ Public Class AsociereForm
                 r(COL_VALOARE) = Bani(l.Valoare)
             Next
         Finally
-            grid.EndUpdate()
+            tinta.EndUpdate()
         End Try
     End Sub
 
@@ -1172,7 +1339,22 @@ Public Class AsociereForm
         Dim aratBenzi As Boolean = String.Equals(key, VEDEREA_BENZI, StringComparison.Ordinal)
         benzi.Visible = aratBenzi
         grafic.Visible = Not aratBenzi
+        ' În fereastra graficelor, arborele recepțiilor stă lângă ele și urmează vederea: graficul
+        ' se desface pe recepția ALEASĂ, deci acolo e nevoie de el; benzile nu se aleg, se trag,
+        ' și primesc toată fereastra (cererea operatorului din 10.09.2026).
+        _fereastraGrafice?.AratArborele(Not aratBenzi)
     End Sub
+
+    ''' <summary>
+    ''' Pe care dintre cele două vederi stă banda de nume ACUM. O citește fereastra graficelor la
+    ''' deschidere, ca să nu ghicească dacă arată sau strânge arborele.
+    ''' </summary>
+    Friend ReadOnly Property VedereaEsteBenzi As Boolean
+        Get
+            Return benzi IsNot Nothing AndAlso
+                   String.Equals(navGrafice?.SelectedKey, VEDEREA_BENZI, StringComparison.Ordinal)
+        End Get
+    End Property
 
     Private Sub Grafic_TabSelected(tabKey As String) Handles grafic.TabSelected
         Try
@@ -1925,6 +2107,42 @@ Public Class AsociereForm
     ''' putut muta ceva, iar strâmta trebuie să arate ce s-a hotărât. Nu e nimic de împăcat între
     ''' ele — amândouă citesc aceleași dicționare.
     ''' </remarks>
+    ''' <summary>
+    ''' Deschide fereastra graficelor și a benzilor (felia 0061).
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Cele două suprafețe de PRIVIT au plecat din ecranul de lucru la cererea
+    ''' operatorului: aici se trag instantanee dintr-o parte în alta și se citesc indicatorii de
+    ''' sub fiecare arbore, iar graficul lua un sfert de fereastră ca să arate ceva de care e
+    ''' nevoie din când în când. Acum are toată fereastra, când e nevoie de el.</para>
+    ''' <para>Se închide și se reconstruiește tot, ca la benzile mari: în fereastra aia se pot
+    ''' muta marcaje, iar mutările alea sunt aceleași mutări — scriu în același tablou local.</para>
+    ''' </remarks>
+    Private Sub btnGrafice_Click(sender As Object, e As EventArgs) Handles btnGrafice.Click
+        Try
+            ' ARBORELE MERGE CU ELE (cererea operatorului din 10.09.2026). Graficul se desface pe
+            ' recepția aleasă, iar într-o fereastră fără arbore nu se putea alege: se vedea ce
+            ' fusese ales înainte de apăsarea butonului, și atât. Se împrumută arborele DE AICI, nu
+            ' se face al doilea acolo — tratatorii, dicționarele de rânduri și pasul de culori sunt
+            ' scrise pentru el, iar o copie ar fi însemnat un al doilea set de toate.
+            Using f As New GraficeAsociereForm(Me, pnlGrafice, pnlCard, treeLant, SplitContainer1.Panel1)
+                _fereastraGrafice = f
+                Try
+                    f.ShowDialog(Me)
+                Finally
+                    ' În `Finally`, nu după: dacă fereastra cade, referința rămâne la un formular
+                    ' aruncat, iar prima trecere pe benzi de după aceea ar chema în gol.
+                    _fereastraGrafice = Nothing
+                End Try
+            End Using
+            Reconstruieste()
+        Catch ex As Exception
+            ' Graniță de UI: se loghează și se spune, nu se re-aruncă.
+            GlobalErrorLog.Write("AsociereForm.btnGrafice_Click", ex)
+            ntfMesaj.Show("Nu am putut deschide graficele. Vedeți jurnalul de erori.", NoticeKind.Error)
+        End Try
+    End Sub
+
     Private Sub Benzi_EnlargeRequested() Handles benzi.EnlargeRequested
         Try
             If _stare Is Nothing Then Return
@@ -1989,7 +2207,7 @@ Public Class AsociereForm
     ''' <para><b>«Este rândul de ștergere»</b> e F21: ultimul instantaneu al lanțului, cel care
     ''' spune când a plecat recepția și cât valora atunci.</para>
     ''' </summary>
-    Private Sub AratMeniul(nod As AdvancedTreeControl.TreeItem)
+    Private Sub AratMeniul(arbore As AdvancedTreeControl, nod As AdvancedTreeControl.TreeItem)
         ' Rândul-recepție al unei recepții pornite aici are meniul lui, cu o singură intrare:
         ' renunțarea. Fără ea, o recepție pornită din greșeală s-ar desface doar desprinzându-i
         ' instantaneele unul câte unul — adică un gest pentru fiecare, ca s-o anulezi pe cea
@@ -1997,6 +2215,15 @@ Public Class AsociereForm
         Dim recNoua As ReceptiePropusa = TryCast(nod?.Tag, ReceptiePropusa)
         If EsteReceptieNoua(recNoua) Then
             AratMeniulReceptieiNoi(recNoua)
+            Return
+        End If
+
+        ' Clic dreapta pe un rând dintr-un grup selectat: meniul e despre TOT grupul. Așa merge
+        ' și restul Windows-ului, și e singurul înțeles care se potrivește cu ce vede omul —
+        ' cinci rânduri aprinse și un meniu care ar lucra doar pe unul ar fi o capcană.
+        Dim grup As List(Of InstantaneuLegat) = InstantaneeleAlese(arbore, nod)
+        If grup.Count > 1 Then
+            AratMeniulGrupului(arbore, grup)
             Return
         End If
 
@@ -2045,7 +2272,85 @@ Public Class AsociereForm
         Dim meniu As New CustomPopup(intrari)
         AddHandler meniu.ItemClicked,
             Sub(s As Object, ev As CustomPopupItemEventArgs) AplicaComandaDeMeniu(inst, ev.Item.Key)
-        meniu.ShowAtCursor(If(nod Is Nothing, CType(treeLant, Control), CType(treeLant, Control)))
+        meniu.ShowAtCursor(arbore)
+    End Sub
+
+    ''' <summary>
+    ''' Instantaneele pe care le privește meniul: grupul selectat în acel arbore, dacă rândul
+    ''' apăsat face parte din el, altfel doar rândul apăsat.
+    ''' </summary>
+    ''' <remarks>
+    ''' Verificarea apartenenței nu e o prudență de prisos: o selecție rămasă de la un gest de
+    ''' dinainte n-are nimic de-a face cu rândul pe care tocmai a căzut clicul, iar un meniu care
+    ''' ar lucra pe ea ar schimba rânduri la care operatorul nu se uita.
+    ''' </remarks>
+    Private Function InstantaneeleAlese(arbore As AdvancedTreeControl,
+                                        nod As AdvancedTreeControl.TreeItem) As List(Of InstantaneuLegat)
+        Dim lista As New List(Of InstantaneuLegat)()
+        If arbore Is Nothing OrElse nod Is Nothing Then Return lista
+
+        Dim contineNodul As Boolean = False
+        For Each rand As AdvancedTreeControl.TreeItem In arbore.SelectedNodes
+            If rand Is nod Then contineNodul = True
+            Dim inst = TryCast(rand?.Tag, InstantaneuLegat)
+            If inst IsNot Nothing Then lista.Add(inst)
+        Next
+
+        If Not contineNodul Then
+            lista.Clear()
+            Dim inst = TryCast(nod.Tag, InstantaneuLegat)
+            If inst IsNot Nothing Then lista.Add(inst)
+        End If
+        Return lista
+    End Function
+
+    ''' <summary>
+    ''' Meniul unui GRUP de instantanee: numai comenzile care au același înțeles pentru toate.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Lipsește dinadins «este rândul de ștergere» (F21): ștergerea e ULTIMUL instantaneu
+    ''' al unui lanț, deci e o însușire a unui singur rând. Pusă pe cinci, ar spune că lanțul are
+    ''' cinci sfârșituri.</para>
+    ''' <para>«Începe o recepție nouă» merge, în schimb, și e chiar cel mai bun motiv pentru care
+    ''' există meniul ăsta: toate cele alese intră ÎNTR-O SINGURĂ recepție nouă — adică exact
+    ''' lanțul unei recepții care nu mai există nicăieri (F26), făcut dintr-un gest în loc de
+    ''' cinci.</para>
+    ''' </remarks>
+    Private Sub AratMeniulGrupului(arbore As AdvancedTreeControl, grup As List(Of InstantaneuLegat))
+        Dim deLucru As List(Of InstantaneuLegat) = grup.Where(Function(i) Not i.Blocat).ToList()
+        If deLucru.Count = 0 Then
+            ntfMesaj.Show("Niciuna dintre legăturile alese nu se mai poate modifica.", NoticeKind.Warning)
+            Return
+        End If
+
+        ' `.Where(...).Count()`, nu `.Count(...)`: pe o listă, proprietatea Count o umbrește pe
+        ' metoda LINQ cu același nume, iar forma cu predicat nici nu compilează.
+        Dim asezate As Integer = deLucru.Where(Function(i) PozitiaLui(i) <> 0).Count()
+        Dim intrari As New List(Of CustomPopupItem)()
+
+        If asezate > 0 Then
+            ' Amestecul dintre așezate și neașezate primește DOAR desprinderea, și e cinstit așa:
+            ' sfârșitul ei — toate în coș — e același lucru pentru toate, iar cele care erau deja
+            ' acolo nu se clintesc.
+            intrari.Add(New CustomPopupItem(MENIU_DESPRINDE,
+                                            $"&Desprinde de recepție ({asezate})",
+                                            Il_Receptii.Images.Item("link_break")))
+        Else
+            If deLucru.All(Function(i) EsteIgnorat(i.Idrh)) Then
+                intrari.Add(New CustomPopupItem(MENIU_NU_IGNORA, $"&Consemnează o schimbare ({deLucru.Count})"))
+            Else
+                intrari.Add(New CustomPopupItem(MENIU_IGNORA, $"&Nu consemnează nicio schimbare ({deLucru.Count})"))
+            End If
+            intrari.Add(CustomPopupItem.Separator())
+            intrari.Add(New CustomPopupItem(MENIU_RECEPTIE_NOUA,
+                                            $"Începe o recepție no&uă din toate {deLucru.Count}",
+                                            Il_Receptii.Images.Item("Receptii")))
+        End If
+
+        Dim meniu As New CustomPopup(intrari)
+        AddHandler meniu.ItemClicked,
+            Sub(s As Object, ev As CustomPopupItemEventArgs) AplicaComandaPeGrup(deLucru, ev.Item.Key)
+        meniu.ShowAtCursor(arbore)
     End Sub
 
     ''' <summary>
@@ -2082,6 +2387,46 @@ Public Class AsociereForm
             GlobalErrorLog.Write("AsociereForm.RenuntaLaReceptiaNoua", ex)
             ntfMesaj.Show("Nu am putut renunța la recepția nouă. Vedeți jurnalul de erori.",
                           NoticeKind.Error)
+        End Try
+    End Sub
+
+    ''' <summary>Aceleași comenzi, pe tot grupul.</summary>
+    Private Sub AplicaComandaPeGrup(grup As List(Of InstantaneuLegat), cheie As String)
+        Try
+            Select Case cheie
+                Case MENIU_DESPRINDE
+                    For Each inst As InstantaneuLegat In grup
+                        _pozitie(inst.Idrh) = 0
+                        _stergere(inst.Idrh) = False
+                    Next
+                Case MENIU_IGNORA
+                    For Each inst As InstantaneuLegat In grup
+                        _ignorat(inst.Idrh) = True
+                        _pozitie(inst.Idrh) = 0
+                    Next
+                Case MENIU_NU_IGNORA
+                    For Each inst As InstantaneuLegat In grup
+                        _ignorat(inst.Idrh) = False
+                    Next
+                Case MENIU_RECEPTIE_NOUA
+                    ' UN SINGUR număr pentru tot grupul, cerut ÎNAINTE de buclă.
+                    ' `UrmatorulIdrrNou` se uită în `_pozitie`, deci chemat înăuntru ar da alt
+                    ' număr la fiecare pas și ar face N recepții de câte un instantaneu — exact
+                    ' pe dos față de ce spune comanda.
+                    Dim idrr As Integer = UrmatorulIdrrNou()
+                    For Each inst As InstantaneuLegat In grup
+                        _pozitie(inst.Idrh) = idrr
+                        _ignorat(inst.Idrh) = False
+                        _stergere(inst.Idrh) = False
+                    Next
+                Case Else
+                    ' Fără implicit tăcut, ca și la comanda pe un singur rând.
+                    Throw New ArgumentException($"Comandă de meniu necunoscută: {cheie}", NameOf(cheie))
+            End Select
+            Reconstruieste()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AsociereForm.AplicaComandaPeGrup", ex)
+            ntfMesaj.Show("Comanda nu a putut fi aplicată. Vedeți jurnalul de erori.", NoticeKind.Error)
         End Try
     End Sub
 
@@ -2175,20 +2520,63 @@ Public Class AsociereForm
     End Function
 
     ''' <summary>
+    ''' Spune ce s-a scris și ÎNCHIDE fereastra — cererea operatorului din 10.09.2026: «la
+    ''' salvare, dacă totul e ok, se închide macheta de asocieri».
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>Prin casetă, nu prin banda de mesaje.</b> Banda trăiește cât fereastra, iar
+    ''' fereastra tocmai se închide — deci propoziția care spune CE s-a scris (tabelele și
+    ''' cifrele întoarse de server) ar sclipi și ar dispărea. Caseta o ține pe ecran până când
+    ''' omul apasă, iar <c>KBotMessage.Show</c> o scrie și în
+    ''' <c>Logs\mesaje_operator.log</c>, deci nu se pierde nici după aceea.</para>
+    ''' <para>Închiderea se face DOAR de pe drumul reușit. La eroare fereastra rămâne deschisă
+    ''' cu tot ce a așezat operatorul: altfel un 409 i-ar șterge munca de pe ecran și l-ar
+    ''' trimite să reia descărcarea de la capăt.</para>
+    ''' </remarks>
+    Private Sub SpuneSiInchide(mesaj As String, cuAvertismente As Boolean)
+        KBotMessage.Show(Me, mesaj, capBar.Text, MessageBoxButtons.OK,
+                        If(cuAvertismente, MessageBoxIcon.Warning, MessageBoxIcon.Information))
+        DialogResult = DialogResult.OK
+        Close()
+    End Sub
+
+    ''' <summary>
+    ''' Câte instantanee nu au încă o hotărâre, într-un tablou dat — perechea Shared a lui
+    ''' <see cref="NehotarateleCount"/>.
+    ''' </summary>
+    ''' <remarks>
+    ''' Există fiindcă shell-ul trebuie să pună ACEEAȘI întrebare ÎNAINTE de a deschide
+    ''' fereastra: dacă din propunere nu rămâne nimic de așezat, macheta n-are ce arăta și nu
+    ''' se mai deschide (felia 0060). Două numărători scrise separat ar aluneca una față de
+    ''' alta, iar alunecarea s-ar vedea abia ca o fereastră care se deschide goală — sau, mai
+    ''' rău, ca una care NU se deschide când era ceva de hotărât.
+    ''' </remarks>
+    Friend Shared Function NehotarateDin(instantanee As IEnumerable(Of InstantaneuLegat),
+                                         pozitie As IReadOnlyDictionary(Of Integer, Integer),
+                                         ignorat As IReadOnlyDictionary(Of Integer, Boolean)) As Integer
+        If instantanee Is Nothing Then Return 0
+        Dim ramase As Integer = 0
+        For Each i As InstantaneuLegat In instantanee
+            ' `Not i.Blocat`: rândurile de CONTEXT (felia 0056) nu poartă hotărâri, deci nu au
+            ' cum să lipsească din ele. Unul neașezat printre ele — cel al cărui rând de istoric
+            ' nu e în descărcarea asta — ar stinge butonul pentru totdeauna.
+            If i.Blocat Then Continue For
+            Dim idrr As Integer = i.Idrr
+            If pozitie IsNot Nothing AndAlso pozitie.ContainsKey(i.Idrh) Then idrr = pozitie(i.Idrh)
+            Dim eIgnorat As Boolean = ignorat IsNot Nothing AndAlso
+                                      ignorat.ContainsKey(i.Idrh) AndAlso ignorat(i.Idrh)
+            If idrr = 0 AndAlso Not eIgnorat Then ramase += 1
+        Next
+        Return ramase
+    End Function
+
+    ''' <summary>
     ''' Câte instantanee nu au încă o hotărâre: neașezate ȘI nemarcate «fără schimbare».
     ''' Zero e condiția ca butonul de salvare să se aprindă în modul propunere.
     ''' </summary>
     Private Function NehotarateleCount() As Integer
         If _stare Is Nothing Then Return 0
-        ' `.Where(...).Count()`, nu `.Count(...)`: proprietatea `Count` a listei umbrește
-        ' extensia LINQ cu predicat, iar compilatorul o citește ca indexare. Aceeași formă ca
-        ' în restul formularului.
-        ' `Not i.Blocat`: rândurile de CONTEXT (felia 0056) nu poartă hotărâri, deci nu au
-        ' cum să lipsească din ele. Unul neașezat printre ele — cel al cărui rând de istoric
-        ' nu e în descărcarea asta — ar stinge butonul pentru totdeauna.
-        Return _stare.Instantanee.
-            Where(Function(i) Not i.Blocat AndAlso PozitiaLui(i) = 0 AndAlso
-                              Not EsteIgnorat(i.Idrh)).Count()
+        Return NehotarateDin(_stare.Instantanee, _pozitie, _ignorat)
     End Function
 
     ''' <summary>
@@ -2311,9 +2699,8 @@ Public Class AsociereForm
             _SAuSalvatModificari = True
             ' NU se reîncarcă: propunerea e consumată, iar o a doua citire ar cere celălalt mod.
             ' Corecturile de după se fac în editorul de oricând, care e la un clic distanță.
-            ntfMesaj.Show(TextDupaSalvare(raspuns),
-                          If(raspuns IsNot Nothing AndAlso raspuns.Avertismente.Count > 0,
-                             NoticeKind.Warning, NoticeKind.Success))
+            SpuneSiInchide(TextDupaSalvare(raspuns),
+                           raspuns IsNot Nothing AndAlso raspuns.Avertismente.Count > 0)
         Catch ex As Exception
             GlobalErrorLog.Write("AsociereForm.SalveazaPropunereaAsync", ex)
             ntfMesaj.Show(TextDeEroare(ex, "Nu am putut salva descărcarea"), NoticeKind.Error)
@@ -2323,8 +2710,15 @@ Public Class AsociereForm
         End Try
     End Function
 
-    ''' <summary>Ce s-a scris, pe tabele — cifrele serverului, nu o repovestire.</summary>
-    Private Shared Function TextDupaSalvare(raspuns As PrelucrareRaspuns) As String
+    ''' <summary>
+    ''' Ce s-a scris, pe tabele — cifrele serverului, nu o repovestire.
+    ''' </summary>
+    ''' <remarks>
+    ''' Friend din felia 0060: aceeași propoziție o arată și shell-ul, când coșul e gol și
+    ''' salvarea se face fără să se mai deschidă macheta. Două formulări ale aceluiași lucru
+    ''' l-ar face pe operator să creadă că s-au întâmplat două lucruri diferite.
+    ''' </remarks>
+    Friend Shared Function TextDupaSalvare(raspuns As PrelucrareRaspuns) As String
         If raspuns Is Nothing Then Return "Descărcarea a fost salvată."
         Dim scrise As String = String.Join(", ",
             raspuns.Scrise.Where(Function(kvp) kvp.Value > 0).
@@ -2363,14 +2757,18 @@ Public Class AsociereForm
             ' Se reîncarcă de la server, nu se peticește tabloul local: după salvare, `Final` /
             ' `Partial` s-au recalculat, iar blocajele se pot fi schimbat — o proiecție locală
             ' ar arăta o stare pe care nimeni n-a citit-o.
+            '
+            ' SE REÎNCARCĂ DEȘI FEREASTRA SE ÎNCHIDE IMEDIAT (felia 0060), și nu e risipă: după
+            ' reîncărcare `Comenzi()` e goală, deci întrebarea din `AsociereForm_FormClosing`
+            ' («ai schimbări nesalvate») nu se mai pune. Fără ea, închiderea de mai jos ar cere
+            ' operatorului să confirme pierderea a ceea ce tocmai a salvat.
             Await ReincarcaAsync()
 
             Dim mesaj As String = "Legăturile au fost salvate."
             If rezultat.Avertismente.Count > 0 Then
-                ntfMesaj.Show(mesaj & " " & String.Join(" ", rezultat.Avertismente), NoticeKind.Warning)
-            Else
-                ntfMesaj.Show(mesaj, NoticeKind.Success)
+                mesaj &= " " & String.Join(" ", rezultat.Avertismente)
             End If
+            SpuneSiInchide(mesaj, rezultat.Avertismente.Count > 0)
         Catch ex As Exception
             GlobalErrorLog.Write("AsociereForm.btnSalveaza_Click", ex)
             ntfMesaj.Show(TextDeEroare(ex, "Nu am putut salva legăturile"), NoticeKind.Error)
@@ -2451,7 +2849,8 @@ Public Class AsociereForm
                 _stergere(inst.Idrh) = False
             Next
             _receptieSelectata = Nothing
-            grid.ClearRows()
+            gridLant.ClearRows()
+            gridLibere.ClearRows()
             Reconstruieste()
             ' `Reconstruieste` has already put up the "how many are left to decide" notice, and
             ' that is the right one now, so nothing is written over it.

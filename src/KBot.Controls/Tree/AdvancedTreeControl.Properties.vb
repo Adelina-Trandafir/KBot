@@ -241,8 +241,11 @@ Partial Public Class AdvancedTreeControl
             Return pSelectedItem
         End Get
         Set(value As TreeItem)
-            If pSelectedItem IsNot value Then
-                pSelectedItem = value
+            Dim eraAltul As Boolean = pSelectedItem IsNot value
+            ' Scrierea unui singur nod din afara controlului STINGE grupul: cine spune «randul e
+            ' asta» nu poate lasa in urma alte cinci randuri selectate pe care nu le-a numit.
+            ResetSelectionTo(value)
+            If eraAltul Then
                 ' Nodul nou selectat poate fi chiar cel peste care stă eticheta plutitoare.
                 EnsureCollapsedFlyoutStillAllowed()
                 ' Invalidate to trigger redraw and show the new selection

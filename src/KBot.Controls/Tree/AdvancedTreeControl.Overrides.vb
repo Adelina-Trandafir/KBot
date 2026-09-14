@@ -79,6 +79,9 @@ Partial Public Class AdvancedTreeControl
 
         ' ── 2c. Ținta tragerii (felia 0048-04) — peste rânduri, sub bordură. Își pune singură
         ' clip-ul pe zona de noduri, deci nu poate scrie peste antet sau subsol.
+        ' Radacina previzualizata se aprinde PRIMA: e un bloc intreg, iar chenarul randului de
+        ' sub cursor trebuie sa ramana deasupra lui, nu sub el.
+        DrawDropPreviewRoot(e.Graphics)
         DrawDropTarget(e.Graphics)
 
         ' ── 3. Scrollbar visibility (BeginInvoke — nu din interiorul OnPaint) ──
@@ -165,7 +168,7 @@ Partial Public Class AdvancedTreeControl
         ArmDrag(it, e.Location, e.Button)
 
         If it Is Nothing Then
-            pSelectedItem = Nothing
+            ResetSelectionTo(Nothing)
             Me.Invalidate()
             Return
         End If
@@ -249,7 +252,7 @@ Partial Public Class AdvancedTreeControl
             End If
 
             If pSelectedItem IsNot it Then
-                pSelectedItem = it
+                SelectSingle(it)
                 RaiseEvent NodeMouseUp(it, e)
             End If
 
@@ -338,7 +341,7 @@ Partial Public Class AdvancedTreeControl
                     Me.Invalidate()
                 End If
 
-                pSelectedItem = it
+                SelectSingle(it)
                 If pSelectedItem IsNot pOldSelectedItem Then RaiseEvent NodeMouseDown(it, e)
                 Return
             End If
@@ -347,7 +350,9 @@ Partial Public Class AdvancedTreeControl
         ' =================================================================
         ' 4. PRIORITATE DOI: SELECȚIE RÂND (TEXT / ICON)
         ' =================================================================
-        pSelectedItem = it
+        ' Ctrl/Shift, grupul si amanarea strangerii lui stau in partiala .MultiSelect; aici
+        ' ramane doar gestul. Cu MultiSelect stins face exact ce facea inainte.
+        ApplyMouseSelection(it, e)
         RaiseEvent NodeMouseDown(it, e)
 
         ' =================================================================
@@ -391,6 +396,10 @@ Partial Public Class AdvancedTreeControl
 
         ' Apăsarea s-a terminat fără să se depărteze: nu mai e nimic de tras de aici.
         _dragCandidate = Nothing
+
+        ' Un clic simplu in interiorul unui grup il stringe la randul apasat — ABIA acum, ca
+        ' apasarea sa fi putut porni o tragere a intregului grup (vezi partiala .MultiSelect).
+        SettlePendingSelection()
 
         Dim it = HitTestItem(e.Location)
 

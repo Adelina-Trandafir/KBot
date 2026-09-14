@@ -65,17 +65,21 @@ Partial Public Class AdvancedTreeControl
         g.SmoothingMode = SmoothingMode.AntiAlias
 
         Dim raza As Integer = SelectionCornerRadiusPx
-        If it Is pSelectedItem Then
+        ' Tot grupul se umple la fel; CHENARUL ramane doar pe randul cu focus. Asa se vede si ca
+        ' sunt selectate toate, si pe care dintre ele au efect Shift si tastele sagata.
+        If IsRowSelected(it) Then
             Using path As GraphicsPath = GetRoundedRect(fullRowRect, raza)
                 Using brush As New SolidBrush(SelectedBackColor)
                     g.FillPath(brush, path)
                 End Using
-                Dim borderRect As New Rectangle(fullRowRect.X, fullRowRect.Y, fullRowRect.Width - 1, fullRowRect.Height - 1)
-                Using borderPath As GraphicsPath = GetRoundedRect(borderRect, raza)
-                    Using pen As New Pen(SelectedBorderColor)
-                        g.DrawPath(pen, borderPath)
+                If it Is pSelectedItem Then
+                    Dim borderRect As New Rectangle(fullRowRect.X, fullRowRect.Y, fullRowRect.Width - 1, fullRowRect.Height - 1)
+                    Using borderPath As GraphicsPath = GetRoundedRect(borderRect, raza)
+                        Using pen As New Pen(SelectedBorderColor)
+                            g.DrawPath(pen, borderPath)
+                        End Using
                     End Using
-                End Using
+                End If
             End Using
         ElseIf it Is pHoveredItem Then
             Using path As GraphicsPath = GetRoundedRect(fullRowRect, raza)
@@ -255,7 +259,7 @@ Partial Public Class AdvancedTreeControl
             End If
 
             ' ══ 5. BACKCOLOR PER NOD ══════════════════════════════════════════════
-            If it.NodeBackColor <> Color.Empty AndAlso it IsNot pSelectedItem Then
+            If it.NodeBackColor <> Color.Empty AndAlso Not IsRowSelected(it) Then
                 Using bgBrush As New SolidBrush(it.NodeBackColor)
                     g.FillRectangle(bgBrush, New Rectangle(textX, y, nodeBackWidth, _itemHeight))
                 End Using
@@ -302,7 +306,7 @@ Partial Public Class AdvancedTreeControl
                             it.Cells.TryGetValue(cd.Name, cellData)
 
                             ' Fundal per celula (suprascrie fundalul nodului)
-                            If cellData IsNot Nothing AndAlso cellData.BackColor <> Color.Empty AndAlso it IsNot pSelectedItem Then
+                            If cellData IsNot Nothing AndAlso cellData.BackColor <> Color.Empty AndAlso Not IsRowSelected(it) Then
                                 Using bgBrush As New SolidBrush(cellData.BackColor)
                                     g.FillRectangle(bgBrush, cellRect)
                                 End Using

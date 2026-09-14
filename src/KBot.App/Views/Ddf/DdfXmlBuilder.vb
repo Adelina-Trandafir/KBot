@@ -19,7 +19,7 @@ Imports KBot.Domain
 '''     zerouri forțate: 129705 -> «129705», nu «129705.00»;
 '''   * <c>AdaugaSubnod</c> — omite nodul-text când valoarea e goală (element gol «&lt;Cell4/&gt;»,
 '''     nu «&lt;Cell4&gt;&lt;/Cell4&gt;»);
-'''   * primul <c>Row1</c> e FICTIV (index 0, doar Cell1 gol) — machetа îl sare;
+'''   * primul <c>Row1</c> e FICTIV (index 0, doar Cell1 gol) — macheta îl sare;
 '''   * <c>Int()</c> din NOTAFD e trunchiere spre −∞ (floor), nu spre zero;
 '''   * lățimile de câmp <c>Left(…, N)</c> din NOTAFD sunt intenționate;
 '''   * <c>Cell7</c> e sărit intenționat în secțiunea B;
@@ -109,7 +109,7 @@ Public NotInheritable Class DdfXmlBuilder
         End If
 
         Dim table1 As New XElement("Table1")
-        ' Row1 FICTIV (index 0) — machetа îl sare.
+        ' Row1 FICTIV (index 0) — macheta îl sare.
         table1.Add(New XElement("Row1", New XElement("Cell1")))
         For Each l As LinieSaRow In SafeEnum(linii)
             Dim row As New XElement("Row1")

@@ -71,15 +71,30 @@ Public Class RezervariView
     ''' </summary>
     Private ReadOnly _executaComanda As Action(Of DdfComanda)
 
+    ''' <summary>
+    ''' Reîmprospătarea rezervărilor din FOREXE (felia 0060) — iconița din DREAPTA subsolului
+    ''' arborelui. Vine de la shell din același motiv ca <see cref="_executaComanda"/>.
+    '''
+    ''' <para>Nothing = gazda nu o oferă. Atunci iconița se STINGE, nu rămâne un buton care nu
+    ''' face nimic.</para>
+    ''' </summary>
+    Private ReadOnly _reimprospateaza As Action(Of String)
+
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of RezervariInfo)), Task(Of RezervariInfo)),
-                   Optional executaComanda As Action(Of DdfComanda) = Nothing)
+                   Optional executaComanda As Action(Of DdfComanda) = Nothing,
+                   Optional reimprospateaza As Action(Of String) = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
         _executaComanda = executaComanda
+        _reimprospateaza = reimprospateaza
+        If _reimprospateaza Is Nothing Then
+            tree.FooterRightIcon = Nothing
+            tree.FooterRightIconTooltip = String.Empty
+        End If
         'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
@@ -89,6 +104,35 @@ Public Class RezervariView
             Return "rezervari"
         End Get
     End Property
+
+    ''' <summary>
+    ''' Iconița din DREAPTA subsolului arborelui cere o reîmprospătare din FOREXE a
+    ''' REZERVĂRILOR angajamentului selectat (felia 0060) — nu o simplă recitire de pe server.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Butonul spunea până acum «Reîncarcă rezervările de la server» și nu era legat la
+    ''' nimic. Cererea operatorului din 10.09.2026 îl face să însemne ce se aștepta de la el.</para>
+    ''' <para>Fluxul aduce antetul, indicatorii și ISTORICUL: <c>FX_Rezervari</c> se scrie pe
+    ''' server DIN <c>FX_Istoric</c>, deci istoricul e sursa rezervărilor. Recepțiile nu se
+    ''' ating, și tocmai acolo stăteau minutele.</para>
+    ''' <para>Vederea NU se reîncarcă de aici: după ingestie shell-ul reîncarcă arborele cu
+    ''' nodul păstrat, iar asta împinge singură contextul nou încoace.</para>
+    ''' </remarks>
+    Private Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
+        Try
+            If _reimprospateaza Is Nothing Then Return
+            If String.IsNullOrWhiteSpace(_requestedCod) Then
+                KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
+                                "K-BOT — Rezervări", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            _reimprospateaza(_requestedCod)
+        Catch ex As Exception
+            ' Graniță de UI: se loghează și se înghite — un throw dintr-un tratator de eveniment
+            ' ar cădea pe firul de UI.
+            GlobalErrorLog.Write("RezervariView.Tree_FooterRightIconClicked", ex)
+        End Try
+    End Sub
 
     ''' <summary>
     ''' Strângerea arborelui (felia 0028, aceeași înțelegere ca în MainForm): arborele e
@@ -314,6 +358,42 @@ Public Class RezervariView
         Catch ex As Exception
             GlobalErrorLog.Write("RezervariView.BuildTree", ex)
             Throw
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Iconița din DREAPTA antetului arborelui deschide GRAFICUL rezervărilor (felia 0061-02) —
+    ''' același loc și același gest ca iconița din antetul recepțiilor.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Fereastra primește RÂNDURILE DEJA ÎNCĂRCATE, nu codul angajamentului: graficul și
+    ''' arborele trebuie să spună aceeași sumă, iar o a doua cerere de rețea ar putea răspunde
+    ''' altceva decât scrie în arborele de sub fereastră.</para>
+    ''' <para>Fără rânduri nu se deschide nimic: o fereastră goală nu spune de ce e goală, iar cele
+    ''' două motive — niciun angajament ales și un angajament fără rezervări — cer răspunsuri
+    ''' diferite.</para>
+    ''' </remarks>
+    Private Sub tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
+        Try
+            If String.IsNullOrWhiteSpace(_requestedCod) Then
+                KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
+                                 "K-BOT — Graficul rezervărilor",
+                                 MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            If _rows Is Nothing OrElse _rows.Count = 0 Then
+                KBotMessage.Show(Me, "Angajamentul nu are rezervări, deci nu are ce arăta graficul.",
+                                 "K-BOT — Graficul rezervărilor",
+                                 MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            Using f As New GraficRezervariForm(_requestedCod, _rows)
+                f.ShowDialog(FindForm())
+            End Using
+        Catch ex As Exception
+            ' Graniță de UI: se loghează și se înghite — un throw dintr-un tratator de eveniment
+            ' ar cădea pe firul de UI.
+            GlobalErrorLog.Write("RezervariView.tree_HeaderRightIconClicked", ex)
         End Try
     End Sub
 

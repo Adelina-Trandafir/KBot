@@ -16,6 +16,12 @@
         Public NodeForeColor As Color = Color.Empty    ' Empty = folosește ForeColor-ul controlului
         Public NodeBackColor As Color = Color.Empty    ' Empty = transparent (fără fundal per nod)
         Public IsLoader As Boolean = False
+
+        ''' <summary>
+        ''' Rand-fantoma: arata unde ar cadea randul tras, cat tine tragerea. NU e un rand al
+        ''' datelor — vezi partiala .DropPreview. Piere odata cu tragerea.
+        ''' </summary>
+        Public IsDropGhost As Boolean = False
         Public IsRadioSelected As Boolean = False
         Public Tooltip As String = ""   ' ControlTipText din VBA - apare ÎNTOTDEAUNA dacă e setat
         Public ColHeaderText As String = ""  ' pipe-separated column names for dynamic TreeListView columns

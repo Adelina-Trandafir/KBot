@@ -68,18 +68,35 @@ Public Class ReceptiiView
     Private _splitterDistanceDesfasurat As Integer
     Private _panel1MinSizeDesfasurat As Integer
 
+    ''' <summary>
+    ''' Reîmprospătarea recepțiilor din FOREXE (felia 0060) — iconița din DREAPTA subsolului
+    ''' arborelui. Vine de la shell din același motiv ca <see cref="_deschideLegaturi"/>:
+    ''' pornește robotul și duce pachetul prin ingestie, iar amândouă cer plasa de
+    ''' re-autentificare, care trăiește într-un singur loc.
+    '''
+    ''' <para>Nothing = gazda nu o oferă. Atunci iconița se STINGE, nu rămâne un buton care nu
+    ''' face nimic — un no-op tăcut e mai rău decât un buton lipsă.</para>
+    ''' </summary>
+    Private ReadOnly _reimprospateaza As Action(Of String)
+
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of ReceptiiInfo)), Task(Of ReceptiiInfo)),
-                   Optional deschideLegaturi As Action(Of String) = Nothing)
+                   Optional deschideLegaturi As Action(Of String) = Nothing,
+                   Optional reimprospateaza As Action(Of String) = Nothing)
         If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
         If withReauth Is Nothing Then Throw New ArgumentNullException(NameOf(withReauth))
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
         _deschideLegaturi = deschideLegaturi
+        _reimprospateaza = reimprospateaza
         If _deschideLegaturi Is Nothing Then
             tree.HeaderRightIcon = Nothing
             tree.HeaderRightIconTooltip = String.Empty
+        End If
+        If _reimprospateaza Is Nothing Then
+            tree.FooterRightIcon = Nothing
+            tree.FooterRightIconTooltip = String.Empty
         End If
         'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
@@ -106,6 +123,34 @@ Public Class ReceptiiView
             ' Graniță de UI: se loghează și se înghite — un throw dintr-un tratator de eveniment
             ' ar cădea pe firul de UI.
             GlobalErrorLog.Write("ReceptiiView.tree_HeaderRightIconClicked", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Iconița din DREAPTA subsolului arborelui cere o reîmprospătare din FOREXE a
+    ''' RECEPȚIILOR angajamentului selectat (felia 0060) — nu o simplă recitire de pe server.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Butonul spunea până acum «Reîncarcă recepțiile de la server» și nu era legat la
+    ''' nimic. Cererea operatorului din 10.09.2026 îl face să însemne ce se aștepta de la el:
+    ''' du-te în FOREXE și adu ce s-a schimbat. Alegerea recepțiilor de citit se face în
+    ''' macheta pe care o deschide shell-ul, înainte să pornească robotul.</para>
+    ''' <para>Vederea NU se reîncarcă de aici: după ingestie shell-ul reîncarcă arborele cu
+    ''' nodul păstrat, iar asta împinge singură contextul nou încoace.</para>
+    ''' </remarks>
+    Private Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
+        Try
+            If _reimprospateaza Is Nothing Then Return
+            If String.IsNullOrWhiteSpace(_requestedCod) Then
+                KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
+                                "K-BOT — Recepții", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            _reimprospateaza(_requestedCod)
+        Catch ex As Exception
+            ' Graniță de UI: se loghează și se înghite — un throw dintr-un tratator de eveniment
+            ' ar cădea pe firul de UI.
+            GlobalErrorLog.Write("ReceptiiView.Tree_FooterRightIconClicked", ex)
         End Try
     End Sub
 

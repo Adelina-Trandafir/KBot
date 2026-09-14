@@ -419,10 +419,12 @@ Public Class KBOT
                 ' ExecutaComandaDdf as DdfView: one re-login policy, one place where the editor
                 ' opens.
                 Case "rezervari" : Return New RezervariView(_apiClient, Function(op) WithReauth(Of RezervariInfo)(op),
-                                                            AddressOf ExecutaComandaDdf)
+                                                            AddressOf ExecutaComandaDdf,
+                                                            AddressOf ReimprospateazaRezervari)
                 Case "partener" : Return New PlaceholderView(key, "Partener")
                 Case "receptii" : Return New ReceptiiView(_apiClient, Function(op) WithReauth(Of ReceptiiInfo)(op),
-                                                         AddressOf DeschideLegaturileReceptiilor)
+                                                         AddressOf DeschideLegaturileReceptiilor,
+                                                         AddressOf ReimprospateazaReceptii)
                 ' «+» din arborele de plati cere ordonantarea zilei / lotul lunii — Access:
                 ' fxPlati_AdaugareOrdonantare / fxPlati_AdaugareOrdonantari din frmFX_MAIN.
                 ' Trece prin ACEEASI ExecutaComandaOrd ca OrdView: o singura politica de
@@ -453,7 +455,7 @@ Public Class KBOT
     ''' <para>D-I: modal. După o salvare, recepțiile se reîncarcă — legăturile schimbate mută
     ''' anteturile între recepții, deci ce a rămas pe ecran nu mai e adevărat.</para>
     ''' </summary>
-    Private Sub DeschideLegaturileReceptiilor(cod As String)
+    Private Async Sub DeschideLegaturileReceptiilor(cod As String)
         Try
             If String.IsNullOrWhiteSpace(cod) Then Return
             Using f As New AsociereForm(_apiClient, cod,
@@ -461,8 +463,11 @@ Public Class KBOT
                                         Function(op) WithReauth(Of AsociereRezultat)(op))
                 f.ShowDialog(Me)
                 If f.SAuSalvatModificari Then
-                    Dim vedere As ReceptiiView = TryCast(_activeView, ReceptiiView)
-                    vedere?.Reincarca()
+                    ' Arborele, nu doar vederea (operator, 10.09.2026): o legătură mutată poate
+                    ' aprinde sau stinge steagurile Are* ale nodului, iar `LoadTreeAsync` cu
+                    ' selecția păstrată împinge singur contextul nou în vederea deschisă — deci
+                    ' `Reincarca()` ar fi a doua citire a aceluiași lucru.
+                    Await LoadTreeAsync(pastreazaSelectia:=True)
                 End If
             End Using
         Catch ex As Exception
@@ -1163,7 +1168,14 @@ Public Class KBOT
     ''' erorile se arată operatorului în română, niciodată înghițite și niciodată
     ''' mascate cu un arbore gol.
     ''' </summary>
-    Private Async Function LoadTreeAsync() As Task
+    ''' <param name="pastreazaSelectia">
+    ''' True = nodul selectat acum rămâne selectat după reîncărcare, iar vederea deschisă
+    ''' primește contextul lui (felia 0060). Se cere DUPĂ o scriere pe angajamentul curent:
+    ''' cifrele s-au schimbat, dar operatorul e tot acolo. Implicit False — la o schimbare de
+    ''' perioadă sau la prima încărcare nu există selecție de păstrat, iar una veche ar fi
+    ''' oricum a altui an.
+    ''' </param>
+    Private Async Function LoadTreeAsync(Optional pastreazaSelectia As Boolean = False) As Task
         ' Fără an/SS nu există interogare de făcut (combo-uri goale = perioade necitite).
         If cboAn.SelectedItem Is Nothing OrElse cboSs.SelectedItem Is Nothing Then
             Return
@@ -1171,6 +1183,10 @@ Public Class KBOT
 
         Dim an As Integer = CInt(cboAn.SelectedItem)
         Dim ss As String = CStr(cboSs.SelectedItem)
+        ' Citit ÎNAINTE de cerere: `PopulateTree` golește `_currentInfo`, deci după el nu mai
+        ' există de unde afla ce era selectat.
+        Dim codSelectat As String = If(pastreazaSelectia AndAlso _currentInfo IsNot Nothing,
+                                       _currentInfo.CodAngajament, Nothing)
 
         busyBar.Running = True
         Try
@@ -1178,7 +1194,7 @@ Public Class KBOT
             Dim rows As IReadOnlyList(Of AngajamentTreeInfo) =
                 Await WithReauth(Of IReadOnlyList(Of AngajamentTreeInfo))(
                     Function() _apiClient.GetTreeAsync(an, ss, _includeHidden, ct))
-            PopulateTree(rows)
+            PopulateTree(rows, codSelectat)
         Catch ex As Exception
             ' Fără plasă tăcută: o eroare (server oprit / 401 sesiune moartă / defect de
             ' server după re-login) se arată operatorului cu motivul întors de server,
@@ -1197,7 +1213,13 @@ Public Class KBOT
     ''' Descriere (upper), celulă CodAngajament, iconiță de status (din Stare), refresh la
     ''' hover, bold dacă are surse (comportament legacy), tooltip = Descriere, Tag = Cod.
     ''' </summary>
-    Private Sub PopulateTree(rows As IReadOnlyList(Of AngajamentTreeInfo))
+    ''' <param name="codSelectat">
+    ''' Angajamentul de re-selectat după repopulare, sau Nothing. Un cod care nu mai e în
+    ''' arbore nu e o eroare: se comportă exact ca Nothing — nicio vedere nu rămâne deschisă pe
+    ''' un angajament care a dispărut din listă.
+    ''' </param>
+    Private Sub PopulateTree(rows As IReadOnlyList(Of AngajamentTreeInfo),
+                             Optional codSelectat As String = Nothing)
         Try
             ArgumentNullException.ThrowIfNull(rows)
             tree.Clear()
@@ -1207,6 +1229,9 @@ Public Class KBOT
             ' deschisă pe un angajament care nu mai e în arbore.
             ApplyViewGating(Nothing)
             RefreshInfoForm()   ' selecția s-a golit -> fereastra de info reflectă asta
+
+            Dim nodDeSelectat As AdvancedTreeControl.TreeItem = Nothing
+            Dim infoDeSelectat As AngajamentTreeInfo = Nothing
 
             For Each info As AngajamentTreeInfo In rows
                 Dim cod As String = If(info.CodAngajament, String.Empty)
@@ -1224,7 +1249,28 @@ Public Class KBOT
                 'node.ShowRightIconOnHover = True
 
                 _treeInfos(cod) = info
+                If codSelectat IsNot Nothing AndAlso
+                   String.Equals(cod, codSelectat, StringComparison.OrdinalIgnoreCase) Then
+                    nodDeSelectat = node
+                    ' Informatia se ia DE AICI, nu prin `_treeInfos(codSelectat)`: dictionarul
+                    ' e pe comparatie exacta, iar potrivirea de mai sus e fara litere mari/mici
+                    ' — deci o cheie care difera doar prin caz ar arunca KeyNotFound.
+                    infoDeSelectat = info
+                End If
             Next
+
+            ' Selecția se pune ÎNAPOI la sfârșit, cu tot ce atârnă de ea — poarta vederilor,
+            ' contextul vederii active, fereastra de informații —, adică exact ce face un clic
+            ' pe nod (`Tree_NodeMouseUp`). `SelectAndReveal`, nu `SelectedNode`: scrisă singură,
+            ' selecția ar fi reală și INVIZIBILĂ, iar operatorul ar vedea o listă care s-a dus
+            ' la primul rând.
+            If nodDeSelectat IsNot Nothing Then
+                _currentInfo = infoDeSelectat
+                tree.SelectAndReveal(nodDeSelectat)
+                ApplyViewGating(infoDeSelectat)
+                _activeView?.SetContext(infoDeSelectat)
+                RefreshInfoForm()
+            End If
 
             tree.Invalidate()
         Catch ex As Exception
@@ -1503,13 +1549,21 @@ Public Class KBOT
 
             Dim pachet As PrelucrareRezultat = IntreabaDacaRefolosescPachetul(cod)
             If pachet Is Nothing Then
+                ' ÎNTÂI întrebarea, apoi robotul (felia 0060): alegerea recepțiilor schimbă ce
+                ' rulează workflow-ul, deci trebuie știută înainte să pornească. `Nothing` =
+                ' operatorul a închis macheta — atunci nu se descarcă nimic, fiindcă renunțarea
+                ' la întrebare e renunțarea la descărcare, nu o descărcare implicită.
+                Dim sarite As List(Of Date) = Await AlegeReceptiileDeSaritAsync(cod)
+                If sarite Is Nothing Then Return
+
                 busyBar.Running = True
                 Try
                     ' Istoricul LOCAL decide înainte/înapoi (Access FX_Angajament_InfoComplete):
                     ' îl citim prin aceeași plasă de re-login ca restul shell-ului.
                     pachet = Await _forexe.DownloadNodeAsync(
                         cod,
-                        Function(c, ct) WithReauth(Of IstoricInfo)(Function() _apiClient.GetIstoricAsync(c, ct)))
+                        Function(c, ct) WithReauth(Of IstoricInfo)(Function() _apiClient.GetIstoricAsync(c, ct)),
+                        sarite)
                 Finally
                     busyBar.Running = False
                 End Try
@@ -1676,16 +1730,39 @@ Public Class KBOT
             ' Nothing = operatorul a renunțat la o alegere de unitate. Nimic nu s-a scris.
             If propunere Is Nothing Then Return
 
-            Using f As New AsociereForm(_apiClient, cod, propunere, pachet, alegeri,
-                                        Function(op) WithReauth(Of PrelucrareRaspuns)(op))
-                f.ShowDialog(Me)
-                If Not f.SAuSalvatModificari Then Return
-            End Using
+            ' ── COȘUL GOL = NICIO ÎNTREBARE (operator, 10.09.2026) ───────────────────
+            '
+            ' Macheta de așezare există pentru un singur lucru: instantaneele pe care mașina
+            ' NU le poate pune singură (F9 — trecerea automată așază doar ULTIMUL instantaneu
+            ' al unui lanț). Când descărcarea nu lasă niciunul — și asta se întâmplă des, mai
+            ' ales la reîmprospătările parțiale, care nici nu aduc istoric — fereastra s-ar
+            ' deschide cu coșul gol și cu butonul deja aprins, adică i-ar cere operatorului să
+            ' apese ca să confirme că n-are nimic de confirmat. Se salvează direct.
+            '
+            ' ÎNTREBAREA E ACEEAȘI, pusă prin ACEEAȘI funcție ca în formular
+            ' (`AsociereForm.NehotarateDin`), peste ACELAȘI tablou; două numărători scrise
+            ' separat ar aluneca una față de alta, iar alunecarea s-ar vedea ca o salvare
+            ' tăcută acolo unde omul trebuia întrebat.
+            Dim stare As AsociereStare = AsociereStare.DinPropunere(propunere)
+            Dim faraMutari As New Dictionary(Of Integer, Integer)()
+            Dim faraIgnorate As New Dictionary(Of Integer, Boolean)()
+
+            If AsociereForm.NehotarateDin(stare.Instantanee, faraMutari, faraIgnorate) = 0 Then
+                If Not Await SalveazaFaraMachetaAsync(cod, stare, propunere, pachet, alegeri) Then Return
+            Else
+                Using f As New AsociereForm(_apiClient, cod, propunere, pachet, alegeri,
+                                            Function(op) WithReauth(Of PrelucrareRaspuns)(op))
+                    f.ShowDialog(Me)
+                    If Not f.SAuSalvatModificari Then Return
+                End Using
+            End If
 
             ' S-a scris: arborele are alte steaguri Are* (istoric, recepții, plăți apar acum),
-            ' iar vederea deschisă arată cifre vechi. Se recitesc amândouă.
-            Await LoadTreeAsync()
-            _activeView?.SetContext(_currentInfo)
+            ' iar vederea deschisă arată cifre vechi. Se recitesc amândouă — DAR nodul rămâne
+            ' selectat (operator, 10.09.2026): o reîncărcare care golește selecția aruncă
+            ' operatorul înapoi la începutul listei exact după ce a terminat de lucrat pe un
+            ' angajament, iar vederea deschisă se închide odată cu ea.
+            Await LoadTreeAsync(pastreazaSelectia:=True)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DuLaIngestieAsync", ex)
             KBotMessage.Show(Me, "Ingestia descărcării a eșuat: " & ex.Message & Environment.NewLine &
@@ -1693,6 +1770,220 @@ Public Class KBOT
                             "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Function
+
+    ''' <summary>
+    ''' FAZA A DOUA fără operator (felia 0060): retrimite pachetul cu hotărârile care se citesc
+    ''' singure din propunere. Se cheamă DOAR când nu mai e nimic de așezat.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>Nu e o scurtătură pe lângă om.</b> Serverul cere o hotărâre pentru FIECARE
+    ''' instantaneu de așezat (400 la o acoperire incompletă), tocmai ca tăcerea să nu poată
+    ''' însemna «ignoră-l». Aici mulțimea aia e goală, deci lista de hotărâri conține exact
+    ''' rândurile pe care serverul le-a așezat el însuși în faza întâi, cu tot cu recepția pe
+    ''' care le-a pus. Nu se inventează nicio alegere; se confirmă ce nu era de ales.</para>
+    ''' <para><b>Aceleași dicționare goale ca la numărătoare.</b> «Nicio mutare, niciun ignorat,
+    ''' nicio ștergere pusă de operator» e chiar starea pe care o are formularul în clipa în
+    ''' care se deschide, deci <c>DeciziiDin</c> produce ce ar fi produs și el dacă operatorul
+    ''' ar fi apăsat «Salvează» fără să atingă nimic (F18).</para>
+    ''' <para>Întoarce False dacă nu s-a scris nimic: fie operatorul a renunțat la o alegere de
+    ''' unitate, fie salvarea a eșuat — și atunci arborele NU se reîncarcă, fiindcă n-are ce
+    ''' arăta nou.</para>
+    ''' </remarks>
+    Private Async Function SalveazaFaraMachetaAsync(cod As String,
+                                                    stare As AsociereStare,
+                                                    propunere As PrelucrarePropunere,
+                                                    pachet As PrelucrareRezultat,
+                                                    alegeri As List(Of AlegereUnitate)) As Task(Of Boolean)
+        Try
+            Dim faraMutari As New Dictionary(Of Integer, Integer)()
+            Dim faraIgnorate As New Dictionary(Of Integer, Boolean)()
+            Dim faraStergeri As New Dictionary(Of Integer, Boolean)()
+            Dim decizii As List(Of DecizieAsociere) =
+                AsociereForm.DeciziiDin(stare.Instantanee, stare.Receptii,
+                                        faraMutari, faraIgnorate, faraStergeri)
+
+            Dim coordonator As New PrelucrareCoordinator(_apiClient)
+            Dim raspuns As PrelucrareRaspuns
+            busyBar.Running = True
+            Try
+                raspuns = Await WithReauth(Of PrelucrareRaspuns)(
+                    Function() coordonator.SalveazaAsync(pachet, propunere.Amprenta, decizii,
+                                                         alegeri, CancellationToken.None))
+            Finally
+                busyBar.Running = False
+            End Try
+
+            If raspuns Is Nothing Then
+                ' Operatorul a renunțat la o alegere de unitate: serverul a derulat înapoi.
+                KBotMessage.Show(Me,
+                    $"Salvarea descărcării lui «{cod}» s-a oprit la o alegere de unitate — " &
+                    "nu s-a scris nimic. Reluați descărcarea când doriți.",
+                    "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return False
+            End If
+
+            ' Cifrele SERVERULUI, nu o repovestire: aceeași propoziție pe care o arată și
+            ' formularul după o salvare, ca operatorul să citească același lucru pe amândouă
+            ' drumurile. `KBotMessage.Show` o scrie și în Logs\mesaje_operator.log.
+            KBotMessage.Show(Me, AsociereForm.TextDupaSalvare(raspuns),
+                            $"K-BOT — Descărcarea lui «{cod}»", MessageBoxButtons.OK,
+                            If(raspuns.Avertismente.Count > 0,
+                               MessageBoxIcon.Warning, MessageBoxIcon.Information))
+            Return True
+        Catch ex As ApiException
+            GlobalErrorLog.Write("MainForm.SalveazaFaraMachetaAsync", ex)
+            KBotMessage.Show(Me, $"Descărcarea lui «{cod}» nu a putut fi salvată: " & ex.Message,
+                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Return False
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.SalveazaFaraMachetaAsync", ex)
+            KBotMessage.Show(Me, $"Descărcarea lui «{cod}» nu a putut fi salvată: " & ex.Message,
+                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Return False
+        End Try
+    End Function
+
+    ' ══════════════════════════════════════════════════════════════════════════════════
+    ' REÎMPROSPĂTAREA CERUTĂ DE OPERATOR (felia 0060)
+    '
+    ' Trei porți de intrare, un singur drum: iconița din dreapta unui NOD (angajamentul
+    ' întreg), iconița din subsolul arborelui de RECEPȚII și cea din subsolul arborelui de
+    ' REZERVĂRI. Toate trei trăiesc aici, nu în vederi, din același motiv ca
+    ' `DeschideLegaturileReceptiilor`: au nevoie de plasa de re-autentificare, care e privată
+    ' și generică în shell, iar politica de re-login rămâne într-un singur loc.
+    ' ══════════════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>
+    ''' Întreabă operatorul CE RECEPȚII vrea citite din nou și întoarce datele celor pe care
+    ''' NU le-a bifat (felia 0060). O listă goală înseamnă «toate»; <c>Nothing</c> înseamnă
+    ''' «a renunțat, nu descărca nimic».
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>Lista se citește de pe server, nu din vederea deschisă.</b> Reîmprospătarea se
+    ''' poate cere de pe orice nod, nu doar de pe cel a cărui vedere e pe ecran, iar o listă
+    ''' luată din vedere ar fi goală exact atunci — sau, mai rău, ar fi a ALTUI angajament.</para>
+    ''' <para><b>O citire care eșuează NU oprește descărcarea.</b> Fără listă nu se poate
+    ''' întreba, iar întrebarea e o economie de timp, nu o condiție: se descarcă tot, și se
+    ''' spune de ce pe consolă. Același raționament ca <c>UltimaDataExtras</c> din coordonator.</para>
+    ''' <para>Un angajament fără nicio recepție locală nu deschide nimic: n-ar avea ce arăta,
+    ''' iar o fereastră goală cu un buton «Descarcă» e o întrebare fără miez.</para>
+    ''' </remarks>
+    Private Async Function AlegeReceptiileDeSaritAsync(cod As String) As Task(Of List(Of Date))
+        Try
+            If String.IsNullOrWhiteSpace(cod) Then Return New List(Of Date)()
+
+            Dim info As ReceptiiInfo
+            busyBar.Running = True
+            Try
+                info = Await WithReauth(Of ReceptiiInfo)(
+                    Function() _apiClient.GetReceptiiAsync(cod, CancellationToken.None))
+            Finally
+                busyBar.Running = False
+            End Try
+
+            Dim randuri As List(Of ReceptieRow) = If(info Is Nothing, Nothing, info.Receptii)
+            If randuri Is Nothing OrElse randuri.Count = 0 Then Return New List(Of Date)()
+
+            Using dlg As New SelectieReceptiiForm(randuri, cod)
+                If dlg.ShowDialog(Me) <> DialogResult.OK Then Return Nothing
+                If dlg.DateDeSarit.Count > 0 Then
+                    _forexe.SpuneStare($"«{cod}»: {dlg.DateDeSarit.Count} zile de recepții sar " &
+                                       "peste citirea detaliului (alegerea operatorului).")
+                End If
+                Return New List(Of Date)(dlg.DateDeSarit)
+            End Using
+        Catch ex As Exception
+            ' Frontieră de UI: fără listă se descarcă TOT. Niciodată invers — o sărire tăcută
+            ' peste recepții, după o citire care a eșuat, ar fi exact hotărârea pe care mașina
+            ' nu are voie s-o ia.
+            GlobalErrorLog.Write("MainForm.AlegeReceptiileDeSaritAsync", ex)
+            _forexe.SpuneStare($"Nu s-a putut citi lista de recepții a lui «{cod}» ({ex.Message}) — " &
+                               "se descarcă toate.")
+            Return New List(Of Date)()
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Reîmprospătează DOAR recepțiile angajamentului dat — iconița din dreapta subsolului
+    ''' arborelui din <c>ReceptiiView</c> (felia 0060).
+    ''' </summary>
+    ''' <remarks>
+    ''' Trece prin ACELEAȘI două faze ca descărcarea unui nod întreg: pachetul pleacă la
+    ''' propunere, iar așezarea (sau lipsa ei) hotărăște dacă se deschide macheta. Un flux
+    ''' parțial nu are voie să ocolească asta — istoricul lui e gol, deci de obicei nu rămâne
+    ''' nimic de hotărât și salvarea se face singură, dar drumul e unul singur.
+    ''' </remarks>
+    Private Async Sub ReimprospateazaReceptii(cod As String)
+        Try
+            If String.IsNullOrWhiteSpace(cod) Then Return
+
+            Dim sarite As List(Of Date) = Await AlegeReceptiileDeSaritAsync(cod)
+            If sarite Is Nothing Then Return   ' a renunțat
+
+            Dim pachet As PrelucrareRezultat
+            busyBar.Running = True
+            Try
+                pachet = Await _forexe.DownloadReceptiiAsync(cod, sarite)
+            Finally
+                busyBar.Running = False
+            End Try
+            If pachet Is Nothing Then
+                AratEsecul("Reîmprospătarea recepțiilor")
+                Return
+            End If
+
+            Await DuLaIngestieAsync(cod, pachet)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ReimprospateazaReceptii", ex)
+            KBotMessage.Show(Me, "Reîmprospătarea recepțiilor a eșuat: " & ex.Message,
+                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Reîmprospătează DOAR rezervările angajamentului dat — iconița din dreapta subsolului
+    ''' arborelui din <c>RezervariView</c> (felia 0060).
+    ''' </summary>
+    ''' <remarks>
+    ''' Aduce antetul, indicatorii și istoricul, fiindcă <c>FX_Rezervari</c> se scrie pe server
+    ''' DIN <c>FX_Istoric</c>. Nu se pune nicio întrebare despre recepții: pachetul nu conține
+    ''' niciuna, deci n-ar fi la ce să răspundă. În schimb, istoricul proaspăt POATE aduce
+    ''' instantanee de așezat — atunci macheta se deschide, ca după orice descărcare.
+    ''' </remarks>
+    Private Async Sub ReimprospateazaRezervari(cod As String)
+        Try
+            If String.IsNullOrWhiteSpace(cod) Then Return
+
+            Dim pachet As PrelucrareRezultat
+            busyBar.Running = True
+            Try
+                pachet = Await _forexe.DownloadRezervariAsync(cod)
+            Finally
+                busyBar.Running = False
+            End Try
+            If pachet Is Nothing Then
+                AratEsecul("Reîmprospătarea rezervărilor")
+                Return
+            End If
+
+            Await DuLaIngestieAsync(cod, pachet)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ReimprospateazaRezervari", ex)
+            KBotMessage.Show(Me, "Reîmprospătarea rezervărilor a eșuat: " & ex.Message,
+                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Arată de ce s-a întors gol ultimul lucru cerut robotului — și TACE dacă operatorul e cel
+    ''' care a renunțat (felia 0057: o anulare lasă <c>LastFailure</c> gol, deliberat).
+    ''' </summary>
+    Private Sub AratEsecul(cePorneam As String)
+        Dim motiv As String = _forexe.LastFailure
+        If String.IsNullOrWhiteSpace(motiv) Then Return
+        KBotMessage.Show(Me, cePorneam & " nu a adus nimic: " & motiv,
+                        "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+    End Sub
 
     ' ---------------- FOREXE: consolă + sincronizare ----------------
     '

@@ -159,35 +159,63 @@
            interior il scrie cu saveTo, iar decizia D-N spune ca structura calatoreste
            pana la server neaplatizata. -->
 
-        <Log message="Procesez recepția [[idx]]: [[R.Tip]] / [[R.Data]] / [[R.Suma]]..." level="info"/>
+        <!-- ═══ SELECȚIA OPERATORULUI (felia 0060) ═══════════════════════════
+             {{RECEPTII_SARITE}} = datele recepțiilor pe care operatorul NU le-a bifat în
+             macheta de reîmprospătare, zz/ll/aaaa, separate prin virgulă. GOL = nu se sare
+             peste niciuna, adică exact comportamentul dinainte de felia asta.
 
-        <!-- nth-child e 1-based, exact ca idx -->
-        <Click selector="table.table-striped.table-bordered.table-condensed tbody tr:nth-child([[idx]]) .glyphicon-eye-open"
-               waitNavigation="false" timeout="5"/>
+             Se sare peste DETALIUL recepției, nu peste rândul ei: rândul rămâne în
+             «ListaReceptii» fiindcă ScrapeTable l-a citit deja, iar clientul îl scoate
+             înainte de trimitere (WorkflowResultStore.FaraReceptiileSarite). Aici se
+             economisesc chiar minutele: o deschidere de pagină pe recepție.
 
-        <WaitFor selector="h3.heading:has-text('Modifică recepție')" timeout="5"/>
-        <WaitFor selector="select[name='receptie']" timeout="5"/>
+             Cele patru variabile scrise în iterație se GOLESC pe ramura asta. Obligatoriu,
+             nu igienă: BuildCollectedRow citește un câmp lipsă din variabila cu același
+             nume, iar SetVariable adaugă într-o listă din care se ia ULTIMA valoare — deci
+             fără golire, recepția sărită ar pleca spre server cu «Detaliu»-ul VECINEI ei.
+             "[]" pentru Detaliu, nu "": serverul cere o listă acolo (cere_lista), iar un
+             șir gol e refuzat. -->
+        <IfVar value="{{RECEPTII_SARITE}}" compare="regex:(^|,)[[R.Data]](,|$)">
 
-        <Read selector="select[name='receptie']" saveTo="TipReceptie"/>
-        <Read selector="textarea[name='descriere']" saveTo="DescriereReceptie"/>
+          <Log message="Recepția [[idx]] ([[R.Data]]) nu a fost bifată — sar peste detaliul ei."
+            level="info" />
+          <SetInternalVar name="Detaliu" value="[]" />
+          <SetInternalVar name="TipReceptie" value="" />
+          <SetInternalVar name="DescriereReceptie" value="" />
+          <SetInternalVar name="CodIndicator" value="" />
 
-        <!-- Tabelul interior: selector cu table-hover — diferențiator față de tabelul exterior -->
-        <ScrapeTable selector="table.table-striped.table-bordered.table-hover.table-condensed"
-                     saveTo="Detaliu"
-                     nextPageSelector="a[rel='next']"
-                     waitSelector="table.table-striped.table-bordered.table-hover.table-condensed"
-                     fingerprintSelector="table.table-striped.table-bordered.table-hover.table-condensed tbody tr:last-child td:last-child"
-                     timeout="5"/>
+          <Else>
+          <Log message="Procesez recepția [[idx]]: [[R.Tip]] / [[R.Data]] / [[R.Suma]]..." level="info"/>
 
-        <!-- Cod din primul rând al tabelului interior -->
-        <Read selector="table.table-striped.table-bordered.table-hover.table-condensed tbody tr:first-child td:nth-child(1) span"
-              saveTo="CodIndicator"/>
+          <!-- nth-child e 1-based, exact ca idx -->
+          <Click selector="table.table-striped.table-bordered.table-condensed tbody tr:nth-child([[idx]]) .glyphicon-eye-open"
+                 waitNavigation="false" timeout="5"/>
 
-        <Log message="✓ Recepția [[idx]] procesată. Revin la listă..." level="success"/>
+          <WaitFor selector="h3.heading:has-text('Modifică recepție')" timeout="5"/>
+          <WaitFor selector="select[name='receptie']" timeout="5"/>
 
-        <!-- GoBack via browser — butonul 'Înapoi' din UI afișează confirmare modală -->
-        <GoBack/>
-        <WaitFor selector="li.tab1.active" state="visible" timeout="5"/>
+          <Read selector="select[name='receptie']" saveTo="TipReceptie"/>
+          <Read selector="textarea[name='descriere']" saveTo="DescriereReceptie"/>
+
+          <!-- Tabelul interior: selector cu table-hover — diferențiator față de tabelul exterior -->
+          <ScrapeTable selector="table.table-striped.table-bordered.table-hover.table-condensed"
+                       saveTo="Detaliu"
+                       nextPageSelector="a[rel='next']"
+                       waitSelector="table.table-striped.table-bordered.table-hover.table-condensed"
+                       fingerprintSelector="table.table-striped.table-bordered.table-hover.table-condensed tbody tr:last-child td:last-child"
+                       timeout="5"/>
+
+          <!-- Cod din primul rând al tabelului interior -->
+          <Read selector="table.table-striped.table-bordered.table-hover.table-condensed tbody tr:first-child td:nth-child(1) span"
+                saveTo="CodIndicator"/>
+
+          <Log message="✓ Recepția [[idx]] procesată. Revin la listă..." level="success"/>
+
+          <!-- GoBack via browser — butonul 'Înapoi' din UI afișează confirmare modală -->
+          <GoBack/>
+          <WaitFor selector="li.tab1.active" state="visible" timeout="5"/>
+          </Else>
+        </IfVar>
 
       </ForEachVar>
 

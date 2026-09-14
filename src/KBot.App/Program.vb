@@ -24,6 +24,9 @@ Friend Module Program
         AddHandler TaskScheduler.UnobservedTaskException, AddressOf OnUnobservedTaskException
 
         Try
+            ' O singura instanta: al doilea proces ridica fereastra celui pornit deja si iese.
+            If Not SingleInstance.TryAcquire() Then Return
+
             ' Setarile de folder se VALIDEAZA INAINTE DE ORICE, chiar inaintea temei
             ' (decizia D-O, 26.08.2026). Doua motive, amandoua practice:
             '
@@ -109,6 +112,8 @@ Friend Module Program
             ' Erori la pornire (DI / construcție formă), în afara message loop-ului.
             GlobalErrorLog.Write("Main.Startup", ex)
             ShowFatal(ex)
+        Finally
+            SingleInstance.Release()
         End Try
     End Sub
 

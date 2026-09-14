@@ -245,8 +245,16 @@ Public NotInheritable Class ForexeController
     ''' REVERSE pornind de la cea mai recentă <c>DataFX</c> cunoscută. Rezultatul (cinci
     ''' tabele + scalari) se păstrează BRUT — nu există încă mapper de ingestie.
     ''' </summary>
+    ''' <param name="receptiiSarite">
+    ''' Datele recepțiilor pe care operatorul NU le-a bifat în macheta de reîmprospătare
+    ''' (felia 0060). Nothing / listă goală = se descarcă toate, adică exact ce se întâmpla
+    ''' înainte. Se folosesc de DOUĂ ori: în workflow, ca să nu se mai deschidă pagina
+    ''' fiecăreia, și aici, ca rândurile lor să nu plece deloc spre server — vezi
+    ''' <c>WorkflowResultStore.FaraReceptiileSarite</c> pentru de ce nu e destul doar una.
+    ''' </param>
     Public Async Function DownloadNodeAsync(cod As String,
-                                            citesteIstoric As Func(Of String, CancellationToken, Task(Of IstoricInfo))) As Task(Of PrelucrareRezultat)
+                                            citesteIstoric As Func(Of String, CancellationToken, Task(Of IstoricInfo)),
+                                            Optional receptiiSarite As IReadOnlyList(Of Date) = Nothing) As Task(Of PrelucrareRezultat)
         ' Cutia neagră a descărcării (felia 0054) — vezi DownloadListaAsync.
         Dim jurnal As New ForexeRunDump("PrelucrareCompleta", cod, _session)
         Try
@@ -274,13 +282,18 @@ Public NotInheritable Class ForexeController
                                $"REVERSE de la {ultimaData.Value:yyyy-MM-dd HH:mm:ss}",
                                "fara istoric local -> prelucrare completa"))
 
+                If receptiiSarite IsNot Nothing AndAlso receptiiSarite.Count > 0 Then
+                    jurnal.Note("receptii_sarite",
+                                WorkflowCatalog.ListaDatelorSarite(receptiiSarite))
+                End If
+
                 Dim job As JobRequest
                 If ultimaData.HasValue Then
                     RaporteazaStare($"Descarc «{cod}» (REVERSE, de la {ultimaData.Value:dd.MM.yyyy HH:mm:ss})...")
-                    job = JobBuilder.BuildPrelucrareCompletaReverse(cod, ultimaData.Value)
+                    job = JobBuilder.BuildPrelucrareCompletaReverse(cod, ultimaData.Value, receptiiSarite)
                 Else
                     RaporteazaStare($"Descarc «{cod}» (prelucrare completă)...")
-                    job = JobBuilder.BuildPrelucrareCompleta(cod)
+                    job = JobBuilder.BuildPrelucrareCompleta(cod, receptiiSarite)
                 End If
                 jurnal.NoteRequest(job)
 
@@ -297,7 +310,12 @@ Public NotInheritable Class ForexeController
                     Return Nothing
                 End If
 
-                Dim pachet As PrelucrareRezultat = WorkflowResultStore.DinJobResult(cod, rezultat)
+                ' Rândurile recepțiilor nebifate se scot ÎNAINTE de salvarea locală, ca fișierul
+                ' de pe disc să arate exact ce va pleca spre server — altfel jurnalul ar spune
+                ' altceva decât cererea.
+                Dim pachet As PrelucrareRezultat =
+                    WorkflowResultStore.FaraReceptiileSarite(
+                        WorkflowResultStore.DinJobResult(cod, rezultat), receptiiSarite)
                 Dim cale As String = _store.SalveazaNod(cod, pachet)
                 Dim total As Integer = pachet.Tabele.Values.Sum(Function(t) t.Count)
                 ScrieJurnal(jurnal, "ok", rezultat, pachet)
@@ -316,6 +334,120 @@ Public NotInheritable Class ForexeController
             jurnal.Note("exceptie", ex.ToString())
             ScrieJurnal(jurnal, "exceptie", Nothing)
             GlobalErrorLog.Write("ForexeController.DownloadNodeAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Reîmprospătarea PARȚIALĂ a unei familii de date — felia 0060. Iconița din DREAPTA
+    ''' subsolului arborelui din vederea Recepții / Rezervări.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>Același drum ca descărcarea unui nod, cu două deosebiri.</b> Rulează un .wfl
+    ''' care e o TĂIETURĂ din prelucrarea completă (vezi <c>WorkflowCatalog</c>), și pachetul
+    ''' NU intră în memoria din care se oferă reutilizarea — vezi
+    ''' <c>WorkflowResultStore.SalveazaPartial</c> pentru de ce. Se scrie totuși pe disc, cu
+    ''' familia în nume.</para>
+    ''' <para>Nu duce nimic pe server: ingestia pornește din shell, cu pachetul întors de aici,
+    ''' exact ca la <see cref="DownloadNodeAsync"/>.</para>
+    ''' </remarks>
+    ''' <param name="receptiiSarite">
+    ''' Datele recepțiilor pe care operatorul NU le-a bifat. Nothing / listă goală = toate.
+    ''' Se folosesc de DOUĂ ori: în workflow, ca să nu se mai deschidă pagina fiecăreia, și
+    ''' aici, ca rândurile lor să nu plece deloc spre server.
+    ''' </param>
+    Public Async Function DownloadReceptiiAsync(
+            cod As String,
+            receptiiSarite As IReadOnlyList(Of Date)) As Task(Of PrelucrareRezultat)
+        Try
+            Return Await DescarcaPartialAsync(
+                cod, "Receptii", "recepțiile",
+                JobBuilder.BuildReceptiiAngajament(cod, receptiiSarite),
+                receptiiSarite)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.DownloadReceptiiAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Reîmprospătarea PARȚIALĂ a rezervărilor — felia 0060. Perechea de mai sus, pe arborele
+    ''' din vederea Rezervări.
+    ''' </summary>
+    ''' <remarks>
+    ''' Aduce antetul, indicatorii și istoricul: <c>FX_Rezervari</c> se scrie pe server DIN
+    ''' <c>FX_Istoric</c> (pașii 3c/3d), deci istoricul E sursa rezervărilor. Recepțiile lipsesc
+    ''' cu totul din pachet, și tocmai asta e economia.
+    ''' </remarks>
+    Public Async Function DownloadRezervariAsync(cod As String) As Task(Of PrelucrareRezultat)
+        Try
+            Return Await DescarcaPartialAsync(
+                cod, "Rezervari", "rezervările",
+                JobBuilder.BuildRezervariAngajament(cod), Nothing)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.DownloadRezervariAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Trunchiul comun al celor două reîmprospătări parțiale: aceleași porți (ocupat, sesiune),
+    ''' aceeași cutie neagră, aceeași regulă a pachetului gol.
+    ''' </summary>
+    Private Async Function DescarcaPartialAsync(
+            cod As String, eticheta As String, familie As String,
+            job As JobRequest,
+            receptiiSarite As IReadOnlyList(Of Date)) As Task(Of PrelucrareRezultat)
+        ' Cutia neagră a descărcării (felia 0054) — vezi DownloadListaAsync.
+        Dim jurnal As New ForexeRunDump(eticheta, cod, _session)
+        Try
+            _ultimulEsec = String.Empty
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
+            End If
+            If _busy Then
+                jurnal.Note("motiv", "O alta operatie FOREXE era deja in curs.")
+                ScrieJurnal(jurnal, "ocupat", Nothing)
+                RaporteazaEsec($"Rulează deja o operație FOREXE — cererea pentru «{cod}» a fost ignorată.")
+                Return Nothing
+            End If
+            If Not Await AsiguraSesiuneAsync() Then
+                jurnal.Note("motiv", "Sesiunea FOREXE nu s-a deschis (anulat sau esuat).")
+                ScrieJurnal(jurnal, "fara-sesiune", Nothing)
+                Return Nothing
+            End If
+
+            IntraInLucru()
+            Try
+                RaporteazaStare($"Reîmprospătez {familie} pentru «{cod}»...")
+                jurnal.NoteRequest(job)
+
+                Dim rezultat As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
+                If Not rezultat.Success Then
+                    ScrieJurnal(jurnal, "esuat", rezultat)
+                    RaporteazaEsec($"Reîmprospătarea {familie} pentru «{cod}» a eșuat: " & rezultat.Message)
+                    Return Nothing
+                End If
+
+                ' Rândurile recepțiilor nebifate se scot ÎNAINTE de salvarea locală, ca fișierul
+                ' de pe disc să arate exact ce a plecat spre server — altfel jurnalul ar spune
+                ' altceva decât cererea.
+                Dim pachet As PrelucrareRezultat =
+                    WorkflowResultStore.FaraReceptiileSarite(
+                        WorkflowResultStore.DinJobResult(cod, rezultat), receptiiSarite)
+
+                Dim cale As String = _store.SalveazaPartial(cod, pachet, eticheta)
+                Dim total As Integer = WorkflowResultStore.NumaraRanduri(pachet)
+                ScrieJurnal(jurnal, "ok", rezultat, pachet)
+                RaporteazaStare($"«{cod}»: {pachet.Tabele.Count} tabele, {total} rânduri → {Path.GetFileName(cale)}")
+                Return pachet
+            Finally
+                IesDinLucru()
+            End Try
+        Catch ex As Exception
+            jurnal.Note("exceptie", ex.ToString())
+            ScrieJurnal(jurnal, "exceptie", Nothing)
+            GlobalErrorLog.Write("ForexeController.DescarcaPartialAsync", ex)
             Throw
         End Try
     End Function

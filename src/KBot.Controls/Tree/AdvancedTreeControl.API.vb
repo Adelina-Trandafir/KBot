@@ -138,6 +138,10 @@ Partial Public Class AdvancedTreeControl
         Items.Clear()
         pSelectedItem = Nothing
         pHoveredItem = Nothing
+        ' Randurile au disparut; un grup care le tine minte ar tine minte randuri care nu mai sunt
+        ' nicaieri, iar gazda care citeste SelectedNodes ar lucra pe ele.
+        ForgetSelection()
+        ForgetDropPreview()
 
         ' 3. Resetăm Scroll-ul la zero (CRITIC)
         Me.AutoScrollPosition = New Point(0, 0)
