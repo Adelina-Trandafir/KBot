@@ -21,6 +21,8 @@ Conventions: [C1..C9](../CONTROLS.md). Status: not recorded.
 ## Limits
 - Single line only, no scrolling. For a multiline box with adjustable border and drawn
   scrollbars use [KBotTextBox](KBotTextBox.md).
-- Border colour/width and corner radius are not settable here — they come from the theme.
+- `CornerRadius: Integer = -1` — same rule as [KBotComboBox](../Combo/KBotComboBox.md):
+  -1 = the scheme's radius (`Style.CornerRadius`), 0 = square, any other value = as set
+  (logical px).
 - Kept out of the Toolbox (`ToolboxItem(False)`); it is a form-specific field, not a
   general-purpose control.

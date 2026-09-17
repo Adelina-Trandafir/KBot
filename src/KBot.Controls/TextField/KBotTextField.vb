@@ -51,7 +51,7 @@ Public NotInheritable Class KBotTextField
     Private _eyeWidth As Integer = 30
     Private _borderWidth As Integer = 1
     Private _focusBorderWidth As Integer = 2
-    Private _cornerRadius As Integer = 6
+    Private _cornerRadius As Integer = -1            ' -1 = from the theme (Style.CornerRadius)
 
     ' -- State ---------------------------------------------------------------------------------
     Private _passwordMode As Boolean = False
@@ -335,15 +335,16 @@ Public NotInheritable Class KBotTextField
         End Set
     End Property
 
+    ''' <summary>Corner radius of the frame, in logical px. -1 = from the theme (Style.CornerRadius).</summary>
     <Category("K-BOT")>
-    <Description("Raza colțurilor (px logici). 0 = colțuri drepte.")>
-    <DefaultValue(6)>
+    <Description("Raza colțurilor (px logici). -1 = din temă, 0 = colțuri drepte.")>
+    <DefaultValue(-1)>
     Public Property CornerRadius As Integer
         Get
             Return _cornerRadius
         End Get
         Set(value As Integer)
-            Dim clamped As Integer = Math.Max(0, value)
+            Dim clamped As Integer = Math.Max(-1, value)
             If _cornerRadius = clamped Then Return
             _cornerRadius = clamped
             Invalidate()
@@ -596,6 +597,12 @@ Public NotInheritable Class KBotTextField
         End If
     End Sub
 
+    ' The effective radius, in DPI-scaled px: the property if the operator set it, else the theme's.
+    Private Function EffectiveRadius() As Integer
+        Dim logical As Integer = If(_cornerRadius >= 0, _cornerRadius, ThemeManager.Current.Style.CornerRadius)
+        Return ThemeShapes.ScaleDpi(Me, Math.Max(0, logical))
+    End Function
+
     ' ===== Painting: rounded fill + outline (accent while focused) + optional eye ==============
 
     Protected Overrides Sub OnPaint(e As PaintEventArgs)
@@ -603,7 +610,7 @@ Public NotInheritable Class KBotTextField
             Dim g As Graphics = e.Graphics
             g.SmoothingMode = SmoothingMode.AntiAlias
 
-            Dim radius As Integer = ThemeShapes.ScaleDpi(Me, _cornerRadius)
+            Dim radius As Integer = EffectiveRadius()
             Dim rect As New Rectangle(0, 0, Width - 1, Height - 1)
             If rect.Width <= 0 OrElse rect.Height <= 0 Then Return
             Using path As GraphicsPath = ThemeShapes.RoundedRect(rect, radius)

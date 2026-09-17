@@ -82,7 +82,8 @@ Partial Public Class AdvancedTreeControl
 
     ' Recitește scara. Din felia 0036 răspunsul vine din AppScaling — sursa unică — fiindcă
     ' operatorul o poate fixa la 100% sau pune un factor al lui; pe modul automat e exact
-    ' DeviceDpi / 96, adică fix ce se calcula aici. Design time rămâne 1, tratat acolo.
+    ' DeviceDpi / 96, adică fix ce se calcula aici — și la design time, fiindcă suprafața
+    ' designerului e conștientă de DPI (vezi rezumatul din AppScaling).
     Private Function RefreshDpiScale() As Boolean
         Dim noua As Single = AppScaling.FactorFor(Me)
         If noua <= 0 OrElse noua = _dpiScale Then Return False

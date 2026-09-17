@@ -15,11 +15,18 @@ Imports KBot.Common
 ''' <para><b>Why not <c>DateTimePicker</c>. It cannot be made taller.</b> The stock control
 ''' overrides its own bounds and snaps the height back to whatever the system says a combo box is,
 ''' so it can never line up with a taller row, a taller neighbour field, or a stretched form. This
-''' one is a plain <c>Control</c> that never touches its own bounds: <b>set <c>Height</c> to
-''' anything, or dock it, and it fills what it was given</b> — the outline stretches, the text
-''' stays vertically centred, and the button grows with the field. On top of that, the stock
-''' control is a native window: its face keeps the system colours on a dark scheme, exactly like
-''' <c>ComboBox</c> before <see cref="KBotComboBox"/>.</para>
+''' one never touches its own bounds: <b>set <c>Height</c> to anything, or dock it, and it fills
+''' what it was given</b> — the outline stretches, the edit box inside stretches with it (it is a
+''' <see cref="KBotDateEditBox"/>, a multiline box that keeps its one line of text vertically
+''' centred), and the button grows with the field. On top of that, the stock control is a native
+''' window: its face keeps the system colours on a dark scheme, exactly like <c>ComboBox</c>
+''' before <see cref="KBotComboBox"/>.</para>
+'''
+''' <para><b>It is a UserControl authored in the designer.</b> The inner box <c>txtDate</c> is
+''' declared in <c>KBotDatePicker.Designer.vb</c>, so the control opens in the Visual Studio
+''' designer like any form of the house and the box can be looked at and edited there. Its
+''' runtime bounds still come from <see cref="PositionInner"/> on every layout pass — the
+''' published metrics decide, not the numbers dragged on the design surface.</para>
 '''
 ''' <para><b>Typing and picking are both first class.</b> The text is real and editable
 ''' (<c>dd.MM.yyyy</c> by default, plus the shorthands the operator actually types: <c>2.9.26</c>,
@@ -45,12 +52,17 @@ Imports KBot.Common
 '''
 ''' <para>Colours follow the house contract (C1), pixel metrics are logical px @96dpi (C2), and
 ''' the control themes itself — it owns a child <c>TextBox</c>, so it MUST (C5).</para>
+'''
+''' <para>It inherits <c>UserControl</c> directly rather than <c>KBotThemedUserControl</c>: that
+''' base exists to keep a Font-mode <c>AutoScaleDimensions</c> stamp honest, and this control
+''' keeps no stamp (<c>AutoScaleMode.Inherit</c>). It must also stay on the AMBIENT font, the
+''' way <see cref="KBotTextField"/> does, so the scheme's base font written on the form reaches
+''' it — a font assigned in a base constructor would cut that off.</para>
 ''' </summary>
 <ToolboxItem(True)>
 <DefaultProperty("Value")>
 <DefaultEvent("ValueChanged")>
 Public NotInheritable Class KBotDatePicker
-    Inherits Control
     Implements IThemedControl
 
     ''' <summary>
@@ -72,8 +84,6 @@ Public NotInheritable Class KBotDatePicker
     ''' refuse every hour of the final day.</summary>
     Private Shared ReadOnly DefaultMinDate As Date = New Date(1900, 1, 1)
     Private Shared ReadOnly DefaultMaxDate As Date = New Date(2100, 12, 31, 23, 59, 59)
-
-    Private ReadOnly _inner As New TextBox()
 
     ' ── Value ────────────────────────────────────────────────────────────────────
     Private _value As Date = Date.Today
@@ -97,6 +107,8 @@ Public NotInheritable Class KBotDatePicker
     Private _textPadding As Padding = New Padding(8, 0, 8, 0)
     Private _buttonPadding As Padding = New Padding(6)
     Private _glyphSize As Integer = 14
+    Private _glyphImage As Image = Nothing
+    Private _glyphRightMargin As Integer = 0
     Private _showDropDownButton As Boolean = True
     Private _readOnlyText As Boolean = False
 
@@ -140,16 +152,18 @@ Public NotInheritable Class KBotDatePicker
         ' The frame itself is never selectable: Tab lands straight on the inner box, exactly as in
         ' KBotTextField. Everything the frame needs from the keyboard it gets through the box.
         SetStyle(ControlStyles.Selectable, False)
-        TabStop = False
+        ' Through MyBase on purpose: the shadow below is browsable-hidden with the right default,
+        ' so hosts stop printing TabStop = False.
+        MyBase.TabStop = False
 
-        _inner.BorderStyle = BorderStyle.None
-        _inner.Multiline = False
-        _inner.AutoSize = False
-        AddHandler _inner.Enter, AddressOf OnInnerEnter
-        AddHandler _inner.Leave, AddressOf OnInnerLeave
-        AddHandler _inner.KeyDown, AddressOf OnInnerKeyDown
-        Controls.Add(_inner)
-
+        ' The inner box is declared in the Designer file, like every control of the house.
+        InitializeComponent()
+        ' Whatever the Designer file wrote to BackColor/ForeColor/Font is this control's own
+        ' starting look, not an operator's pin: the overrides above flagged it as pinned, and left
+        ' that way every host would print the colour and the theme could never write it (C4).
+        _backColorPinned = False
+        _foreColorPinned = False
+        _fontPinned = False
         WriteText()
     End Sub
 
@@ -158,8 +172,87 @@ Public NotInheritable Class KBotDatePicker
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Property InnerTextBox As TextBox
         Get
-            Return _inner
+            Return txtDate
         End Get
+    End Property
+
+    ' =====================================================================
+    ' INHERITED PROPERTIES THAT HAVE NO MEANING HERE
+    ' =====================================================================
+
+    ''' <summary>
+    ''' The frame is never the tab target (the inner box is), so <c>TabStop</c> has no meaning
+    ''' here. Shadowed with the right default so hosts stop printing <c>TabStop = False</c>.
+    ''' </summary>
+    <Browsable(False)>
+    <EditorBrowsable(EditorBrowsableState.Never)>
+    <DefaultValue(False)>
+    Public Shadows Property TabStop As Boolean
+        Get
+            Return MyBase.TabStop
+        End Get
+        Set(value As Boolean)
+            MyBase.TabStop = value
+        End Set
+    End Property
+
+    ''' <summary>The outline is painted by this control; a native border would sit under it.</summary>
+    <Browsable(False)>
+    <EditorBrowsable(EditorBrowsableState.Never)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Shadows Property BorderStyle As BorderStyle
+        Get
+            Return MyBase.BorderStyle
+        End Get
+        Set(value As BorderStyle)
+            MyBase.BorderStyle = value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' The whole point of the control is a height the operator sets; a UserControl that sizes
+    ''' itself to its children would take that away. Hidden, and left False.
+    ''' </summary>
+    <Browsable(False)>
+    <EditorBrowsable(EditorBrowsableState.Never)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    <DefaultValue(False)>
+    Public Shadows Property AutoSize As Boolean
+        Get
+            Return MyBase.AutoSize
+        End Get
+        Set(value As Boolean)
+            MyBase.AutoSize = value
+        End Set
+    End Property
+
+    <Browsable(False)>
+    <EditorBrowsable(EditorBrowsableState.Never)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Shadows Property AutoSizeMode As AutoSizeMode
+        Get
+            Return MyBase.AutoSizeMode
+        End Get
+        Set(value As AutoSizeMode)
+            MyBase.AutoSizeMode = value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Kept on <c>Inherit</c>: the host form scales the frame like any other control and
+    ''' <see cref="PositionInner"/> re-places the box afterwards, so a private scaling pass with
+    ''' its own stamp would only add a second rounding. Hidden so nobody flips it in a host.
+    ''' </summary>
+    <Browsable(False)>
+    <EditorBrowsable(EditorBrowsableState.Never)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Shadows Property AutoScaleMode As AutoScaleMode
+        Get
+            Return MyBase.AutoScaleMode
+        End Get
+        Set(value As AutoScaleMode)
+            MyBase.AutoScaleMode = value
+        End Set
     End Property
 
     ' =====================================================================
@@ -175,7 +268,7 @@ Public NotInheritable Class KBotDatePicker
         Set(value As Color)
             _backColorPinned = True
             MyBase.BackColor = value
-            _inner.BackColor = value
+            txtDate.BackColor = value
             Invalidate()
         End Set
     End Property
@@ -191,7 +284,7 @@ Public NotInheritable Class KBotDatePicker
 
     Public Overrides Sub ResetBackColor()
         MyBase.BackColor = _autoBack
-        _inner.BackColor = _autoBack
+        txtDate.BackColor = _autoBack
         _backColorPinned = False
         Invalidate()
     End Sub
@@ -205,7 +298,7 @@ Public NotInheritable Class KBotDatePicker
         Set(value As Color)
             _foreColorPinned = True
             MyBase.ForeColor = value
-            _inner.ForeColor = value
+            txtDate.ForeColor = value
             Invalidate()
         End Set
     End Property
@@ -216,7 +309,7 @@ Public NotInheritable Class KBotDatePicker
 
     Public Overrides Sub ResetForeColor()
         MyBase.ForeColor = _autoFore
-        _inner.ForeColor = _autoFore
+        txtDate.ForeColor = _autoFore
         _foreColorPinned = False
         Invalidate()
     End Sub
@@ -247,7 +340,9 @@ Public NotInheritable Class KBotDatePicker
     ''' <summary>
     ''' The whole point of this control: <b>the height is free</b>. Nothing here overrides
     ''' <c>SetBoundsCore</c>, which is what <c>DateTimePicker</c> does to snap itself back to the
-    ''' system combo height. The default is only a starting size.
+    ''' system combo height. The default is only a starting size — the same pair the Designer
+    ''' file writes, so <c>ShouldSerializeSize</c> (which compares against THIS) stays False on a
+    ''' freshly dropped control (C4).
     ''' </summary>
     Protected Overrides ReadOnly Property DefaultSize As Size
         Get
@@ -338,10 +433,10 @@ Public NotInheritable Class KBotDatePicker
     <DefaultValue("")>
     Public Property PlaceholderText As String
         Get
-            Return _inner.PlaceholderText
+            Return txtDate.PlaceholderText
         End Get
         Set(value As String)
-            _inner.PlaceholderText = If(value, String.Empty)
+            txtDate.PlaceholderText = If(value, String.Empty)
             Invalidate()
         End Set
     End Property
@@ -597,10 +692,10 @@ Public NotInheritable Class KBotDatePicker
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Overrides Property Text As String
         Get
-            Return _inner.Text
+            Return txtDate.Text
         End Get
         Set(value As String)
-            _inner.Text = If(value, String.Empty)
+            txtDate.Text = If(value, String.Empty)
             CommitText()
         End Set
     End Property
@@ -615,7 +710,7 @@ Public NotInheritable Class KBotDatePicker
         End Get
         Set(value As Boolean)
             _readOnlyText = value
-            _inner.ReadOnly = value
+            txtDate.ReadOnly = value
         End Set
     End Property
 
@@ -623,12 +718,12 @@ Public NotInheritable Class KBotDatePicker
     Private Sub WriteText()
         Try
             _writingText = True
-            _inner.Text = If(_hasValue, _value.ToString(_format, _culture), String.Empty)
+            txtDate.Text = If(_hasValue, _value.ToString(_format, _culture), String.Empty)
         Catch ex As FormatException
             ' A format string the operator invented: log it and fall back to the house format,
             ' rather than leaving the field showing nothing.
             GlobalErrorLog.Write("KBotDatePicker.WriteText", ex)
-            _inner.Text = If(_hasValue, _value.ToString("dd.MM.yyyy", _culture), String.Empty)
+            txtDate.Text = If(_hasValue, _value.ToString("dd.MM.yyyy", _culture), String.Empty)
         Finally
             _writingText = False
         End Try
@@ -641,7 +736,7 @@ Public NotInheritable Class KBotDatePicker
     Public Sub CommitText()
         Try
             If _writingText Then Return
-            Dim brut As String = If(_inner.Text, String.Empty).Trim()
+            Dim brut As String = If(txtDate.Text, String.Empty).Trim()
 
             If brut.Length = 0 Then
                 If _allowEmpty Then
@@ -854,6 +949,55 @@ Public NotInheritable Class KBotDatePicker
         End Set
     End Property
 
+    ''' <summary>
+    ''' A picture for the button instead of the drawn calendar. <c>Nothing</c> = the drawn glyph,
+    ''' which takes the scheme's colour. The picture is fitted into the square
+    ''' <see cref="GlyphSize"/> gives (0 = whatever <see cref="ButtonPadding"/> leaves), keeping its
+    ''' proportions, and is dimmed while the field is disabled.
+    ''' </summary>
+    <Category("K-BOT Date")>
+    <Description("Picture drawn on the calendar button. Empty = the drawn calendar glyph.")>
+    Public Property GlyphImage As Image
+        Get
+            ' The operator's choice, not the effective picture: otherwise the designer would
+            ' freeze the default into every host (C4).
+            Return _glyphImage
+        End Get
+        Set(value As Image)
+            _glyphImage = value
+            Invalidate()
+        End Set
+    End Property
+
+    ' Private: TypeDescriptor finds them by name, non-public included (see KBotCaptionBar).
+    Private Function ShouldSerializeGlyphImage() As Boolean
+        Return _glyphImage IsNot Nothing
+    End Function
+
+    Private Sub ResetGlyphImage()
+        GlyphImage = Nothing
+    End Sub
+
+    ''' <summary>
+    ''' Air between the calendar button and the right edge of the control, px @96dpi. It moves the
+    ''' WHOLE button strip — hover fill and glyph together — inwards, unlike
+    ''' <see cref="ButtonPadding"/>, which only moves the glyph inside the strip. The text area
+    ''' is not touched: the strip keeps its width and slides left.
+    ''' </summary>
+    <Category("K-BOT Date")>
+    <Description("Distance between the calendar button and the right edge of the control, px @96dpi.")>
+    <DefaultValue(0)>
+    Public Property GlyphRightMargin As Integer
+        Get
+            Return _glyphRightMargin
+        End Get
+        Set(value As Integer)
+            _glyphRightMargin = Math.Max(0, value)
+            PerformLayout()
+            Invalidate()
+        End Set
+    End Property
+
     ' Negative air is not air: C3 says clamp a number, not throw for it.
     Private Shared Function Clamp(p As Padding) As Padding
         Return New Padding(Math.Max(0, p.Left), Math.Max(0, p.Top),
@@ -1012,8 +1156,8 @@ Public NotInheritable Class KBotDatePicker
             ' MyBase, not Me: writing the theme must never pass for a choice of the operator.
             If Not _backColorPinned Then MyBase.BackColor = _autoBack
             If Not _foreColorPinned Then MyBase.ForeColor = _autoFore
-            _inner.BackColor = BackColor
-            _inner.ForeColor = ForeColor
+            txtDate.BackColor = BackColor
+            txtDate.ForeColor = ForeColor
 
             Invalidate()
         Catch ex As Exception
@@ -1042,16 +1186,23 @@ Public NotInheritable Class KBotDatePicker
         If zona.Width <= 0 OrElse zona.Height <= 0 Then Return Rectangle.Empty
         Dim w As Integer = Math.Min(ThemeShapes.ScaleDpi(Me, _buttonWidth), Math.Max(1, zona.Width \ 2))
         If w <= 0 Then Return Rectangle.Empty
-        Return New Rectangle(zona.Right - w, zona.Top, w, zona.Height)
+        Dim margin As Integer = Math.Min(ThemeShapes.ScaleDpi(Me, _glyphRightMargin), Math.Max(0, zona.Width - w))
+        Return New Rectangle(zona.Right - margin - w, zona.Top, w, zona.Height)
     End Function
 
     ''' <summary>
-    ''' Places the inner box. The field may be ANY height: the text stays one line, vertically
-    ''' centred in the strip <see cref="TextPadding"/> leaves it, and the button grows with the
-    ''' field.
+    ''' Places the inner box. The field may be ANY height: the box fills the whole strip
+    ''' <see cref="TextPadding"/> leaves it — no longer capped at one text line — and the box
+    ''' itself keeps its text on one centred line (<see cref="KBotDateEditBox"/>). The button
+    ''' grows with the field. This is the one writer of the box's bounds; the numbers in the
+    ''' Designer file are only what the design surface shows.
     ''' </summary>
     Private Sub PositionInner()
         Try
+            ' Layout events can reach here from the base constructor, before the Designer file
+            ' has created the box.
+            If txtDate Is Nothing Then Return
+
             Dim zona As Rectangle = ContentRect()
             Dim pad As Padding = ScalePad(_textPadding)
             Dim buton As Rectangle = ButtonRect()
@@ -1060,12 +1211,10 @@ Public NotInheritable Class KBotDatePicker
             Dim stanga As Integer = zona.Left + pad.Left
             Dim latime As Integer = Math.Max(0, (dreapta - pad.Right) - stanga)
 
-            Dim sus0 As Integer = zona.Top + pad.Top
-            Dim disponibil As Integer = Math.Max(1, (zona.Bottom - pad.Bottom) - sus0)
-            Dim inaltime As Integer = Math.Min(disponibil, _inner.PreferredHeight)
-            Dim sus As Integer = sus0 + Math.Max(0, (disponibil - inaltime) \ 2)
+            Dim sus As Integer = zona.Top + pad.Top
+            Dim inaltime As Integer = Math.Max(1, (zona.Bottom - pad.Bottom) - sus)
 
-            _inner.SetBounds(stanga, sus, latime, inaltime)
+            txtDate.SetBounds(stanga, sus, latime, inaltime)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDatePicker.PositionInner", ex)
         End Try
@@ -1143,11 +1292,68 @@ Public NotInheritable Class KBotDatePicker
                     End Using
                 End If
 
-                If Not buton.IsEmpty Then DrawCalendarGlyph(g, buton)
+                If Not buton.IsEmpty Then DrawGlyph(g, buton)
             End Using
         Catch ex As Exception
             ' Paint boundary: a throw from here would take the process down.
             GlobalErrorLog.Write("KBotDatePicker.OnPaint", ex)
+        End Try
+    End Sub
+
+    ' The square the glyph gets inside the button strip: ButtonPadding taken out, then GlyphSize
+    ' (0 = all of it), centred. Empty when there is no room for anything readable.
+    Private Function GlyphSquare(area As Rectangle) As Rectangle
+        Dim zona As Rectangle = Shrink(area, ScalePad(_buttonPadding))
+        Dim incape As Integer = Math.Min(zona.Width, zona.Height)
+        If incape < 6 Then Return Rectangle.Empty
+        Dim latura As Integer = If(_glyphSize > 0,
+                                   Math.Min(ThemeShapes.ScaleDpi(Me, _glyphSize), incape),
+                                   incape)
+        If latura < 6 Then Return Rectangle.Empty
+        Return New Rectangle(zona.Left + (zona.Width - latura) \ 2,
+                             zona.Top + (zona.Height - latura) \ 2, latura, latura)
+    End Function
+
+    ' The picture when the operator gave one, the drawn calendar otherwise.
+    Private Sub DrawGlyph(g As Graphics, area As Rectangle)
+        If _glyphImage IsNot Nothing Then
+            DrawGlyphImage(g, area)
+        Else
+            DrawCalendarGlyph(g, area)
+        End If
+    End Sub
+
+    ''' <summary>
+    ''' <see cref="GlyphImage"/> fitted into the glyph square with its proportions kept, and
+    ''' faded while the field is disabled — the same signal the drawn glyph gives by going grey.
+    ''' </summary>
+    Private Sub DrawGlyphImage(g As Graphics, area As Rectangle)
+        Dim patrat As Rectangle = GlyphSquare(area)
+        If patrat.IsEmpty Then Return
+        Dim img As Image = _glyphImage
+        If img.Width <= 0 OrElse img.Height <= 0 Then Return
+
+        Dim scara As Double = Math.Min(patrat.Width / CDbl(img.Width), patrat.Height / CDbl(img.Height))
+        Dim w As Integer = Math.Max(1, CInt(Math.Round(img.Width * scara)))
+        Dim h As Integer = Math.Max(1, CInt(Math.Round(img.Height * scara)))
+        Dim dest As New Rectangle(patrat.Left + (patrat.Width - w) \ 2,
+                                  patrat.Top + (patrat.Height - h) \ 2, w, h)
+
+        Dim stare As GraphicsState = g.Save()
+        Try
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality
+            If Enabled Then
+                g.DrawImage(img, dest)
+            Else
+                Using atribute As New Imaging.ImageAttributes()
+                    Dim fade As New Imaging.ColorMatrix() With {.Matrix33 = 0.4F}
+                    atribute.SetColorMatrix(fade)
+                    g.DrawImage(img, dest, 0, 0, img.Width, img.Height, GraphicsUnit.Pixel, atribute)
+                End Using
+            End If
+        Finally
+            g.Restore(stare)
         End Try
     End Sub
 
@@ -1158,16 +1364,11 @@ Public NotInheritable Class KBotDatePicker
     ''' </summary>
     Private Sub DrawCalendarGlyph(g As Graphics, area As Rectangle)
         Dim culoare As Color = If(Enabled, EffectiveGlyphColor, _autoDisabled)
-        Dim zona As Rectangle = Shrink(area, ScalePad(_buttonPadding))
-        Dim incape As Integer = Math.Min(zona.Width, zona.Height)
-        If incape < 6 Then Return
-        Dim latura As Integer = If(_glyphSize > 0,
-                                   Math.Min(ThemeShapes.ScaleDpi(Me, _glyphSize), incape),
-                                   incape)
-        If latura < 6 Then Return
-
-        Dim x As Integer = zona.Left + (zona.Width - latura) \ 2
-        Dim y As Integer = zona.Top + (zona.Height - latura) \ 2
+        Dim patrat As Rectangle = GlyphSquare(area)
+        If patrat.IsEmpty Then Return
+        Dim latura As Integer = patrat.Width
+        Dim x As Integer = patrat.Left
+        Dim y As Integer = patrat.Top
         Dim pagina As New Rectangle(x, y + latura \ 6, latura, latura - latura \ 6)
 
         Using p As New Pen(culoare, 1.0F)
@@ -1230,37 +1431,37 @@ Public NotInheritable Class KBotDatePicker
             ' The second click on the button: the press already closed the calendar by activating
             ' the window underneath, so opening it again here would make it look unclosable.
             If KBotCalendarPopup.ClosedJustNow Then
-                _inner.Focus()
+                txtDate.Focus()
                 Return
             End If
 
             If ButtonRect().Contains(e.Location) Then
-                _inner.Focus()
+                txtDate.Focus()
                 ShowDropDown()
             ElseIf _readOnlyText Then
                 ' Typing is off, so the whole face is the button.
-                _inner.Focus()
+                txtDate.Focus()
                 ShowDropDown()
             Else
-                _inner.Focus()
+                txtDate.Focus()
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDatePicker.OnMouseDown", ex)
         End Try
     End Sub
 
-    Private Sub OnInnerEnter(sender As Object, e As EventArgs)
+    Private Sub OnInnerEnter(sender As Object, e As EventArgs) Handles txtDate.Enter
         _focused = True
         Invalidate()
     End Sub
 
-    Private Sub OnInnerLeave(sender As Object, e As EventArgs)
+    Private Sub OnInnerLeave(sender As Object, e As EventArgs) Handles txtDate.Leave
         _focused = False
         CommitText()
         Invalidate()
     End Sub
 
-    Private Sub OnInnerKeyDown(sender As Object, e As KeyEventArgs)
+    Private Sub OnInnerKeyDown(sender As Object, e As KeyEventArgs) Handles txtDate.KeyDown
         Try
             If e.KeyCode = Keys.F4 OrElse (e.Alt AndAlso e.KeyCode = Keys.Down) Then
                 e.Handled = True
@@ -1307,16 +1508,19 @@ Public NotInheritable Class KBotDatePicker
 
     Protected Overrides Sub OnEnabledChanged(e As EventArgs)
         MyBase.OnEnabledChanged(e)
-        _inner.Enabled = Enabled
+        txtDate.Enabled = Enabled
         Invalidate()
     End Sub
 
+    ' Kept here rather than in the Designer file: the popup is runtime state the generated
+    ' Dispose knows nothing about. Visual Studio only regenerates InitializeComponent.
     Protected Overrides Sub Dispose(disposing As Boolean)
         Try
             If disposing Then
                 Dim p As KBotCalendarPopup = _popup
                 _popup = Nothing
                 If p IsNot Nothing AndAlso Not p.IsDisposed Then p.Close()
+                If components IsNot Nothing Then components.Dispose()
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDatePicker.Dispose", ex)

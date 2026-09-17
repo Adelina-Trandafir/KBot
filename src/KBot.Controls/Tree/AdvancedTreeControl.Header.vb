@@ -33,8 +33,9 @@ Partial Public Class AdvancedTreeControl
         End If
 
         ' ── Right side: RightIcon then SearchIcon (built right-to-left) ──
-        Dim scrollW As Integer = ScrollBarWidth 'If(_vScroll.Visible, _vScroll.Width, 0)
-        Dim rx As Integer = Me.Width - PaddingTreeEndPx - scrollW
+        ' The header spans the full width above the scrollbar (which starts below it), so its
+        ' icons ignore the scrollbar: they must not jump left/right as it comes and goes.
+        Dim rx As Integer = Me.Width - PaddingTreeEndPx
 
         _headerRightIconRect = Rectangle.Empty
         If _headerRightIcon IsNot Nothing Then

@@ -39,9 +39,15 @@ End Enum
 ''' proiectarea e <see cref="DpiUnaware"/>, fiindcă acolo întinde Windows toată fereastra ca
 ''' bitmap; costul e textul mai moale. De aceea sunt două setări, nu una.</para>
 '''
-''' <para><b>La design time scara e mereu 1</b>, indiferent de mod: suprafața Visual Studio
-''' desenează la 96 dpi, deci acolo trebuie să se vadă chiar valoarea tastată. Un factor manual
-''' aplicat în designer ar face ca ce vezi să nu mai fie ce ai scris.</para>
+''' <para><b>La design time scara e cea a suprafeței</b>, adică tot <c>DeviceDpi / 96</c>.
+''' Designerul VS 2022 pentru .NET rulează conștient de DPI: pe un ecran la 150% desenează la 144
+''' dpi și ștampilează în .Designer.vb pixeli de ecran (<c>AutoScaleDimensions = (9, 22)</c> pentru
+''' Calibri 9, care la 96 dpi măsoară (6, 14)). Dacă măsurile NOASTRE ar rămâne la 1 în designer,
+''' jumătate din desen (Bounds-urile WinForms, fonturile în puncte) ar fi la 150% și cealaltă
+''' jumătate (rânduri, benzi, umpluturi) la 100% — exact diferența văzută între designer și
+''' rulare. Pe un designer neconștient de DPI <c>DeviceDpi</c> e 96, deci același drum dă 1 acolo.
+''' Ce rămâne 1 la design time e doar MĂRIREA TEXTULUI (<see cref="TextFactorFor"/>): aceea e o
+''' setare a operatorului, nu a ecranului, iar designerul nu citește theme.json.</para>
 ''' </summary>
 Public Module AppScaling
 
@@ -292,12 +298,13 @@ Public Module AppScaling
     ''' împreună: la 150% pe un ecran, cu textul pus pe 125%, un rând trebuie să fie de 1,875 ori
     ''' cel de la 96 dpi — nu de 1,5 și nici de 1,25.
     '''
-    ''' La design time — și pentru un control fără handle, unde <c>DeviceDpi</c> minte cu 96 —
-    ''' răspunsul e 1.
+    ''' Pentru un control fără handle, unde <c>DeviceDpi</c> minte cu 96, răspunsul e 1. La design
+    ''' time NU se scurtcircuitează: suprafața designerului e conștientă de DPI și desenează la
+    ''' scara ecranului, deci și măsurile noastre trebuie să meargă la aceeași scară — vezi
+    ''' rezumatul modulului. Mărirea textului e 1 acolo oricum (designerul nu citește theme.json).
     ''' </summary>
     Public Function FactorFor(ctrl As Control) As Single
         Try
-            If ctrl IsNot Nothing AndAlso KBotDesignTime.IsDesignTime(ctrl) Then Return 1.0F
             Return EcranFactor(ctrl) * _textScale
         Catch
             ' Predicat de pictură: „nu știu” înseamnă 1, niciodată o excepție dintr-un OnPaint.
@@ -310,11 +317,11 @@ Public Module AppScaling
     ''' without the operator's text size. <see cref="ThemeFormFit"/> needs it at capture time: a
     ''' form's client size right after <c>InitializeComponent</c> already carries the DPI (the
     ''' platform autoscale ran), but not yet the text size, which the theme applies later in
-    ''' <c>OnLoad</c>. 1 at design time and for a control without a handle.
+    ''' <c>OnLoad</c>. 1 for a control without a handle. Not short-circuited at design time, for
+    ''' the same reason as <see cref="FactorFor"/>: the designer surface is DPI-aware.
     ''' </summary>
     Public Function ScreenFactorFor(ctrl As Control) As Single
         Try
-            If ctrl IsNot Nothing AndAlso KBotDesignTime.IsDesignTime(ctrl) Then Return 1.0F
             Return EcranFactor(ctrl)
         Catch
             Return 1.0F

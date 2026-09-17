@@ -21,7 +21,7 @@ lists only its exceptions.
 | `KBotChipBar` | [ChipBar/KBotChipBar.md](ChipBar/KBotChipBar.md) | Multi-select chip/filter bar with badges |
 | `KBotComboBox` | [Combo/KBotComboBox.md](Combo/KBotComboBox.md) | Themed combo, list-only or typed (`Editable` + `LimitToList`) |
 | `KBotCalendar` | [Calendar/KBotCalendar.md](Calendar/KBotCalendar.md) | Owner-drawn calendar: days / months / years, one zoom axis |
-| `KBotDatePicker` | [Calendar/KBotDatePicker.md](Calendar/KBotDatePicker.md) | Date field, typed or picked, height NOT locked |
+| `KBotDatePicker` | [Calendar/KBotDatePicker.md](Calendar/KBotDatePicker.md) | Date field, typed or picked, height NOT locked; UserControl authored in the designer, inner box is `KBotDateEditBox` |
 | `KBotRichTextEditor` | [RichText/KBotRichTextEditor.md](RichText/KBotRichTextEditor.md) | Rich-text surface: toolbar band + counter band, RTF and plain text |
 | `KBotTextBox` | [TextField/KBotTextBox.md](TextField/KBotTextBox.md) | General text box, own border + own scrollbars |
 | `KBotTextField` | [TextField/KBotTextField.md](TextField/KBotTextField.md) | Single-line form field with password eye |

@@ -70,19 +70,24 @@ Partial Class OrdEditForm
         ' 
         ' dtpData
         ' 
-        dtpData.ButtonPadding = New Padding(0, 0, 4, 0)
-        dtpData.ButtonWidth = 16
+        dtpData.BackColor = SystemColors.Window
+        dtpData.ButtonPadding = New Padding(1)
+        dtpData.ButtonWidth = 18
+        dtpData.CornerRadius = 4
         dtpData.Dock = DockStyle.Fill
         dtpData.FocusBorderColor = SystemColors.Highlight
         dtpData.ForeColor = SystemColors.ActiveCaptionText
         dtpData.GlyphColor = SystemColors.ActiveCaptionText
-        dtpData.GlyphSize = 16
-        dtpData.Location = New Point(694, 4)
-        dtpData.Margin = New Padding(4, 4, 4, 10)
+        dtpData.GlyphImage = My.Resources.Resources.calendar
+        dtpData.GlyphRightMargin = 4
+        dtpData.GlyphSize = 20
+        dtpData.Location = New Point(690, 0)
+        dtpData.Margin = New Padding(0)
         dtpData.Name = "dtpData"
-        dtpData.Size = New Size(181, 26)
+        dtpData.PlaceholderText = "_"
+        dtpData.Size = New Size(189, 40)
         dtpData.TabIndex = 5
-        dtpData.TabStop = False
+        dtpData.TextPadding = New Padding(0)
         tips.SetToolTipHeader(dtpData, "Data ordonanțării")
         tips.SetToolTipText(dtpData, "Data care se scrie în document." & vbLf & "Plățile propuse rămân cele ale zilei pentru care s-a generat ordonanțarea.")
         ' 
@@ -105,7 +110,7 @@ Partial Class OrdEditForm
         ' btnSalveaza
         ' 
         btnSalveaza.Dock = DockStyle.Fill
-        btnSalveaza.Location = New Point(1012, 4)
+        btnSalveaza.Location = New Point(1353, 4)
         btnSalveaza.Margin = New Padding(0, 4, 10, 4)
         btnSalveaza.Name = "btnSalveaza"
         btnSalveaza.Padding = New Padding(14, 7, 14, 7)
@@ -154,7 +159,7 @@ Partial Class OrdEditForm
         tlyMain.RowStyles.Add(New RowStyle())
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyMain.RowStyles.Add(New RowStyle())
-        tlyMain.Size = New Size(1298, 996)
+        tlyMain.Size = New Size(1639, 996)
         tlyMain.TabIndex = 0
         ' 
         ' capBar
@@ -170,7 +175,7 @@ Partial Class OrdEditForm
         capBar.ShowTextScaleSlider = False
         capBar.ShowThemeEditor = False
         capBar.ShowThemeOptions = False
-        capBar.Size = New Size(1298, 57)
+        capBar.Size = New Size(1639, 57)
         capBar.TabIndex = 0
         capBar.TabStop = False
         capBar.Text = "K-BOT — Ordonanțare de plată"
@@ -181,7 +186,7 @@ Partial Class OrdEditForm
         busyBar.Location = New Point(0, 57)
         busyBar.Margin = New Padding(0)
         busyBar.Name = "busyBar"
-        busyBar.Size = New Size(1298, 7)
+        busyBar.Size = New Size(1639, 7)
         busyBar.TabIndex = 1
         busyBar.TabStop = False
         ' 
@@ -214,7 +219,7 @@ Partial Class OrdEditForm
         tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
         tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
         tlyAntet.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyAntet.Size = New Size(1290, 87)
+        tlyAntet.Size = New Size(1631, 87)
         tlyAntet.TabIndex = 2
         ' 
         ' lblCodCaption
@@ -289,10 +294,11 @@ Partial Class OrdEditForm
         lblTotal.Location = New Point(1001, 0)
         lblTotal.Margin = New Padding(4, 0, 4, 0)
         lblTotal.Name = "lblTotal"
-        lblTotal.Size = New Size(285, 40)
+        lblTotal.Size = New Size(626, 40)
         lblTotal.TabIndex = 7
         lblTotal.Text = "0,00"
         lblTotal.TextAlign = ContentAlignment.MiddleLeft
+        lblTotal.Visible = False
         ' 
         ' lblObiectCaption
         ' 
@@ -316,7 +322,7 @@ Partial Class OrdEditForm
         lblObiect.Location = New Point(154, 40)
         lblObiect.Margin = New Padding(4, 0, 4, 0)
         lblObiect.Name = "lblObiect"
-        lblObiect.Size = New Size(1132, 40)
+        lblObiect.Size = New Size(1473, 40)
         lblObiect.TabIndex = 9
         lblObiect.TextAlign = ContentAlignment.MiddleLeft
         ' 
@@ -327,7 +333,7 @@ Partial Class OrdEditForm
         ntfMesaj.Location = New Point(4, 212)
         ntfMesaj.Margin = New Padding(4, 5, 4, 5)
         ntfMesaj.Name = "ntfMesaj"
-        ntfMesaj.Size = New Size(1290, 10)
+        ntfMesaj.Size = New Size(1631, 10)
         ntfMesaj.TabIndex = 3
         ntfMesaj.TabStop = False
         ntfMesaj.Visible = False
@@ -358,7 +364,7 @@ Partial Class OrdEditForm
         navSub.Name = "navSub"
         navSub.Orientation = KBotNavOrientation.Horizontal
         navSub.SelectedKey = Nothing
-        navSub.Size = New Size(1298, 39)
+        navSub.Size = New Size(1639, 39)
         navSub.TabIndex = 4
         ' 
         ' pnlPages
@@ -368,7 +374,8 @@ Partial Class OrdEditForm
         pnlPages.Location = New Point(0, 227)
         pnlPages.Margin = New Padding(0)
         pnlPages.Name = "pnlPages"
-        pnlPages.Size = New Size(1298, 711)
+        pnlPages.Padding = New Padding(0, 10, 0, 0)
+        pnlPages.Size = New Size(1639, 711)
         pnlPages.TabIndex = 5
         ' 
         ' tlySubsol
@@ -385,7 +392,7 @@ Partial Class OrdEditForm
         tlySubsol.Name = "tlySubsol"
         tlySubsol.RowCount = 1
         tlySubsol.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlySubsol.Size = New Size(1298, 58)
+        tlySubsol.Size = New Size(1639, 58)
         tlySubsol.TabIndex = 6
         ' 
         ' OrdEditForm

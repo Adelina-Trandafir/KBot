@@ -80,10 +80,10 @@ Partial Class OrdBeneficiariPage
         ' 
         chkClsf.AutoSize = True
         chkClsf.Dock = DockStyle.Fill
-        chkClsf.Location = New Point(9, 7)
-        chkClsf.Margin = New Padding(9, 7, 9, 3)
+        chkClsf.Location = New Point(10, 8)
+        chkClsf.Margin = New Padding(10, 8, 10, 3)
         chkClsf.Name = "chkClsf"
-        chkClsf.Size = New Size(313, 40)
+        chkClsf.Size = New Size(347, 46)
         chkClsf.TabIndex = 0
         chkClsf.Text = "Grupează pe clasificații"
         tips.SetToolTipHeader(chkClsf, "Grupează pe clasificații")
@@ -96,10 +96,10 @@ Partial Class OrdBeneficiariPage
         cboCodPartener.DrawMode = DrawMode.OwnerDrawFixed
         cboCodPartener.DropDownStyle = ComboBoxStyle.DropDownList
         cboCodPartener.FlatStyle = FlatStyle.Flat
-        cboCodPartener.Location = New Point(624, 5)
-        cboCodPartener.Margin = New Padding(4, 5, 4, 5)
+        cboCodPartener.Location = New Point(694, 6)
+        cboCodPartener.Margin = New Padding(4, 6, 4, 6)
         cboCodPartener.Name = "cboCodPartener"
-        cboCodPartener.Size = New Size(290, 32)
+        cboCodPartener.Size = New Size(324, 32)
         cboCodPartener.TabIndex = 3
         tips.SetToolTipHeader(cboCodPartener, "Partener")
         tips.SetToolTipText(cboCodPartener, "Partenerul din nomenclator care corespunde beneficiarului." & vbLf & "Completează codul fiscal și contul, dacă sunt goale.")
@@ -232,11 +232,11 @@ Partial Class OrdBeneficiariPage
         grdLinii.FrozenColumnCount = 1
         grdLinii.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grdLinii.HeaderSeparatorColor = SystemColors.ActiveBorder
-        grdLinii.Location = New Point(4, 145)
-        grdLinii.Margin = New Padding(4, 5, 4, 5)
+        grdLinii.Location = New Point(4, 165)
+        grdLinii.Margin = New Padding(4, 6, 4, 6)
         grdLinii.Name = "grdLinii"
         grdLinii.RowHeight = 22
-        grdLinii.Size = New Size(918, 538)
+        grdLinii.Size = New Size(1022, 611)
         grdLinii.TabIndex = 1
         ' 
         ' split
@@ -249,17 +249,17 @@ Partial Class OrdBeneficiariPage
         ' split.Panel1
         ' 
         split.Panel1.Controls.Add(tlyStanga)
-        split.Panel1.Padding = New Padding(10, 0, 0, 10)
+        split.Panel1.Padding = New Padding(11, 0, 0, 11)
         split.Panel1MinSize = 180
         ' 
         ' split.Panel2
         ' 
         split.Panel2.Controls.Add(tlyDreapta)
-        split.Panel2.Padding = New Padding(0, 0, 10, 10)
+        split.Panel2.Padding = New Padding(0, 0, 11, 11)
         split.Panel2MinSize = 380
-        split.Size = New Size(1286, 698)
-        split.SplitterDistance = 341
-        split.SplitterWidth = 9
+        split.Size = New Size(1429, 793)
+        split.SplitterDistance = 378
+        split.SplitterWidth = 10
         split.TabIndex = 0
         ' 
         ' tlyStanga
@@ -269,13 +269,13 @@ Partial Class OrdBeneficiariPage
         tlyStanga.Controls.Add(grdStanga, 0, 1)
         tlyStanga.Controls.Add(chkClsf, 0, 0)
         tlyStanga.Dock = DockStyle.Fill
-        tlyStanga.Location = New Point(10, 0)
+        tlyStanga.Location = New Point(11, 0)
         tlyStanga.Margin = New Padding(0)
         tlyStanga.Name = "tlyStanga"
         tlyStanga.RowCount = 2
-        tlyStanga.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
+        tlyStanga.RowStyles.Add(New RowStyle(SizeType.Absolute, 57F))
         tlyStanga.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyStanga.Size = New Size(331, 688)
+        tlyStanga.Size = New Size(367, 782)
         tlyStanga.TabIndex = 0
         ' 
         ' grdStanga
@@ -301,12 +301,12 @@ Partial Class OrdBeneficiariPage
         grdStanga.EnableGrouping = True
         grdStanga.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         grdStanga.HeaderSeparatorColor = SystemColors.ActiveBorder
-        grdStanga.Location = New Point(0, 50)
+        grdStanga.Location = New Point(0, 57)
         grdStanga.Margin = New Padding(0)
         grdStanga.Name = "grdStanga"
         grdStanga.ReadOnlyGrid = True
         grdStanga.RowHeight = 22
-        grdStanga.Size = New Size(331, 638)
+        grdStanga.Size = New Size(367, 725)
         grdStanga.TabIndex = 1
         ' 
         ' tlyDreapta
@@ -320,17 +320,17 @@ Partial Class OrdBeneficiariPage
         tlyDreapta.Margin = New Padding(0)
         tlyDreapta.Name = "tlyDreapta"
         tlyDreapta.RowCount = 2
-        tlyDreapta.RowStyles.Add(New RowStyle(SizeType.Absolute, 140F))
+        tlyDreapta.RowStyles.Add(New RowStyle(SizeType.Absolute, 159F))
         tlyDreapta.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyDreapta.Size = New Size(926, 688)
+        tlyDreapta.Size = New Size(1030, 782)
         tlyDreapta.TabIndex = 0
         ' 
         ' tlyAntetBene
         ' 
         tlyAntetBene.ColumnCount = 4
-        tlyAntetBene.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 143F))
+        tlyAntetBene.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 159F))
         tlyAntetBene.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 55F))
-        tlyAntetBene.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 114F))
+        tlyAntetBene.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 127F))
         tlyAntetBene.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 45F))
         tlyAntetBene.Controls.Add(lblDenBene, 0, 0)
         tlyAntetBene.Controls.Add(txtDenBene, 1, 0)
@@ -343,14 +343,14 @@ Partial Class OrdBeneficiariPage
         tlyAntetBene.Controls.Add(lblBanca, 0, 2)
         tlyAntetBene.Controls.Add(txtBanca, 1, 2)
         tlyAntetBene.Dock = DockStyle.Fill
-        tlyAntetBene.Location = New Point(4, 5)
-        tlyAntetBene.Margin = New Padding(4, 5, 4, 5)
+        tlyAntetBene.Location = New Point(4, 6)
+        tlyAntetBene.Margin = New Padding(4, 6, 4, 6)
         tlyAntetBene.Name = "tlyAntetBene"
         tlyAntetBene.RowCount = 3
-        tlyAntetBene.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
-        tlyAntetBene.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
-        tlyAntetBene.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
-        tlyAntetBene.Size = New Size(918, 130)
+        tlyAntetBene.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
+        tlyAntetBene.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
+        tlyAntetBene.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
+        tlyAntetBene.Size = New Size(1022, 147)
         tlyAntetBene.TabIndex = 0
         ' 
         ' lblDenBene
@@ -360,7 +360,7 @@ Partial Class OrdBeneficiariPage
         lblDenBene.Location = New Point(4, 0)
         lblDenBene.Margin = New Padding(4, 0, 4, 0)
         lblDenBene.Name = "lblDenBene"
-        lblDenBene.Size = New Size(135, 42)
+        lblDenBene.Size = New Size(151, 48)
         lblDenBene.TabIndex = 0
         lblDenBene.Text = "Beneficiar"
         lblDenBene.TextAlign = ContentAlignment.MiddleLeft
@@ -369,24 +369,21 @@ Partial Class OrdBeneficiariPage
         ' 
         txtDenBene.BackColor = Color.Transparent
         txtDenBene.Dock = DockStyle.Fill
-        txtDenBene.Location = New Point(147, 5)
-        txtDenBene.Margin = New Padding(4, 5, 4, 5)
-        txtDenBene.MaxLength = 32767
+        txtDenBene.Location = New Point(163, 6)
+        txtDenBene.Margin = New Padding(4, 6, 4, 6)
         txtDenBene.Name = "txtDenBene"
-        txtDenBene.PlaceholderText = ""
-        txtDenBene.Size = New Size(355, 32)
+        txtDenBene.Size = New Size(396, 36)
         txtDenBene.TabIndex = 1
-        txtDenBene.TabStop = False
-        txtDenBene.UseSystemPasswordChar = False
+        txtDenBene.TextPadding = New Padding(12, 0, 12, 0)
         ' 
         ' lblCodPartener
         ' 
         lblCodPartener.AutoSize = True
         lblCodPartener.Dock = DockStyle.Fill
-        lblCodPartener.Location = New Point(510, 0)
+        lblCodPartener.Location = New Point(567, 0)
         lblCodPartener.Margin = New Padding(4, 0, 4, 0)
         lblCodPartener.Name = "lblCodPartener"
-        lblCodPartener.Size = New Size(106, 42)
+        lblCodPartener.Size = New Size(119, 48)
         lblCodPartener.TabIndex = 2
         lblCodPartener.Text = "Partener"
         lblCodPartener.TextAlign = ContentAlignment.MiddleLeft
@@ -395,10 +392,10 @@ Partial Class OrdBeneficiariPage
         ' 
         lblCodFiscal.AutoSize = True
         lblCodFiscal.Dock = DockStyle.Fill
-        lblCodFiscal.Location = New Point(4, 42)
+        lblCodFiscal.Location = New Point(4, 48)
         lblCodFiscal.Margin = New Padding(4, 0, 4, 0)
         lblCodFiscal.Name = "lblCodFiscal"
-        lblCodFiscal.Size = New Size(135, 42)
+        lblCodFiscal.Size = New Size(151, 48)
         lblCodFiscal.TabIndex = 4
         lblCodFiscal.Text = "Cod fiscal"
         lblCodFiscal.TextAlign = ContentAlignment.MiddleLeft
@@ -407,24 +404,21 @@ Partial Class OrdBeneficiariPage
         ' 
         txtCodFiscal.BackColor = Color.Transparent
         txtCodFiscal.Dock = DockStyle.Fill
-        txtCodFiscal.Location = New Point(147, 47)
-        txtCodFiscal.Margin = New Padding(4, 5, 4, 5)
-        txtCodFiscal.MaxLength = 32767
+        txtCodFiscal.Location = New Point(163, 54)
+        txtCodFiscal.Margin = New Padding(4, 6, 4, 6)
         txtCodFiscal.Name = "txtCodFiscal"
-        txtCodFiscal.PlaceholderText = ""
-        txtCodFiscal.Size = New Size(355, 32)
+        txtCodFiscal.Size = New Size(396, 36)
         txtCodFiscal.TabIndex = 5
-        txtCodFiscal.TabStop = False
-        txtCodFiscal.UseSystemPasswordChar = False
+        txtCodFiscal.TextPadding = New Padding(12, 0, 12, 0)
         ' 
         ' lblContIban
         ' 
         lblContIban.AutoSize = True
         lblContIban.Dock = DockStyle.Fill
-        lblContIban.Location = New Point(510, 42)
+        lblContIban.Location = New Point(567, 48)
         lblContIban.Margin = New Padding(4, 0, 4, 0)
         lblContIban.Name = "lblContIban"
-        lblContIban.Size = New Size(106, 42)
+        lblContIban.Size = New Size(119, 48)
         lblContIban.TabIndex = 6
         lblContIban.Text = "Cont IBAN"
         lblContIban.TextAlign = ContentAlignment.MiddleLeft
@@ -433,24 +427,21 @@ Partial Class OrdBeneficiariPage
         ' 
         txtContIban.BackColor = Color.Transparent
         txtContIban.Dock = DockStyle.Fill
-        txtContIban.Location = New Point(624, 47)
-        txtContIban.Margin = New Padding(4, 5, 4, 5)
-        txtContIban.MaxLength = 32767
+        txtContIban.Location = New Point(694, 54)
+        txtContIban.Margin = New Padding(4, 6, 4, 6)
         txtContIban.Name = "txtContIban"
-        txtContIban.PlaceholderText = ""
-        txtContIban.Size = New Size(290, 32)
+        txtContIban.Size = New Size(324, 36)
         txtContIban.TabIndex = 7
-        txtContIban.TabStop = False
-        txtContIban.UseSystemPasswordChar = False
+        txtContIban.TextPadding = New Padding(12, 0, 12, 0)
         ' 
         ' lblBanca
         ' 
         lblBanca.AutoSize = True
         lblBanca.Dock = DockStyle.Fill
-        lblBanca.Location = New Point(4, 84)
+        lblBanca.Location = New Point(4, 96)
         lblBanca.Margin = New Padding(4, 0, 4, 0)
         lblBanca.Name = "lblBanca"
-        lblBanca.Size = New Size(135, 46)
+        lblBanca.Size = New Size(151, 51)
         lblBanca.TabIndex = 8
         lblBanca.Text = "Banca"
         lblBanca.TextAlign = ContentAlignment.MiddleLeft
@@ -460,24 +451,21 @@ Partial Class OrdBeneficiariPage
         txtBanca.BackColor = Color.Transparent
         tlyAntetBene.SetColumnSpan(txtBanca, 3)
         txtBanca.Dock = DockStyle.Fill
-        txtBanca.Location = New Point(147, 89)
-        txtBanca.Margin = New Padding(4, 5, 4, 5)
-        txtBanca.MaxLength = 32767
+        txtBanca.Location = New Point(163, 102)
+        txtBanca.Margin = New Padding(4, 6, 4, 6)
         txtBanca.Name = "txtBanca"
-        txtBanca.PlaceholderText = ""
-        txtBanca.Size = New Size(767, 36)
+        txtBanca.Size = New Size(855, 39)
         txtBanca.TabIndex = 9
-        txtBanca.TabStop = False
-        txtBanca.UseSystemPasswordChar = False
+        txtBanca.TextPadding = New Padding(12, 0, 12, 0)
         ' 
         ' OrdBeneficiariPage
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
+        AutoScaleDimensions = New SizeF(10F, 25F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(split)
-        Margin = New Padding(4, 5, 4, 5)
+        Margin = New Padding(4, 6, 4, 6)
         Name = "OrdBeneficiariPage"
-        Size = New Size(1286, 698)
+        Size = New Size(1429, 793)
         CType(grdLinii, ComponentModel.ISupportInitialize).EndInit()
         split.Panel1.ResumeLayout(False)
         split.Panel2.ResumeLayout(False)

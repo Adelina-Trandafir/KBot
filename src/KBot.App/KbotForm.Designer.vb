@@ -120,11 +120,11 @@ Partial Class KbotForm
         cboAn.DrawMode = DrawMode.OwnerDrawFixed
         cboAn.DropDownStyle = ComboBoxStyle.DropDownList
         cboAn.FlatStyle = FlatStyle.Flat
-        cboAn.ItemHeight = 28
+        cboAn.ItemHeight = 31
         cboAn.Location = New Point(320, 7)
         cboAn.Margin = New Padding(0, 7, 0, 0)
         cboAn.Name = "cboAn"
-        cboAn.Size = New Size(126, 34)
+        cboAn.Size = New Size(126, 37)
         cboAn.TabIndex = 3
         tips.SetToolTipHeader(cboAn, "An")
         tips.SetToolTipText(cboAn, "Anul de lucru." & vbLf & "Schimbarea lui reîncarcă arborele și toate ecranele.")
@@ -135,11 +135,11 @@ Partial Class KbotForm
         cboSs.DrawMode = DrawMode.OwnerDrawFixed
         cboSs.DropDownStyle = ComboBoxStyle.DropDownList
         cboSs.FlatStyle = FlatStyle.Flat
-        cboSs.ItemHeight = 28
+        cboSs.ItemHeight = 31
         cboSs.Location = New Point(589, 7)
         cboSs.Margin = New Padding(0, 7, 10, 0)
         cboSs.Name = "cboSs"
-        cboSs.Size = New Size(104, 34)
+        cboSs.Size = New Size(104, 37)
         cboSs.TabIndex = 5
         tips.SetToolTipHeader(cboSs, "Subperioadă")
         tips.SetToolTipText(cboSs, "Subperioada (SS) din anul ales." & vbLf & "Ultima aleasă se ține minte pentru data viitoare.")

@@ -4,16 +4,47 @@ The date field: a text box you can type into, with a drawn calendar button on th
 drops a [KBotCalendar](KBotCalendar.md). Same rounded outline, same input colours and same focus
 ring as the calendar it opens, so the two read as one control.
 
-`Calendar/KBotDatePicker.vb` · `Control` · sealed · Toolbox · `IThemedControl`
-Conventions: [C1..C9](../CONTROLS.md). Status: slice 0050, **never seen on screen**.
+`Calendar/KBotDatePicker.vb` + `Calendar/KBotDatePicker.Designer.vb` · `UserControl` · sealed ·
+Toolbox · `IThemedControl`. The inner box is `Calendar/KBotDateEditBox.vb`.
+Conventions: [C1..C9](../CONTROLS.md). Status: slice 0050; rendered with `DrawToBitmap` on
+2026-09-17 (four heights, 9 pt and 16 pt, filled and empty) — not yet opened in Visual Studio.
 
 ## Why not `DateTimePicker` — it cannot be made taller
 The stock control overrides its own bounds and snaps `Height` back to the system combo height, so
-it can never line up with a taller row or a stretched form. This one is a plain `Control` that
-never touches its own bounds: **set `Height` to anything, or dock it, and it fills what it was
-given** — the outline stretches, the single line of text stays vertically centred, and the button
-grows with the field. On top of that the stock control is a native window whose face keeps the
-system colours on a dark scheme.
+it can never line up with a taller row or a stretched form. This one never touches its own
+bounds: **set `Height` to anything, or dock it, and it fills what it was given** — the outline
+stretches, the edit box inside stretches with it, its one line of text stays vertically centred,
+and the button grows with the field. On top of that the stock control is a native window whose
+face keeps the system colours on a dark scheme.
+
+## Authored in the designer
+It is a `UserControl` whose inner box `txtDate` is declared in `KBotDatePicker.Designer.vb`, so
+the control opens in the Visual Studio designer and the box can be seen and edited there. The
+bounds written in that file are what the design surface shows at 96 dpi; at runtime
+`PositionInner` places the box on every layout pass from the published metrics (`Padding`,
+`TextPadding`, `ButtonWidth`, `BorderWidth`), scaled to the DPI in force — the box always fills
+the strip `TextPadding` leaves it, whatever was dragged on the surface.
+
+`AutoScaleMode` stays `Inherit` and the class inherits `UserControl` directly, not
+`KBotThemedUserControl`: that base assigns a font in its constructor, which would cut the field
+off from the ambient font the scheme writes on the form. The four UserControl properties that
+would break the contract — `BorderStyle`, `AutoSize`, `AutoSizeMode`, `AutoScaleMode` — are
+hidden from the grid; `TabStop` is shadowed with default `False` (the KBotTextField pattern), so
+hosts stop printing it.
+
+## The box that can be tall: `KBotDateEditBox`
+A single-line `TextBox` cannot be made taller than its font — with `AutoSize` off it takes the
+height but draws the text at the top, and the Windows edit control ignores `EM_SETRECT` unless it
+is multiline. So the box IS multiline (that is what frees its height, in the designer and at
+runtime) and its formatting rectangle is moved, after every `WM_SIZE`, handle creation and font
+change, to a one-line band centred in the client area: that is where the text and the caret live.
+Enter is suppressed by the picker before it reaches the edit control, so no second line ever
+appears; `Multiline` is hidden and refuses `False`.
+
+The placeholder is painted by the box itself, in the same band, in `ForeColor` pulled halfway
+towards `BackColor`: the framework would draw its own `PlaceholderText` at the TOP of a multiline
+box, a line above the typed text. The base property is shadowed and kept empty. The hint is also
+drawn on `WM_PRINT`/`WM_PRINTCLIENT`, so `DrawToBitmap` shows it too.
 
 ## API
 - `Value: Date` — **time of day included**; clamped to `MinDate`/`MaxDate`; writing it always
@@ -22,6 +53,10 @@ system colours on a dark scheme.
 - `PlaceholderText`, `Format = "dd.MM.yyyy"`, `CultureName = "ro-RO"`, `MinDate`, `MaxDate`.
 - `ReadOnlyText: Boolean` — typing off; the whole face then opens the calendar.
 - `ShowDropDownButton`, `ButtonWidth`, `GlyphSize`, `BorderWidth`, `CornerRadius` (logical px).
+- `GlyphImage: Image` — a picture on the button instead of the drawn calendar (`Nothing` = drawn;
+  fitted into the `GlyphSize` square, faded while disabled). `GlyphRightMargin` (logical px) slides
+  the whole button strip, hover fill included, away from the right edge; `ButtonPadding` only moves
+  the glyph inside the strip.
 - The air, all four sides each, all in the designer: `Padding` (inherited, inside the outline),
   `TextPadding` (around the text), `ButtonPadding` (around the glyph) — see **The air** below.
 - Passed to the drop-down: `ShowToday`, `ShowWeekNumbers`, `FirstDayOfWeek`;
@@ -94,9 +129,11 @@ button disappear; reset it to get the theme back.
   as a whole). Up/Down nudge whole DAYS even when the format shows a time — there is no
   hour-under-the-caret stepping.
 - No checkbox in the face: emptiness is `AllowEmpty` + `HasValue`, not a `Checked` box.
-- The text is single line and left aligned; there is no `TextAlign` and no multi-line.
+- The text is one line, left aligned; there is no `TextAlign`. The box is technically multiline
+  (that is what lets it be tall), but Enter never reaches it and the band holds one line.
 - The frame is not selectable — Tab lands on the inner `TextBox` (the KBotTextField pattern), so
   a host wanting `KeyDown` should hook `InnerTextBox`.
 - Setting a `Format` the framework rejects is logged and falls back to `dd.MM.yyyy` rather than
   leaving the field blank.
-- **Never opened in the Visual Studio designer and never rendered on screen.**
+- **Not yet opened in the Visual Studio designer.** Rendered only through `DrawToBitmap`; the
+  drop-down, typing and focus behaviour have not been exercised on screen.

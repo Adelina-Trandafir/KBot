@@ -18,10 +18,10 @@ Partial Class ReceptiiView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(ReceptiiView))
         Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim TreeNodeDefinition2 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim TreeNodeDefinition3 As TreeNodeDefinition = New TreeNodeDefinition()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(ReceptiiView))
         Dim KBotDataColumn1 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
@@ -51,8 +51,8 @@ Partial Class ReceptiiView
         ' split.Panel2
         ' 
         split.Panel2.Controls.Add(grid)
-        split.Size = New Size(986, 568)
-        split.SplitterDistance = 318
+        split.Size = New Size(1179, 568)
+        split.SplitterDistance = 380
         split.SplitterWidth = 9
         split.TabIndex = 0
         ' 
@@ -74,7 +74,7 @@ Partial Class ReceptiiView
         tree.FooterHeight = 30
         tree.FooterIconSize = New Size(18, 18)
         tree.FooterLeftIcon = My.Resources.Resources.database
-        tree.FooterLeftIconTooltip = "Reface din istoric instantaneele și liniile de recepție care lipsesc." & vbLf & "Întâi numără ce lipsește și întreabă; scrie doar după confirmare." & vbLf & "Anteturile refăcute apar în dosarul «Instantanee neașezate» și se așază din editorul de legături."
+        tree.FooterLeftIconTooltip = resources.GetString("tree.FooterLeftIconTooltip")
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
         tree.FooterRightIconTooltip = "Reîmprospătează recepțiile din FOREXE (întreabă întâi pe care)."
         tree.FooterSeparatorColor = Color.Gainsboro
@@ -90,13 +90,14 @@ Partial Class ReceptiiView
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
         tree.HeaderRightIcon = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
-        tree.HeaderRightIconTooltip = "Legăturile recepțiilor" & vbLf & "Deschide editorul de legături recepție ▸ instantaneu de istoric." & vbLf & "Se poate deschide oricând, nu doar după o descărcare. Legăturile pe care s-a construit o ordonanțare sau peste care s-au calculat plăți rămân vizibile, dar nu se mai pot muta."
+        tree.HeaderRightIconTooltip = resources.GetString("tree.HeaderRightIconTooltip")
         tree.HeaderSearchIconTooltip = "Caută în arbore." & vbLf & "ESC golește căutarea și închide banda."
         tree.HeaderSeparatorColor = Color.Gainsboro
         tree.HeaderSeparatorWidth = 2
         tree.HeaderVisible = True
         tree.Indent = 8
         tree.LeftIconSize = New Size(14, 14)
+        tree.LeftTextWidth = 100
         tree.Location = New Point(0, 0)
         tree.Margin = New Padding(4, 5, 4, 5)
         tree.MinimumCollapsedWidth = 120
@@ -134,9 +135,8 @@ Partial Class ReceptiiView
         tree.PaddingIconGap = 10
         tree.PaddingTreeStart = 8
         tree.RightIconSize = New Size(14, 14)
-        tree.LeftTextWidth = 100
         tree.SearchIn = AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
-        tree.Size = New Size(318, 568)
+        tree.Size = New Size(380, 568)
         tree.TabIndex = 0
         ' 
         ' image_list
@@ -227,7 +227,7 @@ Partial Class ReceptiiView
         grid.ReadOnlyGrid = True
         grid.RowHeight = 22
         grid.ShrinkColumnsToFit = False
-        grid.Size = New Size(659, 568)
+        grid.Size = New Size(790, 568)
         grid.TabIndex = 0
         ' 
         ' lblEmpty
@@ -237,7 +237,7 @@ Partial Class ReceptiiView
         lblEmpty.Location = New Point(0, 0)
         lblEmpty.Margin = New Padding(4, 0, 4, 0)
         lblEmpty.Name = "lblEmpty"
-        lblEmpty.Size = New Size(986, 568)
+        lblEmpty.Size = New Size(1179, 568)
         lblEmpty.TabIndex = 1
         lblEmpty.Text = "Selectați un angajament din arbore."
         lblEmpty.TextAlign = ContentAlignment.MiddleCenter
@@ -250,7 +250,7 @@ Partial Class ReceptiiView
         Controls.Add(lblEmpty)
         Margin = New Padding(4, 5, 4, 5)
         Name = "ReceptiiView"
-        Size = New Size(986, 568)
+        Size = New Size(1179, 568)
         split.Panel1.ResumeLayout(False)
         split.Panel2.ResumeLayout(False)
         CType(split, ComponentModel.ISupportInitialize).EndInit()
