@@ -84,6 +84,16 @@ Public Interface IApiClient
     Function GetReceptiiAsync(cod As String, ct As CancellationToken) As Task(Of ReceptiiInfo)
 
     ''' <summary>
+    ''' Reface instantaneele (FX_Receptii_H) și liniile (FX_Receptii) care lipsesc față de
+    ''' FX_Istoric, după IDH (POST /api/forexe/receptii/refacere, felia 0062).
+    ''' <paramref name="apply"/> = False este o PROBĂ: serverul numără ce ar scrie și nu scrie
+    ''' nimic; True scrie, într-o singură tranzacție. Aceeași plimbare în ambele moduri.
+    ''' Hard-fail (Throw) la non-2xx; fără retry pe 401 (curge spre WithReauth).
+    ''' </summary>
+    Function RebuildReceptiiAsync(cod As String, apply As Boolean, ct As CancellationToken) _
+        As Task(Of ReceptiiRebuildResult)
+
+    ''' <summary>
     ''' Aduce plățile unui angajament (GET /api/forexe/plati): un rând per înregistrare
     ''' FX_Plati, cu extrasul bancar (FX_Extrase) purtat pe rând. Baza NU se trimite:
     ''' serverul o ia din sesiune. Un cod necunoscut întoarce un PlatiInfo cu zero rânduri

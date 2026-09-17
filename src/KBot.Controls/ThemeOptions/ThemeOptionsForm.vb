@@ -289,11 +289,35 @@ Public Class ThemeOptionsForm
             trkTextScale.Minimum = CInt(Math.Round(AppScaling.MinTextScale * 100))
             trkTextScale.Maximum = CInt(Math.Round(AppScaling.MaxTextScale * 100))
             trkTextScale.Value = ProcenteDinScara(AppScaling.TextScale)
+
+            ' The base of a themed form (slice 0062): not a scheme property, for the same reason
+            ' scaling is not -- it belongs to the operator's screen, not to a colour scheme.
+            rdoFitScaled.Checked = (ThemeFormFit.Baseline = FormFitBaseline.Scaled)
+            rdoFitRaw.Checked = (ThemeFormFit.Baseline = FormFitBaseline.DesignerRaw)
         Finally
             _suppress = False
         End Try
         ActualizeazaDisponibilitateaFactorului()
         ActualizeazaEticheta()
+    End Sub
+
+    ' Both radios route here; only the one that became checked writes (the other fires too, unchecked).
+    Private Sub rdoFitBaseline_CheckedChanged(sender As Object, e As EventArgs) _
+            Handles rdoFitScaled.CheckedChanged, rdoFitRaw.CheckedChanged
+        Try
+            If _suppress Then Return
+            Dim rdo As RadioButton = TryCast(sender, RadioButton)
+            If rdo Is Nothing OrElse Not rdo.Checked Then Return
+            Dim wanted As FormFitBaseline = If(rdo Is rdoFitRaw, FormFitBaseline.DesignerRaw, FormFitBaseline.Scaled)
+            If wanted = ThemeFormFit.Baseline Then Return
+            ThemeFormFit.Baseline = wanted
+            SetStatus(If(wanted = FormFitBaseline.Scaled,
+                         "Baza ferestrelor urmează scalarea.",
+                         "Baza ferestrelor rămâne cea din designer."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("ThemeOptionsForm.rdoFitBaseline_CheckedChanged", ex)
+            ShowError("Schimbarea bazei ferestrelor a eșuat.", ex)
+        End Try
     End Sub
 
     ' Procentele întregi, ținute în interiorul șinei — o valoare din fișier ușor în afara

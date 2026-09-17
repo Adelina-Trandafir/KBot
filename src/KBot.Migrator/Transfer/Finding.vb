@@ -136,6 +136,27 @@ Public NotInheritable Class Finding
     Public ReadOnly Property Message As String
     Public ReadOnly Property RowCount As Integer
 
+    ''' <summary>
+    ''' Everything behind the message that does not fit a grid cell: the paths that were
+    ''' checked and whether each exists, the values compared, the query that measured.
+    ''' Empty when the message already says it all.
+    ''' </summary>
+    ''' <remarks>
+    ''' Written to the findings log (<see cref="FindingLog"/>) and shown in the detail
+    ''' pane, never in the grid. It exists because a sentence like "has no FOREXE file"
+    ''' is the END of a diagnosis, and the operator needs its beginning - which path was
+    ''' tried, resolved from what - to say whether the registry or the disk is wrong.
+    ''' Settable, so a producer attaches it after construction without every one of the
+    ''' forty <c>report.Add</c> calls growing a parameter.
+    ''' </remarks>
+    Public Property Detail As String = String.Empty
+
+    ''' <summary>Attaches <see cref="Detail"/> and returns the same finding, for one-line use.</summary>
+    Public Function WithDetail(detail As String) As Finding
+        Me.Detail = If(detail, String.Empty)
+        Return Me
+    End Function
+
     Public ReadOnly Property IsBlocking As Boolean
         Get
             Return Severity = FindingClass.Blocant

@@ -30,8 +30,53 @@ Public NotInheritable Class MigratorSettings
     <JsonPropertyName("registryPath")>
     Public Property RegistryPath As String = String.Empty
 
+    ''' <summary>
+    ''' Where the SQL journal goes. Empty means the default, <c>&lt;AppDir&gt;\Logs\Migrare</c>,
+    ''' resolved on the machine that runs - see <see cref="ResolvedJournalFolder"/>.
+    ''' </summary>
+    ''' <remarks>
+    ''' Stored EMPTY for the default rather than as the absolute path it resolves to. This
+    ''' file lives next to the executable and travels with it, and an absolute
+    ''' <c>C:\Users\&lt;dev&gt;\...\bin\Debug\...\Logs\Migrare</c> written on one machine is,
+    ''' on the operator's, a folder under <c>C:\Users</c> that a normal account cannot
+    ''' create: the transfer then dies at its first line with «Access to the path ... is
+    ''' denied», after a verification that passed. 14.09.2026.
+    ''' </remarks>
     <JsonPropertyName("journalFolder")>
     Public Property JournalFolder As String = String.Empty
+
+    ''' <summary>The default journal folder on THIS machine.</summary>
+    Public Shared Function DefaultJournalFolder() As String
+        Return LogPaths.Combine("Migrare")
+    End Function
+
+    ''' <summary>
+    ''' The journal folder a run should use: the default when nothing is stored, a
+    ''' relative value resolved against the executable's folder, and a stored absolute
+    ''' path only while it is USABLE here - it or its parent exists. An absolute path
+    ''' whose parent is not on this machine is one carried over from another and is
+    ''' replaced by the default, with <paramref name="note"/> saying so.
+    ''' </summary>
+    Public Function ResolvedJournalFolder(ByRef note As String) As String
+        note = String.Empty
+        Dim stored = If(JournalFolder, String.Empty).Trim()
+        If stored.Length = 0 Then Return DefaultJournalFolder()
+
+        Try
+            Dim full = If(Path.IsPathRooted(stored), stored, Path.Combine(AppContext.BaseDirectory, stored))
+            full = Path.GetFullPath(full)
+            If Directory.Exists(full) OrElse Directory.Exists(Path.GetDirectoryName(full)) Then Return full
+
+            note = $"Dosarul jurnalului din setări, «{full}», nu există pe acest calculator " &
+                   $"(nici părintele lui). Se folosește «{DefaultJournalFolder()}»."
+            Return DefaultJournalFolder()
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorSettings.ResolvedJournalFolder", ex)
+            note = $"Dosarul jurnalului din setări, «{stored}», nu este o cale validă: {ex.Message} " &
+                   $"Se folosește «{DefaultJournalFolder()}»."
+            Return DefaultJournalFolder()
+        End Try
+    End Function
 
     <JsonPropertyName("host")>
     Public Property Host As String = "localhost"
@@ -108,7 +153,7 @@ Public NotInheritable Class MigratorSettings
     Private Shared Function Defaults() As MigratorSettings
         Dim settings As New MigratorSettings()
         settings.RegistryPath = "C:\AVACONT\cale.accdb"
-        settings.JournalFolder = LogPaths.Combine("Migrare")
+        ' JournalFolder stays empty: the default is resolved per machine, never stored.
         Return settings
     End Function
 

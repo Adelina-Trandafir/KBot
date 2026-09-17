@@ -177,7 +177,9 @@ End Class
 ' are nullable: NrCrt can be missing on an indicator/header, and idr is null for an antet
 ' with no lines (LEFT JOIN branch).
 Public NotInheritable Class GetReceptieRow
-    Public Property idrr As Integer
+    ' Nullable since slice 0062: an antet with H.IDRR NULL (unplaced snapshot) comes with
+    ' idrr null. The domain model reads it as 0 = «no receptie», as AsociereInfo does.
+    Public Property idrr As Integer?
     Public Property nrcrt_r As Integer?
     Public Property data_r As Date?
     Public Property suma_antet As Double
@@ -186,12 +188,16 @@ Public NotInheritable Class GetReceptieRow
     ' F28: receptie reconstituita (F26), si daca gruparea ei a putut fi VERIFICATA sau nu.
     Public Property reconstituit As Boolean
     Public Property reconstituit_nesigur As Boolean
-    Public Property idrh As Integer
+    ' Slice 0065: the receptie's own description (R.Descriere), for the tooltip of its node.
+    Public Property descriere_r As String
+    Public Property idrh As Integer?
     Public Property nrcrt_h As Integer?
     Public Property data_h As Date?
     Public Property total As Double
     Public Property difh As Double
     Public Property sters_h As Boolean
+    ' Slice 0065: F21 deletion row -- the last snapshot of a deleted receptie, no lines.
+    Public Property este_stergere As Boolean
     Public Property descriere_h As String
     Public Property idr As Integer?
     Public Property id_clsf As Integer
@@ -206,6 +212,28 @@ End Class
 Public NotInheritable Class GetReceptiePlata
     Public Property data_plata As Date?
     Public Property suma As Double
+End Class
+
+' Wire DTOs for POST /api/forexe/receptii/refacere (slice 0062). Property names ARE the
+' JSON keys (ASCII on both sides of the wire).
+Public NotInheritable Class PostReceptiiRefacereRequest
+    Public Property cod As String
+    Public Property aplica As Boolean
+End Class
+
+Public NotInheritable Class PostReceptiiRefacereResponse
+    Public Property cod As String
+    Public Property aplicat As Boolean
+    Public Property antete_lipsa As Integer
+    Public Property linii_lipsa As Integer
+    Public Property linii_orfane As Integer
+    Public Property antete_scrise As Integer
+    Public Property linii_scrise As Integer
+    Public Property linii_relegate As Integer
+    Public Property linii_fara_antet As Integer
+    Public Property linii_sarite As Integer
+    Public Property receptii_recalculate As New List(Of Integer)()
+    Public Property avertismente As New List(Of String)()
 End Class
 
 ' Wire DTOs for GET /api/forexe/plati (vederea Plăți, slice 0017).

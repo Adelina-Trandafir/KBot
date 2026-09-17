@@ -57,6 +57,11 @@ Friend NotInheritable Class AsociereFakeApi
         Return Task.FromResult(New AsociereRezultat() With {.CodAngajament = cod, .Amprenta = "dupa"})
     End Function
 
+    Public Function RebuildReceptiiAsync(cod As String, apply As Boolean, ct As CancellationToken) _
+        As Task(Of ReceptiiRebuildResult) Implements IApiClient.RebuildReceptiiAsync
+        Throw New NotSupportedException()
+    End Function
+
     ' Editorul de legaturi NU cere receptiile: are ruta lui. Daca ajunge aici, ceva s-a legat
     ' gresit, si e mai bine sa se vada decat sa se intoarca o lista goala.
     Public Function GetReceptiiAsync(cod As String, ct As CancellationToken) _

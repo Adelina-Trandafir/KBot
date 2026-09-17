@@ -153,6 +153,16 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized resource of type System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property Everaldo_Crystal_Clear_Action_cancel_128_resized() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("Everaldo-Crystal-Clear-Action-cancel.128_resized", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property Everaldo_Crystal_Clear_App_xmag_search_48() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("Everaldo-Crystal-Clear-App-xmag-search.48", resourceCulture)

@@ -17,6 +17,13 @@ Partial Public Class AdvancedTreeControl
     Private _searchClearBtn As Label = Nothing
     Private Const CLEAR_BTN_WIDTH As Integer = 18
 
+    ' The visible search box. A single-line TextBox is autosized by Windows to its font and
+    ' draws its text at the top, so the box the operator sees is this host panel: fixed height
+    ' (SearchBoxHeightPx), box colour, and the real TextBox sits inside it vertically centered
+    ' (clipped when the font is taller than the box). Single-line is kept on purpose: the Win32
+    ' cue banner does not work on multiline edit controls.
+    Private _searchBoxHost As Panel = Nothing
+
     ' ── Win32 CueBanner — placeholder nativ, fără race conditions ────────────
     Private Const EM_SETCUEBANNER As Integer = &H1501
 
@@ -93,6 +100,17 @@ Partial Public Class AdvancedTreeControl
         _searchBarHeight = Math.Max(_itemHeight + SearchBarRowAirPx, Me.Font.Height + SearchBarFontAirPx)
     End Sub
 
+    ''' <summary>
+    ''' Inaltimea casetei de cautare, in pixeli de ecran. NU e autosize dupa font: cu iconita de
+    ''' cautare in antet, caseta are EXACT inaltimea iconitei desenate, orice alta setare ar
+    ''' spune; fara iconita, fontul casetei plus aerul din SearchBoxAirPx. Aceeasi formula pe
+    ''' banda desenata (design-time) si pe TextBox-ul real, ca trecerea sa nu mute nimic.
+    ''' </summary>
+    Private Function SearchBoxHeightPx(boxFont As Font) As Integer
+        If _headerSearchIcon IsNot Nothing Then Return Math.Max(1, _headerIconSize.Height)
+        Return boxFont.Height + SearchBoxAirPx
+    End Function
+
     ''' <summary>Re-dimensionează banda după o schimbare de font / _itemHeight (no-op dacă e închisă).</summary>
     Friend Sub RefreshSearchBarMetrics()
         If Not _isSearchMode Then Return
@@ -146,7 +164,7 @@ Partial Public Class AdvancedTreeControl
 
         Dim clearW As Integer = If(_searchClearButton, SearchClearButtonWidth, 0)
         Dim boxW As Integer = Math.Max(SearchBoxMinWidthPx, Me.Width - x - PaddingTreeEndPx - clearW)
-        Dim boxH As Integer = boxFont.Height + SearchBoxAirPx
+        Dim boxH As Integer = SearchBoxHeightPx(boxFont)
         Dim boxRect As New Rectangle(x, barTop + (_searchBarHeight - boxH) \ 2, boxW, boxH)
         Dim boxBack As Color = SearchBoxBackColor
 
@@ -204,6 +222,14 @@ Partial Public Class AdvancedTreeControl
         End If
 
         If _searchTextBox Is Nothing Then
+            _searchBoxHost = New Panel() With {
+                .Margin = Padding.Empty,
+                .Padding = Padding.Empty,
+                .TabStop = False,
+                .Visible = False
+            }
+            ' A click on the air above/below the text still lands in the box.
+            AddHandler _searchBoxHost.Click, AddressOf OnSearchBoxHostClick
             _searchTextBox = New TextBox() With {
             .BorderStyle = BorderStyle.None,
             .Font = Me.Font,
@@ -212,7 +238,8 @@ Partial Public Class AdvancedTreeControl
         }
             AddHandler _searchTextBox.TextChanged, AddressOf OnSearchTextChanged
             AddHandler _searchTextBox.KeyDown, AddressOf OnSearchTextBoxKeyDown
-            Me.Controls.Add(_searchTextBox)
+            _searchBoxHost.Controls.Add(_searchTextBox)
+            Me.Controls.Add(_searchBoxHost)
         End If
         UpdateSearchTextBoxFont()
         _searchTextBox.Text = ""
@@ -236,12 +263,22 @@ Partial Public Class AdvancedTreeControl
         RestyleSearchChildren()
 
         PositionSearchTextBox()
-        _searchTextBox.Visible = True
-        _searchTextBox.BringToFront()
+        _searchBoxHost.Visible = True
+        _searchBoxHost.BringToFront()
 
         ApplySearchPlaceholder()
-        Me.Invalidate()
+        ' The band pushes the node area down: the scrollbar must move with it, or it keeps its
+        ' old top and the band's controls land on it.
+        RefreshScrollVisibility()
         If focusTree AndAlso Me.IsHandleCreated Then Me.Focus()
+    End Sub
+
+    Private Sub OnSearchBoxHostClick(sender As Object, e As EventArgs)
+        Try
+            If _searchTextBox IsNot Nothing AndAlso _searchTextBox.IsHandleCreated Then _searchTextBox.Focus()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.OnSearchBoxHostClick", ex)
+        End Try
     End Sub
 
     ' Creează (o singură dată) și re-stilizează butonul ✕. Separat de OpenSearchMode ca
@@ -330,7 +367,7 @@ Partial Public Class AdvancedTreeControl
     ''' <summary>Închidere necondiționată (SearchShow = False).</summary>
     Friend Sub ForceCloseSearchMode()
         If _searchClearBtn IsNot Nothing Then _searchClearBtn.Visible = False
-        If _searchTextBox IsNot Nothing Then _searchTextBox.Visible = False
+        If _searchBoxHost IsNot Nothing Then _searchBoxHost.Visible = False
         If _searchBarLabel IsNot Nothing Then _searchBarLabel.Visible = False
         _filterActive = False
         _filterSet.Clear()
@@ -338,15 +375,18 @@ Partial Public Class AdvancedTreeControl
         _searchPlaceholderActive = False
         _searchResults.Clear()
         _searchBarHeight = 0    ' ← reset explicit — headerOff din OnPaint/GetItemY devine corect imediat
-        Me.Invalidate()
+        RefreshScrollVisibility()   ' the node area grew back: scrollbar top + height follow (it invalidates)
     End Sub
 
     Private Sub PositionSearchTextBox()
-        If _searchTextBox Is Nothing Then Return
+        If _searchTextBox Is Nothing OrElse _searchBoxHost Is Nothing Then Return
         'Dim scrollW As Integer = ScrollBarWidth 'If(_vScroll.Visible, _vScroll.Width, 0)
         ' barTop vizual REAL = poziție fixă + compensare scroll
         Dim barTop As Integer = If(_headerVisible, _headerHeight, 0)
-        Dim tbTop As Integer = barTop + (_searchBarHeight - _searchTextBox.PreferredHeight) \ 2
+        ' Fixed box height (icon height when there is a search icon) — never the TextBox's own
+        ' autosize; that one is centered INSIDE the box below.
+        Dim boxH As Integer = SearchBoxHeightPx(_searchTextBox.Font)
+        Dim tbTop As Integer = barTop + (_searchBarHeight - boxH) \ 2
 
         ' Spațiu rezervat pentru ✕ — DOAR când butonul e vizibil
         Dim clearW As Integer = If(_searchClearButton AndAlso
@@ -366,17 +406,20 @@ Partial Public Class AdvancedTreeControl
             tbWidth = Math.Max(SearchBoxMinWidthPx, Me.Width - PaddingTreeStartPx - PaddingTreeEndPx - clearW)
         End If
 
-        _searchTextBox.Left = tbLeft
-        _searchTextBox.Top = tbTop
-        _searchTextBox.Width = tbWidth
-        _searchTextBox.Height = _searchTextBox.PreferredHeight
+        _searchBoxHost.SetBounds(tbLeft, tbTop, tbWidth, boxH)
 
-        ' ── Poziționare ✕ imediat la dreapta textbox-ului, aceeași înălțime ──
+        ' The single-line TextBox keeps its natural height and is centered in the box, so the
+        ' text (already TextAlign=Center) ends up centered both ways. Taller than the box →
+        ' clipped equally top and bottom, still centered.
+        Dim tbH As Integer = _searchTextBox.PreferredHeight
+        _searchTextBox.SetBounds(0, (boxH - tbH) \ 2, tbWidth, tbH)
+
+        ' ── Poziționare ✕ imediat la dreapta casetei, aceeași înălțime ──
         If _searchClearButton AndAlso _searchClearBtn IsNot Nothing AndAlso _searchClearBtn.Visible Then
-            _searchClearBtn.Left = _searchTextBox.Right
-            _searchClearBtn.Top = _searchTextBox.Top - SearchClearButtonPaddingPx.Top
+            _searchClearBtn.Left = _searchBoxHost.Right
+            _searchClearBtn.Top = _searchBoxHost.Top - SearchClearButtonPaddingPx.Top
             _searchClearBtn.Width = SearchClearButtonWidth
-            _searchClearBtn.Height = _searchTextBox.Height +
+            _searchClearBtn.Height = _searchBoxHost.Height +
                                      SearchClearButtonPaddingPx.Vertical
         End If
     End Sub
@@ -555,13 +598,11 @@ Partial Public Class AdvancedTreeControl
         If _searchClearBtn.Visible = shouldShow Then Return
         _searchClearBtn.Visible = shouldShow
 
-        ' Poziționare doar a butonului × — TextBox rămâne neatins
-        If shouldShow AndAlso _searchTextBox IsNot Nothing Then
-            _searchClearBtn.Left = _searchTextBox.Right - SearchClearButtonWidth
-            _searchClearBtn.Top = _searchTextBox.Top - SearchClearButtonPaddingPx.Top
-            _searchClearBtn.Width = SearchClearButtonWidth
-            _searchClearBtn.Height = _searchTextBox.Height + SearchClearButtonPaddingPx.Vertical
-            _searchClearBtn.BackColor = _searchTextBox.BackColor
+        ' Only runs on the empty <-> non-empty transition: the box gives up / takes back the
+        ' button's width and the button sits at its right edge, at the box's exact height.
+        PositionSearchTextBox()
+        If shouldShow Then
+            ApplyClearButtonHoverColor()
             _searchClearBtn.BringToFront()
         End If
     End Sub

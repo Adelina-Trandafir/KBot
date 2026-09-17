@@ -19,10 +19,10 @@ Partial Class ForexeFooterView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New Global.KBot.Controls.KBotToolTip(components)
+        tips = New KBot.Controls.KBotToolTip(components)
         btnExtinde = New Button()
         btnIstoric = New Button()
-        lblConexiune = New Label()
+        btnConectare = New Button()
         pbProgress = New Controls.KBotProgressBar()
         lblCert = New Label()
         lblStatus = New Label()
@@ -32,9 +32,10 @@ Partial Class ForexeFooterView
         ' 
         btnExtinde.Dock = DockStyle.Right
         btnExtinde.FlatStyle = FlatStyle.Flat
-        btnExtinde.Location = New Point(783, 0)
+        btnExtinde.Location = New Point(1174, 0)
+        btnExtinde.Margin = New Padding(4, 5, 4, 5)
         btnExtinde.Name = "btnExtinde"
-        btnExtinde.Size = New Size(37, 31)
+        btnExtinde.Size = New Size(56, 49)
         btnExtinde.TabIndex = 6
         btnExtinde.Text = "▲"
         tips.SetToolTipHeader(btnExtinde, "Consolă")
@@ -45,41 +46,54 @@ Partial Class ForexeFooterView
         ' 
         btnIstoric.Dock = DockStyle.Right
         btnIstoric.FlatStyle = FlatStyle.Flat
-        btnIstoric.Location = New Point(745, 0)
+        btnIstoric.Location = New Point(1117, 0)
+        btnIstoric.Margin = New Padding(4, 5, 4, 5)
         btnIstoric.Name = "btnIstoric"
-        btnIstoric.Size = New Size(38, 31)
+        btnIstoric.Size = New Size(57, 49)
         btnIstoric.TabIndex = 5
         btnIstoric.Text = "⟲"
         tips.SetToolTipHeader(btnIstoric, "Istoric")
         tips.SetToolTipText(btnIstoric, "Istoricul acțiunilor duse prin FOREXE în această sesiune," & vbLf & "cu rezultatul și jurnalul fiecăreia.")
         btnIstoric.UseVisualStyleBackColor = True
         ' 
-        ' lblConexiune
+        ' btnConectare
         ' 
-        lblConexiune.Dock = DockStyle.Left
-        lblConexiune.Location = New Point(0, 0)
-        lblConexiune.Name = "lblConexiune"
-        lblConexiune.Size = New Size(106, 31)
-        lblConexiune.TabIndex = 1
-        lblConexiune.Text = "● Neconectat"
-        lblConexiune.TextAlign = ContentAlignment.MiddleCenter
+        btnConectare.BackgroundImageLayout = ImageLayout.None
+        btnConectare.Dock = DockStyle.Left
+        btnConectare.FlatAppearance.BorderColor = SystemColors.ActiveBorder
+        btnConectare.FlatStyle = FlatStyle.Flat
+        btnConectare.Font = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        btnConectare.Image = My.Resources.Resources.FX_24
+        btnConectare.ImageAlign = ContentAlignment.MiddleLeft
+        btnConectare.Location = New Point(0, 0)
+        btnConectare.Margin = New Padding(0)
+        btnConectare.Name = "btnConectare"
+        btnConectare.Padding = New Padding(17, 0, 0, 0)
+        btnConectare.Size = New Size(219, 49)
+        btnConectare.TabIndex = 1
+        btnConectare.Text = "Conectare"
+        tips.SetToolTipHeader(btnConectare, "Conectare FOREXE")
+        tips.SetToolTipText(btnConectare, "Pornește sesiunea către portalul FOREXE." & vbLf & "Se cere certificatul o singură dată pe sesiune.")
+        btnConectare.UseVisualStyleBackColor = True
         ' 
         ' pbProgress
         ' 
         pbProgress.Dock = DockStyle.Left
-        pbProgress.Location = New Point(106, 0)
-        pbProgress.Margin = New Padding(4, 4, 4, 4)
+        pbProgress.Location = New Point(219, 0)
+        pbProgress.Margin = New Padding(6)
         pbProgress.Name = "pbProgress"
-        pbProgress.Size = New Size(142, 31)
+        pbProgress.Size = New Size(213, 49)
         pbProgress.TabIndex = 2
         ' 
         ' lblCert
         ' 
         lblCert.AutoEllipsis = True
         lblCert.Dock = DockStyle.Left
-        lblCert.Location = New Point(248, 0)
+        lblCert.Location = New Point(432, 0)
+        lblCert.Margin = New Padding(4, 0, 4, 0)
         lblCert.Name = "lblCert"
-        lblCert.Size = New Size(164, 31)
+        lblCert.Padding = New Padding(10, 0, 0, 0)
+        lblCert.Size = New Size(321, 49)
         lblCert.TabIndex = 3
         lblCert.Text = "Certificat: —"
         lblCert.TextAlign = ContentAlignment.MiddleLeft
@@ -88,33 +102,35 @@ Partial Class ForexeFooterView
         ' 
         lblStatus.AutoEllipsis = True
         lblStatus.Dock = DockStyle.Fill
-        lblStatus.Location = New Point(412, 0)
+        lblStatus.Location = New Point(753, 0)
+        lblStatus.Margin = New Padding(4, 0, 4, 0)
         lblStatus.Name = "lblStatus"
-        lblStatus.Size = New Size(333, 31)
+        lblStatus.Size = New Size(364, 49)
         lblStatus.TabIndex = 4
         lblStatus.Text = "În așteptare..."
         lblStatus.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' ForexeFooterView
         ' 
-        AutoScaleDimensions = New SizeF(6F, 14F)
+        AutoScaleDimensions = New SizeF(9F, 22F)
         AutoScaleMode = AutoScaleMode.Font
         Controls.Add(lblStatus)
         Controls.Add(btnIstoric)
         Controls.Add(btnExtinde)
         Controls.Add(lblCert)
         Controls.Add(pbProgress)
-        Controls.Add(lblConexiune)
+        Controls.Add(btnConectare)
+        Margin = New Padding(4, 5, 4, 5)
         Name = "ForexeFooterView"
-        Size = New Size(820, 31)
+        Size = New Size(1230, 49)
         ResumeLayout(False)
     End Sub
 
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
-    Friend WithEvents lblConexiune As Label
     Friend WithEvents pbProgress As Global.KBot.Controls.KBotProgressBar
     Friend WithEvents lblCert As Label
     Friend WithEvents lblStatus As Label
     Friend WithEvents btnIstoric As Button
     Friend WithEvents btnExtinde As Button
+    Friend WithEvents btnConectare As Button
 End Class

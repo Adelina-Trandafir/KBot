@@ -41,7 +41,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from utils import asociere_log as journal
 
-from .prelucrare_helpers import fx_receptii_h_get_hash_ident
+from .prelucrare_helpers import SNAPSHOT_COUNTS_SQL, fx_receptii_h_get_hash_ident
 
 logger = logging.getLogger(__name__)
 
@@ -141,11 +141,16 @@ _RHR_SQL = (
 # ramase din rulari anterioare. Selectia e `IDRR IS NULL AND Sters = 0`, NU «inserate de
 # rularea curenta». Marcajul Access `OrigIDRH IS NULL` nu are echivalent aici si nu se
 # reconstruieste.
+#
+# F32: un antet fara nicio linie (si care nu e stergere) NU e instantaneu -- e o eroare a
+# vechii aplicatii Access -- si nu intra nici in tabloul de hotarat, nici in context.
+# `SNAPSHOT_COUNTS_SQL` il lasa afara pe TOATE citirile din fisierul asta.
 _INSTANTANEE_SQL = (
-    "SELECT IDRH, IDH, DataH, Total, Descriere, EsteStergere "
-    "FROM FX_Receptii_H "
-    "WHERE CodAngajament = %s AND IDRR IS NULL AND COALESCE(Sters, 0) = 0 "
-    "ORDER BY DataH, IDRH"
+    "SELECT H.IDRH, H.IDH, H.DataH, H.Total, H.Descriere, H.EsteStergere "
+    "FROM FX_Receptii_H H "
+    "WHERE H.CodAngajament = %s AND H.IDRR IS NULL AND COALESCE(H.Sters, 0) = 0 "
+    "  AND " + SNAPSHOT_COUNTS_SQL + " "
+    "ORDER BY H.DataH, H.IDRH"
 )
 _LINII_SQL = (
     "SELECT IDRH, CodIndicator, CodAI, CodSSI, IdClsf, Valoare "
@@ -154,9 +159,10 @@ _LINII_SQL = (
 # Toate instantaneele angajamentului, pentru CONTEXTUL propunerii. Aceleasi coloane ca in
 # routes/forexe/asociere.py, ca sa poata calatori in aceeasi forma pe fir.
 _TOATE_INSTANTANEELE_SQL = (
-    "SELECT IDRH, IDRR, IDH, DataH, Total, Descriere, TipReceptie, "
-    "       COALESCE(Sters, 0) AS Sters, COALESCE(EsteStergere, 0) AS EsteStergere "
-    "FROM FX_Receptii_H WHERE CodAngajament = %s ORDER BY DataH, IDRH"
+    "SELECT H.IDRH, H.IDRR, H.IDH, H.DataH, H.Total, H.Descriere, H.TipReceptie, "
+    "       COALESCE(H.Sters, 0) AS Sters, COALESCE(H.EsteStergere, 0) AS EsteStergere "
+    "FROM FX_Receptii_H H WHERE H.CodAngajament = %s AND " + SNAPSHOT_COUNTS_SQL + " "
+    "ORDER BY H.DataH, H.IDRH"
 )
 
 
@@ -1150,9 +1156,19 @@ _H_IGNORA_SQL = (
 )
 _R_MARCHEAZA_STEARSA_SQL = "UPDATE FX_Receptii_R SET Sters = 1 WHERE IDRR = %s"
 _H_TIP_SQL = "UPDATE FX_Receptii_H SET TipReceptie = %s, HASH = %s WHERE IDRH = %s"
+# F32: un antet gol nu e in lant, deci nu poate fi «ultimul» si nu ia `Final`.
 _H_LANT_SQL = (
-    "SELECT IDRH, DataH, Descriere, TipReceptie, CodAngajament FROM FX_Receptii_H "
-    "WHERE IDRR = %s ORDER BY DataH, IDRH"
+    "SELECT H.IDRH, H.DataH, H.Descriere, H.TipReceptie, H.CodAngajament "
+    "FROM FX_Receptii_H H "
+    "WHERE H.IDRR = %s AND " + SNAPSHOT_COUNTS_SQL + " ORDER BY H.DataH, H.IDRH"
+)
+# Membrii deja asezati ai unui lant atins de deciziile de acum (F15 / F16 judeca lantul
+# intreg). Acelasi filtru F32: un antet gol in mijlocul lantului ar avea multimea de
+# indicatori VIDA, si F16 («multimile doar cresc») ar cadea pe un rand pe care operatorul
+# nu il vede si nu l-a atins.
+_H_MEMBRI_LANT_SQL = (
+    "SELECT H.IDRH, H.DataH, H.Total, H.EsteStergere FROM FX_Receptii_H H "
+    "WHERE H.IDRR = %s AND " + SNAPSHOT_COUNTS_SQL
 )
 
 
@@ -1229,9 +1245,7 @@ def aplica_decizii(cursor, cod: str, decizii: List[dict], instantanee: List[dict
     # Instantaneele DEJA asociate ale acelorasi receptii fac parte din lant si ele --
     # F15 si F16 se refera la lantul intreg, nu doar la ce se adauga acum.
     for idrr in list(lanturi):
-        cursor.execute(
-            "SELECT H.IDRH, H.DataH, H.Total, H.EsteStergere FROM FX_Receptii_H H "
-            "WHERE H.IDRR = %s", (idrr,))
+        cursor.execute(_H_MEMBRI_LANT_SQL, (idrr,))
         for r in cursor.fetchall():
             idrh = int(r["IDRH"])
             if any(x["idrh"] == idrh for x in lanturi[idrr]):

@@ -305,6 +305,22 @@ Public Module AppScaling
         End Try
     End Function
 
+    ''' <summary>
+    ''' Only the SCREEN part of the scale (the mode: DPI, fixed 1, or the manual factor) --
+    ''' without the operator's text size. <see cref="ThemeFormFit"/> needs it at capture time: a
+    ''' form's client size right after <c>InitializeComponent</c> already carries the DPI (the
+    ''' platform autoscale ran), but not yet the text size, which the theme applies later in
+    ''' <c>OnLoad</c>. 1 at design time and for a control without a handle.
+    ''' </summary>
+    Public Function ScreenFactorFor(ctrl As Control) As Single
+        Try
+            If ctrl IsNot Nothing AndAlso KBotDesignTime.IsDesignTime(ctrl) Then Return 1.0F
+            Return EcranFactor(ctrl)
+        Catch
+            Return 1.0F
+        End Try
+    End Function
+
     ' Doar partea de ECRAN a scării — fără mărirea cerută de operator.
     Private Function EcranFactor(ctrl As Control) As Single
         Select Case _mode

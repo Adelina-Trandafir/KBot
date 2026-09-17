@@ -405,17 +405,35 @@ class FakeConnection:
         self.closed = False
 
     def rows_for(self, sql):
+        if sql.startswith("UPDATE "):
+            return []
         if "(SELECT COUNT(*) FROM FX_Istoric" in sql:
             return [dict(_AMPRENTA)]
+        if sql.startswith("SELECT IDRR FROM FX_Receptii_R"):
+            return []                                   # F28: nothing reconstituted
+        if sql.startswith("SELECT H.IDRH, H.DataH, H.Descriere"):
+            # `_H_LANT_SQL` (recalculeaza_final): the chain of one reception.
+            return [{"IDRH": i["IDRH"], "DataH": i["DataH"],
+                     "Descriere": i["Descriere"], "TipReceptie": i["TipReceptie"],
+                     "CodAngajament": COD}
+                    for i in self.tabele.get("instantanee", []) if i["IDRR"]]
         if sql.startswith("SELECT IDRR, CodIndicator"):
             return self.tabele.get("rhr", [])
         if sql.startswith("SELECT IDRR, NRCRT"):
             return self.tabele.get("receptii", [])
-        if sql.startswith("SELECT H.IDRH"):
+        # F32: `_INSTANTANEE_SQL` carries the alias `H` too, so the two `SELECT H.IDRH`
+        # readers are told apart by the blocking counters only `_BLOCAJE_SQL` has.
+        if sql.startswith("SELECT H.IDRH") and " AS ord_h" in sql:
             return self.tabele.get("blocaje", [])
+        if sql.startswith("SELECT H.IDRH, H.Total FROM FX_Receptii_H H"):
+            # `_DIF_H_SQL` (step 4d, slice 0065): the chain of one reception, by IDRR.
+            return [{"IDRH": i["IDRH"], "Total": i["Total"]}
+                    for i in self.tabele.get("instantanee", []) if i["IDRR"]]
+        if sql.startswith("SELECT R.IDR, R.CodAI"):
+            return []                                   # `_DIF_R_SQL`: no line DIFs here
         if sql.startswith("SELECT IDRH, CodIndicator"):
             return self.tabele.get("linii", [])
-        if sql.startswith("SELECT IDRH, IDRR"):
+        if sql.startswith("SELECT H.IDRH, H.IDRR"):
             return self.tabele.get("instantanee", [])
         if sql.startswith("SELECT Data_plata"):
             return self.tabele.get("plati", [])
@@ -525,6 +543,84 @@ def test_un_instantaneu_blocat_ajunge_la_client_cu_motive(client, auth_headers,
     inst5 = date["instantanee"][0]
     assert inst5["blocat"] is True
     assert "01.03.2026" in inst5["motive"][0]
+
+
+def test_editor_snapshots_carry_the_rand_istoric_alias(conn):
+    """
+    The 17.09.2026 defect: EVERY save died with «'rand_istoric'». The editor's snapshots
+    carried `idrh` only, while `valideaza_plasarile` (the chain journal, slice 0058) and
+    `materializeaza_reconstituite` key on `rand_istoric`. The alias is set at read time,
+    exactly as on the commands.
+    """
+    out = A.citeste_instantanee(conn.cursor(dictionary=True), COD, {})
+    assert [(i["idrh"], i["rand_istoric"]) for i in out] == [(5, 5)]
+    # The very path that died: the chain check over the editor's snapshots.
+    receptii = {3: rec(3, "2026-02-10 00:00:00", 1000)}
+    avertismente = []
+    P.valideaza_plasarile({3: out}, receptii, f15_ca_avertisment=True,
+                          avertismente=avertismente)
+    assert avertismente == []
+
+
+def test_a_whole_save_passes_the_chain_check(client, auth_headers, monkeypatch):
+    """
+    End to end: a chain of TWO snapshots, one gets detached. The survivor goes through
+    `valideaza_plasarile` -- exactly the line that died with «'rand_istoric'» -- and the
+    request reaches commit, not a 500. (With a single snapshot the resulting chain is
+    empty and the defect did not show.)
+    """
+    c = baza_cu_un_lant()
+    c.tabele["instantanee"].append(
+        {"IDRH": 6, "IDRR": 3, "IDH": 10, "DataH": dt("2026-02-12 00:00:00"),
+         "Total": 1000.0, "Descriere": "Plata fact.", "TipReceptie": "",
+         "Sters": 0, "EsteStergere": 0})
+    c.tabele["linii"].append(
+        {"IDRH": 6, "CodIndicator": "AAB", "CodAI": COD + "-AAB", "CodSSI": "",
+         "IdClsf": 1, "Valoare": 1000.0})
+    monkeypatch.setattr(A, "get_kbot_connection", lambda db=None: c)
+
+    amp = P.amprenta(c.cursor(dictionary=True), COD)
+    c.executed.clear()
+    corp = _json.dumps({"cod": COD, "amprenta": amp,
+                        "comenzi": [cmd(5, A.ACTIUNE_DESPRINS)]})
+    r = client.post(URL, data=corp, headers=auth_headers)
+    assert r.status_code == 200, r.get_data(as_text=True)
+    assert r.get_json()["scrise"]["desprins"] == 1
+    assert c.committed and not c.rolled_back
+    assert any(sql.startswith("UPDATE FX_Receptii_H SET IDRR = NULL")
+               for sql, _ in c.executed)
+
+
+def test_a_save_recomputes_dif_on_every_touched_chain(client, auth_headers, monkeypatch):
+    """
+    Slice 0065: the always-available editor runs step 4d on each chain it touched. Before,
+    a snapshot placed here kept `DIFH`/`DIF` NULL, and `SUM(DIF)` (ordonantare, Receptii
+    label) silently lost the reception -- the operator's 25.410 instead of 29.645.
+    """
+    c = baza_cu_un_lant()
+    c.tabele["instantanee"].append(
+        {"IDRH": 6, "IDRR": None, "IDH": 10, "DataH": dt("2026-02-12 00:00:00"),
+         "Total": 1500.0, "Descriere": "Plata fact.", "TipReceptie": "",
+         "Sters": 0, "EsteStergere": 0})
+    c.tabele["linii"].append(
+        {"IDRH": 6, "CodIndicator": "AAB", "CodAI": COD + "-AAB", "CodSSI": "",
+         "IdClsf": 1, "Valoare": 1500.0})
+    monkeypatch.setattr(A, "get_kbot_connection", lambda db=None: c)
+
+    amp = P.amprenta(c.cursor(dictionary=True), COD)
+    c.executed.clear()
+    corp = _json.dumps({"cod": COD, "amprenta": amp,
+                        "comenzi": [cmd(6, A.ACTIUNE_ASOCIAT, idrr=3)]})
+    r = client.post(URL, data=corp, headers=auth_headers)
+    assert r.status_code == 200, r.get_data(as_text=True)
+
+    difh = [p for sql, p in c.executed
+            if sql.startswith("UPDATE FX_Receptii_H SET DIFH")]
+    # The fake answers `_DIF_H_SQL` with the snapshots ALREADY on the chain (IDRH 5); the
+    # point is that the recomputation ran for IDRR 3 at all, with the first snapshot's
+    # DIFH = its own Total.
+    assert difh == [(1000.0, 0.0, 5)]
+    assert c.committed
 
 
 def test_post_pe_o_legatura_blocata_da_409(client, auth_headers, monkeypatch):

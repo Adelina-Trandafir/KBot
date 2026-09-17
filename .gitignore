@@ -510,3 +510,6 @@ schema_diff/
 /IconReader.exe
 /Surse/VBA_DDF_INFO
 /Surse/Prelucrare-Excel-Razvan
+
+# Inno Setup optional payload (bundled .NET runtime installer, ~60 MB) - not committed
+tools/KBotInstaller/prereq/

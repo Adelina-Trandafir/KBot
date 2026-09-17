@@ -26,6 +26,11 @@ Public NotInheritable Class LoginForm
     Private _collapsedHeight As Integer
     Private _expandedHeight As Integer
 
+    ' Who logged in last on this Windows account (slice 0063): user name pre-filled at
+    ' Load, unit pre-selected at phase 2. Read once; written only after a login SUCCEEDED.
+    ' Never holds the password -- see LastLoginStore.
+    Private _lastLogin As LastLoginStore
+
     Public Sub New(authApi As IAuthApi, session As SessionContext)
         ArgumentNullException.ThrowIfNull(authApi)
         ArgumentNullException.ThrowIfNull(session)
@@ -42,8 +47,14 @@ Public NotInheritable Class LoginForm
             capBar.IconImage = My.Resources.kbot_64
 #If DEBUG Then
             txtUser.Text = "scavatarsoft@gmail.com"
-            txtPass.Text = "Par0laN0u@"
+            txtPass.Text = "Moisil2026!"
 #End If
+            ' The last user who got in wins over the Debug default: that is the name the
+            ' operator would otherwise type again. Load never throws (missing file = nothing).
+            _lastLogin = LastLoginStore.Load()
+            If Not String.IsNullOrWhiteSpace(_lastLogin.Username) Then
+                txtUser.Text = _lastLogin.Username
+            End If
             Me.KeyPreview = True                ' Escape inchide (nu mai exista X nativ)
             CaptureFormHeights()
             ShowPhaseCreds()
@@ -139,7 +150,13 @@ Public NotInheritable Class LoginForm
             Me.Height = _collapsedHeight
             Me.AcceptButton = btnContinue
             ClearError()
-            txtUser.FocusInput()
+            ' With the name already filled in (remembered or typed before «Inapoi»), the
+            ' next thing to type is the password.
+            If String.IsNullOrWhiteSpace(txtUser.Text) Then
+                txtUser.FocusInput()
+            Else
+                txtPass.FocusInput()
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("LoginForm.ShowPhaseCreds", ex)
             Throw
@@ -206,6 +223,18 @@ Public NotInheritable Class LoginForm
             cboUnit.DisplayMember = NameOf(UnitInfo.Display)   ' arata NumeUnitate
             cboUnit.ValueMember = NameOf(UnitInfo.DC)          ' valoarea din spate e DC
             cboUnit.SelectedIndex = 0    ' caz mono-unitate: pre-selectat, un click de confirmat
+            ' Same user as last time and their unit is still on the list -> pre-select it.
+            ' Another user, or a unit gone from the list -> the first one, as before.
+            If _lastLogin IsNot Nothing AndAlso
+               String.Equals(_lastLogin.Username, user, StringComparison.OrdinalIgnoreCase) AndAlso
+               Not String.IsNullOrWhiteSpace(_lastLogin.UnitDc) Then
+                For i As Integer = 0 To units.Count - 1
+                    If String.Equals(units(i).DC, _lastLogin.UnitDc, StringComparison.Ordinal) Then
+                        cboUnit.SelectedIndex = i
+                        Exit For
+                    End If
+                Next
+            End If
 
             ShowPhaseUnit()
 
@@ -236,6 +265,14 @@ Public NotInheritable Class LoginForm
 
             _session.Populate(_username, result.Token, result.SessionContext)   ' OperatorName = e-mail
             _session.LastSS = result.LastSS                                     ' hint pentru MainForm
+
+            ' Remember the pair for next time -- only now, after the server said yes.
+            Try
+                LastLoginStore.Save(_username, selected.DC)
+            Catch ex As Exception
+                ' Already logged by Save. A convenience file that cannot be written is not a
+                ' reason to fail a login that just succeeded.
+            End Try
 
             DialogResult = DialogResult.OK
             Close()

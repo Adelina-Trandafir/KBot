@@ -269,10 +269,17 @@ Public Class AsociereForm
                 _stergere(i.Idrh) = i.Stergere
             Next
 
+            ' Felia 0065: instantaneele cu valoarea unei recepții UNICE se așază singure pe ea,
+            ' ca mutări locale nesalvate — operatorul le vede și hotărăște. Doar în editorul de oricând: în
+            ' modul propunere sugestiile le-a făcut deja serverul (pasul 4c).
+            Dim asezateAutomat As Integer = If(_mod = ModAsociere.Oricand, AsazaPerechileUnice(), 0)
+
             Reconstruieste()
 
             If stare.Instantanee.Count = 0 Then
                 ntfMesaj.Show("Angajamentul nu are niciun instantaneu de istoric.", NoticeKind.Warning)
+            ElseIf asezateAutomat > 0 Then
+                ntfMesaj.Show(TextAsezareAutomata(asezateAutomat), NoticeKind.Success)
             Else
                 ntfMesaj.Clear()
             End If
@@ -434,6 +441,67 @@ Public Class AsociereForm
             GlobalErrorLog.Write("AsociereForm.Reconstruieste", ex)
         End Try
     End Sub
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' Așezarea automată a perechilor cu valoare unică (felia 0065)
+    ' ══════════════════════════════════════════════════════════════════════════
+
+''' <summary>
+    ''' Așază singur, la deschidere, instantaneele neașezate a căror valoare (Total) e valoarea
+    ''' (SumaAntet) unei SINGURE recepții — cererea operatorului din 17.09.2026: «ia-i din
+    ''' muncă». Întoarce câte s-au așezat.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>Unicitatea se măsoară pe recepții, nu pe instantanee</b> (operator, 17.09.2026).
+    ''' O recepție e salvată pe site de câte ori vrea omul, și fiecare salvare lasă un
+    ''' instantaneu cu ACEEAȘI valoare a întregii recepții (F3, F7) — deci mai multe instantanee
+    ''' de 4.235 în coș sunt, cel mai probabil, tot lanțul aceleiași recepții de 4.235. Dacă
+    ''' recepția de 4.235 e una singură, toate se duc pe ea. Ce oprește ghicirea e cealaltă
+    ''' latură: două recepții cu aceeași valoare nu primesc nimic, fiindcă valoarea nu e cheie
+    ''' (F5) și n-are cine să spună care e a cui.</para>
+    ''' <para>E doar o MUTARE LOCALĂ: rămâne în arbore ca oricare tragere, se poate desface, și nu
+    ''' pleacă spre server până la «Salvează». Se sar: instantaneele blocate, cele marcate «fără
+    ''' schimbare» (F17) și rândurile de ștergere; recepțiile șterse pe site (F22). Vetourile
+    ''' F14/F16 se aplică la fel ca la o tragere (<see cref="MotivulRefuzului"/>), în ordinea
+    ''' DataH, ca fiecare instantaneu să fie judecat față de lanțul deja crescut cu cele de
+    ''' dinaintea lui; unul refuzat rămâne în coș.</para>
+    ''' </remarks>
+    Private Function AsazaPerechileUnice() As Integer
+        If _stare Is Nothing Then Return 0
+
+        ' Valoarea rotunjită la ban, ca 4235 și 4235,004 să fie aceeași valoare.
+        Dim cheie As Func(Of Double, Long) = Function(v) CLng(Math.Round(v * 100.0))
+
+        Dim unicaReceptie As Dictionary(Of Long, ReceptiePropusa) =
+            _stare.Receptii.Where(Function(r) Not r.Sters).
+                            GroupBy(Function(r) cheie(r.SumaAntet)).
+                            Where(Function(g) g.Count() = 1).
+                            ToDictionary(Function(g) g.Key, Function(g) g.First())
+        If unicaReceptie.Count = 0 Then Return 0
+
+        Dim inCos As List(Of InstantaneuLegat) =
+            _stare.Instantanee.Where(Function(i) PozitiaLui(i) = 0 AndAlso Not i.Blocat AndAlso
+                                                 Not EsteIgnorat(i.Idrh) AndAlso Not i.Stergere).
+                               OrderBy(Function(i) i.DataH).ThenBy(Function(i) i.Idrh).ToList()
+
+        Dim asezate As Integer = 0
+        For Each inst As InstantaneuLegat In inCos
+            Dim rec As ReceptiePropusa = Nothing
+            If Not unicaReceptie.TryGetValue(cheie(inst.Total), rec) Then Continue For
+            If MotivulRefuzului(inst, rec) <> String.Empty Then Continue For
+            _pozitie(inst.Idrh) = rec.Idrr
+            _ignorat(inst.Idrh) = False
+            asezate += 1
+        Next
+        Return asezate
+    End Function
+
+    ''' <summary>Mesajul din bandă după o așezare automată. Friend pentru teste.</summary>
+    Friend Shared Function TextAsezareAutomata(cate As Integer) As String
+        Dim ce As String = If(cate = 1, "Un instantaneu a fost așezat automat", $"{cate} instantanee au fost așezate automat")
+        Return ce & ", pe singura recepție cu aceeași valoare. Verifică în arbore și apasă «Salvează» dacă e bine; " &
+               "altfel trage-le înapoi în coș."
+    End Function
 
     ''' <summary>Unde stă acum instantaneul, DUPĂ mutările locale.</summary>
     Private Function PozitiaLui(inst As InstantaneuLegat) As Integer
@@ -1100,6 +1168,13 @@ Public Class AsociereForm
     ''' trăit un timp ca SEMN pe rând și în etichete; pe 09.09.2026 operatorul a cerut și acel
     ''' rest scos — se aprindea pe date corecte, deci nu spunea nimic. <b>Nu mai există nicăieri
     ''' în formular niciun cuvânt despre <c>DataR</c> ca avertisment.</b></para>
+    '''
+    ''' <para><b>F31 (17.09.2026)</b> — both sets come from <c>FX_Receptii</c>, and the ingest
+    ''' used to drop a snapshot's zero-valued lines (VBA parity), so an indicator that did not
+    ''' move or fell to zero simply vanished from the snapshot and F16 refused a correct
+    ''' placement. Zero lines are now written (<c>este_linie_receptie</c>, step 4a); chains
+    ''' ingested before that get them back through «Refacere din istoric» in the Recepții view.
+    ''' Nothing here filters on <c>Valoare</c> — do not add such a filter.</para>
     ''' </summary>
     Private Function MotivulRefuzului(inst As InstantaneuLegat, rec As ReceptiePropusa) As String
         Dim indInst As HashSet(Of String) = inst.Indicatori()
@@ -2125,7 +2200,7 @@ Public Class AsociereForm
             ' fusese ales înainte de apăsarea butonului, și atât. Se împrumută arborele DE AICI, nu
             ' se face al doilea acolo — tratatorii, dicționarele de rânduri și pasul de culori sunt
             ' scrise pentru el, iar o copie ar fi însemnat un al doilea set de toate.
-            Using f As New GraficeAsociereForm(Me, pnlGrafice, pnlCard, treeLant, SplitContainer1.Panel1)
+            Using f As New GraficeAsociereForm(Me, pnlGrafice, pnlCard, treeLant, SplitStanga.Panel1)
                 _fereastraGrafice = f
                 Try
                     f.ShowDialog(Me)
@@ -2534,8 +2609,10 @@ Public Class AsociereForm
     ''' trimite să reia descărcarea de la capăt.</para>
     ''' </remarks>
     Private Sub SpuneSiInchide(mesaj As String, cuAvertismente As Boolean)
-        KBotMessage.Show(Me, mesaj, capBar.Text, MessageBoxButtons.OK,
+        If cuAvertismente Then
+            KBotMessage.Show(Me, mesaj, capBar.Text, MessageBoxButtons.OK,
                         If(cuAvertismente, MessageBoxIcon.Warning, MessageBoxIcon.Information))
+        End If
         DialogResult = DialogResult.OK
         Close()
     End Sub

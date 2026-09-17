@@ -52,10 +52,6 @@ Partial Class AsociereForm
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AsociereForm))
         Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim TreeNodeDefinition2 As TreeNodeDefinition = New TreeNodeDefinition()
-        Dim KBotChartTab1 As KBotChartTab = New KBotChartTab()
-        Dim KBotChartTab2 As KBotChartTab = New KBotChartTab()
-        Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         Dim KBotDataColumn1 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
@@ -64,49 +60,68 @@ Partial Class AsociereForm
         Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn7 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn8 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotChartTab1 As KBotChartTab = New KBotChartTab()
+        Dim KBotChartTab2 As KBotChartTab = New KBotChartTab()
+        Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
+        btnGrafice = New Button()
         pnlCard = New Panel()
         split = New SplitContainer()
-        SplitContainer1 = New SplitContainer()
+        SplitStanga = New SplitContainer()
         treeLant = New AdvancedTreeControl()
         Il_Receptii = New ImageList(components)
-        treeLibere = New AdvancedTreeControl()
+        gridLant = New KBotDataView()
         splitDreapta = New SplitContainer()
+        treeLibere = New AdvancedTreeControl()
+        gridLibere = New KBotDataView()
         pnlGrafice = New Panel()
         benzi = New KBotLaneView()
         grafic = New KBotChartView()
         navGrafice = New KBotNavList()
-        gridLant = New KBotDataView()
-        gridLibere = New KBotDataView()
         ntfMesaj = New KBotNotice()
         lblIntro = New Label()
         btnRenunta = New Button()
-        btnGrafice = New Button()
         btnReseteaza = New Button()
         btnSalveaza = New Button()
         capBar = New KBotCaptionBar()
         tlyAsociere = New TableLayoutPanel()
         pnlCard.SuspendLayout()
-        pnlGrafice.SuspendLayout()
         CType(split, ComponentModel.ISupportInitialize).BeginInit()
         split.Panel1.SuspendLayout()
         split.Panel2.SuspendLayout()
         split.SuspendLayout()
-        CType(SplitContainer1, ComponentModel.ISupportInitialize).BeginInit()
-        SplitContainer1.Panel1.SuspendLayout()
-        SplitContainer1.Panel2.SuspendLayout()
-        SplitContainer1.SuspendLayout()
+        CType(SplitStanga, ComponentModel.ISupportInitialize).BeginInit()
+        SplitStanga.Panel1.SuspendLayout()
+        SplitStanga.Panel2.SuspendLayout()
+        SplitStanga.SuspendLayout()
+        CType(gridLant, ComponentModel.ISupportInitialize).BeginInit()
         CType(splitDreapta, ComponentModel.ISupportInitialize).BeginInit()
         splitDreapta.Panel1.SuspendLayout()
         splitDreapta.Panel2.SuspendLayout()
         splitDreapta.SuspendLayout()
+        CType(gridLibere, ComponentModel.ISupportInitialize).BeginInit()
+        pnlGrafice.SuspendLayout()
         CType(benzi, ComponentModel.ISupportInitialize).BeginInit()
         CType(grafic, ComponentModel.ISupportInitialize).BeginInit()
         CType(navGrafice, ComponentModel.ISupportInitialize).BeginInit()
-        CType(gridLant, ComponentModel.ISupportInitialize).BeginInit()
-        CType(gridLibere, ComponentModel.ISupportInitialize).BeginInit()
         tlyAsociere.SuspendLayout()
         SuspendLayout()
+        ' 
+        ' btnGrafice
+        ' 
+        btnGrafice.AutoSize = True
+        btnGrafice.Dock = DockStyle.Fill
+        btnGrafice.Location = New Point(275, 813)
+        btnGrafice.Margin = New Padding(4, 5, 4, 5)
+        btnGrafice.Name = "btnGrafice"
+        btnGrafice.Padding = New Padding(17, 10, 17, 10)
+        btnGrafice.Size = New Size(263, 60)
+        btnGrafice.TabIndex = 1
+        btnGrafice.Text = "Grafice și benzi"
+        tips.SetToolTipHeader(btnGrafice, "Grafice și benzi")
+        tips.SetToolTipText(btnGrafice, "Evoluția valorii și așezarea instantaneelor, într-o fereastră de sine stătătoare, pe care o poți mări cât ecranul.")
+        btnGrafice.UseVisualStyleBackColor = True
         ' 
         ' pnlCard
         ' 
@@ -127,44 +142,45 @@ Partial Class AsociereForm
         ' split
         ' 
         split.Dock = DockStyle.Fill
-        split.Location = New Point(17, 71)
+        split.Location = New Point(17, 105)
         split.Margin = New Padding(4, 5, 4, 5)
         split.Name = "split"
         ' 
         ' split.Panel1
         ' 
-        split.Panel1.Controls.Add(SplitContainer1)
+        split.Panel1.Controls.Add(SplitStanga)
         split.Panel1MinSize = 160
         ' 
         ' split.Panel2
         ' 
         split.Panel2.Controls.Add(splitDreapta)
         split.Panel2MinSize = 160
-        split.Size = New Size(1050, 557)
-        split.SplitterDistance = 407
-        split.SplitterWidth = 9
+        split.Size = New Size(1050, 523)
+        split.SplitterDistance = 504
+        split.SplitterWidth = 10
         split.TabIndex = 2
         ' 
-        ' SplitContainer1
+        ' SplitStanga
         ' 
-        SplitContainer1.Dock = DockStyle.Fill
-        SplitContainer1.Location = New Point(0, 0)
-        SplitContainer1.Margin = New Padding(0)
-        SplitContainer1.Name = "SplitContainer1"
-        SplitContainer1.Orientation = Orientation.Horizontal
+        SplitStanga.Dock = DockStyle.Fill
+        SplitStanga.Location = New Point(0, 0)
+        SplitStanga.Margin = New Padding(4, 5, 4, 5)
+        SplitStanga.Name = "SplitStanga"
+        SplitStanga.Orientation = Orientation.Horizontal
         ' 
-        ' SplitContainer1.Panel1
+        ' SplitStanga.Panel1
         ' 
-        SplitContainer1.Panel1.Controls.Add(treeLant)
+        SplitStanga.Panel1.Controls.Add(treeLant)
+        SplitStanga.Panel1MinSize = 120
         ' 
-        ' SplitContainer1.Panel2
-        '
-        SplitContainer1.Panel2.Controls.Add(gridLant)
-        SplitContainer1.Panel1MinSize = 120
-        SplitContainer1.Panel2MinSize = 80
-        SplitContainer1.Size = New Size(407, 557)
-        SplitContainer1.SplitterDistance = 340
-        SplitContainer1.TabIndex = 1
+        ' SplitStanga.Panel2
+        ' 
+        SplitStanga.Panel2.Controls.Add(gridLant)
+        SplitStanga.Panel2MinSize = 80
+        SplitStanga.Size = New Size(504, 523)
+        SplitStanga.SplitterDistance = 282
+        SplitStanga.SplitterWidth = 10
+        SplitStanga.TabIndex = 1
         ' 
         ' treeLant
         ' 
@@ -215,7 +231,7 @@ Partial Class AsociereForm
         treeLant.ReserveRightIconSpace = True
         treeLant.RightIconSize = New Size(12, 12)
         treeLant.RootExpander = False
-        treeLant.Size = New Size(407, 314)
+        treeLant.Size = New Size(504, 282)
         treeLant.TabIndex = 1
         treeLant.TooltipShowOnlyOnRightIcon = True
         ' 
@@ -233,153 +249,8 @@ Partial Class AsociereForm
         Il_Receptii.Images.SetKeyName(6, "Receptii_Move")
         Il_Receptii.Images.SetKeyName(7, "Lock")
         ' 
-        ' treeLibere
+        ' gridLant
         ' 
-        treeLibere.BorderColor = SystemColors.ActiveBorder
-        treeLibere.Dock = DockStyle.Fill
-        treeLibere.DragEnabled = True
-        treeLibere.ExpanderSize = 10
-        treeLibere.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
-        treeLibere.HeaderBackColor = SystemColors.Control
-        treeLibere.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
-        treeLibere.HeaderCaption = " INSTANTANEE NEAȘEZATE"
-        treeLibere.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        treeLibere.HeaderHeight = 30
-        treeLibere.HeaderIconSize = New Size(18, 18)
-        treeLibere.HeaderLeftIcon = CType(resources.GetObject("treeLibere.HeaderLeftIcon"), Image)
-        treeLibere.HeaderLeftIconKey = "Receptii_Link"
-        treeLibere.HeaderSeparatorColor = SystemColors.ActiveBorder
-        treeLibere.HeaderSeparatorWidth = 2
-        treeLibere.HeaderVisible = True
-        treeLibere.Indent = 12
-        treeLibere.Location = New Point(0, 0)
-        treeLibere.Margin = New Padding(4, 5, 4, 5)
-        treeLibere.MultiSelect = True
-        treeLibere.Name = "treeLibere"
-        treeLibere.NodeImages = Il_Receptii
-        treeLibere.PaddingExpanderGap = 8
-        treeLibere.PaddingIconGap = 8
-        treeLibere.Size = New Size(407, 239)
-        treeLibere.TabIndex = 1
-        ' 
-        ' splitDreapta
-        ' 
-        splitDreapta.Dock = DockStyle.Fill
-        splitDreapta.Location = New Point(0, 0)
-        splitDreapta.Margin = New Padding(4, 5, 4, 5)
-        splitDreapta.Name = "splitDreapta"
-        splitDreapta.Orientation = Orientation.Horizontal
-        ' 
-        ' splitDreapta.Panel1
-        '
-        splitDreapta.Panel1.Controls.Add(treeLibere)
-        splitDreapta.Panel1MinSize = 120
-        '
-        ' splitDreapta.Panel2
-        '
-        splitDreapta.Panel2.Controls.Add(gridLibere)
-        splitDreapta.Panel2MinSize = 80
-        splitDreapta.Size = New Size(634, 557)
-        splitDreapta.SplitterDistance = 340
-        splitDreapta.SplitterWidth = 10
-        splitDreapta.TabIndex = 1
-        '
-        ' pnlGrafice
-        '
-        ' Copiii in ordine INVERSA de andocare: Fill intai, apoi Top (regula casei pentru
-        ' panourile-card). Panoul sta ascuns in formular si se muta INTREG in fereastra
-        ' graficelor la apasarea butonului — vezi GraficeAsociereForm.
-        pnlGrafice.Controls.Add(benzi)
-        pnlGrafice.Controls.Add(grafic)
-        pnlGrafice.Controls.Add(navGrafice)
-        pnlGrafice.Dock = DockStyle.Fill
-        pnlGrafice.Location = New Point(17, 71)
-        pnlGrafice.Margin = New Padding(0)
-        pnlGrafice.Name = "pnlGrafice"
-        pnlGrafice.Size = New Size(1050, 557)
-        pnlGrafice.TabIndex = 4
-        pnlGrafice.Visible = False
-        '
-        ' benzi
-        '
-        benzi.AxisVisible = True
-        benzi.Dock = DockStyle.Fill
-        benzi.EmptyText = "Trage un instantaneu dintr-o bandă în alta ca să-l muți."
-        benzi.EnlargeButtonTooltip = "Deschide benzile mari" & vbCrLf & "Aceleași benzi, cu denumirile întregi și datele pe axă — pentru când tragerea cere loc."
-        benzi.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
-        benzi.HeaderBackColor = SystemColors.Control
-        benzi.HeaderCaption = " AȘEZAREA INSTANTANEELOR"
-        benzi.HeaderGradient = 5
-        benzi.HeaderHeight = 30
-        benzi.HeaderSeparatorColor = SystemColors.ActiveBorder
-        benzi.HeaderSeparatorWidth = 2
-        benzi.LaneCaptionsVisible = True
-        benzi.LaneCaptionWidth = 150
-        benzi.LaneHeight = 18
-        benzi.LaneSpacing = 3
-        benzi.Location = New Point(0, 34)
-        benzi.Margin = New Padding(4, 5, 4, 5)
-        benzi.MarkerSize = 9
-        benzi.Name = "benzi"
-        benzi.SegmentWidth = 4
-        benzi.Size = New Size(634, 274)
-        benzi.TabIndex = 1
-        benzi.TrailingSpace = 50
-        benzi.Visible = False
-        ' 
-        ' grafic
-        ' 
-        grafic.Dock = DockStyle.Fill
-        grafic.EmptyText = "Alege o recepție în stânga ca să-i vezi evoluția."
-        grafic.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
-        grafic.HeaderBackColor = SystemColors.Control
-        grafic.HeaderCaption = " EVOLUȚIA VALORII"
-        grafic.HeaderGradient = 5
-        grafic.HeaderHeight = 30
-        grafic.HeaderSeparatorWidth = 2
-        grafic.LegendVisible = False
-        grafic.Location = New Point(0, 34)
-        grafic.Margin = New Padding(4, 5, 4, 5)
-        grafic.Name = "grafic"
-        grafic.PlotMargin = 2
-        grafic.SelectedTabKey = "receptie"
-        grafic.Size = New Size(634, 274)
-        grafic.TabHeight = 26
-        grafic.TabIndex = 0
-        grafic.TabPadding = 4
-        KBotChartTab1.Key = "receptie"
-        KBotChartTab1.Text = "Recepția"
-        KBotChartTab1.Tooltip = "Evoluția recepției alese" & vbCrLf & "Fiecare punct este un instantaneu al lanțului ei, la ora la care a fost salvat."
-        KBotChartTab2.Key = "angajament"
-        KBotChartTab2.Text = "Tot angajamentul"
-        KBotChartTab2.Tooltip = "Evoluția întregului angajament" & vbCrLf & "Câte o linie pentru fiecare recepție, plus linia îngroșată a totalului."
-        grafic.Tabs.Add(KBotChartTab1)
-        grafic.Tabs.Add(KBotChartTab2)
-        ' 
-        ' navGrafice
-        ' 
-        navGrafice.Dock = DockStyle.Top
-        navGrafice.ItemPadding = New Padding(0)
-        KBotNavItem1.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Chart_curve_32
-        KBotNavItem1.Key = "grafic"
-        KBotNavItem1.Text = "Grafic"
-        KBotNavItem2.Align = KBotNavAlign.Far
-        KBotNavItem2.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Barchart_32
-        KBotNavItem2.Key = "benzi"
-        KBotNavItem2.Text = "Distribuție"
-        navGrafice.Items.Add(KBotNavItem1)
-        navGrafice.Items.Add(KBotNavItem2)
-        navGrafice.Location = New Point(0, 0)
-        navGrafice.Name = "navGrafice"
-        navGrafice.Orientation = KBotNavOrientation.Horizontal
-        navGrafice.SelectedKey = "grafic"
-        navGrafice.Size = New Size(634, 34)
-        navGrafice.TabIndex = 1
-        navGrafice.Text = "KBotNavList1"
-        ' 
-        ' grid
-        ' 
-        gridLant.AutoSizeColumnsMode = KBotAutoSizeMode.ToContent
         gridLant.BackColor = SystemColors.Window
         gridLant.CellTooltip.Enabled = False
         gridLant.ColumnFillMode = KBotFillMode.LastColumn
@@ -431,17 +302,64 @@ Partial Class AsociereForm
         gridLant.HeaderSeparatorColor = SystemColors.ActiveBorder
         gridLant.Location = New Point(0, 0)
         gridLant.Margin = New Padding(4, 5, 4, 5)
-        gridLant.Name = "grid"
+        gridLant.Name = "gridLant"
         gridLant.RowHeight = 22
-        gridLant.Size = New Size(407, 213)
+        gridLant.Size = New Size(504, 231)
         gridLant.TabIndex = 0
-        '
+        ' 
+        ' splitDreapta
+        ' 
+        splitDreapta.Dock = DockStyle.Fill
+        splitDreapta.Location = New Point(0, 0)
+        splitDreapta.Margin = New Padding(4, 5, 4, 5)
+        splitDreapta.Name = "splitDreapta"
+        splitDreapta.Orientation = Orientation.Horizontal
+        ' 
+        ' splitDreapta.Panel1
+        ' 
+        splitDreapta.Panel1.Controls.Add(treeLibere)
+        splitDreapta.Panel1MinSize = 120
+        ' 
+        ' splitDreapta.Panel2
+        ' 
+        splitDreapta.Panel2.Controls.Add(gridLibere)
+        splitDreapta.Panel2MinSize = 80
+        splitDreapta.Size = New Size(536, 523)
+        splitDreapta.SplitterDistance = 282
+        splitDreapta.SplitterWidth = 10
+        splitDreapta.TabIndex = 1
+        ' 
+        ' treeLibere
+        ' 
+        treeLibere.BorderColor = SystemColors.ActiveBorder
+        treeLibere.Dock = DockStyle.Fill
+        treeLibere.DragEnabled = True
+        treeLibere.ExpanderSize = 10
+        treeLibere.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        treeLibere.HeaderBackColor = SystemColors.Control
+        treeLibere.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
+        treeLibere.HeaderCaption = " INSTANTANEE NEAȘEZATE"
+        treeLibere.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        treeLibere.HeaderHeight = 30
+        treeLibere.HeaderIconSize = New Size(18, 18)
+        treeLibere.HeaderLeftIcon = CType(resources.GetObject("treeLibere.HeaderLeftIcon"), Image)
+        treeLibere.HeaderLeftIconKey = "Receptii_Link"
+        treeLibere.HeaderSeparatorColor = SystemColors.ActiveBorder
+        treeLibere.HeaderSeparatorWidth = 2
+        treeLibere.HeaderVisible = True
+        treeLibere.Indent = 12
+        treeLibere.Location = New Point(0, 0)
+        treeLibere.Margin = New Padding(4, 5, 4, 5)
+        treeLibere.MultiSelect = True
+        treeLibere.Name = "treeLibere"
+        treeLibere.NodeImages = Il_Receptii
+        treeLibere.PaddingExpanderGap = 8
+        treeLibere.PaddingIconGap = 8
+        treeLibere.Size = New Size(536, 282)
+        treeLibere.TabIndex = 1
+        ' 
         ' gridLibere
-        '
-        ' Aceleasi patru coloane ca la stanga, si nu din lene: cele doua grile arata ACELASI
-        ' fel de rand — liniile pe indicator ale randului ales — doar ca fiecare il ia din
-        ' arborele de deasupra ei. Doua seturi de coloane ar spune ca sunt doua feluri de date.
-        gridLibere.AutoSizeColumnsMode = KBotAutoSizeMode.ToContent
+        ' 
         gridLibere.BackColor = SystemColors.Window
         gridLibere.CellTooltip.Enabled = False
         gridLibere.ColumnFillMode = KBotFillMode.LastColumn
@@ -495,11 +413,101 @@ Partial Class AsociereForm
         gridLibere.Margin = New Padding(4, 5, 4, 5)
         gridLibere.Name = "gridLibere"
         gridLibere.RowHeight = 22
-        gridLibere.Size = New Size(634, 213)
+        gridLibere.Size = New Size(536, 231)
         gridLibere.TabIndex = 0
-        '
+        ' 
+        ' pnlGrafice
+        ' 
+        pnlGrafice.Controls.Add(benzi)
+        pnlGrafice.Controls.Add(grafic)
+        pnlGrafice.Controls.Add(navGrafice)
+        pnlGrafice.Dock = DockStyle.Fill
+        pnlGrafice.Location = New Point(17, 105)
+        pnlGrafice.Margin = New Padding(0)
+        pnlGrafice.Name = "pnlGrafice"
+        pnlGrafice.Size = New Size(1050, 523)
+        pnlGrafice.TabIndex = 4
+        pnlGrafice.Visible = False
+        ' 
+        ' benzi
+        ' 
+        benzi.AxisVisible = True
+        benzi.Dock = DockStyle.Fill
+        benzi.EmptyText = "Trage un instantaneu dintr-o bandă în alta ca să-l muți."
+        benzi.EnlargeButtonTooltip = "Deschide benzile mari" & vbCrLf & "Aceleași benzi, cu denumirile întregi și datele pe axă — pentru când tragerea cere loc."
+        benzi.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        benzi.HeaderBackColor = SystemColors.Control
+        benzi.HeaderCaption = " AȘEZAREA INSTANTANEELOR"
+        benzi.HeaderGradient = 5
+        benzi.HeaderHeight = 30
+        benzi.HeaderSeparatorColor = SystemColors.ActiveBorder
+        benzi.HeaderSeparatorWidth = 2
+        benzi.LaneCaptionsVisible = True
+        benzi.LaneCaptionWidth = 150
+        benzi.LaneHeight = 18
+        benzi.LaneSpacing = 3
+        benzi.Location = New Point(0, 34)
+        benzi.Margin = New Padding(4, 5, 4, 5)
+        benzi.MarkerSize = 9
+        benzi.Name = "benzi"
+        benzi.SegmentWidth = 4
+        benzi.Size = New Size(1050, 489)
+        benzi.TabIndex = 1
+        benzi.TrailingSpace = 50
+        benzi.Visible = False
+        ' 
+        ' grafic
+        ' 
+        grafic.Dock = DockStyle.Fill
+        grafic.EmptyText = "Alege o recepție în stânga ca să-i vezi evoluția."
+        grafic.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        grafic.HeaderBackColor = SystemColors.Control
+        grafic.HeaderCaption = " EVOLUȚIA VALORII"
+        grafic.HeaderGradient = 5
+        grafic.HeaderHeight = 30
+        grafic.HeaderSeparatorWidth = 2
+        grafic.LegendVisible = False
+        grafic.Location = New Point(0, 34)
+        grafic.Margin = New Padding(4, 5, 4, 5)
+        grafic.Name = "grafic"
+        grafic.PlotMargin = 2
+        grafic.SelectedTabKey = "receptie"
+        grafic.Size = New Size(1050, 489)
+        grafic.TabHeight = 26
+        grafic.TabIndex = 0
+        grafic.TabPadding = 4
+        KBotChartTab1.Key = "receptie"
+        KBotChartTab1.Text = "Recepția"
+        KBotChartTab1.Tooltip = "Evoluția recepției alese" & vbCrLf & "Fiecare punct este un instantaneu al lanțului ei, la ora la care a fost salvat."
+        KBotChartTab2.Key = "angajament"
+        KBotChartTab2.Text = "Tot angajamentul"
+        KBotChartTab2.Tooltip = "Evoluția întregului angajament" & vbCrLf & "Câte o linie pentru fiecare recepție, plus linia îngroșată a totalului."
+        grafic.Tabs.Add(KBotChartTab1)
+        grafic.Tabs.Add(KBotChartTab2)
+        ' 
+        ' navGrafice
+        ' 
+        navGrafice.Dock = DockStyle.Top
+        navGrafice.ItemPadding = New Padding(0)
+        KBotNavItem1.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Chart_curve_32
+        KBotNavItem1.Key = "grafic"
+        KBotNavItem1.Text = "Grafic"
+        KBotNavItem2.Align = KBotNavAlign.Far
+        KBotNavItem2.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Barchart_32
+        KBotNavItem2.Key = "benzi"
+        KBotNavItem2.Text = "Distribuție"
+        navGrafice.Items.Add(KBotNavItem1)
+        navGrafice.Items.Add(KBotNavItem2)
+        navGrafice.Location = New Point(0, 0)
+        navGrafice.Name = "navGrafice"
+        navGrafice.Orientation = KBotNavOrientation.Horizontal
+        navGrafice.SelectedKey = "grafic"
+        navGrafice.Size = New Size(1050, 34)
+        navGrafice.TabIndex = 1
+        navGrafice.Text = "KBotNavList1"
+        ' 
         ' ntfMesaj
-        '
+        ' 
         ntfMesaj.BackColor = Color.Transparent
         ntfMesaj.Dock = DockStyle.Bottom
         ntfMesaj.Location = New Point(17, 628)
@@ -517,8 +525,6 @@ Partial Class AsociereForm
         lblIntro.Margin = New Padding(4, 0, 4, 0)
         lblIntro.Name = "lblIntro"
         lblIntro.Padding = New Padding(0, 0, 0, 13)
-        ' Un rand mai inalt decat era: textul spune de acum si despre alegerea mai multor
-        ' instantanee si despre locul dat de ora, iar la 144 dpi un rand de Calibri 9 cere 22 px.
         lblIntro.Size = New Size(1050, 105)
         lblIntro.TabIndex = 1
         lblIntro.Text = resources.GetString("lblIntro.Text")
@@ -532,50 +538,35 @@ Partial Class AsociereForm
         btnRenunta.Margin = New Padding(4, 5, 4, 5)
         btnRenunta.Name = "btnRenunta"
         btnRenunta.Padding = New Padding(17, 10, 17, 10)
-        btnRenunta.Size = New Size(404, 60)
+        btnRenunta.Size = New Size(263, 60)
         btnRenunta.TabIndex = 0
         btnRenunta.Text = "Renunță"
         btnRenunta.UseVisualStyleBackColor = True
-        '
-        ' btnGrafice
-        '
-        btnGrafice.AutoSize = True
-        btnGrafice.Dock = DockStyle.Fill
-        btnGrafice.Location = New Point(275, 813)
-        btnGrafice.Margin = New Padding(4, 5, 4, 5)
-        btnGrafice.Name = "btnGrafice"
-        btnGrafice.Padding = New Padding(17, 10, 17, 10)
-        btnGrafice.Size = New Size(263, 60)
-        btnGrafice.TabIndex = 1
-        btnGrafice.Text = "Grafice și benzi"
-        btnGrafice.UseVisualStyleBackColor = True
-        tips.SetToolTipHeader(btnGrafice, "Grafice și benzi")
-        tips.SetToolTipText(btnGrafice, "Evoluția valorii și așezarea instantaneelor, într-o fereastră de sine stătătoare, pe care o poți mări cât ecranul.")
-        '
+        ' 
         ' btnReseteaza
-        '
+        ' 
         btnReseteaza.AutoSize = True
         btnReseteaza.Dock = DockStyle.Fill
-        btnReseteaza.Location = New Point(365, 813)
+        btnReseteaza.Location = New Point(546, 813)
         btnReseteaza.Margin = New Padding(4, 5, 4, 5)
         btnReseteaza.Name = "btnReseteaza"
         btnReseteaza.Padding = New Padding(17, 10, 17, 10)
-        btnReseteaza.Size = New Size(353, 60)
+        btnReseteaza.Size = New Size(263, 60)
         btnReseteaza.TabIndex = 1
         btnReseteaza.Text = "Golește așezările"
         btnReseteaza.UseVisualStyleBackColor = True
         btnReseteaza.Visible = False
-        '
+        ' 
         ' btnSalveaza
-        '
+        ' 
         btnSalveaza.AutoSize = True
         btnSalveaza.Dock = DockStyle.Right
         btnSalveaza.Enabled = False
-        btnSalveaza.Location = New Point(722, 813)
+        btnSalveaza.Location = New Point(817, 813)
         btnSalveaza.Margin = New Padding(4, 5, 4, 5)
         btnSalveaza.Name = "btnSalveaza"
         btnSalveaza.Padding = New Padding(17, 10, 17, 10)
-        btnSalveaza.Size = New Size(358, 60)
+        btnSalveaza.Size = New Size(263, 60)
         btnSalveaza.TabIndex = 2
         btnSalveaza.Text = "Salvează legăturile"
         btnSalveaza.UseVisualStyleBackColor = True
@@ -590,6 +581,7 @@ Partial Class AsociereForm
         capBar.Name = "capBar"
         capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
+        capBar.ShowMaximize = True
         capBar.ShowTextScaleSlider = False
         capBar.ShowThemeEditor = False
         capBar.ShowThemeOptions = False
@@ -636,6 +628,7 @@ Partial Class AsociereForm
         Name = "AsociereForm"
         Padding = New Padding(1, 5, 1, 5)
         ShowInTaskbar = False
+        SizeGripStyle = SizeGripStyle.Show
         StartPosition = FormStartPosition.CenterParent
         Text = "K-BOT — Legăturile recepțiilor"
         pnlCard.ResumeLayout(False)
@@ -643,20 +636,20 @@ Partial Class AsociereForm
         split.Panel2.ResumeLayout(False)
         CType(split, ComponentModel.ISupportInitialize).EndInit()
         split.ResumeLayout(False)
-        SplitContainer1.Panel1.ResumeLayout(False)
-        SplitContainer1.Panel2.ResumeLayout(False)
-        CType(SplitContainer1, ComponentModel.ISupportInitialize).EndInit()
-        SplitContainer1.ResumeLayout(False)
+        SplitStanga.Panel1.ResumeLayout(False)
+        SplitStanga.Panel2.ResumeLayout(False)
+        CType(SplitStanga, ComponentModel.ISupportInitialize).EndInit()
+        SplitStanga.ResumeLayout(False)
+        CType(gridLant, ComponentModel.ISupportInitialize).EndInit()
         splitDreapta.Panel1.ResumeLayout(False)
         splitDreapta.Panel2.ResumeLayout(False)
         CType(splitDreapta, ComponentModel.ISupportInitialize).EndInit()
         splitDreapta.ResumeLayout(False)
+        CType(gridLibere, ComponentModel.ISupportInitialize).EndInit()
+        pnlGrafice.ResumeLayout(False)
         CType(benzi, ComponentModel.ISupportInitialize).EndInit()
         CType(grafic, ComponentModel.ISupportInitialize).EndInit()
         CType(navGrafice, ComponentModel.ISupportInitialize).EndInit()
-        CType(gridLant, ComponentModel.ISupportInitialize).EndInit()
-        CType(gridLibere, ComponentModel.ISupportInitialize).EndInit()
-        pnlGrafice.ResumeLayout(False)
         tlyAsociere.ResumeLayout(False)
         tlyAsociere.PerformLayout()
         ResumeLayout(False)
@@ -680,7 +673,7 @@ Partial Class AsociereForm
     Friend WithEvents capBar As KBotCaptionBar
     Friend WithEvents tlyAsociere As TableLayoutPanel
     Friend WithEvents Il_Receptii As ImageList
-    Friend WithEvents SplitContainer1 As SplitContainer
+    Friend WithEvents SplitStanga As SplitContainer
     Friend WithEvents treeLant As AdvancedTreeControl
     Friend WithEvents treeLibere As AdvancedTreeControl
     Friend WithEvents navGrafice As KBotNavList

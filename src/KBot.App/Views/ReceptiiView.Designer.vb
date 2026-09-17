@@ -73,6 +73,8 @@ Partial Class ReceptiiView
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
         tree.FooterHeight = 30
         tree.FooterIconSize = New Size(18, 18)
+        tree.FooterLeftIcon = My.Resources.Resources.database
+        tree.FooterLeftIconTooltip = "Reface din istoric instantaneele și liniile de recepție care lipsesc." & vbLf & "Întâi numără ce lipsește și întreabă; scrie doar după confirmare." & vbLf & "Anteturile refăcute apar în dosarul «Instantanee neașezate» și se așază din editorul de legături."
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
         tree.FooterRightIconTooltip = "Reîmprospătează recepțiile din FOREXE (întreabă întâi pe care)."
         tree.FooterSeparatorColor = Color.Gainsboro

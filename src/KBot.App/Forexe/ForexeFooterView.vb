@@ -28,6 +28,8 @@ Public Class ForexeFooterView
     ''' <summary>Operatorul a cerut consola FOREXE (butonul de extindere).</summary>
     Public Event ExpandRequested As EventHandler
 
+    Public Event ConectareForexeRequested As EventHandler
+
     ''' <summary>
     ''' Operatorul a cerut istoricul acțiunilor FOREXE (felia 0040). Banda rămâne proastă:
     ''' fereastra o deține și o arată shell-ul, exact ca pe consolă.
@@ -110,7 +112,8 @@ Public Class ForexeFooterView
         Dim conectat As Boolean = _controller.IsConnected
         Dim ocupat As Boolean = _controller.IsBusy
 
-        lblConexiune.Text = If(conectat, "● Forexe: conectat", "● Forexe: neconectat")
+        btnConectare.Enabled = Not conectat
+        'lblConexiune.Text = If(conectat, "● Forexe: conectat", "● Forexe: neconectat")
 
         ' Linia de stare — perechea lui lblStatus din KBOT_IPC (felia 0040). Sursa e ULTIMA stare
         ' știută de coordonator, aceeași pe care o împinge StatusChanged: la legare (când încă
@@ -118,7 +121,7 @@ Public Class ForexeFooterView
         lblStatus.Text = If(_controller.LastStatus.Length > 0, _controller.LastStatus, "În așteptare...")
 
         Dim p = ThemeManager.Current.Palette
-        lblConexiune.ForeColor = If(conectat, p.SuccessColor, p.TextDimColor)
+        'lblConexiune.ForeColor = If(conectat, p.SuccessColor, p.TextDimColor)
 
         ' Certificatul: eticheta apare DOAR după ce s-a ales unul. Fără certificat n-are ce
         ' spune, iar un «Certificat: —» permanent e zgomot, nu informație.
@@ -166,6 +169,7 @@ Public Class ForexeFooterView
 
             ButtonStyles.ApplySecondary(btnExtinde, scheme)
             ButtonStyles.ApplySecondary(btnIstoric, scheme)
+            ButtonStyles.ApplyPrimary(btnConectare, scheme)
 
             ' Bara de progres e ea însăși IThemedControl, dar banda ASTA e la rândul ei una:
             ' ThemeManager nu recurge în copiii unui IThemedControl, deci schema trebuie
@@ -193,4 +197,11 @@ Public Class ForexeFooterView
         End If
     End Sub
 
+    Private Sub BtnConectare_Click(sender As Object, e As EventArgs) Handles btnConectare.Click
+        Try
+            RaiseEvent ConectareForexeRequested(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeFooterView.btnConectare_Click", ex)
+        End Try
+    End Sub
 End Class

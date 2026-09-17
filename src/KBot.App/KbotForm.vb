@@ -23,7 +23,7 @@ Imports KBot.Theming
 ''' create lazy (PlaceholderView în această felie); starea nodului selectat circulă
 ''' ca AngajamentTreeInfo, nu ca textbox-uri ascunse.
 ''' </summary>
-Public Class KBOT
+Public Class KbotForm
 
     Private ReadOnly _forexeRunner As IForexeRunner
     Private ReadOnly _session As SessionContext
@@ -204,8 +204,8 @@ Public Class KBOT
             ' «Conectare» stă acum în antet, nu în bandă. Butonul e al shell-ului, dar starea lui
             ' vine tot de la coordonator: ne abonăm o singură dată aici și ne dezabonăm la
             ' închidere (coordonatorul e singleton și ar ține formularul în viață).
-            AddHandler _forexe.StateChanged, AddressOf Forexe_StateChanged
-            ActualizeazaButonConectare()
+            'AddHandler _forexe.StateChanged, AddressOf Forexe_StateChanged
+            'ActualizeazaButonConectare()
 
             ' Navigația vederilor — ordinea paginilor din Access, Sumar implicit.
             ' Cele opt intrări (cinci butoane Near, separator Far, DDF/ORD Far) sunt AUTORITE
@@ -424,7 +424,8 @@ Public Class KBOT
                 Case "partener" : Return New PlaceholderView(key, "Partener")
                 Case "receptii" : Return New ReceptiiView(_apiClient, Function(op) WithReauth(Of ReceptiiInfo)(op),
                                                          AddressOf DeschideLegaturileReceptiilor,
-                                                         AddressOf ReimprospateazaReceptii)
+                                                         AddressOf ReimprospateazaReceptii,
+                                                         AddressOf RebuildReceptiiFromIstoric)
                 ' «+» din arborele de plati cere ordonantarea zilei / lotul lunii — Access:
                 ' fxPlati_AdaugareOrdonantare / fxPlati_AdaugareOrdonantari din frmFX_MAIN.
                 ' Trece prin ACEEASI ExecutaComandaOrd ca OrdView: o singura politica de
@@ -467,7 +468,8 @@ Public Class KBOT
                     ' aprinde sau stinge steagurile Are* ale nodului, iar `LoadTreeAsync` cu
                     ' selecția păstrată împinge singur contextul nou în vederea deschisă — deci
                     ' `Reincarca()` ar fi a doua citire a aceluiași lucru.
-                    Await LoadTreeAsync(pastreazaSelectia:=True)
+                    Await LoadTreeAsync(pastreazaSelectia:=True, resetView:=False)
+                    'navViews
                 End If
             End Using
         Catch ex As Exception
@@ -477,6 +479,100 @@ Public Class KBOT
                             "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Rebuilds, from FX_Istoric, the receptie snapshots (FX_Receptii_H) and lines
+    ''' (FX_Receptii) that are missing for one angajament -- the footer-left icon of the
+    ''' <c>ReceptiiView</c> tree (slice 0062).
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>Two calls to the same endpoint: a dry run first, so the operator confirms real
+    ''' numbers, then the write. Nothing is written when the dry run finds nothing, or when
+    ''' the operator says no. Lives here for the usual reason: the call needs the re-login net
+    ''' on its own response shape, and <c>WithReauth</c> is private to the shell.</para>
+    ''' <para>After a write the TREE reloads with the selection kept: rebuilt snapshots can
+    ''' switch the node's Are* flags, and the reload pushes the fresh context into the open
+    ''' view by itself. The rebuilt snapshots land UNPLACED (no receptie); the operator places
+    ''' them from the link editor, which is why the closing message points there.</para>
+    ''' </remarks>
+    Private Async Sub RebuildReceptiiFromIstoric(cod As String)
+        Try
+            If String.IsNullOrWhiteSpace(cod) Then Return
+
+            Dim dryRun As ReceptiiRebuildResult
+            busyBar.Running = True
+            Try
+                dryRun = Await WithReauth(Of ReceptiiRebuildResult)(
+                    Function() _apiClient.RebuildReceptiiAsync(cod, False, CancellationToken.None))
+            Finally
+                busyBar.Running = False
+            End Try
+            If dryRun Is Nothing Then
+                AratEsecul("Refacerea recepțiilor")
+                Return
+            End If
+
+            If dryRun.NothingToDo Then
+                KBotMessage.Show(Me,
+                    $"«{cod}»: toate instantaneele și liniile din istoric există deja în recepții. " &
+                    "Nu este nimic de refăcut." & WarningsParagraph(dryRun),
+                    "Refacerea recepțiilor", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+
+            Dim question As String =
+                $"«{cod}»: față de istoric lipsesc {dryRun.HeadersMissing} instantanee și " &
+                $"{dryRun.LinesMissing} linii de recepție; {dryRun.LinesOrphaned} linii există dar " &
+                "nu stau pe niciun instantaneu și vor fi relegate." & vbCrLf & vbCrLf &
+                "Instantaneele refăcute NU se așază pe nicio recepție: vor apărea în dosarul " &
+                "«Instantanee neașezate» și se așază din editorul de legături." &
+                WarningsParagraph(dryRun) & vbCrLf & vbCrLf & "Continuați?"
+            If KBotMessage.Show(Me, question, "Refacerea recepțiilor",
+                               MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
+                Return
+            End If
+
+            Dim result As ReceptiiRebuildResult
+            busyBar.Running = True
+            Try
+                result = Await WithReauth(Of ReceptiiRebuildResult)(
+                    Function() _apiClient.RebuildReceptiiAsync(cod, True, CancellationToken.None))
+            Finally
+                busyBar.Running = False
+            End Try
+            If result Is Nothing Then
+                AratEsecul("Refacerea recepțiilor")
+                Return
+            End If
+
+            KBotMessage.Show(Me,
+                $"«{cod}»: s-au scris {result.HeadersWritten} instantanee și " &
+                $"{result.LinesWritten} linii; {result.LinesRelinked} linii au fost relegate." &
+                If(result.ReceptiiRecalculated.Count > 0,
+                   vbCrLf & $"Diferențele s-au recalculat pe {result.ReceptiiRecalculated.Count} recepții.",
+                   String.Empty) &
+                WarningsParagraph(result),
+                "Refacerea recepțiilor", MessageBoxButtons.OK, MessageBoxIcon.Information)
+
+            Await LoadTreeAsync(pastreazaSelectia:=True)
+        Catch ex As ApiException
+            GlobalErrorLog.Write("MainForm.RebuildReceptiiFromIstoric", ex)
+            KBotMessage.Show(Me, ex.Message, "Refacerea recepțiilor",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        Catch ex As Exception
+            ' UI boundary: log and show; a throw from here would land on the UI thread.
+            GlobalErrorLog.Write("MainForm.RebuildReceptiiFromIstoric", ex)
+            KBotMessage.Show(Me, "Refacerea recepțiilor a eșuat: " & ex.Message,
+                            "Refacerea recepțiilor", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>The server's warnings as a trailing paragraph, or nothing when there are none.</summary>
+    Private Shared Function WarningsParagraph(r As ReceptiiRebuildResult) As String
+        If r Is Nothing OrElse r.Warnings.Count = 0 Then Return String.Empty
+        Return vbCrLf & vbCrLf & "Semnalări:" & vbCrLf & "  • " &
+               String.Join(vbCrLf & "  • ", r.Warnings)
+    End Function
 
     ' ══════════════════════════════════════════════════════════════════════════════════
     ' EDITORUL DE ORDONANTARE (felia 0049) — cele patru puncte de intrare
@@ -1175,7 +1271,7 @@ Public Class KBOT
     ''' perioadă sau la prima încărcare nu există selecție de păstrat, iar una veche ar fi
     ''' oricum a altui an.
     ''' </param>
-    Private Async Function LoadTreeAsync(Optional pastreazaSelectia As Boolean = False) As Task
+    Private Async Function LoadTreeAsync(Optional pastreazaSelectia As Boolean = False, Optional resetView As Boolean = True) As Task
         ' Fără an/SS nu există interogare de făcut (combo-uri goale = perioade necitite).
         If cboAn.SelectedItem Is Nothing OrElse cboSs.SelectedItem Is Nothing Then
             Return
@@ -1219,15 +1315,16 @@ Public Class KBOT
     ''' un angajament care a dispărut din listă.
     ''' </param>
     Private Sub PopulateTree(rows As IReadOnlyList(Of AngajamentTreeInfo),
-                             Optional codSelectat As String = Nothing)
+                             Optional codSelectat As String = Nothing, Optional resetView As Boolean = True)
         Try
             ArgumentNullException.ThrowIfNull(rows)
             tree.Clear()
             _treeInfos.Clear()
-            _currentInfo = Nothing
+
+            If resetView Then _currentInfo = Nothing
             ' Selecția veche a dispărut odată cu rândurile: nicio vedere nu rămâne
             ' deschisă pe un angajament care nu mai e în arbore.
-            ApplyViewGating(Nothing)
+            ApplyViewGating(_currentInfo)
             RefreshInfoForm()   ' selecția s-a golit -> fereastra de info reflectă asta
 
             Dim nodDeSelectat As AdvancedTreeControl.TreeItem = Nothing
@@ -1881,7 +1978,7 @@ Public Class KBOT
                 busyBar.Running = False
             End Try
 
-            Dim randuri As List(Of ReceptieRow) = If(info Is Nothing, Nothing, info.Receptii)
+            Dim randuri As List(Of ReceptieRow) = info?.Receptii
             If randuri Is Nothing OrElse randuri.Count = 0 Then Return New List(Of Date)()
 
             Using dlg As New SelectieReceptiiForm(randuri, cod)
@@ -2029,7 +2126,7 @@ Public Class KBOT
     ''' «Conectare» (prima celulă din <c>tlyHeader</c>) — fostul buton al benzii de subsol,
     ''' mutat în antet. Face exact ce făcea acolo: cere coordonatorului o sesiune FOREXE.
     ''' </summary>
-    Private Async Sub BtnConectare_Click(sender As Object, e As EventArgs) Handles btnConectare.Click
+    Private Async Sub ConectareForexe(sender As Object, e As EventArgs) Handles forexeFooter.ConectareForexeRequested
         Try
             Await _forexe.ConnectAsync()
         Catch ex As Exception
@@ -2041,37 +2138,37 @@ Public Class KBOT
     End Sub
 
     ' Starea coordonatorului poate veni de pe firul robotului — trecem pe firul de UI.
-    Private Sub Forexe_StateChanged(sender As Object, e As EventArgs)
-        Try
-            If IsDisposed OrElse Disposing OrElse Not IsHandleCreated Then Return
-            If InvokeRequired Then
-                BeginInvoke(New Action(AddressOf ActualizeazaButonConectare))
-            Else
-                ActualizeazaButonConectare()
-            End If
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.Forexe_StateChanged", ex)
-        End Try
-    End Sub
+    'Private Sub Forexe_StateChanged(sender As Object, e As EventArgs)
+    '    Try
+    '        If IsDisposed OrElse Disposing OrElse Not IsHandleCreated Then Return
+    '        If InvokeRequired Then
+    '            BeginInvoke(New Action(AddressOf ActualizeazaButonConectare))
+    '        Else
+    '            ActualizeazaButonConectare()
+    '        End If
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("MainForm.Forexe_StateChanged", ex)
+    '    End Try
+    'End Sub
 
     ' Activ doar cât nu e nimic în lucru ȘI nu există deja sesiune (regula benzii de subsol).
-    Private Sub ActualizeazaButonConectare()
-        Try
-            btnConectare.Enabled = Not _forexe.IsBusy AndAlso Not _forexe.IsConnected
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.ActualizeazaButonConectare", ex)
-        End Try
-    End Sub
+    'Private Sub ActualizeazaButonConectare()
+    '    Try
+    '        btnConectare.Enabled = Not _forexe.IsBusy AndAlso Not _forexe.IsConnected
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("MainForm.ActualizeazaButonConectare", ex)
+    '    End Try
+    'End Sub
 
     ' Coordonatorul e singleton: un abonament rămas ar ține shell-ul în viață după închidere.
-    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
-        Try
-            RemoveHandler _forexe.StateChanged, AddressOf Forexe_StateChanged
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.OnFormClosed", ex)
-        End Try
-        MyBase.OnFormClosed(e)
-    End Sub
+    'Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+    '    Try
+    '        RemoveHandler _forexe.StateChanged, AddressOf Forexe_StateChanged
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("MainForm.OnFormClosed", ex)
+    '    End Try
+    '    MyBase.OnFormClosed(e)
+    'End Sub
 
     ' Butonul de extindere din banda de subsol: arată consola (nemodal, deținută de shell).
     Private Sub ForexeFooter_ExpandRequested(sender As Object, e As EventArgs) Handles forexeFooter.ExpandRequested
@@ -2231,7 +2328,7 @@ Public Class KBOT
             lblTree.ForeColor = p.TextColor
 
             ' «Conectare» e butonul principal al antetului (stilul îl avea în banda de subsol).
-            ButtonStyles.ApplyPrimary(btnConectare, scheme)
+            'ButtonStyles.ApplyPrimary(btnConectare, scheme)
 
 
             ' Arborele ESTE acum IThemedControl: își ia singur paleta și, mai important,

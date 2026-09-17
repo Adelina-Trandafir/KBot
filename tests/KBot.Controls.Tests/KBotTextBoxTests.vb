@@ -72,7 +72,7 @@ Public Class KBotTextBoxTests
                        c.Size = New Size(200, 100)
                        c.BorderWidth = 3
                        c.FocusBorderWidth = 3
-                       c.TextPadding = 5
+                       c.TextPadding = New Padding(5)
                        Dim zona As Rectangle = c.ContentBounds
                        Assert.Equal(8, zona.X)
                        Assert.Equal(8, zona.Y)
@@ -87,7 +87,7 @@ Public Class KBotTextBoxTests
         RunSta(Sub()
                    Using c As New KBotTextBox()
                        c.Size = New Size(200, 100)
-                       c.TextPadding = 0
+                       c.TextPadding = New Padding(0)
                        c.BorderWidth = 1
                        c.FocusBorderWidth = 3
                        ' Zona ține maximul dintre cele două grosimi, chiar dacă acum e desenată cea subțire.

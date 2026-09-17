@@ -9,6 +9,8 @@ not a creation timestamp, so the date veto rested on nothing; it survives as a s
 paths. **F25 amended** — step 4b matches on `CLng(DataR)`, not on the header hash. **F29 added**
 (the premise itself). **F30 added** — a recorded, deliberately unfixed hazard that follows from
 F25's real key. §1.5 rewritten accordingly; O2 closed, O7 added.
+**Revised 17.09.2026 (slice 0064): F31 added** — zero-valued lines are lines and are kept;
+**F32 added** — a header with only the total row is not a snapshot and is ignored everywhere.
 **Location:** `docs/FUNDAMENT_Asociere_Receptii.md` (moved here from the repo root in slice 0048-03).
 
 This document exists because the association form could not be explained to its users. Working
@@ -361,6 +363,41 @@ The operator states he has never seen the `DataR` edit happen in practice, and t
 behaviour is "not right all the time, but mostly works". **Recorded, deliberately not fixed here.**
 If a duplicate or a silently overwritten reception ever appears after a download, this is the first
 place to look. — `VERIFIED` in `Receptii_Prelucrare`; `OPERATOR`, 31.08.2026.
+
+**F31.** **A snapshot's zero-valued lines are lines, and are kept.** The site emits a
+`Suma receptie: 0 RON` row for an indicator of the reception that did not move (or fell to zero)
+in that save; it is not an error, it is the indicator being named at zero. `FX_Istoric_Populeaza_
+Receptii` in Access kept only `Val_Receptie <> 0` (`mdl_FX_Istoric.md` line 623), and the port
+(step 4a) followed it — so the indicator **disappeared from `FX_Receptii`** while `RHR` still
+carried it, and F16 ("sets only grow") refused a correct placement with *«Instantaneul pierde
+indicatorii…»*. F14 and F16 rest on the sets in `FX_Receptii`, so the ingest must not throw part of
+the set away: a non-header history row that **names an indicator** (`CodAI`) is a line whatever its
+value (`prelucrare_helpers.este_linie_receptie`, shared by step 4a and the rebuild route). Rows
+ingested before 17.09.2026 lack those lines; **«Refacere din istoric»** (slice 0062) puts them back,
+since it sees them as missing by `IDH`. Side effect, wanted: `SUM(DIF)` on a line now comes down when
+the indicator falls to zero. — `OPERATOR`, 17.09.2026; `VERIFIED` in `mdl_FX_Istoric.md` and
+`prelucrare_pasi.step4a_populeaza_receptii`.
+
+**F32.** **A header with only the total row — no indicator line — is not a snapshot and is
+ignored everywhere.** The operator found rows in `FX_Istoric` where a reception header
+(`(activ:true)`, with a `Total`) is preceded by no per-indicator row at all. That is not a state a
+reception can be in — with F31 even a save that changed nothing names every indicator, at zero —
+so they are errors left by the old Access app, and they carry nothing: no indicator set for
+F14/F16, no line for `DIF`, no truth for `Final`/`Partial`. They are therefore left out
+**everywhere, by one criterion**: step 4a and «Refacere din istoric» do not write an
+`FX_Receptii_H` for such a header (`prelucrare_helpers.is_header_only_snapshot`), and every
+reader of `FX_Receptii_H` — the association editor, the ingest proposal and its context, the
+chain members F15/F16 judge, `recalculeaza_final`, `DIFH`, the Recepții tree, the `AreReceptii`
+flag — filters with `prelucrare_helpers.SNAPSHOT_COUNTS_SQL` (*not a deletion, and has at least
+one `FX_Receptii` line*). The **deletion row is the one exemption** (F21): it never has lines
+and it IS the last snapshot of its chain. A header whose only line row names an indicator
+unknown to `FX_Indicatori` is NOT the F32 case: the line row exists, so the rebuild still
+writes the header and the line can attach once the indicator does. Rows already in the base
+stay there (a delete would have to reach `FX_ORD.IDRH`), unseen; the rebuild names them.
+Consequence to know: a snapshot ingested **before F31** whose only lines were zeros has no
+`FX_Receptii` line either, and is hidden by the same filter until «Refacere din istoric» puts
+its zero lines back — the repair F31 already requires. — `OPERATOR`, 17.09.2026; `VERIFIED` in
+`prelucrare_pasi.step4a_populeaza_receptii` and `receptii_refacere.refa_receptii`.
 
 ---
 

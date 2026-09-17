@@ -295,4 +295,16 @@ Public Class SumarView
         End Try
     End Sub
 
+    Private Sub lblCod_Click(sender As Object, e As EventArgs) Handles lblCod.Click
+        'copy to clipboard
+        If Not String.IsNullOrWhiteSpace(lblCod.Text) Then
+            Try
+                Clipboard.SetText(lblCod.Text)
+            Catch ex As Exception
+                GlobalErrorLog.Write("SumarView.lblCod_Click", ex)
+                MessageBox.Show("Nu s-a putut copia codul în clipboard.", "Eroare",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End Try
+        End If
+    End Sub
 End Class

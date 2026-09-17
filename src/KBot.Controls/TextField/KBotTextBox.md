@@ -14,6 +14,8 @@ line, fixed 1 px outline, password eye, no scrolling).
 ## API
 Text: `Text`, `Lines`, `Multiline = True`, `WordWrap = True`, `ReadOnly = False`,
 `MaxLength = 32767`, `PlaceholderText`, `TextAlign`, `UseSystemPasswordChar = False`,
+`PasswordChar`, `AcceptsReturn`, `AcceptsTab`, `CharacterCasing`, `HideSelection`,
+`ShortcutsEnabled` (all forwarded to the inner box, all in the F4 grid under «K-BOT»),
 `AppendText(text)`, `FocusInput()`, `InnerTextBox`.
 
 Scrolling: `ScrollBars = Vertical`, `AutoHideScrollBars = True`,
@@ -22,8 +24,21 @@ Scrolling: `ScrollBars = Vertical`, `AutoHideScrollBars = True`,
 `ViewChanged` event.
 
 Frame: `BorderColor`, `FocusBorderColor` (Empty = accent), `BorderWidth = 1`,
-`FocusBorderWidth = 1`, `CornerRadius = 4`, `TextPadding = 6` (logical px),
-`ContentBounds`, `GetPreferredSize`.
+`FocusBorderWidth = 1`, `CornerRadius = 4`, `ContentBounds`, `GetPreferredSize`.
+
+Paddings (all `Padding`, all logical px, all with ShouldSerialize/Reset — C4):
+- `TextPadding = (6,6,6,6)` — outline → text, per side. Where a bar shows, the text stops at
+  the bar's band on that side instead.
+- `VerticalScrollBarPadding = (0,6,6,6)` — `Left` faces the text, `Right` the outline,
+  `Top`/`Bottom` inset the bar from the outline's ends.
+- `HorizontalScrollBarPadding = (6,0,6,6)` — `Top` faces the text, `Bottom` the outline,
+  `Left`/`Right` inset the bar from the outline's sides.
+- Where both bars show, each stops at the other's band; the corner stays empty.
+- Inherited `Control.Padding` does nothing here and is hidden from the grid (as on
+  `TextBoxBase`), so it cannot be mistaken for `TextPadding`.
+
+The defaults reproduce the single-number geometry the control had before (6 px air, bars
+inset 6 px from the outline and glued to the text).
 
 Theme: `BackColor` / `ForeColor` / `Font` overridden with ShouldSerialize/Reset (C4),
 `ApplyTheme(scheme)`. Also `FieldKeyDown` (the inner box's `KeyDown`, re-raised).

@@ -160,6 +160,9 @@ Partial Class CertificateSelectionForm
         ' CertificateSelectionForm
         '
         AcceptButton = btnSelect
+        ' No child is docked Fill (absolute layout), so there is no root to measure the content
+        ' from; the fixed dialog keeps its designer size. Centring on the app screen still applies.
+        AutoFitToTheme = False
         AutoScaleDimensions = New System.Drawing.SizeF(8F, 18F)
         AutoScaleMode = AutoScaleMode.Font
         BackColor = Drawing.Color.White

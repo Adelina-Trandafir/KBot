@@ -4,9 +4,10 @@
 ' (GET /api/forexe/receptii). Serverul NU pre-formeaza arborele: intoarce un rand per
 ' linie FX_Receptii (cu antetul H si receptia R purtate pe rand) plus lista de plati a
 ' angajamentului. Clientul (ReceptiiView) deriva:
-'   * arborele pe 2 niveluri: receptie (IDRR) -> antet (IDRH);
-'   * grila LISTA (per antet selectat): un rand-total sintetic + un rand per clsf;
-'   * (felia 0015-02) tooltip-ul de receptie, din DIFH-uri necumulate + plati.
+'   * arborele: radacina «Toate receptiile» -> luna -> receptie (IDRR) (felia 0065);
+'   * grila LISTA (per nod selectat): un rand per clsf, din ULTIMUL antet al fiecarei
+'     receptii, nu un agregat peste tot lantul (felia 0065);
+'   * tooltip-ul de receptie / luna: cumulul totalurilor ULTIMULUI antet + plati.
 ' Modele pure (fara logica de I/O) -> nu poarta Try/Catch (regula casei: POCO-uri simple).
 
 ''' <summary>
@@ -17,7 +18,9 @@
 ''' </summary>
 Public NotInheritable Class ReceptieRow
     ' --- receptia (R) ---
-    ''' <summary>Cheia primara FX_Receptii_R — identitatea receptiei (radacina arborelui).</summary>
+    ''' <summary>Cheia primara FX_Receptii_R — identitatea receptiei (radacina arborelui).
+    ''' 0 = antetul NU sta pe nicio receptie (H.IDRR NULL, «instantaneu neasezat», felia 0062):
+    ''' aceeasi conventie ca in AsociereInfo. Serverul trimite null; clientul citeste 0.</summary>
     Public Property Idrr As Integer
     ''' <summary>NRCRT al receptiei — cheia principala de ordonare a radacinilor.</summary>
     Public Property NrCrtR As Integer?
@@ -41,6 +44,10 @@ Public NotInheritable Class ReceptieRow
     ''' </summary>
     Public Property ReconstituitNesigur As Boolean
 
+    ''' <summary>Descrierea receptiei (FX_Receptii_R.Descriere). Tooltip-ul nodului de
+    ''' receptie o arata (felia 0065). Poate fi goala.</summary>
+    Public Property DescriereR As String = String.Empty
+
     ' --- antetul (H) ---
     ''' <summary>Cheia primara FX_Receptii_H — identitatea antetului (nodul arborelui).</summary>
     Public Property Idrh As Integer
@@ -53,6 +60,10 @@ Public NotInheritable Class ReceptieRow
     ''' <summary>Antet sters. Arborele il arata oricum (qFX_MAIN_REC_TREE nu filtreaza
     ''' Sters), dar cumulul DIFH din tooltip il EXCLUDE (qFX_MAIN_REC_TT_DIFH: Sters=False).</summary>
     Public Property StersH As Boolean
+    ''' <summary>Randul de stergere al lantului (F21): ULTIMUL instantaneu al unei receptii
+    ''' sterse pe site, fara nicio linie pe indicator. Vederea il tine ca ultim antet (totalul
+    ''' lui e valoarea receptiei la stergere), dar liniile le ia din ultimul antet CU linii.</summary>
+    Public Property EsteStergere As Boolean
     ''' <summary>Descrierea antetului. Coloana „Descriere" a grilei o afiseaza pe randurile
     ''' per-clsf (randul-total arata „Toți indicatorii"). Poate fi goala.</summary>
     Public Property DescriereH As String = String.Empty

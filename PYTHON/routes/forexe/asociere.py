@@ -98,6 +98,8 @@ from utils.database import get_kbot_connection
 from utils import asociere_log as journal
 
 from . import forexe_bp
+from .prelucrare_helpers import SNAPSHOT_COUNTS_SQL
+from .prelucrare_pasi import step4d_calculeaza_dif
 from .prelucrare_asociere import (
     ACTIUNE_ASOCIAT,
     ACTIUNE_IGNORAT,
@@ -140,10 +142,15 @@ class InstantaneuBlocat(Exception):
 # TOATE instantaneele angajamentului, nu doar cele neasezate: aici se editeaza legaturile
 # EXISTENTE, deci cele asociate sunt chiar subiectul. Vin si cele marcate `Sters` (F17,
 # «nu consemneaza nicio schimbare»), ca operatorul sa le poata rasgandi.
+#
+# F32: un antet fara nicio linie, care nu e stergere, NU e instantaneu -- e o eroare a
+# vechii aplicatii Access -- si nu apare in editor. `SNAPSHOT_COUNTS_SQL` il lasa afara;
+# o comanda care l-ar numi cade in `verifica_blocajele` cu «nu exista pe acest angajament».
 _INSTANTANEE_SQL = (
-    "SELECT IDRH, IDRR, IDH, DataH, Total, Descriere, TipReceptie, "
-    "       COALESCE(Sters, 0) AS Sters, COALESCE(EsteStergere, 0) AS EsteStergere "
-    "FROM FX_Receptii_H WHERE CodAngajament = %s ORDER BY DataH, IDRH"
+    "SELECT H.IDRH, H.IDRR, H.IDH, H.DataH, H.Total, H.Descriere, H.TipReceptie, "
+    "       COALESCE(H.Sters, 0) AS Sters, COALESCE(H.EsteStergere, 0) AS EsteStergere "
+    "FROM FX_Receptii_H H WHERE H.CodAngajament = %s AND " + SNAPSHOT_COUNTS_SQL + " "
+    "ORDER BY H.DataH, H.IDRH"
 )
 _LINII_SQL = (
     "SELECT IDRH, CodIndicator, CodAI, CodSSI, IdClsf, Valoare "
@@ -271,6 +278,12 @@ def citeste_instantanee(cursor, cod: str, blocaje: dict) -> list:
 
     Ancora e `idrh`, nu `rand_istoric`: nu exista sarcina utila din care sa vina un
     indice, si nici nu e nevoie -- randurile sunt deja in baza.
+
+    `rand_istoric` se pune totusi, ca ALIAS al lui `idrh` -- exact ca in
+    `normalizeaza_comenzi`. Functiile imprumutate din `prelucrare_asociere`
+    (`valideaza_plasarile`, `materializeaza_reconstituite`) cheiaza instantaneele pe
+    `rand_istoric`, si fara alias FIECARE salvare cadea cu `KeyError: 'rand_istoric'`
+    la prima verificare de lant (defectul din 17.09.2026).
     """
     cursor.execute(_LINII_SQL, (cod,))
     linii = {}
@@ -292,6 +305,7 @@ def citeste_instantanee(cursor, cod: str, blocaje: dict) -> list:
         motive = blocaje.get(idrh, [])
         out.append({
             "idrh": idrh,
+            "rand_istoric": idrh,
             "idrr": int(r["IDRR"]) if r["IDRR"] is not None else 0,
             "idh": int(r["IDH"]) if r["IDH"] is not None else 0,
             "data_h": r["DataH"],
@@ -580,6 +594,14 @@ def aplica_comenzi(cursor, cod: str, comenzi: list, instantanee: list,
 
     for idrr in sorted(de_recalculat):
         recalculeaza_final(cursor, idrr)
+
+    # Pasul 4d, pe fiecare lant atins (felia 0065). Ingestia il ruleaza dupa 4c si
+    # refacerea dupa ce a scris; editorul de oricand NU il rula, deci un instantaneu
+    # asezat de aici ramanea cu `DIFH`/`DIF` NULL -- iar `SUM(DIF)` din ordonantare
+    # (`qFX_ORD_REC_ANT`) si eticheta din Receptii nu il vedeau. Operatorul a gasit o
+    # receptie lipsa din total: 25.410 in loc de 29.645.
+    for idrr in sorted(de_recalculat):
+        step4d_calculeaza_dif(cursor, cod, idrr)
 
     marcheaza_reconstituirile_nesigure(cursor, cod, avertismente)
     journal.section("ce s-a scris")

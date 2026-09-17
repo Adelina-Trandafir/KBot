@@ -284,6 +284,7 @@ Partial Public Class AdvancedTreeControl
     ''' de culoare — e singurul loc care le atinge, de când traversarea temei nu mai intră aici.
     ''' </summary>
     Friend Sub RestyleSearchChildren()
+        If _searchBoxHost IsNot Nothing Then _searchBoxHost.BackColor = SearchBoxBackColor
         If _searchTextBox IsNot Nothing Then
             _searchTextBox.BackColor = SearchBoxBackColor
             _searchTextBox.ForeColor = Me.ForeColor

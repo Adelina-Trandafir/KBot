@@ -146,6 +146,28 @@ if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish a esuat (ExitCode=$LASTEXITCODE)."
 }
 
+# --- 4b. Migrare — KBot.Migrator (utilitarul Access -> MariaDB) in subfolderul 'Migrare\' ---
+#  Este un EXE separat (nu e referit de KBot.App), deci are publish-ul lui. Sta in subfolder
+#  ca sa-si pastreze propriile .deps.json / .runtimeconfig.json fara sa se amestece cu ale
+#  aplicatiei. Aceiasi parametri: framework-dependent, fara single-file.
+$MigratorProj = Join-Path $SolutionRoot 'src\KBot.Migrator\KBot.Migrator.vbproj'
+if (-not (Test-Path $MigratorProj)) { throw "Nu gasesc proiectul: $MigratorProj" }
+$MigrareDir = Join-Path $PublishDir 'Migrare'
+Write-Host "Publish KBot.Migrator -> Migrare\ ..." -ForegroundColor Cyan
+& dotnet publish $MigratorProj `
+    -c $Configuration `
+    -r $Rid `
+    --self-contained false `
+    -p:PublishSingleFile=false `
+    -o $MigrareDir
+if ($LASTEXITCODE -ne 0) {
+    throw "dotnet publish KBot.Migrator a esuat (ExitCode=$LASTEXITCODE)."
+}
+if (-not (Test-Path -LiteralPath (Join-Path $MigrareDir 'KBot.Migrator.exe'))) {
+    throw "KBot.Migrator.exe lipseste din $MigrareDir dupa publish."
+}
+Write-Host "Migrare OK: KBot.Migrator.exe in $MigrareDir" -ForegroundColor Cyan
+
 # --- 5. Folder Workflows — copiaza .wfl din src\KBot.Forexe\Workflows in output ---
 #  Sursa de adevar pentru workflow-uri. Eroare DURA daca lipsesc (app-ul nu se conecteaza).
 $WorkflowsDir    = Join-Path $PublishDir 'Workflows'
@@ -243,4 +265,5 @@ Write-Host "                 -> optional alt folder: KBot_Setup_$Stamp.exe `"D:\
 Write-Host "  Zip (manual) : $ZipPath  ($ZipSizeMB MB)  [fallback de dezarhivare manuala]"
 Write-Host "  Necesita     : .NET Desktop Runtime 8 (win-x64) instalat pe PC-ul clientului."
 Write-Host "  Workflows    : $($wfls.Count) fisier(e) .wfl incluse deja in 'Workflows\'."
+Write-Host "  Migrare      : KBot.Migrator.exe (Access -> MariaDB) inclus in 'Migrare\'."
 Write-Host "  Browser      : prima rulare pe un PC nou cere '.\playwright.ps1 install chromium' (per-user)."

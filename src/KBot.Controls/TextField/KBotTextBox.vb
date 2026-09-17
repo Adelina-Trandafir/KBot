@@ -82,7 +82,15 @@ Public NotInheritable Class KBotTextBox
     Private _grosimeChenar As Integer = 1        ' px LOGICI
     Private _grosimeChenarFocus As Integer = 1   ' px LOGICI
     Private _raza As Integer = 4                 ' px LOGICI
-    Private _paddingIntern As Integer = 6        ' px LOGICI
+    ' Every air below is LOGICAL px, one side at a time (C2). The defaults reproduce the
+    ' geometry the control had when the air was a single number: 6 px between outline and
+    ' text, the bars inset 6 px from the outline and glued to the text.
+    Private Shared ReadOnly DefaultTextPadding As New Padding(6)
+    Private Shared ReadOnly DefaultVerticalScrollBarPadding As New Padding(0, 6, 6, 6)
+    Private Shared ReadOnly DefaultHorizontalScrollBarPadding As New Padding(6, 0, 6, 6)
+    Private _textPadding As Padding = DefaultTextPadding
+    Private _vBarPadding As Padding = DefaultVerticalScrollBarPadding
+    Private _hBarPadding As Padding = DefaultHorizontalScrollBarPadding
     Private _grosimeBara As Integer = KBotScrollBar.GrosimeImplicita  ' px LOGICI
     Private _bare As System.Windows.Forms.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
     Private _ascundeBareleNefolosite As Boolean = True
@@ -104,7 +112,7 @@ Public NotInheritable Class KBotTextBox
                  ControlStyles.OptimizedDoubleBuffer Or ControlStyles.ResizeRedraw Or
                  ControlStyles.SupportsTransparentBackColor, True)
         SetStyle(ControlStyles.Selectable, False)
-        TabStop = False
+        MyBase.TabStop = False
 
         _inner.BorderStyle = BorderStyle.None
         _inner.Multiline = True
@@ -141,11 +149,14 @@ Public NotInheritable Class KBotTextBox
 
     ' ═══ Suprafața de text ═══════════════════════════════════════════════════
 
+    ' The multiline editor is the one TextBoxBase itself names, by string, so the property grid
+    ' opens the drop-down text area instead of a one-line cell.
     <Category("K-BOT")>
     <Description("Textul casetei.")>
     <Browsable(True)>
     <EditorBrowsable(EditorBrowsableState.Always)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)>
+    <Editor("System.ComponentModel.Design.MultilineStringEditor, System.Design, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a", GetType(System.Drawing.Design.UITypeEditor))>
     Public Overrides Property Text As String
         Get
             Return _inner.Text
@@ -286,6 +297,82 @@ Public NotInheritable Class KBotTextBox
         End Set
     End Property
 
+    ' ── The rest of the inner box's authoring surface, forwarded one to one ──
+    ' Everything an operator could set on a plain TextBox in the property grid is reachable
+    ' from the frame too; the frame is what sits on the form, so the frame is what F4 shows.
+
+    <Category("K-BOT")>
+    <Description("Caracterul afișat în loc de text (parolă). Doar pe o singură linie; gol = niciunul.")>
+    <DefaultValue(ChrW(0))>
+    Public Property PasswordChar As Char
+        Get
+            Return _inner.PasswordChar
+        End Get
+        Set(v As Char)
+            _inner.PasswordChar = v
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Enter pune rând nou în casetă, în loc să apese butonul implicit al formularului.")>
+    <DefaultValue(False)>
+    Public Property AcceptsReturn As Boolean
+        Get
+            Return _inner.AcceptsReturn
+        End Get
+        Set(v As Boolean)
+            _inner.AcceptsReturn = v
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Tab pune un tabulator în casetă, în loc să mute focusul.")>
+    <DefaultValue(False)>
+    Public Property AcceptsTab As Boolean
+        Get
+            Return _inner.AcceptsTab
+        End Get
+        Set(v As Boolean)
+            _inner.AcceptsTab = v
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Forțează literele mari sau mici la tastare.")>
+    <DefaultValue(CharacterCasing.Normal)>
+    Public Property CharacterCasing As CharacterCasing
+        Get
+            Return _inner.CharacterCasing
+        End Get
+        Set(v As CharacterCasing)
+            _inner.CharacterCasing = v
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Selecția nu se mai vede când caseta pierde focusul.")>
+    <DefaultValue(True)>
+    Public Property HideSelection As Boolean
+        Get
+            Return _inner.HideSelection
+        End Get
+        Set(v As Boolean)
+            _inner.HideSelection = v
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Scurtăturile de tastatură ale casetei (Ctrl+C, Ctrl+V, Ctrl+A…) și meniul contextual.")>
+    <DefaultValue(True)>
+    Public Property ShortcutsEnabled As Boolean
+        Get
+            Return _inner.ShortcutsEnabled
+        End Get
+        Set(v As Boolean)
+            _inner.ShortcutsEnabled = v
+        End Set
+    End Property
+
     ''' <summary>Rândurile textului (delegat la caseta internă).</summary>
     <Browsable(False)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
@@ -343,7 +430,7 @@ Public NotInheritable Class KBotTextBox
 
     ' ═══ Chenar ══════════════════════════════════════════════════════════════
 
-    <Category("K-BOT")>
+    <Category("K-BOT: Culori")>
     <Description("Culoarea chenarului; goală = InputBorderColor din temă.")>
     Public Property BorderColor As Color
         Get
@@ -362,7 +449,7 @@ Public NotInheritable Class KBotTextBox
         Invalidate()
     End Sub
 
-    <Category("K-BOT")>
+    <Category("K-BOT: Culori")>
     <Description("Culoarea chenarului cât timp caseta are focus; goală = accentul temei.")>
     Public Property FocusBorderColor As Color
         Get
@@ -431,20 +518,134 @@ Public NotInheritable Class KBotTextBox
         End Set
     End Property
 
-    <Category("K-BOT")>
-    <Description("Aerul dintre chenar și text (px logici).")>
-    <DefaultValue(6)>
-    Public Property TextPadding As Integer
+    ' ═══ Aer (paddings) ═══════════════════════════════════════════════════════
+    ' Three paddings, all logical px, all four sides each (C2, C4). A side that faces a
+    ' scrollbar is measured to that bar, not to the outline.
+
+    ''' <summary>
+    ''' The air between the outline and the text, each side on its own, px @96dpi. When a bar
+    ''' is showing, the text stops at the bar's band instead of at this padding on that side.
+    ''' </summary>
+    <Category("K-BOT: Paddings")>
+    <Description("Aerul dintre chenar și text: stânga, sus, dreapta, jos (px logici).")>
+    Public Property TextPadding As Padding
         Get
-            Return _paddingIntern
+            Return _textPadding
         End Get
-        Set(v As Integer)
-            Dim nou As Integer = Math.Max(0, v)
-            If _paddingIntern = nou Then Return
-            _paddingIntern = nou
+        Set(v As Padding)
+            Dim nou As Padding = ClampPad(v)
+            If _textPadding = nou Then Return
+            _textPadding = nou
             RefaLayout()
         End Set
     End Property
+    Public Function ShouldSerializeTextPadding() As Boolean
+        Return _textPadding <> DefaultTextPadding
+    End Function
+    Public Sub ResetTextPadding()
+        TextPadding = DefaultTextPadding
+    End Sub
+
+    ''' <summary>
+    ''' The air around the vertical bar, px @96dpi: <c>Left</c> faces the text, <c>Right</c>
+    ''' faces the outline, <c>Top</c>/<c>Bottom</c> inset the bar from the top and bottom of the
+    ''' outline (where the horizontal bar is showing, the bar stops at that bar's band instead).
+    ''' </summary>
+    <Category("K-BOT: Paddings")>
+    <Description("Aerul din jurul barei verticale (px logici): Left = față de text, Right = față de chenar, Top/Bottom = față de capetele chenarului.")>
+    Public Property VerticalScrollBarPadding As Padding
+        Get
+            Return _vBarPadding
+        End Get
+        Set(v As Padding)
+            Dim nou As Padding = ClampPad(v)
+            If _vBarPadding = nou Then Return
+            _vBarPadding = nou
+            RefaLayout()
+        End Set
+    End Property
+    Public Function ShouldSerializeVerticalScrollBarPadding() As Boolean
+        Return _vBarPadding <> DefaultVerticalScrollBarPadding
+    End Function
+    Public Sub ResetVerticalScrollBarPadding()
+        VerticalScrollBarPadding = DefaultVerticalScrollBarPadding
+    End Sub
+
+    ''' <summary>
+    ''' The air around the horizontal bar, px @96dpi: <c>Top</c> faces the text, <c>Bottom</c>
+    ''' faces the outline, <c>Left</c>/<c>Right</c> inset the bar from the sides of the outline
+    ''' (where the vertical bar is showing, the bar stops at that bar's band instead).
+    ''' </summary>
+    <Category("K-BOT: Paddings")>
+    <Description("Aerul din jurul barei orizontale (px logici): Top = față de text, Bottom = față de chenar, Left/Right = față de laturile chenarului.")>
+    Public Property HorizontalScrollBarPadding As Padding
+        Get
+            Return _hBarPadding
+        End Get
+        Set(v As Padding)
+            Dim nou As Padding = ClampPad(v)
+            If _hBarPadding = nou Then Return
+            _hBarPadding = nou
+            RefaLayout()
+        End Set
+    End Property
+    Public Function ShouldSerializeHorizontalScrollBarPadding() As Boolean
+        Return _hBarPadding <> DefaultHorizontalScrollBarPadding
+    End Function
+    Public Sub ResetHorizontalScrollBarPadding()
+        HorizontalScrollBarPadding = DefaultHorizontalScrollBarPadding
+    End Sub
+
+    ''' <summary>
+    ''' <c>Control.Padding</c> does nothing on this frame (the layout is its own and the three
+    ''' paddings above are the ones that work) -- hidden from the property grid so it cannot be
+    ''' mistaken for <see cref="TextPadding"/>. Same treatment as <c>TextBoxBase</c> gives it.
+    ''' </summary>
+    <Browsable(False)>
+    <EditorBrowsable(EditorBrowsableState.Never)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Shadows Property Padding As Padding
+        Get
+            Return MyBase.Padding
+        End Get
+        Set(value As Padding)
+            MyBase.Padding = value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' The frame is never the tab target (the inner box is), so <c>TabStop</c> has no meaning
+    ''' here. Shadowed with the right default so hosts stop printing <c>TabStop = False</c>.
+    ''' </summary>
+    <Browsable(False)>
+    <EditorBrowsable(EditorBrowsableState.Never)>
+    <DefaultValue(False)>
+    Public Shadows Property TabStop As Boolean
+        Get
+            Return MyBase.TabStop
+        End Get
+        Set(value As Boolean)
+            MyBase.TabStop = value
+        End Set
+    End Property
+
+    ' Negative air is not air: C3 says clamp a number, not throw for it.
+    Private Shared Function ClampPad(p As Padding) As Padding
+        Return New Padding(Math.Max(0, p.Left), Math.Max(0, p.Top),
+                           Math.Max(0, p.Right), Math.Max(0, p.Bottom))
+    End Function
+
+    ' Logical px -> device px, one side at a time (C2).
+    Private Function ScalePad(p As Padding) As Padding
+        Return New Padding(ThemeShapes.ScaleDpi(Me, p.Left), ThemeShapes.ScaleDpi(Me, p.Top),
+                           ThemeShapes.ScaleDpi(Me, p.Right), ThemeShapes.ScaleDpi(Me, p.Bottom))
+    End Function
+
+    ' A rectangle with the air taken out of it, never smaller than nothing.
+    Private Shared Function Shrink(r As Rectangle, p As Padding) As Rectangle
+        Return New Rectangle(r.Left + p.Left, r.Top + p.Top,
+                             Math.Max(0, r.Width - p.Horizontal), Math.Max(0, r.Height - p.Vertical))
+    End Function
 
     ' ═══ Proprietăți ambientale: steag propriu, ca designerul să nu le înghețe ═
 
@@ -546,13 +747,21 @@ Public NotInheritable Class KBotTextBox
         Return ThemeShapes.ScaleDpi(Me, Math.Max(_grosimeChenar, _grosimeChenarFocus))
     End Function
 
-    ''' <summary>Dreptunghiul dinăuntrul chenarului și al aerului — acolo stau textul și barele.</summary>
+    ''' <summary>The rectangle inside the reserved outline (device px): text air and bars live in it.</summary>
+    Private Function FrameBounds() As Rectangle
+        Dim m As Integer = ChenarRezervat()
+        Return New Rectangle(m, m, Math.Max(0, Width - 2 * m), Math.Max(0, Height - 2 * m))
+    End Function
+
+    ''' <summary>
+    ''' The rectangle inside the outline and the text air (device px) -- where the text goes
+    ''' before a bar takes its band off the right or the bottom.
+    ''' </summary>
     <Browsable(False)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Property ContentBounds As Rectangle
         Get
-            Dim m As Integer = ChenarRezervat() + ThemeShapes.ScaleDpi(Me, _paddingIntern)
-            Return New Rectangle(m, m, Math.Max(0, Width - 2 * m), Math.Max(0, Height - 2 * m))
+            Return Shrink(FrameBounds(), ScalePad(_textPadding))
         End Get
     End Property
 
@@ -566,27 +775,46 @@ Public NotInheritable Class KBotTextBox
         End Try
     End Sub
 
+    ' Each visible bar owns a BAND along its edge of the frame: its own air on both sides plus
+    ' its thickness. The text stops at the band (or at its own air, whichever comes first) and
+    ' where the two bands cross each bar stops at the other's band, so the corner stays empty.
     Private Sub AsazaCopiii()
+        Dim cadru As Rectangle = FrameBounds()
         Dim zona As Rectangle = ContentBounds
-        If zona.Width <= 0 OrElse zona.Height <= 0 Then Return
+        If cadru.Width <= 0 OrElse cadru.Height <= 0 Then Return
 
         Dim grosime As Integer = ThemeShapes.ScaleDpi(Me, _grosimeBara)
+        Dim aerV As Padding = ScalePad(_vBarPadding)
+        Dim aerH As Padding = ScalePad(_hBarPadding)
         Dim cuV As Boolean = _vBar.Visible
         Dim cuH As Boolean = _hBar.Visible
 
-        Dim latimeText As Integer = Math.Max(0, zona.Width - If(cuV, grosime, 0))
-        Dim inaltimeText As Integer = Math.Max(0, zona.Height - If(cuH, grosime, 0))
+        Dim bandaV As Integer = If(cuV, aerV.Left + grosime + aerV.Right, 0)   ' right band, width
+        Dim bandaH As Integer = If(cuH, aerH.Top + grosime + aerH.Bottom, 0)   ' bottom band, height
+
+        Dim dreaptaText As Integer = If(cuV, Math.Min(zona.Right, cadru.Right - bandaV), zona.Right)
+        Dim josText As Integer = If(cuH, Math.Min(zona.Bottom, cadru.Bottom - bandaH), zona.Bottom)
+        Dim latimeText As Integer = Math.Max(0, dreaptaText - zona.X)
+        Dim inaltimeText As Integer = Math.Max(0, josText - zona.Y)
 
         ' Pe o singură linie caseta internă își impune înălțimea; o centrăm în zonă.
         If _inner.Multiline Then
             _inner.SetBounds(zona.X, zona.Y, latimeText, inaltimeText)
         Else
-            Dim sus As Integer = zona.Y + Math.Max(0, (zona.Height - _inner.Height) \ 2)
+            Dim sus As Integer = zona.Y + Math.Max(0, (inaltimeText - _inner.Height) \ 2)
             _inner.SetBounds(zona.X, sus, latimeText, _inner.Height)
         End If
 
-        If cuV Then _vBar.SetBounds(zona.Right - grosime, zona.Y, grosime, inaltimeText)
-        If cuH Then _hBar.SetBounds(zona.X, zona.Bottom - grosime, latimeText, grosime)
+        If cuV Then
+            Dim sus As Integer = cadru.Y + aerV.Top
+            Dim jos As Integer = If(cuH, cadru.Bottom - bandaH, cadru.Bottom - aerV.Bottom)
+            _vBar.SetBounds(cadru.Right - aerV.Right - grosime, sus, grosime, Math.Max(0, jos - sus))
+        End If
+        If cuH Then
+            Dim stanga As Integer = cadru.X + aerH.Left
+            Dim dreapta As Integer = If(cuV, cadru.Right - bandaV, cadru.Right - aerH.Right)
+            _hBar.SetBounds(stanga, cadru.Bottom - aerH.Bottom - grosime, Math.Max(0, dreapta - stanga), grosime)
+        End If
     End Sub
 
     Protected Overrides Sub OnResize(e As EventArgs)
@@ -626,8 +854,8 @@ Public NotInheritable Class KBotTextBox
     ''' </summary>
     Public Overrides Function GetPreferredSize(proposedSize As Size) As Size
         Try
-            Dim m As Integer = ChenarRezervat() + ThemeShapes.ScaleDpi(Me, _paddingIntern)
-            Return New Size(Width, _inner.PreferredHeight + 2 * m)
+            Dim aer As Padding = ScalePad(_textPadding)
+            Return New Size(Width, _inner.PreferredHeight + 2 * ChenarRezervat() + aer.Vertical)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotTextBox.GetPreferredSize", ex)
             Return MyBase.GetPreferredSize(proposedSize)

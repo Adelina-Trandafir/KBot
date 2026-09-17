@@ -57,6 +57,11 @@ Public Class ReceptiiViewTests
             Throw New NotSupportedException()
         End Function
 
+        Public Function RebuildReceptiiAsync(cod As String, apply As Boolean, ct As CancellationToken) _
+            As Task(Of ReceptiiRebuildResult) Implements IApiClient.RebuildReceptiiAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public ReadOnly RequestedCods As New List(Of String)()
         Public ReadOnly Pending As New Dictionary(Of String, TaskCompletionSource(Of ReceptiiInfo))(StringComparer.Ordinal)
 
@@ -567,6 +572,69 @@ Public Class ReceptiiViewTests
     End Sub
 
     <Fact>
+    Public Sub Grid_IsPerIndicator_ZeroRowsIncluded_AndCaptionCarriesHeaderTime()
+        ' Operator's case (17.09.2026, AAB4RNH8B8K): two receptii on 16.06, two indicators
+        ' (20.01.30 / 20.05.30). The server sends one row per indicator for EVERY header,
+        ' Idr Nothing + Valoare 0 where the header has no line on that indicator.
+        '  R123: headers 156 (10:08:17) and 157 (10:08:18), both 20.01.30 = 12100.
+        '  R124: header 158 (10:09:37): 20.05.30 = 10350, 20.01.30 = 0 (real zero line).
+        ' Month  -> 20.01.30 = 12100, 20.05.30 = 10350.
+        ' R123   -> 12100 and 0.   R124 -> 0 and 10350.
+        ' The caption carries the time of the last header so the two days tell apart.
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim g = GridOf(view)
+                       Dim t = TreeOf(view)
+
+                       Dim d As New Date(2026, 6, 16)
+                       Dim data As New ReceptiiInfo() With {.Cod = "A100"}
+                       ' R123 / header 156
+                       data.Receptii.Add(Row(123, 1, d, 12100.0, False, True, 156, New Date(2026, 6, 15, 10, 8, 17), 12100.0, 12100.0, "F58",
+                                             327, "65.02.04.01.20.01.30", "alte bunuri", 1, 12100.0, 12100.0))
+                       data.Receptii.Add(Row(123, 1, d, 12100.0, False, True, 156, New Date(2026, 6, 15, 10, 8, 17), 12100.0, 12100.0, "F58",
+                                             Nothing, "65.02.04.01.20.05.30", "obiecte inventar", 2, 0.0, 0.0))
+                       ' R123 / header 157 (the last one)
+                       data.Receptii.Add(Row(123, 1, d, 12100.0, False, True, 157, New Date(2026, 6, 15, 10, 8, 18), 12100.0, 0.0, "F58",
+                                             328, "65.02.04.01.20.01.30", "alte bunuri", 1, 12100.0, 0.0))
+                       data.Receptii.Add(Row(123, 1, d, 12100.0, False, True, 157, New Date(2026, 6, 15, 10, 8, 18), 12100.0, 0.0, "F58",
+                                             Nothing, "65.02.04.01.20.05.30", "obiecte inventar", 2, 0.0, 0.0))
+                       ' R124 / header 158
+                       data.Receptii.Add(Row(124, 2, d, 10350.0, False, True, 158, New Date(2026, 6, 15, 10, 9, 37), 10350.0, 10350.0, "F59",
+                                             473, "65.02.04.01.20.01.30", "alte bunuri", 1, 0.0, 0.0))
+                       data.Receptii.Add(Row(124, 2, d, 10350.0, False, True, 158, New Date(2026, 6, 15, 10, 9, 37), 10350.0, 10350.0, "F59",
+                                             329, "65.02.04.01.20.05.30", "obiecte inventar", 2, 10350.0, 10350.0))
+
+                       view.SetContext(Context("A100"))
+                       api.Complete("A100", data)
+                       Application.DoEvents()
+
+                       Dim iunie = t.Items(0)
+                       Assert.Equal(2, iunie.Children.Count)
+                       Assert.StartsWith("16.06.2026 10:08:18", iunie.Children(0).Caption)
+                       Assert.StartsWith("16.06.2026 10:09:37", iunie.Children(1).Caption)
+
+                       ClickNode(view, iunie)
+                       Assert.Equal(2, g.RowCount)
+                       Assert.Equal("65.02.04.01.20.01.30", CStr(g.Rows(0)("clsf")))
+                       Assert.Equal(12100.0, CDbl(g.Rows(0)("valoare")), 2)
+                       Assert.Equal("65.02.04.01.20.05.30", CStr(g.Rows(1)("clsf")))
+                       Assert.Equal(10350.0, CDbl(g.Rows(1)("valoare")), 2)
+
+                       ClickNode(view, iunie.Children(0))
+                       Assert.Equal(2, g.RowCount)
+                       Assert.Equal(12100.0, CDbl(g.Rows(0)("valoare")), 2)
+                       Assert.Equal(0.0, CDbl(g.Rows(1)("valoare")), 2)
+
+                       ClickNode(view, iunie.Children(1))
+                       Assert.Equal(2, g.RowCount)
+                       Assert.Equal(0.0, CDbl(g.Rows(0)("valoare")), 2)
+                       Assert.Equal(10350.0, CDbl(g.Rows(1)("valoare")), 2)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
     Public Sub EmptyReceptii_ShowsNoTreeNoGrid()
         RunSta(Sub()
                    Dim api As New FakeApiClient()
@@ -619,8 +687,10 @@ Public Class ReceptiiViewTests
                        Assert.Contains("1.000,00", ttMonthIan)
                        Assert.Contains("1.864,12", ttMonthIan)
 
-                       ' Recepția din Ianuarie folosește aceeași fereastră de plăți ca luna ei.
+                       ' The receptie (a day) takes the payments before the NEXT receptie
+                       ' (16.02): the 25.01 payment is in -> platiCum 1000, dif 1864,12.
                        Assert.Contains("Data recepție", ttReceptieIan)
+                       Assert.Contains("1.000,00", ttReceptieIan)
                        Assert.Contains("1.864,12", ttReceptieIan)
 
                        ' Februarie: difhCum 3480,43; platiCum 1000; dif 2480,43.
@@ -658,6 +728,53 @@ Public Class ReceptiiViewTests
     End Sub
 
     <Fact>
+    Public Sub Tooltip_OnReceptie_TakesPaymentsBeforeTheNextReceptie_LastTakesAll()
+        ' Operator's request (2026-09-17): a receptie takes every payment dated before the
+        ' NEXT receptie; the last one takes all the remaining payments (R1=01.01, R2=04.01,
+        ' P1=02.01, P2=05.01 -> R1 has P1, R2 has P1+P2). Two receptii in the same month.
+        '  R1 on 10.01 (100): payments < 20.01 = 05.01 (10) + 10.01 (20) + 15.01 (40) = 70
+        '                     -> dif 30. 25.01 (80) is out.
+        '  R2 on 20.01 (200): last -> all = 150 -> recCum 300, dif 150.
+        '  Month (single, last): all payments = 150 -> recCum 300, dif 150.
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim t = TreeOf(view)
+
+                       Dim data As New ReceptiiInfo() With {.Cod = "A100"}
+                       data.Receptii.Add(Row(1, 1, New Date(2026, 1, 10), 100.0, False, True,
+                                             11, New Date(2026, 1, 10), 100.0, 100.0, "Antet 1",
+                                             101, "65.02", "Salarii", 1, 100.0, 100.0))
+                       data.Receptii.Add(Row(2, 2, New Date(2026, 1, 20), 200.0, False, True,
+                                             21, New Date(2026, 1, 20), 200.0, 200.0, "Antet 2",
+                                             201, "65.02", "Salarii", 1, 200.0, 200.0))
+                       data.Plati.Add(New ReceptiePlata() With {.DataPlata = New Date(2026, 1, 5), .Suma = 10.0})
+                       data.Plati.Add(New ReceptiePlata() With {.DataPlata = New Date(2026, 1, 10), .Suma = 20.0})
+                       data.Plati.Add(New ReceptiePlata() With {.DataPlata = New Date(2026, 1, 15), .Suma = 40.0})
+                       data.Plati.Add(New ReceptiePlata() With {.DataPlata = New Date(2026, 1, 25), .Suma = 80.0})
+
+                       view.SetContext(Context("A100"))
+                       api.Complete("A100", data)
+                       Application.DoEvents()
+
+                       Dim month = t.Items(0)
+                       ' Receptii keep the server (row) order inside the month.
+                       Dim ttR1 = month.Children(0).Tooltip
+                       Dim ttR2 = month.Children(1).Tooltip
+
+                       Assert.Contains("70,00", ttR1)       ' 10 + 20 + 40, all before 20.01
+                       Assert.Contains("30,00", ttR1)       ' 100 - 70
+                       Assert.DoesNotContain("150,00", ttR1)   ' 25.01 is not R1's
+
+                       Assert.Contains("150,00", ttR2)      ' last receptie -> all payments
+                       Assert.Contains("300,00", ttR2)      ' recCum; dif = 300 - 150 = 150
+
+                       Assert.Contains("150,00", month.Tooltip)   ' month keeps its window
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
     Public Sub StaleResponse_ForSupersededCod_IsDiscarded()
         ' A100 e cerut, apoi B200 înainte ca A100 să răspundă. Răspunsul lui A100 vine
         ' ULTIMUL și nu are voie să suprascrie arborele lui B200.
@@ -684,6 +801,132 @@ Public Class ReceptiiViewTests
                        Application.DoEvents()
 
                        Assert.Equal(1, t.Items.Count)
+                   End Using
+               End Sub)
+    End Sub
+
+    ' ── Instantanee neașezate (felia 0062) ───────────────────────────────────
+    ' Un antet cu H.IDRR NULL vine cu Idrr = 0 și NU are lună de DataR: merge într-un dosar
+    ' separat, la sfârșit, cu un nod per antet. Tooltip-urile de reconciliere nu îl văd.
+
+    Private Shared Function UnplacedRow(idrh As Integer, dataH As Date, total As Double,
+                                        descriereH As String, idr As Integer?, clsf As String,
+                                        valoare As Double) As ReceptieRow
+        Return New ReceptieRow() With {
+            .Idrr = 0, .NrCrtR = Nothing, .DataR = Nothing, .SumaAntet = 0,
+            .Idrh = idrh, .DataH = dataH, .Total = total, .Difh = 0, .DescriereH = descriereH,
+            .Idr = idr, .Clsf = clsf, .Denumire = "X", .CodIndicator = "IND-A", .NrCrtInd = 1,
+            .Valoare = valoare, .Dif = 0
+        }
+    End Function
+
+    <Fact>
+    Public Sub UnplacedSnapshots_GoInTheirOwnFolder_AfterTheMonths()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim t = TreeOf(view)
+                       view.SetContext(Context("A100"))
+                       Dim data As ReceptiiInfo = StandardData()
+                       ' Două anteturi neașezate: unul cu o linie, unul fără nicio linie.
+                       data.Receptii.Add(UnplacedRow(31, New Date(2026, 3, 3), 500.0, "Fără recepție",
+                                                     301, "65.02", 500.0))
+                       data.Receptii.Add(UnplacedRow(32, New Date(2026, 3, 9), 700.0, "", Nothing, "", 0))
+                       api.Complete("A100", data)
+                       Application.DoEvents()
+
+                       ' Cele două luni rămân primele; dosarul e ULTIMUL.
+                       Assert.Equal(3, t.Items.Count)
+                       Dim folder = t.Items(2)
+                       Assert.Equal(ReceptiiView.UNPLACED_KEY, folder.Key)
+                       Assert.StartsWith("Instantanee neașezate", folder.Caption)
+                       Assert.Contains("1.200,00", folder.Caption)     ' 500 + 700, o dată per antet
+
+                       ' Un nod per antet, în ordinea DataH.
+                       Assert.Equal(2, folder.Children.Count)
+                       Assert.StartsWith("03.03.2026", folder.Children(0).Caption)
+                       Assert.Contains("Fără recepție", folder.Children(0).Caption)
+                       Assert.Contains("500,00", folder.Children(0).Caption)
+                       Assert.StartsWith("09.03.2026", folder.Children(1).Caption)
+
+                       ' Lunile nu s-au schimbat: totalul lui Ianuarie e tot SumaAntet-ul lui.
+                       Assert.Contains("2.864,12", t.Items(0).Caption)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub UnplacedSnapshotClick_FillsGridWithItsLines()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim t = TreeOf(view)
+                       Dim g = GridOf(view)
+                       view.SetContext(Context("A100"))
+                       Dim data As ReceptiiInfo = StandardData()
+                       data.Receptii.Add(UnplacedRow(31, New Date(2026, 3, 3), 500.0, "Fără recepție",
+                                                     301, "70.70", 500.0))
+                       api.Complete("A100", data)
+                       Application.DoEvents()
+
+                       ClickNode(view, t.Items(2).Children(0))
+                       Dim r = Assert.Single(g.Rows)
+                       Assert.Equal("70.70", CStr(r("clsf")))
+                       Assert.Equal(500.0, CDbl(r("valoare")))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub OnlyUnplacedSnapshots_StillShowTheTree_NotTheEmptyMessage()
+        ' Cazul operatorului: TOATE anteturile au pierdut IDRR-ul. Înainte de 0062 vederea
+        ' spunea «angajamentul nu are recepții».
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Dim t = TreeOf(view)
+                       view.SetContext(Context("A100"))
+                       Dim data As New ReceptiiInfo() With {.Cod = "A100"}
+                       data.Receptii.Add(UnplacedRow(31, New Date(2026, 3, 3), 500.0, "Fără recepție",
+                                                     301, "65.02", 500.0))
+                       api.Complete("A100", data)
+                       Application.DoEvents()
+
+                       Dim folder = Assert.Single(t.Items)
+                       Assert.Equal(ReceptiiView.UNPLACED_KEY, folder.Key)
+                       Assert.Single(folder.Children)
+                       ' Fără tooltip de reconciliere pe nodul de antet (nu are DataR).
+                       Assert.True(String.IsNullOrEmpty(folder.Children(0).Tooltip))
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub FooterLeftIcon_IsOffWithoutTheRebuildAction_AndOnWithIt()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Using view As New ReceptiiView(api, PassThrough())
+                       Assert.Null(TreeOf(view).FooterLeftIcon)
+                   End Using
+                   Using view As New ReceptiiView(api, PassThrough(), Nothing, Nothing, Sub(cod)
+                                                                                    End Sub)
+                       Assert.NotNull(TreeOf(view).FooterLeftIcon)
+                   End Using
+               End Sub)
+    End Sub
+
+    <Fact>
+    Public Sub FooterLeftIconClick_HandsTheCurrentCodToTheShell()
+        RunSta(Sub()
+                   Dim api As New FakeApiClient()
+                   Dim primit As String = Nothing
+                   Using view As New ReceptiiView(api, PassThrough(), Nothing, Nothing,
+                                                  Sub(cod) primit = cod)
+                       view.SetContext(Context("A100"))
+                       Dim m = view.GetType().GetMethod("Tree_FooterLeftIconClicked",
+                           Reflection.BindingFlags.NonPublic Or Reflection.BindingFlags.Instance)
+                       m.Invoke(view, New Object() {New MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0)})
+                       Assert.Equal("A100", primit)
                    End Using
                End Sub)
     End Sub

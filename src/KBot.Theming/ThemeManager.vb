@@ -144,6 +144,10 @@ Public Module ThemeManager
         ' formular: ApplyBaseFont îl citește la prima aplicare a temei.
         _writesFormFont = ThemeStore.LoadThemeWritesFormFont()
 
+        ' The definition of a form's base size (slice 0062), also before the first form: the
+        ' first fit runs at that form's OnLoad.
+        ThemeFormFit.LoadFrom(ThemeStore.LoadFormFitBaseline())
+
         ' Scheme utilizator — inclusiv fișierele care SUPRASCRIU o schemă built-in editată din
         ' fereastra de opțiuni. Un fișier corupt e sărit + logat, nu crapă pornirea.
         _userSchemes.Clear()
@@ -356,8 +360,12 @@ Public Module ThemeManager
         ' Controalele auto-tematizate își aplică singure culorile ȘI NU se recurge în
         ' ele cu regulile GENERICE — altfel regula de Panel ar repicta suprafața, iar recursia ar
         ' strica TextBox-ul intern din KBotTextField.
+        ' ...EXCEPT a self-theming CONTAINER (slice 0062): its children are the host's own
+        ' controls and still take the generic rules. It is themed AFTER them, at the bottom of
+        ' this method, so that whatever it measures is the themed content.
+        Dim container As IThemedContainer = TryCast(ctrl, IThemedContainer)
         Dim themed As IThemedControl = TryCast(ctrl, IThemedControl)
-        If themed IsNot Nothing Then
+        If themed IsNot Nothing AndAlso container Is Nothing Then
             themed.ApplyTheme(_current)
             ' …iar sub «Colorful» punem înapoi cele trei proprietăți ambientale peste ce-a scris
             ' ApplyTheme: interiorul controlului rămâne al schemei, suprafața rămâne a designerului.
@@ -372,12 +380,25 @@ Public Module ThemeManager
             Return
         End If
 
-        If preserve Then
-            PreserveDesigner(ctrl)
-        Else
-            StyleControl(ctrl)
+        If container Is Nothing Then
+            If preserve Then
+                PreserveDesigner(ctrl)
+            Else
+                StyleControl(ctrl)
+            End If
         End If
 
+        TraverseChildren(ctrl)
+
+        If container IsNot Nothing Then
+            container.ApplyTheme(_current)
+            If preserve Then DesignerBaseline.Restore(ctrl)
+        End If
+    End Sub
+
+    ' The recursion of Traverse, split out so a themed container can run it BEFORE its own
+    ' ApplyTheme. SplitContainer and TabControl panels are stepped over, as always.
+    Private Sub TraverseChildren(ctrl As Control)
         If TypeOf ctrl Is SplitContainer Then
             Dim sc = DirectCast(ctrl, SplitContainer)
             For Each child As Control In sc.Panel1.Controls

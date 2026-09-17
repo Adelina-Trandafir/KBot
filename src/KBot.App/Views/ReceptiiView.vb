@@ -11,13 +11,25 @@ Imports KBot.Theming
 
 ''' <summary>
 ''' Vederea Recepții (felia 0015) — echivalentul Access frmFX_MAIN_REC: un master/detail
-''' cu un arbore de recepții pe 2 niveluri la stânga (folder lună/an -> recepția R / IDRR,
-''' ca în RezervariView) și o grilă continuă la dreapta (LISTA) cu detaliul pe clasificații.
+''' cu un arbore de recepții la stânga (rădăcina «Toate recepțiile» -> folder lună/an ->
+''' recepția R / IDRR) și o grilă continuă la dreapta (LISTA) cu detaliul pe clasificații.
 ''' Read-only în această felie. Datele vin din GET /api/forexe/receptii, întotdeauna prin
-''' plasa de re-autentificare a shell-ului (401 -> re-login -> reia o dată). Click pe ORICE
-''' nod (lună / recepție) umple grila cu agregatul rândurilor lui: un rând-total
-''' sintetic (Sum(DIF)) + un rând per clasificație (Sum(Valoare)). Tooltip de reconciliere
-''' recepții/plăți pe folderele de lună ȘI pe recepții (revizuire operator 2026-07-22).
+''' plasa de re-autentificare a shell-ului (401 -> re-login -> reia o dată).
+'''
+''' <para><b>Regula din felia 0065 (operator, 17.09.2026): o recepție VALOREAZĂ ultimul ei
+''' instantaneu.</b> Lanțul unei recepții e un șir de instantanee (anteturi H) în ordinea
+''' DataH, fiecare cu VALOAREA ÎNTREGII recepții la acel moment (F3). Deci ce e adevărat
+''' acum despre o recepție e ULTIMUL antet: totalul lui e totalul recepției, liniile lui
+''' sunt indicatorii ei. Click pe ORICE nod umple grila cu un rând per clasificație din
+''' ultimul antet al fiecărei recepții a nodului — NU un agregat peste tot lanțul, care ar
+''' aduna de mai multe ori aceeași sumă. Tooltip de reconciliere recepții/plăți pe rădăcină,
+''' pe folderele de lună ȘI pe recepții (revizuire operator 2026-07-22), cumulul fiind tot
+''' suma totalurilor ultimului antet — nu suma DIFH-urilor, care e NULL pe un antet așezat
+''' din editorul de legături înainte de 0065 și pierdea recepția din total.</para>
+'''
+''' Din felia 0062 arborele mai are un dosar, «Instantanee neașezate», pentru anteturile
+''' fără recepție (H.IDRR NULL) — și o iconiță în stânga subsolului care reface din istoric
+''' anteturile și liniile lipsă.
 ''' </summary>
 Public Class ReceptiiView
     Implements IAngajamentView, IThemedControl
@@ -36,6 +48,12 @@ Public Class ReceptiiView
     Private Const ICO_LUNA As String = "month"      ' folderul de lună
     Private Const ICO_SUS As String = "up"          ' recepție cu valoare pozitivă ▲
     Private Const ICO_JOS As String = "down"        ' recepție cu valoare negativă ▼
+
+    ' Cheia nodului-dosar al anteturilor NEAȘEZATE (felia 0062). Friend pentru teste.
+    Friend Const UNPLACED_KEY As String = "unplaced"
+
+    ' Cheia rădăcinii «Toate recepțiile» (felia 0065). Friend pentru teste.
+    Friend Const ROOT_KEY As String = "all"
 
     ' Format românesc: separator de mii «.» și zecimală «,» (1.091.940,00).
     Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
@@ -79,10 +97,22 @@ Public Class ReceptiiView
     ''' </summary>
     Private ReadOnly _reimprospateaza As Action(Of String)
 
+    ''' <summary>
+    ''' Refacerea instantaneelor și liniilor LIPSĂ din istoric (felia 0062) — iconița din
+    ''' STÂNGA subsolului arborelui. Vine de la shell din același motiv ca celelalte două:
+    ''' apelul are nevoie de plasa de re-autentificare pe o formă de răspuns proprie
+    ''' (<see cref="ReceptiiRebuildResult"/>), iar politica aia trăiește într-un singur loc.
+    '''
+    ''' <para>Nothing = gazda nu o oferă. Atunci iconița se STINGE, nu rămâne un buton care nu
+    ''' face nimic.</para>
+    ''' </summary>
+    Private ReadOnly _rebuildMissing As Action(Of String)
+
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of ReceptiiInfo)), Task(Of ReceptiiInfo)),
                    Optional deschideLegaturi As Action(Of String) = Nothing,
-                   Optional reimprospateaza As Action(Of String) = Nothing)
+                   Optional reimprospateaza As Action(Of String) = Nothing,
+                   Optional rebuildMissing As Action(Of String) = Nothing)
         If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
         If withReauth Is Nothing Then Throw New ArgumentNullException(NameOf(withReauth))
         InitializeComponent()
@@ -90,6 +120,7 @@ Public Class ReceptiiView
         _withReauth = withReauth
         _deschideLegaturi = deschideLegaturi
         _reimprospateaza = reimprospateaza
+        _rebuildMissing = rebuildMissing
         If _deschideLegaturi Is Nothing Then
             tree.HeaderRightIcon = Nothing
             tree.HeaderRightIconTooltip = String.Empty
@@ -97,6 +128,10 @@ Public Class ReceptiiView
         If _reimprospateaza Is Nothing Then
             tree.FooterRightIcon = Nothing
             tree.FooterRightIconTooltip = String.Empty
+        End If
+        If _rebuildMissing Is Nothing Then
+            tree.FooterLeftIcon = Nothing
+            tree.FooterLeftIconTooltip = String.Empty
         End If
         'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
@@ -151,6 +186,31 @@ Public Class ReceptiiView
             ' Graniță de UI: se loghează și se înghite — un throw dintr-un tratator de eveniment
             ' ar cădea pe firul de UI.
             GlobalErrorLog.Write("ReceptiiView.Tree_FooterRightIconClicked", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Iconița din STÂNGA subsolului arborelui cere refacerea, din istoric, a instantaneelor
+    ''' și liniilor care lipsesc din FX_Receptii_H / FX_Receptii (felia 0062).
+    ''' </summary>
+    ''' <remarks>
+    ''' Cererea operatorului din 15.09.2026: Access pierde IDRH/IDRR pe anteturi, iar după
+    ''' migrare rândurile lipsesc sau stau neașezate. Istoricul le are pe toate, după IDH.
+    ''' Shell-ul face proba, cere confirmarea, scrie și reîncarcă arborele cu nodul păstrat —
+    ''' ceea ce împinge singur contextul nou încoace, deci vederea nu se reîncarcă de aici.
+    ''' </remarks>
+    Private Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
+        Try
+            If _rebuildMissing Is Nothing Then Return
+            If String.IsNullOrWhiteSpace(_requestedCod) Then
+                KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
+                                "K-BOT — Recepții", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            _rebuildMissing(_requestedCod)
+        Catch ex As Exception
+            ' Graniță de UI: se loghează și se înghite.
+            GlobalErrorLog.Write("ReceptiiView.Tree_FooterLeftIconClicked", ex)
         End Try
     End Sub
 
@@ -280,7 +340,7 @@ Public Class ReceptiiView
             _rows = rows
             BuildTree(rows)
             ' „Nimic selectat" -> grila arată TOATE recepțiile angajamentului (ca în
-            ' RezervariView); un click pe un nod o restrânge apoi la rândurile lui.
+            ' RezervariView, și ca rădăcina); un click pe un nod o restrânge apoi la ale lui.
             FillGridFromRows(rows)
             ShowContent()
         Catch ex As ApiException
@@ -301,15 +361,16 @@ Public Class ReceptiiView
     End Sub
 
     ' ── Arborele ─────────────────────────────────────────────────────────────
-    ' DOUĂ niveluri (revizuire operator 2026-08-13, ca în RezervariView): folder lună/an
-    ' (grupat pe DataR) -> recepția (IDRR, iconiță după VALOARE: SumaAntet >= 0 -> «up»,
-    ' negativă -> «down»). Nivelul de ANTET (IDRH) a fost scos — anteturile rămân doar rânduri în
-    ' Tag-ul recepției, agregate în grilă. Aici NU există iconița «+» din Rezervări
-    ' (recepțiile n-au nevoie de ea), deci nu se rezervă loc la dreapta.
+    ' TREI niveluri (felia 0065): rădăcina «Toate recepțiile» -> folder lună/an (grupat pe
+    ' DataR) -> recepția (IDRR, iconiță după VALOARE: totalul ultimului antet >= 0 -> «up»,
+    ' negativ -> «down»). Nivelul de ANTET (IDRH) nu există ca nod (revizuire operator
+    ' 2026-08-13) — anteturile rămân rânduri în Tag-ul recepției. Aici NU există iconița «+»
+    ' din Rezervări (recepțiile n-au nevoie de ea), deci nu se rezervă loc la dreapta.
     ' Rândurile vin ordonate de server (R.NRCRT, R.DataR, H.NrCrt, H.DataH); lunile se
     ' ordonează cronologic, iar în interiorul unei luni „distinct în ordine" e suficient.
-    ' Fiecare nod (lună / recepție) poartă în Tag rândurile lui, ca un click să umple grila
-    ' (agregat) fără o nouă cerere. Tooltip-ul de reconciliere stă și pe folderul de lună,
+    ' Fiecare nod poartă în Tag rândurile lui — TOATE liniile TUTUROR anteturilor
+    ' recepțiilor lui —, iar grila alege singură din ele ultimul antet al fiecărei recepții
+    ' (`FillGridFromRows`). Tooltip-ul de reconciliere stă pe rădăcină, pe folderul de lună
     ' și pe recepție.
     Private Sub BuildTree(rows As List(Of ReceptieRow))
         Try
@@ -319,20 +380,37 @@ Public Class ReceptiiView
             Dim monthItems As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
             Dim receptieItems As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
 
+            ' Anteturile NEAȘEZATE (Idrr = 0, felia 0062) nu au recepție, deci nici lună de
+            ' DataR: ele merg într-un dosar separat, la sfârșit, nu în cronologie.
+            Dim placedRows As List(Of ReceptieRow) = rows.Where(Function(r) r.Idrr > 0).ToList()
+            Dim unplacedRows As List(Of ReceptieRow) = rows.Where(Function(r) r.Idrr <= 0).ToList()
+
+            Dim rootItem As AdvancedTreeControl.TreeItem = Nothing
+            If placedRows.Count > 0 Then
+                ' Rădăcina: toate recepțiile așezate, cu totalul lor = suma valorii (ultimul
+                ' antet) fiecărei recepții.
+                Dim icoRoot As Image = LunaIcon()
+                rootItem = tree.AddItem(ROOT_KEY, $"Toate recepțiile~~~{Money(TotalReceptii(placedRows))}",
+                                        pLeftIconClosed:=icoRoot, pLeftIconOpen:=icoRoot,
+                                        pExpanded:=True)
+                rootItem.Tag = placedRows
+                rootItem.Bold = True
+            End If
+
             ' Grupare pe lună (an, lună din DataR), cronologic.
-            Dim monthGroups = rows.GroupBy(Function(r) MonthKeyOf(r.DataR)).
-                                   OrderBy(Function(g) g.Key)
+            Dim monthGroups = placedRows.GroupBy(Function(r) MonthKeyOf(r.DataR)).
+                                         OrderBy(Function(g) g.Key)
 
             For Each mg In monthGroups
                 Dim monthRows As List(Of ReceptieRow) = mg.ToList()
-                ' Totalul lunii = suma SumaAntet pe recepții DISTINCTE ale lunii.
-                Dim monthTotal As Double = monthRows.GroupBy(Function(r) r.Idrr).
-                                                     Sum(Function(g) g.First().SumaAntet)
+                ' Totalul lunii = suma valorii (ultimul antet) pe recepțiile DISTINCTE ale lunii.
+                Dim monthTotal As Double = TotalReceptii(monthRows)
                 ' NU «lunaIcon»: VB e insensibil la litere mari/mici, deci variabila ar purta
                 ' același nume cu funcția LunaIcon și ar umbri-o (capcana din RezervariView).
                 Dim icoLuna As Image = LunaIcon()
                 Dim monthItem As AdvancedTreeControl.TreeItem =
                     tree.AddItem($"m_{mg.Key}", $"{MonthLabel(mg.Key Mod 100)}~~~{Money(monthTotal)}",
+                                 rootItem,
                                  pLeftIconClosed:=icoLuna, pLeftIconOpen:=icoLuna,
                                  pExpanded:=True)
                 monthItem.Tag = monthRows
@@ -340,34 +418,38 @@ Public Class ReceptiiView
                 monthItem.Expanded = False
                 monthItems(mg.Key) = monthItem
 
-                ' Recepțiile sub folderul lunii (al DOILEA și ultimul nivel).
-                Dim roots As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
-                Dim rootRows As New Dictionary(Of Integer, List(Of ReceptieRow))()
-
-                For Each r As ReceptieRow In monthRows
-                    ' --- recepția (IDRR) ---
-                    Dim root As AdvancedTreeControl.TreeItem = Nothing
-                    If Not roots.TryGetValue(r.Idrr, root) Then
-                        Dim icon As Image = ValoareIconOf(r.SumaAntet, palette)
-                        Dim caption As String =
-                            $"{ShortDate(r.DataR)}{SemnReconstituire(r)}~~~{Money(r.SumaAntet)}"
-                        root = tree.AddItem($"r_{r.Idrr}", caption, monthItem,
-                                            pLeftIconClosed:=icon, pLeftIconOpen:=icon)
-                        Dim rr As New List(Of ReceptieRow)()
-                        root.Tag = rr
-                        roots(r.Idrr) = root
-                        rootRows(r.Idrr) = rr
-                        receptieItems(r.Idrr) = root
-                    End If
+                ' Recepțiile sub folderul lunii (al TREILEA și ultimul nivel), în ordinea
+                ' serverului (R.NRCRT, R.DataR) — GroupBy păstrează ordinea primei apariții.
+                For Each gp In monthRows.GroupBy(Function(r) r.Idrr)
+                    Dim recRows As List(Of ReceptieRow) = gp.ToList()
+                    Dim r As ReceptieRow = recRows(0)
+                    ' Valoarea recepției = totalul ULTIMULUI ei antet (felia 0065), nu
+                    ' SumaAntet al rândului R: ea e ce a scris ultima salvare de pe site.
+                    Dim ultimul As ReceptieRow = UltimulAntet(recRows)
+                    Dim valoare As Double = If(ultimul Is Nothing, 0.0, ultimul.Total)
+                    Dim icon As Image = ValoareIconOf(valoare, palette)
+                    ' DataR (the day) + the TIME of the last header (DataH): two receptii on
+                    ' the same day would otherwise read the same (operator's request,
+                    ' 17.09.2026).
+                    Dim caption As String =
+                        $"{ShortDate(r.DataR)}{TimeOfHeader(ultimul)}{SemnReconstituire(r)}{SemnStergere(ultimul)}~~~{Money(valoare)}"
+                    Dim root As AdvancedTreeControl.TreeItem =
+                        tree.AddItem($"r_{gp.Key}", caption, monthItem,
+                                     pLeftIconClosed:=icon, pLeftIconOpen:=icon)
                     ' Toate liniile TUTUROR anteturilor recepției intră în Tag-ul ei: nivelul
-                    ' de antet nu mai există ca nod, dar agregatul din grilă rămâne complet.
-                    rootRows(r.Idrr).Add(r)
+                    ' de antet nu există ca nod, iar grila alege din ele ultimul antet.
+                    root.Tag = recRows
+                    receptieItems(gp.Key) = root
                 Next
             Next
 
-            ' Tooltip de reconciliere pe folderele de lună ȘI pe recepții (fereastra de plăți
-            ' se întinde până la prima recepție a lunii URMĂTOARE — revizuirea operatorului).
-            ComputeTooltips(rows, monthItems, receptieItems)
+            ' Tooltip de reconciliere pe rădăcină, pe folderele de lună ȘI pe recepții
+            ' (fereastra de plăți se întinde până la prima recepție a lunii URMĂTOARE —
+            ' revizuirea operatorului). Doar peste rândurile AȘEZATE: un antet fără recepție nu
+            ' are DataR și nu intră în niciun cumul.
+            ComputeTooltips(placedRows, rootItem, monthItems, receptieItems)
+
+            AddUnplacedFolder(unplacedRows, palette)
 
             tree.Invalidate()
         Catch ex As Exception
@@ -375,6 +457,136 @@ Public Class ReceptiiView
             Throw
         End Try
     End Sub
+
+    ' ── Ultimul antet al unei recepții (felia 0065) ──────────────────────────
+    ' O recepție e un lanț de instantanee; fiecare poartă VALOAREA ÎNTREGII recepții la acel
+    ' moment (F3). Ultimul, în ordinea DataH apoi IDRH, e adevărul de acum. Anteturile marcate
+    ' Sters (H.Sters — «nu consemnează nicio schimbare», F17) nu fac parte din lanț.
+
+    ''' <summary>Un rând al ultimului antet al recepției (toate rândurile unui antet poartă
+    ''' aceleași Total / DataH / DescriereH), sau Nothing dacă recepția nu are niciun antet.</summary>
+    Private Shared Function UltimulAntet(recRows As IEnumerable(Of ReceptieRow)) As ReceptieRow
+        Dim grp = AnteturiDescrescator(recRows).FirstOrDefault()
+        Return If(grp Is Nothing, Nothing, grp.First())
+    End Function
+
+    ''' <summary>
+    ''' Liniile (indicatorii) recepției AȘA CUM SUNT ACUM: liniile ultimului antet care ARE
+    ''' linii. Rândul de ștergere (F21) e ultimul antet al unei recepții șterse și nu are linii
+    ''' prin definiție; ce s-a șters sunt liniile antetului dinaintea lui.
+    ''' </summary>
+    Private Shared Function LiniileUltimuluiAntet(recRows As IEnumerable(Of ReceptieRow)) As List(Of ReceptieRow)
+        For Each grp In AnteturiDescrescator(recRows)
+            ' The server sends one row per indicator of the receptie for EVERY header
+            ' (Idr Nothing + Valoare 0 where the header has no line on that indicator).
+            ' A header counts as «with lines» if any indicator has a real line; then ALL
+            ' its indicator rows go to the grid, so the operator sees the zero ones too
+            ' (operator's request, 17.09.2026: «12100 and 0», «0 and 10350»).
+            If grp.Any(Function(r) r.Idr.HasValue) Then Return grp.ToList()
+        Next
+        Return New List(Of ReceptieRow)()
+    End Function
+
+    ' Anteturile recepției, cel mai nou primul (DataH desc, apoi IDRH desc), fără cele Sters.
+    Private Shared Function AnteturiDescrescator(recRows As IEnumerable(Of ReceptieRow)) As IEnumerable(Of IGrouping(Of Integer, ReceptieRow))
+        Return recRows.Where(Function(r) Not r.StersH).
+                       GroupBy(Function(r) r.Idrh).
+                       OrderByDescending(Function(gp) If(gp.First().DataH.HasValue, gp.First().DataH.Value, Date.MinValue)).
+                       ThenByDescending(Function(gp) gp.Key)
+    End Function
+
+    ''' <summary>Valoarea unei recepții = totalul ultimului ei antet (0 dacă n-are niciunul).</summary>
+    Private Shared Function ValoareaReceptiei(recRows As IEnumerable(Of ReceptieRow)) As Double
+        Dim ultimul As ReceptieRow = UltimulAntet(recRows)
+        Return If(ultimul Is Nothing, 0.0, ultimul.Total)
+    End Function
+
+    ''' <summary>Suma valorilor recepțiilor DISTINCTE din rândurile date (rădăcină / lună).</summary>
+    Private Shared Function TotalReceptii(rows As IEnumerable(Of ReceptieRow)) As Double
+        Return rows.GroupBy(Function(r) r.Idrr).Sum(Function(gp) ValoareaReceptiei(gp))
+    End Function
+
+    ''' <summary>
+    ''' Liniile de arătat în grilă pentru un nod: ultimul antet al FIECĂREI recepții din
+    ''' rândurile lui. Pe un nod de recepție sunt exact liniile ultimului ei antet; pe lună și
+    ''' pe rădăcină, ale fiecărei recepții, apoi grila le grupează pe clasificație.
+    ''' Anteturile neașezate (Idrr = 0) n-au recepție, deci se iau așa cum sunt.
+    ''' </summary>
+    Private Shared Function LiniileDeAratat(nodeRows As IEnumerable(Of ReceptieRow)) As List(Of ReceptieRow)
+        Dim out As New List(Of ReceptieRow)()
+        For Each gp In nodeRows.GroupBy(Function(r) r.Idrr)
+            If gp.Key > 0 Then
+                out.AddRange(LiniileUltimuluiAntet(gp))
+            Else
+                out.AddRange(gp.Where(Function(r) r.Idr.HasValue))
+            End If
+        Next
+        Return out
+    End Function
+
+    ''' <summary>Semnul de pe o recepție al cărei ultim antet e rândul de ștergere (F21).</summary>
+    Private Shared Function SemnStergere(ultimul As ReceptieRow) As String
+        If ultimul IsNot Nothing AndAlso ultimul.EsteStergere Then Return "  [ștearsă]"
+        Return String.Empty
+    End Function
+
+    ''' <summary>
+    ''' Dosarul «Instantanee neașezate» (felia 0062): un nod per antet (IDRH) cu
+    ''' <c>H.IDRR NULL</c>, adică un instantaneu care nu stă pe nicio recepție.
+    ''' </summary>
+    ''' <remarks>
+    ''' Până la 0062 serverul nici nu le trimitea (INNER JOIN pe R), iar vederea spunea
+    ''' «angajamentul nu are recepții» când el avea — doar pierdute de Access la IDRR. Acum se
+    ''' văd, cu data și totalul lor, iar operatorul le așază din editorul de legături (iconița
+    ''' din antetul arborelui). Fără tooltip de reconciliere: nu au DataR, deci nu intră în
+    ''' niciun cumul. Un click pe nod umple grila cu liniile antetului, ca la orice nod.
+    ''' </remarks>
+    Private Sub AddUnplacedFolder(unplacedRows As List(Of ReceptieRow), palette As ThemePalette)
+        If unplacedRows Is Nothing OrElse unplacedRows.Count = 0 Then Return
+
+        ' Totalul dosarului = suma Total pe anteturi DISTINCTE (Total e constant pe liniile
+        ' unui antet).
+        Dim folderTotal As Double = unplacedRows.GroupBy(Function(r) r.Idrh).
+                                                 Sum(Function(gp) gp.First().Total)
+        Dim icoLuna As Image = LunaIcon()
+        Dim folder As AdvancedTreeControl.TreeItem =
+            tree.AddItem(UNPLACED_KEY, $"Instantanee neașezate~~~{Money(folderTotal)}",
+                         pLeftIconClosed:=icoLuna, pLeftIconOpen:=icoLuna,
+                         pExpanded:=True)
+        folder.Tag = unplacedRows
+        folder.Bold = True
+        folder.Tooltip = BuildUnplacedTooltipXml(unplacedRows.GroupBy(Function(r) r.Idrh).Count())
+
+        ' Un nod per antet, în ordinea DataH apoi IDRH (ordinea serverului pentru rândurile
+        ' fără recepție: H.NrCrt, H.DataH).
+        Dim perAntet = unplacedRows.GroupBy(Function(r) r.Idrh).
+                                    OrderBy(Function(gp) If(gp.First().DataH.HasValue, gp.First().DataH.Value, Date.MinValue)).
+                                    ThenBy(Function(gp) gp.Key)
+        For Each gp In perAntet
+            Dim first As ReceptieRow = gp.First()
+            Dim icon As Image = ValoareIconOf(first.Total, palette)
+            Dim descriere As String = If(String.IsNullOrWhiteSpace(first.DescriereH), String.Empty, "  " & first.DescriereH.Trim())
+            Dim caption As String = $"{ShortDate(first.DataH)}{descriere}~~~{Money(first.Total)}"
+            Dim node As AdvancedTreeControl.TreeItem =
+                tree.AddItem($"h_{gp.Key}", caption, folder,
+                             pLeftIconClosed:=icon, pLeftIconOpen:=icon)
+            node.Tag = gp.ToList()
+        Next
+    End Sub
+
+    ' Tooltip-ul dosarului de neașezate: câte anteturi sunt și ce e de făcut cu ele.
+    Private Shared Function BuildUnplacedTooltipXml(count As Integer) As String
+        Dim sb As New StringBuilder()
+        sb.Append("<table>")
+        sb.Append("<header>")
+        sb.Append("<cell Align=""left"" Bold=""1"">Instantanee neașezate</cell>")
+        sb.Append("<cell Align=""right"" Bold=""1"">").Append(count).Append("</cell>")
+        sb.Append("</header>")
+        AppendTtRow(sb, "Antete fără recepție (IDRR gol)", CStr(count), Nothing)
+        AppendTtRow(sb, "Se așază din editorul de legături", "iconița din antetul arborelui", Nothing)
+        sb.Append("</table>")
+        Return sb.ToString()
+    End Function
 
     ''' <summary>
     ''' Semnul pus lângă data unei recepții RECONSTITUITE (F26) — și, dacă gruparea ei nu a
@@ -397,20 +609,29 @@ Public Class ReceptiiView
         Return String.Empty
     End Function
 
-    ' ── Tooltip de reconciliere (lună + recepție) ────────────────────────────
+    ' ── Tooltip de reconciliere (rădăcină + lună + recepție) ─────────────────
     ' Oglindește NewRootPlatiTooltip din frmFX_MAIN_REC, generalizat la lună (revizuire
-    ' operator 2026-07-22): patru rânduri — Data recepție/Lună / Recepții cumulate (difhCum) /
-    ' Plăți cumulate (platiCum) / Diferență (difhCum − platiCum, roșu dacă <0, albastru >0).
-    '   * difhCum = sumă rulantă a Sum(DIFH) pe recepție (DIFH e per antet — se însumează
-    '     anteturile DISTINCTE ale recepției, EXCLUZÂND cele șterse — qFX_MAIN_REC_TT_DIFH
-    '     filtrează Sters=False, deși arborele NU-l filtrează), cumulată pe recepții în ordinea
-    '     DataR. Recepția = cumul până la ea; luna = cumul până la ULTIMA recepție a lunii.
-    '   * platiCum = Sum(Suma) peste plăți cu DataPlata < DataR-ul PRIMEI recepții din LUNA
-    '     URMĂTOARE (toate plățile de dinaintea lunii următoare — cerința operatorului).
-    '     Ultima lună -> toate plățile. Toate recepțiile aceleiași luni împart aceeași
-    '     fereastră de plăți.
+    ' operator 2026-07-22): Data recepție/Lună / Descriere (pe recepție, felia 0065) /
+    ' Recepții cumulate (recCum) / Plăți cumulate (platiCum) / Diferență (recCum − platiCum,
+    ' roșu dacă <0, albastru >0).
+    '   * recCum = sumă rulantă a VALORII recepției — totalul ULTIMULUI ei antet (felia
+    '     0065) —, cumulată pe recepții în ordinea DataR. Recepția = cumul până la ea; luna =
+    '     cumul până la ULTIMA recepție a lunii; rădăcina = cumulul întreg.
+    '     Până la 0065 se însuma DIFH pe anteturi (qFX_MAIN_REC_TT_DIFH). Pe un lanț complet
+    '     suma DIFH-urilor E totalul ultimului antet, dar DIFH e calculat de noi, la pasul 4d,
+    '     și lipsea (NULL -> 0) pe orice antet așezat din editorul de legături — recepția
+    '     dispărea din total (25.410 în loc de 29.645, cazul operatorului). Totalul antetului
+    '     vine de pe site și nu poate lipsi.
+    '   * platiCum on a MONTH = Sum(Suma) over payments with DataPlata < the DataR of the
+    '     FIRST receptie of the NEXT month (everything paid before the next month starts,
+    '     operator's request). Last month -> all payments. Root -> all payments.
+    '   * platiCum on a RECEPTIE (a day) = Sum(Suma) over payments with DataPlata < the DataR
+    '     of the NEXT receptie (chronological, any month); the last receptie -> all payments
+    '     (operator's request, 2026-09-17: R1=01.01, R2=04.01, P1=02.01, P2=05.01 -> R1 has
+    '     P1, R2 has P1+P2). It no longer shares the month window.
     ' valAsoc NU e folosit (linia lui e comentată în Access). Nu se face niciun apel de rețea.
     Private Sub ComputeTooltips(rows As List(Of ReceptieRow),
+                                rootItem As AdvancedTreeControl.TreeItem,
                                 monthItems As Dictionary(Of Integer, AdvancedTreeControl.TreeItem),
                                 receptieItems As Dictionary(Of Integer, AdvancedTreeControl.TreeItem))
         Dim plati As List(Of ReceptiePlata) = If(_plati, New List(Of ReceptiePlata)())
@@ -421,7 +642,8 @@ Public Class ReceptiiView
                 .Idrr = gp.Key,
                 .DataR = gp.Select(Function(x) x.DataR).FirstOrDefault(Function(d) d.HasValue),
                 .MonthKey = MonthKeyOf(gp.Select(Function(x) x.DataR).FirstOrDefault(Function(d) d.HasValue)),
-                .SumDifh = SumDistinctAntetDifh(gp)
+                .Valoare = ValoareaReceptiei(gp),
+                .Descriere = DescriereaReceptiei(gp)
             }).
             OrderBy(Function(x) If(x.DataR.HasValue, x.DataR.Value, Date.MinValue)).
             ThenBy(Function(x) x.Idrr).
@@ -448,28 +670,31 @@ Public Class ReceptiiView
                     Exit For
                 End If
             Next
-            Dim windowSum As Double
-            If boundary.HasValue Then
-                windowSum = plati.
-                    Where(Function(p) p.DataPlata.HasValue AndAlso p.DataPlata.Value < boundary.Value).
-                    Sum(Function(p) p.Suma)
-            Else
-                windowSum = plati.Sum(Function(p) p.Suma)
-            End If
-            platiWindowByMonth(monthsOrdered(i)) = windowSum
+            platiWindowByMonth(monthsOrdered(i)) = PlatiBefore(plati, boundary)
         Next
 
-        ' Cumulul difuri, în ordinea DataR. Recepția = cumul până la ea; luna reține cumulul
+        ' Cumulul valorilor, în ordinea DataR. Recepția = cumul până la ea; luna reține cumulul
         ' până la ULTIMA recepție a lunii (ultima scriere câștigă).
-        Dim difhCum As Double = 0
+        ' The receptie's payments are everything dated before the NEXT receptie (the last
+        ' receptie takes all of them), not the month window.
+        Dim recCum As Double = 0
         Dim monthCum As New Dictionary(Of Integer, Double)()
-        For Each rec As ReceptieTtRow In perReceptie
-            difhCum += rec.SumDifh
-            monthCum(rec.MonthKey) = difhCum
-            Dim platiCum As Double = LookupOrZero(platiWindowByMonth, rec.MonthKey)
+        For i As Integer = 0 To perReceptie.Count - 1
+            Dim rec As ReceptieTtRow = perReceptie(i)
+            recCum += rec.Valoare
+            monthCum(rec.MonthKey) = recCum
+            Dim nextDataR As Date? = Nothing
+            For j As Integer = i + 1 To perReceptie.Count - 1
+                If perReceptie(j).DataR.HasValue Then
+                    nextDataR = perReceptie(j).DataR
+                    Exit For
+                End If
+            Next
+            Dim platiCum As Double = PlatiBefore(plati, nextDataR)
             Dim ri As AdvancedTreeControl.TreeItem = Nothing
             If receptieItems.TryGetValue(rec.Idrr, ri) Then
-                ri.Tooltip = BuildReconTooltipXml("Data recepție", ShortDate(rec.DataR), difhCum, platiCum)
+                ri.Tooltip = BuildReconTooltipXml("Data recepție", ShortDate(rec.DataR), recCum, platiCum,
+                                                  rec.Descriere)
             End If
         Next
 
@@ -478,40 +703,70 @@ Public Class ReceptiiView
             If monthItems.TryGetValue(mk, mi) Then
                 mi.Tooltip = BuildReconTooltipXml("Lună", MonthYearLabel(mk),
                                                   LookupOrZero(monthCum, mk),
-                                                  LookupOrZero(platiWindowByMonth, mk))
+                                                  LookupOrZero(platiWindowByMonth, mk), Nothing)
             End If
         Next
+
+        ' Rădăcina: tot ce s-a recepționat față de tot ce s-a plătit.
+        If rootItem IsNot Nothing Then
+            rootItem.Tooltip = BuildReconTooltipXml("Toate recepțiile",
+                                                    perReceptie.Count.ToString(_roCulture),
+                                                    recCum, plati.Sum(Function(p) p.Suma), Nothing)
+        End If
     End Sub
+
+    ''' <summary>
+    ''' Descrierea de arătat pe o recepție: a recepției (R.Descriere) dacă are una, altfel a
+    ''' ultimului ei antet. Rândul R al unei recepții reconstituite (F26) poate să n-aibă niciuna.
+    ''' </summary>
+    Private Shared Function DescriereaReceptiei(recRows As IEnumerable(Of ReceptieRow)) As String
+        Dim first As ReceptieRow = recRows.FirstOrDefault()
+        If first IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(first.DescriereR) Then
+            Return first.DescriereR.Trim()
+        End If
+        Dim ultimul As ReceptieRow = UltimulAntet(recRows)
+        If ultimul IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(ultimul.DescriereH) Then
+            Return ultimul.DescriereH.Trim()
+        End If
+        Return String.Empty
+    End Function
+
+    ''' <summary>
+    ''' Sum of the payments dated strictly before <paramref name="boundary"/>; no boundary
+    ''' (last month / last receptie) -> all payments.
+    ''' </summary>
+    Private Shared Function PlatiBefore(plati As List(Of ReceptiePlata), boundary As Date?) As Double
+        If Not boundary.HasValue Then Return plati.Sum(Function(p) p.Suma)
+        Return plati.
+            Where(Function(p) p.DataPlata.HasValue AndAlso p.DataPlata.Value < boundary.Value).
+            Sum(Function(p) p.Suma)
+    End Function
 
     Private Shared Function LookupOrZero(map As Dictionary(Of Integer, Double), key As Integer) As Double
         Dim v As Double
         Return If(map.TryGetValue(key, v), v, 0.0)
     End Function
 
-    ' Sum(DIFH) pe anteturile DISTINCTE ale recepției, sărind cele șterse. DIFH e constant
-    ' pe liniile unui antet, deci se ia o dată per IDRH.
-    Private Shared Function SumDistinctAntetDifh(recRows As IEnumerable(Of ReceptieRow)) As Double
-        Return recRows.Where(Function(r) Not r.StersH).
-                       GroupBy(Function(r) r.Idrh).
-                       Sum(Function(gp) gp.First().Difh)
-    End Function
-
     ' Construiește tabelul-tooltip XML (<table>) citit de TooltipTableParser al arborelui.
     ' firstLabel/firstValue = primul rând (Data recepție + data, sau Lună + „Ianuarie/2026").
+    ' descriere = rândul «Descriere» de sub el (felia 0065, doar pe recepție); gol -> lipsește.
     Private Shared Function BuildReconTooltipXml(firstLabel As String, firstValue As String,
-                                                 difhCum As Double, platiCum As Double) As String
-        Dim dif As Double = Math.Round(difhCum - platiCum, 2)
+                                                 recCum As Double, platiCum As Double,
+                                                 descriere As String) As String
+        Dim dif As Double = Math.Round(recCum - platiCum, 2)
         ' Roșu dacă negativ, albastru dacă pozitiv (Switch din Access). ParseColor ia #RRGGBB.
         Dim difColor As String = If(dif < 0, "#CC0000", If(dif > 0, "#0033CC", Nothing))
 
         Dim sb As New StringBuilder()
+
         sb.Append("<table>")
         sb.Append("<header>")
         sb.Append("<cell Align=""left"" Bold=""1"">").Append(XmlEscape(firstLabel)).Append("</cell>")
         sb.Append("<cell Align=""right"" Bold=""1"">Valoare</cell>")
         sb.Append("</header>")
         AppendTtRow(sb, firstLabel, firstValue, Nothing)
-        AppendTtRow(sb, "Recepții cumulate", Money(difhCum), Nothing)
+        If Not String.IsNullOrEmpty(descriere) Then AppendTtRow(sb, "Descriere", descriere, Nothing)
+        AppendTtRow(sb, "Recepții cumulate", Money(recCum), Nothing)
         AppendTtRow(sb, "Plăți cumulate", Money(platiCum), Nothing)
         AppendTtRow(sb, "Diferență", Money(dif), difColor)
         sb.Append("</table>")
@@ -539,15 +794,21 @@ Public Class ReceptiiView
         Public Property Idrr As Integer
         Public Property DataR As Date?
         Public Property MonthKey As Integer
-        Public Property SumDifh As Double
+        ''' <summary>Valoarea recepției = totalul ultimului ei antet (felia 0065).</summary>
+        Public Property Valoare As Double
+        Public Property Descriere As String = String.Empty
     End Class
 
     ' ── Grila (LISTA) ────────────────────────────────────────────────────────
-    ' Detaliul AGREGAT al unui nod (lună / recepție): un rând-
-    ' total sintetic „Toți indicatorii" (Valoare = Sum(DIF) pe rândurile nodului), apoi un
-    ' rând per clasificație (Valoare = Sum(Valoare) grupat pe Clsf, NrCrt din indicator,
-    ' Descriere = Denumirea clasificației — bine definită la orice nivel de agregare, spre
-    ' deosebire de descrierea antetului). Grupurile: pe NrCrt apoi Clsf.
+    ' Detaliul unui nod (rădăcină / lună / recepție / antet neașezat): un rând per
+    ' clasificație (Valoare = Sum(Valoare) grupat pe Clsf, NrCrt din indicator, Descriere =
+    ' Denumirea clasificației — bine definită la orice nivel de agregare, spre deosebire de
+    ' descrierea antetului). Grupurile: pe NrCrt apoi Clsf.
+    ' Din felia 0065 liniile sunt ale ULTIMULUI antet al fiecărei recepții a nodului
+    ' (`LiniileDeAratat`): pe o recepție, exact indicatorii ei de acum; pe lună / rădăcină,
+    ' indicatorii fiecărei recepții, adunați pe clasificație. Un agregat peste toate
+    ' anteturile lanțului ar aduna aceeași sumă o dată pentru fiecare salvare de pe site.
+    ' Fără rândul-total sintetic (scos la revizuirea operatorului din 2026-08-13).
     Private Sub FillGridFromRows(nodeRows As List(Of ReceptieRow))
         grid.BeginUpdate()
         Try
@@ -562,8 +823,8 @@ Public Class ReceptiiView
             'rowTot(COL_CLSF) = String.Empty
             'rowTot(COL_VALOARE) = totalDif
 
-            ' Rânduri per clasificație — doar liniile reale (un antet fără linii dă doar total).
-            Dim lines = nodeRows.Where(Function(r) r.Idr.HasValue)
+            ' Rânduri per clasificație — liniile ultimului antet al fiecărei recepții.
+            Dim lines = LiniileDeAratat(nodeRows)
             Dim groups = lines.GroupBy(Function(r) r.Clsf).
                                OrderBy(Function(gp) MinNrCrt(gp)).
                                ThenBy(Function(gp) gp.Key, StringComparer.Ordinal)
@@ -595,7 +856,7 @@ Public Class ReceptiiView
         Return String.Empty
     End Function
 
-    ' Click pe orice nod (lună / recepție) -> umple grila cu agregatul rândurilor
+    ' Click pe orice nod (rădăcină / lună / recepție) -> umple grila din rândurile
     ' nodului (în Tag). Fără apel de rețea.
     Private Sub tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
@@ -626,6 +887,13 @@ Public Class ReceptiiView
     End Function
 
     ' Data scurtă în format românesc (dd.MM.yyyy). Nothing -> gol.
+    ' The time of the last header (« 10:08:18»), for the receptie caption. No header or
+    ' no DataH -> empty.
+    Private Shared Function TimeOfHeader(ultimul As ReceptieRow) As String
+        If ultimul Is Nothing OrElse Not ultimul.DataH.HasValue Then Return String.Empty
+        Return " " & ultimul.DataH.Value.ToString("HH:mm:ss", _roCulture)
+    End Function
+
     Private Shared Function ShortDate(value As Date?) As String
         If Not value.HasValue Then Return String.Empty
         Return value.Value.ToString("dd.MM.yyyy", _roCulture)

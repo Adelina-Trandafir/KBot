@@ -17,6 +17,17 @@ Imports KBot.Common
 ''' fiecare control descendent e subclasat (NativeWindow) ca să întoarcă HTTRANSPARENT
 ''' în bandă; hit-test-ul cade astfel înapoi pe formular, care răspunde HT* corect.
 ''' Totul e conținut aici — formularele derivate nu au nimic de făcut.
+'''
+''' <para><b>Slice 0062 -- the fit and WM_GETMINMAXINFO.</b> <see cref="ThemeFormFit"/> (inherited
+''' from <see cref="KBotThemedForm"/>) grows the window through <c>ClientSize</c>, and on a
+''' borderless window Windows silently refuses any size above <c>ptMaxTrackSize</c>. The two are
+''' coordinated by construction, not by extra code: the fit clamps to the working area of the
+''' form's screen, <see cref="NativeMethods.ApplyMinMaxInfo"/> only rewrites the MAXIMISED size
+''' and position (also the working area) and leaves <c>ptMaxTrackSize</c> at the WinForms value
+''' (<c>MaximumSize</c>, or the Windows default = the virtual screen), so a fitted size is never
+''' larger than what the message allows. A form that sets <c>MaximumSize</c> below its base is
+''' the one case left: the fit asks, Windows refuses, and the operator log says the window was
+''' clamped (see <c>ThemeFormFit.Apply</c>).</para>
 ''' </summary>
 Public Class KBotShellForm
     Inherits KBotThemedForm

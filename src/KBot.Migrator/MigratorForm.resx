@@ -120,19 +120,6 @@
   <metadata name="tipMigrator.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
-  <data name="txtCheieApi.ToolTipText" xml:space="preserve">
-    <value>Cheia serverului («X-Api-Key») — nu parola MariaDB și nu parola
-fișierelor Access. Ca și celelalte parole, nu se păstrează nicăieri:
-se tastează la nevoie și dispare cu fereastra.
-Poate rămâne gol dacă nu construiți structura unei baze goale.</value>
-  </data>
-  <data name="txtServerUrl.ToolTipText" xml:space="preserve">
-    <value>Serverul K-BOT, scris ca «https://server.exemplu.ro» — adresa
-aplicației Python, nu adresa MariaDB. Numai «https»: cheia
-călătorește într-un antet și nu pleacă niciodată necriptată.
-Se folosește la un singur lucru: construirea structurii unei
-baze goale. Restul migrării merge direct la MariaDB.</value>
-  </data>
   <data name="txtCodFiscal.ToolTipText" xml:space="preserve">
     <value>Extrasele de cont se aleg după codul fiscal din numele fișierului.
 La alegerea unui DC caseta se completează cu valoarea din registrul Windows,
@@ -142,6 +129,12 @@ se folosește la rulare, iar gol înseamnă tot «ia-l din registry».
 Valoarea NU se salvează: la fiecare alegere de DC se recitește din registru,
 ca o suprascriere de probă să nu influențeze tăcut o migrare reală.
 Jurnalul rulării scrie amândouă valorile — cea din registry și cea folosită.</value>
+  </data>
+  <data name="txtCaleForexe.ToolTipText" xml:space="preserve">
+    <value>La alegerea unui DC caseta arată fișierul FX_*.accdb pe care îl numește registrul
+pentru unitățile lui. Dacă pe acest calculator fișierul stă în altă parte (OneDrive,
+alt disc), scrieți aici calea reală: ea se folosește pentru TOATE unitățile bifate
+care au un fișier FOREXE în registru. Nu se memorează între rulări.</value>
   </data>
   <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>84</value>

@@ -74,6 +74,11 @@ Public Class PrelucrareCoordinatorTests
             Throw New NotSupportedException()
         End Function
 
+        Public Function RebuildReceptiiAsync(cod As String, apply As Boolean, ct As CancellationToken) _
+            As Task(Of ReceptiiRebuildResult) Implements IApiClient.RebuildReceptiiAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public Function UpsertAngajamenteAsync(dbName As String, rows As IReadOnlyList(Of Angajament),
                                                ct As CancellationToken) As Task(Of String) _
             Implements IApiClient.UpsertAngajamenteAsync

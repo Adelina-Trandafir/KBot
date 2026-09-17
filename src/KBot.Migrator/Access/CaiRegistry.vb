@@ -66,6 +66,16 @@ Public NotInheritable Class CaiUnit
         End Get
     End Property
 
+    ''' <summary>
+    ''' The same unit with its FOREXE file taken from <paramref name="forexeFilePath"/>
+    ''' instead of the registry. A copy, never a mutation: the registry list keeps what
+    ''' the registry said, so the two can be written side by side in the journal.
+    ''' </summary>
+    Public Function WithForexeFile(forexeFilePath As String) As CaiUnit
+        Return New CaiUnit(IdUnitate, Dc, NumeUnitate, Sursa, UnitFilePath,
+                           If(forexeFilePath, String.Empty), AnDate, AlteDetalii)
+    End Function
+
     Public Overrides Function ToString() As String
         Return $"{IdUnitate} - {NumeUnitate}"
     End Function

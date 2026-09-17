@@ -535,7 +535,7 @@ Public Class ApiClient
                     If payload.receptii IsNot Nothing Then
                         For Each r As GetReceptieRow In payload.receptii
                             result.Receptii.Add(New ReceptieRow() With {
-                                .Idrr = r.idrr,
+                                .Idrr = If(r.idrr, 0),   ' null = antet neasezat (0062)
                                 .NrCrtR = r.nrcrt_r,
                                 .DataR = r.data_r,
                                 .SumaAntet = r.suma_antet,
@@ -543,12 +543,14 @@ Public Class ApiClient
                                 .Preluat = r.preluat,
                                 .Reconstituit = r.reconstituit,
                                 .ReconstituitNesigur = r.reconstituit_nesigur,
-                                .Idrh = r.idrh,
+                                .DescriereR = If(r.descriere_r, String.Empty),
+                                .Idrh = If(r.idrh, 0),
                                 .NrCrtH = r.nrcrt_h,
                                 .DataH = r.data_h,
                                 .Total = r.total,
                                 .Difh = r.difh,
                                 .StersH = r.sters_h,
+                                .EsteStergere = r.este_stergere,
                                 .DescriereH = If(r.descriere_h, String.Empty),
                                 .Idr = r.idr,
                                 .IdClsf = r.id_clsf,
@@ -578,6 +580,57 @@ Public Class ApiClient
             Throw
         Catch ex As Exception
             GlobalErrorLog.Write("ApiClient.GetReceptiiAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Rebuilds the FX_Receptii_H / FX_Receptii rows missing against FX_Istoric (slice 0062).
+    ' `apply` = False is the dry run the operator confirms; True writes. One shape back in
+    ' both modes. Hard-fail (Throw ApiException) on non-2xx; a 401 flows to WithReauth.
+    Public Async Function RebuildReceptiiAsync(cod As String, apply As Boolean, ct As CancellationToken) _
+        As Task(Of ReceptiiRebuildResult) Implements IApiClient.RebuildReceptiiAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim req As New PostReceptiiRefacereRequest() With {.cod = cod, .aplica = apply}
+            Dim body As String = JsonSerializer.Serialize(req, _json)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/receptii/refacere")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "refacerea recepțiilor din istoric", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As PostReceptiiRefacereResponse =
+                        JsonSerializer.Deserialize(Of PostReceptiiRefacereResponse)(respText, _json)
+                    Dim rez As New ReceptiiRebuildResult() With {.Cod = cod, .Applied = apply}
+                    If payload Is Nothing Then Return rez
+
+                    If Not String.IsNullOrEmpty(payload.cod) Then rez.Cod = payload.cod
+                    rez.Applied = payload.aplicat
+                    rez.HeadersMissing = payload.antete_lipsa
+                    rez.LinesMissing = payload.linii_lipsa
+                    rez.LinesOrphaned = payload.linii_orfane
+                    rez.HeadersWritten = payload.antete_scrise
+                    rez.LinesWritten = payload.linii_scrise
+                    rez.LinesRelinked = payload.linii_relegate
+                    rez.LinesWithoutHeader = payload.linii_fara_antet
+                    rez.LinesSkipped = payload.linii_sarite
+                    If payload.receptii_recalculate IsNot Nothing Then rez.ReceptiiRecalculated.AddRange(payload.receptii_recalculate)
+                    If payload.avertismente IsNot Nothing Then rez.Warnings.AddRange(payload.avertismente)
+                    Return rez
+                End Using
+            End Using
+        Catch ex As ApiException
+            ' 401/HTTP tipat, tratat de apelant (WithReauth) — nu logăm.
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.RebuildReceptiiAsync", ex)
             Throw
         End Try
     End Function

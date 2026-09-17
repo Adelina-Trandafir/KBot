@@ -23,9 +23,9 @@ Partial Class MigratorForm
     Friend WithEvents txtParolaUnitati As KBot.Controls.KBotTextField
     Friend WithEvents lblCodFiscal As System.Windows.Forms.Label
     Friend WithEvents txtCodFiscal As KBot.Controls.KBotTextField
-
-    ' --- region 1.5: python -------------------------------------------------------
-    Friend WithEvents grpPython As System.Windows.Forms.GroupBox
+    Friend WithEvents lblCaleForexe As System.Windows.Forms.Label
+    Friend WithEvents txtCaleForexe As KBot.Controls.KBotTextField
+    Friend WithEvents btnRasfoireForexe As System.Windows.Forms.Button
 
     ' --- region 2: server ------------------------------------------------------
     Friend WithEvents grpServer As System.Windows.Forms.GroupBox
@@ -69,13 +69,13 @@ Partial Class MigratorForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(MigratorForm))
         Dim KBotDataColumn1 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn2 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn3 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn4 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn5 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn6 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(MigratorForm))
         Dim KBotDataColumn7 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn8 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn9 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
@@ -87,12 +87,6 @@ Partial Class MigratorForm
         Dim KBotDataColumn15 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         tlpRoot = New TableLayoutPanel()
         capBar = New Controls.KBotCaptionBar()
-        grpPython = New GroupBox()
-        tplPython = New TableLayoutPanel()
-        txtCheieApi = New Controls.KBotTextField()
-        lblCheieApi = New Label()
-        txtServerUrl = New Controls.KBotTextField()
-        lblServerUrl = New Label()
         grpServer = New GroupBox()
         tlpServer = New TableLayoutPanel()
         lblGazda = New Label()
@@ -119,6 +113,9 @@ Partial Class MigratorForm
         lblDc = New Label()
         lblCodFiscal = New Label()
         txtCodFiscal = New Controls.KBotTextField()
+        lblCaleForexe = New Label()
+        txtCaleForexe = New Controls.KBotTextField()
+        btnRasfoireForexe = New Button()
         lblBazaTinta = New Label()
         grpTransfer = New GroupBox()
         tlpTransfer = New TableLayoutPanel()
@@ -136,8 +133,6 @@ Partial Class MigratorForm
         rtbInfoRowConstatari = New RichTextBox()
         tipMigrator = New KBot.Controls.KBotToolTip(components)
         tlpRoot.SuspendLayout()
-        grpPython.SuspendLayout()
-        tplPython.SuspendLayout()
         grpServer.SuspendLayout()
         tlpServer.SuspendLayout()
         grpUnitate.SuspendLayout()
@@ -159,7 +154,6 @@ Partial Class MigratorForm
         tlpRoot.ColumnCount = 1
         tlpRoot.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpRoot.Controls.Add(capBar, 0, 0)
-        tlpRoot.Controls.Add(grpPython, 0, 1)
         tlpRoot.Controls.Add(grpServer, 0, 2)
         tlpRoot.Controls.Add(grpUnitate, 0, 3)
         tlpRoot.Controls.Add(grpTransfer, 0, 4)
@@ -171,8 +165,8 @@ Partial Class MigratorForm
         tlpRoot.RowStyles.Add(New RowStyle())
         tlpRoot.RowStyles.Add(New RowStyle())
         tlpRoot.RowStyles.Add(New RowStyle())
-        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 30.77922F))
-        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 69.22078F))
+        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 37.5F))
+        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 62.5F))
         tlpRoot.Size = New Size(1505, 1044)
         tlpRoot.TabIndex = 0
         ' 
@@ -193,107 +187,17 @@ Partial Class MigratorForm
         capBar.TabStop = False
         capBar.Text = "K-BOT"
         ' 
-        ' grpPython
-        ' 
-        grpPython.Controls.Add(tplPython)
-        grpPython.Dock = DockStyle.Fill
-        grpPython.Location = New Point(4, 82)
-        grpPython.Margin = New Padding(4, 5, 4, 5)
-        grpPython.Name = "grpPython"
-        grpPython.Padding = New Padding(14, 4, 14, 4)
-        grpPython.Size = New Size(1497, 84)
-        grpPython.TabIndex = 0
-        grpPython.TabStop = False
-        grpPython.Text = "Server Python"
-        grpPython.Visible = False
-        ' 
-        ' tplPython
-        ' 
-        tplPython.ColumnCount = 5
-        tplPython.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
-        tplPython.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 399F))
-        tplPython.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 101F))
-        tplPython.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 350F))
-        tplPython.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tplPython.Controls.Add(txtCheieApi, 3, 0)
-        tplPython.Controls.Add(lblCheieApi, 2, 0)
-        tplPython.Controls.Add(txtServerUrl, 1, 0)
-        tplPython.Controls.Add(lblServerUrl, 0, 0)
-        tplPython.Dock = DockStyle.Fill
-        tplPython.Location = New Point(14, 28)
-        tplPython.Margin = New Padding(0)
-        tplPython.Name = "tplPython"
-        tplPython.RowCount = 1
-        tplPython.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
-        tplPython.Size = New Size(1469, 52)
-        tplPython.TabIndex = 0
-        ' 
-        ' txtCheieApi
-        ' 
-        txtCheieApi.BackColor = Color.Transparent
-        tplPython.SetColumnSpan(txtCheieApi, 2)
-        txtCheieApi.Dock = DockStyle.Fill
-        txtCheieApi.Location = New Point(654, 5)
-        txtCheieApi.Margin = New Padding(4, 5, 4, 5)
-        txtCheieApi.MaxLength = 32767
-        txtCheieApi.Name = "txtCheieApi"
-        txtCheieApi.PlaceholderText = "doar când se construiește o bază goală"
-        txtCheieApi.Size = New Size(811, 42)
-        txtCheieApi.TabIndex = 4
-        txtCheieApi.TabStop = False
-        tipMigrator.SetToolTipHeader(txtCheieApi, "Cheia API")
-        tipMigrator.SetToolTipText(txtCheieApi, resources.GetString("txtCheieApi.ToolTipText"))
-        txtCheieApi.UseSystemPasswordChar = True
-        ' 
-        ' lblCheieApi
-        ' 
-        lblCheieApi.AutoSize = True
-        lblCheieApi.Dock = DockStyle.Fill
-        lblCheieApi.Location = New Point(552, 0)
-        lblCheieApi.Name = "lblCheieApi"
-        lblCheieApi.Size = New Size(95, 52)
-        lblCheieApi.TabIndex = 3
-        lblCheieApi.Text = "Cheie API"
-        lblCheieApi.TextAlign = ContentAlignment.MiddleRight
-        ' 
-        ' txtServerUrl
-        ' 
-        txtServerUrl.BackColor = Color.Transparent
-        txtServerUrl.Dock = DockStyle.Fill
-        txtServerUrl.Location = New Point(154, 5)
-        txtServerUrl.Margin = New Padding(4, 5, 4, 5)
-        txtServerUrl.MaxLength = 32767
-        txtServerUrl.Name = "txtServerUrl"
-        txtServerUrl.PlaceholderText = "https://server.exemplu.ro"
-        txtServerUrl.Size = New Size(391, 42)
-        txtServerUrl.TabIndex = 2
-        txtServerUrl.TabStop = False
-        tipMigrator.SetToolTipHeader(txtServerUrl, "Adresa serverului")
-        tipMigrator.SetToolTipText(txtServerUrl, resources.GetString("txtServerUrl.ToolTipText"))
-        txtServerUrl.UseSystemPasswordChar = False
-        ' 
-        ' lblServerUrl
-        ' 
-        lblServerUrl.AutoSize = True
-        lblServerUrl.Dock = DockStyle.Fill
-        lblServerUrl.Location = New Point(3, 0)
-        lblServerUrl.Name = "lblServerUrl"
-        lblServerUrl.Size = New Size(144, 52)
-        lblServerUrl.TabIndex = 0
-        lblServerUrl.Text = "Adresă server"
-        lblServerUrl.TextAlign = ContentAlignment.MiddleLeft
-        ' 
         ' grpServer
         ' 
         grpServer.AutoSize = True
         grpServer.AutoSizeMode = AutoSizeMode.GrowAndShrink
         grpServer.Controls.Add(tlpServer)
         grpServer.Dock = DockStyle.Fill
-        grpServer.Location = New Point(4, 176)
+        grpServer.Location = New Point(4, 82)
         grpServer.Margin = New Padding(4, 5, 4, 5)
         grpServer.Name = "grpServer"
         grpServer.Padding = New Padding(14, 4, 14, 4)
-        grpServer.Size = New Size(1497, 84)
+        grpServer.Size = New Size(1497, 82)
         grpServer.TabIndex = 1
         grpServer.TabStop = False
         grpServer.Text = "Server MariaDB"
@@ -324,7 +228,7 @@ Partial Class MigratorForm
         tlpServer.Controls.Add(btnTesteaza, 8, 0)
         tlpServer.Controls.Add(lblStareServer, 9, 0)
         tlpServer.Dock = DockStyle.Fill
-        tlpServer.Location = New Point(14, 28)
+        tlpServer.Location = New Point(14, 26)
         tlpServer.Margin = New Padding(4, 5, 4, 5)
         tlpServer.Name = "tlpServer"
         tlpServer.RowCount = 1
@@ -350,13 +254,9 @@ Partial Class MigratorForm
         txtGazda.Dock = DockStyle.Fill
         txtGazda.Location = New Point(104, 5)
         txtGazda.Margin = New Padding(4, 5, 4, 5)
-        txtGazda.MaxLength = 32767
         txtGazda.Name = "txtGazda"
-        txtGazda.PlaceholderText = ""
         txtGazda.Size = New Size(142, 42)
         txtGazda.TabIndex = 1
-        txtGazda.TabStop = False
-        txtGazda.UseSystemPasswordChar = False
         ' 
         ' lblPort
         ' 
@@ -376,13 +276,9 @@ Partial Class MigratorForm
         txtPort.Dock = DockStyle.Fill
         txtPort.Location = New Point(354, 5)
         txtPort.Margin = New Padding(4, 5, 4, 5)
-        txtPort.MaxLength = 32767
         txtPort.Name = "txtPort"
-        txtPort.PlaceholderText = ""
         txtPort.Size = New Size(142, 42)
         txtPort.TabIndex = 3
-        txtPort.TabStop = False
-        txtPort.UseSystemPasswordChar = False
         ' 
         ' lblUtilizator
         ' 
@@ -402,13 +298,9 @@ Partial Class MigratorForm
         txtUtilizator.Dock = DockStyle.Fill
         txtUtilizator.Location = New Point(604, 5)
         txtUtilizator.Margin = New Padding(4, 5, 4, 5)
-        txtUtilizator.MaxLength = 32767
         txtUtilizator.Name = "txtUtilizator"
-        txtUtilizator.PlaceholderText = ""
         txtUtilizator.Size = New Size(142, 42)
         txtUtilizator.TabIndex = 5
-        txtUtilizator.TabStop = False
-        txtUtilizator.UseSystemPasswordChar = False
         ' 
         ' lblParolaServer
         ' 
@@ -428,12 +320,9 @@ Partial Class MigratorForm
         txtParolaServer.Dock = DockStyle.Fill
         txtParolaServer.Location = New Point(854, 5)
         txtParolaServer.Margin = New Padding(4, 5, 4, 5)
-        txtParolaServer.MaxLength = 32767
         txtParolaServer.Name = "txtParolaServer"
-        txtParolaServer.PlaceholderText = ""
         txtParolaServer.Size = New Size(192, 42)
         txtParolaServer.TabIndex = 7
-        txtParolaServer.TabStop = False
         txtParolaServer.UseSystemPasswordChar = True
         ' 
         ' btnTesteaza
@@ -464,11 +353,11 @@ Partial Class MigratorForm
         grpUnitate.Controls.Add(dgvUnitati)
         grpUnitate.Controls.Add(pnlUnitateSus)
         grpUnitate.Dock = DockStyle.Fill
-        grpUnitate.Location = New Point(4, 270)
+        grpUnitate.Location = New Point(4, 174)
         grpUnitate.Margin = New Padding(4, 5, 4, 5)
         grpUnitate.Name = "grpUnitate"
         grpUnitate.Padding = New Padding(14, 4, 14, 4)
-        grpUnitate.Size = New Size(1497, 229)
+        grpUnitate.Size = New Size(1497, 318)
         grpUnitate.TabIndex = 2
         grpUnitate.TabStop = False
         grpUnitate.Text = "Unitate"
@@ -529,11 +418,11 @@ Partial Class MigratorForm
         dgvUnitati.Dock = DockStyle.Fill
         dgvUnitati.FillColumnKey = "nume"
         dgvUnitati.HeaderHeight = 26
-        dgvUnitati.Location = New Point(527, 28)
+        dgvUnitati.Location = New Point(527, 26)
         dgvUnitati.Margin = New Padding(4, 5, 4, 5)
         dgvUnitati.Name = "dgvUnitati"
         dgvUnitati.RowHeight = 24
-        dgvUnitati.Size = New Size(956, 197)
+        dgvUnitati.Size = New Size(956, 288)
         dgvUnitati.TabIndex = 1
         ' 
         ' pnlUnitateSus
@@ -541,11 +430,11 @@ Partial Class MigratorForm
         pnlUnitateSus.Controls.Add(TableLayoutPanel1)
         pnlUnitateSus.Controls.Add(lblBazaTinta)
         pnlUnitateSus.Dock = DockStyle.Left
-        pnlUnitateSus.Location = New Point(14, 28)
+        pnlUnitateSus.Location = New Point(14, 26)
         pnlUnitateSus.Margin = New Padding(0)
         pnlUnitateSus.Name = "pnlUnitateSus"
         pnlUnitateSus.Padding = New Padding(0, 0, 10, 10)
-        pnlUnitateSus.Size = New Size(513, 197)
+        pnlUnitateSus.Size = New Size(513, 288)
         pnlUnitateSus.TabIndex = 0
         ' 
         ' TableLayoutPanel1
@@ -564,17 +453,21 @@ Partial Class MigratorForm
         TableLayoutPanel1.Controls.Add(lblDc, 0, 2)
         TableLayoutPanel1.Controls.Add(lblCodFiscal, 0, 3)
         TableLayoutPanel1.Controls.Add(txtCodFiscal, 1, 3)
+        TableLayoutPanel1.Controls.Add(lblCaleForexe, 0, 4)
+        TableLayoutPanel1.Controls.Add(txtCaleForexe, 1, 4)
+        TableLayoutPanel1.Controls.Add(btnRasfoireForexe, 2, 4)
         TableLayoutPanel1.Dock = DockStyle.Fill
         TableLayoutPanel1.Location = New Point(0, 0)
         TableLayoutPanel1.Margin = New Padding(0)
         TableLayoutPanel1.Name = "TableLayoutPanel1"
-        TableLayoutPanel1.RowCount = 5
+        TableLayoutPanel1.RowCount = 6
         TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
         TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
         TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 38F))
         TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
+        TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
         TableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        TableLayoutPanel1.Size = New Size(503, 187)
+        TableLayoutPanel1.Size = New Size(503, 278)
         TableLayoutPanel1.TabIndex = 4
         ' 
         ' btnRasfoireRegistru
@@ -594,15 +487,12 @@ Partial Class MigratorForm
         txtRegistru.Dock = DockStyle.Fill
         txtRegistru.Location = New Point(135, 5)
         txtRegistru.Margin = New Padding(4, 5, 4, 5)
-        txtRegistru.MaxLength = 32767
         txtRegistru.Name = "txtRegistru"
         txtRegistru.PlaceholderText = "C:\AVACONT\cale.accdb"
         txtRegistru.Size = New Size(301, 40)
         txtRegistru.TabIndex = 1
-        txtRegistru.TabStop = False
         tipMigrator.SetToolTipHeader(txtRegistru, "Registrul AVACONT")
         tipMigrator.SetToolTipText(txtRegistru, "Fișierul «cale.accdb». Din el se citesc DC-urile, unitățile și căile" & vbLf & "către fișierele fiecărei unități — nu trebuie tastate una câte una.")
-        txtRegistru.UseSystemPasswordChar = False
         ' 
         ' txtParolaUnitati
         ' 
@@ -610,12 +500,10 @@ Partial Class MigratorForm
         txtParolaUnitati.Dock = DockStyle.Fill
         txtParolaUnitati.Location = New Point(135, 55)
         txtParolaUnitati.Margin = New Padding(4, 5, 4, 5)
-        txtParolaUnitati.MaxLength = 32767
         txtParolaUnitati.Name = "txtParolaUnitati"
         txtParolaUnitati.PlaceholderText = "lăsați gol dacă nu sunt protejate"
         txtParolaUnitati.Size = New Size(301, 40)
         txtParolaUnitati.TabIndex = 4
-        txtParolaUnitati.TabStop = False
         txtParolaUnitati.UseSystemPasswordChar = True
         ' 
         ' lblRegistru
@@ -666,7 +554,7 @@ Partial Class MigratorForm
         cboDc.Location = New Point(135, 105)
         cboDc.Margin = New Padding(4, 5, 4, 5)
         cboDc.Name = "cboDc"
-        cboDc.Size = New Size(301, 33)
+        cboDc.Size = New Size(301, 30)
         cboDc.TabIndex = 1
         ' 
         ' lblDc
@@ -707,7 +595,42 @@ Partial Class MigratorForm
         txtCodFiscal.TabStop = True
         tipMigrator.SetToolTipHeader(txtCodFiscal, "Cod fiscal (suprascrie registry)")
         tipMigrator.SetToolTipText(txtCodFiscal, resources.GetString("txtCodFiscal.ToolTipText"))
-        txtCodFiscal.UseSystemPasswordChar = False
+        ' 
+        ' lblCaleForexe
+        ' 
+        lblCaleForexe.AutoSize = True
+        lblCaleForexe.Dock = DockStyle.Fill
+        lblCaleForexe.Location = New Point(4, 188)
+        lblCaleForexe.Margin = New Padding(4, 0, 4, 0)
+        lblCaleForexe.Name = "lblCaleForexe"
+        lblCaleForexe.Size = New Size(123, 50)
+        lblCaleForexe.TabIndex = 8
+        lblCaleForexe.Text = "Fișier FOREXE"
+        lblCaleForexe.TextAlign = ContentAlignment.MiddleLeft
+        ' 
+        ' txtCaleForexe
+        ' 
+        txtCaleForexe.BackColor = Color.Transparent
+        txtCaleForexe.Dock = DockStyle.Fill
+        txtCaleForexe.Location = New Point(135, 193)
+        txtCaleForexe.Margin = New Padding(4, 5, 4, 5)
+        txtCaleForexe.Name = "txtCaleForexe"
+        txtCaleForexe.PlaceholderText = "se completează la alegerea DC-ului"
+        txtCaleForexe.Size = New Size(301, 40)
+        txtCaleForexe.TabIndex = 7
+        tipMigrator.SetToolTipHeader(txtCaleForexe, "Fișier FOREXE (suprascrie registrul)")
+        tipMigrator.SetToolTipText(txtCaleForexe, resources.GetString("txtCaleForexe.ToolTipText"))
+        ' 
+        ' btnRasfoireForexe
+        ' 
+        btnRasfoireForexe.Dock = DockStyle.Fill
+        btnRasfoireForexe.Location = New Point(444, 192)
+        btnRasfoireForexe.Margin = New Padding(4)
+        btnRasfoireForexe.Name = "btnRasfoireForexe"
+        btnRasfoireForexe.Size = New Size(55, 42)
+        btnRasfoireForexe.TabIndex = 9
+        btnRasfoireForexe.Text = "..."
+        btnRasfoireForexe.UseVisualStyleBackColor = True
         ' 
         ' lblBazaTinta
         ' 
@@ -715,7 +638,7 @@ Partial Class MigratorForm
         lblBazaTinta.Location = New Point(643, 20)
         lblBazaTinta.Margin = New Padding(4, 0, 4, 0)
         lblBazaTinta.Name = "lblBazaTinta"
-        lblBazaTinta.Size = New Size(208, 25)
+        lblBazaTinta.Size = New Size(197, 22)
         lblBazaTinta.TabIndex = 3
         lblBazaTinta.Text = "Baza-țintă: (necunoscută)"
         ' 
@@ -723,11 +646,11 @@ Partial Class MigratorForm
         ' 
         grpTransfer.Controls.Add(tlpTransfer)
         grpTransfer.Dock = DockStyle.Fill
-        grpTransfer.Location = New Point(4, 509)
+        grpTransfer.Location = New Point(4, 502)
         grpTransfer.Margin = New Padding(4, 5, 4, 5)
         grpTransfer.Name = "grpTransfer"
         grpTransfer.Padding = New Padding(14, 4, 14, 4)
-        grpTransfer.Size = New Size(1497, 530)
+        grpTransfer.Size = New Size(1497, 537)
         grpTransfer.TabIndex = 3
         grpTransfer.TabStop = False
         grpTransfer.Text = "Transfer"
@@ -739,13 +662,13 @@ Partial Class MigratorForm
         tlpTransfer.Controls.Add(pnlButoane, 0, 0)
         tlpTransfer.Controls.Add(tlpGrile, 0, 1)
         tlpTransfer.Dock = DockStyle.Fill
-        tlpTransfer.Location = New Point(14, 28)
+        tlpTransfer.Location = New Point(14, 26)
         tlpTransfer.Margin = New Padding(4, 5, 4, 5)
         tlpTransfer.Name = "tlpTransfer"
         tlpTransfer.RowCount = 2
         tlpTransfer.RowStyles.Add(New RowStyle(SizeType.Absolute, 65F))
         tlpTransfer.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlpTransfer.Size = New Size(1469, 498)
+        tlpTransfer.Size = New Size(1469, 507)
         tlpTransfer.TabIndex = 0
         ' 
         ' pnlButoane
@@ -840,7 +763,7 @@ Partial Class MigratorForm
         tlpGrile.Name = "tlpGrile"
         tlpGrile.RowCount = 1
         tlpGrile.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlpGrile.Size = New Size(1461, 423)
+        tlpGrile.Size = New Size(1461, 432)
         tlpGrile.TabIndex = 1
         ' 
         ' dgvTabele
@@ -885,7 +808,7 @@ Partial Class MigratorForm
         dgvTabele.Margin = New Padding(4, 5, 4, 5)
         dgvTabele.Name = "dgvTabele"
         dgvTabele.RowHeight = 24
-        dgvTabele.Size = New Size(576, 413)
+        dgvTabele.Size = New Size(576, 422)
         dgvTabele.TabIndex = 0
         ' 
         ' tlpDreapta
@@ -903,7 +826,7 @@ Partial Class MigratorForm
         tlpDreapta.RowCount = 2
         tlpDreapta.RowStyles.Add(New RowStyle(SizeType.Percent, 61.810154F))
         tlpDreapta.RowStyles.Add(New RowStyle(SizeType.Percent, 38.189846F))
-        tlpDreapta.Size = New Size(877, 423)
+        tlpDreapta.Size = New Size(877, 432)
         tlpDreapta.TabIndex = 1
         ' 
         ' dgvConstatari
@@ -958,18 +881,18 @@ Partial Class MigratorForm
         dgvConstatari.Margin = New Padding(4, 5, 4, 5)
         dgvConstatari.Name = "dgvConstatari"
         dgvConstatari.RowHeight = 24
-        dgvConstatari.Size = New Size(492, 251)
+        dgvConstatari.Size = New Size(492, 257)
         dgvConstatari.TabIndex = 0
         ' 
         ' rtbJurnal
         ' 
         tlpDreapta.SetColumnSpan(rtbJurnal, 2)
         rtbJurnal.Dock = DockStyle.Fill
-        rtbJurnal.Location = New Point(4, 266)
+        rtbJurnal.Location = New Point(4, 272)
         rtbJurnal.Margin = New Padding(4, 5, 4, 5)
         rtbJurnal.Name = "rtbJurnal"
         rtbJurnal.ReadOnly = True
-        rtbJurnal.Size = New Size(869, 152)
+        rtbJurnal.Size = New Size(869, 155)
         rtbJurnal.TabIndex = 1
         rtbJurnal.Text = ""
         rtbJurnal.WordWrap = False
@@ -980,7 +903,7 @@ Partial Class MigratorForm
         rtbInfoRowConstatari.Dock = DockStyle.Fill
         rtbInfoRowConstatari.Location = New Point(503, 3)
         rtbInfoRowConstatari.Name = "rtbInfoRowConstatari"
-        rtbInfoRowConstatari.Size = New Size(371, 255)
+        rtbInfoRowConstatari.Size = New Size(371, 261)
         rtbInfoRowConstatari.TabIndex = 2
         rtbInfoRowConstatari.Text = ""
         ' 
@@ -999,9 +922,6 @@ Partial Class MigratorForm
         Text = "K-BOT — migrare Access ▸ MariaDB"
         tlpRoot.ResumeLayout(False)
         tlpRoot.PerformLayout()
-        grpPython.ResumeLayout(False)
-        tplPython.ResumeLayout(False)
-        tplPython.PerformLayout()
         grpServer.ResumeLayout(False)
         grpServer.PerformLayout()
         tlpServer.ResumeLayout(False)
@@ -1025,11 +945,6 @@ Partial Class MigratorForm
 
     Friend WithEvents rtbInfoRowConstatari As RichTextBox
     Friend WithEvents tlpButoane As TableLayoutPanel
-    Friend WithEvents tplPython As TableLayoutPanel
-    Friend WithEvents txtCheieApi As Controls.KBotTextField
-    Friend WithEvents lblCheieApi As Label
-    Friend WithEvents txtServerUrl As Controls.KBotTextField
-    Friend WithEvents lblServerUrl As Label
     Friend WithEvents TableLayoutPanel1 As TableLayoutPanel
     Friend WithEvents capBar As Controls.KBotCaptionBar
 

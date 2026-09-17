@@ -35,6 +35,9 @@ Partial Class ThemeOptionsForm
         lblTextScale = New Label()
         trkTextScale = New TrackBar()
         lblTextScaleValue = New Label()
+        lblFitBaseline = New Label()
+        rdoFitScaled = New RadioButton()
+        rdoFitRaw = New RadioButton()
         lblScalingHint = New Label()
         pnlBottom = New Panel()
         lblStatus = New Label()
@@ -201,17 +204,55 @@ Partial Class ThemeOptionsForm
         lblTextScaleValue.TabIndex = 8
         lblTextScaleValue.Text = "100%"
         '
+        ' lblFitBaseline
+        '
+        lblFitBaseline.AutoSize = True
+        lblFitBaseline.Location = New Point(12, 140)
+        lblFitBaseline.Name = "lblFitBaseline"
+        lblFitBaseline.Size = New Size(72, 15)
+        lblFitBaseline.TabIndex = 9
+        lblFitBaseline.Text = "Baza ferestrei:"
+        '
+        ' rdoFitScaled
+        '
+        rdoFitScaled.AutoSize = True
+        rdoFitScaled.Checked = True
+        rdoFitScaled.Location = New Point(90, 138)
+        rdoFitScaled.Name = "rdoFitScaled"
+        rdoFitScaled.Size = New Size(300, 19)
+        rdoFitScaled.TabIndex = 10
+        rdoFitScaled.TabStop = True
+        rdoFitScaled.Text = "urmează scalarea (mărimea de pornire crește cu textul)"
+        rdoFitScaled.UseVisualStyleBackColor = True
+        tips.SetToolTipHeader(rdoFitScaled, "Baza urmează cursorul de scalare")
+        tips.SetToolTipText(rdoFitScaled, "Fereastra nu scade niciodată sub mărimea ei de pornire, iar acea mărime crește și scade odată cu textul și cu ecranul.")
+        '
+        ' rdoFitRaw
+        '
+        rdoFitRaw.AutoSize = True
+        rdoFitRaw.Location = New Point(90, 160)
+        rdoFitRaw.Name = "rdoFitRaw"
+        rdoFitRaw.Size = New Size(300, 19)
+        rdoFitRaw.TabIndex = 11
+        rdoFitRaw.Text = "rămâne cea din designer (pixeli bruți)"
+        rdoFitRaw.UseVisualStyleBackColor = True
+        tips.SetToolTipHeader(rdoFitRaw, "Baza înghețată în pixeli")
+        tips.SetToolTipText(rdoFitRaw, "Mărimea de pornire rămâne cea de la deschidere, oricât s-ar schimba scalarea; fereastra crește doar cât îi cere conținutul.")
+        '
         ' lblScalingHint
         '
-        lblScalingHint.Location = New Point(12, 136)
+        lblScalingHint.Location = New Point(12, 184)
         lblScalingHint.Name = "lblScalingHint"
         lblScalingHint.Size = New Size(560, 32)
-        lblScalingHint.TabIndex = 9
+        lblScalingHint.TabIndex = 12
         lblScalingHint.Text = "«Fix 100%» oprește scalarea măsurilor NOASTRE; fonturile le scalează în continuare Windows, deci la 150% textul rămâne mai mare decât geometria din jur. Pentru proporții identice cu proiectarea, bifează întinderea de mai sus."
         '
         ' pnlScaling
         '
         pnlScaling.Controls.Add(lblScalingHint)
+        pnlScaling.Controls.Add(rdoFitRaw)
+        pnlScaling.Controls.Add(rdoFitScaled)
+        pnlScaling.Controls.Add(lblFitBaseline)
         pnlScaling.Controls.Add(lblTextScaleValue)
         pnlScaling.Controls.Add(trkTextScale)
         pnlScaling.Controls.Add(lblTextScale)
@@ -222,9 +263,9 @@ Partial Class ThemeOptionsForm
         pnlScaling.Controls.Add(lblScalingMode)
         pnlScaling.Controls.Add(lblScalingTitle)
         pnlScaling.Dock = DockStyle.Bottom
-        pnlScaling.Location = New Point(0, 310)
+        pnlScaling.Location = New Point(0, 262)
         pnlScaling.Name = "pnlScaling"
-        pnlScaling.Size = New Size(584, 176)
+        pnlScaling.Size = New Size(584, 224)
         pnlScaling.TabIndex = 2
         '
         ' lblStatus
@@ -286,7 +327,7 @@ Partial Class ThemeOptionsForm
         '
         AutoScaleDimensions = New SizeF(6F, 14F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(584, 540)
+        ClientSize = New Size(584, 588)
         ' Ordine INVERSĂ de andocare (regula casei): Fill primul, apoi Bottom-urile — cel adăugat
         ' mai devreme rămâne mai jos — și Top la urmă.
         Controls.Add(grid)
@@ -295,7 +336,7 @@ Partial Class ThemeOptionsForm
         Controls.Add(pnlTop)
         FormBorderStyle = FormBorderStyle.SizableToolWindow
         MinimizeBox = False
-        MinimumSize = New Size(560, 500)
+        MinimumSize = New Size(560, 548)
         Name = "ThemeOptionsForm"
         ShowInTaskbar = False
         StartPosition = FormStartPosition.CenterParent
@@ -325,6 +366,9 @@ Partial Class ThemeOptionsForm
     Friend WithEvents lblTextScale As Label
     Friend WithEvents trkTextScale As TrackBar
     Friend WithEvents lblTextScaleValue As Label
+    Friend WithEvents lblFitBaseline As Label
+    Friend WithEvents rdoFitScaled As RadioButton
+    Friend WithEvents rdoFitRaw As RadioButton
     Friend WithEvents lblScalingHint As Label
     Friend WithEvents pnlBottom As Panel
     Friend WithEvents lblStatus As Label

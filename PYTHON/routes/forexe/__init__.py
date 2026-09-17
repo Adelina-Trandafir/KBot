@@ -38,6 +38,8 @@ forexe_bp = Blueprint("forexe", __name__)
 # sumar.py       -> GET /api/forexe/sumar
 # rezervari.py   -> GET /api/forexe/rezervari
 # receptii.py    -> GET /api/forexe/receptii
+# receptii_refacere.py -> POST /api/forexe/receptii/refacere (instantaneele si liniile
+#                   lipsa, refacute din FX_Istoric dupa IDH, felia 0062)
 # plati.py       -> GET /api/forexe/plati
 # ddf.py         -> GET /api/forexe/ddf
 # istoric.py     -> GET /api/forexe/istoric
@@ -59,11 +61,14 @@ forexe_bp = Blueprint("forexe", __name__)
 # asociere.py    -> GET/POST /api/forexe/asociere (editorul R<->H de ORICAND, 0048-04)
 # extrase.py     -> POST /api/forexe/extrase/import, GET /api/forexe/extrase/ultima
 #                   (extrasele de cont SNM, felia 0057)
+# angajament_dump.py -> GET /api/forexe/angajament/dump?db_name=&cod= (dump de
+#                   diagnostic al unui angajament: toate tabelele FX_, fara extrase)
 from . import angajamente  # noqa: E402,F401
 from . import tree  # noqa: E402,F401
 from . import sumar  # noqa: E402,F401
 from . import rezervari  # noqa: E402,F401
 from . import receptii  # noqa: E402,F401
+from . import receptii_refacere  # noqa: E402,F401
 from . import plati  # noqa: E402,F401
 from . import ddf  # noqa: E402,F401
 from . import istoric  # noqa: E402,F401
@@ -84,3 +89,5 @@ from . import asociere  # noqa: E402,F401
 # extrase.py = importul extraselor de cont SNM (felia 0057): portul lui
 # mdl_FX_Extrase.FX_Extrase_Prelucrare, mutat de pe partea de Access pe server.
 from . import extrase  # noqa: E402,F401
+# angajament_dump.py = unealta de diagnostic (un angajament, toate tabelele lui, ca text).
+from . import angajament_dump  # noqa: E402,F401

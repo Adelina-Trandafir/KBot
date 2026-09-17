@@ -714,6 +714,10 @@ Public NotInheritable Class TransferRunner
             lines.Add($"      nomenclatoare: {unit.UnitFilePath}")
             lines.Add($"      forexe:        {If(unit.ForexeFilePath, "(niciunul)")}")
         Next
+        If _request.ForexeFileOverride.Length > 0 Then
+            lines.Add($"Fișier FOREXE din registru: {If(_request.RegistryForexeFile.Length = 0, "(lipsă)", _request.RegistryForexeFile)}")
+            lines.Add($"Fișier FOREXE folosit:      {_request.ForexeFileOverride}   ◂ SUPRASCRIS de operator")
+        End If
         lines.Add(String.Empty)
         lines.Add("Tabele bifate: " & String.Join(", ", _request.SelectedTables.OrderBy(Function(t) t)))
         Return lines

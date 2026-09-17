@@ -635,6 +635,8 @@ Partial Public Class AdvancedTreeControl
             _headerSearchIcon = value
             ' Fără iconiță de toggle, SearchShow înseamnă bandă permanentă — re-evaluăm.
             ApplySearchShow()
+            ' With an icon the search box takes the icon's height: re-lay the open band.
+            If _isSearchMode Then PositionSearchTextBox()
             Me.Invalidate()
         End Set
     End Property
@@ -704,6 +706,7 @@ Partial Public Class AdvancedTreeControl
         Set(value As Size)
             _headerIconSizeLogic = value
             _headerIconSize = New Size(SX(value.Width), SY(value.Height))
+            If _isSearchMode Then PositionSearchTextBox()   ' search box height follows the icon
             Me.Invalidate()
         End Set
     End Property

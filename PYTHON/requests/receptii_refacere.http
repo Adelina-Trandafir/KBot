@@ -1,0 +1,93 @@
+# Rebuild missing FX_Receptii_H / FX_Receptii rows from FX_Istoric (slice 0062).
+#
+# VS Code: install the "REST Client" extension (humao.rest-client), open this file and
+# click "Send Request" above each block, IN ORDER. The password is asked in a prompt and
+# never written here. The token from step 2 is captured automatically into {{login.response.body.Token}}.
+#
+# Local server instead of production: change @host (e.g. http://127.0.0.1:5000).
+
+@host = https://kbot.avatarsoft.ro
+@username = scavatarsoft@gmail.com
+@cod = AAB37CNBK95
+# ADMIN blocks only (bottom of the file): the database name and the server key. Do NOT
+# commit a real key here -- put it in a REST Client environment ($shared / settings) instead.
+@dbname = 000_DEMO
+@apikey = <API_KEY din config.py>
+
+### 1. Which units (DC) can this user open?  -> pick the DC you want in step 2
+# @prompt password Parola
+# @name units
+POST {{host}}/api/auth/units
+Content-Type: application/json
+
+{ "username": "{{username}}", "password": "{{password}}" }
+
+### 2. Login on ONE unit (db_name = the DC from step 1) -> bearer token
+# @prompt password Parola
+# @prompt dc DC-ul unitatii (din pasul 1)
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "username": "{{username}}", "password": "{{password}}", "db_name": "{{dc}}", "machine": "VSCODE" }
+
+### 3. DRY RUN - counts only, writes nothing (aplica = false)
+POST {{host}}/api/forexe/receptii/refacere
+Authorization: Bearer {{login.response.body.Token}}
+Content-Type: application/json
+
+{ "cod": "{{cod}}", "aplica": false }
+
+### 4. APPLY - writes, in one transaction (aplica = true). Run 3 first and read the numbers.
+POST {{host}}/api/forexe/receptii/refacere
+Authorization: Bearer {{login.response.body.Token}}
+Content-Type: application/json
+
+{ "cod": "{{cod}}", "aplica": true }
+
+### 3b. WHOLE DATABASE, dry run: every angajament with receptie history, counts only.
+# `detalii` lists only the angajamente where something is missing or worth a warning;
+# `erori` lists the ones that failed (each angajament is its own transaction).
+POST {{host}}/api/forexe/receptii/refacere
+Authorization: Bearer {{login.response.body.Token}}
+Content-Type: application/json
+
+{ "toate": true, "aplica": false }
+
+### 4b. WHOLE DATABASE, apply. One commit per angajament; a failing one is rolled back
+# alone and reported in `erori`, the rest still get written. Run 3b first.
+POST {{host}}/api/forexe/receptii/refacere
+Authorization: Bearer {{login.response.body.Token}}
+Content-Type: application/json
+
+{ "toate": true, "aplica": true }
+
+### 5. Check: the receptii list now includes the rebuilt snapshots (idrr = null while unplaced)
+GET {{host}}/api/forexe/receptii?cod={{cod}}
+Authorization: Bearer {{login.response.body.Token}}
+
+### ADMIN, no login: the server-wide key (config.py API_KEY) + the database name in the body.
+# Same body and same answer as above, plus "db_name" echoed back. Dry run:
+POST {{host}}/api/admin/receptii/refacere
+X-Api-Key: {{apikey}}
+Content-Type: application/json
+
+{ "db_name": "{{dbname}}", "toate": true, "aplica": false }
+
+### ADMIN, whole database, APPLY
+POST {{host}}/api/admin/receptii/refacere
+X-Api-Key: {{apikey}}
+Content-Type: application/json
+
+{ "db_name": "{{dbname}}", "toate": true, "aplica": true }
+
+### ADMIN, one angajament, dry run
+POST {{host}}/api/admin/receptii/refacere
+X-Api-Key: {{apikey}}
+Content-Type: application/json
+
+{ "db_name": "{{dbname}}", "cod": "{{cod}}", "aplica": false }
+
+### 6. Logout (optional)
+POST {{host}}/api/auth/logout
+Authorization: Bearer {{login.response.body.Token}}

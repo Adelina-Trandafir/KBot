@@ -45,11 +45,11 @@ Partial Class LogViewerForm
         txtPanaLa = New Controls.KBotTextField()
         btnReimprospateaza = New Button()
         tmrCautare = New Timer(components)
-        tlyMain = New TableLayoutPanel()
+        tlyMain = New Global.KBot.Controls.KBotTableLayoutPanel()
         capBar = New Controls.KBotCaptionBar()
-        tlyFilter = New TableLayoutPanel()
-        tlyFilterActual = New TableLayoutPanel()
-        tlyFooter = New TableLayoutPanel()
+        tlyFilter = New Global.KBot.Controls.KBotTableLayoutPanel()
+        tlyFilterActual = New Global.KBot.Controls.KBotTableLayoutPanel()
+        tlyFooter = New Global.KBot.Controls.KBotTableLayoutPanel()
         pnlFisiere.SuspendLayout()
         CType(navFisiere, ComponentModel.ISupportInitialize).BeginInit()
         pnlGrila.SuspendLayout()
@@ -568,11 +568,11 @@ Partial Class LogViewerForm
     Friend WithEvents busy As Global.KBot.Controls.KBotBusyBar
     Friend WithEvents lblStare As Label
     Friend WithEvents tmrCautare As Timer
-    Friend WithEvents tlyFilter As TableLayoutPanel
-    Friend WithEvents tlyMain As TableLayoutPanel
+    Friend WithEvents tlyFilter As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents tlyMain As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents capBar As Controls.KBotCaptionBar
-    Friend WithEvents tlyFilterActual As TableLayoutPanel
+    Friend WithEvents tlyFilterActual As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents pnlFisiere As Panel
     Friend WithEvents noticeServer As Controls.KBotNotice
-    Friend WithEvents tlyFooter As TableLayoutPanel
+    Friend WithEvents tlyFooter As Global.KBot.Controls.KBotTableLayoutPanel
 End Class

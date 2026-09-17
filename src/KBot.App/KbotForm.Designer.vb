@@ -1,5 +1,7 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
-Partial Class KBOT
+﻿Imports KBot.Controls
+
+<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
+Partial Class KbotForm
     Inherits Global.KBot.Theming.KBotShellForm
 
     'Form overrides dispose to clean up the component list.
@@ -22,32 +24,31 @@ Partial Class KBOT
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim TreeNodeDefinition1 As Global.KBot.Controls.TreeNodeDefinition = New Controls.TreeNodeDefinition()
-        Dim KBotNavItem1 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KBOT))
-        Dim KBotNavItem2 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim KBotNavItem3 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim KBotNavItem4 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim KBotNavItem5 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim KBotNavItem6 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim KBotNavItem7 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        Dim KBotNavItem8 As Global.KBot.Controls.KBotNavItem = New Controls.KBotNavItem()
-        tips = New Global.KBot.Controls.KBotToolTip(components)
-        btnConectare = New Button()
+        Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
+        Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KbotForm))
+        Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem5 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem7 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem8 As KBotNavItem = New KBotNavItem()
+        tips = New KBotToolTip(components)
         btnInfo = New Button()
         btnSort = New Button()
         btnOpt = New Button()
-        cboAn = New Controls.KBotComboBox()
-        cboSs = New Controls.KBotComboBox()
+        cboAn = New KBotComboBox()
+        cboSs = New KBotComboBox()
         pnlRoot = New Panel()
         pnlWork = New Panel()
         split = New SplitContainer()
         pnlTree = New Panel()
-        tree = New Controls.AdvancedTreeControl()
+        tree = New AdvancedTreeControl()
         pnlTreeHead = New Panel()
         lblTree = New Label()
         viewHost = New Panel()
-        navViews = New Controls.KBotNavList()
+        navViews = New KBotNavList()
         pnlStatus = New Panel()
         forexeFooter = New ForexeFooterView()
         pnlHeader = New Panel()
@@ -55,8 +56,8 @@ Partial Class KBOT
         lblOperator = New Label()
         lblSs = New Label()
         lblAn = New Label()
-        busyBar = New Controls.KBotBusyBar()
-        capBar = New Controls.KBotCaptionBar()
+        busyBar = New KBotBusyBar()
+        capBar = New KBotCaptionBar()
         pnlRoot.SuspendLayout()
         pnlWork.SuspendLayout()
         CType(split, ComponentModel.ISupportInitialize).BeginInit()
@@ -70,26 +71,6 @@ Partial Class KBOT
         pnlHeader.SuspendLayout()
         tlyHeader.SuspendLayout()
         SuspendLayout()
-        ' 
-        ' btnConectare
-        ' 
-        btnConectare.BackgroundImageLayout = ImageLayout.None
-        btnConectare.Dock = DockStyle.Left
-        btnConectare.FlatAppearance.BorderColor = SystemColors.ActiveBorder
-        btnConectare.FlatStyle = FlatStyle.Flat
-        btnConectare.Font = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        btnConectare.Image = My.Resources.Resources.FX_24
-        btnConectare.ImageAlign = ContentAlignment.MiddleLeft
-        btnConectare.Location = New Point(0, 0)
-        btnConectare.Margin = New Padding(0)
-        btnConectare.Name = "btnConectare"
-        btnConectare.Padding = New Padding(17, 0, 0, 0)
-        btnConectare.Size = New Size(219, 52)
-        btnConectare.TabIndex = 0
-        btnConectare.Text = "Conectare"
-        tips.SetToolTipHeader(btnConectare, "Conectare FOREXE")
-        tips.SetToolTipText(btnConectare, "Pornește sesiunea către portalul FOREXE." & vbLf & "Se cere certificatul o singură dată pe sesiune.")
-        btnConectare.UseVisualStyleBackColor = True
         ' 
         ' btnInfo
         ' 
@@ -140,10 +121,10 @@ Partial Class KBOT
         cboAn.DropDownStyle = ComboBoxStyle.DropDownList
         cboAn.FlatStyle = FlatStyle.Flat
         cboAn.ItemHeight = 28
-        cboAn.Location = New Point(1130, 7)
+        cboAn.Location = New Point(320, 7)
         cboAn.Margin = New Padding(0, 7, 0, 0)
         cboAn.Name = "cboAn"
-        cboAn.Size = New Size(150, 34)
+        cboAn.Size = New Size(126, 34)
         cboAn.TabIndex = 3
         tips.SetToolTipHeader(cboAn, "An")
         tips.SetToolTipText(cboAn, "Anul de lucru." & vbLf & "Schimbarea lui reîncarcă arborele și toate ecranele.")
@@ -155,10 +136,10 @@ Partial Class KBOT
         cboSs.DropDownStyle = ComboBoxStyle.DropDownList
         cboSs.FlatStyle = FlatStyle.Flat
         cboSs.ItemHeight = 28
-        cboSs.Location = New Point(1480, 7)
+        cboSs.Location = New Point(589, 7)
         cboSs.Margin = New Padding(0, 7, 10, 0)
         cboSs.Name = "cboSs"
-        cboSs.Size = New Size(140, 34)
+        cboSs.Size = New Size(104, 34)
         cboSs.TabIndex = 5
         tips.SetToolTipHeader(cboSs, "Subperioadă")
         tips.SetToolTipText(cboSs, "Subperioada (SS) din anul ales." & vbLf & "Ultima aleasă se ține minte pentru data viitoare.")
@@ -174,7 +155,7 @@ Partial Class KBOT
         pnlRoot.Location = New Point(1, 2)
         pnlRoot.Margin = New Padding(4, 5, 4, 5)
         pnlRoot.Name = "pnlRoot"
-        pnlRoot.Size = New Size(1639, 996)
+        pnlRoot.Size = New Size(1920, 996)
         pnlRoot.TabIndex = 0
         pnlRoot.Tag = "Card"
         ' 
@@ -183,11 +164,11 @@ Partial Class KBOT
         pnlWork.Controls.Add(split)
         pnlWork.Controls.Add(navViews)
         pnlWork.Dock = DockStyle.Fill
-        pnlWork.Location = New Point(0, 114)
+        pnlWork.Location = New Point(0, 109)
         pnlWork.Margin = New Padding(4, 5, 4, 5)
         pnlWork.Name = "pnlWork"
         pnlWork.Padding = New Padding(11, 13, 11, 13)
-        pnlWork.Size = New Size(1639, 809)
+        pnlWork.Size = New Size(1920, 814)
         pnlWork.TabIndex = 0
         ' 
         ' split
@@ -208,8 +189,8 @@ Partial Class KBOT
         split.Panel2.Controls.Add(viewHost)
         split.Panel2.Padding = New Padding(11, 0, 0, 0)
         split.Panel2MinSize = 400
-        split.Size = New Size(1398, 783)
-        split.SplitterDistance = 397
+        split.Size = New Size(1679, 788)
+        split.SplitterDistance = 476
         split.SplitterWidth = 9
         split.TabIndex = 1
         ' 
@@ -221,7 +202,7 @@ Partial Class KBOT
         pnlTree.Location = New Point(11, 0)
         pnlTree.Margin = New Padding(4, 5, 4, 5)
         pnlTree.Name = "pnlTree"
-        pnlTree.Size = New Size(386, 783)
+        pnlTree.Size = New Size(465, 788)
         pnlTree.TabIndex = 0
         pnlTree.Tag = "Card"
         ' 
@@ -253,7 +234,7 @@ Partial Class KBOT
         tree.FooterTextAlign = ContentAlignment.MiddleRight
         tree.FooterVisible = True
         tree.HeaderBackColor = SystemColors.Control
-        tree.HeaderBackStyle = Global.KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
+        tree.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " LISTĂ ANGAJAMENTE"
         tree.HeaderFont = New Font("Calibri", 10F, FontStyle.Bold)
         tree.HeaderForeColor = Color.Black
@@ -285,16 +266,18 @@ Partial Class KBOT
         tree.ReserveRightIconSpace = True
         tree.RightIconSize = New Size(16, 16)
         tree.RootExpander = False
-        tree.ScrollBarTheme = Global.KBot.Controls.AdvancedTreeControl.En_ScrollBarTheme.Default
+        tree.ScrollBarTheme = AdvancedTreeControl.En_ScrollBarTheme.Default
         tree.SearchBarFont = New Font("Calibri", 9F)
         tree.SearchBoxBackColor = SystemColors.Control
         tree.SearchClearButton = True
         tree.SearchClearButtonHoverColor = SystemColors.Control
+        tree.SearchClearButtonImage = My.Resources.Resources.Everaldo_Crystal_Clear_Action_cancel_128_resized
         tree.SearchDefaultText = "... tastează minim 3 caractere ..."
-        tree.SearchIn = Global.KBot.Controls.AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
-        tree.SearchSeparatorColor = Color.Gainsboro
+        tree.SearchIn = AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
+        tree.SearchSeparatorColor = SystemColors.ActiveBorder
+        tree.SearchSeparatorWidth = 2
         tree.ShowRightIconOnHover = True
-        tree.Size = New Size(386, 783)
+        tree.Size = New Size(465, 788)
         tree.TabIndex = 0
         tree.TooltipShowOnlyOnLeftIcon = True
         tree.TreeListView = True
@@ -330,7 +313,7 @@ Partial Class KBOT
         viewHost.Location = New Point(11, 0)
         viewHost.Margin = New Padding(4, 5, 4, 5)
         viewHost.Name = "viewHost"
-        viewHost.Size = New Size(981, 783)
+        viewHost.Size = New Size(1183, 788)
         viewHost.TabIndex = 0
         viewHost.Tag = "Card"
         ' 
@@ -338,7 +321,7 @@ Partial Class KBOT
         ' 
         navViews.CollapseButtonSize = 14
         navViews.CollapseCollapsedImage = My.Resources.Resources.expand_24
-        navViews.CollapseCorner = Global.KBot.Controls.KBotNavCorner.BottomLeft
+        navViews.CollapseCorner = KBotNavCorner.BottomLeft
         navViews.CollapseExpandedImage = My.Resources.Resources.collapse_24
         navViews.Collapsible = True
         navViews.Dock = DockStyle.Left
@@ -361,15 +344,15 @@ Partial Class KBOT
         KBotNavItem5.Image = My.Resources.Resources.credit_card
         KBotNavItem5.Key = "plati"
         KBotNavItem5.Text = "Plăți"
-        KBotNavItem6.Align = Global.KBot.Controls.KBotNavAlign.Far
+        KBotNavItem6.Align = KBotNavAlign.Far
         KBotNavItem6.IsSeparator = True
         KBotNavItem6.Key = "__sep_1"
         KBotNavItem6.Text = Nothing
-        KBotNavItem7.Align = Global.KBot.Controls.KBotNavAlign.Far
+        KBotNavItem7.Align = KBotNavAlign.Far
         KBotNavItem7.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_temporary_32
         KBotNavItem7.Key = "ddf"
         KBotNavItem7.Text = "Fundamentare"
-        KBotNavItem8.Align = Global.KBot.Controls.KBotNavAlign.Far
+        KBotNavItem8.Align = KBotNavAlign.Far
         KBotNavItem8.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
         KBotNavItem8.Key = "ord"
         KBotNavItem8.Text = "Ordonanțare"
@@ -385,7 +368,7 @@ Partial Class KBOT
         navViews.Margin = New Padding(4, 5, 4, 5)
         navViews.Name = "navViews"
         navViews.SelectedKey = Nothing
-        navViews.Size = New Size(219, 783)
+        navViews.Size = New Size(219, 788)
         navViews.TabIndex = 0
         ' 
         ' pnlStatus
@@ -395,7 +378,7 @@ Partial Class KBOT
         pnlStatus.Location = New Point(0, 923)
         pnlStatus.Margin = New Padding(4, 5, 4, 5)
         pnlStatus.Name = "pnlStatus"
-        pnlStatus.Size = New Size(1639, 73)
+        pnlStatus.Size = New Size(1920, 73)
         pnlStatus.TabIndex = 1
         pnlStatus.Tag = "Card"
         ' 
@@ -407,7 +390,7 @@ Partial Class KBOT
         forexeFooter.Margin = New Padding(0)
         forexeFooter.Name = "forexeFooter"
         forexeFooter.Padding = New Padding(9, 10, 9, 10)
-        forexeFooter.Size = New Size(1639, 73)
+        forexeFooter.Size = New Size(1920, 73)
         forexeFooter.TabIndex = 1
         ' 
         ' pnlHeader
@@ -419,7 +402,7 @@ Partial Class KBOT
         pnlHeader.Margin = New Padding(0)
         pnlHeader.Name = "pnlHeader"
         pnlHeader.Padding = New Padding(9, 0, 0, 0)
-        pnlHeader.Size = New Size(1639, 52)
+        pnlHeader.Size = New Size(1920, 47)
         pnlHeader.TabIndex = 2
         pnlHeader.Tag = "Card"
         ' 
@@ -427,51 +410,50 @@ Partial Class KBOT
         ' 
         tlyHeader.BackColor = Color.Transparent
         tlyHeader.ColumnCount = 8
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 223F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 97F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 126F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 11F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 132F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 114F))
         tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 313F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 50F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 50F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
-        tlyHeader.Controls.Add(btnConectare, 0, 0)
-        tlyHeader.Controls.Add(lblOperator, 1, 0)
-        tlyHeader.Controls.Add(cboSs, 7, 0)
-        tlyHeader.Controls.Add(lblSs, 6, 0)
-        tlyHeader.Controls.Add(cboAn, 4, 0)
-        tlyHeader.Controls.Add(lblAn, 3, 0)
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 520F))
+        tlyHeader.Controls.Add(lblOperator, 7, 0)
+        tlyHeader.Controls.Add(cboSs, 5, 0)
+        tlyHeader.Controls.Add(lblSs, 4, 0)
+        tlyHeader.Controls.Add(cboAn, 2, 0)
+        tlyHeader.Controls.Add(lblAn, 1, 0)
         tlyHeader.Dock = DockStyle.Fill
         tlyHeader.Location = New Point(9, 0)
         tlyHeader.Margin = New Padding(0)
         tlyHeader.Name = "tlyHeader"
         tlyHeader.RowCount = 1
         tlyHeader.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyHeader.Size = New Size(1630, 52)
+        tlyHeader.Size = New Size(1911, 47)
         tlyHeader.TabIndex = 6
         ' 
         ' lblOperator
         ' 
         lblOperator.Dock = DockStyle.Fill
         lblOperator.Font = New Font("Calibri", 10F, FontStyle.Bold Or FontStyle.Italic)
-        lblOperator.Location = New Point(621, 0)
+        lblOperator.Location = New Point(1395, 0)
         lblOperator.Margin = New Padding(4, 0, 4, 0)
         lblOperator.Name = "lblOperator"
         lblOperator.Padding = New Padding(19, 0, 9, 0)
-        lblOperator.Size = New Size(305, 52)
+        lblOperator.Size = New Size(512, 47)
         lblOperator.TabIndex = 6
         lblOperator.Text = "Operator"
-        lblOperator.TextAlign = ContentAlignment.MiddleLeft
+        lblOperator.TextAlign = ContentAlignment.MiddleRight
         ' 
         ' lblSs
         ' 
         lblSs.AutoSize = True
         lblSs.Dock = DockStyle.Fill
         lblSs.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
-        lblSs.Location = New Point(1334, 0)
+        lblSs.Location = New Point(461, 0)
         lblSs.Margin = New Padding(4, 0, 4, 0)
         lblSs.Name = "lblSs"
-        lblSs.Size = New Size(142, 52)
+        lblSs.Size = New Size(124, 47)
         lblSs.TabIndex = 4
         lblSs.Text = "Sursă/Sector:"
         lblSs.TextAlign = ContentAlignment.MiddleRight
@@ -481,10 +463,10 @@ Partial Class KBOT
         lblAn.AutoSize = True
         lblAn.Dock = DockStyle.Fill
         lblAn.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
-        lblAn.Location = New Point(984, 0)
+        lblAn.Location = New Point(227, 0)
         lblAn.Margin = New Padding(4, 0, 4, 0)
         lblAn.Name = "lblAn"
-        lblAn.Size = New Size(142, 52)
+        lblAn.Size = New Size(89, 47)
         lblAn.TabIndex = 2
         lblAn.Text = "An Date:"
         lblAn.TextAlign = ContentAlignment.MiddleRight
@@ -495,7 +477,7 @@ Partial Class KBOT
         busyBar.Location = New Point(0, 57)
         busyBar.Margin = New Padding(4, 5, 4, 5)
         busyBar.Name = "busyBar"
-        busyBar.Size = New Size(1639, 5)
+        busyBar.Size = New Size(1920, 5)
         busyBar.TabIndex = 3
         busyBar.TabStop = False
         ' 
@@ -512,23 +494,23 @@ Partial Class KBOT
         capBar.ShowMinimize = True
         capBar.ShowOptionsButton = True
         capBar.ShowThemeButton = True
-        capBar.Size = New Size(1639, 57)
+        capBar.Size = New Size(1920, 57)
         capBar.TabIndex = 4
         capBar.TabStop = False
         capBar.Text = "K-BOT"
         capBar.TintOptionButtonImage = False
         ' 
-        ' MainForm
+        ' KbotForm
         ' 
         AutoScaleDimensions = New SizeF(9F, 22F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(1641, 1000)
+        ClientSize = New Size(1922, 1000)
         Controls.Add(pnlRoot)
         FormBorderStyle = FormBorderStyle.None
         Icon = CType(resources.GetObject("$this.Icon"), Icon)
         Margin = New Padding(4, 5, 4, 5)
         MinimumSize = New Size(1571, 1000)
-        Name = "MainForm"
+        Name = "KbotForm"
         Padding = New Padding(1, 2, 1, 2)
         StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT"
@@ -549,23 +531,22 @@ Partial Class KBOT
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
+    Friend WithEvents tips As KBotToolTip
     Friend WithEvents pnlRoot As Panel
-    Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
-    Friend WithEvents busyBar As Global.KBot.Controls.KBotBusyBar
+    Friend WithEvents capBar As KBotCaptionBar
+    Friend WithEvents busyBar As KBotBusyBar
     Friend WithEvents pnlStatus As Panel
     Friend WithEvents forexeFooter As ForexeFooterView
     Friend WithEvents pnlWork As Panel
-    Friend WithEvents navViews As Global.KBot.Controls.KBotNavList
+    Friend WithEvents navViews As KBotNavList
     Friend WithEvents split As SplitContainer
     Friend WithEvents pnlTree As Panel
     Friend WithEvents pnlTreeHead As Panel
     Friend WithEvents lblTree As Label
-    Friend WithEvents btnConectare As Button
     Friend WithEvents btnInfo As Button
     Friend WithEvents btnSort As Button
     Friend WithEvents btnOpt As Button
-    Friend WithEvents tree As Global.KBot.Controls.AdvancedTreeControl
+    Friend WithEvents tree As AdvancedTreeControl
     Friend WithEvents viewHost As Panel
     Friend WithEvents pnlHeader As Panel
     Friend WithEvents tlyHeader As TableLayoutPanel

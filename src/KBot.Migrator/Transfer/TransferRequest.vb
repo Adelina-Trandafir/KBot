@@ -78,6 +78,24 @@ Public NotInheritable Class TransferRequest
         Return RegistryCodFiscal()
     End Function
 
+    ''' <summary>
+    ''' The FOREXE file the operator typed over the registry's path, for this run only.
+    ''' Empty when the units carry the paths exactly as the registry named them.
+    ''' </summary>
+    ''' <remarks>
+    ''' ONE path for the whole selection, by design: the estate keeps one shared
+    ''' <c>FX_&lt;year&gt;.accdb</c> for many units, and the registry may name it by a
+    ''' path that is not where this machine keeps it (an absolute <c>C:\AVACONT\...</c>
+    ''' on a OneDrive copy). When set, every selected unit that HAD a registry path has
+    ''' already been rewritten to this one - see <see cref="CaiUnit.WithForexeFile"/>;
+    ''' this property is the record of that, for the journal and the findings log.
+    ''' Same rule as <see cref="CodFiscalOverride"/>: never persisted.
+    ''' </remarks>
+    Public Property ForexeFileOverride As String = String.Empty
+
+    ''' <summary>The path the registry named before the override, for the journal.</summary>
+    Public Property RegistryForexeFile As String = String.Empty
+
     ''' <summary>Target table names ticked for transfer. Empty means nothing to do.</summary>
     Public ReadOnly Property SelectedTables As HashSet(Of String)
 

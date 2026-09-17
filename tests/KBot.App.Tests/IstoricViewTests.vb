@@ -55,6 +55,11 @@ Public Class IstoricViewTests
             Throw New NotSupportedException()
         End Function
 
+        Public Function RebuildReceptiiAsync(cod As String, apply As Boolean, ct As CancellationToken) _
+            As Task(Of ReceptiiRebuildResult) Implements IApiClient.RebuildReceptiiAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public ReadOnly RequestedCods As New List(Of String)()
         Public ReadOnly Pending As New Dictionary(Of String, TaskCompletionSource(Of IstoricInfo))(StringComparer.Ordinal)
 

@@ -52,6 +52,11 @@ Public Class MigratorForm
     Private _boldFont As Font
     Private _normalFont As Font
     Private _journalPath As String
+    ''' <summary>
+    ''' The FOREXE path the registry names for the selected DC, as shown in the box when
+    ''' the DC was picked. The box is an override ONLY while its text differs from this.
+    ''' </summary>
+    Private _registryForexePath As String = String.Empty
 
     Public Sub New()
         InitializeComponent()
@@ -62,11 +67,13 @@ Public Class MigratorForm
     Private Sub MigratorForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Try
             txtRegistru.Text = _settings.RegistryPath
-            _journalPath = _settings.JournalFolder
+            Dim journalNote As String = Nothing
+            _journalPath = _settings.ResolvedJournalFolder(journalNote)
+            If journalNote.Length > 0 Then Say(journalNote)
             txtGazda.Text = _settings.Host
             txtPort.Text = _settings.Port.ToString(CultureInfo.InvariantCulture)
             txtUtilizator.Text = _settings.User
-            txtServerUrl.Text = _settings.ServerUrl
+            'txtServerUrl.Text = _settings.ServerUrl
 
             FillTableList()
             ResetProgress()
@@ -150,12 +157,17 @@ Public Class MigratorForm
     ''' </remarks>
     Private Sub SaveSettings()
         _settings.RegistryPath = txtRegistru.Text.Trim()
-        _settings.JournalFolder = If(_journalPath, String.Empty).Trim()
+        ' The default is stored as EMPTY, so the file never carries this machine's absolute
+        ' path to another - see the remarks on MigratorSettings.JournalFolder.
+        Dim journal = If(_journalPath, String.Empty).Trim()
+        _settings.JournalFolder = If(String.Equals(journal, MigratorSettings.DefaultJournalFolder(),
+                                                   StringComparison.OrdinalIgnoreCase),
+                                     String.Empty, journal)
         _settings.Host = txtGazda.Text.Trim()
         _settings.Port = ParsePort()
         _settings.User = txtUtilizator.Text.Trim()
         _settings.Dc = Convert.ToString(cboDc.SelectedItem, CultureInfo.InvariantCulture)
-        _settings.ServerUrl = txtServerUrl.Text.Trim()
+        '_settings.ServerUrl = txtServerUrl.Text.Trim()
         ' No secret reaches this call - MigratorSettings has no field for one. The API key
         ' stays in its box and dies with the window.
         '
@@ -180,6 +192,28 @@ Public Class MigratorForm
             End Using
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.btnRasfoireRegistru_Click", ex)
+        End Try
+    End Sub
+
+    Private Sub btnRasfoireForexe_Click(sender As Object, e As EventArgs) Handles btnRasfoireForexe.Click
+        Try
+            Using dialog As New OpenFileDialog()
+                dialog.Title = "Alegeți fișierul FOREXE (FX_<an>.accdb)"
+                dialog.Filter = "Baze Access (*.accdb)|*.accdb|Toate fișierele (*.*)|*.*"
+                Dim current = txtCaleForexe.Text.Trim()
+                If File.Exists(current) Then
+                    dialog.FileName = current
+                ElseIf current.Length > 0 Then
+                    ' The registry's path is not on this disk; at least open the dialog
+                    ' where the registry file is, which is where a OneDrive copy keeps
+                    ' everything else too.
+                    Dim registryFolder = Path.GetDirectoryName(txtRegistru.Text.Trim())
+                    If Directory.Exists(registryFolder) Then dialog.InitialDirectory = registryFolder
+                End If
+                If dialog.ShowDialog(Me) = DialogResult.OK Then txtCaleForexe.Text = dialog.FileName
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.btnRasfoireForexe_Click", ex)
         End Try
     End Sub
 
@@ -232,6 +266,7 @@ Public Class MigratorForm
         Try
             FillUnitList()
             ShowCodFiscal()
+            ShowForexePath()
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.cboDc_SelectedIndexChanged", ex)
         End Try
@@ -270,6 +305,56 @@ Public Class MigratorForm
     End Sub
 
     ''' <summary>
+    ''' Shows the FOREXE file the registry names for the selected DC's units, so the
+    ''' operator SEES the path a run would open - and can type the real one over it.
+    ''' </summary>
+    ''' <remarks>
+    ''' ONE box, not a column: the estate keeps one shared <c>FX_&lt;year&gt;.accdb</c> for
+    ''' many units, and what goes wrong is the same for all of them at once - the registry
+    ''' names <c>C:\AVACONT\Forexe\...</c> and this machine keeps it under OneDrive. The
+    ''' registry may still name several files; then the first is shown and the log lists
+    ''' the rest, and a typed path replaces ALL of them, which is what "one path" means.
+    ''' <para>
+    ''' Same rules as <see cref="ShowCodFiscal"/>: re-run on every DC change, overwriting
+    ''' the box, and never persisted (a path typed for one DC must not follow to the next,
+    ''' and a stale override must not outlive the launch it was typed in).
+    ''' </para>
+    ''' </remarks>
+    Private Sub ShowForexePath()
+        Dim dc = Convert.ToString(cboDc.SelectedItem, CultureInfo.InvariantCulture)
+        Dim paths = CaiRegistry.UnitsOf(_units, dc).
+            Select(Function(u) u.ForexeFilePath).
+            Where(Function(p) Not String.IsNullOrWhiteSpace(p)).
+            Distinct(StringComparer.OrdinalIgnoreCase).
+            ToList()
+
+        _registryForexePath = If(paths.Count > 0, paths(0), String.Empty)
+        txtCaleForexe.Text = _registryForexePath
+
+        If paths.Count = 0 Then
+            Say($"Registrul nu numește niciun fișier FOREXE pentru DC «{dc}».")
+            Return
+        End If
+        Say($"Fișier FOREXE din registru pentru «{dc}»: {_registryForexePath}" &
+            If(File.Exists(_registryForexePath), "", " — NU EXISTĂ pe acest calculator; scrieți calea reală în casetă."))
+        If paths.Count > 1 Then
+            Say($"Registrul numește {paths.Count} fișiere FOREXE diferite pentru acest DC; caseta arată primul. " &
+                "O cale scrisă în casetă le înlocuiește pe toate: " & String.Join(" | ", paths.Skip(1)))
+        End If
+    End Sub
+
+    ''' <summary>
+    ''' The FOREXE path typed over the registry's, or empty when the box still shows what
+    ''' the registry said (or is blank). Compared case-insensitively, as Windows paths are.
+    ''' </summary>
+    Private Function ForexeOverride() As String
+        Dim typed = txtCaleForexe.Text.Trim()
+        If typed.Length = 0 Then Return String.Empty
+        If String.Equals(typed, _registryForexePath, StringComparison.OrdinalIgnoreCase) Then Return String.Empty
+        Return typed
+    End Function
+
+    ''' <summary>
     ''' Fills the unit grid, binding each <see cref="CaiUnit"/> to its row's
     ''' <see cref="KBot.Controls.KBotDataRow.Tag"/>.
     ''' </summary>
@@ -295,7 +380,12 @@ Public Class MigratorForm
                 row("nume") = unit.NumeUnitate
                 row("sursa") = unit.Sursa
                 row("nomenclator") = If(unit.HasUnitFile, unit.UnitFilePath, "(lipsește) " & unit.UnitFilePath)
-                row("forexe") = If(unit.HasForexeFile, unit.ForexeFilePath, "(niciunul)")
+                ' Same two shapes as the nomenclator column: a path that is not on this
+                ' disk is shown WITH the path, so the operator sees where the registry
+                ' points. «(niciunul)» is only the blank registry column.
+                row("forexe") = If(unit.HasForexeFile, unit.ForexeFilePath,
+                                   If(String.IsNullOrWhiteSpace(unit.ForexeFilePath), "(niciunul)",
+                                      "(lipsește) " & unit.ForexeFilePath))
             Next
         Finally
             dgvUnitati.EndUpdate()
@@ -392,6 +482,10 @@ Public Class MigratorForm
                 Function() New Verifier(request, AddressOf SayFromWorker, AddressOf StepFromWorker).Run(token),
                 token)
             ShowFindings(report)
+            ' The grid is gone at the next «Verifică»; the file is not. Written BEFORE the
+            ' button is touched, so a failure to log cannot change what the operator may do.
+            FindingLog.WriteReport(request, report)
+            Say($"Constatările, cu detalii, sunt scrise în «{FindingLog.FilePath()}».")
             btnTransfera.Enabled = report.CanRun
             ' Kept only while it is allowed to be used. A plan from a verification that
             ' found something blocking must not sit around waiting to be picked up.
@@ -401,6 +495,12 @@ Public Class MigratorForm
                    "«Transferă» rămâne inactiv până când nu mai există constatări blocante."))
         Catch ex As OperationCanceledException
             Say("Verificare oprită.")
+        Catch ex As Exception
+            ' A verification that dies leaves the grid empty. The findings log gets the
+            ' request and the whole exception, so the run is not simply absent from it;
+            ' the click handler above still logs to harness_errors.log and tells the operator.
+            FindingLog.WriteFailure(request, ex)
+            Throw
         Finally
             EndProgress()
             SetBusy(False)
@@ -528,6 +628,9 @@ Public Class MigratorForm
         rtbInfoRowConstatari.Clear()
         AppendLabelled("COLOANĂ", If(finding.Column.Length > 0, finding.Column, "—"))
         AppendLabelled("MESAJ", finding.Message)
+        If finding.Detail.Length > 0 Then
+            AppendLabelled("DETALII", Environment.NewLine & finding.Detail)
+        End If
         rtbInfoRowConstatari.SelectionStart = 0
         rtbInfoRowConstatari.ScrollToCaret()
     End Sub
@@ -772,6 +875,20 @@ Public Class MigratorForm
                  "ca să nu existe o migrare nescrisă nicăieri.")
             Return Nothing
         End If
+        ' Proven writable NOW, before anything runs. The journal is the first thing the
+        ' transfer creates, and a folder that cannot be created used to surface as a
+        ' transfer failure AFTER a verification had passed - the wrong moment, and with the
+        ' path buried in a stack trace. Here the operator sees the path and the reason.
+        Try
+            Directory.CreateDirectory(journal)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.BuildRequest.Journal", ex)
+            Warn($"Dosarul jurnalului SQL «{journal}» nu poate fi creat pe acest calculator:" &
+                 Environment.NewLine & Environment.NewLine & ex.Message & Environment.NewLine & Environment.NewLine &
+                 "Verificați «journalFolder» din migrator-settings.json (de lângă executabil); " &
+                 "gol înseamnă dosarul implicit, «Logs\Migrare» de lângă executabil.")
+            Return Nothing
+        End Try
 
         Dim password = AccessPassword()
         Dim request As New TransferRequest(server, dc) With {
@@ -791,10 +908,25 @@ Public Class MigratorForm
         ' stops the run. Only the full list can tell those two apart.
         request.RegistryUnits.AddRange(_units)
 
+        ' The operator's FOREXE path, when there is one, replaces the registry's on every
+        ' ticked unit that HAS a registry path. A unit whose cai.CaleForexe is blank has no
+        ' FX data by the registry's own word, and a path typed to fix WHERE the shared file
+        ' is must not turn into a claim that it also covers units it never covered.
+        Dim typedForexe = ForexeOverride()
+        If typedForexe.Length > 0 Then
+            request.ForexeFileOverride = typedForexe
+            request.RegistryForexeFile = _registryForexePath
+            Say($"Fișier FOREXE suprascris de operator: {typedForexe} (registrul: {_registryForexePath}).")
+        End If
+
         For Each row In dgvUnitati.Rows
             If Not IsTicked(row) Then Continue For
             Dim unit = TryCast(row.Tag, CaiUnit)
-            If unit IsNot Nothing Then request.Units.Add(unit)
+            If unit Is Nothing Then Continue For
+            If typedForexe.Length > 0 AndAlso Not String.IsNullOrWhiteSpace(unit.ForexeFilePath) Then
+                unit = unit.WithForexeFile(typedForexe)
+            End If
+            request.Units.Add(unit)
         Next
         If request.Units.Count = 0 Then
             Warn("Nu a fost bifată nicio unitate.")

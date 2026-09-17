@@ -150,6 +150,33 @@ Public Module ThemeStore
     End Function
 
     ''' <summary>
+    ''' Saves how a form's base size follows the scale (slice 0062), keeping the rest of the file.
+    ''' Same read-modify-write as the other three writers, for the same reason: the active scheme,
+    ''' the scaling and this key are written from different places and must not tread on each other.
+    ''' </summary>
+    Public Sub SaveFormFitBaseline(value As FormFitBaseline)
+        Dim cfg As ActiveConfig = If(LoadConfig(), New ActiveConfig())
+        cfg.FormFitBaseline = CInt(value)
+        SaveConfig(cfg)
+    End Sub
+
+    ''' <summary>
+    ''' Reads the key above. Missing file, missing key or an unknown number all land on
+    ''' <see cref="FormFitBaseline.Scaled"/> -- the documented default, which is also what a
+    ''' theme.json written before the slice deserializes to. An unknown number is logged.
+    ''' </summary>
+    Public Function LoadFormFitBaseline() As FormFitBaseline
+        Dim cfg As ActiveConfig = LoadConfig()
+        If cfg Is Nothing Then Return FormFitBaseline.Scaled
+        If [Enum].IsDefined(GetType(FormFitBaseline), cfg.FormFitBaseline) Then
+            Return CType(cfg.FormFitBaseline, FormFitBaseline)
+        End If
+        GlobalErrorLog.Write("ThemeStore.LoadFormFitBaseline",
+            New InvalidDataException($"Unknown formFitBaseline in theme.json: {cfg.FormFitBaseline}. Using Scaled."))
+        Return FormFitBaseline.Scaled
+    End Function
+
+    ''' <summary>
     ''' Scrie o schemă ÎNTREAGĂ în …\AVACONT\Themes\&lt;Nume&gt;.json. Așa se persistă și editarea
     ''' unei scheme built-in: fișierul are numele ei, iar <c>ThemeManager</c> îl pune PESTE cea
     ''' compilată la pornire (vezi <c>MergeSchemes</c>). Ștergerea fișierului readuce implicitul —
@@ -261,6 +288,14 @@ Public Module ThemeStore
         ''' </summary>
         <JsonPropertyName("themeWritesFormFont")>
         Public Property ThemeWritesFormFont As Boolean = True
+
+        ''' <summary>
+        ''' How a themed form's base size follows the scale (slice 0062); the number is
+        ''' <see cref="KBot.Theming.FormFitBaseline"/>. 0 = Scaled, the default an older file
+        ''' without the key receives.
+        ''' </summary>
+        <JsonPropertyName("formFitBaseline")>
+        Public Property FormFitBaseline As Integer = 0
     End Class
 
 End Module

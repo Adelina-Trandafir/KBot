@@ -188,19 +188,55 @@ Public NotInheritable Class Verifier
     Private Sub CheckAccessFiles(report As VerificationReport)
         For Each unit In _request.Units
             If Not unit.HasUnitFile Then
-                report.Add(Finding.FISIER_LIPSA, FindingClass.Blocant, String.Empty, String.Empty,
+                report.Add(New Finding(Finding.FISIER_LIPSA, FindingClass.Blocant, String.Empty, String.Empty,
                            $"Unitatea {unit.IdUnitate} («{unit.NumeUnitate}») nu are fișierul de " &
-                           $"nomenclatoare la «{unit.UnitFilePath}».")
+                           $"nomenclatoare la «{unit.UnitFilePath}».").
+                           WithDetail(FileDetail(unit, "FullPath", unit.UnitFilePath)))
             End If
             If Not unit.HasForexeFile Then
                 ' Not blocking: cai carries a NULL CaleForexe on two of its thirteen rows,
-                ' so a unit with nomenclators and no FX data is a normal shape.
-                report.Add(Finding.FISIER_LIPSA, FindingClass.Atentie, String.Empty, String.Empty,
-                           $"Unitatea {unit.IdUnitate} («{unit.NumeUnitate}») nu are fișier FOREXE. " &
-                           "Nomenclatoarele se transferă, tabelele FX_* nu au ce citi.")
+                ' so a unit with nomenclators and no FX data is a normal shape. The two
+                ' shapes are told apart in the message: a blank registry column is that
+                ' normal case, a path that is not on this disk is a registry pointing at
+                ' another machine (an absolute C:\AVACONT\... path on a OneDrive estate).
+                Dim where = If(String.IsNullOrWhiteSpace(unit.ForexeFilePath),
+                               "registrul nu are CaleForexe pentru ea",
+                               $"fișierul «{unit.ForexeFilePath}» nu există pe acest calculator")
+                report.Add(New Finding(Finding.FISIER_LIPSA, FindingClass.Atentie, String.Empty, String.Empty,
+                           $"Unitatea {unit.IdUnitate} («{unit.NumeUnitate}») nu are fișier FOREXE: " &
+                           where & ". Nomenclatoarele se transferă, tabelele FX_* nu au ce citi.").
+                           WithDetail(FileDetail(unit, "CaleForexe", unit.ForexeFilePath)))
             End If
         Next
     End Sub
+
+    ''' <summary>
+    ''' The diagnosis behind a FISIER_LIPSA finding: the registry column, the resolved
+    ''' path, and whether the file and each folder above it exist - so the log says WHERE
+    ''' the path stops being real, not just that it does.
+    ''' </summary>
+    Private Shared Function FileDetail(unit As CaiUnit, registryColumn As String, resolvedPath As String) As String
+        Dim sb As New Text.StringBuilder()
+        sb.AppendLine($"unit: {unit.IdUnitate} / {unit.NumeUnitate} / DC {unit.Dc} / SURSA {unit.Sursa}")
+        sb.AppendLine($"registry column: cai.{registryColumn}")
+        If String.IsNullOrWhiteSpace(resolvedPath) Then
+            sb.AppendLine("resolved path: (empty - the registry column is NULL or blank)")
+            Return sb.ToString().TrimEnd()
+        End If
+        sb.AppendLine($"resolved path: {resolvedPath}")
+        sb.AppendLine($"file exists: {IO.File.Exists(resolvedPath)}")
+        Try
+            Dim folder = IO.Path.GetDirectoryName(resolvedPath)
+            While Not String.IsNullOrEmpty(folder)
+                sb.AppendLine($"folder exists: {IO.Directory.Exists(folder)}  {folder}")
+                If IO.Directory.Exists(folder) Then Exit While
+                folder = IO.Path.GetDirectoryName(folder)
+            End While
+        Catch ex As Exception
+            sb.AppendLine($"folder walk failed: {ex.GetType().Name}: {ex.Message}")
+        End Try
+        Return sb.ToString().TrimEnd()
+    End Function
 
     ' ---- gate 2: every selected table exists on the target ------------------------
 

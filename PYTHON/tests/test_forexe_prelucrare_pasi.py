@@ -12,6 +12,7 @@ import pytest
 
 try:
     import routes.forexe.prelucrare_pasi as P
+    import routes.forexe.prelucrare_helpers as H
 except Exception as e:                              # pragma: no cover - broken install
     pytest.skip(f"imports unavailable: {e}", allow_module_level=True)
 
@@ -208,6 +209,7 @@ def test_stergere_receptie_becomes_a_snapshot_with_no_lines():
 def test_an_ordinary_header_is_not_marked_as_a_deletion():
     cur = FakeCursor({
         "SELECT ID, HASH": [
+            _istoric_receptie(7, "Rand: AAB,Suma receptie: 510 RON", 510),
             _istoric_receptie(9, "Receptie: PLATA FACT., valoare: 510, (activ:true)",
                               510),
         ],
@@ -216,6 +218,124 @@ def test_an_ordinary_header_is_not_marked_as_a_deletion():
     })
     P.step4a_populeaza_receptii(cur, COD, indicatori("AAB"))
     assert cur.inserts("FX_Receptii_H")[0][6] == 0
+
+
+def test_a_zero_valued_line_that_names_an_indicator_is_kept():
+    """
+    F31. The VBA dropped `Val_Receptie = 0` rows, so an indicator that did not move (or
+    fell to zero) vanished from the snapshot and F14/F16 refused correct placements.
+    A zero row that names an indicator is a line, written with Valoare = 0.
+    """
+    cur = FakeCursor({
+        "SELECT ID, HASH": [
+            _istoric_receptie(7, "Rand: AAB,Suma receptie: 210 RON", 210),
+            _istoric_receptie(8, "Rand: AA2,Suma receptie: 0 RON", 0, cod_ind="AA2"),
+            _istoric_receptie(9, "Receptie: PLATA FACT., valoare: 210, (activ:true)",
+                              210),
+        ],
+        "SELECT CodIndicator FROM FX_Receptii ": [],
+        "SELECT MAX(NrCrt)": [],
+    })
+    P.step4a_populeaza_receptii(cur, COD, indicatori("AAB", "AA2"))
+    linii = cur.inserts("FX_Receptii")
+    assert len(linii) == 2
+    # _REC_INSERT_SQL: (IDRH, IDH, IdClsf, CodSSI, Clsf, IdUnitate, CodAI, CodAngajament,
+    #                   CodIndicator, Data, Valoare, ValoareOrig, HASH, TipIntern)
+    zero = next(p for p in linii if p[1] == 8)
+    assert zero[8] == "AA2"
+    assert zero[10] == 0.0
+    assert zero[11] == 0.0
+
+
+def test_a_zero_row_that_names_no_indicator_is_still_skipped():
+    """A zero row without CodAI is not a line -- exactly as before F31."""
+    gol = _istoric_receptie(8, "ceva fara indicator", 0, cod_ind="")
+    gol["CodAI"] = None
+    cur = FakeCursor({
+        "SELECT ID, HASH": [
+            gol,
+            _istoric_receptie(7, "Rand: AAB,Suma receptie: 210 RON", 210),
+            _istoric_receptie(9, "Receptie: PLATA FACT., valoare: 210, (activ:true)",
+                              210),
+        ],
+        "SELECT CodIndicator FROM FX_Receptii ": [],
+        "SELECT MAX(NrCrt)": [],
+    })
+    assert P.step4a_populeaza_receptii(cur, COD, indicatori("AAB")) == 1
+    assert [x[8] for x in cur.inserts("FX_Receptii")] == ["AAB"]
+
+
+def test_a_header_with_no_line_rows_is_not_a_snapshot():
+    """
+    F32. The old Access app left headers in FX_Istoric with a total and no indicator
+    row before them. They are errors, not snapshots: no FX_Receptii_H is written.
+    """
+    cur = FakeCursor({
+        "SELECT ID, HASH": [
+            _istoric_receptie(9, "Receptie: PLATA FACT., valoare: 510, (activ:true)",
+                              510),
+        ],
+        "SELECT CodIndicator FROM FX_Receptii ": [],
+        "SELECT MAX(NrCrt)": [],
+    })
+    assert P.step4a_populeaza_receptii(cur, COD, indicatori("AAB")) == 0
+    assert cur.inserts("FX_Receptii_H") == []
+    assert cur.inserts("FX_Receptii") == []
+
+
+def test_a_header_only_snapshot_does_not_steal_the_next_headers_lines():
+    """The skipped header leaves the buffer as it found it (empty); the real one after
+    it gets exactly its own lines."""
+    cur = FakeCursor({
+        "SELECT ID, HASH": [
+            _istoric_receptie(5, "Receptie: PLATA FACT., valoare: 100, (activ:true)",
+                              100),
+            _istoric_receptie(7, "Rand: AAB,Suma receptie: 210 RON", 210),
+            _istoric_receptie(9, "Receptie: PLATA FACT., valoare: 210, (activ:true)",
+                              210),
+        ],
+        "SELECT CodIndicator FROM FX_Receptii ": [],
+        "SELECT MAX(NrCrt)": [],
+    })
+    assert P.step4a_populeaza_receptii(cur, COD, indicatori("AAB")) == 1
+    antete = cur.inserts("FX_Receptii_H")
+    assert [a[0] for a in antete] == [9]          # IDH of the real header only
+    assert antete[0][1] == 1                       # NrCrt not consumed by the skipped one
+    assert len(cur.inserts("FX_Receptii")) == 1
+
+
+def test_the_f32_criterion_exempts_the_deletion_row():
+    assert H.is_header_only_snapshot(False, []) is True
+    assert H.is_header_only_snapshot(False, 0) is True
+    assert H.is_header_only_snapshot(True, []) is False
+    assert H.is_header_only_snapshot(False, [{"x": 1}]) is False
+    assert H.is_header_only_snapshot(False, 1) is False
+
+
+def test_every_reader_of_fx_receptii_h_carries_the_f32_filter():
+    """
+    The read-side half of F32 is one predicate pasted into every query that walks
+    `FX_Receptii_H` as snapshots. Dropping it from one reader would bring the
+    header-only rows back on that one screen and nowhere else.
+    """
+    import routes.forexe.asociere as A
+    import routes.forexe.prelucrare_asociere as PA
+    import routes.forexe.receptii as R
+    import routes.forexe.tree as T
+    readers = {
+        "editor instantanee": A._INSTANTANEE_SQL,
+        "ingest de hotarat": PA._INSTANTANEE_SQL,
+        "ingest context": PA._TOATE_INSTANTANEELE_SQL,
+        "recalculeaza_final": PA._H_LANT_SQL,
+        "membrii lantului (F15/F16)": PA._H_MEMBRI_LANT_SQL,
+        "DIFH": P._DIF_H_SQL,
+        "vederea Receptii": R._SQL_RECEPTII,
+        "arbore AreReceptii": T._SELECT,
+    }
+    lipsa = [k for k, sql in readers.items() if H.SNAPSHOT_COUNTS_SQL not in sql]
+    assert lipsa == []
+    assert "H.EsteStergere" in H.SNAPSHOT_COUNTS_SQL
+    assert "FX_Receptii L" in H.SNAPSHOT_COUNTS_SQL
 
 
 def test_a_line_whose_indicator_is_unknown_raises():

@@ -129,6 +129,7 @@ Friend Module Program
     Private Sub RunLauncher(provider As ServiceProvider)
         Dim alegere As String
         Using launcher As New StartupLauncherForm()
+            AppScreen.SetReference(launcher)   ' the first window: every dialog after it lands on its screen (slice 0062)
             If launcher.ShowDialog() <> DialogResult.OK Then Return   ' renunțare -> ieșim curat
             alegere = launcher.Alegere
         End Using
@@ -142,7 +143,9 @@ Friend Module Program
                 ' Jurnalele, singure: fără autentificare (citesc fișiere locale) și fără shell.
                 ' Grupul de jurnale de server rămâne acolo, dar fără sesiune apelul lui va pica —
                 ' și o spune în notificarea proprie, ca orice altă cădere de server.
-                Application.Run(provider.GetRequiredService(Of LogViewerForm)())
+                Dim jurnale As LogViewerForm = provider.GetRequiredService(Of LogViewerForm)()
+                AppScreen.SetReference(jurnale)
+                Application.Run(jurnale)
             Case Else
                 Throw New ArgumentException("Pornire necunoscută în launcher: «" & If(alegere, "<nimic>") & "».")
         End Select
@@ -157,11 +160,11 @@ Friend Module Program
         Try
             Dim harness As Global.KBot.DevHarness.DevHarnessForm = provider.GetRequiredService(Of Global.KBot.DevHarness.DevHarnessForm)()
 
-            Dim harnessMain As KBOT = Nothing
+            Dim harnessMain As KbotForm = Nothing
             harness.OpenMainFormAction =
                 Sub()
                     If harnessMain Is Nothing OrElse harnessMain.IsDisposed Then
-                        harnessMain = provider.GetRequiredService(Of KBOT)()
+                        harnessMain = provider.GetRequiredService(Of KbotForm)()
                         AddHandler harnessMain.FormClosed, Sub() harnessMain = Nothing
                     End If
                     harnessMain.Show()
@@ -187,6 +190,7 @@ Friend Module Program
                     If harnessLogs IsNot Nothing AndAlso Not harnessLogs.IsDisposed Then harnessLogs.Close()
                 End Sub
 
+            AppScreen.SetReference(harness)   ' the bench is the application's window while it runs (slice 0062)
             Application.Run(harness)   ' se termină când harness-ul (pagina de teste) se închide
         Catch ex As Exception
             GlobalErrorLog.Write("Program.RunHarness", ex)
@@ -203,6 +207,7 @@ Friend Module Program
     Private Sub RunShellWithLogin(provider As ServiceProvider)
         Try
             Using login As LoginForm = provider.GetRequiredService(Of LoginForm)()
+                AppScreen.SetReference(login)
                 If login.ShowDialog() <> DialogResult.OK Then
                     Return   ' anulat -> ieșim fără a lansa shell-ul
                 End If
@@ -212,7 +217,9 @@ Friend Module Program
             Dim session As SessionContext = provider.GetRequiredService(Of SessionContext)()
             Dim authApi As IAuthApi = provider.GetRequiredService(Of IAuthApi)()
 
-            Application.Run(provider.GetRequiredService(Of KBOT)())
+            Dim shell As KbotForm = provider.GetRequiredService(Of KbotForm)()
+            AppScreen.SetReference(shell)   ' the shell replaces the login as the application's window (slice 0062)
+            Application.Run(shell)
 
             'trebuie sa aduca in prim plan fereastra main, daca loginul a fost facut cu succes si s-a inchis formularul login
 
@@ -351,7 +358,7 @@ Friend Module Program
         services.AddSingleton(Of ForexeController)()
 
         ' Forms.
-        services.AddTransient(Of KBOT)()
+        services.AddTransient(Of KbotForm)()
         services.AddTransient(Of LoginForm)()
         ' Vizualizatorul de jurnale (felia 0031-04). Transient: se deschide nemodal din meniul
         ' butonului de opțiuni al shell-ului și modal din bancul de probă — două vieți diferite,
