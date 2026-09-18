@@ -52,10 +52,10 @@ Partial Class OrdBeneficiariPage
         cboCodPartener = New KBotComboBox()
         grdLinii = New KBotDataView()
         split = New SplitContainer()
-        tlyStanga = New TableLayoutPanel()
+        tlyStanga = New Global.KBot.Controls.KBotTableLayoutPanel()
         grdStanga = New KBotDataView()
-        tlyDreapta = New TableLayoutPanel()
-        tlyAntetBene = New TableLayoutPanel()
+        tlyDreapta = New Global.KBot.Controls.KBotTableLayoutPanel()
+        tlyAntetBene = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblDenBene = New Label()
         txtDenBene = New KBotTextField()
         lblCodPartener = New Label()
@@ -482,11 +482,11 @@ Partial Class OrdBeneficiariPage
 
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents split As SplitContainer
-    Friend WithEvents tlyStanga As TableLayoutPanel
+    Friend WithEvents tlyStanga As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents chkClsf As CheckBox
     Friend WithEvents grdStanga As Global.KBot.Controls.KBotDataView
-    Friend WithEvents tlyDreapta As TableLayoutPanel
-    Friend WithEvents tlyAntetBene As TableLayoutPanel
+    Friend WithEvents tlyDreapta As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents tlyAntetBene As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblDenBene As Label
     Friend WithEvents txtDenBene As Global.KBot.Controls.KBotTextField
     Friend WithEvents lblCodPartener As Label

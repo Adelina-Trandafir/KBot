@@ -17,11 +17,11 @@ Partial Class StartupLauncherForm
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
         tips = New Global.KBot.Controls.KBotToolTip(components)
-        tlyRadacina = New TableLayoutPanel()
+        tlyRadacina = New Global.KBot.Controls.KBotTableLayoutPanel()
         capBar = New Global.KBot.Controls.KBotCaptionBar()
         lblIntro = New Label()
         navPorniri = New Global.KBot.Controls.KBotNavList()
-        tlyButoane = New TableLayoutPanel()
+        tlyButoane = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnPorneste = New Button()
         btnIesire = New Button()
         CType(navPorniri, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -162,11 +162,11 @@ Partial Class StartupLauncherForm
     End Sub
 
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
-    Friend WithEvents tlyRadacina As TableLayoutPanel
+    Friend WithEvents tlyRadacina As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents lblIntro As Label
     Friend WithEvents navPorniri As Global.KBot.Controls.KBotNavList
-    Friend WithEvents tlyButoane As TableLayoutPanel
+    Friend WithEvents tlyButoane As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnPorneste As Button
     Friend WithEvents btnIesire As Button
 End Class

@@ -49,7 +49,7 @@ Partial Class OrdAtasamentePage
         split = New SplitContainer()
         grdBene = New KBotDataView()
         splitDreapta = New SplitContainer()
-        tlyLista = New TableLayoutPanel()
+        tlyLista = New Global.KBot.Controls.KBotTableLayoutPanel()
         grdAtasamente = New KBotDataView()
         pnlPreview = New Panel()
         picPreview = New PictureBox()
@@ -326,7 +326,7 @@ Partial Class OrdAtasamentePage
     Friend WithEvents split As SplitContainer
     Friend WithEvents grdBene As Global.KBot.Controls.KBotDataView
     Friend WithEvents splitDreapta As SplitContainer
-    Friend WithEvents tlyLista As TableLayoutPanel
+    Friend WithEvents tlyLista As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents grdAtasamente As Global.KBot.Controls.KBotDataView
     Friend WithEvents btnAdauga As Button
     Friend WithEvents pnlPreview As Panel

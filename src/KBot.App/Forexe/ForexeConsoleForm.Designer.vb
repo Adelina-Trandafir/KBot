@@ -30,7 +30,7 @@ Partial Class ForexeConsoleForm
         lblCert = New Label()
         pbProgress = New KBotProgressBar()
         capBar = New KBotCaptionBar()
-        tlpFoot = New TableLayoutPanel()
+        tlpFoot = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnRecorder = New Button()
         pnlCard.SuspendLayout()
         pnlFoot.SuspendLayout()
@@ -255,6 +255,6 @@ Partial Class ForexeConsoleForm
     Friend WithEvents btnAnulare As Button
     Friend WithEvents btnAfiseazaBrowser As Button
     Friend WithEvents btnAfiseazaLog As Button
-    Friend WithEvents tlpFoot As TableLayoutPanel
+    Friend WithEvents tlpFoot As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnRecorder As Button
 End Class

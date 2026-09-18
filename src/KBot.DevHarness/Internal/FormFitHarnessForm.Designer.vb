@@ -332,7 +332,7 @@ Partial Class FormFitHarnessForm
         'btnCollapse
         '
         Me.btnCollapse.AutoSize = True
-        Me.btnCollapse.Text = "Strânge banda (+ResetStyleBaseline)"
+        Me.btnCollapse.Text = "Strânge banda (SetRowCollapsed)"
         Me.btnCollapse.UseVisualStyleBackColor = True
         Me.btnCollapse.Name = "btnCollapse"
         '

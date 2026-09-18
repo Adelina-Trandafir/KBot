@@ -22,7 +22,7 @@ Imports KBot.Theming
 ''' <item><b><see cref="KBotTableLayoutPanel"/></b>: the log viewer's filter row, authored SHORT
 ''' (32px rows), with themed cell lines. Under Modern the rows must grow and under Classic come
 ''' back; the label column must keep step with the label as the text grows; collapsing the band
-''' and calling <c>ResetStyleBaseline</c> must survive the next scheme switch.</item>
+''' through <c>SetRowCollapsed</c> must survive the next scheme switch.</item>
 ''' </list>
 ''' Scheme, text size and base are put back on close: a bench never leaves a setting behind.
 ''' </summary>
@@ -33,7 +33,6 @@ Public NotInheritable Class FormFitHarnessForm
     Private ReadOnly _originalTextScale As Single
     Private ReadOnly _originalBaseline As FormFitBaseline
     Private _suppress As Boolean
-    Private _bandHeightBeforeCollapse As Single = -1.0F
 
     Public Sub New(log As Action(Of String))
         _log = log
@@ -264,17 +263,16 @@ Public NotInheritable Class FormFitHarnessForm
     End Sub
 
     ''' <summary>
-    ''' The slice 0049-02 move: a band collapsed to 0 by code, then <c>ResetStyleBaseline</c> so the
-    ''' next scheme switch does not revive it. Visible is WRITTEN here, never read.
+    ''' The slice 0049-02 move, through the table's own API since 0066: the band is collapsed with
+    ''' <c>SetRowCollapsed</c>, which the next scheme or scale pass honours on its own -- the
+    ''' authored height stays in the table, in logical pixels. Visible is WRITTEN here, never read.
     ''' </summary>
     Private Sub btnCollapse_Click(sender As Object, e As EventArgs) Handles btnCollapse.Click
         Try
-            If _bandHeightBeforeCollapse < 0F Then _bandHeightBeforeCollapse = tblProbe.RowStyles(1).Height
             lblBanda.Visible = False
             chkBanda.Visible = False
-            tblProbe.RowStyles(1).Height = 0F
-            tblProbe.ResetStyleBaseline()
-            Note("banda strânsă la 0 + ResetStyleBaseline (autorat acum: " & tblProbe.DebugAuthoredRow(1).ToString("0.#") & ")")
+            tblProbe.SetRowCollapsed(1, True)
+            Note("banda strânsă prin SetRowCollapsed (autorat: " & tblProbe.DebugAuthoredRow(1).ToString("0.#") & ", acum " & tblProbe.RowStyles(1).Height.ToString("0.#") & ")")
             Readout("după strângerea benzii")
         Catch ex As Exception
             GlobalErrorLog.Write("FormFitHarnessForm.btnCollapse_Click", ex)
@@ -284,16 +282,14 @@ Public NotInheritable Class FormFitHarnessForm
 
     Private Sub btnExpand_Click(sender As Object, e As EventArgs) Handles btnExpand.Click
         Try
-            If _bandHeightBeforeCollapse < 0F Then
+            If Not tblProbe.IsRowCollapsed(1) Then
                 Note("banda nu a fost strânsă -- nimic de desfăcut")
                 Return
             End If
-            tblProbe.RowStyles(1).Height = _bandHeightBeforeCollapse
-            tblProbe.ResetStyleBaseline()
+            tblProbe.SetRowCollapsed(1, False)
             lblBanda.Visible = True
             chkBanda.Visible = True
-            _bandHeightBeforeCollapse = -1.0F
-            Note("banda desfăcută + ResetStyleBaseline (autorat acum: " & tblProbe.DebugAuthoredRow(1).ToString("0.#") & ")")
+            Note("banda desfăcută prin SetRowCollapsed (autorat: " & tblProbe.DebugAuthoredRow(1).ToString("0.#") & ", acum " & tblProbe.RowStyles(1).Height.ToString("0.#") & ")")
             Readout("după desfacerea benzii")
         Catch ex As Exception
             GlobalErrorLog.Write("FormFitHarnessForm.btnExpand_Click", ex)

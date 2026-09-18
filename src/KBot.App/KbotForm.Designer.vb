@@ -52,7 +52,7 @@ Partial Class KbotForm
         pnlStatus = New Panel()
         forexeFooter = New ForexeFooterView()
         pnlHeader = New Panel()
-        tlyHeader = New TableLayoutPanel()
+        tlyHeader = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblOperator = New Label()
         lblSs = New Label()
         lblAn = New Label()
@@ -549,7 +549,7 @@ Partial Class KbotForm
     Friend WithEvents tree As AdvancedTreeControl
     Friend WithEvents viewHost As Panel
     Friend WithEvents pnlHeader As Panel
-    Friend WithEvents tlyHeader As TableLayoutPanel
+    Friend WithEvents tlyHeader As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblOperator As Label
     Friend WithEvents cboSs As Controls.KBotComboBox
     Friend WithEvents lblSs As Label

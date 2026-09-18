@@ -16,7 +16,7 @@ Partial Class DdfVizualizarePage
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         pagValori = New DdfValoriPage()
-        tblHeader = New TableLayoutPanel()
+        tblHeader = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblCodCaption = New Label()
         lblCod = New Label()
         lblDataCreareCaption = New Label()
@@ -29,7 +29,7 @@ Partial Class DdfVizualizarePage
         lblObiectDDF = New Label()
         lblBeneficiarCaption = New Label()
         lblBeneficiar = New Label()
-        tlyMain = New TableLayoutPanel()
+        tlyMain = New Global.KBot.Controls.KBotTableLayoutPanel()
         tblHeader.SuspendLayout()
         tlyMain.SuspendLayout()
         SuspendLayout()
@@ -233,7 +233,7 @@ Partial Class DdfVizualizarePage
     End Sub
 
     Friend WithEvents pagValori As DdfValoriPage
-    Friend WithEvents tblHeader As TableLayoutPanel
+    Friend WithEvents tblHeader As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblCodCaption As Label
     Friend WithEvents lblCod As Label
     Friend WithEvents lblDataCreareCaption As Label
@@ -246,5 +246,5 @@ Partial Class DdfVizualizarePage
     Friend WithEvents lblBeneficiar As Label
     Friend WithEvents lblObiectDDFCaption As Label
     Friend WithEvents lblObiectDDF As Label
-    Friend WithEvents tlyMain As TableLayoutPanel
+    Friend WithEvents tlyMain As Global.KBot.Controls.KBotTableLayoutPanel
 End Class

@@ -18,7 +18,7 @@ Partial Class LoginForm
         components = New ComponentModel.Container()
         tips = New Controls.KBotToolTip(components)
         pnlCard = New Panel()
-        tlpBody = New TableLayoutPanel()
+        tlpBody = New Global.KBot.Controls.KBotTableLayoutPanel()
         picLogo = New PictureBox()
         lblTitle = New Label()
         lblSubtitle = New Label()
@@ -27,7 +27,7 @@ Partial Class LoginForm
         lblPass = New Label()
         txtPass = New Controls.KBotTextField()
         btnContinue = New Button()
-        pnlUnit = New TableLayoutPanel()
+        pnlUnit = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblUnit = New Label()
         cboUnit = New Controls.KBotComboBox()
         btnBack = New Button()
@@ -349,7 +349,7 @@ Partial Class LoginForm
     Friend WithEvents pnlCard As Panel
     Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents busyBar As Global.KBot.Controls.KBotBusyBar
-    Friend WithEvents tlpBody As TableLayoutPanel
+    Friend WithEvents tlpBody As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents picLogo As PictureBox
     Friend WithEvents lblTitle As Label
     Friend WithEvents lblSubtitle As Label
@@ -358,7 +358,7 @@ Partial Class LoginForm
     Friend WithEvents lblPass As Label
     Friend WithEvents txtPass As Global.KBot.Controls.KBotTextField
     Friend WithEvents btnContinue As Button
-    Friend WithEvents pnlUnit As TableLayoutPanel
+    Friend WithEvents pnlUnit As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblUnit As Label
     Friend WithEvents cboUnit As Global.KBot.Controls.KBotComboBox
     Friend WithEvents btnBack As Button

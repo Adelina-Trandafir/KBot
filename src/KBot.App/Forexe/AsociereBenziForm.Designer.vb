@@ -35,7 +35,7 @@ Partial Class AsociereBenziForm
         benziMari = New KBotLaneView()
         capBar = New KBotCaptionBar()
         btnInchide = New Button()
-        tlyBenzi = New TableLayoutPanel()
+        tlyBenzi = New Global.KBot.Controls.KBotTableLayoutPanel()
         pnlCard.SuspendLayout()
         CType(benziMari, ComponentModel.ISupportInitialize).BeginInit()
         tlyBenzi.SuspendLayout()
@@ -150,5 +150,5 @@ Partial Class AsociereBenziForm
     Friend WithEvents benziMari As Global.KBot.Controls.KBotLaneView
     Friend WithEvents capBar As KBotCaptionBar
     Friend WithEvents btnInchide As Button
-    Friend WithEvents tlyBenzi As TableLayoutPanel
+    Friend WithEvents tlyBenzi As Global.KBot.Controls.KBotTableLayoutPanel
 End Class

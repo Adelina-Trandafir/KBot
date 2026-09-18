@@ -33,7 +33,7 @@ Partial Class PlatiView
         innerSplit = New SplitContainer()
         grid = New KBotDataView()
         detailPane = New Panel()
-        detailTable = New TableLayoutPanel()
+        detailTable = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblDetailMessage = New Label()
         capNrDoc = New Label()
         valNrDoc = New Label()
@@ -545,7 +545,7 @@ Partial Class PlatiView
     Friend WithEvents innerSplit As SplitContainer
     Friend WithEvents grid As Global.KBot.Controls.KBotDataView
     Friend WithEvents detailPane As Panel
-    Friend WithEvents detailTable As TableLayoutPanel
+    Friend WithEvents detailTable As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents capNrDoc As Label
     Friend WithEvents valNrDoc As Label
     Friend WithEvents capDataBanca As Label

@@ -28,9 +28,9 @@ Partial Class XfaXmlPreview
         grid = New KBotDataView()
         pnlHeader = New Panel()
         lblNota = New Label()
-        tblHeader = New TableLayoutPanel()
+        tblHeader = New Global.KBot.Controls.KBotTableLayoutPanel()
         pnlMissing = New Panel()
-        tblMissing = New TableLayoutPanel()
+        tblMissing = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblMissing = New Label()
         btnGenereaza = New Button()
         lblMessage = New Label()
@@ -263,9 +263,9 @@ Partial Class XfaXmlPreview
     Friend WithEvents grid As Global.KBot.Controls.KBotDataView
     Friend WithEvents pnlHeader As Panel
     Friend WithEvents lblNota As Label
-    Friend WithEvents tblHeader As TableLayoutPanel
+    Friend WithEvents tblHeader As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents pnlMissing As Panel
-    Friend WithEvents tblMissing As TableLayoutPanel
+    Friend WithEvents tblMissing As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblMissing As Label
     Friend WithEvents btnGenereaza As Button
     Friend WithEvents lblMessage As Label

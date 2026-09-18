@@ -18,7 +18,7 @@ Partial Class AdobeReaderHarnessForm
     ' unreachable). A TopDown FlowLayoutPanel with AutoScroll scrolls this content reliably — it is
     ' the same container that worked here before the layout rework.
     Friend WithEvents flowOptions As System.Windows.Forms.FlowLayoutPanel
-    Friend WithEvents tlpRight As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpRight As Global.KBot.Controls.KBotTableLayoutPanel
     ' Cele două suprafețe de document, ca file. Opțiunile din stânga urmăresc fila selectată.
     Friend WithEvents tabsMain As System.Windows.Forms.TabControl
     Friend WithEvents tabHosted As System.Windows.Forms.TabPage
@@ -30,13 +30,13 @@ Partial Class AdobeReaderHarnessForm
 
     ' Lansare
     Friend WithEvents grpLaunch As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpLaunch As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpLaunch As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents chkNewInstance As System.Windows.Forms.CheckBox
     Friend WithEvents chkNoSplash As System.Windows.Forms.CheckBox
 
     ' Chrome ascuns (parametri /A)
     Friend WithEvents grpChrome As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpChrome As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpChrome As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents chkToolbar As System.Windows.Forms.CheckBox
     Friend WithEvents chkNavpanes As System.Windows.Forms.CheckBox
     Friend WithEvents chkStatusbar As System.Windows.Forms.CheckBox
@@ -46,20 +46,20 @@ Partial Class AdobeReaderHarnessForm
 
     ' Document
     Friend WithEvents grpFile As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpFile As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpFile As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnBrowse As System.Windows.Forms.Button
     Friend WithEvents lblFile As System.Windows.Forms.Label
     Friend WithEvents btnRelaunch As System.Windows.Forms.Button
 
     ' Diagnostic — the child window probe + the machine-state read.
     Friend WithEvents grpProbe As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpProbe As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpProbe As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnProbe As System.Windows.Forms.Button
     Friend WithEvents btnMachineState As System.Windows.Forms.Button
 
     ' Scenariu — load / run / save a scenario file (JSON, AppDir\Config).
     Friend WithEvents grpScenario As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpScenario As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpScenario As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblScenario As System.Windows.Forms.Label
     Friend WithEvents btnLoadScenario As System.Windows.Forms.Button
     Friend WithEvents btnRunScenario As System.Windows.Forms.Button
@@ -67,7 +67,7 @@ Partial Class AdobeReaderHarnessForm
 
     ' Decupare — geometry clipping (live, no relaunch).
     Friend WithEvents grpClip As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpClip As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpClip As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents chkClip As System.Windows.Forms.CheckBox
     Friend WithEvents lblClipRight As System.Windows.Forms.Label
     Friend WithEvents numClipRight As System.Windows.Forms.NumericUpDown
@@ -77,7 +77,7 @@ Partial Class AdobeReaderHarnessForm
 
     ' Ferestre copil — hide a child window directly.
     Friend WithEvents grpChildren As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpChildren As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpChildren As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lstChildren As System.Windows.Forms.ListBox
     Friend WithEvents btnHideChild As System.Windows.Forms.Button
     Friend WithEvents btnShowChild As System.Windows.Forms.Button
@@ -87,7 +87,7 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents grpMove As System.Windows.Forms.GroupBox
     ' ── Felia 0024-03: «Închidere / captură» ────────────────────────────────────
     Friend WithEvents grpHosting As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpHosting As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpHosting As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblDetachMode As System.Windows.Forms.Label
     Friend WithEvents flowDetachMode As System.Windows.Forms.FlowLayoutPanel
     Friend WithEvents rdoDetachKill As System.Windows.Forms.RadioButton
@@ -101,7 +101,7 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents lblEmbedTiming As System.Windows.Forms.Label
     ' ── Felia 0024-03: «ActiveX (AcroPDF)» ──────────────────────────────────────
     Friend WithEvents grpActiveX As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpActiveX As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpActiveX As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblAcroStatus As System.Windows.Forms.Label
     Friend WithEvents flowAcroButtons As System.Windows.Forms.FlowLayoutPanel
     Friend WithEvents btnAcroLoad As System.Windows.Forms.Button
@@ -118,7 +118,7 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents btnAcroHudApply As System.Windows.Forms.Button
     Friend WithEvents tmrAcroVerify As System.Windows.Forms.Timer
     Friend WithEvents pnlAcroHost As System.Windows.Forms.Panel
-    Friend WithEvents tlpMove As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpMove As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblDx As System.Windows.Forms.Label
     Friend WithEvents numDx As System.Windows.Forms.NumericUpDown
     Friend WithEvents lblDy As System.Windows.Forms.Label
@@ -132,18 +132,18 @@ Partial Class AdobeReaderHarnessForm
 
     ' Scurtături — keyboard toggles (experimental).
     Friend WithEvents grpKeys As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpKeys As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpKeys As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnSendShiftF4 As System.Windows.Forms.Button
     Friend WithEvents btnSendF4 As System.Windows.Forms.Button
 
     ' Preferințe Adobe (utilizator) — HKCU, no elevation.
     Friend WithEvents grpUser As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpUser As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpUser As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblHive As System.Windows.Forms.Label
     Friend WithEvents cboHive As System.Windows.Forms.ComboBox
     ' One ROW per preference — «nu atinge» / «șterge» / a literal value. NOT checkboxes: a
     ' checkbox has two states and the schema has four, so «bEnableAv2 = 0» could never express 1.
-    Friend WithEvents tlpPrefRows As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpPrefRows As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblExpandRhp As System.Windows.Forms.Label
     Friend WithEvents cboExpandRhp As System.Windows.Forms.ComboBox
     Friend WithEvents lblRhpSticky As System.Windows.Forms.Label
@@ -162,7 +162,7 @@ Partial Class AdobeReaderHarnessForm
 
     ' Politici Adobe (mașină) — HKLM via elevated reg.exe import.
     Friend WithEvents grpMachine As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpMachine As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpMachine As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents cboProduct As System.Windows.Forms.ComboBox
     Friend WithEvents chkSuppressUpsell As System.Windows.Forms.CheckBox
     Friend WithEvents chkDisableServices As System.Windows.Forms.CheckBox
@@ -172,7 +172,7 @@ Partial Class AdobeReaderHarnessForm
 
     ' Linie de comandă — the one control that must not collapse when the splitter goes narrow.
     Friend WithEvents grpCmd As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpCmd As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpCmd As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents txtCmd As System.Windows.Forms.TextBox
 
     Friend WithEvents pnlButtons As System.Windows.Forms.FlowLayoutPanel
@@ -193,11 +193,11 @@ Partial Class AdobeReaderHarnessForm
         splitMain = New SplitContainer()
         flowOptions = New FlowLayoutPanel()
         grpLaunch = New GroupBox()
-        tlpLaunch = New TableLayoutPanel()
+        tlpLaunch = New Global.KBot.Controls.KBotTableLayoutPanel()
         chkNewInstance = New CheckBox()
         chkNoSplash = New CheckBox()
         grpChrome = New GroupBox()
-        tlpChrome = New TableLayoutPanel()
+        tlpChrome = New Global.KBot.Controls.KBotTableLayoutPanel()
         chkToolbar = New CheckBox()
         chkNavpanes = New CheckBox()
         chkStatusbar = New CheckBox()
@@ -205,22 +205,22 @@ Partial Class AdobeReaderHarnessForm
         chkScrollbar = New CheckBox()
         chkPagemodeNone = New CheckBox()
         grpFile = New GroupBox()
-        tlpFile = New TableLayoutPanel()
+        tlpFile = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnBrowse = New Button()
         lblFile = New Label()
         btnRelaunch = New Button()
         grpProbe = New GroupBox()
-        tlpProbe = New TableLayoutPanel()
+        tlpProbe = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnProbe = New Button()
         btnMachineState = New Button()
         grpScenario = New GroupBox()
-        tlpScenario = New TableLayoutPanel()
+        tlpScenario = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblScenario = New Label()
         btnLoadScenario = New Button()
         btnRunScenario = New Button()
         btnSaveScenario = New Button()
         grpClip = New GroupBox()
-        tlpClip = New TableLayoutPanel()
+        tlpClip = New Global.KBot.Controls.KBotTableLayoutPanel()
         chkClip = New CheckBox()
         lblClipRight = New Label()
         numClipRight = New NumericUpDown()
@@ -229,7 +229,7 @@ Partial Class AdobeReaderHarnessForm
         btnClipAuto = New Button()
         grpMove = New GroupBox()
         grpHosting = New GroupBox()
-        tlpHosting = New TableLayoutPanel()
+        tlpHosting = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblDetachMode = New Label()
         flowDetachMode = New FlowLayoutPanel()
         rdoDetachKill = New RadioButton()
@@ -242,7 +242,7 @@ Partial Class AdobeReaderHarnessForm
         chkForceClassicUi = New CheckBox()
         lblEmbedTiming = New Label()
         grpActiveX = New GroupBox()
-        tlpActiveX = New TableLayoutPanel()
+        tlpActiveX = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblAcroStatus = New Label()
         flowAcroButtons = New FlowLayoutPanel()
         btnAcroLoad = New Button()
@@ -259,7 +259,7 @@ Partial Class AdobeReaderHarnessForm
         tmrHudWatch = New Timer(components)
         tmrAcroVerify = New Timer(components)
         pnlAcroHost = New Panel()
-        tlpMove = New TableLayoutPanel()
+        tlpMove = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblDx = New Label()
         numDx = New NumericUpDown()
         lblDy = New Label()
@@ -271,20 +271,20 @@ Partial Class AdobeReaderHarnessForm
         btnResetMove = New Button()
         lblMoveHint = New Label()
         grpChildren = New GroupBox()
-        tlpChildren = New TableLayoutPanel()
+        tlpChildren = New Global.KBot.Controls.KBotTableLayoutPanel()
         lstChildren = New ListBox()
         btnHideChild = New Button()
         btnShowChild = New Button()
         btnShowAllChildren = New Button()
         grpKeys = New GroupBox()
-        tlpKeys = New TableLayoutPanel()
+        tlpKeys = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnSendShiftF4 = New Button()
         btnSendF4 = New Button()
         grpUser = New GroupBox()
-        tlpUser = New TableLayoutPanel()
+        tlpUser = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblHive = New Label()
         cboHive = New ComboBox()
-        tlpPrefRows = New TableLayoutPanel()
+        tlpPrefRows = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblExpandRhp = New Label()
         cboExpandRhp = New ComboBox()
         lblRhpSticky = New Label()
@@ -299,7 +299,7 @@ Partial Class AdobeReaderHarnessForm
         btnRestoreUser = New Button()
         chkRestoreOnClose = New CheckBox()
         grpMachine = New GroupBox()
-        tlpMachine = New TableLayoutPanel()
+        tlpMachine = New Global.KBot.Controls.KBotTableLayoutPanel()
         cboProduct = New ComboBox()
         chkSuppressUpsell = New CheckBox()
         chkDisableServices = New CheckBox()
@@ -307,9 +307,9 @@ Partial Class AdobeReaderHarnessForm
         btnRevertMachine = New Button()
         chkRevertPolicyOnClose = New CheckBox()
         grpCmd = New GroupBox()
-        tlpCmd = New TableLayoutPanel()
+        tlpCmd = New Global.KBot.Controls.KBotTableLayoutPanel()
         txtCmd = New TextBox()
-        tlpRight = New TableLayoutPanel()
+        tlpRight = New Global.KBot.Controls.KBotTableLayoutPanel()
         tabsMain = New TabControl()
         tabHosted = New TabPage()
         tabActiveX = New TabPage()

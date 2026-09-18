@@ -73,10 +73,10 @@ Partial Class DdfEditForm
         btnRenunta = New Button()
         btnSalveaza = New Button()
         tmrLock = New Timer(components)
-        tlyMain = New TableLayoutPanel()
+        tlyMain = New Global.KBot.Controls.KBotTableLayoutPanel()
         capBar = New KBotCaptionBar()
         busyBar = New KBotBusyBar()
-        tlyAntet = New TableLayoutPanel()
+        tlyAntet = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblCodCaption = New Label()
         lblCod = New Label()
         lblCualCaption = New Label()
@@ -91,7 +91,7 @@ Partial Class DdfEditForm
         ntfMesaj = New KBotNotice()
         navSub = New KBotNavList()
         pnlPages = New Panel()
-        tlySubsol = New TableLayoutPanel()
+        tlySubsol = New Global.KBot.Controls.KBotTableLayoutPanel()
         tlyMain.SuspendLayout()
         tlyAntet.SuspendLayout()
         CType(navSub, ComponentModel.ISupportInitialize).BeginInit()
@@ -643,10 +643,10 @@ Partial Class DdfEditForm
 
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents tmrLock As Timer
-    Friend WithEvents tlyMain As TableLayoutPanel
+    Friend WithEvents tlyMain As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents busyBar As Global.KBot.Controls.KBotBusyBar
-    Friend WithEvents tlyAntet As TableLayoutPanel
+    Friend WithEvents tlyAntet As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblCodCaption As Label
     Friend WithEvents lblCod As Label
     Friend WithEvents lblCualCaption As Label
@@ -672,7 +672,7 @@ Partial Class DdfEditForm
     Friend WithEvents ntfMesaj As Global.KBot.Controls.KBotNotice
     Friend WithEvents navSub As Global.KBot.Controls.KBotNavList
     Friend WithEvents pnlPages As Panel
-    Friend WithEvents tlySubsol As TableLayoutPanel
+    Friend WithEvents tlySubsol As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnRenunta As Button
     Friend WithEvents btnSalveaza As Button
 End Class

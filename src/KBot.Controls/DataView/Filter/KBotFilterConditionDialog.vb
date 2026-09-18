@@ -71,10 +71,15 @@ Friend NotInheritable Class KBotFilterConditionDialog
         Dim rand As Integer = tlyMAIN.GetRow(ctrl)
         If rand < 0 OrElse rand >= tlyMAIN.RowStyles.Count Then Return 0
 
+        ' Through the table's own API (slice 0066), so the collapse survives every scale and
+        ' theme pass: a fixed row is collapsed, any other is rewritten as a fixed row of 0.
         Dim stil As RowStyle = tlyMAIN.RowStyles(rand)
         Dim inainte As Integer = If(stil.SizeType = SizeType.Absolute, CInt(stil.Height), ctrl.Height)
-        stil.SizeType = SizeType.Absolute
-        stil.Height = 0F
+        If stil.SizeType = SizeType.Absolute Then
+            tlyMAIN.SetRowCollapsed(rand, True)
+        Else
+            tlyMAIN.SetRowHeight(rand, 0F)
+        End If
         Return inainte
     End Function
 

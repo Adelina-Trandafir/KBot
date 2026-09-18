@@ -24,7 +24,7 @@ Partial Class KBotFilterConditionDialog
 
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KBotFilterConditionDialog))
-        tlyMAIN = New TableLayoutPanel()
+        tlyMAIN = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnCancel = New Button()
         btnOk = New Button()
         txtOperand2 = New TextBox()
@@ -147,7 +147,7 @@ Partial Class KBotFilterConditionDialog
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tlyMAIN As TableLayoutPanel
+    Friend WithEvents tlyMAIN As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnCancel As Button
     Friend WithEvents btnOk As Button
     Friend WithEvents txtOperand2 As TextBox

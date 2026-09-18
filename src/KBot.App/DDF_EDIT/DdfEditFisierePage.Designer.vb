@@ -61,10 +61,10 @@ Partial Class DdfEditFisierePage
         btnSalveazaPeDisc = New Button()
         dlgAlege = New OpenFileDialog()
         dlgSalveaza = New SaveFileDialog()
-        tlyRoot = New TableLayoutPanel()
+        tlyRoot = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblStare = New Label()
         grd = New KBotDataView()
-        tlyButoane = New TableLayoutPanel()
+        tlyButoane = New Global.KBot.Controls.KBotTableLayoutPanel()
         prv = New DdfFisierPreview()
         tlyRoot.SuspendLayout()
         CType(grd, ComponentModel.ISupportInitialize).BeginInit()
@@ -262,9 +262,9 @@ Partial Class DdfEditFisierePage
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents dlgAlege As OpenFileDialog
     Friend WithEvents dlgSalveaza As SaveFileDialog
-    Friend WithEvents tlyRoot As TableLayoutPanel
+    Friend WithEvents tlyRoot As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents grd As Global.KBot.Controls.KBotDataView
-    Friend WithEvents tlyButoane As TableLayoutPanel
+    Friend WithEvents tlyButoane As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnAdauga As Button
     Friend WithEvents btnSterge As Button
     Friend WithEvents btnSalveazaPeDisc As Button

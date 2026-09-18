@@ -49,7 +49,7 @@ Partial Class DdfEditSectiuneaBPage
         Dim KBotDataColumn9 As KBotDataColumn = New KBotDataColumn()
         components = New ComponentModel.Container()
         tips = New KBotToolTip(components)
-        tlyRoot = New TableLayoutPanel()
+        tlyRoot = New Global.KBot.Controls.KBotTableLayoutPanel()
         grd = New KBotDataView()
         lblNota = New Label()
         tlyRoot.SuspendLayout()
@@ -249,7 +249,7 @@ Partial Class DdfEditSectiuneaBPage
     End Sub
 
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
-    Friend WithEvents tlyRoot As TableLayoutPanel
+    Friend WithEvents tlyRoot As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents grd As Global.KBot.Controls.KBotDataView
     Friend WithEvents lblNota As Label
 End Class

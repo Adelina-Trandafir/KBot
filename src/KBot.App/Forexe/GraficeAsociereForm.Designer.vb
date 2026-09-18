@@ -44,7 +44,7 @@ Partial Class GraficeAsociereForm
         splitGrafice = New SplitContainer()
         capBar = New KBotCaptionBar()
         btnInchide = New Button()
-        tlyGrafice = New TableLayoutPanel()
+        tlyGrafice = New Global.KBot.Controls.KBotTableLayoutPanel()
         pnlCard.SuspendLayout()
         CType(splitGrafice, ComponentModel.ISupportInitialize).BeginInit()
         splitGrafice.SuspendLayout()
@@ -157,5 +157,5 @@ Partial Class GraficeAsociereForm
     Friend WithEvents splitGrafice As SplitContainer
     Friend WithEvents capBar As KBotCaptionBar
     Friend WithEvents btnInchide As Button
-    Friend WithEvents tlyGrafice As TableLayoutPanel
+    Friend WithEvents tlyGrafice As Global.KBot.Controls.KBotTableLayoutPanel
 End Class

@@ -46,10 +46,10 @@ Partial Class OrdDocumentePage
         dlgFisiere = New OpenFileDialog()
         split = New SplitContainer()
         splitDreapta = New SplitContainer()
-        tlyText = New TableLayoutPanel()
+        tlyText = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnStergeText = New Button()
         grdText = New KBotDataView()
-        tlyFisiere = New TableLayoutPanel()
+        tlyFisiere = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnStergeFisier = New Button()
         grdFisiere = New KBotDataView()
         CType(grdBene, ComponentModel.ISupportInitialize).BeginInit()
@@ -349,10 +349,10 @@ Partial Class OrdDocumentePage
     Friend WithEvents split As SplitContainer
     Friend WithEvents grdBene As Global.KBot.Controls.KBotDataView
     Friend WithEvents splitDreapta As SplitContainer
-    Friend WithEvents tlyText As TableLayoutPanel
+    Friend WithEvents tlyText As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents grdText As Global.KBot.Controls.KBotDataView
     Friend WithEvents btnAdaugaText As Button
-    Friend WithEvents tlyFisiere As TableLayoutPanel
+    Friend WithEvents tlyFisiere As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents grdFisiere As Global.KBot.Controls.KBotDataView
     Friend WithEvents btnAdaugaFisier As Button
     Friend WithEvents btnStergeText As Button

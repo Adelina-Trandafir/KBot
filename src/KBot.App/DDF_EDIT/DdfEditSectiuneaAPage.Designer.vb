@@ -67,9 +67,9 @@ Partial Class DdfEditSectiuneaAPage
         tips = New KBotToolTip(components)
         btnAdauga = New Button()
         btnSterge = New Button()
-        tlyRoot = New TableLayoutPanel()
+        tlyRoot = New Global.KBot.Controls.KBotTableLayoutPanel()
         grd = New KBotDataView()
-        tlyButoane = New TableLayoutPanel()
+        tlyButoane = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblStare = New Label()
         tlyRoot.SuspendLayout()
         CType(grd, ComponentModel.ISupportInitialize).BeginInit()
@@ -314,9 +314,9 @@ Partial Class DdfEditSectiuneaAPage
     End Sub
 
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
-    Friend WithEvents tlyRoot As TableLayoutPanel
+    Friend WithEvents tlyRoot As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents grd As Global.KBot.Controls.KBotDataView
-    Friend WithEvents tlyButoane As TableLayoutPanel
+    Friend WithEvents tlyButoane As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnAdauga As Button
     Friend WithEvents btnSterge As Button
     Friend WithEvents lblStare As Label

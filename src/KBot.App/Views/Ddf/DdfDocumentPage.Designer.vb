@@ -18,10 +18,10 @@ Partial Class DdfDocumentPage
         components = New ComponentModel.Container()
         tips = New Global.KBot.Controls.KBotToolTip(components)
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DdfDocumentPage))
-        tlyPDF = New TableLayoutPanel()
+        tlyPDF = New Global.KBot.Controls.KBotTableLayoutPanel()
         previewPdf = New ReaderHostPreview()
         pnlBottomButtons = New Panel()
-        tlyBottomButtons = New TableLayoutPanel()
+        tlyBottomButtons = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnOpenInAdobe = New Button()
         btnSaveLocalCopy = New Button()
         pnlAdobe = New Panel()
@@ -243,10 +243,10 @@ Partial Class DdfDocumentPage
     End Sub
 
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
-    Friend WithEvents tlyPDF As TableLayoutPanel
+    Friend WithEvents tlyPDF As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents previewPdf As ReaderHostPreview
     Friend WithEvents pnlBottomButtons As Panel
-    Friend WithEvents tlyBottomButtons As TableLayoutPanel
+    Friend WithEvents tlyBottomButtons As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnOpenInAdobe As Button
     Friend WithEvents btnSaveLocalCopy As Button
     Friend WithEvents pnlAdobe As Panel

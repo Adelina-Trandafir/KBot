@@ -32,12 +32,12 @@ Partial Class IstoricView
         split = New SplitContainer()
         grid = New Controls.KBotDataView()
         pnlDetaliu = New Panel()
-        detailTable = New TableLayoutPanel()
+        detailTable = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblCapDescriere = New Controls.KBotLabel()
         txtDescriere = New Controls.KBotTextBox()
         gridValori = New Controls.KBotDataView()
         pnlFiltre = New Panel()
-        TableLayoutPanel1 = New TableLayoutPanel()
+        TableLayoutPanel1 = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblFiltruActiv = New Label()
         lblEmpty = New Label()
         menuClsf = New ContextMenuStrip(components)
@@ -498,7 +498,7 @@ Partial Class IstoricView
     Friend WithEvents split As SplitContainer
     Friend WithEvents grid As Global.KBot.Controls.KBotDataView
     Friend WithEvents pnlDetaliu As Panel
-    Friend WithEvents detailTable As TableLayoutPanel
+    Friend WithEvents detailTable As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblCapDescriere As Global.KBot.Controls.KBotLabel
     Friend WithEvents txtDescriere As Global.KBot.Controls.KBotTextBox
     Friend WithEvents gridValori As Global.KBot.Controls.KBotDataView
@@ -511,6 +511,6 @@ Partial Class IstoricView
     Friend WithEvents menuClsf As ContextMenuStrip
     Friend WithEvents menuTipRand As ContextMenuStrip
     Friend WithEvents menuData As ContextMenuStrip
-    Friend WithEvents TableLayoutPanel1 As TableLayoutPanel
+    Friend WithEvents TableLayoutPanel1 As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnFiltruClsf As Button
 End Class

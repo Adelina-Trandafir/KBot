@@ -41,7 +41,7 @@ Partial Class GraficRezervariForm
         grafic = New KBotChartView()
         capBar = New KBotCaptionBar()
         btnInchide = New Button()
-        tlyGrafic = New TableLayoutPanel()
+        tlyGrafic = New Global.KBot.Controls.KBotTableLayoutPanel()
         pnlCard.SuspendLayout()
         CType(grafic, ComponentModel.ISupportInitialize).BeginInit()
         tlyGrafic.SuspendLayout()
@@ -167,5 +167,5 @@ Partial Class GraficRezervariForm
     Friend WithEvents grafic As KBotChartView
     Friend WithEvents capBar As KBotCaptionBar
     Friend WithEvents btnInchide As Button
-    Friend WithEvents tlyGrafic As TableLayoutPanel
+    Friend WithEvents tlyGrafic As Global.KBot.Controls.KBotTableLayoutPanel
 End Class

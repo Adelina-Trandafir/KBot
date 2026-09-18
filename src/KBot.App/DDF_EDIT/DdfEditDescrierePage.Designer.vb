@@ -37,7 +37,7 @@ Partial Class DdfEditDescrierePage
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DdfEditDescrierePage))
         tips = New KBotToolTip(components)
         txtScurta = New KBotTextField()
-        tlyRoot = New TableLayoutPanel()
+        tlyRoot = New Global.KBot.Controls.KBotTableLayoutPanel()
         edtLunga = New KBotRichTextEditor()
         il_rtb = New ImageList(components)
         lblScurtaCaption = New Label()
@@ -162,7 +162,7 @@ Partial Class DdfEditDescrierePage
     End Sub
 
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
-    Friend WithEvents tlyRoot As TableLayoutPanel
+    Friend WithEvents tlyRoot As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblScurtaCaption As Label
     Friend WithEvents txtScurta As Global.KBot.Controls.KBotTextField
     Friend WithEvents lblLungaCaption As Label

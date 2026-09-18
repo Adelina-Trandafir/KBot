@@ -855,11 +855,22 @@ Public NotInheritable Class KBotTextBox
     Public Overrides Function GetPreferredSize(proposedSize As Size) As Size
         Try
             Dim aer As Padding = ScalePad(_textPadding)
-            Return New Size(Width, _inner.PreferredHeight + 2 * ChenarRezervat() + aer.Vertical)
+            Return New Size(AuthoredWidthDemand(), _inner.PreferredHeight + 2 * ChenarRezervat() + aer.Vertical)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotTextBox.GetPreferredSize", ex)
             Return MyBase.GetPreferredSize(proposedSize)
         End Try
+    End Function
+
+    ' The WIDTH half of the answer (slice 0066). A text box has no intrinsic width: its width is
+    ' the designer's, unless docking stretches it to the cell -- and then the current Width IS
+    ' the cell, so reporting it would tell the table «I need exactly what you gave me» and a
+    ' fixed column could never come back from a growth (measured: a 180px column at 1.65 stayed
+    ' at 297 under Fixed 100% because the field in it "wanted" 297). Stretched: nothing; else
+    ' the authored width, as the platform scaled it.
+    Private Function AuthoredWidthDemand() As Integer
+        Dim stretched As Boolean = Dock = DockStyle.Fill OrElse Dock = DockStyle.Top OrElse Dock = DockStyle.Bottom
+        Return If(stretched, 0, Width)
     End Function
 
     ' ═══ Pictură ═════════════════════════════════════════════════════════════

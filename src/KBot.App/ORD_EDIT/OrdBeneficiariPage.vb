@@ -69,9 +69,6 @@ Public Class OrdBeneficiariPage
     Private _cheieSelectata As Integer
     ' Repopularea listelor ridica evenimente de selectie care NU sunt alegeri ale operatorului.
     Private _suspenda As Boolean
-    ' Inaltimea benzii pe care sta bifa, retinuta la prima ascundere ca sa poata fi pusa
-    ' inapoi. -1 = inca nu s-a ascuns niciodata. Vezi `AplicaVizibilitateaBifei`.
-    Private _inaltimeaBifei As Single = -1.0F
     ' Ce s-a HOTARAT despre bifa, nu ce se vede: `chkClsf.Visible` raspunde False cat timp
     ' formularul insusi e inca nearatat (getter-ul da vizibilitatea EFECTIVA), iar prima
     ' asezare se face tocmai atunci, din `Form_Load`. Nothing = inca nu s-a hotarat nimic.
@@ -221,11 +218,11 @@ Public Class OrdBeneficiariPage
     ''' unic (cerinta operatorului, 03.09.2026). Cu mai multe clasificatii bifa RAMANE, chiar
     ''' daca beneficiarul e unul singur — acolo ea chiar desface liniile.
     '''
-    ''' <para>Inaltimea benzii se RETINE la ascundere, nu se scrie inapoi de la 96 dpi:
-    ''' <c>TableLayoutPanel</c> a scalat-o deja pentru ecranul de fata, iar o valoare logica
-    ''' pusa inapoi ar strange banda pe un ecran marit (regula DPI a casei). Punerea inapoi e
-    ''' plasa de siguranta: graful nu-si schimba beneficiarii cat tine un editor deschis, deci
-    ''' hotararea nu se poate rasturna in practica.</para>
+    ''' <para>The band collapses through <c>KBotTableLayoutPanel.SetRowCollapsed</c> (slice
+    ''' 0066): the table keeps the authored height itself, in logical pixels, and writes the row
+    ''' back at the scale of the screen it is on -- nothing to remember here. Putting it back is
+    ''' the safety net: the graph does not change its partners while an editor is open, so the
+    ''' decision cannot flip in practice.</para>
     ''' </summary>
     Private Sub AplicaVizibilitateaBifei()
         Dim nrBene As Integer = If(_draft Is Nothing, 0, _draft.Parteneri.Count)
@@ -246,13 +243,7 @@ Public Class OrdBeneficiariPage
             End Try
         End If
 
-        Dim banda As RowStyle = tlyStanga.RowStyles(0)
-        If areRost Then
-            If _inaltimeaBifei > 0.0F Then banda.Height = _inaltimeaBifei
-        Else
-            If _inaltimeaBifei <= 0.0F Then _inaltimeaBifei = banda.Height
-            banda.Height = 0.0F
-        End If
+        tlyStanga.SetRowCollapsed(0, Not areRost)
         chkClsf.Visible = areRost
     End Sub
 

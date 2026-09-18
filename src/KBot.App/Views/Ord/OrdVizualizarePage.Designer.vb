@@ -24,8 +24,8 @@ Partial Class OrdVizualizarePage
         Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
         grid = New KBotDataView()
-        tlyMain = New TableLayoutPanel()
-        tblFooter = New TableLayoutPanel()
+        tlyMain = New Global.KBot.Controls.KBotTableLayoutPanel()
+        tblFooter = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblContIban = New Label()
         lblContIbanCaption = New Label()
         lblCodFiscal = New Label()
@@ -36,7 +36,7 @@ Partial Class OrdVizualizarePage
         lblDocJust = New Label()
         lblInfoPlataCaption = New Label()
         lblInfoPlata = New Label()
-        tlyHeader = New TableLayoutPanel()
+        tlyHeader = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblSelecteazaBeneficiar = New Label()
         cboBeneficiar = New KBotComboBox()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
@@ -395,11 +395,11 @@ Partial Class OrdVizualizarePage
     End Sub
 
     Friend WithEvents grid As Global.KBot.Controls.KBotDataView
-    Friend WithEvents tlyMain As TableLayoutPanel
-    Friend WithEvents tlyHeader As TableLayoutPanel
+    Friend WithEvents tlyMain As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents tlyHeader As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblSelecteazaBeneficiar As Label
     Friend WithEvents cboBeneficiar As KBotComboBox
-    Friend WithEvents tblFooter As TableLayoutPanel
+    Friend WithEvents tblFooter As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblContIban As Label
     Friend WithEvents lblContIbanCaption As Label
     Friend WithEvents lblCodFiscal As Label

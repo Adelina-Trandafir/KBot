@@ -23,7 +23,7 @@ Partial Class SumarView
         Dim KBotDataColumn6 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn7 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         pnlHeader = New Panel()
-        tblHeader = New TableLayoutPanel()
+        tblHeader = New Controls.KBotTableLayoutPanel()
         lblCodCaption = New Label()
         lblCod = New Label()
         lblDataFxCaption = New Label()
@@ -87,6 +87,7 @@ Partial Class SumarView
         tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
         tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
         tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
+        tblHeader.ScaleAbsoluteStyles = False
         tblHeader.Size = New Size(1106, 172)
         tblHeader.TabIndex = 0
         ' 
@@ -261,7 +262,7 @@ Partial Class SumarView
         KBotDataColumn1.ReadOnly = True
         KBotDataColumn1.ShowColumnFilter = True
         KBotDataColumn1.TextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn1.Width = 250
+        KBotDataColumn1.Width = 140
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.ColumnFilterIcon = My.Resources.Resources.filter
         KBotDataColumn2.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold)
@@ -290,7 +291,6 @@ Partial Class SumarView
         KBotDataColumn3.ReadOnly = True
         KBotDataColumn3.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn3.ValueType = KBot.Controls.KBotValueType.Number
-        KBotDataColumn3.Width = 110
         KBotDataColumn4.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.CellPadding = New Padding(2, 0, 2, 0)
@@ -307,7 +307,6 @@ Partial Class SumarView
         KBotDataColumn4.ReadOnly = True
         KBotDataColumn4.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn4.ValueType = KBot.Controls.KBotValueType.Number
-        KBotDataColumn4.Width = 110
         KBotDataColumn5.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.CellPadding = New Padding(2, 0, 2, 0)
@@ -324,7 +323,6 @@ Partial Class SumarView
         KBotDataColumn5.ReadOnly = True
         KBotDataColumn5.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn5.ValueType = KBot.Controls.KBotValueType.Number
-        KBotDataColumn5.Width = 110
         KBotDataColumn6.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.CellPadding = New Padding(2, 0, 2, 0)
@@ -340,7 +338,6 @@ Partial Class SumarView
         KBotDataColumn6.OptionGroup = Nothing
         KBotDataColumn6.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn6.ValueType = KBot.Controls.KBotValueType.Number
-        KBotDataColumn6.Width = 110
         KBotDataColumn7.Aggregate = KBot.Controls.KBotAggregate.Sum
         KBotDataColumn7.AggregateFormatString = Nothing
         KBotDataColumn7.CellPadding = New Padding(2, 0, 2, 0)
@@ -356,7 +353,6 @@ Partial Class SumarView
         KBotDataColumn7.OptionGroup = Nothing
         KBotDataColumn7.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn7.ValueType = KBot.Controls.KBotValueType.Number
-        KBotDataColumn7.Width = 110
         grid.Columns.Add(KBotDataColumn1)
         grid.Columns.Add(KBotDataColumn2)
         grid.Columns.Add(KBotDataColumn3)
@@ -384,11 +380,11 @@ Partial Class SumarView
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.HeaderSeparatorColor = Color.Gainsboro
         grid.Location = New Point(0, 208)
-        grid.Margin = New Padding(4, 5, 4, 5)
+        grid.Margin = New Padding(0)
         grid.Name = "grid"
         grid.ReadOnlyGrid = True
         grid.RowHeight = 22
-        grid.Size = New Size(1142, 624)
+        grid.Size = New Size(1142, 518)
         grid.TabIndex = 1
         ' 
         ' lblEmpty
@@ -398,7 +394,7 @@ Partial Class SumarView
         lblEmpty.Location = New Point(0, 208)
         lblEmpty.Margin = New Padding(4, 0, 4, 0)
         lblEmpty.Name = "lblEmpty"
-        lblEmpty.Size = New Size(1142, 624)
+        lblEmpty.Size = New Size(1142, 518)
         lblEmpty.TabIndex = 2
         lblEmpty.Text = "Selectați un angajament din arbore."
         lblEmpty.TextAlign = ContentAlignment.MiddleCenter
@@ -412,7 +408,7 @@ Partial Class SumarView
         Controls.Add(pnlHeader)
         Margin = New Padding(4, 5, 4, 5)
         Name = "SumarView"
-        Size = New Size(1142, 832)
+        Size = New Size(1142, 726)
         pnlHeader.ResumeLayout(False)
         tblHeader.ResumeLayout(False)
         CType(grid, ComponentModel.ISupportInitialize).EndInit()
@@ -420,7 +416,7 @@ Partial Class SumarView
     End Sub
 
     Friend WithEvents pnlHeader As Panel
-    Friend WithEvents tblHeader As TableLayoutPanel
+    Friend WithEvents tblHeader As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblCodCaption As Label
     Friend WithEvents lblCod As Label
     Friend WithEvents lblDataFxCaption As Label

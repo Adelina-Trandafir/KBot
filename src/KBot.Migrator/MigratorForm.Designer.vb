@@ -15,7 +15,7 @@ Partial Class MigratorForm
     Private components As System.ComponentModel.IContainer
 
     ' --- root ------------------------------------------------------------------
-    Friend WithEvents tlpRoot As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpRoot As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblRegistru As System.Windows.Forms.Label
     Friend WithEvents txtRegistru As KBot.Controls.KBotTextField
     Friend WithEvents btnRasfoireRegistru As System.Windows.Forms.Button
@@ -29,7 +29,7 @@ Partial Class MigratorForm
 
     ' --- region 2: server ------------------------------------------------------
     Friend WithEvents grpServer As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpServer As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpServer As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblGazda As System.Windows.Forms.Label
     Friend WithEvents txtGazda As KBot.Controls.KBotTextField
     Friend WithEvents lblPort As System.Windows.Forms.Label
@@ -52,15 +52,15 @@ Partial Class MigratorForm
 
     ' --- region 4: transfer ----------------------------------------------------
     Friend WithEvents grpTransfer As System.Windows.Forms.GroupBox
-    Friend WithEvents tlpTransfer As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpTransfer As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents pnlButoane As System.Windows.Forms.Panel
     Friend WithEvents btnVerifica As System.Windows.Forms.Button
     Friend WithEvents btnTransfera As System.Windows.Forms.Button
     Friend WithEvents btnOpreste As System.Windows.Forms.Button
     Friend WithEvents prgTransfer As System.Windows.Forms.ProgressBar
-    Friend WithEvents tlpGrile As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpGrile As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents dgvTabele As KBot.Controls.KBotDataView
-    Friend WithEvents tlpDreapta As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlpDreapta As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents dgvConstatari As KBot.Controls.KBotDataView
     Friend WithEvents rtbJurnal As System.Windows.Forms.RichTextBox
 
@@ -85,10 +85,10 @@ Partial Class MigratorForm
         Dim KBotDataColumn13 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn14 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn15 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
-        tlpRoot = New TableLayoutPanel()
+        tlpRoot = New Global.KBot.Controls.KBotTableLayoutPanel()
         capBar = New Controls.KBotCaptionBar()
         grpServer = New GroupBox()
-        tlpServer = New TableLayoutPanel()
+        tlpServer = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblGazda = New Label()
         txtGazda = New Controls.KBotTextField()
         lblPort = New Label()
@@ -102,7 +102,7 @@ Partial Class MigratorForm
         grpUnitate = New GroupBox()
         dgvUnitati = New Controls.KBotDataView()
         pnlUnitateSus = New Panel()
-        TableLayoutPanel1 = New TableLayoutPanel()
+        TableLayoutPanel1 = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnRasfoireRegistru = New Button()
         txtRegistru = New Controls.KBotTextField()
         txtParolaUnitati = New Controls.KBotTextField()
@@ -118,16 +118,16 @@ Partial Class MigratorForm
         btnRasfoireForexe = New Button()
         lblBazaTinta = New Label()
         grpTransfer = New GroupBox()
-        tlpTransfer = New TableLayoutPanel()
+        tlpTransfer = New Global.KBot.Controls.KBotTableLayoutPanel()
         pnlButoane = New Panel()
-        tlpButoane = New TableLayoutPanel()
+        tlpButoane = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnVerifica = New Button()
         prgTransfer = New ProgressBar()
         btnOpreste = New Button()
         btnTransfera = New Button()
-        tlpGrile = New TableLayoutPanel()
+        tlpGrile = New Global.KBot.Controls.KBotTableLayoutPanel()
         dgvTabele = New Controls.KBotDataView()
-        tlpDreapta = New TableLayoutPanel()
+        tlpDreapta = New Global.KBot.Controls.KBotTableLayoutPanel()
         dgvConstatari = New Controls.KBotDataView()
         rtbJurnal = New RichTextBox()
         rtbInfoRowConstatari = New RichTextBox()
@@ -944,8 +944,8 @@ Partial Class MigratorForm
     End Sub
 
     Friend WithEvents rtbInfoRowConstatari As RichTextBox
-    Friend WithEvents tlpButoane As TableLayoutPanel
-    Friend WithEvents TableLayoutPanel1 As TableLayoutPanel
+    Friend WithEvents tlpButoane As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents TableLayoutPanel1 As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents capBar As Controls.KBotCaptionBar
 
 End Class

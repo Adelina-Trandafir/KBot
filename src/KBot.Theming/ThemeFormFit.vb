@@ -268,8 +268,20 @@ Public NotInheritable Class ThemeFormFit
                 Return New Size(If(stretched, 0, c.Width), c.Height)
             End If
 
+            Dim btn As Button = TryCast(c, Button)
+            If btn IsNot Nothing AndAlso btn.Dock <> DockStyle.None Then Return ButtonDemand(btn)
+
             If TypeOf c Is TableLayoutPanel OrElse TypeOf c Is FlowLayoutPanel OrElse IsLeaf(c) Then
                 Return c.GetPreferredSize(Size.Empty)
+            End If
+
+            ' A control that paints itself and OWNS its child controls (IThemedControl, not a
+            ' container, not a composite UserControl) has no content a dock walk could see: its
+            ' children are the scrollbars and search boxes it positions from its own size, so the
+            ' walk would only echo the cell it sits in -- measured in slice 0066, a 300px table
+            ' column holding a tree grew to 628 from the tree's search box. It asks for nothing.
+            If TypeOf c Is IThemedControl AndAlso Not TypeOf c Is IThemedContainer AndAlso Not TypeOf c Is ContainerControl Then
+                Return Size.Empty
             End If
 
             Return DockedDemand(c)
@@ -277,6 +289,22 @@ Public NotInheritable Class ThemeFormFit
             GlobalErrorLog.Write("ThemeFormFit.ContentDemand", ex)
             Throw
         End Try
+    End Function
+
+    ' A Button docked to anything answers GetPreferredSize with its BOUNDS (measured in slice
+    ' 0066: 300x100 in a 300x100 cell, on every FlatStyle, AutoSize or not) -- the one leaf whose
+    ' own answer echoes the cell, so a fixed row holding an OK button could never come back from
+    ' a growth. Measured by hand then, with the formula ModernRenderer uses to size an undocked
+    ' button: padding + one line of text + the two borders. The width is nothing when docking
+    ' stretches it (Fill/Top/Bottom), text plus padding otherwise.
+    Private Shared Function ButtonDemand(btn As Button) As Size
+        Dim text As String = If(String.IsNullOrEmpty(btn.Text), "Wg", btn.Text)
+        Dim t As Size = TextRenderer.MeasureText(text, btn.Font)
+        Dim border As Integer = If(btn.FlatStyle = FlatStyle.Flat, 2 * btn.FlatAppearance.BorderSize, 2)
+        Dim h As Integer = btn.Padding.Vertical + t.Height + border
+        Dim stretchedW As Boolean = btn.Dock = DockStyle.Fill OrElse btn.Dock = DockStyle.Top OrElse btn.Dock = DockStyle.Bottom
+        Dim w As Integer = If(stretchedW, 0, btn.Padding.Horizontal + t.Width + border)
+        Return New Size(w, h)
     End Function
 
     ' A container walked by its dock structure (see ContentDemand).

@@ -46,10 +46,10 @@ Partial Class OrdEditForm
         lblNrOrd = New Label()
         btnSalveaza = New Button()
         btnRenunta = New Button()
-        tlyMain = New TableLayoutPanel()
+        tlyMain = New KBotTableLayoutPanel()
         capBar = New KBotCaptionBar()
         busyBar = New KBotBusyBar()
-        tlyAntet = New TableLayoutPanel()
+        tlyAntet = New KBotTableLayoutPanel()
         lblCodCaption = New Label()
         lblCod = New Label()
         lblNrOrdCaption = New Label()
@@ -61,7 +61,7 @@ Partial Class OrdEditForm
         ntfMesaj = New KBotNotice()
         navSub = New KBotNavList()
         pnlPages = New Panel()
-        tlySubsol = New TableLayoutPanel()
+        tlySubsol = New KBotTableLayoutPanel()
         tlyMain.SuspendLayout()
         tlyAntet.SuspendLayout()
         CType(navSub, ComponentModel.ISupportInitialize).BeginInit()
@@ -219,6 +219,7 @@ Partial Class OrdEditForm
         tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
         tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
         tlyAntet.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyAntet.ScaleAbsoluteStyles = False
         tlyAntet.Size = New Size(1631, 87)
         tlyAntet.TabIndex = 2
         ' 
@@ -419,10 +420,10 @@ Partial Class OrdEditForm
     End Sub
 
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
-    Friend WithEvents tlyMain As TableLayoutPanel
+    Friend WithEvents tlyMain As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents busyBar As Global.KBot.Controls.KBotBusyBar
-    Friend WithEvents tlyAntet As TableLayoutPanel
+    Friend WithEvents tlyAntet As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblCodCaption As Label
     Friend WithEvents lblCod As Label
     Friend WithEvents lblNrOrdCaption As Label
@@ -434,7 +435,7 @@ Partial Class OrdEditForm
     Friend WithEvents lblObiectCaption As Label
     Friend WithEvents lblObiect As Label
     Friend WithEvents navSub As Global.KBot.Controls.KBotNavList
-    Friend WithEvents tlySubsol As TableLayoutPanel
+    Friend WithEvents tlySubsol As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnRenunta As Button
     Friend WithEvents btnSalveaza As Button
     Friend WithEvents ntfMesaj As KBotNotice

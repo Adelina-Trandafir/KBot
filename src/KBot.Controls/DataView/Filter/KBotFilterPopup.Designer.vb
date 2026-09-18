@@ -27,7 +27,7 @@ Imports System.Windows.Forms
 '''
 ''' <para><b>Rândurile tabelelor sunt AUTORATE pe schema Classic</b> — designerul nu știe nimic
 ''' despre motorul de teme. Cât cresc ele sub o schemă cu umplutură (Modern) e treaba lui
-''' <c>ThemeTableFit</c>, chemat din <c>OnThemeChanged</c>; aici rămân măsurile alese cu ochiul.</para>
+''' <c>KBotTableLayoutPanel</c> (își reface singur rândurile fixe la temă și la scară); aici rămân măsurile alese cu ochiul.</para>
 '''
 ''' <para>Fereastra e fără chenar (e un meniu), iar «chenarul» de 1px se obține din
 ''' <c>Padding</c>-ul formularului plus fundalul lui: culoarea vine din temă, în
@@ -53,13 +53,13 @@ Partial Class KBotFilterPopup
         pnlCorp = New Panel()
         pnlFile = New Panel()
         pnlSortare = New Panel()
-        tlySortare = New TableLayoutPanel()
+        tlySortare = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnSortAsc = New Button()
         btnSortDesc = New Button()
         sepSortare = New Panel()
         btnSortClear = New Button()
         pnlFiltrare = New Panel()
-        tlyFiltrare = New TableLayoutPanel()
+        tlyFiltrare = New Global.KBot.Controls.KBotTableLayoutPanel()
         picCauta = New PictureBox()
         txtCauta = New KBotTextField()
         chkSelecteazaTot = New CheckBox()
@@ -68,7 +68,7 @@ Partial Class KBotFilterPopup
         btnConditii = New Button()
         btnStergeFiltru = New Button()
         pnlGrupare = New Panel()
-        tlyGrupare = New TableLayoutPanel()
+        tlyGrupare = New Global.KBot.Controls.KBotTableLayoutPanel()
         chkGrupeaza = New CheckBox()
         pnlSensGrup = New Panel()
         rbGrupCresc = New RadioButton()
@@ -418,7 +418,7 @@ Partial Class KBotFilterPopup
         ' pnlSensGrup
         '
         ' AutoSize, nu Dock=Fill: pe o schemă cu alt font butoanele radio cresc, iar un panou care
-        ' își ia înălțimea din celulă n-are cum să spună asta mai departe. Așa ThemeTableFit îl
+        ' își ia înălțimea din celulă n-are cum să spună asta mai departe. Așa KBotTableLayoutPanel îl
         ' întreabă cât cere și mărește rândul cu exact atât.
         pnlSensGrup.AutoSize = True
         pnlSensGrup.AutoSizeMode = AutoSizeMode.GrowAndShrink
@@ -644,13 +644,13 @@ Partial Class KBotFilterPopup
     Friend WithEvents pnlCorp As Panel
     Friend WithEvents pnlFile As Panel
     Friend WithEvents pnlSortare As Panel
-    Friend WithEvents tlySortare As TableLayoutPanel
+    Friend WithEvents tlySortare As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnSortAsc As Button
     Friend WithEvents btnSortDesc As Button
     Friend WithEvents sepSortare As Panel
     Friend WithEvents btnSortClear As Button
     Friend WithEvents pnlFiltrare As Panel
-    Friend WithEvents tlyFiltrare As TableLayoutPanel
+    Friend WithEvents tlyFiltrare As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents picCauta As PictureBox
     Friend WithEvents txtCauta As KBotTextField
     Friend WithEvents chkSelecteazaTot As CheckBox
@@ -659,7 +659,7 @@ Partial Class KBotFilterPopup
     Friend WithEvents btnConditii As Button
     Friend WithEvents btnStergeFiltru As Button
     Friend WithEvents pnlGrupare As Panel
-    Friend WithEvents tlyGrupare As TableLayoutPanel
+    Friend WithEvents tlyGrupare As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents chkGrupeaza As CheckBox
     Friend WithEvents pnlSensGrup As Panel
     Friend WithEvents rbGrupCresc As RadioButton

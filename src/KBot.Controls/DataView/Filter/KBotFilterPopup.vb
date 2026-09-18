@@ -119,11 +119,8 @@ Partial Friend NotInheritable Class KBotFilterPopup
                    currentSort As KBotSortDirection, Optional grid As KBotDataView = Nothing)
         InitializeComponent()
 
-        ' Instantaneul măsurilor AUTORATE, ÎNAINTE de orice atingere a temei (vezi ThemeTableFit):
-        ' după prima scriere a schemei, valoarea aleasă cu ochiul în designer nu mai există.
-        ThemeTableFit.Capture(tlySortare)
-        ThemeTableFit.Capture(tlyFiltrare)
-        ThemeTableFit.Capture(tlyGrupare)
+        ' The three tables are KBotTableLayoutPanels (slice 0066): they keep their authored
+        ' measures themselves and refit on every theme and scale pass -- nothing to capture here.
 
         _columnKey = columnKey
         _columnCaption = If(columnCaption, String.Empty)
@@ -316,7 +313,7 @@ Partial Friend NotInheritable Class KBotFilterPopup
         ' ȘI rândul lui se strânge la zero — altfel ar rămâne o bandă goală în mijlocul filei.
         Dim areConditii As Boolean = KBotFilterEngine.AllowedOperators(_valueType).Length > 0
         btnConditii.Visible = areConditii
-        ThemeTableFit.SetRowCollapsed(tlyFiltrare, RandConditii, Not areConditii)
+        tlyFiltrare.SetRowCollapsed(RandConditii, Not areConditii)
         If areConditii Then btnConditii.Text = KBotFilterEngine.ConditionMenuCaption(_valueType) & "  ▸"
     End Sub
 
@@ -399,9 +396,9 @@ Partial Friend NotInheritable Class KBotFilterPopup
     Private Sub AjusteazaInaltimea()
         ' Rândurile fixe se pun întâi pe măsura schemei (umplutura și fontul ei), altfel fereastra
         ' s-ar croi pe niște rânduri care se schimbă imediat după.
-        ThemeTableFit.Fit(tlySortare)
-        ThemeTableFit.Fit(tlyFiltrare)
-        ThemeTableFit.Fit(tlyGrupare)
+        tlySortare.RefitToTheme()
+        tlyFiltrare.RefitToTheme()
+        tlyGrupare.RefitToTheme()
         PerformLayout()
 
         Dim cere As Integer = InaltimeaFilei()

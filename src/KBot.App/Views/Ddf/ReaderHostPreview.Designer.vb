@@ -22,7 +22,7 @@ Partial Class ReaderHostPreview
         tips = New Global.KBot.Controls.KBotToolTip(components)
         pnlHost = New Panel()
         pnlMissing = New Panel()
-        tblMissing = New TableLayoutPanel()
+        tblMissing = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblMissing = New Label()
         btnGenereaza = New Button()
         lblMessage = New Label()
@@ -154,7 +154,7 @@ Partial Class ReaderHostPreview
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlHost As Panel
     Friend WithEvents pnlMissing As Panel
-    Friend WithEvents tblMissing As TableLayoutPanel
+    Friend WithEvents tblMissing As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblMissing As Label
     Friend WithEvents btnGenereaza As Button
     Friend WithEvents lblMessage As Label

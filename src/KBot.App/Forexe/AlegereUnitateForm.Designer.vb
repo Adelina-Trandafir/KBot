@@ -46,10 +46,10 @@ Partial Class AlegereUnitateForm
         btnAlege = New Button()
         btnRenunta = New Button()
         pnlCard = New Panel()
-        tlpBody = New TableLayoutPanel()
+        tlpBody = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblTitle = New Label()
         lblIntro = New Label()
-        tlpInfo = New TableLayoutPanel()
+        tlpInfo = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblCapAngajament = New Label()
         lblAngajament = New Label()
         lblCapIndicator = New Label()
@@ -57,7 +57,7 @@ Partial Class AlegereUnitateForm
         lblCapClsf = New Label()
         lblClsf = New Label()
         ntfError = New KBotNotice()
-        tlpButtons = New TableLayoutPanel()
+        tlpButtons = New Global.KBot.Controls.KBotTableLayoutPanel()
         capBar = New KBotCaptionBar()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         pnlCard.SuspendLayout()
@@ -417,10 +417,10 @@ Partial Class AlegereUnitateForm
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
     Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
-    Friend WithEvents tlpBody As TableLayoutPanel
+    Friend WithEvents tlpBody As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblTitle As Label
     Friend WithEvents lblIntro As Label
-    Friend WithEvents tlpInfo As TableLayoutPanel
+    Friend WithEvents tlpInfo As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblCapAngajament As Label
     Friend WithEvents lblAngajament As Label
     Friend WithEvents lblCapIndicator As Label
@@ -430,7 +430,7 @@ Partial Class AlegereUnitateForm
     Friend WithEvents grid As Global.KBot.Controls.KBotDataView
     Friend WithEvents chkRetine As CheckBox
     Friend WithEvents ntfError As Global.KBot.Controls.KBotNotice
-    Friend WithEvents tlpButtons As TableLayoutPanel
+    Friend WithEvents tlpButtons As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnRenunta As Button
     Friend WithEvents btnAlege As Button
 End Class

@@ -31,11 +31,11 @@ Partial Class OrdZiuaForm
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
         tips = New KBotToolTip(components)
-        tlyMain = New TableLayoutPanel()
+        tlyMain = New Global.KBot.Controls.KBotTableLayoutPanel()
         capBar = New KBotCaptionBar()
         lblIntro = New Label()
         dtpZiua = New DateTimePicker()
-        tlySubsol = New TableLayoutPanel()
+        tlySubsol = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnRenunta = New Button()
         btnOk = New Button()
         tlyMain.SuspendLayout()
@@ -167,11 +167,11 @@ Partial Class OrdZiuaForm
     End Sub
 
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
-    Friend WithEvents tlyMain As TableLayoutPanel
+    Friend WithEvents tlyMain As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents lblIntro As Label
     Friend WithEvents dtpZiua As DateTimePicker
-    Friend WithEvents tlySubsol As TableLayoutPanel
+    Friend WithEvents tlySubsol As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnRenunta As Button
     Friend WithEvents btnOk As Button
 End Class
