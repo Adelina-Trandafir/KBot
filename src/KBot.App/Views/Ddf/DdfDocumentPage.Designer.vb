@@ -213,8 +213,8 @@ Partial Class DdfDocumentPage
         ' 
         ' DdfDocumentPage
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(tlyPDF)
         Controls.Add(pnlAdobe)
         Controls.Add(lblAvizSetari)

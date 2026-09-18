@@ -33,9 +33,10 @@ Imports KBot.Controls
 ' All controls are declared HERE (docs/kbot-forms-ui-convention.md).
 ' Coordinates are written at 144 dpi -- the file was saved from the designer on a 150% screen,
 ' and Visual Studio rewrites the coordinates and the stamp together when it does.
-' AutoScaleDimensions goes with them: Calibri 9 measures (9, 22) there (slice 0052). The two
-' always change together; a stamp taken from another font or another dpi squashes the window
-' on open, with nothing in the designer to show it.
+' AutoScaleDimensions goes with them: (144, 144) in AutoScaleMode.Dpi (slice 0066-02; before
+' that the font pair (9, 22), which scaled non-uniformly). The two always change together; a
+' stamp from another dpi squashes or inflates the window on open, with nothing in the designer
+' to show it.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfEditForm
     Inherits Global.KBot.Theming.KBotShellForm
@@ -620,8 +621,8 @@ Partial Class DdfEditForm
         ' 
         ' DdfEditForm
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(1641, 1000)
         Controls.Add(tlyMain)
         FormBorderStyle = FormBorderStyle.None

@@ -745,8 +745,8 @@ Partial Class DataViewPlaygroundForm
         ' DataViewPlaygroundForm
         ' 
         AcceptButton = btnPass
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         CancelButton = btnFail
         ClientSize = New Size(1180, 700)
         Controls.Add(grid)

@@ -440,8 +440,8 @@ Partial Class RecorderForm
         '
         ' RecorderForm
         '
-        AutoScaleDimensions = New System.Drawing.SizeF(7F, 15F)
-        AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        AutoScaleDimensions = New System.Drawing.SizeF(96F, 96F)
+        AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         ClientSize = New System.Drawing.Size(1400, 900)
         Controls.Add(splitMain)
         MinimumSize = New System.Drawing.Size(1000, 640)

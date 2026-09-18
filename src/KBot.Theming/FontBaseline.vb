@@ -23,7 +23,7 @@ Imports KBot.Common
 '''
 ''' <para><b>De ce nu se ghicește.</b> Prima formă compara REFERINȚA fontului scris de noi cu cea
 ''' de pe control, ca să vadă dacă l-a rescris altcineva. Nu ține pe un <c>Form</c>: fiindcă
-''' formularele sunt <c>AutoScaleMode.Font</c>, scrierea fontului declanșează
+''' formularele erau, pana la felia 0066-02, <c>AutoScaleMode.Font</c>, scrierea fontului declanșează
 ''' <c>PerformAutoScale</c>, iar autoscalarea își face PROPRIA instanță de <c>Font</c> — deci
 ''' obiectul de pe control nu mai era niciodată cel scris de noi, tocmai în cazul care contează.
 ''' Rezultatul: baza se muta la fiecare pas și mărimile se compuneau (10 → 15 → 30 în loc de 20).

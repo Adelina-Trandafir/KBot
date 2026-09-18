@@ -236,8 +236,8 @@ Partial Class XfaXmlPreview
         ' 
         ' XfaXmlPreview
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(pnlContent)
         Controls.Add(pnlMissing)
         Controls.Add(lblMessage)

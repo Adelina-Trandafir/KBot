@@ -219,7 +219,8 @@ Partial Class PopupPlaygroundForm
         '
         ' AcceptButton lipsește INTENȚIONAT: Enter trebuie să ajungă la meniu, nu la «Pass».
         Me.CancelButton = Me.btnFail
-        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(144F, 144F)
+        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(760, 480)
         ' Ordine INVERSĂ de andocare (regula casei): Fill întâi, apoi benzile Top/Bottom —
         ' ultimul Top adăugat ajunge cel mai sus.

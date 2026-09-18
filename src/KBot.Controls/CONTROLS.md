@@ -48,6 +48,11 @@ Every public pixel number is a LOGICAL pixel at 96 dpi. Scaling happens at paint
 time from `DeviceDpi / 96` (`ThemeShapes.ScaleDpi`). Public getters stay logical — never
 write a scaled value back into a public property or the next load scales it again.
 Fonts are in points and scale themselves.
+A number the designer serialized into a `AutoScaleMode.Dpi` form is in the dpi of the surface
+it was saved on (`AutoScaleDimensions`); a control that keeps such numbers logical converts
+them ONCE, at its first snapshot, from the nearest container's stamp -- see
+`KBotTableLayoutPanel.DesignDpi` (0066-02). Never from `DeviceDpi`: that is the screen, not
+the designer.
 
 ## C3 — no silent no-ops
 Empty key, duplicate key, unknown key → `ArgumentException`. Impossible state (collapse a

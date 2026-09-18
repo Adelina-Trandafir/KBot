@@ -10,7 +10,8 @@ Imports KBot.Theming
 ''' <c>AdvancedTreeControl.Dpi.vb</c> and <c>KBotDataView.Dpi.vb</c>, same disease, same cure.
 '''
 ''' <para><b>Two values for every measure.</b> The AUTHORED value is logical (px at 96 dpi):
-''' what the designer wrote, what <see cref="Padding"/> returns, what the tests read. The LIVE
+''' what the designer wrote brought to 96 dpi (see below), what <see cref="Padding"/> returns
+''' after the first snapshot, what the tests read. The LIVE
 ''' value -- the <c>RowStyle</c>/<c>ColumnStyle</c> the layout engine reads, <c>MyBase.Padding</c>
 ''' -- is the authored value times the scale, in whole pixels. The scale is
 ''' <c>AppScaling.FactorFor(Me)</c>: <c>DeviceDpi / 96</c> x the operator's text size under
@@ -18,13 +19,24 @@ Imports KBot.Theming
 ''' source, the same the tree and the grid read, so a 40px row and a 22px tree item keep their
 ''' proportion on every screen.</para>
 '''
-''' <para><b>Why the platform's factor is not the source.</b> WinForms' font autoscale rewrites
-''' Absolute styles and Padding with the ratio between two font heights, which at 150% measured
-''' 1.43 on X and 1.67 on Y (slice 0066 probe). It also rewrites them AGAIN at every font change,
-''' multiplying whatever is current. So the platform stays the TRIGGER (<see cref="ScaleControl"/>
-''' is where it does its work) but never the source: after every base call the live values are
-''' written back from the logical snapshot. Nothing is ever derived from a live value, so two
-''' passes cannot compound.</para>
+''' <para><b>Why the platform's factor is not the source.</b> Until slice 0066-02 the forms were
+''' <c>AutoScaleMode.Font</c>, whose autoscale rewrites Absolute styles and Padding with the ratio
+''' between two INTEGER font metrics -- 1.43 on X and 1.67 on Y at 150% (slice 0066 probe) -- and
+''' again at every font change, multiplying whatever is current. The forms are
+''' <c>AutoScaleMode.Dpi</c> now, which is exact and uniform, but the platform still multiplies
+''' the CURRENT value at every pass (the operator's zoom, a DPI change), so it stays the TRIGGER
+''' (<see cref="ScaleControl"/> is where it does its work) and never the source: after every base
+''' call the live values are written back from the logical snapshot. Nothing is ever derived from
+''' a live value, so two passes cannot compound and the table agrees with the tree to the pixel.</para>
+'''
+''' <para><b>In which pixels the designer wrote.</b> Those of the surface it was saved on: a form
+''' saved on a 150% screen carries <c>AutoScaleDimensions = (144, 144)</c> and every number in it
+''' is a 144-dpi pixel, a 48px row there being the 32px row of a form saved at 96 (slice 0066-02).
+''' The first snapshot reads that stamp from the nearest container that scales for itself
+''' (<see cref="DesignDpi"/>) and divides: logical = authored x 96 / designDpi -- the same rule
+''' the platform applies to every Bounds around the table, so the two never disagree. A
+''' Font-mode or None container, or no container at all, means 96: a table built in code writes
+''' logical values.</para>
 '''
 ''' <para><b>When the snapshot is taken.</b> At the first hook that runs, whichever it is:
 ''' <see cref="ScaleControl"/> BEFORE the base call (the platform's first autoscale is the first
@@ -33,8 +45,9 @@ Imports KBot.Theming
 ''' for a table built in code and added to a form already scaled. Rows or columns added at
 ''' runtime (a style count that changed) are read from their live value, unscaled.</para>
 '''
-''' <para><b>In the designer nothing is scaled</b> (C6): the scale reads 1, the live values are
-''' the authored ones, and the serializer writes what the operator typed.</para>
+''' <para><b>In the designer nothing is scaled</b> (C6): the scale reads 1, the design dpi reads
+''' 96, the live values are the authored ones, and the serializer writes what the operator typed
+''' -- on a 150% surface a 48 stays a 48, exactly like the Bounds beside it.</para>
 ''' </summary>
 Partial Public Class KBotTableLayoutPanel
     ' Declared HERE, in the partial that owns the scale: the interface has one member, and it is
@@ -57,6 +70,8 @@ Partial Public Class KBotTableLayoutPanel
     Private ReadOnly _collapsedCols As New HashSet(Of Integer)()
     ' The table's own padding, logical. MyBase.Padding carries the device value.
     Private _logicalPadding As Padding = Padding.Empty
+    ' The dpi the designer wrote in, read once at the first snapshot (96 until then).
+    Private _designDpi As Single = 96.0F
 
     ' A platform scale rounds to whole pixels (measured); a "same value" test needs a tolerance.
     Private Const SameValueTolerance As Single = 0.75F
@@ -257,6 +272,13 @@ Partial Public Class KBotTableLayoutPanel
     Private Sub EnsureBaseline()
         If _logicalCols IsNot Nothing AndAlso _logicalCols.Length = ColumnStyles.Count AndAlso
            _logicalRows.Length = RowStyles.Count Then Return
+        If _logicalCols Is Nothing Then
+            ' First capture: the live values are what the designer wrote, in the pixels of the
+            ' surface it was saved on. The padding was written before the table had a parent, so
+            ' it is brought to 96 dpi here, with the same number the styles get in Rebase.
+            _designDpi = ReadDesignDpi()
+            _logicalPadding = ScalePaddingBy(_logicalPadding, DesignToLogical())
+        End If
         _logicalCols = Rebase(ColumnStyles, _logicalCols, _lastCols)
         _logicalRows = Rebase(RowStyles, _logicalRows, _lastRows)
         _lastCols = NaNs(ColumnStyles.Count)
@@ -269,7 +291,8 @@ Partial Public Class KBotTableLayoutPanel
         For i As Integer = 0 To styles.Count - 1
             Dim live As Single = StyleValue(styles, i)
             If old Is Nothing Then
-                m(i) = live                                     ' first capture: authored = logical
+                ' First capture: the designer's pixels, brought to 96 dpi (a raw number for Percent / AutoSize).
+                m(i) = If(IsAbsolute(styles, i), live * DesignToLogical(), live)
             ElseIf i < old.Length AndAlso i < last.Length AndAlso Not Single.IsNaN(last(i)) AndAlso
                    Math.Abs(live - last(i)) <= SameValueTolerance Then
                 m(i) = old(i)                                   ' untouched since we wrote it
@@ -289,6 +312,40 @@ Partial Public Class KBotTableLayoutPanel
             m(i) = Single.NaN
         Next
         Return m
+    End Function
+
+    ' authored px -> logical px: 96 over the dpi the designer wrote in.
+    Private Function DesignToLogical() As Single
+        If _designDpi <= 0F Then Return 1.0F
+        Return 96.0F / _designDpi
+    End Function
+
+    ' The dpi the authored values are in: the AutoScaleDimensions of the nearest container that
+    ' scales for itself (AutoScaleMode other than Inherit), when it scales by Dpi -- read BEFORE
+    ' the platform's first autoscale updates it (the ScaleControl hook runs before the base call),
+    ' or after it, when the two are the same number because nothing had to be scaled. 96 for a
+    ' Font-mode or None container, for no container at all, and at design time, where the surface
+    ' shows the authored pixels as they are (C6).
+    Private Function ReadDesignDpi() As Single
+        If KBotDesignTime.IsDesignTime(Me) Then Return 96.0F
+        Dim p As Control = Parent
+        While p IsNot Nothing
+            Dim cc As ContainerControl = TryCast(p, ContainerControl)
+            If cc IsNot Nothing AndAlso cc.AutoScaleMode <> AutoScaleMode.Inherit Then
+                If cc.AutoScaleMode = AutoScaleMode.Dpi AndAlso cc.AutoScaleDimensions.Width > 0F Then
+                    Return cc.AutoScaleDimensions.Width
+                End If
+                Return 96.0F
+            End If
+            p = p.Parent
+        End While
+        Return 96.0F
+    End Function
+
+    Private Shared Function ScalePaddingBy(p As Padding, k As Single) As Padding
+        If Math.Abs(k - 1.0F) < 0.0001F Then Return p
+        Return New Padding(CInt(Math.Round(p.Left * k)), CInt(Math.Round(p.Top * k)),
+                           CInt(Math.Round(p.Right * k)), CInt(Math.Round(p.Bottom * k)))
     End Function
 
     Private Shared Function StyleValue(styles As TableLayoutStyleCollection, index As Integer) As Single
@@ -444,6 +501,15 @@ Partial Public Class KBotTableLayoutPanel
         If _logicalRows Is Nothing OrElse index < 0 OrElse index >= _logicalRows.Length Then Return -1.0F
         Return _logicalRows(index)
     End Function
+
+    ''' <summary>The dpi the designer wrote the styles and the padding in -- read at the first snapshot (96 before it, and at design time).</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property DesignDpi As Single
+        Get
+            Return _designDpi
+        End Get
+    End Property
 
     ''' <summary>True once the snapshot of the authored styles was taken.</summary>
     <Browsable(False)>

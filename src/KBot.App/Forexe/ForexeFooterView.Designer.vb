@@ -112,8 +112,8 @@ Partial Class ForexeFooterView
         ' 
         ' ForexeFooterView
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(lblStatus)
         Controls.Add(btnIstoric)
         Controls.Add(btnExtinde)

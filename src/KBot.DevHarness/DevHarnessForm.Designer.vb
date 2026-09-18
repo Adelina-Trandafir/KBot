@@ -209,7 +209,8 @@ Partial Class DevHarnessForm
         '
         'DevHarnessForm
         '
-        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(144F, 144F)
+        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(984, 621)
         Me.Controls.Add(Me.split)
         Me.Controls.Add(Me.pnlBottom)

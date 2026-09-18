@@ -98,3 +98,16 @@ property grid — not by `New`-ing it and configuring it in code-behind.
   handlers, resolving image keys against the runtime icon cache, and anything driven by
   the session or API response. Runtime-only members (`SelectedNode`, `Items`, resolved
   header `Image`s, …) are `<Browsable(False)>` and never appear in the grid by design.
+
+## 9. Every form and UserControl autoscales by DPI, never by font (slice 0066-02)
+
+`AutoScaleMode = Dpi` and `AutoScaleDimensions = (d, d)` where `d` is the dpi of the
+screen the file was last saved on (`96`, `120`, `144`). Visual Studio writes both when it
+saves, together with every coordinate in the file, so they always change as a pair.
+`AutoScaleMode.Font` is forbidden: it scales by the ratio of two INTEGER font metrics
+(1.29 x 1.47 at 150%, 0.86 x 0.93 at 100% with text at 99% -- measured), never the same on
+both axes and never `DeviceDpi / 96`, so the same window came out different at 100%, 125%
+and 150% and never matched the tree, the grid or the table beside it. With `Dpi` the
+platform multiplies every rectangle by exactly `DeviceDpi / d`; the operator's text size
+and the K-BOT scaling modes are one uniform zoom on top (`AppScaling.ApplyZoom`), applied
+to geometry and fonts with the same number.

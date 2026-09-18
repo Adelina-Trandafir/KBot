@@ -42,8 +42,8 @@ Partial Class PlaceholderView
         '
         ' PlaceholderView
         '
-        AutoScaleDimensions = New SizeF(6F, 14F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(96F, 96F)
+        AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(lblMessage)
         Controls.Add(busy)
         Name = "PlaceholderView"

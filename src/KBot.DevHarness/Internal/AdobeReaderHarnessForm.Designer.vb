@@ -1962,8 +1962,8 @@ Partial Class AdobeReaderHarnessForm
         ' TabStop = False, deci nu pot fi nici focalizate cu Tab și apoi apăsate din greșeală.
         ' Verdictul se dă DOAR cu mouse-ul, pe butonul respectiv.
         AcceptButton = Nothing
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ' ATENȚIE: CancelButton apasă efectiv btnFail, deci Esc DĂ verdictul «Fail» (No) — nu doar
         ' închide. Setter-ul nu suprascrie DialogResult fiindcă nu e None. Lăsat aici deliberat
         ' (cererea a fost despre Enter); dacă nici Esc nu trebuie să dea verdict, se șterge linia.

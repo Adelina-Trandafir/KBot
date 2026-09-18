@@ -38,7 +38,8 @@ Partial Public Class AdvancedTreeControl
     Implements IDpiScaledControl
 
     ' Scara măsurilor proprii. 1 = 96 dpi. Sursa e DeviceDpi / 96, NU factorul primit de la
-    ' WinForms: `AutoScaleMode.Font` dă raportul înălțimilor de font (~1,45 la 150%, nu 1,5), iar
+    ' WinForms: `AutoScaleMode.Font` (the forms' mode until slice 0066-02) gave the ratio of two
+    ' integer font metrics (~1.45 at 150%, not 1.5); `AutoScaleMode.Dpi` now gives 1.5, iar
     ' constantele din pictură trec deja prin `ThemeShapes.ScaleDpi`, care citește DeviceDpi. Două
     ' surse ar însemna măsuri care nu se potrivesc între ele cu câțiva pixeli.
     '

@@ -171,3 +171,135 @@ modul de scalare și mărimea textului se pun înapoi la închidere.
 - ⚠ Testele vechi de formă (`ThemeFormFitTests`) n-au fost atinse și nu folosesc butoane
   andocate sau `IThemedControl`, deci regulile noi din `ContentDemand` nu le ating pe hârtie
   — de confirmat la rulare.
+
+---
+
+# 0066-02 — corectură: formularele se scalează la DPI, nu la font
+
+Operatorul a deschis bancul 0062 la 100%, 125% și 150% (18.09.2026) și a pus capturile una
+lângă alta: *«NONE OF THEM ARE EQUAL … on 100% scaling the tablelayout is huge»*. Are
+dreptate, și cauza nu era în tabel: felia 0066 pusese tabelul pe rigla arborelui, dar
+FORMULARUL din jurul lui nu era pe nicio riglă.
+
+## 1. Ce era stricat
+
+Toate cele 69 de formulare și vederi din `src/` erau `AutoScaleMode.Font`. Din sursa .NET 8
+(`ContainerControl.GetFontAutoScaleDimensions`): factorul e raportul a două metrici ÎNTREGI
+de font — `tmHeight` și lățimea medie rotunjită («intentional integer round off here for
+Win32 compat») — față de perechea ștampilată în designer. Cifrele din capturile operatorului
+(baza formularului 0062, autorat 1180×640 la 96 dpi cu (7, 15)):
+
+| ecran | text | perechea măsurată | factorul platformei | `DeviceDpi/96` |
+|---|---|---|---|---|
+| 100% | 99% | (6, 14) | **0,857 × 0,933** | 1,00 |
+| 125% | 100% | (8, 18) | **1,143 × 1,200** | 1,25 |
+| 150% | 99% | (9, 22) | **1,286 × 1,467** | 1,50 |
+
+Niciunul nu e `DeviceDpi/96`, niciunul nu e la fel pe cele două axe, și fiecare DPI dă alt
+raport — deci aceeași fereastră nu putea arăta la fel pe două ecrane. Arborele, grila și (de
+la 0066) tabelul desenau corect, la 1,00 / 1,25 / 1,50, și tocmai de aceea IEȘEAU din
+proporție: la 100% tabelul era la 1,00 într-un formular la 0,857 × 0,933 — «huge».
+
+Confirmat și cu o sondă separată (`scratchpad/probe`, aceeași fereastră autorată la 96 pe
+ecranul de 150%): `Font` (7, 15) → client 1686×1067 (1,43 × 1,67); `Dpi` (96, 96) → client
+1770×960 (1,50 × 1,50 exact), rând de tabel 32→48, umplutură 8→12, buton 100×30→150×45;
+schimbarea fontului sub `Dpi` nu mișcă nimic; `Control.Scale(1,1)` înmulțește uniform tot
+(client 1947×1056, rând 53, `MinimumSize` 1471×789) și se întoarce exact.
+
+## 2. Ce s-a schimbat
+
+1. **Toate cele 69 de designere: `AutoScaleMode.Dpi`, `AutoScaleDimensions = (d, d)`**, cu
+   `d` dpi-ul ecranului pe care a fost salvat fișierul, dedus din perechea de font pe care o
+   purta: (6, 14) și (7, 15) → 96; (8, 18) → 120 (un singur formular,
+   `CertificateSelectionForm`); (9, 22) și (10, 25) → 144. Casa ȘTIA deja asta — comentariile
+   din 14 designere spuneau «coordonatele sunt scrise la 144 dpi … Calibri 9 se măsoară (9,
+   22) acolo» — și acele comentarii au fost rescrise pentru ștampila nouă. Platforma
+   înmulțește acum fiecare `Bounds`, `Margin`, `Padding`, `MinimumSize` și stil fix cu exact
+   `DeviceDpi / d`, pe ambele axe.
+   Opt formulare din `KBot.DevHarness` (`DevHarnessForm`, `AsociereStressForm`,
+   `BrowserDockHarnessForm`, `DataViewHarnessForm`, `PopupPlaygroundForm`, `ThemeGalleryForm`,
+   `TreePlaygroundForm`, `TreeVisualForm`) n-aveau NICIO ștampilă, deci nu se scalau deloc, nici
+   înainte; au primit (144, 144) — dpi-ul ecranului pe care sunt desenate — și de acum se
+   scalează ca toate celelalte.
+2. **`AppScaling`: un singur zoom peste platformă.** `PlatformFactorFor` (= `DeviceDpi/96`),
+   `ZoomFor` (= `FactorFor / PlatformFactorFor`: mărirea textului sub Automatic; `96/dpi ×
+   text` sub Fix 100%; `factor × 96/dpi × text` sub Manual), `ApplyZoom(root)` (pune DIFERENȚA
+   față de zoom-ul deja pus prin `Control.Scale`, pe formulare și `UserControl`-uri proiectate,
+   idempotent, cu rădăcinile de dedesubt însemnate ca să nu fie înmulțite de două ori),
+   `AppliedZoomOf` (seam). `ApplyTextScale` și `Broadcast` fac întâi zoom-ul, apoi fonturile;
+   `TextFactorFor` E `ZoomFor`, deci sub Fix 100% / Manual se scalează și fonturile cu același
+   număr — «Fix 100%» la 150% e acum fereastra de la 100% cu tot cu text, nu jumătate din ea.
+   Compromisul documentat («fonturile nu pot fi oprite din afară») a dispărut odată cu cauza
+   lui. Cache-ul fonturilor derivate e pe (font, factor) și se golește și la `Configure`.
+   `ScreenFactorFor` șters (singurul apelant era captura de mai jos).
+3. **`ThemeFormFit.Capture`** reține `PlatformFactorFor`, nu partea de ecran a modului: baza
+   fotografiată la `OnCreateControl` poartă exact `DeviceDpi/96`, în orice mod, și podeaua
+   devine `captured × zoom`. **`KBotThemedForm.OnDpiChanged`** re-pune zoom-ul (nimic sub
+   Automatic; sub Fix 100% / Manual factorul e față de ecranul NOU) și repotrivește.
+4. **`KBotTableLayoutPanel`: logic = autorat × 96 / `DesignDpi`.** La prima fotografie citește
+   `AutoScaleDimensions` de la cel mai apropiat container care se scalează singur (înaintea
+   apelului de bază din `ScaleControl`, când ștampila e încă cea din designer; sau după, când
+   n-a fost nimic de scalat și cele două sunt același număr) și împarte — stilurile fixe ȘI
+   umplutura (scrisă înainte ca tabelul să aibă părinte). Un container Font/None, niciun
+   container, sau design time → 96 (C6 rămâne: pe suprafața de 150% un 48 stă 48). Seam
+   `DesignDpi`. Fără asta un tabel autorat la 144 (toate din `KBot.App`) ar fi ieșit de 1,5
+   ori prea mare pe orice ecran — «huge» a doua oară.
+5. Bancurile 0062 și 0066 spun acum pe față `AutoScale Dpi 144 dpi, DeviceDpi 144, zoom pus
+   1,00` și, la tabel, `tabel scris la 96 dpi`.
+
+## 3. Rezultate
+
+- `dotnet build KBot.sln`: **0 erori, 0 avertismente** în afara celor 7 `MSB3825` preexistente.
+- **Nicio suită n-a fost rulată și nimic nu s-a comis** (cerere explicită: «no tests no git»).
+- **Văzut pe ecran prin `DrawToBitmap`** (gazda de unică folosință `scratchpad/render`, pe
+  monitorul de 150%), bancul 0062 — chiar cel din capturile operatorului:
+
+| stare | client | coloanele tabelului | rând | `txtCauta` | buton `Reîmprospătează` | `pnlTop` |
+|---|---|---|---|---|---|---|
+| Automatic la 150% | 1770×960 → 1988×960 după fit | 120/300/12/120/180 | 48 | 300×48 | 180×48 | 66 |
+| Fix 100% (= cum arată la 100%) | 1326×640 | 80/200/8/80/120 | 32 | 200×32 | 120×32 | 44 |
+| Manual 1,25 (= cum arată la 125%) | 1657×800 | 100/250/10/100/150 | 40 | 250×40 | 150×40 | 55 |
+| Automatic, text 110% | 2187×1056 | 132/330/13/132/198 | 53 | 330×53 | 198×53 | 73 |
+
+  Aceeași imagine la 2/3, 5/6 și 1 (1326 × 1,5 = 1989, 640 × 1,5 = 960; 1326 × 1,25 = 1657,5),
+  cu fonturile 6 / 7,5 / 9 pt. Lățimea peste 1180 e cererea de conținut a fit-ului din 0062,
+  și ea uniformă. Bancul 0066: coloanele 90/180/12/110 → 135/270/18/165, rânduri 32→48,
+  umplutură 8→12, arbore 48 = rând 48; sub Fix 100% totul înapoi la cifrele autorate.
+- **Un formular autorat la 144** (o clasă de probă din gazdă, `KBotThemedForm` cu
+  `AutoScaleDimensions = (144, 144)`, rând 48, coloană 120, umplutură 12, client 1770×960):
+  la 150% neatins (rând 48, logic 32, `DesignDpi` 144, umplutură 12 = logic 8); sub Fix 100%
+  exact 2/3 (1180×640, rând 32, coloană 80, umplutură 8, buton 45→30); înapoi exact.
+
+## 4. Neverificat / amânat
+
+- ⚠ Cele ~70 de formulare reale NU s-au deschis; la 150% cele autorate la 144 (tot `KBot.App`)
+  ies IDENTIC cu ieri (factor 1), iar cele autorate la 96 (bancurile, `RecorderForm`) ies la
+  1,5 în loc de 1,29 × 1,47 — deci mai mari. La 100% și 125% toate ies acum la 2/3 respectiv
+  5/6 uniform, în loc de 0,857 × 0,933 / 1,143 × 1,2. De văzut pe un ecran la 100%.
+- ⚠ Butoanele `AutoSize` (`GrowOnly`) nu se mai strâng după un zoom în jos: `btnClassic` din
+  banc a ieșit 39 la 150%, 35 în «100%», 44 în «125%» și 53 după dus-întors prin text 110% —
+  regula platformei (`AutoSize` nu scade sub `Size`), la fel ca înainte de 0066-02, dar acum
+  vizibilă pe o riglă altfel exactă. La deschidere curată e proporțional.
+- ⚠ Fonturile la schimbarea monitorului: platforma rescrie `Font.Size` cu `nou/vechi`
+  (`Control.GetScaledFont`), iar `FontBaseline` ține baza dinaintea schimbării; `OnDpiChanged`
+  re-pune doar zoom-ul geometric. Neverificat (un singur monitor).
+- ⚠ Un tabel construit în cod și adăugat unui formular deja scalat n-are ștampilă; stilurile
+  lui se citesc ca logice (nu există niciunul în `src/`).
+- ⚠ Testele existente compilează, dar n-au fost rulate; `AppScalingTests` /
+  `TextScaleFontsTests` testează `FactorFor`/`TextScale`, nu `TextFactorFor` sub Fix 100%, deci
+  pe hârtie nu le atinge nimic — de confirmat.
+- ⚠ Designerul VS nu s-a deschis pe niciun formular `Dpi`; la salvare pe 150% va scrie
+  `(144, 144)` — comportamentul documentat al designerului out-of-process, raționat, nu văzut.
+
+## 5. Fișiere atinse (0066-02)
+
+- 69 × `*.Designer.vb` (`KBot.App` 44, `KBot.Controls` 4, `KBot.DevHarness` 15, `KBot.Forexe`
+  4, `KBot.Migrator` 1): `AutoScaleMode.Dpi` + ștampila; 14 dintre ele cu comentariul de antet
+  rescris.
+- `src/KBot.Theming/AppScaling.vb`, `ThemeFormFit.vb`, `KBotThemedForm.vb`, `FontBaseline.vb`
+  (comentariu), `KBotFonts.vb` (comentariu).
+- `src/KBot.Controls/Table/KBotTableLayoutPanel.Dpi.vb`, `KBotTableLayoutPanel.md`,
+  `CONTROLS.md` (C2); `DataView/KBotDataView.Dpi.vb`, `Tree/AdvancedTreeControl.Dpi.vb`
+  (comentarii).
+- `src/KBot.DevHarness/Internal/FormFitHarnessForm.vb`, `TableLayoutHarnessForm.vb` (readout).
+- `docs/kbot-forms-ui-convention.md` §9, `CLAUDE.md` (regula Autoscale), `KBOT_STATUS.md`.

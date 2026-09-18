@@ -207,7 +207,8 @@ Partial Class BrowserDockHarnessForm
         '
         'BrowserDockHarnessForm
         '
-        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(144F, 144F)
+        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(1360, 880)
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = "Banc de probă — browser andocat + monitor Wicket"

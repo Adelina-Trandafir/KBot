@@ -106,8 +106,8 @@ Partial Class DdfFileBrowser
         '
         ' DdfFileBrowser
         '
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(grid)
         Controls.Add(lblEmpty)
         Name = "DdfFileBrowser"

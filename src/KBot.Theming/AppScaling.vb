@@ -1,5 +1,6 @@
 Option Strict On
 Imports System.Collections.Generic
+Imports System.Runtime.CompilerServices
 Imports System.Drawing
 Imports System.Windows.Forms
 Imports KBot.Common
@@ -31,23 +32,31 @@ End Enum
 ''' înapoi pe valorile din designer, iar <see cref="ScalingMode.Manual"/> îi dă un singur număr pe
 ''' care îl poate potrivi cu ochii.</para>
 '''
-''' <para><b>Onestitate — ce NU face.</b> Aici se decide DOAR scara măsurilor NOASTRE. Fonturile
-''' (care sunt în puncte) și <c>Bounds</c>-urile controalelor obișnuite le scalează în continuare
-''' WinForms prin <c>AutoScaleMode.Font</c>, iar acela nu poate fi oprit din afară. Deci pe
-''' «Fix 100%» la 150% textul va fi în continuare mai mare decât geometria din jurul lui — e
-''' compromisul modului, nu o scăpare. Singurul comutator care dă proporții IDENTICE cu
-''' proiectarea e <see cref="DpiUnaware"/>, fiindcă acolo întinde Windows toată fereastra ca
-''' bitmap; costul e textul mai moale. De aceea sunt două setări, nu una.</para>
+''' <para><b>What the platform does and what we do (slice 0066-02).</b> Every form is
+''' <c>AutoScaleMode.Dpi</c>: WinForms multiplies EVERY rectangle by itself (Bounds, Margin,
+''' Padding, the fixed styles of the tables, MinimumSize) by <c>DeviceDpi / design dpi</c> -- the
+''' same number on both axes, exactly. Until 0066-02 the forms were <c>AutoScaleMode.Font</c>,
+''' which multiplies by the ratio of two INTEGER font metrics (the rounded average character
+''' width and the line height): MEASURED 1.29 on X and 1.47 on Y at 150%, 0.86 x 0.93 at 100%
+''' with the text at 99% -- never <c>DeviceDpi / 96</c>, never the same on both axes, and
+''' different at every DPI. That is why the same window looked different at 100%, 125% and
+''' 150%, and why the tree, the grid and the table (which drew correctly, at
+''' <c>DeviceDpi / 96</c>) never matched what stood around them. On top of the platform's scale
+''' we put ONE uniform zoom, <see cref="ZoomFor"/> -- the text size, plus, under
+''' <see cref="ScalingMode.Fixed100"/> / <see cref="ScalingMode.Manual"/>, the difference between
+''' the scale asked for and the screen's -- through <c>Control.Scale</c>, and we write the fonts
+''' with the SAME number. So geometry and text sit on a single ruler in all three modes: "Fix
+''' 100%" at 150% is the window of a 100% screen, text included. <see cref="DpiUnaware"/> stays
+''' for whoever prefers Windows' bitmap stretch.</para>
 '''
-''' <para><b>La design time scara e cea a suprafeței</b>, adică tot <c>DeviceDpi / 96</c>.
-''' Designerul VS 2022 pentru .NET rulează conștient de DPI: pe un ecran la 150% desenează la 144
-''' dpi și ștampilează în .Designer.vb pixeli de ecran (<c>AutoScaleDimensions = (9, 22)</c> pentru
-''' Calibri 9, care la 96 dpi măsoară (6, 14)). Dacă măsurile NOASTRE ar rămâne la 1 în designer,
-''' jumătate din desen (Bounds-urile WinForms, fonturile în puncte) ar fi la 150% și cealaltă
-''' jumătate (rânduri, benzi, umpluturi) la 100% — exact diferența văzută între designer și
-''' rulare. Pe un designer neconștient de DPI <c>DeviceDpi</c> e 96, deci același drum dă 1 acolo.
-''' Ce rămâne 1 la design time e doar MĂRIREA TEXTULUI (<see cref="TextFactorFor"/>): aceea e o
-''' setare a operatorului, nu a ecranului, iar designerul nu citește theme.json.</para>
+''' <para><b>At design time the scale is the surface's</b>, i.e. still <c>DeviceDpi / 96</c>.
+''' The VS 2022 designer for .NET runs DPI-aware: on a 150% screen it draws at 144 dpi and stamps
+''' screen pixels into .Designer.vb, with <c>AutoScaleDimensions = (144, 144)</c> next to them
+''' (before 0066-02 the font pair of the same dpi, (9, 22) for Calibri 9). If OUR measures stayed
+''' at 1 in the designer, half of the drawing would be at 150% and the other half (rows, bands,
+''' paddings) at 100% -- exactly the difference seen between designer and runtime. What stays 1
+''' at design time is only our ZOOM (<see cref="ZoomFor"/>): the text size is the operator's
+''' setting, not the screen's, and the designer does not read theme.json.</para>
 ''' </summary>
 Public Module AppScaling
 
@@ -127,14 +136,15 @@ Public Module AppScaling
     End Property
 
     ''' <summary>
-    ''' Mărimea textului pentru un control anume — 1 la design time, unde trebuie să se vadă exact
-    ''' ce s-a autorit. Perechea lui <see cref="FactorFor"/>, dar FĂRĂ partea de ecran: un font e în
-    ''' puncte, deci DPI-ul îl scalează deja sistemul; a-l înmulți și cu scara de ecran l-ar mări de
-    ''' două ori.
+    ''' The FONT size for a given control -- 1 at design time, where exactly what was authored
+    ''' must show. The same number as <see cref="ZoomFor"/>, because geometry and text sit on a
+    ''' single ruler (slice 0066-02): a font is in points, so the screen's DPI already scales it,
+    ''' and on top of that we put exactly what we put on the rectangles -- the text size, and
+    ''' under Fixed100 / Manual the difference to the screen. Under
+    ''' <see cref="ScalingMode.Automatic"/> it is exactly <see cref="TextScale"/>.
     ''' </summary>
     Public Function TextFactorFor(ctrl As Control) As Single
-        If ctrl IsNot Nothing AndAlso KBotDesignTime.IsDesignTime(ctrl) Then Return 1.0F
-        Return _textScale
+        Return ZoomFor(ctrl)
     End Function
 
     ''' <summary>
@@ -160,14 +170,15 @@ Public Module AppScaling
             Dim factor As Single = TextFactorFor(ctrl)
             If Math.Abs(factor - 1.0F) < 0.0001F Then Return source
 
+            Dim key As Tuple(Of Font, Single) = Tuple.Create(source, factor)
             Dim gata As Font = Nothing
-            If _scaledFonts.TryGetValue(source, gata) Then Return gata
+            If _scaledFonts.TryGetValue(key, gata) Then Return gata
 
             Dim marime As Single = source.Size * factor
             If marime <= 0F Then Return source
             gata = New Font(source.FontFamily, marime, source.Style, source.Unit,
                             source.GdiCharSet, source.GdiVerticalFont)
-            _scaledFonts(source) = gata
+            _scaledFonts(key) = gata
             Return gata
         Catch ex As Exception
             ' Predicat de pictură: o familie stricată nu are voie să arunce dintr-un OnPaint.
@@ -177,7 +188,7 @@ Public Module AppScaling
     End Function
 
     ' Fonturile derivate, pe fontul-sursă. Se golește la fiecare schimbare de mărime.
-    Private ReadOnly _scaledFonts As New Dictionary(Of Font, Font)()
+    Private ReadOnly _scaledFonts As New Dictionary(Of Tuple(Of Font, Single), Font)()
 
     ''' <summary>Aduce un factor între limite. Valorile absurde (0, negative) cad pe 1.</summary>
     Public Function ClampFactor(value As Single) As Single
@@ -216,26 +227,34 @@ Public Module AppScaling
     End Sub
 
     ''' <summary>
-    ''' Duce mărimea textului la un control și la toți copiii lui. O cheamă
-    ''' <c>ThemeManager.Apply</c> la SFÂRȘIT, după ce tema și-a scris fonturile — ordinea contează:
-    ''' invers, schema «Colorat» ar restaura fontul nescalat peste mărire și aceasta ar dispărea
-    ''' pe o singură schemă, ceea ce ar fi arătat ca un defect fără cauză.
+    ''' Carries the text size to a control and all its children -- FIRST the geometric zoom
+    ''' (<see cref="ApplyZoom"/>, once per root), then the fonts. <c>ThemeManager.Apply</c> calls
+    ''' it LAST, after the theme wrote its fonts -- the order matters: the other way round the
+    ''' "Colorat" scheme would restore the unscaled font over the enlargement and it would vanish
+    ''' on one scheme only, which would have looked like a defect without a cause.
     ''' </summary>
     Public Sub ApplyTextScale(root As Control)
         If root Is Nothing Then Return
         Try
             If KBotDesignTime.IsDesignTime(root) Then Return   ' în designer se vede ce s-a autorit
-            ScaleFontsRecursive(root)
+            ScaleTree(root)
         Catch ex As Exception
             GlobalErrorLog.Write("AppScaling.ApplyTextScale", ex)
             Throw
         End Try
     End Sub
 
-    ' Formularul PRIMUL: scrierea fontului lui declanșează autoscalarea WinForms, care mută
-    ' dreptunghiurile copiilor. Copiii cu font propriu se scalează după aceea, individual.
+    ' The geometric zoom on the root (moves the rectangles, once for the whole tree), then the
+    ' fonts, control by control. Under AutoScaleMode.Dpi writing a font no longer triggers any
+    ' platform autoscale, so the order of the two does not matter any more.
+    Private Sub ScaleTree(root As Control)
+        ApplyZoom(root)
+        ScaleFontsRecursive(root)
+    End Sub
+
+    ' Children with a font of their own are scaled individually; the rest inherit from the form.
     Private Sub ScaleFontsRecursive(ctrl As Control)
-        FontBaseline.ApplyScale(ctrl, _textScale)
+        FontBaseline.ApplyScale(ctrl, TextFactorFor(ctrl))
 
         Dim sc As SplitContainer = TryCast(ctrl, SplitContainer)
         If sc IsNot Nothing Then
@@ -269,6 +288,7 @@ Public Module AppScaling
         Try
             _mode = mode
             _manualFactor = ClampFactor(manualFactor)
+            _scaledFonts.Clear()   ' under Fixed100 / Manual the derived fonts depend on the mode
             ThemeStore.SaveScaling(_mode, _manualFactor, _dpiUnaware, _textScale)
             Broadcast()
             RaiseEvent ScalingChanged(Nothing, EventArgs.Empty)
@@ -313,20 +333,94 @@ Public Module AppScaling
     End Function
 
     ''' <summary>
-    ''' Only the SCREEN part of the scale (the mode: DPI, fixed 1, or the manual factor) --
-    ''' without the operator's text size. <see cref="ThemeFormFit"/> needs it at capture time: a
-    ''' form's client size right after <c>InitializeComponent</c> already carries the DPI (the
-    ''' platform autoscale ran), but not yet the text size, which the theme applies later in
-    ''' <c>OnLoad</c>. 1 for a control without a handle. Not short-circuited at design time, for
-    ''' the same reason as <see cref="FactorFor"/>: the designer surface is DPI-aware.
+    ''' Only what the PLATFORM does by itself for a control: <c>DeviceDpi / 96</c>, in every mode
+    ''' -- the scale <c>AutoScaleMode.Dpi</c> has already multiplied every rectangle by (slice
+    ''' 0066-02). 1 for a missing control. <see cref="ThemeFormFit"/> keeps it at capture, to know
+    ''' by how much the client size it photographs is already multiplied.
     ''' </summary>
-    Public Function ScreenFactorFor(ctrl As Control) As Single
+    Public Function PlatformFactorFor(ctrl As Control) As Single
         Try
-            Return EcranFactor(ctrl)
+            If ctrl Is Nothing Then Return 1.0F
+            Return CSng(ctrl.DeviceDpi / 96.0)
         Catch
             Return 1.0F
         End Try
     End Function
+
+    ''' <summary>
+    ''' OUR zoom over the platform's scale: <see cref="FactorFor"/> divided by
+    ''' <see cref="PlatformFactorFor"/>. Under <see cref="ScalingMode.Automatic"/> it is exactly
+    ''' <see cref="TextScale"/>; under Fixed100 at 150% it is <c>96 / 144 x text</c>; under Manual
+    ''' it is <c>factor x 96 / DeviceDpi x text</c>. This number goes on the rectangles through
+    ''' <see cref="ApplyZoom"/> (<c>Control.Scale</c>) AND on the fonts through
+    ''' <see cref="TextFactorFor"/>, so there is a single ruler. 1 at design time.
+    ''' </summary>
+    Public Function ZoomFor(ctrl As Control) As Single
+        Try
+            If ctrl IsNot Nothing AndAlso KBotDesignTime.IsDesignTime(ctrl) Then Return 1.0F
+            Return FactorFor(ctrl) / PlatformFactorFor(ctrl)
+        Catch
+            Return 1.0F
+        End Try
+    End Function
+
+    ' The zoom already put on each root (a form or a designed UserControl), so the next pass
+    ' writes only the DIFFERENCE -- Control.Scale multiplies what is there now, not what was
+    ' authored. ConditionalWeakTable: a closed window is not kept alive by its entry.
+    Private ReadOnly _zoomApplied As New ConditionalWeakTable(Of Control, StrongBox(Of Single))()
+
+    ''' <summary>
+    ''' The zoom the given root has been multiplied by so far through <see cref="ApplyZoom"/>;
+    ''' 1 if never. A reading seam for the bench and the tests.
+    ''' </summary>
+    Public Function AppliedZoomOf(root As Control) As Single
+        Dim box As StrongBox(Of Single) = Nothing
+        If root Is Nothing OrElse Not _zoomApplied.TryGetValue(root, box) Then Return 1.0F
+        Return box.Value
+    End Function
+
+    ''' <summary>
+    ''' Puts <see cref="ZoomFor"/> on the geometry of a root -- a form or a designed
+    ''' <c>UserControl</c> -- through <c>Control.Scale</c>, which multiplies Bounds, Margin,
+    ''' Padding, MinimumSize and the fixed styles of the tables uniformly, on it and on all its
+    ''' children. Writes only the difference to the zoom already applied, so it is idempotent. The
+    ''' designed roots below it (the views in the main form) are marked with the same zoom, so a
+    ''' later pass on one of them does not multiply it a second time. Returns <c>True</c> when it
+    ''' moved something. Nothing at design time and nothing on a control that is not a designed
+    ''' root.
+    ''' </summary>
+    Public Function ApplyZoom(root As Control) As Boolean
+        If root Is Nothing Then Return False
+        Try
+            If Not (TypeOf root Is Form OrElse TypeOf root Is UserControl) Then Return False
+            If KBotDesignTime.IsDesignTime(root) Then Return False
+            Dim want As Single = ZoomFor(root)
+            Dim have As Single = AppliedZoomOf(root)
+            Dim delta As Single = want / have
+            If Math.Abs(delta - 1.0F) < 0.0001F Then Return False
+            root.Scale(New SizeF(delta, delta))
+            MarkZoom(root, want)
+            Return True
+        Catch ex As Exception
+            GlobalErrorLog.Write("AppScaling.ApplyZoom", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Marks the root and every designed root below it with the zoom just applied.
+    Private Sub MarkZoom(ctrl As Control, zoom As Single)
+        If TypeOf ctrl Is Form OrElse TypeOf ctrl Is UserControl Then
+            Dim box As StrongBox(Of Single) = Nothing
+            If _zoomApplied.TryGetValue(ctrl, box) Then
+                box.Value = zoom
+            Else
+                _zoomApplied.Add(ctrl, New StrongBox(Of Single)(zoom))
+            End If
+        End If
+        For Each child As Control In ctrl.Controls
+            MarkZoom(child, zoom)
+        Next
+    End Sub
 
     ' Doar partea de ECRAN a scării — fără mărirea cerută de operator.
     Private Function EcranFactor(ctrl As Control) As Single
@@ -363,9 +457,9 @@ Public Module AppScaling
 
             For Each f As Form In ferestre
                 If f.IsDisposed Then Continue For
-                ' Fonturile ÎNTÂI: autoscalarea pe care o declanșează mută dreptunghiurile, deci
-                ' măsurile proprii trebuie recalculate DUPĂ ea, nu înainte.
-                ScaleFontsRecursive(f)
+                ' The zoom and the fonts FIRST: Control.Scale moves the rectangles, so our own
+                ' measures must be recomputed AFTER it, not before.
+                ScaleTree(f)
                 RefreshTree(f)
                 f.PerformLayout()
                 f.Invalidate(True)

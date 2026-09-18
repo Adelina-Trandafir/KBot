@@ -502,8 +502,8 @@ Partial Class KbotForm
         ' 
         ' KbotForm
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(1922, 1000)
         Controls.Add(pnlRoot)
         FormBorderStyle = FormBorderStyle.None

@@ -499,8 +499,8 @@ Partial Class LogViewerForm
         ' 
         ' LogViewerForm
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(1175, 873)
         Controls.Add(tlyMain)
         FormBorderStyle = FormBorderStyle.None

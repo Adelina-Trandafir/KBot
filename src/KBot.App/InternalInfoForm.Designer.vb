@@ -102,8 +102,8 @@ Partial Class InternalInfoForm
         '
         ' InternalInfoForm
         '
-        AutoScaleDimensions = New SizeF(6F, 14F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(96F, 96F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(380, 520)
         Controls.Add(pnlCard)
         FormBorderStyle = FormBorderStyle.None

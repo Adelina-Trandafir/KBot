@@ -225,8 +225,8 @@ Partial Class SelectieReceptiiForm
         '
         ' SelectieReceptiiForm
         '
-        AutoScaleDimensions = New SizeF(6F, 14F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(96F, 96F)
+        AutoScaleMode = AutoScaleMode.Dpi
         CancelButton = btnRenunta
         ClientSize = New Size(740, 500)
         Controls.Add(pnlCard)

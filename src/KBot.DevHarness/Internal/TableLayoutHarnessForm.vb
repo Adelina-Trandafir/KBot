@@ -327,6 +327,8 @@ Public NotInheritable Class TableLayoutHarnessForm
             Dim k As Single = tlyProbe.DpiScale
             Dim sb As New StringBuilder()
             sb.Append("scara ").Append(k.ToString("0.00")).Append(" (").Append(ModeText()).Append(", DeviceDpi ").Append(DeviceDpi).Append(", text ").Append(CInt(Math.Round(AppScaling.TextScale * 100))).Append("%)")
+            sb.Append("   fereastra: AutoScale ").Append(AutoScaleMode.ToString()).Append(" ").Append(AutoScaleDimensions.Width.ToString("0")).Append(" dpi, client ").Append(SizeText(ClientSize))
+            sb.Append(", zoom pus ").Append(AppScaling.AppliedZoomOf(Me).ToString("0.00")).Append(", tabel scris la ").Append(tlyProbe.DesignDpi.ToString("0")).Append(" dpi")
             sb.AppendLine()
 
             sb.Append("coloane autorat→acum: ")

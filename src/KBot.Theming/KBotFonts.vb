@@ -6,12 +6,13 @@ Imports KBot.Common
 ''' <summary>
 ''' THE ONE PLACE the application's base font is decided (slice 0052).
 '''
-''' <para><b>Why a single place matters more than the choice itself.</b> Every form is
-''' <c>AutoScaleMode.Font</c>, which means WinForms reads the form's font, compares it with the
-''' <c>AutoScaleDimensions</c> stamped in the designer file, and multiplies every child rectangle
-''' and the form's own <c>ClientSize</c> by the ratio. So the font is not a decoration — it is one
-''' half of a measurement, and the designer file is the other half. If the two halves disagree,
-''' every window opens at a size nobody drew.</para>
+''' <para><b>Why a single place matters more than the choice itself.</b> Until slice 0066-02
+''' every form was <c>AutoScaleMode.Font</c>: WinForms read the form's font, compared it with the
+''' <c>AutoScaleDimensions</c> stamped in the designer file, and multiplied every child rectangle
+''' and the form's own <c>ClientSize</c> by the ratio -- so the font was one half of a
+''' measurement, and a disagreement opened every window at a size nobody drew. The forms are
+''' <c>AutoScaleMode.Dpi</c> now and the font moves nothing; one base font still matters because
+''' the designer surface and the runtime must draw the same glyphs.</para>
 '''
 ''' <para>They did disagree. The designer surface laid out against the WinForms default (Segoe UI
 ''' 9), while the «Modern» scheme wrote «Segoe UI Variable Text» 9 over it at runtime. Measured on

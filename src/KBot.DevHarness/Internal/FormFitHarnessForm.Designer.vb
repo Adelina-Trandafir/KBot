@@ -493,8 +493,8 @@ Partial Class FormFitHarnessForm
         'FormFitHarnessForm
         '
         Me.CancelButton = Me.btnFail
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(7.0F, 15.0F)
-        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(96F, 96F)
+        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(1180, 640)
         ' Reverse dock order (house rule): Fill first, then Bottom, then the Top bands from the
         ' lowest to the highest -- the last Top added ends up on top.

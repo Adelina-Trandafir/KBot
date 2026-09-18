@@ -157,8 +157,8 @@ Partial Class ForexeHistoryForm
         '
         ' ForexeHistoryForm
         '
-        AutoScaleDimensions = New SizeF(6F, 14F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(96F, 96F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(1012, 661)
         Controls.Add(pnlCard)
         FormBorderStyle = FormBorderStyle.None

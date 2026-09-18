@@ -103,11 +103,14 @@ Public NotInheritable Class ThemeFormFit
     ''' Remembers the form's client size, minimum size and the scale of the moment. Idempotent:
     ''' only the first call for a form stores anything.
     '''
-    ''' <para>The scale stored is the SCREEN part only (<see cref="AppScaling.ScreenFactorFor"/>):
-    ''' measured, the client size right after <c>InitializeComponent</c> already carries the DPI
-    ''' (the platform autoscale ran) but not the operator's text size, which the theme applies
-    ''' later, in <c>OnLoad</c>. Storing the full factor would make a form captured at 125% text
-    ''' shrink BELOW its designer size when the operator went back to 100%.</para>
+    ''' <para>The scale stored is what the PLATFORM alone has already applied
+    ''' (<see cref="AppScaling.PlatformFactorFor"/>, <c>DeviceDpi / 96</c>): the client size right
+    ''' after <c>InitializeComponent</c> carries the Dpi autoscale but not yet our zoom -- the text
+    ''' size and, under Fixed100 / Manual, the mode's factor over the screen -- which the theme
+    ''' applies later, in <c>OnLoad</c> (slice 0066-02). The floor is then captured x
+    ''' <c>FactorFor / PlatformFactorFor</c> = captured x zoom, in every mode. Storing the full
+    ''' factor would make a form captured at 125% text shrink BELOW its designer size when the
+    ''' operator went back to 100%.</para>
     ''' </summary>
     Public Shared Sub Capture(target As Form)
         If target Is Nothing Then Throw New ArgumentNullException(NameOf(target))
@@ -116,7 +119,7 @@ Public NotInheritable Class ThemeFormFit
         _snapshots.Add(target, New FitSnapshot With {
             .ClientSize = target.ClientSize,
             .MinimumSize = target.MinimumSize,
-            .ScaleAtCapture = AppScaling.ScreenFactorFor(target)})
+            .ScaleAtCapture = AppScaling.PlatformFactorFor(target)})
     End Sub
 
     ''' <summary>True once <see cref="Capture"/> ran for the form.</summary>

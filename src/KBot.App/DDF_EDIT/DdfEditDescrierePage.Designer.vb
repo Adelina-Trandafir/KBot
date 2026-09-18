@@ -150,8 +150,8 @@ Partial Class DdfEditDescrierePage
         ' 
         ' DdfEditDescrierePage
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(tlyRoot)
         Margin = New Padding(0)
         Name = "DdfEditDescrierePage"

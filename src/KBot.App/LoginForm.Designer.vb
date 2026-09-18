@@ -308,8 +308,8 @@ Partial Class LoginForm
         ' 
         ' LoginForm
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(600, 867)
         Controls.Add(pnlCard)
         FormBorderStyle = FormBorderStyle.None

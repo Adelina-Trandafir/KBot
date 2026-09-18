@@ -34,8 +34,10 @@ Partial Class KBotDataView
     ' Scara măsurilor proprii. 1 = 96 dpi.
     '
     ' Sursa e DeviceDpi / 96, NU factorul primit de la WinForms. Sunt aproape la fel, dar nu
-    ' identice: `AutoScaleMode.Font` dă raportul dintre înălțimile de font, care la 150% iese
-    ' ~1,45, nu 1,5. Și tot restul picturii grilei folosește deja `ScaleDpi` (DeviceDpi) pentru
+    ' identice: `AutoScaleMode.Font` (the forms' mode until slice 0066-02) gave the ratio of two
+    ' integer font metrics, ~1.45 at 150%, not 1.5; `AutoScaleMode.Dpi` now gives 1.5, but it
+    ' multiplies the CURRENT value at every pass.
+    ' Și tot restul picturii grilei folosește deja `ScaleDpi` (DeviceDpi) pentru
     ' constantele ei. Dacă lățimile ar veni din factor iar spațiile dintre pictograme din
     ' DeviceDpi, podeaua de lățime și desenul ar ieși din DOUĂ formule și coloana s-ar putea
     ' strâmta cu câțiva pixeli sub ce se pictează efectiv — chiar scăparea descrisă în nota de

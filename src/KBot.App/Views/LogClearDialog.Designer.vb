@@ -189,8 +189,8 @@ Partial Class LogClearDialog
         '
         ' LogClearDialog
         '
-        AutoScaleDimensions = New SizeF(6F, 14F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(96F, 96F)
+        AutoScaleMode = AutoScaleMode.Dpi
         CancelButton = btnRenunta
         ClientSize = New Size(700, 460)
         Controls.Add(pnlCard)

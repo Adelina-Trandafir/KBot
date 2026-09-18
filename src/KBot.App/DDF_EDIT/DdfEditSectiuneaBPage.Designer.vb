@@ -16,9 +16,9 @@ Imports KBot.Controls
 ' colours, same money format (`Standard` -- thousand separators, as in every grid of
 ' `OrdEditForm`), same fill behaviour. The two sit one nav click apart and show the same
 ' document; a different font or a number written two ways between them reads as two
-' applications. `AutoScaleDimensions` is (9, 22) for the same reason -- it was 7x15 here and
-' 10x25 on the other three pages of this form, so this one alone came out scaled up beside
-' its siblings. All four now carry the Calibri 9 pair at 144 dpi (slice 0052).
+' applications. `AutoScaleDimensions` is (144, 144) in AutoScaleMode.Dpi for the same reason --
+' all four pages of this form are authored at 144 dpi and must say so (slice 0052 aligned the
+' font pairs; slice 0066-02 replaced them with the dpi stamp).
 '
 ' All controls are declared HERE (docs/kbot-forms-ui-convention.md).
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
@@ -236,8 +236,8 @@ Partial Class DdfEditSectiuneaBPage
         '
         ' DdfEditSectiuneaBPage
         '
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(tlyRoot)
         Margin = New Padding(0)
         Name = "DdfEditSectiuneaBPage"

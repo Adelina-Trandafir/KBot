@@ -368,8 +368,8 @@ Partial Class ComboPlaygroundForm
         ' ComboPlaygroundForm
         '
         AcceptButton = btnPass
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         CancelButton = btnFail
         ClientSize = New Size(1024, 640)
         Controls.Add(pnlRight)

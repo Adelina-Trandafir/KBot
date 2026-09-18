@@ -18,6 +18,11 @@ Imports KBot.Common
 ''' or than what its themed content asks for (<see cref="ThemeFormFit"/>). The base is captured
 ''' at <see cref="OnCreateControl"/> (before <c>Load</c>), the fit runs at the tail of <see cref="OnLoad"/> (after the
 ''' theme) and again after every scheme or scaling change.</item>
+''' <item>Slice 0066-02: the geometry is on ONE ruler. <c>AutoScaleMode.Dpi</c> gives
+''' <c>DeviceDpi / designDpi</c> on both axes, and <see cref="AppScaling.ApplyZoom"/> (run from
+''' <c>ThemeManager.Apply</c> in <see cref="OnLoad"/>, again on every broadcast, and from
+''' <see cref="OnDpiChanged"/>) multiplies the whole form by the operator's zoom through
+''' <c>Control.Scale</c>. Nothing here follows the font any more.</item>
 ''' <item><see cref="CenterOnScreen"/> -- a form that would be centred by WinForms' own rule
 ''' (<c>CenterScreen</c>, or <c>CenterParent</c> with nobody to centre on) is centred on the
 ''' application's screen (<see cref="AppScreen"/>) instead of the monitor under the mouse. Forms
@@ -33,12 +38,12 @@ Public Class KBotThemedForm
     ''' <summary>
     ''' Puts the application's base font on the form BEFORE anything else (slice 0052).
     '''
-    ''' <para>The timing is the whole point, not a detail. A derived form's constructor calls
-    ''' <c>InitializeComponent</c>, and that is where <c>AutoScaleDimensions</c> and
-    ''' <c>AutoScaleMode.Font</c> are assigned — at which moment WinForms measures the font the
-    ''' form is CURRENTLY wearing and scales every child by the ratio against the stamped pair.
-    ''' A base constructor runs before the derived one, so assigning here is the only way the
-    ''' form is already wearing the right font when it gets measured.</para>
+    ''' <para>Since slice 0066-02 every form is <c>AutoScaleMode.Dpi</c>, so the font no longer
+    ''' decides any geometry: WinForms scales the children by <c>DeviceDpi / AutoScaleDimensions</c>
+    ''' alone, and a font written later moves nothing. (Under the old <c>AutoScaleMode.Font</c> the
+    ''' form was measured in whatever font it wore during <c>InitializeComponent</c>, which is why
+    ''' the base constructor had to dress it first; the timing is kept because the designer surface
+    ''' still renders the base type, see below.)</para>
     '''
     ''' <para>It also fixes the designer surface: Visual Studio instantiates the BASE type to
     ''' render a derived form, so the designer now lays out in the same font the operator will
@@ -187,6 +192,19 @@ Public Class KBotThemedForm
             If ThemeFormFit.Apply(Me, FitRoot) Then AppScreen.KeepOnScreen(Me)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotThemedForm.RefitToTheme", ex)
+        End Try
+    End Sub
+
+    ' The platform just rescaled the form for the new monitor (bounds, fonts). Under Automatic our
+    ' zoom does not depend on the DPI, so this is a no-op; under Fixed100 / Manual it is the mode's
+    ' factor over the NEW screen that has to be re-applied. Fonts are left to the platform here.
+    Protected Overrides Sub OnDpiChanged(e As DpiChangedEventArgs)
+        MyBase.OnDpiChanged(e)
+        Try
+            If KBotDesignTime.IsDesignTime(Me) Then Return
+            If AppScaling.ApplyZoom(Me) Then RefitToTheme()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotThemedForm.OnDpiChanged", ex)
         End Try
     End Sub
 

@@ -16,8 +16,8 @@ Imports KBot.Controls
 '
 ' Toate controalele se declara AICI (docs/kbot-forms-ui-convention.md).
 '
-' Coordonatele sunt scrise la 96 dpi si AutoScaleDimensions le insoteste: Calibri 9 se masoara
-' (6, 14) acolo (felia 0052). Cele doua se schimba INTOTDEAUNA impreuna.
+' Coordonatele sunt scrise la 96 dpi si AutoScaleDimensions le insoteste: (96, 96) in
+' AutoScaleMode.Dpi (felia 0066-02). Cele doua se schimba INTOTDEAUNA impreuna.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class GraficRezervariForm
     Inherits Global.KBot.Theming.KBotShellForm
@@ -144,8 +144,8 @@ Partial Class GraficRezervariForm
         '
         ' GraficRezervariForm
         '
-        AutoScaleDimensions = New SizeF(6F, 14F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(96F, 96F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(942, 614)
         Controls.Add(tlyGrafic)
         FormBorderStyle = FormBorderStyle.None

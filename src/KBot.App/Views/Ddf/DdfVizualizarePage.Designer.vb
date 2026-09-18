@@ -221,8 +221,8 @@ Partial Class DdfVizualizarePage
         ' 
         ' DdfVizualizarePage
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(tlyMain)
         Margin = New Padding(4, 5, 4, 5)
         Name = "DdfVizualizarePage"

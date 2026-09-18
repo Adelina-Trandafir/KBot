@@ -909,8 +909,8 @@ Partial Class MigratorForm
         ' 
         ' MigratorForm
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(1505, 1044)
         ControlBox = False
         Controls.Add(tlpRoot)

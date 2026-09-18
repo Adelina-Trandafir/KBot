@@ -193,8 +193,8 @@ Partial Class OfficePreviewHarnessForm
         '
         ' OfficePreviewHarnessForm
         '
-        AutoScaleDimensions = New SizeF(7F, 15F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(96F, 96F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(1100, 650)
         ' Children in REVERSE dock order: Fill first, then the docked edges.
         Controls.Add(splRoot)

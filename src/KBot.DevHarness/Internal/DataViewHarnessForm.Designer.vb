@@ -162,7 +162,8 @@ Partial Class DataViewHarnessForm
         '
         Me.AcceptButton = Me.btnPass
         Me.CancelButton = Me.btnFail
-        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(144F, 144F)
+        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(1000, 620)
         ' Ordine INVERSĂ de dock (regula casei): Fill întâi, apoi Bottom/Top.
         Me.Controls.Add(Me.grid)

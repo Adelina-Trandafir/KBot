@@ -86,8 +86,8 @@ Partial Class WicketMonitorForm
         ' 
         ' WicketMonitorForm
         ' 
-        AutoScaleDimensions = New System.Drawing.SizeF(9F, 22F)
-        AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        AutoScaleDimensions = New System.Drawing.SizeF(144F, 144F)
+        AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         ClientSize = New System.Drawing.Size(378, 404)
         Controls.Add(rtbMonitor)
         Controls.Add(pnlBottom)

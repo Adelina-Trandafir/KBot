@@ -225,8 +225,8 @@ Partial Class ForexeConsoleForm
         ' 
         ' ForexeConsoleForm
         ' 
-        AutoScaleDimensions = New SizeF(9.0F, 22.0F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(914, 667)
         Controls.Add(pnlCard)
         FormBorderStyle = FormBorderStyle.None

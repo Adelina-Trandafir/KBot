@@ -99,8 +99,8 @@ Partial Class FormFitProbeDialog
         '
         Me.AcceptButton = Me.btnInchide
         Me.CancelButton = Me.btnInchide
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(7.0F, 15.0F)
-        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(96F, 96F)
+        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(420, 200)
         Me.Controls.Add(Me.pnlCard)
         Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable

@@ -174,8 +174,8 @@ Partial Class ThemeEditorForm
         '
         ' ThemeEditorForm
         '
-        AutoScaleDimensions = New SizeF(6F, 14F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(96F, 96F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(584, 444)
         ' Ordine INVERSĂ de andocare (regula casei): Fill primul, apoi Bottom/Top.
         Controls.Add(splitMain)

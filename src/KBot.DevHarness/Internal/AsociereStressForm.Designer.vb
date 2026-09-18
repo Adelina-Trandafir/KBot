@@ -342,7 +342,8 @@ Partial Class AsociereStressForm
         'AsociereStressForm
         '
         Me.CancelButton = Me.btnFail
-        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(144F, 144F)
+        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.ClientSize = New System.Drawing.Size(1100, 780)
         ' Ordine INVERSĂ de andocare (regula casei): Fill întâi, apoi benzile Bottom/Top —
         ' ultima bandă adăugată pe o latură ajunge cea mai apropiată de margine.

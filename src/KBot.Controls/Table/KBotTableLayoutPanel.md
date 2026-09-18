@@ -11,9 +11,11 @@ logical model, the triggers, the runtime API), `.Fit.vb` (the surplus rule and
 `GetPreferredSize`).
 `TableLayoutPanel` · partial · Toolbox · `IThemedContainer`, `IDpiScaledControl`
 Conventions: [C1..C9](../CONTROLS.md).
-Status: **screen-verified 2026-09-17 through `DrawToBitmap`** (slice 0066, six states on a
-150% monitor with text at 110%: Classic/Modern, Automatic/Fixed100/Manual, the API moves,
-and back). Never driven by hand. Harness: `TableLayoutHarnessTest` (0066),
+Status: **screen-verified 2026-09-18 through `DrawToBitmap`** (slice 0066-02: the 0062 and 0066
+benches at 150% under Automatic, Fixed100 = the 100% look and Manual 1.25 = the 125% look, all
+three the same picture at 2/3, 5/6 and 1; a 144-authored form untouched at 150% and exactly 2/3
+under Fixed100). Driven by hand on 2026-09-18 by the operator at 100/125/150% BEFORE 0066-02,
+which is what showed the forms themselves were not on the tree's ruler. Harness: `TableLayoutHarnessTest` (0066),
 `FormFitHarnessTest` (0062, the log-viewer filter row).
 
 ## Every TableLayoutPanel in the solution is one of these
@@ -25,9 +27,9 @@ parameter types of `ThemeTableFit`, which has no caller in `src/` any more.
 ## The model (C2, made concrete)
 | Measure | Authored (logical) | Live (device) | Written by |
 |---|---|---|---|
-| Absolute `ColumnStyle.Width` | snapshot `_logicalCols(i)` | `Round(logical x scale) + surplus`, or 0 when collapsed | `Refit` |
+| Absolute `ColumnStyle.Width` | snapshot `_logicalCols(i)` = authored x 96 / `DesignDpi` | `Round(logical x scale) + surplus`, or 0 when collapsed | `Refit` |
 | Absolute `RowStyle.Height` | snapshot `_logicalRows(i)` | same | `Refit` |
-| `Padding` (shadowed) | `_logicalPadding` -- what the getter returns and the designer serializes | `MyBase.Padding` = `PaddingPx` | `ApplyMetricScale` |
+| `Padding` (shadowed) | `_logicalPadding` -- the designer's value x 96 / `DesignDpi` after the first snapshot; what the getter returns and (at design time, unconverted) the designer serializes | `MyBase.Padding` = `PaddingPx` | `ApplyMetricScale` |
 | Percent / AutoSize styles | -- | never touched | -- |
 | children's `Margin` | -- | the platform's (the child's property) | -- |
 
@@ -36,17 +38,27 @@ Fixed100, the operator's number under Manual; 1 at design time (C6 -- unlike the
 because the VS surface stamps device pixels into a table's styles). Read back through
 `DpiScale`. `ScaleAbsoluteStyles = False` pins the scale of THIS table at 1.
 
+**In which pixels the designer wrote (0066-02):** those of the screen the file was saved on --
+the form's `AutoScaleDimensions` says which (`(144, 144)` for a file saved at 150%), and every
+Bounds in the file is in the same pixels. The first snapshot reads that stamp from the nearest
+container that scales for itself (`DesignDpi`, 96 for a Font/None container, no container, or
+design time) and divides, so a 48px row authored at 144 IS the 32px row authored at 96, and
+both come out 48 on a 150% screen and 32 on a 100% one -- exactly like the platform treats the
+Bounds around them. A table built in code writes logical values (no stamp above it).
+
 **When the snapshot is taken:** at the first hook, whichever it is -- `ScaleControl` BEFORE
 the base call (the platform's first autoscale is the first thing that touches the styles
 after `InitializeComponent`), `OnHandleCreated`, `ApplyTheme`, `RefreshDpiMetrics`. A style
 count that changed (rows added at runtime) is re-read: untouched entries keep their logical
 value, new ones are read from the live value and unscaled.
 
-**Why the platform is a trigger and not a source:** measured on a 150% monitor, WinForms'
-font autoscale multiplies Absolute styles and Padding by 1.43 on X and 1.67 on Y, and does
-it again at every font change on whatever is current. After every base `ScaleControl` the
-live values are rewritten from the logical source, so its number never survives and two
-passes cannot compound.
+**Why the platform is a trigger and not a source:** until 0066-02 the forms were
+`AutoScaleMode.Font`, whose autoscale multiplied Absolute styles and Padding by the ratio of two
+INTEGER font metrics -- 1.43 on X and 1.67 on Y on a 150% monitor -- and again at every font
+change on whatever was current. The forms are `AutoScaleMode.Dpi` now (exact, uniform), but the
+platform still multiplies the CURRENT value at every pass (the operator's zoom, a DPI change).
+After every base `ScaleControl` the live values are rewritten from the logical source, so its
+number never survives and two passes cannot compound.
 
 ## Runtime API (all logical, all idempotent)
 - `SetRowHeight(i, logical)` / `SetColumnWidth(i, logical)` -- writes the authored measure,
@@ -60,7 +72,8 @@ passes cannot compound.
 - `ResetStyleBaseline()` -- the escape hatch: a style written directly (device pixels) is
   adopted as the new authored value; styles still at what the control last wrote are left
   alone. Prefer the methods above.
-- Seams: `DebugAuthoredRow/Column(i)` (logical, -1 before any snapshot), `HasStyleBaseline`.
+- Seams: `DebugAuthoredRow/Column(i)` (logical, -1 before any snapshot), `HasStyleBaseline`,
+  `DesignDpi` (the stamp the snapshot was read against; 96 before it).
 
 ## The fit (slice 0062, kept)
 A fixed line is `scaled authored + Max(0, surplus)`, surplus = the greediest single-cell
@@ -89,9 +102,8 @@ gap itself (1/2/3 px) is the platform's and is not scaled.
 - Children's `Margin`s are the platform's: 1.43 x 1.67 at 150%, not 1.5. A cell whose
   margin must match a drawn measure exactly does not exist yet; if one appears, the margin
   belongs in the child, not here.
-- Under Fixed100/Manual the table goes back to its logical pixels while the platform-scaled
-  controls around it (bounds, fonts) stay large -- the documented compromise of those modes,
-  visible on purpose in the bench.
+- A table built in code and added to a form already on screen has no stamp of its own: its
+  styles are read as logical. Write them through `SetRowHeight` / `SetColumnWidth` to be sure.
 - `ButtonDemand` under-asks by the few pixels of chrome WinForms adds around a button's
   text; a row authored TIGHTER than its button's text + padding will clip the chrome, not
   the text.

@@ -465,8 +465,8 @@ Partial Class IstoricView
         ' 
         ' IstoricView
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(splitTree)
         Controls.Add(pnlFiltre)
         Controls.Add(lblEmpty)

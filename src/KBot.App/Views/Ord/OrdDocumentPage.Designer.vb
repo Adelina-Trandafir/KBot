@@ -48,8 +48,8 @@ Partial Class OrdDocumentPage
         '
         ' OrdDocumentPage
         '
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(previewPdf)
         Controls.Add(lblEmpty)
         Margin = New Padding(4, 5, 4, 5)

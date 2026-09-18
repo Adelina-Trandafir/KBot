@@ -62,7 +62,8 @@ Partial Class TreeVisualForm
         'TreeVisualForm
         '
         Me.AcceptButton = Me.btnPass
-        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(144F, 144F)
+        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Me.CancelButton = Me.btnFail
         Me.ClientSize = New System.Drawing.Size(504, 521)
         Me.Controls.Add(Me.tree)

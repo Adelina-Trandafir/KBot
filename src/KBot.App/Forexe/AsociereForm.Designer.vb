@@ -28,10 +28,10 @@ Imports KBot.Controls
 ' sa se randeze in designerul Visual Studio, nu sa se construiasca la rulare.
 '
 ' Coordonatele sunt scrise la 144 dpi -- fisierul a fost salvat din designer pe un ecran la
-' 150%, iar Visual Studio rescrie ATUNCI si coordonatele, si perechea. AutoScaleDimensions
-' le insoteste: Calibri 9 se masoara (9, 22) acolo (felia 0052). Cele doua se schimba
-' INTOTDEAUNA impreuna; o pereche luata de la alt font sau de la alt dpi turteste fereastra
-' la deschidere, fara ca nimic din designer s-o arate.
+' 150%, iar Visual Studio rescrie ATUNCI si coordonatele, si stampila. AutoScaleDimensions
+' le insoteste: (144, 144) in AutoScaleMode.Dpi (felia 0066-02; pana atunci era perechea de
+' font (9, 22), care scala neuniform). Cele doua se schimba INTOTDEAUNA impreuna; o stampila
+' de la alt dpi turteste sau umfla fereastra la deschidere, fara ca designerul s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class AsociereForm
     Inherits Global.KBot.Theming.KBotThemedForm
@@ -620,8 +620,8 @@ Partial Class AsociereForm
         ' 
         ' AsociereForm
         ' 
-        AutoScaleDimensions = New SizeF(9F, 22F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(1086, 888)
         Controls.Add(tlyAsociere)
         FormBorderStyle = FormBorderStyle.None

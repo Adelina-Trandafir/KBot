@@ -17,10 +17,10 @@ Imports KBot.Controls
 ' Toate controalele se declara AICI (docs/kbot-forms-ui-convention.md): pagina trebuie sa se
 ' randeze in designerul Visual Studio, nu sa se construiasca la rulare.
 ' Coordonatele sunt scrise la 144 dpi -- fisierul a fost salvat din designer pe un ecran la
-' 150%, iar Visual Studio rescrie ATUNCI si coordonatele, si perechea. AutoScaleDimensions
-' le insoteste: Calibri 9 se masoara (9, 22) acolo (felia 0052). Cele doua se schimba
-' INTOTDEAUNA impreuna; o pereche luata de la alt font sau de la alt dpi turteste fereastra
-' la deschidere, fara ca nimic din designer s-o arate.
+' 150%, iar Visual Studio rescrie ATUNCI si coordonatele, si stampila. AutoScaleDimensions
+' le insoteste: (144, 144) in AutoScaleMode.Dpi (felia 0066-02; pana atunci era perechea de
+' font (9, 22), care scala neuniform). Cele doua se schimba INTOTDEAUNA impreuna; o stampila
+' de la alt dpi turteste sau umfla fereastra la deschidere, fara ca designerul s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class OrdBeneficiariPage
     Inherits System.Windows.Forms.UserControl
@@ -460,8 +460,8 @@ Partial Class OrdBeneficiariPage
         ' 
         ' OrdBeneficiariPage
         ' 
-        AutoScaleDimensions = New SizeF(10F, 25F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(split)
         Margin = New Padding(4, 6, 4, 6)
         Name = "OrdBeneficiariPage"

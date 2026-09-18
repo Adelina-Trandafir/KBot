@@ -310,7 +310,9 @@ Public NotInheritable Class FormFitHarnessForm
                  " (scară la captură " & ThemeFormFit.CapturedScale(Me).ToString("0.00") & ", acum " & AppScaling.FactorFor(Me).ToString("0.00") &
                  ", " & ThemeFormFit.Baseline.ToString() & ")" &
                  If(AutoFitToTheme, " · cerere " & SizeText(demand), " · potrivire OPRITĂ") &
-                 " · font " & Font.Size.ToString("0.##") & "pt · ecran " & Screen.FromHandle(Handle).DeviceName)
+                 " · font " & Font.Size.ToString("0.##") & "pt · ecran " & Screen.FromHandle(Handle).DeviceName &
+                 " · AutoScale " & AutoScaleMode.ToString() & " " & AutoScaleDimensions.Width.ToString("0") & " dpi, DeviceDpi " & DeviceDpi &
+                 ", zoom pus " & AppScaling.AppliedZoomOf(Me).ToString("0.00"))
 
             Dim refForm As Form = AppScreen.ReferenceForm()
             lblReference.Text = "referință: " & If(refForm Is Nothing, "(niciuna)", refForm.Name) & " pe " & AppScreen.Reference(Me).DeviceName &

@@ -132,8 +132,8 @@ Partial Class StartupLauncherForm
         ' StartupLauncherForm
         '
         AcceptButton = btnPorneste
-        AutoScaleDimensions = New SizeF(6F, 14F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(96F, 96F)
+        AutoScaleMode = AutoScaleMode.Dpi
         CancelButton = btnIesire
         ClientSize = New Size(440, 360)
         Controls.Add(tlyRadacina)
