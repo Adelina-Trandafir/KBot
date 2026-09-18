@@ -69,14 +69,16 @@ Public NotInheritable Class AsociereStare
     ''' două desene ale aceleiași hotărâri, care alunecă unul față de altul, și două locuri de
     ''' învățat pentru operator.</para>
     '''
-    ''' <para><b>Ancora călătorește ca <see cref="InstantaneuLegat.Idrh"/>, dar NU este un
-    ''' IDRH.</b> În propunere fiecare instantaneu e ancorat pe INDICELE rândului lui în
-    ''' <c>TabelIstoric</c> (F24): id-urile atribuite în faza întâi dispar la derularea înapoi
-    ''' și nu se întorc identice. Indicele intră aici în locul cheii fiindcă editorul are
-    ''' nevoie doar de un număr STABIL pe care să-și țină dicționarele, iar la salvare el
-    ''' pleacă înapoi ca <c>rand_istoric</c>, exact de unde a venit. Cele două numere nu se
-    ''' amestecă niciodată: un tablou vine sau dintr-o propunere, sau din bază, niciodată din
-    ''' amândouă.</para>
+    ''' <para><b>Cheia și ancora sunt două lucruri, și de la 18.09.2026 nu se mai suprapun.</b>
+    ''' <see cref="InstantaneuLegat.Idrh"/> e cheia pe care editorul își ține dicționarele:
+    ''' în propunere e <c>IDRH</c>-ul dat în faza întâi — unic în tabloul de față, dar NU un
+    ''' nume care supraviețuiește derulării înapoi, deci nu pleacă niciodată spre server.
+    ''' Ancora — ce pleacă înapoi la salvare — călătorește separat, pe
+    ''' <see cref="InstantaneuLegat.RandIstoric"/> (indicele rândului în <c>TabelIstoric</c>,
+    ''' F24) sau, când rândul nu e în această descărcare, pe
+    ''' <see cref="InstantaneuLegat.Idh"/> (F34). Până la felia asta cheia ERA indicele,
+    ''' ceea ce lăsa fără nume orice instantaneu rămas dintr-o rulare mai veche: fluxul
+    ''' REVERSE nu-i mai aduce rândul de istoric. Vezi <see cref="AncoraAsociere"/>.</para>
     '''
     ''' <para><see cref="InstantaneuLegat.Idrr"/> primește SUGESTIA automată a serverului, ca
     ''' operatorul să vadă unde ar cădea rândul dacă n-ar face nimic — se ARATĂ ca sugestie,
@@ -93,14 +95,12 @@ Public NotInheritable Class AsociereStare
     ''' <see cref="PrelucrarePropunere.Plati"/> aduce reperele de plată — §1.3, chiar miza
     ''' așezării.</para>
     '''
-    ''' <para><b>Cheile lor sunt NEGATIVE, și de-asta.</b> Un rând de decis e ancorat pe
-    ''' indicele lui (0, 1, 2…), unul de context pe <c>IDRH</c>, cheia reală — două
-    ''' numerotări din spații diferite, care ar avea toate șansele să se ciocnească în
-    ''' <c>_pozitie</c> și în dicționarele de rânduri. Se păstrează deci ca <c>-IDRH</c>:
-    ''' negarea e reversibilă (<c>IDRH</c> pornește de la 1), nu poate atinge un indice, și
-    ''' spune dintr-o privire că rândul nu poartă o hotărâre. Nimic nu le trimite înapoi —
-    ''' toate sunt <see cref="InstantaneuLegat.Blocat"/>, iar formularul nu construiește
-    ''' decizii din rânduri blocate.</para>
+    ''' <para><b>Cheile lor sunt NEGATIVE, și de-asta.</b> Toate cheile sunt <c>IDRH</c>-uri
+    ''' reale, deci distincte între ele; negarea (<c>-IDRH</c>, reversibilă fiindcă
+    ''' <c>IDRH</c> pornește de la 1) spune dintr-o privire că rândul nu poartă o hotărâre
+    ''' și îl ține departe de cele pozitive ale rândurilor de decis. Nimic nu le trimite
+    ''' înapoi — toate sunt <see cref="InstantaneuLegat.Blocat"/>, iar formularul nu
+    ''' construiește decizii din rânduri blocate.</para>
     ''' </summary>
     Public Shared Function DinPropunere(propunere As PrelucrarePropunere) As AsociereStare
         If propunere Is Nothing Then Throw New ArgumentNullException(NameOf(propunere))
@@ -114,9 +114,10 @@ Public NotInheritable Class AsociereStare
 
         For Each p As InstantaneuPropus In propunere.Instantanee
             Dim legat As New InstantaneuLegat() With {
-                .Idrh = p.RandIstoric,
+                .Idrh = p.Idrh,
+                .RandIstoric = p.RandIstoric,
                 .Idrr = p.SugestieIdrr,
-                .Idh = 0,
+                .Idh = p.Idh,
                 .DataH = p.DataH,
                 .Descriere = p.Descriere,
                 .Total = p.Total,
@@ -158,8 +159,20 @@ End Class
 ''' </summary>
 Public NotInheritable Class InstantaneuLegat
 
-    ''' <summary><c>FX_Receptii_H.IDRH</c>. Ancora, aici — nu un indice de rand.</summary>
+    ''' <summary>
+    ''' <c>FX_Receptii_H.IDRH</c>. In editorul de oricand e si ancora comenzilor. In modul
+    ''' propunere e DOAR cheia dictionarelor formularului (id-ul dat in faza intai, care nu
+    ''' supravietuieste derularii inapoi); ancora e atunci <see cref="RandIstoric"/> /
+    ''' <see cref="Idh"/>. Vezi <see cref="AsociereStare.DinPropunere"/>.
+    ''' </summary>
     Public Property Idrh As Integer
+
+    ''' <summary>
+    ''' Doar in modul propunere: indicele randului de istoric in <c>TabelIstoric</c> (F24),
+    ''' sau Nothing cand randul nu e in aceasta descarcare — atunci ancora e <see cref="Idh"/>
+    ''' (F34). Nothing si fara sens in editorul de oricand.
+    ''' </summary>
+    Public Property RandIstoric As Integer?
 
     ''' <summary>Recepția pe care sta acum. 0 = neasezat.</summary>
     Public Property Idrr As Integer

@@ -11,6 +11,9 @@ paths. **F25 amended** — step 4b matches on `CLng(DataR)`, not on the header h
 F25's real key. §1.5 rewritten accordingly; O2 closed, O7 added.
 **Revised 17.09.2026 (slice 0064): F31 added** — zero-valued lines are lines and are kept;
 **F32 added** — a header with only the total row is not a snapshot and is ignored everywhere.
+**Revised 18.09.2026 (slice 0068): F33 added** — a history row is consumed once; **F34 added** —
+a snapshot whose history row is not in the download is anchored on `FX_Istoric.ID`, because the
+REVERSE flow carries only the newer history rows.
 **Location:** `docs/FUNDAMENT_Asociere_Receptii.md` (moved here from the repo root in slice 0048-03).
 
 This document exists because the association form could not be explained to its users. Working
@@ -398,6 +401,39 @@ Consequence to know: a snapshot ingested **before F31** whose only lines were ze
 `FX_Receptii` line either, and is hidden by the same filter until «Refacere din istoric» puts
 its zero lines back — the repair F31 already requires. — `OPERATOR`, 17.09.2026; `VERIFIED` in
 `prelucrare_pasi.step4a_populeaza_receptii` and `receptii_refacere.refa_receptii`.
+
+**F33.** **A history row is consumed once, whoever put it there.** Step 4a reads `FX_Istoric`
+rows at `Prelucrat = 0`, but step 7 marked only the rows the SAME run had inserted. A row that
+reached the table with the flag down by another road — migration from Access, in the case that
+surfaced it (`AAB2KPRT2EB`, history row 5786, the 27.07.2026 reception) — was therefore read on
+every download, and every download built a NEW, unplaced `FX_Receptii_H` for it, which F34 then
+made impossible to place from the download. Two guards, both required: step 4a does not write a
+header whose `IDH` already has a snapshot (the check «Refacere din istoric» already made), and
+step 7 marks every row 4a consumed — headers written, headers skipped, lines poured under a
+header — not only the inserted ones. Lines still waiting for their header at the end of the pass
+are not consumed; they belong to the next run. Duplicates already born before the fix stay in the
+base (a delete would have to reach `FX_ORD.IDRH`); the ingest leaves them out by name (F34) and
+the anytime editor sees each by its `IDRH`. — `OPERATOR`, 18.09.2026 (query over `FX_Receptii_H ⋈
+FX_Istoric`); `VERIFIED` in `prelucrare_pasi.step4a_populeaza_receptii` / `_ruleaza_pasii`.
+
+**F34.** **A snapshot whose history row is not in the download is anchored on `FX_Istoric.ID`.**
+F24 anchors a decision on the INDEX of the snapshot's history row in `TabelIstoric`, because the
+ids handed out in the proposal vanish on the rollback. That rested on «FOREXE sends the whole
+history on every download», which is true only for the first one: `Prelucrare Completa Reverse`
+walks the history pages backwards and stops at `DATA_IESIRE`, the last row already at home, so
+`TabelIstoric` is a difference. Any snapshot left unplaced by an earlier run — the normal result
+of F9/F10, not an exception — had no index, was dropped from the proposal with a warning, and
+could only ever be placed in the anytime editor. The anchor is now one of two names, never both:
+`rand_istoric` when the row is in the payload (F24, unchanged, and the only name for a snapshot
+born in this run), else `idh` — the row's `FX_Istoric.ID`, stable across the two phases because
+the row existed before the run and the fingerprint guarantees `FX_Istoric` did not move. The
+server refuses a decision carrying neither or both, and a snapshot with no `IDH`, or sharing its
+`IDH` with another unplaced snapshot (an F33 leftover), still stays out, counted, for the editor.
+The proposal also carries `idrh` — the phase-one id — as the form's dictionary key only: unique
+while the proposal lives, never sent back. Pair on the wire: `prelucrare_asociere.ancora()` ↔
+`AncoraAsociere` (KBot.Domain). — `VERIFIED` in `WorkflowExecutor.Actions.ScrapeTable.vb`
+(`exitIfCellEquals`, `startFromLast`), `adlop - Prelucrare Completa Reverse.wfl` §4,
+`prelucrare_asociere.citeste_instantanee`.
 
 ---
 

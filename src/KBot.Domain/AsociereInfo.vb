@@ -115,10 +115,10 @@ Public NotInheritable Class PrelucrarePropunere
     ''' vetourile F15 / F16 pe lantul INTREG, deci pana acum formularul era singurul care
     ''' nu vedea ce vede vetoul.</para>
     '''
-    ''' <para>Ancora lor e <c>IDRH</c>, cheia reala — nu un indice de rand. Nu se ciocnesc
-    ''' cu indicii din <see cref="Instantanee"/> fiindca nu ajung niciodata in aceleasi
-    ''' dictionare cu ei; vezi <c>AsociereStare.DinPropunere</c>, care le da chei negative
-    ''' tocmai pentru asta.</para>
+    ''' <para>Ancora lor e <c>IDRH</c>, cheia reala — nu un indice de rand. In formular
+    ''' primesc chei NEGATIVE (<c>-IDRH</c>), ca sa spuna dintr-o privire ca nu poarta o
+    ''' hotarare si sa nu se ciocneasca cu cheile pozitive ale celor din
+    ''' <see cref="Instantanee"/>; vezi <c>AsociereStare.DinPropunere</c>.</para>
     ''' </summary>
     Public Property InstantaneeAsezate As New List(Of InstantaneuLegat)
 
@@ -207,18 +207,71 @@ Public NotInheritable Class LinieReceptie
     Public Property ValoareN As Double
 End Class
 
+''' <summary>
+''' Numele sub care un instantaneu de asezat calatoreste de la propunere la salvare —
+''' ANCORA (F24 / F34). Doua forme, si numai doua, iar cele doua nu se confunda niciodata:
+''' <list type="bullet">
+''' <item><c>rand:N</c> — indicele randului lui de istoric in <c>TabelIstoric</c> (F24),
+''' cand randul E in sarcina utila. Id-urile date in propunere dispar la derularea inapoi;
+''' indicele e stabil prin constructie, fiindca amandoua fazele poarta acelasi payload.</item>
+''' <item><c>idh:N</c> — <c>FX_Istoric.ID</c> (F34, 18.09.2026), cand randul NU e in sarcina
+''' utila. Fluxul REVERSE aduce doar istoricul mai nou decat ultimul de acasa, deci un
+''' instantaneu ramas neasezat dintr-o rulare mai veche nu-si mai gaseste indicele; ID-ul
+''' randului lui e insa stabil intre faze, fiindca randul exista dinaintea rularii si
+''' amprenta garanteaza ca tabelul nu s-a miscat.</item>
+''' </list>
+''' Perechea de pe fir: <c>prelucrare_asociere.ancora()</c>.
+''' </summary>
+Public NotInheritable Class AncoraAsociere
+    Private Sub New()
+    End Sub
+
+    ''' <summary>
+    ''' Textul ancorei, sau sirul gol cand instantaneul nu are niciun nume (nici indice, nici
+    ''' id de istoric) — un astfel de rand nu poate primi hotarare din descarcare.
+    ''' </summary>
+    Public Shared Function Cheie(randIstoric As Integer?, idh As Integer?) As String
+        If randIstoric.HasValue Then Return "rand:" & randIstoric.Value.ToString(Globalization.CultureInfo.InvariantCulture)
+        If idh.HasValue AndAlso idh.Value > 0 Then Return "idh:" & idh.Value.ToString(Globalization.CultureInfo.InvariantCulture)
+        Return String.Empty
+    End Function
+
+    ''' <summary>Cum se numeste ancora in mesajele catre operator: «rândul 3» / «istoric 5786».</summary>
+    Public Shared Function Text(randIstoric As Integer?, idh As Integer?) As String
+        If randIstoric.HasValue Then Return "rândul " & randIstoric.Value.ToString(Globalization.CultureInfo.InvariantCulture)
+        If idh.HasValue AndAlso idh.Value > 0 Then Return "istoric " & idh.Value.ToString(Globalization.CultureInfo.InvariantCulture)
+        Return "(fără nume)"
+    End Function
+End Class
+
 ''' <summary>Un instantaneu de asezat, cu sugestia automata daca a fost una. POCO.</summary>
 Public NotInheritable Class InstantaneuPropus
 
     ''' <summary>
     ''' INDICELE de la zero al randului in <c>TabelIstoric</c> (F24) — NU o cheie de baza de
-    ''' date.
-    '''
-    ''' Id-urile atribuite in timpul propunerii dispar la derularea inapoi si nu se intorc
-    ''' identice. Indicele e stabil PRIN CONSTRUCTIE, fiindca amandoua fazele poarta acelasi
-    ''' payload — de-asta fisierul local pastreaza sarcina utila exact cum a fost trimisa.
+    ''' date. Nothing cand randul lui de istoric NU e in aceasta descarcare; atunci ancora e
+    ''' <see cref="Idh"/> (F34). Vezi <see cref="AncoraAsociere"/>.
     ''' </summary>
-    Public Property RandIstoric As Integer
+    Public Property RandIstoric As Integer?
+
+    ''' <summary>
+    ''' <c>FX_Istoric.ID</c> al randului lui de istoric. Ancora cand <see cref="RandIstoric"/>
+    ''' e Nothing (F34); altfel doar informativ. 0 = necunoscut.
+    ''' </summary>
+    Public Property Idh As Integer
+
+    ''' <summary>
+    ''' <c>FX_Receptii_H.IDRH</c> AL PROPUNERII. NU e un nume care supravietuieste: se atribuie
+    ''' din nou la salvare, dupa derularea inapoi. E unic in tabloul de fata si atat — cheia
+    ''' pe care formularul isi tine dictionarele cat traieste propunerea
+    ''' (<c>AsociereStare.DinPropunere</c>). Nu pleaca niciodata inapoi spre server.
+    ''' </summary>
+    Public Property Idrh As Integer
+
+    ''' <summary>Ancora, ca text: vezi <see cref="AncoraAsociere.Cheie"/>.</summary>
+    Public Function Ancora() As String
+        Return AncoraAsociere.Cheie(RandIstoric, Idh)
+    End Function
 
     ''' <summary>Momentul editarii. ESTE axa timpului lantului (F2).</summary>
     Public Property DataH As Date
@@ -264,12 +317,26 @@ End Class
 ''' numeste inca nu exista si isi primeste <c>IDRR</c> abia la salvare.
 ''' </remarks>
 Public NotInheritable Class DecizieAsociere
-    Public Property RandIstoric As Integer
+    ''' <summary>
+    ''' Ancora F24: indicele randului de istoric in <c>TabelIstoric</c>. EXACT una dintre
+    ''' <see cref="RandIstoric"/> si <see cref="Idh"/> — serverul respinge cu 400 si lipsa
+    ''' amandurora, si prezenta amandurora. Se trimite inapoi exact ce a dat propunerea
+    ''' (<see cref="InstantaneuPropus.RandIstoric"/> / <see cref="InstantaneuPropus.Idh"/>).
+    ''' </summary>
+    Public Property RandIstoric As Integer?
+
+    ''' <summary>Ancora F34: <c>FX_Istoric.ID</c>, cand randul nu e in descarcare. Vezi <see cref="AncoraAsociere"/>.</summary>
+    Public Property Idh As Integer?
+
+    ''' <summary>Ancora, ca text: vezi <see cref="AncoraAsociere.Cheie"/>.</summary>
+    Public Function Ancora() As String
+        Return AncoraAsociere.Cheie(RandIstoric, Idh)
+    End Function
 
     ''' <summary>
-    ''' Data instantaneului, calatorind alaturi de indice. Serverul o compara cu randul aflat
-    ''' la acel indice in payload: daca nu se potriveste, fisierul de decizii e invechit si
-    ''' cererea cade ZGOMOTOS in loc sa asocieze tacut alt rand.
+    ''' Data instantaneului, calatorind alaturi de ancora. Serverul o compara cu randul aflat
+    ''' la acea ancora: daca nu se potriveste, fisierul de decizii e invechit si cererea
+    ''' cade ZGOMOTOS in loc sa asocieze tacut alt rand.
     ''' </summary>
     Public Property DataH As Date
 
@@ -343,8 +410,11 @@ Public NotInheritable Class AsociereDosar
     Public ReadOnly Property EsteComplet As Boolean
         Get
             If Propunere Is Nothing Then Return False
-            Dim decise As New HashSet(Of Integer)(Decizii.Select(Function(d) d.RandIstoric))
-            Return Propunere.Instantanee.All(Function(i) decise.Contains(i.RandIstoric))
+            ' Pe ANCORA, nu pe indice: un instantaneu ancorat pe id-ul de istoric (F34) are
+            ' indicele Nothing, iar unul fara niciun nume nu poate fi niciodata «decis».
+            Dim decise As New HashSet(Of String)(Decizii.Select(Function(d) d.Ancora()))
+            decise.Remove(String.Empty)
+            Return Propunere.Instantanee.All(Function(i) decise.Contains(i.Ancora()))
         End Get
     End Property
 End Class

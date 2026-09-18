@@ -2082,8 +2082,12 @@ Public Class ApiClient
                 "Acțiunea «desprins» nu are sens în ingestie: acolo niciun instantaneu " &
                 "nu este încă atașat. Ea aparține editorului de asociere.", NameOf(d))
         End If
+        ' ANCORA pleaca exact cum a venit din propunere: indicele (F24) sau id-ul de istoric
+        ' (F34), niciodata amandoua. Nu se fabrica nimic aici; o decizie fara niciun nume e
+        ' respinsa de server cu 400, cu motivul, nu tradusa in tacere intr-un rand zero.
         Dim pe As New PostPrelucrareDecizie() With {
             .rand_istoric = d.RandIstoric,
+            .idh = If(d.RandIstoric.HasValue, Nothing, d.Idh),
             .data_h = d.DataH.ToString("yyyy-MM-ddTHH:mm:ss", Globalization.CultureInfo.InvariantCulture),
             .actiune = NumeActiune(d.Actiune)
         }
@@ -2353,6 +2357,8 @@ Public Class ApiClient
             For Each i As PostPropunereInstantaneu In payload.instantanee
                 Dim inst As New InstantaneuPropus() With {
                     .RandIstoric = i.rand_istoric,
+                    .Idh = If(i.idh.HasValue, i.idh.Value, 0),
+                    .Idrh = If(i.idrh.HasValue, i.idrh.Value, 0),
                     .DataH = CitesteData(i.data_h),
                     .Descriere = If(i.descriere, String.Empty),
                     .Total = i.total,

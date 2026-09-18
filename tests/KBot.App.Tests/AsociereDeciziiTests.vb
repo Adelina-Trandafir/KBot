@@ -18,10 +18,19 @@ Imports KBot.Domain
 ' to open the form — ShowDialog is modal and would block the run.
 Public Class AsociereDeciziiTests
 
+    ' Cheia formularului (`Idrh`) și ancora (`RandIstoric`) sunt două lucruri de la felia 0068;
+    ' aici se țin egale ca aserțiunile de mai jos să poată numi rândul printr-un singur număr.
     Private Shared Function Instantaneu(idrh As Integer, idrr As Integer, zi As Integer) As InstantaneuLegat
         Return New InstantaneuLegat() With {
-            .Idrh = idrh, .Idrr = idrr, .DataH = New Date(2026, 1, zi, 10, 30, 0),
-            .Total = 100 * zi}
+            .Idrh = idrh, .RandIstoric = idrh, .Idrr = idrr,
+            .DataH = New Date(2026, 1, zi, 10, 30, 0), .Total = 100 * zi}
+    End Function
+
+    ' Un instantaneu al cărui rând de istoric NU e în descărcare (F34): fără indice, cu IDH.
+    Private Shared Function InstantaneuPrinIdh(idrh As Integer, idh As Integer, idrr As Integer, zi As Integer) As InstantaneuLegat
+        Return New InstantaneuLegat() With {
+            .Idrh = idrh, .RandIstoric = Nothing, .Idh = idh, .Idrr = idrr,
+            .DataH = New Date(2026, 1, zi, 10, 30, 0), .Total = 100 * zi}
     End Function
 
     ' Trei instantanee: unul pe sugestia serverului, unul mutat de operator, unul neatins.
@@ -56,7 +65,7 @@ Public Class AsociereDeciziiTests
             FaraAncore(), Gol(Of Integer)(), Gol(Of Boolean)(), Gol(Of Boolean)())
 
         Assert.Equal(2, d.Count)
-        Assert.Equal(New Integer() {0, 2}, d.Select(Function(x) x.RandIstoric).ToArray())
+        Assert.Equal(New Integer() {0, 2}, d.Select(Function(x) x.RandIstoric.Value).ToArray())
         Assert.All(d, Sub(x) Assert.Equal(ActiuneAsociere.Asociat, x.Actiune))
     End Sub
 
@@ -183,7 +192,7 @@ Public Class AsociereDeciziiTests
             FaraAncore(), Gol(Of Integer)(), Gol(Of Boolean)(), Gol(Of Boolean)())
 
         Dim una = Assert.Single(d)
-        Assert.Equal(0, una.RandIstoric)
+        Assert.Equal(0, una.RandIstoric.Value)
     End Sub
 
     <Fact>
@@ -213,13 +222,13 @@ Public Class AsociereDeciziiTests
             FaraAncore(), pozitie, Gol(Of Boolean)(), Gol(Of Boolean)())
 
         Assert.Equal(2, d.Count)
-        Dim porneste = d.Single(Function(x) x.RandIstoric = 0)
+        Dim porneste = d.Single(Function(x) x.RandIstoric.Value = 0)
         Assert.Equal(ActiuneAsociere.Reconstituire, porneste.Actiune)
         Assert.Equal("R1", porneste.ReceptieNoua)
         Assert.Equal(0, porneste.Idrr)
         Assert.False(porneste.RandReceptie.HasValue)
 
-        Dim inchide = d.Single(Function(x) x.RandIstoric = 2)
+        Dim inchide = d.Single(Function(x) x.RandIstoric.Value = 2)
         Assert.Equal(ActiuneAsociere.Stergere, inchide.Actiune)
         Assert.Equal("R1", inchide.ReceptieNoua)
         Assert.Equal(0, inchide.Idrr)
@@ -239,9 +248,9 @@ Public Class AsociereDeciziiTests
 
         Assert.Single(d.Where(Function(x) x.Actiune = ActiuneAsociere.Reconstituire))
         Assert.Single(d.Where(Function(x) x.Actiune = ActiuneAsociere.Stergere))
-        Assert.Equal(ActiuneAsociere.Reconstituire, d.Single(Function(x) x.RandIstoric = 0).Actiune)
-        Assert.Equal(ActiuneAsociere.Asociat, d.Single(Function(x) x.RandIstoric = 1).Actiune)
-        Assert.Equal(ActiuneAsociere.Stergere, d.Single(Function(x) x.RandIstoric = 2).Actiune)
+        Assert.Equal(ActiuneAsociere.Reconstituire, d.Single(Function(x) x.RandIstoric.Value = 0).Actiune)
+        Assert.Equal(ActiuneAsociere.Asociat, d.Single(Function(x) x.RandIstoric.Value = 1).Actiune)
+        Assert.Equal(ActiuneAsociere.Stergere, d.Single(Function(x) x.RandIstoric.Value = 2).Actiune)
         Assert.All(d, Sub(x) Assert.Equal("R1", x.ReceptieNoua))
     End Sub
 
@@ -259,8 +268,8 @@ Public Class AsociereDeciziiTests
             FaraAncore(), pozitie, Gol(Of Boolean)(), stergere)
 
         Assert.Single(d.Where(Function(x) x.Actiune = ActiuneAsociere.Stergere))
-        Assert.Equal(ActiuneAsociere.Asociat, d.Single(Function(x) x.RandIstoric = 1).Actiune)
-        Assert.Equal(ActiuneAsociere.Stergere, d.Single(Function(x) x.RandIstoric = 2).Actiune)
+        Assert.Equal(ActiuneAsociere.Asociat, d.Single(Function(x) x.RandIstoric.Value = 1).Actiune)
+        Assert.Equal(ActiuneAsociere.Stergere, d.Single(Function(x) x.RandIstoric.Value = 2).Actiune)
     End Sub
 
     <Fact>
@@ -270,8 +279,38 @@ Public Class AsociereDeciziiTests
             New List(Of InstantaneuLegat) From {Instantaneu(0, 0, 19), Instantaneu(2, 0, 21)},
             FaraAncore(), pozitie, Gol(Of Boolean)(), Gol(Of Boolean)())
 
-        Assert.Equal("R1", d.Single(Function(x) x.RandIstoric = 0).ReceptieNoua)
-        Assert.Equal("R2", d.Single(Function(x) x.RandIstoric = 2).ReceptieNoua)
+        Assert.Equal("R1", d.Single(Function(x) x.RandIstoric.Value = 0).ReceptieNoua)
+        Assert.Equal("R2", d.Single(Function(x) x.RandIstoric.Value = 2).ReceptieNoua)
+    End Sub
+
+    <Fact>
+    Public Sub UnInstantaneuFaraRandInDescarcare_PleacaCuIdhSiFaraIndice()
+        ' F34: rândul lui de istoric nu e în descărcarea asta (fluxul REVERSE aduce doar
+        ' diferența), deci numele care ține e id-ul de istoric. Exact unul dintre cele două.
+        Dim d = AsociereForm.DeciziiDin(
+            New List(Of InstantaneuLegat) From {InstantaneuPrinIdh(265, 5786, 41, 19)},
+            FaraAncore(), Gol(Of Integer)(), Gol(Of Boolean)(), Gol(Of Boolean)())
+
+        Dim una = Assert.Single(d)
+        Assert.False(una.RandIstoric.HasValue)
+        Assert.Equal(5786, una.Idh.Value)
+        Assert.Equal("idh:5786", una.Ancora())
+        Assert.Equal(41, una.Idrr)
+    End Sub
+
+    <Fact>
+    Public Sub UnInstantaneuCuIndice_NuPleacaSiCuIdh()
+        ' Idh e pus și pe rândurile cu indice (informativ); decizia poartă DOAR indicele.
+        Dim cuAmandoua As InstantaneuLegat = Instantaneu(0, 41, 19)
+        cuAmandoua.Idh = 6253
+        Dim d = AsociereForm.DeciziiDin(
+            New List(Of InstantaneuLegat) From {cuAmandoua},
+            FaraAncore(), Gol(Of Integer)(), Gol(Of Boolean)(), Gol(Of Boolean)())
+
+        Dim una = Assert.Single(d)
+        Assert.Equal(0, una.RandIstoric.Value)
+        Assert.False(una.Idh.HasValue)
+        Assert.Equal("rand:0", una.Ancora())
     End Sub
 
     <Fact>

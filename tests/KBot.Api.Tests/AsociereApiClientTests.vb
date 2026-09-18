@@ -71,14 +71,20 @@ Public Class AsociereApiClientTests
                 ""valoare"": 510.0, ""valoare_n"": 0.0}]}
   ],
   ""instantanee"": [
-    {""rand_istoric"": 9, ""data_h"": ""2026-02-10 22:46:54"", ""descriere"": ""PLATA FACT."",
+    {""rand_istoric"": 9, ""idh"": 6001, ""idrh"": 501,
+     ""data_h"": ""2026-02-10 22:46:54"", ""descriere"": ""PLATA FACT."",
      ""total"": 510.0, ""stergere"": false, ""sugestie_idrr"": 271,
      ""sugestie_automata"": true,
      ""linii"": [{""cod_indicator"": ""AAB"", ""cod_ai"": ""AAB37CNBK95-AAB"",
                   ""cod_ssi"": ""02E650301200301"", ""id_clsf"": 1204, ""valoare"": 510.0}]},
-    {""rand_istoric"": 41, ""data_h"": ""2026-05-28 20:11:34"", ""descriere"": ""Plata ces"",
+    {""rand_istoric"": 41, ""idh"": 6040, ""idrh"": 502,
+     ""data_h"": ""2026-05-28 20:11:34"", ""descriere"": ""Plata ces"",
      ""total"": 7150.0, ""stergere"": true, ""sugestie_idrr"": null,
-     ""sugestie_automata"": false, ""linii"": []}
+     ""sugestie_automata"": false, ""linii"": []},
+    {""rand_istoric"": null, ""idh"": 5786, ""idrh"": 265,
+     ""data_h"": ""2026-07-26 15:14:50"", ""descriere"": ""plata factura 2624228094"",
+     ""total"": 3240.12, ""stergere"": false, ""sugestie_idrr"": 203,
+     ""sugestie_automata"": true, ""linii"": []}
   ],
   ""are"": {""Receptii"": true, ""Plati"": false},
   ""scrise"": {""FX_Istoric"": 44},
@@ -105,7 +111,7 @@ Public Class AsociereApiClientTests
         Assert.Single(p.Receptii(0).Rhr)
         Assert.Equal(10502.19, p.Receptii(0).Rhr(0).CreditBugetar)
 
-        Assert.Equal(2, p.Instantanee.Count)
+        Assert.Equal(3, p.Instantanee.Count)
         Assert.True(p.Are("Receptii"))
         Assert.Equal(44, p.Scrise("FX_Istoric"))
         Assert.Single(p.Avertismente)
@@ -133,6 +139,27 @@ Public Class AsociereApiClientTests
         Assert.Equal(0, fara.SugestieIdrr)
         Assert.False(fara.SugestieAutomata)
         Assert.True(fara.Stergere)
+    End Function
+
+    <Fact>
+    Public Async Function Ancora_Se_Citeste_Intreaga_Indice_Idh_Si_Cheia_Propunerii() As Task
+        ' F24 / F34: un rand cu indice il pastreaza; unul cu `rand_istoric: null` e ancorat pe
+        ' `idh`. `idrh` e cheia dictionarelor formularului si nimic mai mult.
+        Dim h As New StubHandler() With {.ResponseBody = CORP_PROPUNERE}
+        Dim raspuns As PrelucrareRaspuns =
+            Await NewClient(h).CerePropunereAsync(Pachet(), Nothing, CancellationToken.None)
+        Dim cuIndice As InstantaneuPropus = raspuns.Propunere.Instantanee(0)
+        Assert.Equal(9, cuIndice.RandIstoric.Value)
+        Assert.Equal(6001, cuIndice.Idh)
+        Assert.Equal(501, cuIndice.Idrh)
+        Assert.Equal("rand:9", cuIndice.Ancora())
+
+        Dim prinIdh As InstantaneuPropus = raspuns.Propunere.Instantanee(2)
+        Assert.False(prinIdh.RandIstoric.HasValue)
+        Assert.Equal(5786, prinIdh.Idh)
+        Assert.Equal(265, prinIdh.Idrh)
+        Assert.Equal("idh:5786", prinIdh.Ancora())
+        Assert.Equal(203, prinIdh.SugestieIdrr)
     End Function
 
     <Fact>
@@ -180,7 +207,10 @@ Public Class AsociereApiClientTests
                 .Actiune = ActiuneAsociere.Reconstituire, .ReceptieNoua = "R1"},
             New DecizieAsociere() With {
                 .RandIstoric = 38, .DataH = New Date(2026, 3, 1, 10, 0, 0),
-                .Actiune = ActiuneAsociere.Stergere, .ReceptieNoua = "R1"}}
+                .Actiune = ActiuneAsociere.Stergere, .ReceptieNoua = "R1"},
+            New DecizieAsociere() With {
+                .Idh = 5786, .DataH = New Date(2026, 7, 26, 15, 14, 50),
+                .Actiune = ActiuneAsociere.Asociat, .Idrr = 203}}
     End Function
 
     <Fact>
@@ -197,13 +227,20 @@ Public Class AsociereApiClientTests
             Assert.Equal("a1b2c3", root.GetProperty("amprenta").GetString())
 
             Dim d As JsonElement = root.GetProperty("decizii")
-            Assert.Equal(4, d.GetArrayLength())
+            Assert.Equal(5, d.GetArrayLength())
 
-            ' asociat: `idrr`, fara eticheta.
+            ' asociat: `idrr`, fara eticheta. Ancora pe indice: `rand_istoric`, fara `idh`.
             Assert.Equal(9, d(0).GetProperty("rand_istoric").GetInt32())
+            Assert.False(d(0).TryGetProperty("idh", Nothing))
             Assert.Equal("asociat", d(0).GetProperty("actiune").GetString())
             Assert.Equal(271, d(0).GetProperty("idrr").GetInt32())
             Assert.False(d(0).TryGetProperty("receptie_noua", Nothing))
+
+            ' F34: ancora pe id-ul de istoric -- `idh`, si NICIUN `rand_istoric` (nici null:
+            ' serverul cere exact una, iar null pe fir ar fi doar zgomot).
+            Assert.Equal(5786, d(4).GetProperty("idh").GetInt32())
+            Assert.False(d(4).TryGetProperty("rand_istoric", Nothing))
+            Assert.Equal(203, d(4).GetProperty("idrr").GetInt32())
 
             ' ignorat: NICIUNA dintre cele doua tinte. Un `idrr: 0` ar fi citit ca
             ' «receptia zero», nu ca «niciuna» — de-asta campul e nulabil pe fir.

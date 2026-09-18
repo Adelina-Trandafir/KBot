@@ -1,4 +1,4 @@
-﻿Option Strict On
+Option Strict On
 Imports System.Collections.Generic
 
 ' DTO-uri de wire pentru POST /api/forexe/angajamente/upsert.
@@ -567,7 +567,11 @@ End Class
 ' `mod` alege faza. LIPSA lui inseamna «propunere» la server — faza care NU scrie. Clientul
 ' il trimite oricum explicit, ca sa nu depinda de un implicit al celeilalte laturi.
 Public NotInheritable Class PostPrelucrareDecizie
-    Public Property rand_istoric As Integer
+    ' ANCORA: exact una dintre `rand_istoric` (F24, indicele randului in TabelIstoric) si
+    ' `idh` (F34, FX_Istoric.ID cand randul nu e in descarcare). Amandoua nulabile: cea
+    ' nepusa iese null, iar serverul citeste null ca ABSENTA -- un 0 ar fi randul zero.
+    Public Property rand_istoric As Integer?
+    Public Property idh As Integer?
     Public Property data_h As String
     Public Property actiune As String
     ' Nullable: serverul cere EXACT una dintre `idrr` si `receptie_noua` pentru asociat si
@@ -628,7 +632,13 @@ Public NotInheritable Class PostPropunereLinieR
 End Class
 
 Public NotInheritable Class PostPropunereInstantaneu
-    Public Property rand_istoric As Integer
+    ' Ancora (F24 / F34): `rand_istoric` cand randul de istoric e in sarcina utila, altfel
+    ' null si atunci numele e `idh`. Se trimit inapoi exact asa, in decizie.
+    Public Property rand_istoric As Integer?
+    Public Property idh As Integer?
+    ' IDRH-ul propunerii: unic in tabloul de fata, NU un nume care supravietuieste derularii
+    ' inapoi. Devine cheia dictionarelor formularului si nimic altceva.
+    Public Property idrh As Integer?
     Public Property data_h As String
     Public Property descriere As String
     Public Property total As Double

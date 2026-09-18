@@ -2711,8 +2711,12 @@ Public Class AsociereForm
             Dim eStergere As Boolean = stergere IsNot Nothing AndAlso
                                        stergere.ContainsKey(inst.Idrh) AndAlso stergere(inst.Idrh)
 
+            ' Ancora pleacă exact cum a venit din propunere (F24 / F34): indicele rândului
+            ' de istoric, sau — când rândul nu e în această descărcare — id-ul lui de
+            ' istoric. `inst.Idrh` e DOAR cheia dicționarelor de aici; nu pleacă nicăieri.
             Dim d As New DecizieAsociere() With {
-                .RandIstoric = inst.Idrh,      ' în modul propunere ancora ESTE indicele rândului
+                .RandIstoric = inst.RandIstoric,
+                .Idh = If(inst.RandIstoric.HasValue OrElse inst.Idh <= 0, Nothing, New Integer?(inst.Idh)),
                 .DataH = inst.DataH
             }
             If eIgnorat Then
@@ -2731,7 +2735,8 @@ Public Class AsociereForm
                 ' Nu se inventează o hotărâre pentru un rând pe care operatorul nu l-a atins.
                 ' Butonul e stins tocmai ca drumul ăsta să nu se poată parcurge.
                 Throw New InvalidOperationException(
-                    $"Instantaneul de la rândul {inst.Idrh} nu are nicio hotărâre.")
+                    $"Instantaneul de la {AncoraAsociere.Text(inst.RandIstoric, inst.Idh)} " &
+                    "nu are nicio hotărâre.")
             Else
                 d.Actiune = If(eStergere, ActiuneAsociere.Stergere, ActiuneAsociere.Asociat)
                 ' UNA dintre cele două, niciodată amândouă: serverul cere exact o țintă.
