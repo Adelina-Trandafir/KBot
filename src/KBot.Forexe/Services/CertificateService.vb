@@ -1,5 +1,6 @@
 Imports System.Security.Cryptography
 Imports System.Security.Cryptography.X509Certificates
+Imports System.IO
 Imports System.Text.RegularExpressions
 Imports KBot.Common
 
@@ -7,6 +8,76 @@ Imports KBot.Common
 ''' Service for smartcard certificate operations
 ''' </summary>
 Public Class CertificateService
+
+    ''' <summary>
+    ''' File name of the last certificate the operator confirmed in CertificateSelectionForm,
+    ''' under %APPDATA%\AVACONT\KBot (next to settings.json). Public part only (DER), so
+    ''' it holds nothing secret and needs no token to be read back.
+    ''' </summary>
+    Public Const LastUsedCertificateFileName As String = "last_certificate.cer"
+
+    ''' <summary>Full path of <see cref="LastUsedCertificateFileName"/>.</summary>
+    Public Shared Function LastUsedCertificatePath() As String
+        Return Path.Combine(SetariFoldere.DirectorSetari(), LastUsedCertificateFileName)
+    End Function
+
+    ''' <summary>
+    ''' Remembers <paramref name="cert"/> as the last used one. Only the public certificate is
+    ''' written; the private key stays on the token.
+    ''' </summary>
+    Public Shared Sub SaveLastUsedCertificate(cert As X509Certificate2)
+        If cert Is Nothing Then Throw New ArgumentNullException(NameOf(cert))
+        Try
+            Dim filePath As String = LastUsedCertificatePath()
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath))
+            File.WriteAllBytes(filePath, cert.Export(X509ContentType.Cert))
+        Catch ex As Exception
+            GlobalErrorLog.Write("CertificateService.SaveLastUsedCertificate", ex)
+            Throw
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' The certificate saved by <see cref="SaveLastUsedCertificate"/>, or Nothing when none was
+    ''' saved yet (or the file is unreadable). Built straight from the file: no certificate store,
+    ''' no token, no validation of any kind. Whether the token is actually plugged in is found
+    ''' out later, when the certificate is used. The instance carries no private key; see
+    ''' <see cref="ResolveFromStore"/> when one is needed.
+    ''' </summary>
+    Public Shared Function LoadLastUsedCertificate() As X509Certificate2
+        Try
+            Dim filePath As String = LastUsedCertificatePath()
+            If Not File.Exists(filePath) Then Return Nothing
+            Return New X509Certificate2(File.ReadAllBytes(filePath))
+        Catch ex As Exception
+            ' A damaged file must not stop the picker from opening: log it, behave as "none saved".
+            GlobalErrorLog.Write("CertificateService.LoadLastUsedCertificate", ex)
+            Return Nothing
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The store copy of <paramref name="cert"/> (same thumbprint), which is the one bound to
+    ''' the token's private key. Nothing when the store has no such certificate, i.e. the token
+    ''' (or its driver) is not present. A single lookup by thumbprint, no key access.
+    ''' </summary>
+    Public Shared Function ResolveFromStore(cert As X509Certificate2) As X509Certificate2
+        If cert Is Nothing Then Throw New ArgumentNullException(NameOf(cert))
+        Try
+            If cert.HasPrivateKey Then Return cert
+            For Each location In {StoreLocation.CurrentUser, StoreLocation.LocalMachine}
+                Using store As New X509Store(StoreName.My, location)
+                    store.Open(OpenFlags.ReadOnly)
+                    Dim found = store.Certificates.Find(X509FindType.FindByThumbprint, cert.Thumbprint, validOnly:=False)
+                    If found.Count > 0 Then Return found(0)
+                End Using
+            Next
+            Return Nothing
+        Catch ex As Exception
+            GlobalErrorLog.Write("CertificateService.ResolveFromStore", ex)
+            Throw
+        End Try
+    End Function
 
     ''' <summary>
     ''' Get all valid certificates with private keys from smartcard/token

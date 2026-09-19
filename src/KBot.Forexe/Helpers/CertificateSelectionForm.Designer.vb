@@ -20,160 +20,154 @@ Partial Class CertificateSelectionForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(CertificateSelectionForm))
-        lblTitle = New Label()
         lstCertificates = New ListBox()
         pnlBottom = New Panel()
-        btnCancel = New Button()
-        btnSelect = New Button()
         btnResendOnly = New Button()
-        grpPin = New GroupBox()
-        lblPinInfo = New Label()
-        txtPin = New TextBox()
-        lblPinTitle = New Label()
+        btnSelect = New Button()
+        lblTitle = New Label()
+        pnlTop = New Panel()
+        btnClose = New Button()
+        btnRefresh = New Button()
+        pnlBody = New Panel()
         pnlBottom.SuspendLayout()
-        grpPin.SuspendLayout()
+        pnlTop.SuspendLayout()
+        pnlBody.SuspendLayout()
         SuspendLayout()
-        '
-        ' lblTitle
-        '
-        lblTitle.AutoSize = True
-        lblTitle.Font = New System.Drawing.Font("Segoe UI Semilight", 14.0F, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
-        lblTitle.ForeColor = Drawing.Color.FromArgb(CByte(64), CByte(64), CByte(64))
-        lblTitle.Location = New System.Drawing.Point(12, 15)
-        lblTitle.Name = "lblTitle"
-        lblTitle.Size = New System.Drawing.Size(253, 32)
-        lblTitle.TabIndex = 0
-        lblTitle.Text = "Selectează un Certificat"
-        '
+        ' 
         ' lstCertificates
-        '
-        lstCertificates.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
+        ' 
         lstCertificates.BorderStyle = BorderStyle.None
+        lstCertificates.Dock = DockStyle.Fill
         lstCertificates.DrawMode = DrawMode.OwnerDrawVariable
-        lstCertificates.Font = New System.Drawing.Font("Segoe UI", 10.0F, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
+        lstCertificates.Font = New System.Drawing.Font("Calibri", 10.0F, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
         lstCertificates.FormattingEnabled = True
         lstCertificates.IntegralHeight = False
         lstCertificates.ItemHeight = 70
-        lstCertificates.Location = New System.Drawing.Point(18, 60)
+        lstCertificates.Location = New System.Drawing.Point(10, 10)
         lstCertificates.Name = "lstCertificates"
-        lstCertificates.Size = New System.Drawing.Size(546, 215)
+        lstCertificates.Size = New System.Drawing.Size(564, 360)
         lstCertificates.TabIndex = 1
-        '
+        ' 
         ' pnlBottom
-        '
+        ' 
         pnlBottom.BackColor = Drawing.Color.WhiteSmoke
         pnlBottom.Controls.Add(btnResendOnly)
-        pnlBottom.Controls.Add(btnCancel)
         pnlBottom.Controls.Add(btnSelect)
         pnlBottom.Dock = DockStyle.Bottom
-        pnlBottom.Location = New System.Drawing.Point(0, 385)
+        pnlBottom.Location = New System.Drawing.Point(0, 425)
         pnlBottom.Name = "pnlBottom"
-        pnlBottom.Size = New System.Drawing.Size(584, 80)
+        pnlBottom.Size = New System.Drawing.Size(584, 40)
         pnlBottom.TabIndex = 2
-        '
+        ' 
         ' btnResendOnly
-        '
-        btnResendOnly.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left
+        ' 
         btnResendOnly.BackColor = Drawing.Color.FromArgb(CByte(180), CByte(110), CByte(20))
+        btnResendOnly.Dock = DockStyle.Left
         btnResendOnly.FlatAppearance.BorderSize = 0
         btnResendOnly.FlatStyle = FlatStyle.Flat
-        btnResendOnly.Font = New System.Drawing.Font("Segoe UI", 9.0F, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
+        btnResendOnly.Font = New System.Drawing.Font("Calibri", 9.0F)
         btnResendOnly.ForeColor = Drawing.Color.White
-        btnResendOnly.Location = New System.Drawing.Point(18, 22)
+        btnResendOnly.Location = New System.Drawing.Point(0, 0)
         btnResendOnly.Name = "btnResendOnly"
-        btnResendOnly.Size = New System.Drawing.Size(180, 35)
+        btnResendOnly.Size = New System.Drawing.Size(122, 40)
         btnResendOnly.TabIndex = 2
-        btnResendOnly.Text = "Fără Token (Resend Only)"
+        btnResendOnly.Text = "Fără Token"
         btnResendOnly.UseVisualStyleBackColor = False
-        '
-        ' btnCancel
-        '
-        btnCancel.Anchor = AnchorStyles.Bottom Or AnchorStyles.Right
-        btnCancel.DialogResult = DialogResult.Cancel
-        btnCancel.FlatAppearance.BorderColor = Drawing.Color.Silver
-        btnCancel.FlatStyle = FlatStyle.Flat
-        btnCancel.Font = New System.Drawing.Font("Segoe UI", 9.0F, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
-        btnCancel.Location = New System.Drawing.Point(354, 22)
-        btnCancel.Name = "btnCancel"
-        btnCancel.Size = New System.Drawing.Size(100, 35)
-        btnCancel.TabIndex = 1
-        btnCancel.Text = "Anulează"
-        btnCancel.UseVisualStyleBackColor = True
-        '
+        ' 
         ' btnSelect
-        '
-        btnSelect.Anchor = AnchorStyles.Bottom Or AnchorStyles.Right
+        ' 
         btnSelect.BackColor = Drawing.Color.FromArgb(CByte(0), CByte(120), CByte(215))
+        btnSelect.Dock = DockStyle.Right
         btnSelect.FlatAppearance.BorderSize = 0
         btnSelect.FlatStyle = FlatStyle.Flat
-        btnSelect.Font = New System.Drawing.Font("Segoe UI Semibold", 9.0F, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
+        btnSelect.Font = New System.Drawing.Font("Calibri", 9.0F)
         btnSelect.ForeColor = Drawing.Color.White
-        btnSelect.Location = New System.Drawing.Point(464, 22)
+        btnSelect.Location = New System.Drawing.Point(484, 0)
         btnSelect.Name = "btnSelect"
-        btnSelect.Size = New System.Drawing.Size(100, 35)
+        btnSelect.Size = New System.Drawing.Size(100, 40)
         btnSelect.TabIndex = 0
         btnSelect.Text = "Confirmă"
         btnSelect.UseVisualStyleBackColor = False
-        '
-        ' grpPin
-        '
-        grpPin.Anchor = AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
-        grpPin.Controls.Add(lblPinInfo)
-        grpPin.Controls.Add(txtPin)
-        grpPin.Controls.Add(lblPinTitle)
-        grpPin.Location = New System.Drawing.Point(18, 291)
-        grpPin.Name = "grpPin"
-        grpPin.Size = New System.Drawing.Size(546, 80)
-        grpPin.TabIndex = 3
-        grpPin.TabStop = False
-        '
-        ' lblPinInfo
-        '
-        lblPinInfo.AutoSize = True
-        lblPinInfo.Font = New System.Drawing.Font("Segoe UI", 8.25F, Drawing.FontStyle.Italic, Drawing.GraphicsUnit.Point, CByte(0))
-        lblPinInfo.ForeColor = Drawing.Color.Gray
-        lblPinInfo.Location = New System.Drawing.Point(340, 35)
-        lblPinInfo.Name = "lblPinInfo"
-        lblPinInfo.Size = New System.Drawing.Size(162, 19)
-        lblPinInfo.TabIndex = 2
-        lblPinInfo.Text = "(Doar dacă este necesar)"
-        '
-        ' txtPin
-        '
-        txtPin.Font = New System.Drawing.Font("Segoe UI", 10.0F)
-        txtPin.Location = New System.Drawing.Point(100, 30)
-        txtPin.Name = "txtPin"
-        txtPin.PasswordChar = "*"c
-        txtPin.Size = New System.Drawing.Size(230, 30)
-        txtPin.TabIndex = 1
-        '
-        ' lblPinTitle
-        '
-        lblPinTitle.AutoSize = True
-        lblPinTitle.Font = New System.Drawing.Font("Segoe UI Semibold", 10.0F, Drawing.FontStyle.Bold)
-        lblPinTitle.Location = New System.Drawing.Point(15, 33)
-        lblPinTitle.Name = "lblPinTitle"
-        lblPinTitle.Size = New System.Drawing.Size(92, 23)
-        lblPinTitle.TabIndex = 0
-        lblPinTitle.Text = "PIN Token:"
-        '
+        ' 
+        ' lblTitle
+        ' 
+        lblTitle.BackColor = Drawing.Color.WhiteSmoke
+        lblTitle.Dock = DockStyle.Fill
+        lblTitle.Font = New System.Drawing.Font("Calibri", 12.0F, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
+        lblTitle.ForeColor = Drawing.SystemColors.ActiveCaptionText
+        lblTitle.Location = New System.Drawing.Point(10, 0)
+        lblTitle.Name = "lblTitle"
+        lblTitle.Size = New System.Drawing.Size(564, 45)
+        lblTitle.TabIndex = 0
+        lblTitle.Text = "Selectează un Certificat"
+        lblTitle.TextAlign = Drawing.ContentAlignment.MiddleCenter
+        ' 
+        ' pnlTop
+        ' 
+        pnlTop.Controls.Add(btnClose)
+        pnlTop.Controls.Add(btnRefresh)
+        pnlTop.Controls.Add(lblTitle)
+        pnlTop.Dock = DockStyle.Top
+        pnlTop.Location = New System.Drawing.Point(0, 0)
+        pnlTop.Margin = New Padding(0)
+        pnlTop.Name = "pnlTop"
+        pnlTop.Padding = New Padding(10, 0, 10, 0)
+        pnlTop.Size = New System.Drawing.Size(584, 45)
+        pnlTop.TabIndex = 3
+        ' 
+        ' btnClose
+        ' 
+        btnClose.BackColor = Drawing.Color.WhiteSmoke
+        btnClose.BackgroundImageLayout = ImageLayout.Center
+        btnClose.Dock = DockStyle.Right
+        btnClose.FlatAppearance.BorderSize = 0
+        btnClose.FlatAppearance.MouseDownBackColor = Drawing.Color.FromArgb(CByte(192), CByte(255), CByte(192))
+        btnClose.FlatAppearance.MouseOverBackColor = Drawing.Color.FromArgb(CByte(192), CByte(255), CByte(192))
+        btnClose.FlatStyle = FlatStyle.Flat
+        btnClose.Image = My.Resources.Resources.Icojam_Blueberry_Basic_Close_delete_2_32
+        btnClose.Location = New System.Drawing.Point(540, 0)
+        btnClose.Name = "btnClose"
+        btnClose.Size = New System.Drawing.Size(34, 45)
+        btnClose.TabIndex = 2
+        btnClose.UseVisualStyleBackColor = False
+        ' 
+        ' btnRefresh
+        ' 
+        btnRefresh.BackColor = Drawing.Color.WhiteSmoke
+        btnRefresh.Dock = DockStyle.Left
+        btnRefresh.FlatAppearance.BorderSize = 0
+        btnRefresh.FlatAppearance.MouseDownBackColor = Drawing.Color.FromArgb(CByte(192), CByte(255), CByte(192))
+        btnRefresh.FlatAppearance.MouseOverBackColor = Drawing.Color.FromArgb(CByte(192), CByte(255), CByte(192))
+        btnRefresh.FlatStyle = FlatStyle.Flat
+        btnRefresh.Image = CType(resources.GetObject("btnRefresh.Image"), Drawing.Image)
+        btnRefresh.Location = New System.Drawing.Point(10, 0)
+        btnRefresh.Name = "btnRefresh"
+        btnRefresh.Size = New System.Drawing.Size(34, 45)
+        btnRefresh.TabIndex = 1
+        btnRefresh.UseVisualStyleBackColor = False
+        ' 
+        ' pnlBody
+        ' 
+        pnlBody.Controls.Add(lstCertificates)
+        pnlBody.Dock = DockStyle.Fill
+        pnlBody.Location = New System.Drawing.Point(0, 45)
+        pnlBody.Margin = New Padding(0)
+        pnlBody.Name = "pnlBody"
+        pnlBody.Padding = New Padding(10)
+        pnlBody.Size = New System.Drawing.Size(584, 380)
+        pnlBody.TabIndex = 4
+        ' 
         ' CertificateSelectionForm
-        '
+        ' 
         AcceptButton = btnSelect
-        ' No child is docked Fill (absolute layout), so there is no root to measure the content
-        ' from; the fixed dialog keeps its designer size. Centring on the app screen still applies.
-        AutoFitToTheme = False
-        AutoScaleDimensions = New System.Drawing.SizeF(120F, 120F)
-        AutoScaleMode = AutoScaleMode.Dpi
-        BackColor = Drawing.Color.White
-        CancelButton = btnCancel
+        AutoScaleMode = AutoScaleMode.None
+        BackColor = Drawing.SystemColors.Window
         ClientSize = New System.Drawing.Size(584, 465)
-        Controls.Add(grpPin)
+        Controls.Add(pnlBody)
+        Controls.Add(pnlTop)
         Controls.Add(pnlBottom)
-        Controls.Add(lstCertificates)
-        Controls.Add(lblTitle)
         Font = New System.Drawing.Font("Segoe UI", 9.0F, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
-        FormBorderStyle = FormBorderStyle.FixedDialog
+        FormBorderStyle = FormBorderStyle.None
         Icon = CType(resources.GetObject("$this.Icon"), Drawing.Icon)
         Margin = New Padding(3, 4, 3, 4)
         MaximizeBox = False
@@ -183,20 +177,17 @@ Partial Class CertificateSelectionForm
         Text = "Securitate"
         TopMost = True
         pnlBottom.ResumeLayout(False)
-        grpPin.ResumeLayout(False)
-        grpPin.PerformLayout()
+        pnlTop.ResumeLayout(False)
+        pnlBody.ResumeLayout(False)
         ResumeLayout(False)
-        PerformLayout()
     End Sub
-
-    Friend WithEvents lblTitle As Label
     Friend WithEvents lstCertificates As ListBox
     Friend WithEvents pnlBottom As Panel
-    Friend WithEvents btnCancel As Button
     Friend WithEvents btnSelect As Button
     Friend WithEvents btnResendOnly As Button
-    Friend WithEvents grpPin As GroupBox
-    Friend WithEvents txtPin As TextBox
-    Friend WithEvents lblPinTitle As Label
-    Friend WithEvents lblPinInfo As Label
+    Friend WithEvents lblTitle As Label
+    Friend WithEvents pnlTop As Panel
+    Friend WithEvents btnRefresh As Button
+    Friend WithEvents pnlBody As Panel
+    Friend WithEvents btnClose As Button
 End Class

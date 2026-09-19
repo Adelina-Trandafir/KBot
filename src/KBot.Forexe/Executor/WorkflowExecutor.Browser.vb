@@ -160,7 +160,7 @@ Partial Public Class WorkflowExecutor
         ' Taskbar ON
         Dim exStyle = GetWindowLong(hwnd, GWL_EXSTYLE)
         exStyle = (exStyle And Not WS_EX_TOOLWINDOW) Or WS_EX_APPWINDOW
-        SetWindowLong(hwnd, GWL_EXSTYLE, exStyle)
+        Dim v = SetWindowLong(hwnd, GWL_EXSTYLE, exStyle)
 
         Dim cdp = Await _page.Context.NewCDPSessionAsync(_page)
         Dim windowId = Await GetChromeWindowIdAsync()
@@ -453,7 +453,7 @@ Partial Public Class WorkflowExecutor
                         If titleBuf.ToString().IndexOf(marker, StringComparison.Ordinal) < 0 Then Return True
 
                         classBuf.Clear()
-                        GetClassName(hWnd, classBuf, classBuf.Capacity)
+                        Dim v = GetClassName(hWnd, classBuf, classBuf.Capacity)
                         If Not String.Equals(classBuf.ToString(), ChromeFrameClass, StringComparison.Ordinal) Then Return True
 
                         result = hWnd

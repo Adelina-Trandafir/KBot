@@ -345,11 +345,11 @@ Public Class KbotForm
 
     ' Schimbarea anului reface SS-urile anului (care fixează perioada) și RE-CITEȘTE
     ' arborele: an-ul e filtru pe server, deci datele vechi nu mai sunt valabile.
-    Private Async Sub CboAn_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboAn.SelectedIndexChanged
+    Private Async Sub CboAn_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboAn.SelectedIndexChanged, cboAn.SelectedIndexChanged
         Try
             If _suppressPeriodEvents Then Return
-            LoadSsForSelectedYear()
-            Await LoadTreeAsync()
+            LoadSsForSelectedYear
+            Await LoadTreeAsync
         Catch ex As Exception
             ' Boundary UI: un handler nu poate rearunca (ar dărâma procesul) — logăm și înghițim.
             GlobalErrorLog.Write("MainForm.cboAn_SelectedIndexChanged", ex)
@@ -357,11 +357,11 @@ Public Class KbotForm
     End Sub
 
     ' Idem pentru SS (filtru pe server, prin EXISTS pe FX_Indicatori.SS).
-    Private Async Sub CboSs_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSs.SelectedIndexChanged
+    Private Async Sub CboSs_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSs.SelectedIndexChanged, cboSs.SelectedIndexChanged
         Try
             If _suppressPeriodEvents Then Return
             ApplySelectedPeriod(persist:=True)
-            Await LoadTreeAsync()
+            Await LoadTreeAsync
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.cboSs_SelectedIndexChanged", ex)
         End Try

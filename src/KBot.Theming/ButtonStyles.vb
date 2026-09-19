@@ -13,8 +13,8 @@ Public Module ButtonStyles
     ''' folosește randarea modernă owner-drawn.
     ''' </summary>
     Public Sub ApplyPrimary(b As Button, scheme As ThemeScheme)
-        If b Is Nothing Then Throw New ArgumentNullException(NameOf(b))
-        If scheme Is Nothing Then Throw New ArgumentNullException(NameOf(scheme))
+        ArgumentNullException.ThrowIfNull(b)
+        ArgumentNullException.ThrowIfNull(scheme)
         Dim p As ThemePalette = scheme.Palette
 
         If scheme.Style.ButtonRender = ButtonRenderStyle.ModernOwnerDrawn Then
@@ -38,8 +38,8 @@ Public Module ButtonStyles
     ''' să concureze cu acțiunea primară.
     ''' </summary>
     Public Sub ApplySecondary(b As Button, scheme As ThemeScheme)
-        If b Is Nothing Then Throw New ArgumentNullException(NameOf(b))
-        If scheme Is Nothing Then Throw New ArgumentNullException(NameOf(scheme))
+        ArgumentNullException.ThrowIfNull(b)
+        ArgumentNullException.ThrowIfNull(scheme)
         Dim p As ThemePalette = scheme.Palette
 
         ModernRenderer.DetachButton(b)
@@ -52,4 +52,17 @@ Public Module ButtonStyles
         b.UseVisualStyleBackColor = False
     End Sub
 
+    Public Sub ApplyNormal(b As Button, scheme As ThemeScheme)
+        ArgumentNullException.ThrowIfNull(b)
+        ArgumentNullException.ThrowIfNull(scheme)
+        Dim p As ThemePalette = scheme.Palette
+        ModernRenderer.DetachButton(b)
+        b.FlatStyle = FlatStyle.Flat
+        b.FlatAppearance.BorderSize = 0
+        b.BackColor = p.SurfaceColor
+        b.ForeColor = p.TextColor
+        b.FlatAppearance.MouseOverBackColor = p.ButtonHoverColor
+        b.FlatAppearance.MouseDownBackColor = p.ButtonPressedColor
+        b.UseVisualStyleBackColor = False
+    End Sub
 End Module

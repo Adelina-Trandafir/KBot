@@ -684,6 +684,7 @@ Public NotInheritable Class ForexeController
     ''' and an operator cancel stays a cancel.</para>
     ''' </summary>
     Private Shared Function NoTokenInDebug() As Boolean
+        Return False
 #If DEBUG Then
         Try
             Return CertificateService.GetSmartcardCertificates().Count = 0

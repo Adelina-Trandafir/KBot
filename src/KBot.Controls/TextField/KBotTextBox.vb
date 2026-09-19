@@ -412,9 +412,12 @@ Public NotInheritable Class KBotTextBox
         End Get
     End Property
 
-    ''' <summary>Dă focus casetei interne (cadrul nu e selectabil).</summary>
+    ''' <summary>
+    ''' Focuses the inner box (the frame is not selectable). Select, not Focus: Focus is a
+    ''' no-op while the form is not yet visible (Load); Select sets the form's ActiveControl.
+    ''' </summary>
     Public Sub FocusInput()
-        _inner.Focus()
+        _inner.Select()
     End Sub
 
     ''' <summary>Adaugă text la sfârșit și duce vederea acolo (jurnal, consolă).</summary>

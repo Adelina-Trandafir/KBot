@@ -26,6 +26,7 @@ Partial Class ForexeFooterView
         pbProgress = New Controls.KBotProgressBar()
         lblCert = New Label()
         lblStatus = New Label()
+        lblSpacer = New Label()
         SuspendLayout()
         ' 
         ' btnExtinde
@@ -62,7 +63,7 @@ Partial Class ForexeFooterView
         btnConectare.Dock = DockStyle.Left
         btnConectare.FlatAppearance.BorderColor = SystemColors.ActiveBorder
         btnConectare.FlatStyle = FlatStyle.Flat
-        btnConectare.Font = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        btnConectare.Font = New Font("Calibri", 9.0F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         btnConectare.Image = My.Resources.Resources.FX_24
         btnConectare.ImageAlign = ContentAlignment.MiddleLeft
         btnConectare.Location = New Point(0, 0)
@@ -79,7 +80,7 @@ Partial Class ForexeFooterView
         ' pbProgress
         ' 
         pbProgress.Dock = DockStyle.Left
-        pbProgress.Location = New Point(219, 0)
+        pbProgress.Location = New Point(234, 0)
         pbProgress.Margin = New Padding(6)
         pbProgress.Name = "pbProgress"
         pbProgress.Size = New Size(213, 49)
@@ -89,7 +90,7 @@ Partial Class ForexeFooterView
         ' 
         lblCert.AutoEllipsis = True
         lblCert.Dock = DockStyle.Left
-        lblCert.Location = New Point(432, 0)
+        lblCert.Location = New Point(447, 0)
         lblCert.Margin = New Padding(4, 0, 4, 0)
         lblCert.Name = "lblCert"
         lblCert.Padding = New Padding(10, 0, 0, 0)
@@ -102,23 +103,33 @@ Partial Class ForexeFooterView
         ' 
         lblStatus.AutoEllipsis = True
         lblStatus.Dock = DockStyle.Fill
-        lblStatus.Location = New Point(753, 0)
+        lblStatus.Location = New Point(768, 0)
         lblStatus.Margin = New Padding(4, 0, 4, 0)
         lblStatus.Name = "lblStatus"
-        lblStatus.Size = New Size(364, 49)
+        lblStatus.Size = New Size(349, 49)
         lblStatus.TabIndex = 4
         lblStatus.Text = "În așteptare..."
         lblStatus.TextAlign = ContentAlignment.MiddleLeft
         ' 
+        ' lblSpacer
+        ' 
+        lblSpacer.Dock = DockStyle.Left
+        lblSpacer.Location = New Point(219, 0)
+        lblSpacer.Margin = New Padding(4, 0, 4, 0)
+        lblSpacer.Name = "lblSpacer"
+        lblSpacer.Size = New Size(15, 49)
+        lblSpacer.TabIndex = 7
+        ' 
         ' ForexeFooterView
         ' 
-        AutoScaleDimensions = New SizeF(144F, 144F)
+        AutoScaleDimensions = New SizeF(144.0F, 144.0F)
         AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(lblStatus)
         Controls.Add(btnIstoric)
         Controls.Add(btnExtinde)
         Controls.Add(lblCert)
         Controls.Add(pbProgress)
+        Controls.Add(lblSpacer)
         Controls.Add(btnConectare)
         Margin = New Padding(4, 5, 4, 5)
         Name = "ForexeFooterView"
@@ -133,4 +144,5 @@ Partial Class ForexeFooterView
     Friend WithEvents btnIstoric As Button
     Friend WithEvents btnExtinde As Button
     Friend WithEvents btnConectare As Button
+    Friend WithEvents lblSpacer As Label
 End Class

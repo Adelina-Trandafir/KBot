@@ -220,9 +220,13 @@ Public NotInheritable Class KBotTextField
         End Get
     End Property
 
-    ''' <summary>Focuses the inner box (the frame is not selectable).</summary>
+    ''' <summary>
+    ''' Focuses the inner box (the frame is not selectable). Uses Select, not Focus: Focus is
+    ''' a no-op while the form is not yet visible (Load), whereas Select records the box as
+    ''' the form's ActiveControl so it gets the caret when the window is first activated.
+    ''' </summary>
     Public Sub FocusInput()
-        _inner.Focus()
+        _inner.Select()
     End Sub
 
     ' ===== Paddings ===========================================================================
