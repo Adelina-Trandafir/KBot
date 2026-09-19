@@ -47,7 +47,8 @@ Public NotInheritable Class LoginForm
             ' The last user who got in wins over the Debug default: that is the name the
             ' operator would otherwise type again. Load never throws (missing file = nothing).
             _lastLogin = LastLoginStore.Load()
-            If Not String.IsNullOrWhiteSpace(_lastLogin.Username) Then
+            ' ...unless the operator switched the memory off («Setări» -> Autentificare, slice 0072).
+            If AppSettings.Current.RememberLastLogin AndAlso Not String.IsNullOrWhiteSpace(_lastLogin.Username) Then
                 txtUser.Text = _lastLogin.Username
             End If
             Me.KeyPreview = True                ' Escape inchide (nu mai exista X nativ)
@@ -234,7 +235,7 @@ Public NotInheritable Class LoginForm
             cboUnit.SelectedIndex = 0    ' caz mono-unitate: pre-selectat, un click de confirmat
             ' Same user as last time and their unit is still on the list -> pre-select it.
             ' Another user, or a unit gone from the list -> the first one, as before.
-            If _lastLogin IsNot Nothing AndAlso
+            If AppSettings.Current.RememberLastUnit AndAlso _lastLogin IsNot Nothing AndAlso
                String.Equals(_lastLogin.Username, user, StringComparison.OrdinalIgnoreCase) AndAlso
                Not String.IsNullOrWhiteSpace(_lastLogin.UnitDc) Then
                 For i As Integer = 0 To units.Count - 1
@@ -275,9 +276,13 @@ Public NotInheritable Class LoginForm
             _session.Populate(_username, result.Token, result.SessionContext)   ' OperatorName = e-mail
             _session.LastSS = result.LastSS                                     ' hint pentru MainForm
 
-            ' Remember the pair for next time -- only now, after the server said yes.
+            ' Remember the pair for next time -- only now, after the server said yes, and only
+            ' while the operator wants it remembered (slice 0072). With the memory off the file
+            ' is not written at all: an unread file is still a file with the e-mail in it.
             Try
-                LastLoginStore.Save(_username, selected.DC)
+                If AppSettings.Current.RememberLastLogin Then
+                    LastLoginStore.Save(_username, If(AppSettings.Current.RememberLastUnit, selected.DC, Nothing))
+                End If
             Catch ex As Exception
                 ' Already logged by Save. A convenience file that cannot be written is not a
                 ' reason to fail a login that just succeeded.

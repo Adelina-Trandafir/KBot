@@ -3,11 +3,9 @@ Option Strict On
 ''' <summary>
 ''' Comutatoarele INTERNE ale aplicației: un singur loc care spune ce e aprins și ce nu.
 '''
-''' <para>Nu e configurație de operator și nu se citește (încă) din niciun fișier — sunt valori de
-''' cod, aici ca să existe UN loc de schimbat, nu zece <c>If</c>-uri împrăștiate. Când se va decide
-''' de unde vin cu adevărat — rol de utilizator, manifest de actualizare, cheie de configurare —
-''' se schimbă IMPLEMENTAREA proprietăților de aici, iar apelanții rămân neatinși. Ăsta e tot rostul
-''' clasei.</para>
+''' <para>Until slice 0072 these were code values. They now come from <see cref="AppSettings"/>
+''' (the operator's «Setări» window), but callers keep reading them FROM HERE -- which is the
+''' whole point of the class: the implementation changed, the callers did not.</para>
 ''' </summary>
 Public Module FeatureSwitches
 
@@ -21,7 +19,8 @@ Public Module FeatureSwitches
     ''' </summary>
     Public ReadOnly Property VizualizatorJurnaleActiv As Boolean
         Get
-            Return True
+            ' Slice 0072: the operator's own switch (settings window, «Aplicație»); default True.
+            Return AppSettings.Current.LogViewerEnabled
         End Get
     End Property
 
@@ -37,7 +36,8 @@ Public Module FeatureSwitches
     ''' </summary>
     Public ReadOnly Property ReceptiiBifateLaDeschidere As Boolean
         Get
-            Return True
+            ' Slice 0072: configurable at last, from the settings window; default True.
+            Return AppSettings.Current.ReceptiiCheckedOnOpen
         End Get
     End Property
 

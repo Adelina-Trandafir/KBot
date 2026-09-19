@@ -33,17 +33,10 @@ Public Class ReaderHostPreview
 
     Public Event GenerateRequested As EventHandler Implements IDdfPreview.GenerateRequested
 
-    ''' <summary>
-    ''' Cum se eliberează fereastra Adobe la schimbarea documentului. Constantă de COMPILARE, același
-    ''' tipar ca <c>DdfPreviewFactory.Mode</c>: ambele căi sunt implementate și testate, niciuna nu e
-    ''' cod mort, iar operatorul comută după ce compară A și B pe banc (bancul arată și timpul de
-    ''' încorporare pentru fiecare).
-    '''
-    ''' A (implicit) oprește procesul pornit de K-BOT — determinist, nu așteaptă nimic. B trimite
-    ''' WM_CLOSE doar ferestrei și lasă procesul cald, deci documentul următor pornește mai repede,
-    ''' dar poate aștepta până la <c>CloseGraceMs</c> dacă fereastra nu se închide.
-    ''' </summary>
-    Private Const DetachMode As AdobeDetachMode = AdobeDetachMode.KillProcess
+    ' How the Adobe window is let go when the document changes (A kills the process we started,
+    ' B closes the window and keeps the process warm) and whether the floating popup is hunted:
+    ' until slice 0072 a compile-time constant, now the operator's choice in «Setări» ->
+    ' Documente, read through AdobeHostSettings in ApplySettings (same place as the profile).
 
     Private ReadOnly _host As AdobeReaderHost
     ' Suprafața ActiveX, creată LENEȘ: dacă operatorul nu cere motorul «ActiveX», controlul COM nu
@@ -57,7 +50,6 @@ Public Class ReaderHostPreview
         InitializeComponent()
         _host = New AdobeReaderHost(pnlHost, AddressOf AdobeHostLog.Write) With {
             .PopupWatchEnabled = True}
-        _host.Options.DetachMode = DetachMode
         ' În DESIGNER nu citim setările și nu scriem jurnal (0025-05, de când controlul e declarat
         ' în DdfView.Designer.vb și deci se construiește pe suprafața de design): `AppDir` e acolo
         ' folderul lui devenv.exe, deci `kbot_paths.json` lipsește oricum, iar singurul efect real
@@ -98,6 +90,8 @@ Public Class ReaderHostPreview
             _host.Mode = mode.Value
             _host.NewInstanceMode = newInstance.Value
             _engine = engine.Value
+            ' Detach mode + popup watch (slice 0072): the operator's, from app_settings.json.
+            AdobeHostSettings.ApplyTo(_host, AddressOf AdobeHostLog.Write)
             AdobeHostLog.Write($"Setări gazdă Adobe: motor={AdobeViewerSettings.EngineLabel(engine.Value)}, " &
                                $"mod={AdobeViewerSettings.ModeLabel(mode.Value)}, " &
                                $"instanță nouă={AdobeViewerSettings.NewInstanceLabel(newInstance.Value)}.")

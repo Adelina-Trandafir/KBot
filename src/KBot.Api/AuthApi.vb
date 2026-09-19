@@ -122,6 +122,47 @@ Public NotInheritable Class AuthApi
         End Try
     End Function
 
+    Public Async Function RequestPasswordCodeAsync(token As String, currentPassword As String,
+                                                   ct As CancellationToken) _
+        As Task(Of PasswordCodeInfo) Implements IAuthApi.RequestPasswordCodeAsync
+
+        Try
+            Dim payload As New PasswordCodeRequest With {.CurrentPassword = currentPassword}
+            Dim respText As String = Await PostAsync("/api/auth/password/code", payload,
+                                                     "trimiterea codului de confirmare", ct, bearer:=token).ConfigureAwait(False)
+            Dim info As PasswordCodeInfo = JsonSerializer.Deserialize(Of PasswordCodeInfo)(respText, _json)
+            If info Is Nothing Then Throw New ApiException("Răspuns invalid de la server la trimiterea codului.")
+            Return info
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("AuthApi.RequestPasswordCodeAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function ChangePasswordAsync(token As String, currentPassword As String, code As String,
+                                              newPassword As String, ct As CancellationToken) _
+        As Task(Of PasswordChangeResult) Implements IAuthApi.ChangePasswordAsync
+
+        Try
+            Dim payload As New PasswordChangeRequest With {
+                .CurrentPassword = currentPassword, .Code = code, .NewPassword = newPassword}
+            Dim respText As String = Await PostAsync("/api/auth/password/change", payload,
+                                                     "schimbarea parolei", ct, bearer:=token).ConfigureAwait(False)
+            Dim result As PasswordChangeResult = JsonSerializer.Deserialize(Of PasswordChangeResult)(respText, _json)
+            If result Is Nothing OrElse Not result.Ok Then
+                Throw New ApiException("Răspuns invalid de la server la schimbarea parolei.")
+            End If
+            Return result
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("AuthApi.ChangePasswordAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ' POST JSON (+ Authorization: Bearer doar cand exista token). Intoarce corpul brut
     ' la 2xx; altfel Throw ApiException cu mesajul serverului (sau fallback pe cod) si
     ' codul HTTP atasat. Nu inghite niciodata.
@@ -190,6 +231,16 @@ Public NotInheritable Class AuthApi
 
     Private NotInheritable Class LastSsRequest
         <JsonPropertyName("ss")> Public Property Ss As String
+    End Class
+
+    Private NotInheritable Class PasswordCodeRequest
+        <JsonPropertyName("current_password")> Public Property CurrentPassword As String
+    End Class
+
+    Private NotInheritable Class PasswordChangeRequest
+        <JsonPropertyName("current_password")> Public Property CurrentPassword As String
+        <JsonPropertyName("code")> Public Property Code As String
+        <JsonPropertyName("new_password")> Public Property NewPassword As String
     End Class
 
     ' ---- DTO-uri de raspuns ----

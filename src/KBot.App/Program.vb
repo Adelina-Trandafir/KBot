@@ -75,6 +75,14 @@ Friend Module Program
             ThemeManager.Initialize()
             KBotTheme.WireSubsystems()
 
+            ' The operator's switches (slice 0072, «Setări»). The FOREXE console verbosity is the
+            ' one that has to be set BEFORE any console exists: RichTextBoxLogger starts on the
+            ' build default (slice 0071) and only an explicit choice overrides it. The rest are
+            ' read where they act (FeatureSwitches, the FOREXE band, the document hosts).
+            If AppSettings.Current.VerboseLogging.HasValue Then
+                RichTextBoxLogger.VerboseLogging = AppSettings.Current.VerboseLogging.Value
+            End If
+
             ' Fontul de bază lipsește de pe mașină (felia 0052). Se spune O SINGURĂ DATĂ, aici,
             ' fiindcă e o proprietate a calculatorului, nu a ferestrei: aplicația merge înainte pe
             ' fontul de sistem, dar formularele au fost proiectate pe Calibri, deci măsurile lor nu
@@ -382,6 +390,12 @@ Friend Module Program
         ' service-locator în MainForm.
         services.AddSingleton(Of Func(Of LoginForm))(
             Function(sp) Function() sp.GetRequiredService(Of LoginForm)())
+
+        ' The settings window (slice 0072): transient, opened modeless from the shell's
+        ' options menu through the same factory pattern as LoginForm.
+        services.AddTransient(Of SetariForm)()
+        services.AddSingleton(Of Func(Of SetariForm))(
+            Function(sp) Function() sp.GetRequiredService(Of SetariForm)())
 
 #If DEBUG Then
         ' Banc de probă (Dev Harness) — doar pe Debug.

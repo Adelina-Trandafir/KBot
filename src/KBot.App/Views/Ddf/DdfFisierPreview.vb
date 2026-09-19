@@ -218,7 +218,13 @@ Public Class DdfFisierPreview
         lblMesaj.Refresh()
 
         Dim gazda As OfficeDocumentHost = AsiguraOffice()
-        If fel = OfficeDocumentKind.Excel Then gazda.ExcelRibbon = ExcelRibbonMode.HideDockWindow
+        ' The operator's choice (slice 0072, «Setări» -> Documente); a broken value falls back to
+        ' the window method and says so in the working log.
+        If fel = OfficeDocumentKind.Excel Then
+            Dim panglica As AdobeSettingRead(Of ExcelRibbonMode) = OfficeHostSettings.CurrentExcelRibbon()
+            If panglica.HasWarning Then OfficeHostLog.Write("ATENȚIE: " & panglica.Warning)
+            gazda.ExcelRibbon = panglica.Value
+        End If
         Dim rezultat As OfficeHostResult = gazda.ShowDocument(cale, fel)
         If rezultat.Succeeded Then
             ArataSuprafata(pnlGazda)
@@ -280,8 +286,9 @@ Public Class DdfFisierPreview
     Private Function AsiguraAdobe() As AdobeReaderHost
         If _adobe IsNot Nothing Then Return _adobe
 
-        _adobe = New AdobeReaderHost(pnlGazda, AddressOf AdobeHostLog.Write) With {.PopupWatchEnabled = True}
-        _adobe.Options.DetachMode = AdobeDetachMode.KillProcess
+        _adobe = New AdobeReaderHost(pnlGazda, AddressOf AdobeHostLog.Write)
+        ' Detach mode + popup watch: the operator's (slice 0072), same two lines as ReaderHostPreview.
+        AdobeHostSettings.ApplyTo(_adobe, AddressOf AdobeHostLog.Write)
 
         Dim mod_ As AdobeSettingRead(Of AdobeViewerMode) = AdobeViewerSettings.CurrentMode()
         Dim instanta As AdobeSettingRead(Of AdobeNewInstanceMode) = AdobeViewerSettings.CurrentNewInstance()

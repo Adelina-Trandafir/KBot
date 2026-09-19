@@ -61,6 +61,8 @@ Public Class ForexeFooterView
             AddHandler _controller.StateChanged, AddressOf Controller_StateChanged
             AddHandler _controller.ProgressChanged, AddressOf Controller_ProgressChanged
             AddHandler _controller.StatusChanged, AddressOf Controller_StatusChanged
+            ' The «Arată browserul» switch (slice 0072) can flip while the band is on screen.
+            AddHandler AppSettings.Changed, AddressOf AppSettings_Changed
             ActualizeazaStarea()
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeFooterView.Bind", ex)
@@ -76,10 +78,20 @@ Public Class ForexeFooterView
             RemoveHandler _controller.StateChanged, AddressOf Controller_StateChanged
             RemoveHandler _controller.ProgressChanged, AddressOf Controller_ProgressChanged
             RemoveHandler _controller.StatusChanged, AddressOf Controller_StatusChanged
+            RemoveHandler AppSettings.Changed, AddressOf AppSettings_Changed
             _controller = Nothing
         Catch ex As Exception
             ' Frontieră de eliberare: nu rearuncăm din Dispose.
             GlobalErrorLog.Write("ForexeFooterView.Dezleaga", ex)
+        End Try
+    End Sub
+
+    ' Raised on the thread that saved the settings (the settings window, UI); marshalled anyway.
+    Private Sub AppSettings_Changed(sender As Object, e As EventArgs)
+        Try
+            PeFirulDeUI(AddressOf ActualizeazaStarea)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeFooterView.AppSettings_Changed", ex)
         End Try
     End Sub
 
@@ -116,7 +128,8 @@ Public Class ForexeFooterView
         Dim ocupat As Boolean = _controller.IsBusy
 
         btnConectare.Enabled = Not conectat
-        btnBrowser.Visible = conectat
+        ' The browser button is also the operator's to hide (slice 0072, «Setări» -> Aplicație).
+        btnBrowser.Visible = conectat AndAlso AppSettings.Current.ShowBrowserButton
         btnExtinde.Visible = conectat
         'lblConexiune.Text = If(conectat, "● Forexe: conectat", "● Forexe: neconectat")
 

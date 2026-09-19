@@ -72,6 +72,23 @@ Public NotInheritable Class LastLoginStore
     End Function
 
     ''' <summary>
+    ''' Deletes what was remembered (slice 0072, «Setări» -> Autentificare). Returns False
+    ''' when there was nothing to forget.
+    ''' </summary>
+    ''' <remarks>I/O boundary: logs and rethrows.</remarks>
+    Public Shared Function Forget(Optional dir As String = Nothing) As Boolean
+        Try
+            Dim target As String = FilePath(dir)
+            If Not File.Exists(target) Then Return False
+            File.Delete(target)
+            Return True
+        Catch ex As Exception
+            GlobalErrorLog.Write("LastLoginStore.Forget", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
     ''' Writes the user name and unit of a login that SUCCEEDED. Call it only after the
     ''' server said yes -- a mistyped name must not become tomorrow's suggestion.
     ''' </summary>

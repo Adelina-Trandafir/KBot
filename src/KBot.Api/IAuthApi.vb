@@ -24,4 +24,14 @@ Public Interface IAuthApi
                              ct As CancellationToken) As Task(Of IReadOnlyList(Of PeriodInfo))
 
     Function SaveLastSsAsync(token As String, ss As String, ct As CancellationToken) As Task
+
+    ' Slice 0072 -- password change in two steps, both on the bearer token:
+    '   RequestPasswordCodeAsync -> the server checks the CURRENT password and e-mails a
+    '                               one-time code to the operator's address (the user name);
+    '   ChangePasswordAsync      -> current password + that code + the new password.
+    Function RequestPasswordCodeAsync(token As String, currentPassword As String,
+                                      ct As CancellationToken) As Task(Of PasswordCodeInfo)
+
+    Function ChangePasswordAsync(token As String, currentPassword As String, code As String,
+                                 newPassword As String, ct As CancellationToken) As Task(Of PasswordChangeResult)
 End Interface

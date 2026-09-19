@@ -240,3 +240,63 @@ lista de fișiere rămâne goală și **numește calea configurată** în mesaj 
   limitare cunoscută a mecanismului, nu o defecțiune de configurare.
 * **Nu semnați un document cât timp fila «Document» ține o fereastră Adobe găzduită** — semnarea
   pornește Adobe într-un alt mod, peste același proces.
+
+---
+
+## 6. Fereastra «Setări» (felia 0072)
+
+Din 19.09.2026 setările de mai sus, plus cele noi, se schimbă din **fereastra «Setări»**, deschisă din
+meniul butonului de opțiuni al ferestrei principale (rândul «Setări…»). Fereastra are aceeași formă
+ca aplicația — navigație în stânga, pagina în dreapta — și **salvează fiecare setare în clipa în care
+o schimbi**; «Închide» doar închide. Cele cinci pagini:
+
+| pagina | ce conține | unde se scrie |
+|---|---|---|
+| **Informații** | operatorul, unitatea, rolul, baza; tipul instalării (datele comerciale — în lucru); versiunea + «Caută actualizări»; **schimbarea parolei** | server (parola) |
+| **Aplicație** | comutatoarele globale, cum se deschid PDF / Word / Excel, folderele | `app_settings.json`, `kbot_paths.json`, `settings.json` |
+| **FOREXE** | starea robotului, certificatul memorat (+ «Uită certificatul»), bara browserului andocat, folderele robotului (doar citire) | `app_settings.json`, `last_certificate.cer` |
+| **Temă** | schema (cele 23 de culori + stil) și scalarea — același conținut ca «Opțiuni de temă» | `…\AVACONT\Themes\*.json`, `theme.json` |
+| **Autentificare** | ce ține minte fereastra de login (+ «Uită datele memorate»); adresa serverului (doar citire) | `app_settings.json`, `last_login.json` |
+
+### 6.1 `app_settings.json` — comutatoarele operatorului
+
+| | |
+|---|---|
+| Fișier | `%APPDATA%\AVACONT\KBot\app_settings.json` (per utilizator Windows) |
+| Lipsă / gol | valorile implicite (= comportamentul de dinainte de felia 0072) |
+| Stricat | valorile implicite + o linie în `harness_errors.log` |
+
+| cheie | implicit | ce face |
+|---|---|---|
+| `VerboseLogging` | *(lipsă)* = după build: pornit pe Debug, oprit pe Release | consola FOREXE arată tot (pași, așteptări, andocare, stive), nu doar `<Log>` și erorile |
+| `LogViewerEnabled` | `true` | rândul «Arată jurnal» în meniul de opțiuni |
+| `ShowBrowserButton` | `true` | butonul «Arată browserul» în banda FOREXE |
+| `ForexeHideBrowserChrome` | `true` | în vizualizator, bara browserului rămâne în afara panoului (se aplică lucrării următoare) |
+| `ReceptiiCheckedOnOpen` | `true` | selectorul de recepții pornește cu tot bifat |
+| `AdobeDetachMode` | `KillProcess` | cum se eliberează fereastra Adobe la schimbarea documentului: `KillProcess` (A) sau `CloseWindow` (B) |
+| `AdobePopupWatch` | `true` | ascunde fereastra plutitoare a Adobe cât timp documentul e afișat |
+| `ExcelRibbon` | `HideDockWindow` | cum se ascunde panglica Excel în previzualizare: `HideDockWindow` (fereastra, ca la Word) sau `Excel4Macro` |
+| `RememberLastLogin` | `true` | fereastra de login completează singură ultimul e-mail |
+| `RememberLastUnit` | `true` | …și preselectează unitatea aleasă ultima dată |
+
+O valoare nerecunoscută la `AdobeDetachMode` / `ExcelRibbon` cade pe implicit cu un avertisment în
+jurnalul gazdei (`adobe_preview.log`, respectiv jurnalul Office). Cod: `src\KBot.Common\AppSettings.vb`,
+`src\KBot.Controls\Adobe\AdobeHostSettings.vb`, `src\KBot.Controls\Office\OfficeHostSettings.vb`.
+
+### 6.2 Schimbarea parolei — doi factori
+
+1. Operatorul scrie **parola actuală** și apasă «Trimite codul pe e-mail». Serverul o verifică (un login
+   MariaDB ca operatorul, exact ca la autentificare) și trimite un **cod de 6 cifre** pe adresa
+   operatorului — numele de utilizator ESTE e-mailul. Codul e valabil 10 minute, o singură dată, cel mult
+   5 încercări greșite.
+2. Operatorul scrie codul, parola nouă (minimum 8 caractere, diferită de cea actuală) și confirmarea, apoi
+   «Schimbă parola». Serverul schimbă parola pe serverul K-BOT (`SET PASSWORD` pe conexiunea
+   operatorului — fără niciun privilegiu al contului de serviciu) și, **cu bună-credință**, pe serverul
+   vechi (Access). Dacă serverul vechi nu a putut fi actualizat, fereastra o spune: acolo rămâne parola
+   veche până o aliniază un administrator.
+
+Nimic despre parole nu rămâne pe calculatorul operatorului. Pe server, trimiterea e-mailului cere
+`SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_FROM` în `config.py` (sau ca variabile
+de mediu cu aceleași nume); fără `SMTP_HOST`, butonul răspunde «Trimiterea e-mailului nu este
+configurată pe server». Rute: `POST /api/auth/password/code`, `POST /api/auth/password/change`
+(`PYTHON\routes\auth\auth.py`, `mailer.py`).

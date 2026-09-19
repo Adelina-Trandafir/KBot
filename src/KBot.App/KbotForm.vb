@@ -67,9 +67,13 @@ Public Class KbotForm
     ' Istoricul acțiunilor FOREXE (felia 0040): creat la prima cerere, ascuns la închidere.
     Private _istoricForexe As ForexeHistoryForm
 
+    ' The settings window (slice 0072): built by DI on demand, shown modeless and owned by
+    ' the shell, one instance at a time (SetariForm.ShowFor).
+    Private ReadOnly _setariFactory As Func(Of SetariForm)
+
     Public Sub New(forexeRunner As IForexeRunner, session As SessionContext,
                    apiClient As IApiClient, authApi As IAuthApi, loginFactory As Func(Of LoginForm),
-                   forexe As ForexeController)
+                   forexe As ForexeController, setariFactory As Func(Of SetariForm))
         InitializeComponent()
         _forexeRunner = forexeRunner
         _session = session
@@ -77,6 +81,7 @@ Public Class KbotForm
         _authApi = authApi
         _loginFactory = loginFactory
         _controller = forexe
+        _setariFactory = setariFactory
         Me.Text = "K-BOT"
     End Sub
 
@@ -2374,6 +2379,8 @@ Public Class KbotForm
     Private Const OPT_JURNAL As String = "jurnal"
     ' Felia 0034: vechiul btnSinc din subsol a devenit rând de meniu (compatibilitate).
     Private Const OPT_SINCRONIZARE As String = "sincronizare"
+    ' Slice 0072: the settings window.
+    Private Const OPT_SETARI As String = "setari"
 
     ''' <summary>
     ''' Butonul de opțiuni din bara de titlu desfășoară meniul shell-ului — un <c>CustomPopup</c>
@@ -2399,6 +2406,7 @@ Public Class KbotForm
                 elemente.Add(New CustomPopupItem(OPT_JURNAL, "&Arată jurnal"))
             End If
             elemente.Add(New CustomPopupItem(OPT_SINCRONIZARE, "&Sincronizare (server)"))
+            elemente.Add(New CustomPopupItem(OPT_SETARI, "S&etări…"))
             If elemente.Count = 0 Then Return
 
             ' NU în «Using»: arătat nemodal, popup-ul se eliberează singur la închidere.
@@ -2418,6 +2426,8 @@ Public Class KbotForm
                     ShowLog()
                 Case OPT_SINCRONIZARE
                     Await SincronizeazaAsync()
+                Case OPT_SETARI
+                    SetariForm.ShowFor(Me, _setariFactory)
                 Case Else
                     ' Fără no-op-uri tăcute: un rând adăugat în meniu și uitat aici trebuie să se vadă.
                     Throw New ArgumentException("Rând necunoscut în meniul de opțiuni: «" & e.Item.Key & "».")

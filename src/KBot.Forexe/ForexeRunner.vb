@@ -272,6 +272,11 @@ Namespace KBot.Forexe
                 ' Niciun SendKeys de PIN.
                 _executor.ManualPinMode = True
 
+                ' The operator's choice (slice 0072, «Setări» -> FOREXE): whether the docked
+                ' browser keeps its own toolbar out of the viewer. Read per job, so a change in
+                ' the window reaches the next job without a restart.
+                _executor.HideChromeWhenDocked = AppSettings.Current.ForexeHideBrowserChrome
+
                 ' Procesorul Excel pentru apelurile parseExcel din workflow. Tot HTTP-ul
                 ' (adresă + token bearer + POST) stă în ApiClient; re-login-ul e transparent.
                 _executor.SetExcelProcessor(_excelProcessor)

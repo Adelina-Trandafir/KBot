@@ -38,6 +38,23 @@ Public Class CertificateService
     End Sub
 
     ''' <summary>
+    ''' Forgets the remembered certificate (slice 0072, «Setări» -> FOREXE): the next
+    ''' connection asks again. Returns False when there was nothing to forget.
+    ''' </summary>
+    ''' <remarks>I/O boundary: logs and rethrows.</remarks>
+    Public Shared Function ForgetLastUsedCertificate() As Boolean
+        Try
+            Dim filePath As String = LastUsedCertificatePath()
+            If Not File.Exists(filePath) Then Return False
+            File.Delete(filePath)
+            Return True
+        Catch ex As Exception
+            GlobalErrorLog.Write("CertificateService.ForgetLastUsedCertificate", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
     ''' The certificate saved by <see cref="SaveLastUsedCertificate"/>, or Nothing when none was
     ''' saved yet (or the file is unreadable). Built straight from the file: no certificate store,
     ''' no token, no validation of any kind. Whether the token is actually plugged in is found
