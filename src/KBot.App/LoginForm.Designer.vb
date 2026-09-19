@@ -14,11 +14,11 @@ Partial Class LoginForm
     Private components As System.ComponentModel.IContainer
 
     Private Sub InitializeComponent()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(LoginForm))
         components = New ComponentModel.Container()
-        tips = New Controls.KBotToolTip(components)
-        pnlCard = New Panel()
-        tlpBody = New Global.KBot.Controls.KBotTableLayoutPanel()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(LoginForm))
+        tips = New KBot.Controls.KBotToolTip(components)
+        tlpBody = New Controls.KBotTableLayoutPanel()
+        busyBar = New Controls.KBotBusyBar()
         picLogo = New PictureBox()
         lblTitle = New Label()
         lblSubtitle = New Label()
@@ -27,53 +27,42 @@ Partial Class LoginForm
         lblPass = New Label()
         txtPass = New Controls.KBotTextField()
         btnContinue = New Button()
-        pnlUnit = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblUnit = New Label()
         cboUnit = New Controls.KBotComboBox()
         btnBack = New Button()
         btnLogin = New Button()
         ntfError = New Controls.KBotNotice()
-        busyBar = New Controls.KBotBusyBar()
         capBar = New Controls.KBotCaptionBar()
-        pnlCard.SuspendLayout()
         tlpBody.SuspendLayout()
         CType(picLogo, ComponentModel.ISupportInitialize).BeginInit()
-        pnlUnit.SuspendLayout()
         SuspendLayout()
-        ' 
-        ' pnlCard
-        ' 
-        pnlCard.Controls.Add(tlpBody)
-        pnlCard.Controls.Add(busyBar)
-        pnlCard.Controls.Add(capBar)
-        pnlCard.Dock = DockStyle.Fill
-        pnlCard.Location = New Point(1, 2)
-        pnlCard.Margin = New Padding(4, 5, 4, 5)
-        pnlCard.Name = "pnlCard"
-        pnlCard.Size = New Size(598, 863)
-        pnlCard.TabIndex = 0
-        pnlCard.Tag = "Card"
-        ' 
+        '
         ' tlpBody
-        ' 
-        tlpBody.ColumnCount = 1
-        tlpBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlpBody.Controls.Add(picLogo, 0, 0)
-        tlpBody.Controls.Add(lblTitle, 0, 1)
-        tlpBody.Controls.Add(lblSubtitle, 0, 2)
-        tlpBody.Controls.Add(lblUser, 0, 3)
-        tlpBody.Controls.Add(txtUser, 0, 4)
-        tlpBody.Controls.Add(lblPass, 0, 5)
-        tlpBody.Controls.Add(txtPass, 0, 6)
-        tlpBody.Controls.Add(btnContinue, 0, 7)
-        tlpBody.Controls.Add(pnlUnit, 0, 8)
-        tlpBody.Controls.Add(ntfError, 0, 9)
+        '
+        tlpBody.ColumnCount = 2
+        tlpBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50.0F))
+        tlpBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50.0F))
+        tlpBody.Controls.Add(busyBar, 0, 0)
+        tlpBody.Controls.Add(picLogo, 0, 1)
+        tlpBody.Controls.Add(lblTitle, 0, 2)
+        tlpBody.Controls.Add(lblSubtitle, 0, 3)
+        tlpBody.Controls.Add(lblUser, 0, 4)
+        tlpBody.Controls.Add(txtUser, 0, 5)
+        tlpBody.Controls.Add(lblPass, 0, 6)
+        tlpBody.Controls.Add(txtPass, 0, 7)
+        tlpBody.Controls.Add(btnContinue, 0, 8)
+        tlpBody.Controls.Add(lblUnit, 0, 9)
+        tlpBody.Controls.Add(cboUnit, 0, 10)
+        tlpBody.Controls.Add(btnBack, 0, 11)
+        tlpBody.Controls.Add(btnLogin, 1, 11)
+        tlpBody.Controls.Add(ntfError, 0, 12)
         tlpBody.Dock = DockStyle.Fill
-        tlpBody.Location = New Point(0, 72)
+        tlpBody.GrowStyle = TableLayoutPanelGrowStyle.FixedSize
+        tlpBody.Location = New Point(1, 69)
         tlpBody.Margin = New Padding(4, 5, 4, 5)
         tlpBody.Name = "tlpBody"
         tlpBody.Padding = New Padding(40, 13, 40, 17)
-        tlpBody.RowCount = 11
+        tlpBody.RowCount = 14
         tlpBody.RowStyles.Add(New RowStyle())
         tlpBody.RowStyles.Add(New RowStyle())
         tlpBody.RowStyles.Add(New RowStyle())
@@ -84,216 +73,213 @@ Partial Class LoginForm
         tlpBody.RowStyles.Add(New RowStyle())
         tlpBody.RowStyles.Add(New RowStyle())
         tlpBody.RowStyles.Add(New RowStyle())
-        tlpBody.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlpBody.Size = New Size(598, 791)
+        tlpBody.RowStyles.Add(New RowStyle())
+        tlpBody.RowStyles.Add(New RowStyle())
+        tlpBody.RowStyles.Add(New RowStyle())
+        tlpBody.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        tlpBody.Size = New Size(516, 829)
         tlpBody.TabIndex = 0
         tlpBody.Tag = "Card"
-        ' 
+        '
+        ' busyBar
+        '
+        tlpBody.SetColumnSpan(busyBar, 2)
+        busyBar.Dock = DockStyle.Fill
+        busyBar.Location = New Point(40, 13)
+        busyBar.Margin = New Padding(0, 0, 0, 10)
+        busyBar.Name = "busyBar"
+        busyBar.Size = New Size(436, 5)
+        busyBar.TabIndex = 0
+        busyBar.TabStop = False
+        '
         ' picLogo
-        ' 
-        picLogo.Anchor = AnchorStyles.None
-        picLogo.Location = New Point(253, 23)
+        '
+        tlpBody.SetColumnSpan(picLogo, 2)
+        picLogo.Dock = DockStyle.Fill
+        picLogo.Location = New Point(44, 38)
         picLogo.Margin = New Padding(4, 10, 4, 10)
         picLogo.Name = "picLogo"
-        picLogo.Size = New Size(91, 107)
+        picLogo.Size = New Size(428, 107)
         picLogo.SizeMode = PictureBoxSizeMode.Zoom
-        picLogo.TabIndex = 0
+        picLogo.TabIndex = 1
         picLogo.TabStop = False
-        ' 
+        '
         ' lblTitle
-        ' 
+        '
         lblTitle.AutoSize = True
+        tlpBody.SetColumnSpan(lblTitle, 2)
         lblTitle.Dock = DockStyle.Top
-        lblTitle.Font = New Font("Segoe UI", 18F, FontStyle.Bold)
-        lblTitle.Location = New Point(44, 140)
+        lblTitle.Font = New Font("Segoe UI", 18.0F, FontStyle.Bold)
+        lblTitle.Location = New Point(44, 155)
         lblTitle.Margin = New Padding(4, 0, 4, 3)
         lblTitle.Name = "lblTitle"
-        lblTitle.Size = New Size(510, 48)
-        lblTitle.TabIndex = 1
+        lblTitle.Size = New Size(428, 48)
+        lblTitle.TabIndex = 2
         lblTitle.Text = "K-BOT"
         lblTitle.TextAlign = ContentAlignment.MiddleCenter
-        ' 
+        '
         ' lblSubtitle
-        ' 
+        '
         lblSubtitle.AutoSize = True
+        tlpBody.SetColumnSpan(lblSubtitle, 2)
         lblSubtitle.Dock = DockStyle.Top
-        lblSubtitle.Font = New Font("Segoe UI", 10F)
-        lblSubtitle.Location = New Point(44, 191)
+        lblSubtitle.Font = New Font("Segoe UI", 10.0F)
+        lblSubtitle.Location = New Point(44, 206)
         lblSubtitle.Margin = New Padding(4, 0, 4, 20)
         lblSubtitle.Name = "lblSubtitle"
-        lblSubtitle.Size = New Size(510, 28)
-        lblSubtitle.TabIndex = 2
+        lblSubtitle.Size = New Size(428, 28)
+        lblSubtitle.TabIndex = 3
         lblSubtitle.Text = "Autentificare operator"
         lblSubtitle.TextAlign = ContentAlignment.MiddleCenter
-        ' 
+        '
         ' lblUser
-        ' 
+        '
         lblUser.AutoSize = True
+        tlpBody.SetColumnSpan(lblUser, 2)
         lblUser.Dock = DockStyle.Top
-        lblUser.Location = New Point(44, 239)
+        lblUser.Location = New Point(44, 254)
         lblUser.Margin = New Padding(4, 0, 4, 5)
         lblUser.Name = "lblUser"
-        lblUser.Size = New Size(510, 25)
-        lblUser.TabIndex = 3
+        lblUser.Size = New Size(428, 22)
+        lblUser.TabIndex = 4
         lblUser.Text = "Utilizator"
-        ' 
+        '
         ' txtUser
-        ' 
-        txtUser.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        '
         txtUser.BackColor = Color.Transparent
-        txtUser.Location = New Point(44, 269)
+        tlpBody.SetColumnSpan(txtUser, 2)
+        txtUser.Dock = DockStyle.Fill
+        txtUser.Location = New Point(44, 281)
         txtUser.Margin = New Padding(4, 0, 4, 17)
-        txtUser.MaxLength = 32767
         txtUser.Name = "txtUser"
-        txtUser.PlaceholderText = ""
-        txtUser.Size = New Size(510, 60)
-        txtUser.TabIndex = 4
-        txtUser.TabStop = False
-        txtUser.UseSystemPasswordChar = False
-        ' 
+        txtUser.Size = New Size(428, 60)
+        txtUser.TabIndex = 5
+        tips.SetToolTipHeader(txtUser, "Utilizator")
+        tips.SetToolTipText(txtUser, "Adresa de e-mail cu care ești înregistrat în K-BOT." & vbLf & "Ea ține locul vechiului nume de utilizator.")
+        '
         ' lblPass
-        ' 
+        '
         lblPass.AutoSize = True
+        tlpBody.SetColumnSpan(lblPass, 2)
         lblPass.Dock = DockStyle.Top
-        lblPass.Location = New Point(44, 346)
+        lblPass.Location = New Point(44, 358)
         lblPass.Margin = New Padding(4, 0, 4, 5)
         lblPass.Name = "lblPass"
-        lblPass.Size = New Size(510, 25)
-        lblPass.TabIndex = 5
+        lblPass.Size = New Size(428, 22)
+        lblPass.TabIndex = 6
         lblPass.Text = "Parolă"
-        ' 
+        '
         ' txtPass
-        ' 
-        txtPass.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        '
         txtPass.BackColor = Color.Transparent
-        txtPass.Location = New Point(44, 376)
+        tlpBody.SetColumnSpan(txtPass, 2)
+        txtPass.Dock = DockStyle.Fill
+        txtPass.Location = New Point(44, 385)
         txtPass.Margin = New Padding(4, 0, 4, 23)
-        txtPass.MaxLength = 32767
         txtPass.Name = "txtPass"
-        txtPass.PlaceholderText = ""
-        txtPass.Size = New Size(510, 60)
-        txtPass.TabIndex = 6
-        txtPass.TabStop = False
+        txtPass.Size = New Size(428, 60)
+        txtPass.TabIndex = 7
+        tips.SetToolTipHeader(txtPass, "Parolă")
+        tips.SetToolTipText(txtPass, "Parola contului." & vbLf & "Se trimite criptat; nu se păstrează pe acest calculator.")
         txtPass.UseSystemPasswordChar = True
-        ' 
+        '
         ' btnContinue
-        ' 
-        btnContinue.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        '
+        tlpBody.SetColumnSpan(btnContinue, 2)
+        btnContinue.Dock = DockStyle.Fill
         btnContinue.FlatStyle = FlatStyle.Flat
-        btnContinue.Font = New Font("Segoe UI Semibold", 10F)
-        btnContinue.Location = New Point(44, 459)
+        btnContinue.Font = New Font("Segoe UI Semibold", 10.0F)
+        btnContinue.Location = New Point(44, 468)
         btnContinue.Margin = New Padding(4, 0, 4, 10)
         btnContinue.Name = "btnContinue"
-        btnContinue.Size = New Size(510, 67)
-        btnContinue.TabIndex = 7
+        btnContinue.Size = New Size(428, 63)
+        btnContinue.TabIndex = 8
         btnContinue.Text = "Continuă"
+        tips.SetToolTipHeader(btnContinue, "Continuă")
+        tips.SetToolTipText(btnContinue, "Verifică utilizatorul și parola, apoi trece la alegerea unității.")
         btnContinue.UseVisualStyleBackColor = True
-        ' 
-        ' pnlUnit
-        ' 
-        pnlUnit.AutoSize = True
-        pnlUnit.AutoSizeMode = AutoSizeMode.GrowAndShrink
-        pnlUnit.ColumnCount = 2
-        pnlUnit.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
-        pnlUnit.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
-        pnlUnit.Controls.Add(lblUnit, 0, 0)
-        pnlUnit.Controls.Add(cboUnit, 0, 1)
-        pnlUnit.Controls.Add(btnBack, 0, 2)
-        pnlUnit.Controls.Add(btnLogin, 1, 2)
-        pnlUnit.Dock = DockStyle.Top
-        pnlUnit.Location = New Point(40, 546)
-        pnlUnit.Margin = New Padding(0, 10, 0, 0)
-        pnlUnit.Name = "pnlUnit"
-        pnlUnit.RowCount = 3
-        pnlUnit.RowStyles.Add(New RowStyle())
-        pnlUnit.RowStyles.Add(New RowStyle())
-        pnlUnit.RowStyles.Add(New RowStyle())
-        pnlUnit.Size = New Size(518, 160)
-        pnlUnit.TabIndex = 8
-        pnlUnit.Tag = "Card"
-        pnlUnit.Visible = False
-        ' 
+        '
         ' lblUnit
-        ' 
+        '
         lblUnit.AutoSize = True
-        pnlUnit.SetColumnSpan(lblUnit, 2)
+        tlpBody.SetColumnSpan(lblUnit, 2)
         lblUnit.Dock = DockStyle.Top
-        lblUnit.Location = New Point(4, 0)
-        lblUnit.Margin = New Padding(4, 0, 4, 5)
+        lblUnit.Location = New Point(44, 551)
+        lblUnit.Margin = New Padding(4, 10, 4, 5)
         lblUnit.Name = "lblUnit"
-        lblUnit.Size = New Size(510, 25)
-        lblUnit.TabIndex = 0
+        lblUnit.Size = New Size(428, 22)
+        lblUnit.TabIndex = 9
         lblUnit.Text = "Selectați unitatea"
-        ' 
+        '
         ' cboUnit
-        ' 
+        '
         cboUnit.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
-        pnlUnit.SetColumnSpan(cboUnit, 2)
+        tlpBody.SetColumnSpan(cboUnit, 2)
         cboUnit.CornerRadius = 4
         cboUnit.DrawMode = DrawMode.OwnerDrawFixed
         cboUnit.DropDownStyle = ComboBoxStyle.DropDownList
+        cboUnit.Enabled = False
         cboUnit.FlatStyle = FlatStyle.Flat
-        cboUnit.Font = New Font("Segoe UI", 10F)
+        cboUnit.Font = New Font("Segoe UI", 10.0F)
         cboUnit.ItemHeight = 36
-        cboUnit.Location = New Point(4, 35)
+        cboUnit.Location = New Point(44, 583)
         cboUnit.Margin = New Padding(4, 5, 4, 20)
         cboUnit.Name = "cboUnit"
-        cboUnit.Size = New Size(510, 42)
-        cboUnit.TabIndex = 1
-        ' 
+        cboUnit.Size = New Size(428, 42)
+        cboUnit.TabIndex = 10
+        tips.SetToolTipHeader(cboUnit, "Unitate")
+        tips.SetToolTipText(cboUnit, "Unitatea (baza de date) în care vei lucra." & vbLf & "Se poate schimba doar reluând autentificarea.")
+        '
         ' btnBack
-        ' 
-        btnBack.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        '
+        btnBack.Dock = DockStyle.Fill
+        btnBack.Enabled = False
         btnBack.FlatStyle = FlatStyle.Flat
-        btnBack.Font = New Font("Segoe UI", 9F)
-        btnBack.Location = New Point(4, 97)
+        btnBack.Font = New Font("Segoe UI", 9.0F)
+        btnBack.Location = New Point(44, 645)
         btnBack.Margin = New Padding(4, 0, 9, 0)
         btnBack.Name = "btnBack"
-        btnBack.Size = New Size(246, 63)
-        btnBack.TabIndex = 3
+        btnBack.Size = New Size(205, 63)
+        btnBack.TabIndex = 11
         btnBack.Text = "Înapoi"
+        tips.SetToolTipHeader(btnBack, "Înapoi")
+        tips.SetToolTipText(btnBack, "Revino la utilizator și parolă, fără să te autentifici.")
         btnBack.UseVisualStyleBackColor = True
-        ' 
+        '
         ' btnLogin
-        ' 
-        btnLogin.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
+        '
+        btnLogin.Dock = DockStyle.Fill
+        btnLogin.Enabled = False
         btnLogin.FlatStyle = FlatStyle.Flat
-        btnLogin.Font = New Font("Segoe UI Semibold", 10F)
-        btnLogin.Location = New Point(268, 97)
+        btnLogin.Font = New Font("Segoe UI Semibold", 10.0F)
+        btnLogin.Location = New Point(267, 645)
         btnLogin.Margin = New Padding(9, 0, 4, 0)
         btnLogin.Name = "btnLogin"
-        btnLogin.Size = New Size(246, 63)
-        btnLogin.TabIndex = 2
+        btnLogin.Size = New Size(205, 63)
+        btnLogin.TabIndex = 12
         btnLogin.Text = "Autentificare"
+        tips.SetToolTipHeader(btnLogin, "Autentificare")
+        tips.SetToolTipText(btnLogin, "Intră în aplicație cu unitatea aleasă.")
         btnLogin.UseVisualStyleBackColor = True
-        ' 
+        '
         ' ntfError
-        ' 
+        '
         ntfError.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
         ntfError.BackColor = Color.Transparent
-        ntfError.Location = New Point(44, 716)
+        tlpBody.SetColumnSpan(ntfError, 2)
+        ntfError.Location = New Point(44, 718)
         ntfError.Margin = New Padding(4, 10, 4, 5)
         ntfError.Name = "ntfError"
-        ntfError.Size = New Size(510, 67)
-        ntfError.TabIndex = 9
+        ntfError.Size = New Size(428, 67)
+        ntfError.TabIndex = 13
         ntfError.TabStop = False
         ntfError.Visible = False
-        ' 
-        ' busyBar
-        ' 
-        busyBar.Dock = DockStyle.Top
-        busyBar.Location = New Point(0, 67)
-        busyBar.Margin = New Padding(4, 5, 4, 5)
-        busyBar.Name = "busyBar"
-        busyBar.Size = New Size(598, 5)
-        busyBar.TabIndex = 2
-        busyBar.TabStop = False
-        ' 
+        '
         ' capBar
-        ' 
+        '
         capBar.Dock = DockStyle.Top
         capBar.IconImage = My.Resources.Resources.kbot_64
-        capBar.Location = New Point(0, 0)
+        capBar.Location = New Point(1, 2)
         capBar.Margin = New Padding(4, 5, 4, 5)
         capBar.Name = "capBar"
         capBar.OptionButtonImage = Nothing
@@ -301,17 +287,18 @@ Partial Class LoginForm
         capBar.ShowThemeButton = True
         capBar.ShowThemeEditor = False
         capBar.ShowThemeOptions = False
-        capBar.Size = New Size(598, 67)
-        capBar.TabIndex = 3
+        capBar.Size = New Size(516, 67)
+        capBar.TabIndex = 1
         capBar.TabStop = False
         capBar.Text = "K-BOT"
-        ' 
+        '
         ' LoginForm
-        ' 
-        AutoScaleDimensions = New SizeF(144F, 144F)
+        '
+        AutoScaleDimensions = New SizeF(144.0F, 144.0F)
         AutoScaleMode = AutoScaleMode.Dpi
-        ClientSize = New Size(600, 867)
-        Controls.Add(pnlCard)
+        ClientSize = New Size(518, 900)
+        Controls.Add(tlpBody)
+        Controls.Add(capBar)
         FormBorderStyle = FormBorderStyle.None
         Icon = CType(resources.GetObject("$this.Icon"), Icon)
         Margin = New Padding(4, 5, 4, 5)
@@ -321,35 +308,17 @@ Partial Class LoginForm
         Padding = New Padding(1, 2, 1, 2)
         StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT — Autentificare"
-        pnlCard.ResumeLayout(False)
         tlpBody.ResumeLayout(False)
         tlpBody.PerformLayout()
         CType(picLogo, ComponentModel.ISupportInitialize).EndInit()
-        pnlUnit.ResumeLayout(False)
-        pnlUnit.PerformLayout()
-        '
-        ' tips — etichetele de survolare (felia 0035). Toate în română, pe controalele care se apasă.
-        '
-        tips.SetToolTipHeader(txtUser, "Utilizator")
-        tips.SetToolTipText(txtUser, "Adresa de e-mail cu care ești înregistrat în K-BOT." & vbLf & "Ea ține locul vechiului nume de utilizator.")
-        tips.SetToolTipHeader(txtPass, "Parolă")
-        tips.SetToolTipText(txtPass, "Parola contului." & vbLf & "Se trimite criptat; nu se păstrează pe acest calculator.")
-        tips.SetToolTipHeader(btnContinue, "Continuă")
-        tips.SetToolTipText(btnContinue, "Verifică utilizatorul și parola, apoi trece la alegerea unității.")
-        tips.SetToolTipHeader(cboUnit, "Unitate")
-        tips.SetToolTipText(cboUnit, "Unitatea (baza de date) în care vei lucra." & vbLf & "Se poate schimba doar reluând autentificarea.")
-        tips.SetToolTipHeader(btnBack, "Înapoi")
-        tips.SetToolTipText(btnBack, "Revino la utilizator și parolă, fără să te autentifici.")
-        tips.SetToolTipHeader(btnLogin, "Autentificare")
-        tips.SetToolTipText(btnLogin, "Intră în aplicație cu unitatea aleasă.")
         ResumeLayout(False)
+        PerformLayout()
     End Sub
 
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
-    Friend WithEvents pnlCard As Panel
     Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
-    Friend WithEvents busyBar As Global.KBot.Controls.KBotBusyBar
     Friend WithEvents tlpBody As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents busyBar As Global.KBot.Controls.KBotBusyBar
     Friend WithEvents picLogo As PictureBox
     Friend WithEvents lblTitle As Label
     Friend WithEvents lblSubtitle As Label
@@ -358,7 +327,6 @@ Partial Class LoginForm
     Friend WithEvents lblPass As Label
     Friend WithEvents txtPass As Global.KBot.Controls.KBotTextField
     Friend WithEvents btnContinue As Button
-    Friend WithEvents pnlUnit As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblUnit As Label
     Friend WithEvents cboUnit As Global.KBot.Controls.KBotComboBox
     Friend WithEvents btnBack As Button

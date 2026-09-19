@@ -513,3 +513,6 @@ schema_diff/
 
 # Inno Setup optional payload (bundled .NET runtime installer, ~60 MB) - not committed
 tools/KBotInstaller/prereq/
+
+# slice 0067: update packages staged locally while testing the update channel
+/PYTHON/updates/

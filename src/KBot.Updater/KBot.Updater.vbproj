@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- K-BOT updater (slice 0067). A deliberately DEPENDENCY-FREE WinExe: it runs from
+       %TEMP% while C:\KBOT is being overwritten, so it must not reference KBot.Theming,
+       KBot.Controls or KBot.Common (they are among the files being replaced). Plain
+       WinForms, system colours, Romanian text: a documented exception to the
+       zero-hardcoded-colours / KBotMessage rules. publish-release.ps1 publishes it as a
+       single file (framework-dependent; no Playwright, so single-file is safe here) and
+       drops KBot.Updater.exe into the package next to KBot.App.exe. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>KBot.Updater</RootNamespace>
+    <AssemblyName>KBot.Updater</AssemblyName>
+    <UseWindowsForms>true</UseWindowsForms>
+    <MyType>Empty</MyType>
+    <StartupObject>KBot.Updater.Program</StartupObject>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <OptionCompare>Binary</OptionCompare>
+    <ApplicationIcon>..\KBot.App\kbot.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <!-- K-BOT component version.
+       FileVersion: bump MANUALLY, only when THIS project changes.
+       AssemblyVersion: keep STABLE. -->
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The applier and the argument parser are Friend so the test project can reach them. -->
+    <InternalsVisibleTo Include="KBot.Updater.Tests" />
+  </ItemGroup>
+
+</Project>

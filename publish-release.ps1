@@ -362,13 +362,42 @@ if (-not (Test-Path -LiteralPath (Join-Path $MigrareDir 'KBot.Migrator.exe'))) {
 }
 Write-Host "Migrare OK: KBot.Migrator.exe in $MigrareDir" -ForegroundColor Cyan
 
-# --- 4d. Sign the two EXEs only (optional, non-fatal) --------------------------
+# --- 4c2. KBot.Updater (slice 0067) -> single KBot.Updater.exe next to the app ----
+#  The in-place update helper. Published SINGLE-FILE (framework-dependent) so the app
+#  has ONE file to copy to %TEMP% before it exits; it references no KBot.* assembly and
+#  no Playwright, so single-file is safe here (the app itself cannot be single-file).
+#  Its own .deps/.runtimeconfig live inside the bundle -- nothing else lands in the
+#  app folder. push-update.ps1 refuses a package without it.
+$UpdaterProj = Join-Path $SolutionRoot 'src\KBot.Updater\KBot.Updater.vbproj'
+if (-not (Test-Path $UpdaterProj)) { throw "Project not found: $UpdaterProj" }
+$UpdaterStage = Join-Path $ArtifactsDir "_updater_$Stamp"
+if (Test-Path $UpdaterStage) { Remove-Item $UpdaterStage -Recurse -Force }
+Write-Host "Publish KBot.Updater (single-file) ..." -ForegroundColor Cyan
+& dotnet publish $UpdaterProj `
+    -c $Configuration `
+    -r $Rid `
+    --self-contained false `
+    -p:PublishSingleFile=true `
+    -o $UpdaterStage
+if ($LASTEXITCODE -ne 0) {
+    throw "dotnet publish KBot.Updater failed (ExitCode=$LASTEXITCODE)."
+}
+$UpdaterExe = Join-Path $UpdaterStage 'KBot.Updater.exe'
+if (-not (Test-Path -LiteralPath $UpdaterExe)) { throw "KBot.Updater.exe missing from $UpdaterStage after publish." }
+Copy-Item -LiteralPath $UpdaterExe -Destination (Join-Path $PublishDir 'KBot.Updater.exe') -Force
+Remove-Item $UpdaterStage -Recurse -Force
+Write-Host "Updater OK: KBot.Updater.exe in $PublishDir" -ForegroundColor Cyan
+
+# --- 4d. Sign the three EXEs only (optional, non-fatal) ------------------------
 #  Windows checks Authenticode on what the operator launches, never on DLLs a
 #  desktop app loads, so the KBot.*.dll files stay unsigned on purpose: each
 #  signature is one SimplySign confirmation. Setup.exe and the uninstaller are
-#  signed by Inno Setup itself (step 7b). Total: 4 confirmations per build.
+#  signed by Inno Setup itself (step 7b). Total: 5 confirmations per build.
+#  The updater relaunches itself through UAC on machines where C:\KBOT is not
+#  writable; unsigned, that prompt would be the yellow one.
 Invoke-KBotSign -SignFile (Join-Path $PublishDir 'KBot.App.exe')
 Invoke-KBotSign -SignFile (Join-Path $MigrareDir 'KBot.Migrator.exe')
+Invoke-KBotSign -SignFile (Join-Path $PublishDir 'KBot.Updater.exe')
 
 # --- 5. Workflows folder -------------------------------------------------------
 $WorkflowsDir    = Join-Path $PublishDir 'Workflows'
@@ -465,6 +494,7 @@ Write-Host "  Zip (manual): $ZipPath  ($ZipSizeMB MB)  [fallback manual extracti
 Write-Host "  Requires : .NET Desktop Runtime 8 (win-x64) on the client PC."
 Write-Host "  Workflows: $($wfls.Count) .wfl file(s) included under 'Workflows\'."
 Write-Host "  Migrare  : KBot.Migrator.exe (Access -> MariaDB) included under 'Migrare\'."
+Write-Host "  Updater  : KBot.Updater.exe next to the app (slice 0067). Publish it: .\push-update.ps1 [-Mandatory] [-Notes '...']"
 Write-Host "  Browser  : installer offers the Chromium download as a task (else '.\playwright.ps1 install chromium')."
 
 # --- 10. Signing status summary ------------------------------------------------

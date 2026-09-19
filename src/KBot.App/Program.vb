@@ -103,7 +103,13 @@ Friend Module Program
                 ' alegere de făcut.
                 RunLauncher(provider)
 #Else
-                ' Pe Release, singura cale este poarta de login înaintea shell-ului.
+                ' Release, BEFORE the login gate: the update check (slice 0067). True = the updater
+                ' was started (or a mandatory update was refused) and the process exits now, so
+                ' the files can be replaced. An unreachable server never blocks startup: it is
+                ' logged and login follows. Debug never checks: a dev build with a lower
+                ' FileVersion would overwrite itself.
+                If provider.GetRequiredService(Of AppUpdateService)().RunStartupCheck() Then Return
+                ' Then the only way in is the login gate before the shell.
                 RunShellWithLogin(provider)
 #End If
             End Using
@@ -335,6 +341,12 @@ Friend Module Program
 
         ' Client de login (felia login). Fără stare — refolosește HttpClient + ApiOptions.
         services.AddSingleton(Of IAuthApi, AuthApi)()
+
+        ' Update channel (slice 0067): two public GETs on the same HttpClient, and the service
+        ' that holds the conversation with the operator. Startup calls it on Release only; the
+        ' «Caută actualizări» buttons call it from anywhere.
+        services.AddSingleton(Of IUpdateApi, UpdateApi)()
+        services.AddSingleton(Of AppUpdateService)()
 
         ' Stocare temporară (SQLite in-memory).
         services.AddSingleton(Of ITempStore, SqliteTempStore)()

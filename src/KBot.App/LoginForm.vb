@@ -21,11 +21,6 @@ Public NotInheritable Class LoginForm
     Private _username As String
     Private _password As String
 
-    ' Doua inaltimi ale ferestrei: compacta (doar credentiale) si extinsa (+ selector
-    ' unitate). Capturate la Load; formularul creste la faza 2, revine la Inapoi.
-    Private _collapsedHeight As Integer
-    Private _expandedHeight As Integer
-
     ' Who logged in last on this Windows account (slice 0063): user name pre-filled at
     ' Load, unit pre-selected at phase 2. Read once; written only after a login SUCCEEDED.
     ' Never holds the password -- see LastLoginStore.
@@ -47,7 +42,7 @@ Public NotInheritable Class LoginForm
             capBar.IconImage = My.Resources.kbot_64
 #If DEBUG Then
             txtUser.Text = "scavatarsoft@gmail.com"
-            txtPass.Text = "Moisil2026!"
+            txtPass.Text = "Par0laN0u@"
 #End If
             ' The last user who got in wins over the Debug default: that is the name the
             ' operator would otherwise type again. Load never throws (missing file = nothing).
@@ -56,7 +51,6 @@ Public NotInheritable Class LoginForm
                 txtUser.Text = _lastLogin.Username
             End If
             Me.KeyPreview = True                ' Escape inchide (nu mai exista X nativ)
-            CaptureFormHeights()
             ShowPhaseCreds()
         Catch ex As Exception
             ' Boundary UI (Load): logam si inghitim.
@@ -107,11 +101,32 @@ Public NotInheritable Class LoginForm
     Private Sub ApplyPrimaryButtons()
         Try
             For Each b As Button In {btnContinue, btnLogin}
-                ButtonStyles.ApplyPrimary(b, ThemeManager.Current)
+                StylePrimaryButton(b)
             Next
         Catch ex As Exception
             GlobalErrorLog.Write("LoginForm.ApplyPrimaryButtons", ex)
             Throw
+        End Try
+    End Sub
+
+    ' A flat button keeps painting its accent BackColor when disabled, so the phase that
+    ' is NOT active would still look clickable. Disabled = flat surface + dim text.
+    Private Sub StylePrimaryButton(b As Button)
+        Dim scheme = ThemeManager.Current
+        ButtonStyles.ApplyPrimary(b, scheme)
+        If Not b.Enabled Then
+            Dim p = scheme.Palette
+            b.BackColor = p.SurfaceAltColor
+            b.ForeColor = p.DisabledTextColor
+            b.FlatAppearance.BorderColor = p.BorderColor
+        End If
+    End Sub
+
+    Private Sub PrimaryButton_EnabledChanged(sender As Object, e As EventArgs) Handles btnContinue.EnabledChanged, btnLogin.EnabledChanged
+        Try
+            StylePrimaryButton(CType(sender, Button))
+        Catch ex As Exception
+            GlobalErrorLog.Write("LoginForm.PrimaryButton_EnabledChanged", ex)
         End Try
     End Sub
 
@@ -124,30 +139,19 @@ Public NotInheritable Class LoginForm
         End Try
     End Sub
 
-    ' Inaltimea din Designer include selectorul (pnlUnit) vizibil => e cea extinsa.
-    ' Cea compacta scade spatiul ocupat de selector. Capturat o singura data, la Load.
-    Private Sub CaptureFormHeights()
-        Try
-            ' Randurile AutoSize se stabilizeaza abia dupa un layout explicit; altfel
-            ' Me.Height / dimensiunile copiilor pot fi gresite la Load.
-            tlpBody.PerformLayout()
-            _expandedHeight = Me.Height
-            Dim unitSpace As Integer = pnlUnit.PreferredSize.Height + pnlUnit.Margin.Vertical
-            If unitSpace <= 0 Then unitSpace = 150
-            _collapsedHeight = _expandedHeight - unitSpace
-        Catch ex As Exception
-            GlobalErrorLog.Write("LoginForm.CaptureFormHeights", ex)
-            Throw
-        End Try
-    End Sub
-
     ' ---------------- comutare faze ----------------
-    ' Faza 1: doar credentialele. Formularul e compact; selectorul (pnlUnit, imbricat in
-    ' randul elastic al pnlCreds) e ascuns.
+    ' The form keeps ONE height: every control is always on screen and the phases only
+    ' flip Enabled. Phase 1: credentials + Continua live; the unit combo is empty and
+    ' disabled, Inapoi / Autentificare disabled.
     Private Sub ShowPhaseCreds()
         Try
-            pnlUnit.Visible = False
-            Me.Height = _collapsedHeight
+            cboUnit.DataSource = Nothing
+            cboUnit.Enabled = False
+            btnBack.Enabled = False
+            btnLogin.Enabled = False
+            txtUser.Enabled = True
+            txtPass.Enabled = True
+            btnContinue.Enabled = True
             Me.AcceptButton = btnContinue
             ClearError()
             ' With the name already filled in (remembered or typed before «Inapoi»), the
@@ -163,11 +167,16 @@ Public NotInheritable Class LoginForm
         End Try
     End Sub
 
-    ' Faza 2: formularul creste si arata selectorul unitatii sub credentiale.
+    ' Phase 2: credentials are locked (the units were fetched with them); the combo was
+    ' populated by the caller and becomes live together with Inapoi / Autentificare.
     Private Sub ShowPhaseUnit()
         Try
-            pnlUnit.Visible = True
-            Me.Height = _expandedHeight
+            txtUser.Enabled = False
+            txtPass.Enabled = False
+            btnContinue.Enabled = False
+            cboUnit.Enabled = True
+            btnBack.Enabled = True
+            btnLogin.Enabled = True
             Me.AcceptButton = btnLogin
             ClearError()
             cboUnit.Focus()
@@ -191,7 +200,7 @@ Public NotInheritable Class LoginForm
     Private Sub SetBusy(busy As Boolean)
         Try
             busyBar.Running = busy
-            tlpBody.Enabled = Not busy        ' pnlUnit e in tlpBody => acoperit
+            tlpBody.Enabled = Not busy        ' every control sits in tlpBody => all covered
             Me.UseWaitCursor = busy
         Catch ex As Exception
             GlobalErrorLog.Write("LoginForm.SetBusy", ex)

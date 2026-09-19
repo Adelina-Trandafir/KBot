@@ -75,6 +75,8 @@ Public Class SelectieReceptiiForm
     ''' <summary>Câte recepții au rămas bifate — pentru linia de stare a gazdei.</summary>
     Public ReadOnly Property BifateCount As Integer
 
+    Private bifaPusa As Boolean = True
+
     Public Sub New(receptii As IEnumerable(Of ReceptieRow), cod As String)
         InitializeComponent()
         _randuri = Grupeaza(receptii)
@@ -176,7 +178,7 @@ Public Class SelectieReceptiiForm
         End Try
     End Sub
 
-    Private Sub btnTot_Click(sender As Object, e As EventArgs) Handles btnTot.Click
+    Private Sub btnTot_Click(sender As Object, e As EventArgs)
         Try
             PuneBifa(True)
         Catch ex As Exception
@@ -184,7 +186,7 @@ Public Class SelectieReceptiiForm
         End Try
     End Sub
 
-    Private Sub btnNimic_Click(sender As Object, e As EventArgs) Handles btnNimic.Click
+    Private Sub btnNimic_Click(sender As Object, e As EventArgs)
         Try
             PuneBifa(False)
         Catch ex As Exception
@@ -295,4 +297,13 @@ Public Class SelectieReceptiiForm
         End Try
     End Sub
 
+    Private Sub grilaReceptii_HeaderRightIconClicked(sender As Object, e As KBotColumnEventArgs) Handles grilaReceptii.HeaderRightIconClicked
+        If bifaPusa Then
+            PuneBifa(False)
+            bifaPusa = False
+        Else
+            PuneBifa(True)
+            bifaPusa = True
+        End If
+    End Sub
 End Class

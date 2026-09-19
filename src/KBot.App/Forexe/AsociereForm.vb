@@ -2092,8 +2092,9 @@ Public Class AsociereForm
             ntfMesaj.Clear()
             Dim inst = TryCast(e.Marker?.Tag, InstantaneuLegat)
             If inst Is Nothing Then e.Cancel = True : Return
-            ' Legătură înghețată de o ordonanțare sau de o plată: vizibilă, dar nu de mutat. Se
-            ' oprește din pornire, ca operatorul să simtă refuzul înainte de gest, nu după.
+            ' Link frozen by an ordonantare (payments alone no longer freeze anything, 18.09.2026):
+            ' visible, but not movable. Cancelled at the start so the operator feels the refusal
+            ' before the gesture, not after.
             If inst.Blocat Then
                 e.Cancel = True
                 ntfMesaj.Show("Această legătură nu se mai poate modifica. " &
@@ -2872,8 +2873,8 @@ Public Class AsociereForm
                     Return "Altcineva a modificat între timp recepțiile acestui angajament. " &
                            "Nu s-a scris nimic — închideți și deschideți din nou fereastra."
                 Case AsociereStare.MotivInstantaneuBlocat
-                    Return "Una dintre legături a fost înghețată între timp de o ordonanțare sau " &
-                           "de o plată. Nu s-a scris nimic. " & api.Message
+                    Return "Una dintre legături a fost înghețată între timp de o ordonanțare. " &
+                           "Nu s-a scris nimic. " & api.Message
             End Select
             Return $"{prefix}: {api.Message}"
         End If

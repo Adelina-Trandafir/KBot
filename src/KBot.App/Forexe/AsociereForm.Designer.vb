@@ -251,6 +251,7 @@ Partial Class AsociereForm
         ' 
         ' gridLant
         ' 
+        gridLant.BackColor = SystemColors.Window
         gridLant.BorderColor = SystemColors.ActiveBorder
         gridLant.CellTooltip.Enabled = False
         gridLant.ColumnFillMode = KBotFillMode.LastColumn
@@ -613,7 +614,7 @@ Partial Class AsociereForm
         tlyAsociere.RowCount = 3
         tlyAsociere.RowStyles.Add(New RowStyle())
         tlyAsociere.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyAsociere.RowStyles.Add(New RowStyle(SizeType.Absolute, 70F))
+        tlyAsociere.RowStyles.Add(New RowStyle())
         tlyAsociere.ScaleAbsoluteStyles = False
         tlyAsociere.Size = New Size(1084, 878)
         tlyAsociere.TabIndex = 2

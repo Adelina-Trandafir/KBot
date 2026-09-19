@@ -52,7 +52,7 @@ Partial Class KbotForm
         pnlStatus = New Panel()
         forexeFooter = New ForexeFooterView()
         pnlHeader = New Panel()
-        tlyHeader = New Global.KBot.Controls.KBotTableLayoutPanel()
+        tlyHeader = New KBotTableLayoutPanel()
         lblOperator = New Label()
         lblSs = New Label()
         lblAn = New Label()
@@ -116,13 +116,14 @@ Partial Class KbotForm
         ' 
         ' cboAn
         ' 
+        cboAn.BorderColor = Color.Transparent
         cboAn.Dock = DockStyle.Fill
         cboAn.DrawMode = DrawMode.OwnerDrawFixed
         cboAn.DropDownStyle = ComboBoxStyle.DropDownList
         cboAn.FlatStyle = FlatStyle.Flat
         cboAn.ItemHeight = 31
-        cboAn.Location = New Point(320, 7)
-        cboAn.Margin = New Padding(0, 7, 0, 0)
+        cboAn.Location = New Point(323, 5)
+        cboAn.Margin = New Padding(0, 4, 0, 0)
         cboAn.Name = "cboAn"
         cboAn.Size = New Size(126, 37)
         cboAn.TabIndex = 3
@@ -131,15 +132,16 @@ Partial Class KbotForm
         ' 
         ' cboSs
         ' 
+        cboSs.BorderColor = Color.Transparent
         cboSs.Dock = DockStyle.Fill
         cboSs.DrawMode = DrawMode.OwnerDrawFixed
         cboSs.DropDownStyle = ComboBoxStyle.DropDownList
         cboSs.FlatStyle = FlatStyle.Flat
         cboSs.ItemHeight = 31
-        cboSs.Location = New Point(589, 7)
-        cboSs.Margin = New Padding(0, 7, 10, 0)
+        cboSs.Location = New Point(595, 5)
+        cboSs.Margin = New Padding(0, 4, 0, 0)
         cboSs.Name = "cboSs"
-        cboSs.Size = New Size(104, 37)
+        cboSs.Size = New Size(114, 37)
         cboSs.TabIndex = 5
         tips.SetToolTipHeader(cboSs, "Subperioadă")
         tips.SetToolTipText(cboSs, "Subperioada (SS) din anul ales." & vbLf & "Ultima aleasă se ține minte pentru data viitoare.")
@@ -409,6 +411,8 @@ Partial Class KbotForm
         ' tlyHeader
         ' 
         tlyHeader.BackColor = Color.Transparent
+        tlyHeader.CellBorderColor = Color.Transparent
+        tlyHeader.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single
         tlyHeader.ColumnCount = 8
         tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 223F))
         tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 97F))
@@ -436,11 +440,11 @@ Partial Class KbotForm
         ' 
         lblOperator.Dock = DockStyle.Fill
         lblOperator.Font = New Font("Calibri", 10F, FontStyle.Bold Or FontStyle.Italic)
-        lblOperator.Location = New Point(1395, 0)
+        lblOperator.Location = New Point(1394, 1)
         lblOperator.Margin = New Padding(4, 0, 4, 0)
         lblOperator.Name = "lblOperator"
         lblOperator.Padding = New Padding(19, 0, 9, 0)
-        lblOperator.Size = New Size(512, 47)
+        lblOperator.Size = New Size(512, 45)
         lblOperator.TabIndex = 6
         lblOperator.Text = "Operator"
         lblOperator.TextAlign = ContentAlignment.MiddleRight
@@ -449,11 +453,12 @@ Partial Class KbotForm
         ' 
         lblSs.AutoSize = True
         lblSs.Dock = DockStyle.Fill
+        lblSs.FlatStyle = FlatStyle.Flat
         lblSs.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
-        lblSs.Location = New Point(461, 0)
+        lblSs.Location = New Point(466, 1)
         lblSs.Margin = New Padding(4, 0, 4, 0)
         lblSs.Name = "lblSs"
-        lblSs.Size = New Size(124, 47)
+        lblSs.Size = New Size(124, 45)
         lblSs.TabIndex = 4
         lblSs.Text = "Sursă/Sector:"
         lblSs.TextAlign = ContentAlignment.MiddleRight
@@ -462,11 +467,12 @@ Partial Class KbotForm
         ' 
         lblAn.AutoSize = True
         lblAn.Dock = DockStyle.Fill
+        lblAn.FlatStyle = FlatStyle.Flat
         lblAn.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
-        lblAn.Location = New Point(227, 0)
+        lblAn.Location = New Point(229, 1)
         lblAn.Margin = New Padding(4, 0, 4, 0)
         lblAn.Name = "lblAn"
-        lblAn.Size = New Size(89, 47)
+        lblAn.Size = New Size(89, 45)
         lblAn.TabIndex = 2
         lblAn.Text = "An Date:"
         lblAn.TextAlign = ContentAlignment.MiddleRight
