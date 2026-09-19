@@ -7,15 +7,11 @@ Namespace KBot.Forexe
         Public Property WflPath As String = String.Empty
         Public Property Parameters As New Dictionary(Of String, String)
 
-        ''' <summary>
-        ''' Browserul se vede cât rulează job-ul? IMPLICIT NU — exact ca în KBOT_IPC, unde
-        ''' <c>isStealth = Not jobToRun.ShowBrowser</c>. Ascuns înseamnă stealth în executor:
-        ''' fereastra pleacă off-screen (--window-position=-3000,0) și iese din Taskbar/Alt-Tab.
-        ''' Se poate aduce oricând la vedere din consolă (ShowBrowserAsync).
-        ''' Contează doar la RunAsync (conectarea), fiindcă acolo se CREEAZĂ fereastra;
-        ''' un job următor rulează pe fereastra deja deschisă, în starea în care a lăsat-o.
-        ''' </summary>
-        Public Property ShowBrowser As Boolean = False
+        ' There is no ShowBrowser switch any more (slice 0070). KBOT_IPC had one
+        ' (`isStealth = Not jobToRun.ShowBrowser`) and a job could ask for a visible Chromium
+        ' window; here the window is ALWAYS born hidden, and the operator sees the page only
+        ' docked into a K-BOT form («Arată browserul» in the console). A free window has a
+        ' close button, and closing it kills the session.
     End Class
 
     Public Class JobResult

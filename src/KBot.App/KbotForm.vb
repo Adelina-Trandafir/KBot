@@ -1,19 +1,10 @@
-﻿Imports System
-Imports System.Collections.Generic
-Imports System.Drawing
-Imports System.IO
-Imports System.Linq
-Imports System.Security.Cryptography.X509Certificates
+﻿Imports System.IO
 Imports System.Threading
-Imports System.Threading.Tasks
-Imports System.Windows.Controls
-Imports System.Windows.Forms
 Imports KBot.Api
 Imports KBot.Common
 Imports KBot.Controls
 Imports KBot.Domain
 Imports KBot.Forexe
-Imports KBot.Theming
 ' RichTextBoxLogger și CertificateSelectionForm sunt în namespace global (din KBot.Forexe).
 
 ''' <summary>
@@ -69,7 +60,7 @@ Public Class KbotForm
 
     ' Coordonatorul FOREXE (felia 0034) — singurul care vorbește cu runner-ul. Banda din
     ' subsol și consola se leagă la el; shell-ul nu mai orchestrează nimic singur.
-    Private ReadOnly _forexe As ForexeController
+    Private ReadOnly _controller As ForexeController
     ' Consola FOREXE: creată O SINGURĂ DATĂ și doar ascunsă la închidere, fiindcă rtbLog-ul
     ' ei e ținta logger-ului pe toată durata aplicației (vezi EnsureConsole).
     Private _console As ForexeConsoleForm
@@ -85,7 +76,7 @@ Public Class KbotForm
         _apiClient = apiClient
         _authApi = authApi
         _loginFactory = loginFactory
-        _forexe = forexe
+        _controller = forexe
         Me.Text = "K-BOT"
     End Sub
 
@@ -198,13 +189,13 @@ Public Class KbotForm
 
             ' Banda FOREXE din subsol: dialogurile coordonatorului (alegerea certificatului)
             ' primesc shell-ul ca proprietar, iar banda se leagă la coordonator.
-            _forexe.Owner = Me
-            forexeFooter.Bind(_forexe)
+            _controller.Owner = Me
+            forexeFooter.Bind(_controller)
 
             ' «Conectare» stă acum în antet, nu în bandă. Butonul e al shell-ului, dar starea lui
             ' vine tot de la coordonator: ne abonăm o singură dată aici și ne dezabonăm la
             ' închidere (coordonatorul e singleton și ar ține formularul în viață).
-            'AddHandler _forexe.StateChanged, AddressOf Forexe_StateChanged
+            'AddHandler _controller.StateChanged, AddressOf Forexe_StateChanged
             'ActualizeazaButonConectare()
 
             ' Navigația vederilor — ordinea paginilor din Access, Sumar implicit.
@@ -348,8 +339,8 @@ Public Class KbotForm
     Private Async Sub CboAn_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboAn.SelectedIndexChanged, cboAn.SelectedIndexChanged
         Try
             If _suppressPeriodEvents Then Return
-            LoadSsForSelectedYear
-            Await LoadTreeAsync
+            LoadSsForSelectedYear()
+            Await LoadTreeAsync()
         Catch ex As Exception
             ' Boundary UI: un handler nu poate rearunca (ar dărâma procesul) — logăm și înghițim.
             GlobalErrorLog.Write("MainForm.cboAn_SelectedIndexChanged", ex)
@@ -361,7 +352,7 @@ Public Class KbotForm
         Try
             If _suppressPeriodEvents Then Return
             ApplySelectedPeriod(persist:=True)
-            Await LoadTreeAsync
+            Await LoadTreeAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.cboSs_SelectedIndexChanged", ex)
         End Try
@@ -1467,7 +1458,7 @@ Public Class KbotForm
                 ' The last imported statement's date stops the walk through the inbox.
                 ' Read through the same re-login net as the rest of the shell; if that
                 ' read fails, the robot takes the whole inbox (slower, but correct).
-                extrase = Await _forexe.DownloadExtraseAsync(
+                extrase = Await _controller.DownloadExtraseAsync(
                     Function(ct) WithReauth(Of Date?)(Function() _apiClient.GetUltimaDataExtrasAsync(ct)))
             Finally
                 busyBar.Running = False
@@ -1565,7 +1556,7 @@ Public Class KbotForm
             Dim mapate As List(Of Angajament)
             busyBar.Running = True
             Try
-                mapate = Await _forexe.DownloadListaAsync()
+                mapate = Await _controller.DownloadListaAsync()
             Finally
                 busyBar.Running = False
             End Try
@@ -1621,7 +1612,7 @@ Public Class KbotForm
     ''' </summary>
     Private Sub ShowForexeFailure(titlu As String)
         Try
-            Dim motiv As String = _forexe.LastFailure
+            Dim motiv As String = _controller.LastFailure
             If String.IsNullOrWhiteSpace(motiv) Then Return
             KBotMessage.Show(Me, motiv, titlu, MessageBoxButtons.OK, MessageBoxIcon.Warning)
         Catch ex As Exception
@@ -1657,7 +1648,7 @@ Public Class KbotForm
                 Try
                     ' Istoricul LOCAL decide înainte/înapoi (Access FX_Angajament_InfoComplete):
                     ' îl citim prin aceeași plasă de re-login ca restul shell-ului.
-                    pachet = Await _forexe.DownloadNodeAsync(
+                    pachet = Await _controller.DownloadNodeAsync(
                         cod,
                         Function(c, ct) WithReauth(Of IstoricInfo)(Function() _apiClient.GetIstoricAsync(c, ct)),
                         sarite)
@@ -1707,8 +1698,8 @@ Public Class KbotForm
     ''' </remarks>
     Private Function IntreabaDacaRefolosescLista() As List(Of Angajament)
         Try
-            Dim lista As IReadOnlyList(Of Angajament) = _forexe.Rezultate.UltimaLista
-            Dim moment As Date? = _forexe.Rezultate.MomentLista
+            Dim lista As IReadOnlyList(Of Angajament) = _controller.Rezultate.UltimaLista
+            Dim moment As Date? = _controller.Rezultate.MomentLista
             If lista Is Nothing OrElse lista.Count = 0 OrElse Not moment.HasValue Then Return Nothing
 
             Dim raspuns As DialogResult = KBotMessage.Show(
@@ -1723,7 +1714,7 @@ Public Class KbotForm
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1)
             If raspuns <> DialogResult.Yes Then Return Nothing
 
-            _forexe.SpuneStare($"Se folosește lista descărcată la {moment.Value:HH:mm:ss} " &
+            _controller.SpuneStare($"Se folosește lista descărcată la {moment.Value:HH:mm:ss} " &
                                "(din memorie, fără o descărcare nouă).")
             Return New List(Of Angajament)(lista)
         Catch ex As Exception
@@ -1734,7 +1725,7 @@ Public Class KbotForm
 
     Private Function IntreabaDacaRefolosescPachetul(cod As String) As PrelucrareRezultat
         Try
-            Dim pachet As PrelucrareRezultat = _forexe.Rezultate.PachetBunDeRefolosit(cod)
+            Dim pachet As PrelucrareRezultat = _controller.Rezultate.PachetBunDeRefolosit(cod)
             If pachet Is Nothing Then Return Nothing
 
             Dim randuri As Integer = WorkflowResultStore.NumaraRanduri(pachet)
@@ -1750,7 +1741,7 @@ Public Class KbotForm
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1)
             If raspuns <> DialogResult.Yes Then Return Nothing
 
-            _forexe.SpuneStare($"«{cod}»: se folosesc datele descărcate la {pachet.Moment:HH:mm:ss} " &
+            _controller.SpuneStare($"«{cod}»: se folosesc datele descărcate la {pachet.Moment:HH:mm:ss} " &
                                "(din memorie, fără o descărcare nouă).")
             Return pachet
         Catch ex As Exception
@@ -1984,7 +1975,7 @@ Public Class KbotForm
             Using dlg As New SelectieReceptiiForm(randuri, cod)
                 If dlg.ShowDialog(Me) <> DialogResult.OK Then Return Nothing
                 If dlg.DateDeSarit.Count > 0 Then
-                    _forexe.SpuneStare($"«{cod}»: {dlg.DateDeSarit.Count} zile de recepții sar " &
+                    _controller.SpuneStare($"«{cod}»: {dlg.DateDeSarit.Count} zile de recepții sar " &
                                        "peste citirea detaliului (alegerea operatorului).")
                 End If
                 Return New List(Of Date)(dlg.DateDeSarit)
@@ -1994,7 +1985,7 @@ Public Class KbotForm
             ' peste recepții, după o citire care a eșuat, ar fi exact hotărârea pe care mașina
             ' nu are voie s-o ia.
             GlobalErrorLog.Write("MainForm.AlegeReceptiileDeSaritAsync", ex)
-            _forexe.SpuneStare($"Nu s-a putut citi lista de recepții a lui «{cod}» ({ex.Message}) — " &
+            _controller.SpuneStare($"Nu s-a putut citi lista de recepții a lui «{cod}» ({ex.Message}) — " &
                                "se descarcă toate.")
             Return New List(Of Date)()
         End Try
@@ -2020,7 +2011,7 @@ Public Class KbotForm
             Dim pachet As PrelucrareRezultat
             busyBar.Running = True
             Try
-                pachet = Await _forexe.DownloadReceptiiAsync(cod, sarite)
+                pachet = Await _controller.DownloadReceptiiAsync(cod, sarite)
             Finally
                 busyBar.Running = False
             End Try
@@ -2054,7 +2045,7 @@ Public Class KbotForm
             Dim pachet As PrelucrareRezultat
             busyBar.Running = True
             Try
-                pachet = Await _forexe.DownloadRezervariAsync(cod)
+                pachet = Await _controller.DownloadRezervariAsync(cod)
             Finally
                 busyBar.Running = False
             End Try
@@ -2076,7 +2067,7 @@ Public Class KbotForm
     ''' care a renunțat (felia 0057: o anulare lasă <c>LastFailure</c> gol, deliberat).
     ''' </summary>
     Private Sub AratEsecul(cePorneam As String)
-        Dim motiv As String = _forexe.LastFailure
+        Dim motiv As String = _controller.LastFailure
         If String.IsNullOrWhiteSpace(motiv) Then Return
         KBotMessage.Show(Me, cePorneam & " nu a adus nimic: " & motiv,
                         "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -2099,7 +2090,7 @@ Public Class KbotForm
         Try
             If _console IsNot Nothing AndAlso Not _console.IsDisposed Then Return
             _console = New ForexeConsoleForm()
-            _console.Bind(_forexe)
+            _console.Bind(_controller)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.EnsureConsole", ex)
             Throw
@@ -2128,7 +2119,7 @@ Public Class KbotForm
     ''' </summary>
     Private Async Sub ConectareForexe(sender As Object, e As EventArgs) Handles forexeFooter.ConectareForexeRequested
         Try
-            Await _forexe.ConnectAsync()
+            Await _controller.ConnectAsync()
         Catch ex As Exception
             ' Frontieră de UI (async Sub): nu poate rearunca — logăm și spunem de ce.
             GlobalErrorLog.Write("MainForm.btnConectare_Click", ex)
@@ -2154,7 +2145,7 @@ Public Class KbotForm
     ' Activ doar cât nu e nimic în lucru ȘI nu există deja sesiune (regula benzii de subsol).
     'Private Sub ActualizeazaButonConectare()
     '    Try
-    '        btnConectare.Enabled = Not _forexe.IsBusy AndAlso Not _forexe.IsConnected
+    '        btnConectare.Enabled = Not _controller.IsBusy AndAlso Not _controller.IsConnected
     '    Catch ex As Exception
     '        GlobalErrorLog.Write("MainForm.ActualizeazaButonConectare", ex)
     '    End Try
@@ -2163,7 +2154,7 @@ Public Class KbotForm
     ' Coordonatorul e singleton: un abonament rămas ar ține shell-ul în viață după închidere.
     'Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
     '    Try
-    '        RemoveHandler _forexe.StateChanged, AddressOf Forexe_StateChanged
+    '        RemoveHandler _controller.StateChanged, AddressOf Forexe_StateChanged
     '    Catch ex As Exception
     '        GlobalErrorLog.Write("MainForm.OnFormClosed", ex)
     '    End Try
@@ -2215,7 +2206,7 @@ Public Class KbotForm
             ' The same offer as on an angajament download (slice 0058): when the list is already
             ' in memory from this session, the operator picks between it and a fresh download.
             Dim mapate As List(Of Angajament) = IntreabaDacaRefolosescLista()
-            If mapate Is Nothing Then mapate = Await _forexe.DownloadListaAsync()
+            If mapate Is Nothing Then mapate = Await _controller.DownloadListaAsync()
             If mapate Is Nothing Then
                 ' Motivul l-a spus deja robotul: coordonatorul a pus linia lui în starea din
                 ' banda FOREXE, iar pașii descărcării sunt în consolă. Aici n-avem ce adăuga.
@@ -2450,5 +2441,19 @@ Public Class KbotForm
         End If
         _logViewer.Show()
         _logViewer.BringToFront()
+    End Sub
+
+    Private Async Sub forexeFooter_ShowBrowserRequested(sender As Object, e As EventArgs) Handles forexeFooter.ShowBrowserRequested
+        Try
+            If _controller Is Nothing Then Return
+            ' Comutare, nu doar «arată»: browserul pornește ASCUNS (stealth), deci operatorul
+            ' trebuie să-l poată pune la loc după ce s-a uitat la el.
+            Await _controller.ToggleBrowserAsync()
+        Catch ex As Exception
+            ' Frontieră de UI (async Sub): nu poate rearunca — logăm și spunem de ce.
+            GlobalErrorLog.Write("KbotForm.forexeFooter_ShowBrowserRequested", ex)
+            KBotMessage.Show(Me, "Browserul nu a putut fi adus în față: " & ex.Message, "Consolă FOREXE",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
     End Sub
 End Class

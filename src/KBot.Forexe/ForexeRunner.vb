@@ -72,35 +72,62 @@ Namespace KBot.Forexe
         End Property
 
         ''' <summary>
-        ''' Aduce fereastra browserului în față. Fără sesiune vie nu e un no-op tăcut:
-        ''' apelantul (butonul «Arată browser») trebuie să afle de ce nu s-a întâmplat nimic.
+        ''' Browserul s-a andocat într-un formular sau s-a ascuns (felia 0070). Vine de pe firul
+        ''' care a terminat operația — gazdele trec pe firul de UI înainte de a atinge un control.
         ''' </summary>
-        Public Async Function ShowBrowserAsync() As Task Implements IForexeRunner.ShowBrowserAsync
+        Public Event BrowserVisibilityChanged As EventHandler Implements IForexeRunner.BrowserVisibilityChanged
+
+        ''' <summary>
+        ''' Arată pagina browserului — ANDOCATĂ în fereastra recorderului, deschisă doar pentru
+        ''' privit (panoul de înregistrare stins). Fereastra Chromium nu apare niciodată singură
+        ''' pe ecran (felia 0070): are buton de închidere, iar o apăsare pe el omoară sesiunea
+        ''' FOREXE cu tot ce urma să ruleze pe ea. Dacă recorderul e deja deschis pentru
+        ''' înregistrare, rămâne așa — doar e adus în față și, la nevoie, browserul e andocat la loc.
+        ''' Fără sesiune vie nu e un no-op tăcut: apelantul (butonul «Arată browserul») trebuie
+        ''' să afle de ce nu s-a întâmplat nimic.
+        ''' </summary>
+        Public Async Function ShowBrowserAsync(owner As IWin32Window) As Task Implements IForexeRunner.ShowBrowserAsync
             If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then
                 Throw New InvalidOperationException("Nicio sesiune activă — nu există browser de arătat.")
             End If
             Try
-                Await _executor.ShowBrowserWindowAsync()
+                Dim form As RecorderForm = ShowRecorderCore(owner, viewOnly:=True)
+                ' Un formular NOU se andochează singur la Shown; unul deja deschis trebuie
+                ' întrebat aici — poate operatorul îl detașase între timp.
+                If form.IsHandleCreated AndAlso form.Visible Then
+                    Await form.EnsureDockedAsync()
+                End If
             Catch ex As Exception
                 _logger?.LogException(ex, "Eroare la aducerea browserului în față")
                 Throw
             End Try
         End Function
 
-        ''' <summary>Ascunde la loc fereastra browserului (perechea lui ShowBrowserAsync).</summary>
+        ''' <summary>
+        ''' Ascunde browserul (perechea lui ShowBrowserAsync): îl detașează din orice formular îl
+        ''' găzduiește și îl parchează în afara ecranului. Recorderul deschis doar pentru privit
+        ''' se închide — nu mai are ce arăta; cel deschis pentru înregistrare rămâne, cu pașii
+        ''' lui, și își stinge singur butoanele de andocare.
+        ''' </summary>
         Public Async Function HideBrowserAsync() As Task Implements IForexeRunner.HideBrowserAsync
             If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then
                 Throw New InvalidOperationException("Nicio sesiune activă — nu există browser de ascuns.")
             End If
             Try
+                ' Întâi browserul, apoi fereastra: la închidere recorderul găsește browserul
+                ' deja detașat și nu mai are nimic de făcut decât să dispară.
                 Await _executor.HideBrowserWindowAsync()
+                Dim form As RecorderForm = _recorder
+                If form IsNot Nothing AndAlso Not form.IsDisposed AndAlso form.ViewOnly Then
+                    form.Close()
+                End If
             Catch ex As Exception
                 _logger?.LogException(ex, "Eroare la ascunderea browserului")
                 Throw
             End Try
         End Function
 
-        ''' <summary>Browserul e la vedere acum? False și când nu există sesiune.</summary>
+        ''' <summary>Browserul e la vedere acum (andocat într-un formular)? False și când nu există sesiune.</summary>
         Public ReadOnly Property IsBrowserVisible As Boolean Implements IForexeRunner.IsBrowserVisible
             Get
                 If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return False
@@ -111,7 +138,8 @@ Namespace KBot.Forexe
         ''' <summary>
         ''' Deschide bancul de înregistrare peste sesiunea curentă. Fără sesiune vie nu are ce
         ''' andoca și ce înregistra, deci aruncă — apelantul trebuie să afle de ce nu se
-        ''' întâmplă nimic, la fel ca la «Arată browserul».
+        ''' întâmplă nimic, la fel ca la «Arată browserul». Un recorder deschis doar pentru
+        ''' privit trece în modul de înregistrare — panoul din dreapta se aprinde.
         ''' </summary>
         Public Sub ShowRecorder(owner As IWin32Window) Implements IForexeRunner.ShowRecorder
             If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then
@@ -120,46 +148,74 @@ Namespace KBot.Forexe
             End If
 
             Try
-                If _recorder Is Nothing OrElse _recorder.IsDisposed Then
-                    _recorder = New RecorderForm()
-                    AddHandler _recorder.FormClosed, AddressOf Recorder_FormClosed
-                End If
-
-                ' Legarea se reface la fiecare deschidere: o reconectare a schimbat executorul.
-                _recorder.AttachExecutor(_executor)
-
-                If _recorder.Visible Then
-                    If _recorder.WindowState = FormWindowState.Minimized Then
-                        _recorder.WindowState = FormWindowState.Normal
-                    End If
-                    _recorder.Activate()
-                ElseIf owner Is Nothing Then
-                    _recorder.Show()
-                Else
-                    _recorder.Show(owner)
-                End If
+                ShowRecorderCore(owner, viewOnly:=False)
             Catch ex As Exception
                 _logger?.LogException(ex, "Eroare la deschiderea recorderului")
                 Throw
             End Try
         End Sub
 
+        ''' <summary>
+        ''' O singură fereastră de recorder pentru amândouă intențiile. Modul se poate doar
+        ''' RIDICA (privit → înregistrare), niciodată coborî: o cerere de «arată browserul» peste
+        ''' un recorder în care operatorul înregistrează nu are voie să-i stingă panoul.
+        ''' Fereastra nouă se andochează singură la Shown (RecorderForm).
+        ''' </summary>
+        Private Function ShowRecorderCore(owner As IWin32Window, viewOnly As Boolean) As RecorderForm
+            Dim fresh As Boolean = _recorder Is Nothing OrElse _recorder.IsDisposed
+            If fresh Then
+                _recorder = New RecorderForm()
+                AddHandler _recorder.FormClosed, AddressOf Recorder_FormClosed
+            End If
+
+            If fresh OrElse Not viewOnly Then _recorder.ViewOnly = viewOnly
+
+            ' Legarea se reface la fiecare deschidere: o reconectare a schimbat executorul.
+            _recorder.AttachExecutor(_executor)
+
+            If _recorder.Visible Then
+                If _recorder.WindowState = FormWindowState.Minimized Then
+                    _recorder.WindowState = FormWindowState.Normal
+                End If
+                _recorder.Activate()
+            ElseIf owner Is Nothing Then
+                _recorder.Show()
+            Else
+                _recorder.Show(owner)
+            End If
+            Return _recorder
+        End Function
+
         Private Sub Recorder_FormClosed(sender As Object, e As FormClosedEventArgs)
             _recorder = Nothing
         End Sub
 
+        Private Sub OnExecutorDockStateChanged(docked As Boolean)
+            Try
+                RaiseEvent BrowserVisibilityChanged(Me, EventArgs.Empty)
+            Catch ex As Exception
+                ' Frontieră de eveniment: un abonat care aruncă nu are voie să oprească andocarea.
+                _logger?.LogException(ex, "Eroare la anunțarea schimbării de vizibilitate a browserului")
+            End Try
+        End Sub
+
         ''' <summary>
         ''' Desprinde recorderul de executorul care urmează să moară. Fără asta ar rămâne cu un
-        ''' executor închis în mână și cu butoanele de andocare aprinse degeaba.
+        ''' executor închis în mână și cu butoanele de andocare aprinse degeaba. Recorderul
+        ''' deschis doar pentru privit se închide de tot: fără browser nu mai are rost.
         ''' </summary>
         Private Sub DetachRecorder()
             Dim form As RecorderForm = _recorder
             If form Is Nothing OrElse form.IsDisposed Then Return
             Try
+                Dim release As Action = Sub()
+                                            form.DetachExecutor()
+                                            If form.ViewOnly Then form.Close()
+                                        End Sub
                 If form.IsHandleCreated AndAlso form.InvokeRequired Then
-                    form.BeginInvoke(Sub() form.DetachExecutor())
+                    form.BeginInvoke(release)
                 Else
-                    form.DetachExecutor()
+                    release()
                 End If
             Catch ex As Exception
                 ' Curățenie: o desprindere ratată nu are voie să oprească închiderea sesiunii.
@@ -197,14 +253,14 @@ Namespace KBot.Forexe
                         progress.Report(pct)
                     End Sub
 
-                ' Stealth = INVERSUL lui job.ShowBrowser, exact ca în KBOT_IPC
-                ' (`isStealth = Not jobToRun.ShowBrowser`). Implicit ascuns: fereastra pleacă
-                ' off-screen și iese din Taskbar/Alt-Tab. Operatorul o poate aduce oricând la
-                ' vedere din consolă — vezi ShowBrowserAsync / HideBrowserAsync.
+                ' Stealth ÎNTOTDEAUNA (felia 0070). KBOT_IPC avea `isStealth = Not
+                ' jobToRun.ShowBrowser`; aici fereastra Chromium se naște off-screen, în afara
+                ' Taskbar/Alt-Tab, și nu apare niciodată singură pe ecran. Operatorul vede
+                ' pagina doar andocată în recorder — vezi ShowBrowserAsync / HideBrowserAsync.
                 _executor = New WorkflowExecutor(
                     logger:=_logger,
                     certificate:=certificate,
-                    stealthMode:=Not job.ShowBrowser,
+                    stealthMode:=True,
                     stepByStep:=False,
                     confirmStep:=Nothing,
                     stepOnlyCheckpoints:=False,
@@ -223,6 +279,7 @@ Namespace KBot.Forexe
                 AddHandler _executor.OnStatusUpdate, AddressOf OnExecutorStatus
                 AddHandler _executor.OnLogMessage, AddressOf OnExecutorLogMessage
                 AddHandler _executor.OnBrowserClosed, AddressOf OnExecutorBrowserClosed
+                AddHandler _executor.OnDockStateChanged, AddressOf OnExecutorDockStateChanged
 
                 ' Gardianul ferestrei de PIN, pornit ÎNAINTE de lansarea browserului — ca în
                 ' KBOT_IPC, unde StartUiGuardian merge imediat după inițializarea executorului.
@@ -270,9 +327,9 @@ Namespace KBot.Forexe
             Catch ex As Exception
                 _logger.LogException(ex, "Eroare conectare")
                 RidicaStare("Eroare!")
-                ' DIAGNOSTIC TEMPORAR: stack trace complet în log (LogException scrie doar Message).
-                _logger.LogError("[DIAG] " & ex.GetType().FullName & ": " & ex.Message)
-                _logger.LogError("[DIAG][STACK] " & ex.ToString())
+                ' The type and the full stack, for the file journal and the verbose console
+                ' (slice 0071: Debug, so the operator sees the sentence above once, not three times).
+                _logger.LogDebug("[DIAG][STACK] " & ex.ToString())
                 ' Browserul rămâne deschis pentru investigație (decizie A3).
                 Return Failed(ex.Message)
             End Try
@@ -393,8 +450,7 @@ Namespace KBot.Forexe
             Catch ex As Exception
                 _logger.LogException(ex, $"Eroare rulare '{job.WorkflowName}'")
                 RidicaStare("Eroare!")
-                _logger.LogError("[DIAG] " & ex.GetType().FullName & ": " & ex.Message)
-                _logger.LogError("[DIAG][STACK] " & ex.ToString())
+                _logger.LogDebug("[DIAG][STACK] " & ex.ToString())
                 Return Failed(ex.Message)
             End Try
         End Function
@@ -666,6 +722,7 @@ Namespace KBot.Forexe
                 RemoveHandler _executor.OnStatusUpdate, AddressOf OnExecutorStatus
                 RemoveHandler _executor.OnLogMessage, AddressOf OnExecutorLogMessage
                 RemoveHandler _executor.OnBrowserClosed, AddressOf OnExecutorBrowserClosed
+                RemoveHandler _executor.OnDockStateChanged, AddressOf OnExecutorDockStateChanged
                 Await _executor.CloseAsync()
             Catch
                 ' ignorăm erorile de cleanup

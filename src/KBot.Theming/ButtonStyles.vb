@@ -65,4 +65,18 @@ Public Module ButtonStyles
         b.FlatAppearance.MouseDownBackColor = p.ButtonPressedColor
         b.UseVisualStyleBackColor = False
     End Sub
+
+    Public Sub ApplyTrans(b As Button, scheme As ThemeScheme)
+        ArgumentNullException.ThrowIfNull(b)
+        ArgumentNullException.ThrowIfNull(scheme)
+        Dim p As ThemePalette = scheme.Palette
+        ModernRenderer.DetachButton(b)
+        b.FlatStyle = FlatStyle.Flat
+        b.FlatAppearance.BorderSize = 0
+        b.BackColor = Color.Transparent
+        b.ForeColor = p.TextColor
+        b.FlatAppearance.MouseOverBackColor = p.ButtonHoverColor
+        b.FlatAppearance.MouseDownBackColor = p.ButtonPressedColor
+        b.UseVisualStyleBackColor = False
+    End Sub
 End Module

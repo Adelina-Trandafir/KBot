@@ -321,8 +321,9 @@ Partial Public Class WorkflowExecutor
     Private Sub LogStep(action As IWorkflowAction, defaultTechnicalMessage As String)
         If Not String.IsNullOrEmpty(action.LogValue) Then
             If action.LogValue.Contains("_"c) Then Return
-            ' Afișăm textul frumos din XML (ex: "Salvez factura...")
-            _logger.LogNormal(action.LogValue)
+            ' Afișăm textul frumos din XML (ex: "Salvez factura...") -- written for the
+            ' operator, so it stays on the console at any verbosity (slice 0071).
+            _logger.LogOperator(action.LogValue)
         Else
             'If Not _showTechnicalMessage Then Return
             ' Afișăm detaliul tehnic (ex: "Click pe #btnSave")

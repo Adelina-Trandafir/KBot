@@ -31,8 +31,6 @@ Partial Class ForexeConsoleForm
         pnlFoot = New Panel()
         tlpFoot = New KBotTableLayoutPanel()
         pnlStare = New Panel()
-        lblStatus = New Label()
-        lblCert = New Label()
         pbProgress = New KBotProgressBar()
         pnlCard.SuspendLayout()
         pnlBody.SuspendLayout()
@@ -65,13 +63,13 @@ Partial Class ForexeConsoleForm
         btnAfiseazaBrowser.FlatStyle = FlatStyle.Flat
         btnAfiseazaBrowser.Font = New Font("Calibri", 10F)
         btnAfiseazaBrowser.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
-        btnAfiseazaBrowser.Location = New Point(774, 5)
+        btnAfiseazaBrowser.Location = New Point(662, 5)
         btnAfiseazaBrowser.Margin = New Padding(4, 5, 4, 5)
         btnAfiseazaBrowser.Name = "btnAfiseazaBrowser"
         btnAfiseazaBrowser.Size = New Size(52, 49)
         btnAfiseazaBrowser.TabIndex = 1
         tips.SetToolTipHeader(btnAfiseazaBrowser, "Arată browserul")
-        tips.SetToolTipText(btnAfiseazaBrowser, "Aduce în față fereastra de browser prin care lucrează robotul FOREXE." & vbLf & "Folosește-o când portalul cere o confirmare.")
+        tips.SetToolTipText(btnAfiseazaBrowser, "Deschide o fereastră K-BOT cu pagina prin care lucrează robotul FOREXE." & vbLf & "Folosește-o când portalul cere o confirmare. Închiderea ferestrei ascunde browserul la loc.")
         btnAfiseazaBrowser.UseVisualStyleBackColor = True
         ' 
         ' btnAfiseazaLog
@@ -80,7 +78,7 @@ Partial Class ForexeConsoleForm
         btnAfiseazaLog.FlatStyle = FlatStyle.Flat
         btnAfiseazaLog.Font = New Font("Calibri", 10F)
         btnAfiseazaLog.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Livejournal_32
-        btnAfiseazaLog.Location = New Point(714, 5)
+        btnAfiseazaLog.Location = New Point(602, 5)
         btnAfiseazaLog.Margin = New Padding(4, 5, 4, 5)
         btnAfiseazaLog.Name = "btnAfiseazaLog"
         btnAfiseazaLog.Size = New Size(52, 49)
@@ -95,7 +93,7 @@ Partial Class ForexeConsoleForm
         btnRecorder.FlatStyle = FlatStyle.Flat
         btnRecorder.Font = New Font("Calibri", 10F)
         btnRecorder.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Record_slide_show_32
-        btnRecorder.Location = New Point(834, 5)
+        btnRecorder.Location = New Point(722, 5)
         btnRecorder.Margin = New Padding(4, 5, 4, 5)
         btnRecorder.Name = "btnRecorder"
         btnRecorder.Size = New Size(52, 49)
@@ -115,7 +113,7 @@ Partial Class ForexeConsoleForm
         pnlCard.Location = New Point(2, 4)
         pnlCard.Margin = New Padding(0)
         pnlCard.Name = "pnlCard"
-        pnlCard.Size = New Size(910, 659)
+        pnlCard.Size = New Size(798, 618)
         pnlCard.TabIndex = 0
         pnlCard.Tag = "Card"
         ' 
@@ -127,7 +125,7 @@ Partial Class ForexeConsoleForm
         pnlBody.Margin = New Padding(0)
         pnlBody.Name = "pnlBody"
         pnlBody.Padding = New Padding(10)
-        pnlBody.Size = New Size(910, 424)
+        pnlBody.Size = New Size(798, 452)
         pnlBody.TabIndex = 6
         ' 
         ' rtbLog
@@ -141,10 +139,10 @@ Partial Class ForexeConsoleForm
         rtbLog.Name = "rtbLog"
         rtbLog.ReadOnly = True
         rtbLog.ScrollBars = RichTextBoxScrollBars.Vertical
-        rtbLog.Size = New Size(890, 404)
+        rtbLog.ShowSelectionMargin = True
+        rtbLog.Size = New Size(778, 432)
         rtbLog.TabIndex = 0
         rtbLog.Text = ""
-        rtbLog.WordWrap = False
         ' 
         ' pnlCaption
         ' 
@@ -153,7 +151,7 @@ Partial Class ForexeConsoleForm
         pnlCaption.Location = New Point(0, 0)
         pnlCaption.Margin = New Padding(0)
         pnlCaption.Name = "pnlCaption"
-        pnlCaption.Size = New Size(910, 49)
+        pnlCaption.Size = New Size(798, 49)
         pnlCaption.TabIndex = 5
         ' 
         ' capBar
@@ -167,7 +165,7 @@ Partial Class ForexeConsoleForm
         capBar.OptionButtonPadding = 0
         capBar.ShowMaximize = True
         capBar.ShowMinimize = True
-        capBar.Size = New Size(910, 49)
+        capBar.Size = New Size(798, 49)
         capBar.TabIndex = 4
         capBar.TabStop = False
         capBar.Text = "Consolă FOREXE"
@@ -176,11 +174,11 @@ Partial Class ForexeConsoleForm
         ' 
         pnlFoot.Controls.Add(tlpFoot)
         pnlFoot.Dock = DockStyle.Bottom
-        pnlFoot.Location = New Point(0, 473)
+        pnlFoot.Location = New Point(0, 501)
         pnlFoot.Margin = New Padding(0)
         pnlFoot.Name = "pnlFoot"
         pnlFoot.Padding = New Padding(10, 0, 10, 0)
-        pnlFoot.Size = New Size(910, 59)
+        pnlFoot.Size = New Size(798, 59)
         pnlFoot.TabIndex = 2
         ' 
         ' tlpFoot
@@ -201,44 +199,19 @@ Partial Class ForexeConsoleForm
         tlpFoot.Name = "tlpFoot"
         tlpFoot.RowCount = 1
         tlpFoot.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlpFoot.Size = New Size(890, 59)
+        tlpFoot.Size = New Size(778, 59)
         tlpFoot.TabIndex = 3
         ' 
         ' pnlStare
         ' 
-        pnlStare.Controls.Add(lblStatus)
-        pnlStare.Controls.Add(lblCert)
         pnlStare.Controls.Add(pbProgress)
         pnlStare.Dock = DockStyle.Bottom
-        pnlStare.Location = New Point(0, 532)
+        pnlStare.Location = New Point(0, 560)
         pnlStare.Margin = New Padding(4, 5, 4, 5)
         pnlStare.Name = "pnlStare"
         pnlStare.Padding = New Padding(10)
-        pnlStare.Size = New Size(910, 127)
+        pnlStare.Size = New Size(798, 58)
         pnlStare.TabIndex = 1
-        ' 
-        ' lblStatus
-        ' 
-        lblStatus.AutoEllipsis = True
-        lblStatus.Dock = DockStyle.Bottom
-        lblStatus.Location = New Point(10, 40)
-        lblStatus.Margin = New Padding(4, 0, 4, 0)
-        lblStatus.Name = "lblStatus"
-        lblStatus.Size = New Size(890, 40)
-        lblStatus.TabIndex = 2
-        lblStatus.Text = "Neconectat."
-        lblStatus.TextAlign = ContentAlignment.MiddleLeft
-        ' 
-        ' lblCert
-        ' 
-        lblCert.Dock = DockStyle.Bottom
-        lblCert.Location = New Point(10, 80)
-        lblCert.Margin = New Padding(4, 0, 4, 0)
-        lblCert.Name = "lblCert"
-        lblCert.Size = New Size(890, 37)
-        lblCert.TabIndex = 1
-        lblCert.Text = "Certificat: —"
-        lblCert.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' pbProgress
         ' 
@@ -246,7 +219,7 @@ Partial Class ForexeConsoleForm
         pbProgress.Location = New Point(10, 10)
         pbProgress.Margin = New Padding(4, 5, 4, 5)
         pbProgress.Name = "pbProgress"
-        pbProgress.Size = New Size(890, 30)
+        pbProgress.Size = New Size(778, 30)
         pbProgress.TabIndex = 0
         ' 
         ' ForexeConsoleForm
@@ -254,11 +227,11 @@ Partial Class ForexeConsoleForm
         AutoFitToTheme = False
         AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
-        ClientSize = New Size(914, 667)
+        ClientSize = New Size(802, 626)
         Controls.Add(pnlCard)
         FormBorderStyle = FormBorderStyle.None
         Margin = New Padding(4, 5, 4, 5)
-        MinimumSize = New Size(914, 667)
+        MinimumSize = New Size(200, 300)
         Name = "ForexeConsoleForm"
         Padding = New Padding(2, 4, 2, 4)
         StartPosition = FormStartPosition.CenterScreen
@@ -278,8 +251,6 @@ Partial Class ForexeConsoleForm
     Friend WithEvents rtbLog As RichTextBox
     Friend WithEvents pnlStare As Panel
     Friend WithEvents pbProgress As KBotProgressBar
-    Friend WithEvents lblCert As Label
-    Friend WithEvents lblStatus As Label
     Friend WithEvents pnlFoot As Panel
     Friend WithEvents btnAnulare As Button
     Friend WithEvents btnAfiseazaBrowser As Button

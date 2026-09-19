@@ -32,6 +32,7 @@ Public Class ForexeControllerFailureTests
         Public Property AreSesiune As Boolean = True
 
         Public Event StatusUpdated As EventHandler(Of String) Implements IForexeRunner.StatusUpdated
+        Public Event BrowserVisibilityChanged As EventHandler Implements IForexeRunner.BrowserVisibilityChanged
 
         Public ReadOnly Property HasLiveSession As Boolean Implements IForexeRunner.HasLiveSession
             Get
@@ -64,7 +65,7 @@ Public Class ForexeControllerFailureTests
             Throw New NotSupportedException()
         End Function
 
-        Public Function ShowBrowserAsync() As Task Implements IForexeRunner.ShowBrowserAsync
+        Public Function ShowBrowserAsync(owner As IWin32Window) As Task Implements IForexeRunner.ShowBrowserAsync
             Return Task.CompletedTask
         End Function
 
@@ -79,6 +80,7 @@ Public Class ForexeControllerFailureTests
         ' Silences the "event never raised" warning without changing behaviour.
         Private Sub Nefolosit()
             RaiseEvent StatusUpdated(Me, String.Empty)
+            RaiseEvent BrowserVisibilityChanged(Me, EventArgs.Empty)
         End Sub
     End Class
 

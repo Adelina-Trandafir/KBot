@@ -21,12 +21,40 @@ Imports KBot.Common
 '  Cost of reparenting, stated out loud: the browser window now belongs to the
 '  panel. Disposing the panel or closing the host form without undocking first
 '  destroys the Chromium window and with it the session, so every host must undock
-'  on FormClosing. Keyboard input needs the two input queues attached, which is
-'  what AttachBrowserInput does.
+'  on FormClosing.
 '
-'  While docked the window moving helpers are disabled: HideBrowserWindowAsync,
-'  ShowBrowserWindowAsync and ExecuteMinimizeAsync all return early, otherwise a
-'  workflow could throw the browser off screen while the operator is recording.
+'  THE FRAME IS REPARENTED WITHOUT WS_CHILD - a top level window with a parent, the
+'  shape every "put notepad in a panel" sample uses - and that is what makes the KEYBOARD
+'  work. Found on screen (slice 0070): docked as a real WS_CHILD the page took the mouse
+'  but not one typed character. Windows never activates a child window, it activates the
+'  top level ancestor - our form - and Chromium routes typed characters through its input
+'  method only while its own window is the active one (WM_ACTIVATE). That message cannot be
+'  faked either: Chromium throws away a WM_ACTIVATE addressed to a window that has WS_CHILD.
+'  Without WS_CHILD the window still hangs off the panel - positioned in the panel's client
+'  pixels, clipped by it, moved with the form - but a click on the page activates the
+'  browser window itself, exactly as if it stood alone, and typing lands in the page. The
+'  visible side effect is honest: while the operator types in the page the host form paints
+'  its caption as inactive, the way any form does when a different window is active.
+'
+'  Two consequences of that shape. GetParent is useless for a window that is not WS_CHILD
+'  (it reports the OWNER, which is nobody), so the parent is read with GetAncestor. And
+'  activating a window does not raise its top level ancestor, so the host form is raised by
+'  hand when the browser becomes the active window (see OnHostFormDeactivate). The input
+'  queues are still attached (AttachBrowserInput): SetFocus and the shared focus state
+'  behave better with them, and it costs nothing.
+'
+'  THE BROWSER IS NEVER A WINDOW OF ITS OWN (slice 0070). It has exactly two states:
+'  docked inside a K-BOT form, or hidden off screen. A free standing Chromium window
+'  has a close button, and one click on it ends the FOREXE session together with every
+'  job that was going to run on it. So undocking does not hand the window back to the
+'  desktop: UndockBrowserAsync puts it straight into the same stealth state the launch
+'  uses (off screen, out of the taskbar), and the only way to see the page again is to
+'  dock it into a form. Whoever docked it must undock on FormClosing, and that undock
+'  hides it - closing the host form is the same gesture as «Ascunde browserul».
+'
+'  While docked ExecuteMinimizeAsync returns early, otherwise a workflow could throw the
+'  browser off screen while the operator is looking at it. HideBrowserWindowAsync does
+'  the opposite: docked, it undocks - which is the hide.
 '
 '  Hiding the browser's own toolbar (tab strip, address bar, bookmarks) is done by
 '  PLACEMENT, not by a Chromium flag. The window is given a negative top - the toolbar
@@ -50,7 +78,7 @@ Partial Public Class WorkflowExecutor
     ' --- Window styles and flags used by docking. The Dock prefix keeps them apart from
     '     locals of the same meaning inside WorkflowExecutor.Browser.vb. ---
     Private Const DockGwlStyle As Integer = -16
-    Private Const DockWsChild As Integer = &H40000000
+    Private Const DockWsChild As Integer = &H40000000           ' never SET - see the header
     Private Const DockWsPopup As Integer = Integer.MinValue     ' 0x80000000
     Private Const DockWsVisible As Integer = &H10000000
     Private Const DockWsCaption As Integer = &HC00000           ' WS_BORDER | WS_DLGFRAME
@@ -66,15 +94,30 @@ Partial Public Class WorkflowExecutor
     Private Const DockSwpFrameChanged As UInteger = &H20
     Private Const DockSwpShowWindow As UInteger = &H40
 
-    Private Const DockSwShow As Integer = 5
+    ''' <summary>GetAncestor flag: the real parent from the window tree, owner excluded.</summary>
+    Private Const GaParent As UInteger = 1
+
+    ''' <summary>SetWindowPos insert-after: top of the z-order (below topmost windows).</summary>
+    Private Shared ReadOnly HwndTop As IntPtr = IntPtr.Zero
 
     ' --- PInvoke used only by docking ---
     <DllImport("user32.dll", SetLastError:=True)>
     Private Shared Function SetParent(hWndChild As IntPtr, hWndNewParent As IntPtr) As IntPtr
     End Function
 
+    ' GetParent is NOT used on purpose: for a window without WS_CHILD it answers with the
+    ' owner, not the parent, and the docked browser has no owner. GetAncestor(GA_PARENT)
+    ' reads the parent out of the window tree whatever the style says.
     <DllImport("user32.dll", SetLastError:=True)>
-    Private Shared Function GetParent(hWnd As IntPtr) As IntPtr
+    Private Shared Function GetAncestor(hWnd As IntPtr, gaFlags As UInteger) As IntPtr
+    End Function
+
+    <DllImport("user32.dll")>
+    Private Shared Function GetDesktopWindow() As IntPtr
+    End Function
+
+    <DllImport("user32.dll")>
+    Private Shared Function GetForegroundWindow() As IntPtr
     End Function
 
     <DllImport("user32.dll", SetLastError:=True)>
@@ -116,15 +159,28 @@ Partial Public Class WorkflowExecutor
     Private _dockHost As Control = Nothing
     Private _dockedHwnd As IntPtr = IntPtr.Zero
 
-    ' The window exactly as it was before docking, so undocking can hand it back unchanged.
+    ' The window styles exactly as they were before docking, so undocking can give the
+    ' frame back. The bounds are NOT kept: an undocked browser goes off screen, never back
+    ' to where it was.
     Private _preDockStyle As Integer = 0
     Private _preDockExStyle As Integer = 0
     Private _preDockParent As IntPtr = IntPtr.Zero
-    Private _preDockBounds As RECT
+
+    ''' <summary>
+    ''' Raised after the browser was docked into a host (True) or undocked and hidden (False).
+    ''' Raised on whatever thread finished the operation - marshal before touching UI. Lets a
+    ''' host form refresh its buttons when somebody ELSE undocked the browser, for instance
+    ''' «Ascunde browserul» from the console while the recorder is open.
+    ''' </summary>
+    Public Event OnDockStateChanged(docked As Boolean)
 
     ' Input queue plumbing. The UI thread id is captured on the UI thread at dock time.
     Private _dockUiThreadId As UInteger = 0
     Private _inputAttachedTo As UInteger = 0
+
+    ' The form the host panel sits on, held only to hear its Deactivate while docked - see
+    ' OnHostFormDeactivate. Cleared on undock.
+    Private _hostForm As Form = Nothing
 
     ' Toolbar hiding. _chromeBandPx is the last measurement that made sense, kept so a single
     ' failed measurement does not make the toolbar flash back into the panel.
@@ -181,6 +237,7 @@ Partial Public Class WorkflowExecutor
         Dim hostHandle As IntPtr = ReadHostHandle(host)
         If hostHandle = IntPtr.Zero Then Throw New InvalidOperationException(
             "Panoul gazdă nu are încă handle. Afișează formularul înainte de andocare.")
+        Dim hostForm As Form = ReadHostForm(host)
         _dockUiThreadId = GetCurrentThreadId()
 
         Dim hwnd As IntPtr = Await GetOrRefreshBrowserHwndAsync()
@@ -189,29 +246,32 @@ Partial Public Class WorkflowExecutor
 
         _preDockStyle = GetWindowLong(hwnd, DockGwlStyle)
         _preDockExStyle = GetWindowLong(hwnd, GWL_EXSTYLE)
-        _preDockParent = GetParent(hwnd)
-        GetWindowRect(hwnd, _preDockBounds)
+        _preDockParent = ParentOf(hwnd)
 
         ' Out of any maximized or minimized state first: a maximized window keeps fighting
         ' the size it is about to be given.
         ShowWindow(hwnd, SW_RESTORE)
 
-        ' A frame window becomes a plain child: no caption, no resize grip, no system menu,
-        ' and out of the taskbar - it is a control now, not a window of its own.
+        ' The frame loses its decorations - no caption, no resize grip, no system menu - but
+        ' it is NOT made a WS_CHILD: a child window is never activated by Windows, and a
+        ' Chromium window that is never activated drops every typed character (see the
+        ' header). It stays a top level window in style, hung off the panel by SetParent.
         Dim style As Integer = _preDockStyle
         style = style And Not (DockWsCaption Or DockWsThickFrame Or
                                DockWsMinimizeBox Or DockWsMaximizeBox Or DockWsSysMenu)
-        style = style And Not DockWsPopup
-        style = style Or DockWsChild Or DockWsVisible
+        style = style And Not DockWsChild
+        style = style Or DockWsVisible
         SetWindowLong(hwnd, DockGwlStyle, style)
 
-        Dim exStyle As Integer = (_preDockExStyle And Not WS_EX_APPWINDOW) And Not WS_EX_TOOLWINDOW
+        ' Tool window, not app window: a window that is top level in style could otherwise
+        ' earn a taskbar button of its own while it sits inside the panel.
+        Dim exStyle As Integer = (_preDockExStyle Or WS_EX_TOOLWINDOW) And Not WS_EX_APPWINDOW
         SetWindowLong(hwnd, GWL_EXSTYLE, exStyle)
 
         ' SetParent returns the PREVIOUS parent, which is null for a top level window and
         ' also null on failure - so its result says nothing. Ask who the parent is now.
         SetParent(hwnd, hostHandle)
-        If GetParent(hwnd) <> hostHandle Then
+        If ParentOf(hwnd) <> hostHandle Then
             Dim err As Integer = Marshal.GetLastWin32Error()
             SetWindowLong(hwnd, DockGwlStyle, _preDockStyle)
             SetWindowLong(hwnd, GWL_EXSTYLE, _preDockExStyle)
@@ -230,6 +290,7 @@ Partial Public Class WorkflowExecutor
         _chromeBandLogged = 0
 
         AttachBrowserInput(hwnd, True)
+        ListenToHostForm(hostForm)
 
         Await SyncDockedBoundsAsync()
 
@@ -240,6 +301,7 @@ Partial Public Class WorkflowExecutor
         Await ClearEmulatedViewportAsync()
 
         _logger.LogInfo("[Andocare] Browserul este copilul panoului gazdă.")
+        RaiseEvent OnDockStateChanged(True)
     End Function
 
     ''' <summary>
@@ -379,7 +441,15 @@ Partial Public Class WorkflowExecutor
         Return best
     End Function
 
-    ''' <summary>Hands the window back: top level again, with the styles and bounds it had.</summary>
+    ''' <summary>
+    ''' Takes the window out of the host panel AND hides it: top level again, with the
+    ''' frame styles it had, but parked off screen and out of the taskbar - the same
+    ''' stealth state the launch puts it in. It is NOT shown on the desktop, ever: a free
+    ''' Chromium window can be closed by the operator, and that closes the session.
+    '''
+    ''' <para>Completes synchronously - a child window is reparented and moved with a few
+    ''' direct calls - so a host that is being disposed may call it without awaiting.</para>
+    ''' </summary>
     Public Function UndockBrowserAsync() As Task
         If Not _isDocked Then Return Task.CompletedTask
 
@@ -390,37 +460,35 @@ Partial Public Class WorkflowExecutor
         _chromeBandPx = 0
         _chromeMeasureWarned = False
         _chromeBandLogged = 0
+        ListenToHostForm(Nothing)
 
         If hwnd = IntPtr.Zero OrElse Not IsWindow(hwnd) Then
             _logger.LogWarning("[Andocare] Fereastra browserului nu a fost găsită la detașare.")
+            _isBrowserVisible = False
+            RaiseEvent OnDockStateChanged(False)
             Return Task.CompletedTask
         End If
 
         AttachBrowserInput(hwnd, False)
 
+        ' Back to the desktop (a null parent) and the styles it had. Never WS_CHILD in
+        ' either direction, so the order of the two calls does not matter.
         SetParent(hwnd, _preDockParent)
         SetWindowLong(hwnd, DockGwlStyle, _preDockStyle)
-        SetWindowLong(hwnd, GWL_EXSTYLE, _preDockExStyle Or WS_EX_APPWINDOW)
 
-        ' The pre-dock rectangle, unless it was never usable - a browser docked straight
-        ' after launch may have been parked off screen by stealth mode.
-        Dim left As Integer = _preDockBounds.Left
-        Dim top As Integer = _preDockBounds.Top
-        Dim width As Integer = _preDockBounds.Width
-        Dim height As Integer = _preDockBounds.Height
-        If width < 300 OrElse height < 200 OrElse left < 0 OrElse top < 0 Then
-            left = 100
-            top = 100
-            width = 1400
-            height = 900
-        End If
+        ' Stealth, not the pre-dock ex-style: whatever the window was before docking, after
+        ' undocking it is a hidden window - tool window (no taskbar button, no Alt-Tab entry).
+        SetWindowLong(hwnd, GWL_EXSTYLE, (_preDockExStyle Or WS_EX_TOOLWINDOW) And Not WS_EX_APPWINDOW)
 
-        SetWindowPos(hwnd, IntPtr.Zero, left, top, width, height,
-                     DockSwpFrameChanged Or DockSwpNoZOrder Or DockSwpShowWindow)
-        ShowWindow(hwnd, DockSwShow)
+        ' Off screen, the same parking spot HideBrowserWindowAsync uses. Still SHOWN in the
+        ' Win32 sense (SWP_SHOWWINDOW, never SW_HIDE): a hidden window cannot host the
+        ' certificate picker, see ApplyStealthWindowStyle.
+        SetWindowPos(hwnd, IntPtr.Zero, StealthLeft, StealthTop, StealthWidth, StealthHeight,
+                     DockSwpFrameChanged Or DockSwpNoZOrder Or DockSwpNoActivate Or DockSwpShowWindow)
 
-        _isBrowserVisible = True
-        _logger.LogInfo("[Andocare] Browser detașat.")
+        _isBrowserVisible = False
+        _logger.LogInfo("[Andocare] Browser detașat și ascuns.")
+        RaiseEvent OnDockStateChanged(False)
         Return Task.CompletedTask
     End Function
 
@@ -450,29 +518,8 @@ Partial Public Class WorkflowExecutor
         End Try
     End Function
 
-    ''' <summary>
-    ''' Puts the browser window immediately above <paramref name="owner"/> in the z-order
-    ''' without activating it. Only for the UNDOCKED browser: clicking the host form
-    ''' activates it, and without this the browser the operator is driving would drop behind
-    ''' the very window that is supposed to sit next to it. Docked there is nothing to do -
-    ''' a child window cannot fall behind its own parent.
-    ''' </summary>
-    Public Async Function RaiseBrowserAboveAsync(owner As IWin32Window) As Task
-        If owner Is Nothing Then Throw New ArgumentNullException(NameOf(owner))
-        If _isDocked Then Return
-        If _page Is Nothing OrElse _page.IsClosed Then Return
-
-        ' Read on the CALLING thread: after the await the continuation may not be on the UI
-        ' thread any more, and Control.Handle is not free to touch from anywhere.
-        Dim ownerHandle As IntPtr = owner.Handle
-        If ownerHandle = IntPtr.Zero Then Return
-
-        Dim hwnd As IntPtr = Await GetOrRefreshBrowserHwndAsync()
-        If hwnd = IntPtr.Zero Then Return
-
-        SetWindowPos(hwnd, ownerHandle, 0, 0, 0, 0,
-                     DockSwpNoMove Or DockSwpNoSize Or DockSwpNoActivate)
-    End Function
+    ' RaiseBrowserAboveAsync (keeping a free browser above the recorder in the z-order) is
+    ' gone with slice 0070: there is no free browser to keep in place any more.
 
     ' =========================================================================
     '  Input queues
@@ -514,14 +561,75 @@ Partial Public Class WorkflowExecutor
     End Sub
 
     ' =========================================================================
+    '  Keeping the host form in front of the browser it hosts
+    ' =========================================================================
+
+    ''' <summary>
+    ''' Subscribes to (or, with Nothing, unsubscribes from) the host form's Deactivate.
+    ''' Best effort: a host without a form - the dev harness bench inside another
+    ''' container, a test - simply does not get raised.
+    ''' </summary>
+    Private Sub ListenToHostForm(form As Form)
+        Try
+            If _hostForm IsNot Nothing Then
+                RemoveHandler _hostForm.Deactivate, AddressOf OnHostFormDeactivate
+                _hostForm = Nothing
+            End If
+            If form Is Nothing OrElse form.IsDisposed Then Return
+            AddHandler form.Deactivate, AddressOf OnHostFormDeactivate
+            _hostForm = form
+        Catch ex As Exception
+            _logger.LogWarning("[Andocare] Nu pot urmări activarea formularului gazdă: " & ex.Message)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' A click on the page activates the browser window, not the form around it, and
+    ''' activating a window does not raise its top level ancestor. So when the form loses
+    ''' activation TO ITS OWN BROWSER it raises itself, without taking the activation back -
+    ''' otherwise a form half covered by another program would stay half covered while the
+    ''' operator types in the part they can see. Any other loss of activation (the operator
+    ''' went to another program) is left alone.
+    ''' </summary>
+    Private Sub OnHostFormDeactivate(sender As Object, e As EventArgs)
+        Try
+            If Not _isDocked OrElse _hostForm Is Nothing OrElse _hostForm.IsDisposed Then Return
+            Dim active As IntPtr = GetForegroundWindow()
+            If active = IntPtr.Zero OrElse active <> _dockedHwnd Then Return
+            SetWindowPos(_hostForm.Handle, HwndTop, 0, 0, 0, 0,
+                         DockSwpNoMove Or DockSwpNoSize Or DockSwpNoActivate)
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowExecutor.OnHostFormDeactivate", ex)
+        End Try
+    End Sub
+
+    ' =========================================================================
     '  Host reads, marshalled to the UI thread
     ' =========================================================================
+
+    ''' <summary>
+    ''' The parent from the window tree. Null for a top level window - GetAncestor answers
+    ''' with the desktop window for those, which nobody wants to SetParent back to.
+    ''' </summary>
+    Private Shared Function ParentOf(hwnd As IntPtr) As IntPtr
+        Dim parent As IntPtr = GetAncestor(hwnd, GaParent)
+        If parent = GetDesktopWindow() Then Return IntPtr.Zero
+        Return parent
+    End Function
+
     Private Shared Function ReadHostHandle(host As Control) As IntPtr
         If host.InvokeRequired Then
             Return CType(host.Invoke(Function() ReadHostHandle(host)), IntPtr)
         End If
         If Not host.IsHandleCreated Then Return IntPtr.Zero
         Return host.Handle
+    End Function
+
+    Private Shared Function ReadHostForm(host As Control) As Form
+        If host.InvokeRequired Then
+            Return CType(host.Invoke(Function() ReadHostForm(host)), Form)
+        End If
+        Return host.FindForm()
     End Function
 
     Private Shared Function ReadHostClientSize(host As Control) As Drawing.Size

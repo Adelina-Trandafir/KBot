@@ -17,6 +17,9 @@ Variantă specială de Click pentru link-uri care declanșează autentificarea W
 | `selector` | ✅ | — | Elementul pe care se dă click pentru a iniția autentificarea |
 | `authTimeout` | — | `120` | Secunde de așteptat pentru confirmarea certificatului |
 | `ExpectedUrlAfterAuth` | — | — | Dacă e furnizat, așteaptă ca URL-ul să conțină acest șir după login |
+| `failUrl` | — | — | Glob de URL care înseamnă «autentificare respinsă» (ex. pagina de deconectare `**/vdesk/hangup.php3**`). E urmărit ÎN TIMPUL așteptării, în paralel cu `ExpectedUrlAfterAuth`: dacă apare, pasul eșuează imediat, fără să mai aștepte `authTimeout` |
+| `failSelector` | — | — | Selector care înseamnă «autentificare respinsă» (ex. `table#main_table.logout_page`). Aceeași regulă ca `failUrl`: prezența elementului în pagină (nu neapărat vizibil) oprește pasul pe loc |
+| `failMessage` | — | mesaj implicit despre certificat | Textul de eroare arătat operatorului când `failUrl` sau `failSelector` se declanșează |
 | `waitNavigation` | — | `false` | Așteaptă navigarea paginii după autentificare |
 | `timeout` | — | `30` | Secunde de așteptat ca elementul să fie disponibil |
 | `isCheckpoint` | — | `false` | Marchează ca punct de reluare |
@@ -28,9 +31,17 @@ Variantă specială de Click pentru link-uri care declanșează autentificarea W
   authTimeout="120"
   waitNavigation="true"
   ExpectedUrlAfterAuth="https://forexe.mfinante.gov.ro/"
+  failUrl="**/vdesk/hangup.php3**"
+  failSelector="table#main_table.logout_page"
+  failMessage="FOREXE a respins autentificarea: certificatul nu este disponibil sau nu a fost acceptat."
   LogValue="Aștept autentificarea cu certificat..."
 />
 ```
+
+Cursa dintre succes și eșec: `ExpectedUrlAfterAuth`, `failUrl` și `failSelector` sunt așteptate
+simultan, cu același `authTimeout`. Prima care se împlinește decide: URL-ul așteptat = succes;
+`failUrl`/`failSelector` = eroare cu `failMessage`; niciuna în `authTimeout` secunde = eroarea de
+timeout de până acum. Fără `failUrl`/`failSelector`, comportamentul e cel vechi.
 
 ---
 

@@ -286,6 +286,9 @@ Public Class WorkflowParser
                 .Selector = GetRequiredAttribute(e, "selector"),
                 .AuthTimeout = GetIntAttribute(e, "authTimeout", 120),
                 .ExpectedUrlAfterAuth = GetAttributeValue(e, "ExpectedUrlAfterAuth", ""),
+                .FailUrl = GetAttributeValue(e, "failUrl", ""),
+                .FailSelector = GetAttributeValue(e, "failSelector", ""),
+                .FailMessage = GetAttributeValue(e, "failMessage", ""),
                 .WaitNavigation = GetBoolAttribute(e, "waitNavigation", False),
                 .IsCheckpoint = GetBoolAttribute(e, "isCheckpoint", False)
             }

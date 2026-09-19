@@ -36,6 +36,44 @@ Public Class RichTextBoxLogger
     ''' Dacă este Nothing sau gol, nu se scrie în fișier.
     ''' </summary>
     Public Property LogFilePath As String = Nothing
+
+    ' ── Verbosity (slice 0071) ─────────────────────────────────────────────
+    ' The console the operator watches shows only what the operator needs: the
+    ' text a workflow author wrote for them (<Log> and LogValue, i.e. entries
+    ' logged with operatorFacing:=True) and errors. Every other line -- steps,
+    ' waits, docking, throttle, stack traces -- is diagnostic and appears only
+    ' when this flag is on. Debug builds start with it on, Release builds off.
+    ' THE FILE JOURNAL AND THE JOB HISTORY ARE NOT FILTERED: every line still
+    ' goes there, so nothing is lost for later reading.
+    '
+    ' Flipping the flag at run time re-renders every open console from its
+    ' buffer, so a future operator toggle («jurnal detaliat») only has to set
+    ' `RichTextBoxLogger.VerboseLogging` -- the name reserved for that slice.
+    Private Shared _verboseLogging As Boolean = InitialVerbosity()
+
+    Public Shared Property VerboseLogging As Boolean
+        Get
+            Return _verboseLogging
+        End Get
+        Set(value As Boolean)
+            If _verboseLogging = value Then Return
+            _verboseLogging = value
+            RefreshAllInstances()
+        End Set
+    End Property
+
+    Private Shared Function InitialVerbosity() As Boolean
+#If DEBUG Then
+        Return True
+#Else
+        Return False
+#End If
+    End Function
+
+    ''' <summary>Whether an entry belongs on the operator's console under the current verbosity.</summary>
+    Private Shared Function ShouldDisplay(level As LogLevel, operatorFacing As Boolean) As Boolean
+        Return _verboseLogging OrElse operatorFacing OrElse level = LogLevel.Error
+    End Function
     ' ---------------------------------------
 
     ' Colors for dark mode (bright, visible on dark background)
@@ -80,6 +118,11 @@ Public Class RichTextBoxLogger
             LogColors(kvp.Key) = kvp.Value
         Next
         ' 2. Re-randează toate instanțele active (trimite pe UI thread)
+        RefreshAllInstances()
+    End Sub
+
+    ''' <summary>Re-renders every live console from its buffer (theme switch, verbosity switch).</summary>
+    Private Shared Sub RefreshAllInstances()
         Dim dead As New List(Of WeakReference(Of RichTextBoxLogger))
         SyncLock _instances
             For Each wr In _instances
@@ -111,7 +154,7 @@ Public Class RichTextBoxLogger
     Private Shared ReadOnly _instances As New List(Of WeakReference(Of RichTextBoxLogger))
 
     ' ── Buffer per instanță: (nivel, mesaj formatat) — maxim 5000 intrări ──
-    Private ReadOnly _buffer As New List(Of (Level As LogLevel, Msg As String))
+    Private ReadOnly _buffer As New List(Of (Level As LogLevel, Msg As String, OperatorFacing As Boolean))
     Private Const MaxBuffer As Integer = 5000
 
     Public Sub New(richTextBox As RichTextBox)
@@ -119,12 +162,32 @@ Public Class RichTextBoxLogger
         SyncLock _instances
             _instances.Add(New WeakReference(Of RichTextBoxLogger)(Me))
         End SyncLock
+        ' The console is built hidden, so the box has no window handle until it is first
+        ' shown. When the handle appears (on the UI thread), replay the buffer into it --
+        ' the lines logged meanwhile are not lost. Same on a handle recreation.
+        AddHandler richTextBox.HandleCreated, Sub() RefreshDisplay()
     End Sub
+
+    ' Slice 0071-02: the box may be touched from the UI thread ONLY, and only once it
+    ' has a handle. `Control.InvokeRequired` answers False while there is no handle, so
+    ' the first line written from a worker thread used to CREATE the handle on that
+    ' thread; every later Invoke then targeted a thread-pool thread that pumps no
+    ' messages and blocked the robot forever (Release, console never opened: the first
+    ' line shown is the workflow's own <Log>, logged from the executor). While there is
+    ' no handle the line stays in the buffer and HandleCreated replays it.
+    Private Function UiReady() As Boolean
+        Return _richTextBox IsNot Nothing AndAlso
+               Not _richTextBox.IsDisposed AndAlso
+               Not _richTextBox.Disposing AndAlso
+               _richTextBox.IsHandleCreated
+    End Function
 
     ''' <summary>
     ''' Log a message with specified level (Thread-Safe)
     ''' </summary>
-    Public Sub Log(message As String, Optional level As LogLevel = LogLevel.Info)
+    ''' <param name="operatorFacing">True for text written FOR the operator (a workflow's
+    ''' &lt;Log&gt; or LogValue): shown on the console whatever the verbosity.</param>
+    Public Sub Log(message As String, Optional level As LogLevel = LogLevel.Info, Optional operatorFacing As Boolean = False)
         Dim timestamp = DateTime.Now.ToString("HH:mm:ss")
         Dim prefix = LogPrefixes(level)
         Dim color = LogColors(level)
@@ -132,14 +195,21 @@ Public Class RichTextBoxLogger
         ' Mesajul formatat care va apărea în log
         Dim fullMessage = $"[{timestamp}] {prefix}{message}"
 
-        ' Bufferizăm pentru re-render la switch temă
+        ' Bufferizăm pentru re-render la switch temă / verbozitate
         SyncLock _buffer
             If _buffer.Count >= MaxBuffer Then _buffer.RemoveAt(0)
-            _buffer.Add((level, fullMessage))
+            _buffer.Add((level, fullMessage, operatorFacing))
         End SyncLock
 
         ' Apelăm funcția internă care decide unde se scrie (UI, Fișier, Istoric)
-        WriteInternal(fullMessage, color)
+        WriteInternal(fullMessage, color, ShouldDisplay(level, operatorFacing))
+    End Sub
+
+    ''' <summary>
+    ''' Text written for the operator by the workflow author: always on the console.
+    ''' </summary>
+    Public Sub LogOperator(message As String, Optional level As LogLevel = LogLevel.Normal)
+        Log(message, level, operatorFacing:=True)
     End Sub
 
     ''' <summary>
@@ -214,14 +284,17 @@ Public Class RichTextBoxLogger
     ''' </summary>
     Public Sub Clear()
         ' 1. Curățare UI (Dacă e activat)
-        If EnableUI Then
-            If _richTextBox.IsDisposed OrElse _richTextBox.Disposing Then Return
-
+        If EnableUI AndAlso UiReady() Then
             If _richTextBox.InvokeRequired Then
                 _richTextBox.Invoke(Sub() ClearUI())
             Else
                 ClearUI()
             End If
+        Else
+            ' No box to clear (or none yet): forget the buffer so a later replay starts clean.
+            SyncLock _buffer
+                _buffer.Clear()
+            End SyncLock
         End If
 
         ' 2. Curățare Fișier (Opțional - ștergem fișierul vechi dacă există)
@@ -321,10 +394,10 @@ Public Class RichTextBoxLogger
 
     ''' <summary>Re-randează toate intrările din buffer cu paleta activă curentă (async UI).</summary>
     Private Sub RefreshDisplay()
-        If _richTextBox.IsDisposed OrElse _richTextBox.Disposing Then Return
-        Dim snapshot As List(Of (Level As LogLevel, Msg As String))
+        If Not UiReady() Then Return
+        Dim snapshot As List(Of (Level As LogLevel, Msg As String, OperatorFacing As Boolean))
         SyncLock _buffer
-            snapshot = New List(Of (Level As LogLevel, Msg As String))(_buffer)
+            snapshot = New List(Of (Level As LogLevel, Msg As String, OperatorFacing As Boolean))(_buffer)
         End SyncLock
         If snapshot.Count = 0 Then Return
         Dim action As Action = Sub() RedrawAll(snapshot)
@@ -335,11 +408,12 @@ Public Class RichTextBoxLogger
         End If
     End Sub
 
-    Private Sub RedrawAll(entries As List(Of (Level As LogLevel, Msg As String)))
+    Private Sub RedrawAll(entries As List(Of (Level As LogLevel, Msg As String, OperatorFacing As Boolean)))
         Try
             _richTextBox.SuspendLayout()
             _richTextBox.Clear()
             For Each entry In entries
+                If Not ShouldDisplay(entry.Level, entry.OperatorFacing) Then Continue For
                 AppendTextToUI(entry.Msg, LogColors(entry.Level))
             Next
             _richTextBox.SelectionStart = _richTextBox.TextLength
@@ -352,9 +426,10 @@ Public Class RichTextBoxLogger
     End Sub
 
     ''' <summary>
-    ''' Internal method to handle writing to History, File and UI
+    ''' Internal method to handle writing to History, File and UI.
+    ''' History and file always get the line; the UI only when <paramref name="display"/> says so.
     ''' </summary>
-    Private Sub WriteInternal(text As String, color As Color)
+    Private Sub WriteInternal(text As String, color As Color, display As Boolean)
 
         ' =========================================================
         ' 1. ISTORIC MEMORIE (NOU) - Cerința 4
@@ -383,10 +458,10 @@ Public Class RichTextBoxLogger
         End If
 
         ' =========================================================
-        ' 3. SCRIERE ÎN UI (Dacă este activată)
+        ' 3. SCRIERE ÎN UI (Dacă este activată și linia trece filtrul de verbozitate)
         ' =========================================================
-        If EnableUI Then
-            If _richTextBox.IsDisposed OrElse _richTextBox.Disposing Then Return
+        If EnableUI AndAlso display Then
+            If Not UiReady() Then Return
 
             If _richTextBox.InvokeRequired Then
                 _richTextBox.Invoke(Sub() AppendTextToUI(text, color))
@@ -423,6 +498,6 @@ Public Class RichTextBoxLogger
     ''' Add a separator line
     ''' </summary>
     Public Sub Separator()
-        WriteInternal("─────────────────────────────────────────", Color.LightGray)
+        WriteInternal("─────────────────────────────────────────", Color.LightGray, _verboseLogging)
     End Sub
 End Class

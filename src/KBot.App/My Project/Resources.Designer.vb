@@ -713,6 +713,16 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized resource of type System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property Semlabs_Web_Blog_Earth_search_48_resized() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("Semlabs-Web-Blog-Earth-search.48_resized", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property settings__1_() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("settings (1)", resourceCulture)
@@ -806,6 +816,16 @@ Namespace My.Resources
         Friend ReadOnly Property vertical() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("vertical", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property Wefunction_Woofunction_Window_app_list_info_32() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("Wefunction-Woofunction-Window-app-list-info.32", resourceCulture)
                 Return CType(obj,System.Drawing.Bitmap)
             End Get
         End Property

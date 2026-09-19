@@ -40,10 +40,10 @@ Public NotInheritable Class LoginForm
             ' accentele/eroarea le pune OnThemeChanged (ruleaza dupa Apply si la comutare live).
             picLogo.Image = My.Resources.kbot_64
             capBar.IconImage = My.Resources.kbot_64
-            '#If DEBUG Then
-            '            txtUser.Text = "scavatarsoft@gmail.com"
-            '            txtPass.Text = "Par0laN0u@"
-            '#End If
+#If DEBUG Then
+            txtUser.Text = "scavatarsoft@gmail.com"
+            txtPass.Text = "Par0laN0u@"
+#End If
             ' The last user who got in wins over the Debug default: that is the name the
             ' operator would otherwise type again. Load never throws (missing file = nothing).
             _lastLogin = LastLoginStore.Load()

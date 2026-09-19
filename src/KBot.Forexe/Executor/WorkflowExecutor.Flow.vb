@@ -64,7 +64,10 @@ Partial Public Class WorkflowExecutor
         Catch ex As Exception
             errorOccurred = True
             errorException = ex
-            _logger.LogException(ex, "Eroare la executare workflow")
+            ' Debug, not error (slice 0071): the exception is rethrown below and ForexeRunner
+            ' logs it ONCE, with the phase it failed in («Eroare conectare», «Eroare rulare
+            ' 'X'»). Logging it here too put the same sentence on the console twice.
+            _logger.LogDebug($"Eroare la executare workflow: {ex.Message}")
         Finally
             StopAuthMonitoring()
         End Try

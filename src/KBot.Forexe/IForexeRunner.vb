@@ -39,16 +39,24 @@ Namespace KBot.Forexe
         ' iar gazdele făceau DirectCast la ForexeRunner ca s-o citească.
         ReadOnly Property HasLiveSession As Boolean
 
-        ' Aduce fereastra browserului în față (delegare către WorkflowExecutor).
-        Function ShowBrowserAsync() As Task
+        ' Arată pagina browserului — ANDOCATĂ în fereastra recorderului, deschisă doar pentru
+        ' privit (felia 0070). Fereastra Chromium nu apare niciodată singură pe ecran: are
+        ' buton de închidere, iar o apăsare pe el omoară sesiunea. Proprietarul e fereastra
+        ' peste care se deschide recorderul (poate fi Nothing).
+        Function ShowBrowserAsync(owner As IWin32Window) As Task
 
-        ' Ascunde la loc fereastra browserului (stealth). Perechea lui ShowBrowserAsync:
-        ' de la felia 0034-02 browserul PORNEȘTE ascuns, deci fără asta o dată arătat nu
-        ' mai putea fi ascuns înapoi.
+        ' Ascunde la loc browserul: îl detașează din formularul-gazdă și îl parchează în afara
+        ' ecranului (stealth). Perechea lui ShowBrowserAsync: de la felia 0034-02 browserul
+        ' PORNEȘTE ascuns, deci fără asta o dată arătat nu mai putea fi ascuns înapoi.
         Function HideBrowserAsync() As Task
 
-        ' Browserul e la vedere acum? (pentru butonul care comută)
+        ' Browserul e la vedere acum, adică andocat într-un formular? (pentru butonul care comută)
         ReadOnly Property IsBrowserVisible As Boolean
+
+        ' Browserul tocmai s-a andocat sau s-a ascuns — inclusiv când operatorul a închis
+        ' fereastra care îl găzduia, caz în care butonul din consolă trebuie să-și schimbe
+        ' eticheta fără să fi fost apăsat. Poate veni de pe orice fir.
+        Event BrowserVisibilityChanged As EventHandler
 
         ' Deschide bancul de înregistrare (felia 0053) peste sesiunea vie. Formularul
         ' trăiește în KBot.Forexe fiindcă are nevoie de WorkflowExecutor, care rămâne

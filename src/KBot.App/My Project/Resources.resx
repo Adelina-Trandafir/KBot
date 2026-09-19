@@ -139,6 +139,9 @@
   <data name="application" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\application.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="Wefunction-Woofunction-Window-app-list-info.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Wefunction-Woofunction-Window-app-list-info.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="Github-Octicons-Sidebar-collapse-24.16" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Github-Octicons-Sidebar-collapse-24.16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -157,8 +160,8 @@
   <data name="fx_mic" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\fx_mic.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="FX_REFRESH_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\FX_REFRESH_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="Everaldo-Crystal-Clear-Action-cancel.128_resized" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Everaldo-Crystal-Clear-Action-cancel.128_resized.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="FX_GRAY_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_GRAY_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -183,9 +186,6 @@
   </data>
   <data name="FX_ORANGE_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_ORANGE_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Everaldo-Crystal-Clear-Action-cancel.128_resized" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Everaldo-Crystal-Clear-Action-cancel.128_resized.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Fatcow-Farm-Fresh-Pdf-exports.24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Fatcow-Farm-Fresh-Pdf-exports.24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -319,6 +319,9 @@
   <data name="FX_WHITE_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_WHITE_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="Fatcow-Farm-Fresh-Check-boxes.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Fatcow-Farm-Fresh-Check-boxes.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="FX_RED_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_RED_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -327,6 +330,9 @@
   </data>
   <data name="FX_GREEN_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_GREEN_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="FX_REFRESH_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_REFRESH_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Fatcow-Farm-Fresh-Record-slide-show.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Forexe\Forexe_Icons\Fatcow-Farm-Fresh-Record-slide-show.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -340,7 +346,7 @@
   <data name="expand_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\expand_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Fatcow-Farm-Fresh-Check-boxes.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Fatcow-Farm-Fresh-Check-boxes.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="Semlabs-Web-Blog-Earth-search.48_resized" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Semlabs-Web-Blog-Earth-search.48_resized.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

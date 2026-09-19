@@ -12,7 +12,15 @@ Imports WorkflowModels
 '  The browser is reparented INTO pnlBrowser (WorkflowExecutor.Docking.vb): while docked
 '  the Chromium window is a child control of that panel, so it moves and clips with the
 '  form and cannot fall behind it. It also dies with the panel, which is why FormClosing
-'  undocks before anything else is disposed.
+'  undocks before anything else is disposed - and since slice 0070 that undock HIDES the
+'  browser, so closing this form is the same as «Ascunde browserul».
+'
+'  Two modes (slice 0070). This is also the only window the page is ever seen in: a free
+'  Chromium window can be closed by the operator, and that closes the session. So the
+'  console's «Arată browserul» opens THIS form with ViewOnly = True - the browser docks
+'  into pnlBrowser on Shown, and the whole right hand panel (docking, recording, steps,
+'  preview) is disabled. «Recorder» opens it with ViewOnly = False and everything on.
+'  Either way the browser docks itself as soon as the form is shown.
 '
 '  Every operator edit (a different candidate, a per step WaitFor, a deletion, a
 '  reorder, a global option) regenerates the preview through RecorderCompactor and
@@ -31,6 +39,30 @@ Public Class RecorderForm
     Private _closingDown As Boolean = False
     Private _themeHooked As Boolean = False
     Private _strikeFont As Font = Nothing
+    Private _viewOnly As Boolean = False
+    ' A dock in flight. Shown and the runner's ShowBrowserAsync can both ask for the dock
+    ' within the same few milliseconds; the executor's own guard is checked before its first
+    ' await, so without this the second request would reparent a window already reparented.
+    Private _docking As Boolean = False
+
+    ''' <summary>Window title in each mode - what the operator reads in the caption.</summary>
+    Private Const TitleRecorder As String = "K-BOT Recorder"
+    Private Const TitleViewer As String = "K-BOT Browser FOREXE"
+
+    ''' <summary>
+    ''' True when the form was opened only to LOOK at the browser («Arată browserul»):
+    ''' the right hand panel is disabled and the caption says so. Can be set at any time;
+    ''' switching to view mode stops a recording in progress. Default False = recorder.
+    ''' </summary>
+    Public Property ViewOnly As Boolean
+        Get
+            Return _viewOnly
+        End Get
+        Set(value As Boolean)
+            _viewOnly = value
+            ApplyMode()
+        End Set
+    End Property
 
     ' =========================================================================
     '  Theme aware semantic colours
@@ -74,10 +106,67 @@ Public Class RecorderForm
             AddHandler ThemeManager.ThemeChanged, AddressOf HandleThemeChanged
             _themeHooked = True
             ApplyListColors()
+            ApplyMode()
             UpdateButtons()
             RefreshPreview()
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.RecorderForm_Load", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' The browser docks itself the moment the form is on screen. Shown, not Load: the host
+    ''' panel must have a handle and a real size, and Shown is the first event where both are
+    ''' certain. A failure is told to the operator - an empty panel with no explanation is
+    ''' exactly the «nothing happened» the console button was not allowed to produce.
+    ''' </summary>
+    Private Async Sub RecorderForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
+        Try
+            Await EnsureDockedAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("RecorderForm.RecorderForm_Shown", ex)
+            KBotMessage.Show(Me, "Browserul nu a putut fi andocat: " & ex.Message,
+                             Me.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Docks the browser into pnlBrowser unless it already is, or a dock is in flight.
+    ''' Public so the runner can call it on a form that is already open - the operator may
+    ''' have detached the browser in the meantime. Throws (after logging) when the executor
+    ''' refuses; the caller decides what to tell the operator.
+    ''' </summary>
+    Public Async Function EnsureDockedAsync() As Task
+        If _executor Is Nothing OrElse Me.IsDisposed Then Return
+        If _executor.IsDocked OrElse _docking Then Return
+        _docking = True
+        Try
+            Await _executor.DockBrowserToAsync(pnlBrowser)
+        Catch ex As Exception
+            GlobalErrorLog.Write("RecorderForm.EnsureDockedAsync", ex)
+            Throw
+        Finally
+            _docking = False
+            UpdateButtons()
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Puts the form in the mode ViewOnly asks for. Everything on the right of the splitter
+    ''' is one panel, so one Enabled covers docking, recording, options, steps and preview;
+    ''' the browser panel on the left is never touched. Safe before the handle exists.
+    ''' </summary>
+    Private Sub ApplyMode()
+        Try
+            Me.Text = If(_viewOnly, TitleViewer, TitleRecorder)
+            splitMain.Panel2.Enabled = Not _viewOnly
+            ' A recording cannot go on behind a disabled panel: the operator could not stop it.
+            If _viewOnly AndAlso _executor IsNot Nothing AndAlso _executor.RecordingActive Then
+                _executor.StopRecording()
+            End If
+            UpdateButtons()
+        Catch ex As Exception
+            GlobalErrorLog.Write("RecorderForm.ApplyMode", ex)
         End Try
     End Sub
 
@@ -156,21 +245,58 @@ Public Class RecorderForm
     '  AttachExecutor / DetachExecutor
     ' =========================================================================
     Public Sub AttachExecutor(executor As WorkflowExecutor)
+        ' The same executor again (the runner re-attaches on every open): nothing to swap,
+        ' and detaching would undock the browser the operator is looking at.
+        If executor IsNot Nothing AndAlso executor Is _executor Then
+            UpdateButtons()
+            Return
+        End If
         DetachExecutor()
         _executor = executor
         If executor Is Nothing Then Return
         AddHandler executor.OnRecordedStep, AddressOf HandleRecordedStep
+        AddHandler executor.OnDockStateChanged, AddressOf HandleDockStateChanged
         ' The monitor window listens to the same executor - it must follow the swap.
         _monitor?.AttachExecutor(executor)
         UpdateButtons()
     End Sub
 
+    ''' <summary>
+    ''' Lets go of the executor. If the browser is still docked here it is undocked FIRST:
+    ''' the executor is usually about to be closed (a reconnect), and a Chromium window that
+    ''' dies while it is a child of pnlBrowser leaves the panel holding a dead handle.
+    ''' UndockBrowserAsync completes synchronously, and this runs from Dispose too, so it is
+    ''' waited on rather than awaited.
+    ''' </summary>
     Public Sub DetachExecutor()
         If _executor Is Nothing Then Return
+        Try
+            If _executor.IsDocked Then _executor.UndockBrowserAsync().GetAwaiter().GetResult()
+        Catch ex As Exception
+            GlobalErrorLog.Write("RecorderForm.DetachExecutor", ex)
+        End Try
         RemoveHandler _executor.OnRecordedStep, AddressOf HandleRecordedStep
+        RemoveHandler _executor.OnDockStateChanged, AddressOf HandleDockStateChanged
         _monitor?.DetachExecutor()
         _executor = Nothing
         UpdateButtons()
+    End Sub
+
+    ''' <summary>
+    ''' The browser was docked or undocked - here or by somebody else («Ascunde browserul» in
+    ''' the console undocks it from under this form). Raised on any thread.
+    ''' </summary>
+    Private Sub HandleDockStateChanged(docked As Boolean)
+        Try
+            If Me.IsDisposed OrElse Not Me.IsHandleCreated Then Return
+            If Me.InvokeRequired Then
+                Me.BeginInvoke(Sub() UpdateButtons())
+            Else
+                UpdateButtons()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("RecorderForm.HandleDockStateChanged", ex)
+        End Try
     End Sub
 
     ' =========================================================================
@@ -620,13 +746,11 @@ Public Class RecorderForm
         ScheduleResync()
     End Sub
 
-    ''' <summary>Debounce: a drag fires hundreds of events, CDP must not see them all.</summary>
+    ''' <summary>Debounce: a drag fires hundreds of events, one move is enough.</summary>
     Private Sub ScheduleResync()
         Try
-            If _executor Is Nothing Then Return
-            ' Undocked the timer still has work to do - it pushes the browser back above this
-            ' form. Only a session with no browser at all leaves it idle.
-            If Not _executor.IsDocked AndAlso Not _executor.IsBrowserOpen Then Return
+            ' Undocked there is nothing to keep in place: the browser is off screen.
+            If _executor Is Nothing OrElse Not _executor.IsDocked Then Return
             tmrResync.Stop()
             tmrResync.Start()
         Catch ex As Exception
@@ -637,14 +761,8 @@ Public Class RecorderForm
     Private Async Sub TmrResync_Tick(sender As Object, e As EventArgs) Handles tmrResync.Tick
         tmrResync.Stop()
         Try
-            If _executor Is Nothing Then Return
-            If _executor.IsDocked Then
-                Await _executor.SyncDockedBoundsAsync()
-            ElseIf _executor.IsBrowserOpen Then
-                ' Not docked, so nothing moves the browser - but activating this form would
-                ' bury it. Put it back just above us, without stealing the focus.
-                Await _executor.RaiseBrowserAboveAsync(Me)
-            End If
+            If _executor Is Nothing OrElse Not _executor.IsDocked Then Return
+            Await _executor.SyncDockedBoundsAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.TmrResync_Tick", ex)
         End Try

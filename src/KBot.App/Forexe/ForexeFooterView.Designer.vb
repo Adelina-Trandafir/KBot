@@ -1,3 +1,6 @@
+Imports KBot.Controls
+Imports KBot.Theming
+
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class ForexeFooterView
     Inherits Global.KBot.Theming.KBotThemedUserControl
@@ -19,11 +22,12 @@ Partial Class ForexeFooterView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New KBot.Controls.KBotToolTip(components)
+        tips = New KBotToolTip(components)
         btnExtinde = New Button()
         btnIstoric = New Button()
         btnConectare = New Button()
-        pbProgress = New Controls.KBotProgressBar()
+        btnBrowser = New Button()
+        pbProgress = New KBotProgressBar()
         lblCert = New Label()
         lblStatus = New Label()
         lblSpacer = New Label()
@@ -33,12 +37,12 @@ Partial Class ForexeFooterView
         ' 
         btnExtinde.Dock = DockStyle.Right
         btnExtinde.FlatStyle = FlatStyle.Flat
+        btnExtinde.Image = My.Resources.Resources.Wefunction_Woofunction_Window_app_list_info_32
         btnExtinde.Location = New Point(1174, 0)
         btnExtinde.Margin = New Padding(4, 5, 4, 5)
         btnExtinde.Name = "btnExtinde"
         btnExtinde.Size = New Size(56, 49)
         btnExtinde.TabIndex = 6
-        btnExtinde.Text = "▲"
         tips.SetToolTipHeader(btnExtinde, "Consolă")
         tips.SetToolTipText(btnExtinde, "Deschide consola FOREXE: progres detaliat, jurnal și descărcări.")
         btnExtinde.UseVisualStyleBackColor = True
@@ -47,7 +51,7 @@ Partial Class ForexeFooterView
         ' 
         btnIstoric.Dock = DockStyle.Right
         btnIstoric.FlatStyle = FlatStyle.Flat
-        btnIstoric.Location = New Point(1117, 0)
+        btnIstoric.Location = New Point(1060, 0)
         btnIstoric.Margin = New Padding(4, 5, 4, 5)
         btnIstoric.Name = "btnIstoric"
         btnIstoric.Size = New Size(57, 49)
@@ -56,6 +60,7 @@ Partial Class ForexeFooterView
         tips.SetToolTipHeader(btnIstoric, "Istoric")
         tips.SetToolTipText(btnIstoric, "Istoricul acțiunilor duse prin FOREXE în această sesiune," & vbLf & "cu rezultatul și jurnalul fiecăreia.")
         btnIstoric.UseVisualStyleBackColor = True
+        btnIstoric.Visible = False
         ' 
         ' btnConectare
         ' 
@@ -63,7 +68,7 @@ Partial Class ForexeFooterView
         btnConectare.Dock = DockStyle.Left
         btnConectare.FlatAppearance.BorderColor = SystemColors.ActiveBorder
         btnConectare.FlatStyle = FlatStyle.Flat
-        btnConectare.Font = New Font("Calibri", 9.0F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        btnConectare.Font = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         btnConectare.Image = My.Resources.Resources.FX_24
         btnConectare.ImageAlign = ContentAlignment.MiddleLeft
         btnConectare.Location = New Point(0, 0)
@@ -76,6 +81,22 @@ Partial Class ForexeFooterView
         tips.SetToolTipHeader(btnConectare, "Conectare FOREXE")
         tips.SetToolTipText(btnConectare, "Pornește sesiunea către portalul FOREXE." & vbLf & "Se cere certificatul o singură dată pe sesiune.")
         btnConectare.UseVisualStyleBackColor = True
+        ' 
+        ' btnBrowser
+        ' 
+        btnBrowser.Dock = DockStyle.Right
+        btnBrowser.FlatStyle = FlatStyle.Flat
+        btnBrowser.Image = My.Resources.Resources.Semlabs_Web_Blog_Earth_search_48_resized
+        btnBrowser.Location = New Point(1117, 0)
+        btnBrowser.Margin = New Padding(4, 5, 4, 5)
+        btnBrowser.Name = "btnBrowser"
+        btnBrowser.Size = New Size(57, 49)
+        btnBrowser.TabIndex = 8
+        btnBrowser.Text = "⟲"
+        tips.SetToolTipFooter(btnBrowser, "ATENȚIE! Orice modificare in browser este live pe serverul FOREXECAB!")
+        tips.SetToolTipHeader(btnBrowser, "Browser")
+        tips.SetToolTipText(btnBrowser, "Afișează browserul")
+        btnBrowser.UseVisualStyleBackColor = True
         ' 
         ' pbProgress
         ' 
@@ -106,7 +127,7 @@ Partial Class ForexeFooterView
         lblStatus.Location = New Point(768, 0)
         lblStatus.Margin = New Padding(4, 0, 4, 0)
         lblStatus.Name = "lblStatus"
-        lblStatus.Size = New Size(349, 49)
+        lblStatus.Size = New Size(406, 49)
         lblStatus.TabIndex = 4
         lblStatus.Text = "În așteptare..."
         lblStatus.TextAlign = ContentAlignment.MiddleLeft
@@ -122,10 +143,11 @@ Partial Class ForexeFooterView
         ' 
         ' ForexeFooterView
         ' 
-        AutoScaleDimensions = New SizeF(144.0F, 144.0F)
+        AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
-        Controls.Add(lblStatus)
         Controls.Add(btnIstoric)
+        Controls.Add(btnBrowser)
+        Controls.Add(lblStatus)
         Controls.Add(btnExtinde)
         Controls.Add(lblCert)
         Controls.Add(pbProgress)
@@ -145,4 +167,5 @@ Partial Class ForexeFooterView
     Friend WithEvents btnExtinde As Button
     Friend WithEvents btnConectare As Button
     Friend WithEvents lblSpacer As Label
+    Friend WithEvents btnBrowser As Button
 End Class

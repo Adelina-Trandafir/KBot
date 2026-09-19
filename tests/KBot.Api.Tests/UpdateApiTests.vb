@@ -38,7 +38,7 @@ Public Class UpdateApiTests
             LastAuthorization = If(request.Headers.Authorization IsNot Nothing,
                                    request.Headers.Authorization.ToString(), Nothing)
             Dim content As New ByteArrayContent(ResponseBody)
-            content.Headers.ContentType = New Headers.MediaTypeHeaderValue(ContentType)
+            content.Headers.ContentType = New System.Net.Http.Headers.MediaTypeHeaderValue(ContentType)
             Return Task.FromResult(New HttpResponseMessage(Status) With {.Content = content})
         End Function
     End Class
@@ -99,7 +99,8 @@ Public Class UpdateApiTests
         }
         Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
             Async Function() Await NewApi(h).GetLatestAsync(CancellationToken.None))
-        Assert.Equal(500, ex.StatusCode)
+        Assert.True(ex.StatusCode.HasValue)
+        Assert.Equal(500, ex.StatusCode.Value)
         Assert.Equal("LATEST_INVALID", ex.Reason)
         Assert.Equal("Descrierea actualizării de pe server este invalidă.", ex.Message)
     End Function
@@ -124,13 +125,17 @@ Public Class UpdateApiTests
     <Fact>
     Public Async Function Download_StreamsToFile_ReportsProgress_AndVerifiesSha() As Task
         Dim payload(200_000 - 1) As Byte
-        New Random(7).NextBytes(payload)
+        Call New Random(7).NextBytes(payload)
         Dim h As New StubHandler With {.ResponseBody = payload, .ContentType = "application/zip"}
         Dim dest As String = TempFile()
         Dim reports As New List(Of Long)()
         Try
             Await NewApi(h).DownloadAsync(dest, Sha(payload),
-                                          New Progress(Of Long)(Sub(n) SyncLock reports : reports.Add(n) : End SyncLock End Sub),
+                                          New Progress(Of Long)(Sub(n)
+                                                                    SyncLock reports
+                                                                        reports.Add(n)
+                                                                    End SyncLock
+                                                                End Sub),
                                           CancellationToken.None)
 
             Assert.Equal(HttpMethod.Get, h.LastMethod)
@@ -169,7 +174,9 @@ Public Class UpdateApiTests
         Dim dest As String = TempFile()
         Try
             Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
-                Async Function() Await NewApi(h).DownloadAsync(dest, New String("0"c, 64), Nothing, CancellationToken.None))
+                Async Function()
+                    Await NewApi(h).DownloadAsync(dest, New String("0"c, 64), Nothing, CancellationToken.None)
+                End Function)
             Assert.Equal("SHA_MISMATCH", ex.Reason)
             Assert.False(File.Exists(dest))
         Finally
@@ -186,7 +193,9 @@ Public Class UpdateApiTests
         Dim dest As String = TempFile()
         Try
             Dim ex = Await Assert.ThrowsAsync(Of ApiException)(
-                Async Function() Await NewApi(h).DownloadAsync(dest, "abc", Nothing, CancellationToken.None))
+                Async Function()
+                    Await NewApi(h).DownloadAsync(dest, "abc", Nothing, CancellationToken.None)
+                End Function)
             Assert.Equal("PACKAGE_MISSING", ex.Reason)
             Assert.Equal("Pachetul de actualizare lipsește de pe server.", ex.Message)
             Assert.False(File.Exists(dest))
@@ -199,8 +208,12 @@ Public Class UpdateApiTests
     Public Async Function Download_RejectsMissingArguments() As Task
         Dim api = NewApi(New StubHandler())
         Await Assert.ThrowsAsync(Of ArgumentException)(
-            Async Function() Await api.DownloadAsync("", "abc", Nothing, CancellationToken.None))
+            Async Function()
+                Await api.DownloadAsync("", "abc", Nothing, CancellationToken.None)
+            End Function)
         Await Assert.ThrowsAsync(Of ArgumentException)(
-            Async Function() Await api.DownloadAsync(TempFile(), "", Nothing, CancellationToken.None))
+            Async Function()
+                Await api.DownloadAsync(TempFile(), "", Nothing, CancellationToken.None)
+            End Function)
     End Function
 End Class

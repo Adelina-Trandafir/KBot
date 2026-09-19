@@ -122,7 +122,7 @@ Partial Class KbotForm
         cboAn.DrawMode = DrawMode.OwnerDrawFixed
         cboAn.DropDownStyle = ComboBoxStyle.DropDownList
         cboAn.FlatStyle = FlatStyle.Flat
-        cboAn.Font = New Font("Calibri", 9.0F)
+        cboAn.Font = New Font("Calibri", 9F)
         cboAn.IntegralHeight = False
         cboAn.ItemHeight = 31
         cboAn.Location = New Point(340, 1)
@@ -141,7 +141,7 @@ Partial Class KbotForm
         cboSs.DrawMode = DrawMode.OwnerDrawFixed
         cboSs.DropDownStyle = ComboBoxStyle.DropDownList
         cboSs.FlatStyle = FlatStyle.Flat
-        cboSs.Font = New Font("Calibri", 9.0F)
+        cboSs.Font = New Font("Calibri", 9F)
         cboSs.IntegralHeight = False
         cboSs.ItemHeight = 31
         cboSs.Location = New Point(595, 1)
@@ -226,11 +226,11 @@ Partial Class KbotForm
         tree.ExpanderSize = 10
         tree.FlyoutDelay = 150
         tree.FlyoutSlideDuration = 100
-        tree.Font = New Font("Calibri", 9.0F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
         tree.FooterCaption = "Actualizează"
         tree.FooterCaptionBackColor = SystemColors.Control
-        tree.FooterCaptionFont = New Font("Calibri", 9.0F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        tree.FooterCaptionFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCaptionForeColor = SystemColors.ActiveCaptionText
         tree.FooterHeight = 30
         tree.FooterLeftIcon = My.Resources.Resources.credit_card
@@ -244,7 +244,7 @@ Partial Class KbotForm
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " LISTĂ ANGAJAMENTE"
-        tree.HeaderFont = New Font("Calibri", 10.0F, FontStyle.Bold)
+        tree.HeaderFont = New Font("Calibri", 10F, FontStyle.Bold)
         tree.HeaderForeColor = Color.Black
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
@@ -275,7 +275,7 @@ Partial Class KbotForm
         tree.RightIconSize = New Size(16, 16)
         tree.RootExpander = False
         tree.ScrollBarTheme = AdvancedTreeControl.En_ScrollBarTheme.Default
-        tree.SearchBarFont = New Font("Calibri", 9.0F)
+        tree.SearchBarFont = New Font("Calibri", 9F)
         tree.SearchBoxBackColor = SystemColors.Control
         tree.SearchClearButton = True
         tree.SearchClearButtonHoverColor = SystemColors.Control
@@ -307,7 +307,7 @@ Partial Class KbotForm
         ' lblTree
         ' 
         lblTree.AutoSize = True
-        lblTree.Font = New Font("Segoe UI Semibold", 10.0F)
+        lblTree.Font = New Font("Segoe UI Semibold", 10F)
         lblTree.Location = New Point(14, 13)
         lblTree.Margin = New Padding(4, 0, 4, 0)
         lblTree.Name = "lblTree"
@@ -393,7 +393,7 @@ Partial Class KbotForm
         ' forexeFooter
         ' 
         forexeFooter.Dock = DockStyle.Fill
-        forexeFooter.Font = New Font("Calibri", 9.0F)
+        forexeFooter.Font = New Font("Calibri", 9F)
         forexeFooter.Location = New Point(0, 0)
         forexeFooter.Margin = New Padding(0)
         forexeFooter.Name = "forexeFooter"
@@ -419,14 +419,14 @@ Partial Class KbotForm
         tlyHeader.CellBorderColor = Color.Transparent
         tlyHeader.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single
         tlyHeader.ColumnCount = 7
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 240.0F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 97.0F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 109.0F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 11.0F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 132.0F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 114.0F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 20.0F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 240F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 97F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 109F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 11F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 132F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 114F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 20F))
         tlyHeader.Controls.Add(lblOperator, 6, 0)
         tlyHeader.Controls.Add(cboSs, 5, 0)
         tlyHeader.Controls.Add(lblSs, 4, 0)
@@ -438,14 +438,14 @@ Partial Class KbotForm
         tlyHeader.Name = "tlyHeader"
         tlyHeader.Padding = New Padding(0, 0, 0, 1)
         tlyHeader.RowCount = 1
-        tlyHeader.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        tlyHeader.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyHeader.Size = New Size(1920, 45)
         tlyHeader.TabIndex = 6
         ' 
         ' lblOperator
         ' 
         lblOperator.Dock = DockStyle.Fill
-        lblOperator.Font = New Font("Calibri", 10.0F, FontStyle.Bold Or FontStyle.Italic)
+        lblOperator.Font = New Font("Calibri", 10F, FontStyle.Bold Or FontStyle.Italic)
         lblOperator.Location = New Point(714, 1)
         lblOperator.Margin = New Padding(4, 0, 4, 0)
         lblOperator.Name = "lblOperator"
@@ -514,7 +514,7 @@ Partial Class KbotForm
         ' 
         ' KbotForm
         ' 
-        AutoScaleDimensions = New SizeF(144.0F, 144.0F)
+        AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(1922, 1000)
         Controls.Add(pnlRoot)

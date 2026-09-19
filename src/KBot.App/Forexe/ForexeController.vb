@@ -54,6 +54,7 @@ Public NotInheritable Class ForexeController
         _runner = runner
         _session = session
         AddHandler _runner.StatusUpdated, AddressOf Runner_StatusUpdated
+        AddHandler _runner.BrowserVisibilityChanged, AddressOf Runner_BrowserVisibilityChanged
     End Sub
 
     ' ── Stare ────────────────────────────────────────────────────────────
@@ -586,14 +587,16 @@ Public NotInheritable Class ForexeController
     ''' <summary>
     ''' Comută vizibilitatea browserului FOREXE. De la felia 0034-02 el PORNEȘTE ascuns
     ''' (stealth, ca în KBOT_IPC), deci butonul din consolă trebuie să meargă în ambele sensuri —
-    ''' altfel, o dată arătat, n-ar mai putea fi ascuns la loc.
+    ''' altfel, o dată arătat, n-ar mai putea fi ascuns la loc. «Arătat» înseamnă, de la felia
+    ''' 0070, andocat în fereastra recorderului deschisă doar pentru privit — fereastra Chromium
+    ''' nu mai apare niciodată singură pe ecran.
     ''' </summary>
     Public Async Function ToggleBrowserAsync() As Task
         Try
             If _runner.IsBrowserVisible Then
                 Await _runner.HideBrowserAsync()
             Else
-                Await _runner.ShowBrowserAsync()
+                Await _runner.ShowBrowserAsync(Owner)
             End If
             RaiseEvent StateChanged(Me, EventArgs.Empty)
         Catch ex As Exception
@@ -602,10 +605,10 @@ Public NotInheritable Class ForexeController
         End Try
     End Function
 
-    ''' <summary>Aduce fereastra browserului FOREXE în față.</summary>
+    ''' <summary>Arată browserul FOREXE, andocat în fereastra lui (vezi ToggleBrowserAsync).</summary>
     Public Async Function ShowBrowserAsync() As Task
         Try
-            Await _runner.ShowBrowserAsync()
+            Await _runner.ShowBrowserAsync(Owner)
             RaiseEvent StateChanged(Me, EventArgs.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeController.ShowBrowserAsync", ex)
@@ -756,6 +759,17 @@ Public NotInheritable Class ForexeController
         Catch ex As Exception
             ' Frontieră de eveniment: un abonat care aruncă nu are voie să oprească robotul.
             GlobalErrorLog.Write("ForexeController.Runner_StatusUpdated", ex)
+        End Try
+    End Sub
+
+    ' Browserul s-a andocat sau s-a ascuns fără ca butonul din consolă să fi fost apăsat
+    ' (operatorul a închis fereastra care îl găzduia): eticheta «Arată/Ascunde browserul»
+    ' se recitește prin StateChanged, ca la orice altă schimbare de stare.
+    Private Sub Runner_BrowserVisibilityChanged(sender As Object, e As EventArgs)
+        Try
+            RaiseEvent StateChanged(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.Runner_BrowserVisibilityChanged", ex)
         End Try
     End Sub
 

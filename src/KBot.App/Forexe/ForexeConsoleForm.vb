@@ -60,7 +60,7 @@ Public Class ForexeConsoleForm
             _controller = controller
             AddHandler _controller.StateChanged, AddressOf Controller_StateChanged
             AddHandler _controller.ProgressChanged, AddressOf Controller_ProgressChanged
-            AddHandler _controller.StatusChanged, AddressOf Controller_StatusChanged
+            'AddHandler _controller.StatusChanged, AddressOf Controller_StatusChanged
             ActualizeazaStarea()
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeConsoleForm.Bind", ex)
@@ -88,13 +88,13 @@ Public Class ForexeConsoleForm
         End Try
     End Sub
 
-    Private Sub Controller_StatusChanged(sender As Object, stare As String)
-        Try
-            PeFirulDeUI(Sub() lblStatus.Text = If(stare, String.Empty))
-        Catch ex As Exception
-            GlobalErrorLog.Write("ForexeConsoleForm.Controller_StatusChanged", ex)
-        End Try
-    End Sub
+    'Private Sub Controller_StatusChanged(sender As Object, stare As String)
+    '    Try
+    '        PeFirulDeUI(Sub() lblStatus.Text = If(stare, String.Empty))
+    '    Catch ex As Exception
+    '        GlobalErrorLog.Write("ForexeConsoleForm.Controller_StatusChanged", ex)
+    '    End Try
+    'End Sub
 
     ''' <summary>
     ''' Consola se leagă la coordonator din <c>MainForm_Load</c>, dar se ARATĂ abia când operatorul
@@ -128,11 +128,11 @@ Public Class ForexeConsoleForm
         btnAfiseazaBrowser.Text = If(conectat AndAlso _controller.IsBrowserVisible,
                                      "Ascunde browserul", "Arată browserul")
         Dim cert As String = _controller.CertificateName
-        lblCert.Text = "Certificat: " & If(String.IsNullOrEmpty(cert), "—", cert)
+        'lblCert.Text = "Certificat: " & If(String.IsNullOrEmpty(cert), "—", cert)
 
         ' Linia de stare și progresul se iau tot de la coordonator, nu doar din evenimente:
         ' altfel o consolă deschisă târziu ar porni goală, deși robotul lucrează de zece minute.
-        lblStatus.Text = If(_controller.LastStatus.Length > 0, _controller.LastStatus, "În așteptare...")
+        'lblStatus.Text = If(_controller.LastStatus.Length > 0, _controller.LastStatus, "În așteptare...")
         pbProgress.Value = If(ocupat, Math.Max(0, Math.Min(100, _controller.LastPercent)), 0)
     End Sub
 
@@ -232,8 +232,8 @@ Public Class ForexeConsoleForm
             ' Culorile pe nivel ale logger-ului urmează schema (dark vs light).
             RichTextBoxLogger.SetColorScheme(schema.IsDark)
 
-            lblCert.ForeColor = p.TextDimColor
-            lblStatus.ForeColor = p.TextColor
+            'lblCert.ForeColor = p.TextDimColor
+            'lblStatus.ForeColor = p.TextColor
 
             ButtonStyles.ApplyPrimary(btnAnulare, schema)
             ButtonStyles.ApplySecondary(btnAfiseazaBrowser, schema)

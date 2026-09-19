@@ -166,7 +166,7 @@ Friend NotInheritable Class BrowserDockHarnessForm
         Try
             If _executor Is Nothing Then Return
             Await _executor.UndockBrowserAsync()
-            SetStare("Detașat.")
+            SetStare("Detașat și ascuns (în afara ecranului).")
         Catch ex As Exception
             GlobalErrorLog.Write("BrowserDockHarnessForm.BtnDetasare_Click", ex)
             AppendLog("EROARE la detașare: " & ex.Message)

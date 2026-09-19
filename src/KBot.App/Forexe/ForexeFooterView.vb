@@ -1,7 +1,5 @@
 Option Strict On
-Imports System.Windows.Forms
 Imports KBot.Common
-Imports KBot.Theming
 
 ''' <summary>
 ''' Banda FOREXE din subsolul shell-ului (felia 0034): starea conexiunii, progresul,
@@ -36,6 +34,8 @@ Public Class ForexeFooterView
     ''' </summary>
     Public Event HistoryRequested As EventHandler
 
+    Public Event ShowBrowserRequested As EventHandler
+
     Public Sub New()
         InitializeComponent()
         ' Starea de repaus, pusă AICI și nu în designer: pe suprafața de proiectare cele două
@@ -43,6 +43,9 @@ Public Class ForexeFooterView
         ' ascunse. Fiind andocate la stânga, ascunse nu ocupă deloc lățime.
         pbProgress.Visible = False
         lblCert.Visible = False
+        btnBrowser.Visible = False
+        btnIstoric.Visible = False
+        btnExtinde.Visible = False
     End Sub
 
     ''' <summary>
@@ -113,6 +116,8 @@ Public Class ForexeFooterView
         Dim ocupat As Boolean = _controller.IsBusy
 
         btnConectare.Enabled = Not conectat
+        btnBrowser.Visible = conectat
+        btnExtinde.Visible = conectat
         'lblConexiune.Text = If(conectat, "● Forexe: conectat", "● Forexe: neconectat")
 
         ' Linia de stare — perechea lui lblStatus din KBOT_IPC (felia 0040). Sursa e ULTIMA stare
@@ -167,8 +172,9 @@ Public Class ForexeFooterView
             lblCert.ForeColor = p.TextDimColor
             lblStatus.ForeColor = p.TextDimColor
 
-            ButtonStyles.ApplySecondary(btnExtinde, scheme)
-            ButtonStyles.ApplySecondary(btnIstoric, scheme)
+            ButtonStyles.ApplyTrans(btnExtinde, scheme)
+            ButtonStyles.ApplyTrans(btnIstoric, scheme)
+            ButtonStyles.ApplyTrans(btnBrowser, scheme)
             ButtonStyles.ApplyPrimary(btnConectare, scheme)
 
             ' Bara de progres e ea însăși IThemedControl, dar banda ASTA e la rândul ei una:
@@ -199,9 +205,18 @@ Public Class ForexeFooterView
 
     Private Sub BtnConectare_Click(sender As Object, e As EventArgs) Handles btnConectare.Click
         Try
+            btnConectare.Enabled = False
             RaiseEvent ConectareForexeRequested(Me, EventArgs.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeFooterView.btnConectare_Click", ex)
+        End Try
+    End Sub
+
+    Private Sub BtnBrowser_Click(sender As Object, e As EventArgs) Handles btnBrowser.Click
+        Try
+            RaiseEvent ShowBrowserRequested(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeFooterView.btnBrowser_Click", ex)
         End Try
     End Sub
 End Class

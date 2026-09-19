@@ -71,24 +71,40 @@ Partial Public Class WorkflowExecutor
     Private Const WS_EX_TOOLWINDOW As Integer = &H80
     Private Const WS_EX_APPWINDOW As Integer = &H40000
 
+    ' The parking spot of a hidden browser: off screen to the left, the same place the
+    ' launch puts it (--window-position=-3000,0). Shared by HideBrowserWindowAsync and
+    ' UndockBrowserAsync so the two hides are one hide.
+    Private Const StealthLeft As Integer = -3000
+    Private Const StealthTop As Integer = 0
+    Private Const StealthWidth As Integer = 1200
+    Private Const StealthHeight As Integer = 800
+
     ' Variabilă internă de stare
     Private _isBrowserVisible As Boolean = False
     Private ReadOnly _browserWindowTitle As String = "WF_BROWSER_" & Guid.NewGuid().ToString("N")
     Private _browserHwnd As IntPtr = IntPtr.Zero
 
 
-    ' Proprietate Publică pentru a fi citită din KBOT_STANDALONE
+    ''' <summary>
+    ''' True while the page can be seen, which since slice 0070 means exactly one thing: the
+    ''' browser is docked into a K-BOT form. There is no free standing visible window any more.
+    ''' </summary>
     Public ReadOnly Property IsBrowserVisible As Boolean
         Get
             Return _isBrowserVisible
         End Get
     End Property
 
+    ''' <summary>
+    ''' Hides the browser. Docked, the hide IS the undock (UndockBrowserAsync parks the window
+    ''' off screen); free, the window is moved off screen and taken out of the taskbar.
+    ''' There is no ShowBrowserWindowAsync counterpart on purpose: the page is shown by
+    ''' docking it into a form (RecorderForm), never by putting a Chromium window on the desktop.
+    ''' </summary>
     Public Async Function HideBrowserWindowAsync() As Task
         If _page Is Nothing Then Return
-        ' While docked the browser must stay over the host panel (see WorkflowExecutor.Docking.vb).
         If _isDocked Then
-            _logger.LogWarning("Browserul este andocat: ascunderea ferestrei a fost ignorată.")
+            Await UndockBrowserAsync()
             Return
         End If
 
@@ -98,7 +114,7 @@ Partial Public Class WorkflowExecutor
         Dim cdp = Await _page.Context.NewCDPSessionAsync(_page)
         Dim windowId = Await GetChromeWindowIdAsync()
 
-        Dim bounds = CreateBounds(-3000, 0, 1200, 800)
+        Dim bounds = CreateBounds(StealthLeft, StealthTop, StealthWidth, StealthHeight)
 
         Dim param = New Dictionary(Of String, Object) From {
             {"windowId", windowId},
@@ -144,37 +160,6 @@ Partial Public Class WorkflowExecutor
         Catch ex As Exception
             _logger.LogError($"Eroare setare Browser TopMost: {ex.Message}")
         End Try
-    End Function
-
-    Public Async Function ShowBrowserWindowAsync() As Task
-        If _page Is Nothing Then Return
-        ' While docked the browser must stay over the host panel (see WorkflowExecutor.Docking.vb).
-        If _isDocked Then
-            _logger.LogWarning("Browserul este andocat: repoziționarea ferestrei a fost ignorată.")
-            Return
-        End If
-
-        Dim hwnd = Await GetOrRefreshBrowserHwndAsync()
-        If hwnd = IntPtr.Zero Then Return
-
-        ' Taskbar ON
-        Dim exStyle = GetWindowLong(hwnd, GWL_EXSTYLE)
-        exStyle = (exStyle And Not WS_EX_TOOLWINDOW) Or WS_EX_APPWINDOW
-        Dim v = SetWindowLong(hwnd, GWL_EXSTYLE, exStyle)
-
-        Dim cdp = Await _page.Context.NewCDPSessionAsync(_page)
-        Dim windowId = Await GetChromeWindowIdAsync()
-
-        Dim bounds = CreateBounds(100, 100, 1400, 900)
-
-        Dim param = New Dictionary(Of String, Object) From {
-            {"windowId", windowId},
-            {"bounds", bounds}
-        }
-
-        Await cdp.SendAsync("Browser.setWindowBounds", param)
-
-        _isBrowserVisible = True
     End Function
 
     ''' <summary>
@@ -230,10 +215,11 @@ Partial Public Class WorkflowExecutor
         End Try
 
         Dim browserArgs As New List(Of String)
-        ' Dacă e Stealth și NU folosim Snap, îl ascundem off-screen
+        ' Stealth and no Snap: the window is born off screen, at the same parking spot every
+        ' later hide uses. ForexeRunner always asks for stealth (slice 0070): the browser is
+        ' only ever seen docked into a form.
         If _stealthMode AndAlso Not _useSnapAssist Then
-            browserArgs.Add("--window-position=-3000,0")
-
+            browserArgs.Add($"--window-position={StealthLeft},{StealthTop}")
         End If
 
         browserArgs.Add("--window-size=1368,768") ' Forțăm o rezoluție de start
