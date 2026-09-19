@@ -119,6 +119,10 @@ Partial Friend NotInheritable Class KBotFilterPopup
                    currentSort As KBotSortDirection, Optional grid As KBotDataView = Nothing)
         InitializeComponent()
 
+        ' A menu, not a dialog: it already has the menu shadow (CS_DROPSHADOW, in CreateParams
+        ' below), so the window shadow of the base (slice 0069) would only double it.
+        BorderlessShadow = False
+
         ' The three tables are KBotTableLayoutPanels (slice 0066): they keep their authored
         ' measures themselves and refit on every theme and scale pass -- nothing to capture here.
 

@@ -27,6 +27,12 @@ Imports KBot.Common
 ''' (<c>CenterScreen</c>, or <c>CenterParent</c> with nobody to centre on) is centred on the
 ''' application's screen (<see cref="AppScreen"/>) instead of the monitor under the mouse. Forms
 ''' that place themselves (<c>Manual</c>) are left alone.</item>
+''' <item>Slice 0069: <see cref="BorderlessShadow"/> -- a borderless form (<c>FormBorderStyle.None</c>)
+''' gets the shadow Windows draws under framed windows, so a dialog opened over another form has an
+''' edge again. When DWM cannot give one (composition off, the call refused) the form draws a one
+''' pixel border in the theme's <c>Border</c> colour instead, on a rim it reserves through its
+''' <c>Padding</c>. Exactly one of <see cref="BorderlessShadowShown"/> /
+''' <see cref="FallbackBorderShown"/> is True on a borderless form with the switch on.</item>
 ''' </list>
 ''' </summary>
 Public Class KBotThemedForm
@@ -34,6 +40,12 @@ Public Class KBotThemedForm
 
     Private _centerOnScreen As Boolean = True
     Private _autoFitToTheme As Boolean = True
+
+    ' Slice 0069: the borderless shadow and what actually happened on this handle.
+    Private _borderlessShadow As Boolean = True
+    Private _shadowShown As Boolean
+    Private _fallbackBorder As Boolean
+    Private Const FallbackBorderWidth As Integer = 1
 
     ''' <summary>
     ''' Puts the application's base font on the form BEFORE anything else (slice 0052).
@@ -89,6 +101,99 @@ Public Class KBotThemedForm
             _autoFitToTheme = value
         End Set
     End Property
+
+    ' ── Slice 0069: the borderless shadow ─────────────────────────────────────
+
+    ''' <summary>
+    ''' True (default): a borderless form asks DWM for the shadow framed windows have; when DWM
+    ''' cannot draw one, a one pixel border in the theme's Border colour takes its place. False:
+    ''' the form is left exactly as WinForms makes it -- for popups that carry their own shadow
+    ''' (<c>CS_DROPSHADOW</c>) or draw their own edge. Framed forms ignore the switch.
+    ''' </summary>
+    <Category("K-BOT")>
+    <DefaultValue(True)>
+    <Description("Umbră sub fereastra fără chenar; dacă sistemul nu o poate desena, un chenar de 1 px în culoarea de bordură a temei.")>
+    Public Property BorderlessShadow As Boolean
+        Get
+            Return _borderlessShadow
+        End Get
+        Set(value As Boolean)
+            If _borderlessShadow = value Then Return
+            _borderlessShadow = value
+            If IsHandleCreated Then UpdateBorderlessDecoration()
+        End Set
+    End Property
+
+    ''' <summary>True when DWM confirmed a shadow for the current handle.</summary>
+    <Browsable(False)>
+    Public ReadOnly Property BorderlessShadowShown As Boolean
+        Get
+            Return _shadowShown
+        End Get
+    End Property
+
+    ''' <summary>True when the form draws its own one pixel border because no shadow was available.</summary>
+    <Browsable(False)>
+    Public ReadOnly Property FallbackBorderShown As Boolean
+        Get
+            Return _fallbackBorder
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Every handle is a new window for DWM, so the decoration is asked for here, each time --
+    ''' a change of <c>FormBorderStyle</c> or <c>ShowInTaskbar</c> recreates the handle and lands
+    ''' here again with the new style.
+    ''' </summary>
+    Protected Overrides Sub OnHandleCreated(e As EventArgs)
+        MyBase.OnHandleCreated(e)
+        Try
+            If KBotDesignTime.IsDesignTime(Me) Then Return
+            UpdateBorderlessDecoration()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotThemedForm.OnHandleCreated", ex)
+        End Try
+    End Sub
+
+    ' The real path: asks DWM, then settles on what it answered.
+    Private Sub UpdateBorderlessDecoration()
+        Dim wanted As Boolean = _borderlessShadow AndAlso FormBorderStyle = FormBorderStyle.None
+        ApplyBorderlessDecoration(wanted, wanted AndAlso NativeMethods.TryEnableBorderlessShadow(Me))
+    End Sub
+
+    ''' <summary>
+    ''' Settles the decoration on what the platform answered: <paramref name="wanted"/> says a
+    ''' shadow was asked for (borderless, switch on), <paramref name="shadowAvailable"/> whether
+    ''' DWM gave it. No shadow while one was wanted = the fallback border, which reserves its rim
+    ''' through <c>Padding</c> (docked children stop one pixel short of the edge; the fit counts
+    ''' the padding, so the form grows by two pixels rather than squeezing its content). Leaving
+    ''' the fallback gives the rim back. Friend so the tests can drive both answers without DWM.
+    ''' </summary>
+    Friend Sub ApplyBorderlessDecoration(wanted As Boolean, shadowAvailable As Boolean)
+        _shadowShown = wanted AndAlso shadowAvailable
+        Dim fallback As Boolean = wanted AndAlso Not shadowAvailable
+        If fallback = _fallbackBorder Then Return
+        _fallbackBorder = fallback
+        Dim delta As Integer = If(fallback, FallbackBorderWidth, -FallbackBorderWidth)
+        Padding = New Padding(Math.Max(0, Padding.Left + delta), Math.Max(0, Padding.Top + delta),
+                              Math.Max(0, Padding.Right + delta), Math.Max(0, Padding.Bottom + delta))
+        If IsHandleCreated Then Invalidate()
+    End Sub
+
+    ' The fallback border, on the rim the padding kept free of children.
+    Protected Overrides Sub OnPaint(e As PaintEventArgs)
+        MyBase.OnPaint(e)
+        Try
+            If Not _fallbackBorder OrElse KBotDesignTime.IsDesignTime(Me) Then Return
+            Dim r As Rectangle = ClientRectangle
+            If r.Width <= 0 OrElse r.Height <= 0 Then Return
+            Using pen As New Pen(ColorHex.FromHex(ThemeManager.Current.Palette.Border), FallbackBorderWidth)
+                e.Graphics.DrawRectangle(pen, r.X, r.Y, r.Width - 1, r.Height - 1)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotThemedForm.OnPaint", ex)
+        End Try
+    End Sub
 
     ''' <summary>
     ''' The control whose preferred size IS the form's content demand. By default the single

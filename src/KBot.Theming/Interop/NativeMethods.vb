@@ -24,6 +24,32 @@ Public Module NativeMethods
     Private Const DWMWCP_DEFAULT As Integer = 0
     Private Const DWMWCP_ROUND As Integer = 2
 
+    ' -- The shadow of a borderless window (slice 0069) ---------------------------------
+    ' Windows draws a shadow only for windows that have a frame; FormBorderStyle.None has none,
+    ' so on Windows 10 a K-BOT dialog opened over another form has no edge at all. Asking DWM
+    ' to render the non-client area and extending its frame ONE pixel into the client area is
+    ' the documented way to get the frame's shadow back without getting the frame itself
+    ' (the one pixel is painted over by the client, so nothing of the frame shows). On Windows
+    ' 11 the rounded corners already bring the shadow; the same call is harmless there.
+    Private Const DWMWA_NCRENDERING_POLICY As Integer = 2
+    Private Const DWMNCRP_ENABLED As Integer = 2
+
+    <StructLayout(LayoutKind.Sequential)>
+    Private Structure MARGINS
+        Public cxLeftWidth As Integer
+        Public cxRightWidth As Integer
+        Public cyTopHeight As Integer
+        Public cyBottomHeight As Integer
+    End Structure
+
+    <DllImport("dwmapi.dll", PreserveSig:=True)>
+    Private Function DwmExtendFrameIntoClientArea(hWnd As IntPtr, ByRef pMarInset As MARGINS) As Integer
+    End Function
+
+    <DllImport("dwmapi.dll", PreserveSig:=True)>
+    Private Function DwmIsCompositionEnabled(ByRef pfEnabled As Boolean) As Integer
+    End Function
+
     ' Tragerea unei ferestre fără chenar de pe o zonă client (via mesaj non-client).
     Private Const WM_NCLBUTTONDOWN As Integer = &HA1
     Private Const HTCAPTION As Integer = 2
@@ -399,6 +425,36 @@ Public Module NativeMethods
             End If
         End Try
     End Sub
+
+    Private _shadowLogged As Boolean = False
+
+    ''' <summary>
+    ''' Asks DWM for the shadow of a borderless window (slice 0069): non-client rendering on,
+    ''' frame extended one pixel into the client area on every side. Returns True ONLY when
+    ''' composition is on and both calls answered S_OK -- that is the caller's signal that a
+    ''' shadow is really there; anything else (composition off, an HRESULT, an exception) is
+    ''' False, logged once, and the caller draws its own border instead. Nothing is thrown:
+    ''' a missing shadow must never stop a form from opening.
+    ''' </summary>
+    Friend Function TryEnableBorderlessShadow(f As Form) As Boolean
+        If f Is Nothing OrElse Not f.IsHandleCreated Then Return False
+        Try
+            Dim composition As Boolean = False
+            If DwmIsCompositionEnabled(composition) <> 0 OrElse Not composition Then Return False
+
+            Dim policy As Integer = DWMNCRP_ENABLED
+            If DwmSetWindowAttribute(f.Handle, DWMWA_NCRENDERING_POLICY, policy, 4) <> 0 Then Return False
+
+            Dim margins As New MARGINS With {.cxLeftWidth = 1, .cxRightWidth = 1, .cyTopHeight = 1, .cyBottomHeight = 1}
+            Return DwmExtendFrameIntoClientArea(f.Handle, margins) = 0
+        Catch ex As Exception
+            If Not _shadowLogged Then
+                _shadowLogged = True
+                GlobalErrorLog.Write("NativeMethods.TryEnableBorderlessShadow (OS nesuportat?)", ex)
+            End If
+            Return False
+        End Try
+    End Function
 
     ''' <summary>
     ''' Pornește tragerea ferestrei fără chenar: eliberează captura mouse-ului, apoi
