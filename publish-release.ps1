@@ -17,6 +17,11 @@
 
   Build PC requirements: .NET 8 SDK in PATH (dotnet), Inno Setup 6 (ISCC.exe).
 
+  Version: before building, one console question -- which part of KBot.App's
+             FileVersion to bump (Major / minor / build / revision / None, Enter =
+             None). Minor caps at 9, Build at 99, Revision at 9: one past the cap
+             carries into the part above and resets. -Bump <part> skips the question.
+
   Digital signing (optional, never fatal):
              - Uses Certum SimplySign token via certificate thumbprint.
              - SimplySign Desktop must be running and logged in before the build.
@@ -36,13 +41,89 @@ param(
     [string] $SignThumbprint = '2F0E82DB6781F3DC17D43166A3420B7CBE380A68',
 
     # Timestamp server. Certum's RFC3161 endpoint.
-    [string] $TimestampUrl = 'http://time.certum.pl'
+    [string] $TimestampUrl = 'http://time.certum.pl',
+
+    # Which part of KBot.App's FileVersion to bump BEFORE building. 'Ask' (default)
+    # prompts on the console: "(M)ajor, m(i)nor, (b)uild, (r)evision, (N)one", Enter = N.
+    # Without an interactive console 'Ask' behaves as 'None'.
+    [ValidateSet('Ask', 'None', 'Major', 'Minor', 'Build', 'Revision')]
+    [string] $Bump = 'Ask'
 )
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $Configuration = 'Release'
+
+# ==============================================================================
+#  VERSION BUMP
+#  KBot.App's FileVersion is THE product version: the installer's AppVersion, the
+#  update server's "version", the number every installed client compares itself
+#  against. It is bumped here, before the build, so the package carries it.
+# ==============================================================================
+
+$VersionParts = @('Major', 'Minor', 'Build', 'Revision')
+# Highest value a part may hold; one past it resets the part to 0 and carries into
+# the part above (1.9.99.9 + Revision -> 2.0.0.0). Major never carries.
+$VersionCaps  = @{ Minor = 9; Build = 99; Revision = 9 }
+
+function Step-KBotVersion {
+    # $Part + 1; everything below $Part resets to 0; carries per $VersionCaps.
+    param([version]$Version, [string]$Part)
+    $n = @([Math]::Max($Version.Major, 0), [Math]::Max($Version.Minor, 0),
+           [Math]::Max($Version.Build, 0), [Math]::Max($Version.Revision, 0))
+    $i = [Array]::IndexOf($VersionParts, $Part)
+    if ($i -lt 0) { throw "Unknown version part '$Part'." }
+    for ($j = $i + 1; $j -lt 4; $j++) { $n[$j] = 0 }
+    while ($true) {
+        $n[$i]++
+        if ($i -eq 0 -or $n[$i] -le $VersionCaps[$VersionParts[$i]]) { break }
+        $n[$i] = 0
+        $i--
+    }
+    return [version]::new($n[0], $n[1], $n[2], $n[3])
+}
+
+function Get-KBotFileVersion {
+    param([string]$Project)
+    $text = [System.IO.File]::ReadAllText($Project)
+    $m = [regex]::Match($text, '<FileVersion>\s*([0-9.]+)\s*</FileVersion>')
+    if (-not $m.Success) { throw "No <FileVersion> element in $Project." }
+    return [version]$m.Groups[1].Value
+}
+
+function Set-KBotFileVersion {
+    # Rewrites only the <FileVersion> text; keeps the file's encoding (BOM or not).
+    param([string]$Project, [version]$NewVersion)
+    $bytes = [System.IO.File]::ReadAllBytes($Project)
+    $hasBom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+    $text = [System.IO.File]::ReadAllText($Project)
+    $rx = [regex]'<FileVersion>\s*[0-9.]+\s*</FileVersion>'
+    if (-not $rx.IsMatch($text)) { throw "No <FileVersion> element in $Project." }
+    $text = $rx.Replace($text, "<FileVersion>$NewVersion</FileVersion>", 1)
+    [System.IO.File]::WriteAllText($Project, $text, (New-Object System.Text.UTF8Encoding($hasBom)))
+}
+
+function Read-KBotBumpChoice {
+    # One question on the console; Enter = None. Letters as the operator asked for
+    # them: M(ajor), i (m-i-nor), b(uild), r(evision), N(one); full words work too.
+    param([version]$Current)
+    if (-not [Environment]::UserInteractive -or [Console]::IsInputRedirected) {
+        Write-Host "Version bump: no interactive console -> None (pass -Bump to choose)." -ForegroundColor Yellow
+        return 'None'
+    }
+    $map = @{ ''  = 'None'; 'N' = 'None'; 'NONE' = 'None'
+              'M' = 'Major'; 'MAJOR' = 'Major'
+              'I' = 'Minor'; 'MINOR' = 'Minor'
+              'B' = 'Build'; 'BUILD' = 'Build'
+              'R' = 'Revision'; 'REVISION' = 'Revision' }
+    while ($true) {
+        $answer = Read-Host "Bump FileVersion $Current ? (M)ajor, m(i)nor, (b)uild, (r)evision, (N)one [N]"
+        $key = ($answer -replace '\s', '').ToUpperInvariant()
+        if ($map.ContainsKey($key)) { return $map[$key] }
+        Write-Host "  Type M, i, b, r or N (Enter = N)." -ForegroundColor Yellow
+    }
+}
 
 # ==============================================================================
 #  SIGNING HELPERS
@@ -305,6 +386,19 @@ if (-not (Test-Path $ProjectFile)) {
 # --- 1. Check dotnet SDK -------------------------------------------------------
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
     throw "dotnet SDK is not in PATH on this (build) PC. Install .NET 8 SDK."
+}
+
+# --- 1b. Version bump (asked on the console unless -Bump says) ------------------
+#  Writes the new number into KBot.App.vbproj BEFORE dotnet publish, so the exe, the
+#  installer and the update package all carry it. The edit is NOT committed here.
+$CurrentVersion = Get-KBotFileVersion -Project $ProjectFile
+$bumpPart = if ($Bump -eq 'Ask') { Read-KBotBumpChoice -Current $CurrentVersion } else { $Bump }
+if ($bumpPart -ne 'None') {
+    $NewVersion = Step-KBotVersion -Version $CurrentVersion -Part $bumpPart
+    Set-KBotFileVersion -Project $ProjectFile -NewVersion $NewVersion
+    Write-Host "FileVersion $CurrentVersion -> $NewVersion ($bumpPart) written to KBot.App.vbproj (not committed)." -ForegroundColor Green
+} else {
+    Write-Host "FileVersion stays $CurrentVersion." -ForegroundColor Cyan
 }
 
 # --- 2. Names / paths ----------------------------------------------------------

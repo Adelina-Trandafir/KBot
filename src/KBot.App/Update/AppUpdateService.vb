@@ -38,7 +38,7 @@ Public NotInheritable Class AppUpdateService
     Private ReadOnly _api As IUpdateApi
 
     Public Sub New(api As IUpdateApi)
-        If api Is Nothing Then Throw New ArgumentNullException(NameOf(api))
+        ArgumentNullException.ThrowIfNull(api)
         _api = api
     End Sub
 

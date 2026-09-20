@@ -27,6 +27,7 @@ Partial Class SetariForm
         Dim KBotNavItem5 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem7 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem8 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         btnClose = New Button()
         pnlRoot = New Panel()
@@ -123,14 +124,17 @@ Partial Class SetariForm
         KBotNavItem5.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
         KBotNavItem5.Key = "autentificare"
         KBotNavItem5.Text = "Autentificare"
-        KBotNavItem6.Align = KBotNavAlign.Far
-        KBotNavItem6.Image = My.Resources.Resources.Papirus_Team_Papirus_Apps_Accessories_text_editor_512_resized
-        KBotNavItem6.Key = "jurnal"
-        KBotNavItem6.Text = "Jurnal"
+        KBotNavItem6.Image = My.Resources.Resources.folder_open
+        KBotNavItem6.Key = "foldere"
+        KBotNavItem6.Text = "Căi fișiere"
         KBotNavItem7.Align = KBotNavAlign.Far
-        KBotNavItem7.IsSeparator = True
-        KBotNavItem7.Key = "jur2"
-        KBotNavItem7.Text = Nothing
+        KBotNavItem7.Image = My.Resources.Resources.Papirus_Team_Papirus_Apps_Accessories_text_editor_512_resized
+        KBotNavItem7.Key = "jurnal"
+        KBotNavItem7.Text = "Jurnal"
+        KBotNavItem8.Align = KBotNavAlign.Far
+        KBotNavItem8.IsSeparator = True
+        KBotNavItem8.Key = "jur2"
+        KBotNavItem8.Text = Nothing
         navViews.Items.Add(KBotNavItem1)
         navViews.Items.Add(KBotNavItem2)
         navViews.Items.Add(KBotNavItem3)
@@ -138,6 +142,7 @@ Partial Class SetariForm
         navViews.Items.Add(KBotNavItem5)
         navViews.Items.Add(KBotNavItem6)
         navViews.Items.Add(KBotNavItem7)
+        navViews.Items.Add(KBotNavItem8)
         navViews.Location = New Point(11, 13)
         navViews.Margin = New Padding(4, 5, 4, 5)
         navViews.Name = "navViews"

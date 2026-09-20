@@ -48,7 +48,6 @@ Public Class SetariAplicatieView
         Try
             IncarcaComutatoarele()
             IncarcaDocumentele()
-            IncarcaFolderele()
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.Activated", ex)
         End Try
@@ -134,7 +133,7 @@ Public Class SetariAplicatieView
 #Else
             buildDefault = False
 #End If
-            RichTextBoxLogger.VerboseLogging = If(item.Value.HasValue, item.Value.Value, buildDefault)
+            RichTextBoxLogger.VerboseLogging = If(item.Value, buildDefault)
         End If
     End Sub
 
@@ -241,71 +240,6 @@ Public Class SetariAplicatieView
                           "Panglica Excel: " & item.ToString() & ". Se aplică documentului următor.")
     End Sub
 
-    ' ---------------- folders ----------------
-
-    ''' <summary>
-    ''' One row per folder setting, in the order <see cref="SetariFoldere.Toate"/> declares
-    ''' them. The RAW operator value goes in the editable column (empty = default), exactly
-    ''' what <see cref="SetariFoldere.Bruta"/> exists for; the resolved path is not shown
-    ''' because it would look editable and is not.
-    ''' </summary>
-    Private Sub IncarcaFolderele()
-        _suppress = True
-        Try
-            Dim foldere As SetariFoldere = SetariFoldere.Incarca()
-            gridFoldere.BeginUpdate()
-            Try
-                gridFoldere.ClearRows()
-                For Each setare As SetariFoldere.Setare In SetariFoldere.Toate
-                    Dim rand As KBotDataRow = gridFoldere.AddRow()
-                    rand("cheie") = setare.Cheie
-                    rand("descriere") = setare.Descriere
-                    rand("implicit") = setare.Implicit
-                    rand("cale") = If(foldere.Bruta(setare.Cheie), String.Empty)
-                Next
-            Finally
-                gridFoldere.EndUpdate()
-            End Try
-            gridFoldere.ClearDirty()
-            btnSalveazaFoldere.Enabled = False
-            lblFoldereStare.Text = If(foldere.Probleme.Count = 0,
-                                      "Fișier: " & SetariFoldere.CaleSetari(),
-                                      String.Join(" ", foldere.Probleme))
-        Finally
-            _suppress = False
-        End Try
-    End Sub
-
-    Private Sub GridFoldere_CellValueChanged(sender As Object, e As KBotCellValueEventArgs) Handles gridFoldere.CellValueChanged
-        Try
-            If _suppress Then Return
-            btnSalveazaFoldere.Enabled = True
-            lblFoldereStare.Text = "Modificări nesalvate — apasă «Salvează folderele»."
-        Catch ex As Exception
-            GlobalErrorLog.Write("SetariAplicatieView.GridFoldere_CellValueChanged", ex)
-        End Try
-    End Sub
-
-    Private Sub BtnSalveazaFoldere_Click(sender As Object, e As EventArgs) Handles btnSalveazaFoldere.Click
-        Try
-            Dim valori As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
-            For i As Integer = 0 To gridFoldere.RowCount - 1
-                Dim cheie As String = Convert.ToString(gridFoldere("cheie", i), Globalization.CultureInfo.InvariantCulture)
-                Dim cale As String = Convert.ToString(gridFoldere("cale", i), Globalization.CultureInfo.InvariantCulture)
-                valori(cheie) = cale
-            Next
-            SetariFoldere.Salveaza(valori)
-            gridFoldere.ClearDirty()
-            btnSalveazaFoldere.Enabled = False
-            lblFoldereStare.Text = "Salvat. Folderele se verifică la următoarea pornire a aplicației."
-            RaiseEvent StatusChanged("Folderele au fost salvate în settings.json — au efect la următoarea pornire.")
-        Catch ex As Exception
-            GlobalErrorLog.Write("SetariAplicatieView.BtnSalveazaFoldere_Click", ex)
-            lblFoldereStare.Text = "Salvarea a eșuat: " & ex.Message
-            RaiseEvent StatusChanged("Folderele nu au putut fi salvate.")
-        End Try
-    End Sub
-
     ' ---------------- theme ----------------
 
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
@@ -316,12 +250,10 @@ Public Class SetariAplicatieView
             tlyBody.BackColor = p.SurfaceAltColor
             tlyComutatoare.BackColor = p.SurfaceAltColor
             tlyDocumente.BackColor = p.SurfaceAltColor
-            tlyFoldereButoane.BackColor = p.SurfaceAltColor
-            For Each caption As Label In New Label() {lblVerbose, lblAdobeMotor, lblExcelRibbon, lblFoldereHint, lblFoldereStare}
+            For Each caption As Label In New Label() {lblVerbose, lblAdobeMotor, lblExcelRibbon}
                 caption.ForeColor = p.TextDimColor
                 caption.BackColor = Color.Transparent
             Next
-            ButtonStyles.ApplyPrimary(btnSalveazaFoldere, scheme)
             ButtonStyles.ApplySecondary(btnAdobeGazduire, scheme)
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.ApplyTheme", ex)

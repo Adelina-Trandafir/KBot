@@ -32,6 +32,8 @@
     -SkipBuild        do not build; push the newest artifacts\KBot_Release_*.zip.
     -Force            push even if the server already has this version or newer.
     -SignThumbprint   forwarded to publish-release.ps1.
+    -Bump             forwarded to publish-release.ps1: Ask (default, one console
+                      question), None, Major, Minor, Build, Revision.
     -SettingsPath     alternative push_settings.json.
     -ApiBaseUrl       where /api/update/latest is read from (default: production).
 ================================================================================
@@ -44,6 +46,8 @@ param(
     [switch] $SkipBuild,
     [switch] $Force,
     [string] $SignThumbprint = '',
+    [ValidateSet('Ask', 'None', 'Major', 'Minor', 'Build', 'Revision')]
+    [string] $Bump = 'Ask',
     [string] $SettingsPath = '',
     [string] $ApiBaseUrl = 'https://kbot.avatarsoft.ro'
 )
@@ -175,9 +179,9 @@ if (-not $SkipBuild) {
     if (-not (Test-Path -LiteralPath $publish)) { throw "publish-release.ps1 not found at $publish." }
     Write-Step "Building RELEASE via publish-release.ps1 ..."
     if ([string]::IsNullOrWhiteSpace($SignThumbprint)) {
-        & $publish
+        & $publish -Bump $Bump
     } else {
-        & $publish -SignThumbprint $SignThumbprint
+        & $publish -SignThumbprint $SignThumbprint -Bump $Bump
     }
     if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "publish-release.ps1 failed (ExitCode=$LASTEXITCODE)." }
 }

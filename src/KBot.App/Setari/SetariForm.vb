@@ -56,8 +56,8 @@ Public Class SetariForm
     ''' for that host it is brought to the front instead.
     ''' </summary>
     Public Shared Function ShowFor(host As Form, factory As Func(Of SetariForm)) As SetariForm
-        If host Is Nothing Then Throw New ArgumentNullException(NameOf(host))
-        If factory Is Nothing Then Throw New ArgumentNullException(NameOf(factory))
+        ArgumentNullException.ThrowIfNull(host)
+        ArgumentNullException.ThrowIfNull(factory)
         Try
             For Each f As Form In host.OwnedForms
                 Dim existing As SetariForm = TryCast(f, SetariForm)
@@ -177,6 +177,7 @@ Public Class SetariForm
                 Case "tema" : Return New SetariTemaView()
                 Case "autentificare" : Return New SetariAutentificareView(_apiOptions)
                 Case "jurnal" : Return New SetariJurnalView() With {.ApiClient = _apiClient}
+                Case "foldere" : Return New SetariFolder()
                 Case Else
                     Throw New ArgumentException($"Pagină de setări necunoscută: '{key}'.", NameOf(key))
             End Select

@@ -18,10 +18,6 @@ Partial Class SetariAplicatieView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim KBotDataColumn1 As KBotDataColumn = New KBotDataColumn()
-        Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
-        Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
-        Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         cboVerbose = New KBotComboBox()
         chkLogViewer = New CheckBox()
@@ -30,8 +26,6 @@ Partial Class SetariAplicatieView
         cboAdobeMotor = New KBotComboBox()
         btnAdobeGazduire = New Button()
         cboExcelRibbon = New KBotComboBox()
-        gridFoldere = New KBotDataView()
-        btnSalveazaFoldere = New Button()
         tlyBody = New KBotTableLayoutPanel()
         lblTitluComutatoare = New Label()
         tlyComutatoare = New KBotTableLayoutPanel()
@@ -40,15 +34,9 @@ Partial Class SetariAplicatieView
         tlyDocumente = New KBotTableLayoutPanel()
         lblAdobeMotor = New Label()
         lblExcelRibbon = New Label()
-        lblTitluFoldere = New Label()
-        lblFoldereHint = New Label()
-        tlyFoldereButoane = New KBotTableLayoutPanel()
-        lblFoldereStare = New Label()
-        CType(gridFoldere, ComponentModel.ISupportInitialize).BeginInit()
         tlyBody.SuspendLayout()
         tlyComutatoare.SuspendLayout()
         tlyDocumente.SuspendLayout()
-        tlyFoldereButoane.SuspendLayout()
         SuspendLayout()
         ' 
         ' cboVerbose
@@ -127,8 +115,8 @@ Partial Class SetariAplicatieView
         ' 
         ' btnAdobeGazduire
         ' 
-        btnAdobeGazduire.Dock = DockStyle.Left
         btnAdobeGazduire.AutoSize = True
+        btnAdobeGazduire.Dock = DockStyle.Left
         btnAdobeGazduire.FlatStyle = FlatStyle.Flat
         btnAdobeGazduire.Location = New Point(404, 47)
         btnAdobeGazduire.Margin = New Padding(4, 0, 4, 10)
@@ -157,71 +145,6 @@ Partial Class SetariAplicatieView
         tips.SetToolTipHeader(cboExcelRibbon, "Panglica Excel în previzualizare")
         tips.SetToolTipText(cboExcelRibbon, "Macro: Excel își ascunde singur panglica (poate fi refuzat de o politică)." & vbLf & "Fereastră: se ascunde fereastra panglicii, ca la Word — nu poate fi refuzat." & vbLf & "Word are o singură metodă și nu se configurează.")
         ' 
-        ' gridFoldere
-        ' 
-        gridFoldere.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridFoldere.BackColor = SystemColors.Window
-        gridFoldere.ColumnFillMode = KBotFillMode.LastColumn
-        KBotDataColumn1.AggregateFormatString = Nothing
-        KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderText = "Setare"
-        KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleLeft
-        KBotDataColumn1.Key = "cheie"
-        KBotDataColumn1.OptionGroup = Nothing
-        KBotDataColumn1.ReadOnly = True
-        KBotDataColumn1.Width = 150
-        KBotDataColumn2.AggregateFormatString = Nothing
-        KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderText = "Ce este"
-        KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleLeft
-        KBotDataColumn2.Key = "descriere"
-        KBotDataColumn2.OptionGroup = Nothing
-        KBotDataColumn2.ReadOnly = True
-        KBotDataColumn2.Width = 330
-        KBotDataColumn3.AggregateFormatString = Nothing
-        KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderText = "Implicit"
-        KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleLeft
-        KBotDataColumn3.Key = "implicit"
-        KBotDataColumn3.OptionGroup = Nothing
-        KBotDataColumn3.ReadOnly = True
-        KBotDataColumn3.Width = 190
-        KBotDataColumn4.AggregateFormatString = Nothing
-        KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderText = "Calea configurată"
-        KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleLeft
-        KBotDataColumn4.Key = "cale"
-        KBotDataColumn4.OptionGroup = Nothing
-        KBotDataColumn4.Width = 230
-        gridFoldere.Columns.Add(KBotDataColumn1)
-        gridFoldere.Columns.Add(KBotDataColumn2)
-        gridFoldere.Columns.Add(KBotDataColumn3)
-        gridFoldere.Columns.Add(KBotDataColumn4)
-        gridFoldere.Dock = DockStyle.Fill
-        gridFoldere.Location = New Point(28, 538)
-        gridFoldere.Margin = New Padding(4, 0, 4, 8)
-        gridFoldere.Name = "gridFoldere"
-        gridFoldere.Size = New Size(904, 319)
-        gridFoldere.TabIndex = 6
-        tips.SetToolTipHeader(gridFoldere, "Folderele în care scrie aplicația")
-        tips.SetToolTipText(gridFoldere, "Doar coloana «Calea configurată» se editează. Apasă «Salvează folderele» după.")
-        ' 
-        ' btnSalveazaFoldere
-        ' 
-        btnSalveazaFoldere.Dock = DockStyle.Fill
-        btnSalveazaFoldere.Enabled = False
-        btnSalveazaFoldere.FlatStyle = FlatStyle.Flat
-        btnSalveazaFoldere.Font = New Font("Segoe UI Semibold", 9F)
-        btnSalveazaFoldere.Location = New Point(668, 0)
-        btnSalveazaFoldere.Margin = New Padding(4, 0, 4, 0)
-        btnSalveazaFoldere.Name = "btnSalveazaFoldere"
-        btnSalveazaFoldere.Size = New Size(232, 49)
-        btnSalveazaFoldere.TabIndex = 1
-        btnSalveazaFoldere.Text = "Salvează folderele"
-        tips.SetToolTipHeader(btnSalveazaFoldere, "Salvează folderele")
-        tips.SetToolTipText(btnSalveazaFoldere, "Scrie căile în settings.json (AppData). Se verifică la următoarea pornire.")
-        btnSalveazaFoldere.UseVisualStyleBackColor = True
-        ' 
         ' tlyBody
         ' 
         tlyBody.AutoScroll = True
@@ -231,25 +154,18 @@ Partial Class SetariAplicatieView
         tlyBody.Controls.Add(tlyComutatoare, 0, 1)
         tlyBody.Controls.Add(lblTitluDocumente, 0, 2)
         tlyBody.Controls.Add(tlyDocumente, 0, 3)
-        tlyBody.Controls.Add(lblTitluFoldere, 0, 4)
-        tlyBody.Controls.Add(lblFoldereHint, 0, 5)
-        tlyBody.Controls.Add(gridFoldere, 0, 6)
-        tlyBody.Controls.Add(tlyFoldereButoane, 0, 7)
         tlyBody.Dock = DockStyle.Fill
         tlyBody.Location = New Point(0, 0)
         tlyBody.Margin = New Padding(0)
         tlyBody.Name = "tlyBody"
         tlyBody.Padding = New Padding(24, 18, 24, 18)
-        tlyBody.RowCount = 8
+        tlyBody.RowCount = 4
         tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
-        tlyBody.RowStyles.Add(New RowStyle())
-        tlyBody.RowStyles.Add(New RowStyle())
-        tlyBody.RowStyles.Add(New RowStyle())
-        tlyBody.RowStyles.Add(New RowStyle())
-        tlyBody.Size = New Size(960, 1040)
+        tlyBody.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
+        tlyBody.Size = New Size(960, 457)
         tlyBody.TabIndex = 0
         ' 
         ' lblTitluComutatoare
@@ -357,72 +273,19 @@ Partial Class SetariAplicatieView
         lblExcelRibbon.Text = "Excel — cum se ascunde panglica"
         lblExcelRibbon.TextAlign = ContentAlignment.MiddleLeft
         ' 
-        ' lblTitluFoldere
-        ' 
-        lblTitluFoldere.AutoSize = True
-        lblTitluFoldere.Font = New Font("Segoe UI Semibold", 12F)
-        lblTitluFoldere.Location = New Point(28, 450)
-        lblTitluFoldere.Margin = New Padding(4, 0, 4, 4)
-        lblTitluFoldere.Name = "lblTitluFoldere"
-        lblTitluFoldere.Size = New Size(95, 32)
-        lblTitluFoldere.TabIndex = 4
-        lblTitluFoldere.Text = "Foldere"
-        ' 
-        ' lblFoldereHint
-        ' 
-        lblFoldereHint.AutoSize = True
-        lblFoldereHint.Dock = DockStyle.Top
-        lblFoldereHint.Location = New Point(28, 486)
-        lblFoldereHint.Margin = New Padding(4, 0, 4, 8)
-        lblFoldereHint.Name = "lblFoldereHint"
-        lblFoldereHint.Size = New Size(904, 44)
-        lblFoldereHint.TabIndex = 5
-        lblFoldereHint.Text = "Calea goală înseamnă «implicit». O cale relativă se rezolvă față de folderul aplicației. Folderele se verifică la pornire — schimbarea are efect la următoarea pornire."
-        ' 
-        ' tlyFoldereButoane
-        ' 
-        tlyFoldereButoane.AutoFitToTheme = False
-        tlyFoldereButoane.AutoSize = True
-        tlyFoldereButoane.ColumnCount = 2
-        tlyFoldereButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyFoldereButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 240F))
-        tlyFoldereButoane.Controls.Add(lblFoldereStare, 0, 0)
-        tlyFoldereButoane.Controls.Add(btnSalveazaFoldere, 1, 0)
-        tlyFoldereButoane.Dock = DockStyle.Top
-        tlyFoldereButoane.Location = New Point(28, 865)
-        tlyFoldereButoane.Margin = New Padding(4, 0, 4, 0)
-        tlyFoldereButoane.Name = "tlyFoldereButoane"
-        tlyFoldereButoane.RowCount = 1
-        tlyFoldereButoane.RowStyles.Add(New RowStyle())
-        tlyFoldereButoane.Size = New Size(904, 49)
-        tlyFoldereButoane.TabIndex = 7
-        ' 
-        ' lblFoldereStare
-        ' 
-        lblFoldereStare.AutoEllipsis = True
-        lblFoldereStare.Dock = DockStyle.Fill
-        lblFoldereStare.Location = New Point(4, 0)
-        lblFoldereStare.Margin = New Padding(4, 0, 4, 0)
-        lblFoldereStare.Name = "lblFoldereStare"
-        lblFoldereStare.Size = New Size(656, 49)
-        lblFoldereStare.TabIndex = 0
-        lblFoldereStare.TextAlign = ContentAlignment.MiddleLeft
-        ' 
         ' SetariAplicatieView
         ' 
         AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(tlyBody)
         Name = "SetariAplicatieView"
-        Size = New Size(960, 1040)
-        CType(gridFoldere, ComponentModel.ISupportInitialize).EndInit()
+        Size = New Size(960, 457)
         tlyBody.ResumeLayout(False)
         tlyBody.PerformLayout()
         tlyComutatoare.ResumeLayout(False)
         tlyComutatoare.PerformLayout()
         tlyDocumente.ResumeLayout(False)
         tlyDocumente.PerformLayout()
-        tlyFoldereButoane.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 
@@ -442,10 +305,4 @@ Partial Class SetariAplicatieView
     Friend WithEvents btnAdobeGazduire As Button
     Friend WithEvents lblExcelRibbon As Label
     Friend WithEvents cboExcelRibbon As KBotComboBox
-    Friend WithEvents lblTitluFoldere As Label
-    Friend WithEvents lblFoldereHint As Label
-    Friend WithEvents gridFoldere As KBotDataView
-    Friend WithEvents tlyFoldereButoane As KBotTableLayoutPanel
-    Friend WithEvents lblFoldereStare As Label
-    Friend WithEvents btnSalveazaFoldere As Button
 End Class
