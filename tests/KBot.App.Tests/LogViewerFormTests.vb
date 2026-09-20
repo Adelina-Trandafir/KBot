@@ -381,17 +381,47 @@ Public Class LogViewerFormTests
                        Assert.NotNull(FindControl(Of KBotDataView)(f))
                        Assert.NotNull(FindControl(Of KBotCaptionBar)(f))
                        Assert.NotNull(FindControl(Of KBotBusyBar)(f))
-                       Assert.NotNull(FindByName(f, "txtDetaliu"))
                        Assert.NotNull(FindByName(f, "txtCauta"))
                        Assert.NotNull(FindByName(f, "noticeServer"))
                        Assert.NotNull(FindByName(f, "noticeGol"))
+                       ' Since 0072-01 the window hosts the settings page, and the detail panel is
+                       ' the house text box (both scroll bars themed), not a bare TextBox.
+                       Assert.NotNull(FindControl(Of SetariJurnalView)(f))
+                       Assert.IsType(Of KBotTextBox)(FindByName(f, "txtDetaliu"))
 
-                       ' Cele șase coloane cerute de plan, în ordine, cu «Ora» înghețată.
+                       ' Five columns, in order, with «Ora» frozen. «Mesaj» is NOT a column any
+                       ' more (0072-01): the message is read whole in txtDetaliu.
                        Dim g As KBotDataView = FindControl(Of KBotDataView)(f)
                        Dim chei As String() = g.Columns.Select(Function(c) c.Key).ToArray()
-                       Assert.Equal(New String() {"ora", "nivel", "sursa", "fisier", "detaliu", "mesaj"}, chei)
+                       Assert.Equal(New String() {"ora", "nivel", "sursa", "fisier", "detaliu"}, chei)
+                       Assert.DoesNotContain("mesaj", chei)
                        Assert.Equal(1, g.FrozenColumnCount)
                        Assert.True(g.ReadOnlyGrid)
+                   End Using
+               End Sub)
+    End Sub
+
+    ''' <summary>
+    ''' Newest first (0072-01): the rows are sorted descending on the timestamp, whatever order
+    ''' the loader handed them in; entries without a timestamp go last, in the order given.
+    ''' </summary>
+    <Fact>
+    Public Sub Randurile_SuntOrdonateDescrescator_CeleMaiNoiPrimele()
+        RunSta(Sub()
+                   Using f As New LogViewerForm()
+                       Dim vechi As New LogEntry(New Date(2026, 8, 14, 9, 0, 0), KBotLogLevel.Info, "s", "vechi", "vechi")
+                       Dim mijloc As New LogEntry(New Date(2026, 8, 14, 10, 0, 0), KBotLogLevel.Info, "s", "mijloc", "mijloc")
+                       Dim nou As New LogEntry(New Date(2026, 8, 14, 11, 0, 0), KBotLogLevel.Info, "s", "nou", "nou")
+                       Dim faraData As New LogEntry(Nothing, KBotLogLevel.Info, "s", "fara", "fara")
+
+                       ' Given oldest-first (file order), like LogFileLoader does.
+                       f.DebugIncarcaIntrari(New List(Of LogEntry) From {vechi, faraData, mijloc, nou})
+
+                       Assert.Equal(4, f.DebugNumarRanduri())
+                       Assert.Equal("nou", f.DebugIntrareaRandului(0).Message)
+                       Assert.Equal("mijloc", f.DebugIntrareaRandului(1).Message)
+                       Assert.Equal("vechi", f.DebugIntrareaRandului(2).Message)
+                       Assert.Equal("fara", f.DebugIntrareaRandului(3).Message)
                    End Using
                End Sub)
     End Sub

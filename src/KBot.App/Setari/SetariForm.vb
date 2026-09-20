@@ -7,9 +7,10 @@ Imports KBot.Theming
 ''' <summary>
 ''' The settings window (slice 0072): the same shape as the shell -- caption bar, a
 ''' <see cref="KBotNavList"/> on the left, one page at a time on the right, a status band
-''' below. Five pages, created lazily at first activation like the shell's views:
+''' below. Six pages, created lazily at first activation like the shell's views:
 ''' «Informații» (operator, licence, updates, password), «Aplicație» (switches, documents,
-''' folders), «FOREXE», «Temă» and «Autentificare».
+''' folders), «FOREXE», «Temă», «Autentificare» and -- pinned at the bottom of the list --
+''' «Jurnal», the log viewer (slice 0072-01; it used to be a window of its own).
 '''
 ''' <para><b>Modeless, one instance.</b> Opened from the shell's options menu and owned by
 ''' it; a second request brings the open window to the front (see <see cref="ShowFor"/>),
@@ -27,24 +28,27 @@ Public Class SetariForm
     Private ReadOnly _updates As AppUpdateService
     Private ReadOnly _controller As ForexeController
     Private ReadOnly _apiOptions As ApiOptions
+    Private ReadOnly _apiClient As IApiClient
 
     ' Pages created lazily (key -> instance); one is visible.
     Private ReadOnly _views As New Dictionary(Of String, ISetariView)()
     Private _activeView As ISetariView
 
     Public Sub New(session As SessionContext, authApi As IAuthApi, updates As AppUpdateService,
-                   controller As ForexeController, apiOptions As ApiOptions)
+                   controller As ForexeController, apiOptions As ApiOptions, apiClient As IApiClient)
         ArgumentNullException.ThrowIfNull(session)
         ArgumentNullException.ThrowIfNull(authApi)
         ArgumentNullException.ThrowIfNull(updates)
         ArgumentNullException.ThrowIfNull(controller)
         ArgumentNullException.ThrowIfNull(apiOptions)
+        ArgumentNullException.ThrowIfNull(apiClient)
         InitializeComponent()
         _session = session
         _authApi = authApi
         _updates = updates
         _controller = controller
         _apiOptions = apiOptions
+        _apiClient = apiClient
     End Sub
 
     ''' <summary>
@@ -71,6 +75,21 @@ Public Class SetariForm
             Throw
         End Try
     End Function
+
+    ''' <summary>
+    ''' Brings a page to the front by its nav key ("jurnal" from the shell's «Arată jurnal»
+    ''' row). Unknown key -> ArgumentException, from the nav list itself: a row added to the
+    ''' menu and forgotten here must be seen, not swallowed.
+    ''' </summary>
+    Public Sub ShowPage(key As String)
+        Try
+            If String.IsNullOrWhiteSpace(key) Then Throw New ArgumentException("Cheia paginii lipsește.", NameOf(key))
+            navViews.SelectedKey = key
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForm.ShowPage", ex)
+            Throw
+        End Try
+    End Sub
 
     Private Sub SetariForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Try
@@ -157,6 +176,7 @@ Public Class SetariForm
                 Case "forexe" : Return New SetariForexeView(_controller)
                 Case "tema" : Return New SetariTemaView()
                 Case "autentificare" : Return New SetariAutentificareView(_apiOptions)
+                Case "jurnal" : Return New SetariJurnalView() With {.ApiClient = _apiClient}
                 Case Else
                     Throw New ArgumentException($"Pagină de setări necunoscută: '{key}'.", NameOf(key))
             End Select

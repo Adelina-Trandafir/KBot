@@ -176,7 +176,21 @@ Partial Public Class CustomPopup
         Dim fractie As Double = Math.Max(0.0, Math.Min(1.0, x / CDbl(utila)))
 
         Dim it As CustomPopupItem = Items(index)
-        Return it.SliderMinimum + CInt(Math.Round(fractie * (it.SliderMaximum - it.SliderMinimum)))
+        Dim bruta As Integer = it.SliderMinimum + CInt(Math.Round(fractie * (it.SliderMaximum - it.SliderMinimum)))
+        ' Punctele de oprire prind DOAR mouse-ul: săgețile merg în pași fixi și nimeresc singure
+        ' punctele (100 / 110 / 125 sunt multipli de 5), iar o săgeată care ar sări peste 105 ca
+        ' să se lipească de 100 ar face pasul de tastatură imprevizibil.
+        Return it.SnapSliderValue(bruta)
+    End Function
+
+    ' X-ul (în client) al unei valori pe șină — inversa lui SliderValueAt, pentru liniuțele de
+    ' oprire și pentru deget, ca amândouă să stea pe același calcul.
+    Private Function SliderXForValue(it As CustomPopupItem, sina As Rectangle, value As Integer) As Integer
+        Dim deget As Integer = ThemeShapes.ScaleDpi(Me, SliderThumbWidthLogical)
+        Dim utila As Integer = Math.Max(0, sina.Width - deget)
+        Dim interval As Integer = it.SliderMaximum - it.SliderMinimum
+        Dim fractie As Double = If(interval <= 0, 0.0, (value - it.SliderMinimum) / CDbl(interval))
+        Return sina.Left + deget \ 2 + CInt(Math.Round(fractie * utila))
     End Function
 
     ' Poziția (în client) a degetului pentru valoarea curentă.
@@ -333,6 +347,21 @@ Partial Public Class CustomPopup
             End Using
 
             Dim deget As Rectangle = SliderThumbRect(index, sina)
+
+            ' Liniuțele punctelor de oprire, SUB deget și sub partea parcursă: o linie fină de
+            ' înălțimea degetului, în culoarea conturului — se văd unde se lipește degetul fără
+            ' să concureze cu șina. Cele de sub deget sunt acoperite de el, ceea ce e și intenția.
+            Dim puncte As Integer() = it.SliderSnapPoints
+            If puncte IsNot Nothing AndAlso puncte.Length > 0 Then
+                Dim inaltimeLiniuta As Integer = Math.Max(deget.Height, sina.Height + ThemeShapes.ScaleDpi(Me, 6))
+                Dim sus As Integer = sina.Top + sina.Height \ 2 - inaltimeLiniuta \ 2
+                Using pen As New Pen(EffectiveBorderColor)
+                    For Each p As Integer In puncte
+                        Dim x As Integer = SliderXForValue(it, sina, p)
+                        g.DrawLine(pen, x, sus, x, sus + inaltimeLiniuta)
+                    Next
+                End Using
+            End If
 
             ' Partea parcursă, până la mijlocul degetului.
             Dim panaLa As Integer = deget.Left + deget.Width \ 2 - sina.Left

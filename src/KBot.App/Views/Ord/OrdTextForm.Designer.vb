@@ -73,8 +73,6 @@ Partial Class OrdTextForm
         capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
         capBar.ShowTextScaleSlider = False
-        capBar.ShowThemeEditor = False
-        capBar.ShowThemeOptions = False
         capBar.Size = New Size(520, 46)
         capBar.TabIndex = 0
         capBar.TabStop = False

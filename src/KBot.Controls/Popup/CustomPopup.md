@@ -25,8 +25,12 @@ click, Esc, or `Deactivate` (a click elsewhere). Shown modeless, so **WinForms d
 - `IsSlider = False` + `SliderMinimum = 0` / `SliderMaximum = 100` / `SliderValue` /
   `SliderFraction` — a row that DRAGS instead of clicking. It does not close the menu; it
   raises `SliderValueChanged` while dragging and `SliderValueCommitted` on release.
+- `SliderSnapPoints` (Integer(), empty = free) + `SliderSnapTolerance = 3` — values the thumb
+  sticks to while DRAGGING when it passes within the tolerance; drawn as thin ticks on the track.
+  Keyboard steps are not snapped. `SnapSliderValue(v)` is the pure rule.
 - Factories: `CustomPopupItem.Separator()`, `CustomPopupItem.Slider(key, text, min, max, value)`
-  (`maximum <= minimum` → `ArgumentException`).
+  and `Slider(key, text, min, max, value, snapPoints)` (points outside the range are dropped,
+  duplicates merged, list sorted; `maximum <= minimum` → `ArgumentException`).
 
 ## CustomPopup
 - Ctors: `New()`, `New(items)`, `New(items, selectedKey)` — the caller states the selection

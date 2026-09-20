@@ -49,8 +49,6 @@ Partial Public NotInheritable Class KBotCaptionBar
 
     ' ── Optional - Theme Button (selectorul de teme; vezi KBotCaptionBar.ThemeButton.vb) ──────
     Private _showThemeButton As Boolean = False
-    Private _showThemeEditor As Boolean = True
-    Private _showThemeOptions As Boolean = True
     Private _showTextScaleSlider As Boolean = True
     Private _themeButtonImage As Image
     Private _themeButtonPadding As Integer = 2

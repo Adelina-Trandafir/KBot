@@ -342,8 +342,6 @@ Partial Class DdfEditForm
         capBar.OptionButtonPadding = 0
         capBar.ShowMaximize = True
         capBar.ShowTextScaleSlider = False
-        capBar.ShowThemeEditor = False
-        capBar.ShowThemeOptions = False
         capBar.Size = New Size(1639, 57)
         capBar.TabIndex = 0
         capBar.TabStop = False

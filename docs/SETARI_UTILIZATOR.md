@@ -253,10 +253,11 @@ o schimbi**; «Închide» doar închide. Cele cinci pagini:
 | pagina | ce conține | unde se scrie |
 |---|---|---|
 | **Informații** | operatorul, unitatea, rolul, baza; tipul instalării (datele comerciale — în lucru); versiunea + «Caută actualizări»; **schimbarea parolei** | server (parola) |
-| **Aplicație** | comutatoarele globale, cum se deschid PDF / Word / Excel, folderele | `app_settings.json`, `kbot_paths.json`, `settings.json` |
+| **Aplicație** | comutatoarele globale, cum se deschid PDF / Word / Excel (setările ferestrei găzduite Adobe stau într-un dialog propriu, deschis la alegerea motorului), folderele | `app_settings.json`, `kbot_paths.json`, `settings.json` |
 | **FOREXE** | starea robotului, certificatul memorat (+ «Uită certificatul»), bara browserului andocat, folderele robotului (doar citire) | `app_settings.json`, `last_certificate.cer` |
-| **Temă** | schema (cele 23 de culori + stil) și scalarea — același conținut ca «Opțiuni de temă» | `…\AVACONT\Themes\*.json`, `theme.json` |
+| **Temă** | schema (cele 23 de culori + stil), scalarea (cursorul de mărime se lipește la 100 / 110 / 125 %) și comutatorul «Font din temă» — meniul butonului de temă a rămas doar cu cursorul și schemele | `…\AVACONT\Themes\*.json`, `theme.json` |
 | **Autentificare** | ce ține minte fereastra de login (+ «Uită datele memorate»); adresa serverului (doar citire) | `app_settings.json`, `last_login.json` |
+| **Jurnal** | vizualizatorul de jurnale (fostul `LogViewerForm`), ca pagină: cele mai noi intrări sus, mesajul întreg în panoul de jos; «Arată jurnal» din meniul shell-ului deschide fereastra pe pagina asta | `Logs*.log`, `/api/logs/*` |
 
 ### 6.1 `app_settings.json` — comutatoarele operatorului
 
@@ -269,7 +270,7 @@ o schimbi**; «Închide» doar închide. Cele cinci pagini:
 | cheie | implicit | ce face |
 |---|---|---|
 | `VerboseLogging` | *(lipsă)* = după build: pornit pe Debug, oprit pe Release | consola FOREXE arată tot (pași, așteptări, andocare, stive), nu doar `<Log>` și erorile |
-| `LogViewerEnabled` | `true` | rândul «Arată jurnal» în meniul de opțiuni |
+| `LogViewerEnabled` | `true` | rândul «Arată jurnal» în meniul de opțiuni; debifat, butonul de opțiuni deschide direct fereastra «Setări» (meniul ar fi avut un singur rând) |
 | `ShowBrowserButton` | `true` | butonul «Arată browserul» în banda FOREXE |
 | `ForexeHideBrowserChrome` | `true` | în vizualizator, bara browserului rămâne în afara panoului (se aplică lucrării următoare) |
 | `ReceptiiCheckedOnOpen` | `true` | selectorul de recepții pornește cu tot bifat |

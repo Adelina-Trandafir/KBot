@@ -76,6 +76,29 @@ Public NotInheritable Class CustomPopupItem
         Return it
     End Function
 
+    ''' <summary>
+    ''' CURSOR cu puncte de OPRIRE: ca <see cref="Slider(String, String, Integer, Integer, Integer)"/>,
+    ''' plus o listă de valori la care degetul se lipește când trece pe lângă ele (vezi
+    ''' <see cref="SliderSnapPoints"/>). Punctele din afara intervalului se ignoră — nu pot fi
+    ''' atinse, deci n-ar fi decât o liniuță desenată degeaba.
+    ''' </summary>
+    Public Shared Function Slider(key As String, text As String,
+                                  minimum As Integer, maximum As Integer, value As Integer,
+                                  snapPoints As IEnumerable(Of Integer)) As CustomPopupItem
+        Dim it As CustomPopupItem = Slider(key, text, minimum, maximum, value)
+        If snapPoints IsNot Nothing Then
+            Dim jos As Integer = Math.Min(minimum, maximum)
+            Dim sus As Integer = Math.Max(minimum, maximum)
+            Dim curate As New List(Of Integer)()
+            For Each p As Integer In snapPoints
+                If p >= jos AndAlso p <= sus AndAlso Not curate.Contains(p) Then curate.Add(p)
+            Next
+            curate.Sort()
+            it.SliderSnapPoints = curate.ToArray()
+        End If
+        Return it
+    End Function
+
     <Category("K-BOT")>
     <Description("Identificatorul folosit de SelectedKey / ItemByKey. Trebuie să fie nevid și unic. Ignorat pe separatori.")>
     Public Property Key As String
@@ -144,6 +167,44 @@ Public NotInheritable Class CustomPopupItem
         End Set
     End Property
     Private _sliderValue As Integer
+
+    ''' <summary>
+    ''' Punctele de OPRIRE ale cursorului: valori la care degetul se lipește când tragerea trece
+    ''' la mai puțin de <see cref="SliderSnapTolerance"/> de ele, desenate ca liniuțe pe șină.
+    ''' Gol = cursor liber. Sunt ale unui cursor construit din cod (mărimea textului are 100 /
+    ''' 110 / 125), nu ale designerului: un tablou de întregi n-are editor de colecții util.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property SliderSnapPoints As Integer() = Array.Empty(Of Integer)()
+
+    ''' <summary>
+    ''' Cât de aproape (în unități ale cursorului) trebuie să fie degetul de un punct de oprire
+    ''' ca să se lipească de el. 3 la un cursor în procente: destul ca «102» să devină «100» fără
+    ''' să te lupți cu șina, prea puțin ca 105 să nu mai poată fi ales.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property SliderSnapTolerance As Integer = 3
+
+    ''' <summary>
+    ''' Valoarea trecută prin punctele de oprire: cel mai apropiat punct aflat în toleranță, sau
+    ''' valoarea neschimbată. Pură, ca să poată fi ținută fix fără ecran.
+    ''' </summary>
+    Public Function SnapSliderValue(value As Integer) As Integer
+        Dim puncte As Integer() = SliderSnapPoints
+        If puncte Is Nothing OrElse puncte.Length = 0 Then Return value
+        Dim celMaiApropiat As Integer = value
+        Dim distanta As Integer = Integer.MaxValue
+        For Each p As Integer In puncte
+            Dim d As Integer = Math.Abs(p - value)
+            If d <= SliderSnapTolerance AndAlso d < distanta Then
+                distanta = d
+                celMaiApropiat = p
+            End If
+        Next
+        Return celMaiApropiat
+    End Function
 
     ''' <summary>Poziția valorii pe șină, 0..1. 0 dacă intervalul e degenerat.</summary>
     <Browsable(False)>

@@ -500,7 +500,7 @@ Partial Class KbotForm
         capBar.Location = New Point(0, 0)
         capBar.Margin = New Padding(4, 5, 4, 5)
         capBar.Name = "capBar"
-        capBar.OptionButtonImage = My.Resources.Resources.settings__1_
+        capBar.OptionButtonImage = My.Resources.Resources.Icojam_Blueberry_Basic_Options_2_32
         capBar.OptionButtonPadding = 2
         capBar.ShowMaximize = True
         capBar.ShowMinimize = True

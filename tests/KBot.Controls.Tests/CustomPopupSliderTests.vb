@@ -396,6 +396,88 @@ Public Class CustomPopupSliderTests
                End Sub)
     End Sub
 
+    ' ── Punctele de oprire ───────────────────────────────────────────────────────
+
+    Private Shared Function MeniuCuOpriri() As CustomPopup
+        Return New CustomPopup(New List(Of CustomPopupItem) From {
+            CustomPopupItem.Slider("zoom", "Mărime text", 75, 200, 100, New Integer() {100, 110, 125}),
+            New CustomPopupItem("a", "&Alfa")
+        })
+    End Function
+
+    ''' <summary>
+    ''' Lipirea e pură și se poate ține fix fără ecran: în toleranță valoarea sare pe punct, în
+    ''' afara ei rămâne ce era. 105 e deliberat NElipit — e pasul de tastatură dintre 100 și 110.
+    ''' </summary>
+    <Theory>
+    <InlineData(100, 100)>
+    <InlineData(102, 100)>
+    <InlineData(98, 100)>
+    <InlineData(103, 100)>
+    <InlineData(105, 105)>
+    <InlineData(108, 110)>
+    <InlineData(113, 113)>
+    <InlineData(123, 125)>
+    <InlineData(150, 150)>
+    Public Sub Valoarea_se_lipeste_de_punctele_de_oprire(bruta As Integer, asteptat As Integer)
+        Dim it As CustomPopupItem = CustomPopupItem.Slider("z", "z", 75, 200, 100, New Integer() {100, 110, 125})
+        Assert.Equal(asteptat, it.SnapSliderValue(bruta))
+    End Sub
+
+    ''' <summary>Fără puncte de oprire, lipirea nu face nimic — cursorul rămâne liber.</summary>
+    <Fact>
+    Public Sub Fara_puncte_de_oprire_valoarea_ramane()
+        Dim it As CustomPopupItem = CustomPopupItem.Slider("z", "z", 75, 200, 100)
+        Assert.Empty(it.SliderSnapPoints)
+        Assert.Equal(102, it.SnapSliderValue(102))
+    End Sub
+
+    ''' <summary>
+    ''' Punctele din afara intervalului se aruncă, dublurile se strâng, iar lista iese sortată:
+    ''' un punct care nu poate fi atins n-ar fi decât o liniuță desenată degeaba.
+    ''' </summary>
+    <Fact>
+    Public Sub Punctele_de_oprire_se_curata_la_construire()
+        Dim it As CustomPopupItem = CustomPopupItem.Slider("z", "z", 75, 200, 100, New Integer() {125, 300, 100, 125, 50, 110})
+        Assert.Equal(New Integer() {100, 110, 125}, it.SliderSnapPoints)
+    End Sub
+
+    ''' <summary>
+    ''' Drumul mouse-ului trece prin lipire: un X care ar da 101 sau 102 pe o șină liberă
+    ''' așază degetul pe 100. Se caută X-ul pe șina reală, nu se presupune o lățime.
+    ''' </summary>
+    <Fact>
+    Public Sub Mouse_ul_se_lipeste_de_punctul_apropiat()
+        RunSta(Sub()
+                   Using m As CustomPopup = MeniuCuOpriri()
+                       Dim sina As Rectangle = m.SliderTrackBounds(0)
+                       Assert.False(sina.IsEmpty)
+
+                       Dim gasit As Boolean = False
+                       For x As Integer = sina.Left To sina.Right
+                           Dim v As Integer = m.SliderValueAt(0, x)
+                           ' Nicio valoare din vecinătatea imediată a unui punct nu scapă nelipită.
+                           Assert.False(v = 99 OrElse v = 101 OrElse v = 102 OrElse v = 109 OrElse v = 111 OrElse v = 124 OrElse v = 126,
+                                        "X=" & x & " a dat " & v & ", care trebuia lipit")
+                           If v = 100 Then gasit = True
+                       Next
+                       Assert.True(gasit, "100 trebuie să fie atins de pe șină")
+                   End Using
+               End Sub)
+    End Sub
+
+    ''' <summary>Săgețile NU se lipesc: pasul de 5 e al tastaturii și trebuie să rămână previzibil.</summary>
+    <Fact>
+    Public Sub Sagetile_nu_se_lipesc()
+        RunSta(Sub()
+                   Using m As CustomPopup = MeniuCuOpriri()
+                       m.SelectedIndex = 0
+                       Assert.True(m.NudgeSelectedSlider(CustomPopup.SliderKeyStep))
+                       Assert.Equal(105, m.Items(0).SliderValue)
+                   End Using
+               End Sub)
+    End Sub
+
     ' ── Meniul de temă ───────────────────────────────────────────────────────────
 
     ''' <summary>Cursorul de mărime stă în CAPUL meniului butonului de temă și poartă valoarea reală.</summary>
@@ -408,11 +490,9 @@ Public Class CustomPopupSliderTests
                        Assert.True(elemente(0).IsSlider)
                        Assert.Equal("@TextScale", elemente(0).Key)
                        Assert.Equal(CInt(Math.Round(AppScaling.TextScale * 100)), elemente(0).SliderValue)
-                       ' Felia 0052 a pus comutatorul de font între cursor și separator: amândouă
-                       ' rândurile de sus reglează același lucru — fontul cu care se măsoară
-                       ' fereastra — deci stau împreună, deasupra liniei care le desparte de scheme.
-                       Assert.Equal("@ThemeFont", elemente(1).Key)
-                       Assert.True(elemente(2).IsSeparator)
+                       ' Sub cursor vine direct linia care îl desparte de scheme: rândul «Font din
+                       ' temă» a plecat din meniu la 20.09.2026 (stă în «Setări» › «Temă»).
+                       Assert.True(elemente(1).IsSeparator)
                    End Using
                End Sub)
     End Sub

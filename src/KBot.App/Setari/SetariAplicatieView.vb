@@ -6,12 +6,14 @@ Imports KBot.Theming
 ''' <summary>
 ''' «Aplicație» (slice 0072): the global switches, how documents open, and the folders.
 '''
-''' <para><b>Three stores, one page.</b> The switches and the two host options go to
-''' <see cref="AppSettings"/> (<c>app_settings.json</c>, per user); the three Adobe viewer
-''' settings keep living in <c>kbot_paths.json</c> (per machine -- what Adobe is installed
-''' there) through <see cref="AdobeViewerSettings.Persist"/>, the same call the DDF view's
-''' combos make; the folders keep living in <c>settings.json</c> through
-''' <see cref="SetariFoldere.Salveaza"/>.</para>
+''' <para><b>Three stores, one page.</b> The switches and the Excel option go to
+''' <see cref="AppSettings"/> (<c>app_settings.json</c>, per user); the PDF engine keeps
+''' living in <c>kbot_paths.json</c> (per machine -- what Adobe is installed there) through
+''' <see cref="AdobeViewerSettings.Persist"/>, the same call the DDF view's combos make; the
+''' folders keep living in <c>settings.json</c> through <see cref="SetariFoldere.Salveaza"/>.
+''' The four settings that only matter for the HOSTED Adobe window are NOT on the page
+''' (slice 0072-01): choosing «Fereastră găzduită» opens <see cref="AdobeGazduireForm"/>,
+''' and the «Opțiuni…» button under the combo reopens it later.</para>
 '''
 ''' <para><b>Switches save on change; folders save on the button.</b> A switch is one value
 ''' and its effect is immediate. The folder grid is a set edited cell by cell, validated at
@@ -62,15 +64,6 @@ Public Class SetariAplicatieView
 
             For Each g As AdobePreviewEngine In New AdobePreviewEngine() {AdobePreviewEngine.WindowHost, AdobePreviewEngine.ActiveX}
                 cboAdobeMotor.Items.Add(New AdobeEngineItem(g))
-            Next
-            For Each m As AdobeViewerMode In New AdobeViewerMode() {AdobeViewerMode.Auto, AdobeViewerMode.Modern, AdobeViewerMode.Classic}
-                cboAdobeMod.Items.Add(New AdobeModeItem(m))
-            Next
-            For Each n As AdobeNewInstanceMode In New AdobeNewInstanceMode() {AdobeNewInstanceMode.Auto, AdobeNewInstanceMode.Da, AdobeNewInstanceMode.Nu}
-                cboAdobeInst.Items.Add(New AdobeNewInstanceItem(n))
-            Next
-            For Each d As AdobeDetachMode In New AdobeDetachMode() {AdobeDetachMode.KillProcess, AdobeDetachMode.CloseWindow}
-                cboAdobeDetach.Items.Add(New DetachItem(d))
             Next
             For Each r As ExcelRibbonMode In New ExcelRibbonMode() {ExcelRibbonMode.HideDockWindow, ExcelRibbonMode.Excel4Macro}
                 cboExcelRibbon.Items.Add(New RibbonItem(r))
@@ -166,10 +159,6 @@ Public Class SetariAplicatieView
         _suppress = True
         Try
             SelecteazaMotor(AdobeViewerSettings.CurrentEngine().Value)
-            SelecteazaMod(AdobeViewerSettings.CurrentMode().Value)
-            SelecteazaInstanta(AdobeViewerSettings.CurrentNewInstance().Value)
-            SelecteazaDetach(AdobeHostSettings.CurrentDetachMode().Value)
-            chkAdobePopup.Checked = AdobeHostSettings.CurrentPopupWatch()
             SelecteazaPanglica(OfficeHostSettings.CurrentExcelRibbon().Value)
             ActualizeazaDisponibilitateaAdobe()
         Finally
@@ -183,76 +172,66 @@ Public Class SetariAplicatieView
         Next
     End Sub
 
-    Private Sub SelecteazaMod(mode As AdobeViewerMode)
-        For i As Integer = 0 To cboAdobeMod.Items.Count - 1
-            If DirectCast(cboAdobeMod.Items(i), AdobeModeItem).Mode = mode Then cboAdobeMod.SelectedIndex = i : Return
-        Next
-    End Sub
-
-    Private Sub SelecteazaInstanta(mode As AdobeNewInstanceMode)
-        For i As Integer = 0 To cboAdobeInst.Items.Count - 1
-            If DirectCast(cboAdobeInst.Items(i), AdobeNewInstanceItem).Mode = mode Then cboAdobeInst.SelectedIndex = i : Return
-        Next
-    End Sub
-
-    Private Sub SelecteazaDetach(mode As AdobeDetachMode)
-        For i As Integer = 0 To cboAdobeDetach.Items.Count - 1
-            If DirectCast(cboAdobeDetach.Items(i), DetachItem).Mode = mode Then cboAdobeDetach.SelectedIndex = i : Return
-        Next
-    End Sub
-
     Private Sub SelecteazaPanglica(mode As ExcelRibbonMode)
         For i As Integer = 0 To cboExcelRibbon.Items.Count - 1
             If DirectCast(cboExcelRibbon.Items(i), RibbonItem).Mode = mode Then cboExcelRibbon.SelectedIndex = i : Return
         Next
     End Sub
 
-    ' «Mod» and «instanță nouă» describe the HOSTED WINDOW; on ActiveX they do nothing, and
-    ' the combos say so instead of looking like they act (same rule as DdfDocumentPage).
+    ' The «Opțiuni…» button is for the HOSTED WINDOW only; on ActiveX the four settings behind
+    ' it do nothing, and a button that opens a dialog which changes nothing would look like it
+    ' acts (same rule as DdfDocumentPage).
     Private Sub ActualizeazaDisponibilitateaAdobe()
-        Dim motor As AdobeEngineItem = TryCast(cboAdobeMotor.SelectedItem, AdobeEngineItem)
-        Dim peFereastra As Boolean = motor Is Nothing OrElse motor.Engine = AdobePreviewEngine.WindowHost
-        cboAdobeMod.Enabled = peFereastra
-        cboAdobeInst.Enabled = peFereastra
-        cboAdobeDetach.Enabled = peFereastra
-        chkAdobePopup.Enabled = peFereastra
-        lblAdobeMod.Enabled = peFereastra
-        lblAdobeInst.Enabled = peFereastra
-        lblAdobeDetach.Enabled = peFereastra
+        btnAdobeGazduire.Enabled = MotorulEsteFereastra()
     End Sub
 
-    ' The three viewer combos save together into kbot_paths.json (they describe one surface).
-    Private Sub AdobeViewer_Changed(sender As Object, e As EventArgs) _
-        Handles cboAdobeMotor.SelectedIndexChanged, cboAdobeMod.SelectedIndexChanged, cboAdobeInst.SelectedIndexChanged
+    Private Function MotorulEsteFereastra() As Boolean
+        Dim motor As AdobeEngineItem = TryCast(cboAdobeMotor.SelectedItem, AdobeEngineItem)
+        Return motor Is Nothing OrElse motor.Engine = AdobePreviewEngine.WindowHost
+    End Function
+
+    ''' <summary>
+    ''' The engine saves into kbot_paths.json next to the two values it does not own (Persist
+    ''' writes all three; they are read back from the store, untouched). Choosing the hosted
+    ''' window then opens the dialog with its four settings -- the operator's request: they
+    ''' appear the moment that engine is picked, not as rows sitting on the page.
+    ''' </summary>
+    Private Sub CboAdobeMotor_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboAdobeMotor.SelectedIndexChanged
         Try
             If _suppress Then Return
             Dim motor As AdobeEngineItem = TryCast(cboAdobeMotor.SelectedItem, AdobeEngineItem)
-            Dim mode As AdobeModeItem = TryCast(cboAdobeMod.SelectedItem, AdobeModeItem)
-            Dim inst As AdobeNewInstanceItem = TryCast(cboAdobeInst.SelectedItem, AdobeNewInstanceItem)
-            If motor Is Nothing OrElse mode Is Nothing OrElse inst Is Nothing Then Return
+            If motor Is Nothing Then Return
             ActualizeazaDisponibilitateaAdobe()
 
-            Dim salvat As Boolean = AdobeViewerSettings.Persist(mode.Mode, inst.Mode, motor.Engine)
+            Dim salvat As Boolean = AdobeViewerSettings.Persist(AdobeViewerSettings.CurrentMode().Value,
+                                                                AdobeViewerSettings.CurrentNewInstance().Value,
+                                                                motor.Engine)
             RaiseEvent StatusChanged(If(salvat,
-                "Setările Adobe au fost salvate (kbot_paths.json). Documentul următor le folosește.",
-                "Setările Adobe s-au aplicat pentru sesiunea curentă, dar nu au putut fi salvate. Detalii în jurnalul de erori."))
+                "Motorul PDF a fost salvat (kbot_paths.json). Documentul următor îl folosește.",
+                "Motorul PDF s-a aplicat pentru sesiunea curentă, dar nu a putut fi salvat. Detalii în jurnalul de erori."))
+
+            If motor.Engine = AdobePreviewEngine.WindowHost Then DeschideOptiunileGazduirii()
         Catch ex As Exception
-            GlobalErrorLog.Write("SetariAplicatieView.AdobeViewer_Changed", ex)
+            GlobalErrorLog.Write("SetariAplicatieView.CboAdobeMotor_SelectedIndexChanged", ex)
             RaiseEvent StatusChanged("Setările Adobe nu au putut fi salvate: " & ex.Message)
         End Try
     End Sub
 
-    Private Sub CboAdobeDetach_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboAdobeDetach.SelectedIndexChanged
-        Dim item As DetachItem = TryCast(cboAdobeDetach.SelectedItem, DetachItem)
-        If item Is Nothing Then Return
-        SalveazaComutator(Sub(s) s.AdobeDetachMode = AdobeHostSettings.DetachModeToText(item.Mode),
-                          "Eliberarea ferestrei Adobe: " & item.ToString() & ". Se aplică documentului următor.")
+    Private Sub BtnAdobeGazduire_Click(sender As Object, e As EventArgs) Handles btnAdobeGazduire.Click
+        Try
+            DeschideOptiunileGazduirii()
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariAplicatieView.BtnAdobeGazduire_Click", ex)
+            RaiseEvent StatusChanged("Fereastra de opțiuni nu a putut fi deschisă: " & ex.Message)
+        End Try
     End Sub
 
-    Private Sub ChkAdobePopup_CheckedChanged(sender As Object, e As EventArgs) Handles chkAdobePopup.CheckedChanged
-        SalveazaComutator(Sub(s) s.AdobePopupWatch = chkAdobePopup.Checked,
-                          If(chkAdobePopup.Checked, "Fereastra plutitoare Adobe se ascunde.", "Fereastra plutitoare Adobe rămâne vizibilă.") &
-                          " Se aplică documentului următor.")
+    ' Modal, owned by the settings window; the dialog writes its own stores and hands back one
+    ' line for the band. Abandoned = nothing changed, and the band says nothing.
+    Private Sub DeschideOptiunileGazduirii()
+        Using dlg As New AdobeGazduireForm()
+            If dlg.ShowDialog(FindForm()) = DialogResult.OK Then RaiseEvent StatusChanged(dlg.Rezumat)
+        End Using
     End Sub
 
     Private Sub CboExcelRibbon_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboExcelRibbon.SelectedIndexChanged
@@ -338,12 +317,12 @@ Public Class SetariAplicatieView
             tlyComutatoare.BackColor = p.SurfaceAltColor
             tlyDocumente.BackColor = p.SurfaceAltColor
             tlyFoldereButoane.BackColor = p.SurfaceAltColor
-            For Each caption As Label In New Label() {lblVerbose, lblAdobeMotor, lblAdobeMod, lblAdobeInst,
-                                                      lblAdobeDetach, lblExcelRibbon, lblFoldereHint, lblFoldereStare}
+            For Each caption As Label In New Label() {lblVerbose, lblAdobeMotor, lblExcelRibbon, lblFoldereHint, lblFoldereStare}
                 caption.ForeColor = p.TextDimColor
                 caption.BackColor = Color.Transparent
             Next
             ButtonStyles.ApplyPrimary(btnSalveazaFoldere, scheme)
+            ButtonStyles.ApplySecondary(btnAdobeGazduire, scheme)
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.ApplyTheme", ex)
         End Try
@@ -365,18 +344,6 @@ Public Class SetariAplicatieView
         End Function
     End Class
 
-    Private NotInheritable Class DetachItem
-        Public ReadOnly Property Mode As AdobeDetachMode
-
-        Public Sub New(mode As AdobeDetachMode)
-            Me.Mode = mode
-        End Sub
-
-        Public Overrides Function ToString() As String
-            Return AdobeHostSettings.DetachModeLabel(Mode)
-        End Function
-    End Class
-
     Private NotInheritable Class RibbonItem
         Public ReadOnly Property Mode As ExcelRibbonMode
 
@@ -388,5 +355,4 @@ Public Class SetariAplicatieView
             Return OfficeHostSettings.ExcelRibbonLabel(Mode)
         End Function
     End Class
-
 End Class

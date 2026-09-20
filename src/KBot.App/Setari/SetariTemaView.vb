@@ -231,6 +231,7 @@ Public Class SetariTemaView
             trkTextScale.Minimum = CInt(Math.Round(AppScaling.MinTextScale * 100))
             trkTextScale.Maximum = CInt(Math.Round(AppScaling.MaxTextScale * 100))
             trkTextScale.Value = ProcenteDinScara(AppScaling.TextScale)
+            chkThemeFont.Checked = ThemeManager.WritesFormFont
             rdoFitScaled.Checked = (ThemeFormFit.Baseline = FormFitBaseline.Scaled)
             rdoFitRaw.Checked = (ThemeFormFit.Baseline = FormFitBaseline.DesignerRaw)
         Finally
@@ -267,8 +268,74 @@ Public Class SetariTemaView
         lblTextScaleValue.Text = trkTextScale.Value.ToString(Globalization.CultureInfo.CurrentCulture) & "%"
     End Sub
 
+    ''' <summary>
+    ''' The snap points of the slider, the same three the caption-bar menu uses
+    ''' (<see cref="KBotCaptionBar.TextScaleSnapPoints"/>): 100 / 110 / 125 %. A drag that
+    ''' passes within <see cref="SnapTolerance"/> of one lands on it; the keyboard steps (5)
+    ''' are left alone, they hit the points by themselves.
+    ''' </summary>
+    Private Shared ReadOnly SnapPoints As Integer() = KBotCaptionBar.TextScaleSnapPoints
+    Private Const SnapTolerance As Integer = 3
+
+    ' Set while the handler itself moves the thumb onto a snap point, so the nested
+    ' ValueChanged does not re-enter the snapping.
+    Private _snapping As Boolean
+
+    ' Snapping happens on Scroll (the mouse/keyboard gesture), not on ValueChanged: the value
+    ' written from the store at load must land exactly where the store says, snap or not.
+    Private Sub TrkTextScale_Scroll(sender As Object, e As EventArgs) Handles trkTextScale.Scroll
+        Try
+            If _suppress OrElse _snapping Then Return
+            Dim lipita As Integer = Lipeste(trkTextScale.Value)
+            If lipita <> trkTextScale.Value Then
+                _snapping = True
+                Try
+                    trkTextScale.Value = lipita
+                Finally
+                    _snapping = False
+                End Try
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariTemaView.TrkTextScale_Scroll", ex)
+        End Try
+    End Sub
+
+    ''' <summary>The value pulled onto the nearest snap point within tolerance, or itself. Pure.</summary>
+    Friend Shared Function Lipeste(value As Integer) As Integer
+        Dim celMaiApropiat As Integer = value
+        Dim distanta As Integer = Integer.MaxValue
+        For Each p As Integer In SnapPoints
+            Dim d As Integer = Math.Abs(p - value)
+            If d <= SnapTolerance AndAlso d < distanta Then
+                distanta = d
+                celMaiApropiat = p
+            End If
+        Next
+        Return celMaiApropiat
+    End Function
+
     Private Sub TrkTextScale_ValueChanged(sender As Object, e As EventArgs) Handles trkTextScale.ValueChanged
         ActualizeazaEticheta()
+    End Sub
+
+    ''' <summary>
+    ''' «Font din temă» -- the switch that used to be a row of the caption-bar theme menu
+    ''' (slice 0052) and moved here on 20.09.2026. The setter persists, puts the designer font
+    ''' back on the open windows when turned off, and raises ThemeChanged; the menu's slider
+    ''' follows it (hidden while the theme does not write the font).
+    ''' </summary>
+    Private Sub ChkThemeFont_CheckedChanged(sender As Object, e As EventArgs) Handles chkThemeFont.CheckedChanged
+        Try
+            If _suppress Then Return
+            If chkThemeFont.Checked = ThemeManager.WritesFormFont Then Return
+            ThemeManager.WritesFormFont = chkThemeFont.Checked
+            RaiseEvent StatusChanged(If(chkThemeFont.Checked,
+                                        "Tema scrie fontul de bază pe ferestre; cursorul de mărime are efect.",
+                                        "Ferestrele păstrează fontul din designer; cursorul de mărime nu se mai arată în meniul de temă."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariTemaView.ChkThemeFont_CheckedChanged", ex)
+            ShowError("Schimbarea fontului din temă a eșuat.", ex)
+        End Try
     End Sub
 
     ' The size is applied at the END of the gesture (mouse up / key up / focus lost), never
@@ -346,6 +413,8 @@ Public Class SetariTemaView
                 caption.BackColor = Color.Transparent
             Next
             lblTextScaleValue.ForeColor = p.TextColor
+            chkThemeFont.ForeColor = p.TextColor
+            chkThemeFont.BackColor = Color.Transparent
             grid.BackColor = p.SurfaceColor
             grid.ViewBackColor = p.InputBackColor
             grid.ViewForeColor = p.InputTextColor

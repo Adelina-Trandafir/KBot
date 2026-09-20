@@ -36,6 +36,7 @@ Partial Class SetariTemaView
         lblTextScale = New Label()
         trkTextScale = New TrackBar()
         lblTextScaleValue = New Label()
+        chkThemeFont = New CheckBox()
         lblFitBaseline = New Label()
         rdoFitScaled = New RadioButton()
         rdoFitRaw = New RadioButton()
@@ -170,6 +171,7 @@ Partial Class SetariTemaView
         tlyScaling.Controls.Add(lblTextScale, 0, 3)
         tlyScaling.Controls.Add(trkTextScale, 1, 3)
         tlyScaling.Controls.Add(lblTextScaleValue, 2, 3)
+        tlyScaling.Controls.Add(chkThemeFont, 3, 3)
         tlyScaling.Controls.Add(lblFitBaseline, 0, 4)
         tlyScaling.Controls.Add(rdoFitScaled, 1, 4)
         tlyScaling.Controls.Add(rdoFitRaw, 1, 5)
@@ -301,7 +303,7 @@ Partial Class SetariTemaView
         trkTextScale.TickStyle = TickStyle.BottomRight
         trkTextScale.Value = 100
         tips.SetToolTipHeader(trkTextScale, "Mărimea textului și a controalelor")
-        tips.SetToolTipText(trkTextScale, "Mărește literele ȘI controalele din jurul lor." & vbLf & "Același cursor stă și în meniul butonului de temă.")
+        tips.SetToolTipText(trkTextScale, "Mărește literele ȘI controalele din jurul lor." & vbLf & "Cursorul se lipește la 100 %, 110 % și 125 %; același cursor stă și în meniul butonului de temă.")
         '
         ' lblTextScaleValue
         '
@@ -313,6 +315,22 @@ Partial Class SetariTemaView
         lblTextScaleValue.TabIndex = 8
         lblTextScaleValue.Text = "100%"
         lblTextScaleValue.TextAlign = ContentAlignment.MiddleRight
+        '
+        ' chkThemeFont
+        '
+        chkThemeFont.Anchor = AnchorStyles.Left
+        chkThemeFont.AutoSize = True
+        chkThemeFont.Checked = True
+        chkThemeFont.CheckState = CheckState.Checked
+        chkThemeFont.Location = New Point(568, 144)
+        chkThemeFont.Margin = New Padding(12, 0, 4, 8)
+        chkThemeFont.Name = "chkThemeFont"
+        chkThemeFont.Size = New Size(180, 29)
+        chkThemeFont.TabIndex = 13
+        chkThemeFont.Text = "Font din temă"
+        chkThemeFont.UseVisualStyleBackColor = True
+        tips.SetToolTipHeader(chkThemeFont, "Font din temă")
+        tips.SetToolTipText(chkThemeFont, "Bifat: tema scrie fontul ei de bază pe fiecare fereastră, iar cursorul de mărime are efect." & vbLf & "Debifat: ferestrele rămân cu fontul din designer, iar cursorul dispare din meniul butonului de temă.")
         '
         ' lblFitBaseline
         '
@@ -405,6 +423,7 @@ Partial Class SetariTemaView
     Friend WithEvents lblTextScale As Label
     Friend WithEvents trkTextScale As TrackBar
     Friend WithEvents lblTextScaleValue As Label
+    Friend WithEvents chkThemeFont As CheckBox
     Friend WithEvents lblFitBaseline As Label
     Friend WithEvents rdoFitScaled As RadioButton
     Friend WithEvents rdoFitRaw As RadioButton

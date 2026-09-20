@@ -180,8 +180,6 @@ Partial Class MigratorForm
         capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
         capBar.ShowMaximize = True
-        capBar.ShowThemeEditor = False
-        capBar.ShowThemeOptions = False
         capBar.Size = New Size(1497, 67)
         capBar.TabIndex = 4
         capBar.TabStop = False

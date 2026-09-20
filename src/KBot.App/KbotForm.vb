@@ -54,10 +54,6 @@ Public Class KbotForm
     ' Fereastra nemodală «Informații interne» (flag-urile Are* ale nodului selectat).
     ' Nothing / IsDisposed = închisă; se re-deschide la nevoie.
     Private _infoForm As InternalInfoForm
-    ' Fereastra nemodală de jurnale, deschisă din meniul butonului de opțiuni (felia 0031-04).
-    ' Nothing / IsDisposed = închisă; se re-deschide la nevoie, ca _infoForm.
-    Private _logViewer As LogViewerForm
-
     ' Coordonatorul FOREXE (felia 0034) — singurul care vorbește cu runner-ul. Banda din
     ' subsol și consola se leagă la el; shell-ul nu mai orchestrează nimic singur.
     Private ReadOnly _controller As ForexeController
@@ -2377,19 +2373,22 @@ Public Class KbotForm
 
     ' Cheile rândurilor din meniul butonului de opțiuni.
     Private Const OPT_JURNAL As String = "jurnal"
-    ' Felia 0034: vechiul btnSinc din subsol a devenit rând de meniu (compatibilitate).
-    Private Const OPT_SINCRONIZARE As String = "sincronizare"
     ' Slice 0072: the settings window.
     Private Const OPT_SETARI As String = "setari"
 
     ''' <summary>
-    ''' Butonul de opțiuni din bara de titlu desfășoară meniul shell-ului — un <c>CustomPopup</c>
-    ''' desenat de noi, deci tematizat, exact ca meniul de teme al aceleiași bare.
+    ''' The options button of the caption bar: TWO rows at most, «Arată jurnal» and «Setări…»,
+    ''' each with its icon and a separator between them -- the operator's request of
+    ''' 20.09.2026 («the setari button will only show the Jurnal (if enabled from setari) and
+    ''' the Setari option»). The menu is a <c>CustomPopup</c>, painted by us, so it is themed
+    ''' exactly like the theme menu of the same bar.
     '''
-    ''' <para>Azi are un singur rând, «Arată jurnal». Poarta lui e
-    ''' <c>FeatureSwitches.VizualizatorJurnaleActiv</c> — comutatorul intern, mereu aprins deocamdată.
-    ''' Când e stins, meniul NU se deschide deloc: un meniu cu singurul lui rând stins ar fi o
-    ''' fereastră goală agățată de buton.</para>
+    ''' <para>«Arată jurnal» is gated by <c>FeatureSwitches.VizualizatorJurnaleActiv</c> (the
+    ''' operator's own switch on the «Aplicație» page). When it is off the menu has one row
+    ''' left, and a one-row menu is a detour: the click opens the settings window directly.</para>
+    '''
+    ''' <para>«Sincronizare (server)» left the menu with this request; <see cref="SincronizeazaAsync"/>
+    ''' stays, unreachable from the shell until the operator asks for a new home for it.</para>
     ''' </summary>
     Private Sub CapBar_OptionButtonClick(sender As Object, e As EventArgs) Handles capBar.OptionButtonClick
         Try
@@ -2397,17 +2396,22 @@ Public Class KbotForm
             ' de dedesubt), deci fără garda asta l-am redeschide instantaneu.
             If CustomPopup.ClosedJustNow Then Return
 
+            If Not FeatureSwitches.VizualizatorJurnaleActiv Then
+                SetariForm.ShowFor(Me, _setariFactory)
+                Return
+            End If
+
             Dim ancora As Rectangle = capBar.OptionButtonBounds
             If ancora.IsEmpty Then Return
 
-            Dim elemente As New List(Of CustomPopupItem)()
-            If FeatureSwitches.VizualizatorJurnaleActiv Then
-                ' «&A» = litera de acces, ca la orice meniu de sistem.
-                elemente.Add(New CustomPopupItem(OPT_JURNAL, "&Arată jurnal"))
-            End If
-            elemente.Add(New CustomPopupItem(OPT_SINCRONIZARE, "&Sincronizare (server)"))
-            elemente.Add(New CustomPopupItem(OPT_SETARI, "S&etări…"))
-            If elemente.Count = 0 Then Return
+            ' «&A» = litera de acces, ca la orice meniu de sistem. The icons are the same two
+            ' the settings window uses for its nav rows, so the menu and the window agree.
+            Dim elemente As New List(Of CustomPopupItem) From {
+                New CustomPopupItem(OPT_JURNAL, "&Arată jurnal",
+                                    My.Resources.Resources.Papirus_Team_Papirus_Apps_Accessories_text_editor_512_resized),
+                CustomPopupItem.Separator(),
+                New CustomPopupItem(OPT_SETARI, "S&etări…", My.Resources.Resources.settings__1_)
+            }
 
             ' NU în «Using»: arătat nemodal, popup-ul se eliberează singur la închidere.
             Dim meniu As New CustomPopup(elemente)
@@ -2419,13 +2423,11 @@ Public Class KbotForm
         End Try
     End Sub
 
-    Private Async Sub MeniuOptiuni_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
+    Private Sub MeniuOptiuni_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
         Try
             Select Case e.Item.Key
                 Case OPT_JURNAL
                     ShowLog()
-                Case OPT_SINCRONIZARE
-                    Await SincronizeazaAsync()
                 Case OPT_SETARI
                     SetariForm.ShowFor(Me, _setariFactory)
                 Case Else
@@ -2440,17 +2442,13 @@ Public Class KbotForm
     End Sub
 
     ''' <summary>
-    ''' Deschide vizualizatorul de jurnale NEMODAL — operatorul trebuie să poată citi jurnalul și să
-    ''' lucreze în shell în același timp. O singură fereastră: dacă e deja deschisă, se aduce în
-    ''' față, ca <c>InternalInfoForm</c>.
+    ''' Opens the log viewer: since slice 0072-01 it is the «Jurnal» page of the settings
+    ''' window, so the same modeless, one-instance window is shown (or brought to the front)
+    ''' and switched to that page. The operator can read the log and work in the shell at the
+    ''' same time, as before.
     ''' </summary>
     Private Sub ShowLog()
-        If _logViewer Is Nothing OrElse _logViewer.IsDisposed Then
-            _logViewer = New LogViewerForm(_apiClient)
-            AddHandler _logViewer.FormClosed, Sub() _logViewer = Nothing
-        End If
-        _logViewer.Show()
-        _logViewer.BringToFront()
+        SetariForm.ShowFor(Me, _setariFactory).ShowPage("jurnal")
     End Sub
 
     Private Async Sub forexeFooter_ShowBrowserRequested(sender As Object, e As EventArgs) Handles forexeFooter.ShowBrowserRequested

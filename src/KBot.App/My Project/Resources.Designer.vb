@@ -633,6 +633,16 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized resource of type System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property Icojam_Blueberry_Basic_Options_2_32() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("Icojam-Blueberry-Basic-Options-2.32", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property Iconoir_Team_Iconoir_Sidebar_collapse_16() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("Iconoir-Team-Iconoir-Sidebar-collapse.16", resourceCulture)
@@ -666,6 +676,16 @@ Namespace My.Resources
         Friend ReadOnly Property kbot_64() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("kbot_64", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property Papirus_Team_Papirus_Apps_Accessories_text_editor_512_resized() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("Papirus-Team-Papirus-Apps-Accessories-text-editor.512_resized", resourceCulture)
                 Return CType(obj,System.Drawing.Bitmap)
             End Get
         End Property

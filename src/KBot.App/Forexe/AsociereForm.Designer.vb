@@ -585,8 +585,6 @@ Partial Class AsociereForm
         capBar.OptionButtonPadding = 0
         capBar.ShowMaximize = True
         capBar.ShowTextScaleSlider = False
-        capBar.ShowThemeEditor = False
-        capBar.ShowThemeOptions = False
         capBar.Size = New Size(1082, 67)
         capBar.TabIndex = 1
         capBar.TabStop = False

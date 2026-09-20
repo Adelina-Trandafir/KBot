@@ -19,8 +19,8 @@ Imports KBot.Theming
 ''' formularul gazdă;</item>
 ''' <item>stă imediat la stânga cutiei de control, iar butonul de opțiuni se mută cu un slot mai
 ''' la stânga când e aprins — două butoane nu pot împărți un slot;</item>
-''' <item>meniul NU arată schema activă și își pierde ultimul rând («Stiluri...») când
-''' <c>ShowThemeEditor</c> e stins;</item>
+''' <item>meniul NU arată schema activă și nu are decât cursorul de mărime, o linie și schemele —
+''' niciun rând de unealtă (20.09.2026);</item>
 ''' <item>butonul rămâne aprins cât e meniul lui deschis — și NU se aprinde când meniul l-a
 ''' desfășurat butonul de opțiuni (sinkul <c>IPopupAnchor</c> e comun pentru amândouă).</item>
 ''' </list>
@@ -114,14 +114,10 @@ Public Class KBotCaptionBarThemeButtonTests
         RunSta(Sub()
                    Using bar As KBotCaptionBar = Bara()
                        Dim elemente = bar.ConstruiesteElementeleMeniului()
-                       ' Nu sunt scheme: cele DOUĂ rânduri de unealtă («Opțiuni temă...» din felia
-                       ' 0036 și «Stiluri...»), cursorul de mărime (0036-01) și comutatorul de
-                       ' font (0052).
+                       ' Nu sunt scheme: cursorul de mărime (0036-01) și linia de sub el. Rândurile
+                       ' de unealtă au plecat din meniu la 20.09.2026.
                        Dim scheme = elemente.Where(Function(i) Not i.IsSeparator AndAlso
-                                                               Not i.IsSlider AndAlso
-                                                               i.Key <> "@ThemeEditor" AndAlso
-                                                               i.Key <> "@ThemeOptions" AndAlso
-                                                               i.Key <> "@ThemeFont").ToList()
+                                                               Not i.IsSlider).ToList()
 
                        Assert.Equal(ThemeManager.AvailableSchemes.Count - 1, scheme.Count)
                        Assert.DoesNotContain(scheme,
@@ -149,80 +145,60 @@ Public Class KBotCaptionBarThemeButtonTests
     End Sub
 
     ''' <summary>
-    ''' «Show Theme Editor» stinge ULTIMUL rând al meniului. Din felia 0036 separatorul NU mai
-    ''' pleacă odată cu el: aparține grupului de unelte, iar «Opțiuni temă...» a rămas aprins.
+    ''' Meniul are DOAR cursorul de mărime, o linie și schemele — niciun rând de unealtă
+    ''' (cererea operatorului din 20.09.2026: «that's all»). Ce reglau «Font din temă»,
+    ''' «Opțiuni temă...» și «Stiluri...» stă în fereastra «Setări».
     ''' </summary>
     <Fact>
-    Public Sub Comutatorul_editorului_scoate_ultimul_rand()
+    Public Sub Meniul_are_doar_cursorul_si_schemele()
         RunSta(Sub()
                    Using bar As KBotCaptionBar = Bara()
-                       Assert.True(bar.ShowThemeEditor, "implicit editorul e în meniu")
+                       Dim elemente = bar.ConstruiesteElementeleMeniului()
 
-                       Dim cuEditor = bar.ConstruiesteElementeleMeniului()
-                       Assert.True(cuEditor.Last().Text.Contains("Stiluri"))
-                       Assert.True(cuEditor(cuEditor.Count - 2).Text.Contains("Opțiuni temă"))
-                       Assert.True(cuEditor(cuEditor.Count - 3).IsSeparator)
-
-                       bar.ShowThemeEditor = False
-                       Dim faraEditor = bar.ConstruiesteElementeleMeniului()
-                       Assert.DoesNotContain(faraEditor, Function(i) i.Text IsNot Nothing AndAlso
-                                                                    i.Text.Contains("Stiluri"))
-                       ' Separatorul rămâne: mai are ce despărți.
-                       Assert.Contains(faraEditor, Function(i) i.IsSeparator)
-                       Assert.Equal(cuEditor.Count - 1, faraEditor.Count)
+                       Assert.DoesNotContain(elemente, Function(i) i.Key IsNot Nothing AndAlso
+                                                                  i.Key.StartsWith("@", StringComparison.Ordinal) AndAlso
+                                                                  Not i.IsSlider)
+                       Assert.DoesNotContain(elemente, Function(i) i.Text IsNot Nothing AndAlso
+                                                                  (i.Text.Contains("Stiluri") OrElse
+                                                                   i.Text.Contains("Opțiuni temă") OrElse
+                                                                   i.Text.Contains("Font din temă")))
+                       ' Cel mult o linie, cea dintre cursor și scheme.
+                       Assert.True(elemente.Where(Function(i) i.IsSeparator).Count() <= 1)
+                       Assert.False(elemente(elemente.Count - 1).IsSeparator,
+                                    "meniul nu are voie să se termine cu o linie")
                    End Using
                End Sub)
     End Sub
 
     ''' <summary>
-    ''' Cele două unelte au comutatoare SEPARATE (felia 0036): fac lucruri diferite — una schimbă
-    ''' tema, cealaltă pune excepții pe controalele unei ferestre — deci o fereastră care o vrea
-    ''' pe una n-are de ce s-o capete și pe cealaltă.
+    ''' Cursorul de mărime poartă punctele de oprire 100 / 110 / 125 — aceleași în meniu și în
+    ''' pagina «Temă» a ferestrei «Setări», ca degetul să se lipească la fel peste tot.
     ''' </summary>
     <Fact>
-    Public Sub Comutatorul_optiunilor_e_separat_de_al_editorului()
+    Public Sub Cursorul_de_marime_are_punctele_de_oprire()
         RunSta(Sub()
                    Using bar As KBotCaptionBar = Bara()
-                       Assert.True(bar.ShowThemeOptions, "implicit opțiunile sunt în meniu")
-
-                       bar.ShowThemeOptions = False
-                       Dim faraOptiuni = bar.ConstruiesteElementeleMeniului()
-                       Assert.DoesNotContain(faraOptiuni, Function(i) i.Key = "@ThemeOptions")
-                       Assert.Contains(faraOptiuni, Function(i) i.Key = "@ThemeEditor")
-                       Assert.Contains(faraOptiuni, Function(i) i.IsSeparator)
+                       Dim cursor = bar.ConstruiesteElementeleMeniului().FirstOrDefault(Function(i) i.IsSlider)
+                       If cursor Is Nothing Then Return   ' tema nu scrie fontul pe mașina asta: cursorul lipsește prin contract
+                       Assert.Equal(New Integer() {100, 110, 125}, cursor.SliderSnapPoints)
+                       Assert.Equal(KBotCaptionBar.TextScaleSnapPoints, cursor.SliderSnapPoints)
                    End Using
                End Sub)
     End Sub
 
     ''' <summary>
-    ''' Stins TOT ce se poate stinge, pleacă și separatorul UNELTELOR: o linie care nu mai desparte
-    ''' nimic e o linie degeaba, iar meniul s-ar termina cu ea.
-    '''
-    ''' <para>Ce NU pleacă e rândul «Font din temă» și linia lui (felia 0052). Rândul acela e
-    ''' singura cale prin care operatorul poate arăta cu degetul că fontul temei nu e cauza unei
-    ''' ferestre care s-a redimensionat — un comutator care poate fi ascuns tocmai de formularul
-    ''' pe care s-ar investiga problema n-ar fi bun la nimic. Deci meniul nu mai poate rămâne fără
-    ''' niciun separator; poate rămâne cu exact unul.</para>
+    ''' Stins cursorul, pleacă și linia lui: rămân doar schemele, iar meniul nu începe cu o linie.
     ''' </summary>
     <Fact>
-    Public Sub Fara_nicio_unealta_pleaca_separatorul_uneltelor()
+    Public Sub Fara_cursor_raman_doar_schemele()
         RunSta(Sub()
                    Using bar As KBotCaptionBar = Bara()
-                       Dim complet = bar.ConstruiesteElementeleMeniului()
-
                        bar.ShowTextScaleSlider = False
-                       bar.ShowThemeOptions = False
-                       bar.ShowThemeEditor = False
                        Dim doarScheme = bar.ConstruiesteElementeleMeniului()
 
-                       ' Rămâne linia de sub «Font din temă», și doar ea.
-                       ' .Where(...).Count(), nu .Count(...): pe un List(Of T), «Count» se rezolvă
-                       ' la proprietatea listei, nu la extensia LINQ, iar compilatorul o respinge.
-                       Assert.Equal(1, doarScheme.Where(Function(i) i.IsSeparator).Count())
-                       Assert.False(doarScheme(doarScheme.Count - 1).IsSeparator,
-                                    "meniul nu are voie să se termine cu o linie")
-                       ' Au plecat: cursorul, separatorul uneltelor și cele două unelte.
-                       Assert.Equal(complet.Count - 4, doarScheme.Count)
+                       Assert.DoesNotContain(doarScheme, Function(i) i.IsSlider)
+                       Assert.DoesNotContain(doarScheme, Function(i) i.IsSeparator)
+                       Assert.Equal(ThemeManager.AvailableSchemes.Count - 1, doarScheme.Count)
                    End Using
                End Sub)
     End Sub
@@ -292,8 +268,6 @@ Public Class KBotCaptionBarThemeButtonTests
     ''' </summary>
     <Theory>
     <InlineData(NameOf(KBotCaptionBar.ShowThemeButton))>
-    <InlineData(NameOf(KBotCaptionBar.ShowThemeEditor))>
-    <InlineData(NameOf(KBotCaptionBar.ShowThemeOptions))>
     <InlineData(NameOf(KBotCaptionBar.ShowTextScaleSlider))>
     <InlineData(NameOf(KBotCaptionBar.ThemeButtonImage))>
     <InlineData(NameOf(KBotCaptionBar.ThemeButtonPadding))>
@@ -314,13 +288,13 @@ Public Class KBotCaptionBarThemeButtonTests
         RunSta(Sub()
                    Using bar As New KBotCaptionBar()
                        bar.ShowThemeButton = True
-                       bar.ShowThemeEditor = False
+                       bar.ShowTextScaleSlider = False
                        bar.ThemeButtonPadding = 6
                        bar.TintThemeButtonImage = False
 
                        Dim props As PropertyDescriptorCollection = TypeDescriptor.GetProperties(bar)
                        Assert.True(props(NameOf(KBotCaptionBar.ShowThemeButton)).ShouldSerializeValue(bar))
-                       Assert.True(props(NameOf(KBotCaptionBar.ShowThemeEditor)).ShouldSerializeValue(bar))
+                       Assert.True(props(NameOf(KBotCaptionBar.ShowTextScaleSlider)).ShouldSerializeValue(bar))
                        Assert.True(props(NameOf(KBotCaptionBar.ThemeButtonPadding)).ShouldSerializeValue(bar))
                        Assert.True(props(NameOf(KBotCaptionBar.TintThemeButtonImage)).ShouldSerializeValue(bar))
 

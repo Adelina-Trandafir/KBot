@@ -298,6 +298,9 @@
   <data name="FX_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="Semlabs-Web-Blog-Earth-search.48_resized" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Semlabs-Web-Blog-Earth-search.48_resized.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="kbot_64" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\kbot_64.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -318,6 +321,9 @@
   </data>
   <data name="FX_WHITE_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_WHITE_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Papirus-Team-Papirus-Apps-Accessories-text-editor.512_resized" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Papirus-Team-Papirus-Apps-Accessories-text-editor.512_resized.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Fatcow-Farm-Fresh-Check-boxes.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Fatcow-Farm-Fresh-Check-boxes.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -346,7 +352,7 @@
   <data name="expand_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\expand_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Semlabs-Web-Blog-Earth-search.48_resized" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Semlabs-Web-Blog-Earth-search.48_resized.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="Icojam-Blueberry-Basic-Options-2.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Icojam-Blueberry-Basic-Options-2.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>
