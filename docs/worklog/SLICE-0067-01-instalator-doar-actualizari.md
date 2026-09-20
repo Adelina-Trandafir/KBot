@@ -62,11 +62,40 @@ scrie `[Setup]`; `DefaultDirName` la fel (`MyDefaultDir`).
 preprocesor ca directivă («Unknown preprocessor directive»); `#13#10` stă mereu în continuarea unei
 linii.
 
+### 4. A doua trecere (aceeași zi): updater-ul scrie și `DisplayVersion`
+
+Cererea: «make the updater write DisplayVersion too». `src\KBot.Updater\InstallRegistry.vb` (nou):
+
+- **Găsește intrarea** `HKLM\…\Uninstall\{AppId}_is1` (vederea pe 64, apoi pe 32) și o atinge
+  DOAR dacă `InstallLocation` e chiar folderul actualizat (`SameFolder`: fără majuscule, fără
+  bara finală) — o a doua copie a aplicației, pusă cu mâna în alt folder, nu rescrie versiunea
+  instalării înregistrate.
+- **Scrie** `DisplayVersion`, `VersionMajor`/`VersionMinor` (DWORD, ca Inno) și sufixul de
+  versiune din `DisplayName` («K-BOT 1.0.30.0» → «K-BOT 1.0.31.0»; un nume care nu se termină cu
+  versiunea veche rămâne neatins — nu se ghicește niciun nume).
+- **Versiunea scrisă = `FileVersion` din `KBot.App.exe` proaspăt aplicat** (același număr pe
+  care îl compară instalatorul), cu `--version` doar ca rezervă.
+- **Drepturi.** HKLM cere administrator. `UpdaterForm` pasul 3 cere acum relansarea prin UAC și
+  când doar intrarea din registru nu e scriibilă (`InstallRegistry.NeedsElevation`). Diferența
+  față de folderul nescriibil: dacă operatorul REFUZĂ promptul și folderul e scriibil,
+  fișierele se actualizează oricum și doar intrarea rămâne în urmă (jurnal). Iar o eroare la
+  scrierea în registru după ce fișierele au fost aplicate **nu e fatală** — fișierele SUNT
+  actualizate, o casetă de eroare ar minți.
+- Consecință de spus: pe un PC obișnuit (utilizator cu UAC), **fiecare actualizare automată va
+  cere o dată confirmarea UAC** dacă aplicația a fost instalată prin Setup. Fără cheie în
+  registru (SFX-ul vechi, copie de mână) nu se cere nimic.
+- `KBot.Updater` `FileVersion` 1.0.0.0 → **1.0.1.0**. Capcana VB de umbrire: parametrul
+  `version` a ascuns `System.Version` (`Version.TryParse` → BC30456); redenumit `newVersion`.
+
 ## Fișiere atinse
 
 - `tools/KBotInstaller/KBot.iss` — antet, `MyAppId`/`MyDefaultDir`, `DisableDirPage=auto`,
   `[Dirs]`, `Excludes`, secțiunea `[Code]` (`TryParseVersion`, `ExeVersionIn`, `ReadRegString`,
   `DetectInstalled`, `CheckInstalledVersion`, `InitializeSetup` rescris, `InitializeWizard` nou).
+- `src/KBot.Updater/InstallRegistry.vb` (nou), `src/KBot.Updater/UpdaterForm.vb` (pașii 3 și
+  4b), `src/KBot.Updater/KBot.Updater.vbproj` (FileVersion 1.0.1.0).
+- `tests/KBot.Updater.Tests/InstallRegistryTests.vb` (nou; doar părțile pure — HKLM nu se atinge
+  din teste).
 - `docs/worklog/SLICE-0067-01-instalator-doar-actualizari.md` (acesta), `docs/worklog/KBOT_STATUS.md`.
 
 ## Rezultatele testelor
@@ -74,8 +103,10 @@ linii.
 - **Compilare ISCC (Inno Setup 6.7.1) reușită** pe un folder de staging fictiv (3 fișiere +
   `Logs\_keep.txt`), `/DAppVersion=1.0.31.0`: zero erori; lista de compresie confirmă că
   `Logs\_keep.txt` NU intră în pachet. Exe-ul rezultat s-a șters cu folderul temporar.
+- `dotnet build src\KBot.Updater -c Release`: **0 erori, 0 avertismente**.
+- Testele scrise, **nerulate**; proiectul de teste neconstruit.
 - `publish-release.ps1` NErulat (nu s-a construit niciun pachet real).
-- Niciun Setup **nu s-a rulat** pe acest PC (ar fi scris în `C:\KBOT`).
+- Niciun Setup și niciun updater **nu s-a rulat** pe acest PC (ar fi scris în `C:\KBOT` / HKLM).
 
 ## Neverificat / amânat
 
@@ -85,10 +116,11 @@ linii.
   CU pagina de folder (fără cheie în registru `auto` o arată, preumplută cu `C:\KBOT`); (2) apoi
   un Setup mai vechi peste → refuz, iar de data asta fără pagina de folder (cheia există);
   (3) același → întrebare.
-- **Registrul rămâne în urmă după actualizările automate** (`DisplayVersion` = ultima instalare
-  prin Setup): instalatorul nu depinde de el, dar «Programe și caracteristici» minte. Dacă se
-  vrea corect, `KBot.Updater` ar trebui să scrie `DisplayVersion` — cere HKLM, deci drepturi de
-  administrator pe care updater-ul le cere doar când folderul nu e scriibil; de hotărât.
+- **Scrierea în registru a updater-ului e nevăzută**: nici promptul UAC pentru intrare, nici
+  refuzul lui (fișiere da, intrare nu), nici valorile în «Programe și caracteristici». De citit
+  `Logs\updater.log` la prima actualizare reală («registry: DisplayVersion … -> …»). Instalările
+  cu updater-ul 1.0.0.0 rămân cu registrul vechi până la prima actualizare cu 1.0.1.0 (care îl
+  corectează, fiindcă scrie versiunea de pe disc, nu diferența).
 - **`SuppressibleMsgBox` în mod silențios** întoarce implicitul: downgrade = refuz (bine), aceeași
   versiune = refuz (regula strictă). Nevăzut.
 - Componenta `migrare` deselectată la actualizare NU șterge `Migrare\` vechi (regula «nimic nu se

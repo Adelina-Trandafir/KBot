@@ -195,9 +195,9 @@ end;
 //  The rules mirror the in-app update system (src\KBot.App\Update,
 //  src\KBot.Updater, src\KBot.Domain\Update\UpdatePolicy):
 //    * the number that counts is the FileVersion of the installed KBot.App.exe
-//      (AppUpdateService.CurrentVersion), NOT the registry: KBot.Updater rewrites
-//      the files without touching "Programs and Features", so DisplayVersion goes
-//      stale after the first automatic update. The registry is a fallback only,
+//      (AppUpdateService.CurrentVersion), NOT the registry. KBot.Updater 1.0.1.0+
+//      does refresh DisplayVersion (InstallRegistry.vb), but an older updater, or a
+//      declined UAC prompt, leaves it behind -- so the registry is a fallback only,
 //      for a registered folder whose exe is gone.
 //    * four-part comparison, a missing part counts as 0 (UpdatePolicy.Normalize);
 //    * installed > package -> refused (no downgrade, ever);

@@ -15,8 +15,9 @@ Imports System.Windows.Forms
 ''' <para><b>Plain WinForms on purpose.</b> This exe runs while the K-BOT assemblies are
 ''' being overwritten, so it references none of them -- see the .vbproj header.</para>
 '''
-''' <para>Sequence: wait for the app to exit -> verify the package -> check the folder is
-''' writable (else relaunch elevated) -> apply -> restart the app -> delete the package.
+''' <para>Sequence: wait for the app to exit -> verify the package -> check the folder (and the
+''' "Programs and Features" entry) is writable, else relaunch elevated -> apply -> write the new
+''' version into that entry -> restart the app -> delete the package.
 ''' Any failure ends in one message box naming the log, and exit code 1.</para>
 ''' </summary>
 Friend Class UpdaterForm
@@ -73,18 +74,41 @@ Friend Class UpdaterForm
                 _log.Write("sha256 OK")
             End If
 
-            ' 3. Can we write there? If not, hand over to an elevated copy of ourselves.
+            ' 3. Can we write there -- the folder, and the "Programs and Features" entry the
+            '    installer registered for it? If not, hand over to an elevated copy of
+            '    ourselves. The entry is cosmetic: when the operator declines the UAC prompt
+            '    and only the entry needed it, the files are still updated and the entry
+            '    is left as it is (logged). A folder we cannot write is the real failure.
             Directory.CreateDirectory(_args.TargetDir)
-            If Not UpdateApplier.IsWritable(_args.TargetDir) Then
+            Dim folderWritable As Boolean = UpdateApplier.IsWritable(_args.TargetDir)
+            Dim registryNeedsElevation As Boolean = InstallRegistry.NeedsElevation(_args.TargetDir)
+            Dim skipRegistry As Boolean = False
+            If Not folderWritable OrElse registryNeedsElevation Then
                 If _args.Elevated Then
-                    Throw New UnauthorizedAccessException("Nu am drept de scriere în " & _args.TargetDir & " nici cu drepturi de administrator.")
+                    If Not folderWritable Then
+                        Throw New UnauthorizedAccessException("Nu am drept de scriere în " & _args.TargetDir & " nici cu drepturi de administrator.")
+                    End If
+                    ' Elevated and the entry is still not writable: written below, failure logged there.
+                ElseIf Not folderWritable Then
+                    _log.Write("target not writable as invoker -> relaunching elevated")
+                    Status("Sunt necesare drepturi de administrator…", _args.TargetDir)
+                    Program.RelaunchElevated(_args)
+                    ExitCode = 3
+                    Post(Sub() Close())
+                    Return
+                Else
+                    _log.Write("uninstall entry not writable as invoker -> relaunching elevated")
+                    Status("Sunt necesare drepturi de administrator…", "pentru «Programe și caracteristici»")
+                    Try
+                        Program.RelaunchElevated(_args)
+                        ExitCode = 3
+                        Post(Sub() Close())
+                        Return
+                    Catch ex As OperationCanceledException
+                        _log.Write("UAC declined; the folder is writable, so the files are updated and the entry is left behind")
+                        skipRegistry = True
+                    End Try
                 End If
-                _log.Write("target not writable as invoker -> relaunching elevated")
-                Status("Sunt necesare drepturi de administrator…", _args.TargetDir)
-                Program.RelaunchElevated(_args)
-                ExitCode = 3
-                Post(Sub() Close())
-                Return
             End If
 
             ' 4. Apply.
@@ -106,6 +130,25 @@ Friend Class UpdaterForm
                 End Sub,
                 CancellationToken.None)
             _log.Write("applied: written=" & result.Written & " skipped=" & result.Skipped)
+
+            ' 4b. "Programs and Features" shows the version the installer wrote; bring it to
+            '     the version now on disk (the exe's FileVersion, what the installer compares
+            '     against; --version is the fallback). Not fatal: the files ARE updated.
+            If Not skipRegistry Then
+                Try
+                    Dim installed As String = If(InstallRegistry.ReadInstalledVersion(_args.TargetDir), _args.Version)
+                    If String.IsNullOrWhiteSpace(installed) Then
+                        _log.Write("registry: no version to write (no KBot.App.exe version and no --version)")
+                    Else
+                        Status("Actualizez «Programe și caracteristici»…", installed)
+                        If Not InstallRegistry.WriteVersion(_args.TargetDir, installed, Sub(line) _log.Write(line)) Then
+                            _log.Write("registry: no uninstall entry for " & _args.TargetDir & " (not installed through Setup); nothing to write")
+                        End If
+                    End If
+                Catch ex As Exception
+                    _log.Write("registry: DisplayVersion not updated (the files are)", ex)
+                End Try
+            End If
 
             ' 5. Restart the app.
             If Not String.IsNullOrWhiteSpace(_args.RestartExe) Then
