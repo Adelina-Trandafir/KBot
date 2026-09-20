@@ -573,11 +573,46 @@ New-KBotManifest -PublishDir $PublishDir -Configuration $Configuration -Runtime 
 if (-not ('System.IO.Compression.ZipFile' -as [type])) {
     Add-Type -AssemblyName 'System.IO.Compression.FileSystem'
 }
+if (-not ('System.IO.Compression.ZipArchive' -as [type])) {
+    Add-Type -AssemblyName 'System.IO.Compression'
+}
 Write-Host "Archiving -> $ZipPath" -ForegroundColor Cyan
-[System.IO.Compression.ZipFile]::CreateFromDirectory(
-    $PublishDir, $ZipPath,
-    [System.IO.Compression.CompressionLevel]::Optimal,
-    $true)
+#  Written entry by entry, NOT with ZipFile::CreateFromDirectory: under Windows
+#  PowerShell 5.1 (.NET Framework) that writes the entry names with BACKSLASHES
+#  ("KBot_Release_x\KBot.App.exe"), which is not a folder separator for zip readers.
+#  KBot.Updater strips the top folder by "/" and push-update.ps1 looks for the exes by
+#  "/" -- with "\" the update would land in C:\KBOT\KBot_Release_<stamp>\ (seen
+#  20.09.2026). Every name below is built with "/" by hand.
+$zipStream = [System.IO.File]::Open($ZipPath, [System.IO.FileMode]::CreateNew)
+try {
+    $archive = New-Object System.IO.Compression.ZipArchive($zipStream, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        # -Name yields paths RELATIVE to $PublishDir (no prefix arithmetic, no
+        # short-vs-long path surprises).
+        foreach ($rel in Get-ChildItem -LiteralPath $PublishDir -Recurse -File -Name) {
+            $file = Get-Item -LiteralPath (Join-Path $PublishDir $rel)
+            $entryName = "$AppFolderName/" + $rel.Replace('\', '/')
+            $entry = $archive.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::Optimal)
+            $entry.LastWriteTime = $file.LastWriteTime
+            $out = $entry.Open()
+            try {
+                $in = [System.IO.File]::OpenRead($file.FullName)
+                try { $in.CopyTo($out) } finally { $in.Dispose() }
+            } finally { $out.Dispose() }
+        }
+    } finally { $archive.Dispose() }
+} finally { $zipStream.Dispose() }
+
+# Guard: no entry may carry a backslash, and the two exes must sit right under the top folder.
+$check = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
+try {
+    $bad = @($check.Entries | Where-Object { $_.FullName.Contains('\') })
+    if ($bad.Count -gt 0) { throw "Zip entries with backslashes: $($bad[0].FullName) (+$($bad.Count - 1))." }
+    foreach ($must in @("$AppFolderName/KBot.App.exe", "$AppFolderName/KBot.Updater.exe")) {
+        if (-not ($check.Entries | Where-Object { $_.FullName -eq $must })) { throw "Zip is missing $must." }
+    }
+    Write-Host "Zip OK: $($check.Entries.Count) entries under '$AppFolderName/'." -ForegroundColor Cyan
+} finally { $check.Dispose() }
 
 # --- 7b. Installer (Inno Setup) -> KBot_Setup_<stamp>.exe -----------------------
 #  tools\KBotInstaller\KBot.iss: publisher, logo, Romanian wizard text, components

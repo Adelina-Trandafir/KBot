@@ -79,8 +79,9 @@ Friend NotInheritable Class UpdateApplier
     Public Shared Function DetectTopFolder(entryNames As IEnumerable(Of String)) As String
         Dim top As String = Nothing
         Dim any As Boolean = False
-        For Each name As String In entryNames
+        For Each rawName As String In entryNames
             any = True
+            Dim name As String = NormalizeEntryName(rawName)
             Dim slash As Integer = name.IndexOf("/"c)
             If slash <= 0 Then Return String.Empty      ' a root-level entry: nothing to strip
             Dim first As String = name.Substring(0, slash)
@@ -116,7 +117,7 @@ Friend NotInheritable Class UpdateApplier
         Using archive As ZipArchive = ZipFile.OpenRead(zipPath)
             Dim names As New List(Of String)(archive.Entries.Count)
             For Each e As ZipArchiveEntry In archive.Entries
-                names.Add(e.FullName)
+                names.Add(NormalizeEntryName(e.FullName))
             Next
             Dim top As String = DetectTopFolder(names)
             result.TopFolder = top
@@ -131,7 +132,7 @@ Friend NotInheritable Class UpdateApplier
                 done += 1
                 progress?.Invoke(done, total)
 
-                Dim rel As String = entry.FullName
+                Dim rel As String = NormalizeEntryName(entry.FullName)
                 If prefix.Length > 0 AndAlso rel.StartsWith(prefix, StringComparison.Ordinal) Then
                     rel = rel.Substring(prefix.Length)
                 End If
@@ -159,6 +160,18 @@ Friend NotInheritable Class UpdateApplier
 
         Say(log, "Scrise " & result.Written & " fișiere, sărite " & result.Skipped & " (" & String.Join(", ", PreservedFolders) & "\).")
         Return result
+    End Function
+
+    ''' <summary>
+    ''' Entry names with "/" only. A zip written under Windows PowerShell 5.1 by
+    ''' ZipFile.CreateFromDirectory carries BACKSLASHES ("KBot_Release_x\KBot.App.exe");
+    ''' read as-is, no top folder would be found and the whole package would land in
+    ''' a subfolder of the target (seen 20.09.2026). publish-release.ps1 no longer
+    ''' writes such names, but the package is not the only thing that must be right.
+    ''' </summary>
+    Public Shared Function NormalizeEntryName(name As String) As String
+        If String.IsNullOrEmpty(name) Then Return String.Empty
+        Return name.Replace("\"c, "/"c)
     End Function
 
     Private Shared Function IsPreserved(folder As String) As Boolean

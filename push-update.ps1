@@ -116,6 +116,15 @@ function Get-PackageInfo {
     $zip = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
     try {
         $entries = @($zip.Entries)
+        # A zip written under Windows PowerShell 5.1 by ZipFile::CreateFromDirectory
+        # carries BACKSLASHES in its entry names. publish-release.ps1 no longer does
+        # that (20.09.2026), and such a package is refused here: the client's updater
+        # strips the top folder by "/" and would unpack it into a subfolder of C:\KBOT.
+        $backslashed = @($entries | Where-Object { $_.FullName.Contains('\') })
+        if ($backslashed.Count -gt 0) {
+            throw ("Package entries use backslashes ({0}); rebuild it with the current publish-release.ps1 -- " +
+                   "KBot.Updater would unpack it into a subfolder.") -f $backslashed[0].FullName
+        }
         $app = $entries | Where-Object { $_.FullName -match '(^|/)KBot\.App\.exe$' } | Select-Object -First 1
         if (-not $app) { throw "KBot.App.exe not found inside $ZipPath." }
         $upd = $entries | Where-Object { $_.FullName -match '(^|/)KBot\.Updater\.exe$' } | Select-Object -First 1
