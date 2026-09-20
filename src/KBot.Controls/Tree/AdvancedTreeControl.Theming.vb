@@ -264,12 +264,10 @@ Partial Public Class AdvancedTreeControl
             If Not _backColorPinned Then MyBase.BackColor = _autoNodeBack
             If Not _foreColorPinned Then MyBase.ForeColor = _autoNodeFore
 
-            ' Bara de derulare urmează întunecimea schemei dacă operatorul a lăsat Explorer
-            ' (implicitul); o alegere explicită Default/DarkMode rămâne a lui.
-            If _scrollBarTheme <> En_ScrollBarTheme.Default Then
-                _scrollBarTheme = If(scheme.IsDark, En_ScrollBarTheme.DarkMode, En_ScrollBarTheme.Explorer)
-                ApplyScrollBarTheme()
-            End If
+            ' The bar is an IThemedControl child, but ThemeManager only reaches it through
+            ' ApplyToNestedThemed; hand it the scheme directly so it is right even when the host
+            ' is themed by hand (test bench, preview) — same wiring as KBotTextBox.
+            _vScroll.ApplyTheme(scheme)
 
             RestyleSearchChildren()
             CancelCollapsedFlyout()   ' o etichetă afară ar rămâne cu culorile schemei vechi

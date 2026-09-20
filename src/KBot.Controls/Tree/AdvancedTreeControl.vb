@@ -41,13 +41,11 @@ Partial Public Class AdvancedTreeControl
     Private WithEvents LoadingTimer As New Timer() With {.Interval = 50} ' 20 FPS
     Private loadingAngle As Single = 0
 
-    Private _vScroll As New VScrollBar()
+    ' Our own bar, not VScrollBar: the native one is painted by Windows, so no palette colour
+    ' ever reached it (SetWindowTheme "DarkMode_Explorer" only bought the system's dark grey).
+    Private ReadOnly _vScroll As New KBotScrollBar()
 
     Private ReadOnly TooltipTimer As New Timer()
-
-    <System.Runtime.InteropServices.DllImport("uxtheme.dll", CharSet:=System.Runtime.InteropServices.CharSet.Unicode)>
-    Private Shared Function SetWindowTheme(hWnd As IntPtr, pszSubAppName As String, pszSubIdList As String) As Integer
-    End Function
 
     ' Proprietate publică - folosită de Tree.vb pentru whitelist în MonitorTimer
     <Browsable(False)>
@@ -143,12 +141,6 @@ Partial Public Class AdvancedTreeControl
         SearchMode_List = 1
     End Enum
 
-    Public Enum En_ScrollBarTheme
-        [Default] = 0
-        Explorer = 1
-        DarkMode = 2
-    End Enum
-
     ' INIȚIALIZARE
     Public Sub New()
         _nodeDefinitions.Owner = Me      ' colecția de designer cere reconstrucția prin proprietar
@@ -162,7 +154,8 @@ Partial Public Class AdvancedTreeControl
         MyBase.Font = New Font("Segoe UI", 9)   ' MyBase: implicitul nu e alegere de operator
         Me.Enabled = True
 
-        ' ── VScrollBar manual — imun la layout engine ─────────────────────
+        ' ── Vertical bar, placed by hand — immune to the layout engine ─────────
+        _vScroll.Orientation = Orientation.Vertical
         _vScroll.Minimum = 0
         _vScroll.Maximum = 0
         _vScroll.SmallChange = _itemHeight
@@ -174,8 +167,6 @@ Partial Public Class AdvancedTreeControl
         _vScroll.Height = Me.Height
         AddHandler _vScroll.Scroll, AddressOf OnVScrollScroll
         Me.Controls.Add(_vScroll)
-
-        AddHandler _vScroll.HandleCreated, Sub(s, e) ApplyScrollBarTheme()
 
         TooltipTimer.Interval = TooltipDelayMs
         AddHandler TooltipTimer.Tick, AddressOf TooltipTimerTick
@@ -923,18 +914,6 @@ Partial Public Class AdvancedTreeControl
 
         Me.Invalidate()                           ' ← garantează repaint curat după orice schimbare
     End Sub
-    Private Sub ApplyScrollBarTheme()
-        If _vScroll Is Nothing OrElse Not _vScroll.IsHandleCreated Then Return
-        Select Case _scrollBarTheme
-            Case En_ScrollBarTheme.Explorer
-                Dim v = SetWindowTheme(_vScroll.Handle, "Explorer", Nothing)
-            Case En_ScrollBarTheme.DarkMode
-                Dim unused = SetWindowTheme(_vScroll.Handle, "DarkMode_Explorer", Nothing)
-            Case En_ScrollBarTheme.Default
-                Dim unused1 = SetWindowTheme(_vScroll.Handle, "", Nothing)
-        End Select
-    End Sub
-
     Private Sub OnVScrollScroll(sender As Object, e As ScrollEventArgs)
         Try
             CancelCollapsedFlyout()   ' rândul de sub etichetă s-a mutat — eticheta n-o urmează

@@ -91,7 +91,7 @@ property grid — not by `New`-ing it and configuring it in code-behind.
 
 - **Initial/static props go in the Designer**: appearance and fixed behavior —
   `ItemHeight`, `Indent`, `RootExpander`, `CheckBoxes`, `HeaderVisible`,
-  `HeaderCaption`, `ScrollBarTheme`, the color properties, `TreeListView`/
+  `HeaderCaption`, `ScrollBarThickness`, the color properties, `TreeListView`/
   `DynamicColumns`/`ColumnsLevel`, etc. (These now carry `<Category>`/`<Description>`/
   `<DefaultValue>` so the grid is self-documenting.)
 - **Code-behind is for runtime data only**: building the node tree / rows, wiring event

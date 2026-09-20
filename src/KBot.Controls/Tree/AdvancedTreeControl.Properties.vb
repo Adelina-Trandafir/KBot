@@ -1911,17 +1911,25 @@ Partial Public Class AdvancedTreeControl
         End Get
     End Property
 
-    Private _scrollBarTheme As En_ScrollBarTheme = En_ScrollBarTheme.Explorer
+    Private _scrollBarThickness As Integer = KBotScrollBar.GrosimeImplicita   ' LOGICAL px
+    ''' <summary>
+    ''' Thickness of the vertical bar in LOGICAL px (96 dpi); scaled at use through
+    ''' <see cref="ScrollBarThicknessPx"/>. Replaces the old <c>ScrollBarTheme</c>: the bar is a
+    ''' <see cref="KBotScrollBar"/> now, so its colours come from the scheme and there is no
+    ''' uxtheme variant left to choose.
+    ''' </summary>
     <Category("K-BOT")>
-    <Description("Tema barei de derulare verticale (Default/Explorer/DarkMode).")>
-    <DefaultValue(En_ScrollBarTheme.Explorer)>
-    Public Property ScrollBarTheme As En_ScrollBarTheme
+    <Description("Grosimea barei de derulare verticale (px logici).")>
+    <DefaultValue(KBotScrollBar.GrosimeImplicita)>
+    Public Property ScrollBarThickness As Integer
         Get
-            Return _scrollBarTheme
+            Return _scrollBarThickness
         End Get
-        Set(value As En_ScrollBarTheme)
-            _scrollBarTheme = value
-            ApplyScrollBarTheme()
+        Set(value As Integer)
+            Dim nou As Integer = Math.Max(4, value)
+            If _scrollBarThickness = nou Then Return
+            _scrollBarThickness = nou
+            RefreshScrollVisibility()   ' the bar is re-placed with its new width (it invalidates)
         End Set
     End Property
 
@@ -2096,18 +2104,15 @@ Partial Public Class AdvancedTreeControl
     End Sub
 
     ''' <summary>
-    ''' Grosimea barei de derulare, la scara arborelui (felia 0040).
-    '''
-    ''' <para><c>SystemInformation.VerticalScrollBarWidth</c> răspunde pentru DPI-ul de la
-    ''' pornirea procesului, nu pentru monitorul pe care stă acum fereastra: pe un al doilea ecran
-    ''' la altă scalare bara ieșea mai îngustă (sau mai lată) decât spațiul rezervat ei, iar textul
-    ''' nodurilor fie se tăia, fie lăsa o dungă goală. Perechea …ForDpi întreabă pentru un DPI
-    ''' anume — i-l dăm pe al nostru, cel din <see cref="AppScaling"/>, ca bara și restul
-    ''' geometriei să crească din aceeași sursă (inclusiv când operatorul fixează scara la 100%).</para>
+    ''' Thickness of the vertical bar in DEVICE px: <see cref="ScrollBarThickness"/> scaled with
+    ''' the tree's own factor, so the bar grows from the same source as the rest of the geometry
+    ''' (including when the operator pins the scale at 100%). It used to ask
+    ''' <c>SystemInformation</c> for the native bar's width (slice 0040); the bar is ours now,
+    ''' so the number is ours too.
     ''' </summary>
     Private ReadOnly Property ScrollBarThicknessPx As Integer
         Get
-            Return SystemInformation.GetVerticalScrollBarWidthForDpi(CInt(Math.Round(96 * DpiScaleX)))
+            Return SX(_scrollBarThickness)
         End Get
     End Property
 End Class

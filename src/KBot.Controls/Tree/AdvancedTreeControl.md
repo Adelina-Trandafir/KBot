@@ -164,8 +164,11 @@ The header/footer BUTTONS use `ButtonTooltip: KBotToolTip` instead (C8), with
   the `*IconHoverColor` family, `SelectionCornerRadius`, `BandColorsFromThemeOnly`,
   `ApplyTheme(scheme)`.
 - Popup mode: `IsPopupTree = False`, `PopupGraceMs = 1500` (no node double-click is raised).
-- Scrollbars: `ScrollBarTheme = Explorer` (`Default` | `Explorer` | `DarkMode`) — native
-  bars, uxtheme only. The vertical bar sits INSIDE the border frame (inset by `BorderWidth`),
+- Scrollbar: a `KBotScrollBar` (owner-drawn, `IThemedControl`), handed the scheme from
+  `ApplyTheme`, so track/thumb/arrows come from the palette — the native `VScrollBar` +
+  `SetWindowTheme` pair only ever bought the system dark grey, and a designer pin of
+  `Default` left it light on the dark scheme. `ScrollBarThickness = 12` (logical px, scaled
+  with the tree). The vertical bar sits INSIDE the border frame (inset by `BorderWidth`),
   so the frame stays closed next to it; `ScrollBarWidth` counts bar + border strip.
   `AutoScrollPosition` / `AutoScrollMinSize` are shadowed.
 - Diagnostics: `TreeLogger` (Init + Debug/Info/Warn/Err/Ex/Perf, `LogFilePath`),

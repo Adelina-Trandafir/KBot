@@ -274,7 +274,6 @@ Partial Class KbotForm
         tree.ReserveRightIconSpace = True
         tree.RightIconSize = New Size(16, 16)
         tree.RootExpander = False
-        tree.ScrollBarTheme = AdvancedTreeControl.En_ScrollBarTheme.Default
         tree.SearchBarFont = New Font("Calibri", 9F)
         tree.SearchBoxBackColor = SystemColors.Control
         tree.SearchClearButton = True

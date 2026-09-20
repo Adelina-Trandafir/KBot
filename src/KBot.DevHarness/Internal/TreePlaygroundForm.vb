@@ -75,7 +75,6 @@ Public NotInheritable Class TreePlaygroundForm
     Private Sub PopulateCombos()
         cboSearchIn.Items.AddRange(New Object() {"Caption", "Tag", "Ambele"})
         cboSearchType.Items.AddRange(New Object() {"Conține", "Începe cu"})
-        cboScrollTheme.Items.AddRange(New Object() {"Default", "Explorer", "DarkMode"})
         cboSearchMode.Items.AddRange(New Object() {"Arbore", "Listă plată"})
         cboHeaderStyle.Items.AddRange(New Object() {"Solid", "Degrade vertical", "Degrade orizontal"})
         cboFooterStyle.Items.AddRange(New Object() {"Solid", "Degrade vertical", "Degrade orizontal"})
@@ -401,8 +400,8 @@ Public NotInheritable Class TreePlaygroundForm
     Private Sub btnFont_Click(sender As Object, e As EventArgs) Handles btnFont.Click
         PickFont(tree.Font, Sub(f) tree.Font = f, "Font")
     End Sub
-    Private Sub cboScrollTheme_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboScrollTheme.SelectedIndexChanged
-        Apply(Sub() tree.ScrollBarTheme = CType(cboScrollTheme.SelectedIndex, AdvancedTreeControl.En_ScrollBarTheme))
+    Private Sub numScrollThickness_ValueChanged(sender As Object, e As EventArgs) Handles numScrollThickness.ValueChanged
+        Apply(Sub() tree.ScrollBarThickness = CInt(numScrollThickness.Value))
     End Sub
 
     ' ── Culori ───────────────────────────────────────────────────────────────────
@@ -630,7 +629,7 @@ Public NotInheritable Class TreePlaygroundForm
         SetNum(numRightPad, tree.RightIconRightPadding)
         SetNum(numLeftIconSize, tree.LeftIconSize.Width)
         SetNum(numRightIconSize, tree.RightIconSize.Width)
-        cboScrollTheme.SelectedIndex = CInt(tree.ScrollBarTheme)
+        SetNum(numScrollThickness, tree.ScrollBarThickness)
 
         chkTooltip.Checked = tree.TooltipShow
         chkTooltipIconOnly.Checked = tree.TooltipShowOnlyOnLeftIcon

@@ -34,6 +34,9 @@
     -SignThumbprint   forwarded to publish-release.ps1.
     -Bump             forwarded to publish-release.ps1: Ask (default, one console
                       question), None, Major, Minor, Build, Revision.
+    -Sign             forwarded to publish-release.ps1: Ask (default, one console
+                      question before the version one), Yes, No (nothing signed,
+                      no SimplySign confirmation).
     -SettingsPath     alternative push_settings.json.
     -ApiBaseUrl       where /api/update/latest is read from (default: production).
 ================================================================================
@@ -48,6 +51,8 @@ param(
     [string] $SignThumbprint = '',
     [ValidateSet('Ask', 'None', 'Major', 'Minor', 'Build', 'Revision')]
     [string] $Bump = 'Ask',
+    [ValidateSet('Ask', 'Yes', 'No')]
+    [string] $Sign = 'Ask',
     [string] $SettingsPath = '',
     [string] $ApiBaseUrl = 'https://kbot.avatarsoft.ro'
 )
@@ -179,9 +184,9 @@ if (-not $SkipBuild) {
     if (-not (Test-Path -LiteralPath $publish)) { throw "publish-release.ps1 not found at $publish." }
     Write-Step "Building RELEASE via publish-release.ps1 ..."
     if ([string]::IsNullOrWhiteSpace($SignThumbprint)) {
-        & $publish -Bump $Bump
+        & $publish -Bump $Bump -Sign $Sign
     } else {
-        & $publish -SignThumbprint $SignThumbprint -Bump $Bump
+        & $publish -SignThumbprint $SignThumbprint -Bump $Bump -Sign $Sign
     }
     if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "publish-release.ps1 failed (ExitCode=$LASTEXITCODE)." }
 }

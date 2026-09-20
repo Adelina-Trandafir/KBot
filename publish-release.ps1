@@ -17,10 +17,13 @@
 
   Build PC requirements: .NET 8 SDK in PATH (dotnet), Inno Setup 6 (ISCC.exe).
 
-  Version: before building, one console question -- which part of KBot.App's
-             FileVersion to bump (Major / minor / build / revision / None, Enter =
-             None). Minor caps at 9, Build at 99, Revision at 9: one past the cap
-             carries into the part above and resets. -Bump <part> skips the question.
+  Questions before building (each skippable by parameter):
+    -Sign    sign the exes, Setup and uninstaller? (Y)es / (N)o, Enter = Y. "No" =
+             no signing step runs, the SimplySign token is never asked.
+    -Bump    which part of KBot.App's FileVersion to bump: (M)ajor, m(i)nor, (b)uild,
+             (r)evision, (N)one, Enter = N. Minor caps at 9, Build at 99, Revision at 9:
+             one past the cap carries into the part above and resets.
+             -Bump <part> skips the question.
 
   Digital signing (optional, never fatal):
              - Uses Certum SimplySign token via certificate thumbprint.
@@ -47,7 +50,14 @@ param(
     # prompts on the console: "(M)ajor, m(i)nor, (b)uild, (r)evision, (N)one", Enter = N.
     # Without an interactive console 'Ask' behaves as 'None'.
     [ValidateSet('Ask', 'None', 'Major', 'Minor', 'Build', 'Revision')]
-    [string] $Bump = 'Ask'
+    [string] $Bump = 'Ask',
+
+    # Sign the exes, Setup and the uninstaller? 'Ask' (default) puts one question on
+    # the console BEFORE the version one: "(Y)es / (N)o", Enter = Y. 'No' means no
+    # SimplySign confirmation is ever requested: every signing step is skipped.
+    # Without an interactive console 'Ask' behaves as 'Yes' (the old behaviour).
+    [ValidateSet('Ask', 'Yes', 'No')]
+    [string] $Sign = 'Ask'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -133,8 +143,28 @@ function Write-SignInfo { param([string]$m) Write-Host "[sign] $m" -ForegroundCo
 function Write-SignWarn { param([string]$m) Write-Warning "[sign] $m" }
 function Write-SignOk   { param([string]$m) Write-Host "[sign] $m" -ForegroundColor Green }
 
+# Set once in step 1a. $false = every signing step (exes, Setup, uninstaller) is
+# skipped, so the SimplySign token is never asked for a confirmation.
+$script:SigningEnabled = $true
+
+function Read-KBotSignChoice {
+    # One question on the console; Enter = Yes.
+    if (-not [Environment]::UserInteractive -or [Console]::IsInputRedirected) {
+        Write-Host "Signing: no interactive console -> Yes (pass -Sign No to skip)." -ForegroundColor Yellow
+        return $true
+    }
+    while ($true) {
+        $answer = Read-Host "Sign the app, Setup and uninstaller (SimplySign confirmations)? (Y)es / (N)o [Y]"
+        $key = ($answer -replace '\s', '').ToUpperInvariant()
+        if ($key -in @('', 'Y', 'YES')) { return $true }
+        if ($key -in @('N', 'NO')) { return $false }
+        Write-Host "  Type Y or N (Enter = Y)." -ForegroundColor Yellow
+    }
+}
+
 function Resolve-SignThumbprint {
-    # Priority: explicit parameter > environment variable > none (skip).
+    # Priority: signing switched off (step 1a) > explicit parameter > environment variable > none (skip).
+    if (-not $script:SigningEnabled) { return $null }
     if ($SignThumbprint) { return ($SignThumbprint -replace '\s', '').ToUpperInvariant() }
     if ($env:KBOT_SIGN_THUMBPRINT) { return ($env:KBOT_SIGN_THUMBPRINT -replace '\s', '').ToUpperInvariant() }
     return $null
@@ -174,7 +204,11 @@ function Invoke-KBotSign {
         [string[]] $Include = @('KBot.*.exe', 'KBot.*.dll')
     )
 
-    # 1. Resolve thumbprint. No thumbprint => skip cleanly.
+    # 1. Resolve thumbprint. Signing off / no thumbprint => skip cleanly.
+    if (-not $script:SigningEnabled) {
+        Write-SignInfo "Signing switched off for this build. Skipping."
+        return
+    }
     $tp = Resolve-SignThumbprint
     if (-not $tp) {
         Write-SignWarn "No signing thumbprint configured (KBOT_SIGN_THUMBPRINT). Skipping signing."
@@ -388,6 +422,20 @@ if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
     throw "dotnet SDK is not in PATH on this (build) PC. Install .NET 8 SDK."
 }
 
+# --- 1a. Sign or not (asked on the console unless -Sign says) -------------------
+#  Decided first, before anything is built, so a "No" never reaches the SimplySign
+#  token: Invoke-KBotSign and the Inno sign command both read $script:SigningEnabled.
+$script:SigningEnabled = switch ($Sign) {
+    'Yes' { $true }
+    'No'  { $false }
+    default { Read-KBotSignChoice }
+}
+if ($script:SigningEnabled) {
+    Write-Host "Signing: ON (exes, Setup, uninstaller)." -ForegroundColor Cyan
+} else {
+    Write-Host "Signing: OFF -- no SimplySign confirmation will be requested; artifacts stay unsigned." -ForegroundColor Yellow
+}
+
 # --- 1b. Version bump (asked on the console unless -Bump says) ------------------
 #  Writes the new number into KBot.App.vbproj BEFORE dotnet publish, so the exe, the
 #  installer and the update package all carry it. The edit is NOT committed here.
@@ -561,6 +609,8 @@ if ($innoSign) {
     $isccArgs += '/DSIGN=1'
     $isccArgs += "/Skbotsign=$innoSign"
     Write-SignInfo "Inno Setup will sign Setup.exe + uninstaller."
+} elseif (-not $script:SigningEnabled) {
+    Write-SignInfo "Signing switched off -- installer and uninstaller stay UNSIGNED."
 } else {
     Write-SignWarn "No usable signing setup -- installer and uninstaller will be UNSIGNED."
 }
@@ -593,7 +643,9 @@ Write-Host "  Browser  : installer offers the Chromium download as a task (else 
 
 # --- 10. Signing status summary ------------------------------------------------
 $tp = Resolve-SignThumbprint
-if ($tp) {
+if (-not $script:SigningEnabled) {
+    Write-Host "  Signing  : OFF for this build (operator's choice) -- ALL artifacts are UNSIGNED." -ForegroundColor Yellow
+} elseif ($tp) {
     $cert = Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert -ErrorAction SilentlyContinue |
         Where-Object { $_.Thumbprint -eq $tp } | Select-Object -First 1
     if ($cert) {

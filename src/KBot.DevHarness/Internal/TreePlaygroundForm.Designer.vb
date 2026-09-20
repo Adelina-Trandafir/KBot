@@ -133,8 +133,8 @@ Partial Class TreePlaygroundForm
     Friend WithEvents lblRightIconSize As System.Windows.Forms.Label
     Friend WithEvents numRightIconSize As System.Windows.Forms.NumericUpDown
     Friend WithEvents btnFont As System.Windows.Forms.Button
-    Friend WithEvents lblScrollTheme As System.Windows.Forms.Label
-    Friend WithEvents cboScrollTheme As System.Windows.Forms.ComboBox
+    Friend WithEvents lblScrollThickness As System.Windows.Forms.Label
+    Friend WithEvents numScrollThickness As System.Windows.Forms.NumericUpDown
 
     ' —— Culori ——
     Friend WithEvents lblSecColors As System.Windows.Forms.Label
@@ -280,8 +280,8 @@ Partial Class TreePlaygroundForm
         Me.lblRightIconSize = New System.Windows.Forms.Label()
         Me.numRightIconSize = New System.Windows.Forms.NumericUpDown()
         Me.btnFont = New System.Windows.Forms.Button()
-        Me.lblScrollTheme = New System.Windows.Forms.Label()
-        Me.cboScrollTheme = New System.Windows.Forms.ComboBox()
+        Me.lblScrollThickness = New System.Windows.Forms.Label()
+        Me.numScrollThickness = New System.Windows.Forms.NumericUpDown()
         Me.lblSecColors = New System.Windows.Forms.Label()
         Me.btnBackColor = New System.Windows.Forms.Button()
         Me.btnForeColor = New System.Windows.Forms.Button()
@@ -325,6 +325,7 @@ Partial Class TreePlaygroundForm
         CType(Me.numCheckSize, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.numRadioLevel, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.numRightPad, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.numScrollThickness, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.numLeftIconSize, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.numRightIconSize, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.numTooltipDelay, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -458,8 +459,8 @@ Partial Class TreePlaygroundForm
         Me.flowLeft.Controls.Add(Me.lblRightIconSize)
         Me.flowLeft.Controls.Add(Me.numRightIconSize)
         Me.flowLeft.Controls.Add(Me.btnFont)
-        Me.flowLeft.Controls.Add(Me.lblScrollTheme)
-        Me.flowLeft.Controls.Add(Me.cboScrollTheme)
+        Me.flowLeft.Controls.Add(Me.lblScrollThickness)
+        Me.flowLeft.Controls.Add(Me.numScrollThickness)
         Me.flowLeft.Controls.Add(Me.lblSecColors)
         Me.flowLeft.Controls.Add(Me.btnBackColor)
         Me.flowLeft.Controls.Add(Me.btnForeColor)
@@ -598,8 +599,8 @@ Partial Class TreePlaygroundForm
         Me.numRightIconSize.Minimum = 8D : Me.numRightIconSize.Maximum = 48D : Me.numRightIconSize.Value = 16D : Me.numRightIconSize.Width = 120 : Me.numRightIconSize.Name = "numRightIconSize"
         ' O SINGURĂ intrare de font pentru arbore: Font. «TreeFont» a dispărut din control.
         Me.btnFont.AutoSize = True : Me.btnFont.Text = "Font (nodurile)…" : Me.btnFont.Name = "btnFont" : Me.btnFont.UseVisualStyleBackColor = True
-        Me.lblScrollTheme.AutoSize = True : Me.lblScrollTheme.Text = "ScrollBarTheme" : Me.lblScrollTheme.Name = "lblScrollTheme"
-        Me.cboScrollTheme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList : Me.cboScrollTheme.Width = 270 : Me.cboScrollTheme.Name = "cboScrollTheme"
+        Me.lblScrollThickness.AutoSize = True : Me.lblScrollThickness.Text = "ScrollBarThickness" : Me.lblScrollThickness.Name = "lblScrollThickness"
+        Me.numScrollThickness.Minimum = 4D : Me.numScrollThickness.Maximum = 40D : Me.numScrollThickness.Value = 12D : Me.numScrollThickness.Width = 120 : Me.numScrollThickness.Name = "numScrollThickness"
         '
         '—— Culori ——
         '
@@ -712,6 +713,7 @@ Partial Class TreePlaygroundForm
         CType(Me.numCheckSize, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.numRadioLevel, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.numRightPad, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(Me.numScrollThickness, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.numLeftIconSize, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.numRightIconSize, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.numTooltipDelay, System.ComponentModel.ISupportInitialize).EndInit()
