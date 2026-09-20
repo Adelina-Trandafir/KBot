@@ -298,7 +298,8 @@ Partial Class KBotDataView
                                              DistinctDisplayValues(col.Key),
                                              ColumnFilter(col.Key),
                                              SortDirectionFor(col.Key),
-                                             Me)
+                                             Me,
+                                             KBotColumnFormat.DateOperandFormat(col.Format, col.FormatString))
 
             AddHandler meniu.FilterAccepted,
                 Sub(s As Object, e As KBotFilterAcceptedEventArgs) SetColumnFilter(e.Filter)

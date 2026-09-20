@@ -45,7 +45,7 @@ Public Class KBotDataViewInputTests
     <Fact>
     Public Sub NextEnabledColumn_SkipsHiddenColumns()
         Using dv = Grid()
-            dv.Column("b").Visible = False
+            dv.Column("b").Visible = KBotColumnVisibility.Hidden
             Assert.Equal("c", dv.NextEnabledColumn("a", 1).Key)
         End Using
     End Sub

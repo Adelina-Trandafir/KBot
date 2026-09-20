@@ -70,7 +70,7 @@ Public Class MainFormPoartaDdfTests
     <Fact>
     Public Sub Salvarea_PrimuluiDocument_AprindeIntrareaDdf()
         RunSta(Sub()
-                   Using f As New KbotForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
+                   Using f As New KbotForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
                        Dim info As AngajamentTreeInfo = FaraDdf("AN-1")
                        PuneSelectia(f, info)
                        f.navViews.SetItemVisible("ddf", False)
@@ -88,7 +88,7 @@ Public Class MainFormPoartaDdfTests
     <Fact>
     Public Sub StergereaDocumentului_StingeIntrareaDdf()
         RunSta(Sub()
-                   Using f As New KbotForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
+                   Using f As New KbotForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
                        Dim info As AngajamentTreeInfo = FaraDdf("AN-1")
                        info.AreDDF = True
                        info.IDDF = 4242L
@@ -109,7 +109,7 @@ Public Class MainFormPoartaDdfTests
         ' The server reports `document_sters = False` there: the document stands even when the
         ' revision deleted was its last. Nothing to say -> nothing touched.
         RunSta(Sub()
-                   Using f As New KbotForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
+                   Using f As New KbotForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
                        Dim info As AngajamentTreeInfo = FaraDdf("AN-1")
                        info.AreDDF = True
                        info.IDDF = 4242L
@@ -130,7 +130,7 @@ Public Class MainFormPoartaDdfTests
         ' The operator can move off the node between the write and the refresh. Flipping the
         ' flag on somebody else's angajament is worse than leaving it stale.
         RunSta(Sub()
-                   Using f As New KbotForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
+                   Using f As New KbotForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
                        Dim info As AngajamentTreeInfo = FaraDdf("AN-1")
                        PuneSelectia(f, info)
                        f.navViews.SetItemVisible("ddf", False)
@@ -147,7 +147,7 @@ Public Class MainFormPoartaDdfTests
     <Fact>
     Public Sub FaraNodSelectat_NuCrapa()
         RunSta(Sub()
-                   Using f As New KbotForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
+                   Using f As New KbotForm(Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing)
                        PuneSelectia(f, Nothing)
                        Poarta(f, "AN-1", iddf:=4242, sters:=False)
                    End Using

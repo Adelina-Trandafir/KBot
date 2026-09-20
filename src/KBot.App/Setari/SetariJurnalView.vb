@@ -149,12 +149,25 @@ Public Class SetariJurnalView
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             If scheme Is Nothing Then Return
+
+            ButtonStyles.ApplyTrans(btnDeschideDosar, ThemeManager.Current)
+            ButtonStyles.ApplyTrans(btnCopiaza, ThemeManager.Current)
+            ButtonStyles.ApplyTrans(btnExporta, ThemeManager.Current)
+            ButtonStyles.ApplyTrans(btnGoleste, ThemeManager.Current)
+            ButtonStyles.ApplyTrans(btnReimprospateaza, ThemeManager.Current)
+            btnDeschideDosar.Padding = Padding.Empty
+            btnGoleste.Padding = Padding.Empty
+            btnCopiaza.Padding = Padding.Empty
+            btnExporta.Padding = Padding.Empty
+
             Dim p As ThemePalette = scheme.Palette
+
             BackColor = p.SurfaceAltColor
             tlyMain.BackColor = p.SurfaceAltColor
             tlyFilter.BackColor = p.SurfaceAltColor
             tlyFilterActual.BackColor = p.SurfaceAltColor
             tlyFooter.BackColor = p.SurfaceAltColor
+
             For Each caption As Label In New Label() {lblCauta, lblDeLa, lblPanaLa, lblStare}
                 caption.ForeColor = p.TextDimColor
                 caption.BackColor = Color.Transparent
@@ -256,7 +269,7 @@ Public Class SetariJurnalView
     Private Shared Function EticheteazaArhiva(nume As String) As Boolean
         Dim ext As String = Path.GetExtension(nume)
         Dim gen As Integer
-        Return ext.Length > 1 AndAlso Integer.TryParse(ext.Substring(1), gen) AndAlso gen >= 1 AndAlso gen <= 5
+        Return ext.Length > 1 AndAlso Integer.TryParse(ext.AsSpan(1), gen) AndAlso gen >= 1 AndAlso gen <= 5
     End Function
 
     Private Shared Function EtichetaFisier(f As FileInfo) As String
@@ -485,7 +498,7 @@ Public Class SetariJurnalView
 
             Dim r As LogLoadResult = LogFileLoader.LoadText(If(raspuns?.Text, String.Empty), nume, Date.Today,
                                                             LogOrigin.Server,
-                                                            If(raspuns IsNot Nothing, raspuns.Truncated, False),
+                                                            raspuns IsNot Nothing AndAlso raspuns.Truncated,
                                                             If(raspuns IsNot Nothing, raspuns.SizeBytes, 0L))
             MarcheazaNoticeServer(False)
             Return New IncarcareRezultat With {.Entries = r.Entries.ToList(),
@@ -505,7 +518,7 @@ Public Class SetariJurnalView
     Private Shared Function GeneratiaDin(nume As String) As Integer
         Dim ext As String = Path.GetExtension(If(nume, String.Empty))
         Dim gen As Integer
-        If ext.Length > 1 AndAlso Integer.TryParse(ext.Substring(1), gen) AndAlso gen >= 1 AndAlso gen <= 5 Then Return gen
+        If ext.Length > 1 AndAlso Integer.TryParse(ext.AsSpan(1), gen) AndAlso gen >= 1 AndAlso gen <= 5 Then Return gen
         Return 0
     End Function
 
@@ -590,7 +603,7 @@ Public Class SetariJurnalView
                 Dim r As KBotDataRow = grila.AddRow()
                 r.Tag = en
                 Dim stamp As Date? = ServerClock.ToClientLocal(en)
-                r("ora") = If(stamp.HasValue, stamp.Value.ToString("dd.MM HH:mm:ss.fff"), String.Empty)
+                r("ora") = If(stamp.HasValue, stamp.Value.ToString("dd.MM.yyyy HH:mm:ss.fff"), String.Empty)
                 r("nivel") = TextNivel(en.Level)
                 r("sursa") = If(en.Origin = LogOrigin.Server, "server", "local")
                 r("fisier") = en.FileName
@@ -902,5 +915,4 @@ Public Class SetariJurnalView
         End Try
         MyBase.OnHandleDestroyed(e)
     End Sub
-
 End Class

@@ -60,7 +60,7 @@ Public Class KBotDataViewAutoHideTests
             SetAutoHideAll(dv, True)
             dv.AutoSizeColumns()
             ' Coloanele ascunse automat au Visible tot True — doar AutoHidden e setat.
-            Assert.True(dv.Column("c4").Visible)
+            Assert.Equal(KBotColumnVisibility.Visible, dv.Column("c4").Visible)
             Assert.True(dv.Column("c4").AutoHidden)
             Assert.False(dv.Column("c4").IsEffectivelyVisible)
         End Using

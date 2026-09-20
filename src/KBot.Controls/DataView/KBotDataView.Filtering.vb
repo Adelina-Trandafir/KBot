@@ -151,11 +151,25 @@ Partial Class KBotDataView
         Dim cheiGrup(Math.Max(0, nrNiveluri - 1)) As String
         Dim tipuriGrup(Math.Max(0, nrNiveluri - 1)) As KBotValueType
         Dim descrescatorGrup(Math.Max(0, nrNiveluri - 1)) As Boolean
+        ' Un nivel cu KeyPattern se ordonează după CHEIA TĂIATĂ, nu după valoarea brută: cheia e
+        ' ce leagă rândurile într-un grup, deci ea trebuie să fie și ce le așază lipite. Se citește
+        ' în tipul coloanei (o zi tăiată dintr-o ștampilă se ordonează ca dată, nu ca text) și se
+        ' calculează O DATĂ pe rând vizibil, nu la fiecare comparație — n log n expresii regulate
+        ' pe o grilă de jurnal ar fi exact prețul pe care sortarea nu are voie să-l plătească.
+        Dim cheiTaiate As String()() = New String(Math.Max(0, nrNiveluri - 1))() {}
         For d As Integer = 0 To nrNiveluri - 1
-            Dim gc As KBotDataColumn = _columnIndex(_activeLevels(d).ColumnKey)
+            Dim nivel As KBotGroupLevel = _activeLevels(d)
+            Dim gc As KBotDataColumn = _columnIndex(nivel.ColumnKey)
             cheiGrup(d) = gc.Key
             tipuriGrup(d) = gc.ValueType
-            descrescatorGrup(d) = (_activeLevels(d).SortDirection = KBotSortDirection.Descending)
+            descrescatorGrup(d) = (nivel.SortDirection = KBotSortDirection.Descending)
+            If nivel.HasKeyPattern Then
+                Dim chei(Math.Max(0, _rows.Count - 1)) As String
+                For Each mi As Integer In _view
+                    chei(mi) = GroupKeyText(_rows(mi), nivel)
+                Next
+                cheiTaiate(d) = chei
+            End If
         Next
 
         ' Sortarea operatorului — poate lipsi (grilă doar grupată).
@@ -171,8 +185,13 @@ Partial Class KBotDataView
 
         _view.Sort(Function(a As Integer, b As Integer) As Integer
                        For d As Integer = 0 To nrNiveluri - 1
-                           Dim semnGrup As Integer = KBotFilterEngine.Compare(
-                               _rows(a)(cheiGrup(d)), _rows(b)(cheiGrup(d)), tipuriGrup(d))
+                           Dim semnGrup As Integer
+                           If cheiTaiate(d) IsNot Nothing Then
+                               semnGrup = KBotFilterEngine.Compare(cheiTaiate(d)(a), cheiTaiate(d)(b), tipuriGrup(d))
+                           Else
+                               semnGrup = KBotFilterEngine.Compare(
+                                   _rows(a)(cheiGrup(d)), _rows(b)(cheiGrup(d)), tipuriGrup(d))
+                           End If
                            If semnGrup <> 0 Then Return If(descrescatorGrup(d), -semnGrup, semnGrup)
                        Next
 

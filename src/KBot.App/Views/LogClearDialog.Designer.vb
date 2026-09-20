@@ -16,204 +16,229 @@ Partial Class LogClearDialog
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        tips = New Global.KBot.Controls.KBotToolTip(components)
-        Dim colSel As New Global.KBot.Controls.KBotDataColumn()
-        Dim colFisier As New Global.KBot.Controls.KBotDataColumn()
-        Dim colMarime As New Global.KBot.Controls.KBotDataColumn()
-        Dim colIntrari As New Global.KBot.Controls.KBotDataColumn()
-        Dim colStare As New Global.KBot.Controls.KBotDataColumn()
-
-        pnlCard = New Panel()
-        capBar = New Global.KBot.Controls.KBotCaptionBar()
-        lblAntet = New Label()
-        grilaFisiere = New Global.KBot.Controls.KBotDataView()
-        pnlJos = New Panel()
-        lblTotal = New Label()
+        Dim KBotDataColumn6 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn7 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn8 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn9 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn10 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        tips = New KBot.Controls.KBotToolTip(components)
         btnSterge = New Button()
         btnRenunta = New Button()
-        busy = New Global.KBot.Controls.KBotBusyBar()
-
+        pnlCard = New Panel()
+        grilaFisiere = New Controls.KBotDataView()
+        pnlJos = New Panel()
+        lblTotal = New Label()
+        lblAntet = New Label()
+        busy = New Controls.KBotBusyBar()
+        capBar = New Controls.KBotCaptionBar()
+        lblSep1 = New Label()
         pnlCard.SuspendLayout()
-        CType(grilaFisiere, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(grilaFisiere, ComponentModel.ISupportInitialize).BeginInit()
         pnlJos.SuspendLayout()
         SuspendLayout()
-        '
-        ' pnlCard — copiii în ordine INVERSĂ de dock: grila (Fill), apoi barele.
-        '
+        ' 
+        ' btnSterge
+        ' 
+        btnSterge.Dock = DockStyle.Right
+        btnSterge.Enabled = False
+        btnSterge.FlatStyle = FlatStyle.Flat
+        btnSterge.Location = New Point(729, 8)
+        btnSterge.Margin = New Padding(4)
+        btnSterge.Name = "btnSterge"
+        btnSterge.Size = New Size(147, 42)
+        btnSterge.TabIndex = 1
+        btnSterge.Text = "Șterge"
+        tips.SetToolTipHeader(btnSterge, "Șterge")
+        tips.SetToolTipText(btnSterge, "<b>Șterge definitiv</b> fișierele bifate." & vbLf & "Operația nu se poate desface.")
+        btnSterge.UseVisualStyleBackColor = True
+        ' 
+        ' btnRenunta
+        ' 
+        btnRenunta.DialogResult = DialogResult.Cancel
+        btnRenunta.Dock = DockStyle.Right
+        btnRenunta.FlatStyle = FlatStyle.Flat
+        btnRenunta.Location = New Point(891, 8)
+        btnRenunta.Margin = New Padding(4)
+        btnRenunta.Name = "btnRenunta"
+        btnRenunta.Size = New Size(147, 42)
+        btnRenunta.TabIndex = 2
+        btnRenunta.Text = "Renunță"
+        tips.SetToolTipHeader(btnRenunta, "Renunță")
+        tips.SetToolTipText(btnRenunta, "Închide fereastra fără să șteargă nimic.")
+        btnRenunta.UseVisualStyleBackColor = True
+        ' 
+        ' pnlCard
+        ' 
         pnlCard.Controls.Add(grilaFisiere)
         pnlCard.Controls.Add(pnlJos)
         pnlCard.Controls.Add(lblAntet)
         pnlCard.Controls.Add(busy)
         pnlCard.Controls.Add(capBar)
         pnlCard.Dock = DockStyle.Fill
-        pnlCard.Location = New Point(1, 1)
+        pnlCard.Location = New Point(2, 2)
+        pnlCard.Margin = New Padding(4)
         pnlCard.Name = "pnlCard"
-        pnlCard.Size = New Size(698, 458)
+        pnlCard.Size = New Size(1046, 675)
         pnlCard.TabIndex = 0
         pnlCard.Tag = "Card"
-        '
+        ' 
+        ' grilaFisiere
+        ' 
+        grilaFisiere.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        grilaFisiere.BackColor = SystemColors.Window
+        grilaFisiere.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
+        KBotDataColumn6.AggregateFormatString = Nothing
+        KBotDataColumn6.ColumnType = KBot.Controls.KBotColumnType.CheckBox
+        KBotDataColumn6.FormatString = Nothing
+        KBotDataColumn6.HeaderRightIcon = My.Resources.Resources.Fatcow_Farm_Fresh_Check_boxes_32
+        KBotDataColumn6.HeaderText = ""
+        KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn6.Key = "sel"
+        KBotDataColumn6.MinWidth = 20
+        KBotDataColumn6.OptionGroup = Nothing
+        KBotDataColumn6.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn6.Width = 32
+        KBotDataColumn7.AggregateFormatString = Nothing
+        KBotDataColumn7.FormatString = Nothing
+        KBotDataColumn7.HeaderText = "Fișier"
+        KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn7.Key = "fisier"
+        KBotDataColumn7.MinWidth = 120
+        KBotDataColumn7.OptionGroup = Nothing
+        KBotDataColumn7.ReadOnly = True
+        KBotDataColumn7.Width = 240
+        KBotDataColumn8.AggregateFormatString = Nothing
+        KBotDataColumn8.FormatString = Nothing
+        KBotDataColumn8.HeaderText = "Mărime"
+        KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn8.Key = "marime"
+        KBotDataColumn8.MinWidth = 70
+        KBotDataColumn8.OptionGroup = Nothing
+        KBotDataColumn8.ReadOnly = True
+        KBotDataColumn8.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn9.AggregateFormatString = Nothing
+        KBotDataColumn9.FormatString = Nothing
+        KBotDataColumn9.HeaderText = "Intrări"
+        KBotDataColumn9.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn9.Key = "intrari"
+        KBotDataColumn9.MinWidth = 60
+        KBotDataColumn9.OptionGroup = Nothing
+        KBotDataColumn9.ReadOnly = True
+        KBotDataColumn9.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn9.Width = 80
+        KBotDataColumn10.AggregateFormatString = Nothing
+        KBotDataColumn10.FormatString = Nothing
+        KBotDataColumn10.HeaderText = "Stare"
+        KBotDataColumn10.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn10.Key = "stare"
+        KBotDataColumn10.MinWidth = 100
+        KBotDataColumn10.OptionGroup = Nothing
+        KBotDataColumn10.ReadOnly = True
+        KBotDataColumn10.Visible = KBot.Controls.KBotColumnVisibility.Hidden
+        KBotDataColumn10.Width = 180
+        grilaFisiere.Columns.Add(KBotDataColumn6)
+        grilaFisiere.Columns.Add(KBotDataColumn7)
+        grilaFisiere.Columns.Add(KBotDataColumn8)
+        grilaFisiere.Columns.Add(KBotDataColumn9)
+        grilaFisiere.Columns.Add(KBotDataColumn10)
+        grilaFisiere.Dock = DockStyle.Fill
+        grilaFisiere.FillColumnKey = "fisier"
+        grilaFisiere.HeaderHeight = 24
+        grilaFisiere.HeaderSeparatorColor = SystemColors.ActiveBorder
+        grilaFisiere.Location = New Point(0, 141)
+        grilaFisiere.Margin = New Padding(4)
+        grilaFisiere.Name = "grilaFisiere"
+        grilaFisiere.Size = New Size(1046, 476)
+        grilaFisiere.TabIndex = 3
+        ' 
+        ' pnlJos
+        ' 
+        pnlJos.Controls.Add(btnSterge)
+        pnlJos.Controls.Add(lblSep1)
+        pnlJos.Controls.Add(lblTotal)
+        pnlJos.Controls.Add(btnRenunta)
+        pnlJos.Dock = DockStyle.Bottom
+        pnlJos.Location = New Point(0, 617)
+        pnlJos.Margin = New Padding(4)
+        pnlJos.Name = "pnlJos"
+        pnlJos.Padding = New Padding(8)
+        pnlJos.Size = New Size(1046, 58)
+        pnlJos.TabIndex = 4
+        pnlJos.Tag = "Card"
+        ' 
+        ' lblTotal
+        ' 
+        lblTotal.AutoSize = True
+        lblTotal.Location = New Point(12, 18)
+        lblTotal.Margin = New Padding(4, 0, 4, 0)
+        lblTotal.Name = "lblTotal"
+        lblTotal.Size = New Size(95, 22)
+        lblTotal.TabIndex = 0
+        lblTotal.Text = "Nimic bifat."
+        ' 
+        ' lblAntet
+        ' 
+        lblAntet.Dock = DockStyle.Top
+        lblAntet.Location = New Point(0, 58)
+        lblAntet.Margin = New Padding(4, 0, 4, 0)
+        lblAntet.Name = "lblAntet"
+        lblAntet.Padding = New Padding(18, 15, 18, 15)
+        lblAntet.Size = New Size(1046, 83)
+        lblAntet.TabIndex = 2
+        lblAntet.Text = "Bifează fișierele de șters. Ștergerea NU se poate anula. Jurnalele de server nu se ating de aici — rutele sunt doar de citire."
+        ' 
+        ' busy
+        ' 
+        busy.Dock = DockStyle.Top
+        busy.Location = New Point(0, 52)
+        busy.Margin = New Padding(4)
+        busy.Name = "busy"
+        busy.Size = New Size(1046, 6)
+        busy.TabIndex = 1
+        ' 
         ' capBar
-        '
+        ' 
         capBar.Dock = DockStyle.Top
+        capBar.IconImage = Nothing
         capBar.Location = New Point(0, 0)
+        capBar.Margin = New Padding(4)
         capBar.Name = "capBar"
-        capBar.ShowMaximize = False
-        capBar.ShowMinimize = False
-        capBar.Size = New Size(698, 40)
+        capBar.OptionButtonImage = Nothing
+        capBar.OptionButtonPadding = 0
+        capBar.Size = New Size(1046, 52)
         capBar.TabIndex = 0
         capBar.TabStop = False
         capBar.Text = "Golește jurnale"
-        '
-        ' busy
-        '
-        busy.Dock = DockStyle.Top
-        busy.Location = New Point(0, 40)
-        busy.Name = "busy"
-        busy.Size = New Size(698, 4)
-        busy.TabIndex = 1
-        '
-        ' lblAntet
-        '
-        lblAntet.Dock = DockStyle.Top
-        lblAntet.Location = New Point(0, 44)
-        lblAntet.Name = "lblAntet"
-        lblAntet.Padding = New Padding(12, 10, 12, 10)
-        lblAntet.Size = New Size(698, 58)
-        lblAntet.TabIndex = 2
-        lblAntet.Text = "Bifează fișierele de șters. Ștergerea NU se poate anula. Jurnalele de server nu se ating de aici — rutele sunt doar de citire."
-        '
-        ' grilaFisiere
-        '
-        grilaFisiere.AutoSizeColumnsMode = Global.KBot.Controls.KBotAutoSizeMode.None
-        grilaFisiere.ColumnFillMode = Global.KBot.Controls.KBotFillMode.FirstColumn
-        colSel.ColumnType = Global.KBot.Controls.KBotColumnType.CheckBox
-        colSel.FormatString = Nothing
-        colSel.HeaderText = "Șterge"
-        colSel.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colSel.Key = "sel"
-        colSel.MinWidth = 60
-        colSel.OptionGroup = Nothing
-        colSel.TextAlign = ContentAlignment.MiddleCenter
-        colSel.Width = 70
-        colFisier.FormatString = Nothing
-        colFisier.HeaderText = "Fișier"
-        colFisier.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colFisier.Key = "fisier"
-        colFisier.MinWidth = 120
-        colFisier.OptionGroup = Nothing
-        colFisier.ReadOnly = True
-        colFisier.Width = 240
-        colMarime.FormatString = Nothing
-        colMarime.HeaderText = "Mărime"
-        colMarime.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colMarime.Key = "marime"
-        colMarime.MinWidth = 70
-        colMarime.OptionGroup = Nothing
-        colMarime.ReadOnly = True
-        colMarime.TextAlign = ContentAlignment.MiddleRight
-        colMarime.Width = 100
-        colIntrari.FormatString = Nothing
-        colIntrari.HeaderText = "Intrări"
-        colIntrari.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colIntrari.Key = "intrari"
-        colIntrari.MinWidth = 60
-        colIntrari.OptionGroup = Nothing
-        colIntrari.ReadOnly = True
-        colIntrari.TextAlign = ContentAlignment.MiddleRight
-        colIntrari.Width = 80
-        colStare.FormatString = Nothing
-        colStare.HeaderText = "Stare"
-        colStare.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colStare.Key = "stare"
-        colStare.MinWidth = 100
-        colStare.OptionGroup = Nothing
-        colStare.ReadOnly = True
-        colStare.Width = 180
-        grilaFisiere.Columns.Add(colSel)
-        grilaFisiere.Columns.Add(colFisier)
-        grilaFisiere.Columns.Add(colMarime)
-        grilaFisiere.Columns.Add(colIntrari)
-        grilaFisiere.Columns.Add(colStare)
-        grilaFisiere.Dock = DockStyle.Fill
-        grilaFisiere.HeaderHeight = 30
-        grilaFisiere.Location = New Point(0, 102)
-        grilaFisiere.Name = "grilaFisiere"
-        grilaFisiere.Size = New Size(698, 300)
-        grilaFisiere.TabIndex = 3
-        '
-        ' pnlJos
-        '
-        pnlJos.Controls.Add(lblTotal)
-        pnlJos.Controls.Add(btnSterge)
-        pnlJos.Controls.Add(btnRenunta)
-        pnlJos.Dock = DockStyle.Bottom
-        pnlJos.Location = New Point(0, 402)
-        pnlJos.Name = "pnlJos"
-        pnlJos.Padding = New Padding(12, 8, 12, 8)
-        pnlJos.Size = New Size(698, 56)
-        pnlJos.TabIndex = 4
-        pnlJos.Tag = "Card"
-        '
-        ' lblTotal
-        '
-        lblTotal.AutoSize = True
-        lblTotal.Location = New Point(12, 20)
-        lblTotal.Name = "lblTotal"
-        lblTotal.Size = New Size(150, 15)
-        lblTotal.TabIndex = 0
-        lblTotal.Text = "Nimic bifat."
-        '
-        ' btnSterge
-        '
-        btnSterge.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        btnSterge.Enabled = False
-        btnSterge.FlatStyle = FlatStyle.Flat
-        btnSterge.Location = New Point(430, 12)
-        btnSterge.Name = "btnSterge"
-        btnSterge.Size = New Size(150, 32)
-        btnSterge.TabIndex = 1
-        btnSterge.Text = "Șterge bifatele"
-        btnSterge.UseVisualStyleBackColor = True
-        '
-        ' btnRenunta
-        '
-        btnRenunta.Anchor = AnchorStyles.Top Or AnchorStyles.Right
-        btnRenunta.DialogResult = DialogResult.Cancel
-        btnRenunta.FlatStyle = FlatStyle.Flat
-        btnRenunta.Location = New Point(588, 12)
-        btnRenunta.Name = "btnRenunta"
-        btnRenunta.Size = New Size(98, 32)
-        btnRenunta.TabIndex = 2
-        btnRenunta.Text = "Renunță"
-        btnRenunta.UseVisualStyleBackColor = True
-        '
+        ' 
+        ' lblSep1
+        ' 
+        lblSep1.Dock = DockStyle.Right
+        lblSep1.Location = New Point(876, 8)
+        lblSep1.Name = "lblSep1"
+        lblSep1.Size = New Size(15, 42)
+        lblSep1.TabIndex = 3
+        lblSep1.TextAlign = ContentAlignment.MiddleLeft
+        ' 
         ' LogClearDialog
-        '
-        AutoScaleDimensions = New SizeF(96F, 96F)
+        ' 
+        AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
         CancelButton = btnRenunta
-        ClientSize = New Size(700, 460)
+        ClientSize = New Size(1050, 679)
         Controls.Add(pnlCard)
         FormBorderStyle = FormBorderStyle.None
+        Margin = New Padding(4)
         MaximizeBox = False
         MinimizeBox = False
         Name = "LogClearDialog"
-        Padding = New Padding(1)
+        Padding = New Padding(2)
         ShowInTaskbar = False
         StartPosition = FormStartPosition.CenterParent
         Text = "Golește jurnale"
-
         pnlCard.ResumeLayout(False)
-        CType(grilaFisiere, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(grilaFisiere, ComponentModel.ISupportInitialize).EndInit()
         pnlJos.ResumeLayout(False)
         pnlJos.PerformLayout()
-        '
-        ' tips — etichetele de survolare (felia 0035), toate în română.
-        '
-        tips.SetToolTipHeader(btnSterge, "Șterge")
-        tips.SetToolTipText(btnSterge, "<b>Șterge definitiv</b> fișierele bifate." & vbLf & "Operația nu se poate desface.")
-        tips.SetToolTipHeader(btnRenunta, "Renunță")
-        tips.SetToolTipText(btnRenunta, "Închide fereastra fără să șteargă nimic.")
         ResumeLayout(False)
     End Sub
 
@@ -227,4 +252,5 @@ Partial Class LogClearDialog
     Friend WithEvents lblTotal As Label
     Friend WithEvents btnSterge As Button
     Friend WithEvents btnRenunta As Button
+    Friend WithEvents lblSep1 As Label
 End Class

@@ -223,7 +223,7 @@ Partial Class SetariForm
         Name = "SetariForm"
         Padding = New Padding(1, 2, 1, 2)
         ShowInTaskbar = False
-        StartPosition = FormStartPosition.CenterParent
+        StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT — Setări"
         pnlRoot.ResumeLayout(False)
         pnlWork.ResumeLayout(False)

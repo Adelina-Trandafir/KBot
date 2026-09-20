@@ -32,5 +32,4 @@ Public Class KBotThemedUserControl
     Public Sub New()
         Font = KBotFonts.Base
     End Sub
-
 End Class

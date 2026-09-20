@@ -46,6 +46,8 @@ Public Class LogClearDialog
         Public Property Intrari As Integer
     End Class
 
+    Private bifaPusa As Boolean = False
+
     Private ReadOnly _randuri As New List(Of RandFisier)()
 
     Public Sub New()
@@ -182,6 +184,8 @@ Public Class LogClearDialog
     ''' </summary>
     Private Sub btnSterge_Click(sender As Object, e As EventArgs) Handles btnSterge.Click
         Try
+            Dim maxShownFiles As Integer
+
             Dim bifate As List(Of RandFisier) = FisiereBifate()
             If bifate.Count = 0 Then Return
 
@@ -189,6 +193,11 @@ Public Class LogClearDialog
             sb.AppendLine("Se șterg definitiv următoarele fișiere de jurnal:")
             sb.AppendLine()
             For Each r As RandFisier In bifate
+                maxShownFiles += 1
+                If maxShownFiles > 10 Then
+                    sb.AppendLine($"... (Se afișează primele 10/{bifate.Count} bifate)")
+                    Exit For
+                End If
                 sb.AppendLine("  • " & r.Info.Name & "  (" & Marime(r.Info.Length) & ")")
             Next
             sb.AppendLine()
@@ -260,4 +269,32 @@ Public Class LogClearDialog
         Return octeti.ToString("N0") & " B"
     End Function
 
+    Private Sub grilaFisiere_HeaderRightIconClicked(sender As Object, e As KBotColumnEventArgs) Handles grilaFisiere.HeaderRightIconClicked
+        If bifaPusa Then
+            grilaFisiere.BeginUpdate()
+            Try
+                For Each row As KBotDataRow In grilaFisiere.Rows
+                    If Not row.Enabled Then Continue For
+                    row(COL_SEL) = False
+                Next
+            Finally
+                grilaFisiere.EndUpdate()
+            End Try
+            bifaPusa = False
+        Else
+            grilaFisiere.BeginUpdate()
+            Try
+                For Each row As KBotDataRow In grilaFisiere.Rows
+                    If Not row.Enabled Then Continue For
+                    row(COL_SEL) = True
+                Next
+            Finally
+                grilaFisiere.EndUpdate()
+            End Try
+            bifaPusa = True
+        End If
+
+        ActualizeazaTotal()
+
+    End Sub
 End Class

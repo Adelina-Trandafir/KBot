@@ -54,8 +54,8 @@ Public NotInheritable Class KBotColumnFormat
                           d.ToString("g", CultureInfo.CurrentCulture))
                 Return True
 
-            Case KBotFormat.LongDate, KBotFormat.MediumDate, KBotFormat.ShortDate,
-                 KBotFormat.LongTime, KBotFormat.MediumTime, KBotFormat.ShortTime
+            Case KBotFormat.LongDate, KBotFormat.MediumDate, KBotFormat.ShortDate, KBotFormat.GeneralDateMs,
+                 KBotFormat.LongTime, KBotFormat.MediumTime, KBotFormat.ShortTime, KBotFormat.LongTimeMs
                 Dim d As Date
                 If Not KBotDataView.TryDate(value, d) Then Return False
                 text = d.ToString(NetFormat(format, decimale), CultureInfo.CurrentCulture)
@@ -105,8 +105,39 @@ Public NotInheritable Class KBotColumnFormat
                 Return "hh:mm tt"
             Case KBotFormat.ShortTime
                 Return "HH:mm"
+            Case KBotFormat.GeneralDateMs
+                ' The culture's own short date, then the 24h time with milliseconds — «g» would
+                ' drop the seconds, let alone the fraction.
+                Return CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern & " HH:mm:ss.fff"
+            Case KBotFormat.LongTimeMs
+                Return "HH:mm:ss.fff"
             Case Else
                 Return Nothing
+        End Select
+    End Function
+
+    ''' <summary>
+    ''' The .NET format the FILTER DIALOG's date field uses for a column: the column's own
+    ''' <c>FormatString</c> when it has one (that is what the operator reads in the cells), else
+    ''' the culture's short date plus exactly the time the named format shows -- milliseconds for
+    ''' <see cref="KBotFormat.GeneralDateMs"/>/<see cref="KBotFormat.LongTimeMs"/>, seconds for
+    ''' <see cref="KBotFormat.LongTime"/>, minutes for the other time-bearing ones, none for the
+    ''' date-only ones. One rule, so the field shows neither more nor less than the cell it
+    ''' filters; what it writes is read back by <see cref="KBotFilterEngine.CoerceOperand"/> under
+    ''' the same culture.
+    ''' </summary>
+    Public Shared Function DateOperandFormat(format As KBotFormat, formatString As String) As String
+        If Not String.IsNullOrWhiteSpace(formatString) Then Return formatString.Trim()
+        Dim baza As String = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern
+        Select Case format
+            Case KBotFormat.GeneralDateMs, KBotFormat.LongTimeMs
+                Return baza & " HH:mm:ss.fff"
+            Case KBotFormat.LongTime
+                Return baza & " HH:mm:ss"
+            Case KBotFormat.GeneralDate, KBotFormat.ShortTime, KBotFormat.MediumTime
+                Return baza & " HH:mm"
+            Case Else
+                Return baza
         End Select
     End Function
 

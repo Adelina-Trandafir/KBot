@@ -17,6 +17,11 @@ Imports KBot.Common
 '''     <see cref="ShrinkColumnsToFit"/> can switch off: cu ea stinsă, coloanele își păstrează
 '''     lățimile și apare bara orizontală.
 '''
+'''  Between the two, the pass also spends leftover on the columns that asked to be shown only
+'''  when there is room (<see cref="KBotColumnVisibility.WhenRoom"/>, gated by
+'''  <see cref="ShowColumnsWhenRoom"/>) — they come BEFORE the fill column, so the fill column
+'''  gets what they leave, not the other way round.
+'''
 '''  English (slice 0028-04): knob 1 is no longer grid-wide only. Every column carries its own
 '''  <see cref="KBotDataColumn.AutoSizeMode"/> and IT TAKES PRECEDENCE over the grid's — the grid
 '''  setting is what a column falls back on, not what it obeys. The default column value is
@@ -48,6 +53,7 @@ Partial Class KBotDataView
     Private _autoSizeSampleRows As Integer = 200
     Private _shrinkColumnsToFit As Boolean = True
     Private _fillColumnKey As String = String.Empty
+    Private _showColumnsWhenRoom As Boolean = True
 
     ' Re-entrancy guard: the pass mutates column widths, so it must never re-enter itself.
     Private _inAutoLayout As Boolean = False
@@ -168,6 +174,34 @@ Partial Class KBotDataView
     End Property
 
     ''' <summary>
+    ''' The grid-wide switch for the columns that say <see cref="KBotColumnVisibility.WhenRoom"/>:
+    ''' with it on (default) the layout pass shows them whenever the visible columns leave enough
+    ''' room — at least the column's <c>MinWidth</c> — and hides them again when the room goes;
+    ''' with it off they simply stay hidden, as if they said <c>Hidden</c>.
+    '''
+    ''' <para><b>Order of precedence.</b> Revealed columns are served FIRST, in column order, at
+    ''' their measured or authored width when it fits and at whatever is left (never under
+    ''' <c>MinWidth</c>) when it does not; only the room still left afterwards goes to the fill
+    ''' column of <see cref="ColumnFillMode"/>. Otherwise a fill column would swallow the whole
+    ''' leftover and no column could ever be revealed. A grid with no fill mode gains the same
+    ''' behaviour on its own: the leftover strip is spent on the hidden columns instead of staying
+    ''' empty.</para>
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Coloanele cu Visible = WhenRoom apar când coloanele vizibile lasă loc cel puțin pentru MinWidth-ul lor (True) sau rămân ascunse (False).")>
+    <DefaultValue(True)>
+    Public Property ShowColumnsWhenRoom As Boolean
+        Get
+            Return _showColumnsWhenRoom
+        End Get
+        Set(value As Boolean)
+            If _showColumnsWhenRoom = value Then Return
+            _showColumnsWhenRoom = value
+            LayoutChanged()
+        End Set
+    End Property
+
+    ''' <summary>
     ''' English (slice 0013): how many rows (from the top) are measured when sizing to content.
     ''' Default 200; 0 measures every row. Clamped to be non-negative.
     ''' </summary>
@@ -236,26 +270,28 @@ Partial Class KBotDataView
         If KBotDesignTime.IsDesignTime(Me) Then Return
 
         Dim anyAutoHide As Boolean = AnyColumnCanAutoHide()
+        Dim anyWhenRoom As Boolean = AnyColumnShowsWhenRoom()
 
-        ' Manual-only (Case 3) AND nothing to auto-hide: keep the caller's widths/visibility.
+        ' Manual-only (Case 3) AND nothing to auto-hide or reveal: keep the caller's widths/visibility.
         ' English (slice 0028-04): «manual-only» is now decided per column — a grid set to None
         ' still runs the pass when a single column asks for ToContent on its own.
-        If _fillMode = KBotFillMode.None AndAlso Not anyAutoHide AndAlso
+        If _fillMode = KBotFillMode.None AndAlso Not anyAutoHide AndAlso Not anyWhenRoom AndAlso
            Not AnyColumnSizesToContent() Then Return
 
         _inAutoLayout = True
         Try
-            ' Step 0 — reset the auto-hidden state so a widened grid re-shows columns that now fit,
-            ' and put every width back to what the CALLER asked for. English (slice 0028-05): without
-            ' that second reset the pass compounds its own output — a grid that was briefly narrow
-            ' shrank a column to its floor, and widening the window afterwards could only ever grow
-            ' the fill target, so the caller's 200px column stayed at 65px for the rest of the
-            ' session. A pass must be a function of (authored widths, available space), nothing else.
+            ' Step 0 — reset the auto-hidden / auto-shown state so a widened grid re-shows columns
+            ' that now fit (and a narrowed one drops the ones it revealed), and put every width back
+            ' to what the CALLER asked for. English (slice 0028-05): without that second reset the
+            ' pass compounds its own output — a grid that was briefly narrow shrank a column to its
+            ' floor, and widening the window afterwards could only ever grow the fill target, so the
+            ' caller's 200px column stayed at 65px for the rest of the session. A pass must be a
+            ' function of (authored widths, available space), nothing else.
             ClearAutoHiddenState()
             RestoreAuthoredWidths()
 
             Dim vis As List(Of KBotDataColumn) = VisibleColumns()
-            If vis.Count = 0 Then Return
+            If vis.Count = 0 AndAlso Not anyWhenRoom Then Return
 
             ' Step 1 — size to content (skipping columns the operator has dragged). The mode is
             ' asked PER COLUMN: the column's own knob wins, the grid's answers for Inherit.
@@ -264,6 +300,14 @@ Partial Class KBotDataView
                 If EffectiveAutoSizeMode(c) <> KBotAutoSizeMode.ToContent Then Continue For
                 c.SetLayoutWidth(MeasureColumnToContent(c))   ' clamps to [Min, Max]
             Next
+
+            ' Step 1b — reveal the WhenRoom columns the leftover can pay for. They are served BEFORE
+            ' the fill column (step 3): what they take is what the fill column does not get.
+            If anyWhenRoom Then
+                PerformRevealWhenRoom(vis)                ' may set AutoShown on some columns
+                vis = VisibleColumns()                    ' recompute after revealing
+                If vis.Count = 0 Then Return
+            End If
 
             ' Step 2 — auto-hide overflowing columns to avoid the horizontal scrollbar. Once
             ' auto-hide is engaged, unresolved overflow shows the scrollbar (it does NOT shrink):
@@ -302,19 +346,64 @@ Partial Class KBotDataView
     ' columns do not count: they take no space, so measuring them would change nothing on screen.
     Private Function AnyColumnSizesToContent() As Boolean
         For Each c In _columns
-            If Not c.Visible Then Continue For
+            If c.Visible <> KBotColumnVisibility.Visible Then Continue For
             If c.UserSized Then Continue For              ' a dragged column is skipped anyway
             If EffectiveAutoSizeMode(c) = KBotAutoSizeMode.ToContent Then Return True
         Next
         Return False
     End Function
 
+    ' ── Reveal when there is room (Visible = WhenRoom) ────────────────────────────
+
+    ' Any WhenRoom column, with the grid switch on? Gates the whole pass, like auto-hide does.
+    Private Function AnyColumnShowsWhenRoom() As Boolean
+        If Not _showColumnsWhenRoom Then Return False
+        For Each c In _columns
+            If c.Visible = KBotColumnVisibility.WhenRoom Then Return True
+        Next
+        Return False
+    End Function
+
+    ''' <summary>
+    ''' Show the <c>WhenRoom</c> columns the leftover can pay for, in column order. Each one is
+    ''' measured like a visible column (ToContent when its mode says so, otherwise its authored
+    ''' width) and then asks for that much; if the leftover is short of it but still covers the
+    ''' column's floor, the column is shown at the leftover (the floor is the operator's own
+    ''' «still readable» line, so a column at it is not a defect); below the floor it stays hidden
+    ''' and so does every later one that needs more than what is left. What the revealed columns
+    ''' take is gone for the fill column, by design — see <see cref="ShowColumnsWhenRoom"/>.
+    ''' </summary>
+    Private Sub PerformRevealWhenRoom(vis As List(Of KBotDataColumn))
+        Dim leftover As Integer = AutoSizeAvailableWidth() - SumWidths(vis)
+        If leftover <= 0 Then Return
+
+        For Each c In _columns
+            If c.Visible <> KBotColumnVisibility.WhenRoom Then Continue For
+            If leftover <= 0 Then Exit For
+
+            ' Baseline first (RestoreAuthoredWidths already ran), then measure if asked.
+            If Not c.UserSized AndAlso EffectiveAutoSizeMode(c) = KBotAutoSizeMode.ToContent Then
+                c.SetLayoutWidth(MeasureColumnToContent(c))
+            End If
+
+            Dim floor As Integer = c.EffectiveMinWidthPx
+            If leftover < floor Then Continue For         ' not even the floor fits: stays hidden
+
+            If c.WidthPx > leftover Then c.SetLayoutWidthAtMost(leftover)   ' clamps at the floor
+            ' The logical/device round trip can land one pixel over the floor (see
+            ' SetLayoutWidthAtMost); a revealed column must never cost a horizontal bar.
+            If c.WidthPx > leftover Then Continue For
+            c.AutoShown = True
+            leftover -= c.WidthPx
+        Next
+    End Sub
+
     ' ── Auto-hide (slice 0016) ────────────────────────────────────────────────────
 
     ' Any auto-hideable column the caller currently shows? Gates the whole pass.
     Private Function AnyColumnCanAutoHide() As Boolean
         For Each c In _columns
-            If c.AutoHide AndAlso c.Visible Then Return True
+            If c.AutoHide AndAlso c.Visible = KBotColumnVisibility.Visible Then Return True
         Next
         Return False
     End Function
@@ -329,10 +418,11 @@ Partial Class KBotDataView
         Next
     End Sub
 
-    ' Clear the pass-owned auto-hidden state (the caller's Visible flag is never touched).
+    ' Clear the pass-owned auto-hidden / auto-shown state (the caller's Visible is never touched).
     Private Sub ClearAutoHiddenState()
         For Each c In _columns
             c.AutoHidden = False
+            c.AutoShown = False
         Next
     End Sub
 

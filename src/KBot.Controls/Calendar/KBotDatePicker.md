@@ -115,6 +115,14 @@ reuses `CustomPopup.FitToWorkArea`, so it flips above the field or aligns to its
 exactly the same cases. `KBotCalendarPopup.ClosedJustNow` is the 250 ms guard that stops the
 second click on the button from reopening what that click just closed.
 
+The popup is **owned** by the field's form and **takes the owner's `TopMost`** (set before
+`Show`, so the window is born in the right band). Without that, a field on a TopMost dialog —
+the grid's filter condition dialog is one — dropped its calendar BEHIND the dialog: an owned
+window is kept above its owner only inside the same band, and TopMost is the band above. The
+popup form also paints through `WM_PAINT` only, double-buffered, like `CustomPopup`: the
+calendar docks over its whole client area, so the frame's own background erase between the
+window appearing and the calendar's first paint was one flash on every opening.
+
 ## The glyph colour is derived, not stored
 `GlyphColor` left `Empty` does NOT read a colour slot: it is the field's own `ForeColor` pulled a
 third of the way towards its own `BackColor`. A stored dim grey is only dim against the background

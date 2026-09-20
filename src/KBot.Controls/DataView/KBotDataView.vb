@@ -321,6 +321,21 @@ Public Class KBotDataView
         End Try
     End Sub
 
+    ''' <summary>
+    ''' A column's <see cref="KBotDataColumn.Visible"/> changed. Unlike a width write this is a
+    ''' full relayout: the set of columns on screen is different, so offsets, the auto-size pass
+    ''' (which may now reveal or drop a <c>WhenRoom</c> column) and the header band all move.
+    ''' </summary>
+    Friend Sub OnColumnVisibleChanged()
+        Try
+            If _initializing Then Return
+            InvalidateHeaderHeight()
+            LayoutChanged()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.OnColumnVisibleChanged", ex)
+        End Try
+    End Sub
+
     Friend Sub OnColumnHeaderChanged()
         Try
             If _initializing Then Return

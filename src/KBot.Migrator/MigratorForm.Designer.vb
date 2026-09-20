@@ -405,7 +405,7 @@ Partial Class MigratorForm
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn6.Key = "forexe"
         KBotDataColumn6.OptionGroup = Nothing
-        KBotDataColumn6.Visible = False
+        KBotDataColumn6.Visible = KBot.Controls.KBotColumnVisibility.Hidden
         KBotDataColumn6.Width = 350
         dgvUnitati.Columns.Add(KBotDataColumn1)
         dgvUnitati.Columns.Add(KBotDataColumn2)
@@ -858,7 +858,7 @@ Partial Class MigratorForm
         KBotDataColumn14.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn14.Key = "coloana"
         KBotDataColumn14.OptionGroup = Nothing
-        KBotDataColumn14.Visible = False
+        KBotDataColumn14.Visible = KBot.Controls.KBotColumnVisibility.Hidden
         KBotDataColumn14.Width = 140
         KBotDataColumn15.AggregateFormatString = Nothing
         KBotDataColumn15.FormatString = Nothing
@@ -866,7 +866,7 @@ Partial Class MigratorForm
         KBotDataColumn15.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn15.Key = "mesaj"
         KBotDataColumn15.OptionGroup = Nothing
-        KBotDataColumn15.Visible = False
+        KBotDataColumn15.Visible = KBot.Controls.KBotColumnVisibility.Hidden
         KBotDataColumn15.Width = 620
         dgvConstatari.Columns.Add(KBotDataColumn11)
         dgvConstatari.Columns.Add(KBotDataColumn12)

@@ -319,7 +319,7 @@ Public NotInheritable Class DataViewPlaygroundForm
         If col IsNot Nothing Then
             _loading = True
             Try
-                chkColVisible.Checked = col.Visible
+                chkColVisible.Checked = (col.Visible <> KBotColumnVisibility.Hidden)
                 chkColEnabled.Checked = col.Enabled
                 chkColReadOnly.Checked = col.[ReadOnly]
                 chkColAutoHide.Checked = col.AutoHide
@@ -407,7 +407,7 @@ Public NotInheritable Class DataViewPlaygroundForm
             col.MinWidth = CInt(numColMin.Value)
             col.MaxWidth = If(numColMax.Value = 0D, Integer.MaxValue, CInt(numColMax.Value))
             col.Width = CInt(numColWidth.Value)
-            col.Visible = chkColVisible.Checked
+            col.Visible = If(chkColVisible.Checked, KBotColumnVisibility.Visible, KBotColumnVisibility.Hidden)
             col.Enabled = chkColEnabled.Checked
             col.[ReadOnly] = chkColReadOnly.Checked
             col.AutoHide = chkColAutoHide.Checked
@@ -467,7 +467,7 @@ Public NotInheritable Class DataViewPlaygroundForm
             If c.IsEffectivelyVisible Then
                 shownN += 1
                 sumW += c.Width
-            ElseIf c.Visible Then
+            ElseIf c.Visible = KBotColumnVisibility.Visible Then
                 autoHiddenN += 1     ' vizibilă pentru caller, dar ascunsă automat (nu încape)
             End If
         Next

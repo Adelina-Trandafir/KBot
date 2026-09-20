@@ -49,6 +49,13 @@ Public NotInheritable Class KBotCalendarPopup
         ' pixels, and a second pass of the form's own scaling would stretch it a second time.
         AutoScaleMode = AutoScaleMode.None
 
+        ' The window itself never shows: the calendar docks over its whole client area. What the
+        ' operator could still see is the frame's own background erase in the instant between the
+        ' window appearing and the calendar's first paint -- one flash on every opening. All
+        ' painting goes through WM_PAINT, double-buffered, exactly as CustomPopup does it.
+        SetStyle(ControlStyles.AllPaintingInWmPaint Or ControlStyles.OptimizedDoubleBuffer Or
+                 ControlStyles.UserPaint, True)
+
         _calendar.Dock = DockStyle.Fill
         _calendar.ShowToday = True
         AddHandler _calendar.DateSelected, AddressOf OnCalendarDateSelected
@@ -111,6 +118,11 @@ Public NotInheritable Class KBotCalendarPopup
                                                sus.X + anchorRect.Width, sus.Y, wa)
 
             Owner = anchor.FindForm()
+            ' A TopMost owner (the filter condition dialog is one) keeps its band above every plain
+            ' window, owned ones included: without this line the calendar opens BEHIND the field it
+            ' hangs off. Set before Show, so the window is created in the right band and never has
+            ' to be moved between bands on screen.
+            TopMost = Owner IsNot Nothing AndAlso Owner.TopMost
             Show()
             Activate()
             _calendar.Focus()

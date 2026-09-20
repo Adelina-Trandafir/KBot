@@ -6,44 +6,41 @@ Imports KBot.Common
 Imports KBot.Theming
 
 ''' <summary>
-''' MENIUL DE COLOANĂ al unei <see cref="KBotDataView"/> — echivalentul săgeții din antetul unei foi
-''' de date Access, cu TREI FILE alese dintr-un <see cref="KBotNavList"/> orizontal (slice 0030):
+''' The COLUMN MENU of a <see cref="KBotDataView"/> -- the counterpart of the arrow in the header
+''' of an Access datasheet, with THREE TABS chosen from a horizontal <see cref="KBotNavList"/>
+''' (slice 0030):
 '''
 ''' <list type="number">
-''' <item><description><b>Sortare</b> — crescător / descrescător, plus «resetează sortarea»;</description></item>
-''' <item><description><b>Filtrare</b> — lista de valori bifabile cu «(Selectează tot)» și o casetă
-''' de căutare, submeniul de CONDIȚII («Filtre text / numerice / de dată») și «Șterge filtrul»;</description></item>
-''' <item><description><b>Grupare</b> — opțiunile de nivel din felia 0029 pentru COLOANA aceasta,
-''' plus ierarhia de niveluri a grilei. Fila se vede numai dacă grila are
-''' <see cref="KBotDataView.EnableGrouping"/> aprins.</description></item>
+''' <item><description><b>Sortare</b> (<see cref="KBotFilterPopupSortView"/>) -- ascending /
+''' descending, plus «reseteaza sortarea»;</description></item>
+''' <item><description><b>Filtrare</b> (<see cref="KBotFilterPopupFilterView"/>) -- the list of
+''' tickable values with «(Selecteaza tot)» and a search box, the CONDITIONS submenu («Filtre
+''' text / numerice / de data») and «Sterge filtrul»;</description></item>
+''' <item><description><b>Grupare</b> (<see cref="KBotFilterPopupGroupView"/>) -- the level
+''' options of slice 0029 for THIS column, plus the grid's hierarchy of levels. The tab shows only
+''' when the grid has <see cref="KBotDataView.EnableGrouping"/> on.</description></item>
 ''' </list>
 '''
-''' <para><b>Meniul e AUTORAT ÎN DESIGNER.</b> Până la felia 0028-06 era o fereastră desenată
-''' integral de noi (≈400 de linii de pictură plus tot atâtea de hit-test și geometrie), fiindcă un
-''' <c>ContextMenuStrip</c> cu un <c>CheckedListBox</c> ar fi rămas două dreptunghiuri albe pe o
-''' schemă întunecată. Motivul acela a dispărut între timp: <c>ThemeManager</c> are reguli pe tip
-''' pentru <c>CheckedListBox</c>, <c>CheckBox</c>, <c>Button</c> și <c>Panel</c> (inclusiv tema
-''' nativă a barelor de derulare), iar <see cref="KBotThemedForm"/> le aplică singur. Deci TOATE
-''' controalele stau în <c>KBotFilterPopup.Designer.vb</c>, ca la orice formular al casei, iar
-''' fișierul acesta ține DOAR comportamentul.</para>
+''' <para><b>Each tab is a view of its own.</b> Until this split the three tabs were three
+''' Panels stacked in one designer file, and this class held the behaviour of all of them. Now
+''' every tab is a <c>KBotThemedUserControl</c> with its own designer, created lazily at first
+''' activation and hosted one at a time in <c>viewHost</c> -- the same shape as <c>KbotForm</c>
+''' and <c>SetariForm</c> behind their nav lists. This class keeps only what the tabs share: the
+''' frame (nav bar, separator, command bar), the window's height, the menu's window behaviour
+''' (deactivate closes, Esc, Enter, the drop shadow) and the two things a tab cannot do from
+''' inside a UserControl: open the conditions submenu and the modal operand dialog, which need
+''' the popup's own window hidden and its deactivation suppressed.</para>
 '''
-''' <para><b>Ce rămâne al rulării, și de ce:</b> textele care depind de tipul coloanei (sortarea se
-''' numește «A → Z» pe text și «de la mic la mare» pe numere), starea de activare a lui «Șterge
-''' filtrul», existența butonului de condiții (coloanele logice n-au submeniu),
-''' <b>conținutul listei de valori</b> și <b>conținutul filei de grupare</b> — valorile distincte
-''' ale unei coloane și nivelurile de grupare ale grilei nu există la proiectare. Controalele care
-''' le arată, în schimb, sunt ale designerului, ca tot restul.</para>
-'''
-''' <para><b>Trei feluri de a preda o hotărâre, și diferența contează:</b></para>
+''' <para><b>Three ways of handing a decision over, and the difference matters:</b></para>
 ''' <list type="bullet">
-''' <item><description><b>FILTRUL se predă la OK.</b> Popup-ul lucrează pe o COPIE
-''' (<see cref="KBotColumnFilter.Clone"/>) și ridică <see cref="FilterAccepted"/> abia la apăsarea
-''' OK; «Anulează» și Esc nu lasă nimic în urmă.</description></item>
-''' <item><description><b>SORTAREA se aplică imediat ȘI închide meniul</b> — nu e o alegere de
-''' confirmat, e o comandă, exact ca în Access.</description></item>
-''' <item><description><b>GRUPAREA se aplică imediat, dar NU închide meniul.</b> E tot o comandă
-''' (grila se rearanjează pe loc, iar operatorul vede rezultatul în spate), numai că are șapte
-''' opțiuni: o filă care s-ar închide la prima bifă ar trebui redeschisă de șase ori.</description></item>
+''' <item><description><b>The FILTER is handed over at OK.</b> The filter tab works on a COPY
+''' (<see cref="KBotColumnFilter.Clone"/>) and <see cref="FilterAccepted"/> is raised only at OK;
+''' «Anuleaza» and Esc leave nothing behind.</description></item>
+''' <item><description><b>SORTING applies at once AND closes the menu</b> -- it is a command, not
+''' a choice to confirm, exactly as in Access.</description></item>
+''' <item><description><b>GROUPING applies at once but does NOT close the menu.</b> It is a
+''' command too (the grid rearranges on the spot), only it has seven options: a tab that closed
+''' at the first tick would have to be reopened six times.</description></item>
 ''' </list>
 ''' </summary>
 <ToolboxItem(False)>
@@ -52,119 +49,108 @@ Partial Friend NotInheritable Class KBotFilterPopup
     Private Const WS_EX_TOOLWINDOW As Integer = &H80
     Private Const CS_DROPSHADOW As Integer = &H20000
 
-    ''' <summary>Câte valori se văd fără derulare — restul, la scroll (lista are bara ei).</summary>
-    Private Const MaxListRows As Integer = 10
-
-    ''' <summary>Sub atât nu coboară fereastra, oricât de scurtă ar fi fila activă.</summary>
+    ''' <summary>The window never goes below this, however short the active tab is.</summary>
     Private Const MinHeight As Integer = 160
 
-    ' Rândul butonului de condiții din tlyFiltrare — se strânge la zero pe coloanele logice.
-    Private Const RandConditii As Integer = 4
-
-    ' ── Ce filtrăm ───────────────────────────────────────────────────────────────
+    ' ── What the menu is for ─────────────────────────────────────────────────
     Private ReadOnly _columnKey As String
     Private ReadOnly _columnCaption As String
     Private ReadOnly _valueType As KBotValueType
-    Private ReadOnly _values As New List(Of String)()          ' textele distincte, în ordine
-    Private ReadOnly _checked As HashSet(Of String)
-    Private ReadOnly _working As KBotColumnFilter
+    Private ReadOnly _distinctValues As New List(Of String)()  ' handed to the filter tab when it is created
+    Private ReadOnly _currentFilter As KBotColumnFilter
     Private ReadOnly _currentSort As KBotSortDirection
 
-    ' Grila care a deschis meniul — DOAR ca să se poată citi starea de grupare (nivelurile active și
-    ' cel al coloanei acesteia). Nimic nu se scrie prin ea: hotărârile ies pe evenimente, ca
-    ' filtrul și sortarea. Nothing = meniu fără gazdă (teste, bancul de probă) => fără filă de
-    ' grupare.
+    ' The .NET format of the condition dialog's date fields (only read on a DateTime column):
+    ' the column's own format, so the field shows the same hour/second/millisecond the cell does.
+    Private ReadOnly _dateOperandFormat As String
+
+    ' The grid that opened the menu -- ONLY so the grouping tab can read the grouping state
+    ' (active levels and the level of this column). Nothing is written through it: decisions go
+    ' out on events, like the filter and the sort. Nothing = no host (tests, the harness) =>
+    ' no grouping tab.
     Private ReadOnly _grid As KBotDataView
 
-    ' Indicii din _values care trec de căutare — adică exact ce e în lstValori, în aceeași ordine.
-    Private ReadOnly _shown As New List(Of Integer)()
+    ' Tabs created lazily (key -> instance); one is visible.
+    Private ReadOnly _views As New Dictionary(Of String, IKBotFilterMenuView)(StringComparer.Ordinal)
+    Private _activeView As IKBotFilterMenuView
 
-    ' Cât timp e True, evenimentele controalelor sunt ecoul nostru, nu al operatorului.
-    Private _syncing As Boolean = False
+    ' The open tab. Kept IN A FIELD, not read from a control's Visible, and that is not a
+    ' preference: the getter of Control.Visible answers about the PARENT CHAIN, so on a form not
+    ' yet shown every tab reports False -- the measurement would always size the window on the
+    ' same tab, and any headless check would measure something other than what is on screen.
+    Private _activeKey As String = "filtrare"
+
     Private _suppressDeactivate As Boolean = False
     Private _closing As Boolean = False
 
-    ' False până la sfârșitul constructorului: EndInit-ul barei de file ridică SelectionChanged din
-    ' mijlocul lui InitializeComponent, cu mult înainte ca vreun câmp de mai sus să existe.
-    Private _construit As Boolean = False
-
-    ' Fila deschisă. Ținută ÎNTR-UN CÂMP, nu citită din «pnlX.Visible», și asta nu e o preferință:
-    ' getter-ul lui Control.Visible răspunde despre LANȚUL DE PĂRINȚI, deci pe un formular încă
-    ' nearătat toate cele trei file raportează False — măsurarea ar croi mereu fereastra pe aceeași
-    ' filă, iar orice probă headless ar măsura altceva decât ce se vede pe ecran.
-    Private _fila As String = "filtrare"
+    ' False until the end of the constructor: the nav bar's EndInit raises SelectionChanged from
+    ' the middle of InitializeComponent, long before any field above exists.
+    Private _built As Boolean = False
 
     ''' <summary>
-    ''' Operatorul a apăsat OK: filtrul din argument e cel de așezat pe coloană (poate fi inactiv,
-    ''' adică «fără filtru»).
+    ''' The operator pressed OK: the filter in the argument is the one to put on the column
+    ''' (it may be inactive, i.e. «no filter»).
     ''' </summary>
     Friend Event FilterAccepted As EventHandler(Of KBotFilterAcceptedEventArgs)
 
-    ''' <summary>Operatorul a cerut o sortare. Se aplică imediat, iar meniul se închide.</summary>
+    ''' <summary>The operator asked for a sort. It applies at once and the menu closes.</summary>
     Friend Event SortRequested As EventHandler(Of KBotSortRequestedEventArgs)
 
     ''' <summary>
-    ''' Operatorul a schimbat gruparea coloanei. Se aplică imediat, dar meniul RĂMÂNE deschis —
-    ''' vezi rezumatul clasei.
+    ''' The operator changed the column's grouping. It applies at once but the menu STAYS open --
+    ''' see the class summary.
     ''' </summary>
     Friend Event GroupingRequested As EventHandler(Of KBotGroupingRequestedEventArgs)
 
     ''' <summary>
-    ''' Construiește meniul pentru o coloană: titlul afișat, tipul valorilor, valorile distincte
-    ''' (deja formatate, în ordinea de sortare), filtrul curent (<c>Nothing</c> = niciunul) și
-    ''' sensul de sortare al coloanei. Grila e opțională: fără ea meniul n-are filă de grupare.
+    ''' Builds the menu for a column: the displayed caption, the type of the values, the distinct
+    ''' values (already formatted, in sort order), the current filter (<c>Nothing</c> = none) and
+    ''' the column's sort direction. The grid is optional: without it the menu has no grouping tab.
+    ''' <paramref name="dateOperandFormat"/> is the format of the condition dialog's date fields
+    ''' (see <see cref="KBotColumnFormat.DateOperandFormat"/>); Nothing = the culture's short date.
     ''' </summary>
     Friend Sub New(columnKey As String, columnCaption As String, valueType As KBotValueType,
                    distinctValues As IEnumerable(Of String), currentFilter As KBotColumnFilter,
-                   currentSort As KBotSortDirection, Optional grid As KBotDataView = Nothing)
+                   currentSort As KBotSortDirection, Optional grid As KBotDataView = Nothing,
+                   Optional dateOperandFormat As String = Nothing)
         InitializeComponent()
 
         ' A menu, not a dialog: it already has the menu shadow (CS_DROPSHADOW, in CreateParams
         ' below), so the window shadow of the base (slice 0069) would only double it.
         BorderlessShadow = False
 
-        ' The three tables are KBotTableLayoutPanels (slice 0066): they keep their authored
-        ' measures themselves and refit on every theme and scale pass -- nothing to capture here.
-
         _columnKey = columnKey
         _columnCaption = If(columnCaption, String.Empty)
         _valueType = valueType
         _grid = grid
-        If distinctValues IsNot Nothing Then _values.AddRange(distinctValues)
-        _working = If(currentFilter Is Nothing, New KBotColumnFilter(columnKey), currentFilter.Clone())
+        If distinctValues IsNot Nothing Then _distinctValues.AddRange(distinctValues)
+        _currentFilter = currentFilter
         _currentSort = currentSort
+        _dateOperandFormat = dateOperandFormat
 
-        ' Bifele pornesc de la filtrul existent; fără filtru, tot ce există e bifat — adică starea
-        ' «nefiltrat», nu una goală pe care operatorul ar trebui s-o repare cu «Selectează tot».
-        If _working.SelectedValues Is Nothing Then
-            _checked = New HashSet(Of String)(_values, StringComparer.CurrentCultureIgnoreCase)
-        Else
-            _checked = New HashSet(Of String)(_working.SelectedValues, StringComparer.CurrentCultureIgnoreCase)
-        End If
+        ' The grouping tab exists only if the grid offers it (KBotDataView.EnableGrouping).
+        navFile.SetItemVisible("grupare", HasGrouping)
 
-        AplicaTexteleDependenteDeColoana()
-        RebuildShown()
-        PopuleazaGruparea()
-        _construit = True
-        AplicaFila(navFile.SelectedKey)
+        _built = True
+        ActivateView(navFile.SelectedKey)
     End Sub
 
-    ''' <summary>Cheia coloanei pentru care s-a deschis meniul.</summary>
+    ''' <summary>The key of the column the menu was opened for.</summary>
     Friend ReadOnly Property ColumnKey As String
         Get
             Return _columnKey
         End Get
     End Property
 
-    ''' <summary>Fila deschisă acum: «sortare», «filtrare» sau «grupare».</summary>
+    ''' <summary>The tab open now: «sortare», «filtrare» or «grupare».</summary>
     Friend ReadOnly Property FilaCurenta As String
         Get
-            Return _fila
+            Return _activeKey
         End Get
     End Property
 
-    ' Grila oferă operatorului fila de grupare? (Fără gazdă, niciodată.)
-    Private ReadOnly Property AreGrupare As Boolean
+    ' Does the grid offer the operator the grouping tab? (Without a host, never.)
+    Private ReadOnly Property HasGrouping As Boolean
         Get
             Return _grid IsNot Nothing AndAlso _grid.EnableGrouping
         End Get
@@ -173,326 +159,226 @@ Partial Friend NotInheritable Class KBotFilterPopup
     Protected Overrides ReadOnly Property CreateParams As CreateParams
         Get
             Dim cp As CreateParams = MyBase.CreateParams
-            cp.ExStyle = cp.ExStyle Or WS_EX_TOOLWINDOW      ' fără buton în bara de activități
-            cp.ClassStyle = cp.ClassStyle Or CS_DROPSHADOW   ' umbra pe care o are orice meniu
+            cp.ExStyle = cp.ExStyle Or WS_EX_TOOLWINDOW      ' no button on the task bar
+            cp.ClassStyle = cp.ClassStyle Or CS_DROPSHADOW   ' the shadow every menu has
             Return cp
         End Get
     End Property
 
     ' ══════════════════════════════════════════════════════════════════════════
-    ' TEMĂ
+    ' THEME
     ' ══════════════════════════════════════════════════════════════════════════
 
     ''' <summary>
-    ''' Culorile SEMANTICE, cele pe care regulile generice pe tip n-au de unde să le știe: chenarul
-    ''' meniului (marginea formularului), liniile despărțitoare, suprafața pe care stau rândurile și
-    ''' RÂNDURILE DE MENIU. Restul — cele două butoane de comandă, bifele, listele, barele lor de
-    ''' derulare, bara de file — vine de la <c>ThemeManager.Apply</c>, prin
+    ''' The SEMANTIC colours of the frame, the ones the generic per-type rules cannot know: the
+    ''' menu border (the form's margin), the line under the navigation and the surface the frame
+    ''' sits on. Each tab colours its own content in its <c>ApplyTheme</c>; the two command
+    ''' buttons and the nav bar come from <c>ThemeManager.Apply</c>, through
     ''' <see cref="KBotThemedForm"/>.
     ''' </summary>
     Protected Overrides Sub OnThemeChanged()
         Try
             Dim p As ThemePalette = ThemeManager.Current.Palette
-            BackColor = p.BorderColor                ' rama de 1px = Padding-ul formularului
-            pnlCorp.BackColor = p.SurfaceAltColor
-            pnlFile.BackColor = p.SurfaceAltColor
-            pnlSortare.BackColor = p.SurfaceAltColor
-            pnlFiltrare.BackColor = p.SurfaceAltColor
-            pnlGrupare.BackColor = p.SurfaceAltColor
-            pnlSensGrup.BackColor = p.SurfaceAltColor
-            pnlButoane.BackColor = p.SurfaceAltColor
-            tlySortare.BackColor = p.SurfaceAltColor
-            tlyFiltrare.BackColor = p.SurfaceAltColor
-            tlyGrupare.BackColor = p.SurfaceAltColor
-            picCauta.BackColor = p.SurfaceAltColor
+            BackColor = p.BorderColor                ' the 1px frame = the form's Padding
+            pnlBody.BackColor = p.SurfaceAltColor
+            viewHost.BackColor = p.SurfaceAltColor
+            pnlCommands.BackColor = p.SurfaceAltColor
             navFile.BackColor = p.SurfaceAltColor
+            ButtonStyles.ApplyTrans(btnCancel, ThemeManager.Current)
+            ButtonStyles.ApplyTrans(btnOk, ThemeManager.Current)
+            btnCancel.Padding = Padding.Empty
+            btnOk.Padding = Padding.Empty
 
-            ' Liniile despărțitoare sunt PANOURI, nu etichete: regula generică de Label pune
-            ' BackColor = Transparent, adică o linie de 1px care nu se mai vede deloc.
+            ' The separator is a PANEL, not a label: the generic Label rule sets
+            ' BackColor = Transparent, i.e. a 1px line that no longer shows at all.
             sepNav.BackColor = p.BorderColor
-            sepSortare.BackColor = p.BorderColor
-            sepFiltrare.BackColor = p.BorderColor
-            sepGrupare.BackColor = p.BorderColor
 
-            lstValori.BackColor = p.SurfaceAltColor  ' listele continuă suprafața meniului
-            lstValori.ForeColor = p.TextColor
-            lstNiveluri.BackColor = p.SurfaceAltColor
-            lstNiveluri.ForeColor = p.TextColor
-            lblNiveluri.ForeColor = p.TextDimColor
-
-            ' Comenzile de meniu sunt RÂNDURI, nu butoane (vezi AplicaRandDeMeniu). Roșul lui
-            ' «Șterge filtrul» vine din paletă, nu din designer: e culoarea de avertizare a schemei
-            ' active, nu un Firebrick scris o dată.
-            AplicaRandDeMeniu(btnSortAsc, p, p.TextColor)
-            AplicaRandDeMeniu(btnSortDesc, p, p.TextColor)
-            AplicaRandDeMeniu(btnSortClear, p, p.ErrorColor)
-            AplicaRandDeMeniu(btnConditii, p, p.TextColor)
-            AplicaRandDeMeniu(btnStergeFiltru, p, p.ErrorColor)
-
-            ' O schemă poate cere alt aer în jurul textului (Modern: 12,8,12,8) și alt font, iar
-            ' designerul a autorat totul pe Classic. Rândurile de tabel se re-măsoară aici, apoi
-            ' fereastra se re-măsoară peste ele.
-            AjusteazaInaltimea()
+            ' A scheme may ask for other air around the text (Modern: 12,8,12,8) and another
+            ' font, and the designer authored everything on Classic. The tab re-measures its
+            ' rows, then the window re-measures over them.
+            AdjustHeight()
         Catch ex As Exception
-            ' Boundary de temă: loghează + ÎNGHITE — o excepție aici ar rupe comutarea de schemă.
+            ' Theme boundary: log and swallow -- a throw here would break the scheme switch.
             GlobalErrorLog.Write("KBotFilterPopup.OnThemeChanged", ex)
         End Try
     End Sub
 
-    ''' <summary>
-    ''' Un RÂND DE MENIU: plat, fără chenar, pe toată lățimea, în culoarea suprafeței pe care stă —
-    ''' hover-ul e singurul lucru care-l scoate în relief, exact ca într-un meniu de sistem.
-    '''
-    ''' <para><b>De ce nu-l lăsăm pe seama regulii generice de buton.</b> Schema Modern randează
-    ''' orice <c>Button</c> owner-drawn: îi taie colțurile cu un <c>Region</c> de rază 8 și-i pune
-    ''' fundalul de buton (<c>#F3F3F3</c>). Pe un rând lat cât meniul, prin decupaje se vedea
-    ''' suprafața de dedesubt (<c>#FFFFFF</c>), deci meniul arăta ca niște pastile gri lipite pe o
-    ''' foaie albă, nu ca o listă de comenzi. <c>DetachButton</c> scoate Region-ul și, pe drum,
-    ''' redă marginea și înălțimea AUTORATE — schema modernă le mărise ca să încapă umplutura ei.
-    ''' Celelalte scheme nu rotunjesc nimic, iar apelul e idempotent: rândul iese la fel peste
-    ''' tot.</para>
-    ''' </summary>
-    Private Sub AplicaRandDeMeniu(b As Button, p As ThemePalette, culoareText As Color)
-        ModernRenderer.DetachButton(b)
-        b.FlatStyle = FlatStyle.Flat
-        b.FlatAppearance.BorderSize = 0
-        b.BackColor = p.SurfaceAltColor
-        b.ForeColor = culoareText
-        b.FlatAppearance.MouseOverBackColor = p.ButtonHoverColor
-        b.FlatAppearance.MouseDownBackColor = p.ButtonPressedColor
-        b.UseVisualStyleBackColor = False
-    End Sub
-
     ' ══════════════════════════════════════════════════════════════════════════
-    ' FILELE
+    ' THE TABS
     ' ══════════════════════════════════════════════════════════════════════════
-
-    ' Arată fila cerută și le ascunde pe celelalte două. O cheie necunoscută cade pe «filtrare» —
-    ' asta e fila pentru care se apasă pâlnia din antet.
-    Private Sub AplicaFila(cheie As String)
-        Dim grupare As Boolean = String.Equals(cheie, "grupare", StringComparison.Ordinal) AndAlso AreGrupare
-        Dim sortare As Boolean = String.Equals(cheie, "sortare", StringComparison.Ordinal)
-        _fila = If(grupare, "grupare", If(sortare, "sortare", "filtrare"))
-
-        pnlSortare.Visible = sortare
-        pnlGrupare.Visible = grupare
-        pnlFiltrare.Visible = Not sortare AndAlso Not grupare
-
-        ' Butoanele OK / Anulează sunt ale FILTRULUI: el e singurul care se predă la sfârșit.
-        ' Sortarea și gruparea s-au aplicat deja când operatorul a apăsat, deci pe filele lor
-        ' bara de jos ar arăta ca și cum ar mai fi ceva de confirmat.
-        pnlButoane.Visible = Not sortare AndAlso Not grupare
-
-        AjusteazaInaltimea()
-    End Sub
 
     Private Sub NavFile_SelectionChanged(key As String) Handles navFile.SelectionChanged
         Try
-            If Not _construit Then Return
-            AplicaFila(key)
+            If Not _built Then Return
+            ActivateView(key)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotFilterPopup.NavFile_SelectionChanged", ex)
         End Try
     End Sub
 
-    ' ══════════════════════════════════════════════════════════════════════════
-    ' CE SE AȘAZĂ LA RULARE (restul e în .Designer.vb)
-    ' ══════════════════════════════════════════════════════════════════════════
-
-    ' Textele care depind de TIPUL coloanei și starea care depinde de filtrul curent.
-    Private Sub AplicaTexteleDependenteDeColoana()
-        btnSortAsc.Text = KBotFilterEngine.SortCaption(_valueType, KBotSortDirection.Ascending) &
-                          SemnulSortarii(KBotSortDirection.Ascending)
-        btnSortDesc.Text = KBotFilterEngine.SortCaption(_valueType, KBotSortDirection.Descending) &
-                           SemnulSortarii(KBotSortDirection.Descending)
-        btnSortClear.Enabled = _currentSort <> KBotSortDirection.None
-        btnStergeFiltru.Text = $"Șterge filtrul din «{_columnCaption}»"
-        btnStergeFiltru.Enabled = _working.IsActive
-
-        ' Fila de grupare există doar dacă grila o oferă (KBotDataView.EnableGrouping).
-        navFile.SetItemVisible("grupare", AreGrupare)
-
-        ' Coloanele logice n-au submeniu de condiții: cele două căsuțe din listă spun deja tot ce se
-        ' poate spune despre o bifă (vezi KBotFilterEngine.AllowedOperators). Butonul se ASCUNDE
-        ' ȘI rândul lui se strânge la zero — altfel ar rămâne o bandă goală în mijlocul filei.
-        Dim areConditii As Boolean = KBotFilterEngine.AllowedOperators(_valueType).Length > 0
-        btnConditii.Visible = areConditii
-        tlyFiltrare.SetRowCollapsed(RandConditii, Not areConditii)
-        If areConditii Then btnConditii.Text = KBotFilterEngine.ConditionMenuCaption(_valueType) & "  ▸"
-    End Sub
-
-    ' Sensul activ e marcat, ca operatorul să vadă pe ce e sortată deja coloana.
-    Private Function SemnulSortarii(direction As KBotSortDirection) As String
-        Return If(_currentSort = direction, "   ✓", String.Empty)
-    End Function
-
-    ''' <summary>
-    ''' Ce SCRIE pe rândul unei valori. Golul are o etichetă a lui — un rând complet gol în listă
-    ''' arată ca un rând stricat, iar operatorul trebuie să poată bifa anume celulele necompletate.
-    ''' </summary>
-    Friend Shared Function EtichetaValorii(value As String) As String
-        If String.IsNullOrEmpty(value) Then Return "(Necompletate)"
-        Return value
-    End Function
-
-    ' Umple lista cu valorile care trec de căutare (toate, dacă e goală) și pune bifele la zi.
-    Private Sub RebuildShown()
-        _shown.Clear()
-        Dim cautat As String = txtCauta.Text.Trim()
-        For i As Integer = 0 To _values.Count - 1
-            If cautat.Length = 0 OrElse
-               EtichetaValorii(_values(i)).Contains(cautat, StringComparison.CurrentCultureIgnoreCase) Then
-                _shown.Add(i)
-            End If
-        Next
-
-        _syncing = True
+    ' Shows the tab asked for and hides the previous one. An unknown key falls on «filtrare» --
+    ' that is the tab the funnel in the header is pressed for.
+    Private Sub ActivateView(key As String)
         Try
-            lstValori.BeginUpdate()
-            lstValori.Items.Clear()
-            For Each i In _shown
-                lstValori.Items.Add(EtichetaValorii(_values(i)), _checked.Contains(_values(i)))
-            Next
-            lstValori.EndUpdate()
-        Finally
-            _syncing = False
-        End Try
+            Dim group As Boolean = String.Equals(key, "grupare", StringComparison.Ordinal) AndAlso HasGrouping
+            Dim sort As Boolean = String.Equals(key, "sortare", StringComparison.Ordinal)
+            _activeKey = If(group, "grupare", If(sort, "sortare", "filtrare"))
 
-        ActualizeazaSelecteazaTot()
-    End Sub
-
-    ' Bifa de sus arată starea celor ARĂTATE: toate / niciuna / unele (a treia stare).
-    Private Sub ActualizeazaSelecteazaTot()
-        Dim bifate As Integer = 0
-        For Each i In _shown
-            If _checked.Contains(_values(i)) Then bifate += 1
-        Next
-
-        _syncing = True
-        Try
-            If _shown.Count > 0 AndAlso bifate = _shown.Count Then
-                chkSelecteazaTot.CheckState = CheckState.Checked
-            ElseIf bifate = 0 Then
-                chkSelecteazaTot.CheckState = CheckState.Unchecked
-            Else
-                chkSelecteazaTot.CheckState = CheckState.Indeterminate
+            Dim view As IKBotFilterMenuView = ViewFor(_activeKey)
+            Dim previous As IKBotFilterMenuView = _activeView
+            _activeView = view
+            DirectCast(view, Control).Visible = True
+            If previous IsNot Nothing AndAlso Not ReferenceEquals(previous, view) Then
+                DirectCast(previous, Control).Visible = False
             End If
-        Finally
-            _syncing = False
+
+            ' The OK / «Anuleaza» buttons belong to the FILTER: it is the only tab that hands
+            ' anything over at the end (IKBotFilterMenuView.ShowsCommandBar).
+            pnlCommands.Visible = view.ShowsCommandBar
+
+            AdjustHeight()
+            view.Activated()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotFilterPopup.ActivateView", ex)
+            Throw
         End Try
     End Sub
 
+    ' The tab for a key, created at first request (lazy, like the shell's views) and added to
+    ' the host hidden; the caller decides what shows. Every tab lives until the menu closes.
+    Private Function ViewFor(key As String) As IKBotFilterMenuView
+        Dim view As IKBotFilterMenuView = Nothing
+        If _views.TryGetValue(key, view) Then Return view
+
+        view = CreateView(key)
+        Dim ctrl As Control = DirectCast(view, Control)
+        ctrl.Dock = DockStyle.Fill
+        ctrl.Visible = False
+        viewHost.Controls.Add(ctrl)
+        ThemeManager.Apply(ctrl)
+        _views(key) = view
+        Return view
+    End Function
+
+    Private Function CreateView(key As String) As IKBotFilterMenuView
+        Try
+            Select Case key
+                Case "sortare"
+                    Dim v As New KBotFilterPopupSortView(_valueType, _currentSort)
+                    AddHandler v.SortRequested, AddressOf SortView_SortRequested
+                    Return v
+                Case "filtrare"
+                    Dim v As New KBotFilterPopupFilterView(_columnKey, _columnCaption, _valueType,
+                                                           _distinctValues, _currentFilter)
+                    AddHandler v.ClearRequested, AddressOf FilterView_ClearRequested
+                    AddHandler v.ConditionMenuRequested, AddressOf FilterView_ConditionMenuRequested
+                    AddHandler v.ContentChanged, AddressOf View_ContentChanged
+                    Return v
+                Case "grupare"
+                    Dim v As New KBotFilterPopupGroupView(_columnKey, _columnCaption, _grid)
+                    AddHandler v.GroupingRequested, AddressOf GroupView_GroupingRequested
+                    AddHandler v.ContentChanged, AddressOf View_ContentChanged
+                    Return v
+                Case Else
+                    Throw New ArgumentException($"Filă necunoscută în meniul de coloană: '{key}'.", NameOf(key))
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotFilterPopup.CreateView", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Typed access to the two tabs that answer questions (BuildFilter, BuildGroupLevel, the
+    ' Debug* gates). They are created on demand: a check may ask before the tab was ever shown.
+    Private ReadOnly Property FilterView As KBotFilterPopupFilterView
+        Get
+            Return DirectCast(ViewFor("filtrare"), KBotFilterPopupFilterView)
+        End Get
+    End Property
+
+    Private ReadOnly Property GroupView As KBotFilterPopupGroupView
+        Get
+            Return DirectCast(ViewFor("grupare"), KBotFilterPopupGroupView)
+        End Get
+    End Property
+
     ' ══════════════════════════════════════════════════════════════════════════
-    ' MĂSURA FERESTREI
+    ' THE WINDOW'S MEASURE
     ' ══════════════════════════════════════════════════════════════════════════
 
     ''' <summary>
-    ''' Singura măsură rămasă în cod: ÎNĂLȚIMEA ferestrei. Lățimea și toate celelalte mărimi sunt
-    ''' ale designerului — o fereastră care se re-măsoară singură pe lățime ar face inutil tot ce
-    ''' așază operatorul acolo.
+    ''' The only measure left in code: the window's HEIGHT. The width and every other size are
+    ''' the designer's -- a window that re-measured its own width would make everything the
+    ''' operator lays out there pointless.
     '''
-    ''' <para>Formula e una singură, pentru toate cele trei file: <b>rama corpului</b> (navigația,
-    ''' linia, bara de butoane, marginile — adică tot ce nu e fila) plus <b>cât cere fila
-    ''' activă</b>. Se măsoară DUPĂ un layout, nu înainte: pe un arbore de controale încă neașezat,
-    ''' înălțimile citite sunt cele scrise de designer, iar diferența față de ele s-ar aduna la
-    ''' fiecare apel.</para>
+    ''' <para>One formula for all three tabs: <b>the frame</b> (navigation, line, command bar,
+    ''' margins -- everything that is not the tab) plus <b>what the active tab asks for</b>
+    ''' (<see cref="IKBotFilterMenuView.RequiredHeight"/>). Measured AFTER a layout, not before:
+    ''' on a control tree not yet laid out the heights read are the designer's, and the
+    ''' difference would add up on every call.</para>
     ''' </summary>
-    Private Sub AjusteazaInaltimea()
-        ' Rândurile fixe se pun întâi pe măsura schemei (umplutura și fontul ei), altfel fereastra
-        ' s-ar croi pe niște rânduri care se schimbă imediat după.
-        tlySortare.RefitToTheme()
-        tlyFiltrare.RefitToTheme()
-        tlyGrupare.RefitToTheme()
+    Private Sub AdjustHeight()
+        If _activeView Is Nothing Then Return
+        Dim wanted As Integer = _activeView.RequiredHeight()
+        If wanted <= 0 Then Return
         PerformLayout()
-
-        Dim cere As Integer = InaltimeaFilei()
-        If cere <= 0 Then Return
-        Dim rama As Integer = ClientSize.Height - pnlFile.Height
-        Dim dorit As Integer = Math.Max(MinHeight, rama + cere)
-        If ClientSize.Height = dorit Then Return
-        ClientSize = New Size(ClientSize.Width, dorit)
+        Dim frame As Integer = ClientSize.Height - viewHost.Height
+        Dim target As Integer = Math.Max(MinHeight, frame + wanted)
+        If ClientSize.Height = target Then Return
+        ClientSize = New Size(ClientSize.Width, target)
         PerformLayout()
     End Sub
 
-    ' Cât cere fila activă: rândurile ei FIXE, plus cât vrea lista ei elastică (rândul Percent).
-    Private Function InaltimeaFilei() As Integer
-        Select Case _fila
-            Case "sortare"
-                Return RanduriFixe(tlySortare)
-            Case "grupare"
-                Return RanduriFixe(tlyGrupare) + CatVreaLista(lstNiveluri, lstNiveluri.Items.Count)
-            Case Else
-                Return RanduriFixe(tlyFiltrare) + CatVreaLista(lstValori, _shown.Count)
-        End Select
-    End Function
-
-    ' Suma rândurilor Absolute ale unui tabel (cele Percent sunt ale listei elastice).
-    Private Shared Function RanduriFixe(tlp As TableLayoutPanel) As Integer
-        Dim total As Single = 0
-        For i As Integer = 0 To tlp.RowStyles.Count - 1
-            Dim rs As RowStyle = tlp.RowStyles(i)
-            If rs.SizeType = SizeType.Absolute Then total += rs.Height
-        Next
-        Return CInt(Math.Ceiling(total))
-    End Function
-
-    ' Cât loc vrea o listă ca să arate câte rânduri are, până la MaxListRows (cu marginile ei).
-    Private Shared Function CatVreaLista(lb As ListBox, elemente As Integer) As Integer
-        Dim randuri As Integer = Math.Max(1, Math.Min(elemente, MaxListRows))
-        Return randuri * lb.ItemHeight + lb.Margin.Vertical
-    End Function
-
     ' ══════════════════════════════════════════════════════════════════════════
-    ' DESCHIDERE
+    ' OPENING
     ' ══════════════════════════════════════════════════════════════════════════
 
     ''' <summary>
-    ''' Deschide meniul sub un dreptunghi din interiorul gazdei (coordonate client) — pictograma de
-    ''' filtru pe care s-a apăsat. Când nu încape dedesubt sau spre dreapta, se răstoarnă peste
-    ''' celelalte două laturi ale pictogramei, ca orice meniu de sistem.
+    ''' Opens the menu under a rectangle inside the host (client coordinates) -- the filter icon
+    ''' that was pressed. When it does not fit below or to the right, it flips over the other two
+    ''' sides of the icon, like any system menu.
     ''' </summary>
     Friend Sub ShowBelow(anchor As Control, anchorRect As Rectangle)
         Try
             ArgumentNullException.ThrowIfNull(anchor)
-            AjusteazaInaltimea()
+            AdjustHeight()
 
-            Dim sus As Point = anchor.PointToScreen(New Point(anchorRect.Left, anchorRect.Top))
-            Location = LocFataDe(sus, anchorRect)
+            Dim top As Point = anchor.PointToScreen(New Point(anchorRect.Left, anchorRect.Top))
+            Location = LocationRelativeTo(top, anchorRect)
 
-            Dim inainte As Integer = Height
+            Dim before As Integer = Height
             Show(anchor.FindForm())
 
-            ' Tema se aplică abia ACUM (KBotThemedForm.OnLoad), iar odată cu ea rândurile fixe își
-            ' primesc măsura schemei — pe Modern meniul poate ieși mai înalt decât cel așezat cu
-            ' două rânduri mai sus. Se re-verifică o singură dată: un meniu care iese pe sub
-            ' marginea de jos a ecranului nu se mai poate citi până la capăt.
-            If Height <> inainte Then Location = LocFataDe(sus, anchorRect)
+            ' The theme applies only NOW (KBotThemedForm.OnLoad), and with it the fixed rows get
+            ' the scheme's measure -- on Modern the menu can come out taller than the one placed
+            ' two lines above. Re-checked once: a menu that runs under the bottom edge of the
+            ' screen cannot be read to the end.
+            If Height <> before Then Location = LocationRelativeTo(top, anchorRect)
 
             Activate()
-            txtCauta.Focus()
+            If _activeView IsNot Nothing Then _activeView.Activated()
         Catch ex As Exception
-            ' Punct de intrare (creare de fereastră, geometrie de ecran) => loghează și RE-ARUNCĂ.
+            ' Entry point (window creation, screen geometry) => log and RE-THROW.
             GlobalErrorLog.Write("KBotFilterPopup.ShowBelow", ex)
             Throw
         End Try
     End Sub
 
-    ' Colțul din stânga-sus al meniului față de pictograma apăsată (coordonate de ECRAN). Când nu
-    ' încape dedesubt sau spre dreapta, se răstoarnă peste celelalte două laturi ale pictogramei,
-    ' ca orice meniu de sistem.
-    Private Function LocFataDe(susEcran As Point, anchorRect As Rectangle) As Point
-        Dim la As New Point(susEcran.X, susEcran.Y + anchorRect.Height)
-        Dim zona As Rectangle = Screen.FromPoint(la).WorkingArea
-        If la.X + Width > zona.Right Then la.X = Math.Max(zona.Left, susEcran.X + anchorRect.Width - Width)
-        If la.Y + Height > zona.Bottom Then la.Y = Math.Max(zona.Top, susEcran.Y - Height)
-        Return la
+    ' The menu's top-left corner relative to the pressed icon (SCREEN coordinates). When it does
+    ' not fit below or to the right, it flips over the other two sides of the icon.
+    Private Function LocationRelativeTo(topScreen As Point, anchorRect As Rectangle) As Point
+        Dim at As New Point(topScreen.X, topScreen.Y + anchorRect.Height)
+        Dim area As Rectangle = Screen.FromPoint(at).WorkingArea
+        If at.X + Width > area.Right Then at.X = Math.Max(area.Left, topScreen.X + anchorRect.Width - Width)
+        If at.Y + Height > area.Bottom Then at.Y = Math.Max(area.Top, topScreen.Y - Height)
+        Return at
     End Function
 
     Protected Overrides Sub OnDeactivate(e As EventArgs)
         Try
             MyBase.OnDeactivate(e)
-            ' Cât timp ține deschis un copil (submeniul de condiții), pierderea activării nu
-            ' înseamnă că operatorul a dat clic în altă parte — înseamnă că se uită la copil.
+            ' While a child is open (the conditions submenu), losing activation does not mean the
+            ' operator clicked elsewhere -- it means they are looking at the child.
             If _suppressDeactivate OrElse _closing Then Return
             Close()
         Catch ex As Exception
@@ -500,8 +386,8 @@ Partial Friend NotInheritable Class KBotFilterPopup
         End Try
     End Sub
 
-    ' Esc închide fără să lase nimic în urmă; Enter predă filtrul. KeyPreview e pus în designer, ca
-    ' cele două taste să funcționeze indiferent ce control are focusul.
+    ' Esc closes leaving nothing behind; Enter hands the filter over. KeyPreview is set in the
+    ' designer, so the two keys work whatever control has the focus.
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
         Try
             MyBase.OnKeyDown(e)
@@ -511,10 +397,10 @@ Partial Friend NotInheritable Class KBotFilterPopup
                     Close()
                 Case Keys.Enter
                     e.SuppressKeyPress = True
-                    ' Enter confirmă FILTRUL. Pe celelalte două file nu e nimic de confirmat
-                    ' (s-au aplicat deja), deci tasta doar închide meniul.
-                    If String.Equals(_fila, "filtrare", StringComparison.Ordinal) Then
-                        AcceptaFiltrul()
+                    ' Enter confirms the FILTER. On the other two tabs there is nothing to
+                    ' confirm (they applied already), so the key just closes the menu.
+                    If String.Equals(_activeKey, "filtrare", StringComparison.Ordinal) Then
+                        AcceptFilter()
                     Else
                         Close()
                     End If
@@ -525,366 +411,165 @@ Partial Friend NotInheritable Class KBotFilterPopup
     End Sub
 
     ' ══════════════════════════════════════════════════════════════════════════
-    ' EVENIMENTELE CONTROALELOR
+    ' WHAT THE TABS ASK FOR
     ' ══════════════════════════════════════════════════════════════════════════
 
-    Private Sub BtnSortAsc_Click(sender As Object, e As EventArgs) Handles btnSortAsc.Click
-        CereSortare(KBotSortDirection.Ascending)
-    End Sub
-
-    Private Sub BtnSortDesc_Click(sender As Object, e As EventArgs) Handles btnSortDesc.Click
-        CereSortare(KBotSortDirection.Descending)
-    End Sub
-
-    Private Sub BtnSortClear_Click(sender As Object, e As EventArgs) Handles btnSortClear.Click
-        CereSortare(KBotSortDirection.None)
-    End Sub
-
-    Private Sub BtnStergeFiltru_Click(sender As Object, e As EventArgs) Handles btnStergeFiltru.Click
-        Try
-            _closing = True
-            RaiseEvent FilterAccepted(Me, New KBotFilterAcceptedEventArgs(New KBotColumnFilter(_columnKey)))
-            Close()
-        Catch ex As Exception
-            GlobalErrorLog.Write("KBotFilterPopup.BtnStergeFiltru_Click", ex)
-        End Try
-    End Sub
-
-    Private Sub BtnConditii_Click(sender As Object, e As EventArgs) Handles btnConditii.Click
-        Try
-            ' Ancora se cere în coordonatele CORPULUI: butonul stă cu trei părinți mai jos (tabel,
-            ' filă, gazda filelor), deci Bounds-ul lui e față de tabel, nu față de pnlCorp.
-            DeschideConditii(pnlCorp.RectangleToClient(btnConditii.Parent.RectangleToScreen(btnConditii.Bounds)))
-        Catch ex As Exception
-            GlobalErrorLog.Write("KBotFilterPopup.BtnConditii_Click", ex)
-        End Try
-    End Sub
-
-    Private Sub BtnOk_Click(sender As Object, e As EventArgs) Handles btnOk.Click
-        AcceptaFiltrul()
-    End Sub
-
-    Private Sub BtnAnuleaza_Click(sender As Object, e As EventArgs) Handles btnAnuleaza.Click
-        Try
-            Close()
-        Catch ex As Exception
-            GlobalErrorLog.Write("KBotFilterPopup.BtnAnuleaza_Click", ex)
-        End Try
-    End Sub
-
-    Private Sub TxtCauta_TextChanged(sender As Object, e As EventArgs) Handles txtCauta.TextChanged
-        Try
-            RebuildShown()
-            AjusteazaInaltimea()
-        Catch ex As Exception
-            GlobalErrorLog.Write("KBotFilterPopup.TxtCauta_TextChanged", ex)
-        End Try
-    End Sub
-
-    ' Bifează / debifează toate valorile ARĂTATE (adică cele care trec de căutare). Peste o listă
-    ' căutată, «Selectează tot» care ar atinge și valorile nevăzute ar fi o comandă care face mai
-    ' mult decât se vede pe ecran.
-    Private Sub ChkSelecteazaTot_Click(sender As Object, e As EventArgs) Handles chkSelecteazaTot.Click
-        Try
-            If _syncing Then Return
-            ComutaToate()
-        Catch ex As Exception
-            GlobalErrorLog.Write("KBotFilterPopup.ChkSelecteazaTot_Click", ex)
-        End Try
-    End Sub
-
-    ' ItemCheck vine ÎNAINTE ca lista să-și schimbe starea, deci se citește e.NewValue, nu bifa.
-    '
-    ' Clauza «Handles» de mai jos NU e decorativă și n-are voie să dispară: fără ea, bifele puse cu
-    ' mouse-ul nu ajung niciodată în _checked. Meniul arată corect, dar filtrul predat la OK e cel
-    ' de dinaintea oricărui clic — iar «debifează tot, apoi bifează una» (drumul obișnuit) predă un
-    ' set GOL, adică o grilă goală. S-a pierdut o dată exact așa, la o redenumire.
-    Private Sub LstValori_ItemCheck(sender As Object, e As ItemCheckEventArgs) Handles lstValori.ItemCheck
-        Try
-            If _syncing Then Return
-            If e.Index < 0 OrElse e.Index >= _shown.Count Then Return
-            Dim v As String = _values(_shown(e.Index))
-            If e.NewValue = CheckState.Checked Then
-                _checked.Add(v)
-            Else
-                _checked.Remove(v)
-            End If
-            ActualizeazaSelecteazaTot()
-        Catch ex As Exception
-            GlobalErrorLog.Write("KBotFilterPopup.LstValori_ItemCheck", ex)
-        End Try
-    End Sub
-
-    ' ══════════════════════════════════════════════════════════════════════════
-    ' FILA DE GRUPARE
-    ' ══════════════════════════════════════════════════════════════════════════
-
-    ''' <summary>
-    ''' Umple fila de grupare din starea REALĂ a grilei: nivelul așezat pe coloana aceasta (dacă
-    ''' există) și ierarhia de niveluri, în ordinea ei. Nimic din ce se vede aici nu e scris în
-    ''' designer în afară de controale — cheile, titlurile și sensurile sunt ale grilei.
-    ''' </summary>
-    Private Sub PopuleazaGruparea()
-        _syncing = True
-        Try
-            chkGrupeaza.Text = $"Grupează după «{_columnCaption}»"
-
-            Dim n As KBotGroupLevel = If(_grid Is Nothing, Nothing, _grid.GroupLevelFor(_columnKey))
-            chkGrupeaza.Checked = n IsNot Nothing
-            rbGrupDesc.Checked = n IsNot Nothing AndAlso n.SortDirection = KBotSortDirection.Descending
-            rbGrupCresc.Checked = Not rbGrupDesc.Checked
-            chkGrupAntet.Checked = If(n Is Nothing, True, n.ShowHeader)
-            chkGrupSubsol.Checked = If(n Is Nothing, True, n.ShowFooter)
-            chkGrupAgregate.Checked = If(n Is Nothing, False, n.ShowHeaderAggregates)
-            chkGrupStrangere.Checked = If(n Is Nothing, True, n.Collapsible)
-            chkGrupPornitStrans.Checked = If(n Is Nothing, False, n.CollapsedByDefault)
-
-            ActualizeazaNivelurile()
-            ActiveazaOptiunileGrupare()
-        Finally
-            _syncing = False
-        End Try
-    End Sub
-
-    ' Ierarhia grilei, o linie pe nivel, cu coloana curentă marcată — altfel operatorul nu are de
-    ' unde ști pe al câtelea etaj a nimerit ce tocmai a bifat.
-    Private Sub ActualizeazaNivelurile()
-        lstNiveluri.BeginUpdate()
-        Try
-            lstNiveluri.Items.Clear()
-            If _grid Is Nothing Then Return
-            Dim niveluri As IReadOnlyList(Of KBotGroupLevel) = _grid.ActiveLevels()
-            If niveluri.Count = 0 Then
-                lstNiveluri.Items.Add("(grila nu e grupată)")
-                Return
-            End If
-            For i As Integer = 0 To niveluri.Count - 1
-                Dim nv As KBotGroupLevel = niveluri(i)
-                Dim titlu As String = TitluColoanei(nv.ColumnKey)
-                Dim sens As String = If(nv.SortDirection = KBotSortDirection.Descending,
-                                        "descrescător", "crescător")
-                Dim aici As String = If(String.Equals(nv.ColumnKey, _columnKey, StringComparison.Ordinal),
-                                        "   ← coloana aceasta", String.Empty)
-                lstNiveluri.Items.Add($"{i + 1}. {titlu} ({sens}){aici}")
-            Next
-        Finally
-            lstNiveluri.EndUpdate()
-        End Try
-    End Sub
-
-    ' Titlul coloanei din grilă; pe o cheie fără titlu rămâne cheia (mai bine decât un rând gol).
-    Private Function TitluColoanei(colKey As String) As String
-        Try
-            Dim col As KBotDataColumn = _grid.Column(colKey)
-            If Not String.IsNullOrWhiteSpace(col.HeaderText) Then Return col.HeaderText
-        Catch ex As Exception
-            GlobalErrorLog.Write("KBotFilterPopup.TitluColoanei", ex)
-        End Try
-        Return colKey
-    End Function
-
-    ' Fără grupare pe coloană, opțiunile ei n-au despre ce vorbi: se sting, nu se ascund — un rând
-    ' care dispare și reapare la fiecare bifă face fila să sară sub cursor.
-    Private Sub ActiveazaOptiunileGrupare()
-        Dim pornit As Boolean = chkGrupeaza.Checked
-        rbGrupCresc.Enabled = pornit
-        rbGrupDesc.Enabled = pornit
-        chkGrupAntet.Enabled = pornit
-        chkGrupSubsol.Enabled = pornit
-        chkGrupAgregate.Enabled = pornit AndAlso chkGrupAntet.Checked
-        chkGrupStrangere.Enabled = pornit AndAlso chkGrupAntet.Checked
-        chkGrupPornitStrans.Enabled = chkGrupStrangere.Enabled AndAlso chkGrupStrangere.Checked
-    End Sub
-
-    ' Orice atingere din fila de grupare cere aceeași lucrare: se compune nivelul din controale și
-    ' se predă gazdei. Un singur handler pentru toate șapte — șapte handlere identice ar fi șapte
-    ' locuri în care se poate uita un rând.
-    Private Sub OptiuniGrupare_Changed(sender As Object, e As EventArgs) _
-        Handles chkGrupeaza.CheckedChanged, rbGrupCresc.CheckedChanged, rbGrupDesc.CheckedChanged,
-                chkGrupAntet.CheckedChanged, chkGrupSubsol.CheckedChanged,
-                chkGrupAgregate.CheckedChanged, chkGrupStrangere.CheckedChanged,
-                chkGrupPornitStrans.CheckedChanged
-        Try
-            If _syncing OrElse Not _construit Then Return
-            ActiveazaOptiunileGrupare()
-            CereGruparea()
-        Catch ex As Exception
-            GlobalErrorLog.Write("KBotFilterPopup.OptiuniGrupare_Changed", ex)
-        End Try
-    End Sub
-
-    ''' <summary>
-    ''' Nivelul pe care l-ar preda fila de grupare ACUM (<c>Nothing</c> = coloana nu mai grupează).
-    ''' Separat de <see cref="CereGruparea"/> ca regula să poată fi probată fără ecran.
-    '''
-    ''' <para>Nivelul EXISTENT se refolosește, nu se înlocuiește cu unul nou: pe el pot sta culori
-    ''' și fonturi puse din designer (<c>HeaderBackColor</c>, <c>FooterFont</c>…), iar o bifă din
-    ''' meniu n-are voie să le șteargă.</para>
-    ''' </summary>
-    Friend Function BuildGroupLevel() As KBotGroupLevel
-        If Not chkGrupeaza.Checked Then Return Nothing
-
-        Dim n As KBotGroupLevel = If(_grid Is Nothing, Nothing, _grid.GroupLevelFor(_columnKey))
-        If n Is Nothing Then n = New KBotGroupLevel()
-
-        n.ColumnKey = _columnKey
-        n.SortDirection = If(rbGrupDesc.Checked, KBotSortDirection.Descending, KBotSortDirection.Ascending)
-        n.ShowHeader = chkGrupAntet.Checked
-        n.ShowFooter = chkGrupSubsol.Checked
-        n.ShowHeaderAggregates = chkGrupAgregate.Checked
-        n.Collapsible = chkGrupStrangere.Checked
-        n.CollapsedByDefault = chkGrupPornitStrans.Checked
-        Return n
-    End Function
-
-    ' Predă gruparea și RĂMÂNE deschis (vezi rezumatul clasei), apoi își reface propria ierarhie:
-    ' nivelul tocmai adăugat trebuie să se vadă în listă, altfel operatorul nu are nicio confirmare.
-    Private Sub CereGruparea()
-        RaiseEvent GroupingRequested(Me, New KBotGroupingRequestedEventArgs(_columnKey, BuildGroupLevel()))
-        _syncing = True
-        Try
-            ActualizeazaNivelurile()
-        Finally
-            _syncing = False
-        End Try
-        AjusteazaInaltimea()
-    End Sub
-
-    ' ══════════════════════════════════════════════════════════════════════════
-    ' ACȚIUNI
-    ' ══════════════════════════════════════════════════════════════════════════
-
-    ' Aplică sortarea cerută și închide — sortarea e o comandă, nu o alegere de confirmat.
-    Private Sub CereSortare(direction As KBotSortDirection)
+    ' Applies the sort asked for and closes -- sorting is a command, not a choice to confirm.
+    Private Sub SortView_SortRequested(direction As KBotSortDirection)
         Try
             _closing = True
             RaiseEvent SortRequested(Me, New KBotSortRequestedEventArgs(_columnKey, direction))
             Close()
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotFilterPopup.CereSortare", ex)
+            GlobalErrorLog.Write("KBotFilterPopup.SortView_SortRequested", ex)
         End Try
     End Sub
 
+    ' «Sterge filtrul»: an inactive filter goes out, i.e. «lift the filter», and the menu closes.
+    Private Sub FilterView_ClearRequested()
+        Try
+            _closing = True
+            RaiseEvent FilterAccepted(Me, New KBotFilterAcceptedEventArgs(New KBotColumnFilter(_columnKey)))
+            Close()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotFilterPopup.FilterView_ClearRequested", ex)
+        End Try
+    End Sub
+
+    Private Sub FilterView_ConditionMenuRequested(anchorScreen As Rectangle)
+        Try
+            ' The submenu anchors in the BODY's coordinates: the tab handed the row in screen
+            ' coordinates because its own Bounds are relative to its table, not to this window.
+            OpenConditionMenu(pnlBody.RectangleToClient(anchorScreen))
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotFilterPopup.FilterView_ConditionMenuRequested", ex)
+        End Try
+    End Sub
+
+    ' Hands the grouping over and STAYS open (see the class summary); the tab refreshes its own
+    ' hierarchy and then asks for a re-measure through ContentChanged.
+    Private Sub GroupView_GroupingRequested(level As KBotGroupLevel)
+        Try
+            RaiseEvent GroupingRequested(Me, New KBotGroupingRequestedEventArgs(_columnKey, level))
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotFilterPopup.GroupView_GroupingRequested", ex)
+        End Try
+    End Sub
+
+    ' A list changed length (search, a level added): the window follows.
+    Private Sub View_ContentChanged()
+        Try
+            AdjustHeight()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotFilterPopup.View_ContentChanged", ex)
+        End Try
+    End Sub
+
+    Private Sub BtnOk_Click(sender As Object, e As EventArgs) Handles btnOk.Click
+        AcceptFilter()
+    End Sub
+
+    Private Sub BtnCancel_Click(sender As Object, e As EventArgs) Handles btnCancel.Click
+        Try
+            Close()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotFilterPopup.BtnCancel_Click", ex)
+        End Try
+    End Sub
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' THE FILTER
+    ' ══════════════════════════════════════════════════════════════════════════
+
     ''' <summary>
-    ''' Filtrul pe care l-ar preda un «OK» apăsat ACUM. Separat de <c>AcceptaFiltrul</c> ca regula
-    ''' de mai jos să poată fi probată fără ecran — meniul e o fereastră, deciziile lui nu.
+    ''' The filter an OK pressed NOW would hand over (<see cref="KBotFilterPopupFilterView.BuildFilter"/>).
+    ''' Separate from <see cref="AcceptFilter"/> so the rule can be checked without a screen --
+    ''' the menu is a window, its decisions are not.
     ''' </summary>
     Friend Function BuildFilter() As KBotColumnFilter
-        Dim rezultat As New KBotColumnFilter(_columnKey) With {
-            .Condition = _working.Condition,
-            .Operand1 = _working.Operand1,
-            .Operand2 = _working.Operand2}
-
-        ' TOATE valorile bifate = nicio restricție de listă. Fără regula asta, un filtru „bifat
-        ' tot” ar rămâne activ pentru totdeauna și antetul ar arăta coloana ca filtrată degeaba.
-        If _checked.Count < _values.Count Then
-            rezultat.SelectedValues = New HashSet(Of String)(_checked, StringComparer.CurrentCultureIgnoreCase)
-        End If
-
-        Return rezultat
+        Return FilterView.BuildFilter()
     End Function
 
-    ' Predă filtrul construit din starea curentă și închide.
-    Private Sub AcceptaFiltrul()
+    ''' <summary>
+    ''' The level the grouping tab would hand over NOW (<c>Nothing</c> = the column no longer
+    ''' groups) -- <see cref="KBotFilterPopupGroupView.BuildGroupLevel"/>.
+    ''' </summary>
+    Friend Function BuildGroupLevel() As KBotGroupLevel
+        Return GroupView.BuildGroupLevel()
+    End Function
+
+    ''' <summary>What a value's row SAYS -- <see cref="KBotFilterPopupFilterView.ValueLabel"/>.</summary>
+    Friend Shared Function EtichetaValorii(value As String) As String
+        Return KBotFilterPopupFilterView.ValueLabel(value)
+    End Function
+
+    ' Hands over the filter built from the current state and closes.
+    Private Sub AcceptFilter()
         Try
             _closing = True
             RaiseEvent FilterAccepted(Me, New KBotFilterAcceptedEventArgs(BuildFilter()))
             Close()
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotFilterPopup.AcceptaFiltrul", ex)
+            GlobalErrorLog.Write("KBotFilterPopup.AcceptFilter", ex)
         End Try
     End Sub
 
-    Private Sub ComutaToate()
-        Dim toateBifate As Boolean = ToateAratateBifate()
-        For Each i In _shown
-            If toateBifate Then
-                _checked.Remove(_values(i))
-            Else
-                _checked.Add(_values(i))
-            End If
-        Next
-        SincronizeazaBifeleListei()
-        ActualizeazaSelecteazaTot()
-    End Sub
+    ' Opens the conditions submenu. While it is up, deactivate does NOT close the parent menu.
+    Private Sub OpenConditionMenu(anchorRow As Rectangle)
+        Dim operators As KBotFilterOperator() = KBotFilterEngine.AllowedOperators(_valueType)
+        If operators.Length = 0 Then Return
 
-    Private Function ToateAratateBifate() As Boolean
-        For Each i In _shown
-            If Not _checked.Contains(_values(i)) Then Return False
-        Next
-        Return _shown.Count > 0
-    End Function
-
-    ' Pune bifele din listă pe starea modelului (fără a trece prin ItemCheck-ul operatorului).
-    Private Sub SincronizeazaBifeleListei()
-        _syncing = True
-        Try
-            For poz As Integer = 0 To _shown.Count - 1
-                lstValori.SetItemChecked(poz, _checked.Contains(_values(_shown(poz))))
-            Next
-        Finally
-            _syncing = False
-        End Try
-    End Sub
-
-    ' Deschide submeniul de condiții. Cât timp e sus, deactivate-ul NU închide meniul-părinte.
-    Private Sub DeschideConditii(anchorRow As Rectangle)
-        Dim operatori As KBotFilterOperator() = KBotFilterEngine.AllowedOperators(_valueType)
-        If operatori.Length = 0 Then Return
-
-        Dim meniu As New CustomPopup()
-        For Each op In operatori
-            meniu.Items.Add(New CustomPopupItem(op.ToString(), KBotFilterEngine.OperatorCaption(op, _valueType)))
+        Dim menu As New CustomPopup()
+        For Each op In operators
+            menu.Items.Add(New CustomPopupItem(op.ToString(), KBotFilterEngine.OperatorCaption(op, _valueType)))
         Next
 
         _suppressDeactivate = True
-        AddHandler meniu.ItemClicked,
+        AddHandler menu.ItemClicked,
             Sub(s As Object, ev As CustomPopupItemEventArgs)
-                Dim ales As KBotFilterOperator
-                If Not [Enum].TryParse(Of KBotFilterOperator)(ev.Item.Key, ales) Then Return
-                ' Submeniul se DĂ LA O PARTE ÎNTÂI. CustomPopup ridică ItemClicked ÎNAINTE de
-                ' Close (vezi CustomPopup.CloseWith), iar dialogul de condiție e modal: fără
-                ' rândul de mai jos, meniul ar rămâne pe ecran, viu și inutil, până la închiderea
-                ' dialogului. Close-ul lui vine oricum, imediat ce ne întoarcem de aici.
-                meniu.Hide()
-                AplicaConditia(ales)
+                Dim chosen As KBotFilterOperator
+                If Not [Enum].TryParse(Of KBotFilterOperator)(ev.Item.Key, chosen) Then Return
+                ' The submenu goes AWAY FIRST. CustomPopup raises ItemClicked BEFORE Close (see
+                ' CustomPopup.CloseWith) and the condition dialog is modal: without the line
+                ' below the menu would stay on screen, alive and useless, until the dialog
+                ' closed. Its Close comes anyway, as soon as we return from here.
+                menu.Hide()
+                ApplyCondition(chosen)
             End Sub
-        AddHandler meniu.FormClosed,
+        AddHandler menu.FormClosed,
             Sub(s As Object, ev As FormClosedEventArgs)
                 _suppressDeactivate = False
-                ' Dacă alegerea din submeniu n-a închis meniul-părinte (operatorul a apăsat Esc),
-                ' focusul se întoarce aici — altfel ar rămâne o fereastră vizibilă și moartă.
+                ' If the choice in the submenu did not close the parent menu (the operator
+                ' pressed Esc), the focus comes back here -- otherwise a visible, dead window
+                ' would remain.
                 If Not _closing AndAlso Not IsDisposed Then Activate()
             End Sub
 
-        ' Ancora e în coordonatele CORPULUI (vezi BtnConditii_Click).
-        meniu.ShowBelow(pnlCorp, anchorRow)
+        ' The anchor is in the BODY's coordinates (see FilterView_ConditionMenuRequested).
+        menu.ShowBelow(pnlBody, anchorRow)
     End Sub
 
-    ' Cere operanzii (dacă îi are) și așază condiția pe filtrul de lucru.
-    Private Sub AplicaConditia(op As KBotFilterOperator)
+    ' Asks for the operands (if it has any) and puts the condition on the working filter.
+    Private Sub ApplyCondition(op As KBotFilterOperator)
         If KBotFilterEngine.OperandCount(op) = 0 Then
-            _working.Condition = op
-            _working.Operand1 = Nothing
-            _working.Operand2 = Nothing
-            AcceptaFiltrul()
+            FilterView.SetCondition(op, Nothing, Nothing)
+            AcceptFilter()
             Return
         End If
 
-        ' Dialogul e MODAL, deci meniul se dă la o parte întâi: două ferestre suprapuse, dintre
-        ' care una cere o valoare, sunt o fereastră în plus peste ce a cerut operatorul.
-        ' Garda se pune ÎNAINTE de Hide: ascunderea ferestrei active mută activarea pe altcineva,
-        ' adică ridică OnDeactivate — care altfel ar închide meniul chiar acum.
+        ' The dialog is MODAL, so the menu steps aside first: two windows on top of each other,
+        ' one of them asking for a value, are one window more than the operator asked for.
+        ' The guard goes BEFORE Hide: hiding the active window moves activation elsewhere,
+        ' i.e. raises OnDeactivate -- which would otherwise close the menu right now.
         _suppressDeactivate = True
         Hide()
         Dim dlg As New KBotFilterConditionDialog(op, _valueType, _columnCaption,
-                                                 _working.Operand1, _working.Operand2)
+                                                 FilterView.Operand1, FilterView.Operand2,
+                                                 _dateOperandFormat)
         Try
             If dlg.ShowDialog(Owner) = DialogResult.OK Then
-                _working.Condition = op
-                _working.Operand1 = dlg.Operand1
-                _working.Operand2 = dlg.Operand2
-                AcceptaFiltrul()
+                FilterView.SetCondition(op, dlg.Operand1, dlg.Operand2)
+                AcceptFilter()
             Else
                 _closing = True
                 Close()
@@ -895,60 +580,47 @@ Partial Friend NotInheritable Class KBotFilterPopup
         End Try
     End Sub
 
-    ' ── Porți de verificare headless (convenția Debug* a casei) ──────────────────
+    ' ── Headless check gates (the house Debug* convention) ────────────────────
 
-    ''' <summary>Câte valori distincte are lista (după căutare).</summary>
+    ''' <summary>How many distinct values the list shows (after the search).</summary>
     Friend Function DebugShownCount() As Integer
-        Return _shown.Count
+        Return FilterView.DebugShownCount()
     End Function
 
-    ''' <summary>Câte valori sunt bifate acum.</summary>
+    ''' <summary>How many values are ticked now.</summary>
     Friend Function DebugCheckedCount() As Integer
-        Return _checked.Count
+        Return FilterView.DebugCheckedCount()
     End Function
 
-    ''' <summary>Comută bifa unei valori după TEXTUL ei — drumul pe care l-ar face un clic.</summary>
+    ''' <summary>Toggles a value's tick by its TEXT -- the path a click would take.</summary>
     Friend Sub DebugToggleValue(displayText As String)
-        Dim i As Integer = _values.IndexOf(displayText)
-        If i < 0 Then Throw New ArgumentException($"Valoare inexistentă în listă: «{displayText}».", NameOf(displayText))
-        Dim poz As Integer = _shown.IndexOf(i)
-        If poz < 0 Then Throw New ArgumentException($"Valoarea «{displayText}» nu e în lista arătată acum.", NameOf(displayText))
-        Dim v As String = _values(i)
-        If Not _checked.Remove(v) Then
-            _checked.Add(v)
-        End If
-        SincronizeazaBifeleListei()
-        ActualizeazaSelecteazaTot()
+        FilterView.DebugToggleValue(displayText)
     End Sub
 
-    ''' <summary>Scrie în caseta de căutare, ca și cum ar fi tastat operatorul.</summary>
+    ''' <summary>Types into the search box, as the operator would.</summary>
     Friend Sub DebugSearch(text As String)
-        txtCauta.Text = text
+        FilterView.DebugSearch(text)
     End Sub
 
-    ''' <summary>Trece pe o filă, ca un clic pe bara de sus.</summary>
+    ''' <summary>Switches to a tab, like a click on the top bar.</summary>
     Friend Sub DebugSelectTab(key As String)
         navFile.SelectedKey = key
     End Sub
 
-    ''' <summary>Ce scrie pe rândurile listei de niveluri (fila de grupare).</summary>
+    ''' <summary>What the rows of the hierarchy list say (the grouping tab).</summary>
     Friend Function DebugLevelLines() As String()
-        Dim linii(lstNiveluri.Items.Count - 1) As String
-        For i As Integer = 0 To lstNiveluri.Items.Count - 1
-            linii(i) = CStr(lstNiveluri.Items(i))
-        Next
-        Return linii
+        Return GroupView.DebugLevelLines()
     End Function
 
-    ''' <summary>Așază geometria și întoarce mărimea la care a ieșit fereastra.</summary>
+    ''' <summary>Lays the geometry out and returns the size the window came out at.</summary>
     Friend Function DebugMeasure() As Size
-        AjusteazaInaltimea()
+        AdjustHeight()
         PerformLayout()
         Return Size
     End Function
 End Class
 
-''' <summary>Argumentele lui <c>KBotFilterPopup.FilterAccepted</c>.</summary>
+''' <summary>The arguments of <c>KBotFilterPopup.FilterAccepted</c>.</summary>
 Friend NotInheritable Class KBotFilterAcceptedEventArgs
     Inherits EventArgs
 
@@ -956,12 +628,12 @@ Friend NotInheritable Class KBotFilterAcceptedEventArgs
         Me.Filter = filter
     End Sub
 
-    ''' <summary>Filtrul de așezat pe coloană; inactiv înseamnă «ridică filtrul».</summary>
+    ''' <summary>The filter to put on the column; inactive means «lift the filter».</summary>
     Public ReadOnly Property Filter As KBotColumnFilter
 
 End Class
 
-''' <summary>Argumentele lui <c>KBotFilterPopup.SortRequested</c>.</summary>
+''' <summary>The arguments of <c>KBotFilterPopup.SortRequested</c>.</summary>
 Friend NotInheritable Class KBotSortRequestedEventArgs
     Inherits EventArgs
 
@@ -975,7 +647,7 @@ Friend NotInheritable Class KBotSortRequestedEventArgs
 
 End Class
 
-''' <summary>Argumentele lui <c>KBotFilterPopup.GroupingRequested</c> (slice 0030).</summary>
+''' <summary>The arguments of <c>KBotFilterPopup.GroupingRequested</c> (slice 0030).</summary>
 Friend NotInheritable Class KBotGroupingRequestedEventArgs
     Inherits EventArgs
 
@@ -984,10 +656,10 @@ Friend NotInheritable Class KBotGroupingRequestedEventArgs
         Me.Level = level
     End Sub
 
-    ''' <summary>Coloana a cărei grupare s-a schimbat.</summary>
+    ''' <summary>The column whose grouping changed.</summary>
     Public ReadOnly Property ColumnKey As String
 
-    ''' <summary>Nivelul de așezat pe coloană; <c>Nothing</c> = coloana nu mai grupează.</summary>
+    ''' <summary>The level to put on the column; <c>Nothing</c> = the column no longer groups.</summary>
     Public ReadOnly Property Level As KBotGroupLevel
 
 End Class

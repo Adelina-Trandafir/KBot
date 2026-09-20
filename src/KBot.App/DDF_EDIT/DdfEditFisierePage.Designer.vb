@@ -197,7 +197,7 @@ Partial Class DdfEditFisierePage
         KBotDataColumn4.Key = "cale_fisier"
         KBotDataColumn4.OptionGroup = Nothing
         KBotDataColumn4.ReadOnly = True
-        KBotDataColumn4.Visible = False
+        KBotDataColumn4.Visible = KBotColumnVisibility.Hidden
         KBotDataColumn4.Width = 460
         grd.Columns.Add(KBotDataColumn1)
         grd.Columns.Add(KBotDataColumn2)

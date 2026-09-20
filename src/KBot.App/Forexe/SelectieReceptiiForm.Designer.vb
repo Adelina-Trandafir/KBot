@@ -36,10 +36,10 @@ Partial Class SelectieReceptiiForm
         pnlCard = New Panel()
         grilaReceptii = New Controls.KBotDataView()
         pnlJos = New Panel()
+        Label1 = New Label()
         lblTotal = New Label()
         lblAntet = New Label()
         capBar = New Controls.KBotCaptionBar()
-        Label1 = New Label()
         pnlCard.SuspendLayout()
         CType(grilaReceptii, ComponentModel.ISupportInitialize).BeginInit()
         pnlJos.SuspendLayout()
@@ -182,6 +182,15 @@ Partial Class SelectieReceptiiForm
         pnlJos.TabIndex = 3
         pnlJos.Tag = "Card"
         ' 
+        ' Label1
+        ' 
+        Label1.Dock = DockStyle.Right
+        Label1.Location = New Point(720, 10)
+        Label1.Margin = New Padding(4, 0, 4, 0)
+        Label1.Name = "Label1"
+        Label1.Size = New Size(15, 46)
+        Label1.TabIndex = 5
+        ' 
         ' lblTotal
         ' 
         lblTotal.AutoSize = True
@@ -216,15 +225,6 @@ Partial Class SelectieReceptiiForm
         capBar.TabIndex = 0
         capBar.TabStop = False
         capBar.Text = "K-BOT — Ce recepții reîmprospătez?"
-        ' 
-        ' Label1
-        ' 
-        Label1.Dock = DockStyle.Right
-        Label1.Location = New Point(720, 10)
-        Label1.Margin = New Padding(4, 0, 4, 0)
-        Label1.Name = "Label1"
-        Label1.Size = New Size(15, 46)
-        Label1.TabIndex = 5
         ' 
         ' SelectieReceptiiForm
         ' 

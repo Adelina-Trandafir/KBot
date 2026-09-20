@@ -76,7 +76,7 @@ Public Class KBotDataModelTests
         Assert.Equal("cod", c.Key)
         Assert.Equal("Cod", c.HeaderText)
         Assert.Equal(KBotColumnType.Combo, c.ColumnType)
-        Assert.True(c.Visible)
+        Assert.Equal(KBotColumnVisibility.Visible, c.Visible)
         Assert.True(c.Enabled)
         Assert.True(c.Resizable)
         Assert.False(c.Frozen)

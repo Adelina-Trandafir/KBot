@@ -23,7 +23,7 @@ Status: heavily unit-tested (`KBotDataView*Tests`); visual harness
   CountFalse First Last`
 - `KBotFormat` — the Access vocabulary: `GeneralNumber Currency Euro Fixed Standard Percent
   Scientific GeneralDate LongDate MediumDate ShortDate LongTime MediumTime ShortTime YesNo
-  TrueFalse OnOff`
+  TrueFalse OnOff` + `GeneralDateMs` `LongTimeMs` (log stamps: `HH:mm:ss.fff`, not Access)
 - `KBotFilterOperator` = `Equals NotEquals Contains NotContains BeginsWith NotBeginsWith
   EndsWith NotEndsWith LessThan GreaterThan Between IsEmpty IsNotEmpty`
 - `KBotAutoSizeMode` = `Inherit(-1)` `None` `ToContent` · `KBotFillMode` = `None
@@ -44,7 +44,9 @@ Status: heavily unit-tested (`KBotDataView*Tests`); visual harness
 `Key` and `ColumnType` are **frozen while the grid has rows**. Identity/size: `HeaderText`
 (+ `MultiLine`, `HeaderTextAlign`, `HeaderFont`), `Width = 100`, `MinWidth = 40`,
 `MaxWidth = MaxValue` (logical px, C2 — `Width` is always clamped into that pair),
-`Resizable = True`, `Visible = True`, `AutoHide = False` (may be dropped, rightmost first,
+`Resizable = True`, `Visible = KBotColumnVisibility.Visible` (`Hidden`, or `WhenRoom` = shown by
+the pass only when the visible columns leave room for its `MinWidth`), `AutoHide = False`
+(may be dropped, rightmost first,
 rather than showing a horizontal bar), `Frozen` (metadata only — the authority is
 `KBotDataView.FrozenColumnCount`), `AutoSizeMode = Inherit`.
 Cells: `TextAlign`, `CellPadding = 6,0,6,0`, `ColumnFont`, `ReadOnly`, `Enabled`,
@@ -67,7 +69,8 @@ Header icons: `HeaderLeftIcon` (decorative) + `HeaderRightIcon` (raises
 
 ## Sizing
 `AutoSizeColumnsMode = ToContent`, `ColumnFillMode = None` (+ `FillColumnKey` for
-`SpecificColumn`), `ShrinkColumnsToFit = True`, `AutoSizeSampleRows = 200` (0 = all rows),
+`SpecificColumn`), `ShrinkColumnsToFit = True`, `ShowColumnsWhenRoom = True` (`WhenRoom`
+columns are served before the fill column), `AutoSizeSampleRows = 200` (0 = all rows),
 `AutoSizeColumns()`, `ResetColumnSizing()`.
 
 ## Sort / filter
@@ -80,6 +83,15 @@ Header icons: `HeaderLeftIcon` (decorative) + `HeaderRightIcon` (raises
 `Operand2`; `Matches(rawValue, displayText, valueType)`, `Clone()`, `IsActive`.
 `KBotFilterEngine` (Shared, pure): `AllowedOperators`, `IsAllowed`, `OperandCount`,
 `OperatorCaption`, `Compare`, `IsBlank`, `MatchesCondition`, `CoerceOperand`.
+The condition dialog (`Filter/KBotFilterConditionDialog`) asks for the operand in a plain
+text box, except on a `DateTime` column, where it is a `KBotDatePicker` (both declared in the
+designer; the unused rows collapse). The field's format is
+`KBotColumnFormat.DateOperandFormat(format, formatString)`: the column's `FormatString` if
+set, else the culture's short date plus the time the named format shows (`.fff` for
+`GeneralDateMs` / `LongTimeMs`, seconds for `LongTime`, minutes for `GeneralDate` /
+`ShortTime` / `MediumTime`, none for the date-only ones) -- the grid passes it to
+`KBotFilterPopup` (`dateOperandFormat`). The field writes in `CurrentCulture`, which is what
+`CoerceOperand` reads back; an empty field is an empty operand (inert condition, as before).
 
 ## Grouping
 `Groups: KBotGroupLevelCollection` (outermost first; empty = ungrouped), `IsGrouped`,
@@ -88,7 +100,10 @@ Header icons: `HeaderLeftIcon` (decorative) + `HeaderRightIcon` (raises
 `EnableGrouping = False` (shows the Grouping tab in the column menu; does not touch levels
 authored in the designer), `GroupCollapsedChanged`, `GroupFormatting`.
 `KBotGroupLevel`: `ColumnKey` (empty = inactive level, skipped), `SortDirection`
-(`None` not allowed), `ShowHeader` / `ShowFooter` (+ heights, + `*CaptionFormat` where
+(`None` not allowed), `KeyPattern` (regex over the DISPLAYED text; key = the capture groups
+joined, or the whole match; no match = the whole text; groups are ordered by that key read in
+the column's type -- e.g. `^\S+` groups a `GeneralDateMs` column by day), `HasKeyPattern`,
+`ShowHeader` / `ShowFooter` (+ heights, + `*CaptionFormat` where
 `{0}` = column title, `{1}` = group value, `{2}` = row count), `EmptyCaption = "(goale)"`,
 `Indent = 16` (cumulative; applies to the bands BELOW it), `ShowFooterAggregates = True`,
 `ShowHeaderAggregates = False`, `Collapsible = True`, `CollapsedByDefault = False`, colours

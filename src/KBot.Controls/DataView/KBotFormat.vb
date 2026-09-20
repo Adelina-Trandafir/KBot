@@ -70,4 +70,14 @@ Public Enum KBotFormat
     ''' <summary>Access «On/Off»: „Pornit” / „Oprit”.</summary>
     OnOff = 17
 
+    ''' <summary>
+    ''' <see cref="GeneralDate"/> with milliseconds: short date + <c>HH:mm:ss.fff</c>, the time
+    ''' ALWAYS written (a log stamp at exactly midnight is still a stamp, not a bare date). Not
+    ''' in Access; exists for log viewers, where two rows a few ms apart must read differently.
+    ''' </summary>
+    GeneralDateMs = 18
+
+    ''' <summary><see cref="LongTime"/> with milliseconds: <c>HH:mm:ss.fff</c>, 24h.</summary>
+    LongTimeMs = 19
+
 End Enum

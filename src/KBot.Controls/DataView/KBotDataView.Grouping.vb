@@ -478,13 +478,17 @@ Partial Class KBotDataView
     '''
     ''' <para>Ordinea, în schimb, o dă valoarea BRUTĂ (vezi sortarea): pe text, «10» ar sta
     ''' înaintea lui «9».</para>
+    '''
+    ''' <para>Un nivel cu <see cref="KBotGroupLevel.KeyPattern"/> TAIE apoi cheia din textul
+    ''' afișat (ziua dintr-o ștampilă cu milisecunde, inițiala dintr-un nume) — același drum pe
+    ''' care merge și sortarea, ca benzile să se rupă exact unde s-a sortat.</para>
     ''' </summary>
-    Private Function GroupKeyText(row As KBotDataRow, nivel As KBotGroupLevel) As String
+    Friend Function GroupKeyText(row As KBotDataRow, nivel As KBotGroupLevel) As String
         Dim col As KBotDataColumn = Nothing
         If Not _columnIndex.TryGetValue(nivel.ColumnKey, col) Then Return String.Empty
         Dim brut As Object = row(nivel.ColumnKey)
         If KBotFilterEngine.IsBlank(brut) Then Return String.Empty
-        Return FormatValue(brut, col)
+        Return nivel.KeyOf(FormatValue(brut, col))
     End Function
 
     ' Prima construcție a unui grup îi aplică CollapsedByDefault — o singură dată pe cale, ca o

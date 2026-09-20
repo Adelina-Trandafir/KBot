@@ -8,6 +8,11 @@ Imports System.Windows.Forms
 ''' Cele două casete de operand sunt declarate AMÂNDOUĂ, mereu: a doua se ascunde pentru condițiile
 ''' cu un singur operand. Un control creat la nevoie n-ar exista pe suprafața de proiectare, iar
 ''' rostul acestui fișier e tocmai ca formularul să se poată deschide și citi acolo.
+'''
+''' Fiecare operand are DOUĂ rânduri: caseta de text și câmpul de dată (<c>KBotDatePicker</c>),
+''' unul sub altul. Coloana hotărăște care rămâne: pe o coloană de dată se strâng rândurile de
+''' text, pe oricare alta cele de dată — vezi <c>StrangeRandul</c>. Fereastra e desenată cu toate
+''' opt rândurile deschise și se scurtează la construcție cu exact cât s-a strâns.
 ''' </summary>
 Partial Class KBotFilterConditionDialog
     Inherits KBot.Theming.KBotThemedForm
@@ -27,90 +32,118 @@ Partial Class KBotFilterConditionDialog
         tlyMAIN = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnCancel = New Button()
         btnOk = New Button()
+        dtpOperand2 = New Global.KBot.Controls.KBotDatePicker()
         txtOperand2 = New TextBox()
         lblOperand2 = New Label()
+        dtpOperand1 = New Global.KBot.Controls.KBotDatePicker()
         txtOperand1 = New TextBox()
         lblOperand1 = New Label()
         lblPrompt = New Label()
         tlyMAIN.SuspendLayout()
         SuspendLayout()
-        ' 
+        '
         ' tlyMAIN
-        ' 
+        '
         tlyMAIN.ColumnCount = 2
         tlyMAIN.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
         tlyMAIN.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
-        tlyMAIN.Controls.Add(btnCancel, 0, 5)
-        tlyMAIN.Controls.Add(btnOk, 1, 5)
-        tlyMAIN.Controls.Add(txtOperand2, 0, 4)
-        tlyMAIN.Controls.Add(lblOperand2, 0, 3)
+        tlyMAIN.Controls.Add(btnCancel, 0, 7)
+        tlyMAIN.Controls.Add(btnOk, 1, 7)
+        tlyMAIN.Controls.Add(dtpOperand2, 0, 6)
+        tlyMAIN.Controls.Add(txtOperand2, 0, 5)
+        tlyMAIN.Controls.Add(lblOperand2, 0, 4)
+        tlyMAIN.Controls.Add(dtpOperand1, 0, 3)
         tlyMAIN.Controls.Add(txtOperand1, 0, 2)
         tlyMAIN.Controls.Add(lblOperand1, 0, 1)
         tlyMAIN.Controls.Add(lblPrompt, 0, 0)
         tlyMAIN.Dock = DockStyle.Fill
         tlyMAIN.Location = New Point(0, 0)
         tlyMAIN.Name = "tlyMAIN"
-        tlyMAIN.RowCount = 6
+        tlyMAIN.RowCount = 8
         tlyMAIN.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyMAIN.RowStyles.Add(New RowStyle(SizeType.Absolute, 32F))
         tlyMAIN.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        tlyMAIN.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
         tlyMAIN.RowStyles.Add(New RowStyle(SizeType.Absolute, 32F))
         tlyMAIN.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        tlyMAIN.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
         tlyMAIN.RowStyles.Add(New RowStyle(SizeType.Absolute, 56F))
-        tlyMAIN.Size = New Size(338, 335)
+        tlyMAIN.Size = New Size(338, 415)
         tlyMAIN.TabIndex = 7
-        ' 
+        '
         ' btnCancel
-        ' 
+        '
         btnCancel.DialogResult = DialogResult.Cancel
         btnCancel.Dock = DockStyle.Fill
-        btnCancel.Location = New Point(3, 282)
+        btnCancel.Location = New Point(3, 362)
         btnCancel.Name = "btnCancel"
         btnCancel.Size = New Size(163, 50)
-        btnCancel.TabIndex = 7
+        btnCancel.TabIndex = 9
         btnCancel.Text = "Anulează"
-        ' 
+        '
         ' btnOk
-        ' 
+        '
         btnOk.DialogResult = DialogResult.OK
         btnOk.Dock = DockStyle.Fill
-        btnOk.Location = New Point(172, 282)
+        btnOk.Location = New Point(172, 362)
         btnOk.Name = "btnOk"
         btnOk.Size = New Size(163, 50)
-        btnOk.TabIndex = 6
+        btnOk.TabIndex = 8
         btnOk.Text = "OK"
-        ' 
+        '
+        ' dtpOperand2
+        '
+        dtpOperand2.AllowEmpty = True
+        tlyMAIN.SetColumnSpan(dtpOperand2, 2)
+        dtpOperand2.Dock = DockStyle.Fill
+        dtpOperand2.Location = New Point(3, 322)
+        dtpOperand2.Name = "dtpOperand2"
+        dtpOperand2.PlaceholderText = "alege sau scrie data"
+        dtpOperand2.Size = New Size(332, 34)
+        dtpOperand2.TabIndex = 7
+        '
         ' txtOperand2
-        ' 
+        '
         tlyMAIN.SetColumnSpan(txtOperand2, 2)
         txtOperand2.Dock = DockStyle.Fill
-        txtOperand2.Location = New Point(3, 242)
+        txtOperand2.Location = New Point(3, 282)
         txtOperand2.Name = "txtOperand2"
         txtOperand2.Size = New Size(332, 31)
-        txtOperand2.TabIndex = 5
-        ' 
+        txtOperand2.TabIndex = 6
+        '
         ' lblOperand2
-        ' 
+        '
         lblOperand2.AutoSize = True
         tlyMAIN.SetColumnSpan(lblOperand2, 2)
         lblOperand2.Dock = DockStyle.Fill
-        lblOperand2.Location = New Point(3, 207)
+        lblOperand2.Location = New Point(3, 247)
         lblOperand2.Name = "lblOperand2"
         lblOperand2.Size = New Size(332, 32)
-        lblOperand2.TabIndex = 4
+        lblOperand2.TabIndex = 5
         lblOperand2.Text = "și:"
-        ' 
+        '
+        ' dtpOperand1
+        '
+        dtpOperand1.AllowEmpty = True
+        tlyMAIN.SetColumnSpan(dtpOperand1, 2)
+        dtpOperand1.Dock = DockStyle.Fill
+        dtpOperand1.Location = New Point(3, 210)
+        dtpOperand1.Name = "dtpOperand1"
+        dtpOperand1.PlaceholderText = "alege sau scrie data"
+        dtpOperand1.Size = New Size(332, 34)
+        dtpOperand1.TabIndex = 4
+        '
         ' txtOperand1
-        ' 
+        '
         tlyMAIN.SetColumnSpan(txtOperand1, 2)
         txtOperand1.Dock = DockStyle.Fill
         txtOperand1.Location = New Point(3, 170)
         txtOperand1.Name = "txtOperand1"
         txtOperand1.Size = New Size(332, 31)
         txtOperand1.TabIndex = 3
-        ' 
+        '
         ' lblOperand1
-        ' 
+        '
         lblOperand1.AutoSize = True
         tlyMAIN.SetColumnSpan(lblOperand1, 2)
         lblOperand1.Dock = DockStyle.Fill
@@ -119,19 +152,19 @@ Partial Class KBotFilterConditionDialog
         lblOperand1.Size = New Size(332, 32)
         lblOperand1.TabIndex = 2
         lblOperand1.Text = "Valoare:"
-        ' 
+        '
         ' lblPrompt
-        ' 
+        '
         tlyMAIN.SetColumnSpan(lblPrompt, 2)
         lblPrompt.Dock = DockStyle.Fill
         lblPrompt.Location = New Point(3, 0)
         lblPrompt.Name = "lblPrompt"
         lblPrompt.Size = New Size(332, 135)
         lblPrompt.TabIndex = 1
-        ' 
+        '
         ' KBotFilterConditionDialog
-        ' 
-        ClientSize = New Size(338, 335)
+        '
+        ClientSize = New Size(338, 415)
         Controls.Add(tlyMAIN)
         Icon = CType(resources.GetObject("$this.Icon"), Icon)
         MaximizeBox = False
@@ -150,8 +183,10 @@ Partial Class KBotFilterConditionDialog
     Friend WithEvents tlyMAIN As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnCancel As Button
     Friend WithEvents btnOk As Button
+    Friend WithEvents dtpOperand2 As Global.KBot.Controls.KBotDatePicker
     Friend WithEvents txtOperand2 As TextBox
     Friend WithEvents lblOperand2 As Label
+    Friend WithEvents dtpOperand1 As Global.KBot.Controls.KBotDatePicker
     Friend WithEvents txtOperand1 As TextBox
     Friend WithEvents lblOperand1 As Label
     Friend WithEvents lblPrompt As Label

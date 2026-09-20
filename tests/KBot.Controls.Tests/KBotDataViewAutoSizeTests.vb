@@ -22,7 +22,7 @@ Public Class KBotDataViewAutoSizeTests
     Private Shared Function SumVisibleWidths(dv As KBotDataView) As Integer
         Dim total As Integer = 0
         For Each c In dv.Columns
-            If c.Visible Then total += c.Width
+            If c.IsEffectivelyVisible Then total += c.Width
         Next
         Return total
     End Function
@@ -259,7 +259,7 @@ Public Class KBotDataViewAutoSizeTests
             dv.BeginUpdate()
             dv.AddColumn("a", "A", KBotColumnType.Text, 100)
             dv.AddColumn("h", "H", KBotColumnType.Text, 100)
-            dv.Column("h").Visible = False
+            dv.Column("h").Visible = KBotColumnVisibility.Hidden
             dv.AddColumn("c", "C", KBotColumnType.Text, 100)
             dv.AddRow()
             dv.EndUpdate()
@@ -484,7 +484,7 @@ Public Class KBotDataViewAutoSizeTests
     Private Shared Function SumWidthsPx(dv As KBotDataView) As Integer
         Dim total As Integer = 0
         For Each c In dv.Columns
-            If c.Visible Then total += CInt(Math.Round(c.Width * dv.DpiScaleX))
+            If c.IsEffectivelyVisible Then total += CInt(Math.Round(c.Width * dv.DpiScaleX))
         Next
         Return total
     End Function

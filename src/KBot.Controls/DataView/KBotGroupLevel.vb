@@ -1,6 +1,8 @@
 Option Strict On
 Imports System.ComponentModel
 Imports System.Drawing
+Imports System.Text.RegularExpressions
+Imports KBot.Common
 
 ''' <summary>
 ''' UN NIVEL DE GRUPARE al <see cref="KBotDataView"/> (slice 0029) — echivalentul unei linii din
@@ -100,6 +102,84 @@ Public NotInheritable Class KBotGroupLevel
         End Set
     End Property
     Private _sortDirection As KBotSortDirection = KBotSortDirection.Ascending
+
+    ''' <summary>
+    ''' Expresie regulată care TAIE cheia de grupare din textul afișat al celulei. Vidă (implicit)
+    ''' = cheia e textul întreg, adică purtarea de dinainte.
+    '''
+    ''' <para>Cheia e concatenarea grupurilor de captură, în ordinea lor; fără grupuri de captură,
+    ''' toată potrivirea. Un text care NU se potrivește rămâne cheie așa cum e — tiparul nu are
+    ''' voie să arunce informația unui rând pe care nu l-a înțeles. Exemplul pentru care există:
+    ''' o coloană «Ora» scrisă <c>dd.MM.yyyy HH:mm:ss.fff</c>, grupată pe ZI cu
+    ''' <c>^\d{2}\.\d{2}\.\d{4}</c>; sau «Nume» grupat pe inițială cu <c>^.</c>.</para>
+    '''
+    ''' <para>Ordinea grupurilor urmează CHEIA, citită în tipul coloanei (o zi tăiată dintr-o dată
+    ''' se ordonează ca dată, nu ca text), iar înăuntrul grupului rămâne ordinea de model sau
+    ''' sortarea cerută de operator — vezi <c>KBotDataView.SortView</c>. Un tipar care nu se
+    ''' compilează ARUNCĂ la setare, nu tace: o grupare care s-ar strica la pictare ar fi un bug
+    ''' invizibil.</para>
+    ''' </summary>
+    <Category("K-BOT: Grupare")>
+    <Description("Expresie regulată aplicată textului afișat: cheia grupului = grupurile de captură (sau toată potrivirea). Vidă = textul întreg.")>
+    <DefaultValue(GetType(String), Nothing)>
+    Public Property KeyPattern As String
+        Get
+            Return _keyPattern
+        End Get
+        Set(value As String)
+            Dim nou As String = If(String.IsNullOrWhiteSpace(value), Nothing, value)
+            If String.Equals(_keyPattern, nou, StringComparison.Ordinal) Then Return
+            Dim compilat As Regex = Nothing
+            If nou IsNot Nothing Then
+                Try
+                    compilat = New Regex(nou, RegexOptions.CultureInvariant)
+                Catch ex As ArgumentException
+                    Throw New ArgumentException(
+                        $"Tiparul de grupare «{nou}» nu e o expresie regulată valabilă: {ex.Message}", NameOf(KeyPattern), ex)
+                End Try
+            End If
+            _keyPattern = nou
+            _keyRegex = compilat
+            Notifica(structural:=True)
+        End Set
+    End Property
+    Private _keyPattern As String
+    Private _keyRegex As Regex
+
+    ''' <summary>The level cuts its key with a pattern (see <see cref="KeyPattern"/>).</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property HasKeyPattern As Boolean
+        Get
+            Return _keyRegex IsNot Nothing
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' The group key of one displayed text: the text itself without a pattern, otherwise what
+    ''' <see cref="KeyPattern"/> cuts out of it (unchanged when the pattern does not match).
+    ''' Pure; Friend because the grid's band builder and its sort both read it, and two readers
+    ''' of the same rule must call the same function.
+    ''' </summary>
+    Friend Function KeyOf(displayText As String) As String
+        Dim text As String = If(displayText, String.Empty)
+        If _keyRegex Is Nothing OrElse text.Length = 0 Then Return text
+        Try
+            Dim m As Match = _keyRegex.Match(text)
+            If Not m.Success Then Return text
+            If m.Groups.Count <= 1 Then Return m.Value
+            Dim sb As New System.Text.StringBuilder()
+            For i As Integer = 1 To m.Groups.Count - 1
+                If m.Groups(i).Success Then sb.Append(m.Groups(i).Value)
+            Next
+            Return sb.ToString()
+        Catch ex As RegexMatchTimeoutException
+            ' Boundary (the regex engine): a pattern that runs away on one text must not take the
+            ' band builder down with it -- the row keeps its whole text as key, and the log says why.
+            GlobalErrorLog.Write("KBotGroupLevel.KeyOf", ex)
+            Return text
+        End Try
+    End Function
 
     ' ══════════════════════════════════════════════════════════════════════════
     ' BENZILE

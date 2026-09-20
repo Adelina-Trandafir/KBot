@@ -960,11 +960,32 @@ Public NotInheritable Class KBotDataColumn
     ''' </summary>
     Friend Property UserSized As Boolean
 
-    ''' <summary>Vizibilă. Implicit True. False => coloana nu se pictează și nu ocupă spațiu.</summary>
+    ''' <summary>
+    ''' Whether the column is on screen: <see cref="KBotColumnVisibility.Visible"/> (default),
+    ''' <see cref="KBotColumnVisibility.Hidden"/>, or <see cref="KBotColumnVisibility.WhenRoom"/> —
+    ''' hidden until the visible columns leave enough room for it (at least its
+    ''' <see cref="MinWidth"/>), then shown by the layout pass; see
+    ''' <see cref="KBotDataView.ShowColumnsWhenRoom"/>. An unknown value is a model error and
+    ''' raises <c>ArgumentException</c>.
+    ''' </summary>
     <Category("K-BOT")>
-    <Description("False => coloana nu se pictează și nu ocupă spațiu.")>
-    <DefaultValue(True)>
-    Public Property Visible As Boolean = True
+    <Description("Visible = se pictează; Hidden = nu se pictează și nu ocupă spațiu; WhenRoom = ascunsă, dar apare când coloanele vizibile lasă loc cel puțin pentru MinWidth-ul ei.")>
+    <DefaultValue(KBotColumnVisibility.Visible)>
+    Public Property Visible As KBotColumnVisibility
+        Get
+            Return _visible
+        End Get
+        Set(value As KBotColumnVisibility)
+            If Not [Enum].IsDefined(GetType(KBotColumnVisibility), value) Then
+                Throw New ArgumentException($"Vizibilitate de coloană necunoscută: «{value}».", NameOf(value))
+            End If
+            If _visible = value Then Return
+            _visible = value
+            AutoShown = False
+            Owner?.OnColumnVisibleChanged()
+        End Set
+    End Property
+    Private _visible As KBotColumnVisibility = KBotColumnVisibility.Visible
 
     ''' <summary>
     ''' English (slice 0016): the column MAY be auto-hidden when the grid would otherwise need a
@@ -986,16 +1007,33 @@ Public NotInheritable Class KBotDataColumn
     Friend Property AutoHidden As Boolean
 
     ''' <summary>
-    ''' English (slice 0016): whether the column is actually on screen right now — the caller
-    ''' shows it (<see cref="Visible"/>) AND the fit pass has not auto-hidden it. Read-only:
-    ''' the caller drives it through <see cref="Visible"/> / <see cref="AutoHide"/>.
-    ''' Derived state: never shown in the property grid, never serialized.
+    ''' The mirror of <see cref="AutoHidden"/>: set by the layout pass when THIS
+    ''' <see cref="KBotColumnVisibility.WhenRoom"/> column was shown because there was room for it
+    ''' (never by the caller). Recomputed from scratch every layout, so a narrowed grid hides the
+    ''' column again. Friend — the caller chooses <see cref="Visible"/>, not this.
+    ''' </summary>
+    Friend Property AutoShown As Boolean
+
+    ''' <summary>
+    ''' English (slice 0016): whether the column is actually on screen right now. A
+    ''' <see cref="KBotColumnVisibility.Visible"/> column is, unless the fit pass auto-hid it; a
+    ''' <see cref="KBotColumnVisibility.Hidden"/> one never is; a
+    ''' <see cref="KBotColumnVisibility.WhenRoom"/> one is only while the pass has shown it
+    ''' (<see cref="AutoShown"/>). Read-only: the caller drives it through <see cref="Visible"/> /
+    ''' <see cref="AutoHide"/>. Derived state: never shown in the property grid, never serialized.
     ''' </summary>
     <Browsable(False)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Property IsEffectivelyVisible As Boolean
         Get
-            Return Visible AndAlso Not AutoHidden
+            Select Case _visible
+                Case KBotColumnVisibility.Visible
+                    Return Not AutoHidden
+                Case KBotColumnVisibility.WhenRoom
+                    Return AutoShown
+                Case Else
+                    Return False
+            End Select
         End Get
     End Property
 

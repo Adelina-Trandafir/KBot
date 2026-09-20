@@ -133,7 +133,7 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clasificatie"
         KBotDataColumn1.OptionGroup = Nothing
-        KBotDataColumn1.Visible = False
+        KBotDataColumn1.Visible = KBotColumnVisibility.Hidden
         KBotDataColumn1.Width = 300
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.ColumnFont = New Font("Calibri", 9F)
@@ -170,7 +170,7 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "cod_partener"
         KBotDataColumn5.OptionGroup = Nothing
-        KBotDataColumn5.Visible = False
+        KBotDataColumn5.Visible = KBotColumnVisibility.Hidden
         KBotDataColumn5.Width = 150
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.CellPadding = New Padding(2, 0, 2, 0)

@@ -227,7 +227,7 @@ Partial Class PlatiView
         KBotDataColumn2.Key = "nrdoc"
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.ReadOnly = True
-        KBotDataColumn2.Visible = False
+        KBotDataColumn2.Visible = KBotColumnVisibility.Hidden
         KBotDataColumn2.Width = 80
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
