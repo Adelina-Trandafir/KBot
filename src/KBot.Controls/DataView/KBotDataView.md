@@ -65,6 +65,8 @@ Header icons: `HeaderLeftIcon` (decorative) + `HeaderRightIcon` (raises
 `HeaderHeight`), `FooterCaption` + `FooterLeftIcon` (+ size, hover colour,
 `FooterLeftIconClicked`). Bands: the `Border*`, `Header*`, `Footer*` and
 `*ColumnSeparator*` colour/width properties, all Empty = theme (C1) and logical px (C2).
+The scrollbars sit INSIDE the border frame (inset by `BorderWidth`), so the frame stays
+closed next to a visible bar; the viewport ends at the bar's edge.
 `ApplyTheme(scheme)`.
 
 ## Sizing

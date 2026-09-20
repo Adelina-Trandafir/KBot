@@ -336,7 +336,7 @@ Partial Public Class AdvancedTreeControl
         End Get
         Set(value As Color)
             m_BorderColor = value
-            Me.Invalidate()
+            RefreshScrollVisibility()   ' Transparent <-> visible moves the bar inside the frame
         End Set
     End Property
     Public Function ShouldSerializeBorderColor() As Boolean
@@ -344,7 +344,7 @@ Partial Public Class AdvancedTreeControl
     End Function
     Public Sub ResetBorderColor()
         m_BorderColor = Color.Empty
-        Me.Invalidate()
+        RefreshScrollVisibility()
     End Sub
 
     ''' <summary>
@@ -366,7 +366,7 @@ Partial Public Class AdvancedTreeControl
                     $"Grosimea chenarului nu poate fi negativă (primit «{value}»); 0 = fără chenar.")
             End If
             _borderWidth = value
-            Me.Invalidate()
+            RefreshScrollVisibility()   ' the bar sits inside the frame, so it moves with it
         End Set
     End Property
 
@@ -2063,11 +2063,37 @@ Partial Public Class AdvancedTreeControl
         If _searchClearBtn IsNot Nothing Then _searchClearBtn.Font = SearchBarFont
     End Sub
 
+    ''' <summary>
+    ''' Width lost to the vertical bar when it is visible: the bar itself PLUS the border strip
+    ''' it sits inside of, i.e. everything from the bar's left edge to the control's right edge.
+    ''' </summary>
     Private ReadOnly Property ScrollBarWidth As Integer
         Get
-            Return If(_vScroll IsNot Nothing AndAlso _vScroll.Visible, _vScroll.Width, 0)
+            Return If(_vScroll IsNot Nothing AndAlso _vScroll.Visible, Math.Max(0, Me.Width - _vScroll.Left), 0)
         End Get
     End Property
+
+    ''' <summary>Border thickness in DEVICE pixels; 0 when the border is transparent or 0 wide.</summary>
+    Private Function BorderDevicePx() As Integer
+        If Me.BorderColor = Color.Transparent Then Return 0
+        Return Math.Max(0, SY(Me.BorderWidth))
+    End Function
+
+    ''' <summary>
+    ''' Places the vertical bar INSIDE the border frame, between the header/search band and the
+    ''' footer. A child control flush on the client edge paints over the frame OnPaint draws
+    ''' there, which is why the border used to stop next to the bar.
+    ''' </summary>
+    Private Sub PositionVScrollBar(headerOff As Integer, viewport As Integer)
+        Dim bPx As Integer = BorderDevicePx()
+        Dim top As Integer = Math.Max(headerOff, bPx)
+        Dim bottom As Integer = headerOff + viewport
+        If FooterOffset = 0 Then bottom = Math.Min(bottom, Me.Height - bPx)
+        _vScroll.Width = ScrollBarThicknessPx
+        _vScroll.Left = Math.Max(0, Me.Width - bPx - _vScroll.Width)
+        _vScroll.Top = top
+        _vScroll.Height = Math.Max(1, bottom - top)
+    End Sub
 
     ''' <summary>
     ''' Grosimea barei de derulare, la scara arborelui (felia 0040).

@@ -39,6 +39,9 @@ Public Class PlatiView
     Private Const ICO_SUS As String = "up"          ' plată încărcată (Access REV_SUS)
     Private Const ICO_JOS As String = "down"        ' plată preluată (Access REV_JOS)
 
+    ' Key of the "Toate platile" root (same shape as ReceptiiView.ROOT_KEY). Friend for tests.
+    Friend Const ROOT_KEY As String = "all"
+
     ' Format românesc: separator de mii «.» și zecimală «,» (1.091.940,00).
     Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
 
@@ -230,9 +233,12 @@ Public Class PlatiView
             End If
 
             _rows = rows
-            BuildTree(rows)
-            ' Nimic selectat -> grila e goală; se umple la click pe orice nod al arborelui.
-            grid.ClearRows()
+            Dim rootItem As AdvancedTreeControl.TreeItem = BuildTree(rows)
+            ' Rădăcina «Toate plățile» pornește SELECTATĂ, iar grila arată ce ar arăta un click
+            ' pe ea: toate plățile angajamentului (SelectedNode nu ridică NodeMouseUp, deci
+            ' grila se umple de aici).
+            tree.SelectedNode = rootItem
+            FillGrid(rows)
             ShowContent()
         Catch ex As ApiException
             If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
@@ -252,9 +258,10 @@ Public Class PlatiView
     End Sub
 
     ' ── Arborele ─────────────────────────────────────────────────────────────
-    ' DOUĂ niveluri: un folder per lună (SUM lună) -> o frunză per ZI, care strânge TOATE
-    ' plățile zilei într-un singur nod (SUM zi). Nodul de plată individuală din felia 0017 a
-    ' fost scos — arborele se oprește la zi.
+    ' TREI niveluri: rădăcina «Toate plățile» (SUM total, ca în ReceptiiView) -> un folder
+    ' per lună (SUM lună) -> o frunză per ZI, care strânge TOATE plățile zilei într-un
+    ' singur nod (SUM zi). Nodul de plată individuală din felia 0017 a fost scos — arborele
+    ' se oprește la zi.
     ' Fiecare nod poartă în Tag rândurile lui, ca un click să FILTREZE grila fără o nouă cerere.
     '
     ' Iconițe — din «image_list» (autorat în designer, legat prin tree.NodeImages):
@@ -270,7 +277,8 @@ Public Class PlatiView
     ' conține îl primește și ea — Access: cLeaf.IconRight urmat de cLeaf.ParentNode.IconRight.
     ' Rădăcinile stau STRÂNSE; se deschide doar luna care poartă «+» (cerință operator — în
     ' Access toate erau Expanded = False).
-    Private Sub BuildTree(rows As List(Of PlataRow))
+    ''' <returns>The "Toate platile" root, so the caller can select it.</returns>
+    Private Function BuildTree(rows As List(Of PlataRow)) As AdvancedTreeControl.TreeItem
         Try
             tree.Clear()
             Dim palette As ThemePalette = TryGetPalette()
@@ -278,6 +286,15 @@ Public Class PlatiView
             ' Cea mai veche zi cu cel puțin o plată ne-ordonantată -> «+» pe ea (o singură zi).
             Dim plusDay As Date? = OldestUnordonantatDay(rows)
             Dim monthIcon As Image = LunaIcon()
+
+            ' Rădăcina: toate plățile angajamentului, cu totalul lor. Stă deschisă; lunile de
+            ' sub ea își păstrează regula proprie (doar cea cu «+» se desface).
+            Dim rootItem As AdvancedTreeControl.TreeItem =
+                tree.AddItem(ROOT_KEY, $"Toate plățile~~~{Money(rows.Sum(Function(r) r.Suma))}",
+                             pLeftIconClosed:=monthIcon, pLeftIconOpen:=monthIcon,
+                             pExpanded:=True)
+            rootItem.Tag = rows
+            rootItem.Bold = True
 
             ' Foldere de lună, cronologic.
             Dim monthGroups = rows.GroupBy(Function(r) MonthKeyOf(r.DataPlata)).
@@ -291,6 +308,7 @@ Public Class PlatiView
 
                 Dim monthItem As AdvancedTreeControl.TreeItem =
                     tree.AddItem($"m_{mg.Key}", $"{MonthLabel(mg.Key Mod 100)}~~~{Money(monthSum)}",
+                                 rootItem,
                                  pLeftIconClosed:=monthIcon, pLeftIconOpen:=monthIcon,
                                  pRightIcon:=monthPlus, pExpanded:=monthContainsPlus)
                 monthItem.Tag = monthRows
@@ -317,11 +335,12 @@ Public Class PlatiView
             Next
 
             tree.Invalidate()
+            Return rootItem
         Catch ex As Exception
             GlobalErrorLog.Write("PlatiView.BuildTree", ex)
             Throw
         End Try
-    End Sub
+    End Function
 
     ' Cea mai veche zi (Min DataPlata) care conține cel puțin o plată cu AreOrd = False.
     ' Nothing dacă toate sunt deja ordonantate. Oglindește snapshot-ul TOP 1 din Show_Plati.
@@ -370,11 +389,12 @@ Public Class PlatiView
     End Sub
 
     ' Click pe iconita «+» -> ordonantarea platilor nodului (mcTree_RightIconClick din Access).
-    ' Pe doua niveluri, exact ca acolo:
-    '   nivel 0 (luna) -> AdaugaOrdonantariCerut(LunaAn) -> FX_Adaugare_ORD_Din_Plati_Batch,
+    ' Pe doua niveluri, exact ca acolo (nivelul 0 e acum radacina «Toate platile», care nu
+    ' poarta «+»; luna e nivelul 1, ziua nivelul 2):
+    '   nivel 1 (luna) -> AdaugaOrdonantariCerut(LunaAn) -> FX_Adaugare_ORD_Din_Plati_Batch,
     '                     adica OrdComanda.LotPeLuna: se genereaza SI SE SALVEAZA, fara editor,
     '                     cate o ordonantare pentru fiecare zi a lunii cu plati neordonantate;
-    '   nivel 1 (ziua)  -> AdaugaOrdonantareCerut(-1, data) -> FX_Adaugare_ORD_Din_Plati cu
+    '   nivel 2 (ziua)  -> AdaugaOrdonantareCerut(-1, data) -> FX_Adaugare_ORD_Din_Plati cu
     '                     vIdPlataFX = -1, adica OrdComanda.DinPlati fara plata anume: se
     '                     genereaza graful (nimic scris) si SE DESCHIDE editorul.
     ' Ramura Access de nivel 2 (o plata anume) n-are nod care s-o ridice cat timp frunza e ziua;
@@ -390,7 +410,7 @@ Public Class PlatiView
             If String.IsNullOrWhiteSpace(_requestedCod) Then Return
 
             Select Case pNode.Level
-                Case 0
+                Case 1
                     RaiseEvent AdaugaOrdonantariCerut(Me, New LunaAnEventArgs(LunaAnOf(rows(0))))
                     Dim luna As Date? = PrimaDataDin(rows)
                     ' Gruparea nodului e chiar luna, deci prima data din el o numeste. O luna
@@ -398,7 +418,7 @@ Public Class PlatiView
                     If luna.HasValue Then
                         CereComandaOrd(OrdComanda.LotPeLuna(_requestedCod, luna.Value.Month, luna.Value.Year))
                     End If
-                Case 1
+                Case 2
                     Dim zi As Date? = PrimaDataDin(rows)
                     RaiseEvent AdaugaOrdonantareCerut(Me, New PlataOrdEventArgs(-1, If(zi, Date.MinValue)))
                     If zi.HasValue Then

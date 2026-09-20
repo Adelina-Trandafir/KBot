@@ -25,11 +25,11 @@ Imports KBot.Theming
 ''' operatorul a cerut-o din nou pe 29.08.2026: legăturile trebuie corectate când se observă
 ''' greșeala, nu doar în minutul de după o descărcare.</para>
 '''
-''' <para><b>Ce nu se poate atinge.</b> O legătură pe care s-a construit o ordonanțare, sau
-''' peste care s-au calculat plăți de la data ei încolo, rămâne <b>vizibilă, dar nu se mai
-''' mută</b>. Serverul decide asta, nu formularul (<c>routes/forexe/asociere.py</c>); aici doar
-''' se arată și se refuză din vreme, ca operatorul să nu ajungă la un mesaj de eroare după ce
-''' a tras.</para>
+''' <para><b>What cannot be touched.</b> A link whose angajament has an ordonantare line dated
+''' on or after the snapshot's day (rule of 20.09.2026; payments alone stopped freezing anything
+''' on 18.09.2026) stays <b>visible but immovable</b>. The server decides, not the form
+''' (<c>routes/forexe/asociere.py</c>, <c>_BLOCAJE_SQL</c>); here it is only shown and refused
+''' up front, so the operator never reaches an error message after dragging.</para>
 '''
 ''' <para><b>O singură salvare, la sfârșit</b> (D-H). Tragerile schimbă doar tabloul local;
 ''' nimic nu pleacă spre server până la buton. Comenzile trimise sunt DOAR cele care diferă de

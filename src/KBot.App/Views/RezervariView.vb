@@ -37,6 +37,9 @@ Public Class RezervariView
     Private Const ICO_INITIALA As String = "equal"  ' frunză: Inițială «=»
     Private Const ICO_PLUS As String = "plus"       ' iconița dreapta «adaugă DDF»
 
+    ' Key of the "Toate rezervarile" root (same shape as ReceptiiView.ROOT_KEY). Friend for tests.
+    Friend Const ROOT_KEY As String = "all"
+
     ' Format românesc: separator de mii «.» și zecimală «,» (1.091.940,00).
     Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
 
@@ -264,7 +267,8 @@ Public Class RezervariView
     End Sub
 
     ' ── Arborele ─────────────────────────────────────────────────────────────
-    ' Foldere pe (an, lună) cu total = SUM(R_Valoare) (confirmat de coloana TOTALL din
+    ' Rădăcina «Toate rezervările» (SUM(R_Valoare) peste tot, ca în ReceptiiView) ->
+    ' foldere pe (an, lună) cu total = SUM(R_Valoare) (confirmat de coloana TOTALL din
     ' qFX_REZERVARI_TREE). Frunze pe (dată, tip) cu valoare = SUM(ValoareOperatie)
     ' (= Suma din QFX_DDF_REZERVARI). Iconița stângă = tipul; iconița «+» apare doar dacă
     ' grupul are cel puțin un rând cu AreDDF = False. Fiecare nod poartă în Tag rândurile
@@ -292,6 +296,16 @@ Public Class RezervariView
                 plusTip = firstEligible.Tip
             End If
 
+            ' Rădăcina: toate rezervările angajamentului, cu totalul lor. Stă deschisă; lunile
+            ' de sub ea își păstrează regula proprie (doar cea cu «+» se desface).
+            Dim icoRoot As Image = LunaIcon()
+            Dim rootItem As AdvancedTreeControl.TreeItem =
+                tree.AddItem(ROOT_KEY, $"Toate rezervările~~~{Money(rows.Sum(Function(r) r.RValoare))}",
+                             pLeftIconClosed:=icoRoot, pLeftIconOpen:=icoRoot,
+                             pExpanded:=True)
+            rootItem.Tag = rows
+            rootItem.Bold = True
+
             ' Luni în ordine cronologică.
             Dim months = rows.GroupBy(Function(r) New With {Key .Y = r.DataRezervare.Year, Key .M = r.DataRezervare.Month}).
                               OrderBy(Function(gp) gp.Key.Y).ThenBy(Function(gp) gp.Key.M)
@@ -313,7 +327,7 @@ Public Class RezervariView
                                                  plusDate.Value.Year = y AndAlso
                                                  plusDate.Value.Month = m
                 Dim root As AdvancedTreeControl.TreeItem =
-                    tree.AddItem(monthKey, monthCaption,
+                    tree.AddItem(monthKey, monthCaption, rootItem,
                                  pLeftIconClosed:=icoLuna, pLeftIconOpen:=icoLuna,
                                  pExpanded:=areFrunzaCuPlus)
                 root.Tag = monthRows
@@ -455,11 +469,17 @@ Public Class RezervariView
     ' Click pe un nod -> filtrează grila la rândurile nodului (lună sau frunză), rând cu rând:
     ' agregarea e starea „nimic selectat", iar un nod ales cere detaliul lui. Rândurile
     ' stau în Tag, puse la construcția arborelui — niciun apel de rețea aici.
+    ' Rădăcina «Toate rezervările» e excepția: ea arată exact ce arată vederea la activare —
+    ' totalurile pe clasificație peste tot angajamentul (FillGridAgregat), nu lista rând cu rând.
     Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
             If pNode Is Nothing Then Return
             Dim rows As List(Of RezervareRow) = TryCast(pNode.Tag, List(Of RezervareRow))
             If rows Is Nothing Then Return
+            If String.Equals(pNode.Key, ROOT_KEY, StringComparison.Ordinal) Then
+                FillGridAgregat(rows)
+                Return
+            End If
             FillGrid(rows)
         Catch ex As Exception
             GlobalErrorLog.Write("RezervariView.tree_NodeMouseUp", ex)

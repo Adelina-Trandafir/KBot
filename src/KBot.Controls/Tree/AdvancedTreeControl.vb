@@ -907,10 +907,7 @@ Partial Public Class AdvancedTreeControl
         Dim viewport As Integer = Math.Max(1, Me.Height - headerOff - FooterOffset)
         Dim contentH As Integer = GetVisibleItems().Count * _itemHeight + PaddingTreeTopPx
 
-        _vScroll.Width = ScrollBarThicknessPx
-        _vScroll.Left = Math.Max(0, Me.Width - _vScroll.Width)
-        _vScroll.Top = headerOff
-        _vScroll.Height = viewport
+        PositionVScrollBar(headerOff, viewport)
         _vScroll.SmallChange = _itemHeight
         _vScroll.LargeChange = viewport
 

@@ -968,7 +968,14 @@ plus, din felia 0031-01, `TreeLogger.Write` și `TreeLogger.Init`. Ultimele dou�
   `_BLOCAJE_SQL` și din `motive_blocare` (`routes/forexe/asociere.py`), testele rescrise
   (`test_platile_nu_mai_blocheaza`), mesajul din `AsociereForm` pe 409 `INSTANTANEU_BLOCAT` nu mai
   pomenește plata. Consecință: pe date vechi, unde `FX_ORD.IDRR`/`IDRH` sunt 0 peste tot, **nimic nu
-  mai e blocat** — jumătatea rămasă e chiar cea neprobată de la (3). Nerulat. **(4)**
+  mai e blocat** — jumătatea rămasă e chiar cea neprobată de la (3). Nerulat.
+  **20.09.2026 — confirmat de operator și CORECTAT:** exact asta se întâmpla («it's not working»);
+  nimeni nu scrie `FX_ORD.IDRR` / `IDRH` (nici `ord_edit.py`). Regula lui: **cel puțin o linie
+  `FX_ORD_TBL` a angajamentului cu data (a capului `FX_ORD.DataORD`) în ziua instantaneului sau
+  după** — `_BLOCAJE_SQL` rescris pe `FX_ORD_TBL ⋈ FX_ORD` prin `IDORDP` + `FX_ORD.CodAngajament`,
+  `DATE(DataORD) >= DATE(DataH)`; `motive_blocare` cu un singur alineat (`ord_n`/`ord_nr`/`ord_data`);
+  teste rescrise; comentariul de antet din `AsociereForm.vb` adus la zi. Detalii în
+  `SLICE-0048-04-asociere-oricand.md` §7. SQL-ul tot nu a atins MariaDB. **(4)**
   ⚠ **Tragerea nu s-a făcut cu un mouse adevărat** — `DoDragDrop` intră într-o buclă modală care nu
   se poate porni fără dispozitiv, deci testele acoperă pragul dinainte, contractul evenimentelor și
   proiecția locală, **nu și bucla însăși**. **(5)** **Reconstituirea (F26 / D-M) e susținută de

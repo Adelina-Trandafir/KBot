@@ -165,7 +165,9 @@ The header/footer BUTTONS use `ButtonTooltip: KBotToolTip` instead (C8), with
   `ApplyTheme(scheme)`.
 - Popup mode: `IsPopupTree = False`, `PopupGraceMs = 1500` (no node double-click is raised).
 - Scrollbars: `ScrollBarTheme = Explorer` (`Default` | `Explorer` | `DarkMode`) — native
-  bars, uxtheme only. `AutoScrollPosition` / `AutoScrollMinSize` are shadowed.
+  bars, uxtheme only. The vertical bar sits INSIDE the border frame (inset by `BorderWidth`),
+  so the frame stays closed next to it; `ScrollBarWidth` counts bar + border strip.
+  `AutoScrollPosition` / `AutoScrollMinSize` are shadowed.
 - Diagnostics: `TreeLogger` (Init + Debug/Info/Warn/Err/Ex/Perf, `LogFilePath`),
   `NodeDebugInfo` + `frmNodeDebug.ShowForNode(...)` — a full per-node dump (bounds,
   metrics, cells, host form) for the node inspector.

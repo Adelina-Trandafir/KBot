@@ -186,7 +186,9 @@ Partial Class KBotDataView
 
     ''' <summary>Lățimea zonei utile (client minus bara verticală, dacă e vizibilă).</summary>
     Private Function ViewportWidth() As Integer
-        Return Math.Max(0, ClientSize.Width - If(vScroll.Visible, vScroll.Width, 0))
+        ' The bar sits inside the border frame, so everything from its left edge on (bar plus
+        ' the border strip beside it) is out of the viewport.
+        Return Math.Max(0, If(vScroll.Visible, vScroll.Left, ClientSize.Width))
     End Function
 
     ''' <summary>
@@ -199,8 +201,8 @@ Partial Class KBotDataView
     ''' </summary>
     Private Function ViewportHeight() As Integer
         If BodyIsCollapsed() Then Return 0
-        Return Math.Max(0, ClientSize.Height - HeaderBandHeight() - FooterBandHeight() -
-                           If(hScroll.Visible, hScroll.Height, 0))
+        Return Math.Max(0, If(hScroll.Visible, hScroll.Top, ClientSize.Height) -
+                           HeaderBandHeight() - FooterBandHeight())
     End Function
 
     ''' <summary>Offset-ul vertical curent, în pixeli.</summary>
@@ -497,9 +499,16 @@ Partial Class KBotDataView
             End If
         End If
 
+        ' The bars sit INSIDE the border frame: a child control placed flush on the client edge
+        ' paints over the frame OnPaint draws there, leaving the border open beside each bar.
+        Dim bPx As Integer = BorderDevicePx()
+
         ' Verticală.
         If needV Then
-            vScroll.Bounds = New Rectangle(ClientSize.Width - vw, headerH, vw, availH)
+            Dim vTop As Integer = Math.Max(headerH, bPx)
+            Dim vBottom As Integer = headerH + availH
+            If totalsH = 0 AndAlso Not needH Then vBottom -= bPx
+            vScroll.Bounds = New Rectangle(ClientSize.Width - bPx - vw, vTop, vw, Math.Max(0, vBottom - vTop))
             ConfigureScrollBar(vScroll, contentH, availH, _rowHeight)
         End If
         If vScroll.Visible <> needV Then vScroll.Visible = needV
@@ -507,7 +516,8 @@ Partial Class KBotDataView
 
         ' Orizontală — derulează DOAR banda ne-înghețată.
         If needH Then
-            hScroll.Bounds = New Rectangle(0, ClientSize.Height - hh, availW, hh)
+            Dim hRight As Integer = If(needV, vScroll.Left, ClientSize.Width - bPx)
+            hScroll.Bounds = New Rectangle(bPx, ClientSize.Height - bPx - hh, Math.Max(0, hRight - bPx), hh)
             Dim scrollViewport As Integer = Math.Max(0, availW - _frozenBandWidth)
             ConfigureScrollBar(hScroll, _scrollBandWidth, scrollViewport, Math.Max(1, _rowHeight))
         End If

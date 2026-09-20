@@ -105,10 +105,15 @@ Partial Public Class AdvancedTreeControl
         End If
 
         ' ── 5. Border ─────────────────────────────────────────────────────
-        Dim grosChenar As Integer = SY(Me.BorderWidth)
-        If Me.BorderColor <> Color.Transparent AndAlso grosChenar > 0 Then
+        ' Same geometry as KBotDataView: GDI+ centres the stroke on the rectangle, so the path
+        ' is pulled in by half the thickness or the right/bottom edges land outside the control.
+        Dim grosChenar As Integer = BorderDevicePx()
+        If grosChenar > 0 Then
+            Dim inset As Integer = grosChenar \ 2
             Using pen As New Pen(Me.BorderColor, grosChenar)
-                e.Graphics.DrawRectangle(pen, 1, 1, Me.Width - 1, Me.Height - 1)
+                e.Graphics.DrawRectangle(pen, New Rectangle(inset, inset,
+                                                            Math.Max(1, Me.Width - 1 - 2 * inset),
+                                                            Math.Max(1, Me.Height - 1 - 2 * inset)))
             End Using
         End If
       Catch ex As Exception
@@ -601,11 +606,7 @@ Partial Public Class AdvancedTreeControl
             MyBase.OnResize(e)
             RememberExpandedWidth()       ' lățimea la care se întoarce butonul de strângere
             CancelCollapsedFlyout()       ' eticheta plutitoare nu supraviețuiește unei mutări
-            _vScroll.Width = ScrollBarThicknessPx
-            _vScroll.Left = Math.Max(0, Me.Width - _vScroll.Width)
-            '_vScroll.Top = 0
-            _vScroll.Height = Math.Max(1, Me.Height - FooterOffset)
-            RefreshScrollVisibility()
+            RefreshScrollVisibility()     ' also re-places the bar inside the border frame
             If _isSearchMode Then PositionSearchTextBox()
             Me.Invalidate()
         Catch ex As Exception

@@ -123,6 +123,10 @@ Regula, ca funcție PURĂ (`routes/forexe/asociere.py:motive_blocare`), peste un
 Motivele se întorc ca listă de propoziții românești, **de la cel mai specific la cel mai general**:
 operatorul citește primul mesaj, deci el trebuie să spună cel mai mult.
 
+> **Istoric.** (3) a fost retrasă pe 18.09.2026 (plățile singure nu mai blochează). (1) și (2) au
+> fost înlocuite pe 20.09.2026 — vezi §7: nimeni nu scrie `FX_ORD.IDRR` / `IDRH`, deci nu blocau
+> nimic. Regula de azi are un singur alineat, pe liniile de ordonanțare ale angajamentului.
+
 ### 2.4 Asimetria deliberată: blocajul nu păzește AȘEZAREA
 
 Blocajul păzește **editarea unei legături existente** — desprinderea sau re-țintirea unui
@@ -335,3 +339,59 @@ numărul reviziei comentat) plus grupul Ddf/Istoric/Xfa. **`KBOT_STATUS.md` spun
    două faze, unde un client căzut ar pierde deciziile luate pe o sarcină utilă care nu se mai poate
    reface. Aici totul se poate reciti de la server oricând, deci nu s-a legat. De rediscutat dacă
    operatorul lucrează sesiuni lungi.
+
+## 7. Corectură 20.09.2026 — blocajul se cheiază pe liniile de ordonanțare ale angajamentului
+
+**Raportat de operator:** «it should block changing the association for H's for which ordonantare
+exist. ordonantare exist means there is at least one ord_tbl row with a date newer than that h. it
+was tied to plati, a recent slice should've change it to ord, but it's not working».
+
+**Cauza, citită în cod.** După retragerea plăților (18.09.2026) blocajul stătea NUMAI pe
+`FX_ORD.IDRR = H.IDRR` / `FX_ORD.IDRH = H.IDRH`. Pe acele două coloane nu scrie nimeni:
+exportul Access le are `0` peste tot (§2.2, §6.4), iar editorul K-BOT de ordonanțări
+(`routes/forexe/ord_edit.py`, `_INSERT_ORD`) nici nu le numește în `INSERT`. Deci pe orice bază
+reală `ord_h = ord_r = 0` pentru fiecare instantaneu, `motive_blocare` întorcea listă goală și
+NIMIC nu era blocat — exact consecința anunțată în STATUS la 18.09 («jumătatea rămasă e chiar cea
+neprobată»), acum confirmată de operator pe ecran.
+
+**Regula nouă (a operatorului).** Un instantaneu ASOCIAT e blocat dacă angajamentul are **cel puțin
+o linie `FX_ORD_TBL`** al cărei cap `FX_ORD` (prin `IDORDP`) are `DataORD` **în ziua instantaneului
+sau după**. Decizii de implementare, notate ca atare:
+
+| Punct | Alegere | De ce |
+|---|---|---|
+| Data liniei | `FX_ORD.DataORD` a capului | `FX_ORD_TBL` nu are nicio coloană de dată (schema din `000_DEMO.sql`) |
+| Angajamentul | `FX_ORD.CodAngajament = H.CodAngajament` | `NOT NULL` pe cap; `FX_ORD_TBL.CodAngajament` e nullable. Același drum pe care `ord.py` leagă liniile de angajament |
+| «mai nouă» | `DATE(DataORD) >= DATE(DataH)` | pe ZI, nu pe datetime; `>=` fiindcă o ordonanțare din aceeași zi a citit deja totalul (§1.3) — aceeași fereastră pe care operatorul o fixase pentru plăți în §2.3. **Presupunere:** operatorul a spus «newer than»; ziua egală s-a luat ca blocantă, conservator |
+| Dată lipsă | `DataORD IS NULL` sau `DataH IS NULL` blochează | nu poate fi dovedită anterioară; ramura conservatoare, ca înainte |
+| Granularitate | neschimbată: doar instantaneele cu `IDRR IS NOT NULL`, fiecare judecat pe data lui | §2.3, §2.4 rămân în picioare |
+
+**Ce s-a schimbat.**
+
+- `PYTHON/routes/forexe/asociere.py` — `_BLOCAJE_SQL` rescris peste fragmentul comun
+  `_ORD_ULTERIOARE_SQL` (`FX_ORD_TBL T JOIN FX_ORD O ON O.IDORDP = T.IDORDP`), trei subinterogări
+  scalare: `ord_n` (câte linii), `ord_nr` (`GROUP_CONCAT DISTINCT NrORD`), `ord_data`
+  (`MIN(DataORD)`). `motive_blocare` are un singur alineat, cu mesajul «Angajamentul are
+  ordonanțarea nr. N din zz.ll.aaaa, ulterioară acestui instantaneu.» (varianta «fără dată» când
+  `ord_data` lipsește). Coloanele vechi `ord_h` / `ord_h_nr` / `ord_r` / `ord_r_data` nu se mai
+  citesc. Antetul modulului spune de ce nu mai e pe `IDRR` / `IDRH`. Consumatorii
+  (`verifica_blocajele`, `citeste_instantanee`, `prelucrare.py` prin `citeste_blocaje`) sunt
+  neatinși: contractul `{IDRH: [motive]}` e același.
+- `PYTHON/tests/test_forexe_asociere.py` — `blocaj()` pe coloanele noi; testele regulii rescrise
+  (număr + dată într-un singur mesaj, «fără dată», coloanele vechi ignorate, un singur motiv pe
+  rând); gardă de citire pe `_BLOCAJE_SQL` (join-ul, legătura pe `CodAngajament`, comparația pe
+  `DATE`, și că `O.IDRH = H.IDRH` / `O.IDRR = H.IDRR` au dispărut); cursorul-fals recunoaște
+  `_BLOCAJE_SQL` după ` AS ord_n`; cele două teste de rută (`blocat` cu motive / 409) hrănite cu
+  rânduri în forma nouă.
+- `src/KBot.App/Forexe/AsociereForm.vb` — doar comentariul de antet, care încă spunea că plățile
+  blochează; rescris în engleză ASCII (regula 0). Zero cod schimbat pe client: formularul citește
+  `blocat` + `motive` de la server și nu știe nimic despre regulă.
+
+**Rezultatele testelor:** nu s-a rulat nicio suită (regula casei: testele se scriu, nu se rulează
+cu o unealtă). `py_compile` curat pe amândouă fișierele Python.
+
+**Rămas neverificat:** `_BLOCAJE_SQL` tot nu a atins MariaDB (§6.2 rămâne); `DATE()` peste
+`datetime` și `GROUP_CONCAT(DISTINCT … ORDER BY …)` într-o subinterogare corelată sunt sintaxă
+MariaDB verificată doar prin citire. Formularul nu s-a deschis pe ecran cu un instantaneu blocat de
+regula nouă. Dacă operatorul a vrut strict «după ziua H» (nu «din ziua H»), se schimbă doar `>=`
+în `>` în `_ORD_ULTERIOARE_SQL` și gardele din test.

@@ -460,8 +460,7 @@ Public Class KbotForm
                     ' aprinde sau stinge steagurile Are* ale nodului, iar `LoadTreeAsync` cu
                     ' selecția păstrată împinge singur contextul nou în vederea deschisă — deci
                     ' `Reincarca()` ar fi a doua citire a aceluiași lucru.
-                    Await LoadTreeAsync(pastreazaSelectia:=True, resetView:=False)
-                    'navViews
+                    Await LoadTreeAsync(pastreazaSelectia:=True)
                 End If
             End Using
         Catch ex As Exception
@@ -1263,7 +1262,7 @@ Public Class KbotForm
     ''' perioadă sau la prima încărcare nu există selecție de păstrat, iar una veche ar fi
     ''' oricum a altui an.
     ''' </param>
-    Private Async Function LoadTreeAsync(Optional pastreazaSelectia As Boolean = False, Optional resetView As Boolean = True) As Task
+    Private Async Function LoadTreeAsync(Optional pastreazaSelectia As Boolean = False) As Task
         ' Fără an/SS nu există interogare de făcut (combo-uri goale = perioade necitite).
         If cboAn.SelectedItem Is Nothing OrElse cboSs.SelectedItem Is Nothing Then
             Return
@@ -1307,17 +1306,17 @@ Public Class KbotForm
     ''' un angajament care a dispărut din listă.
     ''' </param>
     Private Sub PopulateTree(rows As IReadOnlyList(Of AngajamentTreeInfo),
-                             Optional codSelectat As String = Nothing, Optional resetView As Boolean = True)
+                             Optional codSelectat As String = Nothing)
         Try
             ArgumentNullException.ThrowIfNull(rows)
             tree.Clear()
             _treeInfos.Clear()
 
-            If resetView Then _currentInfo = Nothing
-            ' Selecția veche a dispărut odată cu rândurile: nicio vedere nu rămâne
-            ' deschisă pe un angajament care nu mai e în arbore.
-            ApplyViewGating(_currentInfo)
-            RefreshInfoForm()   ' selecția s-a golit -> fereastra de info reflectă asta
+            ' The view gate is applied ONCE, after the loop, when it is known whether the old
+            ' node is still in the tree. Gating on Nothing up here, before the re-selection,
+            ' used to hide every entry and push the nav onto «sumar» -- so a reload that KEPT
+            ' the node still threw the operator off the view they were on (Rezervari,
+            ' Receptii...) after every FOREXE refresh.
 
             Dim nodDeSelectat As AdvancedTreeControl.TreeItem = Nothing
             Dim infoDeSelectat As AngajamentTreeInfo = Nothing
@@ -1356,10 +1355,17 @@ Public Class KbotForm
             If nodDeSelectat IsNot Nothing Then
                 _currentInfo = infoDeSelectat
                 tree.SelectAndReveal(nodDeSelectat)
+                ' The nav key stays where it was: `ApplyViewGating` only falls back to «sumar»
+                ' when the fresh flags no longer allow the open view.
                 ApplyViewGating(infoDeSelectat)
                 _activeView?.SetContext(infoDeSelectat)
-                RefreshInfoForm()
+            Else
+                ' Selecția veche a dispărut odată cu rândurile (sau nu era de păstrat): nicio
+                ' vedere nu rămâne deschisă pe un angajament care nu mai e în arbore.
+                _currentInfo = Nothing
+                ApplyViewGating(Nothing)
             End If
+            RefreshInfoForm()   ' fereastra de info reflectă selecția nouă (sau lipsa ei)
 
             tree.Invalidate()
         Catch ex As Exception

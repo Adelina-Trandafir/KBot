@@ -547,6 +547,11 @@ Partial Class KBotDataView
         Return If(_footerColSepPinned = Color.Empty, _cFooterSep, _footerColSepPinned)
     End Function
 
+    ''' <summary>Border thickness in DEVICE pixels; 0 when there is no border pen.</summary>
+    Private Function BorderDevicePx() As Integer
+        Return If(_pBorder Is Nothing, 0, CInt(_pBorder.Width))
+    End Function
+
     ''' <summary>Culoarea chenarului; gol = marginea temei, <c>Transparent</c> = fără chenar.</summary>
     Friend Function BorderColorResolved() As Color
         Return If(_borderPinned = Color.Empty, _cHeaderSep, _borderPinned)
@@ -585,6 +590,8 @@ Partial Class KBotDataView
             If _borderPinned = value Then Return
             _borderPinned = value
             RebuildThemeResources()
+            ' Transparent <-> visible changes the frame the scrollbars sit inside.
+            UpdateLayout()
             Invalidate()
         End Set
     End Property
@@ -616,6 +623,8 @@ Partial Class KBotDataView
             If _borderWidth = value Then Return
             _borderWidth = value
             RebuildThemeResources()
+            ' The scrollbars sit inside the frame, so a new thickness moves them.
+            UpdateLayout()
             Invalidate()
         End Set
     End Property
