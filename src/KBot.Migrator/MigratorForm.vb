@@ -908,24 +908,26 @@ Public Class MigratorForm
         ' stops the run. Only the full list can tell those two apart.
         request.RegistryUnits.AddRange(_units)
 
-        ' The operator's FOREXE path, when there is one, replaces the registry's on every
-        ' ticked unit that HAS a registry path. A unit whose cai.CaleForexe is blank has no
-        ' FX data by the registry's own word, and a path typed to fix WHERE the shared file
-        ' is must not turn into a claim that it also covers units it never covered.
+        ' The operator's FOREXE path, when there is one, replaces the registry's on EVERY
+        ' ticked unit - including a unit whose cai.CaleForexe is blank. Until 21.09 a blank
+        ' registry column kept the typed path out, on the theory that the registry knew
+        ' best; in practice whole DCs (006_GR35, four units) carry NULL there while the
+        ' shared FX_<year>.accdb is complete, and the run died on 11 phantom 1364 findings
+        ' because no unit ever opened the file. Safe to apply broadly: the file names its
+        ' owner on every row (IdUnitate), and OwnershipPlan (decision D7) skips a unit the
+        ' file does not cover, so a typed path cannot make a unit claim rows that are not its.
         Dim typedForexe = ForexeOverride()
         If typedForexe.Length > 0 Then
             request.ForexeFileOverride = typedForexe
             request.RegistryForexeFile = _registryForexePath
-            Say($"Fișier FOREXE suprascris de operator: {typedForexe} (registrul: {_registryForexePath}).")
+            Say($"Fișier FOREXE suprascris de operator: {typedForexe} (registrul: {If(_registryForexePath.Length = 0, "(lipsă)", _registryForexePath)}).")
         End If
 
         For Each row In dgvUnitati.Rows
             If Not IsTicked(row) Then Continue For
             Dim unit = TryCast(row.Tag, CaiUnit)
             If unit Is Nothing Then Continue For
-            If typedForexe.Length > 0 AndAlso Not String.IsNullOrWhiteSpace(unit.ForexeFilePath) Then
-                unit = unit.WithForexeFile(typedForexe)
-            End If
+            If typedForexe.Length > 0 Then unit = unit.WithForexeFile(typedForexe)
             request.Units.Add(unit)
         Next
         If request.Units.Count = 0 Then

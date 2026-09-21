@@ -86,9 +86,10 @@ Public NotInheritable Class TransferRequest
     ''' ONE path for the whole selection, by design: the estate keeps one shared
     ''' <c>FX_&lt;year&gt;.accdb</c> for many units, and the registry may name it by a
     ''' path that is not where this machine keeps it (an absolute <c>C:\AVACONT\...</c>
-    ''' on a OneDrive copy). When set, every selected unit that HAD a registry path has
-    ''' already been rewritten to this one - see <see cref="CaiUnit.WithForexeFile"/>;
-    ''' this property is the record of that, for the journal and the findings log.
+    ''' on a OneDrive copy), or may name nothing at all for a unit the file does cover.
+    ''' When set, EVERY selected unit has already been rewritten to this one, blank
+    ''' registry column or not - see <see cref="CaiUnit.WithForexeFile"/>; this property
+    ''' is the record of that, for the journal and the findings log.
     ''' Same rule as <see cref="CodFiscalOverride"/>: never persisted.
     ''' </remarks>
     Public Property ForexeFileOverride As String = String.Empty

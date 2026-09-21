@@ -134,7 +134,12 @@ Public Module FindingLog
         sb.AppendLine($"cod fiscal: registry «{Blank(request.RegistryCodFiscal())}», used «{Blank(request.ResolvedCodFiscal())}»")
         sb.AppendLine($"journal:  {Blank(request.JournalFolder)}")
         If request.ForexeFileOverride.Length > 0 Then
-            sb.AppendLine($"forexe file: registry «{Blank(request.RegistryForexeFile)}», used «{request.ForexeFileOverride}» (operator override)")
+            ' Say on how many units the path actually landed: before 21.09 this line read
+            ' "used «...»" while zero units had received it, and the 1364 findings below
+            ' looked like a broken file rather than a file nobody opened.
+            Dim covered = request.Units.Where(Function(u) String.Equals(u.ForexeFilePath, request.ForexeFileOverride, StringComparison.OrdinalIgnoreCase)).Count()
+            sb.AppendLine($"forexe file: registry «{Blank(request.RegistryForexeFile)}», used «{request.ForexeFileOverride}» " &
+                          $"(operator override, applied to {covered.ToString(CultureInfo.InvariantCulture)} of {request.Units.Count.ToString(CultureInfo.InvariantCulture)} selected units)")
         End If
         sb.AppendLine($"registry units: {request.RegistryUnits.Count.ToString(CultureInfo.InvariantCulture)} in total")
         sb.AppendLine($"selected units: {request.Units.Count.ToString(CultureInfo.InvariantCulture)}")
