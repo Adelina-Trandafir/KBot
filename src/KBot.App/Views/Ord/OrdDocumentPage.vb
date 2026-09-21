@@ -26,8 +26,13 @@ Public Class OrdDocumentPage
     Private _shownPath As String
     Private _shownExists As Boolean
     ' Mesajul stării goale, ales la fiecare context (nicio selecție vs. PDF inexistent).
-    Private _mesajGol As String = "Selectați o ordonanțare din arbore."
+    'Private _mesajGol As String = "Selectați o ordonanțare din arbore."
 
+    Public Event GenerateRequested As EventHandler Implements IOrdPage.GenerateRequested
+
+    ' Pagina «Document» nu listează fișiere -> nu ridică niciodată acest eveniment. Rămâne
+    ' declarat ca gazda să se poată abona uniform la toate paginile.
+    Public Event FileActivated As EventHandler(Of String) Implements IOrdPage.FileActivated
     Public Sub New()
         InitializeComponent()
     End Sub
@@ -45,16 +50,14 @@ Public Class OrdDocumentPage
     ''' </summary>
     Public Sub SetContext(ctx As OrdPageContext) Implements IOrdPage.SetContext
         Try
+            ' O rădăcină de lună ajunge aici cu PdfPath gol — părintele nu compune cale decât
+            ' pentru o frunză (sau pentru fișierul ales din listă), deci nu mai verificăm IsRoot.
             If ctx Is Nothing OrElse String.IsNullOrEmpty(ctx.PdfPath) Then
                 _pendingPath = Nothing
                 _pendingExists = False
-                _mesajGol = "Selectați o ordonanțare din arbore."
             Else
                 _pendingPath = ctx.PdfPath
                 _pendingExists = ctx.PdfExists
-                If Not ctx.PdfExists Then
-                    _mesajGol = "Nu există PDF generat pentru această ordonanțare."
-                End If
             End If
             MountIfVisible()
         Catch ex As Exception
@@ -83,19 +86,16 @@ Public Class OrdDocumentPage
         _shownPath = _pendingPath
         _shownExists = _pendingExists
 
-        If String.IsNullOrEmpty(_pendingPath) OrElse Not _pendingExists Then
-            ' Eliberăm fereastra găzduită înainte de a ascunde suprafața: altfel o fereastră
-            ' Adobe reparentată ar rămâne agățată de un panou invizibil.
+        If String.IsNullOrEmpty(_pendingPath) Then
             previewPdf.Clear()
-            previewPdf.Visible = False
-            lblEmpty.Text = _mesajGol
-            lblEmpty.Visible = True
-            Return
+        Else
+            previewPdf.ShowDocument(_pendingPath, _pendingExists)
         End If
+    End Sub
 
-        lblEmpty.Visible = False
-        previewPdf.Visible = True
-        previewPdf.ShowDocument(_pendingPath, True)
+    Private Sub previewPdf_GenerateRequested(sender As Object, e As EventArgs) _
+        Handles previewPdf.GenerateRequested
+        RaiseEvent GenerateRequested(Me, EventArgs.Empty)
     End Sub
 
     ''' <summary>Cascadă: fundalul paginii + starea goală; suprafața PDF se auto-temează.</summary>

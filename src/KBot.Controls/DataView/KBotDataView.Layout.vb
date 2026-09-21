@@ -29,6 +29,14 @@ Partial Class KBotDataView
     ' Gardă de reintrare: schimbarea vizibilității barelor declanșează layout.
     Private _inLayout As Boolean = False
 
+    ' English: the bars' OWN shown state. Control.Visible reports the EFFECTIVE visibility, which
+    ' is False whenever any ancestor is hidden -- so a relayout that runs while the grid sits on
+    ' a hidden page (the host pushes a new context into it before showing it) would read "bar
+    ' already hidden", skip the write, and the stale bar would come back with the page. These
+    ' flags say what WE asked for; every layout read goes through them, never through Visible.
+    Private _vScrollShown As Boolean = False
+    Private _hScrollShown As Boolean = False
+
     ' Derulare orizontală pe coloane (ScrollByColumn): starea de aliniere la margini.
     Private _scrollByColumn As Boolean = False
     Private _lastHScrollValue As Integer = 0
@@ -188,7 +196,7 @@ Partial Class KBotDataView
     Private Function ViewportWidth() As Integer
         ' The bar sits inside the border frame, so everything from its left edge on (bar plus
         ' the border strip beside it) is out of the viewport.
-        Return Math.Max(0, If(vScroll.Visible, vScroll.Left, ClientSize.Width))
+        Return Math.Max(0, If(_vScrollShown, vScroll.Left, ClientSize.Width))
     End Function
 
     ''' <summary>
@@ -201,18 +209,18 @@ Partial Class KBotDataView
     ''' </summary>
     Private Function ViewportHeight() As Integer
         If BodyIsCollapsed() Then Return 0
-        Return Math.Max(0, If(hScroll.Visible, hScroll.Top, ClientSize.Height) -
+        Return Math.Max(0, If(_hScrollShown, hScroll.Top, ClientSize.Height) -
                            HeaderBandHeight() - FooterBandHeight())
     End Function
 
     ''' <summary>Offset-ul vertical curent, în pixeli.</summary>
     Private Function VScrollOffset() As Integer
-        Return If(vScroll.Visible, vScroll.Value, 0)
+        Return If(_vScrollShown, vScroll.Value, 0)
     End Function
 
     ''' <summary>Offset-ul orizontal curent al benzii derulate, în pixeli.</summary>
     Private Function HScrollOffset() As Integer
-        Return If(hScroll.Visible, hScroll.Value, 0)
+        Return If(_hScrollShown, hScroll.Value, 0)
     End Function
 
     ' ── Virtualizare ────────────────────────────────────────────────────────────
@@ -308,7 +316,7 @@ Partial Class KBotDataView
     Friend Sub EndHorizontalThumbDrag()
         _hThumbTracking = False
         If Not _scrollByColumn OrElse _snappingHScroll Then Return
-        If Not hScroll.Visible OrElse _scrollLayout.Count = 0 Then Return
+        If Not _hScrollShown OrElse _scrollLayout.Count = 0 Then Return
         ApplySnappedHValue(NearestColumnStart(hScroll.Value))
         _lastHScrollValue = hScroll.Value
     End Sub
@@ -370,7 +378,7 @@ Partial Class KBotDataView
     ' Se SARE cât timp se trage thumb-ul — atunci derularea e liberă, alinierea vine la EndScroll.
     Private Sub SnapHScrollToColumn()
         If Not _scrollByColumn OrElse _snappingHScroll OrElse _hThumbTracking Then Return
-        If Not hScroll.Visible OrElse _scrollLayout.Count = 0 Then Return
+        If Not _hScrollShown OrElse _scrollLayout.Count = 0 Then Return
         ApplySnappedHValue(SnappedHValue(hScroll.Value))
     End Sub
 
@@ -461,8 +469,8 @@ Partial Class KBotDataView
         ' Strâns pe verticală nu mai există corp de derulat: barele se sting amândouă, altfel ar
         ' rămâne atârnate peste cele două benzi.
         If BodyIsCollapsed() Then
-            If vScroll.Visible Then vScroll.Visible = False
-            If hScroll.Visible Then hScroll.Visible = False
+            SetVScrollShown(False)
+            SetHScrollShown(False)
             vScroll.Value = 0
             hScroll.Value = 0
             Return
@@ -511,7 +519,7 @@ Partial Class KBotDataView
             vScroll.Bounds = New Rectangle(ClientSize.Width - bPx - vw, vTop, vw, Math.Max(0, vBottom - vTop))
             ConfigureScrollBar(vScroll, contentH, availH, _rowHeight)
         End If
-        If vScroll.Visible <> needV Then vScroll.Visible = needV
+        SetVScrollShown(needV)
         If Not needV Then vScroll.Value = 0
 
         ' Orizontală — derulează DOAR banda ne-înghețată.
@@ -521,7 +529,7 @@ Partial Class KBotDataView
             Dim scrollViewport As Integer = Math.Max(0, availW - _frozenBandWidth)
             ConfigureScrollBar(hScroll, _scrollBandWidth, scrollViewport, Math.Max(1, _rowHeight))
         End If
-        If hScroll.Visible <> needH Then hScroll.Visible = needH
+        SetHScrollShown(needH)
         If Not needH Then hScroll.Value = 0
 
         ' Lățimile s-au putut schimba (auto-size, slice 0013): re-aliniază la o margine.
@@ -529,6 +537,23 @@ Partial Class KBotDataView
             SnapHScrollToColumn()
             _lastHScrollValue = hScroll.Value
         End If
+    End Sub
+
+    ' English: the only writers of the bars' visibility. The flag and the control are always
+    ' written together, so they never diverge, and the change test is on the FLAG, not on
+    ' Control.Visible. Control.Visible = False on a hidden ancestor still records the wish (the
+    ' bar stays hidden when the page shows) -- that is exactly the write the old
+    ' `If vScroll.Visible <> needV` guard skipped, because Visible already read False there.
+    Private Sub SetVScrollShown(shown As Boolean)
+        If _vScrollShown = shown Then Return
+        _vScrollShown = shown
+        vScroll.Visible = shown
+    End Sub
+
+    Private Sub SetHScrollShown(shown As Boolean)
+        If _hScrollShown = shown Then Return
+        _hScrollShown = shown
+        hScroll.Visible = shown
     End Sub
 
     ' Setează intervalul unei bare. Semantica WinForms: valoarea maximă atinsă efectiv este
@@ -558,7 +583,7 @@ Partial Class KBotDataView
             ' grupului — acela e ce se vede din el, și e locul de unde se poate redeschide.
             Dim bandIndex As Integer = AnchorBandOfRow(rowIndex)
             If bandIndex < 0 Then Return
-            If Not vScroll.Visible Then Return
+            If Not _vScrollShown Then Return
 
             Dim banda As KBotBand = BandAt(bandIndex)
             Dim viewH As Integer = ViewportHeight()

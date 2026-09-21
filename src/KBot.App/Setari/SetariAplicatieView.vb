@@ -288,3 +288,45 @@ Public Class SetariAplicatieView
         End Function
     End Class
 End Class
+
+''' <summary>
+''' O intrare din combo-ul «Mod vizualizator Adobe»: valoarea + eticheta românească. Există ca să
+''' NU se compare texte de interfață când se citește selecția. POCO -&gt; fără Try/Catch.
+''' </summary>
+Friend NotInheritable Class AdobeModeItem
+    Public ReadOnly Property Mode As AdobeViewerMode
+
+    Public Sub New(mode As AdobeViewerMode)
+        Me.Mode = mode
+    End Sub
+
+    Public Overrides Function ToString() As String
+        Return AdobeViewerSettings.ModeLabel(Mode)
+    End Function
+End Class
+
+''' <summary>O intrare din combo-ul «Motor previzualizare». POCO -&gt; fără Try/Catch.</summary>
+Friend NotInheritable Class AdobeEngineItem
+    Public ReadOnly Property Engine As AdobePreviewEngine
+
+    Public Sub New(engine As AdobePreviewEngine)
+        Me.Engine = engine
+    End Sub
+
+    Public Overrides Function ToString() As String
+        Return AdobeViewerSettings.EngineLabel(Engine)
+    End Function
+End Class
+
+''' <summary>O intrare din combo-ul «Instanță nouă Adobe». POCO -&gt; fără Try/Catch.</summary>
+Friend NotInheritable Class AdobeNewInstanceItem
+    Public ReadOnly Property Mode As AdobeNewInstanceMode
+
+    Public Sub New(mode As AdobeNewInstanceMode)
+        Me.Mode = mode
+    End Sub
+
+    Public Overrides Function ToString() As String
+        Return AdobeViewerSettings.NewInstanceLabel(Mode)
+    End Function
+End Class

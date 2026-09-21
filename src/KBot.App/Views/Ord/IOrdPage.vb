@@ -30,4 +30,16 @@ Public Interface IOrdPage
     ''' </summary>
     Sub SetContext(ctx As OrdPageContext)
 
+    ''' <summary>
+    ''' Ridicat de butonul «Generează documentul» de pe suprafața „document lipsă". Îl ridică
+    ''' doar paginile «Vizualizare» și «Document»; celelalte niciodată.
+    ''' </summary>
+    Event GenerateRequested As EventHandler
+
+    ''' <summary>
+    ''' Ridicat când operatorul alege un fișier din listă. Îl ridică doar pagina «Fișiere»;
+    ''' părintele calculează ținta PDF și comută pe pagina «Document».
+    ''' </summary>
+    Event FileActivated As EventHandler(Of String)
+
 End Interface

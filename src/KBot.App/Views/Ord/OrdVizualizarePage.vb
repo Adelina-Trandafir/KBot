@@ -49,6 +49,8 @@ Public Class OrdVizualizarePage
     ' Repopularea combo-ului ridică SelectedIndexChanged, dar aceea NU e o alegere a
     ' operatorului: filtrul s-ar aplica peste o grilă pe care oricum tocmai o reumplem.
     Private _suspendaFiltru As Boolean
+    Public Event GenerateRequested As EventHandler Implements IOrdPage.GenerateRequested
+    Public Event FileActivated As EventHandler(Of String) Implements IOrdPage.FileActivated
 
     Public Sub New()
         InitializeComponent()
