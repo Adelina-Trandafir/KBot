@@ -32,9 +32,6 @@ Partial Class OrdDocumentPage
         previewPdf.TabIndex = 0
         '
         ' lblEmpty — starea goală a paginii (fără ordonanțare selectată / fără PDF generat).
-        ' Cât timp e vizibilă, suprafața PDF e ascunsă: fără generare în felia asta, suprafața
-        ' „document lipsă" a lui ReaderHostPreview ar arăta un buton «Generează» care nu face
-        ' nimic.
         '
         lblEmpty.Dock = DockStyle.Fill
         lblEmpty.Font = New Font("Segoe UI", 10F)

@@ -99,6 +99,11 @@ Public Class OrdView
     Private _pdfPathRezolvat As String
     ' Ordonanțarea pentru care s-a rezolvat calea de mai sus — stale-guard, ca la DDF.
     Private _pdfRezolvatPentruIdordp As Integer
+    ' The document just GENERATED (unsigned, in TempPdf), which replaces the computed path
+    ' until the next click in the tree. Same role as DdfView._pdfPathOverride.
+    Private _pdfPathOverride As String
+    ' A generation is running? Blocks re-entry from the button.
+    Private _generating As Boolean
 
     ' Starea splitter-ului dinainte de strângerea arborelui, ca desfacerea să-l pună înapoi
     ' exact unde era (vezi Tree_CollapsedChanged). 0 = arborele n-a fost încă strâns.
@@ -266,12 +271,16 @@ Public Class OrdView
 
     Private Function CreatePage(key As String) As IOrdPage
         Try
+            Dim page As IOrdPage
             Select Case key
-                Case PAGE_VIZUALIZARE : Return New OrdVizualizarePage()
-                Case PAGE_DOCUMENT : Return New OrdDocumentPage()
+                Case PAGE_VIZUALIZARE : page = New OrdVizualizarePage()
+                Case PAGE_DOCUMENT : page = New OrdDocumentPage()
                 Case Else
                     Throw New ArgumentException($"Pagină ORD necunoscută: '{key}'.", NameOf(key))
             End Select
+            ' Uniform subscription, as in DdfView: a page with nothing to raise never raises.
+            AddHandler page.GenerateRequested, AddressOf OnGenerateRequested
+            Return page
         Catch ex As Exception
             GlobalErrorLog.Write("OrdView.CreatePage", ex)
             Throw
@@ -291,7 +300,11 @@ Public Class OrdView
             ' AȘTEPTATĂ, ca un fișier deja prezent să se vadă imediat.
             Dim pdfPath As String = Nothing
             If Not _nodeIsRoot AndAlso _selectedOrd IsNot Nothing Then
-                If Not String.IsNullOrEmpty(_pdfPathRezolvat) AndAlso
+                If Not String.IsNullOrEmpty(_pdfPathOverride) Then
+                    ' The document generated just now (unsigned, TempPdf) wins until the
+                    ' next click in the tree -- same precedence as in DdfView.
+                    pdfPath = _pdfPathOverride
+                ElseIf Not String.IsNullOrEmpty(_pdfPathRezolvat) AndAlso
                    _pdfRezolvatPentruIdordp = _selectedOrd.Idordp Then
                     pdfPath = _pdfPathRezolvat
                 Else
@@ -378,6 +391,7 @@ Public Class OrdView
                     _nodeLinii = LiniiFor(tinta.Idordp)
                     _nodeIsRoot = False
                     _selectedOrd = tinta
+                    _pdfPathOverride = Nothing
                     _pdfPathRezolvat = Nothing
                     _pdfRezolvatPentruIdordp = 0
                     Dim nod As AdvancedTreeControl.TreeItem = Nothing
@@ -392,6 +406,7 @@ Public Class OrdView
             _nodeLinii = _linii
             _nodeIsRoot = True
             _selectedOrd = Nothing
+            _pdfPathOverride = Nothing
             _pdfPathRezolvat = Nothing
             _pdfRezolvatPentruIdordp = 0
             PushToActivePage()
@@ -496,6 +511,7 @@ Public Class OrdView
             _nodeIsRoot = payload.IsRoot
             _selectedOrd = payload.Ordonantare
             ' O selecție nouă anulează calea rezolvată pentru nodul anterior (felia 0041).
+            _pdfPathOverride = Nothing
             _pdfPathRezolvat = Nothing
             _pdfRezolvatPentruIdordp = 0
 
@@ -549,6 +565,82 @@ Public Class OrdView
         End Try
     End Sub
 
+    ' "Genereaza documentul" on the "document lipsa" surface -- the same path as
+    ' DdfView.OnGenerateRequested. Async UI boundary: log and swallow (no await to catch).
+    '
+    ' The 401 net (_withReauth) is typed on OrdInfo, so the two calls below go straight to
+    ' the client, exactly like EnsureSignedPdfAsync does for the signed PDF.
+    Private Async Sub OnGenerateRequested(sender As Object, e As EventArgs)
+        Try
+            If _generating Then Return
+            Dim cod As String = _requestedCod
+            Dim ordonantare As OrdHeaderRow = _selectedOrd
+            If String.IsNullOrWhiteSpace(cod) OrElse ordonantare Is Nothing OrElse _nodeIsRoot Then Return
+
+            _generating = True
+            Try
+                Dim idordp As Integer = ordonantare.Idordp
+
+                ' 1. The whole graph (partners, lines, documents, attachment rows) -- what
+                ' Access copied into tmpFX_ORD*. The read-only view call drops most of it.
+                Dim draft As OrdDraft = Await _apiClient.GetOrdDraftAsync(idordp, CancellationToken.None).ConfigureAwait(True)
+                If draft Is Nothing Then Return
+                If Not EsteIncaTinta(cod, idordp) Then Return
+
+                ' 2. The image bytes, one download per attachment (they no longer travel with
+                ' the graph). 404 = no image, a normal state: the row stays empty, as in Access.
+                Dim imagini As New Dictionary(Of Integer, String)()
+                For Each att As OrdDraftAtt In draft.Atasamente
+                    If att.Idordattp <= 0 Then Continue For
+                    Dim img As PdfDownloadResult = Await _apiClient.GetOrdAtasamentAsync(
+                        att.Idordattp, Nothing, CancellationToken.None).ConfigureAwait(True)
+                    If img IsNot Nothing AndAlso img.Status = PdfDownloadStatus.Content AndAlso img.Bytes IsNot Nothing Then
+                        imagini(att.Idordattp) = Convert.ToBase64String(img.Bytes)
+                    End If
+                Next
+                If Not EsteIncaTinta(cod, idordp) Then Return
+
+                ' 3. The XML (form1 + Attachments).
+                Dim ctx As OrdXmlBuilder.Context = OrdXmlBuilder.Context.FromSession(_session)
+                Dim xml As String = OrdXmlBuilder.BuildComplete(ctx, draft, imagini)
+
+                ' 4. Unsigned -> derived artifact: the work area (TempPdf, wiped at start),
+                ' not the signed cache and not the server. File name from the convention,
+                ' folder flattened. The .xml sibling sits next to it.
+                Dim numeFisier As String = IO.Path.GetFileName(
+                    OrdPdfLocator.ExpectedPath(KBotPaths.Current.OrdPdfRoot, ordonantare, cod))
+                If String.IsNullOrEmpty(numeFisier) Then Return
+                TempPdfStore.EnsureRoot()
+                Dim pdfPath As String = TempPdfStore.PathFor(numeFisier)
+                Dim xmlPath As String = IO.Path.ChangeExtension(pdfPath, ".xml")
+                IO.File.WriteAllText(xmlPath, xml, New Text.UTF8Encoding(False))
+
+                ' 5. The generation itself, off the UI thread. XfaWriter logs + rethrows at
+                ' its boundary; no second catch layer here -- it lands in the one below.
+                Await Task.Run(Sub() Call Global.KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "ORD", deschidePdf:=False)).ConfigureAwait(True)
+
+                ' 6. Nothing written back, nothing uploaded (unsigned). Existence is decided
+                ' by probing the disk: the context is rebuilt (PdfExists just went False ->
+                ' True on the same path) and pushed to the active page, whose (path, exists)
+                ' guard forces the re-embed.
+                If Not EsteIncaTinta(cod, idordp) Then Return
+                _pdfPathOverride = pdfPath
+                PushToActivePage()
+            Finally
+                _generating = False
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdView.OnGenerateRequested", ex)
+        End Try
+    End Sub
+
+    ' Stale-guard for the awaits above: the operator may have clicked another angajament
+    ' or another ordonantare while a call was in flight.
+    Private Function EsteIncaTinta(cod As String, idordp As Integer) As Boolean
+        Return String.Equals(_requestedCod, cod, StringComparison.Ordinal) AndAlso
+               _selectedOrd IsNot Nothing AndAlso _selectedOrd.Idordp = idordp
+    End Function
+
     ''' <summary>
     ''' Strângerea arborelui (felia 0028, aceeași înțelegere ca în MainForm): arborele e
     ''' <c>Dock = Fill</c> în <c>split.Panel1</c>, deci lățimea NU e a lui — el schimbă starea
@@ -594,6 +686,7 @@ Public Class OrdView
         _nodeLinii = Nothing
         _nodeIsRoot = False
         _selectedOrd = Nothing
+        _pdfPathOverride = Nothing
         _pdfPathRezolvat = Nothing
         _pdfRezolvatPentruIdordp = 0
         tree.Clear()

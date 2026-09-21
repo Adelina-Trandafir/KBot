@@ -28,7 +28,7 @@ Imports KBot.Domain
 '''
 ''' Decizie §2.9 (rezolvată din sursă): codul de program vine din globalul de sesiune
 ''' (<c>globCodProgram</c> -> <see cref="SessionContext.CodProgram"/>), NU din
-''' <c>FX_DDF.Program</c> — macheta Access scrie <c>Nz(globCodProgram, "0000000000")</c> în
+''' <c>FX_DDF.Program</c> — se scrie CA ATARE, fara valoare de rezerva (nu poate lipsi din sesiune), în
 ''' Cell2/program, ignorând antetul.
 '''
 ''' RISC DE FIDELITATE NEVERIFICAT: <c>EncodeBase64</c> din VBA folosea
@@ -45,13 +45,12 @@ Public NotInheritable Class DdfXmlBuilder
     Private Const XmlDeclForm As String = "<?xml version=""1.0"" encoding=""UTF-8""?>"
     Private Const XmlDeclNotafd As String = "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>"
     Private Const NotafdNs As String = "mfp:anaf:dgti:notafd:declaratie:v1"
-    Private Const DefaultProgram As String = "0000000000"
 
     ''' <summary>Globalii de sesiune de care are nevoie constructorul (§2.9). POCO pur.</summary>
     Public NotInheritable Class Context
         Public Property NumeUnitate As String = String.Empty
         Public Property CodFiscal As String = String.Empty
-        ''' <summary>Codul de program (globCodProgram). Gol -> «0000000000».</summary>
+        ''' <summary>Codul de program (globCodProgram). Scris ca atare: nu poate lipsi din sesiune.</summary>
         Public Property CodProgram As String = String.Empty
 
         Public Shared Function FromSession(s As Global.KBot.Common.SessionContext) As Context
@@ -84,7 +83,7 @@ Public NotInheritable Class DdfXmlBuilder
                                         linii As IEnumerable(Of LinieSaRow),
                                         sbRows As IEnumerable(Of SectiuneBRow)) As String
         If ctx Is Nothing Then ctx = New Context()
-        Dim program As String = ProgramOf(ctx)
+        Dim program As String = If(ctx.CodProgram, String.Empty)
 
         Dim antetNode As New XElement("SubformAntet")
         If antet IsNot Nothing Then
@@ -157,7 +156,7 @@ Public NotInheritable Class DdfXmlBuilder
                                           sbRows As IEnumerable(Of SectiuneBRow)) As String
         If ctx Is Nothing Then ctx = New Context()
         Dim ns As XNamespace = NotafdNs
-        Dim program As String = Left(ProgramOf(ctx), 10)
+        Dim program As String = Left(ctx.CodProgram, 10)
 
         Dim root As New XElement(ns + "NOTAFD")
         If antet IsNot Nothing Then
@@ -287,10 +286,6 @@ Public NotInheritable Class DdfXmlBuilder
         Dim primele2 As String = If(clsf.Length >= 2, clsf.Substring(0, 2), clsf)
         Dim delaPoz7 As String = If(clsf.Length >= 7, clsf.Substring(6), String.Empty)
         Return If(l.SS, String.Empty) & primele2 & delaPoz7.Replace(".", String.Empty)
-    End Function
-
-    Private Shared Function ProgramOf(ctx As Context) As String
-        Return If(String.IsNullOrEmpty(ctx.CodProgram), DefaultProgram, ctx.CodProgram)
     End Function
 
     Private Shared Function CualText(antet As DdfAntet) As String

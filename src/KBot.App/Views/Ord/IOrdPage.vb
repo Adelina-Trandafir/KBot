@@ -11,10 +11,9 @@ Option Strict On
 ''' Efect secundar util: fără injecție de dependențe, fiecare pagină are un constructor FĂRĂ
 ''' parametri, deci se instanțiază în designerul Visual Studio.
 '''
-''' MAI SUBȚIRE decât <c>IDdfPage</c>: ORD e read-only în felia asta — nu există generare și
-''' nu există listă de fișiere, deci nicio pagină nu are ce ridica spre părinte. Când
-''' generarea ORD va veni (felie ulterioară), aici se adaugă un <c>GenerateRequested</c>, la
-''' fel ca la DDF.
+''' Same events as <c>IDdfPage</c>: <see cref="GenerateRequested"/> is wired (the host
+''' generates the PDF, as DdfView does); <see cref="FileActivated"/> stays declared for a
+''' uniform subscription loop, although ORD has no file list page yet.
 ''' </summary>
 Public Interface IOrdPage
 

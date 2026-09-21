@@ -13,9 +13,9 @@ Imports KBot.Theming
 ''' generare din afara K-BOT, mâine prin felia de generare ORD), iar o gardă pe cale ar sări
 ''' exact re-încorporarea care trebuia făcută.
 '''
-''' Fără PDF pe disc arătăm eticheta noastră, NU suprafața „document lipsă" a
-''' <c>ReaderHostPreview</c>: aceea poartă un buton «Generează», iar generarea ORD e o felie
-''' ulterioară — un buton care nu face nimic e mai rău decât niciun buton.
+''' Without a PDF on disk, <c>ReaderHostPreview</c> shows its "document lipsa" surface with
+''' the "Genereaza" button; the click is raised up as <see cref="GenerateRequested"/> and
+''' <c>OrdView.OnGenerateRequested</c> builds the PDF, exactly as DDF does.
 ''' </summary>
 Public Class OrdDocumentPage
     Implements IOrdPage, IThemedControl
@@ -93,6 +93,7 @@ Public Class OrdDocumentPage
         End If
     End Sub
 
+    ' Trivial: hands the generate request up to the host (OrdView).
     Private Sub previewPdf_GenerateRequested(sender As Object, e As EventArgs) _
         Handles previewPdf.GenerateRequested
         RaiseEvent GenerateRequested(Me, EventArgs.Empty)
