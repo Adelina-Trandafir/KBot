@@ -174,6 +174,7 @@ Public Class SetariForm
                 Case "info" : Return New SetariInfoView(_session, _authApi, _updates, AddressOf InchideAplicatia)
                 Case "aplicatie" : Return New SetariAplicatieView()
                 Case "forexe" : Return New SetariForexeView(_controller)
+                Case "pagina" : Return New SetariPaginaView(_controller)
                 Case "tema" : Return New SetariTemaView()
                 Case "autentificare" : Return New SetariAutentificareView(_apiOptions)
                 Case "jurnal" : Return New SetariJurnalView() With {.ApiClient = _apiClient}

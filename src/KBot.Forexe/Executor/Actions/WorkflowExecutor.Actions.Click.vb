@@ -1,3 +1,4 @@
+Imports KBot.Common
 Imports Microsoft.Playwright
 Imports WorkflowModels
 
@@ -34,6 +35,10 @@ Partial Public Class WorkflowExecutor
             End Try
         Else
             ' --- RAMURA STANDARD ---
+            ' The operator's page rules (ForexeWatch.js, section 4) may hide the very thing
+            ' this step clicks - the FOREXE menu while an angajament is open. Such a target
+            ' gets the rules lifted for this one click; the next document has them back.
+            Dim lifted As Boolean = Await LiftPageStylesIfHiddenAsync(locator)
             If Not action.Force Then
                 ' Verificare vizibilitate (fără Await în Catch - clean)
                 Dim pEx As Microsoft.Playwright.PlaywrightException = Nothing
@@ -54,7 +59,18 @@ Partial Public Class WorkflowExecutor
 
             ' Click efectiv
             Dim clickOptions As New LocatorClickOptions With {.Timeout = timeoutMs, .Force = action.Force}
-            Await locator.ClickAsync(clickOptions)
+            ' VB cannot Await in a Finally: the click's exception is caught, the rules are
+            ' put back, then it is rethrown with its stack.
+            Dim clickEx As Exception = Nothing
+            Try
+                Await locator.ClickAsync(clickOptions)
+            Catch ex As Exception
+                clickEx = ex
+            End Try
+            If lifted Then Await RestorePageStylesAsync()
+            If clickEx IsNot Nothing Then
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(clickEx).Throw()
+            End If
         End If
 
         ' C. GESTIONAREA NAVIGĂRII (Momentul Adevărului)
@@ -100,6 +116,36 @@ Partial Public Class WorkflowExecutor
             End Try
         End If
 
+    End Function
+
+    ''' <summary>
+    ''' True when the first element the locator finds is hidden ONLY by the operator's page
+    ''' rules - in which case the rules are switched off in the page until
+    ''' <see cref="RestorePageStylesAsync"/>. False for a target that is visible, missing, or
+    ''' hidden by FOREXE itself; never throws (the click that follows reports the real problem).
+    ''' </summary>
+    Private Async Function LiftPageStylesIfHiddenAsync(locator As ILocator) As Task(Of Boolean)
+        Try
+            If Await locator.CountAsync() = 0 Then Return False
+            Dim hidden As Boolean = Await locator.First.EvaluateAsync(Of Boolean)(
+                "el => !!(window._kbotWatch && window._kbotWatch.hiddenByStyles && window._kbotWatch.hiddenByStyles(el))")
+            If Not hidden Then Return False
+            Await _page.EvaluateAsync(Of Object)("() => { if (window._kbotWatch) { window._kbotWatch.liftStyles(true); } }")
+            _logger.LogDebug("[Click] Ținta e ascunsă de regulile paginii: le ridic pentru acest clic.")
+            Return True
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowExecutor.LiftPageStylesIfHiddenAsync", ex)
+            Return False
+        End Try
+    End Function
+
+    ''' <summary>Puts the rules back. Quiet when the click navigated away: the new document has them on.</summary>
+    Private Async Function RestorePageStylesAsync() As Task
+        Try
+            Await _page.EvaluateAsync(Of Object)("() => { if (window._kbotWatch) { window._kbotWatch.liftStyles(false); } }")
+        Catch ex As Exception
+            _logger.LogDebug("[Click] Regulile paginii nu au putut fi repuse (pagina s-a schimbat): " & ex.Message)
+        End Try
     End Function
 
 End Class

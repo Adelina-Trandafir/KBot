@@ -206,6 +206,29 @@ Namespace KBot.Forexe
             Return Await _executor.ReadPageAngajamentAsync()
         End Function
 
+        ''' <summary>The operator's page choices, sent to the live page; a no-op without one.</summary>
+        Public Async Function ApplyPageConfigAsync() As Task Implements IForexeRunner.ApplyPageConfigAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return
+            Try
+                Await _executor.ApplyWatchConfigAsync(ForexeWatchConfig.JsonNow())
+            Catch ex As Exception
+                _logger?.LogException(ex, "Eroare la trimiterea setărilor paginii în browser")
+                Throw
+            End Try
+        End Function
+
+        ''' <summary>The page's element outline; "[]" without a session.</summary>
+        Public Async Function ReadPageElementsAsync() As Task(Of String) Implements IForexeRunner.ReadPageElementsAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return "[]"
+            Return Await _executor.ReadPageElementsAsync()
+        End Function
+
+        ''' <summary>A frame over one listed element of the page; "" without a session.</summary>
+        Public Async Function HighlightPageElementAsync(index As Integer) As Task(Of String) Implements IForexeRunner.HighlightPageElementAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return String.Empty
+            Return Await _executor.HighlightPageElementAsync(index)
+        End Function
+
         ''' <summary>Re-fits the docked browser to its host; a no-op when it is not docked.</summary>
         Public Async Function SyncBrowserBoundsAsync() As Task Implements IForexeRunner.SyncBrowserBoundsAsync
             If _executor Is Nothing OrElse Not _executor.IsBrowserOpen OrElse Not _executor.IsDocked Then Return
@@ -518,13 +541,19 @@ Namespace KBot.Forexe
                 ' would arm operations, and its floating menu would sit over click targets.
                 ' VB cannot Await inside Finally, so the run's exception is caught, the
                 ' watcher is woken, and only then is it rethrown to the handlers below.
-                Await _executor.SetWatchSuspendedAsync(True)
+                ' And the docked window is shut to the operator until the job is over: a
+                ' click of theirs in the middle of the robot's clicks would derail it.
+                ' The veil over the page names the job (operator, 21.09.2026).
+                Dim numeLucrare As String = If(String.IsNullOrWhiteSpace(workflow.Name), job.WorkflowName, workflow.Name)
+                Await _executor.SetWatchSuspendedAsync(True, "K-BOT lucrează în FOREXE: " & numeLucrare)
+                _executor.LockDockedInput(True)
                 Dim runEx As Exception = Nothing
                 Try
                     Await Task.Run(Function() _executor.ExecuteAsync(workflow))
                 Catch ex As Exception
                     runEx = ex
                 End Try
+                _executor.LockDockedInput(False)
                 Await _executor.SetWatchSuspendedAsync(False)
                 If runEx IsNot Nothing Then
                     System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(runEx).Throw()

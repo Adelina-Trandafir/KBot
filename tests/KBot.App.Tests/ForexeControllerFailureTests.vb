@@ -98,6 +98,18 @@ Public Class ForexeControllerFailureTests
             Return Task.CompletedTask
         End Function
 
+        Public Function ApplyPageConfigAsync() As Task Implements IForexeRunner.ApplyPageConfigAsync
+            Return Task.CompletedTask
+        End Function
+
+        Public Function ReadPageElementsAsync() As Task(Of String) Implements IForexeRunner.ReadPageElementsAsync
+            Return Task.FromResult("[]")
+        End Function
+
+        Public Function HighlightPageElementAsync(index As Integer) As Task(Of String) Implements IForexeRunner.HighlightPageElementAsync
+            Return Task.FromResult(String.Empty)
+        End Function
+
         Public Function ReadPageAngajamentAsync() As Task(Of String) Implements IForexeRunner.ReadPageAngajamentAsync
             Return Task.FromResult(String.Empty)
         End Function

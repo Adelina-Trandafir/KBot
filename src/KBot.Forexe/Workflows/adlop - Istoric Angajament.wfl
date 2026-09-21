@@ -50,6 +50,13 @@
 	            fingerprintSelector="table.table-striped tbody tr:last-child td:first-child~table.table-striped tbody tr:last-child td:last-child"
               timeout="5" />
 
+  <!-- The history is read: back to the angajament page (its «Înapoi»), so the page the
+       operator gets back is the angajament, not the history list. -->
+  <IfExists selector="button.btn-default:has-text('Înapoi')" timeout="5">
+    <Click selector="button.btn-default:has-text('Înapoi')" waitNavigation="true" timeout="15" />
+    <WaitFor selector="li.tab0" timeout="15" />
+  </IfExists>
+
   <Log message="Flux finalizat cu succes." level="success"/>
 
 </Workflow>

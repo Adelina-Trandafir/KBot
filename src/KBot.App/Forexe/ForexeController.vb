@@ -10,6 +10,7 @@ Imports KBot.Api
 Imports KBot.Common
 Imports KBot.Domain
 Imports KBot.Forexe
+Imports KBot.Theming
 ' CertificateSelectionForm e în namespace global (din KBot.Forexe).
 
 ''' <summary>
@@ -56,6 +57,19 @@ Public NotInheritable Class ForexeController
         AddHandler _runner.StatusUpdated, AddressOf Runner_StatusUpdated
         AddHandler _runner.BrowserVisibilityChanged, AddressOf Runner_BrowserVisibilityChanged
         AddHandler _runner.OperationCaptured, AddressOf Runner_OperationCaptured
+        ' The page follows K-BOT's theme (dark scheme = dark page, ForexeWatchConfig).
+        AddHandler ThemeManager.ThemeChanged, AddressOf ThemeManager_ThemeChanged
+    End Sub
+
+    ' UI boundary (event handler): the page gets the new theme; a page that is not there
+    ' gets it at its next dock. Never throws.
+    Private Async Sub ThemeManager_ThemeChanged(sender As Object, e As EventArgs)
+        Try
+            If Not IsConnected Then Return
+            Await _runner.ApplyPageConfigAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.ThemeManager_ThemeChanged", ex)
+        End Try
     End Sub
 
     ' ── Stare ────────────────────────────────────────────────────────────
@@ -673,6 +687,51 @@ Public NotInheritable Class ForexeController
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeController.CitesteCodulPaginiiAsync", ex)
             Return String.Empty
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Sends the operator's page choices (developer tools, CSS rules - AppSettings.Current)
+    ''' to the live FOREXE page. True when they went in; False (with the reason on the
+    ''' console) when there is no page to send them to. Never throws: the settings are
+    ''' saved either way and reach the page at its next dock.
+    ''' </summary>
+    Public Async Function AplicaSetarilePaginiiAsync() As Task(Of Boolean)
+        Try
+            If Not IsConnected Then Return False
+            Await _runner.ApplyPageConfigAsync()
+            Return True
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.AplicaSetarilePaginiiAsync", ex)
+            RaporteazaStare("Setările paginii nu au ajuns în browser: " & ex.Message)
+            Return False
+        End Try
+    End Function
+
+    ''' <summary>The FOREXE page's element outline (JSON array); "[]" without a page. Never throws.</summary>
+    Public Async Function CitesteElementelePaginiiAsync() As Task(Of String)
+        Try
+            If Not IsConnected Then Return "[]"
+            Return Await _runner.ReadPageElementsAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.CitesteElementelePaginiiAsync", ex)
+            Return "[]"
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Frames one element of the last listing in the live page (a negative index clears the
+    ''' frame). True when the page drew it; False when there is no page, the frame was
+    ''' cleared, or the page changed since the listing. Never throws.
+    ''' </summary>
+    Public Async Function EvidentiazaElementulAsync(index As Integer) As Task(Of Boolean)
+        Try
+            If Not IsConnected Then Return False
+            Dim word As String = Await _runner.HighlightPageElementAsync(index)
+            Return String.Equals(word, "shown", StringComparison.Ordinal)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.EvidentiazaElementulAsync", ex)
+            Return False
         End Try
     End Function
 

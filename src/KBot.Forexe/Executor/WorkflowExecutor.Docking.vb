@@ -72,6 +72,17 @@ Imports KBot.Common
 '  render widget window does not cover them, so widening the window by that gap pushed both
 '  scrollbars past the edges of the panel. Any real frame border left over on the sides is a
 '  couple of dead pixels; a missing scrollbar is a page that cannot be read.
+'
+'  THE PLACEMENT IS CHECKED, NOT TRUSTED (operator, 21.09.2026): coming back to the shell's
+'  «Browser» view after another view, the window was found sitting at 0,0 of the panel with
+'  its toolbar in full view. Whatever moved it - a band measured as zero right after the
+'  reparenting, Chromium laying its toolbar out again once the new size arrived - the cure
+'  is the same: read the rectangle the window really has, compare it with the one it should
+'  have, and put it back when they differ. Done at once after every dock and every resync,
+'  then again a few times over the next second and a half (SettleDockedPlacement), so a
+'  late move by Chromium is undone before the operator has a good look at the address bar.
+'  The last good toolbar measurement is also kept across an undock: a docking whose first
+'  measurement fails starts from that figure, never from zero.
 ' =============================================================================
 Partial Public Class WorkflowExecutor
 
@@ -130,6 +141,16 @@ Partial Public Class WorkflowExecutor
     Private Shared Function GetWindowRect(hWnd As IntPtr, ByRef lpRect As RECT) As Boolean
     End Function
 
+    <DllImport("user32.dll")>
+    Private Shared Function ClientToScreen(hWnd As IntPtr, ByRef lpPoint As POINT) As Boolean
+    End Function
+
+    <StructLayout(LayoutKind.Sequential)>
+    Private Structure POINT
+        Public X As Integer
+        Public Y As Integer
+    End Structure
+
     <DllImport("user32.dll", SetLastError:=True)>
     Private Shared Function GetWindowThreadProcessId(hWnd As IntPtr, ByRef lpdwProcessId As UInteger) As UInteger
     End Function
@@ -141,6 +162,10 @@ Partial Public Class WorkflowExecutor
 
     <DllImport("kernel32.dll")>
     Private Shared Function GetCurrentThreadId() As UInteger
+    End Function
+
+    <DllImport("user32.dll", SetLastError:=True)>
+    Private Shared Function EnableWindow(hWnd As IntPtr, bEnable As Boolean) As Boolean
     End Function
 
     <DllImport("user32.dll", SetLastError:=True)>
@@ -158,6 +183,8 @@ Partial Public Class WorkflowExecutor
     Private _isDocked As Boolean = False
     Private _dockHost As Control = Nothing
     Private _dockedHwnd As IntPtr = IntPtr.Zero
+    ' True while a robot job holds the docked window shut to the operator (see LockDockedInput).
+    Private _inputLocked As Boolean = False
 
     ' The window styles exactly as they were before docking, so undocking can give the
     ' frame back. The bounds are NOT kept: an undocked browser goes off screen, never back
@@ -188,6 +215,11 @@ Partial Public Class WorkflowExecutor
     Private _chromeBandPx As Integer = 0
     Private _chromeMeasureWarned As Boolean = False
     Private _chromeBandLogged As Integer = 0
+
+    ' Placement checks (see the header). Each dock or resync starts a new series of delayed
+    ' re-checks; the counter lets a fresh series cancel the one still running.
+    Private _placementSeries As Integer = 0
+    Private Shared ReadOnly PlacementCheckDelaysMs As Integer() = {60, 200, 500, 1000, 1600}
 
     ''' <summary>True while the browser window is a child of a host panel.</summary>
     Public ReadOnly Property IsDocked As Boolean
@@ -296,12 +328,15 @@ Partial Public Class WorkflowExecutor
         _dockHost = host
         _isDocked = True
         _isBrowserVisible = True
-        _chromeBandPx = 0
+        ' _chromeBandPx is kept on purpose: the last measurement is the best guess for a
+        ' window that cannot be measured in the first milliseconds after reparenting.
         _chromeMeasureWarned = False
         _chromeBandLogged = 0
 
         AttachBrowserInput(hwnd, True)
         ListenToHostForm(hostForm)
+        ' Docked in the middle of a job (the shell's view can do that): shut at once.
+        If _inputLocked Then EnableWindow(hwnd, False)
 
         Await SyncDockedBoundsAsync()
 
@@ -311,18 +346,80 @@ Partial Public Class WorkflowExecutor
         ' seeing a page of the old size letterboxed inside the panel.
         Await ClearEmulatedViewportAsync()
 
+        ' The rectangle is checked again over the next moments (see the header): what the
+        ' operator must never see is the address bar.
+        SettleDockedPlacement()
+
         _logger.LogInfo("[Andocare] Browserul este copilul panoului gazdă.")
         RaiseEvent OnDockStateChanged(True)
     End Function
 
     ''' <summary>
     ''' Re-applies the host rectangle to the browser window. Called after every resize or
-    ''' splitter drag of the host form. Not asynchronous in fact - a child window is moved
-    ''' with one synchronous call - but the name and the Task keep every caller unchanged.
+    ''' splitter drag of the host form, and by a host that was just shown again. The move
+    ''' itself is synchronous - a child window is moved with one call - and a series of
+    ''' delayed re-checks is started behind it; the Task keeps every caller unchanged.
     ''' </summary>
     Public Function SyncDockedBoundsAsync() As Task
         ApplyDockedBounds()
+        SettleDockedPlacement()
         Return Task.CompletedTask
+    End Function
+
+    ''' <summary>
+    ''' Checks the docked window's rectangle a few times over the next second and a half and
+    ''' puts it back where it belongs whenever it is found elsewhere. Fire and forget: a new
+    ''' series (another dock, another resize) cancels the one still running, and an undock
+    ''' ends it. Never throws - a failed check is logged and the next one still runs.
+    ''' </summary>
+    Private Sub SettleDockedPlacement()
+        Dim series As Integer = Threading.Interlocked.Increment(_placementSeries)
+        Dim ignored As Task = SettleDockedPlacementAsync(series)
+    End Sub
+
+    Private Async Function SettleDockedPlacementAsync(series As Integer) As Task
+        For Each delayMs As Integer In PlacementCheckDelaysMs
+            Try
+                Await Task.Delay(delayMs)
+                If series <> _placementSeries OrElse Not _isDocked Then Return
+                If DockedPlacementIsRight() Then Continue For
+                ApplyDockedBounds()
+                _logger.LogInfo("[Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.")
+            Catch ex As Exception
+                GlobalErrorLog.Write("WorkflowExecutor.SettleDockedPlacementAsync", ex)
+                _logger.LogDebug("[Andocare] Verificarea poziției browserului a eșuat: " & ex.Message)
+            End Try
+        Next
+    End Function
+
+    ''' <summary>
+    ''' True when the window's rectangle on screen is exactly the one <see cref="ApplyDockedBounds"/>
+    ''' would give it now: the host's client rectangle, pulled up by the toolbar band. False
+    ''' when it differs or when nothing can be read (a host without a handle, a dead window);
+    ''' the caller then re-applies, which reports the real problem if there is one.
+    ''' </summary>
+    Private Function DockedPlacementIsRight() As Boolean
+        If Not _isDocked Then Return True
+        Dim host As Control = _dockHost
+        If host Is Nothing OrElse host.IsDisposed Then Return False
+        Dim hwnd As IntPtr = _dockedHwnd
+        If hwnd = IntPtr.Zero OrElse Not IsWindow(hwnd) Then Return False
+        Dim hostHandle As IntPtr = ReadHostHandle(host)
+        If hostHandle = IntPtr.Zero Then Return False
+
+        Dim size As Drawing.Size = ReadHostClientSize(host)
+        If size.Width < 40 OrElse size.Height < 40 Then Return True   ' nothing to fit yet
+
+        Dim origin As New POINT With {.X = 0, .Y = 0}
+        If Not ClientToScreen(hostHandle, origin) Then Return False
+        Dim actual As RECT
+        If Not GetWindowRect(hwnd, actual) Then Return False
+
+        Dim band As Integer = If(_hideChromeWhenDocked, _chromeBandPx, 0)
+        Return actual.Left = origin.X AndAlso
+               actual.Top = origin.Y - band AndAlso
+               actual.Width = size.Width AndAlso
+               actual.Height = size.Height + band
     End Function
 
     ''' <summary>
@@ -357,6 +454,12 @@ Partial Public Class WorkflowExecutor
         If _hideChromeWhenDocked Then
             Dim settled As Integer = CurrentChromeBand(hwnd)
             If settled <> band Then PlaceDockedWindow(hwnd, size, settled)
+        End If
+
+        ' Read back: a move Windows or Chromium did not honour is applied once more, now,
+        ' rather than found by the next delayed check.
+        If Not DockedPlacementIsRight() Then
+            PlaceDockedWindow(hwnd, size, If(_hideChromeWhenDocked, _chromeBandPx, 0))
         End If
     End Sub
 
@@ -468,9 +571,10 @@ Partial Public Class WorkflowExecutor
         _isDocked = False
         _dockHost = Nothing
         _dockedHwnd = IntPtr.Zero
-        _chromeBandPx = 0
+        ' The band measurement stays for the next dock (see the header).
         _chromeMeasureWarned = False
         _chromeBandLogged = 0
+        Threading.Interlocked.Increment(_placementSeries)   ' ends any running check series
         ListenToHostForm(Nothing)
 
         If hwnd = IntPtr.Zero OrElse Not IsWindow(hwnd) Then
@@ -481,6 +585,8 @@ Partial Public Class WorkflowExecutor
         End If
 
         AttachBrowserInput(hwnd, False)
+        ' A parked window is nobody's to click; it must not come back shut either.
+        EnableWindow(hwnd, True)
 
         ' Back to the desktop (a null parent) and the styles it had. Never WS_CHILD in
         ' either direction, so the order of the two calls does not matter.
@@ -531,6 +637,31 @@ Partial Public Class WorkflowExecutor
 
     ' RaiseBrowserAboveAsync (keeping a free browser above the recorder in the z-order) is
     ' gone with slice 0070: there is no free browser to keep in place any more.
+
+    ' =========================================================================
+    '  Input lock while the robot drives
+    ' =========================================================================
+
+    ''' <summary>
+    ''' Shuts the docked browser window to the operator's mouse and keyboard (True) or
+    ''' opens it again (False). Called around every robot job: until the job is over and
+    ''' the page it was sent for is on screen, a click or a key from the operator would land
+    ''' in the middle of the robot's own clicks. The robot itself is not affected - Playwright
+    ''' drives the page through the debugging protocol, never through the window's input
+    ''' queue, and a disabled window keeps painting. Remembered while not docked, so a
+    ''' docking that happens mid-job starts shut, and lifted by the undock.
+    ''' </summary>
+    Public Sub LockDockedInput(locked As Boolean)
+        Try
+            _inputLocked = locked
+            If Not _isDocked OrElse _dockedHwnd = IntPtr.Zero OrElse Not IsWindow(_dockedHwnd) Then Return
+            EnableWindow(_dockedHwnd, Not locked)
+        Catch ex As Exception
+            ' Best effort: a page left clickable during a job is a nuisance, not a reason to
+            ' stop the job the operator asked for.
+            GlobalErrorLog.Write("WorkflowExecutor.LockDockedInput", ex)
+        End Try
+    End Sub
 
     ' =========================================================================
     '  Input queues

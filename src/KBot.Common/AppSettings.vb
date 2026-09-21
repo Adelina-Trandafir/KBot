@@ -1,5 +1,7 @@
 Option Strict On
+Imports System.Collections.Generic
 Imports System.IO
+Imports System.Linq
 Imports System.Text
 Imports System.Text.Json
 Imports System.Text.Json.Serialization
@@ -65,6 +67,20 @@ Public NotInheritable Class AppSettings
 
     ''' <summary>The reception picker opens with every reception already ticked.</summary>
     Public Property ReceptiiCheckedOnOpen As Boolean = True
+
+    ''' <summary>
+    ''' The browser's developer tools (F12, Ctrl+Shift+I / J / C, the context menu's
+    ''' «Inspect») stay reachable in the FOREXE page. Off by default: the page script
+    ''' swallows those keys and the context menu (operator, 21.09.2026).
+    ''' </summary>
+    Public Property ForexeDevToolsAllowed As Boolean = False
+
+    ''' <summary>
+    ''' The operator's CSS rules for the FOREXE page, written into every load and refresh.
+    ''' Missing from the file = <see cref="PageStyleRule.Defaults"/>; an empty list in the
+    ''' file means the operator removed them all and stays empty.
+    ''' </summary>
+    Public Property ForexePageStyles As List(Of PageStyleRule) = PageStyleRule.Defaults()
 
     ' ── Documents ────────────────────────────────────────────────────────
 
@@ -179,6 +195,9 @@ Public NotInheritable Class AppSettings
             .ShowBrowserButton = ShowBrowserButton,
             .ForexeHideBrowserChrome = ForexeHideBrowserChrome,
             .ReceptiiCheckedOnOpen = ReceptiiCheckedOnOpen,
+            .ForexeDevToolsAllowed = ForexeDevToolsAllowed,
+            .ForexePageStyles = ForexePageStyles?.Select(Function(r) New PageStyleRuleDto With {
+                .Enabled = r.Enabled, .Selector = r.Selector, .Css = r.Css, .Note = r.Note, .Page = r.Page}).ToList(),
             .AdobeDetachMode = AdobeDetachMode,
             .AdobePopupWatch = AdobePopupWatch,
             .ExcelRibbon = ExcelRibbon,
@@ -194,6 +213,13 @@ Public NotInheritable Class AppSettings
         If dto.ShowBrowserButton.HasValue Then s.ShowBrowserButton = dto.ShowBrowserButton.Value
         If dto.ForexeHideBrowserChrome.HasValue Then s.ForexeHideBrowserChrome = dto.ForexeHideBrowserChrome.Value
         If dto.ReceptiiCheckedOnOpen.HasValue Then s.ReceptiiCheckedOnOpen = dto.ReceptiiCheckedOnOpen.Value
+        If dto.ForexeDevToolsAllowed.HasValue Then s.ForexeDevToolsAllowed = dto.ForexeDevToolsAllowed.Value
+        If dto.ForexePageStyles IsNot Nothing Then
+            s.ForexePageStyles = dto.ForexePageStyles.
+                Where(Function(r) r IsNot Nothing).
+                Select(Function(r) New PageStyleRule(r.Note, r.Selector, r.Css, r.Page) With {
+                    .Enabled = If(r.Enabled, True)}).ToList()
+        End If
         If Not String.IsNullOrWhiteSpace(dto.AdobeDetachMode) Then s.AdobeDetachMode = dto.AdobeDetachMode.Trim()
         If dto.AdobePopupWatch.HasValue Then s.AdobePopupWatch = dto.AdobePopupWatch.Value
         If Not String.IsNullOrWhiteSpace(dto.ExcelRibbon) Then s.ExcelRibbon = dto.ExcelRibbon.Trim()
@@ -211,9 +237,20 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ShowBrowserButton As Boolean?
     Public Property ForexeHideBrowserChrome As Boolean?
     Public Property ReceptiiCheckedOnOpen As Boolean?
+    Public Property ForexeDevToolsAllowed As Boolean?
+    Public Property ForexePageStyles As List(Of PageStyleRuleDto)
     Public Property AdobeDetachMode As String
     Public Property AdobePopupWatch As Boolean?
     Public Property ExcelRibbon As String
     Public Property RememberLastLogin As Boolean?
     Public Property RememberLastUnit As Boolean?
+End Class
+
+''' <summary>Wire shape of one page style rule. POCO.</summary>
+Friend NotInheritable Class PageStyleRuleDto
+    Public Property Enabled As Boolean?
+    Public Property Selector As String
+    Public Property Css As String
+    Public Property Note As String
+    Public Property Page As String
 End Class

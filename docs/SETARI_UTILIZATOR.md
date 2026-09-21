@@ -248,13 +248,14 @@ lista de fișiere rămâne goală și **numește calea configurată** în mesaj 
 Din 19.09.2026 setările de mai sus, plus cele noi, se schimbă din **fereastra «Setări»**, deschisă din
 meniul butonului de opțiuni al ferestrei principale (rândul «Setări…»). Fereastra are aceeași formă
 ca aplicația — navigație în stânga, pagina în dreapta — și **salvează fiecare setare în clipa în care
-o schimbi**; «Închide» doar închide. Cele cinci pagini:
+o schimbi**; «Închide» doar închide. Paginile:
 
 | pagina | ce conține | unde se scrie |
 |---|---|---|
 | **Informații** | operatorul, unitatea, rolul, baza; tipul instalării (datele comerciale — în lucru); versiunea + «Caută actualizări»; **schimbarea parolei** | server (parola) |
 | **Aplicație** | comutatoarele globale, cum se deschid PDF / Word / Excel (setările ferestrei găzduite Adobe stau într-un dialog propriu, deschis la alegerea motorului), folderele | `app_settings.json`, `kbot_paths.json`, `settings.json` |
-| **FOREXE** | starea robotului, certificatul memorat (+ «Uită certificatul»), bara browserului andocat, folderele robotului (doar citire) | `app_settings.json`, `last_certificate.cer` |
+| **FOREXE** | starea robotului, certificatul memorat (+ «Uită certificatul»), bara browserului andocat, instrumentele pentru dezvoltatori în pagină, folderele robotului (doar citire) | `app_settings.json`, `last_certificate.cer` |
+| **Pagina FOREXE** | regulile CSS pe care K-BOT le scrie în pagina FOREXE (vezi §7): lista în stânga, rândul ales se editează în dreapta («Ce face», «Selector», «Pagina», «Stil»); «Regulă nouă…» deschide arborele paginii deschise; «Implicite» pune la loc regulile K-BOT; **«Salvează și aplică»** — singurul buton care scrie | `app_settings.json` |
 | **Temă** | schema (cele 23 de culori + stil), scalarea (cursorul de mărime se lipește la 100 / 110 / 125 %) și comutatorul «Font din temă» — meniul butonului de temă a rămas doar cu cursorul și schemele | `…\AVACONT\Themes\*.json`, `theme.json` |
 | **Autentificare** | ce ține minte fereastra de login (+ «Uită datele memorate»); adresa serverului (doar citire) | `app_settings.json`, `last_login.json` |
 | **Jurnal** | vizualizatorul de jurnale (fostul `LogViewerForm`), ca pagină: cele mai noi intrări sus, mesajul întreg în panoul de jos; «Arată jurnal» din meniul shell-ului deschide fereastra pe pagina asta | `Logs*.log`, `/api/logs/*` |
@@ -273,6 +274,8 @@ o schimbi**; «Închide» doar închide. Cele cinci pagini:
 | `LogViewerEnabled` | `true` | rândul «Arată jurnal» în meniul de opțiuni; debifat, butonul de opțiuni deschide direct fereastra «Setări» (meniul ar fi avut un singur rând) |
 | `ShowBrowserButton` | `true` | butonul «Arată browserul» în banda FOREXE |
 | `ForexeHideBrowserChrome` | `true` | în vizualizator, bara browserului rămâne în afara panoului (se aplică lucrării următoare) |
+| `ForexeDevToolsAllowed` | `false` | pagina FOREXE lasă F12, Ctrl+Shift+I/J/C, Ctrl+U și clicul dreapta să ajungă la Chromium; debifat, meniul K-BOT din pagină le înghite |
+| `ForexePageStyles` | cele 5 reguli K-BOT (§7.1) | lista de reguli CSS `{enabled, selector, css, note, page}` scrisă în fiecare pagină FOREXE; lipsă = regulile implicite, listă goală = nicio regulă |
 | `ReceptiiCheckedOnOpen` | `true` | selectorul de recepții pornește cu tot bifat |
 | `AdobeDetachMode` | `KillProcess` | cum se eliberează fereastra Adobe la schimbarea documentului: `KillProcess` (A) sau `CloseWindow` (B) |
 | `AdobePopupWatch` | `true` | ascunde fereastra plutitoare a Adobe cât timp documentul e afișat |
@@ -301,3 +304,95 @@ Nimic despre parole nu rămâne pe calculatorul operatorului. Pe server, trimite
 de mediu cu aceleași nume); fără `SMTP_HOST`, butonul răspunde «Trimiterea e-mailului nu este
 configurată pe server». Rute: `POST /api/auth/password/code`, `POST /api/auth/password/change`
 (`PYTHON\routes\auth\auth.py`, `mailer.py`).
+
+## 7. Pagina FOREXE din browserul andocat (21.09.2026)
+
+Tot ce urmează face scriptul K-BOT din pagină (`src\KBot.Forexe\Services\JavaScripts\ForexeWatch.js`,
+instalat la andocare, în ORICE document pe care Wicket îl încarcă — `contract?6`, `contract_edit_rand?7`,
+`receptie_edit?7`, `wicket/page?9`…). Setările îi ajung prin `ForexeWatchConfig` (JSON
+`{devTools, darkMode, rules}`), la fiecare andocare și în clipa în care se apasă «Salvează și aplică» sau
+se schimbă tema; pagina le ține în `localStorage`, ca următoarea încărcare să pornească gata stilizată,
+înainte de prima afișare (cum anume — §7.4).
+
+### 7.1 Regulile CSS (pagina «Pagina FOREXE»)
+
+Fiecare regulă = un selector + declarații `proprietate: valoare;`. Se scriu într-un `<style>` la începutul
+documentului, fiecare declarație cu `!important`, deci bat stilurile proprii ale paginii și nu sunt atinse
+de reîmprospătările Ajax ale lui Wicket. Cele cinci reguli implicite:
+
+| ce face | selector | stil |
+|---|---|---|
+| meniul lateral ascuns cât e deschis un angajament | `body:has(.well.well-small h4 span:nth-child(2)) [class*='col-lg-2']:has(.bs-sidebar)` | `visibility: hidden` |
+| conținutul pe toată lățimea, în același caz | `body:has(.well.well-small h4 span:nth-child(2)) [class*='col-lg-2']:has(.bs-sidebar) + [class*='col-lg-10']` | `width: 100%` |
+| pagina folosește 90 % din lățime | `#main.container` | `max-width: 90%` |
+| fără mărirea textului a FOREXE-ului | `body` | `font-size: 100%` |
+| butonul «Înapoi» din bara de file ascuns, DOAR pe `…/CABWeb/contract` | `span.nav.nav-tabs [class*='col-lg-10'] button.btn.btn-default` | `display: none` |
+
+**«Pagina»** (a cincea regulă o folosește): gol = regula ține pe orice pagină; altfel doar cât timp adresa
+documentului, FĂRĂ `?…`, este cea scrisă — întreagă (`https://forexe.mfinante.gov.ro/CABWeb/contract`),
+doar calea (`/CABWeb/contract`) sau doar ultimul ei cuvânt (`contract`). Scriptul recalculează foaia la fiecare
+navigare, la fiecare apel Ajax Wicket și la bătaia de 2 s, deci regula vine și pleacă odată cu adresa.
+Regulile implicite intră în listă numai la prima pornire sau la «Implicite» (care ÎNLOCUIEȘTE lista) — o
+regulă implicită nouă nu se adaugă singură peste o listă deja salvată.
+
+Condiția `body:has(…)` ține meniul lateral la vedere pe listă / acasă — paginile de pe care pornesc
+fluxurile robotului. **Regulile rămân pornite și cât rulează robotul**: un pas `Click` a cărui țintă e
+ascunsă de ele (linkul «Listă angajamente» din meniul lateral) le ridică pentru acel singur clic.
+
+Selectorii nu folosesc niciodată id-urile Wicket (`id98`…): se schimbă la fiecare afișare. Fereastra
+«Regulă nouă…» citește elementele paginii deschise (tag, id static, `name`, clase, textul, stilul
+inline) și le arată ca arbore; un clic pe un element îi pune selectorul propus și stilul de acum în
+câmpuri și **încadrează elementul în pagina FOREXE** (chenar portocaliu, derulat la vedere); chenarul
+piere la închiderea ferestrei.
+
+### 7.2 Cât lucrează robotul
+
+- fereastra browserului e **închisă pentru operator** (`EnableWindow`): clicul și tastele nu ajung în
+  pagină; robotul, care vorbește prin protocolul de depanare, nu e afectat;
+- pagina e **încețoșată** și un cartonaș în mijloc spune «K-BOT lucrează în FOREXE: <numele lucrării>»
+  + «Vă rugăm așteptați»; o navigare din mijlocul lucrării vine deja încețoșată, iar o re-randare Ajax
+  Wicket nu o ridică (§7.4);
+- meniul K-BOT din pagină e ascuns, urmărirea operațiunilor e suspendată.
+
+Totul se ridică singur la sfârșitul lucrării.
+
+### 7.3 Ce mai face scriptul
+
+- **Salvare fără modificări**: la formularele de rezervare (`input[name^='tableContainer:']`) și de
+  recepție (`form.form-horizontal input[name$=':valoare']`) valorile se fotografiază când apare
+  formularul; un clic pe butonul de salvare — sau Enter într-un câmp — cu aceleași valori e oprit și un
+  mesaj blocant cere «NU salvați! Apăsați «Renunță»». Butoanele din `.modal-dialog` («Da» / «Nu» din
+  întrebarea de renunțare) trec întotdeauna. Mesajul se închide cu «Am înțeles», Esc sau Enter.
+- **«Renunță»** apăsat oriunde încheie operațiunea urmărită fără descărcare.
+- **Rezervare modificată** → se descarcă doar rezervările; **recepție** → doar recepțiile.
+- **Istoric**: după citirea istoricului, fluxurile apasă «Înapoi».
+- **Instrumentele pentru dezvoltatori** stau închise dacă `ForexeDevToolsAllowed` e `false`.
+- **Mod întunecat**: cu o schemă K-BOT întunecată pagina e inversată (`html { filter: invert(1)
+  hue-rotate(180deg) }`, imaginile și elementele K-BOT inversate înapoi); urmează tema pe loc.
+- Meniul K-BOT plutitor se **strânge / desface** din butonul ▾/▸ din rândul titlului (ținut minte).
+- Fereastra andocată e **verificată** după fiecare andocare / redimensionare (imediat și încă de 5 ori
+  în 1,6 s) și pusă la loc dacă s-a mutat: bara de adrese nu trebuie să se vadă.
+
+### 7.4 Când intră stilurile și cum rămân (21.09.2026, felia 0073-01)
+
+Tot ce scrie scriptul în pagină stă în două elemente `<style>` (regulile + modul întunecat într-unul,
+încețoșarea în celălalt) și într-o clasă pe `<html>` (`kbot-busy`, cât lucrează robotul). Semnalate de
+operator: încețoșarea, culorile întunecate și bara de meniu ascunsă «reveneau abia după un moment».
+Cauza: pe un document nou scriptul rulează ÎNAINTE ca browserul să fi construit `<html>` — nu avea de ce
+să agațe foile, instalarea de la început eșua în tăcere și bătaia de 2 s era prima care le punea.
+(Clicul «Istoric» din jurnal se termina cu o redirecționare Wicket, deci un document nou, nu doar Ajax.)
+
+Acum:
+
+- foile intră **în clipa în care apare `<html>`** (un observator pe document), cu mult înainte de prima
+  afișare; la `DOMContentLoaded` se verifică din nou, și dacă ar fi intrat abia atunci consola K-BOT
+  spune o singură dată «stilurile paginii au intrat abia la încărcarea completă» — mesaj care NU
+  trebuie să apară;
+- după **fiecare apel Ajax Wicket** (`/ajax/call/complete`, `/dom/node/added`; pe Wicket vechi
+  `registerPostCallHandler`) și la **orice schimbare pe `<html>` (clasa) sau în `<head>` (copiii)** foile,
+  clasa, vălul și starea ascunsă a meniului K-BOT se repun pe loc, nu la următoarea bătaie; tot atunci se
+  recalculează foaia regulilor, ca regulile legate de o pagină (§7.1, «Pagina») să vină și să plece cu
+  adresa;
+- bătaia de 2 s rămâne doar ca ultimă plasă.
+
+Nimic pe partea .NET nu s-a schimbat pentru asta.

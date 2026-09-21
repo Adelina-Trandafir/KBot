@@ -83,6 +83,19 @@ Namespace KBot.Forexe
         ' menu is not in the page yet, or without a session. Never throws.
         Function ReadPageAngajamentAsync() As Task(Of String)
 
+        ' The operator's page choices (developer tools, CSS rules) from AppSettings.Current,
+        ' sent to the page now. Quiet without a session or without the menu in the page.
+        Function ApplyPageConfigAsync() As Task
+
+        ' The page's element outline (JSON array) for the settings window's picker; "[]"
+        ' without a session. Never throws.
+        Function ReadPageElementsAsync() As Task(Of String)
+
+        ' Draws a frame over the element at `index` of the last ReadPageElementsAsync listing
+        ' (a negative index clears it). "shown", "gone" (the page changed since the listing)
+        ' or "cleared"; "" without a session. Never throws.
+        Function HighlightPageElementAsync(index As Integer) As Task(Of String)
+
         ' Deschide bancul de înregistrare (felia 0053) peste sesiunea vie. Formularul
         ' trăiește în KBot.Forexe fiindcă are nevoie de WorkflowExecutor, care rămâne
         ' privat în runner; gazdele cer doar «arată-l», nu executorul.

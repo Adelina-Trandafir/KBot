@@ -34,6 +34,7 @@ Partial Class SetariForexeView
         lblTitluBrowser = New Label()
         tlyBrowser = New KBotTableLayoutPanel()
         chkHideChrome = New CheckBox()
+        chkDevTools = New CheckBox()
         lblTitluFoldere = New Label()
         tlyFoldere = New KBotTableLayoutPanel()
         lblWorkflowsCaption = New Label()
@@ -249,13 +250,15 @@ Partial Class SetariForexeView
         tlyBrowser.ColumnCount = 1
         tlyBrowser.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyBrowser.Controls.Add(chkHideChrome, 0, 0)
+        tlyBrowser.Controls.Add(chkDevTools, 0, 1)
         tlyBrowser.Dock = DockStyle.Top
         tlyBrowser.Location = New Point(28, 300)
         tlyBrowser.Margin = New Padding(4, 0, 4, 24)
         tlyBrowser.Name = "tlyBrowser"
-        tlyBrowser.RowCount = 1
+        tlyBrowser.RowCount = 2
         tlyBrowser.RowStyles.Add(New RowStyle())
-        tlyBrowser.Size = New Size(904, 39)
+        tlyBrowser.RowStyles.Add(New RowStyle())
+        tlyBrowser.Size = New Size(904, 78)
         tlyBrowser.TabIndex = 5
         '
         ' chkHideChrome
@@ -272,6 +275,19 @@ Partial Class SetariForexeView
         tips.SetToolTipHeader(chkHideChrome, "Bara browserului")
         tips.SetToolTipText(chkHideChrome, "Bifat, operatorul vede doar pagina FOREXE." & vbLf & "Debifat, apare și bara Chromium. Se aplică de la următoarea lucrare.")
         chkHideChrome.UseVisualStyleBackColor = True
+        '
+        ' chkDevTools
+        '
+        chkDevTools.AutoSize = True
+        chkDevTools.Location = New Point(4, 39)
+        chkDevTools.Margin = New Padding(4, 0, 4, 10)
+        chkDevTools.Name = "chkDevTools"
+        chkDevTools.Size = New Size(420, 29)
+        chkDevTools.TabIndex = 1
+        chkDevTools.Text = "Permite instrumentele pentru dezvoltatori în pagina FOREXE (F12, Ctrl+Shift+I, clic dreapta)"
+        tips.SetToolTipHeader(chkDevTools, "Instrumente pentru dezvoltatori")
+        tips.SetToolTipText(chkDevTools, "Debifat, pagina înghite F12, Ctrl+Shift+I / J / C, Ctrl+U și meniul de clic dreapta." & vbLf & "Bifat, toate rămân la îndemână. Se aplică imediat în pagina deschisă.")
+        chkDevTools.UseVisualStyleBackColor = True
         '
         ' lblTitluFoldere
         '
@@ -430,6 +446,7 @@ Partial Class SetariForexeView
     Friend WithEvents lblTitluBrowser As Label
     Friend WithEvents tlyBrowser As KBotTableLayoutPanel
     Friend WithEvents chkHideChrome As CheckBox
+    Friend WithEvents chkDevTools As CheckBox
     Friend WithEvents lblTitluFoldere As Label
     Friend WithEvents tlyFoldere As KBotTableLayoutPanel
     Friend WithEvents lblWorkflowsCaption As Label

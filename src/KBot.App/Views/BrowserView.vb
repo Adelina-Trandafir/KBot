@@ -189,6 +189,9 @@ Public Class BrowserView
             Return
         End If
         If BrowserEsteAici Then
+            ' Still docked here (the view was hidden and shown without losing it): the
+            ' window is re-fitted at once, before the operator can see a misplaced toolbar.
+            Await _controller.SyncBrowserBoundsAsync()
             ActualizeazaStarea()
             Return
         End If

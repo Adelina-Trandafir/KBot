@@ -13,9 +13,13 @@ Imports KBot.Theming
 ''' FOREXE browser reports the operator's own operations - a new angajament, a reservation
 ''' row, a reception - through <c>ForexeWatch.js</c> -> <c>WorkflowExecutor</c> ->
 ''' <c>ForexeRunner</c> -> <c>ForexeController.OperatiuneCapturata</c>. When one FINISHES
-''' (its save was confirmed by the page) the shell does, by itself, exactly what the node's
-''' download icon does: downloads the angajament from FOREXE, takes it through the two-phase
-''' ingest, and then opens the angajament's history cut to the minutes the operator worked.
+''' (its save was confirmed by the page) the shell does, by itself, what the node's download
+''' icon does: downloads from FOREXE, takes the package through the two-phase ingest, and
+''' then opens the angajament's history cut to the minutes the operator worked. WHAT is
+''' downloaded follows the operation: a reservation brings the reservations only (the
+''' Rezervari flow: header, indicators, history - never the receptions), a reception brings
+''' the receptions only (the Receptii flow - never the reservations), and a new angajament
+''' or a manual operation brings the whole angajament (operator, 21.09.2026).
 '''
 ''' <para><b>A new angajament</b> has no node yet, so the angajamente list is synchronised
 ''' first (the same road as the tree footer icon), the codes that were not in the tree before
@@ -130,7 +134,7 @@ Partial Public Class KbotForm
 
             For Each cod As String In coduri
                 _controller.SpuneStare($"«{ev.Label}» salvată în FOREXE — descarc «{cod}»...")
-                Dim pachet As PrelucrareRezultat = Await DescarcaNodulAsync(cod)
+                Dim pachet As PrelucrareRezultat = Await DescarcaPentruOperatiuneAsync(ev.Operation, cod)
                 ' Nothing = the robot did not start or failed; it already said why on the console.
                 If pachet Is Nothing Then
                     ShowForexeFailure("FOREXE")
@@ -145,16 +149,25 @@ Partial Public Class KbotForm
     End Function
 
     ''' <summary>
-    ''' The node download, without the «which receptions to skip» question: the operator
-    ''' just finished working, everything is fresh, everything is wanted.
+    ''' The download that fits the operation: reservations only, receptions only, or the
+    ''' whole node. Never the «which receptions to skip» question - the operator just
+    ''' finished working, everything is fresh, everything of that family is wanted.
     ''' </summary>
-    Private Async Function DescarcaNodulAsync(cod As String) As Task(Of PrelucrareRezultat)
+    Private Async Function DescarcaPentruOperatiuneAsync(op As ForexeOperationKind,
+                                                          cod As String) As Task(Of PrelucrareRezultat)
         busyBar.Running = True
         Try
-            Return Await _controller.DownloadNodeAsync(
-                cod,
-                Function(c, ct) WithReauth(Of IstoricInfo)(Function() _apiClient.GetIstoricAsync(c, ct)),
-                Nothing)
+            Select Case op
+                Case ForexeOperationKind.Rezervare
+                    Return Await _controller.DownloadRezervariAsync(cod)
+                Case ForexeOperationKind.Receptie, ForexeOperationKind.ReceptieModificare
+                    Return Await _controller.DownloadReceptiiAsync(cod, Nothing)
+                Case Else
+                    Return Await _controller.DownloadNodeAsync(
+                        cod,
+                        Function(c, ct) WithReauth(Of IstoricInfo)(Function() _apiClient.GetIstoricAsync(c, ct)),
+                        Nothing)
+            End Select
         Finally
             busyBar.Running = False
         End Try

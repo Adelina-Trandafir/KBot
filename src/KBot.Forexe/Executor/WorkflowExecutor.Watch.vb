@@ -69,6 +69,9 @@ Partial Public Class WorkflowExecutor
         End If
 
         _watchActive = True
+        ' The operator's page choices (developer tools, CSS rules) go in every time the menu
+        ' is (re)started: a change made in «Setări» reaches the page at the next dock.
+        Await ApplyWatchConfigAsync(ForexeWatchConfig.JsonNow())
         ' A stale page-side suspension (a job that died mid-way) is lifted here - but NOT
         ' one a job holds right now (slice 0074: the shell's «Browser» view docks the browser
         ' while a job may be running, and waking the watcher under the robot would arm
@@ -98,6 +101,67 @@ Partial Public Class WorkflowExecutor
         End Try
     End Function
 
+    ''' <summary>
+    ''' Hands the page the operator's choices (<see cref="ForexeWatchConfig"/>): the script
+    ''' applies them at once and keeps them in the page's own storage, so the next load
+    ''' starts styled before its first paint. Quiet when the menu is not in the page yet or
+    ''' the page is mid-navigation: the next StartWatchingAsync sends them again.
+    ''' </summary>
+    Public Async Function ApplyWatchConfigAsync(json As String) As Task
+        If Not _watchInstalled Then Return
+        If _page Is Nothing OrElse _page.IsClosed Then Return
+        If String.IsNullOrWhiteSpace(json) Then Return
+        Try
+            Await _page.EvaluateAsync(Of Object)(
+                "(c) => { if (window._kbotWatch && window._kbotWatch.configure) { window._kbotWatch.configure(c); } }",
+                json)
+            _logger.LogDebug("[Urmărire] Setările paginii (stiluri, unelte dezvoltator) au fost trimise în pagină.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowExecutor.ApplyWatchConfigAsync", ex)
+            _logger.LogDebug($"[Urmărire] Setările paginii nu au ajuns în pagină: {ex.Message}")
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The page's element outline as the script sees it: a JSON array of
+    ''' <c>{depth, tag, selector, id, classes, text, style}</c>, for the «Din pagină» picker
+    ''' of the settings window. "[]" when there is no page or the menu is not installed.
+    ''' </summary>
+    Public Async Function ReadPageElementsAsync() As Task(Of String)
+        If Not _watchInstalled Then Return "[]"
+        If _page Is Nothing OrElse _page.IsClosed Then Return "[]"
+        Try
+            Dim json As String = Await _page.EvaluateAsync(Of String)(
+                "() => (window._kbotWatch && window._kbotWatch.listElements) ? window._kbotWatch.listElements() : '[]'")
+            Return If(String.IsNullOrWhiteSpace(json), "[]", json)
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowExecutor.ReadPageElementsAsync", ex)
+            _logger.LogDebug($"[Urmărire] Nu am putut citi elementele paginii: {ex.Message}")
+            Return "[]"
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Draws the script's frame over the element at <paramref name="index"/> of the last
+    ''' <see cref="ReadPageElementsAsync"/> listing, scrolled into view; a negative index
+    ''' takes the frame away. Returns the script's word: "shown", "gone" (the page changed
+    ''' since the listing) or "cleared"; "" when there is no page or no menu in it.
+    ''' </summary>
+    Public Async Function HighlightPageElementAsync(index As Integer) As Task(Of String)
+        If Not _watchInstalled Then Return String.Empty
+        If _page Is Nothing OrElse _page.IsClosed Then Return String.Empty
+        Try
+            Dim word As String = Await _page.EvaluateAsync(Of String)(
+                "(i) => (window._kbotWatch && window._kbotWatch.highlightElement) ? window._kbotWatch.highlightElement(i) : ''",
+                index)
+            Return If(word, String.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowExecutor.HighlightPageElementAsync", ex)
+            _logger.LogDebug($"[Urmărire] Nu am putut evidenția elementul în pagină: {ex.Message}")
+            Return String.Empty
+        End Try
+    End Function
+
     ''' <summary>Stops forwarding events. The page side script stays installed.</summary>
     Public Sub StopWatching()
         _watchActive = False
@@ -111,15 +175,22 @@ Partial Public Class WorkflowExecutor
     ''' Suspends (True) or resumes (False) the in-page watcher. Safe to call at any time:
     ''' when the script is not installed or the page is mid-navigation it only records the
     ''' flag, which the callback reads too, so nothing the robot does is ever forwarded.
+    ''' While suspended the page is blurred behind a card that asks the operator to wait;
+    ''' <paramref name="message"/> is the card's title (the job's name), the script's own
+    ''' wording when empty.
     ''' </summary>
-    Public Async Function SetWatchSuspendedAsync(suspended As Boolean) As Task
+    Public Async Function SetWatchSuspendedAsync(suspended As Boolean,
+                                                 Optional message As String = Nothing) As Task
         _watchSuspended = suspended
         If Not _watchInstalled Then Return
         If _page Is Nothing OrElse _page.IsClosed Then Return
         Try
+            Dim arg As String = New JObject(
+                New JProperty("s", suspended),
+                New JProperty("m", If(message, String.Empty))).ToString(Newtonsoft.Json.Formatting.None)
             Await _page.EvaluateAsync(Of Object)(
-                "(s) => { if (window._kbotWatch) { window._kbotWatch.setSuspended(s); } }",
-                suspended)
+                "(a) => { const o = JSON.parse(a); if (window._kbotWatch) { window._kbotWatch.setSuspended(o.s, o.m); } }",
+                arg)
         Catch ex As Exception
             ' The page may be navigating right now; the flag above still guards the
             ' callback, and the script re-reads sessionStorage on the next page anyway.

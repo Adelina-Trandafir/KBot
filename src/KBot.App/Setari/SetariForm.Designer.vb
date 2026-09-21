@@ -28,6 +28,7 @@ Partial Class SetariForm
         Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem7 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem8 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem9 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         btnClose = New Button()
         pnlRoot = New Panel()
@@ -118,6 +119,9 @@ Partial Class SetariForm
         KBotNavItem3.Image = My.Resources.Resources.butonforexebug2022
         KBotNavItem3.Key = "forexe"
         KBotNavItem3.Text = "FOREXE"
+        KBotNavItem9.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
+        KBotNavItem9.Key = "pagina"
+        KBotNavItem9.Text = "Pagina FOREXE"
         KBotNavItem4.Image = My.Resources.Resources.Papirus_Team_Papirus_Apps_Preferences_desktop_theme_24
         KBotNavItem4.Key = "tema"
         KBotNavItem4.Text = "Temă"
@@ -138,6 +142,7 @@ Partial Class SetariForm
         navViews.Items.Add(KBotNavItem1)
         navViews.Items.Add(KBotNavItem2)
         navViews.Items.Add(KBotNavItem3)
+        navViews.Items.Add(KBotNavItem9)
         navViews.Items.Add(KBotNavItem4)
         navViews.Items.Add(KBotNavItem5)
         navViews.Items.Add(KBotNavItem6)

@@ -49,6 +49,7 @@ Public Class SetariForexeView
             _suppress = True
             Try
                 chkHideChrome.Checked = AppSettings.Current.ForexeHideBrowserChrome
+                chkDevTools.Checked = AppSettings.Current.ForexeDevToolsAllowed
             Finally
                 _suppress = False
             End Try
@@ -146,6 +147,24 @@ Public Class SetariForexeView
                                         "Bara browserului se vede în panou. Se aplică de la următoarea lucrare."))
         Catch ex As Exception
             GlobalErrorLog.Write("SetariForexeView.ChkHideChrome_CheckedChanged", ex)
+            RaiseEvent StatusChanged("Setarea nu a putut fi salvată: " & ex.Message)
+        End Try
+    End Sub
+
+    ' The switch is saved at once and pushed into the open page (operator, 21.09.2026).
+    Private Async Sub ChkDevTools_CheckedChanged(sender As Object, e As EventArgs) Handles chkDevTools.CheckedChanged
+        Try
+            If _suppress Then Return
+            Dim copie As AppSettings = AppSettings.Current.Clone()
+            copie.ForexeDevToolsAllowed = chkDevTools.Checked
+            copie.Save()
+            Dim inPagina As Boolean = Await _controller.AplicaSetarilePaginiiAsync()
+            RaiseEvent StatusChanged(If(chkDevTools.Checked,
+                                        "Instrumentele pentru dezvoltatori sunt permise în pagina FOREXE.",
+                                        "Instrumentele pentru dezvoltatori sunt oprite în pagina FOREXE.") &
+                                     If(inPagina, " Aplicat în pagina deschisă.", " Se aplică la următoarea deschidere a browserului."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForexeView.ChkDevTools_CheckedChanged", ex)
             RaiseEvent StatusChanged("Setarea nu a putut fi salvată: " & ex.Message)
         End Try
     End Sub
