@@ -33,7 +33,7 @@ Partial Class PlatiView
         innerSplit = New SplitContainer()
         grid = New KBotDataView()
         detailPane = New Panel()
-        detailTable = New Global.KBot.Controls.KBotTableLayoutPanel()
+        detailTable = New KBotTableLayoutPanel()
         lblDetailMessage = New Label()
         capNrDoc = New Label()
         valNrDoc = New Label()
@@ -269,6 +269,7 @@ Partial Class PlatiView
         KBotDataColumn5.Key = "platitor"
         KBotDataColumn5.OptionGroup = Nothing
         KBotDataColumn5.ReadOnly = True
+        KBotDataColumn5.ShowColumnFilter = True
         KBotDataColumn5.Width = 120
         grid.Columns.Add(KBotDataColumn1)
         grid.Columns.Add(KBotDataColumn2)

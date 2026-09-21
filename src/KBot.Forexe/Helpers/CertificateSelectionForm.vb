@@ -35,23 +35,25 @@ Public Class CertificateSelectionForm
     ''' the full refresh.
     ''' </summary>
     Private Sub CertificateSelectionForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        Try
-            Dim lastUsed As X509Certificate2 = CertificateService.LoadLastUsedCertificate()
-            If lastUsed IsNot Nothing Then
-                lstCertificates.BeginUpdate()
-                Try
-                    lstCertificates.Items.Clear()
-                    lstCertificates.Items.Add(lastUsed)
-                Finally
-                    lstCertificates.EndUpdate()
-                End Try
-                lstCertificates.SelectedIndex = 0
-            Else
-                LoadCertificates()
-            End If
-        Catch ex As Exception
-            GlobalErrorLog.Write("CertificateSelectionForm.CertificateSelectionForm_Load", ex)
-        End Try
+        LoadCertificates()
+
+        'Try
+        '    Dim lastUsed As X509Certificate2 = CertificateService.LoadLastUsedCertificate()
+        '    If lastUsed IsNot Nothing Then
+        '        lstCertificates.BeginUpdate()
+        '        Try
+        '            lstCertificates.Items.Clear()
+        '            lstCertificates.Items.Add(lastUsed)
+        '        Finally
+        '            lstCertificates.EndUpdate()
+        '        End Try
+        '        lstCertificates.SelectedIndex = 0
+        '    Else
+        '        LoadCertificates()
+        '    End If
+        'Catch ex As Exception
+        '    GlobalErrorLog.Write("CertificateSelectionForm.CertificateSelectionForm_Load", ex)
+        'End Try
     End Sub
 
     Private Sub btnRefresh_Click(sender As Object, e As EventArgs) Handles btnRefresh.Click

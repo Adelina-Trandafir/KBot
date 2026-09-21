@@ -22,11 +22,13 @@ Partial Class ForexeFooterView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(ForexeFooterView))
         tips = New KBotToolTip(components)
         btnExtinde = New Button()
         btnIstoric = New Button()
-        btnConectare = New Button()
+        btnSelectieCertificate = New Button()
         btnBrowser = New Button()
+        btnConectare = New Button()
         pbProgress = New KBotProgressBar()
         lblCert = New Label()
         lblStatus = New Label()
@@ -62,25 +64,22 @@ Partial Class ForexeFooterView
         btnIstoric.UseVisualStyleBackColor = True
         btnIstoric.Visible = False
         ' 
-        ' btnConectare
+        ' btnSelectieCertificate
         ' 
-        btnConectare.BackgroundImageLayout = ImageLayout.None
-        btnConectare.Dock = DockStyle.Left
-        btnConectare.FlatAppearance.BorderColor = SystemColors.ActiveBorder
-        btnConectare.FlatStyle = FlatStyle.Flat
-        btnConectare.Font = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        btnConectare.Image = My.Resources.Resources.FX_24
-        btnConectare.ImageAlign = ContentAlignment.MiddleLeft
-        btnConectare.Location = New Point(0, 0)
-        btnConectare.Margin = New Padding(0)
-        btnConectare.Name = "btnConectare"
-        btnConectare.Padding = New Padding(17, 0, 0, 0)
-        btnConectare.Size = New Size(219, 49)
-        btnConectare.TabIndex = 1
-        btnConectare.Text = "Conectare"
-        tips.SetToolTipHeader(btnConectare, "Conectare FOREXE")
-        tips.SetToolTipText(btnConectare, "Pornește sesiunea către portalul FOREXE." & vbLf & "Se cere certificatul o singură dată pe sesiune.")
-        btnConectare.UseVisualStyleBackColor = True
+        btnSelectieCertificate.BackgroundImageLayout = ImageLayout.None
+        btnSelectieCertificate.Dock = DockStyle.Left
+        btnSelectieCertificate.FlatAppearance.BorderColor = SystemColors.ActiveBorder
+        btnSelectieCertificate.FlatStyle = FlatStyle.Flat
+        btnSelectieCertificate.Font = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        btnSelectieCertificate.Image = CType(resources.GetObject("btnSelectieCertificate.Image"), Image)
+        btnSelectieCertificate.Location = New Point(179, 0)
+        btnSelectieCertificate.Margin = New Padding(0)
+        btnSelectieCertificate.Name = "btnSelectieCertificate"
+        btnSelectieCertificate.Size = New Size(57, 49)
+        btnSelectieCertificate.TabIndex = 1
+        tips.SetToolTipHeader(btnSelectieCertificate, "Conectare FOREXE")
+        tips.SetToolTipText(btnSelectieCertificate, "Deschide fereatra pentru selecția certificatelor")
+        btnSelectieCertificate.UseVisualStyleBackColor = True
         ' 
         ' btnBrowser
         ' 
@@ -98,10 +97,30 @@ Partial Class ForexeFooterView
         tips.SetToolTipText(btnBrowser, "Afișează browserul")
         btnBrowser.UseVisualStyleBackColor = True
         ' 
+        ' btnConectare
+        ' 
+        btnConectare.BackgroundImageLayout = ImageLayout.None
+        btnConectare.Dock = DockStyle.Left
+        btnConectare.FlatAppearance.BorderColor = SystemColors.ActiveBorder
+        btnConectare.FlatStyle = FlatStyle.Flat
+        btnConectare.Font = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        btnConectare.Image = My.Resources.Resources.FX_24
+        btnConectare.ImageAlign = ContentAlignment.MiddleLeft
+        btnConectare.Location = New Point(0, 0)
+        btnConectare.Margin = New Padding(0)
+        btnConectare.Name = "btnConectare"
+        btnConectare.Padding = New Padding(17, 0, 0, 0)
+        btnConectare.Size = New Size(179, 49)
+        btnConectare.TabIndex = 9
+        btnConectare.Text = "Conectare"
+        tips.SetToolTipHeader(btnConectare, "Conectare FOREXE")
+        tips.SetToolTipText(btnConectare, "Pornește sesiunea către portalul FOREXE." & vbCrLf & "Se folosește certificatul implicit. Dacă acesta nu este" & vbCrLf & "conectat la PC, conexiunea cu serverul FOREXE" & vbCrLf & "NU VA FI STABILITA!")
+        btnConectare.UseVisualStyleBackColor = True
+        ' 
         ' pbProgress
         ' 
         pbProgress.Dock = DockStyle.Left
-        pbProgress.Location = New Point(234, 0)
+        pbProgress.Location = New Point(251, 0)
         pbProgress.Margin = New Padding(6)
         pbProgress.Name = "pbProgress"
         pbProgress.Size = New Size(213, 49)
@@ -111,7 +130,7 @@ Partial Class ForexeFooterView
         ' 
         lblCert.AutoEllipsis = True
         lblCert.Dock = DockStyle.Left
-        lblCert.Location = New Point(447, 0)
+        lblCert.Location = New Point(464, 0)
         lblCert.Margin = New Padding(4, 0, 4, 0)
         lblCert.Name = "lblCert"
         lblCert.Padding = New Padding(10, 0, 0, 0)
@@ -124,10 +143,10 @@ Partial Class ForexeFooterView
         ' 
         lblStatus.AutoEllipsis = True
         lblStatus.Dock = DockStyle.Fill
-        lblStatus.Location = New Point(768, 0)
+        lblStatus.Location = New Point(785, 0)
         lblStatus.Margin = New Padding(4, 0, 4, 0)
         lblStatus.Name = "lblStatus"
-        lblStatus.Size = New Size(406, 49)
+        lblStatus.Size = New Size(389, 49)
         lblStatus.TabIndex = 4
         lblStatus.Text = "În așteptare..."
         lblStatus.TextAlign = ContentAlignment.MiddleLeft
@@ -135,7 +154,7 @@ Partial Class ForexeFooterView
         ' lblSpacer
         ' 
         lblSpacer.Dock = DockStyle.Left
-        lblSpacer.Location = New Point(219, 0)
+        lblSpacer.Location = New Point(236, 0)
         lblSpacer.Margin = New Padding(4, 0, 4, 0)
         lblSpacer.Name = "lblSpacer"
         lblSpacer.Size = New Size(15, 49)
@@ -152,6 +171,7 @@ Partial Class ForexeFooterView
         Controls.Add(lblCert)
         Controls.Add(pbProgress)
         Controls.Add(lblSpacer)
+        Controls.Add(btnSelectieCertificate)
         Controls.Add(btnConectare)
         Margin = New Padding(4, 5, 4, 5)
         Name = "ForexeFooterView"
@@ -165,7 +185,8 @@ Partial Class ForexeFooterView
     Friend WithEvents lblStatus As Label
     Friend WithEvents btnIstoric As Button
     Friend WithEvents btnExtinde As Button
-    Friend WithEvents btnConectare As Button
+    Friend WithEvents btnSelectieCertificate As Button
     Friend WithEvents lblSpacer As Label
     Friend WithEvents btnBrowser As Button
+    Friend WithEvents btnConectare As Button
 End Class

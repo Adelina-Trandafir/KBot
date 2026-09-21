@@ -198,6 +198,35 @@ Public NotInheritable Class ForexeController
         End Try
     End Function
 
+    Public Async Function ConnectAsync(certificat As X509Certificate2) As Task(Of Boolean)
+        Try
+            If IsConnected Then Return True
+            If _busy Then Return False
+            _ultimulEsec = String.Empty
+            IntraInLucru()
+            Try
+                Dim job As New JobRequest With {
+                    .WorkflowName = "Conectare",
+                    .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.ConectareFile)
+                }
+                RaporteazaStare("Conectare la FOREXE...")
+                Dim rezultat As JobResult = Await _runner.RunAsync(job, certificat, Progres(), _cts.Token)
+                If rezultat.Success Then
+                    _certificat = certificat
+                    RaporteazaStare("Conectat.")
+                Else
+                    RaporteazaEsec("Conectare eșuată: " & rezultat.Message)
+                End If
+                Return rezultat.Success
+            Finally
+                IesDinLucru()
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.ConnectAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ''' <summary>
     ''' Descarcă lista de angajamente («adlop - Lista Angajamente Curente.wfl»), o mapează în
     ''' forma de domeniu și o păstrează local (memorie + JSON). NU scrie nimic pe server —

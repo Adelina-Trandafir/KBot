@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.Security.Cryptography.X509Certificates
 Imports KBot.Common
 
 ''' <summary>
@@ -27,7 +28,7 @@ Public Class ForexeFooterView
     Public Event ExpandRequested As EventHandler
 
     Public Event ConectareForexeRequested As EventHandler
-
+    Public Event ConectareForexeDefaultRequested As EventHandler
     ''' <summary>
     ''' Operatorul a cerut istoricul acțiunilor FOREXE (felia 0040). Banda rămâne proastă:
     ''' fereastra o deține și o arată shell-ul, exact ca pe consolă.
@@ -35,6 +36,8 @@ Public Class ForexeFooterView
     Public Event HistoryRequested As EventHandler
 
     Public Event ShowBrowserRequested As EventHandler
+
+    Public Property LastUsedCertificate As X509Certificate2
 
     Public Sub New()
         InitializeComponent()
@@ -128,6 +131,7 @@ Public Class ForexeFooterView
         Dim ocupat As Boolean = _controller.IsBusy
 
         btnConectare.Enabled = Not conectat
+        btnSelectieCertificate.Enabled = Not conectat
         ' The browser button is also the operator's to hide (slice 0072, «Setări» -> Aplicație).
         btnBrowser.Visible = conectat AndAlso AppSettings.Current.ShowBrowserButton
         btnExtinde.Visible = conectat
@@ -188,7 +192,8 @@ Public Class ForexeFooterView
             ButtonStyles.ApplyTrans(btnExtinde, scheme)
             ButtonStyles.ApplyTrans(btnIstoric, scheme)
             ButtonStyles.ApplyTrans(btnBrowser, scheme)
-            ButtonStyles.ApplyPrimary(btnConectare, scheme)
+            ButtonStyles.ApplyNormal(btnConectare, scheme)
+            ButtonStyles.ApplyNormal(btnSelectieCertificate, scheme)
 
             ' Bara de progres e ea însăși IThemedControl, dar banda ASTA e la rândul ei una:
             ' ThemeManager nu recurge în copiii unui IThemedControl, deci schema trebuie
@@ -216,12 +221,13 @@ Public Class ForexeFooterView
         End If
     End Sub
 
-    Private Sub BtnConectare_Click(sender As Object, e As EventArgs) Handles btnConectare.Click
+    Private Sub BtnSelectieCertificate_Click(sender As Object, e As EventArgs) Handles btnSelectieCertificate.Click
         Try
-            btnConectare.Enabled = False
+            'btnSelectieCertificate.Enabled = False
+            'btnConectare.Enabled = False
             RaiseEvent ConectareForexeRequested(Me, EventArgs.Empty)
         Catch ex As Exception
-            GlobalErrorLog.Write("ForexeFooterView.btnConectare_Click", ex)
+            GlobalErrorLog.Write("ForexeFooterView.BtnSelectieCertificate_Click", ex)
         End Try
     End Sub
 
@@ -230,6 +236,19 @@ Public Class ForexeFooterView
             RaiseEvent ShowBrowserRequested(Me, EventArgs.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeFooterView.btnBrowser_Click", ex)
+        End Try
+    End Sub
+
+    Private Sub btnConectare_Click(sender As Object, e As EventArgs) Handles btnConectare.Click
+        Try
+            LastUsedCertificate = CertificateService.LoadLastUsedCertificate()
+            If LastUsedCertificate IsNot Nothing Then
+                RaiseEvent ConectareForexeDefaultRequested(Me, EventArgs.Empty)
+            Else
+                RaiseEvent ConectareForexeRequested(Me, EventArgs.Empty)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeFooterView.btnConectare_Click", ex)
         End Try
     End Sub
 End Class

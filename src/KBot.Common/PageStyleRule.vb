@@ -70,7 +70,7 @@ Public NotInheritable Class PageStyleRule
                               "body",
                               "font-size: 100%"),
             New PageStyleRule("Butonul «Înapoi» din bara de file ascuns pe pagina angajamentului",
-                              "span.nav.nav-tabs [class*='col-lg-10'] button.btn.btn-default",
+                              "span.nav.nav-tabs ~ button.btn.btn-default",
                               "display: none",
                               "https://forexe.mfinante.gov.ro/CABWeb/contract")
         }

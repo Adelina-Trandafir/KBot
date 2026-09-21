@@ -2493,4 +2493,15 @@ Public Class KbotForm
                             MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
+
+    Private Async Sub forexeFooter_ConectareForexeDefaultRequested(sender As Object, e As EventArgs) Handles forexeFooter.ConectareForexeDefaultRequested
+        Try
+            Await _controller.ConnectAsync(forexeFooter.LastUsedCertificate)
+        Catch ex As Exception
+            ' Frontieră de UI (async Sub): nu poate rearunca — logăm și spunem de ce.
+            GlobalErrorLog.Write("MainForm.btnConectare_Click", ex)
+            KBotMessage.Show(Me, "Conectarea la FOREXE a eșuat: " & ex.Message, "FOREXE",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
 End Class

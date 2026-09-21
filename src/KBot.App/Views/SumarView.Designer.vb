@@ -369,8 +369,6 @@ Partial Class SumarView
         grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FooterHeight = 30
         grid.FooterIconSize = New Size(14, 14)
-        grid.FooterLeftIcon = My.Resources.Resources.settings__1_
-        grid.FooterLeftIconHoverColor = Color.Linen
         grid.FooterSeparatorColor = Color.Gainsboro
         grid.FooterVisible = True
         grid.FrozenColumnCount = 1

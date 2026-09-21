@@ -352,30 +352,30 @@ Partial Class KbotForm
         KBotNavItem5.Image = My.Resources.Resources.credit_card
         KBotNavItem5.Key = "plati"
         KBotNavItem5.Text = "Plăți"
-        KBotNavItem9.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
-        KBotNavItem9.Key = "browser"
-        KBotNavItem9.Text = "Browser FOREXE"
-        KBotNavItem6.Align = KBotNavAlign.Far
-        KBotNavItem6.IsSeparator = True
-        KBotNavItem6.Key = "__sep_1"
-        KBotNavItem6.Text = Nothing
+        KBotNavItem6.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
+        KBotNavItem6.Key = "browser"
+        KBotNavItem6.Text = "Browser FOREXE"
         KBotNavItem7.Align = KBotNavAlign.Far
-        KBotNavItem7.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_temporary_32
-        KBotNavItem7.Key = "ddf"
-        KBotNavItem7.Text = "Fundamentare"
+        KBotNavItem7.IsSeparator = True
+        KBotNavItem7.Key = "__sep_1"
+        KBotNavItem7.Text = Nothing
         KBotNavItem8.Align = KBotNavAlign.Far
-        KBotNavItem8.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
-        KBotNavItem8.Key = "ord"
-        KBotNavItem8.Text = "Ordonanțare"
+        KBotNavItem8.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_temporary_32
+        KBotNavItem8.Key = "ddf"
+        KBotNavItem8.Text = "Fundamentare"
+        KBotNavItem9.Align = KBotNavAlign.Far
+        KBotNavItem9.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
+        KBotNavItem9.Key = "ord"
+        KBotNavItem9.Text = "Ordonanțare"
         navViews.Items.Add(KBotNavItem1)
         navViews.Items.Add(KBotNavItem2)
         navViews.Items.Add(KBotNavItem3)
         navViews.Items.Add(KBotNavItem4)
         navViews.Items.Add(KBotNavItem5)
-        navViews.Items.Add(KBotNavItem9)
         navViews.Items.Add(KBotNavItem6)
         navViews.Items.Add(KBotNavItem7)
         navViews.Items.Add(KBotNavItem8)
+        navViews.Items.Add(KBotNavItem9)
         navViews.Location = New Point(11, 13)
         navViews.Margin = New Padding(4, 5, 4, 5)
         navViews.Name = "navViews"
@@ -398,6 +398,7 @@ Partial Class KbotForm
         ' 
         forexeFooter.Dock = DockStyle.Fill
         forexeFooter.Font = New Font("Calibri", 9F)
+        forexeFooter.LastUsedCertificate = Nothing
         forexeFooter.Location = New Point(0, 0)
         forexeFooter.Margin = New Padding(0)
         forexeFooter.Name = "forexeFooter"
