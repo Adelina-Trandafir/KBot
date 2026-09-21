@@ -62,5 +62,12 @@ Namespace KBot.Forexe
         ' trăiește în KBot.Forexe fiindcă are nevoie de WorkflowExecutor, care rămâne
         ' privat în runner; gazdele cer doar «arată-l», nu executorul.
         Sub ShowRecorder(owner As IWin32Window)
+
+        ' The floating K-BOT menu inside the FOREXE page (slice 0073) saw the operator start,
+        ' finish or abandon an operation: a new angajament, a reservation row, a reception.
+        ' Kind = Finished carries the angajament code read from the page header and the
+        ' interval [StartedAt, FinishedAt]; the shell downloads that angajament and opens its
+        ' history for the interval. Raised on the Playwright callback thread - marshal first.
+        Event OperationCaptured As EventHandler(Of ForexeWatchEvent)
     End Interface
 End Namespace

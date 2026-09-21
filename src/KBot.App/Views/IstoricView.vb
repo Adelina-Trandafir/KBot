@@ -70,6 +70,11 @@ Public Class IstoricView
     Private _splitterDistanceDesfasurat As Integer
     Private _panel1MinSizeDesfasurat As Integer
 
+    ' The interval a caller asked for BEFORE the rows arrived (slice 0073): LoadAsync clears
+    ' every filter unconditionally when a new angajament lands, so the range is remembered
+    ' here and applied right after that clearing. Nothing = no interval requested.
+    Private _intervalCerut As (DeLa As Date, PanaLa As Date)?
+
     ''' <summary>
     ''' Rândul selectat s-a schimbat — oglindește evenimentul dormant Access
     ''' <c>Public Event RowChanged(key)</c> (cu <c>RaiseEvent</c> comentat) și textbox-ul ascuns
@@ -141,6 +146,22 @@ Public Class IstoricView
     ''' Selecția din arbore s-a schimbat. Fără angajament (nod de capitol / deselectare) NU se
     ''' face niciun apel de rețea — doar se golește vederea (§6).
     ''' </summary>
+    ''' <summary>
+    ''' Loads one angajament and shows ONLY the history rows FOREXE stamped inside
+    ''' [<paramref name="dela"/>, <paramref name="panaLa"/>] (slice 0073) - the window in
+    ''' which the operator worked in the browser. The range sits in the DataFx segment, so
+    ''' «TOATE» on the date menu or «Reset» widens the view to the whole history.
+    ''' </summary>
+    Public Sub SetContextInterval(cod As String, dela As Date, panaLa As Date)
+        Try
+            _intervalCerut = (dela, panaLa)
+            SetContext(New AngajamentTreeInfo With {.CodAngajament = cod})
+        Catch ex As Exception
+            GlobalErrorLog.Write("IstoricView.SetContextInterval", ex)
+            Throw
+        End Try
+    End Sub
+
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
         Try
             Dim cod As String = info?.CodAngajament
@@ -184,6 +205,13 @@ Public Class IstoricView
             ' Filtrul din angajamentul precedent NU are voie să supraviețuiască (§6, aceeași
             ' regulă necondiționată ca resetul combo-ului din DdfView).
             _filter.ClearAll()
+            ' ...except the interval this very load was asked for (slice 0073), consumed once.
+            If _intervalCerut.HasValue Then
+                Dim iv = _intervalCerut.Value
+                _intervalCerut = Nothing
+                _filter.SetDataFxRange(iv.DeLa, iv.PanaLa,
+                    $"{iv.DeLa.ToString("dd.MM.yyyy HH:mm", _roCulture)} – {iv.PanaLa.ToString("dd.MM.yyyy HH:mm", _roCulture)}")
+            End If
             'BuildMenus()
             BuildTree()
             FillFiltered()

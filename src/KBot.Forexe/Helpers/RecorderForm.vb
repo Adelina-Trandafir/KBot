@@ -15,12 +15,22 @@ Imports WorkflowModels
 '  undocks before anything else is disposed - and since slice 0070 that undock HIDES the
 '  browser, so closing this form is the same as «Ascunde browserul».
 '
-'  Two modes (slice 0070). This is also the only window the page is ever seen in: a free
-'  Chromium window can be closed by the operator, and that closes the session. So the
-'  console's «Arată browserul» opens THIS form with ViewOnly = True - the browser docks
-'  into pnlBrowser on Shown, and the whole right hand panel (docking, recording, steps,
-'  preview) is disabled. «Recorder» opens it with ViewOnly = False and everything on.
-'  Either way the browser docks itself as soon as the form is shown.
+'  Two modes (slice 0070, reshaped in 0073). This is also the only window the page is ever
+'  seen in: a free Chromium window can be closed by the operator, and that closes the
+'  session. So the console's «Arată browserul» opens THIS form with ViewOnly = True - the
+'  browser docks into pnlBrowser on Shown and the whole right hand panel (docking,
+'  recording, steps, preview) is COLLAPSED, so the page has the window to itself.
+'  «Recorder» opens it with ViewOnly = False and the panel unfolds. Either way the browser
+'  docks itself as soon as the form is shown.
+'
+'  In both modes the page carries the floating K-BOT menu (ForexeWatch.js, slice 0073):
+'  zoom in / out and the watcher that reports the operator's own operations - a new
+'  angajament, a reservation row, a reception - back to the runner. It is installed the
+'  moment the browser is docked here (StartWatchingAsync); the form only hosts it.
+'
+'  Every button on the right hand panel wears the theme's DEFAULT button dress
+'  (ButtonStyles.ApplyDefault), re-applied on every theme change - the generic rule
+'  would leave them native under a scheme that keeps system colours.
 '
 '  Every operator edit (a different candidate, a per step WaitFor, a deletion, a
 '  reorder, a global option) regenerates the preview through RecorderCompactor and
@@ -51,7 +61,7 @@ Public Class RecorderForm
 
     ''' <summary>
     ''' True when the form was opened only to LOOK at the browser («Arată browserul»):
-    ''' the right hand panel is disabled and the caption says so. Can be set at any time;
+    ''' the right hand panel is collapsed and the caption says so. Can be set at any time;
     ''' switching to view mode stops a recording in progress. Default False = recorder.
     ''' </summary>
     Public Property ViewOnly As Boolean
@@ -106,6 +116,7 @@ Public Class RecorderForm
             AddHandler ThemeManager.ThemeChanged, AddressOf HandleThemeChanged
             _themeHooked = True
             ApplyListColors()
+            ApplyPanelButtonStyles()
             ApplyMode()
             UpdateButtons()
             RefreshPreview()
@@ -149,26 +160,85 @@ Public Class RecorderForm
             _docking = False
             UpdateButtons()
         End Try
+        Await StartWatchAsync()
+    End Function
+
+    ''' <summary>
+    ''' Puts the floating K-BOT menu into the docked page (slice 0073). Separate from the
+    ''' dock itself on purpose: a page that would not take the script is still a page the
+    ''' operator can look at, so the failure is told and logged, never allowed to undo the
+    ''' dock that just succeeded.
+    ''' </summary>
+    Private Async Function StartWatchAsync() As Task
+        If _executor Is Nothing OrElse Me.IsDisposed Then Return
+        If Not _executor.IsDocked Then Return
+        Try
+            Await _executor.StartWatchingAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("RecorderForm.StartWatchAsync", ex)
+            KBotMessage.Show(Me, "Meniul K-BOT nu a putut fi pus în pagină: " & ex.Message,
+                             Me.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
     End Function
 
     ''' <summary>
     ''' Puts the form in the mode ViewOnly asks for. Everything on the right of the splitter
-    ''' is one panel, so one Enabled covers docking, recording, options, steps and preview;
-    ''' the browser panel on the left is never touched. Safe before the handle exists.
+    ''' is one panel, so collapsing it hides docking, recording, options, steps and preview
+    ''' in one move and gives the page the whole window; the browser panel on the left is
+    ''' never touched. Safe before the handle exists.
     ''' </summary>
     Private Sub ApplyMode()
         Try
             Me.Text = If(_viewOnly, TitleViewer, TitleRecorder)
-            splitMain.Panel2.Enabled = Not _viewOnly
+            splitMain.Panel2Collapsed = _viewOnly
             ' A recording cannot go on behind a disabled panel: the operator could not stop it.
             If _viewOnly AndAlso _executor IsNot Nothing AndAlso _executor.RecordingActive Then
                 _executor.StopRecording()
             End If
             UpdateButtons()
+            ' Folding or unfolding the panel resizes the browser host without a SplitterMoved.
+            ScheduleResync()
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.ApplyMode", ex)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Every Button on the right hand panel, at any depth, in the theme's default dress.
+    ''' Called after the theme engine has run (Load, and each ThemeChanged), so it is the
+    ''' last word on how those buttons look.
+    ''' </summary>
+    Private Sub ApplyPanelButtonStyles()
+        Try
+            Dim scheme As ThemeScheme = ThemeManager.Current
+            For Each b As Button In ButtonsUnder(splitMain.Panel2)
+                ButtonStyles.ApplyDefault(b, scheme)
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("RecorderForm.ApplyPanelButtonStyles", ex)
+        End Try
+    End Sub
+
+    Private Shared Iterator Function ButtonsUnder(root As Control) As IEnumerable(Of Button)
+        If root Is Nothing Then Return
+        For Each child As Control In root.Controls
+            Dim b As Button = TryCast(child, Button)
+            If b IsNot Nothing Then Yield b
+            Dim sc As SplitContainer = TryCast(child, SplitContainer)
+            If sc IsNot Nothing Then
+                For Each inner As Button In ButtonsUnder(sc.Panel1)
+                    Yield inner
+                Next
+                For Each inner As Button In ButtonsUnder(sc.Panel2)
+                    Yield inner
+                Next
+            ElseIf child.HasChildren Then
+                For Each inner As Button In ButtonsUnder(child)
+                    Yield inner
+                Next
+            End If
+        Next
+    End Function
 
     ' =========================================================================
     '  ListView theming - ThemeManager does not cover ListView, so the rows and
@@ -178,6 +248,7 @@ Public Class RecorderForm
         Try
             If Me.IsDisposed Then Return
             ApplyListColors()
+            ApplyPanelButtonStyles()
             RefreshPreview()
             lvPasi.Invalidate()
         Catch ex As Exception
@@ -368,6 +439,7 @@ Public Class RecorderForm
             End If
             Await _executor.DockBrowserToAsync(pnlBrowser)
             UpdateButtons()
+            Await StartWatchAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.BtnAndocheaza_Click", ex)
             KBotMessage.Show(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")

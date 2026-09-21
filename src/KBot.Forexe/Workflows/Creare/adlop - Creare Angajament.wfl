@@ -1,0 +1,234 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow name="FOREXEBUG - Creare angajament" startUrl="current">
+  <!-- V2.0 - 11.03.2026
+    Creare angajament bugetar nou
+    ─────────────────────────────
+    V1.0 - 03-03-2026
+
+    Flux:
+      1. Resetare interfață + navigare Home
+      2. Deschide formular Angajament nou + completează descriere
+      3. Pentru fiecare rând din DATE_RECEPTIE:
+           - selectează Program, Sursă, Clasificație
+           - completează valoarea CB inițial
+           - citește limitele CA/CB disponibile
+           - face poză
+           - salvează (intermediar sau final)
+           - verifică succes
+      4. Citește codul angajamentului creat
+      5. Scrape tabel indicatori final
+
+    Variabile așteptate din VBA:
+      {{DESCRIERE_ANGAJAMENT}}   - titlul/descrierea angajamentului
+      {{!DATE_RECEPTIE}}         - JSON array cu obiectele:
+                                     { "Cheie":         "IdSecA-135",
+                                       "Clasificatia":  "65.04.02",
+                                       "CodProgram":    "0000000000",
+                                       "Sursa":         "65",
+                                       "CB_INITIAL":    "30600" }
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECȚIUNEA 1 — RESET + NAVIGARE
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ Pornesc crearea unui angajament nou ══" level="action"/>
+
+  <!-- Închidem orice dropdown/select2 rămas deschis din sesiunea anterioară -->
+  <IfExists selector="#select2-drop-mask" timeout="1">
+    <Click selector="#select2-drop-mask" force="true"
+           LogValue="Resetare interfață — închid dropdown-uri deschise"/>
+  </IfExists>
+
+  <!-- Navigăm la Home prin logo — obligatoriu, resetează starea paginii -->
+  <Click selector="#statlogo" waitNavigation="true" timeout="20"
+         LogValue="Navigare Home via logo"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECȚIUNEA 2 — CREARE ANGAJAMENT + DESCRIERE
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="Deschid formularul de angajament nou..." level="action"/>
+  <Click selector="a:has-text('Angajament nou')" jsClick="true"
+         LogValue="Click Angajament nou"/>
+  <WaitFor selector="textarea[name='descriere']"
+           LogValue="Aștept încărcarea formularului"/>
+
+  <Log message="Completez descrierea angajamentului..." level="info"/>
+  <Fill selector="textarea[name='descriere']"
+        value="{{DESCRIERE_ANGAJAMENT|Titlul documentului de fundamentare Rev.0}}"
+        clear="true"
+        LogValue="Fill descriere angajament"/>
+
+  <Click selector="button:has-text('Adaugă angajament')" force="true"
+         LogValue="Click Adaugă angajament"/>
+  <Log message="Angajament inițializat. Trec la completarea indicatorilor..." level="success"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECȚIUNEA 3 — PROCESARE INDICATORI
+       ═══════════════════════════════════════════════════════ -->
+
+  <!-- Preluăm JSON-ul cu rândurile de procesat de la VBA -->
+  <SetInternalVar name="DATE_RECEPTIE" value="{{!DATE_RECEPTIE|Array randuri|type=JSON}}"/>
+  <Log message="Date preluate de la VBA. Pornesc procesarea pe rânduri..." level="action"/>
+
+  <ForEachVar source="DATE_RECEPTIE" itemPrefix="R" indexVariable="idx" collectFields="Cheie,Clasificatia">
+
+    <Log message="──────────────────────────────────────────" level="info"/>
+    <Log message="Rând [[idx]]: [[R.Cheie]] — Clasificație: [[R.Clasificatia]]" level="action"/>
+
+    <!-- 3.1 — PROGRAM -->
+    <Log message="Selectez Programul [[R.CodProgram]]..." level="info"/>
+    <Click selector=".select2-container:has(+ input[name='program:sel']) a.select2-choice"
+           LogValue="Click dropdown Program"/>
+    <WaitFor selector=".select2-results li:has-text('[[R.CodProgram]]')" timeout="5"
+             LogValue="Aștept apariția opțiunii [[R.CodProgram]] în listă"/>
+    <Click selector="#select2-drop ul.select2-results li:has-text('[[R.CodProgram]]')"
+           isCheckpoint="true"
+           LogValue="Selectez programul [[R.CodProgram]]"/>
+
+    <!-- 3.2 — SURSĂ -->
+    <Log message="Selectez Sursa [[R.Sursa]]..." level="info"/>
+    <WaitFor selector="select[name='sursa']:not([disabled])" timeout="10"
+             LogValue="Aștept activarea dropdownului Sursă"/>
+    <Select selector="select[name='sursa']:not([disabled])" value="[[R.Sursa]]"
+            timeout="5" isCheckpoint="true"
+            LogValue="Selectez sursa [[R.Sursa]]"/>
+
+    <!-- 3.3 — CLASIFICAȚIE (INDICATOR) -->
+    <Log message="Selectez Indicatorul [[R.Clasificatia]]..." level="info"/>
+
+    <!-- AȘTEPTARE CRITICĂ: AJAX-ul din spate trebuie să termine înainte de click -->
+    <WaitFor selector="#statlogo[style*='display: inline']" timeout="10"
+             LogValue="Aștept finalizarea AJAX după selecția sursei"/>
+
+    <Click selector="*:has(> input[name='indicator:indicator']) a.select2-choice"
+           timeout="5"
+           LogValue="Deschid dropdown Indicator"/>
+
+    <!-- AȘTEPTARE CRITICĂ: select2 se repozitionează după deschidere -->
+    <WaitFor selector="#select2-drop input.select2-input" timeout="10"
+             LogValue="Aștept inputul de căutare din dropdown Indicator"/>
+    <WaitFor selector="#select2-drop li.select2-no-results" timeout="10"
+             LogValue="Aștept ca dropdown-ul să fie gata de căutare"/>
+
+    <Fill selector="#select2-drop input.select2-input" value="[[R.Clasificatia]]"
+          isCheckpoint="true"
+          LogValue="Caut clasificația [[R.Clasificatia]]"/>
+    <WaitFor selector="#select2-drop li.select2-result-selectable" timeout="5"
+             LogValue="Aștept rezultatele căutării clasificației"/>
+    <Click selector="#select2-drop li.select2-result-selectable:nth-child(1)"
+           LogValue="Selectez primul rezultat pentru [[R.Clasificatia]]"/>
+
+    <!-- 3.4 — VALOARE CB INIȚIAL -->
+    <Log message="Completez suma CB inițial: [[R.CB_INITIAL]]..." level="info"/>
+    <WaitFor selector="input[name='tableContainer:creditBugRezervatInitialAnCurent']"
+             LogValue="Aștept inputul de valoare CB inițial"/>
+    <Fill selector="input[name='tableContainer:creditBugRezervatInitialAnCurent']"
+          value="[[R.CB_INITIAL]]" isCheckpoint="true"
+          LogValue="Fill CB inițial: [[R.CB_INITIAL]]"/>
+
+    <!-- 3.5 — CITIRE LIMITE CREDIT ANGAJAMENT -->
+    <Log message="Citesc limitele de credit disponibile..." level="info"/>
+    <Read selector="tr:has(td:text-is('Credit angajament')) td:nth-child(2) span"
+          saveTo="CA_Total_[[R.Cheie]]" timeout="5"
+          LogValue="Citesc CA Total pentru [[R.Cheie]]"/>
+    <Read selector="tr:has(td:text-is('Credit angajament')) td:nth-child(3) span"
+          saveTo="CA_Limita_[[R.Cheie]]" timeout="5"
+          LogValue="Citesc CA Limita pentru [[R.Cheie]]"/>
+    <Read selector="tr:has(td:text-is('Credit angajament')) td:nth-child(4) span"
+          saveTo="CA_Disponibil_[[R.Cheie]]" timeout="5"
+          LogValue="Citesc CA Disponibil pentru [[R.Cheie]]"/>
+
+    <!-- 3.6 — CITIRE LIMITE CREDIT BUGETAR -->
+    <Read selector="tr:has(td:text-is('Credit bugetar')) td:nth-child(2) span"
+          saveTo="CB_Total_[[R.Cheie]]" timeout="5"
+          LogValue="Citesc CB Total pentru [[R.Cheie]]"/>
+    <Read selector="tr:has(td:text-is('Credit bugetar')) td:nth-child(3)"
+          saveTo="CB_Limita_[[R.Cheie]]" timeout="5"
+          LogValue="Citesc CB Limita pentru [[R.Cheie]]"/>
+    <Read selector="tr:has(td:text-is('Credit bugetar')) td:nth-child(4) span"
+          saveTo="CB_Disponibil_[[R.Cheie]]" timeout="5"
+          LogValue="Citesc CB Disponibil pentru [[R.Cheie]]"/>
+
+    <!-- 3.7 — POZĂ ÎNAINTE DE SALVARE -->
+    <Screenshot SaveTo="Poza_[[R.Cheie]]"
+                LogValue="Captură ecran înainte de salvare — [[R.Cheie]]"/>
+    <Log message="Captură ecran salvată pentru [[R.Cheie]]." level="success"/>
+
+    <!-- 3.8 — SALVARE (FINAL sau INTERMEDIAR) -->
+    <Log message="Salvez rândul [[R.Cheie]]..." level="info"/>
+    <IfVar Value="[[R.IsLast]]" compare="eq:true" isCheckpoint="true">
+
+      <!-- Ultimul rând: Salvare finală cu navigație -->
+      <Click selector=".form-group button.btn-success:nth-child(1)"
+             waitNavigation="true" timeout="10" isCheckpoint="true"
+             LogValue="Salvez FINAL (ultimul rând)"/>
+
+      <Else>
+        <!-- Rânduri intermediare: Salvare fără navigație -->
+        <Click selector=".form-group button.btn-success:nth-child(2)"
+               waitNavigation="false" timeout="5" isCheckpoint="true"
+               LogValue="Salvez intermediar — rândul [[idx]]"/>
+
+        <!-- Verificare eroare de validare -->
+        <IfExists selector=".feedbackPanelERROR span[title]" timeout="2" isCheckpoint="true">
+          <Log message="EROARE de validare la rândul [[R.Cheie]]!" level="error"/>
+          <GetAttribute selector=".feedbackPanelERROR span[title]"
+                        attributeName="title"
+                        showErrorMessage="true"
+                        Result="Err_[[R.Cheie]]"/>
+          <Exit message="Eroare la introducerea datelor pentru [[R.Cheie]]. Opresc execuția."/>
+        </IfExists>
+
+        <!-- Verificare confirmare succes -->
+        <IfExists selector=".alert.alert-success" timeout="5" isCheckpoint="true">
+          <Log message="✓ Rândul [[R.Cheie]] salvat cu succes." level="success"/>
+          <Else>
+            <Log message="EROARE: Rândul [[R.Cheie]] NU a fost salvat (nu apare confirmarea de succes)!" level="error"/>
+            <Exit message="Salvarea rândului [[R.Cheie]] a eșuat fără mesaj de eroare explicit."/>
+          </Else>
+        </IfExists>
+
+      </Else>
+    </IfVar>
+
+    <!-- 3.9 — CITIRE COD ANGAJAMENT DUPĂ SALVARE -->
+    <Read selector=".well.well-small" timeout="1"
+          saveTo="CodAng_[[R.Cheie]]" isCheckpoint="true"
+          LogValue="Citesc codul angajamentului după salvarea rândului [[R.Cheie]]"/>
+
+  </ForEachVar>
+
+  <Log message="══ Toți indicatorii au fost procesați. ([[idx]] rânduri) ══" level="success"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECȚIUNEA 4 — CITIRE COD ANGAJAMENT FINAL
+       ═══════════════════════════════════════════════════════ -->
+
+  <!-- AȘTEPTARE CRITICĂ: AJAX-ul de fundal nu a terminat încă după ultima salvare -->
+  <WaitFor selector="li.tab0" isCheckpoint="true" timeout="5"
+           LogValue="Aștept finalizarea AJAX post-salvare finală"/>
+
+  <Screenshot SaveTo="Poza_Final"
+              LogValue="Captură ecran stare finală angajament"/>
+
+  <Log message="Citesc codul angajamentului creat..." level="action" isCheckpoint="true"/>
+  <WaitFor selector=".well.well-small h4 span:nth-child(2)" timeout="10"
+           LogValue="Aștept elementul cu codul angajamentului"/>
+  <Read selector=".well.well-small h4 span:nth-child(2)" timeout="5"
+        saveTo="CodAng_Final"
+        LogValue="Citesc CodAng_Final"/>
+  <Log message="✓ Angajament creat cu codul: [[CodAng_Final]]" level="success"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECȚIUNEA 5 — SCRAPE TABEL INDICATORI FINAL
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="Salvez tabelul final cu toți indicatorii angajamentului..." level="info"/>
+  <ScrapeTable selector="table.table-striped" saveTo="TabelIndicatori"
+               isCheckpoint="true" timeout="1"
+               LogValue="Scrape tabel indicatori final"/>
+  <Log message="══ Workflow finalizat cu succes. ══" level="success"/>
+
+</Workflow>

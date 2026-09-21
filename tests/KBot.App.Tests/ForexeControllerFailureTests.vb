@@ -33,6 +33,8 @@ Public Class ForexeControllerFailureTests
 
         Public Event StatusUpdated As EventHandler(Of String) Implements IForexeRunner.StatusUpdated
         Public Event BrowserVisibilityChanged As EventHandler Implements IForexeRunner.BrowserVisibilityChanged
+        ' Slice 0073: the in-page watcher's pipe. Never raised here; the fake has no page.
+        Public Event OperationCaptured As EventHandler(Of ForexeWatchEvent) Implements IForexeRunner.OperationCaptured
 
         Public ReadOnly Property HasLiveSession As Boolean Implements IForexeRunner.HasLiveSession
             Get

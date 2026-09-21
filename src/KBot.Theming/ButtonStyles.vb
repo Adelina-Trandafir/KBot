@@ -52,6 +52,33 @@ Public Module ButtonStyles
         b.UseVisualStyleBackColor = False
     End Sub
 
+    ''' <summary>
+    ''' The theme's OWN default button - the look ThemeManager's generic rule gives a plain
+    ''' Button (ButtonBack / ButtonText / ButtonBorder slots, modern owner-drawn corners when
+    ''' the scheme asks for them) - applied EXPLICITLY. The generic rule stops at a scheme that
+    ''' keeps system colours or preserves the designer's, so a form that wants every button in
+    ''' the theme's default dress regardless of scheme (RecorderForm, slice 0073) calls this.
+    ''' </summary>
+    Public Sub ApplyDefault(b As Button, scheme As ThemeScheme)
+        ArgumentNullException.ThrowIfNull(b)
+        ArgumentNullException.ThrowIfNull(scheme)
+        Dim p As ThemePalette = scheme.Palette
+
+        If scheme.Style.ButtonRender = ButtonRenderStyle.ModernOwnerDrawn Then
+            ModernRenderer.ApplyButton(b, scheme)
+            Return
+        End If
+        ModernRenderer.DetachButton(b)
+        b.FlatStyle = FlatStyle.Flat
+        b.FlatAppearance.BorderSize = 1
+        b.BackColor = p.ButtonBackColor
+        b.ForeColor = p.ButtonTextColor
+        b.FlatAppearance.BorderColor = p.ButtonBorderColor
+        b.FlatAppearance.MouseOverBackColor = p.ButtonHoverColor
+        b.FlatAppearance.MouseDownBackColor = p.ButtonPressedColor
+        b.UseVisualStyleBackColor = False
+    End Sub
+
     Public Sub ApplyNormal(b As Button, scheme As ThemeScheme)
         ArgumentNullException.ThrowIfNull(b)
         ArgumentNullException.ThrowIfNull(scheme)

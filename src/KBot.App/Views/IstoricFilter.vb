@@ -85,6 +85,18 @@ Public NotInheritable Class IstoricFilter
         _dataLabel = label
     End Sub
 
+    ''' <summary>
+    ''' Fixes the DataFx segment on a closed interval WITH time (slice 0073): the rows FOREXE
+    ''' wrote while the operator worked, from the first click to the confirmed save. Unlike
+    ''' the month / day segments the hour matters here, so nothing is truncated to a date.
+    ''' </summary>
+    Public Sub SetDataFxRange(dela As Date, panaLa As Date, label As String)
+        Dim lo As Date = If(dela <= panaLa, dela, panaLa)
+        Dim hi As Date = If(dela <= panaLa, panaLa, dela)
+        _dataPredicate = Function(d) d.HasValue AndAlso d.Value >= lo AndAlso d.Value <= hi
+        _dataLabel = label
+    End Sub
+
     ''' <summary>«TOATE» pe DataFx — golește DOAR acest segment.</summary>
     Public Sub ClearDataFx()
         _dataPredicate = Nothing

@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- V4.0 - 21.03.2026 -->
+<!--
+  DATE_MODIFICARE — array JSON din VBA:
+  [
+    {
+      "Cheie":        "IdSecA-1",
+      "Indicator_ang":"!NOU",           ← "!" prefix = indicator nou | fara "!" = existent (ex: "AA3")
+      "ClsfSal":      "650402200101",   ← pentru FindInTable (stripNonAlphaNum + includes)
+      "Clasificatia": "65.04.02.20.01.01", ← pentru select2 (DOAR la indicator nou)
+      "CodProgram":   "0000000000",     ← DOAR la indicator nou
+      "Sursa":        "02A",            ← DOAR la indicator nou
+      "ValoareNoua":  "1.380,00",
+      "Motiv":        "Modificare 2026" ← DOAR la indicator existent
+    }
+  ]
+-->
+<Workflow name="FOREXEBUG - Modificare/Adaugare rezervari" startUrl="current"
+          expectedUrl="forexe.mfinante.gov.ro">
+
+  <Log message="Initiez operatiile rezervari pentru {{COD_ANGAJAMENT}}..." level="success"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       BLOC OBLIGATORIU LA INCEPUT
+  ════════════════════════════════════════════════════════ -->
+  <IfExists selector="#select2-drop-mask" timeout="1">
+    <Click selector="#select2-drop-mask" force="true" LogValue="Resetare interfata"/>
+  </IfExists>
+  <Click selector="#statlogo" waitNavigation="true" timeout="10"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CAUTARE ANGAJAMENT + DESCHIDERE MODIFICARE
+  ════════════════════════════════════════════════════════ -->
+  <Log message="══ Caut şi deschid angajamentul {{COD_ANGAJAMENT}} ══" level="action"/>
+
+  <Click selector="a:has-text('Listă angajamente')" waitNavigation="false" timeout="5"
+         LogValue="Click Listă angajamente"/>
+  <Fill selector="input[name='cod']" value="{{COD_ANGAJAMENT}}" clear="true" timeout="5"
+        LogValue="Fill câmp Cod cu {{COD_ANGAJAMENT}}"/>
+  <Click selector="button:has-text('Caută')" waitNavigation="false" timeout="5"
+         LogValue="Click Caută"/>
+
+  <IfExists selector=".alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')" timeout="1">
+    <Log message="EROARE: Angajamentul {{COD_ANGAJAMENT}} nu există în listă!" level="error"/>
+    <Exit message="Angajamentul {{COD_ANGAJAMENT}} nu a fost găsit. Opresc execuţia."/>
+  </IfExists>
+
+  <WaitFor selector="a[href*='exportToXLS']" timeout="5"
+           LogValue="Aştept încărcarea listei de rezultate"/>
+  <Click selector="a.haction i.glyphicon-list:visible" timeout="10"
+         LogValue="Click iconiţa detalii angajament"/>
+  <WaitFor selector=".divaction" state="visible" timeout="10"
+           LogValue="Aştept meniul de acţiuni"/>
+  <Click selector=".divaction a:has-text('Modificare')" waitNavigation="true" timeout="5"
+         LogValue="Click Modificare"/>
+  <WaitFor selector="li.tab0" timeout="5"
+           LogValue="Aştept încărcarea formularului de modificare"/>
+
+  <Log message="Angajament {{COD_ANGAJAMENT}} deschis în modul Modificare." level="success"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       DATE DIN VBA
+  ════════════════════════════════════════════════════════ -->
+  <SetInternalVar name="DATE_MODIFICARE"
+                  value="{{!DATE_MODIFICARE|Array randuri de modificat|type=JSON}}"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTIUNEA 1: Tabel indicatori
+  ════════════════════════════════════════════════════════ -->
+  <Log message="══ SECŢIUNEA 1: Tabel indicatori ══" level="action"/>
+  <WaitFor selector="li.tab0.active" timeout="5"
+           LogValue="Confirm ca suntem pe tab0"/>
+  <IfExists selector="table.table-striped tbody tr" timeout="5"
+            LogValue="Verific daca exista indicatori in tabel">
+
+    <ForEachVar source="DATE_MODIFICARE"
+                itemPrefix="R"
+                indexVariable="idx"
+                collectKey="Cheie">
+
+      <Log message="--- Rand [[idx]] | [[R.Indicator_ang]] | [[R.ClsfSal]] ---" level="info"/>
+
+      <!-- ══════════════════════════════════════════════
+           RAMURA A: INDICATOR NOU (Indicator_ang incepe cu !)
+      ══════════════════════════════════════════════ -->
+      <IfVar value="[[R.Indicator_ang]]" compare="regex:^!">
+
+        <Log message="Adaug indicator nou: [[R.Clasificatia]]" level="action"/>
+
+        <!-- 1. APAS ADAUGA -->
+        <Click selector="button.btn.btn-default.btn-small:has-text('Adaug')"
+               waitNavigation="true"
+               timeout="10"
+               isCheckpoint="true"
+               LogValue="Apas Adauga"/>
+
+        <!-- 2. COD PROGRAM -->
+        <Log message="Selectez Programul [[R.CodProgram]]" level="info"/>
+        <Click selector=".select2-container:has(+ input[name='program:sel']) a.select2-choice"/>
+        <WaitFor selector=".select2-results li:has-text('[[R.CodProgram]]')" timeout="5"/>
+        <Click selector="#select2-drop ul.select2-results li:has-text('[[R.CodProgram]]')"
+               isCheckpoint="true"/>
+
+        <!-- 3. SURSA -->
+        <Log message="Selectez Sursa [[R.Sursa]]" level="info"/>
+        <WaitFor selector="select[name='sursa']:not([disabled])" timeout="10"/>
+        <Select selector="select[name='sursa']:not([disabled])"
+                value="[[R.Sursa]]"
+                timeout="5"
+                isCheckpoint="true"/>
+
+        <!-- 4. CLASIFICATIE — ASTEPTARE CRITICA AJAX -->
+        <Log message="Selectez Indicatorul [[R.Clasificatia]]" level="info"/>
+        <WaitFor selector="#statlogo[style*='display: inline']" timeout="10"/>
+        <Click selector="*:has(> input[name='indicator:indicator']) a.select2-choice" timeout="5"/>
+        <WaitFor selector="#select2-drop input.select2-input" timeout="10"/>
+        <Wait seconds="1"/>
+        <Fill selector="#select2-drop input.select2-input"
+              value="[[R.Clasificatia]]"
+              isCheckpoint="true"/>
+        <WaitFor selector="#select2-drop li.select2-result-selectable" timeout="5"/>
+        <Click selector="#select2-drop li.select2-result-selectable:nth-child(1)"/>
+
+        <!-- 5. VALOARE NOUA -->
+        <Log message="Completez valoarea [[R.ValoareNoua]]" level="info"/>
+        <WaitFor selector="input[name='tableContainer:creditBugRezervatDefinitivAnCurent']" timeout="5"/>
+        <Fill selector="input[name='tableContainer:creditBugRezervatDefinitivAnCurent']"
+              value="[[R.ValoareNoua]]"
+              clear="true"
+              isCheckpoint="true"/>
+
+        <!-- 6. POZA -->
+        <Screenshot saveTo="Poza_[[R.Cheie]]"/>
+
+        <!-- 7. SALVARE — fara modal -->
+        <Click selector="button.btn.btn-success.btn-small:nth-child(1)"
+               waitNavigation="true"
+               timeout="10"
+               isCheckpoint="true"
+               LogValue="Salvez indicator nou"/>
+
+        <!-- 8. CONFIRM REVENIRE LA TABEL -->
+        <WaitFor selector="li.tab0.active"
+                 timeout="10"
+                 LogValue="Confirm revenire la tabel"/>
+
+        <!-- 9. CITIRE COD INDICATOR ALOCAT DE SISTEM -->
+        <FindInTable
+          selector="table.table-striped"
+          fieldName="Sector - Sursa - Indicator"
+          value="[[R.ClsfSal]]"
+          saveRowTo="Rand_[[R.Cheie]]"
+          fieldTransform="regex:/^[0-9]{2}[A-Z]-\s*/g:|stripNonAlphaNum"
+          timeout="5"
+          LogValue="Citesc codul indicatorului alocat pentru [[R.ClsfSal]]">
+          <Read selector="td:first-child span" saveTo="CodIndicator_[[R.Cheie]]"/>
+        </FindInTable>
+
+        <Log message="✓ Indicator nou adaugat: [[R.ClsfSal]]" level="success"/>
+
+      <!-- ══════════════════════════════════════════════
+           RAMURA B: INDICATOR EXISTENT
+      ══════════════════════════════════════════════ -->
+      <Else>
+
+        <Log message="Modific indicator existent: [[R.Indicator_ang]] → [[R.ValoareNoua]]" level="action"/>
+
+        <!-- 1. GASESC RANDUL SI APAS OCHISOR -->
+        <FindInTable
+          selector="table.table-striped"
+          fieldName="Indicator ang"
+          value="[[R.Indicator_ang]]"
+          fieldTransform="trim"
+          clickSelector="a:has(.glyphicon-eye-open)"
+          timeout="10"
+          isCheckpoint="true"
+          LogValue="Gasesc randul [[R.Indicator_ang]] si apas ochisor"/>
+
+        <!-- 2. ASTEPT PAGINA DE EDITARE -->
+        <WaitFor selector="input[name='tableContainer:creditBugRezervatDefinitivAnCurent']"
+                 timeout="10"
+                 LogValue="Astept pagina de editare"/>
+
+        <!-- 3. VALOARE NOUA -->
+        <Fill selector="input[name='tableContainer:creditBugRezervatDefinitivAnCurent']"
+              value="[[R.ValoareNoua]]"
+              clear="true"
+              isCheckpoint="true"/>
+
+        <!-- 4. POZA -->
+        <Screenshot saveTo="Poza_[[R.Cheie]]"/>
+
+        <!-- 5. SALVARE -->
+        <Click selector="button.btn.btn-success.btn-small:nth-child(1)"
+               isCheckpoint="true"
+               LogValue="Apas Salveaza"/>
+
+        <!-- 6. MODAL MOTIV -->
+        <WaitFor selector="div.modal-content textarea[name='modal:form:motiv']"
+                 timeout="10"
+                 LogValue="Astept modalul"/>
+
+        <Fill selector="textarea[name='modal:form:motiv']"
+              value="[[R.Motiv]]"
+              clear="true"/>
+
+        <Click selector="div.modal-footer button.btn.btn-success.btn-small"
+               waitNavigation="true"
+               timeout="10"
+               isCheckpoint="true"
+               LogValue="Apas Continua"/>
+
+        <!-- 7. CONFIRM REVENIRE LA TABEL -->
+        <WaitFor selector="li.tab0.active"
+                 timeout="10"
+                 LogValue="Confirm revenire la tabel"/>
+
+        <!-- 8. CITIRE DATE ACTUALIZATE DIN TABEL -->
+        <FindInTable
+          selector="table.table-striped"
+          fieldName="Sector - Sursa - Indicator"
+          value="[[R.ClsfSal]]"
+          saveRowTo="Rand_[[R.Cheie]]"
+          fieldTransform="regex:/^[0-9]{2}[A-Z]-\s*/g:|stripNonAlphaNum"
+          timeout="5"
+          LogValue="Citesc noile informatii pentru [[R.ClsfSal]]"/>
+
+        <Log message="✓ Indicator [[R.Indicator_ang]] modificat cu succes" level="success"/>
+
+      </Else>
+      </IfVar>
+
+        <!-- 9. NAVIGARE LA TAB ISTORIC -->
+        <Click selector="button.btn-success:has-text('Istoric')"
+               waitNavigation="true"
+               timeout="5"
+               LogValue="Navighez la tab Istoric"/>
+        <WaitFor selector="h3.heading:has-text('Istoric angajament')" timeout="10"/>
+        <WaitFor selector="table.table-striped" timeout="5"/>
+
+        <!-- 10. CITESC ULTIMUL RAND DIN ISTORIC -->
+	<ScrapeTable selector="table.table-striped"
+             saveTo="UltimulIstoric_[[R.Cheie]]"
+             page="last"
+             row="last"
+             lastPageSelector="a.last"
+             waitSelector="table.table-striped"
+             timeout="5"
+             LogValue="Citesc ultimul rand din Istoric"/>
+
+	<Click selector="button.btn-default:has-text('Înapoi')" waitNavigation="true" timeout="5"
+             LogValue="Revin la formularul de modificare"/>
+	<WaitFor selector="li.tab0.active" timeout="5"
+             LogValue="Confirm revenire la tab0"/>
+
+    </ForEachVar>
+
+    <Else>
+      <Log message="Nu exista indicatori in tabel." level="error"/>
+      <Exit message="Tabel indicatori gol."/>
+    </Else>
+
+  </IfExists>
+
+  <Screenshot saveTo="Poza_Final"/>
+  <Log message="✓ Operatii rezervari finalizate pentru {{COD_ANGAJAMENT}}" level="success"/>
+
+</Workflow>

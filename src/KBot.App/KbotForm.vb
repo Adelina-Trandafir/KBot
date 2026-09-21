@@ -192,6 +192,8 @@ Public Class KbotForm
             ' primesc shell-ul ca proprietar, iar banda se leagă la coordonator.
             _controller.Owner = Me
             forexeFooter.Bind(_controller)
+            ' The in-page watcher's finished operations (slice 0073) - see KbotForm.ForexeWatch.vb.
+            LeagaUrmarirea()
 
             ' «Conectare» stă acum în antet, nu în bandă. Butonul e al shell-ului, dar starea lui
             ' vine tot de la coordonator: ne abonăm o singură dată aici și ne dezabonăm la

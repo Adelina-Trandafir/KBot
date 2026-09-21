@@ -78,6 +78,12 @@ Namespace KBot.Forexe
         Public Event BrowserVisibilityChanged As EventHandler Implements IForexeRunner.BrowserVisibilityChanged
 
         ''' <summary>
+        ''' The floating K-BOT menu in the page reported an operation (slice 0073). Comes
+        ''' straight from the executor's callback thread; hosts marshal to UI themselves.
+        ''' </summary>
+        Public Event OperationCaptured As EventHandler(Of ForexeWatchEvent) Implements IForexeRunner.OperationCaptured
+
+        ''' <summary>
         ''' Arată pagina browserului — ANDOCATĂ în fereastra recorderului, deschisă doar pentru
         ''' privit (panoul de înregistrare stins). Fereastra Chromium nu apare niciodată singură
         ''' pe ecran (felia 0070): are buton de închidere, iar o apăsare pe el omoară sesiunea
@@ -199,6 +205,18 @@ Namespace KBot.Forexe
             End Try
         End Sub
 
+        ' The in-page watcher spoke (slice 0073): passed on as it is. The executor already
+        ' wrote the line the operator reads in the console.
+        Private Sub OnExecutorWatchEvent(ev As ForexeWatchEvent)
+            Try
+                RaiseEvent OperationCaptured(Me, ev)
+            Catch ex As Exception
+                ' Event boundary: a subscriber that throws must not reach the Playwright callback.
+                GlobalErrorLog.Write("ForexeRunner.OnExecutorWatchEvent", ex)
+                _logger?.LogException(ex, "Eroare la anunțarea operațiunii urmărite în FOREXE")
+            End Try
+        End Sub
+
         ''' <summary>
         ''' Desprinde recorderul de executorul care urmează să moară. Fără asta ar rămâne cu un
         ''' executor închis în mână și cu butoanele de andocare aprinse degeaba. Recorderul
@@ -285,6 +303,7 @@ Namespace KBot.Forexe
                 AddHandler _executor.OnLogMessage, AddressOf OnExecutorLogMessage
                 AddHandler _executor.OnBrowserClosed, AddressOf OnExecutorBrowserClosed
                 AddHandler _executor.OnDockStateChanged, AddressOf OnExecutorDockStateChanged
+                AddHandler _executor.OnWatchEvent, AddressOf OnExecutorWatchEvent
 
                 ' Gardianul ferestrei de PIN, pornit ÎNAINTE de lansarea browserului — ca în
                 ' KBOT_IPC, unde StartUiGuardian merge imediat după inițializarea executorului.
@@ -419,7 +438,21 @@ Namespace KBot.Forexe
                 ' Linia de stare arată FIȘIERUL, ca «Execut: ...» din KBOT_IPC; numele de workflow
                 ' rămâne în jurnal, unde se poate citi pe îndelete.
                 RidicaStare($"Execut: {Path.GetFileName(job.WflPath)}...")
-                Await Task.Run(Function() _executor.ExecuteAsync(workflow))
+                ' The in-page watcher (slice 0073) sleeps while the robot drives: its clicks
+                ' would arm operations, and its floating menu would sit over click targets.
+                ' VB cannot Await inside Finally, so the run's exception is caught, the
+                ' watcher is woken, and only then is it rethrown to the handlers below.
+                Await _executor.SetWatchSuspendedAsync(True)
+                Dim runEx As Exception = Nothing
+                Try
+                    Await Task.Run(Function() _executor.ExecuteAsync(workflow))
+                Catch ex As Exception
+                    runEx = ex
+                End Try
+                Await _executor.SetWatchSuspendedAsync(False)
+                If runEx IsNot Nothing Then
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(runEx).Throw()
+                End If
 
                 ' Slice 0057 -- an <Exit> STOPS here. All four workflows that carry one use
                 ' it the same way: the angajament (or the code) was not found, so there is
@@ -728,6 +761,7 @@ Namespace KBot.Forexe
                 RemoveHandler _executor.OnLogMessage, AddressOf OnExecutorLogMessage
                 RemoveHandler _executor.OnBrowserClosed, AddressOf OnExecutorBrowserClosed
                 RemoveHandler _executor.OnDockStateChanged, AddressOf OnExecutorDockStateChanged
+                RemoveHandler _executor.OnWatchEvent, AddressOf OnExecutorWatchEvent
                 Await _executor.CloseAsync()
             Catch
                 ' ignorăm erorile de cleanup

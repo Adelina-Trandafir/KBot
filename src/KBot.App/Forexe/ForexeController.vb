@@ -55,6 +55,7 @@ Public NotInheritable Class ForexeController
         _session = session
         AddHandler _runner.StatusUpdated, AddressOf Runner_StatusUpdated
         AddHandler _runner.BrowserVisibilityChanged, AddressOf Runner_BrowserVisibilityChanged
+        AddHandler _runner.OperationCaptured, AddressOf Runner_OperationCaptured
     End Sub
 
     ' ── Stare ────────────────────────────────────────────────────────────
@@ -126,6 +127,15 @@ Public NotInheritable Class ForexeController
     Public Event StateChanged As EventHandler
     Public Event ProgressChanged As EventHandler(Of Integer)
     Public Event StatusChanged As EventHandler(Of String)
+
+    ''' <summary>
+    ''' The floating K-BOT menu inside the FOREXE page saw the operator start, finish or
+    ''' abandon an operation (slice 0073). Passed on from the runner as it is; it comes from
+    ''' the Playwright callback thread, so the shell marshals to UI before acting. Only
+    ''' <c>Kind = Finished</c> leads anywhere: the shell downloads the angajament and opens
+    ''' its history for the interval.
+    ''' </summary>
+    Public Event OperatiuneCapturata As EventHandler(Of ForexeWatchEvent)
 
     ' ── Intenții ─────────────────────────────────────────────────────────
 
@@ -770,6 +780,16 @@ Public NotInheritable Class ForexeController
             RaiseEvent StateChanged(Me, EventArgs.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeController.Runner_BrowserVisibilityChanged", ex)
+        End Try
+    End Sub
+
+    ' The in-page watcher spoke (slice 0073). Re-raised unchanged; the shell decides.
+    Private Sub Runner_OperationCaptured(sender As Object, ev As ForexeWatchEvent)
+        Try
+            RaiseEvent OperatiuneCapturata(Me, ev)
+        Catch ex As Exception
+            ' Event boundary: a subscriber that throws must not stop the robot.
+            GlobalErrorLog.Write("ForexeController.Runner_OperationCaptured", ex)
         End Try
     End Sub
 
