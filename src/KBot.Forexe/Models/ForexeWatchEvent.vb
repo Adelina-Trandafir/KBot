@@ -23,6 +23,12 @@ Public Enum ForexeWatchEventKind
     Started = 1
     Finished = 2
     Cancelled = 3
+    ''' <summary>
+    ''' Slice 0074: the page shows a different angajament now (or none). Not an operation -
+    ''' <see cref="ForexeWatchEvent.CodAngajament"/> is the header code, empty when the page
+    ''' has no open angajament. The shell selects that node in its tree, nothing more.
+    ''' </summary>
+    PageOpened = 4
 End Enum
 
 ''' <summary>
@@ -76,6 +82,7 @@ Public Class ForexeWatchEvent
             Case "started" : Return ForexeWatchEventKind.Started
             Case "finished" : Return ForexeWatchEventKind.Finished
             Case "cancelled" : Return ForexeWatchEventKind.Cancelled
+            Case "page" : Return ForexeWatchEventKind.PageOpened
             Case Else : Return ForexeWatchEventKind.Info
         End Select
     End Function

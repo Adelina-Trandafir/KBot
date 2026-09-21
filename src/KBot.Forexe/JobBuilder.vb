@@ -134,6 +134,24 @@ Namespace KBot.Forexe
         End Function
 
         ''' <summary>
+        ''' «adlop - Deschide Angajament.wfl» (slice 0074): search the angajament and open it in
+        ''' «Modificare», then stop. No tables come back; the run either lands on the page or
+        ''' fails (an &lt;Exit&gt; when the code is not in the FOREXE list).
+        ''' </summary>
+        Public Shared Function BuildDeschideAngajament(cod As String) As JobRequest
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
+            End If
+
+            Dim job As New JobRequest With {
+                .WorkflowName = "DeschideAngajament",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.DeschideAngajamentFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
+            Return job
+        End Function
+
+        ''' <summary>
         ''' Pune <c>RECEPTII_SARITE</c> pe lucrare — INTOTDEAUNA, chiar si goala.
         ''' </summary>
         ''' <remarks>

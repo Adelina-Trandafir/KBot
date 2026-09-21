@@ -197,6 +197,17 @@ Partial Public Class WorkflowExecutor
     End Property
 
     ''' <summary>
+    ''' The panel the browser is docked into right now, or Nothing. Two hosts exist since
+    ''' slice 0074 (the recorder's panel and the shell's «Browser» view), and each needs to
+    ''' know whether the browser is ITS before it resyncs, releases or takes it over.
+    ''' </summary>
+    Public ReadOnly Property DockHost As Control
+        Get
+            Return If(_isDocked, _dockHost, Nothing)
+        End Get
+    End Property
+
+    ''' <summary>
     ''' While docked, keeps the browser's own toolbar - tab strip, address bar, bookmarks -
     ''' outside the host panel, so the operator sees only the page. On by default. Setting it
     ''' takes effect at once when the browser is already docked.

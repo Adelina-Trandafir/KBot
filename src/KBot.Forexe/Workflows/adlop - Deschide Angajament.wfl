@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Workflow name="Deschide angajament {{COD_ANGAJAMENT}}" startUrl="current"
+  expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
+  <!-- V.1 - 21/09/2026 (slice 0074)
+    Opens ONE angajament in «Modificare» and STOPS there. Nothing is read: the operator
+    carries on by hand in the shell's «Browser FOREXE» view, which runs this flow whenever a
+    node is picked in the angajamente tree.
+
+    Every step is copied from the preamble of «adlop - Prelucrare Completa.wfl» (reset,
+    search, the row's action menu, «Modificare»): the same road the robot already takes,
+    cut short after the page of the angajament is on screen (li.tab0 present).
+
+    Variable expected from K-BOT: {{COD_ANGAJAMENT}}  - the code of the angajament to open
+  -->
+
+  <!-- Interface reset - mandatory first step (see Prelucrare Completa) -->
+  <IfExists selector="#select2-drop-mask" timeout="1">
+    <Click selector="#select2-drop-mask" force="true"
+      LogValue="Resetare interfață — închid dropdown-uri deschise" />
+  </IfExists>
+  <Click selector="#statlogo" waitNavigation="true" timeout="15" />
+
+  <Log message="══ Caut și deschid angajamentul {{COD_ANGAJAMENT}} ══" level="action" />
+
+  <Click selector="a:has-text('Listă angajamente')" waitNavigation="false" timeout="15" />
+  <Fill selector="input[name='cod']" value="{{COD_ANGAJAMENT}}" clear="true" timeout="15" />
+  <Click selector="button:has-text('Caută')" waitNavigation="false" timeout="15" />
+
+  <IfExists selector=".alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')"
+    timeout="1">
+    <Log message="EROARE: Angajamentul {{COD_ANGAJAMENT}} nu există în listă!" level="error" />
+    <Exit message="Angajamentul {{COD_ANGAJAMENT}} nu a fost găsit în FOREXE." />
+  </IfExists>
+
+  <WaitFor selector="a[href*='exportToXLS']" timeout="15" />
+  <Click selector="a.haction i.glyphicon-list:visible" timeout="15" />
+  <WaitFor selector=".divaction" state="visible" timeout="15" />
+  <Click selector=".divaction a:has-text('Modificare')" waitNavigation="true" timeout="15" />
+  <WaitFor selector="li.tab0" timeout="15" />
+
+  <Log message="Angajament {{COD_ANGAJAMENT}} deschis în modul Modificare." level="success" />
+
+</Workflow>

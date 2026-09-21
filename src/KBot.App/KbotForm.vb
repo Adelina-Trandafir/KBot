@@ -194,6 +194,8 @@ Public Class KbotForm
             forexeFooter.Bind(_controller)
             ' The in-page watcher's finished operations (slice 0073) - see KbotForm.ForexeWatch.vb.
             LeagaUrmarirea()
+            ' The «Browser FOREXE» view's gate on the session (slice 0074) - see KbotForm.Browser.vb.
+            LeagaBrowserul()
 
             ' «Conectare» stă acum în antet, nu în bandă. Butonul e al shell-ului, dar starea lui
             ' vine tot de la coordonator: ne abonăm o singură dată aici și ne dezabonăm la
@@ -430,6 +432,10 @@ Public Class KbotForm
                                                 AddressOf ExecutaComandaDdf)
                 Case "ord" : Return New OrdView(_apiClient, Function(op) WithReauth(Of OrdInfo)(op), _session,
                                                 AddressOf ExecutaComandaOrd)
+                ' The live FOREXE page, docked into the shell (slice 0074). Only the
+                ' coordinator: the view docks, opens angajamente and follows the page
+                ' through it, and the shell keeps the reference for page-to-tree selection.
+                Case "browser" : Return CreeazaVedereaBrowser()
                 Case Else
                     Throw New ArgumentException($"Vedere necunoscută: '{key}'.", NameOf(key))
             End Select
@@ -1394,6 +1400,9 @@ Public Class KbotForm
             navViews.SetItemVisible("plati", info IsNot Nothing AndAlso info.ArePlati)
             navViews.SetItemVisible("ddf", info IsNot Nothing AndAlso info.AreDDF)
             navViews.SetItemVisible("ord", info IsNot Nothing AndAlso info.AreORD)
+            ' «Browser FOREXE» (slice 0074) hangs on the SESSION, not on the node: with no
+            ' selection the operator can still browse; without a session there is no page.
+            navViews.SetItemVisible("browser", BrowserDisponibil())
 
             ' Dacă vederea activă tocmai s-a închis, cădem înapoi pe «sumar» (mereu activ)
             ' ca shell-ul să nu rămână pe o pagină pe care nu o mai poți părăsi.
@@ -1408,7 +1417,7 @@ Public Class KbotForm
 
     ' Adevărat dacă vederea are dreptul să fie activă pentru contextul dat.
     Private Shared Function IsViewEnabled(key As String, info As AngajamentTreeInfo) As Boolean
-        If String.IsNullOrEmpty(key) OrElse key = "sumar" Then Return True
+        If String.IsNullOrEmpty(key) OrElse key = "sumar" OrElse key = "browser" Then Return True
         If info Is Nothing Then Return False
         Select Case key
             'Case "indicatori" : Return info.AreIndicatori
@@ -1420,6 +1429,9 @@ Public Class KbotForm
             Case "plati" : Return info.ArePlati
             Case "ddf" : Return info.AreDDF
             Case "ord" : Return info.AreORD
+            ' Gated by the session in ApplyViewGating / the coordinator's StateChanged
+            ' (KbotForm.Browser.vb), never by the node.
+            Case "browser" : Return True
             Case Else
                 Throw New ArgumentException($"Vedere necunoscută: '{key}'.", NameOf(key))
         End Select
@@ -1437,6 +1449,9 @@ Public Class KbotForm
             ' Flag-urile nodului comandă ce vederi sunt accesibile (poarta Are*).
             ApplyViewGating(info)
             _activeView?.SetContext(info)
+            ' An operator CLICK with the «Browser FOREXE» view open sends the robot after the
+            ' node (slice 0074) - only a click, never the reload-driven SetContext above.
+            TryCast(_activeView, BrowserView)?.DeschideSelectia()
             RefreshInfoForm()   ' fereastra «Informații interne», dacă e deschisă
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.tree_NodeMouseUp", ex)
@@ -2462,8 +2477,14 @@ Public Class KbotForm
     Private Async Sub forexeFooter_ShowBrowserRequested(sender As Object, e As EventArgs) Handles forexeFooter.ShowBrowserRequested
         Try
             If _controller Is Nothing Then Return
-            ' Comutare, nu doar «arată»: browserul pornește ASCUNS (stealth), deci operatorul
-            ' trebuie să-l poată pune la loc după ce s-a uitat la el.
+            ' Slice 0074: the place to look at the page is the «Browser FOREXE» view, not a
+            ' window of its own. Connected, the button goes there (and back to «Sumar» when
+            ' it is already there, which is the «hide» half of the old toggle); the console's
+            ' own button still opens the recorder in view mode.
+            If _controller.IsConnected Then
+                navViews.SelectedKey = If(navViews.SelectedKey = "browser", "sumar", "browser")
+                Return
+            End If
             Await _controller.ToggleBrowserAsync()
         Catch ex As Exception
             ' Frontieră de UI (async Sub): nu poate rearunca — logăm și spunem de ce.

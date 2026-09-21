@@ -69,9 +69,33 @@ Partial Public Class WorkflowExecutor
         End If
 
         _watchActive = True
-        ' A job may have left the page suspended; the operator is looking at it now.
-        Await SetWatchSuspendedAsync(False)
+        ' A stale page-side suspension (a job that died mid-way) is lifted here - but NOT
+        ' one a job holds right now (slice 0074: the shell's «Browser» view docks the browser
+        ' while a job may be running, and waking the watcher under the robot would arm
+        ' operations on its clicks). RunJobAsync lifts its own hold when it is done.
+        If Not _watchSuspended Then Await SetWatchSuspendedAsync(False)
         _logger.LogInfo("[Urmărire] Meniul K-BOT e în pagină; urmăresc operațiunile FOREXE.")
+    End Function
+
+    ''' <summary>
+    ''' The angajament code the page shows RIGHT NOW (its header), or an empty string when
+    ''' there is none, the menu is not installed, or the page cannot answer (mid-navigation).
+    ''' Slice 0074: the shell's view asks this once it has docked, before deciding whether the
+    ''' selected node still has to be opened - the "page" event of the resume would arrive
+    ''' too late for that decision.
+    ''' </summary>
+    Public Async Function ReadPageAngajamentAsync() As Task(Of String)
+        If Not _watchInstalled Then Return String.Empty
+        If _page Is Nothing OrElse _page.IsClosed Then Return String.Empty
+        Try
+            Dim cod As String = Await _page.EvaluateAsync(Of String)(
+                "() => (window._kbotWatch && window._kbotWatch.getCod) ? (window._kbotWatch.getCod() || '') : ''")
+            Return If(cod, String.Empty).Trim()
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowExecutor.ReadPageAngajamentAsync", ex)
+            _logger.LogDebug($"[Urmărire] Nu am putut citi codul din pagină: {ex.Message}")
+            Return String.Empty
+        End Try
     End Function
 
     ''' <summary>Stops forwarding events. The page side script stays installed.</summary>
@@ -136,6 +160,11 @@ Partial Public Class WorkflowExecutor
             Case ForexeWatchEventKind.Cancelled
                 _logger.LogWarning($"[Urmărire] «{ev.Label}» abandonată" &
                                    If(String.IsNullOrEmpty(ev.Message), "", $" ({ev.Message})") & ".")
+            Case ForexeWatchEventKind.PageOpened
+                ' Every navigation says this; Debug keeps the console readable.
+                _logger.LogDebug("[Urmărire] Pagina arată " &
+                                 If(String.IsNullOrEmpty(ev.CodAngajament), "niciun angajament.",
+                                    $"angajamentul «{ev.CodAngajament}»."))
             Case Else
                 If Not String.IsNullOrEmpty(ev.Message) Then _logger.LogDebug($"[Urmărire] {ev.Message}")
         End Select

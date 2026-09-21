@@ -626,6 +626,110 @@ Public NotInheritable Class ForexeController
         End Try
     End Function
 
+    ' ── The browser inside the shell's view (slice 0074) ─────────────────
+
+    ''' <summary>The control the browser is docked into now, or Nothing (hidden, no session).</summary>
+    Public ReadOnly Property BrowserHost As Control
+        Get
+            Try
+                Return _runner.BrowserHost
+            Catch ex As Exception
+                GlobalErrorLog.Write("ForexeController.BrowserHost", ex)
+                Throw
+            End Try
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Docks the FOREXE browser into a panel of the shell - the «Browser FOREXE» view - and
+    ''' puts the floating K-BOT menu into the page. Takes it over from the recorder if that
+    ''' is where it was. Throws without a live session; the view says why.
+    ''' </summary>
+    Public Async Function DockBrowserAsync(host As Control) As Task
+        Try
+            Await _runner.DockBrowserAsync(host)
+            RaiseEvent StateChanged(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.DockBrowserAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>Undocks and hides the browser if <paramref name="host"/> holds it; quiet otherwise.</summary>
+    Public Async Function ReleaseBrowserAsync(host As Control) As Task
+        Try
+            Await _runner.ReleaseBrowserAsync(host)
+            RaiseEvent StateChanged(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.ReleaseBrowserAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>The angajament code the FOREXE page shows now; empty when none. Never throws.</summary>
+    Public Async Function CitesteCodulPaginiiAsync() As Task(Of String)
+        Try
+            Return Await _runner.ReadPageAngajamentAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.CitesteCodulPaginiiAsync", ex)
+            Return String.Empty
+        End Try
+    End Function
+
+    ''' <summary>Re-fits the docked browser to its host after a resize.</summary>
+    Public Async Function SyncBrowserBoundsAsync() As Task
+        Try
+            Await _runner.SyncBrowserBoundsAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.SyncBrowserBoundsAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Opens ONE angajament in «Modificare» on the live session and stops there
+    ''' («adlop - Deschide Angajament.wfl», slice 0074): the road the operator would walk by
+    ''' hand - list, search by code, the row's menu, «Modificare» - taken by the robot when a
+    ''' node is picked in the tree while the «Browser FOREXE» view is open. Nothing is
+    ''' downloaded and nothing is written; the operator carries on from the page.
+    ''' Returns False when the run could not start or failed - the reason is in
+    ''' <see cref="LastFailure"/> and on the console.
+    ''' </summary>
+    Public Async Function DeschideAngajamentAsync(cod As String) As Task(Of Boolean)
+        Try
+            _ultimulEsec = String.Empty
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
+            End If
+            If _busy Then
+                RaporteazaEsec($"Rulează deja o operație FOREXE — deschiderea lui «{cod}» a fost ignorată.")
+                Return False
+            End If
+            If Not IsConnected Then
+                RaporteazaEsec($"Nu există o sesiune FOREXE — «{cod}» nu poate fi deschis în browser.")
+                Return False
+            End If
+
+            IntraInLucru()
+            Try
+                RaporteazaStare($"Deschid «{cod}» în FOREXE...")
+                Dim rezultat As JobResult = Await _runner.RunJobAsync(
+                    JobBuilder.BuildDeschideAngajament(cod), Progres(), _cts.Token)
+                If Not rezultat.Success Then
+                    RaporteazaEsec($"«{cod}» nu s-a putut deschide în FOREXE: " & rezultat.Message)
+                    Return False
+                End If
+                RaporteazaStare($"«{cod}» e deschis în FOREXE (Modificare).")
+                Return True
+            Finally
+                IesDinLucru()
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.DeschideAngajamentAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ''' <summary>
     ''' Deschide bancul de înregistrare (K-BOT Recorder, felia 0053) peste sesiunea FOREXE.
     ''' Fereastra e modeless și trăiește în KBot.Forexe, lângă executorul pe care îl andochează;

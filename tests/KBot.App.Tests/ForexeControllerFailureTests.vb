@@ -79,6 +79,29 @@ Public Class ForexeControllerFailureTests
             Throw New NotSupportedException()
         End Sub
 
+        ' Slice 0074: the shell's «Browser» view docks the browser itself. No browser here.
+        Public ReadOnly Property BrowserHost As Control Implements IForexeRunner.BrowserHost
+            Get
+                Return Nothing
+            End Get
+        End Property
+
+        Public Function DockBrowserAsync(host As Control) As Task Implements IForexeRunner.DockBrowserAsync
+            Throw New NotSupportedException()
+        End Function
+
+        Public Function ReleaseBrowserAsync(host As Control) As Task Implements IForexeRunner.ReleaseBrowserAsync
+            Return Task.CompletedTask
+        End Function
+
+        Public Function SyncBrowserBoundsAsync() As Task Implements IForexeRunner.SyncBrowserBoundsAsync
+            Return Task.CompletedTask
+        End Function
+
+        Public Function ReadPageAngajamentAsync() As Task(Of String) Implements IForexeRunner.ReadPageAngajamentAsync
+            Return Task.FromResult(String.Empty)
+        End Function
+
         ' Silences the "event never raised" warning without changing behaviour.
         Private Sub Nefolosit()
             RaiseEvent StatusUpdated(Me, String.Empty)

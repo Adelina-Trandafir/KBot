@@ -34,6 +34,7 @@ Partial Class KbotForm
         Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem7 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem8 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem9 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         btnInfo = New Button()
         btnSort = New Button()
@@ -351,6 +352,9 @@ Partial Class KbotForm
         KBotNavItem5.Image = My.Resources.Resources.credit_card
         KBotNavItem5.Key = "plati"
         KBotNavItem5.Text = "Plăți"
+        KBotNavItem9.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
+        KBotNavItem9.Key = "browser"
+        KBotNavItem9.Text = "Browser FOREXE"
         KBotNavItem6.Align = KBotNavAlign.Far
         KBotNavItem6.IsSeparator = True
         KBotNavItem6.Key = "__sep_1"
@@ -368,6 +372,7 @@ Partial Class KbotForm
         navViews.Items.Add(KBotNavItem3)
         navViews.Items.Add(KBotNavItem4)
         navViews.Items.Add(KBotNavItem5)
+        navViews.Items.Add(KBotNavItem9)
         navViews.Items.Add(KBotNavItem6)
         navViews.Items.Add(KBotNavItem7)
         navViews.Items.Add(KBotNavItem8)

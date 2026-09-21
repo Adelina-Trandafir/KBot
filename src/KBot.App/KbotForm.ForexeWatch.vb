@@ -44,6 +44,7 @@ Partial Public Class KbotForm
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         Try
             DezleagaUrmarirea()
+            DezleagaBrowserul()
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.OnFormClosed", ex)
         End Try
@@ -67,6 +68,10 @@ Partial Public Class KbotForm
             Select Case ev.Kind
                 Case ForexeWatchEventKind.Finished
                     Await PreiaOperatiuneaAsync(ev)
+                Case ForexeWatchEventKind.PageOpened
+                    ' Slice 0074: the page shows another angajament - the tree follows it,
+                    ' the robot stays put (KbotForm.Browser.vb).
+                    TrateazaPaginaDeschisa(ev.CodAngajament)
                 Case Else
                     ' Started / Cancelled / Info are already on the console, written by the
                     ' executor; nothing for the shell to do with them.

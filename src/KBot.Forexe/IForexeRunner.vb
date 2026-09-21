@@ -58,6 +58,31 @@ Namespace KBot.Forexe
         ' eticheta fără să fi fost apăsat. Poate veni de pe orice fir.
         Event BrowserVisibilityChanged As EventHandler
 
+        ' Slice 0074 - the shell's «Browser FOREXE» view hosts the docked browser itself, in a
+        ' panel of its own, with no recorder window in between. The three calls below are the
+        ' recorder's docking toolbar reduced to what a plain host needs.
+        '
+        ' DockBrowserAsync: puts the live browser into `host` (and the floating K-BOT menu into
+        ' the page). If it is docked somewhere else it is taken over; a recorder opened only
+        ' for looking is closed, one opened for recording stays and shows itself undocked.
+        ' Throws without a live session or when the host has no handle yet.
+        Function DockBrowserAsync(host As Control) As Task
+
+        ' ReleaseBrowserAsync: undocks and hides the browser IF it is docked in `host`. Quiet
+        ' when it is elsewhere or there is no session: a view that is being hidden must not
+        ' pull the browser out from under another host.
+        Function ReleaseBrowserAsync(host As Control) As Task
+
+        ' SyncBrowserBoundsAsync: re-fits the docked window to its host after a resize.
+        Function SyncBrowserBoundsAsync() As Task
+
+        ' The control the browser is docked into now, or Nothing (hidden, or no session).
+        ReadOnly Property BrowserHost As Control
+
+        ' The angajament code the page shows right now (its header); empty when none, when the
+        ' menu is not in the page yet, or without a session. Never throws.
+        Function ReadPageAngajamentAsync() As Task(Of String)
+
         ' Deschide bancul de înregistrare (felia 0053) peste sesiunea vie. Formularul
         ' trăiește în KBot.Forexe fiindcă are nevoie de WorkflowExecutor, care rămâne
         ' privat în runner; gazdele cer doar «arată-l», nu executorul.

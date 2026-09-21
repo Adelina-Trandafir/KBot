@@ -47,6 +47,12 @@ Namespace KBot.Forexe
         Public Const ReceptiiAngajamentFile As String = "adlop - Receptii Angajament.wfl"
         Public Const RezervariAngajamentFile As String = "adlop - Rezervari Angajament.wfl"
 
+        ' Slice 0074: opens ONE angajament in «Modificare» and stops there - the preamble of
+        ' the complete flow (reset, search, the row's action menu, «Modificare»), nothing read.
+        ' Run by the shell's «Browser FOREXE» view whenever a node is picked in the tree, so
+        ' the operator lands on the page they would otherwise have searched for by hand.
+        Public Const DeschideAngajamentFile As String = "adlop - Deschide Angajament.wfl"
+
         ' Variabilele consumate de cele două .wfl (verificate în fișiere).
         Public Const VarCodAngajament As String = "COD_ANGAJAMENT"
         Public Const VarDataIesire As String = "DATA_IESIRE"

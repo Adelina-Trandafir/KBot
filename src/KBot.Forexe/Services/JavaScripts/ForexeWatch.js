@@ -24,6 +24,12 @@
     //  _clickMonitorCallback, _keyMonitorCallback and _wicketMonitorCallback are
     //  taken, and ExposeFunctionAsync throws on a second registration.
     //
+    //  3. (slice 0074) Saying WHICH angajament the page shows: whenever the code in
+    //     the header changes - a navigation, a search the operator made by hand, a
+    //     Wicket re-render - a "page" event carries it to .NET, and the shell selects
+    //     that node in its tree without running the robot. Sent again on resume, so
+    //     the page the robot just opened is reported the moment it is handed back.
+    //
     //  EVERY selector in OPS below is copied from the workflows in
     //  Workflows/Creare (Creare Angajament, Incarca Rezervare, Rezervare si
     //  Receptie) - they are the selectors the robot itself clicks, so they are as
@@ -98,6 +104,8 @@
     var state = loadState();
     var suspended = false;
     var pendingTimer = null;
+    // The header code last reported through "page"; null = nothing reported yet.
+    var lastCodReported = null;
     var menu = null;
     var lblStatus = null;
     var btnStart = null;
@@ -213,6 +221,17 @@
             message: (extra && extra.message) || ''
         };
         try { window._kbotWatchCallback(JSON.stringify(payload)); } catch (ignored) { }
+    }
+
+    // ── Which angajament is on the page (slice 0074) ─────────────────────────
+    // Reported when the header code CHANGES (including to nothing: the operator left the
+    // angajament), or on demand. Not gated by "suspended": the .NET side drops what it
+    // does not want while a job runs, and asks again when the job is over.
+    function reportPage(force) {
+        var cod = readCod();
+        if (!force && cod === lastCodReported) { return; }
+        lastCodReported = cod;
+        emit('page', { message: cod ? 'angajament în pagină' : 'niciun angajament în pagină' });
     }
 
     // ── Operation life cycle ─────────────────────────────────────────────────
@@ -482,6 +501,9 @@
             else { sessionStorage.removeItem(KEY_SUSPEND); }
         } catch (ignored) { }
         if (menu) { menu.style.display = suspended ? 'none' : ''; }
+        // Handed back after a robot job: say at once which angajament it left on screen,
+        // even when it is the same code as before the job (the shell may have missed it).
+        if (!suspended) { reportPage(true); }
     }
 
     function readSuspended() {
@@ -496,7 +518,9 @@
         start: function (label) { startOperation('manual', label || 'Operațiune manuală'); },
         finish: function () { finishOperation('încheiat din K-BOT'); },
         cancel: function () { cancelOperation('renunțat din K-BOT'); },
-        getState: function () { return JSON.parse(JSON.stringify(state)); }
+        getState: function () { return JSON.parse(JSON.stringify(state)); },
+        reportPage: function () { reportPage(true); },
+        getCod: readCod
     };
 
     // ── Boot ─────────────────────────────────────────────────────────────────
@@ -509,12 +533,16 @@
         // A save that navigated: the pending flag survived in sessionStorage, so the new
         // page decides whether the operation is done.
         if (state.op && state.pendingSince) { schedulePendingCheck(); }
+        // Which angajament this page shows - the new page says so as soon as it is ready.
+        reportPage(true);
         // Wicket re-renders pieces of the page, never the body - but should the menu ever
-        // be dropped, it comes back.
+        // be dropped, it comes back. The same beat re-reads the header code: a Wicket
+        // re-render that swaps the angajament is not a navigation, so nothing else sees it.
         setInterval(function () {
             if (!document.body) { return; }
             if (!menu || !document.body.contains(menu)) { menu = null; buildMenu(); applyZoom(readZoom(), true); }
             if (menu) { menu.style.display = suspended ? 'none' : ''; }
+            reportPage(false);
         }, MENU_KEEPALIVE_MS);
     }
 

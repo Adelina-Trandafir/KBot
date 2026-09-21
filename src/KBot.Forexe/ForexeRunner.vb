@@ -141,6 +141,82 @@ Namespace KBot.Forexe
             End Get
         End Property
 
+        ''' <summary>The panel the browser is docked into, or Nothing (slice 0074).</summary>
+        Public ReadOnly Property BrowserHost As Control Implements IForexeRunner.BrowserHost
+            Get
+                If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return Nothing
+                Return _executor.DockHost
+            End Get
+        End Property
+
+        ''' <summary>
+        ''' Docks the live browser into a host of the shell (the «Browser FOREXE» view, slice
+        ''' 0074) and puts the floating K-BOT menu into the page. A browser docked elsewhere is
+        ''' taken over: the view was asked for, so it wins; a recorder opened only for looking
+        ''' has nothing left to show and closes, one opened for recording stays (its buttons
+        ''' follow the dock state by themselves).
+        ''' </summary>
+        Public Async Function DockBrowserAsync(host As Control) As Task Implements IForexeRunner.DockBrowserAsync
+            ArgumentNullException.ThrowIfNull(host)
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then
+                Throw New InvalidOperationException("Nicio sesiune activă — nu există browser de andocat.")
+            End If
+            Try
+                If _executor.IsDocked Then
+                    If _executor.DockHost Is host Then
+                        Await _executor.StartWatchingAsync()
+                        Return
+                    End If
+                    Await _executor.UndockBrowserAsync()
+                    Dim form As RecorderForm = _recorder
+                    If form IsNot Nothing AndAlso Not form.IsDisposed AndAlso form.ViewOnly Then
+                        form.Close()
+                    End If
+                End If
+                Await _executor.DockBrowserToAsync(host)
+                ' The menu is the view's whole point (zoom, the watcher, «which angajament is
+                ' on the page»), so a page that will not take it is reported, not hidden.
+                Await _executor.StartWatchingAsync()
+            Catch ex As Exception
+                _logger?.LogException(ex, "Eroare la andocarea browserului în vederea shell-ului")
+                Throw
+            End Try
+        End Function
+
+        ''' <summary>
+        ''' Undocks and hides the browser only when <paramref name="host"/> holds it. A host
+        ''' that is going away (the view was hidden, the shell is closing) must not touch a
+        ''' browser that another host took over in the meantime.
+        ''' </summary>
+        Public Async Function ReleaseBrowserAsync(host As Control) As Task Implements IForexeRunner.ReleaseBrowserAsync
+            If host Is Nothing Then Return
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return
+            If Not _executor.IsDocked OrElse _executor.DockHost IsNot host Then Return
+            Try
+                Await _executor.HideBrowserWindowAsync()
+            Catch ex As Exception
+                _logger?.LogException(ex, "Eroare la eliberarea browserului din vederea shell-ului")
+                Throw
+            End Try
+        End Function
+
+        ''' <summary>The angajament code on the page now; empty without a session (slice 0074).</summary>
+        Public Async Function ReadPageAngajamentAsync() As Task(Of String) Implements IForexeRunner.ReadPageAngajamentAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return String.Empty
+            Return Await _executor.ReadPageAngajamentAsync()
+        End Function
+
+        ''' <summary>Re-fits the docked browser to its host; a no-op when it is not docked.</summary>
+        Public Async Function SyncBrowserBoundsAsync() As Task Implements IForexeRunner.SyncBrowserBoundsAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen OrElse Not _executor.IsDocked Then Return
+            Try
+                Await _executor.SyncDockedBoundsAsync()
+            Catch ex As Exception
+                _logger?.LogException(ex, "Eroare la resincronizarea browserului andocat")
+                Throw
+            End Try
+        End Function
+
         ''' <summary>
         ''' Deschide bancul de înregistrare peste sesiunea curentă. Fără sesiune vie nu are ce
         ''' andoca și ce înregistra, deci aruncă — apelantul trebuie să afle de ce nu se

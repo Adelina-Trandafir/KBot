@@ -149,9 +149,14 @@ Public Class RecorderForm
     ''' </summary>
     Public Async Function EnsureDockedAsync() As Task
         If _executor Is Nothing OrElse Me.IsDisposed Then Return
-        If _executor.IsDocked OrElse _docking Then Return
+        If _docking Then Return
+        If _executor.IsDocked AndAlso _executor.DockHost Is pnlBrowser Then Return
         _docking = True
         Try
+            ' Docked in another host - the shell's «Browser FOREXE» view (slice 0074). This
+            ' window was asked for, so it takes the browser over; the view sees the dock
+            ' state change and offers to take it back.
+            If _executor.IsDocked Then Await _executor.UndockBrowserAsync()
             Await _executor.DockBrowserToAsync(pnlBrowser)
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.EnsureDockedAsync", ex)
@@ -171,7 +176,7 @@ Public Class RecorderForm
     ''' </summary>
     Private Async Function StartWatchAsync() As Task
         If _executor Is Nothing OrElse Me.IsDisposed Then Return
-        If Not _executor.IsDocked Then Return
+        If Not DockedHere Then Return
         Try
             Await _executor.StartWatchingAsync()
         Catch ex As Exception
@@ -342,7 +347,7 @@ Public Class RecorderForm
     Public Sub DetachExecutor()
         If _executor Is Nothing Then Return
         Try
-            If _executor.IsDocked Then _executor.UndockBrowserAsync().GetAwaiter().GetResult()
+            If DockedHere Then _executor.UndockBrowserAsync().GetAwaiter().GetResult()
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.DetachExecutor", ex)
         End Try
@@ -437,9 +442,9 @@ Public Class RecorderForm
                 KBotMessage.Show("Nu există o sesiune de browser atașată.", MsgBoxStyle.Exclamation, "K-BOT Recorder")
                 Return
             End If
-            Await _executor.DockBrowserToAsync(pnlBrowser)
-            UpdateButtons()
-            Await StartWatchAsync()
+            ' Through EnsureDockedAsync, which also takes the browser over from the shell's
+            ' view (slice 0074); it docks, refreshes the buttons and installs the menu.
+            Await EnsureDockedAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.BtnAndocheaza_Click", ex)
             KBotMessage.Show(ex.Message, MsgBoxStyle.Critical, "K-BOT Recorder")
@@ -477,7 +482,7 @@ Public Class RecorderForm
                 Return
             End If
             ' Recording a browser the operator cannot see is pointless.
-            If Not _executor.IsDocked Then
+            If Not DockedHere Then
                 KBotMessage.Show("Andochează browserul înainte de a începe înregistrarea.",
                        MsgBoxStyle.Exclamation, "K-BOT Recorder")
                 Return
@@ -783,10 +788,19 @@ Public Class RecorderForm
         End Try
     End Sub
 
+    ''' <summary>The browser is docked into THIS window's panel (slice 0074: it may also live in the shell's view).</summary>
+    Private ReadOnly Property DockedHere As Boolean
+        Get
+            Return _executor IsNot Nothing AndAlso _executor.IsDocked AndAlso _executor.DockHost Is pnlBrowser
+        End Get
+    End Property
+
     Private Sub UpdateButtons()
         If Me.IsDisposed Then Return
         Dim hasExecutor As Boolean = _executor IsNot Nothing
-        Dim docked As Boolean = hasExecutor AndAlso _executor.IsDocked
+        ' Docked HERE: docked into the shell's «Browser» view (slice 0074) counts as not
+        ' docked for this window - the dock button must be able to bring it over.
+        Dim docked As Boolean = DockedHere
         Dim recording As Boolean = hasExecutor AndAlso _executor.RecordingActive
 
         btnAndocheaza.Enabled = hasExecutor AndAlso Not docked
@@ -822,7 +836,7 @@ Public Class RecorderForm
     Private Sub ScheduleResync()
         Try
             ' Undocked there is nothing to keep in place: the browser is off screen.
-            If _executor Is Nothing OrElse Not _executor.IsDocked Then Return
+            If Not DockedHere Then Return
             tmrResync.Stop()
             tmrResync.Start()
         Catch ex As Exception
@@ -833,7 +847,7 @@ Public Class RecorderForm
     Private Async Sub TmrResync_Tick(sender As Object, e As EventArgs) Handles tmrResync.Tick
         tmrResync.Stop()
         Try
-            If _executor Is Nothing OrElse Not _executor.IsDocked Then Return
+            If Not DockedHere Then Return
             Await _executor.SyncDockedBoundsAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("RecorderForm.TmrResync_Tick", ex)
@@ -852,7 +866,9 @@ Public Class RecorderForm
         Try
             tmrResync.Stop()
             _executor?.StopRecording()
-            If _executor IsNot Nothing AndAlso _executor.IsDocked Then
+            ' Only a browser docked HERE: one the shell's view holds (slice 0074) is not
+            ' this window's to hide.
+            If DockedHere Then
                 Await _executor.UndockBrowserAsync()
             End If
         Catch ex As Exception
