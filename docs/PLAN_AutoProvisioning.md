@@ -317,49 +317,91 @@ candidate. Decide in 0075-05.
 
 Q1–Q11 closed 22.09.2026 → D14–D19 above.
 
-## 11. Pass 0075-00 — `Clasificatii.Sursa` becomes a written column (runs FIRST)
+## 11. Pass 0075-00 — `Sector`, `Sursa` and `SS` become written columns (runs FIRST)
 
-**Why not a plain `MODIFY`:** MySQL documents that a STORED generated column turned into a normal
-one keeps its values; for MariaDB 10.11 this is **UNVERIFIED**. The pass does not rely on it: it
-copies the values into a new column first, so nothing depends on how the engine treats the
-conversion. It also cannot `MODIFY SS` in place, because `SS` carries the FK
-`Clasificatii__DefaSS` — MariaDB refuses to change a column used by a foreign key.
+> **Reworked 22.09.2026, after the server refused the first design.** It kept `SS` generated
+> as `concat(<sector CASE>, Sursa)`. MariaDB 10.11 rejects that with **error 1901** —
+> reproduced in a FRESH table, so it is the expression shape, not the `ALTER`: *«Function or
+> expression 'concat(case right(coalesce(`Capitol`,''),2) … ,`Sursa`)' cannot be used in the
+> GENERATED ALWAYS AS clause of `SS`».* A stored generated column here cannot be built out of
+> another column, so `SS` must be written — and `Sector`/`Sursa`, its two halves, follow.
 
-Per database — `AVACONT_SURSA` first (the template), then every `NNN_XXXX` in `SCHEMATA`:
+**Which columns, and which stay.** The eight generated columns are two different kinds of
+thing. Six (`Clsf`, `Titlu`, `ClsfSal`, `ClsfF`, `ClsfE`, `ClsfX`) are pure functions of
+`Capitol/Subcapitol/Articol/Alineat`, which every writer already supplies, and two of them
+carry foreign keys of their own. Generated, they **cannot** disagree with the base columns;
+written, an `UPDATE` that changes `Capitol` and forgets `ClsfF` yields a row that passes every
+foreign key and still lies. They stay generated. Only the three that genuinely cannot be
+computed — the source letter was never in the capitol — become written (decision 22.09.2026).
+
+**Why not a plain `MODIFY`:** MySQL documents that a STORED generated column turned into a
+normal one keeps its values; for MariaDB 10.11 this is **UNVERIFIED**. The pass does not rely
+on it: it copies the values into plain columns first, so nothing depends on how the engine
+treats the conversion.
+
+Per database — `AVACONT_SURSA` first (the template), then every `NNN_*` in `SCHEMATA`:
 
 1. `mysqldump` of `Clasificatii` to a dated file (backup, per DB).
 2. Snapshot: `CREATE TABLE _snap_clsf AS SELECT IDClsf, Sector, Sursa, SS FROM Clasificatii`.
-3. `ALTER TABLE Clasificatii ADD COLUMN Sursa_w char(1) NULL` → `UPDATE … SET Sursa_w = Sursa`.
-4. One `ALTER TABLE`: `DROP FOREIGN KEY Clasificatii__DefaSS`, `DROP COLUMN SS`,
-   `DROP COLUMN Sursa`, `CHANGE Sursa_w Sursa char(1) NOT NULL DEFAULT 'A'` (same position),
-   `MODIFY Sector` with the CASE extended (`00,01→01`, `02,10→02`, `03→03`, `04→04`, `05→05`,
-   `08→08`), `ADD COLUMN SS varchar(3) AS (concat(<same CASE>, Sursa)) STORED` (same position),
-   `ADD KEY idx_SS`, `ADD CONSTRAINT Clasificatii__DefaSS FOREIGN KEY (SS) REFERENCES
-   AVACONT_COMUN.DefaSursaSector (SursaSector)`.
-5. Verify against the snapshot: row count equal, and **zero rows** where `Sector`, `Sursa` or `SS`
-   differ (`<=>`). Any difference → stop, report, restore that DB from step 1. Drop the snapshot
-   only after it passes.
+3. `ADD COLUMN Sector_w / Sursa_w / SS_w` (nullable) → `UPDATE … SET Sector_w = Sector, …`.
+4. One `ALTER TABLE`: `DROP FOREIGN KEY Clasificatii__DefaSS`, `DROP KEY idx_SS`,
+   `DROP COLUMN SS / Sursa / Sector`, then `CHANGE` each `*_w` into its real name —
+   `Sector varchar(2) NOT NULL DEFAULT ''`, `Sursa char(1) NOT NULL DEFAULT 'A'`,
+   `SS varchar(3) NOT NULL` — each `AFTER` the column it sat behind, then `ADD KEY idx_SS`
+   and `ADD CONSTRAINT Clasificatii__DefaSS`. **Nothing generated is created**, so 1901
+   cannot recur.
+5. Verify against the snapshot: row count equal, and **zero rows** where `Sector`, `Sursa` or
+   `SS` differ (`<=>`). Any difference → stop, report, restore that DB from step 1. Drop the
+   snapshot only after it passes.
 
-Why no existing row can change: today only capitol endings `00/01/02/10` pass the FK (anything else
-computes `SS = ''`, which `DefaSursaSector` refuses), and for those four the extended CASE and the
-copied `Sursa` give exactly the old values. Step 5 proves it rather than trusting the argument.
+**`SS` has no default, on purpose.** A writer that omits it fails with `1364`; one that
+invents a value fails with `1452`. Both loud. A default would let a wrong sector-source
+through quietly, which is the failure this pass exists to prevent.
 
-Delivered as a standalone script with a dry-run mode that prints the DB list and row counts,
-**not** through `proc_SchemaDiff_DDL`. `sql/AVACONT_SURSA.sql` updated to match.
+**The deployment window.** After step 4 an `INSERT` without `SS` fails; before it, an `INSERT`
+*with* `SS` fails, because writing a generated column is an error. So the updated writers and
+this migration go out in the same maintenance window; between them, writes to `Clasificatii`
+fail and reads are unaffected. Those routes serve the Access/VBA sync, not continuous traffic
+— pick a quiet moment.
+
+Delivered as a standalone script with a dry-run mode that prints the DB list, row counts and
+per-database state, **not** through `proc_SchemaDiff_DDL`. `--clean-leftovers` clears what a
+failed run left behind, but only where all three columns are still generated — i.e. where
+nothing structural happened. `sql/AVACONT_SURSA.sql` updated to match.
+
+### 11.1 The writers
+
+`SS` written means six existing write sites must pass it or break. They all have only the
+capitol, so `PYTHON/routes/clasificatii_ss.py` holds the one rule they share —
+`ss_values(capitol, sursa=None) → (Sector, Sursa, SS)` — which **reproduces the old generated
+expression exactly** when called with a capitol alone. Those routes therefore behave as they
+always did; only new code (this slice's provisioning, the Migrator reading Access `Sursa`)
+passes a real source letter and reaches the other eleven `DefaSursaSector` values.
+
+Touched: `routes/clasificatii.py` (two INSERTs and the upsert — which also gains the three
+columns in its `ON DUPLICATE KEY UPDATE` list, because it can change `Capitol`) and
+`routes/nomenclatoare.py` (one INSERT).
 
 ## 12. Migrator — `Clasificatii` flow
 
 - `ColumnPlan` builds from `information_schema`, so once `Sursa` is writable it becomes a **name
   match** by itself (Access `Clasificatii` has a `Sursa` column). That is correct — but it must be
-  deliberate, not accidental: add it to the `Clasificatii` `TableMap` explicitly, with a note.
-- Value rule: Access `Sursa` trimmed and uppercased; empty/NULL → `A` (the column default and what
-  the old generated column produced for every non-`10` capitol); `Capitol xx10` → `E` regardless.
+  deliberate, not accidental. And `SS` is worse than accidental: `NOT NULL`, with a foreign key,
+  and **no Access column of that name at all**, so without an explicit mapping every INSERT would
+  die with `1364`. All three are declared on the `Clasificatii` `TableMap`.
+- Value rule: Access `Sursa` trimmed and uppercased (first character — the column is `char(1)`);
+  empty/NULL → `A`, what the old generated column produced for every non-`10` capitol;
+  `Capitol xx10` → `E` regardless of the file.
 - `ClasificatieDerived`: `Sector` gets the extended CASE; `Sursa` returns the written value by the
-  rule above instead of computing it; `SS = Sector & Sursa`. The `Verifier` gate against
+  rule above; `SS = Sector & Sursa`. For these three the class stops being a *prediction* of the
+  DDL and becomes the **source** of what gets written. The `Verifier` gate against
   `DefaSursaSector` keeps working unchanged on the new `SS`.
-- `TargetColumn.IsGenerated` docs and `MAPARE_NOMENCLATOARE.md` §3: nine generated columns → eight.
+- One new `ColumnSourceKind.ClasificatieSursaSector` serves all three; the target column name
+  picks which value. Its `AccessColumn` is «Sursa» for all of them, so `ColumnPlan` counts that
+  Access column as consumed and the plain name match cannot claim it a second time.
+- `TargetColumn.IsGenerated` docs and `MAPARE_NOMENCLATOARE.md` §3: nine generated columns → six.
 - Tests: an Access row with Sursa `F` on capitol `xx01` lands as `01F`; a NULL Sursa lands as `A`;
-  a `xx10` capitol lands as `E`.
+  a `xx10` capitol lands as `E`; and the `TableMap` carries a mapping for each of the three.
 
 ## 13. Existing accounts carry SU rights — a job of its own
 

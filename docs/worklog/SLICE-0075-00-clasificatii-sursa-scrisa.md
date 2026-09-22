@@ -1,4 +1,50 @@
-# SLICE-0075-00 — `Clasificatii.Sursa` devine coloană scrisă
+# SLICE-0075-00 — `Clasificatii`: `Sector`, `Sursa` și `SS` devin coloane scrise
+
+> **REVIZIA 2 (22.09.2026, după ce serverul a refuzat prima formă).** Ce scrie mai jos sub
+> «Ce s-a schimbat și de ce» descrie **prima încercare**, în care `SS` rămânea generată ca
+> `concat(<CASE sector>, Sursa)`. MariaDB 10.11 o refuză cu **eroarea 1901**, reprodusă
+> într-un tabel NOU, deci nu e vina lui `ALTER`, e forma expresiei:
+>
+> ```
+> Function or expression 'concat(case right(coalesce(`Capitol`,''),2) ... ,`Sursa`)'
+> cannot be used in the GENERATED ALWAYS AS clause of `SS`
+> ```
+>
+> O coloană generată STORED nu poate fi construită dintr-o altă coloană. Deci `SS` trebuie
+> scrisă, iar `Sector` și `Sursa` — cele două jumătăți ale ei — o urmează. **Celelalte șase
+> coloane generate rămân neatinse** (`Clsf`, `Titlu`, `ClsfSal`, `ClsfF`, `ClsfE`, `ClsfX`):
+> sunt funcții pure de Capitol/Subcapitol/Articol/Alineat, pe care orice scriitor le dă deja,
+> două dintre ele poartă chei străine proprii, iar generate **nu pot** să nu fie de acord cu
+> coloanele de bază. Scrise, un `UPDATE` care schimbă `Capitol` și uită `ClsfF` ar da un rând
+> care trece de toate cheile străine și totuși minte. Decizia operatorului, 22.09.2026.
+>
+> Ce aduce revizia, peste textul de mai jos:
+> - `SS` e `varchar(3) NOT NULL` **fără implicit**: cine o omite primește `1364`, cine inventează
+>   o valoare primește `1452`. Amândouă zgomotoase — exact opusul unui sector greșit în tăcere.
+> - `PYTHON/routes/clasificatii_ss.py` (nou) ține singura regulă: `ss_values(capitol, sursa=None)`
+>   → `(Sector, Sursa, SS)`, care reproduce **exact** vechea expresie generată când primește doar
+>   capitolul. Cele șase locuri care scriau în `Clasificatii` se comportă deci ca înainte; doar
+>   codul nou (provizionarea acestei felii, Migratorul care citește `Sursa` din Access) trimite
+>   o literă adevărată și ajunge la celelalte unsprezece valori din `DefaSursaSector`.
+> - Atinse: `routes/clasificatii.py` (două `INSERT` + upsert-ul, care primește cele trei coloane
+>   ȘI în lista `ON DUPLICATE KEY UPDATE` — poate schimba `Capitol`) și `routes/nomenclatoare.py`.
+> - `ColumnSourceKind.ClasificatieSursa` ▸ **`ClasificatieSursaSector`**, una pentru toate trei;
+>   coloana-țintă alege valoarea. `SS` e `NOT NULL`, cu cheie străină, și **nu are coloană Access
+>   cu acest nume**, deci fără mapare explicită fiecare `INSERT` al Migratorului ar muri cu `1364`.
+> - `--clean-leftovers` (nou) curăță ce a lăsat o rulare eșuată, dar **numai** pe un tabel unde
+>   toate trei sunt încă generate — adică unde nu s-a întâmplat nimic structural.
+> - **Fereastra de instalare:** după migrare un `INSERT` fără `SS` pică; înainte de ea, unul *cu*
+>   `SS` pică (scrierea într-o coloană generată e eroare). Deci rutele actualizate și migrarea
+>   merg în aceeași fereastră de mentenanță; între ele, scrierile în `Clasificatii` pică, iar
+>   citirile merg neatinse. Rutele acelea servesc sincronizarea Access/VBA, nu trafic continuu.
+>
+> Prima formă a ajuns pe server o dată, pe `AVACONT_SURSA`: `ALTER`-ul a picat la pregătire,
+> deci **tabelul a rămas neatins**, copia de siguranță fusese luată, iar `_snap_clsf` și
+> `Sursa_w` au rămas în urmă (de unde `--clean-leftovers`).
+
+---
+
+## Textul reviziei 1 (păstrat pentru istoric)
 
 Prima trecere din felia 0075 (creare automată a unei baze de unitate, `docs/PLAN_AutoProvisioning.md`).
 Rulează înaintea oricărei alte treceri: fără ea, pagina publică poate oferi cele 14 surse-sector,
@@ -68,8 +114,12 @@ sărită; rămășițe ale unei rulări eșuate (`_snap_clsf` sau `Sursa_w`) →
 |---|---|
 | `docs/PLAN_AutoProvisioning.md` | **nou** — planul, cu §0 (constatările Pasului 0) și D20–D23 |
 | `PYTHON/scripts/__init__.py` | nou |
-| `PYTHON/scripts/clasificatii_sursa.py` | nou — scriptul de migrare |
-| `PYTHON/tests/test_clasificatii_sursa.py` | nou — 20 de teste offline |
+| `PYTHON/scripts/clasificatii_sursa.py` | nou — scriptul de migrare (rescris la revizia 2) |
+| `PYTHON/routes/clasificatii_ss.py` | **nou (revizia 2)** — regula unică `ss_values` |
+| `PYTHON/routes/clasificatii.py` | **revizia 2** — două `INSERT` + upsert-ul scriu Sector/Sursa/SS |
+| `PYTHON/routes/nomenclatoare.py` | **revizia 2** — `INSERT`-ul scrie Sector/Sursa/SS |
+| `PYTHON/tests/test_clasificatii_sursa.py` | nou — teste offline pentru script |
+| `PYTHON/tests/test_clasificatii_ss.py` | **nou (revizia 2)** — teste pentru regula comună |
 | `sql/AVACONT_SURSA.sql` | `Clasificatii`: `Sursa` scrisă, `Sector`/`SS` cu CASE extins |
 | `src/KBot.Migrator/Transfer/ClasificatieDerived.vb` | `NormalizeSursa`, `Sursa` scrisă, CASE extins |
 | `src/KBot.Migrator/Transfer/ColumnMapping.vb` | `ColumnSourceKind.ClasificatieSursa` + fabrica |
@@ -83,25 +133,41 @@ sărită; rămășițe ale unei rulări eșuate (`_snap_clsf` sau `Sursa_w`) →
 
 ## Rezultatele testelor
 
-- `dotnet build src\KBot.Migrator --no-incremental`: **0 erori, 0 avertismente**.
-- `ast.parse` pe cele trei fișiere Python noi: curat.
+- `dotnet build src\KBot.Migrator --no-incremental`: **0 erori, 0 avertismente** (și după revizia 2).
+- `ast.parse` pe toate fișierele Python atinse: curat.
+- `ss_values` / `derive_ss` verificate prin apel direct: `65.01`▸`01A`, `65.10`▸`02E`,
+  `65.02`▸`02A`, `65.99`▸`A`, `('65.01','F')`▸`('01','F','01F')`.
 - Suitele **nu au fost rulate** (regula casei: testele se scriu, nu se rulează).
 
 ## Neverificat / amânat
 
-- **Nimic nu a atins un MariaDB.** Scriptul nu a rulat niciodată, în niciun mod — nici `--dry-run`.
-  Dezvoltatorul nu are acces la server; operatorul rulează.
+- **Migrarea nu a rulat cu succes pe niciun MariaDB.** Prima formă a picat pe `AVACONT_SURSA`
+  cu 1901 fără să schimbe tabelul; forma a doua **nu a fost încercată deloc**. Dezvoltatorul nu
+  are acces la server; operatorul rulează.
+- **Rutele Python atinse n-au fost pornite.** `clasificatii.py` și `nomenclatoare.py` scriu acum
+  zece coloane în loc de șapte; corectitudinea lor e dovedită doar de `ast.parse` și de testele
+  scrise, nerulate.
 - **`tests/KBot.Migrator.Tests` nu a fost compilat** (regula casei interzice `dotnet build tests*`).
   E un proiect nou, adăugat în soluție: la prima `dotnet build KBot.sln` a operatorului poate
   cere corecturi de compilare. De raportat.
-- **ALTER-ul dintr-o bucată e NEVERIFICAT pe MariaDB 10.11**: ștergerea lui `Sursa` în aceeași
-  instrucțiune cu ștergerea și re-adăugarea lui `SS` (a cărui expresie inline conține același
-  CASE, nu coloana). Dacă serverul refuză, `--split-alter` face aceiași pași în trei instrucțiuni;
-  între ele tabelul stă câteva secunde fără `SS`, iar copia de siguranță acoperă intervalul.
-- Cele 3 rânduri `Unitati_Utilizatori` au `Rol = 'Contabil'`, iar D4 cere `'CO'` — de hotărât dacă
-  se aliniază (un singur `UPDATE`), altfel utilizatorii noi vor avea alt rol decât cei vechi.
-- `Unitati_Ani.CodProgram` pentru o unitate nouă: `000_DEMO` are `0000002510` și `0000000000`;
-  până la alt ordin, trecerea 0075-03 va scrie `0000000000`.
-- Neobținute încă (necesare la 0075-03/04/05): `SHOW GRANTS` pentru un cont de e-mail și unul
-  `_Contabil`, blocul nginx al lui `kbot.avatarsoft.ro`, și cele patru piese lipsă ale
-  componentelor JS (`listener-tracker-mixin.js`, `ZIndexManager`, `getClassNumericProperty`, CSS-ul).
+- **Cauza exactă a lui 1901 rămâne nedemonstrată.** Se știe că `concat(<CASE>, <coloană>)` e
+  refuzat într-o coloană generată STORED pe 10.11; nu s-a testat dacă un `concat('01', Sursa)`
+  simplu trece. Nu blochează nimic — forma nouă nu creează nicio expresie generată.
+- Decizii luate între timp (D24–D26 în plan): rolurile rămân cuvintele românești (`Contabil`
+  acum, `Administrator`/`Director` mai târziu); `Unitati_Ani.CodProgram` urmează sectorul
+  (`01`▸`0000002510`, `02`▸`0000000000`), precompletat și editabil de operator; conturile
+  `_Contabil` dispar, fiecare utilizator e un cont pe e-mail.
+- **Drepturile conturilor existente** (§13 din plan, trecerea 0075-06): conturile pe e-mail NU
+  sunt SU — au `USAGE` global plus drepturi pe baza lor. Ce e greșit: `WITH GRANT OPTION` pe baza
+  proprie și drepturile DDL (`CREATE`, `DROP`, `ALTER`, `CREATE ROUTINE`, `EVENT`, `TRIGGER`).
+  SU adevărat au doar `Admin` (`ALL PRIVILEGES ON *.*`) și `AVACONT` (`SUPER`, `FILE`,
+  `CREATE USER`, `SHUTDOWN`). În plus: `scavatarsoft@gmail.com` și `AVACONT` au **același hash
+  de parolă**, iar `030_SCTC` și `050_GRSA` **n-au niciun cont**.
+- nginx: **rezolvat** — `/etc/nginx/sites-available/avacont-ssl` are un singur `location /` spre
+  `127.0.0.1:5009`, deci pagina publică și fișierele ei statice ajung la Flask fără nicio
+  modificare de nginx.
+- Componentele JS: **rezolvat** — `listener-tracker/`, `utils/z-max.js` (`ZIndexManager`),
+  `utils/css.js` (`getClassNumericProperty`) și `css/treeview/*` + `css/combobox.css` există acum
+  în `JS_COMPONENTS`. Atenție la felia 0075-04: importurile sunt `../../listener-tracker/…`, deci
+  componentele trebuie servite din `static/js/components/<nume>/`, cu folderele comune în
+  `static/js/`.

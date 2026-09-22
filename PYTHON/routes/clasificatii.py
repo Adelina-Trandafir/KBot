@@ -4,6 +4,7 @@ import re
 from flask import Blueprint, request, jsonify
 from mysql.connector import Error
 from utils.security import require_api_key
+from routes.clasificatii_ss import ss_values   # slice 0075-00: Sector/Sursa/SS are written now
 from config import DB_CONFIG  # Importam configurarea
 from typing import Any, Dict, cast
 
@@ -175,8 +176,11 @@ def insert():
             cursor = conn.cursor()
             conn.start_transaction()
             
-            sql_structura = """INSERT INTO Clasificatii (IdClsfAcc, IdUnitate, Capitol, Subcapitol, Articol, Alineat, Denumire) 
-                               VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+            # Sector/Sursa/SS became WRITTEN columns in slice 0075-00 (MariaDB refuses a
+            # generated SS built from another column -- error 1901). derive_ss reproduces
+            # the old generated expression exactly, so this route behaves as it always did.
+            sql_structura = """INSERT INTO Clasificatii (IdClsfAcc, IdUnitate, Capitol, Subcapitol, Articol, Alineat, Denumire, Sector, Sursa, SS)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
             
             sql_buget = """INSERT INTO Clasificatii_Buget (IdClsf, IdUnitate, An, Trim1, Trim2, Trim3, Trim4) 
                            VALUES (%s, %s, %s, %s, %s, %s, %s)"""
@@ -188,7 +192,7 @@ def insert():
                 s = item['structura']
                 b = item['buget']
                 
-                val_s = (s['IdClsfAcc'], s['IdUnitate'], s['Capitol'], s['Subcapitol'], s['Articol'], s['Alineat'], s['Denumire'])
+                val_s = (s['IdClsfAcc'], s['IdUnitate'], s['Capitol'], s['Subcapitol'], s['Articol'], s['Alineat'], s['Denumire']) + ss_values(s['Capitol'])
                 cursor.execute(sql_structura, val_s)
                 
                 new_id = cursor.lastrowid
@@ -472,6 +476,11 @@ def save_clasificatii_complete_upsert():
             LIMIT 1
         """
 
+        # Sector/Sursa/SS are WRITTEN since slice 0075-00 (see routes/clasificatii_ss.py).
+        # They MUST appear in the ON DUPLICATE KEY UPDATE list as well: this statement can
+        # change `Capitol`, and while the three were generated they followed it by
+        # themselves. Leaving them out would keep the old sector on a re-classified row --
+        # a row that still passes every foreign key and is wrong.
         sql_upsert_clsf_with_id = """
             INSERT INTO Clasificatii
             (
@@ -482,9 +491,12 @@ def save_clasificatii_complete_upsert():
                 Subcapitol,
                 Articol,
                 Alineat,
-                Denumire
+                Denumire,
+                Sector,
+                Sursa,
+                SS
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE
                 IdClsfAcc = VALUES(IdClsfAcc),
                 IdUnitate = VALUES(IdUnitate),
@@ -492,7 +504,10 @@ def save_clasificatii_complete_upsert():
                 Subcapitol = VALUES(Subcapitol),
                 Articol = VALUES(Articol),
                 Alineat = VALUES(Alineat),
-                Denumire = VALUES(Denumire)
+                Denumire = VALUES(Denumire),
+                Sector = VALUES(Sector),
+                Sursa = VALUES(Sursa),
+                SS = VALUES(SS)
         """
 
         sql_insert_clsf_no_id = """
@@ -504,9 +519,12 @@ def save_clasificatii_complete_upsert():
                 Subcapitol,
                 Articol,
                 Alineat,
-                Denumire
+                Denumire,
+                Sector,
+                Sursa,
+                SS
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
 
         sql_exists_buget = """
@@ -627,7 +645,7 @@ def save_clasificatii_complete_upsert():
                             s_clean["Articol"],
                             s_clean["Alineat"],
                             s_clean["Denumire"]
-                        )
+                        ) + ss_values(s_clean["Capitol"])
                     )
 
                     current_id_clsf = s_clean["IdClsf"]
@@ -657,7 +675,7 @@ def save_clasificatii_complete_upsert():
                             s_clean["Articol"],
                             s_clean["Alineat"],
                             s_clean["Denumire"]
-                        )
+                        ) + ss_values(s_clean["Capitol"])
                     )
 
                     current_id_clsf = cursor.lastrowid

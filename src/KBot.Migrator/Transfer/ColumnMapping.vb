@@ -38,16 +38,19 @@ Public Enum ColumnSourceKind
     ''' </summary>
     WrittenElsewhere = 6
     ''' <summary>
-    ''' <c>Clasificatii.Sursa</c>: the Access value, normalised.
+    ''' <c>Clasificatii.Sector</c>, <c>Sursa</c> or <c>SS</c>: computed from the row by
+    ''' <see cref="ClasificatieDerived"/>, which of the three decided by the target column.
     ''' </summary>
     ''' <remarks>
-    ''' The column was GENERATED until slice 0075-00 and is written from now on, so a plain
-    ''' name match would suddenly start travelling on its own - correct, but by accident, and
-    ''' with the raw Access text. This kind makes it deliberate and applies the rule of
-    ''' <see cref="ClasificatieDerived.NormalizeSursa"/>: trimmed, uppercased, empty becomes
-    ''' <c>A</c>, and a <c>xx10</c> capitol is <c>E</c> whatever the file says.
+    ''' All three were GENERATED until slice 0075-00 and are written from now on, because
+    ''' MariaDB refuses a stored generated <c>SS</c> built out of another column (error 1901,
+    ''' proven on the live server). Two consequences this kind exists for: the Access column
+    ''' <c>Sursa</c> would otherwise start travelling on its own through the plain name match
+    ''' - correct by accident, and with the raw text - and <c>SS</c> is NOT NULL with a
+    ''' foreign key and nothing in Access to match it by name at all, so without an explicit
+    ''' mapping every INSERT would fail with 1364.
     ''' </remarks>
-    ClasificatieSursa = 7
+    ClasificatieSursaSector = 7
 End Enum
 
 ''' <summary>
@@ -113,15 +116,15 @@ Public NotInheritable Class ColumnMapping
     End Function
 
     ''' <summary>
-    ''' <c>Clasificatii.Sursa</c> from the Access column of the same name, normalised.
+    ''' One of <c>Clasificatii.Sector</c> / <c>Sursa</c> / <c>SS</c>, computed from the row.
     ''' </summary>
     ''' <remarks>
-    ''' <see cref="AccessColumn"/> is «Sursa» on purpose: that is what tells
+    ''' <see cref="AccessColumn"/> is «Sursa» on purpose for all three: that is what tells
     ''' <see cref="ColumnPlan"/> the Access column is already consumed, so the plain name
-    ''' match does not claim the target a second time.
+    ''' match does not claim <c>Sursa</c> a second time.
     ''' </remarks>
-    Public Shared Function ClasificatieSursa(targetColumn As String) As ColumnMapping
-        Return New ColumnMapping(targetColumn, ColumnSourceKind.ClasificatieSursa,
+    Public Shared Function ClasificatieSursaSector(targetColumn As String) As ColumnMapping
+        Return New ColumnMapping(targetColumn, ColumnSourceKind.ClasificatieSursaSector,
                                  "Sursa", Nothing, False)
     End Function
 
@@ -139,8 +142,8 @@ Public NotInheritable Class ColumnMapping
                 Return $"{AccessColumn} (partener rezolvat) -> {TargetColumn}"
             Case ColumnSourceKind.WrittenElsewhere
                 Return $"(scrisă de WriteUnitati) -> {TargetColumn}"
-            Case ColumnSourceKind.ClasificatieSursa
-                Return $"{AccessColumn} (sursă normalizată) -> {TargetColumn}"
+            Case ColumnSourceKind.ClasificatieSursaSector
+                Return $"{AccessColumn} (sursă/sector calculate) -> {TargetColumn}"
             Case Else
                 Return $"(NULL) -> {TargetColumn}"
         End Select

@@ -240,17 +240,28 @@ also read `000_DEMO` — a second, independent occurrence.
 **Access** — `baza2026.accdb` ▸ `Clasificatii`, 54 rows, PK `IDClsf`. Non-unique indexes on
 Capitol / Subcapitol / Articol / Alineat.
 
-**MariaDB** — read from DDL. Only **eight** columns are writable; eight are
+**MariaDB** — read from DDL. **Ten** columns are writable; **six** are
 `GENERATED ALWAYS … PERSISTENT` and **cannot appear in an INSERT at all**, and two are
 server-maintained timestamps.
 
-> **Slice 0075-00 moved `Sursa` across that line.** It was the ninth generated column and is
-> now `char(1) NOT NULL DEFAULT 'A'`, written like any other. Reason: the source letter
-> (A/C/D/E/F/G) cannot be read back from the capitol — `01A`, `01D`, `01F` and `01G` all end
-> in `01` — so eleven of the fourteen `DefaSursaSector` values were unreachable while the
-> column was computed. `Sector` stays generated, with its CASE extended to `03/04/05/08`, and
-> `SS = concat(<sector>, Sursa)` stays generated, so the foreign key is unchanged. See
-> `PYTHON/scripts/clasificatii_sursa.py` and `docs/PLAN_AutoProvisioning.md` §11–12.
+> **Slice 0075-00 moved `Sector`, `Sursa` and `SS` across that line.** They were three of the
+> nine generated columns and are written like any other now: `Sector varchar(2) NOT NULL
+> DEFAULT ''`, `Sursa char(1) NOT NULL DEFAULT 'A'`, `SS varchar(3) NOT NULL` — **no default
+> on `SS`**, so a writer that omits it fails with `1364` instead of storing a wrong
+> sector-source quietly.
+>
+> Two reasons. The source letter (A/C/D/E/F/G) cannot be read back from the capitol — `01A`,
+> `01D`, `01F` and `01G` all end in `01` — so eleven of the fourteen `DefaSursaSector` values
+> were unreachable while the column was computed. And keeping `SS` generated as
+> `concat(<sector>, Sursa)` is not possible: **MariaDB 10.11 refuses it with error 1901**,
+> reproduced in a fresh table on the live server, so it is the expression shape and not the
+> `ALTER`. A stored generated column here cannot be built out of another column.
+>
+> The other six stay generated on purpose: they are pure functions of
+> Capitol/Subcapitol/Articol/Alineat, which every writer already supplies, and two of them
+> carry foreign keys. Generated, they cannot disagree with the base columns. See
+> `PYTHON/scripts/clasificatii_sursa.py`, `PYTHON/routes/clasificatii_ss.py` and
+> `docs/PLAN_AutoProvisioning.md` §11–12.
 
 | Access | MariaDB | |
 |---|---|---|
@@ -265,8 +276,8 @@ server-maintained timestamps.
 | Trim1..Trim4 | ▸ `Clasificatii_Buget` | Double. See §4 |
 | TOTAL | ✗ | Double. On the target it is `Clasificatii_Buget.TOTAL`, **generated** |
 | IdClsfPY | ✗ | **Rule 1 — never read.** F5 |
-| Clsf, Titlu, ClsfSal, ClsfF, ClsfE, ClsfX, Sector, SS | ✗ | ⚠ **All eight exist on the target as `GENERATED ALWAYS … PERSISTENT`.** Computed there from Capitol/Subcapitol/Articol/Alineat (and, for `SS`, the written `Sursa`). Writing one is an error, not a no-op |
-| Sursa | Sursa | **Written since slice 0075-00** (was generated). Trimmed, uppercased, first character; empty ▸ `A`; a `xx10` capitol ▸ `E` whatever the file says. Mapped explicitly (`ColumnSourceKind.ClasificatieSursa`), not by name match |
+| Clsf, Titlu, ClsfSal, ClsfF, ClsfE, ClsfX | ✗ | ⚠ **All six exist on the target as `GENERATED ALWAYS … PERSISTENT`**, computed from Capitol/Subcapitol/Articol/Alineat. Writing one is an error, not a no-op |
+| Sursa | Sector, Sursa, SS | **All three written since slice 0075-00** (were generated). `Sursa` = the Access value trimmed, uppercased, first character; empty ▸ `A`; a `xx10` capitol ▸ `E` whatever the file says. `Sector` = the capitol's last two characters, mapped. `SS` = the two concatenated, `NOT NULL`, foreign key, no default. One explicit mapping each (`ColumnSourceKind.ClasificatieSursaSector`), never by name match |
 | CodSSI | ✗ | Memo, `01A650402100101`. No column on the target |
 | CodAng, CodInd | ✗ | NULL throughout the sample. No column on `Clasificatii` (they live on `Parteneri_Coduri`, §6.1) |
 | TOTALFX | ✗ | Double, NULL on most rows. No target |
@@ -301,10 +312,12 @@ Three things follow:
 2. **`CREATE DATABASE` from `AVACONT_SURSA` is not enough** (plan §4 step 3). `AVACONT_COMUN`
    is a **different database** and is not created by that loop. A new DC's `Clasificatii` will
    not accept a single row until `AVACONT_COMUN` exists and is populated.
-3. `Sector` is derived from `right(Capitol, 2)` with an explicit `else ''`, so a `Capitol`
+3. `Sector` comes from `right(Capitol, 2)` with an explicit "nothing else", so a `Capitol`
    outside the eight endings it knows (`00/01/02/10`, and `03/04/05/08` since slice 0075-00)
-   computes an empty sector — and `SS`, now `concat(<sector>, Sursa)`, is then a bare letter,
-   which will not be in `DefaSursaSector`. The failure mode is a near-blank, not a wrong value.
+   yields an empty sector — and `SS` is then a bare letter, which will not be in
+   `DefaSursaSector`. The failure mode is a near-blank, not a wrong value. Since 0075-00 the
+   writer computes this rather than the server (`PYTHON/routes/clasificatii_ss.py`,
+   `ClasificatieDerived`), but the foreign key still has the last word.
 
 Two corrections from the live server (22.09.2026), which §3.1 above still has wrong: there are
 **four** cross-database foreign keys, not five — `ClsfE` has **no** foreign key into

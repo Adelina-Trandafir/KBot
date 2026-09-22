@@ -23,10 +23,15 @@
 ''' written.
 ''' </para>
 ''' <para>
-''' Slice 0075-00 moved <c>Sursa</c> out of the generated set: it is a plain
-''' <c>char(1) NOT NULL DEFAULT 'A'</c> now, so all fourteen <c>DefaSursaSector</c> values
-''' are reachable (the source letter was never readable from the capitol - 01A, 01D, 01F
-''' and 01G all end in <c>01</c>). <c>Sector</c> keeps its CASE, extended to 03/04/05/08.
+''' Slice 0075-00 moved <c>Sector</c>, <c>Sursa</c> and <c>SS</c> out of the generated set
+''' entirely: all three are plain written columns now. The source letter was never readable
+''' from the capitol (01A, 01D, 01F and 01G all end in <c>01</c>), and keeping <c>SS</c>
+''' generated as <c>concat(&lt;sector&gt;, Sursa)</c> is not possible either - MariaDB 10.11
+''' refuses a stored generated column built out of another column with error 1901, proven on
+''' the live server in a fresh table. So for these three this class is no longer a
+''' REPLICATION of the DDL: it is the SOURCE of the values, and what it returns is what gets
+''' written. The remaining six (Clsf, Titlu, ClsfSal, ClsfF, ClsfE, ClsfX) are still
+''' generated and still only predicted here.
 ''' </para>
 ''' <para>
 ''' <b>This is a REPLICATION of the DDL, not a reading of it.</b> The expressions below
@@ -92,13 +97,14 @@ Public NotInheritable Class ClasificatieDerived
     End Property
 
     ''' <summary>
-    ''' <c>case right(Capitol,2) when '00' then '01' when '01' then '01' when '02' then '02'
-    ''' when '10' then '02' when '03' then '03' when '04' then '04' when '05' then '05'
-    ''' when '08' then '08' else '' end</c>
+    ''' The WRITTEN sector (slice 0075-00): the last two characters of the capitol, mapped.
     ''' </summary>
     ''' <remarks>
-    ''' 03/04/05/08 were added in slice 0075-00, with the same four sectors DefaSursaSector
-    ''' knows. The four historical endings keep exactly the mapping they had.
+    ''' It was <c>case right(Capitol,2) when '02' then '02' when '01' then '01' when '10'
+    ''' then '02' when '00' then '01' else '' end</c> on the server. 03/04/05/08 were added
+    ''' here, being the sectors DefaSursaSector knows; the four historical endings keep
+    ''' exactly the mapping they had. An unknown ending yields an empty sector, so SS is a
+    ''' bare letter and the foreign key refuses it - a near-blank, never a plausible value.
     ''' </remarks>
     Public ReadOnly Property Sector As String
         Get
@@ -123,12 +129,14 @@ Public NotInheritable Class ClasificatieDerived
     Public ReadOnly Property Sursa As String
 
     ''' <summary>
-    ''' <c>concat(&lt;sector case&gt;, Sursa)</c>.
+    ''' The WRITTEN <c>SS</c> (slice 0075-00): sector + source.
     ''' </summary>
     ''' <remarks>
-    ''' Note the failure mode: a Capitol outside the eight endings computes an EMPTY sector,
-    ''' so SS is one letter, which will not be in DefaSursaSector. The row is then refused
-    ''' for a near-blank, not for a wrong value - which is far harder to read in a raw 1452.
+    ''' NOT NULL on the target, with the foreign key into <c>DefaSursaSector</c> and NO
+    ''' default - an INSERT that leaves it out fails with 1364 rather than storing a wrong
+    ''' sector-source quietly. A Capitol outside the eight endings computes an EMPTY sector,
+    ''' so SS is one letter, which the foreign key refuses: a near-blank, not a plausible
+    ''' wrong value.
     ''' </remarks>
     Public ReadOnly Property SS As String
         Get

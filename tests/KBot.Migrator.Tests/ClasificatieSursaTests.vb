@@ -97,18 +97,22 @@ Public Class ClasificatieSursaTests
 
     ' ---- the mapping is deliberate ---------------------------------------------------
 
-    <Fact>
-    Public Sub Harta_Clasificatii_revendica_explicit_coloana_Sursa()
-        ' Without this entry the Access column would travel by plain NAME MATCH the moment
-        ' the target column turned writable - right outcome, wrong reason, raw value.
+    <Theory>
+    <InlineData("Sector")>
+    <InlineData("Sursa")>
+    <InlineData("SS")>
+    Public Sub Harta_Clasificatii_revendica_explicit_cele_trei_coloane(target As String)
+        ' All three are written since 0075-00. Without these entries: «Sursa» would travel by
+        ' plain NAME MATCH (right outcome, wrong reason, raw value), and «SS» - NOT NULL, with
+        ' a foreign key, and no Access column of that name - would make every INSERT fail 1364.
         Dim map = TableMaps.Nomenclators().Single(Function(m) m.TargetTable = "Clasificatii")
-        Dim sursa = map.Derived.SingleOrDefault(Function(d) d.TargetColumn = "Sursa")
+        Dim mapping = map.Derived.SingleOrDefault(Function(d) d.TargetColumn = target)
 
-        Assert.NotNull(sursa)
-        Assert.Equal(ColumnSourceKind.ClasificatieSursa, sursa.Kind)
+        Assert.NotNull(mapping)
+        Assert.Equal(ColumnSourceKind.ClasificatieSursaSector, mapping.Kind)
         ' The Access column is named so ColumnPlan counts it as consumed and the name match
-        ' does not claim the target a second time.
-        Assert.Equal("Sursa", sursa.AccessColumn)
+        ' does not claim «Sursa» a second time.
+        Assert.Equal("Sursa", mapping.AccessColumn)
     End Sub
 
     ' ---- the other generated columns are untouched ------------------------------------

@@ -88,17 +88,21 @@ Public NotInheritable Class TableMaps
         ' The rename RELEASES the name match it replaces - without that, Access IDClsf
         ' would also match the target's own IDClsf (auto_increment is writable) and the
         ' Access id would land in the primary key.
-        ' EIGHT target columns are GENERATED (Clsf, Titlu, ClsfSal, ClsfF, ClsfE, ClsfX,
-        ' Sector, SS) and need no exclusion: they are not writable at all.
-        ' Sursa was the ninth until slice 0075-00 and is WRITTEN from now on. Once it is
-        ' writable, the Access column of the same name would start travelling BY ITSELF
-        ' through the plain name match - the right outcome reached by accident, and with
-        ' the raw text. ClasificatieSursa claims it deliberately and normalises it (empty
-        ' -> 'A', a xx10 capitol -> 'E'). See docs/PLAN_AutoProvisioning.md 12.
+        ' SIX target columns are GENERATED (Clsf, Titlu, ClsfSal, ClsfF, ClsfE, ClsfX) and
+        ' need no exclusion: they are not writable at all.
+        ' Sector, Sursa and SS were generated too until slice 0075-00 and are WRITTEN from
+        ' now on, because MariaDB refuses a stored generated SS built out of another column
+        ' (error 1901 on the live server). Two things follow, and the three mappings below
+        ' are both of them: the Access column «Sursa» would otherwise travel BY ITSELF
+        ' through the plain name match - the right outcome by accident, with the raw text -
+        ' and SS is NOT NULL with a foreign key and no Access column of that name at all,
+        ' so an INSERT without it dies with 1364. See docs/PLAN_AutoProvisioning.md 12.
         maps.Add(New TableMap("Clasificatii", "Clasificatii", SourceFile.UnitFile).
             Rename("IDClsf", "IdClsfAcc").
             Add(ColumnMapping.FromUnit("IdUnitate")).
-            Add(ColumnMapping.ClasificatieSursa("Sursa")).
+            Add(ColumnMapping.ClasificatieSursaSector("Sector")).
+            Add(ColumnMapping.ClasificatieSursaSector("Sursa")).
+            Add(ColumnMapping.ClasificatieSursaSector("SS")).
             Exclude("IdClsfPY", "TOTAL", "TOTALFX", "CodSSI", "CodAng", "CodInd",
                     "DTQ", "Esinc", "Document", "Data", "IdLegatura",
                     "Trim1", "Trim2", "Trim3", "Trim4").
