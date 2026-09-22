@@ -17,6 +17,12 @@ Imports KBot.Theming
 ''' click-through, apariția ei ar scoate cursorul de pe control, ceea ce ar ascunde eticheta,
 ''' ceea ce ar readuce cursorul pe control… la nesfârșit.</para>
 '''
+''' <para><b>The topmost band is an EX STYLE, never the TopMost property.</b> Setting TopMost on a
+''' form whose handle does not exist yet only records it; Form.CreateHandle then re-applies it with
+''' a SetWindowPos(HWND_TOPMOST) that has no SWP_NOACTIVATE, and that call activates the label the
+''' one time the handle is built -- WS_EX_NOACTIVATE guards clicks, not that. Born topmost through
+''' CreateParams, the window never asks for activation at all.</para>
+'''
 ''' <para><b>Nu e un <see cref="System.Windows.Forms.ToolTip"/>.</b> Acela își ia culorile din
 ''' sistem, nu se poate rotunji, n-are antet, n-are subsol, n-are linie despărțitoare și nu poate
 ''' scrie text îmbogățit. Toate cele cinci sunt cerute aici.</para>
@@ -32,6 +38,7 @@ Friend NotInheritable Class KBotToolTipWindow
     Private Const WS_EX_NOACTIVATE As Integer = &H8000000
     Private Const WS_EX_TOOLWINDOW As Integer = &H80
     Private Const WS_EX_TRANSPARENT As Integer = &H20
+    Private Const WS_EX_TOPMOST As Integer = &H8
     Private Const SW_SHOWNOACTIVATE As Integer = 4
     Private Const HWND_TOPMOST As Integer = -1
     Private Const SWP_NOACTIVATE As UInteger = &H10
@@ -85,7 +92,15 @@ Friend NotInheritable Class KBotToolTipWindow
         ControlBox = False
         MinimizeBox = False
         MaximizeBox = False
-        TopMost = True
+        ' NO TopMost property here -- this was the whole bug. A TopMost set before the handle
+        ' exists is only remembered; Form.CreateHandle re-applies it at the end with a
+        ' SetWindowPos(HWND_TOPMOST) that carries NO SWP_NOACTIVATE, so Windows ACTIVATES the
+        ' label the single time its handle gets built. WS_EX_NOACTIVATE does not stop that call:
+        ' it only keeps a CLICK from activating. The form underneath was deactivated and lost the
+        ' caret once per label window -- which is why it looked like a first-time-only glitch.
+        ' The topmost band is asked for in CreateParams instead: the window is BORN topmost and
+        ' nobody has to touch focus for it. ShowTip still re-asserts the band on every show, with
+        ' SWP_NOACTIVATE spelled out.
         Text = String.Empty
         ' Fără autoscalare: primim Bounds în px DEJA scalați la DPI-ul ecranului pe care apărem.
         ' O a doua ajustare ar muta eticheta de lângă controlul ei.
@@ -105,7 +120,8 @@ Friend NotInheritable Class KBotToolTipWindow
     Protected Overrides ReadOnly Property CreateParams As CreateParams
         Get
             Dim cp As CreateParams = MyBase.CreateParams
-            cp.ExStyle = cp.ExStyle Or WS_EX_NOACTIVATE Or WS_EX_TOOLWINDOW Or WS_EX_TRANSPARENT
+            cp.ExStyle = cp.ExStyle Or WS_EX_NOACTIVATE Or WS_EX_TOOLWINDOW Or WS_EX_TRANSPARENT Or
+                         WS_EX_TOPMOST
             Return cp
         End Get
     End Property

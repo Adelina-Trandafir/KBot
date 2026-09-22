@@ -1,0 +1,73 @@
+/**
+ * 🎨 PHONE TOOLS LIGHT - CSS
+ * Styling minimal pentru flag element
+ * 
+ * @version 1.0.0
+ */
+
+/* ========== FLAG WRAPPER ========== */
+.phone-flag-wrapper {
+  display: inline-block;
+  vertical-align: middle;
+  transition: all 0.2s ease;
+}
+
+/* ========== FLAG ICON ========== */
+.phone-flag-icon {
+  display: inline-block;
+  width: 24px;
+  height: 18px;
+  font-size: 24px;
+  line-height: 18px;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.phone-flag-icon:hover {
+  transform: scale(1.1);
+}
+
+/* ========== LAYOUT ADJUSTMENTS ========== */
+.details-panel-baza-form-group .phone-flag-wrapper {
+  flex: 0 0 auto;
+}
+
+.details-panel-baza-form-group input[type="phone"],
+.details-panel-baza-form-group input.details-panel-baza-form-control-phone {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+  .phone-flag-wrapper {
+    margin-right: 6px;
+    margin-bottom: 3px;
+  }
+
+  .phone-flag-icon {
+    width: 20px;
+    height: 15px;
+    font-size: 20px;
+  }
+
+  .details-panel-baza-form-group {
+    gap: 6px;
+  }
+}
+
+/* ========== OPTIONAL: FORM CONTROL STYLING ========== */
+
+/* Dacă vrei ca input-ul să arate mai bine cu steagul */
+input.details-panel-baza-form-control-phone {
+  padding-left: 8px;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+}
+
+input.details-panel-baza-form-control-phone:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}

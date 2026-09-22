@@ -1,23 +1,27 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Workflow name="Recepții {{COD_ANGAJAMENT}}" startUrl="current"
   expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
-  <!-- V.1 - 10/09/2026 — felia 0060
-    Flux PARȚIAL — numai recepțiile unui angajament
+  <!-- V.2 - 22/09/2026 — felia 0060
+    Flux PARȚIAL — recepțiile unui angajament (+ istoricul lui)
     ───────────────────────────────────────────────
     SEC. 0 — Citire date angajament (din .well)
     SEC. 2 — Recepții (tab1) cu detaliu per recepție
+    SEC. 4 — Istoric (cu paginare)
 
     E o TĂIETURĂ din «adlop - Prelucrare Completa.wfl», nu un drum nou prin site: aceleași
-    selectoare, aceiași pași, aceleași nume de tabele. Lipsesc secțiunile 1 (indicatori) și
-    4 (istoric), fiindcă butonul din subsolul arborelui de RECEPȚII cere recepțiile, iar
-    celelalte două secțiuni sunt exact partea care costă timp fără să răspundă la întrebare.
-    Când unul dintre fișiere se schimbă într-o secțiune comună, se schimbă și celălalt —
-    decizia D11.
+    selectoare, aceiași pași, aceleași nume de tabele. Lipsește secțiunea 1 (indicatorii),
+    fiindcă butonul din subsolul arborelui de RECEPȚII cere recepțiile, iar indicatorii sunt
+    exact partea care costă timp fără să răspundă la întrebare. Când unul dintre fișiere se
+    schimbă într-o secțiune comună, se schimbă și celălalt — decizia D11.
 
-    Serverul primește un pachet FĂRĂ «TabelIndicatori» și FĂRĂ «TabelIstoric»: le citește cu
-    `tabele.get(...) or []`, deci pașii lor nu scriu nimic, iar pasul 4b are nevoie de
-    indicatori din BAZĂ (`read_indicatori`), nu din sarcina utilă. Verificat citind
-    routes/forexe/prelucrare.py.
+    DE CE ISTORICUL, de la V.2 (operator, 22.09.2026). Salvarea unei recepții scrie un rând
+    și în istoricul FOREXE, iar pachetul fără «TabelIstoric» nu-l aducea: FX_Istoric rămânea
+    fără el până la o reîmprospătare completă a nodului („dacă dau refresh totul e ok").
+    Secțiunea e COPIATĂ din prelucrarea completă, literă cu literă — decizia D11.
+
+    Serverul primește un pachet FĂRĂ «TabelIndicatori»: îl citește cu `tabele.get(...) or []`,
+    deci pasul lui nu scrie nimic, iar pasul 4b are nevoie de indicatori din BAZĂ
+    (`read_indicatori`), nu din sarcina utilă. Verificat citind routes/forexe/prelucrare.py.
 
     Variabile așteptate:
       {{COD_ANGAJAMENT}}   — codul angajamentului de procesat
@@ -203,10 +207,47 @@
   </IfExists>
 
   <!-- ═══════════════════════════════════════════════════════
+       SECȚIUNEA 4 — ISTORIC
+       Butonul Istoric e accesibil doar din tab0 — revenim explicit.
+       Guard: dacă tabelul nu există, sărim secțiunea silențios.
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ SECȚIUNEA 4: Istoric angajament ══" level="action" />
+
+  <Click selector="li.tab0 a" timeout="15" />
+  <WaitFor selector="li.tab0.active" timeout="15" />
+
+  <Click selector="button.btn-success:has-text('Istoric')" waitNavigation="true" timeout="15" />
+  <WaitFor selector="h3.heading:has-text('Istoric angajament')" timeout="15" />
+
+  <IfExists selector="table.table-striped tbody tr" timeout="15">
+
+    <ScrapeTable selector="table.table-striped"
+      saveTo="TabelIstoric"
+      nextPageSelector="a[rel='next']"
+      waitSelector="table.table-striped"
+      fingerprintSelector="table.table-striped tbody tr:last-child td:last-child"
+      timeout="15" />
+    <Log message="✓ Istoric salvat cu succes." level="success" />
+
+    <Else>
+      <Log message="Pagina Istoric nu conține înregistrări pentru {{COD_ANGAJAMENT}}."
+        level="warning" />
+    </Else>
+  </IfExists>
+
+  <!-- The history is read: back to the angajament page (its «Înapoi»), so the page the
+       operator gets back is the angajament, not the history list. -->
+  <IfExists selector="button.btn-default:has-text('Înapoi')" timeout="5">
+    <Click selector="button.btn-default:has-text('Înapoi')" waitNavigation="true" timeout="15" />
+    <WaitFor selector="li.tab0" timeout="15" />
+  </IfExists>
+
+  <!-- ═══════════════════════════════════════════════════════
        FINAL
        ═══════════════════════════════════════════════════════ -->
 
-  <Log message="══ Recepțiile angajamentului {{COD_ANGAJAMENT}} au fost citite. ══"
+  <Log message="══ Recepțiile și istoricul angajamentului {{COD_ANGAJAMENT}} au fost citite. ══"
     level="success" />
 
 </Workflow>

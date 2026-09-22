@@ -51,6 +51,21 @@ Public Class KbotForm
     Private ReadOnly _treeInfos As New Dictionary(Of String, AngajamentTreeInfo)()
     ' Opțiunea btnOpt: arată și angajamentele ASCUNS (implicit nu).
     Private _includeHidden As Boolean
+    ' The last rows GET /api/forexe/tree handed back, in the server's own order. Kept so a
+    ' change of sort re-lays the tree without asking for them again.
+    Private _treeRows As IReadOnlyList(Of AngajamentTreeInfo)
+    ' The order the tree lays its rows in (the «Sortare» button). Default: the server's.
+    Private _treeSort As TreeSortMode = TreeSortMode.ServerOrder
+
+    ''' <summary>The order the main tree lays its rows in — the «Sortare» button.</summary>
+    Private Enum TreeSortMode
+        ''' <summary>As the server sent them (by code, the way the list query orders it).</summary>
+        ServerOrder = 0
+        ''' <summary>By DataCreare, oldest first.</summary>
+        DateAscending = 1
+        ''' <summary>By DataCreare, newest first.</summary>
+        DateDescending = 2
+    End Enum
     ' Fereastra nemodală «Informații interne» (flag-urile Are* ale nodului selectat).
     ' Nothing / IsDisposed = închisă; se re-deschide la nevoie.
     Private _infoForm As InternalInfoForm
@@ -1289,6 +1304,8 @@ Public Class KbotForm
             Dim rows As IReadOnlyList(Of AngajamentTreeInfo) =
                 Await WithReauth(Of IReadOnlyList(Of AngajamentTreeInfo))(
                     Function() _apiClient.GetTreeAsync(an, ss, _includeHidden, ct))
+            ' The rows are kept: the «Sortare» button re-lays them without a fresh request.
+            _treeRows = rows
             PopulateTree(rows, codSelectat)
         Catch ex As Exception
             ' Fără plasă tăcută: o eroare (server oprit / 401 sesiune moartă / defect de
@@ -1329,7 +1346,7 @@ Public Class KbotForm
             Dim nodDeSelectat As AdvancedTreeControl.TreeItem = Nothing
             Dim infoDeSelectat As AngajamentTreeInfo = Nothing
 
-            For Each info As AngajamentTreeInfo In rows
+            For Each info As AngajamentTreeInfo In SortRows(rows)
                 Dim cod As String = If(info.CodAngajament, String.Empty)
                 Dim caption As String = If(info.Descriere, String.Empty).Trim().ToUpperInvariant()
 
@@ -1341,7 +1358,7 @@ Public Class KbotForm
 
                 node.Cells("CodAngajament") = New AdvancedTreeControl.TreeItem.CellData With {.Value = cod}
                 node.Bold = info.AreIndicatori   ' legacy: îngroșare = are surse (indicatori)
-                node.Tooltip = If(info.Descriere, String.Empty)
+                node.Tooltip = TooltipFor(info)
                 'node.ShowRightIconOnHover = True
 
                 _treeInfos(cod) = info
@@ -1381,6 +1398,48 @@ Public Class KbotForm
             Throw
         End Try
     End Sub
+
+    ''' <summary>
+    ''' The hover label of a tree row. Until 22.09.2026 it was the Descriere alone — the very
+    ''' text already written ON the row, in capitals — so the operator had nothing to gain by
+    ''' waiting for it, and it was reachable only over the 14 px status icon
+    ''' (<c>TooltipShowOnlyOnLeftIcon</c>). Both halves are fixed: it now shows over the whole
+    ''' row, and it says what the row cannot fit — code, state, dates, sources.
+    ''' </summary>
+    ''' <remarks>
+    ''' Plain lines, not the XML table the Recepții tree uses: there is one node per angajament
+    ''' here, nothing to put in columns. Empty fields are left out rather than shown blank.
+    ''' </remarks>
+    Private Shared Function TooltipFor(info As AngajamentTreeInfo) As String
+        If info Is Nothing Then Return String.Empty
+        Try
+            Dim linii As New List(Of String)()
+            Dim descriere As String = If(info.Descriere, String.Empty).Trim()
+            If descriere.Length > 0 Then linii.Add(descriere)
+
+            Dim cod As String = If(info.CodAngajament, String.Empty).Trim()
+            If cod.Length > 0 Then linii.Add("Cod: " & cod)
+
+            Dim stare As String = If(info.Stare, String.Empty).Trim()
+            If stare.Length > 0 Then linii.Add("Stare: " & stare)
+
+            If info.DataCreare.HasValue Then
+                linii.Add("Creat: " & info.DataCreare.Value.ToString("dd.MM.yyyy"))
+            End If
+            If info.DataDefinitivare.HasValue Then
+                linii.Add("Definitivat: " & info.DataDefinitivare.Value.ToString("dd.MM.yyyy"))
+            End If
+
+            Dim surse As String = If(info.Surse, String.Empty).Trim()
+            If surse.Length > 0 Then linii.Add("Surse: " & surse)
+            If info.Ascuns Then linii.Add("Ascuns")
+
+            Return String.Join(vbLf, linii)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.TooltipFor", ex)
+            Return If(info.Descriere, String.Empty)
+        End Try
+    End Function
 
     ''' <summary>
     ''' Poarta vederilor: fiecare flag Are* comandă exact o intrare din navigație.
@@ -2261,14 +2320,103 @@ Public Class KbotForm
 
     ' ---------------- placeholder-e (felii viitoare) ----------------
 
+    ' Menu row keys of the «Sortare» button.
+    Private Const SORT_IMPLICIT As String = "implicit"
+    Private Const SORT_DATA_ASC As String = "data-asc"
+    Private Const SORT_DATA_DESC As String = "data-desc"
+
+    ''' <summary>
+    ''' The «Sortare» button (Access btnSort): a small menu with the orders the tree can lay
+    ''' its rows in. Sorting by date is the operator's request of 22.09.2026 — the list comes
+    ''' from the server ordered by code, which says nothing about WHEN an angajament was made.
+    ''' </summary>
+    ''' <remarks>
+    ''' Nothing is asked of the server again: the rows of the last load are kept in
+    ''' <c>_treeRows</c> and only re-laid, so the order changes at once and the selected node
+    ''' comes back where it was (<c>PopulateTree</c> re-selects it).
+    ''' </remarks>
     Private Sub BtnSort_Click(sender As Object, e As EventArgs) Handles btnSort.Click
         Try
-            ' TODO felie: sortarea arborelui (Access btnSort / m_SortTree).
-            KBotMessage.Show(Me, "În lucru.", "Sortare", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            ' A second press on the button CLOSES the menu -- see CapBar_OptionButtonClick.
+            If CustomPopup.ClosedJustNow Then Return
+
+            Dim rows As New List(Of CustomPopupItem) From {
+                New CustomPopupItem(SORT_IMPLICIT, "Ordinea &implicită (după cod)"),
+                CustomPopupItem.Separator(),
+                New CustomPopupItem(SORT_DATA_ASC, "După &dată, de la cea mai veche"),
+                New CustomPopupItem(SORT_DATA_DESC, "După dat&ă, de la cea mai nouă")
+            }
+
+            ' NOT in a «Using»: shown modeless, the popup disposes itself when it closes.
+            Dim menu As New CustomPopup(rows, SortKey(_treeSort))
+            AddHandler menu.ItemClicked, AddressOf SortMenu_ItemClicked
+            menu.ShowBelow(btnSort)
         Catch ex As Exception
+            ' UI boundary (event handler): log and swallow.
             GlobalErrorLog.Write("MainForm.btnSort_Click", ex)
         End Try
     End Sub
+
+    Private Sub SortMenu_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
+        Try
+            Dim asked As TreeSortMode
+            Select Case e.Item.Key
+                Case SORT_IMPLICIT : asked = TreeSortMode.ServerOrder
+                Case SORT_DATA_ASC : asked = TreeSortMode.DateAscending
+                Case SORT_DATA_DESC : asked = TreeSortMode.DateDescending
+                Case Else
+                    ' No silent no-ops: a row added to the menu and forgotten here must show.
+                    Throw New ArgumentException("Rând necunoscut în meniul de sortare: «" & e.Item.Key & "».")
+            End Select
+
+            If asked = _treeSort Then Return
+            _treeSort = asked
+            ' The selected node stays selected: the order changed, not the contents of the list.
+            Dim codSelectat As String = If(_currentInfo Is Nothing, Nothing, _currentInfo.CodAngajament)
+            If _treeRows IsNot Nothing Then PopulateTree(_treeRows, codSelectat)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.SortMenu_ItemClicked", ex)
+            KBotMessage.Show(Me, "Sortarea nu a putut fi aplicată: " & ex.Message, "Sortare",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ' The menu key of an order, so the menu opens with the current one marked.
+    Private Shared Function SortKey(mode As TreeSortMode) As String
+        Select Case mode
+            Case TreeSortMode.DateAscending : Return SORT_DATA_ASC
+            Case TreeSortMode.DateDescending : Return SORT_DATA_DESC
+            Case Else : Return SORT_IMPLICIT
+        End Select
+    End Function
+
+    ''' <summary>
+    ''' The rows in the order <see cref="_treeSort"/> asks for. <c>ServerOrder</c> hands back
+    ''' the very list it was given — the server already orders by code.
+    ''' </summary>
+    ''' <remarks>
+    ''' A row with no DataCreare goes LAST in both directions: it has no place on a timeline,
+    ''' and sinking it is the only answer that reads the same whichever way the arrow points.
+    ''' The code breaks ties, so two angajamente made the same day keep a stable order between
+    ''' two loads instead of swapping under the operator.
+    ''' </remarks>
+    Private Function SortRows(rows As IReadOnlyList(Of AngajamentTreeInfo)) As IEnumerable(Of AngajamentTreeInfo)
+        Try
+            If rows Is Nothing OrElse _treeSort = TreeSortMode.ServerOrder Then Return rows
+
+            Dim noDate As Date = If(_treeSort = TreeSortMode.DateAscending, Date.MaxValue, Date.MinValue)
+            Dim key As Func(Of AngajamentTreeInfo, Date) =
+                Function(i) If(i.DataCreare.HasValue, i.DataCreare.Value, noDate)
+
+            If _treeSort = TreeSortMode.DateAscending Then
+                Return rows.OrderBy(key).ThenBy(Function(i) If(i.CodAngajament, String.Empty)).ToList()
+            End If
+            Return rows.OrderByDescending(key).ThenBy(Function(i) If(i.CodAngajament, String.Empty)).ToList()
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.SortRows", ex)
+            Throw
+        End Try
+    End Function
 
     ''' <summary>
     ''' Opțiunile arborelui (Access bOpt). În această felie: comută afișarea

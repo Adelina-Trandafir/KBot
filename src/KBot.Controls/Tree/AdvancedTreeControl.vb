@@ -101,6 +101,19 @@ Partial Public Class AdvancedTreeControl
     Private _activeColFilters As New Dictionary(Of String, String)  ' colName → filterText
     Private _activeColFilterPopup As Form = Nothing
 
+    ''' <summary>
+    ''' The two filter sets hold ROW OBJECTS, not criteria, so they stop meaning anything the
+    ''' moment the rows are replaced. <see cref="Clear"/> and <see cref="AddItem"/> raise this
+    ''' flag; <see cref="GetVisibleItems"/> rebuilds the sets over the rows that are in the tree
+    ''' NOW, before anyone reads them.
+    '''
+    ''' <para>Without it, a host that repopulates the tree while a search or a column filter is
+    ''' on ends up with sets full of rows that no longer exist: every fresh row fails both
+    ''' lookups and the tree paints EMPTY, as if the unit had no data. That is what the operator
+    ''' saw after saving a reservation with a filter typed in (22.09.2026).</para>
+    ''' </summary>
+    Private _filtersStale As Boolean = False
+
     ' ══════════════ SEARCH ══════════════
     Private _isSearchMode As Boolean = False
     Private _searchResults As New List(Of SearchResultItem)()
@@ -429,12 +442,81 @@ Partial Public Class AdvancedTreeControl
 
     ' Returnează lista plată a nodurilor vizibile (ținând cont de expandare)
     Private Function GetVisibleItems() As List(Of TreeItem)
+        RebuildFilterSetsIfStale()
         Dim result As New List(Of TreeItem)
         For Each it In Items
             AddVisible(it, result)
         Next
         Return result
     End Function
+
+    ''' <summary>
+    ''' The rows changed under an active filter: the sets are rebuilt over the CURRENT rows,
+    ''' from the criteria the operator gave (the search text, the column filters), so the filter
+    ''' keeps filtering instead of hiding everything. See <see cref="_filtersStale"/>.
+    ''' </summary>
+    ''' <remarks>
+    ''' Deliberately silent: no event, no scroll reset, no Invalidate. It runs from
+    ''' <see cref="GetVisibleItems"/>, which OnPaint itself calls, and a repaint asked for from
+    ''' inside a repaint is how a control starts spinning.
+    ''' </remarks>
+    Private Sub RebuildFilterSetsIfStale()
+        If Not _filtersStale Then Return
+        ' An empty tree has nothing to rebuild over -- and `Clear` asks for a repaint on the
+        ' spot (Update), so without this exit the filter would put itself out BEFORE the new
+        ' rows arrive. The flag stays raised for the first read after the repopulation.
+        If Items.Count = 0 Then Return
+        _filtersStale = False
+
+        If _filterActive Then
+            Dim searched As String = If(_searchTextBox Is Nothing OrElse _searchPlaceholderActive,
+                                        String.Empty, If(_searchTextBox.Text, String.Empty))
+            _filterSet.Clear()
+            _searchResults.Clear()
+            _searchResultHoveredIdx = -1
+            If searched.Length >= 3 Then
+                Dim matches As New HashSet(Of TreeItem)()
+                CollectMatchingNodes(Items, searched, matches)
+                AddWithAncestors(matches, _filterSet)
+                BuildTreeSearchResults(searched)
+            End If
+            ' The same rule as in PerformSearch: a search with no hits does not hide everything.
+            _filterActive = (_filterSet.Count > 0)
+        End If
+
+        If _colFilterActive Then
+            _colFilterSet.Clear()
+            _colFilterActive = (_activeColFilters.Count > 0)
+            If _colFilterActive Then
+                Dim matches As New HashSet(Of TreeItem)()
+                CollectColFilterMatches(Items, matches)
+                AddWithAncestors(matches, _colFilterSet)
+            End If
+        End If
+    End Sub
+
+    ''' <summary>
+    ''' Copies the matches into the filter set, each with its ancestors — a child that passes
+    ''' must stay reachable through parents that did not.
+    ''' </summary>
+    Private Shared Sub AddWithAncestors(matches As HashSet(Of TreeItem), target As HashSet(Of TreeItem))
+        For Each node As TreeItem In matches
+            target.Add(node)
+            Dim p As TreeItem = node.Parent
+            While p IsNot Nothing
+                target.Add(p)
+                p = p.Parent
+            End While
+        Next
+    End Sub
+
+    ''' <summary>
+    ''' Says that the rows no longer match the filter sets. Called by every path that adds or
+    ''' drops rows; the rebuild itself is lazy (<see cref="RebuildFilterSetsIfStale"/>).
+    ''' </summary>
+    Friend Sub MarkFiltersStale()
+        If _filterActive OrElse _colFilterActive Then _filtersStale = True
+    End Sub
 
     Private Sub AddVisible(it As TreeItem, list As List(Of TreeItem))
         ' AND logic: nodul trebuie să treacă AMBELE filtre (dacă sunt active)

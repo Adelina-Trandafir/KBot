@@ -1,0 +1,723 @@
+/**
+ * 🇷🇴 CNP TOOLS LIGHT
+ * Variantă simplificată pentru validare CNP + steag automat
+ * - Auto-insert element steag în DOM
+ * - Auto-detect tip CNP (rezident/non-rezident)
+ * - Formatare opțională live
+ * - Validare și callbacks
+ *
+ * @version 1.0.0
+ */
+
+export class CnpToolsLight {
+  /**
+   * @param {HTMLInputElement} inputElement - Input element pentru CNP
+   * @param {Object} options - Opțiuni
+   * @param {boolean} options.autoFormat - Formatare automată (default: false)
+   * @param {boolean} options.autoValidate - Validare la blur (default: true)
+   * @param {boolean} options.showError - Afișează mesaj eroare (default: false)
+   * @param {Function} options.onValid - Callback la validare reușită
+   * @param {Function} options.onInvalid - Callback la validare eșuată
+   * @param {Function} options.onChange - Callback la orice schimbare
+   * @param {boolean} options.debugMode - Activează logging
+   */
+  constructor(inputElement, options = {}) {
+    if (!inputElement || !(inputElement instanceof HTMLInputElement)) {
+      throw new Error('CnpToolsLight: inputElement invalid');
+    }
+
+    this.inputElement = inputElement;
+    this.autoFormat = options.autoFormat || false;
+    this.autoValidate = options.autoValidate !== false;
+    this.showError = options.showError || false;
+    this.onValid = options.onValid || null;
+    this.onInvalid = options.onInvalid || null;
+    this.onChange = options.onChange || null;
+    this.debugMode = options.debugMode || false;
+    this.ListenerTracker = options.ListenerTracker || null;
+
+    // Daca e furnizat ListenerTracker, folosește-l
+    if (this.ListenerTracker) {
+      this.ListenerTracker.applyTo(this, {
+        debugMode: this.debugMode || false,
+        logPrefix: 'CNP_TOOLS_LIGHT',
+        trackPerformance: false,
+      });
+    } else {
+      // Fallback la addEventListener normal
+      this.addDOMListener = (el, ev, fn) => el.addEventListener(ev, fn);
+    }
+
+    // State
+    this.flagWrapper = null;
+    this.flagElement = null;
+    this.errorElement = null;
+    this.parentElement = null;
+    this.currentCnpData = null;
+
+    // Bind methods
+    this.handleInput = this.handleInput.bind(this);
+    this.handleBlur = this.handleBlur.bind(this);
+    this.handleKeydown = this.handleKeydown.bind(this);
+
+    // Positioning
+    this.cursorPos = 0;
+    this.oldValue = '';
+    this.firstDigit = '';
+    // Inițializare
+    this.init();
+  }
+
+  // ==================== INITIALIZATION ====================
+
+  /**
+   * Inițializare completă
+   */
+  init() {
+    this.log('🚀 CnpToolsLight init...');
+
+    // 1. Încarcă CSS-ul pentru steaguri
+    this.loadFlagsCSS()
+      .then(() => {
+        // 2. Creează element steag
+        this.createFlagElement();
+
+        // 3. Atașează event listeners
+        this.attachListeners();
+
+        // 4. Procesează valoarea existentă (dacă există)
+        if (this.inputElement.value.trim()) {
+          this.processInput(this.inputElement.value);
+        }
+
+        this.log('✅ CnpToolsLight initialized');
+      })
+      .catch((err) => {
+        this.log('❌ Eroare la încărcarea CSS-ului', err);
+      });
+  }
+
+  /**
+   * Încarcă CSS pentru steaguri
+   */
+  async loadFlagsCSS() {
+    if (document.getElementById('cnpFlagsCSS')) {
+      this.log('✅ CSS deja încărcat');
+      return;
+    }
+
+    this.log('🎨 Încarc CSS-ul flags...');
+
+    return new Promise((resolve, reject) => {
+      const link = document.createElement('link');
+      link.id = 'cnpFlagsCSS';
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css';
+
+      link.onload = () => {
+        this.log('✅ CSS încărcat cu succes');
+        resolve();
+      };
+
+      link.onerror = () => {
+        this.log('❌ Eroare la încărcarea CSS-ului');
+        reject(new Error('Failed to load CSS'));
+      };
+
+      document.head.appendChild(link);
+    });
+  }
+
+  /**
+   * Creează și inserează elementul de steag în DOM
+   */
+  createFlagElement() {
+    this.parentElement = this.inputElement.parentElement;
+
+    if (!this.parentElement) {
+      this.log('❌ Parent element not found');
+      return;
+    }
+
+    // Creează wrapper pentru steag
+    this.flagWrapper = document.createElement('div');
+    this.flagWrapper.className = 'cnp-flag-wrapper hidden';
+
+    // Creează elementul steag
+    this.flagElement = document.createElement('span');
+    this.flagElement.className = 'cnp-flag-icon fi';
+
+    this.flagWrapper.appendChild(this.flagElement);
+
+    // Găsește label-ul
+    const label = this.parentElement.querySelector('label');
+
+    if (label) {
+      label.insertAdjacentElement('afterend', this.flagWrapper);
+      this.log('✅ Flag element inserted after label');
+    } else {
+      this.parentElement.insertBefore(this.flagWrapper, this.inputElement);
+      this.log('✅ Flag element inserted before input');
+    }
+
+    // Creează element pentru erori (dacă e cazul)
+    if (this.showError) {
+      this.errorElement = document.createElement('div');
+      this.errorElement.className = 'cnp-error-message';
+      this.inputElement.insertAdjacentElement('afterend', this.errorElement);
+    }
+  }
+
+  /**
+   * Atașează event listeners
+   */
+  attachListeners() {
+    this.addDOMListener(this.inputElement, 'input', this.handleInput);
+    this.addDOMListener(this.inputElement, 'keydown', this.handleKeydown);
+
+    if (this.autoValidate) {
+      this.addDOMListener(this.inputElement, 'blur', this.handleBlur);
+    }
+
+    this.log('✅ Event listeners attached');
+  }
+
+  // ==================== EVENT HANDLERS ====================
+
+  /**
+   * Handler pentru keydown - permite doar cifre
+   */
+  handleKeydown(e) {
+    // Permite: Backspace, Delete, Tab, Escape, Enter, Home, End, Arrow keys
+    if (
+      [
+        'Backspace',
+        'Delete',
+        'Tab',
+        'Escape',
+        'Enter',
+        'Home',
+        'End',
+        'ArrowLeft',
+        'ArrowRight',
+        'ArrowUp',
+        'ArrowDown',
+      ].includes(e.key)
+    ) {
+      return;
+    }
+
+    // Permite: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+    if (e.ctrlKey || e.metaKey) {
+      return;
+    }
+
+    // Blochează tot ce nu e cifră
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
+    }
+
+    // Limitează la 13 cifre
+    const currentDigits = this.extractDigits(this.inputElement.value);
+    if (currentDigits.length >= 13 && /^\d$/.test(e.key)) {
+      e.preventDefault();
+    }
+
+    //this.processInput(this.inputElement.value, e.key);
+  }
+
+  /**
+   * Handler pentru input - procesare live
+   */
+  handleInput(e) {
+    this.processInput(e.target.value);
+  }
+
+  /**
+   * Handler pentru blur - validare finală
+   */
+  handleBlur(e) {
+    const cnp = this.extractDigits(e.target.value);
+
+    if (!cnp) {
+      this.hideFlag();
+      this.hideError();
+      return;
+    }
+
+    const result = this.parseCNP(cnp);
+
+    if (result && result.valid) {
+      this.showValidationState(true);
+      if (this.onValid) {
+        this.onValid(result);
+      }
+    } else {
+      this.showValidationState(false, 'CNP invalid');
+      if (this.onInvalid) {
+        this.onInvalid(cnp);
+      }
+    }
+  }
+
+  // ==================== CORE PROCESSING ====================
+
+  /**
+   * Procesează input-ul (formatare + detectare steag)
+   */
+  processInput(value, currentKey = null) {
+    let digits = '';
+
+    digits = this.extractDigits(value);
+
+    // Callback onChange
+    if (this.onChange) {
+      this.onChange(digits);
+    }
+
+    if (!digits && !currentKey) {
+      // Reset
+      this.firstDigit = '';
+      this.hideFlag();
+      this.hideError();
+      return;
+    } else if (!digits && currentKey) {
+      // Prima cifră introdusă
+      digits = currentKey;
+      this.firstDigit = parseInt(currentKey, 10);
+      this.updateFlag(this.firstDigit);
+    } else {
+      // Alte cifre introduse
+      // Detectează tipul CNP din prima cifră
+      if (this.firstDigit !== parseInt(digits[0], 10)) {
+        this.firstDigit = parseInt(digits[0], 10);
+        this.updateFlag(this.firstDigit);
+      }
+    }
+
+    // Formatare (dacă e activată)
+    if (this.autoFormat) {
+      this.formatCNP(digits);
+      this.inputElement.value = this.autoFormat ? this.formatCNP(digits) : digits;
+      this.inputElement.setSelectionRange(this.cursorPos, this.cursorPos);
+    }
+
+    // Validare parțială (fără erori până la blur)
+    if (digits.length === 13) {
+      const result = this.parseCNP(digits);
+      this.currentCnpData = result;
+
+      // Nu afișăm erori la input, doar la blur
+      // Dar actualizăm steagul cu datele corecte
+      //if (result && result.valid) {
+      //  this.updateFlagFromData(result);
+      //}
+    }
+  }
+
+  /**
+   * Formatează CNP-ul vizual: 1 23 45 67 890 123
+   */
+  formatCNP(digits) {
+    if (digits.length === 0) {
+      this.inputElement.value = '';
+      return;
+    }
+
+    let formatted = '';
+
+    // Format: S AA LL ZZ JJ NNNN C
+    // Pozițiile: 1 | 2-3 | 4-5 | 6-7 | 8-9 | 10-12 | 13
+    const parts = [
+      digits.substring(0, 1), // S
+      digits.substring(1, 3), // AA
+      digits.substring(3, 5), // LL
+      digits.substring(5, 7), // ZZ
+      digits.substring(7, 9), // JJ
+      digits.substring(9, 12), // NNN
+      digits.substring(12, 13), // C
+    ];
+
+    formatted = parts.filter((p) => p).join(' ');
+
+    // Salvează poziția cursorului
+    this.cursorPos = this.inputElement.selectionStart;
+    this.oldValue = this.inputElement.value;
+
+    // this.inputElement.value = formatted;
+
+    // Recalculează poziția cursorului
+    if (this.cursorPos) {
+      const oldSpaces = (this.oldValue.substring(0, this.cursorPos).match(/ /g) || []).length;
+      const newSpaces = (formatted.substring(0, this.cursorPos).match(/ /g) || []).length;
+      const newCursorPos = this.cursorPos + (newSpaces - oldSpaces);
+      this.cursorPos = newCursorPos;
+      //  this.inputElement.setSelectionRange(newCursorPos, newCursorPos);
+    }
+
+    return formatted;
+  }
+
+  // ==================== CNP PARSING & VALIDATION ====================
+
+  /**
+   * Parsează și validează un CNP
+   * @param {string} cnp - CNP de 13 cifre
+   * @returns {Object|null}
+   */
+  parseCNP(cnp) {
+    if (!/^\d{13}$/.test(cnp)) return null;
+
+    const digits = cnp.split('').map(Number);
+    const S = digits[0];
+    const AA = parseInt(cnp.substr(1, 2), 10);
+    const LL = parseInt(cnp.substr(3, 2), 10);
+    const ZZ = parseInt(cnp.substr(5, 2), 10);
+    const JJ = parseInt(cnp.substr(7, 2), 10);
+
+    // Validări de bază
+    if (S < 1 || S > 9) return null;
+    if (LL < 1 || LL > 12 || ZZ < 1 || ZZ > 31) return null;
+    if (JJ < 1 || JJ > 52) return null;
+
+    // Validare cifră de control
+    const controlKey = '279146358279';
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+      sum += digits[i] * parseInt(controlKey[i], 10);
+    }
+    const controlDigit = sum % 11 === 10 ? 1 : sum % 11;
+    if (controlDigit !== digits[12]) return null;
+
+    // Determinare an
+    let year = null;
+    if (S === 1 || S === 2) year = 1900 + AA;
+    else if (S === 3 || S === 4) year = 1800 + AA;
+    else if (S === 5 || S === 6) year = 2000 + AA;
+    else if (S === 7 || S === 8 || S === 9) year = null; // non-rezident
+
+    // Validare dată (doar pentru rezidenți)
+    if (year && !this.isValidDate(year, LL, ZZ)) return null;
+
+    // Sex
+    const sex = [1, 3, 5, 7].includes(S) ? 'M' : 'F';
+
+    // Categorie
+    const categorie = S <= 6 ? 'Rezident' : S <= 8 ? 'Rezident străin' : 'Non-rezident';
+
+    // Județe (cod 2 litere)
+    const judete = {
+      1: 'AB',
+      2: 'AR',
+      3: 'AG',
+      4: 'BC',
+      5: 'BH',
+      6: 'BN',
+      7: 'BT',
+      8: 'BV',
+      9: 'BR',
+      10: 'BZ',
+      11: 'CS',
+      12: 'CJ',
+      13: 'CT',
+      14: 'CV',
+      15: 'DB',
+      16: 'DJ',
+      17: 'GL',
+      18: 'GJ',
+      19: 'HR',
+      20: 'HD',
+      21: 'IL',
+      22: 'IS',
+      23: 'IF',
+      24: 'MM',
+      25: 'MH',
+      26: 'MS',
+      27: 'NT',
+      28: 'OT',
+      29: 'PH',
+      30: 'SM',
+      31: 'SJ',
+      32: 'SB',
+      33: 'SV',
+      34: 'TR',
+      35: 'TM',
+      36: 'TL',
+      37: 'VS',
+      38: 'VL',
+      39: 'VN',
+      40: 'B',
+      41: 'B',
+      42: 'B',
+      43: 'B',
+      44: 'B',
+      45: 'B',
+      46: 'B',
+      51: 'CL',
+      52: 'GR',
+    };
+
+    // Data nașterii
+    const dataNasterii = year ? new Date(year, LL - 1, ZZ).toISOString().slice(0, 10) : null;
+
+    // Steag
+    const steag = S >= 7 && S <= 9 ? 'un' : 'ro';
+
+    return {
+      valid: true,
+      sex,
+      categorie,
+      judet: judete[JJ] || '??',
+      dataNasterii,
+      anulNasterii: year,
+      steag,
+      cnp,
+    };
+  }
+
+  /**
+   * Verifică validitatea unei date
+   */
+  isValidDate(year, month, day) {
+    const d = new Date(year, month - 1, day);
+    return d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day;
+  }
+
+  // ==================== FLAG MANAGEMENT ====================
+
+  /**
+   * Actualizează steagul pe baza primei cifre
+   */
+  updateFlag(firstDigit) {
+    if (firstDigit < 1 || firstDigit > 9) {
+      this.hideFlag();
+      return;
+    }
+
+    // 1-6: Rezident RO (🇷🇴)
+    // 7-9: Non-rezident (🌍 UN)
+    const flagCode = firstDigit >= 7 && firstDigit <= 9 ? 'un' : 'ro';
+
+    this.showFlag(flagCode);
+  }
+
+  /**
+   * Actualizează steagul din datele complete CNP
+   */
+  updateFlagFromData(cnpData) {
+    if (cnpData && cnpData.valid && cnpData.steag) {
+      this.showFlag(cnpData.steag);
+    }
+  }
+
+  /**
+   * Afișează steagul
+   */
+  showFlag(flagCode) {
+    this.flagElement.className = `cnp-flag-icon fi fi-${flagCode}`;
+    this.flagWrapper.classList.remove('hidden');
+    this.flagWrapper.classList.add('visible');
+    // this.flagWrapper.style.opacity = '1';
+
+    this.log(`🏴 Steag afișat: ${flagCode}`);
+  }
+
+  /**
+   * Ascunde steagul
+   */
+  hideFlag() {
+    this.flagWrapper.classList.add('hidden');
+    this.flagWrapper.classList.remove('visible');
+    // this.flagWrapper.style.opacity = '0';
+  }
+
+  // ==================== VALIDATION UI ====================
+
+  /**
+   * Marchează starea validării în UI
+   */
+  showValidationState(isValid, errorMessage = 'CNP invalid') {
+    // Update input styling
+    this.inputElement.classList.toggle('is-valid', isValid);
+    this.inputElement.classList.toggle('is-invalid', !isValid);
+
+    // Update error message
+    if (this.showError && this.errorElement) {
+      if (isValid) {
+        this.hideError();
+      } else {
+        this.showErrorMessage(errorMessage);
+      }
+    }
+  }
+
+  /**
+   * Afișează mesaj de eroare
+   */
+  showErrorMessage(message) {
+    if (this.errorElement) {
+      this.errorElement.textContent = message;
+      this.errorElement.style.display = 'block';
+    }
+  }
+
+  /**
+   * Ascunde mesajul de eroare
+   */
+  hideError() {
+    if (this.errorElement) {
+      this.errorElement.textContent = '';
+      this.errorElement.style.display = 'none';
+    }
+
+    this.inputElement.classList.remove('is-valid', 'is-invalid');
+  }
+
+  // ==================== PUBLIC API ====================
+
+  /**
+   * Validare manuală
+   * @param {string} cnp - CNP de validat (opțional, folosește input-ul dacă lipsește)
+   * @returns {Object|null}
+   */
+  validate(cnp = null) {
+    const cnpToValidate = cnp || this.extractDigits(this.inputElement.value);
+    return this.parseCNP(cnpToValidate);
+  }
+
+  /**
+   * Verifică dacă CNP-ul curent este valid
+   */
+  isValid() {
+    const result = this.validate();
+    return result && result.valid;
+  }
+
+  /**
+   * Setează un CNP
+   */
+  setCNP(cnp) {
+    const digits = this.extractDigits(cnp);
+    this.inputElement.value = '';
+    if (!digits) return;
+
+    this.processInput(this.inputElement.value);
+  }
+
+  /**
+   * Obține CNP-ul curent (fără formatare)
+   */
+  getCNP() {
+    return this.extractDigits(this.inputElement.value);
+  }
+
+  /**
+   * Obține datele complete CNP
+   */
+  getCNPData() {
+    return this.currentCnpData;
+  }
+
+  /**
+   * Resetează la starea inițială
+   */
+  reset() {
+    this.inputElement.value = '';
+    this.hideFlag();
+    this.hideError();
+    this.currentCnpData = null;
+    this.log('🔄 Reset');
+  }
+
+  /**
+   * Activează/dezactivează input-ul
+   */
+  setEnabled(enabled) {
+    this.inputElement.disabled = !enabled;
+
+    if (enabled) {
+      this.parentElement?.classList.remove('disabled');
+    } else {
+      this.parentElement?.classList.add('disabled');
+    }
+  }
+
+  /**
+   * Distruge instanța
+   */
+  destroy() {
+    // Șterge event listeners
+    if (this.addDOMListener === ((el, ev, fn) => el.addEventListener(ev, fn))) {
+      this.inputElement.removeEventListener('input', this.handleInput);
+      this.inputElement.removeEventListener('keydown', this.handleKeydown);
+      this.inputElement.removeEventListener('blur', this.handleBlur);
+    }
+    // Șterge elementele din DOM
+    if (this.flagWrapper && this.flagWrapper.parentElement) {
+      this.flagWrapper.remove();
+    }
+
+    if (this.errorElement && this.errorElement.parentElement) {
+      this.errorElement.remove();
+    }
+
+    // Curăță referințele
+    this.inputElement = null;
+    this.flagWrapper = null;
+    this.flagElement = null;
+    this.errorElement = null;
+    this.parentElement = null;
+    this.currentCnpData = null;
+    this.addDOMListener = null;
+
+    this.log('🗑️ Destroyed');
+  }
+
+  // ==================== UTILS ====================
+
+  /**
+   * Extrage doar cifrele dintr-un string
+   */
+  extractDigits(str) {
+    return str.replace(/\D/g, '');
+  }
+
+  /**
+   * Logging helper
+   */
+  log = (() => {
+    const fn = (message, data = null) => {
+      if (this.debugMode) {
+        const now = new Date();
+        const ts = `${now.toLocaleTimeString('en-GB', { hour12: false })}.${now
+          .getMilliseconds()
+          .toString()
+          .padStart(3, '0')}`;
+        const CPN = 'CNP_LIGHT'.padEnd(15);
+        console.log(
+          `%c[${ts}] [${CPN}] ${message}`,
+          'color: #3498db; font-weight: bold;',
+          data ?? ''
+        );
+      }
+    };
+
+    fn.error = (message, data = null) => {
+      const now = new Date();
+      const ts = `${now.toLocaleTimeString('en-GB', { hour12: false })}.${now
+        .getMilliseconds()
+        .toString()
+        .padStart(3, '0')}`;
+      const CPN = 'CNP_LIGHT'.padEnd(15);
+      console.error(
+        `%c[${ts}] [${CPN}] ${message}`,
+        'color: #e74c3c; font-weight: bold;',
+        data ?? ''
+      );
+    };
+
+    return fn;
+  })();
+}
+
+export default CnpToolsLight;

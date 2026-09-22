@@ -123,7 +123,12 @@ Partial Public Class AdvancedTreeControl
         Friend Sub New()
             Me.FormBorderStyle = FormBorderStyle.None
             Me.ShowInTaskbar = False
-            Me.TopMost = True
+            ' NO TopMost property: set before the handle exists it is only remembered, and
+            ' Form.CreateHandle re-applies it with a SetWindowPos(HWND_TOPMOST) that carries no
+            ' SWP_NOACTIVATE -- which ACTIVATES the popup the one time its handle is built and
+            ' deactivates the form underneath. WS_EX_NOACTIVATE guards clicks, not that call.
+            ' The band comes from CreateParams (WS_EX_TOPMOST) and from ForceShowTopMost, which
+            ' spells SWP_NOACTIVATE out.
             Me.BackColor = _BackColor   ' Galben tooltip clasic
             Me.Padding = New Padding(0)
             Me.DoubleBuffered = True
@@ -411,6 +416,8 @@ Partial Public Class AdvancedTreeControl
                 cp.ExStyle = cp.ExStyle Or &H80       ' WS_EX_TOOLWINDOW
                 cp.ExStyle = cp.ExStyle Or &H8000000  ' WS_EX_NOACTIVATE
                 cp.ExStyle = cp.ExStyle Or &H20       ' WS_EX_TRANSPARENT (opțional, pentru click-through)
+                cp.ExStyle = cp.ExStyle Or &H8        ' WS_EX_TOPMOST -- see the ctor: born topmost,
+                '                                       so the TopMost property never has to be set
 
                 ' IMPORTANT: Adaugă stilul de fereastră pentru a preveni focusul
                 cp.Style = cp.Style And Not &H8000000 ' Scoate WS_BORDER dacă există

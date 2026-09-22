@@ -15,11 +15,13 @@ Imports KBot.Theming
 ''' <c>ForexeRunner</c> -> <c>ForexeController.OperatiuneCapturata</c>. When one FINISHES
 ''' (its save was confirmed by the page) the shell does, by itself, what the node's download
 ''' icon does: downloads from FOREXE, takes the package through the two-phase ingest, and
-''' then opens the angajament's history cut to the minutes the operator worked. WHAT is
-''' downloaded follows the operation: a reservation brings the reservations only (the
-''' Rezervari flow: header, indicators, history - never the receptions), a reception brings
-''' the receptions only (the Receptii flow - never the reservations), and a new angajament
-''' or a manual operation brings the whole angajament (operator, 21.09.2026).
+''' then, for every operation but a reservation, opens the angajament's history cut to the
+''' minutes the operator worked. WHAT is downloaded follows the operation: a reservation brings
+''' the reservations only (the Rezervari flow: header, indicators, history - never the
+''' receptions), a reception brings the receptions AND the history (the Receptii flow - never
+''' the indicators; the history since 22.09.2026, because a saved reception writes a row in it
+''' too and FX_Istoric stayed without it), and a new angajament or a manual operation brings
+''' the whole angajament (operator, 21.09.2026).
 '''
 ''' <para><b>A new angajament</b> has no node yet, so the angajamente list is synchronised
 ''' first (the same road as the tree footer icon), the codes that were not in the tree before
@@ -141,7 +143,13 @@ Partial Public Class KbotForm
                     Continue For
                 End If
                 Await DuLaIngestieAsync(cod, pachet)
-                DeschideIstoricInterval(cod, deLa, panaLa, ev.Label)
+                ' NOT after a reservation (operator, 22.09.2026): the reservation flow reads
+                ' the history itself and the Rezervari view already shows the row that was
+                ' just written, so the window added nothing and had to be closed by hand
+                ' after every single save. The other operations keep it.
+                If ev.Operation <> ForexeOperationKind.Rezervare Then
+                    DeschideIstoricInterval(cod, deLa, panaLa, ev.Label)
+                End If
             Next
         Finally
             _urmarireInLucru = False

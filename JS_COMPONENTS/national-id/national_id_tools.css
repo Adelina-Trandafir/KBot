@@ -1,0 +1,157 @@
+/**
+ * 🎨 NATIONAL ID TOOLS - CSS
+ * Styling pentru input-uri de ID-uri naționale cu steag și validare
+ * Suportă: RO (CNP), UK (NINO), extensibil pentru alte țări
+ * 
+ * @version 2.0.0
+ */
+
+/* ========== FLAG WRAPPER ========== */
+.national-id-flag-wrapper {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.national-id-flag-wrapper.visible {
+  opacity: 1;
+}
+
+.national-id-flag-wrapper.hidden {
+  opacity: 0;
+}
+
+/* ========== FLAG ICON ========== */
+.national-id-flag-icon {
+  display: inline-block;
+  width: 24px;
+  height: 18px;
+  font-size: 24px;
+  line-height: 18px;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.national-id-flag-icon:hover {
+  transform: scale(1.1);
+}
+
+/* ========== ERROR MESSAGE ========== */
+.national-id-error-message {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 4px;
+  display: none;
+  animation: fadeIn 0.2s ease;
+}
+
+.national-id-error-message.visible {
+  display: block;
+}
+
+/* ========== INPUT VALIDATION STATES ========== */
+input.is-valid {
+  border-color: #27ae60 !important;
+  background-color: #f0fff4;
+}
+
+input.is-invalid {
+  border-color: #e74c3c !important;
+  background-color: #fff5f5;
+}
+
+/* ========== FORMATARE INPUT ========== */
+/* Pentru a arăta mai bine cu formatare */
+input[type="text"].national-id-formatted {
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .national-id-flag-wrapper {
+    margin-right: 6px;
+    margin-bottom: 3px;
+  }
+
+  .national-id-flag-icon {
+    width: 20px;
+    height: 15px;
+    font-size: 20px;
+  }
+
+  .national-id-error-message {
+    font-size: 11px;
+  }
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== DISABLED STATE ========== */
+.disabled .national-id-flag-wrapper {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.disabled input {
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+/* ========== FORM GROUP INTEGRATION ========== */
+/* Compatibilitate cu sistem de form existent */
+.form-group .national-id-flag-wrapper,
+.details-panel-baza-form-group .national-id-flag-wrapper {
+  flex: 0 0 auto;
+}
+
+.form-group input.national-id-formatted,
+.details-panel-baza-form-group input.national-id-formatted {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* ========== COUNTRY-SPECIFIC STYLING ========== */
+/* Opțional: stiluri specifice pentru fiecare țară */
+
+/* RO (CNP) - mai lat pentru 13 cifre */
+input.national-id-ro {
+  min-width: 220px;
+}
+
+/* UK (NINO) - mai îngust pentru 9 caractere */
+input.national-id-uk {
+  min-width: 180px;
+  text-transform: uppercase;
+}
+
+/* ========== FOCUS STATES ========== */
+input.national-id-formatted:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  border-color: #3498db;
+}
+
+input.is-valid:focus {
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
+  border-color: #27ae60;
+}
+
+input.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2);
+  border-color: #e74c3c;
+}

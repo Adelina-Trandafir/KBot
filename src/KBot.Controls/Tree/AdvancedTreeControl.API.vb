@@ -31,6 +31,10 @@ Partial Public Class AdvancedTreeControl
             pParent.Children.Add(it)
         End If
 
+        ' A row the active filter has never seen: the sets are rebuilt before they are read
+        ' again, otherwise the new row fails a lookup it was never offered to.
+        MarkFiltersStale()
+
         Me.Invalidate()
         Return it
     End Function
@@ -142,6 +146,9 @@ Partial Public Class AdvancedTreeControl
         ' nicaieri, iar gazda care citeste SelectedNodes ar lucra pe ele.
         ForgetSelection()
         ForgetDropPreview()
+        ' The filter stays (the criteria are the operator's), but its sets point at rows that
+        ' have just gone -- they are rebuilt over the new rows, at the first read.
+        MarkFiltersStale()
 
         ' 3. Resetăm Scroll-ul la zero (CRITIC)
         Me.AutoScrollPosition = New Point(0, 0)

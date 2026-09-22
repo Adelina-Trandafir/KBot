@@ -287,7 +287,7 @@ Partial Class KbotForm
         tree.ShowRightIconOnHover = True
         tree.Size = New Size(465, 790)
         tree.TabIndex = 0
-        tree.TooltipShowOnlyOnLeftIcon = True
+        tree.TooltipShowOnlyOnLeftIcon = False
         tree.TreeListView = True
         ' 
         ' pnlTreeHead
