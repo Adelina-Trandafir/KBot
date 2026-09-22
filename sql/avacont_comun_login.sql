@@ -19,8 +19,22 @@ USE `AVACONT_COMUN`;
 --  authoritative source of globCF for a unit.
 --  IdUnitate values are preserved from Access -> plain INT PK.
 -- ---------------------------------------------------------------------
+-- ---------------------------------------------------------------------
+--  ⚠ THIS FILE IS A STALE REFERENCE, NOT THE SERVER (read 22.09.2026,
+--  slice 0075). It is kept for the column meanings; the shapes below have
+--  drifted. What the live K-BOT server actually has, and what any code
+--  must be written against:
+--    * CAI's primary key is `IdCai`, AUTO_INCREMENT — NOT `IdUnitate`.
+--    * `IdUnitate` is a plain, NON-UNIQUE column. 70 rows, MAX = 200.
+--      Nothing protects it, which is why the provisioning job of §5.6
+--      takes GET_LOCK('cai_idunitate') before reading MAX(IdUnitate)+1.
+--    * `DbName` equals `DC` on every row.
+--  Corrected below. Treat the rest of the file the same way: useful for
+--  what a column MEANS, not authoritative for its type or its keys.
+-- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `CAI` (
-  `IdUnitate`   INT           NOT NULL,
+  `IdCai`       INT           NOT NULL AUTO_INCREMENT,
+  `IdUnitate`   INT           NOT NULL,           -- NOT unique; see the note above
   `DbName`      VARCHAR(64)   NOT NULL,           -- per-unit schema, e.g. '000_DEMO'
   `NumeUnitate` VARCHAR(255)      NULL,
   `AlteDetalii` VARCHAR(255)      NULL,
@@ -29,14 +43,17 @@ CREATE TABLE IF NOT EXISTS `CAI` (
   `CodProgram`  VARCHAR(32)       NULL,           -- program code (NEW)
   `AnDate`      INT               NULL,           -- year (-> ANL); CLng(AnDate)=globANL
   `DC`          VARCHAR(32)       NULL,           -- data-context tag (legacy DC())
-  PRIMARY KEY (`IdUnitate`),
+  PRIMARY KEY (`IdCai`),
+  KEY `ix_CAI_IdUnitate`  (`IdUnitate`),
   KEY `ix_CAI_DbName`    (`DbName`),
   KEY `ix_CAI_DC_AnDate` (`DC`, `AnDate`),
   KEY `ix_CAI_Sursa_An`  (`Sursa`, `AnDate`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
--- OPEN QUESTION: DbName is intentionally NOT globally UNIQUE. If a single unit
--- gets exactly one CAI row per year, tighten to UNIQUE(DbName, AnDate) AFTER
--- confirming the row-per-year cardinality against the real Access data.
+-- ANSWERED (22.09.2026): DbName is not unique and neither is IdUnitate — a unit
+-- gets one CAI row per sector-source, so several rows share both. That is why
+-- the free-name check of §5.4 scans SCHEMATA *and* CAI, and why §5.6 step 3
+-- needs an explicit lock: no key stops two runs from picking the same
+-- MAX(IdUnitate)+1.
 
 -- ---------------------------------------------------------------------
 --  FX_LoginLog — session audit. One row per successful login.

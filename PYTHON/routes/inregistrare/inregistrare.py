@@ -45,6 +45,9 @@ from routes.auth.ratelimit import LIMITER
 from utils.database import get_kbot_comun_connection
 
 from . import anaf as anaf_client
+from . import cerere as cerere_mod
+from . import nomenclatoare
+from . import nume
 from . import store
 
 logger = logging.getLogger(__name__)
@@ -305,6 +308,178 @@ def inregistrare_verifica():
          "expires_in": left},
         200,
     )
+
+
+# ---------------------------------------------------------------------------
+# GET /api/inregistrare/sursasector
+# GET /api/inregistrare/clasificatii?tip=F|E
+# Steps 4 and 5. The lists the applicant picks from. Behind the token like
+# everything after step 1 -- these are small dictionaries, but they are the
+# customer's nomenclature, not public reference data.
+# ---------------------------------------------------------------------------
+@inregistrare_bp.route("/api/inregistrare/sursasector", methods=["GET"])
+def inregistrare_sursasector():
+    _token, _registration_data, refusal = _registration()
+    if refusal is not None:
+        return refusal
+
+    conn = None
+    try:
+        conn = get_kbot_comun_connection()
+        return _json({"surse": nomenclatoare.read_sursasector(conn)}, 200)
+    except mysql.connector.Error as err:
+        logger.error("inregistrare_sursasector failed: %s", err)
+        return _fail("DB_ERROR", "Lista surselor-sector nu a putut fi citită.", 500)
+    finally:
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+
+@inregistrare_bp.route("/api/inregistrare/clasificatii", methods=["GET"])
+def inregistrare_clasificatii():
+    _token, _registration_data, refusal = _registration()
+    if refusal is not None:
+        return refusal
+
+    tip = (request.args.get("tip") or "").strip().upper()
+    if tip not in ("F", "E"):
+        return _fail("TIP_INVALID", "Tipul clasificației trebuie să fie F sau E.", 400)
+
+    conn = None
+    try:
+        conn = get_kbot_comun_connection()
+        return _json({"tip": tip, "coduri": nomenclatoare.read_clasificatii(conn, tip)}, 200)
+    except mysql.connector.Error as err:
+        logger.error("inregistrare_clasificatii(%s) failed: %s", tip, err)
+        return _fail("DB_ERROR", "Nomenclatorul nu a putut fi citit.", 500)
+    finally:
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+
+# ---------------------------------------------------------------------------
+# GET /api/inregistrare/nume?denumire=
+# Step 3. A PREVIEW of the database name. The real one is computed again at
+# approval (plan 5.4), because a number free now can be taken by the time the
+# operator gets round to the request.
+# ---------------------------------------------------------------------------
+@inregistrare_bp.route("/api/inregistrare/nume", methods=["GET"])
+def inregistrare_nume():
+    _token, _registration_data, refusal = _registration()
+    if refusal is not None:
+        return refusal
+
+    denumire = (request.args.get("denumire") or "").strip()
+    if not denumire:
+        return _fail("DENUMIRE_ABSENTA", "Introduceți denumirea unității.", 400)
+
+    try:
+        key = nume.letter_key(denumire)
+    except nume.NameTooShort:
+        return _fail(
+            "DENUMIRE_PREA_SCURTA",
+            "Denumirea unității trebuie să conțină cel puțin patru litere.",
+            400,
+        )
+
+    conn = None
+    try:
+        conn = get_kbot_comun_connection()
+        number = nume.first_free_number(nume.used_prefixes(conn))
+    except nume.NoFreeNumber:
+        logger.error("no free database number left between 111 and 199")
+        return _fail(
+            "NUMAR_EPUIZAT",
+            "Nu mai există numere libere pentru baze noi. Contactați-ne.",
+            409,
+        )
+    except mysql.connector.Error as err:
+        logger.error("inregistrare_nume failed: %s", err)
+        return _fail("DB_ERROR", "Numele bazei nu a putut fi calculat.", 500)
+    finally:
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+    # `previzualizare` says out loud what the plan says in 5.4: this is not a promise.
+    return _json({"db_name": nume.db_name(number, key), "numar": number,
+                  "litere": key, "previzualizare": True}, 200)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/inregistrare/cerere
+# Step 6. Everything checked once more and written as one row for the operator.
+# ---------------------------------------------------------------------------
+@inregistrare_bp.route("/api/inregistrare/cerere", methods=["POST"])
+def inregistrare_cerere():
+    token, registration, refusal = _registration()
+    if refusal is not None:
+        return refusal
+
+    body = request.get_json(silent=True) or {}
+    conn = None
+    try:
+        conn = get_kbot_comun_connection()
+        # D11 once more. The fiscal code was free when the wizard opened; half an
+        # hour is long enough for the operator to have created that unit by hand.
+        if _cf_has_database(registration.get("cf") or ""):
+            return _fail(
+                "CF_EXISTS",
+                "Pentru acest cod fiscal există deja o bază de date. "
+                "Contactați-ne pentru acces.",
+                409,
+            )
+        checked = cerere_mod.validate(conn, registration, body)
+    except cerere_mod.CerereInvalid as err:
+        return _fail(err.reason, err.message, 400)
+    except mysql.connector.Error as err:
+        logger.error("inregistrare_cerere validation failed: %s", err)
+        return _fail("DB_ERROR", "Cererea nu a putut fi verificată. Reîncercați.", 500)
+    finally:
+        if conn is not None and conn.is_connected():
+            conn.close()
+
+    try:
+        id_cerere = cerere_mod.insert(checked, registration, _ip())
+    except mysql.connector.Error as err:
+        logger.error("inregistrare_cerere insert failed: %s", err)
+        return _fail("DB_ERROR", "Cererea nu a putut fi înregistrată. Reîncercați.", 500)
+
+    # The request IS recorded at this point. A notification that does not go out is
+    # worth a warning in the log and an honest field in the answer -- never a failure
+    # that would invite the applicant to send everything a second time.
+    notified = _notify_operator(id_cerere, checked, registration)
+
+    # The registration is finished with. Leaving the note alive would let the same
+    # token post a second request against a proven address.
+    store.discard(token)
+
+    logger.info("registration request %s filed for CF %s", id_cerere,
+                registration.get("cf"))
+    return _json({"id_cerere": id_cerere,
+                  "randuri": checked["randuri"],
+                  "operator_anuntat": notified}, 200)
+
+
+def _notify_operator(id_cerere, checked, registration):
+    """True when the operator's mail went out. Every failure is logged, none raised."""
+    try:
+        address = mailer.operator_address()
+        if not address:
+            logger.warning("OPERATOR_EMAIL is not configured: request %s not announced",
+                           id_cerere)
+            return False
+        mailer.send_registration_notice(
+            address,
+            id_cerere=id_cerere,
+            denumire=checked["denumire"],
+            cf=registration.get("cf") or "",
+            email=registration.get("email") or "",
+            randuri=checked["randuri"],
+        )
+        return True
+    except Exception as err:
+        logger.error("operator notice for request %s failed: %s", id_cerere, err)
+        return False
 
 
 # ---------------------------------------------------------------------------

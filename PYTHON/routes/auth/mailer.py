@@ -138,6 +138,65 @@ def send_registration_code(to_address, code, minutes):
         smtp.send_message(msg)
 
 
+def operator_address():
+    """
+    Where a waiting registration is announced (slice 0075-02, plan 5.5).
+
+    `OPERATOR_EMAIL` in config.py. Empty means nobody is told automatically, which
+    the caller reports rather than treats as a failure: the request is already
+    recorded and visible on the approval page either way.
+    """
+    return str(_get(_read_config(), "OPERATOR_EMAIL", "") or "").strip()
+
+
+def send_registration_notice(to_address, id_cerere, denumire, cf, email, randuri):
+    """
+    Tells the operator a registration is waiting for their decision.
+
+    Deliberately thin: the figures that matter for deciding whether to look now, and
+    nothing that would let the mailbox stand in for the approval page. The row count
+    is in it because it is the one number that can be alarming -- a request worth a
+    few hundred classifications reads very differently from one worth fifty thousand.
+    """
+    cfg = _read_config()
+    host = str(_get(cfg, "SMTP_HOST", "")).strip()
+    if not host:
+        raise MailNotConfigured("SMTP_HOST lipseste din config.")
+
+    port = int(_get(cfg, "SMTP_PORT", 587))
+    user = str(_get(cfg, "SMTP_USER", "") or "")
+    password = str(_get(cfg, "SMTP_PASSWORD", "") or "")
+    sender = str(_get(cfg, "SMTP_FROM", "K-BOT <no-reply@avatarsoft.ro>"))
+    use_tls = bool(_get(cfg, "SMTP_USE_TLS", True))
+    timeout = int(_get(cfg, "SMTP_TIMEOUT", 15))
+
+    msg = EmailMessage()
+    msg["Subject"] = f"K-BOT: cerere de înregistrare nouă ({id_cerere})"
+    msg["From"] = sender
+    msg["To"] = to_address
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid()
+    # Romanian, literal diacritics: this is what the operator reads.
+    msg.set_content(
+        "O cerere de înregistrare așteaptă aprobare.\n\n"
+        f"Număr cerere:  {id_cerere}\n"
+        f"Unitate:       {denumire}\n"
+        f"Cod fiscal:    {cf}\n"
+        f"E-mail:        {email}\n"
+        f"Clasificații:  {randuri} rânduri\n\n"
+        "Detaliile complete și butoanele de aprobare sunt pe pagina de cereri.\n\n"
+        "K-BOT\n"
+    )
+
+    logger.info("registration notice for request %s -> %s", id_cerere, _mask(to_address))
+    with smtplib.SMTP(host, port, timeout=timeout) as smtp:
+        if use_tls:
+            smtp.starttls()
+        if user:
+            smtp.login(user, password)
+        smtp.send_message(msg)
+
+
 def _mask(address):
     """a***@domain -- for logs and for the answer sent back to the client."""
     if not address or "@" not in address:

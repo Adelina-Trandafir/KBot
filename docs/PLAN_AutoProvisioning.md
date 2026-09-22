@@ -17,11 +17,27 @@ they differ.**
 
 ## 0.0 START HERE — state on 22.09.2026, end of day
 
-**Pass 0075-01 is written** (code only — nothing has been started, no route has been
-called). `PYTHON/routes/inregistrare/` holds the pre-auth store, the ANAF v9 client and
-`/anaf`, `/cod`, `/verifica`; `main.py` registers the blueprint. Worklog:
-`SLICE-0075-01-inregistrare-preauth-anaf-cod.md`. Four things it settled, which override
-the sections below:
+**Passes 0075-01 and 0075-02 are written** (code only — nothing has been started, no route
+has been called). `PYTHON/routes/inregistrare/` now holds the whole applicant side: the
+pre-auth store, the ANAF v9 client, the nomenclator reads, the name algorithm, the request
+check and the `FX_Inregistrari` write. Worklogs:
+`SLICE-0075-01-inregistrare-preauth-anaf-cod.md`, `SLICE-0075-02-nomenclatoare-nume-cerere.md`.
+
+**Next pass: 0075-03** (§5.6) — the provisioning job with its compensation chain. Or 0075-04
+(the page) first, if seeing it working matters more than being able to approve it; neither
+blocks the other, and 0075-05 (the approval UI) needs 0075-03.
+
+From 0075-02, which override the sections below:
+
+- **`sql/0075_fx_inregistrari.sql`** must be run on the K-BOT server before `/cerere` works.
+- **`OPERATOR_EMAIL`** in `config.py`: until it is set, every request is recorded but nobody
+  is told (the answer says so, `operator_anuntat: false`).
+- **The free-number check compares the NUMBER, not the whole name** — see §5.4.
+- **`cerere.MAX_ROWS = 50 000`** is a ceiling the plan does not ask for. Added deliberately:
+  without it, all the leaves of both trees times all fourteen sources is 531 × 686 × 14, five
+  million rows queued from an anonymous form. One constant, move it if it is wrong.
+
+From 0075-01, which override the sections below:
 
 - **The token is minted by `/anaf`, not by `/cod`.** §4 and §5.1 contradicted each other;
   the operator settled it. The note carries `cf` and `anaf` from step 1, because
@@ -35,16 +51,11 @@ the sections below:
 - **No pytest files**, by operator decision. §8 no longer asks for them. The cost is
   stated in the worklog: this pass has zero automated coverage.
 
-**Next pass: 0075-02** (§5.4–5.5) — the nomenclator endpoints, the DB-name algorithm,
-the `FX_Inregistrari` DDL and `/cerere`; plus refreshing the stale
-`sql/avacont_comun_login.sql` (§2a).
-
-**Add to `config.py` on the VPS before 0075-01 runs for real** (both have working
-defaults in code, so the server starts without them):
-`ANAF_TVA_URL = "https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva"`,
-`ANAF_TIMEOUT = 15`. ⚠ The operator's proving call on 22.09.2026 answered, but **which of
-the two path shapes it used was not recorded** — Access still calls
-`/PlatitorTvaRest/api/v6/ws/tva`. If the one above is wrong it is one line on the VPS.
+**Add to `config.py` on the VPS** (all have working defaults, or their absence is reported
+rather than fatal, so the server starts without them):
+`ANAF_TVA_URL = "https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva"` (CONFIRMED by the
+operator, 22.09.2026 — v9 on this path shape, not the v6-style
+`/PlatitorTvaRest/api/v6/ws/tva` Access uses), `ANAF_TIMEOUT = 15`, `OPERATOR_EMAIL`.
 
 ---
 
@@ -269,9 +280,8 @@ The stored value is plain JSON types only, because the Redis backend calls `json
   baza de date ANAF.» (404).
 - Returns only the fields the page shows, read from `found[0].date_generale`: `denumire`, `adresa`,
   `cui`, `nrRegCom` (VERIFIED on the same answer). ANAF sends **cedilla** diacritics (`PLOIEŞTI`),
-  not comma-below; nothing rewrites them. Still UNVERIFIED: ANAF's rate limit on v9, and which of
-  the two path shapes the operator's proving call actually used (Access uses
-  `/PlatitorTvaRest/api/v6/ws/tva`) — hence `ANAF_TVA_URL` in `config.py`.
+  not comma-below; nothing rewrites them. The URL above is CONFIRMED (operator, 22.09.2026).
+  Still UNVERIFIED: ANAF's rate limit on v9.
 - CF already in `CAI` or `AVACONT_COMUN.Unitati` → refused (D11): «Pentru acest cod fiscal există
   deja o bază de date. Contactați-ne pentru acces.» Checked here AND again at `/cerere` and at
   approval.
@@ -299,6 +309,23 @@ refused with a Romanian message. `nn`: the lowest free pair in `11..99` with no 
 free meaning absent from both `information_schema.SCHEMATA` and `CAI.DbName`. The name is
 **re-computed at approval time**; the page value is only a preview.
 
+BUILT IN 0075-02, `routes/inregistrare/nume.py`. Two readings the text above leaves open, and
+what the code does:
+
+- **What is compared is the NUMBER, not the whole name.** "Absent from SCHEMATA and CAI"
+  does not say what is looked for there. Every existing row carries a distinct `NNN`, which
+  reads as a unit number rather than a disambiguator, so `1nn` counts as free only when *no*
+  name in either list starts with `1nn_`. Two units sharing `111` with different letters
+  would break that pattern. One line to change if the operator wants the looser rule.
+- **Diacritics are folded through `unicodedata`**, not a table of special cases: NFD splits a
+  letter from its marks and the marks are dropped. That covers comma-below *and* cedilla —
+  which matters, because ANAF sends cedilla — with no accented character in the source.
+
+Checked by direct call: `AVATAR SOFT SRL` ▸ `VTRS`, `LICEUL TEORETIC` ▸ `LCLT`,
+`Direcția de Asistență Socială` ▸ `DRCT`, `MUN. PLOIEŞTI` ▸ `MNPL`, `AEIOU` ▸ `AEIO`
+(no consonants at all), `ANA` ▸ refused. `/nume` says `previzualizare: true` in its own
+answer, so the page cannot mistake it for a promise.
+
 ### 5.5 Request — `POST /api/inregistrare/cerere`
 
 Validates everything again server-side (token verified, SS values exist in `DefaSursaSector`, every
@@ -311,6 +338,26 @@ code exists in `DefaClsfF`/`DefaClsfE` and is a leaf, An in range). Writes one r
 `IpAddress`.
 
 Then e-mails the operator that a request is waiting (address from `config.py`).
+
+BUILT IN 0075-02, `routes/inregistrare/cerere.py` + `sql/0075_fx_inregistrari.sql`. Four
+things the text above leaves out:
+
+- **"Is a leaf" cannot be answered from the code alone.** `xx0000` is a root and never
+  selectable; `xxyy00` is a level-1 node, selectable only when nothing hangs under it (real
+  data has `650500` and `590100`, level-1 codes nobody subdivided, and they are legitimate
+  rows); anything else is a leaf. So the check needs the whole dictionary, read at submission
+  — which is also what catches a code that has disappeared inside the thirty-minute window.
+- **`FX_Inregistrari` has no foreign keys, deliberately.** A request is correspondence, not a
+  unit: it exists before the database, the `CAI` row and the account do, it may end `Respinsa`
+  pointing at nothing, and a failed run must leave the row behind with its `Motiv` intact
+  rather than be cascaded away with the wreckage.
+- **The operator notice never fails the request.** No `OPERATOR_EMAIL`, or SMTP down, and the
+  row is still written: a warning goes to the log and the answer carries
+  `operator_anuntat: false`. Failing here would invite the applicant to send everything twice.
+- **`cerere.MAX_ROWS = 50 000`** — a ceiling this plan does not ask for. See §0.0.
+
+On success the registration note is discarded, so the same token cannot file a second request
+against an address it already proved.
 
 ### 5.6 Approval and provisioning (job + poll, like `schema_sync`)
 
@@ -376,7 +423,7 @@ candidate. Decide in 0075-05.
 |---|---|
 | 0075-00 | `Clasificatii.Sursa` migration script (§11) + Migrator flow (§12) — before anything else |
 | 0075-01 | Pre-auth notes, ANAF proxy, `/cod`, `/verifica` — **DONE (code only)**. ~~pytest~~: no test files, by operator decision of 22.09.2026. The same goes for every pass after this one |
-| 0075-02 | Nomenclator endpoints, name algorithm, `FX_Inregistrari` DDL, `/cerere`; refresh `sql/avacont_comun_login.sql` |
+| 0075-02 | Nomenclator endpoints, name algorithm, `FX_Inregistrari` DDL, `/cerere`; refresh `sql/avacont_comun_login.sql` — **DONE (code only)** |
 | 0075-03 | Provisioning job with compensation. ~~one pytest per failing step proving the unwind~~ — dropped with the rest of the test files. ⚠ Worth knowing what that costs: this is the pass that CREATEs and DROPs databases and MariaDB accounts, and the unwind is the only thing between a half-failed run and a half-built unit. With no test behind it, every compensation path is first exercised on the live server |
 | 0075-04 | Public page with `JS_COMPONENTS` (tree checkbox mode) |
 | 0075-05 | Operator approval UI (incl. the editable `CodProgram` fields, D25); runbook for the provisioning account + SMTP on the VPS |
