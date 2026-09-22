@@ -17,6 +17,37 @@ they differ.**
 
 ## 0.0 START HERE — state on 22.09.2026, end of day
 
+**Pass 0075-01 is written** (code only — nothing has been started, no route has been
+called). `PYTHON/routes/inregistrare/` holds the pre-auth store, the ANAF v9 client and
+`/anaf`, `/cod`, `/verifica`; `main.py` registers the blueprint. Worklog:
+`SLICE-0075-01-inregistrare-preauth-anaf-cod.md`. Four things it settled, which override
+the sections below:
+
+- **The token is minted by `/anaf`, not by `/cod`.** §4 and §5.1 contradicted each other;
+  the operator settled it. The note carries `cf` and `anaf` from step 1, because
+  `FX_Inregistrari.DenumireAnaf` must be the server's own copy — the applicant is allowed
+  to edit `Denumire`, and §7's approval page compares the two.
+- **ANAF v9 has no `cod` field.** Verified against a real answer: two top-level keys,
+  `found` and `notFound`. The Access check `cod <> "200"` does not port; "not found" is
+  `found` empty. The `<html>` check does port, unchanged.
+- **The service account can read `mysql.user`** on the K-BOT server (checked on the
+  machine: 10 accounts). §5.3's e-mail check works as written.
+- **No pytest files**, by operator decision. §8 no longer asks for them. The cost is
+  stated in the worklog: this pass has zero automated coverage.
+
+**Next pass: 0075-02** (§5.4–5.5) — the nomenclator endpoints, the DB-name algorithm,
+the `FX_Inregistrari` DDL and `/cerere`; plus refreshing the stale
+`sql/avacont_comun_login.sql` (§2a).
+
+**Add to `config.py` on the VPS before 0075-01 runs for real** (both have working
+defaults in code, so the server starts without them):
+`ANAF_TVA_URL = "https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva"`,
+`ANAF_TIMEOUT = 15`. ⚠ The operator's proving call on 22.09.2026 answered, but **which of
+the two path shapes it used was not recorded** — Access still calls
+`/PlatitorTvaRest/api/v6/ws/tva`. If the one above is wrong it is one line on the VPS.
+
+---
+
 **Pass 0075-00 is applied.** `Clasificatii.Sector`, `Sursa` and `SS` are written columns on
 the K-BOT server, the six other generated columns are untouched, and the updated writers
 (`routes/clasificatii_ss.py`, `clasificatii.py`, `nomenclatoare.py`) are on the VPS with
@@ -30,10 +61,10 @@ went through cleanly or also needed hand work, and what exactly the template ref
 Everything else about the script (backup, snapshot, verification against it) is unexercised
 on a table with rows, since the template is empty.
 
-**Next pass: 0075-01** (§5.1–5.3) — the pre-auth registration store, the ANAF proxy, `/cod`
-and `/verifica`, with pytest. Nothing blocks it: nginx needs no change (§F9 is closed, a
-single `location /` proxies everything to Flask), the JS components are complete (§F2a), and
-D24–D26 answer the role, CodProgram and account questions.
+~~**Next pass: 0075-01**~~ — **done, see the top of this section.** Nothing blocked it:
+nginx needs no change (§F9 is closed, a single `location /` proxies everything to Flask),
+the JS components are complete (§F2a), and D24–D26 answer the role, CodProgram and account
+questions.
 
 **Not started, and separate: 0075-06** (§13) — the rights of the accounts that already exist.
 The grants were read on 22.09.2026 and are less bad than first reported; see §13.
@@ -183,8 +214,12 @@ One HTML page + one JS module, served as static files by Flask, using the `JS_CO
 | 6 | **An** (combobox: current year, current-1) + summary → «Trimite cererea» | `POST /api/inregistrare/cerere` |
 | 7 | «Cererea a fost trimisă. Veți primi un e-mail după aprobare.» | — |
 
-Steps 2–6 are only reachable with the registration token from step 2; every call after it carries
-the token.
+Steps 2–6 are only reachable with the registration token, which **step 1 hands out** on a
+successful ANAF lookup; every call after it carries the token in the `X-Registration-Token`
+header. *(This line used to say "from step 2" and contradicted §5.1, whose note holds `cf` and
+`anaf` — step-1 data. Settled by the operator, 22.09.2026, and implemented in 0075-01: the
+server must own the ANAF name, because the applicant may edit `Denumire` and §7 shows the two
+side by side.)*
 
 ### 4.1 Tree building (client side, from the flat list)
 
@@ -211,16 +246,32 @@ diacritics, no swallowed exceptions.
 Notes on the session store (F5): key = opaque registration token, `name = "register"`, value =
 `{email, cf, code_hash, attempts, verified, anaf}`, TTL 30 min. Memory and Redis behave the same.
 
+BUILT IN 0075-01, `routes/inregistrare/store.py`. Two points the text above leaves out and the
+code had to decide:
+
+- The token is minted by **`/anaf`** — `cf` and `anaf` are step-1 data and this note is where
+  they live. See the correction under §4.
+- The 30 minutes are **absolute**, from the ANAF lookup. Every write puts the note back with
+  what is LEFT, never a fresh half hour, so the window cannot be walked forward by asking for
+  code after code. The field is `expires_at` and it is set once.
+
+The stored value is plain JSON types only, because the Redis backend calls `json.dumps` on it.
+
 ### 5.2 ANAF proxy — `POST /api/inregistrare/anaf {cf}`
 
 - Server-side call (a browser cannot call ANAF: CORS). Body
   `[{"cui": <cf>, "data": "<yyyy-mm-dd>"}]` to `https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva`,
   exactly as `InformatiiFirmaOnline2`. Stdlib `urllib` (F10).
 - `cf`: digits only (strip `RO`, spaces), validated before the call.
-- Response starts with `<html>` → «Serverul ANAF a generat o eroare.» (502). `cod <> 200` or CF not
-  found → «Codul fiscal nu a fost găsit în baza de date ANAF.» (404).
-- Returns only the fields the page shows (name, address). UNVERIFIED: ANAF's current rate limit and
-  field names in v9 — confirm on the first real call and write them in the worklog.
+- Response starts with `<html>` → «Serverul ANAF a generat o eroare.» (502). ~~`cod <> 200`~~ →
+  **v9 has no `cod` field**; "not found" is `found` being empty (VERIFIED against a real answer,
+  22.09.2026: the body carried exactly `found` and `notFound`). → «Codul fiscal nu a fost găsit în
+  baza de date ANAF.» (404).
+- Returns only the fields the page shows, read from `found[0].date_generale`: `denumire`, `adresa`,
+  `cui`, `nrRegCom` (VERIFIED on the same answer). ANAF sends **cedilla** diacritics (`PLOIEŞTI`),
+  not comma-below; nothing rewrites them. Still UNVERIFIED: ANAF's rate limit on v9, and which of
+  the two path shapes the operator's proving call actually used (Access uses
+  `/PlatitorTvaRest/api/v6/ws/tva`) — hence `ANAF_TVA_URL` in `config.py`.
 - CF already in `CAI` or `AVACONT_COMUN.Unitati` → refused (D11): «Pentru acest cod fiscal există
   deja o bază de date. Contactați-ne pentru acces.» Checked here AND again at `/cerere` and at
   approval.
@@ -230,6 +281,14 @@ Notes on the session store (F5): key = opaque registration token, `name = "regis
 Same rules as slice 0072 (6 digits, hash only, 10 min, ≤ 5 attempts, `compare_digest`). `/cod`
 also refuses an e-mail that already exists as a MariaDB user (`mysql.user`) or in
 `Unitati_Utilizatori`, with a message that does not reveal more than «adresa nu poate fi folosită».
+
+BUILT IN 0075-01. **VERIFIED on the machine, 22.09.2026: the service account can read
+`mysql.user`** on the K-BOT server (10 accounts) — that was the one thing that could have
+forced a different shape. Also settled in the code: a code cannot outlive the registration
+that carries it (`expires_in` reports the true number), a new code replaces the previous one,
+and changing the address sets `verified` back to false — whoever proved the old inbox proved
+nothing about the new one. The address is refused above 80 characters here, on the screen where
+the applicant can still act on it, rather than as a `1406` at `/cerere`.
 
 ### 5.4 DB name — `GET /api/inregistrare/nume`
 
@@ -316,9 +375,9 @@ candidate. Decide in 0075-05.
 | Pass | Contents |
 |---|---|
 | 0075-00 | `Clasificatii.Sursa` migration script (§11) + Migrator flow (§12) — before anything else |
-| 0075-01 | Pre-auth notes, ANAF proxy, `/cod`, `/verifica`, pytest |
-| 0075-02 | Nomenclator endpoints, name algorithm, `FX_Inregistrari` DDL, `/cerere`, pytest; refresh `sql/avacont_comun_login.sql` |
-| 0075-03 | Provisioning job with compensation; one pytest per failing step proving the unwind |
+| 0075-01 | Pre-auth notes, ANAF proxy, `/cod`, `/verifica` — **DONE (code only)**. ~~pytest~~: no test files, by operator decision of 22.09.2026. The same goes for every pass after this one |
+| 0075-02 | Nomenclator endpoints, name algorithm, `FX_Inregistrari` DDL, `/cerere`; refresh `sql/avacont_comun_login.sql` |
+| 0075-03 | Provisioning job with compensation. ~~one pytest per failing step proving the unwind~~ — dropped with the rest of the test files. ⚠ Worth knowing what that costs: this is the pass that CREATEs and DROPs databases and MariaDB accounts, and the unwind is the only thing between a half-failed run and a half-built unit. With no test behind it, every compensation path is first exercised on the live server |
 | 0075-04 | Public page with `JS_COMPONENTS` (tree checkbox mode) |
 | 0075-05 | Operator approval UI (incl. the editable `CodProgram` fields, D25); runbook for the provisioning account + SMTP on the VPS |
 | 0075-06 | **Least privilege for the accounts that already exist** (§13, D26) — separate, one account at a time, after the grants are read |

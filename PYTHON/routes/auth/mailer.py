@@ -85,6 +85,59 @@ def send_password_code(to_address, code, minutes):
         smtp.send_message(msg)
 
 
+def send_registration_code(to_address, code, minutes):
+    """
+    The same one-time code, for someone who does not have an account yet
+    (slice 0075-01, the public registration page).
+
+    Deliberately a separate function rather than a parameter on the one above: the
+    two are read by different people in different situations, and the sentences say
+    different things. A person changing their password knows what K-BOT is; a person
+    registering has just typed a fiscal code into a web page and needs to be told
+    which request this code belongs to, and what happens if it was not them.
+
+    Same contract as send_password_code: MailNotConfigured without SMTP_HOST, and
+    smtplib / socket errors propagate to the caller.
+    """
+    cfg = _read_config()
+    host = str(_get(cfg, "SMTP_HOST", "")).strip()
+    if not host:
+        raise MailNotConfigured("SMTP_HOST lipseste din config.")
+
+    port = int(_get(cfg, "SMTP_PORT", 587))
+    user = str(_get(cfg, "SMTP_USER", "") or "")
+    password = str(_get(cfg, "SMTP_PASSWORD", "") or "")
+    sender = str(_get(cfg, "SMTP_FROM", "K-BOT <no-reply@avatarsoft.ro>"))
+    use_tls = bool(_get(cfg, "SMTP_USE_TLS", True))
+    timeout = int(_get(cfg, "SMTP_TIMEOUT", 15))
+
+    msg = EmailMessage()
+    msg["Subject"] = "K-BOT: codul de confirmare a adresei de e-mail"
+    msg["From"] = sender
+    msg["To"] = to_address
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid()
+    # Romanian, literal diacritics: this is what the applicant reads.
+    msg.set_content(
+        "Bună ziua,\n\n"
+        "Ați început înregistrarea unei unități noi în K-BOT și ați indicat "
+        "această adresă de e-mail.\n\n"
+        f"Codul de confirmare este:  {code}\n\n"
+        f"Codul este valabil {minutes} minute și poate fi folosit o singură dată.\n"
+        "Dacă nu ați cerut dumneavoastră înregistrarea, ignorați acest mesaj: "
+        "fără cod, cererea nu merge mai departe.\n\n"
+        "K-BOT\n"
+    )
+
+    logger.info("registration code mail -> %s via %s:%s", _mask(to_address), host, port)
+    with smtplib.SMTP(host, port, timeout=timeout) as smtp:
+        if use_tls:
+            smtp.starttls()
+        if user:
+            smtp.login(user, password)
+        smtp.send_message(msg)
+
+
 def _mask(address):
     """a***@domain -- for logs and for the answer sent back to the client."""
     if not address or "@" not in address:
