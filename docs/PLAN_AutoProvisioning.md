@@ -15,6 +15,29 @@ they differ.**
 
 ---
 
+## 0.0 START HERE — state on 22.09.2026, end of day
+
+**Pass 0075-00 is applied.** `Clasificatii.Sector`, `Sursa` and `SS` are written columns on
+the K-BOT server, the six other generated columns are untouched, and the updated writers
+(`routes/clasificatii_ss.py`, `clasificatii.py`, `nomenclatoare.py`) are on the VPS with
+gunicorn restarted. Run by the operator; the developer has no server access.
+
+⚠️ **One thing the script did not do by itself:** the three virtual columns on
+`AVACONT_SURSA.Clasificatii` had to be removed **by hand** before the run would go through.
+The reason was not captured. Before trusting `scripts/clasificatii_sursa.py` again — 0075-03
+does not use it, but a future unit database will — find out whether the seven unit databases
+went through cleanly or also needed hand work, and what exactly the template refused.
+Everything else about the script (backup, snapshot, verification against it) is unexercised
+on a table with rows, since the template is empty.
+
+**Next pass: 0075-01** (§5.1–5.3) — the pre-auth registration store, the ANAF proxy, `/cod`
+and `/verifica`, with pytest. Nothing blocks it: nginx needs no change (§F9 is closed, a
+single `location /` proxies everything to Flask), the JS components are complete (§F2a), and
+D24–D26 answer the role, CodProgram and account questions.
+
+**Not started, and separate: 0075-06** (§13) — the rights of the accounts that already exist.
+The grants were read on 22.09.2026 and are less bad than first reported; see §13.
+
 ## 0. Step 0 findings (22.09.2026) — read before anything else
 
 Everything here was read from files in the repo or from the live server output the operator
@@ -423,11 +446,37 @@ SHOW GRANTS FOR '<each account>'@'%';
 SELECT UN, DC, Rol FROM AVACONT_COMUN.Unitati_Utilizatori ORDER BY UN;
 ```
 
-Shape of the fix, to confirm once those are read: for each e-mail account, `REVOKE ALL
-PRIVILEGES, GRANT OPTION`, then `GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE` on each
-database that account has a `Unitati_Utilizatori` row for — plus whatever login itself needs,
-which `auth.py` decides (it reads `AVACONT_COMUN` through the SERVICE account, so probably
-nothing). The service accounts `AVACONT` / `Admin` keep what they have; the provisioning
+### 13.1 What the grants actually say (read 22.09.2026 — VERIFIED)
+
+The e-mail accounts are **not** SU, contrary to the first report. Each has `USAGE ON *.*`
+globally — that is "may log in", no rights — plus privileges on exactly its own database:
+`scavatarsoft`▸`000_DEMO`, `gradipp35`▸`006_GR35`, `dorraaa1977`▸`014_SCSV`,
+`grigore_moisil2003`▸`027_SCGM`, `radubogdangeorge`▸`045_CTER`. That scoping is already right.
+
+Three real problems remain, all narrower than "SU":
+
+1. **`WITH GRANT OPTION` on each user's own database** — any of the five can hand their rights
+   to any other account. Nothing needs it.
+2. **DDL inside their database**: `CREATE`, `DROP`, `ALTER`, `REFERENCES`, `INDEX`,
+   `CREATE VIEW`, `CREATE ROUTINE`, `ALTER ROUTINE`, `EVENT`, `TRIGGER`,
+   `CREATE TEMPORARY TABLES`, `LOCK TABLES`. An accountant can drop their unit's tables.
+   D18 wants `SELECT, INSERT, UPDATE, DELETE, EXECUTE`.
+3. **The two real SU accounts**: `Admin`@`%` has `ALL PRIVILEGES ON *.* WITH GRANT OPTION`;
+   `AVACONT`@`%` has `SUPER`, `FILE`, `SHUTDOWN`, `CREATE USER`, `RELOAD`, `PROCESS` and
+   `GRANT OPTION` globally. `AVACONT` is the Flask service account and needs some of that —
+   not `SHUTDOWN` or `FILE`.
+
+Two findings worth their own line:
+
+- **`scavatarsoft@gmail.com` and `AVACONT` share the same password hash**
+  (`*DE9102A3…`). The operator's own login and the service account are one password.
+- **`030_SCTC` and `050_GRSA` have no account at all** — nobody can log into those two units.
+  Intended or an oversight, unanswered.
+
+Shape of the fix: for each e-mail account, `REVOKE ALL PRIVILEGES, GRANT OPTION`, then
+`GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE` on each database that account has a
+`Unitati_Utilizatori` row for — plus whatever login itself needs, which `auth.py` decides (it
+reads `AVACONT_COMUN` through the SERVICE account, so probably nothing). The provisioning
 account of §5.6 is new and narrow. The legacy `NNN_XXXX_Contabil` / `_Administrator` accounts
 are dropped once nothing uses them (D26) — check `Jurnal` and the FOREXE fleet first.
 

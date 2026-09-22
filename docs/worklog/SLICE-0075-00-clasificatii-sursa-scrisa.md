@@ -139,14 +139,26 @@ sărită; rămășițe ale unei rulări eșuate (`_snap_clsf` sau `Sursa_w`) →
   `65.02`▸`02A`, `65.99`▸`A`, `('65.01','F')`▸`('01','F','01F')`.
 - Suitele **nu au fost rulate** (regula casei: testele se scriu, nu se rulează).
 
+## Aplicat pe server (22.09.2026, de operator)
+
+Revizia 2 a fost dusă pe VPS și rulată: fișierele copiate (`scripts/clasificatii_sursa.py`,
+`routes/clasificatii_ss.py`, `routes/clasificatii.py`, `routes/nomenclatoare.py`), gunicorn
+repornit, migrarea rulată cu `--clean-leftovers`. `Sector`, `Sursa` și `SS` sunt acum coloane
+scrise; cele șase generate rămase sunt neatinse.
+
+⚠️ **Scriptul NU a făcut totul singur:** cele trei coloane virtuale de pe
+`AVACONT_SURSA.Clasificatii` au trebuit **șterse de mână** ca să treacă rularea. Motivul nu a
+fost notat. De lămurit înainte de a te baza din nou pe script: dacă cele șapte baze de unitate
+au trecut curat sau au cerut și ele intervenție, și ce anume a refuzat șablonul. Restul
+scriptului (copia, instantaneul, verificarea față de el) rămâne **neexercitat pe un tabel cu
+rânduri**, fiindcă șablonul e gol.
+
 ## Neverificat / amânat
 
-- **Migrarea nu a rulat cu succes pe niciun MariaDB.** Prima formă a picat pe `AVACONT_SURSA`
-  cu 1901 fără să schimbe tabelul; forma a doua **nu a fost încercată deloc**. Dezvoltatorul nu
-  are acces la server; operatorul rulează.
-- **Rutele Python atinse n-au fost pornite.** `clasificatii.py` și `nomenclatoare.py` scriu acum
-  zece coloane în loc de șapte; corectitudinea lor e dovedită doar de `ast.parse` și de testele
-  scrise, nerulate.
+- **Rutele Python atinse n-au fost pornite de dezvoltator.** `clasificatii.py` și
+  `nomenclatoare.py` scriu acum zece coloane în loc de șapte; corectitudinea lor e dovedită
+  doar de `ast.parse`, de testele scrise (nerulate) și de faptul că serverul a pornit. Prima
+  scriere adevărată într-un `Clasificatii` migrat **încă nu s-a văzut**.
 - **`tests/KBot.Migrator.Tests` nu a fost compilat** (regula casei interzice `dotnet build tests*`).
   E un proiect nou, adăugat în soluție: la prima `dotnet build KBot.sln` a operatorului poate
   cere corecturi de compilare. De raportat.
