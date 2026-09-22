@@ -315,7 +315,7 @@ Public NotInheritable Class Verifier
 
         ' One query per dictionary, not one per row: the distinct set is small (54 rows
         ' produce a handful of distinct titles and source-sectors).
-        Dim derived = rows.Select(Function(r) New ClasificatieDerived(r.Capitol, r.Subcapitol, r.Articol, r.Alineat)).ToList()
+        Dim derived = rows.Select(Function(r) New ClasificatieDerived(r.Capitol, r.Subcapitol, r.Articol, r.Alineat, r.Sursa)).ToList()
 
         CheckDictionary(report, cn, commonName, "DefaArticol", "Articol",
                         derived.Select(Function(d) d.Articol), "Articol")
@@ -846,7 +846,8 @@ Public NotInheritable Class Verifier
                                 AsText(reader.ValueOrMissing("Subcapitol")),
                                 AsText(reader.ValueOrMissing("Articol")),
                                 AsText(reader.ValueOrMissing("Alineat")),
-                                AsText(reader.ValueOrMissing("Denumire"))))
+                                AsText(reader.ValueOrMissing("Denumire")),
+                                AsText(reader.ValueOrMissing("Sursa"))))
                         End While
                     End Using
                 End Using
@@ -923,8 +924,15 @@ End Class
 ''' </remarks>
 Public NotInheritable Class ClasificatieRow
 
+    ''' <param name="sursa">
+    ''' The Access <c>Sursa</c> column. Read since slice 0075-00, when the target column
+    ''' stopped being generated: the SS a row will hold now depends on this value, so the
+    ''' DefaSursaSector gate has to see it. A file without the column yields an empty
+    ''' string, which normalises to <c>A</c>.
+    ''' </param>
     Public Sub New(accessIdClsf As Integer, idUnitate As Integer, capitol As String,
-                   subcapitol As String, articol As String, alineat As String, denumire As String)
+                   subcapitol As String, articol As String, alineat As String, denumire As String,
+                   Optional sursa As String = Nothing)
         Me.AccessIdClsf = accessIdClsf
         Me.IdUnitate = idUnitate
         Me.Capitol = capitol
@@ -932,6 +940,7 @@ Public NotInheritable Class ClasificatieRow
         Me.Articol = articol
         Me.Alineat = alineat
         Me.Denumire = denumire
+        Me.Sursa = If(sursa, String.Empty)
     End Sub
 
     Public ReadOnly Property AccessIdClsf As Integer
@@ -941,5 +950,7 @@ Public NotInheritable Class ClasificatieRow
     Public ReadOnly Property Articol As String
     Public ReadOnly Property Alineat As String
     Public ReadOnly Property Denumire As String
+    ''' <summary>The Access source letter, raw. Normalised by <see cref="ClasificatieDerived"/>.</summary>
+    Public ReadOnly Property Sursa As String
 
 End Class

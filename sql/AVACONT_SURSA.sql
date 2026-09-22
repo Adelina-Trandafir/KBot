@@ -36,9 +36,14 @@ CREATE TABLE `Clasificatii`  (
   `ClsfF` varchar(255) GENERATED ALWAYS AS (concat(left(coalesce(`Capitol`,''),2),replace(coalesce(`Subcapitol`,''),'.',''))) PERSISTENT,
   `ClsfE` varchar(255) GENERATED ALWAYS AS (concat(replace(coalesce(`Articol`,''),'.',''),coalesce(`Alineat`,''))) PERSISTENT,
   `ClsfX` varchar(255) GENERATED ALWAYS AS (concat_ws('.',`Capitol`,'XX.XX',`Articol`,`Alineat`)) PERSISTENT,
-  `Sector` varchar(2) GENERATED ALWAYS AS (case right(coalesce(`Capitol`,''),2) when '02' then '02' when '01' then '01' when '10' then '02' when '00' then '01' else '' end) PERSISTENT,
-  `Sursa` char(1) GENERATED ALWAYS AS (case right(coalesce(`Capitol`,''),2) when '02' then 'A' when '01' then 'A' when '10' then 'E' when '00' then 'A' else '' end) PERSISTENT,
-  `SS` varchar(3) GENERATED ALWAYS AS (concat(case right(coalesce(`Capitol`,''),2) when '02' then '02' when '01' then '01' when '10' then '02' when '00' then '01' else '' end,case right(coalesce(`Capitol`,''),2) when '02' then 'A' when '01' then 'A' when '10' then 'E' when '00' then 'A' else '' end)) PERSISTENT,
+  `Sector` varchar(2) GENERATED ALWAYS AS (case right(coalesce(`Capitol`,''),2) when '00' then '01' when '01' then '01' when '02' then '02' when '10' then '02' when '03' then '03' when '04' then '04' when '05' then '05' when '08' then '08' else '' end) PERSISTENT,
+  -- Slice 0075-00: WRITTEN, no longer generated. The source letter (A/C/D/E/F/G) cannot be
+  -- read back from Capitol -- 01A, 01D, 01F and 01G all end in `01` -- so DefaSursaSector's
+  -- fourteen values were unreachable while this column was computed. Existing rows carry the
+  -- value the old expression produced ('A', or 'E' on a `xx10` capitol); see
+  -- PYTHON/scripts/clasificatii_sursa.py and docs/PLAN_AutoProvisioning.md 11.
+  `Sursa` char(1) NOT NULL DEFAULT 'A',
+  `SS` varchar(3) GENERATED ALWAYS AS (concat(case right(coalesce(`Capitol`,''),2) when '00' then '01' when '01' then '01' when '02' then '02' when '10' then '02' when '03' then '03' when '04' then '04' when '05' then '05' when '08' then '08' else '' end,`Sursa`)) PERSISTENT,
   `DataAdugare` datetime NULL DEFAULT current_timestamp(),
   `DataModificare` datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`IDClsf`) USING BTREE,

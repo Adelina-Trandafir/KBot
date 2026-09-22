@@ -420,6 +420,13 @@ Public NotInheritable Class TransferRunner
                         outcome.ValuesNulled += 1
                     End If
 
+                Case ColumnSourceKind.ClasificatieSursa
+                    ' Written since slice 0075-00. The capitol is read from the SAME row,
+                    ' because a xx10 capitol decides the letter no matter what the file says.
+                    values(mapping.TargetColumn) = ClasificatieDerived.NormalizeSursa(
+                        Verifier.AsText(reader.ValueOrMissing(mapping.AccessColumn)),
+                        Verifier.AsText(reader.ValueOrMissing("Capitol")))
+
                 Case ColumnSourceKind.ResolvedPartener
                     Dim partnerUnit = RowUnit(map, verdict, mapping.TargetColumn)
                     Dim code = Verifier.AsText(reader.ValueOrMissing(mapping.AccessColumn))

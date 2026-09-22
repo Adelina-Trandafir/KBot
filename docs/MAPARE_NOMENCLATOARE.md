@@ -240,9 +240,17 @@ also read `000_DEMO` — a second, independent occurrence.
 **Access** — `baza2026.accdb` ▸ `Clasificatii`, 54 rows, PK `IDClsf`. Non-unique indexes on
 Capitol / Subcapitol / Articol / Alineat.
 
-**MariaDB** — read from DDL. Only **seven** columns are writable; nine are
+**MariaDB** — read from DDL. Only **eight** columns are writable; eight are
 `GENERATED ALWAYS … PERSISTENT` and **cannot appear in an INSERT at all**, and two are
 server-maintained timestamps.
+
+> **Slice 0075-00 moved `Sursa` across that line.** It was the ninth generated column and is
+> now `char(1) NOT NULL DEFAULT 'A'`, written like any other. Reason: the source letter
+> (A/C/D/E/F/G) cannot be read back from the capitol — `01A`, `01D`, `01F` and `01G` all end
+> in `01` — so eleven of the fourteen `DefaSursaSector` values were unreachable while the
+> column was computed. `Sector` stays generated, with its CASE extended to `03/04/05/08`, and
+> `SS = concat(<sector>, Sursa)` stays generated, so the foreign key is unchanged. See
+> `PYTHON/scripts/clasificatii_sursa.py` and `docs/PLAN_AutoProvisioning.md` §11–12.
 
 | Access | MariaDB | |
 |---|---|---|
@@ -257,7 +265,8 @@ server-maintained timestamps.
 | Trim1..Trim4 | ▸ `Clasificatii_Buget` | Double. See §4 |
 | TOTAL | ✗ | Double. On the target it is `Clasificatii_Buget.TOTAL`, **generated** |
 | IdClsfPY | ✗ | **Rule 1 — never read.** F5 |
-| Clsf, Titlu, ClsfSal, ClsfF, ClsfE, ClsfX, Sector, Sursa, SS | ✗ | ⚠ **All nine exist on the target as `GENERATED ALWAYS … PERSISTENT`.** Computed there from Capitol/Subcapitol/Articol/Alineat. Writing one is an error, not a no-op |
+| Clsf, Titlu, ClsfSal, ClsfF, ClsfE, ClsfX, Sector, SS | ✗ | ⚠ **All eight exist on the target as `GENERATED ALWAYS … PERSISTENT`.** Computed there from Capitol/Subcapitol/Articol/Alineat (and, for `SS`, the written `Sursa`). Writing one is an error, not a no-op |
+| Sursa | Sursa | **Written since slice 0075-00** (was generated). Trimmed, uppercased, first character; empty ▸ `A`; a `xx10` capitol ▸ `E` whatever the file says. Mapped explicitly (`ColumnSourceKind.ClasificatieSursa`), not by name match |
 | CodSSI | ✗ | Memo, `01A650402100101`. No column on the target |
 | CodAng, CodInd | ✗ | NULL throughout the sample. No column on `Clasificatii` (they live on `Parteneri_Coduri`, §6.1) |
 | TOTALFX | ✗ | Double, NULL on most rows. No target |
@@ -292,9 +301,14 @@ Three things follow:
 2. **`CREATE DATABASE` from `AVACONT_SURSA` is not enough** (plan §4 step 3). `AVACONT_COMUN`
    is a **different database** and is not created by that loop. A new DC's `Clasificatii` will
    not accept a single row until `AVACONT_COMUN` exists and is populated.
-3. `Sector`/`Sursa`/`SS` are derived from `right(Capitol, 2)` with an explicit `else ''`, so a
-   `Capitol` outside `00/01/02/10` computes `SS = ''` — which will not be in
-   `DefaSursaSector`. The failure mode is a blank, not a wrong value.
+3. `Sector` is derived from `right(Capitol, 2)` with an explicit `else ''`, so a `Capitol`
+   outside the eight endings it knows (`00/01/02/10`, and `03/04/05/08` since slice 0075-00)
+   computes an empty sector — and `SS`, now `concat(<sector>, Sursa)`, is then a bare letter,
+   which will not be in `DefaSursaSector`. The failure mode is a near-blank, not a wrong value.
+
+Two corrections from the live server (22.09.2026), which §3.1 above still has wrong: there are
+**four** cross-database foreign keys, not five — `ClsfE` has **no** foreign key into
+`DefaClsfE` — and the caption column of all four dictionaries is **`Denumire`**.
 
 ### 3.2 ⚠ No unique key on `(IdClsfAcc, IdUnitate)` — the upsert cannot match
 

@@ -88,11 +88,17 @@ Public NotInheritable Class TableMaps
         ' The rename RELEASES the name match it replaces - without that, Access IDClsf
         ' would also match the target's own IDClsf (auto_increment is writable) and the
         ' Access id would land in the primary key.
-        ' Nine target columns are GENERATED (Clsf, Titlu, ClsfSal, ClsfF, ClsfE, ClsfX,
-        ' Sector, Sursa, SS) and need no exclusion: they are not writable at all.
+        ' EIGHT target columns are GENERATED (Clsf, Titlu, ClsfSal, ClsfF, ClsfE, ClsfX,
+        ' Sector, SS) and need no exclusion: they are not writable at all.
+        ' Sursa was the ninth until slice 0075-00 and is WRITTEN from now on. Once it is
+        ' writable, the Access column of the same name would start travelling BY ITSELF
+        ' through the plain name match - the right outcome reached by accident, and with
+        ' the raw text. ClasificatieSursa claims it deliberately and normalises it (empty
+        ' -> 'A', a xx10 capitol -> 'E'). See docs/PLAN_AutoProvisioning.md 12.
         maps.Add(New TableMap("Clasificatii", "Clasificatii", SourceFile.UnitFile).
             Rename("IDClsf", "IdClsfAcc").
             Add(ColumnMapping.FromUnit("IdUnitate")).
+            Add(ColumnMapping.ClasificatieSursa("Sursa")).
             Exclude("IdClsfPY", "TOTAL", "TOTALFX", "CodSSI", "CodAng", "CodInd",
                     "DTQ", "Esinc", "Document", "Data", "IdLegatura",
                     "Trim1", "Trim2", "Trim3", "Trim4").

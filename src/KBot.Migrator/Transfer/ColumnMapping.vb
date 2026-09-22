@@ -37,6 +37,17 @@ Public Enum ColumnSourceKind
     ''' actual writer in agreement.
     ''' </summary>
     WrittenElsewhere = 6
+    ''' <summary>
+    ''' <c>Clasificatii.Sursa</c>: the Access value, normalised.
+    ''' </summary>
+    ''' <remarks>
+    ''' The column was GENERATED until slice 0075-00 and is written from now on, so a plain
+    ''' name match would suddenly start travelling on its own - correct, but by accident, and
+    ''' with the raw Access text. This kind makes it deliberate and applies the rule of
+    ''' <see cref="ClasificatieDerived.NormalizeSursa"/>: trimmed, uppercased, empty becomes
+    ''' <c>A</c>, and a <c>xx10</c> capitol is <c>E</c> whatever the file says.
+    ''' </remarks>
+    ClasificatieSursa = 7
 End Enum
 
 ''' <summary>
@@ -101,6 +112,19 @@ Public NotInheritable Class ColumnMapping
         Return New ColumnMapping(targetColumn, ColumnSourceKind.WrittenElsewhere, Nothing, Nothing, False)
     End Function
 
+    ''' <summary>
+    ''' <c>Clasificatii.Sursa</c> from the Access column of the same name, normalised.
+    ''' </summary>
+    ''' <remarks>
+    ''' <see cref="AccessColumn"/> is «Sursa» on purpose: that is what tells
+    ''' <see cref="ColumnPlan"/> the Access column is already consumed, so the plain name
+    ''' match does not claim the target a second time.
+    ''' </remarks>
+    Public Shared Function ClasificatieSursa(targetColumn As String) As ColumnMapping
+        Return New ColumnMapping(targetColumn, ColumnSourceKind.ClasificatieSursa,
+                                 "Sursa", Nothing, False)
+    End Function
+
     Public Overrides Function ToString() As String
         Select Case Kind
             Case ColumnSourceKind.AccessColumn
@@ -115,6 +139,8 @@ Public NotInheritable Class ColumnMapping
                 Return $"{AccessColumn} (partener rezolvat) -> {TargetColumn}"
             Case ColumnSourceKind.WrittenElsewhere
                 Return $"(scrisă de WriteUnitati) -> {TargetColumn}"
+            Case ColumnSourceKind.ClasificatieSursa
+                Return $"{AccessColumn} (sursă normalizată) -> {TargetColumn}"
             Case Else
                 Return $"(NULL) -> {TargetColumn}"
         End Select
