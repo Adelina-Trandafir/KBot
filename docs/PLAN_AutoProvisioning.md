@@ -23,8 +23,10 @@ pasted. Decisions D20–D23 were taken by the operator the same day.
 | # | Finding | Consequence |
 |---|---|---|
 | F1 | Slice 0073 is the Recorder slice; 0074 the Browser view | **D20:** this work is slice **0075** |
-| F2 | `JS_COMPONENTS/treeview` is a single-select dropdown (`onSelect` fires once and closes); no checkboxes, no tri-state. `combobox` is single-select (`readonly` + `staticData` fits **An** only). Both import `../../listener-tracker/listener-tracker-mixin.js`, `window.ZIndexManager`, `window.getClassNumericProperty` and CSS classes that are **not in the repo** | **D21:** add an opt-in checkbox mode to the tree (`checkable: true`, tri-state, result = checked leaves) once the operator supplies the four missing pieces; **SectorSursa** = plain checkbox list |
+| F2 | `JS_COMPONENTS/treeview` is a single-select dropdown (`onSelect` fires once and closes); no checkboxes, no tri-state. `combobox` is single-select (`readonly` + `staticData` fits **An** only) | **D21:** add an opt-in checkbox mode to the tree (`checkable: true`, tri-state, result = checked leaves); **SectorSursa** = plain checkbox list |
+| F2a | The four pieces F2 first reported missing **arrived on 22.09.2026**: `JS_COMPONENTS/listener-tracker/` (5 files, itself importing `../event-bus/event-bus.js` — also present), `utils/z-max.js` (`window.ZIndexManager`), `utils/css.js` (`window.getClassNumericProperty`), and the stylesheets `css/treeview/*` + `css/combobox.css` | The components import `../../listener-tracker/…`, i.e. TWO levels up: they must be served from `static/js/components/<name>/` with the shared folders at `static/js/`. That layout is respected rather than the import paths edited (D1: use them as they are) |
 | F3 | `schema_sync` **refuses** a missing DB (`schema_common.verify_targets` raises «Baze inexistente pe server»). The only creation path is `routes/admin.py::setup_database`: `CREATE DATABASE` + `SHOW CREATE TABLE`/`VIEW` clone of `AVACONT_SURSA`, X-Api-Key, **legacy** server | **D22:** the provisioning job ports that clone loop into its own module on the K-BOT server (`DB_CONFIG_NEW`); `schema_sync` is not used for creation |
+| F0 | **The K-BOT server has 7 unit databases, not the 22 §2a lists** (dry run, 22.09.2026): `000_DEMO`, `006_GR35`, `014_SCSV`, `027_SCGM`, `030_SCTC`, `045_CTER`, `050_GRSA`. The 22-name list in §2a was read off the LEGACY server. `AVACONT_SURSA.Clasificatii` is empty (0 rows) | §5.4's free-name check scans `SCHEMATA` **and** `CAI` on the K-BOT server, so the shorter list is what counts. §2a's list is stale — do not use it to predict a free `nn` |
 | F4 | Login (`routes/auth/auth.py`, gitignored) reads `AVACONT_COMUN.Unitati (DC PK, NumeUnitate NOT NULL, CF NOT NULL)`, `Unitati_Utilizatori (UN varchar(80), DC, Rol varchar(32) NOT NULL, LastSS)` PK `(UN, DC)` FK `DC → Unitati`, `Unitati_Ani (DC, AN, SS varchar(16), CodProgram varchar(64) NOT NULL)` PK `(DC, AN, SS)` FK `DC → Unitati`; audit in `Jurnal`. `CAI` is read only by `schema_sync` discovery. `Rol` holds `Contabil` on all 3 live rows | **D23:** the job writes `Unitati` + `Unitati_Utilizatori` (`Rol = 'CO'` per D4, one constant) + one `Unitati_Ani` row per SS × An, **plus** `CAI` for `schema_sync`. D17's `Utilizatori_Roluri` is dropped. Open: whether the 3 `Contabil` rows become `CO`, and the `CodProgram` value for a new unit (`000_DEMO` has `0000002510` / `0000000000`; default `0000000000` until told otherwise) |
 | F5 | `session_store.put_note/get_note/delete_note` accept any token string and never touch the session keys; the guard validates only `kbot:sess:<token>` | The pre-auth store of §5.1 = notes on a registration token (`name = "register"`, TTL 30 min). No new backend code |
 | F6 | Every data route uses the **service account** (`utils/database.py`: "the caller picks a SERVER, not an identity"); the operator's MariaDB login is used only by `_verify_operator`, with no default DB | D18's grants are not needed by K-BOT itself; they are still applied as decided |
@@ -48,7 +50,7 @@ Still to obtain from the operator: `SHOW GRANTS` for one e-mail account and one 
 | D1 | Public web page, built new, served by the Flask app. Uses the custom tree and combobox from `JS_COMPONENTS` (see D21) |
 | D2 | Operator approval is required before anything is created on the server |
 | D3 | DB name `1nn_SSSS`: `n` ∈ 1..9, `SSSS` = first 4 consonants of the unit name |
-| D4 | Username = the e-mail, verified by a 6-digit code. Role suffix is deprecated. Roles do not exist yet; for now exactly one: **`CO`** (Contabil). `AD` and `DR` come later — the design must take them without rework |
+| D4 | Username = the e-mail, verified by a 6-digit code. Role suffix is deprecated. Roles do not exist yet; for now exactly one: **`Contabil`**. `Administrator` and `Director` come later — the design must take them without rework. *(Amended by D24: the values are the Romanian words already in the table, not the codes `CO`/`AD`/`DR` this row first carried.)* |
 | D5 | The tree selection writes `Clasificatii`: one row per checked F leaf × checked E leaf × chosen SS. `Capitol = Left(ClsfF,2) & "." & Left(SS,2)`, except `SS = "02E"` → `Left(ClsfF,2) & ".10"` (dotted, as on real rows: `65.01`) |
 | D6 | `IdUnitate = MAX(CAI.IdUnitate) + 1`. `An` defaults to the current year, allowed range `[current-1, current]`, never the future |
 | D7 | **CF is the first input.** It drives an ANAF lookup (`PlatitorTvaRest/v9/tva`) that pre-fills the unit's data |
@@ -67,7 +69,10 @@ Still to obtain from the operator: `SHOW GRANTS` for one e-mail account and one 
 | D20 | Slice number **0075** |
 | D21 | Tree: opt-in checkbox mode added to `JS_COMPONENTS/treeview`; SectorSursa = checkbox list; combobox for An |
 | D22 | DB creation: port of `admin.py::setup_database`'s clone loop, on the K-BOT server |
-| D23 | Login rows: `Unitati`, `Unitati_Utilizatori (Rol='CO')`, `Unitati_Ani` (per SS), plus `CAI` |
+| D23 | Login rows: `Unitati`, `Unitati_Utilizatori (Rol)`, `Unitati_Ani` (per SS), plus `CAI` |
+| D24 | **Role values are the Romanian words**, as already stored: `Contabil` (what D4 called `CO`), later `Administrator` (`AD`) and `Director` (`DR`). The 3 existing rows are **not** touched. One constant in the code, three values, no codes |
+| D25 | **`Unitati_Ani.CodProgram` follows the sector**: `01` ▸ `0000002510`, `02` ▸ `0000000000`. Prefilled that way and **editable by the operator on the approval page**, per (An, SS) row, before the job runs. A sector outside 01/02 (now reachable, see D15) has no known value → prefilled `0000000000`, editable like the rest |
+| D26 | **The `NNN_XXXX_Contabil` / `_Administrator` accounts disappear.** Every user, at every level, is a MariaDB account named by their e-mail; the role is `Unitati_Utilizatori.Rol`, not the account name. **Separately: every account on the server today carries SU rights, which is wrong and has to be fixed** — its own job, see §13 |
 
 ---
 
@@ -237,10 +242,10 @@ failure unwinds in reverse order, sets `Stare = Esuata` + `Motiv`, and reports i
 | 2 | Create the DB: `CREATE DATABASE` + clone every table and view of `AVACONT_SURSA` (D22) | `DROP DATABASE` |
 | 3 | `IdUnitate` = `MAX(CAI.IdUnitate)+1`, one per SS, under `GET_LOCK('cai_idunitate')` | — |
 | 4 | `INSERT` `CAI` rows (`DbName` = `DC` = new name, `Sursa` = SS, `CF`, `NumeUnitate`, `AnDate`) | `DELETE` those `IdUnitate` |
-| 4a | `INSERT` `AVACONT_COMUN.Unitati (DC, NumeUnitate, CF)` and `Unitati_Ani (DC, AN, SS, CodProgram)` per SS (D23) | `DELETE` those rows |
+| 4a | `INSERT` `AVACONT_COMUN.Unitati (DC, NumeUnitate, CF)` and `Unitati_Ani (DC, AN, SS, CodProgram)` per SS (D23). `CodProgram` = what the operator left in the approval page's field, prefilled per sector (D25) | `DELETE` those rows |
 | 5 | `INSERT` unit-DB `Unitati` rows (same `IdUnitate`, `SursaSector`, `Detalii`, `An`) | dropped with the DB |
 | 6 | `INSERT` `Clasificatii` rows (§6) in one transaction | dropped with the DB |
-| 7 | `CREATE USER '<email>'@'%' IDENTIFIED VIA mysql_native_password` with a random unusable password; `GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON \`<db>\`.*` only (D18); row in `Unitati_Utilizatori (UN, DC, Rol='CO')` (D23) | `DROP USER` + delete the row |
+| 7 | `CREATE USER '<email>'@'%' IDENTIFIED VIA mysql_native_password` with a random unusable password; `GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON \`<db>\`.*` only (D18) — never the SU rights today's accounts carry (D26, §13); row in `Unitati_Utilizatori (UN, DC, Rol='Contabil')` (D23/D24) | `DROP USER` + delete the row |
 | 8 | E-mail the user a one-time link (24 h) to set the password → `SET PASSWORD` | — |
 
 ---
@@ -292,7 +297,8 @@ candidate. Decide in 0075-05.
 | 0075-02 | Nomenclator endpoints, name algorithm, `FX_Inregistrari` DDL, `/cerere`, pytest; refresh `sql/avacont_comun_login.sql` |
 | 0075-03 | Provisioning job with compensation; one pytest per failing step proving the unwind |
 | 0075-04 | Public page with `JS_COMPONENTS` (tree checkbox mode) |
-| 0075-05 | Operator approval UI; runbook for the provisioning account + SMTP on the VPS |
+| 0075-05 | Operator approval UI (incl. the editable `CodProgram` fields, D25); runbook for the provisioning account + SMTP on the VPS |
+| 0075-06 | **Least privilege for the accounts that already exist** (§13, D26) — separate, one account at a time, after the grants are read |
 
 ## 9. Verification checklist
 
@@ -303,7 +309,8 @@ candidate. Decide in 0075-05.
 5. Server refuses a tampered request (non-leaf code, unknown SS, An out of range).
 6. A failure injected at each of steps 2–7 leaves **nothing** behind (no DB, no user, no `CAI` /
    `Unitati` / `Unitati_Ani` / `Unitati_Utilizatori` rows).
-7. The new user logs in through `LoginForm` and sees exactly the new unit(s), role `CO`.
+7. The new user logs in through `LoginForm` and sees exactly the new unit(s), role `Contabil`,
+   and `SHOW GRANTS` for them names **only** the new database.
 8. Build clean; pytest all green or cleanly skipped.
 
 ## 10. Closed questions
@@ -353,6 +360,37 @@ Delivered as a standalone script with a dry-run mode that prints the DB list and
 - `TargetColumn.IsGenerated` docs and `MAPARE_NOMENCLATOARE.md` §3: nine generated columns → eight.
 - Tests: an Access row with Sursa `F` on capitol `xx01` lands as `01F`; a NULL Sursa lands as `A`;
   a `xx10` capitol lands as `E`.
+
+## 13. Existing accounts carry SU rights — a job of its own
+
+Stated by the operator on 22.09.2026: **every account on the K-BOT server today has SU
+rights**, granted in a hurry. That is a live security problem, not a detail of this slice,
+and it is deliberately NOT folded into the provisioning job:
+
+- Provisioning (§5.6 step 7) must not copy today's grants. It gives exactly what §D18 says,
+  on the new database only. That rule holds whatever the old accounts turn out to have.
+- Fixing the old accounts is a **separate pass** (proposed **0075-06**), because it can lock
+  a working operator out of a live system and must therefore be done with eyes on it, one
+  account at a time, with the old grant recorded before it is replaced.
+
+What it needs before a line is written, all from the server:
+
+```sql
+SELECT user, host, plugin FROM mysql.user ORDER BY user;
+SHOW GRANTS FOR '<each account>'@'%';
+SELECT UN, DC, Rol FROM AVACONT_COMUN.Unitati_Utilizatori ORDER BY UN;
+```
+
+Shape of the fix, to confirm once those are read: for each e-mail account, `REVOKE ALL
+PRIVILEGES, GRANT OPTION`, then `GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE` on each
+database that account has a `Unitati_Utilizatori` row for — plus whatever login itself needs,
+which `auth.py` decides (it reads `AVACONT_COMUN` through the SERVICE account, so probably
+nothing). The service accounts `AVACONT` / `Admin` keep what they have; the provisioning
+account of §5.6 is new and narrow. The legacy `NNN_XXXX_Contabil` / `_Administrator` accounts
+are dropped once nothing uses them (D26) — check `Jurnal` and the FOREXE fleet first.
+
+Every step is reversible from what was recorded, and one account is done and verified by a
+real login before the next is touched.
 
 ## Standing rules
 
