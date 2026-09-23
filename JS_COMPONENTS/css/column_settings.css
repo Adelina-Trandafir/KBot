@@ -1,0 +1,401 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f5f7fa;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.tab-selector {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid #e1e4e8;
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 16px;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.3s;
+}
+
+.tab-btn:hover {
+  color: #333;
+}
+
+.tab-btn.active {
+  color: #5b47fb;
+  border-bottom-color: #5b47fb;
+  font-weight: 600;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn:hover {
+  background: #f8f9fa;
+  border-color: #aaa;
+}
+
+.btn-primary {
+  background: #5b47fb;
+  color: white;
+  border-color: #5b47fb;
+}
+
+.btn-primary:hover {
+  background: #4936ea;
+  border-color: #4936ea;
+}
+
+.search-box {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.search-box input {
+  width: 300px;
+  padding: 8px 12px 8px 35px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.search-box svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  stroke: #999;
+}
+
+.columns-grid {
+  display: grid;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.column-item {
+  display: grid;
+  grid-template-columns: 40px 250px 200px 100px 100px 120px 120px 80px auto;
+  gap: 15px;
+  align-items: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.column-item:hover {
+  background: #e9ecef;
+}
+
+.column-item.hidden {
+  opacity: 0.5;
+  background: #fee;
+}
+
+/*.column-item.filtered-out {
+  display: none;
+}*/
+
+.drag-handle {
+  cursor: move;
+  color: #aaa;
+  font-size: 20px;
+  text-align: center;
+}
+
+.column-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+
+.column-item.drag-over {
+  border-top: 3px solid #5b47fb;
+}
+
+.column-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.column-description {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+input[type='text'],
+input[type='number'],
+select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+}
+
+input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.format-select {
+  font-size: 13px;
+}
+
+.save-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 20px;
+  border-top: 2px solid #e1e4e8;
+}
+
+.save-info {
+  color: #666;
+  font-size: 14px;
+}
+
+.save-info.has-changes {
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+.save-btn {
+  background: #5b47fb;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: #4936ea;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(91, 71, 251, 0.3);
+}
+
+.save-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.header-row {
+  display: grid;
+  grid-template-columns: 40px 250px 200px 100px 100px 120px 120px 80px auto;
+  gap: 15px;
+  padding: 10px 15px;
+  font-weight: 600;
+  color: #666;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e1e4e8;
+  margin-bottom: 15px;
+  position: sticky;
+  top: 0;
+  background: white;
+  /* z-index: 10; */
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.spinner {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #5b47fb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 25px;
+  border-radius: 6px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease-out;
+  /* z-index: 1000; */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.message.success {
+  background: #10b981;
+  color: white;
+}
+
+.message.error {
+  background: #ef4444;
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.tooltip {
+  position: absolute;
+  background: #333;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  /* z-index: 10000; */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip.visible {
+  opacity: 1;
+}
+
+.actions-menu {
+  position: relative;
+}
+
+.actions-btn {
+  background: none;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  color: #666;
+  border-radius: 4px;
+}
+
+.actions-btn:hover {
+  background: #e9ecef;
+  color: #333;
+}
+
+.actions-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: none;
+  min-width: 180px;
+  /* z-index: 100; */
+}
+
+.actions-dropdown.show {
+  display: block;
+}
+
+.actions-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.actions-dropdown button:hover {
+  background: #f8f9fa;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px;
+  color: #999;
+}
+
+.empty-state svg {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 20px;
+  stroke: #ddd;
+}

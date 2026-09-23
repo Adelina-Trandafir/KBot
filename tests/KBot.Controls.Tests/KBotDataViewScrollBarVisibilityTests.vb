@@ -83,9 +83,9 @@ Public Class KBotDataViewScrollBarVisibilityTests
             Assert.True(dv.hScroll.Visible)
 
             host.Visible = False
-            For i As Integer = 1 To 4
-                dv.Column("c" & i.ToString()).Visible = False   ' back to 100 <= 250
-            Next
+            'For i As Integer = 1 To 4
+            '    dv.Column("c" & i.ToString()).Visible = False   ' back to 100 <= 250
+            'Next
             host.Visible = True
 
             Assert.False(dv.hScroll.Visible)

@@ -1,0 +1,721 @@
+/* ========== DASHBOARD TABLE - Stiluri pentru Tabel ========== */
+/* Stiluri specifice pentru tabelul principal și filtrarea existentă */
+
+/* Variabile pentru Record Selector */
+:root {
+    --record-selector-width: 25px;
+    --record-selector-bg: #f8f9fa;
+    --record-selector-border: #dee2e6;
+    --selection-single-bg: #cce5ff;
+    --selection-single-color: #0056b3;
+    --selection-multi-bg: #d4edda;
+    --selection-multi-color: #155724;
+    --indicator-active-bg: #007bff;
+    --indicator-active-border: #0056b3;
+    --header-columns-height: 40px;
+    --row-normal-height: 30px;
+    --row-selected-height: 30px;
+}
+
+/* ========== WRAPPER TABEL RESTRUCTURAT ========== */
+.table-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: overlay;
+}
+
+/* Header fix - nu se derulează */
+.table-header-fixed {
+    height: 30px;
+    background: var(--hover-bg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Container pentru scroll doar pe body */
+.table-body-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+/* Scrollbar subțire normal (10px) */
+.table-body-scroll::-webkit-scrollbar {
+    width: 10px;
+    transition: width 0.3s ease;
+}
+
+/* Track-ul (zona scrollbar-ului) - invizibil normal */
+.table-body-scroll::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 6px;
+}
+
+/* Thumb-ul (bara de scroll) - subțire normal */
+.table-body-scroll::-webkit-scrollbar-thumb {
+    background: rgba(216, 255, 237, 0.463);
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+/* DOAR când mouse-ul e peste scrollbar (thumb sau track) */
+.table-body-scroll::-webkit-scrollbar:hover {
+    width: 12px;
+}
+
+.table-body-scroll::-webkit-scrollbar-track:hover {
+    background: #f1f1f1;
+}
+
+.table-body-scroll::-webkit-scrollbar-thumb:hover {
+    background: #8caa84;
+}
+
+/* Hover direct pe thumb pentru interacțiune maximă */
+.table-body-scroll::-webkit-scrollbar-thumb:active {
+    background: #555;
+}
+
+/* Când panelul de filtrare NU e activ, table-container ocupă tot spațiul */
+.table-and-filter-area.filter-hidden .table-container {
+    width: 100%;
+    max-width: none;
+}
+
+/* ========== STILURI TABEL - DOUĂ TABELE SEPARATE + RECORD SELECTOR ========== */
+table, .data-table, .data-table-body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+    border-collapse: collapse;
+    border-spacing: 0 !important;
+    font-size: 12px;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    table-layout: fixed;
+    width: auto !important;
+    user-select: none;
+}
+
+/* Header-uri (tabel fix) */
+.data-table th {
+    height: var(--header-columns-height);
+    background: var(--table-header-backcolor-gradient);
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.data-table tbody tr:not(.clicked):hover td:not(.record-selector),
+.data-table-body tbody tr:not(.clicked):hover td:not(.record-selector) {
+    background-color: rgba(79, 255, 173, 0.1) !important;
+    cursor: pointer;
+}
+
+.data-table tr,
+.data-table-body tr {
+    height: var(--row-normal-height) !important;
+    position: relative; /* Necesar pentru poziționarea butoanelor */
+}
+
+.data-table td,
+.data-table-body td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.header-inner-div {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+.filter-open-icon {
+    color: #6b7280;
+    opacity: 0.7;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    padding: 5px;
+}
+
+.header-title-span {
+    flex: 1 1 0%;
+    min-width: 0px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.header-status-area {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+
+.column-header-clickable .header-icons-div {
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s;
+}
+
+.column-header-clickable:hover .header-icons-div {
+    pointer-events: auto;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+/* ========== RECORD SELECTOR ========== */
+.record-selector {
+    width: var(--record-selector-width) !important;
+    height: var(--row-normal-height) !important;
+    min-width: var(--record-selector-width) !important;
+    max-width: var(--record-selector-width) !important;
+    background: var(--record-selector-bg) !important;
+    border-right: 1px solid var(--record-selector-border);
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    padding: 0 !important;
+    user-select: none;
+}
+
+.record {
+    height: var(--row-normal-height) !important;
+}
+
+.record-indicator {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0;
+    border-color: transparent;
+    margin: 0 auto;
+    transition: all 0.2s;
+}
+
+/* ========== SELECȚII DE RÂNDURI ========== */
+.data-table tbody tr.clicked td:not(.record-selector),
+.data-table-body tbody tr.clicked td:not(.record-selector) {
+    background-color: var(--selection-single-bg) !important;
+    color: var(--selection-single-color) !important;
+}
+
+.data-table tbody tr.clicked .record-indicator,
+.data-table-body tbody tr.clicked .record-indicator {
+    border-width: 5px 0 5px 8px !important;
+    border-color: transparent transparent transparent #007bff !important;
+}
+
+.data-table tbody tr.selected-multi td:not(.record-selector),
+.data-table-body tbody tr.selected-multi td:not(.record-selector) {
+    background-color: var(--selection-multi-bg) !important;
+    color: var(--selection-multi-color) !important;
+}
+
+/* ========== HOVER EFFECTS ========== */
+.data-table tbody tr:hover td:not(.record-selector),
+.data-table-body tbody tr:hover td:not(.record-selector) {
+    background-color: rgba(79, 255, 173, 0.1) !important;
+    cursor: pointer;
+}
+
+.data-table tbody tr:hover .record-selector,
+.data-table-body tbody tr:hover .record-selector {
+    background: var(--green-hover-background) !important;
+}
+
+/* Stiluri pentru tabel când e disabled de panel modal */
+.table-wrapper.disabled-by-modal {
+    pointer-events: none;
+    opacity: 0.5;
+    position: relative;
+}
+
+.table-wrapper.disabled-by-modal::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.3);
+    z-index: 100;
+}
+
+/* Panel în mod modal să fie în primul plan */
+.details-panel.modal-mode {
+    position: relative;
+    z-index: 5000;
+    background: white;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* ========== OVERRIDE PENTRU CELULE CU CULORI CUSTOM ========== */
+/*.data-table tbody tr.clicked td[style*="background"]:not(.record-selector),
+.data-table-body tbody tr.clicked td[style*="background"]:not(.record-selector) {
+    background-color: var(--selection-single-bg) !important;
+}
+
+.data-table tbody tr.selected-multi td[style*="background"]:not(.record-selector),
+.data-table-body tbody tr.selected-multi td[style*="background"]:not(.record-selector) {
+    background-color: var(--selection-multi-bg) !important;
+}*/
+
+/* ========== FOOTER TABEL ========== */
+.table-footer {
+    background: var(--hover-bg);
+    border-top: 2px solid var(--border-color);
+    padding: 2px 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #666;
+    flex-shrink: 0;
+}
+
+.footer-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.footer-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.stats-inline {
+    display: flex;
+    gap: 5px;
+}
+
+.stat-item-small {
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: var(--bg-white);
+    border: 1px solid #e9ecef;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 36px;
+}
+
+.stat-item-small:hover {
+    transform: translateY(-1px);
+}
+
+.stat-red { color: #dc3545; }
+.stat-green { color: #28a745; }
+.stat-yellow { color: #ffc107; }
+
+/* ========== BUTOANE ACȚIUNI ========== */
+.action-buttons {
+    display: flex;
+    gap: 0;
+    margin-bottom: 5px;
+}
+
+.action-btn {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid transparent;
+    border-bottom: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.action-btn:hover {
+    background: var(--hover-bg);
+}
+
+.action-btn.active {
+    background: var(--bg-white);
+    border-color: var(--border-color);
+}
+
+/* ========== BUTOANE ACȚIUNI LA HOVER - DOAR CSS ========== */
+.row-action-buttons {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) translateX(-100px);
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease-in-out;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2px 4px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+}
+
+.data-table tbody tr.clicked .record-selector:hover .row-action-buttons,
+.data-table-body tbody tr.clicked .record-selector:hover .row-action-buttons,
+.data-table tbody tr.selected-multi .record-selector:hover .row-action-buttons,
+.data-table-body tbody tr.selected-multi .record-selector:hover .row-action-buttons {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Butoanele individuale */
+.row-action-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.row-action-btn.edit {
+    background: #007bff;
+    color: white;
+}
+
+.row-action-btn.feedback {
+    background: #28a745;
+    color: white;
+}
+
+.row-action-btn.delete {
+    background: #dc3545;
+    color: white;
+}
+
+.row-action-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.row-action-btn.edit:hover {
+    background: #0056b3;
+}
+
+.row-action-btn.feedback:hover {
+    background: #1e7e34;
+}
+
+.row-action-btn.delete:hover {
+    background: #c82333;
+}
+
+/* TOOLTIP-URI */
+.row-action-btn::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -25px; /* Păstrează poziția sub buton */
+    left: 0; /* Aliniază la marginea stângă a butonului */
+    background: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Nefolosit momentan, dar păstrat pentru eventuale săgeți la tooltip */
+.row-action-btn::before {
+    content: '';
+    position: absolute;
+    left: 8px; /* Aliniază săgeata la stânga, cu un mic offset pentru estetică */
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 4px solid #333;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+.row-action-btn.hover::before {
+    visibility: hidden;
+}
+
+.row-action-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Asigură-te că butoanele nu interferează cu hover-ul rândului */
+.data-table tbody tr:hover td:last-child,
+.data-table-body tbody tr:hover td:last-child {
+    overflow: visible;
+    position: relative;
+}
+
+/* Pentru rândurile selectate - adaptează culorile butoanelor */
+.data-table tbody tr.clicked .row-action-buttons,
+.data-table-body tbody tr.clicked .row-action-buttons,
+.data-table tbody tr.selected-multi .row-action-buttons,
+.data-table-body tbody tr.selected-multi .row-action-buttons {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* ========== RESPONSIVE ========== */
+/* @media (max-width: 768px) {
+    .row-action-buttons {
+        right: 4px;
+        gap: 2px;
+    }
+    
+    .row-action-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+    }
+} */
+
+/* ========== PANEL FILTRARE EXISTENT ========== */
+.filter-panel {
+    width: 280px;
+    background: var(--bg-white);
+    border-left: 2px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+}
+
+.filter-panel.visible {
+    transform: translateX(0);
+}
+
+.filter-header {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 12px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.filter-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.filter-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.filter-content {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.filter-row {
+    margin-bottom: 20px;
+}
+
+.filter-label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.filter-input,
+.filter-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 13px;
+    background: var(--bg-white);
+}
+
+.filter-input:focus,
+.filter-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.filter-btn {
+    flex: 1;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.filter-btn:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    transform: translateY(-1px);
+}
+
+.filter-btn-clear {
+    flex: 1;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.filter-btn-clear:hover {
+    background: var(--hover-bg);
+    border-color: #adb5bd;
+}
+
+/* ========== RESPONSIVE PENTRU TABEL ========== */
+@media (max-width: 1024px) {
+    .filter-panel {
+        width: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-panel {
+        width: 100%;
+        position: fixed;
+        top: var(--header-height);
+        right: 0;
+        height: calc(100vh - var(--header-height));
+        z-index: 2000;
+        border-radius: 0;
+    }
+    
+    .stat-item-small {
+        font-size: 14px;
+        padding: 6px 8px;
+        min-height: 30px;
+    }
+    
+    .table-footer {
+        gap: 8px;
+    }
+    
+    .footer-left,
+    .footer-right {
+        width: 100%;
+        justify-content: space-around;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: baseline;
+    }
+}
+
+/* ========== STILURI PENTRU SORTARE COLOANE ========== */
+.sortable-header {
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+
+.sortable-header:hover {
+    background: #e2e6ea !important;
+}
+
+.sort-indicator {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: #6c757d;
+}
+
+.sort-asc .sort-indicator::after {
+    content: '▲';
+}
+
+.sort-desc .sort-indicator::after {
+    content: '🔽';
+}
+
+/* ========== STILURI PENTRU REDIMENSIONARE COLOANE ========== */
+.resizable-header {
+    position: relative;
+}
+
+.column-resizer {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    cursor: col-resize;
+    background: transparent;
+    border-right: 1px solid var(--border-color);
+}
+
+.column-resizer:hover,
+.column-resizer.resizing {
+    background: #007bff;
+    border-right-color: #007bff;
+}
+
+/* ========== STILURI PENTRU CĂUTARE ÎN TABEL ========== */
+.table-search-highlight {
+    background: #fff3cd !important;
+    color: #856404 !important;
+    font-weight: 600;
+}
+
+.table-search-current {
+    background: #ffeaa7 !important;
+    color: #2d3436 !important;
+    font-weight: 700;
+    box-shadow: 0 0 0 2px #fdcb6e;
+}

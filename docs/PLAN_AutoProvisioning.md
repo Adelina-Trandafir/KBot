@@ -17,27 +17,81 @@ they differ.**
 
 ## 0.0 START HERE — state on 22.09.2026, end of day
 
-**Passes 0075-01 and 0075-02 are written** (code only — nothing has been started, no route
-has been called). `PYTHON/routes/inregistrare/` now holds the whole applicant side: the
-pre-auth store, the ANAF v9 client, the nomenclator reads, the name algorithm, the request
-check and the `FX_Inregistrari` write. Worklogs:
+**Passes 0075-00, 0075-01, 0075-02 and 0075-04 are done (code only). Next pass: 0075-03**
+(the provisioning job). 0075-04 was taken first by the operator's choice; 0075-05 (approval)
+needs 0075-03.
+
+### The schema is now readable — `MariaDB_Schema/`
+
+The operator dumped the three live schemas on 22.09.2026, 19:21, from the K-BOT server
+(`89.33.25.34:3306`, MariaDB 10.11.14): `AVACONT_COMUN.sql` (23 tables), `AVACONT_SURSA.sql`
+(44), `000_DEMO.sql` (43).
+
+**These files are the truth about shapes. `sql/*.sql` in the repo is not** — those are the
+old hand-written DDLs and they have drifted. Read `MariaDB_Schema/` before assuming any
+column, key or foreign key.
+
+WARNING: **the folder is gitignored** (`.gitignore:507`). It exists on the operator's disk
+only, it will not arrive with a clone, and a new thread must read it from disk rather than
+expect it in git.
+
+**What it settled immediately:**
+
+- `DefaSursaSector` has **`SursaSector` PK, `Sursa`, `Sectorul`, `Denumire`** — so the
+  caption column 0075-02 could not name **is** `Denumire`, and `nomenclatoare.read_sursasector`
+  finds it on its first try. That unknown is closed.
+- **`FX_Inregistrari` exists on the server** — the operator ran `sql/0075_fx_inregistrari.sql`.
+  `AUTO_INCREMENT = 1`, so no request has been filed yet. Shape matches what was written,
+  `CHECK (json_valid(Payload))` included.
+- `DefaClsfE` **has** a primary key on `ClsfE`; `DefaClsfF` has **none** and its `ClsfF` is
+  nullable with a non-unique index. The `GROUP BY` in `nomenclatoare.py` was right for F and
+  is merely harmless for E.
+- `Clasificatii` carries **four** foreign keys into `AVACONT_COMUN` (`DefaArticol`,
+  `DefaClsfF`, `DefaSS`, `DefaTitlu`) plus the local `Clasificatii__Unitati`. **There is no
+  FK on `ClsfE`** — confirming F13. So the fifteen unusable E codes die on `Articol`/`Titlu`,
+  which is exactly what `nomenclatoare.py` joins on. The filter is aimed at the right thing.
+- **`CAI` has no `ix_CAI_IdUnitate`.** `sql/avacont_comun_login.sql` was corrected in 0075-02
+  to show one; the server does not have it. The rest of that correction holds: `IdCai` is the
+  AUTO_INCREMENT PK (now at 96), `IdUnitate` is a plain non-unique column with no index at
+  all — which makes §5.6's `GET_LOCK` before `MAX(IdUnitate)+1` more necessary, not less.
+- **Two different tables are called `Unitati`** and they share no column.
+  `AVACONT_COMUN.Unitati` is `(DC PK, NumeUnitate, CF)` — the login registry.
+  `<unit>.Unitati` is `(IdUnitate PK, Detalii, SursaSector, An, CodProgram, Ascuns, …)` — the
+  local one `Clasificatii.IdUnitate` points at. 0075-03 writes **both**, and they are not the
+  same row in two places.
+
+### Leftover work columns on the template — for 0075-03
+
+`AVACONT_SURSA.Clasificatii` still has **`Sector_w`, `Sursa_w`, `SS_w`**, the work columns
+0075-00's script added. `000_DEMO.Clasificatii` does **not** have them — it is otherwise
+column-for-column identical. So the unit databases came through clean and only the template
+kept the scaffolding.
+
+That matters because §5.6 step 1 builds a new unit database by cloning `AVACONT_SURSA`:
+every unit created from today on would inherit three dead columns no other unit database
+has. Drop them on the template before 0075-03 runs for real:
+
+```sql
+ALTER TABLE `AVACONT_SURSA`.`Clasificatii`
+  DROP COLUMN `Sector_w`, DROP COLUMN `Sursa_w`, DROP COLUMN `SS_w`;
+```
+
+This is also most of the answer to the question 0075-00 left open (why three virtual columns
+had to be dropped by hand): the hand work was on the template, and the seven unit databases
+needed none. Why the template refused is still not captured.
+
+### What is written, and what has never run
+
+`PYTHON/routes/inregistrare/` holds the whole applicant side: the pre-auth store, the ANAF v9
+client, the nomenclator reads, the name algorithm, the request check and the
+`FX_Inregistrari` write. Seven routes. Worklogs:
 `SLICE-0075-01-inregistrare-preauth-anaf-cod.md`, `SLICE-0075-02-nomenclatoare-nume-cerere.md`.
 
-**Next pass: 0075-03** (§5.6) — the provisioning job with its compensation chain. Or 0075-04
-(the page) first, if seeing it working matters more than being able to approve it; neither
-blocks the other, and 0075-05 (the approval UI) needs 0075-03.
+**Nothing has been started.** No route has been called, on any server. The only real contact
+with the live system so far is the operator's own work: the 0075-00 migration, running
+`sql/0075_fx_inregistrari.sql`, one `curl` to ANAF and these schema dumps.
 
-From 0075-02, which override the sections below:
-
-- **`sql/0075_fx_inregistrari.sql`** must be run on the K-BOT server before `/cerere` works.
-- **`OPERATOR_EMAIL`** in `config.py`: until it is set, every request is recorded but nobody
-  is told (the answer says so, `operator_anuntat: false`).
-- **The free-number check compares the NUMBER, not the whole name** — see §5.4.
-- **`cerere.MAX_ROWS = 50 000`** is a ceiling the plan does not ask for. Added deliberately:
-  without it, all the leaves of both trees times all fourteen sources is 531 × 686 × 14, five
-  million rows queued from an anonymous form. One constant, move it if it is wrong.
-
-From 0075-01, which override the sections below:
+Decisions from 0075-01 and 0075-02 that override the sections below:
 
 - **The token is minted by `/anaf`, not by `/cod`.** §4 and §5.1 contradicted each other;
   the operator settled it. The note carries `cf` and `anaf` from step 1, because
@@ -48,37 +102,55 @@ From 0075-01, which override the sections below:
   `found` empty. The `<html>` check does port, unchanged.
 - **The service account can read `mysql.user`** on the K-BOT server (checked on the
   machine: 10 accounts). §5.3's e-mail check works as written.
+- **The free-number check compares the NUMBER, not the whole name** — see §5.4.
+- **`cerere.MAX_ROWS = 50 000`** is a ceiling the plan does not ask for. Added deliberately:
+  without it, all the leaves of both trees times all fourteen sources is 531 × 686 × 14, five
+  million rows queued from an anonymous form. One constant, move it if it is wrong.
 - **No pytest files**, by operator decision. §8 no longer asks for them. The cost is
-  stated in the worklog: this pass has zero automated coverage.
+  stated in the worklog: these passes have zero automated coverage, and it will be felt most
+  in 0075-03, where the compensation chain is the only thing between a half-failed run and a
+  half-built unit.
 
-**Add to `config.py` on the VPS** (all have working defaults, or their absence is reported
-rather than fatal, so the server starts without them):
+**Still to add to `config.py` on the VPS** (all have working defaults, or their absence is
+reported rather than fatal, so the server starts without them):
 `ANAF_TVA_URL = "https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva"` (CONFIRMED by the
 operator, 22.09.2026 — v9 on this path shape, not the v6-style
 `/PlatitorTvaRest/api/v6/ws/tva` Access uses), `ANAF_TIMEOUT = 15`, `OPERATOR_EMAIL`.
+Until `OPERATOR_EMAIL` is set, every request is recorded but nobody is told (the answer says
+so: `operator_anuntat: false`).
+
+### What 0075-04 has to work with
+
+- nginx needs no change: a single `location /` proxies everything to gunicorn on
+  `127.0.0.1:5009` (F9 closed).
+- The JS components are complete in `JS_COMPONENTS/` — including the four pieces F2 first
+  reported missing (`listener-tracker/`, `utils/z-max.js`, `utils/css.js`,
+  `css/treeview/*` + `css/combobox.css`). They import **two levels up**
+  (`../../listener-tracker/…`), so the layout must be `static/js/components/<name>/` with the
+  shared folders at `static/js/` (D1: use them as they are, do not edit their imports).
+  **Done in 0075-04**: copied to `PYTHON/static/js/` in exactly that layout. That copy is what
+  the page loads; `JS_COMPONENTS/` stays the original and out of the commit.
+- The tree has **no checkbox mode** — D21 adds an opt-in one (`checkable: true`, tri-state,
+  result = checked leaves). SectorSursa is a plain checkbox list, not a tree.
+- The seven routes the page talks to are all written and documented in
+  `PYTHON/routes/inregistrare/README.md`, reason codes included.
 
 ---
 
 **Pass 0075-00 is applied.** `Clasificatii.Sector`, `Sursa` and `SS` are written columns on
 the K-BOT server, the six other generated columns are untouched, and the updated writers
 (`routes/clasificatii_ss.py`, `clasificatii.py`, `nomenclatoare.py`) are on the VPS with
-gunicorn restarted. Run by the operator; the developer has no server access.
-
-⚠️ **One thing the script did not do by itself:** the three virtual columns on
-`AVACONT_SURSA.Clasificatii` had to be removed **by hand** before the run would go through.
-The reason was not captured. Before trusting `scripts/clasificatii_sursa.py` again — 0075-03
-does not use it, but a future unit database will — find out whether the seven unit databases
-went through cleanly or also needed hand work, and what exactly the template refused.
-Everything else about the script (backup, snapshot, verification against it) is unexercised
-on a table with rows, since the template is empty.
-
-~~**Next pass: 0075-01**~~ — **done, see the top of this section.** Nothing blocked it:
-nginx needs no change (§F9 is closed, a single `location /` proxies everything to Flask),
-the JS components are complete (§F2a), and D24–D26 answer the role, CodProgram and account
-questions.
+gunicorn restarted. Run by the operator; the developer has no server access. The schema dumps
+confirm all of it. Two things the run left behind: the `_w` work columns on the template (see
+above), and no record of why the template refused the first attempt. Everything else about
+`scripts/clasificatii_sursa.py` (backup, snapshot, verification against it) is unexercised on
+a table with rows, since the template is empty.
 
 **Not started, and separate: 0075-06** (§13) — the rights of the accounts that already exist.
-The grants were read on 22.09.2026 and are less bad than first reported; see §13.
+The grants were read on 22.09.2026 and are less bad than first reported; see §13. It does not
+block any other pass.
+
+---
 
 ## 0. Step 0 findings (22.09.2026) — read before anything else
 
@@ -88,7 +160,7 @@ pasted. Decisions D20–D23 were taken by the operator the same day.
 | # | Finding | Consequence |
 |---|---|---|
 | F1 | Slice 0073 is the Recorder slice; 0074 the Browser view | **D20:** this work is slice **0075** |
-| F2 | `JS_COMPONENTS/treeview` is a single-select dropdown (`onSelect` fires once and closes); no checkboxes, no tri-state. `combobox` is single-select (`readonly` + `staticData` fits **An** only) | **D21:** add an opt-in checkbox mode to the tree (`checkable: true`, tri-state, result = checked leaves); **SectorSursa** = plain checkbox list |
+| F2 | `JS_COMPONENTS/treeview` is a single-select dropdown (`onSelect` fires once and closes); no checkboxes, no tri-state. `combobox` is single-select (`readonly` + `staticData` fits **An** only) | **D21:** add an opt-in checkbox mode to the tree (`checkable: true`, tri-state, result = checked leaves); **SectorSursa** = two single-select comboboxes (Sursa, then Sectorul) |
 | F2a | The four pieces F2 first reported missing **arrived on 22.09.2026**: `JS_COMPONENTS/listener-tracker/` (5 files, itself importing `../event-bus/event-bus.js` — also present), `utils/z-max.js` (`window.ZIndexManager`), `utils/css.js` (`window.getClassNumericProperty`), and the stylesheets `css/treeview/*` + `css/combobox.css` | The components import `../../listener-tracker/…`, i.e. TWO levels up: they must be served from `static/js/components/<name>/` with the shared folders at `static/js/`. That layout is respected rather than the import paths edited (D1: use them as they are) |
 | F3 | `schema_sync` **refuses** a missing DB (`schema_common.verify_targets` raises «Baze inexistente pe server»). The only creation path is `routes/admin.py::setup_database`: `CREATE DATABASE` + `SHOW CREATE TABLE`/`VIEW` clone of `AVACONT_SURSA`, X-Api-Key, **legacy** server | **D22:** the provisioning job ports that clone loop into its own module on the K-BOT server (`DB_CONFIG_NEW`); `schema_sync` is not used for creation |
 | F0 | **The K-BOT server has 7 unit databases, not the 22 §2a lists** (dry run, 22.09.2026): `000_DEMO`, `006_GR35`, `014_SCSV`, `027_SCGM`, `030_SCTC`, `045_CTER`, `050_GRSA`. The 22-name list in §2a was read off the LEGACY server. `AVACONT_SURSA.Clasificatii` is empty (0 rows) | §5.4's free-name check scans `SCHEMATA` **and** `CAI` on the K-BOT server, so the shorter list is what counts. §2a's list is stale — do not use it to predict a free `nn` |
@@ -112,7 +184,7 @@ Still to obtain from the operator: `SHOW GRANTS` for one e-mail account and one 
 
 | # | Decision |
 |---|---|
-| D1 | Public web page, built new, served by the Flask app. Uses the custom tree and combobox from `JS_COMPONENTS` (see D21) |
+| D1 | Public web page, built new, served by the Flask app. Uses the custom tree and combobox, vendored from `JS_COMPONENTS` into `PYTHON/static/js/` (see D21) |
 | D2 | Operator approval is required before anything is created on the server |
 | D3 | DB name `1nn_SSSS`: `n` ∈ 1..9, `SSSS` = first 4 consonants of the unit name |
 | D4 | Username = the e-mail, verified by a 6-digit code. Role suffix is deprecated. Roles do not exist yet; for now exactly one: **`Contabil`**. `Administrator` and `Director` come later — the design must take them without rework. *(Amended by D24: the values are the Romanian words already in the table, not the codes `CO`/`AD`/`DR` this row first carried.)* |
@@ -125,23 +197,31 @@ Still to obtain from the operator: `SHOW GRANTS` for one e-mail account and one 
 | D11 | A CF already present in `CAI` (and in `AVACONT_COMUN.Unitati`) is refused |
 | D12 | `SSSS`: first 4 consonants; if fewer than 4, vowels fill the rest in name order |
 | D13 | The password is set through a one-time link e-mailed after approval |
-| D14 | A leaf whose `xx00` parent is missing hangs directly under its root `xx0000`; a leaf with no root either is ignored |
+| D14 | ~~A leaf whose `xx00` parent is missing hangs directly under its root `xx0000`~~ ▸ superseded by D28 (the middle level is always there); a leaf with no root name either is ignored — **still in force** |
 | D15 | All 14 `DefaSursaSector` values must be storable → `Sursa` becomes a written column (§11) |
 | D16 | A `DefaClsfE` row with NULL/empty `Denumire` is not shown in the tree |
 | D17 | ~~`Utilizatori_Roluri(Email, DbName, Rol)`~~ — replaced by D23 (`Unitati_Utilizatori.Rol` already exists) |
 | D18 | New users get only what their work needs, on their own DB — never global rights. Provisioning uses its own account, not `AVACONT` |
 | D19 | Q11 shape approved; migration per §11, verified row by row; Migrator updated per §12 |
 | D20 | Slice number **0075** |
-| D21 | Tree: opt-in checkbox mode added to `JS_COMPONENTS/treeview`; SectorSursa = checkbox list; combobox for An |
+| D21 | Tree: opt-in checkbox mode added to the vendored `PYTHON/static/js/components/treeview`; combobox for An. ~~SectorSursa = checkbox list~~ ▸ ~~two comboboxes, one pair~~ ▸ **two comboboxes + «Adaugă» onto a list, any number of pairs** (operator, 22.09.2026, D29) |
 | D22 | DB creation: port of `admin.py::setup_database`'s clone loop, on the K-BOT server |
 | D23 | Login rows: `Unitati`, `Unitati_Utilizatori (Rol)`, `Unitati_Ani` (per SS), plus `CAI` |
 | D24 | **Role values are the Romanian words**, as already stored: `Contabil` (what D4 called `CO`), later `Administrator` (`AD`) and `Director` (`DR`). The 3 existing rows are **not** touched. One constant in the code, three values, no codes |
 | D25 | **`Unitati_Ani.CodProgram` follows the sector**: `01` ▸ `0000002510`, `02` ▸ `0000000000`. Prefilled that way and **editable by the operator on the approval page**, per (An, SS) row, before the job runs. A sector outside 01/02 (now reachable, see D15) has no known value → prefilled `0000000000`, editable like the rest |
+| D27 | **Unit name characters** (operator, 22.09.2026): only `[\w\s,]` — letters (diacritics included), digits, `_`, whitespace, commas; whitespace runs become one space. The page **removes** anything else, from the ANAF name too, before it is shown; `/nume` and `/cerere` **refuse** it (`DENUMIRE_CARACTERE_INTERZISE`) |
+| D28 | **Trees are three levels of two digits** (operator, 22.09.2026), ClsfF and ClsfE alike: `650100` = `65` › `01`, `650101` = `65` › `01` › `01`. Any number of leaves can be ticked. **ClsfF: only leaves have a checkbox.** **ClsfE: the top level (title) has none; a level-2 node with children (article) has a tri-state box that ticks its whole branch.** What is sent is always the ticked leaves. Replaces the §4.1 rules below |
+| D29 | **Many sector-sources per request** (operator, 22.09.2026): the pair picked in the two comboboxes is added to a list with «Adaugă»; each entry can be removed. A pair with no `DefaSursaSector` row is refused (at «Adaugă», and at «Continuă» for a pair picked but not yet added) |
 | D26 | **The `NNN_XXXX_Contabil` / `_Administrator` accounts disappear.** Every user, at every level, is a MariaDB account named by their e-mail; the role is `Unitati_Utilizatori.Rol`, not the account name. **Separately: every account on the server today carries SU rights, which is wrong and has to be fixed** — its own job, see §13 |
 
 ---
 
 ## 2. What already exists (VERIFIED)
+
+> **Both §2 and §2a are now second-hand.** `MariaDB_Schema/` (22.09.2026, 19:21) holds the
+> real `SHOW CREATE TABLE` for all three schemas — read it instead of trusting any shape
+> below. The lists here are kept because they explain what the columns MEAN; the dumps say
+> what they ARE. Known divergences are marked inline.
 
 - `AVACONT_SURSA` is the schema template (`sql/AVACONT_SURSA.sql`). ~~The server-side
   `schema_sync` job creates a unit DB from it~~ — **wrong, see F3.** `SchemaSyncClient`
@@ -172,7 +252,9 @@ Still to obtain from the operator: `SHOW GRANTS` for one e-mail account and one 
 - **`CAI` differs from the repo copy:** PK is `IdCai` AUTO_INCREMENT; `IdUnitate` is **not unique**
   (plain column). `MAX(IdUnitate) = 200`, 70 rows. `DbName = DC` on every row. D6 therefore needs
   its own lock (`GET_LOCK('cai_idunitate')`) — no key protects it. `sql/avacont_comun_login.sql`
-  is stale; fix it in 0075-02.
+  is stale; fix it in 0075-02. *(Done in 0075-02, and then corrected again against the dump:
+  the server has **no index at all** on `IdUnitate` — the `ix_CAI_IdUnitate` that 0075-02 added
+  to the repo DDL does not exist. `IdCai` AUTO_INCREMENT is at 96.)*
 - Existing DBs: `000_DEMO`, `001_GR23` … `053_LTTR`, `101_CCDP` (22). Pattern `NNN_XXXX`;
   `101_CCDP` predates D3 (has a 0). The free-name check must look at `SCHEMATA` **and** `CAI`.
 - **`Clasificatii` has FOUR cross-database FKs, not five:** `Articol▸DefaArticol`,
@@ -212,20 +294,22 @@ Still to obtain from the operator: `SHOW GRANTS` for one e-mail account and one 
 
 ## 4. The page — `https://kbot.avatarsoft.ro/inregistrare` (wizard, Romanian UI)
 
-One HTML page + one JS module, served as static files by Flask, using the `JS_COMPONENTS` tree
-(checkbox mode, D21) and combobox. No external CDN.
+One HTML page + one JS module, served as static files by Flask, using the vendored tree
+(checkbox mode, D21) and combobox in `PYTHON/static/js/`. No external CDN.
+
+Six screens, as built in 0075-04 — the operator moved **Denumire** onto screen 1 and turned
+**SectorSursa** into two comboboxes on 22.09.2026, after the first version was on screen:
 
 | Step | Screen | Server call |
 |---|---|---|
-| 1 | **Cod fiscal** → «Caută» → shows the ANAF data (name, address) for confirmation | `POST /api/inregistrare/anaf` |
+| 1 | **Date Unitate**: cod fiscal → «Caută» → ANAF data for confirmation, then **Denumire** (pre-filled from ANAF, editable). The proposed DB name is **not** shown; `/nume` is called on «Continuă» only for its verdict (the four-letter rule) | `POST /api/inregistrare/anaf`, `GET /api/inregistrare/nume?denumire=` |
 | 2 | **E-mail** → «Trimite codul» → code → «Verifică» | `POST /api/inregistrare/cod`, `/verifica` |
-| 3 | **Denumire unitate** (pre-filled from ANAF, editable) → the proposed DB name is shown read-only | `GET /api/inregistrare/nume?denumire=` |
-| 4 | **SectorSursa** — multi-select (checkbox list) from `DefaSursaSector` | `GET /api/inregistrare/sursasector` |
-| 5 | **ClsfF** tree and **ClsfE** tree, with checkboxes | `GET /api/inregistrare/clasificatii?tip=F\|E` |
-| 6 | **An** (combobox: current year, current-1) + summary → «Trimite cererea» | `POST /api/inregistrare/cerere` |
-| 7 | «Cererea a fost trimisă. Veți primi un e-mail după aprobare.» | — |
+| 3 | **Sursa** combobox, then **Sectorul** combobox filtered by it, «Adaugă» → the pair (one `SursaSector` code) goes on a list; any number of pairs (D29). A pair with no row in `DefaSursaSector` is refused | `GET /api/inregistrare/sursasector` |
+| 4 | **ClsfF** tree and **ClsfE** tree, three two-digit levels, checkboxes on leaves only (D28) | `GET /api/inregistrare/clasificatii?tip=F\|E` |
+| 5 | **An** (combobox: current year, current-1) + summary → «Trimite cererea» | `POST /api/inregistrare/cerere` |
+| 6 | «Cererea a fost trimisă. Veți primi un e-mail după aprobare.» | — |
 
-Steps 2–6 are only reachable with the registration token, which **step 1 hands out** on a
+Steps 2–5 are only reachable with the registration token, which **step 1 hands out** on a
 successful ANAF lookup; every call after it carries the token in the `X-Registration-Token`
 header. *(This line used to say "from step 2" and contradicted §5.1, whose note holds `cf` and
 `anaf` — step-1 data. Settled by the operator, 22.09.2026, and implemented in 0075-01: the
@@ -234,16 +318,22 @@ side by side.)*
 
 ### 4.1 Tree building (client side, from the flat list)
 
-For each code `c` (ClsfF or ClsfE):
+**Rewritten 22.09.2026 (D28).** Three levels of two digits, for ClsfF and ClsfE alike:
 
-- `Right(c,4) = "0000"` → root
-- else `Right(c,2) = "00"` → level 1, parent = `Left(c, Len-4) & "0000"`
-- else → leaf, parent = `Left(c, Len-2) & "00"`; parent missing → under the root (D14); root
-  missing too → ignored
+- `xx0000` → the **name** of level 1 `xx`; never a choice
+- `xxyy00` → a **leaf** at level 2 when no `xxyyzz` exists; otherwise the **name** of group `xxyy`
+- `xxyyzz` → a leaf at level 3, under `xx` › `yy`, always — the middle level is created even when
+  no `xxyy00` row exists (it then shows its two digits alone)
+- a level-1 group with no name at all is dropped with everything under it (D14, second half)
 
-A level-1 node without children is valid and **selectable as a leaf**. Checking a parent checks its
-children (tri-state). What is sent to the server = the checked **leaves only** (level-1 nodes with no
-children count as leaves).
+Group names come from the rows above or, for ClsfE, from `DefaTitlu` / `DefaArticol` (`grupuri`
+in the `/clasificatii` answer): the ClsfE query's join on `DefaArticol` drops every `xx0000` row,
+because `xx.00` is not an article — so under the old rules ClsfE had no roots and showed nothing.
+
+**ClsfF: only leaves have a checkbox**; a node with children opens and closes. **ClsfE: a title
+(level 1) has no box and only opens; an article with children (level 2) has a tri-state box that
+ticks or clears its whole branch** (tree option `branchChecks`). What is sent = the ticked leaves —
+the same thing `cerere.py` calls selectable.
 
 ---
 
@@ -425,7 +515,7 @@ candidate. Decide in 0075-05.
 | 0075-01 | Pre-auth notes, ANAF proxy, `/cod`, `/verifica` — **DONE (code only)**. ~~pytest~~: no test files, by operator decision of 22.09.2026. The same goes for every pass after this one |
 | 0075-02 | Nomenclator endpoints, name algorithm, `FX_Inregistrari` DDL, `/cerere`; refresh `sql/avacont_comun_login.sql` — **DONE (code only)** |
 | 0075-03 | Provisioning job with compensation. ~~one pytest per failing step proving the unwind~~ — dropped with the rest of the test files. ⚠ Worth knowing what that costs: this is the pass that CREATEs and DROPs databases and MariaDB accounts, and the unwind is the only thing between a half-failed run and a half-built unit. With no test behind it, every compensation path is first exercised on the live server |
-| 0075-04 | Public page with `JS_COMPONENTS` (tree checkbox mode) |
+| 0075-04 | Public page, components vendored to `PYTHON/static/js/` (tree checkbox mode) — **DONE (code only)**, taken ahead of 0075-03 by the operator's choice of 22.09.2026. Verified in a browser against a stub, never against live Flask/MariaDB/ANAF. §4 now describes what was built: six screens, Denumire on screen 1, sursă-sector list (D29), three-level trees with leaf-only boxes (D28), name characters (D27) |
 | 0075-05 | Operator approval UI (incl. the editable `CodProgram` fields, D25); runbook for the provisioning account + SMTP on the VPS |
 | 0075-06 | **Least privilege for the accounts that already exist** (§13, D26) — separate, one account at a time, after the grants are read |
 
@@ -440,7 +530,9 @@ candidate. Decide in 0075-05.
    `Unitati` / `Unitati_Ani` / `Unitati_Utilizatori` rows).
 7. The new user logs in through `LoginForm` and sees exactly the new unit(s), role `Contabil`,
    and `SHOW GRANTS` for them names **only** the new database.
-8. Build clean; pytest all green or cleanly skipped.
+8. Build clean. ~~pytest all green or cleanly skipped~~ — there are no test files (operator
+   decision, 22.09.2026), so every line of this checklist is a **hand** check on a live
+   server. Nothing on this list has been done yet.
 
 ## 10. Closed questions
 

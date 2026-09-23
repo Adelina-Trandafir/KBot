@@ -1,0 +1,57 @@
+/**
+ * 📝 ADD LEAD - FORM STYLES
+ * Form layout, country selector, phone input
+ * 
+ * @version 1.0.0
+ */
+
+/* ========== FORM LAYOUT ========== */
+.add-lead-form {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+/* ========== COUNTRY SELECTOR ========== */
+.add-lead-tara {
+  flex: 0 0 140px;
+}
+
+.add-lead-steag {
+  width: 100%;
+}
+
+/* ========== PHONE INPUT ========== */
+.add-lead-telefon {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.add-lead-telefon label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.add-lead-telefon input {
+  width: 100%;
+  padding: 4px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.add-lead-telefon input:hover {
+  border-color: #9ca3af;
+}
+
+.add-lead-telefon input:focus {
+  outline: 1px solid #667eea;
+  /* outline-offset: 2px; */
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}

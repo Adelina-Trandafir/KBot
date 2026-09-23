@@ -1,0 +1,664 @@
+/**
+ * ========== TREEVIEW STYLES ==========
+ * Stiluri pentru componenta TreeView cu suport pentru teme
+ * Compatibil cu calculele existente din JS (display: block)
+ */
+
+/* ========== CONTAINER PRINCIPAL ========== */
+.treeview-container{
+    position: relative;
+    width: 100%;
+    min-width: 0;              /* permite comprimarea sub 200px */
+}
+
+/* ---------- INPUT ---------- */
+.treeview-input{
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    background: #fff;
+    outline: none;
+    transition: all .2s;
+}
+.treeview-input:focus{
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76,175,80,.1);
+}
+.treeview-input:disabled{
+    background: #f5f5f5 !important;
+    cursor: auto !important;
+    opacity: .6;
+}
+
+.treeview-input:hover {
+    cursor: pointer;
+    background: #edffe7;
+}
+
+/* ---------- SĂGEATĂ ---------- */
+.treeview-arrow{
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: all;
+    cursor: pointer;
+    color: #666;
+    font-size: 15px;
+    transition: transform .2s, font-size .2s;
+    user-select: none;
+}
+
+.treeview-arrow:hover{font-size:16px}
+
+.treeview-container.disabled .treeview-arrow{
+    cursor: auto;
+    opacity: .4;
+    font-size: 15px !important;
+}
+
+/* ========== LOADER ========== */
+.treeview-loader {
+  position: absolute;
+  right: 35px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #4CAF50;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: none;
+}
+
+.treeview-loader.show {
+  display: block;
+}
+
+/* ========== DROPDOWN - COMPATIBIL CU JS BLOCK MODE ========== */
+.treeview-dropdown {
+  position: fixed !important;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  /* z-index: 99999 !important; */
+  display: none;
+  scrollbar-width: none;
+  /* Tranziție pentru poziționare */
+  transition: all 0.2s ease;
+  /* maxHeight și overflow sunt setate dinamic în JS */
+  max-width: 100vh;
+}
+
+
+/* Dropdown pozitionat deasupra input-ului - NORMAL MODE */
+.treeview-dropdown.show-above {
+  /* Umbra orientată în jos când dropdown-ul e deasupra */
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+  /* Restul stilurilor rămân identice */
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  /* z-index: 99999 !important; */
+  transition: all 0.2s ease;
+}
+
+/* Scrollbar customization pentru dropdown */
+.treeview-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.treeview-dropdown::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.treeview-dropdown::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.treeview-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* ========== SEARCH BOX - POZIȚIONARE NORMALĂ ========== */
+.treeview-search-wrapper {
+  background: white;
+  /* padding: 8px; */
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  min-height: 36px; /* Minimum pentru funcționalitate */
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.treeview-search-input {
+  flex: 1;
+  /* padding: 6px 30px 6px 30px; */
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.treeview-search-input:focus {
+  border-color: #3b82f6;
+  /* box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); */
+}
+
+.treeview-search-icon {
+  position: absolute;
+  left: 16px;
+  color: #9ca3af;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.treeview-search-clear {
+  position: absolute;
+  right: 16px;
+  color: #6b7280;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px;
+  transition: all 0.2s;
+}
+
+.treeview-search-clear:hover {
+  color: #ef4444;
+  transform: scale(1.2);
+}
+
+/* ========== TREE CONTAINER - BLOCK LAYOUT ========== */
+.treeview-tree-container {
+  position: relative;
+  /* Înălțimea calculată dinamic în JS prin maxHeight pe dropdown */
+  /* JS setează overflow-y pe dropdown, nu aici */
+}
+
+/* Pentru dropdown-urile care AU search wrapper */
+.treeview-dropdown:has(.treeview-search-wrapper) {
+  /* JS va calcula înălțimea totală și o va seta pe dropdown */
+}
+
+/* Pentru dropdown-urile care NU au search wrapper */
+.treeview-dropdown:not(:has(.treeview-search-wrapper)) .treeview-tree-container {
+  /* Lasă JS-ul să gestioneze totul prin maxHeight pe dropdown */
+}
+
+.treeview-tree {
+  padding: 4px 0;
+}
+
+/* Scrollbar subtil pentru tree container - DOAR când JS nu setează pe dropdown */
+.treeview-tree-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.treeview-tree-container::-webkit-scrollbar-track {
+  background: #f9fafb;
+}
+
+.treeview-tree-container::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.treeview-tree-container::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ========== OVERLAY MODE - COMPATIBIL CU JS EXISTENT ========== */
+.treeview-dropdown.overlay-mode {
+  border: 1px solid #3b82f6;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+  background: white;
+  /* Păstrează display: block din JS */
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+/* Overlay mode pozitionat deasupra (dacă nu încape jos) */
+.treeview-dropdown.overlay-mode.show-above {
+  transform: translateY(-100%); /* Mută tot dropdown-ul în sus cu înălțimea lui */
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+
+/* Search wrapper în overlay mode - poziționare simplă */
+.treeview-dropdown.overlay-mode .treeview-search-wrapper {
+  position: relative;
+  background: white;
+  padding: 8px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  min-height: 36px; /* Adaptat dinamic */
+  box-sizing: border-box;
+  border-bottom: 1px solid #e5e7eb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.treeview-dropdown.overlay-mode .treeview-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  /* padding: 8px 35px 8px 12px; */
+  background: transparent;
+  font-size: 12px;
+}
+
+.treeview-dropdown.overlay-mode .treeview-tree-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: white;
+  position: relative;
+  max-height:200px;
+}
+
+/* Când nu există search wrapper în overlay mode */
+.treeview-dropdown.overlay-mode:not(:has(.treeview-search-wrapper)) .treeview-tree-container {
+  height: 100%; /* Ocupă tot dropdown-ul */
+}
+
+/* ========== ITEMS ========== */
+.treeview-item-wrapper {
+  position: relative;
+}
+
+.treeview-item {
+  display: flex;
+  align-items: center;
+  /* padding: 6px 12px; */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  position: relative;
+  /* min-height: 32px; */
+  border-radius: 4px;
+  margin: 2px 4px;
+}
+
+.treeview-item:hover {
+  background: #f5f5f5;
+}
+
+.treeview-item:active {
+  transform: scale(0.98);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.treeview-item.highlighted {
+  background: #e3f2fd;
+}
+
+/* Items ne-selectabile */
+.treeview-item.not-selectable {
+  cursor: default;
+  opacity: 0.7;
+  background: transparent;
+}
+
+.treeview-item.not-selectable:hover {
+  background: rgba(0, 0, 0, 0.03);
+  transform: none;
+  box-shadow: none;
+}
+
+/* Hover special pentru parents */
+.treeview-item[data-has-children="true"]:hover {
+  background: linear-gradient(90deg, #f0fdf4 0%, #dcfce7 100%);
+  box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.15);
+}
+
+/* Parent și leaf items */
+.treeview-parent-item {
+  font-weight: 500;
+}
+
+.treeview-leaf-item {
+  font-weight: 400;
+}
+
+/* Double-click mode */
+.treeview-item.dblclick-mode {
+  cursor: pointer;
+}
+
+.treeview-item.pulse {
+  animation: pulse 1s ease-out;
+}
+
+/* ========== EXPANDER ========== */
+.treeview-expander {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  color: #666;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  border-radius: 3px;
+  margin-right: 4px;
+}
+
+.treeview-expander:hover {
+  color: #2563eb;
+  background: rgba(59, 130, 246, 0.1);
+  transform: scale(1.2);
+}
+
+.treeview-expander.expanded {
+  color: #16a34a;
+}
+
+.treeview-expander.expanded:hover {
+  background: rgba(34, 197, 94, 0.1);
+  color: #15803d;
+}
+
+/* ========== SPACER ========== */
+.treeview-spacer {
+  display: inline-block;
+  width: 20px;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+/* ========== LABELS ========== */
+.treeview-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #1f2937;
+  font-weight: 400;
+  transition: color 0.2s ease;
+  min-height: 20px;
+  line-height: 20px;
+}
+
+.treeview-item[data-has-children="true"] .treeview-label {
+  font-weight: 500;
+  color: #111827;
+}
+
+.treeview-item:hover .treeview-label {
+  color: #1e40af;
+}
+
+.treeview-item.not-selectable:hover .treeview-label {
+  color: #6b7280;
+}
+
+.treeview-item.highlighted .treeview-label {
+  color: white;
+}
+
+/* ========== LEVEL INDICATOR ========== */
+.treeview-level-indicator {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #9ca3af;
+  font-style: italic;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.treeview-item:hover .treeview-level-indicator {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.treeview-item.highlighted .treeview-level-indicator {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ========== DOUBLE-CLICK HINT ========== */
+.treeview-dblclick-hint {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #9ca3af;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.treeview-item.dblclick-mode:hover .treeview-dblclick-hint {
+  opacity: 0.7;
+}
+
+/* ========== CHILDREN CONTAINER ========== */
+.treeview-children {
+  position: relative;
+  animation: slideDown 0.2s ease;
+}
+
+.treeview-children .treeview-item {
+  position: relative;
+}
+
+.treeview-children .treeview-item::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  width: 12px;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.treeview-children::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 0;
+  bottom: 16px;
+  width: 1px;
+  background: #e5e7eb;
+}
+
+/* ========== SEARCH STYLING ========== */
+/* Items care match căutarea */
+.treeview-item.matched {
+  opacity: 1 !important;
+  background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.treeview-item.matched .treeview-label {
+  color: #111827 !important;
+  font-weight: 600;
+}
+
+.treeview-item.matched:hover {
+  background: linear-gradient(90deg, #fde68a 0%, #fbbf24 100%);
+}
+
+/* Părinți care conțin rezultate */
+.treeview-item.parent-matched {
+  opacity: 1 !important;
+  color: #6b7280;
+}
+
+.treeview-item.parent-matched .treeview-label {
+  color: #4b5563;
+  font-weight: 500;
+}
+
+/* Items dimmed când nu match căutarea */
+.treeview-item.dimmed {
+  opacity: 0.2;
+  filter: grayscale(100%);
+}
+
+.treeview-item.dimmed:hover {
+  opacity: 0.3;
+  background: transparent;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Resetare pentru toate items în modul search */
+.treeview-tree-container .treeview-item {
+  opacity: 1;
+  color: #1f2937;
+}
+
+.treeview-tree-container .treeview-label {
+  color: #1f2937;
+  font-weight: 400;
+}
+
+/* ========== HIGHLIGHT TEXT ========== */
+.treeview-highlight {
+  background: #ffeb3b;
+  padding: 1px 2px;
+  border-radius: 2px;
+  font-weight: 500;
+}
+
+.treeview-highlight-local {
+  background: #fbbf24;
+  color: #000;
+  padding: 1px 3px;
+  border-radius: 2px;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+/* ========== ERROR & NO RESULTS ========== */
+.treeview-error {
+  padding: 12px;
+  color: #d32f2f;
+  text-align: center;
+  font-size: 12px;
+}
+
+.treeview-no-results {
+  padding: 12px;
+  color: #666;
+  text-align: center;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* ========== AUTO-RESIZE ========== */
+.treeview-container[data-auto-resize="true"] .treeview-dropdown {
+  transition: width 0.2s ease;
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes spin {
+  0% { transform: translateY(-50%) rotate(0deg); }
+  100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
+  }
+  50% { 
+    box-shadow: 0 0 0 10px rgba(251, 191, 36, 0);
+  }
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .treeview-tree-container {
+    max-height: 150px;
+  }
+}
+
+/* ========== DARK MODE ========== */
+@media (prefers-color-scheme: light) {
+  .treeview-input {
+    background: #1f2937;
+    border: 1px solid #374151;
+    color: #f9fafb;
+  }
+  .treeview-input:focus {
+    border-color: #10b981;      
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+  }
+  .treeview-input:hover {
+    background: #111827;
+  }
+  .treeview-container.disabled .treeview-input {
+    background: #374151 !important;
+    color: #9ca3af !important;
+  }
+  .treeview-arrow {
+    color: #9ca3af;
+  }
+  .treeview-container.disabled .treeview-arrow {
+    color: #6b7280;
+  }
+  .treeview-dropdown {
+    background: #111827;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    color: #f9fafb;
+  }
+  .treeview-dropdown.show-above {
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.5);
+  }
+  .treeview-search-wrapper {
+    background: #1f2937;
+    border-bottom: 1px solid #374151;
+  }
+  .treeview-search-input {
+    background: #374151;
+    border: 1px solid #4b5563;
+    color: #f9fafb;
+  }
+  .treeview-search-input:focus {
+    border-color: #3b82f6;
+    /* box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); */
+  }
+  .treeview-search-icon {
+    color: #6b7280;
+  }
+  .treeview-search-clear {
+    color: #9ca3af;
+  }
+  .treeview-search-clear:hover {
+    color: #ef4444;
+  }
+
+  .treeview-tree-container::-webkit-scrollbar-track {
+    background: #374151;
+  } 
+}

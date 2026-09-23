@@ -1,0 +1,181 @@
+/**
+ * 📊 ADD LEAD - TABLE STYLES
+ * Table container, rows, states
+ * 
+ * @version 1.0.0
+ */
+
+/* ========== MIDDLE SECTION ========== */
+.add-lead-middle-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 24px 16px;
+  
+  /* Animație slide-down */
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+}
+
+.add-lead-middle-section:not(.hidden) {
+  max-height: 400px;
+  opacity: 1;
+  padding: 16px 24px;
+}
+
+/* ========== TABLE CONTAINER ========== */
+.add-lead-table-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.add-lead-table-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ========== TABLE ========== */
+.add-lead-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  overflow-y: auto;
+  max-height: 200px;
+  display: block;
+}
+
+.add-lead-table thead,
+.add-lead-table tbody {
+  display: block;
+  width: 100%;
+}
+
+.add-lead-table thead {
+  background: #f9fafb;
+  position: sticky;
+  top: 0;
+  /* z-index: 1; */
+}
+
+.add-lead-table tbody {
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+.add-lead-table tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* ========== TABLE HEADER ========== */
+.add-lead-table-header {
+  padding: 10px 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: left;
+  border-bottom: 2px solid var(--border-color);
+}
+
+/* ========== TABLE ROWS ========== */
+.add-lead-table tbody tr {
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s ease;
+}
+
+/* Rânduri selectabile */
+.add-lead-table tbody tr.row-selectable {
+  cursor: pointer;
+}
+
+.add-lead-table tbody tr.row-selectable:hover {
+  background-color: #f3f4f6 !important;
+}
+
+/* Rând selectat */
+.add-lead-table tbody tr.row-selected {
+  background-color: var(--green-hover-background) !important;
+}
+
+/* Rânduri neutilizabile */
+.add-lead-table tbody tr.row-unusable {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.add-lead-table tbody tr.row-unusable:hover {
+  background-color: inherit !important;
+}
+
+/* ========== TABLE CELLS ========== */
+.add-lead-table td {
+  padding: 10px 12px;
+  color: #1f2937;
+}
+
+/* ========== STATES ========== */
+.add-lead-table .no-data,
+.add-lead-table .error {
+  /* position: relative; */
+  text-align: center;
+  padding: 20px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.add-lead-table .loading {position: relative;transform: translateY(0%) translateX(-50%);}
+
+.add-lead-table .error {
+  color: #dc2626;
+}
+
+/* ========== SCROLL BAR ========== */
+.add-lead-table tbody::-webkit-scrollbar {
+  width: 8px;
+}
+
+.add-lead-table tbody::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.add-lead-table tbody::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.add-lead-table tbody::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ========== TABLE FOOTER ========== */
+.add-lead-table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-top: 2px solid var(--border-color);
+  background: #f9fafb;
+  flex-shrink: 0;
+}
+
+/* ========== CHECKBOXES ========== */
+td.unchecked::before {
+  content: '☐';
+  font-size: 22px;
+}
+
+/* Checked */
+td.checked::before {
+  content: '☑️';
+  font-size: 18px;
+}

@@ -17,7 +17,7 @@ must show as an error on their screen, not as a silent wait.
 import logging
 import smtplib
 from email.message import EmailMessage
-from email.utils import formatdate, make_msgid
+from email.utils import formatdate, make_msgid, parseaddr
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,57 @@ def _get(cfg, name, default):
     return getattr(cfg, name, default) if cfg is not None else default
 
 
+def _smtp_config():
+    """
+    The SMTP block from config.py. Raises MailNotConfigured when SMTP_HOST is empty,
+    so a missing account can never read as a sent message.
+
+    Two ways to encrypt, and they are not interchangeable. Port 465 (SMTPS) is
+    IMPLICIT TLS: the socket is encrypted from the first byte and STARTTLS is never
+    sent -- talking plain SMTP to it hangs until the timeout. Ports 587 and 25 start
+    in the clear and upgrade with STARTTLS. The port decides by itself; SMTP_USE_SSL
+    forces the implicit form on a provider that runs SMTPS elsewhere.
+    """
+    cfg = _read_config()
+    host = str(_get(cfg, "SMTP_HOST", "")).strip()
+    if not host:
+        raise MailNotConfigured("SMTP_HOST lipseste din config.")
+
+    port = int(_get(cfg, "SMTP_PORT", 587))
+    return {
+        "host": host,
+        "port": port,
+        "user": str(_get(cfg, "SMTP_USER", "") or ""),
+        "password": str(_get(cfg, "SMTP_PASSWORD", "") or ""),
+        "sender": str(_get(cfg, "SMTP_FROM", "K-BOT <no-reply@avatarsoft.ro>")),
+        "use_tls": bool(_get(cfg, "SMTP_USE_TLS", True)),
+        "use_ssl": bool(_get(cfg, "SMTP_USE_SSL", port == 465)),
+        "timeout": int(_get(cfg, "SMTP_TIMEOUT", 15)),
+    }
+
+
+def _deliver(msg, conf):
+    """Opens the session the way `conf` says and sends one message. Errors propagate."""
+    opener = smtplib.SMTP_SSL if conf["use_ssl"] else smtplib.SMTP
+    with opener(conf["host"], conf["port"], timeout=conf["timeout"]) as smtp:
+        # STARTTLS on an already-encrypted session is an error, not a second layer.
+        if conf["use_tls"] and not conf["use_ssl"]:
+            smtp.starttls()
+        if conf["user"]:
+            smtp.login(conf["user"], conf["password"])
+        smtp.send_message(msg)
+
+
+def _message_id(conf):
+    """
+    A Message-ID on the SENDER's domain. Bare `make_msgid()` uses the machine's own
+    hostname (`vps-123.localdomain` or similar), a domain that matches nothing else in
+    the message -- one of the small signals spam filters add up.
+    """
+    domain = parseaddr(conf["sender"])[1].rpartition("@")[2].strip()
+    return make_msgid(domain=domain) if domain else make_msgid()
+
+
 def is_configured():
     cfg = _read_config()
     return bool(str(_get(cfg, "SMTP_HOST", "")).strip())
@@ -48,24 +99,14 @@ def send_password_code(to_address, code, minutes):
     Sends the one-time code. Raises MailNotConfigured without SMTP_HOST, and lets
     smtplib / socket errors propagate -- the caller reports them.
     """
-    cfg = _read_config()
-    host = str(_get(cfg, "SMTP_HOST", "")).strip()
-    if not host:
-        raise MailNotConfigured("SMTP_HOST lipseste din config.")
-
-    port = int(_get(cfg, "SMTP_PORT", 587))
-    user = str(_get(cfg, "SMTP_USER", "") or "")
-    password = str(_get(cfg, "SMTP_PASSWORD", "") or "")
-    sender = str(_get(cfg, "SMTP_FROM", "K-BOT <no-reply@avatarsoft.ro>"))
-    use_tls = bool(_get(cfg, "SMTP_USE_TLS", True))
-    timeout = int(_get(cfg, "SMTP_TIMEOUT", 15))
+    conf = _smtp_config()
 
     msg = EmailMessage()
     msg["Subject"] = "K-BOT: codul de confirmare pentru schimbarea parolei"
-    msg["From"] = sender
+    msg["From"] = conf["sender"]
     msg["To"] = to_address
     msg["Date"] = formatdate(localtime=True)
-    msg["Message-ID"] = make_msgid()
+    msg["Message-ID"] = _message_id(conf)
     # Romanian, literal diacritics: this is what the operator reads.
     msg.set_content(
         "Bună ziua,\n\n"
@@ -76,13 +117,10 @@ def send_password_code(to_address, code, minutes):
         "K-BOT\n"
     )
 
-    logger.info("password code mail -> %s via %s:%s", _mask(to_address), host, port)
-    with smtplib.SMTP(host, port, timeout=timeout) as smtp:
-        if use_tls:
-            smtp.starttls()
-        if user:
-            smtp.login(user, password)
-        smtp.send_message(msg)
+    logger.info(
+        "password code mail -> %s via %s:%s", _mask(to_address), conf["host"], conf["port"]
+    )
+    _deliver(msg, conf)
 
 
 def send_registration_code(to_address, code, minutes):
@@ -99,24 +137,14 @@ def send_registration_code(to_address, code, minutes):
     Same contract as send_password_code: MailNotConfigured without SMTP_HOST, and
     smtplib / socket errors propagate to the caller.
     """
-    cfg = _read_config()
-    host = str(_get(cfg, "SMTP_HOST", "")).strip()
-    if not host:
-        raise MailNotConfigured("SMTP_HOST lipseste din config.")
-
-    port = int(_get(cfg, "SMTP_PORT", 587))
-    user = str(_get(cfg, "SMTP_USER", "") or "")
-    password = str(_get(cfg, "SMTP_PASSWORD", "") or "")
-    sender = str(_get(cfg, "SMTP_FROM", "K-BOT <no-reply@avatarsoft.ro>"))
-    use_tls = bool(_get(cfg, "SMTP_USE_TLS", True))
-    timeout = int(_get(cfg, "SMTP_TIMEOUT", 15))
+    conf = _smtp_config()
 
     msg = EmailMessage()
     msg["Subject"] = "K-BOT: codul de confirmare a adresei de e-mail"
-    msg["From"] = sender
+    msg["From"] = conf["sender"]
     msg["To"] = to_address
     msg["Date"] = formatdate(localtime=True)
-    msg["Message-ID"] = make_msgid()
+    msg["Message-ID"] = _message_id(conf)
     # Romanian, literal diacritics: this is what the applicant reads.
     msg.set_content(
         "Bună ziua,\n\n"
@@ -129,13 +157,10 @@ def send_registration_code(to_address, code, minutes):
         "K-BOT\n"
     )
 
-    logger.info("registration code mail -> %s via %s:%s", _mask(to_address), host, port)
-    with smtplib.SMTP(host, port, timeout=timeout) as smtp:
-        if use_tls:
-            smtp.starttls()
-        if user:
-            smtp.login(user, password)
-        smtp.send_message(msg)
+    logger.info(
+        "registration code mail -> %s via %s:%s", _mask(to_address), conf["host"], conf["port"]
+    )
+    _deliver(msg, conf)
 
 
 def operator_address():
@@ -158,24 +183,14 @@ def send_registration_notice(to_address, id_cerere, denumire, cf, email, randuri
     is in it because it is the one number that can be alarming -- a request worth a
     few hundred classifications reads very differently from one worth fifty thousand.
     """
-    cfg = _read_config()
-    host = str(_get(cfg, "SMTP_HOST", "")).strip()
-    if not host:
-        raise MailNotConfigured("SMTP_HOST lipseste din config.")
-
-    port = int(_get(cfg, "SMTP_PORT", 587))
-    user = str(_get(cfg, "SMTP_USER", "") or "")
-    password = str(_get(cfg, "SMTP_PASSWORD", "") or "")
-    sender = str(_get(cfg, "SMTP_FROM", "K-BOT <no-reply@avatarsoft.ro>"))
-    use_tls = bool(_get(cfg, "SMTP_USE_TLS", True))
-    timeout = int(_get(cfg, "SMTP_TIMEOUT", 15))
+    conf = _smtp_config()
 
     msg = EmailMessage()
     msg["Subject"] = f"K-BOT: cerere de înregistrare nouă ({id_cerere})"
-    msg["From"] = sender
+    msg["From"] = conf["sender"]
     msg["To"] = to_address
     msg["Date"] = formatdate(localtime=True)
-    msg["Message-ID"] = make_msgid()
+    msg["Message-ID"] = _message_id(conf)
     # Romanian, literal diacritics: this is what the operator reads.
     msg.set_content(
         "O cerere de înregistrare așteaptă aprobare.\n\n"
@@ -189,12 +204,7 @@ def send_registration_notice(to_address, id_cerere, denumire, cf, email, randuri
     )
 
     logger.info("registration notice for request %s -> %s", id_cerere, _mask(to_address))
-    with smtplib.SMTP(host, port, timeout=timeout) as smtp:
-        if use_tls:
-            smtp.starttls()
-        if user:
-            smtp.login(user, password)
-        smtp.send_message(msg)
+    _deliver(msg, conf)
 
 
 def _mask(address):

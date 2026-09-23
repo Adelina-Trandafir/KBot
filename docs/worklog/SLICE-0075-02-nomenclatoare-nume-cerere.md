@@ -143,13 +143,32 @@ neunică. «Întrebarea deschisă» de la coada tabelei e acum **răspunsă**: o
 - **Fără fișiere de test** (decizia operatorului). Acoperire automată: **zero**.
 - **Nicio rută n-a fost pornită.** Nimic n-a atins un Flask viu, un MariaDB sau ANAF.
 
-## Neverificat / amânat
+## Adăugat după commit — schema adevărată (22.09.2026, seara)
 
-- **Coloana de captiune a lui `DefaSursaSector`.** Nimic din depozit nu face join pe tabela
-  asta, iar cele 14 valori s-au citit ca simple coduri, deci numele coloanei de captiune
-  **nu e cunoscut**. `read_sursasector` face `SELECT *` și ia prima dintre `Denumire`,
-  `Explicatie`, `Descriere` pe care o găsește; fără niciuna, codul își ține loc de etichetă și
-  se scrie un avertisment în log. De lămurit la prima rulare adevărată.
+Operatorul a pus în `MariaDB_Schema/` cele trei scheme luate de pe serverul K-BOT
+(19:21, MariaDB 10.11.14). Folderul e **în `.gitignore`**, deci trăiește numai pe discul lui.
+Ce a schimbat pentru trecerea asta:
+
+- **`DefaSursaSector` e `(SursaSector PK, Sursa, Sectorul, Denumire)`** — necunoscuta de mai jos
+  e închisă, `read_sursasector` găsește `Denumire` din prima. Căutarea de captiune rămâne în
+  cod: nu costă nimic și nu se mai uită de ce e acolo.
+- **`FX_Inregistrari` e pe server** — scriptul a fost rulat. `AUTO_INCREMENT = 1`, deci nicio
+  cerere încă. Forma e cea scrisă, cu `CHECK (json_valid(Payload))` cu tot.
+- **`Clasificatii` chiar nu are cheie străină pe `ClsfE`** — patru spre `AVACONT_COMUN`
+  (`DefaArticol`, `DefaClsfF`, `DefaSS`, `DefaTitlu`) plus `Clasificatii__Unitati`, locală.
+  Deci cele 15 coduri neinserabile mor pe `Articol`/`Titlu`, exact unde `nomenclatoare.py` face
+  join. Filtrul e îndreptat unde trebuie.
+- **`DefaClsfE` ARE cheie primară pe `ClsfE`; `DefaClsfF` nu are niciuna** — `GROUP BY`-ul era
+  necesar pentru F și e doar nevătămător pentru E.
+- ⚠ **`CAI` nu are niciun index pe `IdUnitate`.** `ix_CAI_IdUnitate`, pe care trecerea asta l-a
+  adăugat în `sql/avacont_comun_login.sql`, **nu există pe server**. Restul corecturii ține:
+  `IdCai` e cheia AUTO_INCREMENT (la 96). Lipsa oricărui index face `GET_LOCK`-ul din §5.6 și
+  mai necesar. Corectat în plan §2a; fișierul din `sql/` rămâne referință de înțelesuri.
+- ⚠ **Pentru 0075-03:** `AVACONT_SURSA.Clasificatii` încă poartă `Sector_w`, `Sursa_w`, `SS_w`
+  de la 0075-00; `000_DEMO` nu le are. Cum §5.6 face baza nouă clonând șablonul, orice unitate
+  creată de acum ar moșteni trei coloane moarte. De șters pe șablon.
+
+## Neverificat / amânat
 - **Numărătorile din §2a nu au fost re-numărate** (52/531 la F, 25/317/686 la E, cele 15
   coduri E neinserabile). Codul nu depinde de ele — filtrul e join-ul, nu o listă — dar
   numerele din comentarii vin din plan, nu dintr-o citire proprie.

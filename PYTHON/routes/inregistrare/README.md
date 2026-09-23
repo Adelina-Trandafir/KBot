@@ -31,8 +31,8 @@ importabile pe o mașină fără `config.py` (același motiv ca la `routes/migra
 | `POST /api/inregistrare/anaf` | `{cf}` | `{token, expires_in, cf, unitate:{cui,denumire,adresa,nr_reg_com}}` |
 | `POST /api/inregistrare/cod` | `{email}` | `{email_masked, expires_in}` |
 | `POST /api/inregistrare/verifica` | `{cod}` | `{ok, email_masked, expires_in}` |
-| `GET /api/inregistrare/sursasector` | — | `{surse:[{cod,denumire}]}` |
-| `GET /api/inregistrare/clasificatii?tip=F\|E` | — | `{tip, coduri:[{cod,denumire}]}` |
+| `GET /api/inregistrare/sursasector` | — | `{surse:[{cod,sursa,sector,denumire}]}` |
+| `GET /api/inregistrare/clasificatii?tip=F\|E` | — | `{tip, coduri:[{cod,denumire}], grupuri:{"20":…,"2001":…}}` (`grupuri` = numele celor două niveluri de sus; numai la E, din `DefaTitlu`/`DefaArticol`) |
 | `GET /api/inregistrare/nume?denumire=` | — | `{db_name, numar, litere, previzualizare}` |
 | `POST /api/inregistrare/cerere` | `{denumire, an, sursasector[], clsf_f[], clsf_e[]}` | `{id_cerere, randuri, operator_anuntat}` |
 
@@ -57,6 +57,12 @@ diacritice se pliază), `AEIOU` ▸ `AEIO`, `ANA` ▸ refuzat.
 
 `/nume` e o **previzualizare**. Numele adevărat se recalculează la aprobare (§5.4): un
 număr liber acum poate fi luat până ajunge operatorul la cerere.
+
+**Ce poate conține denumirea** (operator, 22.09.2026): litere, cifre, `_`, spații și
+virgule — `[\w\s,]`, cu `\w` Unicode, deci literele cu diacritice trec. Spațiile repetate
+devin unul singur. Pagina **scoate** orice altceva înainte să-i arate solicitantului
+numele (și pe cel venit de la ANAF); `/nume` și `/cerere` doar **refuză**, cu
+`DENUMIRE_CARACTERE_INTERZISE`.
 
 ## De ce numai `ClsfE` e filtrat
 
@@ -94,7 +100,7 @@ ASCII, stabile, pentru ca pagina să poată ramifica fără să citească textul
 `RATE_LIMITED` · `DB_ERROR` · `TOKEN_ABSENT` · `TOKEN_UNKNOWN` · `TOKEN_EXPIRED` ·
 `EMAIL_INVALID` · `EMAIL_TOO_LONG` · `EMAIL_TAKEN` · `MAIL_NOT_CONFIGURED` ·
 `MAIL_FAILED` · `CODE_ABSENT` · `CODE_NOT_REQUESTED` · `CODE_EXPIRED` · `CODE_WRONG` ·
-`CODE_ATTEMPTS_EXHAUSTED` · `TIP_INVALID` · `DENUMIRE_ABSENTA` · `DENUMIRE_PREA_SCURTA` ·
+`CODE_ATTEMPTS_EXHAUSTED` · `TIP_INVALID` · `DENUMIRE_ABSENTA` · `DENUMIRE_CARACTERE_INTERZISE` · `DENUMIRE_PREA_SCURTA` ·
 `NUMAR_EPUIZAT` · `EMAIL_NEVERIFICAT` · `DENUMIRE_PREA_LUNGA` · `AN_INVALID` ·
 `AN_IN_AFARA_INTERVALULUI` · `SS_ABSENT` · `SS_NECUNOSCUT` · `CLSF_F_ABSENT` ·
 `CLSF_E_ABSENT` · `CLSF_F_NECUNOSCUT` · `CLSF_E_NECUNOSCUT` · `CLSF_F_NU_E_FRUNZA` ·
@@ -140,11 +146,12 @@ constantă și operatorul o poate muta.
 ## Ce nu e verificat
 
 - **Nicio rută n-a fost pornită.** Nimic de aici n-a atins un Flask viu sau un MariaDB.
-- **Coloana de captiune a lui `DefaSursaSector`** nu e cunoscută: nimic din depozit nu face
-  join pe tabela asta, iar cele 14 valori s-au citit ca simple coduri. De aceea
-  `read_sursasector` face `SELECT *` și ia prima coloană de captiune pe care o găsește
-  (`Denumire`, `Explicatie`, `Descriere`); dacă nu există niciuna, codul își ține loc de
-  etichetă. O listă de 14 coduri face mai mult decât un 500 pe un nume de coloană.
+- ~~**Coloana de captiune a lui `DefaSursaSector`**~~ — **lămurită** pe 22.09.2026 seara, din
+  schema adevărată (`MariaDB_Schema/AVACONT_COMUN.sql`, folder local, în `.gitignore`):
+  `(SursaSector PK, Sursa, Sectorul, Denumire)`. `read_sursasector` găsește `Denumire` din
+  prima. Căutarea de captiune (`Denumire` ▸ `Explicatie` ▸ `Descriere`, iar fără niciuna codul
+  își ține loc de etichetă) **rămâne** în cod: nu costă nimic, și o listă de 14 coduri face mai
+  mult decât un 500 pe un nume de coloană.
 - **Limita de apeluri a ANAF pe v9** nu e cunoscută. Un apel per înregistrare e mult sub
   orice cifră publicată, dar numărul în sine n-a fost confirmat.
 - **v9 nu are câmpul `cod`.** Funcția din Access decide «negăsit» după `cod <> "200"`;

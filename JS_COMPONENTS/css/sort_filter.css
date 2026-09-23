@@ -1,0 +1,371 @@
+/* ==============================================
+   FILTRARE COLOANE - Stiluri
+   ============================================== */
+
+/* Iconița binoclu la hover */
+/* Implemntat in JS.*/
+
+/* Iconița pentru coloane filtrate */
+.filter-active-icon {
+  display: inline-block !important;
+  position: absolute;
+  right: 8px; /* După iconița de binoclu */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="blue" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>')
+    no-repeat center;
+  background-size: contain;
+  cursor: pointer;
+  z-index: 11;
+}
+
+/* Asigură-te că col-resizer nu se suprapune */
+.col-resizer {
+  right: 0px !important;
+  /* z-index: 12; */
+}
+
+/* Iconița pentru coloane filtrate */
+.filter-status-icon {
+  display: inline-block !important;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold; /* Matches inline style */
+  color: #059669; /* Matches inline style */
+  margin-left: 4px; /* Matches inline style */
+  transition: all 0.2s ease; /* Consistent with .sort-icon and .filter-open-icon */
+  padding: 4px;
+}
+
+.filter-status-icon:hover {
+  color: #047857; /* Darker green for hover, consistent with theme */
+  transform: scale(1.2); /* Subtle "pop" effect, like other icons */
+  opacity: 1; /* Ensures full visibility on hover */
+}
+
+.filter-tooltip {
+  position: absolute;
+  background: linear-gradient(135deg, #333 0%, #555 100%);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  /* z-index: 2500; */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #666;
+}
+.filter-tooltip.show {
+  opacity: 1;
+}
+.filter-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid #333;
+}
+
+/* Asigură-te că col-resizer nu se suprapune */
+.col-resizer {
+  right: 0px !important;
+  /* z-index: 12; */
+}
+
+/* ========== LOADER ========== */
+.filter-window-exact-loader {
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #4caf50;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: none;
+}
+
+.filter-window-exact-loader-visible {
+  display: block !important;
+}
+/* ==============================================
+   FEREASTRA DE FILTRARE - Pozitionare peste header
+   ============================================== */
+.filter-window {
+  display: none;
+  position: absolute;
+  /* z-index: 3000; */
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  width: auto;
+  height: auto;
+  
+  /* Animație slide-down */
+  /* transform: translateY(0px); */
+  opacity: 0;
+  transition: all 0.25s linear;
+}
+
+.filter-window.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.filter-window-content {
+  background: var(--table-header-backcolor-gradient-reverse);
+  border: 2px solid var(--border-color);
+  border-radius: 6px; /* Radius uniform pe toate colțurile */
+  /* box-shadow: 2px 2px 20px -10px rgb(0 0 0 / 32%); */
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-width: 280px;
+  max-width: 400px;
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+  border-top: none; 
+}
+
+.filter-window-header {
+  display: none; /* Eliminat complet header-ul */
+}
+
+.filter-window-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.filter-close {
+  color: #999;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.filter-close:hover {
+  color: #666;
+  background: #f0f0f0;
+}
+
+/* ==============================================
+   ACCORDION BEHAVIOR - Expand/Collapse
+   ============================================== */
+
+.filter-window-body {
+  padding: 8px 12px;
+}
+
+.filter-window-options {
+  margin-bottom: 6px;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  background-color: #fdfdfd;
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+.filter-window-options.collapsed{
+  background: none;
+}
+
+.filter-window-options:hover {
+  border-color: #d0d0d0;
+}
+
+.filter-window-options:last-child {
+  margin-bottom: 0;
+}
+
+/* Layout inline forțat pentru label-uri */
+.filter-window-options label {
+  display: flex;
+  align-items: center; /* Forțat pe aceeași linie */
+  font-weight: 500;
+  font-size: 13px;
+  margin: 0;
+  padding: 8px;
+  cursor: pointer;
+  color: #555;
+  line-height: 1.4;
+  transition: background-color 0.15s ease;
+}
+
+.filter-window-options label:hover {
+  background-color: var(--record-selector-border);
+}
+
+.filter-window-options input[type='radio'] {
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.filter-window-options-label-text {
+  flex: 1;
+}
+
+/* Content pentru input-uri - întotdeauna sub label */
+.filter-window-options-content {
+  padding: 0 8px 8px 8px;
+  transition: all 0.25s ease;
+  max-height: 100px;
+  opacity: 1;
+}
+
+/* Stare collapsed - doar label-ul vizibil */
+.filter-window-options.collapsed .filter-window-options-content {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+/* Stare expanded - content vizibil */
+.filter-window-options.expanded .filter-window-options-content {
+  max-height: 100px;
+  opacity: 1;
+  background: var(--record-selector-border);
+}
+
+/* Styling pentru secțiunea activă */
+.filter-window-options.active {
+  border-color: #4caf50;
+  background-color: #f8fff8;
+}
+
+.filter-window-options.active label {
+  background-color: var(--record-selector-border);
+  color: #2e7d32;
+}
+
+/* ==============================================
+   INPUT-URI - Layout simplu și consistent
+   ============================================== */
+
+.filter-window-options-content select,
+.filter-window-options-content input[type='text'] {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.filter-window-options-content select:focus,
+.filter-window-options-content input[type='text']:focus {
+  outline: none;
+  border-color: #4caf50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15);
+}
+
+.filter-window-options-content select:disabled,
+.filter-window-options-content input[type='text']:disabled {
+  background-color: #f8f8f8;
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* Layout pentru interval - simplu și clar */
+.filter-calendar-container{
+  display: flex;
+}
+
+.filter-range-label{
+  width:100px;
+}
+
+.filter-range-inputs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-direction: column;
+  /* height: 200px; */
+  /* flex: auto; */
+}
+
+.filter-range-inputs input {
+  flex: 1;
+  min-width: 0;
+}
+
+.filter-range-inputs span {
+  font-weight: 500;
+  color: #666;
+  font-size: 13px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+/* ==============================================
+   BUTOANE - Design compact
+   ============================================== */
+
+.filter-buttons {
+  padding: 4px 4px;
+  border-top: 2px solid #e5e7eb;
+  background: #f9fafb;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 0 0 12px 12px;
+  flex-direction: row;
+  align-items: center;
+}
+
+/* ==============================================
+   TOOLTIP PENTRU FILTRE ACTIVE
+   ============================================== */
+
+.filter-tooltip {
+  position: absolute;
+  background: linear-gradient(135deg, #333 0%, #555 100%);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  /* z-index: 3001; */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #666;
+}
+
+.filter-tooltip.show {
+  opacity: 1;
+}
+
+.filter-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid #333;
+}

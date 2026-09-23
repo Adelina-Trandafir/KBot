@@ -1,0 +1,119 @@
+/**
+ * 📱 ADD LEAD - RESPONSIVE STYLES
+ * Media queries for mobile and tablet
+ * 
+ * @version 1.0.0
+ */
+
+/* ========== MOBILE (sub 600px) ========== */
+@media (max-width: 600px) {
+  .add-lead-container {
+    width: 95vw;
+    max-height: 95vh;
+  }
+
+  .add-lead-header {
+    padding: 12px 16px;
+  }
+
+  .add-lead-header h2 {
+    font-size: 16px;
+  }
+
+  .add-lead-top-section {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .add-lead-image {
+    font-size: 60px;
+  }
+
+  .add-lead-form {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .add-lead-tara {
+    flex: none;
+    width: 100%;
+  }
+
+  .add-lead-telefon {
+    width: 100%;
+  }
+
+  .add-lead-middle-section:not(.hidden) {
+    padding: 12px 16px;
+  }
+
+  .add-lead-table tbody {
+    max-height: 150px;
+  }
+
+  .add-lead-table {
+    font-size: 12px;
+  }
+
+  .add-lead-table-header {
+    padding: 8px;
+    font-size: 11px;
+  }
+
+  .add-lead-table td {
+    padding: 8px;
+  }
+
+  .add-lead-footer {
+    flex-direction: row;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .add-lead-table-footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .add-lead-nou-btn,
+  .add-lead-vechi-btn,
+  .add-lead-cancel-btn,
+  .add-lead-ok-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ========== TABLET (601px - 768px) ========== */
+@media (min-width: 601px) and (max-width: 768px) {
+  .add-lead-container {
+    width: 90vw;
+    max-width: 750px;
+  }
+
+  .add-lead-top-section {
+    padding: 20px;
+    gap: 20px;
+  }
+
+  .add-lead-image {
+    font-size: 70px;
+  }
+
+  .add-lead-middle-section:not(.hidden) {
+    padding: 12px 20px;
+  }
+
+  .add-lead-footer {
+    padding: 14px 20px;
+  }
+}
+
+/* ========== SMALL DESKTOP (769px - 1024px) ========== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .add-lead-container {
+    width: 700px;
+  }
+}

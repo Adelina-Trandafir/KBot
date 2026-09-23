@@ -1,0 +1,63 @@
+/* ========== TABLE FOOTER & ACTIONS ========== */
+.table-footer {
+  background: var(--table-header-backcolor-gradient-reverse);
+  border-top: 2px solid var(--border-color);
+  padding: 2px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.footer-left,
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  align-content: space-around;
+  flex-direction: row;
+}
+
+.stats-inline {
+  display: flex;
+  /* gap: 5px; */
+  width: 270px;
+  justify-items: stretch;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.stat-item-small {display: flex;box-sizing: border-box;font-weight: 600;padding: 4px 12px;background: var(--table-header-backcolor-gradient-reverse);font-size: 16px;cursor: pointer;transition: transform 0.2s;min-height: 36px;flex: 1; /* Fiecare element ocupă spațiu egal */text-align: center; /* Opțional: centrează conținutul */align-items: center;justify-content: space-between;}
+
+.stat-item-small:hover {
+  transform: translateY(-2px);
+  border-bottom: 2px solid;
+  /* border-color: #275c00; */
+}
+
+.stat-red {color: #dc3545;border-color: #dc3545;}
+.stat-green { color: #28a745; }
+.stat-yellow { color: #ffc107; }
+
+@media (max-width: 768px) {
+  .stat-item-small {
+    font-size: 14px;
+    padding: 6px 8px;
+    min-height: 30px;
+  }
+
+  .table-footer {
+    gap: 8px;
+  }
+
+  .footer-left,
+  .footer-right {
+    width: 100%;
+    justify-content: space-around;
+    flex-wrap: nowrap;
+    align-items: baseline;
+  }
+}

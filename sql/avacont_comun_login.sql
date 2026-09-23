@@ -24,13 +24,24 @@ USE `AVACONT_COMUN`;
 --  slice 0075). It is kept for the column meanings; the shapes below have
 --  drifted. What the live K-BOT server actually has, and what any code
 --  must be written against:
---    * CAI's primary key is `IdCai`, AUTO_INCREMENT — NOT `IdUnitate`.
---    * `IdUnitate` is a plain, NON-UNIQUE column. 70 rows, MAX = 200.
---      Nothing protects it, which is why the provisioning job of §5.6
---      takes GET_LOCK('cai_idunitate') before reading MAX(IdUnitate)+1.
+--    * CAI's primary key is `IdCai`, AUTO_INCREMENT — NOT `IdUnitate`
+--      (AUTO_INCREMENT was at 96 on 22.09.2026).
+--    * `IdUnitate` is a plain, NON-UNIQUE column with NO INDEX AT ALL.
+--      70 rows, MAX = 200. Nothing protects it, which is why the
+--      provisioning job of §5.6 takes GET_LOCK('cai_idunitate') before
+--      reading MAX(IdUnitate)+1.
 --    * `DbName` equals `DC` on every row.
---  Corrected below. Treat the rest of the file the same way: useful for
---  what a column MEANS, not authoritative for its type or its keys.
+--
+--  ⚠⚠ READ `MariaDB_Schema/AVACONT_COMUN.sql` INSTEAD. That folder holds
+--  the real SHOW CREATE TABLE for all three schemas, dumped from the
+--  server on 22.09.2026 19:21. It is gitignored, so it lives on the
+--  operator's disk only — but where it and this file disagree, it wins.
+--  The `ix_CAI_IdUnitate` written below is an example: it was added here
+--  in pass 0075-02 and the server does NOT have it. Kept, without being
+--  claimed as fact, because a fresh CAI would be better off with it.
+--
+--  Treat the rest of the file the same way: useful for what a column
+--  MEANS, not authoritative for its type or its keys.
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `CAI` (
   `IdCai`       INT           NOT NULL AUTO_INCREMENT,
@@ -44,7 +55,7 @@ CREATE TABLE IF NOT EXISTS `CAI` (
   `AnDate`      INT               NULL,           -- year (-> ANL); CLng(AnDate)=globANL
   `DC`          VARCHAR(32)       NULL,           -- data-context tag (legacy DC())
   PRIMARY KEY (`IdCai`),
-  KEY `ix_CAI_IdUnitate`  (`IdUnitate`),
+  KEY `ix_CAI_IdUnitate`  (`IdUnitate`),   -- NOT on the live server; see the note above
   KEY `ix_CAI_DbName`    (`DbName`),
   KEY `ix_CAI_DC_AnDate` (`DC`, `AnDate`),
   KEY `ix_CAI_Sursa_An`  (`Sursa`, `AnDate`)

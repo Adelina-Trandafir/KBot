@@ -38,7 +38,7 @@ import secrets
 import time
 
 import mysql.connector
-from flask import Blueprint, current_app, request
+from flask import Blueprint, current_app, request, send_from_directory
 
 from routes.auth import mailer
 from routes.auth.ratelimit import LIMITER
@@ -348,7 +348,11 @@ def inregistrare_clasificatii():
     conn = None
     try:
         conn = get_kbot_comun_connection()
-        return _json({"tip": tip, "coduri": nomenclatoare.read_clasificatii(conn, tip)}, 200)
+        return _json({
+            "tip": tip,
+            "coduri": nomenclatoare.read_clasificatii(conn, tip),
+            "grupuri": nomenclatoare.read_group_captions(conn, tip),
+        }, 200)
     except mysql.connector.Error as err:
         logger.error("inregistrare_clasificatii(%s) failed: %s", tip, err)
         return _fail("DB_ERROR", "Nomenclatorul nu a putut fi citit.", 500)
@@ -369,9 +373,11 @@ def inregistrare_nume():
     if refusal is not None:
         return refusal
 
-    denumire = (request.args.get("denumire") or "").strip()
+    denumire = nume.normalize_name(request.args.get("denumire"))
     if not denumire:
         return _fail("DENUMIRE_ABSENTA", "Introduceți denumirea unității.", 400)
+    if nume.has_forbidden_characters(denumire):
+        return _fail("DENUMIRE_CARACTERE_INTERZISE", nume.NAME_CHARACTERS_MESSAGE, 400)
 
     try:
         key = nume.letter_key(denumire)
@@ -480,6 +486,38 @@ def _notify_operator(id_cerere, checked, registration):
     except Exception as err:
         logger.error("operator notice for request %s failed: %s", id_cerere, err)
         return False
+
+
+# ---------------------------------------------------------------------------
+# GET /inregistrare
+# The page itself (slice 0075-04). Its CSS and JS live beside it in PYTHON/static/,
+# which Flask already serves at /static/ as the app's default static folder, so
+# only the page needs a route of its own -- a clean URL for the link people get.
+#
+# The headers are for a page anyone can open. 'unsafe-inline' is on styles only:
+# the tree component writes style="..." attributes into its markup. No script is
+# inline and nothing uses eval, so scripts stay 'self'.
+# ---------------------------------------------------------------------------
+_PAGE_FILE = "inregistrare.html"
+_PAGE_HEADERS = {
+    "Content-Security-Policy": (
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; "
+        "base-uri 'none'; form-action 'none'"
+    ),
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "same-origin",
+    # Revalidated on every visit, so a new version of the page is never held back.
+    "Cache-Control": "no-cache",
+}
+
+
+@inregistrare_bp.route("/inregistrare", methods=["GET"])
+@inregistrare_bp.route("/inregistrare/", methods=["GET"])
+def inregistrare_page():
+    response = send_from_directory(current_app.static_folder, _PAGE_FILE)
+    response.headers.update(_PAGE_HEADERS)
+    return response
 
 
 # ---------------------------------------------------------------------------

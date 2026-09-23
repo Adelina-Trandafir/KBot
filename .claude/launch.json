@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "inregistrare-stub",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/ADELIN~1/AppData/Local/Temp/claude/C--Users-Adelina-Trandafir-source-repos-KBOT/02925640-a3b7-4f60-8112-3a30f5ea2e20/scratchpad/inregistrare_stub.py",
+        "8765"
+      ],
+      "port": 8765
+    }
+  ]
+}

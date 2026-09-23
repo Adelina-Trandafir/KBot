@@ -1,5 +1,5 @@
 # routes/inregistrare/nume.py
-"""
+r"""
 The database name for a new unit (slice 0075-02, plan 5.4 and decisions D3 / D12).
 
 `1nn_SSSS`, uppercase: a three-digit number starting with 1, an underscore, and four
@@ -27,6 +27,14 @@ comma-below letters (S-comma, T-comma) and the cedilla ones ANAF actually sends 
 plus A-breve, A-circumflex and I-circumflex, without a table of special cases and
 without a single accented character in the source.
 
+WHAT A NAME MAY CONTAIN (operator, 22.09.2026): word characters, whitespace and commas,
+nothing else -- `[\w\s,]`. Python's `\w` is Unicode-aware, so letters with diacritics
+count as word characters; the page uses `[\p{L}\p{N}_\s,]` for the same set (a JS `\w`
+is ASCII-only and would take every diacritic out). Runs of whitespace become one space.
+The page REMOVES anything else before the applicant sees it, including from the ANAF
+name; this side only REFUSES, because by the time a name gets here nothing should be left
+to remove.
+
 Nothing here writes to the database. `used_prefixes` reads two lists; everything else
 is pure.
 """
@@ -40,6 +48,15 @@ VOWELS = "AEIOU"
 # An existing database name: three digits, an underscore, then the letters.
 _EXISTING_NAME = re.compile(r"^\d{3}_")
 
+# Everything a unit name may NOT contain, and the whitespace runs folded to one space.
+_NAME_FORBIDDEN = re.compile(r"[^\w\s,]")
+_WHITESPACE_RUN = re.compile(r"\s+")
+
+# The sentence the applicant reads when a name breaks the rule above.
+NAME_CHARACTERS_MESSAGE = (
+    "Denumirea unității poate conține doar litere, cifre, spații și virgule."
+)
+
 
 class NameTooShort(ValueError):
     """The unit's name has fewer than four letters, so no suffix can be built."""
@@ -48,6 +65,23 @@ class NameTooShort(ValueError):
 class NoFreeNumber(RuntimeError):
     """All 81 numbers from 111 to 199 are taken. Eighty-one units would be a nice
     problem to have; it is raised rather than wrapped around into the old block."""
+
+
+def normalize_name(denumire) -> str:
+    """
+    The name as it is checked and stored: NFC, every whitespace run one space, trimmed.
+
+    NFC first, so a letter that arrives as a base plus a combining mark is judged as the
+    one letter it is, not as a letter followed by a forbidden character.
+    """
+    text = "" if denumire is None else str(denumire)
+    text = unicodedata.normalize("NFC", text)
+    return _WHITESPACE_RUN.sub(" ", text).strip()
+
+
+def has_forbidden_characters(denumire) -> bool:
+    r"""True when the (normalized) name holds anything outside `[\w\s,]`."""
+    return _NAME_FORBIDDEN.search(normalize_name(denumire)) is not None
 
 
 def letter_key(denumire) -> str:

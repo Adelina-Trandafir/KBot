@@ -38,7 +38,7 @@ from datetime import date
 
 from utils.database import COMMON_DB, get_kbot_connection
 
-from . import nomenclatoare
+from . import nomenclatoare, nume
 
 logger = logging.getLogger(__name__)
 
@@ -91,9 +91,11 @@ def validate(conn, registration, body):
             "Adresa de e-mail nu a fost confirmată. Reluați pasul cu codul.",
         )
 
-    denumire = (body.get("denumire") or "").strip()
+    denumire = nume.normalize_name(body.get("denumire"))
     if not denumire:
         raise CerereInvalid("DENUMIRE_ABSENTA", "Introduceți denumirea unității.")
+    if nume.has_forbidden_characters(denumire):
+        raise CerereInvalid("DENUMIRE_CARACTERE_INTERZISE", nume.NAME_CHARACTERS_MESSAGE)
     if len(denumire) > DENUMIRE_MAX_LENGTH:
         raise CerereInvalid(
             "DENUMIRE_PREA_LUNGA",

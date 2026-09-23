@@ -1,0 +1,183 @@
+/* ========== TABLE ROWS ========== */
+.data-table tr,
+.data-table-body tr {
+  height: var(--row-normal-height) !important;
+  position: relative;
+}
+
+.data-table td,
+.data-table-body td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+/* ========== HOVER - APLICAT PE TR ========== */
+.data-table tbody tr:not(.clicked):hover,
+.data-table-body tbody tr:not(.clicked):hover {
+  background: var(--green-hover-background) !important;
+  cursor: pointer;
+}
+
+/* ========== DEZACTIVEZ STILURILE DE PE TD LA HOVER PE TR ========== */
+/* TD transparent când TR-ul părintele este hover */
+.data-table tbody tr:hover td,
+.data-table-body tbody tr:hover td {
+  background: transparent !important;
+  font-weight: 600 !important;
+  font-size: 13px;
+}
+
+/* TD transparent când TR-ul părintele este clicked */
+.data-table tbody tr.clicked td,
+.data-table-body tbody tr.clicked td {
+  background: transparent !important;
+}
+
+/* TD transparent când TR-ul părintele este selected-multi */
+.data-table tbody tr.selected-multi td,
+.data-table-body tbody tr.selected-multi td {
+  background: transparent !important;
+}
+
+/* ========== RECORD SELECTOR ========== */
+.record-selector {
+  width: var(--record-selector-width) !important;
+  min-width: var(--record-selector-width) !important;
+  max-width: var(--record-selector-width) !important;
+  height: var(--row-normal-height) !important;
+  background: var(--record-selector-bg) !important;
+  border-right: 1px solid var(--record-selector-border);
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  padding: 0 !important;
+  user-select: none;
+}
+
+/* HOVER PE TR - SCHIMBARE FUNDAL RECORD SELECTOR */
+.data-table tbody tr:hover td.record-selector,
+.data-table-body tbody tr:hover td.record-selector {
+  background: var(--green-hover-background-reversed) !important;
+}
+
+/* HOVER PE CLICKED TR = SCHIMBARE OVERFLOW PENTRU row-action-buttons */
+.data-table tbody tr.clicked .record-selector,
+.data-table-body tbody tr.clicked .record-selector,
+.data-table tbody tr.selected-multi .record-selector,
+.data-table-body tbody tr.selected-multi .record-selector {
+    overflow: visible !important;
+    position: relative;
+}
+
+.record-indicator {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0;
+  border-color: transparent;
+  margin: 0 auto;
+  transition: all 0.2s;
+}
+
+/* ========== ROW SELECTION - APLICAT PE TR ========== */
+.data-table tbody tr.clicked,
+.data-table-body tbody tr.clicked {
+  background-color: var(--selection-single-bg) !important;
+  color: var(--selection-single-color) !important;
+}
+
+.data-table tbody tr.clicked .record-indicator,
+.data-table-body tbody tr.clicked .record-indicator {
+  border-width: 5px 0 5px 8px !important;
+  border-color: transparent transparent transparent #007bff !important;
+}
+
+.data-table tbody tr.selected-multi,
+.data-table-body tbody tr.selected-multi {
+  background-color: var(--selection-multi-bg) !important;
+  color: var(--selection-multi-color) !important;
+}
+
+
+/* ========== ACTION BUTTONS ========== */
+.row-action-buttons {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%) translateX(-100px);
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease-in-out;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2px 4px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.data-table tbody tr.clicked .record-selector:hover .row-action-buttons,
+.data-table-body tbody tr.clicked .record-selector:hover .row-action-buttons,
+.data-table tbody tr.selected-multi .record-selector:hover .row-action-buttons,
+.data-table-body tbody tr.selected-multi .record-selector:hover .row-action-buttons {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+  position: block;
+}
+
+.row-action-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.row-action-btn.edit { background: #007bff; color: white; }
+.row-action-btn.feedback { background: #28a745; color: white; }
+.row-action-btn.delete { background: #dc3545; color: white; }
+
+.row-action-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.row-action-btn.edit:hover { background: #0056b3; }
+.row-action-btn.feedback:hover { background: #1e7e34; }
+.row-action-btn.delete:hover { background: #c82333; }
+
+/* ========== ACTION BUTTONS TOOLTIP ========== */
+.row-action-btn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: -25px;
+  left: 0;
+  background: #333;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.row-action-btn:hover::after {
+  opacity: 1;
+  visibility: visible;
+}

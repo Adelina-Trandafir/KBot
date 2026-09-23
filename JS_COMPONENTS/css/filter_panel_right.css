@@ -1,0 +1,483 @@
+/**
+ * ========== FILTER PANEL RIGHT - Stiluri pentru Panelul de Filtrare ==========
+ * Stiluri specifice pentru panelul de filtrare din dreapta
+ * Congruent cu design-ul existent al aplicației
+ */
+
+/* Container principal */
+.filter-panel-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* background: #f8f9fa; */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* border-radius: 8px; */
+  border-left-style: solid;
+  border-left-color: #e8e8e8;
+  padding: 0 4px 4px 4px;
+  /* box-shadow: var(--panel-shadow); */
+  /* border-style: solid;
+  border-left: 2px solid #e8e8e8;
+  border-bottom: 2px solid #e8e8e8;
+  border-top: 2px solid #e8e8e8; */
+}
+
+/* Header panel */
+.filter-panel-header {
+  height: var(--table-tabs-height);
+  background-color: var(--hover-bg);
+  border-bottom: 2px solid var(--border-color);
+  
+  /* background: #2c3e50; */
+  color: rgb(0, 0, 0);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  /* border-bottom: 2px solid #e8e8e8; */
+  position: relative;
+  border-radius: 8px 0 0px 0;
+}
+
+.filter-panel-icon {
+  padding-left: 10px;
+  font-size: 18px;
+}
+
+.filter-panel-title {
+  flex: 1;
+}
+
+/* Counter pentru filtre active */
+.filter-counter {
+  background: #e74c3c;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+/* Secțiune căutare */
+.filter-panel-search-section {
+  height: 40px;
+  background: var(--hover-bg);
+  border-bottom: 2px solid #d0d0d0;
+  padding: 5px;
+}
+
+.filter-panel-search-input {
+  width: 100%;
+  height: 90%;
+  text-align: center;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  transition: border-color 0.4s;
+}
+
+.filter-panel-search-input:hover{
+  border-color: #3498db;
+}
+
+.filter-panel-search-input:focus {
+  text-align: center;
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+}
+
+.filter-panel-search-input::placeholder {
+  color: #999;
+}
+
+/* Lista coloanelor */
+.filter-panel-columns-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+  background: white;
+}
+
+/* Scrollbar styling */
+.filter-panel-columns-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.filter-panel-columns-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.filter-panel-columns-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.filter-panel-columns-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Item coloană - FĂRĂ spațiu vertical între ele */
+.panel-right-filter-column-item {
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid #e8e8e8;
+  gap: 10px;
+  width: 100%;
+  min-height: 25px;
+  height: var(--row-normal-height);
+  position: relative;
+  overflow: hidden;
+}
+
+.panel-right-filter-column-item:hover:not(.expanded) {
+  background-color: #f5f7fa;
+  transform: translateX(1px);
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+}
+
+.panel-right-filter-column-item:active {
+  background-color: #e8ecf1;
+}
+
+/* Item cu filtru activ */
+.panel-right-filter-column-item.has-filter {
+  background-color: #e3f2fd;
+}
+
+.panel-right-filter-column-item.has-filter:hover {
+  background-color: #bbdefb;
+}
+
+/* ========== STILURI PENTRU ELEMENT EXPANDAT ========== */
+.panel-right-filter-column-item.expanded {
+  background-color: #e3f2fd !important;
+  border-left: 4px solid #2196f3;
+  font-weight: 600;
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+}
+
+.panel-right-filter-column-item.expanded:hover {
+  background-color: #e3f2fd !important;
+}
+
+/* Indicator vizual pentru elementul expandat */
+.panel-right-filter-column-item.expanded::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #2196f3 0%, #1976d2 100%);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Efect pe iconițe pentru element expandat */
+.panel-right-filter-column-item.expanded .panel-right-filter-status-icon {
+  transform: scale(1.2);
+  transition: transform 0.4s ease;
+}
+
+/* ========== SUB-PANEL STYLING ========== */
+.filter-panel-subpanel {
+  background: #f8f9fa;
+  border-left: 3px solid #3498db;
+  border-bottom: 1px solid #e0e0e0;
+  overflow: hidden;
+  margin-left: 4px;
+  /* Tranziția se setează din JavaScript pentru control precis */
+  /* max-height și opacity se controlează din JS */
+}
+
+/* Conținut sub-panel */
+.filter-panel-subpanel-content {
+  padding: 12px 15px;
+  background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+/* Loading în sub-panel */
+.filter-panel-subpanel-loading {
+  color: #666;
+  font-size: 13px;
+  text-align: center;
+  padding: 8px;
+  font-style: italic;
+}
+
+/* Iconițe status */
+.panel-right-filter-status-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: transform 0.4s ease;
+}
+
+/* Nume coloană */
+.panel-right-column-display-name {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Badge filtru activ */
+.panel-right-filter-active-badge {
+  background: #3498db;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* Loading state */
+.filter-panel-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #666;
+  gap: 12px;
+}
+
+.filter-panel-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error state */
+.filter-panel-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  gap: 12px;
+}
+
+.error-icon {
+  font-size: 48px;
+  color: #e74c3c;
+}
+
+.error-message {
+  color: #666;
+  font-size: 14px;
+}
+
+.retry-button {
+  margin-top: 8px;
+  padding: 8px 16px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.4s;
+}
+
+.retry-button:hover {
+  background: #2980b9;
+}
+
+.retry-button:active {
+  transform: translateY(1px);
+}
+
+/* No results message */
+.no-search-results {
+  padding: 40px 20px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .filter-panel-header {
+    padding: 12px;
+    font-size: 13px;
+  }
+  
+  .panel-right-filter-column-item {
+    padding: 8px 12px;
+    min-height: 36px;
+  }
+  
+  .panel-right-column-display-name {
+    font-size: 13px;
+  }
+}
+
+/* Animații pentru tranziții smooth - efect de undă */
+.panel-right-filter-column-item::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(52, 152, 219, 0.1);
+  transform: translateX(-100%);
+  transition: transform 0.4s;
+}
+
+.panel-right-filter-column-item:hover::after {
+  transform: translateX(0);
+}
+
+/* Focus states pentru accessibility */
+.panel-right-filter-column-item:focus {
+  outline: 2px solid #3498db;
+  outline-offset: -2px;
+}
+
+.filter-panel-search-input:focus {
+  outline: 2px solid #3498db;
+  outline-offset: -2px;
+}
+
+/* Container pentru butoane în header */
+.filter-panel-header-buttons {
+  display: flex;
+  align-items: center;
+  /* gap: 8px; */
+  margin-left: auto;
+}
+
+/* Stil comun pentru butoane */
+.filter-panel-btn-sticky,
+.filter-panel-btn-close {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.4s;
+  font-size: 12px;
+  padding: 0;
+}
+
+/* Hover effects */
+.filter-panel-btn-sticky:hover {
+  background-color: rgb(158, 220, 198);
+}
+
+.filter-panel-btn-close:hover {
+  background-color: rgba(255, 192, 185, 0.8);
+}
+
+/* Active/pressed state */
+.filter-panel-btn-sticky:active,
+.filter-panel-btn-close:active {
+  transform: scale(0.95);
+}
+
+/* Sticky button când e activ */
+.filter-panel-btn-sticky.active {
+  background-color: rgba(52, 152, 219, 0.3);
+  transform: rotate(45deg);
+}
+
+/* Focus state pentru accessibility */
+.filter-panel-btn-sticky:focus,
+.filter-panel-btn-close:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: -2px;
+}
+
+/* Simulează EXACT :hover cu efectul de undă de la stânga la dreapta */
+.panel-right-filter-column-item.simulated-hover:not(.expanded) {
+  background-color: rgb(245, 247, 250); /* Exact ca :hover */
+  transform: translateX(1px);
+  box-shadow: rgb(0, 0, 0, 0.1) 2px 0px 4px;
+}
+
+/* Simulează EXACT ::after cu animația de undă */
+.panel-right-filter-column-item.simulated-hover::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(52, 152, 219, 0.1);
+  transform: translateX(0); /* Unda vizibilă - ca la :hover */
+  transition: transform 0.4s; /* Aceeași durată */
+}
+
+/* Dark mode support (dacă aplicația are dark mode) */
+/* @media (prefers-color-scheme: dark) {
+  .filter-panel-container {
+    background: #1a1a1a;
+  }
+  
+  .filter-panel-header {
+    background: #2d2d2d;
+    border-bottom-color: #444;
+  }
+  
+  .filter-panel-search-section {
+    background: #2d2d2d;
+    border-bottom-color: #444;
+  }
+  
+  .filter-panel-search-input {
+    background: #1a1a1a;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+  
+  .filter-panel-columns-list {
+    background: #1a1a1a;
+  }
+  
+  .panel-right-filter-column-item {
+    border-bottom-color: #333;
+    color: #e0e0e0;
+  }
+  
+  .panel-right-filter-column-item:hover {
+    background-color: #2d2d2d;
+  }
+  
+  .panel-right-column-display-name {
+    color: #e0e0e0;
+  }
+} */

@@ -1,0 +1,544 @@
+/* ============================================================================ */
+/* OVERLAY - Fundal semi-transparent */
+/* ============================================================================ */
+
+.details-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.5;
+  background: aliceblue;
+}
+
+.details-panel-overlay.visible {
+  display: block;
+}
+
+.details-panel-overlay.hidden {
+  display: none;
+}
+
+/* ============================================================================ */
+/* DETAILS PANEL - CSS RESPONSIVE CENTRAT PE ECRAN */
+/* ============================================================================ */
+
+/* Container principal - centrat pe ecran */
+.details-panel-baza {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  
+  /* CENTRAT PE ECRAN */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  
+  
+  /* DIMENSIUNI DESKTOP */
+  width: 1000px;
+  height: 470px;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  transform: translate(-50%, -50%);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease, height 0.3s ease;
+}
+
+.details-panel-baza.hidden {
+  display: none;
+}
+
+.details-panel-baza.collapsed {
+  height: 0;
+  margin: 0;
+  border: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.details-panel-baza.expanded {
+  position: fixed;
+  opacity: 1;
+  pointer-events: all;
+  /* z-index: 1002; */
+}
+
+/* Header panel */
+.details-panel-baza-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px;
+  padding-left: 15px;
+  color: white;
+  flex-shrink: 0;
+  height: var(--modal-header-height);
+  background: var(--modal-header-background);
+  border-radius: var(--modal-border-radius-header);
+}
+
+.details-panel-baza-title {
+  font: var(--modal-header-font);
+  color: var(--modal-header-font-color-light);
+}
+
+.details-panel-baza-toggle {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  transition: transform 0.3s ease;
+}
+
+.details-panel-baza-toggle:hover {
+  transform: scale(1.1);
+}
+
+.details-panel-baza.expanded .details-panel-baza-toggle {
+  transform: rotate(180deg);
+}
+
+/* ============================================================================ */
+/* CONTENT AREA - LAYOUT PRINCIPAL DESKTOP */
+/* ============================================================================ */
+
+.details-panel-baza-content {
+  background: white;
+  display: flex;
+  flex: 1;
+  padding: 8px;
+  padding-top: 12px;
+  gap: 16px;
+  overflow: hidden;
+  /* border-radius: 0 0 12px 12px; */
+}
+
+/* Secțiunea stânga - LAYOUT ÎN COLOANE AUTOMAT */
+.details-panel-baza-left {
+  flex: 0 0 360px;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid #e8e8e8;
+  padding-right: 8px;
+}
+
+/* Formular cu layout în coloane */
+.details-panel-baza-form {
+  width: 100%;
+  height: 100%;
+  
+  /* CSS Grid pentru coloane automate */
+  display: grid;
+  /* grid-auto-flow: column; */
+  grid-template-rows: repeat(auto-fit, minmax(32px, max-content));
+  gap: 4px 16px;
+  
+  /* Calculează numărul de coloane în funcție de spațiul disponibil */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  align-items: center;
+}
+
+/* Eliminăm .form-row - nu mai e necesar */
+.form-row {
+  display: contents;
+}
+
+/* Form groups - elemente independente */
+.details-panel-baza-form-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* height: 24px; */
+  flex-shrink: 0;
+  justify-content: space-between;
+  font: 13px "-apple-system", Consolas, monospace;
+}
+
+/* Labels */
+.details-panel-baza-form-label {
+  font-size: 12px;
+  font-family: Arial;
+  font-weight: 500;
+  color: #495057;
+  min-width: 95px;
+  width: 80px;
+  flex-shrink: 0;
+  text-align: left;
+}
+
+/* Input-uri */
+.details-panel-baza-form-control,
+.details-panel-baza-form-control-combo {
+  min-width: 120px;
+  flex: 1;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  font: inherit;
+  min-height: 24px;
+  transition: all 0.2s ease;
+  flex-wrap: wrap;
+  flex-direction: column-reverse;
+}
+
+.details-panel-baza-form-control {
+  padding: 4px 8px;
+}
+
+.form-control:hover:not(:disabled) {
+  background: var(--green-hover-background);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--form-control-focus-border);
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15);
+  background: var(--form-control-focus-background);
+}
+
+.form-control:disabled {
+  background-color: #f8f9fa;
+  cursor: auto !important;
+  opacity: 0.9 !important;
+}
+
+/* TREEVIEW */
+.details-panel-baza-form-control-combo.treeview-container {position: relative;display: flex;flex-direction: row;justify-content: space-between;}
+.details-panel-baza-form-control-combo.treeview-container:not(.disabled):has(.treeview-arrow:hover) {
+  background: #edffe7;
+}
+
+/* Secțiunea mijloc */
+.details-panel-baza-middle {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #ced4da;
+  position: relative; /* ✅ CRITICAL pentru embedded mode */
+}
+
+.details-panel-baza-feedback-table-container {
+  display: flex;
+  flex: content;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+}
+
+.details-panel-baza-feedback-table-footer {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+  border-top: 1px solid #ced4da;
+  background: var(--table-header-backcolor-gradient-reverse);
+  padding: 2px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+/* Secțiunea dreapta - butoane */
+.details-panel-baza-bottom {
+  padding: 4px 4px;
+  border-top: 2px solid #e5e7eb;
+  background: #f9fafb;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 0 0 12px 12px;
+  flex-direction: row;
+}
+
+
+/* FOOTER */
+
+/* ============================================================================ */
+/* RESPONSIVE - MOBILE (sub 600px) */
+/* ============================================================================ */
+@media (max-width: 600px) {
+  .details-panel-baza {
+    width: 90vw;
+    height: 90vh;
+    max-width: 90vw;
+    max-height: 90vh;
+  }
+  
+  .details-panel-baza-content {
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 12px;
+  }
+
+  /* Secțiunea stânga - o singură coloană */
+  .details-panel-baza-left {
+    flex: none;
+    height: auto;
+    padding-right: 0;
+    margin-bottom: 16px;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 16px;
+    overflow-y: visible;
+  }
+
+  .details-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: auto;
+  }
+
+  .form-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    max-height: none;
+  }
+
+  .form-group label {
+    width: 100%;
+    min-width: auto;
+    font-weight: 600;
+  }
+
+  .form-control,
+  .form-control-combo {
+    width: 100% !important;
+    min-width: auto;
+  }
+
+  /* Secțiunea mijloc */
+  .details-panel-baza-middle {
+    flex: none;
+    margin-bottom: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  /* Secțiunea dreapta - butoane */
+  .details-panel-baza-bottom {
+    flex: none;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    flex: 1;
+  }
+
+  .feedback-table th {
+    white-space: nowrap;
+    overflow-x: hidden;
+    font-size: 11px;
+  }
+}
+
+/* ============================================================================ */
+/* RESPONSIVE - TABLET (601px - 928px) */
+/* ============================================================================ */
+@media (min-width: 601px) and (max-width: 928px) {
+  .details-panel-baza {
+    width: 90vw;
+    height: 500px;
+    max-height: 90vh;
+  }
+  
+  .details-panel-baza-left {
+    overflow-y: auto;
+  }
+
+  .details-form {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .form-group label {
+    min-width: 70px;
+    width: 70px;
+  }
+
+  .form-control,
+  .form-control-combo {
+    min-width: 100px;
+  }
+
+  .btn {
+    padding: 6px 12px !important;
+  }
+}
+
+/* ============================================================================ */
+/* RESPONSIVE - DESKTOP MIC (929px - 1269px) */
+/* ============================================================================ */
+@media (min-width: 929px) and (max-width: 1269px) {
+  .details-panel-baza {
+    width: 90vw;
+    max-width: 1000px;
+  }
+  
+  .details-panel-baza-left {
+    overflow-y: auto;
+  }
+
+  .details-form {
+    display: block;
+  }
+}
+
+/* ============================================================================ */
+/* FEEDBACK TABLE */
+/* ============================================================================ */
+
+.feedback-table-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.feedback-table-container h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.feedback-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+}
+
+.feedback-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.feedback-table thead {
+  background: #f8f9fa;
+  position: sticky;
+  top: 0;
+  /* z-index: 1; */
+}
+
+.details-panel-baza-feedback-table-header {
+  padding: 2px 4px;
+  background: var(--table-header-backcolor-gradient);
+}
+
+.feedback-table th {
+  padding: 8px 4px;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.feedback-table tbody tr {
+  border-bottom: 1px solid #c0c0c0;
+  transition: background-color 0.2s ease;
+}
+
+.feedback-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.feedback-table td {
+  padding: 4px 8px;
+  color: #212529;
+}
+
+.feedback-row {
+    border-bottom: 1px solid #ced4da;
+}
+/* ============================================================================ */
+/* BUTOANE */
+/* ============================================================================ */
+
+.btn {
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn:hover:not(:disabled) .btn-icon-span {
+  transform: scale(1.2);
+}
+
+.btn:hover:disabled {
+  background: none;
+  box-shadow: none;
+}
+
+.btn-text-span{
+  color: black;
+  font-size: 14px;
+  font-family: monospace;
+}
+
+.btn-primary {
+  /* padding: 4px 4px; */
+  background: var(--primary-btn-gradient);
+  color: #000000;
+  /* padding: 8px; */
+  border-radius: 4px;
+  border-color: #b6b5b5;
+}
+
+.btn-primary:hover {
+  /* transform: translateY(-1px); */
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+  background: var(--primary-btn-gradient-hover);
+}
+
+.btn-secondary {
+  background: var(--secondary-btn-gradient);
+}
+
+.btn-secondary:hover {
+  /* transform: translateY(-2px); */
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+  background: var(--secondary-btn-gradient-hover);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-add-feedback {
+  border-radius: 4px;
+  background: none;
+  padding: 2px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.btn-add-feedback:hover {
+  background: linear-gradient(135deg, #ecffeb 0%, #ccffc5 100%);
+}
+
+.btn-send-mail {
+  border-radius: 4px;
+  background: none;
+  padding: 2px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.btn-send-mail:hover {
+  background: linear-gradient(135deg, #ecffeb 0%, #ccffc5 100%);
+}

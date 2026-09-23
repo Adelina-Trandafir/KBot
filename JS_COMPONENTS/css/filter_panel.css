@@ -1,0 +1,271 @@
+/* ========== CSS pentru Panel Filtrare ========== */
+/* Panel lateral care apare la apăsarea butonului Filtrare */
+
+/* ========== PANEL FILTRARE ========== */
+.filter-panel {
+    width: 300px;
+    background: var(--bg-white);
+    border-radius: 0 8px 8px 0;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    border-left: 1px solid var(--border-color);
+    display: none;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.filter-panel.active {
+    display: block;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Header panou filtrare */
+.filter-header {
+    background: var(--hover-bg);
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.filter-close {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.filter-close:hover {
+    color: var(--text-primary);
+}
+
+/* Container filtre */
+.filter-content {
+    padding: 15px;
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+}
+
+/* Rânduri individuale de filtre */
+.filter-row {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: var(--hover-bg);
+    border-radius: 6px;
+    border-left: 4px solid #007bff;
+    transition: all 0.2s;
+}
+
+.filter-row:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transform: translateX(2px);
+}
+
+/* Label pentru filtru */
+.filter-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    display: block;
+}
+
+/* Input-uri pentru filtre */
+.filter-input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: border-color 0.2s;
+    background: var(--bg-white);
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* Select pentru filtre */
+select.filter-input {
+    cursor: pointer;
+}
+
+/* Date picker */
+input[type="date"].filter-input {
+    cursor: pointer;
+}
+
+/* ========== TIPURI SPECIALE DE FILTRE ========== */
+
+/* Filtru range (de la - până la) */
+.filter-range {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.filter-range input {
+    flex: 1;
+}
+
+.filter-range-separator {
+    font-size: 11px;
+    color: #999;
+}
+
+/* Checkbox-uri pentru filtre multiple */
+.filter-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 5px;
+}
+
+.filter-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.filter-checkbox-item input[type="checkbox"] {
+    cursor: pointer;
+}
+
+/* ========== BUTOANE ACȚIUNI FILTRE ========== */
+.filter-actions {
+    padding: 15px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 10px;
+    background: var(--hover-bg);
+}
+
+.filter-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-btn-apply {
+    background: #007bff;
+    color: white;
+}
+
+.filter-btn-apply:hover {
+    background: #0056b3;
+}
+
+.filter-btn-reset {
+    background: var(--bg-white);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.filter-btn-reset:hover {
+    background: #e9ecef;
+}
+
+/* ========== INDICATORI FILTRE ACTIVE ========== */
+.filter-active-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #28a745;
+    border-radius: 50%;
+    margin-left: 5px;
+}
+
+.filter-count-badge {
+    background: #007bff;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+}
+
+/* ========== FILTRE AVANSATE ========== */
+.filter-advanced-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: #e9ecef;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.filter-advanced-toggle:hover {
+    background: #dee2e6;
+}
+
+.filter-advanced-content {
+    display: none;
+    margin-top: 10px;
+}
+
+.filter-advanced-content.active {
+    display: block;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .filter-panel {
+        width: 100%;
+        position: fixed;
+        top: 0;
+        right: 0;
+        height: 100vh;
+        /* z-index: 1000; */
+        border-radius: 0;
+    }
+    
+    .filter-panel.active {
+        animation: slideUp 0.3s ease-out;
+    }
+    
+    @keyframes slideUp {
+        from {
+            transform: translateY(100%);
+        }
+        to {
+            transform: translateY(0);
+        }
+    }
+}

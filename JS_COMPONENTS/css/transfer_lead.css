@@ -1,0 +1,440 @@
+/**
+ * TRANSFER LEAD - CSS
+ * Toate clasele incep cu .tl- (prefix Transfer Lead)
+ * IMPORTANT: Nu se seteaza z-index nicaieri - overlayManager.subscribe() il seteaza automat
+ */
+
+/* ========== PANEL PRINCIPAL ========== */
+.tl-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 440px;
+  background: white;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tl-panel--hidden {
+  display: none !important;
+}
+
+.tl-panel--visible {
+  display: flex !important;
+}
+
+/* ========== HEADER ========== */
+.tl-header {
+  background: var(--modal-header-background);
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  align-items: center;
+  padding: 4px 15px;
+  height: var(--modal-header-height, 36px);
+  flex-shrink: 0;
+}
+
+.tl-header-title {
+  font: var(--modal-header-font);
+  color: var(--modal-header-font-color-light, white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ========== BODY: 3 sectiuni + tabs, pe o singura linie ========== */
+.tl-body {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  overflow: hidden;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  min-height: 0;
+}
+
+/* ========== SECTIUNI (CLIENT, DETALII DOSAR, FUNCTIA) - coloane egale ========== */
+.tl-section {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.tl-section-header {
+  background: var(--modal-header-background);
+  color: var(--modal-header-font-color-light, white);
+  text-align: center;
+  font-weight: bold;
+  font-size: 11px;
+  padding: 4px;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.tl-section-body {
+  padding: 6px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.tl-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.tl-field label {
+  min-width: 68px;
+  font-size: 11px;
+  color: #495057;
+  flex-shrink: 0;
+}
+
+.tl-field input[type='text'],
+.tl-field input[type='email'],
+.tl-field input[type='number'] {
+  flex: 1;
+  height: 24px;
+  font-size: 11px;
+  padding: 0 6px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  min-width: 0;
+}
+
+.tl-field input[readonly] {
+  background: #f8f9fa;
+  color: #495057;
+}
+
+.tl-field input:focus:not([readonly]) {
+  outline: none;
+  border-color: #4caf50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15);
+}
+
+.tl-ro-flag {
+  font-size: 14px;
+}
+
+#tl-btn-codebitor {
+  flex: 1;
+  height: 24px;
+  font-size: 10px;
+  padding: 0 4px;
+  background: #f0f8ff;
+  border: 1px dashed #ced4da;
+  cursor: pointer;
+  color: #336;
+  border-radius: 3px;
+}
+
+#tl-btn-codebitor:hover {
+  background: #ddeeff;
+}
+
+/* ========== AREA TABS (tab bar + tab content) ========== */
+.tl-tabs-area {
+  flex: 1.5;
+  display: flex;
+  flex-direction: row;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ========== TAB BAR (verticala stanga) ========== */
+.tl-tab-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  width: 90px;
+  flex-shrink: 0;
+  background: #f9fafb;
+  border-right: 1px solid #e5e7eb;
+  overflow-y: auto;
+}
+
+.tl-tab-btn {
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: white;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  text-align: left;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #495057;
+}
+
+.tl-tab-btn--active {
+  background: var(--modal-header-background);
+  color: var(--modal-header-font-color-light, white);
+  border-color: transparent;
+}
+
+.tl-tab-btn:hover:not(.tl-tab-btn--active) {
+  background: #f0f4f8;
+}
+
+/* ========== TAB CONTENT ========== */
+.tl-tab-content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+  background: white;
+  min-width: 0;
+}
+
+/* Garanteaza ascunderea corecta a tab-urilor inactive */
+[data-tab-content][hidden] {
+  display: none !important;
+}
+
+/* ========== SECTIUNI DIN TAB-URI ========== */
+.tl-tab-section-header {
+  background: var(--modal-header-background);
+  color: var(--modal-header-font-color-light, white);
+  text-align: center;
+  font-weight: bold;
+  font-size: 10px;
+  padding: 2px 4px;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  margin-top: 6px;
+  border-radius: 3px;
+}
+
+.tl-tab-section-header:first-child {
+  margin-top: 0;
+}
+
+.tl-tab-financiar,
+.tl-tab-bancar {
+  padding: 2px;
+}
+
+.tl-tab-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+.tl-tab-row label {
+  min-width: 80px;
+  font-size: 11px;
+  color: #495057;
+  flex-shrink: 0;
+}
+
+.tl-val-input {
+  width: 80px;
+  height: 22px;
+  font-size: 11px;
+  text-align: right;
+  padding: 0 4px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+}
+
+.tl-lbl-lei {
+  font-size: 10px;
+  color: #666;
+}
+
+.tl-tab-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  color: #999;
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* ========== ERROR BAR ========== */
+.tl-error-bar {
+  background: #fee;
+  border-top: 1px solid #f88;
+  color: #c00;
+  font-size: 11px;
+  padding: 4px 10px;
+  display: none;
+  flex-shrink: 0;
+}
+
+.tl-error-bar.tl-error-bar--visible {
+  display: block;
+}
+
+/* ========== FOOTER: butoane Renunta / Salveaza ========== */
+.tl-panel-bottom {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px;
+  border-top: 2px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0;
+  flex-shrink: 0;
+}
+
+/* ========== ANAF MODAL ========== */
+/* z-index NU se seteaza - overlayManager il seteaza automat */
+#tl-anaf-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 480px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  display: none;
+  flex-direction: column;
+  padding: 12px;
+  gap: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+#tl-anaf-modal.tl-anaf-modal--visible {
+  display: flex;
+}
+
+.tl-anaf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 13px;
+  color: #003366;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 6px;
+}
+
+.tl-anaf-close-btn {
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #888;
+  line-height: 1;
+}
+
+.tl-anaf-close-btn:hover {
+  color: #333;
+}
+
+.tl-anaf-search-row {
+  display: flex;
+  gap: 6px;
+}
+
+#tl-anaf-input {
+  flex: 1;
+  height: 28px;
+  font-size: 12px;
+  padding: 0 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+}
+
+.tl-anaf-search-btn {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 11px;
+  background: #f0f8ff;
+  border: 1px solid #ced4da;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.tl-anaf-search-btn:hover {
+  background: #ddeeff;
+}
+
+#tl-anaf-results {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.tl-anaf-result-item {
+  padding: 6px 8px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 12px;
+}
+
+.tl-anaf-result-item:last-child {
+  border-bottom: none;
+}
+
+.tl-anaf-result-item:hover {
+  background: #f0f8ff;
+}
+
+.tl-anaf-result-item strong {
+  color: #003366;
+}
+
+.tl-anaf-empty,
+.tl-anaf-loading,
+.tl-anaf-error {
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #888;
+}
+
+.tl-anaf-error {
+  color: #c00;
+}
+
+/* ========== OPTIUNEA SPECIALA ANAF IN COMBOBOX ========== */
+.combobox-item--anaf {
+  color: #0055aa;
+  font-style: italic;
+  border-top: 1px solid #e5e7eb;
+  background: #f0f8ff;
+}
+
+.combobox-item--anaf:hover {
+  background: #ddeeff;
+}
+
+/* ========== BUTON TRANSFER IN TABEL ========== */
+.tl-row-menu-btn {
+  display: none;
+  padding: 1px 4px;
+  font-size: 9px;
+  cursor: pointer;
+  border: 1px solid #ced4da;
+  background: #f0f8ff;
+  color: #333;
+  margin-left: 2px;
+  border-radius: 2px;
+}
+
+tr:hover .tl-row-menu-btn {
+  display: inline-block;
+}

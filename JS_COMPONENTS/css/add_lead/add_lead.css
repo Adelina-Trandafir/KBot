@@ -1,0 +1,50 @@
+/**
+ * 📞 ADD LEAD MODAL - MASTER CSS
+ * Import all modular CSS files
+ * 
+ * @version 1.0.0
+ * @author Adelina Trandafir - Avatar Soft SRL
+ */
+
+/* ========== BASE STYLES ========== */
+@import url('add_lead_base.css');
+
+/* ========== FORM STYLES ========== */
+@import url('add_lead_form.css');
+
+/* ========== TABLE STYLES ========== */
+@import url('add_lead_table.css');
+
+/* ========== ANIMATIONS ========== */
+@import url('add_lead_animations.css');
+
+/* ========== RESPONSIVE ========== */
+@import url('add_lead_responsive.css');
+
+/**
+ * 🏁 FLAG ICONS STYLES
+ */
+
+/* Steag în combobox */
+.country-flag {
+  display: inline-block;
+  width: 20px;
+  height: 15px;
+  margin-right: 8px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+/* Steag în dropdown list */
+.combobox-item .country-flag {
+  width: 24px;
+  height: 18px;
+  margin-right: 10px;
+}
+
+/* Steag în input selectat */
+.combobox-selected .country-flag {
+  width: 20px;
+  height: 15px;
+  margin-right: 8px;
+}

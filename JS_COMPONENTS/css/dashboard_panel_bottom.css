@@ -1,0 +1,419 @@
+/* ========== DASHBOARD PANEL BOTTOM - Panel Jos ========== */
+/* Stiluri specifice pentru panelul de jos */
+
+/* ========== PANEL JOS - STRUCTURA DE BAZĂ ========== */
+.bottom-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--panel-bottom-height);
+    background: var(--panel-bg);
+    border-top: 2px solid var(--panel-border);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+    /* z-index: 1500; */
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.bottom-panel.visible {
+    transform: translateY(0);
+}
+
+/* ========== HEADER PANEL JOS ========== */
+.bottom-panel .panel-header {
+    background: var(--panel-header-bg);
+    color: white;
+    padding: 12px 20px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--panel-border);
+}
+
+/* Buton închidere panel jos */
+.bottom-panel .panel-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    transition: all 0.3s;
+}
+
+.bottom-panel .panel-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ========== CONȚINUT PANEL JOS ========== */
+.bottom-panel .panel-content {
+    padding: 15px 20px;
+    height: calc(100% - 50px);
+    overflow-y: auto;
+    background: var(--panel-bg);
+    display: flex;
+    gap: 20px;
+}
+
+/* ========== LAYOUT ORIZONTAL PENTRU PANEL JOS ========== */
+.bottom-panel .panel-column {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.bottom-panel .panel-column + .panel-column {
+    border-left: 1px solid var(--border-color);
+    padding-left: 20px;
+}
+
+/* ========== SCROLLBAR PERSONALIZAT PENTRU PANEL JOS ========== */
+.bottom-panel .panel-content::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+}
+
+.bottom-panel .panel-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.bottom-panel .panel-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.bottom-panel .panel-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ========== ANIMAȚII PENTRU PANEL JOS ========== */
+@keyframes slideInUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.bottom-panel.visible {
+    animation: slideInUp 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* ========== RESPONSIVE PENTRU PANEL JOS ========== */
+@media (max-width: 768px) {
+    .bottom-panel {
+        height: auto;
+        max-height: 80vh;
+    }
+    
+    .bottom-panel .panel-content {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+    }
+    
+    .bottom-panel .panel-column + .panel-column {
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+        padding-left: 0;
+        padding-top: 15px;
+    }
+}
+
+/* ========== STILURI PENTRU CONȚINUTUL PANEL JOS ========== */
+/* Acestea vor fi folosite când vei adăuga conținut */
+
+.bottom-panel .panel-section {
+    margin-bottom: 15px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.bottom-panel .panel-section h4 {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 6px;
+}
+
+/* Detalii selecție pentru panel jos */
+.bottom-panel .selection-details {
+    flex: 1;
+    background: var(--hover-bg);
+    border-radius: 6px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    overflow-y: auto;
+    max-height: 150px;
+}
+
+.bottom-panel .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 12px;
+}
+
+.bottom-panel .detail-row:last-child {
+    border-bottom: none;
+}
+
+.bottom-panel .detail-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 100px;
+}
+
+.bottom-panel .detail-value {
+    color: var(--text-primary);
+    text-align: right;
+    flex: 1;
+}
+
+/* Istoric modificări pentru panel jos */
+.bottom-panel .history-list {
+    flex: 1;
+    max-height: 150px;
+    overflow-y: auto;
+    background: var(--hover-bg);
+    border-radius: 6px;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.bottom-panel .history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.bottom-panel .history-item:hover {
+    background: rgba(0, 123, 255, 0.1);
+    border-radius: 4px;
+}
+
+.bottom-panel .history-item:last-child {
+    border-bottom: none;
+}
+
+.bottom-panel .history-time {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 40px;
+    font-size: 11px;
+}
+
+.bottom-panel .history-action {
+    color: var(--text-primary);
+    flex: 1;
+}
+
+/* Acțiuni rapide orizontale pentru panel jos */
+.bottom-panel .quick-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.bottom-panel .action-btn-small {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s;
+    flex: 1;
+    min-width: 80px;
+    text-align: center;
+}
+
+.bottom-panel .action-btn-small:hover {
+    background: var(--hover-bg);
+    transform: translateY(-1px);
+    border-color: #adb5bd;
+}
+
+/* Butoane pentru panel jos */
+.bottom-panel .panel-btn {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.bottom-panel .panel-btn:hover {
+    background: var(--hover-bg);
+    border-color: #adb5bd;
+    transform: translateY(-1px);
+}
+
+.bottom-panel .panel-btn.primary {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    border-color: transparent;
+}
+
+.bottom-panel .panel-btn.primary:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+/* Formulare pentru panel jos */
+.bottom-panel .panel-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bottom-panel .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bottom-panel .form-label {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-primary);
+}
+
+.bottom-panel .form-input {
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 12px;
+    background: var(--bg-white);
+}
+
+.bottom-panel .form-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.bottom-panel .form-textarea {
+    min-height: 60px;
+    resize: vertical;
+}
+
+/* Tabele pentru panel jos */
+.bottom-panel .mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    background: var(--bg-white);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.bottom-panel .mini-table th {
+    background: var(--hover-bg);
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 11px;
+}
+
+.bottom-panel .mini-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 11px;
+}
+
+.bottom-panel .mini-table tbody tr:hover {
+    background: var(--hover-bg);
+}
+
+.bottom-panel .mini-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status indicators pentru panel jos */
+.bottom-panel .status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.bottom-panel .status-active {
+    background: #28a745;
+}
+
+.bottom-panel .status-pending {
+    background: #ffc107;
+}
+
+.bottom-panel .status-inactive {
+    background: #dc3545;
+}
+
+/* Separatori pentru panel jos */
+.bottom-panel .panel-separator {
+    height: 1px;
+    background: var(--border-color);
+    margin: 10px 0;
+}
+
+/* Text auxiliar pentru panel jos */
+.bottom-panel .panel-text-muted {
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-bottom: 8px;
+    font-style: italic;
+}
+
+/* Badge-uri pentru panel jos */
+.bottom-panel .panel-badge {
+    background: #007bff;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+}
+
+.bottom-panel .panel-badge.success {
+    background: #28a745;
+}
+
+.bottom-panel .panel-badge.warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.bottom-panel .panel-badge.danger {
+    background: #dc3545;
+}

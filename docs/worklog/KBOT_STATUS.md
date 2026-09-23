@@ -200,7 +200,9 @@ number** is recorded at the bottom of this section — bump it when you assign a
 
 | 0074 | **Vederea «Browser FOREXE» în shell: pagina andocată, arborele ↔ pagina** — cererea operatorului din 21.09.2026: «add a new view in the kbotform with the browser inside it which will only be visible if the user is connected … it is just for user use. it will HAVE the custom js menu … when one angajament is selected from the treeview, the browser will do a workflow selecting that angajament and opening it through Modificare … it will stop after clicking on that href. also, if the user searches in the browser an angajament and opens it, the treeview will know about it and select it (without triggering the forexe part again)» | GATA pe cod (`dotnet build` pe `src\KBot.Forexe`, `src\KBot.App` `--no-incremental`, `src\KBot.DevHarness`: **0 erori, 0 avertismente**; `node --check` valid) / **văzut pe ecran** prin `DrawToBitmap`: vederea neconectată și conectată-cu-andocare-refuzată / **NIMIC nu a atins un browser adevărat sau CABWeb; nicio suită rulată** | `SLICE-0074-vedere-browser-forexe.md` | **`BrowserView`** (cheia `browser`, intrare nouă în nav după «Plăți», poarta = SESIUNEA: `ApplyViewGating` + `StateChanged`, cade pe «Sumar» dacă sesiunea moare): doar `pnlBrowser` (gazda `SetParent`), linia de stare și «Adu browserul aici»; andocarea urmează vizibilitatea (`DockBrowserAsync` / `ReleaseBrowserAsync(host)` — tăcut dacă browserul nu e al gazdei); eliberat sincron în `KbotForm.OnFormClosing` (DestroyWindow ar lua fereastra Chromium cu el). **Arbore → pagină**: `adlop - Deschide Angajament.wfl` (nou: preambulul din Prelucrare Completa până la `.divaction a:has-text('Modificare')` + `WaitFor li.tab0`, apoi stop), `JobBuilder.BuildDeschideAngajament`, `ForexeController.DeschideAngajamentAsync`; robotul pornește DOAR la clicul operatorului (`Tree_NodeMouseUp` → `DeschideSelectia`) și la activarea vederii, niciodată la `SetContext`-ul unei reîncărcări (ar lovi descărcarea urmăririi 0073 pe unicul browser); codul din pagină se citește sincron la activare (`ReadPageAngajamentAsync` → `_kbotWatch.getCod()`). **Pagină → arbore**: `ForexeWatch.js` emite `page` când codul din antet se schimbă (boot, bătaia de 2 s, forțat la `setSuspended(false)`) → `ForexeWatchEventKind.PageOpened` → `KbotForm.TrateazaPaginaDeschisa`: `NoteazaCodulPaginii` întâi, apoi `SelectAndReveal` + gating + `SetContext` fără robot. Două gazde: `WorkflowExecutor.DockHost`, `IForexeRunner.DockBrowserAsync/ReleaseBrowserAsync/SyncBrowserBoundsAsync/BrowserHost/ReadPageAngajamentAsync`; `RecorderForm.DockedHere` (recorderul preia browserul din vedere când e cerut; vederea îl cere înapoi cu butonul); `StartWatchingAsync` nu trezește urmărirea ținută de un job. Butonul «browser» din banda shell-ului duce la vedere. FileVersion: `KBot.Forexe` 1.0.11 ▸ **1.0.12**, `KBot.App` 1.0.34 ▸ **1.0.35**. |
 
-| 0075-02 | **Înregistrare publică: nomenclatoarele, numele bazei, `FX_Inregistrari`, `/cerere`** — §5.4–5.5 din `PLAN_AutoProvisioning.md`, plus împrospătarea lui `sql/avacont_comun_login.sql`. Module noi: `nume.py` (`1nn_SSSS`), `nomenclatoare.py` (cele trei liste), `cerere.py` (verificare + scriere); patru rute noi (`/sursasector`, `/clasificatii?tip=F\|E`, `/nume?denumire=`, `/cerere`); `sql/0075_fx_inregistrari.sql` nou; `operator_address` + `send_registration_notice` în mailer | GATA pe cod / **NIMIC nu a fost pornit** — nicio rută n-a atins un Flask viu, un MariaDB sau ANAF. `ast.parse` curat (5/5); **Regula 0 verificată prin AST** (intervalele literalilor de tip șir adunate din toate cele șapte fișiere ale feliei, căutare de diacritice în afara lor ▸ **zero**); algoritmul numelui verificat prin apel direct. ⚠ **Zero teste** (decizia operatorului) | `SLICE-0075-02-nomenclatoare-nume-cerere.md` | **Numele:** `SSSS` = primele 4 consoane, vocalele umplu restul, sub 4 litere ▸ refuz; `nn` = cea mai mică pereche din `11..99` **fără cifra zero** — blocul `111`–`199` nu poate fi atins de numerotarea veche (`000_DEMO`…`053_LTTR`, `101_CCDP`), deci un nume ales de server nu cade peste unul scris de mână. Se compară **NUMĂRUL**, nu numele întreg (planul nu spune ce se caută în `SCHEMATA`/`CAI`; rândurile existente au fiecare un `NNN` distinct). **Zero diacritice în `nume.py`**: plierea trece prin `unicodedata` NFD, deci prinde și virgula dedesubt și sedila (cea pe care o trimite ANAF). Verificat: `AVATAR SOFT SRL`▸`VTRS`, `Direcția de Asistență Socială`▸`DRCT`, `MUN. PLOIEŞTI`▸`MNPL`, `AEIOU`▸`AEIO`, `ANA`▸refuzat. **Filtrul E e chiar join-ul** spre `DefaArticol`/`DefaTitlu`: cele 15 coduri neinserabile dispar singure, fără o listă de excepții care s-ar învechi; `DefaClsfF` n-are nevoie de filtru (`ClsfF` e propria cheie străină). `GROUP BY`, nu `DISTINCT` — `DefaClsfF` n-are cheie primară și indexul nu e unic. **«Frunză» nu se poate citi din cod**: `xxyy00` e alegibil doar dacă n-are nimic sub el (`650500`, `590100` sunt rânduri reale), deci verificarea cere tot dicționarul. `FX_Inregistrari` **fără chei străine, intenționat** — o cerere există înaintea bazei, poate sfârși `Respinsa` fără să arate spre nimic, iar o rulare eșuată trebuie să lase rândul cu `Motiv`-ul intact. Anunțul către operator **nu pică niciodată cererea** (`operator_anuntat: false` + avertisment în log). ⚠ **`MAX_ROWS = 50 000` e adăugat de mine, nu din plan**: fără el, toate frunzele ambilor arbori × 14 surse = 531×686×14, cinci milioane de rânduri dintr-un formular anonim. **De rulat pe server:** `sql/0075_fx_inregistrari.sql`. **De pus în `config.py`:** `OPERATOR_EMAIL`. **Neverificat:** coloana de captiune a lui `DefaSursaSector` (nimic din depozit nu face join pe ea) — `SELECT *` + prima dintre `Denumire`/`Explicatie`/`Descriere`, altfel codul ține loc de etichetă |
+| 0075-04 | **Înregistrare publică: pagina solicitantului** — §4 și §4.1 din `PLAN_AutoProvisioning.md`, luată înaintea lui 0075-03 la alegerea operatorului. `GET /inregistrare` servește `PYTHON/static/inregistrare.html`: un vrăjitor cu șase ecrane peste cele șapte rute scrise în 0075-01/02. Componentele JS copiate din `JS_COMPONENTS/` în `PYTHON/static/js/` (35 de fișiere; `JS_COMPONENTS/` rămâne originalul și **nu e în commit**); module noi `wizard.js`, `api.js`, `tree-builder.js`, `treeview-checkable.js`, plus `inregistrare.css` și `treeview_checkbox.css` | GATA pe cod / **verificat în browser pe un ciot** din biblioteca standard care servește fișierele adevărate și mimează cele șapte rute — **nimic viu: nici Flask, nici MariaDB, nici ANAF**. Exersate: toate cele șase ecrane, refuzurile fiecăruia, expirarea, corpul trimis la `/cerere` (numai frunze) și telefonul la 375px. ⚠ **Zero teste** (decizia operatorului) | `SLICE-0075-04-pagina-publica.md` | **De ce copie, nu referință:** componentele sunt module ES cu importuri relative care urcă **două niveluri** (`../../listener-tracker/…`) — se rezolvă după URL, deci folderele comune trebuie să stea la `static/js/` (D1: nu li se rescriu importurile). Toate cele 27 de importuri urmărite ▸ niciunul nu cade în gol. **Modul `checkable` (D21)**: starea stă numai pe frunze, părintele și-o deduce (tri-stare), rezultatul = frunzele bifate; `setData` păstrează bifele și le curăță pe cele dispărute — de asta depinde reluarea după `CLSF_*_NECUNOSCUT`. **Două schimbări cerute de operator cu pagina pe ecran (22.09.2026):** denumirea a urcat pe **ecranul 1 lângă codul fiscal («Date Unitate»)** și numele bazei nu se mai arată nicăieri — `/nume` se cheamă totuși la «Continuă», dar doar pentru verdict (e singurul loc cu regula celor patru litere, pe care `/cerere` n-o repetă); și **sursa-sector se alege din două combo-uri** (Sursa, apoi Sectorul filtrat pe ea), nu din listă de bife, cu perechea refuzată la «Continuă» dacă n-are rând în `DefaSursaSector` (plasă de siguranță: ambele liste vin din aceleași rânduri, deci prin interfață nu e de atins; serverul refuză oricum cu `SS_NECUNOSCUT`). Deci **o singură** pereche sursă-sector, deși serverul acceptă în continuare o listă. **Două divergențe față de `JS_COMPONENTS`**, ambele comentate în cod: `escapeHtml` scapă și ghilimelele (textul ajunge în atribute, iar captiunile vin din nomenclator), și `getComputedTreeHeight` măsoară orice rând randat când nu găsește o frunză (la prima deschidere toate rădăcinile sunt strânse și rezerva de 24px tăia lista). CSP pe pagină: `script-src 'self'`, `style-src 'self' 'unsafe-inline'` (arborele scrie `style` în linie), `frame-ancestors 'none'`. `/sursasector` întoarce de acum și `sursa`, și `sector` separat (tabela le are ca coloane). ⚠ Rămase: `debugMode` al arborelui e `true` (zgomot în consolă pe o pagină publică); fișierele statice n-au amprentă de versiune; «Contactați-ne» n-are pe pagină telefon sau e-mail; `.claude/launch.json` nou pornește ciotul din scratchpad-ul sesiunii, deci calea moare cu sesiunea. **A doua rundă (operator, 22.09.2026, după încercarea pe server) — D27–D29:** denumirea numai `[\w\s,]` (pagina scoate, serverul refuză cu `DENUMIRE_CARACTERE_INTERZISE`; în JS `\p{L}\p{N}`, fiindcă `\w` acolo e ASCII); **oricâte perechi sursă-sector** puse cu «Adaugă» într-o listă; **arbori pe trei niveluri de câte două cifre** — la F căsuțe numai pe frunze; la E titlul fără căsuță, articolul bifează toată ramura (opțiunea `branchChecks`). **ClsfE gol pe server**: join-ul pe `DefaArticol` aruncă rândurile `xx0000`, iar vechiul constructor arunca frunzele fără rădăcină — acum `/clasificatii` dă și `grupuri` (din `DefaTitlu`/`DefaArticol`); cauză dedusă, nevăzută pe server. Verificat tot pe ciot |
+
+| 0075-02 | **Înregistrare publică: nomenclatoarele, numele bazei, `FX_Inregistrari`, `/cerere`** — §5.4–5.5 din `PLAN_AutoProvisioning.md`, plus împrospătarea lui `sql/avacont_comun_login.sql`. Module noi: `nume.py` (`1nn_SSSS`), `nomenclatoare.py` (cele trei liste), `cerere.py` (verificare + scriere); patru rute noi (`/sursasector`, `/clasificatii?tip=F\|E`, `/nume?denumire=`, `/cerere`); `sql/0075_fx_inregistrari.sql` nou; `operator_address` + `send_registration_notice` în mailer | GATA pe cod / **NIMIC nu a fost pornit** — nicio rută n-a atins un Flask viu, un MariaDB sau ANAF. `ast.parse` curat (5/5); **Regula 0 verificată prin AST** (intervalele literalilor de tip șir adunate din toate cele șapte fișiere ale feliei, căutare de diacritice în afara lor ▸ **zero**); algoritmul numelui verificat prin apel direct. ⚠ **Zero teste** (decizia operatorului) | `SLICE-0075-02-nomenclatoare-nume-cerere.md` | **Numele:** `SSSS` = primele 4 consoane, vocalele umplu restul, sub 4 litere ▸ refuz; `nn` = cea mai mică pereche din `11..99` **fără cifra zero** — blocul `111`–`199` nu poate fi atins de numerotarea veche (`000_DEMO`…`053_LTTR`, `101_CCDP`), deci un nume ales de server nu cade peste unul scris de mână. Se compară **NUMĂRUL**, nu numele întreg (planul nu spune ce se caută în `SCHEMATA`/`CAI`; rândurile existente au fiecare un `NNN` distinct). **Zero diacritice în `nume.py`**: plierea trece prin `unicodedata` NFD, deci prinde și virgula dedesubt și sedila (cea pe care o trimite ANAF). Verificat: `AVATAR SOFT SRL`▸`VTRS`, `Direcția de Asistență Socială`▸`DRCT`, `MUN. PLOIEŞTI`▸`MNPL`, `AEIOU`▸`AEIO`, `ANA`▸refuzat. **Filtrul E e chiar join-ul** spre `DefaArticol`/`DefaTitlu`: cele 15 coduri neinserabile dispar singure, fără o listă de excepții care s-ar învechi; `DefaClsfF` n-are nevoie de filtru (`ClsfF` e propria cheie străină). `GROUP BY`, nu `DISTINCT` — `DefaClsfF` n-are cheie primară și indexul nu e unic. **«Frunză» nu se poate citi din cod**: `xxyy00` e alegibil doar dacă n-are nimic sub el (`650500`, `590100` sunt rânduri reale), deci verificarea cere tot dicționarul. `FX_Inregistrari` **fără chei străine, intenționat** — o cerere există înaintea bazei, poate sfârși `Respinsa` fără să arate spre nimic, iar o rulare eșuată trebuie să lase rândul cu `Motiv`-ul intact. Anunțul către operator **nu pică niciodată cererea** (`operator_anuntat: false` + avertisment în log). ⚠ **`MAX_ROWS = 50 000` e adăugat de mine, nu din plan**: fără el, toate frunzele ambilor arbori × 14 surse = 531×686×14, cinci milioane de rânduri dintr-un formular anonim. **De rulat pe server:** `sql/0075_fx_inregistrari.sql`. **De pus în `config.py`:** `OPERATOR_EMAIL`. ~~**Neverificat:** coloana de captiune a lui `DefaSursaSector`~~ ▸ **ÎNCHIS pe 22.09.2026 seara**, cu schema adevărată din `MariaDB_Schema/AVACONT_COMUN.sql`: tabela e `(SursaSector PK, Sursa, Sectorul, Denumire)`, deci `read_sursasector` găsește `Denumire` din prima încercare; `SELECT *` + căutarea captiunii rămân, fiindcă nu costă nimic. Dumpul a mai adus trei lucruri: **`FX_Inregistrari` e deja pe server** (scriptul a fost rulat; AUTO_INCREMENT = 1, nicio cerere încă), `Clasificatii` chiar **nu are** cheie străină pe `ClsfE` — deci join-ul spre `DefaArticol`/`DefaTitlu` e țintit exact unde se rupe — și ⚠ **`CAI` nu are niciun index pe `IdUnitate`**: `ix_CAI_IdUnitate`, pe care trecerea asta l-a pus în `sql/avacont_comun_login.sql`, **nu există pe server**; corectat în plan, fișierul din depozit rămâne o referință de înțelesuri, nu de forme |
 
 | 0075-01 | **Înregistrare publică: magazinul dinainte de autentificare, proxy-ul ANAF, `/cod`, `/verifica`** — §5.1–5.3 din `PLAN_AutoProvisioning.md`. Blueprint nou `PYTHON/routes/inregistrare/` (`store.py`, `anaf.py`, `inregistrare.py`, README), `send_registration_code` în `routes/auth/mailer.py`, blueprint-ul înregistrat în `main.py`. Trei rute publice: `POST /api/inregistrare/anaf` ▸ `{token, expires_in, cf, unitate}`, `/cod` ▸ `{email_masked, expires_in}`, `/verifica` ▸ `{ok, email_masked, expires_in}`; token-ul se întoarce în antetul `X-Registration-Token` (antet, nu corp — §5.4 și nomenclatoarele sunt GET-uri) | GATA pe cod / **NIMIC nu a fost pornit**: nicio rută n-a atins un Flask viu, un MariaDB sau ANAF. `ast.parse` curat (6/6); Regula 0 verificată prin căutare (diacritice **numai** în mesajele românești). ⚠ **Zero teste** — decizia operatorului din 22.09.2026 («no pytest files, i don't use them anyway»); planul §8 a fost corectat ca să nu mai mintă, și pentru trecerile următoare | `SLICE-0075-01-inregistrare-preauth-anaf-cod.md` | **Token-ul se naște la `/anaf`, nu la `/cod`** — planul se contrazicea singur (§4 vs §5.1), tranșat cu operatorul: nota poartă `cf` și `anaf` de la pasul 1, fiindcă `FX_Inregistrari.DenumireAnaf` trebuie să fie copia SERVERULUI — solicitantul are voie să schimbe `Denumire`, iar §7 le arată una lângă alta; altfel pagina de aprobare ar compara ce a scris solicitantul cu ce a scris solicitantul. **F5 confirmată pe cod**: `put_note/get_note/delete_note` acceptă orice token și nu ating cheile de sesiune ▸ **zero cod nou de backend**. Înregistrarea ține **30 de minute absolut**, fiecare scriere o pune la loc cu cât a mai rămas (fereastra nu poate fi plimbată cerând cod după cod). **v9 NU are câmpul `cod`** (verificat pe un răspuns real: doar `found` și `notFound`) — deci verificarea `cod <> "200"` din `InformatiiFirmaOnline2` **nu se portează**, «negăsit» = `found` gol; verificarea `<html>` se portează neschimbată. Câmpuri din `found[0].date_generale`; ANAF trimite diacritice cu **sedilă**, nimic nu le rescrie. **Verificat pe mașină: contul de serviciu chiar poate citi `mysql.user`** (10 conturi) — singurul lucru care ar fi putut obliga la altă formă a lui §5.3. De adăugat în `config.py` pe VPS (ambele cu valori implicite în cod): `ANAF_TVA_URL`, `ANAF_TIMEOUT`. ⚠ Apelul de probă al operatorului a răspuns, dar **nu s-a notat pe care dintre cele două forme de cale** (Access folosește `/PlatitorTvaRest/api/v6/ws/tva`) |
 
@@ -232,45 +234,79 @@ plus, din felia 0031-01, `TreeLogger.Write` și `TreeLogger.Init`. Ultimele dou�
 
 - **Slice 0075 — creare automată a unei baze de unitate (22.09.2026).** Plan:
   `docs/PLAN_AutoProvisioning.md` — **§0.0 «START HERE» spune unde s-a ajuns**; §0 ține
-  constatările Pasului 0, care bat restul planului acolo unde diferă. Trecerea **0075-00 e
-  APLICATĂ pe server**: `Sector`, `Sursa` și `SS` sunt coloane scrise, rutele actualizate sunt
-  pe VPS. Trecerea **0075-01 e SCRISĂ, dar nepornită**: `PYTHON/routes/inregistrare/` ține
-  magazinul dinainte de autentificare, clientul ANAF v9 și cele trei rute publice; nicio rută
-  n-a atins încă un Flask viu, un MariaDB sau ANAF. Patru lucruri lămurite acolo: **token-ul se
-  naște la `/anaf`** (planul se contrazicea, §4 vs §5.1 — serverul trebuie să dețină denumirea
-  de la ANAF, fiindcă solicitantul poate schimba `Denumire` iar pagina de aprobare le compară);
-  **v9 nu are câmpul `cod`**, deci «negăsit» = `found` gol; **contul de serviciu poate citi
-  `mysql.user`** (verificat pe mașină); **fără fișiere de test**, decizia operatorului — costul
-  e scris apăsat în worklog și în planul §8, mai ales pentru 0075-03, unde desfacerea pașilor e
-  singurul lucru dintre o rulare pe jumătate eșuată și o unitate pe jumătate construită.
-  Trecerea **0075-02 e la fel: scrisă, nepornită** — nomenclatoarele, numele `1nn_SSSS`,
-  `FX_Inregistrari` și `/cerere`. Cu ea, **toată latura solicitantului e scrisă**; ce
-  lipsește e jobul care construiește efectiv baza (0075-03), pagina (0075-04) și ecranul de
-  aprobare (0075-05). **Urmează 0075-03** (jobul de provizionare cu lanțul de compensări) —
-  sau 0075-04 întâi, dacă contează mai mult să se vadă pagina mergând; niciuna nu o blochează
-  pe cealaltă, iar 0075-05 are nevoie de 0075-03.
-  **De făcut pe VPS înainte ca ceva din astea să meargă cu adevărat:** de rulat
-  `sql/0075_fx_inregistrari.sql`, și de pus în `config.py` `ANAF_TVA_URL`, `ANAF_TIMEOUT`,
-  `OPERATOR_EMAIL` (toate au valori implicite sau lipsa lor e raportată, nu fatală).
-  ⚠ Două lucruri adăugate de mine, nu cerute de plan, ca să nu treacă neobservate:
-  plafonul `cerere.MAX_ROWS = 50 000` (fără el, un formular anonim poate pune la coadă cinci
-  milioane de rânduri) și citirea că «liber» se compară pe **număr**, nu pe numele întreg.
-  **Revizia 2 (aceeași zi):** serverul a refuzat prima formă cu **1901** — o coloană generată
-  STORED nu poate fi construită dintr-o altă coloană pe 10.11 — deci `Sector`, `Sursa` ȘI `SS`
-  se scriu, celelalte șase generate rămân. Costul: șase locuri de scriere trec prin
-  `routes/clasificatii_ss.py`, iar migrarea și rutele noi merg în aceeași fereastră de
-  mentenanță.
-  Blocajele de la operator s-au **închis toate**: nginx are un singur `location /` spre
-  `127.0.0.1:5009` (deci pagina publică nu cere nicio modificare de nginx), componentele JS
-  sunt complete în `JS_COMPONENTS`, rolurile rămân cuvintele românești (D24), `CodProgram`
-  urmează sectorul și e editabil (D25). Rămâne de rulat migrarea. Drepturile conturilor
-  existente: conturile pe e-mail NU sunt SU (au `USAGE` global + drepturi pe baza lor); greșite
-  sunt `WITH GRANT OPTION` și drepturile DDL pe baza proprie — trecerea **0075-06**, separată.
-  Trei corecturi ale planului, constatate în cod: `schema_sync` **refuză** o
-  bază inexistentă (crearea se face după tiparul lui `admin.py::setup_database`), login-ul
-  citește `Unitati` / `Unitati_Utilizatori` / `Unitati_Ani`, nu `CAI` (deci `Utilizatori_Roluri`
-  din D17 pică — rolul există deja), iar arborele din `JS_COMPONENTS` **nu are casete de
-  bifat**: i se adaugă un mod `checkable`.
+  constatările Pasului 0, care bat restul planului acolo unde diferă.
+  **Trecerile 00, 01, 02 și 04 sunt gata (numai cod). Urmează 0075-03** (jobul de
+  provizionare). 0075-04 a fost luată înainte la alegerea operatorului; 0075-05 are nevoie
+  de 0075-03.
+
+  **Schema adevărată se poate acum citi: `MariaDB_Schema/`** — cele trei scheme luate de pe
+  serverul K-BOT pe 22.09.2026, 19:21 (`AVACONT_COMUN.sql` 23 tabele, `AVACONT_SURSA.sql` 44,
+  `000_DEMO.sql` 43). **Astea sunt adevărul despre forme, nu `sql/*.sql`** din depozit, care
+  sunt DDL-urile vechi scrise de mână. ⚠ Folderul e **în `.gitignore`** (linia 507): există
+  numai pe discul operatorului, nu vine cu o clonă, deci un fir nou îl citește de pe disc.
+  Ce a lămurit pe loc: **`DefaSursaSector.Denumire` există** (necunoscuta lăsată de 0075-02 e
+  închisă — `read_sursasector` o găsește din prima); **`FX_Inregistrari` e pe server**, deci
+  `sql/0075_fx_inregistrari.sql` a fost rulat (AUTO_INCREMENT = 1, nicio cerere încă);
+  `Clasificatii` are **patru** chei străine spre `AVACONT_COMUN` și **niciuna pe `ClsfE`**,
+  deci filtrul prin join spre `DefaArticol`/`DefaTitlu` din `nomenclatoare.py` e țintit exact
+  unde trebuie; `DefaClsfE` **are** cheie primară, `DefaClsfF` **nu are** (cum se presupusese);
+  `CAI` **nu are niciun index pe `IdUnitate`** — `ix_CAI_IdUnitate` pe care 0075-02 l-a pus în
+  DDL-ul din depozit nu există pe server, ceea ce face `GET_LOCK`-ul din §5.6 și mai necesar;
+  și **două tabele diferite se cheamă `Unitati`** — `AVACONT_COMUN.Unitati (DC, NumeUnitate,
+  CF)` pentru login, `<unitate>.Unitati (IdUnitate, Detalii, SursaSector, An, CodProgram,
+  Ascuns)` pentru `Clasificatii.IdUnitate`. 0075-03 le scrie pe **amândouă**.
+
+  ⚠ **Pentru 0075-03: șablonul a rămas cu coloanele de lucru.** `AVACONT_SURSA.Clasificatii`
+  încă are `Sector_w`, `Sursa_w`, `SS_w`; `000_DEMO.Clasificatii` **nu le are** și e altfel
+  identică coloană cu coloană. Deci bazele de unitate au trecut curat și numai șablonul a
+  păstrat schela. Contează fiindcă §5.6 pasul 1 face baza nouă **clonând `AVACONT_SURSA`**:
+  orice unitate creată de azi înainte ar moșteni trei coloane moarte pe care nicio altă bază nu
+  le are. De șters pe șablon înainte ca 0075-03 să ruleze adevărat (`ALTER TABLE
+  AVACONT_SURSA.Clasificatii DROP COLUMN Sector_w, DROP COLUMN Sursa_w, DROP COLUMN SS_w`).
+  Asta e și cea mai mare parte din răspunsul la întrebarea lăsată deschisă de 0075-00 («de ce
+  au trebuit șterse de mână trei coloane virtuale?»): munca de mână a fost pe șablon, cele
+  șapte baze de unitate n-au cerut nimic. **De ce** a refuzat șablonul rămâne nenotat.
+
+  **Toată latura solicitantului e scrisă** — `PYTHON/routes/inregistrare/` ține magazinul
+  dinainte de autentificare, clientul ANAF v9, nomenclatoarele, numele `1nn_SSSS`,
+  `FX_Inregistrari` și `/cerere`; șapte rute. **Nimic n-a fost pornit:** nicio rută n-a atins
+  un Flask viu, un MariaDB sau ANAF. Singurul contact adevărat cu sistemul viu e munca
+  operatorului — migrarea 0075-00, rularea lui `sql/0075_fx_inregistrari.sql`, un `curl` la
+  ANAF și dumpurile astea.
+
+  Lucrurile lămurite pe drum: **token-ul se naște la `/anaf`** (planul se contrazicea, §4 vs
+  §5.1 — serverul trebuie să dețină denumirea de la ANAF, fiindcă solicitantul poate schimba
+  `Denumire` iar pagina de aprobare le compară); **v9 nu are câmpul `cod`**, deci «negăsit» =
+  `found` gol; **contul de serviciu poate citi `mysql.user`**; **fără fișiere de test**, decizia
+  operatorului — costul e scris apăsat în worklog și în planul §8, mai ales pentru 0075-03,
+  unde desfacerea pașilor e singurul lucru dintre o rulare pe jumătate eșuată și o unitate pe
+  jumătate construită. ⚠ Două lucruri adăugate de mine, nu cerute de plan, ca să nu treacă
+  neobservate: plafonul `cerere.MAX_ROWS = 50 000` (fără el, un formular anonim poate pune la
+  coadă cinci milioane de rânduri) și citirea că «liber» se compară pe **număr**, nu pe numele
+  întreg.
+
+  **Ce mai lipsește de pe VPS:** în `config.py`, `ANAF_TVA_URL`, `ANAF_TIMEOUT` și
+  `OPERATOR_EMAIL` (toate au valori implicite sau lipsa lor e raportată, nu fatală — până e pus
+  `OPERATOR_EMAIL`, cererea se scrie dar nu e anunțat nimeni, iar răspunsul o spune).
+
+  **Pagina publică e scrisă (0075-04).** `GET /inregistrare` servește
+  `PYTHON/static/inregistrare.html`; componentele JS sunt **copiate** din `JS_COMPONENTS/` în
+  `PYTHON/static/js/` (35 de fișiere, așezarea `static/js/components/<nume>/` cu folderele
+  comune la `static/js/`, fiindcă importurile urcă două niveluri). `JS_COMPONENTS/` rămâne
+  originalul și **nu e în commit**. Arborele a primit modul `checkable` cu trei stări (D21).
+  Două schimbări cerute de operator după ce prima versiune era pe ecran: **denumirea stă pe
+  ecranul 1, lângă codul fiscal («Date Unitate»), iar numele bazei nu se mai arată nicăieri**,
+  și **sursa-sector se alege din două combo-uri** (Sursa, apoi Sectorul filtrat), cu perechea
+  refuzată la «Continuă» dacă nu are rând în `DefaSursaSector`. Deci șase ecrane, nu șapte;
+  §4 din plan e adus la zi. Verificat **în browser pe un ciot** din biblioteca standard (nimic
+  viu: nici Flask, nici MariaDB, nici ANAF), inclusiv corpul trimis la `/cerere`. Detalii și
+  lista de neverificat: `docs/worklog/SLICE-0075-04-pagina-publica.md`.
+
+  Restul blocajelor de la operator s-au închis: rolurile rămân cuvintele românești (D24),
+  `CodProgram` urmează sectorul și e editabil (D25). Drepturile conturilor existente: conturile
+  pe e-mail NU sunt SU (au `USAGE` global + drepturi pe baza lor); greșite sunt `WITH GRANT
+  OPTION` și drepturile DDL pe baza proprie — trecerea **0075-06**, separată, nu blochează
+  nimic.
 - **Slice 0074 — vederea «Browser FOREXE» în shell (21.09.2026).** Pagina FOREXE andocată într-o
   vedere a shell-ului, vizibilă doar conectat, fără panou de înregistrare, cu meniul K-BOT.
   Clic pe un nod → «Deschide Angajament.wfl» (caută + «Modificare», apoi stop); pagina raportează

@@ -37,6 +37,15 @@ WHAT 2a SAYS ABOUT THESE TABLES, and why the queries look defensive:
   * Codes are six characters throughout.
   * D16: a `DefaClsfE` row with no caption is not shown. On 22.09.2026 there were
     none, but the rule is the operator's and the data can change.
+
+THE TREE IS THREE LEVELS OF TWO DIGITS (operator, 22.09.2026): `650101` is `65` > `01` >
+`01`, and `650100` is `65` > `01`. The page builds it from the flat list, but the NAMES of
+the two upper levels are not always in that list. For ClsfE they cannot be: the join
+above drops every `xx0000` row (`xx.00` is not an article), so without help the page had
+titles for none of the codes and showed an empty tree. `read_group_captions` supplies
+them from the dictionaries the codes are checked against anyway -- `DefaTitlu` for the
+first level, `DefaArticol` for the second. ClsfF has no such dictionaries; its level names
+come from its own `xx0000` / `xxyy00` rows, where they exist.
 """
 import logging
 
@@ -69,13 +78,30 @@ _SQL_CLSF_E = (
     "ORDER BY e.ClsfE"
 )
 
+# The names of the two upper E levels. Same GROUP BY guard: `DefaTitlu` has no key.
+_SQL_TITLU = (
+    "SELECT Titlu AS cod, MAX(Denumire) AS denumire "
+    "FROM AVACONT_COMUN.DefaTitlu "
+    "WHERE Titlu IS NOT NULL AND Titlu <> '' "
+    "GROUP BY Titlu"
+)
+_SQL_ARTICOL = (
+    "SELECT Articol AS cod, MAX(Denumire) AS denumire "
+    "FROM AVACONT_COMUN.DefaArticol "
+    "GROUP BY Articol"
+)
+
 # Caption column names tried, in order, on DefaSursaSector. See read_sursasector.
 _CAPTION_COLUMNS = ("Denumire", "Explicatie", "Descriere")
 
 
 def read_sursasector(conn) -> list:
     """
-    The fourteen sector-sources, as `[{"cod", "denumire"}]`.
+    The fourteen sector-sources, as `[{"cod", "sursa", "sector", "denumire"}]`.
+
+    The page picks `sursa` first and `sector` second (two comboboxes, slice 0075-04),
+    so both columns travel as stored. A row with either one empty falls back to the
+    code's own halves (`01A` -> `01`, `A`), which is how every live row is built.
 
     `SELECT *` on purpose. The code column is certain -- `SursaSector` is the target
     of the `Clasificatii__DefaSS` foreign key, so it is named in the DDL. The CAPTION
@@ -105,7 +131,12 @@ def read_sursasector(conn) -> list:
         if not cod:
             continue
         label = _text(row.get(caption)) if caption else ""
-        out.append({"cod": cod, "denumire": label or cod})
+        out.append({
+            "cod": cod,
+            "sursa": _text(row.get("Sursa")) or cod[:2],
+            "sector": _text(row.get("Sectorul")) or cod[2:],
+            "denumire": label or cod,
+        })
     return out
 
 
@@ -113,8 +144,8 @@ def read_clasificatii(conn, tip) -> list:
     """
     The flat code list for one tree, as `[{"cod", "denumire"}]`.
 
-    `tip` is `F` or `E`. The page turns the flat list into a tree itself (plan 4.1):
-    `xx0000` is a root, `xxxx00` a level-1 node, anything else a leaf.
+    `tip` is `F` or `E`. The page turns the flat list into a tree itself: three levels
+    of two digits each, see the note at the top of the file.
     """
     sql = _SQL_CLSF_F if tip == "F" else _SQL_CLSF_E
     cur = conn.cursor(dictionary=True)
@@ -124,6 +155,31 @@ def read_clasificatii(conn, tip) -> list:
         for row in cur.fetchall()
         if _text(row.get("cod"))
     ]
+
+
+def read_group_captions(conn, tip) -> dict:
+    """
+    Names for the upper tree levels, keyed by the code prefix: `{"20": ..., "2001": ...}`.
+
+    E only -- `DefaTitlu` (`20`) and `DefaArticol` (`20.01`, the dot dropped). F answers
+    an empty dict; its names are in its own rows. A name here is only a label: which
+    codes can be chosen is still decided by `read_clasificatii` alone.
+    """
+    if tip != "E":
+        return {}
+    cur = conn.cursor(dictionary=True)
+    out = {}
+    cur.execute(_SQL_TITLU)
+    for row in cur.fetchall():
+        key = _text(row.get("cod"))
+        if len(key) == 2:
+            out[key] = _text(row.get("denumire"))
+    cur.execute(_SQL_ARTICOL)
+    for row in cur.fetchall():
+        key = _text(row.get("cod")).replace(".", "")
+        if len(key) == 4:
+            out[key] = _text(row.get("denumire"))
+    return out
 
 
 def read_codes(conn, tip) -> set:

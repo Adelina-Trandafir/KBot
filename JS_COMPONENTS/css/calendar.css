@@ -1,0 +1,407 @@
+/* ===========================================================
+   CALENDAR CUSTOM – CSS COMPLET (responsive, flex, fără overflow)
+   =========================================================== */
+
+/* ---------- WRAPPER INPUT-URI + BUTON ---------- */
+.custom-datetime-container{
+    display: flex;          /* devine flexibil */
+    align-items: center;
+    /* gap: .25rem; */                   /* spațiu între elemente */
+    width: 100%;
+    min-width: 0;                  /* permite comprimarea */
+    border: 1px solid rgb(206, 212, 218);
+    border-radius: 4px;
+    background: #fff;
+    padding-left: 8px;
+    box-sizing: border-box;
+                 /* nu sare pe alt rând */
+    max-height: 24px;
+    justify-content: space-between;
+}
+
+.custom-date-container {
+    font-size: 13px;
+    display: flex;          /* devine flexibil */
+    align-items: baseline;
+    /* gap: .25rem; */                   /* spațiu între elemente */
+    width: 100%;
+    min-width: 0;                  /* permite comprimarea */
+    border: 1px solid rgb(206, 212, 218);
+    border-radius: 4px;
+    background: #fff;
+    padding-left: 8px;
+    padding-top: 2px;
+    box-sizing: content-box;
+                 /* nu sare pe alt rând */
+    max-height: 24px;
+    justify-content: space-between;
+}
+/* ========== STILURI PENTRU INPUT ENABLED/DISABLED ========== */
+.calendar-managed {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-managed:hover {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25);
+}
+
+.calendar-disabled {
+  background-color: #f8f9fa !important;
+  color: #6c757d !important;
+  /* border-color: #e9ecef !important; */
+  /* cursor: not-allowed !important; */
+  opacity: 0.65;
+  border: 1px solid #ced4da !important;
+}
+
+.calendar-disabled:focus {
+  border-color: #e9ecef !important;
+  box-shadow: none !important;
+}
+
+/* Pentru custom datetime container */
+.custom-datetime-container.calendar-disabled {
+  background-color: #f8f9fa !important;
+  /* border-color: #e9ecef !important; */
+  cursor: auto !important;
+  opacity: 0.65;
+}
+
+.custom-datetime-container.calendar-disabled .custom-date-day,
+.custom-datetime-container.calendar-disabled .custom-date-month,
+.custom-datetime-container.calendar-disabled .custom-date-year,
+.custom-datetime-container.calendar-disabled .custom-time-hour,
+.custom-datetime-container.calendar-disabled .custom-time-minute {
+  background-color: transparent !important;
+  color: #6c757d !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+.custom-datetime-container.calendar-disabled .custom-calendar-btn {
+  color: #6c757d !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  opacity: 0.5 !important;
+}
+
+.custom-datetime-container.calendar-disabled .custom-calendar-btn:hover {
+  font-size: 15px !important;
+  transform: none !important;
+}
+
+.custom-datetime-container.calendar-disabled span {
+  color: #6c757d !important;
+}
+
+.custom-datetime-container-date{
+    display: flex;
+    width: 55%;
+    justify-content: space-around;
+}
+.custom-datetime-container-time{
+    display: flex;
+    width: 25%;
+    justify-content: space-around;
+}
+
+/* ---------- INPUT-URI ---------- */
+.custom-date-day,
+.custom-date-month,
+.custom-date-year,
+.custom-time-hour,
+.custom-time-minute{
+    flex: 1 1 auto;                /* elastic */
+    min-width: 0;                  /* poate scădea sub default */
+    width: auto !important;        /* anulează lățimile fixe vechi */
+    max-width: 4ch;              /* ~2 caractere */
+    border: none;
+    outline: none;
+    text-align: center;
+    padding: 0;
+    background: transparent;
+    font-size: 13px;
+    line-height: 1.2;
+    -moz-appearance: textfield;
+    -webkit-appearance: textfield;
+    appearance: textfield;
+}
+.custom-date-year{max-width: 6ch;} /* anul are 4 cifre */
+
+/* ascundem săgețile numerice */
+.custom-date-day::-webkit-outer-spin-button,
+.custom-date-month::-webkit-outer-spin-button,
+.custom-date-year::-webkit-outer-spin-button,
+.custom-time-hour::-webkit-outer-spin-button,
+.custom-time-minute::-webkit-outer-spin-button,
+.custom-date-day::-webkit-inner-spin-button,
+.custom-date-month::-webkit-inner-spin-button,
+.custom-date-year::-webkit-inner-spin-button,
+.custom-time-hour::-webkit-inner-spin-button,
+.custom-time-minute::-webkit-inner-spin-button{
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* hover/focus câmpuri */
+.custom-date-day:hover:not(:disabled),.custom-date-month:hover:not(:disabled),.custom-date-year:hover:not(:disabled),
+.custom-time-hour:hover:not(:disabled),.custom-time-minute:hover:not(:disabled){background: var(--green-hover-background);}
+.custom-date-day:focus,.custom-date-month:focus,.custom-date-year:focus,
+.custom-time-hour:focus,.custom-time-minute:focus{background-color:#e6f3ff;}
+
+/* invalid */
+.custom-date-day:invalid,.custom-date-month:invalid,.custom-date-year:invalid,
+.custom-time-hour:invalid,.custom-time-minute:invalid{background-color:#ff62624a;}
+
+/* separatori “/” și “:” */
+.custom-datetime-container span{
+    width: 10%;
+    flex: 0 0 auto;
+    color: #6c757d;
+    font-size: 14px;
+    user-select: none;
+}
+
+/* ---------- BUTON CALENDAR ---------- */
+.custom-calendar-btn{
+    flex: 0 0 auto;          /* nu crește, nu se micșorează */
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: none;
+    font-size: 15px;
+    line-height: 1;
+    border-radius: 4px;
+    transition: transform .2s;
+    align-items: center;
+    justify-content: space-between;
+}
+.custom-calendar-btn:hover:not(:disabled){
+    transform: scale(1.1);
+    background: rgba(0,0,0,.05);
+    cursor: pointer;
+}
+
+/* ---------- FONT MIC + ASCUNDE SEPARATORI PE FOARTE ÎNGUST ---------- */
+@media (max-width: 400px){
+    .custom-datetime-container{font-size: 12px; gap: .15rem;}
+    .custom-calendar-btn{font-size: 13px;}
+    /* al treilea “/” și “:” */
+    .custom-datetime-container span:nth-of-type(3),
+    .custom-datetime-container span:nth-of-type(4){display: none;}
+}
+
+/* ===========================================================
+   RESTUL STILURILOR (calendar-popup, modal, etc.) rămân identice
+   =========================================================== */
+
+/* ---------- CALENDAR POPUP ---------- */
+.custom-calendar{
+    position: absolute;
+    /* background: #fff; */
+    /* border: 1px solid #dee2e6; */
+    /* border-radius: 8px; */
+    box-shadow: 3px 3px 10px 0px rgba(0, 0, 0, .15);
+    font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    font-size: 14px;
+    user-select: none;
+    opacity: 0;
+    /* transform: translateY(-10px) scale(.95); */
+    /* transition: all .2s cubic-bezier(.4,0,.2,1); */
+}
+.custom-calendar.hidden{display: none;}
+.custom-calendar.visible{opacity: 1;transform: translateY(0) scale(1);}
+
+/* ---------- HEADER ---------- */
+.calendar-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--modal-header-background);
+    color: #fff;
+    /* border-radius: 7px 7px 0 0; */
+    padding: 2px;
+    /* gap: 8px; */
+    /* height: 40px; */
+}
+.calendar-header-title{
+    text-align: center;
+    font-size: 13px;
+}
+.calendar-nav-btn{
+    background: rgba(255,255,255,0);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 24px;
+    /* border-radius: 4px; */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .2s ease;
+    font-size: 14px;
+}
+.calendar-nav-btn:hover{background: rgba(255,255,255,.3);transform: scale(1.05);}
+.calendar-nav-btn:active{transform: scale(.95);}
+.calendar-current-date{flex: 1;text-align: center;font-weight: 600;font-size: 16px;}
+
+/* ---------- ZILE SĂPTĂMÂNĂ ---------- */
+.calendar-weekdays{
+    display: grid;
+    grid-template-columns: repeat(7,1fr);
+    background: #c8e2fc;
+    border-bottom: 1px solid #e9ecef;
+}
+.calendar-weekday{
+    padding: 3px;
+    text-align: center;
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.calendar-day.weekend { background: #fff5f5; }
+.calendar-weekday.weekend {background: #ffd3d3;}
+
+.calendar-day.weekend:hover:not(.selected):not(.disabled) 
+.calendar-weekday.weekend:hover:not(.selected):not(.disabled) { background: #ffe6e6;background: #ffe6e6;}                                                          
+
+/* ---------- GRILA ZILE ---------- */
+.calendar-days-grid{
+    display: grid;
+    grid-template-columns: repeat(7,1fr);
+    gap: 1px;
+    background: #e9ecef;
+    padding: 1px;
+}
+.calendar-day{
+    background: #fff;
+    min-height: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all .2s ease;
+    border: 2px solid transparent;
+}
+.calendar-day:not(.empty):not(.disabled):hover{background: #e3f2fd;transform: scale(1.05);}
+.calendar-day.empty{cursor: default;background: #f8f9fa;}
+.calendar-day.disabled{background: #f8f9fa;color: #adb5bd;cursor: not-allowed;}
+.calendar-day.today{background: #fff3cd;font-weight: 600;color: #856404;border-color: #ffc107;}
+.calendar-day.selected{background: linear-gradient(135deg,#d8f7e6 0%,#5eff75 100%);color: #000;font-weight: 600;border-color: #495057;border-width: 1px;}
+.calendar-day.weekend{background: #ffdada;}
+.calendar-day.weekend:hover:not(.selected):not(.disabled){background: #ffe6e6;}
+.calendar-day.has-data{background: #d1ecf1;font-weight: 600;}
+.calendar-day.has-data:hover:not(.selected){background: #b8daff;}
+
+/* număr + bulină evenimente */
+.calendar-day-number{font-size: 14px;line-height: 1;}
+.calendar-day-count{position: absolute;top: 0;right: 0;color: #216500;font-size: 10px;font-weight: 600;min-width: 16px;height: 16px;border-radius: 8px;display: flex;align-items: center;justify-content: center;line-height: 1;text-align: end;}
+.calendar-day.selected .calendar-day-count{background: rgba(255,255,255,.3);color: #fff;}
+
+/* ---------- FOOTER ---------- */
+.calendar-footer{
+    display: flex;
+    gap: 4px;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+    border-radius: 0 0 7px 7px;
+    justify-content: space-between;
+    flex-direction: row-reverse;
+    display: none;
+}
+.calendar-footer button{
+    flex: 0.5 1;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all .2s ease;
+    min-height: 24px;
+    min-width: 49px;
+}
+.calendar-footer button:hover{background: #e9ecef;border-color: #adb5bd;transform: translateY(-1px);}
+.calendar-today-btn{background: linear-gradient(135deg,#28a745,#20c997)!important;color: #fff!important;border-color: #28a745!important;padding: 2px;}
+.calendar-today-btn:hover{background: linear-gradient(135deg,#218838,#1fa480)!important;border-color: #1e7e34!important;}
+.calendar-clear-btn{background: linear-gradient(135deg,#ffc107,#fd7e14)!important;color: #fff!important;border-color: #ffc107!important;}
+.calendar-clear-btn:hover{background: linear-gradient(135deg,#e0a800,#e8690b)!important;border-color: #d39e00!important;}
+.calendar-close-btn{background: linear-gradient(135deg,#6c757d,#495057)!important;color: #fff!important;border-color: #6c757d!important;}
+.calendar-close-btn:hover{background: linear-gradient(135deg,#5a6268,#3d4043)!important;border-color: #545b62!important;}
+
+/* ---------- MODAL DETALII ZI ---------- */
+.calendar-day-modal{position: fixed;top: 0;left: 0;width: 100%;height: 100%;display: flex;align-items: center;justify-content: center;}
+.calendar-day-modal.hidden{display: none;}
+.calendar-overlay{position: fixed;top: 0;left: 0;width: 100%;height: 100%;}
+.calendar-modal-overlay{position: absolute;top: 0;left: 0;width: 100%;height: 100%;background: rgba(0,0,0,.5);backdrop-filter: blur(4px);animation: fadeIn .3s ease;}
+.calendar-modal-content{position: relative;background: #fff;border-radius: 12px;box-shadow: 0 20px 60px rgba(0,0,0,.3);max-width: 500px;width: 90%;max-height: 70vh;overflow: hidden;animation: slideIn .3s cubic-bezier(.4,0,.2,1);}
+@keyframes fadeIn{from{opacity: 0;}to{opacity: 1;}}
+@keyframes slideIn{from{opacity: 0;transform: translateY(-20px) scale(.9);}to{opacity: 1;transform: translateY(0) scale(1);}}
+
+.calendar-modal-header{display: flex;align-items: center;justify-content: space-between;padding: 20px 24px;background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);color: #fff;}
+.calendar-modal-title{margin: 0;font-size: 18px;font-weight: 600;}
+.calendar-modal-close{background: rgba(255,255,255,.2);border: none;color: #fff;width: 32px;height: 32px;border-radius: 50%;cursor: pointer;font-size: 20px;display: flex;align-items: center;justify-content: center;transition: all .2s ease;}
+.calendar-modal-close:hover{background: rgba(255,255,255,.3);transform: rotate(90deg);}
+
+.calendar-modal-body{padding: 24px;max-height: 400px;overflow-y: auto;}
+.calendar-day-details{display: flex;flex-direction: column;gap: 16px;}
+.calendar-day-summary{background: linear-gradient(135deg,#e3f2fd,#f3e5f5);padding: 16px;border-radius: 8px;border-left: 4px solid #667eea;}
+.calendar-day-summary strong{color: #495057;font-size: 16px;}
+.calendar-day-list{display: flex;flex-direction: column;gap: 12px;}
+.calendar-day-item{display: flex;align-items: center;gap: 12px;padding: 12px;background: #f8f9fa;border-radius: 6px;border: 1px solid #e9ecef;transition: all .2s ease;}
+.calendar-day-item:hover{background: #e9ecef;transform: translateX(4px);}
+.calendar-day-time{background: linear-gradient(135deg,#667eea,#764ba2);color: #fff;padding: 4px 8px;border-radius: 12px;font-size: 12px;font-weight: 600;min-width: 60px;text-align: center;}
+.calendar-day-description{flex: 1;color: #495057;font-size: 14px;}
+.calendar-no-data{text-align: center;padding: 40px 20px;color: #6c757d;font-style: italic;background: #f8f9fa;border-radius: 8px;border: 2px dashed #dee2e6;}
+
+.calendar-time-selector{
+    padding-left: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.calendar-time-controls{padding: 4px;border-top: 1px solid #d5d5d5;border-bottom: 1px solid #d5d5d5;display: flex;align-items: center;}
+.calendar-time-input-group{display: flex;width: 100%;/* justify-content: flex-end; */flex-direction: row;align-items: baseline;}
+.calendar-hour-select,.calendar-minute-select{
+  background: #ffffff;
+  color: #333333;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+}
+.calendar-hour-select:focus-visible,.calendar-minute-select:focus-visible{outline: none;}
+.calendar-hour-select:hover,.calendar-minute-select:hover{background: linear-gradient(135deg,#fbfbfb,#c9e4ff);}
+
+.calendar-modal-footer{padding: 16px 24px;border-top: 1px solid #e9ecef;background: #f8f9fa;display: flex;justify-content: flex-end;}
+.calendar-modal-close-btn{padding: 8px 24px;background: linear-gradient(135deg,#6c757d,#495057);color: #fff;border: none;border-radius: 6px;cursor: pointer;font-weight: 500;transition: all .2s ease;}
+.calendar-modal-close-btn:hover{background: linear-gradient(135deg,#5a6268,#3d4043);transform: translateY(-1px);box-shadow: 0 4px 12px rgba(0,0,0,.2);}
+
+/* Option-urile (Chrome/Edge) */
+.calendar-hour-select option,.calendar-minute-select option {background: #ffffff;color: #333333;}
+.calendar-hour-select option:checked, .calendar-minute-select option:checked {background: #667eea;color: #ffffff;}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 768px){
+  .custom-calendar{min-width: 260px;font-size: 13px;}
+  .calendar-day{min-height: 32px;}
+  .calendar-day-number{font-size: 13px;}
+  .calendar-modal-content{width: 95%;margin: 20px;}
+  .calendar-modal-header,.calendar-modal-body,.calendar-modal-footer{padding: 16px;}
+  .calendar-modal-title{font-size: 16px;}
+}
+
+/* ---------- LOADER ---------- */
+.calendar-loading .calendar-days-grid{opacity: .6;position: relative;}
+.calendar-loading .calendar-days-grid::after{content: '';position: absolute;top: 50%;left: 50%;transform: translate(-50%,-50%);width: 24px;height: 24px;border: 3px solid #f3f3f3;border-top: 3px solid #667eea;border-radius: 50%;animation: spin 1s linear infinite;}
+@keyframes spin{0%{transform: translate(-50%,-50%) rotate(0deg);}100%{transform: translate(-50%,-50%) rotate(360deg);}}

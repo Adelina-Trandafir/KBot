@@ -1,0 +1,263 @@
+/* ========== DASHBOARD PANEL LEFT - Panel Stânga ========== */
+/* Stiluri specifice pentru panelul din stânga */
+
+/* ========== PANEL STÂNGA - STRUCTURA DE BAZĂ ========== */
+.left-panel {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    width: var(--panel-width);
+    height: calc(100vh - var(--header-height));
+    background: var(--panel-bg);
+    border-right: 2px solid var(--panel-border);
+    box-shadow: var(--panel-shadow);
+    z-index: 1500;
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow: hidden;
+}
+
+.left-panel.visible {
+    transform: translateX(0);
+}
+
+/* ========== HEADER PANEL STÂNGA ========== */
+.left-panel .panel-header {
+    background: var(--panel-header-bg);
+    color: white;
+    padding: 12px 20px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--panel-border);
+}
+
+/* Buton închidere panel stânga */
+.left-panel .panel-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    transition: all 0.3s;
+}
+
+.left-panel .panel-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ========== CONȚINUT PANEL STÂNGA ========== */
+.left-panel .panel-content {
+    padding: 20px;
+    height: calc(100% - 50px);
+    overflow-y: auto;
+    background: var(--panel-bg);
+}
+
+/* ========== SCROLLBAR PERSONALIZAT PENTRU PANEL STÂNGA ========== */
+.left-panel .panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.left-panel .panel-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.left-panel .panel-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.left-panel .panel-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ========== ANIMAȚII PENTRU PANEL STÂNGA ========== */
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.left-panel.visible {
+    animation: slideInLeft 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* ========== RESPONSIVE PENTRU PANEL STÂNGA ========== */
+@media (max-width: 768px) {
+    .left-panel {
+        width: 100%;
+        z-index: 2000;
+    }
+    
+    .left-panel .panel-content {
+        padding: 15px;
+    }
+}
+
+/* ========== STILURI PENTRU CONȚINUTUL PANEL STÂNGA ========== */
+/* Acestea vor fi folosite când vei adăuga conținut */
+
+.left-panel .panel-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.left-panel .panel-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.left-panel .panel-section h4 {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Butoane pentru panel stânga */
+.left-panel .panel-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.left-panel .panel-btn {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+    transition: all 0.3s;
+    color: var(--text-primary);
+}
+
+.left-panel .panel-btn:hover {
+    background: var(--hover-bg);
+    border-color: #adb5bd;
+    transform: translateY(-1px);
+}
+
+/* Select-uri pentru panel stânga */
+.left-panel .panel-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-white);
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+/* Input-uri pentru panel stânga */
+.left-panel .panel-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-white);
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.left-panel .panel-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Checkbox-uri pentru panel stânga */
+.left-panel .panel-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    margin-bottom: 6px;
+}
+
+.left-panel .panel-checkbox:hover {
+    background: var(--hover-bg);
+}
+
+.left-panel .panel-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* Labels pentru panel stânga */
+.left-panel .panel-label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--text-primary);
+    display: block;
+}
+
+/* Liste pentru panel stânga */
+.left-panel .panel-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.left-panel .panel-list-item {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 13px;
+}
+
+.left-panel .panel-list-item:hover {
+    background: var(--hover-bg);
+}
+
+.left-panel .panel-list-item:last-child {
+    border-bottom: none;
+}
+
+/* Separatori pentru panel stânga */
+.left-panel .panel-separator {
+    height: 1px;
+    background: var(--border-color);
+    margin: 15px 0;
+}
+
+/* Text auxiliar pentru panel stânga */
+.left-panel .panel-text-muted {
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+/* Badge-uri pentru panel stânga */
+.left-panel .panel-badge {
+    background: #007bff;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+}

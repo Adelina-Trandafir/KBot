@@ -1,0 +1,272 @@
+/* ========== CSS pentru Secțiunea Expandabilă ========== */
+/* Secțiune care apare la selectarea unui rând */
+
+/* ========== SECȚIUNE EXPANDABILĂ - 300px înălțime ========== */
+.expandable-section {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    background: var(--bg-white);
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: height 0.3s ease;
+    opacity: 0;
+    z-index: 100;
+}
+
+.expandable-section.expanded {
+    height: 300px;
+    opacity: 1;
+}
+
+/* Header secțiune */
+.section-header {
+    background: var(--hover-bg);
+    padding: 8px 15px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-primary);
+}
+
+.section-header:hover {
+    background: #e9ecef;
+}
+
+.collapse-btn {
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    transition: transform 0.3s;
+    color: var(--text-primary);
+}
+
+.expandable-section.expanded .collapse-btn {
+    transform: rotate(180deg);
+}
+
+/* ========== CONȚINUT SECȚIUNE - Layout 3 zone ========== */
+.section-content {
+    display: flex;
+    height: 250px;
+    padding: 15px;
+}
+
+/* ========== STÂNGA 50% - Formular Date ========== */
+.data-entry-form {
+    flex: 0 0 50%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 15px;
+    padding-right: 15px;
+    border-right: 1px solid var(--border-color);
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-label {
+    font-size: 9px;
+    color: #666;
+    text-transform: uppercase;
+    margin-bottom: 1px;
+    font-weight: 600;
+}
+
+.form-input {
+    height: 22px;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+    padding: 2px 5px;
+    font-size: 10px;
+    background: var(--bg-white);
+    transition: border-color 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.form-input:disabled {
+    background: var(--hover-bg);
+    color: #666;
+    cursor: not-allowed;
+}
+
+/* ========== MIJLOC 40% - Tabel Feedback ========== */
+.feedback-section {
+    flex: 0 0 40%;
+    display: flex;
+    flex-direction: column;
+    padding: 0 15px;
+    border-right: 1px solid var(--border-color);
+}
+
+.feedback-header {
+    background: #f1f3f4;
+    padding: 6px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px 4px 0 0;
+}
+
+.feedback-table-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    background: var(--bg-white);
+}
+
+.feedback-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+}
+
+.feedback-table th {
+    background: var(--hover-bg);
+    padding: 4px 6px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 9px;
+    position: sticky;
+    top: 0;
+}
+
+.feedback-table td {
+    padding: 3px 6px;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 9px;
+    vertical-align: top;
+}
+
+.feedback-table tbody tr:hover {
+    background: var(--hover-bg);
+}
+
+/* Stiluri pentru statusuri în feedback */
+.feedback-status {
+    display: inline-block;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 8px;
+    font-weight: 600;
+}
+
+.feedback-status.urgent {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.feedback-status.completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.feedback-status.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* ========== DREAPTA 10% - Butoane Acțiuni ========== */
+.form-actions {
+    flex: 0 0 10%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 15px;
+    justify-content: flex-start;
+}
+
+.form-action-btn {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    padding: 12px 4px;
+    border: none;
+    border-radius: 4px;
+    font-size: 9px;
+    cursor: pointer;
+    font-weight: 500;
+    min-height: 80px;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.btn-save {
+    background: #28a745;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #218838;
+}
+
+.btn-cancel {
+    background: var(--text-secondary);
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: #5a6268;
+}
+
+/* ========== ANIMAȚII ========== */
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.expandable-section.expanded .section-content {
+    animation: slideUp 0.3s ease-out;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1024px) {
+    .section-content {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .data-entry-form,
+    .feedback-section,
+    .form-actions {
+        flex: none;
+        width: 100%;
+        border: none;
+        padding: 10px;
+    }
+    
+    .form-actions {
+        flex-direction: row;
+        justify-content: center;
+    }
+    
+    .form-action-btn {
+        writing-mode: initial;
+        min-height: auto;
+        padding: 8px 16px;
+    }
+}

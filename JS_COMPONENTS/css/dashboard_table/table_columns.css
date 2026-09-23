@@ -1,0 +1,107 @@
+
+/* ========== TABLE COLUMNS ========== */
+
+/* ========== HEADERS ========== */
+.data-table th {
+  height: var(--header-columns-height);
+  background: var(--table-header-backcolor-gradient);
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
+  border-top: none;
+}
+
+.header-inner-div {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  overflow: hidden;
+}
+
+.filter-open-icon {
+  color: #6b7280;
+  opacity: 0.7;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  padding: 5px;
+}
+
+.header-title-span {
+  flex: 1 1 0%;
+  min-width: 0px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-status-area {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.column-header-clickable .header-icons-div {
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s;
+}
+
+.column-header-clickable:not(.filter-header-active):hover .header-icons-div {
+  pointer-events: auto;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+/* ========== SORTING ========== */
+.sortable-header {
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+}
+
+.sortable-header:hover {
+  background: #e2e6ea !important;
+}
+
+.sort-indicator {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: #6c757d;
+}
+
+.sort-asc .sort-indicator::after {
+  content: '▲';
+}
+
+.sort-desc .sort-indicator::after {
+  content: '🔽';
+}
+
+/* ========== COLUMN RESIZE ========== */
+.resizable-header {
+  position: relative;
+}
+
+.column-resizer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  cursor: col-resize;
+  background: transparent;
+  border-right: 1px solid var(--border-color);
+}
+
+.column-resizer:hover,
+.column-resizer.resizing {
+  background: #007bff;
+  border-right-color: #007bff;
+}

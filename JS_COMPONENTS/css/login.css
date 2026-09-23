@@ -1,0 +1,642 @@
+/* ========== LOGIN PAGE STYLES ========== */
+
+/* Reset și base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: radial-gradient(circle at center, #00f2fe 0%, #4facfe 70%, #005dae 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto; /* Schimbat de la hidden la auto pentru scroll dacă e necesar */
+  margin: 0;
+  padding: 20px 0; /* Adaugă padding vertical */
+}
+
+/* Container principal */
+.login-container {
+  display: flex;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  width: 900px;
+  max-width: 95%;
+  min-height: 580px; /* Redus de la 600px */
+  max-height: 95vh; /* Nou: limitează înălțimea la 95% din viewport */
+}
+
+/* ========== SECȚIUNEA STÂNGĂ - INFORMAȚII ========== */
+.info-section {
+  flex: 1;
+  background: linear-gradient(135deg, #4facfe 0%, #6cd3ff 100%);
+  padding: 60px 40px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.info-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>')
+    repeat;
+  animation: float 5s infinite linear;
+}
+
+@keyframes float {
+  0% {
+    transform: translateX(-100px) translateY(-100px);
+  }
+  100% {
+    transform: translateX(100px) translateY(100px);
+  }
+}
+
+.logo-section {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 40px;
+}
+
+.logo-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.main-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin-bottom: 40px;
+  font-weight: 300;
+}
+
+.features-list {
+  list-style: none;
+  position: relative;
+  z-index: 2;
+}
+
+.features-list li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+.feature-icon {
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+/* ========== SECȚIUNEA DREAPTĂ - FORMULAR ========== */
+.form-section {
+  flex: 1;
+  padding: 45px 40px; /* Redus de la 60px 50px */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: white;
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: 30px; /* Redus de la 40px */
+}
+
+.form-title {
+  font-size: 1.8rem; /* Redus de la 2rem */
+  color: #333;
+  margin-bottom: 8px; /* Redus de la 10px */
+  font-weight: 600;
+}
+
+.form-subtitle {
+  color: #666;
+  font-size: 0.95rem; /* Redus de la 1rem */
+}
+
+/* ========== FORMULAR ========== */
+.form-group {
+  margin-bottom: 18px; /* Redus de la 25px */
+  position: relative;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px; /* Redus de la 8px */
+  color: #555;
+  font-weight: 500;
+  font-size: 0.9rem; /* Redus de la 0.95rem */
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 12px 16px; /* Redus de la 15px 20px */
+  border: 2px solid #e1e5e9;
+  border-radius: 10px; /* Redus de la 12px */
+  font-size: 0.95rem; /* Redus de la 1rem */
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: #4facfe;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+}
+
+/* Stări pentru input-uri */
+.form-input:disabled,
+.form-select:disabled {
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+  border-color: #ced4da;
+}
+
+.form-input.valid {
+  border-color: #28a745;
+  background: #f8fff9;
+}
+
+.form-input.invalid {
+  border-color: #dc3545;
+  background: #fff8f8;
+}
+
+.form-select.valid {
+  border-color: #28a745;
+  background: #f8fff9;
+}
+
+/* Status fields */
+.field-status {
+  font-size: 0.8rem; /* Redus de la 0.85rem */
+  margin-top: 4px; /* Redus de la 5px */
+  min-height: 16px; /* Redus de la 20px */
+}
+
+.field-status.success {
+  color: #28a745;
+}
+
+.field-status.error {
+  color: #dc3545;
+}
+
+.field-status.info {
+  color: #17a2b8;
+}
+
+/* ========== BUTON LOGIN ========== */
+.login-button {
+  width: 100%;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  border: none;
+  padding: 14px; /* Redus de la 16px */
+  font-size: 1rem; /* Redus de la 1.1rem */
+  font-weight: 600;
+  border-radius: 10px; /* Redus de la 12px */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px; /* Redus de la 20px */
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(79, 172, 254, 0.3);
+}
+
+.login-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  display: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ffffff;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 10px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========== MESAJE ========== */
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 12px 14px; /* Redus de la 15px 16px */
+  border-radius: 10px; /* Redus de la 12px */
+  margin-bottom: 16px; /* Redus de la 20px */
+  border: 1px solid #f5c6cb;
+  font-size: 0.9rem; /* Redus fontul */
+}
+
+.info-message {
+  background: #d1ecf1;
+  color: #0c5460;
+  padding: 12px 14px; /* Redus de la 15px 16px */
+  border-radius: 10px; /* Redus de la 12px */
+  margin-bottom: 16px; /* Redus de la 20px */
+  border: 1px solid #bee5eb;
+  font-size: 0.9rem; /* Redus fontul */
+}
+
+/* ========== RESET PASSWORD LINK ========== */
+.reset-password-link {
+  text-align: center;
+  margin-top: 15px; /* Redus de la 20px */
+  visibility: hidden;
+  height: 0px;
+  margin: 0px;
+}
+
+.reset-password-link a {
+  color: #4facfe;
+  text-decoration: none;
+  font-size: 0.9rem; /* Redus de la 0.95rem */
+}
+
+.reset-password-link a:hover {
+  text-decoration: underline;
+}
+
+/* ========== INFO BOX ========== */
+.info-box {
+  background: #e8f4fd;
+  border: 1px solid #bee5eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 25px;
+}
+
+.info-title {
+  font-weight: 600;
+  color: #0c5460;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.info-list {
+  list-style: none;
+  color: #155724;
+  font-size: 0.9rem;
+}
+
+.info-list li {
+  margin-bottom: 5px;
+  padding-left: 15px;
+  position: relative;
+}
+
+.info-list li::before {
+  content: '•';
+  color: #28a745;
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+}
+
+.extra-info {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #bee5eb;
+}
+
+.extra-info strong {
+  color: #721c24;
+}
+
+.extra-info span {
+  color: #0c5460;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+
+  .login-container {
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    min-height: auto;
+    max-height: none;
+    border-radius: 15px;
+  }
+
+  /* Secțiunea stângă devine header compact */
+  .info-section {
+    padding: 30px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    /* Păstrează gradientul */
+  }
+
+  .info-section::before {
+    display: none; /* Ascunde animația pentru mobile */
+  }
+
+  .logo-section {
+    margin-bottom: 0; /* Elimină margin-bottom */
+  }
+
+  .logo-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 15px auto;
+  }
+
+  .main-title {
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    margin-bottom: 0;
+    opacity: 0.9;
+  }
+
+  /* Ascunde lista de features pe mobile */
+  .features-list {
+    display: none;
+  }
+
+  /* Formular optimizat pentru mobile */
+  .form-section {
+    padding: 30px 25px;
+  }
+
+  .form-header {
+    margin-bottom: 25px;
+  }
+
+  .form-title {
+    font-size: 1.6rem;
+  }
+
+  .form-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .form-input,
+  .form-select {
+    font-size: 16px; /* Previne zoom pe iOS */
+    padding: 14px 16px; /* Puțin mai mare pentru touch */
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .login-button {
+    padding: 16px; /* Mai mare pentru touch */
+    font-size: 1.05rem;
+  }
+
+  .info-box {
+    padding: 15px;
+    margin-top: 20px;
+    font-size: 0.8rem;
+  }
+
+  .info-title {
+    font-size: 0.85rem;
+  }
+
+  .info-list {
+    font-size: 0.75rem;
+  }
+
+  .extra-info {
+    font-size: 0.75rem;
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+}
+
+@media (max-height: 800px) {
+  .info-section {
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+  }
+
+  .form-section{
+    padding: 4px !important;
+  }
+
+  .form-header {
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+
+  .form-subtitle {
+    visibility: hidden;
+  }
+
+  .form-group {
+    margin-bottom: 0px;
+  }
+  
+  .form-input, .form-select {
+    padding: 8px;
+    font-size: 0.9rem;
+  }
+
+  .field-status.success, .field-status.info {
+    visibility: hidden;
+  }
+
+  .login-button {
+    padding: 8px;
+    font-size: 0.9rem;
+    margin-top: 5px;
+  }
+
+  .info-box {
+    padding: 5px;
+    margin-top: 25px;
+    display: inline;
+    max-height: 100px;
+  }
+
+  .extra-info {
+  visibility: hidden;
+  height: 0px;
+  }
+}
+
+@media (max-height: 920px) {
+  .form-section{
+    /* padding: 10px !important; */
+    padding-bottom: 5px !important;
+  }
+
+  .form-header {
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+
+  .form-subtitle {
+    visibility: hidden;
+  }
+  
+  .form-input, .form-select {
+    padding: 8px;
+  }
+
+  .login-button {
+    padding: 8px;
+    font-size: 0.9rem;
+    margin-top: 5px;
+  }
+
+  .info-box {
+    padding: 5px;
+    margin-top: 15px;
+    max-height: 100px;
+    display: inline-table;
+  }
+
+  .extra-info {
+  visibility: hidden;
+  height: 0px;
+  }
+}
+/* ========== COMBOBOX OVERRIDES FOR LOGIN FORM ========== */
+#departmentContainer.combobox-container {
+  max-width: 100%;
+  width: 100%;
+  display: block;
+}
+#departmentContainer .combobox-input {
+  width: 100%;
+  padding: 12px 28px 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+#departmentContainer .combobox-input:focus {
+  border-color: #4facfe;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+}
+#departmentContainer .combobox-input:disabled {
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+  border-color: #ced4da;
+}
+#departmentContainer.combobox-valid .combobox-input {
+  border-color: #28a745;
+  background: #f8fff9;
+}
+#departmentContainer .combobox-dropdown {
+  max-width: none;
+}
+#departmentContainer .combobox-option {
+  font-size: 1rem;
+  max-height: none;
+  padding: 10px 16px;
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 5px;
+  }
+
+  .login-container {
+    border-radius: 10px;
+  }
+
+  .info-section {
+    padding: 25px 15px;
+  }
+
+  .form-section {
+    padding: 25px 20px;
+  }
+
+  .main-title {
+    font-size: 2.2rem;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .form-title {
+    /* font-size: 1.4rem; */
+    margin-bottom: 0px;
+  }
+}

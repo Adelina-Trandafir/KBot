@@ -1,0 +1,691 @@
+/**
+ * 💬 FEEDBACK MODAL STYLES
+ * Stiluri pentru modal-ul de adăugare feedback
+ * 
+ * @version 1.0.0
+ * @author Adelina Trandafir - Avatar Soft SRL
+ */
+
+/* ========== OVERLAY ========== */
+.feedback-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.5;
+  background: aliceblue;
+}
+
+.feedback-modal-overlay.visible {
+  display: block;
+}
+
+.feedback-modal-overlay.hidden {
+  display: none;
+}
+
+/* ========== CONTAINER ========== */
+.feedback-modal-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 700px;
+  height: 480px;
+  max-width: 95vw;
+  max-height: 95vh;
+  
+  /* ✅ Combină centrarea cu animația */
+  transform: translate(-50%, -50%);
+  
+  /* ✅ Tranziție smoothă pentru scale și opacity */
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.3s ease;
+  
+  /* ✅ Origin point - va fi setat dinamic din JS */
+  transform-origin: center center;
+}
+
+/* ✅ Stare inițială - invizibil și mic */
+.feedback-modal-container.zoom-in-start {
+  /* Combină translate (pentru centrare) cu scale (pentru zoom) */
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+}
+
+/* ✅ Stare finală - vizibil și mărime normală */
+.feedback-modal-container.zoom-in-end {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+/* ✅ Animație de închidere */
+.feedback-modal-container.zoom-out {
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: transform 0.25s ease-in, opacity 0.2s ease-in;
+}
+
+
+/* ========== HEADER ========== */
+.feedback-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px;
+  border-bottom: 2px solid #e5e7eb;
+  color: var(--modal-header-font-color-light);
+  border-radius: var(--modal-border-radius-header);
+  height: var(--modal-header-height);
+  background: var(--modal-header-background);
+}
+
+.feedback-modal-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px;
+}
+
+.feedback-modal-close {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  display: none;
+}
+
+.feedback-modal-header.with-status {
+  background: linear-gradient(
+    to bottom, 
+    #ffffff 0%, 
+    var(--status-color-left) 20%, 
+    var(--status-color-right) 100%, 
+    #ffffff 100%
+  ) !important;
+  color:black;
+}
+
+.feedback-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ========== SPELL CHECK BANNER ========== */
+.spell-check-banner {
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 24px 0;
+}
+
+.spell-check-banner-content {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.spell-check-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.spell-check-text {
+  flex: 1;
+  font-size: 13px;
+  color: #92400e;
+}
+
+.spell-check-text strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #78350f;
+}
+
+.spell-check-instructions {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.spell-check-dismiss {
+  background: transparent;
+  border: none;
+  color: #92400e;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.spell-check-dismiss:hover {
+  background: rgba(146, 64, 14, 0.1);
+}
+
+/* ========== BODY ========== */
+.feedback-modal-body {
+  display: flex;
+  padding: 5px;
+  overflow-y: auto;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.feedback-upper-controls {display: flex;flex-direction: row;align-items: center;align-content: space-between;justify-content: space-evenly;flex-wrap: wrap;}
+/* ========== FORM GROUPS ========== */
+.feedback-form-group {
+  min-width: 300px;
+}
+
+.feedback-form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #374151;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+/* ========== SELECT ========== */
+/* .feedback-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.feedback-select:hover {
+  border-color: #9ca3af;
+}
+
+.feedback-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+} */
+
+/* ========== DATE INPUT ========== */
+.feedback-date-wrapper {
+  position: relative;
+}
+
+.feedback-date-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.feedback-date-input:hover {
+  border-color: #9ca3af;
+}
+
+.feedback-date-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* ========== TOOLBAR ========== */
+.feedback-toolbar {
+  display: flex;
+  gap: 4px;
+  padding: 2px 4px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px 8px 0 0;
+  align-items: center;
+  border-bottom: none;
+  padding-bottom: 4px;
+}
+
+.feedback-toolbar-btn {
+  background: white;
+  border: 1px solid #d1d5db;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 32px;
+}
+
+.feedback-toolbar-btn:hover {
+  background: var(--green-hover-background);
+  border-color: #9ca3af;
+}
+
+.feedback-toolbar-btn:active {
+  transform: scale(0.95);
+}
+
+.feedback-toolbar-separator {
+  width: 1px;
+  height: 24px;
+  background: #d1d5db;
+  margin: 0 4px;
+}
+
+.feedback-color-picker {
+  width: 36px;
+  height: 32px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.feedback-color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.feedback-color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+/* ========== EDITOR ========== */
+.feedback-editor {
+  min-height: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 4px;
+  border: 2px solid #e5e7eb;
+  border-radius: 0 0 8px 8px;
+  font-size: 14px;
+  line-height: 1.6;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.feedback-editor:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.feedback-editor:empty:before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.feedback-editor[contenteditable="false"] {
+  background: #ffffff;
+  cursor: not-allowed;
+  opacity: 0.6;
+  pointer-events: none; /* opțional */
+}
+
+/* ========== CHARACTER COUNTER ========== */
+.feedback-char-count {
+  /* margin-top: 6px; */
+  font-size: 12px;
+  color: #6b7280;
+  text-align: right;
+}
+
+/* ========== FOOTER ========== */
+.feedback-modal-footer {
+  padding: 4px 4px;
+  border-top: 2px solid #e5e7eb;
+  background: #f9fafb;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-radius: 0 0 12px 12px;
+}
+
+/* ========== BUTTONS ========== */
+.feedback-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.feedback-btn-primary {
+  background: var(--primary-btn-gradient);
+  color: white;
+}
+
+.feedback-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.feedback-btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.feedback-btn-secondary {
+  background: var(--secondary-btn-gradient);
+  #ffffff00; */
+  /* background: none; */
+}
+
+.feedback-btn-secondary:hover {
+  /* transform: translateY(-2px); */
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .feedback-modal-container {
+    width: 95%;
+    max-height: 95vh;
+  }
+  
+  .feedback-modal-header {
+    padding: 16px 20px;
+  }
+  
+  .feedback-modal-header h2 {
+    font-size: 18px;
+  }
+  
+  .feedback-modal-body {
+    padding: 20px;
+  }
+  
+  .feedback-toolbar {
+    flex-wrap: wrap;
+  }
+  
+  .feedback-editor {
+    min-height: 150px;
+    max-height: 250px;
+  }
+  
+  .spell-check-instructions {
+    font-size: 11px;
+  }
+}
+
+/* ========== ACCESSIBILITY ========== */
+.feedback-btn:focus,
+.feedback-toolbar-btn:focus,
+.feedback-date-input:focus,
+.feedback-modal-close:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ========== SCROLL BAR ========== */
+.feedback-editor::-webkit-scrollbar {
+  width: 8px;
+}
+
+.feedback-editor::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.feedback-editor::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.feedback-editor::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ============================================================================ */
+/* EMBEDDED MODE - Modal în container specific (nu fullscreen) */
+/* ============================================================================ */
+
+/* Container trebuie să fie relative pentru absolute positioning */
+.details-panel-baza-middle {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Overlay embedded - acoperă doar containerul */
+.feedback-modal-overlay.embedded-mode {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  transform: none !important;
+  opacity: 0.7;
+  background: #e5e5e5;
+}
+
+/* Modal embedded - ocupă tot containerul */
+.feedback-modal-container.embedded-mode {
+  position: static;
+  top: 3px !important;
+  left: 3px !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  transform: translate(0,0); 
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e5e7eb;
+}
+
+/* Header ascuns în embedded mode */
+.feedback-modal-container.embedded-mode .feedback-modal-header.hidden {
+  display: none;
+}
+
+/* Body ocupă tot spațiul rămas */
+.feedback-modal-container.embedded-mode .feedback-modal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 12px;
+  min-height: 0; /* Critical pentru flex shrink corect */
+  padding: 4px;
+}
+
+/* Upper controls - înălțime fixă */
+.feedback-modal-container.embedded-mode .feedback-upper-controls {
+  display: flex;
+  flex-shrink: 0;
+  margin-bottom: 12px;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Form group cu editor - ocupă spațiul rămas */
+.feedback-modal-container.embedded-mode .feedback-modal-body > .feedback-form-group:last-child {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Critical pentru flex shrink */
+  overflow: hidden;
+}
+
+/* Label fix */
+.feedback-modal-container.embedded-mode .feedback-modal-body > .feedback-form-group:last-child > label {
+  flex-shrink: 0;
+}
+
+/* Toolbar fix */
+.feedback-modal-container.embedded-mode .feedback-toolbar {
+  flex-shrink: 0;
+}
+
+/* Editor ocupă tot spațiul din form-group */
+.feedback-modal-container.embedded-mode .feedback-editor {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+}
+
+/* Counter fix */
+.feedback-modal-container.embedded-mode .feedback-char-count {
+  flex-shrink: 0;
+}
+
+/* Footer fix height */
+.feedback-modal-container.embedded-mode .feedback-modal-footer {
+  flex-shrink: 0;
+  border-radius: 0;
+}
+
+.feedback-modal-container.embedded-mode .feedback-btn {
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.feedback-modal-container.embedded-mode .custom-date-container {
+    width: unset;
+}
+
+.feedback-modal-container.embedded-mode .feedback-form-group {min-width: 200px;width: 100%;}
+.feedback-modal-container.embedded-mode .feedback-form-group label {
+    padding-left: 10px;
+}
+
+.feedback-modal-header.embedded-mode h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px;
+}
+.feedback-modal-container.embedded-mode .feedback-modal-header {
+    padding: 4px;
+    display: flex;
+}
+
+.feedback-modal-container.embedded-mode .feedback-toolbar-btn{
+    width: 24px;
+    height: 24px;
+    min-width: 0;
+    min-height: 0;
+    border-radius: 3px;
+    font-size: 13px;
+    border: 1px solid #ffffff;
+}
+
+.feedback-toolbar-btn.selected {
+  background: linear-gradient(
+180deg, #def5d9 0%, #caff90 100%);
+}
+
+.feedback-modal-container.embedded-mode .feedback-toolbar-btn:hover{border: 1px solid #ced4da;background: linear-gradient(90deg, #c5cffb 0%, #e5ccff 100%);}
+
+.feedback-modal-container.embedded-mode .feedback-color-picker {
+  min-width: 0;
+  min-height: 0;
+  border-radius: 3px;
+  width: 24px;
+  height: 24px;
+  border-style: none;
+  padding: 4px;
+}
+
+.feedback-modal-container.embedded-mode .feedback-color-picker:hover {
+    background: linear-gradient(90deg, #c5cffb 0%, #e5ccff 100%);
+}
+.feedback-modal-header.with-status.embedded-mode{
+    background: var(--status-color-left);
+    color: black;
+    justify-content: flex-start;
+}
+/*.feedback-modal-container.embedded-mode .combobox-container.readonly .combobox-input {}*/
+/* ============================================================================ */
+/* ANIMATIONS pentru embedded mode */
+/* ============================================================================ */
+
+/* Animație fade-in pentru feedback nou */
+@keyframes feedbackRowFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+    background-color: #d4edda;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Success banner animations */
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-50%) translateY(-20px);
+    opacity: 0;
+  }
+}

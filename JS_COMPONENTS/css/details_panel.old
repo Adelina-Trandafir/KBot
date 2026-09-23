@@ -1,0 +1,424 @@
+/* ============================================================================ */
+/* DETAILS PANEL - CSS RESPONSIVE CU LAYOUT ÎN COLOANE AUTOMAT */
+/* ============================================================================ */
+
+/* Container principal - păstrează structura existentă */
+.details-panel {
+  /* margin: 5px 0; */
+  transition: all 0.3s ease;
+}
+
+.details-panel.hidden {
+  display: none;
+}
+
+.details-panel.collapsed {
+  height: 0;
+  margin: 0;
+  border: none;
+  opacity: 0;
+}
+
+.details-panel.expanded {
+  /* Înălțime fixă pentru calculul coloanelor */
+  /* height: 200px; */
+  opacity: 1;
+}
+
+/* Header panel - păstrează design-ul original */
+.details-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.details-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.details-panel-toggle {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  transition: transform 0.3s ease;
+}
+
+.details-panel-toggle:hover {
+  transform: scale(1.1);
+}
+
+.details-panel.expanded .details-panel-toggle {
+  transform: rotate(180deg);
+}
+
+/* ============================================================================ */
+/* CONTENT AREA - LAYOUT PRINCIPAL DESKTOP */
+/* ============================================================================ */
+
+.details-panel-content {
+  background: white;
+  position: fixed;
+  display: flex;
+  height: 200px; /* Total - header height */
+  bottom: 0px;
+  padding: 4px;
+  gap: 8px;
+  justify-content: space-between;
+  margin-right: 4px;
+  /* border: black; */
+  border-width: 10px;
+}
+
+/* Secțiunea stânga - LAYOUT ÎN COLOANE AUTOMAT */
+.details-panel-left {
+  flex: 0 0 40%;
+  height: 100%;
+  overflow: hidden;
+  border-right-style: solid;
+  border-right-color: #e8e8e8;
+  padding-right: 8px;
+}
+
+/* Formular cu layout în coloane */
+.details-form {
+  width: 100%;
+  height: 100%;
+  
+  /* CSS Grid pentru coloane automate */
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(auto-fit, minmax(32px, max-content));
+  gap: 2px 8px;
+  
+  /* Calculează numărul de coloane în funcție de spațiul disponibil */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+/* Eliminăm .form-row - nu mai e necesar */
+.form-row {
+  display: contents; /* Face ca și cum nu ar exista */
+}
+
+/* Form groups - elemente independente */
+.form-group {
+  display: flex;
+  align-items: center;
+  /* gap: 8px; */
+  /* min-height: 32px; */
+  
+  /* Forțează dimensiuni consistente */
+  max-height: 24px;
+  flex-shrink: 0;
+}
+
+/* Labels - lățime minimă și consistentă */
+.form-group label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #495057;
+  min-width: 80px;
+  width: 80px;
+  flex-shrink: 0;
+  text-align: left;
+}
+
+/* Input-uri - lățime minimă și flexibilă */
+.form-control,
+.form-control-combo {
+  min-width: 120px;
+  flex: 1;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  font-size: 13px;
+  min-height: 24px;
+  transition: all 0.2s ease;
+}
+
+.form-control {
+  padding: 4px 8px;
+}
+
+.form-control:hover {background:#edffe7}
+.form-control:focus {
+  outline: none;
+  border-color: #4caf50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15);
+  background:#edffe7b8
+}
+
+.form-control:disabled {
+  background-color: #f8f9fa;
+  cursor: auto !important;
+  opacity: .6 !important;
+}
+
+/* Secțiunea mijloc - păstrează structura existentă */
+.details-panel-middle {
+  /* flex: 0 0 50%; */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Secțiunea dreapta - păstrează butoanele */
+.details-panel-right {
+  flex: 0 0 10%;
+  /* min-width: 120px; */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* padding: 5px; */
+  align-content: space-between;
+  justify-content: space-between;
+}
+
+/* ============================================================================ */
+/* RESPONSIVE - MOBILE FIRST (sub 600px) - DOAR SCROLL FIXED */
+/* ============================================================================ */
+@media (max-width: 600px) {
+  .details-panel.expanded {
+    /* height: auto; */ /* SCHIMBAT: Înălțime automată pe mobile */
+    max-height: 350px; /* ADĂUGAT: Limitează înălțimea */
+    overflow-y: auto; /* ADĂUGAT: Permite scroll pe tot panelul */
+  }
+  
+  #tableBodyScroll:has(.details-panel.expanded) {
+    max-height: none !important;
+  }
+  
+  .details-panel-content {
+    height: auto; /* SCHIMBAT: Înălțime automată */
+    display: block; /* Stack vertical pe mobile */
+    overflow-y: visible; /* SCHIMBAT: Lasă scroll-ul pe părinte */
+    width: 100%;
+  }
+
+  /* Secțiunea stânga - o singură coloană */
+  .details-panel-left {
+    flex: none;
+    height: auto;
+    padding-right: 0;
+    margin-bottom: 0px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 16px;
+    border-style: none;
+  }
+
+  .details-form {
+    /* O singură coloană pe mobile */
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: auto;
+  }
+
+  .form-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .form-group label {
+    width: 100%;
+    min-width: auto;
+    font-weight: 600;
+  }
+
+  .form-control,
+  .form-control-combo {
+    width: 100% !important;
+    /* min-width: auto; */
+  }
+
+  /* Secțiunea mijloc - sub stânga */
+  .details-panel-middle {
+    flex: none;
+    margin-bottom: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  /* Secțiunea dreapta - butoane în bottom */
+  .details-panel-right {
+    position: sticky !important;
+    bottom: 0 !important;
+    background: white !important;
+    border-top: 1px solid #e0e0e0 !important;
+    z-index: 10 !important;
+    display: flex;
+    flex-direction: row-reverse;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    flex: 1;
+    max-width: 48%;
+  }
+
+  .feedback-table th {white-space: nowrap;overflow-x: hidden;font-size: 11px;}
+
+  .feedback-table td {/* font-size: 11px; */}
+}
+
+@media (max-height:750px) {
+  .details-panel.expanded {/* height: 500px; */}
+}
+
+@media (min-width:929px) and (max-width:1269px) {
+  .details-panel-left {overflow-y: scroll;}
+  .details-form {display:block}
+  .feedback-table{}
+  .feedback-table.th {}
+}
+/* ============================================================================ */
+/* RESPONSIVE - TABLET (601px - 800px) */
+/* ============================================================================ */
+
+@media (min-width: 601px) and (max-width: 928px) {
+  .details-panel.expanded {
+    height: 200px; /* Puțin mai mic pe tablet */
+  }
+  
+  .details-panel-content {
+    gap: 8px;
+  }
+
+  .details-panel-left {
+     /* Puțin mai mare pe tablet */
+     overflow-y: scroll;
+  }
+
+  .details-panel-middle {
+    flex: 0 0 45%;
+  }
+
+  /* Ajustează grid pentru tablet */
+  .details-form {
+  display: block;
+  }
+
+  .form-group label {
+    min-width: 70px;
+    width: 70px;
+  }
+
+  .form-control,
+  .form-control-combo {
+    min-width: 100px;
+  }
+
+  .btn {
+    padding: 4px 4px !important;
+}
+}
+
+/* ============================================================================ */
+/* FEEDBACK TABLE - păstrează stilurile existente */
+/* ============================================================================ */
+
+.feedback-table-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+}
+
+.feedback-table-container h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.feedback-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  margin-top: 3px;
+}
+
+.feedback-table {
+  width: 100% !important;
+  border-collapse: collapse;
+  font-size: 12px;
+  /* white-space: nowrap; */
+}
+
+.feedback-table thead {
+  background: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.feedback-table th {
+  padding: 8px 4px;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.feedback-table tbody tr {
+  border-bottom: 1px solid #c0c0c0;
+  transition: background-color 0.2s ease;
+}
+
+.feedback-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.feedback-table td {
+  padding: 2px 2px;
+  color: #212529;
+}
+
+/* ============================================================================ */
+/* BUTOANE - păstrează stilurile existente */
+/* ============================================================================ */
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: break-spaces;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
