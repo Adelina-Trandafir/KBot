@@ -11,7 +11,10 @@ Public Enum ForexeOperationKind
     Rezervare = 2
     ''' <summary>A reception added on tab1 of an open angajament.</summary>
     Receptie = 3
-    ''' <summary>A reception CHANGED. Detection not written yet: the flow is unknown (TODO).</summary>
+    ''' <summary>
+    ''' A reception CHANGED: armed by the eye of its row on tab1 (slice 0076), saved with the
+    ''' same «Salveaza» as a new one.
+    ''' </summary>
     ReceptieModificare = 4
     ''' <summary>The operator pressed Start / Gata in the floating menu themselves.</summary>
     Manual = 5
@@ -55,6 +58,15 @@ Public Class ForexeWatchEvent
     Public Property FinishedAt As Date?
     Public Property Url As String = String.Empty
     Public Property Message As String = String.Empty
+
+    ''' <summary>
+    ''' Slice 0076: what the save was about, as the page sent it (its "data" object, JSON
+    ''' text); empty when there is none. A reception: <c>{dataReceptie, rowDate, formDate}</c>
+    ''' (dates as zz/ll/aaaa). A reservation: <c>{indicator, indicatorCod, buget}</c> - the
+    ''' indicator's row of the tab0 table and its budget table, read the way ScrapeTable reads
+    ''' them. The shell parses it; this layer only carries it.
+    ''' </summary>
+    Public Property DetaliiJson As String = String.Empty
 
     ''' <summary>The code to work with: the one at the end, else the one at the start.</summary>
     Public ReadOnly Property CodEfectiv As String

@@ -221,6 +221,7 @@ Partial Class KbotForm
         tree.CollapseButtonTooltip = "Strânge arborele la o bandă îngustă." & vbLf & "Rândurile se citesc atunci prin eticheta care iese la survolare."
         tree.ColumnHeaderSeparatorColor = Color.Gainsboro
         tree.ColumnHeaderSeparatorWidth = 2
+        tree.ColumnHeaderVisible = False
         tree.Dock = DockStyle.Fill
         tree.DynamicColumns = False
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
@@ -251,7 +252,7 @@ Partial Class KbotForm
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
         tree.HeaderRightIcon = My.Resources.Resources.settings__1_
-        tree.HeaderRightIconTooltip = "Setările arborelui: coloane, sortare și rânduri ascunse."
+        tree.HeaderRightIconTooltip = "Opțiunile arborelui: sortarea și coloanele afișate." & vbLf & "Aceleași opțiuni sunt și în Setări ▸ Aplicație ▸ KBOT."
         tree.HeaderSearchIcon = My.Resources.Resources.Everaldo_Crystal_Clear_App_xmag_search_48
         tree.HeaderSearchIconTooltip = "Deschide banda de căutare peste arbore." & vbLf & "ESC golește căutarea și o închide."
         tree.HeaderSeparatorColor = Color.Gainsboro
@@ -287,7 +288,6 @@ Partial Class KbotForm
         tree.ShowRightIconOnHover = True
         tree.Size = New Size(465, 790)
         tree.TabIndex = 0
-        tree.TooltipShowOnlyOnLeftIcon = False
         tree.TreeListView = True
         ' 
         ' pnlTreeHead

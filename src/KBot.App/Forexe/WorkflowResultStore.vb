@@ -143,6 +143,122 @@ Public NotInheritable Class WorkflowResultStore
     ''' <summary>Numele tabelului de receptii din pachet.</summary>
     Private Const TABEL_RECEPTII As String = "ListaReceptii"
 
+    ' Slice 0076. The tables a ForEachVar with collectFields produces are named
+    ' "<source>_results" (WorkflowExecutor.SaveCollectedResults), and THOSE are the ones the
+    ' server reads (TABLE_RECEPTII / TABLE_INDICATORI in the Python ingest).
+    Private Const TABEL_RECEPTII_COLECTAT As String = "ListaReceptii_results"
+    Private Const TABEL_INDICATORI As String = "TabelIndicatori"
+    Private Const TABEL_INDICATORI_COLECTAT As String = "TabelIndicatori_results"
+    ''' <summary>The flag «adlop - Receptie Editata.wfl» collects with every reception row.</summary>
+    Private Const COL_CITITA As String = "Citita"
+    ''' <summary>The nested budget table of an indicator row, as the complete flow names it.</summary>
+    Public Const COL_BUGET_INDICATOR As String = "BugetIndicator"
+
+    ''' <summary>
+    ''' The package of «adlop - Receptie Editata.wfl» (slice 0076) with ONLY the reception(s)
+    ''' the flow opened: rows whose «Citita» is "1". The flag itself is taken out of the rows,
+    ''' so the server receives the same columns as from the complete flow.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>Why the other rows go.</b> They were scraped from the list but their detail
+    ''' was NOT read; sent as they are, step 4b would update their header sum with an empty
+    ''' «Detaliu» - a reception whose sum no longer adds up to its lines.</para>
+    ''' <para>The raw «ListaReceptii» is cut by the DATES of the kept rows: it has no flag, and
+    ''' its rows are not guaranteed to line up one to one with the collected ones (a row with an
+    ''' empty first field is not collected).</para>
+    ''' </remarks>
+    Public Shared Function DoarReceptiileCitite(rezultat As PrelucrareRezultat) As PrelucrareRezultat
+        Try
+            If rezultat Is Nothing OrElse rezultat.Tabele Is Nothing Then Return rezultat
+
+            Dim tabele As New Dictionary(Of String, TabelRezultat)(rezultat.Tabele)
+            Dim datePastrate As New HashSet(Of String)(StringComparer.Ordinal)
+
+            Dim colectat As TabelRezultat = Nothing
+            If rezultat.Tabele.TryGetValue(TABEL_RECEPTII_COLECTAT, colectat) AndAlso colectat IsNot Nothing Then
+                Dim pastrate As New TabelRezultat()
+                For Each rand As RandTabel In colectat
+                    Dim citita As CelulaTabel = Nothing
+                    If Not rand.TryGetValue(COL_CITITA, citita) OrElse citita Is Nothing Then Continue For
+                    If citita.TextSau(String.Empty).Trim() <> "1" Then Continue For
+                    Dim curat As New RandTabel(rand.Where(Function(c) c.Key <> COL_CITITA))
+                    pastrate.Adauga(curat)
+                    Dim data As CelulaTabel = Nothing
+                    If rand.TryGetValue(COL_DATA_RECEPTIE, data) AndAlso data IsNot Nothing Then
+                        datePastrate.Add(data.TextSau(String.Empty).Trim())
+                    End If
+                Next
+                tabele(TABEL_RECEPTII_COLECTAT) = pastrate
+            End If
+
+            Dim brut As TabelRezultat = Nothing
+            If rezultat.Tabele.TryGetValue(TABEL_RECEPTII, brut) AndAlso brut IsNot Nothing Then
+                Dim pastrate As New TabelRezultat()
+                For Each rand As RandTabel In brut
+                    Dim data As CelulaTabel = Nothing
+                    If rand.TryGetValue(COL_DATA_RECEPTIE, data) AndAlso data IsNot Nothing AndAlso
+                       datePastrate.Contains(data.TextSau(String.Empty).Trim()) Then
+                        pastrate.Adauga(rand)
+                    End If
+                Next
+                tabele(TABEL_RECEPTII) = pastrate
+            End If
+
+            Return New PrelucrareRezultat With {
+                .CodAngajament = rezultat.CodAngajament,
+                .Moment = rezultat.Moment,
+                .Workflow = rezultat.Workflow,
+                .Scalari = rezultat.Scalari,
+                .Tabele = tabele
+            }
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowResultStore.DoarReceptiileCitite", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The package of «adlop - Rezervari Editate.wfl» (slice 0076) with the indicator rows the
+    ''' FOREXE page kept after each reservation save: the SAME two tables «adlop - Rezervari
+    ''' Angajament.wfl» produces in its section 1 - «TabelIndicatori» (the rows) and
+    ''' «TabelIndicatori_results» (each row plus its nested «BugetIndicator») - so the server
+    ''' sees no difference from a flow that read them itself.
+    ''' </summary>
+    ''' <param name="indicatori">
+    ''' The kept rows, each already carrying «BugetIndicator» as a list cell. Only the edited
+    ''' indicators: the server's step 2 inserts or updates the rows it receives and leaves the
+    ''' others alone.
+    ''' </param>
+    Public Shared Function CuIndicatoriMemorati(rezultat As PrelucrareRezultat,
+                                                indicatori As IReadOnlyList(Of RandTabel)) As PrelucrareRezultat
+        Try
+            ArgumentNullException.ThrowIfNull(rezultat)
+            Dim tabele As New Dictionary(Of String, TabelRezultat)(
+                If(rezultat.Tabele, New Dictionary(Of String, TabelRezultat)()))
+            If indicatori IsNot Nothing AndAlso indicatori.Count > 0 Then
+                Dim colectat As New TabelRezultat()
+                Dim brut As New TabelRezultat()
+                For Each rand As RandTabel In indicatori
+                    If rand Is Nothing Then Continue For
+                    colectat.Adauga(rand)
+                    brut.Adauga(New RandTabel(rand.Where(Function(c) c.Key <> COL_BUGET_INDICATOR)))
+                Next
+                tabele(TABEL_INDICATORI_COLECTAT) = colectat
+                tabele(TABEL_INDICATORI) = brut
+            End If
+            Return New PrelucrareRezultat With {
+                .CodAngajament = rezultat.CodAngajament,
+                .Moment = rezultat.Moment,
+                .Workflow = rezultat.Workflow,
+                .Scalari = rezultat.Scalari,
+                .Tabele = tabele
+            }
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowResultStore.CuIndicatoriMemorati", ex)
+            Throw
+        End Try
+    End Function
+
     ''' <summary>
     ''' ACELASI pachet, dar fara randurile receptiilor pe care operatorul nu le-a bifat (felia
     ''' 0060). Un pachet din care nu e nimic de scos se intoarce NESCHIMBAT, aceeasi instanta.
@@ -167,19 +283,25 @@ Public NotInheritable Class WorkflowResultStore
             Dim desarit As New HashSet(Of Date)(dateSarite.Select(Function(d) d.Date))
             If desarit.Count = 0 Then Return rezultat
 
-            Dim receptii As TabelRezultat = Nothing
-            If Not rezultat.Tabele.TryGetValue(TABEL_RECEPTII, receptii) OrElse receptii Is Nothing Then
-                Return rezultat
-            End If
-
-            Dim pastrate As New TabelRezultat()
-            For Each rand As RandTabel In receptii
-                If Not EDeSarit(rand, desarit) Then pastrate.Adauga(rand)
-            Next
-            If pastrate.Count = receptii.Count Then Return rezultat
-
+            ' Slice 0076: BOTH tables. Until then only the raw «ListaReceptii» was cut, but the
+            ' server reads «ListaReceptii_results» (TABLE_RECEPTII in prelucrare_pasi.py), the
+            ' one ForEachVar collects - so the skipped rows still reached step 4b with an empty
+            ' «Detaliu», which is exactly the half-updated reception this cut exists to prevent.
             Dim tabele As New Dictionary(Of String, TabelRezultat)(rezultat.Tabele)
-            tabele(TABEL_RECEPTII) = pastrate
+            Dim schimbat As Boolean = False
+            For Each nume As String In {TABEL_RECEPTII, TABEL_RECEPTII_COLECTAT}
+                Dim receptii As TabelRezultat = Nothing
+                If Not rezultat.Tabele.TryGetValue(nume, receptii) OrElse receptii Is Nothing Then Continue For
+                Dim pastrate As New TabelRezultat()
+                For Each rand As RandTabel In receptii
+                    If Not EDeSarit(rand, desarit) Then pastrate.Adauga(rand)
+                Next
+                If pastrate.Count = receptii.Count Then Continue For
+                tabele(nume) = pastrate
+                schimbat = True
+            Next
+            If Not schimbat Then Return rezultat
+
             Return New PrelucrareRezultat With {
                 .CodAngajament = rezultat.CodAngajament,
                 .Moment = rezultat.Moment,

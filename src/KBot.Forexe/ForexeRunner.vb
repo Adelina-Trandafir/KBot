@@ -35,8 +35,15 @@ Namespace KBot.Forexe
         ' Token-ul bearer și adresa stau în ApiClient; re-login-ul e transparent aici.
         Private ReadOnly _excelProcessor As Func(Of ExcelJob, CancellationToken, Task(Of String))
 
-        Public Sub New(excelProcessor As Func(Of ExcelJob, CancellationToken, Task(Of String)))
+        ' Slice 0076: who reserves the ids the FOREXE page writes into a reservation's motive /
+        ' a reception's description - (tip, cod) -> the marker text. The same kind of DI bridge
+        ' as the Excel one: the HTTP call lives in ApiClient, FOREXE only gets this Func.
+        Private ReadOnly _marcajProvider As Func(Of String, String, CancellationToken, Task(Of String))
+
+        Public Sub New(excelProcessor As Func(Of ExcelJob, CancellationToken, Task(Of String)),
+                       marcajProvider As Func(Of String, String, CancellationToken, Task(Of String)))
             _excelProcessor = excelProcessor
+            _marcajProvider = marcajProvider
         End Sub
 
         ''' <summary>
@@ -397,6 +404,7 @@ Namespace KBot.Forexe
                 ' Procesorul Excel pentru apelurile parseExcel din workflow. Tot HTTP-ul
                 ' (adresă + token bearer + POST) stă în ApiClient; re-login-ul e transparent.
                 _executor.SetExcelProcessor(_excelProcessor)
+                _executor.SetMarcajProvider(_marcajProvider)
 
                 AddHandler _executor.OnStatusUpdate, AddressOf OnExecutorStatus
                 AddHandler _executor.OnLogMessage, AddressOf OnExecutorLogMessage

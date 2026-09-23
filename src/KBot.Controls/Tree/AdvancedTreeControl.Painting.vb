@@ -789,7 +789,7 @@ Partial Public Class AdvancedTreeControl
     ''' </summary>
     Private Sub DrawColumnHeaders(g As Graphics)
         Dim visCols As Integer = GetVisibleColumnCount()
-        If Not _treeListViewEnabled OrElse Not _treeListView OrElse visCols = 0 Then Return
+        If Not _treeListViewEnabled OrElse Not _treeListView OrElse visCols = 0 OrElse Not _columnHeaderVisible Then Return
         Try
             Dim headerOff As Integer = If(_headerVisible, _headerHeight, 0) +
                                        If(_isSearchMode, _searchBarHeight, 0)

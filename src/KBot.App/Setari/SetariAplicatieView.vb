@@ -19,6 +19,12 @@ Imports KBot.Theming
 ''' and its effect is immediate. The folder grid is a set edited cell by cell, validated at
 ''' STARTUP (a path that cannot be written stops the launch), so it is written once, on
 ''' purpose, and the page says a restart is needed.</para>
+'''
+''' <para><b>Three tabs (slice 0777).</b> A horizontal <see cref="KBotNavList"/> on top, like the
+''' vertical one of the settings window: «Generale» (the switches), «Documente» (PDF / Excel)
+''' and «KBOT» (the main tree: its order and, per order, the CODANGAJAMENT / SURSE columns --
+''' the same keys the menu of the tree header's icon writes). The page follows
+''' <see cref="AppSettings.Changed"/> so a choice made in that menu shows here at once.</para>
 ''' </summary>
 Public Class SetariAplicatieView
     Implements ISetariView, IThemedContainer
@@ -29,9 +35,63 @@ Public Class SetariAplicatieView
     ' Guards the change handlers while the page fills its controls from the stores.
     Private _suppress As Boolean
 
+    ' Tab keys of navPagini (authored in the designer).
+    Private Const PAGE_GENERALE As String = "generale"
+    Private Const PAGE_DOCUMENTE As String = "documente"
+    Private Const PAGE_KBOT As String = "kbot"
+
     Public Sub New()
         InitializeComponent()
         BuildCombos()
+        ' Raises SelectionChanged, which shows the first tab.
+        navPagini.SelectedKey = PAGE_GENERALE
+    End Sub
+
+    ' ---------------- tabs ----------------
+
+    Private Sub NavPagini_SelectionChanged(key As String) Handles navPagini.SelectionChanged
+        Try
+            Dim page As Control
+            Select Case key
+                Case PAGE_GENERALE : page = tlyGenerale
+                Case PAGE_DOCUMENTE : page = tlyPaginaDocumente
+                Case PAGE_KBOT : page = tlyPaginaKbot
+                Case Else
+                    ' No silent no-ops: a tab added in the designer and forgotten here must show.
+                    Throw New ArgumentException("Pagină necunoscută în setările aplicației: «" & key & "».")
+            End Select
+            For Each p As Control In New Control() {tlyGenerale, tlyPaginaDocumente, tlyPaginaKbot}
+                p.Visible = ReferenceEquals(p, page)
+            Next
+        Catch ex As Exception
+            ' UI boundary (event handler): log and swallow.
+            GlobalErrorLog.Write("SetariAplicatieView.NavPagini_SelectionChanged", ex)
+        End Try
+    End Sub
+
+    ' The shared store can change under the page (the tree header's menu): follow it while
+    ' the page has a window. AppSettings is static, so the subscription ends with the handle.
+    Protected Overrides Sub OnHandleCreated(e As EventArgs)
+        MyBase.OnHandleCreated(e)
+        AddHandler AppSettings.Changed, AddressOf AppSettings_Changed
+    End Sub
+
+    Protected Overrides Sub OnHandleDestroyed(e As EventArgs)
+        RemoveHandler AppSettings.Changed, AddressOf AppSettings_Changed
+        MyBase.OnHandleDestroyed(e)
+    End Sub
+
+    Private Sub AppSettings_Changed(sender As Object, e As EventArgs)
+        Try
+            If IsDisposed OrElse Not IsHandleCreated Then Return
+            If InvokeRequired Then
+                BeginInvoke(New Action(AddressOf IncarcaArborele))
+            Else
+                IncarcaArborele()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariAplicatieView.AppSettings_Changed", ex)
+        End Try
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements ISetariView.ViewKey
@@ -48,6 +108,7 @@ Public Class SetariAplicatieView
         Try
             IncarcaComutatoarele()
             IncarcaDocumentele()
+            IncarcaArborele()
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.Activated", ex)
         End Try
@@ -67,6 +128,9 @@ Public Class SetariAplicatieView
             For Each r As ExcelRibbonMode In New ExcelRibbonMode() {ExcelRibbonMode.HideDockWindow, ExcelRibbonMode.Excel4Macro}
                 cboExcelRibbon.Items.Add(New RibbonItem(r))
             Next
+
+            cboSortare.Items.Add(New SortItem(AppSettings.TreeSortName, "După nume"))
+            cboSortare.Items.Add(New SortItem(AppSettings.TreeSortDate, "După data creării"))
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.BuildCombos", ex)
             Throw
@@ -116,6 +180,7 @@ Public Class SetariAplicatieView
             RaiseEvent StatusChanged("Setarea nu a putut fi salvată: " & ex.Message)
             IncarcaComutatoarele()
             IncarcaDocumentele()
+            IncarcaArborele()
         End Try
     End Sub
 
@@ -240,6 +305,118 @@ Public Class SetariAplicatieView
                           "Panglica Excel: " & item.ToString() & ". Se aplică documentului următor.")
     End Sub
 
+    ' ---------------- KBOT: the main tree (slice 0777) ----------------
+
+    ' Also reached from AppSettings.Changed, i.e. possibly from inside SalveazaComutator's
+    ' own Save: the previous suppress state is put back, not forced to False.
+    Private Sub IncarcaArborele()
+        Dim before As Boolean = _suppress
+        _suppress = True
+        Try
+            Dim s As AppSettings = AppSettings.Current
+            Dim wanted As String = If(s.TreeSortIsDate, AppSettings.TreeSortDate, AppSettings.TreeSortName)
+            For i As Integer = 0 To cboSortare.Items.Count - 1
+                If DirectCast(cboSortare.Items(i), SortItem).Value = wanted Then cboSortare.SelectedIndex = i : Exit For
+            Next
+            chkNumeCod.Checked = s.TreeNameShowCod
+            chkNumeSurse.Checked = s.TreeNameShowSurse
+            chkDataCod.Checked = s.TreeDateShowCod
+            chkDataSurse.Checked = s.TreeDateShowSurse
+            txtLatimeCod.Text = s.TreeCodColumnWidth.ToString(Globalization.CultureInfo.InvariantCulture)
+            txtLatimeSurse.Text = s.TreeSurseColumnWidth.ToString(Globalization.CultureInfo.InvariantCulture)
+        Finally
+            _suppress = before
+        End Try
+    End Sub
+
+    Private Sub CboSortare_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSortare.SelectedIndexChanged
+        Dim item As SortItem = TryCast(cboSortare.SelectedItem, SortItem)
+        If item Is Nothing Then Return
+        SalveazaComutator(Sub(s) s.TreeSort = item.Value,
+                          "Arborele de angajamente se sortează " & item.ToString().ToLowerInvariant() & ".")
+    End Sub
+
+    Private Sub ChkNumeCod_CheckedChanged(sender As Object, e As EventArgs) Handles chkNumeCod.CheckedChanged
+        SalveazaComutator(Sub(s) s.TreeNameShowCod = chkNumeCod.Checked,
+                          ColumnMessage("CODANGAJAMENT", "după nume", chkNumeCod.Checked))
+    End Sub
+
+    Private Sub ChkNumeSurse_CheckedChanged(sender As Object, e As EventArgs) Handles chkNumeSurse.CheckedChanged
+        SalveazaComutator(Sub(s) s.TreeNameShowSurse = chkNumeSurse.Checked,
+                          ColumnMessage("SURSE", "după nume", chkNumeSurse.Checked))
+    End Sub
+
+    Private Sub ChkDataCod_CheckedChanged(sender As Object, e As EventArgs) Handles chkDataCod.CheckedChanged
+        SalveazaComutator(Sub(s) s.TreeDateShowCod = chkDataCod.Checked,
+                          ColumnMessage("CODANGAJAMENT", "după dată", chkDataCod.Checked))
+    End Sub
+
+    Private Sub ChkDataSurse_CheckedChanged(sender As Object, e As EventArgs) Handles chkDataSurse.CheckedChanged
+        SalveazaComutator(Sub(s) s.TreeDateShowSurse = chkDataSurse.Checked,
+                          ColumnMessage("SURSE", "după dată", chkDataSurse.Checked))
+    End Sub
+
+    ' The widths save when the field is left or on Enter -- not on every keystroke, where
+    ' «1» on the way to «140» would already re-lay the tree with a 1 px column.
+    Private Sub TxtLatimeCod_Leave(sender As Object, e As EventArgs) Handles txtLatimeCod.Leave
+        SalveazaLatimea(txtLatimeCod, "CODANGAJAMENT",
+                        Function(s) s.TreeCodColumnWidth, Sub(s, w) s.TreeCodColumnWidth = w)
+    End Sub
+
+    Private Sub TxtLatimeSurse_Leave(sender As Object, e As EventArgs) Handles txtLatimeSurse.Leave
+        SalveazaLatimea(txtLatimeSurse, "SURSE",
+                        Function(s) s.TreeSurseColumnWidth, Sub(s, w) s.TreeSurseColumnWidth = w)
+    End Sub
+
+    Private Sub TxtLatime_FieldKeyDown(sender As Object, e As KeyEventArgs) Handles txtLatimeCod.FieldKeyDown, txtLatimeSurse.FieldKeyDown
+        Try
+            If e.KeyCode <> Keys.Enter Then Return
+            e.SuppressKeyPress = True
+            If ReferenceEquals(sender, txtLatimeCod) Then
+                TxtLatimeCod_Leave(sender, EventArgs.Empty)
+            Else
+                TxtLatimeSurse_Leave(sender, EventArgs.Empty)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariAplicatieView.TxtLatime_FieldKeyDown", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Validates one width field and saves it. Not a whole number in range -> the band says
+    ''' why and the field goes back to the stored value. Unchanged -> nothing is written.
+    ''' </summary>
+    Private Sub SalveazaLatimea(field As KBotTextField, column As String,
+                                read As Func(Of AppSettings, Integer),
+                                write As Action(Of AppSettings, Integer))
+        Try
+            If _suppress Then Return
+            Dim stored As Integer = read(AppSettings.Current)
+            Dim raw As String = If(field.Text, String.Empty).Trim()
+            Dim asked As Integer
+            If Not Integer.TryParse(raw, Globalization.NumberStyles.None,
+                                    Globalization.CultureInfo.InvariantCulture, asked) OrElse
+               Not AppSettings.IsValidTreeColumnWidth(asked) Then
+                RaiseEvent StatusChanged("Lățimea coloanei " & column & " trebuie să fie un număr între " &
+                                         AppSettings.TreeColumnWidthMin & " și " & AppSettings.TreeColumnWidthMax &
+                                         ". A rămas " & stored & ".")
+                IncarcaArborele()
+                Return
+            End If
+            If asked = stored Then Return
+            SalveazaComutator(Sub(s) write(s, asked),
+                              "Coloana " & column & " are acum " & asked & " px.")
+        Catch ex As Exception
+            ' Reached from Leave / KeyDown only: UI boundary, log and swallow.
+            GlobalErrorLog.Write("SetariAplicatieView.SalveazaLatimea", ex)
+        End Try
+    End Sub
+
+    Private Shared Function ColumnMessage(column As String, sortText As String, shown As Boolean) As String
+        Return "Coloana " & column & " este " & If(shown, "afișată", "ascunsă") &
+               " la sortarea " & sortText & "."
+    End Function
+
     ' ---------------- theme ----------------
 
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
@@ -247,10 +424,13 @@ Public Class SetariAplicatieView
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
             BackColor = p.SurfaceAltColor
-            tlyBody.BackColor = p.SurfaceAltColor
-            tlyComutatoare.BackColor = p.SurfaceAltColor
-            tlyDocumente.BackColor = p.SurfaceAltColor
-            For Each caption As Label In New Label() {lblVerbose, lblAdobeMotor, lblExcelRibbon}
+            For Each t As Control In New Control() {tlyGenerale, tlyComutatoare, tlyPaginaDocumente, tlyDocumente,
+                                                   tlyPaginaKbot, tlyArbore}
+                t.BackColor = p.SurfaceAltColor
+            Next
+            For Each caption As Label In New Label() {lblVerbose, lblAdobeMotor, lblExcelRibbon,
+                                                      lblSortare, lblColoaneNume, lblColoaneData,
+                                                      lblLatimeCod, lblLatimeSurse}
                 caption.ForeColor = p.TextDimColor
                 caption.BackColor = Color.Transparent
             Next
@@ -267,6 +447,20 @@ Public Class SetariAplicatieView
         Private ReadOnly _label As String
 
         Public Sub New(value As Boolean?, label As String)
+            Me.Value = value
+            _label = label
+        End Sub
+
+        Public Overrides Function ToString() As String
+            Return _label
+        End Function
+    End Class
+
+    Private NotInheritable Class SortItem
+        Public ReadOnly Property Value As String
+        Private ReadOnly _label As String
+
+        Public Sub New(value As String, label As String)
             Me.Value = value
             _label = label
         End Sub

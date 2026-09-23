@@ -1,3 +1,4 @@
+Imports System.Threading
 Imports KBot.Common
 Imports Newtonsoft.Json.Linq
 
@@ -208,7 +209,15 @@ Partial Public Class WorkflowExecutor
         Dim ev As ForexeWatchEvent = Nothing
         Dim parseEx As Exception = Nothing
         Try
-            ev = BuildWatchEvent(JObject.Parse(jsonArgs))
+            Dim obj As JObject = JObject.Parse(jsonArgs)
+            ' Slice 0076: a marker request is not an operation - answered here, never raised.
+            If String.Equals(TextOf(obj, "event"), "marcaj", StringComparison.OrdinalIgnoreCase) Then
+                Dim cod As String = TextOf(obj, "cod")
+                If String.IsNullOrWhiteSpace(cod) Then cod = TextOf(obj, "codAtStart")
+                RaspundeLaMarcaj(TextOf(obj, "requestId"), TextOf(obj, "tip"), cod)
+                Return
+            End If
+            ev = BuildWatchEvent(obj)
         Catch ex As Exception
             parseEx = ex
         End Try
@@ -243,9 +252,67 @@ Partial Public Class WorkflowExecutor
         RaiseEvent OnWatchEvent(ev)
     End Sub
 
+    ' =========================================================================
+    '  Markers (slice 0076) - the page asks, the server reserves, the page is told
+    ' =========================================================================
+    ''' <summary>
+    ''' Who reserves a marker: (tip = "rezervare" | "receptie", angajament code) -> the
+    ''' marker text, e.g. "(IDREV: 112)". Set by the runner from what the shell registered;
+    ''' Nothing = markers are not available, and the page saves without one.
+    ''' </summary>
+    Private _marcajProvider As Func(Of String, String, CancellationToken, Task(Of String))
+
+    Public Sub SetMarcajProvider(provider As Func(Of String, String, CancellationToken, Task(Of String)))
+        _marcajProvider = provider
+    End Sub
+
+    ' The page holds a save click until it gets an answer (or its own timeout runs out), so
+    ' this ALWAYS answers - with the marker, or with an empty text and the reason.
+    ' Async Sub from the Playwright callback: log and swallow, never rethrow.
+    Private Async Sub RaspundeLaMarcaj(requestId As String, tip As String, cod As String)
+        Dim marcaj As String = String.Empty
+        Dim motiv As String = String.Empty
+        Try
+            If _marcajProvider Is Nothing Then
+                motiv = "K-BOT nu poate rezerva marcaje în sesiunea asta."
+            ElseIf String.IsNullOrWhiteSpace(cod) Then
+                motiv = "pagina nu arată codul angajamentului."
+            Else
+                marcaj = If(Await _marcajProvider(tip, cod.Trim(), CancellationToken.None), String.Empty)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowExecutor.RaspundeLaMarcaj", ex)
+            motiv = ex.Message
+        End Try
+
+        If String.IsNullOrEmpty(marcaj) Then
+            _logger.LogWarning($"[Urmărire] Salvarea ({tip}) pleacă fără marcaj K-BOT: {motiv}")
+        Else
+            _logger.LogInfo($"[Urmărire] Marcajul {marcaj} a fost pus în {If(tip = "rezervare", "motivul rezervării", "descrierea recepției")}.")
+        End If
+
+        Try
+            If _page Is Nothing OrElse _page.IsClosed Then Return
+            Dim arg As String = New JObject(
+                New JProperty("id", requestId),
+                New JProperty("t", marcaj),
+                New JProperty("m", motiv)).ToString(Newtonsoft.Json.Formatting.None)
+            Await _page.EvaluateAsync(Of Object)(
+                "(a) => { const o = JSON.parse(a); if (window._kbotWatch && window._kbotWatch.setMarcaj) { window._kbotWatch.setMarcaj(o.id, o.t, o.m); } }",
+                arg)
+        Catch ex As Exception
+            ' The page navigated meanwhile: its own timeout lets the save through unmarked.
+            GlobalErrorLog.Write("WorkflowExecutor.RaspundeLaMarcaj", ex)
+            _logger.LogDebug($"[Urmărire] Răspunsul cu marcajul nu a ajuns în pagină: {ex.Message}")
+        End Try
+    End Sub
+
     Private Shared Function BuildWatchEvent(obj As JObject) As ForexeWatchEvent
         Dim opName As String = TextOf(obj, "op")
+        Dim detalii As JToken = obj("data")
         Return New ForexeWatchEvent With {
+            .DetaliiJson = If(detalii Is Nothing OrElse detalii.Type = JTokenType.Null,
+                              String.Empty, detalii.ToString(Newtonsoft.Json.Formatting.None)),
             .Kind = ForexeWatchEvent.ParseKind(TextOf(obj, "event")),
             .Operation = ForexeWatchEvent.ParseOperation(opName),
             .OperationName = opName,

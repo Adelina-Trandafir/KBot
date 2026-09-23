@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Workflow name="Recepție editată {{COD_ANGAJAMENT}}" startUrl="current"
+  expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
+  <!-- V.1 - 23/09/2026 (slice 0076)
+    Run by K-BOT right after the operator SAVED a reception by hand in the «Browser FOREXE»
+    view (a new one, or an existing one opened with the eye of its row). The operator is
+    on the angajament's page, on the receptions tab, so there is NO preamble here: no
+    reset, no search, no «Modificare» (operator, 23.09.2026). The footer icon of the
+    receptions tree keeps its own file, «adlop - Receptii Angajament.wfl», which does
+    search, because it can be pressed with the browser anywhere.
+
+    ONE reception is read, not all of them:
+      {{RECEPTIE_TINTA}} = ULTIMA      a NEW reception: the last row of the list;
+      {{RECEPTIE_TINTA}} = zz/ll/aaaa  an EDITED one: the row(s) with that date - the date
+                                       the page read from the form (or from the row whose
+                                       eye was pressed). Two receptions of the same day are
+                                       both read: the whole pipeline names a reception by its
+                                       date (see WorkflowCatalog.ListaDatelorSarite).
+    Every other row keeps «Citita» = 0 and K-BOT drops it before anything goes to the
+    server (WorkflowResultStore.DoarReceptiileCitite): a row sent without its detail would
+    make the server update the header sum without the lines.
+
+    The history is read like «adlop - Istoric Angajament REVERSE.wfl»: from the LAST page
+    backwards, stopping at {{DATA_IESIRE}} (the newest DataFX K-BOT already has). With no
+    local history K-BOT sends a pattern that never matches, so the whole history is read.
+
+    Every selector of the reception section is the one «adlop - Prelucrare Completa.wfl»
+    uses (decision D11): same table, same eye, same inner table, same names.
+
+    Variables expected from K-BOT:
+      {{COD_ANGAJAMENT}}   - for the log lines only; the page is already on the angajament
+      {{RECEPTIE_TINTA}}   - ULTIMA, or the date of the reception (zz/ll/aaaa)
+      {{DATA_IESIRE}}      - where the reverse history read stops
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 0 - the angajament header (.well)
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ Recepția salvată în FOREXE — citesc antetul angajamentului ══" level="action" />
+
+  <WaitFor selector=".well.well-small h4 span:nth-child(2)" timeout="15" />
+  <Read selector=".well.well-small h4 span:nth-child(2)" saveTo="CodAngajament" />
+  <Read
+    selector=".well.well-small div.clearfix:has(strong:has-text('Dată angajament')) span:last-child"
+    saveTo="DataAngajament" />
+  <IfExists
+    selector=".well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child">
+    <Read
+      selector=".well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child"
+      saveTo="DataInceputDerulare" />
+  </IfExists>
+
+  <IfExists
+    selector=".well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child">
+    <Read
+      selector=".well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child"
+      saveTo="UltimaModificare" />
+  </IfExists>
+
+  <Read selector=".well.well-small div.pull-left p" saveTo="DescriereAngajament" />
+  <Read selector=".well.well-small span.label" saveTo="StareAngajament" />
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 2 - the ONE reception that was saved
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ Citesc recepția salvată ({{RECEPTIE_TINTA}}) ══" level="action" />
+
+  <IfExists selector="li.tab1" timeout="15">
+
+    <!-- Already there as a rule; pressed anyway, a save may land on the first tab. -->
+    <Click selector="li.tab1 a" timeout="15" />
+    <WaitFor selector="li.tab1.active" state="visible" timeout="15" />
+
+    <IfExists selector="table.table-striped.table-bordered.table-condensed tbody tr" timeout="15">
+
+      <ScrapeTable selector="table.table-striped.table-bordered.table-condensed"
+        saveTo="ListaReceptii"
+        timeout="15" />
+
+      <ForEachVar source="ListaReceptii" itemPrefix="R" indexVariable="idx"
+        collectFields="Tip,Data,Suma,TipReceptie,DescriereReceptie,CodIndicator,Detaliu,Citita">
+
+        <!-- Is this the row? «Citita» decides, and it travels with the row. -->
+        <SetInternalVar name="Citita" value="0" />
+        <IfVar value="{{RECEPTIE_TINTA}}" compare="eq:ULTIMA">
+          <IfVar value="[[R.IsLast]]" compare="eq:true">
+            <SetInternalVar name="Citita" value="1" />
+          </IfVar>
+          <Else>
+            <IfVar value="[[R.Data]]" compare="eq:{{RECEPTIE_TINTA}}">
+              <SetInternalVar name="Citita" value="1" />
+            </IfVar>
+          </Else>
+        </IfVar>
+
+        <IfVar value="[[Citita]]" compare="eq:1">
+
+          <Log message="Citesc recepția [[idx]]: [[R.Tip]] / [[R.Data]] / [[R.Suma]]..."
+            level="info" />
+
+          <!-- nth-child is 1-based, exactly like idx -->
+          <Click
+            selector="table.table-striped.table-bordered.table-condensed tbody tr:nth-child([[idx]]) .glyphicon-eye-open"
+            waitNavigation="false" timeout="15" />
+
+          <WaitFor selector="h3.heading:has-text('Modifică recepție')" timeout="15" />
+          <WaitFor selector="select[name='receptie']" timeout="15" />
+
+          <Read selector="select[name='receptie']" saveTo="TipReceptie" />
+          <Read selector="textarea[name='descriere']" saveTo="DescriereReceptie" />
+
+          <ScrapeTable selector="table.table-striped.table-bordered.table-hover.table-condensed"
+            saveTo="Detaliu"
+            nextPageSelector="a[rel='next']"
+            waitSelector="table.table-striped.table-bordered.table-hover.table-condensed"
+            fingerprintSelector="table.table-striped.table-bordered.table-hover.table-condensed tbody tr:last-child td:last-child"
+            timeout="15" />
+
+          <Read
+            selector="table.table-striped.table-bordered.table-hover.table-condensed tbody tr:first-child td:nth-child(1) span"
+            saveTo="CodIndicator" />
+
+          <Log message="✓ Recepția [[idx]] citită. Revin la listă..." level="success" />
+
+          <!-- Browser back: the page's own «Înapoi» asks for a confirmation in a modal -->
+          <GoBack />
+          <WaitFor selector="li.tab1.active" state="visible" timeout="15" />
+
+          <Else>
+            <!-- Emptied on purpose, like the skip branch of the complete flow: a missing
+                 field is read from the variable of the same name, whose LAST value would
+                 be the neighbour's. "[]" for Detaliu - the server wants a list there. -->
+            <SetInternalVar name="Detaliu" value="[]" />
+            <SetInternalVar name="TipReceptie" value="" />
+            <SetInternalVar name="DescriereReceptie" value="" />
+            <SetInternalVar name="CodIndicator" value="" />
+          </Else>
+        </IfVar>
+
+      </ForEachVar>
+
+      <Else>
+        <Log message="Tabul Recepții nu conține înregistrări pentru {{COD_ANGAJAMENT}}."
+          level="warning" />
+      </Else>
+    </IfExists>
+
+    <Else>
+      <Log message="Tabul Recepții (tab1) nu este disponibil pentru {{COD_ANGAJAMENT}}."
+        level="warning" />
+    </Else>
+  </IfExists>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 4 - the history, from the last page backwards
+       «Istoric» lives on tab0 only.
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ Istoricul angajamentului (de la sfârșit, până la {{DATA_IESIRE}}) ══"
+    level="action" />
+
+  <Click selector="li.tab0 a" timeout="15" />
+  <WaitFor selector="li.tab0.active" timeout="15" />
+
+  <Click selector="button.btn-success:has-text('Istoric')" waitNavigation="true" timeout="15" />
+  <WaitFor selector="h3.heading:has-text('Istoric angajament')" timeout="15" />
+
+  <IfExists selector="table.table-striped tbody tr" timeout="15">
+
+    <ScrapeTable selector="table.table-striped"
+      saveTo="TabelIstoric"
+      lastPageSelector="a.last"
+      prevPageSelector="a.prev"
+      waitSelector="table.table-striped"
+      fingerprintSelector="table.table-striped tbody tr:last-child td:last-child"
+      exitIfCellEquals="Timp:~:^{{DATA_IESIRE}}"
+      startFromLast="true"
+      timeout="15" />
+    <Log message="✓ Istoric citit." level="success" />
+
+    <Else>
+      <Log message="Pagina Istoric nu conține înregistrări pentru {{COD_ANGAJAMENT}}."
+        level="warning" />
+    </Else>
+  </IfExists>
+
+  <!-- Back to the angajament, and to the receptions tab the operator was on. -->
+  <IfExists selector="button.btn-default:has-text('Înapoi')" timeout="5">
+    <Click selector="button.btn-default:has-text('Înapoi')" waitNavigation="true" timeout="15" />
+    <WaitFor selector="li.tab0" timeout="15" />
+  </IfExists>
+  <IfExists selector="li.tab1" timeout="5">
+    <Click selector="li.tab1 a" timeout="15" />
+    <WaitFor selector="li.tab1.active" state="visible" timeout="15" />
+  </IfExists>
+
+  <Log message="══ Recepția și istoricul angajamentului {{COD_ANGAJAMENT}} au fost citite. ══"
+    level="success" />
+
+</Workflow>

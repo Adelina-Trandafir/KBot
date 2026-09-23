@@ -2,8 +2,10 @@
 <Workflow name="Recepții {{COD_ANGAJAMENT}}" startUrl="current"
   expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
   <!-- V.2 - 22/09/2026 — felia 0060
-       V.3 - 23/09/2026 — fara felie - incep direct de la pagina curenta. nu deschid lista angajamentelor, 
-	                                   nu caut angajamentul, nu deschid tabul 0. Operatorul a facut deja asta.
+       V.4 - 23/09/2026 - slice 0076: V.3 (start straight from the current page) MOVED to
+             «adlop - Receptie Editata.wfl». This file is also run by the footer icon of the
+             receptions tree, which can be pressed with the browser anywhere, so it searches
+             and opens the angajament itself again, as before V.3.
     Flux PARȚIAL — recepțiile unui angajament (+ istoricul lui)
     ───────────────────────────────────────────────
     SEC. 0 — Citire date angajament (din .well)
@@ -35,15 +37,15 @@
        RESET INTERFAȚĂ — OBLIGATORIU LA ÎNCEPUT
        ═══════════════════════════════════════════════════════ -->
 
-  <!--<IfExists selector="#select2-drop-mask" timeout="1">
+  <IfExists selector="#select2-drop-mask" timeout="1">
     <Click selector="#select2-drop-mask" force="true"
       LogValue="Resetare interfață — închid dropdown-uri deschise" />
   </IfExists>
   <Click selector="#statlogo" waitNavigation="true" timeout="15" />
 
-  --><!-- ═══════════════════════════════════════════════════════
+  <!-- ═══════════════════════════════════════════════════════
        CĂUTARE ANGAJAMENT + DESCHIDERE MODIFICARE
-       ═══════════════════════════════════════════════════════ --><!--
+       ═══════════════════════════════════════════════════════ -->
 
   <Log message="══ Caut și deschid angajamentul {{COD_ANGAJAMENT}} ══" level="action" />
 
@@ -63,7 +65,7 @@
   <Click selector=".divaction a:has-text('Modificare')" waitNavigation="true" timeout="15" />
   <WaitFor selector="li.tab0" timeout="15" />
 
-  <Log message="Angajament {{COD_ANGAJAMENT}} deschis în modul Modificare." level="success" />-->
+  <Log message="Angajament {{COD_ANGAJAMENT}} deschis în modul Modificare." level="success" />
 
   <!-- ═══════════════════════════════════════════════════════
        SECȚIUNEA 0 — CITIRE DATE ANGAJAMENT (din .well)

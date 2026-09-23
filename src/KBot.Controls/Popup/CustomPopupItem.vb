@@ -128,6 +128,17 @@ Public NotInheritable Class CustomPopupItem
     <DefaultValue(True)>
     Public Property Enabled As Boolean = True
 
+    ''' <summary>
+    ''' Slice 0777: a check mark is drawn at the right end of the row -- the state of an option
+    ''' (a column shown, the sort in force) seen without opening another window. The popup
+    ''' reserves the band only when at least one row is checked. Clicking does NOT flip it: the
+    ''' popup closes, and the caller decides what the click means.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("True => a check mark is drawn at the right end of the row. A click does not flip it.")>
+    <DefaultValue(False)>
+    Public Property Checked As Boolean
+
     <Category("K-BOT")>
     <Description("True => linie fină neselectabilă în locul unui rând. Cheia, textul și pictograma sunt ignorate.")>
     <DefaultValue(False)>

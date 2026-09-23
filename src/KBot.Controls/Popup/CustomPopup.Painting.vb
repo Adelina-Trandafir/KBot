@@ -93,13 +93,33 @@ Partial Public Class CustomPopup
             KBotNavList.DrawItemImage(g, it.Image, dest, it.Enabled)
         End If
 
+        Dim checkW As Integer = CheckBand()
+        If it.Checked AndAlso checkW > 0 Then DrawCheckMark(g, r, padX, fore)
+
         Dim textLeft As Integer = r.Left + padX + gutter
-        Dim tr As New Rectangle(textLeft, r.Top, Math.Max(0, r.Right - padX - textLeft), r.Height)
+        Dim tr As New Rectangle(textLeft, r.Top, Math.Max(0, r.Right - padX - checkW - textLeft), r.Height)
         If tr.Width <= 0 Then Return
         ' EndEllipsis peste steagurile de măsurare: taie doar ce oricum n-ar fi încăput în
         ' MaximumPopupWidth, deci nu schimbă lățimea calculată pentru textele care încap.
         TextRenderer.DrawText(g, If(it.Text, String.Empty), Font, tr, fore,
                               MeasureFlags() Or TextFormatFlags.EndEllipsis)
+    End Sub
+
+    ' Slice 0777: the check mark of a Checked row, right-aligned inside the padding, in the
+    ' row's own text colour (so it follows the highlight and the disabled state with the text).
+    Private Sub DrawCheckMark(g As Graphics, r As Rectangle, padX As Integer, fore As Color)
+        Dim side As Integer = ThemeShapes.ScaleDpi(Me, CheckMarkLogical)
+        Dim box As New Rectangle(r.Right - padX - side, r.Top + (r.Height - side) \ 2, side, side)
+        Dim pts As PointF() = {
+            New PointF(box.Left, box.Top + side * 0.55F),
+            New PointF(box.Left + side * 0.38F, box.Bottom - side * 0.1F),
+            New PointF(box.Right, box.Top + side * 0.1F)}
+        Using pen As New Pen(fore, Math.Max(1.5F, ThemeShapes.ScaleDpi(Me, 2)))
+            pen.LineJoin = LineJoin.Round
+            pen.StartCap = LineCap.Round
+            pen.EndCap = LineCap.Round
+            g.DrawLines(pen, pts)
+        End Using
     End Sub
 
     ' Separatorul: o linie fină pe mijlocul slotului, retrasă de la margini ca să grupeze

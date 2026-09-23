@@ -52,6 +52,7 @@ Public Class CustomPopup
     Private Const IconGapLogical As Integer = 6    ' între banda de pictograme și text
     Private Const RowAirLogical As Integer = 8     ' înălțimea rândului = fontul + atât
     Private Const SeparatorLogical As Integer = 7  ' înălțimea slotului de separator
+    Private Const CheckMarkLogical As Integer = 10 ' side of the check mark at the row's right end (0777)
     Private Const BorderThickness As Integer = 1
 
     ' ── Culorile «auto» (fallback pentru orice proprietate lăsată Empty) ──────────
@@ -837,7 +838,7 @@ Public Class CustomPopup
                 If latime > textW Then textW = latime
             Next
 
-            Dim w As Integer = BorderThickness * 2 + padX + gutter + textW + padX
+            Dim w As Integer = BorderThickness * 2 + padX + gutter + textW + CheckBand() + padX
             w = Math.Max(w, ThemeShapes.ScaleDpi(Me, _minimumPopupWidth))
             w = Math.Min(w, ThemeShapes.ScaleDpi(Me, _maximumPopupWidth))
 
@@ -869,6 +870,19 @@ Public Class CustomPopup
         For Each it As CustomPopupItem In _items
             If Not it.IsSeparator AndAlso it.Image IsNot Nothing Then
                 Return side + ThemeShapes.ScaleDpi(Me, IconGapLogical)
+            End If
+        Next
+        Return 0
+    End Function
+
+    ''' <summary>
+    ''' Width of the check-mark band at the right end of the rows (0 = no row is checked).
+    ''' Slice 0777, see <see cref="CustomPopupItem.Checked"/>.
+    ''' </summary>
+    Friend Function CheckBand() As Integer
+        For Each it As CustomPopupItem In _items
+            If Not it.IsSeparator AndAlso Not it.IsSlider AndAlso it.Checked Then
+                Return ThemeShapes.ScaleDpi(Me, CheckMarkLogical + IconGapLogical)
             End If
         Next
         Return 0

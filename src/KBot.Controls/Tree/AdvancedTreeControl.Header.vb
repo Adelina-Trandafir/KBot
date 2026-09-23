@@ -160,4 +160,19 @@ Partial Public Class AdvancedTreeControl
 
         Me.Invalidate()
     End Sub
+
+    ''' <summary>
+    ''' The current rectangle of the header's right icon, in client coordinates (empty = not
+    ''' shown). Slice 0777: the host opens a <c>CustomPopup</c> under it, the way the footer
+    ''' icons already expose <see cref="FooterRightIconRect"/>. It is the rectangle the last
+    ''' paint used, i.e. exactly the one the click was hit-tested against.
+    ''' </summary>
+    <System.ComponentModel.Browsable(False)>
+    <System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property HeaderRightIconRect As Rectangle
+        Get
+            If Not _headerVisible OrElse _headerRightIcon Is Nothing Then Return Rectangle.Empty
+            Return _headerRightIconRect
+        End Get
+    End Property
 End Class

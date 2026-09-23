@@ -79,6 +79,7 @@ Partial Public Class AdvancedTreeControl
     ' VARIANTA …Px; valoarea logică rămâne pentru definiție, pentru XML și pentru teste.
     Friend ReadOnly Property ColumnHeaderHeightPx As Integer
         Get
+            If Not _columnHeaderVisible Then Return 0   ' slice 0777: band hidden, no height
             Return SY(COLUMN_HEADER_HEIGHT)
         End Get
     End Property

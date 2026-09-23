@@ -18,6 +18,9 @@ Partial Class SetariAplicatieView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
+        Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         cboVerbose = New KBotComboBox()
         chkLogViewer = New CheckBox()
@@ -26,21 +29,42 @@ Partial Class SetariAplicatieView
         cboAdobeMotor = New KBotComboBox()
         btnAdobeGazduire = New Button()
         cboExcelRibbon = New KBotComboBox()
-        tlyBody = New KBotTableLayoutPanel()
+        cboSortare = New KBotComboBox()
+        chkNumeCod = New CheckBox()
+        chkNumeSurse = New CheckBox()
+        chkDataCod = New CheckBox()
+        chkDataSurse = New CheckBox()
+        txtLatimeCod = New KBotTextField()
+        txtLatimeSurse = New KBotTextField()
+        navPagini = New KBotNavList()
+        tlyGenerale = New KBotTableLayoutPanel()
         lblTitluComutatoare = New Label()
         tlyComutatoare = New KBotTableLayoutPanel()
         lblVerbose = New Label()
+        tlyPaginaDocumente = New KBotTableLayoutPanel()
         lblTitluDocumente = New Label()
         tlyDocumente = New KBotTableLayoutPanel()
         lblAdobeMotor = New Label()
         lblExcelRibbon = New Label()
-        tlyBody.SuspendLayout()
+        tlyPaginaKbot = New KBotTableLayoutPanel()
+        lblTitluArbore = New Label()
+        tlyArbore = New KBotTableLayoutPanel()
+        lblSortare = New Label()
+        lblColoaneNume = New Label()
+        lblColoaneData = New Label()
+        lblLatimeCod = New Label()
+        lblLatimeSurse = New Label()
+        CType(navPagini, ComponentModel.ISupportInitialize).BeginInit()
+        tlyGenerale.SuspendLayout()
         tlyComutatoare.SuspendLayout()
+        tlyPaginaDocumente.SuspendLayout()
         tlyDocumente.SuspendLayout()
+        tlyPaginaKbot.SuspendLayout()
+        tlyArbore.SuspendLayout()
         SuspendLayout()
-        ' 
+        '
         ' cboVerbose
-        ' 
+        '
         cboVerbose.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboVerbose.CornerRadius = 4
         cboVerbose.DrawMode = DrawMode.OwnerDrawFixed
@@ -54,9 +78,9 @@ Partial Class SetariAplicatieView
         cboVerbose.TabIndex = 1
         tips.SetToolTipHeader(cboVerbose, "Cât scrie consola FOREXE")
         tips.SetToolTipText(cboVerbose, "«Implicit» = pornit pe Debug, oprit pe Release (felia 0071)." & vbLf & "Pornit arată pașii, așteptările, andocarea și stivele; oprit arată doar <Log> și erorile." & vbLf & "Fișierul-jurnal primește oricum tot.")
-        ' 
+        '
         ' chkLogViewer
-        ' 
+        '
         chkLogViewer.AutoSize = True
         tlyComutatoare.SetColumnSpan(chkLogViewer, 2)
         chkLogViewer.Location = New Point(4, 47)
@@ -68,9 +92,9 @@ Partial Class SetariAplicatieView
         tips.SetToolTipHeader(chkLogViewer, "Vizualizatorul de jurnale")
         tips.SetToolTipText(chkLogViewer, "Debifat, rândul dispare din meniul butonului de opțiuni." & vbLf & "Jurnalele se scriu în continuare pe disc.")
         chkLogViewer.UseVisualStyleBackColor = True
-        ' 
+        '
         ' chkShowBrowser
-        ' 
+        '
         chkShowBrowser.AutoSize = True
         tlyComutatoare.SetColumnSpan(chkShowBrowser, 2)
         chkShowBrowser.Location = New Point(4, 83)
@@ -82,9 +106,9 @@ Partial Class SetariAplicatieView
         tips.SetToolTipHeader(chkShowBrowser, "Butonul de browser")
         tips.SetToolTipText(chkShowBrowser, "Debifat, operatorul nu mai poate deschide vizualizatorul browserului FOREXE." & vbLf & "Robotul rulează la fel; doar butonul dispare.")
         chkShowBrowser.UseVisualStyleBackColor = True
-        ' 
+        '
         ' chkReceptii
-        ' 
+        '
         chkReceptii.AutoSize = True
         tlyComutatoare.SetColumnSpan(chkReceptii, 2)
         chkReceptii.Location = New Point(4, 119)
@@ -96,9 +120,9 @@ Partial Class SetariAplicatieView
         tips.SetToolTipHeader(chkReceptii, "Recepțiile de descărcat")
         tips.SetToolTipText(chkReceptii, "Bifat: apăsarea obișnuită aduce tot; debifat: nimic până nu alegi." & vbLf & "Cerut configurabil de operator la 10.09.2026.")
         chkReceptii.UseVisualStyleBackColor = True
-        ' 
+        '
         ' cboAdobeMotor
-        ' 
+        '
         cboAdobeMotor.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboAdobeMotor.CornerRadius = 4
         cboAdobeMotor.DrawMode = DrawMode.OwnerDrawFixed
@@ -112,9 +136,9 @@ Partial Class SetariAplicatieView
         cboAdobeMotor.TabIndex = 1
         tips.SetToolTipHeader(cboAdobeMotor, "Motorul de previzualizare PDF")
         tips.SetToolTipText(cboAdobeMotor, "«Fereastră găzduită» = fereastra Adobe mutată în panoul K-BOT (singura rulată în aplicație)." & vbLf & "«ActiveX» = controlul AcroPDF, în proces.")
-        ' 
+        '
         ' btnAdobeGazduire
-        ' 
+        '
         btnAdobeGazduire.AutoSize = True
         btnAdobeGazduire.Dock = DockStyle.Left
         btnAdobeGazduire.FlatStyle = FlatStyle.Flat
@@ -128,9 +152,9 @@ Partial Class SetariAplicatieView
         tips.SetToolTipHeader(btnAdobeGazduire, "Fereastra găzduită Adobe")
         tips.SetToolTipText(btnAdobeGazduire, "Modul vizualizatorului, comutatorul /n, eliberarea ferestrei și fereastra plutitoare." & vbLf & "Se deschide singur când alegi «Fereastră găzduită»; de aici le poți revedea oricând.")
         btnAdobeGazduire.UseVisualStyleBackColor = True
-        ' 
+        '
         ' cboExcelRibbon
-        ' 
+        '
         cboExcelRibbon.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboExcelRibbon.CornerRadius = 4
         cboExcelRibbon.DrawMode = DrawMode.OwnerDrawFixed
@@ -144,32 +168,122 @@ Partial Class SetariAplicatieView
         cboExcelRibbon.TabIndex = 4
         tips.SetToolTipHeader(cboExcelRibbon, "Panglica Excel în previzualizare")
         tips.SetToolTipText(cboExcelRibbon, "Macro: Excel își ascunde singur panglica (poate fi refuzat de o politică)." & vbLf & "Fereastră: se ascunde fereastra panglicii, ca la Word — nu poate fi refuzat." & vbLf & "Word are o singură metodă și nu se configurează.")
-        ' 
-        ' tlyBody
-        ' 
-        tlyBody.AutoScroll = True
-        tlyBody.ColumnCount = 1
-        tlyBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyBody.Controls.Add(lblTitluComutatoare, 0, 0)
-        tlyBody.Controls.Add(tlyComutatoare, 0, 1)
-        tlyBody.Controls.Add(lblTitluDocumente, 0, 2)
-        tlyBody.Controls.Add(tlyDocumente, 0, 3)
-        tlyBody.Dock = DockStyle.Fill
-        tlyBody.Location = New Point(0, 0)
-        tlyBody.Margin = New Padding(0)
-        tlyBody.Name = "tlyBody"
-        tlyBody.Padding = New Padding(24, 18, 24, 18)
-        tlyBody.RowCount = 4
-        tlyBody.RowStyles.Add(New RowStyle())
-        tlyBody.RowStyles.Add(New RowStyle())
-        tlyBody.RowStyles.Add(New RowStyle())
-        tlyBody.RowStyles.Add(New RowStyle())
-        tlyBody.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
-        tlyBody.Size = New Size(960, 457)
-        tlyBody.TabIndex = 0
-        ' 
+        '
+        ' cboSortare
+        '
+        cboSortare.Anchor = AnchorStyles.Left Or AnchorStyles.Right
+        tlyArbore.SetColumnSpan(cboSortare, 2)
+        cboSortare.CornerRadius = 4
+        cboSortare.DrawMode = DrawMode.OwnerDrawFixed
+        cboSortare.DropDownStyle = ComboBoxStyle.DropDownList
+        cboSortare.FlatStyle = FlatStyle.Flat
+        cboSortare.ItemHeight = 31
+        cboSortare.Location = New Point(404, 0)
+        cboSortare.Margin = New Padding(4, 0, 4, 10)
+        cboSortare.Name = "cboSortare"
+        cboSortare.Size = New Size(496, 37)
+        cboSortare.TabIndex = 1
+        tips.SetToolTipHeader(cboSortare, "Ordinea arborelui de angajamente")
+        tips.SetToolTipText(cboSortare, "«După nume» = după descrierea angajamentului." & vbLf & "«După data creării» = de la cel mai vechi; cele fără dată descărcată vin la urmă, după nume." & vbLf & "Aceeași alegere e și în meniul iconiței din antetul arborelui.")
+        '
+        ' chkNumeCod
+        '
+        chkNumeCod.AutoSize = True
+        chkNumeCod.Location = New Point(404, 47)
+        chkNumeCod.Margin = New Padding(4, 0, 4, 10)
+        chkNumeCod.Name = "chkNumeCod"
+        chkNumeCod.Size = New Size(180, 26)
+        chkNumeCod.TabIndex = 3
+        chkNumeCod.Text = "CODANGAJAMENT"
+        tips.SetToolTipHeader(chkNumeCod, "Coloana CODANGAJAMENT")
+        tips.SetToolTipText(chkNumeCod, "Afișată cât timp arborele e sortat după nume." & vbLf & "Implicit: afișată.")
+        chkNumeCod.UseVisualStyleBackColor = True
+        '
+        ' chkNumeSurse
+        '
+        chkNumeSurse.AutoSize = True
+        chkNumeSurse.Location = New Point(684, 47)
+        chkNumeSurse.Margin = New Padding(4, 0, 4, 10)
+        chkNumeSurse.Name = "chkNumeSurse"
+        chkNumeSurse.Size = New Size(90, 26)
+        chkNumeSurse.TabIndex = 4
+        chkNumeSurse.Text = "SURSE"
+        tips.SetToolTipHeader(chkNumeSurse, "Coloana SURSE")
+        tips.SetToolTipText(chkNumeSurse, "Afișată cât timp arborele e sortat după nume." & vbLf & "Implicit: ascunsă.")
+        chkNumeSurse.UseVisualStyleBackColor = True
+        '
+        ' chkDataCod
+        '
+        chkDataCod.AutoSize = True
+        chkDataCod.Location = New Point(404, 83)
+        chkDataCod.Margin = New Padding(4, 0, 4, 10)
+        chkDataCod.Name = "chkDataCod"
+        chkDataCod.Size = New Size(180, 26)
+        chkDataCod.TabIndex = 6
+        chkDataCod.Text = "CODANGAJAMENT"
+        tips.SetToolTipHeader(chkDataCod, "Coloana CODANGAJAMENT")
+        tips.SetToolTipText(chkDataCod, "Afișată cât timp arborele e sortat după data creării." & vbLf & "Implicit: ascunsă.")
+        chkDataCod.UseVisualStyleBackColor = True
+        '
+        ' chkDataSurse
+        '
+        chkDataSurse.AutoSize = True
+        chkDataSurse.Location = New Point(684, 83)
+        chkDataSurse.Margin = New Padding(4, 0, 4, 10)
+        chkDataSurse.Name = "chkDataSurse"
+        chkDataSurse.Size = New Size(90, 26)
+        chkDataSurse.TabIndex = 7
+        chkDataSurse.Text = "SURSE"
+        tips.SetToolTipHeader(chkDataSurse, "Coloana SURSE")
+        tips.SetToolTipText(chkDataSurse, "Afișată cât timp arborele e sortat după data creării." & vbLf & "Implicit: afișată.")
+        chkDataSurse.UseVisualStyleBackColor = True
+        '
+        ' navPagini
+        '
+        navPagini.Dock = DockStyle.Top
+        navPagini.ItemCornerRadius = 8
+        navPagini.ItemPadding = New Padding(6)
+        KBotNavItem1.Image = My.Resources.Resources.settings__1_
+        KBotNavItem1.Key = "generale"
+        KBotNavItem1.Text = "Generale"
+        KBotNavItem2.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Pdf_exports_24
+        KBotNavItem2.Key = "documente"
+        KBotNavItem2.Text = "Documente"
+        KBotNavItem3.Image = My.Resources.Resources.kbot_64
+        KBotNavItem3.Key = "kbot"
+        KBotNavItem3.Text = "KBOT"
+        navPagini.Items.Add(KBotNavItem1)
+        navPagini.Items.Add(KBotNavItem2)
+        navPagini.Items.Add(KBotNavItem3)
+        navPagini.Location = New Point(0, 0)
+        navPagini.Margin = New Padding(0)
+        navPagini.Name = "navPagini"
+        navPagini.Orientation = KBotNavOrientation.Horizontal
+        navPagini.SelectedKey = Nothing
+        navPagini.Size = New Size(960, 60)
+        navPagini.TabIndex = 0
+        '
+        ' tlyGenerale
+        '
+        tlyGenerale.AutoScroll = True
+        tlyGenerale.ColumnCount = 1
+        tlyGenerale.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyGenerale.Controls.Add(lblTitluComutatoare, 0, 0)
+        tlyGenerale.Controls.Add(tlyComutatoare, 0, 1)
+        tlyGenerale.Dock = DockStyle.Fill
+        tlyGenerale.Location = New Point(0, 60)
+        tlyGenerale.Margin = New Padding(0)
+        tlyGenerale.Name = "tlyGenerale"
+        tlyGenerale.Padding = New Padding(24, 18, 24, 18)
+        tlyGenerale.RowCount = 3
+        tlyGenerale.RowStyles.Add(New RowStyle())
+        tlyGenerale.RowStyles.Add(New RowStyle())
+        tlyGenerale.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
+        tlyGenerale.Size = New Size(960, 397)
+        tlyGenerale.TabIndex = 1
+        '
         ' lblTitluComutatoare
-        ' 
+        '
         lblTitluComutatoare.AutoSize = True
         lblTitluComutatoare.Font = New Font("Segoe UI Semibold", 12F)
         lblTitluComutatoare.Location = New Point(28, 18)
@@ -178,9 +292,9 @@ Partial Class SetariAplicatieView
         lblTitluComutatoare.Size = New Size(158, 32)
         lblTitluComutatoare.TabIndex = 0
         lblTitluComutatoare.Text = "Comutatoare"
-        ' 
+        '
         ' tlyComutatoare
-        ' 
+        '
         tlyComutatoare.AutoFitToTheme = False
         tlyComutatoare.AutoSize = True
         tlyComutatoare.ColumnCount = 2
@@ -202,9 +316,9 @@ Partial Class SetariAplicatieView
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.Size = New Size(904, 155)
         tlyComutatoare.TabIndex = 1
-        ' 
+        '
         ' lblVerbose
-        ' 
+        '
         lblVerbose.AutoSize = True
         lblVerbose.Dock = DockStyle.Fill
         lblVerbose.Location = New Point(4, 0)
@@ -214,20 +328,40 @@ Partial Class SetariAplicatieView
         lblVerbose.TabIndex = 0
         lblVerbose.Text = "Consola FOREXE detaliată (VerboseLogging)"
         lblVerbose.TextAlign = ContentAlignment.MiddleLeft
-        ' 
+        '
+        ' tlyPaginaDocumente
+        '
+        tlyPaginaDocumente.AutoScroll = True
+        tlyPaginaDocumente.ColumnCount = 1
+        tlyPaginaDocumente.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyPaginaDocumente.Controls.Add(lblTitluDocumente, 0, 0)
+        tlyPaginaDocumente.Controls.Add(tlyDocumente, 0, 1)
+        tlyPaginaDocumente.Dock = DockStyle.Fill
+        tlyPaginaDocumente.Location = New Point(0, 60)
+        tlyPaginaDocumente.Margin = New Padding(0)
+        tlyPaginaDocumente.Name = "tlyPaginaDocumente"
+        tlyPaginaDocumente.Padding = New Padding(24, 18, 24, 18)
+        tlyPaginaDocumente.RowCount = 3
+        tlyPaginaDocumente.RowStyles.Add(New RowStyle())
+        tlyPaginaDocumente.RowStyles.Add(New RowStyle())
+        tlyPaginaDocumente.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
+        tlyPaginaDocumente.Size = New Size(960, 397)
+        tlyPaginaDocumente.TabIndex = 2
+        tlyPaginaDocumente.Visible = False
+        '
         ' lblTitluDocumente
-        ' 
+        '
         lblTitluDocumente.AutoSize = True
         lblTitluDocumente.Font = New Font("Segoe UI Semibold", 12F)
-        lblTitluDocumente.Location = New Point(28, 237)
+        lblTitluDocumente.Location = New Point(28, 18)
         lblTitluDocumente.Margin = New Padding(4, 0, 4, 8)
         lblTitluDocumente.Name = "lblTitluDocumente"
         lblTitluDocumente.Size = New Size(343, 32)
-        lblTitluDocumente.TabIndex = 2
+        lblTitluDocumente.TabIndex = 0
         lblTitluDocumente.Text = "Documente (PDF, Word, Excel)"
-        ' 
+        '
         ' tlyDocumente
-        ' 
+        '
         tlyDocumente.AutoFitToTheme = False
         tlyDocumente.AutoSize = True
         tlyDocumente.ColumnCount = 2
@@ -239,7 +373,7 @@ Partial Class SetariAplicatieView
         tlyDocumente.Controls.Add(lblExcelRibbon, 0, 2)
         tlyDocumente.Controls.Add(cboExcelRibbon, 1, 2)
         tlyDocumente.Dock = DockStyle.Top
-        tlyDocumente.Location = New Point(28, 277)
+        tlyDocumente.Location = New Point(28, 58)
         tlyDocumente.Margin = New Padding(4, 0, 4, 24)
         tlyDocumente.Name = "tlyDocumente"
         tlyDocumente.RowCount = 3
@@ -247,10 +381,10 @@ Partial Class SetariAplicatieView
         tlyDocumente.RowStyles.Add(New RowStyle())
         tlyDocumente.RowStyles.Add(New RowStyle())
         tlyDocumente.Size = New Size(904, 149)
-        tlyDocumente.TabIndex = 3
-        ' 
+        tlyDocumente.TabIndex = 1
+        '
         ' lblAdobeMotor
-        ' 
+        '
         lblAdobeMotor.AutoSize = True
         lblAdobeMotor.Dock = DockStyle.Fill
         lblAdobeMotor.Location = New Point(4, 0)
@@ -260,9 +394,9 @@ Partial Class SetariAplicatieView
         lblAdobeMotor.TabIndex = 0
         lblAdobeMotor.Text = "PDF — motor de previzualizare"
         lblAdobeMotor.TextAlign = ContentAlignment.MiddleLeft
-        ' 
+        '
         ' lblExcelRibbon
-        ' 
+        '
         lblExcelRibbon.AutoSize = True
         lblExcelRibbon.Dock = DockStyle.Fill
         lblExcelRibbon.Location = New Point(4, 102)
@@ -272,25 +406,192 @@ Partial Class SetariAplicatieView
         lblExcelRibbon.TabIndex = 3
         lblExcelRibbon.Text = "Excel — cum se ascunde panglica"
         lblExcelRibbon.TextAlign = ContentAlignment.MiddleLeft
-        ' 
+        '
+        ' tlyPaginaKbot
+        '
+        tlyPaginaKbot.AutoScroll = True
+        tlyPaginaKbot.ColumnCount = 1
+        tlyPaginaKbot.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyPaginaKbot.Controls.Add(lblTitluArbore, 0, 0)
+        tlyPaginaKbot.Controls.Add(tlyArbore, 0, 1)
+        tlyPaginaKbot.Dock = DockStyle.Fill
+        tlyPaginaKbot.Location = New Point(0, 60)
+        tlyPaginaKbot.Margin = New Padding(0)
+        tlyPaginaKbot.Name = "tlyPaginaKbot"
+        tlyPaginaKbot.Padding = New Padding(24, 18, 24, 18)
+        tlyPaginaKbot.RowCount = 3
+        tlyPaginaKbot.RowStyles.Add(New RowStyle())
+        tlyPaginaKbot.RowStyles.Add(New RowStyle())
+        tlyPaginaKbot.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
+        tlyPaginaKbot.Size = New Size(960, 397)
+        tlyPaginaKbot.TabIndex = 3
+        tlyPaginaKbot.Visible = False
+        '
+        ' lblTitluArbore
+        '
+        lblTitluArbore.AutoSize = True
+        lblTitluArbore.Font = New Font("Segoe UI Semibold", 12F)
+        lblTitluArbore.Location = New Point(28, 18)
+        lblTitluArbore.Margin = New Padding(4, 0, 4, 8)
+        lblTitluArbore.Name = "lblTitluArbore"
+        lblTitluArbore.Size = New Size(300, 32)
+        lblTitluArbore.TabIndex = 0
+        lblTitluArbore.Text = "Arborele de angajamente"
+        '
+        ' tlyArbore
+        '
+        tlyArbore.AutoFitToTheme = False
+        tlyArbore.AutoSize = True
+        tlyArbore.ColumnCount = 3
+        tlyArbore.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 400F))
+        tlyArbore.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 280F))
+        tlyArbore.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyArbore.Controls.Add(lblSortare, 0, 0)
+        tlyArbore.Controls.Add(cboSortare, 1, 0)
+        tlyArbore.Controls.Add(lblColoaneNume, 0, 1)
+        tlyArbore.Controls.Add(chkNumeCod, 1, 1)
+        tlyArbore.Controls.Add(chkNumeSurse, 2, 1)
+        tlyArbore.Controls.Add(lblColoaneData, 0, 2)
+        tlyArbore.Controls.Add(chkDataCod, 1, 2)
+        tlyArbore.Controls.Add(chkDataSurse, 2, 2)
+        tlyArbore.Controls.Add(lblLatimeCod, 0, 3)
+        tlyArbore.Controls.Add(txtLatimeCod, 1, 3)
+        tlyArbore.Controls.Add(lblLatimeSurse, 0, 4)
+        tlyArbore.Controls.Add(txtLatimeSurse, 1, 4)
+        tlyArbore.Dock = DockStyle.Top
+        tlyArbore.Location = New Point(28, 58)
+        tlyArbore.Margin = New Padding(4, 0, 4, 24)
+        tlyArbore.Name = "tlyArbore"
+        tlyArbore.RowCount = 5
+        tlyArbore.RowStyles.Add(New RowStyle())
+        tlyArbore.RowStyles.Add(New RowStyle())
+        tlyArbore.RowStyles.Add(New RowStyle())
+        tlyArbore.RowStyles.Add(New RowStyle())
+        tlyArbore.RowStyles.Add(New RowStyle())
+        tlyArbore.Size = New Size(904, 219)
+        tlyArbore.TabIndex = 1
+        '
+        ' lblSortare
+        '
+        lblSortare.AutoSize = True
+        lblSortare.Dock = DockStyle.Fill
+        lblSortare.Location = New Point(4, 0)
+        lblSortare.Margin = New Padding(4, 0, 4, 10)
+        lblSortare.Name = "lblSortare"
+        lblSortare.Size = New Size(392, 37)
+        lblSortare.TabIndex = 0
+        lblSortare.Text = "Sortare"
+        lblSortare.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' lblColoaneNume
+        '
+        lblColoaneNume.AutoSize = True
+        lblColoaneNume.Dock = DockStyle.Fill
+        lblColoaneNume.Location = New Point(4, 47)
+        lblColoaneNume.Margin = New Padding(4, 0, 4, 10)
+        lblColoaneNume.Name = "lblColoaneNume"
+        lblColoaneNume.Size = New Size(392, 26)
+        lblColoaneNume.TabIndex = 2
+        lblColoaneNume.Text = "Coloane afișate la sortarea după nume"
+        lblColoaneNume.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' lblColoaneData
+        '
+        lblColoaneData.AutoSize = True
+        lblColoaneData.Dock = DockStyle.Fill
+        lblColoaneData.Location = New Point(4, 83)
+        lblColoaneData.Margin = New Padding(4, 0, 4, 10)
+        lblColoaneData.Name = "lblColoaneData"
+        lblColoaneData.Size = New Size(392, 26)
+        lblColoaneData.TabIndex = 5
+        lblColoaneData.Text = "Coloane afișate la sortarea după dată"
+        lblColoaneData.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' lblLatimeCod
+        '
+        lblLatimeCod.AutoSize = True
+        lblLatimeCod.Dock = DockStyle.Fill
+        lblLatimeCod.Location = New Point(4, 119)
+        lblLatimeCod.Margin = New Padding(4, 0, 4, 10)
+        lblLatimeCod.Name = "lblLatimeCod"
+        lblLatimeCod.Size = New Size(392, 40)
+        lblLatimeCod.TabIndex = 8
+        lblLatimeCod.Text = "Lățimea coloanei CODANGAJAMENT (px)"
+        lblLatimeCod.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' txtLatimeCod
+        '
+        txtLatimeCod.Anchor = AnchorStyles.Left
+        txtLatimeCod.BackColor = Color.Transparent
+        txtLatimeCod.Location = New Point(404, 119)
+        txtLatimeCod.Margin = New Padding(4, 0, 4, 10)
+        txtLatimeCod.MaxLength = 3
+        txtLatimeCod.Name = "txtLatimeCod"
+        txtLatimeCod.PlaceholderText = "140"
+        txtLatimeCod.Size = New Size(150, 40)
+        txtLatimeCod.TabIndex = 9
+        txtLatimeCod.TextAlign = HorizontalAlignment.Center
+        txtLatimeCod.TextPadding = New Padding(8, 0, 8, 0)
+        tips.SetToolTipHeader(txtLatimeCod, "Lățimea coloanei CODANGAJAMENT")
+        tips.SetToolTipText(txtLatimeCod, "În pixeli la 100% (se mărește singură pe ecranele scalate)." & vbLf & "Între 30 și 600. Se salvează la Enter sau când ieși din câmp.")
+        '
+        ' lblLatimeSurse
+        '
+        lblLatimeSurse.AutoSize = True
+        lblLatimeSurse.Dock = DockStyle.Fill
+        lblLatimeSurse.Location = New Point(4, 169)
+        lblLatimeSurse.Margin = New Padding(4, 0, 4, 10)
+        lblLatimeSurse.Name = "lblLatimeSurse"
+        lblLatimeSurse.Size = New Size(392, 40)
+        lblLatimeSurse.TabIndex = 10
+        lblLatimeSurse.Text = "Lățimea coloanei SURSE (px)"
+        lblLatimeSurse.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' txtLatimeSurse
+        '
+        txtLatimeSurse.Anchor = AnchorStyles.Left
+        txtLatimeSurse.BackColor = Color.Transparent
+        txtLatimeSurse.Location = New Point(404, 169)
+        txtLatimeSurse.Margin = New Padding(4, 0, 4, 10)
+        txtLatimeSurse.MaxLength = 3
+        txtLatimeSurse.Name = "txtLatimeSurse"
+        txtLatimeSurse.PlaceholderText = "90"
+        txtLatimeSurse.Size = New Size(150, 40)
+        txtLatimeSurse.TabIndex = 11
+        txtLatimeSurse.TextAlign = HorizontalAlignment.Center
+        txtLatimeSurse.TextPadding = New Padding(8, 0, 8, 0)
+        tips.SetToolTipHeader(txtLatimeSurse, "Lățimea coloanei SURSE")
+        tips.SetToolTipText(txtLatimeSurse, "În pixeli la 100% (se mărește singură pe ecranele scalate)." & vbLf & "Între 30 și 600. Se salvează la Enter sau când ieși din câmp.")
+        '
         ' SetariAplicatieView
-        ' 
+        '
         AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
-        Controls.Add(tlyBody)
+        Controls.Add(tlyGenerale)
+        Controls.Add(tlyPaginaDocumente)
+        Controls.Add(tlyPaginaKbot)
+        Controls.Add(navPagini)
         Name = "SetariAplicatieView"
         Size = New Size(960, 457)
-        tlyBody.ResumeLayout(False)
-        tlyBody.PerformLayout()
+        CType(navPagini, ComponentModel.ISupportInitialize).EndInit()
+        tlyGenerale.ResumeLayout(False)
+        tlyGenerale.PerformLayout()
         tlyComutatoare.ResumeLayout(False)
         tlyComutatoare.PerformLayout()
+        tlyPaginaDocumente.ResumeLayout(False)
+        tlyPaginaDocumente.PerformLayout()
         tlyDocumente.ResumeLayout(False)
         tlyDocumente.PerformLayout()
+        tlyPaginaKbot.ResumeLayout(False)
+        tlyPaginaKbot.PerformLayout()
+        tlyArbore.ResumeLayout(False)
+        tlyArbore.PerformLayout()
         ResumeLayout(False)
     End Sub
 
     Friend WithEvents tips As KBotToolTip
-    Friend WithEvents tlyBody As KBotTableLayoutPanel
+    Friend WithEvents navPagini As KBotNavList
+    Friend WithEvents tlyGenerale As KBotTableLayoutPanel
     Friend WithEvents lblTitluComutatoare As Label
     Friend WithEvents tlyComutatoare As KBotTableLayoutPanel
     Friend WithEvents lblVerbose As Label
@@ -298,6 +599,7 @@ Partial Class SetariAplicatieView
     Friend WithEvents chkLogViewer As CheckBox
     Friend WithEvents chkShowBrowser As CheckBox
     Friend WithEvents chkReceptii As CheckBox
+    Friend WithEvents tlyPaginaDocumente As KBotTableLayoutPanel
     Friend WithEvents lblTitluDocumente As Label
     Friend WithEvents tlyDocumente As KBotTableLayoutPanel
     Friend WithEvents lblAdobeMotor As Label
@@ -305,4 +607,19 @@ Partial Class SetariAplicatieView
     Friend WithEvents btnAdobeGazduire As Button
     Friend WithEvents lblExcelRibbon As Label
     Friend WithEvents cboExcelRibbon As KBotComboBox
+    Friend WithEvents tlyPaginaKbot As KBotTableLayoutPanel
+    Friend WithEvents lblTitluArbore As Label
+    Friend WithEvents tlyArbore As KBotTableLayoutPanel
+    Friend WithEvents lblSortare As Label
+    Friend WithEvents cboSortare As KBotComboBox
+    Friend WithEvents lblColoaneNume As Label
+    Friend WithEvents chkNumeCod As CheckBox
+    Friend WithEvents chkNumeSurse As CheckBox
+    Friend WithEvents lblColoaneData As Label
+    Friend WithEvents chkDataCod As CheckBox
+    Friend WithEvents chkDataSurse As CheckBox
+    Friend WithEvents lblLatimeCod As Label
+    Friend WithEvents txtLatimeCod As KBotTextField
+    Friend WithEvents lblLatimeSurse As Label
+    Friend WithEvents txtLatimeSurse As KBotTextField
 End Class

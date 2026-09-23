@@ -945,6 +945,27 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
+    ''' <summary>
+    ''' Slice 0777: False = the columns are drawn in the rows but the band of column titles
+    ''' above them is not -- no band, no height taken, no header click (so no column filter
+    ''' popup either). Default True: every existing tree keeps its band.
+    ''' </summary>
+    Private _columnHeaderVisible As Boolean = True
+    <Category("K-BOT: Columns")>
+    <Description("False = the column title band is not drawn and takes no height. The row cells stay.")>
+    <DefaultValue(True)>
+    Public Property ColumnHeaderVisible As Boolean
+        Get
+            Return _columnHeaderVisible
+        End Get
+        Set(value As Boolean)
+            If value = _columnHeaderVisible Then Return
+            _columnHeaderVisible = value
+            Me.PerformLayout()
+            Me.Invalidate()
+        End Set
+    End Property
+
     ' ── Antet: font, aliniere, stil de fundal ─────────────────────────────────────
     Private _headerFont As Font = Nothing          ' Nothing = fontul arborelui (Font)
     <Category("K-BOT: Header")>

@@ -91,11 +91,33 @@
     //     <html> (its class) and one on <head> (its children). The beat stays as the last
     //     safety net.
     //
+    // 12. (slice 0076) WHAT A SAVE WAS ABOUT travels with the "finished" event (its "data"):
+    //     - a reception EDIT is armed by the eye of its row on the receptions tab (the same
+    //       eye «Prelucrare Completa» presses to open «Modifica receptie»); the row's date is
+    //       kept at that click and the form's date at the save, and the save is known by
+    //       that date. A NEW reception carries the form's date too, but .NET reads the last
+    //       row for it (operator, 23.09.2026).
+    //     - a reservation carries what «Rezervari Angajament.wfl» would have read for it: the
+    //       indicator's row of the tab0 table (read once the save is confirmed, when the page
+    //       is back on tab0) and its budget table (read at the save click, on the edit page -
+    //       the very table the complete flow scrapes behind the eye). .NET keeps one per
+    //       indicator until the operator says the reservations are done.
+    //     A form closed WITHOUT a save (the page's «Inapoi», another tab) ends the operation
+    //     at the next beat, like «Renunta» does.
+    //
+    // 13. (slice 0076) THE MARKERS. Before a reservation's motive («Continua» of the motive
+    //     modal) or a reception's form («Salveaza») is submitted, the click is held, K-BOT is
+    //     asked for the ids the save will become (the server reserves them), the marker is
+    //     appended to the text - «(IDREV: n)» to the motive, «(IDRH: n; IDR: m)» to the
+    //     reception's description, replacing an older one - and the click is replayed. FOREXE
+    //     copies that text into its history, so the ingest knows which history row became
+    //     which record. When K-BOT cannot answer in time the save goes through WITHOUT a
+    //     marker (said on the console): the operator's work is never held hostage.
+    //
     //  EVERY selector in OPS below is copied from the workflows in
     //  Workflows/Creare (Creare Angajament, Incarca Rezervare, Rezervare si
-    //  Receptie) - they are the selectors the robot itself clicks, so they are as
-    //  verified as anything in this repo. "receptie-modificare" has no rules yet:
-    //  the flow is unknown (operator, 21.09.2026) and stays a TODO.
+    //  Receptie) and from «Prelucrare Completa» - they are the selectors the robot
+    //  itself clicks, so they are as verified as anything in this repo.
     // =========================================================================
 
     if (window._kbotWatchInstalled) { return; }
@@ -122,6 +144,17 @@
     var SEL_ERROR = '.feedbackPanelERROR, .alert.alert-danger';
     var SEL_MODAL = 'div.modal-content textarea[name=\'modal:form:motiv\'], .modal.in, .modal[style*=\'display: block\']';
     var SEL_BUSY = '#animlogo';
+    // Slice 0076 - all of them from «Prelucrare Completa» / Workflows/Creare.
+    var SEL_FORM_RECEPTIE = 'form.form-horizontal select[name=\'receptie\']';
+    var SEL_DATA_RECEPTIE = 'form.form-horizontal input[name=\'data\']';
+    var SEL_DESCRIERE_RECEPTIE = 'form.form-horizontal textarea[name=\'descriere\']';
+    var SEL_MOTIV = 'textarea[name=\'modal:form:motiv\']';
+    var SEL_LISTA = 'table.table-striped.table-bordered.table-condensed';
+    var SEL_BUGET = 'table.table-bordered.table-hover.table-condensed';
+    // How long a save waits for K-BOT's marker before it goes through without one.
+    var MARCAJ_TIMEOUT_MS = 8000;
+    // Any K-BOT marker, as prelucrare_helpers.py reads it (section 13).
+    var RE_MARCAJ = /\s*\(\s*ID(?:REV|RH|R)\s*:\s*\d+(?:\s*;\s*ID(?:REV|RH|R)\s*:\s*\d+)*\s*\)/gi;
     // Any «Renunta» button of a FOREXE form or modal (btn-danger on the angajament forms,
     // btn-default on the reception form): pressing it ends the operation.
     var RULE_CANCEL = { closest: 'button', text: 'Renunta' };
@@ -159,12 +192,32 @@
             start: [{ closest: 'button', text: 'Adauga' }],
             finish: [{ closest: 'form.form-horizontal button', text: 'Salveaza' }],
             done: function () {
-                return !!readCod() && !exists('form.form-horizontal select[name=\'receptie\']');
+                return !!readCod() && !exists(SEL_FORM_RECEPTIE);
+            }
+        },
+        // Slice 0076: the eye of a row on the receptions tab opens «Modifica receptie» (the
+        // same eye «Prelucrare Completa» presses, tbody tr:nth-child(idx) .glyphicon-eye-open).
+        // Saved with the same button as a new reception.
+        'receptie-modificare': {
+            label: 'Modificare recepție',
+            when: 'li.tab1.active',
+            start: [
+                { closest: 'table.table-striped tbody tr a:has(.glyphicon-eye-open)' },
+                { closest: 'table.table-striped tbody tr .glyphicon-eye-open' }
+            ],
+            finish: [{ closest: 'form.form-horizontal button', text: 'Salveaza' }],
+            done: function () {
+                return !!readCod() && !exists(SEL_FORM_RECEPTIE);
             }
         }
-        // 'receptie-modificare': TODO - the FOREXE flow for changing a reception is not
-        // known yet, so nothing arms it automatically. The manual Start / Gata buttons
-        // cover it meanwhile.
+    };
+
+    // The form each operation edits (slice 0076): once it has been on screen, its going away
+    // with no save pending means the operator left without saving (section 12).
+    var OP_FORMS = {
+        'rezervare': 'input[name^=\'tableContainer:\']',
+        'receptie': SEL_FORM_RECEPTIE,
+        'receptie-modificare': SEL_FORM_RECEPTIE
     };
 
     // ── State ────────────────────────────────────────────────────────────────
@@ -190,12 +243,24 @@
     var btnCancel = null;
     var lblZoom = null;
 
+    // The slice 0076 fields: formSeen (the op's form has been on screen), rowDate / formDate
+    // (the reception's date at the eye / at the save), rezBefore (the indicator codes of the
+    // tab0 table when a reservation started), rezIndicator (the code of the row whose eye was
+    // pressed), rezBuget (the budget table read at the save click).
+    function emptyState() {
+        return {
+            op: null, label: '', startedAt: null, codAtStart: '', pendingSince: null,
+            formSeen: false, rowDate: '', formDate: '',
+            rezBefore: null, rezIndicator: '', rezBuget: null
+        };
+    }
+
     function loadState() {
         try {
             var raw = sessionStorage.getItem(KEY_STATE);
             if (raw) { return JSON.parse(raw); }
         } catch (ignored) { }
-        return { op: null, label: '', startedAt: null, codAtStart: '', pendingSince: null };
+        return emptyState();
     }
 
     function saveState() {
@@ -203,7 +268,7 @@
     }
 
     function resetState() {
-        state = { op: null, label: '', startedAt: null, codAtStart: '', pendingSince: null };
+        state = emptyState();
         saveState();
     }
 
@@ -283,6 +348,104 @@
         return two(d.getHours()) + ':' + two(d.getMinutes()) + ':' + two(d.getSeconds());
     }
 
+    // ── Reading a table the way the robot does (slice 0076) ──────────────────
+    // A COPY of Services/JavaScripts/ScrapeTableExtract.js (the function ScrapeTable runs),
+    // so a row read here has exactly the keys the same row has in a downloaded package:
+    // multi-row headers joined with "!", diacritics dropped, anything else made "_", a
+    // cell's input value preferred to its text. Change one, change the other.
+    function scrapeTable(table) {
+        var data = [];
+        if (!table) { return data; }
+        var headerRows = table.querySelectorAll('thead tr');
+        var matrix = [];
+        var r, c;
+        for (r = 0; r < headerRows.length; r++) { matrix.push([]); }
+        for (r = 0; r < headerRows.length; r++) {
+            var cells = headerRows[r].querySelectorAll('th, td');
+            var colIndex = 0;
+            for (var k = 0; k < cells.length; k++) {
+                var cell = cells[k];
+                while (typeof matrix[r][colIndex] !== 'undefined') { colIndex++; }
+                var text = (cell.innerText || '').replace(/[\r\n]+/g, ' ').trim();
+                var rowspan = parseInt(cell.getAttribute('rowspan') || 1, 10);
+                var colspan = parseInt(cell.getAttribute('colspan') || 1, 10);
+                for (var rr = 0; rr < rowspan; rr++) {
+                    for (var cc = 0; cc < colspan; cc++) {
+                        if (!matrix[r + rr]) { matrix[r + rr] = []; }
+                        matrix[r + rr][colIndex + cc] = text;
+                    }
+                }
+                colIndex += colspan;
+            }
+        }
+        var headers = [];
+        var numCols = 0;
+        for (r = 0; r < matrix.length; r++) { if (matrix[r].length > numCols) { numCols = matrix[r].length; } }
+        for (c = 0; c < numCols; c++) {
+            var parts = [];
+            for (r = 0; r < matrix.length; r++) {
+                var val = matrix[r] ? matrix[r][c] : null;
+                if (val && val.length > 0 && parts.indexOf(val) < 0) { parts.push(val); }
+            }
+            headers.push(parts.join('!') || ('Col_' + (c + 1)));
+        }
+        var rows = table.querySelectorAll('tbody tr');
+        for (r = 0; r < rows.length; r++) {
+            var rowData = {};
+            var tds = rows[r].querySelectorAll('td');
+            for (c = 0; c < tds.length; c++) {
+                var key = headers[c] || ('Col_' + (c + 1));
+                try { key = key.normalize('NFD').replace(/[̀-ͯ]/g, ''); } catch (ignored) { }
+                key = key.replace(/[^a-zA-Z0-9_!]+/g, '_').replace(/^_+|_+$/g, '');
+                var inputEl = tds[c].querySelector('input:not([type=checkbox]):not([type=radio]), select, textarea');
+                rowData[key] = ((inputEl ? inputEl.value : tds[c].innerText) || '').replace(/[\r\n]+/g, ' ').trim();
+            }
+            data.push(rowData);
+        }
+        return data;
+    }
+
+    // The indicator code of a tab0 row («Indicator ang.» - the server's Indicator_ang).
+    function indicatorOf(row) {
+        if (!row) { return ''; }
+        if (row.Indicator_ang) { return norm(row.Indicator_ang); }
+        for (var k in row) {
+            if (Object.prototype.hasOwnProperty.call(row, k) && k.indexOf('Indicator_ang') === 0) {
+                return norm(row[k]);
+            }
+        }
+        return '';
+    }
+
+    function indicatorCodes(rows) {
+        var out = [];
+        for (var i = 0; i < rows.length; i++) {
+            var cod = indicatorOf(rows[i]);
+            if (cod) { out.push(cod); }
+        }
+        return out;
+    }
+
+    // The table ROW an element sits in, with that row read like the robot reads it.
+    function rowReadOf(el) {
+        var tr = closestOf(el, 'tr');
+        var table = closestOf(el, 'table');
+        if (!tr || !table) { return null; }
+        var trs = table.querySelectorAll('tbody tr');
+        var idx = Array.prototype.indexOf.call(trs, tr);
+        if (idx < 0) { return null; }
+        return scrapeTable(table)[idx] || null;
+    }
+
+    // Any d/m/yyyy spelling (/ . -) -> dd/MM/yyyy, the way the receptions list writes «Data»
+    // (WorkflowCatalog.DataReceptieFormat). '' when it is not a date.
+    function normDate(s) {
+        var m = /(\d{1,2})\s*[\/.\-]\s*(\d{1,2})\s*[\/.\-]\s*(\d{4})/.exec(s || '');
+        if (!m) { return ''; }
+        function two(x) { return x.length < 2 ? '0' + x : x; }
+        return two(m[1]) + '/' + two(m[2]) + '/' + m[3];
+    }
+
     // ── Reporting to .NET ────────────────────────────────────────────────────
     function emit(event, extra) {
         if (typeof window._kbotWatchCallback !== 'function') { return; }
@@ -295,7 +458,12 @@
             startedAt: state.startedAt || null,
             finishedAt: (extra && extra.finishedAt) || null,
             url: window.location.href,
-            message: (extra && extra.message) || ''
+            message: (extra && extra.message) || '',
+            // Slice 0076: what the save was about (section 12) and the marker requests
+            // (section 13). Plain objects; .NET reads them as JSON.
+            data: (extra && extra.data) || null,
+            tip: (extra && extra.tip) || '',
+            requestId: (extra && extra.requestId) || ''
         };
         try { window._kbotWatchCallback(JSON.stringify(payload)); } catch (ignored) { }
     }
@@ -312,30 +480,84 @@
     }
 
     // ── Operation life cycle ─────────────────────────────────────────────────
-    function startOperation(opName, label) {
-        state.op = opName;
-        state.label = label;
-        state.startedAt = new Date().toISOString();
-        state.codAtStart = readCod();
-        state.pendingSince = null;
+    // el = the element whose click started it (Nothing for the manual Start).
+    function startOperation(opName, label, el) {
+        var fresh = emptyState();
+        fresh.op = opName;
+        fresh.label = label;
+        fresh.startedAt = new Date().toISOString();
+        fresh.codAtStart = readCod();
+        state = fresh;
+        // Slice 0076 (section 12): what the start click says about the save to come.
+        try {
+            if (opName === 'receptie-modificare' && el) {
+                var rowR = rowReadOf(el);
+                state.rowDate = normDate(rowR ? rowR.Data : '');
+            } else if (opName === 'rezervare') {
+                state.rezBefore = indicatorCodes(scrapeTable(document.querySelector(SEL_LISTA)));
+                // The eye of an existing row names the indicator; «Adauga» does not - the new
+                // code is the one that was not in the table before (read at the finish).
+                var rowZ = el && closestOf(el, '.glyphicon-eye-open, a:has(.glyphicon-eye-open)') ? rowReadOf(el) : null;
+                state.rezIndicator = indicatorOf(rowZ);
+            }
+        } catch (ignored) { }
         saveState();
         emit('started');
         renderStatus();
     }
 
-    function armFinish() {
+    // el = the save button that was pressed (Nothing when .NET or the menu ends it).
+    function armFinish(el) {
         if (!state.op) { return; }
         state.pendingSince = new Date().toISOString();
+        // Slice 0076 (section 12): what only the form still on screen can tell.
+        try {
+            if (state.op === 'receptie' || state.op === 'receptie-modificare') {
+                var d = document.querySelector(SEL_DATA_RECEPTIE);
+                if (d) { state.formDate = normDate(d.value); }
+            } else if (state.op === 'rezervare') {
+                var buget = document.querySelector(SEL_BUGET);
+                if (buget) { state.rezBuget = scrapeTable(buget); }
+            }
+        } catch (ignored) { }
         saveState();
         emit('info', { message: 'salvare apăsată' });
         renderStatus();
         schedulePendingCheck();
     }
 
+    // Section 12: the "data" of a finished operation, read now that the page is settled.
+    function finishedData() {
+        if (state.op === 'receptie' || state.op === 'receptie-modificare') {
+            return { dataReceptie: state.formDate || state.rowDate || '', rowDate: state.rowDate || '',
+                     formDate: state.formDate || '' };
+        }
+        if (state.op === 'rezervare') {
+            var rows = scrapeTable(document.querySelector(SEL_LISTA));
+            var cod = state.rezIndicator || '';
+            var found = null;
+            var i;
+            if (cod) {
+                for (i = 0; i < rows.length; i++) { if (indicatorOf(rows[i]) === cod) { found = rows[i]; break; } }
+            } else if (state.rezBefore) {
+                // The new indicator: the row whose code was not in the table at the start.
+                for (i = 0; i < rows.length; i++) {
+                    var c = indicatorOf(rows[i]);
+                    if (c && state.rezBefore.indexOf(c) < 0) { found = rows[i]; break; }
+                }
+            }
+            return { indicator: found, indicatorCod: found ? indicatorOf(found) : cod,
+                     buget: state.rezBuget || [] };
+        }
+        return null;
+    }
+
     function finishOperation(message) {
         if (!state.op) { return; }
         stopPendingCheck();
-        emit('finished', { finishedAt: new Date().toISOString(), message: message || '' });
+        var data = null;
+        try { data = finishedData(); } catch (ignored) { }
+        emit('finished', { finishedAt: new Date().toISOString(), message: message || '', data: data });
         resetState();
         renderStatus();
     }
@@ -929,7 +1151,7 @@
             // nothing downloaded. Checked before the finish rules on purpose.
             if (ruleMatches(el, RULE_CANCEL)) { cancelOperation('Renunță apăsat în FOREXE'); return; }
             var current = OPS[state.op];
-            if (current && anyRuleMatches(el, current.finish)) { armFinish(); }
+            if (current && anyRuleMatches(el, current.finish)) { armFinish(el); }
             return;
         }
 
@@ -938,10 +1160,140 @@
             var rules = OPS[name];
             if (rules.when && !exists(rules.when)) { continue; }
             if (anyRuleMatches(el, rules.start)) {
-                startOperation(name, rules.label);
+                startOperation(name, rules.label, el);
                 return;
             }
         }
+    }
+
+    // ── A form left without a save (slice 0076, section 12) ──────────────────
+    // Called on the beat. Once the operation's form has been on screen, its absence with no
+    // save pending means the operator went away (the page's «Inapoi», another tab): the
+    // operation ends, as with «Renunta», instead of blocking every later start.
+    function checkAbandoned() {
+        if (suspended || !state.op || state.pendingSince) { return; }
+        var sel = OP_FORMS[state.op];
+        if (!sel) { return; }
+        if (exists(sel)) {
+            if (!state.formSeen) { state.formSeen = true; saveState(); }
+            return;
+        }
+        if (state.formSeen && !wicketBusy()) { cancelOperation('formularul s-a închis fără salvare'); }
+    }
+
+    // ── The markers (slice 0076, section 13) ─────────────────────────────────
+    var marcajPending = {};    // requestId -> {resolve, timer}
+    var marcajSeq = 0;
+    var marcajBypass = false;  // true while a held click is replayed
+    var marcajBusy = false;    // a click is being held right now
+
+    // Asks .NET for the marker; resolves with its text, or '' (no answer, an error, a timeout).
+    function requestMarcaj(tip) {
+        return new Promise(function (resolve) {
+            if (typeof window._kbotWatchCallback !== 'function') { resolve(''); return; }
+            marcajSeq++;
+            var id = 'm' + Date.now() + '_' + marcajSeq;
+            var timer = setTimeout(function () {
+                if (!marcajPending[id]) { return; }
+                delete marcajPending[id];
+                emit('info', { message: 'marcajul K-BOT nu a venit în ' + (MARCAJ_TIMEOUT_MS / 1000) + ' s; salvez fără el' });
+                resolve('');
+            }, MARCAJ_TIMEOUT_MS);
+            marcajPending[id] = { resolve: resolve, timer: timer };
+            emit('marcaj', { tip: tip, requestId: id });
+        });
+    }
+
+    // From .NET: the answer to requestMarcaj. text '' = no marker (message says why).
+    function setMarcaj(id, text, message) {
+        var p = marcajPending[id];
+        if (!p) { return false; }
+        delete marcajPending[id];
+        clearTimeout(p.timer);
+        if (!text && message) { emit('info', { message: 'marcajul K-BOT lipsește: ' + message }); }
+        p.resolve(text || '');
+        return true;
+    }
+
+    // The text with every K-BOT marker taken out and the new one appended.
+    function withMarcaj(text, marcaj) {
+        var clean = (text || '').replace(RE_MARCAJ, '').replace(/\s+$/, '');
+        return clean ? clean + ' ' + marcaj : marcaj;
+    }
+
+    function setFieldValue(field, value) {
+        field.value = value;
+        try { field.dispatchEvent(new Event('input', { bubbles: true })); } catch (ignored) { }
+        try { field.dispatchEvent(new Event('change', { bubbles: true })); } catch (ignored) { }
+    }
+
+    // Which marker, if any, the clicked button's submit must carry: {tip, field} or null.
+    function marcajTarget(el) {
+        // The reservation: «Continua» of the motive modal.
+        if (closestOf(el, 'div.modal-footer button.btn-success')) {
+            var motiv = document.querySelector(SEL_MOTIV);
+            if (motiv && isVisible(motiv)) { return { tip: 'rezervare', field: motiv }; }
+            return null;
+        }
+        // The reception: «Salveaza» of the reception form, new or edited.
+        if (ruleMatches(el, { closest: 'form.form-horizontal button', text: 'Salveaza' })) {
+            var descr = document.querySelector(SEL_DESCRIERE_RECEPTIE);
+            if (descr && exists(SEL_FORM_RECEPTIE)) { return { tip: 'receptie', field: descr }; }
+        }
+        return null;
+    }
+
+    // Capture phase, after the form guard (a save it stops needs no marker) and before the
+    // watcher (so the finish is armed by the REPLAYED click, the one that really submits).
+    function onMarcajClick(e) {
+        if (suspended || marcajBypass) { return; }
+        if (typeof window._kbotWatchCallback !== 'function') { return; }
+        var el = e.target;
+        if (!el || !el.tagName) { return; }
+        if (menu && menu.contains(el)) { return; }
+        var target = marcajTarget(el);
+        if (!target) { return; }
+        var button = closestOf(el, 'button') || el;
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (marcajBusy) { return; }   // a second click while the first is held
+        marcajBusy = true;
+        emit('info', { message: 'cer marcajul K-BOT pentru ' + target.tip });
+
+        requestMarcaj(target.tip).then(function (marcaj) {
+            try {
+                if (marcaj) { setFieldValue(target.field, withMarcaj(target.field.value, marcaj)); }
+            } catch (ignored) { }
+            marcajBusy = false;
+            marcajBypass = true;
+            try { button.click(); } finally { marcajBypass = false; }
+        });
+    }
+
+    // Enter in a text box of the reception form or of the motive modal would save through the
+    // browser's implicit submit, which may never pass through onMarcajClick. Swallowed there:
+    // the operator saves with the button, and the button carries the marker. Textareas keep
+    // Enter (a new line, never a submit); the buttons themselves keep it too (a key on a focused
+    // button is a real click event, onMarcajClick sees it).
+    function onMarcajKey(e) {
+        if (suspended || e.key !== 'Enter') { return; }
+        if (typeof window._kbotWatchCallback !== 'function') { return; }
+        var el = e.target;
+        if (!el || el.tagName !== 'INPUT') { return; }
+        var type = (el.type || '').toLowerCase();
+        if (type === 'button' || type === 'submit') { return; }
+        var inside = false;
+        try {
+            var form = closestOf(el, 'form');
+            if (form && form.querySelector(SEL_FORM_RECEPTIE)) { inside = true; }
+            var modal = closestOf(el, '.modal');
+            if (modal && modal.querySelector(SEL_MOTIV)) { inside = true; }
+        } catch (ignored) { }
+        if (!inside) { return; }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        emit('info', { message: 'Enter oprit în formular; salvați cu butonul (acolo se pune marcajul K-BOT)' });
     }
 
     // ── Zoom (CSS zoom on the root; the menu is counter-zoomed so it keeps its size) ──
@@ -1166,6 +1518,7 @@
         getState: function () { return JSON.parse(JSON.stringify(state)); },
         reportPage: function () { reportPage(true); },
         getCod: readCod,
+        setMarcaj: setMarcaj,
         configure: configure,
         getConfig: function () { return JSON.parse(JSON.stringify(config)); },
         listElements: listElements,
@@ -1200,6 +1553,9 @@
         // The form guard goes BEFORE the watcher: a swallowed save must not arm a finish.
         document.addEventListener('click', onGuardClick, true);
         document.addEventListener('keydown', onGuardKey, true);
+        // Slice 0076: the marker holds a save click between the guard and the watcher.
+        document.addEventListener('click', onMarcajClick, true);
+        document.addEventListener('keydown', onMarcajKey, true);
         document.addEventListener('click', onClick, true);
         // While the blocking message is up no key reaches the page; registered first so
         // it runs before the guard and the devtools filter.
@@ -1225,6 +1581,7 @@
             if (!menu || !document.body.contains(menu)) { menu = null; buildMenu(); applyZoom(readZoom(), true); }
             reportPage(false);
             refreshGuards();
+            checkAbandoned();
             // The last safety net under the watchers of section 11: should anything drop
             // the sheets, the busy class or the veil past all of them, they come back here.
             resync();

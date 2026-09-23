@@ -152,6 +152,72 @@ Namespace KBot.Forexe
         End Function
 
         ''' <summary>
+        ''' «adlop - Receptie Editata.wfl» (slice 0076): the reception the operator just saved
+        ''' in the «Browser FOREXE» view, and the history from its end back to
+        ''' <paramref name="ultimaData"/>. Starts on the page the operator is on.
+        ''' </summary>
+        ''' <param name="dataReceptie">
+        ''' The date of the EDITED reception (from its form, or from the row whose eye was
+        ''' pressed). Nothing = a NEW reception: the flow reads the last row of the list.
+        ''' </param>
+        ''' <param name="ultimaData">
+        ''' The newest DataFX K-BOT already has for the angajament; Nothing = no local history,
+        ''' read it all.
+        ''' </param>
+        Public Shared Function BuildReceptieEditata(cod As String, dataReceptie As Date?,
+                                                    ultimaData As Date?) As JobRequest
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
+            End If
+
+            Dim job As New JobRequest With {
+                .WorkflowName = "ReceptieEditata",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.ReceptieEditataFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
+            ' Invariant: compared as text with the «Data» cell exactly as the site writes it.
+            job.Parameters(WorkflowCatalog.VarReceptieTinta) =
+                If(dataReceptie.HasValue,
+                   dataReceptie.Value.ToString(WorkflowCatalog.DataReceptieFormat,
+                                               Globalization.CultureInfo.InvariantCulture),
+                   WorkflowCatalog.ReceptieTintaUltima)
+            PuneDataIesire(job, ultimaData)
+            Return job
+        End Function
+
+        ''' <summary>
+        ''' «adlop - Rezervari Editate.wfl» (slice 0076): the header and the history from its
+        ''' end back to <paramref name="ultimaData"/>, once the operator said they are done
+        ''' editing the reservations. The indicators are NOT in it - the page kept them.
+        ''' </summary>
+        Public Shared Function BuildRezervariEditate(cod As String, ultimaData As Date?) As JobRequest
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
+            End If
+
+            Dim job As New JobRequest With {
+                .WorkflowName = "RezervariEditate",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.RezervariEditateFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
+            PuneDataIesire(job, ultimaData)
+            Return job
+        End Function
+
+        ''' <summary>
+        ''' <c>DATA_IESIRE</c>, always: the newest known DataFX in the exact format of the
+        ''' «Timp» column, or <see cref="WorkflowCatalog.DataIesireNiciuna"/> when there is no
+        ''' local history (never empty - see there why).
+        ''' </summary>
+        Private Shared Sub PuneDataIesire(job As JobRequest, ultimaData As Date?)
+            job.Parameters(WorkflowCatalog.VarDataIesire) =
+                If(ultimaData.HasValue,
+                   ultimaData.Value.ToString(WorkflowCatalog.DataIesireFormat,
+                                             Globalization.CultureInfo.InvariantCulture),
+                   WorkflowCatalog.DataIesireNiciuna)
+        End Sub
+
+        ''' <summary>
         ''' Pune <c>RECEPTII_SARITE</c> pe lucrare — INTOTDEAUNA, chiar si goala.
         ''' </summary>
         ''' <remarks>

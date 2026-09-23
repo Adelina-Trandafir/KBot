@@ -369,6 +369,18 @@ Friend Module Program
                        End Function
             End Function)
 
+        ' Slice 0076: the id markers the FOREXE page writes into a reservation's motive / a
+        ' reception's description. Same bridge shape as the Excel one: ApiClient does the HTTP,
+        ' FOREXE only receives the Func (tip, cod) -> marker text.
+        services.AddSingleton(Of IMarcajApi)(
+            Function(sp) DirectCast(sp.GetRequiredService(Of IApiClient)(), IMarcajApi))
+        services.AddSingleton(Of Func(Of String, String, CancellationToken, Task(Of String)))(
+            Function(sp)
+                Return Function(tip As String, cod As String, ct As CancellationToken)
+                           Return sp.GetRequiredService(Of IMarcajApi)().RezervaMarcajAsync(tip, cod, ct)
+                       End Function
+            End Function)
+
         ' Executor FOREXE (in-process).
         services.AddSingleton(Of IForexeRunner, ForexeRunner)()
 

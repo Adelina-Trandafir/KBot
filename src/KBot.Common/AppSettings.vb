@@ -42,6 +42,11 @@ Public NotInheritable Class AppSettings
     ''' <summary>Stored text for <see cref="ExcelRibbon"/>: hide the ribbon's own window (Word's method).</summary>
     Public Const RibbonHideDockWindow As String = "HideDockWindow"
 
+    ''' <summary>Stored text for <see cref="TreeSort"/>: by name (Descriere).</summary>
+    Public Const TreeSortName As String = "Name"
+    ''' <summary>Stored text for <see cref="TreeSort"/>: by DataCreare.</summary>
+    Public Const TreeSortDate As String = "Date"
+
     ' ── Journals ─────────────────────────────────────────────────────────
 
     ''' <summary>
@@ -98,6 +103,60 @@ Public NotInheritable Class AppSettings
     ''' «HideDockWindow». Text, for the same reason as <see cref="AdobeDetachMode"/>.
     ''' </summary>
     Public Property ExcelRibbon As String = RibbonHideDockWindow
+
+    ' ── Main tree (slice 0777) ──────────────────────────────────────────────
+
+    ''' <summary>
+    ''' The order of the main tree: <see cref="TreeSortName"/> (by the angajament's name,
+    ''' the Descriere) or <see cref="TreeSortDate"/> (by DataCreare; rows without a date go
+    ''' last, by name). Text, so a value this build does not know falls back to the default
+    ''' instead of breaking the load.
+    ''' </summary>
+    Public Property TreeSort As String = TreeSortName
+
+    ''' <summary>Sorted by name: the CODANGAJAMENT column is shown.</summary>
+    Public Property TreeNameShowCod As Boolean = True
+    ''' <summary>Sorted by name: the SURSE column is shown.</summary>
+    Public Property TreeNameShowSurse As Boolean = False
+    ''' <summary>Sorted by date: the CODANGAJAMENT column is shown (off by default, operator 23.09.2026).</summary>
+    Public Property TreeDateShowCod As Boolean = False
+    ''' <summary>Sorted by date: the SURSE column is shown (on by default, operator 23.09.2026).</summary>
+    Public Property TreeDateShowSurse As Boolean = True
+
+    ''' <summary>Smallest / largest column width the settings page accepts, logical px (96 dpi).</summary>
+    Public Const TreeColumnWidthMin As Integer = 30
+    Public Const TreeColumnWidthMax As Integer = 600
+
+    ''' <summary>Width of the CODANGAJAMENT column, logical px (96 dpi). Same under both sorts.</summary>
+    Public Property TreeCodColumnWidth As Integer = 140
+    ''' <summary>Width of the SURSE column, logical px (96 dpi). Same under both sorts.</summary>
+    Public Property TreeSurseColumnWidth As Integer = 90
+
+    ''' <summary>True when <paramref name="width"/> is inside [TreeColumnWidthMin, TreeColumnWidthMax].</summary>
+    Public Shared Function IsValidTreeColumnWidth(width As Integer) As Boolean
+        Return width >= TreeColumnWidthMin AndAlso width <= TreeColumnWidthMax
+    End Function
+
+    ''' <summary>True when <see cref="TreeSort"/> asks for the date order; anything else is by name.</summary>
+    Public ReadOnly Property TreeSortIsDate As Boolean
+        Get
+            Return String.Equals(TreeSort, TreeSortDate, StringComparison.OrdinalIgnoreCase)
+        End Get
+    End Property
+
+    ''' <summary>The CODANGAJAMENT column is shown under the sort in force.</summary>
+    Public ReadOnly Property TreeShowCod As Boolean
+        Get
+            Return If(TreeSortIsDate, TreeDateShowCod, TreeNameShowCod)
+        End Get
+    End Property
+
+    ''' <summary>The SURSE column is shown under the sort in force.</summary>
+    Public ReadOnly Property TreeShowSurse As Boolean
+        Get
+            Return If(TreeSortIsDate, TreeDateShowSurse, TreeNameShowSurse)
+        End Get
+    End Property
 
     ' ── Login ────────────────────────────────────────────────────────────
 
@@ -201,6 +260,13 @@ Public NotInheritable Class AppSettings
             .AdobeDetachMode = AdobeDetachMode,
             .AdobePopupWatch = AdobePopupWatch,
             .ExcelRibbon = ExcelRibbon,
+            .TreeSort = TreeSort,
+            .TreeNameShowCod = TreeNameShowCod,
+            .TreeNameShowSurse = TreeNameShowSurse,
+            .TreeDateShowCod = TreeDateShowCod,
+            .TreeDateShowSurse = TreeDateShowSurse,
+            .TreeCodColumnWidth = TreeCodColumnWidth,
+            .TreeSurseColumnWidth = TreeSurseColumnWidth,
             .RememberLastLogin = RememberLastLogin,
             .RememberLastUnit = RememberLastUnit}
     End Function
@@ -223,6 +289,19 @@ Public NotInheritable Class AppSettings
         If Not String.IsNullOrWhiteSpace(dto.AdobeDetachMode) Then s.AdobeDetachMode = dto.AdobeDetachMode.Trim()
         If dto.AdobePopupWatch.HasValue Then s.AdobePopupWatch = dto.AdobePopupWatch.Value
         If Not String.IsNullOrWhiteSpace(dto.ExcelRibbon) Then s.ExcelRibbon = dto.ExcelRibbon.Trim()
+        If Not String.IsNullOrWhiteSpace(dto.TreeSort) Then s.TreeSort = dto.TreeSort.Trim()
+        If dto.TreeNameShowCod.HasValue Then s.TreeNameShowCod = dto.TreeNameShowCod.Value
+        If dto.TreeNameShowSurse.HasValue Then s.TreeNameShowSurse = dto.TreeNameShowSurse.Value
+        If dto.TreeDateShowCod.HasValue Then s.TreeDateShowCod = dto.TreeDateShowCod.Value
+        If dto.TreeDateShowSurse.HasValue Then s.TreeDateShowSurse = dto.TreeDateShowSurse.Value
+        ' A width out of range in the file (hand-edited) keeps the default instead of drawing
+        ' a column of 0 or 5000 px.
+        If dto.TreeCodColumnWidth.HasValue AndAlso IsValidTreeColumnWidth(dto.TreeCodColumnWidth.Value) Then
+            s.TreeCodColumnWidth = dto.TreeCodColumnWidth.Value
+        End If
+        If dto.TreeSurseColumnWidth.HasValue AndAlso IsValidTreeColumnWidth(dto.TreeSurseColumnWidth.Value) Then
+            s.TreeSurseColumnWidth = dto.TreeSurseColumnWidth.Value
+        End If
         If dto.RememberLastLogin.HasValue Then s.RememberLastLogin = dto.RememberLastLogin.Value
         If dto.RememberLastUnit.HasValue Then s.RememberLastUnit = dto.RememberLastUnit.Value
         Return s
@@ -242,6 +321,13 @@ Friend NotInheritable Class AppSettingsDto
     Public Property AdobeDetachMode As String
     Public Property AdobePopupWatch As Boolean?
     Public Property ExcelRibbon As String
+    Public Property TreeSort As String
+    Public Property TreeNameShowCod As Boolean?
+    Public Property TreeNameShowSurse As Boolean?
+    Public Property TreeDateShowCod As Boolean?
+    Public Property TreeDateShowSurse As Boolean?
+    Public Property TreeCodColumnWidth As Integer?
+    Public Property TreeSurseColumnWidth As Integer?
     Public Property RememberLastLogin As Boolean?
     Public Property RememberLastUnit As Boolean?
 End Class

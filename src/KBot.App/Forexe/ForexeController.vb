@@ -414,9 +414,10 @@ Public NotInheritable Class ForexeController
             cod As String,
             receptiiSarite As IReadOnlyList(Of Date)) As Task(Of PrelucrareRezultat)
         Try
+            Dim job As JobRequest = JobBuilder.BuildReceptiiAngajament(cod, receptiiSarite)
             Return Await DescarcaPartialAsync(
                 cod, "Receptii", "recepțiile",
-                JobBuilder.BuildReceptiiAngajament(cod, receptiiSarite),
+                Function() Task.FromResult(job),
                 receptiiSarite)
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeController.DownloadReceptiiAsync", ex)
@@ -435,11 +436,67 @@ Public NotInheritable Class ForexeController
     ''' </remarks>
     Public Async Function DownloadRezervariAsync(cod As String) As Task(Of PrelucrareRezultat)
         Try
+            Dim job As JobRequest = JobBuilder.BuildRezervariAngajament(cod)
             Return Await DescarcaPartialAsync(
                 cod, "Rezervari", "rezervările",
-                JobBuilder.BuildRezervariAngajament(cod), Nothing)
+                Function() Task.FromResult(job), Nothing)
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeController.DownloadRezervariAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Slice 0076 - the reception the operator just SAVED by hand in the «Browser FOREXE»
+    ''' view: «adlop - Receptie Editata.wfl», which starts on the page the operator is on,
+    ''' reads that ONE reception and the history backwards (REVERSE, from the newest DataFX
+    ''' K-BOT has). The package keeps only the reception(s) the flow opened
+    ''' (<see cref="WorkflowResultStore.DoarReceptiileCitite"/>).
+    ''' </summary>
+    ''' <param name="dataReceptie">
+    ''' The date of an EDITED reception; Nothing = a NEW one (the flow reads the last row).
+    ''' </param>
+    ''' <param name="citesteIstoric">The local history read, for the REVERSE stop (as in DownloadNodeAsync).</param>
+    Public Async Function DownloadReceptieEditataAsync(
+            cod As String, dataReceptie As Date?,
+            citesteIstoric As Func(Of String, CancellationToken, Task(Of IstoricInfo))) As Task(Of PrelucrareRezultat)
+        Try
+            Return Await DescarcaPartialAsync(
+                cod, "ReceptieEditata", "recepția salvată",
+                Async Function()
+                    Dim ultimaData As Date? = Await UltimaDataIstoric(cod, citesteIstoric)
+                    Return JobBuilder.BuildReceptieEditata(cod, dataReceptie, ultimaData)
+                End Function,
+                Nothing,
+                AddressOf WorkflowResultStore.DoarReceptiileCitite)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.DownloadReceptieEditataAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Slice 0076 - the reservations the operator edited by hand in the «Browser FOREXE» view,
+    ''' once they said they are done: «adlop - Rezervari Editate.wfl» reads the header and the
+    ''' history backwards from the page they are on, and the indicator rows the page kept after
+    ''' every save are put next to it (<see cref="WorkflowResultStore.CuIndicatoriMemorati"/>) -
+    ''' the same package «Rezervari Angajament» would have produced, without reading the
+    ''' indicators a second time.
+    ''' </summary>
+    Public Async Function DownloadRezervariEditateAsync(
+            cod As String, indicatori As IReadOnlyList(Of RandTabel),
+            citesteIstoric As Func(Of String, CancellationToken, Task(Of IstoricInfo))) As Task(Of PrelucrareRezultat)
+        Try
+            Return Await DescarcaPartialAsync(
+                cod, "RezervariEditate", "rezervările editate",
+                Async Function()
+                    Dim ultimaData As Date? = Await UltimaDataIstoric(cod, citesteIstoric)
+                    Return JobBuilder.BuildRezervariEditate(cod, ultimaData)
+                End Function,
+                Nothing,
+                Function(p) WorkflowResultStore.CuIndicatoriMemorati(p, indicatori))
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.DownloadRezervariEditateAsync", ex)
             Throw
         End Try
     End Function
@@ -448,10 +505,20 @@ Public NotInheritable Class ForexeController
     ''' Trunchiul comun al celor două reîmprospătări parțiale: aceleași porți (ocupat, sesiune),
     ''' aceeași cutie neagră, aceeași regulă a pachetului gol.
     ''' </summary>
+    ''' <param name="construiesteJob">
+    ''' Builds the job INSIDE the busy gate (slice 0076): the two «editate» flows first read the
+    ''' local history for their REVERSE stop, and that read uses this operation's token.
+    ''' </param>
+    ''' <param name="transforma">
+    ''' Slice 0076: what the package still needs before it is kept - the reception rows the
+    ''' flow did not open taken out, or the indicator rows the page kept put in. Nothing = as
+    ''' the flow returned it.
+    ''' </param>
     Private Async Function DescarcaPartialAsync(
             cod As String, eticheta As String, familie As String,
-            job As JobRequest,
-            receptiiSarite As IReadOnlyList(Of Date)) As Task(Of PrelucrareRezultat)
+            construiesteJob As Func(Of Task(Of JobRequest)),
+            receptiiSarite As IReadOnlyList(Of Date),
+            Optional transforma As Func(Of PrelucrareRezultat, PrelucrareRezultat) = Nothing) As Task(Of PrelucrareRezultat)
         ' Cutia neagră a descărcării (felia 0054) — vezi DownloadListaAsync.
         Dim jurnal As New ForexeRunDump(eticheta, cod, _session)
         Try
@@ -474,6 +541,7 @@ Public NotInheritable Class ForexeController
             IntraInLucru()
             Try
                 RaporteazaStare($"Reîmprospătez {familie} pentru «{cod}»...")
+                Dim job As JobRequest = Await construiesteJob()
                 jurnal.NoteRequest(job)
 
                 Dim rezultat As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
@@ -489,6 +557,7 @@ Public NotInheritable Class ForexeController
                 Dim pachet As PrelucrareRezultat =
                     WorkflowResultStore.FaraReceptiileSarite(
                         WorkflowResultStore.DinJobResult(cod, rezultat), receptiiSarite)
+                If transforma IsNot Nothing Then pachet = transforma(pachet)
 
                 Dim cale As String = _store.SalveazaPartial(cod, pachet, eticheta)
                 Dim total As Integer = WorkflowResultStore.NumaraRanduri(pachet)

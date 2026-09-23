@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Workflow name="Rezervări editate {{COD_ANGAJAMENT}}" startUrl="current"
+  expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
+  <!-- V.1 - 23/09/2026 (slice 0076)
+    Run by K-BOT when the operator said they are DONE editing the reservations of an
+    angajament by hand in the «Browser FOREXE» view. The operator is on the angajament's
+    page (the reservations tab), so there is NO preamble: no reset, no search, no
+    «Modificare» (operator, 23.09.2026).
+
+    The indicators are NOT read here. What «adlop - Rezervari Angajament.wfl» reads in its
+    section 1 (the indicator row and its budget table) was already taken by the page itself
+    after every save and kept in K-BOT's memory; K-BOT puts it into the package next to
+    what this flow returns (ForexeController.DownloadRezervariEditateAsync). So the only
+    thing left to read is what the saves wrote into FOREXE's history - FX_Rezervari is
+    written on the server FROM FX_Istoric (steps 3c/3d).
+
+    The history is read like «adlop - Istoric Angajament REVERSE.wfl»: from the LAST page
+    backwards, stopping at {{DATA_IESIRE}} (the newest DataFX K-BOT already has). With no
+    local history K-BOT sends a pattern that never matches, so the whole history is read.
+
+    Variables expected from K-BOT:
+      {{COD_ANGAJAMENT}}  - for the log lines only; the page is already on the angajament
+      {{DATA_IESIRE}}     - where the reverse history read stops
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 0 - the angajament header (.well)
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ Rezervările s-au încheiat — citesc antetul angajamentului ══" level="action" />
+
+  <WaitFor selector=".well.well-small h4 span:nth-child(2)" timeout="15" />
+  <Read selector=".well.well-small h4 span:nth-child(2)" saveTo="CodAngajament" />
+  <Read
+    selector=".well.well-small div.clearfix:has(strong:has-text('Dată angajament')) span:last-child"
+    saveTo="DataAngajament" />
+  <IfExists
+    selector=".well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child">
+    <Read
+      selector=".well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child"
+      saveTo="DataInceputDerulare" />
+  </IfExists>
+
+  <IfExists
+    selector=".well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child">
+    <Read
+      selector=".well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child"
+      saveTo="UltimaModificare" />
+  </IfExists>
+
+  <Read selector=".well.well-small div.pull-left p" saveTo="DescriereAngajament" />
+  <Read selector=".well.well-small span.label" saveTo="StareAngajament" />
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 4 - the history, from the last page backwards
+       «Istoric» lives on tab0 only.
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ Istoricul angajamentului (de la sfârșit, până la {{DATA_IESIRE}}) ══"
+    level="action" />
+
+  <Click selector="li.tab0 a" timeout="15" />
+  <WaitFor selector="li.tab0.active" timeout="15" />
+
+  <Click selector="button.btn-success:has-text('Istoric')" waitNavigation="true" timeout="15" />
+  <WaitFor selector="h3.heading:has-text('Istoric angajament')" timeout="15" />
+
+  <IfExists selector="table.table-striped tbody tr" timeout="15">
+
+    <ScrapeTable selector="table.table-striped"
+      saveTo="TabelIstoric"
+      lastPageSelector="a.last"
+      prevPageSelector="a.prev"
+      waitSelector="table.table-striped"
+      fingerprintSelector="table.table-striped tbody tr:last-child td:last-child"
+      exitIfCellEquals="Timp:~:^{{DATA_IESIRE}}"
+      startFromLast="true"
+      timeout="15" />
+    <Log message="✓ Istoric citit." level="success" />
+
+    <Else>
+      <Log message="Pagina Istoric nu conține înregistrări pentru {{COD_ANGAJAMENT}}."
+        level="warning" />
+    </Else>
+  </IfExists>
+
+  <!-- Back to the angajament page (tab0, the reservations), where the operator was. -->
+  <IfExists selector="button.btn-default:has-text('Înapoi')" timeout="5">
+    <Click selector="button.btn-default:has-text('Înapoi')" waitNavigation="true" timeout="15" />
+    <WaitFor selector="li.tab0" timeout="15" />
+  </IfExists>
+
+  <Log message="══ Istoricul rezervărilor angajamentului {{COD_ANGAJAMENT}} a fost citit. ══"
+    level="success" />
+
+</Workflow>

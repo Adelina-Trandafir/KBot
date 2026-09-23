@@ -53,6 +53,30 @@ Namespace KBot.Forexe
         ' the operator lands on the page they would otherwise have searched for by hand.
         Public Const DeschideAngajamentFile As String = "adlop - Deschide Angajament.wfl"
 
+        ' Slice 0076: the two flows run after the operator SAVED by hand in the «Browser
+        ' FOREXE» view. Both start on the page the operator is on (no reset, no search, no
+        ' «Modificare») and both read the history backwards like the REVERSE flow.
+        '   * Receptie Editata  = the header + ONE reception (the saved one) + the history.
+        '   * Rezervari Editate = the header + the history. The indicator rows come from the
+        '                         page itself, kept in memory after each save.
+        ' The footer icons keep their own files above: they can be pressed with the browser
+        ' anywhere, so those still search and open the angajament.
+        Public Const ReceptieEditataFile As String = "adlop - Receptie Editata.wfl"
+        Public Const RezervariEditateFile As String = "adlop - Rezervari Editate.wfl"
+
+        ''' <summary>Which reception «Receptie Editata» reads: its date, or <see cref="ReceptieTintaUltima"/>.</summary>
+        Public Const VarReceptieTinta As String = "RECEPTIE_TINTA"
+        ''' <summary>A NEW reception: the flow reads the last row of the list.</summary>
+        Public Const ReceptieTintaUltima As String = "ULTIMA"
+
+        ''' <summary>
+        ''' <c>DATA_IESIRE</c> when K-BOT has NO history of the angajament yet: a pattern that
+        ''' matches nothing, so the reverse read (<c>exitIfCellEquals="Timp:~:^{{DATA_IESIRE}}"</c>)
+        ''' never stops early and the whole history is read. An EMPTY value would do the
+        ''' opposite - «^» matches every row, so the read would stop at the first one.
+        ''' </summary>
+        Public Const DataIesireNiciuna As String = "(?!)"
+
         ' Variabilele consumate de cele două .wfl (verificate în fișiere).
         Public Const VarCodAngajament As String = "COD_ANGAJAMENT"
         Public Const VarDataIesire As String = "DATA_IESIRE"
