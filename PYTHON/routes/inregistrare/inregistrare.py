@@ -48,6 +48,7 @@ from . import anaf as anaf_client
 from . import cerere as cerere_mod
 from . import nomenclatoare
 from . import nume
+from . import parola as parola_mod
 from . import store
 
 logger = logging.getLogger(__name__)
@@ -518,6 +519,82 @@ def inregistrare_page():
     response = send_from_directory(current_app.static_folder, _PAGE_FILE)
     response.headers.update(_PAGE_HEADERS)
     return response
+
+
+# ---------------------------------------------------------------------------
+# GET  /parola                          the page the approval mail links to
+# POST /api/inregistrare/parola/stare   {token}          -> is the link alive?
+# POST /api/inregistrare/parola         {token, parola}  -> set it, spend the link
+# Slice 0075-03, plan 5.6 step 8. The token arrives in the link's fragment, so it
+# reaches the server only in these POST bodies -- never in a URL, never in a log.
+# ---------------------------------------------------------------------------
+_PAROLA_FILE = "parola.html"
+_MSG_LINK_DEAD = (
+    "Linkul nu mai este valabil: a expirat sau a fost deja folosit. "
+    "Contactați-ne pentru un link nou."
+)
+
+
+@inregistrare_bp.route("/parola", methods=["GET"])
+def parola_page():
+    response = send_from_directory(current_app.static_folder, _PAROLA_FILE)
+    response.headers.update(_PAGE_HEADERS)
+    return response
+
+
+@inregistrare_bp.route("/api/inregistrare/parola/stare", methods=["POST"])
+def parola_stare():
+    body = request.get_json(silent=True) or {}
+    token = (body.get("token") or "").strip()
+    ip = _ip()
+    if LIMITER.is_blocked(ip, "parola"):
+        return _fail("RATE_LIMITED", _MSG_RATE_LIMITED, 429)
+    try:
+        link = parola_mod.find(token)
+    except mysql.connector.Error as err:
+        logger.error("parola_stare lookup failed: %s", err)
+        return _fail("DB_ERROR", "Linkul nu a putut fi verificat. Reîncercați mai târziu.", 500)
+    if link is None:
+        LIMITER.record_failure(ip, "parola")
+        return _fail("LINK_INVALID", _MSG_LINK_DEAD, 404)
+    return _json({"email_masked": mailer.mask_address(link["email"]),
+                  "denumire": link["denumire"],
+                  "expires_in": link["ramas"]}, 200)
+
+
+@inregistrare_bp.route("/api/inregistrare/parola", methods=["POST"])
+def parola_set():
+    body = request.get_json(silent=True) or {}
+    token = (body.get("token") or "").strip()
+    parola = body.get("parola")
+    ip = _ip()
+    if LIMITER.is_blocked(ip, "parola"):
+        return _fail("RATE_LIMITED", _MSG_RATE_LIMITED, 429)
+
+    problem = parola_mod.password_problem(parola)
+    if problem:
+        return _fail("PAROLA_INVALIDA", problem, 400)
+
+    try:
+        link = parola_mod.find(token)
+    except mysql.connector.Error as err:
+        logger.error("parola_set lookup failed: %s", err)
+        return _fail("DB_ERROR", "Linkul nu a putut fi verificat. Reîncercați mai târziu.", 500)
+    if link is None:
+        LIMITER.record_failure(ip, "parola")
+        return _fail("LINK_INVALID", _MSG_LINK_DEAD, 404)
+
+    try:
+        parola_mod.set_password(link, token, parola)
+    except Exception as err:        # MariaDB refusal or missing provisioning config
+        logger.error("password set for request %s failed: %s", link["id_cerere"], err)
+        return _fail("PAROLA_NESETATA",
+                     "Parola nu a putut fi setată pe server. Reîncercați mai târziu.", 500)
+
+    LIMITER.record_success(ip, "parola")
+    logger.info("password chosen for request %s (%s)", link["id_cerere"],
+                mailer.mask_address(link["email"]))
+    return _json({"ok": True, "utilizator": link["email"]}, 200)
 
 
 # ---------------------------------------------------------------------------

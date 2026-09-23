@@ -79,5 +79,9 @@ export function createApi(getToken) {
     clasificatii: (tip) => call('GET', `/clasificatii?tip=${encodeURIComponent(tip)}`),
     dbName: (denumire) => call('GET', `/nume?denumire=${encodeURIComponent(denumire)}`),
     submit: (payload) => call('POST', '/cerere', payload),
+    // The password link of slice 0075-03 (parola.js). Its token travels in the body,
+    // not in the registration header: it is a different token with a different life.
+    linkState: (token) => call('POST', '/parola/stare', { token }),
+    setPassword: (token, parola) => call('POST', '/parola', { token, parola }),
   };
 }

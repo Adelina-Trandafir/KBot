@@ -9,6 +9,24 @@
         "8765"
       ],
       "port": 8765
+    },
+    {
+      "name": "parola-stub",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/ADELIN~1/AppData/Local/Temp/claude/C--Users-Adelina-Trandafir-source-repos-KBOT/1fd362b9-e18a-46dd-ab70-f93a0a721565/scratchpad/parola_stub.py",
+        "8766"
+      ],
+      "port": 8766
+    },
+    {
+      "name": "operator-stub",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/ADELIN~1/AppData/Local/Temp/claude/C--Users-Adelina-Trandafir-source-repos-KBOT/1fd362b9-e18a-46dd-ab70-f93a0a721565/scratchpad/operator_stub.py",
+        "8767"
+      ],
+      "port": 8767
     }
   ]
 }

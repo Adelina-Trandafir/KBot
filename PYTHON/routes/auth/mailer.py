@@ -163,6 +163,108 @@ def send_registration_code(to_address, code, minutes):
     _deliver(msg, conf)
 
 
+def send_account_ready(to_address, denumire, link, hours):
+    """
+    Tells a new user their unit was approved and hands them the one-time link to
+    choose a password (slice 0075-03, plan 5.6 step 8, D13).
+
+    The database name is deliberately absent: the applicant never saw it on the page
+    (operator, 22.09.2026) and does not need it -- K-BOT lists their unit after login.
+
+    Same contract as the others: MailNotConfigured without SMTP_HOST, smtplib /
+    socket errors propagate to the caller.
+    """
+    conf = _smtp_config()
+
+    msg = EmailMessage()
+    msg["Subject"] = "K-BOT: cererea de înregistrare a fost aprobată"
+    msg["From"] = conf["sender"]
+    msg["To"] = to_address
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = _message_id(conf)
+    # Romanian, literal diacritics: this is what the new user reads.
+    msg.set_content(
+        "Bună ziua,\n\n"
+        f"Cererea de înregistrare pentru «{denumire}» a fost aprobată, iar contul "
+        "dumneavoastră K-BOT este gata.\n\n"
+        "Alegeți parola contului deschizând linkul de mai jos:\n\n"
+        f"{link}\n\n"
+        f"Linkul este valabil {hours} de ore și poate fi folosit o singură dată.\n"
+        f"După ce alegeți parola, vă autentificați în K-BOT cu adresa {to_address} "
+        "și parola aleasă.\n\n"
+        "Dacă nu ați cerut dumneavoastră înregistrarea, ignorați acest mesaj.\n\n"
+        "K-BOT\n"
+    )
+
+    logger.info("account ready mail -> %s via %s:%s",
+                _mask(to_address), conf["host"], conf["port"])
+    _deliver(msg, conf)
+
+
+def send_operator_code(to_address, code, minutes):
+    """
+    The second factor of the operator's sign-in to the approval page (slice 0075-05).
+    That page creates databases and MariaDB accounts, so the password alone is not
+    enough. Same contract as the others.
+    """
+    conf = _smtp_config()
+
+    msg = EmailMessage()
+    msg["Subject"] = "K-BOT: codul de acces la pagina de cereri"
+    msg["From"] = conf["sender"]
+    msg["To"] = to_address
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = _message_id(conf)
+    # Romanian, literal diacritics: this is what the operator reads.
+    msg.set_content(
+        "Bună ziua,\n\n"
+        "Cineva s-a autentificat cu parola dumneavoastră pe pagina de aprobare a cererilor "
+        "de înregistrare K-BOT.\n\n"
+        f"Codul de acces este:  {code}\n\n"
+        f"Codul este valabil {minutes} minute și poate fi folosit o singură dată.\n"
+        "Dacă nu ați fost dumneavoastră, schimbați parola contului K-BOT cât mai repede.\n\n"
+        "K-BOT\n"
+    )
+
+    logger.info("operator code mail -> %s via %s:%s",
+                _mask(to_address), conf["host"], conf["port"])
+    _deliver(msg, conf)
+
+
+def send_registration_rejected(to_address, denumire, motiv):
+    """
+    Tells the applicant their request was turned down, with the operator's reason
+    (slice 0075-05, plan 7). Same contract as the others.
+    """
+    conf = _smtp_config()
+
+    msg = EmailMessage()
+    msg["Subject"] = "K-BOT: cererea de înregistrare nu a fost aprobată"
+    msg["From"] = conf["sender"]
+    msg["To"] = to_address
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = _message_id(conf)
+    # Romanian, literal diacritics: this is what the applicant reads.
+    msg.set_content(
+        "Bună ziua,\n\n"
+        f"Cererea de înregistrare pentru «{denumire}» nu a fost aprobată.\n\n"
+        "Motivul:\n"
+        f"{motiv}\n\n"
+        "Puteți depune o cerere nouă după ce rezolvați problema de mai sus, "
+        "sau ne puteți răspunde la acest mesaj.\n\n"
+        "K-BOT\n"
+    )
+
+    logger.info("registration rejected mail -> %s", _mask(to_address))
+    _deliver(msg, conf)
+
+
+def operator_page_link():
+    """Where the approval page lives, for the operator's notice mail (0075-05)."""
+    base = str(_get(_read_config(), "PUBLIC_BASE_URL", "") or "https://kbot.avatarsoft.ro")
+    return f"{base.rstrip('/')}/operator"
+
+
 def operator_address():
     """
     Where a waiting registration is announced (slice 0075-02, plan 5.5).
@@ -199,7 +301,8 @@ def send_registration_notice(to_address, id_cerere, denumire, cf, email, randuri
         f"Cod fiscal:    {cf}\n"
         f"E-mail:        {email}\n"
         f"Clasificații:  {randuri} rânduri\n\n"
-        "Detaliile complete și butoanele de aprobare sunt pe pagina de cereri.\n\n"
+        "Detaliile complete și butoanele de aprobare sunt pe pagina de cereri:\n"
+        f"{operator_page_link()}\n\n"
         "K-BOT\n"
     )
 

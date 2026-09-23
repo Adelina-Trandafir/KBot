@@ -17,9 +17,15 @@ they differ.**
 
 ## 0.0 START HERE — state on 22.09.2026, end of day
 
-**Passes 0075-00, 0075-01, 0075-02 and 0075-04 are done (code only). Next pass: 0075-03**
-(the provisioning job). 0075-04 was taken first by the operator's choice; 0075-05 (approval)
-needs 0075-03.
+**Passes 0075-00 to 0075-05 are done.** *(Updated 23.09.2026.)* The 0075-03 job HAS run on
+the live server (request 1 ▸ `111_TRND`). The operator's approval page, `/operator` (0075-05),
+is written and verified against a stub only — see §7 "BUILT IN 0075-05". The command line
+`python -m scripts.aproba_cerere <id>` stays as the fallback. **Closed by the operator on
+23.09.2026:** the page deployed and working, §9 check 7 passed, and 0075-06 done on the server
+(details not recorded in this plan). Before the first run the operator must apply `sql/0075_03_provizionare.sql` (it
+also drops the template's `_w` columns below) and add `DB_CONFIG_PROVIZIONARE` to `config.py`.
+**The job has never run**: its first run, and the first run of every undo path, is on the
+live server.
 
 ### The schema is now readable — `MariaDB_Schema/`
 
@@ -467,6 +473,25 @@ failure unwinds in reverse order, sets `Stare = Esuata` + `Motiv`, and reports i
 | 7 | `CREATE USER '<email>'@'%' IDENTIFIED VIA mysql_native_password` with a random unusable password; `GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON \`<db>\`.*` only (D18) — never the SU rights today's accounts carry (D26, §13); row in `Unitati_Utilizatori (UN, DC, Rol='Contabil')` (D23/D24) | `DROP USER` + delete the row |
 | 8 | E-mail the user a one-time link (24 h) to set the password → `SET PASSWORD` | — |
 
+BUILT IN 0075-03 (`routes/inregistrare/provizionare.py`, `randuri.py`, `parola.py`,
+`scripts/aproba_cerere.py`, `sql/0075_03_provizionare.sql`; worklog
+`SLICE-0075-03-provizionare.md`). Where it differs from the table above:
+
+- **Step 8 uses `ALTER USER`, not `SET PASSWORD`**, through the provisioning account —
+  nobody knows the old (random) password, so the user cannot change their own. The link's
+  token sits after `#` (never in a URL the server logs); only its SHA-256 is stored, on the
+  request row (`ParolaHash`, `ParolaExpira` — two new columns).
+- **The mail of step 8 unwinds nothing** when it fails: the unit is complete. The answer says
+  `link_trimis: false`; `link_nou()` / `--link-nou` sends another.
+- **Checks before step 1** (nothing created, request marked `Esuata` with the reason): e-mail
+  usable as an account name and not taken, CF not taken (D11), name ≥ 4 letters, template
+  without the `_w` columns and without triggers/routines/events (they are not cloned), every
+  row passes the dictionaries (§6.3), ≤ `MAX_ROWS`, `CodProgram` valid (D25).
+- **One run at a time server-wide** (`GET_LOCK('kbot_provizionare')`), which also keeps the
+  command line and the future approval page from racing.
+- The provisioning account's grants are written from the documentation, **not tried**: see
+  the worklog for the two that are least certain.
+
 ---
 
 ## 6. `Clasificatii` rows
@@ -503,9 +528,18 @@ An operator page (D10), behind operator login, on the same site:
 - «Respinge» → reason required, e-mailed to the requester.
 - A failed job (`Esuata`) shows `Motiv` and can be retried after the cause is fixed.
 
-UNVERIFIED: how operator login is gated for a web page — `auth.py` offers bearer sessions only;
-an operator allow-list in `config.py` (e-mails) checked on top of `require_session` is the
-candidate. Decide in 0075-05.
+~~UNVERIFIED: how operator login is gated~~ — DECIDED by the operator, 23.09.2026: the K-BOT
+password (a MariaDB login as the operator, like `LoginForm`), then a six-digit code mailed to
+the same address, and the address must be in `OPERATORI` in `config.py`. The session is a
+`STORE` note with its own header (`X-Operator-Token`), not the K-BOT bearer session.
+
+BUILT IN 0075-05 (`routes/inregistrare/operator.py`, `static/operator.html`,
+`static/js/operator/`; worklog `SLICE-0075-05-pagina-operator.md`). Beyond the list above:
+**the operator can also edit the database name** before approving (operator, 23.09.2026),
+held to the computed name's rules — shape `1nn_SSSS`, a number no other database uses, a
+database that does not exist. The page sends the name on screen, so the job builds exactly
+what was confirmed. The approval runs as a thread polled by the page; an in-memory registry,
+safe only under the single gunicorn worker.
 
 ## 8. Passes
 
@@ -514,10 +548,10 @@ candidate. Decide in 0075-05.
 | 0075-00 | `Clasificatii.Sursa` migration script (§11) + Migrator flow (§12) — before anything else |
 | 0075-01 | Pre-auth notes, ANAF proxy, `/cod`, `/verifica` — **DONE (code only)**. ~~pytest~~: no test files, by operator decision of 22.09.2026. The same goes for every pass after this one |
 | 0075-02 | Nomenclator endpoints, name algorithm, `FX_Inregistrari` DDL, `/cerere`; refresh `sql/avacont_comun_login.sql` — **DONE (code only)** |
-| 0075-03 | Provisioning job with compensation. ~~one pytest per failing step proving the unwind~~ — dropped with the rest of the test files. ⚠ Worth knowing what that costs: this is the pass that CREATEs and DROPs databases and MariaDB accounts, and the unwind is the only thing between a half-failed run and a half-built unit. With no test behind it, every compensation path is first exercised on the live server |
+| 0075-03 | Provisioning job with compensation — **DONE (code only), 23.09.2026**, plus the password link page (step 8) and a command line to approve until 0075-05 exists. ~~one pytest per failing step proving the unwind~~ — dropped with the rest of the test files. ⚠ Worth knowing what that costs: this is the pass that CREATEs and DROPs databases and MariaDB accounts, and the unwind is the only thing between a half-failed run and a half-built unit. With no test behind it, every compensation path is first exercised on the live server |
 | 0075-04 | Public page, components vendored to `PYTHON/static/js/` (tree checkbox mode) — **DONE (code only)**, taken ahead of 0075-03 by the operator's choice of 22.09.2026. Verified in a browser against a stub, never against live Flask/MariaDB/ANAF. §4 now describes what was built: six screens, Denumire on screen 1, sursă-sector list (D29), three-level trees with leaf-only boxes (D28), name characters (D27) |
-| 0075-05 | Operator approval UI (incl. the editable `CodProgram` fields, D25); runbook for the provisioning account + SMTP on the VPS |
-| 0075-06 | **Least privilege for the accounts that already exist** (§13, D26) — separate, one account at a time, after the grants are read |
+| 0075-05 | Operator approval UI (incl. the editable `CodProgram` fields, D25, and the editable database name) — **DONE (code only), 23.09.2026**, verified in a browser against a stub. ~~runbook for the provisioning account + SMTP~~: the provisioning account was set up live during 0075-03, recorded in its worklog |
+| 0075-06 | **Least privilege for the accounts that already exist** (§13, D26) — separate, one account at a time, after the grants are read — **DONE by the operator on the server, 23.09.2026** (what was changed is not recorded here) |
 
 ## 9. Verification checklist
 
@@ -680,6 +714,13 @@ are dropped once nothing uses them (D26) — check `Jurnal` and the FOREXE fleet
 
 Every step is reversible from what was recorded, and one account is done and verified by a
 real login before the next is touched.
+
+⚠ **Do not break provisioning while doing this (added 23.09.2026).** Step 7 of §5.6 hands a new
+user their rights through `AVACONT_COMUN.proc_Provizionare_Grant`, a `SQL SECURITY DEFINER`
+procedure whose **definer is `Admin`@`%`** — it runs with Admin's rights, and needs a definer
+holding global privileges `WITH GRANT OPTION` (see `sql/0075_03_02_grant_procedura.sql` for why a
+narrower grant cannot work). If this pass drops `Admin` or trims its global grants, recreate the
+procedure first under an account that keeps them, or every approval fails at step 7.
 
 ## Standing rules
 
