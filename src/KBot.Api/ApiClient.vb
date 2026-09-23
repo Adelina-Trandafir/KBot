@@ -317,6 +317,13 @@ Public Class ApiClient
         End Try
     End Function
 
+    ''' <summary>
+    ''' The <c>ss</c> value of <see cref="GetTreeAsync"/> that lifts the SS filter: every
+    ''' source of the year (slice 0777, the tree sorted by creation date). The server
+    ''' (routes/forexe/tree.py, ALL_SOURCES) knows the same value.
+    ''' </summary>
+    Public Const TreeAllSources As String = "*"
+
     ' Tree query for the MainForm tree (slice 0008). Filters by an + SS; includeHidden
     ' brings ASCUNS rows back (btnOpt). The database is NOT sent — the server reads it
     ' from the session (one database = one unit), so a token cannot target another base.

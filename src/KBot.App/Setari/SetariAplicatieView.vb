@@ -131,6 +131,9 @@ Public Class SetariAplicatieView
 
             cboSortare.Items.Add(New SortItem(AppSettings.TreeSortName, "După nume"))
             cboSortare.Items.Add(New SortItem(AppSettings.TreeSortDate, "După data creării"))
+            ' Index 0 = ascending, 1 = descending (read back by index in IncarcaArborele).
+            cboOrdine.Items.Add("Crescătoare")
+            cboOrdine.Items.Add("Descrescătoare")
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.BuildCombos", ex)
             Throw
@@ -318,6 +321,7 @@ Public Class SetariAplicatieView
             For i As Integer = 0 To cboSortare.Items.Count - 1
                 If DirectCast(cboSortare.Items(i), SortItem).Value = wanted Then cboSortare.SelectedIndex = i : Exit For
             Next
+            cboOrdine.SelectedIndex = If(s.TreeSortDescending, 1, 0)
             chkNumeCod.Checked = s.TreeNameShowCod
             chkNumeSurse.Checked = s.TreeNameShowSurse
             chkDataCod.Checked = s.TreeDateShowCod
@@ -327,6 +331,13 @@ Public Class SetariAplicatieView
         Finally
             _suppress = before
         End Try
+    End Sub
+
+    Private Sub CboOrdine_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboOrdine.SelectedIndexChanged
+        If cboOrdine.SelectedIndex < 0 Then Return
+        Dim descending As Boolean = (cboOrdine.SelectedIndex = 1)
+        SalveazaComutator(Sub(s) s.TreeSortDescending = descending,
+                          "Arborele de angajamente se ordonează " & If(descending, "descrescător", "crescător") & ".")
     End Sub
 
     Private Sub CboSortare_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSortare.SelectedIndexChanged
@@ -429,7 +440,7 @@ Public Class SetariAplicatieView
                 t.BackColor = p.SurfaceAltColor
             Next
             For Each caption As Label In New Label() {lblVerbose, lblAdobeMotor, lblExcelRibbon,
-                                                      lblSortare, lblColoaneNume, lblColoaneData,
+                                                      lblSortare, lblOrdine, lblColoaneNume, lblColoaneData,
                                                       lblLatimeCod, lblLatimeSurse}
                 caption.ForeColor = p.TextDimColor
                 caption.BackColor = Color.Transparent

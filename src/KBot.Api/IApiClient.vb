@@ -53,6 +53,7 @@ Public Interface IApiClient
     ''' pe an + SS. includeHidden readuce angajamentele ASCUNS (opțiunea btnOpt).
     ''' Baza NU se trimite: serverul o ia din sesiune (o bază = o unitate). Hard-fail
     ''' (Throw) la non-2xx; fără retry pe 401 (curge spre WithReauth).
+    ''' Slice 0777: ss = <see cref="ApiClient.TreeAllSources"/> brings every source of the year.
     ''' </summary>
     Function GetTreeAsync(an As Integer, ss As String, includeHidden As Boolean,
                           ct As CancellationToken) As Task(Of IReadOnlyList(Of AngajamentTreeInfo))

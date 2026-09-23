@@ -1277,7 +1277,9 @@ Public Class KbotForm
         End If
 
         Dim an As Integer = CInt(cboAn.SelectedItem)
-        Dim ss As String = CStr(cboSs.SelectedItem)
+        ' Sorted by date the tree is a timeline of the whole year: every source, not only the
+        ' SS in the combo (operator, 23.09.2026 -- slice 0777).
+        Dim ss As String = If(AppSettings.Current.TreeSortIsDate, ApiClient.TreeAllSources, CStr(cboSs.SelectedItem))
         ' Citit ÎNAINTE de cerere: `PopulateTree` golește `_currentInfo`, deci după el nu mai
         ' există de unde afla ce era selectat.
         Dim codSelectat As String = If(pastreazaSelectia AndAlso _currentInfo IsNot Nothing,
@@ -1345,7 +1347,7 @@ Public Class KbotForm
                 ' sort in force (slice 0777, ApplyTreeColumns) -- so a toggle needs no reload.
                 node.Cells(COL_COD) = New AdvancedTreeControl.TreeItem.CellData With {.Value = cod}
                 node.Cells(COL_SURSE) = New AdvancedTreeControl.TreeItem.CellData With {
-                    .Value = If(info.Surse, String.Empty).Trim()}
+                    .Value = FormatSurse(info.Surse)}
                 node.Bold = info.AreIndicatori   ' legacy: îngroșare = are surse (indicatori)
                 node.Tooltip = TooltipFor(info)
                 'node.ShowRightIconOnHover = True
@@ -1419,7 +1421,7 @@ Public Class KbotForm
                 linii.Add("Definitivat: " & info.DataDefinitivare.Value.ToString("dd.MM.yyyy"))
             End If
 
-            Dim surse As String = If(info.Surse, String.Empty).Trim()
+            Dim surse As String = FormatSurse(info.Surse)
             If surse.Length > 0 Then linii.Add("Surse: " & surse)
             If info.Ascuns Then linii.Add("Ascuns")
 

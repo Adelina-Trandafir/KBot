@@ -30,6 +30,7 @@ Partial Class SetariAplicatieView
         btnAdobeGazduire = New Button()
         cboExcelRibbon = New KBotComboBox()
         cboSortare = New KBotComboBox()
+        cboOrdine = New KBotComboBox()
         chkNumeCod = New CheckBox()
         chkNumeSurse = New CheckBox()
         chkDataCod = New CheckBox()
@@ -50,6 +51,7 @@ Partial Class SetariAplicatieView
         lblTitluArbore = New Label()
         tlyArbore = New KBotTableLayoutPanel()
         lblSortare = New Label()
+        lblOrdine = New Label()
         lblColoaneNume = New Label()
         lblColoaneData = New Label()
         lblLatimeCod = New Label()
@@ -184,7 +186,36 @@ Partial Class SetariAplicatieView
         cboSortare.Size = New Size(496, 37)
         cboSortare.TabIndex = 1
         tips.SetToolTipHeader(cboSortare, "Ordinea arborelui de angajamente")
-        tips.SetToolTipText(cboSortare, "«După nume» = după descrierea angajamentului." & vbLf & "«După data creării» = de la cel mai vechi; cele fără dată descărcată vin la urmă, după nume." & vbLf & "Aceeași alegere e și în meniul iconiței din antetul arborelui.")
+        tips.SetToolTipText(cboSortare, "«După nume» = după descrierea angajamentului." & vbLf & "«După data creării» = din TOATE sursele anului (nu doar SS-ul ales); cele fără dată descărcată vin la urmă, după nume." & vbLf & "Aceeași alegere e și în meniul iconiței din antetul arborelui.")
+        '
+        ' cboOrdine
+        '
+        cboOrdine.Anchor = AnchorStyles.Left Or AnchorStyles.Right
+        tlyArbore.SetColumnSpan(cboOrdine, 2)
+        cboOrdine.CornerRadius = 4
+        cboOrdine.DrawMode = DrawMode.OwnerDrawFixed
+        cboOrdine.DropDownStyle = ComboBoxStyle.DropDownList
+        cboOrdine.FlatStyle = FlatStyle.Flat
+        cboOrdine.ItemHeight = 31
+        cboOrdine.Location = New Point(404, 47)
+        cboOrdine.Margin = New Padding(4, 0, 4, 10)
+        cboOrdine.Name = "cboOrdine"
+        cboOrdine.Size = New Size(496, 37)
+        cboOrdine.TabIndex = 2
+        tips.SetToolTipHeader(cboOrdine, "Ordinea sortării")
+        tips.SetToolTipText(cboOrdine, "«Crescătoare» = A…Z, respectiv de la cel mai vechi (implicit)." & vbLf & "«Descrescătoare» = Z…A, respectiv de la cel mai nou." & vbLf & "Cele fără dată descărcată rămân oricum la urmă.")
+        '
+        ' lblOrdine
+        '
+        lblOrdine.AutoSize = True
+        lblOrdine.Dock = DockStyle.Fill
+        lblOrdine.Location = New Point(4, 47)
+        lblOrdine.Margin = New Padding(4, 0, 4, 10)
+        lblOrdine.Name = "lblOrdine"
+        lblOrdine.Size = New Size(392, 37)
+        lblOrdine.TabIndex = 1
+        lblOrdine.Text = "Ordine"
+        lblOrdine.TextAlign = ContentAlignment.MiddleLeft
         '
         ' chkNumeCod
         '
@@ -448,27 +479,30 @@ Partial Class SetariAplicatieView
         tlyArbore.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyArbore.Controls.Add(lblSortare, 0, 0)
         tlyArbore.Controls.Add(cboSortare, 1, 0)
-        tlyArbore.Controls.Add(lblColoaneNume, 0, 1)
-        tlyArbore.Controls.Add(chkNumeCod, 1, 1)
-        tlyArbore.Controls.Add(chkNumeSurse, 2, 1)
-        tlyArbore.Controls.Add(lblColoaneData, 0, 2)
-        tlyArbore.Controls.Add(chkDataCod, 1, 2)
-        tlyArbore.Controls.Add(chkDataSurse, 2, 2)
-        tlyArbore.Controls.Add(lblLatimeCod, 0, 3)
-        tlyArbore.Controls.Add(txtLatimeCod, 1, 3)
-        tlyArbore.Controls.Add(lblLatimeSurse, 0, 4)
-        tlyArbore.Controls.Add(txtLatimeSurse, 1, 4)
+        tlyArbore.Controls.Add(lblOrdine, 0, 1)
+        tlyArbore.Controls.Add(cboOrdine, 1, 1)
+        tlyArbore.Controls.Add(lblColoaneNume, 0, 2)
+        tlyArbore.Controls.Add(chkNumeCod, 1, 2)
+        tlyArbore.Controls.Add(chkNumeSurse, 2, 2)
+        tlyArbore.Controls.Add(lblColoaneData, 0, 3)
+        tlyArbore.Controls.Add(chkDataCod, 1, 3)
+        tlyArbore.Controls.Add(chkDataSurse, 2, 3)
+        tlyArbore.Controls.Add(lblLatimeCod, 0, 4)
+        tlyArbore.Controls.Add(txtLatimeCod, 1, 4)
+        tlyArbore.Controls.Add(lblLatimeSurse, 0, 5)
+        tlyArbore.Controls.Add(txtLatimeSurse, 1, 5)
         tlyArbore.Dock = DockStyle.Top
         tlyArbore.Location = New Point(28, 58)
         tlyArbore.Margin = New Padding(4, 0, 4, 24)
         tlyArbore.Name = "tlyArbore"
-        tlyArbore.RowCount = 5
+        tlyArbore.RowCount = 6
         tlyArbore.RowStyles.Add(New RowStyle())
         tlyArbore.RowStyles.Add(New RowStyle())
         tlyArbore.RowStyles.Add(New RowStyle())
         tlyArbore.RowStyles.Add(New RowStyle())
         tlyArbore.RowStyles.Add(New RowStyle())
-        tlyArbore.Size = New Size(904, 219)
+        tlyArbore.RowStyles.Add(New RowStyle())
+        tlyArbore.Size = New Size(904, 266)
         tlyArbore.TabIndex = 1
         '
         ' lblSortare
@@ -527,7 +561,7 @@ Partial Class SetariAplicatieView
         txtLatimeCod.Margin = New Padding(4, 0, 4, 10)
         txtLatimeCod.MaxLength = 3
         txtLatimeCod.Name = "txtLatimeCod"
-        txtLatimeCod.PlaceholderText = "140"
+        txtLatimeCod.PlaceholderText = "100"
         txtLatimeCod.Size = New Size(150, 40)
         txtLatimeCod.TabIndex = 9
         txtLatimeCod.TextAlign = HorizontalAlignment.Center
@@ -555,7 +589,7 @@ Partial Class SetariAplicatieView
         txtLatimeSurse.Margin = New Padding(4, 0, 4, 10)
         txtLatimeSurse.MaxLength = 3
         txtLatimeSurse.Name = "txtLatimeSurse"
-        txtLatimeSurse.PlaceholderText = "90"
+        txtLatimeSurse.PlaceholderText = "70"
         txtLatimeSurse.Size = New Size(150, 40)
         txtLatimeSurse.TabIndex = 11
         txtLatimeSurse.TextAlign = HorizontalAlignment.Center
@@ -612,6 +646,8 @@ Partial Class SetariAplicatieView
     Friend WithEvents tlyArbore As KBotTableLayoutPanel
     Friend WithEvents lblSortare As Label
     Friend WithEvents cboSortare As KBotComboBox
+    Friend WithEvents lblOrdine As Label
+    Friend WithEvents cboOrdine As KBotComboBox
     Friend WithEvents lblColoaneNume As Label
     Friend WithEvents chkNumeCod As CheckBox
     Friend WithEvents chkNumeSurse As CheckBox

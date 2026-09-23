@@ -17,9 +17,10 @@ Imports KBot.Domain
 ''' The menu and the KBOT tab of the application settings page write the same keys, and the shell
 ''' follows <see cref="AppSettings.Changed"/>, so a change made on either side shows at once.</para>
 '''
-''' <para><b>Nothing is asked of the server again.</b> The rows of the last load are kept in
-''' <c>_treeRows</c> and only re-laid; the selected node comes back where it was
-''' (<c>PopulateTree</c> re-selects it).</para>
+''' <para><b>The two sorts show different rows.</b> By name = the SS chosen in the combo; by
+''' date = EVERY source of the year (<c>ss=*</c>, operator 23.09.2026). So a change of sort
+''' reloads from the server; a change of column only re-lays. The selected node comes back
+''' where it was when it is still in the list (<c>PopulateTree</c> re-selects it).</para>
 ''' </summary>
 Partial Public Class KbotForm
 
@@ -40,6 +41,7 @@ Partial Public Class KbotForm
     ' What the tree was last laid out with, so an AppSettings.Changed raised for an unrelated
     ' switch (the console, the browser button...) does not re-lay the tree for nothing.
     Private _appliedSortIsDate As Boolean?
+    Private _appliedDescending As Boolean?
     Private _appliedShowCod As Boolean?
     Private _appliedShowSurse As Boolean?
     Private _appliedCodWidth As Integer?
@@ -82,20 +84,36 @@ Partial Public Class KbotForm
                                          Not Nullable.Equals(_appliedShowSurse, s.TreeShowSurse) OrElse
                                          Not Nullable.Equals(_appliedCodWidth, s.TreeCodColumnWidth) OrElse
                                          Not Nullable.Equals(_appliedSurseWidth, s.TreeSurseColumnWidth)
-            If Not sortChanged AndAlso Not colsChanged Then Return
+            Dim directionChanged As Boolean = Not Nullable.Equals(_appliedDescending, s.TreeSortDescending)
+            If Not sortChanged AndAlso Not colsChanged AndAlso Not directionChanged Then Return
 
             If colsChanged Then ApplyTreeColumns(s)
             _appliedSortIsDate = s.TreeSortIsDate
+            _appliedDescending = s.TreeSortDescending
 
             If sortChanged AndAlso _treeRows IsNot Nothing Then
-                ' The selected node stays selected: the order changed, not the contents.
-                Dim codSelectat As String = If(_currentInfo Is Nothing, Nothing, _currentInfo.CodAngajament)
-                PopulateTree(_treeRows, codSelectat)
+                ' The two sorts do not show the same rows: by date = every source of the
+                ' year, by name = the SS in the combo. So a change of sort asks the server
+                ' again; the selected node stays selected if it is still in the list.
+                ReincarcaArboreleDupaSortare()
+            ElseIf directionChanged AndAlso _treeRows IsNot Nothing Then
+                ' Same rows, other direction: re-laid from the kept rows, selection kept.
+                PopulateTree(_treeRows, If(_currentInfo Is Nothing, Nothing, _currentInfo.CodAngajament))
             Else
                 tree.Invalidate()
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ApplyTreeOptionsFromStore", ex)
+        End Try
+    End Sub
+
+    ' Async boundary (fire-and-forget from a settings event): LoadTreeAsync already shows its
+    ' own failures to the operator; anything else is logged and swallowed.
+    Private Async Sub ReincarcaArboreleDupaSortare()
+        Try
+            Await LoadTreeAsync(pastreazaSelectia:=True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ReincarcaArboreleDupaSortare", ex)
         End Try
     End Sub
 
@@ -117,6 +135,7 @@ Partial Public Class KbotForm
             _appliedCodWidth = s.TreeCodColumnWidth
             _appliedSurseWidth = s.TreeSurseColumnWidth
             If Not _appliedSortIsDate.HasValue Then _appliedSortIsDate = s.TreeSortIsDate
+            If Not _appliedDescending.HasValue Then _appliedDescending = s.TreeSortDescending
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ApplyTreeColumns", ex)
             Throw
@@ -139,25 +158,35 @@ Partial Public Class KbotForm
     ''' The rows in the order the store asks for.
     ''' <list type="bullet">
     ''' <item>By name: Descriere in Romanian order, the code breaking ties.</item>
-    ''' <item>By date: DataCreare, oldest first. A row whose date was not downloaded yet goes
-    ''' LAST, and those rows are ordered by name among themselves (operator, 23.09.2026).</item>
+    ''' <item>By date: DataCreare. A row whose date was not downloaded yet goes LAST, and
+    ''' those rows are ordered by name among themselves, whatever the direction.</item>
     ''' </list>
-    ''' The code breaks every remaining tie, so two loads never swap rows under the operator.
+    ''' Direction: <c>TreeSortDescending</c>, ascending by default (operator, 23.09.2026). The
+    ''' code breaks every remaining tie, so two loads never swap rows under the operator.
     ''' </summary>
     Private Function SortRows(rows As IReadOnlyList(Of AngajamentTreeInfo)) As IEnumerable(Of AngajamentTreeInfo)
         Try
             If rows Is Nothing Then Return Array.Empty(Of AngajamentTreeInfo)()
+            rows = OneRowPerAngajament(rows)
 
+            Dim s As AppSettings = AppSettings.Current
             Dim byName As Func(Of AngajamentTreeInfo, String) = Function(i) If(i.Descriere, String.Empty).Trim()
             Dim byCod As Func(Of AngajamentTreeInfo, String) = Function(i) If(i.CodAngajament, String.Empty)
 
-            If Not AppSettings.Current.TreeSortIsDate Then
-                Return rows.OrderBy(byName, NameComparer).ThenBy(byCod, StringComparer.OrdinalIgnoreCase).ToList()
+            If Not s.TreeSortIsDate Then
+                Dim byNameOrdered As IOrderedEnumerable(Of AngajamentTreeInfo) =
+                    If(s.TreeSortDescending,
+                       rows.OrderByDescending(byName, NameComparer),
+                       rows.OrderBy(byName, NameComparer))
+                Return byNameOrdered.ThenBy(byCod, StringComparer.OrdinalIgnoreCase).ToList()
             End If
 
+            Dim withDate As IEnumerable(Of AngajamentTreeInfo) = rows.Where(Function(i) i.DataCreare.HasValue)
+            Dim byDate As Func(Of AngajamentTreeInfo, Date) = Function(i) i.DataCreare.Value
             Dim dated As IEnumerable(Of AngajamentTreeInfo) =
-                rows.Where(Function(i) i.DataCreare.HasValue).
-                     OrderBy(Function(i) i.DataCreare.Value).
+                If(s.TreeSortDescending,
+                   withDate.OrderByDescending(byDate),
+                   withDate.OrderBy(byDate)).
                      ThenBy(byName, NameComparer).
                      ThenBy(byCod, StringComparer.OrdinalIgnoreCase)
             Dim undated As IEnumerable(Of AngajamentTreeInfo) =
@@ -169,6 +198,45 @@ Partial Public Class KbotForm
             GlobalErrorLog.Write("MainForm.SortRows", ex)
             Throw
         End Try
+    End Function
+
+    ''' <summary>
+    ''' One tree row per angajament, whatever the list holds. An angajament can have several
+    ''' sources (operator, 23.09.2026): the server already folds them into one row
+    ''' (GROUP_CONCAT over FX_Indicatori, CodAngajament is the primary key), but a second row
+    ''' with the same code would collide on the node key, so any repeat is merged here: the
+    ''' first row is kept and gets the union of the sources.
+    ''' </summary>
+    Private Shared Function OneRowPerAngajament(rows As IReadOnlyList(Of AngajamentTreeInfo)) As IReadOnlyList(Of AngajamentTreeInfo)
+        Dim result As New List(Of AngajamentTreeInfo)(rows.Count)
+        Dim byCod As New Dictionary(Of String, AngajamentTreeInfo)(StringComparer.OrdinalIgnoreCase)
+        For Each info As AngajamentTreeInfo In rows
+            If info Is Nothing Then Continue For
+            Dim cod As String = If(info.CodAngajament, String.Empty).Trim()
+            Dim first As AngajamentTreeInfo = Nothing
+            If byCod.TryGetValue(cod, first) Then
+                first.Surse = FormatSurse(first.Surse & ";" & info.Surse)
+                Continue For
+            End If
+            byCod(cod) = info
+            result.Add(info)
+        Next
+        Return result
+    End Function
+
+    ''' <summary>
+    ''' The sources of one angajament as the operator reads them: each SS once, in order,
+    ''' separated by «,» (the server sends them joined by «;»). Empty stays empty.
+    ''' </summary>
+    Private Shared Function FormatSurse(raw As String) As String
+        If String.IsNullOrWhiteSpace(raw) Then Return String.Empty
+        Dim parts As IEnumerable(Of String) =
+            raw.Split({";"c, ","c}, StringSplitOptions.RemoveEmptyEntries).
+                Select(Function(p) p.Trim()).
+                Where(Function(p) p.Length > 0).
+                Distinct(StringComparer.OrdinalIgnoreCase).
+                OrderBy(Function(p) p, StringComparer.OrdinalIgnoreCase)
+        Return String.Join(",", parts)
     End Function
 
     ' ---------------- the menu ----------------

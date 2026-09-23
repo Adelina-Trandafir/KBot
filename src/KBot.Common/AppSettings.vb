@@ -114,6 +114,12 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property TreeSort As String = TreeSortName
 
+    ''' <summary>
+    ''' The direction of <see cref="TreeSort"/>: False = ascending (A..Z, oldest first -- the
+    ''' default, operator 23.09.2026), True = descending. Rows without a date stay last either way.
+    ''' </summary>
+    Public Property TreeSortDescending As Boolean = False
+
     ''' <summary>Sorted by name: the CODANGAJAMENT column is shown.</summary>
     Public Property TreeNameShowCod As Boolean = True
     ''' <summary>Sorted by name: the SURSE column is shown.</summary>
@@ -128,9 +134,9 @@ Public NotInheritable Class AppSettings
     Public Const TreeColumnWidthMax As Integer = 600
 
     ''' <summary>Width of the CODANGAJAMENT column, logical px (96 dpi). Same under both sorts.</summary>
-    Public Property TreeCodColumnWidth As Integer = 140
+    Public Property TreeCodColumnWidth As Integer = 100
     ''' <summary>Width of the SURSE column, logical px (96 dpi). Same under both sorts.</summary>
-    Public Property TreeSurseColumnWidth As Integer = 90
+    Public Property TreeSurseColumnWidth As Integer = 70
 
     ''' <summary>True when <paramref name="width"/> is inside [TreeColumnWidthMin, TreeColumnWidthMax].</summary>
     Public Shared Function IsValidTreeColumnWidth(width As Integer) As Boolean
@@ -261,6 +267,7 @@ Public NotInheritable Class AppSettings
             .AdobePopupWatch = AdobePopupWatch,
             .ExcelRibbon = ExcelRibbon,
             .TreeSort = TreeSort,
+            .TreeSortDescending = TreeSortDescending,
             .TreeNameShowCod = TreeNameShowCod,
             .TreeNameShowSurse = TreeNameShowSurse,
             .TreeDateShowCod = TreeDateShowCod,
@@ -290,6 +297,7 @@ Public NotInheritable Class AppSettings
         If dto.AdobePopupWatch.HasValue Then s.AdobePopupWatch = dto.AdobePopupWatch.Value
         If Not String.IsNullOrWhiteSpace(dto.ExcelRibbon) Then s.ExcelRibbon = dto.ExcelRibbon.Trim()
         If Not String.IsNullOrWhiteSpace(dto.TreeSort) Then s.TreeSort = dto.TreeSort.Trim()
+        If dto.TreeSortDescending.HasValue Then s.TreeSortDescending = dto.TreeSortDescending.Value
         If dto.TreeNameShowCod.HasValue Then s.TreeNameShowCod = dto.TreeNameShowCod.Value
         If dto.TreeNameShowSurse.HasValue Then s.TreeNameShowSurse = dto.TreeNameShowSurse.Value
         If dto.TreeDateShowCod.HasValue Then s.TreeDateShowCod = dto.TreeDateShowCod.Value
@@ -322,6 +330,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property AdobePopupWatch As Boolean?
     Public Property ExcelRibbon As String
     Public Property TreeSort As String
+    Public Property TreeSortDescending As Boolean?
     Public Property TreeNameShowCod As Boolean?
     Public Property TreeNameShowSurse As Boolean?
     Public Property TreeDateShowCod As Boolean?
