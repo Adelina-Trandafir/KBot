@@ -54,6 +54,12 @@ Public NotInheritable Class OrdPageContext
     ''' <summary>Codul fiscal al UNITĂȚII (sesiune «CF»), nu al partenerului.</summary>
     Public ReadOnly Property CodFiscal As String
 
+    ''' <summary>
+    ''' Slice 0078: the signing session of the document at <see cref="PdfPath"/> (Nothing when the
+    ''' node has no single document). Owned by OrdView; the «Document» page hands it to the preview.
+    ''' </summary>
+    Public Property Signing As PdfSigningSession
+
     Public Sub New(linii As List(Of OrdLinieRow), isRoot As Boolean, nrOrd As Integer,
                    dataOrd As Date?, cod As String, pdfPath As String, pdfExists As Boolean,
                    Optional ord As OrdHeaderRow = Nothing,

@@ -87,6 +87,8 @@ Public NotInheritable Class GetTreeRow
     Public Property Descriere As String
     Public Property Stare As String
     Public Property DataCreare As Date?
+    ' Slice 0777: FX_Istoric «Angajament nou.» DataFX, time part included.
+    Public Property DataAngajamentNou As Date?
     Public Property DataDefinitivare As Date?
     Public Property Incarcat As Boolean
     Public Property Preluat As Boolean
@@ -453,6 +455,8 @@ Public NotInheritable Class GetOrdHeaderRow
     Public Property pdf_sha256 As String
     Public Property pdf_dimensiune As Integer?
     Public Property pdf_data_modif As Date?
+    ' Slice 0078 -- FX_ORD.Semnatura: signer roles, e.g. "AB,Ordonator". Null/empty = unsigned.
+    Public Property semnatura As String
 End Class
 
 ' One FX_ORD_TBL record. The list stays FLAT (the server does not group), but every line

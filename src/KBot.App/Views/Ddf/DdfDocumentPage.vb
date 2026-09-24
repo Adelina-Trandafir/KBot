@@ -22,6 +22,8 @@ Public Class DdfDocumentPage
     Private _pendingExists As Boolean
     Private _shownPath As String
     Private _shownExists As Boolean
+    ' Slice 0078: the signing session that goes with the pending target.
+    Private _pendingSigning As PdfSigningSession
     ' Se populează combo-urile de setări chiar acum? Atunci o selecție programatică nu are voie
     ' să declanșeze o salvare.
     ' Private _suppressAdobeComboEvent As Boolean
@@ -54,9 +56,11 @@ Public Class DdfDocumentPage
             If ctx Is Nothing OrElse String.IsNullOrEmpty(ctx.PdfPath) Then
                 _pendingPath = Nothing
                 _pendingExists = False
+                _pendingSigning = Nothing
             Else
                 _pendingPath = ctx.PdfPath
                 _pendingExists = ctx.PdfExists
+                _pendingSigning = ctx.Signing
             End If
             MountIfVisible()
         Catch ex As Exception
@@ -79,6 +83,9 @@ Public Class DdfDocumentPage
     ' fiecare comutare de pagină.
     Private Sub MountIfVisible()
         If Not Visible Then Return
+        ' Slice 0078: outside the (path, exists) guard -- a new session for the same file (after an
+        ' upload, or a view reload) must reach the preview without re-launching Adobe.
+        previewPdf.Signing = _pendingSigning
         If String.Equals(_shownPath, _pendingPath, StringComparison.Ordinal) AndAlso
            _shownExists = _pendingExists Then Return
 

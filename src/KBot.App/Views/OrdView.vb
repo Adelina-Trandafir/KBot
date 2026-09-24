@@ -104,6 +104,8 @@ Public Class OrdView
     Private _pdfPathOverride As String
     ' A generation is running? Blocks re-entry from the button.
     Private _generating As Boolean
+    ' Slice 0078: the signing session of the document on screen (Nothing when there is none).
+    Private _signing As PdfSigningSession
 
     ' Starea splitter-ului dinainte de strângerea arborelui, ca desfacerea să-l pună înapoi
     ' exact unde era (vezi Tree_CollapsedChanged). 0 = arborele n-a fost încă strâns.
@@ -121,6 +123,8 @@ Public Class OrdView
         _withReauth = withReauth
         _session = session
         _executaComanda = executaComanda
+        ' Slice 0078: the session's FileSystemWatcher must not outlive the view.
+        AddHandler Disposed, Sub(s, e) EndSigning()
         BuildNav()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
@@ -307,8 +311,14 @@ Public Class OrdView
                 ElseIf Not String.IsNullOrEmpty(_pdfPathRezolvat) AndAlso
                    _pdfRezolvatPentruIdordp = _selectedOrd.Idordp Then
                     pdfPath = _pdfPathRezolvat
-                Else
-                    pdfPath = OrdPdfLocator.ExpectedPath(KBotPaths.Current.OrdPdfRoot, _selectedOrd, _requestedCod)
+                ElseIf Not _selectedOrd.ArePdfSemnat Then
+                    ' Slice 0078: a SIGNED ordonantare shows nothing until EnsureSignedPdfAsync
+                    ' has checked the local copy against the server (the server is the truth).
+                    ' No PDF on the server: NEVER a local file (operator, 23.09.2026) -- only what
+                    ' «Generează» wrote in the work area this session; else the generate button.
+                    Dim nume As String = IO.Path.GetFileName(
+                        OrdPdfLocator.ExpectedPath(KBotPaths.Current.OrdPdfRoot, _selectedOrd, _requestedCod))
+                    If Not String.IsNullOrEmpty(nume) Then pdfPath = TempPdfStore.PathFor(nume)
                 End If
             End If
             ' Existența fișierului se decide printr-o probă pe discul clientului. Serverul spune
@@ -317,13 +327,15 @@ Public Class OrdView
 
             ' Antetul întreg + globalii unității: banda de antet a paginii «Vizualizare» îi
             ' folosește. Sesiunea poate lipsi (teste) -> rândurile ei se sar, banda nu se rupe.
-            Return New OrdPageContext(_nodeLinii, _nodeIsRoot,
-                                      If(_selectedOrd Is Nothing, 0, _selectedOrd.NrOrd),
-                                      If(_selectedOrd Is Nothing, Nothing, _selectedOrd.DataOrd),
-                                      _requestedCod, pdfPath, exists,
-                                      _selectedOrd,
-                                      If(_session Is Nothing, String.Empty, _session.NumeUnitate),
-                                      If(_session Is Nothing, String.Empty, _session.CF))
+            Dim ctx As New OrdPageContext(_nodeLinii, _nodeIsRoot,
+                                          If(_selectedOrd Is Nothing, 0, _selectedOrd.NrOrd),
+                                          If(_selectedOrd Is Nothing, Nothing, _selectedOrd.DataOrd),
+                                          _requestedCod, pdfPath, exists,
+                                          _selectedOrd,
+                                          If(_session Is Nothing, String.Empty, _session.NumeUnitate),
+                                          If(_session Is Nothing, String.Empty, _session.CF))
+            ctx.Signing = EnsureSigning(pdfPath, exists)
+            Return ctx
         Catch ex As Exception
             GlobalErrorLog.Write("OrdView.BuildCurrentContext", ex)
             Throw
@@ -398,6 +410,8 @@ Public Class OrdView
                     If _noduriOrd.TryGetValue(tinta.Idordp, nod) Then tree.SelectAndReveal(nod)
                     PushToActivePage()
                     ShowContent()
+                    ' Slice 0078: a signed ordonantare shows nothing until its copy is checked.
+                    EnsureSignedPdfAsync(tinta)
                     Return
                 End If
             End If
@@ -534,13 +548,38 @@ Public Class OrdView
     Private Async Sub EnsureSignedPdfAsync(ordonantare As OrdHeaderRow)
         Try
             If ordonantare Is Nothing Then Return
-            If Not ordonantare.ArePdfSemnat Then Return
-
+            Dim idordp As Integer = ordonantare.Idordp
             Dim cachePath As String =
                 OrdPdfLocator.ExpectedPath(KBotPaths.Current.OrdPdfRoot, ordonantare, _requestedCod)
+
+            ' Slice 0078: a signed copy kept on this machine (its upload failed earlier) goes first
+            ' -- same rule as DdfView.EnsureSignedPdfAsync.
+            Dim pending As PendingPdfUpload = PendingPdfUploads.TryGet(PdfDocKind.Ord, idordp)
+            If pending IsNot Nothing AndAlso Not pending.Conflict Then
+                If String.IsNullOrWhiteSpace(pending.CachePath) Then pending.CachePath = cachePath
+                Try
+                    Dim resp As PutPdfResponse = Await PendingPdfUploads.UploadAsync(_apiClient, pending).ConfigureAwait(True)
+                    ordonantare.PdfSha256 = resp.sha256
+                    If Not String.IsNullOrEmpty(resp.semnatura) Then ordonantare.Semnatura = resp.semnatura
+                    SigningMessages.ShowPendingUploaded(FindForm())
+                Catch ex As ApiException When ex.StatusCode.GetValueOrDefault() = 409
+                    SigningMessages.ShowPendingConflict(FindForm())
+                Catch ex As Exception
+                    GlobalErrorLog.Write("OrdView.EnsureSignedPdfAsync.Pending", ex)
+                    If _selectedOrd Is Nothing OrElse _selectedOrd.Idordp <> idordp Then Return
+                    _pdfPathRezolvat = pending.PdfPath
+                    _pdfRezolvatPentruIdordp = idordp
+                    PushToActivePage()
+                    Return
+                End Try
+            End If
+
+            If Not ordonantare.ArePdfSemnat Then
+                If _selectedOrd IsNot Nothing AndAlso _selectedOrd.Idordp = idordp Then PushToActivePage()
+                Return
+            End If
             If String.IsNullOrEmpty(cachePath) Then Return
 
-            Dim idordp As Integer = ordonantare.Idordp
             Dim rezultat As PdfCacheResult = Await PdfCache.EnsureAsync(
                 cachePath, ordonantare.PdfSha256,
                 Function(shaLocal) _apiClient.DownloadOrdPdfAsync(idordp, shaLocal, CancellationToken.None)).ConfigureAwait(True)
@@ -553,6 +592,8 @@ Public Class OrdView
                     _pdfPathRezolvat = rezultat.Cale
                     _pdfRezolvatPentruIdordp = idordp
                     PushToActivePage()
+                    ' Slice 0078 (item 4): the local file was not the original -- say so.
+                    If rezultat.LocalReplaced Then SigningMessages.ShowLocalReplaced(FindForm())
                 Case PdfCacheStatus.Eroare
                     ' EXISTĂ un document semnat pe care nu-l putem aduce — o spunem, nu cădem
                     ' tăcut pe „nu are PDF".
@@ -576,6 +617,8 @@ Public Class OrdView
             Dim cod As String = _requestedCod
             Dim ordonantare As OrdHeaderRow = _selectedOrd
             If String.IsNullOrWhiteSpace(cod) OrElse ordonantare Is Nothing OrElse _nodeIsRoot Then Return
+            ' Slice 0078: an unsigned document over a signed one needs the operator's yes.
+            If ordonantare.ArePdfSemnat AndAlso Not SigningMessages.ConfirmRegenerateSigned(FindForm()) Then Return
 
             _generating = True
             Try
@@ -692,6 +735,68 @@ Public Class OrdView
         tree.Clear()
         ' Contextul devine Nothing -> pagina activă își arată starea goală.
         PushToActivePage()
+    End Sub
+
+    ' ── Semnare (slice 0078) ──────────────────────────────────────────────────
+    ''' <summary>
+    ''' The signing session for the document about to be shown: kept when it is the same
+    ''' ordonantare and file, replaced otherwise, Nothing on a month root or a missing file.
+    ''' </summary>
+    Private Function EnsureSigning(pdfPath As String, exists As Boolean) As PdfSigningSession
+        Dim o As OrdHeaderRow = _selectedOrd
+        If Not exists OrElse _nodeIsRoot OrElse o Is Nothing Then
+            EndSigning()
+            Return Nothing
+        End If
+        If _signing IsNot Nothing AndAlso _signing.Matches(PdfDocKind.Ord, o.Idordp, pdfPath) Then Return _signing
+
+        EndSigning()
+        Dim cachePath As String = OrdPdfLocator.ExpectedPath(KBotPaths.Current.OrdPdfRoot, o, _requestedCod)
+        ' A kept copy on screen started from ITS precedent, not from the server's current sha.
+        Dim serverSha As String = o.PdfSha256
+        Dim pending As PendingPdfUpload = PendingPdfUploads.TryGet(PdfDocKind.Ord, o.Idordp)
+        If pending IsNot Nothing AndAlso String.Equals(pending.PdfPath, pdfPath, StringComparison.OrdinalIgnoreCase) Then
+            serverSha = If(pending.ShaPrecedent = ApiClient.ShaFaraRand, String.Empty, pending.ShaPrecedent)
+        End If
+        _signing = New PdfSigningSession(PdfDocKind.Ord, o.Idordp, pdfPath, cachePath, serverSha, _apiClient)
+        AddHandler _signing.Completed, AddressOf OnSigningCompleted
+        _signing.Begin()
+        Return _signing
+    End Function
+
+    Private Sub EndSigning()
+        Try
+            If _signing Is Nothing Then Return
+            RemoveHandler _signing.Completed, AddressOf OnSigningCompleted
+            _signing.Dispose()
+            _signing = Nothing
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdView.EndSigning", ex)
+        End Try
+    End Sub
+
+    ' UI thread (the session posts back to it). UI boundary: log and swallow.
+    Private Sub OnSigningCompleted(session As PdfSigningSession, outcome As PdfSigningOutcome)
+        Try
+            If outcome Is Nothing Then Return
+            Dim o As OrdHeaderRow = _ordonantari?.FirstOrDefault(Function(x) x.Idordp = session.Id)
+            Select Case outcome.Status
+                Case PdfSigningStatus.Uploaded
+                    If o IsNot Nothing Then
+                        o.PdfSha256 = outcome.NewSha
+                        o.Semnatura = outcome.Semnatura
+                    End If
+                    SigningMessages.ShowOutcome(FindForm(), outcome)
+                Case PdfSigningStatus.Conflict
+                    SigningMessages.ShowOutcome(FindForm(), outcome)
+                    ' Reload: the list brings the server's current sha, the reselect path downloads it.
+                    If o IsNot Nothing Then Reincarca(o.Idordp)
+                Case Else
+                    SigningMessages.ShowOutcome(FindForm(), outcome)
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdView.OnSigningCompleted", ex)
+        End Try
     End Sub
 
     Private Sub ShowEmpty(message As String)

@@ -122,7 +122,7 @@ Public Class SetariAplicatieView
             cboVerbose.Items.Add(New VerboseItem(True, "Pornit — tot ce scrie robotul"))
             cboVerbose.Items.Add(New VerboseItem(False, "Oprit — doar <Log> și erorile"))
 
-            For Each g As AdobePreviewEngine In New AdobePreviewEngine() {AdobePreviewEngine.WindowHost, AdobePreviewEngine.ActiveX}
+            For Each g As AdobePreviewEngine In New AdobePreviewEngine() {AdobePreviewEngine.WindowHost, AdobePreviewEngine.ActiveX, AdobePreviewEngine.ActiveXReadMode}
                 cboAdobeMotor.Items.Add(New AdobeEngineItem(g))
             Next
             For Each r As ExcelRibbonMode In New ExcelRibbonMode() {ExcelRibbonMode.HideDockWindow, ExcelRibbonMode.Excel4Macro}
@@ -227,6 +227,8 @@ Public Class SetariAplicatieView
         Try
             SelecteazaMotor(AdobeViewerSettings.CurrentEngine().Value)
             SelecteazaPanglica(OfficeHostSettings.CurrentExcelRibbon().Value)
+            chkAcroTrace.Checked = AcroPdfTraceLog.SwitchedOn
+            chkAcroNou.Checked = AppSettings.Current.AcroPdfFreshControl
             ActualizeazaDisponibilitateaAdobe()
         Finally
             _suppress = False
@@ -299,6 +301,31 @@ Public Class SetariAplicatieView
         Using dlg As New AdobeGazduireForm()
             If dlg.ShowDialog(FindForm()) = DialogResult.OK Then RaiseEvent StatusChanged(dlg.Rezumat)
         End Using
+    End Sub
+
+    ' The ActiveX viewer's exhaustive trace (AcroPdfTraceLog). NOT saved: held in memory for this
+    ' run only, so every start of the application begins with it off (operator, 24.09.2026).
+    ' It records from the next document load until that document is open or a blocking error.
+    Private Sub ChkAcroTrace_CheckedChanged(sender As Object, e As EventArgs) Handles chkAcroTrace.CheckedChanged
+        Try
+            If _suppress Then Return
+            AcroPdfTraceLog.SwitchedOn = chkAcroTrace.Checked
+            RaiseEvent StatusChanged(If(chkAcroTrace.Checked,
+                "Jurnalul de diagnostic ActiveX este pornit până la închiderea aplicației: Logs\" &
+                AcroPdfTraceLog.FileNameOnly & ", de la următoarea deschidere de document.",
+                "Jurnalul de diagnostic ActiveX este oprit."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariAplicatieView.ChkAcroTrace_CheckedChanged", ex)
+        End Try
+    End Sub
+
+    ' ActiveX: a new AcroPDF control for every document asked for (DDF and ORD). Saved.
+    Private Sub ChkAcroNou_CheckedChanged(sender As Object, e As EventArgs) Handles chkAcroNou.CheckedChanged
+        If _suppress Then Return
+        SalveazaComutator(Sub(s) s.AcroPdfFreshControl = chkAcroNou.Checked,
+                          If(chkAcroNou.Checked,
+                             "ActiveX: fiecare document nou se deschide într-un control Adobe nou.",
+                             "ActiveX: documentele se încarcă în același control Adobe."))
     End Sub
 
     Private Sub CboExcelRibbon_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboExcelRibbon.SelectedIndexChanged

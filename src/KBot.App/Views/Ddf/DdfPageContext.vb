@@ -52,6 +52,12 @@ Public NotInheritable Class DdfPageContext
     ''' se confunda cu <c>Antet.CodFiscal</c>, care e al partenerului.</summary>
     Public ReadOnly Property CodFiscal As String
 
+    ''' <summary>
+    ''' Slice 0078: the signing session of the document at <see cref="PdfPath"/> (Nothing when the
+    ''' node has no single document). Owned by DdfView; the «Document» page hands it to the preview.
+    ''' </summary>
+    Public Property Signing As PdfSigningSession
+
     Public Sub New(antet As DdfAntet, linii As List(Of LinieSaRow), revizii As List(Of RevizieRow),
                    isRoot As Boolean, revizie As RevizieRow, cod As String,
                    pdfPath As String, pdfExists As Boolean,

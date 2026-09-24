@@ -51,6 +51,9 @@ Public NotInheritable Class OrdHeaderRow
     Public Property PdfDimensiune As Integer?
     ''' <summary>Cand a fost scris ultima data PDF-ul semnat (cu ora); Nothing cand nu exista.</summary>
     Public Property PdfDataModif As Date?
+    ''' <summary>Slice 0078: signer roles stored in FX_ORD.Semnatura ("AB,CD,Ordonator");
+    ''' empty when unsigned.</summary>
+    Public Property Semnatura As String = String.Empty
 
     ''' <summary>Exista un PDF SEMNAT pe server pentru aceasta ordonantare?</summary>
     Public ReadOnly Property ArePdfSemnat As Boolean

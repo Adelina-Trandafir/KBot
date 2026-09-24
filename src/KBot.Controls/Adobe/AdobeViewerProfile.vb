@@ -31,6 +31,12 @@ Public Enum AdobePreviewEngine
     WindowHost = 0
     ''' <summary>The in-process AcroPDF ActiveX control.</summary>
     ActiveX = 1
+    ''' <summary>
+    ''' The same AcroPDF control, but the toolbars are hidden by Adobe's own Read Mode (Ctrl+H) sent
+    ''' once the document is laid out, instead of the collapse / hide / header timers of
+    ''' <see cref="ActiveX"/> (operator, 24.09.2026). Only the script-alert clicker still runs.
+    ''' </summary>
+    ActiveXReadMode = 2
 End Enum
 
 ''' <summary>

@@ -47,6 +47,7 @@ Public NotInheritable Class AdobeViewerSettings
 
     Public Const EngineWindowText As String = "Fereastra"
     Public Const EngineActiveXText As String = "ActiveX"
+    Public Const EngineActiveXReadModeText As String = "ActiveXCitire"
 
     ''' <summary>
     ''' Textul stocat -&gt; motorul de previzualizare. Necunoscut -&gt; fereastra găzduită + avertisment.
@@ -64,23 +65,27 @@ Public NotInheritable Class AdobeViewerSettings
                 Return New AdobeSettingRead(Of AdobePreviewEngine)(AdobePreviewEngine.WindowHost, "")
             Case "activex", "acropdf", "acro"
                 Return New AdobeSettingRead(Of AdobePreviewEngine)(AdobePreviewEngine.ActiveX, "")
+            Case "activexcitire", "activexreadmode", "citire"
+                Return New AdobeSettingRead(Of AdobePreviewEngine)(AdobePreviewEngine.ActiveXReadMode, "")
             Case Else
                 Return New AdobeSettingRead(Of AdobePreviewEngine)(
                     AdobePreviewEngine.WindowHost,
                     $"Setarea «{KBotPathsKeys.AdobePreviewEngine}» are valoarea nerecunoscută «{stored}» — " &
-                    "se folosește «Fereastra». Valori acceptate: Fereastra, ActiveX.")
+                    "se folosește «Fereastra». Valori acceptate: Fereastra, ActiveX, ActiveXCitire.")
         End Select
     End Function
 
     ''' <summary>Valoarea de scris în fișier pentru un motor.</summary>
     Public Shared Function EngineToText(engine As AdobePreviewEngine) As String
         If engine = AdobePreviewEngine.ActiveX Then Return EngineActiveXText
+        If engine = AdobePreviewEngine.ActiveXReadMode Then Return EngineActiveXReadModeText
         Return EngineWindowText
     End Function
 
     ''' <summary>Eticheta românească din combo.</summary>
     Public Shared Function EngineLabel(engine As AdobePreviewEngine) As String
         If engine = AdobePreviewEngine.ActiveX Then Return "ActiveX (AcroPDF)"
+        If engine = AdobePreviewEngine.ActiveXReadMode Then Return "ActiveX (AcroPDF) — mod citire, Ctrl+H"
         Return "Fereastră găzduită"
     End Function
 

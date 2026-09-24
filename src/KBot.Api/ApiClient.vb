@@ -356,6 +356,7 @@ Public Class ApiClient
                                 .Descriere = If(r.Descriere, String.Empty),
                                 .Stare = If(r.Stare, String.Empty),
                                 .DataCreare = r.DataCreare,
+                                .DataAngajamentNou = r.DataAngajamentNou,
                                 .DataDefinitivare = r.DataDefinitivare,
                                 .IDDF = r.IDDF,
                                 .EIncarcat = r.Incarcat,
@@ -894,7 +895,8 @@ Public Class ApiClient
                                 .Preluat = o.preluat,
                                 .PdfSha256 = If(o.pdf_sha256, String.Empty),
                                 .PdfDimensiune = o.pdf_dimensiune,
-                                .PdfDataModif = o.pdf_data_modif
+                                .PdfDataModif = o.pdf_data_modif,
+                                .Semnatura = If(o.semnatura, String.Empty)
                             })
                         Next
                     End If
@@ -1019,6 +1021,12 @@ Public Class ApiClient
     ' («-» cand crede ca nu exista rand) -> concurenta optimista, 409 la nepotrivire.
     Private Const H_SHA As String = "X-Sha256"
     Private Const H_SHA_PREC As String = "X-Sha-Precedent"
+    ' Slice 0078: signer roles found in the uploaded PDF (ASCII, comma separated).
+    Private Const H_SEMN As String = "X-Semnatura"
+    ' Slice 0079: the signatures an upload adds + this computer's details. Both are base64 of UTF-8
+    ' JSON -- a header carries ASCII only, and a signer name can have diacritics.
+    Private Const H_SEMNATURI As String = "X-Semnaturi"
+    Private Const H_STATIE As String = "X-Statie"
     ''' <summary>Valoarea lui <c>X-Sha-Precedent</c> pentru «cred că nu există rând pe server».</summary>
     Public Const ShaFaraRand As String = "-"
 
@@ -1050,10 +1058,11 @@ Public Class ApiClient
     ''' Vezi <see cref="IApiClient.UploadDdfPdfAsync"/> pentru contract.
     ''' </summary>
     Public Function UploadDdfPdfAsync(idrev As Integer, continut As Byte(), shaPrecedent As String,
+                                      semnatura As String, semnaturi As IReadOnlyList(Of PdfSignatureRecord),
                                       ct As CancellationToken) _
         As Task(Of PutPdfResponse) Implements IApiClient.UploadDdfPdfAsync
 
-        Return UploadPdfAsync($"/api/forexe/ddf/pdf/{idrev}", continut, shaPrecedent,
+        Return UploadPdfAsync($"/api/forexe/ddf/pdf/{idrev}", continut, shaPrecedent, semnatura, semnaturi,
                               "salvarea PDF-ului documentului de fundamentare",
                               "ApiClient.UploadDdfPdfAsync", ct)
     End Function
@@ -1062,10 +1071,11 @@ Public Class ApiClient
     ''' Încarcă PDF-ul semnat al unei ordonanțări (PUT /api/forexe/ord/pdf/{idordp}).
     ''' </summary>
     Public Function UploadOrdPdfAsync(idordp As Integer, continut As Byte(), shaPrecedent As String,
+                                      semnatura As String, semnaturi As IReadOnlyList(Of PdfSignatureRecord),
                                       ct As CancellationToken) _
         As Task(Of PutPdfResponse) Implements IApiClient.UploadOrdPdfAsync
 
-        Return UploadPdfAsync($"/api/forexe/ord/pdf/{idordp}", continut, shaPrecedent,
+        Return UploadPdfAsync($"/api/forexe/ord/pdf/{idordp}", continut, shaPrecedent, semnatura, semnaturi,
                               "salvarea PDF-ului ordonanțării",
                               "ApiClient.UploadOrdPdfAsync", ct)
     End Function
@@ -1135,6 +1145,7 @@ Public Class ApiClient
     ' 409 / 400 / 404 ies ca `ApiException` cu mesajul romanesc al serverului, prin acelasi
     ' parser `ApiErrorBody` ca restul apelurilor.
     Private Async Function UploadPdfAsync(url As String, continut As Byte(), shaPrecedent As String,
+                                          semnatura As String, semnaturi As IReadOnlyList(Of PdfSignatureRecord),
                                           actiune As String, sink As String, ct As CancellationToken) _
         As Task(Of PutPdfResponse)
         Try
@@ -1151,6 +1162,13 @@ Public Class ApiClient
                 msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
                 msg.Headers.TryAddWithoutValidation(H_SHA, sha)
                 msg.Headers.TryAddWithoutValidation(H_SHA_PREC, precedent)
+                If Not String.IsNullOrWhiteSpace(semnatura) Then
+                    msg.Headers.TryAddWithoutValidation(H_SEMN, semnatura.Trim())
+                End If
+                If semnaturi IsNot Nothing AndAlso semnaturi.Count > 0 Then
+                    msg.Headers.TryAddWithoutValidation(H_SEMNATURI, ToBase64Json(semnaturi))
+                    msg.Headers.TryAddWithoutValidation(H_STATIE, ToBase64Json(StationInfo.Current()))
+                End If
                 Dim body As New ByteArrayContent(continut)
                 body.Headers.ContentType = New Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream")
                 msg.Content = body
@@ -1174,6 +1192,11 @@ Public Class ApiClient
             GlobalErrorLog.Write(sink, ex)
             Throw
         End Try
+    End Function
+
+    ' Slice 0079: UTF-8 JSON, base64 -- the header-safe form of the audit payloads.
+    Private Function ToBase64Json(value As Object) As String
+        Return Convert.ToBase64String(Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value, value.GetType(), _json)))
     End Function
 
     ' Conversie Excel -> JSON pe server. FOREXE nu mai face HTTP direct: umple un

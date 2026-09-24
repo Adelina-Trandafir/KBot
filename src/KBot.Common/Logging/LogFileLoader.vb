@@ -215,7 +215,8 @@ Public Module LogFileLoader
         Dim wanted As String
         If baseName = "harness_errors.log" Then
             wanted = "HarnessError"
-        ElseIf baseName = "adobe_preview.log" Then
+        ElseIf baseName = "adobe_preview.log" OrElse baseName = "acropdf_trace.log" Then
+            ' acropdf_trace.log (AcroPdfTraceLog, KBot.Controls) uses the same line format.
             wanted = "AdobeHost"
         ElseIf baseName = OperatorLog.FileNameOnly Then
             wanted = "OperatorLog"

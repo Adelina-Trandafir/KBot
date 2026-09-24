@@ -13,7 +13,10 @@ next free number is 0077 and was left untouched).
    The hidden `btnSort` (in the invisible `pnlTreeHead`) opens the same menu; its old
    three-way menu (server order / date asc / date desc) is gone.
 2. **Sort.** By name = Descriere, Romanian culture, case ignored, code breaks ties. By date =
-   DataCreare (ascending by default, direction in Settings since pass 4; all sources since pass 3); rows without a downloaded DataCreare go **last, ordered by name**.
+   **`FX_Istoric.DataFX` of the row whose `Descriere` is «Angajament nou.»**, one per
+   CodAngajament (pass 5 — NOT `FX_Angajamente.DataCreare`). DataFX is DATETIME and the sort
+   uses the time part too. Ascending by default, direction in Settings (pass 4); all sources
+   (pass 3). Rows with no such FX_Istoric row go **last, ordered by name**.
 3. **Columns per sort.** Each sort keeps its own pair of switches. Defaults as asked:
    by name = CODANGAJAMENT on, SURSE off; by date = CODANGAJAMENT off, SURSE on. A column row in
    the menu flips the column for the sort in force only.
@@ -70,6 +73,16 @@ next free number is 0077 and was left untouched).
     (`cboOrdine`, key `TreeSortDescending`). Applies to both sorts; undated rows stay last
     either way. Pass 3's hard-coded «newest first» is gone. A change of direction re-lays
     from the kept rows (no server call).
+
+## Fifth pass (same slice, operator 23.09.2026)
+
+14. **The date sort orders on `FX_Istoric.DataFX`**, taken from the row whose `Descriere` is
+    «Angajament nou.» (Access literal with the trailing dot; matched with or without it),
+    one per CodAngajament (`MIN()` keeps the subquery scalar). DataFX is DATETIME and the
+    time part is kept end to end: server field `DataAngajamentNou` (ISO datetime) →
+    `GetTreeRow.DataAngajamentNou` → `AngajamentTreeInfo.DataAngajamentNou` → `SortRows`.
+    The row tooltip shows it as «Angajament nou (FOREXE): dd.MM.yyyy HH:mm:ss».
+    `FX_Angajamente.DataCreare` still drives the YEAR filter only. Not built, not run.
 
 ## Files touched
 

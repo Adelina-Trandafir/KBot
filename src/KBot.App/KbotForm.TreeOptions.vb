@@ -158,7 +158,8 @@ Partial Public Class KbotForm
     ''' The rows in the order the store asks for.
     ''' <list type="bullet">
     ''' <item>By name: Descriere in Romanian order, the code breaking ties.</item>
-    ''' <item>By date: DataCreare. A row whose date was not downloaded yet goes LAST, and
+    ''' <item>By date: the DataFX of the angajament's FX_Istoric row «Angajament nou.» (full
+    ''' datetime, so two made the same day keep their real order). A row without it goes LAST, and
     ''' those rows are ordered by name among themselves, whatever the direction.</item>
     ''' </list>
     ''' Direction: <c>TreeSortDescending</c>, ascending by default (operator, 23.09.2026). The
@@ -181,8 +182,8 @@ Partial Public Class KbotForm
                 Return byNameOrdered.ThenBy(byCod, StringComparer.OrdinalIgnoreCase).ToList()
             End If
 
-            Dim withDate As IEnumerable(Of AngajamentTreeInfo) = rows.Where(Function(i) i.DataCreare.HasValue)
-            Dim byDate As Func(Of AngajamentTreeInfo, Date) = Function(i) i.DataCreare.Value
+            Dim withDate As IEnumerable(Of AngajamentTreeInfo) = rows.Where(Function(i) i.DataAngajamentNou.HasValue)
+            Dim byDate As Func(Of AngajamentTreeInfo, Date) = Function(i) i.DataAngajamentNou.Value
             Dim dated As IEnumerable(Of AngajamentTreeInfo) =
                 If(s.TreeSortDescending,
                    withDate.OrderByDescending(byDate),
@@ -190,7 +191,7 @@ Partial Public Class KbotForm
                      ThenBy(byName, NameComparer).
                      ThenBy(byCod, StringComparer.OrdinalIgnoreCase)
             Dim undated As IEnumerable(Of AngajamentTreeInfo) =
-                rows.Where(Function(i) Not i.DataCreare.HasValue).
+                rows.Where(Function(i) Not i.DataAngajamentNou.HasValue).
                      OrderBy(byName, NameComparer).
                      ThenBy(byCod, StringComparer.OrdinalIgnoreCase)
             Return dated.Concat(undated).ToList()

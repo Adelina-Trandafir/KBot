@@ -218,6 +218,16 @@ Friend Module Program
     ' LoginForm e MODAL (ShowDialog): se închide COMPLET înainte ca MainForm să se deschidă
     ' (Application.Run(MainForm) rulează abia după). La închiderea MainForm-ului bucla se
     ' termină și procesul revine în VB.NET; dacă login-ul e anulat, ieșim fără shell.
+    ' Slice 0078 -- UI boundary (async void from the Shown handler): log and swallow.
+    Private Async Sub RetryPendingPdfUploads(shell As Form, api As IApiClient)
+        Try
+            Dim lines As List(Of String) = Await PendingPdfUploads.RetryAllAsync(api).ConfigureAwait(True)
+            If lines.Count > 0 Then SigningMessages.ShowRetrySummary(shell, lines)
+        Catch ex As Exception
+            GlobalErrorLog.Write("Program.RetryPendingPdfUploads", ex)
+        End Try
+    End Sub
+
     Private Sub RunShellWithLogin(provider As ServiceProvider)
         Try
             Using login As LoginForm = provider.GetRequiredService(Of LoginForm)()
@@ -233,6 +243,9 @@ Friend Module Program
 
             Dim shell As KbotForm = provider.GetRequiredService(Of KbotForm)()
             AppScreen.SetReference(shell)   ' the shell replaces the login as the application's window (slice 0062)
+            ' Slice 0078: signed PDFs whose upload failed earlier are retried once the shell is up.
+            Dim api As IApiClient = provider.GetRequiredService(Of IApiClient)()
+            AddHandler shell.Shown, Sub(s, e) RetryPendingPdfUploads(shell, api)
             Application.Run(shell)
 
             'trebuie sa aduca in prim plan fereastra main, daca loginul a fost facut cu succes si s-a inchis formularul login

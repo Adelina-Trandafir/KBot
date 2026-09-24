@@ -35,6 +35,16 @@ Public Class AdobePreviewEngineSettingTests
     End Sub
 
     <Theory>
+    <InlineData("ActiveXCitire")>
+    <InlineData("activexreadmode")>
+    <InlineData("citire")>
+    Public Sub ReadModeSpellings_AllResolveToTheReadModePath(stored As String)
+        Dim read = AdobeViewerSettings.ParseEngine(stored)
+        Assert.Equal(AdobePreviewEngine.ActiveXReadMode, read.Value)
+        Assert.False(read.HasWarning)
+    End Sub
+
+    <Theory>
     <InlineData("")>
     <InlineData("   ")>
     <InlineData(Nothing)>
@@ -59,7 +69,7 @@ Public Class AdobePreviewEngineSettingTests
     <Fact>
     Public Sub EngineTextRoundTrips()
         For Each e As AdobePreviewEngine In New AdobePreviewEngine() {
-            AdobePreviewEngine.WindowHost, AdobePreviewEngine.ActiveX}
+            AdobePreviewEngine.WindowHost, AdobePreviewEngine.ActiveX, AdobePreviewEngine.ActiveXReadMode}
             Dim text As String = AdobeViewerSettings.EngineToText(e)
             Assert.Equal(e, AdobeViewerSettings.ParseEngine(text).Value)
         Next

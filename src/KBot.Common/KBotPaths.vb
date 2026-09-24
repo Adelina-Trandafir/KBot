@@ -25,14 +25,24 @@ Imports System.Text.Json
 Public NotInheritable Class KBotPaths
 
     ''' <summary>Valoarea implicită a rădăcinii PDF-urilor DDF (planul, decizia 13).</summary>
-    Public Const DefaultDdfPdfRoot As String = "C:\AVACONT\FOREXE\PDF\DDF\"
+    Public Const DefaultDdfPdfRoot As String = "C:\KBOT\Temp\PDF\DDF\"
 
     ''' <summary>
     ''' Valoarea implicită a rădăcinii PDF-urilor ORD (felia 0033). Sora celei de mai sus:
     ''' <c>mdl_FX_ORD_PDF</c> compune exact <c>&lt;CPJ&gt;\FOREXE\PDF\ORD\</c>, iar căile
     ''' înregistrate în <c>FX_ORD.CalePDF</c> o confirmă.
     ''' </summary>
-    Public Const DefaultOrdPdfRoot As String = "C:\AVACONT\FOREXE\PDF\ORD\"
+    Public Const DefaultOrdPdfRoot As String = "C:\KBOT\Temp\PDF\ORD\"
+
+    ''' <summary>
+    ''' The Access-era defaults (before 23.09.2026). Since slice 0078 the server holds the only true
+    ''' copy of a signed PDF, so the local folders are working copies under <c>C:\KBOT\Temp\PDF</c>
+    ''' (operator, 23.09.2026). <see cref="Save"/> used to write the default back into
+    ''' <c>kbot_paths.json</c> with every Adobe setting, so an old default found there is not an
+    ''' operator's choice and is read as the new default.
+    ''' </summary>
+    Public Const LegacyDdfPdfRoot As String = "C:\AVACONT\FOREXE\PDF\DDF\"
+    Public Const LegacyOrdPdfRoot As String = "C:\AVACONT\FOREXE\PDF\ORD\"
 
     ''' <summary>Valoarea implicită a modului vizualizatorului Adobe.</summary>
     Public Const DefaultAdobeViewerMode As String = "Auto"
@@ -161,7 +171,7 @@ Public NotInheritable Class KBotPaths
         End Get
     End Property
 
-    ''' <summary>PDF-urile temporare. Implicit <c>&lt;AppDir&gt;\TempPdf</c>.</summary>
+    ''' <summary>PDF-urile temporare. Implicit <c>C:\KBOT\Temp\PDF</c> (23.09.2026).</summary>
     Public Shared ReadOnly Property FolderPdfTemporar As String
         Get
             Return Foldere.Cale(SetariFoldere.CheieTempPdf)
@@ -227,8 +237,12 @@ Public NotInheritable Class KBotPaths
 
             Dim dto As KBotPathsDto = JsonSerializer.Deserialize(Of KBotPathsDto)(json)
             If dto IsNot Nothing Then
-                If Not String.IsNullOrWhiteSpace(dto.DdfPdfRoot) Then result.DdfPdfRoot = dto.DdfPdfRoot.Trim()
-                If Not String.IsNullOrWhiteSpace(dto.OrdPdfRoot) Then result.OrdPdfRoot = dto.OrdPdfRoot.Trim()
+                If Not String.IsNullOrWhiteSpace(dto.DdfPdfRoot) AndAlso Not SameFolder(dto.DdfPdfRoot, LegacyDdfPdfRoot) Then
+                    result.DdfPdfRoot = dto.DdfPdfRoot.Trim()
+                End If
+                If Not String.IsNullOrWhiteSpace(dto.OrdPdfRoot) AndAlso Not SameFolder(dto.OrdPdfRoot, LegacyOrdPdfRoot) Then
+                    result.OrdPdfRoot = dto.OrdPdfRoot.Trim()
+                End If
                 If Not String.IsNullOrWhiteSpace(dto.AdobeViewerMode) Then result.AdobeViewerMode = dto.AdobeViewerMode.Trim()
                 If Not String.IsNullOrWhiteSpace(dto.AdobeNewInstance) Then result.AdobeNewInstance = dto.AdobeNewInstance.Trim()
                 If Not String.IsNullOrWhiteSpace(dto.AdobePreviewEngine) Then result.AdobePreviewEngine = dto.AdobePreviewEngine.Trim()
@@ -239,6 +253,11 @@ Public NotInheritable Class KBotPaths
             GlobalErrorLog.Write("KBotPaths.Load", ex)
             Return New KBotPaths()
         End Try
+    End Function
+
+    ' Same folder, ignoring case and a trailing separator.
+    Private Shared Function SameFolder(a As String, b As String) As Boolean
+        Return String.Equals(a.Trim().TrimEnd("\"c, "/"c), b.Trim().TrimEnd("\"c, "/"c), StringComparison.OrdinalIgnoreCase)
     End Function
 
     ''' <summary>

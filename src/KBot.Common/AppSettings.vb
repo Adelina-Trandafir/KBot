@@ -99,6 +99,14 @@ Public NotInheritable Class AppSettings
     Public Property AdobePopupWatch As Boolean = True
 
     ''' <summary>
+    ''' ActiveX viewer (DDF and ORD): destroy the AcroPDF control whenever another document is
+    ''' asked for and create a new one for it, instead of loading into the same control. A reused
+    ''' control sometimes stays empty after LoadFile; a fresh one built at once in every client
+    ''' trace (operator, 24.09.2026). Off by default.
+    ''' </summary>
+    Public Property AcroPdfFreshControl As Boolean = False
+
+    ''' <summary>
     ''' How the Excel ribbon is taken down in the hosted preview: «Excel4Macro» or
     ''' «HideDockWindow». Text, for the same reason as <see cref="AdobeDetachMode"/>.
     ''' </summary>
@@ -265,6 +273,7 @@ Public NotInheritable Class AppSettings
                 .Enabled = r.Enabled, .Selector = r.Selector, .Css = r.Css, .Note = r.Note, .Page = r.Page}).ToList(),
             .AdobeDetachMode = AdobeDetachMode,
             .AdobePopupWatch = AdobePopupWatch,
+            .AcroPdfFreshControl = AcroPdfFreshControl,
             .ExcelRibbon = ExcelRibbon,
             .TreeSort = TreeSort,
             .TreeSortDescending = TreeSortDescending,
@@ -295,6 +304,7 @@ Public NotInheritable Class AppSettings
         End If
         If Not String.IsNullOrWhiteSpace(dto.AdobeDetachMode) Then s.AdobeDetachMode = dto.AdobeDetachMode.Trim()
         If dto.AdobePopupWatch.HasValue Then s.AdobePopupWatch = dto.AdobePopupWatch.Value
+        If dto.AcroPdfFreshControl.HasValue Then s.AcroPdfFreshControl = dto.AcroPdfFreshControl.Value
         If Not String.IsNullOrWhiteSpace(dto.ExcelRibbon) Then s.ExcelRibbon = dto.ExcelRibbon.Trim()
         If Not String.IsNullOrWhiteSpace(dto.TreeSort) Then s.TreeSort = dto.TreeSort.Trim()
         If dto.TreeSortDescending.HasValue Then s.TreeSortDescending = dto.TreeSortDescending.Value
@@ -328,6 +338,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ForexePageStyles As List(Of PageStyleRuleDto)
     Public Property AdobeDetachMode As String
     Public Property AdobePopupWatch As Boolean?
+    Public Property AcroPdfFreshControl As Boolean?
     Public Property ExcelRibbon As String
     Public Property TreeSort As String
     Public Property TreeSortDescending As Boolean?

@@ -74,6 +74,8 @@ End Class
 ''' or not. Writing it silently on every DDF preview is unacceptable and prompting on every preview
 ''' is unusable, so the shipping code ADAPTS to whichever UI it finds — which is exactly what
 ''' <see cref="AdobeUiDetector"/> makes possible. The bench writes it because the bench is a bench.
+''' The single, documented exception (slice 0078) is <see cref="AdobePrefs"/>: the standard Windows
+''' «Save As» dialog, written only when a SIGNING session starts, never by this class.
 ''' </summary>
 Public NotInheritable Class AdobeReaderHost
     Implements IDisposable
@@ -85,6 +87,10 @@ Public NotInheritable Class AdobeReaderHost
     Private ReadOnly _teardown As AdobeWindowTeardown
     Private ReadOnly _launcher As IAdobeLauncher
     Private ReadOnly _hook As AdobeCreationHook
+    ' Slice 0078-02: forces Adobe's «Save As» onto the hosted document's own path.
+    Private ReadOnly _saveTrap As AdobeSaveTrap
+    ' The document hosted right now -- the ONLY path the save trap may ever force.
+    Private _hostedPath As String
 
     ' Every process id THIS host started. A PID outside this set is never killed — not here, not in
     ' the bench. With «/n» off the embedded window can belong to the operator's own Adobe.
@@ -115,6 +121,76 @@ Public NotInheritable Class AdobeReaderHost
         _teardown = New AdobeWindowTeardown(windows, _launcher)
         _watcher = New AdobePopupWatcher(AddressOf Report)
         _hook = New AdobeCreationHook(AddressOf Report)
+        _saveTrap = New AdobeSaveTrap(AddressOf Report)
+        AddHandler _saveTrap.Saved, AddressOf OnTrapSaved
+        AddHandler _saveTrap.Failed, AddressOf OnTrapFailed
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0078: raised (UI thread) after Adobe saved the hosted document through a trapped
+    ''' «Save As». Argument = the document path. The file may still be settling on disk.
+    ''' </summary>
+    Public Event DocumentSaved As Action(Of String)
+
+    ''' <summary>Slice 0078: raised (UI thread) when a «Save As» had to be cancelled. Argument = Romanian reason.</summary>
+    Public Event SaveTrapFailed As Action(Of String)
+
+    ''' <summary>
+    ''' Slice 0078: while True, every file dialog of the hosted Adobe is filled with the HOSTED
+    ''' document's own path and confirmed, off screen (see <see cref="AdobeSaveTrap"/>). The target
+    ''' is never a separate property: it cannot differ from the file actually on screen. Takes
+    ''' effect immediately when a document is hosted, otherwise with the next one.
+    ''' </summary>
+    Public Property SaveTrapEnabled As Boolean
+        Get
+            Return _saveTrapEnabled
+        End Get
+        Set(value As Boolean)
+            _saveTrapEnabled = value
+            If value Then
+                StartSaveTrap()
+            Else
+                _saveTrap.Stop()
+            End If
+        End Set
+    End Property
+    Private _saveTrapEnabled As Boolean
+
+    ''' <summary>The document hosted right now, or Nothing.</summary>
+    Public ReadOnly Property HostedPath As String
+        Get
+            Return _hostedPath
+        End Get
+    End Property
+
+    ' Starts the trap on the current document, when there is one. Wrapped: called from a setter.
+    Private Sub StartSaveTrap()
+        Try
+            If Not _saveTrapEnabled OrElse Not IsHosting OrElse String.IsNullOrEmpty(_hostedPath) Then Return
+            Dim pids As New List(Of Integer)()
+            If _hostedPid <> 0 Then pids.Add(_hostedPid)
+            If _startedPid <> 0 AndAlso Not pids.Contains(_startedPid) Then pids.Add(_startedPid)
+            _saveTrap.Start(_hostedPath, pids)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.StartSaveTrap", ex)
+        End Try
+    End Sub
+
+    ' Trap events arrive on the UI thread (hook + WinForms timer); forwarded as they are.
+    Private Sub OnTrapSaved(path As String)
+        Try
+            RaiseEvent DocumentSaved(path)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.OnTrapSaved", ex)
+        End Try
+    End Sub
+
+    Private Sub OnTrapFailed(reason As String)
+        Try
+            RaiseEvent SaveTrapFailed(reason)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.OnTrapFailed", ex)
+        End Try
     End Sub
 
     ''' <summary>Which profile the operator asked for. Changing it takes effect on the next document.</summary>
@@ -264,6 +340,7 @@ Public NotInheritable Class AdobeReaderHost
 
         _hostedWindow = caught.Window
         _hostedPid = caught.OwnerPid
+        _hostedPath = pdfPath
         Report($"Fereastră găsită în {caught.ElapsedMs} ms " &
                $"({If(caught.Match = AdobeCaptureMatch.ByPid, "după PID", "după titlu")}), PID {_hostedPid}.")
 
@@ -325,6 +402,9 @@ Public NotInheritable Class AdobeReaderHost
             _watcher.Start(_host.Handle, pids)
             _watcher.Sweep()
         End If
+
+        ' Slice 0078: armed as soon as the window is visible -- the operator can sign from now on.
+        StartSaveTrap()
 
         ' Adobe finishes its layout after the window appears; without this second pass the reparented
         ' window can stay blank.
@@ -425,6 +505,11 @@ Public NotInheritable Class AdobeReaderHost
         Try
             _watcher.Stop()
             _hook.Remove()
+            ' Slice 0078: a Save we pressed must finish before Adobe is closed or killed, or the
+            ' signed file could be cut in half.
+            If _saveTrap.IsBusy Then _saveTrap.WaitWhileBusy(5000)
+            _saveTrap.Stop()
+            _hostedPath = Nothing
 
             Dim hwnd As IntPtr = _hostedWindow
             Dim pid As Integer = _hostedPid
@@ -458,6 +543,9 @@ Public NotInheritable Class AdobeReaderHost
             Detach()
             _watcher.Dispose()
             _hook.Dispose()
+            RemoveHandler _saveTrap.Saved, AddressOf OnTrapSaved
+            RemoveHandler _saveTrap.Failed, AddressOf OnTrapFailed
+            _saveTrap.Dispose()
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHost.Dispose", ex)
         End Try

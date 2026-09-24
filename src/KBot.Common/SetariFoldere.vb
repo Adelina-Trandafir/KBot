@@ -95,18 +95,18 @@ Public NotInheritable Class SetariFoldere
                        "Dosarele locale de asociere a recepțiilor, unul per angajament.", True),
             New Setare(CheieWorkflowResults, "WorkflowResults",
                        "Rezultatele brute ale descărcărilor FOREXE, în JSON.", True),
-            New Setare(CheieTempPdf, "TempPdf",
-                       "PDF-urile temporare, descărcate ca să fie deschise în vizualizator.", True),
+            New Setare(CheieTempPdf, "C:\KBOT\Temp\PDF",
+                       "PDF-urile de lucru: cele generate (golite la fiecare pornire) și, în DDF\ și ORD\, copiile descărcate de pe server.", True),
             New Setare(CheieWorkflows, "Workflows",
                        "Definițiile de workflow FOREXE («.wfl»). Doar se citesc.", False),
             New Setare(CheieExports, "Exports",
                        "Exporturile bancului de probe (numai pe Debug).", True),
             New Setare(CheieExtrase, "Extrase",
                        "Extrasele de cont (SNM) descărcate din FOREXE, ca PDF.", True),
-            New Setare(CheieDdfPdf, "C:\AVACONT\FOREXE\PDF\DDF\",
-                       "Rădăcina în care se caută PDF-urile DDF.", False),
-            New Setare(CheieOrdPdf, "C:\AVACONT\FOREXE\PDF\ORD\",
-                       "Rădăcina în care se caută PDF-urile ORD.", False)
+            New Setare(CheieDdfPdf, KBotPaths.DefaultDdfPdfRoot,
+                       "Copiile locale ale PDF-urilor DDF descărcate de pe server.", True),
+            New Setare(CheieOrdPdf, KBotPaths.DefaultOrdPdfRoot,
+                       "Copiile locale ale PDF-urilor ORD descărcate de pe server.", True)
         })
 
     Private Shared ReadOnly _dupaCheie As Dictionary(Of String, Setare) =

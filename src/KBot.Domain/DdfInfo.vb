@@ -97,8 +97,8 @@ Public NotInheritable Class RevizieRow
     Public Property Incarcat As Boolean
     ''' <summary>Revizie preluata -> iconita «jos» (daca nu e si Incarcat).</summary>
     Public Property Preluat As Boolean
-    ''' <summary>Semnatura documentului. Purtata pe fir, neafisata azi; devine vie daca
-    ''' felia de semnare (pasul 06) merge mai departe.</summary>
+    ''' <summary>Slice 0078: signer roles stored in FX_DDF_REV.Semnatura ("A,B,Ordonator");
+    ''' written by the signing upload, empty when unsigned.</summary>
     Public Property Semnatura As String = String.Empty
     ''' <summary>SUM(ValCur) REAL peste sectiunea A a reviziei (0 cand nu are linii).</summary>
     Public Property TotalRevizie As Double

@@ -73,7 +73,7 @@ Public Class DdfXmlBuilderTests
         Assert.Equal("ISJ 2025 - Burse", antetNode.Element("SubtitluDF").Value)
         Assert.Equal("2026-01-18", antetNode.Element("DataRevizuirii").Value)  ' yyyy-MM-dd
         Assert.Equal("0", antetNode.Element("Revizuirea").Value)
-        Assert.Equal("A1.0.07", antetNode.Element("universalCode").Value)
+        Assert.Null(antetNode.Element("universalCode"))   ' the template keeps its own version
     End Sub
 
     <Fact>

@@ -51,6 +51,13 @@ _SELECT = (
     "a.DataDefinitivare, a.Incarcat, a.Preluat, a.Salarii, a.ASCUNS, "
     "(SELECT GROUP_CONCAT(DISTINCT i.SS ORDER BY i.SS SEPARATOR ';') "
     " FROM FX_Indicatori i WHERE i.CodAngajament = a.CodAngajament) AS Surse, "
+    # Slice 0777: the moment the angajament was made, as FOREXE's own history says it --
+    # the FX_Istoric row «Angajament nou.» (Access literal, trailing dot; matched with or
+    # without it). DataFX is DATETIME and the tree sorts on it WITH the time part, so it is
+    # sent whole. MIN() keeps the subquery scalar should a second such row ever appear.
+    "(SELECT MIN(x.DataFX) FROM FX_Istoric x "
+    " WHERE x.CodAngajament = a.CodAngajament "
+    "   AND TRIM(TRAILING '.' FROM TRIM(x.Descriere)) = 'Angajament nou') AS DataAngajamentNou, "
     "EXISTS (SELECT 1 FROM FX_Indicatori i WHERE i.CodAngajament = a.CodAngajament) AS AreIndicatori, "
     "EXISTS (SELECT 1 FROM FX_Istoric x WHERE x.CodAngajament = a.CodAngajament) AS AreIstoric, "
     "EXISTS (SELECT 1 FROM FX_DDF_REV_SA r WHERE r.CodAngajament = a.CodAngajament) AS AreRevizii, "
@@ -129,7 +136,7 @@ def get_tree():
 
     Query: an (obligatoriu, intreg), ss (obligatoriu; "*" = all sources, slice 0777), include_hidden (0/1, implicit 0).
     Returneaza { db_name, count, rows: [ {CodAngajament, IDDF, Descriere, Stare,
-    DataCreare, DataDefinitivare, Incarcat, Preluat, Salarii, Ascuns, Surse,
+    DataCreare, DataDefinitivare, Incarcat, Preluat, Salarii, Ascuns, Surse, DataAngajamentNou,
     AreIndicatori, AreIstoric, AreRevizii, AreRezervari, AreReceptii, ArePlati,
     AreDDF, ArePartener, AreOrd}, ... ] }.
     """
@@ -162,7 +169,7 @@ def get_tree():
         cursor.execute(_SQL, (an, all_ss, ss, include_hidden))
         rows = []
         for (cod, iddf, descriere, stare, data_creare, data_def, incarcat, preluat,
-             salarii, ascuns, surse, are_indicatori, are_istoric, are_revizii,
+             salarii, ascuns, surse, data_ang_nou, are_indicatori, are_istoric, are_revizii,
              are_rezervari, are_receptii, are_plati, are_ddf, are_partener,
              are_ord) in cursor.fetchall():
             rows.append({
@@ -177,6 +184,8 @@ def get_tree():
                 "Salarii": bool(salarii),
                 "Ascuns": bool(ascuns),
                 "Surse": surse,
+                # Full datetime (time included): the date sort orders on it (slice 0777).
+                "DataAngajamentNou": data_ang_nou.isoformat() if data_ang_nou is not None else None,
                 "AreIndicatori": bool(are_indicatori),
                 "AreIstoric": bool(are_istoric),
                 "AreRevizii": bool(are_revizii),

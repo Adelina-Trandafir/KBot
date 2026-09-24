@@ -45,7 +45,6 @@ Public NotInheritable Class DdfXmlBuilder
     Private Const XmlDeclForm As String = "<?xml version=""1.0"" encoding=""UTF-8""?>"
     Private Const XmlDeclNotafd As String = "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>"
     Private Const NotafdNs As String = "mfp:anaf:dgti:notafd:declaratie:v1"
-
     ''' <summary>Globalii de sesiune de care are nevoie constructorul (§2.9). POCO pur.</summary>
     Public NotInheritable Class Context
         Public Property NumeUnitate As String = String.Empty
@@ -97,7 +96,8 @@ Public NotInheritable Class DdfXmlBuilder
             AddNode(antetNode, "Revizuirea", revizie.NumarRev.ToString(CultureInfo.InvariantCulture))
         End If
         AddNode(antetNode, "CheckBox1", "0")
-        AddNode(antetNode, "universalCode", "A1.0.07")
+        ' NO universalCode: it is the MFP template's own version stamp. A data value overrides the
+        ' template default, so writing it stamps an old version on a newer template (Access did).
 
         ' Secțiunea A
         Dim sub123 As New XElement("Subform123")

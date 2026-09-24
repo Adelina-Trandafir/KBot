@@ -28,6 +28,8 @@ Partial Class SetariAplicatieView
         chkReceptii = New CheckBox()
         cboAdobeMotor = New KBotComboBox()
         btnAdobeGazduire = New Button()
+        chkAcroTrace = New CheckBox()
+        chkAcroNou = New CheckBox()
         cboExcelRibbon = New KBotComboBox()
         cboSortare = New KBotComboBox()
         cboOrdine = New KBotComboBox()
@@ -155,6 +157,32 @@ Partial Class SetariAplicatieView
         tips.SetToolTipText(btnAdobeGazduire, "Modul vizualizatorului, comutatorul /n, eliberarea ferestrei și fereastra plutitoare." & vbLf & "Se deschide singur când alegi «Fereastră găzduită»; de aici le poți revedea oricând.")
         btnAdobeGazduire.UseVisualStyleBackColor = True
         '
+        ' chkAcroTrace
+        '
+        chkAcroTrace.AutoSize = True
+        chkAcroTrace.Location = New Point(404, 102)
+        chkAcroTrace.Margin = New Padding(4, 0, 4, 10)
+        chkAcroTrace.Name = "chkAcroTrace"
+        chkAcroTrace.Size = New Size(462, 26)
+        chkAcroTrace.TabIndex = 3
+        chkAcroTrace.Text = "ActiveX — jurnal de diagnostic detaliat (acropdf_trace.log)"
+        tips.SetToolTipHeader(chkAcroTrace, "Jurnal de diagnostic ActiveX")
+        tips.SetToolTipText(chkAcroTrace, "Bifat: vizualizatorul ActiveX scrie în Logs\acropdf_trace.log tot ce vede și tot ce face (cronometre, ferestre, procese, salvări)." & vbLf & "Înregistrează de la deschiderea unui document până când e deschis sau apare o eroare care blochează." & vbLf & "Nu se salvează: la fiecare pornire a aplicației este oprit.")
+        chkAcroTrace.UseVisualStyleBackColor = True
+        '
+        ' chkAcroNou
+        '
+        chkAcroNou.AutoSize = True
+        chkAcroNou.Location = New Point(404, 138)
+        chkAcroNou.Margin = New Padding(4, 0, 4, 10)
+        chkAcroNou.Name = "chkAcroNou"
+        chkAcroNou.Size = New Size(462, 26)
+        chkAcroNou.TabIndex = 4
+        chkAcroNou.Text = "ActiveX — control Adobe nou la fiecare document"
+        tips.SetToolTipHeader(chkAcroNou, "Control Adobe nou la fiecare document")
+        tips.SetToolTipText(chkAcroNou, "Bifat: la alegerea altei revizii (DDF și ORD) controlul Adobe se închide și se distruge, iar documentul nou se deschide într-un control nou." & vbLf & "Debifat: documentul nou se încarcă în același control." & vbLf & "Doar pentru motoarele ActiveX.")
+        chkAcroNou.UseVisualStyleBackColor = True
+        '
         ' cboExcelRibbon
         '
         cboExcelRibbon.Anchor = AnchorStyles.Left Or AnchorStyles.Right
@@ -163,11 +191,11 @@ Partial Class SetariAplicatieView
         cboExcelRibbon.DropDownStyle = ComboBoxStyle.DropDownList
         cboExcelRibbon.FlatStyle = FlatStyle.Flat
         cboExcelRibbon.ItemHeight = 31
-        cboExcelRibbon.Location = New Point(404, 102)
+        cboExcelRibbon.Location = New Point(404, 174)
         cboExcelRibbon.Margin = New Padding(4, 0, 4, 10)
         cboExcelRibbon.Name = "cboExcelRibbon"
         cboExcelRibbon.Size = New Size(496, 37)
-        cboExcelRibbon.TabIndex = 4
+        cboExcelRibbon.TabIndex = 6
         tips.SetToolTipHeader(cboExcelRibbon, "Panglica Excel în previzualizare")
         tips.SetToolTipText(cboExcelRibbon, "Macro: Excel își ascunde singur panglica (poate fi refuzat de o politică)." & vbLf & "Fereastră: se ascunde fereastra panglicii, ca la Word — nu poate fi refuzat." & vbLf & "Word are o singură metodă și nu se configurează.")
         '
@@ -401,17 +429,21 @@ Partial Class SetariAplicatieView
         tlyDocumente.Controls.Add(lblAdobeMotor, 0, 0)
         tlyDocumente.Controls.Add(cboAdobeMotor, 1, 0)
         tlyDocumente.Controls.Add(btnAdobeGazduire, 1, 1)
-        tlyDocumente.Controls.Add(lblExcelRibbon, 0, 2)
-        tlyDocumente.Controls.Add(cboExcelRibbon, 1, 2)
+        tlyDocumente.Controls.Add(chkAcroTrace, 1, 2)
+        tlyDocumente.Controls.Add(chkAcroNou, 1, 3)
+        tlyDocumente.Controls.Add(lblExcelRibbon, 0, 4)
+        tlyDocumente.Controls.Add(cboExcelRibbon, 1, 4)
         tlyDocumente.Dock = DockStyle.Top
         tlyDocumente.Location = New Point(28, 58)
         tlyDocumente.Margin = New Padding(4, 0, 4, 24)
         tlyDocumente.Name = "tlyDocumente"
-        tlyDocumente.RowCount = 3
+        tlyDocumente.RowCount = 5
         tlyDocumente.RowStyles.Add(New RowStyle())
         tlyDocumente.RowStyles.Add(New RowStyle())
         tlyDocumente.RowStyles.Add(New RowStyle())
-        tlyDocumente.Size = New Size(904, 149)
+        tlyDocumente.RowStyles.Add(New RowStyle())
+        tlyDocumente.RowStyles.Add(New RowStyle())
+        tlyDocumente.Size = New Size(904, 221)
         tlyDocumente.TabIndex = 1
         '
         ' lblAdobeMotor
@@ -430,11 +462,11 @@ Partial Class SetariAplicatieView
         '
         lblExcelRibbon.AutoSize = True
         lblExcelRibbon.Dock = DockStyle.Fill
-        lblExcelRibbon.Location = New Point(4, 102)
+        lblExcelRibbon.Location = New Point(4, 174)
         lblExcelRibbon.Margin = New Padding(4, 0, 4, 10)
         lblExcelRibbon.Name = "lblExcelRibbon"
         lblExcelRibbon.Size = New Size(392, 37)
-        lblExcelRibbon.TabIndex = 3
+        lblExcelRibbon.TabIndex = 5
         lblExcelRibbon.Text = "Excel — cum se ascunde panglica"
         lblExcelRibbon.TextAlign = ContentAlignment.MiddleLeft
         '
@@ -639,6 +671,8 @@ Partial Class SetariAplicatieView
     Friend WithEvents lblAdobeMotor As Label
     Friend WithEvents cboAdobeMotor As KBotComboBox
     Friend WithEvents btnAdobeGazduire As Button
+    Friend WithEvents chkAcroTrace As CheckBox
+    Friend WithEvents chkAcroNou As CheckBox
     Friend WithEvents lblExcelRibbon As Label
     Friend WithEvents cboExcelRibbon As KBotComboBox
     Friend WithEvents tlyPaginaKbot As KBotTableLayoutPanel

@@ -84,5 +84,14 @@ Adobe's classic and modern UIs need different window offsets and clipping.
   through `RegistrySnapshotSet` — a crash between capture and restore leaves them changed.
 - Async: `ShowDocumentAsync` can return `Superseded` when a newer document was requested
   while it waited. Do not assume the last call won.
-- **Never sign a PDF while a `ReaderHostPreview` holds a window on it** (DDF slice rule).
+- **Signing happens INSIDE the hosted window** (slice 0078; replaces the old rule «never sign
+  while a `ReaderHostPreview` holds a window»). With `SaveTrapEnabled = True` the host arms
+  `AdobeSaveTrap`: every file dialog of the hosted Adobe is moved off screen, filled with the
+  hosted document's own path (read back and compared), saved, and the «replace?» prompt owned by
+  that dialog is answered Yes. Any doubt cancels the dialog and raises `SaveTrapFailed`; the
+  dialog is never left to the operator. `DocumentSaved` fires after the dialog closes.
+  `Detach()` waits up to 5 s for a pressed Save before tearing Adobe down.
+  `AdobePrefs.EnsureStandardSaveDialog()` sets `bToggleCustomSaveExperience = 1` (UNVERIFIED name)
+  so Acrobat DC shows the standard Windows dialog, not its cloud «Save As» screen; it is called
+  only when a signing session starts.
 - Nothing here is themed: the hosted surface is Adobe's own UI.

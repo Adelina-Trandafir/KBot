@@ -397,7 +397,8 @@ Public Class AdobeUtils
     ''' Mapează un nume de câmp de semnătură pe rolul (masca) corespunzător.
     ''' Întâi după numele subformularului (acoperă ORD și DDF), apoi fallback numeric pe tip.
     ''' </summary>
-    Private Shared Function ClassifySigner(fieldName As String, docType As String) As Integer
+    ' Friend since slice 0078: PdfSignatures reuses the same mapping (one rule set, not two).
+    Friend Shared Function ClassifySigner(fieldName As String, docType As String) As Integer
         If String.IsNullOrEmpty(fieldName) Then Return 0
         Dim dt As String = If(docType, "").ToUpperInvariant()
 

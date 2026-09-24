@@ -22,8 +22,23 @@ Public Module AdobeHostLog
     ''' <summary>Numele fișierului, lângă executabil, sub <c>Logs\</c>.</summary>
     Public Const FileNameOnly As String = "adobe_preview.log"
 
+    ''' <summary>
+    ''' Slice 0078: every line, as it is written, for a bench that shows the log live. Raised on the
+    ''' WRITER's thread, after the file write; a failing listener is swallowed like a failing file.
+    ''' </summary>
+    Public Event LineWritten As Action(Of String)
+
     ''' <summary>Scrie o linie cu marcaj de timp. Nu aruncă niciodată.</summary>
     Public Sub Write(line As String)
+        WriteToFile(line)
+        Try
+            RaiseEvent LineWritten(line)
+        Catch listenerEx As Exception
+            Trace.WriteLine("AdobeHostLog listener failure: " & listenerEx.Message)
+        End Try
+    End Sub
+
+    Private Sub WriteToFile(line As String)
         Try
             ' LogPaths: aceeași cale ca înainte (<AppDir>\Logs), calculată acum într-un singur loc.
             LogPaths.EnsureLogsDirectory()

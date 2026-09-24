@@ -38,7 +38,6 @@ Public NotInheritable Class OrdXmlBuilder
     End Sub
 
     Private Const XmlDecl As String = "<?xml version=""1.0"" encoding=""UTF-8""?>"
-    Private Const UniversalCode As String = "A1.0.08"
     Private Shared ReadOnly XfaNs As XNamespace = "http://www.xfa.org/schema/xfa-data/1.0/"
 
     ''' <summary>Session globals the builder needs (globNumeUnit / globCF / globCodProgram).</summary>
@@ -85,7 +84,8 @@ Public NotInheritable Class OrdXmlBuilder
         AddNode(antet, "cif", ctx.CodFiscal)
         AddNode(antet, "NrOpl", draft.NrOrd.ToString(CultureInfo.InvariantCulture))
         AddNode(antet, "DataOpl", DateForm(draft.DataOrd))
-        AddNode(antet, "universalCode", UniversalCode)
+        ' NO universalCode: it is the MFP template's own version stamp. A data value overrides the
+        ' template default, so writing it stamps an old version on a newer template (Access did).
         mainForm.Add(antet)
 
         Dim comp As String = If(draft.Comp, String.Empty)

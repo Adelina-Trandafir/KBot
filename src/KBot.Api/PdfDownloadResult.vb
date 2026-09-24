@@ -58,4 +58,6 @@ Public NotInheritable Class PutPdfResponse
     ''' <summary>Numele derivat pe SERVER — sursa unică; clientul nu îl propune niciodată.</summary>
     Public Property nume_fisier As String
     Public Property dimensiune As Integer
+    ''' <summary>Slice 0078: the signer roles the server stored (canonical order), or Nothing.</summary>
+    Public Property semnatura As String
 End Class

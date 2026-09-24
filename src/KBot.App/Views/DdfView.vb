@@ -114,6 +114,11 @@ Public Class DdfView
     Private _pdfPathOverride As String
     ' O generare e în curs? Blochează re-invocarea butonului.
     Private _generating As Boolean
+    ' Slice 0078: True when _pdfPathOverride is the document GENERATED for _selectedRevizie (so it
+    ' may be signed and uploaded as that revision); False when it is a file picked from the list.
+    Private _overrideIsGenerated As Boolean
+    ' Slice 0078: the signing session of the document on screen (Nothing when there is none).
+    Private _signing As PdfSigningSession
 
     ' Starea splitter-ului dinainte de strângerea arborelui, ca desfacerea să-l pună înapoi
     ' exact unde era (vezi Tree_CollapsedChanged). 0 = arborele n-a fost încă strâns.
@@ -138,6 +143,8 @@ Public Class DdfView
         _withReauth = withReauth
         _session = session
         _executaComanda = executaComanda
+        ' Slice 0078: the session's FileSystemWatcher must not outlive the view.
+        AddHandler Disposed, Sub(s, e) EndSigning()
         BuildNav()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
@@ -242,6 +249,11 @@ Public Class DdfView
             '      cache-ul semnat validat prin sumă, fie documentul regenerat în zona de lucru;
             '   3. calea AȘTEPTATĂ a cache-ului semnat, cât timp rezolvarea încă nu s-a întors:
             '      dacă fișierul e deja acolo, se arată imediat, fără să pâlpâie ecranul gol.
+            '
+            ' SLICE 0078 -- the server copy is the single truth: a revision that HAS a signed PDF on
+            ' the server shows NOTHING until EnsureSignedPdfAsync has checked (and if needed
+            ' replaced) the local file. Showing the local file first would put a possibly altered
+            ' copy on screen, and would keep it open in Adobe while it has to be overwritten.
             Dim pdfPath As String = Nothing
             If Not String.IsNullOrEmpty(_pdfPathOverride) Then
                 pdfPath = _pdfPathOverride
@@ -249,18 +261,25 @@ Public Class DdfView
                 If Not String.IsNullOrEmpty(_pdfPathRezolvat) AndAlso
                    _pdfRezolvatPentruIdrev = _selectedRevizie.Idrev Then
                     pdfPath = _pdfPathRezolvat
-                Else
-                    pdfPath = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, _selectedRevizie.NumarRev)
+                ElseIf Not _selectedRevizie.ArePdfSemnat Then
+                    ' No PDF on the server: NEVER a local file (operator, 23.09.2026). Only the
+                    ' document «Generează» writes in the work area this session; until then the
+                    ' path does not exist and the page shows the generate button.
+                    Dim nume As String = IO.Path.GetFileName(
+                        DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, _selectedRevizie.NumarRev))
+                    If Not String.IsNullOrEmpty(nume) Then pdfPath = TempPdfStore.PathFor(nume)
                 End If
             End If
             Dim exists As Boolean = Not String.IsNullOrEmpty(pdfPath) AndAlso IO.File.Exists(pdfPath)
 
             ' Globalii unității pentru antetul paginii «Vizualizare». Sesiunea poate lipsi (teste)
             ' -> antetul își sare rândurile goale, ca în XfaXmlPreview.
-            Return New DdfPageContext(_antet, _nodeRows, _revizii, _nodeIsRoot, _selectedRevizie,
-                                      _requestedCod, pdfPath, exists,
-                                      If(_session Is Nothing, String.Empty, _session.NumeUnitate),
-                                      If(_session Is Nothing, String.Empty, _session.CF))
+            Dim ctx As New DdfPageContext(_antet, _nodeRows, _revizii, _nodeIsRoot, _selectedRevizie,
+                                          _requestedCod, pdfPath, exists,
+                                          If(_session Is Nothing, String.Empty, _session.NumeUnitate),
+                                          If(_session Is Nothing, String.Empty, _session.CF))
+            ctx.Signing = EnsureSigning(pdfPath, exists)
+            Return ctx
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.BuildCurrentContext", ex)
             Throw
@@ -355,6 +374,8 @@ Public Class DdfView
                     If _noduriRevizie.TryGetValue(tinta.Idrev, nod) Then tree.SelectAndReveal(nod)
                     PushToActivePage()
                     ShowContent()
+                    ' Slice 0078: a signed revision shows nothing until its copy is checked.
+                    EnsureSignedPdfAsync(tinta)
                     Return
                 End If
             End If
@@ -498,6 +519,7 @@ Public Class DdfView
             ' O selecție nouă în arbore ANULEAZĂ fișierul ales din lista paginii «Fișiere» ȘI
             ' calea rezolvată pentru nodul anterior.
             _pdfPathOverride = Nothing
+            _overrideIsGenerated = False
             _pdfPathRezolvat = Nothing
             _pdfRezolvatPentruIdrev = 0
 
@@ -532,13 +554,40 @@ Public Class DdfView
     Private Async Sub EnsureSignedPdfAsync(revizie As RevizieRow)
         Try
             If revizie Is Nothing OrElse _antet Is Nothing Then Return
-            If Not revizie.ArePdfSemnat Then Return
-
+            Dim idrev As Integer = revizie.Idrev
             Dim cachePath As String =
                 DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, revizie.NumarRev)
+
+            ' Slice 0078: a signed copy kept on this machine (its upload failed earlier) goes first.
+            ' Uploaded now -> the normal check below finds it in the cache. Still failing -> THAT
+            ' copy is shown, never the older server version over it.
+            Dim pending As PendingPdfUpload = PendingPdfUploads.TryGet(PdfDocKind.Ddf, idrev)
+            If pending IsNot Nothing AndAlso Not pending.Conflict Then
+                If String.IsNullOrWhiteSpace(pending.CachePath) Then pending.CachePath = cachePath
+                Try
+                    Dim resp As PutPdfResponse = Await PendingPdfUploads.UploadAsync(_apiClient, pending).ConfigureAwait(True)
+                    revizie.PdfSha256 = resp.sha256
+                    If Not String.IsNullOrEmpty(resp.semnatura) Then revizie.Semnatura = resp.semnatura
+                    SigningMessages.ShowPendingUploaded(FindForm())
+                Catch ex As ApiException When ex.StatusCode.GetValueOrDefault() = 409
+                    SigningMessages.ShowPendingConflict(FindForm())
+                Catch ex As Exception
+                    ' Already logged by UploadAsync. Show the kept copy.
+                    GlobalErrorLog.Write("DdfView.EnsureSignedPdfAsync.Pending", ex)
+                    If _selectedRevizie Is Nothing OrElse _selectedRevizie.Idrev <> idrev Then Return
+                    _pdfPathRezolvat = pending.PdfPath
+                    _pdfRezolvatPentruIdrev = idrev
+                    PushToActivePage()
+                    Return
+                End Try
+            End If
+
+            If Not revizie.ArePdfSemnat Then
+                If _selectedRevizie IsNot Nothing AndAlso _selectedRevizie.Idrev = idrev Then PushToActivePage()
+                Return
+            End If
             If String.IsNullOrEmpty(cachePath) Then Return
 
-            Dim idrev As Integer = revizie.Idrev
             Dim rezultat As PdfCacheResult = Await PdfCache.EnsureAsync(
                 cachePath, revizie.PdfSha256,
                 Function(shaLocal) _apiClient.DownloadDdfPdfAsync(idrev, shaLocal, CancellationToken.None)).ConfigureAwait(True)
@@ -552,6 +601,8 @@ Public Class DdfView
                     _pdfPathRezolvat = rezultat.Cale
                     _pdfRezolvatPentruIdrev = idrev
                     PushToActivePage()
+                    ' Slice 0078 (item 4): the local file was not the original -- say so.
+                    If rezultat.LocalReplaced Then SigningMessages.ShowLocalReplaced(FindForm())
                 Case PdfCacheStatus.Eroare
                     ' Documentul semnat nu s-a putut aduce. Nu inventăm o cădere pe regenerare:
                     ' operatorul trebuie să știe că EXISTĂ un document semnat pe care nu-l vedem.
@@ -608,7 +659,26 @@ Public Class DdfView
     Private Sub OnFileActivated(sender As Object, pdfPath As String)
         Try
             If String.IsNullOrWhiteSpace(pdfPath) Then Return
+            ' Slice 0078 (item 4): the file of a known revision is opened AS that revision, so it
+            ' goes through the same server check as a tree click -- never shown unchecked.
+            Dim r As RevizieRow = RevizieForPath(pdfPath)
+            If r IsNot Nothing Then
+                _nodeRows = LiniiFor(r.Idrev)
+                _nodeIsRoot = False
+                _selectedRevizie = r
+                _pdfPathOverride = Nothing
+                _overrideIsGenerated = False
+                _pdfPathRezolvat = Nothing
+                _pdfRezolvatPentruIdrev = 0
+                Dim nod As AdvancedTreeControl.TreeItem = Nothing
+                If _noduriRevizie.TryGetValue(r.Idrev, nod) Then tree.SelectAndReveal(nod)
+                PushToActivePage()
+                EnsureSignedPdfAsync(r)
+                navSub.SelectedKey = PAGE_PDF
+                Return
+            End If
             _pdfPathOverride = pdfPath
+            _overrideIsGenerated = False
             PushToActivePage()
             navSub.SelectedKey = PAGE_PDF      ' ridică SelectionChanged -> ActivatePage -> îl arată
         Catch ex As Exception
@@ -624,6 +694,8 @@ Public Class DdfView
             Dim cod As String = _requestedCod
             Dim revizie As RevizieRow = _selectedRevizie
             If String.IsNullOrWhiteSpace(cod) OrElse revizie Is Nothing OrElse _antet Is Nothing Then Return
+            ' Slice 0078: an unsigned document over a signed one needs the operator's yes.
+            If revizie.ArePdfSemnat AndAlso Not SigningMessages.ConfirmRegenerateSigned(FindForm()) Then Return
 
             _generating = True
             Try
@@ -670,6 +742,7 @@ Public Class DdfView
                 ' (cale, existență) tocmai ca acest salt să forțeze re-încorporarea deși calea a
                 ' rămas aceeași.
                 _pdfPathOverride = pdfPath
+                _overrideIsGenerated = True
                 PushToActivePage()
             Finally
                 _generating = False
@@ -689,12 +762,93 @@ Public Class DdfView
         _nodeIsRoot = False
         _selectedRevizie = Nothing
         _pdfPathOverride = Nothing
+        _overrideIsGenerated = False
         _pdfPathRezolvat = Nothing
         _pdfRezolvatPentruIdrev = 0
         tree.Clear()
         ' Contextul devine Nothing -> pagina activă își arată starea goală.
         PushToActivePage()
     End Sub
+
+    ' ── Semnare (slice 0078) ──────────────────────────────────────────────────
+    ''' <summary>
+    ''' The signing session for the document about to be shown: kept when it is the same revision
+    ''' and file, replaced otherwise, Nothing when the context has no single revision document
+    ''' (a month root, a file picked from the list that belongs to no revision).
+    ''' </summary>
+    Private Function EnsureSigning(pdfPath As String, exists As Boolean) As PdfSigningSession
+        Dim r As RevizieRow = _selectedRevizie
+        Dim wanted As Boolean = exists AndAlso Not _nodeIsRoot AndAlso r IsNot Nothing AndAlso _antet IsNot Nothing AndAlso
+                                (String.IsNullOrEmpty(_pdfPathOverride) OrElse _overrideIsGenerated)
+        If Not wanted Then
+            EndSigning()
+            Return Nothing
+        End If
+        If _signing IsNot Nothing AndAlso _signing.Matches(PdfDocKind.Ddf, r.Idrev, pdfPath) Then Return _signing
+
+        EndSigning()
+        Dim cachePath As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, r.NumarRev)
+        ' A kept copy on screen started from ITS precedent, not from the server's current sha.
+        Dim serverSha As String = r.PdfSha256
+        Dim pending As PendingPdfUpload = PendingPdfUploads.TryGet(PdfDocKind.Ddf, r.Idrev)
+        If pending IsNot Nothing AndAlso String.Equals(pending.PdfPath, pdfPath, StringComparison.OrdinalIgnoreCase) Then
+            serverSha = If(pending.ShaPrecedent = ApiClient.ShaFaraRand, String.Empty, pending.ShaPrecedent)
+        End If
+        _signing = New PdfSigningSession(PdfDocKind.Ddf, r.Idrev, pdfPath, cachePath, serverSha, _apiClient)
+        AddHandler _signing.Completed, AddressOf OnSigningCompleted
+        _signing.Begin()
+        Return _signing
+    End Function
+
+    Private Sub EndSigning()
+        Try
+            If _signing Is Nothing Then Return
+            RemoveHandler _signing.Completed, AddressOf OnSigningCompleted
+            _signing.Dispose()
+            _signing = Nothing
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.EndSigning", ex)
+        End Try
+    End Sub
+
+    ' UI thread (the session posts back to it). UI boundary: log and swallow.
+    Private Sub OnSigningCompleted(session As PdfSigningSession, outcome As PdfSigningOutcome)
+        Try
+            If outcome Is Nothing Then Return
+            Dim r As RevizieRow = _revizii?.FirstOrDefault(Function(x) x.Idrev = session.Id)
+            Select Case outcome.Status
+                Case PdfSigningStatus.Uploaded
+                    If r IsNot Nothing Then
+                        r.PdfSha256 = outcome.NewSha
+                        r.Semnatura = outcome.Semnatura
+                    End If
+                    SigningMessages.ShowOutcome(FindForm(), outcome)
+                Case PdfSigningStatus.Conflict
+                    SigningMessages.ShowOutcome(FindForm(), outcome)
+                    ' Reload: the list brings the server's current sha, the reselect path downloads it.
+                    If r IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(_requestedCod) Then
+                        _idrevDeReselectat = r.Idrev
+                        LoadAsync(_requestedCod)
+                    End If
+                Case Else
+                    SigningMessages.ShowOutcome(FindForm(), outcome)
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.OnSigningCompleted", ex)
+        End Try
+    End Sub
+
+    ''' <summary>The revision whose canonical cache file is <paramref name="pdfPath"/>, or Nothing.</summary>
+    Private Function RevizieForPath(pdfPath As String) As RevizieRow
+        If _revizii Is Nothing OrElse _antet Is Nothing Then Return Nothing
+        Dim full As String = IO.Path.GetFullPath(pdfPath)
+        For Each r As RevizieRow In _revizii
+            Dim expected As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, r.NumarRev)
+            If Not String.IsNullOrEmpty(expected) AndAlso
+               String.Equals(IO.Path.GetFullPath(expected), full, StringComparison.OrdinalIgnoreCase) Then Return r
+        Next
+        Return Nothing
+    End Function
 
     Private Sub ShowEmpty(message As String)
         lblEmpty.Text = message

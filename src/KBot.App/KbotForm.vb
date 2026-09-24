@@ -1417,6 +1417,10 @@ Public Class KbotForm
             If info.DataCreare.HasValue Then
                 linii.Add("Creat: " & info.DataCreare.Value.ToString("dd.MM.yyyy"))
             End If
+            ' Slice 0777: the moment the date sort orders on, with its time part.
+            If info.DataAngajamentNou.HasValue Then
+                linii.Add("Angajament nou (FOREXE): " & info.DataAngajamentNou.Value.ToString("dd.MM.yyyy HH:mm:ss"))
+            End If
             If info.DataDefinitivare.HasValue Then
                 linii.Add("Definitivat: " & info.DataDefinitivare.Value.ToString("dd.MM.yyyy"))
             End If

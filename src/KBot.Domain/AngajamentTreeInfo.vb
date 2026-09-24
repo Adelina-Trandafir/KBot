@@ -67,6 +67,9 @@ Public NotInheritable Class AngajamentTreeInfo
     Public Property Descriere As String = String.Empty
     Public Property Stare As String = String.Empty
     Public Property DataCreare As Date?
+    ' Slice 0777: when FOREXE recorded the angajament as made -- the DataFX (DATETIME, time
+    ' included) of its FX_Istoric row «Angajament nou.». The date sort orders on this.
+    Public Property DataAngajamentNou As Date?
     Public Property DataDefinitivare As Date?
     Public Property IDDF As Long?
     Public Property EIncarcat As Boolean                 ' query: Incarcat

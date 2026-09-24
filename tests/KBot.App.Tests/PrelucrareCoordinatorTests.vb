@@ -150,12 +150,12 @@ Public Class PrelucrareCoordinatorTests
             Implements IApiClient.DownloadOrdPdfAsync
             Throw New NotSupportedException()
         End Function
-        Public Function UploadDdfPdfAsync(idrev As Integer, continut As Byte(), shaPrecedent As String,
+        Public Function UploadDdfPdfAsync(idrev As Integer, continut As Byte(), shaPrecedent As String, semnatura As String, semnaturi As IReadOnlyList(Of PdfSignatureRecord),
                                           ct As CancellationToken) As Task(Of PutPdfResponse) _
             Implements IApiClient.UploadDdfPdfAsync
             Throw New NotSupportedException()
         End Function
-        Public Function UploadOrdPdfAsync(idordp As Integer, continut As Byte(), shaPrecedent As String,
+        Public Function UploadOrdPdfAsync(idordp As Integer, continut As Byte(), shaPrecedent As String, semnatura As String, semnaturi As IReadOnlyList(Of PdfSignatureRecord),
                                           ct As CancellationToken) As Task(Of PutPdfResponse) _
             Implements IApiClient.UploadOrdPdfAsync
             Throw New NotSupportedException()

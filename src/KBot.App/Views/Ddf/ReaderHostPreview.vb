@@ -23,15 +23,34 @@ Imports KBot.Theming
 '''
 ''' NU SE SCRIE NIMIC ÎN REGISTRY. Bancul scrie <c>bEnableAv2</c> ca să FORȚEZE o generație; aici
 ''' nu se scrie, fiindcă acea valoare schimbă Adobe-ul operatorului pentru ORICE PDF ar deschide,
-''' inclusiv în afara K-BOT.
+''' inclusiv în afara K-BOT. (Singura excepție, slice 0078: <c>AdobePrefs</c>, dialogul standard
+''' de salvare -- vezi mai jos.)
 '''
-''' AVERTISMENT (planul §8 ter): NU invoca semnarea (Adobe) cât timp această suprafață ține o
-''' fereastră găzduită — lansarea unui mod de semnare peste același proces cere probleme.
+''' SIGNING (slice 0078, replaces the old «never sign while hosted» warning): the operator signs
+''' INSIDE this surface. The host's Save As trap is ALWAYS on here, so a save can only overwrite the
+''' document on screen, never land elsewhere. <see cref="Signing"/> (set by the page, may be
+''' Nothing) is told about every trapped save and decides whether to upload.
 ''' </summary>
 Public Class ReaderHostPreview
     Implements IDdfPreview, IThemedControl
 
     Public Event GenerateRequested As EventHandler Implements IDdfPreview.GenerateRequested
+
+    ' Slice 0078: the Adobe «standard Save As dialog» preference is written once per process.
+    Private Shared _savePrefDone As Boolean
+
+    ''' <summary>
+    ''' Slice 0078: the signing session of the document on screen (Nothing = nobody uploads, but the
+    ''' Save As trap still keeps every save on the same path). Set by the page BEFORE ShowDocument.
+    ''' </summary>
+    <System.ComponentModel.Browsable(False),
+     System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
+    Public Property Signing As PdfSigningSession
+
+    ''' <summary>Slice 0078: a trapped save finished (argument = the document path). For the bench.</summary>
+    Public Event DocumentSaved As Action(Of String)
+    ''' <summary>Slice 0078: a save was cancelled by the trap (argument = Romanian reason). For the bench.</summary>
+    Public Event SaveCancelled As Action(Of String)
 
     ' How the Adobe window is let go when the document changes (A kills the process we started,
     ' B closes the window and keeps the process warm) and whether the floating popup is hunted:
@@ -50,6 +69,10 @@ Public Class ReaderHostPreview
         InitializeComponent()
         _host = New AdobeReaderHost(pnlHost, AddressOf AdobeHostLog.Write) With {
             .PopupWatchEnabled = True}
+        ' Slice 0078: every save of the hosted Adobe goes back onto the document on screen.
+        _host.SaveTrapEnabled = True
+        AddHandler _host.DocumentSaved, AddressOf OnDocumentSaved
+        AddHandler _host.SaveTrapFailed, AddressOf OnSaveTrapFailed
         ' În DESIGNER nu citim setările și nu scriem jurnal (0025-05, de când controlul e declarat
         ' în DdfView.Designer.vb și deci se construiește pe suprafața de design): `AppDir` e acolo
         ' folderul lui devenv.exe, deci `kbot_paths.json` lipsește oricum, iar singurul efect real
@@ -125,6 +148,10 @@ Public Class ReaderHostPreview
             ' altfel controlul ActiveX ar rămâne peste fereastra reparentată, sau invers.
             ReleaseUnusedEngine()
             _host.Detach()
+            ' Setting "control Adobe nou la fiecare document": the ActiveX control of the previous
+            ' document is closed and destroyed here, on the click; the load creates a new one. A
+            ' reused control sometimes stayed empty after LoadFile (client trace 24.09.2026).
+            If UsesActiveX() AndAlso AppSettings.Current.AcroPdfFreshControl Then _acro?.Clear()
 
             If String.IsNullOrWhiteSpace(pdfPath) Then
                 ShowMessage("Selectați o revizie din arbore.")
@@ -133,6 +160,12 @@ Public Class ReaderHostPreview
             If Not exists Then
                 ShowMissing()
                 Return
+            End If
+
+            ' Slice 0078: before Adobe starts, so the preference is already read by it.
+            If Not _savePrefDone Then
+                _savePrefDone = True
+                AdobeHostLog.Write(AdobePrefs.EnsureStandardSaveDialog())
             End If
 
             ' Starea de așteptare rămâne pe ecran până când fereastra e chiar încorporată. Panoul
@@ -152,7 +185,7 @@ Public Class ReaderHostPreview
     ' pe ecran — §6: o previzualizare care arată în tăcere un dreptunghi gri e cel mai prost final.
     Private Async Sub EmbedAsync(pdfPath As String)
         Try
-            If _engine = AdobePreviewEngine.ActiveX Then
+            If UsesActiveX() Then
                 Await EmbedWithActiveXAsync(pdfPath).ConfigureAwait(True)
                 Return
             End If
@@ -194,6 +227,10 @@ Public Class ReaderHostPreview
             Return
         End If
 
+        ' Engine "ActiveX -- mod citire": toolbars hidden by Adobe's Read Mode (Ctrl+H) instead of
+        ' the collapse / hide / header timers. Read at every load, so a change in the settings
+        ' window applies to the next document.
+        surface.ReadMode = (_engine = AdobePreviewEngine.ActiveXReadMode)
         Dim result As AcroPdfResult = Await surface.ShowDocumentAsync(pdfPath).ConfigureAwait(True)
         If Not String.Equals(_requestedPath, pdfPath, StringComparison.Ordinal) Then Return
 
@@ -203,7 +240,10 @@ Public Class ReaderHostPreview
             If result.Collapsed Then
                 lblNote.Visible = False
             Else
-                lblNote.Text = "Panourile Adobe nu au putut fi colapsate — vezi jurnalul."
+                ' The surface says WHY when it knows (e.g. Adobe showed nothing at all); otherwise
+                ' the only thing missing is the collapse.
+                lblNote.Text = If(result.Message.Length > 0, result.Message,
+                                  "Panourile Adobe nu au putut fi colapsate — vezi jurnalul.")
                 lblNote.Visible = True
             End If
         Else
@@ -211,15 +251,52 @@ Public Class ReaderHostPreview
         End If
     End Function
 
+    ' Both ActiveX engines (old path and Read Mode) use the same AcroPDF surface.
+    Private Function UsesActiveX() As Boolean
+        Return _engine = AdobePreviewEngine.ActiveX OrElse _engine = AdobePreviewEngine.ActiveXReadMode
+    End Function
+
     Private Function EnsureAcroSurface() As AcroPdfSurface
         Try
-            If _acro Is Nothing Then _acro = New AcroPdfSurface(pnlHost, AddressOf AdobeHostLog.Write)
+            If _acro Is Nothing Then
+                _acro = New AcroPdfSurface(pnlHost, AddressOf AdobeHostLog.Write)
+                ' Slice 0078: the ActiveX engine traps Save As exactly like the hosted window.
+                _acro.SaveTrapEnabled = True
+                AddHandler _acro.DocumentSaved, AddressOf OnDocumentSaved
+                AddHandler _acro.SaveTrapFailed, AddressOf OnSaveTrapFailed
+            End If
             Return _acro
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.EnsureAcroSurface", ex)
             Return Nothing
         End Try
     End Function
+
+    ' Slice 0078 -- host events, raised on the UI thread. UI boundary: log and swallow.
+    Private Sub OnDocumentSaved(path As String)
+        Try
+            Signing?.NotifySaved(path)
+            RaiseEvent DocumentSaved(path)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.OnDocumentSaved", ex)
+        End Try
+    End Sub
+
+    Private Sub OnSaveTrapFailed(reason As String)
+        Try
+            RaiseEvent SaveCancelled(reason)
+            If Signing IsNot Nothing Then
+                Signing.NotifySaveCancelled(reason)
+            Else
+                KBotMessage.Show(FindForm(),
+                                 "Salvarea documentului a fost oprită de K-BOT, ca fișierul să nu ajungă în alt loc." &
+                                 Environment.NewLine & reason,
+                                 "Salvare oprită", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.OnSaveTrapFailed", ex)
+        End Try
+    End Sub
 
     Private Sub pnlHost_SizeChanged(sender As Object, e As EventArgs) Handles pnlHost.SizeChanged
         Try
@@ -236,8 +313,7 @@ Public Class ReaderHostPreview
     Friend Sub DetachReader()
         Try
             _host?.Dispose()
-            _acro?.Dispose()
-            _acro = Nothing
+            DisposeAcro()
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.DetachReader", ex)
         End Try
@@ -249,12 +325,19 @@ Public Class ReaderHostPreview
     ''' poate fi deschis simultan în amândouă (măsurat 05.08.2026 — a doua cerere dă un panou gri).
     ''' </summary>
     Private Sub ReleaseUnusedEngine()
-        If _engine = AdobePreviewEngine.ActiveX Then
+        If UsesActiveX() Then
             _host.Detach()
         ElseIf _acro IsNot Nothing Then
-            _acro.Dispose()
-            _acro = Nothing
+            DisposeAcro()
         End If
+    End Sub
+
+    Private Sub DisposeAcro()
+        If _acro Is Nothing Then Return
+        RemoveHandler _acro.DocumentSaved, AddressOf OnDocumentSaved
+        RemoveHandler _acro.SaveTrapFailed, AddressOf OnSaveTrapFailed
+        _acro.Dispose()
+        _acro = Nothing
     End Sub
 
     Public Sub Clear() Implements IDdfPreview.Clear

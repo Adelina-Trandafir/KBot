@@ -74,7 +74,9 @@ Public NotInheritable Class PdfCache
 
                 Case Else
                     Scrie(cachePath, rezultat.Bytes)
-                    Return PdfCacheResult.Gata(cachePath)
+                    ' Slice 0078: a local file EXISTED and was not the server's -- the caller tells
+                    ' the operator it was replaced (the server copy is the single truth).
+                    Return PdfCacheResult.Gata(cachePath, localReplaced:=shaLocal IsNot Nothing)
             End Select
         Catch ex As ApiException
             ' Mesajul e deja românesc (câmpul «error» al serverului sau motivul SHA_MISMATCH).
@@ -120,15 +122,22 @@ Public NotInheritable Class PdfCacheResult
     Public ReadOnly Property Cale As String
     ''' <summary>Mesaj românesc pentru operator, populat doar pe <see cref="PdfCacheStatus.Eroare"/>.</summary>
     Public ReadOnly Property Mesaj As String
+    ''' <summary>
+    ''' Slice 0078: on <see cref="PdfCacheStatus.Gata"/>, True when a local file existed, differed
+    ''' from the server's and was overwritten with the server copy.
+    ''' </summary>
+    Public ReadOnly Property LocalReplaced As Boolean
 
-    Private Sub New(status As PdfCacheStatus, cale As String, mesaj As String)
+    Private Sub New(status As PdfCacheStatus, cale As String, mesaj As String,
+                    Optional localReplaced As Boolean = False)
         Me.Status = status
         Me.Cale = If(cale, String.Empty)
         Me.Mesaj = If(mesaj, String.Empty)
+        Me.LocalReplaced = localReplaced
     End Sub
 
-    Public Shared Function Gata(cale As String) As PdfCacheResult
-        Return New PdfCacheResult(PdfCacheStatus.Gata, cale, Nothing)
+    Public Shared Function Gata(cale As String, Optional localReplaced As Boolean = False) As PdfCacheResult
+        Return New PdfCacheResult(PdfCacheStatus.Gata, cale, Nothing, localReplaced)
     End Function
 
     Public Shared Function Nesemnat() As PdfCacheResult

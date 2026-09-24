@@ -170,15 +170,27 @@ Public Interface IApiClient
     '''
     ''' Se încarcă DOAR PDF-uri semnate. Cel nesemnat este un artefact derivat, care se
     ''' regenerează local. Hard-fail (Throw ApiException) la non-2xx; 401 curge spre WithReauth.
+    '''
+    ''' Slice 0078: <paramref name="semnatura"/> = the signer roles found in the PDF, comma
+    ''' separated (DDF: A,B,Ordonator). Sent as <c>X-Semnatura</c>; the server writes it to
+    ''' <c>FX_DDF_REV.Semnatura</c> in the same transaction as the PDF. Blank = column untouched.
+    '''
+    ''' Slice 0079: <paramref name="semnaturi"/> = the signatures this upload ADDS (not the ones the
+    ''' file already had when it was opened). Sent as <c>X-Semnaturi</c>, together with this
+    ''' computer's details (<c>X-Statie</c>); the server records one <c>FX_PDF_SEMNATURI</c> row per
+    ''' signature, in the same transaction. Nothing / empty = no row.
     ''' </summary>
     Function UploadDdfPdfAsync(idrev As Integer, continut As Byte(), shaPrecedent As String,
+                               semnatura As String, semnaturi As IReadOnlyList(Of PdfSignatureRecord),
                                ct As CancellationToken) As Task(Of PutPdfResponse)
 
     ''' <summary>
     ''' Încarcă PDF-ul SEMNAT al unei ordonanțări (PUT /api/forexe/ord/pdf/{idordp}).
-    ''' Sora lui <see cref="UploadDdfPdfAsync"/>, cu exact același contract.
+    ''' Sora lui <see cref="UploadDdfPdfAsync"/>, cu exact același contract
+    ''' (roles AB,CD,Ordonator -> <c>FX_ORD.Semnatura</c>).
     ''' </summary>
     Function UploadOrdPdfAsync(idordp As Integer, continut As Byte(), shaPrecedent As String,
+                               semnatura As String, semnaturi As IReadOnlyList(Of PdfSignatureRecord),
                                ct As CancellationToken) As Task(Of PutPdfResponse)
 
     ''' <summary>
