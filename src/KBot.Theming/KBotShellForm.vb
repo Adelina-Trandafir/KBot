@@ -81,6 +81,9 @@ Public Class KBotShellForm
 
     ' True dacă punctul-ecran cade în banda de redimensionare a acestui formular.
     Friend Function IsInResizeBand(screenPoint As Point) As Boolean
+        ' A closed shell can still receive WM_NCHITTEST through a child whose handle
+        ' outlived it; PointToClient would then try to recreate the disposed form's handle.
+        If IsDisposed OrElse Disposing OrElse Not IsHandleCreated Then Return False
         If FormBorderStyle <> FormBorderStyle.None OrElse WindowState <> FormWindowState.Normal Then
             Return False
         End If

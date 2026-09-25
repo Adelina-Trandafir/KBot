@@ -78,11 +78,9 @@ End Class
 ''' <summary>
 ''' One <c>FX_DDF_REV_SA</c> row.
 '''
-''' <para>The classification inversion, once more because this family has been bitten by it:
-''' <c>id_clsf</c> is the MariaDB key (FK into <c>Clasificatii</c>) and <c>id_clsf_acc</c> is
-''' the retained Access id -- the OPPOSITE of <c>FX_Indicatori</c>, where the column named
-''' <c>IdClsf</c> holds the Access id. The client sends only <c>id_clsf</c>; the server
-''' resolves the rest.</para>
+''' <para><c>id_clsf</c> is the MariaDB key (FK into <c>Clasificatii</c>). No Access id travels:
+''' since slice 0080-04 it lives only in <c>Clasificatii.IdClsfAcc</c>. The client sends only
+''' <c>id_clsf</c>; the server resolves the rest.</para>
 '''
 ''' <para><c>buget</c> and <c>val_rec</c> ride down for DISPLAY only -- they have no column on
 ''' <c>FX_DDF_REV_SA</c> (Access kept them on <c>tmpFX_DDF_REV_SA</c>) and the server ignores
@@ -94,7 +92,6 @@ Public NotInheritable Class DdfDraftLinieADto
     Public Property cod_angajament As String
     Public Property cod_indicator As String
     Public Property id_clsf As Integer
-    Public Property id_clsf_acc As Integer
     Public Property clsf As String
     Public Property ss As String
     Public Property id_unitate As Integer
@@ -122,7 +119,6 @@ Public NotInheritable Class DdfDraftLinieBDto
     Public Property cod_angajament As String
     Public Property cod_indicator As String
     Public Property id_clsf As Integer
-    Public Property id_clsf_acc As Integer
     ''' <summary>Resolved server-side as <c>CONCAT(SS, ClsfSal)</c>; the client never
     ''' computes it, because <c>Clasificatii</c> has no <c>CodSSI</c> column.</summary>
     Public Property cod_ssi As String
@@ -221,7 +217,6 @@ End Class
 ''' <c>id_clsf = -1</c> is the synthetic separator; picking it is refused.</summary>
 Public NotInheritable Class DdfClasificatieDto
     Public Property id_clsf As Integer
-    Public Property id_clsf_acc As Integer
     Public Property clsf As String
     Public Property denumire As String
     Public Property ss As String

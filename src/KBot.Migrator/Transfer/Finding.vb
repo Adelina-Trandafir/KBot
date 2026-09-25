@@ -109,6 +109,12 @@ Public NotInheritable Class Finding
     ''' it sees this kind, so the two must not be confused.
     ''' </remarks>
     Public Const BAZA_FARA_TABELE As String = "BAZA_FARA_TABELE"
+    ''' <summary>
+    ''' The target database does not exist on the server. The form offers to create it from
+    ''' the template and verifies again; until then nothing on the target can be checked, so
+    ''' it blocks (before 25.09.2026 it was an Atentie that promised a creation nothing did).
+    ''' </summary>
+    Public Const BAZA_LIPSA As String = "BAZA_LIPSA"
     Public Const RANDURI_EXISTENTE As String = "RANDURI_EXISTENTE"
     Public Const ORDINE_TABELE As String = "ORDINE_TABELE"
     Public Const CICLU_TABELE As String = "CICLU_TABELE"
@@ -117,6 +123,11 @@ Public NotInheritable Class Finding
     Public Const FISIER_LIPSA As String = "FISIER_LIPSA"
     Public Const PARTENER_NULAT As String = "PARTENER_NULAT"
     Public Const COLOANA_NECORELATA As String = "COLOANA_NECORELATA"
+    ''' <summary>
+    ''' An FX_Istoric or FX_Rezervari row with no CodAngajament in Access. Impossible by the
+    ''' operator's rule (24.09.2026: "a critical rule"), so it BLOCKS.
+    ''' </summary>
+    Public Const ANGAJAMENT_LIPSA As String = "ANGAJAMENT_LIPSA"
 
     Public Sub New(kind As String, severity As FindingClass, table As String,
                    column As String, message As String, Optional rowCount As Integer = 0)

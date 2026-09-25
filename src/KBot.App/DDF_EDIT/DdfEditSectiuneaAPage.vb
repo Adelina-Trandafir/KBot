@@ -329,7 +329,6 @@ Public Class DdfEditSectiuneaAPage
     ''' </summary>
     Private Sub AplicaClasificatia(a As DdfDraftLinieA, c As DdfClasificatie)
         a.IdClsf = c.IdClsf
-        a.IdClsfAcc = c.IdClsfAcc
         a.Clsf = c.Clsf
         a.Ss = c.Ss
         a.IdUnitate = c.IdUnitate

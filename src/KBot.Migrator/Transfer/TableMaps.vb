@@ -215,17 +215,16 @@ Public NotInheritable Class TableMaps
             WithNote("«Ascuns» călătorește - ruta Flask nu-l scrie, dar ținta îl are."))
 
         ' --- Parteneri_Coduri ------------------------------------------------------
-        ' In scope by operator decision, 23.08. The only target found that keeps IdClsf
-        ' and IdClsfAcc side by side, so the Access IdClsf feeds BOTH: resolved into
-        ' IdClsf, raw into IdClsfAcc.
+        ' In scope by operator decision, 23.08. The Access IdClsf is resolved into
+        ' IdClsf. Slice 0080-04: no raw copy into IdClsfAcc any more - the Access id lives
+        ' only in Clasificatii (operator, 25.09.2026).
         maps.Add(New TableMap("ParteneriAng", "Parteneri_Coduri", SourceFile.UnitFile).
             Add(ColumnMapping.FromPartener("IdPartener", "CodPartener", True)).
             Add(ColumnMapping.FromClasificatie("IdClsf", "IdClsf", True)).
-            Add(ColumnMapping.FromAccess("IdClsfAcc", "IdClsf")).
             Rename("ContBanca", "ContBancar").
             Exclude("Id", "Clsf", "DTQ").
             WithNote("Singura redenumire e «ContBanca» ▸ «ContBancar». " &
-                     "IdClsf-ul Access hrănește AMÂNDOUĂ coloanele țintei."))
+                     "IdClsf-ul Access se traduce în Clasificatii.IDClsf."))
 
         Return maps
     End Function
@@ -235,7 +234,12 @@ Public NotInheritable Class TableMaps
         Dim maps As New List(Of TableMap)()
 
         maps.Add(NameMatched("FX_Angajamente"))
-        maps.Add(NameMatched("FX_Indicatori"))
+        ' Slice 0080-01: on the seven tables below with WithClsfPair() the target IdClsf is
+        ' Clasificatii.IDClsf, like the ORD/DDF families; the Access IdClsf is resolved row
+        ' by row on the row's unit (OwnershipPlan.ClassificationUnit) and NOT kept. The
+        ' verifier's dry run names every row that does not resolve, before anything is
+        ' written; the writer stops the run on one too.
+        maps.Add(NameMatched("FX_Indicatori").WithClsfPair())
 
         ' --- FX_DDF ----------------------------------------------------------------
         ' MAPARE_ACCESS_MARIADB.md §3. PK is IDDF alone as of 24.08 - the operator
@@ -266,11 +270,11 @@ Public NotInheritable Class TableMaps
             Exclude("ArePDFDDF", "CalePDFDDF", "AreDDF", "CaleDDF").
             WithNote("«ESpeciala» e doar pe MariaDB, nulabilă - nu călătorește."))
 
-        maps.Add(NameMatched("FX_Istoric"))
-        maps.Add(NameMatched("FX_Rezervari"))
+        maps.Add(NameMatched("FX_Istoric").WithClsfPair())
+        maps.Add(NameMatched("FX_Rezervari").WithClsfPair())
         maps.Add(NameMatched("FX_Receptii_H"))
-        maps.Add(NameMatched("FX_Receptii"))
-        maps.Add(NameMatched("FX_Plati"))
+        maps.Add(NameMatched("FX_Receptii").WithClsfPair())
+        maps.Add(NameMatched("FX_Plati").WithClsfPair())
         ' --- the Extrase family, selected by CodFiscal (D8) -------------------------
         ' FX_Extrase_F.NumeFisier reads
         ' TREZ521_ExtrasEP_PDFCLI_2842919_XML_SIGNED_03062026h1717.pdf. The file travels
@@ -283,13 +287,17 @@ Public NotInheritable Class TableMaps
             WithNote("Se alege după codul fiscal din numele fișierului (D8): orice segment " &
                      "numeric întreg dintre «_» care e egal cu codul fiscal al DC-ului."))
 
-        ' D10: IdUnitate travels here BY NAME and unfiltered - it is the operator's
-        ' information, not an authority. Nothing is derived from it and nothing is filtered
-        ' by it, which is why unit 77 (112 rows) and unit 0 (7 rows) no longer raise
-        ' anything: the column has no foreign key on the target, so they cost nothing.
-        maps.Add(NameMatched("FX_Extrase_H").
-            WithNote("D10: «IdUnitate» călătorește ca informație, nefiltrat — antetul " &
-                     "pleacă dacă fișierul lui de extras a plecat (D11)."))
+        ' D10 still holds: IdUnitate is not an authority - nothing is filtered by it, the
+        ' header travels with its statement file (D11). But since 25.09.2026 (operator) the
+        ' Access IdUnitate / IdClsf / IdClsfV are NOT carried either: migrated headers came
+        ' out with IdUnitate = 0 and no IdClsf. The three are recomputed from Cont / CodIBAN
+        ' with the extrase download's own rules (ExtrasHeaderRules), so a migrated header
+        ' reads exactly like a downloaded one. A miss is NULL plus a warning, never a stop.
+        maps.Add(NameMatched("FX_Extrase_H").WithExtrasHeaderRules().
+            WithNote("«IdUnitate», «IdClsf» și «IdClsfV» se calculează din «Cont» / «CodIBAN» " &
+                     "cu regulile descărcării extraselor (DefaSSS ▸ DefaSS ▸ Unitati, apoi " &
+                     "Clasificatii pe unitate); valorile Access nu se citesc. Antetul pleacă " &
+                     "dacă fișierul lui de extras a plecat (D11)."))
 
         ' D10: the Extrase family carries no LIVE unit at all, and slice 0046 stopped
         ' pretending otherwise. FX_Extrase.IdUnitate is a relic - NULL on all 3.110 rows -
@@ -309,10 +317,8 @@ Public NotInheritable Class TableMaps
 
         ' --- FX_DDF_REV_SA ---------------------------------------------------------
         ' IdClsf is NOT NULL with a foreign key, so a resolution miss is BLOCKING.
-        ' IdClsfAcc is NOT NULL with no default on the target - contradicting
-        ' MAPARE_ACCESS_MARIADB.md §5, which claims it was made nullable on 22.08. It was
-        ' not. Decision D9: write the Access IdClsf into it, which is exactly what
-        ' IdClsfAcc means on Clasificatii.
+        ' D9 (write the Access IdClsf into a NOT NULL IdClsfAcc) is GONE with slice
+        ' 0080-04: the column was dropped, the Access id lives only in Clasificatii.
         ' IdPartener travels as NULL (§5.2) and the count is logged per table.
         '
         ' D12 reverses slice 0045-07 here on two counts, and both reversals matter.
@@ -330,17 +336,14 @@ Public NotInheritable Class TableMaps
         ' column is a relic (D1).
         maps.Add(New TableMap("FX_DDF_REV_SA", "FX_DDF_REV_SA", SourceFile.ForexeFile).
             Add(ColumnMapping.FromClasificatie("IdClsf", "IdClsf", True)).
-            Add(ColumnMapping.FromAccess("IdClsfAcc", "IdClsf")).
             Add(ColumnMapping.AlwaysNull("IdPartener")).
             Exclude("ID", "IdClsfPY").
-            WithNote("D9: «IdClsfAcc» e NOT NULL fără implicit, deci primește IdClsf-ul " &
-                     "Access. «IdPartener» pleacă NULL (§5.2). D2/D12: tabelul ăsta E " &
+            WithNote("«IdPartener» pleacă NULL (§5.2). D2/D12: tabelul ăsta E " &
                      "autoritatea — «IdUnitate» al lui e răspunsul, călătorește ca atare, " &
                      "și el spune cărei unități aparține documentul, nu invers."))
 
         maps.Add(New TableMap("FX_DDF_REV_SB", "FX_DDF_REV_SB", SourceFile.ForexeFile).
             Add(ColumnMapping.FromClasificatie("IdClsf", "IdClsf", True)).
-            Add(ColumnMapping.FromAccess("IdClsfAcc", "IdClsf")).
             Add(ColumnMapping.AlwaysNull("IdPartener")).
             Exclude("ID", "IdClsfPY").
             WithNote("Aceeași formă ca SA, dar NU e autoritate: D2 spune că unitatea " &
@@ -421,7 +424,7 @@ Public NotInheritable Class TableMaps
             WithNote("Scos din lista de excluderi pe 26.08.2026 (corecția C1): NU e o " &
                      "relicvă. «IDRP» rămâne nemapat — arăta către FX_Receptii_Plati, mort."))
 
-        maps.Add(NameMatched("FX_Receptii_RHR"))
+        maps.Add(NameMatched("FX_Receptii_RHR").WithClsfPair())
         maps.Add(NameMatched("FX_Rezervarii_IMG"))
         maps.Add(NameMatched("FX_Receptii_IMG"))
 

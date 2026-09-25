@@ -75,6 +75,9 @@ Public Class BrowserView
     ''' <summary>True while the browser is docked in THIS view.</summary>
     Public ReadOnly Property BrowserEsteAici As Boolean
         Get
+            ' InitializeComponent sizes pnlBrowser (its Resize handler lands here) before
+            ' the constructor has set _controller.
+            If _controller Is Nothing Then Return False
             Return _controller.BrowserHost Is pnlBrowser
         End Get
     End Property

@@ -937,6 +937,13 @@ Public NotInheritable Class AcroPdfSurface
             Dim windows As Integer = AdobeNativeMethods.Descendants(_host.Handle).Count
             Tr($"EmptyControlCheck: {windows} window(s) in {AcroPdfTraceLog.Hex(_host.Handle)} {DeadControlMs} ms after the load; replaced already={_deadRetryDone}")
             If windows > 0 Then Return
+            ' A script alert is up (one left for the operator stays up until they press OK) and
+            ' Adobe builds nothing while it is: the control is waiting, not dead. Check again later.
+            If _saveTrap IsNot Nothing AndAlso _saveTrap.InScriptBurst Then
+                Tr("EmptyControlCheck: script alert(s) showing -> postponed")
+                _deadCheckTimer.Start()
+                Return
+            End If
 
             Dim path As String = _loadedPath
             If _deadRetryDone OrElse String.IsNullOrEmpty(path) Then

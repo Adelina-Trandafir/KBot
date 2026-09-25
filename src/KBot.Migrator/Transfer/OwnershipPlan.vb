@@ -4,7 +4,7 @@ Imports KBot.Common
 
 ''' <summary>Which subtree an FX_* row hangs from, if any.</summary>
 ''' <remarks>
-''' Only these four families need a subtree at all. Every other FX_* table either carries
+''' Only these five families need a subtree at all. Every other FX_* table either carries
 ''' its own <c>IdUnitate</c> or reaches its unit through the foreign keys
 ''' <see cref="TransferRunner"/> already follows.
 ''' </remarks>
@@ -19,6 +19,11 @@ Public Enum Subtree
     ExtrasFile = 3
     ''' <summary>One statement HEADER inside a file, keyed on IDEXH.</summary>
     ExtrasHeader = 4
+    ''' <summary>
+    ''' An angajament and its history, keyed on CodAngajament; its units come from
+    ''' <c>FX_Indicatori.IdUnitate</c> (slice 0080-01, operator decision 24.09.2026).
+    ''' </summary>
+    Angajament = 5
 End Enum
 
 ''' <summary>What happens to one Access row.</summary>
@@ -118,6 +123,24 @@ Public NotInheritable Class OwnershipPlan
     ''' <summary>The only table that says which units an ORD serves (D3).</summary>
     Public Const OrdAuthorityTable As String = "FX_ORD_TBL"
 
+    ''' <summary>
+    ''' The only table that says which units an angajament serves (slice 0080-01).
+    ''' </summary>
+    ''' <remarks>
+    ''' Operator, 24.09.2026: <c>FX_Angajamente.IdUnitate</c> is NOT usable, and one
+    ''' <c>FX_2026.accdb</c> can hold two DCs. <c>FX_Istoric</c> and <c>FX_Rezervari</c> have
+    ''' no unit column at all, so until this they travelled whole - the other DC's history
+    ''' included, with <c>CodAI</c> / <c>CodAngajament</c> blanked because their parents
+    ''' stayed behind (014_SCSV run: 704 + 68 such rows).
+    ''' </remarks>
+    Public Const AngajamentAuthorityTable As String = "FX_Indicatori"
+
+    ''' <summary>
+    ''' <c>FX_Angajamente.DC</c>: the database the angajament was downloaded for. The
+    ''' tiebreaker for an angajament with no indicator unit.
+    ''' </summary>
+    Public Const DcColumn As String = "DC"
+
     Private ReadOnly _selected As HashSet(Of Integer)
     Private ReadOnly _knownInCai As HashSet(Of Integer)
     Private ReadOnly _codFiscal As String
@@ -129,16 +152,25 @@ Public NotInheritable Class OwnershipPlan
     Private ReadOnly _ordUnits As New Dictionary(Of String, HashSet(Of Integer))(StringComparer.OrdinalIgnoreCase)
     Private ReadOnly _travellingExtraseF As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
     Private ReadOnly _travellingExtraseH As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+    Private ReadOnly _angajamentUnits As New Dictionary(Of String, HashSet(Of Integer))(StringComparer.OrdinalIgnoreCase)
+    Private ReadOnly _indicatorUnit As New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
+    ' Angajamente with no indicator unit whose FX_Angajamente.DC is the target database:
+    ' not fully downloaded, so they exist only in FX_Angajamente. They travel into that
+    ' table alone (operator, 25.09.2026).
+    Private ReadOnly _dcOnlyAngajamente As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+    Private ReadOnly _targetDatabase As String
 
     Private _ddfRead As Boolean
     Private _ordRead As Boolean
     Private _extraseRead As Boolean
+    Private _angajamentRead As Boolean
 
     Private Sub New(selected As HashSet(Of Integer), knownInCai As HashSet(Of Integer),
-                    codFiscal As String)
+                    codFiscal As String, targetDatabase As String)
         _selected = selected
         _knownInCai = knownInCai
         _codFiscal = codFiscal
+        _targetDatabase = If(targetDatabase, String.Empty).Trim()
     End Sub
 
     ''' <summary>Findings raised while the plan was built. Raised ONCE, never per row.</summary>
@@ -170,6 +202,13 @@ Public NotInheritable Class OwnershipPlan
         End Get
     End Property
 
+    Public ReadOnly Property TravellingAngajamentCount As Integer
+        Get
+            Return _angajamentUnits.Values.Where(Function(u) u.Overlaps(_selected)).Count() +
+                   _dcOnlyAngajamente.Count
+        End Get
+    End Property
+
     Public ReadOnly Property TravellingExtraseFileCount As Integer
         Get
             Return _travellingExtraseF.Count
@@ -193,7 +232,7 @@ Public NotInheritable Class OwnershipPlan
             Dim known As New HashSet(Of Integer)(request.KnownUnitIds())
             Dim codFiscal = request.ResolvedCodFiscal()
 
-            Dim plan As New OwnershipPlan(selected, known, codFiscal)
+            Dim plan As New OwnershipPlan(selected, known, codFiscal, request.TargetDatabase)
 
             If codFiscal.Length = 0 Then
                 ' D15: silence here would look exactly like "this file holds no statements
@@ -213,6 +252,7 @@ Public NotInheritable Class OwnershipPlan
                     plan.ReadDdfAuthority(cn)
                     plan.ReadOrdAuthority(cn)
                     plan.ReadExtrase(cn)
+                    plan.ReadAngajamentAuthority(cn)
                 End Using
             Next
 
@@ -347,6 +387,114 @@ Public NotInheritable Class OwnershipPlan
             "spune cărei unități aparțin. Ordonanțarea și liniile ei rămân în Access.",
             stranded.Count))
     End Sub
+
+    ''' <summary>
+    ''' <c>FX_Indicatori</c> ▸ which units each CodAngajament serves, plus the data
+    ''' conditions: an angajament with no indicator unit, and history with no angajament.
+    ''' </summary>
+    Private Sub ReadAngajamentAuthority(cn As OleDbConnection)
+        Dim realName = AccessSchema.ResolveTableName(cn, AngajamentAuthorityTable)
+        If realName Is Nothing Then Return
+        _angajamentRead = True
+
+        Using reader = AccessSchema.OpenKeyReader(cn, realName, {"CodAI", "CodAngajament", UnitOwnership.UnitColumn})
+            While reader.Read()
+                Dim owner = Verifier.AsInteger(reader.ValueOrMissing(UnitOwnership.UnitColumn))
+                If Not owner.HasValue Then Continue While
+                Dim codAi = Normalise(reader.ValueOrMissing("CodAI")).Trim()
+                If codAi.Length > 0 Then _indicatorUnit(codAi) = owner.Value
+                Dim key = Normalise(reader.ValueOrMissing("CodAngajament")).Trim()
+                If key.Length = 0 Then Continue While
+                Units(_angajamentUnits, key).Add(owner.Value)
+            End While
+        End Using
+
+        ' An angajament whose indicators name no unit was not fully downloaded: it exists
+        ' only in FX_Angajamente. The DC column breaks the tie (operator, 25.09.2026): when
+        ' it names the target database the angajament travels, into FX_Angajamente only;
+        ' another DC's stays behind as that DC's. With no DC it cannot be placed - said
+        ' once, with the codes.
+        Dim headName = AccessSchema.ResolveTableName(cn, "FX_Angajamente")
+        If headName IsNot Nothing Then
+            Dim hasDc = AccessSchema.Columns(cn, headName).Any(
+                Function(c) String.Equals(c.Name, DcColumn, StringComparison.OrdinalIgnoreCase))
+            Dim columns = If(hasDc, {"CodAngajament", DcColumn}, {"CodAngajament"})
+            Dim stranded As New List(Of String)()
+            Using reader = AccessSchema.OpenKeyReader(cn, headName, columns)
+                While reader.Read()
+                    Dim key = Normalise(reader.ValueOrMissing("CodAngajament")).Trim()
+                    If key.Length = 0 OrElse _angajamentUnits.ContainsKey(key) Then Continue While
+                    Dim dc = If(hasDc, Normalise(reader.ValueOrMissing(DcColumn)).Trim(), String.Empty)
+                    If dc.Length = 0 Then
+                        stranded.Add(key)
+                    ElseIf _targetDatabase.Length > 0 AndAlso
+                           String.Equals(dc, _targetDatabase, StringComparison.OrdinalIgnoreCase) Then
+                        _dcOnlyAngajamente.Add(key)
+                    End If
+                End While
+            End Using
+            If stranded.Count > 0 Then
+                _findings.Add(New Finding(
+                    Finding.UNITATE_NEDETERMINATA, FindingClass.Atentie, "FX_Angajamente", "CodAngajament",
+                    $"{stranded.Count} angajamente nu au niciun indicator cu «IdUnitate» în " &
+                    $"«{AngajamentAuthorityTable}» și nici «{DcColumn}» completat " &
+                    $"({String.Join(", ", stranded.Take(20))}), deci nu se poate spune cărei " &
+                    "unități aparțin. Angajamentul, istoricul și rezervările lui rămân în Access.",
+                    stranded.Count))
+            End If
+        End If
+
+        ' An angajament placed only by its DC goes into FX_Angajamente alone. History or a
+        ' reservation hanging from one is not expected; if there is any, it stays behind
+        ' and is said, never dropped quietly.
+        If _dcOnlyAngajamente.Count > 0 Then
+            For Each table In {"FX_Istoric", "FX_Rezervari"}
+                Dim left = CountHangingFrom(cn, table, _dcOnlyAngajamente)
+                If left = 0 Then Continue For
+                _findings.Add(New Finding(
+                    Finding.UNITATE_NEDETERMINATA, FindingClass.Atentie, table, "CodAngajament",
+                    $"{left} rânduri din «{table}» aparțin unor angajamente fără indicatori, " &
+                    $"trimise doar în «FX_Angajamente» după «{DcColumn}». Rândurile acestea " &
+                    "rămân în Access.", left))
+            Next
+        End If
+
+        ' Operator, 24.09.2026: history or a reservation without CodAngajament is impossible -
+        ' a critical rule. So it blocks, rather than the row staying behind in silence.
+        For Each table In {"FX_Istoric", "FX_Rezervari"}
+            Dim missing = CountWithoutAngajament(cn, table)
+            If missing = 0 Then Continue For
+            _findings.Add(New Finding(
+                Finding.ANGAJAMENT_LIPSA, FindingClass.Blocant, table, "CodAngajament",
+                $"{missing} rânduri din «{table}» nu au «CodAngajament». Regula spune că " &
+                "nu pot exista; fișierul Access trebuie corectat înainte de transfer.", missing))
+        Next
+    End Sub
+
+    Private Shared Function CountHangingFrom(cn As OleDbConnection, table As String,
+                                             keys As HashSet(Of String)) As Integer
+        Dim realName = AccessSchema.ResolveTableName(cn, table)
+        If realName Is Nothing Then Return 0
+        Dim count = 0
+        Using reader = AccessSchema.OpenKeyReader(cn, realName, {"CodAngajament"})
+            While reader.Read()
+                If keys.Contains(Normalise(reader.ValueOrMissing("CodAngajament")).Trim()) Then count += 1
+            End While
+        End Using
+        Return count
+    End Function
+
+    Private Shared Function CountWithoutAngajament(cn As OleDbConnection, table As String) As Integer
+        Dim realName = AccessSchema.ResolveTableName(cn, table)
+        If realName Is Nothing Then Return 0
+        Dim count = 0
+        Using reader = AccessSchema.OpenKeyReader(cn, realName, {"CodAngajament"})
+            While reader.Read()
+                If Normalise(reader.ValueOrMissing("CodAngajament")).Trim().Length = 0 Then count += 1
+            End While
+        End Using
+        Return count
+    End Function
 
     ''' <summary>
     ''' The statement files whose name carries the DC's CodFiscal, and their headers.
@@ -497,8 +645,36 @@ Public NotInheritable Class OwnershipPlan
         End Select
     End Function
 
+    ''' <summary>
+    ''' The unit whose nomenclator a row's classification is resolved on (slice 0080-01), or
+    ''' Nothing when none can be named.
+    ''' </summary>
+    ''' <remarks>
+    ''' The same order as <c>PYTHON/utils/clsf_pair.py</c>: the row's own <c>IdUnitate</c>
+    ''' (for <c>FX_Extrase_H</c> that column is the operator's information for ownership,
+    ''' D10, but it IS the unit of the header's account); else the unit the ownership plan
+    ''' gave the row (<c>FX_Istoric</c> / <c>FX_Rezervari</c>: their angajament's); else the
+    ''' unit of the row's indicator (<c>CodAI</c> in Access <c>FX_Indicatori</c>). Asked by
+    ''' the verifier's dry run and by the writer alike.
+    ''' </remarks>
+    Public Function ClassificationUnit(reader As AccessTableReader, verdict As RowVerdict) As Integer?
+        If reader Is Nothing Then Throw New ArgumentNullException(NameOf(reader))
+        If reader.HasColumn(UnitOwnership.UnitColumn) Then
+            Dim own = Verifier.AsInteger(reader.ValueOrMissing(UnitOwnership.UnitColumn))
+            If own.HasValue AndAlso own.Value <> 0 Then Return own
+        End If
+        If verdict IsNot Nothing AndAlso verdict.HasUnit Then Return verdict.IdUnitate
+        If reader.HasColumn("CodAI") Then
+            Dim codAi = Normalise(reader.ValueOrMissing("CodAI")).Trim()
+            Dim unit As Integer
+            If codAi.Length > 0 AndAlso _indicatorUnit.TryGetValue(codAi, unit) Then Return unit
+        End If
+        Return Nothing
+    End Function
+
     Private Function DecideRouted(route As SubtreeRoute, reader As AccessTableReader) As RowVerdict
         Dim key = Normalise(reader.ValueOrMissing(route.KeyColumn))
+        If route.Subtree = Subtree.Angajament Then Return DecideAngajament(route.AccessTable, key.Trim())
         If Not SubtreeTravels(route.Subtree, key) Then Return RowVerdict.SubtreeStayedBehind()
 
         ' The head and its descriptive tables serve every unit the subtree serves; only the
@@ -510,6 +686,37 @@ Public NotInheritable Class OwnershipPlan
         If Not own.HasValue Then Return RowVerdict.SubtreeStayedBehind()
         If Not _selected.Contains(own.Value) Then Return RowVerdict.OtherUnit()
         Return RowVerdict.Named(own.Value)
+    End Function
+
+    ''' <summary>
+    ''' An angajament row, or a history / reservation row hanging from one: it travels when
+    ''' one of its indicators is in a ticked unit, and it is that unit's when there is one.
+    ''' </summary>
+    ''' <remarks>
+    ''' An angajament whose indicators are all in unticked units is another unit's (or the
+    ''' other DC's) and is counted as such. One with no indicator unit travels into
+    ''' <c>FX_Angajamente</c> alone when its <c>DC</c> is the target database; otherwise it
+    ''' stays behind. <see cref="ReadAngajamentAuthority"/> has already said so.
+    ''' </remarks>
+    Private Function DecideAngajament(accessTable As String, key As String) As RowVerdict
+        If Not _angajamentRead Then
+            Throw New TransferException(
+                $"«{AngajamentAuthorityTable}» lipsește din fișierul FOREXE, deci nu se poate " &
+                "spune cărei unități aparține un angajament. Unealta nu ghicește.")
+        End If
+        If key.Length = 0 Then Return RowVerdict.SubtreeStayedBehind()
+        Dim units As HashSet(Of Integer) = Nothing
+        If Not _angajamentUnits.TryGetValue(key, units) Then
+            If _dcOnlyAngajamente.Contains(key) AndAlso
+               String.Equals(accessTable, "FX_Angajamente", StringComparison.OrdinalIgnoreCase) Then
+                Return RowVerdict.Shared1()
+            End If
+            Return RowVerdict.SubtreeStayedBehind()
+        End If
+        Dim ours = units.Where(Function(u) _selected.Contains(u)).ToList()
+        If ours.Count = 0 Then Return RowVerdict.OtherUnit()
+        If ours.Count = 1 Then Return RowVerdict.Named(ours(0))
+        Return RowVerdict.Shared1()
     End Function
 
     Private Function SubtreeTravels(subtree1 As Subtree, key As String) As Boolean
@@ -559,7 +766,10 @@ Public NotInheritable Class OwnershipPlan
         New SubtreeRoute("FX_ORD_TBL", Subtree.Ord, "IDORD", UnitOwnership.UnitColumn),
         New SubtreeRoute("FX_Extrase_F", Subtree.ExtrasFile, "IDEXF", Nothing),
         New SubtreeRoute("FX_Extrase_H", Subtree.ExtrasFile, "IDEXF", Nothing),
-        New SubtreeRoute("FX_Extrase", Subtree.ExtrasHeader, "IDFXH", Nothing)
+        New SubtreeRoute("FX_Extrase", Subtree.ExtrasHeader, "IDFXH", Nothing),
+        New SubtreeRoute("FX_Angajamente", Subtree.Angajament, "CodAngajament", Nothing),
+        New SubtreeRoute("FX_Istoric", Subtree.Angajament, "CodAngajament", Nothing),
+        New SubtreeRoute("FX_Rezervari", Subtree.Angajament, "CodAngajament", Nothing)
     }
 
     Private Shared Function RouteFor(accessTable As String) As SubtreeRoute
@@ -593,6 +803,7 @@ Public NotInheritable Class OwnershipPlan
         log($"Proprietatea rândurilor, hotărâtă înainte de prima scriere: " &
             $"{TravellingDdfCount} din {_ddfUnits.Count} documente cu unitate cunoscută pleacă, " &
             $"{TravellingOrdCount} din {_ordUnits.Count} ordonanțări, " &
+            $"{TravellingAngajamentCount} din {_angajamentUnits.Count} angajamente, " &
             $"{TravellingExtraseFileCount} fișiere de extras (cod fiscal " &
             $"«{If(_codFiscal.Length = 0, "lipsă", _codFiscal)}»).")
     End Sub

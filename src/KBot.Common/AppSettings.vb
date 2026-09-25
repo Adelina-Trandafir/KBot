@@ -74,6 +74,14 @@ Public NotInheritable Class AppSettings
     Public Property ReceptiiCheckedOnOpen As Boolean = True
 
     ''' <summary>
+    ''' The advanced settings pages are shown: the documents tab of the application page, the
+    ''' FOREXE page styles, the theme and the file paths. Switching it on asks for a password
+    ''' (operator, 24.09.2026);
+    ''' off by default, so an operator sees only the everyday pages.
+    ''' </summary>
+    Public Property AdvancedOptions As Boolean = False
+
+    ''' <summary>
     ''' The browser's developer tools (F12, Ctrl+Shift+I / J / C, the context menu's
     ''' «Inspect») stay reachable in the FOREXE page. Off by default: the page script
     ''' swallows those keys and the context menu (operator, 21.09.2026).
@@ -105,6 +113,26 @@ Public NotInheritable Class AppSettings
     ''' trace (operator, 24.09.2026). Off by default.
     ''' </summary>
     Public Property AcroPdfFreshControl As Boolean = False
+
+    ''' <summary>
+    ''' Adobe script alerts («Warning: JavaScript Window») that K-BOT closes by itself: one
+    ''' regular expression per entry, matched (case-insensitive, anywhere in the text) against the
+    ''' alert's message. An alert that matches none is LEFT ON SCREEN for the operator -- the forms
+    ''' also use alerts to tell the operator something («Validarea s-a terminat cu succes!...»),
+    ''' and closing those left the operator not knowing what happened (operator, 24.09.2026).
+    ''' Missing from the file = <see cref="DefaultAdobeTrappedAlerts"/>; an empty list stays empty
+    ''' (nothing is closed automatically).
+    ''' </summary>
+    Public Property AdobeTrappedAlerts As List(Of String) = DefaultAdobeTrappedAlerts()
+
+    ''' <summary>
+    ''' The alerts closed automatically before the list existed, as seen in the working logs up to
+    ''' 24.09.2026: «GeneralError / Operation failed.» and «TypeError: sumCell5.toFixed is not a
+    ''' function», raised by the DDF / ORD scripts on open and changing nothing in the file.
+    ''' </summary>
+    Public Shared Function DefaultAdobeTrappedAlerts() As List(Of String)
+        Return New List(Of String) From {"GeneralError", "Operation failed", "TypeError"}
+    End Function
 
     ''' <summary>
     ''' How the Excel ribbon is taken down in the hosted preview: «Excel4Macro» or
@@ -171,6 +199,47 @@ Public NotInheritable Class AppSettings
             Return If(TreeSortIsDate, TreeDateShowSurse, TreeNameShowSurse)
         End Get
     End Property
+
+    ' ── Bank statements (slice 0080-02) ──────────────────────────────────
+
+    ''' <summary>
+    ''' The columns of the four statement grids, in order (<see cref="ExtraseGrid"/>). Nothing =
+    ''' the defaults of <see cref="ExtraseColumns.Defaults"/>; read them through
+    ''' <see cref="ExtraseColumnsFor"/>, which also drops keys this build does not know.
+    ''' </summary>
+    Public Property ExtraseViewHeaderColumns As List(Of String)
+    Public Property ExtraseViewOperationColumns As List(Of String)
+    Public Property ExtraseWindowHeaderColumns As List(Of String)
+    Public Property ExtraseWindowOperationColumns As List(Of String)
+
+    ''' <summary>The columns in force for <paramref name="grid"/>: the stored ones, or the defaults.</summary>
+    Public Function ExtraseColumnsFor(grid As ExtraseGrid) As List(Of String)
+        Return ExtraseColumns.Normalize(grid, StoredExtraseColumns(grid))
+    End Function
+
+    ''' <summary>Stores <paramref name="keys"/> for <paramref name="grid"/>; Nothing goes back to the defaults.</summary>
+    Public Sub SetExtraseColumns(grid As ExtraseGrid, keys As IEnumerable(Of String))
+        Dim value As List(Of String) = If(keys Is Nothing, Nothing, ExtraseColumns.Normalize(grid, keys))
+        Select Case grid
+            Case ExtraseGrid.ViewHeaders : ExtraseViewHeaderColumns = value
+            Case ExtraseGrid.ViewOperations : ExtraseViewOperationColumns = value
+            Case ExtraseGrid.WindowHeaders : ExtraseWindowHeaderColumns = value
+            Case ExtraseGrid.WindowOperations : ExtraseWindowOperationColumns = value
+            Case Else
+                Throw New ArgumentException($"Grilă de extrase necunoscută: '{grid}'.", NameOf(grid))
+        End Select
+    End Sub
+
+    Private Function StoredExtraseColumns(grid As ExtraseGrid) As List(Of String)
+        Select Case grid
+            Case ExtraseGrid.ViewHeaders : Return ExtraseViewHeaderColumns
+            Case ExtraseGrid.ViewOperations : Return ExtraseViewOperationColumns
+            Case ExtraseGrid.WindowHeaders : Return ExtraseWindowHeaderColumns
+            Case ExtraseGrid.WindowOperations : Return ExtraseWindowOperationColumns
+            Case Else
+                Throw New ArgumentException($"Grilă de extrase necunoscută: '{grid}'.", NameOf(grid))
+        End Select
+    End Function
 
     ' ── Login ────────────────────────────────────────────────────────────
 
@@ -268,12 +337,14 @@ Public NotInheritable Class AppSettings
             .ShowBrowserButton = ShowBrowserButton,
             .ForexeHideBrowserChrome = ForexeHideBrowserChrome,
             .ReceptiiCheckedOnOpen = ReceptiiCheckedOnOpen,
+            .AdvancedOptions = AdvancedOptions,
             .ForexeDevToolsAllowed = ForexeDevToolsAllowed,
             .ForexePageStyles = ForexePageStyles?.Select(Function(r) New PageStyleRuleDto With {
                 .Enabled = r.Enabled, .Selector = r.Selector, .Css = r.Css, .Note = r.Note, .Page = r.Page}).ToList(),
             .AdobeDetachMode = AdobeDetachMode,
             .AdobePopupWatch = AdobePopupWatch,
             .AcroPdfFreshControl = AcroPdfFreshControl,
+            .AdobeTrappedAlerts = AdobeTrappedAlerts?.ToList(),
             .ExcelRibbon = ExcelRibbon,
             .TreeSort = TreeSort,
             .TreeSortDescending = TreeSortDescending,
@@ -284,7 +355,11 @@ Public NotInheritable Class AppSettings
             .TreeCodColumnWidth = TreeCodColumnWidth,
             .TreeSurseColumnWidth = TreeSurseColumnWidth,
             .RememberLastLogin = RememberLastLogin,
-            .RememberLastUnit = RememberLastUnit}
+            .RememberLastUnit = RememberLastUnit,
+            .ExtraseViewHeaderColumns = ExtraseViewHeaderColumns?.ToList(),
+            .ExtraseViewOperationColumns = ExtraseViewOperationColumns?.ToList(),
+            .ExtraseWindowHeaderColumns = ExtraseWindowHeaderColumns?.ToList(),
+            .ExtraseWindowOperationColumns = ExtraseWindowOperationColumns?.ToList()}
     End Function
 
     ' A key missing from the file keeps its default: every DTO member is nullable.
@@ -295,6 +370,7 @@ Public NotInheritable Class AppSettings
         If dto.ShowBrowserButton.HasValue Then s.ShowBrowserButton = dto.ShowBrowserButton.Value
         If dto.ForexeHideBrowserChrome.HasValue Then s.ForexeHideBrowserChrome = dto.ForexeHideBrowserChrome.Value
         If dto.ReceptiiCheckedOnOpen.HasValue Then s.ReceptiiCheckedOnOpen = dto.ReceptiiCheckedOnOpen.Value
+        If dto.AdvancedOptions.HasValue Then s.AdvancedOptions = dto.AdvancedOptions.Value
         If dto.ForexeDevToolsAllowed.HasValue Then s.ForexeDevToolsAllowed = dto.ForexeDevToolsAllowed.Value
         If dto.ForexePageStyles IsNot Nothing Then
             s.ForexePageStyles = dto.ForexePageStyles.
@@ -305,6 +381,11 @@ Public NotInheritable Class AppSettings
         If Not String.IsNullOrWhiteSpace(dto.AdobeDetachMode) Then s.AdobeDetachMode = dto.AdobeDetachMode.Trim()
         If dto.AdobePopupWatch.HasValue Then s.AdobePopupWatch = dto.AdobePopupWatch.Value
         If dto.AcroPdfFreshControl.HasValue Then s.AcroPdfFreshControl = dto.AcroPdfFreshControl.Value
+        If dto.AdobeTrappedAlerts IsNot Nothing Then
+            s.AdobeTrappedAlerts = dto.AdobeTrappedAlerts.
+                Where(Function(p) Not String.IsNullOrWhiteSpace(p)).
+                Select(Function(p) p.Trim()).ToList()
+        End If
         If Not String.IsNullOrWhiteSpace(dto.ExcelRibbon) Then s.ExcelRibbon = dto.ExcelRibbon.Trim()
         If Not String.IsNullOrWhiteSpace(dto.TreeSort) Then s.TreeSort = dto.TreeSort.Trim()
         If dto.TreeSortDescending.HasValue Then s.TreeSortDescending = dto.TreeSortDescending.Value
@@ -322,6 +403,12 @@ Public NotInheritable Class AppSettings
         End If
         If dto.RememberLastLogin.HasValue Then s.RememberLastLogin = dto.RememberLastLogin.Value
         If dto.RememberLastUnit.HasValue Then s.RememberLastUnit = dto.RememberLastUnit.Value
+        ' A list missing from the file stays Nothing (= defaults); a present one is kept as the
+        ' operator saved it and cleaned only when read (ExtraseColumnsFor).
+        s.ExtraseViewHeaderColumns = dto.ExtraseViewHeaderColumns?.ToList()
+        s.ExtraseViewOperationColumns = dto.ExtraseViewOperationColumns?.ToList()
+        s.ExtraseWindowHeaderColumns = dto.ExtraseWindowHeaderColumns?.ToList()
+        s.ExtraseWindowOperationColumns = dto.ExtraseWindowOperationColumns?.ToList()
         Return s
     End Function
 
@@ -334,11 +421,13 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ShowBrowserButton As Boolean?
     Public Property ForexeHideBrowserChrome As Boolean?
     Public Property ReceptiiCheckedOnOpen As Boolean?
+    Public Property AdvancedOptions As Boolean?
     Public Property ForexeDevToolsAllowed As Boolean?
     Public Property ForexePageStyles As List(Of PageStyleRuleDto)
     Public Property AdobeDetachMode As String
     Public Property AdobePopupWatch As Boolean?
     Public Property AcroPdfFreshControl As Boolean?
+    Public Property AdobeTrappedAlerts As List(Of String)
     Public Property ExcelRibbon As String
     Public Property TreeSort As String
     Public Property TreeSortDescending As Boolean?
@@ -350,6 +439,10 @@ Friend NotInheritable Class AppSettingsDto
     Public Property TreeSurseColumnWidth As Integer?
     Public Property RememberLastLogin As Boolean?
     Public Property RememberLastUnit As Boolean?
+    Public Property ExtraseViewHeaderColumns As List(Of String)
+    Public Property ExtraseViewOperationColumns As List(Of String)
+    Public Property ExtraseWindowHeaderColumns As List(Of String)
+    Public Property ExtraseWindowOperationColumns As List(Of String)
 End Class
 
 ''' <summary>Wire shape of one page style rule. POCO.</summary>

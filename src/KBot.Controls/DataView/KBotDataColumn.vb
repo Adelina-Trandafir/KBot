@@ -665,6 +665,17 @@ Public NotInheritable Class KBotDataColumn
     End Property
 
     ''' <summary>
+    ''' The column menu of THIS column offers the «Grupare» tab when the grid has
+    ''' <see cref="KBotDataView.EnableGrouping"/> on (slice 0080-02). On by default, so a grid that
+    ''' already offers grouping keeps offering it on every filterable column; turned off where a
+    ''' column may be filtered but grouping on it makes no sense (a payer's name, say).
+    ''' </summary>
+    <Category("K-BOT: Grupare")>
+    <Description("Meniul acestei coloane arată fila «Grupare» (când grila are EnableGrouping).")>
+    <DefaultValue(True)>
+    Public Property AllowGrouping As Boolean = True
+
+    ''' <summary>
     ''' Imaginea butonului de filtrare. <c>Nothing</c> (implicit) = pâlnia desenată din culoarea
     ''' temei — plină cât timp coloana chiar are un filtru așezat.
     ''' </summary>

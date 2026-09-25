@@ -97,10 +97,52 @@ Public Class SetariForm
             ' The first page. Assigning here (not in the designer) is what raises
             ' SelectionChanged and therefore creates it -- same reasoning as the shell.
             navViews.SelectedKey = "info"
+            AplicaOptiunileAvansate()
+            AddHandler AppSettings.Changed, AddressOf AppSettings_Changed
         Catch ex As Exception
             ' UI boundary (Load): log and swallow.
             GlobalErrorLog.Write("SetariForm.SetariForm_Load", ex)
         End Try
+    End Sub
+
+    ' AppSettings.Changed is static: the subscription must end with the window.
+    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        RemoveHandler AppSettings.Changed, AddressOf AppSettings_Changed
+        MyBase.OnFormClosed(e)
+    End Sub
+
+    ' ---------------- advanced options ----------------
+
+    ''' <summary>
+    ''' The pages shown only with the advanced options switch ticked on the application page
+    ''' (<see cref="AppSettings.AdvancedOptions"/>, operator, 24.09.2026). The fourth advanced
+    ''' page, the documents tab, lives inside <see cref="SetariAplicatieView"/>.
+    ''' </summary>
+    Friend Shared ReadOnly AdvancedPageKeys As String() = {"pagina", "tema", "foldere"}
+
+    Private Sub AppSettings_Changed(sender As Object, e As EventArgs)
+        Try
+            If IsDisposed OrElse Not IsHandleCreated Then Return
+            If InvokeRequired Then
+                BeginInvoke(New Action(AddressOf AplicaOptiunileAvansate))
+            Else
+                AplicaOptiunileAvansate()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForm.AppSettings_Changed", ex)
+        End Try
+    End Sub
+
+    ' Shows / hides the advanced pages. A page hidden while it is on screen hands over to
+    ' «Aplicatie», where the switch that hid it is.
+    Private Sub AplicaOptiunileAvansate()
+        Dim shown As Boolean = AppSettings.Current.AdvancedOptions
+        For Each key As String In AdvancedPageKeys
+            navViews.SetItemVisible(key, shown)
+        Next
+        If Not shown AndAlso AdvancedPageKeys.Contains(navViews.SelectedKey) Then
+            navViews.SelectedKey = "aplicatie"
+        End If
     End Sub
 
     ' Every page created so far gets a say: the theme page may hold unsaved scheme edits.
@@ -175,6 +217,7 @@ Public Class SetariForm
                 Case "aplicatie" : Return New SetariAplicatieView()
                 Case "forexe" : Return New SetariForexeView(_controller)
                 Case "pagina" : Return New SetariPaginaView(_controller)
+                Case "extrase" : Return New SetariExtraseView()
                 Case "tema" : Return New SetariTemaView()
                 Case "autentificare" : Return New SetariAutentificareView(_apiOptions)
                 Case "jurnal" : Return New SetariJurnalView() With {.ApiClient = _apiClient}

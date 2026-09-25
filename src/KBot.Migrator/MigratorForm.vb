@@ -66,6 +66,9 @@ Public Class MigratorForm
 
     Private Sub MigratorForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Try
+            ' The build that is running, so the operator can tell an old copy from the last.
+            Text = $"K-BOT — migrare Access ▸ MariaDB — versiunea {MigratorVersion.Text}"
+            capBar.Text = $"K-BOT migrare {MigratorVersion.Text}"
             txtRegistru.Text = _settings.RegistryPath
             Dim journalNote As String = Nothing
             _journalPath = _settings.ResolvedJournalFolder(journalNote)
@@ -78,6 +81,7 @@ Public Class MigratorForm
             FillTableList()
             ResetProgress()
 
+            Say($"Migrator versiunea {MigratorVersion.Text}.")
             Say("Alegeți registrul «cale.accdb» și apăsați «Citește registrul».")
             Say("Anul transferului este fixat la " &
                 TableMaps.TransferYear.ToString(CultureInfo.InvariantCulture) & ".")
@@ -412,6 +416,99 @@ Public Class MigratorForm
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Fills «Rânduri Access» for the ticked units' files. A failure here is logged and
+    ''' said, never allowed to change the verification's outcome.
+    ''' </summary>
+    Private Async Function CountAccessRowsAsync(request As TransferRequest,
+                                                token As CancellationToken) As Task(Of Dictionary(Of String, Long))
+        Try
+            Dim maps = TableMaps.All()
+            Dim counts = Await Task.Run(Function() AccessRowCounter.Count(request, maps, token), token)
+            ShowAccessCounts(counts)
+            Return counts
+        Catch ex As OperationCanceledException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.CountAccessRowsAsync", ex)
+            Say($"Rândurile din Access nu au putut fi numărate: {ex.Message}")
+            Return Nothing
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Tables this form unticked because they had no Access rows - and only those are ticked
+    ''' back when a later count finds rows. A table the operator unticked stays unticked.
+    ''' </summary>
+    Private ReadOnly _autoUnticked As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+
+    ''' <summary>Tables the operator ticked back after an auto-untick: never unticked again.</summary>
+    Private ReadOnly _operatorKept As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+
+    ''' <summary>
+    ''' Unticks every table with 0 rows in the ticked units' Access files - or no file to read
+    ''' at all (a unit with no FOREXE file) - and re-ticks the ones unticked here earlier that
+    ''' now have rows (operator, 25.09.2026: «by default»; the operator may tick one back by
+    ''' hand). Returns True when a tick changed. A failed count (Nothing) changes nothing.
+    ''' </summary>
+    Private Function UntickEmptyTables(counts As Dictionary(Of String, Long)) As Boolean
+        Dim unticked As New List(Of String)()
+        Dim reticked As New List(Of String)()
+
+        dgvTabele.BeginUpdate()
+        Try
+            For Each row In dgvTabele.Rows
+                Dim map = TryCast(row.Tag, TableMap)
+                If map Is Nothing Then Continue For
+                Dim n As Long
+                Dim empty = Not counts.TryGetValue(map.TargetTable, n) OrElse n = 0
+
+                If _autoUnticked.Contains(map.TargetTable) AndAlso IsTicked(row) Then
+                    ' The operator ticked it back by hand: theirs from now on.
+                    _autoUnticked.Remove(map.TargetTable)
+                    _operatorKept.Add(map.TargetTable)
+                    Continue For
+                End If
+                If _operatorKept.Contains(map.TargetTable) Then Continue For
+
+                If empty AndAlso IsTicked(row) Then
+                    row("bifa") = False
+                    _autoUnticked.Add(map.TargetTable)
+                    unticked.Add(map.TargetTable)
+                ElseIf Not empty AndAlso Not IsTicked(row) AndAlso _autoUnticked.Remove(map.TargetTable) Then
+                    row("bifa") = True
+                    reticked.Add(map.TargetTable)
+                End If
+            Next
+        Finally
+            dgvTabele.EndUpdate()
+        End Try
+
+        If unticked.Count > 0 Then
+            Say($"Debifate, fiindcă nu au niciun rând în Access: {String.Join(", ", unticked)}.")
+        End If
+        If reticked.Count > 0 Then
+            Say($"Rebifate, fiindcă acum au rânduri în Access: {String.Join(", ", reticked)}.")
+        End If
+        Return unticked.Count > 0 OrElse reticked.Count > 0
+    End Function
+
+    ''' <summary>Writes the counts into the table grid; Nothing resets the column to «—».</summary>
+    Private Sub ShowAccessCounts(counts As Dictionary(Of String, Long))
+        dgvTabele.BeginUpdate()
+        Try
+            For Each row In dgvTabele.Rows
+                Dim map = TryCast(row.Tag, TableMap)
+                If map Is Nothing Then Continue For
+                Dim n As Long
+                row("randuri") = If(counts IsNot Nothing AndAlso counts.TryGetValue(map.TargetTable, n),
+                                    n.ToString("N0", CultureInfo.GetCultureInfo("ro-RO")), "—")
+            Next
+        Finally
+            dgvTabele.EndUpdate()
+        End Try
+    End Sub
+
     Private Shared Function SourceLabel(source As SourceFile) As String
         Select Case source
             Case SourceFile.UnitFile : Return "nomenclatoare"
@@ -471,12 +568,21 @@ Public Class MigratorForm
         _ownership = Nothing
         dgvConstatari.ClearRows()
         ClearFindingDetail()
+        ShowAccessCounts(Nothing)
         SetBusy(True)
         _cancellation = New CancellationTokenSource()
 
         Dim report As VerificationReport = Nothing
         Try
             Dim token = _cancellation.Token
+            ' Counted BEFORE the verification: a table with no Access rows is unticked here,
+            ' so the request verified - and later written - no longer carries it.
+            Dim counts = Await CountAccessRowsAsync(request, token)
+            If counts IsNot Nothing AndAlso UntickEmptyTables(counts) Then
+                request = BuildRequest()
+                If request Is Nothing Then Return
+            End If
+
             BeginProgress(Verifier.StepCount)
             report = Await Task.Run(
                 Function() New Verifier(request, AddressOf SayFromWorker, AddressOf StepFromWorker).Run(token),
@@ -509,9 +615,67 @@ Public Class MigratorForm
         End Try
 
         If report Is Nothing OrElse Not offerSchemaSync Then Return
+        If report.Findings.Any(Function(f) f.Kind = Finding.BAZA_LIPSA) Then
+            Await OfferCreateDatabaseAsync(request)
+            Return
+        End If
         If Not report.Findings.Any(Function(f) f.Kind = Finding.BAZA_FARA_TABELE) Then Return
 
         Await OfferBuildStructureAsync(request)
+    End Function
+
+    ''' <summary>
+    ''' Offers to create a MISSING target database from the template, then verifies again.
+    ''' </summary>
+    ''' <remarks>
+    ''' The verifier used to say «va fi creată» and stop, but nothing created it: the
+    ''' verification built no ownership plan, and «Transferă» then refused with «Rulați întâi
+    ''' «Verifică»» (operator, 25.09.2026, 008_CNJM). Same shape as
+    ''' <see cref="OfferBuildStructureAsync"/>: a prompt for one finding, not a step.
+    ''' CREATE DATABASE cannot be rolled back, hence the question.
+    ''' </remarks>
+    Private Async Function OfferCreateDatabaseAsync(request As TransferRequest) As Task
+        Dim dc = request.TargetDatabase
+        Dim answer = KBotMessage.Show(
+            $"Baza «{dc}» nu există pe server." & Environment.NewLine & Environment.NewLine &
+            $"Poate fi creată acum, cu structura bazei «{request.TemplateDatabase}»." &
+            Environment.NewLine & Environment.NewLine &
+            "După aceea verificarea se reia automat." & Environment.NewLine & Environment.NewLine &
+            "Creați baza acum?",
+            "Bază inexistentă", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+        If answer <> DialogResult.Yes Then
+            Say($"Baza «{dc}» nu a fost creată.")
+            Return
+        End If
+
+        SetBusy(True)
+        BeginProgress(0)
+        _cancellation = New CancellationTokenSource()
+
+        Try
+            Dim token = _cancellation.Token
+            Dim created = Await Task.Run(
+                Function() request.Server.CreateDatabaseFrom(
+                    dc, request.TemplateDatabase, AddressOf SayFromWorker),
+                token)
+            Say($"Baza «{dc}» a fost creată: {created} tabele.")
+        Catch ex As OperationCanceledException
+            Say("Crearea a fost oprită.")
+            Return
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.OfferCreateDatabaseAsync", ex)
+            Warn($"Baza «{dc}» nu a putut fi creată." &
+                 Environment.NewLine & Environment.NewLine & ex.Message)
+            Return
+        Finally
+            EndProgress()
+            SetBusy(False)
+            _cancellation?.Dispose()
+            _cancellation = Nothing
+        End Try
+
+        ' offerSchemaSync:=False - a second missing / empty result is reported, not re-offered.
+        Await VerifyAsync(offerSchemaSync:=False)
     End Function
 
     ' ---- structure for an empty database ----------------------------------------------------

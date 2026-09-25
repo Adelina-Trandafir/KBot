@@ -151,6 +151,15 @@ Public NotInheritable Class TableMap
     ''' </remarks>
     Public Property NameMatchOnly As Boolean
 
+    ''' <summary>
+    ''' True for the seven FX_ tables whose <c>IdClsf</c> became <c>Clasificatii.IDClsf</c> in
+    ''' slice 0080-01. The Access <c>IdClsf</c> is resolved row by row
+    ''' (<see cref="ColumnSourceKind.ClasificatieByRowUnit"/>); no copy of it is kept on the
+    ''' table (operator, 24.09.2026). <c>FX_Extrase_H</c> is the exception: its <c>IdClsf</c>
+    ''' is computed from the account (<see cref="WithExtrasHeaderRules"/>).
+    ''' </summary>
+    Public Property HasClsfPair As Boolean
+
     ' ---- fluent builders, so the catalogue below reads as a table ----------------
 
     Public Function Rename(accessColumn As String, targetColumn As String) As TableMap
@@ -199,6 +208,31 @@ Public NotInheritable Class TableMap
         UnitAuthorityTable = authorityTable
         UnitAuthorityOwnKeyColumn = ownKeyColumn
         UnitAuthorityKeyColumn = authorityKeyColumn
+        Return Me
+    End Function
+
+    ''' <summary>
+    ''' Declares that the Access <c>IdClsf</c> is resolved into <c>Clasificatii.IDClsf</c>
+    ''' on the row's unit (the derived mapping displaces the plain name match).
+    ''' </summary>
+    Public Function WithClsfPair() As TableMap
+        Derived.Add(ColumnMapping.FromClasificatieByRowUnit("IdClsf", "IdClsf"))
+        HasClsfPair = True
+        Return Me
+    End Function
+
+    ''' <summary>
+    ''' <c>FX_Extrase_H</c> only: <c>IdUnitate</c>, <c>IdClsf</c> and <c>IdClsfV</c> are
+    ''' computed from <c>Cont</c> / <c>CodIBAN</c> by <see cref="ExtrasHeaderRules"/>, the
+    ''' rules of the extrase download (operator, 25.09.2026). <c>IdClsf</c> is still
+    ''' <c>Clasificatii.IDClsf</c>, so the table keeps <see cref="HasClsfPair"/> and the
+    ''' 0080-01 marker check.
+    ''' </summary>
+    Public Function WithExtrasHeaderRules() As TableMap
+        Derived.Add(ColumnMapping.FromExtrasHeaderRule("IdUnitate"))
+        Derived.Add(ColumnMapping.FromExtrasHeaderRule("IdClsf"))
+        Derived.Add(ColumnMapping.FromExtrasHeaderRule("IdClsfV"))
+        HasClsfPair = True
         Return Me
     End Function
 

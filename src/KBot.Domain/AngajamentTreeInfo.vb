@@ -88,6 +88,8 @@ Public NotInheritable Class AngajamentTreeInfo
     Public Property AreDDF As Boolean
     Public Property AreReceptii As Boolean
     Public Property ArePlati As Boolean
+    ' Slice 0080-02: FX_Extrase carries this angajament in CodContract.
+    Public Property AreExtrase As Boolean
 
     ' --- stare de navigare (în Access: setate de mcTree_Click, după nivelul nodului) ---
     Public Property TipNod As String = String.Empty      ' "D" / "R" / "P" / ... (TIP_NOD)

@@ -50,10 +50,9 @@ End Class
 
 ' One FX_ORD_TBL row (a payment line).
 '
-' The `IdClsf` inversion, once more because it has bitten this family before: `id_clsf` is
-' the MariaDB key (FK into Clasificatii) and `id_clsf_acc` is the retained Access id — the
-' opposite of FX_Indicatori. `id_unitate` is NOT NULL with a real FK, so it must be written
-' even though IdUnitate is a relic on the other FX_ tables.
+' `id_clsf` is the MariaDB key (FK into Clasificatii); no Access id travels (slice 0080-04:
+' it lives only in Clasificatii.IdClsfAcc). `id_unitate` is NOT NULL with a real FK, so it
+' must be written even though IdUnitate is a relic on the other FX_ tables.
 Public NotInheritable Class OrdDraftLinieDto
     Public Property temp_id As Integer
     Public Property idordtblp As Integer
@@ -64,7 +63,6 @@ Public NotInheritable Class OrdDraftLinieDto
     Public Property cod_indicator As String
     Public Property cod_ssi As String
     Public Property id_clsf As Integer?
-    Public Property id_clsf_acc As Integer?
     Public Property clsf As String
     Public Property denumire As String
     Public Property id_unitate As Integer?

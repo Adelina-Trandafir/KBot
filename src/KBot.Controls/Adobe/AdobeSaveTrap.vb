@@ -80,6 +80,8 @@ Public NotInheritable Class AdobeSaveTrap
     Private Shared ReadOnly Dismissed As New HashSet(Of IntPtr)()
     Private Shared ReadOnly ScriptClicks As New Dictionary(Of IntPtr, DateTime)()
     Private Shared ReadOnly ScriptAttempts As New Dictionary(Of IntPtr, Integer)()
+    ' Alerts left on screen because their text is not on the operator's list (reported once).
+    Private Shared ReadOnly LeftToOperator As New HashSet(Of IntPtr)()
     ' When a script ERROR box was last seen, process-wide: a console showing near it opened itself.
     Private Shared _lastScriptAlert As DateTime = DateTime.MinValue
     ''' <summary>
@@ -621,6 +623,7 @@ Public NotInheritable Class AdobeSaveTrap
             Claims.Remove(h)
         Next
         Dismissed.RemoveWhere(Function(k) Not AdobeNativeMethods.IsWindow(k))
+        LeftToOperator.RemoveWhere(Function(k) Not AdobeNativeMethods.IsWindow(k))
         For Each h As IntPtr In ScriptClicks.Keys.Where(Function(k) Not AdobeNativeMethods.IsWindow(k)).ToList()
             ScriptClicks.Remove(h)
             ScriptAttempts.Remove(h)
@@ -779,9 +782,25 @@ Public NotInheritable Class AdobeSaveTrap
                 If t.Length > 0 Then texts.Add(t.Replace(vbCr, " ").Replace(vbLf, " "))
             End If
         Next
+        Dim message As String = String.Join(" ", texts)
         Dim text As String = If(texts.Count = 0, "(fără text citibil)", String.Join(" | ", texts))
         If text.Length > 500 Then text = text.Substring(0, 500) & "…"
         Dim what As String = If(isConsole, "Consola de script", "Mesajul de script")
+
+        ' Only alerts whose message is on the operator's list are closed (24.09.2026): the forms
+        ' also use alerts to TELL the operator something, and those must stay on screen. Checked
+        ' on every sweep, so an alert whose text was not readable yet is judged again.
+        If Not isConsole Then
+            Dim rule As String = AdobeScriptAlertFilter.FirstMatch(message, AdobeScriptAlertFilter.Current())
+            If rule Is Nothing Then
+                If LeftToOperator.Add(hwnd) Then
+                    Report($"{what} Adobe 0x{hwnd.ToInt64():X} lăsat operatorului (textul nu e în lista mesajelor închise automat): {text}")
+                End If
+                Tr($"DismissScriptNoise {AcroPdfTraceLog.Hex(hwnd)}: no trapped-alert pattern matches -> left on screen")
+                Return
+            End If
+            Tr($"DismissScriptNoise {AcroPdfTraceLog.Hex(hwnd)}: matches trapped-alert pattern «{rule}»")
+        End If
 
         Dim attempts As Integer = 0
         ScriptAttempts.TryGetValue(hwnd, attempts)

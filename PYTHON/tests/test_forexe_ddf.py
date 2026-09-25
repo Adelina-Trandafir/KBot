@@ -165,22 +165,22 @@ def demo_rows():
             )
 
         # Trei linii pe revizia multi-linie. A treia are Clsf GOL -> cade pe nomenclator.
-        # IdClsfAcc e NOT NULL in schema, deci se completeaza, dar NU e cheia de citire.
+        # Since slice 0080-04 the table has no IdClsfAcc; the Access id is only in Clasificatii.
         for i, val in enumerate(VAL_MULTI):
             clsf_text = "" if i == 2 else "65.02.04.02.20.01.03"
             cur.execute(
                 "INSERT INTO FX_DDF_REV_SA (IDDF, IDREV, CodAngajament, CodIndicator, "
-                "IdClsfAcc, IdClsf, Clsf, ElementFund, ParametriiFund, ValPrec, ValCur, "
-                "ValTot) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                (IDDF, IDREV_MULTI, COD, f"IND-{i}", CLSF_ACC, id_clsf, clsf_text,
+                "IdClsf, Clsf, ElementFund, ParametriiFund, ValPrec, ValCur, "
+                "ValTot) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (IDDF, IDREV_MULTI, COD, f"IND-{i}", id_clsf, clsf_text,
                  f"Element {i}", f"Parametru {i}", 0.0, val, val),
             )
 
         cur.execute(
             "INSERT INTO FX_DDF_REV_SA (IDDF, IDREV, CodAngajament, CodIndicator, "
-            "IdClsfAcc, IdClsf, Clsf, ElementFund, ParametriiFund, ValPrec, ValCur, ValTot) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            (IDDF, IDREV_UNA, COD, "IND-U", CLSF_ACC, id_clsf, "65.02.04.02.20.01.03",
+            "IdClsf, Clsf, ElementFund, ParametriiFund, ValPrec, ValCur, ValTot) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (IDDF, IDREV_UNA, COD, "IND-U", id_clsf, "65.02.04.02.20.01.03",
              "Element unic", "Parametru unic", 600.0, 50.0, 650.0),
         )
 
@@ -188,9 +188,9 @@ def demo_rows():
         # atasament (DateFisier = base64), ambele pentru testele cu pentru_generare=1.
         cur.execute(
             "INSERT INTO FX_DDF_REV_SB (IDDF, IDREV, CodAngajament, CodIndicator, "
-            "IdClsfAcc, IdClsf, CodSSI, CA_Anterior, Inf1, CB_Anterior, Inf2) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            (IDDF, IDREV_MULTI, COD, "IND-B", CLSF_ACC, id_clsf, "01A",
+            "IdClsf, CodSSI, CA_Anterior, Inf1, CB_Anterior, Inf2) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (IDDF, IDREV_MULTI, COD, "IND-B", id_clsf, "01A",
              1000.0, 200.0, 3000.0, 400.0),
         )
         cur.execute(

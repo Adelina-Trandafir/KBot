@@ -372,7 +372,8 @@ Public Class ApiClient
                                 .ArePlati = r.ArePlati,
                                 .AreDDF = r.AreDDF,
                                 .ArePartener = r.ArePartener,
-                                .AreORD = r.AreOrd
+                                .AreORD = r.AreOrd,
+                                .AreExtrase = r.AreExtrase
                             })
                         Next
                     End If
@@ -452,6 +453,85 @@ Public Class ApiClient
             Throw
         Catch ex As Exception
             GlobalErrorLog.Write("ApiClient.GetSumarAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The statements of one angajament, or of the whole database when <paramref name="cod"/>
+    ''' is empty (slice 0080-02 / 0080-03). The database is never sent: the server reads it
+    ''' from the session.
+    ''' </summary>
+    Public Async Function GetExtraseListaAsync(cod As String, ct As CancellationToken) _
+        As Task(Of ExtraseInfo) Implements IApiClient.GetExtraseListaAsync
+
+        Try
+            EnsureConfigured()
+            Dim url As String = "/api/forexe/extrase/lista"
+            If Not String.IsNullOrWhiteSpace(cod) Then url &= "?cod=" & Uri.EscapeDataString(cod)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea extraselor de cont", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As GetExtraseListaResponse =
+                        JsonSerializer.Deserialize(Of GetExtraseListaResponse)(respText, _json)
+                    Dim result As New ExtraseInfo()
+                    If payload Is Nothing Then Return result
+
+                    If payload.antete IsNot Nothing Then
+                        For Each a As GetExtrasAntetRow In payload.antete
+                            result.Antete.Add(New ExtrasAntet() With {
+                                .IdExh = a.idexh,
+                                .IdExf = a.idexf,
+                                .DataExtras = a.data_extras,
+                                .NumarExtras = If(a.numar_extras, String.Empty),
+                                .IdClsf = a.id_clsf,
+                                .Clsf = If(a.clsf, String.Empty),
+                                .Denumire = If(a.denumire, String.Empty),
+                                .CodIban = If(a.cod_iban, String.Empty),
+                                .Cont = If(a.cont, String.Empty),
+                                .Sid = a.sid, .Sic = a.sic,
+                                .Rpd = a.rpd, .Rpc = a.rpc,
+                                .Tsd = a.tsd, .Tsc = a.tsc,
+                                .Sfd = a.sfd, .Sfc = a.sfc
+                            })
+                        Next
+                    End If
+                    If payload.operatiuni IsNot Nothing Then
+                        For Each o As GetExtrasOperatiuneRow In payload.operatiuni
+                            result.Operatiuni.Add(New ExtrasOperatiune() With {
+                                .IdFxe = o.idfxe,
+                                .IdFxh = o.idfxh,
+                                .DataBanca = o.data_banca,
+                                .DataDoc = o.data_doc,
+                                .NrDoc = If(o.nr_doc, String.Empty),
+                                .Referinta = If(o.referinta, String.Empty),
+                                .ReferintaDest = If(o.referinta_dest, String.Empty),
+                                .PlatitorNume = If(o.platitor_nume, String.Empty),
+                                .PlatitorCui = If(o.platitor_cui, String.Empty),
+                                .PlatitorIban = If(o.platitor_iban, String.Empty),
+                                .SumaDebit = o.suma_debit,
+                                .SumaCredit = o.suma_credit,
+                                .Explicatii = If(o.explicatii, String.Empty),
+                                .CodContract = If(o.cod_contract, String.Empty),
+                                .RandContract = If(o.rand_contract, String.Empty),
+                                .CodProgram = If(o.cod_program, String.Empty),
+                                .CodAi = If(o.cod_ai, String.Empty)
+                            })
+                        Next
+                    End If
+                    Return result
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetExtraseListaAsync", ex)
             Throw
         End Try
     End Function
@@ -1691,7 +1771,6 @@ Public Class ApiClient
                     .CodIndicator = If(l.cod_indicator, String.Empty),
                     .CodSsi = If(l.cod_ssi, String.Empty),
                     .IdClsf = If(l.id_clsf.HasValue, l.id_clsf.Value, 0),
-                    .IdClsfAcc = If(l.id_clsf_acc.HasValue, l.id_clsf_acc.Value, 0),
                     .Clsf = If(l.clsf, String.Empty),
                     .Denumire = If(l.denumire, String.Empty),
                     .IdUnitate = If(l.id_unitate.HasValue, l.id_unitate.Value, 0),
@@ -1781,7 +1860,6 @@ Public Class ApiClient
                 .valoare = l.Valoare, .ramas = l.Ramas,
                 .explicatie = l.Explicatie, .cod_partener = l.CodPartener}
             If l.IdClsf > 0 Then ldto.id_clsf = l.IdClsf
-            If l.IdClsfAcc > 0 Then ldto.id_clsf_acc = l.IdClsfAcc
             If l.IdUnitate > 0 Then ldto.id_unitate = l.IdUnitate
             If l.IdPartener > 0 Then ldto.id_partener = l.IdPartener
             dto.linii.Add(ldto)
@@ -2552,7 +2630,7 @@ Public Class ApiClient
                     If payload Is Nothing OrElse payload.clasificatii Is Nothing Then Return rezultat
                     For Each c As DdfClasificatieDto In payload.clasificatii
                         rezultat.Add(New DdfClasificatie() With {
-                            .IdClsf = c.id_clsf, .IdClsfAcc = c.id_clsf_acc,
+                            .IdClsf = c.id_clsf,
                             .Clsf = If(c.clsf, String.Empty),
                             .Denumire = If(c.denumire, String.Empty),
                             .Ss = If(c.ss, String.Empty),
@@ -3065,7 +3143,7 @@ Public Class ApiClient
                     .TempId = l.temp_id, .IdSecA = l.id_sec_a,
                     .CodAngajament = If(l.cod_angajament, String.Empty),
                     .CodIndicator = If(l.cod_indicator, String.Empty),
-                    .IdClsf = l.id_clsf, .IdClsfAcc = l.id_clsf_acc,
+                    .IdClsf = l.id_clsf,
                     .Clsf = If(l.clsf, String.Empty),
                     .Ss = If(l.ss, String.Empty),
                     .IdUnitate = l.id_unitate,
@@ -3085,7 +3163,7 @@ Public Class ApiClient
                     .TempId = b.temp_id, .IdSecB = b.id_sec_b,
                     .CodAngajament = If(b.cod_angajament, String.Empty),
                     .CodIndicator = If(b.cod_indicator, String.Empty),
-                    .IdClsf = b.id_clsf, .IdClsfAcc = b.id_clsf_acc,
+                    .IdClsf = b.id_clsf,
                     .CodSsi = If(b.cod_ssi, String.Empty),
                     .Ss = If(b.ss, String.Empty),
                     .IdUnitate = b.id_unitate,
@@ -3150,7 +3228,7 @@ Public Class ApiClient
             dto.linii_a.Add(New DdfDraftLinieADto() With {
                 .temp_id = l.TempId, .id_sec_a = l.IdSecA,
                 .cod_angajament = l.CodAngajament, .cod_indicator = l.CodIndicator,
-                .id_clsf = l.IdClsf, .id_clsf_acc = l.IdClsfAcc,
+                .id_clsf = l.IdClsf,
                 .clsf = l.Clsf, .ss = l.Ss, .id_unitate = l.IdUnitate,
                 .element_fund = l.ElementFund, .parametrii_fund = l.ParametriiFund,
                 .cod_partener = l.CodPartener, .id_partener = l.IdPartener,
@@ -3164,7 +3242,7 @@ Public Class ApiClient
             dto.linii_b.Add(New DdfDraftLinieBDto() With {
                 .temp_id = b.TempId, .id_sec_b = b.IdSecB,
                 .cod_angajament = b.CodAngajament, .cod_indicator = b.CodIndicator,
-                .id_clsf = b.IdClsf, .id_clsf_acc = b.IdClsfAcc,
+                .id_clsf = b.IdClsf,
                 .cod_ssi = b.CodSsi, .ss = b.Ss, .id_unitate = b.IdUnitate,
                 .cod_partener = b.CodPartener, .id_partener = b.IdPartener,
                 .ca_anterior = b.CaAnterior, .inf1 = b.Inf1, .ca_curent = b.CaCurent,

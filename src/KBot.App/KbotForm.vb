@@ -431,6 +431,10 @@ Public Class KbotForm
                 ' re-login, un singur loc unde se deschide editorul.
                 Case "plati" : Return New PlatiView(_apiClient, Function(op) WithReauth(Of PlatiInfo)(op),
                                                     AddressOf ExecutaComandaOrd)
+                ' Slice 0080-02: the angajament's bank statements. Its footer icon downloads them
+                ' through the SAME DescarcaExtraseAsync as the «Extrase de cont» window.
+                Case "extrase" : Return New ExtraseView(_apiClient, Function(op) WithReauth(Of ExtraseInfo)(op),
+                                                        Function() DescarcaExtraseAsync(Me))
                 Case "ddf" : Return New DdfView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op), _session,
                                                 AddressOf ExecutaComandaDdf)
                 Case "ord" : Return New OrdView(_apiClient, Function(op) WithReauth(Of OrdInfo)(op), _session,
@@ -1452,6 +1456,7 @@ Public Class KbotForm
             'navViews.SetItemVisible("partener", info IsNot Nothing AndAlso info.ArePartener)
             navViews.SetItemVisible("receptii", info IsNot Nothing AndAlso info.AreReceptii)
             navViews.SetItemVisible("plati", info IsNot Nothing AndAlso info.ArePlati)
+            navViews.SetItemVisible("extrase", info IsNot Nothing AndAlso info.AreExtrase)
             navViews.SetItemVisible("ddf", info IsNot Nothing AndAlso info.AreDDF)
             navViews.SetItemVisible("ord", info IsNot Nothing AndAlso info.AreORD)
             ' «Browser FOREXE» (slice 0074) hangs on the SESSION, not on the node: with no
@@ -1481,6 +1486,7 @@ Public Class KbotForm
             'Case "partener" : Return info.ArePartener
             Case "receptii" : Return info.AreReceptii
             Case "plati" : Return info.ArePlati
+            Case "extrase" : Return info.AreExtrase
             Case "ddf" : Return info.AreDDF
             Case "ord" : Return info.AreORD
             ' Gated by the session in ApplyViewGating / the coordinator's StateChanged
@@ -1518,8 +1524,34 @@ Public Class KbotForm
     ' strângerea; asta a fost doar a shell-ului.
 
     ''' <summary>
-    ''' The LEFT icon of the tree footer (slice 0057) = download the SNM bank statements
-    ''' from FOREXE and send them to the import.
+    ''' The LEFT icon of the tree footer opens the «Extrase de cont» window (slice 0080-03,
+    ''' operator 24.09.2026): every statement of the database, with the download button in its
+    ''' own footer. It used to download directly (slice 0057); that action now lives in
+    ''' <see cref="DescarcaExtraseAsync"/>, shared by the window and the Extrase view.
+    ''' </summary>
+    Private Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
+        Try
+            Using f As New ExtraseForm(_apiClient,
+                                       Function(op) WithReauth(Of ExtraseInfo)(op),
+                                       Function(owner) DescarcaExtraseAsync(owner))
+                f.ShowDialog(Me)
+            End Using
+            ' The window may have imported statements: the open view follows.
+            Dim vedere As IAngajamentView = Nothing
+            If _views.TryGetValue("extrase", vedere) Then TryCast(vedere, ExtraseView)?.Reincarca()
+        Catch ex As Exception
+            ' UI boundary: log it and say why.
+            GlobalErrorLog.Write("MainForm.tree_FooterLeftIconClicked", ex)
+            KBotMessage.Show(Me, "Fereastra extraselor de cont nu s-a putut deschide: " & ex.Message,
+                            "Extrase de cont", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Download the SNM bank statements from FOREXE and send them to the import (slice 0057;
+    ''' shared since 0080-02 by the Extrase view and the «Extrase de cont» window). Returns
+    ''' True when the import wrote at least one statement or operation, so the caller knows to
+    ''' reload. Every failure is told to the operator here, over <paramref name="owner"/>.
     ''' </summary>
     ''' <remarks>
     ''' Two steps, like downloading one angajament: the robot brings the PDFs and unwraps
@@ -1528,7 +1560,7 @@ Public Class KbotForm
     ''' over, the PDFs stay on disk and can be retried; the second run skips what is
     ''' already written.
     ''' </remarks>
-    Private Async Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
+    Friend Async Function DescarcaExtraseAsync(owner As IWin32Window) As Task(Of Boolean)
         Try
             Dim extrase As List(Of ExtrasDescarcat)
             busyBar.Running = True
@@ -1546,22 +1578,23 @@ Public Class KbotForm
             ' when the operator gave up themselves -- no box for that.
             If extrase Is Nothing Then
                 ShowForexeFailure("Extrase de cont")
-                Return
+                Return False
             End If
             If extrase.Count = 0 Then
-                KBotMessage.Show(Me, "Nu există extrase noi de descărcat.", "Extrase de cont",
+                KBotMessage.Show(owner, "Nu există extrase noi de descărcat.", "Extrase de cont",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information)
-                Return
+                Return False
             End If
 
-            Await ImportaExtraseAsync(extrase)
+            Return Await ImportaExtraseAsync(extrase, owner)
         Catch ex As Exception
-            ' UI boundary (async Sub): cannot re-throw -- log it and say why.
-            GlobalErrorLog.Write("MainForm.tree_FooterLeftIconClicked", ex)
-            KBotMessage.Show(Me, "Descărcarea extraselor de cont a eșuat: " & ex.Message,
+            ' Called from UI handlers that cannot re-throw: log it and say why.
+            GlobalErrorLog.Write("MainForm.DescarcaExtraseAsync", ex)
+            KBotMessage.Show(owner, "Descărcarea extraselor de cont a eșuat: " & ex.Message,
                             "Extrase de cont", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return False
         End Try
-    End Sub
+    End Function
 
     ''' <summary>
     ''' The statements' second step: the downloaded package goes to
@@ -1570,7 +1603,8 @@ Public Class KbotForm
     ''' those lookups every account header stays without a unit, and that has to be seen
     ''' now rather than months later.
     ''' </summary>
-    Private Async Function ImportaExtraseAsync(extrase As List(Of ExtrasDescarcat)) As Task
+    Private Async Function ImportaExtraseAsync(extrase As List(Of ExtrasDescarcat),
+                                               owner As IWin32Window) As Task(Of Boolean)
         Try
             Dim pentruServer As New List(Of ExtrasPentruImport)()
             For Each x As ExtrasDescarcat In extrase
@@ -1604,14 +1638,16 @@ Public Class KbotForm
                     mesaj.AppendLine(" - " & a)
                 Next
             End If
-            KBotMessage.Show(Me, mesaj.ToString(), "Extrase de cont",
+            KBotMessage.Show(owner, mesaj.ToString(), "Extrase de cont",
                             MessageBoxButtons.OK, iconita)
+            Return rezultat.Importate > 0 OrElse rezultat.Randuri > 0
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ImportaExtraseAsync", ex)
-            KBotMessage.Show(Me,
+            KBotMessage.Show(owner,
                 "Importul extraselor a eșuat: " & ex.Message & Environment.NewLine &
                 "PDF-urile au rămas pe disc — o nouă apăsare reia doar ce lipsește.",
                 "Extrase de cont", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return False
         End Try
     End Function
 

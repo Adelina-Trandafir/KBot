@@ -149,10 +149,14 @@ Partial Friend NotInheritable Class KBotFilterPopup
         End Get
     End Property
 
-    ' Does the grid offer the operator the grouping tab? (Without a host, never.)
+    ' Does the grid offer the operator the grouping tab, on this column? (Without a host, never.)
+    ' The column's own AllowGrouping narrows the grid-wide switch (slice 0080-02).
     Private ReadOnly Property HasGrouping As Boolean
         Get
-            Return _grid IsNot Nothing AndAlso _grid.EnableGrouping
+            If _grid Is Nothing OrElse Not _grid.EnableGrouping Then Return False
+            Dim col As KBotDataColumn = _grid.Columns.FirstOrDefault(
+                Function(c) String.Equals(c.Key, _columnKey, StringComparison.Ordinal))
+            Return col Is Nothing OrElse col.AllowGrouping
         End Get
     End Property
 

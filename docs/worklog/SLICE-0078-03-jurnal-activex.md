@@ -261,3 +261,42 @@ INPUT structs, STATECHANGE / LOCATIONCHANGE), `AdobeViewerProfile.vb`, `AdobeVie
 
 - Not run, the new row not seen on screen. Whether a control per document is always as fast as
   the traces suggest, and whether it avoids the empty control (trace 2 #3 was a fresh control).
+## Pass 06 — only listed script alerts are closed (24.09.2026)
+
+### Why
+
+The trap pressed OK on EVERY «Warning: JavaScript Window» box. The forms also use that box to
+tell the operator something («Validarea s-a terminat cu succes! Semnati formularul...», «Nu sunt
+erori la sectiunea A»), and the operator never saw those. The operator asked for the decision to
+be made on the message text (the `Static` child of the alert, Window Detective 0x00300B72) against
+a list they can edit in Setări, regular expressions allowed.
+
+### What changed
+
+- `AppSettings.AdobeTrappedAlerts` (JSON list, missing = defaults, empty = nothing trapped).
+  Defaults = the texts the working logs show were closed as errors: `GeneralError`,
+  `Operation failed`, `TypeError`.
+- `KBot.Controls/Adobe/AdobeScriptAlertFilter.vb` (new): case-insensitive regex, matched anywhere,
+  whitespace collapsed; broken / blank / match-everything patterns refused (`CheckPattern`) and
+  skipped (`Compile`); 200 ms match timeout; compiled list cached per saved settings.
+- `AdobeSaveTrap.DismissScriptNoise`: an alert (not the console) whose Static text matches no
+  pattern is LEFT ON SCREEN, reported once («lăsat operatorului»), judged again on every sweep
+  (text not readable yet). It still counts as a script burst, so Ctrl+H waits until 3 s after the
+  operator closes it.
+- `AcroPdfSurface.OnDeadCheckTick`: the 5 s empty-control check is postponed while a script
+  alert is up (Adobe builds nothing while one is showing; the one left for the operator can stay
+  up for long) instead of recreating the control under it.
+- Setări ▸ Aplicație ▸ Documente: button «Mesaje de script Adobe…» (row 4, Excel row moved to 5)
+  opens `AdobeMesajeForm`: one pattern per line, a live test box, «Lista implicită», save refuses
+  broken lines with their numbers and asks before saving an empty list.
+- Tests written (not run): `tests/KBot.Controls.Tests/AdobeScriptAlertFilterTests.vb`.
+
+### Test results
+
+`dotnet build src\KBot.App\KBot.App.vbproj`: 0 errors, 0 warnings. No tests run.
+
+### Unverified
+
+- Not run; the dialog and the new row not seen on screen. The alert text is taken from the
+  `Static` children as before; an alert whose text is drawn some other way reads as empty and is
+  left on screen.

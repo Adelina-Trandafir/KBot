@@ -51,6 +51,25 @@ Public Enum ColumnSourceKind
     ''' mapping every INSERT would fail with 1364.
     ''' </remarks>
     ClasificatieSursaSector = 7
+    ''' <summary>
+    ''' An Access classification id resolved to <c>Clasificatii.IDClsf</c> on the unit the
+    ''' ROW belongs to for classification purposes (slice 0080-01, the seven FX_ tables):
+    ''' its own <c>IdUnitate</c>, else the row's ownership unit, else its indicator's unit.
+    ''' </summary>
+    ''' <remarks>
+    ''' Separate from <see cref="ResolvedClasificatie"/> because the unit is found another
+    ''' way: <c>FX_Extrase_H</c> travels with its statement file and has no ownership unit,
+    ''' and <c>FX_Istoric</c> / <c>FX_Rezervari</c> have no unit column at all. See
+    ''' <see cref="OwnershipPlan.ClassificationUnit"/>. An Access id of 0 or NULL is "no
+    ''' classification" and travels as NULL; any other miss stops the run.
+    ''' </remarks>
+    ClasificatieByRowUnit = 8
+    ''' <summary>
+    ''' <c>FX_Extrase_H.IdUnitate</c> / <c>IdClsf</c> / <c>IdClsfV</c>, computed from the row's
+    ''' <c>Cont</c> and <c>CodIBAN</c> by <see cref="ExtrasHeaderRules"/> - the rules of the
+    ''' extrase download. The Access values of the three columns are not read.
+    ''' </summary>
+    ExtrasHeaderRule = 9
 End Enum
 
 ''' <summary>
@@ -101,6 +120,17 @@ Public NotInheritable Class ColumnMapping
                                  accessColumn, Nothing, blocking)
     End Function
 
+    ''' <summary>See <see cref="ColumnSourceKind.ClasificatieByRowUnit"/>. Always blocking.</summary>
+    Public Shared Function FromClasificatieByRowUnit(targetColumn As String, accessColumn As String) As ColumnMapping
+        Return New ColumnMapping(targetColumn, ColumnSourceKind.ClasificatieByRowUnit,
+                                 accessColumn, Nothing, True)
+    End Function
+
+    ''' <summary>See <see cref="ColumnSourceKind.ExtrasHeaderRule"/>. Never blocking: a miss is NULL.</summary>
+    Public Shared Function FromExtrasHeaderRule(targetColumn As String) As ColumnMapping
+        Return New ColumnMapping(targetColumn, ColumnSourceKind.ExtrasHeaderRule, Nothing, Nothing, False)
+    End Function
+
     Public Shared Function FromPartener(targetColumn As String, accessColumn As String,
                                         blocking As Boolean) As ColumnMapping
         Return New ColumnMapping(targetColumn, ColumnSourceKind.ResolvedPartener,
@@ -138,6 +168,10 @@ Public NotInheritable Class ColumnMapping
                 Return $"(constanta {ConstantValue}) -> {TargetColumn}"
             Case ColumnSourceKind.ResolvedClasificatie
                 Return $"{AccessColumn} (clasificatie rezolvata) -> {TargetColumn}"
+            Case ColumnSourceKind.ClasificatieByRowUnit
+                Return $"{AccessColumn} (clasificatie rezolvata pe unitatea randului) -> {TargetColumn}"
+            Case ColumnSourceKind.ExtrasHeaderRule
+                Return $"Cont/CodIBAN (regulile descărcării extraselor) -> {TargetColumn}"
             Case ColumnSourceKind.ResolvedPartener
                 Return $"{AccessColumn} (partener rezolvat) -> {TargetColumn}"
             Case ColumnSourceKind.WrittenElsewhere

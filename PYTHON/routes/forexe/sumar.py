@@ -94,9 +94,12 @@ logger = logging.getLogger(__name__)
 #   Clasificatii   : IDClsf    = PK MariaDB („PY”)
 #                    IdClsfAcc = id Access
 #
-# ...DAR tabelele FX_ NU respecta conventia: `FX_Indicatori.IdClsf` tine ID-UL
-# ACCESS, deci se potriveste cu `Clasificatii.IdClsfAcc`, NU cu `Clasificatii.IDClsf`.
-# Numele coloanei minte. Verificat pe 000_DEMO (felia 0011-03):
+# Slice 0080-01 made the FX_ tables follow the convention: `IdClsf` = Clasificatii.IDClsf
+# on all seven tables that held the Access id there (FX_Extrase_H, FX_Indicatori,
+# FX_Istoric, FX_Plati, FX_Receptii, FX_Receptii_RHR, FX_Rezervari); no copy of the Access
+# id is kept on them. The join below is therefore `C.IDClsf = I.IdClsf`. The history, kept
+# because the lesson still holds -- until 0080-01 `FX_Indicatori.IdClsf` held the ACCESS
+# id and the column name lied. Measured on 000_DEMO (slice 0011-03):
 #   FX_Indicatori                                          -> 29 randuri
 #   ... WHERE IdClsf <> 0                                  -> 25
 #   JOIN Clasificatii ON I.IdClsf = C.IDClsf               ->  0  (cheie gresita)
@@ -114,7 +117,7 @@ _SQL = (
     "SELECT A.CodAngajament, IST.DataFX, A.DataCreare, A.DataDefinitivare, "
     "A.Descriere, A.Stare, A.Incarcat, A.Preluat, "
     "(SELECT C.Clsf FROM Clasificatii C "
-    "  WHERE C.IdClsfAcc = I.IdClsf AND C.IdUnitate = I.IdUnitate "
+    "  WHERE C.IDClsf = I.IdClsf "
     "  LIMIT 1) AS Clsf, "
     "I.CodIndicator, aggRev.Partener, "
     "COALESCE(aggRez.TotalRezervari, 0)    AS TotalRezervari, "

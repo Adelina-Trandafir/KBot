@@ -128,6 +128,7 @@ Public Module FindingLog
             Return
         End If
 
+        sb.AppendLine($"migrator: {MigratorVersion.Text}")
         sb.AppendLine($"operator: {Blank(request.OperatorName)}")
         sb.AppendLine($"server:   {request.Server.Describe()}")
         sb.AppendLine($"target:   {request.TargetDatabase}   (template {request.TemplateDatabase}, common {request.CommonDatabase})")

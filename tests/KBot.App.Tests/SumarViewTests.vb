@@ -96,6 +96,11 @@ Public Class SumarViewTests
             Throw New NotSupportedException()
         End Function
 
+        Public Function GetExtraseListaAsync(cod As String, ct As CancellationToken) As Task(Of ExtraseInfo) _
+                                               Implements IApiClient.GetExtraseListaAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public Function ImportaExtraseAsync(extrase As IReadOnlyList(Of ExtrasPentruImport),
                                                ct As CancellationToken) As Task(Of ImportExtraseRezultat) _
                                                Implements IApiClient.ImportaExtraseAsync

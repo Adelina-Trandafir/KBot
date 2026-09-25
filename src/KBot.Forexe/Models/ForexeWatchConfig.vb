@@ -38,12 +38,42 @@ Public NotInheritable Class ForexeWatchConfig
             Dim root As New JObject(
                 New JProperty("devTools", s.ForexeDevToolsAllowed),
                 New JProperty("darkMode", DarkModeNow()),
+                New JProperty("veil", VeilColorsNow()),
                 New JProperty("rules", rules))
             Return root.ToString(Newtonsoft.Json.Formatting.None)
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeWatchConfig.JsonFromSettings", ex)
             Throw
         End Try
+    End Function
+
+    ''' <summary>
+    ''' The veil's colours (operator, 24.09.2026: a solid backdrop in the colour of the view
+    ''' that hosts the browser instead of a blur, so the robot's work is not seen through it).
+    ''' <c>back</c> is the host view's SurfaceAlt; the card takes Surface / Text / TextDim /
+    ''' Accent / Border. Nothing when no theme is loaded: the page keeps its own defaults.
+    ''' </summary>
+    Private Shared Function VeilColorsNow() As JObject
+        Try
+            Dim scheme As ThemeScheme = ThemeManager.Current
+            If scheme Is Nothing OrElse scheme.Palette Is Nothing Then Return Nothing
+            Dim p As ThemePalette = scheme.Palette
+            Return New JObject(
+                New JProperty("back", CssHex(p.SurfaceAltColor)),
+                New JProperty("card", CssHex(p.SurfaceColor)),
+                New JProperty("text", CssHex(p.TextColor)),
+                New JProperty("dim", CssHex(p.TextDimColor)),
+                New JProperty("accent", CssHex(p.AccentColor)),
+                New JProperty("border", CssHex(p.BorderColor)))
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeWatchConfig.VeilColorsNow", ex)
+            Return Nothing
+        End Try
+    End Function
+
+    ''' <summary>#rrggbb; alpha dropped (the veil must stay opaque).</summary>
+    Private Shared Function CssHex(c As Drawing.Color) As String
+        Return String.Format(Globalization.CultureInfo.InvariantCulture, "#{0:x2}{1:x2}{2:x2}", c.R, c.G, c.B)
     End Function
 
     ''' <summary>The current settings, as the page wants them.</summary>

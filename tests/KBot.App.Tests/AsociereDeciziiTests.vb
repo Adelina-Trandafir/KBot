@@ -213,8 +213,8 @@ Public Class AsociereDeciziiTests
     Public Sub AReceiptStartedByTheOperator_IsNamedByALabel_NotByAnIdrr()
         ' F26 în modul propunere: recepția nu există nici pe site, nici local, deci nu are IDRR
         ' de numit. Formularul o ține pe un IDRR NEGATIV, iar pe fir pleacă eticheta.
-        ' Primul instantaneu al lanțului o DECLARĂ; ULTIMUL o închide — fără ca nimeni să-l
-        ' marcheze, de-aia dicționarul de ștergeri e gol aici.
+        ' The first snapshot DECLARES it. Nothing is a deletion row unless the operator marked
+        ' it (25.09.2026: starting a reception does not mean it was deleted).
         Dim pozitie As New Dictionary(Of Integer, Integer) From {{0, -1}, {2, -1}}
 
         Dim d = AsociereForm.DeciziiDin(
@@ -228,17 +228,16 @@ Public Class AsociereDeciziiTests
         Assert.Equal(0, porneste.Idrr)
         Assert.False(porneste.RandReceptie.HasValue)
 
-        Dim inchide = d.Single(Function(x) x.RandIstoric.Value = 2)
-        Assert.Equal(ActiuneAsociere.Stergere, inchide.Actiune)
-        Assert.Equal("R1", inchide.ReceptieNoua)
-        Assert.Equal(0, inchide.Idrr)
+        Dim urmatorul = d.Single(Function(x) x.RandIstoric.Value = 2)
+        Assert.Equal(ActiuneAsociere.Asociat, urmatorul.Actiune)
+        Assert.Equal("R1", urmatorul.ReceptieNoua)
+        Assert.Equal(0, urmatorul.Idrr)
     End Sub
 
     <Fact>
-    Public Sub OnlyTheFirstSnapshotDeclares_AndOnlyTheLastCloses()
-        ' Serverul cere EXACT o «reconstituire» și EXACT o «ștergere» per etichetă; două ar fi o
-        ' etichetă declarată (sau închisă) de două ori, iar zero ar fi una folosită fără să fie
-        ' declarată. Amândouă se citesc din capetele lanțului, nu dintr-un steag.
+    Public Sub OnlyTheFirstSnapshotDeclares_AndNothingIsDeletedUnlessMarked()
+        ' The server wants EXACTLY one «reconstituire» per label, read from the start of the
+        ' chain. A deletion row is only ever the operator's flag.
         Dim pozitie As New Dictionary(Of Integer, Integer) From {{0, -1}, {1, -1}, {2, -1}}
 
         Dim d = AsociereForm.DeciziiDin(
@@ -247,20 +246,18 @@ Public Class AsociereDeciziiTests
             FaraAncore(), pozitie, Gol(Of Boolean)(), Gol(Of Boolean)())
 
         Assert.Single(d.Where(Function(x) x.Actiune = ActiuneAsociere.Reconstituire))
-        Assert.Single(d.Where(Function(x) x.Actiune = ActiuneAsociere.Stergere))
+        Assert.Empty(d.Where(Function(x) x.Actiune = ActiuneAsociere.Stergere))
         Assert.Equal(ActiuneAsociere.Reconstituire, d.Single(Function(x) x.RandIstoric.Value = 0).Actiune)
         Assert.Equal(ActiuneAsociere.Asociat, d.Single(Function(x) x.RandIstoric.Value = 1).Actiune)
-        Assert.Equal(ActiuneAsociere.Stergere, d.Single(Function(x) x.RandIstoric.Value = 2).Actiune)
+        Assert.Equal(ActiuneAsociere.Asociat, d.Single(Function(x) x.RandIstoric.Value = 2).Actiune)
         Assert.All(d, Sub(x) Assert.Equal("R1", x.ReceptieNoua))
     End Sub
 
     <Fact>
-    Public Sub AStaleDeletionFlagInTheMiddleOfAReconstructedChain_ChangesNothing()
-        ' Steagul poate rămâne pe un instantaneu care a stat mai devreme pe o recepție de la
-        ' server. Citit și aici, lanțul ar pleca cu DOUĂ ștergeri, iar serverul refuză salvarea
-        ' întreagă (§4c-bis). Pe o recepție pornită de operator hotărăsc capetele lanțului.
+    Public Sub AMarkedDeletionRowOnAStartedReceipt_IsSentAsStergere()
+        ' The operator's flag is read on a started reception exactly as on any other one.
         Dim pozitie As New Dictionary(Of Integer, Integer) From {{0, -1}, {1, -1}, {2, -1}}
-        Dim stergere As New Dictionary(Of Integer, Boolean) From {{1, True}}
+        Dim stergere As New Dictionary(Of Integer, Boolean) From {{2, True}}
 
         Dim d = AsociereForm.DeciziiDin(
             New List(Of InstantaneuLegat) From {

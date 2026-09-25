@@ -87,10 +87,9 @@ Public NotInheritable Class Verifier
                                "ei nu a fost cerută.")
                     Return report
                 End If
-                report.Add(Finding.TABEL_LIPSA, FindingClass.Atentie, String.Empty, String.Empty,
-                           $"Baza «{_request.TargetDatabase}» nu există și va fi creată după " &
-                           $"«{_request.TemplateDatabase}». Verificările pe țintă se opresc aici — " &
-                           "reluați «Verifică» după creare.")
+                report.Add(Finding.BAZA_LIPSA, FindingClass.Blocant, String.Empty, String.Empty,
+                           $"Baza «{_request.TargetDatabase}» nu există. Poate fi creată acum după " &
+                           $"«{_request.TemplateDatabase}», iar verificarea se reia automat după creare.")
                 Return report
             End If
 
@@ -145,6 +144,7 @@ Public NotInheritable Class Verifier
 
                 Step1("Se compun listele de coloane…")
                 CheckColumnPlans(report, schema, maps, clasificatii)
+                CheckClsfConverted(report, cn, schema, maps)
                 cancel.ThrowIfCancellationRequested()
 
                 Step1("Se verifică lățimile…")
@@ -429,6 +429,64 @@ Public NotInheritable Class Verifier
         Next
     End Sub
 
+    ''' <summary>The column comment a converted <c>IdClsf</c> carries (slice 0080-01).</summary>
+    Public Const ClsfConvertedTag As String = "0080-01"
+
+    ''' <summary>
+    ''' Slice 0080-01: a table whose <c>IdClsf</c> is written as <c>Clasificatii.IDClsf</c>
+    ''' must be marked as converted on the target.
+    ''' </summary>
+    ''' <remarks>
+    ''' The one-off <c>PYTHON/scripts/extrase_clsf_0080.py</c> puts the comment
+    ''' «Clasificatii.IDClsf (0080-01)» on <c>IdClsf</c>, and it is how that script knows a
+    ''' table is done. Writing MariaDB keys into an unmarked table would leave rows the script
+    ''' later reads as Access ids - so an unmarked target is refused. On an empty database
+    ''' the script takes seconds.
+    ''' </remarks>
+    Private Sub CheckClsfConverted(report As VerificationReport, cn As MySqlConnection,
+                                   schema As TargetSchema, maps As IEnumerable(Of TableMap))
+        ' Slice 0080-04: only Clasificatii keeps the Access id (operator, 25.09.2026). A
+        ' target table still carrying IdClsfAcc was not converted - on FX_DDF_REV_SA / _SB
+        ' it is NOT NULL, so every row would fail there anyway.
+        For Each table In maps.Select(Function(m) m.TargetTable).
+                               Distinct(StringComparer.OrdinalIgnoreCase).
+                               Where(Function(t) Not String.Equals(t, "Clasificatii", StringComparison.OrdinalIgnoreCase) AndAlso
+                                                 schema.HasTable(t) AndAlso
+                                                 schema.Column(t, "IdClsfAcc") IsNot Nothing)
+            report.Add(Finding.CLASIFICATIE_NECORELATA, FindingClass.Blocant, table, "IdClsfAcc",
+                       $"«{table}» mai are coloana «IdClsfAcc» în baza «{_request.TargetDatabase}». " &
+                       "Id-ul Access al clasificației stă doar în Clasificatii (felia 0080-04). " &
+                       $"Rulați întâi scripts/idclsfacc_0080_04.py --db {_request.TargetDatabase} " &
+                       "pe server.")
+        Next
+
+        Dim wanted = maps.Where(Function(m) m.HasClsfPair AndAlso schema.HasTable(m.TargetTable) AndAlso
+                                            schema.Column(m.TargetTable, "IdClsf") IsNot Nothing).
+                          Select(Function(m) m.TargetTable).ToList()
+        If wanted.Count = 0 Then Return
+
+        Dim marked As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+        Using cmd As New MySqlCommand(
+            "SELECT TABLE_NAME FROM information_schema.COLUMNS " &
+            "WHERE TABLE_SCHEMA = @db AND COLUMN_NAME = 'IdClsf' AND COLUMN_COMMENT LIKE @tag", cn)
+            cmd.Parameters.AddWithValue("@db", _request.TargetDatabase)
+            cmd.Parameters.AddWithValue("@tag", "%" & ClsfConvertedTag & "%")
+            Using reader = cmd.ExecuteReader()
+                While reader.Read()
+                    marked.Add(reader.GetString(0))
+                End While
+            End Using
+        End Using
+
+        For Each table In wanted.Where(Function(t) Not marked.Contains(t))
+            report.Add(Finding.CLASIFICATIE_NECORELATA, FindingClass.Blocant, table, "IdClsf",
+                       $"«{table}.IdClsf» nu e marcat ca «Clasificatii.IDClsf (0080-01)» în baza " &
+                       $"«{_request.TargetDatabase}». Rulați întâi scripts/extrase_clsf_0080.py " &
+                       $"--db {_request.TargetDatabase} pe server (pe o bază goală durează câteva " &
+                       "secunde); altfel rândurile scrise acum ar fi citite mai târziu ca id-uri Access.")
+        Next
+    End Sub
+
     ''' <summary>
     ''' Text values wider than the target column. The 1406 guard.
     ''' </summary>
@@ -505,9 +563,14 @@ Public NotInheritable Class Verifier
             covered.Add($"{row.AccessIdClsf}|{row.IdUnitate}")
         Next
 
+        ' Slice 0080-01 adds the seven FX_ tables whose IdClsf is resolved on the row's
+        ' classification unit (OwnershipPlan.ClassificationUnit) - the prior test the
+        ' operator asked for: every miss is named here, before anything is written.
+        Dim isConsumer As Func(Of ColumnMapping, Boolean) =
+            Function(d) d.Kind = ColumnSourceKind.ResolvedClasificatie OrElse
+                        d.Kind = ColumnSourceKind.ClasificatieByRowUnit
         Dim consumers = maps.
-            Where(Function(m) m.Source = SourceFile.ForexeFile AndAlso
-                              m.Derived.Any(Function(d) d.Kind = ColumnSourceKind.ResolvedClasificatie)).
+            Where(Function(m) m.Source = SourceFile.ForexeFile AndAlso m.Derived.Any(isConsumer)).
             ToList()
         If consumers.Count = 0 Then Return
 
@@ -517,7 +580,8 @@ Public NotInheritable Class Verifier
                     Dim realName = AccessSchema.ResolveTableName(cn, map.AccessTable)
                     If realName Is Nothing Then Continue For
 
-                    Dim mapping = map.Derived.First(Function(d) d.Kind = ColumnSourceKind.ResolvedClasificatie)
+                    Dim mapping = map.Derived.First(isConsumer)
+                    Dim byRowUnit = mapping.Kind = ColumnSourceKind.ClasificatieByRowUnit
                     Dim misses As New Dictionary(Of String, Integer)(StringComparer.Ordinal)
                     Dim withoutUnit = 0
 
@@ -526,18 +590,23 @@ Public NotInheritable Class Verifier
                             Dim verdict = ownership.Decide(map, reader, pass.Units)
                             If verdict.Disposition <> RowDisposition.Travels Then Continue While
 
-                            If Not verdict.HasUnit Then
+                            Dim idClsf = AsInteger(reader.ValueOrMissing(mapping.AccessColumn))
+                            If byRowUnit AndAlso (Not idClsf.HasValue OrElse idClsf.Value = 0) Then Continue While
+
+                            Dim unit As Integer? = If(byRowUnit,
+                                                      ownership.ClassificationUnit(reader, verdict),
+                                                      If(verdict.HasUnit, verdict.IdUnitate, CType(Nothing, Integer?)))
+                            If Not unit.HasValue Then
                                 ' Travelling is enough to WRITE a row, but not to resolve a
-                                ' classification: that needs one unit by name. No consumer
-                                ' is in this state today, and the writer refuses it too.
+                                ' classification: that needs one unit by name. The writer
+                                ' refuses it too.
                                 withoutUnit += 1
                                 Continue While
                             End If
 
-                            Dim idClsf = AsInteger(reader.ValueOrMissing(mapping.AccessColumn))
                             If Not idClsf.HasValue OrElse idClsf.Value = 0 Then Continue While
 
-                            Dim key = $"{idClsf.Value}|{verdict.IdUnitate}"
+                            Dim key = $"{idClsf.Value}|{unit.Value}"
                             If covered.Contains(key) Then Continue While
 
                             Dim count As Integer

@@ -635,16 +635,16 @@ Public Class AsociereFormTests
                        Dim radacina = Nod(Arbore(f, "treeLant"), "R:-1")
                        Assert.NotNull(radacina)
                        Assert.NotNull(Nod(Arbore(f, "treeLant"), "H:41"))
-                       Assert.Contains("[nouă, ștearsă]", radacina.Caption)
+                       Assert.Contains("[nouă]", radacina.Caption)
+                       Assert.DoesNotContain("ștearsă", radacina.Caption)
                    End Using
                End Sub)
     End Sub
 
     <Fact>
-    Public Sub ANewReceipt_IsBornDeletedAndReconstructed_AndSaysSoInItsColour()
-        ' Serverul o scrie cu `Sters = 1` și `Reconstituit = 1` — nu are altă formă în care să
-        ' existe. Rândul de pe ecran spune același lucru, cu aceleași două steaguri și cu
-        ' culoarea oricărei recepții șterse.
+    Public Sub ANewReceipt_IsBornLiveAndReconstructed()
+        ' Operator, 25.09.2026: starting a reception does NOT mean it was deleted. The server
+        ' writes `Sters = 0`, `Reconstituit = 1`; the screen says the same.
         RunSta(Sub()
                    Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
                    Using f As AsociereForm = Formular(api)
@@ -652,7 +652,7 @@ Public Class AsociereFormTests
                        Meniu(f, Instantaneul(f, "treeLibere", "H:41"), "receptie_noua")
 
                        Dim rec As ReceptiePropusa = ReceptiaNodului(f, "R:-1")
-                       Assert.True(rec.Sters)
+                       Assert.False(rec.Sters)
                        Assert.True(rec.Reconstituit)
                        ' Pe FOND: culoarea textului e a liniei din grafic, adică identitatea
                        ' rândului. Vezi `ColoreazaReceptia`.
@@ -664,27 +664,23 @@ Public Class AsociereFormTests
     End Sub
 
     <Fact>
-    Public Sub ANewReceiptWithASingleSnapshot_CannotBeSaved()
-        ' Lanțul are nevoie de două capete diferite: unul declară recepția, celălalt o închide.
-        ' Refuzul vine aici, nu de la server: acolo ar pica salvarea ÎNTREAGĂ, iar operatorul ar
-        ' afla abia din eroare ce îi lipsea.
+    Public Sub ANewReceiptWithASingleSnapshot_CanBeSaved()
+        ' Operator, 25.09.2026: an H turned into an R may be the whole chain.
         RunSta(Sub()
                    Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
                    Using f As AsociereForm = Formular(api)
                        Incarca(f)
                        Meniu(f, Instantaneul(f, "treeLibere", "H:41"), "receptie_noua")
 
-                       Assert.Contains("un singur instantaneu", Problema(f))
-                       Assert.False(Buton(f, "btnSalveaza").Enabled)
+                       Assert.Equal(String.Empty, Problema(f))
+                       Assert.True(Buton(f, "btnSalveaza").Enabled)
                    End Using
                End Sub)
     End Sub
 
     <Fact>
-    Public Sub TheLastSnapshotOfANewReceipt_IsItsDeletionRow_WithNobodyMarkingIt()
-        ' Miezul: o recepție pornită aici NU poate să nu fie ștearsă, deci nu e nimic de întrebat
-        ' pe operator. Ultimul instantaneu al lanțului e ștergerea ei, iar salvarea se aprinde
-        ' fără niciun alt gest.
+    Public Sub NoSnapshotOfANewReceipt_IsADeletionRow_UntilTheOperatorMarksOne()
+        ' Operator, 25.09.2026: deletion is the operator's decision on a started reception too.
         RunSta(Sub()
                    Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
                    Using f As AsociereForm = Formular(api)
@@ -695,7 +691,13 @@ Public Class AsociereFormTests
                               Nod(Arbore(f, "treeLant"), "R:-1"))
 
                        Assert.DoesNotContain("[ștergere]", Nod(Arbore(f, "treeLant"), "H:41").Caption)
+                       Assert.DoesNotContain("[ștergere]", Nod(Arbore(f, "treeLant"), "H:42").Caption)
+                       Assert.False(ReceptiaNodului(f, "R:-1").Sters)
+
+                       Meniu(f, Instantaneul(f, "treeLant", "H:42"), "stergere")
+
                        Assert.Contains("[ștergere]", Nod(Arbore(f, "treeLant"), "H:42").Caption)
+                       Assert.True(ReceptiaNodului(f, "R:-1").Sters)
                        Assert.Equal(String.Empty, Problema(f))
                        Assert.True(Buton(f, "btnSalveaza").Enabled)
                    End Using
@@ -703,9 +705,8 @@ Public Class AsociereFormTests
     End Sub
 
     <Fact>
-    Public Sub TheDeletionRow_MovesToTheNewLastSnapshot_WhenALaterOneIsAdded()
-        ' Citit din lanț, nu ținut minte: un instantaneu mai nou pus pe aceeași recepție devine
-        ' el ștergerea, iar cel de dinainte încetează să mai fie. Ținut minte, ar fi rămas două.
+    Public Sub AMarkedDeletionRowThatIsNotLast_StopsTheSave()
+        ' The server refuses a deletion row with snapshots after it; the form says so first.
         RunSta(Sub()
                    Dim api As New AsociereFakeApi() With {.Stare = StareCuTreiNeasezate()}
                    Using f As AsociereForm = Formular(api)
@@ -714,26 +715,21 @@ Public Class AsociereFormTests
                        Arunca(f, "TreeLant_NodeDropped",
                               Nod(Arbore(f, "treeLibere"), "H:42"),
                               Nod(Arbore(f, "treeLant"), "R:-1"))
+                       Meniu(f, Instantaneul(f, "treeLant", "H:42"), "stergere")
                        Arunca(f, "TreeLant_NodeDropped",
                               Nod(Arbore(f, "treeLibere"), "H:43"),
                               Nod(Arbore(f, "treeLant"), "R:-1"))
 
-                       Assert.DoesNotContain("[ștergere]", Nod(Arbore(f, "treeLant"), "H:42").Caption)
-                       Assert.Contains("[ștergere]", Nod(Arbore(f, "treeLant"), "H:43").Caption)
-
-                       Dim c = Comenzi(f)
-                       Assert.Equal(ActiuneAsociere.Reconstituire, c.Single(Function(x) x.Idrh = 41).Actiune)
-                       Assert.Equal(ActiuneAsociere.Asociat, c.Single(Function(x) x.Idrh = 42).Actiune)
-                       Assert.Equal(ActiuneAsociere.Stergere, c.Single(Function(x) x.Idrh = 43).Actiune)
+                       Assert.Contains("nu e ultimul", Problema(f))
+                       Assert.False(Buton(f, "btnSalveaza").Enabled)
                    End Using
                End Sub)
     End Sub
 
     <Fact>
-    Public Sub AStaleDeletionFlag_HasNoSayOnANewReceipt_NeitherOnScreenNorOnTheWire()
-        ' Steagul poate rămâne pe un instantaneu care a trecut pe aici mai devreme. Pe o recepție
-        ' pornită de operator nu are niciun cuvânt — altfel ecranul ar arăta un rând de ștergere
-        ' la mijlocul lanțului, iar serverul ar primi două, adică exact ce refuză (§4c-bis).
+    Public Sub ADeletionFlagOnTheStartingRow_StopsTheSave()
+        ' One row carries one action on the wire: the row that starts a reception cannot also
+        ' be its deletion row.
         RunSta(Sub()
                    Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
                    Using f As AsociereForm = Formular(api)
@@ -742,23 +738,18 @@ Public Class AsociereFormTests
                        Arunca(f, "TreeLant_NodeDropped",
                               Nod(Arbore(f, "treeLibere"), "H:42"),
                               Nod(Arbore(f, "treeLant"), "R:-1"))
-                       ' Comanda se dă direct: în meniul unui instantaneu de pe o recepție
-                       ' pornită aici nici nu se mai oferă.
                        Meniu(f, Instantaneul(f, "treeLant", "H:41"), "stergere")
 
-                       Assert.DoesNotContain("[ștergere]", Nod(Arbore(f, "treeLant"), "H:41").Caption)
-                       Assert.Equal(String.Empty, Problema(f))
-                       Dim c = Comenzi(f)
-                       Assert.Equal(ActiuneAsociere.Reconstituire, c.Single(Function(x) x.Idrh = 41).Actiune)
-                       Assert.Equal(ActiuneAsociere.Stergere, c.Single(Function(x) x.Idrh = 42).Actiune)
+                       Assert.Contains("care o pornește", Problema(f))
+                       Assert.False(Buton(f, "btnSalveaza").Enabled)
                    End Using
                End Sub)
     End Sub
 
     <Fact>
-    Public Sub AWholeReconstructedChain_SendsReconstituireAndStergere_OnTheSameLabel()
-        ' Ce pleacă pe fir: prima comandă DECLARĂ eticheta, ultima o închide, și niciuna nu
-        ' poartă IDRR — recepția nu există încă, deci nu are cheie de numit.
+    Public Sub AWholeReconstructedChain_SendsReconstituireAndAsociat_OnTheSameLabel()
+        ' The first command DECLARES the label, the rest are placed on it, and none carries an
+        ' IDRR: the reception does not exist yet. No deletion row unless the operator marks one.
         RunSta(Sub()
                    Dim api As New AsociereFakeApi() With {.Stare = StareCuDouaNeasezate()}
                    Using f As AsociereForm = Formular(api)
@@ -778,10 +769,10 @@ Public Class AsociereFormTests
                        Assert.Equal("R1", porneste.ReceptieNoua)
                        Assert.Equal(0, porneste.Idrr)
 
-                       Dim inchide = c.Single(Function(x) x.Idrh = 42)
-                       Assert.Equal(ActiuneAsociere.Stergere, inchide.Actiune)
-                       Assert.Equal("R1", inchide.ReceptieNoua)
-                       Assert.Equal(0, inchide.Idrr)
+                       Dim urmatorul = c.Single(Function(x) x.Idrh = 42)
+                       Assert.Equal(ActiuneAsociere.Asociat, urmatorul.Actiune)
+                       Assert.Equal("R1", urmatorul.ReceptieNoua)
+                       Assert.Equal(0, urmatorul.Idrr)
                    End Using
                End Sub)
     End Sub

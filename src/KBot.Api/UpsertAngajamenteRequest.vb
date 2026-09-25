@@ -104,6 +104,7 @@ Public NotInheritable Class GetTreeRow
     Public Property AreDDF As Boolean
     Public Property ArePartener As Boolean
     Public Property AreOrd As Boolean
+    Public Property AreExtrase As Boolean
 End Class
 
 ' Wire DTOs for GET /api/forexe/sumar (vederea Sumar, slice 0011).
@@ -407,8 +408,8 @@ Public NotInheritable Class GetIstoricRandRow
     Public Property idrev As Integer?
 End Class
 
-' One classification-hierarchy entry (deduped on IdClsfAcc). id_clsf is the ACCESS id
-' (= Clasificatii.IdClsfAcc), matching FX_Istoric.IdClsf — the opposite direction from DDF.
+' One classification-hierarchy entry. Since slice 0080-01 id_clsf is the MariaDB key
+' (= Clasificatii.IDClsf), matching FX_Istoric.IdClsf -- the same direction as DDF.
 Public NotInheritable Class GetIstoricClasificatieRow
     Public Property id_clsf As Integer
     Public Property clsf As String
@@ -757,4 +758,51 @@ End Class
 ' the whole FOREXE inbox.
 Public NotInheritable Class UltimaDataExtrasResponse
     Public Property data_extras As String
+End Class
+
+' The 200 body of GET /api/forexe/extrase/lista (slice 0080-02). Keys ARE the JSON keys;
+' dates arrive as ISO `YYYY-MM-DD`.
+Public NotInheritable Class GetExtraseListaResponse
+    Public Property antete As List(Of GetExtrasAntetRow)
+    Public Property operatiuni As List(Of GetExtrasOperatiuneRow)
+End Class
+
+Public NotInheritable Class GetExtrasAntetRow
+    Public Property idexh As Integer
+    Public Property idexf As Integer?
+    Public Property data_extras As Date?
+    Public Property numar_extras As String
+    Public Property id_clsf As Integer?
+    Public Property clsf As String
+    Public Property denumire As String
+    Public Property cod_iban As String
+    Public Property cont As String
+    Public Property sid As Double
+    Public Property sic As Double
+    Public Property rpd As Double
+    Public Property rpc As Double
+    Public Property tsd As Double
+    Public Property tsc As Double
+    Public Property sfd As Double
+    Public Property sfc As Double
+End Class
+
+Public NotInheritable Class GetExtrasOperatiuneRow
+    Public Property idfxe As Integer
+    Public Property idfxh As Integer?
+    Public Property data_banca As Date?
+    Public Property data_doc As Date?
+    Public Property nr_doc As String
+    Public Property referinta As String
+    Public Property referinta_dest As String
+    Public Property platitor_nume As String
+    Public Property platitor_cui As String
+    Public Property platitor_iban As String
+    Public Property suma_debit As Double
+    Public Property suma_credit As Double
+    Public Property explicatii As String
+    Public Property cod_contract As String
+    Public Property rand_contract As String
+    Public Property cod_program As String
+    Public Property cod_ai As String
 End Class

@@ -61,6 +61,8 @@ forexe_bp = Blueprint("forexe", __name__)
 # asociere.py    -> GET/POST /api/forexe/asociere (editorul R<->H de ORICAND, 0048-04)
 # extrase.py     -> POST /api/forexe/extrase/import, GET /api/forexe/extrase/ultima
 #                   (extrasele de cont SNM, felia 0057)
+# extrase_lista.py -> GET /api/forexe/extrase/lista[?cod=] (vederea Extrase si fereastra
+#                   Extrase de cont, felia 0080)
 # marcaj.py     -> POST /api/forexe/marcaj/rezerva (id-urile pe care pagina FOREXE le
 #                   scrie in Motiv / Descriere inainte de salvare, felia 0076)
 # angajament_dump.py -> GET /api/forexe/angajament/dump?db_name=&cod= (dump de
@@ -91,6 +93,8 @@ from . import asociere  # noqa: E402,F401
 # extrase.py = importul extraselor de cont SNM (felia 0057): portul lui
 # mdl_FX_Extrase.FX_Extrase_Prelucrare, mutat de pe partea de Access pe server.
 from . import extrase  # noqa: E402,F401
+# extrase_lista.py = reading the statements for the Extrase view / window (slice 0080).
+from . import extrase_lista  # noqa: E402,F401
 # angajament_dump.py = unealta de diagnostic (un angajament, toate tabelele lui, ca text).
 from . import angajament_dump  # noqa: E402,F401
 # marcaj.py = the ids the FOREXE page appends to what the operator types (slice 0076).

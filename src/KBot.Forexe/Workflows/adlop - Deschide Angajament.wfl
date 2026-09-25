@@ -22,7 +22,13 @@
 
   <Log message="══ Caut și deschid angajamentul {{COD_ANGAJAMENT}} ══" level="action" />
 
-  <Click selector="a:has-text('Listă angajamente')" waitNavigation="false" timeout="15" />
+  <!-- V.2 - 24/09/2026: JS click. Docked in the narrower «Browser FOREXE» view, FOREXE's
+    fixed top bar (div.navbar-fixed-top) sits over the side menu's first link, and a real
+    mouse click is refused for 15 s ("subtree intercepts pointer events"). The JS click
+    fires the link's own handler whatever covers it; it does not wait by itself, hence
+    the WaitFor. -->
+  <WaitFor selector="a:has-text('Listă angajamente')" timeout="15" />
+  <Click selector="a:has-text('Listă angajamente')" jsClick="true" waitNavigation="false" timeout="15" />
   <Fill selector="input[name='cod']" value="{{COD_ANGAJAMENT}}" clear="true" timeout="15" />
   <Click selector="button:has-text('Caută')" waitNavigation="false" timeout="15" />
 

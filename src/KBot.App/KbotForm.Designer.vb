@@ -35,6 +35,7 @@ Partial Class KbotForm
         Dim KBotNavItem7 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem8 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem9 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem10 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         btnInfo = New Button()
         btnSort = New Button()
@@ -236,7 +237,7 @@ Partial Class KbotForm
         tree.FooterCaptionForeColor = SystemColors.ActiveCaptionText
         tree.FooterHeight = 30
         tree.FooterLeftIcon = My.Resources.Resources.credit_card
-        tree.FooterLeftIconTooltip = "Descarcă extrasele de cont (SNM) din FOREXE." & vbLf & "Se conectează întâi, dacă nu există sesiune."
+        tree.FooterLeftIconTooltip = "Extrasele de cont: fereastra cu toate extrasele bazei." & vbLf & "Descărcarea din FOREXE se face de acolo."
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
         tree.FooterRightIconTooltip = "Actualizează lista de angajamente din FOREXE." & vbLf & "Cele noi se adaugă; cele existente rămân neatinse."
         tree.FooterSeparatorColor = Color.Gainsboro
@@ -352,6 +353,9 @@ Partial Class KbotForm
         KBotNavItem5.Image = My.Resources.Resources.credit_card
         KBotNavItem5.Key = "plati"
         KBotNavItem5.Text = "Plăți"
+        KBotNavItem10.Image = My.Resources.Resources.binvoice
+        KBotNavItem10.Key = "extrase"
+        KBotNavItem10.Text = "Extrase"
         KBotNavItem6.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
         KBotNavItem6.Key = "browser"
         KBotNavItem6.Text = "Browser FOREXE"
@@ -372,6 +376,7 @@ Partial Class KbotForm
         navViews.Items.Add(KBotNavItem3)
         navViews.Items.Add(KBotNavItem4)
         navViews.Items.Add(KBotNavItem5)
+        navViews.Items.Add(KBotNavItem10)
         navViews.Items.Add(KBotNavItem6)
         navViews.Items.Add(KBotNavItem7)
         navViews.Items.Add(KBotNavItem8)

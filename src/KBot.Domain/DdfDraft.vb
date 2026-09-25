@@ -29,12 +29,10 @@ Imports System.Text
 ''' <summary>
 ''' One section-A line = one <c>FX_DDF_REV_SA</c> row. The only grid the operator edits.
 '''
-''' <para>CLASSIFICATION KEY TRAP, and it points the OTHER WAY from <c>FX_Indicatori</c>:
-''' here <see cref="IdClsf"/> is the MariaDB key (<c>Clasificatii.IDClsf</c>, confirmed by the
-''' foreign key <c>FX_DDF_REV_SA_ibfk_4</c>) and <see cref="IdClsfAcc"/> is the retained Access
-''' id. On <c>FX_Indicatori</c> the column called <c>IdClsf</c> holds the ACCESS id instead.
-''' The client sends only the MariaDB key; the server resolves <c>IdClsfAcc</c>, which is
-''' <c>NOT NULL</c> in the table, from <c>Clasificatii</c>.</para>
+''' <para>CLASSIFICATION KEY: <see cref="IdClsf"/> is the MariaDB key
+''' (<c>Clasificatii.IDClsf</c>, confirmed by the foreign key <c>FX_DDF_REV_SA_ibfk_4</c>).
+''' No Access id is kept on the line: since slice 0080-04 it lives only in
+''' <c>Clasificatii.IdClsfAcc</c>.</para>
 '''
 ''' <para><see cref="Buget"/> and <see cref="ValRec"/> ride along FOR DISPLAY ONLY. They exist
 ''' on Access's <c>tmpFX_DDF_REV_SA</c> but NOT on <c>FX_DDF_REV_SA</c>, so they are dropped at
@@ -52,8 +50,6 @@ Public NotInheritable Class DdfDraftLinieA
 
     ''' <summary>MariaDB classification key (FK to <c>Clasificatii.IDClsf</c>).</summary>
     Public Property IdClsf As Integer
-    ''' <summary>Retained Access classification id. Resolved server-side; not sent.</summary>
-    Public Property IdClsfAcc As Integer
     ''' <summary>The displayed classification ("65.03.01.20"), resolved server-side.</summary>
     Public Property Clsf As String = String.Empty
     ''' <summary>Sector + Sursa, three characters, from <c>Clasificatii.SS</c>.</summary>
@@ -118,7 +114,6 @@ Public NotInheritable Class DdfDraftLinieB
     Public Property CodAngajament As String = String.Empty
     Public Property CodIndicator As String = String.Empty
     Public Property IdClsf As Integer
-    Public Property IdClsfAcc As Integer
     ''' <summary>Resolved server-side from <c>Clasificatii</c>; the client never computes it.</summary>
     Public Property CodSsi As String = String.Empty
     Public Property Ss As String = String.Empty
@@ -289,7 +284,6 @@ Public NotInheritable Class DdfDraftRevizie
             b.CodAngajament = a.CodAngajament
             b.CodIndicator = a.CodIndicator
             b.IdClsf = a.IdClsf
-            b.IdClsfAcc = a.IdClsfAcc
             b.Ss = a.Ss
             b.IdUnitate = a.IdUnitate
             b.CodPartener = a.CodPartener
@@ -619,7 +613,6 @@ End Class
 Public NotInheritable Class DdfClasificatie
     ''' <summary>MariaDB key. <c>-1</c> marks the synthetic separator row.</summary>
     Public Property IdClsf As Integer
-    Public Property IdClsfAcc As Integer
     Public Property Clsf As String = String.Empty
     Public Property Denumire As String = String.Empty
     Public Property Ss As String = String.Empty

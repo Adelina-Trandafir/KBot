@@ -85,12 +85,65 @@ Public Class SetariAplicatieView
         Try
             If IsDisposed OrElse Not IsHandleCreated Then Return
             If InvokeRequired Then
-                BeginInvoke(New Action(AddressOf IncarcaArborele))
+                BeginInvoke(New Action(AddressOf UrmeazaSetarile))
             Else
-                IncarcaArborele()
+                UrmeazaSetarile()
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.AppSettings_Changed", ex)
+        End Try
+    End Sub
+
+    ' What follows the shared store: the tree tab and the advanced-options switch.
+    Private Sub UrmeazaSetarile()
+        IncarcaArborele()
+        Dim before As Boolean = _suppress
+        _suppress = True
+        Try
+            chkAvansate.Checked = AppSettings.Current.AdvancedOptions
+            AplicaOptiunileAvansate(AppSettings.Current.AdvancedOptions)
+        Finally
+            _suppress = before
+        End Try
+    End Sub
+
+    ' ---------------- advanced options ----------------
+
+    ' The documents tab is an advanced page (operator, 24.09.2026). Hidden while it is the
+    ' selected tab -> back to the switches, so the page never shows a tab without its button.
+    Private Sub AplicaOptiunileAvansate(shown As Boolean)
+        navPagini.SetItemVisible(PAGE_DOCUMENTE, shown)
+        If Not shown AndAlso String.Equals(navPagini.SelectedKey, PAGE_DOCUMENTE, StringComparison.Ordinal) Then
+            navPagini.SelectedKey = PAGE_GENERALE
+        End If
+    End Sub
+
+    ' Ticking asks for the password; a wrong or abandoned prompt puts the tick back. Unticking
+    ' needs nothing. The settings window follows AppSettings.Changed for its own pages.
+    Private Sub ChkAvansate_CheckedChanged(sender As Object, e As EventArgs) Handles chkAvansate.CheckedChanged
+        Try
+            If _suppress Then Return
+            If chkAvansate.Checked Then
+                Dim ok As Boolean
+                Using dlg As New ParolaAvansataForm()
+                    ok = dlg.ShowDialog(FindForm()) = DialogResult.OK
+                End Using
+                If Not ok Then
+                    _suppress = True
+                    Try
+                        chkAvansate.Checked = False
+                    Finally
+                        _suppress = False
+                    End Try
+                    RaiseEvent StatusChanged("Opțiunile avansate au rămas oprite.")
+                    Return
+                End If
+            End If
+            SalveazaComutator(Sub(s) s.AdvancedOptions = chkAvansate.Checked,
+                              If(chkAvansate.Checked, "Opțiunile avansate sunt active.", "Opțiunile avansate sunt ascunse."))
+            AplicaOptiunileAvansate(AppSettings.Current.AdvancedOptions)
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariAplicatieView.ChkAvansate_CheckedChanged", ex)
         End Try
     End Sub
 
@@ -150,6 +203,8 @@ Public Class SetariAplicatieView
             chkLogViewer.Checked = s.LogViewerEnabled
             chkShowBrowser.Checked = s.ShowBrowserButton
             chkReceptii.Checked = s.ReceptiiCheckedOnOpen
+            chkAvansate.Checked = s.AdvancedOptions
+            AplicaOptiunileAvansate(s.AdvancedOptions)
         Finally
             _suppress = False
         End Try
@@ -292,6 +347,18 @@ Public Class SetariAplicatieView
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.BtnAdobeGazduire_Click", ex)
             RaiseEvent StatusChanged("Fereastra de opțiuni nu a putut fi deschisă: " & ex.Message)
+        End Try
+    End Sub
+
+    ' The list of Adobe script alerts closed automatically (AdobeMesajeForm writes it itself).
+    Private Sub BtnMesajeAdobe_Click(sender As Object, e As EventArgs) Handles btnMesajeAdobe.Click
+        Try
+            Using dlg As New AdobeMesajeForm()
+                If dlg.ShowDialog(FindForm()) = DialogResult.OK Then RaiseEvent StatusChanged(dlg.Rezumat)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariAplicatieView.BtnMesajeAdobe_Click", ex)
+            RaiseEvent StatusChanged("Lista mesajelor Adobe nu a putut fi deschisă: " & ex.Message)
         End Try
     End Sub
 
@@ -438,7 +505,7 @@ Public Class SetariAplicatieView
                 RaiseEvent StatusChanged("Lățimea coloanei " & column & " trebuie să fie un număr între " &
                                          AppSettings.TreeColumnWidthMin & " și " & AppSettings.TreeColumnWidthMax &
                                          ". A rămas " & stored & ".")
-                IncarcaArborele()
+                UrmeazaSetarile()
                 Return
             End If
             If asked = stored Then Return
@@ -473,6 +540,7 @@ Public Class SetariAplicatieView
                 caption.BackColor = Color.Transparent
             Next
             ButtonStyles.ApplySecondary(btnAdobeGazduire, scheme)
+            ButtonStyles.ApplySecondary(btnMesajeAdobe, scheme)
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.ApplyTheme", ex)
         End Try

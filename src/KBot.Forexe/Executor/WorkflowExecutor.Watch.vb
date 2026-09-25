@@ -176,7 +176,7 @@ Partial Public Class WorkflowExecutor
     ''' Suspends (True) or resumes (False) the in-page watcher. Safe to call at any time:
     ''' when the script is not installed or the page is mid-navigation it only records the
     ''' flag, which the callback reads too, so nothing the robot does is ever forwarded.
-    ''' While suspended the page is blurred behind a card that asks the operator to wait;
+    ''' While suspended the page is covered by a solid backdrop in the theme's colour, with a card that asks the operator to wait;
     ''' <paramref name="message"/> is the card's title (the job's name), the script's own
     ''' wording when empty.
     ''' </summary>

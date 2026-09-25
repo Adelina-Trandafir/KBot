@@ -53,8 +53,9 @@
     //     operation: nothing is reported as finished, so the shell downloads nothing.
     //
     //  7. A save that changes NOTHING is stopped (operator, 21.09.2026): when the edit
-    //     form of a reservation or of a reception is on screen its value fields are
-    //     snapshotted the moment the form appears (MutationObserver + the beat); a click
+    //     form of a reservation or of a reception is on screen its value fields (for a
+    //     reception also Tip, Data and Descriere - 25.09.2026) are snapshotted the moment
+    //     the form appears (MutationObserver + the beat); a click
     //     on that form's save button - or Enter in one of its fields - with the very same
     //     values is swallowed and a blocking message tells the operator to press
     //     «Renunta» instead. Never while the robot drives, and never for a button inside
@@ -64,13 +65,15 @@
     //  8. The floating menu folds: a small button in its title row hides everything but
     //     the title row (remembered in localStorage).
     //
-    //  9. THE VEIL (operator, 21.09.2026): while a robot job drives the page everything in
-    //     it is heavily blurred and a sharp card in the middle asks the operator to wait,
-    //     with the name of the job. The blur is a class on <html> plus a stylesheet written
-    //     at script start, so a navigation in the middle of the job comes up blurred from
-    //     its first paint; the card is the one element left sharp. The veil takes no
-    //     pointer events, so the robot's clicks pass through it as if it were not there
-    //     (the operator's clicks are stopped by the window lock on the .NET side).
+    //  9. THE VEIL (operator, 21.09.2026; 24.09.2026 - solid, no blur): while a robot job
+    //     drives the page an opaque backdrop in K-BOT's theme colour (config.veil, the
+    //     colour of the view that hosts the browser) covers it, and a card in the middle
+    //     asks the operator to wait, with the name of the job. The robot's work is not
+    //     seen through it at all. The veil is a class on <html> plus a stylesheet written
+    //     at script start, so a navigation in the middle of the job comes up covered from
+    //     its first paint. The veil takes no pointer events, so the robot's clicks pass
+    //     through it as if it were not there (the operator's clicks are stopped by the
+    //     window lock on the .NET side).
     //
     // 10. DARK MODE (operator, 21.09.2026): when K-BOT itself runs a dark scheme the page is
     //     inverted (invert + hue-rotate on the root element - the one element whose filter
@@ -621,9 +624,12 @@
             fields: 'input[name^=\'tableContainer:\']',
             save: { closest: 'button.btn-success.btn-small' }
         },
+        // Tip / Data / Descriere count as much as the values (operator, 25.09.2026): a
+        // reception whose only change is its type, date or description is a real save.
         'receptie': {
             label: 'recepție',
-            fields: 'form.form-horizontal input[name$=\':valoare\']',
+            fields: 'form.form-horizontal input[name$=\':valoare\'], ' + SEL_FORM_RECEPTIE + ', ' +
+                SEL_DATA_RECEPTIE + ', ' + SEL_DESCRIERE_RECEPTIE,
             save: { closest: 'form.form-horizontal button', text: 'Salveaza' }
         }
     };
@@ -651,13 +657,20 @@
     }
 
     // A form that has just appeared is snapshotted; one that went away forgets its
-    // snapshot. A form still on screen keeps the first snapshot, whatever Wicket redraws.
+    // snapshot. A form still on screen keeps the first snapshot, whatever Wicket redraws;
+    // a field that shows up after the snapshot (rendered a beat later) joins it with the
+    // first value it is seen with, so a late field can never make every save look changed.
     function refreshGuards() {
         for (var kind in GUARDS) {
             if (!Object.prototype.hasOwnProperty.call(GUARDS, kind)) { continue; }
             var now = readFields(GUARDS[kind].fields);
             if (!now) { delete guardSnapshots[kind]; continue; }
-            if (!guardSnapshots[kind]) { guardSnapshots[kind] = now; }
+            var snap = guardSnapshots[kind];
+            if (!snap) { guardSnapshots[kind] = now; continue; }
+            for (var k in now) {
+                if (Object.prototype.hasOwnProperty.call(now, k) &&
+                    !Object.prototype.hasOwnProperty.call(snap, k)) { snap[k] = now[k]; }
+            }
         }
     }
 
@@ -771,11 +784,11 @@
             if (raw) {
                 var c = JSON.parse(raw);
                 if (c && typeof c === 'object') {
-                    return { devTools: !!c.devTools, darkMode: !!c.darkMode, rules: Array.isArray(c.rules) ? c.rules : [] };
+                    return { devTools: !!c.devTools, darkMode: !!c.darkMode, veil: veilColors(c.veil), rules: Array.isArray(c.rules) ? c.rules : [] };
                 }
             }
         } catch (ignored) { }
-        return { devTools: false, darkMode: false, rules: [] };
+        return { devTools: false, darkMode: false, veil: veilColors(null), rules: [] };
     }
 
     // From .NET: the JSON text of ForexeWatchConfig. Applied now, kept for the next load.
@@ -783,9 +796,10 @@
         var c = null;
         try { c = typeof json === 'string' ? JSON.parse(json) : json; } catch (ignored) { }
         if (!c || typeof c !== 'object') { return; }
-        config = { devTools: !!c.devTools, darkMode: !!c.darkMode, rules: Array.isArray(c.rules) ? c.rules : [] };
+        config = { devTools: !!c.devTools, darkMode: !!c.darkMode, veil: veilColors(c.veil), rules: Array.isArray(c.rules) ? c.rules : [] };
         try { localStorage.setItem(KEY_CONFIG, JSON.stringify(config)); } catch (ignored) { }
         installStyles();
+        installBusyStyle();
     }
 
     // A rule's "page" (operator, 21.09.2026): empty = every page; otherwise the rule is in
@@ -886,37 +900,57 @@
     }
 
     // ── The veil (section 9) ─────────────────────────────────────────────────
-    var BUSY_CSS =
-        'html.kbot-busy body > *:not(#kbot-watch-veil):not(#kbot-watch-menu):not(#kbot-watch-block){' +
-        'filter:blur(7px) !important;}' +
-        '#kbot-watch-veil{position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483000;' +
-        'display:none;align-items:center;justify-content:center;pointer-events:none;' +
-        'background:rgba(255,255,255,0.42);font-family:Segoe UI,Arial,sans-serif;}' +
-        'html.kbot-busy #kbot-watch-veil{display:flex;}' +
-        '#kbot-watch-veil .kbot-veil-card{display:flex;align-items:center;gap:18px;' +
-        'background:#2d2d30;color:#fff;padding:22px 34px;border-radius:12px;' +
-        'box-shadow:0 12px 44px rgba(0,0,0,0.45);max-width:70vw;}' +
-        '#kbot-watch-veil .kbot-veil-spin{width:30px;height:30px;flex:0 0 30px;border-radius:50%;' +
-        'border:4px solid rgba(255,255,255,0.22);border-top-color:#fff;' +
-        'animation:kbot-veil-spin 0.9s linear infinite;}' +
-        '#kbot-watch-veil .kbot-veil-title{font-size:18px;font-weight:600;line-height:1.3;}' +
-        '#kbot-watch-veil .kbot-veil-sub{font-size:14px;opacity:0.8;margin-top:4px;}' +
-        '@keyframes kbot-veil-spin{to{transform:rotate(360deg);}}';
+    // The colours come from .NET (ForexeWatchConfig.VeilColorsNow, the theme palette). Each
+    // one must be a plain #rrggbb - anything else falls back to the default, so nothing but
+    // a colour ever reaches the sheet. The defaults live inside the function because
+    // loadConfig() calls it at the top of the script, before any var down here is set.
+    function veilColors(v) {
+        var defaults = { back: '#f0f0f0', card: '#2d2d30', text: '#ffffff', dim: '#d0d0d0', accent: '#ffffff', border: '#2d2d30' };
+        var out = {};
+        for (var k in defaults) {
+            if (!defaults.hasOwnProperty(k)) { continue; }
+            var c = (v && typeof v === 'object') ? String(v[k] || '') : '';
+            out[k] = /^#[0-9a-fA-F]{6}$/.test(c) ? c : defaults[k];
+        }
+        return out;
+    }
 
-    // At script start, like the rules: a document loaded mid-job is blurred before it paints.
-    // True when the sheet is in the document afterwards.
+    // An opaque backdrop: nothing of the page is painted through it. The page's own
+    // elements are NOT hidden (visibility/display would make the robot's targets "not
+    // visible" to Playwright); the veil only sits on top of them.
+    function busyCss(v) {
+        return '#kbot-watch-veil{position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483000;' +
+            'display:none;align-items:center;justify-content:center;pointer-events:none;' +
+            'background:' + v.back + ' !important;font-family:Segoe UI,Arial,sans-serif;}' +
+            'html.kbot-busy #kbot-watch-veil{display:flex;}' +
+            '#kbot-watch-veil .kbot-veil-card{display:flex;align-items:center;gap:18px;' +
+            'background:' + v.card + ';color:' + v.text + ';border:1px solid ' + v.border + ';' +
+            'padding:22px 34px;border-radius:12px;' +
+            'box-shadow:0 8px 28px rgba(0,0,0,0.18);max-width:70vw;}' +
+            '#kbot-watch-veil .kbot-veil-spin{width:30px;height:30px;flex:0 0 30px;border-radius:50%;' +
+            'border:4px solid ' + v.border + ';border-top-color:' + v.accent + ';' +
+            'animation:kbot-veil-spin 0.9s linear infinite;}' +
+            '#kbot-watch-veil .kbot-veil-title{font-size:18px;font-weight:600;line-height:1.3;}' +
+            '#kbot-watch-veil .kbot-veil-sub{font-size:14px;color:' + v.dim + ';margin-top:4px;}' +
+            '@keyframes kbot-veil-spin{to{transform:rotate(360deg);}}';
+    }
+
+    // At script start, like the rules: a document loaded mid-job is covered before it paints.
+    // Rewritten when the colours change (configure). True when the sheet is in the document.
     function installBusyStyle() {
         try {
-            if (busyStyleEl && busyStyleEl.parentNode) { return true; }
-            var parent = sheetParent();
-            if (!parent) { return false; }
-            busyStyleEl = document.getElementById('kbot-watch-busy-style');
-            if (!busyStyleEl) {
-                busyStyleEl = document.createElement('style');
-                busyStyleEl.id = 'kbot-watch-busy-style';
-                busyStyleEl.textContent = BUSY_CSS;
-                parent.appendChild(busyStyleEl);
+            var css = busyCss(config.veil || veilColors(null));
+            if (!busyStyleEl || !busyStyleEl.parentNode) {
+                var parent = sheetParent();
+                if (!parent) { return false; }
+                busyStyleEl = document.getElementById('kbot-watch-busy-style');
+                if (!busyStyleEl) {
+                    busyStyleEl = document.createElement('style');
+                    busyStyleEl.id = 'kbot-watch-busy-style';
+                    parent.appendChild(busyStyleEl);
+                }
             }
+            if (busyStyleEl.textContent !== css) { busyStyleEl.textContent = css; }
             return true;
         } catch (ignored) { return false; }
     }
@@ -950,7 +984,7 @@
         try { return sessionStorage.getItem(KEY_SUSPEND_MSG) || DEFAULT_BUSY_TEXT; } catch (e) { return DEFAULT_BUSY_TEXT; }
     }
 
-    // The <html> class drives both the blur and the veil's display (see BUSY_CSS). Touches
+    // The <html> class drives the veil's display (see busyCss). Touches
     // the class only when it is wrong: the root observer of section 11 calls this too, and
     // a rewrite of an already-right class would wake it again for nothing.
     function syncBusy() {
@@ -1529,7 +1563,7 @@
 
     // The styles go in as early as the document allows - the moment <html> exists, which
     // is before anything is painted (section 11): no unstyled first paint, and a document
-    // that comes up in the middle of a robot job comes up blurred.
+    // that comes up in the middle of a robot job comes up covered.
     suspended = readSuspended();
     whenRootExists(earlyInstall);
 

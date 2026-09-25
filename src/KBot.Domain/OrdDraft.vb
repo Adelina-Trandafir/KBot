@@ -47,10 +47,10 @@ End Class
 ''' O linie de plata = un rand <c>FX_ORD_TBL</c>.
 '''
 ''' <para>CAPCANA <c>IdClsf</c>: aici <see cref="IdClsf"/> este cheia MariaDB
-''' (<c>Clasificatii.IDClsf</c>) iar <see cref="IdClsfAcc"/> este id-ul Access pastrat —
-''' INVERS fata de <c>FX_Indicatori</c>. In Access cele doua se numeau <c>IdClsfPY</c> si
-''' <c>IdClsf</c>. O linie ajunsa la salvare cu <c>IdClsf = 0</c> cade pe cheia straina, deci
-''' se valideaza pe nume inainte.</para>
+''' (<c>Clasificatii.IDClsf</c>); in Access se numea <c>IdClsfPY</c>. Id-ul Access nu se
+''' pastreaza pe linie (felia 0080-04: doar in <c>Clasificatii.IdClsfAcc</c>). O linie ajunsa
+''' la salvare cu <c>IdClsf = 0</c> cade pe cheia straina, deci se valideaza pe nume
+''' inainte.</para>
 ''' </summary>
 Public NotInheritable Class OrdDraftLinie
     Public Property TempId As Integer
@@ -69,8 +69,6 @@ Public NotInheritable Class OrdDraftLinie
 
     ''' <summary>Cheia MariaDB a clasificatiei (FK catre <c>Clasificatii.IDClsf</c>).</summary>
     Public Property IdClsf As Integer
-    ''' <summary>Id-ul Access al clasificatiei, pastrat. Nu e cheie straina.</summary>
-    Public Property IdClsfAcc As Integer
     ''' <summary>Clasificatia afisata («65.03.01.20»), rezolvata pe server.</summary>
     Public Property Clsf As String = String.Empty
     ''' <summary>Denumirea clasificatiei.</summary>

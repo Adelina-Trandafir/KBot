@@ -40,6 +40,14 @@ Public Interface IApiClient
                                  ct As CancellationToken) As Task(Of ImportExtraseRezultat)
 
     ''' <summary>
+    ''' The bank statements (GET /api/forexe/extrase/lista, slice 0080-02): the headers
+    ''' (FX_Extrase_H) and the operations (FX_Extrase). <paramref name="cod"/> = one
+    ''' angajament (operations whose CodContract is it, and their headers); Nothing or empty
+    ''' = the whole database. Hard-fail (Throw) on non-2xx; a 401 flows to WithReauth.
+    ''' </summary>
+    Function GetExtraseListaAsync(cod As String, ct As CancellationToken) As Task(Of ExtraseInfo)
+
+    ''' <summary>
     ''' Aduce lista de angajamente pentru vederea-listă din MainForm (oglindește
     ''' Angajamente_SQL). Filtrează după COALESCE(IdUnitate,0)=idUnitate; doarAnulate
     ''' comută pe filtrul anulate/suspendat/ascuns. Hard-fail (Throw) la non-2xx;

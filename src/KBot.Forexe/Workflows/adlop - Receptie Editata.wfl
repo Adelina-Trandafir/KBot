@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Workflow name="Recepție editată {{COD_ANGAJAMENT}}" startUrl="current"
-  expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
+<Workflow name="Recepție editată {{COD_ANGAJAMENT}}" startUrl="current" expectedUrl="">
+  <!-- expectedUrl stays EMPTY (25.09.2026): the angajament page opened by hand in the
+    «Browser FOREXE» view lives at /CABWeb/contract?N, not /CABWeb/home. With the old
+    expectedUrl=".../CABWeb/home" the executor saw a «wrong» URL, navigated home and threw
+    away the very page this flow reads, so the first WaitFor on the header timed out. -->
   <!-- V.1 - 23/09/2026 (slice 0076)
     Run by K-BOT right after the operator SAVED a reception by hand in the «Browser FOREXE»
     view (a new one, or an existing one opened with the eye of its row). The operator is

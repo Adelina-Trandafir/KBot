@@ -37,6 +37,8 @@ Public NotInheritable Class TransferRunner
     Private ReadOnly _clasificatii As New ClasificatiiMap()
     Private ReadOnly _parteneri As New ParteneriMap()
     Private ReadOnly _written As New WrittenKeys()
+    ''' <summary>FX_Extrase_H's unit / classification, on the run's connection. Set in Run.</summary>
+    Private _extrasRules As ExtrasHeaderRules
 
     ''' <summary>
     ''' Which rows travel. Built by the verification that unlocked this run, and handed in
@@ -81,8 +83,10 @@ Public NotInheritable Class TransferRunner
 
                 Dim order = WriteOrder.Derive(schema, maps.Select(Function(m) m.TargetTable))
                 Say("Ordinea de scriere, dedusă din cheile străine vii: " & String.Join(" ▸ ", order))
+                RequireLookupsBeforeExtrasHeader(order)
 
                 Using transaction = cn.BeginTransaction()
+                    _extrasRules = New ExtrasHeaderRules(cn, transaction, _request.CommonDatabase)
                     Try
                         If _request.PopulateUnitati AndAlso schema.HasTable("Unitati") Then
                             result.Tables.Add(WriteUnitati(cn, transaction, schema, dump, cancel))
@@ -94,6 +98,9 @@ Public NotInheritable Class TransferRunner
                             If map Is Nothing Then Continue For
                             If map.Source = SourceFile.Derived Then Continue For
                             result.Tables.Add(WriteTable(cn, transaction, schema, map, dump, cancel))
+                            If map.Derived.Any(Function(d) d.Kind = ColumnSourceKind.ExtrasHeaderRule) Then
+                                SayExtrasHeaderSummary(map, dump)
+                            End If
                         Next
 
                         transaction.Commit()
@@ -388,6 +395,8 @@ Public NotInheritable Class TransferRunner
                                  reader As AccessTableReader, verdict As RowVerdict,
                                  outcome As TableOutcome, ByRef skipRow As Boolean) As Dictionary(Of String, Object)
         Dim values As New Dictionary(Of String, Object)(StringComparer.OrdinalIgnoreCase)
+        ' FX_Extrase_H: the three columns come from ONE resolution per row.
+        Dim header As (IdUnitate As Object, IdClsf As Object, IdClsfV As Object)? = Nothing
 
         For Each mapping In plan.Mappings
             Dim target = schema.Column(map.TargetTable, mapping.TargetColumn)
@@ -419,6 +428,43 @@ Public NotInheritable Class TransferRunner
                         values(mapping.TargetColumn) = DBNull.Value
                         outcome.ValuesNulled += 1
                     End If
+
+                Case ColumnSourceKind.ClasificatieByRowUnit
+                    ' Slice 0080-01. 0 / NULL = no classification in Access, travels as NULL.
+                    Dim accessId = Verifier.AsInteger(reader.ValueOrMissing(mapping.AccessColumn))
+                    If Not accessId.HasValue OrElse accessId.Value = 0 Then
+                        values(mapping.TargetColumn) = DBNull.Value
+                    Else
+                        Dim clsfUnit = _ownership.ClassificationUnit(reader, verdict)
+                        Dim assigned As Integer
+                        If clsfUnit.HasValue AndAlso
+                           _clasificatii.TryResolve(accessId.Value, clsfUnit.Value, assigned) Then
+                            values(mapping.TargetColumn) = assigned
+                        Else
+                            ' The verifier's dry run should have stopped this already. The
+                            ' writer refuses too: no row is written without its key.
+                            Throw New TransferException(
+                                $"«{map.TargetTable}»: clasificația Access {accessId.Value} " &
+                                If(clsfUnit.HasValue, $"a unității {clsfUnit.Value} nu se regăsește în «Clasificatii» transferate.",
+                                   "aparține unui rând căruia nu i se poate afla unitatea.") &
+                                " Rularea s-a oprit (ROLLBACK) — nimic nu s-a scris.")
+                        End If
+                    End If
+
+                Case ColumnSourceKind.ExtrasHeaderRule
+                    If Not header.HasValue Then
+                        header = _extrasRules.Resolve(Verifier.AsText(reader.ValueOrMissing("Cont")),
+                                                      Verifier.AsText(reader.ValueOrMissing("CodIBAN")))
+                    End If
+                    Select Case mapping.TargetColumn.ToUpperInvariant()
+                        Case "IDUNITATE" : values(mapping.TargetColumn) = header.Value.IdUnitate
+                        Case "IDCLSF" : values(mapping.TargetColumn) = header.Value.IdClsf
+                        Case "IDCLSFV" : values(mapping.TargetColumn) = header.Value.IdClsfV
+                        Case Else
+                            Throw New TransferException(
+                                $"«{map.TargetTable}»: regulile antetului de extras nu cunosc coloana " &
+                                $"«{mapping.TargetColumn}».")
+                    End Select
 
                 Case ColumnSourceKind.ClasificatieSursaSector
                     ' All three written since slice 0075-00. Capitol comes from the SAME row:
@@ -462,6 +508,49 @@ Public NotInheritable Class TransferRunner
 
         Return values
     End Function
+
+    ' ---- FX_Extrase_H -------------------------------------------------------------------
+
+    ''' <summary>
+    ''' <see cref="ExtrasHeaderRules"/> reads Clasificatii and Clasificatii_Venituri off the
+    ''' target while FX_Extrase_H is written, so when this run writes them too they must come
+    ''' first (Unitati is written before every table anyway). No foreign key orders them today (FX_Extrase_H has none onto them);
+    ''' the nomenclators lead the seed order, which is what puts them first - this refuses
+    ''' the run, before anything is written, if that ever stops being true.
+    ''' </summary>
+    Private Shared Sub RequireLookupsBeforeExtrasHeader(order As IReadOnlyList(Of String))
+        Dim header = IndexOf(order, ExtrasHeaderRules.TableName)
+        If header < 0 Then Return
+        For Each lookup In {"Clasificatii", "Clasificatii_Venituri"}
+            Dim at = IndexOf(order, lookup)
+            If at > header Then
+                Throw New TransferException(
+                    $"«{lookup}» s-ar scrie după «{ExtrasHeaderRules.TableName}», dar unitatea și " &
+                    "clasificația antetelor de extras se caută în ea. Rularea nu a pornit.")
+            End If
+        Next
+    End Sub
+
+    Private Shared Function IndexOf(order As IReadOnlyList(Of String), table As String) As Integer
+        For i = 0 To order.Count - 1
+            If String.Equals(order(i), table, StringComparison.OrdinalIgnoreCase) Then Return i
+        Next
+        Return -1
+    End Function
+
+    ''' <summary>What the header rules produced, and every distinct warning, in the log and the journal.</summary>
+    Private Sub SayExtrasHeaderSummary(map As TableMap, dump As SqlDumpWriter)
+        Dim rules = _extrasRules
+        Dim line = $"«{map.TargetTable}»: unitate găsită pe {rules.WithUnit} antete, fără unitate " &
+                   $"{rules.WithoutUnit}; clasificație (IdClsf) pe {rules.WithClsf}, clasificație " &
+                   $"de venituri (IdClsfV) pe {rules.WithClsfV}."
+        Say(line)
+        dump.WriteComment(map.TargetTable, line)
+        For Each warning In rules.Warnings
+            Say("   " & warning)
+            dump.WriteComment(map.TargetTable, warning)
+        Next
+    End Sub
 
     ' ---- unit and parent filtering ---------------------------------------------------
 
@@ -725,6 +814,7 @@ Public NotInheritable Class TransferRunner
         lines.Add($"Cod fiscal folosit:      {If(used.Length = 0, "(lipsă)", used)}" &
                   If(String.Equals(used, fromRegistry, StringComparison.Ordinal), String.Empty, "   ◂ SUPRASCRIS de operator"))
         lines.Add($"Operator:  {_request.OperatorName}")
+        lines.Add($"Migrator:  versiunea {MigratorVersion.Text}")
         lines.Add($"Pornit:    {DateTime.Now:yyyy-MM-dd HH:mm:ss}")
         lines.Add(String.Empty)
         lines.Add("Unități:")

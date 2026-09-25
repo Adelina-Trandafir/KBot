@@ -17,6 +17,11 @@ Imports KBot.Common
 ''' That is a real advantage of reading Access directly, and it is why this class is
 ''' short: the only work left is NULL handling, the tinyint(1) question, and empty text.
 ''' </para>
+''' <para>
+''' One exception since slice 0080-01: a date typed into an Access TEXT column arrives as a
+''' String, and a MariaDB date column refuses <c>31.12.2025</c> (1292). Such text is read by
+''' <see cref="TryReadDate"/>; text that is not a date stops the run with its value named.
+''' </para>
 ''' </remarks>
 Public NotInheritable Class ValueConverter
 
@@ -48,6 +53,19 @@ Public NotInheritable Class ValueConverter
                 If text.Length = 0 AndAlso target IsNot Nothing AndAlso Not IsTextual(target) Then
                     Return DBNull.Value
                 End If
+                ' An Access TEXT column holding a date, going into a MariaDB date column
+                ' (slice 0080-01: FX_Extrase.DataDoc, which carries 31.12.2025, 31/12/2025
+                ' and 2025-12-31 00:00:00 side by side). MariaDB reads none of the first two.
+                If IsDateLike(target) Then
+                    If text.Trim().Length = 0 Then Return DBNull.Value
+                    Dim parsed As DateTime
+                    If Not TryReadDate(text, parsed) Then
+                        Throw New TransferException(
+                            $"Valoarea «{text}» nu poate fi citită ca dată pentru coloana «{target.Name}». " &
+                            "Formele acceptate: zz.ll.aaaa, zz/ll/aaaa, aaaa-ll-zz (cu sau fără oră).")
+                    End If
+                    Return If(IsDateOnly(target), parsed.Date, parsed)
+                End If
                 Return text
             End If
 
@@ -69,6 +87,106 @@ Public NotInheritable Class ValueConverter
                 Return False
         End Select
     End Function
+
+    ''' <summary>True when the target column holds a date, with or without a time.</summary>
+    Public Shared Function IsDateLike(target As TargetColumn) As Boolean
+        If target Is Nothing OrElse target.DataType Is Nothing Then Return False
+        Select Case target.DataType.ToLowerInvariant()
+            Case "date", "datetime", "timestamp"
+                Return True
+            Case Else
+                Return False
+        End Select
+    End Function
+
+    Private Shared Function IsDateOnly(target As TargetColumn) As Boolean
+        Return String.Equals(target.DataType, "date", StringComparison.OrdinalIgnoreCase)
+    End Function
+
+    ''' <summary>
+    ''' Reads a date typed as text, by the same rules as the Python migrator
+    ''' (<c>PYTHON/routes/migrare/parser.py</c>), so the two read an Access file alike.
+    ''' </summary>
+    ''' <remarks>
+    ''' <list type="bullet">
+    ''' <item>A first number above 31 is the year: <c>yyyy-mm-dd</c>, nothing to guess.</item>
+    ''' <item>Otherwise the third number is the year; two digits below 70 are 20xx, else 19xx.</item>
+    ''' <item>«.» and «-» are DAY first. «/» with a four-digit year is DAY first (typed by a
+    ''' person on a Romanian system); «/» with a two-digit year is MONTH first (mdbtools'
+    ''' own output). A number above 12 settles the order whatever the rule says.</item>
+    ''' <item>An optional time follows (<c>hh:mm[:ss][.fff] [AM|PM]</c>, or after a <c>T</c>).</item>
+    ''' </list>
+    ''' </remarks>
+    Public Shared Function TryReadDate(text As String, ByRef result As DateTime) As Boolean
+        result = DateTime.MinValue
+        If text Is Nothing Then Return False
+        Dim m = DatePart.Match(text)
+        If Not m.Success Then Return False
+
+        Dim a = Integer.Parse(m.Groups("a").Value, CultureInfo.InvariantCulture)
+        Dim b = Integer.Parse(m.Groups("b").Value, CultureInfo.InvariantCulture)
+        Dim c = Integer.Parse(m.Groups("c").Value, CultureInfo.InvariantCulture)
+        Dim separator = m.Groups("sep").Value
+
+        Dim year, month, day As Integer
+        If a > 31 Then
+            year = a : month = b : day = c
+        Else
+            Dim monthFirst As Boolean
+            If c < 100 Then
+                year = If(c < 70, 2000 + c, 1900 + c)
+                monthFirst = True
+            Else
+                year = c
+                monthFirst = False
+            End If
+            If separator <> "/" Then monthFirst = False
+
+            If a > 12 AndAlso b > 12 Then Return False
+            If a > 12 Then
+                monthFirst = False
+            ElseIf b > 12 Then
+                monthFirst = True
+            End If
+            If monthFirst Then
+                month = a : day = b
+            Else
+                day = a : month = b
+            End If
+        End If
+
+        If year < 1 OrElse year > 9999 OrElse month < 1 OrElse month > 12 Then Return False
+        If day < 1 OrElse day > DateTime.DaysInMonth(year, month) Then Return False
+
+        Dim hour, minute, second As Integer
+        If Not TryReadTime(m.Groups("tail").Value, hour, minute, second) Then Return False
+        result = New DateTime(year, month, day, hour, minute, second)
+        Return True
+    End Function
+
+    Private Shared Function TryReadTime(tail As String, ByRef hour As Integer,
+                                        ByRef minute As Integer, ByRef second As Integer) As Boolean
+        hour = 0 : minute = 0 : second = 0
+        If String.IsNullOrWhiteSpace(tail) Then Return True
+        Dim m = TimePart.Match(tail)
+        If Not m.Success Then Return False
+        hour = Integer.Parse(m.Groups("h").Value, CultureInfo.InvariantCulture)
+        minute = Integer.Parse(m.Groups("m").Value, CultureInfo.InvariantCulture)
+        If m.Groups("s").Success Then second = Integer.Parse(m.Groups("s").Value, CultureInfo.InvariantCulture)
+        Dim ampm = m.Groups("ampm").Value.ToLowerInvariant()
+        If ampm = "pm" AndAlso hour < 12 Then
+            hour += 12
+        ElseIf ampm = "am" AndAlso hour = 12 Then
+            hour = 0
+        End If
+        Return hour <= 23 AndAlso minute <= 59 AndAlso second <= 59
+    End Function
+
+    Private Shared ReadOnly DatePart As New Text.RegularExpressions.Regex(
+        "^\s*(?<a>\d{1,4})\s*(?<sep>[/.\-])\s*(?<b>\d{1,2})\s*\k<sep>\s*(?<c>\d{1,4})(?<tail>.*)$")
+
+    Private Shared ReadOnly TimePart As New Text.RegularExpressions.Regex(
+        "^[\sT]*(?<h>\d{1,2}):(?<m>\d{2})(?::(?<s>\d{2}))?(?:\.\d+)?\s*(?<ampm>[AaPp][Mm])?\s*$")
 
     ''' <summary>
     ''' True when this value counts as an orphan in a foreign-key column whose parent key

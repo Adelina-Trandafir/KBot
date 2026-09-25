@@ -51,9 +51,9 @@ setat, altfel primul, si LOGHEAZA un avertisment cand numarul e mai mare ca 1. N
 voie sa aleaga tacut.
 
 Clasificatia (`Clsf`) — NU are nevoie de tratamentul IdClsfAcc + IdUnitate din 0011-03:
-  - `routes/ddf/sync_acc_mdb.py` (liniile 7-8) documenteaza maparea:
-        Access.IdClsf   -> MariaDB.IdClsfAcc
+  - `routes/ddf/sync_acc_mdb.py` documenteaza maparea:
         Access.IdClsfPY -> MariaDB.IdClsf   (FK Clasificatii)
+        Access.IdClsf   -> not kept (since 0080-04 only in Clasificatii.IdClsfAcc)
     iar DDL-ul confirma: `FX_DDF_REV_SA_ibfk_4 FOREIGN KEY (IdClsf) REFERENCES
     Clasificatii (IDClsf)`. Pe ACEASTA tabela MariaDB.IdClsf tine deja CHEIA PRIMARA
     a nomenclatorului — INVERS fata de FX_Indicatori, unde IdClsf tine id-ul Access.
