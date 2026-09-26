@@ -425,7 +425,7 @@ _SQL_GEN_INDICATORI = (
     "  CONCAT(C.SS, C.ClsfSal)                         AS CodSSI, "
     "  A.DataCreare                                    AS DataRezervare, "
     "  H.CodAI, H.CodAngajament, H.CodIndicator, "
-    "  I.Prevedere_Bugetara_Initiala                   AS Buget, "
+    "  I.Credit_Bugetar                                AS Buget, "
     "  0                                               AS ValPrec, "
     "  H.Val_Rezervare_I                               AS Suma "
     "FROM FX_Istoric H "

@@ -114,6 +114,10 @@ Public Class ForexeControllerFailureTests
             Return Task.FromResult(String.Empty)
         End Function
 
+        Public Function ReadUncorrectedOperationsAsync() As Task(Of String) Implements IForexeRunner.ReadUncorrectedOperationsAsync
+            Return Task.FromResult(String.Empty)
+        End Function
+
         ' Silences the "event never raised" warning without changing behaviour.
         Private Sub Nefolosit()
             RaiseEvent StatusUpdated(Me, String.Empty)

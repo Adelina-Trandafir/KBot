@@ -40,6 +40,8 @@ Friend NotInheritable Class KBotComboFindList
 
     ''' <summary>A row was clicked. The argument is the index in the COMBO's items.</summary>
     Public Event RowChosen(itemIndex As Integer)
+    ''' <summary>The «new item» row (<see cref="KBotComboBox.OfferNewItem"/>) was clicked.</summary>
+    Public Event NewItemChosen()
 
     Public Sub New(combo As KBotComboBox)
         ArgumentNullException.ThrowIfNull(combo)
@@ -88,6 +90,13 @@ Friend NotInheritable Class KBotComboFindList
         Get
             If _selected < 0 OrElse _selected >= _rows.Count Then Return -1
             Return _rows(_selected).ItemIndex
+        End Get
+    End Property
+
+    ''' <summary>Is the highlighted row the «new item» row?</summary>
+    Public ReadOnly Property SelectedIsNewItem As Boolean
+        Get
+            Return _selected >= 0 AndAlso _selected < _rows.Count AndAlso _rows(_selected).IsNewItem
         End Get
     End Property
 
@@ -178,10 +187,17 @@ Friend NotInheritable Class KBotComboFindList
                     End Using
                 End If
                 Dim textArea As New Rectangle(r.Left + padX, r.Top, Math.Max(0, r.Width - padX), r.Height)
-                TextRenderer.DrawText(g, _rows(i).Caption, _combo.Font, textArea,
-                                      If(sel, _combo.EffectiveSelectionForeColor, _combo.ForeColor),
-                                      TextFormatFlags.VerticalCenter Or TextFormatFlags.Left Or
-                                      TextFormatFlags.EndEllipsis Or TextFormatFlags.NoPrefix)
+                Dim fore As Color = If(sel, _combo.EffectiveSelectionForeColor, _combo.ForeColor)
+                Const flags As TextFormatFlags = TextFormatFlags.VerticalCenter Or TextFormatFlags.Left Or
+                                                 TextFormatFlags.EndEllipsis Or TextFormatFlags.NoPrefix
+                If _rows(i).IsNewItem Then
+                    ' The «new item» row is an action, not a value: italic, so it never reads as one.
+                    Using f As New Font(_combo.Font, FontStyle.Italic)
+                        TextRenderer.DrawText(g, _rows(i).Caption, f, textArea, fore, flags)
+                    End Using
+                Else
+                    TextRenderer.DrawText(g, _rows(i).Caption, _combo.Font, textArea, fore, flags)
+                End If
             Next
 
             ' A thin thumb says "there is more than you see"; the wheel moves it.
@@ -227,7 +243,11 @@ Friend NotInheritable Class KBotComboFindList
             If e.Button <> MouseButtons.Left Then Return
             Dim i As Integer = RowAt(e.Location)
             If i < 0 Then Return
-            RaiseEvent RowChosen(_rows(i).ItemIndex)
+            If _rows(i).IsNewItem Then
+                RaiseEvent NewItemChosen()
+            Else
+                RaiseEvent RowChosen(_rows(i).ItemIndex)
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("KBotComboFindList.OnMouseDown", ex)
         End Try
@@ -250,13 +270,22 @@ Friend NotInheritable Class KBotComboFindList
     End Sub
 End Class
 
-''' <summary>One row of the find list: what it shows and which of the combo's items it stands for.</summary>
+''' <summary>One row of the find list: what it shows and which of the combo's items it stands for.
+''' The «new item» row stands for none (<see cref="ItemIndex"/> = -1).</summary>
 Friend NotInheritable Class KBotComboFindRow
     Public ReadOnly Property ItemIndex As Integer
     Public ReadOnly Property Caption As String
+    Public ReadOnly Property IsNewItem As Boolean
 
     Public Sub New(itemIndex As Integer, caption As String)
         Me.ItemIndex = itemIndex
         Me.Caption = If(caption, String.Empty)
     End Sub
+
+    ''' <summary>The row <see cref="KBotComboBox.OfferNewItem"/> shows when nothing matches.</summary>
+    Public Shared Function NewItem(caption As String) As KBotComboFindRow
+        Dim r As New KBotComboFindRow(-1, caption)
+        r._IsNewItem = True
+        Return r
+    End Function
 End Class

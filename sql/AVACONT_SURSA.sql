@@ -484,7 +484,7 @@ CREATE TABLE `FX_Indicatori`  (
   `CodIndicator` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
   `IdClsf` int(11) NULL DEFAULT NULL COMMENT 'Clasificatii.IDClsf (0080-01)',
   `IndicatorFX` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
-  `Prevedere_Bugetara_Initiala` double NULL DEFAULT NULL,
+  `Credit_Bugetar` double NULL DEFAULT NULL COMMENT 'rename:Prevedere_Bugetara_Initiala',
   `Credit_Bugetar_Initial` double NULL DEFAULT NULL,
   `Angajament_Legal` double NULL DEFAULT NULL,
   `Credit_Bugetar_Definitiv` double NULL DEFAULT NULL,

@@ -83,6 +83,10 @@ Namespace KBot.Forexe
         ' menu is not in the page yet, or without a session. Never throws.
         Function ReadPageAngajamentAsync() As Task(Of String)
 
+        ' The «Operatiuni necorectate» table of the page on screen, as JSON (slice 0084):
+        ' {"found", "pages", "rows"}. Empty without a session. Throws when the page cannot answer.
+        Function ReadUncorrectedOperationsAsync() As Task(Of String)
+
         ' The operator's page choices (developer tools, CSS rules) from AppSettings.Current,
         ' sent to the page now. Quiet without a session or without the menu in the page.
         Function ApplyPageConfigAsync() As Task

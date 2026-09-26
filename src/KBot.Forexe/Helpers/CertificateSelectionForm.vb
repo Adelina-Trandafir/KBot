@@ -125,7 +125,8 @@ Public Class CertificateSelectionForm
     Private Const IconSizeLogic As Integer = 40
     Private Const IconGapLogic As Integer = 15         ' circle -> text
     Private Const ParagraphGapLogic As Integer = 6     ' name -> details (the "paragraph spacing")
-    Private Const LineGapLogic As Integer = 2          ' between the two detail lines
+    Private Const LineGapLogic As Integer = 2          ' between the detail lines
+    Private Const DetailLineCount As Integer = 3       ' issuer, expiry, serial number
 
     Private _titleFont As Font
     Private _detailFont As Font
@@ -156,7 +157,7 @@ Public Class CertificateSelectionForm
     End Sub
 
     ''' <summary>
-    ''' Height of one item = padding + name line + paragraph gap + two detail lines + padding,
+    ''' Height of one item = padding + name line + paragraph gap + the detail lines + padding,
     ''' measured with the real fonts, so the item grows with the DPI instead of clipping.
     ''' </summary>
     Private Sub lstCertificates_MeasureItem(sender As Object, e As MeasureItemEventArgs) Handles lstCertificates.MeasureItem
@@ -164,7 +165,8 @@ Public Class CertificateSelectionForm
             EnsureItemFonts()
             Dim titleH As Integer = CInt(Math.Ceiling(_titleFont.GetHeight(e.Graphics)))
             Dim detailH As Integer = CInt(Math.Ceiling(_detailFont.GetHeight(e.Graphics)))
-            Dim textH As Integer = titleH + Px(ParagraphGapLogic) + detailH + Px(LineGapLogic) + detailH
+            Dim textH As Integer = titleH + Px(ParagraphGapLogic) +
+                                   DetailLineCount * detailH + (DetailLineCount - 1) * Px(LineGapLogic)
             e.ItemHeight = Math.Min(255, 2 * Px(ItemPadLogic) + Math.Max(textH, Px(IconSizeLogic)))
         Catch ex As Exception
             GlobalErrorLog.Write("CertificateSelectionForm.lstCertificates_MeasureItem", ex)
@@ -220,8 +222,12 @@ Public Class CertificateSelectionForm
                 g.DrawString(issuerName, _detailFont, detailBrush, textLeft, issuerTop)
 
                 Dim expireTop As Integer = issuerTop + detailH + Px(LineGapLogic)
-                Dim expireText As String = $"Expiră: {cert.NotAfter:dd.MM.yyyy}  |  SN: {cert.SerialNumber}"
+                Dim expireText As String = $"Expiră: {cert.NotAfter:dd.MM.yyyy}"
                 g.DrawString(expireText, _detailFont, If(cert.NotAfter < DateTime.Now, Brushes.Red, detailBrush), textLeft, expireTop)
+
+                ' Own line, never clipped: two certificates of the same holder differ only here.
+                Dim serialTop As Integer = expireTop + detailH + Px(LineGapLogic)
+                g.DrawString($"SN: {cert.SerialNumber}", _detailFont, detailBrush, textLeft, serialTop)
             End Using
 
             If isSelected Then

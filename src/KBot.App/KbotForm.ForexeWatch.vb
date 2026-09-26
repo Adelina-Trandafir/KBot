@@ -54,6 +54,7 @@ Partial Public Class KbotForm
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         Try
             DezleagaUrmarirea()
+            DezleagaOperatiunileNecorectate()   ' slice 0084 - KbotForm.UncorrectedOperations.vb
             DezleagaBrowserul()
             DezleagaOptiunileArborelui()   ' slice 0777 - KbotForm.TreeOptions.vb
         Catch ex As Exception

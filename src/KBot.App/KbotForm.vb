@@ -198,6 +198,8 @@ Public Class KbotForm
             forexeFooter.Bind(_controller)
             ' The in-page watcher's finished operations (slice 0073) - see KbotForm.ForexeWatch.vb.
             LeagaUrmarirea()
+            ' The login's «Operatiuni necorectate» warning (slice 0084) - see KbotForm.UncorrectedOperations.vb.
+            LeagaOperatiunileNecorectate()
             ' The «Browser FOREXE» view's gate on the session (slice 0074) - see KbotForm.Browser.vb.
             LeagaBrowserul()
 

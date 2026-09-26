@@ -535,7 +535,7 @@ def _calculeaza_val_rezervare_dif(cursor, cod: str) -> None:
 #     o a doua scriere ar esua zgomotos oricum -- dar filtrul e cel care o previne.)
 _REZ_SELECT = (
     "SELECT H.ID, I.CodAI, I.CodAngajament, I.CodIndicator, I.IdClsf, "
-    "  DATE(H.DataFX) AS DataRezervare, I.Prevedere_Bugetara_Initiala AS R_CreditBug, "
+    "  DATE(H.DataFX) AS DataRezervare, I.Credit_Bugetar AS R_CreditBug, "
     "  H.Val_Rezervare_I AS R_Initiala, H.Val_AngLeg AS R_Definitiva, "
     "  {valoare} AS R_Valoare, H.Val_Rezervare_Ant, H.IDREV, "
     "  (SELECT C.Clsf FROM Clasificatii C WHERE C.IDClsf = I.IdClsf LIMIT 1) AS ClsfSort "

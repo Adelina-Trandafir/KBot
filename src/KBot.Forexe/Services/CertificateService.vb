@@ -116,41 +116,56 @@ Public Class CertificateService
             Using store As New X509Store(StoreName.My, location)
                 store.Open(OpenFlags.ReadOnly)
                 For Each cert As X509Certificate2 In store.Certificates
-                    If Not cert.HasPrivateKey Then Continue For
-                    If DateTime.Now > cert.NotAfter Then Continue For
-                    If DateTime.Now < cert.NotBefore Then Continue For
-                    If Not IsValidHardwareCertificate(cert) Then Continue For
-                    If Not certificates.Any(Function(c) c.Thumbprint = cert.Thumbprint) Then
-                        certificates.Add(cert)
+                    ' Only the thumbprint makes two certificates "the same": two certificates with
+                    ' one holder name (e.g. an old and a new token) are both listed.
+                    Dim reason As String = RejectReason(cert)
+                    If reason Is Nothing AndAlso certificates.Any(Function(c) c.Thumbprint = cert.Thumbprint) Then
+                        reason = "already listed (same thumbprint)"
                     End If
+                    CertificateLog.Write($"{location} | {GetCommonName(cert)} | SN {cert.SerialNumber} | " &
+                                         $"{cert.NotBefore:dd.MM.yyyy}-{cert.NotAfter:dd.MM.yyyy} | " &
+                                         If(reason Is Nothing, "ACCEPTED", "REJECTED: " & reason))
+                    If reason Is Nothing Then certificates.Add(cert)
                 Next
             End Using
         Catch ex As Exception
-            ' Înghițire intenționată: un magazin inaccesibil nu trebuie să pice enumerarea
-            ' celuilalt magazin; logăm și continuăm.
+            ' Deliberate swallow: an unreadable store must not stop the other store from being
+            ' enumerated; logged, then carry on.
             GlobalErrorLog.Write("CertificateService.AddCertificatesFromStore", ex)
         End Try
     End Sub
 
     ''' <summary>
-    ''' Verifică dacă certificatul este stocat pe un dispozitiv hardware sau este eligibil.
-    ''' Implementează logica strictă de validare și folosește USING pentru a nu bloca PIN-ul.
+    ''' Why <paramref name="cert"/> does not belong in the picker, or Nothing when it does.
+    ''' Every rule returns its own reason, so certificate_filter.log says which one fired.
+    ''' Public for the DevHarness certificate inventory, which prints the picker's verdict per certificate.
     ''' </summary>
-    Private Shared Function IsValidHardwareCertificate(cert As X509Certificate2) As Boolean
+    Public Shared Function RejectReason(cert As X509Certificate2) As String
+        If Not cert.HasPrivateKey Then Return "no private key"
+        If DateTime.Now > cert.NotAfter Then Return "expired"
+        If DateTime.Now < cert.NotBefore Then Return "not valid yet"
+        Return HardwareRejectReason(cert)
+    End Function
+
+    ''' <summary>
+    ''' The hardware rules: the key lives on a token/smart card (or carries Client Authentication),
+    ''' is not exportable and is not in a Microsoft software provider. Nothing = accepted.
+    ''' USING releases the smart card handle right away, so the PIN is not locked.
+    ''' </summary>
+    Private Shared Function HardwareRejectReason(cert As X509Certificate2) As String
         Try
-            ' !!! USING este critic aici pentru a elibera handle-ul către Smart Card imediat !!!
             Using rsaPrivateKey As RSA = cert.GetRSAPrivateKey()
-                If rsaPrivateKey Is Nothing Then Return False
+                If rsaPrivateKey Is Nothing Then Return "private key is not RSA (" & cert.PublicKey.Oid.FriendlyName & ")"
 
                 Dim providerName As String = ""
                 Dim isNonExportable As Boolean = False
                 Dim isHardwareProvider As Boolean = False
 
-                ' --- A. Identificare Provider și Export Policy ---
+                ' A. Provider and export policy.
                 Dim cngKey As RSACng = TryCast(rsaPrivateKey, RSACng)
                 If cngKey IsNot Nothing Then
                     providerName = cngKey.Key.Provider.Provider
-                    ' Bitul AllowPlaintextExport = 0 înseamnă că nu se poate exporta (deci e sigur/hardware)
+                    ' AllowPlaintextExport bit = 0 means the key cannot leave the device.
                     isNonExportable = (cngKey.Key.ExportPolicy And CngExportPolicies.AllowPlaintextExport) = 0
                 Else
                     Dim capiKey As RSACryptoServiceProvider = TryCast(rsaPrivateKey, RSACryptoServiceProvider)
@@ -160,7 +175,7 @@ Public Class CertificateService
                     End If
                 End If
 
-                ' --- B. BLACKLIST: Excludem explicit providerii software Microsoft ---
+                ' B. Blacklist: the standard Microsoft software providers.
                 Dim microsoftSoftwareProviders As String() = {
                     "Microsoft Strong Cryptographic Provider",
                     "Microsoft Enhanced Cryptographic Provider",
@@ -168,15 +183,13 @@ Public Class CertificateService
                     "Microsoft Software Key Storage Provider"
                 }
 
-                Dim isMicrosoftSoftware As Boolean = False
                 For Each msProvider In microsoftSoftwareProviders
                     If providerName.Equals(msProvider, StringComparison.OrdinalIgnoreCase) Then
-                        isMicrosoftSoftware = True
-                        Return False
+                        Return "software provider '" & providerName & "'"
                     End If
                 Next
 
-                ' --- C. WHITELIST: Acceptăm providerii hardware cunoscuți ---
+                ' C. Whitelist: known hardware providers.
                 Dim hardwareProviders As String() = {
                     "Smart Card", "Token", "Athena", "SafeNet", "eToken",
                     "Aladdin", "Gemalto", "Feitian", "JaCarta", "Oberthur",
@@ -190,14 +203,13 @@ Public Class CertificateService
                     End If
                 Next
 
-                ' --- D. Verificăm Extended Key Usage (EKU) pentru Client Authentication ---
-                ' Unele certificate (ex: Cloud) nu apar ca hardware provider clasic, dar au acest flag.
+                ' D. Extended Key Usage: Client Authentication (1.3.6.1.5.5.7.3.2). Some certificates
+                ' (e.g. cloud ones) do not show a classic hardware provider but carry this flag.
                 Dim hasClientAuth As Boolean = False
                 For Each extension In cert.Extensions
                     If TypeOf extension Is X509EnhancedKeyUsageExtension Then
                         Dim ekuExt As X509EnhancedKeyUsageExtension = DirectCast(extension, X509EnhancedKeyUsageExtension)
                         For Each oid In ekuExt.EnhancedKeyUsages
-                            ' OID pentru Client Authentication: 1.3.6.1.5.5.7.3.2
                             If oid.Value = "1.3.6.1.5.5.7.3.2" Then
                                 hasClientAuth = True
                                 Exit For
@@ -206,34 +218,30 @@ Public Class CertificateService
                     End If
                 Next
 
-                ' --- E. LOGICA FINALĂ DE VALIDARE ---
-                ' 1. Trebuie să nu fie exportabil.
-                ' 2. Trebuie să NU fie un provider software Microsoft standard.
-                ' 3. Trebuie să fie (Hardware Provider Cunoscut) SAU (Să aibă Client Auth).
-                Dim isValid As Boolean = isNonExportable AndAlso
-                                         Not isMicrosoftSoftware AndAlso
-                                         (isHardwareProvider OrElse hasClientAuth)
-
-                ' --- F. Filtrare suplimentară pe nume (Excludem Localhost/Test) ---
-                If isValid Then
-                    Dim cnMatch As Match = Regex.Match(cert.Subject, "CN=([^,]+)")
-                    Dim cn As String = If(cnMatch.Success, cnMatch.Groups(1).Value, "")
-
-                    If cn.IndexOf("localhost", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
-                       cn.IndexOf("test", StringComparison.OrdinalIgnoreCase) >= 0 Then
-                        isValid = False
-                    End If
+                ' E. Final rule: not exportable AND (known hardware provider OR Client Auth).
+                If Not isNonExportable Then Return "exportable key (provider '" & providerName & "')"
+                If Not (isHardwareProvider OrElse hasClientAuth) Then
+                    Return "provider '" & providerName & "' is not a known token and there is no Client Authentication"
                 End If
 
-                Return isValid
+                ' F. Name filter: no localhost / test certificates.
+                Dim cnMatch As Match = Regex.Match(cert.Subject, "CN=([^,]+)")
+                Dim cn As String = If(cnMatch.Success, cnMatch.Groups(1).Value, "")
 
-            End Using ' <--- Aici se închide conexiunea cu cardul pentru acest certificat
+                If cn.IndexOf("localhost", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+                   cn.IndexOf("test", StringComparison.OrdinalIgnoreCase) >= 0 Then
+                    Return "name contains localhost/test"
+                End If
+
+                Return Nothing
+
+            End Using ' <-- the connection to the card closes here for this certificate
 
         Catch ex As Exception
-            ' Înghițire intenționată: la eroare (ex: driver lipsă) considerăm certificatul
-            ' invalid ca să nu crăpăm aplicația; logăm totuși în sink-ul global.
-            GlobalErrorLog.Write("CertificateService.IsValidHardwareCertificate", ex)
-            Return False
+            ' Deliberate swallow: an error here (e.g. token not plugged in, missing driver) makes
+            ' the certificate ineligible instead of crashing the picker; still logged globally.
+            GlobalErrorLog.Write("CertificateService.HardwareRejectReason", ex)
+            Return "error reading the private key: " & ex.Message
         End Try
     End Function
 

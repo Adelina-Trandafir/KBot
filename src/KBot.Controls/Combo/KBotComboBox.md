@@ -31,6 +31,14 @@ Everything `ComboBox` offers, plus:
 - `InputMask: String = ""` — what may be typed; the literals are written by the mask (slice 0082,
   see below). An invalid mask THROWS.
 - `UnmaskedText` (read-only, not serialized) — the typed characters only, without the literals.
+- `OfferNewItem: Boolean = False` — slice 0083. Only with `LimitToList = True`: when the list has
+  nothing to show (the typed text matches no row, or the combo has no items and the drop-down is
+  opened), ONE italic row `OfferNewItemText` is shown under the box instead. A click or Enter on it
+  raises `NewItemRequested`. Works with or without `FindAsYouType`.
+- `OfferNewItemText: String = "Adaugă un element nou…"` — the text of that row; empty = default.
+- `NewItemRequested(sender, KBotComboNewItemEventArgs)` — `e.Text` = the typed text (empty on a
+  non-editable combo). If the handler adds an item whose caption is exactly that text, the combo
+  selects it.
 - `FindMatches(captions, typed)` (Shared, pure) — the matcher the find list uses.
 - `ApplyTheme(scheme)`
 

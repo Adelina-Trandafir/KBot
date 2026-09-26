@@ -213,6 +213,17 @@ Namespace KBot.Forexe
             Return Await _executor.ReadPageAngajamentAsync()
         End Function
 
+        ''' <summary>The «Operatiuni necorectate» table of the page (slice 0084); empty without a session.</summary>
+        Public Async Function ReadUncorrectedOperationsAsync() As Task(Of String) Implements IForexeRunner.ReadUncorrectedOperationsAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return String.Empty
+            Try
+                Return Await _executor.ReadUncorrectedOperationsAsync()
+            Catch ex As Exception
+                _logger?.LogException(ex, "Eroare la citirea operațiunilor necorectate din pagina FOREXE")
+                Throw
+            End Try
+        End Function
+
         ''' <summary>The operator's page choices, sent to the live page; a no-op without one.</summary>
         Public Async Function ApplyPageConfigAsync() As Task Implements IForexeRunner.ApplyPageConfigAsync
             If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return

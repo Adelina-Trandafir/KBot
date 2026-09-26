@@ -232,13 +232,13 @@ _IND_EXISTS_SQL = (
 _IND_INSERT_SQL = (
     "INSERT INTO FX_Indicatori "
     "(CodAI, CodAngajament, CodIndicator, IdClsf, IndicatorFX, IdUnitate, SS, "
-    " Prevedere_Bugetara_Initiala, Credit_Bugetar_Initial, Angajament_Legal, "
+    " Credit_Bugetar, Credit_Bugetar_Initial, Angajament_Legal, "
     " Credit_Bugetar_Definitiv, NrCrt) "
     "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 )
 # Ramura Edit din VBA atinge EXACT aceste patru coloane si nimic altceva.
 _IND_UPDATE_SQL = (
-    "UPDATE FX_Indicatori SET Prevedere_Bugetara_Initiala = %s, "
+    "UPDATE FX_Indicatori SET Credit_Bugetar = %s, "
     "Credit_Bugetar_Initial = %s, Angajament_Legal = %s, Credit_Bugetar_Definitiv = %s "
     "WHERE CodAngajament = %s AND CodIndicator = %s"
 )

@@ -859,6 +859,8 @@ Public Class DdfEditForm
                     _seIncarca = False
                 End Try
                 AnuntaPaginile()
+            Else
+                cmbPartener.Focus()
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditForm.ChkPartAng_CheckedChanged", ex)

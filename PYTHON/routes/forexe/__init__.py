@@ -104,3 +104,6 @@ from . import marcaj  # noqa: E402,F401
 from . import ddf_trimitere  # noqa: E402,F401
 # ddf_director.py = the director's list of DDF revisions to sign, across units (slice 0081-06).
 from . import ddf_director  # noqa: E402,F401
+# operatiuni.py = POST /api/forexe/operatiuni/necorectate: the «Operatiuni necorectate» the
+# FOREXE landing page shows after login, saved into FX_Operatiuni (slice 0084).
+from . import operatiuni  # noqa: E402,F401

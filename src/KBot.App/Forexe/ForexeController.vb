@@ -151,6 +151,13 @@ Public NotInheritable Class ForexeController
     ''' </summary>
     Public Event OperatiuneCapturata As EventHandler(Of ForexeWatchEvent)
 
+    ''' <summary>
+    ''' Slice 0084: the FOREXE landing page, read right after a successful login, lists
+    ''' «Operațiuni necorectate». Raised only when it has at least one row; the shell warns
+    ''' the operator and saves the rows into FX_Operatiuni.
+    ''' </summary>
+    Public Event UncorrectedOperationsFound As EventHandler(Of UncorrectedOperationsPage)
+
     ' ── Intenții ─────────────────────────────────────────────────────────
 
     ''' <summary>
@@ -189,6 +196,7 @@ Public NotInheritable Class ForexeController
                 If rezultat.Success Then
                     _certificat = cert
                     RaporteazaStare("Conectat.")
+                    Await ReadUncorrectedOperationsAsync()
                 Else
                     RaporteazaEsec("Conectare eșuată: " & rezultat.Message)
                 End If
@@ -222,6 +230,7 @@ Public NotInheritable Class ForexeController
                 If rezultat.Success Then
                     _certificat = certificat
                     RaporteazaStare("Conectat.")
+                    Await ReadUncorrectedOperationsAsync()
                 Else
                     RaporteazaEsec("Conectare eșuată: " & rezultat.Message)
                 End If
@@ -1144,6 +1153,31 @@ Public NotInheritable Class ForexeController
             RaporteazaStare("Jurnalul descărcării: " & cale)
         End If
     End Sub
+
+    ''' <summary>
+    ''' Slice 0084: reads the «Operațiuni necorectate» table of the page the login left the
+    ''' browser on and raises <see cref="UncorrectedOperationsFound"/> when it has rows.
+    ''' A page that cannot be read does NOT fail the connection: it is logged and said on the
+    ''' console, and the session stays usable.
+    ''' </summary>
+    Private Async Function ReadUncorrectedOperationsAsync() As Task
+        Dim page As UncorrectedOperationsPage
+        Try
+            page = UncorrectedOperations.FromPageJson(Await _runner.ReadUncorrectedOperationsAsync())
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.ReadUncorrectedOperationsAsync", ex)
+            RaporteazaStare("Operațiunile necorectate din pagina FOREXE nu au putut fi citite: " & ex.Message)
+            Return
+        End Try
+        If Not page.Found OrElse page.Rows.Count = 0 Then Return
+        RaporteazaStare($"Pagina FOREXE arată {page.Rows.Count} operațiuni necorectate.")
+        Try
+            RaiseEvent UncorrectedOperationsFound(Me, page)
+        Catch ex As Exception
+            ' Event boundary: a subscriber that throws must not undo a good connection.
+            GlobalErrorLog.Write("ForexeController.ReadUncorrectedOperationsAsync", ex)
+        End Try
+    End Function
 
     ' Deschide sesiunea dacă nu există; False = operatorul a anulat sau conectarea a eșuat.
     Private Async Function AsiguraSesiuneAsync() As Task(Of Boolean)

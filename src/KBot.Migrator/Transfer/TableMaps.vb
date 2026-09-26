@@ -239,7 +239,9 @@ Public NotInheritable Class TableMaps
         ' by row on the row's unit (OwnershipPlan.ClassificationUnit) and NOT kept. The
         ' verifier's dry run names every row that does not resolve, before anything is
         ' written; the writer stops the run on one too.
-        maps.Add(NameMatched("FX_Indicatori").WithClsfPair())
+        ' Slice 0084-01: the MariaDB column was renamed; Access keeps the old name.
+        maps.Add(NameMatched("FX_Indicatori").WithClsfPair().
+            Rename("Prevedere_Bugetara_Initiala", "Credit_Bugetar"))
 
         ' --- FX_DDF ----------------------------------------------------------------
         ' MAPARE_ACCESS_MARIADB.md §3. PK is IDDF alone as of 24.08 - the operator

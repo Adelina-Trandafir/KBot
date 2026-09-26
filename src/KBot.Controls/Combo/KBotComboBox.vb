@@ -107,6 +107,11 @@ Public Class KBotComboBox
     Private _findHost As Form                     ' the form whose Move/Deactivate close the list
     Private _masking As Boolean = False           ' our own Text writes are not operator edits
 
+    ' -- The «new item» row (slice 0083) --------------------------------------------
+    Private Const DefaultOfferNewItemText As String = "Adaugă un element nou…"
+    Private _offerNewItem As Boolean = False
+    Private _offerNewItemText As String = DefaultOfferNewItemText
+
     ' The colour messages the native EDIT child asks its parent (us) to answer. See WndProc.
     Private Const WM_CTLCOLOREDIT As Integer = &H133
     Private Const WM_CTLCOLORSTATIC As Integer = &H138
@@ -256,6 +261,82 @@ Public Class KBotComboBox
         End Set
     End Property
 
+    ''' <summary>
+    ''' Slice 0083. With <see cref="LimitToList"/> on, a list that has nothing to show -- nothing
+    ''' matches the typed text, or the combo has no items at all -- shows ONE row instead,
+    ''' <see cref="OfferNewItemText"/>. Clicking it (or Enter on it) raises
+    ''' <see cref="NewItemRequested"/>; the host adds the item. With <see cref="LimitToList"/> off it
+    ''' does nothing: a typed text is kept anyway, so there is nothing to offer.
+    ''' </summary>
+    <Category("K-BOT Combo")>
+    <Description("With LimitToList on: when the list has nothing to show, offer one row (OfferNewItemText) that raises NewItemRequested.")>
+    <DefaultValue(False)>
+    Public Property OfferNewItem As Boolean
+        Get
+            Return _offerNewItem
+        End Get
+        Set(value As Boolean)
+            _offerNewItem = value
+            If Not value Then HideFindList()
+        End Set
+    End Property
+
+    ''' <summary>Slice 0083. The text of the «new item» row (see <see cref="OfferNewItem"/>).
+    ''' Nothing / empty goes back to the default.</summary>
+    <Category("K-BOT Combo")>
+    <Description("Text of the row OfferNewItem shows when the list has nothing to show.")>
+    <DefaultValue(DefaultOfferNewItemText)>
+    Public Property OfferNewItemText As String
+        Get
+            Return _offerNewItemText
+        End Get
+        Set(value As String)
+            _offerNewItemText = If(String.IsNullOrEmpty(value), DefaultOfferNewItemText, value)
+        End Set
+    End Property
+
+    ''' <summary>Slice 0083. The operator chose the «new item» row. <c>e.Text</c> is what was typed.
+    ''' When the handler adds an item whose caption is exactly that text, the combo selects it.</summary>
+    <Category("K-BOT Combo")>
+    <Description("The operator chose the OfferNewItem row. e.Text = the typed text.")>
+    Public Event NewItemRequested As EventHandler(Of KBotComboNewItemEventArgs)
+
+    ''' <summary>Does the «new item» row apply now? (<see cref="OfferNewItem"/> needs
+    ''' <see cref="LimitToList"/>.)</summary>
+    Private ReadOnly Property OffersNewItem As Boolean
+        Get
+            Return _offerNewItem AndAlso _limitToList
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' The «new item» row was chosen: the list closes, the host is told, and an item the host
+    ''' added under exactly the typed text becomes the selection. Friend so the tests can drive it
+    ''' without a window.
+    ''' </summary>
+    Friend Sub RequestNewItem()
+        HideFindList()
+        Dim typed As String = If(_editable, If(Text, String.Empty), String.Empty)
+        RaiseEvent NewItemRequested(Me, New KBotComboNewItemEventArgs(typed))
+        If typed.Length > 0 AndAlso SelectedIndex < 0 Then
+            Dim added As Integer = FindStringExact(typed)
+            If added >= 0 Then AcceptFindRow(added)
+        End If
+    End Sub
+
+    ' Only the «new item» row, under the box.
+    Private Sub ShowNewItemRow()
+        ShowFindList(New List(Of KBotComboFindRow) From {KBotComboFindRow.NewItem(_offerNewItemText)})
+    End Sub
+
+    Private Sub FindList_NewItemChosen()
+        Try
+            RequestNewItem()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotComboBox.FindList_NewItemChosen", ex)
+        End Try
+    End Sub
+
     ''' <summary>The raw value under the mask (the typed characters only, no literals); the whole
     ''' text when there is no mask.</summary>
     <Browsable(False)> <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
@@ -390,11 +471,13 @@ Public Class KBotComboBox
 
     ''' <summary>
     ''' After every edit the operator makes: re-filter the find list, or close it when there is
-    ''' too little typed or nothing matches.
+    ''' too little typed or nothing matches. Slice 0083: when nothing matches and
+    ''' <see cref="OfferNewItem"/> applies, the list shows the «new item» row instead -- also
+    ''' without <see cref="FindAsYouType"/>, where it is the only row this list ever shows.
     ''' </summary>
     Private Sub AfterOperatorEdit()
         Try
-            If Not (_editable AndAlso _findAsYouType) Then Return
+            If Not _editable OrElse Not (_findAsYouType OrElse OffersNewItem) Then Return
             If SignificantLength() < _findAfterNChars Then
                 HideFindList()
                 Return
@@ -402,6 +485,10 @@ Public Class KBotComboBox
             Dim captions As List(Of String) = AllCaptions()
             Dim hits As List(Of Integer) = FindMatches(captions, If(Text, String.Empty))
             If hits.Count = 0 Then
+                If OffersNewItem Then ShowNewItemRow() Else HideFindList()
+                Return
+            End If
+            If Not _findAsYouType Then
                 HideFindList()
                 Return
             End If
@@ -420,6 +507,7 @@ Public Class KBotComboBox
         If _findList Is Nothing OrElse _findList.IsDisposed Then
             _findList = New KBotComboFindList(Me)
             AddHandler _findList.RowChosen, AddressOf FindList_RowChosen
+            AddHandler _findList.NewItemChosen, AddressOf FindList_NewItemChosen
         End If
         Dim host As Form = TryCast(TopLevelControl, Form)
         If Not ReferenceEquals(host, _findHost) Then
@@ -1107,9 +1195,28 @@ Public Class KBotComboBox
 
     Protected Overrides Sub OnDropDown(e As EventArgs)
         MyBase.OnDropDown(e)
-        ' The native list and the find list are never open together.
-        HideFindList()
-        Invalidate()
+        Try
+            ' The native list and the find list are never open together.
+            HideFindList()
+            ' Slice 0083: an EMPTY list with OfferNewItem shows the «new item» row instead. The
+            ' native list cannot be closed from inside its own opening, so it is swapped just after.
+            If OffersNewItem AndAlso Items.Count = 0 AndAlso IsHandleCreated Then
+                BeginInvoke(New MethodInvoker(AddressOf SwapEmptyDropDownForNewItemRow))
+            End If
+            Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotComboBox.OnDropDown", ex)
+        End Try
+    End Sub
+
+    Private Sub SwapEmptyDropDownForNewItemRow()
+        Try
+            If IsDisposed OrElse Items.Count > 0 Then Return
+            If DroppedDown Then DroppedDown = False
+            ShowNewItemRow()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotComboBox.SwapEmptyDropDownForNewItemRow", ex)
+        End Try
     End Sub
 
     ''' <summary>The find list is a window of its own: it goes with the box.</summary>
@@ -1119,6 +1226,7 @@ Public Class KBotComboBox
                 UnhookFindHost()
                 If _findList IsNot Nothing Then
                     RemoveHandler _findList.RowChosen, AddressOf FindList_RowChosen
+                    RemoveHandler _findList.NewItemChosen, AddressOf FindList_NewItemChosen
                     _findList.Dispose()
                     _findList = Nothing
                 End If
@@ -1176,6 +1284,12 @@ Public Class KBotComboBox
                         e.SuppressKeyPress = True
                         Return
                     Case Keys.Enter
+                        If _findList.SelectedIsNewItem Then
+                            RequestNewItem()
+                            e.Handled = True
+                            e.SuppressKeyPress = True
+                            Return
+                        End If
                         Dim chosen As Integer = _findList.SelectedItemIndex
                         If chosen >= 0 Then
                             AcceptFindRow(chosen)
