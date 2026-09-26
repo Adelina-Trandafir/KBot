@@ -24,6 +24,14 @@ Everything `ComboBox` offers, plus:
   vertical centre, computed from the font's own line height. Positive = down, negative = up.
 - `CommitText()` — give the verdict on the typed text now, without waiting for the field
   to be left.
+- `FindAsYouType: Boolean = False` — a list of the matching rows under the box while typing
+  (slice 0082, see below).
+- `FindAfterNChars: Integer = 1` — the search starts after this many typed characters. Under a
+  mask only the typed characters count, never the literals. < 1 THROWS.
+- `InputMask: String = ""` — what may be typed; the literals are written by the mask (slice 0082,
+  see below). An invalid mask THROWS.
+- `UnmaskedText` (read-only, not serialized) — the typed characters only, without the literals.
+- `FindMatches(captions, typed)` (Shared, pure) — the matcher the find list uses.
 - `ApplyTheme(scheme)`
 
 ## Typing: `Editable` + `LimitToList`
@@ -65,7 +73,39 @@ The last accepted value is whatever was last chosen from the list (or the last f
 accepted while `LimitToList` was off). With `LimitToList = False`, read `.Text` — not
 `.SelectedItem`, which is `Nothing` for a value that is not in the list.
 
+## Find as you type (slice 0082)
+Needs `Editable = True`. After every edit the operator makes (not after a host writes `Text`,
+not after a selection), once `FindAfterNChars` characters are typed, a separate window under the
+box (`KBotComboFindList`) shows the rows whose caption matches: rows that **start** with the text
+first, then rows that only **contain** it, each group in list order; case and diacritics ignored
+(«sectiune» finds «secțiune»). The list window **never takes the focus** (`WS_EX_NOACTIVATE`,
+`MA_NOACTIVATE`): the caret stays in the box and the box drives the list — Up/Down/PageUp/PageDown
+move the highlight, Enter or a click takes the row (as if picked from the drop-down:
+`SelectedIndexChanged` fires), Escape closes it. While it is open, Enter/Escape are input keys, so
+a form's AcceptButton / CancelButton do not take them. It closes when the box loses the focus,
+when the native list opens, and when the form moves, resizes or is deactivated.
+
+`Items` are never touched: the list only SHOWS rows, so data binding keeps working and the typed
+text is never rewritten under the operator's fingers.
+
+With `FindAsYouType` on, `CommitText` also accepts a text that is the **start of exactly one** row
+(a full classification code picks its «code — name» row).
+
+## Input mask (slice 0082)
+Needs `Editable = True`. One character per position: `0` digit, `L` letter, `A` letter or digit,
+`&` any non-space character, `\x` the literal `x`; anything else is a literal written by the mask.
+Classification: `00.00.00.00.00.00.00` — the operator types `65020402200101`, the box shows
+`65.02.04.02.20.01.01`. A literal is written only in front of a character that follows it, so there
+is never a trailing dot to backspace over. Backspace/Delete take one typed character (and the
+literal in front of it); Ctrl+V / Shift+Insert keep only what fits the slots; any other edit (Ctrl+X,
+the context-menu paste) is re-shaped through `TextUpdate`. Typing over a row chosen from the list
+with the whole text selected starts again from empty. The engine is `KBotInputMask` (pure, tested).
+
 ## Limits
+- The find list has no scrollbar to drag: the wheel scrolls it and a thin thumb shows where it
+  is. No "nothing matches" row: the list simply closes.
+- The mask does not demand a COMPLETE value; a partial one is valid text (a start to search
+  with). `KBotInputMask.IsComplete` is there for a host that needs it.
 - **`DropDownStyle.Simple` THROWS** (C3): there the list is a permanent panel we neither
   draw nor theme.
 - In editable mode the **hover wash moves to the outline**. The EDIT child repaints its own

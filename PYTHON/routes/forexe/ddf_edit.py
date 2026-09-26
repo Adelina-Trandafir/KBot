@@ -12,6 +12,7 @@ is one unit, so there is NO `db_name` / `id_unitate` parameter anywhere):
     GET    /api/forexe/ddf/clasificatii                   -> the section-A combo source
     GET    /api/forexe/ddf/parteneri                      -> the header partner combo
     GET    /api/forexe/ddf/comp                           -> the compartment combo
+    GET    /api/forexe/ddf/surse-program                  -> program -> SS map (AVACONT_COMUN.DefaProgram)
     POST   /api/forexe/ddf/save                           -> the whole graph, one transaction
     DELETE /api/forexe/ddf/rev/<idrev>                    -> one revision
     DELETE /api/forexe/ddf/<iddf>                         -> the whole document
@@ -106,7 +107,7 @@ from datetime import date, datetime, timedelta
 from flask import request, g, current_app
 
 from routes.auth.guard import require_session
-from utils.database import get_kbot_connection
+from utils.database import get_kbot_connection, get_kbot_comun_connection
 
 from . import forexe_bp
 from .marcaj import LOCK_IDREV, consuma_lacatul, id_marcaj_utilizabil, idrev_tinut
@@ -1082,6 +1083,10 @@ def get_ddf_clasificatii():
 # angajament's own indicators, because the SESSION HAS NO UNIT ID: every session is minted
 # with `id_unitate = 0` and nothing reads it.
 #
+# Slice 0081-10: an angajament being created in K-BOT («Angajament nou», code «!...») has no
+# indicators yet, so the unit predicate matched nothing and the combo came up empty. With no
+# indicator to scope by, every unit of this database is offered (the database is one DC).
+#
 # `CodFiscal` is authoritative, not `CodPartener`: one CodFiscal can map to several
 # IdUnitate, hence to several CodPartener / IdPartener rows. `FX_DDF` stores only CodFiscal
 # and NumePartener -- it has no IdPartener column at all.
@@ -1093,8 +1098,10 @@ _SQL_PARTENERI = (
     " WHERE P.Tip = '1' "
     "   AND COALESCE(P.Ascuns, 0) = 0 "
     "   AND COALESCE(P.CodFiscal, '') <> '' "
-    "   AND P.IdUnitate IN (SELECT DISTINCT I.IdUnitate FROM FX_Indicatori I "
-    "                        WHERE I.CodAngajament = %s AND I.IdUnitate IS NOT NULL) "
+    "   AND (P.IdUnitate IN (SELECT DISTINCT I.IdUnitate FROM FX_Indicatori I "
+    "                         WHERE I.CodAngajament = %s AND I.IdUnitate IS NOT NULL) "
+    "        OR NOT EXISTS (SELECT 1 FROM FX_Indicatori I "
+    "                        WHERE I.CodAngajament = %s AND I.IdUnitate IS NOT NULL)) "
     " GROUP BY P.CodFiscal "
     " ORDER BY NumePartener"
 )
@@ -1118,7 +1125,7 @@ def get_ddf_parteneri():
     try:
         conn = get_kbot_connection(db_name)
         cursor = conn.cursor(dictionary=True)
-        cursor.execute(_SQL_PARTENERI, (cod,))
+        cursor.execute(_SQL_PARTENERI, (cod, cod))
         parteneri = [{
             "cod_fiscal": _txt(r.get("CodFiscal")),
             "nume_partener": _txt(r.get("NumePartener")),
@@ -1167,6 +1174,42 @@ def get_ddf_comp():
     except Exception as e:
         logger.error(f"[forexe.ddf_edit] comp: {e}", exc_info=True)
         return _json_utf8({"error": f"Eroare la citirea compartimentelor: {e}"}, 500)
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+# THE PROGRAM -> SOURCE / SECTOR MAP (slice 0081-09).
+#
+# A section-A line takes its SS (Sursa + Sectorul, the `DefaSursaSector.SursaSector` code and
+# `Clasificatii.SS`) from the document's program: `AVACONT_COMUN.DefaProgram` lists, per
+# program, the SSs it may use (0000000000 -> 02A, 02E; 0000002510 -> 01A). Common to every
+# unit, so it is read from AVACONT_COMUN and returned whole -- a handful of rows; the client
+# keeps the ones of the header's program.
+_SQL_SURSE_PROGRAM = (
+    "SELECT P.Program, CONCAT(P.Sursa, P.Sectorul) AS SS, S.Denumire "
+    "  FROM DefaProgram P "
+    "  LEFT JOIN DefaSursaSector S ON S.Sursa = P.Sursa AND S.Sectorul = P.Sectorul "
+    " ORDER BY P.Program, P.Sursa, P.Sectorul"
+)
+
+
+@forexe_bp.route("/api/forexe/ddf/surse-program", methods=["GET"])
+@require_session
+def get_ddf_surse_program():
+    """Every (program, SS, caption) row of AVACONT_COMUN.DefaProgram."""
+    conn = None
+    try:
+        conn = get_kbot_comun_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(_SQL_SURSE_PROGRAM)
+        randuri = [{"program": _txt(r.get("Program")),
+                    "ss": _txt(r.get("SS")),
+                    "denumire": _txt(r.get("Denumire"))} for r in cursor.fetchall()]
+        return _json_utf8({"surse": randuri}, 200)
+    except Exception as e:
+        logger.error(f"[forexe.ddf_edit] surse-program: {e}", exc_info=True)
+        return _json_utf8({"error": f"Eroare la citirea surselor programelor: {e}"}, 500)
     finally:
         if conn is not None:
             conn.close()

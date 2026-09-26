@@ -54,7 +54,8 @@ Public NotInheritable Class DdfDraftFactory
             .Preluat = False,
             .Buget = False,
             .Nou = True,
-            .RevizieNoua = True}
+            .RevizieNoua = True,
+            .AngajamentNou = True}
         d.Revizie = New DdfDraftRevizie() With {
             .CodAngajament = cod,
             .NumarRev = 0,

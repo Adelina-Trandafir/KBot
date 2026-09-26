@@ -29,6 +29,8 @@ Public NotInheritable Class DdfEditReauth
     Public ReadOnly Property Compartimente As Func(Of Func(Of Task(Of List(Of String))), Task(Of List(Of String)))
     Public ReadOnly Property Parteneri As Func(Of Func(Of Task(Of List(Of DdfPartener))), Task(Of List(Of DdfPartener)))
     Public ReadOnly Property Clasificatii As Func(Of Func(Of Task(Of List(Of DdfClasificatie))), Task(Of List(Of DdfClasificatie)))
+    ''' <summary>Slice 0081-09: the program -&gt; SS map (<c>AVACONT_COMUN.DefaProgram</c>).</summary>
+    Public ReadOnly Property SurseProgram As Func(Of Func(Of Task(Of List(Of DdfSursaProgram))), Task(Of List(Of DdfSursaProgram)))
 
     Public Sub New(salvare As Func(Of Func(Of Task(Of DdfSaveRezultat)), Task(Of DdfSaveRezultat)),
                    incarcare As Func(Of Func(Of Task(Of PutDdfFisierResponse)), Task(Of PutDdfFisierResponse)),
@@ -36,7 +38,8 @@ Public NotInheritable Class DdfEditReauth
                    numar As Func(Of Func(Of Task(Of DdfNumarLock)), Task(Of DdfNumarLock)),
                    compartimente As Func(Of Func(Of Task(Of List(Of String))), Task(Of List(Of String))),
                    parteneri As Func(Of Func(Of Task(Of List(Of DdfPartener))), Task(Of List(Of DdfPartener))),
-                   clasificatii As Func(Of Func(Of Task(Of List(Of DdfClasificatie))), Task(Of List(Of DdfClasificatie))))
+                   clasificatii As Func(Of Func(Of Task(Of List(Of DdfClasificatie))), Task(Of List(Of DdfClasificatie))),
+                   Optional surseProgram As Func(Of Func(Of Task(Of List(Of DdfSursaProgram))), Task(Of List(Of DdfSursaProgram))) = Nothing)
         ArgumentNullException.ThrowIfNull(salvare)
         ArgumentNullException.ThrowIfNull(incarcare)
         ArgumentNullException.ThrowIfNull(descarcare)
@@ -52,5 +55,12 @@ Public NotInheritable Class DdfEditReauth
         _Compartimente = compartimente
         _Parteneri = parteneri
         _Clasificatii = clasificatii
+        ' Slice 0081-09: optional, so a host built before it still compiles; without it the
+        ' call goes out with no re-login net (the editor says so if it fails).
+        If surseProgram Is Nothing Then
+            _SurseProgram = Function(op As Func(Of Task(Of List(Of DdfSursaProgram)))) op()
+        Else
+            _SurseProgram = surseProgram
+        End If
     End Sub
 End Class

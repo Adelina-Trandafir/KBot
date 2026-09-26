@@ -48,7 +48,7 @@ Public NotInheritable Class DdfSendLine
     Public Shared Function FromDraft(a As DdfDraftLinieA) As DdfSendLine
         ArgumentNullException.ThrowIfNull(a)
         Return New DdfSendLine() With {
-            .IdSecA = a.IdSecA, .Clsf = If(a.Clsf, String.Empty), .Ss = If(a.Ss, String.Empty),
+            .IdSecA = a.IdSecA, .Clsf = DdfSendInputs.ForexeClsf(a.Clsf), .Ss = If(a.Ss, String.Empty),
             .CodIndicator = If(a.CodIndicator, String.Empty),
             .ValPrec = a.ValPrec, .ValCur = a.ValCur, .ValTot = a.ValTot}
     End Function
@@ -93,6 +93,23 @@ Public NotInheritable Class DdfSendInputs
         Dim v As Double
         If Double.TryParse(text.Trim(), NumberStyles.Number, _ro, v) Then Return v
         Return Nothing
+    End Function
+
+    ''' <summary>
+    ''' A classification as forexecab writes it: «65.02.04.02.20.01.01» -&gt; «65.04.02.20.01.01».
+    '''
+    ''' <para><c>Clasificatii.Clsf</c> is <c>concat_ws('.', Capitol, Subcapitol, Articol,
+    ''' Alineat)</c>, and <c>Capitol</c> still carries Access's «NN.NN» («65.02»); the second
+    ''' half is a relic forexecab does not know (the table's own <c>ClsfSal</c> already keeps
+    ''' only <c>left(Capitol, 2)</c>). Every column is NOT NULL, so the Access form always has
+    ''' seven dotted parts: only then is the second part dropped. A text already in forexecab's
+    ''' form (six parts) or any other shape comes back trimmed, unchanged.</para>
+    ''' </summary>
+    Public Shared Function ForexeClsf(clsf As String) As String
+        Dim t As String = If(clsf, String.Empty).Trim()
+        Dim parti As String() = t.Split("."c)
+        If parti.Length <> 7 OrElse parti(0).Length <> 2 Then Return t
+        Return parti(0) & "." & String.Join(".", parti, 2, parti.Length - 2)
     End Function
 
     ''' <summary>Only letters and digits, upper case.</summary>

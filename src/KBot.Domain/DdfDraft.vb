@@ -387,6 +387,15 @@ Public NotInheritable Class DdfDraft
     ''' <summary>New revision on an existing DDF? Also a save-route branch.</summary>
     Public Property RevizieNoua As Boolean
 
+    ''' <summary>
+    ''' Slice 0081-09: is the ANGAJAMENT itself being created here («Angajament nou», code «!…»)?
+    ''' Set only by <see cref="DdfDraftFactory.ForNewAngajament"/>; never sent to or read from the
+    ''' server. It is the one case whose header is typed: every other new revision sits on an
+    ''' angajament that already exists and takes its header from it, locked. It also switches
+    ''' section A to choosing the source / sector first (from the header's program).
+    ''' </summary>
+    Public Property AngajamentNou As Boolean
+
     ''' <summary>Did the operator retype <c>ObiectDDF</c>? Not a gate any more -- the cascade
     ''' onto <c>FX_Angajamente.Descriere</c> is unconditional now (decision D10 replaces
     ''' Access's <c>ModNume</c>) -- but the form still tracks it so the worklog claim that the

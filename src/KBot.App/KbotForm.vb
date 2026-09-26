@@ -1153,9 +1153,13 @@ Public Class KbotForm
             Function(op) WithReauth(Of DdfNumarLock)(op),
             Function(op) WithReauth(Of List(Of String))(op),
             Function(op) WithReauth(Of List(Of DdfPartener))(op),
-            Function(op) WithReauth(Of List(Of DdfClasificatie))(op))
+            Function(op) WithReauth(Of List(Of DdfClasificatie))(op),
+            Function(op) WithReauth(Of List(Of DdfSursaProgram))(op))
 
-        Using f As New DdfEditForm(_apiClient, draft, reauth, stare, TryCast(_apiClient, IDdfSendApi))
+        ' Slice 0081-09: a section-A line picks its SS among those of the document's program
+        ' (AVACONT_COMUN.DefaProgram, read by the editor); the SS chosen here is the one proposed.
+        Using f As New DdfEditForm(_apiClient, draft, reauth, stare, TryCast(_apiClient, IDdfSendApi)) With {
+                .SursaSectorSesiune = If(_session.SectorSursa, String.Empty)}
             f.ShowDialog(Me)
             If f.SAuSalvatModificari AndAlso angajamentNou Then
                 ReincarcaArborelePe(draft.CodAngajament)

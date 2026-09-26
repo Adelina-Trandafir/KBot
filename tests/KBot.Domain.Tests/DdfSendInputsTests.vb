@@ -149,4 +149,22 @@ Public Class DdfSendInputsTests
     Public Sub CodeFromText_ReadsTheCode(text As String, expected As String)
         Assert.Equal(expected, DdfSendInputs.CodeFromText(text))
     End Sub
+
+    ' Slice 0081-10: Access's «.02» after the chapter never reaches forexecab.
+    <Theory>
+    <InlineData("65.02.04.02.20.01.01", "65.04.02.20.01.01")>
+    <InlineData(" 65.02.04.02.20.01.01 ", "65.04.02.20.01.01")>
+    <InlineData("65.04.02.20.01.01", "65.04.02.20.01.01")>
+    <InlineData("", "")>
+    <InlineData(Nothing, "")>
+    Public Sub ForexeClsf_DropsTheAccessHalfOfTheChapter(clsf As String, expected As String)
+        Assert.Equal(expected, DdfSendInputs.ForexeClsf(clsf))
+    End Sub
+
+    <Fact>
+    Public Sub FromDraft_SendsTheForexeClassification()
+        Dim l As DdfSendLine = DdfSendLine.FromDraft(New DdfDraftLinieA() With {.Clsf = "65.02.04.02.20.01.01", .Ss = "02A"})
+        Assert.Equal("65.04.02.20.01.01", l.Clsf)
+        Assert.Equal("650402200101", l.ClsfSal)
+    End Sub
 End Class

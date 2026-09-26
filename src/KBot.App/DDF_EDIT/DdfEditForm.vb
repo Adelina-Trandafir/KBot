@@ -93,6 +93,16 @@ Public Class DdfEditForm
     ''' S1 revision). Nothing in a host that has none -- the form then says so.</summary>
     Private ReadOnly _sendApi As IDdfSendApi
 
+    ''' <summary>Slice 0081-09: the SS chosen in K-BOT's main window -- the one the line window
+    ''' proposes when it is one of the program's. Set by the host before showing.</summary>
+    Public Property SursaSectorSesiune As String = String.Empty
+
+    ''' <summary>Slice 0081-09: <c>AVACONT_COMUN.DefaProgram</c> -- which SSs each program may
+    ''' use. Fetched once when the form opens; a section-A line takes its SS from the rows of the
+    ''' header's program. Empty while not fetched (or when the fetch failed).</summary>
+    Private ReadOnly _surseProgram As New List(Of DdfSursaProgram)()
+    Private _surseProgramAduse As Boolean
+
     Public Sub New(apiClient As IApiClient, draft As DdfDraft, reauth As DdfEditReauth,
                    Optional stare As DdfRevisionState = DdfRevisionState.Draft,
                    Optional sendApi As IDdfSendApi = Nothing)
@@ -212,6 +222,7 @@ Public Class DdfEditForm
         Finally
             _seIncarca = False
         End Try
+        AnuntaAntetulSectiuniiA()
     End Sub
 
     ''' <summary>
@@ -221,22 +232,35 @@ Public Class DdfEditForm
     ''' four flags map onto the draft like this: <c>DDF_NOU</c> = the document is new,
     ''' <c>DDF_MOD</c> = an existing revision is being modified, <c>DDF_UPL</c> = the
     ''' angajament came from FOREXE (its code does not start with «!»).</para>
+    '''
+    ''' <para><b>Slice 0081-09 / 0081-10: a NEW revision on a document that already exists
+    ''' («Adauga rezervare» with an earlier document, revision 1, 2, ...) takes its header from
+    ''' that document, LOCKED</b> -- compartment, program, object, CUAL, creation date, partner.
+    ''' Everything else keeps Access's rule, in particular revision 0 of an angajament downloaded
+    ''' from forexecab (<see cref="DdfDraftFactory.ForFirstRevisionOfExisting"/>, a NEW document):
+    ''' its header is typed, because <c>FX_Angajamente</c> does not carry most of it.
+    ''' One exception, so the save is not refused for a field nobody could reach: a required text
+    ''' the earlier document left empty stays open while it is empty.</para>
     ''' </summary>
     Private Sub AplicaEnablement()
         Dim ddfNou As Boolean = _draft.Nou
         Dim ddfMod As Boolean = Not _draft.RevizieNoua
         Dim eRev0 As Boolean = _draft.Revizie.NumarRev = 0
         Dim ddfUpl As Boolean = Not _draft.Manual
+        ' A new revision on a document that already exists: its header is that document's.
+        Dim antetDinAngajament As Boolean = _draft.RevizieNoua AndAlso Not _draft.Nou
 
-        Dim capEditabil As Boolean = ddfNou OrElse (ddfMod AndAlso eRev0)
+        Dim capEditabil As Boolean = Not antetDinAngajament AndAlso (ddfNou OrElse (ddfMod AndAlso eRev0))
         txtCual.Enabled = capEditabil
         dtpDataCreare.Enabled = capEditabil
-        txtObiect.Enabled = capEditabil
+        txtObiect.Enabled = capEditabil OrElse
+                            (antetDinAngajament AndAlso String.IsNullOrWhiteSpace(_draft.ObiectDdf))
         cmbProgram.Enabled = capEditabil
-        cmbComp.Enabled = capEditabil
+        cmbComp.Enabled = capEditabil OrElse
+                          (antetDinAngajament AndAlso String.IsNullOrWhiteSpace(_draft.Comp))
 
-        chkPartAng.Enabled = ddfNou OrElse ddfMod
-        cmbPartener.Enabled = (ddfNou OrElse ddfMod) AndAlso _draft.PartAng
+        chkPartAng.Enabled = Not antetDinAngajament AndAlso (ddfNou OrElse ddfMod)
+        cmbPartener.Enabled = chkPartAng.Enabled AndAlso _draft.PartAng
 
         ' `Salarii` has no control of its own: the branch behind it is dead (the salaries
         ' form, IdSalariiS, tmpFX_Salarii and the SalariiH updates are not ported), so the
@@ -459,9 +483,37 @@ Public Class DdfEditForm
                 GlobalErrorLog.Write("DdfEditForm.IncarcaListeleAsync/parteneri", ex)
                 cmbPartener.Enabled = False
             End Try
+
+            ' Slice 0081-09: the program -> SS map. Its failure is not hidden: section A cannot
+            ' choose a line's SS without it, and says so when «Adauga rand» is pressed.
+            Try
+                Await AduSurseleProgramelorAsync().ConfigureAwait(True)
+            Catch ex As Exception
+                GlobalErrorLog.Write("DdfEditForm.IncarcaListeleAsync/surse-program", ex)
+            End Try
         Finally
             busyBar.Running = False
         End Try
+    End Function
+
+    ''' <summary>
+    ''' Slice 0081-09: reads <c>AVACONT_COMUN.DefaProgram</c> (program -&gt; SS) and hands it to the
+    ''' section-A page. Called when the form opens and again by the page when the first try came
+    ''' back empty or failed. Throws on a failed fetch (the callers log it).
+    ''' </summary>
+    Friend Async Function AduSurseleProgramelorAsync() As Task(Of List(Of DdfSursaProgram))
+        If Not _surseProgramAduse OrElse _surseProgram.Count = 0 Then
+            Dim api As IDdfProgramApi = TryCast(_apiClient, IDdfProgramApi)
+            If api Is Nothing Then
+                Throw New InvalidOperationException("The api client does not implement IDdfProgramApi.")
+            End If
+            Dim lista As List(Of DdfSursaProgram) = Await _reauth.SurseProgram(
+                Function() api.GetDdfSurseProgramAsync(CancellationToken.None)).ConfigureAwait(True)
+            _surseProgram.Clear()
+            If lista IsNot Nothing Then _surseProgram.AddRange(lista)
+            _surseProgramAduse = True
+        End If
+        Return _surseProgram
     End Function
 
     ''' <summary>
@@ -477,13 +529,14 @@ Public Class DdfEditForm
         Dim titlu As String = Nothing
         If _draft.Manual Then
             Dim prima As DdfDraftLinieA = _draft.LiniiA.FirstOrDefault()
-            ' `Clsf` is "Capitol.Subcapitol.Articol.Alineat" and `Titlu` is the first two
-            ' characters of Articol, so it is the THIRD dotted part. Access got at it with
-            ' `Mid(Clsf, 13, 2)`, arithmetic over a fixed-width string; splitting on the dot
-            ' says the same thing without depending on the widths.
-            If prima IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(prima.Clsf) Then
-                Dim parti As String() = prima.Clsf.Split("."c)
-                If parti.Length >= 3 AndAlso parti(2).Length >= 2 Then titlu = parti(2).Substring(0, 2)
+            ' `Clsf` is concat_ws('.', Capitol, Subcapitol, Articol, Alineat) and `Titlu` is
+            ' left(Articol, 2). Capitol and Subcapitol are themselves «NN.NN» (varchar(5), e.g.
+            ' 65.02 / 04.02), so Articol starts at character 13 -- exactly Access's
+            ' `Mid(Clsf, 13, 2)`. Slice 0081-08: this used to take the THIRD dotted part, which
+            ' is the first half of Subcapitol («04» in 65.02.04.02.20.01.01, not «20»), and so
+            ' restricted a manual angajament's list to the wrong Titlu.
+            If prima IsNot Nothing AndAlso prima.Clsf IsNot Nothing AndAlso prima.Clsf.Length >= 14 Then
+                titlu = prima.Clsf.Substring(12, 2)
             End If
         End If
 
@@ -593,6 +646,11 @@ Public Class DdfEditForm
                 ' call: it asks the form for the list, which keeps its constructor empty and
                 ' `IDdfEditPage`'s "no requests" rule intact.
                 pagina.SursaClasificatiilor = AddressOf AduClasificatiileAsync
+                ' Slice 0081-09: where a line's SS comes from, and whether a new angajament's
+                ' header is complete enough for lines.
+                pagina.SursaSurselorProgramelor = AddressOf AduSurseleProgramelorAsync
+                pagina.SursaPropusa = SursaSectorSesiune
+                pagina.SeteazaLipsurileAntetului(LipsurileAntetului())
                 Return pagina
             Case PAGINA_SECTIUNEA_B : Return New DdfEditSectiuneaBPage()
             Case PAGINA_DESCRIERE : Return New DdfEditDescrierePage()
@@ -726,6 +784,8 @@ Public Class DdfEditForm
         Try
             If _seIncarca Then Return
             _draft.Program = If(TryCast(cmbProgram.SelectedItem, String), String.Empty)
+            ' Slice 0081-09: the program decides a new angajament's SSs, so section A hears of it.
+            AnuntaAntetulSectiuniiA()
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditForm.CmbProgram_SelectedIndexChanged", ex)
         End Try
@@ -785,6 +845,8 @@ Public Class DdfEditForm
             If _seIncarca Then Return
             _draft.PartAng = chkPartAng.Checked
             cmbPartener.Enabled = chkPartAng.Checked AndAlso (_draft.Nou OrElse Not _draft.RevizieNoua)
+            ' A new angajament tied to a partner is not complete until the partner is chosen.
+            AnuntaAntetulSectiuniiA()
 
             If Not _draft.PartAng Then
                 _draft.CodFiscal = String.Empty
@@ -841,11 +903,43 @@ Public Class DdfEditForm
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 0081-09: what a NEW angajament's header still lacks before section A takes lines
+    ''' (empty for any other document). The compartment and the object are read from the boxes
+    ''' as typed -- they reach the draft only when the box is left, and a button that stayed off
+    ''' until then could never be clicked; the rest is written to the draft at once.
+    ''' </summary>
+    Private Function LipsurileAntetului() As List(Of String)
+        If _draft Is Nothing OrElse Not _draft.AngajamentNou Then Return New List(Of String)()
+        Return DdfSectiuneaAReguli.LipsuriAntet(_draft.Program, cmbComp.Text, txtObiect.Text,
+                                                _draft.PartAng, _draft.CodFiscal)
+    End Function
+
+    ''' <summary>Tells the section-A page (once it exists) what the header still lacks.</summary>
+    Private Sub AnuntaAntetulSectiuniiA()
+        Dim page As IDdfEditPage = Nothing
+        If Not _pages.TryGetValue(PAGINA_SECTIUNEA_A, page) Then Return
+        Dim pagina As DdfEditSectiuneaAPage = TryCast(page, DdfEditSectiuneaAPage)
+        pagina?.SeteazaLipsurileAntetului(LipsurileAntetului())
+    End Sub
+
+    ' Boundary UI (event handler): logged and swallowed.
+    Private Sub AntetText_TextChanged(sender As Object, e As EventArgs) _
+        Handles txtObiect.TextChanged, cmbComp.TextChanged
+        Try
+            If _seIncarca Then Return
+            AnuntaAntetulSectiuniiA()
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfEditForm.AntetText_TextChanged", ex)
+        End Try
+    End Sub
+
     ''' <summary>Re-pushes the graph at the visible page after the header changed it under
     ''' the page's feet.</summary>
     Private Sub AnuntaPaginile()
         _activePage?.SetDraft(_draft)
         ActualizeazaTotalul()
+        AnuntaAntetulSectiuniiA()
     End Sub
 
     ' ══════════════════════════════════════════════════════════════════════════
@@ -892,10 +986,20 @@ Public Class DdfEditForm
             If a.IdClsf <= 0 Then motive.Add($"Clasificația lipsește pe rândul {nr} din secțiunea A.")
             If a.IdUnitate <= 0 Then motive.Add($"Unitatea lipsește pe rândul {nr} din secțiunea A.")
             If _draft.PartAng AndAlso String.IsNullOrWhiteSpace(a.CodPartener) Then
-                motive.Add($"Documentul e asociat unui partener, deci câmpul «Partener» " &
-                           $"e obligatoriu (rândul {nr} din secțiunea A).")
+                motive.Add($"Documentul e asociat unui partener: alegeți partenerul în antet " &
+                           $"(lipsește pe rândul {nr} din secțiunea A).")
             End If
         Next
+
+        ' Slice 0081-09: a new angajament's lines took their SS from the header's program; a
+        ' program changed after that leaves them on an SS it does not have. (Any other document's
+        ' program is locked, so its new lines always match.)
+        If _draft.AngajamentNou Then
+            For Each nrLinie As Integer In DdfSectiuneaAReguli.LiniiCuAltaSursa(_draft.LiniiA, _surseProgram, _draft.Program)
+                motive.Add($"Rândul {nrLinie} din secțiunea A are o sursă / un sector care nu aparține " &
+                           $"programului «{_draft.Program}».")
+            Next
+        End If
 
         nr = 0
         For Each b As DdfDraftLinieB In _draft.LiniiB

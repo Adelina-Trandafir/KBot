@@ -98,6 +98,15 @@ Public Class KBotComboBox
     Private _lastAcceptedText As String = String.Empty
     Private _committing As Boolean = False
 
+    ' -- Find as you type + input mask (slice 0082) ----------------------------------
+    Private _findAsYouType As Boolean = False
+    Private _findAfterNChars As Integer = 1
+    Private _inputMask As String = String.Empty
+    Private _mask As KBotInputMask                ' Nothing = no mask
+    Private _findList As KBotComboFindList        ' created on first use
+    Private _findHost As Form                     ' the form whose Move/Deactivate close the list
+    Private _masking As Boolean = False           ' our own Text writes are not operator edits
+
     ' The colour messages the native EDIT child asks its parent (us) to answer. See WndProc.
     Private Const WM_CTLCOLOREDIT As Integer = &H133
     Private Const WM_CTLCOLORSTATIC As Integer = &H138
@@ -186,22 +195,136 @@ Public Class KBotComboBox
     End Property
 
     ''' <summary>
+    ''' Slice 0082. On = while the operator types, a list under the box shows only the rows that
+    ''' match the text so far (rows that START with it first, then rows that CONTAIN it; case and
+    ''' diacritics ignored). Up/Down move through it, Enter or a click takes a row, Escape closes it.
+    ''' Needs <see cref="Editable"/>: without typing there is nothing to search with.
+    ''' </summary>
+    <Category("K-BOT Combo")>
+    <Description("Show the matching rows in a list under the box while typing. Needs Editable = True.")>
+    <DefaultValue(False)>
+    Public Property FindAsYouType As Boolean
+        Get
+            Return _findAsYouType
+        End Get
+        Set(value As Boolean)
+            _findAsYouType = value
+            If Not value Then HideFindList()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Slice 0082. The search starts once at least this many characters have been typed. With an
+    ''' <see cref="InputMask"/> only the characters the operator types are counted -- the literals
+    ''' the mask writes by itself (the dots of a classification) are not.
+    ''' </summary>
+    <Category("K-BOT Combo")>
+    <Description("FindAsYouType starts after this many typed characters (mask literals not counted). Minimum 1.")>
+    <DefaultValue(1)>
+    Public Property FindAfterNChars As Integer
+        Get
+            Return _findAfterNChars
+        End Get
+        Set(value As Integer)
+            If value < 1 Then
+                Throw New ArgumentOutOfRangeException(NameOf(value), value, "FindAfterNChars must be at least 1.")
+            End If
+            _findAfterNChars = value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Slice 0082. What the operator may type, one character per position: <c>0</c> = digit,
+    ''' <c>L</c> = letter, <c>A</c> = letter or digit, <c>&amp;</c> = any character, <c>\x</c> = the
+    ''' literal <c>x</c>; every other character is a literal the mask writes by itself. For a
+    ''' classification: <c>00.00.00.00.00.00.00</c> -- the operator types only the digits and the
+    ''' dots appear. Empty = no mask. Needs <see cref="Editable"/>. An invalid mask THROWS.
+    ''' See <see cref="KBotInputMask"/>.
+    ''' </summary>
+    <Category("K-BOT Combo")>
+    <Description("Input mask: 0 = digit, L = letter, A = letter or digit, & = any, \x = literal x, anything else = literal written automatically. Empty = none. Needs Editable = True.")>
+    <DefaultValue("")>
+    Public Property InputMask As String
+        Get
+            Return _inputMask
+        End Get
+        Set(value As String)
+            Dim v As String = If(value, String.Empty)
+            ' Parsed BEFORE anything is stored: a mask that throws leaves the old one in place.
+            _mask = If(v.Length = 0, Nothing, New KBotInputMask(v))
+            _inputMask = v
+        End Set
+    End Property
+
+    ''' <summary>The raw value under the mask (the typed characters only, no literals); the whole
+    ''' text when there is no mask.</summary>
+    <Browsable(False)> <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property UnmaskedText As String
+        Get
+            Dim t As String = If(Text, String.Empty)
+            Return If(_mask Is Nothing, t, _mask.ExtractRaw(t))
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' The rows of <paramref name="captions"/> that match <paramref name="typed"/>, as indexes:
+    ''' those that START with it first, then those that only CONTAIN it, each group in list order.
+    ''' Case and diacritics are ignored (an operator typing «sectiune» finds the caption spelled with t-comma). Pure, so
+    ''' it is tested on its own.
+    ''' </summary>
+    Public Shared Function FindMatches(captions As IList(Of String), typed As String) As List(Of Integer)
+        Dim starts As New List(Of Integer)()
+        Dim contains As New List(Of Integer)()
+        If captions Is Nothing OrElse String.IsNullOrEmpty(typed) Then Return starts
+        Dim ci As Globalization.CompareInfo = Globalization.CultureInfo.CurrentCulture.CompareInfo
+        Const opts As Globalization.CompareOptions =
+            Globalization.CompareOptions.IgnoreCase Or Globalization.CompareOptions.IgnoreNonSpace
+        For i As Integer = 0 To captions.Count - 1
+            Dim c As String = If(captions(i), String.Empty)
+            If ci.IsPrefix(c, typed, opts) Then
+                starts.Add(i)
+            ElseIf ci.IndexOf(c, typed, opts) >= 0 Then
+                contains.Add(i)
+            End If
+        Next
+        starts.AddRange(contains)
+        Return starts
+    End Function
+
+    ''' <summary>
     ''' Give the verdict on the text typed NOW, without waiting for the field to be left. A host
     ''' calls it when it reads the value from a button ("Salveaza") the operator can reach without
     ''' moving the focus. Idempotent: calling it twice changes nothing the second time.
+    '''
+    ''' <para>Slice 0082: with <see cref="FindAsYouType"/> on, a text that is not a whole row but
+    ''' is the START of exactly ONE row takes that row -- a full classification code typed through
+    ''' the mask picks its «code — name» row without the operator having to type the name.</para>
     ''' </summary>
     Public Sub CommitText()
         Try
             If Not _editable Then Return
+            HideFindList()
 
             Dim typed As String = If(Text, String.Empty)
             Dim match As Integer = If(typed.Length = 0, -1, FindStringExact(typed))
+            If match < 0 AndAlso _findAsYouType AndAlso typed.Length > 0 Then match = UniquePrefixMatch(typed)
 
             _committing = True
             Try
                 If match >= 0 Then
                     ' The text IS in the list: the selection follows it, with the list's spelling.
                     If SelectedIndex <> match Then MyBase.SelectedIndex = match
+                    ' A unique-prefix match can leave the index already right and the box still
+                    ' showing the typed start: the row's own caption goes back in.
+                    Dim caption As String = CaptionOf(Items(match))
+                    If Not String.Equals(Text, caption, StringComparison.Ordinal) Then
+                        _masking = True
+                        Try
+                            MyBase.Text = caption
+                        Finally
+                            _masking = False
+                        End Try
+                    End If
                     _lastAcceptedText = If(Text, String.Empty)
                 ElseIf _limitToList Then
                     ' Refused: back to the last accepted value (empty = empty field, no selection).
@@ -228,6 +351,210 @@ Public Class KBotComboBox
             Invalidate()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotComboBox.CommitText", ex)
+        End Try
+    End Sub
+
+    ' =====================================================================
+    ' FIND AS YOU TYPE + INPUT MASK (slice 0082)
+    ' =====================================================================
+
+    ' The captions of every item, in list order (DisplayMember honoured).
+    Private Function AllCaptions() As List(Of String)
+        Dim list As New List(Of String)(Items.Count)
+        For Each it As Object In Items
+            list.Add(CaptionOf(it))
+        Next
+        Return list
+    End Function
+
+    ' The one row whose caption STARTS with the text; -1 when none or several do.
+    Private Function UniquePrefixMatch(typed As String) As Integer
+        Dim ci As Globalization.CompareInfo = Globalization.CultureInfo.CurrentCulture.CompareInfo
+        Const opts As Globalization.CompareOptions =
+            Globalization.CompareOptions.IgnoreCase Or Globalization.CompareOptions.IgnoreNonSpace
+        Dim found As Integer = -1
+        Dim captions As List(Of String) = AllCaptions()
+        For i As Integer = 0 To captions.Count - 1
+            If Not ci.IsPrefix(captions(i), typed, opts) Then Continue For
+            If found >= 0 Then Return -1
+            found = i
+        Next
+        Return found
+    End Function
+
+    ''' <summary>How many characters count towards <see cref="FindAfterNChars"/>: the typed ones
+    ''' under a mask, the whole text otherwise.</summary>
+    Private Function SignificantLength() As Integer
+        Return UnmaskedText.Length
+    End Function
+
+    ''' <summary>
+    ''' After every edit the operator makes: re-filter the find list, or close it when there is
+    ''' too little typed or nothing matches.
+    ''' </summary>
+    Private Sub AfterOperatorEdit()
+        Try
+            If Not (_editable AndAlso _findAsYouType) Then Return
+            If SignificantLength() < _findAfterNChars Then
+                HideFindList()
+                Return
+            End If
+            Dim captions As List(Of String) = AllCaptions()
+            Dim hits As List(Of Integer) = FindMatches(captions, If(Text, String.Empty))
+            If hits.Count = 0 Then
+                HideFindList()
+                Return
+            End If
+            Dim rows As New List(Of KBotComboFindRow)(hits.Count)
+            For Each i As Integer In hits
+                rows.Add(New KBotComboFindRow(i, captions(i)))
+            Next
+            ShowFindList(rows)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotComboBox.AfterOperatorEdit", ex)
+        End Try
+    End Sub
+
+    Private Sub ShowFindList(rows As List(Of KBotComboFindRow))
+        If DroppedDown Then Return          ' the native list is open: it wins
+        If _findList Is Nothing OrElse _findList.IsDisposed Then
+            _findList = New KBotComboFindList(Me)
+            AddHandler _findList.RowChosen, AddressOf FindList_RowChosen
+        End If
+        Dim host As Form = TryCast(TopLevelControl, Form)
+        If Not ReferenceEquals(host, _findHost) Then
+            UnhookFindHost()
+            _findHost = host
+            If _findHost IsNot Nothing Then
+                AddHandler _findHost.Move, AddressOf FindHost_Changed
+                AddHandler _findHost.Resize, AddressOf FindHost_Changed
+                AddHandler _findHost.Deactivate, AddressOf FindHost_Changed
+            End If
+        End If
+        _findList.ShowRows(rows, _findHost)
+    End Sub
+
+    ''' <summary>Closes the find list, if it is open.</summary>
+    Private Sub HideFindList()
+        If _findList IsNot Nothing AndAlso Not _findList.IsDisposed AndAlso _findList.Visible Then
+            _findList.Hide()
+        End If
+    End Sub
+
+    Private ReadOnly Property FindListOpen As Boolean
+        Get
+            Return _findList IsNot Nothing AndAlso Not _findList.IsDisposed AndAlso
+                   _findList.Visible AndAlso _findList.RowCount > 0
+        End Get
+    End Property
+
+    Private Sub UnhookFindHost()
+        If _findHost Is Nothing Then Return
+        RemoveHandler _findHost.Move, AddressOf FindHost_Changed
+        RemoveHandler _findHost.Resize, AddressOf FindHost_Changed
+        RemoveHandler _findHost.Deactivate, AddressOf FindHost_Changed
+        _findHost = Nothing
+    End Sub
+
+    ' The list is placed in screen coordinates: once the form moves it would float off the box.
+    Private Sub FindHost_Changed(sender As Object, e As EventArgs)
+        Try
+            HideFindList()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotComboBox.FindHost_Changed", ex)
+        End Try
+    End Sub
+
+    Private Sub FindList_RowChosen(itemIndex As Integer)
+        Try
+            AcceptFindRow(itemIndex)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotComboBox.FindList_RowChosen", ex)
+        End Try
+    End Sub
+
+    ' A row of the find list becomes the selection -- exactly as if it had been picked from the
+    ' drop-down: SelectedIndexChanged fires and the row becomes the last accepted value.
+    Private Sub AcceptFindRow(itemIndex As Integer)
+        HideFindList()
+        If itemIndex < 0 OrElse itemIndex >= Items.Count Then Return
+        Dim caption As String = CaptionOf(Items(itemIndex))
+        _masking = True
+        Try
+            If SelectedIndex <> itemIndex Then MyBase.SelectedIndex = itemIndex
+            If Not String.Equals(Text, caption, StringComparison.Ordinal) Then MyBase.Text = caption
+        Finally
+            _masking = False
+        End Try
+        _lastAcceptedText = caption
+        If _editable Then
+            SelectionStart = If(Text, String.Empty).Length
+            SelectionLength = 0
+        End If
+        Invalidate()
+    End Sub
+
+    ' Writes the result of one masked keystroke: the text, then the caret.
+    Private Sub ApplyMaskEdit(edit As KBotMaskEdit)
+        If edit Is Nothing Then Return
+        _masking = True
+        Try
+            If Not String.Equals(Text, edit.Text, StringComparison.Ordinal) Then MyBase.Text = edit.Text
+            SelectionStart = edit.Caret
+            SelectionLength = 0
+        Finally
+            _masking = False
+        End Try
+        AfterOperatorEdit()
+    End Sub
+
+    ''' <summary>
+    ''' Typed characters under a mask: each goes through <see cref="KBotInputMask.InsertChar"/>
+    ''' (a character no slot takes is simply not written), Backspace through its own rule, and
+    ''' Ctrl+V is swallowed here because <see cref="OnKeyDown"/> already pasted.
+    ''' </summary>
+    Protected Overrides Sub OnKeyPress(e As KeyPressEventArgs)
+        MyBase.OnKeyPress(e)
+        Try
+            If e.Handled OrElse Not _editable OrElse _mask Is Nothing Then Return
+            Dim c As Char = e.KeyChar
+            Select Case AscW(c)
+                Case 8          ' Backspace
+                    ApplyMaskEdit(_mask.Backspace(Text, SelectionStart, SelectionLength))
+                    e.Handled = True
+                Case 22         ' Ctrl+V -- pasted in OnKeyDown
+                    e.Handled = True
+                Case Else
+                    If Char.IsControl(c) Then Return        ' Enter, Escape, Ctrl+A/C/X/Z
+                    Dim edit As KBotMaskEdit = _mask.InsertChar(Text, SelectionStart, SelectionLength, c)
+                    If edit IsNot Nothing Then ApplyMaskEdit(edit)
+                    e.Handled = True
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotComboBox.OnKeyPress", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Every edit the operator makes that did NOT come through <see cref="OnKeyPress"/> (Ctrl+X,
+    ''' the EDIT's own context-menu paste, IME): <c>TextUpdate</c> fires only for the operator's
+    ''' edits, never for a selection or a host writing <c>Text</c>. Under a mask the text is
+    ''' re-shaped by it here, caret at the end.
+    ''' </summary>
+    Protected Overrides Sub OnTextUpdate(e As EventArgs)
+        MyBase.OnTextUpdate(e)
+        Try
+            If _masking OrElse Not _editable Then Return
+            If _mask IsNot Nothing Then
+                Dim shaped As String = _mask.Normalize(Text)
+                If Not String.Equals(shaped, Text, StringComparison.Ordinal) Then
+                    ApplyMaskEdit(New KBotMaskEdit(shaped, shaped.Length))
+                    Return
+                End If
+            End If
+            AfterOperatorEdit()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotComboBox.OnTextUpdate", ex)
         End Try
     End Sub
 
@@ -773,12 +1100,37 @@ Public Class KBotComboBox
 
     Protected Overrides Sub OnLostFocus(e As EventArgs)
         MyBase.OnLostFocus(e)
+        ' The find list never takes the focus, so a focus that leaves the box leaves the list too.
+        HideFindList()
         Invalidate()
     End Sub
 
     Protected Overrides Sub OnDropDown(e As EventArgs)
         MyBase.OnDropDown(e)
+        ' The native list and the find list are never open together.
+        HideFindList()
         Invalidate()
+    End Sub
+
+    ''' <summary>The find list is a window of its own: it goes with the box.</summary>
+    Protected Overrides Sub Dispose(disposing As Boolean)
+        Try
+            If disposing Then
+                UnhookFindHost()
+                If _findList IsNot Nothing Then
+                    RemoveHandler _findList.RowChosen, AddressOf FindList_RowChosen
+                    _findList.Dispose()
+                    _findList = Nothing
+                End If
+            End If
+        Finally
+            MyBase.Dispose(disposing)
+        End Try
+    End Sub
+
+    Protected Overrides Sub OnVisibleChanged(e As EventArgs)
+        MyBase.OnVisibleChanged(e)
+        If Not Visible Then HideFindList()
     End Sub
 
     Protected Overrides Sub OnDropDownClosed(e As EventArgs)
@@ -810,6 +1162,55 @@ Public Class KBotComboBox
     ''' operator can confirm without ever leaving the field.
     ''' </summary>
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
+        ' Slice 0082: while the find list is open the navigation keys drive IT, not the native
+        ' selection (Down would otherwise step SelectedIndex and rewrite the typed text).
+        Try
+            If FindListOpen AndAlso Not e.Alt Then
+                Select Case e.KeyCode
+                    Case Keys.Down, Keys.Up, Keys.PageDown, Keys.PageUp
+                        Dim page As Integer = _findList.PageSize
+                        _findList.MoveSelection(
+                            If(e.KeyCode = Keys.Down, 1, If(e.KeyCode = Keys.Up, -1,
+                               If(e.KeyCode = Keys.PageDown, page, -page))))
+                        e.Handled = True
+                        e.SuppressKeyPress = True
+                        Return
+                    Case Keys.Enter
+                        Dim chosen As Integer = _findList.SelectedItemIndex
+                        If chosen >= 0 Then
+                            AcceptFindRow(chosen)
+                            e.Handled = True
+                            e.SuppressKeyPress = True
+                            Return
+                        End If
+                    Case Keys.Escape
+                        HideFindList()
+                        e.Handled = True
+                        e.SuppressKeyPress = True
+                        Return
+                End Select
+            End If
+
+            ' Under a mask, Delete and paste are edits of the raw value too.
+            If _editable AndAlso _mask IsNot Nothing Then
+                If e.KeyCode = Keys.Delete AndAlso Not e.Control AndAlso Not e.Shift Then
+                    ApplyMaskEdit(_mask.DeleteForward(Text, SelectionStart, SelectionLength))
+                    e.Handled = True
+                    e.SuppressKeyPress = True
+                    Return
+                End If
+                If (e.KeyCode = Keys.V AndAlso e.Control) OrElse (e.KeyCode = Keys.Insert AndAlso e.Shift) Then
+                    Dim pasted As String = If(Clipboard.ContainsText(), Clipboard.GetText(), String.Empty)
+                    ApplyMaskEdit(_mask.Paste(Text, SelectionStart, SelectionLength, pasted))
+                    e.Handled = True
+                    e.SuppressKeyPress = True
+                    Return
+                End If
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotComboBox.OnKeyDown", ex)
+        End Try
+
         MyBase.OnKeyDown(e)
         Try
             If e.KeyCode = Keys.Enter AndAlso _editable AndAlso Not DroppedDown Then CommitText()
@@ -817,6 +1218,21 @@ Public Class KBotComboBox
             GlobalErrorLog.Write("KBotComboBox.OnKeyDown", ex)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' While the find list is open, Enter and Escape belong to it: without this a form's
+    ''' AcceptButton / CancelButton would take them first (dialog keys are processed before
+    ''' KeyDown) and Enter on a highlighted row would close the whole window instead.
+    ''' </summary>
+    Protected Overrides Function IsInputKey(keyData As Keys) As Boolean
+        If FindListOpen Then
+            Select Case keyData And Keys.KeyCode
+                Case Keys.Enter, Keys.Escape, Keys.Up, Keys.Down, Keys.PageUp, Keys.PageDown
+                    If (keyData And Keys.Alt) = Keys.None Then Return True
+            End Select
+        End If
+        Return MyBase.IsInputKey(keyData)
+    End Function
 
     ''' <summary>The arrow moves with the width, and so does the box's right margin.</summary>
     Protected Overrides Sub OnResize(e As EventArgs)
