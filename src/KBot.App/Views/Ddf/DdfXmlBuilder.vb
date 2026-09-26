@@ -45,6 +45,8 @@ Public NotInheritable Class DdfXmlBuilder
     Private Const XmlDeclForm As String = "<?xml version=""1.0"" encoding=""UTF-8""?>"
     Private Const XmlDeclNotafd As String = "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>"
     Private Const NotafdNs As String = "mfp:anaf:dgti:notafd:declaratie:v1"
+    ''' <summary>The XFA data namespace (the template's <c>xfa:datasets</c>), for <c>xfa:contentType</c>.</summary>
+    Private Const XfaDataNs As String = "http://www.xfa.org/schema/xfa-data/1.0/"
     ''' <summary>Globalii de sesiune de care are nevoie constructorul (§2.9). POCO pur.</summary>
     Public NotInheritable Class Context
         Public Property NumeUnitate As String = String.Empty
@@ -66,21 +68,41 @@ Public NotInheritable Class DdfXmlBuilder
     ''' <summary>
     ''' XML-ul final (form1 + Attachments cu NOTAFD.xml și fișierele), gata de scris pe disc
     ''' și dat lui XfaWriter. Oglindește GenereazaPDF: form1 -> NOTAFD -> InsereazaAtasamente.
+    '''
+    ''' <para>Slice 0081-02: <paramref name="mode"/> = <see cref="DdfPdfMode.Interim"/> for a revision
+    ''' not sent yet -- header and section A only: section B carries no rows and its option is
+    ''' left unticked (<c>CheckBox9 = 0</c>), and no FOREXE capture rides along. The operator signs A
+    ''' on it; forexecab has not answered yet, so there is nothing to put in B.
+    ''' <see cref="DdfPdfMode.Final"/> is the whole document (the output before this slice).</para>
+    '''
+    ''' <para>Slice 0081-05: <paramref name="capturi"/> = the FOREXE captures (base64 PNG, in the
+    ''' order they were taken), drawn in <c>SubformSectiuneaB/Subform51/Table4</c> of the FINAL
+    ''' document -- and ONLY there: the form says «in rubrica de mai jos sau ca anexa», and both
+    ''' would double the size, so a <c>PrtScr</c> row is never also a file attachment.</para>
     ''' </summary>
     Public Shared Function BuildComplete(ctx As Context, antet As DdfAntet, revizie As RevizieRow,
                                          linii As IEnumerable(Of LinieSaRow),
                                          sbRows As IEnumerable(Of SectiuneBRow),
-                                         attRows As IEnumerable(Of AtasamentRow)) As String
-        Dim formXml As String = BuildFormXml(ctx, antet, revizie, linii, sbRows)
-        Dim notafdXml As String = BuildNotafdXml(ctx, antet, revizie, linii, sbRows)
-        Return InsertAttachments(formXml, notafdXml, attRows)
+                                         attRows As IEnumerable(Of AtasamentRow),
+                                         Optional mode As DdfPdfMode = DdfPdfMode.Final,
+                                         Optional capturi As IEnumerable(Of String) = Nothing) As String
+        Dim interim As Boolean = mode = DdfPdfMode.Interim
+        Dim sb As IEnumerable(Of SectiuneBRow) = If(interim, Enumerable.Empty(Of SectiuneBRow)(), sbRows)
+        ' FOREXE captures (PrtScr) are section B's Table4, never a file attachment (0081-05).
+        Dim att As IEnumerable(Of AtasamentRow) = SafeEnum(attRows).Where(Function(a) Not a.PrtScr)
+        Dim poze As IEnumerable(Of String) = If(interim, Enumerable.Empty(Of String)(), capturi)
+        Dim formXml As String = BuildFormXml(ctx, antet, revizie, linii, sb, sectiuneaB:=Not interim, capturi:=poze)
+        Dim notafdXml As String = BuildNotafdXml(ctx, antet, revizie, linii, sb, sectiuneaB:=Not interim)
+        Return InsertAttachments(formXml, notafdXml, att)
     End Function
 
     ' ── form1 (GenereazaXML_PentruPython) ─────────────────────────────────────
 
     Public Shared Function BuildFormXml(ctx As Context, antet As DdfAntet, revizie As RevizieRow,
                                         linii As IEnumerable(Of LinieSaRow),
-                                        sbRows As IEnumerable(Of SectiuneBRow)) As String
+                                        sbRows As IEnumerable(Of SectiuneBRow),
+                                        Optional sectiuneaB As Boolean = True,
+                                        Optional capturi As IEnumerable(Of String) = Nothing) As String
         If ctx Is Nothing Then ctx = New Context()
         Dim program As String = If(ctx.CodProgram, String.Empty)
 
@@ -143,17 +165,43 @@ Public NotInheritable Class DdfXmlBuilder
             AddNode(row, "Cell9", ToXmlNum(sb.Inf2))
             table3.Add(row)
         Next
-        Dim sectB As New XElement("SubformSectiuneaB", New XElement("CheckBox9", "1"), table3)
+        ' Slice 0081-02: the interim document leaves option 1 of section B unticked.
+        Dim sectB As New XElement("SubformSectiuneaB", New XElement("CheckBox9", If(sectiuneaB, "1", "0")), table3)
+        Dim table4 As XElement = Table4Of(capturi)
+        If table4 IsNot Nothing Then sectB.Add(New XElement("Subform51", table4))
 
         Dim form1 As New XElement("form1", antetNode, sectA, sectB)
         Return XmlDeclForm & form1.ToString()
+    End Function
+
+    ''' <summary>
+    ''' Slice 0081-05: <c>Table4</c> of the captures, the shape of the template's own data
+    ''' (<c>Surse/doc_fund_xdp.xml</c>): the hidden template <c>Row1</c> first (empty, like
+    ''' Table1 / Table3), then one <c>Row1/Cell1</c> per image, <c>xfa:contentType="image/png"</c>,
+    ''' the PNG as base64 text. Nothing when there is no capture -- the template keeps its defaults.
+    ''' </summary>
+    Public Shared Function Table4Of(capturi As IEnumerable(Of String)) As XElement
+        Dim lista As List(Of String) = SafeEnum(capturi).Where(Function(c) Not String.IsNullOrWhiteSpace(c)).ToList()
+        If lista.Count = 0 Then Return Nothing
+        Dim xfa As XNamespace = XfaDataNs
+        Dim table4 As New XElement("Table4", New XAttribute(XNamespace.Xmlns + "xfa", XfaDataNs))
+        table4.Add(New XElement("Row1", New XElement("Cell1")))
+        For Each c As String In lista
+            table4.Add(New XElement("Row1",
+                New XElement("Cell1",
+                    New XAttribute(xfa + "contentType", "image/png"),
+                    New XAttribute("href", String.Empty),
+                    c.Trim())))
+        Next
+        Return table4
     End Function
 
     ' ── NOTAFD (GenereazaXML_NOTAFD) ──────────────────────────────────────────
 
     Public Shared Function BuildNotafdXml(ctx As Context, antet As DdfAntet, revizie As RevizieRow,
                                           linii As IEnumerable(Of LinieSaRow),
-                                          sbRows As IEnumerable(Of SectiuneBRow)) As String
+                                          sbRows As IEnumerable(Of SectiuneBRow),
+                                          Optional sectiuneaB As Boolean = True) As String
         If ctx Is Nothing Then ctx = New Context()
         Dim ns As XNamespace = NotafdNs
         Dim program As String = Left(ctx.CodProgram, 10)
@@ -199,7 +247,7 @@ Public NotInheritable Class DdfXmlBuilder
         root.Add(sectA)
 
         ' Secțiunea B
-        Dim sectB As New XElement(ns + "sectiuneaB", New XAttribute("ckbx_secta_inreg_ctrl_ang", "1"))
+        Dim sectB As New XElement(ns + "sectiuneaB", New XAttribute("ckbx_secta_inreg_ctrl_ang", If(sectiuneaB, "1", "0")))
         For Each sb As SectiuneBRow In SafeEnum(sbRows)
             Dim row As New XElement(ns + "rowT_ang_ctrl_ang")
             row.Add(New XAttribute("cod_angajament", Left(sb.CodAngajament, 11)))
@@ -316,3 +364,11 @@ Public NotInheritable Class DdfXmlBuilder
     End Function
 
 End Class
+
+''' <summary>Slice 0081-02: which of the two PDFs of a revision is being built.</summary>
+Public Enum DdfPdfMode
+    ''' <summary>Before the send: header + section A; section B empty and unticked; no captures.</summary>
+    Interim = 0
+    ''' <summary>After every forexecab action of the revision: header + A + B (+ captures, 0081-05).</summary>
+    Final = 1
+End Enum

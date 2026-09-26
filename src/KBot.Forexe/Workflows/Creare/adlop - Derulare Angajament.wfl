@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Workflow name="Derulare {{COD_ANGAJAMENT}}" startUrl="current"
+          expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
+  <!-- V1.0 - 25.09.2026 (K-BOT slice 0081-03, G1)
+       «In derulare» for ONE angajament: «In definitivare» -> «In derulare».
+       Split out of «adlop - Definitivare_Derulare Angajament.wfl»: the search and «Modificare»
+       of its sections 1-3, then its sections 7-8, unchanged selectors. The original file stays
+       until both halves have run live.
+
+       Capture (goes under Section B of the final DDF, SubformSectiuneaB/Subform51/Table4):
+         Poza_Derulare - the angajament page right after the success message
+
+       Variables expected from K-BOT:
+         {{COD_ANGAJAMENT}} - the forexecab code
+         {{MOTIV_DERULARE}} - the reason text; ends with «(REV:n)» (decision D9)
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 1 — RESET + NAVIGATION + SEARCH + «Modificare»
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ Trec angajamentul {{COD_ANGAJAMENT}} în derulare ══" level="action"/>
+
+  <IfExists selector="#select2-drop-mask" timeout="1">
+    <Click selector="#select2-drop-mask" force="true" waitNavigation="true" timeout="5"
+           LogValue="Resetare interfață — închid dropdown-uri deschise"/>
+  </IfExists>
+
+  <Click selector="#statlogo" waitNavigation="true" timeout="10"
+         LogValue="Navigare Home via logo"/>
+
+  <Click selector="a:has-text('Listă angajamente')" waitNavigation="false" timeout="5"
+         LogValue="Click Listă angajamente"/>
+
+  <Fill selector="input[name='cod']" value="{{COD_ANGAJAMENT}}" clear="true" timeout="5"
+        LogValue="Completez câmpul Cod cu {{COD_ANGAJAMENT}}"/>
+  <Click selector="button:has-text('Caută')" waitNavigation="false" timeout="5"
+         LogValue="Apăs Caută"/>
+
+  <IfExists selector=".alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')" timeout="1">
+    <Log message="EROARE: Angajamentul {{COD_ANGAJAMENT}} nu a fost găsit în listă!" level="error"/>
+    <Exit message="Angajamentul {{COD_ANGAJAMENT}} nu există. Opresc execuția."/>
+  </IfExists>
+
+  <WaitFor selector="a[href*='exportToXLS']" timeout="5"
+           LogValue="Aștept încărcarea listei de rezultate"/>
+
+  <Click selector="a.haction i.glyphicon-list:visible" timeout="5"
+         LogValue="Click iconița detalii angajament"/>
+  <WaitFor selector=".divaction" state="visible" timeout="5"
+           LogValue="Aștept meniul de acțiuni"/>
+
+  <Click selector=".divaction a:has-text('Modificare')" waitNavigation="true" timeout="5"
+         LogValue="Click Modificare"/>
+  <WaitFor selector="li.tab0" timeout="5"
+           LogValue="Aștept formularul de modificare"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 2 — «In derulare»
+       ═══════════════════════════════════════════════════════ -->
+
+  <Click selector="button.btn-default.btn-small:has-text('În derulare')"
+         waitNavigation="false" timeout="5"
+         LogValue="Click În derulare"/>
+
+  <WaitFor selector="form[action*='IFormSubmitListener-modal-form'] textarea[name='descriere']" timeout="5"
+           LogValue="Aștept modalul confirmare În derulare"/>
+
+  <Fill selector="form[action*='IFormSubmitListener-modal-form'] textarea[name='descriere']"
+        value="{{MOTIV_DERULARE}}"
+        clear="true"
+        LogValue="Completez descrierea modalului În derulare"/>
+
+  <Click selector="form[action*='IFormSubmitListener-modal-form'] .modal-footer button.btn-success"
+         waitNavigation="true" timeout="10"
+         LogValue="Click Continuă — confirmare În derulare"/>
+
+  <WaitFor selector=".alert.alert-success" timeout="15"
+           LogValue="Aștept confirmarea trecerii În derulare"/>
+
+  <!-- G1: the page in its new state, with the success message on it -->
+  <Screenshot SaveTo="Poza_Derulare"
+              LogValue="Captură ecran — angajamentul în derulare"/>
+
+  <Log message="✓ Angajamentul {{COD_ANGAJAMENT}} trecut În derulare." level="success"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 3 — STATE + TABLE AFTER
+       ═══════════════════════════════════════════════════════ -->
+
+  <WaitFor selector="li.tab0" timeout="5"
+           LogValue="Aștept formularul de modificare"/>
+
+  <IfExists selector=".well.well-small span.label" timeout="3"
+            LogValue="Verific Stare">
+    <Read selector=".well.well-small span.label"
+          saveTo="StareAngajament"
+          LogValue="Citesc starea angajamentului"/>
+  </IfExists>
+
+  <ScrapeTable selector="table.table-striped" saveTo="TabelIndicatoriFinali" timeout="5"
+               LogValue="Scrape tabel indicatori final"/>
+
+  <Log message="══ Derulare finalizată pentru {{COD_ANGAJAMENT}} — [[StareAngajament]] ══" level="success"/>
+
+</Workflow>

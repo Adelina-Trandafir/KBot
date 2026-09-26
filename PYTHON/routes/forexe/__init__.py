@@ -99,3 +99,8 @@ from . import extrase_lista  # noqa: E402,F401
 from . import angajament_dump  # noqa: E402,F401
 # marcaj.py = the ids the FOREXE page appends to what the operator types (slice 0076).
 from . import marcaj  # noqa: E402,F401
+# ddf_trimitere.py = sending a DDF revision KBOT -> forexecab (slice 0081). The import is
+# not touched; ddf_edit.py (the editor's save) is not touched either.
+from . import ddf_trimitere  # noqa: E402,F401
+# ddf_director.py = the director's list of DDF revisions to sign, across units (slice 0081-06).
+from . import ddf_director  # noqa: E402,F401

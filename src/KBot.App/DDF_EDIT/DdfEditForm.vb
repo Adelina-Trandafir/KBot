@@ -84,7 +84,18 @@ Public Class DdfEditForm
     ''' <summary>Was anything saved? The host reloads the DDF view only then.</summary>
     Public ReadOnly Property SAuSalvatModificari As Boolean
 
-    Public Sub New(apiClient As IApiClient, draft As DdfDraft, reauth As DdfEditReauth)
+    ''' <summary>Slice 0081-02: the revision's place in the sending flow when the form opened.
+    ''' The editor is opened only while it can still change (S0 / S1); section B is shown only
+    ''' once the revision has been sent.</summary>
+    Private ReadOnly _stare As DdfRevisionState
+
+    ''' <summary>Slice 0081-02: the sending routes (dropping the A signature after an edit of an
+    ''' S1 revision). Nothing in a host that has none -- the form then says so.</summary>
+    Private ReadOnly _sendApi As IDdfSendApi
+
+    Public Sub New(apiClient As IApiClient, draft As DdfDraft, reauth As DdfEditReauth,
+                   Optional stare As DdfRevisionState = DdfRevisionState.Draft,
+                   Optional sendApi As IDdfSendApi = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(draft)
         ArgumentNullException.ThrowIfNull(reauth)
@@ -93,6 +104,8 @@ Public Class DdfEditForm
         _apiClient = apiClient
         _draft = draft
         _reauth = reauth
+        _stare = stare
+        _sendApi = sendApi
     End Sub
 
     ' ══════════════════════════════════════════════════════════════════════════
@@ -122,6 +135,12 @@ Public Class DdfEditForm
 
             IncarcaAntetul()
             AplicaEnablement()
+
+            ' Slice 0081-02: section B is created with the revision (it is derived from A on every
+            ' edit) but NOT shown before the send: until forexecab answers there is nothing in it
+            ' the operator can act on, and the interim PDF carries none of it either. The nav
+            ' entry is authored in the designer, so it is hidden by key here.
+            navSub.SetItemVisible(PAGINA_SECTIUNEA_B, DdfRevisionStates.IsSent(_stare))
 
             ' The generation warnings (a manually created angajament, an over-long object)
             ' are shown from the start: they are things to know BEFORE editing, not after a
@@ -925,7 +944,16 @@ Public Class DdfEditForm
                 Return
             End If
 
-            If KBotMessage.Show(Me, "Salvez datele?", "Salvează documentul",
+            ' Slice 0081-02: an S1 revision (A signed on its interim PDF) is still editable, but
+            ' the signature was on the values about to change -- it goes, with the signed PDF.
+            Dim anuleazaSemnatura As Boolean = _stare = DdfRevisionState.SignedA AndAlso Not _draft.Revizie.EsteNoua
+            Dim intrebare As String = If(anuleazaSemnatura,
+                "Revizia este semnată A pe documentul intermediar." & vbCrLf & vbCrLf &
+                "Dacă salvezi, semnătura A și PDF-ul semnat se anulează: documentul intermediar " &
+                "trebuie generat și semnat din nou înainte de trimiterea în FOREXE." & vbCrLf & vbCrLf &
+                "Salvez datele?",
+                "Salvez datele?")
+            If KBotMessage.Show(Me, intrebare, "Salvează documentul",
                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
                 Return
             End If
@@ -952,6 +980,9 @@ Public Class DdfEditForm
 
                 IncarcaAntetul()
                 AplicaEnablement()
+
+                ' ── Slice 0081-02: S1 -> S0 ─────────────────────────────────────────────
+                If anuleazaSemnatura Then Await AnuleazaSemnaturaAAsync(rezultat.Idrev).ConfigureAwait(True)
 
                 ' ── PHASE TWO: the file bytes ───────────────────────────────────────────
                 Dim esuate As List(Of String) = Await UrcaFisiereleAsync().ConfigureAwait(True)
@@ -1018,6 +1049,30 @@ Public Class DdfEditForm
             End Try
         Next
         Return esuate
+    End Function
+
+    ''' <summary>
+    ''' Slice 0081-02: after an S1 revision was saved, its A signature and signed interim PDF are
+    ''' removed on the server. NEVER throws: the document is already saved, and the operator is
+    ''' told plainly when the signature could not be dropped (the state would still read S1).
+    ''' </summary>
+    Private Async Function AnuleazaSemnaturaAAsync(idrev As Integer) As Task
+        Try
+            If _sendApi Is Nothing Then
+                KBotMessage.Show(Me, "Documentul a fost salvat, dar semnătura A nu a putut fi anulată " &
+                                "(funcția nu este disponibilă aici). Generează și semnează din nou documentul intermediar.",
+                                "Salvează documentul", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+            Await _sendApi.AnuleazaSemnaturaDdfAsync(idrev, CancellationToken.None).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfEditForm.AnuleazaSemnaturaAAsync", ex)
+            KBotMessage.Show(Me, "Documentul a fost salvat, dar semnătura A nu a putut fi anulată: " &
+                            ex.Message & vbCrLf & vbCrLf &
+                            "Revizia apare încă «semnată A». Nu o trimite în FOREXE până nu generezi și " &
+                            "semnezi din nou documentul intermediar.",
+                            "Salvează documentul", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
     End Function
 
     Private Sub BtnRenunta_Click(sender As Object, e As EventArgs) Handles btnRenunta.Click

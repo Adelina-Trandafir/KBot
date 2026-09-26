@@ -850,7 +850,8 @@ Public Class ApiClient
                                 .NumePartener = If(a.nume_partener, String.Empty),
                                 .Salarii = a.salarii,
                                 .Incarcat = a.incarcat,
-                                .Preluat = a.preluat
+                                .Preluat = a.preluat,
+                                .Manual = a.manual
                             })
                         Next
                     End If
@@ -868,6 +869,8 @@ Public Class ApiClient
                                 .Incarcat = r.incarcat,
                                 .Preluat = r.preluat,
                                 .Semnatura = If(r.semnatura, String.Empty),
+                                .StareTrimitere = r.stare_trimitere,
+                                .AreRezervari = r.are_rezervari,
                                 .TotalRevizie = r.total_revizie,
                                 .PdfSha256 = If(r.pdf_sha256, String.Empty),
                                 .PdfDimensiune = r.pdf_dimensiune,
@@ -1109,6 +1112,9 @@ Public Class ApiClient
     Private Const H_STATIE As String = "X-Statie"
     ''' <summary>Valoarea lui <c>X-Sha-Precedent</c> pentru «cred că nu există rând pe server».</summary>
     Public Const ShaFaraRand As String = "-"
+    ''' <summary>Slice 0081-01: the <c>X-Semnatura</c> value for «this PDF carries no signature»
+    ''' -- the server writes '' into <c>Semnatura</c>. Used for the final DDF PDF.</summary>
+    Public Const SemnaturaNiciuna As String = "-"
 
     ''' <summary>
     ''' Descarcă PDF-ul semnat al unei revizii DDF (GET /api/forexe/ddf/pdf/{idrev}).

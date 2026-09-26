@@ -482,14 +482,19 @@ Public Class DdfView
                 ' Frunze de revizie, în ordinea serverului (DataRev, NumarRev).
                 For Each r As RevizieRow In monthRevs
                     Dim leafIcon As Image = IconFor(StareOf(r), palette)
+                    ' Slice 0081-01: the send state on the RIGHT (the left arrow is the sign
+                    ' of the total -- see StareOf).
+                    Dim stare As DdfRevisionState = r.Stare
                     Dim leafItem As AdvancedTreeControl.TreeItem =
                         tree.AddItem($"RC_{r.Idrev}", $"{r.EtichetaRevizie}~~~{Money(r.TotalRevizie)}",
-                                     monthItem, pLeftIconClosed:=leafIcon, pLeftIconOpen:=leafIcon)
+                                     monthItem, pLeftIconClosed:=leafIcon, pLeftIconOpen:=leafIcon,
+                                     pRightIcon:=StateIconFor(stare, palette))
                     leafItem.Tag = New DdfNodeRows(LiniiFor(r.Idrev), isRoot:=False, revizie:=r)
                     ' Slice 0051: remembered so `Reincarca` can land back on the revision the
                     ' operator was working on. Read-only behaviour is untouched by this.
                     _noduriRevizie(r.Idrev) = leafItem
-                    leafItem.Tooltip = r.DescScurta
+                    leafItem.Tooltip = If(String.IsNullOrWhiteSpace(r.DescScurta), String.Empty, r.DescScurta & vbLf) &
+                                       "Stare: " & DdfRevisionStates.Label(stare)
                     If r.TotalRevizie < 0 AndAlso palette IsNot Nothing Then
                         leafItem.NodeForeColor = palette.ErrorColor
                     End If
@@ -699,39 +704,17 @@ Public Class DdfView
 
             _generating = True
             Try
-                ' 1. Datele de generare (secțiunea B + atașamentele) — un apel opt-in.
-                Dim data As DdfInfo = Await _withReauth(
-                    Function() _apiClient.GetDdfAsync(cod, CancellationToken.None, pentruGenerare:=True)).ConfigureAwait(True)
-                If data Is Nothing Then Return
-                ' Ținta s-a schimbat între timp? Renunțăm.
+                ' Slice 0081-04: the steps (generation data, the revision's rows, XML, XfaWriter
+                ' into the work area) moved to DdfPdfGenerator, shared with the send's final PDF.
+                ' Slice 0081-02: a revision not sent yet gets the INTERIM document (no section B,
+                ' no captures); from the send on, the whole one, captures included (0081-05).
+                Dim mode As DdfPdfMode = If(DdfRevisionStates.IsSent(revizie.Stare), DdfPdfMode.Final, DdfPdfMode.Interim)
+                Dim generat As DdfPdfGenerator.Rezultat = Await DdfPdfGenerator.GenereazaAsync(
+                    Function() _withReauth(Function() _apiClient.GetDdfAsync(cod, CancellationToken.None, pentruGenerare:=True)),
+                    AddressOf CitesteCapturaAsync, _session, revizie.Idrev, mode).ConfigureAwait(True)
+                ' The target changed meanwhile? Drop it.
                 If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
-
-                ' 2. Doar rândurile reviziei-țintă (generarea e per revizie, ca tmpFX_* din Access).
-                Dim liniiRev = data.Linii.Where(Function(l) l.Idrev = revizie.Idrev).ToList()
-                Dim sbRev = data.SectiuneB.Where(Function(s) s.Idrev = revizie.Idrev).ToList()
-                Dim attRev = data.Atasamente.Where(Function(a) a.Idrev = revizie.Idrev).ToList()
-
-                ' 3. XML-ul complet (form1 + NOTAFD + atașamente).
-                Dim ctx As DdfXmlBuilder.Context = DdfXmlBuilder.Context.FromSession(_session)
-                Dim xml As String = DdfXmlBuilder.BuildComplete(ctx, _antet, revizie, liniiRev, sbRev, attRev)
-
-                ' 4. FELIA 0041 — documentul generat aici este NESEMNAT, deci un artefact DERIVAT:
-                ' merge în zona de lucru (`<AppDir>\TempPdf\`, golită la fiecare pornire), NU în
-                ' cache-ul persistent al PDF-urilor semnate și NU pe server. Numele fișierului
-                ' rămâne cel din convenție — se schimbă doar folderul, iar zona e plată (fără
-                ' subfolder de partener: se golește oricum). Siblingul .xml stă lângă el.
-                Dim numeFisier As String = IO.Path.GetFileName(
-                    DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, revizie.NumarRev))
-                If String.IsNullOrEmpty(numeFisier) Then Return
-                TempPdfStore.EnsureRoot()
-                Dim pdfPath As String = TempPdfStore.PathFor(numeFisier)
-                Dim xmlPath As String = IO.Path.ChangeExtension(pdfPath, ".xml")
-                IO.File.WriteAllText(xmlPath, xml, New Text.UTF8Encoding(False))
-
-                ' 5. Generarea PROPRIU-ZISĂ pe thread de fundal (descarcă macheta, completează XFA,
-                ' embedează atașamentele, scrie PDF-ul). XfaWriter loghează + rearuncă la graniță;
-                ' NU adăugăm un al doilea strat de catch în jur — îl lăsăm să urce în catch-ul de aici.
-                Await Task.Run(Sub() Call Global.KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "DDF", deschidePdf:=False)).ConfigureAwait(True)
+                Dim pdfPath As String = generat.PdfPath
 
                 ' 6. Fără scriere înapoi în bază și FĂRĂ încărcare pe server: documentul e
                 ' nesemnat, iar felia 0041 stochează DOAR semnate (încărcarea vine cu felia de
@@ -751,6 +734,18 @@ Public Class DdfView
             GlobalErrorLog.Write("DdfView.OnGenerateRequested", ex)
         End Try
     End Sub
+
+    ''' <summary>Slice 0081-05: one FOREXE capture's bytes, for the final PDF's Table4. Risky
+    ''' boundary (HTTP): logs and rethrows; the generation stops rather than drop a capture.</summary>
+    Private Async Function CitesteCapturaAsync(idRevAtt As Integer) As Task(Of Byte())
+        Try
+            Dim r As PdfDownloadResult = Await _apiClient.GetDdfFisierAsync(idRevAtt, String.Empty, CancellationToken.None).ConfigureAwait(True)
+            Return If(r IsNot Nothing AndAlso r.Status = PdfDownloadStatus.Content, r.Bytes, Nothing)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.CitesteCapturaAsync", ex)
+            Throw
+        End Try
+    End Function
 
     ' ── Stare goală / conținut ───────────────────────────────────────────────
     Private Sub ClearAll()
@@ -940,6 +935,30 @@ Public Class DdfView
     End Function
 
     ''' <summary>
+    ''' Slice 0081-01: the right-hand state marker of a revision. List first, like
+    ''' <see cref="IconFor"/>: a picture under «stare_&lt;state&gt;» in «image_list» (for example
+    ''' «stare_signeda») wins; otherwise the GDI shape from <see cref="DdfIcons.StateIcon"/>,
+    ''' coloured from the palette.
+    ''' </summary>
+    Private Function StateIconFor(stare As DdfRevisionState, palette As ThemePalette) As Image
+        Dim dinLista As Image = tree.NodeImage("stare_" & stare.ToString().ToLowerInvariant())
+        If dinLista IsNot Nothing Then Return dinLista
+        If palette Is Nothing Then Return Nothing
+
+        Dim color As Color
+        Select Case stare
+            Case DdfRevisionState.Draft : color = palette.TextDimColor
+            Case DdfRevisionState.SignedA, DdfRevisionState.SignedAB : color = palette.AccentColor
+            Case DdfRevisionState.SendInterrupted : color = palette.ErrorColor
+            Case DdfRevisionState.SentInProgress, DdfRevisionState.FinalToSign : color = palette.WarningColor
+            Case DdfRevisionState.Approved : color = palette.SuccessColor
+            Case Else
+                Throw New ArgumentOutOfRangeException(NameOf(stare), stare, "Stare de revizie necunoscută.")
+        End Select
+        Return DdfIcons.StateIcon(stare, color, tree.RightIconSize.Width)
+    End Function
+
+    ''' <summary>
     ''' Iconița folderului de lună pentru cheia dată («folder_closed» / «folder_open»), cu
     ''' aceeași regulă listă-întâi ca <see cref="IconFor"/>.
     ''' </summary>
@@ -1010,6 +1029,7 @@ Public Class DdfView
     Private Const MENIU_STERGE_REVIZIE As String = "sterge-revizie"
     Private Const MENIU_STERGE_DOC As String = "sterge-document"
     Private Const MENIU_STERGE_LUNA As String = "sterge-luna"
+    Private Const MENIU_TRIMITE As String = "trimite"
 
     ''' <summary>Which revision the next tree build should land on; 0 = leave the selection
     ''' where the build puts it.</summary>
@@ -1037,6 +1057,16 @@ Public Class DdfView
         If payload.IsRoot Then
             intrari.Add(New CustomPopupItem(MENIU_STERGE_LUNA, "Șterge &TOATE reviziile lunii"))
         Else
+            ' Slice 0081-04: the send, offered only in the state that allows it -- S1 sends, S1x
+            ' resumes. Placed first: in those two states it is the next thing to do.
+            If payload.Revizie IsNot Nothing Then
+                Dim stare As DdfRevisionState = payload.Revizie.Stare
+                If stare = DdfRevisionState.SignedA Then
+                    intrari.Add(New CustomPopupItem(MENIU_TRIMITE, "&Trimite în FOREXE"))
+                ElseIf stare = DdfRevisionState.SendInterrupted Then
+                    intrari.Add(New CustomPopupItem(MENIU_TRIMITE, "&Reia trimiterea în FOREXE"))
+                End If
+            End If
             intrari.Add(New CustomPopupItem(MENIU_MODIFICA, "&Modifică revizia"))
             intrari.Add(New CustomPopupItem(MENIU_STERGE_REVIZIE, "Șter&ge revizia"))
             intrari.Add(New CustomPopupItem(MENIU_STERGE_DOC, "Șterge &documentul"))
@@ -1055,6 +1085,8 @@ Public Class DdfView
     Private Sub AplicaComandaDeMeniu(cheie As String, revizie As RevizieRow, cheieNod As String)
         Try
             Select Case cheie
+                Case MENIU_TRIMITE
+                    CereComanda(New DdfComanda(DdfActiune.Trimite, _requestedCod, revizie))
                 Case MENIU_MODIFICA
                     CereComanda(New DdfComanda(DdfActiune.Modifica, _requestedCod, revizie))
                 Case MENIU_STERGE_REVIZIE

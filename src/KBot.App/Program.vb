@@ -240,11 +240,17 @@ Friend Module Program
 
             Dim session As SessionContext = provider.GetRequiredService(Of SessionContext)()
             Dim authApi As IAuthApi = provider.GetRequiredService(Of IAuthApi)()
+            Dim api As IApiClient = provider.GetRequiredService(Of IApiClient)()
 
-            Dim shell As KbotForm = provider.GetRequiredService(Of KbotForm)()
+            ' Slice 0081-06: a director gets only the list of documents to sign, never the shell.
+            Dim shell As Form
+            If DirectorForm.EsteDirector(session) Then
+                shell = provider.GetRequiredService(Of DirectorForm)()
+            Else
+                shell = provider.GetRequiredService(Of KbotForm)()
+            End If
             AppScreen.SetReference(shell)   ' the shell replaces the login as the application's window (slice 0062)
             ' Slice 0078: signed PDFs whose upload failed earlier are retried once the shell is up.
-            Dim api As IApiClient = provider.GetRequiredService(Of IApiClient)()
             AddHandler shell.Shown, Sub(s, e) RetryPendingPdfUploads(shell, api)
             Application.Run(shell)
 
@@ -404,6 +410,7 @@ Friend Module Program
 
         ' Forms.
         services.AddTransient(Of KbotForm)()
+        services.AddTransient(Of DirectorForm)()
         services.AddTransient(Of LoginForm)()
         ' Vizualizatorul de jurnale (felia 0031-04). Transient: se deschide nemodal din meniul
         ' butonului de opțiuni al shell-ului și modal din bancul de probă — două vieți diferite,

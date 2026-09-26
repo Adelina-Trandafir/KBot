@@ -26,6 +26,10 @@ Public NotInheritable Class LoginForm
     ' Never holds the password -- see LastLoginStore.
     Private _lastLogin As LastLoginStore
 
+    ''' <summary>Slice 0081-06: the unit to pre-select at phase 2, over the remembered one -- the
+    ''' director's window asks for a login on the unit of the document to sign. Nothing = as before.</summary>
+    Public Property PreferredDc As String
+
     Public Sub New(authApi As IAuthApi, session As SessionContext)
         ArgumentNullException.ThrowIfNull(authApi)
         ArgumentNullException.ThrowIfNull(session)
@@ -240,6 +244,15 @@ Public NotInheritable Class LoginForm
                Not String.IsNullOrWhiteSpace(_lastLogin.UnitDc) Then
                 For i As Integer = 0 To units.Count - 1
                     If String.Equals(units(i).DC, _lastLogin.UnitDc, StringComparison.Ordinal) Then
+                        cboUnit.SelectedIndex = i
+                        Exit For
+                    End If
+                Next
+            End If
+
+            If Not String.IsNullOrWhiteSpace(PreferredDc) Then
+                For i As Integer = 0 To units.Count - 1
+                    If String.Equals(units(i).DC, PreferredDc, StringComparison.Ordinal) Then
                         cboUnit.SelectedIndex = i
                         Exit For
                     End If

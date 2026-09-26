@@ -37,6 +37,9 @@ Public NotInheritable Class DdfAntet
     Public Property Salarii As Boolean
     Public Property Incarcat As Boolean
     Public Property Preluat As Boolean
+    ''' <summary>Slice 0081-02: <c>FX_DDF.Manual</c> -- the document was created in K-BOT
+    ''' («Angajament nou»). Its Rev 0 is the only one that gets «Definitiveaza» / «Deruleaza».</summary>
+    Public Property Manual As Boolean
 
     ''' <summary>
     ''' Numele folderului in care sta PDF-ul, dupa conventia din mdl_FX_DDF_PDF: numele
@@ -100,8 +103,28 @@ Public NotInheritable Class RevizieRow
     ''' <summary>Slice 0078: signer roles stored in FX_DDF_REV.Semnatura ("A,B,Ordonator");
     ''' written by the signing upload, empty when unsigned.</summary>
     Public Property Semnatura As String = String.Empty
+    ''' <summary>Slice 0081-01: raw <c>FX_DDF_REV.StareTrimitere</c> (<see cref="DdfSendStage"/>);
+    ''' 0 on a database where sql/0081 has not been run.</summary>
+    Public Property StareTrimitere As Integer
+    ''' <summary>Slice 0081-01: at least one <c>FX_Rezervari</c> row points at this revision.</summary>
+    Public Property AreRezervari As Boolean
     ''' <summary>SUM(ValCur) REAL peste sectiunea A a reviziei (0 cand nu are linii).</summary>
     Public Property TotalRevizie As Double
+
+    ''' <summary>Slice 0081-01: a stage-0 revision forexecab already has (it came from there,
+    ''' or reservations are linked to it).</summary>
+    Public ReadOnly Property DejaInForexe As Boolean
+        Get
+            Return Incarcat OrElse Preluat OrElse AreRezervari
+        End Get
+    End Property
+
+    ''' <summary>Slice 0081-01: the revision's place in the sending flow (S0-S4, S1x).</summary>
+    Public ReadOnly Property Stare As DdfRevisionState
+        Get
+            Return DdfRevisionStates.Derive(StareTrimitere, DejaInForexe, Semnatura)
+        End Get
+    End Property
 
     ''' <summary>
     ''' Felia 0041 — suma de control a PDF-ului SEMNAT stocat pe server (FX_DDF_PDF), hex

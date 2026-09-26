@@ -34,6 +34,9 @@ Public Enum DdfActiune
     ''' <summary>Delete every revision of one month. When that is all of them, the DOCUMENT
     ''' goes instead -- the server decides and says which it did.</summary>
     StergeLuna = 5
+    ''' <summary>Slice 0081-04: send the selected revision to forexecab (S1), or resume an
+    ''' interrupted send (S1x).</summary>
+    Trimite = 6
 End Enum
 
 ''' <summary>

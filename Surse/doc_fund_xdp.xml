@@ -1,0 +1,448 @@
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/" timeStamp="2026-02-17T12:31:20Z" uuid="4d5f604d-7b90-4d10-9067-19d0527b0c38">
+  <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.2-c001 63.139439, 2011/06/07-10:39:26        ">
+    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+      <rdf:Description xmlns:xmp="http://ns.adobe.com/xap/1.0/" rdf:about="">
+        <xmp:MetadataDate>2026-02-17T12:31:20Z</xmp:MetadataDate>
+        <xmp:CreatorTool>Adobe LiveCycle Designer ES 10.0</xmp:CreatorTool>
+        <xmp:ModifyDate>2026-01-27T16:15:37+02:00</xmp:ModifyDate>
+        <xmp:CreateDate>2026-01-12T15:02:12+02:00</xmp:CreateDate>
+      </rdf:Description>
+      <rdf:Description xmlns:pdf="http://ns.adobe.com/pdf/1.3/" rdf:about="">
+        <pdf:Producer>Adobe LiveCycle Designer ES 10.0</pdf:Producer>
+      </rdf:Description>
+      <rdf:Description xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/" rdf:about="">
+        <xmpMM:DocumentID>uuid:4d5f604d-7b90-4d10-9067-19d0527b0c38</xmpMM:DocumentID>
+        <xmpMM:InstanceID>uuid:4d4c5bc1-8db2-4f5c-bd92-a44f26a9e942</xmpMM:InstanceID>
+      </rdf:Description>
+      <rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/" rdf:about="">
+        <dc:format>application/pdf</dc:format>
+      </rdf:Description>
+      <rdf:Description xmlns:desc="http://ns.adobe.com/xfa/promoted-desc/" rdf:about="">
+        <desc:version rdf:parseType="Resource">
+          <rdf:value>10.0.2.20120224.1.869952.867557</rdf:value>
+          <desc:ref>/template/subform[1]</desc:ref>
+        </desc:version>
+      </rdf:Description>
+    </rdf:RDF>
+  </x:xmpmeta>
+  <xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve">
+    <annots />
+  </xfdf>
+  <form checksum="ksn+JvJHuhfEyROaHtQMjZbbBHo=" xmlns="http://www.xfa.org/schema/xfa-form/2.8/">
+    <subform name="form1">
+      <instanceManager name="_MainForm" />
+      <subform name="MainForm">
+        <instanceManager name="_SubformAntet" />
+        <subform name="SubformAntet">
+          <field name="DenInstPb">
+            <value override="1" />
+          </field>
+          <field name="cif">
+            <value override="1" />
+          </field>
+          <field name="NrUnicInreg">
+            <value override="1" />
+          </field>
+          <field name="DataRevizuirii">
+            <value override="1" />
+          </field>
+          <field name="Revizuirea">
+            <value override="1" />
+          </field>
+          <field name="SubtitluDF">
+            <value override="1" />
+          </field>
+        </subform>
+        <instanceManager name="_SubformSectiuneaA" />
+        <subform name="SubformSectiuneaA">
+          <instanceManager name="_Subform123" />
+          <subform name="Subform123">
+            <field name="ComparimentSpecialitate">
+              <value override="1" />
+            </field>
+            <field name="DescrieObFundRevizuireScurt">
+              <value override="1" />
+            </field>
+            <field name="DescrieObFundRevizuireLung">
+              <value override="1" />
+            </field>
+          </subform>
+          <instanceManager name="_Subform4" />
+          <subform name="Subform4">
+            <instanceManager name="_Subform41" />
+            <subform name="Subform41">
+              <field name="CheckBox2">
+                <value override="1" />
+              </field>
+            </subform>
+            <instanceManager name="_Table1" />
+            <subform name="Table1" access="open">
+              <instanceManager name="_Row1" />
+              <subform name="Row1" presence="hidden">
+                <field name="Cell7" />
+              </subform>
+              <subform name="Row1">
+                <field name="Cell1">
+                  <value override="1" />
+                </field>
+                <field name="Cell2">
+                  <value override="1" />
+                </field>
+                <field name="Cell3">
+                  <value override="1" />
+                </field>
+                <field name="Cell4">
+                  <value override="1" />
+                </field>
+                <field name="Cell5">
+                  <value override="1" />
+                </field>
+                <field name="Cell6">
+                  <value override="1" />
+                </field>
+                <field name="Cell7" />
+              </subform>
+              <instanceManager name="_FooterRow" />
+              <subform name="FooterRow">
+                <field name="Cell5" />
+                <field name="Cell6" />
+                <field name="Cell7">
+                  <value>
+                    <decimal>1.00</decimal>
+                  </value>
+                </field>
+              </subform>
+            </subform>
+            <instanceManager name="_Subform423" />
+            <subform name="Subform423" access="readOnly">
+              <field name="sumRamasaFD" access="readOnly" />
+            </subform>
+          </subform>
+          <instanceManager name="_Subform5" />
+          <subform name="Subform5">
+            <field name="CheckBox4" access="readOnly" />
+            <field name="CheckBox5">
+              <value override="1" />
+            </field>
+            <field name="CheckBox6" access="open">
+              <value override="1" />
+            </field>
+            <field name="CheckBox7" access="open" />
+            <field name="CheckBox8" access="open" />
+          </subform>
+          <instanceManager name="_Table2" />
+          <subform name="Table2" access="readOnly">
+            <subform name="HeaderRow1" />
+            <instanceManager name="_Row1" />
+            <subform name="Row1" presence="hidden" />
+            <instanceManager name="_FooterRow" />
+            <subform name="FooterRow">
+              <field name="Cell1" />
+              <field name="Cell2" />
+              <field name="Cell3" />
+              <field name="Cell4" />
+              <field name="Cell5" />
+              <field name="Cell6" />
+            </subform>
+            <subform name="HeaderRow1" />
+          </subform>
+        </subform>
+      </subform>
+      <instanceManager name="_SubformSemnaturaA" />
+      <subform name="SubformSemnaturaA">
+        <field name="SignatureField1" access="open" />
+        <field name="SignatureField11" access="readOnly" />
+        <field name="SignatureField12" access="readOnly" />
+        <field name="SignatureField13" access="readOnly" />
+        <field name="SignatureField14" access="readOnly" />
+        <field name="SignatureField15" access="readOnly" />
+        <field name="SignatureField16" access="readOnly" />
+      </subform>
+      <instanceManager name="_SubformSectiuneaB" />
+      <subform name="SubformSectiuneaB">
+        <field name="CheckBox9">
+          <value override="1" />
+        </field>
+        <instanceManager name="_Table3" />
+        <subform name="Table3">
+          <instanceManager name="_Row1" />
+          <subform name="Row1" presence="hidden">
+            <field name="Cell7" />
+            <field name="Cell10" />
+          </subform>
+          <subform name="Row1">
+            <field name="Cell1">
+              <value override="1" />
+            </field>
+            <field name="Cell2">
+              <value override="1" />
+            </field>
+            <field name="Cell3">
+              <value override="1" />
+            </field>
+            <field name="Cell4">
+              <value override="1" />
+            </field>
+            <field name="Cell5">
+              <value override="1" />
+            </field>
+            <field name="Cell6">
+              <value override="1" />
+            </field>
+            <field name="Cell7" />
+            <field name="Cell8">
+              <value override="1" />
+            </field>
+            <field name="Cell9">
+              <value override="1" />
+            </field>
+            <field name="Cell10" />
+          </subform>
+          <instanceManager name="_FooterRow" />
+          <subform name="FooterRow">
+            <field name="Cell5" />
+            <field name="Cell6" />
+            <field name="Cell7" />
+            <field name="Cell8" />
+            <field name="Cell9" />
+            <field name="Cell10" />
+          </subform>
+        </subform>
+        <instanceManager name="_Subform51" />
+        <subform name="Subform51">
+          <instanceManager name="_Table4" />
+          <subform name="Table4">
+            <instanceManager name="_Row1" />
+            <subform name="Row1" presence="hidden" />
+            <subform name="Row1">
+              <field name="Cell1" />
+            </subform>
+            <subform name="FooterRow" />
+            <subform name="FooterRow" />
+          </subform>
+          <instanceManager name="_Subform52" />
+          <subform name="Subform52">
+            <instanceManager name="_Subform521" />
+            <subform name="Subform521" presence="hidden" />
+          </subform>
+        </subform>
+      </subform>
+      <instanceManager name="_SubformSemnaturaB" />
+      <subform name="SubformSemnaturaB">
+        <field name="SignatureField2" access="readOnly" />
+        <field name="SignatureField21" access="readOnly" />
+        <field name="SignatureField22" access="readOnly" />
+        <field name="SignatureField23" access="readOnly" />
+        <field name="SignatureField24" access="readOnly" />
+        <field name="SignatureField25" access="readOnly" />
+        <field name="SignatureField26" access="readOnly" />
+      </subform>
+      <instanceManager name="_SubformSemnaturaOrdonator" />
+      <subform name="SubformSemnaturaOrdonator">
+        <field name="SignatureField3" access="readOnly" />
+      </subform>
+      <pageSet>
+        <pageArea name="Page1">
+          <field name="CurrentPage">
+            <value>
+              <float>1.00000000</float>
+            </value>
+          </field>
+          <field name="PageCount">
+            <value>
+              <float>3.00000000</float>
+            </value>
+          </field>
+        </pageArea>
+        <pageArea name="Page1">
+          <field name="CurrentPage">
+            <value>
+              <float>2.00000000</float>
+            </value>
+          </field>
+          <field name="PageCount">
+            <value>
+              <float>3.00000000</float>
+            </value>
+          </field>
+        </pageArea>
+        <pageArea name="Page1">
+          <field name="CurrentPage">
+            <value>
+              <float>3.00000000</float>
+            </value>
+          </field>
+          <field name="PageCount">
+            <value>
+              <float>3.00000000</float>
+            </value>
+          </field>
+        </pageArea>
+      </pageSet>
+    </subform>
+  </form>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <form1>
+        <SubformAntet>
+          <DenInstPb>Test</DenInstPb>
+          <cif>21015411</cif>
+          <NrUnicInreg>1</NrUnicInreg>
+          <DataRevizuirii>2026-09-25</DataRevizuirii>
+          <Revizuirea>1</Revizuirea>
+          <SubtitluDF>TEST</SubtitluDF>
+          <CheckBox1>0</CheckBox1>
+          <universalCode>A1.0.08</universalCode>
+        </SubformAntet>
+        <SubformSectiuneaA>
+          <Subform123>
+            <ComparimentSpecialitate>TEST</ComparimentSpecialitate>
+            <DescrieObFundRevizuireScurt>TEST</DescrieObFundRevizuireScurt>
+            <DescrieObFundRevizuireLung>TEST</DescrieObFundRevizuireLung>
+          </Subform123>
+          <Subform4>
+            <Subform41>
+              <CheckBox2>1</CheckBox2>
+            </Subform41>
+            <Table1>
+              <HeaderRow xfa:dataNode="dataGroup" />
+              <HeaderRow1 xfa:dataNode="dataGroup" />
+              <Row1>
+                <Cell1 />
+                <Cell2 />
+                <Cell3 />
+                <Cell4 />
+                <Cell5 />
+                <Cell6 />
+                <Cell7>0.00</Cell7>
+              </Row1>
+              <FooterRow>
+                <Cell5>0.00</Cell5>
+                <Cell6>1.00</Cell6>
+              </FooterRow>
+              <Row1>
+                <Cell1>TEST</Cell1>
+                <Cell2>0000000000</Cell2>
+                <Cell3>01A650402100105</Cell3>
+                <Cell4>TEST</Cell4>
+                <Cell5>0.00</Cell5>
+                <Cell6>1.00</Cell6>
+                <Cell7>1.00</Cell7>
+              </Row1>
+            </Table1>
+            <Subform423>
+              <CheckBox3>0</CheckBox3>
+              <sumRamasaFD />
+            </Subform423>
+          </Subform4>
+          <Subform5>
+            <CheckBox4>0</CheckBox4>
+            <CheckBox5>1</CheckBox5>
+            <CheckBox6>1</CheckBox6>
+            <CheckBox7>0</CheckBox7>
+            <CheckBox8>0</CheckBox8>
+          </Subform5>
+          <Table2>
+            <HeaderRow xfa:dataNode="dataGroup" />
+            <HeaderRow1 xfa:dataNode="dataGroup" />
+            <Row1>
+              <Cell7 />
+              <Cell8 />
+              <Cell1 />
+              <Cell2 />
+              <Cell3 />
+              <Cell4 />
+              <Cell5 />
+              <Cell6 />
+            </Row1>
+            <FooterRow>
+              <Cell1>0.00</Cell1>
+              <Cell2>0.00</Cell2>
+              <Cell3>0.00</Cell3>
+              <Cell4>0.00</Cell4>
+              <Cell5>0.00</Cell5>
+              <Cell6>0.00</Cell6>
+            </FooterRow>
+          </Table2>
+          <CheckBox13>0</CheckBox13>
+        </SubformSectiuneaA>
+        <SubformSemnaturaA xfa:dataNode="dataGroup" />
+        <SubformSectiuneaB>
+          <CheckBox9>1</CheckBox9>
+          <Table3>
+            <HeaderRow xfa:dataNode="dataGroup" />
+            <HeaderRow1 xfa:dataNode="dataGroup" />
+            <Row1>
+              <Cell1 />
+              <Cell2 />
+              <Cell3 />
+              <Cell4 />
+              <Cell5 />
+              <Cell6 />
+              <Cell7>0.00</Cell7>
+              <Cell8 />
+              <Cell9 />
+              <Cell10>0.00</Cell10>
+            </Row1>
+            <FooterRow>
+              <Cell5>0.00</Cell5>
+              <Cell6>1.00</Cell6>
+              <Cell7>1.00</Cell7>
+              <Cell8>0.00</Cell8>
+              <Cell9>1.00</Cell9>
+              <Cell10>1.00</Cell10>
+            </FooterRow>
+            <Row1>
+              <Cell1>TESTTESTTES</Cell1>
+              <Cell2>AAB</Cell2>
+              <Cell3>0000000000</Cell3>
+              <Cell4>01A650402100105</Cell4>
+              <Cell5>0.00</Cell5>
+              <Cell6>1.00</Cell6>
+              <Cell7>1.00</Cell7>
+              <Cell8>0.00</Cell8>
+              <Cell9>1.00</Cell9>
+              <Cell10>1.00</Cell10>
+            </Row1>
+          </Table3>
+          <Subform51>
+            <Table4>
+              <Row1>
+                <Cell1 />
+              </Row1>
+              <FooterRow xfa:dataNode="dataGroup" />
+              <Row1>
+                <Cell1 xfa:contentType="image/png" href="">iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACx
+jwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAAI7SURBVFhH7ZexaxNhGIdfBFFXkdYIgjg4SEWj
+F02xVL1ShzqIgwpdOoiDDg4VHaQuUpx0EwpFEDeH/gGCky1dAg5KCy2SqknuKoWI5tq0JpJX3s8Q
+zO/yfknk6+YDDzmufb/nu+tdoET/aUEQBE+CIKiGYcgulLVkTeyo5PP5X4VCgV0qa2JHBYddiR0V
+HHQldlRw0JXYUcFBV2JHBQddiR0VHHQldlRw0JXYUcFBV2JHBQddiR0VHHQldlRw0JXYUcHBblyd
+n+Pi5AT/GL3M0cV+oxzLufUhL4mtluCinRisrHDx0QOOhk5z5KdaWvJTtcj3pmvp9B5sNoGLt1Pi
+32+NxYK63lvrJjDQTnPlsUg7vWnsNsCAzdX5WettFzcn7nJt7Stv3BxtnJM/h/pMYMSmPFwY/Nv1
+K8O89ewpC7KJpp9f8KawbcCITfO0twiLcuVc3jCfsgn5hA0sY9uAEZvmVdPilYq5ci6XzZ3A34n8
+1E9sGzBiszScxkX/xKv1eLUSv/K6JT9VwbYBIzaL1y79U1z8dv5UFtsGjNgMH95rWrTTuBgOJl9g
+24ARm9k3r5tew07j8hrOnTk6gG0DRmzmcjn+fP9OLNDOTwMnXhHRDmwbuv3H5OPCAgdjV2MRzcJg
+8t14IrEPuw0ymczzbjex9OE9Z8dvW78V5bYvnz0+c6OnpxebyG4iShDRgS499PjIweuL/cdm1s6d
+/CKvmSjHcu5l3+ERItqFse1gJxHtJaL9deVYzsX4DbxC3xZk7nnAAAAAAElFTkSuQmCC</Cell1>
+              </Row1>
+            </Table4>
+            <Subform52>
+              <Subform522>
+                <CheckBox10>0</CheckBox10>
+                <creditAngajament />
+                <creditBugetar />
+                <CheckBox11>0</CheckBox11>
+                <CheckBox12>0</CheckBox12>
+              </Subform522>
+              <Subform521>
+                <Intrucit />
+              </Subform521>
+            </Subform52>
+          </Subform51>
+        </SubformSectiuneaB>
+        <SubformSemnaturaB xfa:dataNode="dataGroup" />
+        <SubformSemnaturaOrdonator xfa:dataNode="dataGroup" />
+      </form1>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>

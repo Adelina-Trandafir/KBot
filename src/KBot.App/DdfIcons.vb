@@ -41,6 +41,58 @@ Public NotInheritable Class DdfIcons
                          Sub(g) DrawStatus(g, stare, color, size))
     End Function
 
+    ''' <summary>
+    ''' Slice 0081-01: the RIGHT-hand marker of a revision leaf -- its place in the sending flow.
+    ''' The left arrow keeps meaning the sign of the total; this is a separate axis. Each state
+    ''' has its own SHAPE, not only its own colour, so it reads without colour too.
+    ''' </summary>
+    Public Shared Function StateIcon(state As KBot.Domain.DdfRevisionState, color As Color, size As Integer) As Image
+        Return GetOrDraw($"stare:{state}:{color.ToArgb()}:{size}", size,
+                         Sub(g) DrawState(g, state, color, size))
+    End Function
+
+    Private Shared Sub DrawState(g As Graphics, state As KBot.Domain.DdfRevisionState, color As Color, size As Integer)
+        Dim m As Single = size * 0.2F
+        Dim d As Single = size - 2 * m
+        Dim penW As Single = Math.Max(1.2F, size * 0.1F)
+        Using brush As New SolidBrush(color), pen As New Pen(color, penW)
+            Select Case state
+                Case KBot.Domain.DdfRevisionState.Draft
+                    ' Hollow circle: nothing signed yet.
+                    g.DrawEllipse(pen, m, m, d, d)
+                Case KBot.Domain.DdfRevisionState.SignedA
+                    ' Left half filled: A signed, ready to send.
+                    g.DrawEllipse(pen, m, m, d, d)
+                    g.FillPie(brush, m, m, d, d, 90.0F, 180.0F)
+                Case KBot.Domain.DdfRevisionState.SendInterrupted
+                    ' Triangle with a gap: the send stopped halfway.
+                    g.FillPolygon(brush, New PointF() {
+                        New PointF(size / 2.0F, m * 0.6F),
+                        New PointF(size - m * 0.6F, size - m * 0.6F),
+                        New PointF(m * 0.6F, size - m * 0.6F)})
+                Case KBot.Domain.DdfRevisionState.SentInProgress
+                    ' Hollow circle with a centre dot: in forexecab, work still going on.
+                    g.DrawEllipse(pen, m, m, d, d)
+                    Dim r As Single = d * 0.22F
+                    g.FillEllipse(brush, size / 2.0F - r, size / 2.0F - r, 2 * r, 2 * r)
+                Case KBot.Domain.DdfRevisionState.FinalToSign
+                    ' Filled square: the final document, waiting for A and B.
+                    g.FillRectangle(brush, m, m, d, d)
+                Case KBot.Domain.DdfRevisionState.SignedAB
+                    ' Filled circle: A and B signed, at the director.
+                    g.FillEllipse(brush, m, m, d, d)
+                Case KBot.Domain.DdfRevisionState.Approved
+                    ' Check mark: approved, end of the flow.
+                    g.DrawLines(pen, New PointF() {
+                        New PointF(m, size / 2.0F),
+                        New PointF(size / 2.0F - m * 0.3F, size - m),
+                        New PointF(size - m, m)})
+                Case Else
+                    Throw New ArgumentOutOfRangeException(NameOf(state), state, "Unknown DDF revision state.")
+            End Select
+        End Using
+    End Sub
+
     ''' <summary>Iconița rădăcinii de lună (un „dosar" simplificat — grupul de revizii).</summary>
     Public Shared Function LunaIcon(color As Color, size As Integer) As Image
         Return GetOrDraw($"luna:{color.ToArgb()}:{size}", size,

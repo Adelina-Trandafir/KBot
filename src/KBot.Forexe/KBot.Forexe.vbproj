@@ -18,7 +18,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.0.13.0</FileVersion>
+    <FileVersion>1.0.14.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -114,6 +114,21 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Workflows\adlop - Rezervari Editate.wfl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- Slice 0081: the SENDING workflows (KBOT -> forexecab), kept in their own folder and
+         copied with it: the output holds Workflows\Creare\*.wfl, resolved as
+         WorkflowCatalog.ResolvePath("Creare\...") -->
+    <None Update="Workflows\Creare\adlop - Creare Angajament.wfl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Workflows\Creare\adlop - Incarca Rezervare.wfl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Workflows\Creare\adlop - Definitivare Angajament.wfl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Workflows\Creare\adlop - Derulare Angajament.wfl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

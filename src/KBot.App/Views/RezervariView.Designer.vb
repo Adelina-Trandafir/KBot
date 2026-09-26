@@ -75,6 +75,8 @@ Partial Class RezervariView
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
         tree.FooterHeight = 30
         tree.FooterIconSize = New Size(18, 18)
+        tree.FooterLeftIcon = My.Resources.Resources.plus_green
+        tree.FooterLeftIconTooltip = "Acțiunile documentului de fundamentare pe acest angajament" & vbLf & "(Adaugă rezervare / Definitivează / Derulează / Generează PDF final)."
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
         tree.FooterRightIconTooltip = "Reîmprospătează rezervările din FOREXE (antet, indicatori, istoric)."
         tree.FooterSeparatorColor = Color.Gainsboro

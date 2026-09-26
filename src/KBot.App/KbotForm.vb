@@ -417,9 +417,14 @@ Public Class KbotForm
                 ' Access: fxRezervari_AdaugaRevizie in frmFX_MAIN. It goes through the SAME
                 ' ExecutaComandaDdf as DdfView: one re-login policy, one place where the editor
                 ' opens.
+                ' Slice 0081-02: the footer LEFT icon (the DDF sending actions) reads the DDF
+                ' through the same 401 net and hands the chosen option back here.
                 Case "rezervari" : Return New RezervariView(_apiClient, Function(op) WithReauth(Of RezervariInfo)(op),
                                                             AddressOf ExecutaComandaDdf,
-                                                            AddressOf ReimprospateazaRezervari)
+                                                            AddressOf ReimprospateazaRezervari,
+                                                            Function(c) WithReauth(Of DdfInfo)(
+                                                                Function() _apiClient.GetDdfAsync(c, CancellationToken.None)),
+                                                            AddressOf ExecutaMeniulRezervari)
                 Case "partener" : Return New PlaceholderView(key, "Partener")
                 Case "receptii" : Return New ReceptiiView(_apiClient, Function(op) WithReauth(Of ReceptiiInfo)(op),
                                                          AddressOf DeschideLegaturileReceptiilor,
@@ -942,6 +947,8 @@ Public Class KbotForm
                     Await StergeDocumentDdfAsync(comanda.Revizie).ConfigureAwait(True)
                 Case DdfActiune.StergeLuna
                     Await StergeLunaDdfAsync(comanda).ConfigureAwait(True)
+                Case DdfActiune.Trimite
+                    Await TrimiteDdfAsync(comanda.Cod, comanda.Revizie).ConfigureAwait(True)
                 Case Else
                     ' No silent no-ops: an unknown action is a programming defect.
                     Throw New ArgumentException($"Acțiune DDF necunoscută: {comanda.Actiune}", NameOf(comanda))
@@ -997,6 +1004,17 @@ Public Class KbotForm
             Return
         End If
 
+        ' Slice 0081-02: only a revision not sent yet (S0 / S1) is edited (D4). Once forexecab has
+        ' it, any change is a NEW revision -- «Adauga rezervare» in the Rezervari tree.
+        Dim stare As DdfRevisionState = revizie.Stare
+        If Not DdfRevisionStates.CanEdit(stare) Then
+            KBotMessage.Show(Me, $"Revizia este «{DdfRevisionStates.Label(stare)}» și nu se mai modifică." &
+                            vbCrLf & vbCrLf & "Orice schimbare de valori cere o revizie nouă " &
+                            "(«Adaugă rezervare» din subsolul arborelui Rezervări).",
+                            "Document de fundamentare", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
         busyBar.Running = True
         Dim draft As DdfDraft
         Try
@@ -1008,12 +1026,122 @@ Public Class KbotForm
             busyBar.Running = False
         End Try
 
-        DeschideEditorulDdf(draft)
+        DeschideEditorulDdf(draft, stare)
     End Function
 
+    ''' <summary>
+    ''' Slice 0081-02 -- «Angajament nou» on the header: a new, K-BOT-only angajament («!» code),
+    ''' revision 0, section A empty. The port of Access's <c>FX_Adaugare_ANG</c>; forexecab hears
+    ''' of it only at «Trimite in FOREXE».
+    ''' </summary>
+    Private Sub BtnAngajamentNou_Click(sender As Object, e As EventArgs) Handles btnAngajamentNou.Click
+        Try
+            If String.IsNullOrWhiteSpace(_session.DbName) Then
+                KBotMessage.Show(Me, "Nu există o unitate deschisă: autentificați-vă întâi.",
+                                "Angajament nou", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            Dim draft As DdfDraft = DdfDraftFactory.ForNewAngajament(
+                DdfDraftFactory.NewManualCode(), _session.DbName, _session.CodProgram, Date.Today)
+            DeschideEditorulDdf(draft, DdfRevisionState.Draft)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.BtnAngajamentNou_Click", ex)
+            KBotMessage.Show(Me, "Documentul pentru angajamentul nou nu a putut fi deschis. Detalii în jurnalul de erori.",
+                            "Angajament nou", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0081-02 -- the option picked in the Rezervari footer menu. UI boundary (Async Sub
+    ''' handed to the view): every failure is logged and shown, never thrown.
+    ''' </summary>
+    Private Async Sub ExecutaMeniulRezervari(optiune As RezervariMenuOption, info As AngajamentTreeInfo)
+        Try
+            Select Case optiune
+                Case RezervariMenuOption.AdaugaRezervare
+                    Await AdaugaRezervareDdfAsync(info).ConfigureAwait(True)
+                Case RezervariMenuOption.Definitiveaza
+                    Await SchimbaStareaAngajamentuluiAsync(info, definitivare:=True).ConfigureAwait(True)
+                Case RezervariMenuOption.Deruleaza
+                    Await SchimbaStareaAngajamentuluiAsync(info, definitivare:=False).ConfigureAwait(True)
+                Case RezervariMenuOption.GenereazaPdfFinal
+                    Await GenereazaPdfFinalDinMeniuAsync(info).ConfigureAwait(True)
+                Case Else
+                    ' No silent no-ops: an option with no handler is a programming defect.
+                    Throw New ArgumentException($"Opțiune de meniu fără acțiune: {optiune}", NameOf(optiune))
+            End Select
+        Catch ex As ApiException
+            GlobalErrorLog.Write("MainForm.ExecutaMeniulRezervari", ex)
+            KBotMessage.Show(Me, ex.Message, "Document de fundamentare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ExecutaMeniulRezervari", ex)
+            KBotMessage.Show(Me, "Acțiunea nu a putut fi executată. Detalii în jurnalul de erori.",
+                            "Document de fundamentare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0081-02 -- «Adauga rezervare» from the Rezervari footer menu: a NEW revision in
+    ''' manual mode, section A empty. On an angajament with a document it continues that document
+    ''' (header of the last revision); without one it opens its revision 0 (the carried-over case).
+    ''' The menu offers it only when no revision is open (plan 0081-04); the check is repeated
+    ''' here against fresh data, because the tree may be minutes old.
+    ''' </summary>
+    Private Async Function AdaugaRezervareDdfAsync(info As AngajamentTreeInfo) As Task
+        If info Is Nothing OrElse String.IsNullOrWhiteSpace(info.CodAngajament) Then Return
+        Dim cod As String = info.CodAngajament
+
+        busyBar.Running = True
+        Dim draft As DdfDraft
+        Try
+            Dim ddf As DdfInfo = Await WithReauth(Of DdfInfo)(
+                Function() _apiClient.GetDdfAsync(cod, CancellationToken.None))
+            Dim revizii As List(Of RevizieRow) = If(ddf?.Revizii, New List(Of RevizieRow)())
+            Dim deschisa As RevizieRow = revizii.FirstOrDefault(Function(r) DdfRevisionStates.IsOpen(r.Stare))
+            If deschisa IsNot Nothing Then
+                KBotMessage.Show(Me, $"Revizia {deschisa.NumarRev} este încă «{DdfRevisionStates.Label(deschisa.Stare)}»." &
+                                vbCrLf & vbCrLf & "Se lucrează la o singură revizie odată: termin-o întâi din vederea DDF.",
+                                "Adaugă rezervare", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+
+            If revizii.Count = 0 Then
+                draft = DdfDraftFactory.ForFirstRevisionOfExisting(
+                    cod, _session.DbName, _session.CodProgram, info.Descriere, info.DataCreare, info.Stare, Date.Today)
+            Else
+                Dim ultima As RevizieRow = revizii.OrderByDescending(Function(r) r.NumarRev).First()
+                Dim iddf As Integer = ultima.Iddf
+                Dim idrev As Integer = ultima.Idrev
+                Dim sursa As DdfDraft = Await WithReauth(Of DdfDraft)(
+                    Function() _apiClient.GetDdfDraftAsync(iddf, idrev, CancellationToken.None))
+                draft = DdfDraftFactory.ForAddedReservation(sursa, Date.Today)
+            End If
+        Finally
+            busyBar.Running = False
+        End Try
+
+        DeschideEditorulDdf(draft, DdfRevisionState.Draft)
+    End Function
+
+    ''' <summary>
+    ''' Slice 0081-02: reloads the angajamente tree and selects <paramref name="cod"/> -- used when
+    ''' the node did not exist before (a new K-BOT angajament) or changed its code (the send).
+    ''' UI boundary (fire-and-forget from a Sub): LoadTreeAsync shows its own errors.
+    ''' </summary>
+    Private Async Sub ReincarcaArborelePe(cod As String)
+        Try
+            Await LoadTreeAsync(codDeSelectat:=cod).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ReincarcaArborelePe", ex)
+        End Try
+    End Sub
+
     ''' <summary>Opens the editor MODALLY and, on a save, reloads the view onto what was written.</summary>
-    Private Sub DeschideEditorulDdf(draft As DdfDraft)
+    Private Sub DeschideEditorulDdf(draft As DdfDraft, Optional stare As DdfRevisionState = DdfRevisionState.Draft)
         If draft Is Nothing Then Return
+        ' Slice 0081-02: a brand-new K-BOT angajament is not in the tree yet; after its save the
+        ' tree is reloaded ONTO it, so the operator lands on what they just created.
+        Dim angajamentNou As Boolean = draft.Nou AndAlso draft.Manual
 
         ' Seven specialisations of the 401 net, named rather than positional: `WithReauth` is
         ' private and generic, so the form needs one closure per response shape, and seven
@@ -1027,9 +1155,11 @@ Public Class KbotForm
             Function(op) WithReauth(Of List(Of DdfPartener))(op),
             Function(op) WithReauth(Of List(Of DdfClasificatie))(op))
 
-        Using f As New DdfEditForm(_apiClient, draft, reauth)
+        Using f As New DdfEditForm(_apiClient, draft, reauth, stare, TryCast(_apiClient, IDdfSendApi))
             f.ShowDialog(Me)
-            If f.SAuSalvatModificari Then
+            If f.SAuSalvatModificari AndAlso angajamentNou Then
+                ReincarcaArborelePe(draft.CodAngajament)
+            ElseIf f.SAuSalvatModificari Then
                 ' What is still on screen is no longer true: the lines changed, the reservations
                 ' consumed changed, and a new revision was not there at all.
                 ' `IddfSalvat` is the key the server returned, so it also answers "does this
@@ -1047,6 +1177,14 @@ Public Class KbotForm
     Private Async Function StergeRevizieDdfAsync(revizie As RevizieRow) As Task
         If revizie Is Nothing OrElse revizie.Idrev <= 0 Then
             KBotMessage.Show(Me, "Selectați o revizie din arbore.", "Document de fundamentare",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        ' Slice 0081-02: a revision K-BOT sent (or began to send) has changed forexecab; deleting
+        ' it here would leave the two out of step (the golden rule, D8).
+        If revizie.StareTrimitere <> DdfSendStage.NotSent Then
+            KBotMessage.Show(Me, $"Revizia este «{DdfRevisionStates.Label(revizie.Stare)}»: a modificat deja " &
+                            "FOREXE, deci nu se mai șterge din K-BOT.", "Șterge revizia",
                             MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If
@@ -1274,7 +1412,11 @@ Public Class KbotForm
     ''' perioadă sau la prima încărcare nu există selecție de păstrat, iar una veche ar fi
     ''' oricum a altui an.
     ''' </param>
-    Private Async Function LoadTreeAsync(Optional pastreazaSelectia As Boolean = False) As Task
+    ''' <param name="codDeSelectat">Slice 0081-02: a code to select after the reload even if it was
+    ''' not in the tree before (a K-BOT angajament just created, or one whose «!» code was replaced
+    ''' by forexecab's). Wins over <paramref name="pastreazaSelectia"/>.</param>
+    Private Async Function LoadTreeAsync(Optional pastreazaSelectia As Boolean = False,
+                                         Optional codDeSelectat As String = Nothing) As Task
         ' Fără an/SS nu există interogare de făcut (combo-uri goale = perioade necitite).
         If cboAn.SelectedItem Is Nothing OrElse cboSs.SelectedItem Is Nothing Then
             Return
@@ -1288,6 +1430,7 @@ Public Class KbotForm
         ' există de unde afla ce era selectat.
         Dim codSelectat As String = If(pastreazaSelectia AndAlso _currentInfo IsNot Nothing,
                                        _currentInfo.CodAngajament, Nothing)
+        If Not String.IsNullOrWhiteSpace(codDeSelectat) Then codSelectat = codDeSelectat
 
         busyBar.Running = True
         Try
@@ -1883,8 +2026,11 @@ Public Class KbotForm
     '''
     ''' <para>Închiderea formularului fără salvare NU e o cale de eroare: e alegerea
     ''' operatorului de a nu scrie descărcarea. Formularul îl avertizează ce pierde.</para>
+    '''
+    ''' <para>Slice 0081-04: returns True only when the package was saved on the server -- the
+    ''' DDF send moves the revision forward only then.</para>
     ''' </summary>
-    Private Async Function DuLaIngestieAsync(cod As String, pachet As PrelucrareRezultat) As Task
+    Private Async Function DuLaIngestieAsync(cod As String, pachet As PrelucrareRezultat) As Task(Of Boolean)
         Try
             ' EMPTY PACKAGE > THE SERVER IS NOT TOUCHED (operator, 08.09.2026).
             '
@@ -1907,7 +2053,7 @@ Public Class KbotForm
                     "Nu s-a trimis nimic pe server. Verificați dacă angajamentul chiar are date " &
                     "în FOREXE și reluați descărcarea.",
                     "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Information)
-                Return
+                Return False
             End If
 
             ' Alegerile de unitate se ADUNĂ aici, nu în coordonator: aceeași listă merge și în
@@ -1930,7 +2076,7 @@ Public Class KbotForm
             End Try
 
             ' Nothing = operatorul a renunțat la o alegere de unitate. Nimic nu s-a scris.
-            If propunere Is Nothing Then Return
+            If propunere Is Nothing Then Return False
 
             ' ── COȘUL GOL = NICIO ÎNTREBARE (operator, 10.09.2026) ───────────────────
             '
@@ -1950,12 +2096,12 @@ Public Class KbotForm
             Dim faraIgnorate As New Dictionary(Of Integer, Boolean)()
 
             If AsociereForm.NehotarateDin(stare.Instantanee, faraMutari, faraIgnorate) = 0 Then
-                If Not Await SalveazaFaraMachetaAsync(cod, stare, propunere, pachet, alegeri) Then Return
+                If Not Await SalveazaFaraMachetaAsync(cod, stare, propunere, pachet, alegeri) Then Return False
             Else
                 Using f As New AsociereForm(_apiClient, cod, propunere, pachet, alegeri,
                                             Function(op) WithReauth(Of PrelucrareRaspuns)(op))
                     f.ShowDialog(Me)
-                    If Not f.SAuSalvatModificari Then Return
+                    If Not f.SAuSalvatModificari Then Return False
                 End Using
             End If
 
@@ -1965,11 +2111,13 @@ Public Class KbotForm
             ' operatorul înapoi la începutul listei exact după ce a terminat de lucrat pe un
             ' angajament, iar vederea deschisă se închide odată cu ea.
             Await LoadTreeAsync(pastreazaSelectia:=True)
+            Return True
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DuLaIngestieAsync", ex)
             KBotMessage.Show(Me, "Ingestia descărcării a eșuat: " & ex.Message & Environment.NewLine &
                             "Pachetul a rămas în «WorkflowResults».",
                             "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return False
         End Try
     End Function
 

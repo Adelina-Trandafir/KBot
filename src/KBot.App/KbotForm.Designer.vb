@@ -58,6 +58,7 @@ Partial Class KbotForm
         lblOperator = New Label()
         lblSs = New Label()
         lblAn = New Label()
+        btnAngajamentNou = New Button()
         busyBar = New KBotBusyBar()
         capBar = New KBotCaptionBar()
         pnlRoot.SuspendLayout()
@@ -442,6 +443,7 @@ Partial Class KbotForm
         tlyHeader.Controls.Add(lblSs, 4, 0)
         tlyHeader.Controls.Add(cboAn, 2, 0)
         tlyHeader.Controls.Add(lblAn, 1, 0)
+        tlyHeader.Controls.Add(btnAngajamentNou, 0, 0)
         tlyHeader.Dock = DockStyle.Fill
         tlyHeader.Location = New Point(0, 0)
         tlyHeader.Margin = New Padding(0)
@@ -451,6 +453,21 @@ Partial Class KbotForm
         tlyHeader.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyHeader.Size = New Size(1920, 45)
         tlyHeader.TabIndex = 6
+        ' 
+        ' btnAngajamentNou
+        ' 
+        btnAngajamentNou.Dock = DockStyle.Fill
+        btnAngajamentNou.FlatStyle = FlatStyle.Flat
+        btnAngajamentNou.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
+        btnAngajamentNou.Location = New Point(9, 6)
+        btnAngajamentNou.Margin = New Padding(8, 5, 8, 5)
+        btnAngajamentNou.Name = "btnAngajamentNou"
+        btnAngajamentNou.Size = New Size(224, 32)
+        btnAngajamentNou.TabIndex = 0
+        btnAngajamentNou.Text = "Angajament nou"
+        tips.SetToolTipHeader(btnAngajamentNou, "Angajament nou")
+        tips.SetToolTipText(btnAngajamentNou, "Deschide documentul de fundamentare pentru un angajament nou (revizia 0)." & vbLf & "Angajamentul se creează în FOREXE abia la «Trimite în FOREXE», după semnătura A.")
+        btnAngajamentNou.UseVisualStyleBackColor = True
         ' 
         ' lblOperator
         ' 
@@ -577,4 +594,5 @@ Partial Class KbotForm
     Friend WithEvents lblSs As Label
     Friend WithEvents cboAn As KBotComboBox
     Friend WithEvents lblAn As Label
+    Friend WithEvents btnAngajamentNou As Button
 End Class

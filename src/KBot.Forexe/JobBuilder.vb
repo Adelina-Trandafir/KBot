@@ -233,5 +233,75 @@ Namespace KBot.Forexe
                 WorkflowCatalog.ListaDatelorSarite(receptiiSarite)
         End Sub
 
+        ' ── Slice 0081: the sending workflows ──────────────────────────────────────────
+
+        ''' <summary>
+        ''' «Creare Angajament»: a new angajament in forexecab from a K-BOT revision 0.
+        ''' <paramref name="dateReceptieJson"/> = the rows (<c>KBot.Domain.DdfSendInputs.CreareRows</c>).
+        ''' Must never run twice for one revision: the caller checks the stored code first.
+        ''' </summary>
+        Public Shared Function BuildCreareAngajament(descriere As String, dateReceptieJson As String) As JobRequest
+            If String.IsNullOrWhiteSpace(dateReceptieJson) Then
+                Throw New ArgumentException("The rows of the new angajament are missing.", NameOf(dateReceptieJson))
+            End If
+            Dim job As New JobRequest With {
+                .WorkflowName = "CreareAngajament",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.CreareAngajamentFile)
+            }
+            job.Parameters(WorkflowCatalog.VarDescriereAngajament) = If(descriere, String.Empty)
+            job.Parameters(WorkflowCatalog.VarDateReceptie) = dateReceptieJson
+            Return job
+        End Function
+
+        ''' <summary>
+        ''' «Incarca Rezervare»: set or add rows on an existing angajament. The «Informatii complete»
+        ''' flag is ALWAYS passed: an unpassed variable reaches the page as literal text.
+        ''' </summary>
+        Public Shared Function BuildIncarcaRezervare(cod As String, dateModificareJson As String,
+                                                     capturaInfoComplete As Boolean) As JobRequest
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("The angajament code is required.", NameOf(cod))
+            End If
+            If String.IsNullOrWhiteSpace(dateModificareJson) Then
+                Throw New ArgumentException("The rows to send are missing.", NameOf(dateModificareJson))
+            End If
+            Dim job As New JobRequest With {
+                .WorkflowName = "IncarcaRezervare",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.IncarcaRezervareFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
+            job.Parameters(WorkflowCatalog.VarDateModificare) = dateModificareJson
+            job.Parameters(WorkflowCatalog.VarCapturaInfoComplete) = If(capturaInfoComplete, "true", "false")
+            Return job
+        End Function
+
+        ''' <summary>«Definitivare Angajament»: «Initial» -&gt; «In definitivare».</summary>
+        Public Shared Function BuildDefinitivare(cod As String, motiv As String) As JobRequest
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("The angajament code is required.", NameOf(cod))
+            End If
+            Dim job As New JobRequest With {
+                .WorkflowName = "DefinitivareAngajament",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.DefinitivareAngajamentFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
+            job.Parameters(WorkflowCatalog.VarMotivDefinitivare) = If(motiv, String.Empty)
+            Return job
+        End Function
+
+        ''' <summary>«Derulare Angajament»: «In definitivare» -&gt; «In derulare».</summary>
+        Public Shared Function BuildDerulare(cod As String, motiv As String) As JobRequest
+            If String.IsNullOrWhiteSpace(cod) Then
+                Throw New ArgumentException("The angajament code is required.", NameOf(cod))
+            End If
+            Dim job As New JobRequest With {
+                .WorkflowName = "DerulareAngajament",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.DerulareAngajamentFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
+            job.Parameters(WorkflowCatalog.VarMotivDerulare) = If(motiv, String.Empty)
+            Return job
+        End Function
+
     End Class
 End Namespace

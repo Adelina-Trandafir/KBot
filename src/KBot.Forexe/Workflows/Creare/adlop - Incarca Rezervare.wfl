@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- V4.1 - 25.09.2026: K-BOT slice 0081-03 (G2) - optional «Informatii complete contract»
+     capture at the end, driven by {{CAPTURA_INFO_COMPLETE}} ("true" / "false", always passed). -->
 <!-- V4.0 - 21.03.2026 -->
 <!--
   DATE_MODIFICARE — array JSON din VBA:
@@ -263,6 +265,28 @@
   </IfExists>
 
   <Screenshot saveTo="Poza_Final"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       K-BOT slice 0081-03 (G2): «Informatii complete contract» for amounts carried over from
+       earlier years (the parent document's S3, guide SCREEN p.30). K-BOT passes
+       {{CAPTURA_INFO_COMPLETE}} = "true" for a Rev 0 on an angajament already «In derulare»,
+       "false" otherwise, and ALWAYS passed: the text after «|» is a description, not a default,
+       and an unpassed variable would reach IfVar as literal text.
+  ════════════════════════════════════════════════════════ -->
+  <IfVar value="{{CAPTURA_INFO_COMPLETE|true = captura Informatii complete contract}}" compare="eq:true">
+    <Log message="Deschid «Informații complete contract»..." level="action"/>
+    <Click selector="a:has-text('Afișează informații complete'), button:has-text('Afișează informații complete')"
+           waitNavigation="true" timeout="10"
+           LogValue="Click Afișează informații complete"/>
+    <WaitFor selector="*:has-text('Informații complete contract')" timeout="10"
+             LogValue="Aștept pagina Informații complete contract"/>
+    <Screenshot saveTo="Poza_InfoComplete"
+                LogValue="Captură ecran — Informații complete contract"/>
+    <Click selector="button.btn-default:has-text('Înapoi'), a:has-text('Înapoi')"
+           waitNavigation="true" timeout="10"
+           LogValue="Revin la angajament"/>
+  </IfVar>
+
   <Log message="✓ Operatii rezervari finalizate pentru {{COD_ANGAJAMENT}}" level="success"/>
 
 </Workflow>

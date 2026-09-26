@@ -888,6 +888,56 @@ Public NotInheritable Class ForexeController
     End Function
 
     ''' <summary>
+    ''' Slice 0081-04: runs one SENDING workflow (Creare / Incarca Rezervare / Definitivare /
+    ''' Derulare) on the live session and hands back its result, FAILED ONES INCLUDED: a sending
+    ''' run that stops halfway has already changed forexecab, and what it read before stopping (the
+    ''' angajament code, the captures) is what the caller needs to save and resume. Nothing = the run
+    ''' could not start (busy, no session, certificate cancelled); <see cref="LastFailure"/> says why.
+    ''' Same black box on disk as the downloads (ForexeRunDump).
+    ''' </summary>
+    Public Async Function RuleazaTrimitereAsync(job As JobRequest, cod As String) As Task(Of JobResult)
+        Dim jurnal As New ForexeRunDump(If(job?.WorkflowName, "Trimitere"), If(cod, String.Empty), _session)
+        Try
+            ArgumentNullException.ThrowIfNull(job)
+            _ultimulEsec = String.Empty
+            If _busy Then
+                jurnal.Note("motiv", "O alta operatie FOREXE era deja in curs.")
+                ScrieJurnal(jurnal, "ocupat", Nothing)
+                RaporteazaEsec("Rulează deja o operație FOREXE — trimiterea nu a pornit.")
+                Return Nothing
+            End If
+            If Not Await AsiguraSesiuneAsync() Then
+                jurnal.Note("motiv", "Sesiunea FOREXE nu s-a deschis (anulat sau esuat).")
+                ScrieJurnal(jurnal, "fara-sesiune", Nothing)
+                If String.IsNullOrEmpty(_ultimulEsec) Then _ultimulEsec = "Sesiunea FOREXE nu s-a deschis."
+                Return Nothing
+            End If
+
+            IntraInLucru()
+            Try
+                RaporteazaStare($"Trimit în FOREXE ({job.WorkflowName}) pentru «{cod}»...")
+                jurnal.NoteRequest(job)
+                Dim rezultat As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
+                If rezultat.Success Then
+                    ScrieJurnal(jurnal, "ok", rezultat)
+                    RaporteazaStare($"«{cod}»: {job.WorkflowName} încheiat.")
+                Else
+                    ScrieJurnal(jurnal, "esuat", rezultat)
+                    RaporteazaEsec($"{job.WorkflowName} pentru «{cod}» s-a oprit: " & rezultat.Message)
+                End If
+                Return rezultat
+            Finally
+                IesDinLucru()
+            End Try
+        Catch ex As Exception
+            jurnal.Note("exceptie", ex.ToString())
+            ScrieJurnal(jurnal, "exceptie", Nothing)
+            GlobalErrorLog.Write("ForexeController.RuleazaTrimitereAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
     ''' Deschide bancul de înregistrare (K-BOT Recorder, felia 0053) peste sesiunea FOREXE.
     ''' Fereastra e modeless și trăiește în KBot.Forexe, lângă executorul pe care îl andochează;
     ''' aici trece doar intenția și proprietarul dialogului.

@@ -172,7 +172,13 @@ Public Class AdobeUtils
                 For Each row As XmlNode In xmlNode.SelectNodes("Row1")
                     Dim newRow As XmlElement = pdfDoc.CreateElement("Row1")
                     For Each cell As XmlNode In row.ChildNodes
-                        newRow.AppendChild(CreateElement(pdfDoc, cell.Name, CStr(cell.InnerText)))
+                        Dim newCell As XmlElement = CreateElement(pdfDoc, cell.Name, CStr(cell.InnerText))
+                        ' Slice 0081-05: a cell's attributes travel with it. An image cell of the
+                        ' DDF captures table (Table4) is «xfa:contentType="image/png"» + base64
+                        ' text; without the attribute Adobe shows the base64 as text. Cells
+                        ' without attributes (every other table) are unchanged.
+                        CopyAttributes(pdfDoc, cell, newCell)
+                        newRow.AppendChild(newCell)
                     Next
                     pdfTableNode.AppendChild(newRow)
                     rowsAdded += 1
@@ -611,4 +617,21 @@ Public Class AdobeUtils
         elem.InnerText = value
         Return elem
     End Function
+
+    ''' <summary>
+    ''' Slice 0081-05: copies the attributes of a data-XML node onto its new twin in the PDF's XFA
+    ''' DOM, namespace and prefix included (<c>xfa:contentType</c>, <c>href</c>). Namespace
+    ''' declarations are skipped: the DOM already declares <c>xfa</c>, and a second declaration
+    ''' on every cell would only add noise. Reached through ModifyXfaFromXml, which logs; Public
+    ''' only so the tests can call it (no Try: pure DOM work).
+    ''' </summary>
+    Public Shared Sub CopyAttributes(doc As XmlDocument, source As XmlNode, target As XmlElement)
+        If source Is Nothing OrElse source.Attributes Is Nothing Then Return
+        For Each a As XmlAttribute In source.Attributes
+            If a.Prefix = "xmlns" OrElse a.Name = "xmlns" Then Continue For
+            Dim copy As XmlAttribute = doc.CreateAttribute(a.Prefix, a.LocalName, a.NamespaceURI)
+            copy.Value = a.Value
+            target.Attributes.Append(copy)
+        Next
+    End Sub
 End Class

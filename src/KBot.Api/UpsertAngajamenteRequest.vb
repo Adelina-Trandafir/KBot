@@ -311,6 +311,8 @@ Public NotInheritable Class GetDdfAntetRow
     Public Property salarii As Boolean
     Public Property incarcat As Boolean
     Public Property preluat As Boolean
+    ' Slice 0081-02: FX_DDF.Manual -- the document was created in K-BOT.
+    Public Property manual As Boolean
 End Class
 
 ' One FX_DDF_REV record. total_revizie is the server-side SUM(ValCur) over section A —
@@ -326,6 +328,10 @@ Public NotInheritable Class GetDdfRevizieRow
     Public Property incarcat As Boolean
     Public Property preluat As Boolean
     Public Property semnatura As String
+    ' Slice 0081-01: FX_DDF_REV.StareTrimitere (0 when the column is absent) and whether any
+    ' FX_Rezervari row points at the revision.
+    Public Property stare_trimitere As Integer
+    Public Property are_rezervari As Boolean
     Public Property total_revizie As Double
     ' Slice 0041 — the SIGNED PDF held on the server (FX_DDF_PDF). Non-null pdf_sha256 MEANS
     ' "a signed PDF exists"; it doubles as the local cache validator (If-None-Match on the

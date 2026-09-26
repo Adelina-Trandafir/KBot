@@ -149,6 +149,29 @@ Namespace KBot.Forexe
             "TabelIndicatori", "BugetIndicator", "TabelIstoric"
         }
 
+        ' Slice 0081: the SENDING workflows (KBOT -> forexecab). They live in the «Creare» sub-folder
+        ' of Workflows (copied there by KBot.Forexe.vbproj), hence the folder in the name.
+        Public Const CreareAngajamentFile As String = "Creare\adlop - Creare Angajament.wfl"
+        Public Const IncarcaRezervareFile As String = "Creare\adlop - Incarca Rezervare.wfl"
+        Public Const DefinitivareAngajamentFile As String = "Creare\adlop - Definitivare Angajament.wfl"
+        Public Const DerulareAngajamentFile As String = "Creare\adlop - Derulare Angajament.wfl"
+
+        ' Their variables (checked in the files).
+        Public Const VarDescriereAngajament As String = "DESCRIERE_ANGAJAMENT"
+        Public Const VarDateReceptie As String = "DATE_RECEPTIE"
+        Public Const VarDateModificare As String = "DATE_MODIFICARE"
+        Public Const VarCapturaInfoComplete As String = "CAPTURA_INFO_COMPLETE"
+        Public Const VarMotivDefinitivare As String = "MOTIV_DEFINITIVARE"
+        Public Const VarMotivDerulare As String = "MOTIV_DERULARE"
+        ''' <summary>What «Creare Angajament» reads last: the new angajament's code.</summary>
+        Public Const VarCodAngajamentFinal As String = "CodAng_Final"
+        ''' <summary>Per-row prefix of the angajament header text «Creare Angajament» reads after each save.</summary>
+        Public Const VarCodAngajamentRandPrefix As String = "CodAng_"
+        ''' <summary>Per-row prefix of the row code «Incarca Rezervare» reads for a NEW row.</summary>
+        Public Const VarCodIndicatorRandPrefix As String = "CodIndicator_"
+        ''' <summary>The indicator table «Creare Angajament» scrapes at its end.</summary>
+        Public Const TabelIndicatori As String = "TabelIndicatori"
+
         ''' <summary>Calea absolută a unui .wfl din folderul Workflows de lângă executabil.</summary>
         Public Shared Function ResolvePath(fileName As String) As String
             Return Path.Combine(KBotPaths.FolderWorkflows, fileName)

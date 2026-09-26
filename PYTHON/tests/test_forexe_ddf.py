@@ -45,10 +45,16 @@ ANTET_KEYS = (
     "iddf", "cod_angajament", "cual", "obiect_ddf", "comp", "program",
     "data_creare", "data_def", "stare", "part_ang", "cod_fiscal", "nume_partener",
     "salarii", "incarcat", "preluat",
+    # Slice 0081-02.
+    "manual",
 )
 REVIZIE_KEYS = (
     "idrev", "iddf", "numar_rev", "data_rev", "desc_scurta", "desc_lunga",
     "tip", "incarcat", "preluat", "semnatura", "total_revizie",
+    # Slice 0041: the signed PDF held on the server.
+    "pdf_sha256", "pdf_dimensiune", "pdf_data_modif",
+    # Slice 0081-01: the send stage and the linked-reservation flag.
+    "stare_trimitere", "are_rezervari",
 )
 LINIE_KEYS = (
     "id_sec_a", "idrev", "id_clsf", "clsf", "ss", "element_fund", "parametrii_fund",

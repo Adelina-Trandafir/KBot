@@ -577,7 +577,7 @@ Namespace KBot.Forexe
                 If Not String.IsNullOrWhiteSpace(opritDeExit) Then
                     _logger.LogWarning($"'{job.WorkflowName}': flux oprit — {opritDeExit}")
                     RidicaStare("Oprit: " & opritDeExit)
-                    Return Failed(opritDeExit)
+                    Return FailedWithVariables(opritDeExit)
                 End If
 
                 Dim result As New JobResult With {.Success = True, .Message = $"'{job.WorkflowName}' rulat."}
@@ -596,14 +596,33 @@ Namespace KBot.Forexe
                 _logger.LogWarning($"'{job.WorkflowName}' anulat.")
                 RidicaStare("Operație anulată.")
                 JobHistoryManager.FinishJob("Anulat")
-                Return Failed($"'{job.WorkflowName}' anulat.")
+                Return FailedWithVariables($"'{job.WorkflowName}' anulat.")
 
             Catch ex As Exception
                 _logger.LogException(ex, $"Eroare rulare '{job.WorkflowName}'")
                 RidicaStare("Eroare!")
                 _logger.LogDebug("[DIAG][STACK] " & ex.ToString())
-                Return Failed(ex.Message)
+                Return FailedWithVariables(ex.Message)
             End Try
+        End Function
+
+        ''' <summary>
+        ''' Slice 0081-04: a failed run that STILL carries what the executor collected before it
+        ''' stopped (<see cref="JobResult.Data"/> / <see cref="JobResult.Tables"/>). A sending
+        ''' workflow that stops halfway has already changed forexecab: the angajament code it read
+        ''' and the captures it took are what lets the send resume without creating a second
+        ''' angajament. Every existing caller checks <c>Success</c> first, so the extra data changes
+        ''' nothing for them. Collecting must never hide the failure: if it throws, it is logged and
+        ''' the plain failed result goes back.
+        ''' </summary>
+        Private Function FailedWithVariables(message As String) As JobResult
+            Dim result As JobResult = Failed(message)
+            Try
+                PopulateResult(result)
+            Catch ex As Exception
+                _logger?.LogWarning("Variabilele fluxului oprit nu au putut fi colectate: " & ex.Message)
+            End Try
+            Return result
         End Function
 
 

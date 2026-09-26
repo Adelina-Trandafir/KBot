@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Workflow name="Definitivare {{COD_ANGAJAMENT}}" startUrl="current"
+          expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
+  <!-- V1.0 - 25.09.2026 (K-BOT slice 0081-03, G1)
+       «Definitiveaza» for ONE angajament: «Initial» -> «In definitivare».
+       Split out of «adlop - Definitivare_Derulare Angajament.wfl» (sections 1-6, unchanged
+       selectors), because the operator runs «Definitiveaza» and «Deruleaza» as two separate
+       actions (Rezervari footer menu). The original file stays until both halves have run live.
+
+       Captures (they go under Section B of the final DDF, SubformSectiuneaB/Subform51/Table4):
+         Poza_Definitivare_[[idx]]  - each indicator form, filled, before «Salveaza»
+         Poza_Definitivare          - the angajament page after the last row
+       Each capture has its OWN variable name: the executor appends to a per-name list, so a
+       shared name would come back as one JSON array instead of separate images.
+
+       Variables expected from K-BOT:
+         {{COD_ANGAJAMENT}}     - the forexecab code
+         {{MOTIV_DEFINITIVARE}} - the reason text; ends with «(REV:n)» (decision D9)
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 1 — RESET + NAVIGATION
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ Pornesc Definitivarea pentru {{COD_ANGAJAMENT}} ══" level="action"/>
+
+  <IfExists selector="#select2-drop-mask" timeout="1">
+    <Click selector="#select2-drop-mask" force="true" waitNavigation="true" timeout="5"
+           LogValue="Resetare interfață — închid dropdown-uri deschise"/>
+  </IfExists>
+
+  <Click selector="#statlogo" waitNavigation="true" timeout="10"
+         LogValue="Navigare Home via logo"/>
+
+  <Click selector="a:has-text('Listă angajamente')" waitNavigation="false" timeout="5"
+         LogValue="Click Listă angajamente"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 2 — SEARCH
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="Caut angajamentul {{COD_ANGAJAMENT}}..." level="info"/>
+
+  <Fill selector="input[name='cod']" value="{{COD_ANGAJAMENT}}" clear="true" timeout="5"
+        LogValue="Completez câmpul Cod cu {{COD_ANGAJAMENT}}"/>
+  <Click selector="button:has-text('Caută')" waitNavigation="false" timeout="5"
+         LogValue="Apăs Caută"/>
+
+  <IfExists selector=".alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')" timeout="1">
+    <Log message="EROARE: Angajamentul {{COD_ANGAJAMENT}} nu a fost găsit în listă!" level="error"/>
+    <Exit message="Angajamentul {{COD_ANGAJAMENT}} nu există. Opresc execuția."/>
+  </IfExists>
+
+  <WaitFor selector="a[href*='exportToXLS']" timeout="5"
+           LogValue="Aștept încărcarea listei de rezultate"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 3 — OPEN «Modificare»
+       ═══════════════════════════════════════════════════════ -->
+
+  <Click selector="a.haction i.glyphicon-list:visible" timeout="5"
+         LogValue="Click iconița detalii angajament"/>
+  <WaitFor selector=".divaction" state="visible" timeout="5"
+           LogValue="Aștept meniul de acțiuni"/>
+
+  <Click selector=".divaction a:has-text('Modificare')" waitNavigation="true" timeout="5"
+         LogValue="Click Modificare"/>
+  <WaitFor selector="li.tab0" timeout="5"
+           LogValue="Aștept formularul de modificare"/>
+
+  <Log message="Angajament {{COD_ANGAJAMENT}} deschis în modul Modificare." level="success"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 4 — INDICATOR TABLE BEFORE
+       ═══════════════════════════════════════════════════════ -->
+
+  <IfExists selector="table.table-striped tbody tr" timeout="5"
+            LogValue="Verific dacă există indicatori în tabel">
+    <ScrapeTable selector="table.table-striped"
+                 saveTo="TabelIndicatori"
+                 timeout="5"
+                 LogValue="Scrape tabel indicatori inițial"/>
+    <Else>
+      <Log message="EROARE: Nu există indicatori în tabel pentru {{COD_ANGAJAMENT}}." level="error"/>
+      <Exit message="Tabel indicatori gol. Opresc execuția."/>
+    </Else>
+  </IfExists>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 5 — «Definitiveaza»
+       ═══════════════════════════════════════════════════════ -->
+
+  <Click selector="button.btn-default:has-text('Definitivează')"
+         waitNavigation="false" timeout="5"
+         LogValue="Click Definitivează"/>
+
+  <WaitFor selector="form[action*='IFormSubmitListener-modal-form'] textarea[name='descriere']" timeout="5"
+           LogValue="Aștept modalul confirmare Definitivare"/>
+
+  <Fill selector="form[action*='IFormSubmitListener-modal-form'] textarea[name='descriere']"
+        value="{{MOTIV_DEFINITIVARE}}"
+        clear="true"
+        LogValue="Completez descrierea Definitivare"/>
+
+  <Click selector="form[action*='IFormSubmitListener-modal-form'] .modal-footer button.btn-success"
+         waitNavigation="true" timeout="10"
+         LogValue="Click Continuă — confirmare Definitivare"/>
+
+  <WaitFor selector="li.tab0.active" timeout="5"
+           LogValue="Confirm revenire după Definitivare"/>
+
+  <Log message="✓ Definitivare confirmată." level="success"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 6 — EACH INDICATOR: CB initial -> CB definitiv
+       ═══════════════════════════════════════════════════════ -->
+
+  <ForEachVar source="TabelIndicatori" itemPrefix="R" indexVariable="idx"
+              collectFields="Indicator_ang,Program,Obiectiv,Proiect,Sector_Sursa_Indicator,Limita_credit_angajament,Total_credit_angajament,Credit_bugetar,Credit_de_angajament_rezervat,Credit_bugetar_rezervat_initial,Angajament_legal,Credit_bugetar_rezervat_definitiv_an_curent,Credit_bugetar_rezervat_definitiv_ani_urmatori,ValoareCitita">
+
+    <Log message="── Indicator [[idx]]: [[R.Indicator_ang]] ──" level="info"/>
+
+    <!-- nth-child is 1-based, like idx -->
+    <Click selector="table.table-striped tbody tr:nth-child([[idx]]) a:has(i.glyphicon-eye-open)"
+           waitNavigation="false" timeout="5"
+           LogValue="Click ochisor indicator [[idx]] — [[R.Indicator_ang]]"/>
+
+    <WaitFor selector="input[name='tableContainer:creditBugRezervatDefinitivAnCurent']" timeout="15"
+             LogValue="Aștept formularul indicator [[idx]]"/>
+
+    <Read selector="input[name='tableContainer:creditBugRezervatInitialAnCurent']"
+          saveTo="ValoareCitita"
+          LogValue="Citesc creditBugRezervatInitialAnCurent → [[idx]]"/>
+
+    <Fill selector="input[name='tableContainer:creditBugRezervatDefinitivAnCurent']"
+          value="[[ValoareCitita]]"
+          clear="true"
+          LogValue="Completez creditBugRezervatDefinitivAnCurent cu [[ValoareCitita]] → [[idx]]"/>
+
+    <Screenshot SaveTo="Poza_Definitivare_[[idx]]"
+                LogValue="Captură ecran indicator [[idx]]"/>
+
+    <Click selector="button.btn-success.btn-small:has-text('Salvează')"
+           waitNavigation="false" timeout="5"
+           LogValue="Click Salvează → indicator [[idx]]"/>
+
+    <!-- The modal appears only when the value changed against the stored one -->
+    <IfExists selector="div.modal-content textarea[name='modal:form:motiv']" timeout="3"
+              LogValue="Verific dacă apare modalul motiv → indicator [[idx]]">
+      <Fill selector="div.modal-content textarea[name='modal:form:motiv']"
+            value="{{MOTIV_DEFINITIVARE}}"
+            clear="true"
+            LogValue="Completez motivul → indicator [[idx]]"/>
+      <Click selector="div.modal-content .modal-footer button.btn-success"
+             waitNavigation="true" timeout="10"
+             LogValue="Click Continuă → indicator [[idx]]"/>
+    </IfExists>
+
+    <WaitFor selector="li.tab0.active" timeout="10"
+             LogValue="Confirm revenire la tabel după indicator [[idx]]"/>
+
+    <Log message="✓ Indicator [[idx]] — [[R.Indicator_ang]] salvat." level="success"/>
+
+  </ForEachVar>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 7 — THE PAGE AFTER «Definitiveaza» (G1) + STATE + TABLE AFTER
+       ═══════════════════════════════════════════════════════ -->
+
+  <WaitFor selector="li.tab0.active" timeout="10"
+           LogValue="Aștept pagina angajamentului după ultimul indicator"/>
+
+  <Screenshot SaveTo="Poza_Definitivare"
+              LogValue="Captură ecran — angajamentul în definitivare"/>
+
+  <IfExists selector=".well.well-small span.label" timeout="3"
+            LogValue="Verific Stare">
+    <Read selector=".well.well-small span.label"
+          saveTo="StareAngajament"
+          LogValue="Citesc starea angajamentului"/>
+  </IfExists>
+
+  <ScrapeTable selector="table.table-striped" saveTo="TabelIndicatoriFinali" timeout="5"
+               LogValue="Scrape tabel indicatori după definitivare"/>
+
+  <Log message="══ Definitivare finalizată pentru {{COD_ANGAJAMENT}} — [[StareAngajament]] ══" level="success"/>
+
+</Workflow>

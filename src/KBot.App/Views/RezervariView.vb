@@ -83,10 +83,25 @@ Public Class RezervariView
     ''' </summary>
     Private ReadOnly _reimprospateaza As Action(Of String)
 
+    ' ── Slice 0081-02: the footer LEFT icon -- ONE icon, ONE option at most ─────────────────
+    ''' <summary>Reads the angajament's DDF (revisions + header) through the shell's 401 net.
+    ''' Nothing = the host offers no DDF actions; the icon is then hidden.</summary>
+    Private ReadOnly _citesteDdf As Func(Of String, Task(Of DdfInfo))
+    ''' <summary>Runs the chosen option in the shell (editor, FOREXE workflows, final PDF).</summary>
+    Private ReadOnly _actiuneMeniu As Action(Of RezervariMenuOption, AngajamentTreeInfo)
+    ''' <summary>The icon as the designer set it, put back whenever there is an option to offer.</summary>
+    Private ReadOnly _iconitaMeniu As Image
+    ''' <summary>The tree node of the angajament shown (state, description) -- the options need it.</summary>
+    Private _info As AngajamentTreeInfo
+    ''' <summary>The option the icon offers now; None = the icon is hidden.</summary>
+    Private _optiune As RezervariMenuOption = RezervariMenuOption.None
+
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of RezervariInfo)), Task(Of RezervariInfo)),
                    Optional executaComanda As Action(Of DdfComanda) = Nothing,
-                   Optional reimprospateaza As Action(Of String) = Nothing)
+                   Optional reimprospateaza As Action(Of String) = Nothing,
+                   Optional citesteDdf As Func(Of String, Task(Of DdfInfo)) = Nothing,
+                   Optional actiuneMeniu As Action(Of RezervariMenuOption, AngajamentTreeInfo) = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
@@ -94,12 +109,79 @@ Public Class RezervariView
         _withReauth = withReauth
         _executaComanda = executaComanda
         _reimprospateaza = reimprospateaza
+        _citesteDdf = citesteDdf
+        _actiuneMeniu = actiuneMeniu
+        _iconitaMeniu = tree.FooterLeftIcon
         If _reimprospateaza Is Nothing Then
             tree.FooterRightIcon = Nothing
             tree.FooterRightIconTooltip = String.Empty
         End If
+        AratatOptiunea(RezervariMenuOption.None)
         'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0081-02: works out the ONE option of the footer LEFT icon for the angajament just
+    ''' loaded (plan 0081-04, the menu table) and shows or hides the icon. The tree has no
+    ''' «disabled» look for a footer icon, so «nothing to offer» hides it.
+    ''' UI boundary (fire-and-forget from LoadAsync): logs and hides the icon on any failure.
+    ''' </summary>
+    Private Async Sub ActualizeazaMeniulAsync(cod As String)
+        Try
+            AratatOptiunea(RezervariMenuOption.None)
+            If _citesteDdf Is Nothing OrElse _actiuneMeniu Is Nothing OrElse _info Is Nothing Then Return
+
+            Dim ddf As DdfInfo = If(_info.AreDDF, Await _citesteDdf(cod).ConfigureAwait(True), Nothing)
+            If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
+
+            Dim antet As DdfAntet = ddf?.AntetDeLucru(If(_info.IDDF.HasValue, CInt(_info.IDDF.Value), 0))
+            Dim optiune As RezervariMenuOption = RezervariMenu.Decide(
+                RezervariMenu.ParseState(_info.Stare, cod),
+                antet IsNot Nothing AndAlso antet.Manual,
+                ddf?.Revizii)
+            AratatOptiunea(optiune)
+        Catch ex As Exception
+            GlobalErrorLog.Write("RezervariView.ActualizeazaMeniulAsync", ex)
+            AratatOptiunea(RezervariMenuOption.None)
+        End Try
+    End Sub
+
+    Private Sub AratatOptiunea(optiune As RezervariMenuOption)
+        _optiune = optiune
+        If optiune = RezervariMenuOption.None Then
+            tree.FooterLeftIcon = Nothing
+            tree.FooterLeftIconTooltip = String.Empty
+        Else
+            tree.FooterLeftIcon = _iconitaMeniu
+            tree.FooterLeftIconTooltip = RezervariMenu.Label(optiune)
+        End If
+        tree.Invalidate()
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0081-02: the footer LEFT icon opens a menu with the valid option only (operator,
+    ''' 25.09.2026: one icon, a menu -- the pattern of the main form's options menu).
+    ''' </summary>
+    Private Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
+        Try
+            If _optiune = RezervariMenuOption.None OrElse _actiuneMeniu Is Nothing OrElse _info Is Nothing Then Return
+            Dim optiune As RezervariMenuOption = _optiune
+            Dim info As AngajamentTreeInfo = _info
+            Dim meniu As New CustomPopup(New List(Of CustomPopupItem) From {
+                New CustomPopupItem(optiune.ToString(), RezervariMenu.Label(optiune))})
+            AddHandler meniu.ItemClicked,
+                Sub(s As Object, ev As CustomPopupItemEventArgs)
+                    Try
+                        _actiuneMeniu(optiune, info)
+                    Catch ex As Exception
+                        GlobalErrorLog.Write("RezervariView.MeniuSubsol", ex)
+                    End Try
+                End Sub
+            meniu.ShowAtCursor(tree)
+        Catch ex As Exception
+            GlobalErrorLog.Write("RezervariView.Tree_FooterLeftIconClicked", ex)
+        End Try
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements IAngajamentView.ViewKey
@@ -204,6 +286,8 @@ Public Class RezervariView
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
         Try
             Dim cod As String = info?.CodAngajament
+            _info = info
+            AratatOptiunea(RezervariMenuOption.None)
             If String.IsNullOrWhiteSpace(cod) Then
                 _requestedCod = Nothing
                 _rows = Nothing
@@ -249,6 +333,8 @@ Public Class RezervariView
             ' (decizia §7.3 + revizuirea operator 2026-08-13: agregat, ca în Recepții).
             FillGridAgregat(rows)
             ShowContent()
+            ' Slice 0081-02: the footer LEFT icon follows the angajament's DDF state.
+            ActualizeazaMeniulAsync(cod)
         Catch ex As ApiException
             If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
             GlobalErrorLog.Write("RezervariView.LoadAsync", ex)
