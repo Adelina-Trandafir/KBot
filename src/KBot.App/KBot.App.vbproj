@@ -103,4 +103,66 @@
     </Compile>
   </ItemGroup>
 
+
+  <!-- Slice 0086: every partial file of a form / control nests under its main file in Solution
+       Explorer (DependentUpon). A new partial «Name.Part.vb» gets its own entry here. -->
+  <ItemGroup>
+    <Compile Update="KbotForm.Browser.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.Chrome.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.Console.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.Ddf.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.DdfDelete.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.DdfSend.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.DdfSendHelpers.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.DdfSendMenu.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.Download.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.Extrase.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.ForexeWatch.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.Ingest.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.Ord.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.Periods.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.Receptii.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.Tree.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.TreeOptions.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.UncorrectedOperations.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.Views.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+  </ItemGroup>
 </Project>

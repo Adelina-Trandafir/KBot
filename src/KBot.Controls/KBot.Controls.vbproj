@@ -98,4 +98,177 @@
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+
+  <!-- Slice 0086: every partial file of a form / control nests under its main file in Solution
+       Explorer (DependentUpon). A new partial «Name.Part.vb» gets its own entry here. -->
+  <ItemGroup>
+    <Compile Update="Calendar\KBotCalendar.Painting.vb">
+      <DependentUpon>KBotCalendar.vb</DependentUpon>
+    </Compile>
+    <Compile Update="CaptionBar\KBotCaptionBar.ThemeButton.vb">
+      <DependentUpon>KBotCaptionBar.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Chart\KBotChartView.Painting.vb">
+      <DependentUpon>KBotChartView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.AutoSize.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.ButtonTips.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.Collapse.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.Dpi.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.Editing.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.FilterIcon.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.Filtering.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.Footer.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.FooterCaption.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.Grouping.Painting.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.Grouping.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.HeaderIcons.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.Input.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.Layout.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.Painting.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.Theming.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.Tooltip.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.WidthProbe.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Lane\KBotLaneView.Drag.vb">
+      <DependentUpon>KBotLaneView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Lane\KBotLaneView.Painting.vb">
+      <DependentUpon>KBotLaneView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Lane\KBotLaneView.Preview.vb">
+      <DependentUpon>KBotLaneView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Popup\CustomPopup.Input.vb">
+      <DependentUpon>CustomPopup.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Popup\CustomPopup.Painting.vb">
+      <DependentUpon>CustomPopup.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Popup\CustomPopup.Slider.vb">
+      <DependentUpon>CustomPopup.vb</DependentUpon>
+    </Compile>
+    <Compile Update="RichText\KBotRichTextEditor.Properties.vb">
+      <DependentUpon>KBotRichTextEditor.vb</DependentUpon>
+    </Compile>
+    <Compile Update="RichText\KBotRichTextEditor.Theming.vb">
+      <DependentUpon>KBotRichTextEditor.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Table\KBotTableLayoutPanel.Dpi.vb">
+      <DependentUpon>KBotTableLayoutPanel.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Table\KBotTableLayoutPanel.Fit.vb">
+      <DependentUpon>KBotTableLayoutPanel.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.API.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.ButtonHover.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.ButtonTips.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.ColFilter.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.DesignerNodes.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Dpi.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Drag.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.DropPreview.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Events.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Footer.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Header.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Keyboard.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.ListMode.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.MultiSelect.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.NodeInspector.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Overrides.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Paddings.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Painting.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Popup.Branching.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Popup.Table.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Popup.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Properties.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Search.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.Theming.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Tree\AdvancedTreeControl.TreeItem.vb">
+      <DependentUpon>AdvancedTreeControl.vb</DependentUpon>
+    </Compile>
+  </ItemGroup>
 </Project>

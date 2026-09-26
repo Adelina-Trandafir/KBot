@@ -42,6 +42,7 @@ Partial Class KbotForm
         btnOpt = New Button()
         cboAn = New KBotComboBox()
         cboSs = New KBotComboBox()
+        btnAngajamentNou = New Button()
         pnlRoot = New Panel()
         pnlWork = New Panel()
         split = New SplitContainer()
@@ -58,7 +59,6 @@ Partial Class KbotForm
         lblOperator = New Label()
         lblSs = New Label()
         lblAn = New Label()
-        btnAngajamentNou = New Button()
         busyBar = New KBotBusyBar()
         capBar = New KBotCaptionBar()
         pnlRoot.SuspendLayout()
@@ -154,6 +154,21 @@ Partial Class KbotForm
         cboSs.TabIndex = 5
         tips.SetToolTipHeader(cboSs, "Subperioadă")
         tips.SetToolTipText(cboSs, "Subperioada (SS) din anul ales." & vbLf & "Ultima aleasă se ține minte pentru data viitoare.")
+        ' 
+        ' btnAngajamentNou
+        ' 
+        btnAngajamentNou.Dock = DockStyle.Fill
+        btnAngajamentNou.FlatStyle = FlatStyle.Flat
+        btnAngajamentNou.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
+        btnAngajamentNou.Location = New Point(9, 6)
+        btnAngajamentNou.Margin = New Padding(8, 5, 8, 5)
+        btnAngajamentNou.Name = "btnAngajamentNou"
+        btnAngajamentNou.Size = New Size(224, 32)
+        btnAngajamentNou.TabIndex = 0
+        btnAngajamentNou.Text = "Angajament nou"
+        tips.SetToolTipHeader(btnAngajamentNou, "Angajament nou")
+        tips.SetToolTipText(btnAngajamentNou, "Deschide documentul de fundamentare pentru un angajament nou (revizia 0)." & vbLf & "Angajamentul se creează în FOREXE abia la «Trimite în FOREXE», după semnătura A.")
+        btnAngajamentNou.UseVisualStyleBackColor = True
         ' 
         ' pnlRoot
         ' 
@@ -354,34 +369,34 @@ Partial Class KbotForm
         KBotNavItem5.Image = My.Resources.Resources.credit_card
         KBotNavItem5.Key = "plati"
         KBotNavItem5.Text = "Plăți"
-        KBotNavItem10.Image = My.Resources.Resources.binvoice
-        KBotNavItem10.Key = "extrase"
-        KBotNavItem10.Text = "Extrase"
-        KBotNavItem6.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
-        KBotNavItem6.Key = "browser"
-        KBotNavItem6.Text = "Browser FOREXE"
-        KBotNavItem7.Align = KBotNavAlign.Far
-        KBotNavItem7.IsSeparator = True
-        KBotNavItem7.Key = "__sep_1"
-        KBotNavItem7.Text = Nothing
+        KBotNavItem6.Image = My.Resources.Resources.binvoice
+        KBotNavItem6.Key = "extrase"
+        KBotNavItem6.Text = "Extrase"
+        KBotNavItem7.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
+        KBotNavItem7.Key = "browser"
+        KBotNavItem7.Text = "Browser FOREXE"
         KBotNavItem8.Align = KBotNavAlign.Far
-        KBotNavItem8.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_temporary_32
-        KBotNavItem8.Key = "ddf"
-        KBotNavItem8.Text = "Fundamentare"
+        KBotNavItem8.IsSeparator = True
+        KBotNavItem8.Key = "__sep_1"
+        KBotNavItem8.Text = Nothing
         KBotNavItem9.Align = KBotNavAlign.Far
-        KBotNavItem9.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
-        KBotNavItem9.Key = "ord"
-        KBotNavItem9.Text = "Ordonanțare"
+        KBotNavItem9.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_temporary_32
+        KBotNavItem9.Key = "ddf"
+        KBotNavItem9.Text = "Fundamentare"
+        KBotNavItem10.Align = KBotNavAlign.Far
+        KBotNavItem10.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
+        KBotNavItem10.Key = "ord"
+        KBotNavItem10.Text = "Ordonanțare"
         navViews.Items.Add(KBotNavItem1)
         navViews.Items.Add(KBotNavItem2)
         navViews.Items.Add(KBotNavItem3)
         navViews.Items.Add(KBotNavItem4)
         navViews.Items.Add(KBotNavItem5)
-        navViews.Items.Add(KBotNavItem10)
         navViews.Items.Add(KBotNavItem6)
         navViews.Items.Add(KBotNavItem7)
         navViews.Items.Add(KBotNavItem8)
         navViews.Items.Add(KBotNavItem9)
+        navViews.Items.Add(KBotNavItem10)
         navViews.Location = New Point(11, 13)
         navViews.Margin = New Padding(4, 5, 4, 5)
         navViews.Name = "navViews"
@@ -453,21 +468,6 @@ Partial Class KbotForm
         tlyHeader.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyHeader.Size = New Size(1920, 45)
         tlyHeader.TabIndex = 6
-        ' 
-        ' btnAngajamentNou
-        ' 
-        btnAngajamentNou.Dock = DockStyle.Fill
-        btnAngajamentNou.FlatStyle = FlatStyle.Flat
-        btnAngajamentNou.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
-        btnAngajamentNou.Location = New Point(9, 6)
-        btnAngajamentNou.Margin = New Padding(8, 5, 8, 5)
-        btnAngajamentNou.Name = "btnAngajamentNou"
-        btnAngajamentNou.Size = New Size(224, 32)
-        btnAngajamentNou.TabIndex = 0
-        btnAngajamentNou.Text = "Angajament nou"
-        tips.SetToolTipHeader(btnAngajamentNou, "Angajament nou")
-        tips.SetToolTipText(btnAngajamentNou, "Deschide documentul de fundamentare pentru un angajament nou (revizia 0)." & vbLf & "Angajamentul se creează în FOREXE abia la «Trimite în FOREXE», după semnătura A.")
-        btnAngajamentNou.UseVisualStyleBackColor = True
         ' 
         ' lblOperator
         ' 
