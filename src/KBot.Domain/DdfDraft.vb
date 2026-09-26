@@ -642,6 +642,9 @@ Public NotInheritable Class DdfClasificatie
     Public Property ValPrec As Double
     ''' <summary>The sum of receptions for this classification. Display only.</summary>
     Public Property ValRec As Double
+    ''' <summary>Slice 0081-12: the angajament's <c>FX_Indicatori.Credit_Bugetar</c> for this
+    ''' classification -- the budget of a line NOT generated from a reservation. Display only.</summary>
+    Public Property Buget As Double
     ''' <summary>The indicator code already in use; EMPTY means none exists yet, and the page
     ''' mints one with <see cref="DdfCodIndicator.GenereazaUnic"/>.</summary>
     Public Property CodIndicator As String = String.Empty

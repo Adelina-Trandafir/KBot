@@ -962,7 +962,7 @@ def get_ddf_draft(iddf, idrev):
 # server yet. They come back with the tree picker, not before.
 _SQL_CLSF_PE_ANGAJAMENT = (
     "SELECT C.IDClsf, C.Clsf, C.Denumire, C.SS, C.Titlu, C.IdUnitate, "
-    "       (SELECT COALESCE(SUM(sa.ValCur), 0) FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf)            AS ValPrec,        (SELECT COALESCE(SUM(r.Valoare), 0) FROM FX_Receptii r          WHERE r.CodAngajament = %s AND r.IdClsf = C.IDClsf)              AS ValRec,        (SELECT sa.CodIndicator FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf LIMIT 1)    AS CodIndicator,        CONCAT(C.SS, C.ClsfSal) AS CodSSI, 1 AS SortOrd "
+    "       (SELECT COALESCE(SUM(sa.ValCur), 0) FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf)            AS ValPrec,        (SELECT COALESCE(SUM(r.Valoare), 0) FROM FX_Receptii r          WHERE r.CodAngajament = %s AND r.IdClsf = C.IDClsf)              AS ValRec,        (SELECT sa.CodIndicator FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf LIMIT 1)    AS CodIndicator,        (SELECT COALESCE(SUM(i.Credit_Bugetar), 0) FROM FX_Indicatori i          WHERE i.CodAngajament = %s AND i.IdClsf = C.IDClsf)              AS Buget,        CONCAT(C.SS, C.ClsfSal) AS CodSSI, 1 AS SortOrd "
     "  FROM Clasificatii C "
     " WHERE C.IDClsf IN (SELECT CC.IDClsf FROM Clasificatii CC "
     "                      JOIN FX_Indicatori I ON CC.IDClsf = I.IdClsf "
@@ -972,7 +972,7 @@ _SQL_CLSF_PE_ANGAJAMENT = (
 
 _SQL_CLSF_ACELASI_TITLU = (
     "SELECT C.IDClsf, C.Clsf, C.Denumire, C.SS, C.Titlu, C.IdUnitate, "
-    "       (SELECT COALESCE(SUM(sa.ValCur), 0) FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf)            AS ValPrec,        (SELECT COALESCE(SUM(r.Valoare), 0) FROM FX_Receptii r          WHERE r.CodAngajament = %s AND r.IdClsf = C.IDClsf)              AS ValRec,        (SELECT sa.CodIndicator FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf LIMIT 1)    AS CodIndicator,        CONCAT(C.SS, C.ClsfSal) AS CodSSI, 3 AS SortOrd "
+    "       (SELECT COALESCE(SUM(sa.ValCur), 0) FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf)            AS ValPrec,        (SELECT COALESCE(SUM(r.Valoare), 0) FROM FX_Receptii r          WHERE r.CodAngajament = %s AND r.IdClsf = C.IDClsf)              AS ValRec,        (SELECT sa.CodIndicator FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf LIMIT 1)    AS CodIndicator,        (SELECT COALESCE(SUM(i.Credit_Bugetar), 0) FROM FX_Indicatori i          WHERE i.CodAngajament = %s AND i.IdClsf = C.IDClsf)              AS Buget,        CONCAT(C.SS, C.ClsfSal) AS CodSSI, 3 AS SortOrd "
     "  FROM Clasificatii C "
     " WHERE C.Titlu IN (SELECT CC.Titlu FROM Clasificatii CC "
     "                     JOIN FX_Indicatori I ON CC.IDClsf = I.IdClsf "
@@ -990,7 +990,7 @@ _SQL_CLSF_ACELASI_TITLU = (
 # (`left(Articol, 2)`), so the client passes it as a parameter and no substring is computed.
 _SQL_CLSF_MANUAL = (
     "SELECT C.IDClsf, C.Clsf, C.Denumire, C.SS, C.Titlu, C.IdUnitate, "
-    "       (SELECT COALESCE(SUM(sa.ValCur), 0) FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf)            AS ValPrec,        (SELECT COALESCE(SUM(r.Valoare), 0) FROM FX_Receptii r          WHERE r.CodAngajament = %s AND r.IdClsf = C.IDClsf)              AS ValRec,        (SELECT sa.CodIndicator FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf LIMIT 1)    AS CodIndicator,        CONCAT(C.SS, C.ClsfSal) AS CodSSI, 1 AS SortOrd "
+    "       (SELECT COALESCE(SUM(sa.ValCur), 0) FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf)            AS ValPrec,        (SELECT COALESCE(SUM(r.Valoare), 0) FROM FX_Receptii r          WHERE r.CodAngajament = %s AND r.IdClsf = C.IDClsf)              AS ValRec,        (SELECT sa.CodIndicator FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf LIMIT 1)    AS CodIndicator,        (SELECT COALESCE(SUM(i.Credit_Bugetar), 0) FROM FX_Indicatori i          WHERE i.CodAngajament = %s AND i.IdClsf = C.IDClsf)              AS Buget,        CONCAT(C.SS, C.ClsfSal) AS CodSSI, 1 AS SortOrd "
     "  FROM Clasificatii C "
     " WHERE (%s IS NULL OR C.Titlu = %s) "
     " ORDER BY C.Clsf"
@@ -1015,6 +1015,10 @@ def _clsf_din_rand(r: dict) -> dict:
         "val_rec": _num(r.get("ValRec")),
         # Empty = no indicator exists for this classification yet, so the client mints one.
         "cod_indicator": _txt(r.get("CodIndicator")),
+        # Slice 0081-12 (operator, 26.09.2026): the budget of a line NOT generated from a
+        # reservation is the angajament's FX_Indicatori.Credit_Bugetar for the classification.
+        # Display only, like the reservation path's R_CreditBug.
+        "buget": _num(r.get("Buget")),
     }
 
 
@@ -1042,12 +1046,13 @@ def get_ddf_clasificatii():
         cursor = conn.cursor(dictionary=True)
 
         if manual:
-            cursor.execute(_SQL_CLSF_MANUAL, (cod, cod, cod, titlu, titlu))
+            # Four `cod`: ValPrec, ValRec, CodIndicator, Buget -- then the Titlu pair.
+            cursor.execute(_SQL_CLSF_MANUAL, (cod, cod, cod, cod, titlu, titlu))
             randuri = [_clsf_din_rand(r) for r in cursor.fetchall()]
         else:
-            cursor.execute(_SQL_CLSF_PE_ANGAJAMENT, (cod, cod, cod, cod))
+            cursor.execute(_SQL_CLSF_PE_ANGAJAMENT, (cod, cod, cod, cod, cod))
             grup1 = [_clsf_din_rand(r) for r in cursor.fetchall()]
-            cursor.execute(_SQL_CLSF_ACELASI_TITLU, (cod, cod, cod, cod, cod))
+            cursor.execute(_SQL_CLSF_ACELASI_TITLU, (cod, cod, cod, cod, cod, cod))
             grup3 = [_clsf_din_rand(r) for r in cursor.fetchall()]
 
             randuri = list(grup1)

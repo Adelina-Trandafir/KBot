@@ -988,7 +988,15 @@ Public Class KbotForm
             busyBar.Running = False
         End Try
 
-        DeschideEditorulDdf(draft)
+        ' Operator, 26.09.2026: the program of a revision added from the Rezervari tree is the
+        ' angajament's -- FX_Indicatori.SS -> DefaProgram -- not the one /genereaza copied (the
+        ' last revision's, or the fixed default for revision 0). The SSs are the selected node's.
+        Dim surse As String = String.Empty
+        If _currentInfo IsNot Nothing AndAlso
+           String.Equals(_currentInfo.CodAngajament, cod, StringComparison.OrdinalIgnoreCase) Then
+            surse = If(_currentInfo.Surse, String.Empty)
+        End If
+        DeschideEditorulDdf(draft, programDinIndicatori:=True, surseIndicatori:=surse)
     End Function
 
     ''' <summary>
@@ -1061,7 +1069,9 @@ Public Class KbotForm
         Try
             Select Case optiune
                 Case RezervariMenuOption.AdaugaRezervare
-                    Await AdaugaRezervareDdfAsync(info).ConfigureAwait(True)
+                    Await AdaugaRezervareDdfAsync(info, cuIndicatori:=False).ConfigureAwait(True)
+                Case RezervariMenuOption.AdaugaRezervareCuIndicatori
+                    Await AdaugaRezervareDdfAsync(info, cuIndicatori:=True).ConfigureAwait(True)
                 Case RezervariMenuOption.Definitiveaza
                     Await SchimbaStareaAngajamentuluiAsync(info, definitivare:=True).ConfigureAwait(True)
                 Case RezervariMenuOption.Deruleaza
@@ -1088,8 +1098,11 @@ Public Class KbotForm
     ''' (header of the last revision); without one it opens its revision 0 (the carried-over case).
     ''' The menu offers it only when no revision is open (plan 0081-04); the check is repeated
     ''' here against fresh data, because the tree may be minutes old.
+    ''' <para><paramref name="cuIndicatori"/> (operator, 26.09.2026, «2. Foloseste indicatorii
+    ''' existenti»): section A starts with a line, value 0, for every indicator the angajament
+    ''' already has; the editor builds them once the classification list is here.</para>
     ''' </summary>
-    Private Async Function AdaugaRezervareDdfAsync(info As AngajamentTreeInfo) As Task
+    Private Async Function AdaugaRezervareDdfAsync(info As AngajamentTreeInfo, cuIndicatori As Boolean) As Task
         If info Is Nothing OrElse String.IsNullOrWhiteSpace(info.CodAngajament) Then Return
         Dim cod As String = info.CodAngajament
 
@@ -1122,7 +1135,11 @@ Public Class KbotForm
             busyBar.Running = False
         End Try
 
-        DeschideEditorulDdf(draft, DdfRevisionState.Draft)
+        ' Both entries (empty revision and prefilled one): the program comes from the indicators
+        ' (FX_Indicatori.SS -> DefaProgram), never from the last revision or the session -- operator,
+        ' 26.09.2026. The editor maps the node's sources once it has the DefaProgram map.
+        DeschideEditorulDdf(draft, DdfRevisionState.Draft, cuIndicatori, If(info.Surse, String.Empty),
+                            programDinIndicatori:=True)
     End Function
 
     ''' <summary>
@@ -1139,7 +1156,10 @@ Public Class KbotForm
     End Sub
 
     ''' <summary>Opens the editor MODALLY and, on a save, reloads the view onto what was written.</summary>
-    Private Sub DeschideEditorulDdf(draft As DdfDraft, Optional stare As DdfRevisionState = DdfRevisionState.Draft)
+    Private Sub DeschideEditorulDdf(draft As DdfDraft, Optional stare As DdfRevisionState = DdfRevisionState.Draft,
+                                    Optional cuIndicatori As Boolean = False,
+                                    Optional surseIndicatori As String = "",
+                                    Optional programDinIndicatori As Boolean = False)
         If draft Is Nothing Then Return
         ' Slice 0081-02: a brand-new K-BOT angajament is not in the tree yet; after its save the
         ' tree is reloaded ONTO it, so the operator lands on what they just created.
@@ -1161,7 +1181,10 @@ Public Class KbotForm
         ' Slice 0081-09: a section-A line picks its SS among those of the document's program
         ' (AVACONT_COMUN.DefaProgram, read by the editor); the SS chosen here is the one proposed.
         Using f As New DdfEditForm(_apiClient, draft, reauth, stare, TryCast(_apiClient, IDdfSendApi)) With {
-                .SursaSectorSesiune = If(_session.SectorSursa, String.Empty)}
+                .SursaSectorSesiune = If(_session.SectorSursa, String.Empty),
+                .PornesteCuIndicatorii = cuIndicatori,
+                .SurseIndicatori = If(surseIndicatori, String.Empty),
+                .ProgramDinIndicatori = programDinIndicatori}
             f.ShowDialog(Me)
             If f.SAuSalvatModificari AndAlso angajamentNou Then
                 ReincarcaArborelePe(draft.CodAngajament)

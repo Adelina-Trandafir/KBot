@@ -101,6 +101,7 @@ Public Class KBotComboBox
     ' -- Find as you type + input mask (slice 0082) ----------------------------------
     Private _findAsYouType As Boolean = False
     Private _findAfterNChars As Integer = 1
+    Private _findFirstGroupCount As Integer
     Private _inputMask As String = String.Empty
     Private _mask As KBotInputMask                ' Nothing = no mask
     Private _findList As KBotComboFindList        ' created on first use
@@ -215,6 +216,22 @@ Public Class KBotComboBox
         Set(value As Boolean)
             _findAsYouType = value
             If Not value Then HideFindList()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' How many rows at the TOP of the list form a group the find list keeps ahead of the rest
+    ''' (e.g. the values already in use, then the others). Set at run time by the host that
+    ''' ordered the items; 0 = no group. Not a designer property: it describes the items, which
+    ''' are filled in code.
+    ''' </summary>
+    <Browsable(False)> <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property FindFirstGroupCount As Integer
+        Get
+            Return _findFirstGroupCount
+        End Get
+        Set(value As Integer)
+            _findFirstGroupCount = Math.Max(0, value)
         End Set
     End Property
 
@@ -354,13 +371,34 @@ Public Class KBotComboBox
     ''' it is tested on its own.
     ''' </summary>
     Public Shared Function FindMatches(captions As IList(Of String), typed As String) As List(Of Integer)
+        Return FindMatches(captions, typed, 0)
+    End Function
+
+    ''' <summary>
+    ''' The same search, with the first <paramref name="firstGroupCount"/> rows kept AHEAD of the
+    ''' rest: the matches among them (start, then contain) come first, then the matches among the
+    ''' others (start, then contain). 0 = one group, the plain search.
+    ''' </summary>
+    Public Shared Function FindMatches(captions As IList(Of String), typed As String,
+                                       firstGroupCount As Integer) As List(Of Integer)
+        Dim result As New List(Of Integer)()
+        If captions Is Nothing OrElse String.IsNullOrEmpty(typed) Then Return result
+        Dim split As Integer = Math.Max(0, Math.Min(firstGroupCount, captions.Count))
+        If split > 0 Then result.AddRange(MatchRange(captions, typed, 0, split))
+        result.AddRange(MatchRange(captions, typed, split, captions.Count))
+        Return result
+    End Function
+
+    ' The rows [fromIndex, toIndex) that match: those that start with the text, then those that
+    ' only contain it, each in list order.
+    Private Shared Function MatchRange(captions As IList(Of String), typed As String,
+                                       fromIndex As Integer, toIndex As Integer) As List(Of Integer)
         Dim starts As New List(Of Integer)()
         Dim contains As New List(Of Integer)()
-        If captions Is Nothing OrElse String.IsNullOrEmpty(typed) Then Return starts
         Dim ci As Globalization.CompareInfo = Globalization.CultureInfo.CurrentCulture.CompareInfo
         Const opts As Globalization.CompareOptions =
             Globalization.CompareOptions.IgnoreCase Or Globalization.CompareOptions.IgnoreNonSpace
-        For i As Integer = 0 To captions.Count - 1
+        For i As Integer = fromIndex To toIndex - 1
             Dim c As String = If(captions(i), String.Empty)
             If ci.IsPrefix(c, typed, opts) Then
                 starts.Add(i)
@@ -483,7 +521,7 @@ Public Class KBotComboBox
                 Return
             End If
             Dim captions As List(Of String) = AllCaptions()
-            Dim hits As List(Of Integer) = FindMatches(captions, If(Text, String.Empty))
+            Dim hits As List(Of Integer) = FindMatches(captions, If(Text, String.Empty), _findFirstGroupCount)
             If hits.Count = 0 Then
                 If OffersNewItem Then ShowNewItemRow() Else HideFindList()
                 Return

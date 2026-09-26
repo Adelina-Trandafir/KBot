@@ -1,28 +1,27 @@
-Option Strict On
+﻿Option Strict On
 Imports System.Windows.Forms
 
 ''' <summary>
-''' Partea „designer” a <see cref="KBotDataView"/>. Conform regulii casei, TOATE controalele
-''' copil se declară aici (nu se construiesc în cod la nevoie): cei doi editori flotanți și
-''' cele două bare de derulare. Pozițiile se setează la runtime (pictarea le poziționează),
-''' dar câmpurile trăiesc în Designer. Doar UN editor e vizibil odată, și doar cât o celulă
-''' e în editare.
+''' The designer part of <see cref="KBotDataView"/>. Per the house rule, ALL child controls are
+''' declared here (never built in code on demand): the two floating editors and the two scroll
+''' bars. Positions are set at runtime (layout places them), but the fields live in the Designer.
+''' Only ONE editor is visible at a time, and only while a cell is being edited.
 ''' </summary>
 Partial Class KBotDataView
 
-    ''' <summary>Containerul de componente (contract designer standard).</summary>
+    ''' <summary>The components container (standard designer contract).</summary>
     Private components As System.ComponentModel.IContainer
 
-    ''' <summary>Editorul de text flotant (ascuns implicit).</summary>
+    ''' <summary>The floating text editor (hidden by default). Borderless and not auto-sized: slice 0085 sizes it to one line of the cell's text (see PlaceEditor).</summary>
     Friend WithEvents editText As TextBox
 
-    ''' <summary>Editorul combo flotant (ascuns implicit). DropDownStyle se comută per coloană.</summary>
+    ''' <summary>The floating combo editor (hidden by default). DropDownStyle is switched per column.</summary>
     Friend WithEvents editCombo As ComboBox
 
-    ''' <summary>Bara de derulare verticală.</summary>
+    ''' <summary>The vertical scroll bar.</summary>
     Friend WithEvents vScroll As VScrollBar
 
-    ''' <summary>Bara de derulare orizontală.</summary>
+    ''' <summary>The horizontal scroll bar.</summary>
     Friend WithEvents hScroll As HScrollBar
 
     Private Sub InitializeComponent()
@@ -32,20 +31,21 @@ Partial Class KBotDataView
         Me.hScroll = New HScrollBar()
         Me.SuspendLayout()
         '
-        ' editText — editor de text flotant
+        ' editText -- floating text editor
         '
-        Me.editText.BorderStyle = BorderStyle.FixedSingle
+        Me.editText.AutoSize = False
+        Me.editText.BorderStyle = BorderStyle.None
         Me.editText.Visible = False
         '
-        ' editCombo — editor combo flotant
+        ' editCombo -- floating combo editor
         '
         Me.editCombo.Visible = False
         '
-        ' vScroll — bară verticală (poziționată/afișată la virtualizare, slice 0010-02)
+        ' vScroll -- vertical bar (placed/shown by virtualization, slice 0010-02)
         '
         Me.vScroll.Visible = False
         '
-        ' hScroll — bară orizontală (poziționată/afișată la virtualizare, slice 0010-02)
+        ' hScroll -- horizontal bar (placed/shown by virtualization, slice 0010-02)
         '
         Me.hScroll.Visible = False
         '

@@ -442,13 +442,19 @@ Partial Class KBotDataView
     Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
         MyBase.OnMouseDown(e)
         Try
-            Focus()
-            ' Orice apăsare închide eticheta: operatorul a trecut la treabă, nu mai citește.
+            ' Any press closes the cell tooltip: the operator is working now, not reading.
             CancelCellTooltip()
 
+            ' Slice 0085: a left press on the cell already being edited (its padding, around the
+            ' one-line editor) keeps the edit and just moves the caret -- taking focus to the grid
+            ' first would commit and reopen it, losing the caret.
+            If e.Button = MouseButtons.Left AndAlso HandleMouseDownOnEditingCell(e.Location) Then Return
+
+            Focus()
+
 #If DEBUG Then
-            ' Sonda de lățimi (doar în Debug): click dreapta pe un antet spune cât are coloana.
-            ' Vezi KBotDataView.WidthProbe.vb.
+            ' Width probe (Debug only): right click on a header reports the column's width.
+            ' See KBotDataView.WidthProbe.vb.
             If e.Button = MouseButtons.Right AndAlso HandleHeaderWidthProbe(e.Location) Then Return
 #End If
 
@@ -483,16 +489,38 @@ Partial Class KBotDataView
             ' un rând, deci nu are ce selecta sub ea.
             If HandleGroupBandMouseDown(e.Location) Then Return
 
-            ' 2) Selecție în zona de date.
+            ' 2) Selection in the data area.
             Dim rowIndex As Integer = RowAtPoint(e.Location)
             If rowIndex < 0 Then Return
             Dim col As KBotDataColumn = ColumnAtX(e.X)
             If col Is Nothing Then Return
             SetCurrentCell(rowIndex, col.Key)
+
+            ' 3) Slice 0085: a single click on an editable cell starts editing right away, with the
+            ' whole text selected (BeginEdit selects it). SetCurrentCell refuses the move when the
+            ' previous edit was rejected -- then the old editor stays, and nothing opens here.
+            If _currentRowIndex = rowIndex AndAlso
+               String.Equals(_currentColumnKey, col.Key, StringComparison.Ordinal) AndAlso
+               Not _editing AndAlso CanEdit(col.Key, rowIndex) Then
+                BeginEdit(col.Key, rowIndex)
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnMouseDown", ex)
         End Try
     End Sub
+
+    ' A left press inside the cell currently being edited (around the one-line editor): keep the
+    ' edit, refocus the editor and select the whole text, like the click that opened it. False
+    ' when the point is not on that cell (the normal path runs).
+    Private Function HandleMouseDownOnEditingCell(pt As Point) As Boolean
+        If Not _editing Then Return False
+        If RowAtPoint(pt) <> _editRowIndex Then Return False
+        Dim col As KBotDataColumn = ColumnAtX(pt.X)
+        If col Is Nothing OrElse Not String.Equals(col.Key, _editColumnKey, StringComparison.Ordinal) Then Return False
+        FocusActiveEditor()
+        If editText.Visible Then editText.SelectAll()
+        Return True
+    End Function
 
     Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
         MyBase.OnMouseMove(e)
@@ -560,6 +588,9 @@ Partial Class KBotDataView
             End If
             Dim tipRow As Integer = RowAtPoint(e.Location)
             Dim tipCol As KBotDataColumn = If(tipRow < 0, Nothing, ColumnAtX(e.X))
+            ' Slice 0085: an I-beam over a cell a click would edit (read-only / disabled cells keep
+            ' the arrow), so the operator sees where typing is possible before clicking.
+            If tipCol IsNot Nothing AndAlso CanEdit(tipCol.Key, tipRow) Then Cursor = Cursors.IBeam
             UpdateCellTooltip(If(tipCol Is Nothing, Nothing, tipCol.Key), If(tipCol Is Nothing, -1, tipRow))
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnMouseMove", ex)
@@ -597,8 +628,10 @@ Partial Class KBotDataView
             Dim col As KBotDataColumn = ColumnAtX(e.X)
             If col Is Nothing Then Return
             RaiseEvent CellDoubleClick(Me, New KBotCellEventArgs(col.Key, rowIndex))
-            ' Dublu-click intră în editare (celulele needitabile sunt refuzate de CanEdit).
-            BeginEdit(col.Key, rowIndex)
+            ' Slice 0085: the first click already opened the editor; only open it here if it is
+            ' not open on this cell (e.g. a host handler closed it). Non-editable cells are
+            ' refused by CanEdit.
+            If Not IsEditingCell(col.Key, rowIndex) Then BeginEdit(col.Key, rowIndex)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnMouseDoubleClick", ex)
         End Try

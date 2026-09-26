@@ -129,7 +129,10 @@ the event, and the host moves its own splitter.
 
 ### Keyboard editing (designer-authorable)
 `ArrowKeyEditing = True` — the arrows carry the EDITOR from cell to cell instead of closing
-it: Up/Down commit and step one row in the same column, Left/Right commit and step to the
+it: Up/Down commit and go to the nearest EDITABLE cell of the same column on the rows drawn
+above/below (`NextEditableRow`; group bands and the footer are never stops, rows in a
+collapsed group are skipped; with nowhere to go nothing happens and nothing is committed),
+Left/Right commit and step to the
 next EDITABLE cell of the row (`NextEditableColumn`, read-only / check / button / progress
 columns skipped, no wrap). Left/Right only move from the EDGE of the text — mid-word they
 stay a caret move, and an open combo keeps its own arrows — otherwise fixing one letter
@@ -141,6 +144,20 @@ first editable field of the next row when it runs out. Enter pressed IN an edito
 the editor on the cell it lands on (a whole table fills in without the mouse); Enter on the
 grid only moves. Tab / Shift+Tab are unchanged: next / previous ENABLED column, editable or
 not.
+
+### The editor looks like the cell (slice 0085)
+A single click on an editable cell starts editing with the whole text selected (a click in
+the padding of the cell already being edited re-selects it). The mouse shows an I-beam over
+every editable cell. The edited cell never takes the selected-row colour: it keeps its
+unselected look (row colour + formatting handlers), padding included, so it stands out. F2 and double click still
+work. The text editor is borderless and sits in the cell's content rectangle (`CellPadding`,
+DPI-scaled), vertically centred on one line of text, with the edit control's margins zeroed
+and TextRenderer's glyph padding applied instead, so its text starts on the same pixel as the
+painted text. Font, colours and horizontal alignment come from the same
+`RowFormatting`/`CellFormatting` chain the painter runs; the painter skips that cell's text
+while it is open. It is re-placed on every layout pass (resize, column width, theme, DPI).
+The combo editor keeps the whole cell (a ComboBox fixes its own height) and only takes the
+cell's font and colours.
 
 ## Tooltips
 `CellTooltip: KBotCellTooltipOptions` — the label for cells whose text does not fit

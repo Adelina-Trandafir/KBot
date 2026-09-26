@@ -444,8 +444,14 @@ Partial Class KBotDataView
         Dim enabled As Boolean = _cellArgs.Enabled
         Dim customBack As Boolean = (_cellArgs.BackColor <> rowBack)
 
-        ' Fundal per-celulă doar dacă handler-ul l-a schimbat față de cel al rândului.
-        If customBack Then
+        ' Per-cell background only when the handler changed it from the row's. Slice 0085: the
+        ' cell being edited always takes its column's UNSELECTED look (resolved by PlaceEditor),
+        ' padding included, so it stands out from the selected row around it.
+        If IsEditingCell(col.Key, rowIndex) AndAlso Not _editBackColor.IsEmpty Then
+            Using b As New SolidBrush(_editBackColor)
+                g.FillRectangle(b, cellRect)
+            End Using
+        ElseIf customBack Then
             Using b As New SolidBrush(_cellArgs.BackColor)
                 g.FillRectangle(b, cellRect)
             End Using
@@ -480,8 +486,12 @@ Partial Class KBotDataView
                 DrawComboCell(g, contentRect, _cellArgs.Text, _cellArgs.Font,
                               fore, _cellArgs.Alignment, enabled)
             Case Else
-                DrawTextCell(g, contentRect, _cellArgs.Text, _cellArgs.Font,
-                             fore, _cellArgs.Alignment)
+                ' Slice 0085: the borderless editor draws this cell's text while it is open;
+                ' painting it too would show the old value around the caret.
+                If Not IsEditingCell(col.Key, rowIndex) Then
+                    DrawTextCell(g, contentRect, _cellArgs.Text, _cellArgs.Font,
+                                 fore, _cellArgs.Alignment)
+                End If
         End Select
 
         ' Separatorul vertical de grilă, la marginea dreaptă a celulei.

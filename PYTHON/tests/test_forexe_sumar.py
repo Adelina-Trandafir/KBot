@@ -39,7 +39,7 @@ CLSF_ACC = 990001
 
 # Cheile pe care contractul de fir le promite (oglindesc SumarRow pe partea VB.NET).
 ROW_KEYS = (
-    "clsf", "cod_indicator", "partener",
+    "clsf", "cod_indicator", "partener", "credit_bug",
     "total_rezervari", "total_receptii", "total_plati",
     "total_revizii", "total_ordonantari",
 )

@@ -22,6 +22,7 @@ Public Class SumarView
     ' ca un typo să nu ajungă o coloană goală în producție.
     Private Const COL_CLSF As String = "clsf"
     Private Const COL_INDICATOR As String = "cod_indicator"
+    Private Const COL_CREDIT_BUG As String = "credit_bug"
     Private Const COL_REZERVARI As String = "total_rezervari"
     Private Const COL_RECEPTII As String = "total_receptii"
     Private Const COL_PLATI As String = "total_plati"
@@ -212,6 +213,7 @@ Public Class SumarView
                     Dim row As KBotDataRow = grid.AddRow()
                     row(COL_CLSF) = r.Clsf
                     row(COL_INDICATOR) = r.CodIndicator
+                    row(COL_CREDIT_BUG) = r.CreditBugetar
                     row(COL_REZERVARI) = r.TotalRezervari
                     row(COL_RECEPTII) = r.TotalReceptii
                     row(COL_PLATI) = r.TotalPlati

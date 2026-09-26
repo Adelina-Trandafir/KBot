@@ -133,6 +133,7 @@ Public NotInheritable Class GetSumarRow
     Public Property clsf As String
     Public Property cod_indicator As String
     Public Property partener As String
+    Public Property credit_bug As Double
     Public Property total_rezervari As Double
     Public Property total_receptii As Double
     Public Property total_plati As Double

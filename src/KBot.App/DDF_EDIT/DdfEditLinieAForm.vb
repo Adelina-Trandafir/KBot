@@ -50,10 +50,25 @@ Public Class DdfEditLinieAForm
     Private ReadOnly _sursaPropusa As String
     Private ReadOnly _alteCoduri As List(Of String)
     Private ReadOnly _nou As Boolean
+    Private ReadOnly _manual As Boolean
     ''' <summary>The classification the line had when the window opened (0 = none).</summary>
     Private ReadOnly _idClsfInitial As Integer
     Private _aleasa As DdfClasificatie
     Private _seIncarca As Boolean
+
+    ' The keys of `grdValori`'s columns -- identical to the designer's.
+    Private Const COL_BUGET As String = "buget"
+    Private Const COL_VAL_REC As String = "val_rec"
+    Private Const COL_DISPONIBIL As String = "disponibil"
+    Private Const COL_VAL_PREC As String = "val_prec"
+    Private Const COL_VAL_CUR As String = "val_cur"
+    Private Const COL_VAL_RAMASA As String = "val_ramasa"
+
+    ''' <summary>The current value as last committed in the grid (0 = none yet).</summary>
+    Private _valCur As Double
+    ''' <summary>The window opens on a line that already has its classification: the value's
+    ''' editor is opened in <c>OnShown</c> (it needs a visible grid).</summary>
+    Private _editeazaValoareaLaAfisare As Boolean
 
     ''' <summary>The edited line. Meaningful only after <c>DialogResult.OK</c>.</summary>
     Public ReadOnly Property Linie As DdfDraftLinieA
@@ -72,15 +87,21 @@ Public Class DdfEditLinieAForm
     ''' <param name="sursaPropusa">The SS to preselect (K-BOT's selected SS); the line's own SS wins
     ''' over it. Ignored when it is not among <paramref name="surse"/>.</param>
     ''' <param name="nou">A new line (caption «Rand nou», button «Adauga randul») or a change.</param>
+    ''' <param name="manual">The angajament is a K-BOT one («!»): decides which classifications
+    ''' count as already in the angajament (<see cref="DdfSectiuneaAReguli.EsteInAngajament"/>).</param>
     Public Sub New(linie As DdfDraftLinieA, clasificatii As IEnumerable(Of DdfClasificatie),
                    alteCoduriIndicator As IEnumerable(Of String), surse As IEnumerable(Of DdfSursaProgram),
-                   sursaPropusa As String, nou As Boolean)
+                   sursaPropusa As String, nou As Boolean, manual As Boolean)
         ArgumentNullException.ThrowIfNull(linie)
         InitializeComponent()
         _linie = Copiaza(linie)
         _idClsfInitial = linie.IdClsf
+        _manual = manual
         If clasificatii IsNot Nothing Then
-            _toate.AddRange(clasificatii.Where(Function(c) c IsNot Nothing AndAlso Not c.EsteSeparator))
+            ' Operator, 26.09.2026: the classifications the angajament already has come first, then
+            ' the ones it has not used -- in the dropdown and in the find-as-you-type list alike.
+            _toate.AddRange(DdfSectiuneaAReguli.InAngajamentIntai(
+                clasificatii.Where(Function(c) c IsNot Nothing AndAlso Not c.EsteSeparator), manual))
         End If
         _surse = If(surse, Enumerable.Empty(Of DdfSursaProgram)()).
                  Where(Function(s) s IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(s.Ss)).ToList()
@@ -117,7 +138,10 @@ Public Class DdfEditLinieAForm
 
                 txtElement.Text = _linie.ElementFund
                 txtParametrii.Text = _linie.ParametriiFund
-                txtValCur.Text = If(_linie.ValCur = 0.0R, String.Empty, _linie.ValCur.ToString("N2", _roCulture))
+                ' The values' one row (slice 0081-12): written by `ArataValorile`.
+                _valCur = _linie.ValCur
+                grdValori.ClearRows()
+                grdValori.AddRow()
             Finally
                 _seIncarca = False
             End Try
@@ -125,21 +149,30 @@ Public Class DdfEditLinieAForm
             Dim initiala As DdfClasificatie = _toate.FirstOrDefault(
                 Function(c) c.IdClsf = _linie.IdClsf AndAlso _linie.IdClsf <> 0)
             AplicaSursa(initiala)
-            ActualizeazaTotalul()
 
             ' Straight to what is still missing: the SS when several are offered and none is
             ' chosen, then the classification (Access's `Clsf_Enter` dropped the combo open for the
-            ' same reason), otherwise the value.
+            ' same reason), otherwise the value -- whose editor opens once the window is shown.
             If _surse.Count > 0 AndAlso SursaAleasa().Length = 0 Then
                 ActiveControl = cmbSursa
             ElseIf _nou OrElse _aleasa Is Nothing Then
                 ActiveControl = cmbClasificatie
             Else
-                ActiveControl = txtValCur
+                ActiveControl = grdValori
+                _editeazaValoareaLaAfisare = True
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditLinieAForm.OnLoad", ex)
             lblStare.Text = "Fereastra nu s-a putut pregăti. Detalii în jurnalul de erori."
+        End Try
+    End Sub
+
+    Protected Overrides Sub OnShown(e As EventArgs)
+        MyBase.OnShown(e)
+        Try
+            If _editeazaValoareaLaAfisare Then grdValori.EditCell(COL_VAL_CUR, 0)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfEditLinieAForm.OnShown", ex)
         End Try
     End Sub
 
@@ -174,6 +207,10 @@ Public Class DdfEditLinieAForm
             For Each c As DdfClasificatie In _oferite
                 cmbClasificatie.Items.Add(Eticheta(c))
             Next
+            ' `_oferite` keeps `_toate`'s order (already in the angajament first); the find list
+            ' is told where that group ends, so typing does not mix the two.
+            cmbClasificatie.FindFirstGroupCount =
+                _oferite.Where(Function(c) DdfSectiuneaAReguli.EsteInAngajament(c, _manual)).Count()
             Dim i As Integer = If(pastreaza Is Nothing, -1, _oferite.FindIndex(Function(c) c.IdClsf = pastreaza.IdClsf))
             If i >= 0 Then
                 cmbClasificatie.SelectedIndex = i
@@ -206,7 +243,6 @@ Public Class DdfEditLinieAForm
         Try
             If _seIncarca Then Return
             AplicaSursa(_aleasa)
-            ActualizeazaTotalul()
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditLinieAForm.CmbSursa_SelectedIndexChanged", ex)
         End Try
@@ -241,48 +277,101 @@ Public Class DdfEditLinieAForm
             End If
 
             ArataClasificatia()
-            ActualizeazaTotalul()
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditLinieAForm.CmbClasificatie_SelectedIndexChanged", ex)
         End Try
     End Sub
 
     ''' <summary>The derived values of the chosen classification (or of the line, before one is
-    ''' chosen): name, previous value, receptions, indicator code.</summary>
+    ''' chosen): name and indicator code, then the values' row.</summary>
     Private Sub ArataClasificatia()
         If _aleasa Is Nothing Then
             lblDenumire.Text = "—"
-            lblValPrec.Text = _linie.ValPrec.ToString("N2", _roCulture)
-            lblValRec.Text = _linie.ValRec.ToString("N2", _roCulture)
             lblCodIndicator.Text = If(String.IsNullOrWhiteSpace(_linie.CodIndicator), "—", _linie.CodIndicator)
-            Return
+        Else
+            lblDenumire.Text = _aleasa.Denumire
+            lblCodIndicator.Text = If(String.IsNullOrWhiteSpace(_aleasa.CodIndicator),
+                                      "unul nou, la adăugarea rândului",
+                                      _aleasa.CodIndicator)
         End If
-        lblDenumire.Text = _aleasa.Denumire
-        lblValPrec.Text = _aleasa.ValPrec.ToString("N2", _roCulture)
-        lblValRec.Text = _aleasa.ValRec.ToString("N2", _roCulture)
-        lblCodIndicator.Text = If(String.IsNullOrWhiteSpace(_aleasa.CodIndicator),
-                                  "unul nou, la adăugarea rândului",
-                                  _aleasa.CodIndicator)
+        ArataValorile()
     End Sub
 
-    Private Sub TxtValCur_TextChanged(sender As Object, e As EventArgs) Handles txtValCur.TextChanged
+    ''' <summary>
+    ''' The values' one row: budget, receptions, available (budget - receptions), previous value,
+    ''' current value, remaining (available - current). Only the current value is typed; the rest
+    ''' follow the classification (or the line, before one is chosen).
+    ''' </summary>
+    Private Sub ArataValorile()
+        If grdValori.RowCount = 0 Then Return
+        Dim r As KBotDataRow = grdValori.Rows(0)
+        Dim buget As Double = Bugetul()
+        Dim valRec As Double = ValoareaReceptiilor()
+        r(COL_BUGET) = buget
+        r(COL_VAL_REC) = valRec
+        r(COL_DISPONIBIL) = DdfSectiuneaAReguli.Disponibil(buget, valRec)
+        r(COL_VAL_PREC) = ValoareaPrecedenta()
+        r(COL_VAL_CUR) = _valCur
+        r(COL_VAL_RAMASA) = DdfSectiuneaAReguli.ValoareRamasa(buget, valRec, _valCur)
+        grdValori.ClearDirty()
+        grdValori.Invalidate()
+    End Sub
+
+    ''' <summary>The current value, parsed ro-RO («1.234,56»); empty = 0. A value that is not a
+    ''' number is refused in the cell, so it never reaches <see cref="_valCur"/>.</summary>
+    Private Sub GrdValori_CellValidating(sender As Object, e As KBotCellValidatingEventArgs) _
+        Handles grdValori.CellValidating
         Try
-            If _seIncarca Then Return
-            ActualizeazaTotalul()
+            If e.ColumnKey <> COL_VAL_CUR Then Return
+            Dim valoare As Double
+            If Not CitesteNumar(e.ProposedValue, valoare) Then
+                KBotMessage.Show(Me, "Valoarea curentă nu este un număr.", "Secțiunea A",
+                                 MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                e.Cancel = True
+                Return
+            End If
+            e.ProposedValue = valoare
         Catch ex As Exception
-            GlobalErrorLog.Write("DdfEditLinieAForm.TxtValCur_TextChanged", ex)
+            GlobalErrorLog.Write("DdfEditLinieAForm.GrdValori_CellValidating", ex)
+            ' A validator that threw must not let the value through.
+            e.Cancel = True
         End Try
     End Sub
 
-    ''' <summary>The total is computed, never typed: <c>Round(ValCur + ValPrec, 2)</c>.</summary>
-    Private Sub ActualizeazaTotalul()
-        Dim valCur As Double
-        If Not CitesteValoarea(valCur) Then
-            lblValTot.Text = "—"
-            Return
-        End If
-        lblValTot.Text = Math.Round(valCur + ValoareaPrecedenta(), 2).ToString("N2", _roCulture)
+    ' Boundary UI (event handler): logged and swallowed.
+    Private Sub GrdValori_CellValueChanged(sender As Object, e As KBotCellValueEventArgs) _
+        Handles grdValori.CellValueChanged
+        Try
+            If e.ColumnKey <> COL_VAL_CUR Then Return
+            Dim valoare As Double
+            If Not CitesteNumar(e.NewValue, valoare) Then Return
+            _valCur = valoare
+            ArataValorile()
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfEditLinieAForm.GrdValori_CellValueChanged", ex)
+        End Try
     End Sub
+
+    Private Shared Function CitesteNumar(valoare As Object, ByRef numar As Double) As Boolean
+        If valoare Is Nothing OrElse TypeOf valoare Is DBNull Then
+            numar = 0.0R
+            Return True
+        End If
+        If TypeOf valoare Is Double Then
+            numar = DirectCast(valoare, Double)
+            Return True
+        End If
+        Dim t As String = Convert.ToString(valoare, _roCulture).Trim()
+        If t.Length = 0 Then
+            numar = 0.0R
+            Return True
+        End If
+        Return Double.TryParse(t, NumberStyles.Number, _roCulture, numar)
+    End Function
+
+    Private Function Bugetul() As Double
+        Return If(_aleasa IsNot Nothing, _aleasa.Buget, _linie.Buget)
+    End Function
 
     Private Function ValoareaPrecedenta() As Double
         Return If(_aleasa IsNot Nothing, _aleasa.ValPrec, _linie.ValPrec)
@@ -290,16 +379,6 @@ Public Class DdfEditLinieAForm
 
     Private Function ValoareaReceptiilor() As Double
         Return If(_aleasa IsNot Nothing, _aleasa.ValRec, _linie.ValRec)
-    End Function
-
-    ''' <summary>The current value as a number (ro-RO: «1.234,56»). An empty field is 0.</summary>
-    Private Function CitesteValoarea(ByRef valoare As Double) As Boolean
-        Dim t As String = If(txtValCur.Text, String.Empty).Trim()
-        If t.Length = 0 Then
-            valoare = 0.0R
-            Return True
-        End If
-        Return Double.TryParse(t, NumberStyles.Number, _roCulture, valoare)
     End Function
 
     ' ══════════════════════════════════════════════════════════════════════════
@@ -311,6 +390,9 @@ Public Class DdfEditLinieAForm
             ' The combo gives its verdict on typed text only when it is left; OK can be reached
             ' with the focus still in it (Enter / AcceptButton).
             cmbClasificatie.CommitText()
+            ' The same for the value typed in the grid: Enter on AcceptButton never reaches the
+            ' grid's editor. A refused value keeps the window open (the grid said why).
+            If Not grdValori.CommitPendingEdit() Then Return
 
             Dim probleme As New List(Of String)()
             If _surse.Count > 0 AndAlso SursaAleasa().Length = 0 Then
@@ -321,14 +403,13 @@ Public Class DdfEditLinieAForm
             If String.IsNullOrWhiteSpace(txtElement.Text) Then
                 probleme.Add("Elementul de fundamentare este un câmp obligatoriu!")
             End If
-            Dim valCur As Double
-            If Not CitesteValoarea(valCur) Then
-                probleme.Add("Valoarea curentă nu este un număr.")
-            ElseIf valCur = 0.0R Then
+            Dim valCur As Double = _valCur
+            If valCur = 0.0R Then
                 probleme.Add("Valoarea curentă este un câmp obligatoriu!")
             ElseIf valCur < 0.0R AndAlso
                    Math.Round(valCur + ValoareaPrecedenta(), 2) < Math.Round(ValoareaReceptiilor(), 2) Then
-                probleme.Add("Valoarea rămasă nu poate fi mai mică decât valoarea recepțiilor!")
+                ' `ValPrec + ValCur` (the line's ValTot) -- NOT the grid's «Val. ramasa».
+                probleme.Add("Valoarea totală (precedentă + curentă) nu poate fi mai mică decât valoarea recepțiilor!")
             End If
 
             If probleme.Count > 0 Then
@@ -364,6 +445,9 @@ Public Class DdfEditLinieAForm
         _linie.IdUnitate = c.IdUnitate
         _linie.ValPrec = c.ValPrec
         _linie.ValRec = c.ValRec
+        ' Slice 0081-12: a line built here is never from a reservation, so its budget is the
+        ' angajament's FX_Indicatori.Credit_Bugetar for the classification.
+        _linie.Buget = c.Buget
         If Not String.IsNullOrWhiteSpace(c.CodIndicator) Then
             _linie.CodIndicator = c.CodIndicator
         ElseIf alta OrElse String.IsNullOrWhiteSpace(_linie.CodIndicator) Then
@@ -422,7 +506,7 @@ Public Class DdfEditLinieAForm
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
             tlyCorp.BackColor = p.SurfaceAltColor
-            For Each lbl As Label In {lblDenumire, lblValPrec, lblValRec, lblCodIndicator}
+            For Each lbl As Label In {lblDenumire, lblCodIndicator}
                 lbl.ForeColor = p.TextDimColor
                 lbl.BackColor = Color.Transparent
             Next

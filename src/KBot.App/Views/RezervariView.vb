@@ -166,13 +166,19 @@ Public Class RezervariView
     Private Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
         Try
             If _optiune = RezervariMenuOption.None OrElse _actiuneMeniu Is Nothing OrElse _info Is Nothing Then Return
-            Dim optiune As RezervariMenuOption = _optiune
             Dim info As AngajamentTreeInfo = _info
-            Dim meniu As New CustomPopup(New List(Of CustomPopupItem) From {
-                New CustomPopupItem(optiune.ToString(), RezervariMenu.Label(optiune))})
+            ' «Adauga rezervare» opens two entries (an empty revision / the existing indicators);
+            ' every other option is one entry. The key is the option's name, parsed back on click.
+            Dim intrari As New List(Of CustomPopupItem)()
+            For Each kv As KeyValuePair(Of RezervariMenuOption, String) In RezervariMenu.Intrari(_optiune)
+                intrari.Add(New CustomPopupItem(kv.Key.ToString(), kv.Value))
+            Next
+            Dim meniu As New CustomPopup(intrari)
             AddHandler meniu.ItemClicked,
                 Sub(s As Object, ev As CustomPopupItemEventArgs)
                     Try
+                        Dim optiune As RezervariMenuOption =
+                            [Enum].Parse(Of RezervariMenuOption)(ev.Item.Key)
                         _actiuneMeniu(optiune, info)
                     Catch ex As Exception
                         GlobalErrorLog.Write("RezervariView.MeniuSubsol", ex)

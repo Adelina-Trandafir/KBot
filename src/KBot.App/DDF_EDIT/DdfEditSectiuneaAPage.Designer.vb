@@ -14,9 +14,14 @@ Imports KBot.Controls
 '   Partener              only when the document has a partener            EDITABLE (gated)
 '   Buget                 display only -- NO column on FX_DDF_REV_SA       read-only
 '   Val. receptii         display only -- NO column on FX_DDF_REV_SA       read-only
+'   Disponibil            computed: Buget - Val. receptii                  read-only
 '   Val. precedenta                                                        read-only
-'   Val. curenta                                                           EDITABLE
-'   Val. totala           computed                                          read-only
+'   Val. curenta          the ONLY editable value                          EDITABLE
+'   Val. ramasa           computed: Disponibil - Val. curenta              read-only
+'
+' Slice 0081-12 (operator, 26.09.2026): the value columns are 90 wide, Standard format, and the
+' grid has NO footer (no totals band). `ValTot` (ValPrec + ValCur) stays on the line and is
+' saved, but is no longer a column: «Val. ramasa» is a different figure.
 '
 ' `Buget` and `ValRec` exist on Access's `tmpFX_DDF_REV_SA` but NOT on `FX_DDF_REV_SA`. They
 ' ride on the draft for display and are dropped at the wire; no column was added for them.
@@ -64,12 +69,13 @@ Partial Class DdfEditSectiuneaAPage
         Dim KBotDataColumn8 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn9 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn10 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn11 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         btnAdauga = New Button()
         btnSterge = New Button()
-        tlyRoot = New Global.KBot.Controls.KBotTableLayoutPanel()
+        tlyRoot = New KBotTableLayoutPanel()
         grd = New KBotDataView()
-        tlyButoane = New Global.KBot.Controls.KBotTableLayoutPanel()
+        tlyButoane = New KBotTableLayoutPanel()
         lblStare = New Label()
         tlyRoot.SuspendLayout()
         CType(grd, ComponentModel.ISupportInitialize).BeginInit()
@@ -162,6 +168,7 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "parametrii_fund"
         KBotDataColumn4.OptionGroup = Nothing
+        KBotDataColumn4.Visible = KBotColumnVisibility.Hidden
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn5.FormatString = Nothing
@@ -186,6 +193,7 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn6.ReadOnly = True
         KBotDataColumn6.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn6.ValueType = KBotValueType.Number
+        KBotDataColumn6.Width = 90
         KBotDataColumn7.AggregateFormatString = Nothing
         KBotDataColumn7.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn7.ColumnFont = New Font("Calibri", 9F)
@@ -200,6 +208,7 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn7.ReadOnly = True
         KBotDataColumn7.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn7.ValueType = KBotValueType.Number
+        KBotDataColumn7.Width = 90
         KBotDataColumn8.AggregateFormatString = Nothing
         KBotDataColumn8.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn8.ColumnFont = New Font("Calibri", 9F)
@@ -207,14 +216,14 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn8.Format = KBotFormat.Standard
         KBotDataColumn8.FormatString = Nothing
         KBotDataColumn8.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
-        KBotDataColumn8.HeaderText = "Val. precedentă"
+        KBotDataColumn8.HeaderText = "Disponibil"
         KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn8.Key = "val_prec"
+        KBotDataColumn8.Key = "disponibil"
         KBotDataColumn8.OptionGroup = Nothing
         KBotDataColumn8.ReadOnly = True
         KBotDataColumn8.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn8.ValueType = KBotValueType.Number
-        KBotDataColumn9.Aggregate = KBotAggregate.Sum
+        KBotDataColumn8.Width = 90
         KBotDataColumn9.AggregateFormatString = Nothing
         KBotDataColumn9.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn9.ColumnFont = New Font("Calibri", 9F)
@@ -222,13 +231,14 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn9.Format = KBotFormat.Standard
         KBotDataColumn9.FormatString = Nothing
         KBotDataColumn9.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
-        KBotDataColumn9.HeaderText = "Val. curentă"
+        KBotDataColumn9.HeaderText = "Val. precedentă"
         KBotDataColumn9.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn9.Key = "val_cur"
+        KBotDataColumn9.Key = "val_prec"
         KBotDataColumn9.OptionGroup = Nothing
+        KBotDataColumn9.ReadOnly = True
         KBotDataColumn9.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn9.ValueType = KBotValueType.Number
-        KBotDataColumn10.Aggregate = KBotAggregate.Sum
+        KBotDataColumn9.Width = 90
         KBotDataColumn10.AggregateFormatString = Nothing
         KBotDataColumn10.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn10.ColumnFont = New Font("Calibri", 9F)
@@ -236,13 +246,28 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn10.Format = KBotFormat.Standard
         KBotDataColumn10.FormatString = Nothing
         KBotDataColumn10.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
-        KBotDataColumn10.HeaderText = "Val. totală"
+        KBotDataColumn10.HeaderText = "Val. curentă"
         KBotDataColumn10.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn10.Key = "val_tot"
+        KBotDataColumn10.Key = "val_cur"
         KBotDataColumn10.OptionGroup = Nothing
-        KBotDataColumn10.ReadOnly = True
         KBotDataColumn10.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn10.ValueType = KBotValueType.Number
+        KBotDataColumn10.Width = 90
+        KBotDataColumn11.AggregateFormatString = Nothing
+        KBotDataColumn11.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn11.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn11.DecimalPlaces = 2
+        KBotDataColumn11.Format = KBotFormat.Standard
+        KBotDataColumn11.FormatString = Nothing
+        KBotDataColumn11.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
+        KBotDataColumn11.HeaderText = "Val. rămasă"
+        KBotDataColumn11.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn11.Key = "val_ramasa"
+        KBotDataColumn11.OptionGroup = Nothing
+        KBotDataColumn11.ReadOnly = True
+        KBotDataColumn11.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn11.ValueType = KBotValueType.Number
+        KBotDataColumn11.Width = 90
         grd.Columns.Add(KBotDataColumn1)
         grd.Columns.Add(KBotDataColumn2)
         grd.Columns.Add(KBotDataColumn3)
@@ -253,12 +278,9 @@ Partial Class DdfEditSectiuneaAPage
         grd.Columns.Add(KBotDataColumn8)
         grd.Columns.Add(KBotDataColumn9)
         grd.Columns.Add(KBotDataColumn10)
+        grd.Columns.Add(KBotDataColumn11)
         grd.Dock = DockStyle.Fill
         grd.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
-        grd.FooterBackColor = SystemColors.Control
-        grd.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        grd.FooterSeparatorColor = SystemColors.ActiveBorder
-        grd.FooterVisible = True
         grd.HeaderBackColor = SystemColors.Control
         grd.HeaderSeparatorColor = SystemColors.ActiveBorder
         grd.Location = New Point(6, 7)

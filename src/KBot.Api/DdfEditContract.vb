@@ -228,6 +228,9 @@ Public NotInheritable Class DdfClasificatieDto
     Public Property val_prec As Double
     ''' <summary>The sum of receptions for it. Display only -- no column stores it.</summary>
     Public Property val_rec As Double
+    ''' <summary>Slice 0081-12: <c>SUM(FX_Indicatori.Credit_Bugetar)</c> of the angajament for it --
+    ''' the budget of a line not generated from a reservation. Display only.</summary>
+    Public Property buget As Double
     ''' <summary>The indicator code already in use for it; empty = none yet, so the client
     ''' mints one.</summary>
     Public Property cod_indicator As String

@@ -120,6 +120,7 @@ _SQL = (
     "  WHERE C.IDClsf = I.IdClsf "
     "  LIMIT 1) AS Clsf, "
     "I.CodIndicator, aggRev.Partener, "
+    "COALESCE(I.Credit_Bugetar, 0)         AS CreditBugetar, "
     "COALESCE(aggRez.TotalRezervari, 0)    AS TotalRezervari, "
     "COALESCE(aggRec.TotalReceptii, 0)     AS TotalReceptii, "
     "COALESCE(aggPlati.TotalPlati, 0)      AS TotalPlati, "
@@ -203,7 +204,7 @@ def get_sumar():
     Query: cod (obligatoriu) = CodAngajament.
     Returneaza { header: {cod_angajament, data_fx, data_creare, data_definitivare,
     descriere, stare, incarcat, preluat} | null, rows: [ {clsf, cod_indicator,
-    partener, total_rezervari, total_receptii, total_plati, total_revizii,
+    partener, credit_bug, total_rezervari, total_receptii, total_plati, total_revizii,
     total_ordonantari}, ... ] }.
 
     Un `cod` necunoscut NU este 404: un angajament fara indicatori este legitim,
@@ -229,7 +230,7 @@ def get_sumar():
         header = None
         rows = []
         for (cod_ang, data_fx, data_creare, data_def, descriere, stare, incarcat,
-             preluat, clsf, cod_indicator, partener, total_rez, total_rec,
+             preluat, clsf, cod_indicator, partener, credit_bug, total_rez, total_rec,
              total_plati, total_rev, total_ord) in cursor.fetchall():
             if header is None:
                 # Coloanele de antet se repeta identic pe fiecare rand -> primul castiga.
@@ -247,6 +248,7 @@ def get_sumar():
                 "clsf": clsf,
                 "cod_indicator": cod_indicator,
                 "partener": partener,
+                "credit_bug": _num(credit_bug),
                 "total_rezervari": _num(total_rez),
                 "total_receptii": _num(total_rec),
                 "total_plati": _num(total_plati),

@@ -55,9 +55,10 @@ Public Class DdfEditSectiuneaAPage
     Private Const COL_PARTENER As String = "cod_partener"
     Private Const COL_BUGET As String = "buget"
     Private Const COL_VAL_REC As String = "val_rec"
+    Private Const COL_DISPONIBIL As String = "disponibil"
     Private Const COL_VAL_PREC As String = "val_prec"
     Private Const COL_VAL_CUR As String = "val_cur"
-    Private Const COL_VAL_TOT As String = "val_tot"
+    Private Const COL_VAL_RAMASA As String = "val_ramasa"
 
     ''' <summary>How many characters the minted indicator code has, after the "!" prefix.
     ''' Access wrote <c>"!" &amp; GenerateUniqueSequence(3)</c>.</summary>
@@ -229,9 +230,10 @@ Public Class DdfEditSectiuneaAPage
         r(COL_PARTENER) = a.CodPartener
         r(COL_BUGET) = a.Buget
         r(COL_VAL_REC) = a.ValRec
+        r(COL_DISPONIBIL) = DdfSectiuneaAReguli.Disponibil(a.Buget, a.ValRec)
         r(COL_VAL_PREC) = a.ValPrec
         r(COL_VAL_CUR) = a.ValCur
-        r(COL_VAL_TOT) = a.ValTot
+        r(COL_VAL_RAMASA) = DdfSectiuneaAReguli.ValoareRamasa(a.Buget, a.ValRec, a.ValCur)
     End Sub
 
     ''' <summary>What a line shows in the classification cell. The code plus the name, which
@@ -372,17 +374,14 @@ Public Class DdfEditSectiuneaAPage
     ''' <param name="linie">The line being edited (its own classification stays offered, whatever
     ''' its SS), or <c>Nothing</c> for a new line.</param>
     Private Function ClasificatiileLibere(linie As DdfDraftLinieA) As List(Of DdfClasificatie)
-        Dim folosite As New HashSet(Of Integer)()
-        If _draft IsNot Nothing Then
-            For Each a As DdfDraftLinieA In _draft.LiniiA
-                If ReferenceEquals(a, linie) Then Continue For
-                folosite.Add(a.IdClsf)
-            Next
-        End If
+        ' Operator, 26.09.2026: a classification already added never comes back in the list --
+        ' matched by key AND by code + SS (the nomenclator can hold one code under several keys).
+        Dim linii As IEnumerable(Of DdfDraftLinieA) =
+            If(_draft Is Nothing, Enumerable.Empty(Of DdfDraftLinieA)(), _draft.LiniiA)
         Dim propria As Integer = If(linie Is Nothing, 0, linie.IdClsf)
         Dim peProgram As New HashSet(Of Integer)(ClasificatiileProgramului(_clasificatii).Select(Function(c) c.IdClsf))
         Return _clasificatii.Where(
-            Function(c) Not c.EsteSeparator AndAlso Not folosite.Contains(c.IdClsf) AndAlso
+            Function(c) Not c.EsteSeparator AndAlso Not DdfSectiuneaAReguli.EsteFolosita(c, linii, linie) AndAlso
                         (peProgram.Contains(c.IdClsf) OrElse (propria <> 0 AndAlso c.IdClsf = propria))).ToList()
     End Function
 
@@ -445,7 +444,7 @@ Public Class DdfEditSectiuneaAPage
         Dim alteCoduri As IEnumerable(Of String) =
             _draft.LiniiA.Where(Function(l) Not ReferenceEquals(l, linie)).Select(Function(l) l.CodIndicator)
 
-        Using f As New DdfEditLinieAForm(deEditat, oferite, alteCoduri, surse, SursaPropusa, nou)
+        Using f As New DdfEditLinieAForm(deEditat, oferite, alteCoduri, surse, SursaPropusa, nou, _draft.Manual)
             If f.ShowDialog(Me) <> DialogResult.OK Then Return
             If nou Then
                 _draft.LiniiA.Add(f.Linie)
@@ -531,7 +530,7 @@ Public Class DdfEditSectiuneaAPage
                     If valoare < 0.0R AndAlso
                        Math.Round(valoare + a.ValPrec, 2) < Math.Round(a.ValRec, 2) Then
                         KBotMessage.Show(Me,
-                            "Valoarea rămasă nu poate fi mai mică decât valoarea recepțiilor!",
+                            "Valoarea totală (precedentă + curentă) nu poate fi mai mică decât valoarea recepțiilor!",
                             "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                         e.Cancel = True
                     End If
@@ -572,7 +571,10 @@ Public Class DdfEditSectiuneaAPage
                     a.ValTot = Math.Round(a.ValCur + a.ValPrec, 2)
                     _suspenda = True
                     Try
-                        rand(COL_VAL_TOT) = a.ValTot
+                        ' The cell gets the number back (the editor committed the typed text),
+                        ' and «Val. ramasa» follows it.
+                        rand(COL_VAL_CUR) = a.ValCur
+                        rand(COL_VAL_RAMASA) = DdfSectiuneaAReguli.ValoareRamasa(a.Buget, a.ValRec, a.ValCur)
                     Finally
                         _suspenda = False
                     End Try

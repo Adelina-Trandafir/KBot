@@ -458,6 +458,8 @@ Partial Class KBotDataView
             PerformAutoSize()
             RecalcColumnLayout()
             UpdateScrollBars()
+            ' Slice 0085: an open editor follows its cell (width, font, DPI, theme colours).
+            PlaceEditor()
         Finally
             _inLayout = False
         End Try

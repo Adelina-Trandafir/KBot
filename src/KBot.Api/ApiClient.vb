@@ -437,6 +437,7 @@ Public Class ApiClient
                                 .Clsf = If(r.clsf, String.Empty),
                                 .CodIndicator = If(r.cod_indicator, String.Empty),
                                 .Partener = If(r.partener, String.Empty),
+                                .CreditBugetar = r.credit_bug,
                                 .TotalRezervari = r.total_rezervari,
                                 .TotalReceptii = r.total_receptii,
                                 .TotalPlati = r.total_plati,
@@ -2643,7 +2644,7 @@ Public Class ApiClient
                             .CodSsi = If(c.cod_ssi, String.Empty),
                             .Titlu = If(c.titlu, String.Empty),
                             .IdUnitate = c.id_unitate, .SortOrd = c.sort_ord,
-                            .ValPrec = c.val_prec, .ValRec = c.val_rec,
+                            .ValPrec = c.val_prec, .ValRec = c.val_rec, .Buget = c.buget,
                             .CodIndicator = If(c.cod_indicator, String.Empty)})
                     Next
                     Return rezultat

@@ -57,6 +57,10 @@ Public Class DdfEditForm
     ''' a magic pair buried in the designer.</summary>
     Private Shared ReadOnly PROGRAME As String() = {"0000000000", "0000002510"}
 
+    ''' <summary>How many characters a minted indicator code has after «!» -- the same constant
+    ''' as section A's (Access: <c>"!" &amp; GenerateUniqueSequence(3)</c>).</summary>
+    Private Const LUNGIME_COD_INDICATOR As Integer = 3
+
     Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
 
     Private ReadOnly _apiClient As IApiClient
@@ -96,6 +100,22 @@ Public Class DdfEditForm
     ''' <summary>Slice 0081-09: the SS chosen in K-BOT's main window -- the one the line window
     ''' proposes when it is one of the program's. Set by the host before showing.</summary>
     Public Property SursaSectorSesiune As String = String.Empty
+
+    ''' <summary>«2. Foloseste indicatorii existenti» (operator, 26.09.2026): a new revision whose
+    ''' section A starts with one line, value 0, for every indicator the angajament already has.
+    ''' Set by the host before showing; acted on once, when the form is shown and section A is
+    ''' still empty. The lines left at 0 are dropped by the save.</summary>
+    Public Property PornesteCuIndicatorii As Boolean
+
+    ''' <summary>The header's program is replaced by the angajament's, from its indicators (see
+    ''' <see cref="SurseIndicatori"/>), when the form is shown. Implied by
+    ''' <see cref="PornesteCuIndicatorii"/>; set on its own for the revision added from the
+    ''' Rezervari tree's «+» (operator, 26.09.2026).</summary>
+    Public Property ProgramDinIndicatori As Boolean
+
+    ''' <summary>The angajament's distinct <c>FX_Indicatori.SS</c> («;» / «,» separated, the tree
+    ''' node's <c>Surse</c>) -- through <c>DefaProgram</c> the ONLY source of the program.</summary>
+    Public Property SurseIndicatori As String = String.Empty
 
     ''' <summary>Slice 0081-09: <c>AVACONT_COMUN.DefaProgram</c> -- which SSs each program may
     ''' use. Fetched once when the form opens; a section-A line takes its SS from the rows of the
@@ -175,6 +195,12 @@ Public Class DdfEditForm
         Try
             Await RezervaNumereleAsync().ConfigureAwait(True)
             Await IncarcaListeleAsync().ConfigureAwait(True)
+            ' The program first: the prefill's SS filter depends on it.
+            Dim programOk As Boolean = True
+            If ProgramDinIndicatori OrElse PornesteCuIndicatorii Then
+                programOk = Await AplicaProgramulIndicatorilorAsync().ConfigureAwait(True)
+            End If
+            If PornesteCuIndicatorii AndAlso programOk Then Await PrecompleteazaIndicatoriiAsync().ConfigureAwait(True)
             Await AduFisiereleAsync().ConfigureAwait(True)
             ' The heartbeat starts only once there is something to renew.
             If _draft.IdLockCual > 0 OrElse _draft.IdLockNumarRev > 0 Then tmrLock.Start()
@@ -545,6 +571,107 @@ Public Class DdfEditForm
                                                           titlu, CancellationToken.None)
             ).ConfigureAwait(True)
     End Function
+
+    ''' <summary>
+    ''' <b>The program is the angajament's, never the last revision's</b> (operator, 26.09.2026):
+    ''' <see cref="SurseIndicatori"/> (<c>FX_Indicatori.SS</c>) JOIN <c>DefaProgram</c> -- nothing
+    ''' else. Replaces the header's program. Returns False (and says why on the notice) when no
+    ''' program, or more than one, comes out; the header then keeps what it had.
+    ''' </summary>
+    Private Async Function AplicaProgramulIndicatorilorAsync() As Task(Of Boolean)
+        busyBar.Running = True
+        Try
+            Dim defa As List(Of DdfSursaProgram) = Await AduSurseleProgramelorAsync().ConfigureAwait(True)
+            Dim programe As List(Of String) = DdfSectiuneaAReguli.ProgrameleIndicatorilor(SurseIndicatori, defa)
+            If programe.Count <> 1 Then
+                Dim surseText As String = If(String.IsNullOrWhiteSpace(SurseIndicatori), "niciuna", SurseIndicatori)
+                ntfMesaj.Show(If(programe.Count = 0,
+                    $"Programul angajamentului nu se poate afla: sursele indicatorilor ({surseText}) nu apar în " &
+                    $"DefaProgram. Programul din antet («{_draft.Program}») NU e verificat.",
+                    $"Indicatorii angajamentului țin de mai multe programe ({String.Join(", ", programe)}; " &
+                    $"surse: {surseText}). Programul din antet («{_draft.Program}») NU e verificat."),
+                    NoticeKind.Warning)
+                ntfMesaj.Visible = True
+                Return False
+            End If
+            If Not DdfSectiuneaAReguli.AcelasiProgram(_draft.Program, programe(0)) Then
+                _draft.Program = programe(0)
+                IncarcaAntetul()
+            End If
+            Return True
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfEditForm.AplicaProgramulIndicatorilorAsync", ex)
+            ntfMesaj.Show("Programul angajamentului nu a putut fi aflat (DefaProgram nu a putut fi adus). " &
+                          $"Programul din antet («{_draft.Program}») NU e verificat.", NoticeKind.Warning)
+            ntfMesaj.Visible = True
+            Return False
+        Finally
+            busyBar.Running = False
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' «2. Foloseste indicatorii existenti»: fills an EMPTY section A with one line per indicator
+    ''' the angajament already has (<see cref="DdfSectiuneaAReguli.LiniiDinIndicatori"/>), value 0.
+    ''' A failure leaves section A empty and says so -- the operator can still add lines by hand.
+    '''
+    ''' <para>Runs only after <see cref="AplicaProgramulIndicatorilorAsync"/> succeeded: the SS
+    ''' filter of the lines needs the angajament's real program.</para>
+    ''' </summary>
+    Private Async Function PrecompleteazaIndicatoriiAsync() As Task
+        If _draft.LiniiA.Count > 0 Then Return
+        busyBar.Running = True
+        Try
+            Dim clasificatii As List(Of DdfClasificatie) = Await AduClasificatiileAsync().ConfigureAwait(True)
+            Dim linii As List(Of DdfDraftLinieA) = DdfSectiuneaAReguli.LiniiDinIndicatori(
+                _draft, clasificatii, _surseProgram, LUNGIME_COD_INDICATOR)
+            If linii.Count = 0 Then
+                ' Says WHICH filter emptied the list: the server sent nothing, none of it is the
+                ' angajament's, or none of that is on the program's SSs.
+                Dim reale As List(Of DdfClasificatie) =
+                    If(clasificatii, New List(Of DdfClasificatie)()).Where(Function(c) c IsNot Nothing AndAlso Not c.EsteSeparator).ToList()
+                Dim aleAngajamentului As List(Of DdfClasificatie) =
+                    reale.Where(Function(c) DdfSectiuneaAReguli.EsteInAngajament(c, _draft.Manual)).ToList()
+                Dim surse As List(Of DdfSursaProgram) = DdfSectiuneaAReguli.SurseAleProgramului(_surseProgram, _draft.Program)
+                Dim peProgram As Integer = If(_surseProgram.Count = 0, aleAngajamentului.Count,
+                    DdfSectiuneaAReguli.ClasificatiileProgramului(aleAngajamentului, surse).Count)
+                ntfMesaj.Show("Nu am găsit indicatori de preluat, secțiunea A pornește goală. " &
+                              $"Serverul a trimis {reale.Count} clasificații " &
+                              $"(angajament {If(_draft.Manual, "manual", "din FOREXE")}); " &
+                              $"{aleAngajamentului.Count} sunt ale angajamentului " &
+                              $"(cod de indicator sau pe FX_Indicatori); {peProgram} pe sursele programului " &
+                              $"«{_draft.Program}» ({String.Join(", ", surse.Select(Function(s) s.Ss))}).",
+                              NoticeKind.Warning)
+                ntfMesaj.Visible = True
+                Return
+            End If
+
+            _draft.LiniiA.AddRange(linii)
+            _draft.Revizie.RecalculeazaSectiuneaB()
+            ReimprospateazaSectiuneaA()
+            ntfMesaj.Show($"Secțiunea A pornește cu {linii.Count} indicatori ai angajamentului, cu valoarea 0. " &
+                          "Completează valorile; rândurile rămase cu 0 se șterg la salvare.",
+                          NoticeKind.Success)
+            ntfMesaj.Visible = True
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfEditForm.PrecompleteazaIndicatoriiAsync", ex)
+            ntfMesaj.Show("Indicatorii angajamentului nu au putut fi aduși: secțiunea A pornește goală. " &
+                          "Rândurile se pot adăuga cu «Adaugă rând».", NoticeKind.Warning)
+            ntfMesaj.Visible = True
+        Finally
+            busyBar.Running = False
+        End Try
+    End Function
+
+    ''' <summary>Pushes the draft at the section-A page (when it exists, visible or not) and
+    ''' refreshes the total -- after section A changed from outside the page.</summary>
+    Private Sub ReimprospateazaSectiuneaA()
+        Dim page As IDdfEditPage = Nothing
+        If _pages.TryGetValue(PAGINA_SECTIUNEA_A, page) AndAlso Not ReferenceEquals(page, _activePage) Then
+            page.SetDraft(_draft)
+        End If
+        AnuntaPaginile()
+    End Sub
 
     ''' <summary>
     ''' Fetches the bytes of the files already stored on the server so the «Fisiere» page can
@@ -957,7 +1084,9 @@ Public Class DdfEditForm
     ''' each recordset -- <c>If Not Rs.EOF Then ...</c>, with no loop -- so a bad value on row
     ''' two went straight through to the server. Every row is checked here.</para>
     ''' </summary>
-    Private Function MotiveDeRefuz() As List(Of String)
+    ''' <param name="deSters">The section-A lines the save drops (value 0): not checked, but still
+    ''' counted, so the row numbers in the message are the ones the operator sees.</param>
+    Private Function MotiveDeRefuz(deSters As HashSet(Of DdfDraftLinieA)) As List(Of String)
         Dim motive As New List(Of String)()
 
         If String.IsNullOrWhiteSpace(_draft.CodAngajament) Then motive.Add("Codul angajamentului lipsește.")
@@ -975,6 +1104,7 @@ Public Class DdfEditForm
         Dim nr As Integer = 0
         For Each a As DdfDraftLinieA In _draft.LiniiA
             nr += 1
+            If deSters.Contains(a) Then Continue For
             If String.IsNullOrWhiteSpace(a.CodIndicator) Then
                 motive.Add($"Cod indicator lipsă pe rândul {nr} din secțiunea A.")
             End If
@@ -998,6 +1128,7 @@ Public Class DdfEditForm
         ' program is locked, so its new lines always match.)
         If _draft.AngajamentNou Then
             For Each nrLinie As Integer In DdfSectiuneaAReguli.LiniiCuAltaSursa(_draft.LiniiA, _surseProgram, _draft.Program)
+                If deSters.Contains(_draft.LiniiA(nrLinie - 1)) Then Continue For
                 motive.Add($"Rândul {nrLinie} din secțiunea A are o sursă / un sector care nu aparține " &
                            $"programului «{_draft.Program}».")
             Next
@@ -1006,6 +1137,8 @@ Public Class DdfEditForm
         nr = 0
         For Each b As DdfDraftLinieB In _draft.LiniiB
             nr += 1
+            ' Section B is rebuilt from A one row per line, in A's order: row N is line N's twin.
+            If nr <= _draft.LiniiA.Count AndAlso deSters.Contains(_draft.LiniiA(nr - 1)) Then Continue For
             If b.Inf1 = 0.0R Then motive.Add($"Influența C.A. este 0 pe rândul {nr} din secțiunea B.")
             If b.Inf2 = 0.0R Then motive.Add($"Influența C.B. este 0 pe rândul {nr} din secțiunea B.")
         Next
@@ -1026,6 +1159,8 @@ Public Class DdfEditForm
 
     ' Boundary UI async: logged and shown; a throw from here would land on the UI thread.
     Private Async Sub BtnSalveaza_Click(sender As Object, e As EventArgs) Handles btnSalveaza.Click
+        ' The zero-value lines taken out for this save, with their places -- put back on failure.
+        Dim liniiScoase As List(Of KeyValuePair(Of Integer, DdfDraftLinieA)) = Nothing
         Try
             ntfMesaj.Clear()
             ntfMesaj.Visible = False
@@ -1035,11 +1170,22 @@ Public Class DdfEditForm
             ' waited on. `CommitText` is idempotent and is exactly what it exists for.
             PreiaCompartimentul()
 
+            ' Operator, 26.09.2026: section-A lines left at value 0 are dropped by the save (after
+            ' the question below); when NOTHING but such lines is left, the document is not saved.
+            Dim deSters As List(Of DdfDraftLinieA) = DdfSectiuneaAReguli.LiniiCuValoareZero(_draft.LiniiA)
+            If _draft.LiniiA.Count > 0 AndAlso deSters.Count = _draft.LiniiA.Count Then
+                KBotMessage.Show(Me, "Toate rândurile din secțiunea A au valoarea curentă 0, deci nu rămâne " &
+                                "niciun rând de salvat." & vbCrLf & vbCrLf &
+                                "Documentul NU se salvează. Completează valoarea cel puțin pe un rând.",
+                                "Salvează documentul", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+
             ' Section B is derived, so it is rebuilt right before the check rather than
             ' trusted to be current: a stale B row would be written to the database.
             _draft.Revizie.RecalculeazaSectiuneaB()
 
-            Dim motive As List(Of String) = MotiveDeRefuz()
+            Dim motive As List(Of String) = MotiveDeRefuz(New HashSet(Of DdfDraftLinieA)(deSters))
             If motive.Count > 0 Then
                 Dim mesaj As New StringBuilder("Nu pot salva din următoarele motive:")
                 For Each m As String In motive
@@ -1059,9 +1205,28 @@ Public Class DdfEditForm
                 "trebuie generat și semnat din nou înainte de trimiterea în FOREXE." & vbCrLf & vbCrLf &
                 "Salvez datele?",
                 "Salvez datele?")
+            If deSters.Count > 0 Then
+                Dim lista As New StringBuilder()
+                lista.Append(If(deSters.Count = 1,
+                                "Un rând din secțiunea A are valoarea curentă 0 și se șterge la salvare:",
+                                $"{deSters.Count} rânduri din secțiunea A au valoarea curentă 0 și se șterg la salvare:"))
+                For Each l As DdfDraftLinieA In deSters
+                    lista.Append(vbCrLf).Append("- ").Append(DdfSendInputs.ForexeClsf(l.Clsf)).
+                          Append(" — ").Append(l.ElementFund)
+                Next
+                intrebare = lista.ToString() & vbCrLf & vbCrLf & intrebare
+            End If
             If KBotMessage.Show(Me, intrebare, "Salvează documentul",
                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
                 Return
+            End If
+
+            ' Confirmed: the zero lines leave the draft (and section B with them) before it goes up.
+            ' They are put back if the save does not go through, so a refused save loses nothing.
+            If deSters.Count > 0 Then
+                liniiScoase = ScoateLiniile(deSters)
+                _draft.Revizie.RecalculeazaSectiuneaB()
+                ReimprospateazaSectiuneaA()
             End If
 
             btnSalveaza.Enabled = False
@@ -1112,12 +1277,48 @@ Public Class DdfEditForm
         Catch ex As ApiException
             ' The server's message is already in Romanian and lists every reason for refusal.
             GlobalErrorLog.Write("DdfEditForm.BtnSalveaza_Click", ex)
+            PuneInapoiLiniile(liniiScoase)
             KBotMessage.Show(Me, ex.Message, "Salvează documentul",
                             MessageBoxButtons.OK, MessageBoxIcon.Error)
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditForm.BtnSalveaza_Click", ex)
+            PuneInapoiLiniile(liniiScoase)
             KBotMessage.Show(Me, "Documentul nu a putut fi salvat. Detalii în jurnalul de erori.",
                             "Salvează documentul", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>Takes <paramref name="linii"/> out of section A and returns each with the index
+    ''' it had, in ascending order, so <see cref="PuneInapoiLiniile"/> can restore them.</summary>
+    Private Function ScoateLiniile(linii As IEnumerable(Of DdfDraftLinieA)) As List(Of KeyValuePair(Of Integer, DdfDraftLinieA))
+        Dim scoase As New List(Of KeyValuePair(Of Integer, DdfDraftLinieA))()
+        For Each l As DdfDraftLinieA In linii
+            Dim i As Integer = _draft.LiniiA.IndexOf(l)
+            If i >= 0 Then scoase.Add(New KeyValuePair(Of Integer, DdfDraftLinieA)(i, l))
+        Next
+        scoase.Sort(Function(a, b) a.Key.CompareTo(b.Key))
+        For Each kv As KeyValuePair(Of Integer, DdfDraftLinieA) In scoase
+            _draft.LiniiA.Remove(kv.Value)
+        Next
+        Return scoase
+    End Function
+
+    ''' <summary>
+    ''' A save that did not go through puts the zero lines back where they were: the operator
+    ''' agreed to lose them FOR a save, not otherwise. Nothing once the save is on the server.
+    ''' Called from the save's catch blocks, so it logs and swallows rather than throw there.
+    ''' </summary>
+    Private Sub PuneInapoiLiniile(scoase As List(Of KeyValuePair(Of Integer, DdfDraftLinieA)))
+        Try
+            If scoase Is Nothing OrElse scoase.Count = 0 OrElse _SAuSalvatModificari Then Return
+            ' Ascending indexes: each insert lands where it was, the earlier ones already back.
+            For Each kv As KeyValuePair(Of Integer, DdfDraftLinieA) In scoase
+                _draft.LiniiA.Insert(Math.Min(kv.Key, _draft.LiniiA.Count), kv.Value)
+            Next
+            _draft.Revizie.RecalculeazaSectiuneaB()
+            ReimprospateazaSectiuneaA()
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfEditForm.PuneInapoiLiniile", ex)
         End Try
     End Sub
 

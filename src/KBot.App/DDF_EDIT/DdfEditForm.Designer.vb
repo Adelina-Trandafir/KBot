@@ -107,7 +107,7 @@ Partial Class DdfEditForm
         txtCual.Location = New Point(467, 3)
         txtCual.Margin = New Padding(4, 3, 4, 3)
         txtCual.Name = "txtCual"
-        txtCual.Size = New Size(163, 34)
+        txtCual.Size = New Size(163, 35)
         txtCual.TabIndex = 0
         tips.SetToolTipHeader(txtCual, "CUAL")
         tips.SetToolTipText(txtCual, "Numărul documentului, rezervat pe server cât timp formularul e deschis." & vbLf & "Îl poți schimba: dacă numărul cerut e liber, rezervarea se mută pe el.")
@@ -125,7 +125,7 @@ Partial Class DdfEditForm
         dtpDataCreare.Location = New Point(798, 3)
         dtpDataCreare.Margin = New Padding(4, 3, 4, 3)
         dtpDataCreare.Name = "dtpDataCreare"
-        dtpDataCreare.Size = New Size(169, 34)
+        dtpDataCreare.Size = New Size(169, 35)
         dtpDataCreare.TabIndex = 1
         tips.SetToolTipHeader(dtpDataCreare, "Data creării")
         tips.SetToolTipText(dtpDataCreare, "Data documentului de fundamentare.")
@@ -138,7 +138,7 @@ Partial Class DdfEditForm
         lblTotal.Location = New Point(1045, 0)
         lblTotal.Margin = New Padding(4, 0, 4, 0)
         lblTotal.Name = "lblTotal"
-        lblTotal.Size = New Size(582, 40)
+        lblTotal.Size = New Size(317, 41)
         lblTotal.TabIndex = 5
         lblTotal.Text = "0,00"
         lblTotal.TextAlign = ContentAlignment.MiddleLeft
@@ -151,10 +151,10 @@ Partial Class DdfEditForm
         tlyAntet.SetColumnSpan(txtObiect, 7)
         txtObiect.Dock = DockStyle.Fill
         txtObiect.Font = New Font("Calibri", 9F, FontStyle.Bold)
-        txtObiect.Location = New Point(144, 43)
+        txtObiect.Location = New Point(144, 44)
         txtObiect.Margin = New Padding(4, 3, 4, 3)
         txtObiect.Name = "txtObiect"
-        txtObiect.Size = New Size(1483, 36)
+        txtObiect.Size = New Size(1218, 35)
         txtObiect.TabIndex = 2
         txtObiect.TextPadding = New Padding(12, 0, 12, 0)
         tips.SetToolTipHeader(txtObiect, "Obiectul documentului")
@@ -202,7 +202,7 @@ Partial Class DdfEditForm
         chkPartAng.Location = New Point(798, 85)
         chkPartAng.Margin = New Padding(4, 3, 4, 3)
         chkPartAng.Name = "chkPartAng"
-        chkPartAng.Size = New Size(169, 36)
+        chkPartAng.Size = New Size(169, 35)
         chkPartAng.TabIndex = 6
         chkPartAng.Text = "Partener asociat"
         tips.SetToolTipHeader(chkPartAng, "Partener asociat")
@@ -224,7 +224,7 @@ Partial Class DdfEditForm
         cmbPartener.Name = "cmbPartener"
         cmbPartener.OfferNewItem = True
         cmbPartener.OfferNewItemText = "Adaugă beneficiar nou..."
-        cmbPartener.Size = New Size(652, 34)
+        cmbPartener.Size = New Size(387, 34)
         cmbPartener.TabIndex = 7
         tips.SetToolTipHeader(cmbPartener, "Partenerul documentului")
         tips.SetToolTipText(cmbPartener, "Se reține codul fiscal — el e cel care se salvează." & vbLf & "Schimbarea lui rescrie partenerul pe toate rândurile.")
@@ -234,10 +234,10 @@ Partial Class DdfEditForm
         txtNumarRev.BackColor = Color.Transparent
         txtNumarRev.Dock = DockStyle.Fill
         txtNumarRev.Font = New Font("Calibri", 9F, FontStyle.Bold)
-        txtNumarRev.Location = New Point(144, 127)
+        txtNumarRev.Location = New Point(144, 126)
         txtNumarRev.Margin = New Padding(4, 3, 4, 3)
         txtNumarRev.Name = "txtNumarRev"
-        txtNumarRev.Size = New Size(182, 37)
+        txtNumarRev.Size = New Size(182, 38)
         txtNumarRev.TabIndex = 8
         txtNumarRev.TextPadding = New Padding(12, 0, 12, 0)
         tips.SetToolTipHeader(txtNumarRev, "Numărul reviziei")
@@ -253,10 +253,10 @@ Partial Class DdfEditForm
         dtpDataRev.ForeColor = SystemColors.ActiveCaptionText
         dtpDataRev.GlyphColor = SystemColors.ActiveCaptionText
         dtpDataRev.GlyphSize = 16
-        dtpDataRev.Location = New Point(467, 127)
+        dtpDataRev.Location = New Point(467, 126)
         dtpDataRev.Margin = New Padding(4, 3, 4, 3)
         dtpDataRev.Name = "dtpDataRev"
-        dtpDataRev.Size = New Size(163, 37)
+        dtpDataRev.Size = New Size(163, 38)
         dtpDataRev.TabIndex = 9
         tips.SetToolTipHeader(dtpDataRev, "Data reviziei")
         tips.SetToolTipText(dtpDataRev, "Nu poate fi mai veche decât ultima revizie a angajamentului.")
@@ -267,10 +267,10 @@ Partial Class DdfEditForm
         tlyAntet.SetColumnSpan(txtDescScurta, 3)
         txtDescScurta.Dock = DockStyle.Fill
         txtDescScurta.Font = New Font("Calibri", 9F, FontStyle.Bold)
-        txtDescScurta.Location = New Point(798, 127)
+        txtDescScurta.Location = New Point(798, 126)
         txtDescScurta.Margin = New Padding(4, 3, 4, 3)
         txtDescScurta.Name = "txtDescScurta"
-        txtDescScurta.Size = New Size(829, 37)
+        txtDescScurta.Size = New Size(564, 38)
         txtDescScurta.TabIndex = 10
         txtDescScurta.TextPadding = New Padding(12, 0, 12, 0)
         tips.SetToolTipHeader(txtDescScurta, "Descrierea scurtă")
@@ -293,7 +293,7 @@ Partial Class DdfEditForm
         ' btnSalveaza
         ' 
         btnSalveaza.Dock = DockStyle.Fill
-        btnSalveaza.Location = New Point(1353, 3)
+        btnSalveaza.Location = New Point(1088, 3)
         btnSalveaza.Margin = New Padding(0, 3, 10, 3)
         btnSalveaza.Name = "btnSalveaza"
         btnSalveaza.Padding = New Padding(14, 7, 14, 7)
@@ -331,7 +331,7 @@ Partial Class DdfEditForm
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 38F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyMain.RowStyles.Add(New RowStyle())
-        tlyMain.Size = New Size(1639, 996)
+        tlyMain.Size = New Size(1374, 747)
         tlyMain.TabIndex = 0
         ' 
         ' capBar
@@ -345,7 +345,7 @@ Partial Class DdfEditForm
         capBar.OptionButtonPadding = 0
         capBar.ShowMaximize = True
         capBar.ShowTextScaleSlider = False
-        capBar.Size = New Size(1639, 57)
+        capBar.Size = New Size(1374, 57)
         capBar.TabIndex = 0
         capBar.TabStop = False
         capBar.Text = "K-BOT — Document de fundamentare"
@@ -356,7 +356,7 @@ Partial Class DdfEditForm
         busyBar.Location = New Point(0, 57)
         busyBar.Margin = New Padding(0)
         busyBar.Name = "busyBar"
-        busyBar.Size = New Size(1639, 7)
+        busyBar.Size = New Size(1374, 7)
         busyBar.TabIndex = 1
         busyBar.TabStop = False
         ' 
@@ -398,11 +398,11 @@ Partial Class DdfEditForm
         tlyAntet.Margin = New Padding(4, 5, 4, 5)
         tlyAntet.Name = "tlyAntet"
         tlyAntet.RowCount = 4
-        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
-        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
-        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
-        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
-        tlyAntet.Size = New Size(1631, 167)
+        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Percent, 25F))
+        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Percent, 25F))
+        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Percent, 25F))
+        tlyAntet.RowStyles.Add(New RowStyle(SizeType.Percent, 25F))
+        tlyAntet.Size = New Size(1366, 167)
         tlyAntet.TabIndex = 2
         ' 
         ' lblCodCaption
@@ -413,7 +413,7 @@ Partial Class DdfEditForm
         lblCodCaption.Location = New Point(4, 0)
         lblCodCaption.Margin = New Padding(4, 0, 4, 0)
         lblCodCaption.Name = "lblCodCaption"
-        lblCodCaption.Size = New Size(132, 40)
+        lblCodCaption.Size = New Size(132, 41)
         lblCodCaption.TabIndex = 0
         lblCodCaption.Text = "Cod angajament"
         lblCodCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -426,7 +426,7 @@ Partial Class DdfEditForm
         lblCod.Location = New Point(144, 0)
         lblCod.Margin = New Padding(4, 0, 4, 0)
         lblCod.Name = "lblCod"
-        lblCod.Size = New Size(182, 40)
+        lblCod.Size = New Size(182, 41)
         lblCod.TabIndex = 1
         lblCod.TextAlign = ContentAlignment.MiddleLeft
         ' 
@@ -438,7 +438,7 @@ Partial Class DdfEditForm
         lblCualCaption.Location = New Point(334, 0)
         lblCualCaption.Margin = New Padding(4, 0, 4, 0)
         lblCualCaption.Name = "lblCualCaption"
-        lblCualCaption.Size = New Size(125, 40)
+        lblCualCaption.Size = New Size(125, 41)
         lblCualCaption.TabIndex = 2
         lblCualCaption.Text = "CUAL"
         lblCualCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -451,7 +451,7 @@ Partial Class DdfEditForm
         lblDataCreareCaption.Location = New Point(638, 0)
         lblDataCreareCaption.Margin = New Padding(4, 0, 4, 0)
         lblDataCreareCaption.Name = "lblDataCreareCaption"
-        lblDataCreareCaption.Size = New Size(152, 40)
+        lblDataCreareCaption.Size = New Size(152, 41)
         lblDataCreareCaption.TabIndex = 3
         lblDataCreareCaption.Text = "Data creării"
         lblDataCreareCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -464,7 +464,7 @@ Partial Class DdfEditForm
         lblTotalCaption.Location = New Point(975, 0)
         lblTotalCaption.Margin = New Padding(4, 0, 4, 0)
         lblTotalCaption.Name = "lblTotalCaption"
-        lblTotalCaption.Size = New Size(62, 40)
+        lblTotalCaption.Size = New Size(62, 41)
         lblTotalCaption.TabIndex = 4
         lblTotalCaption.Text = "Total"
         lblTotalCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -474,10 +474,10 @@ Partial Class DdfEditForm
         lblObiectCaption.AutoSize = True
         lblObiectCaption.Dock = DockStyle.Fill
         lblObiectCaption.Font = New Font("Calibri", 9F)
-        lblObiectCaption.Location = New Point(4, 40)
+        lblObiectCaption.Location = New Point(4, 41)
         lblObiectCaption.Margin = New Padding(4, 0, 4, 0)
         lblObiectCaption.Name = "lblObiectCaption"
-        lblObiectCaption.Size = New Size(132, 42)
+        lblObiectCaption.Size = New Size(132, 41)
         lblObiectCaption.TabIndex = 6
         lblObiectCaption.Text = "Obiectul documentului"
         lblObiectCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -490,7 +490,7 @@ Partial Class DdfEditForm
         lblProgramCaption.Location = New Point(4, 82)
         lblProgramCaption.Margin = New Padding(4, 0, 4, 0)
         lblProgramCaption.Name = "lblProgramCaption"
-        lblProgramCaption.Size = New Size(132, 42)
+        lblProgramCaption.Size = New Size(132, 41)
         lblProgramCaption.TabIndex = 7
         lblProgramCaption.Text = "Program"
         lblProgramCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -503,7 +503,7 @@ Partial Class DdfEditForm
         lblCompCaption.Location = New Point(334, 82)
         lblCompCaption.Margin = New Padding(4, 0, 4, 0)
         lblCompCaption.Name = "lblCompCaption"
-        lblCompCaption.Size = New Size(125, 42)
+        lblCompCaption.Size = New Size(125, 41)
         lblCompCaption.TabIndex = 8
         lblCompCaption.Text = "Compartiment"
         lblCompCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -513,10 +513,10 @@ Partial Class DdfEditForm
         lblNumarRevCaption.AutoSize = True
         lblNumarRevCaption.Dock = DockStyle.Fill
         lblNumarRevCaption.Font = New Font("Calibri", 9F)
-        lblNumarRevCaption.Location = New Point(4, 124)
+        lblNumarRevCaption.Location = New Point(4, 123)
         lblNumarRevCaption.Margin = New Padding(4, 0, 4, 0)
         lblNumarRevCaption.Name = "lblNumarRevCaption"
-        lblNumarRevCaption.Size = New Size(132, 43)
+        lblNumarRevCaption.Size = New Size(132, 44)
         lblNumarRevCaption.TabIndex = 9
         lblNumarRevCaption.Text = "Număr revizie"
         lblNumarRevCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -526,10 +526,10 @@ Partial Class DdfEditForm
         lblDataRevCaption.AutoSize = True
         lblDataRevCaption.Dock = DockStyle.Fill
         lblDataRevCaption.Font = New Font("Calibri", 9F)
-        lblDataRevCaption.Location = New Point(334, 124)
+        lblDataRevCaption.Location = New Point(334, 123)
         lblDataRevCaption.Margin = New Padding(4, 0, 4, 0)
         lblDataRevCaption.Name = "lblDataRevCaption"
-        lblDataRevCaption.Size = New Size(125, 43)
+        lblDataRevCaption.Size = New Size(125, 44)
         lblDataRevCaption.TabIndex = 10
         lblDataRevCaption.Text = "Data reviziei"
         lblDataRevCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -539,10 +539,10 @@ Partial Class DdfEditForm
         lblDescScurtaCaption.AutoSize = True
         lblDescScurtaCaption.Dock = DockStyle.Fill
         lblDescScurtaCaption.Font = New Font("Calibri", 9F)
-        lblDescScurtaCaption.Location = New Point(638, 124)
+        lblDescScurtaCaption.Location = New Point(638, 123)
         lblDescScurtaCaption.Margin = New Padding(4, 0, 4, 0)
         lblDescScurtaCaption.Name = "lblDescScurtaCaption"
-        lblDescScurtaCaption.Size = New Size(152, 43)
+        lblDescScurtaCaption.Size = New Size(152, 44)
         lblDescScurtaCaption.TabIndex = 11
         lblDescScurtaCaption.Text = "Descriere scurtă"
         lblDescScurtaCaption.TextAlign = ContentAlignment.MiddleLeft
@@ -554,7 +554,7 @@ Partial Class DdfEditForm
         ntfMesaj.Location = New Point(4, 246)
         ntfMesaj.Margin = New Padding(4, 5, 4, 5)
         ntfMesaj.Name = "ntfMesaj"
-        ntfMesaj.Size = New Size(1631, 10)
+        ntfMesaj.Size = New Size(1366, 10)
         ntfMesaj.TabIndex = 3
         ntfMesaj.TabStop = False
         ntfMesaj.Visible = False
@@ -590,7 +590,7 @@ Partial Class DdfEditForm
         navSub.Name = "navSub"
         navSub.Orientation = KBotNavOrientation.Horizontal
         navSub.SelectedKey = Nothing
-        navSub.Size = New Size(1639, 38)
+        navSub.Size = New Size(1374, 38)
         navSub.TabIndex = 4
         ' 
         ' pnlPages
@@ -600,7 +600,7 @@ Partial Class DdfEditForm
         pnlPages.Location = New Point(0, 299)
         pnlPages.Margin = New Padding(0)
         pnlPages.Name = "pnlPages"
-        pnlPages.Size = New Size(1639, 639)
+        pnlPages.Size = New Size(1374, 390)
         pnlPages.TabIndex = 5
         ' 
         ' tlySubsol
@@ -612,19 +612,19 @@ Partial Class DdfEditForm
         tlySubsol.Controls.Add(btnRenunta, 0, 0)
         tlySubsol.Controls.Add(btnSalveaza, 2, 0)
         tlySubsol.Dock = DockStyle.Fill
-        tlySubsol.Location = New Point(0, 938)
+        tlySubsol.Location = New Point(0, 689)
         tlySubsol.Margin = New Padding(0)
         tlySubsol.Name = "tlySubsol"
         tlySubsol.RowCount = 1
         tlySubsol.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlySubsol.Size = New Size(1639, 58)
+        tlySubsol.Size = New Size(1374, 58)
         tlySubsol.TabIndex = 6
         ' 
         ' DdfEditForm
         ' 
         AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
-        ClientSize = New Size(1641, 1000)
+        ClientSize = New Size(1376, 751)
         Controls.Add(tlyMain)
         FormBorderStyle = FormBorderStyle.None
         Margin = New Padding(4, 5, 4, 5)

@@ -159,6 +159,10 @@ Public Enum RezervariMenuOption
     Deruleaza = 2
     GenereazaPdfFinal = 3
     AdaugaRezervare = 4
+    ''' <summary>The second entry under «Adauga rezervare» (operator, 26.09.2026): the new revision
+    ''' starts with a section-A line for every indicator the angajament already has. Never returned
+    ''' by <see cref="RezervariMenu.Decide"/> -- it is offered through <see cref="RezervariMenu.Intrari"/>.</summary>
+    AdaugaRezervareCuIndicatori = 5
 End Enum
 
 ''' <summary>
@@ -251,9 +255,30 @@ Public NotInheritable Class RezervariMenu
             Case RezervariMenuOption.Deruleaza : Return "Derulează"
             Case RezervariMenuOption.GenereazaPdfFinal : Return "Generează PDF final"
             Case RezervariMenuOption.AdaugaRezervare : Return "Adaugă rezervare"
+            Case RezervariMenuOption.AdaugaRezervareCuIndicatori : Return "Adaugă rezervare cu indicatorii existenți"
             Case RezervariMenuOption.None : Return String.Empty
             Case Else
                 Throw New ArgumentOutOfRangeException(NameOf(opt), opt, "Unknown Rezervari menu option.")
         End Select
+    End Function
+
+    ''' <summary>
+    ''' The entries of the footer menu for the option <see cref="Decide"/> chose, in order, with the
+    ''' text each one shows. «Adauga rezervare» opens two (operator, 26.09.2026): an empty revision,
+    ''' or one that starts from the angajament's indicators. Any other option is its own one entry.
+    ''' </summary>
+    Public Shared Function Intrari(opt As RezervariMenuOption) As List(Of KeyValuePair(Of RezervariMenuOption, String))
+        Dim lista As New List(Of KeyValuePair(Of RezervariMenuOption, String))()
+        Select Case opt
+            Case RezervariMenuOption.None
+            Case RezervariMenuOption.AdaugaRezervare
+                lista.Add(New KeyValuePair(Of RezervariMenuOption, String)(
+                    RezervariMenuOption.AdaugaRezervare, "1. Adaugă revizie goală"))
+                lista.Add(New KeyValuePair(Of RezervariMenuOption, String)(
+                    RezervariMenuOption.AdaugaRezervareCuIndicatori, "2. Folosește indicatorii existenți"))
+            Case Else
+                lista.Add(New KeyValuePair(Of RezervariMenuOption, String)(opt, Label(opt)))
+        End Select
+        Return lista
     End Function
 End Class
