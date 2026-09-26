@@ -135,7 +135,7 @@
         <Screenshot saveTo="Poza_[[R.Cheie]]"/>
 
         <!-- 7. SALVARE — fara modal -->
-        <Click selector="button.btn.btn-success.btn-small:nth-child(1)"
+        <Click commits="true" selector="button.btn.btn-success.btn-small:nth-child(1)"
                waitNavigation="true"
                timeout="10"
                isCheckpoint="true"
@@ -193,7 +193,7 @@
         <Screenshot saveTo="Poza_[[R.Cheie]]"/>
 
         <!-- 5. SALVARE -->
-        <Click selector="button.btn.btn-success.btn-small:nth-child(1)"
+        <Click commits="true" selector="button.btn.btn-success.btn-small:nth-child(1)"
                isCheckpoint="true"
                LogValue="Apas Salveaza"/>
 
@@ -206,7 +206,7 @@
               value="[[R.Motiv]]"
               clear="true"/>
 
-        <Click selector="div.modal-footer button.btn.btn-success.btn-small"
+        <Click commits="true" selector="div.modal-footer button.btn.btn-success.btn-small"
                waitNavigation="true"
                timeout="10"
                isCheckpoint="true"

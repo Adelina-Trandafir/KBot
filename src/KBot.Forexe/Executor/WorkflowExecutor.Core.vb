@@ -45,6 +45,20 @@ Partial Public Class WorkflowExecutor
     ' package on to the server.
     Private _exitMessage As String = Nothing
 
+    ''' <summary>
+    ''' Slice 0081-07, the dry run: a Click marked <c>commits="true"</c> is NOT clicked; the
+    ''' run stops right before it as if an &lt;Exit&gt; had been met. Set per job by the runner.
+    ''' </summary>
+    Public Property StopBeforeCommit As Boolean
+
+    ''' <summary>True when the last run was stopped by <see cref="StopBeforeCommit"/>. Reset per run.</summary>
+    Public ReadOnly Property StoppedBeforeCommit As Boolean
+        Get
+            Return _stoppedBeforeCommit
+        End Get
+    End Property
+    Private _stoppedBeforeCommit As Boolean
+
 
     Private ReadOnly _windowsSecurityAutomation As WindowsSecurityAutomation
     Private ReadOnly _variables As New Dictionary(Of String, List(Of String))

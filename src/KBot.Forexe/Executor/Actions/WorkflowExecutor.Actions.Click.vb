@@ -6,6 +6,9 @@ Partial Public Class WorkflowExecutor
 
     Private Async Function ExecuteClickAsync(action As ClickAction) As Task
         Dim finalSelector As String = ReplaceInternalVariables(action.Selector)
+        If action.Commits AndAlso StopBeforeCommit Then
+            Await StopBeforeCommitAsync(action, finalSelector)
+        End If
         LogStep(action, $"Click pe: {finalSelector} {(If(action.ExpectNewTab, "[TAB NOU]", ""))}")
 
         Dim locator = _page.Locator(finalSelector)
@@ -146,6 +149,31 @@ Partial Public Class WorkflowExecutor
         Catch ex As Exception
             _logger.LogDebug("[Click] Regulile paginii nu au putut fi repuse (pagina s-a schimbat): " & ex.Message)
         End Try
+    End Function
+
+    ''' <summary>
+    ''' Variable holding the capture of the page at the dry-run stop. NOT «Poza_*»: those are
+    ''' the send's captures and would be stored on the DDF revision.
+    ''' </summary>
+    Public Const DryRunCaptureVariable As String = "Proba_Captura"
+
+    ''' <summary>
+    ''' Slice 0081-07, the dry run: the page is captured as it stands, and the run stops before a
+    ''' click that would make FOREXE save. Always throws <see cref="WorkflowExitException"/>.
+    ''' </summary>
+    Private Async Function StopBeforeCommitAsync(action As ClickAction, finalSelector As String) As Task
+        Try
+            Dim bytes As Byte() = Await _page.ScreenshotAsync(New PageScreenshotOptions With {.FullPage = True})
+            SetVariable(DryRunCaptureVariable, Convert.ToBase64String(bytes))
+        Catch ex As Exception
+            ' The capture only helps the reading; the stop itself must happen regardless.
+            GlobalErrorLog.Write("WorkflowExecutor.StopBeforeCommitAsync", ex)
+        End Try
+        _stoppedBeforeCommit = True
+        Dim stepName As String = If(String.IsNullOrWhiteSpace(action.LogValue), finalSelector, action.LogValue)
+        _logger.LogWarning($"[Mod probă] Oprit înainte de pasul care salvează: {stepName}")
+        Throw New WorkflowExitException(
+            $"Mod probă: robotul s-a oprit înainte de pasul care salvează («{stepName}»). FOREXE nu a salvat nimic.")
     End Function
 
 End Class

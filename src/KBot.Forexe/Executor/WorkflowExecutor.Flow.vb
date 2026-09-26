@@ -15,6 +15,7 @@ Partial Public Class WorkflowExecutor
             ' This run's own verdict: a stop left over from the previous workflow must not
             ' be read as this one's.
             _exitMessage = Nothing
+            _stoppedBeforeCommit = False
 
             ' VERIFICARE CRITICĂ: Dacă browserul nu e pornit, îl pornim acum (fallback)
             If _page Is Nothing Then

@@ -7,7 +7,8 @@ Imports KBot.Theming
 ''' <summary>
 ''' «FOREXE» (slice 0072): what the robot is doing now, the certificate it will propose
 ''' next time (and the button that forgets it), the docked-browser toolbar switch, and the
-''' folders it reads and writes (read-only here -- they are edited on «Aplicație»).
+''' folders it reads and writes (read-only here -- they are edited on the application page).
+''' Slice 0081-07 adds the two test modes (dry run, replay), both session only.
 '''
 ''' <para>Reads the state from <see cref="ForexeController"/> and follows its
 ''' <c>StateChanged</c> while the page is alive, so a connection made while the window is
@@ -57,6 +58,7 @@ Public Class SetariForexeView
             AratatCalea(lblWorkflows, KBotPaths.FolderWorkflows)
             AratatCalea(lblRezultate, KBotPaths.FolderRezultateWorkflow)
             AratatCalea(lblExtrase, KBotPaths.FolderExtrase)
+            AratatCalea(lblAnswers, KBotPaths.FolderRezultateForexe)
         Catch ex As Exception
             GlobalErrorLog.Write("SetariForexeView.Activated", ex)
         End Try
@@ -93,6 +95,15 @@ Public Class SetariForexeView
             lblConexiune.ForeColor = If(conectat, p.SuccessColor, p.TextDimColor)
             Dim nume As String = _controller.CertificateName
             lblCertificat.Text = If(String.IsNullOrEmpty(nume), "— (se alege la conectare)", nume)
+            ' Slice 0081-07: the two test modes live on the controller (session only); the boxes
+            ' follow it, so a mode turned off elsewhere (one turns the other off) shows here.
+            _suppress = True
+            Try
+                chkDryRun.Checked = _controller.DryRunMode
+                chkReplay.Checked = _controller.ReplayMode
+            Finally
+                _suppress = False
+            End Try
         Catch ex As Exception
             GlobalErrorLog.Write("SetariForexeView.ActualizeazaStarea", ex)
         End Try
@@ -169,6 +180,34 @@ Public Class SetariForexeView
         End Try
     End Sub
 
+    ' ---------------- dry run / replay (slice 0081-07) ----------------
+
+    Private Sub ChkDryRun_CheckedChanged(sender As Object, e As EventArgs) Handles chkDryRun.CheckedChanged
+        Try
+            If _suppress Then Return
+            _controller.DryRunMode = chkDryRun.Checked
+            RaiseEvent StatusChanged(If(chkDryRun.Checked,
+                "Mod probă pornit: robotul se oprește înainte de orice pas care salvează în FOREXE.",
+                "Mod probă oprit."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForexeView.ChkDryRun_CheckedChanged", ex)
+            RaiseEvent StatusChanged("Modul probă nu a putut fi schimbat: " & ex.Message)
+        End Try
+    End Sub
+
+    Private Sub ChkReplay_CheckedChanged(sender As Object, e As EventArgs) Handles chkReplay.CheckedChanged
+        Try
+            If _suppress Then Return
+            _controller.ReplayMode = chkReplay.Checked
+            RaiseEvent StatusChanged(If(chkReplay.Checked,
+                "Mod reîncărcare pornit: FOREXE nu se atinge; răspunsurile se aleg din «Rezultate_Forexe».",
+                "Mod reîncărcare oprit."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForexeView.ChkReplay_CheckedChanged", ex)
+            RaiseEvent StatusChanged("Modul reîncărcare nu a putut fi schimbat: " & ex.Message)
+        End Try
+    End Sub
+
     ' ---------------- theme ----------------
 
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
@@ -181,8 +220,10 @@ Public Class SetariForexeView
             tlyCertificat.BackColor = p.SurfaceAltColor
             tlyBrowser.BackColor = p.SurfaceAltColor
             tlyFoldere.BackColor = p.SurfaceAltColor
+            tlyTests.BackColor = p.SurfaceAltColor
             For Each caption As Label In New Label() {lblConexiuneCaption, lblCertificatCaption, lblCertMemoratCaption,
-                                                      lblWorkflowsCaption, lblRezultateCaption, lblExtraseCaption, lblFoldereHint}
+                                                      lblWorkflowsCaption, lblRezultateCaption, lblExtraseCaption, lblFoldereHint,
+                                                      lblAnswersCaption, lblTestsHint}
                 caption.ForeColor = p.TextDimColor
                 caption.BackColor = Color.Transparent
             Next

@@ -1,7 +1,7 @@
 Namespace WorkflowModels
 
     ''' <summary>
-    ''' Click action - Simulează un click pe un element identificat printr-un selector CSS.
+    ''' Click action - clicks an element found by a CSS selector.
     ''' </summary>
     Public Class ClickAction
         Implements IWorkflowAction
@@ -21,6 +21,12 @@ Namespace WorkflowModels
         Public Property Force As Boolean = False
         Public Property JsClick As Boolean = False
         Public Property ExpectNewTab As Boolean = False
+        ''' <summary>
+        ''' Slice 0081-07: this click makes FOREXE SAVE something (a new angajament, a
+        ''' reservation row, a confirmation). Attribute <c>commits="true"</c>. In the dry run
+        ''' (<see cref="WorkflowExecutor.StopBeforeCommit"/>) the run stops right before it.
+        ''' </summary>
+        Public Property Commits As Boolean = False
     End Class
 
 End Namespace

@@ -71,7 +71,7 @@
         clear="true"
         LogValue="Completez descrierea modalului În derulare"/>
 
-  <Click selector="form[action*='IFormSubmitListener-modal-form'] .modal-footer button.btn-success"
+  <Click commits="true" selector="form[action*='IFormSubmitListener-modal-form'] .modal-footer button.btn-success"
          waitNavigation="true" timeout="10"
          LogValue="Click Continuă — confirmare În derulare"/>
 

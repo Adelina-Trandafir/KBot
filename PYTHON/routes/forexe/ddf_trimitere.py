@@ -314,12 +314,37 @@ def _are_att_img(cursor) -> bool:
     return bool(row.get("n"))
 
 
+def _captura_existenta(cursor, idrev: int, octeti: bytes, sha: str) -> int:
+    """Slice 0081-07: the id of a capture of this revision with the SAME bytes, or 0.
+
+    A FOREXE answer loaded again from «Rezultate_Forexe» (K-BOT's replay mode) brings its
+    captures a second time; stored twice, they would show twice in the final PDF (Table4).
+    Same bytes = same sha256 (or, on a database without FX_DDF_REV_ATT_IMG, the same base64).
+    """
+    if _are_att_img(cursor):
+        cursor.execute(
+            "SELECT a.IdRevAtt AS id FROM FX_DDF_REV_ATT a "
+            "  JOIN FX_DDF_REV_ATT_IMG i ON i.IdRevAtt = a.IdRevAtt "
+            " WHERE a.IDREV = %s AND a.PrtScr = 1 AND i.Sha256 = %s LIMIT 1",
+            (idrev, sha))
+    else:
+        cursor.execute(
+            "SELECT IdRevAtt AS id FROM FX_DDF_REV_ATT "
+            " WHERE IDREV = %s AND PrtScr = 1 AND DateFisier = %s LIMIT 1",
+            (idrev, base64.b64encode(octeti).decode("ascii")))
+    row = cursor.fetchone() or {}
+    return int(row.get("id") or 0)
+
+
 def _captura(cursor, idrev: int, nume: str, octeti: bytes, sha: str) -> dict:
     rev = citeste_revizia(cursor, idrev)
     stage = int(rev.get("StareTrimitere") or 0)
     if stage not in (STAGE_INTERRUPTED, STAGE_SENT_IN_PROGRESS):
         raise Refuz("Capturile din FOREXE se adaugă doar în timpul trimiterii reviziei "
                     "(inclusiv «Definitivează» / «Derulează»).", 409)
+    existing = _captura_existenta(cursor, idrev, octeti, sha)
+    if existing > 0:
+        return {"id_rev_att": existing, "dimensiune": len(octeti), "exista_deja": True}
     cursor.execute("INSERT INTO FX_DDF_REV_ATT (IDDF, IDREV, CaleFisier, PrtScr) VALUES (%s, %s, %s, 1)",
                    (rev.get("IDDF"), idrev, nume))
     id_rev_att = int(cursor.lastrowid or 0)

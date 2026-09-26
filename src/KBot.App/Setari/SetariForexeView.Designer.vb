@@ -44,11 +44,19 @@ Partial Class SetariForexeView
         lblExtraseCaption = New Label()
         lblExtrase = New Label()
         lblFoldereHint = New Label()
+        lblTitleTests = New Label()
+        tlyTests = New KBotTableLayoutPanel()
+        chkDryRun = New CheckBox()
+        chkReplay = New CheckBox()
+        lblTestsHint = New Label()
+        lblAnswersCaption = New Label()
+        lblAnswers = New Label()
         tlyBody.SuspendLayout()
         tlyStare.SuspendLayout()
         tlyCertificat.SuspendLayout()
         tlyBrowser.SuspendLayout()
         tlyFoldere.SuspendLayout()
+        tlyTests.SuspendLayout()
         SuspendLayout()
         '
         ' tlyBody
@@ -62,14 +70,18 @@ Partial Class SetariForexeView
         tlyBody.Controls.Add(tlyCertificat, 0, 3)
         tlyBody.Controls.Add(lblTitluBrowser, 0, 4)
         tlyBody.Controls.Add(tlyBrowser, 0, 5)
-        tlyBody.Controls.Add(lblTitluFoldere, 0, 6)
-        tlyBody.Controls.Add(tlyFoldere, 0, 7)
+        tlyBody.Controls.Add(lblTitleTests, 0, 6)
+        tlyBody.Controls.Add(tlyTests, 0, 7)
+        tlyBody.Controls.Add(lblTitluFoldere, 0, 8)
+        tlyBody.Controls.Add(tlyFoldere, 0, 9)
         tlyBody.Dock = DockStyle.Fill
         tlyBody.Location = New Point(0, 0)
         tlyBody.Margin = New Padding(0)
         tlyBody.Name = "tlyBody"
         tlyBody.Padding = New Padding(24, 18, 24, 18)
-        tlyBody.RowCount = 9
+        tlyBody.RowCount = 11
+        tlyBody.RowStyles.Add(New RowStyle())
+        tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
@@ -289,15 +301,83 @@ Partial Class SetariForexeView
         tips.SetToolTipText(chkDevTools, "Debifat, pagina înghite F12, Ctrl+Shift+I / J / C, Ctrl+U și meniul de clic dreapta." & vbLf & "Bifat, toate rămân la îndemână. Se aplică imediat în pagina deschisă.")
         chkDevTools.UseVisualStyleBackColor = True
         '
+        ' lblTitleTests
+        '
+        lblTitleTests.AutoSize = True
+        lblTitleTests.Font = New Font("Segoe UI Semibold", 12F)
+        lblTitleTests.Location = New Point(28, 402)
+        lblTitleTests.Margin = New Padding(4, 0, 4, 8)
+        lblTitleTests.Name = "lblTitleTests"
+        lblTitleTests.Size = New Size(250, 32)
+        lblTitleTests.TabIndex = 6
+        lblTitleTests.Text = "Probă și reîncărcare"
+        '
+        ' tlyTests
+        '
+        tlyTests.AutoFitToTheme = False
+        tlyTests.AutoSize = True
+        tlyTests.ColumnCount = 1
+        tlyTests.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyTests.Controls.Add(chkDryRun, 0, 0)
+        tlyTests.Controls.Add(chkReplay, 0, 1)
+        tlyTests.Controls.Add(lblTestsHint, 0, 2)
+        tlyTests.Dock = DockStyle.Top
+        tlyTests.Location = New Point(28, 442)
+        tlyTests.Margin = New Padding(4, 0, 4, 24)
+        tlyTests.Name = "tlyTests"
+        tlyTests.RowCount = 3
+        tlyTests.RowStyles.Add(New RowStyle())
+        tlyTests.RowStyles.Add(New RowStyle())
+        tlyTests.RowStyles.Add(New RowStyle())
+        tlyTests.Size = New Size(904, 110)
+        tlyTests.TabIndex = 7
+        '
+        ' chkDryRun
+        '
+        chkDryRun.AutoSize = True
+        chkDryRun.Location = New Point(4, 0)
+        chkDryRun.Margin = New Padding(4, 0, 4, 10)
+        chkDryRun.Name = "chkDryRun"
+        chkDryRun.Size = New Size(420, 29)
+        chkDryRun.TabIndex = 0
+        chkDryRun.Text = "Mod probă: robotul se oprește înainte de orice pas care salvează în FOREXE"
+        tips.SetToolTipHeader(chkDryRun, "Mod probă")
+        tips.SetToolTipText(chkDryRun, "Robotul parcurge paginile FOREXE reale (formulare, liste, sume, capturi)" & vbLf & "și se oprește chiar înainte de primul clic care ar salva ceva." & vbLf & "Revizia DDF nu își schimbă starea. Se oprește la închiderea K-BOT.")
+        chkDryRun.UseVisualStyleBackColor = True
+        '
+        ' chkReplay
+        '
+        chkReplay.AutoSize = True
+        chkReplay.Location = New Point(4, 39)
+        chkReplay.Margin = New Padding(4, 0, 4, 10)
+        chkReplay.Name = "chkReplay"
+        chkReplay.Size = New Size(420, 29)
+        chkReplay.TabIndex = 1
+        chkReplay.Text = "Mod reîncărcare: răspunsurile FOREXE se aleg din «Rezultate_Forexe», fără a intra în FOREXE"
+        tips.SetToolTipHeader(chkReplay, "Mod reîncărcare")
+        tips.SetToolTipText(chkReplay, "Fiecare răspuns FOREXE se păstrează în «Rezultate_Forexe»." & vbLf & "Cu bifa pusă, K-BOT nu mai pornește robotul: pentru fiecare pas cere fișierul" & vbLf & "răspunsului și continuă ca și cum FOREXE ar fi răspuns acum. Se oprește la închiderea K-BOT.")
+        chkReplay.UseVisualStyleBackColor = True
+        '
+        ' lblTestsHint
+        '
+        lblTestsHint.AutoSize = True
+        lblTestsHint.Dock = DockStyle.Fill
+        lblTestsHint.Location = New Point(4, 78)
+        lblTestsHint.Margin = New Padding(4, 0, 4, 0)
+        lblTestsHint.Name = "lblTestsHint"
+        lblTestsHint.Size = New Size(896, 26)
+        lblTestsHint.TabIndex = 2
+        lblTestsHint.Text = "Cele două moduri nu merg împreună și se opresc singure la închiderea K-BOT."
+        '
         ' lblTitluFoldere
         '
         lblTitluFoldere.AutoSize = True
         lblTitluFoldere.Font = New Font("Segoe UI Semibold", 12F)
-        lblTitluFoldere.Location = New Point(28, 363)
+        lblTitluFoldere.Location = New Point(28, 576)
         lblTitluFoldere.Margin = New Padding(4, 0, 4, 8)
         lblTitluFoldere.Name = "lblTitluFoldere"
         lblTitluFoldere.Size = New Size(93, 32)
-        lblTitluFoldere.TabIndex = 6
+        lblTitluFoldere.TabIndex = 8
         lblTitluFoldere.Text = "Foldere"
         '
         ' tlyFoldere
@@ -313,18 +393,21 @@ Partial Class SetariForexeView
         tlyFoldere.Controls.Add(lblRezultate, 1, 1)
         tlyFoldere.Controls.Add(lblExtraseCaption, 0, 2)
         tlyFoldere.Controls.Add(lblExtrase, 1, 2)
-        tlyFoldere.Controls.Add(lblFoldereHint, 0, 3)
+        tlyFoldere.Controls.Add(lblAnswersCaption, 0, 3)
+        tlyFoldere.Controls.Add(lblAnswers, 1, 3)
+        tlyFoldere.Controls.Add(lblFoldereHint, 0, 4)
         tlyFoldere.Dock = DockStyle.Top
-        tlyFoldere.Location = New Point(28, 403)
+        tlyFoldere.Location = New Point(28, 616)
         tlyFoldere.Margin = New Padding(4, 0, 4, 0)
         tlyFoldere.Name = "tlyFoldere"
-        tlyFoldere.RowCount = 4
+        tlyFoldere.RowCount = 5
         tlyFoldere.RowStyles.Add(New RowStyle())
         tlyFoldere.RowStyles.Add(New RowStyle())
         tlyFoldere.RowStyles.Add(New RowStyle())
         tlyFoldere.RowStyles.Add(New RowStyle())
-        tlyFoldere.Size = New Size(904, 130)
-        tlyFoldere.TabIndex = 7
+        tlyFoldere.RowStyles.Add(New RowStyle())
+        tlyFoldere.Size = New Size(904, 162)
+        tlyFoldere.TabIndex = 9
         '
         ' lblWorkflowsCaption
         '
@@ -398,16 +481,40 @@ Partial Class SetariForexeView
         lblExtrase.TabIndex = 5
         lblExtrase.Text = "—"
         '
+        ' lblAnswersCaption
+        '
+        lblAnswersCaption.AutoSize = True
+        lblAnswersCaption.Dock = DockStyle.Fill
+        lblAnswersCaption.Location = New Point(4, 96)
+        lblAnswersCaption.Margin = New Padding(4, 0, 4, 6)
+        lblAnswersCaption.Name = "lblAnswersCaption"
+        lblAnswersCaption.Size = New Size(252, 26)
+        lblAnswersCaption.TabIndex = 6
+        lblAnswersCaption.Text = "Răspunsurile FOREXE (reîncărcabile)"
+        '
+        ' lblAnswers
+        '
+        lblAnswers.AutoEllipsis = True
+        lblAnswers.AutoSize = False
+        lblAnswers.Dock = DockStyle.Fill
+        lblAnswers.Font = New Font("Segoe UI Semibold", 9F)
+        lblAnswers.Location = New Point(264, 96)
+        lblAnswers.Margin = New Padding(4, 0, 4, 6)
+        lblAnswers.Name = "lblAnswers"
+        lblAnswers.Size = New Size(636, 26)
+        lblAnswers.TabIndex = 7
+        lblAnswers.Text = "—"
+        '
         ' lblFoldereHint
         '
         lblFoldereHint.AutoSize = True
         tlyFoldere.SetColumnSpan(lblFoldereHint, 2)
         lblFoldereHint.Dock = DockStyle.Fill
-        lblFoldereHint.Location = New Point(4, 96)
+        lblFoldereHint.Location = New Point(4, 128)
         lblFoldereHint.Margin = New Padding(4, 6, 4, 0)
         lblFoldereHint.Name = "lblFoldereHint"
         lblFoldereHint.Size = New Size(896, 26)
-        lblFoldereHint.TabIndex = 6
+        lblFoldereHint.TabIndex = 8
         lblFoldereHint.Text = "Căile se schimbă din pagina «Aplicație», secțiunea «Foldere»."
         '
         ' SetariForexeView
@@ -427,6 +534,8 @@ Partial Class SetariForexeView
         tlyBrowser.PerformLayout()
         tlyFoldere.ResumeLayout(False)
         tlyFoldere.PerformLayout()
+        tlyTests.ResumeLayout(False)
+        tlyTests.PerformLayout()
         ResumeLayout(False)
     End Sub
 
@@ -456,4 +565,11 @@ Partial Class SetariForexeView
     Friend WithEvents lblExtraseCaption As Label
     Friend WithEvents lblExtrase As Label
     Friend WithEvents lblFoldereHint As Label
+    Friend WithEvents lblTitleTests As Label
+    Friend WithEvents tlyTests As KBotTableLayoutPanel
+    Friend WithEvents chkDryRun As CheckBox
+    Friend WithEvents chkReplay As CheckBox
+    Friend WithEvents lblTestsHint As Label
+    Friend WithEvents lblAnswersCaption As Label
+    Friend WithEvents lblAnswers As Label
 End Class

@@ -95,6 +95,7 @@ Public NotInheritable Class WflWriter
         If a.Force Then el.Add(New XAttribute("force", "true"))
         If a.JsClick Then el.Add(New XAttribute("jsClick", "true"))
         If a.ExpectNewTab Then el.Add(New XAttribute("expectNewTab", "true"))
+        If a.Commits Then el.Add(New XAttribute("commits", "true"))
         AddCommon(el, a, 30)
         Return el
     End Function

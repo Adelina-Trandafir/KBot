@@ -102,7 +102,7 @@
         clear="true"
         LogValue="Completez descrierea Definitivare"/>
 
-  <Click selector="form[action*='IFormSubmitListener-modal-form'] .modal-footer button.btn-success"
+  <Click commits="true" selector="form[action*='IFormSubmitListener-modal-form'] .modal-footer button.btn-success"
          waitNavigation="true" timeout="10"
          LogValue="Click Continuă — confirmare Definitivare"/>
 
@@ -140,7 +140,7 @@
     <Screenshot SaveTo="Poza_Definitivare_[[idx]]"
                 LogValue="Captură ecran indicator [[idx]]"/>
 
-    <Click selector="button.btn-success.btn-small:has-text('Salvează')"
+    <Click commits="true" selector="button.btn-success.btn-small:has-text('Salvează')"
            waitNavigation="false" timeout="5"
            LogValue="Click Salvează → indicator [[idx]]"/>
 
@@ -151,7 +151,7 @@
             value="{{MOTIV_DEFINITIVARE}}"
             clear="true"
             LogValue="Completez motivul → indicator [[idx]]"/>
-      <Click selector="div.modal-content .modal-footer button.btn-success"
+      <Click commits="true" selector="div.modal-content .modal-footer button.btn-success"
              waitNavigation="true" timeout="10"
              LogValue="Click Continuă → indicator [[idx]]"/>
     </IfExists>

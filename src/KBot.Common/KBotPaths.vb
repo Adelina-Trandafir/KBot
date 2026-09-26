@@ -171,6 +171,16 @@ Public NotInheritable Class KBotPaths
         End Get
     End Property
 
+    ''' <summary>
+    ''' Slice 0081-07: every answer FOREXE gave a workflow, one JSON per run, in a form that can
+    ''' be loaded back instead of running again. Default <c>&lt;AppDir&gt;\Rezultate_Forexe</c>.
+    ''' </summary>
+    Public Shared ReadOnly Property FolderRezultateForexe As String
+        Get
+            Return Foldere.Cale(SetariFoldere.CheieRezultateForexe)
+        End Get
+    End Property
+
     ''' <summary>PDF-urile temporare. Implicit <c>C:\KBOT\Temp\PDF</c> (23.09.2026).</summary>
     Public Shared ReadOnly Property FolderPdfTemporar As String
         Get

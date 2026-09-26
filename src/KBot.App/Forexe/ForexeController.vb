@@ -160,6 +160,10 @@ Public NotInheritable Class ForexeController
     ''' </summary>
     Public Async Function ConnectAsync() As Task(Of Boolean)
         Try
+            If _replayMode Then
+                RaporteazaStare("Mod reîncărcare: FOREXE nu se deschide; răspunsurile vin din «Rezultate_Forexe».")
+                Return True
+            End If
             If IsConnected Then Return True
             If _busy Then Return False
             _ultimulEsec = String.Empty
@@ -200,6 +204,10 @@ Public NotInheritable Class ForexeController
 
     Public Async Function ConnectAsync(certificat As X509Certificate2) As Task(Of Boolean)
         Try
+            If _replayMode Then
+                RaporteazaStare("Mod reîncărcare: FOREXE nu se deschide; răspunsurile vin din «Rezultate_Forexe».")
+                Return True
+            End If
             If IsConnected Then Return True
             If _busy Then Return False
             _ultimulEsec = String.Empty
@@ -256,7 +264,12 @@ Public NotInheritable Class ForexeController
                 RaporteazaStare("Descarc lista de angajamente...")
                 Dim job As JobRequest = JobBuilder.BuildListaAngajamente(_session)
                 jurnal.NoteRequest(job)
-                Dim rezultat As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
+                Dim rezultat As JobResult = Await RunOrReplayAsync(job, String.Empty)
+                If rezultat Is Nothing Then
+                    jurnal.Note("motiv", "Reincarcarea a fost anulata de operator.")
+                    ScrieJurnal(jurnal, "anulat", Nothing)
+                    Return Nothing
+                End If
                 If Not rezultat.Success Then
                     ScrieJurnal(jurnal, "esuat", rezultat)
                     RaporteazaEsec("Lista de angajamente a eșuat: " & rezultat.Message)
@@ -351,7 +364,12 @@ Public NotInheritable Class ForexeController
                 End If
                 jurnal.NoteRequest(job)
 
-                Dim rezultat As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
+                Dim rezultat As JobResult = Await RunOrReplayAsync(job, cod)
+                If rezultat Is Nothing Then
+                    jurnal.Note("motiv", "Reincarcarea a fost anulata de operator.")
+                    ScrieJurnal(jurnal, "anulat", Nothing)
+                    Return Nothing
+                End If
                 If Not rezultat.Success Then
                     ' Slice 0057. This branch now ALSO catches the flow that stopped
                     ' itself because the angajament is not in the FOREXE list: RunJobAsync
@@ -544,7 +562,12 @@ Public NotInheritable Class ForexeController
                 Dim job As JobRequest = Await construiesteJob()
                 jurnal.NoteRequest(job)
 
-                Dim rezultat As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
+                Dim rezultat As JobResult = Await RunOrReplayAsync(job, cod)
+                If rezultat Is Nothing Then
+                    jurnal.Note("motiv", "Reincarcarea a fost anulata de operator.")
+                    ScrieJurnal(jurnal, "anulat", Nothing)
+                    Return Nothing
+                End If
                 If Not rezultat.Success Then
                     ScrieJurnal(jurnal, "esuat", rezultat)
                     RaporteazaEsec($"Reîmprospătarea {familie} pentru «{cod}» a eșuat: " & rezultat.Message)
@@ -781,6 +804,7 @@ Public NotInheritable Class ForexeController
     ''' <summary>The angajament code the FOREXE page shows now; empty when none. Never throws.</summary>
     Public Async Function CitesteCodulPaginiiAsync() As Task(Of String)
         Try
+            If _replayMode Then Return String.Empty
             Return Await _runner.ReadPageAngajamentAsync()
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeController.CitesteCodulPaginiiAsync", ex)
@@ -917,7 +941,12 @@ Public NotInheritable Class ForexeController
             Try
                 RaporteazaStare($"Trimit în FOREXE ({job.WorkflowName}) pentru «{cod}»...")
                 jurnal.NoteRequest(job)
-                Dim rezultat As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
+                Dim rezultat As JobResult = Await RunOrReplayAsync(job, cod)
+                If rezultat Is Nothing Then
+                    jurnal.Note("motiv", "Reincarcarea a fost anulata de operator.")
+                    ScrieJurnal(jurnal, "anulat", Nothing)
+                    Return Nothing
+                End If
                 If rezultat.Success Then
                     ScrieJurnal(jurnal, "ok", rezultat)
                     RaporteazaStare($"«{cod}»: {job.WorkflowName} încheiat.")
@@ -950,6 +979,131 @@ Public NotInheritable Class ForexeController
             Throw
         End Try
     End Sub
+
+    ' ── Slice 0081-07: dry run, replay, and the answers kept on disk ──────
+
+    Private Const ReplayTitle As String = "Reîncarcă un răspuns FOREXE"
+
+    Private _dryRunMode As Boolean
+    Private _replayMode As Boolean
+
+    ''' <summary>
+    ''' The dry run: every job is sent with <see cref="JobRequest.StopBeforeSave"/>, so the robot
+    ''' walks the real FOREXE pages and stops right before the first step that would save.
+    ''' Session only -- it is off at every start of K-BOT, on purpose.
+    ''' </summary>
+    Public Property DryRunMode As Boolean
+        Get
+            Return _dryRunMode
+        End Get
+        Set(value As Boolean)
+            If _dryRunMode = value Then Return
+            _dryRunMode = value
+            If value Then _replayMode = False
+            RaporteazaStare(If(value,
+                "Mod probă PORNIT: robotul se oprește înainte de orice pas care salvează în FOREXE.",
+                "Mod probă oprit: robotul lucrează din nou normal în FOREXE."))
+            RaiseEvent StateChanged(Me, EventArgs.Empty)
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Replay: no job reaches FOREXE. Each one is answered from a file of
+    ''' <see cref="ForexeAnswerStore.Folder"/> the operator picks, as if the workflow had run and
+    ''' answered that. Session only, off at every start, and it turns the dry run off.
+    ''' </summary>
+    Public Property ReplayMode As Boolean
+        Get
+            Return _replayMode
+        End Get
+        Set(value As Boolean)
+            If _replayMode = value Then Return
+            _replayMode = value
+            If value Then _dryRunMode = False
+            RaporteazaStare(If(value,
+                "Mod reîncărcare PORNIT: FOREXE nu se atinge; răspunsurile se aleg din «Rezultate_Forexe».",
+                "Mod reîncărcare oprit: robotul lucrează din nou în FOREXE."))
+            RaiseEvent StateChanged(Me, EventArgs.Empty)
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' THE one way a data job reaches the robot. Replay: the answer comes from a file. Otherwise
+    ''' the job runs (as a dry run when <see cref="DryRunMode"/> is on) and its answer is written to
+    ''' <see cref="ForexeAnswerStore.Folder"/> whatever the outcome. Nothing = the operator
+    ''' cancelled the replay (nothing ran). Called inside the busy gate, with <c>_cts</c> set.
+    ''' </summary>
+    Private Async Function RunOrReplayAsync(job As JobRequest, code As String) As Task(Of JobResult)
+        If _replayMode Then Return AnswerFromFile(job, code)
+
+        job.StopBeforeSave = _dryRunMode
+        Dim result As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
+        Dim filePath As String = ForexeAnswerStore.Save(job, code, _session, result)
+        If String.IsNullOrEmpty(filePath) Then
+            RaporteazaStare("Răspunsul FOREXE nu s-a putut păstra în «Rezultate_Forexe» — vezi Logs\harness_errors.log.")
+        Else
+            RaporteazaStare("Răspunsul FOREXE păstrat: " & filePath)
+        End If
+        Return result
+    End Function
+
+    ''' <summary>
+    ''' Replay: the operator picks the answer for THIS job; a different workflow is refused, and a
+    ''' different angajament, database or parameter set is used only after a yes. Nothing when the
+    ''' operator cancelled -- then nothing ran.
+    ''' </summary>
+    Private Function AnswerFromFile(job As JobRequest, code As String) As JobResult
+        Dim folder As String = ForexeAnswerStore.Folder
+        Directory.CreateDirectory(folder)
+        Dim filePath As String
+        Using dlg As New OpenFileDialog With {
+            .Title = $"{ReplayTitle}: {job.WorkflowName}" & If(String.IsNullOrWhiteSpace(code), "", $" «{code}»"),
+            .InitialDirectory = folder,
+            .Filter = $"Răspunsuri {job.WorkflowName}|{ForexeAnswerStore.FilePattern(job.WorkflowName)}|Toate răspunsurile|*.json",
+            .CheckFileExists = True,
+            .Multiselect = False
+        }
+            Dim picked As DialogResult = If(Owner Is Nothing, dlg.ShowDialog(), dlg.ShowDialog(Owner))
+            If picked <> DialogResult.OK Then
+                RaporteazaStare($"Reîncărcarea pentru {job.WorkflowName} a fost anulată: nu s-a ales niciun răspuns.")
+                Return Nothing
+            End If
+            filePath = dlg.FileName
+        End Using
+
+        Dim answer As ForexeAnswer = ForexeAnswerStore.Load(filePath)
+        If Not String.Equals(answer.Workflow, job.WorkflowName, StringComparison.Ordinal) Then
+            KBotMessage.Show(Owner,
+                $"Răspunsul ales este al workflow-ului «{answer.Workflow}», iar K-BOT are nevoie acum de «{job.WorkflowName}». " &
+                "Nu se folosește.", ReplayTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            RaporteazaStare($"Reîncărcarea pentru {job.WorkflowName} a fost oprită: s-a ales un răspuns de alt tip.")
+            Return Nothing
+        End If
+
+        Dim differences As New List(Of String)()
+        If Not String.Equals(answer.Code, If(code, String.Empty), StringComparison.OrdinalIgnoreCase) Then
+            differences.Add($"angajamentul: «{answer.Code}» în fișier, «{code}» acum")
+        End If
+        If Not String.Equals(answer.DbName, _session.DbName, StringComparison.OrdinalIgnoreCase) Then
+            differences.Add($"baza de date: «{answer.DbName}» în fișier, «{_session.DbName}» acum")
+        End If
+        Dim parameters As List(Of String) = ForexeAnswerStore.ParameterDifferences(answer, job)
+        If parameters.Count > 0 Then differences.Add("datele trimise robotului: " & String.Join(", ", parameters))
+        If differences.Count > 0 Then
+            Dim question As String =
+                $"Răspunsul «{Path.GetFileName(filePath)}» nu a fost înregistrat pentru aceeași cerere:" & vbCrLf & "  " &
+                String.Join(vbCrLf & "  ", differences) & vbCrLf & vbCrLf &
+                "Îl folosesc totuși, ca și cum FOREXE ar fi răspuns așa acum?"
+            If KBotMessage.Show(Owner, question, ReplayTitle, MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+                                MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
+                RaporteazaStare($"Reîncărcarea pentru {job.WorkflowName} a fost anulată.")
+                Return Nothing
+            End If
+        End If
+
+        RaporteazaStare($"{job.WorkflowName}: răspuns reîncărcat din «{Path.GetFileName(filePath)}» — FOREXE nu a fost atins.")
+        Return ForexeAnswerStore.ToJobResult(answer)
+    End Function
 
     ' ── Interne ──────────────────────────────────────────────────────────
 
@@ -993,6 +1147,7 @@ Public NotInheritable Class ForexeController
 
     ' Deschide sesiunea dacă nu există; False = operatorul a anulat sau conectarea a eșuat.
     Private Async Function AsiguraSesiuneAsync() As Task(Of Boolean)
+        If _replayMode Then Return True
         If IsConnected Then Return True
         Return Await ConnectAsync()
     End Function

@@ -518,6 +518,7 @@ Namespace KBot.Forexe
                 ' job's JSON parameters also go in through `SetVariable`, so clearing from inside
                 ' the executor would wipe exactly the ones just put there.
                 _executor.ClearAllVariables()
+                _executor.StopBeforeCommit = job.StopBeforeSave
 
                 ' Injectare variabile — separat pe tip (ca în KBOT_IPC.WorkFlow):
                 ' JSON -> executor (SetVariable), plate -> substituție în XML (ApplyVariables).
@@ -577,7 +578,9 @@ Namespace KBot.Forexe
                 If Not String.IsNullOrWhiteSpace(opritDeExit) Then
                     _logger.LogWarning($"'{job.WorkflowName}': flux oprit — {opritDeExit}")
                     RidicaStare("Oprit: " & opritDeExit)
-                    Return FailedWithVariables(opritDeExit)
+                    Dim stopped As JobResult = FailedWithVariables(opritDeExit)
+                    stopped.StoppedBeforeSave = _executor.StoppedBeforeCommit
+                    Return stopped
                 End If
 
                 Dim result As New JobResult With {.Success = True, .Message = $"'{job.WorkflowName}' rulat."}

@@ -271,7 +271,8 @@ Public Class WorkflowParser
                 .IsCheckpoint = GetBoolAttribute(e, "isCheckpoint", False),
                 .Force = GetBoolAttribute(e, "force", False),
                 .JsClick = GetBoolAttribute(e, "jsClick", False),
-                .ExpectNewTab = GetBoolAttribute(e, "expectNewTab", False)
+                .ExpectNewTab = GetBoolAttribute(e, "expectNewTab", False),
+                .Commits = GetBoolAttribute(e, "commits", False)
             }
             Return a
         Catch ex As Exception

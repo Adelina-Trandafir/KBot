@@ -92,7 +92,7 @@ Partial Public Class KbotForm
             $"Trimit revizia {numarRev} a angajamentului «{codCurent}» în FOREXE?" & vbCrLf & vbCrLf &
             "Din acest moment revizia nu se mai modifică și nu se mai șterge din K-BOT: " &
             "orice schimbare ulterioară cere o revizie nouă.")
-        If KBotMessage.Show(Me, intrebare, TitluTrimitere, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+        If KBotMessage.Show(Me, intrebare & ModeNote(), TitluTrimitere, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
                             MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
             Return
         End If
@@ -102,7 +102,10 @@ Partial Public Class KbotForm
             AratEsecul("Conectarea la FOREXE")
             Return
         End If
-        Await ApelTrimitereAsync(Function() sendApi.IncepeTrimitereaDdfAsync(idrev, CancellationToken.None))
+        ' Slice 0081-07: a dry run saves nothing in forexecab, so the revision is not marked as sent.
+        If Not _controller.DryRunMode Then
+            Await ApelTrimitereAsync(Function() sendApi.IncepeTrimitereaDdfAsync(idrev, CancellationToken.None))
+        End If
 
         ' ── Which workflow ────────────────────────────────────────────────────────
         Dim creare As Boolean = codCurent.StartsWith("!", StringComparison.Ordinal)
@@ -154,6 +157,10 @@ Partial Public Class KbotForm
                 ' Nothing started: forexecab is untouched, the stage is 1 and a resume is safe.
                 AratEsecul("Trimiterea")
                 AnuntaTrimitereaIntrerupta(codCurent, idrev, "Robotul FOREXE nu a pornit.")
+                Return
+            End If
+            If rezultat.StoppedBeforeSave Then
+                ReportDryRunStop(rezultat)
                 Return
             End If
 
@@ -266,6 +273,33 @@ Partial Public Class KbotForm
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 0081-07: the line added to a send question when FOREXE will not really be written --
+    ''' the dry run, or answers loaded from «Rezultate_Forexe». Empty in the normal mode.
+    ''' </summary>
+    Private Function ModeNote() As String
+        If _controller.ReplayMode Then
+            Return vbCrLf & vbCrLf & "MOD REÎNCĂRCARE: robotul nu intră în FOREXE. Pentru fiecare pas alegeți " &
+                   "răspunsul păstrat în «Rezultate_Forexe»; K-BOT îl tratează ca și cum FOREXE ar fi răspuns acum."
+        End If
+        If _controller.DryRunMode Then
+            Return vbCrLf & vbCrLf & "MOD PROBĂ: robotul parcurge paginile FOREXE și se oprește înainte de primul pas " &
+                   "care salvează. Nu se salvează nimic în FOREXE, iar revizia nu își schimbă starea."
+        End If
+        Return String.Empty
+    End Function
+
+    ''' <summary>
+    ''' Slice 0081-07: a dry run reached a step that saves and stopped there. Nothing was saved in
+    ''' forexecab, so nothing is written on the revision either (no codes, no captures, no stage).
+    ''' </summary>
+    Private Sub ReportDryRunStop(result As JobResult)
+        KBotMessage.Show(Me, "Proba s-a încheiat." & vbCrLf & vbCrLf & result.Message & vbCrLf & vbCrLf &
+                        "Tot ce era înainte de acest pas a mers pe paginile FOREXE reale. Revizia nu s-a schimbat. " &
+                        "Răspunsul probei (cu o captură a paginii din momentul opririi) este în «Rezultate_Forexe».",
+                        TitluTrimitere, MessageBoxButtons.OK, MessageBoxIcon.Information)
+    End Sub
+
     ' ── The Rezervari footer menu: Definitiveaza / Deruleaza / Genereaza PDF final ─────
 
     ''' <summary>
@@ -288,7 +322,7 @@ Partial Public Class KbotForm
         Dim intrebare As String = If(definitivare,
             $"Definitivez angajamentul «{cod}» în FOREXE?",
             $"Trec angajamentul «{cod}» în derulare în FOREXE?")
-        If KBotMessage.Show(Me, intrebare, titlu, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+        If KBotMessage.Show(Me, intrebare & ModeNote(), titlu, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
                             MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
             Return
         End If
@@ -298,6 +332,10 @@ Partial Public Class KbotForm
         Dim rezultat As JobResult = Await _controller.RuleazaTrimitereAsync(job, cod).ConfigureAwait(True)
         If rezultat Is Nothing Then
             AratEsecul(titlu)
+            Return
+        End If
+        If rezultat.StoppedBeforeSave Then
+            ReportDryRunStop(rezultat)
             Return
         End If
         Await UrcaCapturileAsync(sendApi, rev0.Idrev, rezultat)

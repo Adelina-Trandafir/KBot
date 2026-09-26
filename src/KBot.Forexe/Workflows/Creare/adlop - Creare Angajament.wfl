@@ -161,13 +161,13 @@
     <IfVar Value="[[R.IsLast]]" compare="eq:true" isCheckpoint="true">
 
       <!-- Ultimul rând: Salvare finală cu navigație -->
-      <Click selector=".form-group button.btn-success:nth-child(1)"
+      <Click commits="true" selector=".form-group button.btn-success:nth-child(1)"
              waitNavigation="true" timeout="10" isCheckpoint="true"
              LogValue="Salvez FINAL (ultimul rând)"/>
 
       <Else>
         <!-- Rânduri intermediare: Salvare fără navigație -->
-        <Click selector=".form-group button.btn-success:nth-child(2)"
+        <Click commits="true" selector=".form-group button.btn-success:nth-child(2)"
                waitNavigation="false" timeout="5" isCheckpoint="true"
                LogValue="Salvez intermediar — rândul [[idx]]"/>
 
