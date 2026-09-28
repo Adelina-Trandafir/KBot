@@ -31,6 +31,7 @@ Partial Class CabNoteForm
         Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn7 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn8 As KBotDataColumn = New KBotDataColumn()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(CabNoteForm))
         tips = New KBotToolTip(components)
         grdOperatii = New KBotDataView()
         cmbAngajament = New KBotComboBox()
@@ -76,99 +77,98 @@ Partial Class CabNoteForm
         grdOperatii.BackColor = SystemColors.Window
         grdOperatii.ColumnFillMode = KBotFillMode.LastColumn
         KBotDataColumn1.AggregateFormatString = Nothing
-        KBotDataColumn1.CellPadding = New Padding(4, 0, 4, 0)
-        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn1.ColumnType = KBotColumnType.CheckBox
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
-        KBotDataColumn1.HeaderText = "Referință TREZOR"
+        KBotDataColumn1.HeaderText = "✓"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn1.Key = "referinta"
+        KBotDataColumn1.Key = "gata"
         KBotDataColumn1.OptionGroup = Nothing
         KBotDataColumn1.ReadOnly = True
-        KBotDataColumn1.Width = 150
+        KBotDataColumn1.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn1.ValueType = KBotValueType.Boolean
+        KBotDataColumn1.Width = 40
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn2.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
-        KBotDataColumn2.HeaderText = "Nr. document"
+        KBotDataColumn2.HeaderText = "Referință TREZOR"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn2.Key = "nr_doc"
+        KBotDataColumn2.Key = "referinta"
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.ReadOnly = True
-        KBotDataColumn2.Width = 120
+        KBotDataColumn2.Width = 150
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn3.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
-        KBotDataColumn3.HeaderText = "Dată plată"
+        KBotDataColumn3.HeaderText = "Nr. document"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn3.Key = "data"
+        KBotDataColumn3.Key = "nr_doc"
         KBotDataColumn3.OptionGroup = Nothing
         KBotDataColumn3.ReadOnly = True
-        KBotDataColumn3.TextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn3.Width = 90
+        KBotDataColumn3.Width = 120
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn4.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
-        KBotDataColumn4.HeaderText = "Tip"
+        KBotDataColumn4.HeaderText = "Dată plată"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn4.Key = "tip"
+        KBotDataColumn4.Key = "data"
         KBotDataColumn4.OptionGroup = Nothing
         KBotDataColumn4.ReadOnly = True
-        KBotDataColumn4.Width = 80
+        KBotDataColumn4.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn4.Width = 90
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn5.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
-        KBotDataColumn5.HeaderText = "Sector - Sursă - Indicator"
+        KBotDataColumn5.HeaderText = "Tip"
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn5.Key = "ssi"
+        KBotDataColumn5.Key = "tip"
         KBotDataColumn5.OptionGroup = Nothing
         KBotDataColumn5.ReadOnly = True
-        KBotDataColumn5.Width = 170
+        KBotDataColumn5.Width = 80
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn6.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn6.DecimalPlaces = 2
-        KBotDataColumn6.Format = KBotFormat.Standard
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
-        KBotDataColumn6.HeaderText = "Suma"
+        KBotDataColumn6.HeaderText = "Sector - Sursă - Indicator"
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn6.Key = "suma"
+        KBotDataColumn6.Key = "ssi"
         KBotDataColumn6.OptionGroup = Nothing
         KBotDataColumn6.ReadOnly = True
-        KBotDataColumn6.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn6.ValueType = KBotValueType.Number
+        KBotDataColumn6.Width = 170
         KBotDataColumn7.AggregateFormatString = Nothing
         KBotDataColumn7.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn7.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn7.DecimalPlaces = 2
+        KBotDataColumn7.Format = KBotFormat.Standard
         KBotDataColumn7.FormatString = Nothing
         KBotDataColumn7.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
-        KBotDataColumn7.HeaderText = "Stare"
+        KBotDataColumn7.HeaderText = "Suma"
         KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn7.Key = "stare"
+        KBotDataColumn7.Key = "suma"
         KBotDataColumn7.OptionGroup = Nothing
         KBotDataColumn7.ReadOnly = True
-        KBotDataColumn7.Width = 200
+        KBotDataColumn7.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn7.ValueType = KBotValueType.Number
         KBotDataColumn8.AggregateFormatString = Nothing
-        KBotDataColumn8.ColumnType = KBotColumnType.CheckBox
+        KBotDataColumn8.CellPadding = New Padding(4, 0, 4, 0)
+        KBotDataColumn8.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn8.FormatString = Nothing
         KBotDataColumn8.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
-        KBotDataColumn8.HeaderText = "✓"
+        KBotDataColumn8.HeaderText = "Stare"
         KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn8.Key = "gata"
+        KBotDataColumn8.Key = "stare"
         KBotDataColumn8.OptionGroup = Nothing
         KBotDataColumn8.ReadOnly = True
-        KBotDataColumn8.TextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn8.ValueType = KBotValueType.Boolean
-        KBotDataColumn8.Width = 32
-        grdOperatii.Columns.Add(KBotDataColumn8)
+        KBotDataColumn8.Width = 200
         grdOperatii.Columns.Add(KBotDataColumn1)
         grdOperatii.Columns.Add(KBotDataColumn2)
         grdOperatii.Columns.Add(KBotDataColumn3)
@@ -176,16 +176,17 @@ Partial Class CabNoteForm
         grdOperatii.Columns.Add(KBotDataColumn5)
         grdOperatii.Columns.Add(KBotDataColumn6)
         grdOperatii.Columns.Add(KBotDataColumn7)
+        grdOperatii.Columns.Add(KBotDataColumn8)
         grdOperatii.Dock = DockStyle.Fill
-        grdOperatii.Location = New Point(22, 20)
+        grdOperatii.Location = New Point(14, 16)
         grdOperatii.Margin = New Padding(4, 6, 4, 6)
         grdOperatii.Name = "grdOperatii"
         grdOperatii.ReadOnlyGrid = True
         grdOperatii.ShrinkColumnsToFit = False
-        grdOperatii.Size = New Size(1367, 428)
+        grdOperatii.Size = New Size(1383, 428)
         grdOperatii.TabIndex = 0
         tips.SetToolTipHeader(grdOperatii, "Operațiunile «ERRRRRRRRRR»")
-        tips.SetToolTipText(grdOperatii, "Încasările pe care FOREXE nu le-a putut lega de un angajament." & vbLf & "Alegeți fiecare rând și completați dedesubt angajamentul și indicatorul: rândul complet se bifează." & vbLf & "Când toate sunt bifate, «Salvează tot» face câte o notă pentru fiecare număr." & vbLf & "«Ieșire» fără salvare: operațiunile rămân în K-BOT și se regăsesc în Meniu → «Operațiuni necorelate».")
+        tips.SetToolTipText(grdOperatii, resources.GetString("grdOperatii.ToolTipText"))
         ' 
         ' cmbAngajament
         ' 
@@ -199,7 +200,7 @@ Partial Class CabNoteForm
         cmbAngajament.Margin = New Padding(4, 3, 4, 3)
         cmbAngajament.MaxDropDownItems = 14
         cmbAngajament.Name = "cmbAngajament"
-        cmbAngajament.Size = New Size(409, 37)
+        cmbAngajament.Size = New Size(417, 37)
         cmbAngajament.TabIndex = 1
         tips.SetToolTipHeader(cmbAngajament, "Angajamentul corect")
         tips.SetToolTipText(cmbAngajament, "Angajamentele din K-BOT. Primele sunt cele care au un indicator" & vbLf & "pe aceeași sursă și clasificație ca operațiunea.")
@@ -211,10 +212,10 @@ Partial Class CabNoteForm
         cmbIndicator.DropDownStyle = ComboBoxStyle.DropDownList
         cmbIndicator.FlatStyle = FlatStyle.Flat
         cmbIndicator.ItemHeight = 31
-        cmbIndicator.Location = New Point(961, 15)
+        cmbIndicator.Location = New Point(969, 15)
         cmbIndicator.Margin = New Padding(4, 3, 4, 3)
         cmbIndicator.Name = "cmbIndicator"
-        cmbIndicator.Size = New Size(410, 37)
+        cmbIndicator.Size = New Size(418, 37)
         cmbIndicator.TabIndex = 3
         tips.SetToolTipHeader(cmbIndicator, "Indicatorul angajamentului")
         tips.SetToolTipText(cmbIndicator, "Indicatorii angajamentului ales. Când are unul singur, se alege singur.")
@@ -229,7 +230,7 @@ Partial Class CabNoteForm
         txtSimbolCont.MaxLength = 15
         txtSimbolCont.Name = "txtSimbolCont"
         txtSimbolCont.ReadOnly = True
-        txtSimbolCont.Size = New Size(409, 58)
+        txtSimbolCont.Size = New Size(417, 58)
         txtSimbolCont.TabIndex = 5
         txtSimbolCont.TextPadding = New Padding(12, 0, 12, 0)
         tips.SetToolTipHeader(txtSimbolCont, "Simbolul contului -- rândul 1")
@@ -240,12 +241,12 @@ Partial Class CabNoteForm
         txtSimbolContCorectie.BackColor = Color.Transparent
         txtSimbolContCorectie.CharacterCasing = CharacterCasing.Upper
         txtSimbolContCorectie.Dock = DockStyle.Fill
-        txtSimbolContCorectie.Location = New Point(961, 79)
+        txtSimbolContCorectie.Location = New Point(969, 79)
         txtSimbolContCorectie.Margin = New Padding(4, 3, 4, 3)
         txtSimbolContCorectie.MaxLength = 15
         txtSimbolContCorectie.Name = "txtSimbolContCorectie"
         txtSimbolContCorectie.ReadOnly = True
-        txtSimbolContCorectie.Size = New Size(410, 58)
+        txtSimbolContCorectie.Size = New Size(418, 58)
         txtSimbolContCorectie.TabIndex = 7
         txtSimbolContCorectie.TextPadding = New Padding(12, 0, 12, 0)
         tips.SetToolTipHeader(txtSimbolContCorectie, "Simbolul contului -- rândul 2")
@@ -255,12 +256,12 @@ Partial Class CabNoteForm
         ' 
         txtCodProgramCorectie.BackColor = Color.Transparent
         txtCodProgramCorectie.Dock = DockStyle.Fill
-        txtCodProgramCorectie.Location = New Point(961, 143)
+        txtCodProgramCorectie.Location = New Point(969, 143)
         txtCodProgramCorectie.Margin = New Padding(4, 3, 4, 3)
         txtCodProgramCorectie.MaxLength = 10
         txtCodProgramCorectie.Name = "txtCodProgramCorectie"
         txtCodProgramCorectie.ReadOnly = True
-        txtCodProgramCorectie.Size = New Size(410, 58)
+        txtCodProgramCorectie.Size = New Size(418, 58)
         txtCodProgramCorectie.TabIndex = 11
         txtCodProgramCorectie.TextPadding = New Padding(12, 0, 12, 0)
         tips.SetToolTipHeader(txtCodProgramCorectie, "Programul rândului 2")
@@ -274,22 +275,22 @@ Partial Class CabNoteForm
         txtNrNota.Margin = New Padding(4, 3, 4, 3)
         txtNrNota.MaxLength = 10
         txtNrNota.Name = "txtNrNota"
-        txtNrNota.Size = New Size(409, 58)
+        txtNrNota.Size = New Size(417, 58)
         txtNrNota.TabIndex = 13
         txtNrNota.TextPadding = New Padding(12, 0, 12, 0)
         tips.SetToolTipHeader(txtNrNota, "Numărul notei de corecție")
-        tips.SetToolTipText(txtNrNota, "Se completează la alegerea angajamentului: un angajament ales deja pe alt rând" & vbLf & "aduce numărul acelui rând; un angajament nou primește următorul număr liber." & vbLf & "Un număr = o notă = un PDF. Același număr la angajamente diferite, sau un număr" & vbLf & "folosit deja pe server, oprește salvarea și nu se salvează nimic.")
+        tips.SetToolTipText(txtNrNota, resources.GetString("txtNrNota.ToolTipText"))
         ' 
         ' txtDataOper
         ' 
         txtDataOper.BackColor = Color.Transparent
         txtDataOper.Dock = DockStyle.Fill
-        txtDataOper.Location = New Point(961, 207)
+        txtDataOper.Location = New Point(969, 207)
         txtDataOper.Margin = New Padding(4, 3, 4, 3)
         txtDataOper.MaxLength = 10
         txtDataOper.Name = "txtDataOper"
         txtDataOper.ReadOnly = True
-        txtDataOper.Size = New Size(410, 58)
+        txtDataOper.Size = New Size(418, 58)
         txtDataOper.TabIndex = 15
         txtDataOper.TextPadding = New Padding(12, 0, 12, 0)
         tips.SetToolTipHeader(txtDataOper, "Data operațiunii inițiale")
@@ -306,7 +307,7 @@ Partial Class CabNoteForm
         txtExplicatii.MaxLength = 70
         txtExplicatii.Name = "txtExplicatii"
         txtExplicatii.ReadOnly = True
-        txtExplicatii.Size = New Size(1097, 58)
+        txtExplicatii.Size = New Size(1113, 58)
         txtExplicatii.TabIndex = 17
         txtExplicatii.TextPadding = New Padding(12, 0, 12, 0)
         tips.SetToolTipHeader(txtExplicatii, "Explicațiile notei")
@@ -322,7 +323,7 @@ Partial Class CabNoteForm
         txtDenumire.MaxLength = 30
         txtDenumire.Name = "txtDenumire"
         txtDenumire.ReadOnly = True
-        txtDenumire.Size = New Size(409, 58)
+        txtDenumire.Size = New Size(417, 58)
         txtDenumire.TabIndex = 19
         txtDenumire.TextPadding = New Padding(12, 0, 12, 0)
         tips.SetToolTipHeader(txtDenumire, "Denumirea entității publice")
@@ -333,14 +334,14 @@ Partial Class CabNoteForm
         btnSalveaza.Dock = DockStyle.Right
         btnSalveaza.Enabled = False
         btnSalveaza.FlatStyle = FlatStyle.Flat
-        btnSalveaza.Location = New Point(1057, 10)
+        btnSalveaza.Location = New Point(1212, 10)
         btnSalveaza.Margin = New Padding(0)
         btnSalveaza.Name = "btnSalveaza"
-        btnSalveaza.Size = New Size(189, 46)
+        btnSalveaza.Size = New Size(189, 56)
         btnSalveaza.TabIndex = 1
         btnSalveaza.Text = "Salvează tot"
         tips.SetToolTipHeader(btnSalveaza, "Nota de corecție")
-        tips.SetToolTipText(btnSalveaza, "Se activează doar când TOATE rândurile sunt bifate (complete)." & vbLf & "Salvează toate operațiunile, câte o notă pentru fiecare număr (toate sau niciuna)," & vbLf & "face PDF-ul fiecărei note (formularul F1135) și întreabă, pentru fiecare, dacă o încarcă în CAB.")
+        tips.SetToolTipText(btnSalveaza, resources.GetString("btnSalveaza.ToolTipText"))
         btnSalveaza.UseVisualStyleBackColor = True
         ' 
         ' pnlCard
@@ -366,7 +367,7 @@ Partial Class CabNoteForm
         tlyCorp.Location = New Point(0, 60)
         tlyCorp.Margin = New Padding(0)
         tlyCorp.Name = "tlyCorp"
-        tlyCorp.Padding = New Padding(18, 14, 18, 6)
+        tlyCorp.Padding = New Padding(10)
         tlyCorp.RowCount = 2
         tlyCorp.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyCorp.RowStyles.Add(New RowStyle(SizeType.Absolute, 440F))
@@ -403,7 +404,7 @@ Partial Class CabNoteForm
         tlyDetalii.Controls.Add(lblCifCaption, 2, 5)
         tlyDetalii.Controls.Add(txtCif, 3, 5)
         tlyDetalii.Dock = DockStyle.Fill
-        tlyDetalii.Location = New Point(18, 454)
+        tlyDetalii.Location = New Point(10, 450)
         tlyDetalii.Margin = New Padding(0)
         tlyDetalii.Name = "tlyDetalii"
         tlyDetalii.Padding = New Padding(0, 12, 0, 0)
@@ -415,7 +416,7 @@ Partial Class CabNoteForm
         tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Absolute, 64F))
         tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Absolute, 64F))
         tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyDetalii.Size = New Size(1375, 440)
+        tlyDetalii.Size = New Size(1391, 440)
         tlyDetalii.TabIndex = 1
         ' 
         ' lblAngajamentCaption
@@ -432,7 +433,7 @@ Partial Class CabNoteForm
         ' lblIndicatorCaption
         ' 
         lblIndicatorCaption.Dock = DockStyle.Fill
-        lblIndicatorCaption.Location = New Point(691, 12)
+        lblIndicatorCaption.Location = New Point(699, 12)
         lblIndicatorCaption.Margin = New Padding(4, 0, 4, 0)
         lblIndicatorCaption.Name = "lblIndicatorCaption"
         lblIndicatorCaption.Size = New Size(262, 64)
@@ -454,7 +455,7 @@ Partial Class CabNoteForm
         ' lblSimbolContCorectieCaption
         ' 
         lblSimbolContCorectieCaption.Dock = DockStyle.Fill
-        lblSimbolContCorectieCaption.Location = New Point(691, 76)
+        lblSimbolContCorectieCaption.Location = New Point(699, 76)
         lblSimbolContCorectieCaption.Margin = New Padding(4, 0, 4, 0)
         lblSimbolContCorectieCaption.Name = "lblSimbolContCorectieCaption"
         lblSimbolContCorectieCaption.Size = New Size(262, 64)
@@ -482,14 +483,14 @@ Partial Class CabNoteForm
         txtCodProgram.MaxLength = 10
         txtCodProgram.Name = "txtCodProgram"
         txtCodProgram.ReadOnly = True
-        txtCodProgram.Size = New Size(409, 58)
+        txtCodProgram.Size = New Size(417, 58)
         txtCodProgram.TabIndex = 9
         txtCodProgram.TextPadding = New Padding(12, 0, 12, 0)
         ' 
         ' lblCodProgramCorectieCaption
         ' 
         lblCodProgramCorectieCaption.Dock = DockStyle.Fill
-        lblCodProgramCorectieCaption.Location = New Point(691, 140)
+        lblCodProgramCorectieCaption.Location = New Point(699, 140)
         lblCodProgramCorectieCaption.Margin = New Padding(4, 0, 4, 0)
         lblCodProgramCorectieCaption.Name = "lblCodProgramCorectieCaption"
         lblCodProgramCorectieCaption.Size = New Size(262, 64)
@@ -511,7 +512,7 @@ Partial Class CabNoteForm
         ' lblDataOperCaption
         ' 
         lblDataOperCaption.Dock = DockStyle.Fill
-        lblDataOperCaption.Location = New Point(691, 204)
+        lblDataOperCaption.Location = New Point(699, 204)
         lblDataOperCaption.Margin = New Padding(4, 0, 4, 0)
         lblDataOperCaption.Name = "lblDataOperCaption"
         lblDataOperCaption.Size = New Size(262, 64)
@@ -544,7 +545,7 @@ Partial Class CabNoteForm
         ' lblCifCaption
         ' 
         lblCifCaption.Dock = DockStyle.Fill
-        lblCifCaption.Location = New Point(691, 332)
+        lblCifCaption.Location = New Point(699, 332)
         lblCifCaption.Margin = New Padding(4, 0, 4, 0)
         lblCifCaption.Name = "lblCifCaption"
         lblCifCaption.Size = New Size(262, 64)
@@ -556,12 +557,12 @@ Partial Class CabNoteForm
         ' 
         txtCif.BackColor = Color.Transparent
         txtCif.Dock = DockStyle.Fill
-        txtCif.Location = New Point(961, 335)
+        txtCif.Location = New Point(969, 335)
         txtCif.Margin = New Padding(4, 3, 4, 3)
         txtCif.MaxLength = 10
         txtCif.Name = "txtCif"
         txtCif.ReadOnly = True
-        txtCif.Size = New Size(410, 58)
+        txtCif.Size = New Size(418, 58)
         txtCif.TabIndex = 21
         txtCif.TextPadding = New Padding(12, 0, 12, 0)
         ' 
@@ -574,7 +575,7 @@ Partial Class CabNoteForm
         pnlJos.Location = New Point(0, 960)
         pnlJos.Margin = New Padding(4)
         pnlJos.Name = "pnlJos"
-        pnlJos.Padding = New Padding(18, 10, 18, 20)
+        pnlJos.Padding = New Padding(10)
         pnlJos.Size = New Size(1411, 76)
         pnlJos.TabIndex = 2
         pnlJos.Tag = "Card"
@@ -583,22 +584,22 @@ Partial Class CabNoteForm
         ' 
         lblStare.AutoEllipsis = True
         lblStare.Dock = DockStyle.Fill
-        lblStare.Location = New Point(18, 10)
+        lblStare.Location = New Point(157, 10)
         lblStare.Margin = New Padding(4, 0, 4, 0)
         lblStare.Name = "lblStare"
-        lblStare.Size = New Size(1039, 46)
+        lblStare.Size = New Size(1055, 56)
         lblStare.TabIndex = 0
         lblStare.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' btnInchide
         ' 
         btnInchide.DialogResult = DialogResult.Cancel
-        btnInchide.Dock = DockStyle.Right
+        btnInchide.Dock = DockStyle.Left
         btnInchide.FlatStyle = FlatStyle.Flat
-        btnInchide.Location = New Point(1246, 10)
+        btnInchide.Location = New Point(10, 10)
         btnInchide.Margin = New Padding(0)
         btnInchide.Name = "btnInchide"
-        btnInchide.Size = New Size(147, 46)
+        btnInchide.Size = New Size(147, 56)
         btnInchide.TabIndex = 2
         btnInchide.Text = "Ieșire"
         btnInchide.UseVisualStyleBackColor = True

@@ -135,8 +135,20 @@ Partial Public Class KbotForm
             End If
 
             ' Nothing = the robot did not start or failed; it already said why on the console.
-            If pachet Is Nothing Then Return
-            Await DuLaIngestieAsync(cod, pachet)
+            If pachet Is Nothing Then
+                SpuneCapturiNetrimise(cod, "descărcarea din FOREXE nu a reușit")
+                Return
+            End If
+            If Not Await DuLaIngestieAsync(cod, pachet) Then
+                SpuneCapturiNetrimise(cod, "descărcarea nu s-a salvat în K-BOT")
+                Return
+            End If
+
+            ' Pictures of the FOREXE page still waiting on disk for this angajament (operator,
+            ' 28.09.2026): the whole node was just written, so the records they hang off may
+            ' exist now. What the server still cannot place stays on disk, as on the browser road.
+            Await TrimiteCapturileAsync(cod, CapturaStore.FelReceptie)
+            Await TrimiteCapturileAsync(cod, CapturaStore.FelRezervare)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.tree_RightIconClicked", ex)
             KBotMessage.Show(Me, "Descărcarea angajamentului a eșuat: " & ex.Message,

@@ -101,6 +101,9 @@ Partial Public Class KbotForm
     ''' </summary>
     Private Async Function PreiaOperatiuneaAsync(ev As ForexeWatchEvent) As Task
         If _urmarireInLucru Then
+            CapturiLog.Write("MainForm.PreiaOperatiuneaAsync",
+                             $"«{ev.Label}» ({ev.Operation}, cod «{ev.CodEfectiv}») NU se preia: o operațiune " &
+                             "anterioară e încă în lucru; nicio captură nu se face acum.", KBotLogLevel.Warn)
             KBotMessage.Show(Me,
                 $"«{ev.Label}» s-a salvat în FOREXE, dar o operațiune anterioară e încă în lucru." &
                 Environment.NewLine &
@@ -132,6 +135,9 @@ Partial Public Class KbotForm
             End If
 
             If coduri.Count = 0 Then
+                CapturiLog.Write("MainForm.PreiaOperatiuneaAsync",
+                                 $"«{ev.Label}» ({ev.Operation}) NU se preia: codul angajamentului nu se cunoaște; " &
+                                 "nicio captură nu se face.", KBotLogLevel.Warn)
                 KBotMessage.Show(Me,
                     $"«{ev.Label}» s-a salvat în FOREXE, dar nu am putut afla codul angajamentului." &
                     Environment.NewLine &
@@ -142,6 +148,10 @@ Partial Public Class KbotForm
 
             ' Slice 0076: a reservation is not downloaded at every save. The page's row is kept,
             ' and the operator is asked whether the reservations are done (see there).
+            CapturiLog.Write("MainForm.PreiaOperatiuneaAsync",
+                $"Operațiune «{ev.Label}» ({ev.Operation}) salvată în FOREXE; cod la început «{ev.CodLaStart}», " &
+                $"cod efectiv «{ev.CodEfectiv}» -> se lucrează pe «{String.Join(", ", coduri)}».")
+
             If ev.Operation = ForexeOperationKind.Rezervare Then
                 Await PastreazaRezervareaAsync(ev, coduri(0))
                 Return
@@ -161,13 +171,16 @@ Partial Public Class KbotForm
                 ' Nothing = the robot did not start or failed; it already said why on the console.
                 If pachet Is Nothing Then
                     ShowForexeFailure("FOREXE")
+                    SpuneCapturiNetrimise(cod, "descărcarea din FOREXE nu a reușit")
                     Continue For
                 End If
                 Dim preluat As Boolean = Await DuLaIngestieAsync(cod, pachet)
                 ' The pictures can only be filed once the ingest has written the reception
                 ' they hang off; until then they wait on disk.
-                If preluat AndAlso (ev.Operation = ForexeOperationKind.Receptie OrElse
-                                    ev.Operation = ForexeOperationKind.ReceptieModificare) Then
+                If Not preluat Then
+                    SpuneCapturiNetrimise(cod, "descărcarea nu s-a salvat în K-BOT")
+                ElseIf ev.Operation = ForexeOperationKind.Receptie OrElse
+                       ev.Operation = ForexeOperationKind.ReceptieModificare Then
                     Await TrimiteCapturileAsync(cod, CapturaStore.FelReceptie)
                 End If
                 ' No history window after a reception (operator, 28.09.2026): the Receptii view
@@ -299,8 +312,13 @@ Partial Public Class KbotForm
             "Rezervări FOREXE", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
         If raspuns <> DialogResult.Yes Then
             _controller.SpuneStare($"Rezervările lui «{cod}» rămân păstrate ({memorie.Salvari} salvări); continuați în FOREXE.")
+            CapturiLog.Write("MainForm.PastreazaRezervareaAsync",
+                             $"«{cod}»: operatorul a ales «NU» la «Ați terminat modificarea rezervărilor?» " &
+                             $"({memorie.Salvari} salvări); capturile de rezervare așteaptă «DA».")
             Return
         End If
+        CapturiLog.Write("MainForm.PastreazaRezervareaAsync",
+                         $"«{cod}»: operatorul a ales «DA» ({memorie.Salvari} salvări, {memorie.Count} indicator(i)).")
 
         ' Operator, 28.09.2026: the second picture of the session, taken while the page is
         ' still where the operator's last save left it - the Buget tab, with the new figures
@@ -319,6 +337,7 @@ Partial Public Class KbotForm
         If pachet Is Nothing Then
             ' The kept rows stay: the next save asks again, and «DA» tries again.
             ShowForexeFailure("Rezervări FOREXE")
+            SpuneCapturiNetrimise(cod, "descărcarea rezervărilor din FOREXE nu a reușit")
             Return
         End If
         ' The package now carries them (and it is on disk); the memory is done with.
@@ -329,6 +348,8 @@ Partial Public Class KbotForm
         If preluat Then
             Await TrimiteCapturileAsync(cod, CapturaStore.FelRezervare)
             Await _controller.IncheieSesiuneaDeCapturiAsync(cod)
+        Else
+            SpuneCapturiNetrimise(cod, "descărcarea rezervărilor nu s-a salvat în K-BOT")
         End If
     End Function
 
@@ -354,29 +375,47 @@ Partial Public Class KbotForm
     ''' <summary>
     ''' The pictures waiting on disk for this angajament go to the server, each on the number
     ''' the page's marker named (the DDF revision for a reservation, the reception snapshot
-    ''' for a reception). One that goes is taken off the disk; one without a number, or one
-    ''' the server cannot place, STAYS there and is said out loud - a picture is evidence, and
-    ''' evidence is never thrown away quietly.
+    ''' for a reception). One that goes is taken off the disk. The ones that do not go are
+    ''' offered for deletion (operator, 28.09.2026 - the same question as for the signed PDFs
+    ''' that did not reach the server); «Nu» keeps them for the next download of the angajament.
     ''' </summary>
     Private Async Function TrimiteCapturileAsync(cod As String, fel As String) As Task
-        Dim ramase As Integer = 0
+        Const Sursa As String = "MainForm.TrimiteCapturileAsync"
+        Dim ramase As New List(Of KeyValuePair(Of CapturaForexe, String))()
         Dim trimise As Integer = 0
         Try
             Dim lista As List(Of CapturaForexe) = _controller.CapturileDe(cod, fel)
-            If lista.Count = 0 Then Return
+            If lista.Count = 0 Then
+                ' Case 1 (operator, 28.09.2026): said on the console and in the log, with what IS
+                ' on disk - a picture kept under another code (or «fara_cod») shows up there.
+                Dim mesaj As String = $"«{cod}»: nicio captură de {fel} de trimis — nu există niciuna în " &
+                                      $"«{CapturaStore.FolderAngajament(cod)}»."
+                _controller.SpuneStare(mesaj)
+                CapturiLog.Write(Sursa, mesaj & $" Pe disc: {CapturaStore.Inventar()}.", KBotLogLevel.Warn)
+                Return
+            End If
+            CapturiLog.Write(Sursa, $"«{cod}»: trimit {lista.Count} captură(i) de {fel}.")
             For Each captura As CapturaForexe In lista
                 If captura.Marcaj <= 0 Then
-                    ramase += 1
+                    ramase.Add(New KeyValuePair(Of CapturaForexe, String)(
+                        captura, "nu are numărul pe care să se sprijine"))
+                    CapturiLog.Write(Sursa, "NU se trimite (fără număr — marcajul nu a fost primit pentru acest cod): " &
+                                            CapturaStore.Descrie(captura), KBotLogLevel.Warn)
                     Continue For
                 End If
                 Try
                     Dim octeti As Byte() = CapturaStore.CitesteOcteti(captura)
                     If octeti Is Nothing OrElse octeti.Length = 0 Then
-                        ramase += 1
+                        ramase.Add(New KeyValuePair(Of CapturaForexe, String)(captura, "fișierul e gol"))
+                        CapturiLog.Write(Sursa, "NU se trimite (fișier gol sau lipsă): " & CapturaStore.Descrie(captura),
+                                         KBotLogLevel.Warn)
                         Continue For
                     End If
+                    Dim receptie As Boolean = String.Equals(fel, CapturaStore.FelReceptie, StringComparison.OrdinalIgnoreCase)
+                    CapturiLog.Write(Sursa, $"PUT /api/forexe/capturi/{If(receptie, "receptie", "rezervare")}/{captura.Marcaj} " &
+                                            $"({octeti.Length \ 1024} KB): {CapturaStore.Descrie(captura)}")
                     Dim id As Integer
-                    If String.Equals(fel, CapturaStore.FelReceptie, StringComparison.OrdinalIgnoreCase) Then
+                    If receptie Then
                         id = Await WithReauth(Of Integer)(
                             Function() _capturiApi.UrcaCapturaReceptieAsync(
                                 captura.Marcaj, cod, captura.Nume, captura.Moment, octeti, CancellationToken.None))
@@ -386,31 +425,129 @@ Partial Public Class KbotForm
                                 captura.Marcaj, cod, captura.Nume, captura.Moment, octeti, CancellationToken.None))
                     End If
                     If id > 0 Then
+                        CapturiLog.Write(Sursa, $"Salvată pe server cu cheia {id}; se șterge de pe disc: {captura.Nume}")
                         CapturaStore.Sterge(captura)
                         trimise += 1
                     Else
-                        ramase += 1
+                        ramase.Add(New KeyValuePair(Of CapturaForexe, String)(captura, "serverul nu a întors cheia"))
+                        CapturiLog.Write(Sursa, "Serverul nu a întors cheia: " & captura.Nume, KBotLogLevel.Warn)
                     End If
                 Catch ex As Exception
                     ' One picture that will not go must not stop the others.
-                    GlobalErrorLog.Write("MainForm.TrimiteCapturileAsync", ex)
-                    _controller.SpuneStare($"Captura «{captura.Moment}» nu a ajuns pe server: {ex.Message}")
-                    ramase += 1
+                    GlobalErrorLog.Write(Sursa, ex)
+                    ramase.Add(New KeyValuePair(Of CapturaForexe, String)(captura, ex.Message))
+                    CapturiLog.Write(Sursa, $"Trimiterea a eșuat ({ex.GetType().Name}): {ex.Message} — {captura.Nume}",
+                                     KBotLogLevel.Error)
                 End Try
             Next
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.TrimiteCapturileAsync", ex)
-            _controller.SpuneStare("Capturile nu au putut fi trimise: " & ex.Message)
+            GlobalErrorLog.Write(Sursa, ex)
+            _controller.SpuneCapturi(Sursa, "Capturile nu au putut fi trimise: " & ex.Message, KBotLogLevel.Error)
             Return
         End Try
 
         If trimise > 0 Then
             _controller.SpuneStare($"{trimise} captură(i) din FOREXE au fost salvate pentru «{cod}».")
         End If
-        If ramase > 0 Then
-            _controller.SpuneStare($"{ramase} captură(i) rămân pe disc ({CapturaStore.FolderAngajament(cod)}): " &
-                                   "nu au numărul pe care să se sprijine.")
-        End If
+        CapturiLog.Write(Sursa, $"«{cod}», {fel}: {trimise} trimise, {ramase.Count} rămase pe disc.",
+                         If(ramase.Count > 0, KBotLogLevel.Warn, KBotLogLevel.Info))
+        If ramase.Count > 0 Then IntreabaStergereaCapturilor(cod, fel, ramase)
+    End Function
+
+    ''' <summary>
+    ''' Asks whether to delete the pictures that did not reach the server. A reservation
+    ''' session still being worked on is NOT asked about: its «before» picture waits for the
+    ''' number the first save reserves, and its rows are not in K-BOT until «DA» - deleting
+    ''' them now would take them out of the document.
+    ''' </summary>
+    Private Sub IntreabaStergereaCapturilor(cod As String, fel As String,
+                                            ramase As List(Of KeyValuePair(Of CapturaForexe, String)))
+        Try
+            Dim sesiuneDeschisa As Boolean =
+                String.Equals(fel, CapturaStore.FelRezervare, StringComparison.OrdinalIgnoreCase) AndAlso
+                _rezervariInLucru.ContainsKey(cod)
+            Dim deIntrebat As New List(Of KeyValuePair(Of CapturaForexe, String))()
+            For Each kvp As KeyValuePair(Of CapturaForexe, String) In ramase
+                Dim c As CapturaForexe = kvp.Key
+                ' The «before» picture of today with no number yet: the first save is still to come.
+                Dim inainteFaraNumar As Boolean =
+                    String.Equals(c.Moment, CapturaStore.MomentInainte, StringComparison.OrdinalIgnoreCase) AndAlso
+                    c.Marcaj <= 0 AndAlso c.LuataLa.Date = Date.Today
+                If sesiuneDeschisa OrElse inainteFaraNumar Then Continue For
+                deIntrebat.Add(kvp)
+            Next
+
+            Dim folder As String = CapturaStore.FolderAngajament(cod)
+            Dim inLucru As Integer = ramase.Count - deIntrebat.Count
+            If inLucru > 0 Then
+                _controller.SpuneCapturi("MainForm.IntreabaStergereaCapturilor",
+                    $"{inLucru} captură(i) ale sesiunii de rezervări în lucru rămân pe disc ({folder}) " &
+                    $"— sesiune deschisă: {If(sesiuneDeschisa, "da", "nu")}; nu se întreabă de ștergere.")
+            End If
+            If deIntrebat.Count = 0 Then Return
+
+            Dim nl As String = Environment.NewLine
+            Dim randuri As IEnumerable(Of String) = deIntrebat.Select(
+                Function(kvp) $" - {EtichetaCapturii(kvp.Key)}, din {kvp.Key.LuataLa:dd.MM.yyyy HH:mm}: {kvp.Value}")
+            Dim text As String =
+                $"«{cod}»: {deIntrebat.Count} captură(i) din FOREXE NU au ajuns pe server:" & nl &
+                String.Join(nl, randuri) & nl & nl &
+                "Le ștergeți de pe acest calculator?" & nl &
+                "Da = se șterg (nu vor mai apărea în documente); " &
+                "Nu = rămân și se reîncearcă la următoarea descărcare a angajamentului."
+            If KBotMessage.Show(Me, text, "Capturi FOREXE", MessageBoxButtons.YesNo,
+                                MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
+                _controller.SpuneCapturi("MainForm.IntreabaStergereaCapturilor",
+                    $"Operatorul a ales «Nu»: {deIntrebat.Count} captură(i) rămân pe disc ({folder}).")
+                Return
+            End If
+
+            CapturiLog.Write("MainForm.IntreabaStergereaCapturilor",
+                             $"Operatorul a ales «Da»: se șterg {deIntrebat.Count} captură(i) ale lui «{cod}».")
+            For Each kvp As KeyValuePair(Of CapturaForexe, String) In deIntrebat
+                CapturiLog.Write("MainForm.IntreabaStergereaCapturilor",
+                                 $"Șterg: {CapturaStore.Descrie(kvp.Key)} (motiv netrimis: {kvp.Value})")
+                CapturaStore.Sterge(kvp.Key)
+            Next
+            ' Sterge logs and swallows; what is still on disk is said once.
+            Dim neSterse As Integer = deIntrebat.Where(Function(kvp) IO.File.Exists(kvp.Key.Fisier)).Count()
+            If neSterse > 0 Then
+                CapturiLog.Write("MainForm.IntreabaStergereaCapturilor",
+                                 $"{neSterse} captură(i) nu s-au putut șterge din «{folder}».", KBotLogLevel.Error)
+                KBotMessage.Show(Me, $"{neSterse} captură(i) nu s-au putut șterge. Fișierele sunt în «{folder}».",
+                                 "Capturi FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.IntreabaStergereaCapturilor", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' The pictures of this angajament are NOT sent this time, and why - on the console and in
+    ''' <see cref="CapturiLog"/>, only when there is something waiting on disk (a download of an
+    ''' angajament nobody photographed has nothing to say here).
+    ''' </summary>
+    Private Sub SpuneCapturiNetrimise(cod As String, motiv As String)
+        Try
+            Dim asteapta As List(Of CapturaForexe) = CapturaStore.AleSale(cod)
+            If asteapta.Count = 0 Then Return
+            _controller.SpuneCapturi("MainForm.SpuneCapturiNetrimise",
+                $"«{cod}»: {asteapta.Count} captură(i) NU se trimit acum — {motiv}. Rămân în " &
+                $"«{CapturaStore.FolderAngajament(cod)}» pentru următoarea descărcare.", KBotLogLevel.Warn)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.SpuneCapturiNetrimise", ex)
+        End Try
+    End Sub
+
+    ''' <summary>The operator's name of one picture, for the deletion question.</summary>
+    Private Shared Function EtichetaCapturii(c As CapturaForexe) As String
+        Select Case If(c.Moment, String.Empty).ToLowerInvariant()
+            Case CapturaStore.MomentInainte : Return "rezervări, înainte de modificare"
+            Case CapturaStore.MomentDupa : Return "rezervări, după modificare"
+            Case CapturaStore.MomentReceptii : Return "recepții"
+            Case CapturaStore.MomentInfoComplete : Return "informații complete contract"
+            Case Else : Return If(String.IsNullOrEmpty(c.Moment), c.Nume, c.Moment)
+        End Select
     End Function
 
     ''' <summary>

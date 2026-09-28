@@ -120,21 +120,7 @@
   <metadata name="tips.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
-  <data name="grdOperatii.ToolTipText" xml:space="preserve">
-    <value>Încasările pe care FOREXE nu le-a putut lega de un angajament.
-Alegeți fiecare rând și completați dedesubt angajamentul și indicatorul: rândul complet se bifează.
-Când toate sunt bifate, «Salvează tot» face câte o notă pentru fiecare număr.
-«Ieșire» fără salvare: operațiunile rămân în K-BOT și se regăsesc în Meniu → «Operațiuni necorelate».</value>
-  </data>
-  <data name="txtNrNota.ToolTipText" xml:space="preserve">
-    <value>Se completează la alegerea angajamentului: un angajament ales deja pe alt rând
-aduce numărul acelui rând; un angajament nou primește următorul număr liber.
-Un număr = o notă = un PDF. Același număr la angajamente diferite, sau un număr
-folosit deja pe server, oprește salvarea și nu se salvează nimic.</value>
-  </data>
-  <data name="btnSalveaza.ToolTipText" xml:space="preserve">
-    <value>Se activează doar când TOATE rândurile sunt bifate (complete).
-Salvează toate operațiunile, câte o notă pentru fiecare număr (toate sau niciuna),
-face PDF-ul fiecărei note (formularul F1135) și întreabă, pentru fiecare, dacă o încarcă în CAB.</value>
-  </data>
+  <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>93</value>
+  </metadata>
 </root>

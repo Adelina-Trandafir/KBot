@@ -276,6 +276,40 @@ plus, din felia 0031-01, `TreeLogger.Write` și `TreeLogger.Init`. Ultimele dou�
 
 ## Current focus
 
+- **No slice (operator's request, 28.09.2026) — silent FOREXE downloads + the FOREXE page
+  pictures reach the server.** Not given a slice number on purpose; recorded only here.
+  (1) **Silent on success:** a download from forexecab shows NO box when everything is fine
+  (counts, «Descărcarea a fost salvată», «Sincronizare reușită», «Nu există extrase noi»,
+  the extrase import summary); the text goes to `Logs\mesaje_operator.log` through
+  `OperatorLog.Write`. A box stays only for errors, server warnings, the empty package and the
+  questions (`KbotForm.Download/Ingest/Console/Extrase.vb`). (2) **No history window** after a
+  new or edited reception saved in the in-app browser (the Recepții view shows it) —
+  `KbotForm.ForexeWatch.vb`. (3) **The pictures never reached the server — cause NOT found
+  yet.** The server log shows no request at all on the capture routes, so the upload never
+  left the client (the IMG keys DO have AUTO_INCREMENT — a first guess in that direction was
+  wrong and reverted). The client log is on the client's PC, not here. To see it next time:
+  `capturi.py` logs every request on ARRIVAL, refusals, INSERTs and duplicates under
+  `[forexe.rezervari.img]` / `[forexe.receptii.img]`; `ddf_edit.py` / `ord_edit.py` log their
+  SELECTs of those tables under the same tags; `pdf.py` logs every PDF download request (first
+  download vs. re-check with the client's cached sha, and the 404 that was silent). On the
+  client, a new `Logs\capturi_forexe.log` (`KBot.Common/Logging/CapturiLog.vb`, shows in the
+  Setări log viewer) records every step: the marker given to the page (or why none), every
+  picture taken / not taken / kept (path, code, kind, moment, number), each upload with its
+  address and answer, each picture left on disk and why, the uploads skipped because the
+  download failed or was not saved, «NU» at the reservations question, the delete answer.
+  An upload that finds nothing for its code (case 1) now says so on the console too, and the
+  log line lists everything waiting under `Capturi\` (a picture taken when the page showed no
+  code lands in `fara_cod\`). FileVersion: Common 1.5.5.0, Forexe 1.0.18.0. (4) **Leftover pictures
+  are also sent** after the node download (both kinds), the Recepții refresh (receptions) and the
+  Rezervări refresh (reservations), only when the ingest saved. (5) **Delete on request**, like
+  the signed PDFs that did not reach the server: pictures that still did not go are listed
+  (kind, date, reason) with «Le ștergeți de pe acest calculator?» — Da deletes, Nu (default)
+  keeps them for the next download. A reservation session still in progress is not asked about
+  (kept rows waiting for «DA», or today's «before» picture with no number yet). Build App
+  **0 / 0**, `py_compile` green; nothing run, not seen on screen, no tests. **Next:**
+  `capturi.py`, `pdf.py`, `ddf_edit.py`, `ord_edit.py` to the VPS, then the client's
+  `harness_errors.log` + console from the next browser session (see Open threads).
+
 - **Slice 0086 — `KbotForm` split + primary «Angajament nou» (26.09.2026).** `KbotForm.vb` cut from
   2766 to 266 lines; 12 new partials by concern, all under ~340 lines, moved comments in English.
   `btnAngajamentNou` themed as primary. Build App 0 / 0; not seen on screen, no tests.
@@ -1043,6 +1077,21 @@ plus, din felia 0031-01, `TreeLogger.Write` și `TreeLogger.Init`. Ultimele dou�
   test could have caught. After that: the **Sumar** slice, which consumes the grid read-only.
 
 ## Open threads (not yet scheduled)
+
+- **FOREXE page pictures (no slice, 28.09.2026) — why they never left the client.** The
+  server log has NO request on `/api/forexe/capturi/*`, so the client stopped before sending.
+  The client log is on the client's PC. Places in the client where nothing is sent:
+  (a) no file in `Capturi\<cod>\` for that angajament and kind — the picture was not taken
+  (`IsConnected` false, or the capture failed: said only on the console) or was kept under
+  ANOTHER code (the reservation «before» picture takes the code from the page, the upload
+  uses the event's code); (b) the picture has no marker number (`Marcaj = 0`: the marker was
+  not reserved, or was reserved under another code); (c) the ingest did not save (placement
+  form closed, or «NU» at «Ați terminat modificarea rezervărilor?»). With the new client build
+  all three are written to `Logs\capturi_forexe.log`; (a) and (c) also on the console, (b) in
+  the deletion question. **To do:** (1) `capturi.py`, `pdf.py`, `ddf_edit.py`, `ord_edit.py` to the VPS +
+  restart gunicorn; (2) on the client's PC after the next browser session:
+  `Logs\capturi_forexe.log` (+ `harness_errors.log`), and the server log grepped for
+  `[forexe.rezervari.img]` / `[forexe.receptii.img]`.
 
 - **0081-12 — de confirmat cu operatorul.** (1) «Indicatorii existenți» = clasificațiile cu cod de
   indicator dintr-o revizie anterioară sau, la un angajament din FOREXE, cele de pe `FX_Indicatori`;

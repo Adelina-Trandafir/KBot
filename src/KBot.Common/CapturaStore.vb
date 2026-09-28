@@ -229,6 +229,51 @@ Public NotInheritable Class CapturaStore
         End Try
     End Sub
 
+    ''' <summary>One picture in one line, for <see cref="CapturiLog"/>. Never throws.</summary>
+    Public Shared Function Descrie(captura As CapturaForexe) As String
+        Try
+            If captura Is Nothing Then Return "(nicio captură)"
+            Dim dimensiune As String = "?"
+            If Not String.IsNullOrEmpty(captura.Fisier) AndAlso File.Exists(captura.Fisier) Then
+                dimensiune = (New FileInfo(captura.Fisier).Length \ 1024).ToString(CultureInfo.InvariantCulture) & " KB"
+            ElseIf Not String.IsNullOrEmpty(captura.Fisier) Then
+                dimensiune = "fișierul lipsește"
+            End If
+            Return $"{captura.Nume} [cod={captura.Cod}, fel={captura.Fel}, moment={captura.Moment}, " &
+                   $"marcaj={captura.Marcaj}, luată la {captura.LuataLa:dd.MM.yyyy HH:mm:ss}, {dimensiune}]"
+        Catch ex As Exception
+            GlobalErrorLog.Write("CapturaStore.Descrie", ex)
+            Return If(captura?.Nume, "?")
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' What is waiting under <c>Capturi\</c>, all angajamente: «folder: n (fel/moment, ...)»
+    ''' per folder, or «gol». For the log line of an upload that found nothing under its own
+    ''' code - a picture kept under ANOTHER code (or under «fara_cod») shows up here. Never throws.
+    ''' </summary>
+    Public Shared Function Inventar(Optional folder As String = Nothing) As String
+        Try
+            Dim radacina As String = FolderSau(folder)
+            If Not Directory.Exists(radacina) Then Return $"«{radacina}» nu există"
+            Dim parti As New List(Of String)()
+            For Each dir As String In Directory.GetDirectories(radacina).OrderBy(Function(d) d)
+                Dim poze As String() = Directory.GetFiles(dir, "*" & Extensie)
+                If poze.Length = 0 Then Continue For
+                Dim feluri As IEnumerable(Of String) =
+                    poze.Select(Function(p) Citeste(p)).
+                         Where(Function(c) c IsNot Nothing).
+                         Select(Function(c) $"{c.Fel}/{c.Moment}/marcaj {c.Marcaj}")
+                parti.Add($"{Path.GetFileName(dir)}: {poze.Length} ({String.Join(", ", feluri)})")
+            Next
+            If parti.Count = 0 Then Return $"«{radacina}» e gol"
+            Return $"în «{radacina}»: " & String.Join(" | ", parti)
+        Catch ex As Exception
+            GlobalErrorLog.Write("CapturaStore.Inventar", ex)
+            Return "inventarul nu s-a putut citi: " & ex.Message
+        End Try
+    End Function
+
     ''' <summary>Nothing from an angajament code or a word ever reaches a path raw.</summary>
     Private Shared Function CuratNume(text As String) As String
         Dim curat As String = If(text, String.Empty).Trim()

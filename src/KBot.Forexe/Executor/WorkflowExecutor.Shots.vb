@@ -49,7 +49,11 @@ Partial Public Class WorkflowExecutor
     ''' prepares the page first and puts it back afterwards, whatever the screenshot does.
     ''' </summary>
     Public Async Function CapturePageAsync(paginaOriginala As Boolean) As Task(Of Byte())
-        If _page Is Nothing OrElse _page.IsClosed Then Return Nothing
+        If _page Is Nothing OrElse _page.IsClosed Then
+            CapturiLog.Write("WorkflowExecutor.CapturePageAsync",
+                             "Nicio pagină FOREXE deschisă: nu am ce fotografia.", KBotLogLevel.Warn)
+            Return Nothing
+        End If
         Dim gata As Boolean = Await BeginShotAsync(paginaOriginala)
         ' VB cannot Await in a Finally: the picture is taken into a variable, the page is put
         ' back, and only then is the answer given. The page MUST be put back either way -
@@ -63,8 +67,15 @@ Partial Public Class WorkflowExecutor
         Catch ex As Exception
             GlobalErrorLog.Write("WorkflowExecutor.CapturePageAsync", ex)
             _logger.LogWarning("[Capturi] Pagina nu a putut fi fotografiată: " & ex.Message)
+            CapturiLog.Write("WorkflowExecutor.CapturePageAsync",
+                             "Pagina nu a putut fi fotografiată: " & ex.Message, KBotLogLevel.Error)
         End Try
         If gata Then Await EndShotAsync()
+        If octeti IsNot Nothing Then
+            CapturiLog.Write("WorkflowExecutor.CapturePageAsync",
+                             $"Pagina fotografiată ({octeti.Length \ 1024} KB, pregătire pagină: {If(gata, "da", "nu")}, " &
+                             $"pagina originală: {If(paginaOriginala, "da", "nu")}, adresa: {SafeUrl()}).")
+        End If
         Return octeti
     End Function
 
@@ -75,10 +86,17 @@ Partial Public Class WorkflowExecutor
     ''' the angajament back. Nothing when the button is not on the page.
     ''' </summary>
     Public Async Function CaptureInfoCompleteAsync(paginaOriginala As Boolean) As Task(Of Byte())
-        If _page Is Nothing OrElse _page.IsClosed Then Return Nothing
+        If _page Is Nothing OrElse _page.IsClosed Then
+            CapturiLog.Write("WorkflowExecutor.CaptureInfoCompleteAsync",
+                             "Nicio pagină FOREXE deschisă: fără captura «Informații complete».", KBotLogLevel.Warn)
+            Return Nothing
+        End If
         Dim buton As ILocator = _page.Locator(SelInfoComplete).First
         If Await buton.CountAsync() = 0 Then
             _logger.LogDebug("[Capturi] «Afișează informații complete» nu e în pagină; sar peste captură.")
+            CapturiLog.Write("WorkflowExecutor.CaptureInfoCompleteAsync",
+                             $"«Afișează informații complete» nu e în pagină ({SafeUrl()}); fără această captură.",
+                             KBotLogLevel.Warn)
             Return Nothing
         End If
 
@@ -108,6 +126,8 @@ Partial Public Class WorkflowExecutor
         Catch ex As Exception
             GlobalErrorLog.Write("WorkflowExecutor.CaptureInfoCompleteAsync", ex)
             _logger.LogWarning("[Capturi] «Informații complete contract» nu a putut fi fotografiată: " & ex.Message)
+            CapturiLog.Write("WorkflowExecutor.CaptureInfoCompleteAsync",
+                             "«Informații complete contract» nu a putut fi fotografiată: " & ex.Message, KBotLogLevel.Error)
         End Try
         If deschis Then Await GoBackFromInfoCompleteAsync()
         LockDockedInput(False)
@@ -148,6 +168,19 @@ Partial Public Class WorkflowExecutor
             Await Task.Delay(400)
         Catch ex As Exception
             GlobalErrorLog.Write("WorkflowExecutor.WaitForAjaxQuietAsync", ex)
+        End Try
+    End Function
+
+    ''' <summary>The page's address for a log line, without its query; never throws.</summary>
+    Private Function SafeUrl() As String
+        Try
+            If _page Is Nothing OrElse _page.IsClosed Then Return "-"
+            Dim url As String = If(_page.Url, String.Empty)
+            Dim q As Integer = url.IndexOf("?"c)
+            Return If(q >= 0, url.Substring(0, q), url)
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowExecutor.SafeUrl", ex)
+            Return "?"
         End Try
     End Function
 
@@ -234,8 +267,13 @@ Partial Public Class WorkflowExecutor
 
         If luata Then
             _logger.LogInfo("[Capturi] Am fotografiat pagina înainte de modificare.")
+            CapturiLog.Write("WorkflowExecutor.RaspundeLaCaptura",
+                             $"Pagina a cerut captura «{tip}» înainte de modificare: luată.")
         Else
             _logger.LogWarning("[Capturi] Pagina merge mai departe fără captură: " & motiv)
+            CapturiLog.Write("WorkflowExecutor.RaspundeLaCaptura",
+                             $"Pagina a cerut captura «{tip}» înainte de modificare: NU s-a luat — {motiv}",
+                             KBotLogLevel.Warn)
         End If
 
         Try

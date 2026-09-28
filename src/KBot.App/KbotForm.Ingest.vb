@@ -281,10 +281,16 @@ Partial Public Class KbotForm
             End Try
             If pachet Is Nothing Then
                 AratEsecul("Reîmprospătarea recepțiilor")
+                SpuneCapturiNetrimise(cod, "reîmprospătarea recepțiilor nu a reușit")
                 Return
             End If
 
-            Await DuLaIngestieAsync(cod, pachet)
+            ' The reception pictures still on disk may have their snapshot now (operator, 28.09.2026).
+            If Await DuLaIngestieAsync(cod, pachet) Then
+                Await TrimiteCapturileAsync(cod, CapturaStore.FelReceptie)
+            Else
+                SpuneCapturiNetrimise(cod, "reîmprospătarea recepțiilor nu s-a salvat în K-BOT")
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ReimprospateazaReceptii", ex)
             KBotMessage.Show(Me, "Reîmprospătarea recepțiilor a eșuat: " & ex.Message,
@@ -315,10 +321,16 @@ Partial Public Class KbotForm
             End Try
             If pachet Is Nothing Then
                 AratEsecul("Reîmprospătarea rezervărilor")
+                SpuneCapturiNetrimise(cod, "reîmprospătarea rezervărilor nu a reușit")
                 Return
             End If
 
-            Await DuLaIngestieAsync(cod, pachet)
+            ' The reservation pictures still on disk may have their rows now (operator, 28.09.2026).
+            If Await DuLaIngestieAsync(cod, pachet) Then
+                Await TrimiteCapturileAsync(cod, CapturaStore.FelRezervare)
+            Else
+                SpuneCapturiNetrimise(cod, "reîmprospătarea rezervărilor nu s-a salvat în K-BOT")
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ReimprospateazaRezervari", ex)
             KBotMessage.Show(Me, "Reîmprospătarea rezervărilor a eșuat: " & ex.Message,

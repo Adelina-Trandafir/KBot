@@ -293,8 +293,13 @@ Partial Public Class WorkflowExecutor
 
         If String.IsNullOrEmpty(marcaj) Then
             _logger.LogWarning($"[Urmărire] Salvarea ({tip}) pleacă fără marcaj K-BOT: {motiv}")
+            CapturiLog.Write("WorkflowExecutor.RaspundeLaMarcaj",
+                             $"Salvarea ({tip}) pe angajamentul «{cod}» pleacă FĂRĂ marcaj: {motiv} " &
+                             "Capturile ei nu vor avea numărul pe care să se sprijine.", KBotLogLevel.Warn)
         Else
             _logger.LogInfo($"[Urmărire] Marcajul {marcaj} a fost pus în {If(tip = "rezervare", "motivul rezervării", "descrierea recepției")}.")
+            CapturiLog.Write("WorkflowExecutor.RaspundeLaMarcaj",
+                             $"Salvarea ({tip}) pe angajamentul «{cod}» primește marcajul {marcaj}.")
         End If
 
         Try

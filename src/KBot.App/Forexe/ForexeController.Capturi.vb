@@ -54,6 +54,13 @@ Partial Public NotInheritable Class ForexeController
     Private Async Function IaCapturaCerutaAsync(tip As String, ct As CancellationToken) As Task(Of Boolean)
         Try
             Dim cod As String = Await CodulDinPaginaAsync()
+            If String.IsNullOrWhiteSpace(cod) Then
+                ' Kept anyway, under «fara_cod»: an upload for a real code will NOT find it there,
+                ' and the upload's own line lists this folder.
+                SpuneCapturi("ForexeController.IaCapturaCerutaAsync",
+                             "Pagina nu arată codul angajamentului: captura «înainte» se păstrează în «fara_cod» " &
+                             "și nu va fi găsită la trimitere.", KBotLogLevel.Warn)
+            End If
             Dim captura As CapturaForexe =
                 Await IaCapturaAsync(cod, CapturaStore.FelRezervare, CapturaStore.MomentInainte)
             Return captura IsNot Nothing
@@ -76,18 +83,30 @@ Partial Public NotInheritable Class ForexeController
     Public Async Function IaCapturaAsync(cod As String, fel As String, moment As String,
                                          Optional unaSingura As Boolean = False) As Task(Of CapturaForexe)
         Try
-            If Not IsConnected Then Return Nothing
+            If Not IsConnected Then
+                SpuneCapturi("ForexeController.IaCapturaAsync",
+                             $"Captura «{fel}/{moment}» a lui «{cod}» nu s-a făcut: sesiunea FOREXE nu e conectată.",
+                             KBotLogLevel.Warn)
+                Return Nothing
+            End If
             If unaSingura Then
                 Dim asteapta As CapturaForexe =
                     CapturaStore.AleSale(cod, fel).
                         FirstOrDefault(Function(c) String.Equals(c.Moment, moment, StringComparison.OrdinalIgnoreCase))
-                If asteapta IsNot Nothing Then Return asteapta
+                If asteapta IsNot Nothing Then
+                    CapturiLog.Write("ForexeController.IaCapturaAsync",
+                                     $"Captura «{fel}/{moment}» a lui «{cod}» există deja, nu o refac: " &
+                                     CapturaStore.Descrie(asteapta))
+                    Return asteapta
+                End If
             End If
             Dim octeti As Byte() = Await _runner.CapturePaginaAsync(PaginaOriginala)
             Return PastreazaCaptura(cod, fel, moment, octeti)
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeController.IaCapturaAsync", ex)
-            SpuneStare("Captura paginii FOREXE nu a reușit: " & ex.Message)
+            SpuneCapturi("ForexeController.IaCapturaAsync",
+                         $"Captura paginii FOREXE («{fel}/{moment}», «{cod}») nu a reușit: " & ex.Message,
+                         KBotLogLevel.Error)
             Return Nothing
         End Try
     End Function
@@ -99,12 +118,19 @@ Partial Public NotInheritable Class ForexeController
     ''' </summary>
     Public Async Function IaCapturaInfoCompleteAsync(cod As String) As Task(Of CapturaForexe)
         Try
-            If Not IsConnected Then Return Nothing
+            If Not IsConnected Then
+                SpuneCapturi("ForexeController.IaCapturaInfoCompleteAsync",
+                             $"Captura «Informații complete contract» a lui «{cod}» nu s-a făcut: " &
+                             "sesiunea FOREXE nu e conectată.", KBotLogLevel.Warn)
+                Return Nothing
+            End If
             Dim octeti As Byte() = Await _runner.CaptureInfoCompleteAsync(PaginaOriginala)
             Return PastreazaCaptura(cod, CapturaStore.FelReceptie, CapturaStore.MomentInfoComplete, octeti)
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeController.IaCapturaInfoCompleteAsync", ex)
-            SpuneStare("Captura «Informații complete contract» nu a reușit: " & ex.Message)
+            SpuneCapturi("ForexeController.IaCapturaInfoCompleteAsync",
+                         $"Captura «Informații complete contract» («{cod}») nu a reușit: " & ex.Message,
+                         KBotLogLevel.Error)
             Return Nothing
         End Try
     End Function
@@ -116,13 +142,19 @@ Partial Public NotInheritable Class ForexeController
     Private Function PastreazaCaptura(cod As String, fel As String, moment As String,
                                       octeti As Byte()) As CapturaForexe
         If octeti Is Nothing OrElse octeti.Length = 0 Then
-            SpuneStare("Pagina FOREXE nu a putut fi fotografiată; documentul se va face fără captura asta.")
+            SpuneCapturi("ForexeController.PastreazaCaptura",
+                         $"Pagina FOREXE nu a putut fi fotografiată («{fel}/{moment}», «{cod}»); " &
+                         "documentul se va face fără captura asta.", KBotLogLevel.Warn)
             Return Nothing
         End If
         Dim marcaj As Integer = MarcajulDe(fel, cod)
         Dim captura As CapturaForexe =
             CapturaStore.Salveaza(cod, fel, moment, octeti, marcaj)
         SpuneStare($"Captura «{moment}» a paginii FOREXE e păstrată ({octeti.Length \ 1024} KB).")
+        CapturiLog.Write("ForexeController.PastreazaCaptura",
+                         $"Captură păstrată pe disc: {CapturaStore.Descrie(captura)} · marcajul ținut minte pentru " &
+                         $"«{cod}»: «{MarcajText(fel, cod)}»" &
+                         If(marcaj > 0, "", " (încă fără număr)") & $" · {captura.Fisier}")
         Return captura
     End Function
 
@@ -138,6 +170,22 @@ Partial Public NotInheritable Class ForexeController
         Return _marcaje.Numar(MarcajeRecente.TipRezervare, cod, MarcajeRecente.CheieIdrev)
     End Function
 
+    ''' <summary>The marker text kept for this kind and angajament, for the log.</summary>
+    Private Function MarcajText(fel As String, cod As String) As String
+        Dim tip As String = If(String.Equals(fel, CapturaStore.FelReceptie, StringComparison.OrdinalIgnoreCase),
+                               MarcajeRecente.TipReceptie, MarcajeRecente.TipRezervare)
+        Return _marcaje.Text(tip, cod)
+    End Function
+
+    ''' <summary>
+    ''' A step of the picture road the operator should see: on the FOREXE console AND in
+    ''' <see cref="CapturiLog"/> (the console is not kept anywhere).
+    ''' </summary>
+    Public Sub SpuneCapturi(sursa As String, mesaj As String, Optional nivel As KBotLogLevel = KBotLogLevel.Info)
+        SpuneStare(mesaj)
+        CapturiLog.Write(sursa, mesaj, nivel)
+    End Sub
+
     ''' <summary>
     ''' Puts the number the page later received on the pictures that were taken before it
     ''' existed, and hands back everything of that kind waiting for this angajament.
@@ -148,9 +196,16 @@ Partial Public NotInheritable Class ForexeController
             Dim marcaj As Integer = MarcajulDe(fel, cod)
             If marcaj > 0 Then
                 For Each captura As CapturaForexe In lista
-                    If captura.Marcaj <= 0 Then CapturaStore.PuneMarcaj(captura, marcaj)
+                    If captura.Marcaj <= 0 Then
+                        CapturaStore.PuneMarcaj(captura, marcaj)
+                        CapturiLog.Write("ForexeController.CapturileDe",
+                                         $"Captura {captura.Nume} primește acum numărul {marcaj}.")
+                    End If
                 Next
             End If
+            CapturiLog.Write("ForexeController.CapturileDe",
+                             $"«{cod}», {fel}: {lista.Count} captură(i) în «{CapturaStore.FolderAngajament(cod)}»; " &
+                             $"marcajul ținut minte: «{MarcajText(fel, cod)}» (număr {marcaj}).")
             Return lista
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeController.CapturileDe", ex)
@@ -164,6 +219,9 @@ Partial Public NotInheritable Class ForexeController
     ''' </summary>
     Public Async Function IncheieSesiuneaDeCapturiAsync(cod As String) As Task
         Try
+            CapturiLog.Write("ForexeController.IncheieSesiuneaDeCapturiAsync",
+                             $"Sesiunea de rezervări a lui «{cod}» e închisă; marcajul «" &
+                             _marcaje.Text(MarcajeRecente.TipRezervare, cod) & "» e uitat.")
             _marcaje.Uita(MarcajeRecente.TipRezervare, cod)
             If IsConnected Then Await _runner.ResetShotSessionAsync()
         Catch ex As Exception

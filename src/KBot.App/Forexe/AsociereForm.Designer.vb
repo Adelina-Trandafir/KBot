@@ -621,6 +621,7 @@ Partial Class AsociereForm
         ' 
         AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
+        CenterOnScreen = False
         ClientSize = New Size(1086, 888)
         Controls.Add(tlyAsociere)
         FormBorderStyle = FormBorderStyle.None
@@ -632,7 +633,7 @@ Partial Class AsociereForm
         Padding = New Padding(1, 5, 1, 5)
         ShowInTaskbar = False
         SizeGripStyle = SizeGripStyle.Show
-        StartPosition = FormStartPosition.CenterParent
+        StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT — Legăturile recepțiilor"
         pnlCard.ResumeLayout(False)
         split.Panel1.ResumeLayout(False)
