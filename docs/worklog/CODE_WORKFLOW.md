@@ -8,8 +8,10 @@ done in this repo. It is short on purpose. Follow it exactly.
 
 ## 1. Before you touch anything
 
-1. Read `KBOT_STATUS.md` (single source of truth). Find the slice you're working on. If the
-   task doesn't map to an existing slice, ask which slice number to use — do not invent one.
+1. Read `KBOT_STATUS.md` (single source of truth). Find the slice you're working on in its
+   index, then open ONLY that slice's `state/KBOT_STATUS_<tens>.md` file. If the task doesn't
+   map to an existing slice, ask which slice number to use — do not invent one (work the
+   operator asks for outside the slice system goes to `state/KBOT_STATUS_SLICELESS.md`).
 2. Read the plan for that slice if one exists (`PLAN_*.md` / `KBOT_*_Plan.md`).
 3. **Read the real file before editing it.** Never edit a file you have not seen verbatim
    in this session. If a plan describes a file you haven't opened, open it first and confirm
@@ -38,8 +40,9 @@ A task is NOT complete until ALL of these are true:
      pass slices use `SLICE-0007-01-…`, `SLICE-0007-02-…`.
    - Required sections: **what changed and why · files touched · test results · anything
      left unverified or deferred.**
-3. `KBOT_STATUS.md` is updated to reflect the new state (slice row, and Current focus /
-   Open threads if they changed).
+3. The status is updated to reflect the new state: the slice's section in
+   `state/KBOT_STATUS_<tens>.md` (full row, Current focus / Open threads if they changed) and
+   its short line in the `KBOT_STATUS.md` index.
 4. The worklog AND the STATUS update AND the code change are committed together and pushed.
 
 If any of the above is missing, the task is unfinished. Report it as unfinished. Do not
