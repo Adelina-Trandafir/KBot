@@ -1,6 +1,8 @@
 Option Strict On
 Imports System.Globalization
 Imports System.IO
+Imports System.Linq
+Imports System.Runtime.ExceptionServices
 Imports System.Threading
 Imports GeneralClasses   ' PdfExtractResult / RichTextBoxLogger
 Imports KBot.Common
@@ -167,6 +169,127 @@ Public NotInheritable Class ForexeSNM
             GlobalErrorLog.Write("ForexeSNM.DescarcaExtraseAsync", ex)
             Throw
         End Try
+    End Function
+
+    ' ── Recipise (slice 0088-04) ─────────────────────────────────────────
+    ' Category 1 of the same inbox holds FOREXE's receipts: one message per registered upload,
+    ' «recipisa pentru CIF 29164800, tip F1135, numar_inregistrare INTERNT-1230450081-2026/28-09-2026,
+    ' perioada raportare 9.2026» (Surse/CAB+ERRRRRRR/MesajeSNM_table.txt). The grid on
+    ' viewAll.do is filled from loadAll.do, the same JSON the bank statements come from, so the
+    ' search reads that JSON instead of the painted grid.
+    Private Const ReceiptPageUrl As String =
+        "https://forexe.mfinante.gov.ro/ForexeSNM/messages/viewAll.do?nomCategoryCode=1"
+    Private Const ReceiptInboxUrl As String =
+        "https://forexe.mfinante.gov.ro/ForexeSNM/messages/loadAll.do?nomCategoryCode=1&start={0}&limit={1}"
+    Private Const ReceiptDownloadUrl As String =
+        "https://forexe.mfinante.gov.ro/ForexeSNM/messages/downloadFile.do?id={0}&fileName={1}&nomCategoryCode=1"
+    ' Newest first: a receipt of today's upload is on the first page; five pages is a generous stop.
+    Private Const ReceiptMaxPages As Integer = 5
+
+    ''' <summary>
+    ''' Opens the receipts inbox, walks it newest-first for the message whose registration number
+    ''' carries <paramref name="index"/> («INTERNT-1230450081-...») and downloads its file. The
+    ''' browser goes back to the page it was on. Not there (yet) -> <c>Found = False</c>.
+    ''' </summary>
+    Public Shared Async Function CautaRecipisaAsync(page As IPage, logger As RichTextBoxLogger,
+                                                    index As String, ct As CancellationToken) As Task(Of ForexeReceipt)
+        If page Is Nothing Then Throw New ArgumentNullException(NameOf(page))
+        If logger Is Nothing Then Throw New ArgumentNullException(NameOf(logger))
+        index = If(index, String.Empty).Trim()
+        If index.Length = 0 OrElse Not index.All(AddressOf Char.IsDigit) Then
+            Throw New ArgumentException($"Indexul de înregistrare «{index}» nu este valid.", NameOf(index))
+        End If
+
+        Dim returnUrl As String = page.Url
+        Dim failure As ExceptionDispatchInfo = Nothing
+        Dim result As ForexeReceipt = Nothing
+        Try
+            result = Await SearchReceiptAsync(page, logger, index, ct).ConfigureAwait(False)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeSNM.CautaRecipisaAsync", ex)
+            failure = ExceptionDispatchInfo.Capture(ex)
+        End Try
+
+        ' Back where the operator was (VB has no Await in Finally); a failure here changes nothing.
+        Try
+            If Not String.IsNullOrWhiteSpace(returnUrl) AndAlso
+               Not returnUrl.StartsWith(ReceiptPageUrl, StringComparison.OrdinalIgnoreCase) Then
+                Await page.GotoAsync(returnUrl).ConfigureAwait(False)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeSNM.CautaRecipisaAsync.Return", ex)
+        End Try
+
+        failure?.Throw()
+        Return result
+    End Function
+
+    ' The search itself; reached only through CautaRecipisaAsync, which logs and rethrows.
+    Private Shared Async Function SearchReceiptAsync(page As IPage, logger As RichTextBoxLogger,
+                                                     index As String, ct As CancellationToken) As Task(Of ForexeReceipt)
+        Dim result As New ForexeReceipt With {.RegistrationIndex = index}
+            logger.LogAction($"SNM: caut recipisa pentru indexul {index}.")
+            Await page.GotoAsync(ReceiptPageUrl, New PageGotoOptions With {.WaitUntil = WaitUntilState.Load}).ConfigureAwait(False)
+
+            Dim marker As String = "INTERNT-" & index & "-"
+            Dim start As Integer = 0
+            Dim total As Integer = Integer.MaxValue
+            For pageNo As Integer = 1 To ReceiptMaxPages
+                If start >= total Then Exit For
+                ct.ThrowIfCancellationRequested()
+                Dim url As String = String.Format(Inv, ReceiptInboxUrl, start, PageSize)
+                Dim text As String = Await page.EvaluateAsync(Of String)(
+                    "async () => { const r = await fetch('" & url & "', { credentials: 'include' }); return await r.text(); }"
+                ).ConfigureAwait(False)
+                If String.IsNullOrWhiteSpace(text) Then
+                    Throw New InvalidOperationException("Cutia de recipise FOREXE a răspuns gol.")
+                End If
+                Dim pagina As JObject = JObject.Parse(text)
+                total = CitesteTotal(pagina)
+                Dim randuri As JToken = pagina("rows")
+                If randuri Is Nothing Then
+                    Throw New InvalidOperationException("Răspunsul FOREXE nu conține «rows» — formatul cutiei de mesaje s-a schimbat.")
+                End If
+
+                For Each rand As JToken In randuri
+                    result.MessagesRead += 1
+                    Dim mesaj As JToken = If(rand("mesajTab"), rand)
+                    Dim descriere As String = If(CStr(mesaj("descriere")), String.Empty)
+                    ' The index is the hidden second column of the grid too: any field equal to it counts.
+                    Dim matches As Boolean = descriere.Contains(marker, StringComparison.OrdinalIgnoreCase) OrElse
+                        DirectCast(rand, JContainer).Descendants().OfType(Of JValue)().Any(
+                            Function(v) (v.Type = JTokenType.String OrElse v.Type = JTokenType.Integer) AndAlso
+                                        String.Equals(Convert.ToString(v.Value, Inv), index, StringComparison.Ordinal))
+                    If Not matches Then Continue For
+
+                    result.Found = True
+                    result.MessageId = CLng(mesaj("id"))
+                    result.FileName = If(CStr(mesaj("numeFisier")), String.Empty)
+                    result.MessageText = descriere
+                    Dim creare As JToken = mesaj("dataCreare")
+                    If creare IsNot Nothing AndAlso creare.Type = JTokenType.Integer Then
+                        result.MessageDate = DateTimeOffset.FromUnixTimeMilliseconds(CLng(creare)).LocalDateTime
+                    End If
+                    Dim m As System.Text.RegularExpressions.Match =
+                        System.Text.RegularExpressions.Regex.Match(descriere, "INTERNT-[0-9]+-[0-9]{4}/[0-9]{2}-[0-9]{2}-[0-9]{4}")
+                    If m.Success Then result.RegistrationNumber = m.Value
+                    logger.LogSuccess($"SNM: recipisa găsită — {result.FileName}.")
+
+                    Dim downloadUrl As String = String.Format(Inv, ReceiptDownloadUrl, result.MessageId,
+                                                              Uri.EscapeDataString(result.FileName))
+                    result.Content = Await page.EvaluateAsync(Of Byte())(
+                        "async () => { const r = await fetch('" & downloadUrl & "', { credentials: 'include' }); " &
+                        "const b = await r.arrayBuffer(); return Array.from(new Uint8Array(b)); }"
+                    ).ConfigureAwait(False)
+                    If result.Content Is Nothing OrElse result.Content.Length = 0 Then
+                        Throw New InvalidOperationException($"FOREXE a trimis recipisa «{result.FileName}» goală.")
+                    End If
+                    Return result
+                Next
+                start += PageSize
+            Next
+            logger.LogInfo($"SNM: recipisa pentru indexul {index} nu este (încă) în cutie — {result.MessagesRead} mesaje citite.")
+            Return result
     End Function
 
     ' ── Interne ──────────────────────────────────────────────────────────

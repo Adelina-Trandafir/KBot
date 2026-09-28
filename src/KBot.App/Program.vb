@@ -221,8 +221,14 @@ Friend Module Program
     ' Slice 0078 -- UI boundary (async void from the Shown handler): log and swallow.
     Private Async Sub RetryPendingPdfUploads(shell As Form, api As IApiClient)
         Try
-            Dim lines As List(Of String) = Await PendingPdfUploads.RetryAllAsync(api).ConfigureAwait(True)
-            If lines.Count > 0 Then SigningMessages.ShowRetrySummary(shell, lines)
+            Dim result As PendingRetryResult = Await PendingPdfUploads.RetryAllAsync(api).ConfigureAwait(True)
+            If result.Left.Count = 0 Then
+                If result.Lines.Count > 0 Then SigningMessages.ShowRetrySummary(shell, result.Lines)
+            Else
+                ' Slice 0088-04: without this question an entry the server can never take (its
+                ' document was deleted) comes back at every start.
+                SigningMessages.AskDeletePending(shell, result)
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("Program.RetryPendingPdfUploads", ex)
         End Try

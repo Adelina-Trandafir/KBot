@@ -256,6 +256,8 @@ Partial Public Class KbotForm
             If _session.IsAuthenticated AndAlso Not String.IsNullOrEmpty(_session.DbName) Then
                 Await LoadPeriodsAsync()
                 Await LoadTreeAsync()
+                ' Slice 0088: the menu's «Operațiuni necorelate» entry and its «!» mark.
+                Await RefreshUncorrelatedMarkAsync()
             Else
                 ' No session (possible only in the Debug harness): no data, no silent sample --
                 ' the list stays empty, honestly. The disabled combos already tell the story.

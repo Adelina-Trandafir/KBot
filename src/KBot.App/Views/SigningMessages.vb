@@ -95,4 +95,38 @@ Public NotInheritable Class SigningMessages
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 0088-04: the retry at start left signed copies that did not reach the server. Says what
+    ''' happened to each and asks whether to delete the ones left: Yes deletes them from
+    ''' <see cref="PendingPdfUploads.Root"/>, No keeps them for the next start.
+    ''' </summary>
+    Public Shared Sub AskDeletePending(owner As IWin32Window, result As PendingRetryResult)
+        Try
+            If result Is Nothing OrElse result.Left.Count = 0 Then Return
+            Dim text As String =
+                "Documente semnate păstrate pe acest calculator:" & Environment.NewLine &
+                String.Join(Environment.NewLine, result.Lines) & Environment.NewLine & Environment.NewLine &
+                $"{result.Left.Count} document(e) NU au ajuns pe server. Le ștergeți de pe acest calculator?" & Environment.NewLine &
+                "Da = se șterg (semnăturile din ele se pierd); Nu = rămân și se reîncearcă la următoarea pornire."
+            If KBotMessage.Show(owner, text, Caption, MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
+
+            Dim failed As New List(Of String)()
+            For Each entry As PendingPdfUpload In result.Left
+                Try
+                    PendingPdfUploads.Remove(entry.Kind, entry.Id)
+                Catch ex As Exception
+                    ' Logged by Remove; said once below.
+                    failed.Add(PendingPdfUploads.Label(entry))
+                End Try
+            Next
+            If failed.Count > 0 Then
+                KBotMessage.Show(owner, "Nu s-au putut șterge: " & String.Join(", ", failed) &
+                                 $". Fișierele sunt în «{PendingPdfUploads.Root}».",
+                                 Caption, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("SigningMessages.AskDeletePending", ex)
+        End Try
+    End Sub
+
 End Class

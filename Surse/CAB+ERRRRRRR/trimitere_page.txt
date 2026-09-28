@@ -1,0 +1,399 @@
+<body
+  class="controls-visible has-control-menu closed yui3-skin-sam guest-site signed-in public-page site"
+  id="senna_surface1"
+>
+  <div class="lfr-spa-loading-bar"></div>
+  <div class="tooltip fade clay-tooltip-top" role="tooltip" style="display: none">
+    <div class="arrow"></div>
+    <div class="tooltip-inner"></div>
+  </div>
+  <div id="senna_surface1-screen_2" style="display: block" class="flipped">
+    <nav class="quick-access-nav" id="lleu_quickAccessNav">
+      <h1 class="hide-accessible">Navigation</h1>
+
+      <ul>
+        <li><a href="#main-content">Skip to Content</a></li>
+      </ul>
+    </nav>
+
+    <div class="control-menu control-menu-level-1 hidden-print" data-qa-id="controlMenu" id="ControlMenu">
+      <div class="container-fluid container-fluid-max-xl">
+        <ul class="control-menu-level-1-nav control-menu-nav" data-namespace="" data-qa-id="header" id="controlMenu">
+          <li class="control-menu-nav-category sites-control-group">
+            <ul class="control-menu-nav">
+              <li class="control-menu-nav-item">
+                <a
+                  aria-label="Menu"
+                  class="control-menu-icon lfr-portal-tooltip product-menu-toggle sidenav-toggler"
+                  data-content="body"
+                  data-qa-id="productMenu"
+                  data-target="#_com_liferay_product_navigation_product_menu_web_portlet_ProductMenuPortlet_sidenavSliderId"
+                  data-title="Menu"
+                  data-toggle="sidenav"
+                  data-type="fixed-push"
+                  data-type-mobile="fixed"
+                  data-url="https://forexe.mfinante.gov.ro/transmitere-documente-electronice?p_p_id=com_liferay_product_navigation_product_menu_web_portlet_ProductMenuPortlet&amp;p_p_lifecycle=0&amp;p_p_state=exclusive&amp;_com_liferay_product_navigation_product_menu_web_portlet_ProductMenuPortlet_mvcPath=%2Fportlet%2Fproduct_menu.jsp&amp;_com_liferay_product_navigation_product_menu_web_portlet_ProductMenuPortlet_selPpid="
+                  href="javascript:;"
+                  id="_com_liferay_product_navigation_product_menu_web_portlet_ProductMenuPortlet_sidenavToggleId"
+                >
+                  <div class="toast-animation">
+                    <div class="pm"></div>
+
+                    <div class="cn"></div>
+                  </div>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <li class="control-menu-nav-category tools-control-group">
+            <ul class="control-menu-nav"></ul>
+          </li>
+
+          <li class="control-menu-nav-category user-control-group">
+            <ul class="control-menu-nav"></ul>
+          </li>
+        </ul>
+      </div>
+
+      <div class="control-menu-body"></div>
+
+      <div id="controlMenuAlertsContainer"></div>
+    </div>
+
+    <div class="pt-0" id="wrapper">
+      <header id="banner">
+        <div class="navbar navbar-classic navbar-top py-3">
+          <div class="container user-personal-bar">
+            <div class="align-items-center autofit-row">
+              <a
+                class="logo custom-logo align-items-center d-md-inline-flex d-sm-none d-none logo-md"
+                href="https://forexe.mfinante.gov.ro"
+                title="Go to "
+              >
+                <img
+                  alt="ForexeBug"
+                  class="mr-2"
+                  height="56"
+                  src="/image/layout_set_logo?img_id=1101844&amp;t=1744616614301"
+                />
+              </a>
+
+              <div class="autofit-col autofit-col-expand"></div>
+
+              <div class="autofit-col">
+                <div
+                  class="portlet-boundary portlet-boundary_com_liferay_product_navigation_user_personal_bar_web_portlet_ProductNavigationUserPersonalBarPortlet_ portlet-static portlet-static-end portlet-decorate portlet-user-personal-bar"
+                  id="p_p_id_com_liferay_product_navigation_user_personal_bar_web_portlet_ProductNavigationUserPersonalBarPortlet_"
+                >
+                  <span
+                    id="p_com_liferay_product_navigation_user_personal_bar_web_portlet_ProductNavigationUserPersonalBarPortlet"
+                  ></span>
+
+                  <span class="user-avatar-link">
+                    <a
+                      class="text-default"
+                      data-qa-id="openUserMenu"
+                      href="javascript:;"
+                      id="_com_liferay_product_navigation_user_personal_bar_web_portlet_ProductNavigationUserPersonalBarPortlet_sidenavUserToggle"
+                    >
+                      <span class="user-avatar-image">
+                        <div class="user-icon-color-3 user-icon user-icon-default"><span>DL</span></div>
+                      </span>
+                      <span class="user-full-name"> DORINA LUCA </span>
+                    </a>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4 navbar navbar-classic navbar-expand-md navbar-light pb-3">
+          <div class="container">
+            <a
+              class="logo custom-logo align-items-center d-inline-flex d-md-none logo-xs"
+              href="https://forexe.mfinante.gov.ro"
+              rel="nofollow"
+            >
+              <img
+                alt="ForexeBug"
+                class="mr-2"
+                height="56"
+                src="/image/layout_set_logo?img_id=1101844&amp;t=1744616614301"
+              />
+            </a>
+
+            <button
+              aria-controls="navigationCollapse"
+              aria-expanded="false"
+              aria-label="Toggle navigation"
+              class="navbar-toggler navbar-toggler-right"
+              data-target="#navigationCollapse"
+              data-toggle="collapse"
+              type="button"
+            >
+              <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div aria-expanded="false" class="collapse navbar-collapse" id="navigationCollapse">
+              <div
+                class="portlet-boundary portlet-boundary_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_ portlet-static portlet-static-end portlet-barebone portlet-navigation"
+                id="p_p_id_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet_"
+              >
+                <span id="p_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet"></span>
+
+                <section
+                  class="portlet"
+                  id="portlet_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet"
+                >
+                  <div class="portlet-content">
+                    <div class="portlet-content-container">
+                      <div class="portlet-body">
+                        <div id="navbar_com_liferay_site_navigation_menu_web_portlet_SiteNavigationMenuPortlet">
+                          <ul
+                            aria-label="Site Pages"
+                            class="nav nav-tabs navbar-site"
+                            role="menubar"
+                            id="yui_patched_v3_18_1_1_1790581976496_579"
+                          >
+                            <li
+                              class="lfr-nav-item nav-item dropdown selected active"
+                              id="layout_40"
+                              role="presentation"
+                            >
+                              <a
+                                aria-labelledby="layout_40"
+                                aria-haspopup="true"
+                                class="nav-link text-truncate dropdown-toggle"
+                                href="https://forexe.mfinante.gov.ro/punct-unic-de-acces"
+                                role="menuitem"
+                                tabindex="0"
+                                id="yui_patched_v3_18_1_1_1790581976496_596"
+                              >
+                                <span class="text-truncate">
+                                  PRIVAT - Punct unic de acces
+                                  <span class="lfr-nav-child-toggle"><i class="icon-caret-down"></i></span
+                                ></span>
+                              </a>
+
+                              <ul aria-expanded="false" class="child-menu dropdown-menu" role="menu">
+                                <li class="" id="layout_62" role="presentation">
+                                  <a
+                                    aria-labelledby="layout_62"
+                                    class="dropdown-item"
+                                    href="http://forexe.mfinante.gov.ro/ForexeSNM/welcome.do"
+                                    target="_blank"
+                                    role="menuitem"
+                                    tabindex="-1"
+                                    id="yui_patched_v3_18_1_1_1790581976496_598"
+                                    >Vizualizare rapoarte</a
+                                  >
+                                </li>
+
+                                <li class="active selected" id="layout_43" role="presentation">
+                                  <a
+                                    aria-labelledby="layout_43"
+                                    class="dropdown-item"
+                                    href="https://forexe.mfinante.gov.ro/transmitere-documente-electronice"
+                                    role="menuitem"
+                                    tabindex="-1"
+                                    id="yui_patched_v3_18_1_1_1790581976496_600"
+                                    >Transmitere documente electronice</a
+                                  >
+                                </li>
+
+                                <li class="" id="layout_59" role="presentation">
+                                  <a
+                                    aria-labelledby="layout_59"
+                                    class="dropdown-item"
+                                    href="http://forexe.mfinante.gov.ro/CABWeb"
+                                    target="_blank"
+                                    role="menuitem"
+                                    tabindex="-1"
+                                    id="yui_patched_v3_18_1_1_1790581976496_602"
+                                    >Aplicatia CAB</a
+                                  >
+                                </li>
+
+                                <li class="" id="layout_65" role="presentation">
+                                  <a
+                                    aria-labelledby="layout_65"
+                                    class="dropdown-item"
+                                    href="http://forexe.mfinante.gov.ro/prod/v1/FeedbackForexe/"
+                                    target="_blank"
+                                    role="menuitem"
+                                    tabindex="-1"
+                                    id="yui_patched_v3_18_1_1_1790581976496_604"
+                                    >Chestionar Feedback - SNR Forexebug</a
+                                  >
+                                </li>
+                              </ul>
+                            </li>
+
+                            <li class="lfr-nav-item nav-item" id="layout_41" role="presentation">
+                              <a
+                                aria-labelledby="layout_41"
+                                class="nav-link text-truncate"
+                                href="https://forexepublic.mfinante.gov.ro/"
+                                role="menuitem"
+                                tabindex="-1"
+                                id="yui_patched_v3_18_1_1_1790581976496_606"
+                              >
+                                <span class="text-truncate"> Pagini Publice </span>
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="container" id="content">
+        <h1 class="sr-only">Transmitere documente electronice</h1>
+
+        <div class="columns-1" id="main-content" role="main">
+          <div class="portlet-layout row">
+            <div class="col-md-12 portlet-column portlet-column-only" id="column-1">
+              <div
+                class="portlet-dropzone portlet-column-content portlet-column-content-only"
+                id="layout-column_column-1"
+              >
+                <div
+                  class="portlet-boundary portlet-boundary_com_liferay_journal_content_web_portlet_JournalContentPortlet_ portlet-static portlet-static-end portlet-decorate portlet-journal-content"
+                  id="p_p_id_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_CDQxTKYwFqrh_"
+                >
+                  <span
+                    id="p_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_CDQxTKYwFqrh"
+                  ></span>
+
+                  <section
+                    class="portlet"
+                    id="portlet_com_liferay_journal_content_web_portlet_JournalContentPortlet_INSTANCE_CDQxTKYwFqrh"
+                  >
+                    <div class="portlet-content">
+                      <div class="autofit-float autofit-row portlet-header">
+                        <div class="autofit-col autofit-col-expand">
+                          <h2 class="portlet-title-text">Transmitere documente electronice</h2>
+                        </div>
+
+                        <div class="autofit-col autofit-col-end">
+                          <div class="autofit-section">
+                            <div class="visible-interaction"></div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="portlet-content-container">
+                        <div class="portlet-body">
+                          <div class="text-right user-tool-asset-addon-entries"></div>
+
+                          <div
+                            class="clearfix journal-content-article"
+                            data-analytics-asset-id="298164"
+                            data-analytics-asset-title="Transmitere documente electronice"
+                            data-analytics-asset-type="web-content"
+                          >
+                            <p>
+                              <iframe
+                                align="top"
+                                frameborder="0"
+                                height="1000px"
+                                longdesc="Depunere Declaratii"
+                                scrolling="no"
+                                src="https://forexe.mfinante.gov.ro/WAS6DUS/"
+                                width="90%"
+                              ></iframe>
+                            </p>
+                            <!--<p>Pentru transmiterea documentelor electronice, puteți utiliza și link-ul:&nbsp;<a href="http://etwsp1.srv.drbc.fiscnet.ro:84/WAS6DUS/" target="_blank">https://decl.anaf.mfinante.gov.ro</a></p>-->
+                          </div>
+
+                          <div class="content-metadata-asset-addon-entries"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form action="#" id="hrefFm" method="post" name="hrefFm"><span></span></form>
+      </section>
+
+      <footer id="footer" role="contentinfo">
+        <div class="container">
+          <div class="row">
+            <div class="col-md-12 text-center text-md-left">
+              Powered By
+              <a class="text-white" href="http://www.liferay.com" rel="external">Liferay</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <div
+      class="closed hidden-print lfr-product-menu-panel sidenav-fixed sidenav-menu-slider"
+      id="_com_liferay_product_navigation_product_menu_web_portlet_ProductMenuPortlet_sidenavSliderId"
+    >
+      <div class="product-menu sidebar sidenav-menu">
+        <div
+          class="portlet-boundary portlet-boundary_com_liferay_product_navigation_product_menu_web_portlet_ProductMenuPortlet_ portlet-static portlet-static-end portlet-decorate"
+          id="p_p_id_com_liferay_product_navigation_product_menu_web_portlet_ProductMenuPortlet_"
+        >
+          <span id="p_com_liferay_product_navigation_product_menu_web_portlet_ProductMenuPortlet"></span>
+
+          <div class="lfr-product-menu-sidebar" id="productMenuSidebar">
+            <div class="sidebar-header">
+              <div class="autofit-row">
+                <div class="autofit-col autofit-col-expand">
+                  <a href="https://forexe.mfinante.gov.ro">
+                    <span class="company-details truncate-text">
+                      <img
+                        alt=""
+                        class="company-logo"
+                        src="/image/layout_set_logo?img_id=1101844&amp;t=1744616614301"
+                      />
+
+                      <span class="company-name">ForexeBug</span>
+                    </span>
+                  </a>
+                </div>
+
+                <div class="autofit-col">
+                  <a
+                    href="javascript:;"
+                    class="d-inline-block d-md-none icon-monospaced sidenav-close"
+                    id="_com_liferay_product_navigation_product_menu_web_portlet_ProductMenuPortlet_qfkd____"
+                    ><svg
+                      class="lexicon-icon lexicon-icon-times"
+                      focusable="false"
+                      role="img"
+                      title=""
+                      viewBox="0 0 512 512"
+                    >
+                      <title>times</title>
+                      <path
+                        class="lexicon-icon-outline"
+                        d="M295.781 256l205.205-205.205c10.998-10.998 10.998-28.814 0-39.781-10.998-10.998-28.815-10.998-39.781 0l-205.205 205.205-205.205-205.238c-10.966-10.998-28.814-10.998-39.781 0-10.998 10.998-10.998 28.814 0 39.781l205.205 205.238-205.205 205.205c-10.998 10.998-10.998 28.815 0 39.781 5.467 5.531 12.671 8.265 19.874 8.265s14.407-2.734 19.907-8.233l205.205-205.238 205.205 205.205c5.5 5.5 12.703 8.233 19.906 8.233s14.407-2.734 19.906-8.233c10.998-10.998 10.998-28.815 0-39.781l-205.238-205.205z"
+                      ></path></svg
+                  ></a>
+                </div>
+              </div>
+            </div>
+
+            <div class="sidebar-body"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>

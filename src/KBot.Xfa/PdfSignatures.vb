@@ -50,6 +50,12 @@ Public NotInheritable Class PdfSignatureInfo
     ''' <summary>The role name of one signer bit for a document type ("" for 0).</summary>
     Public Shared Function RoleName(bit As Integer, docType As String) As String
         Dim ddf As Boolean = String.Equals(docType, "DDF", StringComparison.OrdinalIgnoreCase)
+        ' Slice 0088: the F1135 correction note has two signers, «Semnatura 1» and «Semnatura 2».
+        If String.Equals(docType, "NC", StringComparison.OrdinalIgnoreCase) Then
+            If (bit And AdobeUtils.SIGNER_AB) <> 0 Then Return "S1"
+            If (bit And AdobeUtils.SIGNER_CD) <> 0 Then Return "S2"
+            Return String.Empty
+        End If
         If (bit And AdobeUtils.SIGNER_AB) <> 0 Then Return If(ddf, "A", "AB")
         If (bit And AdobeUtils.SIGNER_CD) <> 0 Then Return If(ddf, "B", "CD")
         If (bit And AdobeUtils.SIGNER_ORDONATOR) <> 0 Then Return "Ordonator"
@@ -67,11 +73,14 @@ Public NotInheritable Class PdfSignatureInfo
     ''' names Access wrote into <c>Semnatura</c> (mdl_FX_Helpers.NumeSemnatar).
     ''' </summary>
     Public Function RoleNames() As IReadOnlyList(Of String)
-        Dim ddf As Boolean = DocType = "DDF"
+        ' One naming rule for every family (RoleName): DDF A/B, ORD AB/CD, NC S1/S2 (slice 0088).
         Dim roles As New List(Of String)()
-        If (Mask And AdobeUtils.SIGNER_AB) <> 0 Then roles.Add(If(ddf, "A", "AB"))
-        If (Mask And AdobeUtils.SIGNER_CD) <> 0 Then roles.Add(If(ddf, "B", "CD"))
-        If (Mask And AdobeUtils.SIGNER_ORDONATOR) <> 0 Then roles.Add("Ordonator")
+        For Each bit As Integer In {AdobeUtils.SIGNER_AB, AdobeUtils.SIGNER_CD, AdobeUtils.SIGNER_ORDONATOR}
+            If (Mask And bit) <> 0 Then
+                Dim name As String = RoleName(bit, DocType)
+                If name.Length > 0 Then roles.Add(name)
+            End If
+        Next
         Return roles
     End Function
 

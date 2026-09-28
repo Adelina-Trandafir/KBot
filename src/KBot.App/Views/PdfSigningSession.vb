@@ -89,7 +89,7 @@ Public NotInheritable Class PdfSigningSession
 
     Private ReadOnly Property DocType As String
         Get
-            Return If(Kind = PdfDocKind.Ddf, "DDF", "ORD")
+            Return PendingPdfUploads.DocType(Kind)
         End Get
     End Property
 
@@ -246,11 +246,7 @@ Public NotInheritable Class PdfSigningSession
         Dim roles As String = If(String.IsNullOrEmpty(semnatura), Nothing, semnatura)
         Try
             Dim resp As PutPdfResponse
-            If Kind = PdfDocKind.Ddf Then
-                resp = Await _api.UploadDdfPdfAsync(Id, bytes, precedent, roles, records, CancellationToken.None).ConfigureAwait(True)
-            Else
-                resp = Await _api.UploadOrdPdfAsync(Id, bytes, precedent, roles, records, CancellationToken.None).ConfigureAwait(True)
-            End If
+            resp = Await PendingPdfUploads.UploadToServerAsync(_api, Kind, Id, bytes, precedent, roles, records).ConfigureAwait(True)
 
             ServerSha = resp.sha256
             _baselineKey = key

@@ -86,6 +86,11 @@ Partial Public Class KbotForm
                                                 AddressOf ExecutaComandaDdf)
                 Case "ord" : Return New OrdView(_apiClient, Function(op) WithReauth(Of OrdInfo)(op), _session,
                                                 AddressOf ExecutaComandaOrd)
+                ' Slice 0088: the CAB correction notes whose correction row went to this angajament.
+                ' «Încarcă în CAB» goes through the same step as the note window; «Validează
+                ' documentul» (page «Recipisă», slice 0088-04) opens the shell's receipt window.
+                Case "notecab" : Return New NoteCabView(_apiClient, Function(op) WithReauth(Of List(Of CabCorrectionNote))(op),
+                                                        AddressOf UploadCabNoteAsync, AddressOf OpenReceiptWindow)
                 ' The live FOREXE page, docked into the shell (slice 0074). Only the
                 ' coordinator: the view docks, opens angajamente and follows the page
                 ' through it, and the shell keeps the reference for page-to-tree selection.
@@ -118,6 +123,10 @@ Partial Public Class KbotForm
             navViews.SetItemVisible("extrase", info IsNot Nothing AndAlso info.AreExtrase)
             navViews.SetItemVisible("ddf", info IsNot Nothing AndAlso info.AreDDF)
             navViews.SetItemVisible("ord", info IsNot Nothing AndAlso info.AreORD)
+            ' Slice 0088: no Are* flag on the tree query -- the notes table may not exist yet on a
+            ' unit database, and the tree must not depend on it. Any angajament; the view says
+            ' «nu are note» when it has none.
+            navViews.SetItemVisible("notecab", info IsNot Nothing)
             ' «Browser FOREXE» (slice 0074) hangs on the SESSION, not on the node: with no
             ' selection the operator can still browse; without a session there is no page.
             navViews.SetItemVisible("browser", BrowserDisponibil())
@@ -148,6 +157,7 @@ Partial Public Class KbotForm
             Case "extrase" : Return info.AreExtrase
             Case "ddf" : Return info.AreDDF
             Case "ord" : Return info.AreORD
+            Case "notecab" : Return True
             ' Gated by the session in ApplyViewGating / the coordinator's StateChanged
             ' (KbotForm.Browser.vb), never by the node.
             Case "browser" : Return True

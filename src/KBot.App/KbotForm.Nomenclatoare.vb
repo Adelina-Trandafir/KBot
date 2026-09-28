@@ -21,6 +21,9 @@ Partial Public Class KbotForm
                     DeschideClasificatiile()
                 Case "parteneri"
                     DeschidePartenerii()
+                Case UncorrelatedMenuKey
+                    ' Slice 0088: every stored ERR operation no note covers yet.
+                    OpenUncorrelatedFromMenu()
                 Case Else
                     Throw New ArgumentException($"Unknown menu key '{e.Key}'.", NameOf(e))
             End Select

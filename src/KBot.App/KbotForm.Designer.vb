@@ -29,6 +29,7 @@ Partial Class KbotForm
         Dim KBotMenuItem3 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem4 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem5 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem6 As KBotMenuItem = New KBotMenuItem()
         Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KbotForm))
@@ -41,6 +42,7 @@ Partial Class KbotForm
         Dim KBotNavItem8 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem9 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem10 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem11 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         btnInfo = New Button()
         btnSort = New Button()
@@ -199,7 +201,12 @@ Partial Class KbotForm
         KBotMenuItem3.Items.Add(KBotMenuItem5)
         KBotMenuItem3.Key = "nomenclatoare"
         KBotMenuItem3.Text = "Nomenclatoare"
+        KBotMenuItem6.Image = My.Resources.Resources.FX_RED_16
+        KBotMenuItem6.Key = "operatiuni_necorelate"
+        KBotMenuItem6.Text = "<b>(!) Operațiuni necorelate</b>"
+        KBotMenuItem6.Visible = False
         menuNou.Items.Add(KBotMenuItem1)
+        menuNou.Items.Add(KBotMenuItem6)
         menuNou.Items.Add(KBotMenuItem2)
         menuNou.Items.Add(KBotMenuItem3)
         ' 
@@ -420,6 +427,10 @@ Partial Class KbotForm
         KBotNavItem10.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
         KBotNavItem10.Key = "ord"
         KBotNavItem10.Text = "Ordonanțare"
+        KBotNavItem11.Align = KBotNavAlign.Far
+        KBotNavItem11.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Check_boxes_32
+        KBotNavItem11.Key = "notecab"
+        KBotNavItem11.Text = "Note corecție"
         navViews.Items.Add(KBotNavItem1)
         navViews.Items.Add(KBotNavItem2)
         navViews.Items.Add(KBotNavItem3)
@@ -430,6 +441,7 @@ Partial Class KbotForm
         navViews.Items.Add(KBotNavItem8)
         navViews.Items.Add(KBotNavItem9)
         navViews.Items.Add(KBotNavItem10)
+        navViews.Items.Add(KBotNavItem11)
         navViews.Location = New Point(11, 13)
         navViews.Margin = New Padding(4, 5, 4, 5)
         navViews.Name = "navViews"

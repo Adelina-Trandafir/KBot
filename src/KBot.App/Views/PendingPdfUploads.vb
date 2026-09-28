@@ -12,6 +12,8 @@ Imports KBot.Common
 Public Enum PdfDocKind
     Ddf = 0
     Ord = 1
+    ''' <summary>Slice 0088: «Nota contabila corectie CAB» (F1135), id = FX_NoteCAB.IDNC.</summary>
+    Nc = 2
 End Enum
 
 ''' <summary>
@@ -71,7 +73,53 @@ Public NotInheritable Class PendingPdfUploads
     End Property
 
     Private Shared Function BaseName(kind As PdfDocKind, id As Integer) As String
-        Return $"{If(kind = PdfDocKind.Ddf, "DDF", "ORD")}_{id}"
+        Return $"{DocType(kind)}_{id}"
+    End Function
+
+    ''' <summary>
+    ''' The family's document type as KBot.Xfa names it («DDF», «ORD», «NC») -- also the file-name
+    ''' prefix here. Unknown kind -> ArgumentException (house rule: no silent default).
+    ''' </summary>
+    Public Shared Function DocType(kind As PdfDocKind) As String
+        Select Case kind
+            Case PdfDocKind.Ddf : Return "DDF"
+            Case PdfDocKind.Ord : Return "ORD"
+            Case PdfDocKind.Nc : Return "NC"
+            Case Else
+                Throw New ArgumentException($"Unknown PDF family: {kind}.", NameOf(kind))
+        End Select
+    End Function
+
+    ''' <summary>
+    ''' Uploads one PDF to the route of its family. The note family is not on <see cref="IApiClient"/>
+    ''' (slice 0088, <see cref="ICabNotesApi"/>), so it is reached through the same client object.
+    ''' </summary>
+    Public Shared Function UploadToServerAsync(api As IApiClient, kind As PdfDocKind, id As Integer, bytes As Byte(),
+                                               shaPrecedent As String, semnatura As String,
+                                               records As IReadOnlyList(Of PdfSignatureRecord)) As Task(Of PutPdfResponse)
+        Select Case kind
+            Case PdfDocKind.Ddf
+                Return api.UploadDdfPdfAsync(id, bytes, shaPrecedent, semnatura, records, CancellationToken.None)
+            Case PdfDocKind.Ord
+                Return api.UploadOrdPdfAsync(id, bytes, shaPrecedent, semnatura, records, CancellationToken.None)
+            Case PdfDocKind.Nc
+                Dim notes As ICabNotesApi = TryCast(api, ICabNotesApi)
+                If notes Is Nothing Then Throw New InvalidOperationException("The API client does not implement ICabNotesApi.")
+                Return notes.UploadCabNotePdfAsync(id, bytes, shaPrecedent, semnatura, records, CancellationToken.None)
+            Case Else
+                Throw New ArgumentException($"Unknown PDF family: {kind}.", NameOf(kind))
+        End Select
+    End Function
+
+    ' The operator's name of a family, for the retry summary.
+    Private Shared Function KindLabel(kind As PdfDocKind) As String
+        Select Case kind
+            Case PdfDocKind.Ddf : Return "DDF revizia"
+            Case PdfDocKind.Ord : Return "ORD"
+            Case PdfDocKind.Nc : Return "Nota de corecție CAB"
+            Case Else
+                Throw New ArgumentException($"Unknown PDF family: {kind}.", NameOf(kind))
+        End Select
     End Function
 
     ''' <summary>Keeps a signed copy for a later upload (overwrites an older entry of the same document).</summary>
@@ -173,13 +221,8 @@ Public NotInheritable Class PendingPdfUploads
             Dim bytes As Byte() = File.ReadAllBytes(entry.PdfPath)
             Dim resp As PutPdfResponse
             Try
-                If entry.Kind = PdfDocKind.Ddf Then
-                    resp = Await api.UploadDdfPdfAsync(entry.Id, bytes, entry.ShaPrecedent, entry.Semnatura,
-                                                       entry.Semnaturi, CancellationToken.None).ConfigureAwait(True)
-                Else
-                    resp = Await api.UploadOrdPdfAsync(entry.Id, bytes, entry.ShaPrecedent, entry.Semnatura,
-                                                       entry.Semnaturi, CancellationToken.None).ConfigureAwait(True)
-                End If
+                resp = Await UploadToServerAsync(api, entry.Kind, entry.Id, bytes, entry.ShaPrecedent,
+                                                 entry.Semnatura, entry.Semnaturi).ConfigureAwait(True)
             Catch ex As ApiException When ex.StatusCode.GetValueOrDefault() = 409
                 MarkConflict(entry)
                 Throw
@@ -195,31 +238,51 @@ Public NotInheritable Class PendingPdfUploads
 
     ''' <summary>
     ''' Retries every non-conflict entry (after login). Returns one Romanian line per entry for the
-    ''' operator; an empty list when there was nothing to do. Never throws -- each failure is a line.
+    ''' operator and the entries still here afterwards (failed again or in conflict) -- the operator
+    ''' is asked whether to delete those (slice 0088-04: an entry whose document no longer exists on
+    ''' the server fails at every start, forever). Never throws -- each failure is a line.
     ''' </summary>
-    Public Shared Async Function RetryAllAsync(api As IApiClient) As Task(Of List(Of String))
-        Dim lines As New List(Of String)()
+    Public Shared Async Function RetryAllAsync(api As IApiClient) As Task(Of PendingRetryResult)
+        Dim result As New PendingRetryResult()
         Try
             For Each entry As PendingPdfUpload In All()
-                Dim label As String = $"{If(entry.Kind = PdfDocKind.Ddf, "DDF revizia", "ORD")} {entry.Id}"
+                Dim label As String = $"{KindLabel(entry.Kind)} {entry.Id}"
                 If entry.Conflict Then
-                    lines.Add($"{label}: în conflict cu versiunea de pe server — rămâne în «{Root}» pentru decizia dumneavoastră.")
+                    result.Lines.Add($"{label}: în conflict cu versiunea de pe server.")
+                    result.Left.Add(entry)
                     Continue For
                 End If
                 Try
                     Await UploadAsync(api, entry).ConfigureAwait(True)
-                    lines.Add($"{label}: documentul semnat a fost încărcat pe server.")
+                    result.Lines.Add($"{label}: documentul semnat a fost încărcat pe server.")
                 Catch ex As ApiException When ex.StatusCode.GetValueOrDefault() = 409
-                    lines.Add($"{label}: între timp altcineva a salvat alt document semnat. Copia dumneavoastră rămâne în «{Root}».")
+                    result.Lines.Add($"{label}: între timp altcineva a salvat alt document semnat.")
+                    result.Left.Add(entry)
                 Catch ex As Exception
-                    lines.Add($"{label}: încărcarea a eșuat din nou ({ex.Message}). Se reîncearcă la următoarea pornire.")
+                    result.Lines.Add($"{label}: încărcarea a eșuat din nou ({ex.Message}).")
+                    result.Left.Add(entry)
                 End Try
             Next
         Catch ex As Exception
             GlobalErrorLog.Write("PendingPdfUploads.RetryAllAsync", ex)
-            lines.Add("Documentele semnate neîncărcate nu au putut fi verificate. Detalii în jurnalul de erori.")
+            result.Lines.Add("Documentele semnate neîncărcate nu au putut fi verificate. Detalii în jurnalul de erori.")
         End Try
-        Return lines
+        Return result
     End Function
+
+    ''' <summary>The label the operator reads for one entry («ORD 12», «Nota de corecție CAB 3»).</summary>
+    Public Shared Function Label(entry As PendingPdfUpload) As String
+        ArgumentNullException.ThrowIfNull(entry)
+        Return $"{KindLabel(entry.Kind)} {entry.Id}"
+    End Function
+
+End Class
+
+''' <summary>What <see cref="PendingPdfUploads.RetryAllAsync"/> did. POCO.</summary>
+Public NotInheritable Class PendingRetryResult
+    ''' <summary>One Romanian line per entry.</summary>
+    Public ReadOnly Property Lines As New List(Of String)()
+    ''' <summary>The entries still waiting after the retry (failed again, or in conflict).</summary>
+    Public ReadOnly Property Left As New List(Of PendingPdfUpload)()
 
 End Class

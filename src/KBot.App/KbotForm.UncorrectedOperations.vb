@@ -13,16 +13,16 @@ Imports KBot.Theming
 ''' <summary>
 ''' Slice 0084 - the «Operațiuni necorectate» of the FOREXE landing page. Right after every
 ''' successful FOREXE login <see cref="ForexeController"/> reads the table; when it has rows
-''' the shell saves the new ones into <c>FX_Operatiuni</c> and warns the operator.
+''' the shell saves the new ones into <c>FX_Operatiuni</c>.
 '''
-''' <para>Save first, then one message: it lists the operations and says in its last line
-''' whether they were saved, so the operator reads one box, not two. A failed save does not
-''' hide the warning.</para>
-'''
-''' <para>Next step (not in this slice): correlating these operations with the angajamente
-''' in the database - see <c>docs/worklog/SLICE-0084-operatiuni-necorectate.md</c>.</para>
+''' <para>Slice 0088 (operator, 28.09.2026): no message box any more. The rows already in
+''' <c>FX_Operatiuni</c> are neither saved again nor shown again; when the save inserted NEW
+''' «ERRRRRRRRRR» rows, the note window opens straight away on exactly those. Everything not
+''' correlated stays reachable from the menu «Operațiuni necorelate» (<c>KbotForm.CabNotes.vb</c>).</para>
 ''' </summary>
 Partial Public Class KbotForm
+
+    Private Const UncorrectedCaption As String = "FOREXE - Operațiuni necorectate"
 
     Private Sub LeagaOperatiunileNecorectate()
         AddHandler _controller.UncorrectedOperationsFound, AddressOf Controller_UncorrectedOperationsFound
@@ -46,24 +46,20 @@ Partial Public Class KbotForm
     ' UI boundary (async Sub started from BeginInvoke): log and tell, never rethrow.
     Private Async Sub TrateazaOperatiunileNecorectate(page As UncorrectedOperationsPage)
         Try
-            Dim saveLine As String = Await SalveazaOperatiunileNecorectateAsync(page.Rows)
-            Dim text As String = UncorrectedOperations.Message(page)
-            If Not String.IsNullOrEmpty(saveLine) Then
-                text &= Environment.NewLine & Environment.NewLine & saveLine
-            End If
-            KBotMessage.Show(Me, text, "FOREXE - Operațiuni necorectate",
-                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Dim result As UncorrectedOperationsSaveResult = Await SalveazaOperatiunileNecorectateAsync(page.Rows)
+            Dim newIds As IEnumerable(Of Integer) = If(result Is Nothing, Enumerable.Empty(Of Integer)(), result.NewIds)
+            Await ShowUncorrelatedAsync(onlyIds:=newIds.ToList())
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.TrateazaOperatiunileNecorectate", ex)
         End Try
     End Sub
 
     ''' <summary>
-    ''' Saves the rows; returns the closing line of the warning (Romanian): how many were new,
-    ''' which were skipped and why, or why the save failed. Never throws: the warning about the
-    ''' operations matters more than the save.
+    ''' Saves the rows (the server inserts only those not in <c>FX_Operatiuni</c> yet). The rows it
+    ''' skipped and why go to the operator log; a failed save is the one thing said in a box --
+    ''' without it the rows cannot be correlated at all. Returns Nothing when the save failed.
     ''' </summary>
-    Private Async Function SalveazaOperatiunileNecorectateAsync(rows As List(Of UncorrectedOperation)) As Task(Of String)
+    Private Async Function SalveazaOperatiunileNecorectateAsync(rows As List(Of UncorrectedOperation)) As Task(Of UncorrectedOperationsSaveResult)
         Try
             Dim api As IUncorrectedOperationsApi = TryCast(_apiClient, IUncorrectedOperationsApi)
             If api Is Nothing Then Throw New InvalidOperationException("The API client does not implement IUncorrectedOperationsApi.")
@@ -71,21 +67,20 @@ Partial Public Class KbotForm
             Dim result As UncorrectedOperationsSaveResult = Await WithReauth(
                 Function() api.SaveUncorrectedOperationsAsync(rows, CancellationToken.None))
 
-            Dim sb As New StringBuilder()
-            If result.AlreadySaved = rows.Count Then
-                sb.Append("Toate operațiunile erau deja salvate în K-BOT.")
-            Else
-                sb.Append("Salvate în K-BOT: ").Append(result.Inserted).Append(" noi")
-                If result.AlreadySaved > 0 Then sb.Append(", ").Append(result.AlreadySaved).Append(" erau deja salvate")
-                sb.Append("."c)
+            If result.Warnings.Count > 0 Then
+                Dim sb As New StringBuilder("Operațiuni necorectate care NU au fost salvate în K-BOT:")
+                For Each w As String In result.Warnings
+                    sb.AppendLine().Append("⚠ ").Append(w)
+                Next
+                OperatorLog.Write("MainForm.SalveazaOperatiunileNecorectateAsync", UncorrectedCaption,
+                                  sb.ToString(), KBotLogLevel.Warn)
             End If
-            For Each w As String In result.Warnings
-                sb.AppendLine().Append("⚠ ").Append(w)
-            Next
-            Return sb.ToString()
+            Return result
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.SalveazaOperatiunileNecorectateAsync", ex)
-            Return "⚠ Operațiunile NU au putut fi salvate în K-BOT: " & ex.Message
+            KBotMessage.Show(Me, "Operațiunile necorectate din FOREXE NU au putut fi salvate în K-BOT: " & ex.Message,
+                             UncorrectedCaption, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return Nothing
         End Try
     End Function
 

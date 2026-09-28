@@ -1,0 +1,80 @@
+<form1>
+  <main>
+    <antet>
+      <numarNota>0000000023</numarNota>
+      <dataNota>28.09.2026</dataNota>
+      <sumaNota>0,00</sumaNota>
+      <denumireEP>SCOALA GIMN SFANTUL VASILE PL</denumireEP>
+      <cifEP>29164800</cifEP>
+      <universalCode>F1135_A1.0.05</universalCode>
+      <txtSumaNota>(zero lei si zero bani)</txtSumaNota>
+      <cif>29164800</cif>
+      <an_r>2026</an_r>
+      <luna_r>09</luna_r>
+      <d_rec>0</d_rec>
+      <totalPlata_A>61647952</totalPlata_A>
+      <numarInregistrari>2</numarInregistrari>
+      <sumaControl>61647952</sumaControl>
+      <totalDebit>0.00</totalDebit>
+      <totalCredit>0.00</totalCredit>
+    </antet>
+    <nc>
+      <tableNC>
+        <headerRowNC xfa:dataNode="dataGroup" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/" />
+        <rowNC>
+          <nrRand>1</nrRand>
+          <simbolCont>24A650401200103</simbolCont>
+          <codProgram>0000000000</codProgram>
+          <codAngajament>ERRRRRRRRRR</codAngajament>
+          <indicatorAngajament />
+          <nrRefOperInitiala>TZ521102454696</nrRefOperInitiala>
+          <dataOperInitiala>23.09.2026</dataOperInitiala>
+          <sumaDebit>0,00</sumaDebit>
+          <sumaCredit>-111,00</sumaCredit>
+          <explicatii>INCASAT UTILITATI REGLARE OP 136</explicatii>
+        </rowNC>
+        <rowNC>
+          <nrRand>2</nrRand>
+          <simbolCont>24A650401200103</simbolCont>
+          <codProgram>0000000000</codProgram>
+          <codAngajament>AAB2HC9F35G</codAngajament>
+          <indicatorAngajament>AAB</indicatorAngajament>
+          <nrRefOperInitiala />
+          <dataOperInitiala />
+          <sumaDebit>0,00</sumaDebit>
+          <sumaCredit>111,00</sumaCredit>
+          <explicatii>INCASAT UTILITATI REGLARE OP 136</explicatii>
+        </rowNC>
+      </tableNC>
+      <frmButonAd>
+        <legenda />
+      </frmButonAd>
+      <frmOptim>
+        <txtTitlu>ADAUGARE INREGISTRARE - NOTA CONTABILA CORECTIE CAB</txtTitlu>
+        <txtNrRand>0</txtNrRand>
+        <SimbolCont>Simbol cont:</SimbolCont>
+        <simbolCont />
+        <CodProgram>Cod program: </CodProgram>
+        <codProgram />
+        <CodAngajament>Cod angajament: </CodAngajament>
+        <codAngajament />
+        <IndicatorAngajament>Indicator angajament: </IndicatorAngajament>
+        <indicatorAngajament />
+        <NrRefOperInitiala>Nr. ref. oper. initiala: </NrRefOperInitiala>
+        <nrRefOperInitiala />
+        <DataOperInitiala>Data oper. initiala: </DataOperInitiala>
+        <dataOperInitiala />
+        <SumaDebit>Suma debit:</SumaDebit>
+        <sumaDebit />
+        <SumaCredit>Suma credit: </SumaCredit>
+        <sumaCredit />
+        <Explicatii>Explicatii: </Explicatii>
+        <explicatii />
+      </frmOptim>
+    </nc>
+  </main>
+  <sbfrmFooter xfa:dataNode="dataGroup" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/" />
+  <footerForm>
+    <mesajValidare />
+  </footerForm>
+</form1>

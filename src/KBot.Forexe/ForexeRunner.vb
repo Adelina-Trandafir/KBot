@@ -18,7 +18,7 @@ Namespace KBot.Forexe
     ''' browser/autentificarea) viu pentru job-urile următoare. Conectarea NU închide browserul.
     ''' </summary>
     Public Class ForexeRunner
-        Implements IForexeRunner
+        Implements IForexeRunner, Global.IForexeDocumentUpload
 
         Private _logger As RichTextBoxLogger
         Private _executor As WorkflowExecutor
@@ -220,6 +220,38 @@ Namespace KBot.Forexe
                 Return Await _executor.ReadUncorrectedOperationsAsync()
             Catch ex As Exception
                 _logger?.LogException(ex, "Eroare la citirea operațiunilor necorectate din pagina FOREXE")
+                Throw
+            End Try
+        End Function
+
+        ''' <summary>Slice 0088: a PDF into «Transmitere documente electronice»; FOREXE's answer.</summary>
+        Public Async Function UploadElectronicDocumentAsync(pdfPath As String) As Task(Of String) _
+            Implements Global.IForexeDocumentUpload.UploadElectronicDocumentAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then
+                Throw New InvalidOperationException("Nu există o sesiune FOREXE deschisă.")
+            End If
+            Try
+                Return Await _executor.UploadElectronicDocumentAsync(pdfPath)
+            Catch ex As Exception
+                _logger?.LogException(ex, "Eroare la încărcarea documentului în FOREXE")
+                Throw
+            End Try
+        End Function
+
+        ''' <summary>Slice 0088-04: the FOREXE receipt of an uploaded document, from the SNM inbox.</summary>
+        Public Async Function FindReceiptAsync(registrationIndex As String) As Task(Of ForexeReceipt) _
+            Implements Global.IForexeDocumentUpload.FindReceiptAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then
+                Throw New InvalidOperationException("Nu există o sesiune FOREXE deschisă.")
+            End If
+            If _logger Is Nothing Then
+                Throw New InvalidOperationException("Logger neatașat — apelează AttachLogger înainte de FindReceiptAsync.")
+            End If
+            Try
+                Return Await ForexeSNM.CautaRecipisaAsync(_executor.CurrentPage, _logger, registrationIndex,
+                                                          CancellationToken.None).ConfigureAwait(False)
+            Catch ex As Exception
+                _logger.LogException(ex, "Eroare la căutarea recipisei în FOREXE")
                 Throw
             End Try
         End Function

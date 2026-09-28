@@ -1,0 +1,694 @@
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/" timeStamp="2023-02-06T12:29:16Z" uuid="605c65f3-62c7-42ef-a039-4a0716cf6450">
+  <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.2-c001 63.139439, 2011/06/07-10:39:26        ">
+    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+      <rdf:Description xmlns:xmp="http://ns.adobe.com/xap/1.0/" rdf:about="">
+        <xmp:MetadataDate>2023-02-06T12:29:16Z</xmp:MetadataDate>
+        <xmp:CreatorTool>Adobe LiveCycle Designer ES 10.0</xmp:CreatorTool>
+        <xmp:ModifyDate>2023-02-06T09:20:02+02:00</xmp:ModifyDate>
+        <xmp:CreateDate>2023-02-01T15:12:23+02:00</xmp:CreateDate>
+      </rdf:Description>
+      <rdf:Description xmlns:pdf="http://ns.adobe.com/pdf/1.3/" rdf:about="">
+        <pdf:Producer>Adobe LiveCycle Designer ES 10.0</pdf:Producer>
+        <pdf:Keywords>F1135</pdf:Keywords>
+      </rdf:Description>
+      <rdf:Description xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/" rdf:about="">
+        <xmpMM:DocumentID>uuid:605c65f3-62c7-42ef-a039-4a0716cf6450</xmpMM:DocumentID>
+        <xmpMM:InstanceID>uuid:55b35a87-502e-482f-94f1-1e62725308b3</xmpMM:InstanceID>
+      </rdf:Description>
+      <rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/" rdf:about="">
+        <dc:format>application/pdf</dc:format>
+        <dc:creator>
+          <rdf:Seq>
+            <rdf:li>Ministerul Finantelor - Serviciul Aplicatii Trezorerie</rdf:li>
+          </rdf:Seq>
+        </dc:creator>
+        <dc:title>
+          <rdf:Alt>
+            <rdf:li xml:lang="x-default">Nota Contabila Corectie CAB</rdf:li>
+          </rdf:Alt>
+        </dc:title>
+      </rdf:Description>
+      <rdf:Description xmlns:desc="http://ns.adobe.com/xfa/promoted-desc/" rdf:about="">
+        <desc:version rdf:parseType="Resource">
+          <rdf:value>10.0.2.20120224.1.869952.867557</rdf:value>
+          <desc:ref>/template/subform[1]</desc:ref>
+        </desc:version>
+      </rdf:Description>
+    </rdf:RDF>
+  </x:xmpmeta>
+  <xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve">
+    <annots />
+  </xfdf>
+  <form checksum="fT7c/EId/jkaUyOdY0M99cwWr/Y=" xmlns="http://www.xfa.org/schema/xfa-form/2.8/">
+    <subform name="form1">
+      <instanceManager name="_main" />
+      <subform name="main">
+        <instanceManager name="_antet" />
+        <subform name="antet">
+          <field name="numarNota" access="readOnly">
+            <value override="1" />
+            <caption>
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </caption>
+            <font>
+              <fill>
+                <color value="0,0,0" />
+              </fill>
+            </font>
+          </field>
+          <field name="dataNota" access="readOnly">
+            <value override="1" />
+            <caption>
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </caption>
+            <font>
+              <fill>
+                <color value="0,0,0" />
+              </fill>
+            </font>
+          </field>
+          <field name="sumaNota">
+            <font>
+              <fill>
+                <color value="128,128,128" />
+              </fill>
+            </font>
+            <caption>
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </caption>
+          </field>
+          <field name="denumireEP" access="readOnly">
+            <value override="1" />
+            <caption>
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </caption>
+            <font>
+              <fill>
+                <color value="0,0,0" />
+              </fill>
+            </font>
+          </field>
+          <field name="cifEP" access="readOnly">
+            <value override="1" />
+            <caption>
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </caption>
+            <font>
+              <fill>
+                <color value="0,0,0" />
+              </fill>
+            </font>
+          </field>
+          <field name="cif" />
+          <field name="an_r" />
+          <field name="luna_r" />
+          <field name="d_rec" />
+          <field name="totalPlata_A" />
+          <field name="numarInregistrari">
+            <font>
+              <fill>
+                <color value="128,128,128" />
+              </fill>
+            </font>
+          </field>
+          <field name="sumaControl">
+            <font>
+              <fill>
+                <color value="128,128,128" />
+              </fill>
+            </font>
+          </field>
+          <field name="totalCredit" />
+        </subform>
+        <instanceManager name="_nc" />
+        <subform name="nc">
+          <instanceManager name="_tableNC" />
+          <subform name="tableNC">
+            <instanceManager name="_rowNC" />
+            <subform name="rowNC">
+              <field name="nrRand">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="simbolCont" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="codProgram" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="codAngajament" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="indicatorAngajament" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="nrRefOperInitiala" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="dataOperInitiala" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="sumaDebit" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="sumaCredit" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="explicatii" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="btnStergere" access="readOnly">
+                <border>
+                  <fill>
+                    <color value="255,0,0" />
+                  </fill>
+                </border>
+              </field>
+              <field name="btnEditare" access="readOnly">
+                <caption>
+                  <font weight="normal" />
+                </caption>
+              </field>
+            </subform>
+            <subform name="rowNC">
+              <field name="nrRand">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="simbolCont" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="codProgram" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="codAngajament" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="indicatorAngajament" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="nrRefOperInitiala" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="dataOperInitiala" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="sumaDebit" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="sumaCredit" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="explicatii" access="readOnly">
+                <font>
+                  <fill>
+                    <color value="0,0,0" />
+                  </fill>
+                </font>
+                <border>
+                  <fill>
+                    <color value="255,255,255" />
+                  </fill>
+                </border>
+              </field>
+              <field name="btnStergere" access="readOnly">
+                <border>
+                  <fill>
+                    <color value="255,0,0" />
+                  </fill>
+                </border>
+              </field>
+              <field name="btnEditare" access="readOnly">
+                <caption>
+                  <font weight="normal" />
+                </caption>
+              </field>
+            </subform>
+          </subform>
+          <instanceManager name="_frmButonAd" />
+          <subform name="frmButonAd">
+            <field name="btnAd" access="readOnly" />
+            <field name="btnAd" access="readOnly" />
+          </subform>
+          <instanceManager name="_frmOptim" />
+          <subform name="frmOptim">
+            <field name="txtTitlu">
+              <border>
+                <fill>
+                  <color value="0,128,0" />
+                </fill>
+                <edge>
+                  <color value="0,0,0" />
+                </edge>
+              </border>
+              <font>
+                <fill>
+                  <color value="255,255,255" />
+                </fill>
+              </font>
+            </field>
+            <field name="txtNrRand" />
+            <field name="SimbolCont">
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="simbolCont" access="readOnly">
+              <value override="1" />
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="CodProgram">
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="codProgram" access="readOnly">
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="CodAngajament">
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="codAngajament" access="readOnly">
+              <value override="1" />
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="IndicatorAngajament">
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="indicatorAngajament" access="readOnly">
+              <value override="1" />
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="NrRefOperInitiala">
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="nrRefOperInitiala" access="readOnly">
+              <value override="1" />
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="DataOperInitiala">
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="dataOperInitiala" access="readOnly">
+              <value override="1" />
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="SumaDebit">
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="sumaDebit" access="readOnly">
+              <value override="1" />
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="SumaCredit">
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="sumaCredit" access="readOnly">
+              <value override="1" />
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="Explicatii">
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="explicatii" access="readOnly">
+              <value override="1" />
+              <font>
+                <fill>
+                  <color value="0,0,0" />
+                </fill>
+              </font>
+            </field>
+            <field name="btnResetare" access="readOnly" />
+            <field name="btnCloseOptim" access="readOnly" />
+            <field name="btnAdaugare" presence="visible" access="readOnly" />
+            <field name="btnSalvare" presence="hidden" access="readOnly" />
+          </subform>
+        </subform>
+      </subform>
+      <instanceManager name="_sbfrmFooter" />
+      <subform name="sbfrmFooter">
+        <field name="btnValidare" access="readOnly" />
+        <field name="SignatureField1" access="readOnly" />
+        <field name="SignatureField2" access="readOnly" />
+      </subform>
+      <instanceManager name="_footerForm" />
+      <subform name="footerForm">
+        <field name="btnImportXML" access="readOnly" />
+        <field name="btnExportXML" access="readOnly" />
+        <field name="btnConsola" access="readOnly" />
+        <field name="mesajValidare" />
+      </subform>
+      <pageSet>
+        <pageArea name="Page1">
+          <field name="currentPageNumber">
+            <value>
+              <float>1.00000000</float>
+            </value>
+          </field>
+          <field name="numberOfPages">
+            <value>
+              <float>1.00000000</float>
+            </value>
+          </field>
+        </pageArea>
+      </pageSet>
+    </subform>
+  </form>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <form1>
+        <main>
+          <antet>
+            <numarNota>0000000023</numarNota>
+            <dataNota>28.09.2026</dataNota>
+            <sumaNota>0,00</sumaNota>
+            <denumireEP>SCOALA GIMN SFANTUL VASILE PL</denumireEP>
+            <cifEP>29164800</cifEP>
+            <universalCode>F1135_A1.0.05</universalCode>
+            <txtSumaNota>(zero lei si zero bani)</txtSumaNota>
+            <cif>29164800</cif>
+            <an_r>2026</an_r>
+            <luna_r>09</luna_r>
+            <d_rec>0</d_rec>
+            <totalPlata_A>61647952</totalPlata_A>
+            <numarInregistrari>2</numarInregistrari>
+            <sumaControl>61647952</sumaControl>
+            <totalDebit>0.00</totalDebit>
+            <totalCredit>0.00</totalCredit>
+          </antet>
+          <nc>
+            <tableNC>
+              <headerRowNC xfa:dataNode="dataGroup" />
+              <rowNC>
+                <nrRand>1</nrRand>
+                <simbolCont>24A650401200103</simbolCont>
+                <codProgram>0000000000</codProgram>
+                <codAngajament>ERRRRRRRRRR</codAngajament>
+                <indicatorAngajament />
+                <nrRefOperInitiala>TZ521102454696</nrRefOperInitiala>
+                <dataOperInitiala>23.09.2026</dataOperInitiala>
+                <sumaDebit>0,00</sumaDebit>
+                <sumaCredit>-111,00</sumaCredit>
+                <explicatii>INCASAT UTILITATI REGLARE OP 136</explicatii>
+              </rowNC>
+              <rowNC>
+                <nrRand>2</nrRand>
+                <simbolCont>24A650401200103</simbolCont>
+                <codProgram>0000000000</codProgram>
+                <codAngajament>AAB2HC9F35G</codAngajament>
+                <indicatorAngajament>AAB</indicatorAngajament>
+                <nrRefOperInitiala />
+                <dataOperInitiala />
+                <sumaDebit>0,00</sumaDebit>
+                <sumaCredit>111,00</sumaCredit>
+                <explicatii>INCASAT UTILITATI REGLARE OP 136</explicatii>
+              </rowNC>
+            </tableNC>
+            <frmButonAd>
+              <legenda />
+            </frmButonAd>
+            <frmOptim>
+              <txtTitlu>ADAUGARE INREGISTRARE - NOTA CONTABILA CORECTIE CAB</txtTitlu>
+              <txtNrRand>0</txtNrRand>
+              <SimbolCont>Simbol cont:</SimbolCont>
+              <simbolCont />
+              <CodProgram>Cod program: </CodProgram>
+              <codProgram />
+              <CodAngajament>Cod angajament: </CodAngajament>
+              <codAngajament />
+              <IndicatorAngajament>Indicator angajament: </IndicatorAngajament>
+              <indicatorAngajament />
+              <NrRefOperInitiala>Nr. ref. oper. initiala: </NrRefOperInitiala>
+              <nrRefOperInitiala />
+              <DataOperInitiala>Data oper. initiala: </DataOperInitiala>
+              <dataOperInitiala />
+              <SumaDebit>Suma debit:</SumaDebit>
+              <sumaDebit />
+              <SumaCredit>Suma credit: </SumaCredit>
+              <sumaCredit />
+              <Explicatii>Explicatii: </Explicatii>
+              <explicatii />
+            </frmOptim>
+          </nc>
+        </main>
+        <sbfrmFooter xfa:dataNode="dataGroup" />
+        <footerForm>
+          <mesajValidare />
+        </footerForm>
+      </form1>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>

@@ -21,7 +21,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.3.1.0</FileVersion>
+    <FileVersion>1.4.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -41,6 +41,11 @@
 
          Suprimarea stă pe PACHET, nu pe proiect: un pachet nou adăugat mâine va avertiza normal. -->
     <PackageReference Include="iTextSharp" Version="5.5.13.3" NoWarn="NU1701" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Slice 0088: the blank MF form F1135 («Nota contabila corectie CAB»), see CabNotePdf. -->
+    <EmbeddedResource Include="Templates\F1135.pdf" LogicalName="KBot.Xfa.Templates.F1135.pdf" />
   </ItemGroup>
 
   <ItemGroup>

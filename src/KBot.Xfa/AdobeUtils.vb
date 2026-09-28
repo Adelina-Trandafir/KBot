@@ -425,6 +425,13 @@ Public Class AdobeUtils
                         Case 3, 4 : Return SIGNER_CD
                         Case 5 : Return SIGNER_ORDONATOR
                     End Select
+                Case "NC"
+                    ' Slice 0088, F1135 «Nota contabila corectie CAB»: SignatureField1 = «Semnatura 1»,
+                    ' SignatureField2 = «Semnatura 2» (roles S1 / S2).
+                    Select Case num
+                        Case 1 : Return SIGNER_AB
+                        Case 2 : Return SIGNER_CD
+                    End Select
                 Case "DDF"
                     ' DDF: 1 + 11..16 = A; 2 + 21..26 = B; 3 = Ordonator
                     Select Case num

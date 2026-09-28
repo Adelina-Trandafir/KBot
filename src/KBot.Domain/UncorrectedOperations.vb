@@ -11,6 +11,12 @@ Imports System.Text.Json
 
 ''' <summary>One row of the «Operatiuni necorectate» table, as the page shows it.</summary>
 Public NotInheritable Class UncorrectedOperation
+    ''' <summary>FX_Operatiuni.IDFXP when the row comes from the database (slice 0088); 0 when read from the page.</summary>
+    Public Property IdFxp As Integer
+    ''' <summary>«Angajament»: «ERRRRRRRRRR» when FOREXE could not attach the operation (slice 0088).</summary>
+    Public Property Commitment As String = String.Empty
+    ''' <summary>«Indicator ang»; «---» on an ERR operation.</summary>
+    Public Property CommitmentIndicator As String = String.Empty
     ''' <summary>«0000000000».</summary>
     Public Property Program As String = String.Empty
     ''' <summary>Sector-source + classification as FOREXE writes it, «02A-65.04.01.20.01.03».</summary>
@@ -64,6 +70,8 @@ Public NotInheritable Class UncorrectedOperations
     End Sub
 
     ' Column headers as the executor script writes them: diacritics stripped, lower case.
+    Private Const HeadCommitment As String = "angajament"
+    Private Const HeadCommitmentIndicator As String = "indicator ang"
     Private Const HeadProgram As String = "program"
     Private Const HeadSsi As String = "sector - sursa - indicator"
     Private Const HeadSsiTitle As String = "ssi_title"
@@ -98,6 +106,8 @@ Public NotInheritable Class UncorrectedOperations
             For Each row As JsonElement In el.EnumerateArray()
                 If row.ValueKind <> JsonValueKind.Object Then Continue For
                 Dim op As New UncorrectedOperation() With {
+                    .Commitment = Text(row, HeadCommitment),
+                    .CommitmentIndicator = Text(row, HeadCommitmentIndicator),
                     .Program = Text(row, HeadProgram),
                     .Ssi = Text(row, HeadSsi),
                     .SsiTitle = Text(row, HeadSsiTitle),

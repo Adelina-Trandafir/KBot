@@ -16,6 +16,7 @@ Partial Public Class ApiClient
 
     ' Wire shapes: field names exactly as routes/forexe/operatiuni.py reads / writes them.
     Private NotInheritable Class UncorrectedOperationWire
+        Public Property angajament As String
         Public Property program As String
         Public Property ssi As String
         Public Property referinta_trezor As String
@@ -35,6 +36,26 @@ Partial Public Class ApiClient
         Public Property inserate As Integer
         Public Property existente As Integer
         Public Property avertismente As List(Of String)
+        Public Property noi As List(Of Integer)
+    End Class
+
+    Private NotInheritable Class UncorrelatedWire
+        Public Property idfxp As Integer
+        Public Property angajament As String
+        Public Property program As String
+        Public Property ss As String
+        Public Property clsf_sal As String
+        Public Property ssi As String
+        Public Property referinta_trezor As String
+        Public Property nr_doc As String
+        Public Property data_plata As String
+        Public Property tip As String
+        Public Property suma As Decimal?
+        Public Property probleme As String
+    End Class
+
+    Private NotInheritable Class UncorrelatedResponse
+        Public Property operatiuni As List(Of UncorrelatedWire)
     End Class
 
     Public Async Function SaveUncorrectedOperationsAsync(rows As IReadOnlyList(Of UncorrectedOperation),
@@ -46,6 +67,7 @@ Partial Public Class ApiClient
 
             Dim request As New UncorrectedOperationsRequest() With {
                 .operatiuni = rows.Select(Function(r) New UncorrectedOperationWire() With {
+                    .angajament = If(String.IsNullOrWhiteSpace(r.Commitment), Nothing, r.Commitment),
                     .program = r.Program,
                     .ssi = r.Ssi,
                     .referinta_trezor = r.TreasuryReference,
@@ -77,7 +99,8 @@ Partial Public Class ApiClient
                         .Received = payload.primite,
                         .Inserted = payload.inserate,
                         .AlreadySaved = payload.existente,
-                        .Warnings = If(payload.avertismente, New List(Of String)())
+                        .Warnings = If(payload.avertismente, New List(Of String)()),
+                        .NewIds = If(payload.noi, New List(Of Integer)())
                     }
                 End Using
             End Using
@@ -85,6 +108,42 @@ Partial Public Class ApiClient
             Throw
         Catch ex As Exception
             GlobalErrorLog.Write("ApiClient.SaveUncorrectedOperationsAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function GetUncorrelatedOperationsAsync(ct As CancellationToken) As Task(Of List(Of UncorrectedOperation)) _
+        Implements IUncorrectedOperationsApi.GetUncorrelatedOperationsAsync
+        Try
+            Dim text As String = Await SendCabAsync(HttpMethod.Get, "/api/forexe/operatiuni/necorelate", Nothing,
+                                                    "citirea operațiunilor necorelate", ct).ConfigureAwait(False)
+            Dim payload As UncorrelatedResponse = JsonSerializer.Deserialize(Of UncorrelatedResponse)(text, _json)
+            Dim result As New List(Of UncorrectedOperation)()
+            If payload Is Nothing OrElse payload.operatiuni Is Nothing Then Return result
+            For Each w As UncorrelatedWire In payload.operatiuni
+                Dim d As Date
+                Dim paid As Date? = Nothing
+                If Date.TryParseExact(If(w.data_plata, String.Empty), "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                                      DateTimeStyles.None, d) Then paid = d
+                result.Add(New UncorrectedOperation() With {
+                    .IdFxp = w.idfxp,
+                    .Commitment = If(w.angajament, String.Empty),
+                    .Program = If(w.program, String.Empty),
+                    .Ssi = If(String.IsNullOrEmpty(w.ss), If(w.ssi, String.Empty), w.ss & "-" & If(w.clsf_sal, String.Empty)),
+                    .SsiTitle = If(w.ssi, String.Empty),
+                    .TreasuryReference = If(w.referinta_trezor, String.Empty),
+                    .DocumentNumber = If(w.nr_doc, String.Empty),
+                    .PaymentDate = paid,
+                    .Kind = If(w.tip, String.Empty),
+                    .Amount = w.suma,
+                    .AmountText = If(w.suma.HasValue, w.suma.Value.ToString("N2", CultureInfo.GetCultureInfo("ro-RO")), String.Empty),
+                    .Problems = If(w.probleme, String.Empty)})
+            Next
+            Return result
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetUncorrelatedOperationsAsync", ex)
             Throw
         End Try
     End Function

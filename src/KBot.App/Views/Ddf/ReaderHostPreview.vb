@@ -351,6 +351,33 @@ Public Class ReaderHostPreview
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 0088-04: the words of the «document lipsă» surface for a page whose document is not
+    ''' generated but fetched (the receipt page: «Validează documentul»). The button still raises
+    ''' <see cref="GenerateRequested"/>. Runtime only -- the designer keeps the DDF wording.
+    ''' </summary>
+    Public Sub SetMissingTexts(message As String, buttonText As String, tipHeader As String, tipText As String)
+        lblMissing.Text = If(message, String.Empty)
+        btnGenereaza.Text = If(buttonText, String.Empty)
+        tips.SetToolTipHeader(btnGenereaza, If(tipHeader, String.Empty))
+        tips.SetToolTipText(btnGenereaza, If(tipText, String.Empty))
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0088-04: a plain line instead of a document (e.g. «Se descarcă recipisa…» while the file
+    ''' is on its way). Detaches whatever was shown, like <see cref="Clear"/>.
+    ''' </summary>
+    Public Sub ShowNotice(message As String)
+        Try
+            _requestedPath = Nothing
+            _host.Detach()
+            _acro?.Clear()
+            ShowMessage(message)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.ShowNotice", ex)
+        End Try
+    End Sub
+
     Private Sub btnGenereaza_Click(sender As Object, e As EventArgs) Handles btnGenereaza.Click
         RaiseEvent GenerateRequested(Me, EventArgs.Empty)
     End Sub
