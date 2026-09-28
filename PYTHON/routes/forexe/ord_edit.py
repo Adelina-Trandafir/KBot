@@ -82,6 +82,7 @@ Fara `Format(..., "0.00")` nicaieri: sumele calatoresc ca numere JSON si se form
 doar la marginea interfetei, cu `ro-RO`. Toate raspunsurile folosesc `ensure_ascii=False`,
 iar mesajele de eroare sunt in romana cu diacritice literale.
 """
+import base64
 import hashlib
 import json
 import logging
@@ -766,6 +767,95 @@ def construieste_graf(randuri: list, dic_banci: dict, dic_part_ind: dict,
     }
 
 
+# Operator, 28.09.2026: the captures K-BOT took in the FOREXE page when the operator saved a
+# reception (routes/forexe/capturi.py -> FX_Receptii_IMG). The guide asks the ordonantare for
+# two of them - «Captura cu receptii» and «Captura cu sectiunea Informatii complete contract»
+# (p.21-22) - and they are taken as a pair, one after the other, so the NEWEST pair of the
+# angajament is the state this ordonantare is written against.
+CAPTURI_ORD_MAX = 2
+
+_SQL_ARE_REC_IMG = (
+    "SELECT COUNT(*) AS n FROM information_schema.TABLES "
+    " WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'FX_Receptii_IMG'"
+)
+
+_REC_IMG_PREZENT = {}
+
+
+def _are_rec_img(cursor, db_name: str) -> bool:
+    """Exista `FX_Receptii_IMG` pe baza asta? Proba se face O SINGURA DATA per baza."""
+    if db_name in _REC_IMG_PREZENT:
+        return _REC_IMG_PREZENT[db_name]
+    try:
+        cursor.execute(_SQL_ARE_REC_IMG, (db_name,))
+        prezent = int((cursor.fetchone() or {}).get("n") or 0) > 0
+    except Exception:
+        logger.warning("[forexe.ord_edit] %s: proba FX_Receptii_IMG a esuat; "
+                       "se presupune ca lipseste", db_name, exc_info=True)
+        prezent = False
+    _REC_IMG_PREZENT[db_name] = prezent
+    return prezent
+
+
+def capturi_receptiilor(cursor, cod: str, parteneri: list) -> list:
+    """The newest pair of FOREXE captures of this angajament, as PROPOSED attachments.
+
+    They carry their bytes inline (`continut`, base64): nothing is written yet, and the
+    editor has to be able to SHOW them before the operator saves. They hang off the first
+    partner, like a capture pasted by hand does (`Table2` of `SubformCaptura` is written per
+    partner). The operator can delete them in the editor - they are a proposal, not a rule.
+    """
+    db_name = g.session.db_name
+    if not _are_rec_img(cursor, db_name):
+        return []
+    cursor.execute(
+        "SELECT I.IDRDC AS id, I.Nume AS nume, I.IMG AS img "
+        "  FROM FX_Receptii_IMG I "
+        " INNER JOIN FX_Receptii_R R ON R.IDRR = I.IDRR "
+        " WHERE R.CodAngajament = %s AND I.IMG IS NOT NULL AND I.IMG <> '' "
+        " ORDER BY I.IDRDC DESC LIMIT %s",
+        (cod, CAPTURI_ORD_MAX))
+    randuri = list(cursor.fetchall() or [])
+    randuri.reverse()   # oldest of the pair first: «receptii», then «informatii complete»
+
+    part_temp = 0
+    if parteneri:
+        part_temp = int(parteneri[0].get("temp_id") or 0)
+
+    atasamente = []
+    urmator = -1
+    for r in randuri:
+        brut = r.get("img") or ""
+        try:
+            octeti = base64.b64decode(brut, validate=False)
+        except Exception:
+            logger.warning("[forexe.ord_edit] %s: captura %s a receptiei nu se poate decoda; "
+                           "ordonantarea se genereaza fara ea", db_name, r.get("id"),
+                           exc_info=True)
+            continue
+        if not octeti:
+            continue
+        atasamente.append({
+            "temp_id": urmator,
+            "idordattp": 0,
+            "part_temp_id": part_temp,
+            "idordpartp": 0,
+            "nume_fisier": (r.get("nume") or f"captura_{r.get('id')}.jpg")[:255],
+            # The one deduction of the file, further down: the type is read from the bytes,
+            # never taken from the name (Access did the same, over base64).
+            "tip_mime": _tip_imagine(octeti) or "image/jpeg",
+            "dimensiune": len(octeti),
+            "sha256": _sha256(octeti),
+            "data_modif": None,
+            "continut": brut,
+        })
+        urmator -= 1
+    if atasamente:
+        logger.info("[forexe.ord_edit] %s: ordonantarea lui %s pleaca cu %s captura(i) din FOREXE",
+                    db_name, cod, len(atasamente))
+    return atasamente
+
+
 @forexe_bp.route("/api/forexe/ord/genereaza", methods=["POST"])
 @require_session
 def post_ord_genereaza():
@@ -834,6 +924,10 @@ def post_ord_genereaza():
         graf = construieste_graf(randuri, dic_banci, dic_part_ind, dic_receptii,
                                  dic_plati, dic_expl, cod, dt, avertismente)
         graf["cod"] = cod
+        # Operator, 28.09.2026: the two pictures the guide asks for (p.21-22) are already in
+        # the database - K-BOT took them in the FOREXE page when the operator saved the
+        # reception - so the new ordonantare opens with them instead of asking for PrtScr.
+        graf["atasamente"] = capturi_receptiilor(cursor, cod, graf["parteneri"])
         graf["avertismente"] = avertismente
 
         logger.info("[forexe.ord_edit] %s: genereaza cod=%s data=%s -> parteneri=%s linii=%s",

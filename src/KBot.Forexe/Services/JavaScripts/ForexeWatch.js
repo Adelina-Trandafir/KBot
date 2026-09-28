@@ -117,6 +117,24 @@
     //     which record. When K-BOT cannot answer in time the save goes through WITHOUT a
     //     marker (said on the console): the operator's work is never held hostage.
     //
+    // 14. (operator, 28.09.2026) THE PICTURES. The ALOP guide asks for screen captures of
+    //     FOREXE in both documents the operator signs: the document of fundamentare takes the
+    //     reservations (GUIDE p.11-14, example p.41 - the Buget tab right after the save) and
+    //     the ordonantare takes the receptions (GUIDE p.21-22 - the Receptii tab and the
+    //     «Informatii complete contract» table). K-BOT takes them itself, so the operator
+    //     never uses PrtScr again:
+    //       - a reservation session gets TWO: one BEFORE the first eye is pressed (this file:
+    //         the click is held exactly as a marker click is, .NET photographs the list, the
+    //         click is replayed), and one after the last save, taken by .NET from the settled
+    //         tab0 page when the operator answers «am terminat». The «before» is taken once
+    //         per angajament session (KEY_SHOT), not once per row.
+    //       - a reception gets the two the guide names, both driven from .NET.
+    //     beginShot / endShot put the page in the state the picture must show: the K-BOT menu,
+    //     the veil, the frame and the blocking box never appear in it, and dark mode is off
+    //     (an inverted page inside a signed document is not what the guide shows). Whether the
+    //     operator's own rules stay on is the operator's choice - «Pagina originala» lifts
+    //     them for the shot, «Asa cum se vede» keeps them.
+    //
     //  EVERY selector in OPS below is copied from the workflows in
     //  Workflows/Creare (Creare Angajament, Incarca Rezervare, Rezervare si
     //  Receptie) and from «Prelucrare Completa» - they are the selectors the robot
@@ -133,6 +151,7 @@
     var KEY_POS = 'kbotWatchPos';          // localStorage: JSON {right, bottom} of the menu
     var KEY_CONFIG = 'kbotWatchConfig';    // localStorage: JSON {devTools, rules} from .NET
     var KEY_COLLAPSED = 'kbotWatchFold';   // localStorage: '1' while the menu is folded
+    var KEY_SHOT = 'kbotWatchShot';        // sessionStorage: the angajament whose «before» picture is taken
 
     var ZOOM_STEP = 0.1;
     var ZOOM_MIN = 0.5;
@@ -156,6 +175,8 @@
     var SEL_BUGET = 'table.table-bordered.table-hover.table-condensed';
     // How long a save waits for K-BOT's marker before it goes through without one.
     var MARCAJ_TIMEOUT_MS = 8000;
+    // How long the eye of a reservation row waits for the «before» picture (section 14).
+    var SHOT_TIMEOUT_MS = 6000;
     // Any K-BOT marker, as prelucrare_helpers.py reads it (section 13).
     var RE_MARCAJ = /\s*\(\s*ID(?:REV|RH|R)\s*:\s*\d+(?:\s*;\s*ID(?:REV|RH|R)\s*:\s*\d+)*\s*\)/gi;
     // Any «Renunta» button of a FOREXE form or modal (btn-danger on the angajament forms,
@@ -1330,6 +1351,153 @@
         emit('info', { message: 'Enter oprit în formular; salvați cu butonul (acolo se pune marcajul K-BOT)' });
     }
 
+    // ── The pictures (section 14) ────────────────────────────────────────────
+    var shotPending = {};      // requestId -> {resolve, timer}
+    var shotSeq = 0;
+    var shotBypass = false;    // true while a held click is replayed
+    var shotBusy = false;      // a click is being held for a picture right now
+    var shotStyleEl = null;    // the sheet that takes K-BOT out of the picture
+    var shotLifted = false;    // the operator's own rules were lifted for this picture
+
+    // What must never be in a picture: K-BOT's own furniture, and the dark-mode inversion
+    // (the guide's examples show the page as FOREXE serves it).
+    var SHOT_CSS =
+        'html{filter:none !important;background:#fff !important;}' +
+        'body{background-color:#fff !important;}' +
+        'img,video,canvas,iframe,svg,[style*="background-image"]{filter:none !important;}' +
+        '#kbot-watch-menu,#kbot-watch-veil,#kbot-watch-hl,#kbot-watch-block{display:none !important;}\n';
+
+    // The angajament whose «before» picture this session already has.
+    function shotSessionCod() {
+        try { return sessionStorage.getItem(KEY_SHOT) || ''; } catch (e) { return ''; }
+    }
+
+    function markShotSession(cod) {
+        try {
+            if (cod) { sessionStorage.setItem(KEY_SHOT, cod); } else { sessionStorage.removeItem(KEY_SHOT); }
+        } catch (ignored) { }
+    }
+
+    // From .NET, when a reservation session is taken into K-BOT: the next one photographs again.
+    function resetShots() {
+        markShotSession('');
+        return true;
+    }
+
+    // Asks .NET for a picture of the page as it stands. Resolves either way - a picture that
+    // does not come must never keep the operator's click waiting for good.
+    function requestShot(tip) {
+        return new Promise(function (resolve) {
+            if (typeof window._kbotWatchCallback !== 'function') { resolve(false); return; }
+            shotSeq++;
+            var id = 's' + Date.now() + '_' + shotSeq;
+            var timer = setTimeout(function () {
+                if (!shotPending[id]) { return; }
+                delete shotPending[id];
+                emit('info', { message: 'captura K-BOT nu a venit în ' + (SHOT_TIMEOUT_MS / 1000) + ' s; continui fără ea' });
+                resolve(false);
+            }, SHOT_TIMEOUT_MS);
+            shotPending[id] = { resolve: resolve, timer: timer };
+            emit('captura', { tip: tip, requestId: id });
+        });
+    }
+
+    // From .NET: the picture was taken (or could not be).
+    function setCaptura(id, ok, message) {
+        var p = shotPending[id];
+        if (!p) { return false; }
+        delete shotPending[id];
+        clearTimeout(p.timer);
+        if (!ok && message) { emit('info', { message: 'captura K-BOT lipsește: ' + message }); }
+        p.resolve(!!ok);
+        return true;
+    }
+
+    // .NET calls this before every screenshot and endShot() after it. original = the
+    // operator's own CSS rules are lifted too («Pagina originală»).
+    function beginShot(original) {
+        try {
+            if (!shotStyleEl || !shotStyleEl.parentNode) {
+                shotStyleEl = document.createElement('style');
+                shotStyleEl.id = 'kbot-watch-shot';
+                shotStyleEl.type = 'text/css';
+                var parent = sheetParent();
+                if (parent) { parent.appendChild(shotStyleEl); }
+            }
+            shotStyleEl.textContent = SHOT_CSS;
+            shotLifted = false;
+            if (original && styleEl && !styleEl.disabled) {
+                styleEl.disabled = true;
+                shotLifted = true;
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function endShot() {
+        try {
+            if (shotStyleEl && shotStyleEl.parentNode) { shotStyleEl.parentNode.removeChild(shotStyleEl); }
+            shotStyleEl = null;
+            if (shotLifted && styleEl) { styleEl.disabled = false; }
+            shotLifted = false;
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // «Informatii complete contract» is wider than its box and opens showing its LEFT end;
+    // what the ordonantare needs (Receptii, Plati) is at the RIGHT end (operator, 28.09.2026).
+    // Every horizontally scrollable box on the page is pushed to its right end; the widest
+    // one is the table. Returns how many were moved.
+    function scrollRight() {
+        var moved = 0;
+        try {
+            var all = document.querySelectorAll('div, table, section');
+            for (var i = 0; i < all.length; i++) {
+                var el = all[i];
+                if (el.scrollWidth - el.clientWidth < 40) { continue; }
+                el.scrollLeft = el.scrollWidth;
+                if (el.scrollLeft > 0) { moved++; }
+            }
+        } catch (ignored) { }
+        return moved;
+    }
+
+    // The eye of a reservation row, held once per angajament session so the list is
+    // photographed as it stood BEFORE the operator changed anything.
+    function onShotClick(e) {
+        if (suspended || shotBypass || shotBusy) { return; }
+        if (typeof window._kbotWatchCallback !== 'function') { return; }
+        if (state.op) { return; }                       // already inside an operation
+        if (!exists('li.tab0.active')) { return; }      // reservations tab only
+        var el = e.target;
+        if (!el || !el.tagName) { return; }
+        if (menu && menu.contains(el)) { return; }
+        // The EYE of an existing row only. «Adauga» starts a row that does not exist yet, and
+        // a picture of the list before it says nothing (operator, 28.09.2026: a new indicator
+        // gets only the picture after the save).
+        if (!closestOf(el, '.glyphicon-eye-open') && !closestOf(el, 'a:has(.glyphicon-eye-open)')) { return; }
+        if (!anyRuleMatches(el, OPS['rezervare'].start)) { return; }
+        var cod = readCod();
+        if (!cod || shotSessionCod() === cod) { return; }
+        var button = closestOf(el, 'a') || closestOf(el, 'button') || el;
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        shotBusy = true;
+        markShotSession(cod);   // one hold per session, whatever the picture does
+        emit('info', { message: 'fotografiez lista rezervărilor înainte de modificare' });
+
+        requestShot('rezervare-inainte').then(function () {
+            shotBusy = false;
+            shotBypass = true;
+            try { button.click(); } finally { shotBypass = false; }
+        });
+    }
+
     // ── Zoom (CSS zoom on the root; the menu is counter-zoomed so it keeps its size) ──
     function readZoom() {
         try {
@@ -1558,7 +1726,12 @@
         listElements: listElements,
         highlightElement: highlightElement,
         hiddenByStyles: hiddenByStyles,
-        liftStyles: liftStyles
+        liftStyles: liftStyles,
+        setCaptura: setCaptura,
+        beginShot: beginShot,
+        endShot: endShot,
+        scrollRight: scrollRight,
+        resetShots: resetShots
     };
 
     // The styles go in as early as the document allows - the moment <html> exists, which
@@ -1590,6 +1763,9 @@
         // Slice 0076: the marker holds a save click between the guard and the watcher.
         document.addEventListener('click', onMarcajClick, true);
         document.addEventListener('keydown', onMarcajKey, true);
+        // Section 14: the eye is held for the «before» picture BEFORE the watcher arms the
+        // operation, so the picture shows the list the operator is about to change.
+        document.addEventListener('click', onShotClick, true);
         document.addEventListener('click', onClick, true);
         // While the blocking message is up no key reaches the page; registered first so
         // it runs before the guard and the devtools filter.

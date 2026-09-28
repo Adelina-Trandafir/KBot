@@ -72,6 +72,13 @@
   <Log message="══ SECŢIUNEA 1: Tabel indicatori ══" level="action"/>
   <WaitFor selector="li.tab0.active" timeout="5"
            LogValue="Confirm ca suntem pe tab0"/>
+
+  <!-- K-BOT 28.09.2026 (operator): the list BEFORE anything is changed, so the document
+       shows what the reservations looked like at the start. Its pair is «Poza_Final», the
+       same list after the last row. The same two pictures K-BOT takes when the OPERATOR
+       does this by hand in the docked browser. -->
+  <Screenshot saveTo="Poza_Inainte"
+              LogValue="Captură ecran — rezervările înainte de modificare"/>
   <IfExists selector="table.table-striped tbody tr" timeout="5"
             LogValue="Verific daca exista indicatori in tabel">
 

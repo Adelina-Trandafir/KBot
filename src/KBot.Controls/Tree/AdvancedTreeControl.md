@@ -45,7 +45,10 @@ left is the reusable control with native events.
 `AdvancedTreeControl.ParseRichText`, `Friend Shared` — the general engine is
 [KBotRichText](../ToolTip/KBotToolTip.md), which is deliberately separate). `~~~` splits the
 caption into a left and a right part; `LeftTextWidth` / `RightTextWidth` (0 = dynamic) and
-`PaddingSeparatorGap` control the split.
+`PaddingSeparatorGap` control the split. `RightTextColumn` (slice 0087, logical px from the
+control's left edge, 0 = off) overrides them: the right part starts at that X on EVERY row,
+left-aligned, whatever the level -- a real second column (code | name); the left part is cut
+before it.
 
 ## Selection, checks, radios
 `SelectedNode`, `OldSelectedNode`, `CheckBoxes = False`,

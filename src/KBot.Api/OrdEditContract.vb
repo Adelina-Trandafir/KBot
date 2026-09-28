@@ -112,6 +112,14 @@ Public NotInheritable Class OrdDraftAttDto
     Public Property dimensiune As Integer
     Public Property sha256 As String
     Public Property data_modif As Date?
+    ''' <summary>
+    ''' The image itself, base64, only on a PROPOSED attachment (operator, 28.09.2026): the
+    ''' captures K-BOT took in the FOREXE page come with the generated ordonanțare, and the
+    ''' editor has to show them before anything is saved. Nothing on a stored attachment -
+    ''' those keep their bytes behind <c>/ord/att/{id}/imagine</c>, and nothing ever sends
+    ''' the bytes back this way.
+    ''' </summary>
+    Public Property continut As String
 End Class
 
 ' The whole graph. Response of POST /genereaza and GET /draft/{idordp}; request body of

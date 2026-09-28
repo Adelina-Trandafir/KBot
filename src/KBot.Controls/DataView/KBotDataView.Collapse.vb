@@ -383,6 +383,18 @@ Partial Class KBotDataView
     ''' care stă butonul îi aparține — aceeași regulă ca la subsolul arborelui.
     ''' </summary>
     Friend Function FooterContentRect(bandRect As Rectangle) As Rectangle
+        Return FooterContentWithoutRightIcon(FooterContentWithoutCollapse(bandRect), bandRect)
+    End Function
+
+    ' Slice 0087: the footer right icon keeps its square too; the content ends before it.
+    Private Function FooterContentWithoutRightIcon(content As Rectangle, bandRect As Rectangle) As Rectangle
+        Dim icon As Rectangle = ComputeFooterRightIconRect(bandRect)
+        If icon.IsEmpty Then Return content
+        Dim right As Integer = Math.Min(content.Right, icon.Left - ScaleDpi(4))
+        Return New Rectangle(content.Left, content.Top, Math.Max(0, right - content.Left), content.Height)
+    End Function
+
+    Private Function FooterContentWithoutCollapse(bandRect As Rectangle) As Rectangle
         Dim buton As Rectangle = ComputeCollapseButtonRect(bandRect)
         If buton.IsEmpty Then Return bandRect
         Dim gap As Integer = ScaleDpi(4)
@@ -466,6 +478,9 @@ Partial Class KBotDataView
             Return True
         End If
 
+        ' Slice 0087: the footer right icon.
+        If HandleFooterRightIconMouseDown(location) Then Return True
+
         ' Pictograma titlului din subsol (slice 0028-02) — cealaltă piesă apăsabilă din bandă.
         HandleFooterIconMouseDown(location)
         Return True                       ' banda e a subsolului, oriunde s-ar fi apăsat
@@ -482,12 +497,19 @@ Partial Class KBotDataView
             RefreshCollapseTip(hover)   ' felia 0035: butonul își spune la ce folosește
             Invalidate()
         End If
-        If inFooter Then UpdateFooterIconHover(location) Else ClearFooterIconHover()
+        If inFooter Then
+            UpdateFooterIconHover(location)
+            UpdateFooterRightIconHover(location)
+        Else
+            ClearFooterIconHover()
+            ClearFooterRightIconHover()
+        End If
         Return inFooter
     End Function
 
     Friend Sub HandleFooterMouseLeave()
         ClearFooterIconHover()
+        ClearFooterRightIconHover()
         HideButtonTip()
         If Not _collapseButtonHover Then Return
         _collapseButtonHover = False

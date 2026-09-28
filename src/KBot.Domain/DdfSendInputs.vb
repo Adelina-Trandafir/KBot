@@ -290,14 +290,19 @@ Public NotInheritable Class DdfSendInputs
         Return result
     End Function
 
-    ''' <summary>The file name of a capture: the variable name, ASCII letters/digits/«_»/«-», «.png».</summary>
+    ''' <summary>
+    ''' The file name of a capture: the variable name, ASCII letters/digits/«_»/«-», «.jpg».
+    ''' JPEG since 28.09.2026 (operator): the workflow's <c>Screenshot</c> compresses, because
+    ''' these pictures live inside the signed PDF. Older rows in the database keep their
+    ''' «.png» names and their PNG bytes; nothing reads the extension to decide what they are.
+    ''' </summary>
     Public Shared Function CaptureFileName(variable As String) As String
         Dim sb As New StringBuilder()
         For Each ch As Char In If(variable, "Poza")
             Dim ok As Boolean = AscW(ch) < 128 AndAlso (Char.IsLetterOrDigit(ch) OrElse ch = "_"c OrElse ch = "-"c)
             sb.Append(If(ok, ch, "_"c))
         Next
-        Return sb.ToString() & ".png"
+        Return sb.ToString() & ".jpg"
     End Function
 
     ''' <summary>

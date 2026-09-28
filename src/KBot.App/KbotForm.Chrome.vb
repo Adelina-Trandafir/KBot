@@ -34,7 +34,7 @@ Partial Public Class KbotForm
             lblTree.ForeColor = p.TextColor
 
             ' Slice 0086: «Angajament nou» is the header's primary action.
-            ButtonStyles.ApplyPrimary(btnAngajamentNou, scheme)
+            ButtonStyles.ApplyPrimary(btnMeniu, scheme)
 
             ' The tree IS an IThemedControl: it takes its own palette and, more importantly,
             ' ThemeManager no longer recurses into its children. Pushing colours from here was

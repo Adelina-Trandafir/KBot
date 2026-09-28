@@ -22,7 +22,7 @@ Imports KBot.Theming
 ''' <para>Singleton, ca runner-ul: starea unei sesiuni de browser nu are ce căuta într-un
 ''' formular care se poate închide.</para>
 ''' </summary>
-Public NotInheritable Class ForexeController
+Partial Public NotInheritable Class ForexeController
 
     Private ReadOnly _runner As IForexeRunner
     Private ReadOnly _session As SessionContext
@@ -49,11 +49,20 @@ Public NotInheritable Class ForexeController
     ''' </summary>
     Public Property Owner As IWin32Window
 
-    Public Sub New(runner As IForexeRunner, session As SessionContext)
+    ''' <param name="marcaje">
+    ''' The markers handed to the FOREXE page, kept so the pictures taken beside a save can
+    ''' hang off the same ids (operator, 28.09.2026). Optional: a harness without it simply
+    ''' files its pictures without a number, and says so.
+    ''' </param>
+    Public Sub New(runner As IForexeRunner, session As SessionContext,
+                   Optional marcaje As MarcajeRecente = Nothing)
         ArgumentNullException.ThrowIfNull(runner)
         ArgumentNullException.ThrowIfNull(session)
         _runner = runner
         _session = session
+        _marcaje = If(marcaje, New MarcajeRecente())
+        ' The page holds the operator's click and asks for a picture: this answers it.
+        _runner.SetCapturaProvider(AddressOf IaCapturaCerutaAsync)
         AddHandler _runner.StatusUpdated, AddressOf Runner_StatusUpdated
         AddHandler _runner.BrowserVisibilityChanged, AddressOf Runner_BrowserVisibilityChanged
         AddHandler _runner.OperationCaptured, AddressOf Runner_OperationCaptured

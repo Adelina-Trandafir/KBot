@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workflow name="rezervare+receptie" startUrl="current" expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/contract?19">
+  <!--
+    Generat automat de K-BOT Recorder — 27.09.2026 13:40
+    ATENȚIE: acesta este un SCHELET. Buclele (ForEach / While / ForEachVar),
+    variabilele, ScrapeTable, Download, Read și checkpoint-urile NU se pot
+    deduce dintr-o înregistrare liniară și trebuie adăugate manual.
+  -->
+  <Click selector="a &gt; span:nth-child(1)" LogValue="Apăs Buget" />
+  <Click selector="i.glyphicon.glyphicon-eye-open" waitNavigation="true" LogValue="Click pe i" />
+  <WaitFor selector="input[name='tableContainer:creditBugRezervatDefinitivAnCurent']" timeout="10" />
+  <Click selector="input[name='tableContainer:creditBugRezervatDefinitivAnCurent']" LogValue="Apăs tableContainer:creditBugRezervatDefinitivAnCurent" />
+  <Fill selector="input[name='tableContainer:creditBugRezervatDefinitivAnCurent']" value="157921,66" LogValue="Completez tableContainer:creditBugRezervatDefinitivAnCurent" />
+  <Click selector="button:has-text('Salvează')" waitNavigation="true" LogValue="Apăs Salvează" />
+  <Fill selector="input[name='tableContainer:creditBugRezervatDefinitivAnCurent']" value="157921,66" LogValue="Completez tableContainer:creditBugRezervatDefinitivAnCurent" />
+  <WaitFor selector="textarea[name='modal:form:motiv']" timeout="10" />
+  <Click selector="textarea[name='modal:form:motiv']" LogValue="Apăs modal:form:motiv" />
+  <Fill selector="textarea[name='modal:form:motiv']" value="Crestere credit bugetar" LogValue="Completez modal:form:motiv" />
+  <Click selector="button:has-text('Continuă')" waitNavigation="true" LogValue="Apăs Continuă" />
+  <Fill selector="textarea[name='modal:form:motiv']" value="Crestere credit bugetar (IDREV: 382)" LogValue="Completez modal:form:motiv" />
+  <WaitFor selector="a &gt; span:nth-child(1)" timeout="10" />
+  <Click selector="a &gt; span:nth-child(1)" waitNavigation="true" LogValue="Apăs Buget" />
+  <WaitFor selector="button:has-text('Istoric')" timeout="10" />
+  <Click selector="button:has-text('Istoric')" waitNavigation="true" LogValue="Apăs Istoric" />
+  <WaitFor selector="a.last" timeout="10" />
+  <Click selector="a.last" waitNavigation="true" LogValue="Apăs &gt;&gt;" />
+  <WaitFor selector="button:has-text('Înapoi')" timeout="10" />
+  <Click selector="button:has-text('Înapoi')" waitNavigation="true" LogValue="Apăs Înapoi" />
+  <WaitFor selector="a &gt; span:nth-child(1)" timeout="10" />
+  <Click selector="a &gt; span:nth-child(1)" waitNavigation="true" LogValue="Apăs Recepții" />
+  <WaitFor selector="button:has-text('Adaugă')" timeout="10" />
+  <Click selector="button:has-text('Adaugă')" waitNavigation="true" LogValue="Apăs Adaugă" />
+  <WaitFor selector="select[name='receptie']" timeout="10" />
+  <Fill selector="select[name='receptie']" value="Final" LogValue="Completez receptie" />
+  <Click selector="*:has(&gt; input[name='data']) img" LogValue="Click pe img" />
+  <Click selector="*:has(&gt; input[name='data']) a.selector" waitNavigation="true" LogValue="Apăs 28" />
+  <Click selector="textarea[name='descriere']" LogValue="Apăs descriere" />
+  <Fill selector="textarea[name='descriere']" value="Plata facturi alimente" LogValue="Completez descriere" />
+  <Click selector="input[name='gridContainer:grid:1:valoare']" LogValue="Apăs gridContainer:grid:1:valoare" />
+  <Fill selector="textarea[name='descriere']" value="Plata facturi alimente" LogValue="Completez descriere" />
+  <Fill selector="input[name='gridContainer:grid:1:valoare']" value="6787,55" LogValue="Completez gridContainer:grid:1:valoare" />
+  <WaitFor selector="button:has-text('Salvează')" timeout="10" />
+  <Click selector="button:has-text('Salvează')" waitNavigation="true" LogValue="Apăs Salvează" />
+  <Fill selector="input[name='gridContainer:grid:1:valoare']" value="6787,55" LogValue="Completez gridContainer:grid:1:valoare" />
+  <WaitFor selector="textarea[name='descriere']" timeout="10" />
+  <Fill selector="textarea[name='descriere']" value="Plata facturi alimente (IDRH: 647; IDR: 791)" LogValue="Completez descriere" />
+  <WaitFor selector="a &gt; span:nth-child(1)" timeout="10" />
+  <Click selector="a &gt; span:nth-child(1)" waitNavigation="true" LogValue="Apăs Recepții" />
+  <WaitFor selector="i.glyphicon.glyphicon-eye-open" timeout="10" />
+  <Click selector="i.glyphicon.glyphicon-eye-open" waitNavigation="true" LogValue="Click pe i" />
+  <WaitFor selector="a &gt; span:nth-child(1)" timeout="10" />
+  <Click selector="a &gt; span:nth-child(1)" waitNavigation="true" LogValue="Apăs Buget" />
+  <WaitFor selector="button:has-text('Istoric')" timeout="10" />
+  <Click selector="button:has-text('Istoric')" waitNavigation="true" LogValue="Apăs Istoric" />
+  <WaitFor selector="a.last" timeout="10" />
+  <Click selector="a.last" waitNavigation="true" LogValue="Apăs &gt;&gt;" />
+  <WaitFor selector="button:has-text('Înapoi')" timeout="10" />
+  <Click selector="button:has-text('Înapoi')" waitNavigation="true" LogValue="Apăs Înapoi" />
+  <WaitFor selector="a &gt; span:nth-child(1)" timeout="10" />
+  <Click selector="a &gt; span:nth-child(1)" waitNavigation="true" LogValue="Apăs Recepții" />
+</Workflow>

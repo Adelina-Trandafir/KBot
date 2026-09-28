@@ -303,8 +303,16 @@ def post_ddf_trimitere_coduri(idrev):
 
 MAX_CAPTURA_BYTES = 16 * 1024 * 1024
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+# JPEG since 28.09.2026 (operator): the workflow compresses its captures, because they end
+# up inside the signed PDF. Both are accepted, and what a row IS is read from its bytes.
+JPEG_MAGIC = b"\xff\xd8\xff"
 H_SHA = "X-Sha256"
 H_NUME = "X-Nume-Fisier"
+
+
+def _tip_imagine(octeti: bytes) -> str:
+    """What the bytes are, read from them -- never from the file name."""
+    return "image/jpeg" if octeti.startswith(JPEG_MAGIC) else "image/png"
 
 
 def _are_att_img(cursor) -> bool:
@@ -354,8 +362,8 @@ def _captura(cursor, idrev: int, nume: str, octeti: bytes, sha: str) -> dict:
         # Decision D12 of slice 0051: the bytes live in FX_DDF_REV_ATT_IMG.
         cursor.execute(
             "INSERT INTO FX_DDF_REV_ATT_IMG (IdRevAtt, NumeFisier, TipMime, Dimensiune, Sha256, "
-            "  Continut, DataModif) VALUES (%s, %s, 'image/png', %s, %s, %s, NOW())",
-            (id_rev_att, nume, len(octeti), sha, octeti))
+            "  Continut, DataModif) VALUES (%s, %s, %s, %s, %s, %s, NOW())",
+            (id_rev_att, nume, _tip_imagine(octeti), len(octeti), sha, octeti))
     else:
         # A database without sql/0051_ddf_rev_att_img.sql: the old column, base64, which the
         # generation read route serves as it is.
@@ -367,15 +375,15 @@ def _captura(cursor, idrev: int, nume: str, octeti: bytes, sha: str) -> dict:
 @forexe_bp.route("/api/forexe/ddf/trimitere/<int:idrev>/captura", methods=["PUT"])
 @require_session
 def put_ddf_trimitere_captura(idrev):
-    """Raw PNG bytes (never base64 in JSON), `X-Sha256` over them, `X-Nume-Fisier` (ASCII).
+    """Raw JPEG or PNG bytes (never base64 in JSON), `X-Sha256` over them, `X-Nume-Fisier` (ASCII).
     Stored as a PrtScr = 1 attachment: read-only in the editor, drawn in Table4 of the final PDF."""
     octeti = request.get_data()
     if not octeti:
         return _json_utf8({"error": "Captura este goală."}, 400)
     if len(octeti) > MAX_CAPTURA_BYTES:
         return _json_utf8({"error": f"Captura depășește {MAX_CAPTURA_BYTES // (1024 * 1024)} MB."}, 413)
-    if not octeti.startswith(PNG_MAGIC):
-        return _json_utf8({"error": "Captura nu este o imagine PNG."}, 400)
+    if not (octeti.startswith(JPEG_MAGIC) or octeti.startswith(PNG_MAGIC)):
+        return _json_utf8({"error": "Captura nu este o imagine JPEG sau PNG."}, 400)
     sha = hashlib.sha256(octeti).hexdigest()
     sha_client = (request.headers.get(H_SHA) or "").strip().lower()
     if sha_client and sha_client != sha:

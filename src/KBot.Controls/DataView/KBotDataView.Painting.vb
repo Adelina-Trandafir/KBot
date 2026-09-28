@@ -244,6 +244,9 @@ Partial Class KBotDataView
         ' Butonul de strângere, ultimul: stă PESTE bandă, în colțul care îi aparține.
         Dim butonRect As Rectangle = ComputeCollapseButtonRect(bandRect)
         If Not butonRect.IsEmpty Then DrawCollapseButton(g, butonRect)
+
+        ' Slice 0087: the footer right icon, in the square FooterContentRect left it.
+        DrawFooterRightIcon(g, bandRect)
     End Sub
 
     ' O celulă de subsol. «stanga» = coloana vecină din stânga (Nothing = nu există): din ea se

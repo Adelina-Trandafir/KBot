@@ -247,6 +247,39 @@ Namespace KBot.Forexe
             Return Await _executor.HighlightPageElementAsync(index)
         End Function
 
+        ''' <summary>
+        ''' A picture of the live page for the two documents (operator, 28.09.2026); Nothing
+        ''' without a session. The capture itself never throws - a missing picture must not
+        ''' cost the operator the work it was taken beside.
+        ''' </summary>
+        Public Async Function CapturePaginaAsync(paginaOriginala As Boolean) As Task(Of Byte()) Implements IForexeRunner.CapturePaginaAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return Nothing
+            Return Await _executor.CapturePageAsync(paginaOriginala)
+        End Function
+
+        ''' <summary>«Informații complete contract», scrolled right; Nothing without a session.</summary>
+        Public Async Function CaptureInfoCompleteAsync(paginaOriginala As Boolean) As Task(Of Byte()) Implements IForexeRunner.CaptureInfoCompleteAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return Nothing
+            Return Await _executor.CaptureInfoCompleteAsync(paginaOriginala)
+        End Function
+
+        ''' <summary>
+        ''' Who answers the page when it holds a click for a picture. Kept on the runner, like
+        ''' the marker bridge, so a session opened later gets it too (see RunJobAsync).
+        ''' </summary>
+        Public Sub SetCapturaProvider(provider As Func(Of String, CancellationToken, Task(Of Boolean))) Implements IForexeRunner.SetCapturaProvider
+            _capturaProvider = provider
+            If _executor IsNot Nothing Then _executor.SetCapturaProvider(provider)
+        End Sub
+
+        Private _capturaProvider As Func(Of String, CancellationToken, Task(Of Boolean))
+
+        ''' <summary>The next reservation session photographs again; quiet without a session.</summary>
+        Public Async Function ResetShotSessionAsync() As Task Implements IForexeRunner.ResetShotSessionAsync
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then Return
+            Await _executor.ResetShotSessionAsync()
+        End Function
+
         ''' <summary>Re-fits the docked browser to its host; a no-op when it is not docked.</summary>
         Public Async Function SyncBrowserBoundsAsync() As Task Implements IForexeRunner.SyncBrowserBoundsAsync
             If _executor Is Nothing OrElse Not _executor.IsBrowserOpen OrElse Not _executor.IsDocked Then Return
@@ -416,6 +449,8 @@ Namespace KBot.Forexe
                 ' (adresă + token bearer + POST) stă în ApiClient; re-login-ul e transparent.
                 _executor.SetExcelProcessor(_excelProcessor)
                 _executor.SetMarcajProvider(_marcajProvider)
+                ' Operator, 28.09.2026: who takes the picture when the page holds a click.
+                _executor.SetCapturaProvider(_capturaProvider)
 
                 AddHandler _executor.OnStatusUpdate, AddressOf OnExecutorStatus
                 AddHandler _executor.OnLogMessage, AddressOf OnExecutorLogMessage

@@ -99,6 +99,7 @@ column as the wire field `desc_lunga`, and `DdfXmlBuilder` puts that value into 
 XFA node `DescrieObFundRevizuireLung`. It is the PLAIN-TEXT rendition; `Desc_Lunga` is the
 RTF one, and the XFA cannot take RTF.
 """
+import base64
 import hashlib
 import json
 import logging
@@ -790,6 +791,108 @@ def _are_att_img(cursor, db_name: str) -> bool:
         prezent = False
     _ATT_IMG_PREZENT[db_name] = prezent
     return prezent
+
+
+# Operator, 28.09.2026: the pictures K-BOT takes in the FOREXE page are filed on the
+# reservation rows themselves (FX_Rezervarii_IMG, routes/forexe/capturi.py). The table came
+# over from Access empty; a database that has not got it must still be able to save a
+# document, so it is probed once, exactly like the blob table above.
+_SQL_ARE_REZ_IMG = (
+    "SELECT COUNT(*) AS n FROM information_schema.TABLES "
+    " WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'FX_Rezervarii_IMG'"
+)
+
+_REZ_IMG_PREZENT = {}
+
+
+def _are_rez_img(cursor, db_name: str) -> bool:
+    if db_name in _REZ_IMG_PREZENT:
+        return _REZ_IMG_PREZENT[db_name]
+    try:
+        cursor.execute(_SQL_ARE_REZ_IMG, (db_name,))
+        prezent = int((cursor.fetchone() or {}).get("n") or 0) > 0
+    except Exception:
+        logger.warning("[forexe.ddf_edit] %s: proba FX_Rezervarii_IMG a esuat; "
+                       "se presupune ca lipseste", db_name, exc_info=True)
+        prezent = False
+    _REZ_IMG_PREZENT[db_name] = prezent
+    return prezent
+
+
+def _capturi_rezervarilor(cursor, db_name: str, iddf: int, idrev: int) -> int:
+    """
+    The captures of this revision's reservations become its `PrtScr = 1` attachments -- the
+    rows `Table4` of the final PDF draws (slice 0081-05), which the ALOP guide asks for
+    (p.11-14, example p.41).
+
+    The picture is not moved: `FX_Rezervarii_IMG` keeps it on the reservation, where it
+    belongs and where a later revision of the same reservation can still find it. What is
+    written here is the revision's own copy, and only once -- the file name carries the
+    moment it was taken, so a name already attached to this revision is skipped.
+
+    Returns how many were added. A database without `FX_Rezervarii_IMG` adds none.
+    """
+    if not _are_rez_img(cursor, db_name):
+        return 0
+    cursor.execute(
+        "SELECT I.IDRZC AS id, I.Nume AS nume, I.IMG AS img "
+        "  FROM FX_Rezervarii_IMG I "
+        " INNER JOIN FX_Rezervari R ON R.IDRZ = I.IDRZ "
+        " WHERE R.IDREV = %s AND I.IMG IS NOT NULL AND I.IMG <> '' "
+        " ORDER BY I.IDRZC",
+        (idrev,))
+    capturi = cursor.fetchall() or []
+    if not capturi:
+        return 0
+
+    cursor.execute(
+        "SELECT CaleFisier AS nume FROM FX_DDF_REV_ATT WHERE IDREV = %s AND PrtScr = 1",
+        (idrev,))
+    deja = {(r.get("nume") or "") for r in (cursor.fetchall() or [])}
+
+    are_blob = _are_att_img(cursor, db_name)
+    adaugate = 0
+    for c in capturi:
+        nume = (c.get("nume") or "").strip() or f"captura_{_int0(c.get('id'))}.jpg"
+        if nume in deja:
+            continue
+        brut = c.get("img") or ""
+        try:
+            octeti = base64.b64decode(brut, validate=False)
+        except Exception:
+            # A picture nobody can decode is said, and the document is saved without it:
+            # the save is the operator's work, the picture is evidence we can take again.
+            logger.warning("[forexe.ddf_edit] %s: captura %s a rezervarii nu se poate decoda; "
+                           "revizia %s se salveaza fara ea", db_name, c.get("id"), idrev,
+                           exc_info=True)
+            continue
+        if not octeti:
+            continue
+        cursor.execute(
+            "INSERT INTO FX_DDF_REV_ATT (IDDF, IDREV, CaleFisier, PrtScr) VALUES (%s, %s, %s, 1)",
+            (iddf, idrev, nume[:255]))
+        id_rev_att = _cheie_noua(cursor, "FX_DDF_REV_ATT")
+        if are_blob:
+            cursor.execute(
+                "INSERT INTO FX_DDF_REV_ATT_IMG "
+                "       (IdRevAtt, NumeFisier, TipMime, Dimensiune, Sha256, Continut, DataModif) "
+                "VALUES (%s, %s, %s, %s, %s, %s, NOW())",
+                # The type is read from the bytes (`_tip_fisier`), never from the name: the
+                # captures are JPEG since 28.09.2026 and PNG before that.
+                (id_rev_att, nume[:255], _tip_fisier(octeti, nume) or "image/jpeg",
+                 len(octeti), _sha256(octeti), octeti))
+        else:
+            # A database without sql/0051_ddf_rev_att_img.sql: the old column, base64,
+            # which the generation read route serves as it is.
+            cursor.execute("UPDATE FX_DDF_REV_ATT SET DateFisier = %s WHERE IdRevAtt = %s",
+                           (brut, id_rev_att))
+        deja.add(nume)
+        adaugate += 1
+
+    if adaugate:
+        logger.info("[forexe.ddf_edit] %s: revizia %s a preluat %s captura(i) din FOREXE",
+                    db_name, idrev, adaugate)
+    return adaugate
 
 
 def _linie_a_din_rand(r: dict) -> dict:
@@ -1997,6 +2100,14 @@ def _scrie_graf(cursor, sarcina: dict, token: str) -> dict:
             (idrev, idrev, cod))
         rezervari_legate += cursor.rowcount
 
+    # 8.1c Operator, 28.09.2026: the captures K-BOT took in the FOREXE page while the
+    # operator was making these very reservations. They were filed on the reservation rows
+    # (FX_Rezervarii_IMG, routes/forexe/capturi.py); the revision that shows them is born
+    # here, so here is where they become its PrtScr attachments -- the ones Table4 of the
+    # final PDF draws (slice 0081-05). Done AFTER section 7's delete pass, so nothing this
+    # step writes is swept by it.
+    capturi_legate = _capturi_rezervarilor(cursor, g.session.db_name, iddf, idrev)
+
     # 8.2 and 8.3 FX_Angajamente. The Descriere cascade is UNCONDITIONAL now (decision D10
     # replaces Access's `ModNume` gate). ObiectDDF is varchar(500) and Descriere is
     # varchar(255), so the value is truncated HERE, explicitly, rather than by MariaDB.
@@ -2019,6 +2130,7 @@ def _scrie_graf(cursor, sarcina: dict, token: str) -> dict:
         "numar_rev": numar_rev,
         "harta": {"linii_a": harta_a, "linii_b": harta_b, "att": harta_att},
         "rezervari_legate": rezervari_legate,
+        "capturi_legate": capturi_legate,
         "obiect_trunchiat": len(obiect) > LUNGIME_DESCRIERE_ANGAJAMENT,
     }
 

@@ -134,11 +134,12 @@ Partial Public Class KbotForm
     End Function
 
     ''' <summary>
-    ''' Slice 0081-02 -- «Angajament nou» on the header: a new, K-BOT-only angajament («!» code),
-    ''' revision 0, section A empty. The port of Access's <c>FX_Adaugare_ANG</c>; forexecab hears
-    ''' of it only at «Trimite in FOREXE».
+    ''' Slice 0081-02 -- «Angajament nou»: a new, K-BOT-only angajament («!» code), revision 0,
+    ''' section A empty. The port of Access's <c>FX_Adaugare_ANG</c>; forexecab hears of it only at
+    ''' «Trimite in FOREXE». Slice 0087: reached from the header menu (<c>menuNou</c>), no longer
+    ''' from its own button.
     ''' </summary>
-    Private Sub BtnAngajamentNou_Click(sender As Object, e As EventArgs) Handles btnAngajamentNou.Click
+    Private Sub DeschideAngajamentNou()
         Try
             If String.IsNullOrWhiteSpace(_session.DbName) Then
                 KBotMessage.Show(Me, "Nu există o unitate deschisă: autentificați-vă întâi.",
@@ -149,7 +150,7 @@ Partial Public Class KbotForm
                 DdfDraftFactory.NewManualCode(), _session.DbName, _session.CodProgram, Date.Today)
             DeschideEditorulDdf(draft, DdfRevisionState.Draft)
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.BtnAngajamentNou_Click", ex)
+            GlobalErrorLog.Write("MainForm.DeschideAngajamentNou", ex)
             KBotMessage.Show(Me, "Documentul pentru angajamentul nou nu a putut fi deschis. Detalii în jurnalul de erori.",
                             "Angajament nou", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try

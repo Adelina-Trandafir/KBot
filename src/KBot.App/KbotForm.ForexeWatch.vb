@@ -147,6 +147,14 @@ Partial Public Class KbotForm
                 Return
             End If
 
+            ' Operator, 28.09.2026: the two pictures the ALOP guide asks for a reception
+            ' (p.21-22) are taken NOW - the page is on the Receptii tab, as the guide's own
+            ' example shows, and the download that follows would navigate away from it.
+            If ev.Operation = ForexeOperationKind.Receptie OrElse
+               ev.Operation = ForexeOperationKind.ReceptieModificare Then
+                Await IaCapturileReceptieiAsync(coduri(0))
+            End If
+
             For Each cod As String In coduri
                 _controller.SpuneStare($"«{ev.Label}» salvată în FOREXE — descarc «{cod}»...")
                 Dim pachet As PrelucrareRezultat = Await DescarcaPentruOperatiuneAsync(ev, cod)
@@ -155,7 +163,13 @@ Partial Public Class KbotForm
                     ShowForexeFailure("FOREXE")
                     Continue For
                 End If
-                Await DuLaIngestieAsync(cod, pachet)
+                Dim preluat As Boolean = Await DuLaIngestieAsync(cod, pachet)
+                ' The pictures can only be filed once the ingest has written the reception
+                ' they hang off; until then they wait on disk.
+                If preluat AndAlso (ev.Operation = ForexeOperationKind.Receptie OrElse
+                                    ev.Operation = ForexeOperationKind.ReceptieModificare) Then
+                    Await TrimiteCapturileAsync(cod, CapturaStore.FelReceptie)
+                End If
                 DeschideIstoricInterval(cod, deLa, panaLa, ev.Label)
             Next
         Finally
@@ -283,6 +297,12 @@ Partial Public Class KbotForm
             Return
         End If
 
+        ' Operator, 28.09.2026: the second picture of the session, taken while the page is
+        ' still where the operator's last save left it - the Buget tab, with the new figures
+        ' and the confirmation, which is the picture the guide shows (p.41). The download
+        ' below drives the page away, so it cannot wait.
+        Await _controller.IaCapturaAsync(cod, CapturaStore.FelRezervare, CapturaStore.MomentDupa, unaSingura:=True)
+
         _controller.SpuneStare($"Preiau rezervările editate ale lui «{cod}»...")
         Dim pachet As PrelucrareRezultat
         busyBar.Running = True
@@ -298,7 +318,94 @@ Partial Public Class KbotForm
         End If
         ' The package now carries them (and it is on disk); the memory is done with.
         _rezervariInLucru.Remove(cod)
-        Await DuLaIngestieAsync(cod, pachet)
+        Dim preluat As Boolean = Await DuLaIngestieAsync(cod, pachet)
+        ' Only now do the reservation rows exist in K-BOT, so only now can the two pictures
+        ' be filed. A failed ingest leaves them on disk: «DA» tried again files them.
+        If preluat Then
+            Await TrimiteCapturileAsync(cod, CapturaStore.FelRezervare)
+            Await _controller.IncheieSesiuneaDeCapturiAsync(cod)
+        End If
+    End Function
+
+    ' ── The pictures of the FOREXE page (operator, 28.09.2026) ──────────────────────────
+
+    ''' <summary>
+    ''' The two pictures the ALOP guide asks for a reception (p.21-22): the Recepții tab as
+    ''' the save left it, then «Informații complete contract» with its table pushed to the
+    ''' right end (K-BOT presses the button itself, behind the veil, and comes back with
+    ''' «Înapoi»). A picture that cannot be taken is said on the console, never thrown: the
+    ''' reception is already saved in FOREXE.
+    ''' </summary>
+    Private Async Function IaCapturileReceptieiAsync(cod As String) As Task
+        Try
+            Await _controller.IaCapturaAsync(cod, CapturaStore.FelReceptie, CapturaStore.MomentReceptii)
+            Await _controller.IaCapturaInfoCompleteAsync(cod)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.IaCapturileReceptieiAsync", ex)
+            _controller.SpuneStare("Capturile recepției nu s-au putut face: " & ex.Message)
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' The pictures waiting on disk for this angajament go to the server, each on the number
+    ''' the page's marker named (the DDF revision for a reservation, the reception snapshot
+    ''' for a reception). One that goes is taken off the disk; one without a number, or one
+    ''' the server cannot place, STAYS there and is said out loud - a picture is evidence, and
+    ''' evidence is never thrown away quietly.
+    ''' </summary>
+    Private Async Function TrimiteCapturileAsync(cod As String, fel As String) As Task
+        Dim ramase As Integer = 0
+        Dim trimise As Integer = 0
+        Try
+            Dim lista As List(Of CapturaForexe) = _controller.CapturileDe(cod, fel)
+            If lista.Count = 0 Then Return
+            For Each captura As CapturaForexe In lista
+                If captura.Marcaj <= 0 Then
+                    ramase += 1
+                    Continue For
+                End If
+                Try
+                    Dim octeti As Byte() = CapturaStore.CitesteOcteti(captura)
+                    If octeti Is Nothing OrElse octeti.Length = 0 Then
+                        ramase += 1
+                        Continue For
+                    End If
+                    Dim id As Integer
+                    If String.Equals(fel, CapturaStore.FelReceptie, StringComparison.OrdinalIgnoreCase) Then
+                        id = Await WithReauth(Of Integer)(
+                            Function() _capturiApi.UrcaCapturaReceptieAsync(
+                                captura.Marcaj, cod, captura.Nume, captura.Moment, octeti, CancellationToken.None))
+                    Else
+                        id = Await WithReauth(Of Integer)(
+                            Function() _capturiApi.UrcaCapturaRezervareAsync(
+                                captura.Marcaj, cod, captura.Nume, captura.Moment, octeti, CancellationToken.None))
+                    End If
+                    If id > 0 Then
+                        CapturaStore.Sterge(captura)
+                        trimise += 1
+                    Else
+                        ramase += 1
+                    End If
+                Catch ex As Exception
+                    ' One picture that will not go must not stop the others.
+                    GlobalErrorLog.Write("MainForm.TrimiteCapturileAsync", ex)
+                    _controller.SpuneStare($"Captura «{captura.Moment}» nu a ajuns pe server: {ex.Message}")
+                    ramase += 1
+                End Try
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.TrimiteCapturileAsync", ex)
+            _controller.SpuneStare("Capturile nu au putut fi trimise: " & ex.Message)
+            Return
+        End Try
+
+        If trimise > 0 Then
+            _controller.SpuneStare($"{trimise} captură(i) din FOREXE au fost salvate pentru «{cod}».")
+        End If
+        If ramase > 0 Then
+            _controller.SpuneStare($"{ramase} captură(i) rămân pe disc ({CapturaStore.FolderAngajament(cod)}): " &
+                                   "nu au numărul pe care să se sprijine.")
+        End If
     End Function
 
     ''' <summary>

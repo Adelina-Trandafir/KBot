@@ -217,6 +217,12 @@ Partial Public Class WorkflowExecutor
                 RaspundeLaMarcaj(TextOf(obj, "requestId"), TextOf(obj, "tip"), cod)
                 Return
             End If
+            ' Operator, 28.09.2026: the page holds a click and asks for a picture of the
+            ' page as it stands. Answered here too, never raised as an operation.
+            If String.Equals(TextOf(obj, "event"), "captura", StringComparison.OrdinalIgnoreCase) Then
+                RaspundeLaCaptura(TextOf(obj, "requestId"), TextOf(obj, "tip"))
+                Return
+            End If
             ev = BuildWatchEvent(obj)
         Catch ex As Exception
             parseEx = ex

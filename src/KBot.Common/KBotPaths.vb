@@ -181,6 +181,16 @@ Public NotInheritable Class KBotPaths
         End Get
     End Property
 
+    ''' <summary>
+    ''' Capturile din pagina FOREXE, de la clipa în care sunt luate până când pleacă pe server
+    ''' (28.09.2026). Implicit <c>&lt;AppDir&gt;\Capturi</c>.
+    ''' </summary>
+    Public Shared ReadOnly Property FolderCapturi As String
+        Get
+            Return Foldere.Cale(SetariFoldere.CheieCapturi)
+        End Get
+    End Property
+
     ''' <summary>PDF-urile temporare. Implicit <c>C:\KBOT\Temp\PDF</c> (23.09.2026).</summary>
     Public Shared ReadOnly Property FolderPdfTemporar As String
         Get

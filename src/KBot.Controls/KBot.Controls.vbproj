@@ -16,7 +16,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.52.0.0</FileVersion>
+    <FileVersion>1.53.0.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -161,6 +161,12 @@
     </Compile>
     <Compile Update="DataView\KBotDataView.Tooltip.vb">
       <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="DataView\KBotDataView.FooterRightIcon.vb">
+      <DependentUpon>KBotDataView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Menu\KBotDropDownMenu.Input.vb">
+      <DependentUpon>KBotDropDownMenu.vb</DependentUpon>
     </Compile>
     <Compile Update="DataView\KBotDataView.WidthProbe.vb">
       <DependentUpon>KBotDataView.vb</DependentUpon>

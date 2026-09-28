@@ -83,7 +83,8 @@ Public NotInheritable Class DdfPdfGenerator
     End Function
 
     ''' <summary>
-    ''' 0081-05: the FOREXE captures of the revision (<c>PrtScr = 1</c>), as base64 PNG, in the order
+    ''' 0081-05: the FOREXE captures of the revision (<c>PrtScr = 1</c>), as base64 (JPEG since
+    ''' 28.09.2026, PNG before that - <c>Table4Of</c> reads which from the bytes), in the order
     ''' they were stored (<c>IdRevAtt</c>, i.e. the order the workflows took them). The bytes come
     ''' from the row itself when the old column carries them, else from the attachment store.
     ''' A capture that cannot be read stops the generation: a final PDF missing a capture would be

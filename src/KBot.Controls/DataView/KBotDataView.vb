@@ -414,6 +414,28 @@ Public Class KBotDataView
         End Get
     End Property
 
+    ''' <summary>
+    ''' Removes one row (slice 0087). An open editor is abandoned first (nothing written); the
+    ''' selection moves to the row that takes its place, or to the new last row. Out of range ->
+    ''' <see cref="ArgumentOutOfRangeException"/>.
+    ''' </summary>
+    Public Sub RemoveRowAt(index As Integer)
+        Try
+            If index < 0 OrElse index >= _rows.Count Then
+                Throw New ArgumentOutOfRangeException(NameOf(index), index, "No row at this index.")
+            End If
+            If _editing Then CancelEdit()
+            _rows.RemoveAt(index)
+            If _currentRowIndex >= _rows.Count Then _currentRowIndex = _rows.Count - 1
+            RecomputeDerived()
+            LayoutChanged()
+            RaiseEvent SelectionChanged(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.RemoveRowAt", ex)
+            Throw
+        End Try
+    End Sub
+
     ''' <summary>Golește toate rândurile (și selecția).</summary>
     Public Sub ClearRows()
         _rows.Clear()

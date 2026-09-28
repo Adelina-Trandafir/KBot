@@ -107,3 +107,12 @@ from . import ddf_director  # noqa: E402,F401
 # operatiuni.py = POST /api/forexe/operatiuni/necorectate: the «Operatiuni necorectate» the
 # FOREXE landing page shows after login, saved into FX_Operatiuni (slice 0084).
 from . import operatiuni  # noqa: E402,F401
+# clasificatii_edit.py / parteneri_edit.py = the «Clasificatii bugetare» and «Parteneri» windows:
+# classification tree, yearly budget + corrections, adding classifications; partners and their
+# codes (slice 0087).
+from . import clasificatii_edit  # noqa: E402,F401
+from . import parteneri_edit  # noqa: E402,F401
+# capturi.py = the captures K-BOT takes out of the FOREXE page while the operator works
+# there (operator, 28.09.2026): PUT /api/forexe/capturi/rezervare/<idrev> and
+# /api/forexe/capturi/receptie/<idrh> -> FX_Rezervarii_IMG / FX_Receptii_IMG.
+from . import capturi  # noqa: E402,F401

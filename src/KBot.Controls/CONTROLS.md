@@ -16,6 +16,7 @@ lists only its exceptions.
 | `KBotLaneView` | [Lane/KBotLaneView.md](Lane/KBotLaneView.md) | Placement surface: dated markers on draggable lanes, one time axis |
 | `KBotNavList` | [NavList/KBotNavList.md](NavList/KBotNavList.md) | Sidebar / toolbar of keyed buttons, 3-state collapse, flyout |
 | `CustomPopup` | [Popup/CustomPopup.md](Popup/CustomPopup.md) | Themed context menu window (icons, mnemonics, sliders) |
+| `KBotDropDownMenu` | [Menu/KBotDropDownMenu.md](Menu/KBotDropDownMenu.md) | Windows 10 style drop-down menu: icon bar, formatted rows, cascading submenus, designer-edited items |
 | `KBotToolTip` | [ToolTip/KBotToolTip.md](ToolTip/KBotToolTip.md) | Extender tooltip: header/body/footer, rich-text markup |
 | `KBotCaptionBar` | [CaptionBar/KBotCaptionBar.md](CaptionBar/KBotCaptionBar.md) | Title bar for borderless forms + theme menu |
 | `KBotChipBar` | [ChipBar/KBotChipBar.md](ChipBar/KBotChipBar.md) | Multi-select chip/filter bar with badges |

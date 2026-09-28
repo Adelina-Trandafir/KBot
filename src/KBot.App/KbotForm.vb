@@ -39,6 +39,12 @@ Partial Public Class KbotForm
     Private ReadOnly _forexeRunner As IForexeRunner
     Private ReadOnly _session As SessionContext
     Private ReadOnly _apiClient As IApiClient
+    ''' <summary>
+    ''' The upload of the FOREXE page captures (operator, 28.09.2026). Its own interface, like
+    ''' the markers: the shell is the only caller, right after the ingest that wrote the
+    ''' records the pictures hang off.
+    ''' </summary>
+    Private ReadOnly _capturiApi As IForexeCapturiApi
     Private ReadOnly _authApi As IAuthApi
     Private ReadOnly _loginFactory As Func(Of LoginForm)
     ''' <summary>
@@ -93,7 +99,8 @@ Partial Public Class KbotForm
 
     Public Sub New(forexeRunner As IForexeRunner, session As SessionContext,
                    apiClient As IApiClient, authApi As IAuthApi, loginFactory As Func(Of LoginForm),
-                   forexe As ForexeController, setariFactory As Func(Of SetariForm))
+                   forexe As ForexeController, setariFactory As Func(Of SetariForm),
+                   capturiApi As IForexeCapturiApi)
         InitializeComponent()
         _forexeRunner = forexeRunner
         _session = session
@@ -102,6 +109,7 @@ Partial Public Class KbotForm
         _loginFactory = loginFactory
         _controller = forexe
         _setariFactory = setariFactory
+        _capturiApi = capturiApi
         Me.Text = "K-BOT"
     End Sub
 

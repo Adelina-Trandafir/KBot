@@ -177,8 +177,9 @@ Public NotInheritable Class DdfXmlBuilder
     ''' <summary>
     ''' Slice 0081-05: <c>Table4</c> of the captures, the shape of the template's own data
     ''' (<c>Surse/doc_fund_xdp.xml</c>): the hidden template <c>Row1</c> first (empty, like
-    ''' Table1 / Table3), then one <c>Row1/Cell1</c> per image, <c>xfa:contentType="image/png"</c>,
-    ''' the PNG as base64 text. Nothing when there is no capture -- the template keeps its defaults.
+    ''' Table1 / Table3), then one <c>Row1/Cell1</c> per image, with its
+    ''' <c>xfa:contentType</c> and the image as base64 text. Nothing when there is no capture
+    ''' -- the template keeps its defaults.
     ''' </summary>
     Public Shared Function Table4Of(capturi As IEnumerable(Of String)) As XElement
         Dim lista As List(Of String) = SafeEnum(capturi).Where(Function(c) Not String.IsNullOrWhiteSpace(c)).ToList()
@@ -189,11 +190,27 @@ Public NotInheritable Class DdfXmlBuilder
         For Each c As String In lista
             table4.Add(New XElement("Row1",
                 New XElement("Cell1",
-                    New XAttribute(xfa + "contentType", "image/png"),
+                    New XAttribute(xfa + "contentType", TipulImaginii(c)),
                     New XAttribute("href", String.Empty),
                     c.Trim())))
         Next
         Return table4
+    End Function
+
+    ''' <summary>
+    ''' What the cell says the image is, read from the base64 itself: a JPEG starts with
+    ''' «/9j/», a PNG with «iVBORw0KGgo». The captures K-BOT takes in the FOREXE page are
+    ''' JPEG since 28.09.2026 (the operator asked for smaller pictures - they live inside a
+    ''' PDF); everything older is PNG, and both must be labelled truthfully.
+    '''
+    ''' <para>Should Adobe turn out to refuse <c>image/jpeg</c> in this cell, the fix is one
+    ''' step earlier - the generator re-encodes the bytes before they get here - not a lie in
+    ''' this attribute.</para>
+    ''' </summary>
+    Private Shared Function TipulImaginii(base64 As String) As String
+        Dim text As String = If(base64, String.Empty).TrimStart()
+        If text.StartsWith("/9j/", StringComparison.Ordinal) Then Return "image/jpeg"
+        Return "image/png"
     End Function
 
     ' ── NOTAFD (GenereazaXML_NOTAFD) ──────────────────────────────────────────

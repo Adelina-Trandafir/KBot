@@ -34,7 +34,8 @@ Status: heavily unit-tested (`KBotDataView*Tests`); visual harness
 
 ## Data
 - `Columns` (designer-authorable), `AddColumn(key, headerText, type, width)`, `Column(key)`
-- `AddRow()`, `Rows`, `RowCount`, `ClearRows()`
+- `AddRow()`, `Rows`, `RowCount`, `ClearRows()`, `RemoveRowAt(index)` (slice 0087: an open
+  editor is abandoned, the selection moves to the row taking its place)
 - `Item(colKey, rowIndex)` — default indexer, read/write. Row side: `KBotDataRow.Item(colKey)`.
 - Dirty tracking: `KBotDataRow.IsDirty` / `MarkClean()` / `HasValue(colKey)`,
   `GetDirtyRows()`, `ClearDirty()`
@@ -62,7 +63,10 @@ Header icons: `HeaderLeftIcon` (decorative) + `HeaderRightIcon` (raises
 `AutoSizeHeaderHeight = True` + `MaxHeaderHeight = 0` (grow for multiline titles),
 `AlternatingRows = True`, `ReadOnlyGrid = False`, `FrozenColumnCount = 0`,
 `ScrollByColumn = False`, `FooterVisible = False`, `FooterHeight = 0` (0 = follow
-`HeaderHeight`), `FooterCaption` + `FooterLeftIcon` (+ size, hover colour,
+`HeaderHeight`), `FooterRightIcon` + `FooterRightIconTooltip` + `FooterRightIconClicked` +
+`FooterRightIconRect` (slice 0087: a button in the right corner of the band, e.g. «+ add row»;
+it keeps its square like the collapse button, standing left of it when both are on the right,
+and the totals are cut before it), `FooterCaption` + `FooterLeftIcon` (+ size, hover colour,
 `FooterLeftIconClicked`). Bands: the `Border*`, `Header*`, `Footer*` and
 `*ColumnSeparator*` colour/width properties, all Empty = theme (C1) and logical px (C2).
 The scrollbars sit INSIDE the border frame (inset by `BorderWidth`), so the frame stays

@@ -529,7 +529,7 @@ Partial Class KBotDataView
             ' celulă nu e survolată, deci nici etichetă.
             If HandleFooterMouseMove(e.Location) Then
                 CancelCellTooltip()
-                Cursor = If(FooterIconHovered, Cursors.Hand, Cursors.Default)
+                Cursor = If(FooterIconHovered OrElse FooterRightIconHovered, Cursors.Hand, Cursors.Default)
                 Return
             End If
 

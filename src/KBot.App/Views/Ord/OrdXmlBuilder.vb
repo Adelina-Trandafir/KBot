@@ -159,6 +159,15 @@ Public NotInheritable Class OrdXmlBuilder
                 If attPart <> partKey AndAlso attPart <> 0 Then Continue For
                 Dim row As New XElement("Row1")
                 AddNode(row, "Cell1", ImageOf(att, imagini))
+                ' Operator, 28.09.2026: the captures K-BOT takes in the FOREXE page are JPEG
+                ' (they live inside this PDF). A PNG cell is written exactly as before - the
+                ' shape Access wrote and the one every ordonantare so far carries - and only
+                ' a JPEG says out loud what it is, because nothing else in the template would.
+                Dim cell1 As XElement = row.Element("Cell1")
+                If cell1 IsNot Nothing AndAlso EsteJpeg(cell1.Value) Then
+                    cell1.Add(New XAttribute(XNamespace.Xmlns + "xfa", XfaNs.NamespaceName))
+                    cell1.Add(New XAttribute(XfaNs + "contentType", "image/jpeg"))
+                End If
                 table2.Add(row)
             Next
             inf.Add(New XElement("SubformCaptura", table2))
@@ -273,6 +282,11 @@ Public NotInheritable Class OrdXmlBuilder
             Return Convert.ToBase64String(att.Continut)
         End If
         Return String.Empty
+    End Function
+
+    ''' <summary>Base64 that starts with «/9j/» is a JPEG; everything else is left as it was.</summary>
+    Private Shared Function EsteJpeg(base64 As String) As Boolean
+        Return If(base64, String.Empty).TrimStart().StartsWith("/9j/", StringComparison.Ordinal)
     End Function
 
     Private Shared Function DateForm(d As Date?) As String

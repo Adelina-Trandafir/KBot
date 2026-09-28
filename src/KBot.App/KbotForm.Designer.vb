@@ -24,6 +24,11 @@ Partial Class KbotForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
+        Dim KBotMenuItem1 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem2 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem3 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem4 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem5 As KBotMenuItem = New KBotMenuItem()
         Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KbotForm))
@@ -42,7 +47,8 @@ Partial Class KbotForm
         btnOpt = New Button()
         cboAn = New KBotComboBox()
         cboSs = New KBotComboBox()
-        btnAngajamentNou = New Button()
+        btnMeniu = New Button()
+        menuNou = New KBotDropDownMenu(components)
         pnlRoot = New Panel()
         pnlWork = New Panel()
         split = New SplitContainer()
@@ -155,20 +161,47 @@ Partial Class KbotForm
         tips.SetToolTipHeader(cboSs, "Subperioadă")
         tips.SetToolTipText(cboSs, "Subperioada (SS) din anul ales." & vbLf & "Ultima aleasă se ține minte pentru data viitoare.")
         ' 
-        ' btnAngajamentNou
+        ' btnMeniu
         ' 
-        btnAngajamentNou.Dock = DockStyle.Fill
-        btnAngajamentNou.FlatStyle = FlatStyle.Flat
-        btnAngajamentNou.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
-        btnAngajamentNou.Location = New Point(9, 6)
-        btnAngajamentNou.Margin = New Padding(8, 5, 8, 5)
-        btnAngajamentNou.Name = "btnAngajamentNou"
-        btnAngajamentNou.Size = New Size(224, 32)
-        btnAngajamentNou.TabIndex = 0
-        btnAngajamentNou.Text = "Angajament nou"
-        tips.SetToolTipHeader(btnAngajamentNou, "Angajament nou")
-        tips.SetToolTipText(btnAngajamentNou, "Deschide documentul de fundamentare pentru un angajament nou (revizia 0)." & vbLf & "Angajamentul se creează în FOREXE abia la «Trimite în FOREXE», după semnătura A.")
-        btnAngajamentNou.UseVisualStyleBackColor = True
+        btnMeniu.Dock = DockStyle.Fill
+        btnMeniu.FlatAppearance.BorderSize = 0
+        btnMeniu.FlatStyle = FlatStyle.Flat
+        btnMeniu.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
+        btnMeniu.Image = My.Resources.Resources.down
+        btnMeniu.Location = New Point(1, 1)
+        btnMeniu.Margin = New Padding(0)
+        btnMeniu.Name = "btnMeniu"
+        btnMeniu.Size = New Size(240, 42)
+        btnMeniu.TabIndex = 0
+        btnMeniu.Text = "  Meniu"
+        btnMeniu.TextAlign = ContentAlignment.MiddleLeft
+        btnMeniu.TextImageRelation = TextImageRelation.ImageBeforeText
+        tips.SetToolTipHeader(btnMeniu, "Meniu")
+        tips.SetToolTipText(btnMeniu, "Angajament nou, clasificațiile bugetare și partenerii.")
+        btnMeniu.UseVisualStyleBackColor = True
+        ' 
+        ' menuNou
+        ' 
+        menuNou.DropDownButton = btnMeniu
+        KBotMenuItem1.Image = My.Resources.Resources.plus_green
+        KBotMenuItem1.Key = "angajament_nou"
+        KBotMenuItem1.Text = "<b>Angajament nou</b>"
+        KBotMenuItem2.IsSeparator = True
+        KBotMenuItem2.Key = Nothing
+        KBotMenuItem3.Image = My.Resources.Resources.folder_open
+        KBotMenuItem4.Image = My.Resources.Resources.cells
+        KBotMenuItem4.Key = "clasificatii"
+        KBotMenuItem4.Text = "Clasificații bugetare"
+        KBotMenuItem5.Image = My.Resources.Resources.binvoice
+        KBotMenuItem5.Key = "parteneri"
+        KBotMenuItem5.Text = "Parteneri"
+        KBotMenuItem3.Items.Add(KBotMenuItem4)
+        KBotMenuItem3.Items.Add(KBotMenuItem5)
+        KBotMenuItem3.Key = "nomenclatoare"
+        KBotMenuItem3.Text = "Nomenclatoare"
+        menuNou.Items.Add(KBotMenuItem1)
+        menuNou.Items.Add(KBotMenuItem2)
+        menuNou.Items.Add(KBotMenuItem3)
         ' 
         ' pnlRoot
         ' 
@@ -458,7 +491,7 @@ Partial Class KbotForm
         tlyHeader.Controls.Add(lblSs, 4, 0)
         tlyHeader.Controls.Add(cboAn, 2, 0)
         tlyHeader.Controls.Add(lblAn, 1, 0)
-        tlyHeader.Controls.Add(btnAngajamentNou, 0, 0)
+        tlyHeader.Controls.Add(btnMeniu, 0, 0)
         tlyHeader.Dock = DockStyle.Fill
         tlyHeader.Location = New Point(0, 0)
         tlyHeader.Margin = New Padding(0)
@@ -594,5 +627,6 @@ Partial Class KbotForm
     Friend WithEvents lblSs As Label
     Friend WithEvents cboAn As KBotComboBox
     Friend WithEvents lblAn As Label
-    Friend WithEvents btnAngajamentNou As Button
+    Friend WithEvents btnMeniu As Button
+    Friend WithEvents menuNou As KBotDropDownMenu
 End Class

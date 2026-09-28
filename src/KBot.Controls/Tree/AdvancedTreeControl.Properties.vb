@@ -507,6 +507,22 @@ Partial Public Class AdvancedTreeControl
         End Get
     End Property
 
+    ' Slice 0087: X (logical px from the control's left edge) where the right part of a «~~~»
+    ' caption starts on EVERY row, left-aligned; 0 = off (the Left/RightTextWidth rules apply).
+    Private m_rightTextColumn As Integer = 0
+    <Category("K-BOT")>
+    <Description("X (logical px from the left edge) where the right part of a ~~~ caption starts on every row, left-aligned, as a second column. 0 = off.")>
+    <DefaultValue(0)>
+    Public Property RightTextColumn As Integer
+        Get
+            Return m_rightTextColumn
+        End Get
+        Set(value As Integer)
+            m_rightTextColumn = Math.Max(0, value)
+            Me.Invalidate()
+        End Set
+    End Property
+
     ''' <summary><see cref="RightTextWidth"/> în pixeli de ecran — vezi <see cref="LeftTextWidthPx"/>.</summary>
     Friend ReadOnly Property RightTextWidthPx As Integer
         Get

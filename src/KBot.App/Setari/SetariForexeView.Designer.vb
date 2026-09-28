@@ -35,6 +35,9 @@ Partial Class SetariForexeView
         tlyBrowser = New KBotTableLayoutPanel()
         chkHideChrome = New CheckBox()
         chkDevTools = New CheckBox()
+        tlyCaptura = New KBotTableLayoutPanel()
+        lblCapturaCaption = New Label()
+        cmbCaptura = New KBotComboBox()
         lblTitluFoldere = New Label()
         tlyFoldere = New KBotTableLayoutPanel()
         lblWorkflowsCaption = New Label()
@@ -263,15 +266,63 @@ Partial Class SetariForexeView
         tlyBrowser.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyBrowser.Controls.Add(chkHideChrome, 0, 0)
         tlyBrowser.Controls.Add(chkDevTools, 0, 1)
+        tlyBrowser.Controls.Add(tlyCaptura, 0, 2)
         tlyBrowser.Dock = DockStyle.Top
         tlyBrowser.Location = New Point(28, 300)
         tlyBrowser.Margin = New Padding(4, 0, 4, 24)
         tlyBrowser.Name = "tlyBrowser"
-        tlyBrowser.RowCount = 2
+        tlyBrowser.RowCount = 3
         tlyBrowser.RowStyles.Add(New RowStyle())
         tlyBrowser.RowStyles.Add(New RowStyle())
-        tlyBrowser.Size = New Size(904, 78)
+        tlyBrowser.RowStyles.Add(New RowStyle())
+        tlyBrowser.Size = New Size(904, 124)
         tlyBrowser.TabIndex = 5
+        '
+        ' tlyCaptura
+        '
+        tlyCaptura.AutoFitToTheme = False
+        tlyCaptura.AutoSize = True
+        tlyCaptura.ColumnCount = 2
+        tlyCaptura.ColumnStyles.Add(New ColumnStyle())
+        tlyCaptura.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyCaptura.Controls.Add(lblCapturaCaption, 0, 0)
+        tlyCaptura.Controls.Add(cmbCaptura, 1, 0)
+        tlyCaptura.Location = New Point(4, 78)
+        tlyCaptura.Margin = New Padding(0, 0, 0, 0)
+        tlyCaptura.Name = "tlyCaptura"
+        tlyCaptura.RowCount = 1
+        tlyCaptura.RowStyles.Add(New RowStyle())
+        tlyCaptura.Size = New Size(900, 46)
+        tlyCaptura.TabIndex = 2
+        '
+        ' lblCapturaCaption
+        '
+        lblCapturaCaption.Anchor = AnchorStyles.Left
+        lblCapturaCaption.AutoSize = True
+        lblCapturaCaption.Location = New Point(4, 8)
+        lblCapturaCaption.Margin = New Padding(4, 0, 12, 0)
+        lblCapturaCaption.Name = "lblCapturaCaption"
+        lblCapturaCaption.Size = New Size(300, 29)
+        lblCapturaCaption.TabIndex = 0
+        lblCapturaCaption.Text = "Capturile pentru documente arată:"
+        '
+        ' cmbCaptura
+        '
+        cmbCaptura.Anchor = AnchorStyles.Left
+        cmbCaptura.DrawMode = DrawMode.OwnerDrawFixed
+        cmbCaptura.DropDownStyle = ComboBoxStyle.DropDownList
+        cmbCaptura.FlatStyle = FlatStyle.Flat
+        cmbCaptura.ItemHeight = 28
+        cmbCaptura.Location = New Point(320, 4)
+        cmbCaptura.Margin = New Padding(4, 4, 4, 4)
+        cmbCaptura.Name = "cmbCaptura"
+        cmbCaptura.Size = New Size(420, 34)
+        cmbCaptura.TabIndex = 1
+        tips.SetToolTipHeader(cmbCaptura, "Capturile din FOREXE")
+        tips.SetToolTipText(cmbCaptura, "Pagina originală: regulile dumneavoastră de stil sunt ridicate pentru poză," & vbLf &
+                            "deci documentul arată pagina așa cum o trimite FOREXE (ca exemplele din ghid)." & vbLf &
+                            "Așa cum se vede: poza păstrează regulile." & vbLf &
+                            "În ambele cazuri poza nu conține meniul K-BOT și nu e întunecată.")
         '
         ' chkHideChrome
         '
@@ -556,6 +607,9 @@ Partial Class SetariForexeView
     Friend WithEvents tlyBrowser As KBotTableLayoutPanel
     Friend WithEvents chkHideChrome As CheckBox
     Friend WithEvents chkDevTools As CheckBox
+    Friend WithEvents tlyCaptura As KBotTableLayoutPanel
+    Friend WithEvents lblCapturaCaption As Label
+    Friend WithEvents cmbCaptura As KBotComboBox
     Friend WithEvents lblTitluFoldere As Label
     Friend WithEvents tlyFoldere As KBotTableLayoutPanel
     Friend WithEvents lblWorkflowsCaption As Label

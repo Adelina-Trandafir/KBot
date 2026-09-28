@@ -110,6 +110,22 @@ Public Class ForexeControllerFailureTests
             Return Task.FromResult(String.Empty)
         End Function
 
+        ' The FOREXE page captures (operator, 28.09.2026): a fake takes no pictures.
+        Public Function CapturePaginaAsync(paginaOriginala As Boolean) As Task(Of Byte()) Implements IForexeRunner.CapturePaginaAsync
+            Return Task.FromResult(Of Byte())(Nothing)
+        End Function
+
+        Public Function CaptureInfoCompleteAsync(paginaOriginala As Boolean) As Task(Of Byte()) Implements IForexeRunner.CaptureInfoCompleteAsync
+            Return Task.FromResult(Of Byte())(Nothing)
+        End Function
+
+        Public Sub SetCapturaProvider(provider As Func(Of String, CancellationToken, Task(Of Boolean))) Implements IForexeRunner.SetCapturaProvider
+        End Sub
+
+        Public Function ResetShotSessionAsync() As Task Implements IForexeRunner.ResetShotSessionAsync
+            Return Task.CompletedTask
+        End Function
+
         Public Function ReadPageAngajamentAsync() As Task(Of String) Implements IForexeRunner.ReadPageAngajamentAsync
             Return Task.FromResult(String.Empty)
         End Function

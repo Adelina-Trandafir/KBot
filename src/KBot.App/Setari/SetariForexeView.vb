@@ -51,6 +51,7 @@ Public Class SetariForexeView
             Try
                 chkHideChrome.Checked = AppSettings.Current.ForexeHideBrowserChrome
                 chkDevTools.Checked = AppSettings.Current.ForexeDevToolsAllowed
+                UmpleCapturile()
             Finally
                 _suppress = False
             End Try
@@ -180,6 +181,41 @@ Public Class SetariForexeView
         End Try
     End Sub
 
+    ' ---------------- the captures for the documents (28.09.2026) ----------------
+
+    ' The two choices, in the order of the setting: index 0 = «Pagina originală» (True).
+    Private Const CapturaOriginala As String = "Pagina originală"
+    Private Const CapturaCumSeVede As String = "Așa cum se vede"
+
+    Private Sub UmpleCapturile()
+        If cmbCaptura.Items.Count = 0 Then
+            cmbCaptura.Items.Add(CapturaOriginala)
+            cmbCaptura.Items.Add(CapturaCumSeVede)
+        End If
+        cmbCaptura.SelectedIndex = If(AppSettings.Current.ForexeCapturaPaginaOriginala, 0, 1)
+    End Sub
+
+    ''' <summary>
+    ''' Saved at once. Nothing is pushed into the page: the choice is read when a picture is
+    ''' taken, so it reaches the very next capture without touching the open page.
+    ''' </summary>
+    Private Sub CmbCaptura_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbCaptura.SelectedIndexChanged
+        Try
+            If _suppress Then Return
+            Dim originala As Boolean = cmbCaptura.SelectedIndex <= 0
+            Dim copie As AppSettings = AppSettings.Current.Clone()
+            copie.ForexeCapturaPaginaOriginala = originala
+            copie.Save()
+            RaiseEvent StatusChanged(If(originala,
+                "Capturile pentru documente arată pagina așa cum o trimite FOREXE (fără regulile dumneavoastră de stil).",
+                "Capturile pentru documente păstrează regulile dumneavoastră de stil.") &
+                " Meniul K-BOT și modul întunecat nu apar în ele niciodată.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForexeView.CmbCaptura_SelectedIndexChanged", ex)
+            RaiseEvent StatusChanged("Setarea nu a putut fi salvată: " & ex.Message)
+        End Try
+    End Sub
+
     ' ---------------- dry run / replay (slice 0081-07) ----------------
 
     Private Sub ChkDryRun_CheckedChanged(sender As Object, e As EventArgs) Handles chkDryRun.CheckedChanged
@@ -219,11 +255,13 @@ Public Class SetariForexeView
             tlyStare.BackColor = p.SurfaceAltColor
             tlyCertificat.BackColor = p.SurfaceAltColor
             tlyBrowser.BackColor = p.SurfaceAltColor
+            tlyCaptura.BackColor = p.SurfaceAltColor
+            cmbCaptura.ApplyTheme(scheme)
             tlyFoldere.BackColor = p.SurfaceAltColor
             tlyTests.BackColor = p.SurfaceAltColor
             For Each caption As Label In New Label() {lblConexiuneCaption, lblCertificatCaption, lblCertMemoratCaption,
                                                       lblWorkflowsCaption, lblRezultateCaption, lblExtraseCaption, lblFoldereHint,
-                                                      lblAnswersCaption, lblTestsHint}
+                                                      lblAnswersCaption, lblTestsHint, lblCapturaCaption}
                 caption.ForeColor = p.TextDimColor
                 caption.BackColor = Color.Transparent
             Next

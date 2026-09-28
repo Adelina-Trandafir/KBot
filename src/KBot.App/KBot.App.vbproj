@@ -164,5 +164,8 @@
     <Compile Update="KbotForm.Views.vb">
       <DependentUpon>KbotForm.vb</DependentUpon>
     </Compile>
+    <Compile Update="KbotForm.Nomenclatoare.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
   </ItemGroup>
 </Project>

@@ -78,6 +78,7 @@ Public NotInheritable Class SetariFoldere
     Public Const CheieOrdPdf As String = "OrdPdf"
     ''' <summary>Slice 0081-07: every FOREXE answer, kept so it can be loaded again instead of re-run.</summary>
     Public Const CheieRezultateForexe As String = "RezultateForexe"
+    Public Const CheieCapturi As String = "Capturi"
 
     ''' <summary>
     ''' Toate setările de folder, cu implicitele lor. ASTA e lista completă — orice cale
@@ -110,7 +111,9 @@ Public NotInheritable Class SetariFoldere
             New Setare(CheieOrdPdf, KBotPaths.DefaultOrdPdfRoot,
                        "Copiile locale ale PDF-urilor ORD descărcate de pe server.", True),
             New Setare(CheieRezultateForexe, "Rezultate_Forexe",
-                       "Fiecare răspuns FOREXE, păstrat ca să poată fi reîncărcat fără o nouă rulare.", True)
+                       "Fiecare răspuns FOREXE, păstrat ca să poată fi reîncărcat fără o nouă rulare.", True),
+            New Setare(CheieCapturi, "Capturi",
+                       "Capturile din pagina FOREXE, până când pleacă pe server (rezervări și recepții).", True)
         })
 
     Private Shared ReadOnly _dupaCheie As Dictionary(Of String, Setare) =

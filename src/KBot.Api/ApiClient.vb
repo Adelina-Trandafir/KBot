@@ -1812,14 +1812,26 @@ Public Class ApiClient
 
         If payload.atasamente IsNot Nothing Then
             For Each t As OrdDraftAttDto In payload.atasamente
-                d.Atasamente.Add(New OrdDraftAtt() With {
+                Dim att As New OrdDraftAtt() With {
                     .TempId = t.temp_id, .Idordattp = t.idordattp,
                     .PartTempId = t.part_temp_id, .Idordpartp = t.idordpartp,
                     .NumeFisier = If(t.nume_fisier, String.Empty),
                     .TipMime = If(t.tip_mime, String.Empty),
                     .Dimensiune = t.dimensiune,
                     .Sha256 = If(t.sha256, String.Empty),
-                    .DataModif = t.data_modif})
+                    .DataModif = t.data_modif}
+                ' A proposed attachment brings its own bytes (the FOREXE captures, 28.09.2026):
+                ' marked as changed, so the save phase uploads them like a pasted picture.
+                ' Bytes that are not readable base64 lose the picture, not the ordonanțare.
+                If Not String.IsNullOrWhiteSpace(t.continut) Then
+                    Try
+                        att.Continut = Convert.FromBase64String(t.continut)
+                        att.Modificat = att.Continut IsNot Nothing AndAlso att.Continut.Length > 0
+                    Catch ex As FormatException
+                        GlobalErrorLog.Write("ApiClient.CitesteDraftOrd", ex)
+                    End Try
+                End If
+                d.Atasamente.Add(att)
             Next
         End If
 

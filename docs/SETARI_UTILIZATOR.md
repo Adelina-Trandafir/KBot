@@ -276,6 +276,7 @@ o schimbi**; «Închide» doar închide. Paginile:
 | `ForexeHideBrowserChrome` | `true` | în vizualizator, bara browserului rămâne în afara panoului (se aplică lucrării următoare) |
 | `ForexeDevToolsAllowed` | `false` | pagina FOREXE lasă F12, Ctrl+Shift+I/J/C, Ctrl+U și clicul dreapta să ajungă la Chromium; debifat, meniul K-BOT din pagină le înghite |
 | `ForexePageStyles` | cele 5 reguli K-BOT (§7.1) | lista de reguli CSS `{enabled, selector, css, note, page}` scrisă în fiecare pagină FOREXE; lipsă = regulile implicite, listă goală = nicio regulă |
+| `ForexeCapturaPaginaOriginala` | `true` | capturile pentru documente (§7.2) arată pagina fără regulile dumneavoastră de stil («Pagina originală»); `false` = «Așa cum se vede». Meniul K-BOT și modul întunecat lipsesc din poză oricum |
 | `ReceptiiCheckedOnOpen` | `true` | selectorul de recepții pornește cu tot bifat |
 | `AdobeDetachMode` | `KillProcess` | cum se eliberează fereastra Adobe la schimbarea documentului: `KillProcess` (A) sau `CloseWindow` (B) |
 | `AdobePopupWatch` | `true` | ascunde fereastra plutitoare a Adobe cât timp documentul e afișat |
@@ -312,7 +313,7 @@ instalat la andocare, în ORICE document pe care Wicket îl încarcă — `contr
 `receptie_edit?7`, `wicket/page?9`…). Setările îi ajung prin `ForexeWatchConfig` (JSON
 `{devTools, darkMode, rules}`), la fiecare andocare și în clipa în care se apasă «Salvează și aplică» sau
 se schimbă tema; pagina le ține în `localStorage`, ca următoarea încărcare să pornească gata stilizată,
-înainte de prima afișare (cum anume — §7.4).
+înainte de prima afișare (cum anume — §7.5).
 
 ### 7.1 Regulile CSS (pagina «Pagina FOREXE»)
 
@@ -345,18 +346,53 @@ inline) și le arată ca arbore; un clic pe un element îi pune selectorul propu
 câmpuri și **încadrează elementul în pagina FOREXE** (chenar portocaliu, derulat la vedere); chenarul
 piere la închiderea ferestrei.
 
-### 7.2 Cât lucrează robotul
+### 7.2 Capturile pentru documente (28.09.2026)
+
+Ghidul ALOP cere capturi din sistemul de control al angajamentelor în amândouă documentele pe care
+le semnați: **documentul de fundamentare** vrea rezervările «imediat ce au fost
+introduse/actualizate» (ghidul, p.11-14; exemplul de la p.41 e fila «Buget» de după salvare), iar
+**ordonanțarea de plată** vrea două poze (p.21-22): «Captura cu recepții» și «Captura cu secțiunea
+Informații complete contract». K-BOT le face singur, deci nu mai folosiți PrtScr:
+
+| Când lucrați | Ce se fotografiază |
+|---|---|
+| Rezervări | lista, **înainte** de primul ochișor apăsat (clicul e ținut o clipă cât se face poza) și **după** ultima salvare, când răspundeți «DA — am terminat», cu pagina întoarsă pe «Buget». Un indicator NOU nu are poză «înainte» — nu era nimic de arătat. |
+| Recepții | fila «Recepții» așa cum a lăsat-o salvarea, apoi «Informații complete contract»: K-BOT apasă singur butonul, derulează tabelul până la **capătul din dreapta** (acolo stau «Recepții» și «Plăți») și revine cu «Înapoi». Cât face asta, pagina e închisă pentru dumneavoastră, ca la orice lucrare a robotului. |
+
+Pozele nu conțin niciodată meniul K-BOT, vălul sau modul întunecat. Restul ține de comutatorul
+«Capturile pentru documente arată» din pagina «FOREXE»: **«Pagina originală»** (implicit) ridică
+regulile dumneavoastră de stil pentru poză, deci documentul arată pagina așa cum o trimite FOREXE —
+ca exemplele din ghid; **«Așa cum se vede»** păstrează regulile.
+
+**Drumul unei poze.** Se scrie pe disc, în `<AppDir>\Capturi\<cod angajament>\`, și stă acolo până
+când descărcarea și preluarea au scris în K-BOT înregistrarea de care se leagă. Apoi pleacă pe
+server, pe numărul pe care marcajul K-BOT l-a pus în pagină — «(IDREV: n)» pentru rezervări,
+«(IDRH: n; IDR: m)» pentru recepții — și se așază pe rândul căruia îi aparține: `FX_Rezervarii_IMG`
+(rezervarea) sau `FX_Receptii_IMG` (recepția). De acolo:
+
+- **revizia** generată din rezervări le ia singură și le pune ca atașamente `PrtScr = 1`, adică
+  exact rândurile pe care le desenează Table4 din PDF-ul final;
+- **ordonanțarea** nouă se deschide cu ultima pereche de poze ale angajamentului deja atașată (le
+  puteți șterge în editor — sunt o propunere).
+
+O poză fără număr, sau pe care serverul n-o poate așeza, **rămâne pe disc** și vi se spune în
+consolă: o dovadă nu se aruncă în tăcere. Pozele sunt JPEG (calitate 70): stau într-un PDF semnat,
+unde un PNG de pagină întreagă costă de câteva ori mai mult pentru cifre care se citesc la fel.
+Aceleași două poze le face și robotul când trimite singur revizia («Poza_Inainte» la început,
+«Poza_Final» la sfârșit).
+
+### 7.3 Cât lucrează robotul
 
 - fereastra browserului e **închisă pentru operator** (`EnableWindow`): clicul și tastele nu ajung în
   pagină; robotul, care vorbește prin protocolul de depanare, nu e afectat;
 - pagina e **încețoșată** și un cartonaș în mijloc spune «K-BOT lucrează în FOREXE: <numele lucrării>»
   + «Vă rugăm așteptați»; o navigare din mijlocul lucrării vine deja încețoșată, iar o re-randare Ajax
-  Wicket nu o ridică (§7.4);
+  Wicket nu o ridică (§7.5);
 - meniul K-BOT din pagină e ascuns, urmărirea operațiunilor e suspendată.
 
 Totul se ridică singur la sfârșitul lucrării.
 
-### 7.3 Ce mai face scriptul
+### 7.4 Ce mai face scriptul
 
 - **Salvare fără modificări**: la formularele de rezervare (`input[name^='tableContainer:']`) și de
   recepție (`form.form-horizontal input[name$=':valoare']`) valorile se fotografiază când apare
@@ -373,7 +409,7 @@ Totul se ridică singur la sfârșitul lucrării.
 - Fereastra andocată e **verificată** după fiecare andocare / redimensionare (imediat și încă de 5 ori
   în 1,6 s) și pusă la loc dacă s-a mutat: bara de adrese nu trebuie să se vadă.
 
-### 7.4 Când intră stilurile și cum rămân (21.09.2026, felia 0073-01)
+### 7.5 Când intră stilurile și cum rămân (21.09.2026, felia 0073-01)
 
 Tot ce scrie scriptul în pagină stă în două elemente `<style>` (regulile + modul întunecat într-unul,
 încețoșarea în celălalt) și într-o clasă pe `<html>` (`kbot-busy`, cât lucrează robotul). Semnalate de

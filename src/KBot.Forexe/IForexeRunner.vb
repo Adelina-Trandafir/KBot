@@ -100,6 +100,26 @@ Namespace KBot.Forexe
         ' or "cleared"; "" without a session. Never throws.
         Function HighlightPageElementAsync(index As Integer) As Task(Of String)
 
+        ' The pictures the ALOP guide asks for (operator, 28.09.2026), taken out of the live
+        ' page as JPEG. `paginaOriginala` lifts the operator's own CSS rules for the shot;
+        ' K-BOT's menu, veil and dark mode are out of it either way. Nothing without a
+        ' session. Never throws.
+        Function CapturePaginaAsync(paginaOriginala As Boolean) As Task(Of Byte())
+
+        ' The guide's second reception picture (p.22): «Afișează informații complete», the
+        ' table scrolled to its right end, the picture, «Înapoi». Nothing when the button is
+        ' not on the page. Never throws.
+        Function CaptureInfoCompleteAsync(paginaOriginala As Boolean) As Task(Of Byte())
+
+        ' Who takes the picture the PAGE asks for when it holds a click (the eye of the first
+        ' reservation row): (tip) -> True when it was taken and kept. Registered once by the
+        ' shell; without it the page goes on without a picture.
+        Sub SetCapturaProvider(provider As Func(Of String, CancellationToken, Task(Of Boolean)))
+
+        ' Forgets that this reservation session has its «before» picture, so the next session
+        ' takes a new one. Called when the session is taken into K-BOT.
+        Function ResetShotSessionAsync() As Task
+
         ' Deschide bancul de înregistrare (felia 0053) peste sesiunea vie. Formularul
         ' trăiește în KBot.Forexe fiindcă are nevoie de WorkflowExecutor, care rămâne
         ' privat în runner; gazdele cer doar «arată-l», nu executorul.

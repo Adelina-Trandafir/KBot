@@ -95,6 +95,15 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property ForexePageStyles As List(Of PageStyleRule) = PageStyleRule.Defaults()
 
+    ''' <summary>
+    ''' How the FOREXE page must look in the captures K-BOT takes for the two documents
+    ''' (operator, 28.09.2026): True = «Pagina originală» - the operator's own CSS rules are
+    ''' lifted for the picture, so it shows the page as FOREXE serves it (which is what the
+    ''' ALOP guide's own examples show, p.22 and p.41); False = «Așa cum se vede». Either
+    ''' way the picture never carries K-BOT's menu, its veil or the dark mode.
+    ''' </summary>
+    Public Property ForexeCapturaPaginaOriginala As Boolean = True
+
     ' ── Documents ────────────────────────────────────────────────────────
 
     ''' <summary>
@@ -341,6 +350,7 @@ Public NotInheritable Class AppSettings
             .ForexeDevToolsAllowed = ForexeDevToolsAllowed,
             .ForexePageStyles = ForexePageStyles?.Select(Function(r) New PageStyleRuleDto With {
                 .Enabled = r.Enabled, .Selector = r.Selector, .Css = r.Css, .Note = r.Note, .Page = r.Page}).ToList(),
+            .ForexeCapturaPaginaOriginala = ForexeCapturaPaginaOriginala,
             .AdobeDetachMode = AdobeDetachMode,
             .AdobePopupWatch = AdobePopupWatch,
             .AcroPdfFreshControl = AcroPdfFreshControl,
@@ -372,6 +382,7 @@ Public NotInheritable Class AppSettings
         If dto.ReceptiiCheckedOnOpen.HasValue Then s.ReceptiiCheckedOnOpen = dto.ReceptiiCheckedOnOpen.Value
         If dto.AdvancedOptions.HasValue Then s.AdvancedOptions = dto.AdvancedOptions.Value
         If dto.ForexeDevToolsAllowed.HasValue Then s.ForexeDevToolsAllowed = dto.ForexeDevToolsAllowed.Value
+        If dto.ForexeCapturaPaginaOriginala.HasValue Then s.ForexeCapturaPaginaOriginala = dto.ForexeCapturaPaginaOriginala.Value
         If dto.ForexePageStyles IsNot Nothing Then
             s.ForexePageStyles = dto.ForexePageStyles.
                 Where(Function(r) r IsNot Nothing).
@@ -424,6 +435,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property AdvancedOptions As Boolean?
     Public Property ForexeDevToolsAllowed As Boolean?
     Public Property ForexePageStyles As List(Of PageStyleRuleDto)
+    Public Property ForexeCapturaPaginaOriginala As Boolean?
     Public Property AdobeDetachMode As String
     Public Property AdobePopupWatch As Boolean?
     Public Property AcroPdfFreshControl As Boolean?

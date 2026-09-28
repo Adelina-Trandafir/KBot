@@ -393,10 +393,21 @@ Friend Module Program
         ' FOREXE only receives the Func (tip, cod) -> marker text.
         services.AddSingleton(Of IMarcajApi)(
             Function(sp) DirectCast(sp.GetRequiredService(Of IApiClient)(), IMarcajApi))
+        ' The captures of the FOREXE page (operator, 28.09.2026), uploaded by the shell after
+        ' the ingest has written the records they hang off.
+        services.AddSingleton(Of IForexeCapturiApi)(
+            Function(sp) DirectCast(sp.GetRequiredService(Of IApiClient)(), IForexeCapturiApi))
+        ' Operator, 28.09.2026: the marker text is also kept here as it goes out. The pictures
+        ' K-BOT takes beside the save hang off the ids it names, and a reception's pair cannot
+        ' be asked for twice - a second request would reserve a snapshot that never existed.
+        services.AddSingleton(Of MarcajeRecente)()
         services.AddSingleton(Of Func(Of String, String, CancellationToken, Task(Of String)))(
             Function(sp)
-                Return Function(tip As String, cod As String, ct As CancellationToken)
-                           Return sp.GetRequiredService(Of IMarcajApi)().RezervaMarcajAsync(tip, cod, ct)
+                Return Async Function(tip As String, cod As String, ct As CancellationToken)
+                           Dim marcaj As String =
+                               Await sp.GetRequiredService(Of IMarcajApi)().RezervaMarcajAsync(tip, cod, ct)
+                           sp.GetRequiredService(Of MarcajeRecente)().Pune(tip, cod, marcaj)
+                           Return marcaj
                        End Function
             End Function)
 

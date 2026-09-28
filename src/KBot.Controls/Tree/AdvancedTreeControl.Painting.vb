@@ -473,6 +473,19 @@ Partial Public Class AdvancedTreeControl
         Dim leftPropPx As Integer = LeftTextWidthPx
         Dim rightPropPx As Integer = RightTextWidthPx
 
+        ' Slice 0087: RightTextColumn puts the right part at the same X on every row, whatever the
+        ' level, left-aligned -- a real second column. The left part is cut before it.
+        If hasSplit AndAlso m_rightTextColumn > 0 Then
+            Dim columnX As Single = Math.Max(CSng(x) + PaddingSeparatorGapPx, CSng(SX(m_rightTextColumn)))
+            Dim leftZone As Single = Math.Max(0, columnX - PaddingSeparatorGapPx - CSng(x))
+            DrawRichPartsInZone(g, ParseRichText(leftText, defaultFont, defaultColor), y, CSng(x), leftZone, fmt)
+            If Not String.IsNullOrEmpty(rightText) AndAlso rightEdgeX > columnX Then
+                DrawRichPartsInZone(g, ParseRichText(rightText, defaultFont, defaultColor), y, columnX,
+                                    rightEdgeX - columnX, fmt)
+            End If
+            Return
+        End If
+
         ' ── 2. Calcul zone stânga/dreapta ────────────────────────────────────────
         Dim leftBudget As Single = availableWidth
         Dim rightZoneStart As Single = rightEdgeX
