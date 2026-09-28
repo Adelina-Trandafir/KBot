@@ -70,8 +70,9 @@ Partial Public Class KbotForm
                 Return False
             End If
             If extrase.Count = 0 Then
-                KBotMessage.Show(owner, "Nu există extrase noi de descărcat.", "Extrase de cont",
-                                MessageBoxButtons.OK, MessageBoxIcon.Information)
+                ' Nothing new is not an error: no box (operator, 28.09.2026).
+                OperatorLog.Write("MainForm.DescarcaExtraseAsync", "Extrase de cont",
+                                  "Nu există extrase noi de descărcat.")
                 Return False
             End If
 
@@ -118,17 +119,19 @@ Partial Public Class KbotForm
             mesaj.AppendLine($"Extrase descărcate: {extrase.Count}.")
             mesaj.AppendLine($"Importate: {rezultat.Importate} · sărite (deja cunoscute): {rezultat.Sarite}.")
             mesaj.AppendLine($"Operațiuni scrise: {rezultat.Randuri}.")
-            Dim iconita As MessageBoxIcon = MessageBoxIcon.Information
+            ' A clean import is SILENT (operator, 28.09.2026): the figures go to the operator
+            ' log only. The box appears only when the server sent warnings.
             If rezultat.Avertismente.Count > 0 Then
-                iconita = MessageBoxIcon.Warning
                 mesaj.AppendLine()
                 mesaj.AppendLine("Avertismente de la server:")
                 For Each a As String In rezultat.Avertismente
                     mesaj.AppendLine(" - " & a)
                 Next
+                KBotMessage.Show(owner, mesaj.ToString(), "Extrase de cont",
+                                MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Else
+                OperatorLog.Write("MainForm.ImportaExtraseAsync", "Extrase de cont", mesaj.ToString())
             End If
-            KBotMessage.Show(owner, mesaj.ToString(), "Extrase de cont",
-                            MessageBoxButtons.OK, iconita)
             Return rezultat.Importate > 0 OrElse rezultat.Randuri > 0
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ImportaExtraseAsync", ex)

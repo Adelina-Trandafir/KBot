@@ -157,11 +157,11 @@ Partial Public Class KbotForm
                 Return
             End If
 
-            ' The upsert is HTTP, not the robot: its result is told to the operator, not the FOREXE console.
+            ' A good synchronisation is SILENT (operator, 28.09.2026): the figures go to the
+            ' operator log only. A failed upsert throws and is shown by the caller.
             Dim resp As String = Await WithReauth(Function() _apiClient.UpsertAngajamenteAsync(_session.DbName, mapate, _cts.Token))
-            KBotMessage.Show(Me,
-                $"Sincronizare reușită: {mapate.Count} angajamente trimise în «{_session.DbName}».{Environment.NewLine}{resp}",
-                "Sincronizare", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            OperatorLog.Write("MainForm.SincronizeazaAsync", "Sincronizare",
+                $"Sincronizare reușită: {mapate.Count} angajamente trimise în «{_session.DbName}». {resp}")
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.SincronizeazaAsync", ex)
             Throw

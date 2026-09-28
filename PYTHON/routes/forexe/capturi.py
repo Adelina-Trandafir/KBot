@@ -127,6 +127,19 @@ def _base64(octeti: bytes) -> str:
     return base64.b64encode(octeti).decode("ascii")
 
 
+def _cheie_noua(cursor, tabela: str, id_col: str) -> int:
+    """The next key of an IMG table, taken inside the transaction.
+
+    The unit databases carry `IDRZC` / `IDRDC` as `INT NOT NULL` WITHOUT AUTO_INCREMENT
+    (MariaDB_Schema/000_DEMO.sql; only AVACONT_SURSA has it), so an INSERT that leaves the
+    key out fails with 1364 and every capture was refused with a 500. `FOR UPDATE` holds the
+    end of the index until commit, so two uploads cannot take the same number.
+    """
+    cursor.execute(f"SELECT COALESCE(MAX({id_col}), 0) + 1 AS n FROM {tabela} FOR UPDATE")
+    row = cursor.fetchone() or {}
+    return int(row.get("n") or 1)
+
+
 def _exista_deja(cursor, tabela: str, cheie: str, valoare: int, continut: str) -> int:
     """The id of a picture of the same record with the SAME bytes, or 0.
 
@@ -188,12 +201,10 @@ def put_captura_rezervare(idrev):
         existent = _exista_deja(cursor, "FX_Rezervarii_IMG", "IDRZ", idrz, continut)
         if existent > 0:
             return {"id": existent, "exista_deja": True, "idrz": idrz}
+        idrzc = _cheie_noua(cursor, "FX_Rezervarii_IMG", "IDRZC")
         cursor.execute(
-            "INSERT INTO FX_Rezervarii_IMG (IDRZ, IMG, Nume) VALUES (%s, %s, %s)",
-            (idrz, continut, nume))
-        idrzc = int(cursor.lastrowid or 0)
-        if idrzc <= 0:
-            raise RuntimeError("FX_Rezervarii_IMG nu a intors o cheie noua (AUTO_INCREMENT lipsa?)")
+            "INSERT INTO FX_Rezervarii_IMG (IDRZC, IDRZ, IMG, Nume) VALUES (%s, %s, %s, %s)",
+            (idrzc, idrz, continut, nume))
         logger.info("[forexe.capturi] rezervare idrev=%s idrz=%s moment=%s %s octeti",
                     idrev, idrz, moment or "-", len(octeti))
         return {"id": idrzc, "exista_deja": False, "idrz": idrz}
@@ -235,12 +246,10 @@ def put_captura_receptie(idrh):
         existent = _exista_deja(cursor, "FX_Receptii_IMG", "IDRR", idrr, continut)
         if existent > 0:
             return {"id": existent, "exista_deja": True, "idrr": idrr}
+        idrdc = _cheie_noua(cursor, "FX_Receptii_IMG", "IDRDC")
         cursor.execute(
-            "INSERT INTO FX_Receptii_IMG (IDRR, IDRH, IMG, Nume) VALUES (%s, %s, %s, %s)",
-            (idrr, idrh, continut, nume))
-        idrdc = int(cursor.lastrowid or 0)
-        if idrdc <= 0:
-            raise RuntimeError("FX_Receptii_IMG nu a intors o cheie noua (AUTO_INCREMENT lipsa?)")
+            "INSERT INTO FX_Receptii_IMG (IDRDC, IDRR, IDRH, IMG, Nume) VALUES (%s, %s, %s, %s, %s)",
+            (idrdc, idrr, idrh, continut, nume))
         logger.info("[forexe.capturi] receptie idrh=%s idrr=%s moment=%s %s octeti",
                     idrh, idrr, moment or "-", len(octeti))
         return {"id": idrdc, "exista_deja": False, "idrr": idrr}

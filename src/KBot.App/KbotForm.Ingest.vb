@@ -179,13 +179,17 @@ Partial Public Class KbotForm
                 Return False
             End If
 
-            ' The SERVER's figures, not a retelling: the same sentence the form shows after a
-            ' save, so the operator reads the same thing on both roads. `KBotMessage.Show` also
-            ' writes it to Logs\mesaje_operator.log.
-            KBotMessage.Show(Me, AsociereForm.TextDupaSalvare(raspuns),
-                            $"K-BOT — Descărcarea lui «{cod}»", MessageBoxButtons.OK,
-                            If(raspuns.Avertismente.Count > 0,
-                               MessageBoxIcon.Warning, MessageBoxIcon.Information))
+            ' The SERVER's figures, not a retelling: the same sentence the form uses after a
+            ' save. A clean save is SILENT (operator, 28.09.2026) -- the figures go to the
+            ' operator log only; a box appears only when the server sent warnings, exactly as
+            ' `AsociereForm.SpuneSiInchide` does.
+            Dim textSalvare As String = AsociereForm.TextDupaSalvare(raspuns)
+            Dim titluSalvare As String = $"K-BOT — Descărcarea lui «{cod}»"
+            If raspuns.Avertismente.Count > 0 Then
+                KBotMessage.Show(Me, textSalvare, titluSalvare, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Else
+                OperatorLog.Write("MainForm.SalveazaFaraMachetaAsync", titluSalvare, textSalvare)
+            End If
             Return True
         Catch ex As ApiException
             GlobalErrorLog.Write("MainForm.SalveazaFaraMachetaAsync", ex)

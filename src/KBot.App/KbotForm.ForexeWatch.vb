@@ -170,7 +170,12 @@ Partial Public Class KbotForm
                                     ev.Operation = ForexeOperationKind.ReceptieModificare) Then
                     Await TrimiteCapturileAsync(cod, CapturaStore.FelReceptie)
                 End If
-                DeschideIstoricInterval(cod, deLa, panaLa, ev.Label)
+                ' No history window after a reception (operator, 28.09.2026): the Receptii view
+                ' already shows what was written, as for reservations.
+                If ev.Operation <> ForexeOperationKind.Receptie AndAlso
+                   ev.Operation <> ForexeOperationKind.ReceptieModificare Then
+                    DeschideIstoricInterval(cod, deLa, panaLa, ev.Label)
+                End If
             Next
         Finally
             _urmarireInLucru = False

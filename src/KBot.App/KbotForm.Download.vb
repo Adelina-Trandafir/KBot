@@ -68,10 +68,11 @@ Partial Public Class KbotForm
             ' new angajament appeared.
             If rezultat.Inserate > 0 Then Await LoadTreeAsync()
 
-            KBotMessage.Show(Me,
-                $"Angajamente în FOREXE: {rezultat.Candidate}." & Environment.NewLine &
-                $"Adăugate acum: {rezultat.Inserate} · deja existente (neatinse): {rezultat.Existente}.",
-                "Listă angajamente", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            ' A good download is SILENT (operator, 28.09.2026): the figures go to the operator
+            ' log only, never into a box. Only errors are shown.
+            OperatorLog.Write("MainForm.Tree_FooterRightIconClicked", "Listă angajamente",
+                $"Angajamente în FOREXE: {rezultat.Candidate}. " &
+                $"Adăugate acum: {rezultat.Inserate} · deja existente (neatinse): {rezultat.Existente}.")
         Catch ex As Exception
             ' UI boundary (async Sub): cannot re-throw -- log it and say why.
             GlobalErrorLog.Write("MainForm.tree_FooterRightIconClicked", ex)
