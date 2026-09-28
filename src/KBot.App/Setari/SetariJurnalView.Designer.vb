@@ -219,7 +219,10 @@ Partial Class SetariJurnalView
         grila.EnableGrouping = True
         grila.FillColumnKey = "sursa"
         grila.FrozenColumnCount = 1
+        KBotGroupLevel2.CollapsedByDefault = True
         KBotGroupLevel2.ColumnKey = "ora"
+        KBotGroupLevel2.FooterCaptionFormat = "{1}"
+        KBotGroupLevel2.HeaderCaptionFormat = "{1}"
         KBotGroupLevel2.KeyPattern = "^\S+"
         KBotGroupLevel2.ShowFooter = False
         KBotGroupLevel2.ShowFooterAggregates = False

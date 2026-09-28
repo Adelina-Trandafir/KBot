@@ -41,7 +41,11 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Open threads (sliceless)
 
-- **FOREXE page pictures (no slice, 28.09.2026) — why they never left the client.** The
+- **FOREXE page pictures (no slice, 28.09.2026) — why they never left the client.** Seen
+  28.09 15:10 (005_CEVM, AAB5T2585AE, DDF revision 305 found 0 pictures): EXPECTED — the
+  reservation was saved outside the in-app browser, so no marker and no picture exist; K-BOT
+  takes pictures only there. The operator's first report (new reservation + new reception
+  made IN the in-app browser, no pictures) is still unexplained. The
   server log has NO request on `/api/forexe/capturi/*`, so the client stopped before sending.
   The client log is on the client's PC. Places in the client where nothing is sent:
   (a) no file in `Capturi\<cod>\` for that angajament and kind — the picture was not taken

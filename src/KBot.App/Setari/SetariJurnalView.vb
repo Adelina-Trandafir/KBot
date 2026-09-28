@@ -324,15 +324,20 @@ Public Class SetariJurnalView
         Finally
             _suprimaEvenimente = False
         End Try
-        Dim ignorat As Task = IncarcaSelectiaAsync()
+        ' A refresh keeps the days the operator opened: they are reading one of them.
+        Dim ignorat As Task = IncarcaSelectiaAsync(strangeZilele:=False)
     End Sub
 
     ''' <summary>
     ''' Loads the current selection: reading and parsing on a background thread, filling on the
     ''' UI thread. A new load cancels the one in flight -- the operator changed the file, the
     ''' old answer has no place in the grid.
+    '''
+    ''' <para><paramref name="strangeZilele"/>: a DIFFERENT journal (file, kind, session count)
+    ''' opens with every day collapsed; the group level's CollapsedByDefault alone would do that
+    ''' only for days never seen before. A refresh passes False.</para>
     ''' </summary>
-    Private Async Function IncarcaSelectiaAsync() As Task
+    Private Async Function IncarcaSelectiaAsync(Optional strangeZilele As Boolean = True) As Task
         _cts?.Cancel()
         _cts?.Dispose()
         _cts = New CancellationTokenSource()
@@ -366,6 +371,7 @@ Public Class SetariJurnalView
             _taiat = rezultat.Truncated
             ActualizeazaBadgeuri()
             AplicaFiltrul()
+            If strangeZilele Then grila.CollapseAllGroups()
         Catch ex As OperationCanceledException
             ' Cancellation is the normal path (a second selection), not an error.
         Catch ex As Exception

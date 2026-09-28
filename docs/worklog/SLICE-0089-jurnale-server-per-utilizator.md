@@ -9,6 +9,7 @@ split the server journal into Error / Warning / Info.
 1. `api_server.log` lines without `[forexe` are ignored — they belong to the old Access/VBA path;
 2. the match is `[forexe` followed by `]` or `.` — some lines are just `[forexe]`;
 3. split the log: the old VBA path writes its own file, `api_server_vba.log`.
+4. the day bands of the grid show only the date (not «Ora: …»), and every day starts collapsed.
 
 ## The problem
 
@@ -72,6 +73,13 @@ nothing that says which login they belong to.
     `noticeServer` removed from the designer (it sat in the hidden file panel). Test hooks
     `DebugAduListaServerAsync` / `DebugNoticeServerAfisat` kept, now on the new path.
   - Filter row re-laid for the extra column (144 dpi designer numbers).
+  - Day grouping (correction 4): the group level gets `HeaderCaptionFormat` / `FooterCaptionFormat`
+    = `{1}` (was the default `{0}: {1} ({2})`, where `{0}` is the column title «Ora») and
+    `CollapsedByDefault = True`. `CollapsedByDefault` alone collapses a day only the first time
+    it is seen, so `IncarcaSelectiaAsync(strangeZilele)` also calls `grila.CollapseAllGroups()`
+    when a different journal is loaded (file, kind, session count). A refresh (button or page
+    activation) passes False and keeps the days the operator opened. Applies to every journal,
+    local and server.
 
 ## Files touched
 - `PYTHON/utils/logger.py`, `PYTHON/utils/timing.py`, `PYTHON/routes/logs.py` (new), `PYTHON/main.py`
@@ -93,6 +101,9 @@ nothing that says which login they belong to.
   own tools) sees the extra `{s=… u=… dc=…}` field after the IP. The K-BOT parser is unaffected
   (the server strips the mark before sending).
 - Never run against the VPS; the route, the tag and the page were checked by reading only.
+- The existing `LogViewerFormTests` select rows by index (`DebugSelecteazaRand`); with the days
+  now collapsed those rows are inside collapsed groups. Not run (standing rule) -- if one fails,
+  that is the reason.
 - Label widths in the filter row (64 / 76 px at 144 dpi) not checked on screen.
 - Sessions are keyed by the 8-character token prefix; two live tokens of one user sharing a
   prefix would merge (1 in 64^8).
