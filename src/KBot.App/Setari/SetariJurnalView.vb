@@ -34,10 +34,18 @@ Imports KBot.Theming
 ''' thread (a log can be 5 MB); FILTERING is in memory and synchronous -- it never re-reads a
 ''' file and never asks the server again. That is why the search has a 250 ms timer.</para>
 '''
-''' <para><b>The server is optional and loaded on demand.</b> Without <c>IApiClient</c> (the
-''' harness) the «Server» group does not appear at all; with it, the file list is fetched only
-''' when the operator asks, and a failure is written into a <c>KBotNotice</c> while the local
-''' files keep working. A dead API is not allowed to take the page down with it.</para>
+''' <para><b>Which journal: <c>CmbTipJurnal</c> (slice 0089).</b> «Jurnale locale» = every
+''' local file. «Server FOREXE» and «Timpi FOREXE» = the caller's OWN lines of the server's
+''' <c>api_server.log</c> / <c>forexe_timing.log</c>, from their last N logins (N from
+''' <c>cmbSesiuni</c>, 3 by default). The server does the choosing (<c>PYTHON/routes/logs.py</c>):
+''' the user comes from the bearer session, so a client can never read another operator's lines,
+''' and only <c>[forexe]</c> / <c>[forexe.xxx]</c> lines come back -- the rest is the old Access
+''' path. The text is parsed here by the same <c>LogFileLoader</c> as a local file, so the level
+''' chips split it into errors / warnings / information like any other journal.</para>
+'''
+''' <para><b>The server is optional.</b> Without <c>IApiClient</c> (the harness) the two server
+''' choices do not exist; with it, a failure is written into <c>noticeGol</c> and the page keeps
+''' working. A dead API is not allowed to take the page down with it.</para>
 '''
 ''' <para><b>What it does NOT do:</b> no live tailing (no <c>FileSystemWatcher</c>), nothing is
 ''' written to the server (the routes are read-only), and nothing is deleted outside the one
@@ -51,9 +59,18 @@ Public Class SetariJurnalView
 
     ' -- Navigation keys --------------------------------------------------------
     Private Const KEY_TOATE As String = "toate"
-    Private Const KEY_SERVER_LISTA As String = "srv__lista"
     Private Const PREFIX_LOCAL As String = "loc:"
-    Private Const PREFIX_SERVER As String = "srv:"
+
+    ' -- Journal kinds (CmbTipJurnal, slice 0089) ----------------------------------
+    ' Key, the text the operator reads, the route (Nothing = local files) and the file name the
+    ' text is parsed under -- LogFileLoader picks the parser by that name.
+    Private Shared ReadOnly TIPURI As (Key As String, Text As String, Route As String, FileName As String)() = {
+        ("local", "Jurnale locale", Nothing, Nothing),
+        ("server", "Server FOREXE", "/api/logs/server", "api_server.log"),
+        ("timing", "Timpi FOREXE", "/api/logs/timing", "forexe_timing.log")}
+
+    ' How many of the operator's last logins a server journal covers. The first one is the default.
+    Private Shared ReadOnly SESIUNI As Integer() = {3, 5, 10, 20, 50}
 
     ' Chip keys = level names, so translating the checked chips into a set of KBotLogLevel is a
     ' single lookup, not a map kept by heart in two places.
@@ -88,8 +105,10 @@ Public Class SetariJurnalView
 
     ' Entries loaded for the current selection (before filtering), newest first.
     Private _incarcate As New List(Of LogEntry)()
-    ' Server file names brought by /api/logs/files (empty until the list is asked for).
-    Private _fisiereServer As New List(Of String)()
+    ' The last server failure (or «nothing of yours»), shown in noticeGol while the grid is empty.
+    Private _eroareServer As String = String.Empty
+    ' The sessions summary of the last server load, for the status line.
+    Private _rezumatSesiuni As String = String.Empty
     ' How many bytes were read and whether any file was cut at the read window.
     Private _octetiCititi As Long
     Private _taiat As Boolean
@@ -108,6 +127,7 @@ Public Class SetariJurnalView
         ' and a page without chips would filter on the empty set -- that is, show nothing
         ' (LogFilter: «empty set = nothing»). This way every caller gets a coherent page.
         ConstruiesteJetoane()
+        ConstruiesteTipuri()
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements ISetariView.ViewKey
@@ -125,13 +145,14 @@ Public Class SetariJurnalView
     ' =====================================================================
 
     ''' <summary>
-    ''' First activation builds the file list and loads «Toate fișierele»; every later one
+    ''' First activation builds the file list and loads «Toate fisierele»; every later one
     ''' re-reads the current selection, because the logs kept growing while another page was
     ''' on screen.
     ''' </summary>
     Public Sub Activated() Implements ISetariView.Activated
         Try
             AplicaCulorileJetoanelor()
+            PotrivesteTipuriCuClientul()
             If Not _pornit Then
                 _pornit = True
                 ConstruiesteListaFisiere()
@@ -213,9 +234,9 @@ Public Class SetariJurnalView
     End Sub
 
     ''' <summary>
-    ''' The list on the left: «Toate fișierele» pinned first, then the LOCAL group (the files in
-    ''' <c>LogPaths.LogsDirectory()</c>, freshest first, archives marked as such) and, if there is
-    ''' an API client, the SERVER group -- with one row that FETCHES the list on demand.
+    ''' The list on the left: «Toate fisierele» pinned first, then the LOCAL files (the files in
+    ''' <c>LogPaths.LogsDirectory()</c>, freshest first, archives marked as such). Server journals
+    ''' are not files here: they are chosen in <c>CmbTipJurnal</c>.
     ''' </summary>
     Private Sub ConstruiesteListaFisiere()
         _suprimaEvenimente = True
@@ -227,14 +248,6 @@ Public Class SetariJurnalView
             For Each f As FileInfo In FisiereLocale()
                 navFisiere.AddItem(PREFIX_LOCAL & f.Name, EtichetaFisier(f))
             Next
-
-            If _api IsNot Nothing Then
-                navFisiere.AddSeparator()
-                navFisiere.AddItem(KEY_SERVER_LISTA, "Server: adu lista…")
-                For Each nume As String In _fisiereServer
-                    navFisiere.AddItem(PREFIX_SERVER & nume, "Server: " & nume)
-                Next
-            End If
         Finally
             _suprimaEvenimente = False
         End Try
@@ -265,7 +278,7 @@ Public Class SetariJurnalView
         End Try
     End Function
 
-    ' «harness_errors.log» / «harness_errors.log.2 (arhivă)» -- the archive shows in the label.
+    ' «harness_errors.log» / «harness_errors.log.2 (arhiva)» -- the archive shows in the label.
     Private Shared Function EticheteazaArhiva(nume As String) As Boolean
         Dim ext As String = Path.GetExtension(nume)
         Dim gen As Integer
@@ -284,11 +297,6 @@ Public Class SetariJurnalView
     Private Sub navFisiere_SelectionChanged(key As String) Handles navFisiere.SelectionChanged
         If _suprimaEvenimente Then Return
         Try
-            If String.Equals(key, KEY_SERVER_LISTA, StringComparison.Ordinal) Then
-                ' This row is not a file: it is the button that FETCHES the server file list.
-                Dim ignorat As Task = AduListaServerAsync()
-                Return
-            End If
             _selectie = key
             Dim ignorat2 As Task = IncarcaSelectiaAsync()
         Catch ex As Exception
@@ -330,21 +338,28 @@ Public Class SetariJurnalView
         _cts = New CancellationTokenSource()
         Dim ct As CancellationToken = _cts.Token
         Dim cerut As String = _selectie
+        Dim tip As Integer = TipCurent()
+        Dim sesiuni As Integer = SesiuniCerute()
 
         SeteazaOcupat(True)
         lblStare.Text = "Se încarcă…"
         noticeGol.Clear()
         noticeGol.Visible = False
+        _eroareServer = String.Empty
+        _rezumatSesiuni = String.Empty
+        MarcheazaNoticeServer(False)
         Try
             Dim rezultat As IncarcareRezultat
-            If cerut.StartsWith(PREFIX_SERVER, StringComparison.Ordinal) Then
-                rezultat = Await IncarcaServerAsync(cerut.Substring(PREFIX_SERVER.Length), ct)
+            If TIPURI(tip).Route IsNot Nothing Then
+                rezultat = Await IncarcaJurnalServerAsync(tip, sesiuni, ct)
             Else
                 Dim cai As List(Of String) = CaiPentru(cerut)
                 rezultat = Await Task.Run(Function() CitesteFisiere(cai, ct), ct)
             End If
 
-            If ct.IsCancellationRequested OrElse Not String.Equals(cerut, _selectie, StringComparison.Ordinal) Then Return
+            If ct.IsCancellationRequested OrElse
+               Not String.Equals(cerut, _selectie, StringComparison.Ordinal) OrElse
+               tip <> TipCurent() OrElse sesiuni <> SesiuniCerute() Then Return
 
             _incarcate = OrdoneazaCeleMaiNoiPrimele(rezultat.Entries)
             _octetiCititi = rezultat.Bytes
@@ -376,8 +391,8 @@ Public Class SetariJurnalView
         If key.StartsWith(PREFIX_LOCAL, StringComparison.Ordinal) Then
             Return New List(Of String) From {LogPaths.Combine(key.Substring(PREFIX_LOCAL.Length))}
         End If
-        ' «Toate fișierele» = every LOCAL one. Server logs are asked for one at a time, because
-        ' each is a network request -- fetching all of them «to see everything» would be a surprise.
+        ' «Toate fisierele» = every LOCAL one. Server journals never mix in here: they are their own
+        ' choice in CmbTipJurnal (slice 0089).
         Return FisiereLocale().Select(Function(f) f.FullName).ToList()
     End Function
 
@@ -438,113 +453,186 @@ Public Class SetariJurnalView
     End Function
 
     ' =====================================================================
-    ' SERVER (on demand)
+    ' JOURNAL KIND AND SERVER JOURNALS (slice 0089)
     ' =====================================================================
 
     ''' <summary>
-    ''' Fetches the current unit's file list (<c>GET /api/logs/files</c>) and puts it in the
-    ''' list. A failure does NOT take the page down: it is written into <c>noticeServer</c>,
-    ''' and the local files stay whole.
+    ''' Fills the two combos. «Jurnale locale» is chosen and the sessions combo is off until a
+    ''' server journal is picked.
     ''' </summary>
-    Private Async Function AduListaServerAsync() As Task
-        If _api Is Nothing Then Return
-        SeteazaOcupat(True)
-        MarcheazaNoticeServer(False)
+    Private Sub ConstruiesteTipuri()
+        _suprimaEvenimente = True
         Try
-            Dim raspuns As LogFilesResponse =
-                Await _api.GetAsync(Of LogFilesResponse)("/api/logs/files", CancellationToken.None)
-
-            If raspuns?.ServerTime IsNot Nothing Then
-                Dim st As DateTimeOffset
-                If DateTimeOffset.TryParse(raspuns.ServerTime, st) Then ServerClock.Update(st)
-            End If
-
-            _fisiereServer = If(raspuns?.Files Is Nothing,
-                                New List(Of String)(),
-                                raspuns.Files.Where(Function(f) f IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(f.Name)).
-                                              Select(Function(f) f.Name).ToList())
-            ConstruiesteListaFisiere()
-            If _fisiereServer.Count = 0 Then
-                noticeServer.Show("Serverul nu are niciun fișier de jurnal pentru unitatea curentă.", NoticeKind.Warning)
-                MarcheazaNoticeServer(True)
-            End If
-        Catch ex As NotImplementedException
-            ' The typed methods on ApiClient are still to come (pass 0031-02). Said plainly, not
-            ' hidden in an empty list.
-            noticeServer.Show("Jurnalele de server nu sunt încă disponibile: ruta se livrează în " &
-                              "trecerea 0031-02. Fișierele locale funcționează normal.", NoticeKind.Warning)
-            MarcheazaNoticeServer(True)
-        Catch ex As Exception
-            GlobalErrorLog.Write("SetariJurnalView.AduListaServerAsync", ex)
-            noticeServer.Show("Jurnalele de server nu s-au putut aduce: " & ex.Message &
-                              " Fișierele locale funcționează mai departe.", NoticeKind.[Error])
-            MarcheazaNoticeServer(True)
+            cmbSesiuni.Items.Clear()
+            For Each n As Integer In SESIUNI
+                cmbSesiuni.Items.Add(n.ToString(Globalization.CultureInfo.InvariantCulture) & " sesiuni")
+            Next
+            cmbSesiuni.SelectedIndex = 0
         Finally
-            SeteazaOcupat(False)
+            _suprimaEvenimente = False
         End Try
+        PotrivesteTipuriCuClientul()
+    End Sub
+
+    ''' <summary>
+    ''' Lists the journal kinds this page can serve. Without an API client only «Jurnale locale»
+    ''' exists: a choice that cannot work must not be offered. The client arrives after the
+    ''' constructor (designer-built page), so this runs again at activation.
+    ''' </summary>
+    Private Sub PotrivesteTipuriCuClientul()
+        Dim dorite As Integer = If(_api IsNot Nothing, TIPURI.Length, 1)
+        If CmbTipJurnal.Items.Count = dorite AndAlso CmbTipJurnal.SelectedIndex >= 0 Then Return
+        _suprimaEvenimente = True
+        Try
+            CmbTipJurnal.Items.Clear()
+            For i As Integer = 0 To dorite - 1
+                CmbTipJurnal.Items.Add(TIPURI(i).Text)
+            Next
+            CmbTipJurnal.SelectedIndex = 0
+            AplicaTipul()
+        Finally
+            _suprimaEvenimente = False
+        End Try
+    End Sub
+
+    ''' <summary>Index into <see cref="TIPURI"/> of the chosen kind (the combo lists them in that order).</summary>
+    Private Function TipCurent() As Integer
+        Dim i As Integer = CmbTipJurnal.SelectedIndex
+        Return If(i < 0 OrElse i >= TIPURI.Length, 0, i)
     End Function
 
-    ''' <summary>Fetches the tail of a server file and runs it through the same parser as a local one.</summary>
-    Private Async Function IncarcaServerAsync(nume As String, ct As CancellationToken) As Task(Of IncarcareRezultat)
-        If _api Is Nothing Then Return New IncarcareRezultat With {.Entries = New List(Of LogEntry)()}
+    Private Function SesiuniCerute() As Integer
+        Dim i As Integer = cmbSesiuni.SelectedIndex
+        Return If(i < 0 OrElse i >= SESIUNI.Length, SESIUNI(0), SESIUNI(i))
+    End Function
+
+    ' The controls that depend on the kind: the sessions count means something only on the
+    ' server; «Deschide dosarul» and «Goleste» act on LOCAL files only.
+    Private Sub AplicaTipul()
+        Dim server As Boolean = TIPURI(TipCurent()).Route IsNot Nothing
+        cmbSesiuni.Enabled = server
+        btnDeschideDosar.Enabled = Not server
+        btnGoleste.Enabled = Not server
+    End Sub
+
+    Private Sub CmbTipJurnal_SelectedIndexChanged(sender As Object, e As EventArgs) Handles CmbTipJurnal.SelectedIndexChanged
+        If _suprimaEvenimente Then Return
         Try
-            Dim raspuns As LogTailResponse =
-                Await _api.GetAsync(Of LogTailResponse)("/api/logs/tail?generation=" & GeneratiaDin(nume), ct)
+            AplicaTipul()
+            Dim ignorat As Task = IncarcaSelectiaAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariJurnalView.CmbTipJurnal_SelectedIndexChanged", ex)
+        End Try
+    End Sub
+
+    Private Sub cmbSesiuni_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbSesiuni.SelectedIndexChanged
+        If _suprimaEvenimente Then Return
+        Try
+            If TIPURI(TipCurent()).Route Is Nothing Then Return
+            Dim ignorat As Task = IncarcaSelectiaAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariJurnalView.cmbSesiuni_SelectedIndexChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Loads one server journal and runs its text through the same parser as a local file. A
+    ''' failure does NOT throw: it is kept in <see cref="_eroareServer"/> (shown in
+    ''' <c>noticeGol</c>) and an empty result comes back, so the page stays usable.
+    ''' </summary>
+    Private Async Function IncarcaJurnalServerAsync(tip As Integer, sesiuni As Integer,
+                                                    ct As CancellationToken) As Task(Of IncarcareRezultat)
+        Dim raspuns As ServerJournalResponse = Await AduJurnalServerAsync(tip, sesiuni, ct)
+        If raspuns Is Nothing Then Return New IncarcareRezultat With {.Entries = New List(Of LogEntry)()}
+
+        Dim text As String = If(raspuns.Text, String.Empty)
+        Dim r As LogLoadResult = LogFileLoader.LoadText(text, TIPURI(tip).FileName, Date.Today,
+                                                        LogOrigin.Server, raspuns.Truncated,
+                                                        Encoding.UTF8.GetByteCount(text))
+        _rezumatSesiuni = RezumatSesiuni(raspuns)
+        If r.Entries.Count = 0 Then
+            _eroareServer = "Serverul nu are nicio intrare de-a dumneavoastră în ultimele " &
+                            sesiuni.ToString(Globalization.CultureInfo.InvariantCulture) &
+                            " sesiuni. Se înregistrează doar ce s-a lucrat după actualizarea serverului."
+        End If
+        Return New IncarcareRezultat With {.Entries = r.Entries.ToList(),
+                                           .Bytes = r.FileLengthBytes,
+                                           .Truncated = r.WasTruncated}
+    End Function
+
+    ''' <summary>
+    ''' The request itself. Nothing on failure -- the reason is in <see cref="_eroareServer"/>
+    ''' and the failure flag is up. Cancellation is re-thrown: it is the normal path.
+    ''' </summary>
+    Private Async Function AduJurnalServerAsync(tip As Integer, sesiuni As Integer,
+                                                ct As CancellationToken) As Task(Of ServerJournalResponse)
+        If _api Is Nothing OrElse TIPURI(tip).Route Is Nothing Then Return Nothing
+        Try
+            Dim raspuns As ServerJournalResponse = Await _api.GetAsync(Of ServerJournalResponse)(
+                TIPURI(tip).Route & "?sessions=" & sesiuni.ToString(Globalization.CultureInfo.InvariantCulture), ct)
 
             If raspuns?.ServerTime IsNot Nothing Then
                 Dim st As DateTimeOffset
-                If DateTimeOffset.TryParse(raspuns.ServerTime, st) Then ServerClock.Update(st)
+                If DateTimeOffset.TryParse(raspuns.ServerTime, Globalization.CultureInfo.InvariantCulture,
+                                           Globalization.DateTimeStyles.None, st) Then ServerClock.Update(st)
             End If
-
-            Dim r As LogLoadResult = LogFileLoader.LoadText(If(raspuns?.Text, String.Empty), nume, Date.Today,
-                                                            LogOrigin.Server,
-                                                            raspuns IsNot Nothing AndAlso raspuns.Truncated,
-                                                            If(raspuns IsNot Nothing, raspuns.SizeBytes, 0L))
-            MarcheazaNoticeServer(False)
-            Return New IncarcareRezultat With {.Entries = r.Entries.ToList(),
-                                               .Bytes = r.FileLengthBytes,
-                                               .Truncated = r.WasTruncated}
+            Return raspuns
+        Catch ex As OperationCanceledException
+            Throw
         Catch ex As Exception
-            GlobalErrorLog.Write("SetariJurnalView.IncarcaServerAsync", ex)
-            noticeServer.Show("Jurnalul de server «" & nume & "» nu s-a putut citi: " & ex.Message,
-                              NoticeKind.[Error])
+            GlobalErrorLog.Write("SetariJurnalView.AduJurnalServerAsync", ex)
+            _eroareServer = "Jurnalul serverului nu s-a putut aduce: " & ex.Message &
+                            " Jurnalele locale funcționează mai departe."
             MarcheazaNoticeServer(True)
-            Return New IncarcareRezultat With {.Entries = New List(Of LogEntry)()}
+            Return Nothing
         End Try
     End Function
 
-    ' The generation from the file name: «api_000_DEMO.log» = 0, «…log.3» = 3. The route takes a
-    ' number, not a name -- the client cannot address another unit's file (plan 6.4).
-    Private Shared Function GeneratiaDin(nume As String) As Integer
-        Dim ext As String = Path.GetExtension(If(nume, String.Empty))
-        Dim gen As Integer
-        If ext.Length > 1 AndAlso Integer.TryParse(ext.AsSpan(1), gen) AndAlso gen >= 1 AndAlso gen <= 5 Then Return gen
-        Return 0
+    ''' <summary>«3 sesiuni: 28.09 09:09–10:51 (014_SCSV), ...» -- newest first, as the server sends them.</summary>
+    Private Shared Function RezumatSesiuni(raspuns As ServerJournalResponse) As String
+        If raspuns?.Sessions Is Nothing OrElse raspuns.Sessions.Count = 0 Then Return String.Empty
+        Dim parti As New List(Of String)()
+        For Each s As ServerJournalSession In raspuns.Sessions
+            If s Is Nothing Then Continue For
+            Dim p As String = FormatStamp(s.First, "dd.MM HH:mm") & "–" & FormatStamp(s.Last, "HH:mm")
+            If Not String.IsNullOrEmpty(s.Dc) Then p &= " (" & s.Dc & ")"
+            parti.Add(p)
+        Next
+        Return parti.Count.ToString(Globalization.CultureInfo.InvariantCulture) &
+               If(parti.Count = 1, " sesiune: ", " sesiuni: ") & String.Join(", ", parti)
     End Function
 
-    ''' <summary>Body of <c>GET /api/logs/files</c> (plan 6.4).</summary>
-    Private NotInheritable Class LogFilesResponse
-        Public Property Files As List(Of LogFileInfoDto)
-        <System.Text.Json.Serialization.JsonPropertyName("server_time")>
-        Public Property ServerTime As String
-    End Class
+    ' "2026-09-28 09:09:29" (server time, as the route sends it) in the given format.
+    ' Unreadable text is shown as it came.
+    Private Shared Function FormatStamp(text As String, format As String) As String
+        Dim d As Date
+        If Date.TryParseExact(If(text, String.Empty), "yyyy-MM-dd HH:mm:ss", Globalization.CultureInfo.InvariantCulture,
+                              Globalization.DateTimeStyles.None, d) Then
+            Return d.ToString(format, Globalization.CultureInfo.InvariantCulture)
+        End If
+        Return If(text, String.Empty)
+    End Function
 
-    Private NotInheritable Class LogFileInfoDto
-        Public Property Name As String
-        Public Property Generation As Integer
-        <System.Text.Json.Serialization.JsonPropertyName("size_bytes")>
-        Public Property SizeBytes As Long
-        Public Property Modified As String
-    End Class
-
-    ''' <summary>Body of <c>GET /api/logs/tail</c> (plan 6.4).</summary>
-    Private NotInheritable Class LogTailResponse
+    ''' <summary>Body of <c>GET /api/logs/server</c> and <c>/api/logs/timing</c> (PYTHON/routes/logs.py).</summary>
+    Private NotInheritable Class ServerJournalResponse
+        Public Property Kind As String
         Public Property Text As String
         Public Property Truncated As Boolean
-        <System.Text.Json.Serialization.JsonPropertyName("size_bytes")>
-        Public Property SizeBytes As Long
+        Public Property Sessions As List(Of ServerJournalSession)
+        <System.Text.Json.Serialization.JsonPropertyName("sessions_requested")>
+        Public Property SessionsRequested As Integer
         <System.Text.Json.Serialization.JsonPropertyName("server_time")>
         Public Property ServerTime As String
+    End Class
+
+    Private NotInheritable Class ServerJournalSession
+        Public Property Session As String
+        Public Property Dc As String
+        Public Property First As String
+        Public Property Last As String
+        Public Property Entries As Integer
+        Public Property Errors As Integer
+        Public Property Warnings As Integer
     End Class
 
     ' =====================================================================
@@ -616,7 +704,10 @@ Public Class SetariJurnalView
         ActualizeazaDetaliu(Nothing)   ' ClearRows does not raise SelectionChanged
         ActualizeazaStare(rezultat)
 
-        If rezultat.ShownCount = 0 Then
+        If rezultat.ShownCount = 0 AndAlso _incarcate.Count = 0 AndAlso Not String.IsNullOrEmpty(_eroareServer) Then
+            noticeGol.Show(_eroareServer, If(_noticeServerAfisat, NoticeKind.[Error], NoticeKind.Warning))
+            noticeGol.Visible = True
+        ElseIf rezultat.ShownCount = 0 Then
             ArataGol(If(_incarcate.Count = 0,
                         "Niciun jurnal de arătat. Fie nu s-a scris încă nimic, fie fișierul e gol.",
                         "Niciun rând nu trece de filtrele curente."))
@@ -691,6 +782,7 @@ Public Class SetariJurnalView
             sb.Append(" · ").Append((_octetiCititi / 1024.0 / 1024.0).ToString("N1")).Append(" MB")
         End If
         If _taiat Then sb.Append(" · doar coada fișierului")
+        If Not String.IsNullOrEmpty(_rezumatSesiuni) Then sb.Append(" · ").Append(_rezumatSesiuni)
         If ServerClock.HasReading AndAlso ServerClock.Offset <> TimeSpan.Zero Then
             sb.Append(" · ceas server ").Append(ServerClock.OffsetText())
         End If
@@ -852,11 +944,10 @@ Public Class SetariJurnalView
 
     Private _noticeServerAfisat As Boolean
 
-    ' One place shows/hides the server notice, so the flag cannot part ways with the control
-    ' (two places saying the same thing contradict each other at the first change).
+    ' One place raises/lowers the server failure flag. The text itself is shown by AplicaFiltrul
+    ' in noticeGol (the file panel that used to hold a notice of its own is hidden).
     Private Sub MarcheazaNoticeServer(afisat As Boolean)
         _noticeServerAfisat = afisat
-        noticeServer.Visible = afisat
     End Sub
 
     ''' <summary>Friend test hook: loads ready-made entries, skipping disk and network. Goes through the same sort as a real load.</summary>
@@ -892,9 +983,9 @@ Public Class SetariJurnalView
         Return TryCast(grila.Rows(index).Tag, LogEntry)
     End Function
 
-    ''' <summary>Friend test hook: fetches the server list on the real path (failure included).</summary>
+    ''' <summary>Friend test hook: asks the server journal on the real path (failure included); the grid is left alone.</summary>
     Friend Function DebugAduListaServerAsync() As Task
-        Return AduListaServerAsync()
+        Return AduJurnalServerAsync(1, SESIUNI(0), CancellationToken.None)
     End Function
 
     ''' <summary>Friend test hook: is the server notice shown?</summary>

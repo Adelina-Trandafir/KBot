@@ -3298,8 +3298,39 @@ Public Class ApiClient
         Return Nothing
     End Function
 
-    Public Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T) Implements IApiClient.GetAsync
-        Throw New NotImplementedException()
+    ' Case-insensitive on purpose: GetAsync serves DTOs declared by the CALLER (slice 0089, the
+    ' journal page), which name their properties in PascalCase and map only the snake_case keys
+    ' with JsonPropertyName.
+    Private Shared ReadOnly _jsonGeneric As JsonSerializerOptions =
+        New JsonSerializerOptions With {.PropertyNameCaseInsensitive = True}
+
+    ''' <summary>
+    ''' Plain authenticated GET, body deserialized into <typeparamref name="T"/> (slice 0089;
+    ''' a stub until then). A non-2xx answer becomes an <see cref="ApiException"/> carrying the
+    ''' server's «error» text, like every typed method here.
+    ''' </summary>
+    Public Async Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T) Implements IApiClient.GetAsync
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(relativeUrl) Then Throw New ArgumentException("relativeUrl is empty.", NameOf(relativeUrl))
+            Using msg As New HttpRequestMessage(HttpMethod.Get, relativeUrl)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "citirea de la server", CInt(resp.StatusCode))
+                    End If
+                    Return JsonSerializer.Deserialize(Of T)(respText, _jsonGeneric)
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As OperationCanceledException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetAsync(" & relativeUrl & ")", ex)
+            Throw
+        End Try
     End Function
 
     Public Function PostAsync(Of TRequest, TResponse)(relativeUrl As String, payload As TRequest, ct As CancellationToken) As Task(Of TResponse) Implements IApiClient.PostAsync

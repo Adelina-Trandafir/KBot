@@ -23,12 +23,12 @@ Partial Class SetariJurnalView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim KBotDataColumn1 As KBotDataColumn = New KBotDataColumn()
-        Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
-        Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
-        Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
-        Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
-        Dim KBotGroupLevel1 As KBotGroupLevel = New KBotGroupLevel()
+        Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn7 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn8 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn9 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn10 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotGroupLevel2 As KBotGroupLevel = New KBotGroupLevel()
         tips = New KBotToolTip(components)
         navFisiere = New KBotNavList()
         chipNiveluri = New KBotChipBar()
@@ -44,7 +44,6 @@ Partial Class SetariJurnalView
         btnExporta = New Button()
         tlyMain = New KBotTableLayoutPanel()
         pnlFisiere = New Panel()
-        noticeServer = New KBotNotice()
         tlyFilter = New KBotTableLayoutPanel()
         tlyFilterActual = New KBotTableLayoutPanel()
         lblCauta = New Label()
@@ -56,6 +55,8 @@ Partial Class SetariJurnalView
         busy = New KBotBusyBar()
         lblStare = New Label()
         tmrCautare = New Timer(components)
+        CmbTipJurnal = New KBotComboBox()
+        cmbSesiuni = New KBotComboBox()
         CType(navFisiere, ComponentModel.ISupportInitialize).BeginInit()
         CType(chipNiveluri, ComponentModel.ISupportInitialize).BeginInit()
         CType(grila, ComponentModel.ISupportInitialize).BeginInit()
@@ -96,11 +97,11 @@ Partial Class SetariJurnalView
         ' 
         txtCauta.BackColor = Color.Transparent
         txtCauta.Dock = DockStyle.Fill
-        txtCauta.Location = New Point(80, 0)
+        txtCauta.Location = New Point(374, 0)
         txtCauta.Margin = New Padding(0)
         txtCauta.Name = "txtCauta"
         txtCauta.PlaceholderText = "text din linie sau din urma de stivă"
-        txtCauta.Size = New Size(200, 40)
+        txtCauta.Size = New Size(150, 40)
         txtCauta.TabIndex = 1
         txtCauta.TextPadding = New Padding(8, 0, 8, 0)
         tips.SetToolTipHeader(txtCauta, "Caută")
@@ -110,11 +111,11 @@ Partial Class SetariJurnalView
         ' 
         txtDeLa.BackColor = Color.Transparent
         txtDeLa.Dock = DockStyle.Fill
-        txtDeLa.Location = New Point(368, 0)
+        txtDeLa.Location = New Point(596, 0)
         txtDeLa.Margin = New Padding(0)
         txtDeLa.Name = "txtDeLa"
         txtDeLa.PlaceholderText = "zz.ll.aaaa"
-        txtDeLa.Size = New Size(120, 40)
+        txtDeLa.Size = New Size(110, 40)
         txtDeLa.TabIndex = 3
         txtDeLa.TextAlign = HorizontalAlignment.Center
         txtDeLa.TextPadding = New Padding(8, 0, 8, 0)
@@ -125,11 +126,11 @@ Partial Class SetariJurnalView
         ' 
         txtPanaLa.BackColor = Color.Transparent
         txtPanaLa.Dock = DockStyle.Fill
-        txtPanaLa.Location = New Point(576, 0)
+        txtPanaLa.Location = New Point(790, 0)
         txtPanaLa.Margin = New Padding(0)
         txtPanaLa.Name = "txtPanaLa"
         txtPanaLa.PlaceholderText = "zz.ll.aaaa"
-        txtPanaLa.Size = New Size(120, 40)
+        txtPanaLa.Size = New Size(110, 40)
         txtPanaLa.TabIndex = 5
         txtPanaLa.TextAlign = HorizontalAlignment.Center
         txtPanaLa.TextPadding = New Padding(8, 0, 8, 0)
@@ -157,73 +158,73 @@ Partial Class SetariJurnalView
         grila.AutoSizeHeaderHeight = False
         grila.BackColor = SystemColors.Window
         grila.ColumnFillMode = KBotFillMode.SpecificColumn
-        KBotDataColumn1.AggregateFormatString = Nothing
-        KBotDataColumn1.Format = KBotFormat.GeneralDateMs
-        KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderText = "Ora"
-        KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn1.Key = "ora"
-        KBotDataColumn1.MinWidth = 90
-        KBotDataColumn1.OptionGroup = Nothing
-        KBotDataColumn1.ReadOnly = True
-        KBotDataColumn1.ShowColumnFilter = True
-        KBotDataColumn1.ValueType = KBotValueType.DateTime
-        KBotDataColumn1.Width = 140
-        KBotDataColumn2.AggregateFormatString = Nothing
-        KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderText = "Nivel"
-        KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn2.Key = "nivel"
-        KBotDataColumn2.MinWidth = 50
-        KBotDataColumn2.OptionGroup = Nothing
-        KBotDataColumn2.ReadOnly = True
-        KBotDataColumn2.Width = 80
-        KBotDataColumn3.AggregateFormatString = Nothing
-        KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderText = "Sursă"
-        KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn3.Key = "sursa"
-        KBotDataColumn3.MinWidth = 50
-        KBotDataColumn3.OptionGroup = Nothing
-        KBotDataColumn3.ReadOnly = True
-        KBotDataColumn3.ShowColumnFilter = True
-        KBotDataColumn3.Width = 70
-        KBotDataColumn4.AggregateFormatString = Nothing
-        KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderText = "Fișier"
-        KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn4.Key = "fisier"
-        KBotDataColumn4.MinWidth = 80
-        KBotDataColumn4.OptionGroup = Nothing
-        KBotDataColumn4.ReadOnly = True
-        KBotDataColumn4.ShowColumnFilter = True
-        KBotDataColumn4.Visible = KBotColumnVisibility.WhenRoom
-        KBotDataColumn4.Width = 170
-        KBotDataColumn5.AggregateFormatString = Nothing
-        KBotDataColumn5.FormatString = Nothing
-        KBotDataColumn5.HeaderText = "Detaliu"
-        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn5.Key = "detaliu"
-        KBotDataColumn5.MinWidth = 80
-        KBotDataColumn5.OptionGroup = Nothing
-        KBotDataColumn5.ReadOnly = True
-        KBotDataColumn5.Visible = KBotColumnVisibility.WhenRoom
-        KBotDataColumn5.Width = 200
-        grila.Columns.Add(KBotDataColumn1)
-        grila.Columns.Add(KBotDataColumn2)
-        grila.Columns.Add(KBotDataColumn3)
-        grila.Columns.Add(KBotDataColumn4)
-        grila.Columns.Add(KBotDataColumn5)
+        KBotDataColumn6.AggregateFormatString = Nothing
+        KBotDataColumn6.Format = KBotFormat.GeneralDateMs
+        KBotDataColumn6.FormatString = Nothing
+        KBotDataColumn6.HeaderText = "Ora"
+        KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn6.Key = "ora"
+        KBotDataColumn6.MinWidth = 90
+        KBotDataColumn6.OptionGroup = Nothing
+        KBotDataColumn6.ReadOnly = True
+        KBotDataColumn6.ShowColumnFilter = True
+        KBotDataColumn6.ValueType = KBotValueType.DateTime
+        KBotDataColumn6.Width = 140
+        KBotDataColumn7.AggregateFormatString = Nothing
+        KBotDataColumn7.FormatString = Nothing
+        KBotDataColumn7.HeaderText = "Nivel"
+        KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn7.Key = "nivel"
+        KBotDataColumn7.MinWidth = 50
+        KBotDataColumn7.OptionGroup = Nothing
+        KBotDataColumn7.ReadOnly = True
+        KBotDataColumn7.Width = 80
+        KBotDataColumn8.AggregateFormatString = Nothing
+        KBotDataColumn8.FormatString = Nothing
+        KBotDataColumn8.HeaderText = "Sursă"
+        KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn8.Key = "sursa"
+        KBotDataColumn8.MinWidth = 50
+        KBotDataColumn8.OptionGroup = Nothing
+        KBotDataColumn8.ReadOnly = True
+        KBotDataColumn8.ShowColumnFilter = True
+        KBotDataColumn8.Width = 70
+        KBotDataColumn9.AggregateFormatString = Nothing
+        KBotDataColumn9.FormatString = Nothing
+        KBotDataColumn9.HeaderText = "Fișier"
+        KBotDataColumn9.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn9.Key = "fisier"
+        KBotDataColumn9.MinWidth = 80
+        KBotDataColumn9.OptionGroup = Nothing
+        KBotDataColumn9.ReadOnly = True
+        KBotDataColumn9.ShowColumnFilter = True
+        KBotDataColumn9.Visible = KBotColumnVisibility.WhenRoom
+        KBotDataColumn9.Width = 170
+        KBotDataColumn10.AggregateFormatString = Nothing
+        KBotDataColumn10.FormatString = Nothing
+        KBotDataColumn10.HeaderText = "Detaliu"
+        KBotDataColumn10.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn10.Key = "detaliu"
+        KBotDataColumn10.MinWidth = 80
+        KBotDataColumn10.OptionGroup = Nothing
+        KBotDataColumn10.ReadOnly = True
+        KBotDataColumn10.Visible = KBotColumnVisibility.WhenRoom
+        KBotDataColumn10.Width = 200
+        grila.Columns.Add(KBotDataColumn6)
+        grila.Columns.Add(KBotDataColumn7)
+        grila.Columns.Add(KBotDataColumn8)
+        grila.Columns.Add(KBotDataColumn9)
+        grila.Columns.Add(KBotDataColumn10)
         grila.Dock = DockStyle.Fill
         grila.EnableGrouping = True
         grila.FillColumnKey = "sursa"
         grila.FrozenColumnCount = 1
-        KBotGroupLevel1.ColumnKey = "ora"
-        KBotGroupLevel1.KeyPattern = "^\S+"
-        KBotGroupLevel1.ShowFooter = False
-        KBotGroupLevel1.ShowFooterAggregates = False
-        KBotGroupLevel1.SortDirection = KBotSortDirection.Descending
-        grila.Groups.Add(KBotGroupLevel1)
+        KBotGroupLevel2.ColumnKey = "ora"
+        KBotGroupLevel2.KeyPattern = "^\S+"
+        KBotGroupLevel2.ShowFooter = False
+        KBotGroupLevel2.ShowFooterAggregates = False
+        KBotGroupLevel2.SortDirection = KBotSortDirection.Descending
+        grila.Groups.Add(KBotGroupLevel2)
         grila.HeaderHeight = 24
         grila.HeaderSeparatorColor = SystemColors.ActiveBorder
         grila.Location = New Point(0, 54)
@@ -333,7 +334,6 @@ Partial Class SetariJurnalView
         ' pnlFisiere
         ' 
         pnlFisiere.Controls.Add(navFisiere)
-        pnlFisiere.Controls.Add(noticeServer)
         pnlFisiere.Dock = DockStyle.Fill
         pnlFisiere.Location = New Point(4, 5)
         pnlFisiere.Margin = New Padding(4, 5, 4, 5)
@@ -343,17 +343,6 @@ Partial Class SetariJurnalView
         pnlFisiere.TabIndex = 0
         pnlFisiere.Tag = "Card"
         pnlFisiere.Visible = False
-        ' 
-        ' noticeServer
-        ' 
-        noticeServer.BackColor = Color.Transparent
-        noticeServer.Dock = DockStyle.Bottom
-        noticeServer.Location = New Point(0, 520)
-        noticeServer.Margin = New Padding(4, 5, 4, 5)
-        noticeServer.Name = "noticeServer"
-        noticeServer.Size = New Size(1, 100)
-        noticeServer.TabIndex = 1
-        noticeServer.Visible = False
         ' 
         ' tlyFilter
         ' 
@@ -373,24 +362,28 @@ Partial Class SetariJurnalView
         ' 
         ' tlyFilterActual
         ' 
-        tlyFilterActual.ColumnCount = 10
-        tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 80F))
+        tlyFilterActual.ColumnCount = 12
         tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 200F))
+        tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 110F))
+        tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 64F))
+        tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
         tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 8F))
-        tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 80F))
-        tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
+        tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 64F))
+        tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 110F))
         tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 8F))
-        tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 80F))
-        tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
+        tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 76F))
+        tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 110F))
         tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyFilterActual.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 49F))
-        tlyFilterActual.Controls.Add(lblCauta, 0, 0)
-        tlyFilterActual.Controls.Add(txtCauta, 1, 0)
-        tlyFilterActual.Controls.Add(lblDeLa, 3, 0)
-        tlyFilterActual.Controls.Add(txtDeLa, 4, 0)
-        tlyFilterActual.Controls.Add(lblPanaLa, 6, 0)
-        tlyFilterActual.Controls.Add(txtPanaLa, 7, 0)
-        tlyFilterActual.Controls.Add(btnReimprospateaza, 9, 0)
+        tlyFilterActual.Controls.Add(CmbTipJurnal, 0, 0)
+        tlyFilterActual.Controls.Add(cmbSesiuni, 1, 0)
+        tlyFilterActual.Controls.Add(lblCauta, 2, 0)
+        tlyFilterActual.Controls.Add(txtCauta, 3, 0)
+        tlyFilterActual.Controls.Add(lblDeLa, 5, 0)
+        tlyFilterActual.Controls.Add(txtDeLa, 6, 0)
+        tlyFilterActual.Controls.Add(lblPanaLa, 8, 0)
+        tlyFilterActual.Controls.Add(txtPanaLa, 9, 0)
+        tlyFilterActual.Controls.Add(btnReimprospateaza, 11, 0)
         tlyFilterActual.Dock = DockStyle.Fill
         tlyFilterActual.Location = New Point(0, 0)
         tlyFilterActual.Margin = New Padding(0)
@@ -404,10 +397,10 @@ Partial Class SetariJurnalView
         ' 
         lblCauta.AutoSize = True
         lblCauta.Dock = DockStyle.Fill
-        lblCauta.Location = New Point(4, 0)
+        lblCauta.Location = New Point(314, 0)
         lblCauta.Margin = New Padding(4, 0, 4, 0)
         lblCauta.Name = "lblCauta"
-        lblCauta.Size = New Size(72, 40)
+        lblCauta.Size = New Size(56, 40)
         lblCauta.TabIndex = 0
         lblCauta.Text = "Caută:"
         lblCauta.TextAlign = ContentAlignment.MiddleLeft
@@ -416,10 +409,10 @@ Partial Class SetariJurnalView
         ' 
         lblDeLa.AutoSize = True
         lblDeLa.Dock = DockStyle.Fill
-        lblDeLa.Location = New Point(292, 0)
+        lblDeLa.Location = New Point(536, 0)
         lblDeLa.Margin = New Padding(4, 0, 4, 0)
         lblDeLa.Name = "lblDeLa"
-        lblDeLa.Size = New Size(72, 40)
+        lblDeLa.Size = New Size(56, 40)
         lblDeLa.TabIndex = 2
         lblDeLa.Text = "De la:"
         lblDeLa.TextAlign = ContentAlignment.MiddleLeft
@@ -428,10 +421,10 @@ Partial Class SetariJurnalView
         ' 
         lblPanaLa.AutoSize = True
         lblPanaLa.Dock = DockStyle.Fill
-        lblPanaLa.Location = New Point(500, 0)
+        lblPanaLa.Location = New Point(718, 0)
         lblPanaLa.Margin = New Padding(4, 0, 4, 0)
         lblPanaLa.Name = "lblPanaLa"
-        lblPanaLa.Size = New Size(72, 40)
+        lblPanaLa.Size = New Size(68, 40)
         lblPanaLa.TabIndex = 4
         lblPanaLa.Text = "Până la:"
         lblPanaLa.TextAlign = ContentAlignment.MiddleLeft
@@ -513,6 +506,37 @@ Partial Class SetariJurnalView
         ' 
         tmrCautare.Interval = 250
         ' 
+        ' CmbTipJurnal
+        ' 
+        CmbTipJurnal.Dock = DockStyle.Fill
+        CmbTipJurnal.DrawMode = DrawMode.OwnerDrawFixed
+        CmbTipJurnal.DropDownStyle = ComboBoxStyle.DropDownList
+        CmbTipJurnal.FlatStyle = FlatStyle.Flat
+        CmbTipJurnal.FormattingEnabled = True
+        CmbTipJurnal.ItemHeight = 31
+        CmbTipJurnal.Location = New Point(3, 3)
+        CmbTipJurnal.Name = "CmbTipJurnal"
+        CmbTipJurnal.Size = New Size(194, 37)
+        CmbTipJurnal.TabIndex = 0
+        tips.SetToolTipHeader(CmbTipJurnal, "Jurnalul afișat")
+        tips.SetToolTipText(CmbTipJurnal, "<b>Jurnale locale</b>: fișierele de pe acest calculator." & vbLf & "<b>Server FOREXE</b>: operațiunile FOREXE făcute de dumneavoastră pe server." & vbLf & "<b>Timpi FOREXE</b>: cât a durat fiecare prelucrare pe server.")
+        ' 
+        ' cmbSesiuni
+        ' 
+        cmbSesiuni.Dock = DockStyle.Fill
+        cmbSesiuni.DrawMode = DrawMode.OwnerDrawFixed
+        cmbSesiuni.DropDownStyle = ComboBoxStyle.DropDownList
+        cmbSesiuni.Enabled = False
+        cmbSesiuni.FlatStyle = FlatStyle.Flat
+        cmbSesiuni.FormattingEnabled = True
+        cmbSesiuni.ItemHeight = 31
+        cmbSesiuni.Location = New Point(203, 3)
+        cmbSesiuni.Name = "cmbSesiuni"
+        cmbSesiuni.Size = New Size(104, 37)
+        cmbSesiuni.TabIndex = 1
+        tips.SetToolTipHeader(cmbSesiuni, "Sesiuni")
+        tips.SetToolTipText(cmbSesiuni, "Câte dintre ultimele dumneavoastră conectări se arată din jurnalele serverului." & vbLf & "O sesiune = o autentificare în K-BOT.")
+        ' 
         ' SetariJurnalView
         ' 
         AutoScaleDimensions = New SizeF(144F, 144F)
@@ -537,7 +561,6 @@ Partial Class SetariJurnalView
     Friend WithEvents tlyMain As KBotTableLayoutPanel
     Friend WithEvents pnlFisiere As Panel
     Friend WithEvents navFisiere As KBotNavList
-    Friend WithEvents noticeServer As KBotNotice
     Friend WithEvents tlyFilter As KBotTableLayoutPanel
     Friend WithEvents chipNiveluri As KBotChipBar
     Friend WithEvents tlyFilterActual As KBotTableLayoutPanel
@@ -560,4 +583,6 @@ Partial Class SetariJurnalView
     Friend WithEvents btnCopiaza As Button
     Friend WithEvents btnExporta As Button
     Friend WithEvents tmrCautare As Timer
+    Friend WithEvents CmbTipJurnal As KBotComboBox
+    Friend WithEvents cmbSesiuni As KBotComboBox
 End Class
