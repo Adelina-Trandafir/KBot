@@ -14,9 +14,14 @@ Imports KBot.Theming
 ''' «Adaugare / editare parteneri» (slice 0087-02, operator 26.09.2026): the Access partner form
 ''' with the list turned into a tree on the left (code in the first column, name in the second,
 ''' search in the header) and the partner's details on the right, with its «Coduri angajament»
-''' typed straight in the grid («+» in the footer adds a row, «✕» removes one). The two filters are
-''' kept («Arata partenerii ascunsi», «Ascunde partenerii fara activitate»); the Burse one is not.
-''' A new partner goes into the unit of the working sector-source.
+''' typed straight in the grid («+» in the footer adds a row, «✕» removes one). The filter
+''' «Ascunde partenerii fara activitate» is kept; the Burse one is not. A new partner goes into the
+''' unit of the working sector-source.
+''' <para>Slice 0093: the server sends only Tip "1" partners with a fiscal code other than the
+''' unit's own, not hidden, one per fiscal code (so the «show hidden» filter and the Tip field are
+''' gone). Leaving the fiscal code (or Enter) asks ANAF and fills the name and the address; the bank
+''' follows the IBAN (AVACONT_COMUN.BIC) while it is empty or was filled that way; a fiscal code
+''' another partner already has is refused.</para>
 ''' </summary>
 Public Class ParteneriForm
 
@@ -53,6 +58,10 @@ Public Class ParteneriForm
     Private _loading As Boolean
     Private _busy As Boolean
     Private _closeAfterSave As Boolean
+    ' The fiscal code (digits only) last shown or looked up: leaving the field unchanged asks nothing.
+    Private _cfChecked As String = String.Empty
+    ' The bank name last derived from the IBAN: while «Banca» still holds it, a new IBAN replaces it.
+    Private _autoBanca As String = String.Empty
 
     ''' <summary>Designer only.</summary>
     Public Sub New()
@@ -74,6 +83,8 @@ Public Class ParteneriForm
     Private Sub ParteneriForm_Load(sender As Object, e As EventArgs) Handles Me.Load
         Try
             If _api Is Nothing Then Return
+            ' KBotTextField forwards TextChanged but NOT Leave (see DdfEditForm_Load).
+            AddHandler txtCodFiscal.InnerTextBox.Leave, AddressOf TxtCodFiscal_Leave
             ShowPartner(Nothing)
             LoadCatalog(Nothing)
         Catch ex As Exception
@@ -93,10 +104,6 @@ Public Class ParteneriForm
             _catalog = catalog
             _choices = catalog.Clasificatii.Select(Function(c) New ClsfChoice() With {
                 .IdClsf = c.IdClsf, .Clsf = c.Clsf, .Ss = c.Ss, .Denumire = c.Denumire, .IdUnitate = c.IdUnitate}).ToList()
-            cmbTip.Items.Clear()
-            For Each t As String In catalog.Tipuri
-                cmbTip.Items.Add(t)
-            Next
             BuildTree(selectId)
             Dim selected As Partener = If(selectId.HasValue,
                 catalog.Partners.FirstOrDefault(Function(p) Nullable.Equals(p.IdPartener, selectId)), Nothing)
@@ -121,7 +128,6 @@ Public Class ParteneriForm
         Dim severalUnits As Boolean = _catalog.Partners.Select(Function(p) p.Ss).Distinct(StringComparer.Ordinal).Count() > 1
         Dim shown As Integer = 0
         For Each p As Partener In _catalog.Partners.OrderBy(Function(x) x.Denumire, StringComparer.CurrentCultureIgnoreCase)
-            If p.Ascuns AndAlso Not chkAscunsi.Checked Then Continue For
             If Not p.Activ AndAlso chkFaraActivitate.Checked Then Continue For
             Dim name As String = Escape(p.Denumire)
             If severalUnits Then name &= $" ({p.Ss})"
@@ -147,8 +153,7 @@ Public Class ParteneriForm
         Return If(text, String.Empty).Replace("<", "‹").Replace(">", "›").Replace("~~~", "~ ~ ~")
     End Function
 
-    Private Sub Filters_CheckedChanged(sender As Object, e As EventArgs) _
-        Handles chkAscunsi.CheckedChanged, chkFaraActivitate.CheckedChanged
+    Private Sub Filters_CheckedChanged(sender As Object, e As EventArgs) Handles chkFaraActivitate.CheckedChanged
         Try
             BuildTree(_current?.IdPartener)
         Catch ex As Exception
@@ -203,8 +208,10 @@ Public Class ParteneriForm
             _current = p
             _deletedCodes.Clear()
             txtCod.Text = If(p?.CodPartener, String.Empty)
-            cmbTip.Text = If(p?.Tip, String.Empty)
             txtCodFiscal.Text = If(p?.CodFiscal, String.Empty)
+            _cfChecked = NormalizeCf(p?.CodFiscal)
+            Dim derived As String = BankFromIban(p?.ContIban)
+            _autoBanca = If(derived.Length > 0 AndAlso String.Equals(derived, p?.Banca, StringComparison.Ordinal), derived, String.Empty)
             txtDenumire.Text = If(p?.Denumire, String.Empty)
             txtIban.Text = If(p?.ContIban, String.Empty)
             txtBanca.Text = If(p?.Banca, String.Empty)
@@ -255,12 +262,122 @@ Public Class ParteneriForm
     End Function
 
     Private Sub Field_TextChanged(sender As Object, e As EventArgs) _
-        Handles txtCod.TextChanged, cmbTip.TextChanged, txtCodFiscal.TextChanged, txtDenumire.TextChanged,
+        Handles txtCod.TextChanged, txtCodFiscal.TextChanged, txtDenumire.TextChanged,
                 txtIban.TextChanged, txtBanca.TextChanged, txtAdresa.TextChanged, chkAscuns.CheckedChanged
         Try
             If Not _loading AndAlso _current IsNot Nothing Then SetDirty(True)
         Catch ex As Exception
             GlobalErrorLog.Write("ParteneriForm.Field_TextChanged", ex)
+        End Try
+    End Sub
+
+    ' ── Fiscal code (ANAF) and bank (IBAN) ──────────────────────────────────────
+
+    ''' <summary>The digits of a fiscal code ("RO 21015411" = "21015411"), as the server compares them.</summary>
+    Private Shared Function NormalizeCf(raw As String) As String
+        Dim text As String = If(raw, String.Empty).Trim().ToUpperInvariant()
+        If text.StartsWith("RO", StringComparison.Ordinal) Then text = text.Substring(2)
+        Return New String(text.Where(Function(ch) ch >= "0"c AndAlso ch <= "9"c).ToArray())
+    End Function
+
+    ''' <summary>The bank of a Romanian IBAN from AVACONT_COMUN.BIC (characters 5-8), or "".</summary>
+    Private Function BankFromIban(iban As String) As String
+        If _catalog Is Nothing Then Return String.Empty
+        Dim compact As String = New String(If(iban, String.Empty).Where(Function(ch) Not Char.IsWhiteSpace(ch)).ToArray()).ToUpperInvariant()
+        If compact.Length < 8 Then Return String.Empty
+        Dim bank As String = Nothing
+        Return If(_catalog.Bic.TryGetValue(compact.Substring(4, 4), bank), If(bank, String.Empty), String.Empty)
+    End Function
+
+    ''' <summary>
+    ''' Why <paramref name="cf"/> cannot be this partner's code (the unit's own, or another listed
+    ''' partner's), or Nothing. The server checks again against every partner, hidden ones too.
+    ''' </summary>
+    Private Function FiscalCodeProblem(cf As String) As String
+        If _catalog Is Nothing OrElse cf.Length = 0 Then Return Nothing
+        If String.Equals(cf, _catalog.CfUnitate, StringComparison.Ordinal) Then
+            Return $"Codul fiscal {cf} este chiar al unității; unitatea nu poate fi propriul partener."
+        End If
+        Dim other As Partener = _catalog.Partners.FirstOrDefault(
+            Function(x) String.Equals(NormalizeCf(x.CodFiscal), cf, StringComparison.Ordinal) AndAlso
+                        Not (_current IsNot Nothing AndAlso _current.IdPartener.HasValue AndAlso
+                             Nullable.Equals(x.IdPartener, _current.IdPartener)))
+        If other Is Nothing Then Return Nothing
+        Return $"Există deja un partener cu codul fiscal {other.CodFiscal}: {other.CodPartener} — {other.Denumire}." & vbLf &
+               "Poate exista un singur partener pentru un cod fiscal."
+    End Function
+
+    Private Sub TxtIban_TextChanged(sender As Object, e As EventArgs) Handles txtIban.TextChanged
+        Try
+            If _loading OrElse _current Is Nothing Then Return
+            Dim bank As String = BankFromIban(txtIban.Text)
+            If bank.Length = 0 Then Return
+            Dim current As String = txtBanca.Text.Trim()
+            If current.Length = 0 OrElse String.Equals(current, _autoBanca, StringComparison.Ordinal) Then
+                txtBanca.Text = bank
+                _autoBanca = bank
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.TxtIban_TextChanged", ex)
+        End Try
+    End Sub
+
+    Private Sub TxtCodFiscal_Leave(sender As Object, e As EventArgs)
+        Try
+            LookupFiscalCode()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.TxtCodFiscal_Leave", ex)
+        End Try
+    End Sub
+
+    Private Sub TxtCodFiscal_FieldKeyDown(sender As Object, e As KeyEventArgs) Handles txtCodFiscal.FieldKeyDown
+        Try
+            If e.KeyCode <> Keys.Enter Then Return
+            e.SuppressKeyPress = True
+            LookupFiscalCode()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.TxtCodFiscal_FieldKeyDown", ex)
+        End Try
+    End Sub
+
+    ' UI boundary: a changed fiscal code is checked, then ANAF fills the name and the address (new
+    ' partner or existing one). The same code left twice asks only once.
+    Private Async Sub LookupFiscalCode()
+        Try
+            If _current Is Nothing OrElse _loading OrElse _busy OrElse _api Is Nothing Then Return
+            Dim cf As String = NormalizeCf(txtCodFiscal.Text)
+            If String.Equals(cf, _cfChecked, StringComparison.Ordinal) Then Return
+            _cfChecked = cf
+            If cf.Length = 0 Then Return
+            If cf.Length < 2 OrElse cf.Length > 10 Then
+                KBotMessage.Show(Me, $"«{txtCodFiscal.Text.Trim()}» nu este un cod fiscal valid.",
+                                 "Cod fiscal", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+            Dim problem As String = FiscalCodeProblem(cf)
+            If problem IsNot Nothing Then
+                KBotMessage.Show(Me, problem, "Cod fiscal", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End If
+            Dim info As PartenerAnaf
+            SetBusy(True, "Se caută codul fiscal la ANAF…")
+            Try
+                info = Await _gate.RunAsync(Function() _api.GetPartenerAnafAsync(cf, CancellationToken.None)).ConfigureAwait(True)
+            Finally
+                If Not IsDisposed Then SetBusy(False, Nothing)
+            End Try
+            If IsDisposed OrElse _current Is Nothing Then Return
+            ' The operator may have typed another code while ANAF answered.
+            If Not String.Equals(NormalizeCf(txtCodFiscal.Text), cf, StringComparison.Ordinal) Then Return
+            txtDenumire.Text = info.Denumire
+            txtAdresa.Text = info.Adresa
+            SetStatus($"Denumirea și adresa au fost completate de la ANAF (CUI {info.Cui}).")
+        Catch ex As ApiException
+            GlobalErrorLog.Write("ParteneriForm.LookupFiscalCode", ex)
+            If Not IsDisposed Then KBotMessage.Show(Me, ex.Message, "Cod fiscal", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.LookupFiscalCode", ex)
+            If Not IsDisposed Then SetStatus("Căutarea la ANAF a eșuat. Detalii în jurnalul de erori.")
         End Try
     End Sub
 
@@ -333,8 +450,8 @@ Public Class ParteneriForm
             Dim fresh As New Partener() With {.Ss = _ss, .IdUnitate = unit, .CodPartener = NextCode(_ss)}
             _currentNode = Nothing
             ShowPartner(fresh)
-            txtDenumire.Focus()
-            SetStatus("Partener nou: completați denumirea, apoi «Salvare».")
+            txtCodFiscal.Focus()
+            SetStatus("Partener nou: tastați codul fiscal (denumirea și adresa vin de la ANAF), apoi «Salvare».")
         Catch ex As Exception
             GlobalErrorLog.Write("ParteneriForm.BtnAdauga_Click", ex)
         End Try
@@ -399,6 +516,7 @@ Public Class ParteneriForm
 
     Private Async Sub BtnSalveaza_Click(sender As Object, e As EventArgs) Handles btnSalveaza.Click
         Try
+            If _busy Then Return
             Await SaveAsync().ConfigureAwait(True)
         Catch ex As Exception
             GlobalErrorLog.Write("ParteneriForm.BtnSalveaza_Click", ex)
@@ -411,9 +529,19 @@ Public Class ParteneriForm
         Try
             If Not gridCoduri.CommitPendingEdit() Then Return False
             Dim problem As String = Nothing
+            Dim cf As String = NormalizeCf(txtCodFiscal.Text)
+            ' A legacy duplicate (brought over from Access) stays savable while its code is unchanged.
+            Dim cfChanged As Boolean = Not _current.IdPartener.HasValue OrElse
+                                       Not String.Equals(cf, NormalizeCf(_current.CodFiscal), StringComparison.Ordinal)
             If txtCod.Text.Trim().Length = 0 Then
                 problem = "Codul partenerului este obligatoriu."
                 txtCod.Focus()
+            ElseIf cf.Length = 0 Then
+                problem = "Codul fiscal al partenerului este obligatoriu."
+                txtCodFiscal.Focus()
+            ElseIf cfChanged AndAlso FiscalCodeProblem(cf) IsNot Nothing Then
+                problem = FiscalCodeProblem(cf)
+                txtCodFiscal.Focus()
             ElseIf txtDenumire.Text.Trim().Length = 0 Then
                 problem = "Denumirea partenerului este obligatorie."
                 txtDenumire.Focus()
@@ -427,7 +555,7 @@ Public Class ParteneriForm
             Dim p As New Partener() With {
                 .IdPartener = _current.IdPartener, .IdUnitate = _current.IdUnitate,
                 .Ss = If(String.IsNullOrEmpty(_current.Ss), _ss, _current.Ss),
-                .CodPartener = txtCod.Text.Trim(), .Tip = cmbTip.Text.Trim(),
+                .CodPartener = txtCod.Text.Trim(), .Tip = "1",
                 .CodFiscal = txtCodFiscal.Text.Trim(), .Denumire = txtDenumire.Text.Trim(),
                 .ContIban = txtIban.Text.Trim(), .Banca = txtBanca.Text.Trim(), .Adresa = txtAdresa.Text.Trim(),
                 .Ascuns = chkAscuns.Checked}

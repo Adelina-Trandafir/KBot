@@ -123,8 +123,8 @@ Public NotInheritable Class Partener
     Public Property CodFiscal As String = String.Empty
     Public Property ContIban As String = String.Empty
     Public Property Banca As String = String.Empty
-    ''' <summary>The <c>Adresa</c> column, shown as «Alte detalii».</summary>
     Public Property Adresa As String = String.Empty
+    ''' <summary>Always "1" since slice 0093 (the server writes it; the window does not show it).</summary>
     Public Property Tip As String = String.Empty
     Public Property Ascuns As Boolean
     ''' <summary>True when a DDF / ORD document uses the partner (it cannot be deleted then).</summary>
@@ -141,12 +141,24 @@ Public NotInheritable Class ClasificatieOption
     Public Property IdUnitate As Integer?
 End Class
 
-''' <summary>Everything the «Parteneri» window shows.</summary>
+''' <summary>
+''' Everything the «Parteneri» window shows. Since slice 0093 the server sends only partners with
+''' Tip "1", a fiscal code other than the unit's own, not hidden, one per fiscal code.
+''' </summary>
 Public NotInheritable Class ParteneriCatalog
     Public Property Partners As New List(Of Partener)()
-    ''' <summary>The distinct <c>Tip</c> values already used.</summary>
-    Public Property Tipuri As New List(Of String)()
     Public Property Clasificatii As New List(Of ClasificatieOption)()
+    ''' <summary>AVACONT_COMUN.BIC: 4-letter BIC code (IBAN characters 5-8, upper case) to bank name.</summary>
+    Public Property Bic As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
+    ''' <summary>The unit's own fiscal code, digits only (it cannot be a partner).</summary>
+    Public Property CfUnitate As String = String.Empty
+End Class
+
+''' <summary>What ANAF says about a fiscal code, used to pre-fill a partner.</summary>
+Public NotInheritable Class PartenerAnaf
+    Public Property Cui As String = String.Empty
+    Public Property Denumire As String = String.Empty
+    Public Property Adresa As String = String.Empty
 End Class
 
 ''' <summary>One partner to save, with the codes changed in the window.</summary>

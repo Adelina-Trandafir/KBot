@@ -135,8 +135,15 @@ Partial Public Class ApiClient
 
     Private NotInheritable Class PartnersResponse
         Public Property partners As List(Of PartnerWire)
-        Public Property tipuri As List(Of String)
         Public Property clasificatii As List(Of ClsfOptionWire)
+        Public Property bic As Dictionary(Of String, String)
+        Public Property cf_unitate As String
+    End Class
+
+    Private NotInheritable Class PartnerAnafWire
+        Public Property cui As String
+        Public Property denumire As String
+        Public Property adresa As String
     End Class
 
     Private NotInheritable Class PartnerSaveWire
@@ -311,7 +318,10 @@ Partial Public Class ApiClient
                 Next
                 result.Partners.Add(p)
             Next
-            result.Tipuri.AddRange(If(payload.tipuri, New List(Of String)()))
+            For Each kv As KeyValuePair(Of String, String) In If(payload.bic, New Dictionary(Of String, String)())
+                result.Bic(kv.Key) = If(kv.Value, String.Empty)
+            Next
+            result.CfUnitate = If(payload.cf_unitate, String.Empty)
             For Each o As ClsfOptionWire In If(payload.clasificatii, New List(Of ClsfOptionWire)())
                 result.Clasificatii.Add(New ClasificatieOption() With {
                     .IdClsf = o.id_clsf, .Clsf = If(o.clsf, String.Empty), .Denumire = If(o.denumire, String.Empty),
@@ -365,6 +375,25 @@ Partial Public Class ApiClient
             Throw
         Catch ex As Exception
             GlobalErrorLog.Write("ApiClient.DeletePartenerAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function GetPartenerAnafAsync(codFiscal As String, ct As CancellationToken) As Task(Of PartenerAnaf) _
+        Implements INomenclatoareApi.GetPartenerAnafAsync
+        Try
+            Dim url As String = $"{NomenclatoareRoot}/parteneri/anaf/{Uri.EscapeDataString(If(codFiscal, String.Empty).Trim())}"
+            Dim respText As String = Await SendNomenclatoareAsync(HttpMethod.Get, url, Nothing,
+                                                                  "căutarea codului fiscal la ANAF", ct).ConfigureAwait(False)
+            Dim payload As PartnerAnafWire = JsonSerializer.Deserialize(Of PartnerAnafWire)(respText, _json)
+            If payload Is Nothing Then Throw New ApiException("Serverul nu a întors datele de la ANAF.")
+            Return New PartenerAnaf() With {
+                .Cui = If(payload.cui, String.Empty), .Denumire = If(payload.denumire, String.Empty),
+                .Adresa = If(payload.adresa, String.Empty)}
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetPartenerAnafAsync", ex)
             Throw
         End Try
     End Function

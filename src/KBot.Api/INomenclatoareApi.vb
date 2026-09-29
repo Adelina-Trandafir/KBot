@@ -48,4 +48,10 @@ Public Interface INomenclatoareApi
     ''' <summary>Deletes a partner no document uses (the server refuses the others with a 409).</summary>
     Function DeletePartenerAsync(idPartener As Integer, ct As CancellationToken) As Task
 
+    ''' <summary>
+    ''' Name and address of a fiscal code, asked of ANAF through the server (slice 0093). Throws
+    ''' <see cref="ApiException"/> when the code is invalid, unknown to ANAF, or ANAF is down.
+    ''' </summary>
+    Function GetPartenerAnafAsync(codFiscal As String, ct As CancellationToken) As Task(Of PartenerAnaf)
+
 End Interface

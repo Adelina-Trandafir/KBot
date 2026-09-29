@@ -49,3 +49,19 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 
 - **0092 — AAB5H2CHDGD are DDF doar pe AAB:** AA2 e legat de revizia 262 (`AreDDF = 1`). Dacă 262 conține și AAB, cauza e pasul 3e cazul 2 (exclude revizia «deja folosită», deși o revizie acoperă mai multe rânduri). Aștept rezultatul interogării pe `FX_DDF_REV` / `FX_DDF_REV_SA`.
 - **0092 — revizii 0 în plus?** Două «lock NUMARREV=0» în jurnal (12:35, 12:40).
+
+---
+
+## Slice 0093
+
+### Registry
+
+| Slice | Name | Status | Worklog(s) | Notes |
+|------:|------|--------|-----------|-------|
+| 0093 | **Parteneri: filtrare, ANAF, banca din IBAN, cod fiscal unic (cererea operatorului, 29.09.2026)** | GATA pe cod (build curat; nimic rulat, nimic testat) | `SLICE-0093-parteneri-anaf-cf-unic.md` | `GET /parteneri` întoarce doar Tip = '1', CodFiscal completat și ≠ `AVACONT_COMUN.Unitati.CF` (DC-ul sesiunii), `Ascuns = 0`, un singur partener pe cod fiscal (primul după IdPartener; codurile comparate doar pe cifre). Banca goală → din IBAN (car. 5-8) prin `AVACONT_COMUN.BIC`, pe server (GET + POST) și în fereastră la tastarea IBAN-ului. Rută nouă `GET /parteneri/anaf/<cf>` (refolosește `routes/inregistrare/anaf.py`, v9). Fereastra: Tip și «Arată partenerii ascunși» scoase, «Alte detalii» → «Adresa», «Cod fiscal *» obligatoriu; la ieșirea din câmp / Enter se caută la ANAF și se completează denumirea + adresa. Salvarea refuză codul unității și un cod fiscal deja folosit (verificare în Python, NU constrângere MariaDB — datele din Access au dubluri; un partener vechi cu cod dublat rămâne editabil cât timp nu-și schimbă codul). Tip scris mereu '1'. |
+
+### Open threads
+
+- **0093 — nimic rulat.** Nici ruta ANAF, nici fereastra nu au fost încercate pe server/ecran.
+- **0093 — partenerii ascunși / cu alt Tip / fără CF nu mai apar deloc** în fereastră; un partener marcat «Ascuns» la salvare dispare din listă. Cererea operatorului, dar nu mai există cale din K-BOT de a-l reafișa.
+- **0093 — cod dublat ascuns:** verificarea de unicitate pe server include și partenerii ascunși sau cu alt Tip (mesajul spune «partener ascuns»); fereastra nu-i vede, deci operatorul află doar la salvare.

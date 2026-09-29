@@ -32,13 +32,10 @@ Partial Class ParteneriForm
         tlyLeft = New KBotTableLayoutPanel()
         tree = New AdvancedTreeControl()
         flowFiltre = New FlowLayoutPanel()
-        chkAscunsi = New CheckBox()
         chkFaraActivitate = New CheckBox()
         tlyDetalii = New KBotTableLayoutPanel()
         lblCod = New Label()
         txtCod = New KBotTextField()
-        lblTip = New Label()
-        cmbTip = New KBotComboBox()
         lblCodFiscal = New Label()
         txtCodFiscal = New KBotTextField()
         lblDenumire = New Label()
@@ -167,7 +164,6 @@ Partial Class ParteneriForm
         '
         ' flowFiltre
         '
-        flowFiltre.Controls.Add(chkAscunsi)
         flowFiltre.Controls.Add(chkFaraActivitate)
         flowFiltre.Dock = DockStyle.Fill
         flowFiltre.Location = New Point(0, 576)
@@ -177,27 +173,15 @@ Partial Class ParteneriForm
         flowFiltre.TabIndex = 1
         flowFiltre.WrapContents = False
         '
-        ' chkAscunsi
-        '
-        chkAscunsi.AutoSize = True
-        chkAscunsi.FlatStyle = FlatStyle.Flat
-        chkAscunsi.Location = New Point(0, 8)
-        chkAscunsi.Margin = New Padding(0, 8, 24, 0)
-        chkAscunsi.Name = "chkAscunsi"
-        chkAscunsi.Size = New Size(180, 24)
-        chkAscunsi.TabIndex = 0
-        chkAscunsi.Text = "Arată partenerii ascunși"
-        tips.SetToolTipText(chkAscunsi, "Arată și partenerii marcați «Ascuns» (scriși înclinat în listă).")
-        '
         ' chkFaraActivitate
         '
         chkFaraActivitate.AutoSize = True
         chkFaraActivitate.FlatStyle = FlatStyle.Flat
-        chkFaraActivitate.Location = New Point(204, 8)
+        chkFaraActivitate.Location = New Point(0, 8)
         chkFaraActivitate.Margin = New Padding(0, 8, 0, 0)
         chkFaraActivitate.Name = "chkFaraActivitate"
         chkFaraActivitate.Size = New Size(250, 24)
-        chkFaraActivitate.TabIndex = 1
+        chkFaraActivitate.TabIndex = 0
         chkFaraActivitate.Text = "Ascunde partenerii fără activitate"
         tips.SetToolTipText(chkFaraActivitate, "Ascunde partenerii care nu apar pe niciun document (DDF sau ORD).")
         '
@@ -208,27 +192,24 @@ Partial Class ParteneriForm
         tlyDetalii.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyDetalii.Controls.Add(lblCod, 0, 0)
         tlyDetalii.Controls.Add(txtCod, 1, 0)
-        tlyDetalii.Controls.Add(lblTip, 0, 1)
-        tlyDetalii.Controls.Add(cmbTip, 1, 1)
-        tlyDetalii.Controls.Add(lblCodFiscal, 0, 2)
-        tlyDetalii.Controls.Add(txtCodFiscal, 1, 2)
-        tlyDetalii.Controls.Add(lblDenumire, 0, 3)
-        tlyDetalii.Controls.Add(txtDenumire, 1, 3)
-        tlyDetalii.Controls.Add(lblIban, 0, 4)
-        tlyDetalii.Controls.Add(txtIban, 1, 4)
-        tlyDetalii.Controls.Add(lblBanca, 0, 5)
-        tlyDetalii.Controls.Add(txtBanca, 1, 5)
-        tlyDetalii.Controls.Add(lblAdresa, 0, 6)
-        tlyDetalii.Controls.Add(txtAdresa, 1, 6)
-        tlyDetalii.Controls.Add(chkAscuns, 1, 7)
-        tlyDetalii.Controls.Add(lblCoduri, 0, 8)
-        tlyDetalii.Controls.Add(gridCoduri, 0, 9)
+        tlyDetalii.Controls.Add(lblCodFiscal, 0, 1)
+        tlyDetalii.Controls.Add(txtCodFiscal, 1, 1)
+        tlyDetalii.Controls.Add(lblDenumire, 0, 2)
+        tlyDetalii.Controls.Add(txtDenumire, 1, 2)
+        tlyDetalii.Controls.Add(lblIban, 0, 3)
+        tlyDetalii.Controls.Add(txtIban, 1, 3)
+        tlyDetalii.Controls.Add(lblBanca, 0, 4)
+        tlyDetalii.Controls.Add(txtBanca, 1, 4)
+        tlyDetalii.Controls.Add(lblAdresa, 0, 5)
+        tlyDetalii.Controls.Add(txtAdresa, 1, 5)
+        tlyDetalii.Controls.Add(chkAscuns, 1, 6)
+        tlyDetalii.Controls.Add(lblCoduri, 0, 7)
+        tlyDetalii.Controls.Add(gridCoduri, 0, 8)
         tlyDetalii.Dock = DockStyle.Fill
         tlyDetalii.Location = New Point(513, 0)
         tlyDetalii.Margin = New Padding(0)
         tlyDetalii.Name = "tlyDetalii"
-        tlyDetalii.RowCount = 10
-        tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        tlyDetalii.RowCount = 9
         tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
         tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
         tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
@@ -265,57 +246,34 @@ Partial Class ParteneriForm
         txtCod.TextPadding = New Padding(8, 0, 8, 0)
         tips.SetToolTipText(txtCod, "Unic în unitate. La «Adăugare» se propune următorul cod numeric liber.")
         '
-        ' lblTip
-        '
-        lblTip.Dock = DockStyle.Fill
-        lblTip.Location = New Point(0, 40)
-        lblTip.Margin = New Padding(0)
-        lblTip.Name = "lblTip"
-        lblTip.Size = New Size(170, 40)
-        lblTip.TabIndex = 2
-        lblTip.Text = "Tip"
-        lblTip.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' cmbTip
-        '
-        cmbTip.Dock = DockStyle.Left
-        cmbTip.DrawMode = DrawMode.OwnerDrawFixed
-        cmbTip.Editable = True
-        cmbTip.FlatStyle = FlatStyle.Flat
-        cmbTip.ItemHeight = 28
-        cmbTip.Location = New Point(170, 4)
-        cmbTip.Margin = New Padding(0, 4, 0, 4)
-        cmbTip.Name = "cmbTip"
-        cmbTip.Size = New Size(200, 34)
-        cmbTip.TabIndex = 3
-        tips.SetToolTipText(cmbTip, "Tipul partenerului, ales dintre cele folosite deja sau tastat.")
-        '
         ' lblCodFiscal
         '
         lblCodFiscal.Dock = DockStyle.Fill
-        lblCodFiscal.Location = New Point(0, 80)
+        lblCodFiscal.Location = New Point(0, 40)
         lblCodFiscal.Margin = New Padding(0)
         lblCodFiscal.Name = "lblCodFiscal"
         lblCodFiscal.Size = New Size(170, 40)
         lblCodFiscal.TabIndex = 4
-        lblCodFiscal.Text = "Cod fiscal"
+        lblCodFiscal.Text = "Cod fiscal *"
         lblCodFiscal.TextAlign = ContentAlignment.MiddleLeft
         '
         ' txtCodFiscal
         '
         txtCodFiscal.BackColor = Color.Transparent
         txtCodFiscal.Dock = DockStyle.Fill
-        txtCodFiscal.Location = New Point(170, 83)
+        txtCodFiscal.Location = New Point(170, 43)
         txtCodFiscal.Margin = New Padding(0, 3, 0, 3)
         txtCodFiscal.Name = "txtCodFiscal"
         txtCodFiscal.Size = New Size(539, 34)
         txtCodFiscal.TabIndex = 5
         txtCodFiscal.TextPadding = New Padding(8, 0, 8, 0)
+        tips.SetToolTipHeader(txtCodFiscal, "Cod fiscal")
+        tips.SetToolTipText(txtCodFiscal, "La ieșirea din câmp (sau Enter) se caută codul la ANAF și se completează denumirea și adresa." & vbLf & "Un cod fiscal poate avea un singur partener.")
         '
         ' lblDenumire
         '
         lblDenumire.Dock = DockStyle.Fill
-        lblDenumire.Location = New Point(0, 120)
+        lblDenumire.Location = New Point(0, 80)
         lblDenumire.Margin = New Padding(0)
         lblDenumire.Name = "lblDenumire"
         lblDenumire.Size = New Size(170, 40)
@@ -327,7 +285,7 @@ Partial Class ParteneriForm
         '
         txtDenumire.BackColor = Color.Transparent
         txtDenumire.Dock = DockStyle.Fill
-        txtDenumire.Location = New Point(170, 123)
+        txtDenumire.Location = New Point(170, 83)
         txtDenumire.Margin = New Padding(0, 3, 0, 3)
         txtDenumire.Name = "txtDenumire"
         txtDenumire.Size = New Size(539, 34)
@@ -337,7 +295,7 @@ Partial Class ParteneriForm
         ' lblIban
         '
         lblIban.Dock = DockStyle.Fill
-        lblIban.Location = New Point(0, 160)
+        lblIban.Location = New Point(0, 120)
         lblIban.Margin = New Padding(0)
         lblIban.Name = "lblIban"
         lblIban.Size = New Size(170, 40)
@@ -349,7 +307,7 @@ Partial Class ParteneriForm
         '
         txtIban.BackColor = Color.Transparent
         txtIban.Dock = DockStyle.Fill
-        txtIban.Location = New Point(170, 163)
+        txtIban.Location = New Point(170, 123)
         txtIban.Margin = New Padding(0, 3, 0, 3)
         txtIban.Name = "txtIban"
         txtIban.Size = New Size(539, 34)
@@ -359,7 +317,7 @@ Partial Class ParteneriForm
         ' lblBanca
         '
         lblBanca.Dock = DockStyle.Fill
-        lblBanca.Location = New Point(0, 200)
+        lblBanca.Location = New Point(0, 160)
         lblBanca.Margin = New Padding(0)
         lblBanca.Name = "lblBanca"
         lblBanca.Size = New Size(170, 40)
@@ -371,7 +329,7 @@ Partial Class ParteneriForm
         '
         txtBanca.BackColor = Color.Transparent
         txtBanca.Dock = DockStyle.Fill
-        txtBanca.Location = New Point(170, 203)
+        txtBanca.Location = New Point(170, 163)
         txtBanca.Margin = New Padding(0, 3, 0, 3)
         txtBanca.Name = "txtBanca"
         txtBanca.Size = New Size(539, 34)
@@ -381,31 +339,31 @@ Partial Class ParteneriForm
         ' lblAdresa
         '
         lblAdresa.Dock = DockStyle.Fill
-        lblAdresa.Location = New Point(0, 240)
+        lblAdresa.Location = New Point(0, 200)
         lblAdresa.Margin = New Padding(0)
         lblAdresa.Name = "lblAdresa"
         lblAdresa.Size = New Size(170, 40)
         lblAdresa.TabIndex = 12
-        lblAdresa.Text = "Alte detalii"
+        lblAdresa.Text = "Adresa"
         lblAdresa.TextAlign = ContentAlignment.MiddleLeft
         '
         ' txtAdresa
         '
         txtAdresa.BackColor = Color.Transparent
         txtAdresa.Dock = DockStyle.Fill
-        txtAdresa.Location = New Point(170, 243)
+        txtAdresa.Location = New Point(170, 203)
         txtAdresa.Margin = New Padding(0, 3, 0, 3)
         txtAdresa.Name = "txtAdresa"
         txtAdresa.Size = New Size(539, 34)
         txtAdresa.TabIndex = 13
         txtAdresa.TextPadding = New Padding(8, 0, 8, 0)
-        tips.SetToolTipText(txtAdresa, "Adresa sau alte detalii despre partener (coloana Adresa).")
+        tips.SetToolTipText(txtAdresa, "Adresa partenerului; se completează de la ANAF după codul fiscal.")
         '
         ' chkAscuns
         '
         chkAscuns.AutoSize = True
         chkAscuns.FlatStyle = FlatStyle.Flat
-        chkAscuns.Location = New Point(170, 288)
+        chkAscuns.Location = New Point(170, 248)
         chkAscuns.Margin = New Padding(0, 8, 0, 0)
         chkAscuns.Name = "chkAscuns"
         chkAscuns.Size = New Size(260, 24)
@@ -417,7 +375,7 @@ Partial Class ParteneriForm
         tlyDetalii.SetColumnSpan(lblCoduri, 2)
         lblCoduri.Dock = DockStyle.Fill
         lblCoduri.Font = New Font("Segoe UI", 10F, FontStyle.Bold)
-        lblCoduri.Location = New Point(0, 314)
+        lblCoduri.Location = New Point(0, 274)
         lblCoduri.Margin = New Padding(0)
         lblCoduri.Name = "lblCoduri"
         lblCoduri.Size = New Size(709, 34)
@@ -486,7 +444,7 @@ Partial Class ParteneriForm
         gridCoduri.FooterRightIcon = My.Resources.Resources.plus_green
         gridCoduri.FooterRightIconTooltip = "Adaugă un cod de angajament" & vbLf & "Rândul nou se completează direct în tabel."
         gridCoduri.FooterVisible = True
-        gridCoduri.Location = New Point(0, 348)
+        gridCoduri.Location = New Point(0, 308)
         gridCoduri.Margin = New Padding(0, 4, 0, 0)
         gridCoduri.Name = "gridCoduri"
         gridCoduri.Size = New Size(709, 262)
@@ -639,13 +597,10 @@ Partial Class ParteneriForm
     Friend WithEvents tlyLeft As KBotTableLayoutPanel
     Friend WithEvents tree As AdvancedTreeControl
     Friend WithEvents flowFiltre As FlowLayoutPanel
-    Friend WithEvents chkAscunsi As CheckBox
     Friend WithEvents chkFaraActivitate As CheckBox
     Friend WithEvents tlyDetalii As KBotTableLayoutPanel
     Friend WithEvents lblCod As Label
     Friend WithEvents txtCod As KBotTextField
-    Friend WithEvents lblTip As Label
-    Friend WithEvents cmbTip As KBotComboBox
     Friend WithEvents lblCodFiscal As Label
     Friend WithEvents txtCodFiscal As KBotTextField
     Friend WithEvents lblDenumire As Label
