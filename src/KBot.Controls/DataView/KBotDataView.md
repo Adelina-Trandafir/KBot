@@ -160,8 +160,17 @@ and TextRenderer's glyph padding applied instead, so its text starts on the same
 painted text. Font, colours and horizontal alignment come from the same
 `RowFormatting`/`CellFormatting` chain the painter runs; the painter skips that cell's text
 while it is open. It is re-placed on every layout pass (resize, column width, theme, DPI).
-The combo editor keeps the whole cell (a ComboBox fixes its own height) and only takes the
-cell's font and colours.
+
+### The combo editor (slice 0094)
+The combo editor is a `KBotComboBox` in cell editor mode (no frame, no arrow, free height), placed
+like the text editor: one line high, vertically centred the same way, over the text rectangle
+of the combo cell (the content minus the 16 logical px chevron strip), with the same font,
+colours, alignment and glyph margins. The grid keeps painting the chevron. A click on the chevron
+(starting the edit or during it) opens / closes the list, which opens under the whole cell;
+elsewhere in the cell a click selects the text. Typing searches the items (`FindAsYouType`); free
+text is still accepted (`LimitToList = False`) and left to `CellValidating`, as before. A commit
+first lets the combo give its verdict (`CommitText`: a text that is the start of exactly one item
+takes that item). Left/Right leave the cell only from the edge of the text, like the text editor.
 
 ## Tooltips
 `CellTooltip: KBotCellTooltipOptions` — the label for cells whose text does not fit

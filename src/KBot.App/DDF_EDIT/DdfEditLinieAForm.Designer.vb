@@ -72,10 +72,6 @@ Partial Class DdfEditLinieAForm
         ' cmbSursa
         ' 
         cmbSursa.Dock = DockStyle.Fill
-        cmbSursa.DrawMode = DrawMode.OwnerDrawFixed
-        cmbSursa.DropDownStyle = ComboBoxStyle.DropDownList
-        cmbSursa.FlatStyle = FlatStyle.Flat
-        cmbSursa.ItemHeight = 31
         cmbSursa.Location = New Point(322, 17)
         cmbSursa.Margin = New Padding(4, 3, 4, 3)
         cmbSursa.Name = "cmbSursa"
@@ -87,13 +83,10 @@ Partial Class DdfEditLinieAForm
         ' cmbClasificatie
         ' 
         cmbClasificatie.Dock = DockStyle.Fill
-        cmbClasificatie.DrawMode = DrawMode.OwnerDrawFixed
         cmbClasificatie.Editable = True
         cmbClasificatie.FindAfterNChars = 2
         cmbClasificatie.FindAsYouType = True
-        cmbClasificatie.FlatStyle = FlatStyle.Flat
         cmbClasificatie.InputMask = "00.00.00.00.00.00"
-        cmbClasificatie.ItemHeight = 31
         cmbClasificatie.Location = New Point(322, 77)
         cmbClasificatie.Margin = New Padding(4, 3, 4, 3)
         cmbClasificatie.MaxDropDownItems = 14

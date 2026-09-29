@@ -512,7 +512,7 @@ Partial Class KBotDataView
 
             Case KBotColumnType.Combo
                 ' Widest formatted cell plus padding plus the chevron zone (see DrawComboCell).
-                need = Math.Max(need, MeasureSampledCells(col) + cellPadX + ScaleDpi(16))
+                need = Math.Max(need, MeasureSampledCells(col) + cellPadX + ScaleDpi(ComboChevronZone))
 
             Case KBotColumnType.Button
                 ' Butonul își desenează propriile margini, nu retragerea coloanei.

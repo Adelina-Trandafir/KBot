@@ -323,10 +323,6 @@ Partial Class SetariForexeView
         ' cmbCaptura
         '
         cmbCaptura.Anchor = AnchorStyles.Left
-        cmbCaptura.DrawMode = DrawMode.OwnerDrawFixed
-        cmbCaptura.DropDownStyle = ComboBoxStyle.DropDownList
-        cmbCaptura.FlatStyle = FlatStyle.Flat
-        cmbCaptura.ItemHeight = 28
         cmbCaptura.Location = New Point(320, 4)
         cmbCaptura.Margin = New Padding(4, 4, 4, 4)
         cmbCaptura.Name = "cmbCaptura"
@@ -474,10 +470,6 @@ Partial Class SetariForexeView
         '
         cmbMultiplicator.Anchor = AnchorStyles.Left
         tlyViteza.SetColumnSpan(cmbMultiplicator, 2)
-        cmbMultiplicator.DrawMode = DrawMode.OwnerDrawFixed
-        cmbMultiplicator.DropDownStyle = ComboBoxStyle.DropDownList
-        cmbMultiplicator.FlatStyle = FlatStyle.Flat
-        cmbMultiplicator.ItemHeight = 28
         cmbMultiplicator.Location = New Point(264, 103)
         cmbMultiplicator.Margin = New Padding(4, 4, 4, 4)
         cmbMultiplicator.Name = "cmbMultiplicator"

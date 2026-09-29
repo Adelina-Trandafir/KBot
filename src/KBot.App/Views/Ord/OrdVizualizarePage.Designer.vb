@@ -368,11 +368,6 @@ Partial Class OrdVizualizarePage
         ' cboBeneficiar
         ' 
         cboBeneficiar.Dock = DockStyle.Fill
-        cboBeneficiar.DrawMode = DrawMode.OwnerDrawFixed
-        cboBeneficiar.DropDownStyle = ComboBoxStyle.DropDownList
-        cboBeneficiar.FlatStyle = FlatStyle.Flat
-        cboBeneficiar.FormattingEnabled = True
-        cboBeneficiar.IntegralHeight = False
         cboBeneficiar.Location = New Point(173, 8)
         cboBeneficiar.Margin = New Padding(0, 8, 8, 8)
         cboBeneficiar.Name = "cboBeneficiar"

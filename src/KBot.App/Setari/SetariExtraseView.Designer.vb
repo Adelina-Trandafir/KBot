@@ -123,10 +123,6 @@ Partial Class SetariExtraseView
         '
         cboGrila.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboGrila.CornerRadius = 4
-        cboGrila.DrawMode = DrawMode.OwnerDrawFixed
-        cboGrila.DropDownStyle = ComboBoxStyle.DropDownList
-        cboGrila.FlatStyle = FlatStyle.Flat
-        cboGrila.ItemHeight = 31
         cboGrila.Location = New Point(72, 2)
         cboGrila.Margin = New Padding(4, 0, 4, 0)
         cboGrila.Name = "cboGrila"

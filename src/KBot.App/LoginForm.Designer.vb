@@ -216,12 +216,8 @@ Partial Class LoginForm
         cboUnit.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
         tlpBody.SetColumnSpan(cboUnit, 2)
         cboUnit.CornerRadius = 4
-        cboUnit.DrawMode = DrawMode.OwnerDrawFixed
-        cboUnit.DropDownStyle = ComboBoxStyle.DropDownList
         cboUnit.Enabled = False
-        cboUnit.FlatStyle = FlatStyle.Flat
         cboUnit.Font = New Font("Segoe UI", 10.0F)
-        cboUnit.ItemHeight = 36
         cboUnit.Location = New Point(44, 583)
         cboUnit.Margin = New Padding(4, 5, 4, 20)
         cboUnit.Name = "cboUnit"

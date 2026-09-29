@@ -7,9 +7,17 @@ Imports KBot.Common
 
 ''' <summary>
 ''' The EDITING part of <see cref="KBotDataView"/> (slice 0010-06) -- the reason the grid is
-''' unbound. ONE real editor (a TextBox or a ComboBox, both declared in the Designer since
+''' unbound. ONE real editor (a TextBox or a KBotComboBox, both declared in the Designer since
 ''' 0010-01) floats over the active cell, so the handle count stays constant however many rows
 ''' there are.
+'''
+''' <para><b>Slice 0094: the combo editor is placed like the text editor.</b> It used to be a
+''' native ComboBox covering the whole cell, which fixes its own height and draws its own frame,
+''' so its text never sat where the cell's text is painted. Now it is a
+''' <see cref="KBotComboBox"/> in cell editor mode (no frame, no arrow, free height), one line
+''' high over the cell's text rectangle; the grid keeps painting the chevron, and a click on the
+''' chevron opens the combo's list under the cell. Typing searches the items as it goes
+''' (<c>FindAsYouType</c>); free text is still accepted and left to <c>CellValidating</c>.</para>
 '''
 ''' Cycle: <c>BeginEdit</c> -> (Enter/Tab/focus loss/move/scroll) -> <c>CommitEdit</c> with a
 ''' veto through <c>CellValidating</c>, or Esc -> <c>CancelEdit</c>. The three are
@@ -108,8 +116,21 @@ Partial Class KBotDataView
         End Set
     End Property
 
+    ' Width of the chevron strip on the right of a combo cell's content, logical px. The painter
+    ' keeps the text out of it, the combo editor stops before it, and a click in it opens the list.
+    Private Const ComboChevronZone As Integer = 16
+
     ' Wires the two editors' events (from the constructor).
     Private Sub WireEditors()
+        ' Slice 0094: the combo editor is a KBotComboBox without frame or arrow (the cell keeps
+        ' painting its own chevron), typeable, searching as the operator types. Free text is kept
+        ' (LimitToList off): the host's CellValidating decides, as with the old native combo.
+        editCombo.CellEditorMode = True
+        editCombo.Editable = True
+        editCombo.FindAsYouType = True
+        editCombo.LimitToList = False
+        editCombo.DropDownAnchorProvider = AddressOf EditingCellScreenRect
+
         AddHandler editText.KeyDown, AddressOf OnEditorKeyDown
         AddHandler editCombo.KeyDown, AddressOf OnEditorKeyDown
         AddHandler editText.Leave, AddressOf OnEditorLeave
@@ -176,14 +197,13 @@ Partial Class KBotDataView
                     editText.Focus()
                     editText.SelectAll()
                 Else
-                    editCombo.Items.Clear()
-                    If col.ComboItems IsNot Nothing Then
-                        ' Do NOT name the variable "item": VB is case-insensitive and "Item" is
-                        ' this class's Default property -- it would bind to that, not the loop.
-                        For Each comboItem In col.ComboItems
-                            editCombo.Items.Add(comboItem)
-                        Next
-                    End If
+                    editCombo.BeginUpdate()
+                    Try
+                        editCombo.Items.Clear()
+                        If col.ComboItems IsNot Nothing Then editCombo.Items.AddRange(col.ComboItems)
+                    Finally
+                        editCombo.EndUpdate()
+                    End Try
                     editCombo.Text = FormatValue(value, col)
                     If value IsNot Nothing Then
                         Dim idx As Integer = editCombo.Items.IndexOf(value)
@@ -193,6 +213,7 @@ Partial Class KBotDataView
                     editCombo.Visible = True
                     editCombo.BringToFront()
                     editCombo.Focus()
+                    editCombo.SelectAll()
                 End If
             Finally
                 _suppressEditorEvents = False
@@ -216,6 +237,10 @@ Partial Class KBotDataView
             If Not _editing Then Return True
 
             Dim col As KBotDataColumn = Column(_editColumnKey)
+
+            ' Slice 0094: the combo gives its verdict on the typed text first (a unique start of
+            ' a row takes that row), so the value read below is the one the operator sees.
+            If col.ColumnType = KBotColumnType.Combo Then editCombo.CommitText()
 
             ' Slice 0085: a single click opens the editor, so most commits are the operator just
             ' passing through a cell. Nothing typed => nothing written: no validation, no dirty
@@ -349,6 +374,35 @@ Partial Class KBotDataView
         Return Rectangle.Empty
     End Function
 
+    ''' <summary>
+    ''' The chevron strip of a combo cell (slice 0094): the part of the content rectangle
+    ''' <c>DrawComboCell</c> keeps free on the right, plus the cell's right padding. A click in it
+    ''' opens or closes the list.
+    ''' </summary>
+    Private Function ComboChevronRect(col As KBotDataColumn, cellBox As Rectangle) As Rectangle
+        Dim content As Rectangle = CellContentRect(col, cellBox)
+        Dim left As Integer = Math.Max(cellBox.Left, content.Right - ScaleDpi(ComboChevronZone))
+        Return New Rectangle(left, cellBox.Top, Math.Max(0, cellBox.Right - left), cellBox.Height)
+    End Function
+
+    ' The cell being edited, on screen: the combo editor's list opens under it, lined up with the
+    ' cell rather than with the narrower text box, and a click inside it does not close the list.
+    Private Function EditingCellScreenRect() As Rectangle
+        If _editing Then
+            Dim cellBox As Rectangle = CellRect(Column(_editColumnKey), _editRowIndex)
+            If cellBox.Width > 0 AndAlso cellBox.Height > 0 Then Return RectangleToScreen(cellBox)
+        End If
+        Return editCombo.RectangleToScreen(editCombo.ClientRectangle)
+    End Function
+
+    ''' <summary>True when <paramref name="pt"/> is on the chevron of an editable combo cell.</summary>
+    Private Function IsOnComboChevron(col As KBotDataColumn, rowIndex As Integer, pt As Point) As Boolean
+        If col Is Nothing OrElse col.ColumnType <> KBotColumnType.Combo Then Return False
+        Dim cellBox As Rectangle = CellRect(col, rowIndex)
+        If cellBox.Width <= 0 OrElse cellBox.Height <= 0 Then Return False
+        Return ComboChevronRect(col, cellBox).Contains(pt)
+    End Function
+
     ' ========================================================================
     ' EDITOR PLACEMENT (slice 0085)
     ' ========================================================================
@@ -375,18 +429,24 @@ Partial Class KBotDataView
             ' Same rectangle the painter hands to DrawTextCell (padding scaled by ScaleDpi).
             Dim content As Rectangle = CellContentRect(col, cellBox)
 
+            ' Glyph padding TextRenderer adds around the text (device pixels, so already at the
+            ' control's DPI), and the height of one line of that font.
+            Dim lineH As Integer
+            Dim padLeft As Integer
+            Dim padRight As Integer
+            MeasureTextPadding(cellFont, lineH, padLeft, padRight)
+
+            Dim h As Integer = Math.Min(lineH, cellBox.Height)
+            ' VerticalCenter: GDI centres one line in the content rect rounding the spare height
+            ' UP (measured: plain integer division left the editor 1 px high).
+            Dim edTop As Integer = content.Top + (content.Height - h + 1) \ 2
+            edTop = Math.Max(cellBox.Top, Math.Min(edTop, cellBox.Bottom - h))
+
             If col.ColumnType = KBotColumnType.Text Then
                 If Not ReferenceEquals(editText.Font, cellFont) Then editText.Font = cellFont
                 editText.BackColor = back
                 editText.ForeColor = fore
                 editText.TextAlign = HorizontalFrom(align)
-
-                ' Glyph padding TextRenderer adds around the text (device pixels, so already at
-                ' the control's DPI), and the height of one line of that font.
-                Dim lineH As Integer
-                Dim padLeft As Integer
-                Dim padRight As Integer
-                MeasureTextPadding(cellFont, lineH, padLeft, padRight)
 
                 ' The editor spans the whole content width and TextRenderer's padding becomes the
                 ' edit control's own margins, so the text starts on the painted pixel and a glyph
@@ -396,20 +456,20 @@ Partial Class KBotDataView
                 SendMessage(editText.Handle, EM_SETMARGINS,
                             New IntPtr(EC_LEFTMARGIN Or EC_RIGHTMARGIN), New IntPtr(margins))
 
-                Dim h As Integer = Math.Min(lineH, cellBox.Height)
-                ' VerticalCenter: GDI centres one line in the content rect rounding the spare
-                ' height UP (measured: plain integer division left the editor 1 px high).
-                Dim edTop As Integer = content.Top + (content.Height - h + 1) \ 2
-                edTop = Math.Max(cellBox.Top, Math.Min(edTop, cellBox.Bottom - h))
                 Dim w As Integer = Math.Max(1, content.Width)
                 editText.Bounds = New Rectangle(content.Left, edTop, w, h)
             Else
-                ' A ComboBox draws its own face and fixes its own height from the font, so it
-                ' keeps the whole cell; it only takes the cell's font and colours.
+                ' Slice 0094: the combo editor is placed like the text editor -- one line high,
+                ' vertically centred the same way -- over the text rectangle DrawComboCell uses
+                ' (the content minus the chevron strip). It sets the same glyph margins on its own
+                ' text box, so typed and painted text start on the same pixel. The chevron stays
+                ' the grid's: a click on it opens the list (see Input).
                 If Not ReferenceEquals(editCombo.Font, cellFont) Then editCombo.Font = cellFont
                 editCombo.BackColor = back
                 editCombo.ForeColor = fore
-                editCombo.Bounds = cellBox
+                editCombo.TextAlign = HorizontalFrom(align)
+                Dim w As Integer = Math.Max(1, content.Width - ScaleDpi(ComboChevronZone))
+                editCombo.Bounds = New Rectangle(content.Left, edTop, w, h)
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.PlaceEditor", ex)
@@ -668,7 +728,12 @@ Partial Class KBotDataView
     ' Left/right move the CELL only from the edge of the text; otherwise they are a caret move.
     ' A selection in progress (Shift+arrows) belongs to the text too, so it moves nothing.
     Private Function CaretAtTextEdge(towardLeft As Boolean) As Boolean
-        If editCombo.Visible Then Return Not editCombo.DroppedDown
+        If editCombo.Visible Then
+            ' Slice 0094: the combo editor is typeable too, so it follows the same rule.
+            If editCombo.DroppedDown OrElse editCombo.SelectionLength > 0 Then Return False
+            If towardLeft Then Return editCombo.SelectionStart <= 0
+            Return editCombo.SelectionStart >= editCombo.TextLength
+        End If
         If Not editText.Visible Then Return True
         If editText.SelectionLength > 0 Then Return False
         If towardLeft Then Return editText.SelectionStart <= 0

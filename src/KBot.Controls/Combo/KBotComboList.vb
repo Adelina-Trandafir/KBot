@@ -5,14 +5,10 @@ Imports System.Windows.Forms
 Imports KBot.Common
 
 ''' <summary>
-''' The list <see cref="KBotComboBox.FindAsYouType"/> opens under the box (slice 0082): only the
-''' rows that match what has been typed so far, re-filtered on every keystroke.
-'''
-''' <para><b>Why not the combo's own list.</b> Filtering means changing <c>Items</c>, which a
-''' data-bound combo cannot do, and every change of <c>Items</c> while the native list is open
-''' makes Windows rewrite the text and move the caret -- the operator would be typing into a
-''' field that edits itself. This is a separate window that only SHOWS rows: the items, the
-''' binding and the typed text stay exactly where they are.</para>
+''' The ONE list of <see cref="KBotComboBox"/>: opened by the arrow (every item, the selected one
+''' highlighted) or by typing with <see cref="KBotComboBox.FindAsYouType"/> (only the matching
+''' items). Slice 0094: before it there was also a native ComboBox list; now this window is the
+''' only one, so the two ways of choosing look and behave the same.
 '''
 ''' <para><b>It never takes the focus.</b> <c>WS_EX_NOACTIVATE</c> plus
 ''' <c>ShowWithoutActivation</c> plus <c>MA_NOACTIVATE</c> on a click: the caret stays in the
@@ -23,7 +19,7 @@ Imports KBot.Common
 ''' nothing of its own to theme; it implements <see cref="IThemedControl"/> only so the generic
 ''' traversal leaves it alone.</para>
 ''' </summary>
-Friend NotInheritable Class KBotComboFindList
+Friend NotInheritable Class KBotComboList
     Inherits Form
     Implements IThemedControl
 
@@ -33,10 +29,17 @@ Friend NotInheritable Class KBotComboFindList
     Private Const WM_MOUSEACTIVATE As Integer = &H21
     Private Const MA_NOACTIVATE As Integer = 3
 
+    ' Width of the scroll track, logical px. Wide enough to grab with the mouse.
+    Private Const SCROLL_WIDTH As Integer = 8
+
     Private ReadOnly _combo As KBotComboBox
-    Private ReadOnly _rows As New List(Of KBotComboFindRow)()
+    Private ReadOnly _rows As New List(Of KBotComboListRow)()
     Private _selected As Integer = -1
     Private _top As Integer = 0
+
+    ' Thumb drag: the offset between the press point and the thumb's top.
+    Private _dragging As Boolean = False
+    Private _dragOffset As Integer = 0
 
     ''' <summary>A row was clicked. The argument is the index in the COMBO's items.</summary>
     Public Event RowChosen(itemIndex As Integer)
@@ -101,29 +104,20 @@ Friend NotInheritable Class KBotComboFindList
     End Property
 
     ''' <summary>
-    ''' Shows <paramref name="rows"/> under (or, without room below, above) the combo. The first
-    ''' row is highlighted, so Enter takes the best match straight away.
+    ''' Shows <paramref name="rows"/> under (or, without room below, above) the screen rectangle
+    ''' <paramref name="anchor"/>, at least <paramref name="minWidth"/> wide.
+    ''' <paramref name="highlight"/> is the ROW to highlight and scroll into view (-1 = none).
     ''' </summary>
-    Public Sub ShowRows(rows As List(Of KBotComboFindRow), owner As Form)
+    Public Sub ShowRows(rows As List(Of KBotComboListRow), owner As Form, anchor As Rectangle,
+                        minWidth As Integer, highlight As Integer)
         _rows.Clear()
         _rows.AddRange(rows)
-        _selected = If(_rows.Count > 0, 0, -1)
+        _selected = If(highlight >= 0 AndAlso highlight < _rows.Count, highlight, -1)
         _top = 0
+        _dragging = False
 
-        Dim rowH As Integer = RowHeight()
-        Dim shownRows As Integer = Math.Max(1, Math.Min(_rows.Count, Math.Max(1, _combo.MaxDropDownItems)))
-        Dim w As Integer = Math.Max(_combo.Width, _combo.DropDownWidth)
-        Dim h As Integer = shownRows * rowH + 2
-
-        Dim below As Point = _combo.PointToScreen(New Point(0, _combo.Height))
-        Dim area As Rectangle = Screen.FromControl(_combo).WorkingArea
-        Dim y As Integer = below.Y
-        If y + h > area.Bottom Then
-            Dim above As Integer = _combo.PointToScreen(Point.Empty).Y - h
-            If above >= area.Top Then y = above
-        End If
-        Dim x As Integer = Math.Max(area.Left, Math.Min(below.X, area.Right - w))
-        Bounds = New Rectangle(x, y, w, h)
+        Place(anchor, minWidth)
+        If _selected >= 0 Then EnsureVisible(_selected, centre:=True)
 
         If Not Visible Then
             If owner IsNot Nothing Then Show(owner) Else Show()
@@ -131,12 +125,50 @@ Friend NotInheritable Class KBotComboFindList
         Invalidate()
     End Sub
 
+    ''' <summary>Follows the box when it moves or changes size while the list is open.</summary>
+    Public Sub Reposition(anchor As Rectangle, minWidth As Integer)
+        If Not Visible Then Return
+        Place(anchor, minWidth)
+        Invalidate()
+    End Sub
+
+    Private Sub Place(anchor As Rectangle, minWidth As Integer)
+        Dim rowH As Integer = RowHeight()
+        Dim shownRows As Integer = Math.Max(1, Math.Min(_rows.Count, Math.Max(1, _combo.MaxDropDownItems)))
+        Dim w As Integer = Math.Max(anchor.Width, minWidth)
+        Dim h As Integer = shownRows * rowH + 2
+
+        Dim area As Rectangle = Screen.FromRectangle(anchor).WorkingArea
+        Dim y As Integer = anchor.Bottom
+        If y + h > area.Bottom Then
+            Dim above As Integer = anchor.Top - h
+            If above >= area.Top Then y = above
+        End If
+        Dim x As Integer = Math.Max(area.Left, Math.Min(anchor.Left, area.Right - w))
+        Bounds = New Rectangle(x, y, w, h)
+        _top = Math.Max(0, Math.Min(_top, MaxTop()))
+    End Sub
+
     ''' <summary>Moves the highlight by <paramref name="delta"/> rows (a page = the visible
     ''' height), keeping it in view.</summary>
     Public Sub MoveSelection(delta As Integer)
         If _rows.Count = 0 Then Return
         _selected = Math.Max(0, Math.Min(_rows.Count - 1, If(_selected < 0, 0, _selected + delta)))
-        EnsureVisible(_selected)
+        EnsureVisible(_selected, centre:=False)
+        Invalidate()
+    End Sub
+
+    ''' <summary>Highlights the first (<paramref name="toEnd"/> False) or last row.</summary>
+    Public Sub MoveToEdge(toEnd As Boolean)
+        If _rows.Count = 0 Then Return
+        _selected = If(toEnd, _rows.Count - 1, 0)
+        EnsureVisible(_selected, centre:=False)
+        Invalidate()
+    End Sub
+
+    ''' <summary>Scrolls by <paramref name="rowsDelta"/> rows without moving the highlight.</summary>
+    Public Sub ScrollBy(rowsDelta As Integer)
+        _top = Math.Max(0, Math.Min(_top + rowsDelta, MaxTop()))
         Invalidate()
     End Sub
 
@@ -147,20 +179,53 @@ Friend NotInheritable Class KBotComboFindList
         End Get
     End Property
 
-    Private Sub EnsureVisible(i As Integer)
-        If i < _top Then _top = i
-        If i >= _top + PageSize Then _top = i - PageSize + 1
-        _top = Math.Max(0, Math.Min(_top, Math.Max(0, _rows.Count - PageSize)))
+    Private Function MaxTop() As Integer
+        Return Math.Max(0, _rows.Count - PageSize)
+    End Function
+
+    Private Sub EnsureVisible(i As Integer, centre As Boolean)
+        If centre AndAlso (i < _top OrElse i >= _top + PageSize) Then
+            _top = i - PageSize \ 2
+        Else
+            If i < _top Then _top = i
+            If i >= _top + PageSize Then _top = i - PageSize + 1
+        End If
+        _top = Math.Max(0, Math.Min(_top, MaxTop()))
     End Sub
 
     Private Function RowHeight() As Integer
         Return Math.Max(1, _combo.ItemHeight)
     End Function
 
+    Private Function HasScrollBar() As Boolean
+        Return _rows.Count > PageSize
+    End Function
+
+    Private Function ScrollWidthPx() As Integer
+        Return If(HasScrollBar(), ThemeShapes.ScaleDpi(_combo, SCROLL_WIDTH), 0)
+    End Function
+
+    ' The scroll track and thumb, in client coordinates (inside the 1 px frame).
+    Private Function TrackRect() As Rectangle
+        Dim w As Integer = ScrollWidthPx()
+        Return New Rectangle(ClientSize.Width - 1 - w, 1, w, Math.Max(0, ClientSize.Height - 2))
+    End Function
+
+    Private Function ThumbRect() As Rectangle
+        Dim track As Rectangle = TrackRect()
+        If track.Width = 0 OrElse _rows.Count = 0 Then Return Rectangle.Empty
+        Dim thumbH As Integer = Math.Max(ThemeShapes.ScaleDpi(_combo, 16), track.Height * PageSize \ _rows.Count)
+        thumbH = Math.Min(thumbH, track.Height)
+        Dim room As Integer = Math.Max(0, track.Height - thumbH)
+        Dim maxT As Integer = Math.Max(1, MaxTop())
+        Return New Rectangle(track.Left, track.Top + room * _top \ maxT, track.Width, thumbH)
+    End Function
+
     Private Function RowAt(p As Point) As Integer
         If p.Y < 1 Then Return -1
+        If HasScrollBar() AndAlso p.X >= TrackRect().Left Then Return -1
         Dim i As Integer = _top + (p.Y - 1) \ RowHeight()
-        Return If(i >= 0 AndAlso i < _rows.Count, i, -1)
+        Return If(i >= 0 AndAlso i < _rows.Count AndAlso i < _top + PageSize, i, -1)
     End Function
 
     ' =====================================================================
@@ -176,7 +241,7 @@ Friend NotInheritable Class KBotComboFindList
 
             Dim rowH As Integer = RowHeight()
             Dim padX As Integer = ThemeShapes.ScaleDpi(_combo, 8)
-            Dim scrollW As Integer = If(_rows.Count > PageSize, ThemeShapes.ScaleDpi(_combo, 4), 0)
+            Dim scrollW As Integer = ScrollWidthPx()
             Dim last As Integer = Math.Min(_rows.Count - 1, _top + PageSize - 1)
             For i As Integer = _top To last
                 Dim r As New Rectangle(1, 1 + (i - _top) * rowH, ClientSize.Width - 2 - scrollW, rowH)
@@ -189,7 +254,8 @@ Friend NotInheritable Class KBotComboFindList
                 Dim textArea As New Rectangle(r.Left + padX, r.Top, Math.Max(0, r.Width - padX), r.Height)
                 Dim fore As Color = If(sel, _combo.EffectiveSelectionForeColor, _combo.ForeColor)
                 Const flags As TextFormatFlags = TextFormatFlags.VerticalCenter Or TextFormatFlags.Left Or
-                                                 TextFormatFlags.EndEllipsis Or TextFormatFlags.NoPrefix
+                                                 TextFormatFlags.EndEllipsis Or TextFormatFlags.NoPrefix Or
+                                                 TextFormatFlags.SingleLine
                 If _rows(i).IsNewItem Then
                     ' The «new item» row is an action, not a value: italic, so it never reads as one.
                     Using f As New Font(_combo.Font, FontStyle.Italic)
@@ -200,15 +266,10 @@ Friend NotInheritable Class KBotComboFindList
                 End If
             Next
 
-            ' A thin thumb says "there is more than you see"; the wheel moves it.
+            ' The thumb says "there is more than you see"; it can be dragged, the track paged.
             If scrollW > 0 Then
-                Dim trackH As Integer = ClientSize.Height - 2
-                Dim thumbH As Integer = Math.Max(ThemeShapes.ScaleDpi(_combo, 12), trackH * PageSize \ _rows.Count)
-                Dim room As Integer = Math.Max(0, trackH - thumbH)
-                Dim maxTop As Integer = Math.Max(1, _rows.Count - PageSize)
-                Dim thumbY As Integer = 1 + room * _top \ maxTop
                 Using b As New SolidBrush(_combo.EffectiveBorderColor)
-                    g.FillRectangle(b, New Rectangle(ClientSize.Width - 1 - scrollW, thumbY, scrollW, thumbH))
+                    g.FillRectangle(b, ThumbRect())
                 End Using
             End If
 
@@ -216,24 +277,36 @@ Friend NotInheritable Class KBotComboFindList
                 g.DrawRectangle(pen, 0, 0, ClientSize.Width - 1, ClientSize.Height - 1)
             End Using
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotComboFindList.OnPaint", ex)
+            GlobalErrorLog.Write("KBotComboList.OnPaint", ex)
         End Try
     End Sub
 
     ' =====================================================================
-    ' MOUSE -- hover highlights, a click chooses, the wheel scrolls
+    ' MOUSE -- hover highlights, a click chooses, the wheel and the thumb scroll
     ' =====================================================================
 
     Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
         MyBase.OnMouseMove(e)
         Try
+            If _dragging Then
+                Dim track As Rectangle = TrackRect()
+                Dim thumb As Rectangle = ThumbRect()
+                Dim room As Integer = Math.Max(1, track.Height - thumb.Height)
+                Dim y As Integer = Math.Max(0, Math.Min(room, e.Y - _dragOffset - track.Top))
+                Dim newTop As Integer = CInt(Math.Round(y * MaxTop() / CDbl(room)))
+                If newTop <> _top Then
+                    _top = newTop
+                    Invalidate()
+                End If
+                Return
+            End If
             Dim i As Integer = RowAt(e.Location)
             If i >= 0 AndAlso i <> _selected Then
                 _selected = i
                 Invalidate()
             End If
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotComboFindList.OnMouseMove", ex)
+            GlobalErrorLog.Write("KBotComboList.OnMouseMove", ex)
         End Try
     End Sub
 
@@ -241,6 +314,18 @@ Friend NotInheritable Class KBotComboFindList
         MyBase.OnMouseDown(e)
         Try
             If e.Button <> MouseButtons.Left Then Return
+
+            If HasScrollBar() AndAlso e.X >= TrackRect().Left Then
+                Dim thumb As Rectangle = ThumbRect()
+                If thumb.Contains(e.Location) Then
+                    _dragging = True
+                    _dragOffset = e.Y - thumb.Top
+                Else
+                    ScrollBy(If(e.Y < thumb.Top, -PageSize, PageSize))
+                End If
+                Return
+            End If
+
             Dim i As Integer = RowAt(e.Location)
             If i < 0 Then Return
             If _rows(i).IsNewItem Then
@@ -249,18 +334,21 @@ Friend NotInheritable Class KBotComboFindList
                 RaiseEvent RowChosen(_rows(i).ItemIndex)
             End If
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotComboFindList.OnMouseDown", ex)
+            GlobalErrorLog.Write("KBotComboList.OnMouseDown", ex)
         End Try
+    End Sub
+
+    Protected Overrides Sub OnMouseUp(e As MouseEventArgs)
+        MyBase.OnMouseUp(e)
+        _dragging = False
     End Sub
 
     Protected Overrides Sub OnMouseWheel(e As MouseEventArgs)
         MyBase.OnMouseWheel(e)
         Try
-            Dim steps As Integer = -Math.Sign(e.Delta) * Math.Max(1, SystemInformation.MouseWheelScrollLines)
-            _top = Math.Max(0, Math.Min(_top + steps, Math.Max(0, _rows.Count - PageSize)))
-            Invalidate()
+            ScrollBy(-Math.Sign(e.Delta) * Math.Max(1, SystemInformation.MouseWheelScrollLines))
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotComboFindList.OnMouseWheel", ex)
+            GlobalErrorLog.Write("KBotComboList.OnMouseWheel", ex)
         End Try
     End Sub
 
@@ -270,9 +358,9 @@ Friend NotInheritable Class KBotComboFindList
     End Sub
 End Class
 
-''' <summary>One row of the find list: what it shows and which of the combo's items it stands for.
+''' <summary>One row of the list: what it shows and which of the combo's items it stands for.
 ''' The «new item» row stands for none (<see cref="ItemIndex"/> = -1).</summary>
-Friend NotInheritable Class KBotComboFindRow
+Friend NotInheritable Class KBotComboListRow
     Public ReadOnly Property ItemIndex As Integer
     Public ReadOnly Property Caption As String
     Public ReadOnly Property IsNewItem As Boolean
@@ -283,8 +371,8 @@ Friend NotInheritable Class KBotComboFindRow
     End Sub
 
     ''' <summary>The row <see cref="KBotComboBox.OfferNewItem"/> shows when nothing matches.</summary>
-    Public Shared Function NewItem(caption As String) As KBotComboFindRow
-        Dim r As New KBotComboFindRow(-1, caption)
+    Public Shared Function NewItem(caption As String) As KBotComboListRow
+        Dim r As New KBotComboListRow(-1, caption)
         r._IsNewItem = True
         Return r
     End Function

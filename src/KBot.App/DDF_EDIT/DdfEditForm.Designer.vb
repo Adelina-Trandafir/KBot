@@ -163,11 +163,7 @@ Partial Class DdfEditForm
         ' cmbProgram
         ' 
         cmbProgram.Dock = DockStyle.Fill
-        cmbProgram.DrawMode = DrawMode.OwnerDrawFixed
-        cmbProgram.DropDownStyle = ComboBoxStyle.DropDownList
-        cmbProgram.FlatStyle = FlatStyle.Flat
         cmbProgram.Font = New Font("Calibri", 9F, FontStyle.Bold)
-        cmbProgram.ItemHeight = 28
         cmbProgram.Location = New Point(144, 85)
         cmbProgram.Margin = New Padding(4, 3, 4, 3)
         cmbProgram.Name = "cmbProgram"
@@ -180,11 +176,8 @@ Partial Class DdfEditForm
         ' 
         tlyAntet.SetColumnSpan(cmbComp, 2)
         cmbComp.Dock = DockStyle.Fill
-        cmbComp.DrawMode = DrawMode.OwnerDrawFixed
         cmbComp.Editable = True
-        cmbComp.FlatStyle = FlatStyle.Flat
         cmbComp.Font = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        cmbComp.ItemHeight = 28
         cmbComp.LimitToList = False
         cmbComp.Location = New Point(467, 85)
         cmbComp.Margin = New Padding(4, 3, 4, 3)
@@ -213,12 +206,9 @@ Partial Class DdfEditForm
         ' 
         tlyAntet.SetColumnSpan(cmbPartener, 2)
         cmbPartener.Dock = DockStyle.Fill
-        cmbPartener.DrawMode = DrawMode.OwnerDrawFixed
         cmbPartener.Editable = True
         cmbPartener.FindAsYouType = True
-        cmbPartener.FlatStyle = FlatStyle.Flat
         cmbPartener.Font = New Font("Calibri", 9F, FontStyle.Bold)
-        cmbPartener.ItemHeight = 28
         cmbPartener.Location = New Point(975, 85)
         cmbPartener.Margin = New Padding(4, 3, 4, 3)
         cmbPartener.Name = "cmbPartener"

@@ -143,10 +143,6 @@ Partial Class KBotRichTextEditor
         ' 
         ' cmbFont
         ' 
-        cmbFont.DrawMode = DrawMode.OwnerDrawFixed
-        cmbFont.DropDownStyle = ComboBoxStyle.DropDownList
-        cmbFont.FlatStyle = FlatStyle.Flat
-        cmbFont.IntegralHeight = False
         cmbFont.Location = New Point(243, 16)
         cmbFont.Margin = New Padding(0)
         cmbFont.Name = "cmbFont"
@@ -158,9 +154,6 @@ Partial Class KBotRichTextEditor
         ' 
         ' cmbSize
         ' 
-        cmbSize.DrawMode = DrawMode.OwnerDrawFixed
-        cmbSize.DropDownStyle = ComboBoxStyle.DropDownList
-        cmbSize.FlatStyle = FlatStyle.Flat
         cmbSize.Location = New Point(516, 16)
         cmbSize.Margin = New Padding(0)
         cmbSize.Name = "cmbSize"

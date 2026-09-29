@@ -132,10 +132,6 @@ Partial Class AdobeGazduireForm
         '
         cboAdobeInst.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboAdobeInst.CornerRadius = 4
-        cboAdobeInst.DrawMode = DrawMode.OwnerDrawFixed
-        cboAdobeInst.DropDownStyle = ComboBoxStyle.DropDownList
-        cboAdobeInst.FlatStyle = FlatStyle.Flat
-        cboAdobeInst.ItemHeight = 31
         cboAdobeInst.Location = New Point(358, 8)
         cboAdobeInst.Margin = New Padding(4, 0, 4, 10)
         cboAdobeInst.Name = "cboAdobeInst"
@@ -160,10 +156,6 @@ Partial Class AdobeGazduireForm
         '
         cboAdobeDetach.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboAdobeDetach.CornerRadius = 4
-        cboAdobeDetach.DrawMode = DrawMode.OwnerDrawFixed
-        cboAdobeDetach.DropDownStyle = ComboBoxStyle.DropDownList
-        cboAdobeDetach.FlatStyle = FlatStyle.Flat
-        cboAdobeDetach.ItemHeight = 31
         cboAdobeDetach.Location = New Point(358, 55)
         cboAdobeDetach.Margin = New Padding(4, 0, 4, 10)
         cboAdobeDetach.Name = "cboAdobeDetach"

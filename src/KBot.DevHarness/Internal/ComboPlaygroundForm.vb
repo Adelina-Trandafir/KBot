@@ -14,7 +14,7 @@ Imports KBot.Theming
 '
 ' Above it sit only the things a property grid CANNOT give: reloading the sample list, clearing
 ' the selection, and the application scale -- because the answer to "did TextOffsetY actually move the
-' edit box" is only visible by reading the native EDIT's real rectangle back from Windows, next
+' edit box" is only visible by reading the inner text box's real rectangle (EditBounds), next
 ' to the logical number that was typed.
 '
 ' Every handler is a UI boundary: log and SWALLOW (never throw into the message loop).
@@ -76,7 +76,7 @@ Public NotInheritable Class ComboPlaygroundForm
         RefreshReadout()
     End Sub
 
-    ' The first true measurement: before Shown there is no native EDIT handle yet.
+    ' The first true measurement: before Shown the inner text box has not been laid out yet.
     Private Sub OnShownRefresh(sender As Object, e As EventArgs) Handles MyBase.Shown
         RefreshReadout()
     End Sub
@@ -220,7 +220,7 @@ Public NotInheritable Class ComboPlaygroundForm
     Private Sub UpdateDependentControls()
         lblManual.Enabled = (AppScaling.Mode = ScalingMode.Manual)
         numManual.Enabled = (AppScaling.Mode = ScalingMode.Manual)
-        ' LimitToList and TextOffsetY both have nothing to do without a native EDIT to act on.
+        ' LimitToList and TextOffsetY both have nothing to do without the inner text box to act on.
         chkLimitToList.Enabled = cbo.Editable
         lblTextOffsetY.Enabled = cbo.Editable
         numTextOffsetY.Enabled = cbo.Editable
@@ -252,7 +252,6 @@ Public NotInheritable Class ComboPlaygroundForm
     End Sub
 
     Private Sub LoadSample()
-        cbo.DataSource = Nothing
         cbo.Items.Clear()
         cbo.Items.AddRange(SAMPLE_ITEMS)
         If cbo.Items.Count > 0 Then cbo.SelectedIndex = 0
@@ -260,9 +259,9 @@ Public NotInheritable Class ComboPlaygroundForm
 
     ''' <summary>
     ''' What ACTUALLY happened: the scale factor, the combo's own face rectangle, and -- only
-    ''' when <see cref="KBotComboBox.Editable"/> is on -- the native EDIT's real rectangle read
-    ''' back from Windows, next to the logical <c>TextOffsetY</c> that was typed. That is the only
-    ''' proof the nudge moved anything at all.
+    ''' when <see cref="KBotComboBox.Editable"/> is on -- the inner text box's real rectangle
+    ''' (<see cref="KBotComboBox.EditBounds"/>), next to the logical <c>TextOffsetY</c> that was
+    ''' typed. That is the only proof the nudge moved anything at all.
     ''' </summary>
     Private Sub RefreshReadout()
         Try
@@ -274,11 +273,11 @@ Public NotInheritable Class ComboPlaygroundForm
             sb.AppendLine($"Selecție: index {cbo.SelectedIndex}  •  text «{cbo.Text}»")
 
             If Not cbo.Editable Then
-                sb.Append("TextOffsetY: fără efect -- combo-ul nu e Editable (nu există EDIT nativ).")
+                sb.Append("TextOffsetY: fără efect -- combo-ul nu e Editable (nu există casetă de text).")
             Else
-                Dim editRect As Rectangle = NativeMethods.GetComboEditBounds(cbo)
+                Dim editRect As Rectangle = cbo.EditBounds
                 Dim offsetPx As Integer = ThemeShapes.ScaleDpi(cbo, cbo.TextOffsetY)
-                sb.Append($"TextOffsetY: {cbo.TextOffsetY} logic → {offsetPx} px  •  EDIT real: " &
+                sb.Append($"TextOffsetY: {cbo.TextOffsetY} logic → {offsetPx} px  •  casetă text reală: " &
                           If(editRect.IsEmpty, "(indisponibil)",
                              $"{editRect.Width}×{editRect.Height} px la ({editRect.Left},{editRect.Top})"))
             End If

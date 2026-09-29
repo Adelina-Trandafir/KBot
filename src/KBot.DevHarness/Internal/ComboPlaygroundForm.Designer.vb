@@ -344,9 +344,6 @@ Partial Class ComboPlaygroundForm
         ' The control under test. Docked Top with a fixed height, like every KBotComboBox on a
         ' real form -- it is a one-line input, not something that grows to fill a panel.
         cbo.Dock = DockStyle.Top
-        cbo.DrawMode = DrawMode.OwnerDrawFixed
-        cbo.DropDownStyle = ComboBoxStyle.DropDownList
-        cbo.FlatStyle = FlatStyle.Flat
         cbo.Font = New Font("Segoe UI", 10F)
         cbo.Location = New Point(12, 12)
         cbo.Name = "cbo"
@@ -356,7 +353,7 @@ Partial Class ComboPlaygroundForm
         ' lblReadout
         '
         ' What ACTUALLY happened on screen: the scale, the combo's own size, the selection, and --
-        ' when Editable is on -- the native EDIT's real rectangle next to the logical TextOffsetY typed.
+        ' when Editable is on -- the inner text box's real rectangle next to the logical TextOffsetY typed.
         lblReadout.Dock = DockStyle.Fill
         lblReadout.Font = New Font("Consolas", 9F)
         lblReadout.Location = New Point(12, 54)

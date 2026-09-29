@@ -15,8 +15,8 @@ Partial Class KBotDataView
     ''' <summary>The floating text editor (hidden by default). Borderless and not auto-sized: slice 0085 sizes it to one line of the cell's text (see PlaceEditor).</summary>
     Friend WithEvents editText As TextBox
 
-    ''' <summary>The floating combo editor (hidden by default). DropDownStyle is switched per column.</summary>
-    Friend WithEvents editCombo As ComboBox
+    ''' <summary>The floating combo editor (hidden by default): a KBotComboBox in cell editor mode (slice 0094), placed on the cell text like editText.</summary>
+    Friend WithEvents editCombo As KBotComboBox
 
     ''' <summary>The vertical scroll bar.</summary>
     Friend WithEvents vScroll As VScrollBar
@@ -26,7 +26,7 @@ Partial Class KBotDataView
 
     Private Sub InitializeComponent()
         Me.editText = New TextBox()
-        Me.editCombo = New ComboBox()
+        Me.editCombo = New KBotComboBox()
         Me.vScroll = New VScrollBar()
         Me.hScroll = New HScrollBar()
         Me.SuspendLayout()

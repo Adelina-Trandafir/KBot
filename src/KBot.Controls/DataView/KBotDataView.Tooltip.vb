@@ -102,7 +102,7 @@ Partial Class KBotDataView
         ' Marginile sunt ale COLOANEI, aceleași pe care le folosește și eticheta așezată peste
         ' celulă: măsurate altfel, eticheta ar apărea pentru un text care încăpea (sau invers).
         Dim disponibil As Integer = col.WidthPx - ScaleDpi(col.CellPadding.Left) - ScaleDpi(col.CellPadding.Right)
-        If col.ColumnType = KBotColumnType.Combo Then disponibil -= ScaleDpi(16)
+        If col.ColumnType = KBotColumnType.Combo Then disponibil -= ScaleDpi(ComboChevronZone)
         If disponibil <= 0 Then Return True
         Dim latime As Integer = MeasureText(text, If(font, Me.Font))
         Return latime > disponibil

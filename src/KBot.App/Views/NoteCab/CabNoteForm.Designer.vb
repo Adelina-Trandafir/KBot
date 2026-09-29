@@ -191,11 +191,8 @@ Partial Class CabNoteForm
         ' cmbAngajament
         ' 
         cmbAngajament.Dock = DockStyle.Fill
-        cmbAngajament.DrawMode = DrawMode.OwnerDrawFixed
         cmbAngajament.Editable = True
         cmbAngajament.FindAsYouType = True
-        cmbAngajament.FlatStyle = FlatStyle.Flat
-        cmbAngajament.ItemHeight = 31
         cmbAngajament.Location = New Point(274, 15)
         cmbAngajament.Margin = New Padding(4, 3, 4, 3)
         cmbAngajament.MaxDropDownItems = 14
@@ -208,10 +205,6 @@ Partial Class CabNoteForm
         ' cmbIndicator
         ' 
         cmbIndicator.Dock = DockStyle.Fill
-        cmbIndicator.DrawMode = DrawMode.OwnerDrawFixed
-        cmbIndicator.DropDownStyle = ComboBoxStyle.DropDownList
-        cmbIndicator.FlatStyle = FlatStyle.Flat
-        cmbIndicator.ItemHeight = 31
         cmbIndicator.Location = New Point(969, 15)
         cmbIndicator.Margin = New Padding(4, 3, 4, 3)
         cmbIndicator.Name = "cmbIndicator"

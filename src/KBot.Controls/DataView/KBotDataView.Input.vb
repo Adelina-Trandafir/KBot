@@ -502,7 +502,10 @@ Partial Class KBotDataView
             If _currentRowIndex = rowIndex AndAlso
                String.Equals(_currentColumnKey, col.Key, StringComparison.Ordinal) AndAlso
                Not _editing AndAlso CanEdit(col.Key, rowIndex) Then
-                BeginEdit(col.Key, rowIndex)
+                ' Slice 0094: a click on a combo cell's chevron also opens the list.
+                If BeginEdit(col.Key, rowIndex) AndAlso IsOnComboChevron(col, rowIndex, e.Location) Then
+                    editCombo.DroppedDown = True
+                End If
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnMouseDown", ex)
@@ -519,6 +522,15 @@ Partial Class KBotDataView
         If col Is Nothing OrElse Not String.Equals(col.Key, _editColumnKey, StringComparison.Ordinal) Then Return False
         FocusActiveEditor()
         If editText.Visible Then editText.SelectAll()
+        If editCombo.Visible Then
+            ' Slice 0094: the chevron opens / closes the list; elsewhere in the cell the text is
+            ' selected, like a click on a text cell.
+            If IsOnComboChevron(col, _editRowIndex, pt) Then
+                editCombo.DroppedDown = Not editCombo.DroppedDown
+            Else
+                editCombo.SelectAll()
+            End If
+        End If
         Return True
     End Function
 
@@ -590,7 +602,10 @@ Partial Class KBotDataView
             Dim tipCol As KBotDataColumn = If(tipRow < 0, Nothing, ColumnAtX(e.X))
             ' Slice 0085: an I-beam over a cell a click would edit (read-only / disabled cells keep
             ' the arrow), so the operator sees where typing is possible before clicking.
-            If tipCol IsNot Nothing AndAlso CanEdit(tipCol.Key, tipRow) Then Cursor = Cursors.IBeam
+            ' Slice 0094: the chevron of a combo cell is a button, not text.
+            If tipCol IsNot Nothing AndAlso CanEdit(tipCol.Key, tipRow) Then
+                Cursor = If(IsOnComboChevron(tipCol, tipRow, e.Location), Cursors.Default, Cursors.IBeam)
+            End If
             UpdateCellTooltip(If(tipCol Is Nothing, Nothing, tipCol.Key), If(tipCol Is Nothing, -1, tipRow))
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnMouseMove", ex)

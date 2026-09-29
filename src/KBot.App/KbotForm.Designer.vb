@@ -130,12 +130,7 @@ Partial Class KbotForm
         cboAn.BorderColor = Color.Transparent
         cboAn.CornerRadius = 0
         cboAn.Dock = DockStyle.Fill
-        cboAn.DrawMode = DrawMode.OwnerDrawFixed
-        cboAn.DropDownStyle = ComboBoxStyle.DropDownList
-        cboAn.FlatStyle = FlatStyle.Flat
         cboAn.Font = New Font("Calibri", 9F)
-        cboAn.IntegralHeight = False
-        cboAn.ItemHeight = 31
         cboAn.Location = New Point(340, 1)
         cboAn.Margin = New Padding(0)
         cboAn.Name = "cboAn"
@@ -149,12 +144,7 @@ Partial Class KbotForm
         cboSs.BorderColor = Color.Transparent
         cboSs.CornerRadius = 0
         cboSs.Dock = DockStyle.Fill
-        cboSs.DrawMode = DrawMode.OwnerDrawFixed
-        cboSs.DropDownStyle = ComboBoxStyle.DropDownList
-        cboSs.FlatStyle = FlatStyle.Flat
         cboSs.Font = New Font("Calibri", 9F)
-        cboSs.IntegralHeight = False
-        cboSs.ItemHeight = 31
         cboSs.Location = New Point(595, 1)
         cboSs.Margin = New Padding(0)
         cboSs.Name = "cboSs"

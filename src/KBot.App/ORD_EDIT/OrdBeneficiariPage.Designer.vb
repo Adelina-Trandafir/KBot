@@ -93,9 +93,6 @@ Partial Class OrdBeneficiariPage
         ' cboCodPartener
         ' 
         cboCodPartener.Dock = DockStyle.Fill
-        cboCodPartener.DrawMode = DrawMode.OwnerDrawFixed
-        cboCodPartener.DropDownStyle = ComboBoxStyle.DropDownList
-        cboCodPartener.FlatStyle = FlatStyle.Flat
         cboCodPartener.Location = New Point(694, 6)
         cboCodPartener.Margin = New Padding(4, 6, 4, 6)
         cboCodPartener.Name = "cboCodPartener"

@@ -43,7 +43,8 @@ Partial Public Class KbotForm
 
             _suppressPeriodEvents = True
             Dim years = _periods.Select(Function(p) p.AN).Distinct().OrderByDescending(Function(y) y).ToList()
-            cboAn.DataSource = years
+            cboAn.Items.Clear()
+            cboAn.Items.AddRange(years)
             cboAn.SelectedIndex = 0            ' the highest year
             _suppressPeriodEvents = False
 
@@ -63,7 +64,8 @@ Partial Public Class KbotForm
                                   Select(Function(p) p.SS).Distinct().ToList()
 
             _suppressPeriodEvents = True
-            cboSs.DataSource = ssList
+            cboSs.Items.Clear()
+            cboSs.Items.AddRange(ssList)
             Dim idx As Integer = If(String.IsNullOrEmpty(_session.LastSS), -1, ssList.IndexOf(_session.LastSS))
             cboSs.SelectedIndex = If(idx >= 0, idx, If(ssList.Count > 0, 0, -1))
             _suppressPeriodEvents = False

@@ -226,7 +226,6 @@ Partial Class KBotDataView
             editText.ForeColor = p.InputTextColor
             editCombo.BackColor = p.InputBackColor
             editCombo.ForeColor = p.InputTextColor
-            editCombo.FlatStyle = FlatStyle.Flat
 
             BackColor = _cRowBack
             ApplyScrollBarTheme()

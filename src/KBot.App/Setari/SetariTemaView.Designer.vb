@@ -88,10 +88,6 @@ Partial Class SetariTemaView
         '
         cboScheme.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboScheme.CornerRadius = 4
-        cboScheme.DrawMode = DrawMode.OwnerDrawFixed
-        cboScheme.DropDownStyle = ComboBoxStyle.DropDownList
-        cboScheme.FlatStyle = FlatStyle.Flat
-        cboScheme.ItemHeight = 30
         cboScheme.Location = New Point(138, 25)
         cboScheme.Margin = New Padding(4, 0, 4, 0)
         cboScheme.Name = "cboScheme"
@@ -220,10 +216,6 @@ Partial Class SetariTemaView
         '
         cboScalingMode.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboScalingMode.CornerRadius = 4
-        cboScalingMode.DrawMode = DrawMode.OwnerDrawFixed
-        cboScalingMode.DropDownStyle = ComboBoxStyle.DropDownList
-        cboScalingMode.FlatStyle = FlatStyle.Flat
-        cboScalingMode.ItemHeight = 30
         cboScalingMode.Location = New Point(158, 52)
         cboScalingMode.Margin = New Padding(4, 0, 4, 8)
         cboScalingMode.Name = "cboScalingMode"

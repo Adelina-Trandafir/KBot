@@ -73,10 +73,6 @@ Partial Class SetariAplicatieView
         '
         cboVerbose.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboVerbose.CornerRadius = 4
-        cboVerbose.DrawMode = DrawMode.OwnerDrawFixed
-        cboVerbose.DropDownStyle = ComboBoxStyle.DropDownList
-        cboVerbose.FlatStyle = FlatStyle.Flat
-        cboVerbose.ItemHeight = 31
         cboVerbose.Location = New Point(404, 0)
         cboVerbose.Margin = New Padding(4, 0, 4, 10)
         cboVerbose.Name = "cboVerbose"
@@ -145,10 +141,6 @@ Partial Class SetariAplicatieView
         '
         cboAdobeMotor.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboAdobeMotor.CornerRadius = 4
-        cboAdobeMotor.DrawMode = DrawMode.OwnerDrawFixed
-        cboAdobeMotor.DropDownStyle = ComboBoxStyle.DropDownList
-        cboAdobeMotor.FlatStyle = FlatStyle.Flat
-        cboAdobeMotor.ItemHeight = 31
         cboAdobeMotor.Location = New Point(404, 0)
         cboAdobeMotor.Margin = New Padding(4, 0, 4, 10)
         cboAdobeMotor.Name = "cboAdobeMotor"
@@ -219,10 +211,6 @@ Partial Class SetariAplicatieView
         '
         cboExcelRibbon.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboExcelRibbon.CornerRadius = 4
-        cboExcelRibbon.DrawMode = DrawMode.OwnerDrawFixed
-        cboExcelRibbon.DropDownStyle = ComboBoxStyle.DropDownList
-        cboExcelRibbon.FlatStyle = FlatStyle.Flat
-        cboExcelRibbon.ItemHeight = 31
         cboExcelRibbon.Location = New Point(404, 229)
         cboExcelRibbon.Margin = New Padding(4, 0, 4, 10)
         cboExcelRibbon.Name = "cboExcelRibbon"
@@ -236,10 +224,6 @@ Partial Class SetariAplicatieView
         cboSortare.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         tlyArbore.SetColumnSpan(cboSortare, 2)
         cboSortare.CornerRadius = 4
-        cboSortare.DrawMode = DrawMode.OwnerDrawFixed
-        cboSortare.DropDownStyle = ComboBoxStyle.DropDownList
-        cboSortare.FlatStyle = FlatStyle.Flat
-        cboSortare.ItemHeight = 31
         cboSortare.Location = New Point(404, 0)
         cboSortare.Margin = New Padding(4, 0, 4, 10)
         cboSortare.Name = "cboSortare"
@@ -253,10 +237,6 @@ Partial Class SetariAplicatieView
         cboOrdine.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         tlyArbore.SetColumnSpan(cboOrdine, 2)
         cboOrdine.CornerRadius = 4
-        cboOrdine.DrawMode = DrawMode.OwnerDrawFixed
-        cboOrdine.DropDownStyle = ComboBoxStyle.DropDownList
-        cboOrdine.FlatStyle = FlatStyle.Flat
-        cboOrdine.ItemHeight = 31
         cboOrdine.Location = New Point(404, 47)
         cboOrdine.Margin = New Padding(4, 0, 4, 10)
         cboOrdine.Name = "cboOrdine"

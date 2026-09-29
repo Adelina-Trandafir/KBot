@@ -150,7 +150,7 @@ Public NotInheritable Class LoginForm
     ' disabled, Inapoi / Autentificare disabled.
     Private Sub ShowPhaseCreds()
         Try
-            cboUnit.DataSource = Nothing
+            cboUnit.Items.Clear()
             cboUnit.Enabled = False
             btnBack.Enabled = False
             btnLogin.Enabled = False
@@ -233,9 +233,10 @@ Public NotInheritable Class LoginForm
             _username = user
             _password = pass
 
-            cboUnit.DataSource = New List(Of UnitInfo)(units)
-            cboUnit.DisplayMember = NameOf(UnitInfo.Display)   ' arata NumeUnitate
-            cboUnit.ValueMember = NameOf(UnitInfo.DC)          ' valoarea din spate e DC
+            ' The combo shows the unit's name, never the raw DC; the item itself stays the UnitInfo.
+            cboUnit.CaptionSelector = Function(o) DirectCast(o, UnitInfo).Display
+            cboUnit.Items.Clear()
+            cboUnit.Items.AddRange(units)
             cboUnit.SelectedIndex = 0    ' caz mono-unitate: pre-selectat, un click de confirmat
             ' Same user as last time and their unit is still on the list -> pre-select it.
             ' Another user, or a unit gone from the list -> the first one, as before.

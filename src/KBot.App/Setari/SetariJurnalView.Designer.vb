@@ -512,11 +512,6 @@ Partial Class SetariJurnalView
         ' CmbTipJurnal
         ' 
         CmbTipJurnal.Dock = DockStyle.Fill
-        CmbTipJurnal.DrawMode = DrawMode.OwnerDrawFixed
-        CmbTipJurnal.DropDownStyle = ComboBoxStyle.DropDownList
-        CmbTipJurnal.FlatStyle = FlatStyle.Flat
-        CmbTipJurnal.FormattingEnabled = True
-        CmbTipJurnal.ItemHeight = 31
         CmbTipJurnal.Location = New Point(3, 3)
         CmbTipJurnal.Name = "CmbTipJurnal"
         CmbTipJurnal.Size = New Size(194, 37)
@@ -527,12 +522,7 @@ Partial Class SetariJurnalView
         ' cmbSesiuni
         ' 
         cmbSesiuni.Dock = DockStyle.Fill
-        cmbSesiuni.DrawMode = DrawMode.OwnerDrawFixed
-        cmbSesiuni.DropDownStyle = ComboBoxStyle.DropDownList
         cmbSesiuni.Enabled = False
-        cmbSesiuni.FlatStyle = FlatStyle.Flat
-        cmbSesiuni.FormattingEnabled = True
-        cmbSesiuni.ItemHeight = 31
         cmbSesiuni.Location = New Point(203, 3)
         cmbSesiuni.Name = "cmbSesiuni"
         cmbSesiuni.Size = New Size(104, 37)

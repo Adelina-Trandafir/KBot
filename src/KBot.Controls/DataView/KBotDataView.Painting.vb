@@ -486,7 +486,10 @@ Partial Class KBotDataView
             Case KBotColumnType.ProgressBar
                 DrawProgressCell(g, cellRect, ProgressFraction(value, col), enabled)
             Case KBotColumnType.Combo
-                DrawComboCell(g, contentRect, _cellArgs.Text, _cellArgs.Font,
+                ' Slice 0094: the combo editor draws the text of the cell being edited; the
+                ' chevron stays painted here.
+                DrawComboCell(g, contentRect,
+                              If(IsEditingCell(col.Key, rowIndex), String.Empty, _cellArgs.Text), _cellArgs.Font,
                               fore, _cellArgs.Alignment, enabled)
             Case Else
                 ' Slice 0085: the borderless editor draws this cell's text while it is open;
@@ -651,7 +654,7 @@ Partial Class KBotDataView
     ' (ComboBox flotant) apare doar la editare (0010-06).
     Private Sub DrawComboCell(g As Graphics, cellRect As Rectangle, text As String, font As Font,
                               fore As Color, align As ContentAlignment, enabled As Boolean)
-        Dim chevronZone As Integer = ScaleDpi(16)
+        Dim chevronZone As Integer = ScaleDpi(ComboChevronZone)
         Dim textRect As New Rectangle(cellRect.Left, cellRect.Top,
                                       Math.Max(0, cellRect.Width - chevronZone), cellRect.Height)
         DrawTextCell(g, textRect, text, font, fore, align)

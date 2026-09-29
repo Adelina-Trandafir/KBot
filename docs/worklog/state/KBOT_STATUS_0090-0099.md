@@ -65,3 +65,32 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 - **0093 — nimic rulat.** Nici ruta ANAF, nici fereastra nu au fost încercate pe server/ecran.
 - **0093 — partenerii ascunși / cu alt Tip / fără CF nu mai apar deloc** în fereastră; un partener marcat «Ascuns» la salvare dispare din listă. Cererea operatorului, dar nu mai există cale din K-BOT de a-l reafișa.
 - **0093 — cod dublat ascuns:** verificarea de unicitate pe server include și partenerii ascunși sau cu alt Tip (mesajul spune «partener ascuns»); fereastra nu-i vede, deci operatorul află doar la salvare.
+
+---
+
+## Slice 0094
+
+### Registry
+
+| Slice | Name | Status | Worklog(s) | Notes |
+|------:|------|--------|-----------|-------|
+| 0094 | **`KBotComboBox` rescris pe `Control` (nu mai moștenește `ComboBox`) și folosit ca editor de combo în `KBotDataView` (cererea operatorului, 29.09.2026)** — fără `DataSource`/`DisplayMember` (elementele în `Items`, afișate prin `CaptionSelector` sau `ToString()`); textul tastat într-o casetă fără chenar așezată ca textul pictat (rețeta 0085); O SINGURĂ listă: săgeata o deschide cu toate elementele, tastarea (`FindAsYouType`) cu cele potrivite; se închide la un clic în afara ei; bară de derulare trasă cu mouse-ul. În grilă: editorul de combo stă pe o linie, centrat ca editorul de text, peste textul celulei; săgeata celulei (pictată de grilă) deschide lista sub celulă; textul liber rămâne la `CellValidating` | GATA pe cod (build Controls/App/Migrator/Theming/Updater **0 / 0**) / **nevăzut pe ecran, fără teste** | `SLICE-0094-combo-own-control-grid-editor.md` | 14 fișiere Designer curățate de liniile ComboBox (`DrawMode`, `DropDownStyle`, `FlatStyle`, `IntegralHeight`, `ItemHeight`, `FormattingEnabled`). An/SS și unitatea de la login: `Items` în loc de `DataSource`. Controls 1.57.0.0, DevHarness 1.0.29.0. |
+
+### Current focus
+
+- **Slice 0094 — combo-ul propriu (29.09.2026).** `KBotComboBox` e un `Control` cu casetă de text,
+  listă proprie și colecție de elemente proprie; grila îl folosește ca editor de combo, așezat ca
+  editorul de text. **Next:** operatorul îl vede în aplicație (grila DDF Secțiunea A, Parteneri,
+  combo-urile din Setări / login / MainForm).
+
+### Open threads
+
+- **0094 — nimic văzut pe ecran.** Alinierea la pixel a editorului de combo cu textul celulei se
+  sprijină pe rețeta măsurată la 0085 pentru editorul de text; pentru combo nu s-a măsurat.
+- **0094 — `AssemblyVersion` a KBot.Controls a rămas 1.0.0.0** deși tipul de bază al
+  `KBotComboBox` s-a schimbat; merge doar pentru că actualizarea livrează tot setul.
+- **0094 — cod rămas fără folosință:** ajutoarele pentru EDIT-ul nativ din
+  `KBot.Theming/Interop/NativeMethods.vb` (`GetComboEditBounds`, `SetComboEditMargins`,
+  `SetComboEditBounds`, `GetComboEditTextTop`, `GetComboEditLineHeight`, `ApplyControlColors`).
+- **0094 — diferențe de comportament:** rotița peste un combo ÎNCHIS nu mai schimbă selecția;
+  `Items.Clear()` pe un combo editabil păstrează textul tastat.
