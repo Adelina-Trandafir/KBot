@@ -31,6 +31,8 @@ Friend NotInheritable Class AdobeNativeMethods
     ' A window's OWN visibility bit, as opposed to IsWindowVisible, which is only true when every
     ' ancestor is showing too. See AdobeNativeMethods.IsVisibleStyleSet.
     Public Const WS_VISIBLE As Long = &H10000000L
+    ' Slice 0078-07: read only, for the log -- is the hosted window still flagged maximized?
+    Public Const WS_MAXIMIZE As Long = &H1000000L
 
     ' The styles a top-level window must LOSE to behave as a hosted child.
     Public Const StandaloneStyles As Long =

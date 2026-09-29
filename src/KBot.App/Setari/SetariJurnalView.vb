@@ -876,23 +876,30 @@ Public Class SetariJurnalView
         Return sb.ToString()
     End Function
 
-    ''' <summary>Exports the FILTERED entries, UTF-8 with BOM (Notepad wants them that way).</summary>
+    ''' <summary>
+    ''' Exports what the operator is LOOKING AT: the rows that pass the filters AND sit in an
+    ''' expanded day (slice 0089). The days start collapsed, so opening a day is how the operator
+    ''' picks what goes into the file; no day open = nothing exported, and the dialog is not
+    ''' even shown. UTF-8 with BOM (Notepad wants them that way).
+    ''' </summary>
     Private Sub btnExporta_Click(sender As Object, e As EventArgs) Handles btnExporta.Click
         Try
-            If grila.RowCount = 0 Then
-                lblStare.Text = "Nimic de exportat."
+            Dim sb As New StringBuilder()
+            For i As Integer = 0 To grila.RowCount - 1
+                If Not grila.IsRowShown(i) Then Continue For
+                Dim en As LogEntry = TryCast(grila.Rows(i).Tag, LogEntry)
+                If en IsNot Nothing Then sb.AppendLine(en.Raw)
+            Next
+            If sb.Length = 0 Then
+                lblStare.Text = If(grila.RowCount = 0,
+                                   "Nimic de exportat.",
+                                   "Nimic de exportat: deschideți zilele pe care vreți să le exportați.")
                 Return
             End If
             Using dlg As New SaveFileDialog()
                 dlg.Filter = "Fișier text (*.txt)|*.txt|Toate fișierele (*.*)|*.*"
                 dlg.FileName = "jurnal_" & Date.Now.ToString("yyyyMMdd_HHmmss") & ".txt"
                 If dlg.ShowDialog(FindForm()) <> DialogResult.OK Then Return
-
-                Dim sb As New StringBuilder()
-                For i As Integer = 0 To grila.RowCount - 1
-                    Dim en As LogEntry = TryCast(grila.Rows(i).Tag, LogEntry)
-                    If en IsNot Nothing Then sb.AppendLine(en.Raw)
-                Next
                 File.WriteAllText(dlg.FileName, sb.ToString(), New UTF8Encoding(True))
                 lblStare.Text = "Exportat în " & dlg.FileName
             End Using

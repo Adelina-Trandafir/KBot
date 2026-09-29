@@ -370,6 +370,19 @@ Public Class RezervariView
             tree.Clear()
             Dim palette As ThemePalette = TryGetPalette()
 
+            ' The initial reservation is ONE event per angajament, even when its lines were
+            ' finalised on different days (a line added while the angajament was being finalised
+            ' gets its own earlier date). Every initial row is placed on the LAST of those days --
+            ' the day the reservation became final -- so the tree shows a single «Inițială» leaf.
+            ' The row's own DataRezervare is untouched; only the tree position moves.
+            Dim initialDays As List(Of Date) =
+                rows.Where(Function(r) r.Tip = RezervareTip.Initiala).
+                     Select(Function(r) r.DataRezervare.Date).ToList()
+            Dim initialDay As Date? = If(initialDays.Count > 0, initialDays.Max(), CType(Nothing, Date?))
+            Dim treeDay As Func(Of RezervareRow, Date) =
+                Function(r) If(r.Tip = RezervareTip.Initiala AndAlso initialDay.HasValue,
+                               initialDay.Value, r.DataRezervare.Date)
+
             ' «+» pe EXACT o frunză (fix 0017-04): oglindește latch-ul one-shot `existaNodCuRIcon`
             ' din Show_Rezervari — PRIMUL nod cu o rezervare fără DDF (IDREV IS NULL -> AreDDF=False)
             ' primește iconița, restul niciuna. Access ordonează după (DataRezervare, IDH, Clsf,
@@ -380,11 +393,11 @@ Public Class RezervariView
             Dim plusTip As RezervareTip = RezervareTip.Necunoscut
             Dim firstEligible As RezervareRow =
                 rows.Where(Function(r) Not r.AreDDF).
-                     OrderBy(Function(r) r.DataRezervare.Date).
+                     OrderBy(Function(r) treeDay(r)).
                      ThenBy(Function(r) CInt(r.Tip)).
                      FirstOrDefault()
             If firstEligible IsNot Nothing Then
-                plusDate = firstEligible.DataRezervare.Date
+                plusDate = treeDay(firstEligible)
                 plusTip = firstEligible.Tip
             End If
 
@@ -399,7 +412,7 @@ Public Class RezervariView
             rootItem.Bold = True
 
             ' Luni în ordine cronologică.
-            Dim months = rows.GroupBy(Function(r) New With {Key .Y = r.DataRezervare.Year, Key .M = r.DataRezervare.Month}).
+            Dim months = rows.GroupBy(Function(r) New With {Key .Y = treeDay(r).Year, Key .M = treeDay(r).Month}).
                               OrderBy(Function(gp) gp.Key.Y).ThenBy(Function(gp) gp.Key.M)
 
             For Each monthGroup In months
@@ -426,7 +439,7 @@ Public Class RezervariView
                 root.Bold = True
                 ' Frunze pe (dată, tip), ordonate pe dată apoi pe rangul tipului
                 ' (Inițială < Mărire < Micșorare, ca strData din Access).
-                Dim leaves = monthRows.GroupBy(Function(r) New With {Key .D = r.DataRezervare.Date, Key .T = r.Tip}).
+                Dim leaves = monthRows.GroupBy(Function(r) New With {Key .D = treeDay(r), Key .T = r.Tip}).
                                        OrderBy(Function(gp) gp.Key.D).ThenBy(Function(gp) CInt(gp.Key.T))
 
                 For Each leafGroup In leaves

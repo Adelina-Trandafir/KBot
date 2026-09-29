@@ -309,7 +309,7 @@ Partial Class SetariJurnalView
         btnExporta.TabIndex = 5
         btnExporta.Text = "Exportă"
         tips.SetToolTipHeader(btnExporta, "Exportă")
-        tips.SetToolTipText(btnExporta, "Salvează într-un fișier rândurile afișate acum.")
+        tips.SetToolTipText(btnExporta, "Salvează într-un fișier rândurile din zilele deschise." & vbLf & "Zilele strânse nu se exportă.")
         btnExporta.UseVisualStyleBackColor = True
         ' 
         ' tlyMain

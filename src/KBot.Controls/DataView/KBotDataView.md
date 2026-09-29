@@ -102,7 +102,7 @@ set, else the culture's short date plus the time the named format shows (`.fff` 
 ## Grouping
 `Groups: KBotGroupLevelCollection` (outermost first; empty = ungrouped), `IsGrouped`,
 `GroupBy(colKey, …)`, `ClearGrouping()`, `SetColumnGroupLevel`, `GroupLevelFor(colKey)`,
-`CollapseAllGroups([level])`, `ExpandAllGroups([level])`, `GroupCount([level])`,
+`CollapseAllGroups([level])`, `ExpandAllGroups([level])`, `GroupCount([level])`, `IsRowShown(rowIndex)` (passes the filters and is not inside a collapsed group),
 `EnableGrouping = False` (shows the Grouping tab in the column menu; does not touch levels
 authored in the designer), `GroupCollapsedChanged`, `GroupFormatting`.
 `KBotGroupLevel`: `ColumnKey` (empty = inactive level, skipped), `SortDirection`

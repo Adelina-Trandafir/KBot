@@ -356,7 +356,9 @@ Public Class ReaderHostPreview
 
     Private Sub pnlHost_SizeChanged(sender As Object, e As EventArgs) Handles pnlHost.SizeChanged
         Try
-            _host.Relayout()
+            ' Raised inside InitializeComponent (docking / autoscale), before the constructor has
+            ' created _host: nothing is hosted yet, so there is nothing to lay out.
+            _host?.Relayout()
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.pnlHost_SizeChanged", ex)
         End Try

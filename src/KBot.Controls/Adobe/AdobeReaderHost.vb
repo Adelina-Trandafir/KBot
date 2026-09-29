@@ -107,6 +107,13 @@ Public NotInheritable Class AdobeReaderHost
     Private _startedPid As Integer = 0
     ' A newer ShowDocument invalidates an in-flight one.
     Private _generation As Integer = 0
+    ' Slice 0078-07: notices Adobe resizing the hosted window by itself (see AdobeSizeWatcher).
+    Private ReadOnly _sizeWatcher As New AdobeSizeWatcher()
+    ' When K-BOT put the window back after Adobe changed it; too many in a short time = a fight.
+    Private ReadOnly _sizeFixes As New List(Of DateTime)()
+    Private _sizeWatchGaveUp As Boolean
+    Private Const SizeFixLimit As Integer = 5
+    Private Const SizeFixWindowMs As Integer = 3000
 
     Public Sub New(hostPanel As Control, log As Action(Of String))
         Me.New(New ControlHostSurface(hostPanel), log, Nothing, Nothing)
@@ -130,6 +137,7 @@ Public NotInheritable Class AdobeReaderHost
         AddHandler _saveTrap.ScriptBurstEnded, AddressOf OnScriptBurstEnded
         _readModeTimer.Interval = ReadModeTickMs
         AddHandler _readModeTimer.Tick, AddressOf OnReadModeTick
+        AddHandler _sizeWatcher.Changed, AddressOf OnAdobeResized
     End Sub
 
     ''' <summary>
@@ -375,6 +383,13 @@ Public NotInheritable Class AdobeReaderHost
         If gen <> _generation Then Return New AdobeHostResult(AdobeHostStatus.Superseded, "", Nothing)
         Fill("Poziție (a doua trecere)")
 
+        ' Slice 0078-07: from here on, a size Adobe gives its window by itself is put back to the panel.
+        _sizeFixes.Clear()
+        _sizeWatchGaveUp = False
+        If Not _sizeWatcher.Start(_hostedWindow, _hostedPid) Then
+            Report("ATENȚIE: nu pot urmări dimensiunea ferestrei Adobe (Windows a refuzat); dacă Adobe o mărește singur, K-BOT nu o readuce.")
+        End If
+
         If ReadModeEnabled Then ArmReadMode()
         Return New AdobeHostResult(AdobeHostStatus.Hosted, "", Nothing, caught.ElapsedMs, caught.Match)
     End Function
@@ -398,15 +413,54 @@ Public NotInheritable Class AdobeReaderHost
     Public Sub Relayout()
         Try
             If Not IsHosting Then Return
-            Fill(Nothing)
+            ' A panel resize is a fresh start for the size watch (slice 0078-07).
+            _sizeFixes.Clear()
+            _sizeWatchGaveUp = False
+            Fill("Poziție (panoul s-a redimensionat)", onlyWhenWrong:=True)
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHost.Relayout", ex)
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 0078-07: Adobe moved or resized the hosted window by itself (AdobeSizeWatcher, UI
+    ''' thread). Put back to the panel and logged, with whether the window still carries the
+    ''' «maximized» flag. When Adobe keeps changing it (5 times in 3 s), K-BOT stops fighting until
+    ''' the next panel resize, and says so. UI boundary: log and swallow.
+    ''' </summary>
+    Private Sub OnAdobeResized()
+        Try
+            If Not IsHosting OrElse _sizeWatchGaveUp Then Return
+            Dim size As Size = _host.ClientSize
+            If size.Width <= 0 OrElse size.Height <= 0 Then Return
+            Dim wanted As New Rectangle(0, 0, size.Width, size.Height)
+            Dim actual As Rectangle = AdobeWindowHosting.RectInParent(_hostedWindow)
+            If actual = wanted OrElse actual.IsEmpty Then Return
+
+            Dim now As DateTime = DateTime.Now
+            _sizeFixes.RemoveAll(Function(t) (now - t).TotalMilliseconds > SizeFixWindowMs)
+            _sizeFixes.Add(now)
+            Dim maximized As Boolean =
+                (AdobeNativeMethods.GetWindowLongPtrSafe(_hostedWindow, AdobeNativeMethods.GWL_STYLE).ToInt64() And
+                 AdobeNativeMethods.WS_MAXIMIZE) <> 0
+            Report($"Adobe și-a schimbat singur fereastra: {MoveOutcomeClassifier.Describe(actual)} " &
+                   $"(panoul: {MoveOutcomeClassifier.Describe(wanted)}; marcată «maximizată»: {If(maximized, "da", "nu")}).")
+            If _sizeFixes.Count > SizeFixLimit Then
+                _sizeWatchGaveUp = True
+                Report($"ATENȚIE: Adobe și-a schimbat fereastra de {_sizeFixes.Count} ori în {SizeFixWindowMs \ 1000} s; " &
+                       "K-BOT nu o mai readuce până la următoarea redimensionare a panoului.")
+                Return
+            End If
+            Fill("Poziție (readusă la panou)")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.OnAdobeResized", ex)
+        End Try
+    End Sub
+
     ' The window gets exactly the panel's client area -- no offset, no oversize. REPORTS WHAT
-    ' ACTUALLY HAPPENED: Adobe can refuse or clamp a size. Nothing as `what` = the silent resize path.
-    Private Sub Fill(what As String)
+    ' ACTUALLY HAPPENED: Adobe can refuse or clamp a size. Nothing as `what` = silent; onlyWhenWrong =
+    ' reported only when the window did not end up at the panel's rectangle (slice 0078-07).
+    Private Sub Fill(what As String, Optional onlyWhenWrong As Boolean = False)
         If Not IsHosting Then Return
         Dim size As Size = _host.ClientSize
         If size.Width <= 0 OrElse size.Height <= 0 Then Return
@@ -419,6 +473,7 @@ Public NotInheritable Class AdobeReaderHost
         If String.IsNullOrEmpty(what) Then Return
 
         Dim after As Rectangle = AdobeWindowHosting.RectInParent(_hostedWindow)
+        If onlyWhenWrong AndAlso after = wanted Then Return
         Dim outcome As MoveOutcome = MoveOutcomeClassifier.Classify(True, True, before, after)
         Report($"{what}: cerut {MoveOutcomeClassifier.Describe(wanted)} — " &
                $"{MoveOutcomeClassifier.Label(outcome)} {MoveOutcomeClassifier.Describe(before)} -> " &
@@ -447,6 +502,8 @@ Public NotInheritable Class AdobeReaderHost
     Private Const PageViewTitle As String = "AVPageView"
     Private Const VK_H As UShort = &H48US
     Private Const VK_S As UShort = &H53US
+    ' Slice 0078-07 (operator, 29.09.2026): Ctrl+2 right after Ctrl+H (Acrobat: zoom to the page width).
+    Private Const VK_2 As UShort = &H32US
     Private ReadOnly _readModeTimer As New System.Windows.Forms.Timer()
     ' Slice 0078-05: the Ctrl+<key> combinations waiting for the conditions above (H = Read Mode,
     ' S = the save K-BOT asks for after a signature, see RequestSave). Sent in order, each once.
@@ -474,6 +531,8 @@ Public NotInheritable Class AdobeReaderHost
     ' Reached from LaunchAndHostAsync (wrapped).
     Private Sub ArmReadMode()
         QueueKey(VK_H)
+        ' Queued behind Ctrl+H: same conditions, same focus, sent in the same batch, in this order.
+        QueueKey(VK_2)
     End Sub
 
     ''' <summary>
@@ -545,6 +604,7 @@ Public NotInheritable Class AdobeReaderHost
     ' What the operator must do by hand when a combination could not be sent.
     Private Shared Function ManualHint(vk As UShort) As String
         If vk = VK_S Then Return "Salvați documentul (Ctrl+S) ca să nu se piardă schimbarea de după semnătură."
+        If vk = VK_2 Then Return "Apăsați Ctrl+2 în document pentru a-l potrivi la lățimea panoului."
         Return "Apăsați Ctrl+H în document pentru a ascunde barele."
     End Function
 
@@ -666,6 +726,7 @@ Public NotInheritable Class AdobeReaderHost
     ''' </summary>
     Public Sub Detach()
         Try
+            _sizeWatcher.Stop()
             DisarmReadMode()
             _hook.Remove()
             ' Slice 0078: a Save we pressed must finish before Adobe is closed or killed, or the
@@ -734,6 +795,7 @@ Public NotInheritable Class AdobeReaderHost
     Private Sub ReleaseAtScreenSize()
         Try
             If Not _options.RestoreScreenSizeOnExit OrElse Not IsHosting Then Return
+            _sizeWatcher.Stop()
             DisarmReadMode()
             _hook.Remove()
             If _saveTrap.IsBusy Then _saveTrap.WaitWhileBusy(5000)
@@ -766,6 +828,8 @@ Public NotInheritable Class AdobeReaderHost
             ReleaseAtScreenSize()
             Detach()
             _readModeTimer.Dispose()
+            RemoveHandler _sizeWatcher.Changed, AddressOf OnAdobeResized
+            _sizeWatcher.Dispose()
             _hook.Dispose()
             RemoveHandler _saveTrap.Saved, AddressOf OnTrapSaved
             RemoveHandler _saveTrap.Failed, AddressOf OnTrapFailed

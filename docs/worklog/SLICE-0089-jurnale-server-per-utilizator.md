@@ -9,7 +9,8 @@ split the server journal into Error / Warning / Info.
 1. `api_server.log` lines without `[forexe` are ignored — they belong to the old Access/VBA path;
 2. the match is `[forexe` followed by `]` or `.` — some lines are just `[forexe]`;
 3. split the log: the old VBA path writes its own file, `api_server_vba.log`.
-4. the day bands of the grid show only the date (not «Ora: …»), and every day starts collapsed.
+4. the day bands of the grid show only the date (not «Ora: …»), and every day starts collapsed;
+5. «Exportă» exports only the expanded days; none expanded = nothing exported (29.09.2026).
 
 ## The problem
 
@@ -80,12 +81,20 @@ nothing that says which login they belong to.
     when a different journal is loaded (file, kind, session count). A refresh (button or page
     activation) passes False and keeps the days the operator opened. Applies to every journal,
     local and server.
+  - Export (correction 5): `btnExporta` takes only the rows that pass the filters AND sit in an
+    expanded day, through the new public `KBotDataView.IsRowShown(rowIndex)` (a public form of
+    the existing `RowIsOnScreen`). No day expanded = no dialog, status line «Nimic de exportat:
+    deschideți zilele pe care vreți să le exportați.». Tooltip updated. «Copiază» unchanged
+    (selected row, or every filtered row when nothing is selected).
+- `KBot.Controls`: `KBotDataView.IsRowShown` added (+ `KBotDataView.md`). FileVersion
+  1.54.0.0 → 1.55.0.0.
 
 ## Files touched
 - `PYTHON/utils/logger.py`, `PYTHON/utils/timing.py`, `PYTHON/routes/logs.py` (new), `PYTHON/main.py`
 - `src/KBot.Api/ApiClient.vb`, `src/KBot.Api/KBot.Api.vbproj`
 - `src/KBot.Common/Logging/LogFileLoader.vb`, `src/KBot.Common/Logging/Parsers/ForexeTimingParser.vb` (new), `src/KBot.Common/KBot.Common.vbproj`
 - `src/KBot.App/Setari/SetariJurnalView.vb`, `src/KBot.App/Setari/SetariJurnalView.Designer.vb`
+- `src/KBot.Controls/DataView/KBotDataView.Grouping.vb`, `src/KBot.Controls/DataView/KBotDataView.md`, `src/KBot.Controls/KBot.Controls.vbproj`
 
 ## Test results
 - `dotnet build src/KBot.App/KBot.App.vbproj`: 0 errors, 0 warnings.

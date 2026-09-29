@@ -129,3 +129,17 @@ putut verifica dacă între timp s-a livrat; dacă da, de crescut la publicare).
    cel al inserării din vedere). Acceptat; de redus dacă deranjează.
 7. Dacă semnătura B e încărcată din alt loc decât documentul inserat (de ex. fișier ales din pagina
    «Fișiere»), comanda `FinalizeazaPdf` nu pleacă; etapa se mută din «Generează PDF final».
+
+## 5. Jurnalul din teren, 29.09.2026 15:15–15:19 (KBot 1.1.0.3, lipit de operator)
+
+- **Eroare reală, reparată:** `NullReferenceException` în `ReaderHostPreview.pnlHost_SizeChanged`
+  (de două ori, la prima deschidere a vederii). `pnlHost.SizeChanged` se ridică în
+  `InitializeComponent`, înainte ca constructorul să creeze `_host`. Acum `_host?.Relayout()`.
+  Eroarea era prinsă și logată (fără efect pe ecran), dar umplea `harness_errors.log`.
+  Build `KBot.App`: 0 erori, 0 avertismente. FileVersion: 1.1.0.3 e deja livrat ▸ de crescut la
+  următoarea publicare.
+- **Inserarea lui B nu apare în jurnal:** documentele deschise (DDF 96 = REV 0, DDF 97 = REV 1,
+  `AAB2DF4BC3P`) sunt `C:\KBOT\Temp\PDF\DDF_NR_1_REV_<n>_AAB2DF4BC3P.PDF` — numele canonic din zona
+  de lucru, adică documentul GENERAT al unei revizii fără PDF semnat pe server; un document cu B
+  inserată ar fi `…_B_HHmmss.pdf`. Nicio salvare / semnătură în acest interval. Ce a făcut
+  operatorul și ce aștepta — de aflat, nu dedus.

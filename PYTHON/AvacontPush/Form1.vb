@@ -51,6 +51,8 @@ Partial Public Class Form1
         txtLocalRoot.Text = _settings.LocalRoot
         txtRemoteRoot.Text = _settings.RemoteRoot
         txtRemotePython.Text = _settings.RemotePython
+        txtApiUrl.Text = _settings.ApiBaseUrl
+        txtApiKey.Text = _settings.ApiKey
         cmbSchemaMode.SelectedIndex = 0   ' SAFE, the tool's own default
     End Sub
 
@@ -68,6 +70,8 @@ Partial Public Class Form1
         _settings.LocalRoot = txtLocalRoot.Text.Trim()
         _settings.RemoteRoot = txtRemoteRoot.Text.Trim().TrimEnd("/"c)
         _settings.RemotePython = txtRemotePython.Text.Trim()
+        _settings.ApiBaseUrl = txtApiUrl.Text.Trim().TrimEnd("/"c)
+        _settings.ApiKey = txtApiKey.Text.Trim()
 
         If _settings.Host = "" Then Throw New ApplicationException("Hostul nu poate fi gol.")
         If _settings.User = "" Then Throw New ApplicationException("Utilizatorul nu poate fi gol.")
@@ -122,7 +126,9 @@ Partial Public Class Form1
 
             ' Use Where(...).Count() so this binds to the LINQ extension, not List.Count.
             Dim toSend = results.Where(Function(r) r.State <> FileState.Identical).Count()
-            SetBusy(False, $"Scanare completă: {results.Count} fișiere, {toSend} bifate pentru trimitere.")
+            SetBusy(False, If(toSend = 0,
+                              $"Scanare completă: {results.Count} fișiere, nimic nou sau modificat.",
+                              $"Scanare completă: {results.Count} fișiere, {toSend} noi sau modificate."))
         Catch ex As Exception
             SetBusy(False, "Scanare eșuată.")
             MessageBox.Show(ex.Message, "Eroare la scanare", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -232,7 +238,9 @@ Partial Public Class Form1
         tvFiles.BeginUpdate()
         Try
             tvFiles.Nodes.Clear()
+            ' Only what a push would send: identical files stay out of the tree.
             For Each r In results
+                If r.State = FileState.Identical Then Continue For
                 AddResultNode(r)
             Next
             ' Set each folder's initial check from its descendants (all checked -> checked).
@@ -643,6 +651,117 @@ Partial Public Class Form1
         End Select
     End Function
 
+    ' ------------------------------------------------------------- USERS
+
+    ' Reads the operator list (AVACONT_COMUN) through the admin API, with the
+    ' live failed-login state of each one from the running server.
+    Private Async Sub btnUsersLoad_Click(sender As Object, e As EventArgs) Handles btnUsersLoad.Click
+        Try
+            ApplyUiToSettings()
+            AppConfigStore.Save(_settings)
+
+            SetBusy(True, "Se citesc utilizatorii...")
+            Await EnsureApiKeyAsync()
+            Await LoadUsersAsync()
+        Catch ex As Exception
+            SetBusy(False, "Citirea utilizatorilor a eșuat.")
+            MessageBox.Show(ex.Message, "Eroare la citirea utilizatorilor", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ' Clears the failed-login counters (and lockout) of every selected user.
+    ' A user on several units appears on several rows but is reset once.
+    Private Async Sub btnLoginReset_Click(sender As Object, e As EventArgs) Handles btnLoginReset.Click
+        Try
+            Dim names = SelectedUserNames()
+            If names.Count = 0 Then
+                MessageBox.Show("Selectați cel puțin un utilizator.",
+                                "Informație", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+
+            If MessageBox.Show(
+                    "Se resetează încercările de login pentru:" & Environment.NewLine &
+                    String.Join(Environment.NewLine, names) & Environment.NewLine & Environment.NewLine &
+                    "Continuați?",
+                    "Confirmare resetare", MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
+                Return
+            End If
+
+            ApplyUiToSettings()
+            AppConfigStore.Save(_settings)
+
+            SetBusy(True, "Se resetează încercările de login...")
+            Await EnsureApiKeyAsync()
+
+            Dim api As New AdminApiService(_settings)
+            Using log As New RunLogger()
+                For Each un In names
+                    Dim cleared = Await api.ResetLoginAsync(un)
+                    log.Write($"LOGIN_RESET {un} -> {cleared}")
+                    AppendOutput($"Resetat: {un}  ({cleared} contoare șterse)")
+                Next
+            End Using
+
+            Await LoadUsersAsync()
+            SetBusy(False, $"Încercări de login resetate pentru {names.Count} utilizatori.")
+        Catch ex As Exception
+            SetBusy(False, "Resetarea a eșuat.")
+            MessageBox.Show(ex.Message, "Eroare la resetare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    Private Async Function LoadUsersAsync() As Task
+        Dim users = Await New AdminApiService(_settings).GetUsersAsync()
+
+        dgvUsers.Rows.Clear()
+        For Each u In users
+            Dim blocked = If(u.Blocked > 0, $"da ({CInt(Math.Ceiling(u.Blocked / 60.0))} min)", "")
+            Dim i = dgvUsers.Rows.Add(u.Un, u.Dc, u.NumeUnitate, u.Rol, u.LastSs,
+                                      If(u.Fails > 0, u.Fails.ToString(CultureInfo.InvariantCulture), ""),
+                                      blocked)
+            If u.Blocked > 0 Then dgvUsers.Rows(i).DefaultCellStyle.ForeColor = Color.Firebrick
+        Next
+
+        Dim blockedCount = users.Where(Function(u) u.Blocked > 0).Select(Function(u) u.Un).Distinct().Count()
+        SetBusy(False, $"{users.Count} rânduri citite, {blockedCount} utilizatori blocați.")
+    End Function
+
+    ' The key is never saved. When the box is empty it is read once over SSH
+    ' from the server's config.py and kept in the box for this session only.
+    ' The output goes straight into the box: never to the log or the pane.
+    Private Async Function EnsureApiKeyAsync() As Task
+        If _settings.ApiKey <> "" Then Return
+
+        Dim cmdText = AdminApiService.ReadKeyCommand(_settings)
+        Dim result As SshResult = Nothing
+        Await Task.Run(
+            Sub()
+                Using ssh As New SshCommandService(_settings)
+                    ssh.Connect()
+                    result = ssh.Run(cmdText)
+                End Using
+            End Sub)
+
+        Dim key = result.StdOut.Trim()
+        If result.ExitStatus <> 0 OrElse key = "" Then
+            Throw New ApplicationException("Cheia API nu a putut fi citită de pe server. Introduceți-o manual.")
+        End If
+        _settings.ApiKey = key
+        txtApiKey.Text = key
+    End Function
+
+    Private Function SelectedUserNames() As List(Of String)
+        Dim names As New List(Of String)()
+        For Each row As DataGridViewRow In dgvUsers.SelectedRows
+            Dim un = Convert.ToString(row.Cells(colUn.Index).Value, CultureInfo.InvariantCulture).Trim()
+            If un <> "" AndAlso Not names.Contains(un, StringComparer.OrdinalIgnoreCase) Then names.Add(un)
+        Next
+        names.Sort(StringComparer.OrdinalIgnoreCase)
+        Return names
+    End Function
+
     ' ---------------------------------------------------------------- UI helpers
 
     Private Sub AppendOutput(msg As String)
@@ -660,6 +779,8 @@ Partial Public Class Form1
         btnSchemaRun.Enabled = Not busy
         cmbSchemaMode.Enabled = Not busy
         clbTargets.Enabled = Not busy
+        btnUsersLoad.Enabled = Not busy
+        btnLoginReset.Enabled = Not busy
         lblStatus.Text = status
         Me.UseWaitCursor = busy
     End Sub

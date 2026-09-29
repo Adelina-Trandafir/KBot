@@ -27,6 +27,14 @@ Public Class PushSettings
     Public Property RemotePython As String = "/root/AVACONT/.venv/bin/python"
     Public Property HostKeyFingerprint As String = ""
 
+    ' Flask API base address for the admin routes (users tab). https only.
+    Public Property ApiBaseUrl As String = "https://kbot.avatarsoft.ro"
+
+    ' X-Api-Key for the admin routes. Never persisted, like Password: when the
+    ' box is empty it is read over SSH from the server's own config.py.
+    <JsonIgnore>
+    Public Property ApiKey As String = ""
+
     ' Folders/patterns skipped by the scan. Editable in the config file.
     ' Entries without a leading "*." match any path segment (folder or file name).
     ' Entries like "*.pyc" match by file extension. Build/IDE output is skipped so
@@ -101,6 +109,10 @@ Public Module AppConfigStore
         If String.IsNullOrWhiteSpace(settings.RemotePython) OrElse
            String.Equals(settings.RemotePython.Trim(), "python3", StringComparison.Ordinal) Then
             settings.RemotePython = defaults.RemotePython
+        End If
+
+        If String.IsNullOrWhiteSpace(settings.ApiBaseUrl) Then
+            settings.ApiBaseUrl = defaults.ApiBaseUrl
         End If
 
         If settings.IgnorePatterns Is Nothing Then

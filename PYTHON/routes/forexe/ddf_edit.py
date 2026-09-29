@@ -377,9 +377,26 @@ def _antet_din_ddf(rand: dict, nou: bool) -> dict:
 #   `Clasificatii.CodSSI`            -> CONCAT(SS, ClsfSal); the column does not exist here.
 #
 # The WHERE clause carries a row-selection rule that is easy to miss and changes the result
-# completely: only the EARLIEST un-DDF'd reservation date, and within that date only the
+# completely: only the EARLIEST un-DDF'd reservation day, and within that day only the
 # LOWEST operation type (Initiala = 1, Marire = 2, Micsorare = 3). Without it, one generated
 # revision would sweep up rows from several dates and several operations at once.
+#
+# The "day" is `ZiRez`, not the raw `DataRezervare`: every INITIAL row counts as falling on
+# the LAST initial day of the angajament. The initial reservation is one event, but a line
+# added while the angajament was being finalised gets its own, earlier date (AAB5H2CHDGD:
+# AA2 on 27.08, AAB on 28.08). On raw dates the earliest-day rule split that one event into
+# two revision-0 proposals. RezervariView groups its tree on the same day, so the leaf the
+# operator clicks and the lines the proposal holds agree. The derived table is repeated
+# four times on purpose (no CTE); each copy takes the `cod` parameter once, so the
+# parameter count (5) is unchanged.
+_REZ_NETRIMISE = (
+    "(SELECT X.*, "
+    "   CASE WHEN X.EInitiala "
+    "        THEN (SELECT MAX(Y.DataRezervare) FROM FX_Rezervari Y "
+    "               WHERE Y.CodAngajament = X.CodAngajament AND Y.EInitiala = 1) "
+    "        ELSE X.DataRezervare END AS ZiRez "
+    "   FROM FX_Rezervari X WHERE X.CodAngajament = %s AND X.AreDDF = 0)"
+)
 _SQL_GEN_REZERVARI = (
     "SELECT "
     "  GROUP_CONCAT(DISTINCT R.IDRZ) AS grp_idrz, "
@@ -388,27 +405,24 @@ _SQL_GEN_REZERVARI = (
     "       ELSE 'Micsorare' END                       AS TipOperatie, "
     "  C.IdUnitate, C.Clsf, C.IDClsf, C.SS, C.Denumire, "
     "  CONCAT(C.SS, C.ClsfSal)                         AS CodSSI, "
-    "  R.DataRezervare, R.CodAI, R.CodAngajament, R.CodIndicator, "
+    "  R.ZiRez                                         AS DataRezervare, "
+    "  R.CodAI, R.CodAngajament, R.CodIndicator, "
     "  R.R_CreditBug                                   AS Buget, "
     "  COALESCE(P.RezPrec, 0)                          AS ValPrec, "
     "  SUM(CASE WHEN R.EInitiala THEN R.R_Initiala ELSE R.R_Valoare END) AS Suma "
-    "FROM FX_Rezervari R "
+    "FROM " + _REZ_NETRIMISE + " R "
     "JOIN FX_Indicatori I ON I.CodAI = R.CodAI "
     "JOIN Clasificatii  C ON C.IDClsf = I.IdClsf "
     "LEFT JOIN (SELECT IdClsf, SUM(ValCur) AS RezPrec "
     "             FROM FX_DDF_REV_SA WHERE CodAngajament = %s GROUP BY IdClsf) P "
     "       ON P.IdClsf = C.IDClsf "
-    "WHERE R.AreDDF = 0 AND R.CodAngajament = %s "
-    "  AND R.DataRezervare = (SELECT MIN(DataRezervare) FROM FX_Rezervari "
-    "                          WHERE AreDDF = 0 AND CodAngajament = %s) "
+    "WHERE R.ZiRez = (SELECT MIN(M.ZiRez) FROM " + _REZ_NETRIMISE + " M) "
     "  AND (CASE WHEN R.EInitiala THEN 1 WHEN R.EMarire THEN 2 ELSE 3 END) = "
-    "      (SELECT MIN(CASE WHEN EInitiala THEN 1 WHEN EMarire THEN 2 ELSE 3 END) "
-    "         FROM FX_Rezervari "
-    "        WHERE AreDDF = 0 AND CodAngajament = %s "
-    "          AND DataRezervare = (SELECT MIN(DataRezervare) FROM FX_Rezervari "
-    "                                 WHERE AreDDF = 0 AND CodAngajament = %s)) "
+    "      (SELECT MIN(CASE WHEN T.EInitiala THEN 1 WHEN T.EMarire THEN 2 ELSE 3 END) "
+    "         FROM " + _REZ_NETRIMISE + " T "
+    "        WHERE T.ZiRez = (SELECT MIN(M2.ZiRez) FROM " + _REZ_NETRIMISE + " M2)) "
     "GROUP BY C.IdUnitate, C.Clsf, C.IDClsf, C.SS, C.ClsfSal, C.Denumire, "
-    "         R.DataRezervare, R.CodAI, R.CodAngajament, R.CodIndicator, R.R_CreditBug, "
+    "         R.ZiRez, R.CodAI, R.CodAngajament, R.CodIndicator, R.R_CreditBug, "
     "         P.RezPrec, R.EInitiala, R.EMarire, R.EMicsorare "
     "HAVING SUM(CASE WHEN R.EInitiala THEN R.R_Initiala ELSE R.R_Valoare END) <> 0 "
     "ORDER BY C.Clsf"

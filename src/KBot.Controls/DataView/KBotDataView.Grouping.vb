@@ -675,6 +675,21 @@ Partial Class KBotDataView
     End Function
 
     ''' <summary>
+    ''' Public form of <see cref="RowIsOnScreen"/> (slice 0089): True when the row at
+    ''' <paramref name="rowIndex"/> (an index into <see cref="Rows"/>) passes the filters AND is not
+    ''' inside a collapsed group -- what an export «of what is shown» should take. Out of range
+    ''' = False.
+    ''' </summary>
+    Public Function IsRowShown(rowIndex As Integer) As Boolean
+        Try
+            Return RowIsOnScreen(rowIndex)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.IsRowShown", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
     ''' ANCORA de navigare a unui rând: banda lui, iar dacă e închis într-un grup strâns, banda de
     ''' ANTET a celui mai din AFARĂ grup strâns care îl ascunde. -1 = rândul e filtrat afară, deci
     ''' nu are nicio ancoră.

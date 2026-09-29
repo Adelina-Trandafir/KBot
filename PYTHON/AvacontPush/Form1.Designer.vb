@@ -52,6 +52,23 @@ Partial Class Form1
     Friend WithEvents tabsMain As TabControl
     Friend WithEvents tabFiles As TabPage
     Friend WithEvents tabSchema As TabPage
+    Friend WithEvents tabUsers As TabPage
+    Friend WithEvents tlpUsers As TableLayoutPanel
+    Friend WithEvents tlpUsersActions As TableLayoutPanel
+    Friend WithEvents lblApiUrl As Label
+    Friend WithEvents txtApiUrl As TextBox
+    Friend WithEvents lblApiKey As Label
+    Friend WithEvents txtApiKey As TextBox
+    Friend WithEvents btnUsersLoad As Button
+    Friend WithEvents btnLoginReset As Button
+    Friend WithEvents dgvUsers As DataGridView
+    Friend WithEvents colUn As DataGridViewTextBoxColumn
+    Friend WithEvents colDc As DataGridViewTextBoxColumn
+    Friend WithEvents colUnitate As DataGridViewTextBoxColumn
+    Friend WithEvents colRol As DataGridViewTextBoxColumn
+    Friend WithEvents colLastSs As DataGridViewTextBoxColumn
+    Friend WithEvents colFails As DataGridViewTextBoxColumn
+    Friend WithEvents colBlocked As DataGridViewTextBoxColumn
     Friend WithEvents tlpFiles As TableLayoutPanel
     Friend WithEvents tvFiles As TreeView
     Friend WithEvents rtbOutput As RichTextBox
@@ -109,6 +126,23 @@ Partial Class Form1
         tabsMain = New TabControl()
         tabFiles = New TabPage()
         tabSchema = New TabPage()
+        tabUsers = New TabPage()
+        tlpUsers = New TableLayoutPanel()
+        tlpUsersActions = New TableLayoutPanel()
+        lblApiUrl = New Label()
+        txtApiUrl = New TextBox()
+        lblApiKey = New Label()
+        txtApiKey = New TextBox()
+        btnUsersLoad = New Button()
+        btnLoginReset = New Button()
+        dgvUsers = New DataGridView()
+        colUn = New DataGridViewTextBoxColumn()
+        colDc = New DataGridViewTextBoxColumn()
+        colUnitate = New DataGridViewTextBoxColumn()
+        colRol = New DataGridViewTextBoxColumn()
+        colLastSs = New DataGridViewTextBoxColumn()
+        colFails = New DataGridViewTextBoxColumn()
+        colBlocked = New DataGridViewTextBoxColumn()
         tlpFiles = New TableLayoutPanel()
         tvFiles = New TreeView()
         rtbOutput = New RichTextBox()
@@ -127,6 +161,10 @@ Partial Class Form1
         tabsMain.SuspendLayout()
         tabFiles.SuspendLayout()
         tabSchema.SuspendLayout()
+        tabUsers.SuspendLayout()
+        tlpUsers.SuspendLayout()
+        tlpUsersActions.SuspendLayout()
+        CType(dgvUsers, System.ComponentModel.ISupportInitialize).BeginInit()
         tlpFiles.SuspendLayout()
         CType(splitMain, System.ComponentModel.ISupportInitialize).BeginInit()
         splitMain.Panel1.SuspendLayout()
@@ -434,6 +472,7 @@ Partial Class Form1
         ' 
         tabsMain.Controls.Add(tabFiles)
         tabsMain.Controls.Add(tabSchema)
+        tabsMain.Controls.Add(tabUsers)
         tabsMain.Dock = DockStyle.Fill
         tabsMain.Location = New Point(0, 0)
         tabsMain.Name = "tabsMain"
@@ -614,7 +653,185 @@ Partial Class Form1
         lblSchemaHint.Size = New Size(856, 25)
         lblSchemaHint.TabIndex = 2
         lblSchemaHint.Text = "Lista vine de pe server. «lipsă din CAI» = baza există, dar registrul nu o listează; «nu există pe server» = numai în CAI, deci nu poate fi bifată."
+        '
+        ' tabUsers
+        '
+        tabUsers.Controls.Add(tlpUsers)
+        tabUsers.Location = New Point(4, 34)
+        tabUsers.Name = "tabUsers"
+        tabUsers.Padding = New Padding(6)
+        tabUsers.Size = New Size(874, 223)
+        tabUsers.TabIndex = 2
+        tabUsers.Text = "Utilizatori"
+        tabUsers.UseVisualStyleBackColor = True
+        '
+        ' tlpUsers
+        '
+        tlpUsers.ColumnCount = 1
+        tlpUsers.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpUsers.Controls.Add(tlpUsersActions, 0, 0)
+        tlpUsers.Controls.Add(dgvUsers, 0, 1)
+        tlpUsers.Dock = DockStyle.Fill
+        tlpUsers.Location = New Point(6, 6)
+        tlpUsers.Margin = New Padding(0)
+        tlpUsers.Name = "tlpUsers"
+        tlpUsers.RowCount = 2
+        tlpUsers.RowStyles.Add(New RowStyle())
+        tlpUsers.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlpUsers.Size = New Size(862, 211)
+        tlpUsers.TabIndex = 0
+        '
+        ' tlpUsersActions
+        '
+        tlpUsersActions.AutoSize = True
+        tlpUsersActions.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        tlpUsersActions.ColumnCount = 6
+        tlpUsersActions.ColumnStyles.Add(New ColumnStyle())
+        tlpUsersActions.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 60F))
+        tlpUsersActions.ColumnStyles.Add(New ColumnStyle())
+        tlpUsersActions.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 40F))
+        tlpUsersActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 190F))
+        tlpUsersActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 280F))
+        tlpUsersActions.Controls.Add(lblApiUrl, 0, 0)
+        tlpUsersActions.Controls.Add(txtApiUrl, 1, 0)
+        tlpUsersActions.Controls.Add(lblApiKey, 2, 0)
+        tlpUsersActions.Controls.Add(txtApiKey, 3, 0)
+        tlpUsersActions.Controls.Add(btnUsersLoad, 4, 0)
+        tlpUsersActions.Controls.Add(btnLoginReset, 5, 0)
+        tlpUsersActions.Dock = DockStyle.Fill
+        tlpUsersActions.Location = New Point(0, 0)
+        tlpUsersActions.Margin = New Padding(0)
+        tlpUsersActions.Name = "tlpUsersActions"
+        tlpUsersActions.RowCount = 1
+        tlpUsersActions.RowStyles.Add(New RowStyle())
+        tlpUsersActions.Size = New Size(862, 37)
+        tlpUsersActions.TabIndex = 0
+        '
+        ' lblApiUrl
+        '
+        lblApiUrl.Anchor = AnchorStyles.Left
+        lblApiUrl.AutoSize = True
+        lblApiUrl.Location = New Point(3, 6)
+        lblApiUrl.Name = "lblApiUrl"
+        lblApiUrl.Size = New Size(44, 25)
+        lblApiUrl.TabIndex = 0
+        lblApiUrl.Text = "API:"
+        '
+        ' txtApiUrl
+        '
+        txtApiUrl.Anchor = AnchorStyles.Left Or AnchorStyles.Right
+        txtApiUrl.Location = New Point(53, 3)
+        txtApiUrl.Name = "txtApiUrl"
+        txtApiUrl.Size = New Size(160, 31)
+        txtApiUrl.TabIndex = 1
+        '
+        ' lblApiKey
+        '
+        lblApiKey.Anchor = AnchorStyles.Left
+        lblApiKey.AutoSize = True
+        lblApiKey.Location = New Point(219, 6)
+        lblApiKey.Name = "lblApiKey"
+        lblApiKey.Size = New Size(58, 25)
+        lblApiKey.TabIndex = 2
+        lblApiKey.Text = "Cheie:"
+        '
+        ' txtApiKey
+        '
+        txtApiKey.Anchor = AnchorStyles.Left Or AnchorStyles.Right
+        txtApiKey.Location = New Point(283, 3)
+        txtApiKey.Name = "txtApiKey"
+        txtApiKey.Size = New Size(106, 31)
+        txtApiKey.TabIndex = 3
+        txtApiKey.UseSystemPasswordChar = True
+        '
+        ' btnUsersLoad
+        '
+        btnUsersLoad.Dock = DockStyle.Fill
+        btnUsersLoad.Location = New Point(392, 0)
+        btnUsersLoad.Margin = New Padding(0)
+        btnUsersLoad.Name = "btnUsersLoad"
+        btnUsersLoad.Size = New Size(190, 37)
+        btnUsersLoad.TabIndex = 4
+        btnUsersLoad.Text = "Citește utilizatorii"
+        '
+        ' btnLoginReset
+        '
+        btnLoginReset.Dock = DockStyle.Fill
+        btnLoginReset.Location = New Point(582, 0)
+        btnLoginReset.Margin = New Padding(0)
+        btnLoginReset.Name = "btnLoginReset"
+        btnLoginReset.Size = New Size(280, 37)
+        btnLoginReset.TabIndex = 5
+        btnLoginReset.Text = "Resetează încercările de login"
+        '
+        ' dgvUsers
+        '
+        dgvUsers.AllowUserToAddRows = False
+        dgvUsers.AllowUserToDeleteRows = False
+        dgvUsers.AllowUserToResizeRows = False
+        dgvUsers.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+        dgvUsers.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
+        dgvUsers.Columns.AddRange(New DataGridViewColumn() {colUn, colDc, colUnitate, colRol, colLastSs, colFails, colBlocked})
+        dgvUsers.Dock = DockStyle.Fill
+        dgvUsers.Location = New Point(0, 43)
+        dgvUsers.Margin = New Padding(0, 6, 0, 0)
+        dgvUsers.MultiSelect = True
+        dgvUsers.Name = "dgvUsers"
+        dgvUsers.ReadOnly = True
+        dgvUsers.RowHeadersVisible = False
+        dgvUsers.SelectionMode = DataGridViewSelectionMode.FullRowSelect
+        dgvUsers.Size = New Size(862, 168)
+        dgvUsers.TabIndex = 1
         ' 
+        ' colUn
+        ' 
+        colUn.FillWeight = 28F
+        colUn.HeaderText = "Utilizator"
+        colUn.Name = "colUn"
+        colUn.ReadOnly = True
+        ' 
+        ' colDc
+        ' 
+        colDc.FillWeight = 11F
+        colDc.HeaderText = "DC"
+        colDc.Name = "colDc"
+        colDc.ReadOnly = True
+        ' 
+        ' colUnitate
+        ' 
+        colUnitate.FillWeight = 33F
+        colUnitate.HeaderText = "Unitate"
+        colUnitate.Name = "colUnitate"
+        colUnitate.ReadOnly = True
+        ' 
+        ' colRol
+        ' 
+        colRol.FillWeight = 10F
+        colRol.HeaderText = "Rol"
+        colRol.Name = "colRol"
+        colRol.ReadOnly = True
+        ' 
+        ' colLastSs
+        ' 
+        colLastSs.FillWeight = 6F
+        colLastSs.HeaderText = "SS"
+        colLastSs.Name = "colLastSs"
+        colLastSs.ReadOnly = True
+        ' 
+        ' colFails
+        ' 
+        colFails.FillWeight = 6F
+        colFails.HeaderText = "Eșecuri"
+        colFails.Name = "colFails"
+        colFails.ReadOnly = True
+        ' 
+        ' colBlocked
+        ' 
+        colBlocked.FillWeight = 10F
+        colBlocked.HeaderText = "Blocat"
+        colBlocked.Name = "colBlocked"
+        colBlocked.ReadOnly = True
+        '
         ' tvFiles
         ' 
         tvFiles.CheckBoxes = True
@@ -707,6 +924,12 @@ Partial Class Form1
         tlpSchema.ResumeLayout(False)
         tlpSchema.PerformLayout()
         tabSchema.ResumeLayout(False)
+        tlpUsersActions.ResumeLayout(False)
+        tlpUsersActions.PerformLayout()
+        CType(dgvUsers, System.ComponentModel.ISupportInitialize).EndInit()
+        tlpUsers.ResumeLayout(False)
+        tlpUsers.PerformLayout()
+        tabUsers.ResumeLayout(False)
         tabsMain.ResumeLayout(False)
         splitMain.Panel1.ResumeLayout(False)
         splitMain.Panel2.ResumeLayout(False)
