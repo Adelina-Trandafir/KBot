@@ -162,7 +162,7 @@ Public NotInheritable Class AdobeViewerSettings
         Select Case mode
             Case AdobeNewInstanceMode.Da : Return "Da"
             Case AdobeNewInstanceMode.Nu : Return "Nu"
-            Case Else : Return "Automat"
+            Case Else : Return "Automat (Da)"
         End Select
     End Function
 

@@ -40,6 +40,10 @@ Friend Module Program
             ' cauta un fisier care nu e unde l-a trimis.
             If Not ValideazaSetarileDeFolder() Then Return
 
+            ' Slice 0078-05: the changes made once per machine after an update (ActiveX -> hosted
+            ' Adobe window), before any window reads the settings they change.
+            OneTimeActions.RunAll()
+
             Application.EnableVisualStyles()
             Application.SetCompatibleTextRenderingDefault(False)
             ' PerMonitorV2 (0025-05), nu SystemAware. SystemAware citește DPI-ul monitorului

@@ -4,18 +4,21 @@ Imports KBot.Controls
 Imports KBot.Theming
 
 ''' <summary>
-''' The extra settings of the HOSTED Adobe window (slice 0072-01): viewer profile, /n switch,
-''' how the window is released when the document changes, and the floating-badge watcher.
+''' The extra settings of the HOSTED Adobe window (slice 0072-01): the /n switch, how the
+''' window is released when the document changes and (slice 0078-05, off by default) whether its
+''' last release, when the K-BOT window closes, puts it back at the size of the screen. The viewer profile and the floating-badge
+''' watcher were removed in slice 0078-05 (the hosted window is no longer positioned or trimmed;
+''' Adobe's Read Mode hides the toolbars).
 '''
-''' <para><b>Why a dialog and not four rows on the page.</b> The four settings mean something
+''' <para><b>Why a dialog and not rows on the page.</b> These settings mean something
 ''' only while the PDF engine is «Fereastră găzduită»; on ActiveX they did nothing and sat
 ''' there disabled, looking like they act. The operator asked (20.09.2026) that they leave the
 ''' page and appear in a small window the moment that engine is chosen. The page keeps one
 ''' button («Opțiuni…») for coming back to them later.</para>
 '''
-''' <para><b>Two stores, saved together on «Salvează».</b> Profile and /n live in
+''' <para><b>Two stores, saved together on «Salvează».</b> /n lives in
 ''' <c>kbot_paths.json</c> (per machine) through <see cref="AdobeViewerSettings.Persist"/>;
-''' release mode and the watcher live in <see cref="AppSettings"/> (per user). Nothing is
+''' release mode and the screen-size switch live in <see cref="AppSettings"/> (per user). Nothing is
 ''' written before the button -- unlike the page, the dialog is a unit the operator confirms
 ''' or abandons. <see cref="Rezumat"/> carries one line for the page's status band.</para>
 ''' </summary>
@@ -32,9 +35,6 @@ Public Class AdobeGazduireForm
     Public Sub New()
         InitializeComponent()
         Try
-            For Each m As AdobeViewerMode In New AdobeViewerMode() {AdobeViewerMode.Auto, AdobeViewerMode.Modern, AdobeViewerMode.Classic}
-                cboAdobeMod.Items.Add(New AdobeModeItem(m))
-            Next
             For Each n As AdobeNewInstanceMode In New AdobeNewInstanceMode() {AdobeNewInstanceMode.Auto, AdobeNewInstanceMode.Da, AdobeNewInstanceMode.Nu}
                 cboAdobeInst.Items.Add(New AdobeNewInstanceItem(n))
             Next
@@ -51,21 +51,14 @@ Public Class AdobeGazduireForm
     ' stores hold the moment it opens, including a change made by the DDF view's own combos.
     Private Sub AdobeGazduireForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Try
-            SelecteazaMod(AdobeViewerSettings.CurrentMode().Value)
             SelecteazaInstanta(AdobeViewerSettings.CurrentNewInstance().Value)
             SelecteazaDetach(AdobeHostSettings.CurrentDetachMode().Value)
-            chkAdobePopup.Checked = AdobeHostSettings.CurrentPopupWatch()
-            ActiveControl = cboAdobeMod
+            chkAdobeEcran.Checked = AppSettings.Current.AdobeRestoreScreenOnExit
+            ActiveControl = cboAdobeInst
         Catch ex As Exception
             ' UI boundary (Load): log and swallow -- a throw would take the opening down.
             GlobalErrorLog.Write("AdobeGazduireForm.AdobeGazduireForm_Load", ex)
         End Try
-    End Sub
-
-    Private Sub SelecteazaMod(mode As AdobeViewerMode)
-        For i As Integer = 0 To cboAdobeMod.Items.Count - 1
-            If DirectCast(cboAdobeMod.Items(i), AdobeModeItem).Mode = mode Then cboAdobeMod.SelectedIndex = i : Return
-        Next
     End Sub
 
     Private Sub SelecteazaInstanta(mode As AdobeNewInstanceMode)
@@ -87,22 +80,23 @@ Public Class AdobeGazduireForm
     ''' </summary>
     Private Sub BtnSalveaza_Click(sender As Object, e As EventArgs) Handles btnSalveaza.Click
         Try
-            Dim mode As AdobeModeItem = TryCast(cboAdobeMod.SelectedItem, AdobeModeItem)
             Dim inst As AdobeNewInstanceItem = TryCast(cboAdobeInst.SelectedItem, AdobeNewInstanceItem)
             Dim detach As DetachItem = TryCast(cboAdobeDetach.SelectedItem, DetachItem)
-            If mode Is Nothing OrElse inst Is Nothing OrElse detach Is Nothing Then
+            If inst Is Nothing OrElse detach Is Nothing Then
                 KBotMessage.Show(Me, "Alege o valoare în fiecare listă.", "Fereastră găzduită Adobe",
                                  MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
 
             ' The engine is not this dialog's business, but Persist writes all three; the page
-            ' opened us BECAUSE the engine is the hosted window, so that is what goes back.
-            Dim salvatPaths As Boolean = AdobeViewerSettings.Persist(mode.Mode, inst.Mode, AdobePreviewEngine.WindowHost)
+            ' opened us BECAUSE the engine is the hosted window, so that is what goes back. The
+            ' stored profile is written back unchanged (nothing reads it since slice 0078-05).
+            Dim salvatPaths As Boolean = AdobeViewerSettings.Persist(AdobeViewerSettings.CurrentMode().Value, inst.Mode,
+                                                                     AdobePreviewEngine.WindowHost)
 
             Dim copie As AppSettings = AppSettings.Current.Clone()
             copie.AdobeDetachMode = AdobeHostSettings.DetachModeToText(detach.Mode)
-            copie.AdobePopupWatch = chkAdobePopup.Checked
+            copie.AdobeRestoreScreenOnExit = chkAdobeEcran.Checked
             copie.Save()
 
             _rezumat = If(salvatPaths,
@@ -126,7 +120,7 @@ Public Class AdobeGazduireForm
             tlyMain.BackColor = p.SurfaceAltColor
             tlyCampuri.BackColor = p.SurfaceAltColor
             tlySubsol.BackColor = p.SurfaceAltColor
-            For Each caption As Label In New Label() {lblIntro, lblAdobeMod, lblAdobeInst, lblAdobeDetach}
+            For Each caption As Label In New Label() {lblIntro, lblAdobeInst, lblAdobeDetach, lblAdobeEcran}
                 caption.ForeColor = p.TextDimColor
                 caption.BackColor = Color.Transparent
             Next

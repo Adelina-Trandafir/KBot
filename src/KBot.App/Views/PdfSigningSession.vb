@@ -60,6 +60,26 @@ Public NotInheritable Class PdfSigningSession
     Private _checking As Boolean
     Private _again As Boolean
     Private _disposed As Boolean
+    ' Slice 0078-05: since when the file has held a signature Adobe has not finished writing
+    ' (Nothing = not waiting on one).
+    Private _unfinishedSince As DateTime?
+
+    ' How long a half-written signature is waited for: the token's PIN is typed AFTER the «Save As».
+    Private Const UnfinishedMaxMs As Integer = 180000
+    Private Const UnfinishedRetryMs As Integer = 1000
+    ' Option B: how long the save K-BOT asked for may take to change the file -- long enough for
+    ' the operator to save by hand when the keys could not be sent (the viewer then says so).
+    Private Const SaveRequestWaitMs As Integer = 60000
+
+    ' Option B: the field key a save was asked for, when, and the file's sha at that moment.
+    Private _saveRequestedKey As String
+    Private _saveRequestedAt As DateTime
+    Private _saveRequestedSha As String
+    ' When the viewer reported Ctrl+S actually sent (Nothing = not yet / could not be sent).
+    Private _saveSentAt As DateTime?
+    ' After the keys went out, a save that changes nothing (e.g. after the LAST signature there is
+    ' nothing left for the form to unlock) is not waited on for the full minute.
+    Private Const SaveSentWaitMs As Integer = 8000
 
     Public ReadOnly Property Kind As PdfDocKind
     ''' <summary>IDREV (DDF) or IDORDP (ORD).</summary>
@@ -73,6 +93,18 @@ Public NotInheritable Class PdfSigningSession
 
     ''' <summary>Raised on the UI thread after every check that did something.</summary>
     Public Event Completed As Action(Of PdfSigningSession, PdfSigningOutcome)
+
+    ''' <summary>
+    ''' Slice 0078-05 (proven on the bench 29.09.2026, A -> B -> Ordonator with the token). After a
+    ''' signature Adobe runs the form's postSign scripts, which change the document AFTER it was saved
+    ''' -- the change that unlocks the next signer. Once a new signature is fully written, the session
+    ''' calls this (the viewer's «save now», Ctrl+S) and waits for the file to change BEFORE uploading,
+    ''' so the uploaded file holds that change: 8 s once the keys went out
+    ''' (<see cref="NotifySaveKeysSent"/>), 60 s when they could not be sent (the operator is asked to
+    ''' save by hand). False = the save could not be asked for; the upload goes ahead as is.
+    ''' <see cref="ReaderHostPreview"/> sets it on every session it is given.
+    ''' </summary>
+    Public Property SaveAfterSignature As Func(Of Boolean)
 
     Public Sub New(kind As PdfDocKind, id As Integer, displayedPath As String, cachePath As String,
                    serverSha As String, api As IApiClient)
@@ -97,6 +129,20 @@ Public NotInheritable Class PdfSigningSession
     Public Function Matches(kind As PdfDocKind, id As Integer, displayedPath As String) As Boolean
         Return Me.Kind = kind AndAlso Me.Id = id AndAlso
                String.Equals(Me.DisplayedPath, displayedPath, StringComparison.OrdinalIgnoreCase)
+    End Function
+
+    ''' <summary>
+    ''' Same document, same file AND the same server version (slice 0078-04). A session is kept
+    ''' across re-renders only while the server still holds the sha it started from: a reload that
+    ''' brings a newer server sha (the final PDF uploaded over the A-signed one, another save) must
+    ''' replace it, or the next save is sent with a stale precedent and refused with 409.
+    ''' Both empty = no signed PDF on the server on either side.
+    ''' </summary>
+    Public Function Matches(kind As PdfDocKind, id As Integer, displayedPath As String, serverSha As String) As Boolean
+        If Not Matches(kind, id, displayedPath) Then Return False
+        ' Me. -- VB is case-insensitive: the bare name is the parameter.
+        If String.IsNullOrWhiteSpace(Me.ServerSha) AndAlso String.IsNullOrWhiteSpace(serverSha) Then Return True
+        Return PdfHash.AreEqual(Me.ServerSha, serverSha)
     End Function
 
     ''' <summary>
@@ -147,6 +193,18 @@ Public NotInheritable Class PdfSigningSession
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 0078-05: the viewer sent the Ctrl+S asked for through <see cref="SaveAfterSignature"/>.
+    ''' From now on a file that does not change is not waited on for long.
+    ''' </summary>
+    Public Sub NotifySaveKeysSent()
+        Try
+            If _saveRequestedSha IsNot Nothing Then _saveSentAt = DateTime.UtcNow
+        Catch ex As Exception
+            GlobalErrorLog.Write("PdfSigningSession.NotifySaveKeysSent", ex)
+        End Try
+    End Sub
+
     ''' <summary>The Save As trap had to cancel: the signature was not applied.</summary>
     Public Sub NotifySaveCancelled(reason As String)
         Try
@@ -185,7 +243,11 @@ Public NotInheritable Class PdfSigningSession
         Try
             Do
                 _again = False
-                Await CheckOnceAsync().ConfigureAwait(True)
+                If Await CheckOnceAsync().ConfigureAwait(True) AndAlso Not _disposed Then
+                    ' A signature still being written: look again shortly, even without a file event.
+                    Await Task.Delay(UnfinishedRetryMs).ConfigureAwait(True)
+                    _again = True
+                End If
             Loop While _again AndAlso Not _disposed
         Catch ex As Exception
             GlobalErrorLog.Write("PdfSigningSession.CheckAsync", ex)
@@ -194,18 +256,19 @@ Public NotInheritable Class PdfSigningSession
         End Try
     End Sub
 
-    Private Async Function CheckOnceAsync() As Task
+    ' True = a new signature is in the file but not finished yet: the caller checks again.
+    Private Async Function CheckOnceAsync() As Task(Of Boolean)
         If _baselineKey Is Nothing AndAlso _baselineTask IsNot Nothing Then
             _baselineKey = Await _baselineTask.ConfigureAwait(True)
         End If
         If _baselineKey Is Nothing Then _baselineKey = ""
 
         Dim bytes As Byte() = Await SignedPdfFiles.ReadWhenSettledAsync(DisplayedPath).ConfigureAwait(True)
-        If bytes Is Nothing OrElse _disposed Then Return
+        If bytes Is Nothing OrElse _disposed Then Return False
 
         ' Exactly the server copy: nothing to do (e.g. the watcher fired on our own cache write).
         Dim sha As String = PdfHash.Compute(bytes)
-        If PdfHash.AreEqual(sha, ServerSha) Then Return
+        If PdfHash.AreEqual(sha, ServerSha) Then Return False
 
         Dim docType As String = Me.DocType
         Dim info As PdfSignatureInfo
@@ -217,12 +280,63 @@ Public NotInheritable Class PdfSigningSession
                 .Status = PdfSigningStatus.Failed,
                 .Message = "Documentul salvat de Adobe nu a putut fi citit, deci semnăturile nu au putut fi verificate. " &
                            "Detalii în jurnalul de erori."})
-            Return
+            Return False
         End Try
 
-        If Not info.IsSigned Then Return
+        If Not info.IsSigned Then Return False
         Dim key As String = info.FieldKey()
-        If String.Equals(key, _baselineKey, StringComparison.Ordinal) Then Return
+        If String.Equals(key, _baselineKey, StringComparison.Ordinal) Then Return False
+
+        ' Slice 0078-05, measured on the bench 29.09.2026: Adobe writes the file TWICE. First with
+        ' the new signature field and an EMPTY placeholder («can't decode PKCS7SignedData»), right
+        ' after the «Save As» -- before the token's PIN --, then the signature bytes into that
+        ' placeholder, in place (same size). The placeholder already counts as «signed» by field
+        ' name, so without this wait the half-written file was uploaded and the real one, whose
+        ' field key no longer changes, never was.
+        Dim unfinished As List(Of String) = Await Task.Run(Function() UnfinishedSignatures(bytes)).ConfigureAwait(True)
+        If unfinished.Count > 0 Then
+            If Not _unfinishedSince.HasValue Then
+                _unfinishedSince = DateTime.UtcNow
+                AdobeHostLogLine($"Semnătura încă se scrie în fișier ({String.Join(", ", unfinished)}) — aștept s-o termine Adobe.")
+            End If
+            If (DateTime.UtcNow - _unfinishedSince.Value).TotalMilliseconds < UnfinishedMaxMs Then Return True
+            _unfinishedSince = Nothing
+            AdobeHostLogLine($"Semnătura nu a fost terminată în {UnfinishedMaxMs \ 1000} s: {String.Join(", ", unfinished)}.")
+            RaiseCompleted(New PdfSigningOutcome With {
+                .Status = PdfSigningStatus.Failed,
+                .Message = "Adobe nu a terminat de scris semnătura în document, deci documentul NU a fost încărcat pe server. " &
+                           "Semnați din nou."})
+            Return False
+        End If
+        _unfinishedSince = Nothing
+
+        ' The signature is written; let Adobe save its postSign change before uploading.
+        If SaveAfterSignature IsNot Nothing Then
+            If Not String.Equals(_saveRequestedKey, key, StringComparison.Ordinal) Then
+                If SaveAfterSignature.Invoke() Then
+                    _saveRequestedKey = key
+                    _saveRequestedAt = DateTime.UtcNow
+                    _saveRequestedSha = sha
+                    _saveSentAt = Nothing
+                    AdobeHostLogLine("Semnătura e scrisă; K-BOT cere salvarea documentului înainte de încărcare.")
+                    Return True
+                End If
+                AdobeHostLogLine("Salvarea după semnătură nu a putut fi cerută — se încarcă documentul așa cum e.")
+                _saveRequestedKey = key
+            ElseIf PdfHash.AreEqual(sha, _saveRequestedSha) Then
+                If _saveSentAt.HasValue Then
+                    If (DateTime.UtcNow - _saveSentAt.Value).TotalMilliseconds < SaveSentWaitMs Then Return True
+                    AdobeHostLogLine($"Ctrl+S nu a schimbat fișierul în {SaveSentWaitMs \ 1000} s (nimic de salvat) — se încarcă documentul așa cum e.")
+                Else
+                    If (DateTime.UtcNow - _saveRequestedAt).TotalMilliseconds < SaveRequestWaitMs Then Return True
+                    AdobeHostLogLine($"Salvarea cerută nu a schimbat fișierul în {SaveRequestWaitMs \ 1000} s — se încarcă documentul așa cum e.")
+                End If
+                _saveRequestedSha = Nothing
+            ElseIf _saveRequestedSha IsNot Nothing Then
+                AdobeHostLogLine($"Documentul a fost salvat după semnătură ({(DateTime.UtcNow - _saveRequestedAt).TotalSeconds:N1} s) — se încarcă.")
+                _saveRequestedSha = Nothing
+            End If
+        End If
 
         If info.Unclassified.Count > 0 Then
             AdobeHostLogLine($"ATENȚIE: câmpuri semnate fără rol cunoscut: {String.Join(", ", info.Unclassified)}.")
@@ -238,6 +352,22 @@ Public NotInheritable Class PdfSigningSession
             GlobalErrorLog.Write("PdfSigningSession.CheckOnceAsync.Pending", ex)
         End Try
         Await UploadAsync(bytes, key, semnatura, records).ConfigureAwait(True)
+        Return False
+    End Function
+
+    ' The signed fields whose signature cannot be decoded or does not verify yet -- Adobe's
+    ' placeholder before the PIN. Any read failure counts as «not finished» for this pass.
+    Friend Shared Function UnfinishedSignatures(bytes As Byte()) As List(Of String)
+        Dim result As New List(Of String)()
+        Try
+            For Each c As PdfSignatureCheck In XfaSignedDocument.CheckSignatures(bytes)
+                If c.ErrorText.Length > 0 OrElse Not c.IntegrityOk Then result.Add(c.FieldName)
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("PdfSigningSession.UnfinishedSignatures", ex)
+            result.Add("(fișierul nu a putut fi verificat)")
+        End Try
+        Return result
     End Function
 
     Private Async Function UploadAsync(bytes As Byte(), key As String, semnatura As String,

@@ -2,9 +2,10 @@ Option Strict On
 Imports KBot.Common
 
 ''' <summary>
-''' The two host switches the operator sets in «Setări» (slice 0072), read from
-''' <see cref="AppSettings"/>: how the hosted Adobe window is let go, and whether the floating
-''' popup is hunted. Text in the store, enum here -- the same split as
+''' The host switch the operator sets in «Setări» (slice 0072), read from
+''' <see cref="AppSettings"/>: how the hosted Adobe window is let go (the floating-popup switch went
+''' with slice 0078-05: nothing of Adobe's is hidden any more). Text in the store, enum here --
+''' the same split as
 ''' <see cref="AdobeViewerSettings"/>, for the same reason (the enum lives in KBot.Controls).
 '''
 ''' Fallback rule, as everywhere in this folder: an unrecognised value falls back to the
@@ -51,21 +52,17 @@ Public NotInheritable Class AdobeHostSettings
         Return ParseDetachMode(AppSettings.Current.AdobeDetachMode)
     End Function
 
-    ''' <summary>Whether the floating popup is hunted while a document is hosted.</summary>
-    Public Shared Function CurrentPopupWatch() As Boolean
-        Return AppSettings.Current.AdobePopupWatch
-    End Function
-
     ''' <summary>
-    ''' Applies both switches to a host, logging a broken value. Called where the host is built,
-    ''' so every preview in the application reads the same two lines.
+    ''' Applies the switch to a host, logging a broken value. Called where the host is built,
+    ''' so every preview in the application reads it the same way.
     ''' </summary>
     Public Shared Sub ApplyTo(host As AdobeReaderHost, log As Action(Of String))
         If host Is Nothing Then Throw New ArgumentNullException(NameOf(host))
         Dim detach As AdobeSettingRead(Of AdobeDetachMode) = CurrentDetachMode()
         If detach.HasWarning AndAlso log IsNot Nothing Then log("ATENȚIE: " & detach.Warning)
         host.Options.DetachMode = detach.Value
-        host.PopupWatchEnabled = CurrentPopupWatch()
+        ' Slice 0078-05: the last release at the size of the screen (off by default).
+        host.Options.RestoreScreenSizeOnExit = AppSettings.Current.AdobeRestoreScreenOnExit
     End Sub
 
 End Class

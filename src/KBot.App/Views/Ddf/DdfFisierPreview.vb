@@ -280,21 +280,18 @@ Public Class DdfFisierPreview
 
     ''' <summary>
     ''' The Adobe host, under the operator's own viewer settings — the same ones
-    ''' <see cref="ReaderHostPreview"/> reads, so a profile that was tuned for the DDF view holds
-    ''' here too. A broken setting falls back to «Automat» and says so in the working log.
+    ''' <see cref="ReaderHostPreview"/> reads (release mode, «/n»). A broken setting falls back to
+    ''' «Automat» and says so in the working log.
     ''' </summary>
     Private Function AsiguraAdobe() As AdobeReaderHost
         If _adobe IsNot Nothing Then Return _adobe
 
         _adobe = New AdobeReaderHost(pnlGazda, AddressOf AdobeHostLog.Write)
-        ' Detach mode + popup watch: the operator's (slice 0072), same two lines as ReaderHostPreview.
+        ' Detach mode: the operator's (slice 0072), same line as ReaderHostPreview.
         AdobeHostSettings.ApplyTo(_adobe, AddressOf AdobeHostLog.Write)
 
-        Dim mod_ As AdobeSettingRead(Of AdobeViewerMode) = AdobeViewerSettings.CurrentMode()
         Dim instanta As AdobeSettingRead(Of AdobeNewInstanceMode) = AdobeViewerSettings.CurrentNewInstance()
-        If mod_.HasWarning Then AdobeHostLog.Write("ATENȚIE: " & mod_.Warning)
         If instanta.HasWarning Then AdobeHostLog.Write("ATENȚIE: " & instanta.Warning)
-        _adobe.Mode = mod_.Value
         _adobe.NewInstanceMode = instanta.Value
         Return _adobe
     End Function

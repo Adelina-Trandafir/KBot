@@ -14,10 +14,14 @@ by TITLE, not by PID.
 Launches Adobe, finds its top-level window and makes it a child of the host panel.
 - `New(hostPanel, log)` or `New(host As IHostSurface, log, …)`
 - `ShowDocumentAsync(pdfPath) As Task(Of AdobeHostResult)`
-- `Relayout()`, `ReapplyProfile()`, `Detach()`, `Dispose()`
-- `Mode: AdobeViewerMode = Auto`, `NewInstanceMode: AdobeNewInstanceMode = Auto`,
-  `PopupWatchEnabled = False`, `Options: AdobeHostOptions`
-- `CurrentChoice`, `LastDetection`, `HostedWindow`, `HostedPid`, `IsHosting` (read-only)
+- `Relayout()`, `Detach()`, `Dispose()`
+- `NewInstanceMode: AdobeNewInstanceMode = Auto` (Auto = «/n»), `ReadModeEnabled = True`,
+  `Options: AdobeHostOptions`
+- `HostedWindow`, `HostedPid`, `IsHosting`, `IsSaving` (read-only)
+- **Slice 0078-05:** the window FILLS the panel — no profile, no clipping / offset, no `/A`
+  parameters, no floating-badge watcher (they stayed in the operator's own Adobe after K-BOT
+  closed). The toolbars are hidden by Adobe's Read Mode: Ctrl+H sent once when the page is laid
+  out, K-BOT is in the foreground and no script-alert burst is running.
 - `AdobeReaderHost.ResolveAdobePath()` (Shared)
 - `AdobeHostStatus` = `Hosted` `AdobeMissing` `LaunchFailed` `WindowNotFound` `Superseded`
   `Failed`; `AdobeHostResult` carries `Status`, `Message` (Romanian, operator-ready, empty
@@ -34,8 +38,9 @@ Launches Adobe, finds its top-level window and makes it a child of the host pane
 - `AcroPdfDetector.ResolveClsid()` / `NormaliseClsid(clsid)`; `AcroPdfHost` is the low-level
   wrapper (`LoadFile`, `ApplyChrome`, `Clear`, `TryReadVersion`).
 
-## Profiles and UI detection
-Adobe's classic and modern UIs need different window offsets and clipping.
+## Profiles and UI detection (DevHarness bench only since slice 0078-05)
+Adobe's classic and modern UIs need different window offsets and clipping. Only the DevHarness
+measuring bench (`AdobeReaderHarnessForm`) still uses these; the shipping host does not.
 - `AdobeUiDetector.Detect(nodes)` → `AdobeUiDetection` (`Generation`, `Evidence`,
   `Ambiguous`, `Describe()`), fed by `AdobeWindowProbe.Walk(...)` / `RhpCandidate(...)`.
 - `AdobeViewerProfile`: `NewInstance`, `NoSplash`, `OpenParameters`, `ClipEnabled`,

@@ -16,10 +16,9 @@ Imports KBot.Theming
 ''' această clasă nu — deci același PDF se comporta diferit în cele două locuri. Ce a rămas aici e
 ''' doar UI: cele trei stări ale suprafeței, tema și butonul de generare.
 '''
-''' CE FACE FELIA 0024 ÎN PLUS: găzduirea rulează sub un PROFIL (modern / clasic), ales de setarea
-''' «Mod vizualizator Adobe» și, pe «Automat», de generația detectată din arborele de ferestre.
-''' Profilul aduce parametrii de lansare, decuparea și poziția măsurate pe banc — vezi
-''' <c>docs\SETARI_UTILIZATOR.md</c>.
+''' SLICE 0078-05: the hosted window only FILLS the panel -- no clipping, no offset, no hidden
+''' toolbars or badge (they stayed in the operator's own Adobe after K-BOT closed). The toolbars go
+''' away through Adobe's Read Mode (Ctrl+H), sent by <see cref="AdobeReaderHost"/>.
 '''
 ''' NU SE SCRIE NIMIC ÎN REGISTRY. Bancul scrie <c>bEnableAv2</c> ca să FORȚEZE o generație; aici
 ''' nu se scrie, fiindcă acea valoare schimbă Adobe-ul operatorului pentru ORICE PDF ar deschide,
@@ -42,10 +41,21 @@ Public Class ReaderHostPreview
     ''' <summary>
     ''' Slice 0078: the signing session of the document on screen (Nothing = nobody uploads, but the
     ''' Save As trap still keeps every save on the same path). Set by the page BEFORE ShowDocument.
+    ''' Slice 0078-05: a session given here gets <see cref="PdfSigningSession.SaveAfterSignature"/> =
+    ''' this viewer's <see cref="RequestSave"/> (Ctrl+S after each signature, before the upload).
     ''' </summary>
     <System.ComponentModel.Browsable(False),
      System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
     Public Property Signing As PdfSigningSession
+        Get
+            Return _signing
+        End Get
+        Set(value As PdfSigningSession)
+            _signing = value
+            If value IsNot Nothing AndAlso value.SaveAfterSignature Is Nothing Then value.SaveAfterSignature = AddressOf RequestSave
+        End Set
+    End Property
+    Private _signing As PdfSigningSession
 
     ''' <summary>Slice 0078: a trapped save finished (argument = the document path). For the bench.</summary>
     Public Event DocumentSaved As Action(Of String)
@@ -67,12 +77,13 @@ Public Class ReaderHostPreview
 
     Public Sub New()
         InitializeComponent()
-        _host = New AdobeReaderHost(pnlHost, AddressOf AdobeHostLog.Write) With {
-            .PopupWatchEnabled = True}
+        _host = New AdobeReaderHost(pnlHost, AddressOf AdobeHostLog.Write)
         ' Slice 0078: every save of the hosted Adobe goes back onto the document on screen.
         _host.SaveTrapEnabled = True
         AddHandler _host.DocumentSaved, AddressOf OnDocumentSaved
         AddHandler _host.SaveTrapFailed, AddressOf OnSaveTrapFailed
+        AddHandler _host.SaveNotSent, AddressOf OnSaveNotSent
+        AddHandler _host.SaveKeysSent, AddressOf OnSaveKeysSent
         ' În DESIGNER nu citim setările și nu scriem jurnal (0025-05, de când controlul e declarat
         ' în DdfView.Designer.vb și deci se construiește pe suprafața de design): `AppDir` e acolo
         ' folderul lui devenv.exe, deci `kbot_paths.json` lipsește oricum, iar singurul efect real
@@ -91,6 +102,51 @@ Public Class ReaderHostPreview
         End Get
     End Property
 
+    ''' <summary>
+    ''' Slice 0078-05, for the signing bench: an engine used INSTEAD of the operator's setting
+    ''' (Nothing = the setting). Nothing is written to the settings. Applies from the next document.
+    ''' </summary>
+    <System.ComponentModel.Browsable(False),
+     System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
+    Public Property ForcedEngine As AdobePreviewEngine?
+        Get
+            Return _forcedEngine
+        End Get
+        Set(value As AdobePreviewEngine?)
+            _forcedEngine = value
+            ApplySettings()
+        End Set
+    End Property
+    Private _forcedEngine As AdobePreviewEngine?
+
+    ''' <summary>
+    ''' Slice 0078-05: a «Save As» pressed by the hosted window's trap has not finished yet (the
+    ''' signed file may still be written). For the signing bench.
+    ''' </summary>
+    <System.ComponentModel.Browsable(False)>
+    Public ReadOnly Property IsSaving As Boolean
+        Get
+            Return _host IsNot Nothing AndAlso _host.IsSaving
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Slice 0078-05: asks the hosted Adobe to save the document (Ctrl+S). Hosted window only; the
+    ''' ActiveX engines answer False. For <see cref="PdfSigningSession.SaveAfterSignature"/>.
+    ''' </summary>
+    Public Function RequestSave() As Boolean
+        Try
+            If UsesActiveX() Then
+                AdobeHostLog.Write("Salvarea după semnătură se cere doar în fereastra găzduită; motorul ActiveX nu o face.")
+                Return False
+            End If
+            Return _host.RequestSave()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.RequestSave", ex)
+            Return False
+        End Try
+    End Function
+
     Public ReadOnly Property Surface As Control Implements IDdfPreview.Surface
         Get
             Return Me
@@ -98,42 +154,25 @@ Public Class ReaderHostPreview
     End Property
 
     ''' <summary>
-    ''' Reia setările operatorului (profil + «instanță nouă») din <c>kbot_paths.json</c>. O valoare
+    ''' Reia setările operatorului (motor + «instanță nouă») din <c>kbot_paths.json</c>. O valoare
     ''' lipsă sau nerecunoscută cade pe «Automat» ȘI se scrie în jurnal — o setare stricată nu are
     ''' voie să oprească deschiderea unui document, dar nici să dispară în tăcere.
     ''' </summary>
     Public Sub ApplySettings()
         Try
-            Dim mode = AdobeViewerSettings.CurrentMode()
             Dim newInstance = AdobeViewerSettings.CurrentNewInstance()
             Dim engine = AdobeViewerSettings.CurrentEngine()
-            If mode.HasWarning Then AdobeHostLog.Write("ATENȚIE: " & mode.Warning)
             If newInstance.HasWarning Then AdobeHostLog.Write("ATENȚIE: " & newInstance.Warning)
             If engine.HasWarning Then AdobeHostLog.Write("ATENȚIE: " & engine.Warning)
-            _host.Mode = mode.Value
             _host.NewInstanceMode = newInstance.Value
-            _engine = engine.Value
-            ' Detach mode + popup watch (slice 0072): the operator's, from app_settings.json.
+            _engine = If(_forcedEngine.HasValue, _forcedEngine.Value, engine.Value)
+            ' Detach mode (slice 0072): the operator's, from app_settings.json.
             AdobeHostSettings.ApplyTo(_host, AddressOf AdobeHostLog.Write)
-            AdobeHostLog.Write($"Setări gazdă Adobe: motor={AdobeViewerSettings.EngineLabel(engine.Value)}, " &
-                               $"mod={AdobeViewerSettings.ModeLabel(mode.Value)}, " &
+            AdobeHostLog.Write($"Setări gazdă Adobe: motor={AdobeViewerSettings.EngineLabel(_engine)}" &
+                               If(_forcedEngine.HasValue, " (forțat de banc)", "") & ", " &
                                $"instanță nouă={AdobeViewerSettings.NewInstanceLabel(newInstance.Value)}.")
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.ApplySettings", ex)
-        End Try
-    End Sub
-
-    ''' <summary>
-    ''' Aplică setările CURENTE și le reflectă imediat pe documentul deja afișat, dacă există:
-    ''' geometria se reaplică pe loc, parametrii de lansare abia la documentul următor (nu se poate
-    ''' schimba «/n» al unui proces care rulează deja).
-    ''' </summary>
-    Public Sub ReapplySettings()
-        Try
-            ApplySettings()
-            _host.ReapplyProfile()
-        Catch ex As Exception
-            GlobalErrorLog.Write("ReaderHostPreview.ReapplySettings", ex)
         End Try
     End Sub
 
@@ -279,6 +318,23 @@ Public Class ReaderHostPreview
             RaiseEvent DocumentSaved(path)
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.OnDocumentSaved", ex)
+        End Try
+    End Sub
+
+    ' Slice 0078-05: the save K-BOT asked for after a signature did not reach Adobe. UI boundary.
+    Private Sub OnSaveNotSent(message As String)
+        Try
+            KBotMessage.Show(FindForm(), message, "Salvare după semnătură", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.OnSaveNotSent", ex)
+        End Try
+    End Sub
+
+    Private Sub OnSaveKeysSent()
+        Try
+            Signing?.NotifySaveKeysSent()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.OnSaveKeysSent", ex)
         End Try
     End Sub
 

@@ -1,4 +1,5 @@
 ﻿Option Strict On
+Imports System.Collections.Generic
 Imports System.IO
 Imports System.Text
 Imports System.Text.Json
@@ -111,6 +112,26 @@ Public NotInheritable Class KBotPaths
     ''' implicit) sau «ActiveX» (controlul AcroPDF, în proces). Text, din același motiv ca celelalte.
     ''' </summary>
     Public Property AdobePreviewEngine As String = DefaultAdobePreviewEngine
+
+    ''' <summary>
+    ''' The one-time actions already applied on this machine (slice 0078-05), by name. Kept here,
+    ''' next to the settings they change: the update keeps <c>kbot_paths.json</c>, so an action
+    ''' runs once per machine and a later choice of the operator is never overwritten again.
+    ''' </summary>
+    Public Property AppliedOneTimeActions As List(Of String) = New List(Of String)()
+
+    ''' <summary>True when the one-time action <paramref name="name"/> was already applied here.</summary>
+    Public Function HasApplied(name As String) As Boolean
+        Return AppliedOneTimeActions IsNot Nothing AndAlso
+               AppliedOneTimeActions.Exists(Function(n) String.Equals(n, name, StringComparison.OrdinalIgnoreCase))
+    End Function
+
+    ''' <summary>Records <paramref name="name"/> as applied (in memory; <see cref="Save"/> writes it).</summary>
+    Public Sub MarkApplied(name As String)
+        If String.IsNullOrWhiteSpace(name) Then Throw New ArgumentException("Numele acțiunii unice lipsește.", NameOf(name))
+        If AppliedOneTimeActions Is Nothing Then AppliedOneTimeActions = New List(Of String)()
+        If Not HasApplied(name) Then AppliedOneTimeActions.Add(name.Trim())
+    End Sub
 
     Private Shared ReadOnly _gate As New Object()
     Private Shared _current As KBotPaths
@@ -266,6 +287,9 @@ Public NotInheritable Class KBotPaths
                 If Not String.IsNullOrWhiteSpace(dto.AdobeViewerMode) Then result.AdobeViewerMode = dto.AdobeViewerMode.Trim()
                 If Not String.IsNullOrWhiteSpace(dto.AdobeNewInstance) Then result.AdobeNewInstance = dto.AdobeNewInstance.Trim()
                 If Not String.IsNullOrWhiteSpace(dto.AdobePreviewEngine) Then result.AdobePreviewEngine = dto.AdobePreviewEngine.Trim()
+                If dto.AppliedOneTimeActions IsNot Nothing Then
+                    result.AppliedOneTimeActions = dto.AppliedOneTimeActions.FindAll(Function(n) Not String.IsNullOrWhiteSpace(n))
+                End If
             End If
             Return result
         Catch ex As Exception
@@ -301,7 +325,8 @@ Public NotInheritable Class KBotPaths
                 .OrdPdfRoot = OrdPdfRoot,
                 .AdobeViewerMode = AdobeViewerMode,
                 .AdobeNewInstance = AdobeNewInstance,
-                .AdobePreviewEngine = AdobePreviewEngine}
+                .AdobePreviewEngine = AdobePreviewEngine,
+                .AppliedOneTimeActions = AppliedOneTimeActions}
             Dim json As String = JsonSerializer.Serialize(dto, New JsonSerializerOptions With {.WriteIndented = True})
             Directory.CreateDirectory(baseDir)
             File.WriteAllText(filePath, json, New UTF8Encoding(False))
@@ -333,4 +358,5 @@ Friend NotInheritable Class KBotPathsDto
     Public Property AdobeViewerMode As String
     Public Property AdobeNewInstance As String
     Public Property AdobePreviewEngine As String
+    Public Property AppliedOneTimeActions As List(Of String)
 End Class

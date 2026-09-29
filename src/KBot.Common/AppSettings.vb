@@ -116,6 +116,13 @@ Public NotInheritable Class AppSettings
     Public Property AdobePopupWatch As Boolean = True
 
     ''' <summary>
+    ''' Slice 0078-05: when the K-BOT window holding a hosted Adobe window closes, the Adobe window
+    ''' is closed maximized over the screen instead of at the panel's size, so the operator's own
+    ''' Adobe does not keep K-BOT's size. Off by default (operator, 29.09.2026: to be tested).
+    ''' </summary>
+    Public Property AdobeRestoreScreenOnExit As Boolean = False
+
+    ''' <summary>
     ''' ActiveX viewer (DDF and ORD): destroy the AcroPDF control whenever another document is
     ''' asked for and create a new one for it, instead of loading into the same control. A reused
     ''' control sometimes stays empty after LoadFile; a fresh one built at once in every client
@@ -353,6 +360,7 @@ Public NotInheritable Class AppSettings
             .ForexeCapturaPaginaOriginala = ForexeCapturaPaginaOriginala,
             .AdobeDetachMode = AdobeDetachMode,
             .AdobePopupWatch = AdobePopupWatch,
+            .AdobeRestoreScreenOnExit = AdobeRestoreScreenOnExit,
             .AcroPdfFreshControl = AcroPdfFreshControl,
             .AdobeTrappedAlerts = AdobeTrappedAlerts?.ToList(),
             .ExcelRibbon = ExcelRibbon,
@@ -391,6 +399,7 @@ Public NotInheritable Class AppSettings
         End If
         If Not String.IsNullOrWhiteSpace(dto.AdobeDetachMode) Then s.AdobeDetachMode = dto.AdobeDetachMode.Trim()
         If dto.AdobePopupWatch.HasValue Then s.AdobePopupWatch = dto.AdobePopupWatch.Value
+        If dto.AdobeRestoreScreenOnExit.HasValue Then s.AdobeRestoreScreenOnExit = dto.AdobeRestoreScreenOnExit.Value
         If dto.AcroPdfFreshControl.HasValue Then s.AcroPdfFreshControl = dto.AcroPdfFreshControl.Value
         If dto.AdobeTrappedAlerts IsNot Nothing Then
             s.AdobeTrappedAlerts = dto.AdobeTrappedAlerts.
@@ -438,6 +447,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ForexeCapturaPaginaOriginala As Boolean?
     Public Property AdobeDetachMode As String
     Public Property AdobePopupWatch As Boolean?
+    Public Property AdobeRestoreScreenOnExit As Boolean?
     Public Property AcroPdfFreshControl As Boolean?
     Public Property AdobeTrappedAlerts As List(Of String)
     Public Property ExcelRibbon As String

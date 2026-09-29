@@ -104,7 +104,7 @@ Public Class AdobeUtils
     ''' <summary>
     ''' Modifică câmpurile/tabelele XFA pe baza XML-ului de configurare.
     ''' </summary>
-    Private Shared Function ModifyXfaFromXml(inputPdfPath As String, outputPdfPath As String, configXmlPath As String) As String
+    Friend Shared Function ModifyXfaFromXml(inputPdfPath As String, outputPdfPath As String, configXmlPath As String) As String
         XfaLog.Log("INFO", $"ModifyXfaFromXml — inputPdf: {inputPdfPath}, outputPdf: {outputPdfPath}, dataXml: {configXmlPath}")
         Dim reader As PdfReader = Nothing
         Dim stamper As PdfStamper = Nothing
@@ -149,7 +149,7 @@ Public Class AdobeUtils
     ''' <summary>
     ''' Procesează recursiv nodurile XML și le aplică pe XFA.
     ''' </summary>
-    Private Shared Sub ProcessXmlNodes(xmlNode As XmlNode, pdfDoc As XmlDocument, pdfContextNode As XmlNode)
+    Friend Shared Sub ProcessXmlNodes(xmlNode As XmlNode, pdfDoc As XmlDocument, pdfContextNode As XmlNode)
         Dim searchRoot As XmlNode = If(pdfContextNode, CType(pdfDoc, XmlNode))
 
         Dim isTable = xmlNode.SelectSingleNode("Row1") IsNot Nothing

@@ -1,6 +1,8 @@
 #If DEBUG Then
 Option Strict On
+Imports System.Collections.Generic
 Imports System.IO
+Imports System.Linq
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports KBot.Api
@@ -11,8 +13,9 @@ Imports KBot.Xfa
 
 ''' <summary>
 ''' The bench for slice 0078: the whole signing round trip, on the REAL pieces the DDF / ORD pages
-''' use -- <see cref="ReaderHostPreview"/> (with whichever engine the operator chose in «Setări»;
-''' the bench shows it and never changes it), <see cref="PdfSigningSession"/> for the upload and
+''' use -- <see cref="ReaderHostPreview"/> (the operator's engine, or the hosted window when
+''' «Forțează fereastra găzduită» is ticked; the setting itself is never changed),
+''' <see cref="PdfSigningSession"/> for the upload and
 ''' the server routes for the read-back.
 '''
 ''' <para><b>What to watch.</b> The log on the right mirrors <c>adobe_preview.log</c> live: every
@@ -20,6 +23,14 @@ Imports KBot.Xfa
 ''' answered «replace?». After each save the bench reads the file itself and lists the signed
 ''' fields, the roles and the sha -- independent of the upload, so a trap that works and an upload
 ''' that fails are told apart.</para>
+'''
+''' <para><b>The order of a save (slice 0078-05).</b> In the hosted Adobe window the «Save As»
+''' comes first and the signed file is written only after it (after the token's PIN). The
+''' «[Disc]» lines (<see cref="PdfSaveTimeline"/>) show every file event and size change counted
+''' from the dialog's close, and the signatures once the file stops changing; the upload line says
+''' how long after the dialog the session sent it. «Doar simulează încărcarea» runs the same session
+''' on <see cref="RecordingPdfApi"/>: nothing reaches the server. «Forțează fereastra găzduită»
+''' (on by default) makes this bench's viewer use the hosted window whatever «Setări» says.</para>
 '''
 ''' <para><b>Always on a copy.</b> A local PDF is copied into <c>TempPdf\Banc\</c> first (wiped at
 ''' every start); the original is never touched. «Deschide copia de pe server» downloads into the
@@ -34,6 +45,7 @@ Public NotInheritable Class PdfSigningHarnessForm
     Private ReadOnly _loginFactory As Func(Of LoginForm)
     Private ReadOnly _log As Action(Of String)
     Private _signing As PdfSigningSession
+    Private _timeline As PdfSaveTimeline
     Private _path As String
     Private _logHooked As Boolean
 
@@ -49,9 +61,10 @@ Public NotInheritable Class PdfSigningHarnessForm
         _logHooked = True
         AddHandler preview.DocumentSaved, AddressOf OnDocumentSaved
         AddHandler preview.SaveCancelled, AddressOf OnSaveCancelled
-        lblMotor.Text = "Motor: " & AdobeViewerSettings.EngineLabel(preview.Engine) & " (din «Setări»)"
+        ApplyEngineChoice()
         UpdateSessionLabel()
-        Write("Banc pornit. Motorul Adobe e cel din «Setări»; bancul nu-l schimbă.")
+        Write("Banc pornit. Setarea motorului Adobe din «Setări» nu se schimbă; bancul poate doar să-și " &
+              "forțeze propriul vizualizator pe fereastra găzduită.")
     End Sub
 
     ' ── Buttons (UI boundaries: log and swallow) ────────────────────────────────
@@ -136,6 +149,22 @@ Public NotInheritable Class PdfSigningHarnessForm
         txtJurnal.Clear()
     End Sub
 
+    Private Sub chkGazduita_CheckedChanged(sender As Object, e As EventArgs) Handles chkGazduita.CheckedChanged
+        Try
+            ApplyEngineChoice()
+            Write("Motorul se schimbă de la documentul următor: " & lblMotor.Text)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PdfSigningHarnessForm.chkGazduita_CheckedChanged", ex)
+        End Try
+    End Sub
+
+    ' The bench's own viewer only: nothing is written to the settings.
+    Private Sub ApplyEngineChoice()
+        preview.ForcedEngine = If(chkGazduita.Checked, AdobePreviewEngine.WindowHost, CType(Nothing, AdobePreviewEngine?))
+        lblMotor.Text = "Motor: " & AdobeViewerSettings.EngineLabel(preview.Engine) &
+                        If(chkGazduita.Checked, " (forțat de banc)", " (din «Setări»)")
+    End Sub
+
     ' ── Opening a document ──────────────────────────────────────────────────────
     ''' <summary>
     ''' Shows the copy and, when uploading is on, starts a real signing session against the id.
@@ -147,8 +176,22 @@ Public NotInheritable Class PdfSigningHarnessForm
             _path = path
             lblFisier.Text = System.IO.Path.GetFileName(path)
             LogSignatures("Local", SignedPdfFiles.ReadShared(path))
+            _timeline = New PdfSaveTimeline(path, Kind(), AddressOf Write)
+            _timeline.Start()
 
             Dim id As Integer = 0
+            If chkSimuleaza.Checked Then
+                ' A real session on a recording client: no server, no login, nothing written.
+                If Not Integer.TryParse(txtId.Text.Trim(), id) OrElse id <= 0 Then id = 1
+                _signing = New PdfSigningSession(KindEnum(), id, path, path, String.Empty,
+                                                 RecordingPdfApi.ForUploads(AddressOf OnSimulatedUpload))
+                AddHandler _signing.Completed, AddressOf OnSigningCompleted
+                _signing.Begin()
+                Write($"Sesiune de semnare SIMULATĂ: {Kind()} {id}, nimic nu ajunge pe server.")
+                preview.Signing = _signing
+                preview.ShowDocument(path, exists:=True)
+                Return
+            End If
             If chkIncarca.Checked Then
                 If Not TryReadId(id) OrElse Not RequireLogin() Then
                     Write("Încărcarea e bifată, dar lipsește id-ul sau autentificarea: documentul se " &
@@ -183,7 +226,10 @@ Public NotInheritable Class PdfSigningHarnessForm
 
     ''' <summary>Adobe holds the file open: the preview lets go before the copy is overwritten.</summary>
     Private Sub ReleaseDocument()
+        If preview.IsSaving Then Write("ATENȚIE: Adobe încă salvează documentul — eliberarea așteaptă salvarea (max. 5 s).")
         EndSigning()
+        _timeline?.Dispose()
+        _timeline = Nothing
         preview.Signing = Nothing
         preview.Clear()
         _path = Nothing
@@ -198,19 +244,29 @@ Public NotInheritable Class PdfSigningHarnessForm
     End Sub
 
     ' ── Events ──────────────────────────────────────────────────────────────────
-    ' A trapped save finished: the bench reads the file ITSELF, whatever the session decides.
-    Private Async Sub OnDocumentSaved(path As String)
+    ' A trapped «Save As» CLOSED -- which is not yet «the file is written» (slice 0078-05). The
+    ' timeline reads the file ITSELF as it changes, whatever the session decides.
+    Private Sub OnDocumentSaved(path As String)
         Try
-            Write("SALVAT de capcană: " & path)
-            Dim bytes As Byte() = Await SignedPdfFiles.ReadWhenSettledAsync(path).ConfigureAwait(True)
-            If bytes Is Nothing Then
-                Write("Fișierul salvat nu s-a stabilizat în 10 s — nu a putut fi citit.")
-                Return
-            End If
-            LogSignatures("După salvare", bytes)
+            Write("SALVAT de capcană (dialogul s-a închis): " & path)
+            _timeline?.MarkDialogClosed()
         Catch ex As Exception
             GlobalErrorLog.Write("PdfSigningHarnessForm.OnDocumentSaved", ex)
-            Write("Citirea după salvare a eșuat: " & ex.Message)
+            Write("Cronologia salvării a eșuat: " & ex.Message)
+        End Try
+    End Sub
+
+    ' The recording client got an upload from the session (UI thread). What would have been sent.
+    Private Sub OnSimulatedUpload(docType As String, id As Integer, bytes As Byte(), semnatura As String,
+                                  records As IReadOnlyList(Of PdfSignatureRecord))
+        Try
+            Dim fields As String = If(records Is Nothing OrElse records.Count = 0, "—",
+                                      String.Join(", ", records.Select(Function(r) $"{r.camp} ({r.rol}, {r.semnatar})")))
+            Write($"ÎNCĂRCARE SIMULATĂ {docType} {id}: {bytes.Length:N0} octeți, roluri «{semnatura}», " &
+                  $"semnături noi: {fields}" & If(_timeline Is Nothing, "", _timeline.SinceDialog()) & ".")
+            LogSignatures("  Trimis", bytes)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PdfSigningHarnessForm.OnSimulatedUpload", ex)
         End Try
     End Sub
 
@@ -222,8 +278,8 @@ Public NotInheritable Class PdfSigningHarnessForm
     Private Sub OnSigningCompleted(session As PdfSigningSession, outcome As PdfSigningOutcome)
         Try
             If outcome Is Nothing Then Return
-            Write($"ÎNCĂRCARE: {outcome.Status} — roluri «{outcome.Semnatura}», sha {ShortSha(outcome.NewSha)}. " &
-                  outcome.Message)
+            Write($"ÎNCĂRCARE: {outcome.Status} — roluri «{outcome.Semnatura}», sha {ShortSha(outcome.NewSha)}" &
+                  If(_timeline Is Nothing, "", _timeline.SinceDialog()) & ". " & outcome.Message)
             SigningMessages.ShowOutcome(Me, outcome)
         Catch ex As Exception
             GlobalErrorLog.Write("PdfSigningHarnessForm.OnSigningCompleted", ex)
@@ -244,20 +300,9 @@ Public NotInheritable Class PdfSigningHarnessForm
     ' ── Helpers ─────────────────────────────────────────────────────────────────
     Private Sub LogSignatures(label As String, bytes As Byte())
         Try
-            Dim info As PdfSignatureInfo = PdfSignatures.Read(bytes, Kind())
-            If Not info.IsSigned Then
-                Write($"{label}: nicio semnătură ({bytes.Length:N0} octeți, sha {ShortSha(PdfHash.Compute(bytes))}).")
-                Return
-            End If
-            Write($"{label}: {info.FieldNames.Count} câmpuri semnate [{String.Join(", ", info.FieldNames)}] " &
-                  $"-> Semnatura «{info.ToSemnatura()}», sha {ShortSha(PdfHash.Compute(bytes))}.")
-            If info.Unclassified.Count > 0 Then
-                Write($"{label}: câmpuri FĂRĂ rol recunoscut: {String.Join(", ", info.Unclassified)}.")
-            End If
-            ' Slice 0079: what the signature log receives for each field.
-            For Each d As PdfSignatureDetail In info.Details
-                Write($"{label}:   {d.FieldName} — rol «{d.Role}», semnatar «{d.Signer}», " &
-                      If(d.SignedAt.HasValue, $"semnat la {d.SignedAt.Value:yyyy-MM-dd HH:mm:ss zzz}", "fără dată"))
+            ' Slice 0078-04: shared with the section B bench (adds the integrity lines).
+            For Each line As String In PdfSignatureReport.Lines(label, bytes, Kind())
+                Write(line)
             Next
         Catch ex As Exception
             GlobalErrorLog.Write("PdfSigningHarnessForm.LogSignatures", ex)
@@ -328,6 +373,8 @@ Public NotInheritable Class PdfSigningHarnessForm
                 _logHooked = False
             End If
             EndSigning()
+            _timeline?.Dispose()
+            _timeline = Nothing
             preview.Signing = Nothing
         Catch ex As Exception
             GlobalErrorLog.Write("PdfSigningHarnessForm.Inchide", ex)

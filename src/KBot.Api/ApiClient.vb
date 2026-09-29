@@ -1167,6 +1167,37 @@ Public Class ApiClient
                               "ApiClient.UploadOrdPdfAsync", ct)
     End Function
 
+    ''' <summary>
+    ''' Slice 0078-05, BENCH ONLY: the same upload as <see cref="UploadDdfPdfAsync"/>, to
+    ''' PUT /api/forexe/banc/pdf/{tip}/{id}, which keeps EVERY upload as a new row of
+    ''' <c>KBOT_BANC_PDF</c> in 000_DEMO (and refuses any other database). Not on
+    ''' <see cref="IApiClient"/>: nothing but the signing benches calls it.
+    ''' <paramref name="tip"/> = ddf / ord / nc; <paramref name="numeFisier"/> and
+    ''' <paramref name="pas"/> are stored as they are, for whoever reads the table.
+    ''' </summary>
+    Public Function UploadBancPdfAsync(tip As String, id As Integer, continut As Byte(), shaPrecedent As String,
+                                       semnatura As String, semnaturi As IReadOnlyList(Of PdfSignatureRecord),
+                                       numeFisier As String, pas As String, ct As CancellationToken) As Task(Of PutPdfResponse)
+        Dim url As String = $"/api/forexe/banc/pdf/{Uri.EscapeDataString(If(tip, "ddf").ToLowerInvariant())}/{id}" &
+                            $"?nume={Uri.EscapeDataString(If(numeFisier, ""))}&pas={Uri.EscapeDataString(If(pas, ""))}"
+        Return UploadPdfAsync(url, continut, shaPrecedent, semnatura, semnaturi,
+                              "salvarea PDF-ului în tabela de probă", "ApiClient.UploadBancPdfAsync", ct)
+    End Function
+
+    ''' <summary>Slice 0078-05, BENCH ONLY: the rows of KBOT_BANC_PDF (000_DEMO), newest first, without content.</summary>
+    Public Function ListBancPdfAsync(ct As CancellationToken) As Task(Of BancPdfList)
+        Return GetAsync(Of BancPdfList)("/api/forexe/banc/pdf", ct)
+    End Function
+
+    ''' <summary>
+    ''' Slice 0078-05, BENCH ONLY: the bytes of one KBOT_BANC_PDF row, checked against the server's
+    ''' sum exactly like a signed PDF (<see cref="DownloadDdfPdfAsync"/>).
+    ''' </summary>
+    Public Function DownloadBancPdfAsync(id As Long, ct As CancellationToken) As Task(Of PdfDownloadResult)
+        Return DownloadPdfAsync($"/api/forexe/banc/pdf/{id}", Nothing, "citirea PDF-ului din tabela de probă",
+                                "ApiClient.DownloadBancPdfAsync", ct)
+    End Function
+
     ' Descarcarea, o singura data pentru amandoua familiile de documente.
     '
     ' OCTETI BRUTI: `ReadAsByteArrayAsync`, NICIODATA `ReadAsStringAsync` — o trecere prin text

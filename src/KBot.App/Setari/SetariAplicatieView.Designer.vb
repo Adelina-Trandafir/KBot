@@ -170,7 +170,7 @@ Partial Class SetariAplicatieView
         btnAdobeGazduire.TabIndex = 2
         btnAdobeGazduire.Text = "Opțiuni fereastră găzduită…"
         tips.SetToolTipHeader(btnAdobeGazduire, "Fereastra găzduită Adobe")
-        tips.SetToolTipText(btnAdobeGazduire, "Modul vizualizatorului, comutatorul /n, eliberarea ferestrei și fereastra plutitoare." & vbLf & "Se deschide singur când alegi «Fereastră găzduită»; de aici le poți revedea oricând.")
+        tips.SetToolTipText(btnAdobeGazduire, "Comutatorul /n și eliberarea ferestrei." & vbLf & "Se deschide singur când alegi «Fereastră găzduită»; de aici le poți revedea oricând.")
         btnAdobeGazduire.UseVisualStyleBackColor = True
         '
         ' chkAcroTrace

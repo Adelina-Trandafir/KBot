@@ -11,7 +11,7 @@ Imports KBot.Theming
 ''' living in <c>kbot_paths.json</c> (per machine -- what Adobe is installed there) through
 ''' <see cref="AdobeViewerSettings.Persist"/>, the same call the DDF view's combos make; the
 ''' folders keep living in <c>settings.json</c> through <see cref="SetariFoldere.Salveaza"/>.
-''' The four settings that only matter for the HOSTED Adobe window are NOT on the page
+''' The settings that only matter for the HOSTED Adobe window are NOT on the page
 ''' (slice 0072-01): choosing «Fereastră găzduită» opens <see cref="AdobeGazduireForm"/>,
 ''' and the «Opțiuni…» button under the combo reopens it later.</para>
 '''
@@ -302,7 +302,7 @@ Public Class SetariAplicatieView
         Next
     End Sub
 
-    ' The «Opțiuni…» button is for the HOSTED WINDOW only; on ActiveX the four settings behind
+    ' The «Opțiuni…» button is for the HOSTED WINDOW only; on ActiveX the settings behind
     ' it do nothing, and a button that opens a dialog which changes nothing would look like it
     ' acts (same rule as DdfDocumentPage).
     Private Sub ActualizeazaDisponibilitateaAdobe()
@@ -317,7 +317,7 @@ Public Class SetariAplicatieView
     ''' <summary>
     ''' The engine saves into kbot_paths.json next to the two values it does not own (Persist
     ''' writes all three; they are read back from the store, untouched). Choosing the hosted
-    ''' window then opens the dialog with its four settings -- the operator's request: they
+    ''' window then opens the dialog with its settings -- the operator's request: they
     ''' appear the moment that engine is picked, not as rows sitting on the page.
     ''' </summary>
     Private Sub CboAdobeMotor_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboAdobeMotor.SelectedIndexChanged
@@ -587,22 +587,6 @@ Public Class SetariAplicatieView
             Return OfficeHostSettings.ExcelRibbonLabel(Mode)
         End Function
     End Class
-End Class
-
-''' <summary>
-''' O intrare din combo-ul «Mod vizualizator Adobe»: valoarea + eticheta românească. Există ca să
-''' NU se compare texte de interfață când se citește selecția. POCO -&gt; fără Try/Catch.
-''' </summary>
-Friend NotInheritable Class AdobeModeItem
-    Public ReadOnly Property Mode As AdobeViewerMode
-
-    Public Sub New(mode As AdobeViewerMode)
-        Me.Mode = mode
-    End Sub
-
-    Public Overrides Function ToString() As String
-        Return AdobeViewerSettings.ModeLabel(Mode)
-    End Function
 End Class
 
 ''' <summary>O intrare din combo-ul «Motor previzualizare». POCO -&gt; fără Try/Catch.</summary>

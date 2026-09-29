@@ -65,6 +65,13 @@ Public NotInheritable Class AdobeHostOptions
     ''' <summary>Extra command-line switches, appended after the profile's own. The bench uses this.</summary>
     Public Property ExtraArgs As String = Nothing
 
+    ''' <summary>
+    ''' Slice 0078-05, off by default: when the K-BOT window holding the panel closes (or the host
+    ''' is disposed), the hosted window is closed as a maximized window of the screen instead of at
+    ''' the panel's size, so Adobe remembers the screen size (see <see cref="AdobeScreenRelease"/>).
+    ''' </summary>
+    Public Property RestoreScreenSizeOnExit As Boolean = False
+
     ''' <summary>A copy, so a caller can hand options to the host and keep editing its own.</summary>
     Public Function Clone() As AdobeHostOptions
         Return New AdobeHostOptions() With {
@@ -75,7 +82,8 @@ Public NotInheritable Class AdobeHostOptions
             .FindPollMs = FindPollMs,
             .RedrawDelayMs = RedrawDelayMs,
             .CloseGraceMs = CloseGraceMs,
-            .ExtraArgs = ExtraArgs}
+            .ExtraArgs = ExtraArgs,
+            .RestoreScreenSizeOnExit = RestoreScreenSizeOnExit}
     End Function
 
     ''' <summary>One line for the log — the settings in force for this document.</summary>
@@ -83,7 +91,8 @@ Public NotInheritable Class AdobeHostOptions
         Return $"închidere={If(DetachMode = AdobeDetachMode.KillProcess, "omoară procesul (A)", "închide fereastra (B)")} · " &
                $"cârlig de creare={If(UseCreationHook, "da", "nu")} · " &
                $"întârziere captură={CaptureDelayMs} ms · pas căutare={FindPollMs} ms · " &
-               $"răgaz închidere={CloseGraceMs} ms"
+               $"răgaz închidere={CloseGraceMs} ms · " &
+               $"ecran întreg la ieșire={If(RestoreScreenSizeOnExit, "da", "nu")}"
     End Function
 
 End Class

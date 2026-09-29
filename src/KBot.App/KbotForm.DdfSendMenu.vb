@@ -112,6 +112,16 @@ Partial Public Class KbotForm
             Await WithReauth(Of PutPdfResponse)(
                 Function() _apiClient.UploadDdfPdfAsync(idrev, continut, shaPrecedent, ApiClient.SemnaturaNiciuna,
                                                         Nothing, CancellationToken.None))
+            ' Slice 0078-04: the cache still holds the signed interim PDF; left there, the next
+            ' open finds it differs from the server and warns «nu era identic». Not fatal if it
+            ' fails (Adobe may hold the file): the next open downloads the server copy anyway.
+            Try
+                SignedPdfFiles.WriteCache(
+                    DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, generat.Antet, generat.Revizie.NumarRev),
+                    continut)
+            Catch ex As Exception
+                GlobalErrorLog.Write("MainForm.GenereazaPdfFinalAsync.Cache", ex)
+            End Try
             Await ApelTrimitereAsync(Function() sendApi.SeteazaStareTrimitereDdfAsync(
                 idrev, DdfSendStage.FinalPdf, CancellationToken.None))
             Return True

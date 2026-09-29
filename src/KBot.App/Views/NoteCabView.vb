@@ -529,13 +529,14 @@ Public Class NoteCabView
             EndSigning()
             Return Nothing
         End If
-        If _signing IsNot Nothing AndAlso _signing.Matches(PdfDocKind.Nc, n.IdNc, pdfPath) Then Return _signing
-        EndSigning()
         Dim serverSha As String = n.PdfSha256
         Dim pending As PendingPdfUpload = PendingPdfUploads.TryGet(PdfDocKind.Nc, n.IdNc)
         If pending IsNot Nothing AndAlso String.Equals(pending.PdfPath, pdfPath, StringComparison.OrdinalIgnoreCase) Then
             serverSha = If(pending.ShaPrecedent = ApiClient.ShaFaraRand, String.Empty, pending.ShaPrecedent)
         End If
+        ' Slice 0078-04: kept only while the server version is the one it started from.
+        If _signing IsNot Nothing AndAlso _signing.Matches(PdfDocKind.Nc, n.IdNc, pdfPath, serverSha) Then Return _signing
+        EndSigning()
         _signing = New PdfSigningSession(PdfDocKind.Nc, n.IdNc, pdfPath, CabNoteFiles.CachePath(n), serverSha, _apiClient)
         AddHandler _signing.Completed, AddressOf OnSigningCompleted
         _signing.Begin()

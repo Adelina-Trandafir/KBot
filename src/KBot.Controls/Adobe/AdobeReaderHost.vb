@@ -1,6 +1,7 @@
 Option Strict On
 Imports System.Collections.Generic
 Imports System.IO
+Imports System.Linq
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
@@ -54,13 +55,10 @@ Public NotInheritable Class AdobeHostResult
 End Class
 
 ''' <summary>
-''' Hosts an Adobe window inside a panel, under a <see cref="AdobeViewerProfile"/>.
+''' Hosts an Adobe window inside a panel.
 '''
-''' This is the shared engine of slice 0024: <c>ReaderHostPreview</c> (KBot.App) drives it, and
-''' <c>AdobeReaderHarnessForm</c> (KBot.DevHarness) uses the same primitives underneath
-''' (<see cref="AdobeWindowCapture"/>, <see cref="AdobeWindowTeardown"/>,
-''' <see cref="AdobeWindowHosting"/>, <see cref="AdobeWindowProbe"/>,
-''' <see cref="AdobeHostGeometry"/>) so the bench and the shipping preview cannot drift apart.
+''' This is the shared engine of slice 0024: <c>ReaderHostPreview</c> and <c>DdfFisierPreview</c>
+''' (KBot.App) drive it.
 '''
 ''' PASS 03 CHANGED THE TWO THINGS THAT WERE ACTUALLY BROKEN:
 '''  * the window is found by PROCESS ID and while still INVISIBLE, then hidden before anyone can
@@ -69,22 +67,31 @@ End Class
 '''    style and re-parented to the desktop, which is how a stray Adobe window with a taskbar button
 '''    survived every document change — see <see cref="AdobeWindowTeardown"/>.
 '''
+''' NO POSITIONING, NO HIDING (slice 0078-05, operator 29.09.2026). The window simply fills the
+''' panel. The measured profiles (clipping the toolbar band off the top, pulling the window left,
+''' «/A toolbar=0&amp;navpanes=0», hiding the floating badge) are gone from this class: Adobe
+''' remembers the size and chrome of the window it closes, so the operator's own Adobe kept the
+''' K-BOT layout after K-BOT was closed. The toolbars are hidden by Adobe's own Read Mode instead
+''' (Ctrl+H, sent once when the page is laid out -- see <see cref="ArmReadMode"/>), which is a
+''' state of the open document only and dies with it.
+'''
 ''' WHAT THIS CLASS DELIBERATELY DOES NOT DO: it never writes <c>bEnableAv2</c>, or any other Adobe
-''' preference. That value changes the operator's Adobe everywhere, for every PDF they open, K-BOT
-''' or not. Writing it silently on every DDF preview is unacceptable and prompting on every preview
-''' is unusable, so the shipping code ADAPTS to whichever UI it finds — which is exactly what
-''' <see cref="AdobeUiDetector"/> makes possible. The bench writes it because the bench is a bench.
-''' The single, documented exception (slice 0078) is <see cref="AdobePrefs"/>: the standard Windows
-''' «Save As» dialog, written only when a SIGNING session starts, never by this class.
+''' preference. The single, documented exception (slice 0078) is <see cref="AdobePrefs"/>: the
+''' standard Windows «Save As» dialog, written only when a SIGNING session starts, never by this class.
 ''' </summary>
 Public NotInheritable Class AdobeReaderHost
     Implements IDisposable
 
     Private ReadOnly _host As IHostSurface
     Private ReadOnly _log As Action(Of String)
-    Private ReadOnly _watcher As AdobePopupWatcher
     Private ReadOnly _capture As AdobeWindowCapture
     Private ReadOnly _teardown As AdobeWindowTeardown
+    ' Slice 0078-05: the opt-in last release at the size of the screen (RestoreScreenSizeOnExit).
+    Private ReadOnly _screenRelease As AdobeScreenRelease
+    ' The hosted window's style before it became a child -- only the screen release writes it back.
+    Private _originalStyle As Long
+    ' The K-BOT window holding the panel, watched for its closing (RestoreScreenSizeOnExit).
+    Private _closingForm As Form
     Private ReadOnly _launcher As IAdobeLauncher
     Private ReadOnly _hook As AdobeCreationHook
     ' Slice 0078-02: forces Adobe's «Save As» onto the hosted document's own path.
@@ -92,8 +99,7 @@ Public NotInheritable Class AdobeReaderHost
     ' The document hosted right now -- the ONLY path the save trap may ever force.
     Private _hostedPath As String
 
-    ' Every process id THIS host started. A PID outside this set is never killed — not here, not in
-    ' the bench. With «/n» off the embedded window can belong to the operator's own Adobe.
+    ' Every process id THIS host started. A PID outside this set is never killed.
     Private ReadOnly _launchedPids As New HashSet(Of Integer)()
 
     Private _hostedWindow As IntPtr = IntPtr.Zero
@@ -101,9 +107,6 @@ Public NotInheritable Class AdobeReaderHost
     Private _startedPid As Integer = 0
     ' A newer ShowDocument invalidates an in-flight one.
     Private _generation As Integer = 0
-    ' Cached across documents, so the SECOND document already launches with the right flags.
-    Private _lastGeneration As AdobeUiGeneration = AdobeUiGeneration.Unknown
-    Private _relaunchedForProfile As Boolean = False
 
     Public Sub New(hostPanel As Control, log As Action(Of String))
         Me.New(New ControlHostSurface(hostPanel), log, Nothing, Nothing)
@@ -119,16 +122,20 @@ Public NotInheritable Class AdobeReaderHost
         _launcher = If(launcher, ProcessAdobeLauncher.Instance)
         _capture = New AdobeWindowCapture(windows)
         _teardown = New AdobeWindowTeardown(windows, _launcher)
-        _watcher = New AdobePopupWatcher(AddressOf Report)
+        _screenRelease = New AdobeScreenRelease(windows, _launcher)
         _hook = New AdobeCreationHook(AddressOf Report)
         _saveTrap = New AdobeSaveTrap(AddressOf Report)
         AddHandler _saveTrap.Saved, AddressOf OnTrapSaved
         AddHandler _saveTrap.Failed, AddressOf OnTrapFailed
+        AddHandler _saveTrap.ScriptBurstEnded, AddressOf OnScriptBurstEnded
+        _readModeTimer.Interval = ReadModeTickMs
+        AddHandler _readModeTimer.Tick, AddressOf OnReadModeTick
     End Sub
 
     ''' <summary>
     ''' Slice 0078: raised (UI thread) after Adobe saved the hosted document through a trapped
-    ''' «Save As». Argument = the document path. The file may still be settling on disk.
+    ''' «Save As». Argument = the document path. The file may still be settling on disk -- with a
+    ''' signature, Adobe writes it only AFTER the dialog (and the token's PIN) is done.
     ''' </summary>
     Public Event DocumentSaved As Action(Of String)
 
@@ -156,6 +163,12 @@ Public NotInheritable Class AdobeReaderHost
     End Property
     Private _saveTrapEnabled As Boolean
 
+    ''' <summary>
+    ''' Slice 0078-05: send Adobe's Read Mode (Ctrl+H) once the document is laid out, so the toolbars
+    ''' are hidden by Adobe itself. True by default; the bench may switch it off.
+    ''' </summary>
+    Public Property ReadModeEnabled As Boolean = True
+
     ''' <summary>The document hosted right now, or Nothing.</summary>
     Public ReadOnly Property HostedPath As String
         Get
@@ -163,18 +176,32 @@ Public NotInheritable Class AdobeReaderHost
         End Get
     End Property
 
+    ''' <summary>
+    ''' True while a Save pressed by the trap has not finished (slice 0078-05, for the bench: the
+    ''' document must not be released while Adobe may still be writing it).
+    ''' </summary>
+    Public ReadOnly Property IsSaving As Boolean
+        Get
+            Return _saveTrap.IsBusy
+        End Get
+    End Property
+
     ' Starts the trap on the current document, when there is one. Wrapped: called from a setter.
     Private Sub StartSaveTrap()
         Try
             If Not _saveTrapEnabled OrElse Not IsHosting OrElse String.IsNullOrEmpty(_hostedPath) Then Return
-            Dim pids As New List(Of Integer)()
-            If _hostedPid <> 0 Then pids.Add(_hostedPid)
-            If _startedPid <> 0 AndAlso Not pids.Contains(_startedPid) Then pids.Add(_startedPid)
-            _saveTrap.Start(_hostedPath, pids)
+            _saveTrap.Start(_hostedPath, HostedPids())
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHost.StartSaveTrap", ex)
         End Try
     End Sub
+
+    Private Function HostedPids() As List(Of Integer)
+        Dim pids As New List(Of Integer)()
+        If _hostedPid <> 0 Then pids.Add(_hostedPid)
+        If _startedPid <> 0 AndAlso Not pids.Contains(_startedPid) Then pids.Add(_startedPid)
+        Return pids
+    End Function
 
     ' Trap events arrive on the UI thread (hook + WinForms timer); forwarded as they are.
     Private Sub OnTrapSaved(path As String)
@@ -193,17 +220,11 @@ Public NotInheritable Class AdobeReaderHost
         End Try
     End Sub
 
-    ''' <summary>Which profile the operator asked for. Changing it takes effect on the next document.</summary>
-    Public Property Mode As AdobeViewerMode = AdobeViewerMode.Auto
-
-    ''' <summary>Whether «/n» is forced on or off, whatever the profile says.</summary>
-    Public Property NewInstanceMode As AdobeNewInstanceMode = AdobeNewInstanceMode.Auto
-
     ''' <summary>
-    ''' Whether the floating-badge watcher may run. FALSE by default so the bench, which shares this
-    ''' code, keeps behaving exactly as it did before the extraction; the DDF preview turns it on.
+    ''' Whether «/n» is used. <see cref="AdobeNewInstanceMode.Auto"/> = yes: a process of K-BOT's own,
+    ''' so the window reparented is never one the operator opened.
     ''' </summary>
-    Public Property PopupWatchEnabled As Boolean = False
+    Public Property NewInstanceMode As AdobeNewInstanceMode = AdobeNewInstanceMode.Auto
 
     ''' <summary>Capture and teardown knobs. Never Nothing; assigning Nothing restores the defaults.</summary>
     Public Property Options As AdobeHostOptions
@@ -215,12 +236,6 @@ Public NotInheritable Class AdobeReaderHost
         End Set
     End Property
     Private _options As New AdobeHostOptions()
-
-    ''' <summary>The profile in force right now (Nothing before the first document).</summary>
-    Public ReadOnly Property CurrentChoice As AdobeProfileChoice
-
-    ''' <summary>The last detection, or Nothing if nothing has been probed yet.</summary>
-    Public ReadOnly Property LastDetection As AdobeUiDetection
 
     ''' <summary>The window hosted right now, or IntPtr.Zero.</summary>
     Public ReadOnly Property HostedWindow As IntPtr
@@ -257,7 +272,6 @@ Public NotInheritable Class AdobeReaderHost
             Detach()
             _generation += 1
             Dim gen As Integer = _generation
-            _relaunchedForProfile = False
 
             If String.IsNullOrWhiteSpace(pdfPath) OrElse Not File.Exists(pdfPath) Then
                 Return New AdobeHostResult(AdobeHostStatus.Failed,
@@ -274,7 +288,7 @@ Public NotInheritable Class AdobeReaderHost
                                            Nothing)
             End If
 
-            Return Await LaunchAndHostAsync(adobePath, pdfPath, gen, allowRelaunch:=True)
+            Return Await LaunchAndHostAsync(adobePath, pdfPath, gen)
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHost.ShowDocumentAsync", ex)
             Return New AdobeHostResult(AdobeHostStatus.Failed,
@@ -282,20 +296,14 @@ Public NotInheritable Class AdobeReaderHost
         End Try
     End Function
 
-    ' One launch + embed cycle. Reached only from ShowDocumentAsync (wrapped) and from itself for the
-    ' single profile relaunch — transitive coverage, house rule.
-    Private Async Function LaunchAndHostAsync(adobePath As String, pdfPath As String, gen As Integer,
-                                              allowRelaunch As Boolean) As Task(Of AdobeHostResult)
-        ' The launch flags must be decided BEFORE we can see the window, so the first document uses
-        ' the last generation we detected (Unknown -> classic, the conservative profile). If the
-        ' detection afterwards disagrees, we relaunch ONCE with the right flags — see below.
-        Dim launchChoice As AdobeProfileChoice =
-            AdobeViewerProfiles.Resolve(Mode, New AdobeUiDetection(_lastGeneration, "din rularea anterioară", False))
-        Dim launchProfile As AdobeViewerProfile = launchChoice.Profile.WithNewInstance(NewInstanceMode)
-
-        Dim args As String = AdobeWindowHosting.BuildArguments(launchProfile, pdfPath, _options.ExtraArgs)
+    ' One launch + embed cycle. Reached only from ShowDocumentAsync (wrapped) -- transitive coverage.
+    Private Async Function LaunchAndHostAsync(adobePath As String, pdfPath As String, gen As Integer) As Task(Of AdobeHostResult)
+        ' «/n» + «/s» and the file, nothing else: no /A open parameters (they hid toolbars and panes).
+        Dim newInstance As Boolean = NewInstanceMode <> AdobeNewInstanceMode.Nu
+        ' Extra switches go BEFORE the file name, like every other one -- Adobe ignores anything after it.
+        Dim extras As String = If(String.IsNullOrWhiteSpace(_options.ExtraArgs), "", _options.ExtraArgs.Trim() & " ")
+        Dim args As String = If(newInstance, "/n ", "") & "/s " & extras & """" & pdfPath & """"
         Report($"Pornesc Adobe: {Path.GetFileName(adobePath)} {args}")
-        Report("  " & launchProfile.Describe())
         Report("  " & _options.Describe())
 
         Dim pid As Integer
@@ -314,10 +322,8 @@ Public NotInheritable Class AdobeReaderHost
         If _options.UseCreationHook Then _hook.Install(pid)
 
         ' The window is identified by the DOCUMENT NAME, and the PID only decides whether the match
-        ' is labelled «ours» or «foreign». Gating the search on «/n» — as this code briefly did — is
-        ' wrong: the operator's log shows Adobe hands the document to a running instance on EVERY
-        ' launch, «/n» included, so a PID-strict search finds nothing and leaves the real window
-        ' floating on screen with a taskbar button.
+        ' is labelled «ours» or «foreign»: Adobe hands the document to a running instance on EVERY
+        ' launch, «/n» included, so a PID-strict search finds nothing.
         Dim opts As AdobeHostOptions = _options.Clone()
         Dim baseName As String = Path.GetFileNameWithoutExtension(pdfPath)
         Dim caught As AdobeCaptureResult =
@@ -344,64 +350,21 @@ Public NotInheritable Class AdobeReaderHost
         Report($"Fereastră găsită în {caught.ElapsedMs} ms " &
                $"({If(caught.Match = AdobeCaptureMatch.ByPid, "după PID", "după titlu")}), PID {_hostedPid}.")
 
-        ' §1: the modern profile launches WITHOUT «/n», so Adobe may hand the document to an instance
-        ' the operator already had open. Say so loudly — the window we are about to reparent then
-        ' belongs to a process K-BOT did not create, and closing it later would close THEIR work.
+        ' The window we are about to reparent may belong to a process K-BOT did not create; closing
+        ' it later would close THEIR work. Said loudly.
         If caught.Match = AdobeCaptureMatch.ByTitle Then
             Report($"ATENȚIE: fereastra încorporată (PID {_hostedPid}) NU a fost creată de K-BOT " &
                    $"(am pornit PID {_startedPid}). Adobe a predat documentul unei instanțe existente — " &
-                   "procesul acela NU va fi închis de K-BOT. Setează «Instanță nouă Adobe» pe «Da» " &
-                   "dacă vrei o instanță separată.")
+                   "procesul acela NU va fi închis de K-BOT.")
         End If
 
         ' The window is hidden at this point (AdobeWindowCapture hid it on sight). Everything from
         ' here to Reveal happens off screen.
-        _capture.AttachAsChild(_hostedWindow, _host.Handle)
-
-        ' Detection happens on the window tree we now own, never on the registry.
-        Dim nodes As List(Of AdobeWindowNode) = AdobeWindowProbe.Walk(_hostedWindow, _host.Handle)
-        Dim detection As AdobeUiDetection = AdobeUiDetector.Detect(nodes)
-        _LastDetection = detection
-        If detection.Generation <> AdobeUiGeneration.Unknown Then _lastGeneration = detection.Generation
-        Report(detection.Describe())
-        If detection.Generation = AdobeUiGeneration.Unknown Then
-            ' The full tree, so the next person has the evidence rather than a verdict.
-            For Each n As AdobeWindowNode In nodes
-                Report(AdobeWindowProbe.DescribeNode(n))
-            Next
-        End If
-
-        Dim choice As AdobeProfileChoice = AdobeViewerProfiles.Resolve(Mode, detection)
-        Dim profile As AdobeViewerProfile = choice.Profile.WithNewInstance(NewInstanceMode)
-        _CurrentChoice = choice
-        If choice.Mismatch Then
-            Report($"ATENȚIE: setarea forțează profilul «{choice.Profile.Name}», dar arborele de ferestre " &
-                   $"arată o interfață {If(choice.Detected = AdobeUiGeneration.Modern, "modernă", "clasică")}. " &
-                   "Previzualizarea va arăta greșit — schimbă «Mod vizualizator Adobe» pe «Automat».")
-        End If
-
-        ' Auto only: if the detected profile needs DIFFERENT LAUNCH FLAGS from the ones we just used,
-        ' relaunch once. Geometry can be re-applied in place; «/n», «/s» and the /A parameters cannot.
-        If allowRelaunch AndAlso Not _relaunchedForProfile AndAlso NeedsRelaunch(launchProfile, profile) Then
-            _relaunchedForProfile = True
-            Report($"Profil detectat «{profile.Name}» diferă de cel de pornire «{launchProfile.Name}» " &
-                   "la parametrii de lansare — repornesc Adobe o singură dată cu profilul corect.")
-            Detach()
-            _generation += 1
-            Return Await LaunchAndHostAsync(adobePath, pdfPath, _generation, allowRelaunch:=False).ConfigureAwait(True)
-        End If
-
-        ApplyGeometry(profile, "Poziție")
-        ' Only now does the window become visible — placed, sized and inside the panel.
+        _originalStyle = _capture.AttachAsChild(_hostedWindow, _host.Handle).ToInt64()
+        WatchClosingForm()
+        Fill("Poziție")
+        ' Only now does the window become visible — inside the panel, filling it.
         _capture.Reveal(_hostedWindow)
-
-        If PopupWatchEnabled AndAlso profile.HidePopups Then
-            Dim pids As New List(Of Integer)()
-            If _hostedPid <> 0 Then pids.Add(_hostedPid)
-            If _startedPid <> 0 AndAlso Not pids.Contains(_startedPid) Then pids.Add(_startedPid)
-            _watcher.Start(_host.Handle, pids)
-            _watcher.Sweep()
-        End If
 
         ' Slice 0078: armed as soon as the window is visible -- the operator can sign from now on.
         StartSaveTrap()
@@ -410,11 +373,10 @@ Public NotInheritable Class AdobeReaderHost
         ' window can stay blank.
         Await Task.Delay(_options.RedrawDelayMs).ConfigureAwait(True)
         If gen <> _generation Then Return New AdobeHostResult(AdobeHostStatus.Superseded, "", Nothing)
-        ApplyGeometry(profile, "Poziție (a doua trecere)")
+        Fill("Poziție (a doua trecere)")
 
-        Dim note As String = ""
-        If detection.Generation = AdobeUiGeneration.Unknown Then note = AdobeUiDetector.UnrecognisedNote
-        Return New AdobeHostResult(AdobeHostStatus.Hosted, note, choice, caught.ElapsedMs, caught.Match)
+        If ReadModeEnabled Then ArmReadMode()
+        Return New AdobeHostResult(AdobeHostStatus.Hosted, "", Nothing, caught.ElapsedMs, caught.Match)
     End Function
 
     ' A superseded launch must not leak a process. Only ever applied to a PID we started ourselves.
@@ -429,54 +391,26 @@ Public NotInheritable Class AdobeReaderHost
         End Try
     End Sub
 
-    ' Only LAUNCH-time differences justify a relaunch; geometry is re-applied in place.
-    Private Shared Function NeedsRelaunch(used As AdobeViewerProfile, wanted As AdobeViewerProfile) As Boolean
-        If used Is Nothing OrElse wanted Is Nothing Then Return False
-        Return used.NewInstance <> wanted.NewInstance OrElse
-               used.NoSplash <> wanted.NoSplash OrElse
-               Not String.Equals(used.OpenParametersText(), wanted.OpenParametersText(), StringComparison.Ordinal)
-    End Function
-
     ''' <summary>
-    ''' Re-places the hosted window under the current profile. Called on every host resize; safe (and
-    ''' silent) when nothing is hosted.
+    ''' Makes the hosted window fill the panel again. Called on every host resize; safe (and silent)
+    ''' when nothing is hosted.
     ''' </summary>
     Public Sub Relayout()
         Try
-            If Not IsHosting OrElse _CurrentChoice Is Nothing Then Return
-            ApplyGeometry(_CurrentChoice.Profile.WithNewInstance(NewInstanceMode), Nothing)
+            If Not IsHosting Then Return
+            Fill(Nothing)
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHost.Relayout", ex)
         End Try
     End Sub
 
-    ''' <summary>
-    ''' Re-applies a (possibly new) profile to the window already hosted, without relaunching. This
-    ''' is what makes the setting take effect on the CURRENT document: geometry, yes — launch flags
-    ''' need the next document.
-    ''' </summary>
-    Public Sub ReapplyProfile()
-        Try
-            If Not IsHosting Then Return
-            Dim choice As AdobeProfileChoice = AdobeViewerProfiles.Resolve(Mode, _LastDetection)
-            _CurrentChoice = choice
-            Report("Profil reaplicat pe documentul curent: " & choice.Profile.Describe())
-            If choice.Mismatch Then
-                Report("ATENȚIE: profilul forțat nu se potrivește cu interfața Adobe detectată.")
-            End If
-            ApplyGeometry(choice.Profile.WithNewInstance(NewInstanceMode), "Poziție (profil reaplicat)")
-        Catch ex As Exception
-            GlobalErrorLog.Write("AdobeReaderHost.ReapplyProfile", ex)
-        End Try
-    End Sub
-
-    ' Places the window and REPORTS WHAT ACTUALLY HAPPENED — Adobe can refuse or clamp a size, and a
-    ' request it ignored must not read like a success (the lesson pass 4 of slice 0023 paid for).
-    ' Pass Nothing as `what` for the silent resize path, which would otherwise flood the log.
-    Private Sub ApplyGeometry(profile As AdobeViewerProfile, what As String)
+    ' The window gets exactly the panel's client area -- no offset, no oversize. REPORTS WHAT
+    ' ACTUALLY HAPPENED: Adobe can refuse or clamp a size. Nothing as `what` = the silent resize path.
+    Private Sub Fill(what As String)
         If Not IsHosting Then Return
-        Dim wanted As Rectangle = AdobeHostGeometry.Compute(_host.ClientSize, profile)
-        If wanted.Width <= 0 OrElse wanted.Height <= 0 Then Return
+        Dim size As Size = _host.ClientSize
+        If size.Width <= 0 OrElse size.Height <= 0 Then Return
+        Dim wanted As New Rectangle(0, 0, size.Width, size.Height)
 
         Dim before As Rectangle = AdobeWindowHosting.RectInParent(_hostedWindow)
         AdobeWindowHosting.Place(_hostedWindow, wanted)
@@ -494,6 +428,235 @@ Public NotInheritable Class AdobeReaderHost
         End If
     End Sub
 
+    ' ── Read Mode (Ctrl+H) ──────────────────────────────────────────────────────
+    '
+    ' Same conditions as the ActiveX surface's Read Mode, checked on a short timer (the hosted window
+    ' has no load event of its own):
+    '  1. the panel is on screen;
+    '  2. the page view («AVPageView») inside the hosted window is visible and has a size;
+    '  3. no burst of script alerts is running (AdobeSaveTrap.InScriptBurst) -- Ctrl+H sent while
+    '     Adobe recovers from them did not hold on the ActiveX engine (24.09.2026);
+    '  4. the K-BOT form holding the panel is ENABLED (no modal alert) and is the FOREGROUND window
+    '     -- SendInput types into whatever has the keyboard;
+    '  5. after SetFocus on the page view, the keyboard focus really is inside the hosted window.
+    ' Sent ONCE per document. When the conditions never hold, the operator is told to press Ctrl+H.
+    ' Read Mode is a state of the open document: nothing of it is saved in Adobe's preferences.
+
+    Private Const ReadModeTickMs As Integer = 150
+    Private Const ReadModeMaxMs As Integer = 30000
+    Private Const PageViewTitle As String = "AVPageView"
+    Private Const VK_H As UShort = &H48US
+    Private Const VK_S As UShort = &H53US
+    Private ReadOnly _readModeTimer As New System.Windows.Forms.Timer()
+    ' Slice 0078-05: the Ctrl+<key> combinations waiting for the conditions above (H = Read Mode,
+    ' S = the save K-BOT asks for after a signature, see RequestSave). Sent in order, each once.
+    Private ReadOnly _pendingKeys As New List(Of UShort)()
+    Private _readModeUntil As DateTime
+    Private _readModeWait As String
+    ' Measured 29.09.2026: right after the Token Logon closed, SetFocus on the page did not take and
+    ' Ctrl+S was dropped. The focus is tried again (the Adobe window first, then the page) a few
+    ' times, a little later each time, before giving up.
+    Private Const FocusAttempts As Integer = 3
+    Private Const FocusRetryMs As Integer = 500
+    Private _focusFailures As Integer
+    Private _retryNotBefore As DateTime = DateTime.MinValue
+
+    ''' <summary>
+    ''' Slice 0078-05: raised (UI thread) when the save K-BOT asked for (<see cref="RequestSave"/>)
+    ''' could not be sent to Adobe. Argument = the Romanian sentence for the operator, who must save
+    ''' by hand or the change the form made after the signature is lost.
+    ''' </summary>
+    Public Event SaveNotSent As Action(Of String)
+
+    ''' <summary>Slice 0078-05: raised (UI thread) when the Ctrl+S asked for by <see cref="RequestSave"/> went out.</summary>
+    Public Event SaveKeysSent As Action
+
+    ' Reached from LaunchAndHostAsync (wrapped).
+    Private Sub ArmReadMode()
+        QueueKey(VK_H)
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0078-05: asks the hosted Adobe to SAVE the document (Ctrl+S, under the same conditions
+    ''' as Read Mode; a «Save As» it may show goes through the trap as usual). Used after a signature:
+    ''' the form's postSign scripts change the document after it was saved, and that change -- which
+    ''' unlocks the next signer -- is lost unless it is saved too. False when nothing is hosted.
+    ''' </summary>
+    Public Function RequestSave() As Boolean
+        Try
+            If Not IsHosting Then Return False
+            Report("Salvare cerută de K-BOT după semnătură: Ctrl+S în așteptare.")
+            QueueKey(VK_S)
+            Return True
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.RequestSave", ex)
+            Return False
+        End Try
+    End Function
+
+    Private Sub QueueKey(vk As UShort)
+        If Not _pendingKeys.Contains(vk) Then _pendingKeys.Add(vk)
+        _focusFailures = 0
+        _retryNotBefore = DateTime.MinValue
+        _readModeWait = Nothing
+        _readModeUntil = DateTime.UtcNow.AddMilliseconds(ReadModeMaxMs)
+        _readModeTimer.Start()
+    End Sub
+
+    Private Sub DisarmReadMode()
+        _readModeTimer.Stop()
+        _pendingKeys.Clear()
+    End Sub
+
+    ' Trap event, UI thread. Boundary: log and swallow.
+    Private Sub OnScriptBurstEnded()
+        Try
+            If _readModeTimer.Enabled Then TrySendPendingKeys()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.OnScriptBurstEnded", ex)
+        End Try
+    End Sub
+
+    ' Timer: log and swallow.
+    Private Sub OnReadModeTick(sender As Object, e As EventArgs)
+        Try
+            TrySendPendingKeys()
+        Catch ex As Exception
+            DisarmReadMode()
+            GlobalErrorLog.Write("AdobeReaderHost.OnReadModeTick", ex)
+        End Try
+    End Sub
+
+    ' A combination that will not be sent: logged; for the save, the operator is told as well.
+    Private Sub GiveUp(vk As UShort, reason As String)
+        Report($"{reason} {ManualHint(vk)}")
+        If vk = VK_S Then
+            RaiseEvent SaveNotSent("K-BOT nu a putut salva documentul după semnătură (Adobe nu a primit tastele)." &
+                                   Environment.NewLine & Environment.NewLine &
+                                   "Faceți clic în document și apăsați Ctrl+S, ca schimbările făcute de formular după " &
+                                   "semnare să fie salvate. Fără ele, semnătura următoare nu se poate aplica.")
+        End If
+    End Sub
+
+    Private Shared Function KeyName(vk As UShort) As String
+        Return "Ctrl+" & ChrW(vk)
+    End Function
+
+    ' What the operator must do by hand when a combination could not be sent.
+    Private Shared Function ManualHint(vk As UShort) As String
+        If vk = VK_S Then Return "Salvați documentul (Ctrl+S) ca să nu se piardă schimbarea de după semnătură."
+        Return "Apăsați Ctrl+H în document pentru a ascunde barele."
+    End Function
+
+    Private Sub TrySendPendingKeys()
+        If Not IsHosting OrElse _pendingKeys.Count = 0 Then
+            DisarmReadMode()
+            Return
+        End If
+        If DateTime.UtcNow < _retryNotBefore Then Return
+        Dim names As String = String.Join(", ", _pendingKeys.Select(Function(k) KeyName(k)))
+        Dim page As IntPtr
+        Dim wait As String = ReadModeBlocker(page)
+        If wait IsNot Nothing Then
+            If DateTime.UtcNow > _readModeUntil Then
+                Dim failed As List(Of UShort) = _pendingKeys.ToList()
+                DisarmReadMode()
+                For Each vk As UShort In failed
+                    GiveUp(vk, $"{KeyName(vk)} NU a fost trimis în {ReadModeMaxMs \ 1000} s ({wait}).")
+                Next
+            ElseIf wait <> _readModeWait Then
+                _readModeWait = wait
+                Report($"{names}: aștept — {wait}")
+            End If
+            Return
+        End If
+
+        ' After a failed attempt the Adobe window itself is focused first, then the page.
+        If _focusFailures > 0 Then AdobeNativeMethods.SetFocus(_hostedWindow)
+        AdobeNativeMethods.SetFocus(page)
+        Dim focus As IntPtr = AdobeNativeMethods.GetFocus()
+        If focus <> page AndAlso focus <> _hostedWindow AndAlso Not AdobeNativeMethods.IsChild(_hostedWindow, focus) Then
+            _focusFailures += 1
+            If _focusFailures < FocusAttempts Then
+                ' Keys stay queued; the timer tries again after a pause.
+                Report($"{names}: documentul nu a primit focusul tastaturii (focus la 0x{focus.ToInt64():X}) — " &
+                       $"reîncerc peste {FocusRetryMs} ms (încercarea {_focusFailures + 1}/{FocusAttempts}).")
+                _retryNotBefore = DateTime.UtcNow.AddMilliseconds(FocusRetryMs)
+                _readModeUntil = DateTime.UtcNow.AddMilliseconds(ReadModeMaxMs)
+                Return
+            End If
+            Dim failed As List(Of UShort) = _pendingKeys.ToList()
+            DisarmReadMode()
+            For Each vk As UShort In failed
+                GiveUp(vk, $"ATENȚIE — documentul nu a primit focusul tastaturii după {FocusAttempts} încercări; " &
+                           $"{KeyName(vk)} NU a fost trimis (ar fi ajuns în K-BOT).")
+            Next
+            Return
+        End If
+
+        Dim keysToSend As List(Of UShort) = _pendingKeys.ToList()
+        DisarmReadMode()
+
+        For Each vk As UShort In keysToSend
+            Dim keys As AdobeNativeMethods.INPUT() = {
+                AdobeNativeMethods.KeyInput(AdobeNativeMethods.VK_CONTROL, False),
+                AdobeNativeMethods.KeyInput(vk, False),
+                AdobeNativeMethods.KeyInput(vk, True),
+                AdobeNativeMethods.KeyInput(AdobeNativeMethods.VK_CONTROL, True)}
+            Dim sent As UInteger = AdobeNativeMethods.SendInput(CUInt(keys.Length), keys,
+                Runtime.InteropServices.Marshal.SizeOf(GetType(AdobeNativeMethods.INPUT)))
+            If sent = keys.Length Then
+                Report($"{KeyName(vk)} trimis documentului.")
+                If vk = VK_S Then RaiseEvent SaveKeysSent()
+            Else
+                Dim err As Integer = Runtime.InteropServices.Marshal.GetLastWin32Error()
+                GiveUp(vk, $"ATENȚIE — {KeyName(vk)} nu a putut fi trimis ({sent}/{keys.Length} taste, eroarea {err}).")
+            End If
+        Next
+    End Sub
+
+    ' Nothing when the pending keys may be sent now; otherwise why not (Romanian, for the log).
+    Private Function ReadModeBlocker(ByRef page As IntPtr) As String
+        page = IntPtr.Zero
+        If _host.Handle = IntPtr.Zero OrElse Not AdobeNativeMethods.IsWindowVisible(_host.Handle) Then Return "panoul nu e pe ecran"
+        For Each h As IntPtr In AdobeNativeMethods.Descendants(_hostedWindow)
+            If Not String.Equals(AdobeNativeMethods.GetTitle(h), PageViewTitle, StringComparison.Ordinal) Then Continue For
+            If Not AdobeNativeMethods.IsWindowVisible(h) Then Continue For
+            Dim r As Rectangle = AdobeNativeMethods.RectInParent(h)
+            If r.Width > 0 AndAlso r.Height > 0 Then
+                page = h
+                Exit For
+            End If
+        Next
+        If page = IntPtr.Zero Then Return "pagina nu e încă așezată"
+        If _saveTrap.InScriptBurst Then Return "mesaje de script în curs"
+        Dim form As IntPtr = AdobeNativeMethods.GetAncestor(_host.Handle, AdobeNativeMethods.GA_ROOT)
+        If form = IntPtr.Zero Then Return "panoul nu e într-o fereastră"
+        If Not AdobeNativeMethods.IsWindowEnabled(form) Then Return "fereastra K-BOT e blocată de un mesaj"
+        Dim fg As IntPtr = AdobeNativeMethods.GetForegroundWindow()
+        If fg <> form Then
+            ' Measured 29.09.2026: ~4.5 s of every open were lost here -- the foreground is taken by
+            ' the Adobe process launched with «/n» (it hands the document over and lingers). When the
+            ' foreground belongs to an Adobe process, K-BOT takes it back instead of waiting.
+            Dim fgPid As Integer = AdobeNativeMethods.OwnerPid(fg)
+            Dim fgText As String = $"0x{fg.ToInt64():X} «{AdobeNativeMethods.GetTitle(fg)}» clasă={AdobeNativeMethods.GetClass(fg)} proces={fgPid}"
+            If IsAdobeProcess(fgPid) AndAlso AdobeNativeMethods.SetForegroundWindow(form) AndAlso
+               AdobeNativeMethods.GetForegroundWindow() = form Then
+                Report($"Prim-planul era la Adobe ({fgText}) — readus la K-BOT.")
+                Return Nothing
+            End If
+            Return $"fereastra K-BOT nu e în prim-plan (prim-plan: {fgText})"
+        End If
+        Return Nothing
+    End Function
+
+    ' The foreground belongs to the hosted / launched Adobe, or to any Adobe viewer process.
+    Private Function IsAdobeProcess(pid As Integer) As Boolean
+        If pid <= 0 Then Return False
+        If pid = _hostedPid OrElse pid = _startedPid OrElse _launchedPids.Contains(pid) Then Return True
+        Return AdobeWindowHosting.AdobeProcessIds().Contains(pid)
+    End Function
+
     ''' <summary>
     ''' Lets the hosted window go, in the mode <see cref="Options"/> selects.
     '''
@@ -503,7 +666,7 @@ Public NotInheritable Class AdobeReaderHost
     ''' </summary>
     Public Sub Detach()
         Try
-            _watcher.Stop()
+            DisarmReadMode()
             _hook.Remove()
             ' Slice 0078: a Save we pressed must finish before Adobe is closed or killed, or the
             ' signed file could be cut in half.
@@ -518,7 +681,6 @@ Public NotInheritable Class AdobeReaderHost
             _hostedWindow = IntPtr.Zero
             _hostedPid = 0
             _startedPid = 0
-            _CurrentChoice = Nothing
 
             If hwnd = IntPtr.Zero AndAlso pid <= 0 Then Return
 
@@ -534,17 +696,80 @@ Public NotInheritable Class AdobeReaderHost
         End Try
     End Sub
 
+    ' ── Last release at the size of the screen (slice 0078-05, opt-in) ────────────────────────
+
+    ' Watches the form that holds the panel: its closing is the last release of the window.
+    ' Reached from LaunchAndHostAsync (wrapped).
+    Private Sub WatchClosingForm()
+        Dim surface As ControlHostSurface = TryCast(_host, ControlHostSurface)
+        Dim form As Form = surface?.Control.FindForm()
+        If form Is _closingForm Then Return
+        UnwatchClosingForm()
+        _closingForm = form
+        If _closingForm IsNot Nothing Then AddHandler _closingForm.FormClosing, AddressOf OnClosingFormClosing
+    End Sub
+
+    Private Sub UnwatchClosingForm()
+        If _closingForm Is Nothing Then Return
+        RemoveHandler _closingForm.FormClosing, AddressOf OnClosingFormClosing
+        _closingForm = Nothing
+    End Sub
+
+    ' UI boundary (event handler): log and swallow.
+    Private Sub OnClosingFormClosing(sender As Object, e As FormClosingEventArgs)
+        Try
+            If e.Cancel Then Return
+            ReleaseAtScreenSize()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.OnClosingFormClosing", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' The last release, when <see cref="AdobeHostOptions.RestoreScreenSizeOnExit"/> is on: the
+    ''' window leaves the panel, is maximized over the screen it is on and closed there, so Adobe
+    ''' keeps that size instead of the panel's (see <see cref="AdobeScreenRelease"/>). Does nothing
+    ''' when the option is off or nothing is hosted -- <see cref="Detach"/> stays the release then.
+    ''' </summary>
+    Private Sub ReleaseAtScreenSize()
+        Try
+            If Not _options.RestoreScreenSizeOnExit OrElse Not IsHosting Then Return
+            DisarmReadMode()
+            _hook.Remove()
+            If _saveTrap.IsBusy Then _saveTrap.WaitWhileBusy(5000)
+            _saveTrap.Stop()
+            _hostedPath = Nothing
+
+            Dim hwnd As IntPtr = _hostedWindow
+            Dim pid As Integer = _hostedPid
+            _hostedWindow = IntPtr.Zero
+            _hostedPid = 0
+            _startedPid = 0
+
+            Dim area As Rectangle = Screen.FromHandle(hwnd).WorkingArea
+            Dim killed As Boolean
+            Dim message As String = _screenRelease.Run(hwnd, pid, _originalStyle, area, _launchedPids, killed)
+            If message.Length > 0 Then Report(message)
+            If killed Then _launchedPids.Remove(pid)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.ReleaseAtScreenSize", ex)
+        End Try
+    End Sub
+
     Private Sub Report(line As String)
         _log?.Invoke(line)
     End Sub
 
     Public Sub Dispose() Implements IDisposable.Dispose
         Try
+            UnwatchClosingForm()
+            ReleaseAtScreenSize()
             Detach()
-            _watcher.Dispose()
+            _readModeTimer.Dispose()
             _hook.Dispose()
             RemoveHandler _saveTrap.Saved, AddressOf OnTrapSaved
             RemoveHandler _saveTrap.Failed, AddressOf OnTrapFailed
+            RemoveHandler _saveTrap.ScriptBurstEnded, AddressOf OnScriptBurstEnded
             _saveTrap.Dispose()
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHost.Dispose", ex)

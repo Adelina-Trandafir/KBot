@@ -15,6 +15,8 @@ Partial Class PdfSigningHarnessForm
     Friend WithEvents btnDinServer As Button
     Friend WithEvents btnAlege As Button
     Friend WithEvents chkIncarca As CheckBox
+    Friend WithEvents chkSimuleaza As CheckBox
+    Friend WithEvents chkGazduita As CheckBox
     Friend WithEvents btnCompara As Button
     Friend WithEvents btnJurnal As Button
 
@@ -57,6 +59,8 @@ Partial Class PdfSigningHarnessForm
         btnDinServer = New Button()
         btnAlege = New Button()
         chkIncarca = New CheckBox()
+        chkSimuleaza = New CheckBox()
+        chkGazduita = New CheckBox()
         btnCompara = New Button()
         btnJurnal = New Button()
         pnlStare = New FlowLayoutPanel()
@@ -88,10 +92,12 @@ Partial Class PdfSigningHarnessForm
         pnlBara.Controls.Add(btnDinServer)
         pnlBara.Controls.Add(btnAlege)
         pnlBara.Controls.Add(chkIncarca)
+        pnlBara.Controls.Add(chkSimuleaza)
+        pnlBara.Controls.Add(chkGazduita)
         pnlBara.Controls.Add(btnCompara)
         pnlBara.Controls.Add(btnJurnal)
         pnlBara.Dock = DockStyle.Top
-        pnlBara.Height = 44
+        pnlBara.Height = 76
         pnlBara.Name = "pnlBara"
         pnlBara.Padding = New Padding(8, 6, 8, 4)
         pnlBara.TabIndex = 0
@@ -159,13 +165,35 @@ Partial Class PdfSigningHarnessForm
         chkIncarca.Text = "Încarcă pe server după semnare"
         chkIncarca.UseVisualStyleBackColor = True
         '
+        ' chkSimuleaza -- slice 0078-05: a real signing session whose upload is only RECORDED
+        ' (no server, no login): shows whether and when the signed file would be sent
+        '
+        chkSimuleaza.AutoSize = True
+        chkSimuleaza.Margin = New Padding(12, 8, 3, 0)
+        chkSimuleaza.Name = "chkSimuleaza"
+        chkSimuleaza.TabIndex = 7
+        chkSimuleaza.Text = "Doar simulează încărcarea"
+        chkSimuleaza.UseVisualStyleBackColor = True
+        '
+        ' chkGazduita -- slice 0078-05: this bench's viewer uses the hosted Adobe window, whatever
+        ' «Setări» says (applies from the next document)
+        '
+        chkGazduita.AutoSize = True
+        chkGazduita.Checked = True
+        chkGazduita.CheckState = CheckState.Checked
+        chkGazduita.Margin = New Padding(12, 8, 3, 0)
+        chkGazduita.Name = "chkGazduita"
+        chkGazduita.TabIndex = 8
+        chkGazduita.Text = "Forțează fereastra găzduită"
+        chkGazduita.UseVisualStyleBackColor = True
+        '
         ' btnCompara
         '
         btnCompara.AutoSize = True
         btnCompara.Margin = New Padding(12, 3, 3, 3)
         btnCompara.Name = "btnCompara"
         btnCompara.Padding = New Padding(8, 2, 8, 2)
-        btnCompara.TabIndex = 7
+        btnCompara.TabIndex = 9
         btnCompara.Text = "Compară cu serverul"
         btnCompara.UseVisualStyleBackColor = True
         '
@@ -174,7 +202,7 @@ Partial Class PdfSigningHarnessForm
         btnJurnal.AutoSize = True
         btnJurnal.Name = "btnJurnal"
         btnJurnal.Padding = New Padding(8, 2, 8, 2)
-        btnJurnal.TabIndex = 8
+        btnJurnal.TabIndex = 10
         btnJurnal.Text = "Golește jurnalul"
         btnJurnal.UseVisualStyleBackColor = True
         '
@@ -197,7 +225,7 @@ Partial Class PdfSigningHarnessForm
         lblSesiune.TabIndex = 0
         lblSesiune.Text = "Neautentificat"
         '
-        ' lblMotor -- the operator's engine setting, shown, never changed by the bench
+        ' lblMotor -- the engine this bench's viewer uses (the operator's, unless chkGazduita forces the hosted window)
         '
         lblMotor.AutoSize = True
         lblMotor.Margin = New Padding(3, 3, 16, 0)

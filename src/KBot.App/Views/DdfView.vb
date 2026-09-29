@@ -779,16 +779,17 @@ Public Class DdfView
             EndSigning()
             Return Nothing
         End If
-        If _signing IsNot Nothing AndAlso _signing.Matches(PdfDocKind.Ddf, r.Idrev, pdfPath) Then Return _signing
-
-        EndSigning()
-        Dim cachePath As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, r.NumarRev)
         ' A kept copy on screen started from ITS precedent, not from the server's current sha.
         Dim serverSha As String = r.PdfSha256
         Dim pending As PendingPdfUpload = PendingPdfUploads.TryGet(PdfDocKind.Ddf, r.Idrev)
         If pending IsNot Nothing AndAlso String.Equals(pending.PdfPath, pdfPath, StringComparison.OrdinalIgnoreCase) Then
             serverSha = If(pending.ShaPrecedent = ApiClient.ShaFaraRand, String.Empty, pending.ShaPrecedent)
         End If
+        ' Slice 0078-04: kept only while the server version is the one it started from.
+        If _signing IsNot Nothing AndAlso _signing.Matches(PdfDocKind.Ddf, r.Idrev, pdfPath, serverSha) Then Return _signing
+
+        EndSigning()
+        Dim cachePath As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, r.NumarRev)
         _signing = New PdfSigningSession(PdfDocKind.Ddf, r.Idrev, pdfPath, cachePath, serverSha, _apiClient)
         AddHandler _signing.Completed, AddressOf OnSigningCompleted
         _signing.Begin()

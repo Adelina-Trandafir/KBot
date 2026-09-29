@@ -70,9 +70,10 @@ Public NotInheritable Class DdfXmlBuilder
     ''' și dat lui XfaWriter. Oglindește GenereazaPDF: form1 -> NOTAFD -> InsereazaAtasamente.
     '''
     ''' <para>Slice 0081-02: <paramref name="mode"/> = <see cref="DdfPdfMode.Interim"/> for a revision
-    ''' not sent yet -- header and section A only: section B carries no rows and its option is
-    ''' left unticked (<c>CheckBox9 = 0</c>), and no FOREXE capture rides along. The operator signs A
-    ''' on it; forexecab has not answered yet, so there is nothing to put in B.
+    ''' not sent yet -- no FOREXE capture rides along, and (slice 0078-04) section B is a PLACEHOLDER,
+    ''' ticked: one row per section A row with Cod angajament «___________» (11), Indicator «___» and program
+    ''' «0000000000» (in A too) -- with B empty the form's «Valideaza» never enables the signature
+    ''' field. The operator signs A on it; the real B values come after the send.
     ''' <see cref="DdfPdfMode.Final"/> is the whole document (the output before this slice).</para>
     '''
     ''' <para>Slice 0081-05: <paramref name="capturi"/> = the FOREXE captures (base64 PNG, in the
@@ -87,13 +88,50 @@ Public NotInheritable Class DdfXmlBuilder
                                          Optional mode As DdfPdfMode = DdfPdfMode.Final,
                                          Optional capturi As IEnumerable(Of String) = Nothing) As String
         Dim interim As Boolean = mode = DdfPdfMode.Interim
-        Dim sb As IEnumerable(Of SectiuneBRow) = If(interim, Enumerable.Empty(Of SectiuneBRow)(), sbRows)
+        ' Slice 0078-04: the interim document carries a PLACEHOLDER section B (and program), ticked --
+        ' with section B empty the form's «Valideaza» button never enables the signature field.
+        If interim Then ctx = InterimContext(ctx)
+        Dim sb As IEnumerable(Of SectiuneBRow) = If(interim, InterimSectionB(linii), sbRows)
         ' FOREXE captures (PrtScr) are section B's Table4, never a file attachment (0081-05).
         Dim att As IEnumerable(Of AtasamentRow) = SafeEnum(attRows).Where(Function(a) Not a.PrtScr)
         Dim poze As IEnumerable(Of String) = If(interim, Enumerable.Empty(Of String)(), capturi)
-        Dim formXml As String = BuildFormXml(ctx, antet, revizie, linii, sb, sectiuneaB:=Not interim, capturi:=poze)
-        Dim notafdXml As String = BuildNotafdXml(ctx, antet, revizie, linii, sb, sectiuneaB:=Not interim)
+        Dim formXml As String = BuildFormXml(ctx, antet, revizie, linii, sb, sectiuneaB:=True, capturi:=poze)
+        Dim notafdXml As String = BuildNotafdXml(ctx, antet, revizie, linii, sb, sectiuneaB:=True)
         Return InsertAttachments(formXml, notafdXml, att)
+    End Function
+
+    ' ── Interim placeholders (slice 0078-04) ──────────────────────────────────
+
+    ''' <summary>
+    ''' Placeholder Cod angajament of the interim document (forexecab gives the real one at the send).
+    ''' 11 characters: the form's «Valideaza» refuses any other length («Cod angajament trebuie sa aiba
+    ''' lungimea de 11 caractere», seen in adobe_preview.log 28.09.2026).
+    ''' </summary>
+    Public Const InterimCodAngajament As String = "___________"
+    ''' <summary>Placeholder Indicator of the interim document.</summary>
+    Public Const InterimIndicator As String = "___"
+    ''' <summary>Placeholder program code of the interim document, in section A AND section B.</summary>
+    Public Const InterimProgram As String = "0000000000"
+
+    ' The session globals with the placeholder program; the caller's context is not touched.
+    Private Shared Function InterimContext(ctx As Context) As Context
+        Dim src As Context = If(ctx, New Context())
+        Return New Context() With {.NumeUnitate = src.NumeUnitate, .CodFiscal = src.CodFiscal, .CodProgram = InterimProgram}
+    End Function
+
+    ''' <summary>
+    ''' Section B of the interim document: one row per section A row, with the placeholder code and
+    ''' indicator, section A's SSI (the same text as A's Cell3) and A's values (before + current).
+    ''' ASSUMPTION: the form only needs B filled for «Valideaza»; the real rows replace these later.
+    ''' </summary>
+    Private Shared Function InterimSectionB(linii As IEnumerable(Of LinieSaRow)) As List(Of SectiuneBRow)
+        Return SafeEnum(linii).Select(Function(l) New SectiuneBRow With {
+            .Idrev = l.Idrev,
+            .CodAngajament = InterimCodAngajament,
+            .CodIndicator = InterimIndicator,
+            .CodSSI = Cell3Of(l),
+            .CaAnterior = l.ValPrec, .Inf1 = l.ValCur,
+            .CbAnterior = l.ValPrec, .Inf2 = l.ValCur}).ToList()
     End Function
 
     ' ── form1 (GenereazaXML_PentruPython) ─────────────────────────────────────
@@ -165,7 +203,7 @@ Public NotInheritable Class DdfXmlBuilder
             AddNode(row, "Cell9", ToXmlNum(sb.Inf2))
             table3.Add(row)
         Next
-        ' Slice 0081-02: the interim document leaves option 1 of section B unticked.
+        ' Option 1 of section B (0081-02 left it unticked on the interim; 0078-04 ticks it on both).
         Dim sectB As New XElement("SubformSectiuneaB", New XElement("CheckBox9", If(sectiuneaB, "1", "0")), table3)
         Dim table4 As XElement = Table4Of(capturi)
         If table4 IsNot Nothing Then sectB.Add(New XElement("Subform51", table4))
@@ -384,7 +422,7 @@ End Class
 
 ''' <summary>Slice 0081-02: which of the two PDFs of a revision is being built.</summary>
 Public Enum DdfPdfMode
-    ''' <summary>Before the send: header + section A; section B empty and unticked; no captures.</summary>
+    ''' <summary>Before the send: header + section A + a placeholder section B (slice 0078-04); no captures.</summary>
     Interim = 0
     ''' <summary>After every forexecab action of the revision: header + A + B (+ captures, 0081-05).</summary>
     Final = 1

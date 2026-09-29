@@ -164,6 +164,13 @@ Friend NotInheritable Class AdobeNativeMethods
     Public Shared Function GetForegroundWindow() As IntPtr
     End Function
 
+    ' The top-level window of a child (the K-BOT form a hosted Adobe window sits in).
+    Public Const GA_ROOT As UInteger = 2UI
+
+    <DllImport("user32.dll")>
+    Public Shared Function GetAncestor(hWnd As IntPtr, gaFlags As UInteger) As IntPtr
+    End Function
+
     ' BM_CLICK on a button of a dialog that is NOT active may do nothing (documented for BM_CLICK);
     ' the dialog is activated first. Allowed only while our process owns the foreground.
     <DllImport("user32.dll")>
