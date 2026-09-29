@@ -23,7 +23,7 @@ Partial Public Class WorkflowExecutor
             Dim waitOk = Await TryWaitForElementAsync(parsedSelector, WaitForSelectorState.Attached, action.Timeout)
             If Not waitOk Then Throw New TimeoutException($"[ScrapeTable] Tabelul '{parsedSelector}' nu a apărut în {action.Timeout}s.")
 
-            Dim rawRows = Await ExtractRawRowsAsync(parsedSelector, action)
+            Dim rawRows = Await ExtractRowsCheckedAsync(parsedSelector, action)
 
             If rawRows.Count = 0 Then
                 _logger.LogWarning("[ScrapeTable] Row mode: niciun rând găsit.")
@@ -66,7 +66,7 @@ Partial Public Class WorkflowExecutor
                 Dim pageLabel = If(String.IsNullOrEmpty(physPage), $"{currentPage}", $"{currentPage} [fizic: {physPage}]")
                 LogStep(action, $"Procesez pagina {pageLabel}")
 
-                Dim rawRows = Await ExtractRawRowsAsync(parsedSelector, action)
+                Dim rawRows = Await ExtractRowsCheckedAsync(parsedSelector, action)
                 exitScrape = ProcessRawRows(rawRows, action, allData)
 
                 If exitScrape Then Exit Do

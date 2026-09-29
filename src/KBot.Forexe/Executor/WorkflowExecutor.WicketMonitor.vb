@@ -152,7 +152,8 @@ Partial Public Class WorkflowExecutor
         If alreadyIdle Then tcs.TrySetResult(True)
 
         Try
-            Await Task.WhenAny(tcs.Task, Task.Delay(WicketIdleTimeoutMs))
+            ' Slice 0091: the cap stretches with the operator's multiplier for the waits.
+            Await Task.WhenAny(tcs.Task, Task.Delay(Stretched(WicketIdleTimeoutMs)))
         Finally
             SyncLock _idleTcsLock
                 If _idleTcs Is tcs Then _idleTcs = Nothing

@@ -71,9 +71,10 @@ Public NotInheritable Class DdfXmlBuilder
     '''
     ''' <para>Slice 0081-02: <paramref name="mode"/> = <see cref="DdfPdfMode.Interim"/> for a revision
     ''' not sent yet -- no FOREXE capture rides along, and (slice 0078-04) section B is a PLACEHOLDER,
-    ''' ticked: one row per section A row with Cod angajament «___________» (11), Indicator «___» and program
-    ''' «0000000000» (in A too) -- with B empty the form's «Valideaza» never enables the signature
-    ''' field. The operator signs A on it; the real B values come after the send.
+    ''' ticked: one row per section A row with Cod angajament = the stored «!…» code (0078-06; else
+    ''' «___________», 11), Indicator «___» and program «0000000000» (in A too) -- with B empty the
+    ''' form's «Valideaza» never enables the signature field. The operator signs A on it; the real B
+    ''' values are written into the signed file after the send (<c>DdfSectionBInsert</c>).
     ''' <see cref="DdfPdfMode.Final"/> is the whole document (the output before this slice).</para>
     '''
     ''' <para>Slice 0081-05: <paramref name="capturi"/> = the FOREXE captures (base64 PNG, in the
@@ -91,7 +92,7 @@ Public NotInheritable Class DdfXmlBuilder
         ' Slice 0078-04: the interim document carries a PLACEHOLDER section B (and program), ticked --
         ' with section B empty the form's «Valideaza» button never enables the signature field.
         If interim Then ctx = InterimContext(ctx)
-        Dim sb As IEnumerable(Of SectiuneBRow) = If(interim, InterimSectionB(linii), sbRows)
+        Dim sb As IEnumerable(Of SectiuneBRow) = If(interim, InterimSectionB(linii, antet, sbRows), sbRows)
         ' FOREXE captures (PrtScr) are section B's Table4, never a file attachment (0081-05).
         Dim att As IEnumerable(Of AtasamentRow) = SafeEnum(attRows).Where(Function(a) Not a.PrtScr)
         Dim poze As IEnumerable(Of String) = If(interim, Enumerable.Empty(Of String)(), capturi)
@@ -120,18 +121,35 @@ Public NotInheritable Class DdfXmlBuilder
     End Function
 
     ''' <summary>
-    ''' Section B of the interim document: one row per section A row, with the placeholder code and
-    ''' indicator, section A's SSI (the same text as A's Cell3) and A's values (before + current).
-    ''' ASSUMPTION: the form only needs B filled for «Valideaza»; the real rows replace these later.
+    ''' Section B of the interim document: one row per section A row, with section A's SSI (the same
+    ''' text as A's Cell3) and A's values (before + current).
+    ''' ASSUMPTION: the form only needs B filled for «Valideaza»; the real rows replace these later
+    ''' (slice 0078-06, <c>DdfSectionBInsert</c>).
+    '''
+    ''' <para>Slice 0078-06: the code and the indicator are the ones MariaDB holds for the revision
+    ''' -- a new angajament's «!» + 10 characters, and <c>FX_DDF_REV_SB.CodIndicator</c> matched by
+    ''' position when both sections have the same number of rows -- whenever they have the length
+    ''' the form demands (11 / 3; its «Valideaza» refuses any other). Otherwise the placeholders.
+    ''' K-BOT's own indicator is «!» + 3 characters (4), so in practice the indicator stays «___».</para>
     ''' </summary>
-    Private Shared Function InterimSectionB(linii As IEnumerable(Of LinieSaRow)) As List(Of SectiuneBRow)
-        Return SafeEnum(linii).Select(Function(l) New SectiuneBRow With {
+    Private Shared Function InterimSectionB(linii As IEnumerable(Of LinieSaRow), antet As DdfAntet,
+                                            sbRows As IEnumerable(Of SectiuneBRow)) As List(Of SectiuneBRow)
+        Dim a As List(Of LinieSaRow) = SafeEnum(linii).ToList()
+        Dim server As List(Of SectiuneBRow) = SafeEnum(sbRows).ToList()
+        Dim cod As String = InterimValue(antet?.CodAngajament, InterimCodAngajament)
+        Return a.Select(Function(l, i) New SectiuneBRow With {
             .Idrev = l.Idrev,
-            .CodAngajament = InterimCodAngajament,
-            .CodIndicator = InterimIndicator,
+            .CodAngajament = cod,
+            .CodIndicator = InterimValue(If(server.Count = a.Count, server(i).CodIndicator, Nothing), InterimIndicator),
             .CodSSI = Cell3Of(l),
             .CaAnterior = l.ValPrec, .Inf1 = l.ValCur,
             .CbAnterior = l.ValPrec, .Inf2 = l.ValCur}).ToList()
+    End Function
+
+    ''' <summary>The stored value when it has the placeholder's length, else the placeholder.</summary>
+    Public Shared Function InterimValue(stored As String, placeholder As String) As String
+        Dim v As String = If(stored, String.Empty).Trim()
+        Return If(v.Length = placeholder.Length, v, placeholder)
     End Function
 
     ' ── form1 (GenereazaXML_PentruPython) ─────────────────────────────────────

@@ -119,6 +119,10 @@ Partial Public Class KbotForm
             ' back to the top of the list right after finishing work on an angajament, and the
             ' open view closes with it.
             Await LoadTreeAsync(pastreazaSelectia:=True)
+
+            ' Slice 0091: receptions whose detail arrived cut kept their old lines; the operator
+            ' decides whether to read them again now.
+            Await OferaReimprospatareaReceptiilorAsync(cod, propunere.ReceptiiIncomplete)
             Return True
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DuLaIngestieAsync", ex)
@@ -297,6 +301,79 @@ Partial Public Class KbotForm
                             "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Slice 0091: tells the operator which receptions came from FOREXE with a cut detail (the
+    ''' page was read while it was still arriving) and offers to read ONLY those again, now.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>The save already happened: the server left those receptions' lines as they were
+    ''' and only warned on them. «Nu» is a real answer -- the Recepții view's refresh button does
+    ''' the same thing later.</para>
+    ''' <para>Only the cut receptions are read: every other local reception's day goes into the
+    ''' skip list, the same list the reception picker of slice 0060 builds. A reception FOREXE has
+    ''' and K-BOT does not is downloaded anyway (nobody can skip what they do not know).</para>
+    ''' <para>If the second read is cut again, the same question comes back through
+    ''' <see cref="DuLaIngestieAsync"/>; the operator stops it by answering «Nu».</para>
+    ''' </remarks>
+    Private Async Function OferaReimprospatareaReceptiilorAsync(cod As String,
+                                                                taiate As List(Of ReceptieIncompleta)) As Task
+        Try
+            If taiate Is Nothing OrElse taiate.Count = 0 Then Return
+
+            Dim ro As Globalization.CultureInfo = Globalization.CultureInfo.GetCultureInfo("ro-RO")
+            Dim lista As New Text.StringBuilder()
+            For Each t As ReceptieIncompleta In taiate
+                lista.AppendLine($"  • {t.DataR:dd.MM.yyyy} · {t.Suma.ToString("N2", ro)} — {t.Motiv}")
+            Next
+            Dim intrebare As String =
+                $"La {taiate.Count} {If(taiate.Count = 1, "recepție", "recepții")} ale lui «{cod}» FOREXE a trimis " &
+                "detaliul incomplet (pagina era încă în încărcare):" & Environment.NewLine &
+                lista.ToString() & Environment.NewLine &
+                "Descărcarea s-a salvat, dar liniile acestor recepții au rămas cele de dinainte." &
+                Environment.NewLine & Environment.NewLine &
+                "Le citesc din nou acum, doar pe ele?" & Environment.NewLine &
+                "(Se poate și mai târziu, din butonul de reîmprospătare al vederii «Recepții».)"
+            If KBotMessage.Show(Me, intrebare, $"K-BOT — Recepții incomplete ({cod})",
+                                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then Return
+
+            ' Skip every local day that is not one of the cut receptions.
+            Dim info As ReceptiiInfo
+            busyBar.Running = True
+            Try
+                info = Await WithReauth(Of ReceptiiInfo)(
+                    Function() _apiClient.GetReceptiiAsync(cod, CancellationToken.None))
+            Finally
+                busyBar.Running = False
+            End Try
+            Dim zileTaiate As HashSet(Of Date) = taiate.Select(Function(t) t.DataR.Date).ToHashSet()
+            Dim sarite As List(Of Date) =
+                If(info?.Receptii, New List(Of ReceptieRow)()).
+                    Where(Function(r) r.DataR.HasValue AndAlso Not zileTaiate.Contains(r.DataR.Value.Date)).
+                    Select(Function(r) r.DataR.Value.Date).Distinct().ToList()
+
+            Dim pachet As PrelucrareRezultat
+            busyBar.Running = True
+            Try
+                pachet = Await _controller.DownloadReceptiiAsync(cod, sarite)
+            Finally
+                busyBar.Running = False
+            End Try
+            If pachet Is Nothing Then
+                AratEsecul("Recitirea recepțiilor incomplete")
+                Return
+            End If
+            If Await DuLaIngestieAsync(cod, pachet) Then
+                Await TrimiteCapturileAsync(cod, CapturaStore.FelReceptie)
+            End If
+        Catch ex As Exception
+            ' UI boundary: the first save stands; only the second read failed.
+            GlobalErrorLog.Write("MainForm.OferaReimprospatareaReceptiilorAsync", ex)
+            KBotMessage.Show(Me, "Recitirea recepțiilor incomplete a eșuat: " & ex.Message & Environment.NewLine &
+                            "Descărcarea de dinainte rămâne salvată; reîncercați din vederea «Recepții».",
+                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Function
 
     ''' <summary>
     ''' Refreshes ONLY the reservations of the given angajament -- the right footer icon of the

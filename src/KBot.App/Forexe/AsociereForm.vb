@@ -1150,6 +1150,9 @@ Public Class AsociereForm
     ''' ingested before that get them back through «Refacere din istoric» in the Recepții view.
     ''' Nothing here filters on <c>Valoare</c> — do not add such a filter.</para>
     ''' </summary>
+    ''' <summary>F14 veto switched off (29.09.2026); mirrors <c>F14_PAUSED</c> on the server.</summary>
+    Private Const F14Paused As Boolean = True
+
     Private Function MotivulRefuzului(inst As InstantaneuLegat, rec As ReceptiePropusa) As String
         Dim indInst As HashSet(Of String) = inst.Indicatori()
         Dim indRec As New HashSet(Of String)(
@@ -1164,7 +1167,13 @@ Public Class AsociereForm
         ' de ștergere), deci mulțimea față de care s-ar compara e tocmai cea care se construiește
         ' acum. Verificat oricum, ar refuza primul instantaneu al fiecărei recepții noi — adică
         ' exact gestul care le creează.
-        If Not EsteReceptieNoua(rec) AndAlso indInst.Count > 0 AndAlso Not indInst.IsSubsetOf(indRec) Then
+        '
+        ' PAUSED (29.09.2026) together with the server (`F14_PAUSED` in prelucrare_asociere.py):
+        ' some receptions have incomplete `RHR` lines, so the check refused correct placements.
+        ' Slice 0091: nor to a reception whose detail arrived cut in this download -- its
+        ' lines are the old ones, the server only warns there.
+        If Not F14Paused AndAlso Not rec.DetaliuIncomplet AndAlso Not EsteReceptieNoua(rec) AndAlso
+           indInst.Count > 0 AndAlso Not indInst.IsSubsetOf(indRec) Then
             Dim lipsa As String = String.Join(", ", indInst.Except(indRec).OrderBy(Function(x) x))
             Return $"Instantaneul numește indicatorii {lipsa}, pe care recepția nu îi are."
         End If

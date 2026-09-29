@@ -5,6 +5,24 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Current focus (sliceless)
 
+- **MOVED TO SLICE 0091 (same day)** — the cause turned out to be a cut `Detaliu` scrape, see
+  `SLICE-0091-detaliu-taiat-viteza-asteptari.md`; the note below is kept as it was written.
+- **No slice (operator's request, 29.09.2026) — F14 PAUSED.** Run 34 (017_SCNB,
+  AAB2DH3X6SK) was refused by F14: the snapshot of 12.01.2026 names AA2 (at 0), reception 84's
+  `RHR` has no AA2. Receptions 86 (RHR = only AA6=0 against 286417.00) and 90 have the same
+  gap, so the `RHR` lines are what is incomplete, not the snapshots. F14 now only writes a
+  journal line + a warning: `F14_PAUSED = True` in `PYTHON/routes/forexe/prelucrare_asociere.py`
+  (both the ingest and the any-time association editor go through `valideaza_plasarile`) and
+  `F14Paused = True` in `src/KBot.App/Forexe/AsociereForm.vb` (`MotivulRefuzului`, drag veto).
+  F16 and F15 are unchanged, so reception 86 would still be refused by F15 (its lines do not
+  add up to its header) until its `RHR` is fixed. **Who writes `RHR`:** (a) the Access
+  migration (`routes/migrare`), (b) step 4b `step4b_receptii_prelucrare` from
+  `ListaReceptii[i].Detaliu` — it only INSERTs missing indicators and UPDATEs changed values,
+  never deletes, so a line absent from `RHR` was never in any `Detaliu` that arrived (or the
+  row predates K-BOT), (c) reconstituted receptions (not the case here). **Unverified:** what
+  `Detaliu` actually carried for these rows — the payload is not in the run log. Build clean;
+  no tests run (operator rule). To restore: set both flags back to False.
+
 - **No slice (operator's request, 28.09.2026) — silent FOREXE downloads + the FOREXE page
   pictures reach the server.** Not given a slice number on purpose; recorded only here.
   (1) **Silent on success:** a download from forexecab shows NO box when everything is fine

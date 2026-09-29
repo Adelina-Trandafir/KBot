@@ -311,7 +311,7 @@ Public NotInheritable Class DdfSectiuneaBHarnessForm
             If revizie IsNot Nothing AndAlso sb.Count > 0 Then
                 ' The program of section B = the one section A of the SIGNED document carries (the
                 ' session's CodProgram was empty on the bench on 28.09.2026 -> an empty Cell3).
-                Dim program As String = SectionAProgram(formXml)
+                Dim program As String = DdfSectionBInsert.SectionAProgram(formXml)
                 If program.Length = 0 Then program = If(_session.CodProgram, String.Empty)
                 Dim xml As String = FromServerRows(data, revizie, sb, program)
                 Write($"Secțiunea B: {sb.Count} rând(uri) de pe server (IDREV {idrev}), program «{program}», bifa opțiunii 1 pusă.")
@@ -336,16 +336,13 @@ Public NotInheritable Class DdfSectiuneaBHarnessForm
         Return built
     End Function
 
-    ' Section B exactly as the final generation writes it (DdfXmlBuilder), cut down to that subform
-    ' so nothing else of the signed form is rewritten.
+    ' Section B exactly as the final generation writes it, cut down to that subform so nothing else
+    ' of the signed form is rewritten -- the builder the DDF view uses since slice 0078-06 (the bench
+    ' sends no captures).
     Private Function FromServerRows(data As DdfInfo, revizie As RevizieRow, sb As List(Of SectiuneBRow),
                                     program As String) As String
-        Dim ctx As DdfXmlBuilder.Context = DdfXmlBuilder.Context.FromSession(_session)
-        ctx.CodProgram = program
-        Dim full As String = DdfXmlBuilder.BuildFormXml(ctx, data.AntetDeLucru(revizie.Iddf), revizie,
-                                                        Enumerable.Empty(Of LinieSaRow)(), sb, sectiuneaB:=True)
-        Dim sectB As XElement = XDocument.Parse(full).Root.Element("SubformSectiuneaB")
-        Return WrapForm1(sectB)
+        Return DdfSectionBInsert.BuildFillXml(DdfXmlBuilder.Context.FromSession(_session),
+                                              data.AntetDeLucru(revizie.Iddf), revizie, sb, Nothing, program)
     End Function
 
     ''' <summary>
@@ -377,18 +374,6 @@ Public NotInheritable Class DdfSectiuneaBHarnessForm
             Next
         End If
         Return WrapForm1(New XElement("SubformSectiuneaB", New XElement("CheckBox9", "1"), table3))
-    End Function
-
-    ' Cell2 (program) of the first real section A row in the form data; "" when there is none.
-    Private Shared Function SectionAProgram(formXml As String) As String
-        If String.IsNullOrWhiteSpace(formXml) Then Return String.Empty
-        Dim table1 As XElement = XDocument.Parse(formXml).Descendants().FirstOrDefault(Function(x) x.Name.LocalName = "Table1")
-        If table1 Is Nothing Then Return String.Empty
-        For Each r As XElement In table1.Elements().Where(Function(x) x.Name.LocalName = "Row1")
-            Dim program As String = CellText(r, "Cell2")
-            If program.Length > 0 Then Return program
-        Next
-        Return String.Empty
     End Function
 
     Private Shared Function WrapForm1(sectB As XElement) As String

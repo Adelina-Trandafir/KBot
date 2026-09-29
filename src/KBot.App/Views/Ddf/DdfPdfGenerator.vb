@@ -90,7 +90,7 @@ Public NotInheritable Class DdfPdfGenerator
     ''' A capture that cannot be read stops the generation: a final PDF missing a capture would be
     ''' signed as complete.
     ''' </summary>
-    Private Shared Async Function CapturileAsync(att As IEnumerable(Of AtasamentRow),
+    Friend Shared Async Function CapturileAsync(att As IEnumerable(Of AtasamentRow),
                                                  citesteFisier As Func(Of Integer, Task(Of Byte()))) As Task(Of List(Of String))
         Dim result As New List(Of String)()
         For Each a As AtasamentRow In att.Where(Function(x) x.PrtScr).OrderBy(Function(x) x.IdRevAtt)

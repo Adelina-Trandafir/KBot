@@ -45,6 +45,8 @@ Partial Public Class KbotForm
                     Await StergeLunaDdfAsync(comanda).ConfigureAwait(True)
                 Case DdfActiune.Trimite
                     Await TrimiteDdfAsync(comanda.Cod, comanda.Revizie).ConfigureAwait(True)
+                Case DdfActiune.FinalizeazaPdf
+                    Await FinalizeazaPdfDupaSemnareBAsync(comanda.Cod, comanda.Revizie).ConfigureAwait(True)
                 Case Else
                     ' No silent no-ops: an unknown action is a programming defect.
                     Throw New ArgumentException($"Acțiune DDF necunoscută: {comanda.Actiune}", NameOf(comanda))

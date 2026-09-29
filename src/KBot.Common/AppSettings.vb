@@ -104,6 +104,57 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property ForexeCapturaPaginaOriginala As Boolean = True
 
+    ' ── FOREXE speed and waits (slice 0091) ─────────────────────────────
+
+    ''' <summary>Below this download speed (Mb/s) the «validate twice» option is offered.</summary>
+    Public Const SlowInternetMbps As Double = 20
+
+    ''' <summary>The multipliers the settings page offers for the WFL waits.</summary>
+    Public Shared ReadOnly Property TimeoutMultipliers As IReadOnlyList(Of Double) =
+        New Double() {1.0, 1.5, 2.0, 3.0}
+
+    ''' <summary>True when <paramref name="value"/> is a multiplier this build accepts (1..5).</summary>
+    Public Shared Function IsValidTimeoutMultiplier(value As Double) As Boolean
+        Return value >= 1.0 AndAlso value <= 5.0
+    End Function
+
+    ''' <summary>
+    ''' Every wait written in the WFL files (the actions' <c>timeout</c>, the <c>Wait</c> pauses)
+    ''' and the robot's own Ajax wait are multiplied by this before the robot uses them. 1 = the
+    ''' files as written (operator, 29.09.2026).
+    ''' </summary>
+    Public Property ForexeTimeoutMultiplier As Double = 1.0
+
+    ''' <summary>
+    ''' The operator's choice: every table the robot reads is read twice and compared, and read
+    ''' again until two readings agree. Only in effect on a slow connection, see
+    ''' <see cref="ForexeValidateTwiceInEffect"/>.
+    ''' </summary>
+    Public Property ForexeValidateTwice As Boolean = False
+
+    ''' <summary>The last speed measured through fast.com, Mb/s. Nothing = never measured.</summary>
+    Public Property ForexeSpeedMbps As Double?
+
+    ''' <summary>When <see cref="ForexeSpeedMbps"/> was measured (local time).</summary>
+    Public Property ForexeSpeedTestedAt As DateTime?
+
+    ''' <summary>The last test found a slow connection (under <see cref="SlowInternetMbps"/>).</summary>
+    Public ReadOnly Property ForexeConnectionIsSlow As Boolean
+        Get
+            Return ForexeSpeedMbps.HasValue AndAlso ForexeSpeedMbps.Value < SlowInternetMbps
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' The double read is done only when the operator ticked it AND the last test found a slow
+    ''' connection: on a good connection the option has no purpose (operator, 29.09.2026).
+    ''' </summary>
+    Public ReadOnly Property ForexeValidateTwiceInEffect As Boolean
+        Get
+            Return ForexeValidateTwice AndAlso ForexeConnectionIsSlow
+        End Get
+    End Property
+
     ' ── Documents ────────────────────────────────────────────────────────
 
     ''' <summary>
@@ -358,6 +409,10 @@ Public NotInheritable Class AppSettings
             .ForexePageStyles = ForexePageStyles?.Select(Function(r) New PageStyleRuleDto With {
                 .Enabled = r.Enabled, .Selector = r.Selector, .Css = r.Css, .Note = r.Note, .Page = r.Page}).ToList(),
             .ForexeCapturaPaginaOriginala = ForexeCapturaPaginaOriginala,
+            .ForexeTimeoutMultiplier = ForexeTimeoutMultiplier,
+            .ForexeValidateTwice = ForexeValidateTwice,
+            .ForexeSpeedMbps = ForexeSpeedMbps,
+            .ForexeSpeedTestedAt = ForexeSpeedTestedAt,
             .AdobeDetachMode = AdobeDetachMode,
             .AdobePopupWatch = AdobePopupWatch,
             .AdobeRestoreScreenOnExit = AdobeRestoreScreenOnExit,
@@ -391,6 +446,13 @@ Public NotInheritable Class AppSettings
         If dto.AdvancedOptions.HasValue Then s.AdvancedOptions = dto.AdvancedOptions.Value
         If dto.ForexeDevToolsAllowed.HasValue Then s.ForexeDevToolsAllowed = dto.ForexeDevToolsAllowed.Value
         If dto.ForexeCapturaPaginaOriginala.HasValue Then s.ForexeCapturaPaginaOriginala = dto.ForexeCapturaPaginaOriginala.Value
+        ' A multiplier out of range in the file (hand-edited) keeps the default.
+        If dto.ForexeTimeoutMultiplier.HasValue AndAlso IsValidTimeoutMultiplier(dto.ForexeTimeoutMultiplier.Value) Then
+            s.ForexeTimeoutMultiplier = dto.ForexeTimeoutMultiplier.Value
+        End If
+        If dto.ForexeValidateTwice.HasValue Then s.ForexeValidateTwice = dto.ForexeValidateTwice.Value
+        If dto.ForexeSpeedMbps.HasValue AndAlso dto.ForexeSpeedMbps.Value > 0 Then s.ForexeSpeedMbps = dto.ForexeSpeedMbps
+        s.ForexeSpeedTestedAt = dto.ForexeSpeedTestedAt
         If dto.ForexePageStyles IsNot Nothing Then
             s.ForexePageStyles = dto.ForexePageStyles.
                 Where(Function(r) r IsNot Nothing).
@@ -445,6 +507,10 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ForexeDevToolsAllowed As Boolean?
     Public Property ForexePageStyles As List(Of PageStyleRuleDto)
     Public Property ForexeCapturaPaginaOriginala As Boolean?
+    Public Property ForexeTimeoutMultiplier As Double?
+    Public Property ForexeValidateTwice As Boolean?
+    Public Property ForexeSpeedMbps As Double?
+    Public Property ForexeSpeedTestedAt As DateTime?
     Public Property AdobeDetachMode As String
     Public Property AdobePopupWatch As Boolean?
     Public Property AdobeRestoreScreenOnExit As Boolean?

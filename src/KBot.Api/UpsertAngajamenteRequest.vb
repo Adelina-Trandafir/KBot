@@ -615,6 +615,15 @@ Public NotInheritable Class PostPropunereResponse
     Public Property are As New Dictionary(Of String, Boolean)()
     Public Property scrise As New Dictionary(Of String, Integer)()
     Public Property avertismente As New List(Of String)()
+    ' Slice 0091: receptions whose Detaliu arrived cut.
+    Public Property receptii_incomplete As New List(Of PostReceptieIncompleta)()
+End Class
+
+Public NotInheritable Class PostReceptieIncompleta
+    ' dd.MM.yyyy
+    Public Property data_r As String
+    Public Property suma As Double
+    Public Property motiv As String
 End Class
 
 Public NotInheritable Class PostPropunereReceptie
@@ -631,6 +640,8 @@ Public NotInheritable Class PostPropunereReceptie
     ' curenta; null pentru toate celelalte, si null pe toata linia in raspunsul editorului
     ' de oricand (acolo nu exista sarcina utila si fiecare IDRR e deja real).
     Public Property rand_receptie As Integer?
+    ' Slice 0091: this run's Detaliu for it arrived cut (only on the ingest route).
+    Public Property detaliu_incomplet As Boolean
     Public Property rhr As New List(Of PostPropunereLinieR)()
 End Class
 

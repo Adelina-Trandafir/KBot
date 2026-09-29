@@ -141,6 +141,21 @@ Public NotInheritable Class PrelucrarePropunere
 
     ''' <summary>Avertismente pentru operator (romana, diacritice literale).</summary>
     Public Property Avertismente As New List(Of String)
+
+    ''' <summary>
+    ''' Slice 0091: the receptions whose <c>Detaliu</c> arrived cut from FOREXE in this
+    ''' download. The server left their lines as they were; the shell offers to refresh them.
+    ''' </summary>
+    Public Property ReceptiiIncomplete As New List(Of ReceptieIncompleta)
+End Class
+
+''' <summary>A reception whose detail arrived cut (slice 0091). POCO.</summary>
+Public NotInheritable Class ReceptieIncompleta
+    ''' <summary>The reception's date, as the robot's skip list names it.</summary>
+    Public Property DataR As Date
+    Public Property Suma As Double
+    ''' <summary>Why the server did not trust the detail (Romanian, for the operator).</summary>
+    Public Property Motiv As String = String.Empty
 End Class
 
 ''' <summary>O receptie asa cum sta acum, cu liniile ei pe indicator. POCO.</summary>
@@ -192,6 +207,12 @@ Public NotInheritable Class ReceptiePropusa
     ''' face gruparea de atunci mai verificabila decat era in clipa in care s-a facut.
     ''' </summary>
     Public Property ReconstituitNesigur As Boolean
+
+    ''' <summary>
+    ''' Slice 0091: this download's <c>Detaliu</c> for the reception arrived cut, so
+    ''' <see cref="Rhr"/> are the old lines. The F14 veto does not apply to it.
+    ''' </summary>
+    Public Property DetaliuIncomplet As Boolean
 
     Public Property Rhr As New List(Of LinieReceptie)
 End Class

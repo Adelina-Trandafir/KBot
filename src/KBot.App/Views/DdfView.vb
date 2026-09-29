@@ -119,6 +119,12 @@ Public Class DdfView
     Private _overrideIsGenerated As Boolean
     ' Slice 0078: the signing session of the document on screen (Nothing when there is none).
     Private _signing As PdfSigningSession
+    ' Slice 0078-06: the documents with section B written into the A-signed PDF, per revision: the
+    ' server sha they were built from (Key) and the work-area file (Value). Reused while the server
+    ' copy is the same, so a second click does not build a second file.
+    Private ReadOnly _inserariB As New Dictionary(Of Integer, KeyValuePair(Of String, String))()
+    ' Slice 0078-06: revisions already told that their section B still has no FOREXE codes.
+    Private ReadOnly _faraCoduriAnuntat As New HashSet(Of Integer)()
 
     ' Starea splitter-ului dinainte de strângerea arborelui, ca desfacerea să-l pună înapoi
     ' exact unde era (vezi Tree_CollapsedChanged). 0 = arborele n-a fost încă strâns.
@@ -603,7 +609,11 @@ Public Class DdfView
 
             Select Case rezultat.Status
                 Case PdfCacheStatus.Gata
-                    _pdfPathRezolvat = rezultat.Cale
+                    ' Slice 0078-06: a sent revision signed only on A gets forexecab's section B
+                    ' written into it (a new file); Nothing = the server copy is shown as it is.
+                    Dim cuB As String = Await SectiuneaBInseratAsync(revizie, rezultat.Cale).ConfigureAwait(True)
+                    If _selectedRevizie Is Nothing OrElse _selectedRevizie.Idrev <> idrev Then Return
+                    _pdfPathRezolvat = If(cuB, rezultat.Cale)
                     _pdfRezolvatPentruIdrev = idrev
                     PushToActivePage()
                     ' Slice 0078 (item 4): the local file was not the original -- say so.
@@ -620,6 +630,82 @@ Public Class DdfView
             GlobalErrorLog.Write("DdfView.EnsureSignedPdfAsync", ex)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Slice 0078-06 -- the path proven on the bench (0078-04/05): a revision sent to forexecab whose
+    ''' stored PDF is signed on section A only gets the REAL section B (codes and indicators saved
+    ''' after the send, the revision's FOREXE captures in Table4) written INTO that signed file, as
+    ''' an incremental update, in a new file of the work area. That file is what the view shows and
+    ''' the signing session watches: signing B uploads it; not signing leaves the server untouched.
+    '''
+    ''' <para>Returns the new file, or Nothing when the server copy is to be shown as it is (not due,
+    ''' codes not saved yet, or the insert failed -- said to the operator). Called from
+    ''' <see cref="EnsureSignedPdfAsync"/>, which already handles errors; the insert's own failure is
+    ''' shown here and the A-signed document stays on screen.</para>
+    ''' </summary>
+    Private Async Function SectiuneaBInseratAsync(revizie As RevizieRow, signedPath As String) As Task(Of String)
+        If Not DdfSectionBInsert.IsCandidate(revizie, _antet) Then Return Nothing
+        Dim idrev As Integer = revizie.Idrev
+        Dim facut As KeyValuePair(Of String, String) = Nothing
+        If _inserariB.TryGetValue(idrev, facut) AndAlso
+           String.Equals(facut.Key, revizie.PdfSha256, StringComparison.OrdinalIgnoreCase) AndAlso
+           IO.File.Exists(facut.Value) Then
+            Return facut.Value
+        End If
+
+        Try
+            Dim cod As String = _requestedCod
+            Dim data As DdfInfo = Await _withReauth(
+                Function() _apiClient.GetDdfAsync(cod, CancellationToken.None, pentruGenerare:=True)).ConfigureAwait(True)
+            If data Is Nothing Then Return Nothing
+            Dim sb As List(Of SectiuneBRow) = data.SectiuneB.Where(Function(s) s.Idrev = idrev).ToList()
+            If Not DdfSectionBInsert.ServerRowsReady(sb) Then
+                If _faraCoduriAnuntat.Add(idrev) Then
+                    KBotMessage.Show(FindForm(),
+                        "Documentul este semnat pe Secțiunea A, dar Secțiunea B a reviziei nu are încă, pe server, " &
+                        "codul angajamentului și indicatorii din FOREXE (sau nu are niciun rând)." & vbCrLf & vbCrLf &
+                        "Se arată documentul semnat pe A. Secțiunea B se completează după ce trimiterea în FOREXE " &
+                        "a salvat codurile.",
+                        "Secțiunea B", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                End If
+                Return Nothing
+            End If
+
+            Dim att As List(Of AtasamentRow) = data.Atasamente.Where(Function(a) a.Idrev = idrev).ToList()
+            Dim capturi As List(Of String) = Await DdfPdfGenerator.CapturileAsync(att, AddressOf CitesteCapturaAsync).ConfigureAwait(True)
+            Dim antet As DdfAntet = If(data.AntetDeLucru(revizie.Iddf), _antet)
+            Dim r As DdfSectionBInsert.Rezultat = Await DdfSectionBInsert.InsertAsync(
+                signedPath, DdfXmlBuilder.Context.FromSession(_session), antet, revizie, sb, capturi,
+                If(_session Is Nothing, String.Empty, _session.CodProgram)).ConfigureAwait(True)
+            _inserariB(idrev) = New KeyValuePair(Of String, String)(revizie.PdfSha256, r.PdfPath)
+
+            Dim text As String =
+                $"Secțiunea B din FOREXE ({r.Rows} rând(uri), codul «{sb(0).CodAngajament}») a fost pusă în documentul " &
+                "semnat pe Secțiunea A; semnătura A a rămas neatinsă." & vbCrLf & vbCrLf &
+                "Semnați Secțiunea B: la semnare documentul se salvează pe server. Fără semnătură nu se salvează nimic."
+            If r.CapturesInDocument < r.Captures Then
+                text &= vbCrLf & vbCrLf & $"ATENȚIE: din {r.Captures} capturi FOREXE, în document au intrat {r.CapturesInDocument}."
+            End If
+            KBotMessage.Show(FindForm(), text, "Secțiunea B", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            OperatorLog.Write("DdfView.SectiuneaBInseratAsync", "Secțiunea B",
+                              $"DDF IDREV {idrev}: fișier «{r.PdfPath}»; {r.NotafdNote}", KBotLogLevel.Info)
+            Return r.PdfPath
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.SectiuneaBInseratAsync", ex)
+            KBotMessage.Show(FindForm(),
+                "Secțiunea B nu a putut fi pusă în documentul semnat pe Secțiunea A: " & ex.Message & vbCrLf & vbCrLf &
+                "Se arată documentul de pe server, semnat doar pe Secțiunea A.",
+                "Secțiunea B", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return Nothing
+        End Try
+    End Function
+
+    ' Is this the section-B document the view built for revision idrev?
+    Private Function IsInsertedFile(idrev As Integer, path As String) As Boolean
+        Dim facut As KeyValuePair(Of String, String) = Nothing
+        Return Not String.IsNullOrEmpty(path) AndAlso _inserariB.TryGetValue(idrev, facut) AndAlso
+               String.Equals(facut.Value, path, StringComparison.OrdinalIgnoreCase)
+    End Function
 
     ''' <summary>
     ''' Strângerea arborelui (felia 0028, aceeași înțelegere ca în MainForm): arborele e
@@ -819,6 +905,13 @@ Public Class DdfView
                         r.Semnatura = outcome.Semnatura
                     End If
                     SigningMessages.ShowOutcome(FindForm(), outcome)
+                    ' Slice 0078-06: B signed on the document built from the A-signed one -> the
+                    ' shell decides whether the revision now has its final PDF (stage 3).
+                    If r IsNot Nothing AndAlso r.StareTrimitere = DdfSendStage.SentInProgress AndAlso
+                       IsInsertedFile(r.Idrev, session.DisplayedPath) AndAlso
+                       DdfRevisionStates.HasRole(outcome.Semnatura, DdfRevisionStates.RoleB) Then
+                        CereComanda(New DdfComanda(DdfActiune.FinalizeazaPdf, _requestedCod, r))
+                    End If
                 Case PdfSigningStatus.Conflict
                     SigningMessages.ShowOutcome(FindForm(), outcome)
                     ' Reload: the list brings the server's current sha, the reselect path downloads it.

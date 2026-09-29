@@ -2388,7 +2388,8 @@ Public Class ApiClient
             .Descriere = If(r.descriere, String.Empty),
             .Sters = r.sters,
             .Reconstituit = r.reconstituit,
-            .ReconstituitNesigur = r.reconstituit_nesigur}
+            .ReconstituitNesigur = r.reconstituit_nesigur,
+            .DetaliuIncomplet = r.detaliu_incomplet}
         If r.rhr IsNot Nothing Then
             For Each l As PostPropunereLinieR In r.rhr
                 rec.Rhr.Add(New LinieReceptie() With {
@@ -2495,6 +2496,20 @@ Public Class ApiClient
         If payload.receptii IsNot Nothing Then
             For Each r As PostPropunereReceptie In payload.receptii
                 p.Receptii.Add(CitesteReceptie(r))
+            Next
+        End If
+
+        ' Slice 0091. A date that does not parse is dropped from the list: the refresh
+        ' offer names receptions by date, and a row it cannot name it cannot refresh.
+        If payload.receptii_incomplete IsNot Nothing Then
+            For Each x As PostReceptieIncompleta In payload.receptii_incomplete
+                Dim d As Date
+                If Date.TryParseExact(If(x.data_r, String.Empty), "dd.MM.yyyy",
+                                      Globalization.CultureInfo.InvariantCulture,
+                                      Globalization.DateTimeStyles.None, d) Then
+                    p.ReceptiiIncomplete.Add(New ReceptieIncompleta() With {
+                        .DataR = d, .Suma = x.suma, .Motiv = If(x.motiv, String.Empty)})
+                End If
             Next
         End If
 

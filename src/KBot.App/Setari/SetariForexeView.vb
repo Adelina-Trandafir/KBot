@@ -52,6 +52,8 @@ Public Class SetariForexeView
                 chkHideChrome.Checked = AppSettings.Current.ForexeHideBrowserChrome
                 chkDevTools.Checked = AppSettings.Current.ForexeDevToolsAllowed
                 UmpleCapturile()
+                UmpleMultiplicatorul()
+                ArataViteza()
             Finally
                 _suppress = False
             End Try
@@ -216,6 +218,118 @@ Public Class SetariForexeView
         End Try
     End Sub
 
+    ' ---------------- speed and waits (slice 0091) ----------------
+
+    Private Shared ReadOnly Ro As Globalization.CultureInfo = Globalization.CultureInfo.GetCultureInfo("ro-RO")
+
+    ''' <summary>
+    ''' The last measured speed, and what it means for the double read: offered (and in force
+    ''' when ticked) only under <see cref="AppSettings.SlowInternetMbps"/>. Called with
+    ''' <c>_suppress</c> set by the caller when it touches the tick box.
+    ''' </summary>
+    Private Sub ArataViteza()
+        Dim s As AppSettings = AppSettings.Current
+        If s.ForexeSpeedMbps.HasValue Then
+            lblViteza.Text = $"{s.ForexeSpeedMbps.Value.ToString("0.#", Ro)} Mb/s" &
+                             If(s.ForexeSpeedTestedAt.HasValue, $" · {s.ForexeSpeedTestedAt.Value:dd.MM.yyyy HH:mm}", "")
+        Else
+            lblViteza.Text = "Netestată"
+        End If
+
+        chkValidareDubla.Enabled = s.ForexeConnectionIsSlow
+        chkValidareDubla.Checked = s.ForexeValidateTwiceInEffect
+        Dim prag As String = AppSettings.SlowInternetMbps.ToString("0", Ro)
+        If Not s.ForexeSpeedMbps.HasValue Then
+            lblVitezaHint.Text = $"Testați viteza: sub {prag} Mb/s se poate cere citirea de două ori a tabelelor."
+        ElseIf s.ForexeConnectionIsSlow Then
+            lblVitezaHint.Text = $"Conexiune lentă (sub {prag} Mb/s): citirea de două ori a tabelelor poate fi bifată."
+        Else
+            lblVitezaHint.Text = $"Conexiune bună (peste {prag} Mb/s): citirea de două ori nu își are rostul și rămâne oprită."
+        End If
+    End Sub
+
+    Private Sub UmpleMultiplicatorul()
+        If cmbMultiplicator.Items.Count = 0 Then
+            For Each m As Double In AppSettings.TimeoutMultipliers
+                cmbMultiplicator.Items.Add(If(m = 1.0, "× 1 (cum sunt scriși în fișiere)", "× " & m.ToString("0.#", Ro)))
+            Next
+        End If
+        ' The closest offered value: a hand-edited file may hold one the list does not have.
+        Dim curent As Double = AppSettings.Current.ForexeTimeoutMultiplier
+        Dim cel As Integer = 0
+        For i As Integer = 1 To AppSettings.TimeoutMultipliers.Count - 1
+            If Math.Abs(AppSettings.TimeoutMultipliers(i) - curent) < Math.Abs(AppSettings.TimeoutMultipliers(cel) - curent) Then cel = i
+        Next
+        cmbMultiplicator.SelectedIndex = cel
+    End Sub
+
+    Private Async Sub BtnTesteazaViteza_Click(sender As Object, e As EventArgs) Handles btnTesteazaViteza.Click
+        Try
+            btnTesteazaViteza.Enabled = False
+            btnTesteazaViteza.Text = "Se măsoară…"
+            RaiseEvent BusyChanged(True)
+            RaiseEvent StatusChanged("Se măsoară viteza prin fast.com (10–30 de secunde)…")
+            Dim mbps As Double
+            Try
+                mbps = Await Task.Run(Function() ForexeSpeedTest.MeasureMbpsAsync())
+            Finally
+                RaiseEvent BusyChanged(False)
+                btnTesteazaViteza.Text = "Testează viteza"
+                btnTesteazaViteza.Enabled = True
+            End Try
+
+            Dim copie As AppSettings = AppSettings.Current.Clone()
+            copie.ForexeSpeedMbps = mbps
+            copie.ForexeSpeedTestedAt = DateTime.Now
+            copie.Save()
+            _suppress = True
+            Try
+                ArataViteza()
+            Finally
+                _suppress = False
+            End Try
+            RaiseEvent StatusChanged($"Viteza de descărcare: {mbps.ToString("0.#", Ro)} Mb/s." &
+                                     If(copie.ForexeConnectionIsSlow,
+                                        " Conexiune lentă: citirea de două ori a tabelelor poate fi bifată.",
+                                        " Conexiune bună: citirea de două ori nu este necesară."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForexeView.BtnTesteazaViteza_Click", ex)
+            RaiseEvent StatusChanged("Viteza nu a putut fi măsurată: " & ex.Message)
+        End Try
+    End Sub
+
+    Private Sub ChkValidareDubla_CheckedChanged(sender As Object, e As EventArgs) Handles chkValidareDubla.CheckedChanged
+        Try
+            If _suppress Then Return
+            Dim copie As AppSettings = AppSettings.Current.Clone()
+            copie.ForexeValidateTwice = chkValidareDubla.Checked
+            copie.Save()
+            RaiseEvent StatusChanged(If(chkValidareDubla.Checked,
+                "Tabelele din FOREXE se vor citi de două ori și se vor compara. Se aplică de la următoarea lucrare.",
+                "Tabelele din FOREXE se citesc o singură dată. Se aplică de la următoarea lucrare."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForexeView.ChkValidareDubla_CheckedChanged", ex)
+            RaiseEvent StatusChanged("Setarea nu a putut fi salvată: " & ex.Message)
+        End Try
+    End Sub
+
+    Private Sub CmbMultiplicator_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbMultiplicator.SelectedIndexChanged
+        Try
+            If _suppress OrElse cmbMultiplicator.SelectedIndex < 0 Then Return
+            Dim m As Double = AppSettings.TimeoutMultipliers(cmbMultiplicator.SelectedIndex)
+            Dim copie As AppSettings = AppSettings.Current.Clone()
+            copie.ForexeTimeoutMultiplier = m
+            copie.Save()
+            RaiseEvent StatusChanged(If(m = 1.0,
+                "Timpii de așteptare sunt cei scriși în fișierele WFL.",
+                $"Timpii de așteptare din WFL se înmulțesc cu {m.ToString("0.#", Ro)}.") &
+                " Se aplică de la următoarea lucrare.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForexeView.CmbMultiplicator_SelectedIndexChanged", ex)
+            RaiseEvent StatusChanged("Setarea nu a putut fi salvată: " & ex.Message)
+        End Try
+    End Sub
+
     ' ---------------- dry run / replay (slice 0081-07) ----------------
 
     Private Sub ChkDryRun_CheckedChanged(sender As Object, e As EventArgs) Handles chkDryRun.CheckedChanged
@@ -259,9 +373,13 @@ Public Class SetariForexeView
             cmbCaptura.ApplyTheme(scheme)
             tlyFoldere.BackColor = p.SurfaceAltColor
             tlyTests.BackColor = p.SurfaceAltColor
+            tlyViteza.BackColor = p.SurfaceAltColor
+            cmbMultiplicator.ApplyTheme(scheme)
+            ButtonStyles.ApplySecondary(btnTesteazaViteza, scheme)
             For Each caption As Label In New Label() {lblConexiuneCaption, lblCertificatCaption, lblCertMemoratCaption,
                                                       lblWorkflowsCaption, lblRezultateCaption, lblExtraseCaption, lblFoldereHint,
-                                                      lblAnswersCaption, lblTestsHint, lblCapturaCaption}
+                                                      lblAnswersCaption, lblTestsHint, lblCapturaCaption,
+                                                      lblVitezaCaption, lblMultiplicatorCaption, lblVitezaHint}
                 caption.ForeColor = p.TextDimColor
                 caption.BackColor = Color.Transparent
             Next

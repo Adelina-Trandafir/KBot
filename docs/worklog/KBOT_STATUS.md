@@ -165,6 +165,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |       0078-03 | Jurnal de diagnostic exhaustiv pentru vizualizatorul ActiveX                                                             | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0078-04 | Secțiunea B după A pe DDF: sesiunea de semnare refăcută când suma de pe server se schimbă + proba pe banc             | PROBAT pe banc A→B→Ordonator; erori JS în vizualizator | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0078-05 | Fereastra găzduită fără poziționare / ascundere (Ctrl+H) + proba ordinii «Salvare ca» → scriere → încărcare  | GATA pe cod, nerulat (+ §8: acțiune unică ActiveX→fereastră, opțiune «ecran întreg la închidere») | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-06 | Secțiunea B inserată în DDF-ul semnat pe A, în fluxul real (angajament nou)                | GATA pe cod, nerulat                          | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |          0079 | Jurnalul semnăturilor (FX_PDF_SEMNATURI)                                                                                 | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0080-01 | `IdClsf` = `Clasificatii.IDClsf` pe șapte tabele FX\_ + `FX_Extrase.DataDoc` → DATE                                      | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
 |       0080-02 | Vederea «Extrase» + pagina «Setări → Extrase»                                                                            | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
@@ -192,10 +193,11 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |          0088 | «Nota contabila corectie CAB» (F1135) pentru operațiunile «ERRRRRRRRRR» (cererea operatorului, 28.09.2026)               | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
 |          0089 | Jurnalele serverului în K-BOT, pe utilizator și pe sesiune (cererea operatorului, 28.09.2026)                            | done                                          | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
 |          0090 | `KBOT_STATUS.md` împărțit: index + fișiere de câte zece felii (cererea operatorului, 28.09.2026)                         | GATA (doar documente)                         | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
+|          0091 | Detaliul recepției citit tăiat din FOREXE: recunoscut pe server + recitire oferită; Setări → FOREXE: test de viteză, citire dublă, multiplicator de timpi; F14 în pauză (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 
 Work outside the slice system: [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
 
-**Next free slice number: 0091.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
+**Next free slice number: 0092.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
 ⚠️ **Registrul are o gaură: 0038 și 0039 lipsesc.** Codul din `KBot.Controls/Tree` se referă în
 comentarii la «felia 0038» (culoarea/grosimea separatorilor) și «felia 0039» (marginile scalate),
 amândouă vizibile în arborele de lucru, dar niciuna n-are rând aici, iar linia de mai sus declara

@@ -100,6 +100,26 @@ Partial Public Class KbotForm
         Dim titlu As String = RezervariMenu.Label(RezervariMenuOption.GenereazaPdfFinal)
         busyBar.Running = True
         Try
+            ' Slice 0078-06: a PDF signed on section A is NEVER regenerated (the signature would be
+            ' lost). Signed A and B already -> it is the final PDF, only the stage moves. Signed A
+            ' only -> the DDF view the caller opens next writes section B into it; the stage moves
+            ' when B's signature is uploaded (FinalizeazaPdfDupaSemnareBAsync).
+            Dim actuala As RevizieRow = Await RevizieProaspataAsync(cod, idrev)
+            If actuala IsNot Nothing AndAlso DdfRevisionStates.HasRole(actuala.Semnatura, DdfRevisionStates.RoleA) Then
+                If DdfRevisionStates.HasRole(actuala.Semnatura, DdfRevisionStates.RoleB) Then
+                    Await ApelTrimitereAsync(Function() sendApi.SeteazaStareTrimitereDdfAsync(
+                        idrev, DdfSendStage.FinalPdf, CancellationToken.None))
+                    Return True
+                End If
+                KBotMessage.Show(Me, "Documentul de pe server este semnat pe Secțiunea A, deci nu se mai generează din nou " &
+                                "(semnătura s-ar pierde)." & vbCrLf & vbCrLf &
+                                "Secțiunea B, cu codurile din FOREXE, se pune în documentul semnat și se arată acum în " &
+                                "vederea documentului de fundamentare. Semnați Secțiunea B: când semnătura ajunge pe server, " &
+                                "revizia trece la «PDF final». Fără semnătură nu se salvează nimic.",
+                                titlu, MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return True
+            End If
+
             Dim generat As DdfPdfGenerator.Rezultat = Await DdfPdfGenerator.GenereazaAsync(
                 Function() WithReauth(Of DdfInfo)(
                     Function() _apiClient.GetDdfAsync(cod, CancellationToken.None, pentruGenerare:=True)),
@@ -135,6 +155,31 @@ Partial Public Class KbotForm
         Finally
             busyBar.Running = False
         End Try
+    End Function
+
+    ''' <summary>
+    ''' Slice 0078-06: section B was signed on the document the DDF view built from the A-signed PDF,
+    ''' and uploaded. That upload IS the final PDF, so the revision moves to stage 3 -- except for a
+    ''' new angajament's Rev 0 whose forexecab state is not «In derulare» yet: there «Definitiveaza»
+    ''' / «Deruleaza» still come first (variant a), and «Genereaza PDF final», finding A and B signed,
+    ''' only moves the stage. Called through <see cref="ExecutaComandaDdf"/>, which shows any exception.
+    ''' </summary>
+    Private Async Function FinalizeazaPdfDupaSemnareBAsync(cod As String, selectata As RevizieRow) As Task
+        If selectata Is Nothing OrElse String.IsNullOrWhiteSpace(cod) Then Return
+        Dim sendApi As IDdfSendApi = CereApiulDeTrimitere()
+        Dim ddf As DdfInfo = Await WithReauth(Of DdfInfo)(Function() _apiClient.GetDdfAsync(cod, CancellationToken.None))
+        Dim revizie As RevizieRow = ddf?.Revizii?.FirstOrDefault(Function(r) r.Idrev = selectata.Idrev)
+        If revizie Is Nothing OrElse revizie.StareTrimitere <> DdfSendStage.SentInProgress Then Return
+        If Not DdfRevisionStates.HasRole(revizie.Semnatura, DdfRevisionStates.RoleA) OrElse
+           Not DdfRevisionStates.HasRole(revizie.Semnatura, DdfRevisionStates.RoleB) Then Return
+        Dim antet As DdfAntet = ddf.AntetDeLucru(revizie.Iddf)
+        If antet IsNot Nothing AndAlso antet.Manual AndAlso revizie.NumarRev = 0 AndAlso
+           RezervariMenu.ParseState(StareaAngajamentului(cod, Nothing), cod) <> ForexeAngajamentState.InDerulare Then
+            Return
+        End If
+        Await ApelTrimitereAsync(Function() sendApi.SeteazaStareTrimitereDdfAsync(
+            revizie.Idrev, DdfSendStage.FinalPdf, CancellationToken.None))
+        Await ArataReviziaAsync(cod, revizie.Idrev)
     End Function
 
     ''' <summary>One attachment's bytes (a capture of the final PDF). Risky boundary: logs and rethrows.</summary>

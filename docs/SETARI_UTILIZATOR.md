@@ -277,6 +277,9 @@ o schimbi**; «Închide» doar închide. Paginile:
 | `ForexeDevToolsAllowed` | `false` | pagina FOREXE lasă F12, Ctrl+Shift+I/J/C, Ctrl+U și clicul dreapta să ajungă la Chromium; debifat, meniul K-BOT din pagină le înghite |
 | `ForexePageStyles` | cele 5 reguli K-BOT (§7.1) | lista de reguli CSS `{enabled, selector, css, note, page}` scrisă în fiecare pagină FOREXE; lipsă = regulile implicite, listă goală = nicio regulă |
 | `ForexeCapturaPaginaOriginala` | `true` | capturile pentru documente (§7.2) arată pagina fără regulile dumneavoastră de stil («Pagina originală»); `false` = «Așa cum se vede». Meniul K-BOT și modul întunecat lipsesc din poză oricum |
+| `ForexeTimeoutMultiplier` | `1` | felia 0091: toți timpii de așteptare din fișierele WFL (`timeout`, pauzele `Wait`) și așteptarea robotului după Ajax se înmulțesc cu el (1 / 1,5 / 2 / 3; fișierul acceptă 1–5). Fișierele nu se schimbă |
+| `ForexeValidateTwice` | `false` | felia 0091: fiecare tabel citit de robot se citește de două ori și încă o dată până ies două citiri la fel (max. 4). Are efect DOAR dacă ultimul test de viteză a găsit sub 20 Mb/s |
+| `ForexeSpeedMbps` / `ForexeSpeedTestedAt` | *(lipsă)* | felia 0091: ultima viteză măsurată prin fast.com (butonul «Testează viteza») și momentul ei |
 | `ReceptiiCheckedOnOpen` | `true` | selectorul de recepții pornește cu tot bifat |
 | `AdobeDetachMode` | `KillProcess` | cum se eliberează fereastra Adobe la schimbarea documentului: `KillProcess` (A) sau `CloseWindow` (B) |
 | `AdobePopupWatch` | `true` | ascunde fereastra plutitoare a Adobe cât timp documentul e afișat |

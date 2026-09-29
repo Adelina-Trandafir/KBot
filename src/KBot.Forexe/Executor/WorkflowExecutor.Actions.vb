@@ -15,6 +15,8 @@ Partial Public Class WorkflowExecutor
     '  ORCHESTRATOR
     ' ============================================================
     Private Async Function ExecuteActionAsync(action As IWorkflowAction) As Task
+        ' Slice 0091: the operator's multiplier for the WFL waits, applied once per action.
+        StretchWaitsOnce(action)
         Select Case True
             Case TypeOf action Is ClickAction
                 Dim a = DirectCast(action, ClickAction)

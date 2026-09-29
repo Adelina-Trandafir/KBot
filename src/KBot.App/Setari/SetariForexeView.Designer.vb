@@ -47,6 +47,15 @@ Partial Class SetariForexeView
         lblExtraseCaption = New Label()
         lblExtrase = New Label()
         lblFoldereHint = New Label()
+        lblTitluViteza = New Label()
+        tlyViteza = New KBotTableLayoutPanel()
+        lblVitezaCaption = New Label()
+        lblViteza = New Label()
+        btnTesteazaViteza = New Button()
+        chkValidareDubla = New CheckBox()
+        lblMultiplicatorCaption = New Label()
+        cmbMultiplicator = New KBotComboBox()
+        lblVitezaHint = New Label()
         lblTitleTests = New Label()
         tlyTests = New KBotTableLayoutPanel()
         chkDryRun = New CheckBox()
@@ -58,6 +67,7 @@ Partial Class SetariForexeView
         tlyStare.SuspendLayout()
         tlyCertificat.SuspendLayout()
         tlyBrowser.SuspendLayout()
+        tlyViteza.SuspendLayout()
         tlyFoldere.SuspendLayout()
         tlyTests.SuspendLayout()
         SuspendLayout()
@@ -73,16 +83,20 @@ Partial Class SetariForexeView
         tlyBody.Controls.Add(tlyCertificat, 0, 3)
         tlyBody.Controls.Add(lblTitluBrowser, 0, 4)
         tlyBody.Controls.Add(tlyBrowser, 0, 5)
-        tlyBody.Controls.Add(lblTitleTests, 0, 6)
-        tlyBody.Controls.Add(tlyTests, 0, 7)
-        tlyBody.Controls.Add(lblTitluFoldere, 0, 8)
-        tlyBody.Controls.Add(tlyFoldere, 0, 9)
+        tlyBody.Controls.Add(lblTitluViteza, 0, 6)
+        tlyBody.Controls.Add(tlyViteza, 0, 7)
+        tlyBody.Controls.Add(lblTitleTests, 0, 8)
+        tlyBody.Controls.Add(tlyTests, 0, 9)
+        tlyBody.Controls.Add(lblTitluFoldere, 0, 10)
+        tlyBody.Controls.Add(tlyFoldere, 0, 11)
         tlyBody.Dock = DockStyle.Fill
         tlyBody.Location = New Point(0, 0)
         tlyBody.Margin = New Padding(0)
         tlyBody.Name = "tlyBody"
         tlyBody.Padding = New Padding(24, 18, 24, 18)
-        tlyBody.RowCount = 11
+        tlyBody.RowCount = 13
+        tlyBody.RowStyles.Add(New RowStyle())
+        tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
@@ -352,6 +366,138 @@ Partial Class SetariForexeView
         tips.SetToolTipText(chkDevTools, "Debifat, pagina înghite F12, Ctrl+Shift+I / J / C, Ctrl+U și meniul de clic dreapta." & vbLf & "Bifat, toate rămân la îndemână. Se aplică imediat în pagina deschisă.")
         chkDevTools.UseVisualStyleBackColor = True
         '
+        ' lblTitluViteza
+        '
+        lblTitluViteza.AutoSize = True
+        lblTitluViteza.Font = New Font("Segoe UI Semibold", 12F)
+        lblTitluViteza.Location = New Point(28, 448)
+        lblTitluViteza.Margin = New Padding(4, 0, 4, 8)
+        lblTitluViteza.Name = "lblTitluViteza"
+        lblTitluViteza.Size = New Size(380, 32)
+        lblTitluViteza.TabIndex = 6
+        lblTitluViteza.Text = "Viteza internetului și așteptările"
+        '
+        ' tlyViteza
+        '
+        tlyViteza.AutoFitToTheme = False
+        tlyViteza.AutoSize = True
+        tlyViteza.ColumnCount = 3
+        tlyViteza.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 260F))
+        tlyViteza.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyViteza.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 240F))
+        tlyViteza.Controls.Add(lblVitezaCaption, 0, 0)
+        tlyViteza.Controls.Add(lblViteza, 1, 0)
+        tlyViteza.Controls.Add(btnTesteazaViteza, 2, 0)
+        tlyViteza.Controls.Add(chkValidareDubla, 0, 1)
+        tlyViteza.Controls.Add(lblMultiplicatorCaption, 0, 2)
+        tlyViteza.Controls.Add(cmbMultiplicator, 1, 2)
+        tlyViteza.Controls.Add(lblVitezaHint, 0, 3)
+        tlyViteza.Dock = DockStyle.Top
+        tlyViteza.Location = New Point(28, 488)
+        tlyViteza.Margin = New Padding(4, 0, 4, 24)
+        tlyViteza.Name = "tlyViteza"
+        tlyViteza.RowCount = 4
+        tlyViteza.RowStyles.Add(New RowStyle())
+        tlyViteza.RowStyles.Add(New RowStyle())
+        tlyViteza.RowStyles.Add(New RowStyle())
+        tlyViteza.RowStyles.Add(New RowStyle())
+        tlyViteza.Size = New Size(904, 180)
+        tlyViteza.TabIndex = 7
+        '
+        ' lblVitezaCaption
+        '
+        lblVitezaCaption.AutoSize = True
+        lblVitezaCaption.Dock = DockStyle.Fill
+        lblVitezaCaption.Location = New Point(4, 0)
+        lblVitezaCaption.Margin = New Padding(4, 0, 4, 10)
+        lblVitezaCaption.Name = "lblVitezaCaption"
+        lblVitezaCaption.Size = New Size(252, 50)
+        lblVitezaCaption.TabIndex = 0
+        lblVitezaCaption.Text = "Viteza măsurată (fast.com)"
+        lblVitezaCaption.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' lblViteza
+        '
+        lblViteza.AutoSize = True
+        lblViteza.Dock = DockStyle.Fill
+        lblViteza.Font = New Font("Segoe UI Semibold", 9F)
+        lblViteza.Location = New Point(264, 0)
+        lblViteza.Margin = New Padding(4, 0, 4, 10)
+        lblViteza.Name = "lblViteza"
+        lblViteza.Size = New Size(388, 50)
+        lblViteza.TabIndex = 1
+        lblViteza.Text = "—"
+        lblViteza.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' btnTesteazaViteza
+        '
+        btnTesteazaViteza.Dock = DockStyle.Fill
+        btnTesteazaViteza.FlatStyle = FlatStyle.Flat
+        btnTesteazaViteza.Font = New Font("Segoe UI Semibold", 9F)
+        btnTesteazaViteza.Location = New Point(664, 0)
+        btnTesteazaViteza.Margin = New Padding(4, 0, 4, 10)
+        btnTesteazaViteza.Name = "btnTesteazaViteza"
+        btnTesteazaViteza.Size = New Size(236, 50)
+        btnTesteazaViteza.TabIndex = 2
+        btnTesteazaViteza.Text = "Testează viteza"
+        tips.SetToolTipHeader(btnTesteazaViteza, "Testează viteza")
+        tips.SetToolTipText(btnTesteazaViteza, "Deschide fast.com într-un browser ascuns și citește viteza de descărcare." & vbLf & "Durează de obicei 10–30 de secunde.")
+        btnTesteazaViteza.UseVisualStyleBackColor = True
+        '
+        ' chkValidareDubla
+        '
+        chkValidareDubla.AutoSize = True
+        tlyViteza.SetColumnSpan(chkValidareDubla, 3)
+        chkValidareDubla.Enabled = False
+        chkValidareDubla.Location = New Point(4, 60)
+        chkValidareDubla.Margin = New Padding(4, 0, 4, 10)
+        chkValidareDubla.Name = "chkValidareDubla"
+        chkValidareDubla.Size = New Size(420, 29)
+        chkValidareDubla.TabIndex = 3
+        chkValidareDubla.Text = "Validează de 2× datele descărcate (fiecare tabel se citește de două ori și se compară)"
+        tips.SetToolTipHeader(chkValidareDubla, "Validează de 2×")
+        tips.SetToolTipText(chkValidareDubla, "Robotul citește fiecare tabel din FOREXE de două ori și îl mai citește" & vbLf & "până când două citiri ies la fel. Mai lent, dar prinde paginile citite" & vbLf & "înainte să se fi încărcat de tot. Se poate bifa doar pe o conexiune lentă.")
+        chkValidareDubla.UseVisualStyleBackColor = True
+        '
+        ' lblMultiplicatorCaption
+        '
+        lblMultiplicatorCaption.Anchor = AnchorStyles.Left
+        lblMultiplicatorCaption.AutoSize = True
+        lblMultiplicatorCaption.Location = New Point(4, 107)
+        lblMultiplicatorCaption.Margin = New Padding(4, 0, 4, 0)
+        lblMultiplicatorCaption.Name = "lblMultiplicatorCaption"
+        lblMultiplicatorCaption.Size = New Size(252, 29)
+        lblMultiplicatorCaption.TabIndex = 4
+        lblMultiplicatorCaption.Text = "Timpii de așteptare din WFL"
+        '
+        ' cmbMultiplicator
+        '
+        cmbMultiplicator.Anchor = AnchorStyles.Left
+        tlyViteza.SetColumnSpan(cmbMultiplicator, 2)
+        cmbMultiplicator.DrawMode = DrawMode.OwnerDrawFixed
+        cmbMultiplicator.DropDownStyle = ComboBoxStyle.DropDownList
+        cmbMultiplicator.FlatStyle = FlatStyle.Flat
+        cmbMultiplicator.ItemHeight = 28
+        cmbMultiplicator.Location = New Point(264, 103)
+        cmbMultiplicator.Margin = New Padding(4, 4, 4, 4)
+        cmbMultiplicator.Name = "cmbMultiplicator"
+        cmbMultiplicator.Size = New Size(420, 34)
+        cmbMultiplicator.TabIndex = 5
+        tips.SetToolTipHeader(cmbMultiplicator, "Timpii de așteptare")
+        tips.SetToolTipText(cmbMultiplicator, "Înmulțește toți timpii de așteptare scriși în fișierele WFL" & vbLf & "(timeout, pauzele Wait) și așteptarea robotului după Ajax." & vbLf & "Fișierele nu se schimbă. Se aplică de la următoarea lucrare.")
+        '
+        ' lblVitezaHint
+        '
+        lblVitezaHint.AutoSize = True
+        tlyViteza.SetColumnSpan(lblVitezaHint, 3)
+        lblVitezaHint.Dock = DockStyle.Fill
+        lblVitezaHint.Location = New Point(4, 147)
+        lblVitezaHint.Margin = New Padding(4, 6, 4, 0)
+        lblVitezaHint.Name = "lblVitezaHint"
+        lblVitezaHint.Size = New Size(896, 26)
+        lblVitezaHint.TabIndex = 6
+        lblVitezaHint.Text = "—"
+        '
         ' lblTitleTests
         '
         lblTitleTests.AutoSize = True
@@ -583,6 +729,8 @@ Partial Class SetariForexeView
         tlyCertificat.PerformLayout()
         tlyBrowser.ResumeLayout(False)
         tlyBrowser.PerformLayout()
+        tlyViteza.ResumeLayout(False)
+        tlyViteza.PerformLayout()
         tlyFoldere.ResumeLayout(False)
         tlyFoldere.PerformLayout()
         tlyTests.ResumeLayout(False)
@@ -619,6 +767,15 @@ Partial Class SetariForexeView
     Friend WithEvents lblExtraseCaption As Label
     Friend WithEvents lblExtrase As Label
     Friend WithEvents lblFoldereHint As Label
+    Friend WithEvents lblTitluViteza As Label
+    Friend WithEvents tlyViteza As KBotTableLayoutPanel
+    Friend WithEvents lblVitezaCaption As Label
+    Friend WithEvents lblViteza As Label
+    Friend WithEvents btnTesteazaViteza As Button
+    Friend WithEvents chkValidareDubla As CheckBox
+    Friend WithEvents lblMultiplicatorCaption As Label
+    Friend WithEvents cmbMultiplicator As KBotComboBox
+    Friend WithEvents lblVitezaHint As Label
     Friend WithEvents lblTitleTests As Label
     Friend WithEvents tlyTests As KBotTableLayoutPanel
     Friend WithEvents chkDryRun As CheckBox

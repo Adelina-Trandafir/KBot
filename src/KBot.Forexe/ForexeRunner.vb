@@ -476,6 +476,7 @@ Namespace KBot.Forexe
                 ' browser keeps its own toolbar out of the viewer. Read per job, so a change in
                 ' the window reaches the next job without a restart.
                 _executor.HideChromeWhenDocked = AppSettings.Current.ForexeHideBrowserChrome
+                ApplyPacing()
 
                 ' Procesorul Excel pentru apelurile parseExcel din workflow. Tot HTTP-ul
                 ' (adresă + token bearer + POST) stă în ApiClient; re-login-ul e transparent.
@@ -597,6 +598,8 @@ Namespace KBot.Forexe
                 ' the executor would wipe exactly the ones just put there.
                 _executor.ClearAllVariables()
                 _executor.StopBeforeCommit = job.StopBeforeSave
+                ' Read per job, so a change in «Setări» reaches the next job without a reconnect.
+                ApplyPacing()
 
                 ' Injectare variabile — separat pe tip (ca în KBOT_IPC.WorkFlow):
                 ' JSON -> executor (SetVariable), plate -> substituție în XML (ApplyVariables).
@@ -858,6 +861,23 @@ Namespace KBot.Forexe
                     Return CelulaTabel.DinText(If(token.ToString(), String.Empty))
             End Select
         End Function
+
+        ''' <summary>
+        ''' Slice 0091: the operator's settings for slow connections (Setări → FOREXE) -- the
+        ''' multiplier for the WFL waits and the double read of tables (only in effect when the
+        ''' last speed test found a slow connection). Said on the console when not the defaults.
+        ''' </summary>
+        Private Sub ApplyPacing()
+            Dim s As AppSettings = AppSettings.Current
+            _executor.TimeoutMultiplier = s.ForexeTimeoutMultiplier
+            _executor.ValidateReadsTwice = s.ForexeValidateTwiceInEffect
+            If s.ForexeTimeoutMultiplier <> 1.0 Then
+                _logger.LogInfo($"Timpii de așteptare din WFL × {s.ForexeTimeoutMultiplier.ToString("0.#", Globalization.CultureInfo.GetCultureInfo("ro-RO"))} (Setări → FOREXE).")
+            End If
+            If s.ForexeValidateTwiceInEffect Then
+                _logger.LogInfo("Tabelele se citesc de două ori și se compară (Setări → FOREXE, conexiune lentă).")
+            End If
+        End Sub
 
         ''' <summary>
         ''' Trasarea pas cu pas a motorului («[MAIN] Pasul 7/23: Click [#btn]») — DOAR în jurnal.

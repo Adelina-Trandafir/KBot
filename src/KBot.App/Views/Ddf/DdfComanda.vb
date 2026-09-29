@@ -37,6 +37,10 @@ Public Enum DdfActiune
     ''' <summary>Slice 0081-04: send the selected revision to forexecab (S1), or resume an
     ''' interrupted send (S1x).</summary>
     Trimite = 6
+    ''' <summary>Slice 0078-06: section B was signed on the document the view built by writing it
+    ''' into the A-signed PDF, and that upload succeeded. The shell moves the revision to stage 3
+    ''' (final PDF) when the Rezervari flow allows it.</summary>
+    FinalizeazaPdf = 7
 End Enum
 
 ''' <summary>
