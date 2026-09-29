@@ -33,6 +33,9 @@ Partial Class ClasificatiiForm
         Dim KBotDataColumn13 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn14 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
+        gridBuget = New KBotDataView()
+        gridRectificari = New KBotDataView()
+        btnSalveaza = New Button()
         tlyMain = New KBotTableLayoutPanel()
         capBar = New KBotCaptionBar()
         pnlCard = New Panel()
@@ -40,148 +43,24 @@ Partial Class ClasificatiiForm
         tree = New AdvancedTreeControl()
         tlyRight = New KBotTableLayoutPanel()
         lblBuget = New Label()
-        gridBuget = New KBotDataView()
         lblRectificari = New Label()
-        gridRectificari = New KBotDataView()
         tlySubsol = New KBotTableLayoutPanel()
         lblStare = New Label()
-        btnSalveaza = New Button()
         btnInchide = New Button()
+        CType(gridBuget, ComponentModel.ISupportInitialize).BeginInit()
+        CType(gridRectificari, ComponentModel.ISupportInitialize).BeginInit()
         tlyMain.SuspendLayout()
         pnlCard.SuspendLayout()
         tlyBody.SuspendLayout()
         tlyRight.SuspendLayout()
-        CType(gridBuget, ComponentModel.ISupportInitialize).BeginInit()
-        CType(gridRectificari, ComponentModel.ISupportInitialize).BeginInit()
         tlySubsol.SuspendLayout()
         SuspendLayout()
-        '
-        ' tlyMain
-        '
-        tlyMain.ColumnCount = 1
-        tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyMain.Controls.Add(capBar, 0, 0)
-        tlyMain.Controls.Add(pnlCard, 0, 1)
-        tlyMain.Controls.Add(tlySubsol, 0, 2)
-        tlyMain.Dock = DockStyle.Fill
-        tlyMain.Location = New Point(1, 1)
-        tlyMain.Margin = New Padding(0)
-        tlyMain.Name = "tlyMain"
-        tlyMain.RowCount = 3
-        tlyMain.RowStyles.Add(New RowStyle())
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
-        tlyMain.Size = New Size(1238, 718)
-        tlyMain.TabIndex = 0
-        '
-        ' capBar
-        '
-        capBar.Dock = DockStyle.Fill
-        capBar.IconImage = My.Resources.Resources.cells
-        capBar.Location = New Point(0, 0)
-        capBar.Margin = New Padding(0)
-        capBar.Name = "capBar"
-        capBar.OptionButtonImage = Nothing
-        capBar.OptionButtonPadding = 0
-        capBar.ShowMaximize = True
-        capBar.ShowTextScaleSlider = False
-        capBar.Size = New Size(1238, 44)
-        capBar.TabIndex = 0
-        capBar.TabStop = False
-        capBar.Text = "K-BOT — Clasificații bugetare"
-        '
-        ' pnlCard
-        '
-        pnlCard.Controls.Add(tlyBody)
-        pnlCard.Dock = DockStyle.Fill
-        pnlCard.Location = New Point(0, 44)
-        pnlCard.Margin = New Padding(0)
-        pnlCard.Name = "pnlCard"
-        pnlCard.Padding = New Padding(8, 6, 8, 6)
-        pnlCard.Size = New Size(1238, 622)
-        pnlCard.TabIndex = 1
-        pnlCard.Tag = "Card"
-        '
-        ' tlyBody
-        '
-        tlyBody.ColumnCount = 2
-        tlyBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 48F))
-        tlyBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 52F))
-        tlyBody.Controls.Add(tree, 0, 0)
-        tlyBody.Controls.Add(tlyRight, 1, 0)
-        tlyBody.Dock = DockStyle.Fill
-        tlyBody.Location = New Point(8, 6)
-        tlyBody.Margin = New Padding(0)
-        tlyBody.Name = "tlyBody"
-        tlyBody.RowCount = 1
-        tlyBody.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyBody.Size = New Size(1222, 610)
-        tlyBody.TabIndex = 0
-        '
-        ' tree
-        '
-        tree.Dock = DockStyle.Fill
-        tree.FooterCaption = "Adaugă clasificații"
-        tree.FooterHeight = 30
-        tree.FooterIconSize = New Size(18, 18)
-        tree.FooterRightIcon = My.Resources.Resources.plus_green
-        tree.FooterRightIconTooltip = "Adaugă clasificații" & vbLf & "Alegeți sursa, clasificațiile funcționale și pe cele economice," & vbLf & "ca la înregistrarea unității."
-        tree.FooterTextAlign = ContentAlignment.MiddleRight
-        tree.FooterVisible = True
-        tree.HeaderCaption = " CLASIFICAȚII"
-        tree.HeaderHeight = 30
-        tree.HeaderIconSize = New Size(18, 18)
-        tree.HeaderLeftIcon = My.Resources.Resources.folder_open
-        tree.HeaderTextAlign = ContentAlignment.MiddleLeft
-        tree.HeaderVisible = True
-        tree.Indent = 14
-        tree.LeftIconSize = New Size(16, 16)
-        tree.Location = New Point(0, 0)
-        tree.Margin = New Padding(0, 0, 8, 0)
-        tree.Name = "tree"
-        tree.RightTextColumn = 300
-        tree.SearchDefaultText = "… tastați o parte din cod sau din denumire …"
-        tree.SearchShow = True
-        tree.Size = New Size(578, 610)
-        tree.TabIndex = 0
-        '
-        ' tlyRight
-        '
-        tlyRight.ColumnCount = 1
-        tlyRight.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyRight.Controls.Add(lblBuget, 0, 0)
-        tlyRight.Controls.Add(gridBuget, 0, 1)
-        tlyRight.Controls.Add(lblRectificari, 0, 2)
-        tlyRight.Controls.Add(gridRectificari, 0, 3)
-        tlyRight.Dock = DockStyle.Fill
-        tlyRight.Location = New Point(586, 0)
-        tlyRight.Margin = New Padding(0)
-        tlyRight.Name = "tlyRight"
-        tlyRight.RowCount = 4
-        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 30F))
-        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 60F))
-        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 38F))
-        tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyRight.Size = New Size(636, 610)
-        tlyRight.TabIndex = 1
-        '
-        ' lblBuget
-        '
-        lblBuget.AutoEllipsis = True
-        lblBuget.Dock = DockStyle.Fill
-        lblBuget.Font = New Font("Segoe UI", 10F, FontStyle.Bold)
-        lblBuget.Location = New Point(0, 0)
-        lblBuget.Margin = New Padding(0)
-        lblBuget.Name = "lblBuget"
-        lblBuget.Size = New Size(636, 30)
-        lblBuget.TabIndex = 0
-        lblBuget.Text = "Buget anual"
-        lblBuget.TextAlign = ContentAlignment.MiddleCenter
-        '
+        ' 
         ' gridBuget
-        '
+        ' 
         gridBuget.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridBuget.ColumnFillMode = KBotFillMode.Proportional
+        gridBuget.BackColor = SystemColors.Window
+        gridBuget.ColumnFillMode = KBotFillMode.LastColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.DecimalPlaces = 2
         KBotDataColumn1.Format = KBotFormat.Standard
@@ -245,30 +124,22 @@ Partial Class ClasificatiiForm
         gridBuget.Columns.Add(KBotDataColumn5)
         gridBuget.Dock = DockStyle.Fill
         gridBuget.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
-        gridBuget.Location = New Point(0, 30)
+        gridBuget.HeaderBackColor = SystemColors.Control
+        gridBuget.HeaderHeight = 24
+        gridBuget.HeaderSeparatorColor = SystemColors.ActiveBorder
+        gridBuget.Location = New Point(0, 45)
         gridBuget.Margin = New Padding(0)
         gridBuget.Name = "gridBuget"
-        gridBuget.Size = New Size(636, 60)
+        gridBuget.RowHeight = 24
+        gridBuget.Size = New Size(955, 90)
         gridBuget.TabIndex = 1
         tips.SetToolTipHeader(gridBuget, "Bugetul anual al clasificației")
         tips.SetToolTipText(gridBuget, "Se tastează trimestrele 1 - 4; totalul se calculează singur." & vbLf & "Se scrie în baza de date la «Salvează».")
-        '
-        ' lblRectificari
-        '
-        lblRectificari.AutoEllipsis = True
-        lblRectificari.Dock = DockStyle.Fill
-        lblRectificari.Font = New Font("Segoe UI", 10F, FontStyle.Bold)
-        lblRectificari.Location = New Point(0, 94)
-        lblRectificari.Margin = New Padding(0, 8, 0, 0)
-        lblRectificari.Name = "lblRectificari"
-        lblRectificari.Size = New Size(636, 30)
-        lblRectificari.TabIndex = 2
-        lblRectificari.Text = "Rectificări bugetare"
-        lblRectificari.TextAlign = ContentAlignment.MiddleCenter
-        '
+        ' 
         ' gridRectificari
-        '
+        ' 
         gridRectificari.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        gridRectificari.BackColor = SystemColors.Window
         gridRectificari.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.FormatString = Nothing
@@ -352,6 +223,7 @@ Partial Class ClasificatiiForm
         KBotDataColumn13.ColumnType = KBotColumnType.Button
         KBotDataColumn13.FormatString = Nothing
         KBotDataColumn13.HeaderText = ""
+        KBotDataColumn13.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn13.Key = "sterge"
         KBotDataColumn13.MinWidth = 34
         KBotDataColumn13.OptionGroup = Nothing
@@ -360,6 +232,7 @@ Partial Class ClasificatiiForm
         KBotDataColumn14.AggregateFormatString = Nothing
         KBotDataColumn14.FormatString = Nothing
         KBotDataColumn14.HeaderText = "Id"
+        KBotDataColumn14.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn14.Key = "id"
         KBotDataColumn14.OptionGroup = Nothing
         KBotDataColumn14.ReadOnly = True
@@ -375,20 +248,181 @@ Partial Class ClasificatiiForm
         gridRectificari.Columns.Add(KBotDataColumn14)
         gridRectificari.Dock = DockStyle.Fill
         gridRectificari.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
+        gridRectificari.FooterBackColor = SystemColors.Control
         gridRectificari.FooterCaption = "Total"
         gridRectificari.FooterRightIcon = My.Resources.Resources.plus_green
         gridRectificari.FooterRightIconTooltip = "Adaugă o rectificare" & vbLf & "Rândul nou se completează direct în tabel."
+        gridRectificari.FooterSeparatorColor = SystemColors.ActiveBorder
         gridRectificari.FooterVisible = True
-        gridRectificari.Location = New Point(0, 132)
+        gridRectificari.HeaderHeight = 24
+        gridRectificari.HeaderSeparatorColor = SystemColors.ActiveBorder
+        gridRectificari.Location = New Point(0, 192)
         gridRectificari.Margin = New Padding(0)
         gridRectificari.Name = "gridRectificari"
-        gridRectificari.Size = New Size(636, 478)
+        gridRectificari.Size = New Size(955, 422)
         gridRectificari.TabIndex = 3
         tips.SetToolTipHeader(gridRectificari, "Rectificările bugetare ale anului")
         tips.SetToolTipText(gridRectificari, "Nr. doc. și data sunt obligatorii; data trebuie să fie în anul de lucru." & vbLf & "«+» din subsol adaugă un rând; «✕» îl șterge. Totul se scrie la «Salvează».")
-        '
+        ' 
+        ' btnSalveaza
+        ' 
+        btnSalveaza.AutoSize = True
+        btnSalveaza.Enabled = False
+        btnSalveaza.FlatStyle = FlatStyle.Flat
+        btnSalveaza.Location = New Point(1186, 6)
+        btnSalveaza.Margin = New Padding(0, 0, 12, 0)
+        btnSalveaza.Name = "btnSalveaza"
+        btnSalveaza.Padding = New Padding(26, 4, 26, 4)
+        btnSalveaza.Size = New Size(198, 60)
+        btnSalveaza.TabIndex = 1
+        btnSalveaza.Text = "Salvează"
+        tips.SetToolTipHeader(btnSalveaza, "Salvează")
+        tips.SetToolTipText(btnSalveaza, "Scrie în baza de date bugetul și rectificările clasificației alese.")
+        btnSalveaza.UseVisualStyleBackColor = True
+        ' 
+        ' tlyMain
+        ' 
+        tlyMain.ColumnCount = 1
+        tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyMain.Controls.Add(capBar, 0, 0)
+        tlyMain.Controls.Add(pnlCard, 0, 1)
+        tlyMain.Controls.Add(tlySubsol, 0, 2)
+        tlyMain.Dock = DockStyle.Fill
+        tlyMain.Location = New Point(2, 2)
+        tlyMain.Margin = New Padding(0)
+        tlyMain.Name = "tlyMain"
+        tlyMain.RowCount = 3
+        tlyMain.RowStyles.Add(New RowStyle())
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 78F))
+        tlyMain.Size = New Size(1599, 776)
+        tlyMain.TabIndex = 0
+        ' 
+        ' capBar
+        ' 
+        capBar.Dock = DockStyle.Fill
+        capBar.IconImage = My.Resources.Resources.cells
+        capBar.Location = New Point(0, 0)
+        capBar.Margin = New Padding(0)
+        capBar.Name = "capBar"
+        capBar.OptionButtonImage = Nothing
+        capBar.OptionButtonPadding = 0
+        capBar.ShowMaximize = True
+        capBar.ShowTextScaleSlider = False
+        capBar.Size = New Size(1599, 66)
+        capBar.TabIndex = 0
+        capBar.TabStop = False
+        capBar.Text = "K-BOT — Clasificații bugetare"
+        ' 
+        ' pnlCard
+        ' 
+        pnlCard.Controls.Add(tlyBody)
+        pnlCard.Dock = DockStyle.Fill
+        pnlCard.Location = New Point(0, 66)
+        pnlCard.Margin = New Padding(0)
+        pnlCard.Name = "pnlCard"
+        pnlCard.Padding = New Padding(12, 9, 12, 9)
+        pnlCard.Size = New Size(1599, 632)
+        pnlCard.TabIndex = 1
+        pnlCard.Tag = "Card"
+        ' 
+        ' tlyBody
+        ' 
+        tlyBody.ColumnCount = 2
+        tlyBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 39.42857F))
+        tlyBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 60.57143F))
+        tlyBody.Controls.Add(tree, 0, 0)
+        tlyBody.Controls.Add(tlyRight, 1, 0)
+        tlyBody.Dock = DockStyle.Fill
+        tlyBody.Location = New Point(12, 9)
+        tlyBody.Margin = New Padding(0)
+        tlyBody.Name = "tlyBody"
+        tlyBody.RowCount = 1
+        tlyBody.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyBody.Size = New Size(1575, 614)
+        tlyBody.TabIndex = 0
+        ' 
+        ' tree
+        ' 
+        tree.BackColor = SystemColors.Window
+        tree.BorderColor = SystemColors.ActiveBorder
+        tree.Dock = DockStyle.Fill
+        tree.FooterCaption = "Adaugă clasificații"
+        tree.FooterHeight = 30
+        tree.FooterIconSize = New Size(18, 18)
+        tree.FooterRightIcon = My.Resources.Resources.plus_green
+        tree.FooterRightIconTooltip = "Adaugă clasificații" & vbLf & "Alegeți sursa, clasificațiile funcționale și pe cele economice," & vbLf & "ca la înregistrarea unității."
+        tree.FooterTextAlign = ContentAlignment.MiddleRight
+        tree.FooterVisible = True
+        tree.HeaderBackColor = SystemColors.Control
+        tree.HeaderCaption = " CLASIFICAȚII"
+        tree.HeaderHeight = 24
+        tree.HeaderIconSize = New Size(18, 18)
+        tree.HeaderLeftIcon = My.Resources.Resources.folder_open
+        tree.HeaderVisible = True
+        tree.Indent = 14
+        tree.LeftIconSize = New Size(16, 16)
+        tree.LeftTextWidth = 80
+        tree.Location = New Point(0, 0)
+        tree.Margin = New Padding(0, 0, 12, 0)
+        tree.Name = "tree"
+        tree.RightTextColumn = 150
+        tree.SearchBackColor = SystemColors.Control
+        tree.SearchDefaultText = "… tastați o parte din cod sau din denumire …"
+        tree.SearchSeparatorColor = SystemColors.ActiveBorder
+        tree.SearchSeparatorWidth = 2
+        tree.SearchShow = True
+        tree.Size = New Size(608, 614)
+        tree.TabIndex = 0
+        ' 
+        ' tlyRight
+        ' 
+        tlyRight.ColumnCount = 1
+        tlyRight.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyRight.Controls.Add(lblBuget, 0, 0)
+        tlyRight.Controls.Add(gridBuget, 0, 1)
+        tlyRight.Controls.Add(lblRectificari, 0, 2)
+        tlyRight.Controls.Add(gridRectificari, 0, 3)
+        tlyRight.Dock = DockStyle.Fill
+        tlyRight.Location = New Point(620, 0)
+        tlyRight.Margin = New Padding(0)
+        tlyRight.Name = "tlyRight"
+        tlyRight.RowCount = 4
+        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 45F))
+        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 90F))
+        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 57F))
+        tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyRight.Size = New Size(955, 614)
+        tlyRight.TabIndex = 1
+        ' 
+        ' lblBuget
+        ' 
+        lblBuget.AutoEllipsis = True
+        lblBuget.Dock = DockStyle.Fill
+        lblBuget.Font = New Font("Segoe UI", 10F, FontStyle.Bold)
+        lblBuget.Location = New Point(0, 0)
+        lblBuget.Margin = New Padding(0)
+        lblBuget.Name = "lblBuget"
+        lblBuget.Size = New Size(955, 45)
+        lblBuget.TabIndex = 0
+        lblBuget.Text = "Buget anual"
+        lblBuget.TextAlign = ContentAlignment.MiddleCenter
+        ' 
+        ' lblRectificari
+        ' 
+        lblRectificari.AutoEllipsis = True
+        lblRectificari.Dock = DockStyle.Fill
+        lblRectificari.Font = New Font("Segoe UI", 10F, FontStyle.Bold)
+        lblRectificari.Location = New Point(0, 147)
+        lblRectificari.Margin = New Padding(0, 12, 0, 0)
+        lblRectificari.Name = "lblRectificari"
+        lblRectificari.Size = New Size(955, 45)
+        lblRectificari.TabIndex = 2
+        lblRectificari.Text = "Rectificări bugetare"
+        lblRectificari.TextAlign = ContentAlignment.MiddleCenter
+        ' 
         ' tlySubsol
-        '
+        ' 
         tlySubsol.AutoFitToTheme = False
         tlySubsol.ColumnCount = 3
         tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
@@ -398,75 +432,61 @@ Partial Class ClasificatiiForm
         tlySubsol.Controls.Add(btnSalveaza, 1, 0)
         tlySubsol.Controls.Add(btnInchide, 2, 0)
         tlySubsol.Dock = DockStyle.Fill
-        tlySubsol.Location = New Point(0, 666)
+        tlySubsol.Location = New Point(0, 698)
         tlySubsol.Margin = New Padding(0)
         tlySubsol.Name = "tlySubsol"
         tlySubsol.Padding = New Padding(8, 6, 8, 6)
         tlySubsol.RowCount = 1
         tlySubsol.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlySubsol.Size = New Size(1238, 52)
+        tlySubsol.Size = New Size(1599, 78)
         tlySubsol.TabIndex = 2
-        '
+        ' 
         ' lblStare
-        '
+        ' 
         lblStare.AutoEllipsis = True
         lblStare.Dock = DockStyle.Fill
         lblStare.Location = New Point(8, 6)
-        lblStare.Margin = New Padding(0, 0, 8, 0)
+        lblStare.Margin = New Padding(0, 0, 12, 0)
         lblStare.Name = "lblStare"
-        lblStare.Size = New Size(944, 40)
+        lblStare.Size = New Size(1166, 66)
         lblStare.TabIndex = 0
         lblStare.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' btnSalveaza
-        '
-        btnSalveaza.AutoSize = True
-        btnSalveaza.Enabled = False
-        btnSalveaza.FlatStyle = FlatStyle.Flat
-        btnSalveaza.Location = New Point(960, 6)
-        btnSalveaza.Margin = New Padding(0, 0, 8, 0)
-        btnSalveaza.Name = "btnSalveaza"
-        btnSalveaza.Padding = New Padding(17, 3, 17, 3)
-        btnSalveaza.Size = New Size(132, 40)
-        btnSalveaza.TabIndex = 1
-        btnSalveaza.Text = "Salvează"
-        tips.SetToolTipHeader(btnSalveaza, "Salvează")
-        tips.SetToolTipText(btnSalveaza, "Scrie în baza de date bugetul și rectificările clasificației alese.")
-        btnSalveaza.UseVisualStyleBackColor = True
-        '
+        ' 
         ' btnInchide
-        '
+        ' 
         btnInchide.AutoSize = True
         btnInchide.FlatStyle = FlatStyle.Flat
-        btnInchide.Location = New Point(1100, 6)
+        btnInchide.Location = New Point(1396, 6)
         btnInchide.Margin = New Padding(0)
         btnInchide.Name = "btnInchide"
-        btnInchide.Padding = New Padding(17, 3, 17, 3)
-        btnInchide.Size = New Size(130, 40)
+        btnInchide.Padding = New Padding(26, 4, 26, 4)
+        btnInchide.Size = New Size(195, 60)
         btnInchide.TabIndex = 2
         btnInchide.Text = "Închide"
         btnInchide.UseVisualStyleBackColor = True
-        '
+        ' 
         ' ClasificatiiForm
-        '
-        AutoScaleDimensions = New SizeF(96F, 96F)
+        ' 
+        AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
-        ClientSize = New Size(1240, 720)
+        CenterOnScreen = False
+        ClientSize = New Size(1603, 780)
         Controls.Add(tlyMain)
         FormBorderStyle = FormBorderStyle.None
+        Margin = New Padding(4)
         MinimizeBox = False
-        MinimumSize = New Size(900, 520)
+        MinimumSize = New Size(1350, 780)
         Name = "ClasificatiiForm"
-        Padding = New Padding(1)
+        Padding = New Padding(2)
         ShowInTaskbar = False
-        StartPosition = FormStartPosition.CenterParent
+        StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT — Clasificații bugetare"
+        CType(gridBuget, ComponentModel.ISupportInitialize).EndInit()
+        CType(gridRectificari, ComponentModel.ISupportInitialize).EndInit()
         tlyMain.ResumeLayout(False)
         pnlCard.ResumeLayout(False)
         tlyBody.ResumeLayout(False)
         tlyRight.ResumeLayout(False)
-        CType(gridBuget, ComponentModel.ISupportInitialize).EndInit()
-        CType(gridRectificari, ComponentModel.ISupportInitialize).EndInit()
         tlySubsol.ResumeLayout(False)
         tlySubsol.PerformLayout()
         ResumeLayout(False)

@@ -313,6 +313,15 @@ Public Class IstoricView
             Dim luni = cuData.GroupBy(Function(r) r.DataFx.Value.Year * 100 + r.DataFx.Value.Month).
                               OrderBy(Function(g) g.Key)
 
+            ' Root «Tot istoricul», like the other trees (Extrase: «Toate extrasele»). Its count is
+            ' every row, dated or not; clicking it shows what the view shows on load.
+            Dim nodTot As AdvancedTreeControl.TreeItem =
+                tree.AddItem("all", $"Tot istoricul~~~{_rows.Count}",
+                             pLeftIconClosed:=icoLuna, pLeftIconOpen:=icoLuna,
+                             pExpanded:=True)
+            nodTot.Tag = NodPerioada.Tot()
+            nodTot.Bold = True
+
             For Each lunaGrp In luni
                 Dim an As Integer = lunaGrp.Key \ 100
                 Dim luna As Integer = lunaGrp.Key Mod 100
@@ -320,6 +329,7 @@ Public Class IstoricView
                 Dim nodLuna As AdvancedTreeControl.TreeItem =
                     tree.AddItem($"L_{an}_{luna:00}",
                                  $"{IstoricFilter.MonthLabel(luna)}~~~{randuriLuna.Count}",
+                                 nodTot,
                                  pLeftIconClosed:=icoLuna, pLeftIconOpen:=icoLuna,
                                  pExpanded:=True)
                 nodLuna.Tag = NodPerioada.Luna(an, luna)
@@ -352,7 +362,10 @@ Public Class IstoricView
             Dim perioada As NodPerioada = TryCast(pNode.Tag, NodPerioada)
             If perioada Is Nothing Then Return
 
-            If perioada.EsteZi Then
+            If perioada.EsteTot Then
+                ' Same as a fresh load: every filter cleared, every row back.
+                ApplyFilterChange(Sub() _filter.ClearAll())
+            ElseIf perioada.EsteZi Then
                 Dim zi As Date = perioada.Data.Value
                 ApplyFilterChange(Sub() _filter.SetDataFxDay(zi, zi.ToString("dd.MM.yyyy", _roCulture)))
             Else
@@ -708,6 +721,8 @@ Friend NotInheritable Class NodPerioada
     Public ReadOnly Property LunaNr As Integer
     ''' <summary>Ziua exactă, doar pentru nodurile de nivel 2 (altfel Nothing).</summary>
     Public ReadOnly Property Data As Date?
+    ''' <summary>True only for the root «Tot istoricul» node (no period at all).</summary>
+    Public ReadOnly Property EsteTot As Boolean
 
     Public ReadOnly Property EsteZi As Boolean
         Get
@@ -715,11 +730,16 @@ Friend NotInheritable Class NodPerioada
         End Get
     End Property
 
-    Private Sub New(an As Integer, lunaNr As Integer, data As Date?)
+    Private Sub New(an As Integer, lunaNr As Integer, data As Date?, Optional esteTot As Boolean = False)
         Me.An = an
         Me.LunaNr = lunaNr
         Me.Data = data
+        Me.EsteTot = esteTot
     End Sub
+
+    Public Shared Function Tot() As NodPerioada
+        Return New NodPerioada(0, 0, Nothing, esteTot:=True)
+    End Function
 
     Public Shared Function Luna(an As Integer, lunaNr As Integer) As NodPerioada
         Return New NodPerioada(an, lunaNr, Nothing)

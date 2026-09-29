@@ -14,6 +14,14 @@ Public Enum ExtrasePanelMode
     Toate = 1
 End Enum
 
+''' <summary>What the right-hand side shows for the selected node (slice 0096, tree header menu).</summary>
+Public Enum ExtraseDisplayMode
+    ''' <summary>Headers on top, the selected header's operations below; a day shows operations + detail.</summary>
+    AntetOperatii = 0
+    ''' <summary>Every node shows its period's operations on top and the selected one in full below.</summary>
+    OperatiiDetalii = 1
+End Enum
+
 ''' <summary>
 ''' The body of the Extrase view and of the «Extrase de cont» window (slice 0080-02 / 0080-03).
 ''' It does not talk to the API: the host loads an <see cref="ExtraseInfo"/> and hands it over
@@ -30,6 +38,10 @@ End Enum
 ''' <b>Day selected</b>: the top grid lists that day's operations; the bottom shows the selected
 ''' one in full, like the Plăți detail panel. The window adds four rows to it.</para>
 '''
+''' <para><b>Display menu</b> (slice 0096, right icon of the tree header): «antet + operații» is
+''' the arrangement above; «operații + detalii» shows, for EVERY node, the operations of its
+''' period on top and the selected one in full below (see <see cref="ApplyDisplayColumns"/>).</para>
+'''
 ''' <para><b>Columns</b>: every column of <see cref="ExtraseColumns"/> is authored in the
 ''' designer, defaults visible; the operator's choice from «Setări → Extrase» is applied over
 ''' them (<see cref="ApplyColumnLayouts"/>) and again whenever the settings are saved.</para>
@@ -38,6 +50,10 @@ Public Class ExtrasePanel
     Implements IThemedControl
 
     Friend Const ROOT_KEY As String = "all"
+
+    ' Row keys of the display menu (right icon of the tree header).
+    Private Const MENU_ANTET_OPERATII As String = "antet-operatii"
+    Private Const MENU_OPERATII_DETALII As String = "operatii-detalii"
 
     Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
 
@@ -53,6 +69,15 @@ Public Class ExtrasePanel
     Private ReadOnly _antetById As New Dictionary(Of Integer, ExtrasAntet)()
     Private ReadOnly _opsByAntet As New Dictionary(Of Integer, List(Of ExtrasOperatiune))()
     Private _current As NodeData
+    Private _display As ExtraseDisplayMode = ExtraseDisplayMode.AntetOperatii
+
+    ' Designer values of the gridZi columns the display mode switches (filter / grouping). POCO.
+    Private NotInheritable Class ColumnCaps
+        Public Property ShowColumnFilter As Boolean
+        Public Property AllowGrouping As Boolean
+        Public Property ColumnFilterIcon As Image
+    End Class
+    Private ReadOnly _designCaps As New Dictionary(Of String, ColumnCaps)(StringComparer.Ordinal)
 
     Private _splitterDistanceDesfasurat As Integer
     Private _panel1MinSizeDesfasurat As Integer
@@ -62,7 +87,14 @@ Public Class ExtrasePanel
 
     Public Sub New()
         InitializeComponent()
+        For Each key As String In New String() {ExtraseColumns.ODataBanca, ExtraseColumns.OPlatitor, ExtraseColumns.OCui}
+            Dim c As KBotDataColumn = gridZi.Column(key)
+            _designCaps(key) = New ColumnCaps() With {.ShowColumnFilter = c.ShowColumnFilter,
+                                                      .AllowGrouping = c.AllowGrouping,
+                                                      .ColumnFilterIcon = c.ColumnFilterIcon}
+        Next
         ApplyMode()
+        ApplyDisplayColumns()
     End Sub
 
     ''' <summary>Angajament (the view) or Toate (the window). Chooses the layouts and the detail rows.</summary>
@@ -259,7 +291,9 @@ Public Class ExtrasePanel
             If Not antetePeZi.ContainsKey(d) Then antetePeZi(d) = New List(Of ExtrasAntet)()
         Next
 
-        Dim rootData As New NodeData() With {.Antete = OrderedAntete(_info.Antete)}
+        Dim rootData As New NodeData() With {
+            .Antete = OrderedAntete(_info.Antete),
+            .Operatiuni = OrderedOperatiuni(_info.Operatiuni)}
         Dim rootItem As AdvancedTreeControl.TreeItem =
             tree.AddItem(ROOT_KEY, "Toate extrasele", pLeftIconClosed:=icoLuna, pLeftIconOpen:=icoLuna,
                          pExpanded:=True)
@@ -271,6 +305,12 @@ Public Class ExtrasePanel
             Dim zile As List(Of Date) = luna.OrderBy(Function(d) d).ToList()
             Dim monthData As New NodeData()
             monthData.Antete = OrderedAntete(zile.SelectMany(Function(d) antetePeZi(d)).Distinct())
+            Dim opsLuna As New List(Of ExtrasOperatiune)()
+            For Each d As Date In zile
+                Dim opsZi As List(Of ExtrasOperatiune) = Nothing
+                If opsPeZi.TryGetValue(d, opsZi) Then opsLuna.AddRange(opsZi)
+            Next
+            monthData.Operatiuni = OrderedOperatiuni(opsLuna)
             Dim caption As String = MonthLabel(luna.Key.M) & If(multiYear, " " & luna.Key.Y.ToString(CultureInfo.InvariantCulture), String.Empty)
             Dim monthItem As AdvancedTreeControl.TreeItem =
                 tree.AddItem($"L_{luna.Key.Y}_{luna.Key.M}", caption, rootItem,
@@ -297,6 +337,12 @@ Public Class ExtrasePanel
                       ThenBy(Function(a) a.IdExh).ToList()
     End Function
 
+    ' Operations of a period: by bank date (none last), then by id.
+    Private Shared Function OrderedOperatiuni(source As IEnumerable(Of ExtrasOperatiune)) As List(Of ExtrasOperatiune)
+        Return source.OrderBy(Function(o) If(o.DataBanca, Date.MaxValue)).
+                      ThenBy(Function(o) o.IdFxe).ToList()
+    End Function
+
     ' ── Tree -> grids ───────────────────────────────────────────────────────
 
     Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
@@ -313,7 +359,7 @@ Public Class ExtrasePanel
     Private Sub ShowNode(data As NodeData)
         If data Is Nothing Then Return
         _current = data
-        If data.IsDay Then
+        If data.IsDay OrElse _display = ExtraseDisplayMode.OperatiiDetalii Then
             gridAntete.Visible = False
             gridZi.Visible = True
             gridOperatiuni.Visible = False
@@ -450,6 +496,99 @@ Public Class ExtrasePanel
         lblDetailMessage.Text = message
         detailTable.Visible = False
         lblDetailMessage.Visible = True
+    End Sub
+
+    ' ── Display mode (tree header menu, slice 0096) ─────────────────────────
+
+    ''' <summary>The right icon of the tree header opens the display menu under it.</summary>
+    Private Sub Tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
+        Try
+            ' A second press on the icon CLOSES the menu (same as the main tree).
+            If CustomPopup.ClosedJustNow Then Return
+            Dim ancora As Rectangle = tree.HeaderRightIconRect
+            If ancora.IsEmpty Then Return
+            Dim rows As New List(Of CustomPopupItem) From {
+                New CustomPopupItem(MENU_ANTET_OPERATII, "Arată &antet + operații", My.Resources.Resources.cells) With {
+                    .Checked = _display = ExtraseDisplayMode.AntetOperatii},
+                New CustomPopupItem(MENU_OPERATII_DETALII, "Arată &operații + detalii",
+                                    My.Resources.Resources.Wefunction_Woofunction_Window_app_list_info_32) With {
+                    .Checked = _display = ExtraseDisplayMode.OperatiiDetalii}
+            }
+            ' NOT in a «Using»: shown modeless, the popup disposes itself when it closes.
+            Dim menu As New CustomPopup(rows)
+            AddHandler menu.ItemClicked, AddressOf DisplayMenu_ItemClicked
+            menu.ShowBelow(tree, ancora)
+        Catch ex As Exception
+            ' UI boundary (event handler): log and swallow.
+            GlobalErrorLog.Write("ExtrasePanel.Tree_HeaderRightIconClicked", ex)
+        End Try
+    End Sub
+
+    Private Sub DisplayMenu_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
+        Try
+            Select Case e.Item.Key
+                Case MENU_ANTET_OPERATII
+                    DisplayMode = ExtraseDisplayMode.AntetOperatii
+                Case MENU_OPERATII_DETALII
+                    DisplayMode = ExtraseDisplayMode.OperatiiDetalii
+                Case Else
+                    ' No silent no-ops: a row added to the menu and forgotten here must show.
+                    Throw New ArgumentException("Rând necunoscut în meniul extraselor: «" & e.Item.Key & "».")
+            End Select
+        Catch ex As Exception
+            ' UI boundary (popup event): log and swallow.
+            GlobalErrorLog.Write("ExtrasePanel.DisplayMenu_ItemClicked", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Headers + operations (as before) or operations + detail for every node. The selected
+    ''' node is shown again in the new mode.
+    ''' </summary>
+    <ComponentModel.Browsable(False)>
+    <ComponentModel.DesignerSerializationVisibility(ComponentModel.DesignerSerializationVisibility.Hidden)>
+    Public Property DisplayMode As ExtraseDisplayMode
+        Get
+            Return _display
+        End Get
+        Set(value As ExtraseDisplayMode)
+            If _display = value Then Return
+            _display = value
+            ApplyDisplayColumns()
+            If _current IsNot Nothing Then ShowNode(_current)
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' The operations grid on top offers more in «operații + detalii»: «Data bancă» gets the
+    ''' grouping tab (only in this mode), «Plătitor» and «CUI» get filtering and grouping. Back in
+    ''' the other mode the designer values return and whatever those extras set is lifted.
+    ''' The menu lives behind the filter icon, so a hidden column offers nothing by itself.
+    ''' </summary>
+    Private Sub ApplyDisplayColumns()
+        Try
+            Dim detalii As Boolean = (_display = ExtraseDisplayMode.OperatiiDetalii)
+            Dim filterIcon As Image = _designCaps(ExtraseColumns.OPlatitor).ColumnFilterIcon
+            For Each pair As KeyValuePair(Of String, ColumnCaps) In _designCaps
+                Dim c As KBotDataColumn = gridZi.Column(pair.Key)
+                If detalii Then
+                    c.ShowColumnFilter = True
+                    c.AllowGrouping = True
+                    If c.ColumnFilterIcon Is Nothing Then c.ColumnFilterIcon = filterIcon
+                Else
+                    If Not pair.Value.ShowColumnFilter Then gridZi.ClearColumnFilter(pair.Key)
+                    c.ShowColumnFilter = pair.Value.ShowColumnFilter
+                    c.ColumnFilterIcon = pair.Value.ColumnFilterIcon
+                    c.AllowGrouping = pair.Value.AllowGrouping AndAlso
+                                      Not String.Equals(pair.Key, ExtraseColumns.ODataBanca, StringComparison.Ordinal)
+                End If
+            Next
+            If Not detalii Then gridZi.ClearGrouping()
+            gridZi.Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ExtrasePanel.ApplyDisplayColumns", ex)
+            Throw
+        End Try
     End Sub
 
     ' ── Footer, collapse ────────────────────────────────────────────────────

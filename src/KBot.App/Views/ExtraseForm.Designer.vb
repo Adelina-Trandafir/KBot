@@ -36,8 +36,8 @@ Partial Class ExtraseForm
         panel = New ExtrasePanel()
         lblEmpty = New Label()
         tlySubsol = New KBotTableLayoutPanel()
-        btnInchide = New Button()
         lblStare = New Label()
+        btnInchide = New Button()
         tlyMain.SuspendLayout()
         pnlCard.SuspendLayout()
         tlySubsol.SuspendLayout()
@@ -151,6 +151,17 @@ Partial Class ExtraseForm
         tlySubsol.Size = New Size(1796, 78)
         tlySubsol.TabIndex = 2
         ' 
+        ' lblStare
+        ' 
+        lblStare.AutoEllipsis = True
+        lblStare.Dock = DockStyle.Fill
+        lblStare.Location = New Point(215, 6)
+        lblStare.Margin = New Padding(12, 0, 12, 0)
+        lblStare.Name = "lblStare"
+        lblStare.Size = New Size(1270, 66)
+        lblStare.TabIndex = 1
+        lblStare.TextAlign = ContentAlignment.MiddleLeft
+        ' 
         ' btnInchide
         ' 
         btnInchide.AutoSize = True
@@ -164,17 +175,6 @@ Partial Class ExtraseForm
         btnInchide.TabIndex = 2
         btnInchide.Text = "Închide"
         btnInchide.UseVisualStyleBackColor = True
-        ' 
-        ' lblStare
-        ' 
-        lblStare.AutoEllipsis = True
-        lblStare.Dock = DockStyle.Fill
-        lblStare.Location = New Point(215, 6)
-        lblStare.Margin = New Padding(12, 0, 12, 0)
-        lblStare.Name = "lblStare"
-        lblStare.Size = New Size(1270, 66)
-        lblStare.TabIndex = 1
-        lblStare.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' ExtraseForm
         ' 

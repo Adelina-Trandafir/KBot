@@ -198,10 +198,12 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |          0092 | Rezervarea inițială = un singur eveniment, pe ultima zi inițială (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0093 | Parteneri: doar Tip 1 cu cod fiscal (nu al unității, neascunși), unul pe cod fiscal; Tip scos, «Alte detalii» → «Adresa»; ANAF la codul fiscal; banca din IBAN (BIC); cod fiscal unic la salvare (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0094 | `KBotComboBox` rescris pe `Control` (fără `ComboBox`, fără `DataSource`), o singură listă (săgeată = toate, tastare = potrivite); editorul de combo din `KBotDataView` (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
+|          0095 | Istoric: nod rădăcină «Tot istoricul» în arbore (toate rândurile, ca la încărcare) (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
+|          0096 | Extrase: meniu de afișare în antetul arborelui — «antet + operații» / «operații + detalii» (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 
 Work outside the slice system: [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
 
-**Next free slice number: 0095.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
+**Next free slice number: 0097.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
 ⚠️ **Registrul are o gaură: 0038 și 0039 lipsesc.** Codul din `KBot.Controls/Tree` se referă în
 comentarii la «felia 0038» (culoarea/grosimea separatorilor) și «felia 0039» (marginile scalate),
 amândouă vizibile în arborele de lucru, dar niciuna n-are rând aici, iar linia de mai sus declara

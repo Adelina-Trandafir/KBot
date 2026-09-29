@@ -158,15 +158,14 @@ Partial Class KbotForm
         btnMeniu.Dock = DockStyle.Fill
         btnMeniu.FlatAppearance.BorderSize = 0
         btnMeniu.FlatStyle = FlatStyle.Flat
-        btnMeniu.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
-        btnMeniu.Image = My.Resources.Resources.down
-        btnMeniu.Location = New Point(1, 1)
-        btnMeniu.Margin = New Padding(0)
+        btnMeniu.Font = New Font("Courier New", 12F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        btnMeniu.Image = My.Resources.Resources.menu
+        btnMeniu.Location = New Point(11, 1)
+        btnMeniu.Margin = New Padding(10, 0, 10, 0)
         btnMeniu.Name = "btnMeniu"
-        btnMeniu.Size = New Size(240, 42)
+        btnMeniu.Size = New Size(220, 42)
         btnMeniu.TabIndex = 0
-        btnMeniu.Text = "  Meniu"
-        btnMeniu.TextAlign = ContentAlignment.MiddleLeft
+        btnMeniu.Text = "  MENIU"
         btnMeniu.TextImageRelation = TextImageRelation.ImageBeforeText
         tips.SetToolTipHeader(btnMeniu, "Meniu")
         tips.SetToolTipText(btnMeniu, "Angajament nou, clasificațiile bugetare și partenerii.")
@@ -178,27 +177,27 @@ Partial Class KbotForm
         KBotMenuItem1.Image = My.Resources.Resources.plus_green
         KBotMenuItem1.Key = "angajament_nou"
         KBotMenuItem1.Text = "<b>Angajament nou</b>"
-        KBotMenuItem2.IsSeparator = True
-        KBotMenuItem2.Key = Nothing
-        KBotMenuItem3.Image = My.Resources.Resources.folder_open
-        KBotMenuItem4.Image = My.Resources.Resources.cells
-        KBotMenuItem4.Key = "clasificatii"
-        KBotMenuItem4.Text = "Clasificații bugetare"
-        KBotMenuItem5.Image = My.Resources.Resources.binvoice
-        KBotMenuItem5.Key = "parteneri"
-        KBotMenuItem5.Text = "Parteneri"
-        KBotMenuItem3.Items.Add(KBotMenuItem4)
-        KBotMenuItem3.Items.Add(KBotMenuItem5)
-        KBotMenuItem3.Key = "nomenclatoare"
-        KBotMenuItem3.Text = "Nomenclatoare"
-        KBotMenuItem6.Image = My.Resources.Resources.FX_RED_16
-        KBotMenuItem6.Key = "operatiuni_necorelate"
-        KBotMenuItem6.Text = "<b>(!) Operațiuni necorelate</b>"
-        KBotMenuItem6.Visible = False
+        KBotMenuItem2.Image = My.Resources.Resources.FX_RED_16
+        KBotMenuItem2.Key = "operatiuni_necorelate"
+        KBotMenuItem2.Text = "<b>(!) Operațiuni necorelate</b>"
+        KBotMenuItem2.Visible = False
+        KBotMenuItem3.IsSeparator = True
+        KBotMenuItem3.Key = Nothing
+        KBotMenuItem4.Image = My.Resources.Resources.folder_open
+        KBotMenuItem5.Image = My.Resources.Resources.cells
+        KBotMenuItem5.Key = "clasificatii"
+        KBotMenuItem5.Text = "Clasificații bugetare"
+        KBotMenuItem6.Image = My.Resources.Resources.binvoice
+        KBotMenuItem6.Key = "parteneri"
+        KBotMenuItem6.Text = "Parteneri"
+        KBotMenuItem4.Items.Add(KBotMenuItem5)
+        KBotMenuItem4.Items.Add(KBotMenuItem6)
+        KBotMenuItem4.Key = "nomenclatoare"
+        KBotMenuItem4.Text = "Nomenclatoare"
         menuNou.Items.Add(KBotMenuItem1)
-        menuNou.Items.Add(KBotMenuItem6)
         menuNou.Items.Add(KBotMenuItem2)
         menuNou.Items.Add(KBotMenuItem3)
+        menuNou.Items.Add(KBotMenuItem4)
         ' 
         ' pnlRoot
         ' 

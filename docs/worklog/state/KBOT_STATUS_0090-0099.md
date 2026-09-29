@@ -94,3 +94,28 @@ Everything recorded about each slice: its registry row, its «Current focus» no
   `SetComboEditBounds`, `GetComboEditTextTop`, `GetComboEditLineHeight`, `ApplyControlColors`).
 - **0094 — diferențe de comportament:** rotița peste un combo ÎNCHIS nu mai schimbă selecția;
   `Items.Clear()` pe un combo editabil păstrează textul tastat.
+
+---
+
+## Slice 0095
+
+### Registry
+
+| Slice | Name | Status | Worklog(s) | Notes |
+|------:|------|--------|-----------|-------|
+| 0095 | **Istoric: nod rădăcină «Tot istoricul» (cererea operatorului, 29.09.2026)** — arborele Istoric are acum un nivel rădăcină, ca celelalte arbori (Extrase: «Toate extrasele»); lunile stau sub el, zilele sub luni. Clic pe rădăcină = ce face vederea la încărcare: toate filtrele golite, toate rândurile FX_Istoric ale angajamentului | GATA pe cod (build KBot.App **0 erori**) / **nevăzut pe ecran, fără teste** | `SLICE-0095-istoric-tree-root.md` | Doar `IstoricView.vb`: `NodPerioada.Tot()` + `EsteTot`. Numărul din dreapta rădăcinii = toate rândurile, inclusiv cele fără dată (până acum fără nod în arbore). Clicul pe rădăcină renunță și la intervalul cerut de FOREXE (0073). FileVersion KBot.App nebumped (îl cere `push-update.ps1`). |
+
+---
+
+## Slice 0096
+
+### Registry
+
+| Slice | Name | Status | Worklog(s) | Notes |
+|------:|------|--------|-----------|-------|
+| 0096 | **Extrase: meniu de afișare în antetul arborelui (cererea operatorului, 29.09.2026)** — iconița de setări din dreapta antetului arborelui (vederea Extrase și fereastra «Extrase de cont») deschide două rânduri: «Arată antet + operații» (ca până acum) și «Arată operații + detalii» (sus operațiunile FX_Extrase ale perioadei alese în arbore, jos detaliul celei selectate; «Data bancă» primește grupare doar în acest mod, «Plătitor» și «CUI» filtrare + grupare) | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste** | `SLICE-0096-extrase-display-menu.md` | Doar `ExtrasePanel.vb` + o iconiță/tooltip în `ExtrasePanel.Designer.vb`. Presupuneri: «Data» = `o_data_banca`; gruparea e OFERITĂ în meniul coloanei, nu aplicată automat; alegerea nu se salvează în `AppSettings`. FileVersion KBot.App nebumped. |
+
+### Open threads
+
+- **0096 — nevăzut pe ecran.** De confirmat cu operatorul: gruparea pe dată oferită vs. aplicată
+  automat la intrarea în mod; dacă alegerea modului trebuie ținută minte între sesiuni.

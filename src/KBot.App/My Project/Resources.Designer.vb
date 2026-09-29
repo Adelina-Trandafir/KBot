@@ -693,6 +693,16 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized resource of type System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property menu() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("menu", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property Papirus_Team_Papirus_Apps_Accessories_text_editor_512_resized() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("Papirus-Team-Papirus-Apps-Accessories-text-editor.512_resized", resourceCulture)

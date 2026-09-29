@@ -74,15 +74,14 @@ Partial Class ExtrasePanel
         Dim KBotDataColumn45 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn46 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
-        split = New SplitContainer()
-        tree = New AdvancedTreeControl()
-        innerSplit = New SplitContainer()
         gridAntete = New KBotDataView()
         gridZi = New KBotDataView()
         gridOperatiuni = New KBotDataView()
+        split = New SplitContainer()
+        tree = New AdvancedTreeControl()
+        innerSplit = New SplitContainer()
         detailPane = New Panel()
         detailTable = New KBotTableLayoutPanel()
-        lblDetailMessage = New Label()
         capNrDoc = New Label()
         valNrDoc = New Label()
         capDataBanca = New Label()
@@ -111,6 +110,10 @@ Partial Class ExtrasePanel
         valCodProgram = New Label()
         capExplicatii = New Label()
         valExplicatii = New Label()
+        lblDetailMessage = New Label()
+        CType(gridAntete, ComponentModel.ISupportInitialize).BeginInit()
+        CType(gridZi, ComponentModel.ISupportInitialize).BeginInit()
+        CType(gridOperatiuni, ComponentModel.ISupportInitialize).BeginInit()
         CType(split, ComponentModel.ISupportInitialize).BeginInit()
         split.Panel1.SuspendLayout()
         split.Panel2.SuspendLayout()
@@ -119,12 +122,754 @@ Partial Class ExtrasePanel
         innerSplit.Panel1.SuspendLayout()
         innerSplit.Panel2.SuspendLayout()
         innerSplit.SuspendLayout()
-        CType(gridAntete, ComponentModel.ISupportInitialize).BeginInit()
-        CType(gridZi, ComponentModel.ISupportInitialize).BeginInit()
-        CType(gridOperatiuni, ComponentModel.ISupportInitialize).BeginInit()
         detailPane.SuspendLayout()
         detailTable.SuspendLayout()
         SuspendLayout()
+        ' 
+        ' gridAntete
+        ' 
+        gridAntete.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        gridAntete.AutoSizeHeaderHeight = False
+        gridAntete.BackColor = SystemColors.Window
+        gridAntete.ColumnFillMode = KBotFillMode.LastColumn
+        KBotDataColumn1.AggregateFormatString = Nothing
+        KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn1.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn1.Format = KBotFormat.ShortDate
+        KBotDataColumn1.FormatString = Nothing
+        KBotDataColumn1.HeaderText = "Data"
+        KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn1.Key = "h_data"
+        KBotDataColumn1.OptionGroup = Nothing
+        KBotDataColumn1.ReadOnly = True
+        KBotDataColumn1.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn1.ValueType = KBotValueType.DateTime
+        KBotDataColumn2.AggregateFormatString = Nothing
+        KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn2.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn2.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn2.FormatString = Nothing
+        KBotDataColumn2.HeaderText = "Nr. extras"
+        KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn2.Key = "h_numar"
+        KBotDataColumn2.OptionGroup = Nothing
+        KBotDataColumn2.ReadOnly = True
+        KBotDataColumn2.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn2.Width = 70
+        KBotDataColumn3.AggregateFormatString = Nothing
+        KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn3.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn3.ColumnFilterIcon = My.Resources.Resources.filter
+        KBotDataColumn3.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn3.FormatString = Nothing
+        KBotDataColumn3.HeaderText = "Clasificație"
+        KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn3.Key = "h_clsf"
+        KBotDataColumn3.OptionGroup = Nothing
+        KBotDataColumn3.ReadOnly = True
+        KBotDataColumn3.ShowColumnFilter = True
+        KBotDataColumn3.Width = 150
+        KBotDataColumn4.AggregateFormatString = Nothing
+        KBotDataColumn4.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn4.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn4.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn4.FormatString = Nothing
+        KBotDataColumn4.HeaderText = "Denumire clasificație"
+        KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn4.Key = "h_denumire"
+        KBotDataColumn4.OptionGroup = Nothing
+        KBotDataColumn4.ReadOnly = True
+        KBotDataColumn4.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn4.Width = 200
+        KBotDataColumn5.AggregateFormatString = Nothing
+        KBotDataColumn5.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn5.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn5.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn5.FormatString = Nothing
+        KBotDataColumn5.HeaderText = "Cont"
+        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn5.Key = "h_cont"
+        KBotDataColumn5.OptionGroup = Nothing
+        KBotDataColumn5.ReadOnly = True
+        KBotDataColumn5.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn5.Width = 150
+        KBotDataColumn6.AggregateFormatString = Nothing
+        KBotDataColumn6.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn6.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn6.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn6.FormatString = Nothing
+        KBotDataColumn6.HeaderText = "IBAN"
+        KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn6.Key = "h_iban"
+        KBotDataColumn6.OptionGroup = Nothing
+        KBotDataColumn6.ReadOnly = True
+        KBotDataColumn6.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn6.Width = 190
+        KBotDataColumn7.AggregateFormatString = Nothing
+        KBotDataColumn7.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn7.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn7.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn7.DecimalPlaces = 2
+        KBotDataColumn7.Format = KBotFormat.Standard
+        KBotDataColumn7.FormatString = Nothing
+        KBotDataColumn7.HeaderText = "SID"
+        KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn7.Key = "h_sid"
+        KBotDataColumn7.OptionGroup = Nothing
+        KBotDataColumn7.ReadOnly = True
+        KBotDataColumn7.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn7.ValueType = KBotValueType.Number
+        KBotDataColumn7.Width = 95
+        KBotDataColumn8.AggregateFormatString = Nothing
+        KBotDataColumn8.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn8.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn8.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn8.DecimalPlaces = 2
+        KBotDataColumn8.Format = KBotFormat.Standard
+        KBotDataColumn8.FormatString = Nothing
+        KBotDataColumn8.HeaderText = "SIC"
+        KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn8.Key = "h_sic"
+        KBotDataColumn8.OptionGroup = Nothing
+        KBotDataColumn8.ReadOnly = True
+        KBotDataColumn8.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn8.ValueType = KBotValueType.Number
+        KBotDataColumn8.Width = 95
+        KBotDataColumn9.AggregateFormatString = Nothing
+        KBotDataColumn9.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn9.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn9.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn9.DecimalPlaces = 2
+        KBotDataColumn9.Format = KBotFormat.Standard
+        KBotDataColumn9.FormatString = Nothing
+        KBotDataColumn9.HeaderText = "RPD"
+        KBotDataColumn9.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn9.Key = "h_rpd"
+        KBotDataColumn9.OptionGroup = Nothing
+        KBotDataColumn9.ReadOnly = True
+        KBotDataColumn9.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn9.ValueType = KBotValueType.Number
+        KBotDataColumn9.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn9.Width = 95
+        KBotDataColumn10.AggregateFormatString = Nothing
+        KBotDataColumn10.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn10.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn10.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn10.DecimalPlaces = 2
+        KBotDataColumn10.Format = KBotFormat.Standard
+        KBotDataColumn10.FormatString = Nothing
+        KBotDataColumn10.HeaderText = "RPC"
+        KBotDataColumn10.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn10.Key = "h_rpc"
+        KBotDataColumn10.OptionGroup = Nothing
+        KBotDataColumn10.ReadOnly = True
+        KBotDataColumn10.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn10.ValueType = KBotValueType.Number
+        KBotDataColumn10.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn10.Width = 95
+        KBotDataColumn11.AggregateFormatString = Nothing
+        KBotDataColumn11.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn11.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn11.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn11.DecimalPlaces = 2
+        KBotDataColumn11.Format = KBotFormat.Standard
+        KBotDataColumn11.FormatString = Nothing
+        KBotDataColumn11.HeaderText = "TSD"
+        KBotDataColumn11.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn11.Key = "h_tsd"
+        KBotDataColumn11.OptionGroup = Nothing
+        KBotDataColumn11.ReadOnly = True
+        KBotDataColumn11.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn11.ValueType = KBotValueType.Number
+        KBotDataColumn11.Width = 95
+        KBotDataColumn12.AggregateFormatString = Nothing
+        KBotDataColumn12.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn12.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn12.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn12.DecimalPlaces = 2
+        KBotDataColumn12.Format = KBotFormat.Standard
+        KBotDataColumn12.FormatString = Nothing
+        KBotDataColumn12.HeaderText = "TSC"
+        KBotDataColumn12.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn12.Key = "h_tsc"
+        KBotDataColumn12.OptionGroup = Nothing
+        KBotDataColumn12.ReadOnly = True
+        KBotDataColumn12.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn12.ValueType = KBotValueType.Number
+        KBotDataColumn12.Width = 95
+        KBotDataColumn13.AggregateFormatString = Nothing
+        KBotDataColumn13.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn13.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn13.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn13.DecimalPlaces = 2
+        KBotDataColumn13.Format = KBotFormat.Standard
+        KBotDataColumn13.FormatString = Nothing
+        KBotDataColumn13.HeaderText = "SFD"
+        KBotDataColumn13.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn13.Key = "h_sfd"
+        KBotDataColumn13.OptionGroup = Nothing
+        KBotDataColumn13.ReadOnly = True
+        KBotDataColumn13.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn13.ValueType = KBotValueType.Number
+        KBotDataColumn13.Width = 95
+        KBotDataColumn14.AggregateFormatString = Nothing
+        KBotDataColumn14.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn14.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn14.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn14.DecimalPlaces = 2
+        KBotDataColumn14.Format = KBotFormat.Standard
+        KBotDataColumn14.FormatString = Nothing
+        KBotDataColumn14.HeaderText = "SFC"
+        KBotDataColumn14.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn14.Key = "h_sfc"
+        KBotDataColumn14.OptionGroup = Nothing
+        KBotDataColumn14.ReadOnly = True
+        KBotDataColumn14.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn14.ValueType = KBotValueType.Number
+        KBotDataColumn14.Width = 95
+        gridAntete.Columns.Add(KBotDataColumn1)
+        gridAntete.Columns.Add(KBotDataColumn2)
+        gridAntete.Columns.Add(KBotDataColumn3)
+        gridAntete.Columns.Add(KBotDataColumn4)
+        gridAntete.Columns.Add(KBotDataColumn5)
+        gridAntete.Columns.Add(KBotDataColumn6)
+        gridAntete.Columns.Add(KBotDataColumn7)
+        gridAntete.Columns.Add(KBotDataColumn8)
+        gridAntete.Columns.Add(KBotDataColumn9)
+        gridAntete.Columns.Add(KBotDataColumn10)
+        gridAntete.Columns.Add(KBotDataColumn11)
+        gridAntete.Columns.Add(KBotDataColumn12)
+        gridAntete.Columns.Add(KBotDataColumn13)
+        gridAntete.Columns.Add(KBotDataColumn14)
+        gridAntete.Dock = DockStyle.Fill
+        gridAntete.EnableGrouping = True
+        gridAntete.FilterIconSize = New Size(14, 14)
+        gridAntete.FrozenColumnCount = 1
+        gridAntete.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        gridAntete.Location = New Point(0, 0)
+        gridAntete.Margin = New Padding(4, 5, 4, 5)
+        gridAntete.Name = "gridAntete"
+        gridAntete.ReadOnlyGrid = True
+        gridAntete.RowHeight = 22
+        gridAntete.ScrollByColumn = True
+        gridAntete.ShrinkColumnsToFit = False
+        gridAntete.Size = New Size(697, 285)
+        gridAntete.TabIndex = 0
+        tips.SetToolTipHeader(gridAntete, "Antetele extraselor")
+        tips.SetToolTipText(gridAntete, "Un rând pentru fiecare cont din extras (FX_Extrase_H), cu soldurile lui." & vbLf & "Rândul selectat își arată operațiunile în grila de dedesubt.")
+        ' 
+        ' gridZi
+        ' 
+        gridZi.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        gridZi.AutoSizeHeaderHeight = False
+        gridZi.BackColor = SystemColors.Window
+        gridZi.ColumnFillMode = KBotFillMode.LastColumn
+        KBotDataColumn15.AggregateFormatString = Nothing
+        KBotDataColumn15.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn15.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn15.ColumnFilterIcon = My.Resources.Resources.filter
+        KBotDataColumn15.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn15.Format = KBotFormat.ShortDate
+        KBotDataColumn15.FormatString = Nothing
+        KBotDataColumn15.HeaderText = "Data bancă"
+        KBotDataColumn15.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn15.Key = "o_data_banca"
+        KBotDataColumn15.OptionGroup = Nothing
+        KBotDataColumn15.ReadOnly = True
+        KBotDataColumn15.ShowColumnFilter = True
+        KBotDataColumn15.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn15.ValueType = KBotValueType.DateTime
+        KBotDataColumn15.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn16.AggregateFormatString = Nothing
+        KBotDataColumn16.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn16.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn16.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn16.Format = KBotFormat.ShortDate
+        KBotDataColumn16.FormatString = Nothing
+        KBotDataColumn16.HeaderText = "Data document"
+        KBotDataColumn16.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn16.Key = "o_data_doc"
+        KBotDataColumn16.OptionGroup = Nothing
+        KBotDataColumn16.ReadOnly = True
+        KBotDataColumn16.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn16.ValueType = KBotValueType.DateTime
+        KBotDataColumn16.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn17.AggregateFormatString = Nothing
+        KBotDataColumn17.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn17.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn17.ColumnFilterIcon = My.Resources.Resources.filter
+        KBotDataColumn17.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn17.FormatString = Nothing
+        KBotDataColumn17.HeaderText = "Clasificație"
+        KBotDataColumn17.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn17.Key = "o_clsf"
+        KBotDataColumn17.OptionGroup = Nothing
+        KBotDataColumn17.ReadOnly = True
+        KBotDataColumn17.ShowColumnFilter = True
+        KBotDataColumn17.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn17.Width = 150
+        KBotDataColumn18.AggregateFormatString = Nothing
+        KBotDataColumn18.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn18.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn18.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn18.FormatString = Nothing
+        KBotDataColumn18.HeaderText = "Nr. document"
+        KBotDataColumn18.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn18.Key = "o_nr_doc"
+        KBotDataColumn18.OptionGroup = Nothing
+        KBotDataColumn18.ReadOnly = True
+        KBotDataColumn18.Width = 90
+        KBotDataColumn19.AggregateFormatString = Nothing
+        KBotDataColumn19.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn19.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn19.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn19.FormatString = Nothing
+        KBotDataColumn19.HeaderText = "Referință"
+        KBotDataColumn19.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn19.Key = "o_referinta"
+        KBotDataColumn19.OptionGroup = Nothing
+        KBotDataColumn19.ReadOnly = True
+        KBotDataColumn19.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn19.Width = 120
+        KBotDataColumn20.AggregateFormatString = Nothing
+        KBotDataColumn20.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn20.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn20.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn20.FormatString = Nothing
+        KBotDataColumn20.HeaderText = "Referință destinatar"
+        KBotDataColumn20.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn20.Key = "o_referinta_dest"
+        KBotDataColumn20.OptionGroup = Nothing
+        KBotDataColumn20.ReadOnly = True
+        KBotDataColumn20.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn20.Width = 120
+        KBotDataColumn21.AggregateFormatString = Nothing
+        KBotDataColumn21.AllowGrouping = False
+        KBotDataColumn21.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn21.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn21.ColumnFilterIcon = My.Resources.Resources.filter
+        KBotDataColumn21.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn21.FormatString = Nothing
+        KBotDataColumn21.HeaderText = "Plătitor"
+        KBotDataColumn21.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn21.Key = "o_platitor"
+        KBotDataColumn21.OptionGroup = Nothing
+        KBotDataColumn21.ReadOnly = True
+        KBotDataColumn21.ShowColumnFilter = True
+        KBotDataColumn21.Width = 200
+        KBotDataColumn22.AggregateFormatString = Nothing
+        KBotDataColumn22.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn22.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn22.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn22.FormatString = Nothing
+        KBotDataColumn22.HeaderText = "CUI"
+        KBotDataColumn22.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn22.Key = "o_cui"
+        KBotDataColumn22.OptionGroup = Nothing
+        KBotDataColumn22.ReadOnly = True
+        KBotDataColumn22.Width = 90
+        KBotDataColumn23.AggregateFormatString = Nothing
+        KBotDataColumn23.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn23.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn23.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn23.FormatString = Nothing
+        KBotDataColumn23.HeaderText = "IBAN"
+        KBotDataColumn23.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn23.Key = "o_iban"
+        KBotDataColumn23.OptionGroup = Nothing
+        KBotDataColumn23.ReadOnly = True
+        KBotDataColumn23.Width = 190
+        KBotDataColumn24.Aggregate = KBotAggregate.Sum
+        KBotDataColumn24.AggregateFormatString = Nothing
+        KBotDataColumn24.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn24.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn24.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn24.DecimalPlaces = 2
+        KBotDataColumn24.Format = KBotFormat.Standard
+        KBotDataColumn24.FormatString = Nothing
+        KBotDataColumn24.HeaderText = "Debit"
+        KBotDataColumn24.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn24.Key = "o_debit"
+        KBotDataColumn24.OptionGroup = Nothing
+        KBotDataColumn24.ReadOnly = True
+        KBotDataColumn24.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn24.ValueType = KBotValueType.Number
+        KBotDataColumn24.Width = 95
+        KBotDataColumn25.Aggregate = KBotAggregate.Sum
+        KBotDataColumn25.AggregateFormatString = Nothing
+        KBotDataColumn25.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn25.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn25.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn25.DecimalPlaces = 2
+        KBotDataColumn25.Format = KBotFormat.Standard
+        KBotDataColumn25.FormatString = Nothing
+        KBotDataColumn25.HeaderText = "Credit"
+        KBotDataColumn25.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn25.Key = "o_credit"
+        KBotDataColumn25.OptionGroup = Nothing
+        KBotDataColumn25.ReadOnly = True
+        KBotDataColumn25.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn25.ValueType = KBotValueType.Number
+        KBotDataColumn25.Width = 95
+        KBotDataColumn26.AggregateFormatString = Nothing
+        KBotDataColumn26.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn26.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn26.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn26.FormatString = Nothing
+        KBotDataColumn26.HeaderText = "Cod angajament"
+        KBotDataColumn26.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn26.Key = "o_cod_angajament"
+        KBotDataColumn26.OptionGroup = Nothing
+        KBotDataColumn26.ReadOnly = True
+        KBotDataColumn26.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn26.Width = 110
+        KBotDataColumn27.AggregateFormatString = Nothing
+        KBotDataColumn27.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn27.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn27.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn27.FormatString = Nothing
+        KBotDataColumn27.HeaderText = "Indicator"
+        KBotDataColumn27.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn27.Key = "o_indicator"
+        KBotDataColumn27.OptionGroup = Nothing
+        KBotDataColumn27.ReadOnly = True
+        KBotDataColumn27.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn27.Width = 80
+        KBotDataColumn28.AggregateFormatString = Nothing
+        KBotDataColumn28.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn28.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn28.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn28.FormatString = Nothing
+        KBotDataColumn28.HeaderText = "Cod program"
+        KBotDataColumn28.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn28.Key = "o_cod_program"
+        KBotDataColumn28.OptionGroup = Nothing
+        KBotDataColumn28.ReadOnly = True
+        KBotDataColumn28.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn28.Width = 90
+        KBotDataColumn29.AggregateFormatString = Nothing
+        KBotDataColumn29.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn29.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn29.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn29.FormatString = Nothing
+        KBotDataColumn29.HeaderText = "CodAI"
+        KBotDataColumn29.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn29.Key = "o_cod_ai"
+        KBotDataColumn29.OptionGroup = Nothing
+        KBotDataColumn29.ReadOnly = True
+        KBotDataColumn29.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn29.Width = 120
+        KBotDataColumn30.AggregateFormatString = Nothing
+        KBotDataColumn30.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn30.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn30.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn30.FormatString = Nothing
+        KBotDataColumn30.HeaderText = "Explicații"
+        KBotDataColumn30.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn30.Key = "o_explicatii"
+        KBotDataColumn30.OptionGroup = Nothing
+        KBotDataColumn30.ReadOnly = True
+        KBotDataColumn30.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn30.Width = 300
+        gridZi.Columns.Add(KBotDataColumn15)
+        gridZi.Columns.Add(KBotDataColumn16)
+        gridZi.Columns.Add(KBotDataColumn17)
+        gridZi.Columns.Add(KBotDataColumn18)
+        gridZi.Columns.Add(KBotDataColumn19)
+        gridZi.Columns.Add(KBotDataColumn20)
+        gridZi.Columns.Add(KBotDataColumn21)
+        gridZi.Columns.Add(KBotDataColumn22)
+        gridZi.Columns.Add(KBotDataColumn23)
+        gridZi.Columns.Add(KBotDataColumn24)
+        gridZi.Columns.Add(KBotDataColumn25)
+        gridZi.Columns.Add(KBotDataColumn26)
+        gridZi.Columns.Add(KBotDataColumn27)
+        gridZi.Columns.Add(KBotDataColumn28)
+        gridZi.Columns.Add(KBotDataColumn29)
+        gridZi.Columns.Add(KBotDataColumn30)
+        gridZi.Dock = DockStyle.Fill
+        gridZi.EnableGrouping = True
+        gridZi.FilterIconSize = New Size(14, 14)
+        gridZi.FooterBackColor = SystemColors.Control
+        gridZi.FooterCaption = "TOTALURI"
+        gridZi.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        gridZi.FooterHeight = 24
+        gridZi.FooterIconSize = New Size(14, 14)
+        gridZi.FooterSeparatorColor = SystemColors.ActiveBorder
+        gridZi.FooterVisible = True
+        gridZi.FrozenColumnCount = 1
+        gridZi.HeaderBackColor = SystemColors.Control
+        gridZi.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        gridZi.HeaderHeight = 24
+        gridZi.HeaderSeparatorColor = SystemColors.ActiveBorder
+        gridZi.Location = New Point(0, 0)
+        gridZi.Margin = New Padding(4, 5, 4, 5)
+        gridZi.Name = "gridZi"
+        gridZi.ReadOnlyGrid = True
+        gridZi.RowHeight = 22
+        gridZi.ScrollByColumn = True
+        gridZi.ShrinkColumnsToFit = False
+        gridZi.Size = New Size(697, 285)
+        gridZi.TabIndex = 1
+        tips.SetToolTipHeader(gridZi, "Operațiunile zilei")
+        tips.SetToolTipText(gridZi, "Operațiunile din extras cu data băncii în ziua aleasă." & vbLf & "Rândul selectat se vede în întregime dedesubt.")
+        gridZi.Visible = False
+        ' 
+        ' gridOperatiuni
+        ' 
+        gridOperatiuni.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        gridOperatiuni.AutoSizeHeaderHeight = False
+        gridOperatiuni.BackColor = SystemColors.Window
+        gridOperatiuni.ColumnFillMode = KBotFillMode.LastColumn
+        KBotDataColumn31.AggregateFormatString = Nothing
+        KBotDataColumn31.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn31.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn31.ColumnFilterIcon = My.Resources.Resources.filter
+        KBotDataColumn31.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn31.Format = KBotFormat.ShortDate
+        KBotDataColumn31.FormatString = Nothing
+        KBotDataColumn31.HeaderText = "Data bancă"
+        KBotDataColumn31.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn31.Key = "o_data_banca"
+        KBotDataColumn31.OptionGroup = Nothing
+        KBotDataColumn31.ReadOnly = True
+        KBotDataColumn31.ShowColumnFilter = True
+        KBotDataColumn31.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn31.ValueType = KBotValueType.DateTime
+        KBotDataColumn32.AggregateFormatString = Nothing
+        KBotDataColumn32.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn32.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn32.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn32.Format = KBotFormat.ShortDate
+        KBotDataColumn32.FormatString = Nothing
+        KBotDataColumn32.HeaderText = "Data document"
+        KBotDataColumn32.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn32.Key = "o_data_doc"
+        KBotDataColumn32.OptionGroup = Nothing
+        KBotDataColumn32.ReadOnly = True
+        KBotDataColumn32.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn32.ValueType = KBotValueType.DateTime
+        KBotDataColumn32.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn33.AggregateFormatString = Nothing
+        KBotDataColumn33.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn33.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn33.ColumnFilterIcon = My.Resources.Resources.filter
+        KBotDataColumn33.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn33.FormatString = Nothing
+        KBotDataColumn33.HeaderText = "Clasificație"
+        KBotDataColumn33.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn33.Key = "o_clsf"
+        KBotDataColumn33.OptionGroup = Nothing
+        KBotDataColumn33.ReadOnly = True
+        KBotDataColumn33.ShowColumnFilter = True
+        KBotDataColumn33.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn33.Width = 150
+        KBotDataColumn34.AggregateFormatString = Nothing
+        KBotDataColumn34.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn34.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn34.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn34.FormatString = Nothing
+        KBotDataColumn34.HeaderText = "Nr. document"
+        KBotDataColumn34.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn34.Key = "o_nr_doc"
+        KBotDataColumn34.OptionGroup = Nothing
+        KBotDataColumn34.ReadOnly = True
+        KBotDataColumn34.Width = 90
+        KBotDataColumn35.AggregateFormatString = Nothing
+        KBotDataColumn35.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn35.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn35.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn35.FormatString = Nothing
+        KBotDataColumn35.HeaderText = "Referință"
+        KBotDataColumn35.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn35.Key = "o_referinta"
+        KBotDataColumn35.OptionGroup = Nothing
+        KBotDataColumn35.ReadOnly = True
+        KBotDataColumn35.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn35.Width = 120
+        KBotDataColumn36.AggregateFormatString = Nothing
+        KBotDataColumn36.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn36.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn36.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn36.FormatString = Nothing
+        KBotDataColumn36.HeaderText = "Referință destinatar"
+        KBotDataColumn36.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn36.Key = "o_referinta_dest"
+        KBotDataColumn36.OptionGroup = Nothing
+        KBotDataColumn36.ReadOnly = True
+        KBotDataColumn36.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn36.Width = 120
+        KBotDataColumn37.AggregateFormatString = Nothing
+        KBotDataColumn37.AllowGrouping = False
+        KBotDataColumn37.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn37.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn37.ColumnFilterIcon = My.Resources.Resources.filter
+        KBotDataColumn37.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn37.FormatString = Nothing
+        KBotDataColumn37.HeaderText = "Plătitor"
+        KBotDataColumn37.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn37.Key = "o_platitor"
+        KBotDataColumn37.OptionGroup = Nothing
+        KBotDataColumn37.ReadOnly = True
+        KBotDataColumn37.ShowColumnFilter = True
+        KBotDataColumn37.Width = 200
+        KBotDataColumn38.AggregateFormatString = Nothing
+        KBotDataColumn38.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn38.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn38.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn38.FormatString = Nothing
+        KBotDataColumn38.HeaderText = "CUI"
+        KBotDataColumn38.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn38.Key = "o_cui"
+        KBotDataColumn38.OptionGroup = Nothing
+        KBotDataColumn38.ReadOnly = True
+        KBotDataColumn38.Width = 90
+        KBotDataColumn39.AggregateFormatString = Nothing
+        KBotDataColumn39.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn39.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn39.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn39.FormatString = Nothing
+        KBotDataColumn39.HeaderText = "IBAN"
+        KBotDataColumn39.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn39.Key = "o_iban"
+        KBotDataColumn39.OptionGroup = Nothing
+        KBotDataColumn39.ReadOnly = True
+        KBotDataColumn39.Width = 190
+        KBotDataColumn40.Aggregate = KBotAggregate.Sum
+        KBotDataColumn40.AggregateFormatString = Nothing
+        KBotDataColumn40.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn40.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn40.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn40.DecimalPlaces = 2
+        KBotDataColumn40.Format = KBotFormat.Standard
+        KBotDataColumn40.FormatString = Nothing
+        KBotDataColumn40.HeaderText = "Debit"
+        KBotDataColumn40.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn40.Key = "o_debit"
+        KBotDataColumn40.OptionGroup = Nothing
+        KBotDataColumn40.ReadOnly = True
+        KBotDataColumn40.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn40.ValueType = KBotValueType.Number
+        KBotDataColumn40.Width = 95
+        KBotDataColumn41.Aggregate = KBotAggregate.Sum
+        KBotDataColumn41.AggregateFormatString = Nothing
+        KBotDataColumn41.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn41.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn41.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn41.DecimalPlaces = 2
+        KBotDataColumn41.Format = KBotFormat.Standard
+        KBotDataColumn41.FormatString = Nothing
+        KBotDataColumn41.HeaderText = "Credit"
+        KBotDataColumn41.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn41.Key = "o_credit"
+        KBotDataColumn41.OptionGroup = Nothing
+        KBotDataColumn41.ReadOnly = True
+        KBotDataColumn41.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn41.ValueType = KBotValueType.Number
+        KBotDataColumn41.Width = 95
+        KBotDataColumn42.AggregateFormatString = Nothing
+        KBotDataColumn42.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn42.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn42.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn42.FormatString = Nothing
+        KBotDataColumn42.HeaderText = "Cod angajament"
+        KBotDataColumn42.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn42.Key = "o_cod_angajament"
+        KBotDataColumn42.OptionGroup = Nothing
+        KBotDataColumn42.ReadOnly = True
+        KBotDataColumn42.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn42.Width = 110
+        KBotDataColumn43.AggregateFormatString = Nothing
+        KBotDataColumn43.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn43.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn43.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn43.FormatString = Nothing
+        KBotDataColumn43.HeaderText = "Indicator"
+        KBotDataColumn43.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn43.Key = "o_indicator"
+        KBotDataColumn43.OptionGroup = Nothing
+        KBotDataColumn43.ReadOnly = True
+        KBotDataColumn43.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn43.Width = 80
+        KBotDataColumn44.AggregateFormatString = Nothing
+        KBotDataColumn44.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn44.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn44.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn44.FormatString = Nothing
+        KBotDataColumn44.HeaderText = "Cod program"
+        KBotDataColumn44.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn44.Key = "o_cod_program"
+        KBotDataColumn44.OptionGroup = Nothing
+        KBotDataColumn44.ReadOnly = True
+        KBotDataColumn44.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn44.Width = 90
+        KBotDataColumn45.AggregateFormatString = Nothing
+        KBotDataColumn45.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn45.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn45.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn45.FormatString = Nothing
+        KBotDataColumn45.HeaderText = "CodAI"
+        KBotDataColumn45.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn45.Key = "o_cod_ai"
+        KBotDataColumn45.OptionGroup = Nothing
+        KBotDataColumn45.ReadOnly = True
+        KBotDataColumn45.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn45.Width = 120
+        KBotDataColumn46.AggregateFormatString = Nothing
+        KBotDataColumn46.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn46.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn46.ColumnFont = New Font("Calibri", 9F)
+        KBotDataColumn46.FormatString = Nothing
+        KBotDataColumn46.HeaderText = "Explicații"
+        KBotDataColumn46.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn46.Key = "o_explicatii"
+        KBotDataColumn46.OptionGroup = Nothing
+        KBotDataColumn46.ReadOnly = True
+        KBotDataColumn46.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn46.Width = 300
+        gridOperatiuni.Columns.Add(KBotDataColumn31)
+        gridOperatiuni.Columns.Add(KBotDataColumn32)
+        gridOperatiuni.Columns.Add(KBotDataColumn33)
+        gridOperatiuni.Columns.Add(KBotDataColumn34)
+        gridOperatiuni.Columns.Add(KBotDataColumn35)
+        gridOperatiuni.Columns.Add(KBotDataColumn36)
+        gridOperatiuni.Columns.Add(KBotDataColumn37)
+        gridOperatiuni.Columns.Add(KBotDataColumn38)
+        gridOperatiuni.Columns.Add(KBotDataColumn39)
+        gridOperatiuni.Columns.Add(KBotDataColumn40)
+        gridOperatiuni.Columns.Add(KBotDataColumn41)
+        gridOperatiuni.Columns.Add(KBotDataColumn42)
+        gridOperatiuni.Columns.Add(KBotDataColumn43)
+        gridOperatiuni.Columns.Add(KBotDataColumn44)
+        gridOperatiuni.Columns.Add(KBotDataColumn45)
+        gridOperatiuni.Columns.Add(KBotDataColumn46)
+        gridOperatiuni.Dock = DockStyle.Fill
+        gridOperatiuni.EnableGrouping = True
+        gridOperatiuni.FilterIconSize = New Size(14, 14)
+        gridOperatiuni.FooterBackColor = SystemColors.Control
+        gridOperatiuni.FooterCaption = "TOTALURI"
+        gridOperatiuni.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        gridOperatiuni.FooterHeight = 24
+        gridOperatiuni.FooterIconSize = New Size(14, 14)
+        gridOperatiuni.FooterSeparatorColor = SystemColors.ActiveBorder
+        gridOperatiuni.FooterVisible = True
+        gridOperatiuni.FrozenColumnCount = 1
+        gridOperatiuni.HeaderBackColor = SystemColors.Control
+        gridOperatiuni.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        gridOperatiuni.HeaderHeight = 24
+        gridOperatiuni.HeaderSeparatorColor = SystemColors.ActiveBorder
+        gridOperatiuni.Location = New Point(0, 0)
+        gridOperatiuni.Margin = New Padding(4, 5, 4, 5)
+        gridOperatiuni.Name = "gridOperatiuni"
+        gridOperatiuni.ReadOnlyGrid = True
+        gridOperatiuni.RowHeight = 22
+        gridOperatiuni.ScrollByColumn = True
+        gridOperatiuni.ShrinkColumnsToFit = False
+        gridOperatiuni.Size = New Size(697, 274)
+        gridOperatiuni.TabIndex = 0
+        tips.SetToolTipHeader(gridOperatiuni, "Operațiunile antetului")
+        tips.SetToolTipText(gridOperatiuni, "Operațiunile din extras ale rândului selectat sus.")
         ' 
         ' split
         ' 
@@ -147,6 +892,8 @@ Partial Class ExtrasePanel
         ' 
         ' tree
         ' 
+        tree.BackColor = SystemColors.Window
+        tree.BorderColor = SystemColors.ActiveBorder
         tree.CollapseButtonTooltip = "Strânge arborele la o bandă îngustă." & vbLf & "Rândurile se citesc atunci prin eticheta care iese la survolare."
         tree.Dock = DockStyle.Fill
         tree.DynamicColumns = False
@@ -158,7 +905,7 @@ Partial Class ExtrasePanel
         tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
-        tree.FooterHeight = 30
+        tree.FooterHeight = 24
         tree.FooterIconSize = New Size(18, 18)
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
         tree.FooterRightIconTooltip = "Descarcă extrasele de cont (SNM) din FOREXE." & vbLf & "Se conectează întâi, dacă nu există sesiune."
@@ -168,9 +915,11 @@ Partial Class ExtrasePanel
         tree.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " EXTRASE DE CONT"
         tree.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        tree.HeaderHeight = 30
+        tree.HeaderHeight = 24
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
+        tree.HeaderRightIcon = My.Resources.Resources.settings__1_
+        tree.HeaderRightIconTooltip = "Modul de afișare al extraselor:" & vbLf & "antet + operații, sau operații + detalii."
         tree.HeaderSearchIconTooltip = "Caută în arbore." & vbLf & "ESC golește căutarea și închide banda."
         tree.HeaderSeparatorWidth = 2
         tree.HeaderVisible = True
@@ -202,794 +951,12 @@ Partial Class ExtrasePanel
         ' 
         ' innerSplit.Panel2
         ' 
-        innerSplit.Panel2.Controls.Add(detailPane)
         innerSplit.Panel2.Controls.Add(gridOperatiuni)
+        innerSplit.Panel2.Controls.Add(detailPane)
         innerSplit.Size = New Size(697, 568)
-        innerSplit.SplitterDistance = 300
+        innerSplit.SplitterDistance = 285
         innerSplit.SplitterWidth = 9
         innerSplit.TabIndex = 0
-        ' 
-        ' gridAntete
-        ' 
-        gridAntete.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridAntete.AutoSizeHeaderHeight = False
-        gridAntete.ColumnFillMode = KBotFillMode.LastColumn
-        KBotDataColumn1.AggregateFormatString = Nothing
-        KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn1.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn1.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn1.Format = KBotFormat.ShortDate
-        KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderText = "Data"
-        KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn1.Key = "h_data"
-        KBotDataColumn1.MinWidth = 40
-        KBotDataColumn1.OptionGroup = Nothing
-        KBotDataColumn1.ReadOnly = True
-        KBotDataColumn1.TextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn1.ValueType = KBotValueType.DateTime
-        KBotDataColumn1.Width = 100
-        gridAntete.Columns.Add(KBotDataColumn1)
-        KBotDataColumn2.AggregateFormatString = Nothing
-        KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn2.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn2.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderText = "Nr. extras"
-        KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn2.Key = "h_numar"
-        KBotDataColumn2.MinWidth = 40
-        KBotDataColumn2.OptionGroup = Nothing
-        KBotDataColumn2.ReadOnly = True
-        KBotDataColumn2.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn2.Width = 70
-        gridAntete.Columns.Add(KBotDataColumn2)
-        KBotDataColumn3.AggregateFormatString = Nothing
-        KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn3.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn3.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn3.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderText = "Clasificație"
-        KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn3.Key = "h_clsf"
-        KBotDataColumn3.MinWidth = 40
-        KBotDataColumn3.OptionGroup = Nothing
-        KBotDataColumn3.ReadOnly = True
-        KBotDataColumn3.ShowColumnFilter = True
-        KBotDataColumn3.Width = 150
-        gridAntete.Columns.Add(KBotDataColumn3)
-        KBotDataColumn4.AggregateFormatString = Nothing
-        KBotDataColumn4.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn4.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn4.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderText = "Denumire clasificație"
-        KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn4.Key = "h_denumire"
-        KBotDataColumn4.MinWidth = 40
-        KBotDataColumn4.OptionGroup = Nothing
-        KBotDataColumn4.ReadOnly = True
-        KBotDataColumn4.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn4.Width = 200
-        gridAntete.Columns.Add(KBotDataColumn4)
-        KBotDataColumn5.AggregateFormatString = Nothing
-        KBotDataColumn5.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn5.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn5.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn5.FormatString = Nothing
-        KBotDataColumn5.HeaderText = "Cont"
-        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn5.Key = "h_cont"
-        KBotDataColumn5.MinWidth = 40
-        KBotDataColumn5.OptionGroup = Nothing
-        KBotDataColumn5.ReadOnly = True
-        KBotDataColumn5.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn5.Width = 150
-        gridAntete.Columns.Add(KBotDataColumn5)
-        KBotDataColumn6.AggregateFormatString = Nothing
-        KBotDataColumn6.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn6.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn6.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn6.FormatString = Nothing
-        KBotDataColumn6.HeaderText = "IBAN"
-        KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn6.Key = "h_iban"
-        KBotDataColumn6.MinWidth = 40
-        KBotDataColumn6.OptionGroup = Nothing
-        KBotDataColumn6.ReadOnly = True
-        KBotDataColumn6.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn6.Width = 190
-        gridAntete.Columns.Add(KBotDataColumn6)
-        KBotDataColumn7.AggregateFormatString = Nothing
-        KBotDataColumn7.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn7.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn7.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn7.DecimalPlaces = 2
-        KBotDataColumn7.Format = KBotFormat.Standard
-        KBotDataColumn7.FormatString = Nothing
-        KBotDataColumn7.HeaderText = "SID"
-        KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn7.Key = "h_sid"
-        KBotDataColumn7.MinWidth = 40
-        KBotDataColumn7.OptionGroup = Nothing
-        KBotDataColumn7.ReadOnly = True
-        KBotDataColumn7.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn7.ValueType = KBotValueType.Number
-        KBotDataColumn7.Width = 95
-        gridAntete.Columns.Add(KBotDataColumn7)
-        KBotDataColumn8.AggregateFormatString = Nothing
-        KBotDataColumn8.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn8.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn8.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn8.DecimalPlaces = 2
-        KBotDataColumn8.Format = KBotFormat.Standard
-        KBotDataColumn8.FormatString = Nothing
-        KBotDataColumn8.HeaderText = "SIC"
-        KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn8.Key = "h_sic"
-        KBotDataColumn8.MinWidth = 40
-        KBotDataColumn8.OptionGroup = Nothing
-        KBotDataColumn8.ReadOnly = True
-        KBotDataColumn8.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn8.ValueType = KBotValueType.Number
-        KBotDataColumn8.Width = 95
-        gridAntete.Columns.Add(KBotDataColumn8)
-        KBotDataColumn9.AggregateFormatString = Nothing
-        KBotDataColumn9.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn9.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn9.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn9.DecimalPlaces = 2
-        KBotDataColumn9.Format = KBotFormat.Standard
-        KBotDataColumn9.FormatString = Nothing
-        KBotDataColumn9.HeaderText = "RPD"
-        KBotDataColumn9.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn9.Key = "h_rpd"
-        KBotDataColumn9.MinWidth = 40
-        KBotDataColumn9.OptionGroup = Nothing
-        KBotDataColumn9.ReadOnly = True
-        KBotDataColumn9.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn9.ValueType = KBotValueType.Number
-        KBotDataColumn9.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn9.Width = 95
-        gridAntete.Columns.Add(KBotDataColumn9)
-        KBotDataColumn10.AggregateFormatString = Nothing
-        KBotDataColumn10.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn10.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn10.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn10.DecimalPlaces = 2
-        KBotDataColumn10.Format = KBotFormat.Standard
-        KBotDataColumn10.FormatString = Nothing
-        KBotDataColumn10.HeaderText = "RPC"
-        KBotDataColumn10.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn10.Key = "h_rpc"
-        KBotDataColumn10.MinWidth = 40
-        KBotDataColumn10.OptionGroup = Nothing
-        KBotDataColumn10.ReadOnly = True
-        KBotDataColumn10.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn10.ValueType = KBotValueType.Number
-        KBotDataColumn10.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn10.Width = 95
-        gridAntete.Columns.Add(KBotDataColumn10)
-        KBotDataColumn11.AggregateFormatString = Nothing
-        KBotDataColumn11.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn11.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn11.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn11.DecimalPlaces = 2
-        KBotDataColumn11.Format = KBotFormat.Standard
-        KBotDataColumn11.FormatString = Nothing
-        KBotDataColumn11.HeaderText = "TSD"
-        KBotDataColumn11.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn11.Key = "h_tsd"
-        KBotDataColumn11.MinWidth = 40
-        KBotDataColumn11.OptionGroup = Nothing
-        KBotDataColumn11.ReadOnly = True
-        KBotDataColumn11.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn11.ValueType = KBotValueType.Number
-        KBotDataColumn11.Width = 95
-        gridAntete.Columns.Add(KBotDataColumn11)
-        KBotDataColumn12.AggregateFormatString = Nothing
-        KBotDataColumn12.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn12.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn12.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn12.DecimalPlaces = 2
-        KBotDataColumn12.Format = KBotFormat.Standard
-        KBotDataColumn12.FormatString = Nothing
-        KBotDataColumn12.HeaderText = "TSC"
-        KBotDataColumn12.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn12.Key = "h_tsc"
-        KBotDataColumn12.MinWidth = 40
-        KBotDataColumn12.OptionGroup = Nothing
-        KBotDataColumn12.ReadOnly = True
-        KBotDataColumn12.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn12.ValueType = KBotValueType.Number
-        KBotDataColumn12.Width = 95
-        gridAntete.Columns.Add(KBotDataColumn12)
-        KBotDataColumn13.AggregateFormatString = Nothing
-        KBotDataColumn13.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn13.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn13.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn13.DecimalPlaces = 2
-        KBotDataColumn13.Format = KBotFormat.Standard
-        KBotDataColumn13.FormatString = Nothing
-        KBotDataColumn13.HeaderText = "SFD"
-        KBotDataColumn13.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn13.Key = "h_sfd"
-        KBotDataColumn13.MinWidth = 40
-        KBotDataColumn13.OptionGroup = Nothing
-        KBotDataColumn13.ReadOnly = True
-        KBotDataColumn13.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn13.ValueType = KBotValueType.Number
-        KBotDataColumn13.Width = 95
-        gridAntete.Columns.Add(KBotDataColumn13)
-        KBotDataColumn14.AggregateFormatString = Nothing
-        KBotDataColumn14.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn14.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn14.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn14.DecimalPlaces = 2
-        KBotDataColumn14.Format = KBotFormat.Standard
-        KBotDataColumn14.FormatString = Nothing
-        KBotDataColumn14.HeaderText = "SFC"
-        KBotDataColumn14.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn14.Key = "h_sfc"
-        KBotDataColumn14.MinWidth = 40
-        KBotDataColumn14.OptionGroup = Nothing
-        KBotDataColumn14.ReadOnly = True
-        KBotDataColumn14.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn14.ValueType = KBotValueType.Number
-        KBotDataColumn14.Width = 95
-        gridAntete.Columns.Add(KBotDataColumn14)
-        gridAntete.Dock = DockStyle.Fill
-        gridAntete.EnableGrouping = True
-        gridAntete.FilterIconSize = New Size(14, 14)
-        gridAntete.FrozenColumnCount = 1
-        gridAntete.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        gridAntete.Location = New Point(0, 0)
-        gridAntete.Margin = New Padding(4, 5, 4, 5)
-        gridAntete.Name = "gridAntete"
-        gridAntete.ReadOnlyGrid = True
-        gridAntete.RowHeight = 22
-        gridAntete.ScrollByColumn = True
-        gridAntete.ShrinkColumnsToFit = False
-        gridAntete.Size = New Size(659, 300)
-        gridAntete.TabIndex = 0
-        tips.SetToolTipHeader(gridAntete, "Antetele extraselor")
-        tips.SetToolTipText(gridAntete, "Un rând pentru fiecare cont din extras (FX_Extrase_H), cu soldurile lui." & vbLf & "Rândul selectat își arată operațiunile în grila de dedesubt.")
-        ' 
-        ' gridZi
-        ' 
-        gridZi.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridZi.AutoSizeHeaderHeight = False
-        gridZi.ColumnFillMode = KBotFillMode.LastColumn
-        KBotDataColumn15.AggregateFormatString = Nothing
-        KBotDataColumn15.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn15.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn15.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn15.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn15.Format = KBotFormat.ShortDate
-        KBotDataColumn15.FormatString = Nothing
-        KBotDataColumn15.HeaderText = "Data bancă"
-        KBotDataColumn15.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn15.Key = "o_data_banca"
-        KBotDataColumn15.MinWidth = 40
-        KBotDataColumn15.OptionGroup = Nothing
-        KBotDataColumn15.ReadOnly = True
-        KBotDataColumn15.ShowColumnFilter = True
-        KBotDataColumn15.TextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn15.ValueType = KBotValueType.DateTime
-        KBotDataColumn15.Width = 100
-        gridZi.Columns.Add(KBotDataColumn15)
-        KBotDataColumn16.AggregateFormatString = Nothing
-        KBotDataColumn16.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn16.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn16.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn16.Format = KBotFormat.ShortDate
-        KBotDataColumn16.FormatString = Nothing
-        KBotDataColumn16.HeaderText = "Data document"
-        KBotDataColumn16.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn16.Key = "o_data_doc"
-        KBotDataColumn16.MinWidth = 40
-        KBotDataColumn16.OptionGroup = Nothing
-        KBotDataColumn16.ReadOnly = True
-        KBotDataColumn16.TextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn16.ValueType = KBotValueType.DateTime
-        KBotDataColumn16.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn16.Width = 100
-        gridZi.Columns.Add(KBotDataColumn16)
-        KBotDataColumn17.AggregateFormatString = Nothing
-        KBotDataColumn17.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn17.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn17.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn17.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn17.FormatString = Nothing
-        KBotDataColumn17.HeaderText = "Clasificație"
-        KBotDataColumn17.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn17.Key = "o_clsf"
-        KBotDataColumn17.MinWidth = 40
-        KBotDataColumn17.OptionGroup = Nothing
-        KBotDataColumn17.ReadOnly = True
-        KBotDataColumn17.ShowColumnFilter = True
-        KBotDataColumn17.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn17.Width = 150
-        gridZi.Columns.Add(KBotDataColumn17)
-        KBotDataColumn18.AggregateFormatString = Nothing
-        KBotDataColumn18.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn18.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn18.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn18.FormatString = Nothing
-        KBotDataColumn18.HeaderText = "Nr. document"
-        KBotDataColumn18.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn18.Key = "o_nr_doc"
-        KBotDataColumn18.MinWidth = 40
-        KBotDataColumn18.OptionGroup = Nothing
-        KBotDataColumn18.ReadOnly = True
-        KBotDataColumn18.Width = 90
-        gridZi.Columns.Add(KBotDataColumn18)
-        KBotDataColumn19.AggregateFormatString = Nothing
-        KBotDataColumn19.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn19.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn19.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn19.FormatString = Nothing
-        KBotDataColumn19.HeaderText = "Referință"
-        KBotDataColumn19.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn19.Key = "o_referinta"
-        KBotDataColumn19.MinWidth = 40
-        KBotDataColumn19.OptionGroup = Nothing
-        KBotDataColumn19.ReadOnly = True
-        KBotDataColumn19.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn19.Width = 120
-        gridZi.Columns.Add(KBotDataColumn19)
-        KBotDataColumn20.AggregateFormatString = Nothing
-        KBotDataColumn20.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn20.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn20.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn20.FormatString = Nothing
-        KBotDataColumn20.HeaderText = "Referință destinatar"
-        KBotDataColumn20.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn20.Key = "o_referinta_dest"
-        KBotDataColumn20.MinWidth = 40
-        KBotDataColumn20.OptionGroup = Nothing
-        KBotDataColumn20.ReadOnly = True
-        KBotDataColumn20.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn20.Width = 120
-        gridZi.Columns.Add(KBotDataColumn20)
-        KBotDataColumn21.AggregateFormatString = Nothing
-        KBotDataColumn21.AllowGrouping = False
-        KBotDataColumn21.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn21.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn21.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn21.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn21.FormatString = Nothing
-        KBotDataColumn21.HeaderText = "Plătitor"
-        KBotDataColumn21.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn21.Key = "o_platitor"
-        KBotDataColumn21.MinWidth = 40
-        KBotDataColumn21.OptionGroup = Nothing
-        KBotDataColumn21.ReadOnly = True
-        KBotDataColumn21.ShowColumnFilter = True
-        KBotDataColumn21.Width = 200
-        gridZi.Columns.Add(KBotDataColumn21)
-        KBotDataColumn22.AggregateFormatString = Nothing
-        KBotDataColumn22.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn22.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn22.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn22.FormatString = Nothing
-        KBotDataColumn22.HeaderText = "CUI"
-        KBotDataColumn22.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn22.Key = "o_cui"
-        KBotDataColumn22.MinWidth = 40
-        KBotDataColumn22.OptionGroup = Nothing
-        KBotDataColumn22.ReadOnly = True
-        KBotDataColumn22.Width = 90
-        gridZi.Columns.Add(KBotDataColumn22)
-        KBotDataColumn23.AggregateFormatString = Nothing
-        KBotDataColumn23.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn23.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn23.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn23.FormatString = Nothing
-        KBotDataColumn23.HeaderText = "IBAN"
-        KBotDataColumn23.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn23.Key = "o_iban"
-        KBotDataColumn23.MinWidth = 40
-        KBotDataColumn23.OptionGroup = Nothing
-        KBotDataColumn23.ReadOnly = True
-        KBotDataColumn23.Width = 190
-        gridZi.Columns.Add(KBotDataColumn23)
-        KBotDataColumn24.Aggregate = KBotAggregate.Sum
-        KBotDataColumn24.AggregateFormatString = Nothing
-        KBotDataColumn24.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn24.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn24.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn24.DecimalPlaces = 2
-        KBotDataColumn24.Format = KBotFormat.Standard
-        KBotDataColumn24.FormatString = Nothing
-        KBotDataColumn24.HeaderText = "Debit"
-        KBotDataColumn24.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn24.Key = "o_debit"
-        KBotDataColumn24.MinWidth = 40
-        KBotDataColumn24.OptionGroup = Nothing
-        KBotDataColumn24.ReadOnly = True
-        KBotDataColumn24.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn24.ValueType = KBotValueType.Number
-        KBotDataColumn24.Width = 95
-        gridZi.Columns.Add(KBotDataColumn24)
-        KBotDataColumn25.Aggregate = KBotAggregate.Sum
-        KBotDataColumn25.AggregateFormatString = Nothing
-        KBotDataColumn25.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn25.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn25.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn25.DecimalPlaces = 2
-        KBotDataColumn25.Format = KBotFormat.Standard
-        KBotDataColumn25.FormatString = Nothing
-        KBotDataColumn25.HeaderText = "Credit"
-        KBotDataColumn25.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn25.Key = "o_credit"
-        KBotDataColumn25.MinWidth = 40
-        KBotDataColumn25.OptionGroup = Nothing
-        KBotDataColumn25.ReadOnly = True
-        KBotDataColumn25.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn25.ValueType = KBotValueType.Number
-        KBotDataColumn25.Width = 95
-        gridZi.Columns.Add(KBotDataColumn25)
-        KBotDataColumn26.AggregateFormatString = Nothing
-        KBotDataColumn26.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn26.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn26.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn26.FormatString = Nothing
-        KBotDataColumn26.HeaderText = "Cod angajament"
-        KBotDataColumn26.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn26.Key = "o_cod_angajament"
-        KBotDataColumn26.MinWidth = 40
-        KBotDataColumn26.OptionGroup = Nothing
-        KBotDataColumn26.ReadOnly = True
-        KBotDataColumn26.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn26.Width = 110
-        gridZi.Columns.Add(KBotDataColumn26)
-        KBotDataColumn27.AggregateFormatString = Nothing
-        KBotDataColumn27.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn27.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn27.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn27.FormatString = Nothing
-        KBotDataColumn27.HeaderText = "Indicator"
-        KBotDataColumn27.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn27.Key = "o_indicator"
-        KBotDataColumn27.MinWidth = 40
-        KBotDataColumn27.OptionGroup = Nothing
-        KBotDataColumn27.ReadOnly = True
-        KBotDataColumn27.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn27.Width = 80
-        gridZi.Columns.Add(KBotDataColumn27)
-        KBotDataColumn28.AggregateFormatString = Nothing
-        KBotDataColumn28.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn28.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn28.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn28.FormatString = Nothing
-        KBotDataColumn28.HeaderText = "Cod program"
-        KBotDataColumn28.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn28.Key = "o_cod_program"
-        KBotDataColumn28.MinWidth = 40
-        KBotDataColumn28.OptionGroup = Nothing
-        KBotDataColumn28.ReadOnly = True
-        KBotDataColumn28.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn28.Width = 90
-        gridZi.Columns.Add(KBotDataColumn28)
-        KBotDataColumn29.AggregateFormatString = Nothing
-        KBotDataColumn29.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn29.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn29.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn29.FormatString = Nothing
-        KBotDataColumn29.HeaderText = "CodAI"
-        KBotDataColumn29.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn29.Key = "o_cod_ai"
-        KBotDataColumn29.MinWidth = 40
-        KBotDataColumn29.OptionGroup = Nothing
-        KBotDataColumn29.ReadOnly = True
-        KBotDataColumn29.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn29.Width = 120
-        gridZi.Columns.Add(KBotDataColumn29)
-        KBotDataColumn30.AggregateFormatString = Nothing
-        KBotDataColumn30.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn30.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn30.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn30.FormatString = Nothing
-        KBotDataColumn30.HeaderText = "Explicații"
-        KBotDataColumn30.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn30.Key = "o_explicatii"
-        KBotDataColumn30.MinWidth = 40
-        KBotDataColumn30.OptionGroup = Nothing
-        KBotDataColumn30.ReadOnly = True
-        KBotDataColumn30.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn30.Width = 300
-        gridZi.Columns.Add(KBotDataColumn30)
-        gridZi.Dock = DockStyle.Fill
-        gridZi.EnableGrouping = True
-        gridZi.FilterIconSize = New Size(14, 14)
-        gridZi.FooterCaption = "TOTALURI"
-        gridZi.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        gridZi.FooterHeight = 30
-        gridZi.FooterIconSize = New Size(14, 14)
-        gridZi.FooterVisible = True
-        gridZi.FrozenColumnCount = 1
-        gridZi.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        gridZi.Location = New Point(0, 0)
-        gridZi.Margin = New Padding(4, 5, 4, 5)
-        gridZi.Name = "gridZi"
-        gridZi.ReadOnlyGrid = True
-        gridZi.RowHeight = 22
-        gridZi.ScrollByColumn = True
-        gridZi.ShrinkColumnsToFit = False
-        gridZi.Size = New Size(659, 300)
-        gridZi.TabIndex = 1
-        tips.SetToolTipHeader(gridZi, "Operațiunile zilei")
-        tips.SetToolTipText(gridZi, "Operațiunile din extras cu data băncii în ziua aleasă." & vbLf & "Rândul selectat se vede în întregime dedesubt.")
-        gridZi.Visible = False
-        ' 
-        ' gridOperatiuni
-        ' 
-        gridOperatiuni.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridOperatiuni.AutoSizeHeaderHeight = False
-        gridOperatiuni.ColumnFillMode = KBotFillMode.LastColumn
-        KBotDataColumn31.AggregateFormatString = Nothing
-        KBotDataColumn31.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn31.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn31.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn31.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn31.Format = KBotFormat.ShortDate
-        KBotDataColumn31.FormatString = Nothing
-        KBotDataColumn31.HeaderText = "Data bancă"
-        KBotDataColumn31.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn31.Key = "o_data_banca"
-        KBotDataColumn31.MinWidth = 40
-        KBotDataColumn31.OptionGroup = Nothing
-        KBotDataColumn31.ReadOnly = True
-        KBotDataColumn31.ShowColumnFilter = True
-        KBotDataColumn31.TextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn31.ValueType = KBotValueType.DateTime
-        KBotDataColumn31.Width = 100
-        gridOperatiuni.Columns.Add(KBotDataColumn31)
-        KBotDataColumn32.AggregateFormatString = Nothing
-        KBotDataColumn32.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn32.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn32.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn32.Format = KBotFormat.ShortDate
-        KBotDataColumn32.FormatString = Nothing
-        KBotDataColumn32.HeaderText = "Data document"
-        KBotDataColumn32.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn32.Key = "o_data_doc"
-        KBotDataColumn32.MinWidth = 40
-        KBotDataColumn32.OptionGroup = Nothing
-        KBotDataColumn32.ReadOnly = True
-        KBotDataColumn32.TextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn32.ValueType = KBotValueType.DateTime
-        KBotDataColumn32.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn32.Width = 100
-        gridOperatiuni.Columns.Add(KBotDataColumn32)
-        KBotDataColumn33.AggregateFormatString = Nothing
-        KBotDataColumn33.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn33.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn33.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn33.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn33.FormatString = Nothing
-        KBotDataColumn33.HeaderText = "Clasificație"
-        KBotDataColumn33.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn33.Key = "o_clsf"
-        KBotDataColumn33.MinWidth = 40
-        KBotDataColumn33.OptionGroup = Nothing
-        KBotDataColumn33.ReadOnly = True
-        KBotDataColumn33.ShowColumnFilter = True
-        KBotDataColumn33.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn33.Width = 150
-        gridOperatiuni.Columns.Add(KBotDataColumn33)
-        KBotDataColumn34.AggregateFormatString = Nothing
-        KBotDataColumn34.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn34.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn34.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn34.FormatString = Nothing
-        KBotDataColumn34.HeaderText = "Nr. document"
-        KBotDataColumn34.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn34.Key = "o_nr_doc"
-        KBotDataColumn34.MinWidth = 40
-        KBotDataColumn34.OptionGroup = Nothing
-        KBotDataColumn34.ReadOnly = True
-        KBotDataColumn34.Width = 90
-        gridOperatiuni.Columns.Add(KBotDataColumn34)
-        KBotDataColumn35.AggregateFormatString = Nothing
-        KBotDataColumn35.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn35.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn35.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn35.FormatString = Nothing
-        KBotDataColumn35.HeaderText = "Referință"
-        KBotDataColumn35.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn35.Key = "o_referinta"
-        KBotDataColumn35.MinWidth = 40
-        KBotDataColumn35.OptionGroup = Nothing
-        KBotDataColumn35.ReadOnly = True
-        KBotDataColumn35.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn35.Width = 120
-        gridOperatiuni.Columns.Add(KBotDataColumn35)
-        KBotDataColumn36.AggregateFormatString = Nothing
-        KBotDataColumn36.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn36.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn36.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn36.FormatString = Nothing
-        KBotDataColumn36.HeaderText = "Referință destinatar"
-        KBotDataColumn36.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn36.Key = "o_referinta_dest"
-        KBotDataColumn36.MinWidth = 40
-        KBotDataColumn36.OptionGroup = Nothing
-        KBotDataColumn36.ReadOnly = True
-        KBotDataColumn36.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn36.Width = 120
-        gridOperatiuni.Columns.Add(KBotDataColumn36)
-        KBotDataColumn37.AggregateFormatString = Nothing
-        KBotDataColumn37.AllowGrouping = False
-        KBotDataColumn37.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn37.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn37.ColumnFilterIcon = My.Resources.Resources.filter
-        KBotDataColumn37.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn37.FormatString = Nothing
-        KBotDataColumn37.HeaderText = "Plătitor"
-        KBotDataColumn37.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn37.Key = "o_platitor"
-        KBotDataColumn37.MinWidth = 40
-        KBotDataColumn37.OptionGroup = Nothing
-        KBotDataColumn37.ReadOnly = True
-        KBotDataColumn37.ShowColumnFilter = True
-        KBotDataColumn37.Width = 200
-        gridOperatiuni.Columns.Add(KBotDataColumn37)
-        KBotDataColumn38.AggregateFormatString = Nothing
-        KBotDataColumn38.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn38.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn38.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn38.FormatString = Nothing
-        KBotDataColumn38.HeaderText = "CUI"
-        KBotDataColumn38.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn38.Key = "o_cui"
-        KBotDataColumn38.MinWidth = 40
-        KBotDataColumn38.OptionGroup = Nothing
-        KBotDataColumn38.ReadOnly = True
-        KBotDataColumn38.Width = 90
-        gridOperatiuni.Columns.Add(KBotDataColumn38)
-        KBotDataColumn39.AggregateFormatString = Nothing
-        KBotDataColumn39.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn39.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn39.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn39.FormatString = Nothing
-        KBotDataColumn39.HeaderText = "IBAN"
-        KBotDataColumn39.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn39.Key = "o_iban"
-        KBotDataColumn39.MinWidth = 40
-        KBotDataColumn39.OptionGroup = Nothing
-        KBotDataColumn39.ReadOnly = True
-        KBotDataColumn39.Width = 190
-        gridOperatiuni.Columns.Add(KBotDataColumn39)
-        KBotDataColumn40.Aggregate = KBotAggregate.Sum
-        KBotDataColumn40.AggregateFormatString = Nothing
-        KBotDataColumn40.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn40.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn40.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn40.DecimalPlaces = 2
-        KBotDataColumn40.Format = KBotFormat.Standard
-        KBotDataColumn40.FormatString = Nothing
-        KBotDataColumn40.HeaderText = "Debit"
-        KBotDataColumn40.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn40.Key = "o_debit"
-        KBotDataColumn40.MinWidth = 40
-        KBotDataColumn40.OptionGroup = Nothing
-        KBotDataColumn40.ReadOnly = True
-        KBotDataColumn40.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn40.ValueType = KBotValueType.Number
-        KBotDataColumn40.Width = 95
-        gridOperatiuni.Columns.Add(KBotDataColumn40)
-        KBotDataColumn41.Aggregate = KBotAggregate.Sum
-        KBotDataColumn41.AggregateFormatString = Nothing
-        KBotDataColumn41.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn41.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn41.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn41.DecimalPlaces = 2
-        KBotDataColumn41.Format = KBotFormat.Standard
-        KBotDataColumn41.FormatString = Nothing
-        KBotDataColumn41.HeaderText = "Credit"
-        KBotDataColumn41.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn41.Key = "o_credit"
-        KBotDataColumn41.MinWidth = 40
-        KBotDataColumn41.OptionGroup = Nothing
-        KBotDataColumn41.ReadOnly = True
-        KBotDataColumn41.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn41.ValueType = KBotValueType.Number
-        KBotDataColumn41.Width = 95
-        gridOperatiuni.Columns.Add(KBotDataColumn41)
-        KBotDataColumn42.AggregateFormatString = Nothing
-        KBotDataColumn42.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn42.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn42.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn42.FormatString = Nothing
-        KBotDataColumn42.HeaderText = "Cod angajament"
-        KBotDataColumn42.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn42.Key = "o_cod_angajament"
-        KBotDataColumn42.MinWidth = 40
-        KBotDataColumn42.OptionGroup = Nothing
-        KBotDataColumn42.ReadOnly = True
-        KBotDataColumn42.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn42.Width = 110
-        gridOperatiuni.Columns.Add(KBotDataColumn42)
-        KBotDataColumn43.AggregateFormatString = Nothing
-        KBotDataColumn43.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn43.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn43.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn43.FormatString = Nothing
-        KBotDataColumn43.HeaderText = "Indicator"
-        KBotDataColumn43.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn43.Key = "o_indicator"
-        KBotDataColumn43.MinWidth = 40
-        KBotDataColumn43.OptionGroup = Nothing
-        KBotDataColumn43.ReadOnly = True
-        KBotDataColumn43.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn43.Width = 80
-        gridOperatiuni.Columns.Add(KBotDataColumn43)
-        KBotDataColumn44.AggregateFormatString = Nothing
-        KBotDataColumn44.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn44.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn44.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn44.FormatString = Nothing
-        KBotDataColumn44.HeaderText = "Cod program"
-        KBotDataColumn44.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn44.Key = "o_cod_program"
-        KBotDataColumn44.MinWidth = 40
-        KBotDataColumn44.OptionGroup = Nothing
-        KBotDataColumn44.ReadOnly = True
-        KBotDataColumn44.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn44.Width = 90
-        gridOperatiuni.Columns.Add(KBotDataColumn44)
-        KBotDataColumn45.AggregateFormatString = Nothing
-        KBotDataColumn45.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn45.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn45.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn45.FormatString = Nothing
-        KBotDataColumn45.HeaderText = "CodAI"
-        KBotDataColumn45.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn45.Key = "o_cod_ai"
-        KBotDataColumn45.MinWidth = 40
-        KBotDataColumn45.OptionGroup = Nothing
-        KBotDataColumn45.ReadOnly = True
-        KBotDataColumn45.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn45.Width = 120
-        gridOperatiuni.Columns.Add(KBotDataColumn45)
-        KBotDataColumn46.AggregateFormatString = Nothing
-        KBotDataColumn46.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn46.CellPadding = New Padding(2, 0, 2, 0)
-        KBotDataColumn46.ColumnFont = New Font("Calibri", 9F)
-        KBotDataColumn46.FormatString = Nothing
-        KBotDataColumn46.HeaderText = "Explicații"
-        KBotDataColumn46.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn46.Key = "o_explicatii"
-        KBotDataColumn46.MinWidth = 40
-        KBotDataColumn46.OptionGroup = Nothing
-        KBotDataColumn46.ReadOnly = True
-        KBotDataColumn46.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn46.Width = 300
-        gridOperatiuni.Columns.Add(KBotDataColumn46)
-        gridOperatiuni.Dock = DockStyle.Fill
-        gridOperatiuni.EnableGrouping = True
-        gridOperatiuni.FilterIconSize = New Size(14, 14)
-        gridOperatiuni.FooterCaption = "TOTALURI"
-        gridOperatiuni.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        gridOperatiuni.FooterHeight = 30
-        gridOperatiuni.FooterIconSize = New Size(14, 14)
-        gridOperatiuni.FooterVisible = True
-        gridOperatiuni.FrozenColumnCount = 1
-        gridOperatiuni.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        gridOperatiuni.Location = New Point(0, 0)
-        gridOperatiuni.Margin = New Padding(4, 5, 4, 5)
-        gridOperatiuni.Name = "gridOperatiuni"
-        gridOperatiuni.ReadOnlyGrid = True
-        gridOperatiuni.RowHeight = 22
-        gridOperatiuni.ScrollByColumn = True
-        gridOperatiuni.ShrinkColumnsToFit = False
-        gridOperatiuni.Size = New Size(659, 300)
-        gridOperatiuni.TabIndex = 0
-        tips.SetToolTipHeader(gridOperatiuni, "Operațiunile antetului")
-        tips.SetToolTipText(gridOperatiuni, "Operațiunile din extras ale rândului selectat sus.")
         ' 
         ' detailPane
         ' 
@@ -999,7 +966,7 @@ Partial Class ExtrasePanel
         detailPane.Location = New Point(0, 0)
         detailPane.Margin = New Padding(0)
         detailPane.Name = "detailPane"
-        detailPane.Size = New Size(697, 259)
+        detailPane.Size = New Size(697, 274)
         detailPane.TabIndex = 1
         detailPane.Visible = False
         ' 
@@ -1056,223 +1023,264 @@ Partial Class ExtrasePanel
         detailTable.RowStyles.Add(New RowStyle())
         detailTable.RowStyles.Add(New RowStyle())
         detailTable.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        detailTable.Size = New Size(697, 259)
+        detailTable.Size = New Size(697, 274)
         detailTable.TabIndex = 0
         detailTable.Visible = False
         ' 
         ' capNrDoc
         ' 
         capNrDoc.AutoSize = True
+        capNrDoc.Location = New Point(3, 4)
         capNrDoc.Margin = New Padding(3, 4, 8, 4)
         capNrDoc.Name = "capNrDoc"
+        capNrDoc.Size = New Size(109, 22)
         capNrDoc.TabIndex = 0
         capNrDoc.Text = "Nr. document"
         ' 
         ' valNrDoc
         ' 
         valNrDoc.AutoSize = True
+        valNrDoc.Location = New Point(239, 4)
         valNrDoc.Margin = New Padding(3, 4, 3, 4)
         valNrDoc.Name = "valNrDoc"
+        valNrDoc.Size = New Size(0, 22)
         valNrDoc.TabIndex = 1
-        valNrDoc.Text = ""
         ' 
         ' capDataBanca
         ' 
         capDataBanca.AutoSize = True
+        capDataBanca.Location = New Point(3, 34)
         capDataBanca.Margin = New Padding(3, 4, 8, 4)
         capDataBanca.Name = "capDataBanca"
+        capDataBanca.Size = New Size(93, 22)
         capDataBanca.TabIndex = 2
         capDataBanca.Text = "Data bancă"
         ' 
         ' valDataBanca
         ' 
         valDataBanca.AutoSize = True
+        valDataBanca.Location = New Point(239, 34)
         valDataBanca.Margin = New Padding(3, 4, 3, 4)
         valDataBanca.Name = "valDataBanca"
+        valDataBanca.Size = New Size(0, 22)
         valDataBanca.TabIndex = 3
-        valDataBanca.Text = ""
         ' 
         ' capDataDoc
         ' 
         capDataDoc.AutoSize = True
+        capDataDoc.Location = New Point(3, 64)
         capDataDoc.Margin = New Padding(3, 4, 8, 4)
         capDataDoc.Name = "capDataDoc"
+        capDataDoc.Size = New Size(123, 22)
         capDataDoc.TabIndex = 4
         capDataDoc.Text = "Data document"
         ' 
         ' valDataDoc
         ' 
         valDataDoc.AutoSize = True
+        valDataDoc.Location = New Point(239, 64)
         valDataDoc.Margin = New Padding(3, 4, 3, 4)
         valDataDoc.Name = "valDataDoc"
+        valDataDoc.Size = New Size(0, 22)
         valDataDoc.TabIndex = 5
-        valDataDoc.Text = ""
         ' 
         ' capReferinta
         ' 
         capReferinta.AutoSize = True
+        capReferinta.Location = New Point(3, 94)
         capReferinta.Margin = New Padding(3, 4, 8, 4)
         capReferinta.Name = "capReferinta"
+        capReferinta.Size = New Size(78, 22)
         capReferinta.TabIndex = 6
         capReferinta.Text = "Referință"
         ' 
         ' valReferinta
         ' 
         valReferinta.AutoSize = True
+        valReferinta.Location = New Point(239, 94)
         valReferinta.Margin = New Padding(3, 4, 3, 4)
         valReferinta.Name = "valReferinta"
+        valReferinta.Size = New Size(0, 22)
         valReferinta.TabIndex = 7
-        valReferinta.Text = ""
         ' 
         ' capPlatitor
         ' 
         capPlatitor.AutoSize = True
+        capPlatitor.Location = New Point(3, 124)
         capPlatitor.Margin = New Padding(3, 4, 8, 4)
         capPlatitor.Name = "capPlatitor"
+        capPlatitor.Size = New Size(64, 22)
         capPlatitor.TabIndex = 8
         capPlatitor.Text = "Plătitor"
         ' 
         ' valPlatitor
         ' 
         valPlatitor.AutoSize = True
+        valPlatitor.Location = New Point(239, 124)
         valPlatitor.Margin = New Padding(3, 4, 3, 4)
         valPlatitor.Name = "valPlatitor"
+        valPlatitor.Size = New Size(0, 22)
         valPlatitor.TabIndex = 9
-        valPlatitor.Text = ""
         ' 
         ' capCui
         ' 
         capCui.AutoSize = True
+        capCui.Location = New Point(3, 154)
         capCui.Margin = New Padding(3, 4, 8, 4)
         capCui.Name = "capCui"
+        capCui.Size = New Size(37, 22)
         capCui.TabIndex = 10
         capCui.Text = "CUI"
         ' 
         ' valCui
         ' 
         valCui.AutoSize = True
+        valCui.Location = New Point(239, 154)
         valCui.Margin = New Padding(3, 4, 3, 4)
         valCui.Name = "valCui"
+        valCui.Size = New Size(0, 22)
         valCui.TabIndex = 11
-        valCui.Text = ""
         ' 
         ' capIban
         ' 
         capIban.AutoSize = True
+        capIban.Location = New Point(3, 184)
         capIban.Margin = New Padding(3, 4, 8, 4)
         capIban.Name = "capIban"
+        capIban.Size = New Size(47, 22)
         capIban.TabIndex = 12
         capIban.Text = "IBAN"
         ' 
         ' valIban
         ' 
         valIban.AutoSize = True
+        valIban.Location = New Point(239, 184)
         valIban.Margin = New Padding(3, 4, 3, 4)
         valIban.Name = "valIban"
+        valIban.Size = New Size(0, 22)
         valIban.TabIndex = 13
-        valIban.Text = ""
         ' 
         ' capDebit
         ' 
         capDebit.AutoSize = True
+        capDebit.Location = New Point(3, 214)
         capDebit.Margin = New Padding(3, 4, 8, 4)
         capDebit.Name = "capDebit"
+        capDebit.Size = New Size(91, 22)
         capDebit.TabIndex = 14
         capDebit.Text = "Sumă debit"
         ' 
         ' valDebit
         ' 
         valDebit.AutoSize = True
+        valDebit.Location = New Point(239, 214)
         valDebit.Margin = New Padding(3, 4, 3, 4)
         valDebit.Name = "valDebit"
+        valDebit.Size = New Size(0, 22)
         valDebit.TabIndex = 15
-        valDebit.Text = ""
         ' 
         ' capCredit
         ' 
         capCredit.AutoSize = True
+        capCredit.Location = New Point(3, 244)
         capCredit.Margin = New Padding(3, 4, 8, 4)
         capCredit.Name = "capCredit"
+        capCredit.Size = New Size(96, 22)
         capCredit.TabIndex = 16
         capCredit.Text = "Sumă credit"
         ' 
         ' valCredit
         ' 
         valCredit.AutoSize = True
+        valCredit.Location = New Point(239, 244)
         valCredit.Margin = New Padding(3, 4, 3, 4)
         valCredit.Name = "valCredit"
+        valCredit.Size = New Size(0, 22)
         valCredit.TabIndex = 17
-        valCredit.Text = ""
         ' 
         ' capCodAngajament
         ' 
         capCodAngajament.AutoSize = True
+        capCodAngajament.Location = New Point(3, 274)
         capCodAngajament.Margin = New Padding(3, 4, 8, 4)
         capCodAngajament.Name = "capCodAngajament"
+        capCodAngajament.Size = New Size(129, 22)
         capCodAngajament.TabIndex = 18
         capCodAngajament.Text = "Cod angajament"
         ' 
         ' valCodAngajament
         ' 
         valCodAngajament.AutoSize = True
+        valCodAngajament.Location = New Point(239, 274)
         valCodAngajament.Margin = New Padding(3, 4, 3, 4)
         valCodAngajament.Name = "valCodAngajament"
+        valCodAngajament.Size = New Size(0, 22)
         valCodAngajament.TabIndex = 19
-        valCodAngajament.Text = ""
         ' 
         ' capIndicator
         ' 
         capIndicator.AutoSize = True
+        capIndicator.Location = New Point(3, 304)
         capIndicator.Margin = New Padding(3, 4, 8, 4)
         capIndicator.Name = "capIndicator"
+        capIndicator.Size = New Size(76, 22)
         capIndicator.TabIndex = 20
         capIndicator.Text = "Indicator"
         ' 
         ' valIndicator
         ' 
         valIndicator.AutoSize = True
+        valIndicator.Location = New Point(239, 304)
         valIndicator.Margin = New Padding(3, 4, 3, 4)
         valIndicator.Name = "valIndicator"
+        valIndicator.Size = New Size(0, 22)
         valIndicator.TabIndex = 21
-        valIndicator.Text = ""
         ' 
         ' capReferintaDest
         ' 
         capReferintaDest.AutoSize = True
+        capReferintaDest.Location = New Point(3, 334)
         capReferintaDest.Margin = New Padding(3, 4, 8, 4)
         capReferintaDest.Name = "capReferintaDest"
+        capReferintaDest.Size = New Size(156, 22)
         capReferintaDest.TabIndex = 22
         capReferintaDest.Text = "Referință destinatar"
         ' 
         ' valReferintaDest
         ' 
         valReferintaDest.AutoSize = True
+        valReferintaDest.Location = New Point(239, 334)
         valReferintaDest.Margin = New Padding(3, 4, 3, 4)
         valReferintaDest.Name = "valReferintaDest"
+        valReferintaDest.Size = New Size(0, 22)
         valReferintaDest.TabIndex = 23
-        valReferintaDest.Text = ""
         ' 
         ' capCodProgram
         ' 
         capCodProgram.AutoSize = True
+        capCodProgram.Location = New Point(3, 364)
         capCodProgram.Margin = New Padding(3, 4, 8, 4)
         capCodProgram.Name = "capCodProgram"
+        capCodProgram.Size = New Size(105, 22)
         capCodProgram.TabIndex = 24
         capCodProgram.Text = "Cod program"
         ' 
         ' valCodProgram
         ' 
         valCodProgram.AutoSize = True
+        valCodProgram.Location = New Point(239, 364)
         valCodProgram.Margin = New Padding(3, 4, 3, 4)
         valCodProgram.Name = "valCodProgram"
+        valCodProgram.Size = New Size(0, 22)
         valCodProgram.TabIndex = 25
-        valCodProgram.Text = ""
         ' 
         ' capExplicatii
         ' 
         capExplicatii.AutoSize = True
+        capExplicatii.Location = New Point(3, 394)
         capExplicatii.Margin = New Padding(3, 4, 8, 4)
         capExplicatii.Name = "capExplicatii"
+        capExplicatii.Size = New Size(75, 1)
         capExplicatii.TabIndex = 26
         capExplicatii.Text = "Explicații"
         ' 
@@ -1280,10 +1288,11 @@ Partial Class ExtrasePanel
         ' 
         valExplicatii.AutoSize = True
         valExplicatii.Dock = DockStyle.Fill
+        valExplicatii.Location = New Point(239, 394)
         valExplicatii.Margin = New Padding(3, 4, 3, 4)
         valExplicatii.Name = "valExplicatii"
+        valExplicatii.Size = New Size(455, 1)
         valExplicatii.TabIndex = 27
-        valExplicatii.Text = ""
         ' 
         ' lblDetailMessage
         ' 
@@ -1292,7 +1301,7 @@ Partial Class ExtrasePanel
         lblDetailMessage.Location = New Point(0, 0)
         lblDetailMessage.Margin = New Padding(2, 0, 2, 0)
         lblDetailMessage.Name = "lblDetailMessage"
-        lblDetailMessage.Size = New Size(697, 259)
+        lblDetailMessage.Size = New Size(697, 274)
         lblDetailMessage.TabIndex = 1
         lblDetailMessage.Text = "Selectați o operațiune."
         lblDetailMessage.TextAlign = ContentAlignment.MiddleCenter
@@ -1305,6 +1314,9 @@ Partial Class ExtrasePanel
         Margin = New Padding(4, 5, 4, 5)
         Name = "ExtrasePanel"
         Size = New Size(986, 568)
+        CType(gridAntete, ComponentModel.ISupportInitialize).EndInit()
+        CType(gridZi, ComponentModel.ISupportInitialize).EndInit()
+        CType(gridOperatiuni, ComponentModel.ISupportInitialize).EndInit()
         split.Panel1.ResumeLayout(False)
         split.Panel2.ResumeLayout(False)
         CType(split, ComponentModel.ISupportInitialize).EndInit()
@@ -1313,12 +1325,9 @@ Partial Class ExtrasePanel
         innerSplit.Panel2.ResumeLayout(False)
         CType(innerSplit, ComponentModel.ISupportInitialize).EndInit()
         innerSplit.ResumeLayout(False)
-        CType(gridAntete, ComponentModel.ISupportInitialize).EndInit()
-        CType(gridZi, ComponentModel.ISupportInitialize).EndInit()
-        CType(gridOperatiuni, ComponentModel.ISupportInitialize).EndInit()
+        detailPane.ResumeLayout(False)
         detailTable.ResumeLayout(False)
         detailTable.PerformLayout()
-        detailPane.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 
