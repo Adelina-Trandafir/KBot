@@ -163,6 +163,10 @@ Public Enum RezervariMenuOption
     ''' starts with a section-A line for every indicator the angajament already has. Never returned
     ''' by <see cref="RezervariMenu.Decide"/> -- it is offered through <see cref="RezervariMenu.Intrari"/>.</summary>
     AdaugaRezervareCuIndicatori = 5
+    ''' <summary>Re-walks the history of the angajament and corrects its reservations. Offered in
+    ''' any state, through <see cref="RezervariMenu.Intrari"/>; never returned by
+    ''' <see cref="RezervariMenu.Decide"/>.</summary>
+    Reanalizeaza = 6
 End Enum
 
 ''' <summary>
@@ -256,6 +260,7 @@ Public NotInheritable Class RezervariMenu
             Case RezervariMenuOption.GenereazaPdfFinal : Return "Generează PDF final"
             Case RezervariMenuOption.AdaugaRezervare : Return "Adaugă rezervare"
             Case RezervariMenuOption.AdaugaRezervareCuIndicatori : Return "Adaugă rezervare cu indicatorii existenți"
+            Case RezervariMenuOption.Reanalizeaza : Return "Reanalizează rezervările"
             Case RezervariMenuOption.None : Return String.Empty
             Case Else
                 Throw New ArgumentOutOfRangeException(NameOf(opt), opt, "Unknown Rezervari menu option.")

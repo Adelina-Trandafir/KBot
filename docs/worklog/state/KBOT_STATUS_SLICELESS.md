@@ -5,6 +5,7 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Current focus (sliceless)
 
+- **No slice (operator, 30.09.2026) — «Reanalizează rezervările».** Route `POST /api/forexe/rezervari/reanaliza` + footer-menu entry: replays FX_Istoric to fix Rez_Ord/TipRand/Val_Rezervare_Ant/Dif and R_Anterioara/R_Valoare. Code done, nothing run. See `SLICELESS-rezervari-reanaliza.md`.
 - **MOVED TO SLICE 0091 (same day)** — the cause turned out to be a cut `Detaliu` scrape, see
   `SLICE-0091-detaliu-taiat-viteza-asteptari.md`; the note below is kept as it was written.
 - **No slice (operator's request, 29.09.2026) — F14 PAUSED.** Run 34 (017_SCNB,

@@ -46,13 +46,17 @@ Partial Public Class KbotForm
                 Case DdfActiune.StergeToate
                     Await StergeToateReviziileDdfAsync(comanda).ConfigureAwait(True)
                 Case DdfActiune.Trimite
-                    Await TrimiteDdfAsync(comanda.Cod, comanda.Revizie).ConfigureAwait(True)
+                    ' Slice 0098: a send drives the robot, so it waits its turn in the robot queue.
+                    Await _robotQueue.RunAsync(Nothing, $"Trimitere DDF «{comanda.Cod}»",
+                                               Function() TrimiteDdfAsync(comanda.Cod, comanda.Revizie)).ConfigureAwait(True)
                 Case DdfActiune.FinalizeazaPdf
                     Await FinalizeazaPdfDupaSemnareBAsync(comanda.Cod, comanda.Revizie).ConfigureAwait(True)
                 Case Else
                     ' No silent no-ops: an unknown action is a programming defect.
                     Throw New ArgumentException($"Acțiune DDF necunoscută: {comanda.Actiune}", NameOf(comanda))
             End Select
+        Catch ex As RobotTaskDroppedException
+            ' Taken out of the robot queue by the operator: the console already said it.
         Catch ex As ApiException
             GlobalErrorLog.Write("MainForm.ExecutaComandaDdf", ex)
             KBotMessage.Show(Me, ex.Message, "Document de fundamentare",
@@ -172,15 +176,21 @@ Partial Public Class KbotForm
                 Case RezervariMenuOption.AdaugaRezervareCuIndicatori
                     Await AdaugaRezervareDdfAsync(info, cuIndicatori:=True).ConfigureAwait(True)
                 Case RezervariMenuOption.Definitiveaza
-                    Await SchimbaStareaAngajamentuluiAsync(info, definitivare:=True).ConfigureAwait(True)
+                    Await _robotQueue.RunAsync(Nothing, $"Definitivare «{info?.CodAngajament}»",
+                                               Function() SchimbaStareaAngajamentuluiAsync(info, definitivare:=True)).ConfigureAwait(True)
                 Case RezervariMenuOption.Deruleaza
-                    Await SchimbaStareaAngajamentuluiAsync(info, definitivare:=False).ConfigureAwait(True)
+                    Await _robotQueue.RunAsync(Nothing, $"Derulare «{info?.CodAngajament}»",
+                                               Function() SchimbaStareaAngajamentuluiAsync(info, definitivare:=False)).ConfigureAwait(True)
                 Case RezervariMenuOption.GenereazaPdfFinal
                     Await GenereazaPdfFinalDinMeniuAsync(info).ConfigureAwait(True)
+                Case RezervariMenuOption.Reanalizeaza
+                    Await ReanalizeazaRezervariAsync(info.CodAngajament).ConfigureAwait(True)
                 Case Else
                     ' No silent no-ops: an option with no handler is a programming defect.
                     Throw New ArgumentException($"Opțiune de meniu fără acțiune: {optiune}", NameOf(optiune))
             End Select
+        Catch ex As RobotTaskDroppedException
+            ' Taken out of the robot queue by the operator: the console already said it.
         Catch ex As ApiException
             GlobalErrorLog.Write("MainForm.ExecutaMeniulRezervari", ex)
             KBotMessage.Show(Me, ex.Message, "Document de fundamentare", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -284,4 +294,71 @@ Partial Public Class KbotForm
             End If
         End Using
     End Sub
+
+    ''' <summary>
+    ''' «Reanalizează rezervările» from the Rezervari footer menu: re-walks the FX_Istoric chain of
+    ''' the angajament on the server (nothing is downloaded) and corrects Rez_Ord, TipRand,
+    ''' Val_Rezervare_Ant/Dif and R_Anterioara/R_Valoare. Dry run first, so the operator sees the
+    ''' real numbers before anything is written; the tree reloads with the selection kept.
+    ''' </summary>
+    Private Async Function ReanalizeazaRezervariAsync(cod As String) As Task
+        If String.IsNullOrWhiteSpace(cod) Then Return
+        Const titlu As String = "Reanalizarea rezervărilor"
+
+        Dim proba As RezervariReanalizaResult
+        busyBar.Running = True
+        Try
+            proba = Await WithReauth(Of RezervariReanalizaResult)(
+                Function() _apiClient.ReanalyzeRezervariAsync(cod, False, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+        If proba Is Nothing Then
+            AratEsecul(titlu)
+            Return
+        End If
+
+        If proba.NothingToDo Then
+            KBotMessage.Show(Me, $"«{cod}»: rezervările sunt deja în acord cu istoricul. Nu este nimic de corectat." &
+                             Semnalari(proba), titlu, MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim exemple As New System.Text.StringBuilder()
+        For Each d As RezervareCorectata In proba.Details.Take(8)
+            exemple.AppendLine($"  • {d.Data}, {d.Indicator}: {d.OldValue:N2} → {d.NewValue:N2} (anterioară {d.OldPrevious:N2} → {d.NewPrevious:N2})")
+        Next
+        Dim intrebare As String =
+            $"«{cod}»: din {proba.HistoryRows} rânduri de istoric, {proba.HistoryToCorrect} au ordinea, tipul sau " &
+            $"diferența greșite, iar {proba.ReservationsToCorrect} rezervări își schimbă valoarea." & vbCrLf & vbCrLf &
+            exemple.ToString() & Semnalari(proba) & vbCrLf & vbCrLf &
+            "Nu se descarcă nimic din FOREXE. Continuați?"
+        If KBotMessage.Show(Me, intrebare, titlu, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+                            MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
+            Return
+        End If
+
+        Dim rezultat As RezervariReanalizaResult
+        busyBar.Running = True
+        Try
+            rezultat = Await WithReauth(Of RezervariReanalizaResult)(
+                Function() _apiClient.ReanalyzeRezervariAsync(cod, True, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+        If rezultat Is Nothing Then
+            AratEsecul(titlu)
+            Return
+        End If
+
+        KBotMessage.Show(Me, $"«{cod}»: s-au corectat {rezultat.HistoryCorrected} rânduri de istoric și " &
+                         $"{rezultat.ReservationsCorrected} rezervări.", titlu,
+                         MessageBoxButtons.OK, MessageBoxIcon.Information)
+        Await LoadTreeAsync(pastreazaSelectia:=True)
+    End Function
+
+    Private Shared Function Semnalari(r As RezervariReanalizaResult) As String
+        If r Is Nothing OrElse r.Warnings.Count = 0 Then Return String.Empty
+        Return vbCrLf & vbCrLf & "Semnalări:" & vbCrLf & "  • " & String.Join(vbCrLf & "  • ", r.Warnings)
+    End Function
 End Class

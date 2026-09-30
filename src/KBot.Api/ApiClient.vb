@@ -725,6 +725,61 @@ Public Class ApiClient
         End Try
     End Function
 
+    ' Re-walks the FX_Istoric chain of one angajament and corrects its reservations. `apply` =
+    ' False is the dry run the operator confirms; True writes. Hard-fail (Throw ApiException)
+    ' on non-2xx; a 401 flows to WithReauth.
+    Public Async Function ReanalyzeRezervariAsync(cod As String, apply As Boolean, ct As CancellationToken) _
+        As Task(Of RezervariReanalizaResult) Implements IApiClient.ReanalyzeRezervariAsync
+
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+
+            Dim req As New PostRezervariReanalizaRequest() With {.cod = cod, .aplica = apply}
+            Dim body As String = JsonSerializer.Serialize(req, _json)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/rezervari/reanaliza")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "reanalizarea rezervărilor", CInt(resp.StatusCode))
+                    End If
+
+                    Dim payload As PostRezervariReanalizaResponse =
+                        JsonSerializer.Deserialize(Of PostRezervariReanalizaResponse)(respText, _json)
+                    Dim rez As New RezervariReanalizaResult() With {.Cod = cod, .Applied = apply}
+                    If payload Is Nothing Then Return rez
+
+                    If Not String.IsNullOrEmpty(payload.cod) Then rez.Cod = payload.cod
+                    rez.Applied = payload.aplicat
+                    rez.HistoryRows = payload.randuri_istoric
+                    rez.HistoryToCorrect = payload.istoric_de_corectat
+                    rez.HistoryCorrected = payload.istoric_corectat
+                    rez.ReservationsToCorrect = payload.rezervari_de_corectat
+                    rez.ReservationsCorrected = payload.rezervari_corectate
+                    rez.TypeChanged = payload.tip_schimbat
+                    If payload.detalii IsNot Nothing Then
+                        For Each d As PostRezervariReanalizaDetaliu In payload.detalii
+                            rez.Details.Add(New RezervareCorectata() With {
+                                .Data = d.data, .Indicator = d.indicator,
+                                .OldValue = d.valoare_veche, .NewValue = d.valoare_noua,
+                                .OldPrevious = d.anterioara_veche, .NewPrevious = d.anterioara_noua})
+                        Next
+                    End If
+                    If payload.avertismente IsNot Nothing Then rez.Warnings.AddRange(payload.avertismente)
+                    Return rez
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.ReanalyzeRezervariAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ' Plățile unui angajament (slice 0017), pentru PlatiView. Un singur parametru:
     ' cod = CodAngajament, escapat in query string. NU se trimite baza (o citeste serverul
     ' din sesiune). Un cod fara plati intoarce 200 cu plati [], deci aici rezulta un PlatiInfo
@@ -1346,6 +1401,8 @@ Public Class ApiClient
 
             Dim body As String = JsonSerializer.Serialize(payload, _json)
             Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/tools/process_excel")
+                ' Slice 0098: a workflow step waits for this answer while the robot runs.
+                msg.Options.Set(ServerGate.Bypass, True)
                 msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
                 msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
                 Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)

@@ -242,6 +242,34 @@ Public NotInheritable Class PostReceptiiRefacereResponse
     Public Property avertismente As New List(Of String)()
 End Class
 
+' Wire DTOs for POST /api/forexe/rezervari/reanaliza. Property names ARE the JSON keys.
+Public NotInheritable Class PostRezervariReanalizaRequest
+    Public Property cod As String
+    Public Property aplica As Boolean
+End Class
+
+Public NotInheritable Class PostRezervariReanalizaDetaliu
+    Public Property data As String
+    Public Property indicator As String
+    Public Property valoare_veche As Double
+    Public Property valoare_noua As Double
+    Public Property anterioara_veche As Double
+    Public Property anterioara_noua As Double
+End Class
+
+Public NotInheritable Class PostRezervariReanalizaResponse
+    Public Property cod As String
+    Public Property aplicat As Boolean
+    Public Property randuri_istoric As Integer
+    Public Property istoric_de_corectat As Integer
+    Public Property istoric_corectat As Integer
+    Public Property rezervari_de_corectat As Integer
+    Public Property rezervari_corectate As Integer
+    Public Property tip_schimbat As Integer
+    Public Property detalii As New List(Of PostRezervariReanalizaDetaliu)()
+    Public Property avertismente As New List(Of String)()
+End Class
+
 ' Wire DTOs for GET /api/forexe/plati (vederea Plăți, slice 0017).
 ' Property names ARE the JSON keys (PropertyNamingPolicy=Nothing) — snake_case verbatim,
 ' matching routes/forexe/plati.py exactly. ApiClient maps them onto the Plati POCOs (with the

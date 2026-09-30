@@ -43,6 +43,7 @@ la lista de mai jos (`docs/HELP_SYSTEM.md` §4). Mută acest reper la fiecare 00
 
 - **Ajutor de actualizat** (feliile de funcționalitate adaugă aici ce subiecte / capturi au
   învechit, ex. `0098: contabil.vederi.plati — coloana nouă «Cont»; captura plati de refăcut`):
+  - `contabil.vederi.rezervari` — iconița din stânga subsolului are acum și «Reanalizează rezervările» (sliceless, 30.09.2026); tabelul «Iconițele arborelui» de completat
   - (nimic deschis; 0097 acoperită în 0000-13)
 
 - **0000-01** — exportul manualului neapăsat pe ecran; fereastra Director nevăzută; tema întunecată nevăzută.

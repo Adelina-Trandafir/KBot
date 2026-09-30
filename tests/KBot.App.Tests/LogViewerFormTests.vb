@@ -66,6 +66,11 @@ Public Class LogViewerFormTests
             Throw New NotSupportedException()
         End Function
 
+        Public Function ReanalyzeRezervariAsync(cod As String, apply As Boolean, ct As CancellationToken) _
+            As Task(Of RezervariReanalizaResult) Implements IApiClient.ReanalyzeRezervariAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public Function GetAsync(Of T)(relativeUrl As String, ct As CancellationToken) As Task(Of T) _
             Implements IApiClient.GetAsync
             Return Task.FromException(Of T)(New ApiException("Serverul nu răspunde.", 503, "SERVER_DOWN"))

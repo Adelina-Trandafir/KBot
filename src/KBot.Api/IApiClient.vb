@@ -103,6 +103,15 @@ Public Interface IApiClient
         As Task(Of ReceptiiRebuildResult)
 
     ''' <summary>
+    ''' Reanalizează rezervările unui angajament din FX_Istoric, fără redescărcare
+    ''' (POST /api/forexe/rezervari/reanaliza): refăcește Rez_Ord, TipRand, Val_Rezervare_Ant/Dif
+    ''' și R_Anterioara/R_Valoare. <paramref name="apply"/> = False este o PROBĂ (nu scrie).
+    ''' Hard-fail (Throw) la non-2xx; fără retry pe 401 (curge spre WithReauth).
+    ''' </summary>
+    Function ReanalyzeRezervariAsync(cod As String, apply As Boolean, ct As CancellationToken) _
+        As Task(Of RezervariReanalizaResult)
+
+    ''' <summary>
     ''' Aduce plățile unui angajament (GET /api/forexe/plati): un rând per înregistrare
     ''' FX_Plati, cu extrasul bancar (FX_Extrase) purtat pe rând. Baza NU se trimite:
     ''' serverul o ia din sesiune. Un cod necunoscut întoarce un PlatiInfo cu zero rânduri

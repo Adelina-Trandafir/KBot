@@ -149,12 +149,15 @@ Public Class RezervariView
 
     Private Sub AratatOptiunea(optiune As RezervariMenuOption)
         _optiune = optiune
-        If optiune = RezervariMenuOption.None Then
+        ' «Reanalizeaza» is offered whenever an angajament is shown and the host runs menu actions,
+        ' so the icon hides only when there is nothing at all to pick.
+        If _actiuneMeniu Is Nothing OrElse _info Is Nothing OrElse String.IsNullOrWhiteSpace(_info.CodAngajament) Then
             tree.FooterLeftIcon = Nothing
             tree.FooterLeftIconTooltip = String.Empty
         Else
             tree.FooterLeftIcon = _iconitaMeniu
-            tree.FooterLeftIconTooltip = RezervariMenu.Label(optiune)
+            tree.FooterLeftIconTooltip = RezervariMenu.Label(
+                If(optiune = RezervariMenuOption.None, RezervariMenuOption.Reanalizeaza, optiune))
         End If
         tree.Invalidate()
     End Sub
@@ -165,7 +168,7 @@ Public Class RezervariView
     ''' </summary>
     Private Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
         Try
-            If _optiune = RezervariMenuOption.None OrElse _actiuneMeniu Is Nothing OrElse _info Is Nothing Then Return
+            If _actiuneMeniu Is Nothing OrElse _info Is Nothing Then Return
             Dim info As AngajamentTreeInfo = _info
             ' «Adauga rezervare» opens two entries (an empty revision / the existing indicators);
             ' every other option is one entry. The key is the option's name, parsed back on click.
@@ -173,6 +176,8 @@ Public Class RezervariView
             For Each kv As KeyValuePair(Of RezervariMenuOption, String) In RezervariMenu.Intrari(_optiune)
                 intrari.Add(New CustomPopupItem(kv.Key.ToString(), kv.Value))
             Next
+            intrari.Add(New CustomPopupItem(RezervariMenuOption.Reanalizeaza.ToString(),
+                                            RezervariMenu.Label(RezervariMenuOption.Reanalizeaza)))
             Dim meniu As New CustomPopup(intrari)
             AddHandler meniu.ItemClicked,
                 Sub(s As Object, ev As CustomPopupItemEventArgs)

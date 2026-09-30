@@ -62,6 +62,11 @@ Public Class SumarViewTests
             Throw New NotSupportedException()
         End Function
 
+        Public Function ReanalyzeRezervariAsync(cod As String, apply As Boolean, ct As CancellationToken) _
+            As Task(Of RezervariReanalizaResult) Implements IApiClient.ReanalyzeRezervariAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public ReadOnly RequestedCods As New List(Of String)()
         ' Cod -> sursa de completare a raspunsului (completata manual de test).
         Public ReadOnly Pending As New Dictionary(Of String, TaskCompletionSource(Of SumarInfo))(StringComparer.Ordinal)

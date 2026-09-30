@@ -37,6 +37,7 @@ forexe_bp = Blueprint("forexe", __name__)
 # tree.py        -> GET /api/forexe/tree
 # sumar.py       -> GET /api/forexe/sumar
 # rezervari.py   -> GET /api/forexe/rezervari
+# rezervari_reanaliza.py -> POST /api/forexe/rezervari/reanaliza
 # receptii.py    -> GET /api/forexe/receptii
 # receptii_refacere.py -> POST /api/forexe/receptii/refacere (instantaneele si liniile
 #                   lipsa, refacute din FX_Istoric dupa IDH, felia 0062)
@@ -71,6 +72,7 @@ from . import angajamente  # noqa: E402,F401
 from . import tree  # noqa: E402,F401
 from . import sumar  # noqa: E402,F401
 from . import rezervari  # noqa: E402,F401
+from . import rezervari_reanaliza  # noqa: E402,F401
 from . import receptii  # noqa: E402,F401
 from . import receptii_refacere  # noqa: E402,F401
 from . import plati  # noqa: E402,F401
