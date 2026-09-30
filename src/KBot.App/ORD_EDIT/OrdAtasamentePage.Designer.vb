@@ -110,8 +110,8 @@ Partial Class OrdAtasamentePage
         btnLipeste.Size = New Size(138, 50)
         btnLipeste.TabIndex = 4
         btnLipeste.Text = "Lipește"
-        tips.SetToolTipHeader(btnLipeste, "Șterge imaginea")
-        tips.SetToolTipText(btnLipeste, "Scoate imaginea din ordonanțare." & vbLf & "Dispare de pe server la următoarea salvare.")
+        tips.SetToolTipHeader(btnLipeste, "Lipește imaginea")
+        tips.SetToolTipText(btnLipeste, "Adaugă imaginea din memoria temporară (de exemplu o captură de ecran copiată)." & vbLf & "Se încarcă pe server după salvarea ordonanțării.")
         btnLipeste.UseVisualStyleBackColor = True
         ' 
         ' dlgImagine

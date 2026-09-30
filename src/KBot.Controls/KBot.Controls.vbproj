@@ -108,6 +108,9 @@
     <Compile Update="CaptionBar\KBotCaptionBar.ThemeButton.vb">
       <DependentUpon>KBotCaptionBar.vb</DependentUpon>
     </Compile>
+    <Compile Update="CaptionBar\KBotCaptionBar.HelpButton.vb">
+      <DependentUpon>KBotCaptionBar.vb</DependentUpon>
+    </Compile>
     <Compile Update="Chart\KBotChartView.Painting.vb">
       <DependentUpon>KBotChartView.vb</DependentUpon>
     </Compile>

@@ -295,15 +295,15 @@ Partial Public NotInheritable Class KBotCaptionBar
         Return SlotRect(If(_showMaximize, 2, 1))
     End Function
 
+    ' Button order, right to left: close, maximize, minimize, HELP (0000-01), theme, options.
     ' Ordinea butoanelor pe bară, dreapta → stânga: închidere, maximizare, minimizare, TEMĂ,
     ' opțiuni. Butonul de temă stă imediat după cutia de control (min/max, iar în lipsa lor după
     ' închidere), deci slotul lui e primul liber după ea; butonul de opțiuni vine la stânga lui.
     ' Toate se derivă din aceeași numărătoare — nimic nu rămâne în urmă când se stinge un buton.
+    ' Slice 0000-01: the help button («?», KBotCaptionBar.HelpButton.vb) takes the first slot
+    ' after the control box when it is shown, so the theme button moves one slot left.
     Private Function ThemeButtonSlot() As Integer
-        Dim slotIndex As Integer = 1 'Close button is always in slot 0
-        If _showMinimize Then slotIndex += 1
-        If _showMaximize Then slotIndex += 1
-        Return slotIndex
+        Return ControlBoxSlots() + If(HelpButtonVisible(), 1, 0)
     End Function
 
     Private Function ThemeButtonRect() As Rectangle
@@ -320,6 +320,7 @@ Partial Public NotInheritable Class KBotCaptionBar
     Private Function TitleRightLimit() As Integer
         If _showOptionsButton Then Return OptionButtonRect().Left
         If _showThemeButton Then Return ThemeButtonRect().Left
+        If HelpButtonVisible() Then Return HelpButtonRect().Left
         If _showMinimize Then Return MinRect().Left
         If _showMaximize Then Return MaxRect().Left
         Return CloseRect().Left
@@ -375,6 +376,9 @@ Partial Public NotInheritable Class KBotCaptionBar
                 DrawImageButton(g, ThemeButtonRect(), EffectiveThemeButtonImage(), _themeButtonPadding,
                                 _tintThemeButtonImage, _themeButtonHover OrElse _themeButtonActive)
             End If
+
+            ' Help button (slice 0000-01).
+            If HelpButtonVisible() Then DrawHelpButton(g)
 
             ' Buton minimizare (opțional).
             If _showMinimize Then
@@ -509,6 +513,7 @@ Partial Public NotInheritable Class KBotCaptionBar
         If _showMinimize AndAlso MinRect().Contains(location) Then Return True
         If _showOptionsButton AndAlso OptionButtonRect().Contains(location) Then Return True
         If _showThemeButton AndAlso ThemeButtonRect().Contains(location) Then Return True
+        If HelpButtonVisible() AndAlso HelpButtonRect().Contains(location) Then Return True
         Return False
     End Function
 
@@ -520,9 +525,11 @@ Partial Public NotInheritable Class KBotCaptionBar
             Dim overMin As Boolean = _showMinimize AndAlso MinRect().Contains(e.Location)
             Dim overOpt As Boolean = _showOptionsButton AndAlso OptionButtonRect().Contains(e.Location)
             Dim overTema As Boolean = _showThemeButton AndAlso ThemeButtonRect().Contains(e.Location)
+            Dim overHelp As Boolean = HelpButtonVisible() AndAlso HelpButtonRect().Contains(e.Location)
 
             If overClose <> _hoverClose OrElse overMin <> _hoverMin OrElse overMax <> _hoverMax OrElse
-               overOpt <> _optionButtonHover OrElse overTema <> _themeButtonHover Then
+               overOpt <> _optionButtonHover OrElse overTema <> _themeButtonHover OrElse overHelp <> _helpButtonHover Then
+                _helpButtonHover = overHelp
                 _hoverClose = overClose
                 _hoverMin = overMin
                 _hoverMax = overMax
@@ -537,7 +544,8 @@ Partial Public NotInheritable Class KBotCaptionBar
 
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
         MyBase.OnMouseLeave(e)
-        If _hoverClose OrElse _hoverMin OrElse _hoverMax OrElse _optionButtonHover OrElse _themeButtonHover Then
+        If _hoverClose OrElse _hoverMin OrElse _hoverMax OrElse _optionButtonHover OrElse _themeButtonHover OrElse _helpButtonHover Then
+            _helpButtonHover = False
             _hoverClose = False
             _hoverMin = False
             _hoverMax = False
@@ -581,6 +589,8 @@ Partial Public NotInheritable Class KBotCaptionBar
             ElseIf _showThemeButton AndAlso ThemeButtonRect().Contains(e.Location) Then
                 ' Meniul de teme îl face bara însăși — vezi KBotCaptionBar.ThemeButton.vb.
                 ShowThemeMenu()
+            ElseIf HelpButtonVisible() AndAlso HelpButtonRect().Contains(e.Location) Then
+                HelpButtonClicked()
             End If
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotCaptionBar.OnMouseClick", ex)

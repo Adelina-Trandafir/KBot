@@ -1014,6 +1014,15 @@ Public Class AsociereForm
                 Return
             Next
 
+            ' The reception sets the value: no new last snapshot with another total.
+            Dim motivValoare As String = MotivulValorii(rec, deMutat)
+            If motivValoare <> String.Empty Then
+                e.Allow = False
+                e.Motiv = motivValoare
+                treeLant.ClearDropPreview()
+                Return
+            End If
+
             e.Allow = True
             AratLocul(rec, deMutat)
         Catch ex As Exception
@@ -1133,7 +1142,8 @@ Public Class AsociereForm
     ''' <para>F14 (indicatorii) și F16 (mulțimile doar cresc) — aceleași două pe care le
     ''' verifică și serverul, și tot ridicând, nu corectând. Se repetă aici nu din neîncredere,
     ''' ci ca refuzul să ajungă la operator în timpul gestului. F15 (capătul lanțului) NU e
-    ''' aici: el e un semn, nu un veto, și trăiește în eticheta recepției.</para>
+    ''' aici: el e un semn, nu un veto, și trăiește în eticheta recepției. Since 30.09.2026 one
+    ''' part of it IS a drag veto -- a NEW end with another value -- in <see cref="MotivulValorii"/>.</para>
     '''
     ''' <para><b>F13 nu mai e aici deloc</b> — retras pe 31.08.2026. <c>FX_Receptii_R.DataR</c>
     ''' nu e momentul creării: e un câmp obișnuit, pe care operatorul îl scrie pe site și îl
@@ -1195,6 +1205,47 @@ Public Class AsociereForm
         End If
 
         Return String.Empty
+    End Function
+
+    ''' <summary>
+    ''' Value rule (operator, 30.09.2026): the reception (R) sets the value, not its snapshots.
+    ''' A drop that would give an existing reception a NEW last snapshot is refused unless that
+    ''' snapshot's total is the reception's own value (<c>SumaAntet</c>). Empty string = allowed.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>This is F15 (the chain closes on the reception's value) applied at drag time, and
+    ''' only to the snapshot that becomes the end. Newer is fine; newer with another value is
+    ''' not. A snapshot that lands before the current end changes nothing and is never refused
+    ''' here. The server already holds F15 as a veto on the ingest save; on the anytime editor
+    ''' it stays a sign there, the drag refusal is the client's alone.</para>
+    ''' <para>Judged on the RESULTING chain, not per dragged row: dragging the middle and the
+    ''' end together is allowed when the end matches, though the middle alone would be refused.</para>
+    ''' <para>Not applied: a reception started here (its value IS its chain); a reception deleted
+    ''' on the site, or a chain whose end is or would be a deletion row (F15 skips those, F21);
+    ''' a reception whose detail arrived cut (slice 0091: its <c>SumaAntet</c> is the old one,
+    ''' the server only warns); an empty chain (no latest snapshot to be newer than).</para>
+    ''' <para>A refusal here makes the tree paint the target as forbidden and draw no place
+    ''' (<c>TreeLant_NodeDragOver</c>), and the drop does not happen.</para>
+    ''' </remarks>
+    Private Function MotivulValorii(rec As ReceptiePropusa, deMutat As List(Of InstantaneuLegat)) As String
+        If rec Is Nothing OrElse deMutat Is Nothing OrElse deMutat.Count = 0 Then Return String.Empty
+        If EsteReceptieNoua(rec) OrElse rec.Sters OrElse rec.DetaliuIncomplet Then Return String.Empty
+
+        Dim lant As List(Of InstantaneuLegat) = LantulReceptiei(rec)
+        If lant.Count = 0 Then Return String.Empty
+        Dim ultimulAcum As InstantaneuLegat = lant.Last()
+        If ultimulAcum.Stergere OrElse EsteStergere(ultimulAcum.Idrh) Then Return String.Empty
+
+        Dim rezultat As New List(Of InstantaneuLegat)(lant)
+        rezultat.AddRange(deMutat.Where(Function(i) Not lant.Any(Function(l) l.Idrh = i.Idrh)))
+        Dim capat As InstantaneuLegat = rezultat.OrderBy(Function(i) i.DataH).ThenBy(Function(i) i.Idrh).Last()
+        If capat.Idrh = ultimulAcum.Idrh Then Return String.Empty
+        If capat.Stergere Then Return String.Empty
+        If Math.Round(capat.Total, 2) = Math.Round(rec.SumaAntet, 2) Then Return String.Empty
+
+        Dim care As String = If(deMutat.Count = 1, "Instantaneul", $"Instantaneul din {capat.DataH:dd.MM.yyyy HH:mm}")
+        Return $"{care} este mai nou decât ultimul din lanț ({ultimulAcum.DataH:dd.MM.yyyy HH:mm}) și ar " &
+               $"schimba valoarea recepției: are {Bani(capat.Total)}, recepția valorează {Bani(rec.SumaAntet)}."
     End Function
 
     ' `EsteInainteDeDataReceptiei` USED TO BE HERE and was DELETED on 09.09.2026 at the

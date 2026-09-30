@@ -82,6 +82,13 @@ Public NotInheritable Class AppSettings
     Public Property AdvancedOptions As Boolean = False
 
     ''' <summary>
+    ''' Help screenshot mode (slice 0000-02): the «Capturi pentru ajutor» window is reachable from
+    ''' the menu and the help window. Shown in the settings only with <see cref="AdvancedOptions"/>
+    ''' and honoured only while that is on too. Not described in the help itself.
+    ''' </summary>
+    Public Property HelpCaptureMode As Boolean = False
+
+    ''' <summary>
     ''' The browser's developer tools (F12, Ctrl+Shift+I / J / C, the context menu's
     ''' «Inspect») stay reachable in the FOREXE page. Off by default: the page script
     ''' swallows those keys and the context menu (operator, 21.09.2026).
@@ -405,6 +412,7 @@ Public NotInheritable Class AppSettings
             .ForexeHideBrowserChrome = ForexeHideBrowserChrome,
             .ReceptiiCheckedOnOpen = ReceptiiCheckedOnOpen,
             .AdvancedOptions = AdvancedOptions,
+            .HelpCaptureMode = HelpCaptureMode,
             .ForexeDevToolsAllowed = ForexeDevToolsAllowed,
             .ForexePageStyles = ForexePageStyles?.Select(Function(r) New PageStyleRuleDto With {
                 .Enabled = r.Enabled, .Selector = r.Selector, .Css = r.Css, .Note = r.Note, .Page = r.Page}).ToList(),
@@ -444,6 +452,7 @@ Public NotInheritable Class AppSettings
         If dto.ForexeHideBrowserChrome.HasValue Then s.ForexeHideBrowserChrome = dto.ForexeHideBrowserChrome.Value
         If dto.ReceptiiCheckedOnOpen.HasValue Then s.ReceptiiCheckedOnOpen = dto.ReceptiiCheckedOnOpen.Value
         If dto.AdvancedOptions.HasValue Then s.AdvancedOptions = dto.AdvancedOptions.Value
+        If dto.HelpCaptureMode.HasValue Then s.HelpCaptureMode = dto.HelpCaptureMode.Value
         If dto.ForexeDevToolsAllowed.HasValue Then s.ForexeDevToolsAllowed = dto.ForexeDevToolsAllowed.Value
         If dto.ForexeCapturaPaginaOriginala.HasValue Then s.ForexeCapturaPaginaOriginala = dto.ForexeCapturaPaginaOriginala.Value
         ' A multiplier out of range in the file (hand-edited) keeps the default.
@@ -504,6 +513,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ForexeHideBrowserChrome As Boolean?
     Public Property ReceptiiCheckedOnOpen As Boolean?
     Public Property AdvancedOptions As Boolean?
+    Public Property HelpCaptureMode As Boolean?
     Public Property ForexeDevToolsAllowed As Boolean?
     Public Property ForexePageStyles As List(Of PageStyleRuleDto)
     Public Property ForexeCapturaPaginaOriginala As Boolean?

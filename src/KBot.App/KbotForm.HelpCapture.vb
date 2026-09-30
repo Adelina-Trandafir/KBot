@@ -1,0 +1,88 @@
+Option Strict On
+Imports KBot.Common
+Imports KBot.Controls
+
+' Slice 0000-02 -- the main window's side of the help capture tool: the «Capturi pentru ajutor»
+' menu entry (shown only in capture mode) and the navigation a capture's «goto» asks for.
+Partial Public Class KbotForm
+    Implements IHelpCaptureNavigator
+
+    Private Const HelpCaptureMenuKey As String = "capturi_ajutor"
+    Private Const HelpCaptureMenuSeparatorKey As String = "capturi_ajutor_sep"
+
+    ''' <summary>True while the capture mode is usable: switched on AND advanced options on.</summary>
+    Friend Shared ReadOnly Property HelpCaptureModeOn As Boolean
+        Get
+            Dim s As AppSettings = AppSettings.Current
+            Return s.AdvancedOptions AndAlso s.HelpCaptureMode
+        End Get
+    End Property
+
+    ' The entry follows the setting at every opening, so a change in Setări needs no restart.
+    Private Sub MenuNou_Opening(sender As Object, e As ComponentModel.CancelEventArgs) Handles menuNou.Opening
+        Try
+            Dim shown As Boolean = HelpCaptureModeOn
+            For Each item As KBotMenuItem In menuNou.Items
+                If String.Equals(item.Key, HelpCaptureMenuKey, StringComparison.Ordinal) OrElse
+                   String.Equals(item.Key, HelpCaptureMenuSeparatorKey, StringComparison.Ordinal) Then
+                    item.Visible = shown
+                End If
+            Next
+        Catch ex As Exception
+            ' UI boundary (event handler): log and swallow.
+            GlobalErrorLog.Write("MainForm.MenuNou_Opening", ex)
+        End Try
+    End Sub
+
+    Private Sub DeschideCapturileAjutorului()
+        Try
+            Dim help As HelpService = TryCast(KBotHelp.Provider, HelpService)
+            If help Is Nothing Then Throw New InvalidOperationException("The help service is not installed.")
+            HelpCaptureForm.ShowFor(Me, help)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.DeschideCapturileAjutorului", ex)
+            KBotMessage.Show(Me, "Fereastra capturilor nu a putut fi deschisă. Detalii în jurnalul de erori.",
+                             "Capturi pentru ajutor", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' <c>view:&lt;key&gt;</c> selects a view of the bar (it must be on for the selected angajament);
+    ''' <c>menu:&lt;key&gt;</c> runs a header menu entry; <c>setari:&lt;page&gt;</c> opens the settings
+    ''' window on a page.
+    ''' </summary>
+    Public Function NavigateForCapture(target As String) As String Implements IHelpCaptureNavigator.NavigateForCapture
+        Try
+            If WindowState = FormWindowState.Minimized Then WindowState = FormWindowState.Normal
+            Activate()
+            Dim colon As Integer = target.IndexOf(":"c)
+            If colon <= 0 Then Throw New ArgumentException("Capture target without 'kind:' -> " & target, NameOf(target))
+            Dim kind As String = target.Substring(0, colon).Trim().ToLowerInvariant()
+            Dim key As String = target.Substring(colon + 1).Trim()
+            Select Case kind
+                Case "view"
+                    Dim item As KBotNavItem = navViews.Items.FirstOrDefault(Function(i) String.Equals(i.Key, key, StringComparison.OrdinalIgnoreCase))
+                    If item Is Nothing Then Throw New ArgumentException("No view '" & key & "' in navViews.", NameOf(target))
+                    If Not item.Enabled OrElse Not item.Visible Then
+                        Return "Vederea «" & item.Text & "» nu e disponibilă pentru angajamentul selectat. Selectați în arbore un angajament care o are, apoi deschideți-o."
+                    End If
+                    navViews.SelectedKey = item.Key
+                    Return Nothing
+                Case "menu"
+                    MenuNou_ItemClicked(menuNou, New KBotMenuItemClickedEventArgs(
+                        menuNou.Items.Concat(menuNou.Items.SelectMany(Function(i) i.Items)) _
+                                     .First(Function(i) String.Equals(i.Key, key, StringComparison.OrdinalIgnoreCase))))
+                    Return Nothing
+                Case "setari"
+                    SetariForm.ShowFor(Me, _setariFactory).ShowPage(key)
+                    Return Nothing
+                Case Else
+                    Throw New ArgumentException("Unknown capture target kind '" & kind & "'.", NameOf(target))
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.NavigateForCapture", ex)
+            Throw
+        End Try
+    End Function
+
+End Class

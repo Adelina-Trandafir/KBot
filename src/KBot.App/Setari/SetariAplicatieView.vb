@@ -113,6 +113,7 @@ Public Class SetariAplicatieView
     ' selected tab -> back to the switches, so the page never shows a tab without its button.
     Private Sub AplicaOptiunileAvansate(shown As Boolean)
         navPagini.SetItemVisible(PAGE_DOCUMENTE, shown)
+        chkCapturi.Visible = shown   ' slice 0000-02: help capture mode lives under the advanced options
         If Not shown AndAlso String.Equals(navPagini.SelectedKey, PAGE_DOCUMENTE, StringComparison.Ordinal) Then
             navPagini.SelectedKey = PAGE_GENERALE
         End If
@@ -145,6 +146,12 @@ Public Class SetariAplicatieView
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.ChkAvansate_CheckedChanged", ex)
         End Try
+    End Sub
+
+    ' Slice 0000-02: the help screenshot mode (menu entry + «Capturi pentru ajutor» window).
+    Private Sub ChkCapturi_CheckedChanged(sender As Object, e As EventArgs) Handles chkCapturi.CheckedChanged
+        SalveazaComutator(Sub(s) s.HelpCaptureMode = chkCapturi.Checked,
+                          If(chkCapturi.Checked, "Modul de capturi pentru ajutor e pornit.", "Modul de capturi pentru ajutor e oprit."))
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements ISetariView.ViewKey
@@ -204,6 +211,7 @@ Public Class SetariAplicatieView
             chkShowBrowser.Checked = s.ShowBrowserButton
             chkReceptii.Checked = s.ReceptiiCheckedOnOpen
             chkAvansate.Checked = s.AdvancedOptions
+            chkCapturi.Checked = s.HelpCaptureMode
             AplicaOptiunileAvansate(s.AdvancedOptions)
         Finally
             _suppress = False

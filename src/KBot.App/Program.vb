@@ -240,6 +240,9 @@ Friend Module Program
 
     Private Sub RunShellWithLogin(provider As ServiceProvider)
         Try
+            ' Slice 0000-01: help is on from the login window onwards (F1 and «?»).
+            HelpService.Install(provider.GetRequiredService(Of HelpService)())
+
             Using login As LoginForm = provider.GetRequiredService(Of LoginForm)()
                 AppScreen.SetReference(login)
                 If login.ShowDialog() <> DialogResult.OK Then
@@ -428,6 +431,9 @@ Friend Module Program
         ' certificatul ales și depozitul local de rezultate. Cele două suprafețe de UI (banda din
         ' subsolul shell-ului și consola) se leagă la el, nu la runner.
         services.AddSingleton(Of ForexeController)()
+
+        ' Slice 0000-01: the help (topics, F1, the «?» of every caption bar, the help window).
+        services.AddSingleton(Of HelpService)()
 
         ' Forms.
         services.AddTransient(Of KbotForm)()

@@ -32,6 +32,8 @@ Partial Class KbotForm
         Dim KBotMenuItem6 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem7 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem8 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem9 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem10 As KBotMenuItem = New KBotMenuItem()
         Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KbotForm))
@@ -152,8 +154,8 @@ Partial Class KbotForm
         cboSs.Name = "cboSs"
         cboSs.Size = New Size(114, 37)
         cboSs.TabIndex = 5
-        tips.SetToolTipHeader(cboSs, "Subperioadă")
-        tips.SetToolTipText(cboSs, "Subperioada (SS) din anul ales." & vbLf & "Ultima aleasă se ține minte pentru data viitoare.")
+        tips.SetToolTipHeader(cboSs, "Sursă / sector")
+        tips.SetToolTipText(cboSs, "Sursa și sectorul (de exemplu 02A) din anul ales." & vbLf & "Schimbarea lor reîncarcă arborele și toate ecranele." & vbLf & "Ultima alegere se ține minte pentru data viitoare.")
         ' 
         ' btnMeniu
         ' 
@@ -206,7 +208,16 @@ Partial Class KbotForm
         menuNou.Items.Add(KBotMenuItem3)
         menuNou.Items.Add(KBotMenuItem4)
         menuNou.Items.Add(KBotMenuItem5)
+        KBotMenuItem9.IsSeparator = True
+        KBotMenuItem9.Key = "capturi_ajutor_sep"
+        KBotMenuItem9.Visible = False
+        KBotMenuItem10.Image = My.Resources.Resources.folder_open
+        KBotMenuItem10.Key = "capturi_ajutor"
+        KBotMenuItem10.Text = "Capturi pentru ajutor"
+        KBotMenuItem10.Visible = False
         menuNou.Items.Add(KBotMenuItem6)
+        menuNou.Items.Add(KBotMenuItem9)
+        menuNou.Items.Add(KBotMenuItem10)
         ' 
         ' pnlRoot
         ' 

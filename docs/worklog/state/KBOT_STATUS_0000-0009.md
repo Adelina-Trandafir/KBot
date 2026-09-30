@@ -6,6 +6,47 @@ each slice is; this file holds everything recorded about it: its registry row, i
 
 ---
 
+## Slice 0000 — HELP (ajutorul interactiv + manualul)
+
+**Standing slice.** Operator, 30.09.2026: EVERY piece of work on the help (engine, capture tool,
+topics, screenshots, tours, manual) is recorded HERE, as a sub-slice `0000-NN`, never under a new
+slice number. Worklogs: `SLICE-0000-NN-<slug>.md`.
+
+### Registry
+
+| Slice | Name | Status | Worklog(s) | Notes |
+|------:|------|--------|-----------|-------|
+| 0000 | **Ajutor interactiv + manual, în trei părți: Contabil / Opțiuni avansate / Director (cererea operatorului, 30.09.2026)** | în lucru | — | Plan: 01 motorul; 02 unealta de capturi; 03 conținut Partea 1; 04 tururi ghidate; 05 Partea 2; 06 Partea 3 + cerințele MF la un DDF nou (ORD nou încă nu există → exclus). Textul se scrie din fișierele .md ale feliilor; fără interiorul controalelor și al browserului; pagina FOREXE doar ca mod de funcționare. Imaginile le face operatorul prin unealta de capturi (0000-02), inclusiv pe PC-ul clientului pentru fluxul FOREXE. |
+| 0000-01 | **Motorul de ajutor: F1 oriunde, «?» pe fiecare bară de titlu, fereastra de ajutor (cuprins, căutare, Înapoi/Înainte), export manual HTML** | GATA pe cod (build **0 avertismente, 0 erori**) / **văzut pe ecran** (login F1, «?» în fereastra principală, căutare) | `SLICE-0000-01-help-engine.md` | Subiecte Markdown în `src/KBot.App/HelpContent/` → `<AppDir>\Help\`; Markdig 0.45.0. `KBotHelp` (Theming) + `HelpService` (App). Director → doar Partea 3; ceilalți Partea 1 + Partea 2 cu opțiunile avansate active. FileVersion nebumped. (Numerotat întâi 0097-01, renumerotat la cererea operatorului.) |
+| 0000-02 | **Unealta de capturi pentru ajutor** — etichete `<!-- capture: ... -->` în subiecte, fereastra «Capturi pentru ajutor» cu «Fă poza» pe fiecare rând, poziționare pe ecran + selecție cu dreptunghi, PNG salvat unde îl cere eticheta | GATA pe cod (build **0 avertismente, 0 erori**); comutatorul văzut de operator; fluxul de captură nerulat de Claude | `SLICE-0000-02-help-capture-tool.md` | Comutator în Setări › Aplicație, vizibil doar cu opțiunile avansate; nedescris în ajutor. Etichete `<!-- capture: id | caption | goto | prepare -->`; salvare în `<AppDir>Helpimg` + sursă pe build din repo. |
+| 0000-03 | **Partea 1 «Contabil»: textul, cu etichete de captură** | GATA (text; build **0 avertismente, 0 erori**) / de citit de operator | `SLICE-0000-03-partea-1-contabil.md` | 31 de subiecte + 30 de etichete de captură; secțiunea «Ce cere MF la un DDF nou» din `FUNDAMENT_DocumentFundamentare_CAB.md`. Tooltipul lui `cboSs` spune «Subperioada» dar e sursă/sector — nemodificat. |
+| 0000-04 | **Tururi ghidate** (+ tooltipul «Sursă / sector» corectat) | GATA pe cod (build **0 avertismente, 0 erori**), nevăzut pe ecran | `SLICE-0000-04-tururi-ghidate.md` | Fișiere `HelpContent/tours/*.md`; inel colorat în jurul controlului + bulă cu Înapoi / Înainte / Închide; pornire din pagina subiectului și din pagina de start. Patru tururi pentru Partea 1. |
+| 0000-05 | **Partea 2 «Opțiuni avansate»: textul, cu etichete de captură** | GATA (text; build **0 avertismente, 0 erori**) / de citit de operator | `SLICE-0000-05-partea-2-optiuni-avansate.md` | 6 subiecte + 7 etichete: activare, Documente (Adobe / Excel), Pagina FOREXE, Temă, Căi fișiere, jurnale. Modul de capturi NU e descris (regula operatorului). |
+| 0000-06 | **Partea 3 «Director»: textul, cu etichete de captură, + turul ferestrei directorului** | GATA (text; build **0 avertismente, 0 erori**) / de citit de operator | `SLICE-0000-06-partea-3-director.md` | 4 subiecte (prezentare, lista, alte unități, semnarea) + 3 etichete + `tur-director` (5 pași). Pozele se fac pe calculatorul directorului și se încarcă cu «Încarcă» (lista de capturi e doar în fereastra contabilului). |
+| 0000-07 | **Acoperire F1 + finisare**: fiecare fereastră a operatorului are subiect; subiect nou «Actualizarea K-BOT»; turul Părții 2 | GATA (text; build **0 avertismente, 0 erori**) / de citit de operator | `SLICE-0000-07-acoperire-si-finisare.md` | Ferestre noi acoperite: Alegerea unității, Grafice și benzi, Istoric angajament (preluarea salvărilor din pagină), Golește jurnale, Actualizare, Informații interne. Fraza «ce modifici de mână ocolește K-BOT» înlocuită (greșită de la 0073). Editorul ORD lăsat afară — decizia operatorului. |
+| 0000-08 | **Ordonanțarea în ajutor + documentația sistemului de ajutor** — vederea ORD rescrisă, subiecte noi «Ordonanțări noi (și ștergerea lor)» și «Editorul de ordonanțare»; `docs/HELP_SYSTEM.md` (ghidul de întreținere + procedura de actualizare); `tools/HelpCheck/Check-Help.ps1`; trimiteri din CLAUDE.md, CODE_WORKFLOW.md, README | GATA (text + script; build **0 avertismente, 0 erori**; verificarea **fără erori**, acoperire completă) / de citit de operator | `SLICE-0000-08-ord-si-documentatie.md` | Fluxul MF pentru trimiterea ORD în FOREXE NU e descris (neclar, K-BOT nu trimite încă ORD). Tooltipul greșit al lui «Lipește» din atașamentele ORD corectat. |
+| 0000-09 | **Semnarea ORD din formularul MF** — validarea în doi pași, cele cinci semnături în ordine, minimul (1 + 2 + Ordonator), CFP înaintea ordonatorului; `docs/FUNDAMENT_Ordonantare_CAB.md` | GATA (text; build **0 avertismente, 0 erori**; verificarea fără erori) / de citit de operator | `SLICE-0000-09-semnarea-ord.md` | Din `Surse/ord_xdp.xml` + `ord_xdp_full.xml`. Pasul următor (recepție + încărcare pe serverul CAB) doar numit, nefăcut în K-BOT. 1 + 2 + 5 și cele două validări confirmate de operator; avertisment «semnează după a doua validare» + ordinea pe două persoane. |
+| 0000-10 | **Semnarea ORD refăcută pe macheta A1.0.11** — validare → semnătura 1 → validare → semnătura 2 → (CFP) → ordonator; «Alte Avize», «Verificat/Avizat», «Anulare Validare»; fără ORDNT.xml la validare | GATA (text; build **0 avertismente, 0 erori**; verificarea fără erori) / de citit de operator | `SLICE-0000-10-ord-a1-0-11.md` | Înlocuiește descrierea din 0000-09 (era macheta veche A1.0.08). Din `Surse/ETAPE ORDONANTARE/`; `Etapa3_xdp.xml` = copie a lui Etapa1. Serverul servește A1.0.11 (confirmat). Etapa 1 doar cu col. 4 = fundătură (starea de după semnătura 1 nu se salvează); tabelul complet înaintea semnăturii 1. |
+| 0000-11 | **Cinci tururi noi**: Ordonanțare, Recepții, Plăți, Extrase de cont, Setări (11 tururi în total) | GATA (text; build **0 avertismente, 0 erori**; verificarea fără erori) / nevăzut pe ecran | `SLICE-0000-11-tururi-noi.md` | Fără tur pentru editorul ORD și Asocieri (ferestre modale). Corectat în trecere: schimbarea parolei e pe pagina «Informații», nu «Autentificare». |
+| 0000-12 | **Fereastra Asocieri, explicată pe larg** — secțiune nouă (de ce există, fereastra pe părți, pas cu pas, cazuri speciale) + `tur-asocieri` (8 pași, pornit din fereastră) | GATA (text; build **0 avertismente, 0 erori**; verificarea fără erori) / de citit de operator | `SLICE-0000-12-asocieri.md` | Din `FUNDAMENT_Asociere_Receptii.md` + `AsociereForm`. F14 (oprit) și regula datei (retrasă) lăsate afară. Turul merge doar pornit cu fereastra deschisă (fereastră modală). |
+
+### Ajutorul e la zi până la
+
+**30.09.2026 — codul de azi, ultima felie din index: 0096** (inclusiv 0095-02). Textul a fost scris
+din codul curent, nu din planuri. Următoarea actualizare pornește de la feliile de după 0096 și de
+la lista de mai jos (`docs/HELP_SYSTEM.md` §4). Mută acest reper la fiecare 0000-NN.
+
+### Open threads
+
+- **Ajutor de actualizat** (feliile de funcționalitate adaugă aici ce subiecte / capturi au
+  învechit, ex. `0098: contabil.vederi.plati — coloana nouă «Cont»; captura plati de refăcut`):
+  _nimic deocamdată._
+
+- **0000-01** — exportul manualului neapăsat pe ecran; fereastra Director nevăzută; tema întunecată nevăzută.
+- **Observat în trecere:** `000_DEMO` nu are tabela `FX_NoteCAB_Corectii` (eroare 1146 la fiecare pornire, `RefreshUncorrelatedMarkAsync`).
+
+---
+
 ## Slice 0001
 
 ### Registry

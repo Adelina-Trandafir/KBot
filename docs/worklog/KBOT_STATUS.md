@@ -35,6 +35,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 
 |         Slice | Name                                                                                                                     | Status (short)                                | File                                        |
 | ------------: | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- | ------------------------------------------- |
+|          0000 | **AJUTOR (felie permanentă): ajutor interactiv + manual — toată munca la ajutor se trece aici, ca 0000-NN** | 0000-01…12 GATA | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0001 | Auth                                                                                                                     | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0002 | Split-brain 401 fix + reason codes                                                                                       | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0003 | Redis session backend                                                                                                    | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
@@ -240,6 +241,14 @@ plus, din felia 0031-01, `TreeLogger.Write` și `TreeLogger.Init`. Ultimele dou�
   [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
 
 ## Locked decisions (do not relitigate without a note here)
+
+- **HELP = slice 0000, permanently** (operator, 30.09.2026). All work on the interactive help and
+  the manual (engine, capture tool, topics under `src/KBot.App/HelpContent/`, screenshots, guided
+  tours, manual export) is recorded as a sub-slice `0000-NN` in
+  [state/KBOT_STATUS_0000-0009.md](state/KBOT_STATUS_0000-0009.md), worklog `SLICE-0000-NN-*.md`.
+  Never give help work a new slice number. A feature slice that changes a screen should also say
+  which help topic / capture tag it makes stale («Ajutor de actualizat» in the 0000 Open threads).
+  Maintainer guide + update procedure: `docs/HELP_SYSTEM.md`.
 
 - **Clasificația pe tabelele FX\_: `IdClsf` = `Clasificatii.IDClsf` (cheia MariaDB)** (felia 0080-01,
   24.09.2026). Nu mai există tabel FX\_ care să țină id-ul Access în `IdClsf`; legăturile se fac pe

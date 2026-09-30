@@ -43,7 +43,11 @@ A task is NOT complete until ALL of these are true:
 3. The status is updated to reflect the new state: the slice's section in
    `state/KBOT_STATUS_<tens>.md` (full row, Current focus / Open threads if they changed) and
    its short line in the `KBOT_STATUS.md` index.
-4. The worklog AND the STATUS update AND the code change are committed together and pushed.
+4. If the change alters something the operator sees (a window, a caption, a message, a flow),
+   the help is either updated in the same task (procedure: `docs/HELP_SYSTEM.md` §4, recorded as
+   `0000-NN`) or the stale topic ids are named in the worklog AND in the «Ajutor de actualizat»
+   line of `state/KBOT_STATUS_0000-0009.md` → Open threads.
+5. The worklog AND the STATUS update AND the code change are committed together and pushed.
 
 If any of the above is missing, the task is unfinished. Report it as unfinished. Do not
 claim completion.

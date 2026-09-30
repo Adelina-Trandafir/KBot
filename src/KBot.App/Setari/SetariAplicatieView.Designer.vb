@@ -27,6 +27,7 @@ Partial Class SetariAplicatieView
         chkShowBrowser = New CheckBox()
         chkReceptii = New CheckBox()
         chkAvansate = New CheckBox()
+        chkCapturi = New CheckBox()
         cboAdobeMotor = New KBotComboBox()
         btnAdobeGazduire = New Button()
         chkAcroTrace = New CheckBox()
@@ -136,6 +137,20 @@ Partial Class SetariAplicatieView
         tips.SetToolTipHeader(chkAvansate, "Opțiuni avansate")
         tips.SetToolTipText(chkAvansate, "Bifat: apar paginile «Documente» (aici), «Pagina FOREXE», «Temă» și «Căi fișiere»." & vbLf & "Bifarea cere parola; debifarea nu.")
         chkAvansate.UseVisualStyleBackColor = True
+        '
+        ' chkCapturi
+        '
+        chkCapturi.AutoSize = True
+        tlyComutatoare.SetColumnSpan(chkCapturi, 2)
+        chkCapturi.Location = New Point(4, 191)
+        chkCapturi.Margin = New Padding(28, 0, 4, 10)
+        chkCapturi.Name = "chkCapturi"
+        chkCapturi.Size = New Size(300, 26)
+        chkCapturi.TabIndex = 6
+        chkCapturi.Text = "Mod capturi pentru ajutor"
+        tips.SetToolTipHeader(chkCapturi, "Capturi pentru ajutor")
+        tips.SetToolTipText(chkCapturi, "Bifat: în «Meniu» și în fereastra de ajutor apare «Capturi pentru ajutor»," & vbLf & "lista imaginilor cerute de paginile de ajutor, fiecare cu butonul «Fă poza».")
+        chkCapturi.UseVisualStyleBackColor = True
         '
         ' cboAdobeMotor
         '
@@ -377,11 +392,13 @@ Partial Class SetariAplicatieView
         tlyComutatoare.Controls.Add(chkShowBrowser, 0, 2)
         tlyComutatoare.Controls.Add(chkReceptii, 0, 3)
         tlyComutatoare.Controls.Add(chkAvansate, 0, 4)
+        tlyComutatoare.Controls.Add(chkCapturi, 0, 5)
         tlyComutatoare.Dock = DockStyle.Top
         tlyComutatoare.Location = New Point(28, 58)
         tlyComutatoare.Margin = New Padding(4, 0, 4, 24)
         tlyComutatoare.Name = "tlyComutatoare"
-        tlyComutatoare.RowCount = 5
+        tlyComutatoare.RowCount = 6
+        tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
@@ -682,6 +699,7 @@ Partial Class SetariAplicatieView
     Friend WithEvents chkShowBrowser As CheckBox
     Friend WithEvents chkReceptii As CheckBox
     Friend WithEvents chkAvansate As CheckBox
+    Friend WithEvents chkCapturi As CheckBox
     Friend WithEvents tlyPaginaDocumente As KBotTableLayoutPanel
     Friend WithEvents lblTitluDocumente As Label
     Friend WithEvents tlyDocumente As KBotTableLayoutPanel

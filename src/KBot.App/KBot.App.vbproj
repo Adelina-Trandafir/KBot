@@ -89,6 +89,15 @@
          Versiunea TREBUIE să fie identică cu cea din KBot.Forexe (vezi nota despre
          selecția automată a certificatului acolo). -->
     <PackageReference Include="Microsoft.Playwright" Version="1.49.0" />
+    <!-- Slice 0000-01: the help topics are Markdown; Markdig turns them into the help window's
+         pages and into the exported manual. -->
+    <PackageReference Include="Markdig" Version="0.45.0" />
+  </ItemGroup>
+
+  <!-- Slice 0000-01: help topics and their pictures. Written under HelpContent\, shipped as
+       <AppDir>\Help\ (build and publish), where HelpLibrary reads them. -->
+  <ItemGroup>
+    <None Include="HelpContent\**\*" Link="Help\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- Banc de probă (Dev Harness): referit DOAR pe Debug → zero amprentă în Release. -->
@@ -162,6 +171,9 @@
       <DependentUpon>KbotForm.vb</DependentUpon>
     </Compile>
     <Compile Update="KbotForm.Views.vb">
+      <DependentUpon>KbotForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="KbotForm.HelpCapture.vb">
       <DependentUpon>KbotForm.vb</DependentUpon>
     </Compile>
     <Compile Update="KbotForm.Nomenclatoare.vb">
