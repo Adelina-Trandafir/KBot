@@ -369,12 +369,19 @@ Friend Module Program
         ' per-request din ApiClient/AuthApi). Gardă https: refuzăm orice adresă ne-https,
         ' ca un token să nu plece niciodată necriptat. Prinde doar o editare greșită
         ' viitoare a constantei — aruncă la pornire, prins de plasele globale -> ShowFatal.
+        ' Slice 0098: every request passes the server gate (held while the FOREXE robot runs a
+        ' workflow). The gate handler also carries the timeout, counted AFTER the wait -- hence the
+        ' infinite HttpClient.Timeout (see ServerGateHandler).
+        services.AddSingleton(Of ServerGate)()
         services.AddSingleton(Of HttpClient)(
             Function(sp)
                 Dim opt As ApiOptions = sp.GetRequiredService(Of ApiOptions)()
                 opt.EnsureHttpsBaseUrl()
-                Dim client As New HttpClient() With {.BaseAddress = New Uri(opt.BaseUrl)}
-                client.Timeout = TimeSpan.FromSeconds(opt.TimeoutSeconds)
+                Dim handler As New ServerGateHandler(sp.GetRequiredService(Of ServerGate)(),
+                                                     TimeSpan.FromSeconds(opt.TimeoutSeconds),
+                                                     New HttpClientHandler())
+                Dim client As New HttpClient(handler) With {.BaseAddress = New Uri(opt.BaseUrl)}
+                client.Timeout = System.Threading.Timeout.InfiniteTimeSpan
                 Return client
             End Function)
         services.AddSingleton(Of IApiClient, ApiClient)()

@@ -41,7 +41,7 @@ Partial Public NotInheritable Class ForexeController
             IntraInLucru()
             Try
                 RaporteazaStare($"Încarc «{Path.GetFileName(pdfPath)}» în FOREXE...")
-                Dim answer As String = Await upload.UploadElectronicDocumentAsync(pdfPath)
+                Dim answer As String = Await RunGatedAsync(Function() upload.UploadElectronicDocumentAsync(pdfPath))
                 RaporteazaStare($"«{Path.GetFileName(pdfPath)}» a fost trimis în FOREXE.")
                 Return If(answer, String.Empty)
             Catch ex As Exception
@@ -86,7 +86,7 @@ Partial Public NotInheritable Class ForexeController
             IntraInLucru()
             Try
                 RaporteazaStare($"Caut recipisa pentru indexul {registrationIndex}...")
-                Dim receipt As ForexeReceipt = Await upload.FindReceiptAsync(registrationIndex)
+                Dim receipt As ForexeReceipt = Await RunGatedAsync(Function() upload.FindReceiptAsync(registrationIndex))
                 RaporteazaStare(If(receipt IsNot Nothing AndAlso receipt.Found,
                                    $"Recipisa pentru indexul {registrationIndex} a fost descărcată.",
                                    $"Recipisa pentru indexul {registrationIndex} nu este încă în FOREXE."))

@@ -29,6 +29,8 @@ Partial Public Class ApiClient
             If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
 
             Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/marcaj/rezerva")
+                ' Slice 0098: the FOREXE page waits for the marker on a save, also inside a robot run.
+                msg.Options.Set(ServerGate.Bypass, True)
                 msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
                 Dim body As String = JsonSerializer.Serialize(
                     New RezervaMarcajRequest() With {.tip = tip, .cod = cod}, _json)

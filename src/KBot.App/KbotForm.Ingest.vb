@@ -108,7 +108,14 @@ Partial Public Class KbotForm
             Else
                 Using f As New AsociereForm(_apiClient, cod, propunere, pachet, alegeri,
                                             Function(op) WithReauth(Of PrelucrareRaspuns)(op))
-                    f.ShowDialog(Me)
+                    ' Slice 0098: the queue waits with the window (it runs one task at a time); its
+                    ' window says what for.
+                    _robotQueue.SetNote($"«{cod}»: așteaptă fereastra de asociere")
+                    Try
+                        f.ShowDialog(Me)
+                    Finally
+                        _robotQueue.SetNote(String.Empty)
+                    End Try
                     If Not f.SAuSalvatModificari Then Return False
                 End Using
             End If
@@ -273,6 +280,22 @@ Partial Public Class KbotForm
         Try
             If String.IsNullOrWhiteSpace(cod) Then Return
 
+            ' Slice 0098: through the robot queue, in the order the operator asked.
+            Await _robotQueue.RunAsync("receptii|" & cod, $"Reîmprospătare recepții «{cod}»",
+                                       Function() ReimprospateazaReceptiiAsync(cod))
+        Catch ex As RobotTaskDroppedException
+            ' Duplicate or taken out of the queue: the console already said it.
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ReimprospateazaReceptii", ex)
+            KBotMessage.Show(Me, "Reîmprospătarea recepțiilor a eșuat: " & ex.Message,
+                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>The refresh itself, run as one robot queue task (slice 0098).</summary>
+    Private Async Function ReimprospateazaReceptiiAsync(cod As String) As Task
+        Try
+            If Not Await AsocierePermiteAsync(cod, "Reîmprospătarea recepțiilor") Then Return
             Dim sarite As List(Of Date) = Await AlegeReceptiileDeSaritAsync(cod)
             If sarite Is Nothing Then Return   ' gave up
 
@@ -296,11 +319,10 @@ Partial Public Class KbotForm
                 SpuneCapturiNetrimise(cod, "reîmprospătarea recepțiilor nu s-a salvat în K-BOT")
             End If
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.ReimprospateazaReceptii", ex)
-            KBotMessage.Show(Me, "Reîmprospătarea recepțiilor a eșuat: " & ex.Message,
-                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            GlobalErrorLog.Write("MainForm.ReimprospateazaReceptiiAsync", ex)
+            Throw
         End Try
-    End Sub
+    End Function
 
     ''' <summary>
     ''' Slice 0091: tells the operator which receptions came from FOREXE with a cut detail (the
@@ -389,6 +411,22 @@ Partial Public Class KbotForm
         Try
             If String.IsNullOrWhiteSpace(cod) Then Return
 
+            ' Slice 0098: through the robot queue, in the order the operator asked.
+            Await _robotQueue.RunAsync("rezervari|" & cod, $"Reîmprospătare rezervări «{cod}»",
+                                       Function() ReimprospateazaRezervariAsync(cod))
+        Catch ex As RobotTaskDroppedException
+            ' Duplicate or taken out of the queue: the console already said it.
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ReimprospateazaRezervari", ex)
+            KBotMessage.Show(Me, "Reîmprospătarea rezervărilor a eșuat: " & ex.Message,
+                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>The refresh itself, run as one robot queue task (slice 0098).</summary>
+    Private Async Function ReimprospateazaRezervariAsync(cod As String) As Task
+        Try
+            If Not Await AsocierePermiteAsync(cod, "Reîmprospătarea rezervărilor") Then Return
             Dim pachet As PrelucrareRezultat
             busyBar.Running = True
             Try
@@ -409,11 +447,10 @@ Partial Public Class KbotForm
                 SpuneCapturiNetrimise(cod, "reîmprospătarea rezervărilor nu s-a salvat în K-BOT")
             End If
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.ReimprospateazaRezervari", ex)
-            KBotMessage.Show(Me, "Reîmprospătarea rezervărilor a eșuat: " & ex.Message,
-                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            GlobalErrorLog.Write("MainForm.ReimprospateazaRezervariAsync", ex)
+            Throw
         End Try
-    End Sub
+    End Function
 
     ''' <summary>
     ''' Shows why the last thing asked of the robot came back empty -- and STAYS QUIET when the

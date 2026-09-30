@@ -92,6 +92,9 @@ Partial Public Class KbotForm
     Private _console As ForexeConsoleForm
     ' The FOREXE action history (slice 0040): created on first request, hidden on close.
     Private _istoricForexe As ForexeHistoryForm
+    ' Slice 0098: the one line of work for the robot (KbotForm.RobotQueue.vb) and its window.
+    Private ReadOnly _robotQueue As RobotQueue
+    Private _queueForm As RobotQueueForm
 
     ' The settings window (slice 0072): built by DI on demand, shown modeless and owned by
     ' the shell, one instance at a time (SetariForm.ShowFor).
@@ -108,6 +111,8 @@ Partial Public Class KbotForm
         _authApi = authApi
         _loginFactory = loginFactory
         _controller = forexe
+        _robotQueue = New RobotQueue(Function() _controller.WaitUntilIdleAsync(),
+                                     Sub(text) _controller.SpuneStare(text))
         _setariFactory = setariFactory
         _capturiApi = capturiApi
         Me.Text = "K-BOT"
@@ -288,6 +293,8 @@ Partial Public Class KbotForm
             ' shell as owner, and the band binds to the coordinator.
             _controller.Owner = Me
             forexeFooter.Bind(_controller)
+            ' Slice 0098: the robot queue - its footer button and its window (KbotForm.RobotQueue.vb).
+            BindRobotQueue()
             ' The in-page watcher's finished operations (slice 0073) - see KbotForm.ForexeWatch.vb.
             LeagaUrmarirea()
             ' The login's «Operatiuni necorectate» warning (slice 0084) - see KbotForm.UncorrectedOperations.vb.

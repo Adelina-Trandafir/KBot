@@ -40,12 +40,6 @@ Partial Public Class KbotForm
         ' Sorted by date the tree is a timeline of the whole year: every source, not only the
         ' SS in the combo (operator, 23.09.2026 -- slice 0777).
         Dim ss As String = If(AppSettings.Current.TreeSortIsDate, ApiClient.TreeAllSources, CStr(cboSs.SelectedItem))
-        ' Read BEFORE the request: `PopulateTree` clears `_currentInfo`, so after it there is
-        ' nowhere left to learn what was selected.
-        Dim codSelectat As String = If(pastreazaSelectia AndAlso _currentInfo IsNot Nothing,
-                                       _currentInfo.CodAngajament, Nothing)
-        If Not String.IsNullOrWhiteSpace(codDeSelectat) Then codSelectat = codDeSelectat
-
         busyBar.Running = True
         Try
             Dim ct As CancellationToken = CancellationToken.None
@@ -54,6 +48,13 @@ Partial Public Class KbotForm
                     Function() _apiClient.GetTreeAsync(an, ss, _includeHidden, ct))
             ' The rows are kept: the tree options menu re-lays them without a fresh request.
             _treeRows = rows
+            ' Read AFTER the request and BEFORE `PopulateTree` (which clears `_currentInfo`). Slice
+            ' 0098: the reload after a queued refresh can take a while, and a node the operator
+            ' clicked meanwhile is the one to keep -- read before, the reload put the old one back
+            ' and undid the click.
+            Dim codSelectat As String = If(pastreazaSelectia AndAlso _currentInfo IsNot Nothing,
+                                           _currentInfo.CodAngajament, Nothing)
+            If Not String.IsNullOrWhiteSpace(codDeSelectat) Then codSelectat = codDeSelectat
             PopulateTree(rows, codSelectat)
         Catch ex As Exception
             ' No silent net: an error (server down / 401 dead session / server defect after a

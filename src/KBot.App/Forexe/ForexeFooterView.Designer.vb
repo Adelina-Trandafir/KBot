@@ -29,6 +29,7 @@ Partial Class ForexeFooterView
         btnSelectieCertificate = New Button()
         btnBrowser = New Button()
         btnConectare = New Button()
+        btnCoada = New Button()
         pbProgress = New KBotProgressBar()
         lblCert = New Label()
         lblStatus = New Label()
@@ -96,6 +97,20 @@ Partial Class ForexeFooterView
         tips.SetToolTipHeader(btnBrowser, "Browser")
         tips.SetToolTipText(btnBrowser, "Afișează browserul")
         btnBrowser.UseVisualStyleBackColor = True
+        ' 
+        ' btnCoada -- slice 0098: the robot queue; hidden at run time until the queue has a task.
+        ' 
+        btnCoada.Dock = DockStyle.Right
+        btnCoada.FlatStyle = FlatStyle.Flat
+        btnCoada.Location = New Point(1064, 0)
+        btnCoada.Margin = New Padding(4, 5, 4, 5)
+        btnCoada.Name = "btnCoada"
+        btnCoada.Size = New Size(110, 49)
+        btnCoada.TabIndex = 10
+        btnCoada.Text = "Coadă"
+        tips.SetToolTipHeader(btnCoada, "Coada robotului")
+        tips.SetToolTipText(btnCoada, "Sarcinile robotului FOREXE: cea în lucru și cele care așteaptă." & vbLf & "Deschide fereastra cozii: pauză, scoatere din coadă, oprire.")
+        btnCoada.UseVisualStyleBackColor = True
         ' 
         ' btnConectare
         ' 
@@ -167,6 +182,7 @@ Partial Class ForexeFooterView
         Controls.Add(btnIstoric)
         Controls.Add(btnBrowser)
         Controls.Add(lblStatus)
+        Controls.Add(btnCoada)
         Controls.Add(btnExtinde)
         Controls.Add(lblCert)
         Controls.Add(pbProgress)
@@ -189,4 +205,5 @@ Partial Class ForexeFooterView
     Friend WithEvents lblSpacer As Label
     Friend WithEvents btnBrowser As Button
     Friend WithEvents btnConectare As Button
+    Friend WithEvents btnCoada As Button
 End Class

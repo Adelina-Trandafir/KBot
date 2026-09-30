@@ -52,6 +52,35 @@ Public NotInheritable Class AsociereStare
     ''' <summary>Plățile angajamentului, pentru contextul din formular.</summary>
     Public Property Plati As New List(Of PlataAsociere)
 
+    ''' <summary>
+    ''' Receptions whose chain does not close on their value: the newest linked snapshot (by
+    ''' DataH) has another total than the reception's <c>SumaAntet</c>. Empty = all close.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>The client-side mirror of the server's F15 total check
+    ''' (<c>valideaza_plasarile</c>), which REFUSES the save after a FOREXE download when a
+    ''' touched chain does not close. A snapshot linked to the wrong reception earlier (the
+    ''' anytime editor only warns) then blocks every later download of the angajament
+    ''' (operator, 30.09.2026). The shell runs this before a refresh and before a new ORD so the
+    ''' operator fixes the links first.</para>
+    ''' <para>Skipped like on the server: an empty chain, and a chain whose newest snapshot is
+    ''' the deletion row (F21). Snapshots marked «no change» (F17) are not chain members. Only
+    ''' the total is compared -- the server's per-line half also exempts receptions whose
+    ''' detail arrived cut, which only the download knows.</para>
+    ''' </remarks>
+    Public Function LanturiNeinchise() As List(Of LantNeinchis)
+        Dim rezultat As New List(Of LantNeinchis)()
+        For Each rec As ReceptiePropusa In Receptii.OrderBy(Function(r) r.DataR).ThenBy(Function(r) r.Idrr)
+            Dim ultimul As InstantaneuLegat =
+                Instantanee.Where(Function(i) i.Idrr = rec.Idrr AndAlso Not i.Ignorat).
+                            OrderBy(Function(i) i.DataH).ThenBy(Function(i) i.Idrh).LastOrDefault()
+            If ultimul Is Nothing OrElse ultimul.Stergere Then Continue For
+            If Math.Round(ultimul.Total, 2) = Math.Round(rec.SumaAntet, 2) Then Continue For
+            rezultat.Add(New LantNeinchis() With {.Receptie = rec, .Ultimul = ultimul})
+        Next
+        Return rezultat
+    End Function
+
     ''' <summary>Instantaneul cu acel <c>IDRH</c>, sau Nothing.</summary>
     Public Function Instantaneu(idrh As Integer) As InstantaneuLegat
         For Each i As InstantaneuLegat In Instantanee
@@ -151,6 +180,13 @@ Public NotInheritable Class AsociereStare
         Next
         Return stare
     End Function
+End Class
+
+''' <summary>A reception whose chain does not close on its value. POCO.</summary>
+Public NotInheritable Class LantNeinchis
+    Public Property Receptie As ReceptiePropusa
+    ''' <summary>The newest snapshot linked to it, whose total is not the reception's value.</summary>
+    Public Property Ultimul As InstantaneuLegat
 End Class
 
 ''' <summary>

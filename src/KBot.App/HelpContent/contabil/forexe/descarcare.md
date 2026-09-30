@@ -14,6 +14,14 @@ cu detaliul lor și istoricul.
 
 <!-- capture: descarcare-iconita-nod | caption: Iconița de reîmprospătare de pe un angajament | prepare: Treceți cu mouse-ul peste un angajament din listă, ca iconița lui din dreapta să se vadă. -->
 
+## Înainte de orice descărcare: asocierea recepțiilor
+<!-- slice: fara-felie -->
+
+Înainte să pornească robotul (descărcare completă sau reîmprospătare de recepții sau de rezervări),
+K-BOT verifică asocierea recepțiilor angajamentului. Dacă o recepție are ca ultim instantaneu unul
+cu altă valoare decât a ei, descărcarea **nu pornește** și ți se oferă fereastra de asociere — vezi
+[Cazuri speciale](topic:contabil.asocieri.cazuri).
+
 ## Înainte de descărcare: ce recepții se citesc din nou
 <!-- slice: 0060, 0072, 0000-14 -->
 

@@ -42,6 +42,7 @@ Public NotInheritable Class UpdateApi
         Try
             EnsureConfigured()
             Using msg As New HttpRequestMessage(HttpMethod.Get, LATEST_PATH)
+                msg.Options.Set(ServerGate.Bypass, True)   ' slice 0098: never touches the database
                 Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
                     Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
                     If CInt(resp.StatusCode) = 404 Then Return Nothing
@@ -79,6 +80,7 @@ Public NotInheritable Class UpdateApi
             If Not String.IsNullOrEmpty(dir) Then Directory.CreateDirectory(dir)
 
             Using msg As New HttpRequestMessage(HttpMethod.Get, DOWNLOAD_PATH)
+                msg.Options.Set(ServerGate.Bypass, True)   ' slice 0098: never touches the database
                 ' Headers first: the body is streamed below, not buffered by HttpClient.
                 Using resp As HttpResponseMessage = Await _http.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(False)
                     If Not resp.IsSuccessStatusCode Then

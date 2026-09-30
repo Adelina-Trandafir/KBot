@@ -181,7 +181,9 @@ Partial Public Class KbotForm
             ' offers «Verifică recipisa».
             Dim answer As String
             Try
-                answer = Await _controller.TrimiteDocumentAsync(pdfPath)
+                answer = Await _robotQueue.RunWithResultAsync(Of String)(
+                    Nothing, $"Încărcare notă CAB nr. {note.NoteNumber}",
+                    Function() _controller.TrimiteDocumentAsync(pdfPath))
             Catch ex As Exception
                 ' Already logged by the coordinator; the message is Romanian.
                 OperatorLog.Write("MainForm.UploadCabNoteAsync", CabNoteCaption, ex.Message, KBotLogLevel.Error)
@@ -278,7 +280,9 @@ Partial Public Class KbotForm
         Try
             Dim found As ForexeReceipt
             Try
-                found = Await _controller.CautaRecipisaAsync(index)
+                found = Await _robotQueue.RunWithResultAsync(Of ForexeReceipt)(
+                    Nothing, $"Căutare recipisă {index}",
+                    Function() _controller.CautaRecipisaAsync(index))
             Catch ex As Exception
                 ' Logged by the coordinator; the message is Romanian.
                 Return New CabReceiptCheck With {.Message = ex.Message}

@@ -57,9 +57,10 @@ Partial Public Class KbotForm
     End Sub
 
     ''' <summary>
-    ''' The operator picked another unit. Refused while FOREXE is connected or working: the
-    ''' browser session belongs to the current unit, and what it downloads is written to the
-    ''' database of the session -- switching under it would put one unit's data into another's.
+    ''' The operator picked another unit. A live FOREXE session is closed first, silently: it
+    ''' belongs to the current unit, and what it downloads is written to the database of the
+    ''' session -- switching under it would put one unit's data into another's. Refused only while
+    ''' a FOREXE operation is running.
     ''' UI boundary: logged and shown.
     ''' </summary>
     Private Async Sub CapBar_SelectorChanged(sender As Object, e As CaptionSelectorChangedEventArgs) Handles capBar.SelectorChanged
@@ -68,10 +69,9 @@ Partial Public Class KbotForm
             Dim tinta As UnitInfo = _unitati?.FirstOrDefault(Function(u) String.Equals(u.DC, e.Key, StringComparison.Ordinal))
             If tinta Is Nothing Then Return
 
-            If _controller.IsBusy OrElse _controller.IsConnected Then
-                KBotMessage.Show(Me, "Conexiunea FOREXE este deschisă pentru unitatea curentă." & vbCrLf &
-                                "Unitatea se poate schimba doar înainte de conectarea la FOREXE " &
-                                "(sau după repornirea aplicației).",
+            ' A running FOREXE operation is writing into the current unit: it has to end first.
+            If _controller.IsBusy Then
+                KBotMessage.Show(Me, "O operație FOREXE este în curs. Unitatea se poate schimba după ce se termină.",
                                 "Schimbă unitatea", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
@@ -85,6 +85,10 @@ Partial Public Class KbotForm
             _schimbaUnitatea = True
             busyBar.Running = True
             Try
+                ' The FOREXE session belongs to the unit being left: closed first, silently (operator,
+                ' 30.09.2026 -- «se deconectează și apoi se schimbă unitatea»).
+                If _controller.IsConnected Then Await _controller.DisconnectAsync()
+
                 Dim dc As String = tinta.DC
                 Dim result As LoginResult = Await WithReauth(Of LoginResult)(
                     Function() _authApi.SwitchUnitAsync(_session.Token, dc, Environment.MachineName, CancellationToken.None))

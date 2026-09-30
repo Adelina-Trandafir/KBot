@@ -43,6 +43,10 @@ Partial Public NotInheritable Class ForexeController
     ' apart -- and a cancel deliberately leaves this EMPTY.
     Private _ultimulEsec As String = String.Empty
 
+    ' Slice 0098: closed around every robot run, so no request reaches the server meanwhile.
+    ' Nothing in a harness built without it -- then runs are simply not gated.
+    Private ReadOnly _gate As ServerGate
+
     ''' <summary>
     ''' Fereastra-părinte pentru dialogurile modale (alegerea certificatului). O pune
     ''' shell-ul după creare; fără ea dialogul s-ar deschide fără proprietar.
@@ -54,13 +58,16 @@ Partial Public NotInheritable Class ForexeController
     ''' hang off the same ids (operator, 28.09.2026). Optional: a harness without it simply
     ''' files its pictures without a number, and says so.
     ''' </param>
+    ''' <param name="gate">Slice 0098: the server gate (see <see cref="RunGatedAsync"/>).</param>
     Public Sub New(runner As IForexeRunner, session As SessionContext,
-                   Optional marcaje As MarcajeRecente = Nothing)
+                   Optional marcaje As MarcajeRecente = Nothing,
+                   Optional gate As ServerGate = Nothing)
         ArgumentNullException.ThrowIfNull(runner)
         ArgumentNullException.ThrowIfNull(session)
         _runner = runner
         _session = session
         _marcaje = If(marcaje, New MarcajeRecente())
+        _gate = gate
         ' The page holds the operator's click and asks for a picture: this answers it.
         _runner.SetCapturaProvider(AddressOf IaCapturaCerutaAsync)
         AddHandler _runner.StatusUpdated, AddressOf Runner_StatusUpdated
@@ -101,6 +108,29 @@ Partial Public NotInheritable Class ForexeController
             Return _busy
         End Get
     End Property
+
+    ''' <summary>
+    ''' Slice 0098: completes when no operation is running -- at once when idle. The robot queue
+    ''' awaits it before each task, so an operation started outside the queue (the Conectare
+    ''' button, the Browser view) finishes first instead of refusing the task as «busy».
+    ''' </summary>
+    Public Function WaitUntilIdleAsync() As Task
+        If Not _busy Then Return Task.CompletedTask
+        Dim idle As New TaskCompletionSource(Of Boolean)(TaskCreationOptions.RunContinuationsAsynchronously)
+        Dim watcher As EventHandler = Nothing
+        watcher = Sub(s, e)
+                      If _busy Then Return
+                      RemoveHandler StateChanged, watcher
+                      idle.TrySetResult(True)
+                  End Sub
+        AddHandler StateChanged, watcher
+        ' It may have finished between the first check and the subscription.
+        If Not _busy Then
+            RemoveHandler StateChanged, watcher
+            idle.TrySetResult(True)
+        End If
+        Return idle.Task
+    End Function
 
     ''' <summary>Numele simplu al certificatului ales; gol dacă nu s-a ales niciunul.</summary>
     Public ReadOnly Property CertificateName As String
@@ -201,7 +231,7 @@ Partial Public NotInheritable Class ForexeController
                     .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.ConectareFile)
                 }
                 RaporteazaStare("Conectare la FOREXE...")
-                Dim rezultat As JobResult = Await _runner.RunAsync(job, cert, Progres(), _cts.Token)
+                Dim rezultat As JobResult = Await RunGatedAsync(Function() _runner.RunAsync(job, cert, Progres(), _cts.Token))
                 If rezultat.Success Then
                     _certificat = cert
                     RaporteazaStare("Conectat.")
@@ -235,7 +265,7 @@ Partial Public NotInheritable Class ForexeController
                     .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.ConectareFile)
                 }
                 RaporteazaStare("Conectare la FOREXE...")
-                Dim rezultat As JobResult = Await _runner.RunAsync(job, certificat, Progres(), _cts.Token)
+                Dim rezultat As JobResult = Await RunGatedAsync(Function() _runner.RunAsync(job, certificat, Progres(), _cts.Token))
                 If rezultat.Success Then
                     _certificat = certificat
                     RaporteazaStare("Conectat.")
@@ -653,7 +683,7 @@ Partial Public NotInheritable Class ForexeController
 
                 Dim folder As String = KBotPaths.FolderExtrase
                 Dim extrase As List(Of ExtrasDescarcat) =
-                    Await _runner.DescarcaExtraseAsync(folder, deLa, ProgresExtrase(), _cts.Token)
+                    Await RunGatedAsync(Function() _runner.DescarcaExtraseAsync(folder, deLa, ProgresExtrase(), _cts.Token))
 
                 RaporteazaStare($"{extrase.Count} extrase descărcate în «{folder}».")
                 Return extrase
@@ -734,6 +764,29 @@ Partial Public NotInheritable Class ForexeController
             Throw
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Slice 0097 -- closes the live FOREXE session (the unit switch in the caption bar). The
+    ''' certificate is forgotten too: the next unit may need another one, so the next connection
+    ''' asks again. Nothing to do without a session. Refused (InvalidOperationException) while an
+    ''' operation is running -- the caller checks <see cref="IsBusy"/> first.
+    ''' </summary>
+    Public Async Function DisconnectAsync() As Task
+        Try
+            If _busy Then Throw New InvalidOperationException("O operație FOREXE este în curs.")
+            Dim deconectare As IForexeDisconnect = TryCast(_runner, IForexeDisconnect)
+            If deconectare Is Nothing Then
+                Throw New InvalidOperationException("The FOREXE runner does not implement IForexeDisconnect.")
+            End If
+            If IsConnected Then Await deconectare.DisconnectAsync()
+            _certificat = Nothing
+            RaporteazaStare("Deconectat de la FOREXE.")
+            RaiseEvent StateChanged(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.DisconnectAsync", ex)
+            Throw
+        End Try
+    End Function
 
     ''' <summary>Browserul FOREXE e la vedere acum?</summary>
     Public ReadOnly Property IsBrowserVisible As Boolean
@@ -912,8 +965,8 @@ Partial Public NotInheritable Class ForexeController
             IntraInLucru()
             Try
                 RaporteazaStare($"Deschid «{cod}» în FOREXE...")
-                Dim rezultat As JobResult = Await _runner.RunJobAsync(
-                    JobBuilder.BuildDeschideAngajament(cod), Progres(), _cts.Token)
+                Dim rezultat As JobResult = Await RunGatedAsync(Function() _runner.RunJobAsync(
+                    JobBuilder.BuildDeschideAngajament(cod), Progres(), _cts.Token))
                 If Not rezultat.Success Then
                     RaporteazaEsec($"«{cod}» nu s-a putut deschide în FOREXE: " & rezultat.Message)
                     Return False
@@ -1055,7 +1108,7 @@ Partial Public NotInheritable Class ForexeController
         If _replayMode Then Return AnswerFromFile(job, code)
 
         job.StopBeforeSave = _dryRunMode
-        Dim result As JobResult = Await _runner.RunJobAsync(job, Progres(), _cts.Token)
+        Dim result As JobResult = Await RunGatedAsync(Function() _runner.RunJobAsync(job, Progres(), _cts.Token))
         Dim filePath As String = ForexeAnswerStore.Save(job, code, _session, result)
         If String.IsNullOrEmpty(filePath) Then
             RaporteazaStare("Răspunsul FOREXE nu s-a putut păstra în «Rezultate_Forexe» — vezi Logs\harness_errors.log.")
@@ -1240,6 +1293,24 @@ Partial Public NotInheritable Class ForexeController
                                             _ultimulProcent = p
                                             RaiseEvent ProgressChanged(Me, p)
                                         End Sub)
+    End Function
+
+    ''' <summary>
+    ''' Slice 0098: one robot run with the server gate closed -- nothing goes to or comes from the
+    ''' K-BOT server until it ends (the robot's own Excel / marker requests excepted, see
+    ''' <see cref="ServerGate"/>). Closing waits for the requests already on the wire.
+    ''' </summary>
+    ''' <remarks>Around the runner call ONLY: the server reads an operation needs before the run
+    ''' (the local history for REVERSE, the last statement date) happen before this, and the ingest
+    ''' after it.</remarks>
+    Private Async Function RunGatedAsync(Of T)(run As Func(Of Task(Of T))) As Task(Of T)
+        If _gate Is Nothing Then Return Await run().ConfigureAwait(True)
+        Await _gate.CloseAsync().ConfigureAwait(True)
+        Try
+            Return Await run().ConfigureAwait(True)
+        Finally
+            _gate.Open()
+        End Try
     End Function
 
     Private Sub IntraInLucru()

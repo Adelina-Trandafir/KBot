@@ -146,3 +146,30 @@ Everything recorded about each slice: its registry row, its «Current focus» no
   de confirmat pe 100% / 125%.
 - **0097 — schimbarea unității:** ferestrele secundare deschise nu se închid; cu FOREXE conectat
   unitatea nu se poate schimba (nu există «deconectare» FOREXE).
+
+---
+
+## Slice 0098
+
+### Registry
+
+| Slice | Name | Status | Worklog(s) | Notes |
+|------:|------|--------|-----------|-------|
+| 0098 | **Coada robotului + poarta serverului (cererea operatorului, 30.09.2026)** — cât rulează robotul FOREXE nicio cerere nu pleacă spre / nu vine de la server (`ServerGate` + `ServerGateHandler` pe `HttpClient`; cererile AȘTEAPTĂ, nu sunt refuzate; timeout-ul numărat după poartă; trec doar Excel, marcajul și actualizarea). Toate operațiile care pornesc robotul din shell merg printr-o coadă unică (`RobotQueue`): în ordinea clicurilor, una câte una, cu ingestia și fereastra «Asociere» în aceeași sarcină (deci niciodată două «Asociere»); dubluri refuzate; operațiunea prinsă în pagina FOREXE intră în fața cozii. Fereastra «Coada robotului» (pauză / scoate / golește / oprește curenta) + butonul «Coadă N» din subsol. `LoadTreeAsync` citește selecția DUPĂ cerere | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste** | `SLICE-0098-robot-queue-server-gate.md` | Vederile așteaptă pe durata unei descărcări (regula cerută). Ajutorul neactualizat (vezi 0000). FileVersion-urile nebumped. |
+
+### Open threads
+
+- **0098 — nimic rulat:** poarta, ordinea cozii, fereastra, butonul din subsol — toate nevăzute.
+- **0098 — vederile așteaptă:** rezolvat în 0098-02 (citirile trec, doar scrierile sunt ținute).
+- **0098-02 — bancul cozii nerulat** (DevHarness → FOREXE).
+- **0098 — fereastra cozii e dezactivată** cât stă deschisă o casetă modală a sarcinii curente
+  («Asociere»); pauza / scoaterea nu se pot apăsa atunci.
+- **0098 — apelanții direcți** (Conectare, vederea «Browser FOREXE») nu trec prin coadă; coada îi
+  așteaptă înaintea fiecărei sarcini, dar o suprapunere în primele secunde ale unei sarcini tot dă
+  «Rulează deja o operație FOREXE».
+
+### 0098-02
+
+| Slice | Name | Status | Worklog(s) | Notes |
+|------:|------|--------|-----------|-------|
+| 0098-02 | **Citirile trec poarta + bancul cozii (cererea operatorului, 30.09.2026)** — `ServerGate.IsRead`: GET / HEAD / OPTIONS trec mereu, doar scrierile așteaptă cât rulează robotul (vederile nu mai îngheață pe durata unei descărcări). DevHarness → FOREXE: «Coada robotului + poarta serverului (FOREXE și server simulate)» — coada, poarta, controlerul și fereastra cozii REALE peste un robot simulat (`FakeForexeRunner`, răspunsuri în forma «Prelucrare Completa») și un server simulat (`FakeServerHandler`); scenarii: la rând, dublură, operațiune în față, robot în afara cozii, GET / POST manual, «Asociere» simulată, eșec, oprire | GATA pe cod (build Debug + Release **0 avertismente, 0 erori**) / **bancul nerulat** | `SLICE-0098-02-reads-pass-queue-bench.md` | Bancul scrie fișierele obișnuite ale descărcării pe codurile PROBA-*; «Asociere» simulată = casetă KBotMessage (ajunge și în `mesaje_operator.log`). |

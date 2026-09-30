@@ -203,10 +203,11 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |       0095-02 | Subsolul arborelui descarcă direct extrasele; «Extrase de cont» din «Meniu → Extrase»; `btnMeniu` urmează lățimea lui `navViews` strâns (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0096 | Extrase: meniu de afișare în antetul arborelui — «antet + operații» / «operații + detalii» (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0097 | Corecturi: ORD/DDF (fără mesaj la ștergere, rădăcini «Toate…», ștergere pe lună/toate, semnat = fără meniu); eticheta barei strânse la DPI; «Note corecție» doar cu note; selector de unitate în bara de titlu; reafișarea ferestrei de autentificare + «Ține minte parola» (cererea operatorului, 30.09.2026) | GATA pe cod (build curat, netestat, nevăzut; server nedeployat) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
+|          0098 | Coada robotului (o singură coadă, în ordine, pauză / scoatere, fereastra «Coada robotului») + poarta serverului (nicio scriere pe server cât rulează robotul; citirile trec) (cererea operatorului, 30.09.2026) | GATA pe cod (build curat, netestat, nevăzut); 0098-02: citirile trec poarta + banc DevHarness (nerulat) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 
 Work outside the slice system: [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
 
-**Next free slice number: 0098.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
+**Next free slice number: 0099.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
 ⚠️ **Registrul are o gaură: 0038 și 0039 lipsesc.** Codul din `KBot.Controls/Tree` se referă în
 comentarii la «felia 0038» (culoarea/grosimea separatorilor) și «felia 0039» (marginile scalate),
 amândouă vizibile în arborele de lucru, dar niciuna n-are rând aici, iar linia de mai sus declara

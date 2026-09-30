@@ -37,6 +37,11 @@ Public Class ForexeFooterView
 
     Public Event ShowBrowserRequested As EventHandler
 
+    ''' <summary>Slice 0098: the operator asked for the robot queue window (the shell owns it).</summary>
+    Public Event QueueRequested As EventHandler
+
+    Private _queue As RobotQueue
+
     Public Property LastUsedCertificate As X509Certificate2
 
     Public Sub New()
@@ -49,6 +54,7 @@ Public Class ForexeFooterView
         btnBrowser.Visible = False
         btnIstoric.Visible = False
         btnExtinde.Visible = False
+        btnCoada.Visible = False
     End Sub
 
     ''' <summary>
@@ -73,6 +79,46 @@ Public Class ForexeFooterView
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 0098: binds the queue button to the robot queue -- visible only while the queue has a
+    ''' task, with the count of tasks (running + waiting) on it.
+    ''' </summary>
+    Public Sub BindQueue(queue As RobotQueue)
+        Try
+            ArgumentNullException.ThrowIfNull(queue)
+            If _queue IsNot Nothing Then Return   ' one binding
+            _queue = queue
+            AddHandler _queue.Changed, AddressOf Queue_Changed
+            RefreshQueueButton()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeFooterView.BindQueue", ex)
+            Throw
+        End Try
+    End Sub
+
+    Private Sub Queue_Changed(sender As Object, e As EventArgs)
+        Try
+            PeFirulDeUI(AddressOf RefreshQueueButton)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeFooterView.Queue_Changed", ex)
+        End Try
+    End Sub
+
+    Private Sub RefreshQueueButton()
+        If _queue Is Nothing Then Return
+        Dim total As Integer = _queue.Waiting.Count + If(_queue.Current Is Nothing, 0, 1)
+        btnCoada.Visible = total > 0
+        btnCoada.Text = If(_queue.IsPaused, $"Coadă {total} ‖", $"Coadă {total}")
+    End Sub
+
+    Private Sub BtnCoada_Click(sender As Object, e As EventArgs) Handles btnCoada.Click
+        Try
+            RaiseEvent QueueRequested(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeFooterView.btnCoada_Click", ex)
+        End Try
+    End Sub
+
     ''' <summary>Desface abonamentele (chemat din Dispose — coordonatorul e singleton și
     ''' trăiește mai mult decât banda, deci un abonament rămas ar ține controlul în viață).</summary>
     Friend Sub Dezleaga()
@@ -82,6 +128,8 @@ Public Class ForexeFooterView
             RemoveHandler _controller.ProgressChanged, AddressOf Controller_ProgressChanged
             RemoveHandler _controller.StatusChanged, AddressOf Controller_StatusChanged
             RemoveHandler AppSettings.Changed, AddressOf AppSettings_Changed
+            If _queue IsNot Nothing Then RemoveHandler _queue.Changed, AddressOf Queue_Changed
+            _queue = Nothing
             _controller = Nothing
         Catch ex As Exception
             ' Frontieră de eliberare: nu rearuncăm din Dispose.
@@ -192,6 +240,7 @@ Public Class ForexeFooterView
             ButtonStyles.ApplyTrans(btnExtinde, scheme)
             ButtonStyles.ApplyTrans(btnIstoric, scheme)
             ButtonStyles.ApplyTrans(btnBrowser, scheme)
+            ButtonStyles.ApplyTrans(btnCoada, scheme)
             ButtonStyles.ApplyNormal(btnConectare, scheme)
             ButtonStyles.ApplyNormal(btnSelectieCertificate, scheme)
 

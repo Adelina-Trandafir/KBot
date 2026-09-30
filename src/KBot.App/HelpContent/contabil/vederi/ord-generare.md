@@ -11,6 +11,10 @@ keywords: ordonantare noua, adauga ordonantare, generare in lot, plati neordonan
 O ordonanțare se face **din plăți**: acoperă plățile **neordonanțate** ale unei zile. Plățile
 vin din vederea [Plăți](topic:contabil.vederi.plati).
 
+Înainte de orice ordonanțare nouă (una sau în lot), K-BOT verifică asocierea recepțiilor: dacă o
+recepție are ca ultim instantaneu unul cu altă valoare decât a ei, ordonanțarea **nu se face** și
+ți se oferă fereastra de asociere — vezi [Cazuri speciale](topic:contabil.asocieri.cazuri).
+
 ## O ordonanțare, pentru o zi
 <!-- slice: 0049-01, 0049-02 -->
 

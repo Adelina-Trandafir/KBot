@@ -66,6 +66,8 @@ Partial Public Class KbotForm
     Private Async Function AdaugaOrdonantareAsync(cod As String,
                                                   Optional ziCeruta As Date? = Nothing,
                                                   Optional idPlataFx As Integer? = Nothing) As Task
+        ' No new ORD over reception chains that do not close on their value.
+        If Not Await AsocierePermiteAsync(cod, "Adăugarea ordonanțării") Then Return
         Dim zi As Date? = If(ziCeruta.HasValue, ziCeruta, CereZiua(cod))
         If Not zi.HasValue Then Return
 
@@ -273,6 +275,7 @@ Partial Public Class KbotForm
     Private Async Function GenereazaInLotAsync(cod As String,
                                                Optional luna As Integer? = Nothing,
                                                Optional an As Integer? = Nothing) As Task
+        If Not Await AsocierePermiteAsync(cod, "Generarea ordonanțărilor în lot") Then Return
         busyBar.Running = True
         Dim zile As OrdZileInfo
         Try

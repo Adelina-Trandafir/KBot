@@ -24,18 +24,7 @@ Partial Public Class KbotForm
     Private Async Sub DeschideLegaturileReceptiilor(cod As String)
         Try
             If String.IsNullOrWhiteSpace(cod) Then Return
-            Using f As New AsociereForm(_apiClient, cod,
-                                        Function(op) WithReauth(Of AsociereStare)(op),
-                                        Function(op) WithReauth(Of AsociereRezultat)(op))
-                f.ShowDialog(Me)
-                If f.SAuSalvatModificari Then
-                    ' The tree, not only the view (operator, 10.09.2026): a moved link can turn
-                    ' the node's Are* flags on or off, and `LoadTreeAsync` with the selection kept
-                    ' pushes the new context into the open view by itself -- so `Reincarca()`
-                    ' would be a second read of the same thing.
-                    Await LoadTreeAsync(pastreazaSelectia:=True)
-                End If
-            End Using
+            Await DeschideLegaturileReceptiilorAsync(cod)
         Catch ex As Exception
             ' UI boundary: logged and shown; a throw from here would land on the UI thread.
             GlobalErrorLog.Write("MainForm.DeschideLegaturileReceptiilor", ex)
@@ -43,6 +32,30 @@ Partial Public Class KbotForm
                             "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' The editor itself, awaitable: also opened by the association guard
+    ''' (<c>AsocierePermiteAsync</c>). True when the operator saved changes.
+    ''' </summary>
+    Private Async Function DeschideLegaturileReceptiilorAsync(cod As String) As Task(Of Boolean)
+        Try
+            Using f As New AsociereForm(_apiClient, cod,
+                                        Function(op) WithReauth(Of AsociereStare)(op),
+                                        Function(op) WithReauth(Of AsociereRezultat)(op))
+                f.ShowDialog(Me)
+                If Not f.SAuSalvatModificari Then Return False
+                ' The tree, not only the view (operator, 10.09.2026): a moved link can turn
+                ' the node's Are* flags on or off, and `LoadTreeAsync` with the selection kept
+                ' pushes the new context into the open view by itself -- so `Reincarca()`
+                ' would be a second read of the same thing.
+                Await LoadTreeAsync(pastreazaSelectia:=True)
+                Return True
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.DeschideLegaturileReceptiilorAsync", ex)
+            Throw
+        End Try
+    End Function
 
     ''' <summary>
     ''' Rebuilds, from FX_Istoric, the receptie snapshots (FX_Receptii_H) and lines

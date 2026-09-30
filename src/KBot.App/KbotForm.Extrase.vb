@@ -78,6 +78,24 @@ Partial Public Class KbotForm
     ''' </remarks>
     Friend Async Function DescarcaExtraseAsync(owner As IWin32Window) As Task(Of Boolean)
         Try
+            ' Slice 0098: through the robot queue, in the order the operator asked.
+            Return Await _robotQueue.RunWithResultAsync(Of Boolean)("extrase", "Extrase de cont",
+                                                               Function() DescarcaExtraseAcumAsync(owner))
+        Catch ex As RobotTaskDroppedException
+            ' Duplicate or taken out of the queue: the console already said it.
+            Return False
+        Catch ex As Exception
+            ' DescarcaExtraseAcumAsync tells and returns; this is only the queue itself failing.
+            GlobalErrorLog.Write("MainForm.DescarcaExtraseAsync", ex)
+            KBotMessage.Show(owner, "Descărcarea extraselor de cont a eșuat: " & ex.Message,
+                            "Extrase de cont", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return False
+        End Try
+    End Function
+
+    ''' <summary>The statements download + import, run as one robot queue task (slice 0098).</summary>
+    Private Async Function DescarcaExtraseAcumAsync(owner As IWin32Window) As Task(Of Boolean)
+        Try
             Dim extrase As List(Of ExtrasDescarcat)
             busyBar.Running = True
             Try
@@ -106,7 +124,7 @@ Partial Public Class KbotForm
             Return Await ImportaExtraseAsync(extrase, owner)
         Catch ex As Exception
             ' Called from UI handlers that cannot re-throw: log it and say why.
-            GlobalErrorLog.Write("MainForm.DescarcaExtraseAsync", ex)
+            GlobalErrorLog.Write("MainForm.DescarcaExtraseAcumAsync", ex)
             KBotMessage.Show(owner, "Descărcarea extraselor de cont a eșuat: " & ex.Message,
                             "Extrase de cont", MessageBoxButtons.OK, MessageBoxIcon.Warning)
             Return False

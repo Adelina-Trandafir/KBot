@@ -29,6 +29,21 @@ Partial Public Class KbotForm
     ''' </remarks>
     Private Async Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
         Try
+            ' Slice 0098: through the robot queue, in the order the operator asked.
+            Await _robotQueue.RunAsync("lista", "Lista de angajamente", AddressOf DescarcaListaAsync)
+        Catch ex As RobotTaskDroppedException
+            ' Duplicate or taken out of the queue: the console already said it.
+        Catch ex As Exception
+            ' UI boundary (async Sub): cannot re-throw -- log it and say why.
+            GlobalErrorLog.Write("MainForm.tree_FooterRightIconClicked", ex)
+            KBotMessage.Show(Me, "Actualizarea listei de angajamente a eșuat: " & ex.Message,
+                            "Listă angajamente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>The list refresh itself, run as one robot queue task (slice 0098).</summary>
+    Private Async Function DescarcaListaAsync() As Task
+        Try
             Dim mapate As List(Of Angajament)
             busyBar.Running = True
             Try
@@ -74,12 +89,10 @@ Partial Public Class KbotForm
                 $"Angajamente în FOREXE: {rezultat.Candidate}. " &
                 $"Adăugate acum: {rezultat.Inserate} · deja existente (neatinse): {rezultat.Existente}.")
         Catch ex As Exception
-            ' UI boundary (async Sub): cannot re-throw -- log it and say why.
-            GlobalErrorLog.Write("MainForm.tree_FooterRightIconClicked", ex)
-            KBotMessage.Show(Me, "Actualizarea listei de angajamente a eșuat: " & ex.Message,
-                            "Listă angajamente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            GlobalErrorLog.Write("MainForm.DescarcaListaAsync", ex)
+            Throw
         End Try
-    End Sub
+    End Function
 
     ''' <summary>
     ''' Shows why a FOREXE intent came back empty -- but ONLY when it was a failure.
@@ -112,6 +125,24 @@ Partial Public Class KbotForm
             Dim cod As String = If(pNode Is Nothing, Nothing, TryCast(pNode.Tag, String))
             If String.IsNullOrEmpty(cod) Then Return
 
+            ' Slice 0098: through the robot queue -- several clicks in a row run one after the
+            ' other, in order, and a second click on a node already queued is refused.
+            Await _robotQueue.RunAsync("nod|" & cod, $"Descărcare completă «{cod}»",
+                                       Function() DescarcaNodulAsync(cod))
+        Catch ex As RobotTaskDroppedException
+            ' Duplicate or taken out of the queue: the console already said it.
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.tree_RightIconClicked", ex)
+            KBotMessage.Show(Me, "Descărcarea angajamentului a eșuat: " & ex.Message,
+                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>A node's whole download + ingest, run as one robot queue task (slice 0098).</summary>
+    Private Async Function DescarcaNodulAsync(cod As String) As Task
+        Try
+            ' Links that do not close would make the save refuse after the robot ran.
+            If Not Await AsocierePermiteAsync(cod, "Descărcarea completă") Then Return
             Dim pachet As PrelucrareRezultat = IntreabaDacaRefolosescPachetul(cod)
             If pachet Is Nothing Then
                 ' The question FIRST, then the robot (slice 0060): the receptii choice changes
@@ -150,11 +181,10 @@ Partial Public Class KbotForm
             Await TrimiteCapturileAsync(cod, CapturaStore.FelReceptie)
             Await TrimiteCapturileAsync(cod, CapturaStore.FelRezervare)
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.tree_RightIconClicked", ex)
-            KBotMessage.Show(Me, "Descărcarea angajamentului a eșuat: " & ex.Message,
-                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            GlobalErrorLog.Write("MainForm.DescarcaNodulAsync", ex)
+            Throw
         End Try
-    End Sub
+    End Function
 
     ''' <summary>
     ''' THE ANGAJAMENTE LIST from memory, when the operator wants it. Nothing = download again.

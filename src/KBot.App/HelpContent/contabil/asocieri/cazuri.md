@@ -98,6 +98,23 @@ muți, trebuie întâi schimbată ordonanțarea care îl folosește.
 În fereastra deschisă **oricând** (din Recepții), «Salvează legăturile» scrie doar ce ai schimbat, iar
 închiderea fără salvare pierde doar mutările tale nesalvate (K-BOT te întreabă).
 
+## «Lanțul nu se închide» oprește descărcările și ordonanțările
+<!-- slice: fara-felie -->
+
+Dacă o recepție are ca **ultim instantaneu** unul cu **altă valoare** decât a ei (de obicei un
+instantaneu pus pe recepția greșită), K-BOT **nu pornește**:
+
+- descărcarea completă a angajamentului și reîmprospătarea recepțiilor sau a rezervărilor;
+- o ordonanțare nouă (și nici generarea în lot).
+
+Mesajul arată recepțiile cu pricina (data, valoarea ei, ultimul instantaneu și valoarea lui) și
+întreabă dacă deschide fereastra de asociere. Acolo muți instantaneul pe recepția lui (sau în coș)
+și apeși «Salvează legăturile». După salvare K-BOT verifică din nou și, dacă totul se închide,
+continuă singur operația cerută. Dacă închizi fereastra fără să salvezi, operația nu pornește.
+
+Motivul: fără verificarea asta, descărcarea rula până la capăt și abia salvarea ei era refuzată cu
+«... Lanțul nu se închide.», iar o ordonanțare s-ar fi făcut pe cifre greșite ale recepțiilor.
+
 ## Dacă altcineva a lucrat între timp
 <!-- slice: 0048-04 -->
 

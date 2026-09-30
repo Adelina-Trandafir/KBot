@@ -45,6 +45,7 @@ la lista de mai jos (`docs/HELP_SYSTEM.md` §4). Mută acest reper la fiecare 00
   învechit, ex. `0098: contabil.vederi.plati — coloana nouă «Cont»; captura plati de refăcut`):
   - `contabil.vederi.rezervari` — iconița din stânga subsolului are acum și «Reanalizează rezervările» (sliceless, 30.09.2026); tabelul «Iconițele arborelui» de completat
   - (nimic deschis; 0097 acoperită în 0000-13)
+  - 0098: `contabil.forexe.descarcare`, `contabil.fereastra`, `contabil.vederi.receptii`, `contabil.ddf.index` — descărcările / reîmprospătările / trimiterea merg acum prin «Coada robotului» (fereastră nouă + butonul «Coadă N» din subsol; vederile așteaptă cât rulează robotul); captură nouă pentru fereastra cozii
 
 - **0000-01** — exportul manualului neapăsat pe ecran; fereastra Director nevăzută; tema întunecată nevăzută.
 - **Observat în trecere:** `000_DEMO` nu are tabela `FX_NoteCAB_Corectii` (eroare 1146 la fiecare pornire, `RefreshUncorrelatedMarkAsync`).

@@ -54,6 +54,7 @@ Partial Public Class KbotForm
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         Try
             DezleagaUrmarirea()
+            UnbindRobotQueue()   ' slice 0098 - KbotForm.RobotQueue.vb
             DezleagaOperatiunileNecorectate()   ' slice 0084 - KbotForm.UncorrectedOperations.vb
             DezleagaBrowserul()
             DezleagaOptiunileArborelui()   ' slice 0777 - KbotForm.TreeOptions.vb
@@ -79,7 +80,11 @@ Partial Public Class KbotForm
         Try
             Select Case ev.Kind
                 Case ForexeWatchEventKind.Finished
-                    Await PreiaOperatiuneaAsync(ev)
+                    ' Slice 0098: a robot queue task like every other, but IN FRONT of the waiting ones:
+                    ' its pictures are of the page as the operator left it, and the next queued
+                    ' download would move the page away.
+                    Await _robotQueue.RunAsync(Nothing, $"Operațiune FOREXE «{ev.Label}»",
+                                               Function() PreiaOperatiuneaAsync(ev), inFront:=True)
                 Case ForexeWatchEventKind.PageOpened
                     ' Slice 0074: the page shows another angajament - the tree follows it,
                     ' the robot stays put (KbotForm.Browser.vb).
@@ -88,6 +93,8 @@ Partial Public Class KbotForm
                     ' Started / Cancelled / Info are already on the console, written by the
                     ' executor; nothing for the shell to do with them.
             End Select
+        Catch ex As RobotTaskDroppedException
+            ' Taken out of the robot queue by the operator: the console already said it.
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.TrateazaOperatiuneaCapturata", ex)
             KBotMessage.Show(Me, "Preluarea operațiunii din FOREXE a eșuat: " & ex.Message,

@@ -18,7 +18,7 @@ Namespace KBot.Forexe
     ''' browser/autentificarea) viu pentru job-urile următoare. Conectarea NU închide browserul.
     ''' </summary>
     Public Class ForexeRunner
-        Implements IForexeRunner, Global.IForexeDocumentUpload
+        Implements IForexeRunner, Global.IForexeDocumentUpload, Global.IForexeDisconnect
 
         Private _logger As RichTextBoxLogger
         Private _executor As WorkflowExecutor
@@ -978,6 +978,22 @@ Namespace KBot.Forexe
             Next
             JobHistoryManager.SaveOutputVariables(rezumat)
         End Sub
+
+        ''' <summary>
+        ''' Slice 0097 -- the operator's disconnect (the unit switch): the same teardown a new
+        ''' connection does first, then the hosts are told the browser is gone.
+        ''' </summary>
+        Public Async Function DisconnectAsync() As Task Implements Global.IForexeDisconnect.DisconnectAsync
+            Try
+                If _executor Is Nothing Then Return
+                Await DisposeExecutorAsync()
+                _logger?.LogOperator("Sesiunea FOREXE a fost închisă.")
+                RaiseEvent BrowserVisibilityChanged(Me, EventArgs.Empty)
+            Catch ex As Exception
+                GlobalErrorLog.Write("ForexeRunner.DisconnectAsync", ex)
+                Throw
+            End Try
+        End Function
 
         Private Async Function DisposeExecutorAsync() As Task
             ' Gardianul trăiește cât sesiunea: se oprește ODATĂ cu executorul, altfel ar
