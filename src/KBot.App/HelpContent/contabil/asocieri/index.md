@@ -7,11 +7,13 @@ parent: contabil
 screens: AsociereForm
 keywords: asocieri, asociere, instantanee, instantaneu, lant, receptii, istoric, dubii, legaturi receptii, neasezate
 ---
+<!-- slice: 0048-04, 0000-12 -->
 Fereastra **Asocieri** este pasul cel mai important — și cel mai greu de înțeles — din tot ce faci
 în K-BOT. **Nu e o listă de erori.** E locul în care spui, pentru fiecare recepție, **povestea ei în
 timp**. De ea depind cifrele fiecărei ordonanțări.
 
 ## Două jumătăți care nu se întâlnesc
+<!-- slice: 0048-03, 0000-12 -->
 
 FOREXE îi dă lui K-BOT recepțiile pe două căi, și niciuna nu e întreagă:
 
@@ -24,6 +26,7 @@ Istoricul FOREXE **nu scrie niciodată numele recepției**. Scrie doar: la ora c
 ajuns la valoarea cutare, cu indicatorii cutare.
 
 ## Un exemplu
+<!-- slice: 0064, 0000-12 -->
 
 O recepție pornește la **1.000 lei** pe indicatorul AAB. Apoi cineva adaugă 100 pe AAB și un
 indicator nou, AA2, cu 200. Mai târziu scoate 500 de pe AAB și tot AA2.
@@ -40,6 +43,7 @@ indicator nou, AA2, cu 200. Mai târziu scoate 500 de pe AAB și tot AA2.
 - Azi recepția valorează 600. Cele trei instantanee, puse în ordinea orei, sunt **lanțul** ei.
 
 ## De ce trebuie să fie corect
+<!-- slice: 0048-09, 0000-12 -->
 
 Fiecare ordonanțare are nevoie de **totalul recepțiilor așa cum era în ziua plății**. Pentru o plată
 din 20.01, recepția de mai sus contează cu 1.300, nu cu 600. Ca să afle asta, K-BOT merge înapoi pe
@@ -50,6 +54,7 @@ anterioare, rămas) ale **fiecărei** plăți de după el. Greșeala nu o prinde
 la iveală, poate, peste luni, ca o reconciliere care nu se închide.
 
 ## De ce n-o poate face K-BOT singur
+<!-- slice: 0048-07, 0058, 0065, 0000-12 -->
 
 - **După valoare** nu se poate: mai multe recepții au adesea aceeași sumă.
 - **După dată** nu se poate: ora instantaneului e ora salvării, iar data recepției e scrisă de mână
@@ -63,6 +68,7 @@ angajament la care recepțiile s-au modificat des, **fereastra Asocieri va avea 
 e mersul normal, nu o problemă.
 
 ## Când se deschide
+<!-- slice: 0048-04, 0055 -->
 
 - **După o descărcare** din FOREXE, dacă a rămas ceva nehotărât — fereastra «Așezarea recepțiilor
   descărcate». Vezi [Descărcarea unui angajament](topic:contabil.forexe.descarcare).

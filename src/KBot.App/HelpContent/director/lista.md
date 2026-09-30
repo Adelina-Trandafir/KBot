@@ -7,6 +7,7 @@ parent: director
 screens: DirectorForm.lstDocumente, DirectorForm.lblTitlu, DirectorForm.btnReincarca
 keywords: lista, documente de semnat, reincarca, unitate, angajament, revizie, total
 ---
+<!-- slice: 0081-06 -->
 La deschidere, K-BOT caută în **toate unitățile** în care ai rolul Director reviziile semnate A și
 B care așteaptă semnătura ta. Titlul de sus spune câte sunt: «Aveți 3 documente de fundamentare de
 semnat» sau «Nu aveți documente de fundamentare de semnat».
@@ -29,11 +30,13 @@ cea pe care ești conectat, K-BOT îți cere întâi să te conectezi pe unitate
 [Documente din alte unități](topic:director.unitati).
 
 ## «Reîncarcă lista»
+<!-- slice: 0081-06 -->
 
 Lista **nu se actualizează singură** după ce semnezi. Apasă **«Reîncarcă lista»**: documentele
 semnate dispar, iar cele ajunse între timp la tine apar.
 
 ## Când lista nu se încarcă
+<!-- slice: 0081-06 -->
 
 - **«Nu s-au putut citi: ...»** după titlu — unitățile numite n-au putut fi citite acum. Restul
   listei e bună. Încearcă din nou mai târziu cu «Reîncarcă lista»; dacă mesajul rămâne, anunță

@@ -38,6 +38,26 @@ Markdown: headings, lists, **bold**, tables (`| a | b |`), `> quote` (drawn as a
 - Picture: `![caption](img/ddf-trimitere-1.png)` (PNG/JPG, under `img/`). A picture not yet on
   disk shows a «Imagine lipsă» box with its name.
 
+## Source tags: which slice decided the text (slice 0000-13)
+
+Every explanation names the slice(s) whose decision it describes, in a line the reader never sees:
+
+```
+<!-- slice: 0072, 0097 -->
+```
+
+- right after the header block of a topic (it covers the text before the first `##`);
+- right under **every** `## ` heading, in topics and in tour steps (`###`: optional, else the
+  `##` above covers it);
+- ids: a slice of the `KBOT_STATUS.md` index or with a worklog (`0048`, `0048-04`), a help
+  sub-slice (`0000-13`) when the explanation was decided in help work, or `fara-felie` (work
+  recorded only in `KBOT_STATUS_SLICELESS.md`);
+- when you change a section, put the slice of the change in its tag (keep the older ids that
+  still hold).
+
+The tags are removed when a file is read (`HelpLibrary.StripSourceTags`): no page, tour bubble,
+search or exported manual carries them. `Check-Help.ps1` fails on a missing or unknown tag.
+
 ## Screenshots: capture tags (slice 0000-02)
 
 A picture the help needs is written as ONE line, where the picture should appear:

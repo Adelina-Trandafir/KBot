@@ -6,6 +6,7 @@ order: 0
 screens: KbotForm
 keywords: prezentare, fereastra principala, flux
 ---
+<!-- slice: 0000-03 -->
 K-BOT ține evidența angajamentelor bugetare ale unității și le leagă de **FOREXE** (sistemul de
 control al angajamentelor al Ministerului Finanțelor): citește din FOREXE rezervările, recepțiile
 și plățile, face documentele de fundamentare (DDF) și le trimite înapoi în FOREXE.
@@ -13,12 +14,14 @@ control al angajamentelor al Ministerului Finanțelor): citește din FOREXE reze
 <!-- capture: fereastra-principala | caption: Fereastra principală K-BOT | goto: view:sumar | prepare: Selectați un angajament în lista din stânga, ca vederea «Sumar» să arate date. -->
 
 ## Lucrul de zi cu zi, pe scurt
+<!-- slice: 0001, 0034, 0055, 0060, 0048-04, 0081, 0076, 0000-12 -->
 
 1. **Te conectezi** la K-BOT cu utilizatorul tău și alegi unitatea — [Conectarea](topic:contabil.autentificare).
 2. **Te conectezi la FOREXE** din banda de jos (butonul «Conectare») — [Legătura cu FOREXE](topic:contabil.forexe).
 3. **Aduci lista de angajamente** și, pentru fiecare angajament care te interesează, **descarci**
-   datele lui din FOREXE — [Descărcarea unui angajament](topic:contabil.forexe.descarcare). Dacă se
-   deschide fereastra **Asocieri**, spui a cărei recepții e fiecare salvare din istoric —
+   datele lui din FOREXE — [Descărcarea unui angajament](topic:contabil.forexe.descarcare).
+   Înainte de robot alegi ce recepții se citesc din nou (fereastra «Ce recepții reîmprospătez?»).
+   Dacă se deschide fereastra **Asocieri**, spui a cărei recepții e fiecare salvare din istoric —
    [Asocierile recepțiilor](topic:contabil.asocieri): de ea depind cifrele ordonanțărilor.
 4. **Te uiți pe angajament** în vederile din stânga: Sumar, Istoric, Rezervări, Recepții, Plăți,
    Extrase — [Vederile angajamentului](topic:contabil.vederi).

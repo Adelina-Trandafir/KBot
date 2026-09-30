@@ -6,11 +6,13 @@ order: 0
 screens: ParolaAvansataForm, SetariAplicatieView.chkAvansate
 keywords: optiuni avansate, parola, setari avansate, activare
 ---
+<!-- slice: 0072-02 -->
 Opțiunile avansate sunt setările care schimbă felul în care K-BOT lucrează pe calculator:
 cum afișează documentele, cum arată pagina FOREXE, tema și scalarea, folderele în care scrie.
 Sunt ascunse ca un operator să nu le schimbe din greșeală.
 
 ## Cum le pornești
+<!-- slice: 0072-02 -->
 
 1. Deschide **Setări** (rotița din bara de titlu › «Setări...»), pagina **Aplicație**.
 2. Bifează **«Activează opțiuni avansate»**. K-BOT cere **parola** opțiunilor avansate.

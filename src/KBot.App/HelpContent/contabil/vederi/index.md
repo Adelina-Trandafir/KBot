@@ -6,6 +6,7 @@ order: 40
 parent: contabil
 keywords: vederi, ecrane, arbore, lista, grila
 ---
+<!-- slice: 0011, 0014, 0015, 0017, 0022, 0033, 0080-02, 0088 -->
 Bara din stânga a ferestrei principale are câte o **vedere** pentru fiecare fel de date ale
 angajamentului selectat. Toate arată datele din K-BOT, adică ce s-a adus din FOREXE la ultima
 descărcare; niciuna nu scrie ceva în FOREXE.

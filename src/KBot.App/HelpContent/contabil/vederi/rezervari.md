@@ -7,6 +7,7 @@ parent: contabil.vederi
 screens: RezervariView, GraficRezervariForm
 keywords: rezervari, rezervare initiala, rezervare definitiva, grafic, plus
 ---
+<!-- slice: 0014, 0061-02, 0092 -->
 Rezervările de credite ale angajamentului, pe luni și zile.
 
 <!-- capture: rezervari | caption: Vederea «Rezervări» | goto: view:rezervari | prepare: Selectați un angajament cu mai multe rezervări. -->
@@ -19,6 +20,7 @@ Rezervările de credite ale angajamentului, pe luni și zile.
   documentul pentru ea — vezi [Documentul de fundamentare](topic:contabil.ddf).
 
 ## Iconițele arborelui
+<!-- slice: 0060, 0061-02, 0081-02 -->
 
 | Unde | Ce face |
 |------|---------|

@@ -7,9 +7,11 @@ parent: contabil
 screens: UpdateProgressForm, SetariInfoView.btnActualizari
 keywords: actualizare, versiune noua, update, cauta actualizari, descarcare, repornire
 ---
+<!-- slice: 0067 -->
 K-BOT se actualizează singur, de pe serverul K-BOT.
 
 ## La pornire
+<!-- slice: 0067 -->
 
 La fiecare pornire, înainte de conectare, K-BOT întreabă serverul dacă există o versiune mai nouă.
 
@@ -24,11 +26,13 @@ Dacă serverul nu răspunde (fără internet, de exemplu), K-BOT pornește oricu
 la pornirea următoare.
 
 ## Oricând: «Caută actualizări»
+<!-- slice: 0067, 0072 -->
 
 În **Setări › Informații**, butonul **«Caută actualizări»** face aceeași verificare pe loc și
 spune de fiecare dată rezultatul, inclusiv «Aveți ultima versiune».
 
 ## Descărcarea
+<!-- slice: 0067, 0067-01 -->
 
 Cât se descarcă, fereastra **«Actualizare K-BOT»** arată progresul.
 

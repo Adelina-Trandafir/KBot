@@ -7,9 +7,11 @@ parent: contabil.asocieri
 screens: AsociereForm.treeLant, AsociereForm.gridLant, AsociereForm.pnlGrafice, AsociereForm.grafic, AsociereForm.benzi, AsociereForm.navGrafice, AsociereForm.btnGrafice, GraficeAsociereForm, AsociereBenziForm
 keywords: fereastra asocieri, receptii si lanturile lor, instantanee neasezate, grafic, distributie, benzi, evolutia valorii, plata, total receptii la data platii
 ---
+<!-- slice: 0048-04, 0000-12 -->
 <!-- capture: asocieri-fereastra | caption: Fereastra Asocieri, cu recepțiile în stânga și instantaneele neașezate în dreapta | goto: view:receptii | prepare: Selectați un angajament cu mai multe recepții modificate, apoi apăsați iconița din dreapta, sus, a arborelui de recepții. -->
 
 ## Stânga — «RECEPȚII ȘI LANȚURILE LOR»
+<!-- slice: 0048-04, 0056, 0059, 0062, 0065 -->
 
 Câte un rând pe **recepție**: data recepției, valoarea de azi și, în paranteză, câte instantanee are
 lanțul ei. Sub fiecare recepție, **lanțul**: instantaneele ei, în ordinea orei.
@@ -34,11 +36,13 @@ este **blocat**: pe el se sprijină deja o ordonanțare sau o plată, se vede, d
 credit bugetar, valoare.
 
 ## Dreapta — «INSTANTANEE NEAȘEZATE» (coșul)
+<!-- slice: 0048-04, 0061 -->
 
 Instantaneele care încă nu au recepție. Grila de sub ele arată indicatorii instantaneului ales.
 Aici tragi înapoi un instantaneu ca să-l desprinzi de recepția lui.
 
 ## Jos — graficele
+<!-- slice: 0048-05, 0048-06, 0048-08, 0048-09, 0061 -->
 
 Două vederi, alese din dreapta:
 
@@ -62,6 +66,7 @@ ecranul — bună la angajamentele cu multe recepții.
 <!-- capture: asocieri-grafice | caption: Fereastra «Grafice și benzi» | goto: view:receptii | prepare: Deschideți Asocieri, apoi apăsați «Grafice și benzi». -->
 
 ## Butoanele
+<!-- slice: 0048-04, 0058 -->
 
 | Buton | Ce face |
 |-------|---------|

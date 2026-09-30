@@ -36,7 +36,7 @@ Public Enum DdfRevisionState
     SendInterrupted = 2
     ''' <summary>S2a -- sent; «Definitiveaza» / «Deruleaza» still to do, then the final PDF.</summary>
     SentInProgress = 3
-    ''' <summary>S2b -- the final PDF exists and waits for the A and B signatures.</summary>
+    ''' <summary>S2b -- the final PDF exists (section B inserted into the document signed on A, 0078-06) and waits for the B signature.</summary>
     FinalToSign = 4
     ''' <summary>S3 -- A and B signed; waits for the director.</summary>
     SignedAB = 5
@@ -111,7 +111,7 @@ Public NotInheritable Class DdfRevisionStates
             Case DdfRevisionState.SignedA : Return "Semnat A — gata de trimis"
             Case DdfRevisionState.SendInterrupted : Return "Trimitere întreruptă"
             Case DdfRevisionState.SentInProgress : Return "Trimis în FOREXE — în lucru"
-            Case DdfRevisionState.FinalToSign : Return "PDF final — de semnat A și B"
+            Case DdfRevisionState.FinalToSign : Return "PDF final — de semnat B"
             Case DdfRevisionState.SignedAB : Return "Semnat A și B — la director"
             Case DdfRevisionState.Approved : Return "Aprobat"
             Case Else

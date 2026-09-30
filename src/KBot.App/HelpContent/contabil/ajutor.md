@@ -7,6 +7,7 @@ parent: contabil
 screens: HelpForm
 keywords: F1, manual, cautare
 ---
+<!-- slice: 0000-01, 0000-04 -->
 - Apasă **F1** în orice fereastră: se deschide pagina despre ce ai pe ecran.
 - Butonul **?** din bara de titlu a fiecărei ferestre face același lucru.
 - În stânga ai **cuprinsul**; deasupra lui, căsuța de **căutare** (scrie cuvintele și apasă Enter;

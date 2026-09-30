@@ -6,6 +6,7 @@ order: 40
 parent: contabil.ddf
 keywords: adauga rezervare, definitiveaza, deruleaza, genereaza pdf final, revizie noua, indicatori existenti
 ---
+<!-- slice: 0081-02, 0078-06 -->
 Iconița din **stânga, jos, a arborelui din vederea Rezervări** deschide acțiunile documentului
 de fundamentare pentru angajamentul selectat. Meniul arată **o singură** acțiune, cea potrivită
 stării angajamentului; iconița e gri când nu e nimic de făcut.
@@ -22,6 +23,7 @@ stării angajamentului; iconița e gri când nu e nimic de făcut.
 | anulat / reziliat / suspendat | — | nimic |
 
 ## Adaugă rezervare
+<!-- slice: 0081-02, 0081-12 -->
 
 Pornește o **revizie nouă** a documentului. Alegi:
 
@@ -30,12 +32,14 @@ Pornește o **revizie nouă** a documentului. Alegi:
    indicator al angajamentului, cu valoarea 0. Completezi doar rândurile care se schimbă;
    cele rămase cu 0 se scot la salvare.
 
-Apoi urmezi drumul obișnuit: salvare, semnare A, trimitere, semnare A și B.
+Apoi urmezi drumul obișnuit: salvare, semnare A, trimitere, semnare B.
 
 ## Definitivează și Derulează
+<!-- slice: 0081-03, 0081-04, 0078-06 -->
 
 Există **doar pentru un angajament nou**, creat în K-BOT, cât timp revizia lui 0 e «în lucru».
 Fiecare pas se face în FOREXE de robot, iar capturile lui intră în documentul reviziei 0.
-Abia după **Derulează** apare **Generează PDF final**, care închide revizia 0.
+Abia după **Derulează** apare **Generează PDF final**, care închide revizia 0: pune Secțiunea B în
+documentul semnat pe A (nu face un document nou), iar tu semnezi B.
 
 > K-BOT nu definitivează și nu derulează angajamente pe care nu le-a creat el.

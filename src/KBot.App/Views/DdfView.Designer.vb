@@ -68,15 +68,12 @@ Partial Class DdfView
         tree.ExpanderSize = 10
         tree.Font = New Font("Calibri", 9.0F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
-        tree.FooterCaption = "Adaugă"
         tree.FooterCaptionFont = New Font("Calibri", 9.0F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCollapseButton = True
         tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
         tree.FooterHeight = 30
-        tree.FooterRightIcon = My.Resources.Resources.plus_green
-        tree.FooterRightIconTooltip = "Adaugă D.D.F. / Revizie"
         tree.FooterSeparatorColor = Color.Gainsboro
         tree.FooterSeparatorWidth = 2
         tree.FooterTextAlign = ContentAlignment.MiddleRight

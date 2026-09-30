@@ -7,7 +7,9 @@ parent: contabil.asocieri
 screens: AsociereForm.treeLibere, AsociereForm.gridLibere, AsociereForm.lblIntro, AsociereForm.btnSalveaza
 keywords: trage, tragere, aseaza, desprinde, ctrl, shift, selectie multipla, ordinea, ora, salveaza legaturile, asezat automat, cum aleg receptia
 ---
+<!-- slice: 0048-04 -->
 ## Gestul de bază: tragi
+<!-- slice: 0048-04, 0061 -->
 
 - **Pe o recepție** — tragi instantaneul din coș peste rândul recepției lui din stânga. Recepția se
   aprinde toată, iar în timpul tragerii se vede **unde ar cădea** în lanț.
@@ -20,6 +22,7 @@ keywords: trage, tragere, aseaza, desprinde, ctrl, shift, selectie multipla, ord
 Nimic nu se scrie până nu apeși **«Salvează legăturile»**: până atunci poți muta cât vrei.
 
 ## Cum îți dai seama a cărei recepții e un instantaneu
+<!-- slice: 0048-07, 0064, 0065, 0000-12 -->
 
 Nu există o regulă sigură — de asta te întreabă K-BOT. Te ajută, în ordine:
 
@@ -37,6 +40,7 @@ Nu există o regulă sigură — de asta te întreabă K-BOT. Te ajută, în ord
    recepții – plăți trebuie să aibă sens.
 
 ## Ordinea de lucru recomandată
+<!-- slice: 0000-12 -->
 
 1. Alege în stânga **o recepție** și citește-i lanțul și valoarea de azi.
 2. Caută în coș instantaneele cu valori pe drumul ei (vezi graficul «Recepția»).
@@ -48,6 +52,7 @@ Nu există o regulă sigură — de asta te întreabă K-BOT. Te ajută, în ord
 6. Verifică reperele plăților, apoi **«Salvează legăturile»**.
 
 ## Așezările automate
+<!-- slice: 0056, 0065 -->
 
 - **După o descărcare**, serverul pune singur pe recepție ce poate recunoaște sigur (de obicei
   ultimul instantaneu al fiecărei recepții).

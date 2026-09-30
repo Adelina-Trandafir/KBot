@@ -6,6 +6,7 @@ order: 20
 parent: contabil.ddf
 keywords: angajament nou, creare angajament, revizia 0
 ---
+<!-- slice: 0078-06, 0081-02, 0086 -->
 Un angajament nou se face din **MENIU › Angajament nou**. Se deschide editorul DDF pentru
 **revizia 0** a unui angajament care încă nu există în FOREXE.
 

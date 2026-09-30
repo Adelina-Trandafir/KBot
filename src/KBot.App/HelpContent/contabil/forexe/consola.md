@@ -7,6 +7,7 @@ parent: contabil.forexe
 screens: ForexeConsoleForm, ForexeHistoryForm
 keywords: consola, jurnal, anuleaza, progres, istoric sesiune
 ---
+<!-- slice: 0034, 0040, 0071 -->
 Consola se deschide din butonul de extindere al benzii FOREXE. Arată ce face robotul, pas cu
 pas: progresul, jurnalul complet și starea.
 

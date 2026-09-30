@@ -5,23 +5,28 @@ part: contabil
 topic: contabil.vederi.ord
 ---
 ## Plățile neordonanțate
+<!-- slice: 0049-01 -->
 target: PlatiView.tree
 goto: view:plati
 O ordonanțare se face din plăți. În vederea Plăți, semnul + apare pe zilele (și lunile) cu plăți neordonanțate. Pe o zi face o ordonanțare din plățile ei și o deschide în editor; pe o lună face câte una pentru fiecare zi și le salvează direct.
 
 ## Arborele ordonanțărilor
+<!-- slice: 0033, 0097 -->
 target: OrdView.tree
 goto: view:ord
-Ordonanțările angajamentului, pe luni, cu data și totalul fiecăreia. Dacă vederea nu se deschide, angajamentul ales nu are încă ordonanțări: alege unul care are.
+Ordonanțările angajamentului, pe luni, sub rădăcina «Toate ordonanțările», cu data și totalul fiecăreia. Dacă vederea nu se deschide, angajamentul ales nu are încă ordonanțări: alege unul care are.
 
 ## Clic dreapta pe arbore
+<!-- slice: 0049, 0049-01, 0097 -->
 target: OrdView.tree
-Meniul are: Adaugă ordonanțare (întreabă ziua plăților), Modifică ordonanțarea, Șterge ordonanțarea (plățile ei redevin neordonanțate) și Generare în lot (câte una pentru fiecare zi cu plăți neordonanțate; se oprește la prima eroare). Iconița Adaugă din subsolul arborelui face același lucru ca Adaugă ordonanțare.
+Meniul are: Adaugă ordonanțare (întreabă ziua plăților), Modifică ordonanțarea, Șterge ordonanțarea (plățile ei redevin neordonanțate) și Generare în lot (câte una pentru fiecare zi cu plăți neordonanțate; se oprește la prima eroare). Pe o lună sau pe rădăcina «Toate ordonanțările» poți șterge toate ordonanțările de sub ea, dacă niciuna nu e semnată. Pe o ordonanțare semnată nu apare niciun meniu: nu se mai modifică și nu se mai șterge. Iconița Adaugă din subsolul arborelui face același lucru ca Adaugă ordonanțare.
 
 ## Paginile ordonanțării
+<!-- slice: 0033, 0041, 0000-14 -->
 target: OrdView.navSub
-Vizualizare = rândurile ordonanțării și beneficiarii ei. Document = PDF-ul; dacă lipsește, butonul Generează îl face din datele salvate.
+Vizualizare = rândurile ordonanțării și beneficiarii ei. Document = PDF-ul; dacă lipsește, butonul Generează îl face din datele salvate. Un document semnat nu se mai generează din nou.
 
 ## Semnarea
+<!-- slice: 0078, 0000-10 -->
 target: OrdView.pnlPages
 Pe pagina Document semnezi în Adobe, pe rând: Validare formular, semnătura 1 (compartimentul de specialitate); apoi din nou Validare formular, semnătura 2 (persoana cu acces la sistemul de control al angajamentelor); CFP dacă e cazul; la sfârșit ordonatorul. Documentul e complet cu semnăturile 1, 2 și 5.

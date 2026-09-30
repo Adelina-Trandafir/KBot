@@ -157,6 +157,45 @@ foreach ($tr in $tours) {
     foreach ($m in [regex]::Matches($tr.__body, '(?m)^target:\s*(.+)$')) { Test-Key $m.Groups[1].Value.Trim() $tr.__file }
 }
 
+# --- Source tags (slice 0000-13): <!-- slice: 0072, 0097 --> right after the header block of a
+# topic (covers the text before the first ##) and right under every ## heading (topics and tour
+# steps). Each id is a slice of the index in KBOT_STATUS.md (0048 or 0048-04) or with a worklog, a help sub-slice
+# with a worklog (0000-13), or 'fara-felie' (work recorded in KBOT_STATUS_SLICELESS.md).
+$statusIndex = Get-Content -LiteralPath (Join-Path $repo 'docs\worklog\KBOT_STATUS.md') -Raw -Encoding UTF8
+$worklogDir = Join-Path $repo 'docs\worklog'
+$knownSlice = @{}
+function Test-SliceId([string]$id, [string]$where) {
+    if ($script:knownSlice.ContainsKey($id)) { return }
+    $ok = $false
+    if ($id -eq 'fara-felie') { $ok = $true }
+    elseif ($id -match '^0000-\d{2}$') { $ok = [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id-*.md") }
+    elseif ($id -match '^(\d{4})(-\d{2})?$') {
+        $ok = ($statusIndex -match "(?m)^\|\s*$($Matches[1])[\s|/-]") -or
+              [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")
+    }
+    if ($ok) { $script:knownSlice[$id] = $true } else { Add-Err "${where}: slice '$id' is not in KBOT_STATUS.md (nor has a worklog)" }
+}
+function Test-SourceTags([string]$body, [string]$file, [bool]$needIntro) {
+    $lines = $body -split "`r?`n"
+    if ($needIntro) {
+        $first = $lines | Where-Object { $_.Trim() } | Select-Object -First 1
+        if ($first -notmatch '^\s*<!--\s*slice:') { Add-Err "${file}: no <!-- slice: ... --> right after the header" }
+    }
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match '^## ') {
+            $next = if ($i + 1 -lt $lines.Count) { $lines[$i + 1] } else { '' }
+            if ($next -notmatch '^\s*<!--\s*slice:') { Add-Err "${file}: section '$($lines[$i].Substring(3).Trim())' has no <!-- slice: ... --> under it" }
+        }
+    }
+    foreach ($m in [regex]::Matches($body, '<!--\s*slice:([^\r\n]*?)-->')) {
+        $ids = $m.Groups[1].Value.Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+        if (-not $ids) { Add-Err "${file}: empty slice tag" }
+        foreach ($id in $ids) { Test-SliceId $id $file }
+    }
+}
+foreach ($t in $topics) { Test-SourceTags $t.__body $t.__file $true }
+foreach ($tr in $tours) { Test-SourceTags $tr.__body $tr.__file $false }
+
 # --- Output
 "Help check: $($topics.Count) topics, $($tours.Count) tours, $($captureIds.Count) capture tags."
 

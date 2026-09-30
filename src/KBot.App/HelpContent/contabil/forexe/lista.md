@@ -6,6 +6,7 @@ order: 20
 parent: contabil.forexe
 keywords: actualizare lista, angajamente noi, sincronizare
 ---
+<!-- slice: 0034, 0057 -->
 Iconița **din dreapta, jos**, a listei de angajamente aduce din FOREXE lista tuturor
 angajamentelor unității.
 

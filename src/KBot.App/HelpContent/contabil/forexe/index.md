@@ -7,6 +7,7 @@ parent: contabil
 screens: ForexeFooterView, KbotForm.forexeFooter
 keywords: forexe, forexecab, robot, certificat, sesiune, banda de jos
 ---
+<!-- slice: 0034, 0040, 0072 -->
 K-BOT lucrează în FOREXE printr-un **robot**: un browser pe care îl conduce singur, cu
 certificatul tău digital. Robotul citește datele angajamentelor și, la trimiterea unui document
 de fundamentare, face în FOREXE pașii pe care altfel i-ai face de mână.

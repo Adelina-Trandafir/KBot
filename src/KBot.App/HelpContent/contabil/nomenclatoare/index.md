@@ -6,6 +6,7 @@ order: 70
 parent: contabil
 keywords: nomenclatoare, clasificatii, parteneri
 ---
+<!-- slice: 0087 -->
 Din **MENIU › Nomenclatoare** se deschid două ferestre de lucru, fiecare de sine stătătoare
 (poți lucra în paralel în fereastra principală):
 

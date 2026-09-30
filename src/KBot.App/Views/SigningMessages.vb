@@ -65,22 +65,20 @@ Public NotInheritable Class SigningMessages
     End Sub
 
     ''' <summary>
-    ''' Generating a document that already has a SIGNED copy on the server: the new one is unsigned
-    ''' and would have to be signed again from scratch. True = go ahead.
+    ''' Slice 0000-14 (operator, 30.09.2026): a document with at least one signature is NEVER
+    ''' generated again. The old «generate an unsigned one over it?» question predates 0078; since
+    ''' data can be inserted into an already signed document, there is no case left that needs it.
     ''' </summary>
-    Public Shared Function ConfirmRegenerateSigned(owner As IWin32Window) As Boolean
+    Public Shared Sub ShowSignedNeverRegenerated(owner As IWin32Window)
         Try
-            Return KBotMessage.Show(owner,
-                                    "Acest document are deja o versiune SEMNATĂ pe server." & Environment.NewLine &
-                                    "Documentul generat acum va fi NESEMNAT și, dacă îl semnați, va înlocui versiunea de pe server." &
-                                    Environment.NewLine & "Continuați?",
-                                    Caption, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
-                                    MessageBoxDefaultButton.Button2) = DialogResult.Yes
+            KBotMessage.Show(owner,
+                             "Documentul are cel puțin o semnătură, deci nu se mai generează din nou." & Environment.NewLine &
+                             "Un document semnat rămâne așa cum a fost semnat.",
+                             Caption, MessageBoxButtons.OK, MessageBoxIcon.Information)
         Catch ex As Exception
-            GlobalErrorLog.Write("SigningMessages.ConfirmRegenerateSigned", ex)
-            Return False
+            GlobalErrorLog.Write("SigningMessages.ShowSignedNeverRegenerated", ex)
         End Try
-    End Function
+    End Sub
 
     ''' <summary>Several kept copies were retried after login -- one line each.</summary>
     Public Shared Sub ShowRetrySummary(owner As IWin32Window, lines As IEnumerable(Of String))

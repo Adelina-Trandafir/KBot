@@ -6,11 +6,13 @@ order: 10
 parent: contabil.ddf
 keywords: ministerul finantelor, mf, omf 1140/2025, ghid alop, sectiunea a, sectiunea b, cod ssi, program, revizie, reguli
 ---
+<!-- slice: 0000-03 -->
 Documentul de fundamentare urmează formularul și ghidul Ministerului Finanțelor pentru
 **OMF 1140/2025** (ghidul de utilizare ALOP). K-BOT completează formularul după regulile de mai
 jos; le poți folosi ca să verifici un document înainte de semnare.
 
 ## Antetul
+<!-- slice: 0000-03, 0081-09 -->
 
 | Câmp | Regula |
 |------|--------|
@@ -21,6 +23,7 @@ jos; le poți folosi ca să verifici un document înainte de semnare.
 | **Data** | data reviziei |
 
 ## Secțiunea A
+<!-- slice: 0000-03, 0081-10 -->
 
 | Punct | Revizia 0 | Reviziile următoare |
 |-------|-----------|---------------------|
@@ -46,6 +49,7 @@ exemplele din ghid, «în anul curent se anticipează emiterea a cel puțin unui
 «se sting în anul curent toate obligațiile de plată».
 
 ## Secțiunea B
+<!-- slice: 0000-03 -->
 
 Se bifează **«Propunerile de la secțiunea A au fost înregistrate în sistemul de control al
 angajamentelor după cum urmează:»** și se completează un rând pe fiecare rând din FOREXE:
@@ -56,6 +60,7 @@ creditul bugetar (CB) rezervate: valoarea dinainte, influența și valoarea nou�
 K-BOT completează Secțiunea B **singur**, după trimiterea în FOREXE; tu n-o scrii niciodată.
 
 ## A și B trebuie să se potrivească
+<!-- slice: 0000-03 -->
 
 Pentru fiecare cod SSI:
 
@@ -69,6 +74,7 @@ Pentru fiecare cod SSI:
 > cât timp angajamentul se lucrează doar prin K-BOT.
 
 ## Trei situații tipice
+<!-- slice: 0000-03, 0092 -->
 
 | Situația | Secțiunea A | În FOREXE |
 |----------|-------------|-----------|

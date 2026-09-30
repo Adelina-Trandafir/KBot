@@ -48,7 +48,8 @@ Public NotInheritable Class HelpTour
     End Function
 
     Friend Shared Function Parse(text As String) As HelpTour
-        Dim lines As String() = text.Replace(vbCrLf, vbLf).Split(ChrW(10))
+        ' Slice 0000-13: the maintainer's source tags never reach the bubble.
+        Dim lines As String() = HelpLibrary.StripSourceTags(text.Replace(vbCrLf, vbLf)).Split(ChrW(10))
         If lines.Length = 0 OrElse lines(0).Trim() <> "---" Then Throw New ArgumentException("the tour does not start with a '---' header block")
 
         Dim tour As New HelpTour()

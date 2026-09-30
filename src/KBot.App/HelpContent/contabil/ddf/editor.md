@@ -7,11 +7,13 @@ parent: contabil.ddf
 screens: DdfEditForm, DdfEditSectiuneaAPage, DdfEditSectiuneaBPage, DdfEditDescrierePage, DdfEditFisierePage, DdfEditLinieAForm
 keywords: editor, antet, sectiunea a, sectiunea b, cual, revizie, clasificatie, partener, fisiere, salveaza
 ---
+<!-- slice: 0051, 0081-02 -->
 Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la «Modifică revizia».
 
 <!-- capture: ddf-editor | caption: Editorul DDF, pagina «Secțiunea A» | prepare: Deschideți editorul DDF pe o revizie cu mai multe rânduri în Secțiunea A. -->
 
 ## Antetul
+<!-- slice: 0081-09, 0081-10 -->
 
 | Câmp | Ce e de știut |
 |------|---------------|
@@ -27,6 +29,7 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
 | **Total** | suma valorilor curente din Secțiunea A, recalculată la fiecare schimbare |
 
 ## Secțiunea A
+<!-- slice: 0081-08, 0081-12 -->
 
 - **Adaugă rând** deschide fereastra rândului nou:
   - **Sursă / sector** al rândului;
@@ -43,6 +46,7 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
 <!-- capture: ddf-rand-nou | caption: Fereastra «Rând nou în secțiunea A» | prepare: Apăsați «Adaugă rând» în Secțiunea A și alegeți o clasificație. -->
 
 ## Secțiunea B, Descriere, Fișiere
+<!-- slice: 0081-02 -->
 
 - **Secțiunea B** se calculează din Secțiunea A și **nu se editează**.
 - **Descriere** are descrierea scurtă și pe cea lungă (starea de fapt și de drept).
@@ -50,6 +54,7 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
   documentului. Capturile venite din FOREXE nu se pot șterge de aici, dar se pot salva pe disc.
 
 ## Salvarea
+<!-- slice: 0051, 0081-12 -->
 
 **Salvează documentul** trimite tot documentul într-o singură tranzacție. Rândurile din Secțiunea A
 cu valoarea 0 se scot la salvare, după ce confirmi. Dacă nu rămâne niciun rând cu valoare,

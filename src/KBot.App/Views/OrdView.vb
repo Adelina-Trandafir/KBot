@@ -674,8 +674,11 @@ Public Class OrdView
             Dim cod As String = _requestedCod
             Dim ordonantare As OrdHeaderRow = _selectedOrd
             If String.IsNullOrWhiteSpace(cod) OrElse ordonantare Is Nothing OrElse _nodeIsRoot Then Return
-            ' Slice 0078: an unsigned document over a signed one needs the operator's yes.
-            If ordonantare.ArePdfSemnat AndAlso Not SigningMessages.ConfirmRegenerateSigned(FindForm()) Then Return
+            ' Slice 0000-14: a signed document is never generated again (operator, 30.09.2026).
+            If EsteSemnata(ordonantare) Then
+                SigningMessages.ShowSignedNeverRegenerated(FindForm())
+                Return
+            End If
 
             _generating = True
             Try

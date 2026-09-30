@@ -7,6 +7,7 @@ parent: avansat
 screens: SetariAplicatieView.cboVerbose, SetariAplicatieView.chkLogViewer
 keywords: jurnal, log, erori, diagnostic, harness_errors, adobe_preview, mesaje_operator, consola detaliata
 ---
+<!-- slice: 0031-01, 0072, 0089 -->
 K-BOT scrie tot ce face în jurnale, în folderul **Logs** (vezi [Căi fișiere](topic:avansat.foldere)).
 Le citești din **Setări › Jurnal** sau direct din folder.
 
@@ -20,12 +21,14 @@ Le citești din **Setări › Jurnal** sau direct din folder.
 Pagina **Jurnal** arată și jurnalele serverului pentru utilizatorul și sesiunea ta.
 
 ## Consola FOREXE detaliată
+<!-- slice: 0071, 0072 -->
 
 În **Setări › Aplicație**, **«Consola FOREXE detaliată»** alege cât scrie consola robotului:
 «Pornit» arată fiecare pas și fiecare așteptare, «Oprit» doar mesajele importante și erorile.
 Fișierul de jurnal primește oricum tot.
 
 ## Ce trimiți când ceri ajutor
+<!-- slice: 0000-05 -->
 
 Când raportezi o problemă, trimite **ora** la care s-a întâmplat și fișierele `harness_errors.log`
 și `mesaje_operator.log` din folderul Logs de pe calculatorul **pe care** a apărut problema.

@@ -796,8 +796,11 @@ Public Class DdfView
             Dim cod As String = _requestedCod
             Dim revizie As RevizieRow = _selectedRevizie
             If String.IsNullOrWhiteSpace(cod) OrElse revizie Is Nothing OrElse _antet Is Nothing Then Return
-            ' Slice 0078: an unsigned document over a signed one needs the operator's yes.
-            If revizie.ArePdfSemnat AndAlso Not SigningMessages.ConfirmRegenerateSigned(FindForm()) Then Return
+            ' Slice 0000-14: a signed document is never generated again (operator, 30.09.2026).
+            If EsteSemnata(revizie) Then
+                SigningMessages.ShowSignedNeverRegenerated(FindForm())
+                Return
+            End If
 
             _generating = True
             Try

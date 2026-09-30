@@ -7,12 +7,14 @@ parent: avansat
 screens: SetariAplicatieView.cboAdobeMotor, SetariAplicatieView.btnAdobeGazduire, SetariAplicatieView.chkAcroTrace, SetariAplicatieView.chkAcroNou, SetariAplicatieView.btnMesajeAdobe, SetariAplicatieView.cboExcelRibbon, AdobeGazduireForm, AdobeMesajeForm
 keywords: adobe, pdf, activex, fereastra gazduita, acropdf, excel, panglica, mesaje javascript, previzualizare
 ---
+<!-- slice: 0072, 0072-01 -->
 Fila **Documente** din **Setări › Aplicație** alege cum afișează K-BOT documentele în ferestrele
 lui: PDF-urile DDF și ORD, atașamentele Word și Excel.
 
 <!-- capture: avansat-documente | caption: Setări › Aplicație, fila «Documente» | goto: setari:aplicatie | prepare: Alegeți fila «Documente» din pagina «Aplicație». -->
 
 ## PDF — motorul de previzualizare
+<!-- slice: 0072-01, 0078-05 -->
 
 | Motor | Ce înseamnă |
 |-------|-------------|
@@ -38,6 +40,7 @@ Doar pentru ActiveX:
   documentul se deschide într-unul nou.
 
 ## Mesaje de script Adobe
+<!-- slice: 0078-03 -->
 
 Adobe arată uneori mesaje «Warning: JavaScript Window» fără importanță. **Mesaje de script
 Adobe...** ține lista celor pe care K-BOT le închide singur (câte o expresie pe rând; literele
@@ -48,6 +51,7 @@ mari și mici nu contează). Orice mesaj care nu se potrivește rămâne pe ecra
 - **Lista implicită** pune la loc lista livrată cu K-BOT; **Salvează** o păstrează.
 
 ## Excel — cum se ascunde panglica
+<!-- slice: 0072 -->
 
 - **Macro**: Excel își ascunde singur panglica (o politică a calculatorului o poate refuza).
 - **Fereastră**: K-BOT ascunde fereastra panglicii, ca la Word; nu poate fi refuzat.

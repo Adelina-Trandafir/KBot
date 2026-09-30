@@ -7,6 +7,7 @@ parent: contabil.vederi
 screens: IstoricView
 keywords: istoric, filtre, tip rand, data fx, observatii
 ---
+<!-- slice: 0022, 0095 -->
 Toate rândurile de istoric ale angajamentului, așa cum le are FOREXE: fiecare rezervare,
 recepție și plată, cu data, valorile, descrierea și observațiile.
 
@@ -21,3 +22,12 @@ recepție și plată, cu data, valorile, descrierea și observațiile.
   - **Reset** — renunță la toate filtrele.
 - Rândul de **totaluri** însumează rezervările, recepțiile și plățile.
 - **Jos** se văd întregi descrierea și observațiile rândului selectat.
+
+## Butoanele arborelui
+<!-- slice: 0022, 0095, 0000-14, 0000-15 -->
+
+- **Lupa** din capul arborelui caută o lună sau o zi.
+- **Butonul de strângere** din subsol («Perioade») îngustează arborele, ca lista să aibă tot locul;
+  încă un clic îl desface.
+- Coloanele listei au **pâlnia** lor (sortare, filtrare, grupare) —
+  [Arborii și tabelele](topic:contabil.liste).

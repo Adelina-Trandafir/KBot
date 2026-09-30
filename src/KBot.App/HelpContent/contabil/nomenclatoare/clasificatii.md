@@ -7,6 +7,7 @@ parent: contabil.nomenclatoare
 screens: ClasificatiiForm, ClasificatiiAddForm
 keywords: clasificatii, buget, trimestre, rectificari, capitol, subcapitol, articol, alineat
 ---
+<!-- slice: 0087, 0075-00 -->
 <!-- capture: clasificatii | caption: Fereastra «Clasificații bugetare» | goto: menu:clasificatii | prepare: Alegeți în arbore un alineat care are buget și rectificări. -->
 
 - **Arborele** din stânga: Capitol › Subcapitol › Articol › Alineat, cu denumirile alături.
@@ -20,6 +21,7 @@ keywords: clasificatii, buget, trimestre, rectificari, capitol, subcapitol, arti
 > Data unei rectificări trebuie să fie în anul de lucru.
 
 ## Clasificații noi
+<!-- slice: 0087 -->
 
 Semnul **«+»** din josul arborelui deschide fereastra de adăugare: bifezi sursele / sectoarele,
 apoi clasificațiile funcționale și economice. Se pot alege doar surse / sectoare pe care unitatea

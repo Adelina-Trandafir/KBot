@@ -33,7 +33,7 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
 | Topics (Markdown, one file = one topic) | `src/KBot.App/HelpContent/<part>/**/*.md` |
 | Guided tours | `src/KBot.App/HelpContent/tours/*.md` |
 | Pictures | `src/KBot.App/HelpContent/img/<capture-id>.png` |
-| Authoring syntax (headers, captures, tours) | `src/KBot.App/HelpContent/README.md` |
+| Authoring syntax (headers, captures, source tags, tours) | `src/KBot.App/HelpContent/README.md` |
 | Static checker | `tools/HelpCheck/Check-Help.ps1` |
 | Engine | `src/KBot.App/Help/` (below) |
 | Seam used by the controls | `src/KBot.Theming/KBotHelp.vb` (`IKBotHelpProvider`) |
@@ -83,6 +83,9 @@ operator sees and you are asked to cover it).
    `.Designer.vb` (`.Text`, `SetToolTipHeader/Text`, `HeaderText`). Messages: `KBotMessage.Show`
    strings. States: `DdfRevisionStates.Label`. Quote on-screen text exactly, in «».
 4. **Edit the topics:**
+   - **every section you write or change gets the slice that decided it** in its hidden
+     `<!-- slice: ... -->` tag (under the `##` heading; the header tag for the text before the
+     first `##`; tour steps too). Syntax: `HelpContent/README.md` «Source tags»;
    - changed behaviour → rewrite the paragraph; renamed button → rename it everywhere
      (`grep` the old caption);
    - a new window or view → a new topic (or a section in the nearest one) AND its type name in
@@ -109,7 +112,10 @@ operator sees and you are asked to cover it).
 
 ### What a feature slice does (when it is NOT a help task)
 
-In its worklog under «left unverified or deferred», and in the 0000 Open threads line «Ajutor de
+**Rule (operator, 30.09.2026): ANY change to the visual experience must also be recorded in the
+help and must reference the slice number.** So a feature slice that changes what the operator
+sees updates the help itself, as a `0000-NN`, with its own slice number in the source tags.
+Only when that cannot be done in the same task: in its worklog under «left unverified or deferred», and in the 0000 Open threads line «Ajutor de
 actualizat», name the topic ids (and capture ids) the change makes stale. One line is enough, e.g.
 `0098: contabil.vederi.plati (noua coloana «Cont»), captura plati de refacut`.
 

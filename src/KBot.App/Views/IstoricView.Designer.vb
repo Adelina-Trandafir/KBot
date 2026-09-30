@@ -149,8 +149,6 @@ Partial Class IstoricView
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
         tree.FooterHeight = 40
         tree.FooterIconSize = New Size(24, 24)
-        tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
-        tree.FooterRightIconTooltip = "Reîncarcă istoricul angajamentului de la server."
         tree.FooterTextAlign = ContentAlignment.MiddleRight
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderBackStyle = Global.KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal

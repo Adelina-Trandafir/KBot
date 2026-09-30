@@ -30,6 +30,19 @@ Public NotInheritable Class HelpLibrary
 
     Friend Const ToursFolderName As String = "tours"
 
+    ''' <summary>
+    ''' Slice 0000-13: the source tag, one line <c>&lt;!-- slice: 0072, 0097 --&gt;</c> under every
+    ''' section, naming the slices that decided what the section says. It is for the maintainer
+    ''' only: it is taken out when the file is read, so no page, tour bubble, search or exported
+    ''' manual ever carries it.
+    ''' </summary>
+    Friend Shared ReadOnly SourceTagPattern As New Regex("(?m)^[ \t]*<!--\s*slice:[^\n]*?-->[ \t]*(\n|$)", RegexOptions.Compiled)
+
+    ''' <summary>The text without its source tags (see <see cref="SourceTagPattern"/>).</summary>
+    Friend Shared Function StripSourceTags(text As String) As String
+        Return SourceTagPattern.Replace(text, String.Empty)
+    End Function
+
     Private Shared Function IsTourFile(root As String, file As String) As Boolean
         Dim folder As String = Path.GetFullPath(Path.Combine(root, ToursFolderName)) & Path.DirectorySeparatorChar
         Return Path.GetFullPath(file).StartsWith(folder, StringComparison.OrdinalIgnoreCase)
@@ -197,7 +210,7 @@ Public NotInheritable Class HelpLibrary
         If topic.Id.Length = 0 Then Throw New ArgumentException("header has no 'id'")
         If topic.Title.Length = 0 Then Throw New ArgumentException("header has no 'title'")
 
-        topic.Body = String.Join(vbLf, lines, i, lines.Length - i).Trim()
+        topic.Body = StripSourceTags(String.Join(vbLf, lines, i, lines.Length - i)).Trim()
         Return topic
     End Function
 

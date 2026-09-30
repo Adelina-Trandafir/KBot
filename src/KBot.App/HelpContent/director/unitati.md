@@ -6,6 +6,7 @@ order: 20
 parent: director
 keywords: unitate, alta unitate, autentificare, conectare, schimbare unitate, parola
 ---
+<!-- slice: 0081-06 -->
 Lista arată documentele din **toate** unitățile tale, dar K-BOT lucrează, la un moment dat, pe o
 **singură** unitate: cea aleasă la conectare. Unitatea de acum se vede în colțul din stânga jos,
 lângă numele tău.
@@ -22,6 +23,7 @@ Lista rămâne aceeași: poți trece de la o unitate la alta oricât, iar fiecar
 conectare.
 
 ## Mesaje posibile
+<!-- slice: 0081-06 -->
 
 | Mesaj | Ce faci |
 |-------|---------|

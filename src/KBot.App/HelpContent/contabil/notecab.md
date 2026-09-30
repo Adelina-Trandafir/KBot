@@ -7,11 +7,13 @@ parent: contabil
 screens: CabNoteForm, CabNoteReceiptForm, NoteCabView, CabNoteVizualizarePage, CabNoteDocumentPage
 keywords: operatiuni necorelate, necorectate, errrrrrrrrr, nota contabila, corectie cab, f1135
 ---
+<!-- slice: 0084, 0088 -->
 Când FOREXE nu poate lega o plată de un angajament, o arată în tabelul **«Operațiuni
 necorectate»** de pe pagina de start, cu angajamentul **«ERRRRRRRRRR»**. K-BOT citește tabelul
 la fiecare conectare și te ajută să faci **nota contabilă de corecție CAB** (formularul F1135).
 
 ## Unde le găsești
+<!-- slice: 0084, 0088 -->
 
 - Imediat după conectarea la FOREXE, dacă sunt operațiuni noi, se deschide singură fereastra de
   corectare.
@@ -21,6 +23,7 @@ la fiecare conectare și te ajută să faci **nota contabilă de corecție CAB**
 <!-- capture: operatiuni-necorelate | caption: Fereastra de corectare a operațiunilor necorelate | goto: menu:operatiuni_necorelate | prepare: E nevoie de cel puțin o operațiune necorelată în baza unității. -->
 
 ## Cum faci nota
+<!-- slice: 0088 -->
 
 1. Pentru **fiecare** operațiune alegi **angajamentul** și **indicatorul** căruia îi aparține.
    Un rând complet primește o bifă.
@@ -32,7 +35,10 @@ la fiecare conectare și te ajută să faci **nota contabilă de corecție CAB**
 «Ieșire» nu salvează nimic în plus: operațiunile rămân în K-BOT și le reiei data viitoare.
 
 ## Vederea «Note corecție»
+<!-- slice: 0088, 0097, 0000-14 -->
 
+Apare doar pe un angajament pentru care s-a făcut cel puțin o notă de corecție (altfel e gri).
+Lupa din capul arborelui caută o notă; butonul de strângere din subsol («Note») îngustează arborele.
 Arată notele care privesc angajamentul selectat: arborele cu notele, rândurile lor și pagina
 **Document**, unde documentul se generează cât timp nu e semnat și se descarcă după ce e semnat.
 

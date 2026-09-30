@@ -7,6 +7,7 @@ parent: contabil.forexe
 screens: BrowserView, IstoricIntervalForm
 keywords: browser, pagina forexe, deschide angajament
 ---
+<!-- slice: 0070, 0074 -->
 Cât timp ești conectat la FOREXE, bara de vederi are **Browser FOREXE**: pagina FOREXE a
 robotului, direct în fereastra K-BOT.
 
@@ -20,6 +21,7 @@ robotului, direct în fereastra K-BOT.
 > Pagina este FOREXE-ul real: ce salvezi aici se salvează în FOREXE.
 
 ## Ce face K-BOT după o salvare făcută în pagină
+<!-- slice: 0073, 0076 -->
 
 K-BOT urmărește pagina. Când salvezi în ea **un angajament nou**, **o recepție** sau **o
 rezervare**, K-BOT preia singur modificarea, fără să mai apeși iconița de descărcare:

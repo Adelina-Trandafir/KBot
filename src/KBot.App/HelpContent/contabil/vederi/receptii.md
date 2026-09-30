@@ -7,6 +7,7 @@ parent: contabil.vederi
 screens: ReceptiiView
 keywords: receptii, antet, diferenta, asocieri, legaturi, instantanee
 ---
+<!-- slice: 0015, 0015-03, 0065 -->
 Recepțiile angajamentului, cu detaliul lor pe clasificații.
 
 <!-- capture: receptii | caption: Vederea «Recepții» | goto: view:receptii | prepare: Selectați un angajament cu recepții în mai multe luni. -->
@@ -21,6 +22,7 @@ Recepțiile angajamentului, cu detaliul lor pe clasificații.
 <!-- capture: receptii-eticheta | caption: Eticheta cu diferența recepții – plăți | goto: view:receptii | prepare: Țineți mouse-ul pe o lună din arborele de recepții până apare eticheta. -->
 
 ## Asocierile, oricând
+<!-- slice: 0048-04 -->
 
 Iconița din **dreapta, sus**, a arborelui deschide fereastra **Asocieri** pentru angajamentul
 selectat, ca să corectezi unde e așezat fiecare instantaneu din istoric față de recepții — vezi
@@ -31,6 +33,11 @@ selectat, ca să corectezi unde e așezat fiecare instantaneu din istoric față
 După salvare, recepțiile se reîncarcă.
 
 ## Subsolul arborelui
+<!-- slice: 0060, 0062, 0000-14 -->
 
-- **dreapta** — reîmprospătează recepțiile din FOREXE; te întreabă întâi care recepții.
-- **stânga** — reface din istoric recepțiile care lipsesc.
+- **dreapta** — reîmprospătează recepțiile din FOREXE; întâi alegi care, în fereastra «Ce recepții
+  reîmprospătez?» — [Descărcarea unui angajament](topic:contabil.forexe.descarcare).
+- **stânga** — reface din istoric instantaneele și liniile de recepție care lipsesc.
+
+În capul arborelui: **lupa** caută, iar iconița din dreapta deschide fereastra Asocieri (mai sus).
+Butoanele comune: [Arborii și tabelele](topic:contabil.liste).

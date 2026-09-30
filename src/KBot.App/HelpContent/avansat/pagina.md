@@ -7,6 +7,7 @@ parent: avansat
 screens: SetariPaginaView, RegulaPaginaForm
 keywords: pagina forexe, css, stil, reguli, selector, meniu lateral, latime pagina, implicite
 ---
+<!-- slice: 0073-01 -->
 K-BOT poate schimba felul în care arată pagina FOREXE din browserul lui: ascunde meniul lateral
 cât e deschis un angajament, lărgește pagina, readuce textul la mărimea normală. Aceste schimbări
 sunt **reguli de stil (CSS)** și se țin în pagina **Pagina FOREXE** din Setări.
@@ -14,6 +15,7 @@ sunt **reguli de stil (CSS)** și se țin în pagina **Pagina FOREXE** din Setă
 <!-- capture: avansat-pagina | caption: Setări › Pagina FOREXE | goto: setari:pagina -->
 
 ## Lista regulilor
+<!-- slice: 0073-01 -->
 
 Fiecare rând e o regulă:
 
@@ -29,6 +31,7 @@ Rândul ales se editează în dreapta. **Nimic nu se aplică până la «Salveaz
 scrie regulile și le trimite în pagina FOREXE deschisă.
 
 ## Butoanele
+<!-- slice: 0073-01 -->
 
 - **Regulă nouă...** — deschide arborele elementelor paginii FOREXE deschise. Un clic pe un element
   îi pune selectorul și stilul în câmpuri și îl **încadrează în pagina FOREXE**, ca să vezi ce ai
@@ -45,6 +48,7 @@ scrie regulile și le trimite în pagina FOREXE deschisă.
 > butoane importante poate încurca operatorul: verifică pagina după «Salvează și aplică».
 
 ## Capturile pentru documente
+<!-- slice: 0081-05 -->
 
 Robotul face singur capturile de ecran cerute de ghidul Ministerului Finanțelor pentru
 documentele de fundamentare și ordonanțări. În pagina **FOREXE** din Setări alegi dacă aceste

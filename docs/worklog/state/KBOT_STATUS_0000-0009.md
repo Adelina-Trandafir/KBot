@@ -29,10 +29,13 @@ slice number. Worklogs: `SLICE-0000-NN-<slug>.md`.
 | 0000-10 | **Semnarea ORD refăcută pe macheta A1.0.11** — validare → semnătura 1 → validare → semnătura 2 → (CFP) → ordonator; «Alte Avize», «Verificat/Avizat», «Anulare Validare»; fără ORDNT.xml la validare | GATA (text; build **0 avertismente, 0 erori**; verificarea fără erori) / de citit de operator | `SLICE-0000-10-ord-a1-0-11.md` | Înlocuiește descrierea din 0000-09 (era macheta veche A1.0.08). Din `Surse/ETAPE ORDONANTARE/`; `Etapa3_xdp.xml` = copie a lui Etapa1. Serverul servește A1.0.11 (confirmat). Etapa 1 doar cu col. 4 = fundătură (starea de după semnătura 1 nu se salvează); tabelul complet înaintea semnăturii 1. |
 | 0000-11 | **Cinci tururi noi**: Ordonanțare, Recepții, Plăți, Extrase de cont, Setări (11 tururi în total) | GATA (text; build **0 avertismente, 0 erori**; verificarea fără erori) / nevăzut pe ecran | `SLICE-0000-11-tururi-noi.md` | Fără tur pentru editorul ORD și Asocieri (ferestre modale). Corectat în trecere: schimbarea parolei e pe pagina «Informații», nu «Autentificare». |
 | 0000-12 | **Fereastra Asocieri, explicată pe larg** — secțiune nouă (de ce există, fereastra pe părți, pas cu pas, cazuri speciale) + `tur-asocieri` (8 pași, pornit din fereastră) | GATA (text; build **0 avertismente, 0 erori**; verificarea fără erori) / de citit de operator | `SLICE-0000-12-asocieri.md` | Din `FUNDAMENT_Asociere_Receptii.md` + `AsociereForm`. F14 (oprit) și regula datei (retrasă) lăsate afară. Turul merge doar pornit cu fereastra deschisă (fereastră modală). |
+| 0000-13 | **Sursa fiecărei explicații + ajutorul pentru 0097** — eticheta ascunsă `<!-- slice: … -->` sub fiecare secțiune și pas de tur (222, cât s-a putut stabili), scoasă la citire de motor, verificată de `Check-Help.ps1`; regula nouă «orice schimbare vizuală intră în ajutor, cu numărul feliei» (CLAUDE.md, CODE_WORKFLOW, HELP_SYSTEM); fereastra «Ce recepții reîmprospătez?» la descărcare, unitatea din bara de titlu, Setări › Autentificare, sesiunea expirată, rădăcinile și ștergerile ORD/DDF | GATA (build **0 avertismente, 0 erori**; verificarea fără erori, acoperire «(none)») / de citit de operator | `SLICE-0000-13-sursa-explicatiilor-si-0097.md` | Etichetele vechi sunt «cel mai bun efort». Capturi noi: `unitate-selector`, `setari-autentificare`; de refăcut: `ord`, `ddf-vedere`. |
+| 0000-14 | **Documentul semnat nu se mai generează niciodată** (cod: `SigningMessages`, `OrdView`, `DdfView` — refuz în loc de întrebare) + **DDF după trimitere** corectat (B în documentul semnat pe A, 0078-06) + «încărcat» / «preluat» + subiect nou `contabil.liste` (butoanele din capul și subsolul arborilor și tabelelor) și butoanele fiecărei vederi | GATA (build **0 avertismente, 0 erori**; verificarea fără erori) / de citit de operator | `SLICE-0000-14-semnat-nu-se-regenereaza-si-butoanele-listelor.md` | Trei iconițe de subsol fără acțiune (Plăți, Istoric, DDF «+») — scoase din ajutor, decizia operatorului. |
+| 0000-15 | **Iconițele de subsol fără acțiune scoase** (Plăți «Descarcă din CAB», Istoric «Reîncarcă», DDF «+ Adaugă») + starea «PDF final — de semnat B» (fost «… A și B») | GATA (build **0 avertismente, 0 erori**; verificarea fără erori) / nevăzut pe ecran | `SLICE-0000-15-iconite-moarte-si-starea-pdf-final.md` | Designer editat de mână. Capturi de refăcut: `plati`, `istoric`, `ddf-vedere`. |
 
 ### Ajutorul e la zi până la
 
-**30.09.2026 — codul de azi, ultima felie din index: 0096** (inclusiv 0095-02). Textul a fost scris
+**30.09.2026 — codul de azi, până la felia 0097 inclusiv** (0000-15). Textul a fost scris
 din codul curent, nu din planuri. Următoarea actualizare pornește de la feliile de după 0096 și de
 la lista de mai jos (`docs/HELP_SYSTEM.md` §4). Mută acest reper la fiecare 0000-NN.
 
@@ -40,14 +43,7 @@ la lista de mai jos (`docs/HELP_SYSTEM.md` §4). Mută acest reper la fiecare 00
 
 - **Ajutor de actualizat** (feliile de funcționalitate adaugă aici ce subiecte / capturi au
   învechit, ex. `0098: contabil.vederi.plati — coloana nouă «Cont»; captura plati de refăcut`):
-  - `0097: contabil.vederi.ord` — rădăcina «Toate ordonanțările», ștergere pe lună / toate, fără
-    meniu pe ordonanțarea semnată; `contabil.ddf`, `contabil.ddf.semnare` — rădăcina «Toate
-    reviziile», «Șterge documentul (TOATE reviziile)», revizia semnată nu se mai modifică/șterge;
-    `contabil.fereastra` — selectorul de unitate din bara de titlu, «Note corecție» doar cu note;
-    `contabil.notecab`; `contabil.autentificare` — bifa «Ține minte parola», reautentificarea
-    tăcută; `contabil.setari` — secțiunea nouă din «Autentificare». Tururi: `tur-ord`, `tur-ddf`,
-    `tur-setari`. Capturi de refăcut: arborii ORD/DDF, bara de titlu, fereastra de autentificare,
-    Setări → Autentificare.
+  - (nimic deschis; 0097 acoperită în 0000-13)
 
 - **0000-01** — exportul manualului neapăsat pe ecran; fereastra Director nevăzută; tema întunecată nevăzută.
 - **Observat în trecere:** `000_DEMO` nu are tabela `FX_NoteCAB_Corectii` (eroare 1146 la fiecare pornire, `RefreshUncorrelatedMarkAsync`).

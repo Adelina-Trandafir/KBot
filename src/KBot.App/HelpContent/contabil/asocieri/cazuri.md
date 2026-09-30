@@ -7,10 +7,12 @@ parent: contabil.asocieri
 screens: AsociereForm.btnReseteaza, AsociereForm.btnRenunta, AsociereForm.ntfMesaj
 keywords: fara schimbare, nu consemneaza nicio schimbare, randul de stergere, receptie stearsa, receptie noua, reconstituita, legatura blocata, golește asezarile, renunta, lantul nu se inchide
 ---
+<!-- slice: 0048-04, 0061 -->
 Toate comenzile de mai jos sunt în **meniul de clic dreapta** al unui instantaneu (sau al unui grup
 de instantanee alese cu Ctrl / Shift).
 
 ## O salvare fără nicio schimbare — «Nu consemnează nicio schimbare»
+<!-- slice: 0048-04, 0064 -->
 
 Cineva a deschis o recepție pe site și a salvat-o fără să schimbe nimic. Istoricul a primit un
 instantaneu întreg, cu **aceleași cifre** ca salvarea de dinainte. Un astfel de instantaneu nu spune
@@ -28,6 +30,7 @@ reală a **altei** recepții care are întâmplător aceeași valoare. Tu știi 
 > Când ai de ales între cele două, alege «fără schimbare».
 
 ## O recepție ștearsă pe site — «Este rândul de ștergere»
+<!-- slice: 0048-04, 0059-02 -->
 
 Ștergerea unei recepții lasă în istoric un rând «Stergere receptie», cu valoarea pe care o avea
 recepția atunci. Acela e **ultimul** instantaneu din lanțul ei:
@@ -40,6 +43,7 @@ recepția atunci. Acela e **ultimul** instantaneu din lanțul ei:
 O recepție ștearsă rămâne în socoteală pentru plățile **dinaintea** ștergerii și iese din ea după.
 
 ## O recepție care nu mai există nicăieri — «Începe o recepție nouă»
+<!-- slice: 0059, 0059-02, 0062 -->
 
 Dacă o recepție a fost creată **și** ștearsă pe site înainte ca K-BOT să fi descărcat vreodată
 angajamentul, ea nu apare în lista recepțiilor, dar instantaneele ei sunt în istoric. Pentru ele:
@@ -60,12 +64,14 @@ salvează.
 > Marcajul rămâne, ca o cifră care nu se leagă peste luni să poată fi urmărită până aici.
 
 ## Legături blocate
+<!-- slice: 0048-04, 0058-02 -->
 
 Un instantaneu pe care se sprijină deja o **ordonanțare** sau o **plată** se vede stins și nu se mai
 poate muta; clicul dreapta spune «Această legătură nu se mai poate modifica» și motivul. Ca să-l
 muți, trebuie întâi schimbată ordonanțarea care îl folosește.
 
 ## Refuzuri la tragere
+<!-- slice: 0048-07, 0065 -->
 
 - **«Instantaneul pierde indicatorii ..., prezenți mai devreme în lanțul recepției. Un indicator
   poate cădea la zero, dar nu poate dispărea.»** — instantaneul nu e al acestei recepții, sau un
@@ -80,6 +86,7 @@ muți, trebuie întâi schimbată ordonanțarea care îl folosește.
 - **«Instantaneul este deja pe această recepție.»** — nimic de făcut.
 
 ## După o descărcare: salvare sau renunțare
+<!-- slice: 0055, 0058 -->
 
 - **Salvarea** se poate face abia când fiecare instantaneu adus de descărcare are o hotărâre:
   așezat, «fără schimbare» sau pe o recepție nouă.
@@ -92,6 +99,7 @@ muți, trebuie întâi schimbată ordonanțarea care îl folosește.
 închiderea fără salvare pierde doar mutările tale nesalvate (K-BOT te întreabă).
 
 ## Dacă altcineva a lucrat între timp
+<!-- slice: 0048-04 -->
 
 Dacă între deschiderea ferestrei și salvare altcineva a modificat recepțiile aceluiași angajament,
 K-BOT nu scrie nimic și îți spune; închide și deschide din nou fereastra.

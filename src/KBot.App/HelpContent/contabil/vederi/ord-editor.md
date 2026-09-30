@@ -7,6 +7,7 @@ parent: contabil.vederi.ord
 screens: OrdEditForm, OrdBeneficiariPage, OrdDocumentePage, OrdAtasamentePage, OrdTextForm
 keywords: editor ordonantare, beneficiari, documente justificative, atasamente, imagini, salveaza ordonantarea, cod fiscal, iban
 ---
+<!-- slice: 0049, 0049-02 -->
 Fereastra **«Ordonanțare de plată»** se deschide la o ordonanțare nouă și la «Modifică
 ordonanțarea».
 
@@ -20,6 +21,7 @@ Dacă la generare ceva lipsește (o clasificație, de exemplu) sau ziua are pest
 avertismentul apare sus, de la început.
 
 ## Beneficiari
+<!-- slice: 0049, 0049-02 -->
 
 - Lista din stânga: beneficiarii ordonanțării. Pentru cel ales vezi și completezi **denumirea,
   codul fiscal, contul IBAN și banca**.
@@ -31,6 +33,7 @@ avertismentul apare sus, de la început.
   IBAN; nebifat, lista arată beneficiarii, iar grila codul SSI.
 
 ## Documente justificative
+<!-- slice: 0049, 0049-02 -->
 
 - Primul rând al listei, **«< TOȚI BENEFICIARII >»**, ține documentele comune întregii
   ordonanțări. Un beneficiar anume arată și documentele lui, și pe cele comune. Cu un singur
@@ -44,6 +47,7 @@ avertismentul apare sus, de la început.
 **Cel puțin un rând text trebuie să existe**, altfel ordonanțarea nu se poate salva.
 
 ## Atașamente
+<!-- slice: 0049 -->
 
 Imaginile atașate ordonanțării:
 
@@ -54,6 +58,7 @@ Imaginile atașate ordonanțării:
 Imaginile se încarcă pe server **după** salvarea ordonanțării.
 
 ## Salvarea
+<!-- slice: 0049, 0049-02 -->
 
 **«Salvează ordonanțarea»** verifică întâi tot și, dacă lipsește ceva, spune **toate** problemele
 deodată: data, compartimentul, CUAL, denumirea / codul fiscal / contul unui beneficiar,

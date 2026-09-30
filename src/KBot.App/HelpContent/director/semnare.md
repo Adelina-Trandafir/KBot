@@ -7,6 +7,7 @@ parent: director
 screens: DirectorForm.pnlDocument, DdfView, DdfVizualizarePage, DdfDocumentPage, DdfFisierePage
 keywords: semnare, semnatura, ordonator, adobe, pdf, certificat, aprobat
 ---
+<!-- slice: 0078, 0081-06 -->
 Documentul ales din listă se deschide în dreapta, în aceeași vedere pe care o folosește și
 contabilul pentru documentele de fundamentare. Poți răsfoi paginile ei (conținutul documentului,
 fișierele atașate), dar **nu poți modifica nimic**: la orice comandă de modificare K-BOT răspunde
@@ -15,6 +16,7 @@ fișierele atașate), dar **nu poți modifica nimic**: la orice comandă de modi
 <!-- capture: director-semnare | caption: Documentul deschis pe pagina «Document PDF», gata de semnătura directorului | prepare: În fereastra directorului, selectați un document și deschideți pagina «Document PDF». Faceți poza pe calculatorul directorului și încărcați-o cu «Încarcă». -->
 
 ## Pașii
+<!-- slice: 0078-06, 0081-06 -->
 
 1. Selectează documentul din listă.
 2. Deschide pagina **Document PDF**. Documentul apare în Adobe, chiar în fereastra K-BOT, cu
@@ -28,6 +30,7 @@ fișierele atașate), dar **nu poți modifica nimic**: la orice comandă de modi
 Semnăturile A și B nu se ating: semnătura ta se adaugă lângă ele.
 
 ## Dacă ceva nu merge
+<!-- slice: 0078, 0081-06 -->
 
 - Documentul semnat se păstrează pe calculator până ajunge pe server. Dacă încărcarea nu reușește,
   K-BOT o reîncearcă la următoarea pornire și îți spune ce a rămas neîncărcat.
