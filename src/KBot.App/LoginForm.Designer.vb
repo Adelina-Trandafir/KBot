@@ -26,6 +26,7 @@ Partial Class LoginForm
         txtUser = New Controls.KBotTextField()
         lblPass = New Label()
         txtPass = New Controls.KBotTextField()
+        chkRememberPassword = New CheckBox()
         btnContinue = New Button()
         lblUnit = New Label()
         cboUnit = New Controls.KBotComboBox()
@@ -50,19 +51,21 @@ Partial Class LoginForm
         tlpBody.Controls.Add(txtUser, 0, 5)
         tlpBody.Controls.Add(lblPass, 0, 6)
         tlpBody.Controls.Add(txtPass, 0, 7)
-        tlpBody.Controls.Add(btnContinue, 0, 8)
-        tlpBody.Controls.Add(lblUnit, 0, 9)
-        tlpBody.Controls.Add(cboUnit, 0, 10)
-        tlpBody.Controls.Add(btnBack, 0, 11)
-        tlpBody.Controls.Add(btnLogin, 1, 11)
-        tlpBody.Controls.Add(ntfError, 0, 12)
+        tlpBody.Controls.Add(chkRememberPassword, 0, 8)
+        tlpBody.Controls.Add(btnContinue, 0, 9)
+        tlpBody.Controls.Add(lblUnit, 0, 10)
+        tlpBody.Controls.Add(cboUnit, 0, 11)
+        tlpBody.Controls.Add(btnBack, 0, 12)
+        tlpBody.Controls.Add(btnLogin, 1, 12)
+        tlpBody.Controls.Add(ntfError, 0, 13)
         tlpBody.Dock = DockStyle.Fill
         tlpBody.GrowStyle = TableLayoutPanelGrowStyle.FixedSize
         tlpBody.Location = New Point(1, 69)
         tlpBody.Margin = New Padding(4, 5, 4, 5)
         tlpBody.Name = "tlpBody"
         tlpBody.Padding = New Padding(40, 13, 40, 17)
-        tlpBody.RowCount = 14
+        tlpBody.RowCount = 15
+        tlpBody.RowStyles.Add(New RowStyle())
         tlpBody.RowStyles.Add(New RowStyle())
         tlpBody.RowStyles.Add(New RowStyle())
         tlpBody.RowStyles.Add(New RowStyle())
@@ -180,8 +183,24 @@ Partial Class LoginForm
         txtPass.Size = New Size(428, 60)
         txtPass.TabIndex = 7
         tips.SetToolTipHeader(txtPass, "Parolă")
-        tips.SetToolTipText(txtPass, "Parola contului." & vbLf & "Se trimite criptat; nu se păstrează pe acest calculator.")
+        tips.SetToolTipText(txtPass, "Parola contului." & vbLf & "Se trimite criptat; nu se păstrează pe acest calculator" & vbLf & "decât dacă bifați «Ține minte parola».")
         txtPass.UseSystemPasswordChar = True
+        '
+        ' chkRememberPassword
+        '
+        chkRememberPassword.AutoSize = True
+        tlpBody.SetColumnSpan(chkRememberPassword, 2)
+        chkRememberPassword.Dock = DockStyle.Top
+        chkRememberPassword.Location = New Point(44, 468)
+        chkRememberPassword.Margin = New Padding(4, 0, 4, 17)
+        chkRememberPassword.Name = "chkRememberPassword"
+        chkRememberPassword.Size = New Size(428, 29)
+        chkRememberPassword.TabIndex = 8
+        chkRememberPassword.Text = "Ține minte parola până la repornirea calculatorului"
+        tips.SetToolTipHeader(chkRememberPassword, "Ține minte parola")
+        tips.SetToolTipText(chkRememberPassword, "Parola se păstrează criptată pentru contul Windows curent," & vbLf & "până la repornirea calculatorului sau ieșirea din Windows." & vbLf & "Debifată, parola memorată se șterge.")
+        chkRememberPassword.UseVisualStyleBackColor = True
+        chkRememberPassword.Visible = False
         '
         ' btnContinue
         '
@@ -193,7 +212,7 @@ Partial Class LoginForm
         btnContinue.Margin = New Padding(4, 0, 4, 10)
         btnContinue.Name = "btnContinue"
         btnContinue.Size = New Size(428, 63)
-        btnContinue.TabIndex = 8
+        btnContinue.TabIndex = 9
         btnContinue.Text = "Continuă"
         tips.SetToolTipHeader(btnContinue, "Continuă")
         tips.SetToolTipText(btnContinue, "Verifică utilizatorul și parola, apoi trece la alegerea unității.")
@@ -208,7 +227,7 @@ Partial Class LoginForm
         lblUnit.Margin = New Padding(4, 10, 4, 5)
         lblUnit.Name = "lblUnit"
         lblUnit.Size = New Size(428, 22)
-        lblUnit.TabIndex = 9
+        lblUnit.TabIndex = 10
         lblUnit.Text = "Selectați unitatea"
         '
         ' cboUnit
@@ -222,7 +241,7 @@ Partial Class LoginForm
         cboUnit.Margin = New Padding(4, 5, 4, 20)
         cboUnit.Name = "cboUnit"
         cboUnit.Size = New Size(428, 42)
-        cboUnit.TabIndex = 10
+        cboUnit.TabIndex = 11
         tips.SetToolTipHeader(cboUnit, "Unitate")
         tips.SetToolTipText(cboUnit, "Unitatea (baza de date) în care vei lucra." & vbLf & "Se poate schimba doar reluând autentificarea.")
         '
@@ -236,7 +255,7 @@ Partial Class LoginForm
         btnBack.Margin = New Padding(4, 0, 9, 0)
         btnBack.Name = "btnBack"
         btnBack.Size = New Size(205, 63)
-        btnBack.TabIndex = 11
+        btnBack.TabIndex = 12
         btnBack.Text = "Înapoi"
         tips.SetToolTipHeader(btnBack, "Înapoi")
         tips.SetToolTipText(btnBack, "Revino la utilizator și parolă, fără să te autentifici.")
@@ -252,7 +271,7 @@ Partial Class LoginForm
         btnLogin.Margin = New Padding(9, 0, 4, 0)
         btnLogin.Name = "btnLogin"
         btnLogin.Size = New Size(205, 63)
-        btnLogin.TabIndex = 12
+        btnLogin.TabIndex = 13
         btnLogin.Text = "Autentificare"
         tips.SetToolTipHeader(btnLogin, "Autentificare")
         tips.SetToolTipText(btnLogin, "Intră în aplicație cu unitatea aleasă.")
@@ -267,7 +286,7 @@ Partial Class LoginForm
         ntfError.Margin = New Padding(4, 10, 4, 5)
         ntfError.Name = "ntfError"
         ntfError.Size = New Size(428, 67)
-        ntfError.TabIndex = 13
+        ntfError.TabIndex = 14
         ntfError.TabStop = False
         ntfError.Visible = False
         '
@@ -320,6 +339,7 @@ Partial Class LoginForm
     Friend WithEvents txtUser As Global.KBot.Controls.KBotTextField
     Friend WithEvents lblPass As Label
     Friend WithEvents txtPass As Global.KBot.Controls.KBotTextField
+    Friend WithEvents chkRememberPassword As CheckBox
     Friend WithEvents btnContinue As Button
     Friend WithEvents lblUnit As Label
     Friend WithEvents cboUnit As Global.KBot.Controls.KBotComboBox

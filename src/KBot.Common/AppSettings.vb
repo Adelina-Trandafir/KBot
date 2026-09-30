@@ -8,7 +8,7 @@ Imports System.Text.Json.Serialization
 
 ''' <summary>
 ''' The operator's application switches (slice 0072): what the settings window
-''' («Setări») reads and writes. One JSON file per Windows user,
+''' («Setari») reads and writes. One JSON file per Windows user,
 ''' <c>%APPDATA%\AVACONT\KBot\app_settings.json</c>, next to <c>settings.json</c>
 ''' (folders) and <c>last_login.json</c>.
 '''
@@ -56,12 +56,12 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property VerboseLogging As Boolean?
 
-    ''' <summary>The «Arată jurnal» row of the shell's options menu is offered.</summary>
+    ''' <summary>The «Arata jurnal» row of the shell's options menu is offered.</summary>
     Public Property LogViewerEnabled As Boolean = True
 
     ' ── FOREXE ───────────────────────────────────────────────────────────
 
-    ''' <summary>The «Arată browserul» button of the FOREXE band is offered while connected.</summary>
+    ''' <summary>The «Arata browserul» button of the FOREXE band is offered while connected.</summary>
     Public Property ShowBrowserButton As Boolean = True
 
     ''' <summary>
@@ -104,9 +104,9 @@ Public NotInheritable Class AppSettings
 
     ''' <summary>
     ''' How the FOREXE page must look in the captures K-BOT takes for the two documents
-    ''' (operator, 28.09.2026): True = «Pagina originală» - the operator's own CSS rules are
+    ''' (operator, 28.09.2026): True = «Pagina originala» - the operator's own CSS rules are
     ''' lifted for the picture, so it shows the page as FOREXE serves it (which is what the
-    ''' ALOP guide's own examples show, p.22 and p.41); False = «Așa cum se vede». Either
+    ''' ALOP guide's own examples show, p.22 and p.41); False = «Asa cum se vede». Either
     ''' way the picture never carries K-BOT's menu, its veil or the dark mode.
     ''' </summary>
     Public Property ForexeCapturaPaginaOriginala As Boolean = True
@@ -323,6 +323,61 @@ Public NotInheritable Class AppSettings
     ''' <summary>The login form pre-selects the unit that user picked last time.</summary>
     Public Property RememberLastUnit As Boolean = True
 
+    ''' <summary>
+    ''' Slice 0097: when the server session expires during work, the login window is shown again
+    ''' (True) -- or K-BOT always logs back in by itself with the password of the last login (False).
+    ''' Only an operator with the advanced options may turn it off; without them it is always on
+    ''' (<see cref="ReloginPromptInEffect"/>).
+    ''' </summary>
+    Public Property ReloginPrompt As Boolean = True
+
+    ''' <summary>
+    ''' Slice 0097: the login window comes back at most once every so many minutes; an expiry
+    ''' sooner than that after the last login typed in the window is covered silently. Without the
+    ''' advanced options it is kept between <see cref="ReloginMinutesMin"/> and
+    ''' <see cref="ReloginMinutesMax"/> (once every 10 minutes .. once an hour).
+    ''' </summary>
+    Public Property ReloginMinutes As Integer = 30
+
+    ''' <summary>Slice 0097: the choices offered for <see cref="ReloginMinutes"/> to everybody.</summary>
+    Public Shared ReadOnly Property ReloginMinuteChoices As IReadOnlyList(Of Integer) =
+        New Integer() {10, 15, 20, 30, 45, 60}
+
+    ''' <summary>Slice 0097: the extra choices offered with the advanced options.</summary>
+    Public Shared ReadOnly Property ReloginMinuteChoicesAdvanced As IReadOnlyList(Of Integer) =
+        New Integer() {5, 10, 15, 20, 30, 45, 60, 90, 120, 240, 480}
+
+    Public Const ReloginMinutesMin As Integer = 10
+    Public Const ReloginMinutesMax As Integer = 60
+
+    ''' <summary>
+    ''' Slice 0097: the login window shows «Tine minte parola pana la repornirea calculatorului».
+    ''' The box itself is shown only with the advanced options on (<see cref="RememberPasswordInEffect"/>).
+    ''' </summary>
+    Public Property RememberPasswordOption As Boolean = True
+
+    ''' <summary>Slice 0097: <see cref="ReloginPrompt"/> as it applies now.</summary>
+    Public ReadOnly Property ReloginPromptInEffect As Boolean
+        Get
+            Return ReloginPrompt OrElse Not AdvancedOptions
+        End Get
+    End Property
+
+    ''' <summary>Slice 0097: <see cref="ReloginMinutes"/> as it applies now.</summary>
+    Public ReadOnly Property ReloginMinutesInEffect As Integer
+        Get
+            If AdvancedOptions Then Return Math.Max(1, ReloginMinutes)
+            Return Math.Min(ReloginMinutesMax, Math.Max(ReloginMinutesMin, ReloginMinutes))
+        End Get
+    End Property
+
+    ''' <summary>Slice 0097: the «Tine minte parola» box is on the login window.</summary>
+    Public ReadOnly Property RememberPasswordInEffect As Boolean
+        Get
+            Return AdvancedOptions AndAlso RememberPasswordOption
+        End Get
+    End Property
+
     ' ── Store ────────────────────────────────────────────────────────────
 
     Private Shared ReadOnly _gate As New Object()
@@ -437,6 +492,9 @@ Public NotInheritable Class AppSettings
             .TreeSurseColumnWidth = TreeSurseColumnWidth,
             .RememberLastLogin = RememberLastLogin,
             .RememberLastUnit = RememberLastUnit,
+            .ReloginPrompt = ReloginPrompt,
+            .ReloginMinutes = ReloginMinutes,
+            .RememberPasswordOption = RememberPasswordOption,
             .ExtraseViewHeaderColumns = ExtraseViewHeaderColumns?.ToList(),
             .ExtraseViewOperationColumns = ExtraseViewOperationColumns?.ToList(),
             .ExtraseWindowHeaderColumns = ExtraseWindowHeaderColumns?.ToList(),
@@ -494,6 +552,9 @@ Public NotInheritable Class AppSettings
         End If
         If dto.RememberLastLogin.HasValue Then s.RememberLastLogin = dto.RememberLastLogin.Value
         If dto.RememberLastUnit.HasValue Then s.RememberLastUnit = dto.RememberLastUnit.Value
+        If dto.ReloginPrompt.HasValue Then s.ReloginPrompt = dto.ReloginPrompt.Value
+        If dto.ReloginMinutes.HasValue AndAlso dto.ReloginMinutes.Value > 0 Then s.ReloginMinutes = dto.ReloginMinutes.Value
+        If dto.RememberPasswordOption.HasValue Then s.RememberPasswordOption = dto.RememberPasswordOption.Value
         ' A list missing from the file stays Nothing (= defaults); a present one is kept as the
         ' operator saved it and cleaned only when read (ExtraseColumnsFor).
         s.ExtraseViewHeaderColumns = dto.ExtraseViewHeaderColumns?.ToList()
@@ -537,6 +598,9 @@ Friend NotInheritable Class AppSettingsDto
     Public Property TreeSurseColumnWidth As Integer?
     Public Property RememberLastLogin As Boolean?
     Public Property RememberLastUnit As Boolean?
+    Public Property ReloginPrompt As Boolean?
+    Public Property ReloginMinutes As Integer?
+    Public Property RememberPasswordOption As Boolean?
     Public Property ExtraseViewHeaderColumns As List(Of String)
     Public Property ExtraseViewOperationColumns As List(Of String)
     Public Property ExtraseWindowHeaderColumns As List(Of String)

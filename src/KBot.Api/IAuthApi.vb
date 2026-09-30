@@ -25,6 +25,14 @@ Public Interface IAuthApi
 
     Function SaveLastSsAsync(token As String, ss As String, ct As CancellationToken) As Task
 
+    ' Slice 0097 -- the unit selector in the caption bar, both on the bearer token:
+    '   GetMyUnitsAsync -> every unit of the logged-in user (DC, name, CF, role);
+    '   SwitchUnitAsync -> opens another of them; login-shaped answer, old token revoked.
+    Function GetMyUnitsAsync(token As String, ct As CancellationToken) As Task(Of IReadOnlyList(Of UnitInfo))
+
+    Function SwitchUnitAsync(token As String, dc As String, machine As String,
+                             ct As CancellationToken) As Task(Of LoginResult)
+
     ' Slice 0072 -- password change in two steps, both on the bearer token:
     '   RequestPasswordCodeAsync -> the server checks the CURRENT password and e-mails a
     '                               one-time code to the operator's address (the user name);

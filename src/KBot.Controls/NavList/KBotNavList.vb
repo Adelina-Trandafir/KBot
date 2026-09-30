@@ -1131,10 +1131,41 @@ Public NotInheritable Class KBotNavList
     ''' </summary>
     Private Function FlyoutFullWidth(it As KBotNavItem) As Integer
         Dim rail As Integer = Math.Max(1, it.Bounds.Width)
-        Dim ts As Size = TextRenderer.MeasureText(If(it.Text, String.Empty), MeasureFont())
-        Dim w As Integer = rail + ts.Width + ThemeShapes.ScaleDpi(Me, 12)
+        Dim w As Integer = rail + FlyoutTextWidth(If(it.Text, String.Empty)) + ThemeShapes.ScaleDpi(Me, 12) +
+                           FlyoutTextGap()
         If it.Badge > 0 Then w += ThemeShapes.ScaleDpi(Me, 26)
         Return w
+    End Function
+
+    ''' <summary>
+    ''' The gap between the icon band and the caption, and the air kept after it (slice 0097). The
+    ''' old width left the text exactly its measured width, so one pixel of rounding at a scale other
+    ''' than 150% cut it with «…».
+    ''' </summary>
+    Friend Function FlyoutTextGap() As Integer
+        Return ThemeShapes.ScaleDpi(Me, 6)
+    End Function
+
+    ''' <summary>
+    ''' Slice 0097: the caption's width measured the way <c>KBotNavFlyout</c> DRAWS it -- the same
+    ''' flags, on a real device context of this window (not the screen DC <c>MeasureText</c> falls
+    ''' back to without one, which can sit at a different DPI than the monitor under a
+    ''' per-monitor-aware process), and with BOTH fonts the caption can be drawn in (the regular one
+    ''' for an unselected item, the semibold one for the selected item), keeping the wider.
+    ''' </summary>
+    Private Function FlyoutTextWidth(text As String) As Integer
+        If String.IsNullOrEmpty(text) Then Return 0
+        Const flags As TextFormatFlags = TextFormatFlags.Left Or TextFormatFlags.VerticalCenter Or
+                                         TextFormatFlags.SingleLine
+        Dim big As New Size(Integer.MaxValue, Integer.MaxValue)
+        If IsHandleCreated Then
+            Using g As Graphics = CreateGraphics()
+                Return Math.Max(TextRenderer.MeasureText(g, text, Font, big, flags).Width,
+                                TextRenderer.MeasureText(g, text, MeasureFont(), big, flags).Width)
+            End Using
+        End If
+        Return Math.Max(TextRenderer.MeasureText(text, Font, big, flags).Width,
+                        TextRenderer.MeasureText(text, MeasureFont(), big, flags).Width)
     End Function
 
     ''' <summary>
@@ -1298,6 +1329,7 @@ Public NotInheritable Class KBotNavList
             .Radius = ItemRadius(),
             .GradientStrength = _itemGradient,
             .RailWidth = it.Bounds.Width,
+            .TextGap = FlyoutTextGap(),
             .IconSide = IconSide(),
             .PadX = ThemeShapes.ScaleDpi(Me, 12),
             .BadgeHeight = ThemeShapes.ScaleDpi(Me, 18),

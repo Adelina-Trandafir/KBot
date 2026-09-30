@@ -105,6 +105,8 @@ Public NotInheritable Class GetTreeRow
     Public Property ArePartener As Boolean
     Public Property AreOrd As Boolean
     Public Property AreExtrase As Boolean
+    ' Slice 0097: a CAB correction note (FX_NoteCAB_Corectii) corrects an operation on it.
+    Public Property AreNoteCab As Boolean
 End Class
 
 ' Wire DTOs for GET /api/forexe/sumar (vederea Sumar, slice 0011).

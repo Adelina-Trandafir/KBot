@@ -81,6 +81,9 @@ Public Class OrdView
     Private Const MENIU_MODIFICA As String = "modifica"
     Private Const MENIU_STERGE As String = "sterge"
     Private Const MENIU_LOT As String = "lot"
+    ' Slice 0097: delete every ordonantare of a month / of the whole angajament.
+    Private Const MENIU_STERGE_LUNA As String = "sterge-luna"
+    Private Const MENIU_STERGE_TOATE As String = "sterge-toate"
 
     ' Codul angajamentului CERUT ultima dată — stale-guard (identic cu DDF/Plăți/Rezervări).
     Private _requestedCod As String
@@ -159,15 +162,21 @@ Public Class OrdView
     End Sub
 
     ''' <summary>
-    ''' Meniul contextual al arborelui: cele patru puncte de intrare, poarta fiecaruia fiind
-    ''' ce e selectat. «Modifica» si «Sterge» au nevoie de o FRUNZA (o ordonantare anume);
-    ''' «Adauga» si «Generare in lot» au nevoie doar de un angajament incarcat.
+    ''' The tree's context menu. What it offers depends on the node:
+    ''' <list type="bullet">
+    ''' <item>a SIGNED ordonantare (at least one signature, slice 0097): no menu at all -- it is
+    ''' neither edited nor deleted, and «Adauga» / «Generare in lot» go with the rest;</item>
+    ''' <item>an unsigned leaf: add, edit, delete, batch;</item>
+    ''' <item>a month or the «Toate ordonantarile» root: add, batch, and the delete of every
+    ''' ordonantare under it -- offered only when NONE of them is signed.</item>
+    ''' </list>
     ''' </summary>
     Private Sub AratatMeniulContextual(nod As AdvancedTreeControl.TreeItem)
         If String.IsNullOrWhiteSpace(_requestedCod) Then Return
 
         Dim payload As OrdNodePayload = TryCast(If(nod Is Nothing, Nothing, nod.Tag), OrdNodePayload)
         Dim ordonantare As OrdHeaderRow = If(payload Is Nothing, Nothing, payload.Ordonantare)
+        If ordonantare IsNot Nothing AndAlso EsteSemnata(ordonantare) Then Return
 
         Dim intrari As New List(Of CustomPopupItem)()
         intrari.Add(New CustomPopupItem(MENIU_ADAUGA, "&Adaugă ordonanțare…"))
@@ -177,19 +186,43 @@ Public Class OrdView
         End If
         intrari.Add(New CustomPopupItem(MENIU_LOT, "Generare în &lot…"))
 
+        ' A month or the root: the delete of everything under it, only when nothing is signed.
+        Dim grup As List(Of OrdHeaderRow) = If(payload Is Nothing, Nothing, payload.Ordonantari)
+        If ordonantare Is Nothing AndAlso grup IsNot Nothing AndAlso grup.Count > 0 AndAlso
+           Not grup.Any(Function(o) EsteSemnata(o)) Then
+            If payload.IsAll Then
+                intrari.Add(New CustomPopupItem(MENIU_STERGE_TOATE, "Șterge &TOATE ordonanțările"))
+            Else
+                intrari.Add(New CustomPopupItem(MENIU_STERGE_LUNA, "Șterge &TOATE ordonanțările lunii"))
+            End If
+        End If
+
+        Dim eticheta As String = If(payload Is Nothing, String.Empty, payload.Eticheta)
         Dim meniu As New CustomPopup(intrari)
         AddHandler meniu.ItemClicked,
-            Sub(s As Object, ev As CustomPopupItemEventArgs) AplicaComandaDeMeniu(ev.Item.Key, ordonantare)
+            Sub(s As Object, ev As CustomPopupItemEventArgs) AplicaComandaDeMeniu(ev.Item.Key, ordonantare, grup, eticheta)
         meniu.ShowAtCursor(tree)
     End Sub
 
-    Private Sub AplicaComandaDeMeniu(cheie As String, ordonantare As OrdHeaderRow)
+    ''' <summary>
+    ''' At least one signature on the ordonantare (slice 0097): the roles written by the signing
+    ''' upload, or a signed PDF stored on the server.
+    ''' </summary>
+    Friend Shared Function EsteSemnata(o As OrdHeaderRow) As Boolean
+        If o Is Nothing Then Return False
+        Return Not String.IsNullOrWhiteSpace(o.Semnatura) OrElse o.ArePdfSemnat
+    End Function
+
+    Private Sub AplicaComandaDeMeniu(cheie As String, ordonantare As OrdHeaderRow,
+                                     grup As List(Of OrdHeaderRow), eticheta As String)
         Try
             Select Case cheie
                 Case MENIU_ADAUGA : CereComanda(OrdActiune.Adauga)
                 Case MENIU_MODIFICA : CereComanda(OrdActiune.Modifica, ordonantare)
                 Case MENIU_STERGE : CereComanda(OrdActiune.Sterge, ordonantare)
                 Case MENIU_LOT : CereComanda(OrdActiune.Lot)
+                Case MENIU_STERGE_LUNA, MENIU_STERGE_TOATE
+                    CereComandaGrup(OrdComanda.StergereGrup(_requestedCod, grup, eticheta))
                 Case Else
                     ' Fara no-op-uri tacute: o cheie necunoscuta e un defect de programare.
                     Throw New ArgumentException($"Comandă de meniu necunoscută: {cheie}", NameOf(cheie))
@@ -210,6 +243,16 @@ Public Class OrdView
             Return
         End If
         _executaComanda(New OrdComanda(actiune, _requestedCod, ordonantare))
+    End Sub
+
+    ' Slice 0097: the group delete carries its list, so it is built by the caller.
+    Private Sub CereComandaGrup(comanda As OrdComanda)
+        If _executaComanda Is Nothing Then
+            KBotMessage.Show(Me, "Editorul de ordonanțări nu este disponibil în acest context.",
+                            "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        _executaComanda(comanda)
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements IAngajamentView.ViewKey
@@ -461,6 +504,19 @@ Public Class OrdView
             Dim months = ordonantari.GroupBy(Function(o) MonthKeyOf(o.DataOrd)).
                                      OrderBy(Function(g) g.Key)
 
+            ' Slice 0097: root «Toate ordonantarile», like «Tot istoricul» (0095). Clicking it
+            ' shows every line, exactly what the view shows on load.
+            Dim totalSum As Double = ordonantari.Sum(Function(o) o.TotalOrd)
+            Dim icoTot As Image = tree.NodeImage(ICO_LUNA)
+            Dim nodTot As AdvancedTreeControl.TreeItem =
+                tree.AddItem(KEY_TOATE, $"Toate ordonanțările~~~{Money(totalSum)}",
+                             pLeftIconClosed:=icoTot, pLeftIconOpen:=icoTot, pExpanded:=True)
+            nodTot.Tag = New OrdNodePayload(If(_linii, New List(Of OrdLinieRow)()), isRoot:=True,
+                                            ordonantari:=ordonantari, isAll:=True,
+                                            eticheta:="toate ordonanțările angajamentului")
+            nodTot.Bold = True
+            If totalSum < 0 AndAlso palette IsNot Nothing Then nodTot.NodeForeColor = palette.ErrorColor
+
             For Each mg In months
                 Dim monthOrds As List(Of OrdHeaderRow) = mg.ToList()
                 Dim monthSum As Double = monthOrds.Sum(Function(o) o.TotalOrd)
@@ -472,9 +528,10 @@ Public Class OrdView
                 Dim icoLuna As Image = tree.NodeImage(ICO_LUNA)
                 Dim root As AdvancedTreeControl.TreeItem =
                     tree.AddItem(MonthKeyText(mg.Key), $"{MonthYearLabel(mg.Key)}~~~{Money(monthSum)}",
-                                 pLeftIconClosed:=icoLuna, pLeftIconOpen:=icoLuna,
+                                 nodTot, pLeftIconClosed:=icoLuna, pLeftIconOpen:=icoLuna,
                                  pExpanded:=True)
-                root.Tag = New OrdNodePayload(monthLinii, isRoot:=True)
+                root.Tag = New OrdNodePayload(monthLinii, isRoot:=True, ordonantari:=monthOrds,
+                                              eticheta:=MonthDeleteLabel(mg.Key))
                 root.Bold = True
                 ' Roșu doar când PROPRIUL total e negativ (ca la Rezervări/DDF).
                 If monthSum < 0 AndAlso palette IsNot Nothing Then
@@ -822,6 +879,15 @@ Public Class OrdView
         Return value.Value.Year * 100 + value.Value.Month
     End Function
 
+    ' Slice 0097: the key of the «Toate ordonantarile» root. Never parses as a month.
+    Private Const KEY_TOATE As String = "all"
+
+    ' «luna Ianuarie 2026» -- the month in the delete confirmation.
+    Private Shared Function MonthDeleteLabel(monthKey As Integer) As String
+        If monthKey <= 0 Then Return "ordonanțările fără dată"
+        Return $"luna {MonthLabel(monthKey Mod 100)} {monthKey \ 100}"
+    End Function
+
     ' Cheia de nod a rădăcinii: «LA_{yyyy}_{M}» (ca la DDF). Fără dată -> «LA_0_0».
     Private Shared Function MonthKeyText(monthKey As Integer) As String
         If monthKey <= 0 Then Return "LA_0_0"
@@ -919,11 +985,24 @@ Friend NotInheritable Class OrdNodePayload
     Public ReadOnly Property IsRoot As Boolean
     ''' <summary>Ordonanțarea frunzei; Nothing pe o rădăcină de lună.</summary>
     Public ReadOnly Property Ordonantare As OrdHeaderRow
+    ''' <summary>Slice 0097: the ordonantari under a month / the «Toate» root (the targets of the
+    ''' group delete); empty on a leaf.</summary>
+    Public ReadOnly Property Ordonantari As List(Of OrdHeaderRow)
+    ''' <summary>Slice 0097: the «Toate ordonantarile» root.</summary>
+    Public ReadOnly Property IsAll As Boolean
+    ''' <summary>Slice 0097: what the group is called in the delete confirmation.</summary>
+    Public ReadOnly Property Eticheta As String
 
     Public Sub New(linii As List(Of OrdLinieRow), isRoot As Boolean,
-                   Optional ordonantare As OrdHeaderRow = Nothing)
+                   Optional ordonantare As OrdHeaderRow = Nothing,
+                   Optional ordonantari As List(Of OrdHeaderRow) = Nothing,
+                   Optional isAll As Boolean = False,
+                   Optional eticheta As String = Nothing)
         Me.Linii = If(linii, New List(Of OrdLinieRow)())
         Me.IsRoot = isRoot
         Me.Ordonantare = ordonantare
+        Me.Ordonantari = If(ordonantari, New List(Of OrdHeaderRow)())
+        Me.IsAll = isAll
+        Me.Eticheta = If(eticheta, String.Empty)
     End Sub
 End Class

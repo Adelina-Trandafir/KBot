@@ -40,7 +40,14 @@ la lista de mai jos (`docs/HELP_SYSTEM.md` §4). Mută acest reper la fiecare 00
 
 - **Ajutor de actualizat** (feliile de funcționalitate adaugă aici ce subiecte / capturi au
   învechit, ex. `0098: contabil.vederi.plati — coloana nouă «Cont»; captura plati de refăcut`):
-  _nimic deocamdată._
+  - `0097: contabil.vederi.ord` — rădăcina «Toate ordonanțările», ștergere pe lună / toate, fără
+    meniu pe ordonanțarea semnată; `contabil.ddf`, `contabil.ddf.semnare` — rădăcina «Toate
+    reviziile», «Șterge documentul (TOATE reviziile)», revizia semnată nu se mai modifică/șterge;
+    `contabil.fereastra` — selectorul de unitate din bara de titlu, «Note corecție» doar cu note;
+    `contabil.notecab`; `contabil.autentificare` — bifa «Ține minte parola», reautentificarea
+    tăcută; `contabil.setari` — secțiunea nouă din «Autentificare». Tururi: `tur-ord`, `tur-ddf`,
+    `tur-setari`. Capturi de refăcut: arborii ORD/DDF, bara de titlu, fereastra de autentificare,
+    Setări → Autentificare.
 
 - **0000-01** — exportul manualului neapăsat pe ecran; fereastra Director nevăzută; tema întunecată nevăzută.
 - **Observat în trecere:** `000_DEMO` nu are tabela `FX_NoteCAB_Corectii` (eroare 1146 la fiecare pornire, `RefreshUncorrelatedMarkAsync`).

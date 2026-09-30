@@ -125,3 +125,24 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 
 - **0096 — nevăzut pe ecran.** De confirmat cu operatorul: gruparea pe dată oferită vs. aplicată
   automat la intrarea în mod; dacă alegerea modului trebuie ținută minte între sesiuni.
+
+---
+
+## Slice 0097
+
+### Registry
+
+| Slice | Name | Status | Worklog(s) | Notes |
+|------:|------|--------|-----------|-------|
+| 0097 | **Corecturi (cererea operatorului, 30.09.2026)** — ORD/DDF: fără mesaj după ștergere (doar `mesaje_operator.log`); rădăcini «Toate ordonanțările» / «Toate reviziile»; ștergere pe lună și pe toate (refuzată dacă e ceva semnat); document cu măcar o semnătură = fără meniu (DDF: rămâne doar «Trimite»). KbotForm: eticheta barei strânse măsurată ca la desen (DPI); «Note corecție» doar cu note (`AreNoteCab`). Bara de titlu: selector de unitate (≥ 2 unități, `/api/auth/my-units` + `/api/auth/switch-unit`). Setări → Autentificare: reafișarea ferestrei de autentificare (oprire doar cu opțiuni avansate; 10–60 min altfel) + reautentificare tăcută. Login: «Ține minte parola până la repornirea calculatorului» (doar cu opțiuni avansate; DPAPI în cheie HKCU volatilă) | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste; server nedeployat** | `SLICE-0097-corective.md` | Server: `routes/forexe/tree.py` + `routes/auth/auth.py` (gitignored) de copiat pe VPS. Cauza etichetei înguste = ipoteză (nereprodusă). Schimbarea unității refuzată cu FOREXE conectat și pe unități cu rol «Director». FileVersion-urile nebumped. |
+
+### Open threads
+
+- **0097 — de deployat pe VPS:** `tree.py` (`AreNoteCab`) și `auth.py` (`my-units`, `switch-unit`).
+  Fără ele vederea «Note corecție» nu mai apare deloc, iar selectorul de unitate nu apare.
+- **0097 — `PYTHON/tests/test_forexe_tree.py`** trebuie adus la al 23-lea câmp și la interogarea
+  `information_schema` (neatins: fără teste).
+- **0097 — eticheta barei strânse:** ipoteză (măsurare pe DC-ul ferestrei + `WM_DPICHANGED`);
+  de confirmat pe 100% / 125%.
+- **0097 — schimbarea unității:** ferestrele secundare deschise nu se închid; cu FOREXE conectat
+  unitatea nu se poate schimba (nu există «deconectare» FOREXE).

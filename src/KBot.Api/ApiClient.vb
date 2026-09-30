@@ -373,7 +373,8 @@ Public Class ApiClient
                                 .AreDDF = r.AreDDF,
                                 .ArePartener = r.ArePartener,
                                 .AreORD = r.AreOrd,
-                                .AreExtrase = r.AreExtrase
+                                .AreExtrase = r.AreExtrase,
+                                .AreNoteCab = r.AreNoteCab
                             })
                         Next
                     End If

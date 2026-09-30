@@ -26,6 +26,9 @@ Public Enum OrdActiune
     ''' <summary>Genereaza si salveaza, fara interactiune, cate o ordonantare pentru fiecare zi
     ''' cu plati neordonantate.</summary>
     Lot = 3
+    ''' <summary>Slice 0097: delete every ordonantare of a month, or of the whole angajament
+    ''' (the «Toate ordonantarile» root). None of them is signed -- the view offers it only then.</summary>
+    StergeGrup = 4
 End Enum
 
 ''' <summary>
@@ -61,6 +64,14 @@ Public NotInheritable Class OrdComanda
     ''' jumatate din <c>vLunaAn</c>. Numai pentru <see cref="OrdActiune.Lot"/>.</summary>
     Public ReadOnly Property An As Integer?
 
+    ''' <summary>Slice 0097: the ordonantari to delete. Only for <see cref="OrdActiune.StergeGrup"/>;
+    ''' empty otherwise.</summary>
+    Public ReadOnly Property Ordonantari As IReadOnlyList(Of OrdHeaderRow) = New List(Of OrdHeaderRow)()
+
+    ''' <summary>Slice 0097: what the group is called in the confirmation («luna Martie 2026»).
+    ''' Only for <see cref="OrdActiune.StergeGrup"/>.</summary>
+    Public ReadOnly Property Eticheta As String = String.Empty
+
     Public Sub New(actiune As OrdActiune, cod As String, Optional ordonantare As OrdHeaderRow = Nothing)
         Me.Actiune = actiune
         Me.Cod = If(cod, String.Empty)
@@ -94,4 +105,20 @@ Public NotInheritable Class OrdComanda
     Public Shared Function LotPeLuna(cod As String, luna As Integer?, an As Integer?) As OrdComanda
         Return New OrdComanda(OrdActiune.Lot, cod, Nothing, Nothing, luna, an)
     End Function
+
+    ''' <summary>Slice 0097: the delete of a month / of every ordonantare.</summary>
+    Public Shared Function StergereGrup(cod As String, ordonantari As IEnumerable(Of OrdHeaderRow),
+                                        eticheta As String) As OrdComanda
+        Return New OrdComanda(OrdActiune.StergeGrup, cod,
+                              If(ordonantari Is Nothing, New List(Of OrdHeaderRow)(), ordonantari.ToList()),
+                              If(eticheta, String.Empty))
+    End Function
+
+    Private Sub New(actiune As OrdActiune, cod As String, ordonantari As List(Of OrdHeaderRow),
+                    eticheta As String)
+        Me.Actiune = actiune
+        Me.Cod = If(cod, String.Empty)
+        Me.Ordonantari = ordonantari
+        Me.Eticheta = eticheta
+    End Sub
 End Class

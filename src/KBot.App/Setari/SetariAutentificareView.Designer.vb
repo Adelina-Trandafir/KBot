@@ -29,6 +29,14 @@ Partial Class SetariAutentificareView
         lblUnitateCaption = New Label()
         lblUnitate = New Label()
         btnUita = New Button()
+        lblTitluLucru = New Label()
+        tlyLucru = New KBotTableLayoutPanel()
+        chkRelogin = New CheckBox()
+        lblIntervalCaption = New Label()
+        cmbInterval = New KBotComboBox()
+        lblReloginHint = New Label()
+        chkRememberPasswordOption = New CheckBox()
+        btnUitaParola = New Button()
         lblTitluServer = New Label()
         tlyServer = New KBotTableLayoutPanel()
         lblServerCaption = New Label()
@@ -38,6 +46,7 @@ Partial Class SetariAutentificareView
         lblServerHint = New Label()
         tlyBody.SuspendLayout()
         tlyMemorie.SuspendLayout()
+        tlyLucru.SuspendLayout()
         tlyServer.SuspendLayout()
         SuspendLayout()
         '
@@ -48,14 +57,18 @@ Partial Class SetariAutentificareView
         tlyBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyBody.Controls.Add(lblTitluMemorie, 0, 0)
         tlyBody.Controls.Add(tlyMemorie, 0, 1)
-        tlyBody.Controls.Add(lblTitluServer, 0, 2)
-        tlyBody.Controls.Add(tlyServer, 0, 3)
+        tlyBody.Controls.Add(lblTitluLucru, 0, 2)
+        tlyBody.Controls.Add(tlyLucru, 0, 3)
+        tlyBody.Controls.Add(lblTitluServer, 0, 4)
+        tlyBody.Controls.Add(tlyServer, 0, 5)
         tlyBody.Dock = DockStyle.Fill
         tlyBody.Location = New Point(0, 0)
         tlyBody.Margin = New Padding(0)
         tlyBody.Name = "tlyBody"
         tlyBody.Padding = New Padding(24, 18, 24, 18)
-        tlyBody.RowCount = 5
+        tlyBody.RowCount = 7
+        tlyBody.RowStyles.Add(New RowStyle())
+        tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
@@ -198,15 +211,136 @@ Partial Class SetariAutentificareView
         tips.SetToolTipText(btnUita, "Șterge fișierul last_login.json din AppData." & vbLf & "La următoarea pornire, e-mailul se tastează din nou.")
         btnUita.UseVisualStyleBackColor = True
         '
+        ' lblTitluLucru
+        '
+        lblTitluLucru.AutoSize = True
+        lblTitluLucru.Font = New Font("Segoe UI Semibold", 12F)
+        lblTitluLucru.Location = New Point(28, 262)
+        lblTitluLucru.Margin = New Padding(4, 0, 4, 8)
+        lblTitluLucru.Name = "lblTitluLucru"
+        lblTitluLucru.Size = New Size(380, 32)
+        lblTitluLucru.TabIndex = 2
+        lblTitluLucru.Text = "În timpul lucrului (sesiunea expirată)"
+        '
+        ' tlyLucru
+        '
+        tlyLucru.AutoFitToTheme = False
+        tlyLucru.AutoSize = True
+        tlyLucru.ColumnCount = 3
+        tlyLucru.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 260F))
+        tlyLucru.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyLucru.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 240F))
+        tlyLucru.Controls.Add(chkRelogin, 0, 0)
+        tlyLucru.Controls.Add(lblIntervalCaption, 0, 1)
+        tlyLucru.Controls.Add(cmbInterval, 1, 1)
+        tlyLucru.Controls.Add(lblReloginHint, 0, 2)
+        tlyLucru.Controls.Add(chkRememberPasswordOption, 0, 3)
+        tlyLucru.Controls.Add(btnUitaParola, 2, 4)
+        tlyLucru.Dock = DockStyle.Top
+        tlyLucru.Location = New Point(28, 302)
+        tlyLucru.Margin = New Padding(4, 0, 4, 24)
+        tlyLucru.Name = "tlyLucru"
+        tlyLucru.RowCount = 5
+        tlyLucru.RowStyles.Add(New RowStyle())
+        tlyLucru.RowStyles.Add(New RowStyle())
+        tlyLucru.RowStyles.Add(New RowStyle())
+        tlyLucru.RowStyles.Add(New RowStyle())
+        tlyLucru.RowStyles.Add(New RowStyle())
+        tlyLucru.Size = New Size(904, 230)
+        tlyLucru.TabIndex = 3
+        '
+        ' chkRelogin
+        '
+        chkRelogin.AutoSize = True
+        chkRelogin.Checked = True
+        chkRelogin.CheckState = CheckState.Checked
+        tlyLucru.SetColumnSpan(chkRelogin, 3)
+        chkRelogin.Location = New Point(4, 0)
+        chkRelogin.Margin = New Padding(4, 0, 4, 10)
+        chkRelogin.Name = "chkRelogin"
+        chkRelogin.Size = New Size(420, 29)
+        chkRelogin.TabIndex = 0
+        chkRelogin.Text = "Reafișează fereastra de autentificare când expiră sesiunea"
+        tips.SetToolTipHeader(chkRelogin, "Fereastra de autentificare")
+        tips.SetToolTipText(chkRelogin, "Debifată, K-BOT se reautentifică singur, cu parola introdusă la intrare." & vbLf & "Se poate schimba doar cu opțiunile avansate activate.")
+        chkRelogin.UseVisualStyleBackColor = True
+        '
+        ' lblIntervalCaption
+        '
+        lblIntervalCaption.AutoSize = True
+        lblIntervalCaption.Dock = DockStyle.Fill
+        lblIntervalCaption.Location = New Point(4, 39)
+        lblIntervalCaption.Margin = New Padding(4, 0, 4, 6)
+        lblIntervalCaption.Name = "lblIntervalCaption"
+        lblIntervalCaption.Size = New Size(252, 42)
+        lblIntervalCaption.TabIndex = 1
+        lblIntervalCaption.Text = "Reafișează cel mult o dată la"
+        lblIntervalCaption.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' cmbInterval
+        '
+        cmbInterval.Anchor = AnchorStyles.Left
+        cmbInterval.Location = New Point(264, 43)
+        cmbInterval.Margin = New Padding(4, 4, 4, 4)
+        cmbInterval.Name = "cmbInterval"
+        cmbInterval.Size = New Size(300, 34)
+        cmbInterval.TabIndex = 2
+        tips.SetToolTipHeader(cmbInterval, "Cât de des")
+        tips.SetToolTipText(cmbInterval, "Dacă sesiunea expiră mai devreme de atât după ultima autentificare," & vbLf & "K-BOT se reautentifică singur, fără fereastră." & vbLf & "Între o dată la 10 minute și o dată pe oră.")
+        '
+        ' lblReloginHint
+        '
+        lblReloginHint.AutoSize = True
+        tlyLucru.SetColumnSpan(lblReloginHint, 3)
+        lblReloginHint.Dock = DockStyle.Fill
+        lblReloginHint.Location = New Point(4, 91)
+        lblReloginHint.Margin = New Padding(4, 6, 4, 16)
+        lblReloginHint.Name = "lblReloginHint"
+        lblReloginHint.Size = New Size(896, 26)
+        lblReloginHint.TabIndex = 3
+        lblReloginHint.Text = "La pornirea aplicației fereastra de autentificare apare întotdeauna."
+        '
+        ' chkRememberPasswordOption
+        '
+        chkRememberPasswordOption.AutoSize = True
+        chkRememberPasswordOption.Checked = True
+        chkRememberPasswordOption.CheckState = CheckState.Checked
+        tlyLucru.SetColumnSpan(chkRememberPasswordOption, 3)
+        chkRememberPasswordOption.Location = New Point(4, 133)
+        chkRememberPasswordOption.Margin = New Padding(4, 0, 4, 10)
+        chkRememberPasswordOption.Name = "chkRememberPasswordOption"
+        chkRememberPasswordOption.Size = New Size(420, 29)
+        chkRememberPasswordOption.TabIndex = 4
+        chkRememberPasswordOption.Text = "Arată în fereastra de autentificare bifa «Ține minte parola până la repornirea calculatorului»"
+        tips.SetToolTipHeader(chkRememberPasswordOption, "Ține minte parola")
+        tips.SetToolTipText(chkRememberPasswordOption, "Parola bifată acolo se păstrează criptată pentru contul Windows curent," & vbLf & "până la repornirea calculatorului sau ieșirea din Windows.")
+        chkRememberPasswordOption.UseVisualStyleBackColor = True
+        '
+        ' btnUitaParola
+        '
+        btnUitaParola.Dock = DockStyle.Fill
+        btnUitaParola.Enabled = False
+        btnUitaParola.FlatStyle = FlatStyle.Flat
+        btnUitaParola.Font = New Font("Segoe UI Semibold", 9F)
+        btnUitaParola.Location = New Point(664, 172)
+        btnUitaParola.Margin = New Padding(4, 0, 4, 0)
+        btnUitaParola.Name = "btnUitaParola"
+        btnUitaParola.Size = New Size(236, 50)
+        btnUitaParola.TabIndex = 5
+        btnUitaParola.Text = "Uită parola memorată"
+        tips.SetToolTipHeader(btnUitaParola, "Uită parola memorată")
+        tips.SetToolTipText(btnUitaParola, "Șterge parola ținută minte pentru această sesiune Windows." & vbLf & "La următoarea pornire, parola se tastează din nou.")
+        btnUitaParola.UseVisualStyleBackColor = True
+        '
         ' lblTitluServer
         '
         lblTitluServer.AutoSize = True
         lblTitluServer.Font = New Font("Segoe UI Semibold", 12F)
-        lblTitluServer.Location = New Point(28, 262)
+        lblTitluServer.Location = New Point(28, 556)
         lblTitluServer.Margin = New Padding(4, 0, 4, 8)
         lblTitluServer.Name = "lblTitluServer"
         lblTitluServer.Size = New Size(84, 32)
-        lblTitluServer.TabIndex = 2
+        lblTitluServer.TabIndex = 4
         lblTitluServer.Text = "Serverul"
         '
         ' tlyServer
@@ -222,7 +356,7 @@ Partial Class SetariAutentificareView
         tlyServer.Controls.Add(lblTimeout, 1, 1)
         tlyServer.Controls.Add(lblServerHint, 0, 2)
         tlyServer.Dock = DockStyle.Top
-        tlyServer.Location = New Point(28, 302)
+        tlyServer.Location = New Point(28, 596)
         tlyServer.Margin = New Padding(4, 0, 4, 0)
         tlyServer.Name = "tlyServer"
         tlyServer.RowCount = 3
@@ -230,7 +364,7 @@ Partial Class SetariAutentificareView
         tlyServer.RowStyles.Add(New RowStyle())
         tlyServer.RowStyles.Add(New RowStyle())
         tlyServer.Size = New Size(904, 100)
-        tlyServer.TabIndex = 3
+        tlyServer.TabIndex = 5
         '
         ' lblServerCaption
         '
@@ -288,7 +422,7 @@ Partial Class SetariAutentificareView
         lblServerHint.Name = "lblServerHint"
         lblServerHint.Size = New Size(896, 26)
         lblServerHint.TabIndex = 4
-        lblServerHint.Text = "Adresa este fixată în program (doar https) și nu se poate schimba de aici. Sesiunea expiră după 20 de minute fără activitate; la expirare se cere din nou autentificarea."
+        lblServerHint.Text = "Adresa este fixată în program (doar https) și nu se poate schimba de aici. Sesiunea expiră după 20 de minute fără activitate; ce urmează spune secțiunea de mai sus."
         '
         ' SetariAutentificareView
         '
@@ -301,6 +435,8 @@ Partial Class SetariAutentificareView
         tlyBody.PerformLayout()
         tlyMemorie.ResumeLayout(False)
         tlyMemorie.PerformLayout()
+        tlyLucru.ResumeLayout(False)
+        tlyLucru.PerformLayout()
         tlyServer.ResumeLayout(False)
         tlyServer.PerformLayout()
         ResumeLayout(False)
@@ -317,6 +453,14 @@ Partial Class SetariAutentificareView
     Friend WithEvents lblUnitateCaption As Label
     Friend WithEvents lblUnitate As Label
     Friend WithEvents btnUita As Button
+    Friend WithEvents lblTitluLucru As Label
+    Friend WithEvents tlyLucru As KBotTableLayoutPanel
+    Friend WithEvents chkRelogin As CheckBox
+    Friend WithEvents lblIntervalCaption As Label
+    Friend WithEvents cmbInterval As KBotComboBox
+    Friend WithEvents lblReloginHint As Label
+    Friend WithEvents chkRememberPasswordOption As CheckBox
+    Friend WithEvents btnUitaParola As Button
     Friend WithEvents lblTitluServer As Label
     Friend WithEvents tlyServer As KBotTableLayoutPanel
     Friend WithEvents lblServerCaption As Label

@@ -54,6 +54,26 @@ Partial Public Class KbotForm
     ''' the note window on them -- on all of them (<paramref name="onlyIds"/> Nothing, the menu), or
     ''' only on the given FX_Operatiuni ids (the rows a login has just stored). Never throws.
     ''' </summary>
+    ''' <summary>
+    ''' Slice 0097: the «notecab» entry shows only when the angajament has notes. A note just saved
+    ''' on the selected angajament raises the flag LOCALLY (as ORD / DDF do after their first
+    ''' write) -- a tree reload would drop the selection.
+    ''' </summary>
+    Private Sub AprindePoartaNotelor(saved As IReadOnlyList(Of CabCorrectionNote))
+        Try
+            If _currentInfo Is Nothing OrElse _currentInfo.AreNoteCab OrElse saved Is Nothing Then Return
+            Dim cod As String = _currentInfo.CodAngajament
+            Dim atinge As Boolean = saved.Any(Function(n) n IsNot Nothing AndAlso n.Corrections.Any(
+                Function(c) String.Equals(c.CommitmentCode, cod, StringComparison.OrdinalIgnoreCase)))
+            If Not atinge Then Return
+            _currentInfo.AreNoteCab = True
+            ApplyViewGating(_currentInfo)
+        Catch ex As Exception
+            ' The notes are saved; a gate that stays shut until the next reload is not worth a throw.
+            GlobalErrorLog.Write("MainForm.AprindePoartaNotelor", ex)
+        End Try
+    End Sub
+
     Private Async Function ShowUncorrelatedAsync(onlyIds As List(Of Integer)) As Task
         Try
             If _uncorrelatedOpen Then Return
@@ -81,7 +101,10 @@ Partial Public Class KbotForm
                 Using f As New CabNoteForm(shown, prep, notesApi, _session.NumeUnitate, _session.CF,
                                            AddressOf UploadCabNoteAsync)
                     f.ShowDialog(Me)
-                    If f.SavedNotes.Count > 0 Then TryCast(_activeView, NoteCabView)?.Reincarca()
+                    If f.SavedNotes.Count > 0 Then
+                        TryCast(_activeView, NoteCabView)?.Reincarca()
+                        AprindePoartaNotelor(f.SavedNotes)
+                    End If
                 End Using
             Finally
                 _uncorrelatedOpen = False

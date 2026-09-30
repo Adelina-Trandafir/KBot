@@ -123,10 +123,9 @@ Partial Public Class KbotForm
             navViews.SetItemVisible("extrase", info IsNot Nothing AndAlso info.AreExtrase)
             navViews.SetItemVisible("ddf", info IsNot Nothing AndAlso info.AreDDF)
             navViews.SetItemVisible("ord", info IsNot Nothing AndAlso info.AreORD)
-            ' Slice 0088: no Are* flag on the tree query -- the notes table may not exist yet on a
-            ' unit database, and the tree must not depend on it. Any angajament; the view says
-            ' «nu are note» when it has none.
-            navViews.SetItemVisible("notecab", info IsNot Nothing)
+            ' Slice 0097: only when the branch has notes, like ORD and DDF (operator). The server
+            ' sends 0 when the notes table does not exist on the unit database.
+            navViews.SetItemVisible("notecab", info IsNot Nothing AndAlso info.AreNoteCab)
             ' «Browser FOREXE» (slice 0074) hangs on the SESSION, not on the node: with no
             ' selection the operator can still browse; without a session there is no page.
             navViews.SetItemVisible("browser", BrowserDisponibil())
@@ -157,7 +156,7 @@ Partial Public Class KbotForm
             Case "extrase" : Return info.AreExtrase
             Case "ddf" : Return info.AreDDF
             Case "ord" : Return info.AreORD
-            Case "notecab" : Return True
+            Case "notecab" : Return info.AreNoteCab
             ' Gated by the session in ApplyViewGating / the coordinator's StateChanged
             ' (KbotForm.Browser.vb), never by the node.
             Case "browser" : Return True

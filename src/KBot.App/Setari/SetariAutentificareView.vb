@@ -41,6 +41,7 @@ Public Class SetariAutentificareView
             Try
                 chkRememberLogin.Checked = AppSettings.Current.RememberLastLogin
                 chkRememberUnit.Checked = AppSettings.Current.RememberLastUnit
+                ArataReautentificarea()
             Finally
                 _suppress = False
             End Try
@@ -107,6 +108,90 @@ Public Class SetariAutentificareView
         End Try
     End Sub
 
+    ' ---------------- during work (slice 0097) ----------------
+
+    ' The minutes offered in the combo, in its order.
+    Private _minuteOferite As IReadOnlyList(Of Integer) = New List(Of Integer)()
+
+    ''' <summary>
+    ''' The «In timpul lucrului» section as the settings and the advanced options stand now.
+    ''' Without the advanced options the window cannot be switched off (the box is shown ticked and
+    ''' greyed out), the interval is 10..60 minutes, and the «Tine minte parola» switch is hidden.
+    ''' Called with <c>_suppress</c> raised.
+    ''' </summary>
+    Private Sub ArataReautentificarea()
+        Dim s As AppSettings = AppSettings.Current
+        Dim avansat As Boolean = s.AdvancedOptions
+
+        chkRelogin.Checked = s.ReloginPromptInEffect
+        chkRelogin.Enabled = avansat
+
+        _minuteOferite = If(avansat, AppSettings.ReloginMinuteChoicesAdvanced, AppSettings.ReloginMinuteChoices)
+        cmbInterval.Items.Clear()
+        For Each m As Integer In _minuteOferite
+            cmbInterval.Items.Add(EtichetaMinute(m))
+        Next
+        ' The closest offered value: a hand-edited file may hold one the list does not have.
+        Dim curent As Integer = s.ReloginMinutesInEffect
+        Dim cel As Integer = 0
+        For i As Integer = 1 To _minuteOferite.Count - 1
+            If Math.Abs(_minuteOferite(i) - curent) < Math.Abs(_minuteOferite(cel) - curent) Then cel = i
+        Next
+        cmbInterval.SelectedIndex = cel
+        ActualizeazaIntervalul()
+
+        chkRememberPasswordOption.Visible = avansat
+        chkRememberPasswordOption.Checked = s.RememberPasswordOption
+        btnUitaParola.Visible = avansat
+        btnUitaParola.Enabled = SessionCredentials.HasWindowsSessionPassword()
+    End Sub
+
+    ' The interval means nothing when the window is off: greyed out, not silently ignored.
+    Private Sub ActualizeazaIntervalul()
+        cmbInterval.Enabled = chkRelogin.Checked
+        lblIntervalCaption.Enabled = chkRelogin.Checked
+    End Sub
+
+    Private Shared Function EtichetaMinute(m As Integer) As String
+        If m = 60 Then Return "60 de minute (o dată pe oră)"
+        If m > 60 AndAlso m Mod 60 = 0 Then Return $"{m \ 60} ore"
+        If m < 20 Then Return $"{m} minute"
+        Return $"{m} de minute"
+    End Function
+
+    Private Sub ChkRelogin_CheckedChanged(sender As Object, e As EventArgs) Handles chkRelogin.CheckedChanged
+        ActualizeazaIntervalul()
+        SalveazaComutator(Sub(s) s.ReloginPrompt = chkRelogin.Checked,
+                          If(chkRelogin.Checked,
+                             "Fereastra de autentificare se reafișează când expiră sesiunea.",
+                             "K-BOT se reautentifică singur când expiră sesiunea, fără fereastră."))
+    End Sub
+
+    Private Sub CmbInterval_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbInterval.SelectedIndexChanged
+        If cmbInterval.SelectedIndex < 0 OrElse cmbInterval.SelectedIndex >= _minuteOferite.Count Then Return
+        Dim m As Integer = _minuteOferite(cmbInterval.SelectedIndex)
+        SalveazaComutator(Sub(s) s.ReloginMinutes = m,
+                          $"Fereastra de autentificare se reafișează cel mult o dată la {EtichetaMinute(m)}.")
+    End Sub
+
+    Private Sub ChkRememberPasswordOption_CheckedChanged(sender As Object, e As EventArgs) Handles chkRememberPasswordOption.CheckedChanged
+        SalveazaComutator(Sub(s) s.RememberPasswordOption = chkRememberPasswordOption.Checked,
+                          If(chkRememberPasswordOption.Checked,
+                             "Bifa «Ține minte parola» apare în fereastra de autentificare.",
+                             "Bifa «Ține minte parola» nu mai apare; o parolă memorată nu se mai folosește."))
+    End Sub
+
+    Private Sub BtnUitaParola_Click(sender As Object, e As EventArgs) Handles btnUitaParola.Click
+        Try
+            Dim sters As Boolean = SessionCredentials.ForgetWindowsSession()
+            btnUitaParola.Enabled = False
+            RaiseEvent StatusChanged(If(sters, "Parola memorată a fost ștearsă.", "Nu era nicio parolă memorată."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariAutentificareView.BtnUitaParola_Click", ex)
+            RaiseEvent StatusChanged("Parola memorată nu a putut fi ștearsă: " & ex.Message)
+        End Try
+    End Sub
+
     ' ---------------- theme ----------------
 
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
@@ -116,13 +201,16 @@ Public Class SetariAutentificareView
             BackColor = p.SurfaceAltColor
             tlyBody.BackColor = p.SurfaceAltColor
             tlyMemorie.BackColor = p.SurfaceAltColor
+            tlyLucru.BackColor = p.SurfaceAltColor
             tlyServer.BackColor = p.SurfaceAltColor
             For Each caption As Label In New Label() {lblUtilizatorCaption, lblUnitateCaption, lblServerCaption,
-                                                      lblTimeoutCaption, lblServerHint}
+                                                      lblTimeoutCaption, lblServerHint, lblIntervalCaption,
+                                                      lblReloginHint}
                 caption.ForeColor = p.TextDimColor
                 caption.BackColor = Color.Transparent
             Next
             ButtonStyles.ApplySecondary(btnUita, scheme)
+            ButtonStyles.ApplySecondary(btnUitaParola, scheme)
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAutentificareView.ApplyTheme", ex)
         End Try

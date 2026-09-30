@@ -108,6 +108,48 @@ Public NotInheritable Class AuthApi
         End Try
     End Function
 
+    ''' <summary>Slice 0097: every unit of the logged-in user (the caption-bar selector).</summary>
+    Public Async Function GetMyUnitsAsync(token As String, ct As CancellationToken) _
+        As Task(Of IReadOnlyList(Of UnitInfo)) Implements IAuthApi.GetMyUnitsAsync
+
+        Try
+            Dim respText As String = Await GetAsync("/api/auth/my-units", "listarea unităților", ct, bearer:=token).ConfigureAwait(False)
+            Dim body As UnitsResponse = JsonSerializer.Deserialize(Of UnitsResponse)(respText, _json)
+            If body Is Nothing OrElse body.Units Is Nothing Then Return Array.Empty(Of UnitInfo)()
+            Return body.Units
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("AuthApi.GetMyUnitsAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Slice 0097: opens another unit of the same user on the live token (no password). The
+    ''' answer has the login's shape; the old token is revoked by the server.
+    ''' </summary>
+    Public Async Function SwitchUnitAsync(token As String, dc As String, machine As String,
+                                          ct As CancellationToken) _
+        As Task(Of LoginResult) Implements IAuthApi.SwitchUnitAsync
+
+        Try
+            Dim payload As New SwitchUnitRequest With {.DbName = dc, .Machine = machine}
+            Dim respText As String = Await PostAsync("/api/auth/switch-unit", payload, "schimbarea unității", ct,
+                                                     bearer:=token).ConfigureAwait(False)
+            Dim result As LoginResult = JsonSerializer.Deserialize(Of LoginResult)(respText, _json)
+            If result Is Nothing OrElse result.SessionContext Is Nothing OrElse String.IsNullOrEmpty(result.Token) Then
+                Throw New ApiException("Răspuns invalid de la server la schimbarea unității.")
+            End If
+            Return result
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("AuthApi.SwitchUnitAsync", ex)
+            Throw
+        End Try
+    End Function
+
     Public Async Function SaveLastSsAsync(token As String, ss As String, ct As CancellationToken) _
         As Task Implements IAuthApi.SaveLastSsAsync
 
@@ -225,6 +267,11 @@ Public NotInheritable Class AuthApi
     Private NotInheritable Class LoginRequest
         <JsonPropertyName("username")> Public Property Username As String
         <JsonPropertyName("password")> Public Property Password As String
+        <JsonPropertyName("db_name")> Public Property DbName As String
+        <JsonPropertyName("machine")> Public Property Machine As String
+    End Class
+
+    Private NotInheritable Class SwitchUnitRequest
         <JsonPropertyName("db_name")> Public Property DbName As String
         <JsonPropertyName("machine")> Public Property Machine As String
     End Class

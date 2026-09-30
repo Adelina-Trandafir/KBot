@@ -23,6 +23,8 @@ Friend NotInheritable Class KBotNavFlyoutStyle
     Public GradientStrength As Integer
     ''' <summary>Lățimea benzii pictogramei = exact lățimea butonului din bara strânsă.</summary>
     Public RailWidth As Integer
+    ''' <summary>Slice 0097: the gap between the icon band and the caption (scaled px).</summary>
+    Public TextGap As Integer
     Public IconSide As Integer
     Public PadX As Integer
     Public BadgeHeight As Integer
@@ -56,6 +58,7 @@ Friend NotInheritable Class KBotNavFlyout
     Inherits Form
 
     Private Const WM_NCHITTEST As Integer = &H84
+    Private Const WM_DPICHANGED As Integer = &H2E0
     Private Const HTTRANSPARENT As Integer = -1
     Private Const WS_EX_NOACTIVATE As Integer = &H8000000
     Private Const WS_EX_TOOLWINDOW As Integer = &H80
@@ -98,6 +101,14 @@ Friend NotInheritable Class KBotNavFlyout
     ' Regula casei lasă WndProc pe plasa globală Application.ThreadException: un Try/Catch aici ar
     ' risca să rupă contractul de mesaje al ferestrei.
     Protected Overrides Sub WndProc(ByRef m As Message)
+        ' Slice 0097: the bar hands us bounds in the monitor's own pixels, recomputed every frame.
+        ' A per-monitor-aware form that crosses into a monitor of another DPI would otherwise be
+        ' resized by the suggested rectangle of WM_DPICHANGED (and its font rescaled) -- narrower
+        ' than the caption it has to hold. Swallowed: the next frame sets the right bounds.
+        If m.Msg = WM_DPICHANGED Then
+            m.Result = IntPtr.Zero
+            Return
+        End If
         MyBase.WndProc(m)
         If m.Msg = WM_NCHITTEST Then m.Result = New IntPtr(HTTRANSPARENT)
     End Sub
@@ -189,11 +200,13 @@ Friend NotInheritable Class KBotNavFlyout
 
             ' Textul începe unde se termină banda pictogramei. Cât timp desfășurarea e la început
             ' lățimea utilă e zero sau negativă — se taie singur, fără caz special.
-            Dim textLeft As Integer = st.RailWidth
+            ' Slice 0097: the same flags the bar measures with (FlyoutTextWidth), plus the ellipsis.
+            Dim textLeft As Integer = st.RailWidth + st.TextGap \ 2
             Dim tr As New Rectangle(textLeft, 0, Math.Max(0, textRight - textLeft), ClientSize.Height)
             If tr.Width > 0 Then
                 TextRenderer.DrawText(g, _caption, st.CaptionFont, tr, st.TextColor,
-                    TextFormatFlags.Left Or TextFormatFlags.VerticalCenter Or TextFormatFlags.EndEllipsis)
+                    TextFormatFlags.Left Or TextFormatFlags.VerticalCenter Or TextFormatFlags.SingleLine Or
+                    TextFormatFlags.EndEllipsis)
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("KBotNavFlyout.OnPaint", ex)

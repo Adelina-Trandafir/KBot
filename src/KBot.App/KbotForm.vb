@@ -125,6 +125,7 @@ Partial Public Class KbotForm
         ' already logged (GlobalErrorLog) and shown by the caller (LoadTreeAsync / SincronizeazaAsync).
         ' VB.NET does not allow Await inside a Catch: the 401 is captured and handled below.
         Dim expired As ApiException
+        Dim tokenFolosit As String = _session.Token
         Try
             Return Await action().ConfigureAwait(True)
         Catch ex As ApiException When IsContextMismatch(ex)
@@ -133,11 +134,17 @@ Partial Public Class KbotForm
             expired = ex
         End Try
 
-        Using login As LoginForm = _loginFactory()
-            If login.ShowDialog(Me) <> DialogResult.OK Then
-                Throw expired   ' the operator cancelled the re-login; propagate the original 401
-            End If
-        End Using
+        ' Slice 0097: the login window only when the settings call for it; otherwise K-BOT logs
+        ' back in by itself (see ReautentificaAsync). A failed silent login falls back to the window.
+        If Not Await ReautentificaAsync(tokenFolosit).ConfigureAwait(True) Then
+            Using login As LoginForm = _loginFactory()
+                If login.ShowDialog(Me) <> DialogResult.OK Then
+                    Throw expired   ' the operator cancelled the re-login; propagate the original 401
+                End If
+            End Using
+            ' The window lets the operator pick a unit; the caption follows the session.
+            ArataUnitateaInTitlu()
+        End If
 
         ' The login refilled _session.Token (the same instance ApiClient reads).
         ' ONE retry. A second 401 right after a fresh login is NOT a normal expiry -- it is a
@@ -156,6 +163,62 @@ Partial Public Class KbotForm
                     401, reason)
             End If
             Throw   ' another 401 reason (e.g. a real expiry) -- propagate unchanged
+        End Try
+    End Function
+
+    ' One silent re-login at a time: several calls can hit the same expiry together.
+    Private ReadOnly _reloginGate As New SemaphoreSlim(1, 1)
+
+    ''' <summary>
+    ''' Slice 0097 -- the re-login WITHOUT the window. True = the session has a fresh token and the
+    ''' call can be retried; False = the window must be shown.
+    '''
+    ''' <para>Silent when: the password of this process's login is known
+    ''' (<see cref="SessionCredentials"/>), AND either the operator (advanced options) turned the
+    ''' window off, or the last login typed in the window is younger than the interval
+    ''' («Setari → Autentificare», 10..60 minutes without the advanced options). Always on the
+    ''' SAME unit (<c>_session.DbName</c>). A token already replaced by a concurrent re-login is
+    ''' simply reused. A server refusal (the password was changed elsewhere) drops the kept
+    ''' password and returns False; any other failure also returns False, logged.</para>
+    ''' </summary>
+    Private Async Function ReautentificaAsync(tokenFolosit As String) As Task(Of Boolean)
+        Await _reloginGate.WaitAsync().ConfigureAwait(True)
+        Try
+            ' Somebody else already logged back in while this call waited.
+            If Not String.IsNullOrEmpty(_session.Token) AndAlso
+               Not String.Equals(_session.Token, tokenFolosit, StringComparison.Ordinal) Then Return True
+
+            Dim s As AppSettings = AppSettings.Current
+            If s.ReloginPromptInEffect Then
+                Dim last As DateTime = SessionCredentials.LastInteractiveLoginUtc
+                If last = DateTime.MinValue Then Return False
+                If DateTime.UtcNow - last >= TimeSpan.FromMinutes(s.ReloginMinutesInEffect) Then Return False
+            End If
+
+            Dim user As String = Nothing, pass As String = Nothing
+            If Not SessionCredentials.TryRecall(user, pass) Then Return False
+            If String.IsNullOrWhiteSpace(_session.DbName) Then Return False
+
+            Dim dc As String = _session.DbName
+            Dim lastSs As String = _session.LastSS
+            Try
+                Dim result As LoginResult = Await _authApi.LoginAsync(
+                    user, pass, dc, Environment.MachineName, CancellationToken.None).ConfigureAwait(True)
+                _session.Populate(user, result.Token, result.SessionContext)
+                _session.LastSS = lastSs
+                SessionCredentials.Remember(user, pass, interactive:=False)
+                Return True
+            Catch ex As ApiException When ex.StatusCode.HasValue AndAlso ex.StatusCode.Value = 401
+                ' The kept password is no longer the account's: the window, and forget it.
+                GlobalErrorLog.Write("MainForm.ReautentificaAsync", ex)
+                SessionCredentials.ForgetInProcess()
+                Return False
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ReautentificaAsync", ex)
+            Return False
+        Finally
+            _reloginGate.Release()
         End Try
     End Function
 
@@ -256,8 +319,10 @@ Partial Public Class KbotForm
             If _session.IsAuthenticated AndAlso Not String.IsNullOrEmpty(_session.DbName) Then
                 Await LoadPeriodsAsync()
                 Await LoadTreeAsync()
-                ' Slice 0088: the menu's «Operațiuni necorelate» entry and its «!» mark.
+                ' Slice 0088: the menu's «Operatiuni necorelate» entry and its «!» mark.
                 Await RefreshUncorrelatedMarkAsync()
+                ' Slice 0097: the unit selector in the caption (two or more units only).
+                Await IncarcaUnitatileAsync()
             Else
                 ' No session (possible only in the Debug harness): no data, no silent sample --
                 ' the list stays empty, honestly. The disabled combos already tell the story.

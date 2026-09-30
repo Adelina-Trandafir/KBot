@@ -461,6 +461,17 @@ Public Class DdfView
             Dim monthGroups = revizii.GroupBy(Function(r) MonthKeyOf(r.DataRev)).
                                       OrderBy(Function(g) g.Key)
 
+            ' Slice 0097: root «Toate reviziile», like «Tot istoricul» (0095). Clicking it shows
+            ' every line, exactly what the view shows on load.
+            Dim totalSum As Double = revizii.Sum(Function(r) r.TotalRevizie)
+            Dim icoTot As Image = LunaIcon(ICO_MONTH, palette)
+            Dim nodTot As AdvancedTreeControl.TreeItem =
+                tree.AddItem(KEY_TOATE, $"Toate reviziile~~~{Money(totalSum)}",
+                             pLeftIconClosed:=icoTot, pLeftIconOpen:=icoTot, pExpanded:=True)
+            nodTot.Tag = New DdfNodeRows(ToateLiniile(revizii), isRoot:=True, revizii:=revizii, isAll:=True)
+            nodTot.Bold = True
+            If totalSum < 0 AndAlso palette IsNot Nothing Then nodTot.NodeForeColor = palette.ErrorColor
+
             For Each mg In monthGroups
                 Dim monthRevs As List(Of RevizieRow) = mg.ToList()
                 ' Valoarea rădăcinii = suma TOTALURILOR frunzelor ei (Access trimite literalul 0).
@@ -476,9 +487,9 @@ Public Class DdfView
                 Dim monthIconDeschis As Image = LunaIcon(ICO_MONTH, palette)
                 Dim monthItem As AdvancedTreeControl.TreeItem =
                     tree.AddItem(MonthKeyText(mg.Key), $"{MonthYearLabel(mg.Key)}~~~{Money(monthSum)}",
-                                 pLeftIconClosed:=monthIconInchis, pLeftIconOpen:=monthIconDeschis,
+                                 nodTot, pLeftIconClosed:=monthIconInchis, pLeftIconOpen:=monthIconDeschis,
                                  pExpanded:=True)
-                monthItem.Tag = New DdfNodeRows(monthLines, isRoot:=True)
+                monthItem.Tag = New DdfNodeRows(monthLines, isRoot:=True, revizii:=monthRevs)
                 monthItem.Bold = True
                 ' Roșu doar când PROPRIUL total e negativ (Access copiază culoarea ultimei frunze).
                 If monthSum < 0 AndAlso palette IsNot Nothing Then
@@ -1124,6 +1135,10 @@ Public Class DdfView
     Private Const MENIU_STERGE_DOC As String = "sterge-document"
     Private Const MENIU_STERGE_LUNA As String = "sterge-luna"
     Private Const MENIU_TRIMITE As String = "trimite"
+    ' Slice 0097: the whole document, from the «Toate reviziile» root.
+    Private Const MENIU_STERGE_TOATE As String = "sterge-toate"
+    ' Slice 0097: the key of the «Toate reviziile» root. Never parses as a month.
+    Private Const KEY_TOATE As String = "all"
 
     ''' <summary>Which revision the next tree build should land on; 0 = leave the selection
     ''' where the build puts it.</summary>
@@ -1149,7 +1164,15 @@ Public Class DdfView
 
         Dim intrari As New List(Of CustomPopupItem)()
         If payload.IsRoot Then
-            intrari.Add(New CustomPopupItem(MENIU_STERGE_LUNA, "Șterge &TOATE reviziile lunii"))
+            ' Slice 0097: a month / the «Toate reviziile» root is deleted only when none of its
+            ' revisions carries a signature.
+            If payload.Revizii.Count > 0 AndAlso Not payload.Revizii.Any(Function(r) EsteSemnata(r)) Then
+                If payload.IsAll Then
+                    intrari.Add(New CustomPopupItem(MENIU_STERGE_TOATE, "Șterge &documentul (TOATE reviziile)"))
+                Else
+                    intrari.Add(New CustomPopupItem(MENIU_STERGE_LUNA, "Șterge &TOATE reviziile lunii"))
+                End If
+            End If
         Else
             ' Slice 0081-04: the send, offered only in the state that allows it -- S1 sends, S1x
             ' resumes. Placed first: in those two states it is the next thing to do.
@@ -1161,24 +1184,42 @@ Public Class DdfView
                     intrari.Add(New CustomPopupItem(MENIU_TRIMITE, "&Reia trimiterea în FOREXE"))
                 End If
             End If
-            intrari.Add(New CustomPopupItem(MENIU_MODIFICA, "&Modifică revizia"))
-            intrari.Add(New CustomPopupItem(MENIU_STERGE_REVIZIE, "Șter&ge revizia"))
-            intrari.Add(New CustomPopupItem(MENIU_STERGE_DOC, "Șterge &documentul"))
+            ' Slice 0097: a revision with at least one signature is neither edited nor deleted --
+            ' only the send (above) may remain.
+            If Not EsteSemnata(payload.Revizie) Then
+                intrari.Add(New CustomPopupItem(MENIU_MODIFICA, "&Modifică revizia"))
+                intrari.Add(New CustomPopupItem(MENIU_STERGE_REVIZIE, "Șter&ge revizia"))
+                intrari.Add(New CustomPopupItem(MENIU_STERGE_DOC, "Șterge &documentul"))
+            End If
         End If
+        If intrari.Count = 0 Then Return
 
         Dim cheieNod As String = If(nod Is Nothing, String.Empty, nod.Key)
         Dim revizie As RevizieRow = payload.Revizie
+        Dim revizii As List(Of RevizieRow) = payload.Revizii
         Dim meniu As New CustomPopup(intrari)
         AddHandler meniu.ItemClicked,
             Sub(s As Object, ev As CustomPopupItemEventArgs)
-                AplicaComandaDeMeniu(ev.Item.Key, revizie, cheieNod)
+                AplicaComandaDeMeniu(ev.Item.Key, revizie, cheieNod, revizii)
             End Sub
         meniu.ShowAtCursor(tree)
     End Sub
 
-    Private Sub AplicaComandaDeMeniu(cheie As String, revizie As RevizieRow, cheieNod As String)
+    ''' <summary>
+    ''' At least one signature on the revision (slice 0097): the roles written by the signing
+    ''' upload, or a signed PDF stored on the server.
+    ''' </summary>
+    Friend Shared Function EsteSemnata(r As RevizieRow) As Boolean
+        If r Is Nothing Then Return False
+        Return Not String.IsNullOrWhiteSpace(r.Semnatura) OrElse r.ArePdfSemnat
+    End Function
+
+    Private Sub AplicaComandaDeMeniu(cheie As String, revizie As RevizieRow, cheieNod As String,
+                                     revizii As List(Of RevizieRow))
         Try
             Select Case cheie
+                Case MENIU_STERGE_TOATE
+                    CereComanda(DdfComanda.Toate(_requestedCod, IddfCurent(), revizii))
                 Case MENIU_TRIMITE
                     CereComanda(New DdfComanda(DdfActiune.Trimite, _requestedCod, revizie))
                 Case MENIU_MODIFICA
@@ -1276,10 +1317,18 @@ Friend NotInheritable Class DdfNodeRows
     Public ReadOnly Property IsRoot As Boolean
     ''' <summary>Revizia frunzei; Nothing pe o rădăcină de lună.</summary>
     Public ReadOnly Property Revizie As RevizieRow
+    ''' <summary>Slice 0097: the revisions under a month / the «Toate» root (what a delete of
+    ''' the node takes, checked for signatures); empty on a leaf.</summary>
+    Public ReadOnly Property Revizii As List(Of RevizieRow)
+    ''' <summary>Slice 0097: the «Toate reviziile» root.</summary>
+    Public ReadOnly Property IsAll As Boolean
 
-    Public Sub New(linii As List(Of LinieSaRow), isRoot As Boolean, Optional revizie As RevizieRow = Nothing)
+    Public Sub New(linii As List(Of LinieSaRow), isRoot As Boolean, Optional revizie As RevizieRow = Nothing,
+                   Optional revizii As List(Of RevizieRow) = Nothing, Optional isAll As Boolean = False)
         Me.Linii = If(linii, New List(Of LinieSaRow)())
         Me.IsRoot = isRoot
         Me.Revizie = revizie
+        Me.Revizii = If(revizii, New List(Of RevizieRow)())
+        Me.IsAll = isAll
     End Sub
 End Class

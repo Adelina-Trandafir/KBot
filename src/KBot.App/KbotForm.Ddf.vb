@@ -43,6 +43,8 @@ Partial Public Class KbotForm
                     Await StergeDocumentDdfAsync(comanda.Revizie).ConfigureAwait(True)
                 Case DdfActiune.StergeLuna
                     Await StergeLunaDdfAsync(comanda).ConfigureAwait(True)
+                Case DdfActiune.StergeToate
+                    Await StergeToateReviziileDdfAsync(comanda).ConfigureAwait(True)
                 Case DdfActiune.Trimite
                     Await TrimiteDdfAsync(comanda.Cod, comanda.Revizie).ConfigureAwait(True)
                 Case DdfActiune.FinalizeazaPdf

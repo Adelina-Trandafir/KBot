@@ -41,6 +41,9 @@ Public Enum DdfActiune
     ''' into the A-signed PDF, and that upload succeeded. The shell moves the revision to stage 3
     ''' (final PDF) when the Rezervari flow allows it.</summary>
     FinalizeazaPdf = 7
+    ''' <summary>Slice 0097: the whole document from the «Toate reviziile» root. None of its
+    ''' revisions is signed -- the view offers it only then.</summary>
+    StergeToate = 8
 End Enum
 
 ''' <summary>
@@ -65,6 +68,10 @@ Public NotInheritable Class DdfComanda
     ''' <summary>The month, 1-12; 0 when the command is not about a month.</summary>
     Public ReadOnly Property Luna As Integer
 
+    ''' <summary>Slice 0097: every revision of the document, for <see cref="DdfActiune.StergeToate"/>
+    ''' (the confirmation counts them); empty otherwise.</summary>
+    Public ReadOnly Property Revizii As IReadOnlyList(Of RevizieRow) = New List(Of RevizieRow)()
+
     Public Sub New(actiune As DdfActiune, cod As String, Optional revizie As RevizieRow = Nothing)
         Me.Actiune = actiune
         Me.Cod = If(cod, String.Empty)
@@ -87,4 +94,18 @@ Public NotInheritable Class DdfComanda
                                   luna As Integer) As DdfComanda
         Return New DdfComanda(cod, iddf, an, luna)
     End Function
+
+    ''' <summary>Slice 0097 -- the «Toate reviziile» root's command: the whole document.</summary>
+    Public Shared Function Toate(cod As String, iddf As Integer,
+                                 revizii As IEnumerable(Of RevizieRow)) As DdfComanda
+        Return New DdfComanda(cod, iddf,
+                              If(revizii Is Nothing, New List(Of RevizieRow)(), revizii.ToList()))
+    End Function
+
+    Private Sub New(cod As String, iddf As Integer, revizii As List(Of RevizieRow))
+        Me.Actiune = DdfActiune.StergeToate
+        Me.Cod = If(cod, String.Empty)
+        Me.Iddf = iddf
+        Me.Revizii = revizii
+    End Sub
 End Class

@@ -4,6 +4,10 @@
 Public NotInheritable Class UnitInfo
     Public Property DC As String
     Public Property NumeUnitate As String
+    ''' <summary>Slice 0097: only from /api/auth/my-units; Nothing from /api/auth/units.</summary>
+    Public Property CF As String
+    ''' <summary>Slice 0097: only from /api/auth/my-units; Nothing from /api/auth/units.</summary>
+    Public Property Rol As String
 
     ' Ce afiseaza combo-ul (niciodata DC-ul brut).
     Public ReadOnly Property Display As String

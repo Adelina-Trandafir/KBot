@@ -148,18 +148,64 @@ Partial Public Class KbotForm
                $"{revizie.TotalRevizie.ToString("N2", ro)} lei." & vbCrLf & descriere
     End Function
 
-    ''' <summary>Reports what actually went, with real counts rather than a bare "done".</summary>
-    Private Sub AratatRezultatulStergerii(rez As DdfStergereRezultat, titlu As String)
+    ''' <summary>
+    ''' Records what actually went, with real counts. Slice 0097: no box any more (operator) --
+    ''' the counts go to the operator log only.
+    ''' </summary>
+    Private Shared Sub AratatRezultatulStergerii(rez As DdfStergereRezultat, titlu As String)
         If rez Is Nothing Then Return
         Dim ce As String = If(rez.DocumentSters, "Documentul de fundamentare a fost șters.",
                                                  "Reviziile au fost șterse.")
-        KBotMessage.Show(Me,
-            ce & vbCrLf &
+        OperatorLog.Write("KbotForm.StergereDdf", titlu,
+            ce & " " &
             $"Revizii: {rez.Revizii} · secțiunea A: {rez.LiniiA} · secțiunea B: {rez.LiniiB} · " &
-            $"fișiere: {rez.Atasamente}." & vbCrLf &
-            $"Rezervări redevenite fără DDF: {rez.RezervariEliberate}.",
-            titlu, MessageBoxButtons.OK, MessageBoxIcon.Information)
+            $"fișiere: {rez.Atasamente} · rezervări redevenite fără DDF: {rez.RezervariEliberate}.")
     End Sub
+
+    ''' <summary>
+    ''' Slice 0097 -- «Sterge documentul» from the «Toate reviziile» root: the whole document,
+    ''' every revision. The same server call as <see cref="StergeDocumentDdfAsync"/>; the
+    ''' confirmation names the count and the total instead of one revision. Refused when any
+    ''' revision is signed (the view offers it only then; re-checked, the list may be older).
+    ''' </summary>
+    Private Async Function StergeToateReviziileDdfAsync(comanda As DdfComanda) As Task
+        Dim revizii As IReadOnlyList(Of RevizieRow) = comanda.Revizii
+        If comanda.Iddf <= 0 OrElse revizii Is Nothing OrElse revizii.Count = 0 Then
+            KBotMessage.Show(Me, "Documentul nu are revizii de șters.", "Document de fundamentare",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        If revizii.Any(Function(r) DdfView.EsteSemnata(r)) Then
+            KBotMessage.Show(Me, "Documentul are revizii semnate; ele nu se mai șterg.",
+                            "Șterge documentul", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim ro As New Globalization.CultureInfo("ro-RO")
+        Dim intrebare As String =
+            $"Dorești ștergerea Documentului de fundamentare, cu toate cele {revizii.Count} revizii?" & vbCrLf & vbCrLf &
+            $"Angajamentul {comanda.Cod}, valoare totală {revizii.Sum(Function(r) r.TotalRevizie).ToString("N2", ro)} lei." &
+            vbCrLf & vbCrLf &
+            "Se șterg TOATE reviziile documentului, cu rândurile și fișierele lor." & vbCrLf &
+            "Rezervările acoperite redevin fără DDF."
+        If KBotMessage.Show(Me, intrebare, "Șterge documentul",
+                           MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
+            Return
+        End If
+
+        busyBar.Running = True
+        Dim rez As DdfStergereRezultat
+        Try
+            Dim iddf As Integer = comanda.Iddf
+            rez = Await WithReauth(Of DdfStergereRezultat)(
+                Function() _apiClient.DeleteDdfAsync(iddf, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        AratatRezultatulStergerii(rez, "Șterge documentul")
+        DupaScriereaDdf(cod:=rez?.Cod, documentSters:=(rez IsNot Nothing AndAlso rez.DocumentSters))
+    End Function
 
     ''' <summary>
     ''' Refreshes what a DDF write invalidated. The reservations view is refreshed too: a save

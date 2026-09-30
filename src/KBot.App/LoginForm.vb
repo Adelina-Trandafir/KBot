@@ -51,15 +51,56 @@ Public NotInheritable Class LoginForm
             ' The last user who got in wins over the Debug default: that is the name the
             ' operator would otherwise type again. Load never throws (missing file = nothing).
             _lastLogin = LastLoginStore.Load()
-            ' ...unless the operator switched the memory off («Setări» -> Autentificare, slice 0072).
+            ' ...unless the operator switched the memory off («Setari» -> Autentificare, slice 0072).
             If AppSettings.Current.RememberLastLogin AndAlso Not String.IsNullOrWhiteSpace(_lastLogin.Username) Then
                 txtUser.Text = _lastLogin.Username
             End If
+            ConfigureRememberPassword()
             Me.KeyPreview = True                ' Escape inchide (nu mai exista X nativ)
             ShowPhaseCreds()
         Catch ex As Exception
             ' Boundary UI (Load): logam si inghitim.
             GlobalErrorLog.Write("LoginForm.LoginForm_Load", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0097 -- «Tine minte parola pana la repornirea calculatorului». The box is on the
+    ''' window only with the advanced options on and its switch in «Setari → Autentificare»
+    ''' (<see cref="AppSettings.RememberPasswordInEffect"/>); the window grows by its row only then.
+    ''' A pair stored for this Windows session (<see cref="SessionCredentials"/>) fills both fields
+    ''' and ticks the box. Without the box, a stored pair is not used at all.
+    ''' </summary>
+    Private Sub ConfigureRememberPassword()
+        Dim shown As Boolean = AppSettings.Current.RememberPasswordInEffect
+        chkRememberPassword.Visible = shown
+        If Not shown Then Return
+        Height += chkRememberPassword.Height + chkRememberPassword.Margin.Vertical
+
+        Dim user As String = Nothing, pass As String = Nothing
+        If SessionCredentials.TryLoadForWindowsSession(user, pass) Then
+            txtUser.Text = user
+            txtPass.Text = pass
+            chkRememberPassword.Checked = True
+        End If
+    End Sub
+
+    ' Slice 0097: after a login the server accepted. The password is kept in this process for the
+    ' silent re-login (KbotForm.WithReauth), and for the Windows session when the box is ticked --
+    ' unticked, a pair stored earlier is erased. Never fails the login it follows.
+    Private Sub RememberCredentials()
+        Try
+            SessionCredentials.Remember(_username, _password, interactive:=True)
+            If chkRememberPassword.Visible Then
+                If chkRememberPassword.Checked Then
+                    SessionCredentials.SaveForWindowsSession(_username, _password)
+                Else
+                    SessionCredentials.ForgetWindowsSession()
+                End If
+            End If
+        Catch ex As Exception
+            ' Already logged by SessionCredentials. A convenience that cannot be stored is not a
+            ' reason to fail a login that just succeeded.
         End Try
     End Sub
 
@@ -289,6 +330,7 @@ Public NotInheritable Class LoginForm
 
             _session.Populate(_username, result.Token, result.SessionContext)   ' OperatorName = e-mail
             _session.LastSS = result.LastSS                                     ' hint pentru MainForm
+            RememberCredentials()
 
             ' Remember the pair for next time -- only now, after the server said yes, and only
             ' while the operator wants it remembered (slice 0072). With the memory off the file

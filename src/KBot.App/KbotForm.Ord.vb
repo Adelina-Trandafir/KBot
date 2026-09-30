@@ -28,6 +28,8 @@ Partial Public Class KbotForm
                     Await AdaugaOrdonantareAsync(comanda.Cod, comanda.Ziua, comanda.IdPlataFx).ConfigureAwait(True)
                 Case OrdActiune.Modifica : Await ModificaOrdonantareAsync(comanda.Ordonantare).ConfigureAwait(True)
                 Case OrdActiune.Sterge : Await StergeOrdonantareAsync(comanda.Ordonantare).ConfigureAwait(True)
+                Case OrdActiune.StergeGrup
+                    Await StergeOrdonantarileAsync(comanda.Ordonantari, comanda.Eticheta).ConfigureAwait(True)
                 Case OrdActiune.Lot
                     Await GenereazaInLotAsync(comanda.Cod, comanda.Luna, comanda.An).ConfigureAwait(True)
                 Case Else
@@ -164,15 +166,85 @@ Partial Public Class KbotForm
             busyBar.Running = False
         End Try
 
-        KBotMessage.Show(Me,
-            $"Ordonanțarea nr. {rez.NrOrd} a fost ștearsă." & vbCrLf &
-            $"Beneficiari: {rez.Parteneri} · rânduri de plată: {rez.Linii} · " &
-            $"documente: {rez.Documente} · atașamente: {rez.Atasamente} · PDF: {rez.Pdf}." & vbCrLf &
-            $"Plăți redevenite neordonanțate: {rez.PlatiEliberate}.",
-            "Șterge ordonanțarea", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        ' Slice 0097: no box after a delete (operator) -- the counts go to the operator log only.
+        JurnalizeazaStergereaOrd(rez)
 
         ' A delete cannot turn AreORD ON (it can only turn it off, and how many are left is
         ' not known from here) -- so the gate is not touched.
+        DupaScriereaOrdonantarii(maiExistaOrdonantari:=False)
+    End Function
+
+    ' The counts of one ORD delete, in mesaje_operator.log instead of a box (slice 0097).
+    Private Shared Sub JurnalizeazaStergereaOrd(rez As OrdStergereRezultat)
+        If rez Is Nothing Then Return
+        OperatorLog.Write("KbotForm.StergeOrdonantareAsync", "Șterge ordonanțarea",
+            $"Ordonanțarea nr. {rez.NrOrd} a fost ștearsă. " &
+            $"Beneficiari: {rez.Parteneri} · rânduri de plată: {rez.Linii} · " &
+            $"documente: {rez.Documente} · atașamente: {rez.Atasamente} · PDF: {rez.Pdf} · " &
+            $"plăți redevenite neordonanțate: {rez.PlatiEliberate}.")
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0097 -- deletes every ordonantare of a month, or of the whole angajament. One
+    ''' confirmation for the group, then one DELETE per ordonantare (the same call as the single
+    ''' delete, so the same cascades). It STOPS at the first failure, saying how many went: what
+    ''' was deleted stays deleted, the rest stays. The view offers it only when none is signed;
+    ''' this re-checks, because the list may be older than the last signing.
+    ''' </summary>
+    Private Async Function StergeOrdonantarileAsync(ordonantari As IReadOnlyList(Of OrdHeaderRow),
+                                                    eticheta As String) As Task
+        If ordonantari Is Nothing OrElse ordonantari.Count = 0 Then Return
+        If ordonantari.Any(Function(o) OrdView.EsteSemnata(o)) Then
+            KBotMessage.Show(Me, "Printre ordonanțări există documente semnate; ele nu se mai șterg.",
+                            "Șterge ordonanțările", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim ro As New Globalization.CultureInfo("ro-RO")
+        Dim total As Double = ordonantari.Sum(Function(o) o.TotalOrd)
+        Dim intrebare As String =
+            $"Ștergeți {ordonantari.Count} ordonanțări ({eticheta}), în valoare totală de " &
+            $"{total.ToString("N2", ro)} lei?" & vbCrLf & vbCrLf &
+            "Odată cu ele se șterg beneficiarii, rândurile de plată, documentele justificative, " &
+            "atașamentele și PDF-urile stocate pe server." & vbCrLf &
+            "Plățile acoperite redevin neordonanțate."
+        If KBotMessage.Show(Me, intrebare, "Șterge ordonanțările",
+                           MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
+            Return
+        End If
+
+        Dim sterse As Integer = 0
+        Dim esuata As OrdHeaderRow = Nothing
+        Dim motiv As String = Nothing
+        busyBar.Running = True
+        Try
+            For Each o As OrdHeaderRow In ordonantari
+                Dim idordp As Integer = o.Idordp
+                If idordp <= 0 Then Continue For
+                Try
+                    Dim rez As OrdStergereRezultat = Await WithReauth(Of OrdStergereRezultat)(
+                        Function() _apiClient.DeleteOrdAsync(idordp, CancellationToken.None))
+                    JurnalizeazaStergereaOrd(rez)
+                    sterse += 1
+                Catch ex As Exception
+                    GlobalErrorLog.Write("MainForm.StergeOrdonantarileAsync", ex)
+                    esuata = o
+                    motiv = ex.Message
+                    Exit For
+                End Try
+            Next
+        Finally
+            busyBar.Running = False
+        End Try
+
+        If esuata IsNot Nothing Then
+            KBotMessage.Show(Me,
+                $"Ștergerea s-a oprit la ordonanțarea nr. {esuata.NrOrd}." & vbCrLf &
+                $"Motiv: {motiv}" & vbCrLf & vbCrLf &
+                $"Până acolo s-au șters {sterse} ordonanțări; celelalte au rămas.",
+                "Șterge ordonanțările", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End If
+
         DupaScriereaOrdonantarii(maiExistaOrdonantari:=False)
     End Function
 

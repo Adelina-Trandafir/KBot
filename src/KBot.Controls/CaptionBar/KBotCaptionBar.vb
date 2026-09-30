@@ -194,7 +194,12 @@ Partial Public NotInheritable Class KBotCaptionBar
         If open Then
             Dim eTema As Boolean = _themeMenuOpening
             _themeMenuOpening = False
-            If eTema Then
+            ' Slice 0097: the title selector unfolds its own list too.
+            If _selectorMenuOpening Then
+                _selectorMenuOpening = False
+                If _selectorActive Then Return
+                _selectorActive = True
+            ElseIf eTema Then
                 If _themeButtonActive Then Return
                 _themeButtonActive = True
             Else
@@ -204,9 +209,10 @@ Partial Public NotInheritable Class KBotCaptionBar
         Else
             ' Închiderea stinge amândouă: sinkul e comun, iar un buton rămas aprins ar arăta un
             ' meniu care nu mai există.
-            If Not _optionButtonActive AndAlso Not _themeButtonActive Then Return
+            If Not _optionButtonActive AndAlso Not _themeButtonActive AndAlso Not _selectorActive Then Return
             _optionButtonActive = False
             _themeButtonActive = False
+            _selectorActive = False
         End If
         Invalidate()
     End Sub
@@ -265,6 +271,7 @@ Partial Public NotInheritable Class KBotCaptionBar
         _closeHoverColor = p.ErrorColor
         _btnHoverColor = ThemeShapes.Blend(p.SurfaceAltColor, p.BorderColor, 0.6)
         _optBtnHoverColor = ThemeShapes.Blend(p.SurfaceAltColor, p.BorderColor, 0.6)
+        _selectorBorderColor = p.BorderColor
 
         BackColor = _backColor
         Invalidate()
@@ -354,8 +361,10 @@ Partial Public NotInheritable Class KBotCaptionBar
                 End If
             End If
 
-            ' Titlu.
-            If Not String.IsNullOrEmpty(Text) Then
+            ' Titlu. Slice 0097: with a selector, «title — [choice ▾]» (KBotCaptionBar.UnitSelector.vb).
+            If SelectorVisible Then
+                DrawTitleWithSelector(g, x, TitleRightLimit())
+            ElseIf Not String.IsNullOrEmpty(Text) Then
                 Dim rightLimit As Integer = TitleRightLimit()
                 Dim titleRect As New Rectangle(x, 0, Math.Max(0, rightLimit - x - pad), Height)
                 TextRenderer.DrawText(g, Text, Font, titleRect, _titleColor,
@@ -514,6 +523,7 @@ Partial Public NotInheritable Class KBotCaptionBar
         If _showOptionsButton AndAlso OptionButtonRect().Contains(location) Then Return True
         If _showThemeButton AndAlso ThemeButtonRect().Contains(location) Then Return True
         If HelpButtonVisible() AndAlso HelpButtonRect().Contains(location) Then Return True
+        If IsOnSelector(location) Then Return True
         Return False
     End Function
 
@@ -526,10 +536,13 @@ Partial Public NotInheritable Class KBotCaptionBar
             Dim overOpt As Boolean = _showOptionsButton AndAlso OptionButtonRect().Contains(e.Location)
             Dim overTema As Boolean = _showThemeButton AndAlso ThemeButtonRect().Contains(e.Location)
             Dim overHelp As Boolean = HelpButtonVisible() AndAlso HelpButtonRect().Contains(e.Location)
+            Dim overSel As Boolean = IsOnSelector(e.Location)
 
             If overClose <> _hoverClose OrElse overMin <> _hoverMin OrElse overMax <> _hoverMax OrElse
-               overOpt <> _optionButtonHover OrElse overTema <> _themeButtonHover OrElse overHelp <> _helpButtonHover Then
+               overOpt <> _optionButtonHover OrElse overTema <> _themeButtonHover OrElse overHelp <> _helpButtonHover OrElse
+               overSel <> _selectorHover Then
                 _helpButtonHover = overHelp
+                _selectorHover = overSel
                 _hoverClose = overClose
                 _hoverMin = overMin
                 _hoverMax = overMax
@@ -544,8 +557,10 @@ Partial Public NotInheritable Class KBotCaptionBar
 
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
         MyBase.OnMouseLeave(e)
-        If _hoverClose OrElse _hoverMin OrElse _hoverMax OrElse _optionButtonHover OrElse _themeButtonHover OrElse _helpButtonHover Then
+        If _hoverClose OrElse _hoverMin OrElse _hoverMax OrElse _optionButtonHover OrElse _themeButtonHover OrElse _helpButtonHover OrElse
+           _selectorHover Then
             _helpButtonHover = False
+            _selectorHover = False
             _hoverClose = False
             _hoverMin = False
             _hoverMax = False
@@ -591,6 +606,8 @@ Partial Public NotInheritable Class KBotCaptionBar
                 ShowThemeMenu()
             ElseIf HelpButtonVisible() AndAlso HelpButtonRect().Contains(e.Location) Then
                 HelpButtonClicked()
+            ElseIf IsOnSelector(e.Location) Then
+                ShowSelectorMenu()
             End If
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotCaptionBar.OnMouseClick", ex)
