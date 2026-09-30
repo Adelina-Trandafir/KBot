@@ -6,6 +6,7 @@ order: 10
 parent: avansat
 screens: SetariAplicatieView.cboAdobeMotor, SetariAplicatieView.btnAdobeGazduire, SetariAplicatieView.chkAcroTrace, SetariAplicatieView.chkAcroNou, SetariAplicatieView.btnMesajeAdobe, SetariAplicatieView.cboExcelRibbon, AdobeGazduireForm, AdobeMesajeForm
 keywords: adobe, pdf, activex, fereastra gazduita, acropdf, excel, panglica, mesaje javascript, previzualizare
+open: setari:aplicatie
 ---
 <!-- slice: 0072, 0072-01 -->
 Fila **Documente** din **Setări › Aplicație** alege cum afișează K-BOT documentele în ferestrele

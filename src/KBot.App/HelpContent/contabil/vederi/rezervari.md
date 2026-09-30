@@ -6,6 +6,7 @@ order: 30
 parent: contabil.vederi
 screens: RezervariView, GraficRezervariForm
 keywords: rezervari, rezervare initiala, rezervare definitiva, grafic, plus
+open: view:rezervari
 ---
 <!-- slice: 0014, 0061-02, 0092 -->
 Rezervările de credite ale angajamentului, pe luni și zile.

@@ -5,7 +5,8 @@ part: contabil
 order: 20
 parent: contabil.nomenclatoare
 screens: ParteneriForm
-keywords: parteneri, furnizori, cod fiscal, cui, anaf, iban, banca, adresa
+keywords: parteneri, furnizori, beneficiari, cod fiscal, cui, anaf, iban, banca, adresa
+open: menu:parteneri
 ---
 <!-- slice: 0087, 0093 -->
 <!-- capture: parteneri | caption: Fereastra «Parteneri» | goto: menu:parteneri | prepare: Alegeți un partener cu cod fiscal, IBAN și adresă completate. -->

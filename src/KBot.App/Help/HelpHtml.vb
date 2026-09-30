@@ -6,6 +6,7 @@ Imports System.Text.RegularExpressions
 Imports KBot.Theming
 Imports Markdig
 Imports Markdig.Renderers
+Imports Markdig.Renderers.Html
 Imports Markdig.Syntax
 Imports Markdig.Syntax.Inlines
 
@@ -50,7 +51,7 @@ Public NotInheritable Class HelpHtml
         sb.Append("<div class='crumbs'>").Append(Crumbs(library, topic)).Append("</div>")
         sb.Append("<h1>").Append(WebUtility.HtmlEncode(topic.Title)).Append("</h1>")
         AppendTourLinks(sb, library.Tours.Where(Function(t) String.Equals(t.TopicId, topic.Id, StringComparison.OrdinalIgnoreCase)))
-        sb.Append(RenderBody(library, topic.Body, False))
+        sb.Append(RenderBody(library, topic.Body, False, withAnchors:=True))
 
         Dim kids As List(Of HelpTopic) = library.Children(topic.Part, topic.Id)
         If kids.Count > 0 Then
@@ -70,8 +71,9 @@ Public NotInheritable Class HelpHtml
         Dim sb As New StringBuilder()
         sb.Append(PageHead("Ajutor K-BOT"))
         sb.Append("<h1>Ajutor K-BOT</h1>")
-        sb.Append("<p>Apasă <b>F1</b> în orice fereastră sau butonul <b>?</b> din bara de titlu ca să ajungi direct la pagina despre ce ai pe ecran. ")
-        sb.Append("Cuprinsul din stânga are tot ajutorul; căsuța de deasupra lui caută în el.</p>")
+        sb.Append("<p>Apasă <b>F1</b> în orice fereastră ca să ajungi direct la pagina despre ce ai pe ecran; butonul <b>?</b> din bara de titlu ")
+        sb.Append("deschide un mic meniu cu o căsuță de căutare, pagina ecranului și tururile ghidate. ")
+        sb.Append("Cuprinsul din stânga are tot ajutorul; în căsuța de deasupra lui poți scrie o întrebare, cu cuvintele tale.</p>")
         For Each part As HelpPart In parts
             sb.Append("<h2>").Append(WebUtility.HtmlEncode(HelpTopic.PartTitle(part))).Append("</h2><ul>")
             Dim roots As List(Of HelpTopic) = library.Children(part, String.Empty)
@@ -90,26 +92,6 @@ Public NotInheritable Class HelpHtml
         If library.Problems.Count > 0 Then
             sb.Append("<blockquote><b>Unele pagini de ajutor n-au putut fi citite</b> (").Append(library.Problems.Count) _
               .Append("). Detaliile sunt în jurnalul de erori.</blockquote>")
-        End If
-        sb.Append("</body></html>")
-        Return sb.ToString()
-    End Function
-
-    ''' <summary>A page listing search results (or saying there are none).</summary>
-    Public Shared Function SearchPage(query As String, results As List(Of HelpTopic)) As String
-        Dim sb As New StringBuilder()
-        sb.Append(PageHead("Căutare"))
-        sb.Append("<h1>Căutare: «").Append(WebUtility.HtmlEncode(query)).Append("»</h1>")
-        If results.Count = 0 Then
-            sb.Append("<p>Nu s-a găsit niciun subiect care să conțină toate cuvintele căutate.</p>")
-        Else
-            sb.Append("<ul>")
-            For Each t As HelpTopic In results
-                sb.Append("<li><a href='").Append(TopicScheme).Append(WebUtility.HtmlEncode(t.Id)).Append("'>") _
-                  .Append(WebUtility.HtmlEncode(t.Title)).Append("</a> <span class='dim'>— ") _
-                  .Append(WebUtility.HtmlEncode(HelpTopic.PartTitle(t.Part))).Append("</span></li>")
-            Next
-            sb.Append("</ul>")
         End If
         sb.Append("</body></html>")
         Return sb.ToString()
@@ -155,7 +137,7 @@ Public NotInheritable Class HelpHtml
                 Dim level As Integer = Math.Min(4, 2 + library.Depth(t))
                 sb.Append("<h").Append(level).Append(" id='").Append(Anchor(t.Id)).Append("'>") _
                   .Append(WebUtility.HtmlEncode(t.Title)).Append("</h").Append(level).Append(">")
-                sb.Append(RenderBody(library, t.Body, True))
+                sb.Append(RenderBody(library, t.Body, True, withAnchors:=False))
             Next
         Next
         sb.Append("</body></html>")
@@ -185,7 +167,7 @@ Public NotInheritable Class HelpHtml
     ''' Markdown to HTML, with topic links and pictures rewritten. <paramref name="forManual"/>
     ''' turns topic links into anchors of the single manual document.
     ''' </summary>
-    Private Shared Function RenderBody(library As HelpLibrary, markdown As String, forManual As Boolean) As String
+    Private Shared Function RenderBody(library As HelpLibrary, markdown As String, forManual As Boolean, withAnchors As Boolean) As String
         ' Slice 0000-02: a capture tag becomes its picture, as a paragraph of its own. A malformed
         ' tag stays an HTML comment (invisible); HelpLibrary.Load has already logged why.
         markdown = HelpCapture.TagPattern.Replace(markdown,
@@ -199,6 +181,7 @@ Public NotInheritable Class HelpHtml
             End Function)
 
         Dim doc As MarkdownDocument = Markdig.Markdown.Parse(markdown, Pipeline)
+        If withAnchors Then AddSectionAnchors(doc)
         For Each link As LinkInline In MarkdownObjectExtensions.Descendants(Of LinkInline)(CType(doc, MarkdownObject)).ToList()
             Dim url As String = If(link.Url, String.Empty)
             If link.IsImage Then
@@ -212,6 +195,8 @@ Public NotInheritable Class HelpHtml
                 End If
             ElseIf url.StartsWith(TopicScheme, StringComparison.OrdinalIgnoreCase) Then
                 Dim id As String = url.Substring(TopicScheme.Length)
+                Dim hash As Integer = id.IndexOf("#"c)   ' slice 0000-18: topic:id#section
+                If hash >= 0 Then id = id.Substring(0, hash)
                 If library.Find(id) Is Nothing Then
                     ' A link to a topic that does not exist is visible, not a dead click.
                     link.ReplaceBy(New HtmlInline("<span class='deadlink'>[subiect lipsă: " & WebUtility.HtmlEncode(id) & "]</span>"))
@@ -228,6 +213,27 @@ Public NotInheritable Class HelpHtml
             Return sw.ToString()
         End Using
     End Function
+
+    ''' <summary>
+    ''' Slice 0000-18: every <c>## </c> heading gets the id its search section has
+    ''' (<see cref="HelpSearch.AnchorFor"/>, same text, same order), so a search hit opens the
+    ''' page at its section.
+    ''' </summary>
+    Private Shared Sub AddSectionAnchors(doc As MarkdownDocument)
+        Dim used As New HashSet(Of String)(StringComparer.Ordinal)
+        For Each h As HeadingBlock In MarkdownObjectExtensions.Descendants(Of HeadingBlock)(CType(doc, MarkdownObject)).ToList()
+            If h.Level <> 2 OrElse h.Inline Is Nothing Then Continue For
+            Dim text As New StringBuilder()
+            For Each piece As Inline In MarkdownObjectExtensions.Descendants(Of Inline)(CType(h.Inline, MarkdownObject))
+                If TypeOf piece Is LiteralInline Then
+                    text.Append(DirectCast(piece, LiteralInline).Content.ToString())
+                ElseIf TypeOf piece Is CodeInline Then
+                    text.Append(DirectCast(piece, CodeInline).Content)
+                End If
+            Next
+            h.GetAttributes().Id = HelpSearch.AnchorFor(text.ToString(), used)
+        Next
+    End Sub
 
     Private Shared Function DataUri(file As String) As String
         Dim mime As String

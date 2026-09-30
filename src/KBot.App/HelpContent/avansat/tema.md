@@ -6,6 +6,7 @@ order: 30
 parent: avansat
 screens: SetariTemaView
 keywords: tema, schema, culori, scalare, dpi, factor, marime text, font din tema, fereastra intinsa
+open: setari:tema
 ---
 <!-- slice: 0036, 0072-01 -->
 Pagina **Temă** din Setări editează schemele de culori și hotărăște cum se mărește K-BOT pe

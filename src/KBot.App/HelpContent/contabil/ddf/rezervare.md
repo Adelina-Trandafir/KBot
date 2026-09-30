@@ -5,6 +5,7 @@ part: contabil
 order: 40
 parent: contabil.ddf
 keywords: adauga rezervare, definitiveaza, deruleaza, genereaza pdf final, revizie noua, indicatori existenti
+open: view:rezervari
 ---
 <!-- slice: 0081-02, 0078-06 -->
 Iconița din **stânga, jos, a arborelui din vederea Rezervări** deschide acțiunile documentului

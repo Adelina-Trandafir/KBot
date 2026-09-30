@@ -6,6 +6,7 @@ order: 60
 parent: contabil
 screens: CabNoteForm, CabNoteReceiptForm, NoteCabView, CabNoteVizualizarePage, CabNoteDocumentPage
 keywords: operatiuni necorelate, necorectate, errrrrrrrrr, nota contabila, corectie cab, f1135
+open: view:notecab
 ---
 <!-- slice: 0084, 0088 -->
 Când FOREXE nu poate lega o plată de un angajament, o arată în tabelul **«Operațiuni

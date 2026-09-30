@@ -40,11 +40,23 @@ Public NotInheritable Class HelpTopic
     ''' <summary>Search words that are not in the title or body (synonyms, old Access names).</summary>
     Public Property Keywords As New List(Of String)()
 
+    ''' <summary>
+    ''' Slice 0000-19: the screen this topic explains, as a capture's <c>goto</c>
+    ''' (<c>view:ddf</c>, <c>menu:clasificatii</c>, <c>setari:tema</c>); empty = none. A search
+    ''' hit on the topic offers «Deschide ...» for it.
+    ''' </summary>
+    Public Property Open As String = String.Empty
+
     ''' <summary>The Markdown body, header removed.</summary>
     Public Property Body As String = String.Empty
 
     ''' <summary>The file it came from (for error messages).</summary>
     Public Property SourcePath As String = String.Empty
+
+    ' Slice 0000-18: the search index, built once when the file is read (HelpSearch.Index).
+    Friend ReadOnly Property Sections As New List(Of HelpSection)()
+    Friend Property TitleTerms As HelpTermSet
+    Friend Property KeywordTerms As HelpTermSet
 
     ''' <summary>Romanian name of a part, as the operator reads it.</summary>
     Public Shared Function PartTitle(part As HelpPart) As String

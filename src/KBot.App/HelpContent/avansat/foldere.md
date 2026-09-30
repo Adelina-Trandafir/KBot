@@ -6,6 +6,7 @@ order: 40
 parent: avansat
 screens: SetariFolder
 keywords: foldere, cai, dosare, logs, extrase, temp, workflow, settings.json
+open: setari:foldere
 ---
 <!-- slice: 0072, 0072-02 -->
 Pagina **Căi fișiere** din Setări arată folderele în care scrie K-BOT și îți permite să le muți.

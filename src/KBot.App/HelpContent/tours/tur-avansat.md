@@ -3,6 +3,7 @@ id: tur-avansat
 title: Opțiunile avansate în Setări
 part: avansat
 topic: avansat
+screens: SetariForm
 ---
 ## Paginile Setărilor
 <!-- slice: 0072 -->

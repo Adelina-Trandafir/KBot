@@ -79,10 +79,13 @@ Partial Public NotInheritable Class KBotCaptionBar
         End Using
     End Sub
 
-    ''' <summary>The «?» click: help for the window. The provider picks the topic from the focused control.</summary>
+    ''' <summary>
+    ''' The «?» click. Slice 0000-20: the help POPUP under the button (search, the topic of the
+    ''' focused control, the tours); F1 still opens the help window directly.
+    ''' </summary>
     Private Sub HelpButtonClicked()
         If Not KBotHelp.IsAvailable Then Return
-        KBotHelp.Request(Me)
+        KBotHelp.RequestMenu(Me, RectangleToScreen(HelpButtonRect()))
     End Sub
 
 End Class

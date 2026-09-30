@@ -6,6 +6,7 @@ order: 10
 parent: contabil.vederi
 screens: SumarView
 keywords: sumar, indicatori, credit bugetar, totaluri
+open: view:sumar
 ---
 <!-- slice: 0011, 0000-14 -->
 Prima privire asupra angajamentului.

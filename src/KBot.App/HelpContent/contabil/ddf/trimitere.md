@@ -5,6 +5,7 @@ part: contabil
 order: 60
 parent: contabil.ddf
 keywords: trimite in forexe, reia trimiterea, trimitere intrerupta, creare angajament, incarca rezervare, capturi
+open: view:ddf
 ---
 <!-- slice: 0081-04 -->
 O revizie **semnată pe A** se trimite în FOREXE din vederea «Fundamentare»: **clic dreapta** pe

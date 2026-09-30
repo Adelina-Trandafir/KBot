@@ -6,6 +6,7 @@ order: 50
 parent: avansat
 screens: SetariAplicatieView.cboVerbose, SetariAplicatieView.chkLogViewer
 keywords: jurnal, log, erori, diagnostic, harness_errors, adobe_preview, mesaje_operator, consola detaliata
+open: setari:jurnal
 ---
 <!-- slice: 0031-01, 0072, 0089 -->
 K-BOT scrie tot ce face în jurnale, în folderul **Logs** (vezi [Căi fișiere](topic:avansat.foldere)).

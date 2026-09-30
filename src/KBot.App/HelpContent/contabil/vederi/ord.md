@@ -6,6 +6,7 @@ order: 70
 parent: contabil.vederi
 screens: OrdView, OrdVizualizarePage, OrdDocumentPage
 keywords: ordonantare, ord, ordonantari de plata, document, pdf, semnare, genereaza, validare formular, anulare validare, alte avize, verificat avizat, cfp, control financiar preventiv, ordonator, compartiment de specialitate
+open: view:ord
 ---
 <!-- slice: 0033, 0041 -->
 Ordonanțările de plată ale angajamentului, cu documentul fiecăreia.

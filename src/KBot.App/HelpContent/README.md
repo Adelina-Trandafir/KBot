@@ -18,6 +18,7 @@ order: 30                         # position among siblings, lower first
 parent: contabil.ddf              # parent topic id; empty = directly under the part
 screens: DdfView, KbotForm.btnSinc  # what F1 / «?» on these opens (see below)
 keywords: fundamentare, revizie   # extra search words
+open: view:ddf                    # optional: the screen this topic explains (slice 0000-19)
 ---
 ```
 
@@ -30,6 +31,23 @@ F1 walks from the focused control up through its parents. Each step offers
 `TypeName.controlName` (a named control inside a form / user control) or `TypeName`
 (the form / user control itself); the first key that a topic lists wins. Debug builds show the
 keys that were tried in the help window's bar, so you can copy the right value.
+
+## open (slice 0000-19)
+
+The screen the topic explains, with the same values as a capture's `goto:` (below):
+`view:<key>`, `menu:<key>`, `setari:<page>`. A search hit on the topic (the «?» popup, the help
+window) then carries a «Deschide «...»» button that takes K-BOT there; the button's caption is
+the view / menu row as the main window shows it («Setări» for a settings page). A view that is
+off for the selected angajament shows the usual «nu e disponibilă» message. Give `open:` only to
+topics that describe ONE real screen; a chapter page or a concept page gets none. The checker
+validates the value against the `goto:` pattern.
+
+## keywords
+
+Search words the text does not contain: synonyms, the old Access names, what an accountant
+would type («ordonantare» for ORD, «semnatura» for signing). The search already ignores
+diacritics, filler words and word endings (slice 0000-18), so do not list plural / singular
+forms of a word that is already in the text.
 
 ## Body
 
@@ -91,6 +109,7 @@ id: tur-fereastra            # ASCII, unique
 title: Fereastra principală  # Romanian, the bubble's caption and the link text
 part: contabil               # who sees it (same parts as topics)
 topic: contabil.fereastra    # the topic that shows «▶ Tur ghidat: ...»; empty = start page only
+screens: KbotForm            # optional (slice 0000-20): where the «?» popup offers it; empty = the topic's screens
 ---
 ## Butonul MENIU             # one '## ' per step: the bubble's heading
 target: KbotForm.btnMeniu    # optional: TypeName or TypeName.controlName to ring
@@ -103,3 +122,10 @@ lines starting with '- ' become bullets.
 is not on screen does not stop the tour: the bubble is centred and says so. Painted parts
 (tree footer icons, caption-bar buttons) are not controls: ring their control and say where.
 Every tour is listed on the help start page under «Tururi ghidate».
+
+**In the «?» popup (slice 0000-20)** a tour is offered on each visible window (not minimized,
+not behind a modal dialog) that shows one of its screens: the tour's own `screens:`, else its
+topic's `screens:`. «Shows» means the form, or a control / view inside it, is visible — for the
+main window that is the selected view. When several windows have tours, the popup puts them in
+one folder per window. Give a tour `screens:` only when its topic's screens do not name the
+window it starts on (e.g. `tur-avansat`: its topic lists one checkbox, the tour runs in Setări).

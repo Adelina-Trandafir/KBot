@@ -5,9 +5,9 @@ part: contabil
 topic: contabil.asocieri
 ---
 ## Pornește turul din fereastră
-<!-- slice: 0000-12 -->
+<!-- slice: 0000-12, 0000-20 -->
 target: AsociereForm
-Turul merge doar cu fereastra Asocieri deschisă. Dacă n-o vezi, închide turul, deschide Asocieri (vederea Recepții › iconița din dreapta, sus, a arborelui), apasă F1 în ea și pornește turul de acolo.
+Turul merge doar cu fereastra Asocieri deschisă. Dacă n-o vezi, închide turul, deschide Asocieri (vederea Recepții › iconița din dreapta, sus, a arborelui), apasă «?» din bara ei de titlu și pornește turul din meniu (sau F1, apoi turul din pagina de ajutor).
 
 ## Recepțiile și lanțurile lor
 <!-- slice: 0048-04, 0065 -->

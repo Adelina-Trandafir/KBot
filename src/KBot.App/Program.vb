@@ -440,6 +440,9 @@ Friend Module Program
         services.AddSingleton(Of ForexeController)()
 
         ' Slice 0000-01: the help (topics, F1, the «?» of every caption bar, the help window).
+        ' Slice 0000-21: the questions typed there go to the server through ApiClient too.
+        services.AddSingleton(Of IHelpFeedbackApi)(
+            Function(sp) DirectCast(sp.GetRequiredService(Of IApiClient)(), IHelpFeedbackApi))
         services.AddSingleton(Of HelpService)()
 
         ' Forms.

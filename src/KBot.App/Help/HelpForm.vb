@@ -5,7 +5,7 @@ Imports KBot.Theming
 
 ''' <summary>
 ''' The help window (slice 0000-01): contents tree and search on the left, the page on the right,
-''' Back / Forward and «Exportă manualul» above it. One instance, owned by <see cref="HelpService"/>;
+''' Back / Forward and the manual export button above it. One instance, owned by <see cref="HelpService"/>;
 ''' F1 and «?» reuse it and just turn the page.
 '''
 ''' <para>Pages are HTML from <see cref="HelpHtml"/> in a <see cref="WebBrowser"/>. A click on a
@@ -16,7 +16,6 @@ Public Class HelpForm
 
     Private Const HomeKey As String = "home"
     Private Const TopicPrefix As String = "t:"
-    Private Const SearchPrefix As String = "s:"
 
     Private ReadOnly _service As HelpService
     Private ReadOnly _back As New Stack(Of String)()
@@ -26,6 +25,9 @@ Public Class HelpForm
     Private _contextKeys As New List(Of String)()
     Private _shown As Boolean
     Private _pendingHtml As String
+    Private _search As HelpSearchSession
+    Private _pendingAnchor As String
+    Private _scrollAnchor As String
 
     ''' <summary>Designer only.</summary>
     Public Sub New()
@@ -35,6 +37,12 @@ Public Class HelpForm
     Public Sub New(service As HelpService)
         InitializeComponent()
         _service = service
+        ' Slice 0000-20: the same search as the «?» popup; its list covers the contents while the
+        ' box has text. Made here, not in Load: a hit from the popup is handed over before Show.
+        If service IsNot Nothing Then
+            _search = New HelpSearchSession(service, HelpSearchSession.WhereWindow, Nothing)
+            pnlCautare.Source = _search
+        End If
     End Sub
 
     ''' <summary>
@@ -57,6 +65,7 @@ Public Class HelpForm
         MyBase.OnLoad(e)
         Try
             If _service Is Nothing Then Return
+            FoldSearch()
             BuildTree()
             ' HelpService picks the first page before Show(); it is drawn now that there is a handle.
             If _current.Length = 0 Then _current = HomeKey
@@ -95,9 +104,10 @@ Public Class HelpForm
         End Try
     End Sub
 
-    Public Sub ShowTopic(id As String)
+    ''' <summary>Opens a topic; with <paramref name="sectionAnchor"/>, scrolled to that section (slice 0000-18).</summary>
+    Public Sub ShowTopic(id As String, Optional sectionAnchor As String = Nothing)
         Try
-            Go(TopicPrefix & id, remember:=True)
+            Go(TopicPrefix & id & If(String.IsNullOrEmpty(sectionAnchor), String.Empty, "#" & sectionAnchor), remember:=True)
         Catch ex As Exception
             GlobalErrorLog.Write("HelpForm.ShowTopic", ex)
             Throw
@@ -151,8 +161,15 @@ Public Class HelpForm
         Dim library As HelpLibrary = _service.Library
         Dim parts As List(Of HelpPart) = _service.VisibleParts()
         Dim html As String
+        Dim anchor As String = Nothing
         If page.StartsWith(TopicPrefix, StringComparison.Ordinal) Then
-            Dim topic As HelpTopic = library.Find(page.Substring(TopicPrefix.Length))
+            Dim topicId As String = page.Substring(TopicPrefix.Length)
+            Dim hash As Integer = topicId.IndexOf("#"c)
+            If hash >= 0 Then
+                anchor = topicId.Substring(hash + 1)
+                topicId = topicId.Substring(0, hash)
+            End If
+            Dim topic As HelpTopic = library.Find(topicId)
             If topic Is Nothing Then
                 html = HelpHtml.MessagePage("Pagina nu există", {"Pagina de ajutor cerută nu se găsește. Folosește cuprinsul din stânga."})
             ElseIf Not parts.Contains(topic.Part) Then
@@ -160,32 +177,40 @@ Public Class HelpForm
             Else
                 html = HelpHtml.TopicPage(library, topic, parts)
             End If
-        ElseIf page.StartsWith(SearchPrefix, StringComparison.Ordinal) Then
-            Dim q As String = page.Substring(SearchPrefix.Length)
-            html = HelpHtml.SearchPage(q, library.Search(q, parts))
         Else
             html = HelpHtml.HomePage(library, parts)
         End If
-        SetHtml(html)
+        SetHtml(html, anchor)
     End Sub
 
     ' The WebBrowser drops a DocumentText set before the window is shown or while a previous page
     ' is still loading (seen on screen: F1 opened the window with a blank page). Such a page waits
     ' here and is drawn from OnShown / DocumentCompleted. Only the newest one is kept.
-    Private Sub SetHtml(html As String)
+    ' Slice 0000-18: the section to scroll to travels with its page and is used once it has loaded.
+    Private Sub SetHtml(html As String, anchor As String)
         If Not _shown OrElse web.IsBusy Then
             _pendingHtml = html
+            _pendingAnchor = anchor
             Return
         End If
         _pendingHtml = Nothing
+        _pendingAnchor = Nothing
+        _scrollAnchor = anchor
         web.DocumentText = html
+    End Sub
+
+    Private Sub ScrollToAnchor()
+        Dim a As String = _scrollAnchor
+        _scrollAnchor = Nothing
+        If String.IsNullOrEmpty(a) OrElse web.Document Is Nothing Then Return
+        web.Document.GetElementById(a)?.ScrollIntoView(True)
     End Sub
 
     Protected Overrides Sub OnShown(e As EventArgs)
         MyBase.OnShown(e)
         Try
             _shown = True
-            If _pendingHtml IsNot Nothing Then SetHtml(_pendingHtml)
+            If _pendingHtml IsNot Nothing Then SetHtml(_pendingHtml, _pendingAnchor)
         Catch ex As Exception
             GlobalErrorLog.Write("HelpForm.OnShown", ex)
         End Try
@@ -193,7 +218,11 @@ Public Class HelpForm
 
     Private Sub Web_DocumentCompleted(sender As Object, e As WebBrowserDocumentCompletedEventArgs) Handles web.DocumentCompleted
         Try
-            If _pendingHtml IsNot Nothing Then SetHtml(_pendingHtml)
+            If _pendingHtml IsNot Nothing Then
+                SetHtml(_pendingHtml, _pendingAnchor)
+            Else
+                ScrollToAnchor()
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("HelpForm.Web_DocumentCompleted", ex)
         End Try
@@ -259,18 +288,57 @@ Public Class HelpForm
         End Try
     End Sub
 
-    ' ── Search ────────────────────────────────────────────────────────────────────
+    ' ── Search (slice 0000-20) ────────────────────────────────────────────────────
 
-    Private Sub TxtCauta_KeyDown(sender As Object, e As KeyEventArgs) Handles txtCauta.KeyDown
+    ''' <summary>A question asked in the «?» popup, carried on here with its results.</summary>
+    Friend Sub TakeOverSearch(from As HelpSearchSession)
         Try
-            If e.KeyCode <> Keys.Enter Then Return
-            e.SuppressKeyPress = True
-            Dim q As String = txtCauta.Text.Trim()
-            If q.Length = 0 Then Return
-            Go(SearchPrefix & q, remember:=True)
+            ' Slice 0000-21: the same question (same id), so a rating here updates its row.
+            _search?.EndQuestion()
+            _search?.Adopt(from)
+            pnlCautare.SetQuery(from.Query)
         Catch ex As Exception
-            GlobalErrorLog.Write("HelpForm.TxtCauta_KeyDown", ex)
+            GlobalErrorLog.Write("HelpForm.TakeOverSearch", ex)
+            Throw
         End Try
+    End Sub
+
+    ' Results on screen: the list takes the whole left side; none: back to the box over the contents.
+    Private Sub FoldSearch()
+        If pnlCautare.HasRows Then
+            tvCuprins.Visible = False
+            pnlCautare.Dock = DockStyle.Fill
+        Else
+            pnlCautare.Dock = DockStyle.Top
+            pnlCautare.Height = pnlCautare.CollapsedHeight
+            tvCuprins.Visible = True
+        End If
+    End Sub
+
+    Private Sub PnlCautare_RowsVisibleChanged(sender As Object, e As EventArgs) Handles pnlCautare.RowsVisibleChanged
+        Try
+            FoldSearch()
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpForm.PnlCautare_RowsVisibleChanged", ex)
+        End Try
+    End Sub
+
+    ' Esc in the box empties it: the contents come back.
+    Private Sub PnlCautare_EscapePressed(sender As Object, e As EventArgs) Handles pnlCautare.EscapePressed
+        Try
+            pnlCautare.SetQuery(String.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpForm.PnlCautare_EscapePressed", ex)
+        End Try
+    End Sub
+
+    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        Try
+            pnlCautare.EndQuestion()
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpForm.OnFormClosed", ex)
+        End Try
+        MyBase.OnFormClosed(e)
     End Sub
 
     ' ── Contents tree ─────────────────────────────────────────────────────────────
@@ -302,6 +370,8 @@ Public Class HelpForm
 
     Private Sub SelectInTree(page As String)
         If Not page.StartsWith(TopicPrefix, StringComparison.Ordinal) Then Return
+        Dim hash As Integer = page.IndexOf("#"c)
+        If hash >= 0 Then page = page.Substring(0, hash)
         Dim node As TreeNode = FindNode(tvCuprins.Nodes, page)
         If node Is Nothing Then Return
         _syncingTree = True

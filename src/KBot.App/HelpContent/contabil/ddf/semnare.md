@@ -4,7 +4,8 @@ title: Semnarea documentului
 part: contabil
 order: 50
 parent: contabil.ddf
-keywords: semnare, semnatura, adobe, pdf, sectiunea a, sectiunea b, validez
+keywords: semnare, semnatura, semnatura electronica, certificat digital, token, adobe, pdf, sectiunea a, sectiunea b, validez
+open: view:ddf
 ---
 <!-- slice: 0078 -->
 Documentul se semnează în K-BOT, pe pagina **Document PDF** a vederii «Fundamentare». Pagina

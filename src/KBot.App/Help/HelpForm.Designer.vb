@@ -22,7 +22,7 @@ Partial Class HelpForm
         pnlRoot = New Panel()
         split = New SplitContainer()
         tvCuprins = New TreeView()
-        txtCauta = New TextBox()
+        pnlCautare = New KBotHelpSearchPanel()
         web = New WebBrowser()
         tlyBara = New KBotTableLayoutPanel()
         btnInapoi = New Button()
@@ -59,7 +59,7 @@ Partial Class HelpForm
         split.Margin = New Padding(0)
         split.Name = "split"
         split.Panel1.Controls.Add(tvCuprins)
-        split.Panel1.Controls.Add(txtCauta)
+        split.Panel1.Controls.Add(pnlCautare)
         split.Panel1.Padding = New Padding(8, 8, 0, 8)
         split.Panel2.Controls.Add(web)
         split.Panel2.Controls.Add(tlyBara)
@@ -76,25 +76,22 @@ Partial Class HelpForm
         tvCuprins.FullRowSelect = True
         tvCuprins.HideSelection = False
         tvCuprins.ItemHeight = 22
-        tvCuprins.Location = New Point(8, 34)
+        tvCuprins.Location = New Point(8, 44)
         tvCuprins.Margin = New Padding(0)
         tvCuprins.Name = "tvCuprins"
         tvCuprins.ShowLines = False
-        tvCuprins.Size = New Size(272, 598)
+        tvCuprins.Size = New Size(272, 588)
         tvCuprins.TabIndex = 1
         '
-        ' txtCauta
+        ' pnlCautare
         '
-        txtCauta.BorderStyle = BorderStyle.FixedSingle
-        txtCauta.Dock = DockStyle.Top
-        txtCauta.Location = New Point(8, 8)
-        txtCauta.Margin = New Padding(0)
-        txtCauta.Name = "txtCauta"
-        txtCauta.PlaceholderText = "Caută în ajutor..."
-        txtCauta.Size = New Size(272, 26)
-        txtCauta.TabIndex = 0
-        tips.SetToolTipHeader(txtCauta, "Caută")
-        tips.SetToolTipText(txtCauta, "Scrie unul sau mai multe cuvinte și apasă Enter. Nu contează diacriticele: «plati» găsește «Plăți».")
+        pnlCautare.Dock = DockStyle.Top
+        pnlCautare.Location = New Point(8, 8)
+        pnlCautare.Margin = New Padding(0)
+        pnlCautare.Name = "pnlCautare"
+        pnlCautare.Padding = New Padding(0, 0, 0, 6)
+        pnlCautare.Size = New Size(272, 36)
+        pnlCautare.TabIndex = 0
         '
         ' web
         '
@@ -233,7 +230,7 @@ Partial Class HelpForm
     Friend WithEvents pnlRoot As Panel
     Friend WithEvents split As SplitContainer
     Friend WithEvents tvCuprins As TreeView
-    Friend WithEvents txtCauta As TextBox
+    Friend WithEvents pnlCautare As KBotHelpSearchPanel
     Friend WithEvents web As WebBrowser
     Friend WithEvents tlyBara As KBotTableLayoutPanel
     Friend WithEvents btnInapoi As Button

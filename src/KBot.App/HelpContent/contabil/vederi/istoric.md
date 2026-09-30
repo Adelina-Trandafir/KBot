@@ -6,6 +6,7 @@ order: 20
 parent: contabil.vederi
 screens: IstoricView
 keywords: istoric, filtre, tip rand, data fx, observatii
+open: view:istoric
 ---
 <!-- slice: 0022, 0095 -->
 Toate rândurile de istoric ale angajamentului, așa cum le are FOREXE: fiecare rezervare,

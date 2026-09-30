@@ -6,6 +6,7 @@ order: 30
 parent: contabil.ddf
 screens: DdfEditForm, DdfEditSectiuneaAPage, DdfEditSectiuneaBPage, DdfEditDescrierePage, DdfEditFisierePage, DdfEditLinieAForm
 keywords: editor, antet, sectiunea a, sectiunea b, cual, revizie, clasificatie, partener, fisiere, salveaza
+open: view:ddf
 ---
 <!-- slice: 0051, 0081-02 -->
 Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la «Modifică revizia».

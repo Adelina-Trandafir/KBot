@@ -8,6 +8,7 @@
       - a topic header without id / title / part, an unknown header key, a bad part
       - duplicate topic ids, a parent or a [x](topic:id) link that does not exist
       - a capture tag with a bad or duplicate id, or an unknown goto prefix
+      - a topic open: (slice 0000-19) with an unknown goto form
       - a tour whose topic does not exist, a tour step goto with an unknown prefix
       - a screens: key or a tour target: whose type (or control name) is not in src\
     Report (no error):
@@ -38,8 +39,8 @@ $CoverageSkip = @(
     'StartupLauncherForm', 'PlaceholderView',
     'HelpForm', 'HelpCaptureForm', 'HelpCapturePromptForm', 'HelpCaptureOverlay', 'HelpTourBubble', 'HelpTourFrame'
 )
-$HeaderKeys = @('id', 'title', 'part', 'order', 'parent', 'screens', 'keywords')
-$TourKeys = @('id', 'title', 'part', 'topic')
+$HeaderKeys = @('id', 'title', 'part', 'order', 'parent', 'screens', 'keywords', 'open')
+$TourKeys = @('id', 'title', 'part', 'topic', 'screens')
 $Parts = @('contabil', 'avansat', 'director')
 $GotoPrefix = '^(view:[a-z0-9_]+|menu:[a-z0-9_]+|setari:[a-z0-9_]+|help|help:[a-z0-9._-]+)$'
 
@@ -77,6 +78,8 @@ foreach ($f in $topicFiles) {
     if ($null -eq $h) { continue }
     foreach ($k in 'id', 'title', 'part') { if (-not $h[$k]) { Add-Err "$($h.__file): missing '$k'" } }
     if ($h.part -and $Parts -notcontains $h.part) { Add-Err "$($h.__file): part '$($h.part)' is not one of $($Parts -join ', ')" }
+    # Slice 0000-19: open: takes the same values as a capture's goto.
+    if ($h.ContainsKey('open') -and $h.open -cnotmatch $GotoPrefix) { Add-Err "$($h.__file): open '$($h.open)' has an unknown form" }
     $topics += $h
 }
 $ids = @{}
@@ -155,6 +158,10 @@ foreach ($t in $topics) {
 }
 foreach ($tr in $tours) {
     foreach ($m in [regex]::Matches($tr.__body, '(?m)^target:\s*(.+)$')) { Test-Key $m.Groups[1].Value.Trim() $tr.__file }
+    # Slice 0000-20: the optional screens: of a tour (the windows the «?» popup offers it on).
+    if ($tr.screens) {
+        foreach ($k in $tr.screens.Split(',')) { $k = $k.Trim(); if ($k) { Test-Key $k $tr.__file } }
+    }
 }
 
 # --- Source tags (slice 0000-13): <!-- slice: 0072, 0097 --> right after the header block of a

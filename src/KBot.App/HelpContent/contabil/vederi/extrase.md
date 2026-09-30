@@ -6,6 +6,7 @@ order: 60
 parent: contabil.vederi
 screens: ExtraseView, ExtraseForm, ExtrasePanel
 keywords: extrase, snm, extras de cont, operatii, antet, platitor, cui
+open: view:extrase
 ---
 <!-- slice: 0080-02, 0080-03 -->
 Extrasele de cont (SNM) se văd în două locuri:

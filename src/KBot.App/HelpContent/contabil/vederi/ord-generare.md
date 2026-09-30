@@ -6,6 +6,7 @@ order: 71
 parent: contabil.vederi.ord
 screens: OrdZiuaForm
 keywords: ordonantare noua, adauga ordonantare, generare in lot, plati neordonantate, ziua, sterge ordonantarea
+open: view:ord
 ---
 <!-- slice: 0049, 0049-01 -->
 O ordonanțare se face **din plăți**: acoperă plățile **neordonanțate** ale unei zile. Plățile

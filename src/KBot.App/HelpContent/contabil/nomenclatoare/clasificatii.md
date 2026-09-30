@@ -5,7 +5,8 @@ part: contabil
 order: 10
 parent: contabil.nomenclatoare
 screens: ClasificatiiForm, ClasificatiiAddForm
-keywords: clasificatii, buget, trimestre, rectificari, capitol, subcapitol, articol, alineat
+keywords: clasificatii, clasificatie bugetara, indicatori, buget, trimestre, rectificari, capitol, subcapitol, articol, alineat
+open: menu:clasificatii
 ---
 <!-- slice: 0087, 0075-00 -->
 <!-- capture: clasificatii | caption: Fereastra «Clasificații bugetare» | goto: menu:clasificatii | prepare: Alegeți în arbore un alineat care are buget și rectificări. -->

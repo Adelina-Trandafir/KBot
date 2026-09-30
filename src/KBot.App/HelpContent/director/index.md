@@ -3,7 +3,7 @@ id: director
 title: K-BOT pentru director
 part: director
 order: 0
-screens: DirectorForm, DirectorForm.capBar
+screens: DirectorForm, DirectorForm.capBar, KBotHelpPopup
 keywords: director, ordonator, semnare, documente de semnat, fereastra directorului
 ---
 <!-- slice: 0081-06 -->
@@ -27,7 +27,7 @@ documentul ajunge la tine. **Semnătura ta e ultima**: după ea documentul e **�
 Documentele în orice altă stare sunt încă la contabil și nu apar la tine.
 
 ## Fereastra, pe scurt
-<!-- slice: 0081-06 -->
+<!-- slice: 0081-06, 0000-20, 0000-21 -->
 
 - **Sus** — câte documente ai de semnat.
 - **Stânga** — lista documentelor. Vezi [Lista documentelor de semnat](topic:director.lista).
@@ -37,4 +37,7 @@ Documentele în orice altă stare sunt încă la contabil și nu apar la tine.
 Un document din altă unitate decât cea pe care te-ai conectat se deschide după o nouă conectare pe
 unitatea lui. Vezi [Documente din alte unități](topic:director.unitati).
 
-> Butonul **?** din bara de titlu și tasta **F1** deschid acest ajutor, ca în orice fereastră K-BOT.
+> Tasta **F1** deschide acest ajutor. Butonul **?** din bara de titlu deschide un meniu mic: o
+> căsuță în care scrii o întrebare cu cuvintele tale, pagina ecranului și turul ghidat al
+> ferestrei. Sub rezultate poți da o notă de la 1 la 5 stele. Întrebările și notele se trimit fără
+> numele tău, ca să putem îmbunătăți ajutorul: nu scrie în căsuță nume sau alte date personale.

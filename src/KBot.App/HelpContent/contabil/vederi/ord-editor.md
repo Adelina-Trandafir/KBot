@@ -6,6 +6,7 @@ order: 72
 parent: contabil.vederi.ord
 screens: OrdEditForm, OrdBeneficiariPage, OrdDocumentePage, OrdAtasamentePage, OrdTextForm
 keywords: editor ordonantare, beneficiari, documente justificative, atasamente, imagini, salveaza ordonantarea, cod fiscal, iban
+open: view:ord
 ---
 <!-- slice: 0049, 0049-02 -->
 Fereastra **«Ordonanțare de plată»** se deschide la o ordonanțare nouă și la «Modifică

@@ -112,16 +112,26 @@ Friend NotInheritable Class HelpTourRunner
     ''' windows (the help and tour windows excluded). Nothing when it is not on screen.
     ''' </summary>
     Friend Shared Function FindTarget(target As String) As Control
+        For Each f As Form In Application.OpenForms.Cast(Of Form)().ToList()
+            If Not f.Visible OrElse TypeOf f Is HelpForm OrElse TypeOf f Is HelpTourBubble OrElse TypeOf f Is HelpTourFrame Then Continue For
+            Dim hit As Control = FindInWindow(f, target)
+            If hit IsNot Nothing Then Return hit
+        Next
+        Return Nothing
+    End Function
+
+    ''' <summary>
+    ''' Slice 0000-20: <c>TypeName</c> or <c>TypeName.controlName</c> inside one window, VISIBLE
+    ''' matches only (a view that is not selected is hidden, so it does not count). Nothing = not there.
+    ''' </summary>
+    Friend Shared Function FindInWindow(window As Form, target As String) As Control
         Dim dot As Integer = target.IndexOf("."c)
         Dim typeName As String = If(dot < 0, target, target.Substring(0, dot)).Trim()
         Dim controlName As String = If(dot < 0, String.Empty, target.Substring(dot + 1).Trim())
-        For Each f As Form In Application.OpenForms.Cast(Of Form)().ToList()
-            If Not f.Visible OrElse TypeOf f Is HelpForm OrElse TypeOf f Is HelpTourBubble OrElse TypeOf f Is HelpTourFrame Then Continue For
-            For Each host As Control In OfType(f, typeName)
-                If controlName.Length = 0 Then Return host
-                For Each hit As Control In host.Controls.Find(controlName, True)
-                    If hit.Visible AndAlso hit.Width > 0 AndAlso hit.Height > 0 Then Return hit
-                Next
+        For Each host As Control In OfType(window, typeName)
+            If controlName.Length = 0 Then Return host
+            For Each hit As Control In host.Controls.Find(controlName, True)
+                If hit.Visible AndAlso hit.Width > 0 AndAlso hit.Height > 0 Then Return hit
             Next
         Next
         Return Nothing

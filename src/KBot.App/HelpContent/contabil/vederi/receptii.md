@@ -5,7 +5,8 @@ part: contabil
 order: 40
 parent: contabil.vederi
 screens: ReceptiiView
-keywords: receptii, antet, diferenta, asocieri, legaturi, instantanee
+keywords: receptii, factura, facturi, antet, diferenta, asocieri, legaturi, instantanee
+open: view:receptii
 ---
 <!-- slice: 0015, 0015-03, 0065 -->
 Recepțiile angajamentului, cu detaliul lor pe clasificații.

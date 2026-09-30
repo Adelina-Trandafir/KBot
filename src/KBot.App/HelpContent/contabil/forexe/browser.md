@@ -6,6 +6,7 @@ order: 40
 parent: contabil.forexe
 screens: BrowserView, IstoricIntervalForm
 keywords: browser, pagina forexe, deschide angajament
+open: view:browser
 ---
 <!-- slice: 0070, 0074 -->
 Cât timp ești conectat la FOREXE, bara de vederi are **Browser FOREXE**: pagina FOREXE a

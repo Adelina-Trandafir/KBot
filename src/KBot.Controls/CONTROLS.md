@@ -16,6 +16,7 @@ lists only its exceptions.
 | `KBotLaneView` | [Lane/KBotLaneView.md](Lane/KBotLaneView.md) | Placement surface: dated markers on draggable lanes, one time axis |
 | `KBotNavList` | [NavList/KBotNavList.md](NavList/KBotNavList.md) | Sidebar / toolbar of keyed buttons, 3-state collapse, flyout |
 | `CustomPopup` | [Popup/CustomPopup.md](Popup/CustomPopup.md) | Themed context menu window (icons, mnemonics, sliders) |
+| `KBotHelpPopup` | [Popup/KBotHelpPopup.md](Popup/KBotHelpPopup.md) | The help's «?» popup + the search panel and list it shares with the help window (fed by the app) |
 | `KBotDropDownMenu` | [Menu/KBotDropDownMenu.md](Menu/KBotDropDownMenu.md) | Windows 10 style drop-down menu: icon bar, formatted rows, cascading submenus, designer-edited items |
 | `KBotToolTip` | [ToolTip/KBotToolTip.md](ToolTip/KBotToolTip.md) | Extender tooltip: header/body/footer, rich-text markup |
 | `KBotCaptionBar` | [CaptionBar/KBotCaptionBar.md](CaptionBar/KBotCaptionBar.md) | Title bar for borderless forms + theme menu |

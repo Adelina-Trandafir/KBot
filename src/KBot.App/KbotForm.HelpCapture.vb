@@ -18,7 +18,7 @@ Partial Public Class KbotForm
         End Get
     End Property
 
-    ' The entry follows the setting at every opening, so a change in Setări needs no restart.
+    ' The entry follows the setting at every opening, so a change in the settings window needs no restart.
     Private Sub MenuNou_Opening(sender As Object, e As ComponentModel.CancelEventArgs) Handles menuNou.Opening
         Try
             Dim shown As Boolean = HelpCaptureModeOn
@@ -81,6 +81,36 @@ Partial Public Class KbotForm
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.NavigateForCapture", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>Slice 0000-19: the caption of a view button / menu row, «Setari» (the settings window) for a settings page.</summary>
+    Public Function TargetCaption(target As String) As String Implements IHelpCaptureNavigator.TargetCaption
+        Try
+            Dim colon As Integer = If(target, String.Empty).IndexOf(":"c)
+            If colon <= 0 Then Return Nothing
+            Dim kind As String = target.Substring(0, colon).Trim().ToLowerInvariant()
+            Dim key As String = target.Substring(colon + 1).Trim()
+            Select Case kind
+                Case "view"
+                    Dim item As KBotNavItem = navViews.Items.FirstOrDefault(Function(i) String.Equals(i.Key, key, StringComparison.OrdinalIgnoreCase))
+                    Return If(item Is Nothing OrElse String.IsNullOrWhiteSpace(item.Text), Nothing, item.Text.Trim())
+                Case "menu"
+                    Dim row As KBotMenuItem = menuNou.Items.Concat(menuNou.Items.SelectMany(Function(i) i.Items)) _
+                                                     .FirstOrDefault(Function(i) String.Equals(i.Key, key, StringComparison.OrdinalIgnoreCase))
+                    If row Is Nothing Then Return Nothing
+                    ' The row text may carry rich-text marks (<b>) and a «(!)» flag: the caption is the words.
+                    Dim caption As String = System.Text.RegularExpressions.Regex.Replace(If(row.Text, String.Empty), "<[^>]+>", String.Empty)
+                    caption = caption.Replace("(!)", String.Empty).Trim()
+                    Return If(caption.Length = 0, Nothing, caption)
+                Case "setari"
+                    Return "Setări"
+                Case Else
+                    Return Nothing
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.TargetCaption", ex)
             Throw
         End Try
     End Function

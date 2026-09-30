@@ -14,4 +14,11 @@ Public Interface IHelpCaptureNavigator
     ''' </summary>
     Function NavigateForCapture(target As String) As String
 
+    ''' <summary>
+    ''' Slice 0000-19: the caption the operator reads for <paramref name="target"/> (the view's
+    ''' button, the menu row, the settings window), for the «Deschide ...» button of a search hit. Nothing
+    ''' when this window has no such screen.
+    ''' </summary>
+    Function TargetCaption(target As String) As String
+
 End Interface

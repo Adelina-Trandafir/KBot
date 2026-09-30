@@ -37,6 +37,13 @@ Public NotInheritable Class HelpTour
     ''' <summary>The topic that shows the «Tur ghidat» link; empty = only on the start page.</summary>
     Public Property TopicId As String = String.Empty
 
+    ''' <summary>
+    ''' Slice 0000-20: the windows / views the tour belongs to, same values as a topic's
+    ''' <c>screens:</c>. Optional: empty = the screens of <see cref="TopicId"/>. The «?» popup offers
+    ''' the tour on a window that shows one of them.
+    ''' </summary>
+    Public Property Screens As New List(Of String)()
+
     Public Property Steps As New List(Of HelpTourStep)()
     Public Property SourcePath As String = String.Empty
 
@@ -72,6 +79,7 @@ Public NotInheritable Class HelpTour
                 Case "title" : tour.Title = value
                 Case "part" : tour.Part = HelpLibrary.ParsePart(value)
                 Case "topic" : tour.TopicId = value
+                Case "screens" : tour.Screens.AddRange(value.Split(","c).Select(Function(s) s.Trim()).Where(Function(s) s.Length > 0))
                 Case Else : Throw New ArgumentException("unknown tour header key '" & key & "'")
             End Select
         End While

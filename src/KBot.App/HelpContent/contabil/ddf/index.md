@@ -5,7 +5,8 @@ part: contabil
 order: 50
 parent: contabil
 screens: DdfView, DdfVizualizarePage, DdfDocumentPage, DdfFisierePage
-keywords: ddf, fundamentare, revizie, stari, flux, trimitere, semnare
+keywords: ddf, fundamentare, document de fundamentare, angajament bugetar, revizie, stari, flux, trimitere, semnare
+open: view:ddf
 ---
 <!-- slice: 0020-02, 0081 -->
 Documentul de fundamentare (DDF) justifică fiecare rezervare de credite a unui angajament. K-BOT

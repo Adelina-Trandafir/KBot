@@ -2,6 +2,7 @@ Option Strict On
 Imports System.Diagnostics
 Imports System.IO
 Imports System.Text
+Imports KBot.Api
 Imports KBot.Common
 Imports KBot.Controls
 
@@ -11,7 +12,7 @@ Imports KBot.Controls
 ''' <c>Program</c>: from then on F1 anywhere and the «?» of every caption bar come here.
 '''
 ''' <para><b>Who reads what.</b> A director reads Part 3 only. Everyone else reads Part 1, plus
-''' Part 2 while «Activează opțiuni avansate» is on (the same switch that shows those pages).</para>
+''' Part 2 while the advanced-options switch is on (the same switch that shows those pages).</para>
 '''
 ''' <para><b>Finding the topic.</b> From the control that asked, up through its parents; each
 ''' step offers a key (see <see cref="ScreenKeys"/>) and the first key some topic lists in its
@@ -21,11 +22,14 @@ Public NotInheritable Class HelpService
     Implements IKBotHelpProvider
 
     Private ReadOnly _session As SessionContext
+    Private ReadOnly _questions As HelpQuestionLog
     Private _library As HelpLibrary
     Private _form As HelpForm
 
-    Public Sub New(session As SessionContext)
+    Public Sub New(session As SessionContext, feedbackApi As IHelpFeedbackApi)
         _session = session
+        ' Slice 0000-21: the waiting list of the questions typed in the help.
+        _questions = New HelpQuestionLog(feedbackApi, session)
     End Sub
 
     ''' <summary>Makes this the application's help and turns F1 on.</summary>
@@ -34,6 +38,19 @@ Public NotInheritable Class HelpService
             If KBotHelp.Provider Is service Then Return   ' one F1 filter, however many logins
             KBotHelp.Provider = service
             Application.AddMessageFilter(New HelpKeyFilter())
+            ' Slice 0000-21: what waits is sent now (the questions of an earlier, offline run)
+            ' and once more on the way out.
+            service._questions.FlushInBackground()
+            AddHandler Application.ApplicationExit,
+                Sub(sender, e)
+                    Try
+                        service._questions.FlushOnExit()
+                        service._questions.Dispose()
+                    Catch ex As Exception
+                        ' UI boundary (application exit): log and let K-BOT close.
+                        GlobalErrorLog.Write("HelpService.ApplicationExit", ex)
+                    End Try
+                End Sub
         Catch ex As Exception
             GlobalErrorLog.Write("HelpService.Install", ex)
             Throw
@@ -80,7 +97,38 @@ Public NotInheritable Class HelpService
         End Try
     End Function
 
-    ''' <summary>Reads the topic files again (the capture list's «Reîncarcă»); an open help window redraws.</summary>
+    ''' <summary>
+    ''' Slice 0000-19: the text of a hit's «Deschide ...» button for <paramref name="target"/>
+    ''' (a topic's <c>open:</c>), from the captions the main window really shows.
+    ''' </summary>
+    Friend Function OpenButtonText(target As String) As String
+        Try
+            Dim navigator As IHelpCaptureNavigator = Application.OpenForms.OfType(Of IHelpCaptureNavigator)().FirstOrDefault()
+            Dim caption As String = navigator?.TargetCaption(target)
+            Return If(String.IsNullOrEmpty(caption), "Deschide ecranul", "Deschide «" & caption & "»")
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpService.OpenButtonText", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Slice 0000-19: a hit's «Deschide ...» -- goes to <paramref name="target"/> through
+    ''' <see cref="Navigate"/>; what it could not do is told to the operator.
+    ''' </summary>
+    Friend Sub OpenScreen(target As String, topicId As String, owner As IWin32Window)
+        Try
+            Dim note As String = Navigate(target, topicId)
+            If note IsNot Nothing Then
+                KBotMessage.Show(owner, note, "Ajutor K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpService.OpenScreen", ex)
+            Throw
+        End Try
+    End Sub
+
+    ''' <summary>Reads the topic files again (the capture list's reload button); an open help window redraws.</summary>
     Public Sub ReloadLibrary()
         _library = Nothing
         RefreshOpenPage()
@@ -120,23 +168,132 @@ Public NotInheritable Class HelpService
     ''' <summary>F1 / «?»: the topic for <paramref name="origin"/>, in the help window.</summary>
     Public Sub ShowHelp(origin As Control) Implements IKBotHelpProvider.ShowHelp
         Try
-            Dim keys As List(Of String) = ScreenKeys(origin)
-            Dim window As HelpForm = EnsureWindow()
-            Dim parts As List(Of HelpPart) = VisibleParts()
-            Dim topic As HelpTopic = Nothing
-            For Each k As String In keys
-                topic = Library.FindByScreen(k, parts)
-                If topic IsNot Nothing Then Exit For
-            Next
-            window.ContextKeys = keys
-            If topic Is Nothing Then
-                window.ShowHome()
-            Else
-                window.ShowTopic(topic.Id)
-            End If
-            Present(window)
+            ShowHelpForKeys(ScreenKeys(origin))
         Catch ex As Exception
             GlobalErrorLog.Write("HelpService.ShowHelp", ex)
+            Throw
+        End Try
+    End Sub
+
+    ' F1 and the popup's «Deschide ajutorul complet»: the window at the topic of these keys.
+    Private Sub ShowHelpForKeys(keys As List(Of String))
+        Dim window As HelpForm = EnsureWindow()
+        Dim topic As HelpTopic = TopicForKeys(keys, VisibleParts())
+        window.ContextKeys = keys
+        If topic Is Nothing Then
+            window.ShowHome()
+        Else
+            window.ShowTopic(topic.Id)
+        End If
+        Present(window)
+    End Sub
+
+    ' The first key some visible topic lists in screens: (see ScreenKeys), or Nothing.
+    Private Function TopicForKeys(keys As List(Of String), parts As List(Of HelpPart)) As HelpTopic
+        For Each k As String In keys
+            Dim topic As HelpTopic = Library.FindByScreen(k, parts)
+            If topic IsNot Nothing Then Return topic
+        Next
+        Return Nothing
+    End Function
+
+    ''' <summary>
+    ''' Slice 0000-20: the «?» button. A popup under the button: search, the topic of the focused
+    ''' control of that window, the tours of the visible windows, «Deschide ajutorul complet» (the
+    ''' same as F1). One popup at a time.
+    ''' </summary>
+    Public Sub ShowHelpMenu(origin As Control, anchorScreenRect As Rectangle) Implements IKBotHelpProvider.ShowHelpMenu
+        Try
+            If _popup IsNot Nothing AndAlso Not _popup.IsDisposed Then _popup.Close()
+            Dim keys As List(Of String) = ScreenKeys(origin)
+            Dim session As New HelpSearchSession(Me, HelpSearchSession.WherePopup, Function() PopupHomeRows(keys))
+            Dim popup As New KBotHelpPopup(session)
+            AddHandler popup.FullHelpRequested,
+                Sub()
+                    Try
+                        ShowHelpForKeys(keys)
+                    Catch ex As Exception
+                        ' UI boundary (click handler of the popup).
+                        GlobalErrorLog.Write("HelpService.ShowHelpMenu.FullHelpRequested", ex)
+                    End Try
+                End Sub
+            _popup = popup
+            popup.ShowUnder(anchorScreenRect, origin.FindForm())
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpService.ShowHelpMenu", ex)
+            Throw
+        End Try
+    End Sub
+
+    Private _popup As KBotHelpPopup
+
+    ''' <summary>
+    ''' Slice 0000-21: writes a question to the waiting list, with the parts this login reads, the
+    ''' K-BOT version and the help version. Nothing about the user, the unit or the PC.
+    ''' </summary>
+    Friend Sub SaveQuestion(q As HelpQuestion)
+        Dim parts As String = String.Join("+", VisibleParts().Select(Function(p) p.ToString().ToLowerInvariant()))
+        _questions.Save(q, parts, AppUpdateService.CurrentVersion.ToString(), Library.HelpVersion)
+    End Sub
+
+    ''' <summary>
+    ''' The popup's rows for an empty box: «Pe ecranul acesta» (the topic F1 would open), then the
+    ''' tours of the visible windows -- listed directly when one window has tours, one folder per
+    ''' window (titled with its caption, the top one open) when several have.
+    ''' </summary>
+    Private Function PopupHomeRows(keys As List(Of String)) As IList(Of KBotHelpRow)
+        Dim rows As New List(Of KBotHelpRow)()
+        Dim parts As List(Of HelpPart) = VisibleParts()
+        Dim topic As HelpTopic = TopicForKeys(keys, parts)
+        If topic IsNot Nothing Then
+            rows.Add(New KBotHelpRow(KBotHelpRowKind.Header, "Pe ecranul acesta"))
+            rows.Add(New KBotHelpRow(KBotHelpRowKind.Topic, topic.Title) With {
+                .Tag = topic, .ToolTipText = "Deschide pagina de ajutor despre ce ai pe ecran."})
+        End If
+        Dim groups As List(Of HelpPopupTours.WindowTours) = HelpPopupTours.Collect(Library, parts)
+        If groups.Count > 0 Then
+            rows.Add(New KBotHelpRow(KBotHelpRowKind.Header, "Tururi ghidate"))
+            If groups.Count = 1 Then
+                rows.AddRange(groups(0).Tours.Select(Function(t) TourRow(t)))
+            Else
+                For Each g As HelpPopupTours.WindowTours In groups
+                    Dim folder As New KBotHelpRow(KBotHelpRowKind.Folder, WindowCaption(g.Window)) With {
+                        .Expanded = g Is groups(0), .ToolTipText = "Tururile ferestrei «" & WindowCaption(g.Window) & "»."}
+                    folder.Children.AddRange(g.Tours.Select(Function(t) TourRow(t)))
+                    rows.Add(folder)
+                Next
+            End If
+        End If
+        Return rows
+    End Function
+
+    Private Shared Function TourRow(t As HelpTour) As KBotHelpRow
+        Return New KBotHelpRow(KBotHelpRowKind.Tour, t.Title) With {
+            .Tag = t, .ToolTipText = "K-BOT îți arată pe ecran, pas cu pas, unde e fiecare lucru."}
+    End Function
+
+    Private Shared Function WindowCaption(f As Form) As String
+        Dim t As String = If(f.Text, String.Empty).Trim()
+        Return If(t.Length = 0, "Fereastra K-BOT", t)
+    End Function
+
+    ''' <summary>The main window, as the owner of a message; Nothing when it is not open.</summary>
+    Friend Function MainWindow() As IWin32Window
+        Return TryCast(Application.OpenForms.OfType(Of IHelpCaptureNavigator)().FirstOrDefault(), IWin32Window)
+    End Function
+
+    ''' <summary>
+    ''' Slice 0000-20: a search hit opened -- the help window at its section. A hit from the popup
+    ''' also brings its question and results into the window's search list.
+    ''' </summary>
+    Friend Sub ShowHit(hit As HelpHit, from As HelpSearchSession)
+        Try
+            Dim window As HelpForm = EnsureWindow()
+            window.ShowTopic(hit.TopicId, hit.SectionAnchor)
+            If from IsNot Nothing AndAlso from.Where = HelpSearchSession.WherePopup Then window.TakeOverSearch(from)
+            Present(window)
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpService.ShowHit", ex)
             Throw
         End Try
     End Sub

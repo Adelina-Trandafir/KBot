@@ -6,6 +6,7 @@ order: 80
 parent: contabil
 screens: SetariForm, SetariInfoView, SetariAplicatieView, SetariForexeView, SetariExtraseView, SetariAutentificareView, SetariJurnalView, LogViewerForm, LogClearDialog
 keywords: setari, tema, marime text, jurnal, parola, informatii, autentificare, sesiune expirata, reafiseaza fereastra, tine minte parola, uita datele memorate, certificat memorat, uita certificatul, schimbare unitate
+open: setari:aplicatie
 ---
 <!-- slice: 0072, 0072-01 -->
 Butonul cu **rotița** din bara de titlu a ferestrei principale deschide **Setări...** și

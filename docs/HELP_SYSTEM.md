@@ -11,10 +11,22 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
 
 ## 1. What it is
 
-- **F1 anywhere** (any K-BOT window) and the **«?» button** on every caption bar open the help
-  window on the topic of the control under focus.
-- The **help window**: contents tree, search (ignores diacritics), Back / Forward, guided tours,
-  «Exportă manualul...» (one HTML file, printable to PDF).
+- **F1 anywhere** (any K-BOT window) opens the help window on the topic of the control under
+  focus.
+- The **«?» button** on every caption bar (slice 0000-20) opens a **popup** under the button: a
+  search box, «Pe ecranul acesta» (the topic F1 would open), the guided tours of the windows on
+  screen (one folder per window when several have tours) and «Deschide ajutorul complet (F1)».
+- The **search** (slice 0000-18) takes a typed question: filler words, diacritics and word
+  endings do not matter, not every word must match, and it finds SECTIONS (a hit opens the page
+  at its `## ` heading). A hit whose topic has `open:` carries «Deschide «...»» (0000-19); one
+  whose topic has a tour carries «Tur ghidat». The popup and the help window use the same search
+  control.
+- **Questions and ratings** (slice 0000-21): every question typed there, with the hits shown,
+  the hit used and a 1-5 star rating, is sent to the server WITHOUT anything about who or where
+  (see §7).
+- The **help window**: contents tree, the search box above it (its results take the tree's place
+  while it has text), Back / Forward, guided tours, «Exportă manualul...» (one HTML file,
+  printable to PDF).
 - **Guided tours**: a coloured ring around a control plus a bubble with Înapoi / Înainte / Închide.
 - **Three parts**, and who sees them:
 
@@ -36,8 +48,11 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
 | Authoring syntax (headers, captures, source tags, tours) | `src/KBot.App/HelpContent/README.md` |
 | Static checker | `tools/HelpCheck/Check-Help.ps1` |
 | Engine | `src/KBot.App/Help/` (below) |
-| Seam used by the controls | `src/KBot.Theming/KBotHelp.vb` (`IKBotHelpProvider`) |
+| Seam used by the controls | `src/KBot.Theming/KBotHelp.vb` (`IKBotHelpProvider`: `ShowHelp` = F1, `ShowHelpMenu` = «?») |
 | «?» on caption bars | `src/KBot.Controls/CaptionBar/KBotCaptionBar.HelpButton.vb` |
+| The popup, the search panel, the list, the stars (slice 0000-20/21) | `src/KBot.Controls/Popup/KBotHelp*.vb` — doc `KBotHelpPopup.md` |
+| The help's version (watermark date, sent with each question) | `src/KBot.App/HelpContent/help-version.txt` |
+| Question log on the server (slice 0000-21) | table `AVACONT_COMUN.FX_AjutorIntrebari` (`sql/0000_21_fx_ajutor_intrebari.sql`), route `PYTHON/routes/help_feedback.py` (`POST /api/help/feedback`) |
 | Capture mode switch | `AppSettings.HelpCaptureMode`; Setări › Aplicație «Mod capturi pentru ajutor» (visible only with advanced options) |
 | Capture menu + navigation for captures/tours | `src/KBot.App/KbotForm.HelpCapture.vb` |
 
@@ -50,7 +65,11 @@ The updater writes only the files in its package, so pictures shot on a client P
 | File | Job |
 |------|-----|
 | `HelpService.vb` | installs the provider + the F1 key filter; who sees which part (`VisibleParts`); F1 → topic; `Navigate` for captures and tours; manual export |
-| `HelpLibrary.vb` | loads and checks the topic files; tree, search, `FindByScreen` |
+| `HelpLibrary.vb` | loads and checks the topic files; tree, `Search` (→ `HelpSearch`), `FindByScreen`, `HelpVersion` |
+| `HelpSearch.vb` | 0000-18: `HelpHit`, the section index built at load, stop words, stems, scoring, snippets, section anchors |
+| `HelpSearchSession.vb` | 0000-20/21: what one search panel searches in (popup / window): hits → rows, row actions, the question being asked |
+| `HelpPopupTours.vb` | 0000-20: which tours the popup offers, per visible window, top first |
+| `HelpQuestionLog.vb` | 0000-21: `HelpQuestion` + the local waiting list and its batched sending |
 | `HelpTopic.vb` | `HelpPart` enum + `HelpTopic` |
 | `HelpHtml.vb` | Markdown → HTML (Markdig), pages, the manual; capture tags → pictures / «Imagine lipsă» |
 | `HelpForm.vb` | the help window |
@@ -65,6 +84,11 @@ F1 walks from the focused control up through its parents. At each step it offers
 in the help window's bar — copy the right one from there.
 
 Inner pages (a tab page inside a window) need no key of their own when their window has one.
+
+The «?» popup's «Pe ecranul acesta» row uses the same keys (from the focused control of the
+window whose «?» was pressed). Its tours: a tour is offered on a visible, usable window where one
+of its screens is visible — the tour's `screens:` if it has one, else its topic's `screens:`
+(`HelpContent/README.md`, «Guided tours»).
 
 ## 4. PROCEDURE — bringing the help up to date after a change
 
@@ -89,7 +113,10 @@ operator sees and you are asked to cover it).
    - changed behaviour → rewrite the paragraph; renamed button → rename it everywhere
      (`grep` the old caption);
    - a new window or view → a new topic (or a section in the nearest one) AND its type name in
-     `screens:`; `-Coverage` must print «(none)»;
+     `screens:`; `-Coverage` must print «(none)»; if the topic explains that one screen and
+     K-BOT can go there (`goto:` values), give it `open:` too (slice 0000-19);
+   - a new word the operator would type for something (a synonym, an old Access name) → the
+     topic's `keywords:`; endings and diacritics need no entry (slice 0000-18);
    - a renamed / removed control → fix `screens:` and tour `target:` (the checker catches it);
    - a new header-menu item, view or Setări page used by `goto:` → also add it to the lists in
      `HelpContent/README.md` (and to `KbotForm.HelpCapture.vb` if it is a new KIND of target).
@@ -100,15 +127,18 @@ operator sees and you are asked to cover it).
    - Never delete or overwrite files in `img/` — they are the operator's.
    - A window the capture list cannot reach (director's window, dialogs that appear only in a real
      situation) → no `goto:`, and a `prepare:` that says when / where to shoot it.
-6. **Tours:** if a step's target moved or its text is now wrong, fix the step.
+6. **Tours:** if a step's target moved or its text is now wrong, fix the step. A new window or
+   view that deserves a tour gets one; if its topic's `screens:` do not name the window the tour
+   runs in, give the tour its own `screens:` so the «?» popup offers it there (slice 0000-20).
 7. **Check + build:** `Check-Help.ps1 -Coverage` → «No errors.» and coverage «(none)», then
    `dotnet build src\KBot.App\KBot.App.vbproj` (0 warnings, 0 errors). Don't run the app to look
    at the help unless asked.
 8. **Record it** as the next sub-slice `0000-NN` (never a new slice number):
    worklog `docs/worklog/SLICE-0000-NN-<slug>.md` (which topics, which capture ids are new / to
    re-shoot, what the operator must read), a row in `state/KBOT_STATUS_0000-0009.md`, move the
-   watermark, clear the «Ajutor de actualizat» notes you handled, and update the index line in
-   `KBOT_STATUS.md` («0000-01…NN GATA»).
+   watermark AND write its date (`yyyy-MM-dd`) in `src/KBot.App/HelpContent/help-version.txt`
+   (it goes with every question, slice 0000-21), clear the «Ajutor de actualizat» notes you
+   handled, and update the index line in `KBOT_STATUS.md` («0000-01…NN GATA»).
 
 ### What a feature slice does (when it is NOT a help task)
 
@@ -147,5 +177,32 @@ actualizat», name the topic ids (and capture ids) the change makes stale. One l
   and the `$GotoPrefix` pattern in `Check-Help.ps1`.
 - New part → `HelpPart` enum, `HelpLibrary.ParsePart`, `HelpService.VisibleParts` / `ManualParts`,
   `$Parts` in `Check-Help.ps1`.
-- New header key → `HelpLibrary` parser, README, `$HeaderKeys` in `Check-Help.ps1`.
+- New header key → `HelpLibrary` parser, README, `$HeaderKeys` in `Check-Help.ps1` (the last one
+  added: `open:`, 0000-19, validated against `$GotoPrefix` / `HelpLibrary.GotoPattern`). New tour
+  key → `HelpTour.Parse`, README, `$TourKeys` (last: `screens:`, 0000-20).
 - Every engine change follows the house rules in `CLAUDE.md` and is recorded as a `0000-NN` too.
+
+## 7. Search and the question log (maintainer side)
+
+**Search** (`HelpSearch.vb`, 0000-18). At load every topic is split into sections (the text
+before the first `## `, then each `## `), folded (lower case, no diacritics) and reduced to stems
+(a common Romanian ending dropped, then the first 5 letters; the first 4 letters count half).
+Filler words are in ONE list, `HelpSearch.StopWords`. A section's score = words matched × 100 +
+weight (title 10, heading 8, keywords 6, text 2; half for a 4-letter match); with 3+ words a
+section must hold half of them; at most 3 hits per topic. Section anchors are the heading's
+folded words joined by dashes; `HelpHtml` gives the page's headings the same ids. Tune the
+weights only from the question log, not by feel.
+
+**Question log** (0000-21). What a row holds: see the header of
+`sql/0000_21_fx_ajutor_intrebari.sql`. Never add anything about the user, the unit, the PC or the
+session — not to the row, not to a log line (the route has its own logger for that reason, see
+the module docstring of `PYTHON/routes/help_feedback.py`). On the client, questions wait as one
+JSON file each in `%APPDATA%\AVACONT\KBot\HelpOutbox\` and are sent in batches (every 3 minutes,
+at 10 waiting, at start, at exit). A question is written when a hit is used, when it is rated,
+and when the box is emptied or the popup / window closes; editing it after a click, a rating or a
+3-second pause starts a new one. The queries that read the log (no click, rated ≤ 2, most
+repeated, the «step 4» gate) are in `docs/worklog/SLICE-0000-21-intrebari-si-note.md`.
+
+The help text says, in one sentence, that questions and ratings are sent without the name to
+improve the help, and asks for no personal data in the box (`contabil.ajutor`, `director`). Keep
+that sentence if the text is rewritten; do not describe the waiting list or the server.

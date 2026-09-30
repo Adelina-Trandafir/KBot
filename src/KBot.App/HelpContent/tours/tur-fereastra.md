@@ -48,6 +48,6 @@ target: KbotForm.forexeFooter
 Conectarea la FOREXE, certificatul, progresul robotului și ultimul lui mesaj. Turul «Legătura cu FOREXE» o arată pe larg.
 
 ## Bara de titlu
-<!-- slice: 0028-09, 0000-01, 0097 -->
+<!-- slice: 0028-09, 0000-01, 0097, 0000-20 -->
 target: KbotForm.capBar
-Lângă «K-BOT» e unitatea pe care lucrezi; dacă ai acces la mai multe, un clic pe ea te lasă să treci pe alta, fără parolă (conexiunea FOREXE, dacă e deschisă, se închide singură). În dreapta ai rotița de setări, butonul de temă (culori și mărimea textului) și «?», care deschide ajutorul pentru ce ai pe ecran. Același lucru face tasta F1, în orice fereastră.
+Lângă «K-BOT» e unitatea pe care lucrezi; dacă ai acces la mai multe, un clic pe ea te lasă să treci pe alta, fără parolă (conexiunea FOREXE, dacă e deschisă, se închide singură). În dreapta ai rotița de setări, butonul de temă (culori și mărimea textului) și «?», care deschide un meniu de ajutor: o căsuță în care scrii o întrebare, pagina despre ce ai pe ecran și tururile ghidate. Tasta F1 deschide direct pagina de ajutor, în orice fereastră.

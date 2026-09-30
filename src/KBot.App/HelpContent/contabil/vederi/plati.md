@@ -5,7 +5,8 @@ part: contabil
 order: 50
 parent: contabil.vederi
 screens: PlatiView
-keywords: plati, incasari, extras bancar, ordin de plata
+keywords: plati, incasari, extras bancar, ordin de plata, op, banca
+open: view:plati
 ---
 <!-- slice: 0017, 0017-04, 0049-01, 0000-14, 0000-15 -->
 Plățile (și încasările) angajamentului.

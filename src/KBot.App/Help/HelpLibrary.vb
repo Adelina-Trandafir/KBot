@@ -25,6 +25,15 @@ Public NotInheritable Class HelpLibrary
     ''' <summary>Problems found while loading (also written to the error log), one line each.</summary>
     Public ReadOnly Property Problems As New List(Of String)()
 
+    ''' <summary>
+    ''' Slice 0000-21: the date the help content was last brought up to date (<c>yyyy-MM-dd</c>),
+    ''' from <c>help-version.txt</c>; empty when the file is missing or malformed. Sent with every
+    ''' question so the answers can be read against the text that was there.
+    ''' </summary>
+    Public Property HelpVersion As String = String.Empty
+
+    Friend Const HelpVersionFileName As String = "help-version.txt"
+
     ''' <summary>The guided tours (slice 0000-04), in file order.</summary>
     Public ReadOnly Property Tours As New List(Of HelpTour)()
 
@@ -37,6 +46,13 @@ Public NotInheritable Class HelpLibrary
     ''' manual ever carries it.
     ''' </summary>
     Friend Shared ReadOnly SourceTagPattern As New Regex("(?m)^[ \t]*<!--\s*slice:[^\n]*?-->[ \t]*(\n|$)", RegexOptions.Compiled)
+
+    ''' <summary>
+    ''' The form of a <c>goto</c> / <c>open</c> value: <c>view:</c>, <c>menu:</c>, <c>setari:</c>
+    ''' with a key, <c>help</c> or <c>help:&lt;topic id&gt;</c>. The same pattern as
+    ''' <c>$GotoPrefix</c> in <c>tools\HelpCheck\Check-Help.ps1</c>.
+    ''' </summary>
+    Friend Shared ReadOnly GotoPattern As New Regex("^(view:[a-z0-9_]+|menu:[a-z0-9_]+|setari:[a-z0-9_]+|help|help:[a-z0-9._-]+)$", RegexOptions.Compiled)
 
     ''' <summary>The text without its source tags (see <see cref="SourceTagPattern"/>).</summary>
     Friend Shared Function StripSourceTags(text As String) As String
@@ -125,6 +141,17 @@ Public NotInheritable Class HelpLibrary
                 Next
             End If
 
+            ' Slice 0000-21: the help's version (the watermark date, one line).
+            Dim versionFile As String = Path.Combine(root, HelpVersionFileName)
+            If File.Exists(versionFile) Then
+                Dim v As String = File.ReadAllText(versionFile, Encoding.UTF8).Trim()
+                If Regex.IsMatch(v, "^\d{4}-\d{2}-\d{2}$") Then
+                    library.HelpVersion = v
+                Else
+                    library.Report(versionFile, "not a yyyy-MM-dd date; questions are sent without the help version")
+                End If
+            End If
+
             ' Slice 0000-02: every screenshot the topics ask for, in manual order.
             For Each part As HelpPart In [Enum].GetValues(Of HelpPart)()
                 For Each t As HelpTopic In library.InReadingOrder(part)
@@ -203,6 +230,10 @@ Public NotInheritable Class HelpLibrary
                 Case "parent" : topic.Parent = value
                 Case "screens" : topic.Screens.AddRange(SplitList(value))
                 Case "keywords" : topic.Keywords.AddRange(SplitList(value))
+                Case "open"
+                    ' Slice 0000-19: same values as a capture's goto (Check-Help.ps1 $GotoPrefix).
+                    If Not GotoPattern.IsMatch(value) Then Throw New ArgumentException("open '" & value & "' has an unknown form")
+                    topic.Open = value
                 Case Else : Throw New ArgumentException("unknown header key '" & key & "'")
             End Select
         End While
@@ -211,6 +242,8 @@ Public NotInheritable Class HelpLibrary
         If topic.Title.Length = 0 Then Throw New ArgumentException("header has no 'title'")
 
         topic.Body = StripSourceTags(String.Join(vbLf, lines, i, lines.Length - i)).Trim()
+        ' Slice 0000-18: sections and stems, once, so a search only looks things up.
+        HelpSearch.Index(topic)
         Return topic
     End Function
 
@@ -286,42 +319,46 @@ Public NotInheritable Class HelpLibrary
     End Function
 
     ''' <summary>
-    ''' Topics matching every word of <paramref name="query"/>, best first. Case and diacritics
-    ''' are ignored, so «plati» finds «Plăți». A title hit weighs more than a body hit.
+    ''' Slice 0000-18: the sections of the topics in <paramref name="parts"/> that answer
+    ''' <paramref name="query"/>, best first (see <see cref="HelpSearch"/>). Case, diacritics,
+    ''' filler words and word endings are ignored, and not every word has to be found.
     ''' </summary>
-    Public Function Search(query As String, parts As IReadOnlyCollection(Of HelpPart)) As List(Of HelpTopic)
-        Dim words As String() = Fold(If(query, String.Empty)).Split({" "c}, StringSplitOptions.RemoveEmptyEntries)
-        If words.Length = 0 Then Return New List(Of HelpTopic)()
-        Dim scored As New List(Of KeyValuePair(Of HelpTopic, Integer))()
-        For Each t As HelpTopic In _topics
-            If Not parts.Contains(t.Part) Then Continue For
-            Dim title As String = Fold(t.Title)
-            Dim keys As String = Fold(String.Join(" ", t.Keywords))
-            Dim body As String = Fold(t.Body)
-            Dim score As Integer = 0
-            Dim all As Boolean = True
-            For Each w As String In words
-                Dim s As Integer = 0
-                If title.Contains(w) Then s += 10
-                If keys.Contains(w) Then s += 5
-                If body.Contains(w) Then s += 1
-                If s = 0 Then all = False : Exit For
-                score += s
-            Next
-            If all Then scored.Add(New KeyValuePair(Of HelpTopic, Integer)(t, score))
+    Public Function Search(query As String, parts As IReadOnlyCollection(Of HelpPart),
+                           Optional maxHits As Integer = HelpSearch.DefaultMaxHits) As List(Of HelpHit)
+        Dim hits As List(Of HelpHit) = HelpSearch.Search(InReadingOrderAll(parts), query, parts, maxHits)
+        ' Slice 0000-19: what a hit can do besides opening its page -- the topic's screen, its tour.
+        For Each h As HelpHit In hits
+            Dim t As HelpTopic = Find(h.TopicId)
+            If t Is Nothing Then Continue For
+            h.OpenTarget = t.Open
+            Dim tour As HelpTour = TourOf(t.Id, parts)
+            If tour IsNot Nothing Then
+                h.TourId = tour.Id
+                h.TourTitle = tour.Title
+            End If
         Next
-        Return scored.OrderByDescending(Function(kv) kv.Value).ThenBy(Function(kv) kv.Key.Title, StringComparer.CurrentCulture) _
-                     .Select(Function(kv) kv.Key).ToList()
+        Return hits
     End Function
 
-    ''' <summary>Lower case, diacritics removed (ă→a, ș→s, ț→t, î→i, â→a).</summary>
-    Friend Shared Function Fold(s As String) As String
-        Dim d As String = s.ToLowerInvariant().Normalize(NormalizationForm.FormD)
-        Dim sb As New StringBuilder(d.Length)
-        For Each c As Char In d
-            If CharUnicodeInfo.GetUnicodeCategory(c) <> UnicodeCategory.NonSpacingMark Then sb.Append(c)
-        Next
-        Return sb.ToString().Normalize(NormalizationForm.FormC)
+    ''' <summary>The first tour offered by <paramref name="topicId"/> that <paramref name="parts"/> may see, or Nothing.</summary>
+    Public Function TourOf(topicId As String, parts As IReadOnlyCollection(Of HelpPart)) As HelpTour
+        Return Tours.FirstOrDefault(Function(x) parts.Contains(x.Part) AndAlso String.Equals(x.TopicId, topicId, StringComparison.OrdinalIgnoreCase))
     End Function
+
+    ' The visible topics in manual order, so equal scores keep the order of the contents.
+    ' Worked out once per part: the library does not change once loaded.
+    Private Function InReadingOrderAll(parts As IReadOnlyCollection(Of HelpPart)) As IEnumerable(Of HelpTopic)
+        Return parts.SelectMany(
+            Function(p)
+                Dim list As List(Of HelpTopic) = Nothing
+                If Not _readingOrder.TryGetValue(p, list) Then
+                    list = InReadingOrder(p)
+                    _readingOrder(p) = list
+                End If
+                Return list
+            End Function)
+    End Function
+
+    Private ReadOnly _readingOrder As New Dictionary(Of HelpPart, List(Of HelpTopic))()
 
 End Class

@@ -6,6 +6,7 @@ order: 20
 parent: avansat
 screens: SetariPaginaView, RegulaPaginaForm
 keywords: pagina forexe, css, stil, reguli, selector, meniu lateral, latime pagina, implicite
+open: setari:pagina
 ---
 <!-- slice: 0073-01 -->
 K-BOT poate schimba felul în care arată pagina FOREXE din browserul lui: ascunde meniul lateral
