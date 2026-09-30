@@ -12,11 +12,63 @@ Partial Public Class KbotForm
     Private _clasificatiiForm As ClasificatiiForm
     Private _parteneriForm As ParteneriForm
 
+    ' Slice 0095-02: set at the first collapse of navViews; from then on btnMeniu's column follows
+    ' the bar's width (also through a DPI change). Before it the designer's width stands.
+    Private _menuFollowsNav As Boolean
+
+    ''' <summary>
+    ''' The bar of views collapsed or expanded (slice 0095-02): the header's menu button takes the
+    ''' same width, and a collapsed button shows only its icon.
+    ''' </summary>
+    Private Sub NavViews_CollapseStateChanged(state As KBotNavCollapseState) Handles navViews.CollapseStateChanged
+        Try
+            _menuFollowsNav = True
+            ApplyMenuButtonText()
+            SyncMenuButtonWidth()
+        Catch ex As Exception
+            ' UI boundary (event handler): log and swallow.
+            GlobalErrorLog.Write("MainForm.NavViews_CollapseStateChanged", ex)
+        End Try
+    End Sub
+
+    Private Sub NavViews_SizeChanged(sender As Object, e As EventArgs) Handles navViews.SizeChanged
+        Try
+            If _menuFollowsNav Then SyncMenuButtonWidth()
+        Catch ex As Exception
+            ' UI boundary (event handler): log and swallow.
+            GlobalErrorLog.Write("MainForm.NavViews_SizeChanged", ex)
+        End Try
+    End Sub
+
+    ' Column 0 of the header holds btnMeniu with its margins; the button's left edge already lines
+    ' up with the bar's (cell border + left margin = pnlWork's left padding), so the column is the
+    ' bar's width plus the two margins. The table takes LOGICAL pixels: device / its scale.
+    Private Sub SyncMenuButtonWidth()
+        If IsDisposed OrElse Not IsHandleCreated Then Return
+        Dim scale As Single = tlyHeader.DpiScale
+        If scale <= 0F Then Return
+        Dim device As Integer = navViews.Width + btnMeniu.Margin.Horizontal
+        tlyHeader.SetColumnWidth(0, device / scale)
+    End Sub
+
+    ' The menu button's caption: none while the bar is collapsed (only the icon fits; the tooltip
+    ' still tells about the «(!)» mark), otherwise «Meniu» with or without the mark.
+    Private Sub ApplyMenuButtonText()
+        If navViews.CollapseState <> KBotNavCollapseState.Expanded Then
+            btnMeniu.Text = String.Empty
+        Else
+            btnMeniu.Text = If(_menuMarked, MenuButtonMarkedText, MenuButtonText)
+        End If
+    End Sub
+
     Private Sub MenuNou_ItemClicked(sender As Object, e As KBotMenuItemClickedEventArgs) Handles menuNou.ItemClicked
         Try
             Select Case e.Key
                 Case "angajament_nou"
                     DeschideAngajamentNou()
+                Case "extrase"
+                    ' Slice 0095-02: the «Extrase de cont» window (KbotForm.Extrase.vb).
+                    DeschideExtrasele()
                 Case "clasificatii"
                     DeschideClasificatiile()
                 Case "parteneri"

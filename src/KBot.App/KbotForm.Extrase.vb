@@ -6,34 +6,61 @@ Imports KBot.Domain
 Imports KBot.Forexe
 
 ''' <summary>
-''' The bank statements (slices 0057 / 0080) -- the left icon of the tree footer, and the
-''' download + import shared with the Extrase view and the «Extrase de cont» window (slice 0086
-''' split out of KbotForm.vb).
+''' The bank statements (slices 0057 / 0080 / 0095-02) -- the left icon of the tree footer
+''' (direct download), «Meniu → Extrase» (the «Extrase de cont» window), and the download +
+''' import shared with the Extrase view and that window (slice 0086 split out of KbotForm.vb).
 ''' </summary>
 Partial Public Class KbotForm
 
+    ' The «Extrase de cont» window opened from the header menu (slice 0095-02); one at a time.
+    Private _extraseForm As ExtraseForm
+
     ''' <summary>
-    ''' The LEFT icon of the tree footer opens the «Extrase de cont» window (slice 0080-03,
-    ''' operator 24.09.2026): every statement of the database, with the download button in its
-    ''' own footer. It used to download directly (slice 0057); that action now lives in
-    ''' <see cref="DescarcaExtraseAsync"/>, shared by the window and the Extrase view.
+    ''' The LEFT icon of the tree footer downloads the SNM bank statements directly again
+    ''' (slice 0095-02, operator 29.09.2026), as in slice 0057. The «Extrase de cont» window it
+    ''' opened since 0080-03 moved to the header menu («Meniu → Extrase»).
     ''' </summary>
-    Private Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
+    Private Async Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
         Try
-            Using f As New ExtraseForm(_apiClient,
-                                       Function(op) WithReauth(Of ExtraseInfo)(op),
-                                       Function(owner) DescarcaExtraseAsync(owner))
-                f.ShowDialog(Me)
-            End Using
-            ' The window may have imported statements: the open view follows.
-            Dim vedere As IAngajamentView = Nothing
-            If _views.TryGetValue("extrase", vedere) Then TryCast(vedere, ExtraseView)?.Reincarca()
+            If Await DescarcaExtraseAsync(Me) Then ReloadExtraseView()
         Catch ex As Exception
-            ' UI boundary: log it and say why.
-            GlobalErrorLog.Write("MainForm.tree_FooterLeftIconClicked", ex)
+            ' UI boundary (async void): log and swallow; DescarcaExtraseAsync told the operator.
+            GlobalErrorLog.Write("MainForm.Tree_FooterLeftIconClicked", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' «Meniu → Extrase» (slice 0095-02): the «Extrase de cont» window, standalone (modeless) like
+    ''' the nomenclatoare windows; asking again brings the open one to the front. When it closes,
+    ''' the open Extrase view reloads -- the window may have imported statements.
+    ''' </summary>
+    Private Sub DeschideExtrasele()
+        Try
+            If _extraseForm IsNot Nothing AndAlso Not _extraseForm.IsDisposed Then
+                _extraseForm.Activate()
+                Return
+            End If
+            _extraseForm = New ExtraseForm(_apiClient,
+                                           Function(op) WithReauth(Of ExtraseInfo)(op),
+                                           Function(owner) DescarcaExtraseAsync(owner))
+            AddHandler _extraseForm.FormClosed,
+                Sub()
+                    _extraseForm = Nothing
+                    ReloadExtraseView()
+                End Sub
+            _extraseForm.Show(Me)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.DeschideExtrasele", ex)
             KBotMessage.Show(Me, "Fereastra extraselor de cont nu s-a putut deschide: " & ex.Message,
                             "Extrase de cont", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
+    End Sub
+
+    ' The open Extrase view (if any) follows an import.
+    Private Sub ReloadExtraseView()
+        If IsDisposed Then Return
+        Dim vedere As IAngajamentView = Nothing
+        If _views.TryGetValue("extrase", vedere) Then TryCast(vedere, ExtraseView)?.Reincarca()
     End Sub
 
     ''' <summary>

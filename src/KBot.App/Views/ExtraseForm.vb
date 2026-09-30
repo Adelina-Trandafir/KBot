@@ -11,8 +11,9 @@ Imports KBot.Theming
 ''' «Extrase de cont» (slice 0080-03, operator 24.09.2026): every bank statement of the
 ''' database -- headers with or without an angajament, operations with CodContract, with only
 ''' CodContract, or with neither (those stand for something other than an angajament). Opened
-''' modal from the left icon of the main tree's footer, in place of the direct download that
-''' icon used to run; the download is the button in this window's footer.
+''' standalone (modeless) from «Meniu → Extrase» (slice 0095-02; before that, modal from the
+''' left icon of the main tree's footer, which downloads directly again); the download is the
+''' button in this window's footer.
 '''
 ''' <para>Data from GET /api/forexe/extrase/lista (no <c>cod</c>), through the shell's re-login
 ''' net. The body is <see cref="ExtrasePanel"/> in <see cref="ExtrasePanelMode.Toate"/> mode,

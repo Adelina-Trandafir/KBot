@@ -30,6 +30,9 @@ Partial Public Class KbotForm
     Private Const MenuButtonText As String = "  Meniu"
     Private Const MenuButtonMarkedText As String = "  Meniu  (!)"
 
+    ' True while uncorrelated operations exist (the «(!)» mark); ApplyMenuButtonText reads it.
+    Private _menuMarked As Boolean
+
     ' Re-entry guard: a login and a menu click must not open two windows.
     Private _uncorrelatedOpen As Boolean
 
@@ -119,7 +122,8 @@ Partial Public Class KbotForm
         item.Text = $"<b>(!) Operațiuni necorelate ({count})</b>"
         Dim palette As ThemePalette = ThemeManager.Current?.Palette
         item.ForeColor = If(palette Is Nothing, Color.Empty, palette.ErrorColor)
-        btnMeniu.Text = If(count > 0, MenuButtonMarkedText, MenuButtonText)
+        _menuMarked = count > 0
+        ApplyMenuButtonText()
         tips.SetToolTipText(btnMeniu, If(count > 0,
             $"Există {count} operațiuni «ERRRRRRRRRR» din FOREXE necorelate cu un angajament: Meniu → «Operațiuni necorelate».",
             "Angajament nou, clasificațiile bugetare și partenerii."))

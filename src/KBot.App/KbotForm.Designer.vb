@@ -30,6 +30,8 @@ Partial Class KbotForm
         Dim KBotMenuItem4 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem5 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem6 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem7 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem8 As KBotMenuItem = New KBotMenuItem()
         Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KbotForm))
@@ -183,21 +185,28 @@ Partial Class KbotForm
         KBotMenuItem2.Visible = False
         KBotMenuItem3.IsSeparator = True
         KBotMenuItem3.Key = Nothing
-        KBotMenuItem4.Image = My.Resources.Resources.folder_open
-        KBotMenuItem5.Image = My.Resources.Resources.cells
-        KBotMenuItem5.Key = "clasificatii"
-        KBotMenuItem5.Text = "Clasificații bugetare"
-        KBotMenuItem6.Image = My.Resources.Resources.binvoice
-        KBotMenuItem6.Key = "parteneri"
-        KBotMenuItem6.Text = "Parteneri"
-        KBotMenuItem4.Items.Add(KBotMenuItem5)
-        KBotMenuItem4.Items.Add(KBotMenuItem6)
-        KBotMenuItem4.Key = "nomenclatoare"
-        KBotMenuItem4.Text = "Nomenclatoare"
+        KBotMenuItem4.Image = My.Resources.Resources.binvoice
+        KBotMenuItem4.Key = "extrase"
+        KBotMenuItem4.Text = "Extrase"
+        KBotMenuItem5.IsSeparator = True
+        KBotMenuItem5.Key = Nothing
+        KBotMenuItem6.Image = My.Resources.Resources.folder_open
+        KBotMenuItem7.Image = My.Resources.Resources.cells
+        KBotMenuItem7.Key = "clasificatii"
+        KBotMenuItem7.Text = "Clasificații bugetare"
+        KBotMenuItem8.Image = My.Resources.Resources.binvoice
+        KBotMenuItem8.Key = "parteneri"
+        KBotMenuItem8.Text = "Parteneri"
+        KBotMenuItem6.Items.Add(KBotMenuItem7)
+        KBotMenuItem6.Items.Add(KBotMenuItem8)
+        KBotMenuItem6.Key = "nomenclatoare"
+        KBotMenuItem6.Text = "Nomenclatoare"
         menuNou.Items.Add(KBotMenuItem1)
         menuNou.Items.Add(KBotMenuItem2)
         menuNou.Items.Add(KBotMenuItem3)
         menuNou.Items.Add(KBotMenuItem4)
+        menuNou.Items.Add(KBotMenuItem5)
+        menuNou.Items.Add(KBotMenuItem6)
         ' 
         ' pnlRoot
         ' 

@@ -104,6 +104,12 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
 | 0095 | **Istoric: nod rădăcină «Tot istoricul» (cererea operatorului, 29.09.2026)** — arborele Istoric are acum un nivel rădăcină, ca celelalte arbori (Extrase: «Toate extrasele»); lunile stau sub el, zilele sub luni. Clic pe rădăcină = ce face vederea la încărcare: toate filtrele golite, toate rândurile FX_Istoric ale angajamentului | GATA pe cod (build KBot.App **0 erori**) / **nevăzut pe ecran, fără teste** | `SLICE-0095-istoric-tree-root.md` | Doar `IstoricView.vb`: `NodPerioada.Tot()` + `EsteTot`. Numărul din dreapta rădăcinii = toate rândurile, inclusiv cele fără dată (până acum fără nod în arbore). Clicul pe rădăcină renunță și la intervalul cerut de FOREXE (0073). FileVersion KBot.App nebumped (îl cere `push-update.ps1`). |
+| 0095-02 | **Extrase: iconița din stânga subsolului arborelui descarcă din nou direct extrasele SNM; fereastra «Extrase de cont» se deschide din «Meniu → Extrase» (nemodală, una singură); `btnMeniu` ia lățimea lui `navViews` când bara se strânge (doar iconița) (cererea operatorului, 29.09.2026)** | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste** | `SLICE-0095-02-extrase-menu-footer-meniu-width.md` | Operatorul a numit-o «slice 95», deja ocupată de Istoric → sub-pas 0095-02. `KbotForm.Extrase.vb` (subsol + `DeschideExtrasele`), `KbotForm.Nomenclatoare.vb` (meniu + lățime), `KbotForm.CabNotes.vb` (`_menuMarked`), intrarea de meniu din Designer (a operatorului). Coloana 0 din `tlyHeader` urmează bara abia după prima strângere. FileVersion KBot.App nebumped. |
+
+### Open threads
+
+- **0095-02 — nevăzut pe ecran.** Butonul strâns (doar iconiță), alinierea la 1px după
+  desfășurare (239 vs 240 logic); tooltipul lui `btnMeniu` nu pomenește Extrasele.
 
 ---
 
